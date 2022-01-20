@@ -1,5 +1,5 @@
+import { getBidIdParameter, isFn, isInteger } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { isInteger } from '../src/utils.js';
 
 const BIDDER_CODE = 'getintent';
 const IS_NET_REVENUE = true;
@@ -7,11 +7,25 @@ const BID_HOST = 'px.adhigh.net';
 const BID_BANNER_PATH = '/rtb/direct_banner';
 const BID_VIDEO_PATH = '/rtb/direct_vast';
 const BID_RESPONSE_TTL_SEC = 360;
-const VIDEO_PROPERTIES = [
-  'protocols', 'mimes', 'min_dur', 'max_dur', 'min_btr', 'max_btr', 'vi_format', 'api', 'skippable'
-];
+const FLOOR_PARAM = 'floor';
+const CURRENCY_PARAM = 'cur';
+const DEFAULT_CURRENCY = 'RUB';
+const VIDEO_PROPERTIES = {
+  'protocols': 'protocols',
+  'mimes': 'mimes',
+  'min_dur': 'minduration',
+  'max_dur': 'maxduration',
+  'min_btr': 'minbitrate',
+  'max_btr': 'maxbitrate',
+  'vi_format': null,
+  'api': 'api',
+  'skippable': 'skip',
+};
+const SKIPPABLE_ALLOW = 'ALLOW';
+const SKIPPABLE_NOT_ALLOW = 'NOT_ALLOW';
+
 const OPTIONAL_PROPERTIES = [
-  'cur', 'floor', 'sid'
+  'sid'
 ];
 
 export const spec = {
@@ -66,7 +80,10 @@ export const spec = {
         creativeId: responseBody.creative_id,
         cpm: responseBody.cpm,
         width: size[0],
-        height: size[1]
+        height: size[1],
+        meta: {
+          advertiserDomains: responseBody.adomain || [],
+        }
       };
       if (responseBody.vast_url) {
         bid.mediaType = 'video';
@@ -105,18 +122,60 @@ function buildGiBidRequest(bidRequest) {
   if (bidRequest.sizes) {
     giBidRequest.size = produceSize(bidRequest.sizes);
   }
-  addVideo(bidRequest.params.video, giBidRequest);
+
+  const currency = getBidIdParameter(CURRENCY_PARAM, bidRequest.params);
+  const floorInfo = getBidFloor(bidRequest, currency);
+  if (floorInfo.floor) {
+    giBidRequest[FLOOR_PARAM] = floorInfo.floor;
+  }
+  if (floorInfo.currency) {
+    giBidRequest[CURRENCY_PARAM] = floorInfo.currency;
+  }
+
+  if (giBidRequest.is_video) {
+    addVideo(bidRequest.params.video, bidRequest.mediaTypes.video, giBidRequest);
+  }
   addOptional(bidRequest.params, giBidRequest, OPTIONAL_PROPERTIES);
   return giBidRequest;
 }
 
-function addVideo(video, giBidRequest) {
-  if (giBidRequest.is_video && video) {
-    for (let i = 0, l = VIDEO_PROPERTIES.length; i < l; i++) {
-      let key = VIDEO_PROPERTIES[i];
-      if (video.hasOwnProperty(key)) {
-        giBidRequest[key] = Array.isArray(video[key]) ? video[key].join(',') : video[key];
+function getBidFloor(bidRequest, currency) {
+  let floorInfo = {};
+
+  if (isFn(bidRequest.getFloor)) {
+    floorInfo = bidRequest.getFloor({
+      currency: currency || DEFAULT_CURRENCY,
+      mediaType: bidRequest.mediaType,
+      size: bidRequest.sizes || '*'
+    });
+  }
+
+  return {
+    floor: floorInfo.floor || bidRequest.params[FLOOR_PARAM] || 0,
+    currency: floorInfo.currency || currency || '',
+  };
+}
+
+function addVideo(videoParams, mediaTypesVideoParams, giBidRequest) {
+  videoParams = videoParams || {};
+  mediaTypesVideoParams = mediaTypesVideoParams || {};
+
+  for (let videoParam in VIDEO_PROPERTIES) {
+    let paramValue;
+
+    const mediaTypesVideoParam = VIDEO_PROPERTIES[videoParam];
+    if (videoParams.hasOwnProperty(videoParam)) {
+      paramValue = videoParams[videoParam];
+    } else if (mediaTypesVideoParam !== null && mediaTypesVideoParams.hasOwnProperty(mediaTypesVideoParam)) {
+      if (mediaTypesVideoParam === 'skip') {
+        paramValue = mediaTypesVideoParams[mediaTypesVideoParam] === 1 ? SKIPPABLE_ALLOW : SKIPPABLE_NOT_ALLOW;
+      } else {
+        paramValue = mediaTypesVideoParams[mediaTypesVideoParam];
       }
+    }
+
+    if (typeof paramValue !== 'undefined') {
+      giBidRequest[videoParam] = Array.isArray(paramValue) ? paramValue.join(',') : paramValue;
     }
   }
 }

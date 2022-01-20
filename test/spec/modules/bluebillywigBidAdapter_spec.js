@@ -210,6 +210,25 @@ describe('BlueBillywigAdapter', () => {
       bid.params.video = void (0);
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
+
+    it('should fail if rendererSettings is specified but is not an object', () => {
+      const bid = deepClone(baseValidBid);
+
+      bid.params.rendererSettings = null;
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+
+      bid.params.rendererSettings = 'string';
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+
+      bid.params.rendererSettings = 123;
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+
+      bid.params.rendererSettings = false;
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+
+      bid.params.rendererSettings = void (0);
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
   });
 
   describe('buildRequests', () => {
@@ -740,6 +759,10 @@ describe('BlueBillywigAdapter', () => {
       expect(bid.creativeId).to.equal(serverResponse.body.seatbid[0].bid[0].crid);
       expect(bid.currency).to.equal(serverResponse.body.cur);
       expect(bid.ttl).to.equal(BB_CONSTANTS.DEFAULT_TTL);
+
+      expect(bid).to.have.property('meta');
+      expect(bid.meta).to.have.property('advertiserDomains');
+      expect(bid.meta.advertiserDomains[0]).to.equal('bluebillywig.com');
 
       expect(bid.publicationName).to.equal(validBidderRequest.bids[0].params.publicationName);
       expect(bid.rendererCode).to.equal(validBidderRequest.bids[0].params.rendererCode);

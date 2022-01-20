@@ -2,7 +2,8 @@
 'use strict';
 
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import * as utils from '../src/utils.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { triggerPixel, isFn, deepAccess, getAdUnitSizes, parseGPTSingleSizeArrayToRtbSize, _map } from '../src/utils.js';
 
 const BIDDER_CODE = 'revcontent';
 const NATIVE_PARAMS = {
@@ -21,12 +22,13 @@ const NATIVE_PARAMS = {
     type: 1
   }
 };
+const STYLE_EXTRA = '<style type="text/css">.undefined-photo { background-size: cover !important;}</style>';
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: ['native'],
+  supportedMediaTypes: [BANNER, NATIVE],
   isBidRequestValid: function (bid) {
-    return (typeof bid.params.apiKey !== 'undefined' && typeof bid.params.userId !== 'undefined' && bid.hasOwnProperty('nativeParams'));
+    return (typeof bid.params.apiKey !== 'undefined' && typeof bid.params.userId !== 'undefined');
   },
   buildRequests: (validBidRequests, bidderRequest) => {
     const userId = validBidRequests[0].params.userId;
@@ -55,66 +57,7 @@ export const spec = {
       endpoint = endpoint + '&widgetId=' + widgetId;
     }
 
-    let bidfloor = 0.1;
-    if (!isNaN(validBidRequests[0].params.bidfloor) && validBidRequests[0].params.bidfloor > 0) {
-      bidfloor = validBidRequests[0].params.bidfloor;
-    }
-
-    const imp = validBidRequests.map((bid, id) => {
-      if (bid.hasOwnProperty('nativeParams')) {
-        const assets = utils._map(bid.nativeParams, (bidParams, key) => {
-          const props = NATIVE_PARAMS[key];
-          const asset = {
-            required: bidParams.required & 1
-          };
-          if (props) {
-            asset.id = props.id;
-            let wmin, hmin, w, h;
-            let aRatios = bidParams.aspect_ratios;
-
-            if (aRatios && aRatios[0]) {
-              aRatios = aRatios[0];
-              wmin = aRatios.min_width || 0;
-              hmin = aRatios.ratio_height * wmin / aRatios.ratio_width | 0;
-            }
-
-            asset[props.name] = {
-              len: bidParams.len,
-              type: props.type,
-              wmin,
-              hmin,
-              w,
-              h
-            };
-
-            return asset;
-          }
-        }).filter(Boolean);
-
-        return {
-          id: id + 1,
-          tagid: bid.params.mid,
-          bidderRequestId: bid.bidderRequestId,
-          auctionId: bid.auctionId,
-          transactionId: bid.transactionId,
-          native: {
-            request: {
-              ver: '1.1',
-              context: 2,
-              contextsubtype: 21,
-              plcmttype: 1,
-              plcmtcnt: 1,
-              assets: assets
-            },
-            ver: '1.1',
-            battr: [1, 3, 8, 11, 17]
-          },
-          instl: 0,
-          bidfloor: bidfloor,
-          secure: '1'
-        };
-      }
-    });
+    const imp = validBidRequests.map((bid, id) => buildImp(bid, id));
 
     let data = {
       id: bidderRequest.auctionId,
@@ -123,7 +66,6 @@ export const spec = {
         id: widgetId,
         domain: domain,
         page: refererInfo,
-        cat: ['IAB17'],
         publisher: {
           id: userId,
           domain: domain
@@ -136,23 +78,7 @@ export const spec = {
       user: {
         id: 1
       },
-      at: 2,
-      bcat: [
-        'IAB24',
-        'IAB25',
-        'IAB25-1',
-        'IAB25-2',
-        'IAB25-3',
-        'IAB25-4',
-        'IAB25-5',
-        'IAB25-6',
-        'IAB25-7',
-        'IAB26',
-        'IAB26-1',
-        'IAB26-2',
-        'IAB26-3',
-        'IAB26-4'
-      ]
+      at: 2
     };
     serverRequests.push({
       method: 'POST',
@@ -166,63 +92,76 @@ export const spec = {
 
     return serverRequests;
   },
-  interpretResponse: function (serverResponse, originalBidRequest) {
-    if (!serverResponse.body) {
-      return;
+  interpretResponse: function (serverResponse, serverRequest) {
+    let response = serverResponse.body;
+    if ((!response) || (!response.seatbid)) {
+      return [];
     }
-    const seatbid = serverResponse.body.seatbid[0];
-    const bidResponses = [];
 
-    for (var x in seatbid.bid) {
-      let adm = JSON.parse(seatbid.bid[x]['adm']);
-      let ad = {
-        clickUrl: adm.link.url
-      };
+    let rtbRequest = JSON.parse(serverRequest.data);
+    let rtbBids = response.seatbid
+      .map(seatbid => seatbid.bid)
+      .reduce((a, b) => a.concat(b), []);
 
-      adm.assets.forEach(asset => {
-        switch (asset.id) {
-          case 3:
-            ad['image'] = {
-              url: asset.img.url,
-              height: 1,
-              width: 1
-            };
-            break;
-          case 0:
-            ad['title'] = asset.title.text;
-            break;
-          case 5:
-            ad['sponsoredBy'] = asset.data.value;
-            break;
-        }
-      });
+    return rtbBids.map(rtbBid => {
+      const bidIndex = +rtbBid.impid - 1;
+      let imp = rtbRequest.imp.filter(imp => imp.id.toString() === rtbBid.impid)[0];
 
-      var size = originalBidRequest.bid[0].params.size;
-
-      const bidResponse = {
-        bidder: BIDDER_CODE,
-        requestId: originalBidRequest.bid[0].bidId,
-        cpm: seatbid.bid[x]['price'],
-        creativeId: seatbid.bid[x]['adid'],
-        currency: 'USD',
-        netRevenue: true,
+      let prBid = {
+        requestId: serverRequest.bid[bidIndex].bidId,
+        cpm: rtbBid.price,
+        creativeId: rtbBid.crid,
+        nurl: rtbBid.nurl,
+        currency: response.cur || 'USD',
         ttl: 360,
-        nurl: seatbid.bid[x]['nurl'],
-        bidderCode: 'revcontent',
-        mediaType: 'native',
-        native: ad,
-        width: size.width,
-        height: size.height,
-        ad: displayNative(ad, getTemplate(size, originalBidRequest.bid[0].params.template))
+        netRevenue: true,
+        bidder: 'revcontent',
+        bidderCode: 'revcontent'
       };
+      if ('banner' in imp) {
+        prBid.mediaType = BANNER;
+        prBid.width = rtbBid.w;
+        prBid.height = rtbBid.h;
+        prBid.ad = STYLE_EXTRA + rtbBid.adm;
+      } else if ('native' in imp) {
+        let adm = JSON.parse(rtbBid.adm);
+        let ad = {
+          clickUrl: adm.link.url
+        };
 
-      bidResponses.push(bidResponse);
-    }
+        adm.assets.forEach(asset => {
+          switch (asset.id) {
+            case 3:
+              ad['image'] = {
+                url: asset.img.url,
+                height: 1,
+                width: 1
+              };
+              break;
+            case 0:
+              ad['title'] = asset.title.text;
+              break;
+            case 5:
+              ad['sponsoredBy'] = asset.data.value || 'Revcontent';
+              break;
+          }
+        });
+        var size = serverRequest.bid[0].params.size;
+        prBid.width = size.width;
+        prBid.height = size.height;
 
-    return bidResponses;
+        prBid.mediaType = NATIVE;
+        prBid.native = ad;
+        prBid.ad = displayNative(ad, getTemplate(serverRequest.bid[0].params.size, serverRequest.bid[0].params.template));
+      }
+
+      return prBid;
+    });
   },
   onBidWon: function (bid) {
-    utils.triggerPixel(bid.nurl);
+    if (bid.nurl) {
+      triggerPixel(bid.nurl);
+    }
     return true;
   }
 };
@@ -272,4 +211,81 @@ function extractHostname(url) {
   hostname = hostname.split('?')[0];
 
   return hostname;
+}
+
+function buildImp(bid, id) {
+  let bidfloor;
+  if (isFn(bid.getFloor)) {
+    bidfloor = bid.getFloor({
+      currency: 'USD',
+      mediaType: '*',
+      size: '*'
+    }).floor;
+  } else {
+    bidfloor = deepAccess(bid, `params.bidfloor`) || 0.1;
+  }
+
+  let imp = {
+    id: id + 1,
+    tagid: bid.adUnitCode,
+    bidderRequestId: bid.bidderRequestId,
+    auctionId: bid.auctionId,
+    transactionId: bid.transactionId,
+    instl: 0,
+    bidfloor: bidfloor,
+    secure: '1'
+  };
+
+  let bannerReq = deepAccess(bid, `mediaTypes.banner`);
+  let nativeReq = deepAccess(bid, `mediaTypes.native`);
+  if (bannerReq) {
+    let sizes = getAdUnitSizes(bid);
+    imp.banner = {
+      w: sizes[0][0],
+      h: sizes[0][1],
+      format: sizes.map(wh => parseGPTSingleSizeArrayToRtbSize(wh)),
+    }
+  } else if (nativeReq) {
+    const assets = _map(bid.nativeParams, (bidParams, key) => {
+      const props = NATIVE_PARAMS[key];
+      const asset = {
+        required: bidParams.required & 1
+      };
+      if (props) {
+        asset.id = props.id;
+        let wmin, hmin, w, h;
+        let aRatios = bidParams.aspect_ratios;
+
+        if (aRatios && aRatios[0]) {
+          aRatios = aRatios[0];
+          wmin = aRatios.min_width || 0;
+          hmin = aRatios.ratio_height * wmin / aRatios.ratio_width | 0;
+        }
+
+        asset[props.name] = {
+          len: bidParams.len,
+          type: props.type,
+          wmin,
+          hmin,
+          w,
+          h
+        };
+
+        return asset;
+      }
+    }).filter(Boolean);
+    imp.native = {
+      request: {
+        ver: '1.1',
+        context: 2,
+        contextsubtype: 21,
+        plcmttype: 1,
+        plcmtcnt: 1,
+        assets: assets
+      },
+      ver: '1.1',
+      battr: [1, 3, 8, 11, 17]
+    };
+  }
+  return imp;
 }
