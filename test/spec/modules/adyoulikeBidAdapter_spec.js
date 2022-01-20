@@ -95,6 +95,40 @@ describe('Adyoulike Adapter', function () {
     }
   ];
 
+  const bidRequestWithMultipleMediatype = [
+    {
+      'bidId': 'bid_id_0',
+      'bidder': 'adyoulike',
+      'placementCode': 'adunit/hb-0',
+      'params': {
+        'placement': 'placement_0'
+      },
+      'sizes': '300x250',
+      'mediaTypes': {
+        'banner': {
+          'sizes': ['640x480']
+        },
+        'video': {
+          'playerSize': [640, 480],
+          'context': 'outstream'
+        },
+        'native': {
+          'image': {
+            'required': true,
+          },
+          'title': {
+            'required': true,
+            'len': 80
+          },
+          'cta': {
+            'required': false
+          },
+        }
+      },
+      'transactionId': 'bid_id_0_transaction_id'
+    }
+  ];
+
   const bidRequestWithNativeImageType = [
     {
       'bidId': 'bid_id_0',
@@ -635,6 +669,21 @@ describe('Adyoulike Adapter', function () {
     it('sends bid request to endpoint with single placement without canonical', function () {
       canonicalQuery.restore();
       const request = spec.buildRequests(bidRequestWithSinglePlacement, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(request.url).to.contain(getEndpoint());
+      expect(request.method).to.equal('POST');
+
+      expect(request.url).to.not.contains('CanonicalUrl=' + encodeURIComponent(canonicalUrl));
+      expect(payload.Version).to.equal('1.0');
+      expect(payload.Bids['bid_id_0'].PlacementID).to.be.equal('placement_0');
+      expect(payload.PageRefreshed).to.equal(false);
+      expect(payload.Bids['bid_id_0'].TransactionID).to.be.equal('bid_id_0_transaction_id');
+    });
+
+    it('sends bid request to endpoint with single placement multiple mediatype', function () {
+      canonicalQuery.restore();
+      const request = spec.buildRequests(bidRequestWithMultipleMediatype, bidderRequest);
       const payload = JSON.parse(request.data);
 
       expect(request.url).to.contain(getEndpoint());

@@ -14,6 +14,8 @@ const bidWon = CONSTANTS.EVENTS.BID_WON;
 const bidTimeout = CONSTANTS.EVENTS.BID_TIMEOUT;
 const ua = navigator.userAgent;
 
+var _sampled = true;
+
 let adomikAdapter = Object.assign(adapter({}),
   {
     // Track every event needed
@@ -81,6 +83,7 @@ adomikAdapter.sendTypedEvent = function() {
     uid: adomikAdapter.currentContext.uid,
     ahbaid: adomikAdapter.currentContext.id,
     hostname: window.location.hostname,
+    sampling: adomikAdapter.currentContext.sampling,
     eventsByPlacementCode: groupedTypedEvents.map(function(typedEventsByType) {
       let sizes = [];
       const eventKeys = ['request', 'response', 'winner'];
@@ -203,19 +206,28 @@ adomikAdapter.adapterEnableAnalytics = adomikAdapter.enableAnalytics;
 
 adomikAdapter.enableAnalytics = function (config) {
   adomikAdapter.currentContext = {};
-
   const initOptions = config.options;
-  if (initOptions) {
-    adomikAdapter.currentContext = {
-      uid: initOptions.id,
-      url: initOptions.url,
-      testId: initOptions.testId,
-      testValue: initOptions.testValue,
-      id: '',
-      timeouted: false,
+
+  _sampled = typeof config === 'undefined' ||
+             typeof config.sampling === 'undefined' ||
+             Math.random() < parseFloat(config.sampling);
+
+  if (_sampled) {
+    if (initOptions) {
+      adomikAdapter.currentContext = {
+        uid: initOptions.id,
+        url: initOptions.url,
+        testId: initOptions.testId,
+        testValue: initOptions.testValue,
+        id: '',
+        timeouted: false,
+        sampling: config.sampling
+      }
+      logInfo('Adomik Analytics enabled with config', initOptions);
+      adomikAdapter.adapterEnableAnalytics(config);
     }
-    logInfo('Adomik Analytics enabled with config', initOptions);
-    adomikAdapter.adapterEnableAnalytics(config);
+  } else {
+    logInfo('Adomik Analytics ignored for sampling', config.sampling);
   }
 };
 
