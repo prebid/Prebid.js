@@ -79,6 +79,7 @@ export function applyBidOverrides(overrideObj, bidObj, bidType) {
   return Object.keys(overrideObj).filter(key => (['adUnitCode', 'bidder'].indexOf(key) === -1)).reduce(function(result, key) {
     logMessage(`bidder overrides changed '${result.adUnitCode}/${result.bidderCode}' ${bidType}.${key} from '${result[key]}.js' to '${overrideObj[key]}'`);
     result[key] = overrideObj[key];
+    result.isDebug = true;
     return result;
   }, bidObj);
 }

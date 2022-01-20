@@ -222,8 +222,8 @@ describe('bid interceptor', () => {
       it('should call addBid for each matching bid', () => {
         intercept({bidRequest: REQUEST});
         expect(addBid.callCount).to.equal(2);
-        expect(addBid.calledWith(sinon.match({replace: 1}), REQUEST.bids[1])).to.be.true;
-        expect(addBid.calledWith(sinon.match({replace: 2}), REQUEST.bids[2])).to.be.true;
+        expect(addBid.calledWith(sinon.match({replace: 1, isDebug: true}), REQUEST.bids[1])).to.be.true;
+        expect(addBid.calledWith(sinon.match({replace: 2, isDebug: true}), REQUEST.bids[2])).to.be.true;
         [DELAY_1, DELAY_2].forEach((delay) => {
           expect(mockSetTimeout.calledWith(sinon.match.any, delay)).to.be.true;
         });

@@ -151,6 +151,7 @@ Object.assign(BidInterceptor.prototype, {
       if (!response.ad) {
         response.ad = this.defaultAd(bid, response);
       }
+      response.isDebug = true;
       return response;
     }
   },
