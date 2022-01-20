@@ -8,6 +8,13 @@ urlParser.href = '%%PATTERN:url%%';
 const publisherDomain = urlParser.protocol + '//' + urlParser.hostname;
 const adId = '%%PATTERN:hb_adid%%';
 
+function receiveMessage(ev) {
+  const origin = ev.origin || ev.originalEvent.origin;
+  if (origin === publisherDomain) {
+      renderAd(ev);
+  }
+}
+
 function renderAd(ev) {
   const key = ev.message ? 'message' : 'data';
   let adObject = {};
@@ -17,9 +24,7 @@ function renderAd(ev) {
     return;
   }
 
-  const origin = ev.origin || ev.originalEvent.origin;
   if (adObject.message && adObject.message === 'Prebid Response' &&
-    publisherDomain === origin &&
     adObject.adId === adId) {
     try {
       const body = window.document.body;
@@ -75,22 +80,24 @@ function renderAd(ev) {
     if (!success) {
       payload.info = {reason, message};
     }
-    ev.source.postMessage(JSON.stringify(payload), publisherDomain);
+    window.parent.postMessage(JSON.stringify(payload), publisherDomain);
   }
 
 }
 
 
 function requestAdFromPrebid() {
-  var message = JSON.stringify({
+  const message = JSON.stringify({
     message: 'Prebid Request',
     adId
   });
-  window.parent.postMessage(message, publisherDomain);
+  const channel = new MessageChannel();
+  channel.port1.onmessage = renderAd;
+  window.parent.postMessage(message, publisherDomain, [channel.port2]);
 }
 
 function listenAdFromPrebid() {
-  window.addEventListener('message', renderAd, false);
+  window.addEventListener('message', receiveMessage, false);
 }
 
 listenAdFromPrebid();
