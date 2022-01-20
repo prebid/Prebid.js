@@ -18,8 +18,6 @@ import { S2S_VENDORS } from './config.js';
 import { ajax } from '../../src/ajax.js';
 import find from 'core-js-pure/features/array/find.js';
 import {hook} from '../../src/hook.js';
-import {registerBidInterceptor} from '../../src/debugging.js';
-import {pbsBidInterceptor} from './debugging.js';
 
 const getConfig = config.getConfig;
 
@@ -1180,8 +1178,6 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
     logError('PBS request not made.  Check endpoints.');
   }
 }, 'processPBSRequest');
-
-registerBidInterceptor(processPBSRequest, pbsBidInterceptor);
 
 /**
  * Global setter that sets eids permissions for bidders

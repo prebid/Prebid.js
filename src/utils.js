@@ -275,6 +275,20 @@ export function logError() {
   events.emit(CONSTANTS.EVENTS.AUCTION_DEBUG, {type: 'ERROR', arguments: arguments});
 }
 
+export function prefixLog(prefix) {
+  function decorate(fn) {
+    return function (...args) {
+      fn(prefix, ...args);
+    }
+  }
+  return {
+    logError: decorate(logError),
+    logWarn: decorate(logWarn),
+    logMessage: decorate(logMessage),
+    logInfo: decorate(logInfo),
+  }
+}
+
 function decorateLog(args, prefix) {
   args = [].slice.call(args);
   let bidder = config.getCurrentBidder();
