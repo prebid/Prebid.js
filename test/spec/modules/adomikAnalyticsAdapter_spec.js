@@ -1,5 +1,6 @@
 import adomikAnalytics from 'modules/adomikAnalyticsAdapter.js';
-import {expect} from 'chai';
+import { expect } from 'chai';
+
 let events = require('src/events');
 let adapterManager = require('src/adapterManager').default;
 let constants = require('src/constants.json');
@@ -8,6 +9,7 @@ describe('Adomik Prebid Analytic', function () {
   let sendEventStub;
   let sendWonEventStub;
   let clock;
+
   before(function () {
     clock = sinon.useFakeTimers();
   });
@@ -43,6 +45,8 @@ describe('Adomik Prebid Analytic', function () {
       const initOptions = {
         id: '123456',
         url: 'testurl',
+        testId: '12345',
+        testValue: '1000'
       };
 
       const bid = {
@@ -69,6 +73,9 @@ describe('Adomik Prebid Analytic', function () {
       expect(adomikAnalytics.currentContext).to.deep.equal({
         uid: '123456',
         url: 'testurl',
+        sampling: undefined,
+        testId: '12345',
+        testValue: '1000',
         id: '',
         timeouted: false
       });
@@ -79,6 +86,9 @@ describe('Adomik Prebid Analytic', function () {
       expect(adomikAnalytics.currentContext).to.deep.equal({
         uid: '123456',
         url: 'testurl',
+        sampling: undefined,
+        testId: '12345',
+        testValue: '1000',
         id: 'test-test-test',
         timeouted: false
       });
@@ -91,7 +101,7 @@ describe('Adomik Prebid Analytic', function () {
         type: 'request',
         event: {
           bidder: 'BIDDERTEST',
-          placementCode: 'placementtest',
+          placementCode: '0000',
         }
       });
 

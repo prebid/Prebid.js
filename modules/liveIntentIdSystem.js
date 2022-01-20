@@ -4,8 +4,7 @@
  * @module modules/liveIntentIdSystem
  * @requires module:modules/userId
  */
-import * as utils from '../src/utils.js';
-import { triggerPixel } from '../src/utils.js';
+import { triggerPixel, logError } from '../src/utils.js';
 import { ajaxBuilder } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { LiveConnect } from 'live-connect-js/esm/initializer.js';
@@ -93,8 +92,8 @@ function initializeLiveConnect(configParams) {
     liveConnectConfig.gdprConsent = gdprConsent.consentString;
   }
 
-  // The second param is the storage object, LS & Cookie manipulation uses PBJS utils.
-  // The third param is the ajax and pixel object, the ajax and pixel use PBJS utils.
+  // The second param is the storage object, LS & Cookie manipulation uses PBJS
+  // The third param is the ajax and pixel object, the ajax and pixel use PBJS
   liveConnect = liveIntentIdSubmodule.getInitializer()(liveConnectConfig, storage, calls);
   if (configParams.emailHash) {
     liveConnect.push({ hash: configParams.emailHash })
@@ -166,18 +165,10 @@ export const liveIntentIdSubmodule = {
     const result = function(callback) {
       liveConnect.resolve(
         response => {
-          let responseObj = {};
-          if (response) {
-            try {
-              responseObj = JSON.parse(response);
-            } catch (error) {
-              utils.logError(error);
-            }
-          }
-          callback(responseObj);
+          callback(response);
         },
         error => {
-          utils.logError(`${MODULE_NAME}: ID fetch encountered an error: `, error);
+          logError(`${MODULE_NAME}: ID fetch encountered an error: `, error);
           callback();
         }
       )

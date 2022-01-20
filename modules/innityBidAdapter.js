@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { parseSizesInput, timestamp } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'innity';
@@ -10,24 +10,20 @@ export const spec = {
     return !!(bid.params && bid.params.pub && bid.params.zone);
   },
   buildRequests: function(validBidRequests, bidderRequest) {
-    let refererInfo = '';
-    if (bidderRequest && bidderRequest.refererInfo) {
-      refererInfo = bidderRequest.refererInfo.referer || '';
-    }
     return validBidRequests.map(bidRequest => {
-      let parseSized = utils.parseSizesInput(bidRequest.sizes);
+      let parseSized = parseSizesInput(bidRequest.sizes);
       let arrSize = parseSized[0].split('x');
       return {
         method: 'GET',
         url: ENDPOINT,
         data: {
-          cb: utils.timestamp(),
+          cb: timestamp(),
           ver: 2,
           hb: 1,
           output: 'js',
           pub: bidRequest.params.pub,
           zone: bidRequest.params.zone,
-          url: encodeURIComponent(refererInfo),
+          url: bidderRequest && bidderRequest.refererInfo ? encodeURIComponent(bidderRequest.refererInfo.referer) : '',
           width: arrSize[0],
           height: arrSize[1],
           vpw: window.screen.width,
@@ -51,6 +47,10 @@ export const spec = {
       netRevenue: true,
       ttl: 60,
       ad: '<script src="https://cdn.innity.net/frame_util.js"></script>' + res.tag,
+      meta: {
+        advertiserDomains: res.adomain && res.adomain.length ? res.adomain : [],
+        mediaType: res.mediaType,
+      }
     };
     return [bidResponse];
   }

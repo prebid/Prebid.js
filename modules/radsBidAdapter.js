@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { deepAccess } from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
@@ -7,10 +7,12 @@ const BIDDER_CODE = 'rads';
 const ENDPOINT_URL = 'https://rads.recognified.net/md.request.php';
 const ENDPOINT_URL_DEV = 'https://dcradn1.online-solution.biz/md.request.php';
 const DEFAULT_VAST_FORMAT = 'vast2';
+const GVLID = 602;
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['rads'],
+  gvlid: GVLID,
+  aliases: [],
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function(bid) {
     return !!(bid.params.placement);
@@ -18,9 +20,6 @@ export const spec = {
   buildRequests: function(validBidRequests, bidderRequest) {
     return validBidRequests.map(bidRequest => {
       const params = bidRequest.params;
-      const videoData = utils.deepAccess(bidRequest, 'mediaTypes.video') || {};
-      const sizes = utils.parseSizesInput(videoData.playerSize || bidRequest.sizes)[0];
-      const [width, height] = sizes.split('x');
       const placementId = params.placement;
 
       const rnd = Math.floor(Math.random() * 99999999999);
@@ -30,34 +29,37 @@ export const spec = {
 
       let endpoint = isDev ? ENDPOINT_URL_DEV : ENDPOINT_URL;
 
-      let payload = {};
-      if (isVideoRequest(bidRequest)) {
-        let vastFormat = params.vastFormat || DEFAULT_VAST_FORMAT;
-        payload = {
-          rt: vastFormat,
-          _f: 'prebid_js',
-          _ps: placementId,
-          srw: width,
-          srh: height,
-          idt: 100,
-          rnd: rnd,
-          p: referrer,
-          bid_id: bidId,
-        };
+      let payload = {
+        _f: 'prebid_js',
+        _ps: placementId,
+        idt: 100,
+        rnd: rnd,
+        p: referrer,
+        bid_id: bidId,
+      };
+
+      let sizes;
+      if (isBannerRequest(bidRequest)) {
+        sizes = getBannerSizes(bidRequest);
+        payload.rt = 'bid-response';
+        payload.srw = sizes[0].width;
+        payload.srh = sizes[0].height;
       } else {
-        payload = {
-          rt: 'bid-response',
-          _f: 'prebid_js',
-          _ps: placementId,
-          srw: width,
-          srh: height,
-          idt: 100,
-          rnd: rnd,
-          p: referrer,
-          bid_id: bidId,
-        };
+        let vastFormat = params.vastFormat || DEFAULT_VAST_FORMAT;
+        sizes = getVideoSizes(bidRequest);
+        payload.rt = vastFormat;
+        payload.srw = sizes[0].width;
+        payload.srh = sizes[0].height;
       }
-      prepareExtraParams(params, payload);
+
+      if (sizes.length > 1) {
+        payload.alt_ad_sizes = [];
+        for (let i = 1; i < sizes.length; i++) {
+          payload.alt_ad_sizes.push(sizes[i].width + 'x' + sizes[i].height);
+        }
+      }
+
+      prepareExtraParams(params, payload, bidderRequest, bidRequest);
 
       return {
         method: 'GET',
@@ -84,7 +86,10 @@ export const spec = {
         dealId: dealId,
         currency: currency,
         netRevenue: netRevenue,
-        ttl: config.getConfig('_bidderTimeout')
+        ttl: config.getConfig('_bidderTimeout'),
+        meta: {
+          advertiserDomains: response.adomain || []
+        }
       };
 
       if (response.vastXml) {
@@ -97,7 +102,46 @@ export const spec = {
       bidResponses.push(bidResponse);
     }
     return bidResponses;
+  },
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
+    if (!serverResponses || serverResponses.length === 0) {
+      return [];
+    }
+
+    const syncs = []
+
+    let gdprParams = '';
+    if (gdprConsent) {
+      if ('gdprApplies' in gdprConsent && typeof gdprConsent.gdprApplies === 'boolean') {
+        gdprParams = `gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+      } else {
+        gdprParams = `gdpr_consent=${gdprConsent.consentString}`;
+      }
+    }
+
+    if (serverResponses.length > 0 && serverResponses[0].body.userSync) {
+      if (syncOptions.iframeEnabled) {
+        serverResponses[0].body.userSync.iframeUrl.forEach((url) => syncs.push({
+          type: 'iframe',
+          url: appendToUrl(url, gdprParams)
+        }));
+      }
+      if (syncOptions.pixelEnabled) {
+        serverResponses[0].body.userSync.imageUrl.forEach((url) => syncs.push({
+          type: 'image',
+          url: appendToUrl(url, gdprParams)
+        }));
+      }
+    }
+    return syncs;
   }
+}
+
+function appendToUrl(url, what) {
+  if (!what) {
+    return url;
+  }
+  return url + (url.indexOf('?') !== -1 ? '&' : '?') + what;
 }
 
 function objectToQueryString(obj, prefix) {
@@ -114,21 +158,31 @@ function objectToQueryString(obj, prefix) {
   }
   return str.join('&');
 }
-
 /**
- * Check if it's a video bid request
+ * Add extra params to server request
  *
- * @param {BidRequest} bid - Bid request generated from ad slots
- * @returns {boolean} True if it's a video bid
+ * @param params
+ * @param payload
+ * @param bidderRequest
+ * @param {BidRequest} bidRequest - Bid request generated from ad slots
  */
-function isVideoRequest(bid) {
-  return bid.mediaType === 'video' || !!utils.deepAccess(bid, 'mediaTypes.video');
-}
-
-function prepareExtraParams(params, payload) {
+function prepareExtraParams(params, payload, bidderRequest, bidRequest) {
   if (params.pfilter !== undefined) {
     payload.pfilter = params.pfilter;
   }
+
+  if (bidderRequest && bidderRequest.gdprConsent) {
+    if (payload.pfilter !== undefined) {
+      payload.pfilter.gdpr_consent = bidderRequest.gdprConsent.consentString;
+      payload.pfilter.gdpr = bidderRequest.gdprConsent.gdprApplies;
+    } else {
+      payload.pfilter = {
+        'gdpr_consent': bidderRequest.gdprConsent.consentString,
+        'gdpr': bidderRequest.gdprConsent.gdprApplies
+      };
+    }
+  }
+
   if (params.bcat !== undefined) {
     payload.bcat = params.bcat;
   }
@@ -146,6 +200,77 @@ function prepareExtraParams(params, payload) {
   if (params.ip !== undefined) {
     payload.i = params.ip;
   }
+
+  if (bidRequest.userId && bidRequest.userId.netId) {
+    payload.did_netid = bidRequest.userId.netId;
+  }
+  if (bidRequest.userId && bidRequest.userId.uid2) {
+    payload.did_uid2 = bidRequest.userId.uid2;
+  }
+}
+
+/**
+ * Check if it's a banner bid request
+ *
+ * @param {BidRequest} bid - Bid request generated from ad slots
+ * @returns {boolean} True if it's a banner bid
+ */
+function isBannerRequest(bid) {
+  return bid.mediaType === 'banner' || !!deepAccess(bid, 'mediaTypes.banner') || !isVideoRequest(bid);
+}
+
+/**
+ * Check if it's a video bid request
+ *
+ * @param {BidRequest} bid - Bid request generated from ad slots
+ * @returns {boolean} True if it's a video bid
+ */
+function isVideoRequest(bid) {
+  return bid.mediaType === 'video' || !!deepAccess(bid, 'mediaTypes.video');
+}
+
+/**
+ * Get video sizes
+ *
+ * @param {BidRequest} bid - Bid request generated from ad slots
+ * @returns {object} True if it's a video bid
+ */
+function getVideoSizes(bid) {
+  return parseSizes(deepAccess(bid, 'mediaTypes.video.playerSize') || bid.sizes);
+}
+
+/**
+ * Get banner sizes
+ *
+ * @param {BidRequest} bid - Bid request generated from ad slots
+ * @returns {object} True if it's a video bid
+ */
+function getBannerSizes(bid) {
+  return parseSizes(deepAccess(bid, 'mediaTypes.banner.sizes') || bid.sizes);
+}
+
+/**
+ * Parse size
+ * @param sizes
+ * @returns {width: number, h: height}
+ */
+function parseSize(size) {
+  let sizeObj = {}
+  sizeObj.width = parseInt(size[0], 10);
+  sizeObj.height = parseInt(size[1], 10);
+  return sizeObj;
+}
+
+/**
+ * Parse sizes
+ * @param sizes
+ * @returns {{width: number , height: number }[]}
+ */
+function parseSizes(sizes) {
+  if (Array.isArray(sizes[0])) { // is there several sizes ? (ie. [[728,90],[200,300]])
+    return sizes.map(size => parseSize(size));
+  }
+  return [parseSize(sizes)]; // or a single one ? (ie. [728,90])
 }
 
 registerBidder(spec);

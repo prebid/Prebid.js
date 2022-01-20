@@ -1,5 +1,5 @@
-import { hook } from './hook.js';
-import * as utils from './utils.js';
+import {hook} from './hook.js';
+import { hasDeviceAccess, checkCookieSupport, logError } from './utils.js';
 import includes from 'core-js-pure/features/array/includes.js';
 
 const moduleTypeWhiteList = ['core', 'prebid-module'];
@@ -40,7 +40,7 @@ export function newStorageManager({gvlid, moduleName, moduleType} = {}) {
         } else {
           let result = {
             hasEnforcementHook: false,
-            valid: utils.hasDeviceAccess()
+            valid: hasDeviceAccess()
           }
           value = cb(result);
         }
@@ -110,7 +110,12 @@ export function newStorageManager({gvlid, moduleName, moduleType} = {}) {
         try {
           localStorage.setItem('prebid.cookieTest', '1');
           return localStorage.getItem('prebid.cookieTest') === '1';
-        } catch (error) {}
+        } catch (error) {
+        } finally {
+          try {
+            localStorage.removeItem('prebid.cookieTest');
+          } catch (error) {}
+        }
       }
       return false;
     }
@@ -130,7 +135,7 @@ export function newStorageManager({gvlid, moduleName, moduleType} = {}) {
   const cookiesAreEnabled = function (done) {
     let cb = function (result) {
       if (result && result.valid) {
-        if (utils.checkCookieSupport()) {
+        if (checkCookieSupport()) {
           return true;
         }
         window.document.cookie = 'prebid.cookieTest';
@@ -217,7 +222,7 @@ export function newStorageManager({gvlid, moduleName, moduleType} = {}) {
         try {
           return !!window.localStorage;
         } catch (e) {
-          utils.logError('Local storage api disabled');
+          logError('Local storage api disabled');
         }
       }
       return false;
@@ -242,7 +247,7 @@ export function newStorageManager({gvlid, moduleName, moduleType} = {}) {
     let cb = function (result) {
       if (result && result.valid) {
         const all = [];
-        if (utils.hasDeviceAccess()) {
+        if (hasDeviceAccess()) {
           const cookies = document.cookie.split(';');
           while (cookies.length) {
             const cookie = cookies.pop();

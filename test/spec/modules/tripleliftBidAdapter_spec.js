@@ -143,10 +143,10 @@ describe('triplelift adapter', function () {
           auctionId: '1d1a030790a475',
           userId: {},
           schain,
-          fpd: {
-            context: {
-              pbAdSlot: 'homepage-top-rect',
+          ortb2Imp: {
+            ext: {
               data: {
+                pbAdSlot: 'homepage-top-rect',
                 adUnitSpecificAttribute: 123
               }
             }
@@ -506,15 +506,16 @@ describe('triplelift adapter', function () {
       });
     });
 
-    it('should add user ids from multiple bid requests', function () {
+    it('should consolidate user ids from multiple bid requests', function () {
       const tdidId = '6bca7f6b-a98a-46c0-be05-6020f7604598';
       const idlEnvId = 'XY6104gr0njcH9UDIR7ysFFJcm2XNpqeJTYslleJ_cMlsFOfZI';
       const criteoId = '53e30ea700424f7bbdd793b02abc5d7';
+      const pubcid = '3261d8ad-435d-481d-abd1-9f1a9ec99f0e';
 
       const bidRequestsMultiple = [
-        { ...bidRequests[0], userId: { tdid: tdidId } },
-        { ...bidRequests[0], userId: { idl_env: idlEnvId } },
-        { ...bidRequests[0], userId: { criteoId: criteoId } }
+        { ...bidRequests[0], userId: { tdid: tdidId, idl_env: idlEnvId, criteoId, pubcid } },
+        { ...bidRequests[0], userId: { tdid: tdidId, idl_env: idlEnvId, criteoId, pubcid } },
+        { ...bidRequests[0], userId: { tdid: tdidId, idl_env: idlEnvId, criteoId, pubcid } }
       ];
 
       const request = tripleliftAdapterSpec.buildRequests(bidRequestsMultiple, bidderRequest);
@@ -549,10 +550,150 @@ describe('triplelift adapter', function () {
                   ext: { rtiPartner: 'criteoId' }
                 }
               ]
+            },
+            {
+              source: 'pubcid.org',
+              uids: [
+                {
+                  id: '3261d8ad-435d-481d-abd1-9f1a9ec99f0e',
+                  ext: { rtiPartner: 'pubcid' }
+                }
+              ]
             }
           ]
         }
       });
+
+      expect(payload.user.ext.eids).to.be.an('array');
+      expect(payload.user.ext.eids).to.have.lengthOf(4);
+    });
+
+    it('should remove malformed ids that would otherwise break call', function () {
+      let tdidId = '6bca7f6b-a98a-46c0-be05-6020f7604598';
+      let idlEnvId = null; // fail; can't be null
+      let criteoId = '53e30ea700424f7bbdd793b02abc5d7';
+      let pubcid = ''; // fail; can't be empty string
+
+      let bidRequestsMultiple = [
+        { ...bidRequests[0], userId: { tdid: tdidId, idl_env: idlEnvId, criteoId, pubcid } },
+        { ...bidRequests[0], userId: { tdid: tdidId, idl_env: idlEnvId, criteoId, pubcid } },
+        { ...bidRequests[0], userId: { tdid: tdidId, idl_env: idlEnvId, criteoId, pubcid } }
+      ];
+
+      let request = tripleliftAdapterSpec.buildRequests(bidRequestsMultiple, bidderRequest);
+      let payload = request.data;
+
+      expect(payload.user).to.deep.equal({
+        ext: {
+          eids: [
+            {
+              source: 'adserver.org',
+              uids: [
+                {
+                  id: tdidId,
+                  ext: { rtiPartner: 'TDID' }
+                }
+              ],
+            },
+            {
+              source: 'criteo.com',
+              uids: [
+                {
+                  id: criteoId,
+                  ext: { rtiPartner: 'criteoId' }
+                }
+              ]
+            }
+          ]
+        }
+      });
+
+      expect(payload.user.ext.eids).to.be.an('array');
+      expect(payload.user.ext.eids).to.have.lengthOf(2);
+
+      tdidId = {}; // fail; can't be empty object
+      idlEnvId = { id: '987654' }; // pass
+      criteoId = [{ id: '123456' }]; // fail; can't be an array
+      pubcid = '3261d8ad-435d-481d-abd1-9f1a9ec99f0e'; // pass
+
+      bidRequestsMultiple = [
+        { ...bidRequests[0], userId: { tdid: tdidId, idl_env: idlEnvId, criteoId, pubcid } },
+        { ...bidRequests[0], userId: { tdid: tdidId, idl_env: idlEnvId, criteoId, pubcid } },
+        { ...bidRequests[0], userId: { tdid: tdidId, idl_env: idlEnvId, criteoId, pubcid } }
+      ];
+
+      request = tripleliftAdapterSpec.buildRequests(bidRequestsMultiple, bidderRequest);
+      payload = request.data;
+
+      expect(payload.user).to.deep.equal({
+        ext: {
+          eids: [
+            {
+              source: 'liveramp.com',
+              uids: [
+                {
+                  id: '987654',
+                  ext: { rtiPartner: 'idl' }
+                }
+              ]
+            },
+            {
+              source: 'pubcid.org',
+              uids: [
+                {
+                  id: pubcid,
+                  ext: { rtiPartner: 'pubcid' }
+                }
+              ]
+            }
+          ]
+        }
+      });
+
+      expect(payload.user.ext.eids).to.be.an('array');
+      expect(payload.user.ext.eids).to.have.lengthOf(2);
+
+      tdidId = { id: '987654' }; // pass
+      idlEnvId = { id: 987654 }; // fail; can't be an int
+      criteoId = '53e30ea700424f7bbdd793b02abc5d7'; // pass
+      pubcid = { id: '' }; // fail; can't be an empty string
+
+      bidRequestsMultiple = [
+        { ...bidRequests[0], userId: { tdid: tdidId, idl_env: idlEnvId, criteoId, pubcid } },
+        { ...bidRequests[0], userId: { tdid: tdidId, idl_env: idlEnvId, criteoId, pubcid } },
+        { ...bidRequests[0], userId: { tdid: tdidId, idl_env: idlEnvId, criteoId, pubcid } }
+      ];
+
+      request = tripleliftAdapterSpec.buildRequests(bidRequestsMultiple, bidderRequest);
+      payload = request.data;
+
+      expect(payload.user).to.deep.equal({
+        ext: {
+          eids: [
+            {
+              source: 'adserver.org',
+              uids: [
+                {
+                  id: '987654',
+                  ext: { rtiPartner: 'TDID' }
+                }
+              ],
+            },
+            {
+              source: 'criteo.com',
+              uids: [
+                {
+                  id: criteoId,
+                  ext: { rtiPartner: 'criteoId' }
+                }
+              ]
+            }
+          ]
+        }
+      });
+
+      expect(payload.user.ext.eids).to.be.an('array');
+      expect(payload.user.ext.eids).to.have.lengthOf(2);
     });
 
     it('should return a query string for TL call', function () {
@@ -650,11 +791,13 @@ describe('triplelift adapter', function () {
       const sens = null;
       const category = ['news', 'weather', 'hurricane'];
       const pmp_elig = 'true';
-      const fpd = {
-        context: {
+      const ortb2 = {
+        site: {
           pmp_elig: pmp_elig,
-          data: {
-            category: category
+          ext: {
+            data: {
+              category: category
+            }
           }
         },
         user: {
@@ -663,7 +806,7 @@ describe('triplelift adapter', function () {
       }
       sandbox.stub(config, 'getConfig').callsFake(key => {
         const config = {
-          fpd
+          ortb2
         };
         return utils.deepAccess(config, key);
       });
@@ -675,8 +818,8 @@ describe('triplelift adapter', function () {
     });
     it('should send ad unit fpd if kvps are available', function() {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.imp[0].fpd.context).to.haveOwnProperty('pbAdSlot');
       expect(request.data.imp[0].fpd.context).to.haveOwnProperty('data');
+      expect(request.data.imp[0].fpd.context.data).to.haveOwnProperty('pbAdSlot');
       expect(request.data.imp[0].fpd.context.data).to.haveOwnProperty('adUnitSpecificAttribute');
       expect(request.data.imp[1].fpd).to.not.exist;
     });
@@ -794,6 +937,8 @@ describe('triplelift adapter', function () {
       expect(result).to.have.length(2);
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
       expect(Object.keys(result[1])).to.have.members(Object.keys(expectedResponse[1]));
+      expect(result[0].ttl).to.equal(300);
+      expect(result[1].ttl).to.equal(3600);
     });
 
     it('should return multiple responses to support SRA', function () {

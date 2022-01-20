@@ -1,10 +1,11 @@
 import { expect } from 'chai';
 import { targeting as targetingInstance, filters, getHighestCpmBidsFromBidPool, sortByDealAndPriceBucketOrCpm } from 'src/targeting.js';
 import { config } from 'src/config.js';
-import { getAdUnits, createBidReceived } from 'test/fixtures/fixtures.js';
+import { createBidReceived } from 'test/fixtures/fixtures.js';
 import CONSTANTS from 'src/constants.json';
 import { auctionManager } from 'src/auctionManager.js';
 import * as utils from 'src/utils.js';
+import {deepClone} from 'src/utils.js';
 
 const bid1 = {
   'bidderCode': 'rubicon',
@@ -280,6 +281,51 @@ describe('targeting tests', function () {
       bidExpiryStub.restore();
     });
 
+    describe('when handling different adunit targeting value types', function () {
+      const adUnitCode = '/123456/header-bid-tag-0';
+      const adServerTargeting = {};
+
+      let getAdUnitsStub;
+
+      before(function() {
+        getAdUnitsStub = sandbox.stub(auctionManager, 'getAdUnits').callsFake(function() {
+          return [
+            {
+              'code': adUnitCode,
+              [CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING]: adServerTargeting
+            }
+          ];
+        });
+      });
+
+      after(function() {
+        getAdUnitsStub.restore();
+      });
+
+      afterEach(function() {
+        delete adServerTargeting.test_type;
+      });
+
+      const pairs = [
+        ['string', '2.3', '2.3'],
+        ['number', 2.3, '2.3'],
+        ['boolean', true, 'true'],
+        ['string-separated', '2.3, 4.5', '2.3,4.5'],
+        ['array-of-string', ['2.3', '4.5'], '2.3,4.5'],
+        ['array-of-number', [2.3, 4.5], '2.3,4.5'],
+        ['array-of-boolean', [true, false], 'true,false']
+      ];
+      pairs.forEach(([type, value, result]) => {
+        it(`accepts ${type}`, function() {
+          adServerTargeting.test_type = value;
+
+          const targeting = targetingInstance.getAllTargeting([adUnitCode]);
+
+          expect(targeting[adUnitCode].test_type).is.equal(result);
+        });
+      });
+    });
+
     describe('when hb_deal is present in bid.adserverTargeting', function () {
       let bid4;
 
@@ -416,6 +462,50 @@ describe('targeting tests', function () {
       });
     });
 
+    describe('targetingControls.allowZeroCpmBids', function () {
+      let bid4;
+      let bidderSettingsStorage;
+
+      before(function() {
+        bidderSettingsStorage = $$PREBID_GLOBAL$$.bidderSettings;
+      });
+
+      beforeEach(function () {
+        bid4 = utils.deepClone(bid1);
+        bid4.adserverTargeting = {
+          hb_pb: '0.0',
+          hb_adid: '567891011',
+          hb_bidder: 'appnexus',
+        };
+        bid4.bidder = bid4.bidderCode = 'appnexus';
+        bid4.cpm = 0;
+        bidsReceived = [bid4];
+      });
+
+      after(function() {
+        bidsReceived = [bid1, bid2, bid3];
+        $$PREBID_GLOBAL$$.bidderSettings = bidderSettingsStorage;
+      })
+
+      it('targeting should not include a 0 cpm by default', function() {
+        bid4.adserverTargeting = {};
+        const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
+        expect(targeting['/123456/header-bid-tag-0']).to.deep.equal({});
+      });
+
+      it('targeting should allow a 0 cpm with targetingControls.allowZeroCpmBids set to true', function () {
+        $$PREBID_GLOBAL$$.bidderSettings = {
+          standard: {
+            allowZeroCpmBids: true
+          }
+        };
+
+        const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
+        expect(targeting['/123456/header-bid-tag-0']).to.include.all.keys('hb_pb', 'hb_bidder', 'hb_adid', 'hb_bidder_appnexus', 'hb_adid_appnexus', 'hb_pb_appnexus');
+        expect(targeting['/123456/header-bid-tag-0']['hb_pb']).to.equal('0.0')
+      });
+    });
+
     describe('targetingControls.allowTargetingKeys', function () {
       let bid4;
 
@@ -453,6 +543,120 @@ describe('targeting tests', function () {
       it('targeting should not include keys prefixed by disallowed default targeting keys', function () {
         const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
         expect(targeting['/123456/header-bid-tag-0']).to.not.have.all.keys(['hb_deal_appnexus', 'hb_deal_rubicon']);
+      });
+    });
+
+    describe('targetingControls.addTargetingKeys', function () {
+      let winningBid = null;
+
+      beforeEach(function () {
+        bidsReceived = [bid1, bid2, nativeBid1, nativeBid2].map(deepClone);
+        bidsReceived.forEach((bid) => {
+          bid.adserverTargeting[CONSTANTS.TARGETING_KEYS.SOURCE] = 'test-source';
+          bid.adUnitCode = 'adunit';
+          if (winningBid == null || bid.cpm > winningBid.cpm) {
+            winningBid = bid;
+          }
+        });
+        enableSendAllBids = true;
+      });
+
+      const expandKey = function (key) {
+        const keys = new Set();
+        if (winningBid.adserverTargeting[key] != null) {
+          keys.add(key);
+        }
+        bidsReceived
+          .filter((bid) => bid.adserverTargeting[key] != null)
+          .map((bid) => bid.bidderCode)
+          .forEach((code) => keys.add(`${key}_${code}`.substr(0, 20)));
+        return new Array(...keys);
+      }
+
+      const targetingResult = function () {
+        return targetingInstance.getAllTargeting(['adunit'])['adunit'];
+      }
+
+      it('should include added keys', function () {
+        config.setConfig({
+          targetingControls: {
+            addTargetingKeys: ['SOURCE']
+          }
+        });
+        expect(targetingResult()).to.include.all.keys(...expandKey(CONSTANTS.TARGETING_KEYS.SOURCE));
+      });
+
+      it('should keep default and native keys', function() {
+        config.setConfig({
+          targetingControls: {
+            addTargetingKeys: ['SOURCE']
+          }
+        });
+        const defaultKeys = new Set(Object.values(CONSTANTS.DEFAULT_TARGETING_KEYS));
+        Object.values(CONSTANTS.NATIVE_KEYS).forEach((k) => defaultKeys.add(k));
+
+        const expectedKeys = new Set();
+        bidsReceived
+          .map((bid) => Object.keys(bid.adserverTargeting))
+          .reduce((left, right) => left.concat(right), [])
+          .filter((key) => defaultKeys.has(key))
+          .map(expandKey)
+          .reduce((left, right) => left.concat(right), [])
+          .forEach((k) => expectedKeys.add(k));
+        expect(targetingResult()).to.include.all.keys(...expectedKeys);
+      });
+
+      it('should not be allowed together with allowTargetingKeys', function () {
+        config.setConfig({
+          targetingControls: {
+            allowTargetingKeys: [CONSTANTS.TARGETING_KEYS.BIDDER],
+            addTargetingKeys: [CONSTANTS.TARGETING_KEYS.SOURCE]
+          }
+        });
+        expect(targetingResult).to.throw();
+      });
+    });
+
+    describe('targetingControls.allowSendAllBidsTargetingKeys', function () {
+      let bid4;
+
+      beforeEach(function() {
+        bid4 = utils.deepClone(bid1);
+        bid4.adserverTargeting = {
+          hb_deal: '4321',
+          hb_pb: '0.1',
+          hb_adid: '567891011',
+          hb_bidder: 'appnexus',
+        };
+        bid4.bidder = bid4.bidderCode = 'appnexus';
+        bid4.cpm = 0.1; // losing bid so not included if enableSendAllBids === false
+        bid4.dealId = '4321';
+        enableSendAllBids = true;
+        config.setConfig({
+          targetingControls: {
+            allowTargetingKeys: ['BIDDER', 'AD_ID', 'PRICE_BUCKET'],
+            allowSendAllBidsTargetingKeys: ['PRICE_BUCKET', 'AD_ID']
+          }
+        });
+        bidsReceived.push(bid4);
+      });
+
+      it('targeting should include custom keys', function () {
+        const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
+        expect(targeting['/123456/header-bid-tag-0']).to.include.all.keys('foobar');
+      });
+
+      it('targeting should only include keys prefixed by allowed default send all bids targeting keys and standard keys', function () {
+        const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
+
+        expect(targeting['/123456/header-bid-tag-0']).to.include.all.keys('hb_bidder', 'hb_adid', 'hb_pb');
+        expect(targeting['/123456/header-bid-tag-0']).to.include.all.keys('hb_adid_rubicon', 'hb_pb_rubicon');
+        expect(targeting['/123456/header-bid-tag-0']).to.include.all.keys('hb_bidder', 'hb_adid', 'hb_pb', 'hb_adid_appnexus', 'hb_pb_appnexus');
+      });
+
+      it('targeting should not include keys prefixed by disallowed default targeting keys and disallowed send all bid targeting keys', function () {
+        const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
+        expect(targeting['/123456/header-bid-tag-0']).to.not.have.all.keys(['hb_deal', 'hb_bidder_rubicon', 'hb_bidder_appnexus', 'hb_deal_appnexus', 'hb_deal_rubicon']);
       });
     });
 

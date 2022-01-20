@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { logWarn } from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
@@ -13,7 +13,7 @@ function isBidRequestValid(bid) {
     case !!(bid.params.asid):
       break;
     default:
-      utils.logWarn(`isBidRequestValid Error. ${bid.params}, please check your implementation.`);
+      logWarn(`isBidRequestValid Error. ${bid.params}, please check your implementation.`);
       return false;
   }
   return true;
@@ -54,6 +54,9 @@ function interpretResponse(serverResponse, bidRequest) {
       referrer: bidRequest.data.r || '',
       mediaType: BANNER,
       ad: response.ad_tag,
+      meta: {
+        advertiserDomains: response.advertiser_domain ? [response.advertiser_domain] : []
+      }
     };
     bidResponses.push(bidResponse);
   }
