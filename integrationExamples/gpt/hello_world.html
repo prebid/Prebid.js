@@ -15,22 +15,80 @@
         var FAILSAFE_TIMEOUT = 3300;
         var PREBID_TIMEOUT = 1000;
 
-        var adUnits = [{
-            code: 'div-gpt-ad-1460505748561-0',
-            mediaTypes: {
-                banner: {
-                    sizes: [[300, 250], [300,600]],
+        var adUnits = [
+                {
+                    code:'1',
+                    mediaTypes:{
+                        banner: {
+                            sizes: [[300, 250]],
+                        }
+                    },
+                    bids:[
+                        {
+                            bidder: 'lunamediahb',
+                            params: {
+                                placementId: 0
+                            }
+                        }
+                    ]
+                },
+                {
+                    code:'1',
+                    mediaTypes:{
+                        video: {
+                            playerSize: [640, 480],
+                            context: 'instream'
+                        }
+                    },
+                    bids:[
+                        {
+                            bidder: 'lunamediahb',
+                            params: {
+                                placementId: 0
+                            }
+                        }
+                    ]
+                },
+                {
+                    code:'1',
+                    mediaTypes:{
+                        video: {
+                            playerSize: [640, 480],
+                            context: 'outstream'
+                        }
+                    },
+                    bids:[
+                        {
+                            bidder: 'lunamediahb',
+                            params: {
+                                placementId: 0
+                            }
+                        }
+                    ]
+                },
+                {
+                    code:'1',
+                    mediaTypes:{
+                        native: {
+                            title: {
+                                required: true
+                            },
+                            icon: {
+                                required: true,
+                                size: [64, 64]
+                            }
+                        }
+                    },
+                    bids:[
+                        {
+                            bidder: 'lunamediahb',
+                            params: {
+                                placementId: 0
+                            }
+                        }
+                    ]
                 }
-            },
-            // Replace this object to test a new Adapter!
-            bids: [{
-                bidder: 'appnexus',
-                params: {
-                    placementId: 13144370
-                }
-            }]
-
-        }];
+            ];
 
         var pbjs = pbjs || {};
         pbjs.que = pbjs.que || [];
