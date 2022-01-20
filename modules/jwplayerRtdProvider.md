@@ -81,20 +81,30 @@ realTimeData = {
 # Usage for Bid Adapters:
 
 Implement the `buildRequests` function. When it is called, the `bidRequests` param will be an array of bids.
-Each bid for which targeting information was found will conform to the following object structure:
+Each bid for which targeting information was found will have a ortb2 param conforming to the [oRTB v2 object structure](https://www.iab.com/wp-content/uploads/2016/03/OpenRTB-API-Specification-Version-2-5-FINAL.pdf). The `ortb2` object will contain our proprietaty targeting segments in a format compliant with the [IAB's segment taxonomy structure](https://github.com/InteractiveAdvertisingBureau/openrtb/blob/master/extensions/community_extensions/segtax.md).
+
+Example:
 
 ```javascript
 {
     adUnitCode: 'xyz',
     bidId: 'abc',
     ...,
-    rtd: {
-        jwplayer: {
-            targeting: {
-                segments: ['123', '456'],
-                content: {
-                    id: 'jw_abc123'
-                }
+    ortb2: {
+        site: {
+            content: {
+                id: 'jw_abc123',
+                data: [{
+                    name: 'jwplayer',
+                    ext: {
+                        segtax: 502
+                    },
+                    segment: [{ 
+                        id: '123'
+                    }, { 
+                        id: '456'
+                    }]
+                }]
             }
         }   
     }
@@ -102,9 +112,15 @@ Each bid for which targeting information was found will conform to the following
 ```
 
 where:
-- `segments` is an array of jwpseg targeting segments, of type string.
-- `content` is an object containing metadata for the media. It may contain the following information: 
-  - `id` is a unique identifier for the specific media asset.
+- `ortb2` is an object containing first party data
+  - `site` is an object containing page specific information
+    - `content` is an object containing metadata for the media. It may contain the following information: 
+      - `id` is a unique identifier for the specific media asset
+      - `data` is an array containing segment taxonomy objects that have the following parameters:
+        - `name` is the `jwplayer` string indicating the provider name
+        - `ext.segtax` whose `502` value is the unique identifier for JW Player's proprietary taxonomy
+        - `segment` is an array containing the segment taxonomy values as an object where:
+          - `id` is the string representation of the data segment value. 
   
 **Example:**
 
