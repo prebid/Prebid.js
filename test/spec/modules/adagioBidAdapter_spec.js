@@ -244,16 +244,6 @@ describe('Adagio bid adapter', () => {
       expect(spec.isBidRequestValid(bid03)).to.equal(false);
       expect(spec.isBidRequestValid(bid04)).to.equal(false);
     });
-
-    it('should return false when refererInfo.reachedTop is false', function() {
-      sandbox.spy(utils, 'logWarn');
-      sandbox.stub(adagio, 'getRefererInfo').returns({ reachedTop: false });
-      const bid = new BidRequestBuilder().withParams().build();
-
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-      sinon.assert.callCount(utils.logWarn, 1);
-      sinon.assert.calledWith(utils.logWarn, 'Adagio: the main page url is unreachabled.');
-    });
   });
 
   describe('buildRequests()', function() {

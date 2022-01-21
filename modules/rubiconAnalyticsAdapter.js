@@ -384,8 +384,9 @@ export function parseBidResponse(bid, previousBidResponse, auctionFloorData) {
     'floorRuleValue', () => deepAccess(bid, 'floorData.floorRuleValue'),
     'floorRule', () => debugTurnedOn() ? deepAccess(bid, 'floorData.floorRule') : undefined,
     'adomains', () => {
-      let adomains = deepAccess(bid, 'meta.advertiserDomains');
-      return Array.isArray(adomains) && adomains.length > 0 ? adomains.slice(0, 10) : undefined
+      const adomains = deepAccess(bid, 'meta.advertiserDomains');
+      const validAdomains = Array.isArray(adomains) && adomains.filter(domain => typeof domain === 'string');
+      return validAdomains && validAdomains.length > 0 ? validAdomains.slice(0, 10) : undefined
     }
   ]);
 }
