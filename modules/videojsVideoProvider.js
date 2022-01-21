@@ -26,7 +26,7 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
     // returns the player if it exists, or attempts to instantiate a new one
     player = videojs(divId, playerConfig, function() {
         // callback runs in both cases
-    })
+    });
   }
 
   function getId() {
