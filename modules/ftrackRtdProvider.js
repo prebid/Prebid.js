@@ -181,9 +181,7 @@ var ftrack = {
         var navLang = navigator.language || navigator.browserLanguage;
         var navLangArr = navLang.split('-');
 
-        if (typeof navLangArr[0] == 'undefined') {
-          // navLang = navLang;
-        } else {
+        if (typeof navLangArr[0] !== 'undefined') {
           navLang = navLangArr[0];
         }
 
@@ -400,17 +398,20 @@ var ftrack = {
 
         try {
           obj = new window.ActiveXObject('AcroPDF.PDF');
-        } catch (e) {}
+        } catch (e) {
+          obj = null;
+        }
 
         if (!obj) {
           try {
             obj = new window.ActiveXObject('PDF.PdfCtrl');
           } catch (e) {
+            obj = null;
             return null;
           }
         }
 
-        if (obj) {
+        if (obj !== null) {
           var version = obj.GetVersions().split(',');
           version = version[0].split('=');
           version = parseFloat(version[1]);
