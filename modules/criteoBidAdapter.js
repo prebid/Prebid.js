@@ -281,6 +281,7 @@ function checkNativeSendId(bidRequest) {
  */
 function buildCdbRequest(context, bidRequests, bidderRequest) {
   let networkId;
+  let schain;
   const request = {
     publisher: {
       url: context.url,
@@ -288,6 +289,7 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
     },
     slots: bidRequests.map(bidRequest => {
       networkId = bidRequest.params.networkId || networkId;
+      schain = bidRequest.schain || schain;
       const slot = {
         impid: bidRequest.adUnitCode,
         transactionid: bidRequest.transactionId,
@@ -344,6 +346,13 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
   if (networkId) {
     request.publisher.networkid = networkId;
   }
+  if (schain) {
+    request.source = {
+      ext: {
+        schain: schain
+      }
+    }
+  };
   request.user = {
     ext: bidderRequest.userExt
   };
