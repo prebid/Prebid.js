@@ -10,7 +10,7 @@ var getMimes = function () {
       mimes.push(nivigatorMimes[i].type + ': ' + nivigatorMimes[i].description);
     }
   } catch (e) {}
-  return mimes.join("|");
+  return mimes.join('|');
 }
 var getPlugins = function () {
   var plugins = [];
@@ -20,7 +20,7 @@ var getPlugins = function () {
       plugins.push(navigatorPlugins[i].name + ': ' + navigatorPlugins[i].description + ' (' + navigatorPlugins[i].filename + ')');
     }
   } catch (e) {}
-  return plugins.join("|");
+  return plugins.join('|');
 }
 
 describe('FTrack Real Time Data 🕒 submodule aka "ftrackRtdProvider"', () => {
@@ -152,17 +152,17 @@ describe('FTrack Real Time Data 🕒 submodule aka "ftrackRtdProvider"', () => {
                         'value': 'mock_id_value_from_lgc'
                       }]
                     }],
-                    "ext": {
-                      "device": {
-                        "language": navigator.language || navigator.browserLanguage || null,
-                        "pxratio": window.devicePixelRatio || null,
-                        "ua": navigator.userAgent || null,
-                        "h": window.screen ? window.screen.height : null,
-                        "w": window.screen ? window.screen.width : null,
-                        "mimes": getMimes(),
-                        "plugins": getPlugins(),
-                        "platform": navigator.platform || null,
-                        "ref": document.referrer || null
+                    'ext': {
+                      'device': {
+                        'language': navigator.language || navigator.browserLanguage || null,
+                        'pxratio': window.devicePixelRatio || null,
+                        'ua': navigator.userAgent || null,
+                        'h': window.screen ? window.screen.height : null,
+                        'w': window.screen ? window.screen.width : null,
+                        'mimes': getMimes(),
+                        'plugins': getPlugins(),
+                        'platform': navigator.platform || null,
+                        'ref': document.referrer || null
                       }
                     }
                   }
@@ -214,17 +214,17 @@ describe('FTrack Real Time Data 🕒 submodule aka "ftrackRtdProvider"', () => {
                         'value': 'mock_id_value'
                       }]
                     }],
-                    "ext": {
-                      "device": {
-                        "language": navigator.language || navigator.browserLanguage || null,
-                        "pxratio": window.devicePixelRatio || null,
-                        "ua": navigator.userAgent || null,
-                        "h": window.screen ? window.screen.height : null,
-                        "w": window.screen ? window.screen.width : null,
-                        "mimes": getMimes(),
-                        "plugins": getPlugins(),
-                        "platform": navigator.platform || null,
-                        "ref": document.referrer || null
+                    'ext': {
+                      'device': {
+                        'language': navigator.language || navigator.browserLanguage || null,
+                        'pxratio': window.devicePixelRatio || null,
+                        'ua': navigator.userAgent || null,
+                        'h': window.screen ? window.screen.height : null,
+                        'w': window.screen ? window.screen.width : null,
+                        'mimes': getMimes(),
+                        'plugins': getPlugins(),
+                        'platform': navigator.platform || null,
+                        'ref': document.referrer || null
                       }
                     }
                   }
