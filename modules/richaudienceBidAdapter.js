@@ -59,9 +59,10 @@ export const spec = {
       REFERER = (typeof bidderRequest.refererInfo.referer != 'undefined' ? encodeURIComponent(bidderRequest.refererInfo.referer) : null)
 
       payload.gdpr_consent = '';
-      payload.gdpr = bidderRequest.gdprConsent.gdprApplies;
+      payload.gdpr = 0;
 
       if (bidderRequest && bidderRequest.gdprConsent) {
+        payload.gdpr = bidderRequest.gdprConsent.gdprApplies
         payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
       }
 
