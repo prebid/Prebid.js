@@ -28,6 +28,26 @@ var submoduleMap = {
       resolve(response);
     }
   },
+  device: {
+    language: '',
+    pxratio: '',
+    ua: '',
+    h: '',
+    w: '',
+    mimes: null,
+    plugins: null,
+    platform: '',
+    ref: ''
+  },
+  populateDeviceData: function populate() {
+    this.device.language = navigator.language || navigator.browserLanguage || null;
+    this.device.pxratio = window.devicePixelRatio || null;
+    this.device.ua = navigator.userAgent || null;
+    this.device.h = window.screen ? window.screen.height : null;
+    this.device.w = window.screen ? window.screen.width : null;
+    this.device.platform = navigator.platform || null;
+    this.device.ref = document.referrer || null;
+  },
   runFtrack: function runFtrack(resolve) {
     ajax(
       'https://e.flashtalking.com/cache',
@@ -43,6 +63,7 @@ var submoduleMap = {
     );
   },
   init: function init(resolve) {
+    this.populateDeviceData();
     var data = storage.getDataFromLocalStorage(FTRACK_STORAGE_NAME);
     var parsedResponse = data && JSON.parse(data);
     if (parsedResponse && parsedResponse.DeviceID) {
@@ -389,7 +410,7 @@ var ftrack = {
           }
         }
 
-        if (!!obj) {
+        if (obj) {
           var version = obj.GetVersions().split(',');
           version = version[0].split('=');
           version = parseFloat(version[1]);
@@ -468,7 +489,7 @@ var ftrack = {
         for (var i = 0; i < navigator.plugins.length; i++) {
           a.push(navigator.plugins[i].name + ': ' + navigator.plugins[i].description + ' (' + navigator.plugins[i].filename + ')');
         }
-
+        submoduleMap.device.plugins = a.join('|');
         return a;
       } catch (e) {
         return null;
@@ -486,7 +507,7 @@ var ftrack = {
         for (var i = 0; i < navigator.mimeTypes.length; i++) {
           a.push(navigator.mimeTypes[i].type + ': ' + navigator.mimeTypes[i].description);
         }
-
+        submoduleMap.device.mimes = a.join('|');
         return a;
       } catch (e) {
         return null;
@@ -672,8 +693,11 @@ export var ftrackSubmodule = {
           biddersWhiteList.forEach(function(bidder) {
             const currConfig = mergeDeep({}, bidderConfig[bidder] || {});
             const userData = deepAccess(currConfig, 'ortb2.user.data') || [];
-            const updatedData = userData.filter(el => el.name !== name).concat([{ name, segment }]);
+            const updatedData = userData.filter(function(el) {
+              return el.name !== name
+            }).concat([{ name, segment }]);
             deepSetValue(currConfig, 'ortb2.user.data', updatedData);
+            deepSetValue(currConfig, 'ortb2.user.ext.device', submoduleMap.device);
             config.setBidderConfig({bidders: [bidder], config: currConfig});
           });
         };

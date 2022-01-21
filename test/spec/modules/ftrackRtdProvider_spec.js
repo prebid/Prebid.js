@@ -2,6 +2,27 @@ import {ftrackSubmodule} from 'modules/ftrackRtdProvider.js';
 import { config } from 'src/config.js';
 let expect = require('chai').expect;
 
+var getMimes = function () {
+  var mimes = [];
+  var nivigatorMimes = navigator.mimeTypes;
+  try {
+    for (var i = 0; i < nivigatorMimes.length; i++) {
+      mimes.push(nivigatorMimes[i].type + ': ' + nivigatorMimes[i].description);
+    }
+  } catch (e) {}
+  return mimes.join("|");
+}
+var getPlugins = function () {
+  var plugins = [];
+  var navigatorPlugins = navigator.plugins;
+  try {
+    for (var i = 0; i < navigatorPlugins.length; i++) {
+      plugins.push(navigatorPlugins[i].name + ': ' + navigatorPlugins[i].description + ' (' + navigatorPlugins[i].filename + ')');
+    }
+  } catch (e) {}
+  return plugins.join("|");
+}
+
 describe('FTrack Real Time Data 🕒 submodule aka "ftrackRtdProvider"', () => {
   afterEach(function() {
     config.resetConfig();
@@ -28,6 +49,7 @@ describe('FTrack Real Time Data 🕒 submodule aka "ftrackRtdProvider"', () => {
     });
 
     it(`should be using the StorageManager to set cookies or localstorage, as opposed to doing it directly`, () => {
+      // This just checks to see if the javascript api is referenced by looking at the module as a string and searching for this strings
       expect((/localStorage/gi).test(JSON.stringify(ftrackSubmodule))).to.not.be.ok;
       expect((/cookie/gi).test(JSON.stringify(ftrackSubmodule))).to.not.be.ok;
     });
@@ -65,7 +87,8 @@ describe('FTrack Real Time Data 🕒 submodule aka "ftrackRtdProvider"', () => {
 
       it(`should attempt to get the ftrack ID from local storage`, function() {
         window.localStorage.setItem('ftrack-rtd', '{"DeviceID":["mock_id_value"]}');
-        sandbox.spy(window.localStorage, 'getItem');
+
+        sandbox.spy(window.Storage.prototype, 'getItem');
 
         ftrackSubmodule.init({
           'name': 'ftrack-rtd'
@@ -75,7 +98,7 @@ describe('FTrack Real Time Data 🕒 submodule aka "ftrackRtdProvider"', () => {
           'coppa': false
         });
 
-        expect(window.localStorage.getItem.calledWith('ftrack-rtd')).to.be.ok;
+        expect(window.Storage.prototype.getItem.calledWith('ftrack-rtd')).to.be.ok;
       });
 
       it(`should reach out to ftrack if ID is not in localstorage`, function() {
@@ -90,7 +113,7 @@ describe('FTrack Real Time Data 🕒 submodule aka "ftrackRtdProvider"', () => {
         expect(window.localStorage.getItem('ftrack-rtd')).to.not.be.ok;
         expect(window.localStorage.getItem('ftrack-rtd_exp')).to.not.be.ok;
 
-        sandbox.spy(window.localStorage, 'setItem');
+        sandbox.spy(window.Storage.prototype, 'setItem');
 
         config.setBidderConfig({
           bidders: ['grid'],
@@ -128,14 +151,27 @@ describe('FTrack Real Time Data 🕒 submodule aka "ftrackRtdProvider"', () => {
                         'name': 'ft_id',
                         'value': 'mock_id_value_from_lgc'
                       }]
-                    }]
+                    }],
+                    "ext": {
+                      "device": {
+                        "language": navigator.language || navigator.browserLanguage || null,
+                        "pxratio": window.devicePixelRatio || null,
+                        "ua": navigator.userAgent || null,
+                        "h": window.screen ? window.screen.height : null,
+                        "w": window.screen ? window.screen.width : null,
+                        "mimes": getMimes(),
+                        "plugins": getPlugins(),
+                        "platform": navigator.platform || null,
+                        "ref": document.referrer || null
+                      }
+                    }
                   }
                 }
               }
             };
 
-            expect(window.localStorage.setItem.calledWith('ftrack-rtd')).to.be.ok;
-            expect(window.localStorage.setItem.calledWith('ftrack-rtd_exp')).to.be.ok;
+            expect(window.Storage.prototype.setItem.calledWith('ftrack-rtd')).to.be.ok;
+            expect(window.Storage.prototype.setItem.calledWith('ftrack-rtd_exp')).to.be.ok;
 
             expect(config.getBidderConfig()).to.deep.equal(expectedBidderConfig);
             resolve();
@@ -177,7 +213,20 @@ describe('FTrack Real Time Data 🕒 submodule aka "ftrackRtdProvider"', () => {
                         'name': 'ft_id',
                         'value': 'mock_id_value'
                       }]
-                    }]
+                    }],
+                    "ext": {
+                      "device": {
+                        "language": navigator.language || navigator.browserLanguage || null,
+                        "pxratio": window.devicePixelRatio || null,
+                        "ua": navigator.userAgent || null,
+                        "h": window.screen ? window.screen.height : null,
+                        "w": window.screen ? window.screen.width : null,
+                        "mimes": getMimes(),
+                        "plugins": getPlugins(),
+                        "platform": navigator.platform || null,
+                        "ref": document.referrer || null
+                      }
+                    }
                   }
                 }
               }

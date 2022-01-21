@@ -91,6 +91,19 @@ where 'abcd1234' is the actual ID assigned to the current user.
             "name": "ft_id",
             "value": "abcd1234"
         }]
-    }]
+    }],
+    "ext": {
+        "device": {
+            "language": "browser language information",
+            "pxratio": "browser pixel ration information",
+            "ua": "browser user agent information",
+            "h": "browser height information",
+            "w": "browser width information",
+            "mimes": "browser mimetype information",
+            "plugins": "browser plugin information",
+            "platform": "browser platform information",
+            "ref": "browser referal information"
+        }
+    }
 }
 ```
