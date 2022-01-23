@@ -31,6 +31,7 @@
  * @property {?Boolean} sendToBidders if true, will send the contextual profile to all bidders (default params.sendToBidders or true)
  * @property {?dataCallback} onData callback
  * @property {?object} defaultProfile to be used if the profile is not found
+ * @property {?Boolean} enabled if false, will ignore this configuration
  */
 
 /**
@@ -41,6 +42,7 @@
  * @property {?object} defaultProfile to be used if the profile is not found
  * @property {?dataCallback} onData callback
  * @property {?string} localStorageProfileKey can be used to customize the local storage key (default is 'webo_wam2gam_entry')
+ * @property {?Boolean} enabled if false, will ignore this configuration
  */
 
 import {
@@ -116,7 +118,7 @@ function init(moduleConfig) {
  * @return {Boolean} true if sub module was initialized with success
  */
 function initWeboCtx(moduleParams, weboCtxConf) {
-  if (!weboCtxConf) {
+  if (!weboCtxConf || weboCtxConf.enabled === false) {
     return false
   }
 
@@ -141,7 +143,7 @@ function initWeboCtx(moduleParams, weboCtxConf) {
  * @return {Boolean} true if sub module was initialized with success
  */
 function initWeboUserData(moduleParams, weboUserDataConf) {
-  if (!weboUserDataConf) {
+  if (!weboUserDataConf || weboUserDataConf.enabled === false) {
     return false;
   }
 
