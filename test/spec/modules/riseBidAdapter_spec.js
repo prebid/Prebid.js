@@ -262,7 +262,7 @@ describe('riseAdapter', function () {
     });
 
     it('should set floor_price to getFloor.floor value if it is greater than params.floorPrice', function() {
-      const bid = deepClone(bidRequests[0]);
+      const bid = utils.deepClone(bidRequests[0]);
       bid.getFloor = () => {
         return {
           currency: 'USD',
@@ -276,7 +276,7 @@ describe('riseAdapter', function () {
     });
 
     it('should set floor_price to params.floorPrice value if it is greater than getFloor.floor', function() {
-      const bid = deepClone(bidRequests[0]);
+      const bid = utils.deepClone(bidRequests[0]);
       bid.getFloor = () => {
         return {
           currency: 'USD',
