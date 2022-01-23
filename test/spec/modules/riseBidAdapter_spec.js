@@ -299,7 +299,8 @@ describe('riseAdapter', function () {
       requestId: '21e12606d47ba7',
       netRevenue: true,
       currency: 'USD',
-      adomain: ['abc.com']
+      adomain: ['abc.com'],
+      nurl: 'http://example.com/win/1234',
     };
 
     it('should get correct bid response', function () {
@@ -315,6 +316,7 @@ describe('riseAdapter', function () {
           ttl: TTL,
           vastXml: '<VAST version="3.0"></VAST>',
           mediaType: VIDEO,
+          nurl: 'http://example.com/win/1234',
           meta: {
             advertiserDomains: ['abc.com']
           }
