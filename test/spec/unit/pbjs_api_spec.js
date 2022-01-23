@@ -1858,11 +1858,23 @@ describe('Unit: Prebid Module', function () {
                   pos: 2
                 }
               }
+            },
+            {
+              code: 'test6',
+              bids: [],
+              sizes: [300, 250],
+              mediaTypes: {
+                banner: {
+                  sizes: [300, 250],
+                  pos: 0
+                }
+              }
             }];
             $$PREBID_GLOBAL$$.requestBids({
               adUnits: adUnit
             });
             expect(auctionArgs.adUnits[0].mediaTypes.banner.pos).to.equal(2);
+            expect(auctionArgs.adUnits[1].mediaTypes.banner.pos).to.equal(0);
           });
         });
 
