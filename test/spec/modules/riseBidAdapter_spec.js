@@ -3,7 +3,7 @@ import { spec } from 'modules/riseBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
 import { VIDEO } from '../../../src/mediaTypes.js';
-import { deepClone } from 'src/utils.js';
+import * as utils from 'src/utils.js';
 
 const ENDPOINT = 'https://hb.yellowblue.io/hb';
 const TEST_ENDPOINT = 'https://hb.yellowblue.io/hb-test';
