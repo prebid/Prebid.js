@@ -119,6 +119,8 @@ function init(moduleConfig) {
  */
 function initWeboCtx(moduleParams, weboCtxConf) {
   if (!weboCtxConf || weboCtxConf.enabled === false) {
+    moduleParams.weboCtxConf = null;
+
     return false
   }
 
@@ -144,6 +146,8 @@ function initWeboCtx(moduleParams, weboCtxConf) {
  */
 function initWeboUserData(moduleParams, weboUserDataConf) {
   if (!weboUserDataConf || weboUserDataConf.enabled === false) {
+    moduleParams.weboUserDataConf = null;
+
     return false;
   }
 
