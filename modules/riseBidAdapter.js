@@ -1,4 +1,4 @@
-import { logWarn,logInfo, isArray, isFn, deepAccess, isEmpty, contains, timestamp, getBidIdParameter, triggerPixel } from '../src/utils.js';
+import { logWarn, logInfo, isArray, isFn, deepAccess, isEmpty, contains, timestamp, getBidIdParameter, triggerPixel } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
