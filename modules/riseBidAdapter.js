@@ -54,11 +54,10 @@ export const spec = {
     // build the imp param, using all adUnits data
     adUnitsParameters.forEach(adUnit => {
       adUnitData = {
-        id: adUnit.bid_id || null,
-        h: adUnit.height || null,
-        w: adUnit.width || null,
-        fp: adUnit.floor_price || null,
-        mt: adUnit.mediaType || null
+        bidId: adUnit.bid_id || null,
+        mediaType: adUnit.mediaType || null,
+        sizes: [adUnit.sizes],
+        floorPeice: adUnit.floor_price || null,
       }
       impArray.push(adUnitData);
     });
@@ -76,16 +75,17 @@ export const spec = {
   interpretResponse: function({body}) {
     const bidResponses = [];
 
-    if (body) {
-      body.forEach(adUnit => {
+    if (body.bids) {
+      body.bids.forEach(adUnit => {
         const bidResponse = {
           requestId: adUnit.requestId,
           cpm: adUnit.cpm,
+          currency: body.params.currency,
           width: adUnit.width,
           height: adUnit.height,
           creativeId: adUnit.requestId,
           currency: adUnit.currency,
-          netRevenue: adUnit.netRevenue,
+          netRevenue: adUnit.params.netRevenue,
           ttl: adUnit.ttl || TTL,
           mediaType: adUnit.mediaType
         };
@@ -99,7 +99,7 @@ export const spec = {
         
         if (adUnit.adomain && adUnit.adomain.length) {
           bidResponse.meta = {};
-          bidResponse.meta.advertiserDomains = body.adomain
+          bidResponse.meta.advertiserDomains = adUnit.adomain;
         }
         bidResponses.push(bidResponse);
       });
@@ -109,13 +109,13 @@ export const spec = {
   getUserSyncs: function(syncOptions, serverResponses) {
     const syncs = [];
     for (const response of serverResponses) {
-      if (syncOptions.iframeEnabled && response.body.userSyncURL) {
+      if (syncOptions.iframeEnabled && response.body.params.userSyncURL) {
         syncs.push({
           type: 'iframe',
           url: response.body.userSyncURL
         });
       }
-      if (syncOptions.pixelEnabled && isArray(response.body.userSyncPixels)) {
+      if (syncOptions.pixelEnabled && isArray(response.body.params.userSyncPixels)) {
         const pixels = response.body.userSyncPixels.map(pixel => {
           return {
             type: 'image',
@@ -149,20 +149,20 @@ function getFloor(bid, mediaType) {
 }
 
 /**
- * Get the the ad size from the bid
+ * Get the the ad sizes array from the bid
  * @param bid {bid}
  * @returns {Array}
  */
 function getSizes(bid, mediaType) {
-  const sizeArray = []
+  const sizesArray = []
 
   if (deepAccess(bid, `mediaTypes.${mediaType}.sizes`)) {
-    sizeArray = bid.mediaTypes[mediaType].sizes[0];
+    sizesArray = bid.mediaTypes[mediaType].sizes;
   } else if (Array.isArray(bid.sizes) && bid.sizes.length) {
-    sizeArray = bid.sizes[0];
+    sizesArray = bid.sizes;
   }
 
-  return sizeArray;
+  return sizesArray;
 }
 
 /**
@@ -270,7 +270,7 @@ function generateParameters(bid, bidderRequest) {
   const mediaType = isBanner(bid) ? BANNER : VIDEO;
   const timeout = config.getConfig('bidderTimeout');
   const {syncEnabled, filterSettings} = config.getConfig('userSync') || {};
-  const [width, height] = getSizes(bid, mediaType);
+  const sizesArray = getSizes(bid, mediaType);
   const {bidderCode} = bidderRequest;
   const domain = window.location.hostname;
 
@@ -287,8 +287,7 @@ function generateParameters(bid, bidderRequest) {
     auction_start: timestamp(),
     ad_unit_code: getBidIdParameter('adUnitCode', bid),
     tmax: timeout,
-    width: width,
-    height: height,
+    sizes: sizesArray,
     publisher_id: params.org,
     floor_price: Math.max(getFloor(bid, mediaType), params.floorPrice),
     ua: navigator.userAgent,
