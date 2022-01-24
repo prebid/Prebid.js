@@ -30,6 +30,7 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
     player = videojs(divId, playerConfig, function() {
         // callback runs in both cases
     });
+    window.ortb = this.getOrtbParams
   }
 
   function getId() {
@@ -40,17 +41,17 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
     if (!player) {
       return null;
     }
-    const adConfig = playerConfig.advertising || {};    
-    
+    const adConfig = playerConfig.params.vendorConfig.advertising || {};    
+    console.log("Ad config", adConfig)
     let playBackMethod = PLAYBACK_METHODS.CLICK_TO_PLAY
-    const isMuted = player.muted() || autoplayAdsMuted; // todo autoplayAdsMuted only applies to preRoll
+    const isMuted = player.muted(); // todo autoplayAdsMuted only applies to preRoll
     if (player.autoplay()) {
         playBackMethod = isMuted ? PLAYBACK_METHODS.AUTOPLAY_MUTED : PLAYBACK_METHODS.AUTOPLAY;
     }
-    supportedMediaTypes = VIDEO_MIME_TYPE.filter(
+    const supportedMediaTypes = Object.values(VIDEO_MIME_TYPE).filter(
         // Follows w3 spec https://www.w3.org/TR/2011/WD-html5-20110113/video.html#dom-navigator-canplaytype
         type => player.canPlayType(type)!==''
-    ) + [VPAID_MIME_TYPE]
+    ).concat([VPAID_MIME_TYPE])
     const video = {
       mimes: supportedMediaTypes,
       // Based on the protocol support provided by the videojs-ima plugin
@@ -62,8 +63,8 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
         API_FRAMEWORKS.VPAID_2_0
       ],
       // TODO: Make sure this returns dimensions in DIPS
-      h: player.getHeight(),
-      w: player.getWidth(), 
+      h: player.currentHeight(),
+      w: player.currentWidth(), 
       placement: PLACEMENT.IN_STREAM,
       // both linearity forms are supported
       // sequence - TODO not yet supported
@@ -75,7 +76,7 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
       skip: 1
     };
 
-    if (player.getFullscreen()) { 
+    if (player.isFullscreen()) { 
      // only specify ad position when in Fullscreen since computational cost is low
         video.pos = AD_POSITION.FULL_SCREEN; 
     }
@@ -86,11 +87,11 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
     };
     // Only include length if player is ready
     if(player.readyState()>0){
-        content.len = player.duration();
+        content.len = Math.round(player.duration());
     }
     const item = player.getMedia();
     if(item){
-        for(param of ['album', 'artist', 'title']){
+        for(let param of ['album', 'artist', 'title']){
             if(item[param]){
                 content[param] = item[param];
             }
