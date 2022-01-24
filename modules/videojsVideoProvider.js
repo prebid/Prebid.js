@@ -25,7 +25,7 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
     // TODO: come up with code for version not supported
       return;
     }
-    console.log(playerConfig)
+
     // returns the player if it exists, or attempts to instantiate a new one
     player = videojs(divId, playerConfig, function() {
         // callback runs in both cases
@@ -41,8 +41,7 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
     if (!player) {
       return null;
     }
-    const adConfig = playerConfig.params.vendorConfig.advertising || {};    
-    console.log("Ad config", adConfig)
+
     let playBackMethod = PLAYBACK_METHODS.CLICK_TO_PLAY
     const isMuted = player.muted(); // todo autoplayAdsMuted only applies to preRoll
     if (player.autoplay()) {
@@ -68,7 +67,7 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
       placement: PLACEMENT.IN_STREAM,
       // both linearity forms are supported
       // sequence - TODO not yet supported
-      battr: adConfig.battr,
+      // battr: adConfig.battr, TODO: Not sure where this should be coming from
       maxextended: -1,
       boxingallowed: 1,
       playbackmethod: [ playBackMethod ],
@@ -101,6 +100,7 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
     return {video, content};
   }
 
+  // Will likely need this plugin: https://github.com/googleads/videojs-ima
   function setAdTagUrl(adTagUrl, options) {
   }
 
