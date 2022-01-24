@@ -1,3 +1,6 @@
+import {
+    PROTOCOLS, API_FRAMEWORKS, VIDEO_MIME_TYPE, PLAYBACK_METHODS, PLACEMENT, VPAID_MIME_TYPE, POSITION, PLAYBACK_END
+  } from './videoModule/constants/ortb.js';
 import { VIDEO_JS_VENDOR } from './videoModule/constants/vendorCodes.js';
 import { videoVendorDirectory } from './videoModule/vendorDirectory.js';
 
@@ -15,14 +18,14 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
     // TODO: come up with code for player absent
       return;
     }
-
+    console.log("Initiliazed with", config)
     playerVersion = videojs.VERSION;
 
     if (playerVersion < minimumSupportedPlayerVersion) {
     // TODO: come up with code for version not supported
       return;
     }
-
+    console.log(playerConfig)
     // returns the player if it exists, or attempts to instantiate a new one
     player = videojs(divId, playerConfig, function() {
         // callback runs in both cases
@@ -34,18 +37,67 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
   }
 
   function getOrtbParams() {
+    if (!player) {
+      return null;
+    }
+    const adConfig = playerConfig.advertising || {};    
+    
+    let playBackMethod = PLAYBACK_METHODS.CLICK_TO_PLAY
+    const isMuted = player.muted() || autoplayAdsMuted; // todo autoplayAdsMuted only applies to preRoll
+    if (player.autoplay()) {
+        playBackMethod = isMuted ? PLAYBACK_METHODS.AUTOPLAY_MUTED : PLAYBACK_METHODS.AUTOPLAY;
+    }
+    supportedMediaTypes = VIDEO_MIME_TYPE.filter(
+        // Follows w3 spec https://www.w3.org/TR/2011/WD-html5-20110113/video.html#dom-navigator-canplaytype
+        type => player.canPlayType(type)!==''
+    ) + [VPAID_MIME_TYPE]
     const video = {
-      mimes: [],
-      w: 0,
-      h: 0,
+      mimes: supportedMediaTypes,
+      // Based on the protocol support provided by the videojs-ima plugin
+      // https://developers.google.com/interactive-media-ads/docs/sdks/html5/client-side/compatibility
+      protocols: [
+        PROTOCOLS.VAST_2_0,
+      ],
+      api: [
+        API_FRAMEWORKS.VPAID_2_0
+      ],
+      // TODO: Make sure this returns dimensions in DIPS
+      h: player.getHeight(),
+      w: player.getWidth(), 
+      placement: PLACEMENT.IN_STREAM,
+      // both linearity forms are supported
+      // sequence - TODO not yet supported
+      battr: adConfig.battr,
+      maxextended: -1,
+      boxingallowed: 1,
+      playbackmethod: [ playBackMethod ],
+      playbackend: PLAYBACK_END.VIDEO_COMPLETION,
+      skip: 1
     };
 
-    const content = {};
-
-    return {
-      video,
-      content
+    if (player.getFullscreen()) { 
+     // only specify ad position when in Fullscreen since computational cost is low
+        video.pos = AD_POSITION.FULL_SCREEN; 
     }
+
+    const content = {
+      // id:, TODO: find a suitable id for videojs sources
+      url: player.currentSrc()
+    };
+    // Only include length if player is ready
+    if(player.readyState()>0){
+        content.len = player.duration();
+    }
+    const item = player.getMedia();
+    if(item){
+        for(param of ['album', 'artist', 'title']){
+            if(item[param]){
+                content[param] = item[param];
+            }
+        }
+    }
+
+    return {video, content};
   }
 
   function setAdTagUrl(adTagUrl, options) {
