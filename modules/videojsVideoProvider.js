@@ -1,5 +1,5 @@
 import {
-    PROTOCOLS, API_FRAMEWORKS, VIDEO_MIME_TYPE, PLAYBACK_METHODS, PLACEMENT, VPAID_MIME_TYPE, POSITION, PLAYBACK_END
+    PROTOCOLS, API_FRAMEWORKS, VIDEO_MIME_TYPE, PLAYBACK_METHODS, PLACEMENT, VPAID_MIME_TYPE, AD_POSITION, PLAYBACK_END
   } from './videoModule/constants/ortb.js';
 import { VIDEO_JS_VENDOR } from './videoModule/constants/vendorCodes.js';
 import { videoVendorDirectory } from './videoModule/vendorDirectory.js';
@@ -43,7 +43,7 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
     }
 
     let playBackMethod = PLAYBACK_METHODS.CLICK_TO_PLAY
-    const isMuted = player.muted(); // todo autoplayAdsMuted only applies to preRoll
+    const isMuted = player.muted() || player.autoplay()==="muted"; // todo autoplayAdsMuted only applies to preRoll
     if (player.autoplay()) {
         playBackMethod = isMuted ? PLAYBACK_METHODS.AUTOPLAY_MUTED : PLAYBACK_METHODS.AUTOPLAY;
     }
