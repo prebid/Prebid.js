@@ -37,34 +37,21 @@ export const spec = {
     return true;
   },
   buildRequests: function (validBidRequests, bidderRequest) {
-    const adUnitsParameters = [];
-    const impArray = [];
+    const bidsArray = [];
     const combinedRequestsObject = {};
-    let testMode = false;
-
+    
+    // use data from the first bid, to create the general params for all bids
+    const generalObject = validBidRequests[0];
+    const testMode = generalObject.params.testMode;;
+    
+    combinedRequestsObject.params = generateGeneralParams(generalObject, bidderRequest);
+    
     if (validBidRequests.length) {
-      // test mode is configured according to the param received in the first bid of the `validBidRequests` array
-      testMode = validBidRequests[0].params && validBidRequests[0].params.testMode;
-
       validBidRequests.forEach(bid => {
-        adUnitsParameters.push(generateParameters(bid, bidderRequest));
+        bidsArray.push(generateBidParameters(bid, bidderRequest));
       });
     }
-
-    // build the imp param, using all adUnits data
-    adUnitsParameters.forEach(adUnit => {
-      adUnitData = {
-        bidId: adUnit.bid_id || null,
-        mediaType: adUnit.mediaType || null,
-        sizes: [adUnit.sizes],
-        floorPeice: adUnit.floor_price || null,
-      }
-      impArray.push(adUnitData);
-    });
-
-    //  send the first adUnit data params as the general params, so that old logic on seller will not be affected
-    combinedRequestsObject.params = adUnitsParameters[0]
-    combinedRequestsObject.imp = impArray;
+    combinedRequestsObject.bids = bidsArray;
 
     return {
       method: 'POST',
@@ -83,27 +70,28 @@ export const spec = {
           currency: body.params.currency,
           width: adUnit.width,
           height: adUnit.height,
-          creativeId: adUnit.requestId,
-          currency: adUnit.currency,
-          netRevenue: adUnit.params.netRevenue,
           ttl: adUnit.ttl || TTL,
-          mediaType: adUnit.mediaType
+          creativeId: adUnit.requestId,
+          netRevenue: adUnit.params.netRevenue,
+          meta: {
+            mediaType: adUnit.mediaType
+          }
         };
 
         if (adUnit.mediaType === VIDEO) {
           bidResponse.vastXml = adUnit.vastXml;
         } else if (adUnit.mediaType === BANNER) {
-          // TODO: verify naming on seller - prebid doc is 'ad', but seller might call it 'html'
           bidResponse.ad = adUnit.ad;
         }
         
         if (adUnit.adomain && adUnit.adomain.length) {
-          bidResponse.meta = {};
           bidResponse.meta.advertiserDomains = adUnit.adomain;
         }
+
         bidResponses.push(bidResponse);
       });
     }
+    
     return bidResponses;
   },
   getUserSyncs: function(syncOptions, serverResponses) {
@@ -153,7 +141,7 @@ function getFloor(bid, mediaType) {
  * @param bid {bid}
  * @returns {Array}
  */
-function getSizes(bid, mediaType) {
+function getSizesArray(bid, mediaType) {
   const sizesArray = []
 
   if (deepAccess(bid, `mediaTypes.${mediaType}.sizes`)) {
@@ -260,127 +248,142 @@ function getDeviceType(ua) {
 }
 
 /**
- * Generate query parameters for the request
- * @param bid {bid}
- * @param bidderRequest {bidderRequest}
- * @returns {Object}
+ * Generate bid specific parameters
+ * @param {bid} bid 
+ * @param {bidderRequest} bidderRequest 
+ * @returns {Object} bid specific params object
  */
-function generateParameters(bid, bidderRequest) {
+function generateBidParameters(bid, bidderRequest) {
   const {params} = bid;
   const mediaType = isBanner(bid) ? BANNER : VIDEO;
   const timeout = config.getConfig('bidderTimeout');
-  const {syncEnabled, filterSettings} = config.getConfig('userSync') || {};
-  const sizesArray = getSizes(bid, mediaType);
-  const {bidderCode} = bidderRequest;
-  const domain = window.location.hostname;
-
+  const sizesArray = getSizesArray(bid, mediaType);
+  
+  const bidObject = {
+    mediaType,
+    ad_unit_code: getBidIdParameter('adUnitCode', bid),
+    tmax: timeout,
+    sizes: sizesArray,
+    floor_price: Math.max(getFloor(bid, mediaType), params.floorPrice),   
+    bid_id: getBidIdParameter('bidId', bid),
+    bidder_request_id: getBidIdParameter('bidderRequestId', bid),
+    transaction_id: getBidIdParameter('transactionId', bid),
+  };
+  
   // fix floor price in case of NAN
-  if (isNaN(params.floorPrice)) {
-    params.floorPrice = 0;
+  if (isNaN(bidObject.floorPrice)) {
+    bidObject.floorPrice = 0;
   }
 
-  const requestParams = {
+  const playbackMethod = deepAccess(bid, `mediaTypes.${mediaType}.playbackmethod`);
+  if (playbackMethod) {
+    bidObject.playback_method = playbackMethod;
+  }
+  const placement = deepAccess(bid, `mediaTypes.${mediaType}.placement`);
+  if (placement) {
+    bidObject.placement = placement;
+  }
+  const pos = deepAccess(bid, `mediaTypes.${mediaType}.pos`);
+  if (pos) {
+    bidObject.pos = pos;
+  }
+  const minDuration = deepAccess(bid, `mediaTypes.${mediaType}.minduration`);
+  if (minDuration) {
+    bidObject.min_duration = minduration;
+  }
+  const maxDuration = deepAccess(bid, `mediaTypes.${mediaType}.maxduration`);
+  if (maxDuration) {
+    bidObject.max_duration = maxduration;
+  }
+  const skip = deepAccess(bid, `mediaTypes.${mediaType}.skip`);
+  if (skip) {
+    bidObject.skip = skip;
+  }
+  const linearity = deepAccess(bid, `mediaTypes.${mediaType}.linearity`);
+  if (linearity) {
+    bidObject.linearity = linearity;
+  }
+
+  return bidObject;
+}
+
+function isBanner(bid) {
+  return bid.mediaTypes && bid.mediaTypes.banner;
+}
+
+/**
+ * Generate params that are common between all bids
+ * @param {single bid object} generalObject 
+ * @param {bidderRequest} bidderRequest 
+ * @returns {object} the common params object
+ */
+function generateGeneralParams(generalObject, bidderRequest) {
+  const domain = window.location.hostname;
+  const {syncEnabled, filterSettings} = config.getConfig('userSync') || {};
+  const {bidderCode} = bidderRequest;
+  const generalParams = generalObject.params;
+
+  generalParams = {
     wrapper_type: 'prebidjs',
     wrapper_vendor: '$$PREBID_GLOBAL$$',
     wrapper_version: '$prebid.version$',
     adapter_version: ADAPTER_VERSION,
     auction_start: timestamp(),
-    ad_unit_code: getBidIdParameter('adUnitCode', bid),
-    tmax: timeout,
-    sizes: sizesArray,
-    publisher_id: params.org,
-    floor_price: Math.max(getFloor(bid, mediaType), params.floorPrice),
-    ua: navigator.userAgent,
-    bid_id: getBidIdParameter('bidId', bid),
-    bidder_request_id: getBidIdParameter('bidderRequestId', bid),
-    transaction_id: getBidIdParameter('transactionId', bid),
-    session_id: getBidIdParameter('auctionId', bid),
+    publisher_id: generalParams.org,
     publisher_name: domain,
     site_domain: domain,
     dnt: (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0,
     device_type: getDeviceType(navigator.userAgent),
-    mediaType
-  };
+    ua: navigator.userAgent,
+    session_id: getBidIdParameter('auctionId', generalObject),
+  }
 
-  const userIdsParam = getBidIdParameter('userId', bid);
+  const userIdsParam = getBidIdParameter('userId', generalObject);
   if (userIdsParam) {
-    requestParams.userIds = JSON.stringify(userIdsParam);
+    generalParams.userIds = JSON.stringify(userIdsParam);
   }
 
   const ortb2Metadata = config.getConfig('ortb2') || {};
   if (ortb2Metadata.site) {
-    requestParams.site_metadata = JSON.stringify(ortb2Metadata.site);
+    generalParams.site_metadata = JSON.stringify(ortb2Metadata.site);
   }
   if (ortb2Metadata.user) {
-    requestParams.user_metadata = JSON.stringify(ortb2Metadata.user);
+    generalParams.user_metadata = JSON.stringify(ortb2Metadata.user);
   }
 
-  const playbackMethod = deepAccess(bid, `mediaTypes.${mediaType}.playbackmethod`);
-  if (playbackMethod) {
-    requestParams.playback_method = playbackMethod;
-  }
-  const placement = deepAccess(bid, `mediaTypes.${mediaType}.placement`);
-  if (placement) {
-    requestParams.placement = placement;
-  }
-  const pos = deepAccess(bid, `mediaTypes.${mediaType}.pos`);
-  if (pos) {
-    requestParams.pos = pos;
-  }
-  const minduration = deepAccess(bid, `mediaTypes.${mediaType}.minduration`);
-  if (minduration) {
-    requestParams.min_duration = minduration;
-  }
-  const maxduration = deepAccess(bid, `mediaTypes.${mediaType}.maxduration`);
-  if (maxduration) {
-    requestParams.max_duration = maxduration;
-  }
-  const skip = deepAccess(bid, `mediaTypes.${mediaType}.skip`);
-  if (skip) {
-    requestParams.skip = skip;
-  }
-  const linearity = deepAccess(bid, `mediaTypes.${mediaType}.linearity`);
-  if (linearity) {
-    requestParams.linearity = linearity;
-  }
-
-  const placement_id = params.placementId || deepAccess(bid, 'mediaTypes.banner.name');
+  const placement_id = generalParams.placementId || deepAccess(generalObject, 'mediaTypes.banner.name');
   if (placement_id) {
-    requestParams.placement_id = placement_id;
+    generalParams.placement_id = placement_id;
   }
 
   if (syncEnabled) {
     const allowedSyncMethod = getAllowedSyncMethod(filterSettings, bidderCode);
     if (allowedSyncMethod) {
-      requestParams.cs_method = allowedSyncMethod;
+      generalParams.cs_method = allowedSyncMethod;
     }
   }
 
   if (bidderRequest.uspConsent) {
-    requestParams.us_privacy = bidderRequest.uspConsent;
+    generalParams.us_privacy = bidderRequest.uspConsent;
   }
 
   if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
-    requestParams.gdpr = bidderRequest.gdprConsent.gdprApplies;
-    requestParams.gdpr_consent = bidderRequest.gdprConsent.consentString;
+    generalParams.gdpr = bidderRequest.gdprConsent.gdprApplies;
+    generalParams.gdpr_consent = bidderRequest.gdprConsent.consentString;
   }
 
-  if (params.ifa) {
-    requestParams.ifa = params.ifa;
+  if (generalParams.ifa) {
+    generalParams.ifa = params.ifa;
   }
 
-  if (bid.schain) {
-    requestParams.schain = getSupplyChain(bid.schain);
+  if (generalObject.schain) {
+    generalParams.schain = getSupplyChain(generalObject.schain);
   }
 
   if (bidderRequest && bidderRequest.refererInfo) {
-    requestParams.referrer = deepAccess(bidderRequest, 'refererInfo.referer');
-    requestParams.page_url = config.getConfig('pageUrl') || deepAccess(window, 'location.href');
+    generalParams.referrer = deepAccess(bidderRequest, 'refererInfo.referer');
+    generalParams.page_url = config.getConfig('pageUrl') || deepAccess(window, 'location.href');
   }
 
-  return requestParams;
-}
-
-function isBanner(bid) {
-  return bid.mediaTypes && bid.mediaTypes.banner;
+  return generalParams
 }
