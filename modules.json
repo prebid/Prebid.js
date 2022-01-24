@@ -2,6 +2,7 @@
   "adlooxAnalyticsAdapter",
   "adlooxRtdProvider",
   "sirdataRtdProvider",
+  "weboramaRtdProvider",
   "currency",
   "consentManagement",
   "consentManagementUsp",
