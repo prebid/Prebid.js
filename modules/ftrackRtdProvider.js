@@ -393,41 +393,13 @@ var ftrack = {
         return null;
       }
 
-      if (window.hasOwnProperty('ActiveXObject')) {
-        var obj = null;
-
-        try {
-          obj = new window.ActiveXObject('AcroPDF.PDF');
-        } catch (e) {
-          obj = null;
+      for (var i = 0; i < navigator.plugins.length; i++) {
+        if (navigator.plugins[i].name.indexOf('Adobe Acrobat') != -1) {
+          return navigator.plugins[i].description.replace(/\D+/g, '.').match(/^.?(.+),?$/)[1];
         }
-
-        if (!obj) {
-          try {
-            obj = new window.ActiveXObject('PDF.PdfCtrl');
-          } catch (e) {
-            obj = null;
-            return null;
-          }
-        }
-
-        if (obj !== null) {
-          var version = obj.GetVersions().split(',');
-          version = version[0].split('=');
-          version = parseFloat(version[1]);
-          return version;
-        } else {
-          return null;
-        }
-      } else {
-        for (var i = 0; i < navigator.plugins.length; i++) {
-          if (navigator.plugins[i].name.indexOf('Adobe Acrobat') != -1) {
-            return navigator.plugins[i].description.replace(/\D+/g, '.').match(/^.?(.+),?$/)[1];
-          }
-        }
-
-        return null;
       }
+
+      return null;
     };
 
     ft.silverlightVersion = function (m) {
