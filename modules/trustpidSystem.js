@@ -4,11 +4,16 @@
  * @module modules/trustpidSystem
  * @requires module:modules/userId
  */
-import {submodule} from '../src/hook.js';
+import { logInfo, logError } from '../src/utils.js';
+import { submodule } from '../src/hook.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 const MODULE_NAME = 'trustpid';
+const LOG_PREFIX = 'Trustpid module'
 let mnoAcronym = '';
 let mnoDomain = '';
+
+export const storage = getStorageManager(null, MODULE_NAME);
 
 /**
  * Handle an event for an iframe.
@@ -19,16 +24,18 @@ let mnoDomain = '';
 function messageHandler(event) {
   let msg;
   try {
-    msg = JSON.parse(event.data);
-    if (msg.msgType === 'MNOSELECTOR' && msg.body && msg.body.url) {
-      let URL = msg.body.url.split('//');
-      let domainURL = URL[1].split('/');
-      mnoDomain = domainURL[0];
-      debugModeConsoleLog('info', `messageHandler set domain: ${mnoDomain}`);
-      getDomainAcronym(mnoDomain);
+    if (event && event.data && typeof event.data === 'string' && event.data) {
+      msg = JSON.parse(event.data);
+      if (msg.msgType === 'MNOSELECTOR' && msg.body && msg.body.url) {
+        let URL = msg.body.url.split('//');
+        let domainURL = URL[1].split('/');
+        mnoDomain = domainURL[0];
+        logInfo(`${LOG_PREFIX}: Message handler set domain to ${mnoDomain}`);
+        getDomainAcronym(mnoDomain);
+      }
     }
   } catch (e) {
-
+    logError(e);
   }
 }
 
@@ -74,11 +81,11 @@ window.addEventListener('message', messageHandler, false);
  */
 function getTrustpidFromStorage() {
   // Get the domain either from localStorage or global
-  let domain = JSON.parse(window.localStorage.getItem('fcIdConnectDomain')) || mnoDomain;
-  debugModeConsoleLog('info', `getTrustpid domain: ${domain}`);
+  let domain = JSON.parse(storage.getDataFromLocalStorage('fcIdConnectDomain')) || mnoDomain;
+  logInfo(`${LOG_PREFIX}: Local storage domain: ${domain}`);
 
   if (!domain) {
-    debugModeConsoleLog('info', `getTrustpid domain: no domain`);
+    logInfo(`${LOG_PREFIX}: Local storage domain not found, returning null`);
     return {
       trustpid: null,
       acr: null,
@@ -93,6 +100,8 @@ function getTrustpidFromStorage() {
     acronym = mnoAcronym;
   }
 
+  logInfo(`${LOG_PREFIX}: Domain acronym found: ${acronym}`);
+
   // Domain is correct in both local storage and idGraph, but no acronym is existing for the domain
   if (domain && !acronym) {
     return {
@@ -102,9 +111,8 @@ function getTrustpidFromStorage() {
   }
 
   let fcIdConnectObject;
-  let fcIdConnectData = JSON.parse(window.localStorage.getItem('fcIdConnectData'));
-  debugModeConsoleLog('info', `getTrustpid fcIdConnectData:
-  ${JSON.stringify(fcIdConnectData)}`);
+  let fcIdConnectData = JSON.parse(storage.getDataFromLocalStorage('fcIdConnectData'));
+  logInfo(`${LOG_PREFIX}: Local storage fcIdConnectData: ${JSON.stringify(fcIdConnectData)}`);
 
   if (fcIdConnectData &&
     fcIdConnectData.connectId &&
@@ -114,8 +122,7 @@ function getTrustpidFromStorage() {
       return item.domain === domain;
     });
   }
-  debugModeConsoleLog('info', `getTrustpid fcIdConnectObject:
-  ${JSON.stringify(fcIdConnectObject)}`);
+  logInfo(`${LOG_PREFIX}: Local storage fcIdConnectObject for domain: ${JSON.stringify(fcIdConnectObject)}`);
 
   return {
     trustpid: (fcIdConnectObject && fcIdConnectObject.umid)
@@ -123,37 +130,6 @@ function getTrustpidFromStorage() {
       : null,
     acr: acronym,
   };
-}
-
-/**
- * Returns whether we are in Prebid debug mode or not.
- * @returns {boolean}
- */
-function isDebugMode() {
-  return (window.location.href.indexOf('?pbjs_debug=true') > -1) || (window.location.href.indexOf('&pbjs_debug=true') > -1);
-}
-
-/**
- * Show debugging messages in browser developer console.
- * @param type
- * @param data
- */
-function debugModeConsoleLog(type = 'info', data) {
-  if (isDebugMode()) {
-    switch (type) {
-      case 'info':
-        // eslint-disable-next-line no-console
-        console.info(data);
-        break;
-      case 'error':
-        // eslint-disable-next-line no-console
-        console.error(data);
-        break;
-      default:
-        // eslint-disable-next-line no-console
-        console.log(data);
-    }
-  }
 }
 
 /** @type {Submodule} */
@@ -169,7 +145,7 @@ export const trustpidSubmodule = {
    * @returns {{trustpid: string} | null}
    */
   decode(bidId) {
-    debugModeConsoleLog('info', `decode ${JSON.stringify(bidId)}`);
+    logInfo(`${LOG_PREFIX}: Decoded ID value ${JSON.stringify(bidId)}`);
     return bidId.trustpid ? bidId : null;
   },
   /**
@@ -180,8 +156,7 @@ export const trustpidSubmodule = {
   getId: function(config) {
     const data = getTrustpidFromStorage();
     if (data.trustpid) {
-      debugModeConsoleLog('info', `getId result 1:
-      ${JSON.stringify(data)}`);
+      logInfo(`${LOG_PREFIX}: Local storage ID value ${JSON.stringify(data)}`);
       return {id: {trustpid: data.trustpid + data.acr}};
     } else {
       if (!config) {
@@ -193,28 +168,28 @@ export const trustpidSubmodule = {
       if (typeof config.params.maxDelayTime === 'undefined' || config.params.maxDelayTime === null) {
         config.params.maxDelayTime = 1000;
       }
-      let timeSpend = 0;
-      const step = 50;
+      // Current delay and delay step in milliseconds
+      let currentDelay = 0;
+      const delayStep = 50;
       const result = (callback) => {
         const data = getTrustpidFromStorage();
         if (!data.trustpid) {
-          if (timeSpend > config.params.maxDelayTime) {
-            debugModeConsoleLog('info', `getId result 3: null`);
+          if (currentDelay > config.params.maxDelayTime) {
+            logInfo(`${LOG_PREFIX}: No trustpid value set after ${config.params.maxDelayTime} max allowed delay time`);
             callback(null);
           } else {
-            timeSpend += step;
+            currentDelay += delayStep;
             setTimeout(() => {
               result(callback);
-            }, step);
+            }, delayStep);
           }
         } else {
-          debugModeConsoleLog('info', `getId result 2:`,
-            JSON.stringify({trustpid: data.trustpid + data.acr}));
-          const dataToReturn = {trustpid: data.trustpid + data.acr};
+          const dataToReturn = { trustpid: data.trustpid + data.acr };
+          logInfo(`${LOG_PREFIX}: Returning ID value data of ${JSON.stringify(dataToReturn)}`);
           callback(dataToReturn);
         }
       };
-      return {callback: result};
+      return { callback: result };
     }
   },
 };
