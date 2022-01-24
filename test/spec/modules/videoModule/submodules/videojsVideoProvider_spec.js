@@ -1,35 +1,7 @@
 import {
   VideojsProvider
 } from 'modules/videojsVideoProvider';
-
-function videojsMock(overrides) {
-  const players = {}
-  const vjs = function(id) {
-    if (!players[id]) {
-      players[id] = {
-        controls: function() {},
-        getViewable: function () {},
-        getPercentViewable: function () {},
-        getMute: function () {},
-        volume: function () {},
-        getConfig: function () {},
-        videoHeight: function () {},
-        videoWidth: function () {},
-        getFullscreen: function () {},
-        getPlaylistItem: function () {},
-        playAd: function () {},
-        on: function () {},
-        off: function () {},
-        remove: function () {},
-        ...overrides
-      }
-    }
-    return players[id]
-  };
-  vjs.players = players
-  vjs.version = '7.17.0';
-  return vjs;
-}
+import videojs from 'video.js';
 
 describe('videojsProvider', function () {
   describe('init', function () {
@@ -44,6 +16,7 @@ describe('videojsProvider', function () {
       //   adState = adStateFactory();
       //   timeState = timeStateFactory();
       //   callbackStorage = callbackStorageFactory();
+      document.body.innerHTML = '';
       utilsMock = null;
     });
 
@@ -56,12 +29,28 @@ describe('videojsProvider', function () {
     });
 
     it('should instantiate the player when uninstantied', function () {
+      const div = document.createElement('div');
+      div.setAttribute("id", "test-div");
+      document.body.appendChild(div);
       config.playerConfig = {};
       config.divId = 'test-div'
-      const videojs = videojsMock();
       const provider = VideojsProvider(config, videojs, adState, timeState, callbackStorage, utilsMock);
       provider.init();
-      expect(videojs.players['test-div']).to.be.an('object')
+      expect(videojs.getPlayer('test-div')).to.be.an('object')
+      videojs.getPlayer('test-div').dispose()
+    });
+
+    it('should not reinstantiate the player when instantated', function () {
+      const div = document.createElement('div');
+      div.setAttribute("id", "test-div");
+      document.body.appendChild(div);
+      const player = videojs(div, {})
+      config.playerConfig = {};
+      config.divId = 'test-div'
+      const provider = VideojsProvider(config, videojs, adState, timeState, callbackStorage, utilsMock);
+      provider.init();
+      expect(videojs.getPlayer('test-div')).to.be.equal(player)
+      videojs.getPlayer('test-div').dispose()
     });
 
     it('should trigger setup complete when player is already instantied', function () {
