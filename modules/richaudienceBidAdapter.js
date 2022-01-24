@@ -62,10 +62,10 @@ export const spec = {
       payload.gdpr = false;
 
       if (bidderRequest && bidderRequest.gdprConsent) {
-        if(typeof bidderRequest.gdprConsent.gdprApplies != "undefined"){
+        if (typeof bidderRequest.gdprConsent.gdprApplies != 'undefined') {
           payload.gdpr = bidderRequest.gdprConsent.gdprApplies;
         }
-        if (typeof bidderRequest.gdprConsent.consentString != "undefined"){
+        if (typeof bidderRequest.gdprConsent.consentString != 'undefined') {
           payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
         }
       }
