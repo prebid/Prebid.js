@@ -514,8 +514,8 @@ describe('SSPBC adapter', function () {
     });
 
     it('should send gdpr data', function () {
-      expect(payload.regs).to.be.an('object').and.to.have.property('[ortb_extensions.gdpr]', 1);
-      expect(payload.user).to.be.an('object').and.to.have.property('[ortb_extensions.consent]', bidRequest.gdprConsent.consentString);
+      expect(payload.regs).to.be.an('object').and.to.have.property('gdpr', 1);
+      expect(payload.user).to.be.an('object').and.to.have.property('consent', bidRequest.gdprConsent.consentString);
     });
 
     it('should send net info and pvid', function () {
