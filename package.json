@@ -105,6 +105,7 @@
     "through2": "^4.0.2",
     "url": "^0.11.0",
     "url-parse": "^1.0.5",
+    "video.js": "^7.17.0",
     "webdriverio": "^7.6.1",
     "webpack": "^5.70.0",
     "webpack-bundle-analyzer": "^4.5.0",
