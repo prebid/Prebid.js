@@ -77,6 +77,7 @@ const buildRequests = (validBidRequests, bidderRequest) => {
     const hostname = aElement.hostname
 
     const videoContext = deepAccess(bid, 'mediaTypes.video.context');
+    const bidfloor = deepAccess(bid, `params.bidfloor`, 0);
 
     const queryParams = {
       id: bid.params.id,
@@ -90,6 +91,8 @@ const buildRequests = (validBidRequests, bidderRequest) => {
       dt: /Mobi/.test(navigator.userAgent) ? 2 : 1,
       pid: bid.params.pid,
       requestId: bid.bidId,
+      schain: bid.schain || '',
+      bidfloor,
       d: getDomainWithoutSubdomain(hostname), // 'vidoomy.com',
       sp: encodeURIComponent(aElement.href),
       usp: bidderRequest.uspConsent || '',
