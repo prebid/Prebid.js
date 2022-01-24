@@ -271,7 +271,7 @@ describe('OguryBidAdapter', function () {
       },
       ext: {
         prebidversion: '$prebid.version$',
-        adapterversion: '1.2.7'
+        adapterversion: '1.2.8'
       }
     };
 
@@ -430,7 +430,7 @@ describe('OguryBidAdapter', function () {
           advertiserDomains: openRtbBidResponse.body.seatbid[0].bid[0].adomain
         },
         nurl: openRtbBidResponse.body.seatbid[0].bid[0].nurl,
-        adapterVersion: '1.2.7',
+        adapterVersion: '1.2.8',
         prebidVersion: '$prebid.version$'
       }, {
         requestId: openRtbBidResponse.body.seatbid[0].bid[1].impid,
@@ -447,7 +447,7 @@ describe('OguryBidAdapter', function () {
           advertiserDomains: openRtbBidResponse.body.seatbid[0].bid[1].adomain
         },
         nurl: openRtbBidResponse.body.seatbid[0].bid[1].nurl,
-        adapterVersion: '1.2.7',
+        adapterVersion: '1.2.8',
         prebidVersion: '$prebid.version$'
       }]
 
@@ -569,6 +569,7 @@ describe('OguryBidAdapter', function () {
       expect(requests.length).to.equal(1);
       expect(requests[0].url).to.equal(TIMEOUT_URL);
       expect(requests[0].method).to.equal('POST');
+      expect(JSON.parse(requests[0].requestBody).location).to.equal(window.location.href);
     })
   });
 });
