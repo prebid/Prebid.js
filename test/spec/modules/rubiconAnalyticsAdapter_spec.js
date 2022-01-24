@@ -246,7 +246,7 @@ const MOCK = {
     }
   },
   BID_REQUESTED: {
-    'bidder': 'rubicon',
+    'bidderCode': 'rubicon',
     'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
     'bidderRequestId': '1be65d7958826a',
     'bids': [
@@ -384,6 +384,10 @@ const ANALYTICS_MESSAGE = {
   'referrerHostname': 'www.test.com',
   'auctions': [
     {
+
+      'auctionEnd': 1519767013781,
+      'auctionStart': 1519767010567,
+      'bidderOrder': ['rubicon'],
       'requestId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
       'clientTimeoutMillis': 3000,
       'serverTimeoutMillis': 1000,
@@ -851,6 +855,32 @@ describe('rubicon analytics adapter', function () {
       validate(message);
 
       expect(message).to.deep.equal(ANALYTICS_MESSAGE);
+    });
+
+    it('should pass along bidderOrder correctly', function () {
+      const appnexusBid = utils.deepClone(MOCK.BID_REQUESTED);
+      appnexusBid.bidderCode = 'appnexus';
+      const pubmaticBid = utils.deepClone(MOCK.BID_REQUESTED);
+      pubmaticBid.bidderCode = 'pubmatic';
+      const indexBid = utils.deepClone(MOCK.BID_REQUESTED);
+      indexBid.bidderCode = 'ix';
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, pubmaticBid);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+      events.emit(BID_REQUESTED, indexBid);
+      events.emit(BID_REQUESTED, appnexusBid);
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      events.emit(SET_TARGETING, MOCK.SET_TARGETING);
+      clock.tick(SEND_TIMEOUT + 1000);
+
+      let message = JSON.parse(server.requests[0].requestBody);
+      expect(message.auctions[0].bidderOrder).to.deep.equal([
+        'pubmatic',
+        'rubicon',
+        'ix',
+        'appnexus'
+      ]);
     });
 
     it('should pass along user ids', function () {
