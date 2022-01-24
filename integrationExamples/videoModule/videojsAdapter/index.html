@@ -79,15 +79,14 @@
     <h2>VideoJS Adapter Test</h2>
     
     <h5>Div-1 existing Player</h5>
-    <div id='vid-div-1'>
-      <video class="video-js vjs-big-play-centered" data-setup='{"controls": true, "autoplay": false, "preload": "auto"}'>
-        <source src="http://content.bitsontherun.com/videos/3XnJSIm4-52qL9xLP.mp4" type="video/mp4">
-      </video>
-    </div>
+
+    <video id='vid-div-1' class="video-js vjs-big-play-centered" data-setup='{"controls": true, "autoplay": false, "preload": "auto"}'>
+      <source src="http://content.bitsontherun.com/videos/3XnJSIm4-52qL9xLP.mp4" type="video/mp4">
+    </video>
 
     <h5>Div-2 existing player without automatic setup</h5>
-    <div id='vid-div-2'>
-      <video-js data-setup='{"controls": true}'>
+    <div>
+      <video-js id='vid-div-2' data-setup='{"controls": true}'>
         <source src="http://content.bitsontherun.com/videos/3XnJSIm4-52qL9xLP.mp4" type="video/mp4">
       </video-js>
     </div>
