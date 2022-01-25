@@ -72,7 +72,7 @@ export const spec = {
           height: adUnit.height,
           ttl: adUnit.ttl || TTL,
           creativeId: adUnit.requestId,
-          netRevenue: adUnit.params.netRevenue,
+          netRevenue: body.params.netRevenue,
           meta: {
             mediaType: adUnit.mediaType
           }
