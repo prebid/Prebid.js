@@ -30,6 +30,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.8.4",
+    "@babel/eslint-parser": "^7.16.5",
     "@babel/preset-env": "^7.8.4",
     "@jsdevtools/coverage-istanbul-loader": "^3.0.3",
     "@wdio/browserstack-service": "^6.1.4",

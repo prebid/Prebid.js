@@ -5,6 +5,7 @@ import adapterManager from '../src/adapterManager.js';
 import {ajax} from '../src/ajax.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import { config } from '../src/config.js';
+import {bidderSettings} from '../src/bidderSettings.js';
 
 const DEFAULT_PROTOCOL = 'https';
 const DEFAULT_HOST = 'pa.deployads.com';
@@ -182,11 +183,11 @@ function getFactor(bidder) {
 }
 
 function getBiddersFactors() {
-  const pb = getGlobal();
   const result = {};
-  if (pb && pb.bidderSettings) {
-    Object.keys(pb.bidderSettings).forEach(bidderKey => {
-      const bidder = pb.bidderSettings[bidderKey];
+  const settings = bidderSettings.getSettings();
+  if (settings) {
+    Object.keys(settings).forEach(bidderKey => {
+      const bidder = settings[bidderKey];
       const factor = getFactor(bidder);
       if (factor !== null) {
         result[bidderKey] = factor;
