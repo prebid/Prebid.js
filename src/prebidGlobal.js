@@ -4,6 +4,10 @@ window.$$PREBID_GLOBAL$$ = (window.$$PREBID_GLOBAL$$ || {});
 window.$$PREBID_GLOBAL$$.cmd = window.$$PREBID_GLOBAL$$.cmd || [];
 window.$$PREBID_GLOBAL$$.que = window.$$PREBID_GLOBAL$$.que || [];
 
+// create a pbjs global pointer
+window._pbjsGlobals = window._pbjsGlobals || [];
+window._pbjsGlobals.push('$$PREBID_GLOBAL$$');
+
 export function getGlobal() {
   return window.$$PREBID_GLOBAL$$;
 }

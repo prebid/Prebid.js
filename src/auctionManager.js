@@ -9,16 +9,19 @@
  *
  * @property {function(): Array} getBidsRequested - returns consolidated bid requests
  * @property {function(): Array} getBidsReceived - returns consolidated bid received
+ * @property {function(): Array} getAllBidsForAdUnitCode - returns consolidated bid received for a given adUnit
  * @property {function(): Array} getAdUnits - returns consolidated adUnits
  * @property {function(): Array} getAdUnitCodes - returns consolidated adUnitCodes
  * @property {function(): Object} createAuction - creates auction instance and stores it for future reference
  * @property {function(): Object} findBidByAdId - find bid received by adId. This function will be called by $$PREBID_GLOBAL$$.renderAd
  * @property {function(): Object} getStandardBidderAdServerTargeting - returns standard bidder targeting for all the adapters. Refer http://prebid.org/dev-docs/publisher-api-reference.html#module_pbjs.bidderSettings for more details
+ * @property {function(Object): void} addWinningBid - add a winning bid to an auction based on auctionId
+ * @property {function(): void} clearAllAuctions - clear all auctions for testing
  */
 
-import { uniques, flatten } from './utils';
-import { newAuction, getStandardBidderSettings, AUCTION_COMPLETED } from './auction';
-import find from 'core-js/library/fn/array/find';
+import { uniques, flatten, logWarn } from './utils.js';
+import { newAuction, getStandardBidderSettings, AUCTION_COMPLETED } from './auction.js';
+import find from 'core-js-pure/features/array/find.js';
 
 const CONSTANTS = require('./constants.json');
 
@@ -29,15 +32,16 @@ const CONSTANTS = require('./constants.json');
  * @returns {AuctionManager} auctionManagerInstance
  */
 export function newAuctionManager() {
-  let _auctions = [];
-  let auctionManager = {};
+  const _auctions = [];
+  const auctionManager = {};
 
   auctionManager.addWinningBid = function(bid) {
     const auction = find(_auctions, auction => auction.getAuctionId() === bid.auctionId);
     if (auction) {
+      bid.status = CONSTANTS.BID_STATUS.RENDERED;
       auction.addWinningBid(bid);
     } else {
-      utils.logWarn(`Auction not found when adding winning bid`);
+      logWarn(`Auction not found when adding winning bid`);
     }
   };
 
@@ -57,15 +61,19 @@ export function newAuctionManager() {
   };
 
   auctionManager.getBidsReceived = function() {
-    // As of now, an old bid which is not used in auction 1 can be used in auction n.
-    // To prevent this, bid.ttl (time to live) will be added to this logic and bid pool will also be added
-    // As of now none of the adapters are sending back bid.ttl
     return _auctions.map((auction) => {
       if (auction.getAuctionStatus() === AUCTION_COMPLETED) {
         return auction.getBidsReceived();
       }
     }).reduce(flatten, [])
       .filter(bid => bid);
+  };
+
+  auctionManager.getAllBidsForAdUnitCode = function(adUnitCode) {
+    return _auctions.map((auction) => {
+      return auction.getBidsReceived();
+    }).reduce(flatten, [])
+      .filter(bid => bid && bid.adUnitCode === adUnitCode)
   };
 
   auctionManager.getAdUnits = function() {
@@ -79,8 +87,8 @@ export function newAuctionManager() {
       .filter(uniques);
   };
 
-  auctionManager.createAuction = function({ adUnits, adUnitCodes, callback, cbTimeout, labels }) {
-    const auction = newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels });
+  auctionManager.createAuction = function({ adUnits, adUnitCodes, callback, cbTimeout, labels, auctionId }) {
+    const auction = newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels, auctionId });
     _addAuction(auction);
     return auction;
   };
@@ -101,6 +109,14 @@ export function newAuctionManager() {
       const auction = find(_auctions, auction => auction.getAuctionId() === bid.auctionId);
       if (auction) auction.setBidTargeting(bid);
     }
+  }
+
+  auctionManager.getLastAuctionId = function() {
+    return _auctions.length && _auctions[_auctions.length - 1].getAuctionId()
+  };
+
+  auctionManager.clearAllAuctions = function() {
+    _auctions.length = 0;
   }
 
   function _addAuction(auction) {

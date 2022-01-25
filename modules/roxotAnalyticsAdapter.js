@@ -1,10 +1,13 @@
-import adapter from '../src/AnalyticsAdapter';
+import { deepClone, getParameterByName, logInfo, logError } from '../src/utils.js';
+import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
-import adapterManager from '../src/adapterManager';
-import includes from 'core-js/library/fn/array/includes';
-import {ajaxBuilder} from '../src/ajax';
+import adapterManager from '../src/adapterManager.js';
+import includes from 'core-js-pure/features/array/includes.js';
+import {ajaxBuilder} from '../src/ajax.js';
+import { getStorageManager } from '../src/storageManager.js';
 
-const utils = require('../src/utils');
+const storage = getStorageManager();
+
 let ajax = ajaxBuilder(0);
 
 const DEFAULT_EVENT_URL = 'pa.rxthdr.com/v3';
@@ -68,17 +71,17 @@ function detectDevice() {
 
 function checkIsNewFlag() {
   let key = buildLocalStorageKey(isNewKey);
-  let lastUpdate = Number(localStorage.getItem(key));
-  localStorage.setItem(key, Date.now());
+  let lastUpdate = Number(storage.getDataFromLocalStorage(key));
+  storage.setDataInLocalStorage(key, Date.now());
   return Date.now() - lastUpdate > isNewTtl;
 }
 
 function updateUtmTimeout() {
-  localStorage.setItem(buildLocalStorageKey(utmTtlKey), Date.now());
+  storage.setDataInLocalStorage(buildLocalStorageKey(utmTtlKey), Date.now());
 }
 
 function isUtmTimeoutExpired() {
-  let utmTimestamp = localStorage.getItem(buildLocalStorageKey(utmTtlKey));
+  let utmTimestamp = storage.getDataFromLocalStorage(buildLocalStorageKey(utmTtlKey));
   return (Date.now() - utmTimestamp) > utmTtl;
 }
 
@@ -150,7 +153,7 @@ function buildBidderRequest(auction, bidRequest) {
 
 function buildBidAfterTimeout(adUnitAuction, args) {
   return {
-    'auction': utils.deepClone(adUnitAuction),
+    'auction': deepClone(adUnitAuction),
     'adUnit': extractAdUnitCode(args),
     'bidder': extractBidder(args),
     'cpm': args.cpm,
@@ -167,7 +170,7 @@ function buildBidAfterTimeout(adUnitAuction, args) {
 function buildImpression(adUnitAuction, args) {
   return {
     'isNew': checkIsNewFlag() ? 1 : 0,
-    'auction': utils.deepClone(adUnitAuction),
+    'auction': deepClone(adUnitAuction),
     'adUnit': extractAdUnitCode(args),
     'bidder': extractBidder(args),
     'cpm': args.cpm,
@@ -339,7 +342,7 @@ roxotAdapter.originEnableAnalytics = roxotAdapter.enableAnalytics;
 
 roxotAdapter.enableAnalytics = function (config) {
   if (this.initConfig(config)) {
-    logInfo('Analytics adapter enabled', initOptions);
+    _logInfo('Analytics adapter enabled', initOptions);
     roxotAdapter.originEnableAnalytics(config);
   }
 };
@@ -348,7 +351,7 @@ roxotAdapter.buildUtmTagData = function () {
   let utmTagData = {};
   let utmTagsDetected = false;
   utmTags.forEach(function (utmTagKey) {
-    let utmTagValue = utils.getParameterByName(utmTagKey);
+    let utmTagValue = getParameterByName(utmTagKey);
     if (utmTagValue !== '') {
       utmTagsDetected = true;
     }
@@ -356,11 +359,11 @@ roxotAdapter.buildUtmTagData = function () {
   });
   utmTags.forEach(function (utmTagKey) {
     if (utmTagsDetected) {
-      localStorage.setItem(buildLocalStorageKey(utmTagKey), utmTagData[utmTagKey]);
+      storage.setDataInLocalStorage(buildLocalStorageKey(utmTagKey), utmTagData[utmTagKey]);
       updateUtmTimeout();
     } else {
       if (!isUtmTimeoutExpired()) {
-        utmTagData[utmTagKey] = localStorage.getItem(buildLocalStorageKey(utmTagKey)) ? localStorage.getItem(buildLocalStorageKey(utmTagKey)) : '';
+        utmTagData[utmTagKey] = storage.getDataFromLocalStorage(buildLocalStorageKey(utmTagKey)) ? storage.getDataFromLocalStorage(buildLocalStorageKey(utmTagKey)) : '';
         updateUtmTimeout();
       }
     }
@@ -371,11 +374,11 @@ roxotAdapter.buildUtmTagData = function () {
 roxotAdapter.initConfig = function (config) {
   let isCorrectConfig = true;
   initOptions = {};
-  initOptions.options = utils.deepClone(config.options);
+  initOptions.options = deepClone(config.options);
 
   initOptions.publisherId = initOptions.options.publisherId || (initOptions.options.publisherIds[0]) || null;
   if (!initOptions.publisherId) {
-    logError('"options.publisherId" is empty');
+    _logError('"options.publisherId" is empty');
     isCorrectConfig = false;
   }
 
@@ -404,7 +407,7 @@ function registerEvent(eventType, eventName, data) {
 
   sendEventCache.push(eventData);
 
-  logInfo('Register event', eventData);
+  _logInfo('Register event', eventData);
 
   (typeof initOptions.serverConfig === 'undefined') ? checkEventAfterTimeout() : checkSendEvent();
 }
@@ -424,7 +427,7 @@ function checkSendEvent() {
     let event = sendEventCache.shift();
     let isNeedSend = initOptions.serverConfig[event.eventType] || 0;
     if (Number(isNeedSend) === 0) {
-      logInfo('Skip event ' + event.eventName, event);
+      _logInfo('Skip event ' + event.eventName, event);
       continue;
     }
     sendEvent(event.eventType, event.eventName, event.data);
@@ -440,7 +443,7 @@ function checkEventAfterTimeout() {
 }
 
 function sendEvent(eventType, eventName, data) {
-  let url = '//' + initOptions.server + '/' + eventType + '?publisherId=' + initOptions.publisherId + '&host=' + initOptions.host;
+  let url = 'https://' + initOptions.server + '/' + eventType + '?publisherId=' + initOptions.publisherId + '&host=' + initOptions.host;
   let eventData = {
     'event': eventType,
     'eventName': eventName,
@@ -451,7 +454,7 @@ function sendEvent(eventType, eventName, data) {
   ajax(
     url,
     function () {
-      logInfo(eventName + ' sent', eventData);
+      _logInfo(eventName + ' sent', eventData);
     },
     JSON.stringify(eventData),
     {
@@ -463,7 +466,7 @@ function sendEvent(eventType, eventName, data) {
 }
 
 function loadServerConfig() {
-  let url = '//' + initOptions.configServer + '/c' + '?publisherId=' + initOptions.publisherId + '&host=' + initOptions.host;
+  let url = 'https://' + initOptions.configServer + '/c' + '?publisherId=' + initOptions.publisherId + '&host=' + initOptions.host;
   ajax(
     url,
     {
@@ -487,12 +490,12 @@ function loadServerConfig() {
   );
 }
 
-function logInfo(message, meta) {
-  utils.logInfo(buildLogMessage(message), meta);
+function _logInfo(message, meta) {
+  logInfo(buildLogMessage(message), meta);
 }
 
-function logError(message) {
-  utils.logError(buildLogMessage(message));
+function _logError(message) {
+  logError(buildLogMessage(message));
 }
 
 function buildLogMessage(message) {

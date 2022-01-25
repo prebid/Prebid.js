@@ -7,6 +7,18 @@ Maintainer: grid-tech@themediagrid.com
 # Description
 
 Module that connects to Grid demand source to fetch bids.
+Grid bid adapter supports Banner and Video (instream and outstream).
+
+#Bidder Config
+You can allow writing in localStorage `pbjs.setBidderConfig` for the bidder `grid`
+```
+pbjs.setBidderConfig({
+        bidders: ["grid"],
+        config: {
+            localStorageWriteAllowed: true
+        }
+      })
+```
 
 # Test Parameters
 ```
@@ -19,7 +31,7 @@ Module that connects to Grid demand source to fetch bids.
                        bidder: "grid",
                        params: {
                            uid: '1',
-                           priceType: 'gross' // by default is 'net'
+                           bidFloor: 0.5
                        }
                    }
                ]
@@ -31,10 +43,26 @@ Module that connects to Grid demand source to fetch bids.
                        bidder: "grid",
                        params: {
                            uid: 2,
-                           priceType: 'gross'
+                           keywords: {
+                               brandsafety: ['disaster'],
+                               topic: ['stress', 'fear']
+                           }
                        }
                    }
                ]
-           }
+           },
+           {
+               code: 'test-div',
+               sizes: [[728, 90]],
+               mediaTypes: { video: {} },
+               bids: [
+                   {
+                       bidder: "grid",
+                       params: {
+                           uid: 11
+                       }
+                   }
+               ]
+          }
        ];
 ```
