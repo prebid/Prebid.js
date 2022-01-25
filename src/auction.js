@@ -59,7 +59,7 @@
 
 import {
   flatten, timestamp, adUnitsFilter, deepAccess, getValue, parseUrl, generateUUID,
-  logMessage, bind, logError, logInfo, logWarn, isEmpty, _each, isFn, isEmptyStr, isAllowZeroCpmBidsEnabled
+  logMessage, bind, logError, logInfo, logWarn, isEmpty, _each, isFn, isEmptyStr
 } from './utils.js';
 import { getPriceBucketString } from './cpmBucketManager.js';
 import { getNativeTargeting } from './native.js';
@@ -73,6 +73,7 @@ import includes from 'core-js-pure/features/array/includes.js';
 import { OUTSTREAM } from './video.js';
 import { VIDEO } from './mediaTypes.js';
 import {auctionManager} from './auctionManager.js';
+import {bidderSettings} from './bidderSettings.js';
 
 const { syncUsers } = userSync;
 
@@ -595,7 +596,7 @@ function getPreparedBidForAuction({adUnitCode, bid, auctionId}, {index = auction
 
 function setupBidTargeting(bidObject) {
   let keyValues;
-  const cpmCheck = (isAllowZeroCpmBidsEnabled(bidObject.bidderCode)) ? bidObject.cpm >= 0 : bidObject.cpm > 0;
+  const cpmCheck = (bidderSettings.get(bidObject.bidderCode, 'allowZeroCpmBids') === true) ? bidObject.cpm >= 0 : bidObject.cpm > 0;
   if (bidObject.bidderCode && (cpmCheck || bidObject.dealId)) {
     keyValues = getKeyValueTargetingPairs(bidObject.bidderCode, bidObject);
   }
@@ -642,18 +643,18 @@ export const getPriceGranularity = (bid, {index = auctionManager.index} = {}) =>
  */
 export const getPriceByGranularity = (granularity) => {
   return (bid) => {
-    granularity = granularity || getPriceGranularity(bid);
-    if (granularity === CONSTANTS.GRANULARITY_OPTIONS.AUTO) {
+    const bidGranularity = granularity || getPriceGranularity(bid);
+    if (bidGranularity === CONSTANTS.GRANULARITY_OPTIONS.AUTO) {
       return bid.pbAg;
-    } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.DENSE) {
+    } else if (bidGranularity === CONSTANTS.GRANULARITY_OPTIONS.DENSE) {
       return bid.pbDg;
-    } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.LOW) {
+    } else if (bidGranularity === CONSTANTS.GRANULARITY_OPTIONS.LOW) {
       return bid.pbLg;
-    } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.MEDIUM) {
+    } else if (bidGranularity === CONSTANTS.GRANULARITY_OPTIONS.MEDIUM) {
       return bid.pbMg;
-    } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.HIGH) {
+    } else if (bidGranularity === CONSTANTS.GRANULARITY_OPTIONS.HIGH) {
       return bid.pbHg;
-    } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.CUSTOM) {
+    } else if (bidGranularity === CONSTANTS.GRANULARITY_OPTIONS.CUSTOM) {
       return bid.pbCg;
     }
   }
@@ -669,6 +670,34 @@ export const getAdvertiserDomain = () => {
   }
 }
 
+// factory for key value objs
+function createKeyVal(key, value) {
+  return {
+    key,
+    val: (typeof value === 'function')
+      ? function (bidResponse, bidReq) {
+        return value(bidResponse, bidReq);
+      }
+      : function (bidResponse) {
+        return getValue(bidResponse, value);
+      }
+  };
+}
+
+function defaultAdserverTargeting() {
+  const TARGETING_KEYS = CONSTANTS.TARGETING_KEYS;
+  return [
+    createKeyVal(TARGETING_KEYS.BIDDER, 'bidderCode'),
+    createKeyVal(TARGETING_KEYS.AD_ID, 'adId'),
+    createKeyVal(TARGETING_KEYS.PRICE_BUCKET, getPriceByGranularity()),
+    createKeyVal(TARGETING_KEYS.SIZE, 'size'),
+    createKeyVal(TARGETING_KEYS.DEAL, 'dealId'),
+    createKeyVal(TARGETING_KEYS.SOURCE, 'source'),
+    createKeyVal(TARGETING_KEYS.FORMAT, 'mediaType'),
+    createKeyVal(TARGETING_KEYS.ADOMAIN, getAdvertiserDomain()),
+  ]
+}
+
 /**
  * @param {string} mediaType
  * @param {string} bidderCode
@@ -676,40 +705,16 @@ export const getAdvertiserDomain = () => {
  * @returns {*}
  */
 export function getStandardBidderSettings(mediaType, bidderCode) {
-  // factory for key value objs
-  function createKeyVal(key, value) {
-    return {
-      key,
-      val: (typeof value === 'function')
-        ? function (bidResponse, bidReq) {
-          return value(bidResponse, bidReq);
-        }
-        : function (bidResponse) {
-          return getValue(bidResponse, value);
-        }
-    };
-  }
   const TARGETING_KEYS = CONSTANTS.TARGETING_KEYS;
+  const standardSettings = Object.assign({}, bidderSettings.settingsFor(null));
 
-  let bidderSettings = $$PREBID_GLOBAL$$.bidderSettings;
-  if (!bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD]) {
-    bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD] = {};
-  }
-  if (!bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING]) {
-    bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING] = [
-      createKeyVal(TARGETING_KEYS.BIDDER, 'bidderCode'),
-      createKeyVal(TARGETING_KEYS.AD_ID, 'adId'),
-      createKeyVal(TARGETING_KEYS.PRICE_BUCKET, getPriceByGranularity()),
-      createKeyVal(TARGETING_KEYS.SIZE, 'size'),
-      createKeyVal(TARGETING_KEYS.DEAL, 'dealId'),
-      createKeyVal(TARGETING_KEYS.SOURCE, 'source'),
-      createKeyVal(TARGETING_KEYS.FORMAT, 'mediaType'),
-      createKeyVal(TARGETING_KEYS.ADOMAIN, getAdvertiserDomain()),
-    ]
+  if (!standardSettings[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING]) {
+    standardSettings[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING] = defaultAdserverTargeting();
   }
 
   if (mediaType === 'video') {
-    const adserverTargeting = bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING];
+    const adserverTargeting = standardSettings[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING].slice();
+    standardSettings[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING] = adserverTargeting;
 
     // Adding hb_uuid + hb_cache_id
     [TARGETING_KEYS.UUID, TARGETING_KEYS.CACHE_ID].forEach(targetingKeyVal => {
@@ -719,7 +724,7 @@ export function getStandardBidderSettings(mediaType, bidderCode) {
     });
 
     // Adding hb_cache_host
-    if (config.getConfig('cache.url') && (!bidderCode || deepAccess(bidderSettings, `${bidderCode}.sendStandardTargeting`) !== false)) {
+    if (config.getConfig('cache.url') && (!bidderCode || bidderSettings.get(bidderCode, 'sendStandardTargeting') !== false)) {
       const urlInfo = parseUrl(config.getConfig('cache.url'));
 
       if (typeof find(adserverTargeting, targetingKeyVal => targetingKeyVal.key === TARGETING_KEYS.CACHE_HOST) === 'undefined') {
@@ -730,7 +735,7 @@ export function getStandardBidderSettings(mediaType, bidderCode) {
       }
     }
   }
-  return bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD];
+  return standardSettings;
 }
 
 export function getKeyValueTargetingPairs(bidderCode, custBidObj, {index = auctionManager.index} = {}) {
@@ -739,19 +744,16 @@ export function getKeyValueTargetingPairs(bidderCode, custBidObj, {index = aucti
   }
   const bidRequest = index.getBidRequest(custBidObj);
   var keyValues = {};
-  var bidderSettings = $$PREBID_GLOBAL$$.bidderSettings;
 
   // 1) set the keys from "standard" setting or from prebid defaults
-  if (bidderSettings) {
-    // initialize default if not set
-    const standardSettings = getStandardBidderSettings(custBidObj.mediaType, bidderCode);
-    setKeys(keyValues, standardSettings, custBidObj, bidRequest);
+  // initialize default if not set
+  const standardSettings = getStandardBidderSettings(custBidObj.mediaType, bidderCode);
+  setKeys(keyValues, standardSettings, custBidObj, bidRequest);
 
-    // 2) set keys from specific bidder setting override if they exist
-    if (bidderCode && bidderSettings[bidderCode] && bidderSettings[bidderCode][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING]) {
-      setKeys(keyValues, bidderSettings[bidderCode], custBidObj, bidRequest);
-      custBidObj.sendStandardTargeting = bidderSettings[bidderCode].sendStandardTargeting;
-    }
+  // 2) set keys from specific bidder setting override if they exist
+  if (bidderCode && bidderSettings.getOwn(bidderCode, CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING)) {
+    setKeys(keyValues, bidderSettings.ownSettingsFor(bidderCode), custBidObj, bidRequest);
+    custBidObj.sendStandardTargeting = bidderSettings.get(bidderCode, 'sendStandardTargeting');
   }
 
   // set native key value targeting
@@ -803,19 +805,13 @@ function setKeys(keyValues, bidderSettings, custBidObj, bidReq) {
 export function adjustBids(bid) {
   let code = bid.bidderCode;
   let bidPriceAdjusted = bid.cpm;
-  let bidCpmAdjustment;
-  if ($$PREBID_GLOBAL$$.bidderSettings) {
-    if (code && $$PREBID_GLOBAL$$.bidderSettings[code] && typeof $$PREBID_GLOBAL$$.bidderSettings[code].bidCpmAdjustment === 'function') {
-      bidCpmAdjustment = $$PREBID_GLOBAL$$.bidderSettings[code].bidCpmAdjustment;
-    } else if ($$PREBID_GLOBAL$$.bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD] && typeof $$PREBID_GLOBAL$$.bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD].bidCpmAdjustment === 'function') {
-      bidCpmAdjustment = $$PREBID_GLOBAL$$.bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD].bidCpmAdjustment;
-    }
-    if (bidCpmAdjustment) {
-      try {
-        bidPriceAdjusted = bidCpmAdjustment(bid.cpm, Object.assign({}, bid));
-      } catch (e) {
-        logError('Error during bid adjustment', 'bidmanager.js', e);
-      }
+  const bidCpmAdjustment = bidderSettings.get(code || null, 'bidCpmAdjustment');
+
+  if (bidCpmAdjustment && typeof bidCpmAdjustment === 'function') {
+    try {
+      bidPriceAdjusted = bidCpmAdjustment(bid.cpm, Object.assign({}, bid));
+    } catch (e) {
+      logError('Error during bid adjustment', 'bidmanager.js', e);
     }
   }
 

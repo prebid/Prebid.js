@@ -271,7 +271,7 @@ describe('OguryBidAdapter', function () {
       },
       ext: {
         prebidversion: '$prebid.version$',
-        adapterversion: '1.2.8'
+        adapterversion: '1.2.9'
       }
     };
 
@@ -300,7 +300,59 @@ describe('OguryBidAdapter', function () {
         ...expectedRequestObject,
         regs: {
           ext: {
-            gdpr: 1
+            gdpr: 0
+          },
+        },
+        user: {
+          ext: {
+            consent: ''
+          },
+        }
+      };
+
+      const validBidRequests = bidRequests
+
+      const request = spec.buildRequests(validBidRequests, bidderRequestWithoutGdpr);
+      expect(request.data).to.deep.equal(expectedRequestObjectWithoutGdpr);
+      expect(request.data.regs.ext.gdpr).to.be.a('number');
+    });
+
+    it('should not add gdpr infos if gdprConsent is undefined', () => {
+      const bidderRequestWithoutGdpr = {
+        ...bidderRequest,
+        gdprConsent: undefined,
+      }
+      const expectedRequestObjectWithoutGdpr = {
+        ...expectedRequestObject,
+        regs: {
+          ext: {
+            gdpr: 0
+          },
+        },
+        user: {
+          ext: {
+            consent: ''
+          },
+        }
+      };
+
+      const validBidRequests = bidRequests
+
+      const request = spec.buildRequests(validBidRequests, bidderRequestWithoutGdpr);
+      expect(request.data).to.deep.equal(expectedRequestObjectWithoutGdpr);
+      expect(request.data.regs.ext.gdpr).to.be.a('number');
+    });
+
+    it('should not add tcString and turn off gdpr-applies if consentString and gdprApplies are undefined', () => {
+      const bidderRequestWithoutGdpr = {
+        ...bidderRequest,
+        gdprConsent: { consentString: undefined, gdprApplies: undefined },
+      }
+      const expectedRequestObjectWithoutGdpr = {
+        ...expectedRequestObject,
+        regs: {
+          ext: {
+            gdpr: 0
           },
         },
         user: {
@@ -430,7 +482,7 @@ describe('OguryBidAdapter', function () {
           advertiserDomains: openRtbBidResponse.body.seatbid[0].bid[0].adomain
         },
         nurl: openRtbBidResponse.body.seatbid[0].bid[0].nurl,
-        adapterVersion: '1.2.8',
+        adapterVersion: '1.2.9',
         prebidVersion: '$prebid.version$'
       }, {
         requestId: openRtbBidResponse.body.seatbid[0].bid[1].impid,
@@ -447,7 +499,7 @@ describe('OguryBidAdapter', function () {
           advertiserDomains: openRtbBidResponse.body.seatbid[0].bid[1].adomain
         },
         nurl: openRtbBidResponse.body.seatbid[0].bid[1].nurl,
-        adapterVersion: '1.2.8',
+        adapterVersion: '1.2.9',
         prebidVersion: '$prebid.version$'
       }]
 
@@ -491,6 +543,11 @@ describe('OguryBidAdapter', function () {
 
     it('Should not create nurl request if bid does not contains nurl', function() {
       spec.onBidWon({})
+      expect(requests.length).to.equal(0);
+    })
+
+    it('Should not create nurl request if bid contains undefined nurl', function() {
+      spec.onBidWon({ nurl: undefined })
       expect(requests.length).to.equal(0);
     })
 
