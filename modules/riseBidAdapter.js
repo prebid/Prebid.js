@@ -323,7 +323,7 @@ function generateGeneralParams(generalObject, bidderRequest) {
   const {bidderCode} = bidderRequest;
   const generalBidParams = generalObject.params;
 
-  generalParams = {
+  const generalParams = {
     wrapper_type: 'prebidjs',
     wrapper_vendor: '$$PREBID_GLOBAL$$',
     wrapper_version: '$prebid.version$',
@@ -373,7 +373,7 @@ function generateGeneralParams(generalObject, bidderRequest) {
   }
 
   if (generalBidParams.ifa) {
-    generalParams.ifa = params.ifa;
+    generalParams.ifa = generalBidParams.ifa;
   }
 
   if (generalObject.schain) {
