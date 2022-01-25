@@ -389,7 +389,7 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
     }
     const timeRemaining = auctionInstance.getAuctionStart() + timeout - Date.now();
     const wait = ready[bidderRequest.bidderRequestId];
-    const orphanWait = ready[null]; // also wait for "orphan" responses that are not associated with any request
+    const orphanWait = ready['']; // also wait for "orphan" responses that are not associated with any request
     if ((wait != null || orphanWait != null) && timeRemaining > 0) {
       Promise.race([
         new Promise((resolve) => setTimeout(resolve, timeRemaining)),
@@ -454,7 +454,7 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
   return {
     addBidResponse: function (adUnit, bid) {
       const bidderRequest = index.getBidderRequest(bid);
-      waitFor((bidderRequest && bidderRequest.bidderRequestId) || null, addBidResponse.call({
+      waitFor((bidderRequest && bidderRequest.bidderRequestId) || '', addBidResponse.call({
         dispatch: handleBidResponse,
       }, adUnit, bid));
     },
