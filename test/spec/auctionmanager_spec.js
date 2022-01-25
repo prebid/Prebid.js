@@ -1424,7 +1424,6 @@ describe('auctionmanager.js', function () {
         'all fail': ['reject', 'reject']
       }).forEach(([test, results]) => {
         describe(`(and ${test})`, () => {
-
           it('should wait for them to complete before calling auctionDone', () => {
             invokeCallbacks();
             return delay().then(() => {
