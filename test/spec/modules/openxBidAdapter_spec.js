@@ -1077,7 +1077,7 @@ describe('OpenxAdapter', function () {
         britepoolid: '1111-britepoolid',
         criteoId: '1111-criteoId',
         fabrickId: '1111-fabrickid',
-        hadronId: '1111-hadronid',
+        haloId: '1111-haloid',
         id5id: {uid: '1111-id5id'},
         idl_env: '1111-idl_env',
         IDP: '1111-zeotap-idplusid',

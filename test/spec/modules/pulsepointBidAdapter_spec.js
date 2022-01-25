@@ -660,8 +660,8 @@ describe('PulsePoint Adapter Tests', function () {
       lipb: {
         lipbid: 'liveintent_id123'
       },
-      hadronId: {
-        hadronId: 'hadron_user1'
+      haloId: {
+        haloId: 'halo_user1'
       },
       lotamePanoramaId: 'lotame_user2',
       merkleId: 'merkle_user3',
@@ -694,7 +694,7 @@ describe('PulsePoint Adapter Tests', function () {
     userVerify(ortbRequest.user.ext.eids[3], 'id5-sync.com', 'id5id_234');
     userVerify(ortbRequest.user.ext.eids[4], 'parrable.com', 'parrable_id234');
     userVerify(ortbRequest.user.ext.eids[5], 'neustar.biz', 'fabrick_user4');
-    userVerify(ortbRequest.user.ext.eids[6], 'audigent.com', 'hadron_user1');
+    userVerify(ortbRequest.user.ext.eids[6], 'audigent.com', 'halo_user1');
     userVerify(ortbRequest.user.ext.eids[7], 'merkleinc.com', 'merkle_user3');
     userVerify(ortbRequest.user.ext.eids[8], 'crwdcntrl.net', 'lotame_user2');
     userVerify(ortbRequest.user.ext.eids[9], 'verizonmedia.com', 'connect_user5');
