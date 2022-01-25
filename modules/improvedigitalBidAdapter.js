@@ -1,4 +1,4 @@
-import { deepSetValue, logError, _each, getBidRequest, isNumber, isArray, deepAccess, isFn, isPlainObject, logWarn, getBidIdParameter, getUniqueIdentifierStr, isEmpty, isInteger } from '../src/utils.js';
+import { deepSetValue, logError, _each, getBidRequest, isNumber, isArray, deepAccess, isFn, isPlainObject, logWarn, getBidIdParameter, getUniqueIdentifierStr, isEmpty, isInteger, isStr } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
@@ -11,7 +11,7 @@ const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js
 const VIDEO_TARGETING = ['skip', 'skipmin', 'skipafter'];
 
 export const spec = {
-  version: '7.5.0',
+  version: '7.6.0',
   code: BIDDER_CODE,
   gvlid: 253,
   aliases: ['id'],
@@ -73,7 +73,24 @@ export const spec = {
       requestParameters.referrer = bidderRequest.refererInfo.referer;
     }
 
+    // Adding first party data
+    const site = config.getConfig('ortb2.site');
+    if (site) {
+      const pageCategory = site.pagecat || site.cat;
+      if (pageCategory && isArray(pageCategory)) {
+        requestParameters.pagecat = pageCategory.filter((category) => {
+          return category && isStr(category)
+        });
+      }
+      const genre = deepAccess(site, 'content.genre');
+      if (genre && isStr(genre)) {
+        requestParameters.genre = genre;
+      }
+    }
+    // End of adding first party data
+
     requestParameters.schain = bidRequests[0].schain;
+    requestParameters.coppa = config.getConfig('coppa') === true;
 
     if (bidRequests[0].userId) {
       const eids = createEidsArray(bidRequests[0].userId);
@@ -621,6 +638,12 @@ export function ImproveDigitalAdServerJSClient(endPoint) {
     if (requestParameters.schain) {
       impressionBidRequestObject.schain = requestParameters.schain;
     }
+    if (requestParameters.pagecat) {
+      impressionBidRequestObject.pagecat = requestParameters.pagecat;
+    }
+    if (requestParameters.genre) {
+      impressionBidRequestObject.genre = requestParameters.genre;
+    }
     if (requestParameters.user) {
       impressionBidRequestObject.user = requestParameters.user;
     }
@@ -628,6 +651,10 @@ export function ImproveDigitalAdServerJSClient(endPoint) {
       for (let prop in extraRequestParameters) {
         impressionBidRequestObject[prop] = extraRequestParameters[prop];
       }
+    }
+
+    if (requestParameters.coppa) {
+      impressionBidRequestObject.coppa = 1;
     }
 
     return impressionBidRequestObject;

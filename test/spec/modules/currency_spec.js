@@ -9,7 +9,8 @@ import {
   setConfig,
   addBidResponseHook,
   currencySupportEnabled,
-  currencyRates
+  currencyRates,
+  ready
 } from 'modules/currency.js';
 import {createBid} from '../../../src/bidfactory.js';
 import CONSTANTS from '../../../src/constants.json';
@@ -30,6 +31,7 @@ describe('currency', function () {
 
   beforeEach(function () {
     fakeCurrencyFileServer = sinon.fakeServer.create();
+    ready.reset();
   });
 
   afterEach(function () {
@@ -292,7 +294,7 @@ describe('currency', function () {
   });
 
   describe('currency.addBidResponseDecorator bidResponseQueue', function () {
-    it('not run until currency rates file is loaded', function () {
+    it('not run until currency rates file is loaded', function (done) {
       setConfig({});
 
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
@@ -302,14 +304,27 @@ describe('currency', function () {
       setConfig({ 'adServerCurrency': 'JPY' });
 
       var marker = false;
-      addBidResponseHook(function() {
+      let promiseResolved = false;
+      addBidResponseHook(Object.assign(function() {
         marker = true;
-      }, 'elementId', bid);
+      }, {
+        bail: function (promise) {
+          promise.then(() => promiseResolved = true);
+        }
+      }), 'elementId', bid);
 
       expect(marker).to.equal(false);
 
-      fakeCurrencyFileServer.respond();
-      expect(marker).to.equal(true);
+      setTimeout(() => {
+        expect(promiseResolved).to.be.false;
+        fakeCurrencyFileServer.respond();
+
+        setTimeout(() => {
+          expect(marker).to.equal(true);
+          expect(promiseResolved).to.be.true;
+          done();
+        });
+      });
     });
   });
 

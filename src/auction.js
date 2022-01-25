@@ -250,11 +250,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
         events.emit(CONSTANTS.EVENTS.AUCTION_INIT, getProperties());
 
         let callbacks = auctionCallbacks(auctionDone, this);
-        adapterManager.callBids(_adUnits, bidRequests, function(...args) {
-          addBidResponse.apply({
-            dispatch: callbacks.addBidResponse
-          }, args)
-        }, callbacks.adapterDone, {
+        adapterManager.callBids(_adUnits, bidRequests, callbacks.addBidResponse, callbacks.adapterDone, {
           request(source, origin) {
             increment(outstandingRequests, origin);
             increment(requests, source);
@@ -344,10 +340,10 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
     addWinningBid,
     setBidTargeting,
     getWinningBids: () => _winningBids,
+    getAuctionStart: () => _auctionStart,
     getTimeout: () => _timeout,
     getAuctionId: () => _auctionId,
     getAuctionStatus: () => _auctionStatus,
-    getAuctionStart: () => _auctionStart,
     getAdUnits: () => _adUnits,
     getAdUnitCodes: () => _adUnitCodes,
     getBidRequests: () => _bidderRequests,
@@ -357,7 +353,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   }
 }
 
-export const addBidResponse = hook('async', function(adUnitCode, bid) {
+export const addBidResponse = hook('sync', function(adUnitCode, bid) {
   this.dispatch.call(null, adUnitCode, bid);
 }, 'addBidResponse');
 
@@ -371,11 +367,37 @@ export const bidsBackCallback = hook('async', function (adUnits, callback) {
   }
 }, 'bidsBackCallback');
 
-export function auctionCallbacks(auctionDone, auctionInstance) {
+export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionManager.index} = {}) {
   let outstandingBidsAdded = 0;
   let allAdapterCalledDone = false;
   let bidderRequestsDone = new Set();
   let bidResponseMap = {};
+  const ready = {};
+
+  function waitFor(requestId, result) {
+    if (ready[requestId] == null) {
+      ready[requestId] = Promise.resolve();
+    }
+    ready[requestId] = ready[requestId].then(() => Promise.resolve(result).catch(() => {}))
+  }
+
+  function guard(bidderRequest, fn) {
+    let timeout = bidderRequest.timeout;
+    if (timeout == null || timeout > auctionInstance.getTimeout()) {
+      timeout = auctionInstance.getTimeout();
+    }
+    const timeRemaining = auctionInstance.getAuctionStart() + timeout - Date.now();
+    const wait = ready[bidderRequest.bidderRequestId];
+    const orphanWait = ready[null]; // also wait for "orphan" responses that are not associated with any request
+    if ((wait != null || orphanWait != null) && timeRemaining > 0) {
+      Promise.race([
+        new Promise((resolve) => setTimeout(resolve, timeRemaining)),
+        Promise.resolve(orphanWait).then(() => wait)
+      ]).then(fn);
+    } else {
+      fn();
+    }
+  }
 
   function afterBidAdded() {
     outstandingBidsAdded--;
@@ -384,7 +406,7 @@ export function auctionCallbacks(auctionDone, auctionInstance) {
     }
   }
 
-  function addBidResponse(adUnitCode, bid) {
+  function handleBidResponse(adUnitCode, bid) {
     bidResponseMap[bid.requestId] = true;
 
     outstandingBidsAdded++;
@@ -429,8 +451,15 @@ export function auctionCallbacks(auctionDone, auctionInstance) {
   }
 
   return {
-    addBidResponse,
-    adapterDone
+    addBidResponse: function (adUnit, bid) {
+      const bidderRequest = index.getBidderRequest(bid);
+      waitFor((bidderRequest && bidderRequest.bidderRequestId) || null, addBidResponse.call({
+        dispatch: handleBidResponse,
+      }, adUnit, bid));
+    },
+    adapterDone: function () {
+      guard(this, adapterDone.bind(this))
+    }
   }
 }
 

@@ -10,6 +10,7 @@ const DEFAULT_TIMEOUT = 1000;
 const BID_HOST = 'https://mweb-hb.presage.io/api/header-bidding-request';
 const TIMEOUT_MONITORING_HOST = 'https://ms-ads-monitoring-events.presage.io';
 const MS_COOKIE_SYNC_DOMAIN = 'https://ms-cookie-sync.presage.io';
+const ADAPTER_VERSION = '1.2.8';
 
 function isBidRequestValid(bid) {
   const adUnitSizes = getAdUnitSizes(bid);
@@ -55,7 +56,11 @@ function buildRequests(validBidRequests, bidderRequest) {
         consent: ''
       }
     },
-    imp: []
+    imp: [],
+    ext: {
+      adapterversion: ADAPTER_VERSION,
+      prebidversion: '$prebid.version$'
+    }
   };
 
   if (bidderRequest.hasOwnProperty('gdprConsent') &&
@@ -123,7 +128,9 @@ function interpretResponse(openRtbBidResponse) {
         meta: {
           advertiserDomains: bid.adomain
         },
-        nurl: bid.nurl
+        nurl: bid.nurl,
+        adapterVersion: ADAPTER_VERSION,
+        prebidVersion: '$prebid.version$'
       };
 
       bidResponse.ad = bid.adm;
@@ -163,7 +170,7 @@ function onBidWon(bid) {
 }
 
 function onTimeout(timeoutData) {
-  ajax(`${TIMEOUT_MONITORING_HOST}/bid_timeout`, null, JSON.stringify(timeoutData[0]), {
+  ajax(`${TIMEOUT_MONITORING_HOST}/bid_timeout`, null, JSON.stringify({...timeoutData[0], location: window.location.href}), {
     method: 'POST',
     contentType: 'application/json'
   });

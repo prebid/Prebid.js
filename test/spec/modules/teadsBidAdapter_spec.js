@@ -614,15 +614,13 @@ describe('teadsBidAdapter', () => {
         }
       ];
 
-      it('should add gpid if ortb2Imp.ext.data.pbadslot is present and is non empty (and ortb2Imp.ext.data.adserver.adslot is not present)', function () {
+      it('should add gpid if ortb2Imp.ext.gpid is present and is non empty', function () {
         const updatedBidRequests = bidRequests.map(function(bidRequest, index) {
           return {
             ...bidRequest,
             ortb2Imp: {
               ext: {
-                data: {
-                  pbadslot: '1111/home-left-' + index
-                }
+                gpid: '1111/home-left-' + index
               }
             }
           };
@@ -635,41 +633,12 @@ describe('teadsBidAdapter', () => {
         expect(payload.data[1].gpid).to.equal('1111/home-left-1');
       });
 
-      it('should add gpid if ortb2Imp.ext.data.pbadslot is present and is non empty (even if ortb2Imp.ext.data.adserver.adslot is present and is non empty too)', function () {
-        const updatedBidRequests = bidRequests.map(function(bidRequest, index) {
-          return {
-            ...bidRequest,
-            ortb2Imp: {
-              ext: {
-                data: {
-                  pbadslot: '1111/home-left-' + index,
-                  adserver: {
-                    adslot: '1111/home-left/div-' + index
-                  }
-                }
-              }
-            }
-          };
-        }
-        );
-        const request = spec.buildRequests(updatedBidRequests, bidderResquestDefault);
-        const payload = JSON.parse(request.data);
-
-        expect(payload.data[0].gpid).to.equal('1111/home-left-0');
-        expect(payload.data[1].gpid).to.equal('1111/home-left-1');
-      });
-
-      it('should not add gpid if both ortb2Imp.ext.data.pbadslot and ortb2Imp.ext.data.adserver.adslot are present but empty', function () {
+      it('should not add gpid if ortb2Imp.ext.gpid is present but empty', function () {
         const updatedBidRequests = bidRequests.map(bidRequest => ({
           ...bidRequest,
           ortb2Imp: {
             ext: {
-              data: {
-                pbadslot: '',
-                adserver: {
-                  adslot: ''
-                }
-              }
+              gpid: ''
             }
           }
         }));
@@ -682,35 +651,21 @@ describe('teadsBidAdapter', () => {
         });
       });
 
-      it('should not add gpid if both ortb2Imp.ext.data.pbadslot and ortb2Imp.ext.data.adserver.adslot are not present', function () {
-        const request = spec.buildRequests(bidRequests, bidderResquestDefault);
+      it('should not add gpid if ortb2Imp.ext.gpid is not present', function () {
+        const updatedBidRequests = bidRequests.map(bidRequest => ({
+          ...bidRequest,
+          ortb2Imp: {
+            ext: {
+            }
+          }
+        }));
+
+        const request = spec.buildRequests(updatedBidRequests, bidderResquestDefault);
         const payload = JSON.parse(request.data);
 
         return payload.data.forEach(bid => {
           expect(bid).not.to.have.property('gpid');
         });
-      });
-
-      it('should add gpid if ortb2Imp.ext.data.pbadslot is not present but ortb2Imp.ext.data.adserver.adslot is present and is non empty', function () {
-        const updatedBidRequests = bidRequests.map(function(bidRequest, index) {
-          return {
-            ...bidRequest,
-            ortb2Imp: {
-              ext: {
-                data: {
-                  adserver: {
-                    adslot: '1111/home-left-' + index
-                  }
-                }
-              }
-            }
-          };
-        });
-        const request = spec.buildRequests(updatedBidRequests, bidderResquestDefault);
-        const payload = JSON.parse(request.data);
-
-        expect(payload.data[0].gpid).to.equal('1111/home-left-0');
-        expect(payload.data[1].gpid).to.equal('1111/home-left-1');
       });
     });
 
