@@ -20,6 +20,7 @@ const SUPPORTED_USER_ID_SOURCES = [
   'verizonmedia.com', // Verizon Media ConnectID
   'pubcid.org' // PubCommon ID
 ];
+const DEFAULT_MAX_TTL = 420; // 7 minutes
 export const spec = {
   code: 'synacormedia',
   supportedMediaTypes: [ BANNER, VIDEO ],
@@ -248,6 +249,19 @@ export const spec = {
               }
             });
           }
+
+          let maxTtl = DEFAULT_MAX_TTL;
+          if (bid.ext && bid.ext['imds.tv'] && bid.ext['imds.tv'].ttl) {
+            const bidTtlMax = parseInt(bid.ext['imds.tv'].ttl, 10);
+            maxTtl = !isNaN(bidTtlMax) && bidTtlMax > 0 ? bidTtlMax : DEFAULT_MAX_TTL;
+          }
+
+          let ttl = maxTtl;
+          if (bid.exp) {
+            const bidTtl = parseInt(bid.exp, 10);
+            ttl = !isNaN(bidTtl) && bidTtl > 0 ? Math.min(bidTtl, maxTtl) : maxTtl;
+          }
+
           const bidObj = {
             requestId: impid,
             cpm: parseFloat(bid.price),
@@ -258,7 +272,7 @@ export const spec = {
             netRevenue: true,
             mediaType: isVideo ? VIDEO : BANNER,
             ad: creative,
-            ttl: 60
+            ttl,
           };
 
           if (bid.adomain != undefined || bid.adomain != null) {
