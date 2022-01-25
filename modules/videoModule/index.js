@@ -1,11 +1,12 @@
 import { config } from '../../src/config.js';
 import events from '../../src/events.js';
-import { allVideoEvents } from './constants/events.js';
+import {allVideoEvents, AUCTION_AD_LOAD_ATTEMPT } from './constants/events.js';
 import CONSTANTS from '../../src/constants.json';
 import { videoCoreFactory } from './coreVideo.js';
 import { coreAdServerFactory } from './adServer.js';
 import find from 'core-js-pure/features/array/find.js';
 import { vastXmlEditorFactory } from './shared/vastXmlEditor.js';
+
 
 events.addEvents(allVideoEvents);
 
@@ -76,15 +77,15 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     const videoConfig = adUnit.video;
     const divId = videoConfig.divId;
     const adServerConfig = videoConfig.adServer;
-    let adTagUrl;
+    let adUrl;
     if (adServerConfig) {
-      adTagUrl = adServerCore.getAdTagUrl(adServerConfig.vendorCode, adUnit, adServerConfig.baseAdTagUrl);
+      adUrl = adServerCore.getAdTagUrl(adServerConfig.vendorCode, adUnit, adServerConfig.baseAdTagUrl);
     }
 
     const adUnitCode = adUnit.code;
     const options = { adUnitCode };
-    if (adTagUrl) {
-      videoCore.setAdTagUrl(adTagUrl, divId, options);
+    if (adUrl) {
+      loadAdTag(adUrl, divId, options);
       return;
     }
 
@@ -94,9 +95,17 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
       return;
     }
 
-    adTagUrl = highestBid.vastUrl;
+    adUrl = highestBid.vastUrl;
     options.adXml = highestBid.vastXml;
-    videoCore.setAdTagUrl(adTagUrl, divId, options);
+    options.winner = highestBid.bidder;
+    loadAdTag(adUrl, divId, options);
+  }
+
+  // options: adXml, winner, adUnitCode,
+  function loadAdTag(adUrl, divId, options) {
+    const payload = Object.assign({ adUrl }, options);
+    pbEvents.emit(AUCTION_AD_LOAD_ATTEMPT, payload);
+    videoCore.setAdTagUrl(adUrl, divId, options);
   }
 
   function addTrackingNodesToVastXml(bid, trackingConfig) {
