@@ -39,13 +39,13 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     const bidsArray = [];
     const combinedRequestsObject = {};
-    
+
     // use data from the first bid, to create the general params for all bids
     const generalObject = validBidRequests[0];
-    const testMode = generalObject.params.testMode;;
-    
+    const testMode = generalObject.params.testMode;
+
     combinedRequestsObject.params = generateGeneralParams(generalObject, bidderRequest);
-    
+
     if (validBidRequests.length) {
       validBidRequests.forEach(bid => {
         bidsArray.push(generateBidParameters(bid, bidderRequest));
@@ -83,7 +83,7 @@ export const spec = {
         } else if (adUnit.mediaType === BANNER) {
           bidResponse.ad = adUnit.ad;
         }
-        
+
         if (adUnit.adomain && adUnit.adomain.length) {
           bidResponse.meta.advertiserDomains = adUnit.adomain;
         }
@@ -91,7 +91,7 @@ export const spec = {
         bidResponses.push(bidResponse);
       });
     }
-    
+
     return bidResponses;
   },
   getUserSyncs: function(syncOptions, serverResponses) {
@@ -142,7 +142,7 @@ function getFloor(bid, mediaType) {
  * @returns {Array}
  */
 function getSizesArray(bid, mediaType) {
-  const sizesArray = []
+  let sizesArray = []
 
   if (deepAccess(bid, `mediaTypes.${mediaType}.sizes`)) {
     sizesArray = bid.mediaTypes[mediaType].sizes;
@@ -249,8 +249,8 @@ function getDeviceType(ua) {
 
 /**
  * Generate bid specific parameters
- * @param {bid} bid 
- * @param {bidderRequest} bidderRequest 
+ * @param {bid} bid
+ * @param {bidderRequest} bidderRequest
  * @returns {Object} bid specific params object
  */
 function generateBidParameters(bid, bidderRequest) {
@@ -258,18 +258,18 @@ function generateBidParameters(bid, bidderRequest) {
   const mediaType = isBanner(bid) ? BANNER : VIDEO;
   const timeout = config.getConfig('bidderTimeout');
   const sizesArray = getSizesArray(bid, mediaType);
-  
+
   const bidObject = {
     mediaType,
     ad_unit_code: getBidIdParameter('adUnitCode', bid),
     tmax: timeout,
     sizes: sizesArray,
-    floor_price: Math.max(getFloor(bid, mediaType), params.floorPrice),   
+    floor_price: Math.max(getFloor(bid, mediaType), params.floorPrice),
     bid_id: getBidIdParameter('bidId', bid),
     bidder_request_id: getBidIdParameter('bidderRequestId', bid),
     transaction_id: getBidIdParameter('transactionId', bid),
   };
-  
+
   // fix floor price in case of NAN
   if (isNaN(bidObject.floorPrice)) {
     bidObject.floorPrice = 0;
@@ -289,11 +289,11 @@ function generateBidParameters(bid, bidderRequest) {
   }
   const minDuration = deepAccess(bid, `mediaTypes.${mediaType}.minduration`);
   if (minDuration) {
-    bidObject.min_duration = minduration;
+    bidObject.min_duration = minDuration;
   }
   const maxDuration = deepAccess(bid, `mediaTypes.${mediaType}.maxduration`);
   if (maxDuration) {
-    bidObject.max_duration = maxduration;
+    bidObject.max_duration = maxDuration;
   }
   const skip = deepAccess(bid, `mediaTypes.${mediaType}.skip`);
   if (skip) {
@@ -313,15 +313,15 @@ function isBanner(bid) {
 
 /**
  * Generate params that are common between all bids
- * @param {single bid object} generalObject 
- * @param {bidderRequest} bidderRequest 
+ * @param {single bid object} generalObject
+ * @param {bidderRequest} bidderRequest
  * @returns {object} the common params object
  */
 function generateGeneralParams(generalObject, bidderRequest) {
   const domain = window.location.hostname;
   const {syncEnabled, filterSettings} = config.getConfig('userSync') || {};
   const {bidderCode} = bidderRequest;
-  const generalParams = generalObject.params;
+  const generalBidParams = generalObject.params;
 
   generalParams = {
     wrapper_type: 'prebidjs',
@@ -329,7 +329,7 @@ function generateGeneralParams(generalObject, bidderRequest) {
     wrapper_version: '$prebid.version$',
     adapter_version: ADAPTER_VERSION,
     auction_start: timestamp(),
-    publisher_id: generalParams.org,
+    publisher_id: generalBidParams.org,
     publisher_name: domain,
     site_domain: domain,
     dnt: (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0,
@@ -351,9 +351,9 @@ function generateGeneralParams(generalObject, bidderRequest) {
     generalParams.user_metadata = JSON.stringify(ortb2Metadata.user);
   }
 
-  const placement_id = generalParams.placementId || deepAccess(generalObject, 'mediaTypes.banner.name');
-  if (placement_id) {
-    generalParams.placement_id = placement_id;
+  const placementId = generalBidParams.placementId || deepAccess(generalObject, 'mediaTypes.banner.name');
+  if (placementId) {
+    generalParams.placement_id = placementId;
   }
 
   if (syncEnabled) {
@@ -372,7 +372,7 @@ function generateGeneralParams(generalObject, bidderRequest) {
     generalParams.gdpr_consent = bidderRequest.gdprConsent.consentString;
   }
 
-  if (generalParams.ifa) {
+  if (generalBidParams.ifa) {
     generalParams.ifa = params.ifa;
   }
 
