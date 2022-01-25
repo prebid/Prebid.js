@@ -15,6 +15,7 @@ import {emitAdRenderFail, emitAdRenderSucceeded} from './adRendering.js';
 
 const BID_WON = constants.EVENTS.BID_WON;
 const STALE_RENDER = constants.EVENTS.STALE_RENDER;
+const WON_AD_IDS = new Set();
 
 const HANDLER_MAP = {
   'Prebid Request': handleRenderRequest,
@@ -113,17 +114,19 @@ function handleNativeRequest(reply, data, adObject) {
     logError(`Cannot find ad '${data.adId}' for x-origin event request`);
     return;
   }
+
+  if (!WON_AD_IDS.has(adObject.adId)) {
+    WON_AD_IDS.add(adObject.adId);
+    auctionManager.addWinningBid(adObject);
+    events.emit(BID_WON, adObject);
+  }
+
   switch (data.action) {
     case 'assetRequest':
       reply(getAssetMessage(data, adObject));
       break;
     case 'allAssetRequest':
       reply(getAllAssetsMessage(data, adObject));
-      // if there is an ortb object inside native, puc won't send postMessage to trigger impression tracker, in that case marking bid as winning
-      if (deepAccess(adObject, 'native.ortb')) {
-        auctionManager.addWinningBid(adObject);
-        events.emit(BID_WON, adObject);
-      }
       break;
     case 'resizeNativeHeight':
       adObject.height = data.height;
@@ -131,12 +134,7 @@ function handleNativeRequest(reply, data, adObject) {
       resizeRemoteCreative(adObject);
       break;
     default:
-      const trackerType = fireNativeTrackers(data, adObject);
-      if (trackerType === 'click') {
-        return;
-      }
-      auctionManager.addWinningBid(adObject);
-      events.emit(BID_WON, adObject);
+      fireNativeTrackers(data, adObject);
   }
 }
 
