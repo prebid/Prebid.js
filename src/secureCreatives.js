@@ -119,6 +119,11 @@ function handleNativeRequest(reply, data, adObject) {
       break;
     case 'allAssetRequest':
       reply(getAllAssetsMessage(data, adObject));
+      // if there is an ortb object inside native, puc won't send postMessage to trigger impression tracker, in that case marking bid as winning
+      if (deepAccess(adObject, 'native.ortb')) {
+        auctionManager.addWinningBid(adObject);
+        events.emit(BID_WON, adObject);
+      }
       break;
     case 'resizeNativeHeight':
       adObject.height = data.height;
