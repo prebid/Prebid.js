@@ -1,4 +1,4 @@
-import { deepSetValue, logError, _each, getBidRequest, isNumber, isArray, deepAccess, isFn, isPlainObject, logWarn, getBidIdParameter, getUniqueIdentifierStr, isEmpty, isInteger, isStr } from '../src/utils.js';
+import { deepSetValue, logError, _each, getBidRequest, isNumber, isArray, deepAccess, isFn, isPlainObject, logWarn, getBidIdParameter, getUniqueIdentifierStr, isEmpty, isInteger, isStr, mergeDeep } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
@@ -9,6 +9,70 @@ import includes from 'core-js-pure/features/array/includes.js';
 const BIDDER_CODE = 'improvedigital';
 const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 const VIDEO_TARGETING = ['skip', 'skipmin', 'skipafter'];
+
+class Razr {
+  static addBidData(data) {
+    const {bid, bidRequest} = data || {};
+
+    if (this.isValidBid(bid)) {
+      const rendererConfig = mergeDeep(
+        {},
+        config.getConfig('improvedigital.rendererConfig'),
+        deepAccess(bidRequest, 'params.rendererConfig')
+      );
+
+      this.bids = this.bids || {};
+      this.bids[bid.requestId] = {
+        ...data,
+        adm: bid.ad,
+        config: rendererConfig
+      };
+
+      bid.ad = `<script>window.top.postMessage({razrBidId: "${bid.requestId}"}, "*");</script>`;
+      this.addListenerOnce();
+    }
+  }
+
+  static isValidBid(bid) {
+    return bid && /razr:\\?\/\\?\//.test(bid.ad);
+  }
+
+  static render(bidId, event) {
+    const ns = window.razr = window.razr || {};
+    ns.queue = ns.queue || [];
+
+    ns.queue.push({
+      ...this.bids[bidId],
+      type: 'prebid',
+      event
+    });
+
+    if (!this.loaded) {
+      const s = document.createElement('script');
+      s.type = 'text/javascript';
+      s.async = true;
+      s.src = 'https://razr.improvedigital.com/renderer.js';
+
+      const x = document.getElementsByTagName('script')[0];
+      x.parentNode.insertBefore(s, x);
+
+      this.loaded = true;
+    }
+  }
+
+  static addListenerOnce() {
+    if (!this.listening) {
+      window.addEventListener('message', event => {
+        const bidId = deepAccess(event, 'data.razrBidId');
+        if (bidId) {
+          this.render(bidId, event);
+        }
+      });
+
+      this.listening = true;
+    }
+  }
+}
 
 export const spec = {
   version: '7.6.0',
@@ -196,6 +260,11 @@ export const spec = {
           advertiserDomains: bidObject.adomain
         };
       }
+
+      Razr.addBidData({
+        bidRequest,
+        bid
+      });
 
       bids.push(bid);
     });
