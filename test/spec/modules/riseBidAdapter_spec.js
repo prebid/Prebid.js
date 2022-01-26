@@ -98,161 +98,141 @@ describe('riseAdapter', function () {
 
     it('should send the correct bid Id', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      console.log(request.data.bids[0].bid_id);
       expect(request.data.bids[0].bid_id).to.equal('299ffc8cca0b87');
     });
 
-    it('should send the correct width and height', function () {
+    it('should send the correct sizes array', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      console.log(request.data.bids[0].sizes);
       // TODO: verify sizes for multiple bids in array using loop
       expect(request.data.bids[0].sizes).to.be.an('array');
       expect(request.data.bids[0].sizes).to.equal(bidRequests[0].sizes)
     });
 
-  //   it('should respect syncEnabled option', function() {
-  //     config.setConfig({
-  //       userSync: {
-  //         syncEnabled: false,
-  //         filterSettings: {
-  //           all: {
-  //             bidders: '*',
-  //             filter: 'include'
-  //           }
-  //         }
-  //       }
-  //     });
-  //     const requests = spec.buildRequests(bidRequests, bidderRequest);
-  //     for (const request of requests) {
-  //       expect(request.data).to.be.an('object');
-  //       expect(request.data).to.not.have.property('cs_method');
-  //     }
-  //   });
+    it('should respect syncEnabled option', function() {
+      config.setConfig({
+        userSync: {
+          syncEnabled: false,
+          filterSettings: {
+            all: {
+              bidders: '*',
+              filter: 'include'
+            }
+          }
+        }
+      });
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.params).to.be.an('object');
+      expect(request.data.params).to.not.have.property('cs_method');
+    });
 
-  //   it('should respect "iframe" filter settings', function () {
-  //     config.setConfig({
-  //       userSync: {
-  //         syncEnabled: true,
-  //         filterSettings: {
-  //           iframe: {
-  //             bidders: [spec.code],
-  //             filter: 'include'
-  //           }
-  //         }
-  //       }
-  //     });
-  //     const requests = spec.buildRequests(bidRequests, bidderRequest);
-  //     for (const request of requests) {
-  //       expect(request.data).to.be.an('object');
-  //       expect(request.data).to.have.property('cs_method', 'iframe');
-  //     }
-  //   });
+    it('should respect "iframe" filter settings', function () {
+      config.setConfig({
+        userSync: {
+          syncEnabled: true,
+          filterSettings: {
+            iframe: {
+              bidders: [spec.code],
+              filter: 'include'
+            }
+          }
+        }
+      });
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.params).to.be.an('object');
+      expect(request.data.params).to.have.property('cs_method', 'iframe');
+    });
 
-  //   it('should respect "all" filter settings', function () {
-  //     config.setConfig({
-  //       userSync: {
-  //         syncEnabled: true,
-  //         filterSettings: {
-  //           all: {
-  //             bidders: [spec.code],
-  //             filter: 'include'
-  //           }
-  //         }
-  //       }
-  //     });
-  //     const requests = spec.buildRequests(bidRequests, bidderRequest);
-  //     for (const request of requests) {
-  //       expect(request.data).to.be.an('object');
-  //       expect(request.data).to.have.property('cs_method', 'iframe');
-  //     }
-  //   });
+    it('should respect "all" filter settings', function () {
+      config.setConfig({
+        userSync: {
+          syncEnabled: true,
+          filterSettings: {
+            all: {
+              bidders: [spec.code],
+              filter: 'include'
+            }
+          }
+        }
+      });
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.params).to.be.an('object');
+      expect(request.data.params).to.have.property('cs_method', 'iframe');
+    });
 
-  //   it('should send the pixel user sync param if userSync is enabled and no "iframe" or "all" configs are present', function () {
-  //     config.setConfig({
-  //       userSync: {
-  //         syncEnabled: true
-  //       }
-  //     });
-  //     const requests = spec.buildRequests(bidRequests, bidderRequest);
-  //     for (const request of requests) {
-  //       expect(request.data).to.be.an('object');
-  //       expect(request.data).to.have.property('cs_method', 'pixel');
-  //     }
-  //   });
+    // it('should send the pixel user sync param if userSync is enabled and no "iframe" or "all" configs are present', function () {
+    //   config.setConfig({
+    //     userSync: {
+    //       syncEnabled: true
+    //     }
+    //   });
+    //   const request = spec.buildRequests(bidRequests, bidderRequest);
+    //   console.log(request.data.params);
+    //   expect(request.data.params).to.be.an('object');
+    //   expect(request.data.params).to.have.property('cs_method', 'pixel');
+    // });
 
-  //   it('should respect total exclusion', function() {
-  //     config.setConfig({
-  //       userSync: {
-  //         syncEnabled: true,
-  //         filterSettings: {
-  //           image: {
-  //             bidders: [spec.code],
-  //             filter: 'exclude'
-  //           },
-  //           iframe: {
-  //             bidders: [spec.code],
-  //             filter: 'exclude'
-  //           }
-  //         }
-  //       }
-  //     });
-  //     const requests = spec.buildRequests(bidRequests, bidderRequest);
-  //     for (const request of requests) {
-  //       expect(request.data).to.be.an('object');
-  //       expect(request.data).to.not.have.property('cs_method');
-  //     }
-  //   });
+    it('should respect total exclusion', function() {
+      config.setConfig({
+        userSync: {
+          syncEnabled: true,
+          filterSettings: {
+            image: {
+              bidders: [spec.code],
+              filter: 'exclude'
+            },
+            iframe: {
+              bidders: [spec.code],
+              filter: 'exclude'
+            }
+          }
+        }
+      });
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.params).to.be.an('object');
+      expect(request.data.params).to.not.have.property('cs_method');
+    });
 
-  //   it('should have us_privacy param if usPrivacy is available in the bidRequest', function () {
-  //     const bidderRequestWithUSP = Object.assign({uspConsent: '1YNN'}, bidderRequest);
-  //     const requests = spec.buildRequests(bidRequests, bidderRequestWithUSP);
-  //     for (const request of requests) {
-  //       expect(request.data).to.be.an('object');
-  //       expect(request.data).to.have.property('us_privacy', '1YNN');
-  //     }
-  //   });
+    it('should have us_privacy param if usPrivacy is available in the bidRequest', function () {
+      const bidderRequestWithUSP = Object.assign({uspConsent: '1YNN'}, bidderRequest);
+      const request = spec.buildRequests(bidRequests, bidderRequestWithUSP);
+      expect(request.data.params).to.be.an('object');
+      expect(request.data.params).to.have.property('us_privacy', '1YNN');
+    });
 
-  //   it('should have an empty us_privacy param if usPrivacy is missing in the bidRequest', function () {
-  //     const requests = spec.buildRequests(bidRequests, bidderRequest);
-  //     for (const request of requests) {
-  //       expect(request.data).to.be.an('object');
-  //       expect(request.data).to.not.have.property('us_privacy');
-  //     }
-  //   });
+    it('should have an empty us_privacy param if usPrivacy is missing in the bidRequest', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.params).to.be.an('object');
+      expect(request.data.params).to.not.have.property('us_privacy');
+    });
 
-  //   it('should not send the gdpr param if gdprApplies is false in the bidRequest', function () {
-  //     const bidderRequestWithGDPR = Object.assign({gdprConsent: {gdprApplies: false}}, bidderRequest);
-  //     const requests = spec.buildRequests(bidRequests, bidderRequestWithGDPR);
-  //     for (const request of requests) {
-  //       expect(request.data).to.be.an('object');
-  //       expect(request.data).to.not.have.property('gdpr');
-  //       expect(request.data).to.not.have.property('gdpr_consent');
-  //     }
-  //   });
+    it('should not send the gdpr param if gdprApplies is false in the bidRequest', function () {
+      const bidderRequestWithGDPR = Object.assign({gdprConsent: {gdprApplies: false}}, bidderRequest);
+      const request = spec.buildRequests(bidRequests, bidderRequestWithGDPR);
+      expect(request.data.params).to.be.an('object');
+      expect(request.data.params).to.not.have.property('gdpr');
+      expect(request.data.params).to.not.have.property('gdpr_consent');
+    });
 
-  //   it('should send the gdpr param if gdprApplies is true in the bidRequest', function () {
-  //     const bidderRequestWithGDPR = Object.assign({gdprConsent: {gdprApplies: true, consentString: 'test-consent-string'}}, bidderRequest);
-  //     const requests = spec.buildRequests(bidRequests, bidderRequestWithGDPR);
-  //     for (const request of requests) {
-  //       expect(request.data).to.be.an('object');
-  //       expect(request.data).to.have.property('gdpr', true);
-  //       expect(request.data).to.have.property('gdpr_consent', 'test-consent-string');
-  //     }
-  //   });
+    it('should send the gdpr param if gdprApplies is true in the bidRequest', function () {
+      const bidderRequestWithGDPR = Object.assign({gdprConsent: {gdprApplies: true, consentString: 'test-consent-string'}}, bidderRequest);
+      const request = spec.buildRequests(bidRequests, bidderRequestWithGDPR);
+      expect(request.data.params).to.be.an('object');
+      expect(request.data.params).to.have.property('gdpr', true);
+      expect(request.data.params).to.have.property('gdpr_consent', 'test-consent-string');
+    });
 
-  //   it('should have schain param if it is available in the bidRequest', () => {
-  //     const schain = {
-  //       ver: '1.0',
-  //       complete: 1,
-  //       nodes: [{ asi: 'indirectseller.com', sid: '00001', hp: 1 }],
-  //     };
-  //     bidRequests[0].schain = schain;
-  //     const requests = spec.buildRequests(bidRequests, bidderRequest);
-  //     for (const request of requests) {
-  //       expect(request.data).to.be.an('object');
-  //       expect(request.data).to.have.property('schain', '1.0,1!indirectseller.com,00001,1,,,');
-  //     }
-  //   });
+    it('should have schain param if it is available in the bidRequest', () => {
+      const schain = {
+        ver: '1.0',
+        complete: 1,
+        nodes: [{ asi: 'indirectseller.com', sid: '00001', hp: 1 }],
+      };
+      bidRequests[0].schain = schain;
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      console.log(request);
+      expect(request.data.params).to.be.an('object');
+      expect(request.data.params).to.have.property('schain', '1.0,1!indirectseller.com,00001,1,,,');
+    });
 
   //   it('should set floor_price to getFloor.floor value if it is greater than params.floorPrice', function() {
   //     const bid = deepClone(bidRequests[0]);

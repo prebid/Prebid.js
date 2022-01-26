@@ -100,11 +100,13 @@ export const spec = {
       if (syncOptions.iframeEnabled && response.body.params.userSyncURL) {
         syncs.push({
           type: 'iframe',
-          url: response.body.userSyncURL
+          // TODO: verify url is correct
+          url: response.body.params.userSyncURL
         });
       }
       if (syncOptions.pixelEnabled && isArray(response.body.params.userSyncPixels)) {
-        const pixels = response.body.userSyncPixels.map(pixel => {
+        // TODO: verify pixels is correct
+        const pixels = response.body.params.userSyncPixels.map(pixel => {
           return {
             type: 'image',
             url: pixel
@@ -271,8 +273,8 @@ function generateBidParameters(bid, bidderRequest) {
   };
 
   // fix floor price in case of NAN
-  if (isNaN(bidObject.floorPrice)) {
-    bidObject.floorPrice = 0;
+  if (isNaN(bidObject.floor_price)) {
+    bidObject.floor_price = 0;
   }
 
   const playbackMethod = deepAccess(bid, `mediaTypes.${mediaType}.playbackmethod`);
