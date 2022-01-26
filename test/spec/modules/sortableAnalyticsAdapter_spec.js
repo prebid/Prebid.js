@@ -148,7 +148,6 @@ describe('Sortable Analytics Adapter', function() {
         }
       }
     });
-
     sortableAnalyticsAdapter.enableAnalytics(initialConfig);
   });
 
@@ -203,11 +202,11 @@ describe('Sortable Analytics Adapter', function() {
         brc: 1,
         brid: ['10141593b1d84a', '37a8760be6db23'],
         rs: ['300x250', '728x90'],
-        btcp: [0.70, 0.50],
+        btcp: [0.70, 0.50].map(n => n * 0.95),
         btcc: 'USD',
         btin: true,
         btsrc: 'sortable',
-        c: [0.70, 0.50],
+        c: [0.70, 0.50].map(n => n * 0.95),
         cc: 'USD',
         did: null,
         inr: true,
