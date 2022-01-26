@@ -1,6 +1,6 @@
 import {
-    PROTOCOLS, API_FRAMEWORKS, VIDEO_MIME_TYPE, PLAYBACK_METHODS, PLACEMENT, VPAID_MIME_TYPE, AD_POSITION, PLAYBACK_END
-  } from './videoModule/constants/ortb.js';
+  PROTOCOLS, API_FRAMEWORKS, VIDEO_MIME_TYPE, PLAYBACK_METHODS, PLACEMENT, VPAID_MIME_TYPE, AD_POSITION, PLAYBACK_END
+} from './videoModule/constants/ortb.js';
 import { VIDEO_JS_VENDOR } from './videoModule/constants/vendorCodes.js';
 import { videoVendorDirectory } from './videoModule/vendorDirectory.js';
 
@@ -18,7 +18,6 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
     // TODO: come up with code for player absent
       return;
     }
-    console.log("Initiliazed with", config)
     playerVersion = videojs.VERSION;
 
     if (playerVersion < minimumSupportedPlayerVersion) {
@@ -28,9 +27,11 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
 
     // returns the player if it exists, or attempts to instantiate a new one
     player = videojs(divId, playerConfig, function() {
-        // callback runs in both cases
+      // callback runs in both cases
     });
-    window.ortb = this.getOrtbParams
+    // TODO: make sure ortb gets called in integration example
+    // currently testing with a hacky solution by hooking it to window
+    // window.ortb = this.getOrtbParams
   }
 
   function getId() {
@@ -43,27 +44,28 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
     }
 
     let playBackMethod = PLAYBACK_METHODS.CLICK_TO_PLAY
-    const isMuted = player.muted() || player.autoplay()==="muted"; // todo autoplayAdsMuted only applies to preRoll
+    const isMuted = player.muted() || player.autoplay() === 'muted'; // todo autoplayAdsMuted only applies to preRoll
     if (player.autoplay()) {
-        playBackMethod = isMuted ? PLAYBACK_METHODS.AUTOPLAY_MUTED : PLAYBACK_METHODS.AUTOPLAY;
+      playBackMethod = isMuted ? PLAYBACK_METHODS.AUTOPLAY_MUTED : PLAYBACK_METHODS.AUTOPLAY;
     }
     const supportedMediaTypes = Object.values(VIDEO_MIME_TYPE).filter(
-        // Follows w3 spec https://www.w3.org/TR/2011/WD-html5-20110113/video.html#dom-navigator-canplaytype
-        type => player.canPlayType(type)!==''
+      // Follows w3 spec https://www.w3.org/TR/2011/WD-html5-20110113/video.html#dom-navigator-canplaytype
+      type => player.canPlayType(type) !== ''
     ).concat([VPAID_MIME_TYPE])
     const video = {
       mimes: supportedMediaTypes,
       // Based on the protocol support provided by the videojs-ima plugin
       // https://developers.google.com/interactive-media-ads/docs/sdks/html5/client-side/compatibility
-      protocols: [
+      // Need to check for the plugins prescence by checking videojs.ima
+      protocols: videojs.ima ? [
         PROTOCOLS.VAST_2_0,
-      ],
+      ] : [],
       api: [
         API_FRAMEWORKS.VPAID_2_0
       ],
       // TODO: Make sure this returns dimensions in DIPS
       h: player.currentHeight(),
-      w: player.currentWidth(), 
+      w: player.currentWidth(),
       placement: PLACEMENT.IN_STREAM,
       // both linearity forms are supported
       // sequence - TODO not yet supported
@@ -75,9 +77,9 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
       skip: 1
     };
 
-    if (player.isFullscreen()) { 
-     // only specify ad position when in Fullscreen since computational cost is low
-        video.pos = AD_POSITION.FULL_SCREEN; 
+    if (player.isFullscreen()) {
+      // only specify ad position when in Fullscreen since computational cost is low
+      video.pos = AD_POSITION.FULL_SCREEN;
     }
 
     const content = {
@@ -85,22 +87,22 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
       url: player.currentSrc()
     };
     // Only include length if player is ready
-    if(player.readyState()>0){
-        content.len = Math.round(player.duration());
+    if (player.readyState() > 0) {
+      content.len = Math.round(player.duration());
     }
     const item = player.getMedia();
-    if(item){
-        for(let param of ['album', 'artist', 'title']){
-            if(item[param]){
-                content[param] = item[param];
-            }
+    if (item) {
+      for (let param of ['album', 'artist', 'title']) {
+        if (item[param]) {
+          content[param] = item[param];
         }
+      }
     }
 
     return {video, content};
   }
 
-  // Will likely need this plugin: https://github.com/googleads/videojs-ima
+  // Plugins to integrate: https://github.com/googleads/videojs-ima
   function setAdTagUrl(adTagUrl, options) {
   }
 
