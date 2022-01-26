@@ -5,6 +5,15 @@ const USER_IDS_CONFIG = {
 
   // key-name : {config}
 
+  // trustpid
+  'trustpid': {
+    source: 'trustpid.com',
+    atype: 1,
+    getValue: function (data) {
+      return data;
+    },
+  },
+
   // intentIqId
   'intentIqId': {
     source: 'intentiq.com',
