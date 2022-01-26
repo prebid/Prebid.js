@@ -159,17 +159,17 @@ describe('riseAdapter', function () {
       expect(request.data.params).to.have.property('cs_method', 'iframe');
     });
 
-    // it('should send the pixel user sync param if userSync is enabled and no "iframe" or "all" configs are present', function () {
-    //   config.setConfig({
-    //     userSync: {
-    //       syncEnabled: true
-    //     }
-    //   });
-    //   const request = spec.buildRequests(bidRequests, bidderRequest);
-    //   console.log(request.data.params);
-    //   expect(request.data.params).to.be.an('object');
-    //   expect(request.data.params).to.have.property('cs_method', 'pixel');
-    // });
+    it('should send the pixel user sync param if userSync is enabled and no "iframe" or "all" configs are present', function () {
+      config.resetConfig();
+      config.setConfig({
+        userSync: {
+          syncEnabled: true,
+        }
+      });
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.params).to.be.an('object');
+      expect(request.data.params).to.have.property('cs_method', 'pixel');
+    });
 
     it('should respect total exclusion', function() {
       config.setConfig({
