@@ -244,6 +244,13 @@ describe('synacormediaBidAdapter ', function () {
             rtiPartner: 'TDID'
           }
         }]
+      },
+      {
+        source: 'neustar.biz',
+        uids: [{
+          id: 'neustar809-044-23njhwer3',
+          atype: 1
+        }]
       }
     ];
 

@@ -14,12 +14,6 @@ const BLOCKED_AD_SIZES = [
   '1x1',
   '1x2'
 ];
-const SUPPORTED_USER_ID_SOURCES = [
-  'liveramp.com', // Liveramp IdentityLink
-  'nextroll.com', // NextRoll XID
-  'verizonmedia.com', // Verizon Media ConnectID
-  'pubcid.org' // PubCommon ID
-];
 const DEFAULT_MAX_TTL = 420; // 7 minutes
 export const spec = {
   code: 'synacormedia',
@@ -96,7 +90,7 @@ export const spec = {
 
     // User ID
     if (validBidReqs[0] && validBidReqs[0].userIdAsEids && Array.isArray(validBidReqs[0].userIdAsEids)) {
-      const eids = this.processEids(validBidReqs[0].userIdAsEids);
+      const eids = validBidReqs[0].userIdAsEids;
       if (eids.length) {
         deepSetValue(openRtbBidRequest, 'user.ext.eids', eids);
       }
@@ -113,16 +107,6 @@ export const spec = {
         }
       };
     }
-  },
-
-  processEids: function(userIdAsEids) {
-    const eids = [];
-    userIdAsEids.forEach(function(eid) {
-      if (SUPPORTED_USER_ID_SOURCES.indexOf(eid.source) > -1) {
-        eids.push(eid);
-      }
-    });
-    return eids;
   },
 
   buildBannerImpressions: function (adSizes, bid, tagIdOrPlacementId, pos, videoOrBannerKey) {
