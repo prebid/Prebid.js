@@ -16,7 +16,7 @@ module.exports = {
       {
         "useBuiltIns": "entry",
         "modules": "commonjs",
-        "corejs": "3"
+        "corejs": "3.13.0"
       }
     ]
   ],
