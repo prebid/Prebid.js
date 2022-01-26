@@ -34,7 +34,7 @@ describe('videojsProvider', function () {
 
     it('should instantiate the player when uninstantied', function () {
       const div = document.createElement('div');
-      div.setAttribute("id", "test-div");
+      div.setAttribute('id', 'test-div');
       document.body.appendChild(div);
       config.playerConfig = {};
       config.divId = 'test-div'
@@ -46,7 +46,7 @@ describe('videojsProvider', function () {
 
     it('should not reinstantiate the player when instantated', function () {
       const div = document.createElement('div');
-      div.setAttribute("id", "test-div");
+      div.setAttribute('id', 'test-div');
       document.body.appendChild(div);
       const player = videojs(div, {})
       config.playerConfig = {};
@@ -71,29 +71,20 @@ describe('videojsProvider', function () {
 
   describe('getOrtbParams', function () {
     beforeEach(() => {
-      // const test_media_type = VIDEO_MIME_TYPE.MP4;
       const test_height = 100;
       const test_width = 200;
-      // const test_start_delay = 5;
-      // const test_placement = PLACEMENT.ARTICLE;
-      const test_battr = 'battr';
-      // const test_playback_method = PLAYBACK_METHODS.CLICK_TO_PLAY;
-      const test_skip = 0;
 
-      const test_duration = 9*60+56;
-      // let test_playback_mode = PLAYBACK_MODE.;
-      if(videojs.getPlayer('test')){
+      if (videojs.getPlayer('test')) {
         videojs.getPlayer('test').dispose()
       }
-
+      // initialize videojs element
       document.body.innerHTML = `
       <video preload id='test' width="${test_width}" height="${test_height}">
       <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
       </video>`
-
     });
     it('should populate oRTB params', function () {
-      const provider = VideojsProvider({divId:'test'}, videojs, null, null, null, null);
+      const provider = VideojsProvider({divId: 'test'}, videojs, null, null, null, null);
       provider.init();
 
       const oRTB = provider.getOrtbParams();
@@ -107,7 +98,7 @@ describe('videojsProvider', function () {
       ]);
       expect(video.h).to.equal(100);
       expect(video.w).to.equal(200);
-      expect(video).to.not.have.property('pos');      
+      expect(video).to.not.have.property('pos');
       // Should we check for these if they are hard coded?
       expect(video.maxextended).to.equal(-1);
       expect(video.boxingallowed).to.equal(1);
@@ -115,33 +106,33 @@ describe('videojsProvider', function () {
       expect(video.playbackend).to.equal(1);
       expect(video.api).to.include.members([API_FRAMEWORKS.VPAID_2_0]);
 
-      expect(content.url).to.be.equal("http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4");
+      expect(content.url).to.be.equal('http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4');
       expect(content).to.not.have.property('len');
     });
 
     it('should populate position when fullscreen', function () {
-      const provider = VideojsProvider({divId:'test'}, videojs, null, null, null, null);
+      const provider = VideojsProvider({divId: 'test'}, videojs, null, null, null, null);
       provider.init();
       const player = videojs.getPlayer('test')
       player.isFullscreen = () => true;
-      const { video, content } = provider.getOrtbParams();;
+      const { video, content } = provider.getOrtbParams(); ;
       expect(video.pos).to.equal(7);
     });
 
     it('should populate length when loaded', function (done) {
-      const provider = VideojsProvider({divId:'test'}, videojs, null, null, null, null);
+      const provider = VideojsProvider({divId: 'test'}, videojs, null, null, null, null);
       provider.init();
       const player = videojs.getPlayer('test')
       player.preload = true
-      setTimeout(()=>{
+      setTimeout(() => {
         const { video, content } = provider.getOrtbParams();
-        expect(content.len).to.equal(9*60+56);
+        expect(content.len).to.equal(9 * 60 + 56);
         done();
       }, 1000);
     });
 
     it('should return the correct playback method for autoplay', function () {
-      const provider = VideojsProvider({divId:'test'}, videojs, null, null, null, null);
+      const provider = VideojsProvider({divId: 'test'}, videojs, null, null, null, null);
       provider.init();
       const player = videojs.getPlayer('test')
       player.autoplay(true)
@@ -150,12 +141,12 @@ describe('videojsProvider', function () {
     });
 
     it('should return the correct playback method for autoplay muted', function (done) {
-      const provider = VideojsProvider({divId:'test'}, videojs, null, null, null, null);
+      const provider = VideojsProvider({divId: 'test'}, videojs, null, null, null, null);
       provider.init();
-      const player = videojs.getPlayer('test') 
+      const player = videojs.getPlayer('test')
       player.muted(true)
       player.autoplay(true)
-      setTimeout(()=>{
+      setTimeout(() => {
         const { video, content } = provider.getOrtbParams();
         expect(video.playbackmethod).to.include(PLAYBACK_METHODS.AUTOPLAY_MUTED);
         done();
@@ -163,18 +154,15 @@ describe('videojsProvider', function () {
     });
 
     it('should return the correct playback method for the other autoplay muted', function (done) {
-      const provider = VideojsProvider({divId:'test'}, videojs, null, null, null, null);
+      const provider = VideojsProvider({divId: 'test'}, videojs, null, null, null, null);
       provider.init();
-      const player = videojs.getPlayer('test') 
+      const player = videojs.getPlayer('test')
       player.autoplay('muted')
-      setTimeout(()=>{
+      setTimeout(() => {
         const { video, content } = provider.getOrtbParams();
         expect(video.playbackmethod).to.include(PLAYBACK_METHODS.AUTOPLAY_MUTED);
         done();
       }, 100);
     });
-
-
   });
-
 });
