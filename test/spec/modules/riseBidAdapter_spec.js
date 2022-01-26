@@ -229,150 +229,157 @@ describe('riseAdapter', function () {
       };
       bidRequests[0].schain = schain;
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      console.log(request);
       expect(request.data.params).to.be.an('object');
       expect(request.data.params).to.have.property('schain', '1.0,1!indirectseller.com,00001,1,,,');
     });
 
-  //   it('should set floor_price to getFloor.floor value if it is greater than params.floorPrice', function() {
-  //     const bid = deepClone(bidRequests[0]);
-  //     bid.getFloor = () => {
-  //       return {
-  //         currency: 'USD',
-  //         floor: 3.32
-  //       }
-  //     }
-  //     bid.params.floorPrice = 0.64;
-  //     const request = spec.buildRequests([bid], bidderRequest)[0];
-  //     expect(request.data).to.be.an('object');
-  //     expect(request.data).to.have.property('floor_price', 3.32);
-  //   });
+    it('should set floor_price to getFloor.floor value if it is greater than params.floorPrice', function() {
+      const bid = deepClone(bidRequests[0]);
+      bid.getFloor = () => {
+        return {
+          currency: 'USD',
+          floor: 3.32
+        }
+      }
+      bid.params.floorPrice = 0.64;
+      const request = spec.buildRequests([bid], bidderRequest);
+      expect(request.data.bids[0]).to.be.an('object');
+      expect(request.data.bids[0]).to.have.property('floor_price', 3.32);
+    });
 
-  //   it('should set floor_price to params.floorPrice value if it is greater than getFloor.floor', function() {
-  //     const bid = deepClone(bidRequests[0]);
-  //     bid.getFloor = () => {
-  //       return {
-  //         currency: 'USD',
-  //         floor: 0.8
-  //       }
-  //     }
-  //     bid.params.floorPrice = 1.5;
-  //     const request = spec.buildRequests([bid], bidderRequest)[0];
-  //     expect(request.data).to.be.an('object');
-  //     expect(request.data).to.have.property('floor_price', 1.5);
-  //   });
+    it('should set floor_price to params.floorPrice value if it is greater than getFloor.floor', function() {
+      const bid = deepClone(bidRequests[0]);
+      bid.getFloor = () => {
+        return {
+          currency: 'USD',
+          floor: 0.8
+        }
+      }
+      bid.params.floorPrice = 1.5;
+      const request = spec.buildRequests([bid], bidderRequest);
+      expect(request.data.bids[0]).to.be.an('object');
+      expect(request.data.bids[0]).to.have.property('floor_price', 1.5);
+    });
   });
 
-  // describe('interpretResponse', function () {
-  //   const response = {
-  //     cpm: 12.5,
-  //     vastXml: '<VAST version="3.0"></VAST>',
-  //     width: 640,
-  //     height: 480,
-  //     requestId: '21e12606d47ba7',
-  //     netRevenue: true,
-  //     currency: 'USD',
-  //     adomain: ['abc.com']
-  //   };
+  describe('interpretResponse', function () {
+    const response = {
+      params: {
+        currency: 'USD',
+        netRevenue: true,
+      },
+      bids: [{
+        cpm: 12.5,
+        vastXml: '<VAST version="3.0"></VAST>',
+        width: 640,
+        height: 480,
+        requestId: '21e12606d47ba7',
+        adomain: ['abc.com'],
+        mediaType: VIDEO
+      }]
+    };
 
-  //   it('should get correct bid response', function () {
-  //     let expectedResponse = [
-  //       {
-  //         requestId: '21e12606d47ba7',
-  //         cpm: 12.5,
-  //         width: 640,
-  //         height: 480,
-  //         creativeId: '21e12606d47ba7',
-  //         currency: 'USD',
-  //         netRevenue: true,
-  //         ttl: TTL,
-  //         vastXml: '<VAST version="3.0"></VAST>',
-  //         mediaType: VIDEO,
-  //         meta: {
-  //           advertiserDomains: ['abc.com']
-  //         }
-  //       }
-  //     ];
-  //     const result = spec.interpretResponse({ body: response });
-  //     expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
-  //   });
-  // })
+    it('should get correct bid response', function () {
+      const expectedResponse = {
+        requestId: '21e12606d47ba7',
+        cpm: 12.5,
+        currency: 'USD',
+        width: 640,
+        height: 480,
+        ttl: TTL,
+        creativeId: '21e12606d47ba7',
+        netRevenue: true,
+        meta: {
+          mediaType: VIDEO,
+          advertiserDomains: ['abc.com']
+        },
+        vastXml: '<VAST version="3.0"></VAST>',
+      };
 
-  // describe('getUserSyncs', function() {
-  //   const imageSyncResponse = {
-  //     body: {
-  //       userSyncPixels: [
-  //         'https://image-sync-url.test/1',
-  //         'https://image-sync-url.test/2',
-  //         'https://image-sync-url.test/3'
-  //       ]
-  //     }
-  //   };
+      const result = spec.interpretResponse({ body: response });
+      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse));
+    });
+  })
 
-  //   const iframeSyncResponse = {
-  //     body: {
-  //       userSyncURL: 'https://iframe-sync-url.test'
-  //     }
-  //   };
+  describe('getUserSyncs', function() {
+    const imageSyncResponse = {
+      body: {
+        params: {
+          userSyncPixels: [
+            'https://image-sync-url.test/1',
+            'https://image-sync-url.test/2',
+            'https://image-sync-url.test/3'
+          ]
+        }
+      }
+    };
 
-  //   it('should register all img urls from the response', function() {
-  //     const syncs = spec.getUserSyncs({ pixelEnabled: true }, [imageSyncResponse]);
-  //     expect(syncs).to.deep.equal([
-  //       {
-  //         type: 'image',
-  //         url: 'https://image-sync-url.test/1'
-  //       },
-  //       {
-  //         type: 'image',
-  //         url: 'https://image-sync-url.test/2'
-  //       },
-  //       {
-  //         type: 'image',
-  //         url: 'https://image-sync-url.test/3'
-  //       }
-  //     ]);
-  //   });
+    const iframeSyncResponse = {
+      body: {
+        params: {
+          userSyncURL: 'https://iframe-sync-url.test'
+        }
+      }
+    };
 
-  //   it('should register the iframe url from the response', function() {
-  //     const syncs = spec.getUserSyncs({ iframeEnabled: true }, [iframeSyncResponse]);
-  //     expect(syncs).to.deep.equal([
-  //       {
-  //         type: 'iframe',
-  //         url: 'https://iframe-sync-url.test'
-  //       }
-  //     ]);
-  //   });
+    it('should register all img urls from the response', function() {
+      const syncs = spec.getUserSyncs({ pixelEnabled: true }, [imageSyncResponse]);
+      expect(syncs).to.deep.equal([
+        {
+          type: 'image',
+          url: 'https://image-sync-url.test/1'
+        },
+        {
+          type: 'image',
+          url: 'https://image-sync-url.test/2'
+        },
+        {
+          type: 'image',
+          url: 'https://image-sync-url.test/3'
+        }
+      ]);
+    });
 
-  //   it('should register both image and iframe urls from the responses', function() {
-  //     const syncs = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: true }, [iframeSyncResponse, imageSyncResponse]);
-  //     expect(syncs).to.deep.equal([
-  //       {
-  //         type: 'iframe',
-  //         url: 'https://iframe-sync-url.test'
-  //       },
-  //       {
-  //         type: 'image',
-  //         url: 'https://image-sync-url.test/1'
-  //       },
-  //       {
-  //         type: 'image',
-  //         url: 'https://image-sync-url.test/2'
-  //       },
-  //       {
-  //         type: 'image',
-  //         url: 'https://image-sync-url.test/3'
-  //       }
-  //     ]);
-  //   });
+    it('should register the iframe url from the response', function() {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, [iframeSyncResponse]);
+      expect(syncs).to.deep.equal([
+        {
+          type: 'iframe',
+          url: 'https://iframe-sync-url.test'
+        }
+      ]);
+    });
 
-  //   it('should handle an empty response', function() {
-  //     const syncs = spec.getUserSyncs({ iframeEnabled: true }, []);
-  //     expect(syncs).to.deep.equal([]);
-  //   });
+    it('should register both image and iframe urls from the responses', function() {
+      const syncs = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: true }, [iframeSyncResponse, imageSyncResponse]);
+      expect(syncs).to.deep.equal([
+        {
+          type: 'iframe',
+          url: 'https://iframe-sync-url.test'
+        },
+        {
+          type: 'image',
+          url: 'https://image-sync-url.test/1'
+        },
+        {
+          type: 'image',
+          url: 'https://image-sync-url.test/2'
+        },
+        {
+          type: 'image',
+          url: 'https://image-sync-url.test/3'
+        }
+      ]);
+    });
 
-  // it('should handle when user syncs are disabled', function() {
-  //   const syncs = spec.getUserSyncs({ pixelEnabled: false }, [imageSyncResponse]);
-  //   expect(syncs).to.deep.equal([]);
-  // });
-  // })
+    it('should handle an empty response', function() {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, []);
+      expect(syncs).to.deep.equal([]);
+    });
+
+    it('should handle when user syncs are disabled', function() {
+      const syncs = spec.getUserSyncs({ pixelEnabled: false }, [imageSyncResponse]);
+      expect(syncs).to.deep.equal([]);
+    });
+  })
 });
