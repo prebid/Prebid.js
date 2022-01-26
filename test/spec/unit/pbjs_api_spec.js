@@ -1006,12 +1006,7 @@ describe('Unit: Prebid Module', function () {
         adUnitCode: config.adUnitCodes[0],
       };
 
-      const event = {
-        source: { postMessage: sinon.stub() },
-        origin: 'origin.sf.com'
-      };
-
-      _sendAdToCreative(mockAdObject, event);
+      _sendAdToCreative(mockAdObject, sinon.stub());
 
       expect(slots[0].spyGetSlotElementId.called).to.equal(false);
       expect(slots[1].spyGetSlotElementId.called).to.equal(true);
@@ -1858,11 +1853,23 @@ describe('Unit: Prebid Module', function () {
                   pos: 2
                 }
               }
+            },
+            {
+              code: 'test6',
+              bids: [],
+              sizes: [300, 250],
+              mediaTypes: {
+                banner: {
+                  sizes: [300, 250],
+                  pos: 0
+                }
+              }
             }];
             $$PREBID_GLOBAL$$.requestBids({
               adUnits: adUnit
             });
             expect(auctionArgs.adUnits[0].mediaTypes.banner.pos).to.equal(2);
+            expect(auctionArgs.adUnits[1].mediaTypes.banner.pos).to.equal(0);
           });
         });
 
