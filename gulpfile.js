@@ -8,7 +8,6 @@ var gutil = require('gulp-util');
 var connect = require('gulp-connect');
 var webpack = require('webpack');
 var webpackStream = require('webpack-stream');
-var terser = require('gulp-terser');
 var gulpClean = require('gulp-clean');
 var KarmaServer = require('karma').Server;
 var karmaConfMaker = require('./karma.conf.maker.js');
@@ -117,7 +116,10 @@ viewReview.displayName = 'view-review';
 
 function makeDevpackPkg() {
   var cloned = _.cloneDeep(webpackConfig);
-  cloned.devtool = 'source-map';
+  Object.assign(cloned, {
+    devtool: 'source-map',
+    mode: 'development'
+  })
   var externalModules = helpers.getArgModules();
 
   const analyticsSources = helpers.getAnalyticsSources();
@@ -142,7 +144,6 @@ function makeWebpackPkg() {
   return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
     .pipe(helpers.nameModules(externalModules))
     .pipe(webpackStream(cloned, webpack))
-    .pipe(terser())
     .pipe(gulpif(file => file.basename === 'prebid-core.js', header(banner, { prebid: prebid })))
     .pipe(gulp.dest('build/dist'));
 }

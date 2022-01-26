@@ -2,6 +2,7 @@ import { setConsentConfig, requestBidsHook, resetConsentData, userCMP, consentTi
 import { gdprDataHandler } from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
+import 'src/prebid.js';
 
 let expect = require('chai').expect;
 
