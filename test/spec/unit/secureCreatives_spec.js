@@ -332,8 +332,8 @@ describe('secureCreatives', () => {
         sinon.assert.calledWith(stubGetAllAssetsMessage, data, adResponse);
         sinon.assert.calledOnce(ev.source.postMessage);
         sinon.assert.notCalled(stubFireNativeTrackers);
-        sinon.assert.neverCalledWith(stubEmit, CONSTANTS.EVENTS.BID_WON);
-        sinon.assert.notCalled(spyAddWinningBid);
+        sinon.assert.calledWith(stubEmit, CONSTANTS.EVENTS.BID_WON, adResponse);
+        sinon.assert.calledOnce(spyAddWinningBid);
         sinon.assert.neverCalledWith(stubEmit, CONSTANTS.EVENTS.STALE_RENDER);
       });
 
@@ -426,10 +426,11 @@ describe('secureCreatives', () => {
       });
 
       it('Prebid native should fire trackers', function () {
-        pushBidResponseToAuction({});
+        let adId = 2;
+        pushBidResponseToAuction({adId});
 
         const data = {
-          adId: bidId,
+          adId: adId,
           message: 'Prebid Native',
           action: 'click',
         };
@@ -446,8 +447,8 @@ describe('secureCreatives', () => {
 
         sinon.assert.neverCalledWith(spyLogWarn, warning);
         sinon.assert.calledOnce(stubFireNativeTrackers);
-        sinon.assert.neverCalledWith(stubEmit, CONSTANTS.EVENTS.BID_WON);
-        sinon.assert.notCalled(spyAddWinningBid);
+        sinon.assert.calledWith(stubEmit, CONSTANTS.EVENTS.BID_WON, adResponse);
+        sinon.assert.calledOnce(spyAddWinningBid);
 
         resetHistories(ev.source.postMessage);
 
@@ -457,10 +458,13 @@ describe('secureCreatives', () => {
 
         sinon.assert.neverCalledWith(spyLogWarn, warning);
         sinon.assert.calledOnce(stubFireNativeTrackers);
-        sinon.assert.calledWith(stubEmit, CONSTANTS.EVENTS.BID_WON, adResponse);
-        sinon.assert.calledOnce(spyAddWinningBid);
+        sinon.assert.neverCalledWith(stubEmit, CONSTANTS.EVENTS.BID_WON);
+        sinon.assert.notCalled(spyAddWinningBid);
 
         expect(adResponse).to.have.property('status', CONSTANTS.BID_STATUS.RENDERED);
+
+        // revert back to 'adId = 1'
+        adResponse.adId = bidId;
       });
     });
 
@@ -472,6 +476,7 @@ describe('secureCreatives', () => {
         describe(`for ${test} bids`, () => {
           beforeEach(() => {
             prepBid(adResponse);
+            // throw JSON.stringify(adResponse);
             pushBidResponseToAuction(adResponse);
           });
 
