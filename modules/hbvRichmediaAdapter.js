@@ -8,7 +8,7 @@ const BIDDER_CODE = 'hbv-richmedia';
 const metadataByRequestId = {};
 
 export const spec = {
-  version: '1.3.0',
+  version: '1.4.0',
   code: BIDDER_CODE,
   gvlid: baseAdapter.GVLID, // use base adapter gvlid
   supportedMediaTypes: [ BANNER, VIDEO ],
@@ -37,6 +37,9 @@ export const spec = {
     if (typeof publisherId !== 'string') { return []; }
 
     bidRequests.forEach(bidRequest => {
+      if (bidRequest.params.format === 'skin' && bidRequest.mediaTypes.banner) {
+        bidRequest.mediaTypes.banner.sizes.push([1800, 1000]);
+      }
       metadataByRequestId[bidRequest.bidId] = { placementId: bidRequest.adUnitCode, bidder: bidRequest.bidder };
     });
     return baseAdapter.buildRequests(bidRequests, bidderRequest);
