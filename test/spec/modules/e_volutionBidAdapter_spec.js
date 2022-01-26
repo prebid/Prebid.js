@@ -1,30 +1,22 @@
 import {expect} from 'chai';
-import {spec} from '../../../modules/lunamediahbBidAdapter.js';
-import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
+import {spec} from '../../../modules/e_volutionBidAdapter.js';
 
-describe('LunamediaHBBidAdapter', function () {
-  const bid = {
+describe('EvolutionTechBidAdapter', function () {
+  let bid = {
     bidId: '23fhj33i987f',
-    bidder: 'lunamediahb',
-    mediaTypes: {
-      [BANNER]: {
-        sizes: [[300, 250]]
-      }
-    },
+    bidder: 'e_volution',
     params: {
-      placementId: 783,
-      traffic: BANNER
-    }
-  };
-
-  const bidderRequest = {
-    refererInfo: {
-      referer: 'test.com'
+      placementId: 0
+    },
+    mediaTypes: {
+      banner: {
+        sizes: [[300, 250]],
+      }
     }
   };
 
   describe('isBidRequestValid', function () {
-    it('Should return true if there are bidId, params and key parameters present', function () {
+    it('Should return true if there are bidId, params and placementId parameters present', function () {
       expect(spec.isBidRequestValid(bid)).to.be.true;
     });
     it('Should return false if at least one of parameters is not present', function () {
@@ -34,7 +26,7 @@ describe('LunamediaHBBidAdapter', function () {
   });
 
   describe('buildRequests', function () {
-    let serverRequest = spec.buildRequests([bid], bidderRequest);
+    let serverRequest = spec.buildRequests([bid]);
     it('Creates a ServerRequest object with method, URL and data', function () {
       expect(serverRequest).to.exist;
       expect(serverRequest.method).to.exist;
@@ -45,7 +37,7 @@ describe('LunamediaHBBidAdapter', function () {
       expect(serverRequest.method).to.equal('POST');
     });
     it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal('https://balancer.lmgssp.com/?c=o&m=multi');
+      expect(serverRequest.url).to.equal('https://service.e-volution.ai/?c=o&m=multi');
     });
     it('Returns valid data if array of bids is valid', function () {
       let data = serverRequest.data;
@@ -57,83 +49,12 @@ describe('LunamediaHBBidAdapter', function () {
       expect(data.secure).to.be.within(0, 1);
       expect(data.host).to.be.a('string');
       expect(data.page).to.be.a('string');
-      expect(data.gdpr).to.not.exist;
-      expect(data.ccpa).to.not.exist;
       let placement = data['placements'][0];
-      expect(placement).to.have.keys('placementId', 'bidId', 'traffic', 'sizes', 'schain');
-      expect(placement.placementId).to.equal(783);
+      expect(placement).to.have.keys('placementId', 'bidId', 'traffic', 'sizes', 'bidfloor');
+      expect(placement.placementId).to.equal(0);
       expect(placement.bidId).to.equal('23fhj33i987f');
-      expect(placement.traffic).to.equal(BANNER);
-      expect(placement.schain).to.be.an('object');
-      expect(placement.sizes).to.be.an('array');
+      expect(placement.traffic).to.equal('banner');
     });
-
-    it('Returns valid data for mediatype video', function () {
-      const playerSize = [300, 300];
-      bid.mediaTypes = {};
-      bid.params.traffic = VIDEO;
-      bid.mediaTypes[VIDEO] = {
-        playerSize
-      };
-      serverRequest = spec.buildRequests([bid], bidderRequest);
-      let data = serverRequest.data;
-      expect(data).to.be.an('object');
-      let placement = data['placements'][0];
-      expect(placement).to.be.an('object');
-      expect(placement).to.have.keys('placementId', 'bidId', 'traffic', 'wPlayer', 'hPlayer', 'schain', 'videoContext');
-      expect(placement.traffic).to.equal(VIDEO);
-      expect(placement.wPlayer).to.equal(playerSize[0]);
-      expect(placement.hPlayer).to.equal(playerSize[1]);
-    });
-
-    it('Returns valid data for mediatype native', function () {
-      const native = {
-        title: {
-          required: true
-        },
-        body: {
-          required: true
-        },
-        icon: {
-          required: true,
-          size: [64, 64]
-        }
-      };
-
-      bid.mediaTypes = {};
-      bid.params.traffic = NATIVE;
-      bid.mediaTypes[NATIVE] = native;
-      serverRequest = spec.buildRequests([bid], bidderRequest);
-      let data = serverRequest.data;
-      expect(data).to.be.an('object');
-      let placement = data['placements'][0];
-      expect(placement).to.be.an('object');
-      expect(placement).to.have.keys('placementId', 'bidId', 'traffic', 'native', 'schain');
-      expect(placement.traffic).to.equal(NATIVE);
-      expect(placement.native).to.equal(native);
-    });
-
-    it('Returns data with gdprConsent and without uspConsent', function () {
-      bidderRequest.gdprConsent = 'test';
-      serverRequest = spec.buildRequests([bid], bidderRequest);
-      let data = serverRequest.data;
-      expect(data.gdpr).to.exist;
-      expect(data.gdpr).to.be.a('string');
-      expect(data.gdpr).to.equal(bidderRequest.gdprConsent);
-      expect(data.ccpa).to.not.exist;
-      delete bidderRequest.gdprConsent;
-    });
-
-    it('Returns data with uspConsent and without gdprConsent', function () {
-      bidderRequest.uspConsent = 'test';
-      serverRequest = spec.buildRequests([bid], bidderRequest);
-      let data = serverRequest.data;
-      expect(data.ccpa).to.exist;
-      expect(data.ccpa).to.be.a('string');
-      expect(data.ccpa).to.equal(bidderRequest.uspConsent);
-      expect(data.gdpr).to.not.exist;
-    });
-
     it('Returns empty data if no valid requests are passed', function () {
       serverRequest = spec.buildRequests([]);
       let data = serverRequest.data;
@@ -154,14 +75,15 @@ describe('LunamediaHBBidAdapter', function () {
           creativeId: '2',
           netRevenue: true,
           currency: 'USD',
-          dealId: '1'
+          dealId: '1',
+          meta: {}
         }]
       };
       let bannerResponses = spec.interpretResponse(banner);
       expect(bannerResponses).to.be.an('array').that.is.not.empty;
       let dataItem = bannerResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId',
-        'netRevenue', 'currency', 'dealId', 'mediaType');
+        'netRevenue', 'currency', 'dealId', 'mediaType', 'meta');
       expect(dataItem.requestId).to.equal('23fhj33i987f');
       expect(dataItem.cpm).to.equal(0.4);
       expect(dataItem.width).to.equal(300);
@@ -183,7 +105,8 @@ describe('LunamediaHBBidAdapter', function () {
           creativeId: '2',
           netRevenue: true,
           currency: 'USD',
-          dealId: '1'
+          dealId: '1',
+          meta: {}
         }]
       };
       let videoResponses = spec.interpretResponse(video);
@@ -191,7 +114,7 @@ describe('LunamediaHBBidAdapter', function () {
 
       let dataItem = videoResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'vastUrl', 'ttl', 'creativeId',
-        'netRevenue', 'currency', 'dealId', 'mediaType');
+        'netRevenue', 'currency', 'dealId', 'mediaType', 'meta');
       expect(dataItem.requestId).to.equal('23fhj33i987f');
       expect(dataItem.cpm).to.equal(0.5);
       expect(dataItem.vastUrl).to.equal('test.com');
@@ -216,13 +139,14 @@ describe('LunamediaHBBidAdapter', function () {
           creativeId: '2',
           netRevenue: true,
           currency: 'USD',
+          meta: {}
         }]
       };
       let nativeResponses = spec.interpretResponse(native);
       expect(nativeResponses).to.be.an('array').that.is.not.empty;
 
       let dataItem = nativeResponses[0];
-      expect(dataItem).to.have.keys('requestId', 'cpm', 'ttl', 'creativeId', 'netRevenue', 'currency', 'mediaType', 'native');
+      expect(dataItem).to.have.keys('requestId', 'cpm', 'ttl', 'creativeId', 'netRevenue', 'currency', 'mediaType', 'native', 'meta');
       expect(dataItem.native).to.have.keys('clickUrl', 'impressionTrackers', 'title', 'image')
       expect(dataItem.requestId).to.equal('23fhj33i987f');
       expect(dataItem.cpm).to.equal(0.4);
@@ -301,30 +225,18 @@ describe('LunamediaHBBidAdapter', function () {
       expect(serverResponses).to.be.an('array').that.is.empty;
     });
   });
-
-  describe('getUserSyncs', function() {
-    it('Should return array of objects with proper sync config , include GDPR', function() {
-      const syncData = spec.getUserSyncs({}, {}, {
-        consentString: 'ALL',
-        gdprApplies: true,
-      }, {});
-      expect(syncData).to.be.an('array').which.is.not.empty;
-      expect(syncData[0]).to.be.an('object')
-      expect(syncData[0].type).to.be.a('string')
-      expect(syncData[0].type).to.equal('image')
-      expect(syncData[0].url).to.be.a('string')
-      expect(syncData[0].url).to.equal('https://cookie.lmgssp.com/image?pbjs=1&gdpr=1&gdpr_consent=ALL&coppa=0')
-    });
-    it('Should return array of objects with proper sync config , include CCPA', function() {
-      const syncData = spec.getUserSyncs({}, {}, {}, {
-        consentString: '1---'
-      });
-      expect(syncData).to.be.an('array').which.is.not.empty;
-      expect(syncData[0]).to.be.an('object')
-      expect(syncData[0].type).to.be.a('string')
-      expect(syncData[0].type).to.equal('image')
-      expect(syncData[0].url).to.be.a('string')
-      expect(syncData[0].url).to.equal('https://cookie.lmgssp.com/image?pbjs=1&ccpa_consent=1---&coppa=0')
+  describe('getUserSyncs', function () {
+    let userSync = spec.getUserSyncs();
+    it('Returns valid URL and type', function () {
+      if (spec.noSync) {
+        expect(userSync).to.be.equal(false);
+      } else {
+        expect(userSync).to.be.an('array').with.lengthOf(1);
+        expect(userSync[0].type).to.exist;
+        expect(userSync[0].url).to.exist;
+        expect(userSync[0].type).to.be.equal('image');
+        expect(userSync[0].url).to.be.equal('https://service.e-volution.ai/?c=o&m=sync');
+      }
     });
   });
 });

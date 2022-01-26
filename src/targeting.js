@@ -1,6 +1,6 @@
 import {
   uniques, isGptPubadsDefined, getHighestCpm, getOldestHighestCpmBid, groupBy, isAdUnitCodeMatchingSlot, timestamp,
-  deepAccess, deepClone, logError, logWarn, logInfo, isFn, isArray, logMessage, isStr, isAllowZeroCpmBidsEnabled
+  deepAccess, deepClone, logError, logWarn, logInfo, isFn, isArray, logMessage, isStr,
 } from './utils.js';
 import { config } from './config.js';
 import { NATIVE_TARGETING_KEYS } from './native.js';
@@ -8,6 +8,7 @@ import { auctionManager } from './auctionManager.js';
 import { sizeSupported } from './sizeMapping.js';
 import { ADPOD } from './mediaTypes.js';
 import { hook } from './hook.js';
+import { bidderSettings } from './bidderSettings.js';
 import includes from 'core-js-pure/features/array/includes.js';
 import find from 'core-js-pure/features/array/find.js';
 
@@ -459,7 +460,7 @@ export function newTargeting(auctionManager) {
     const adUnitCodes = getAdUnitCodes(adUnitCode);
     return bidsReceived
       .filter(bid => includes(adUnitCodes, bid.adUnitCode))
-      .filter(bid => (isAllowZeroCpmBidsEnabled(bid.bidderCode)) ? bid.cpm >= 0 : bid.cpm > 0)
+      .filter(bid => (bidderSettings.get(bid.bidderCode, 'allowZeroCpmBids') === true) ? bid.cpm >= 0 : bid.cpm > 0)
       .map(bid => bid.adUnitCode)
       .filter(uniques)
       .map(adUnitCode => bidsReceived
