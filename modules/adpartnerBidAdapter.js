@@ -172,7 +172,6 @@ export const spec = {
           if (respObject['syncs'] !== undefined &&
             Array.isArray(respObject.syncs) &&
             respObject.syncs.length > 0) {
-
             respObject.syncs.filter(function (syncIframeObject) {
               if (syncIframeObject['type'] !== undefined &&
                 syncIframeObject['link'] !== undefined &&
@@ -184,7 +183,6 @@ export const spec = {
                 url: appendGdprParams(syncIframeObject.link, gdprParams)
               });
             });
-
             respObject.syncs.filter(function (syncImageObject) {
               if (syncImageObject['type'] !== undefined &&
                 syncImageObject['link'] !== undefined &&
