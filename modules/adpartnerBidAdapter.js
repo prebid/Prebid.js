@@ -148,10 +148,6 @@ export const spec = {
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
     const syncs = [];
 
-    if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) {
-      return syncs;
-    }
-
     let appendGdprParams = function (url, gdprParams) {
       if (gdprParams === null) {
         return url;
@@ -176,32 +172,30 @@ export const spec = {
           if (respObject['syncs'] !== undefined &&
             Array.isArray(respObject.syncs) &&
             respObject.syncs.length > 0) {
-            if (syncOptions.iframeEnabled) {
-              respObject.syncs.filter(function (syncIframeObject) {
-                if (syncIframeObject['type'] !== undefined &&
-                  syncIframeObject['link'] !== undefined &&
-                  syncIframeObject.type === 'iframe') { return true; }
-                return false;
-              }).forEach(function (syncIframeObject) {
-                syncs.push({
-                  type: 'iframe',
-                  url: appendGdprParams(syncIframeObject.link, gdprParams)
-                });
+
+            respObject.syncs.filter(function (syncIframeObject) {
+              if (syncIframeObject['type'] !== undefined &&
+                syncIframeObject['link'] !== undefined &&
+                syncIframeObject.type === 'iframe') { return true; }
+              return false;
+            }).forEach(function (syncIframeObject) {
+              syncs.push({
+                type: 'iframe',
+                url: appendGdprParams(syncIframeObject.link, gdprParams)
               });
-            }
-            if (syncOptions.pixelEnabled) {
-              respObject.syncs.filter(function (syncImageObject) {
-                if (syncImageObject['type'] !== undefined &&
-                  syncImageObject['link'] !== undefined &&
-                  syncImageObject.type === 'image') { return true; }
-                return false;
-              }).forEach(function (syncImageObject) {
-                syncs.push({
-                  type: 'image',
-                  url: appendGdprParams(syncImageObject.link, gdprParams)
-                });
+            });
+
+            respObject.syncs.filter(function (syncImageObject) {
+              if (syncImageObject['type'] !== undefined &&
+                syncImageObject['link'] !== undefined &&
+                syncImageObject.type === 'image') { return true; }
+              return false;
+            }).forEach(function (syncImageObject) {
+              syncs.push({
+                type: 'image',
+                url: appendGdprParams(syncImageObject.link, gdprParams)
               });
-            }
+            });
           }
         });
       }
