@@ -37,7 +37,6 @@ export const spec = {
     return true;
   },
   buildRequests: function (validBidRequests, bidderRequest) {
-    const bidsArray = [];
     const combinedRequestsObject = {};
 
     // use data from the first bid, to create the general params for all bids
@@ -45,13 +44,7 @@ export const spec = {
     const testMode = generalObject.params.testMode;
 
     combinedRequestsObject.params = generateGeneralParams(generalObject, bidderRequest);
-
-    if (validBidRequests.length) {
-      validBidRequests.forEach(bid => {
-        bidsArray.push(generateBidParameters(bid, bidderRequest));
-      });
-    }
-    combinedRequestsObject.bids = bidsArray;
+    combinedRequestsObject.bids = generateBidsParams(validBidRequests, bidderRequest);
 
     return {
       method: 'POST',
@@ -247,6 +240,18 @@ function getDeviceType(ua) {
     return '3';
   }
   return '1';
+}
+
+function generateBidsParams(validBidRequests, bidderRequest) {
+  const bidsArray = [];
+
+  if (validBidRequests.length) {
+    validBidRequests.forEach(bid => {
+      bidsArray.push(generateBidParameters(bid, bidderRequest));
+    });
+  }
+
+  return bidsArray;
 }
 
 /**
