@@ -5,8 +5,8 @@ import { config } from 'src/config.js';
 import { VIDEO } from '../../../src/mediaTypes.js';
 import { deepClone } from 'src/utils.js';
 
-const ENDPOINT = 'https://hb.yellowblue.io/hb';//TODO: CHANGE
-const TEST_ENDPOINT = 'https://hb.yellowblue.io/hb-test';//todo: CHANGE
+const ENDPOINT = 'https://hb.minutemedia-prebid.com/hb';
+const TEST_ENDPOINT = 'https://hb.minutemedia-prebid.com/hb-test';
 const TTL = 360;
 
 describe('minutemediaAdapter', function () {

@@ -4,14 +4,14 @@ Module Name: MinuteMedia Bidder Adapter
 
 Module Type: Bidder Adapter
 
-Maintainer: prebid-rise-engage@risecodes.com //TODO:prebidmail
+Maintainer: hb@minutemedia.com
 
 
 # Description
 
 Module that connects to MinuteMedia's demand sources.
 
-The MinuteMedia adapter requires setup and approval from the MinuteMedia. Please reach out to prebid-rise-engage@risecodes.com to create an MinuteMedia account. //TODO: prebidmail
+The MinuteMedia adapter requires setup and approval from the MinuteMedia. Please reach out to hb@minutemedia.com to create an MinuteMedia account.
 
 The adapter supports Video(instream).
 
