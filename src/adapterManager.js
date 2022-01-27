@@ -469,7 +469,7 @@ function isTestingServerOnly(s2sConfig) {
 function getSupportedMediaTypes(bidderCode) {
   let supportedMediaTypes = [];
   if (includes(adapterManager.videoAdapters, bidderCode)) supportedMediaTypes.push('video');
-  if (includes(nativeAdapters, bidderCode)) supportedMediaTypes.push('native');
+  if (FEATURES.NATIVE && includes(nativeAdapters, bidderCode)) supportedMediaTypes.push('native');
   return supportedMediaTypes;
 }
 
@@ -483,7 +483,7 @@ adapterManager.registerBidAdapter = function (bidAdapter, bidderCode, {supported
       if (includes(supportedMediaTypes, 'video')) {
         adapterManager.videoAdapters.push(bidderCode);
       }
-      if (includes(supportedMediaTypes, 'native')) {
+      if (FEATURES.NATIVE && includes(supportedMediaTypes, 'native')) {
         nativeAdapters.push(bidderCode);
       }
     } else {
