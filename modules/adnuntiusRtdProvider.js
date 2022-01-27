@@ -1,7 +1,9 @@
-import { getGlobal } from '../src/prebidGlobal.js';
+
 import { submodule } from '../src/hook.js'
-import { logError, logInfo, mergeDeep } from '../src/utils.js'
+import { logError, logInfo } from '../src/utils.js'
 import { ajax } from '../src/ajax.js';
+
+import { config as sourceConfig } from '../src/config.js';
 
 const GVLID = 855;
 
@@ -39,7 +41,6 @@ function prepProvider(provider) {
 }
 
 function setGlobalConfig(config, segments) {
-  const pbjsG = getGlobal()
   const ortbSegments = {
     ortb2: {
       user: {
@@ -51,12 +52,12 @@ function setGlobalConfig(config, segments) {
     }
   }
   if (config.params && config.params.bidders) {
-    pbjsG.setBidderConfig(mergeDeep(pbjsG, {
+    sourceConfig.mergeBidderConfig({
       bidders: config.params.bidders,
       config: ortbSegments
-    }));
+    })
   } else {
-    pbjsG.setConfig(mergeDeep(pbjsG, ortbSegments));
+    sourceConfig.mergeConfig(ortbSegments)
   }
 }
 
