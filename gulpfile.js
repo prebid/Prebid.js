@@ -420,7 +420,7 @@ gulp.task('build-bundle-verbose', gulp.series(makeWebpackPkg({
       }),
     ],
   }
-})), gulpBundle.bind(null, false))
+}), gulpBundle.bind(null, false)));
 
 // public tasks (dependencies are needed for each task since they can be ran on their own)
 gulp.task('test-only', test);
