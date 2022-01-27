@@ -520,7 +520,7 @@ function buildBidResponse(bid, bidResponse, imp) {
   if (bid.dealid) baseBid.dealId = bid.dealid;
   if (bid.adomain) baseBid.meta = { advertiserDomains: bid.adomain };
 
-  if (mediaType === NATIVE) return { ...baseBid, native: buildNativeBidData(bid, imp) };
+  if (mediaType === NATIVE) return { ...baseBid, native: buildNativeBidData(bid) };
   return { ...baseBid, ...buildCreativeBidData(bid, mediaType) };
 }
 
