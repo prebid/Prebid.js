@@ -74,12 +74,28 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
       boxingallowed: 1,
       playbackmethod: [ playBackMethod ],
       playbackend: PLAYBACK_END.VIDEO_COMPLETION,
-      skip: 1
+      skip: 1,
+      pos: AD_POSITION.UNKNOWN // default value modified below
     };
 
+    // Placement according to IQG Guidelines 4.2.8
+    // https://cdn2.hubspot.net/hubfs/2848641/TrustworthyAccountabilityGroup_May2017/Docs/TAG-Inventory-Quality-Guidelines-v2_2-10-18-2016.pdf?t=1509469105938
     if (player.isFullscreen()) {
-      // only specify ad position when in Fullscreen since computational cost is low
       video.pos = AD_POSITION.FULL_SCREEN;
+    }
+    else if(videojs.dom.findPosition){
+      const {left, top, width, height} = videojs.dom.findPosition(player.el())
+      const bottom = window.innerHeight - top - height
+      const right = window.innerWidth - left - width
+      // Make sure video isn't overflowed horizontally
+      if(left >= 0 && right >= 0){
+        if(top>=0 && bottom>=0){
+          video.pos = AD_POSITION.ABOVE_THE_FOLD
+        }
+        else if(top>=0){
+          video.pos = AD_POSITION.BELOW_THE_FOLD
+        }
+      }
     }
 
     const content = {
