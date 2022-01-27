@@ -542,7 +542,7 @@ describe('gumgumAdapter', function () {
     });
     it('should include the local time and timezone offset', function () {
       const bidRequest = spec.buildRequests(bidRequests)[0];
-      expect(!!bidRequest.data.lt).to.be.false;
+      expect(!!bidRequest.data.lt).to.be.true;
     });
   })
 
