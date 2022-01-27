@@ -56,7 +56,7 @@ describe('Adot Adapter', function () {
             id: undefined
           }
         },
-        device: { ua: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/97.0.4692.71 Safari/537.36', language: 'en-US' },
+        device: { ua: navigator.userAgent, language: 'en-US' },
         user: { ext: { consent: bidderRequest.gdprConsent.consentString } },
         regs: { ext: { gdpr: bidderRequest.gdprConsent.gdprApplies } },
         ext: {
