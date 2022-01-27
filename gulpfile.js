@@ -35,6 +35,7 @@ var port = 9999;
 const FAKE_SERVER_HOST = argv.host ? argv.host : 'localhost';
 const FAKE_SERVER_PORT = 4444;
 const { spawn } = require('child_process');
+const TerserPlugin = require('terser-webpack-plugin');
 
 // these modules must be explicitly listed in --modules to be included in the build, won't be part of "all" modules
 var explicitModules = [
@@ -132,20 +133,22 @@ function makeDevpackPkg() {
     .pipe(connect.reload());
 }
 
-function makeWebpackPkg() {
-  var cloned = _.cloneDeep(webpackConfig);
+function makeWebpackPkg(extraConfig = {}) {
+  var cloned = _.merge(_.cloneDeep(webpackConfig), (extraConfig || {}));
   delete cloned.devtool;
 
-  var externalModules = helpers.getArgModules();
+  return function buildBundle() {
+    var externalModules = helpers.getArgModules();
 
-  const analyticsSources = helpers.getAnalyticsSources();
-  const moduleSources = helpers.getModulePaths(externalModules);
+    const analyticsSources = helpers.getAnalyticsSources();
+    const moduleSources = helpers.getModulePaths(externalModules);
 
-  return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
-    .pipe(helpers.nameModules(externalModules))
-    .pipe(webpackStream(cloned, webpack))
-    .pipe(gulpif(file => file.basename === 'prebid-core.js', header(banner, { prebid: prebid })))
-    .pipe(gulp.dest('build/dist'));
+    return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
+      .pipe(helpers.nameModules(externalModules))
+      .pipe(webpackStream(cloned, webpack))
+      .pipe(gulpif(file => file.basename === 'prebid-core.js', header(banner, {prebid: prebid})))
+      .pipe(gulp.dest('build/dist'));
+  }
 }
 
 function getModulesListToAddInBanner(modules) {
@@ -398,7 +401,25 @@ gulp.task(clean);
 gulp.task(escapePostbidConfig);
 
 gulp.task('build-bundle-dev', gulp.series(makeDevpackPkg, gulpBundle.bind(null, true)));
-gulp.task('build-bundle-prod', gulp.series(makeWebpackPkg, gulpBundle.bind(null, false)));
+gulp.task('build-bundle-prod', gulp.series(makeWebpackPkg(), gulpBundle.bind(null, false)));
+// build-bundle-verbose - prod bundle except names and comments are preserved. Use this to see the effects
+// of dead code elimination.
+gulp.task('build-bundle-verbose', gulp.series(makeWebpackPkg({
+  optimization: {
+    minimizer: [
+      new TerserPlugin({
+        parallel: true,
+        terserOptions: {
+          mangle: false,
+          format: {
+            comments: 'all'
+          }
+        },
+        extractComments: false,
+      }),
+    ],
+  }
+})), gulpBundle.bind(null, false))
 
 // public tasks (dependencies are needed for each task since they can be ran on their own)
 gulp.task('test-only', test);
@@ -417,7 +438,7 @@ gulp.task('serve-fast', gulp.series(clean, gulp.parallel('build-bundle-dev', wat
 gulp.task('serve-and-test', gulp.series(clean, gulp.parallel('build-bundle-dev', watchFast, testTaskMaker({watch: true}))));
 gulp.task('serve-fake', gulp.series(clean, gulp.parallel('build-bundle-dev', watch), injectFakeServerEndpointDev, test, startFakeServer));
 
-gulp.task('default', gulp.series(clean, makeWebpackPkg));
+gulp.task('default', gulp.series(clean, makeWebpackPkg()));
 
 gulp.task('e2e-test', gulp.series(clean, setupE2e, gulp.parallel('build-bundle-prod', watch), injectFakeServerEndpoint, test));
 // other tasks
