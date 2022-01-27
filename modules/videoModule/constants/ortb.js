@@ -34,7 +34,7 @@ export const PLACEMENT = {
 ORTB 2.5 section 5.4 - Ad Position
  */
 export const AD_POSITION = {
-  UNKOWN: 0,
+  UNKNOWN: 0,
   ABOVE_THE_FOLD: 1,
   BELOW_THE_FOLD: 3,
   HEADER: 4,
