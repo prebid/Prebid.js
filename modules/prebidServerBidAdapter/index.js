@@ -417,18 +417,19 @@ let nativeEventTrackerMethodMap = {
   js: 2
 };
 
-// enable reverse lookup
-[
-  nativeDataIdMap,
-  nativeImgIdMap,
-  nativeEventTrackerEventMap,
-  nativeEventTrackerMethodMap
-].forEach(map => {
-  Object.keys(map).forEach(key => {
-    map[map[key]] = key;
+if (FEATURES.NATIVE) {
+  // enable reverse lookup
+  [
+    nativeDataIdMap,
+    nativeImgIdMap,
+    nativeEventTrackerEventMap,
+    nativeEventTrackerMethodMap
+  ].forEach(map => {
+    Object.keys(map).forEach(key => {
+      map[map[key]] = key;
+    });
   });
-});
-
+}
 /*
  * Protocol spec for OpenRTB endpoint
  * e.g., https://<prebid-server-url>/v1/openrtb2/auction
@@ -510,74 +511,76 @@ const OPEN_RTB_PROTOCOL = {
         impressionId = `${adUnit.code}-${i}`;
       }
       impIds.add(impressionId);
-
-      const nativeParams = processNativeAdUnitParams(deepAccess(adUnit, 'mediaTypes.native'));
       let nativeAssets;
-      if (nativeParams) {
-        try {
-          nativeAssets = nativeAssetCache[impressionId] = Object.keys(nativeParams).reduce((assets, type) => {
-            let params = nativeParams[type];
 
-            function newAsset(obj) {
-              return Object.assign({
-                required: params.required ? 1 : 0
-              }, obj ? cleanObj(obj) : {});
-            }
+      if (FEATURES.NATIVE) {
+        const nativeParams = processNativeAdUnitParams(deepAccess(adUnit, 'mediaTypes.native'));
+        if (nativeParams) {
+          try {
+            nativeAssets = nativeAssetCache[impressionId] = Object.keys(nativeParams).reduce((assets, type) => {
+              let params = nativeParams[type];
 
-            switch (type) {
-              case 'image':
-              case 'icon':
-                let imgTypeId = nativeImgIdMap[type];
-                let asset = cleanObj({
-                  type: imgTypeId,
-                  w: deepAccess(params, 'sizes.0'),
-                  h: deepAccess(params, 'sizes.1'),
-                  wmin: deepAccess(params, 'aspect_ratios.0.min_width'),
-                  hmin: deepAccess(params, 'aspect_ratios.0.min_height')
-                });
-                if (!((asset.w && asset.h) || (asset.hmin && asset.wmin))) {
-                  throw 'invalid img sizes (must provide sizes or min_height & min_width if using aspect_ratios)';
-                }
-                if (Array.isArray(params.aspect_ratios)) {
-                  // pass aspect_ratios as ext data I guess?
-                  const aspectRatios = params.aspect_ratios
-                    .filter((ar) => ar.ratio_width && ar.ratio_height)
-                    .map(ratio => `${ratio.ratio_width}:${ratio.ratio_height}`);
-                  if (aspectRatios.length > 0) {
-                    asset.ext = {
-                      aspectratios: aspectRatios
+              function newAsset(obj) {
+                return Object.assign({
+                  required: params.required ? 1 : 0
+                }, obj ? cleanObj(obj) : {});
+              }
+
+              switch (type) {
+                case 'image':
+                case 'icon':
+                  let imgTypeId = nativeImgIdMap[type];
+                  let asset = cleanObj({
+                    type: imgTypeId,
+                    w: deepAccess(params, 'sizes.0'),
+                    h: deepAccess(params, 'sizes.1'),
+                    wmin: deepAccess(params, 'aspect_ratios.0.min_width'),
+                    hmin: deepAccess(params, 'aspect_ratios.0.min_height')
+                  });
+                  if (!((asset.w && asset.h) || (asset.hmin && asset.wmin))) {
+                    throw 'invalid img sizes (must provide sizes or min_height & min_width if using aspect_ratios)';
+                  }
+                  if (Array.isArray(params.aspect_ratios)) {
+                    // pass aspect_ratios as ext data I guess?
+                    const aspectRatios = params.aspect_ratios
+                      .filter((ar) => ar.ratio_width && ar.ratio_height)
+                      .map(ratio => `${ratio.ratio_width}:${ratio.ratio_height}`);
+                    if (aspectRatios.length > 0) {
+                      asset.ext = {
+                        aspectratios: aspectRatios
+                      }
                     }
                   }
-                }
-                assets.push(newAsset({
-                  img: asset
-                }));
-                break;
-              case 'title':
-                if (!params.len) {
-                  throw 'invalid title.len';
-                }
-                assets.push(newAsset({
-                  title: {
-                    len: params.len
-                  }
-                }));
-                break;
-              default:
-                let dataAssetTypeId = nativeDataIdMap[type];
-                if (dataAssetTypeId) {
                   assets.push(newAsset({
-                    data: {
-                      type: dataAssetTypeId,
+                    img: asset
+                  }));
+                  break;
+                case 'title':
+                  if (!params.len) {
+                    throw 'invalid title.len';
+                  }
+                  assets.push(newAsset({
+                    title: {
                       len: params.len
                     }
-                  }))
-                }
-            }
-            return assets;
-          }, []);
-        } catch (e) {
-          logError('error creating native request: ' + String(e))
+                  }));
+                  break;
+                default:
+                  let dataAssetTypeId = nativeDataIdMap[type];
+                  if (dataAssetTypeId) {
+                    assets.push(newAsset({
+                      data: {
+                        type: dataAssetTypeId,
+                        len: params.len
+                      }
+                    }))
+                  }
+              }
+              return assets;
+            }, []);
+          } catch (e) {
+            logError('error creating native request: ' + String(e))
+          }
         }
       }
       const videoParams = deepAccess(adUnit, 'mediaTypes.video');
@@ -637,7 +640,7 @@ const OPEN_RTB_PROTOCOL = {
         }
       }
 
-      if (nativeAssets) {
+      if (FEATURES.NATIVE && nativeAssets) {
         try {
           mediaTypes['native'] = {
             request: JSON.stringify({
@@ -938,7 +941,7 @@ const OPEN_RTB_PROTOCOL = {
 
             if (bid.adm) { bidObject.vastXml = bid.adm; }
             if (!bidObject.vastUrl && bid.nurl) { bidObject.vastUrl = bid.nurl; }
-          } else if (deepAccess(bid, 'ext.prebid.type') === NATIVE) {
+          } else if (FEATURES.NATIVE && deepAccess(bid, 'ext.prebid.type') === NATIVE) {
             bidObject.mediaType = NATIVE;
             let adm;
             if (typeof bid.adm === 'string') {
@@ -1081,7 +1084,7 @@ export function PrebidServer() {
 
     // at this point ad units should have a size array either directly or mapped so filter for that
     const validAdUnits = adUnits.filter(unit =>
-      unit.mediaTypes && (unit.mediaTypes.native || (unit.mediaTypes.banner && unit.mediaTypes.banner.sizes) || (unit.mediaTypes.video && unit.mediaTypes.video.playerSize))
+      unit.mediaTypes && ((FEATURES.NATIVE && unit.mediaTypes.native) || (unit.mediaTypes.banner && unit.mediaTypes.banner.sizes) || (unit.mediaTypes.video && unit.mediaTypes.video.playerSize))
     );
 
     // in case config.bidders contains invalid bidders, we only process those we sent requests for

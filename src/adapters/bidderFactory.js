@@ -501,7 +501,7 @@ export function isValid(adUnitCode, bid, bidRequests) {
     return false;
   }
 
-  if (bid.mediaType === 'native' && !nativeBidIsValid(bid, bidRequests)) {
+  if (FEATURES.NATIVE && bid.mediaType === 'native' && !nativeBidIsValid(bid, bidRequests)) {
     logError(errorMessage('Native bid missing some required properties.'));
     return false;
   }

@@ -169,5 +169,11 @@ module.exports = {
     }
 
     return options;
+  },
+  getDisabledFeatures() {
+    return (argv.disable || '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => s);
   }
 };

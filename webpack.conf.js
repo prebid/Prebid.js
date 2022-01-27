@@ -4,9 +4,10 @@ var webpack = require('webpack');
 var helpers = require('./gulpHelpers.js');
 var { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 var argv = require('yargs').argv;
+const babelConfig = require('./babelConfig.js')({disableFeatures: helpers.getDisabledFeatures()});
 
 var plugins = [
-  new webpack.EnvironmentPlugin({'LiveConnectMode': null})
+  new webpack.EnvironmentPlugin({'LiveConnectMode': null}),
 ];
 
 if (argv.analyze) {
@@ -53,7 +54,7 @@ module.exports = {
         use: [
           {
             loader: 'babel-loader',
-            options: helpers.getAnalyticsOptions(),
+            options: Object.assign({}, babelConfig, helpers.getAnalyticsOptions()),
           }
         ]
       },
@@ -63,6 +64,7 @@ module.exports = {
         use: [
           {
             loader: 'babel-loader',
+            options: babelConfig
           }
         ],
       }

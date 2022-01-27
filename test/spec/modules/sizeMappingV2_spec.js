@@ -641,6 +641,9 @@ describe('sizeMappingV2', function () {
     });
 
     describe('native mediaTypes checks', function () {
+      if (!FEATURES.NATIVE) {
+        return;
+      }
       beforeEach(function () {
         sinon.spy(adUnitSetupChecks, 'validateNativeMediaType');
       });

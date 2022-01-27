@@ -6,6 +6,7 @@ const babelConfig = require('./babelConfig.js');
 var _ = require('lodash');
 var webpackConf = require('./webpack.conf.js');
 var karmaConstants = require('karma').constants;
+const helpers = require('./gulpHelpers.js');
 
 function newWebpackConfig(codeCoverage) {
   // Make a clone here because we plan on mutating this object, and don't want parallel tasks to trample each other.
@@ -22,7 +23,7 @@ function newWebpackConfig(codeCoverage) {
     .flatMap((r) => r.use)
     .filter((use) => use.loader === 'babel-loader')
     .forEach((use) => {
-      use.options = babelConfig(true);
+      use.options = babelConfig({test: true, disableFeatures: helpers.getDisabledFeatures()});
     });
 
   if (codeCoverage) {

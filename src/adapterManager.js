@@ -62,12 +62,14 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels, src})
     if (active) {
       result.push(adUnit.bids.filter(bid => bid.bidder === bidderCode)
         .reduce((bids, bid) => {
-          const nativeParams =
-            adUnit.nativeParams || deepAccess(adUnit, 'mediaTypes.native');
-          if (nativeParams) {
-            bid = Object.assign({}, bid, {
-              nativeParams: processNativeAdUnitParams(nativeParams),
-            });
+          if (FEATURES.NATIVE) {
+            const nativeParams =
+              adUnit.nativeParams || deepAccess(adUnit, 'mediaTypes.native');
+            if (nativeParams) {
+              bid = Object.assign({}, bid, {
+                nativeParams: processNativeAdUnitParams(nativeParams),
+              });
+            }
           }
 
           bid = Object.assign({}, bid, getDefinedParams(adUnit, [

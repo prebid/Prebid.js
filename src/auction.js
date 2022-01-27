@@ -95,6 +95,14 @@ const sourceInfo = {};
 const queuedCalls = [];
 
 /**
+ * Clear global state for tests
+ */
+export function resetAuctionState() {
+  queuedCalls.length = 0;
+  [outstandingRequests, sourceInfo].forEach((ob) => Object.keys(ob).forEach((k) => { delete ob[k] }));
+}
+
+/**
   * Creates new auction instance
   *
   * @param {Object} requestConfig
@@ -764,7 +772,7 @@ export function getKeyValueTargetingPairs(bidderCode, custBidObj, bidReq) {
   }
 
   // set native key value targeting
-  if (custBidObj['native']) {
+  if (FEATURES.NATIVE && custBidObj['native']) {
     keyValues = Object.assign({}, keyValues, getNativeTargeting(custBidObj, bidReq));
   }
 
