@@ -48,7 +48,7 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
     const autoplay = player.autoplay();
     const muted = player.muted() || autoplay === 'muted';
     if (autoplay!==false) {
-      playBackMethod = isMuted ? PLAYBACK_METHODS.AUTOPLAY_MUTED : PLAYBACK_METHODS.AUTOPLAY;
+      playBackMethod = muted ? PLAYBACK_METHODS.AUTOPLAY_MUTED : PLAYBACK_METHODS.AUTOPLAY;
     }
     const supportedMediaTypes = Object.values(VIDEO_MIME_TYPE).filter(
       // Follows w3 spec https://www.w3.org/TR/2011/WD-html5-20110113/video.html#dom-navigator-canplaytype
@@ -81,7 +81,7 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
       boxingallowed: 1,
       playbackmethod: [ playBackMethod ],
       playbackend: PLAYBACK_END.VIDEO_COMPLETION,
-      skip: 1,
+      // Per ortb 7.4 skip is omitted since neither the player nor ima plugin imposes a skip button
       pos: AD_POSITION.UNKNOWN // default value modified below
     };
 
@@ -113,11 +113,11 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
     if (player.readyState() > 0) {
       content.len = Math.round(player.duration());
     }
-    const item = player.getMedia();
-    if (item) {
+    const mediaItem = player.getMedia();
+    if (mediaItem) {
       for (let param of ['album', 'artist', 'title']) {
-        if (item[param]) {
-          content[param] = item[param];
+        if (mediaItem[param]) {
+          content[param] = mediaItem[param];
         }
       }
     }
