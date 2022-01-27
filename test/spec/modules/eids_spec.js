@@ -240,9 +240,9 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
-  it('haloId', function() {
+  it('hadronId', function() {
     const userId = {
-      haloId: 'some-random-id-value'
+      hadronId: 'some-random-id-value'
     };
     const newEids = createEidsArray(userId);
     expect(newEids.length).to.equal(1);
