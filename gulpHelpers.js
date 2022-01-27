@@ -175,5 +175,5 @@ module.exports = {
       .split(',')
       .map((s) => s.trim())
       .filter((s) => s);
-  }
+  },
 };

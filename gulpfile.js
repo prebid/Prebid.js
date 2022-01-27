@@ -227,8 +227,10 @@ function bundle(dev, moduleArr) {
 
 function testTaskMaker(options = {}) {
   ['watch', 'e2e', 'file', 'browserstack', 'notest'].forEach(opt => {
-    options[opt] = options[opt] || argv[opt];
+    options[opt] = options.hasOwnProperty(opt) ? options[opt] : argv[opt];
   })
+
+  options.disableFeatures = options.disableFeatures || helpers.getDisabledFeatures();
 
   return function test(done) {
     if (options.notest) {
@@ -273,13 +275,15 @@ function testTaskMaker(options = {}) {
           process.exit(1);
         });
     } else {
-      var karmaConf = karmaConfMaker(false, options.browserstack, options.watch, options.file);
+      var karmaConf = karmaConfMaker(false, options.browserstack, options.watch, options.file, options.disableFeatures);
 
       var browserOverride = helpers.parseBrowserArgs(argv);
       if (browserOverride.length > 0) {
         karmaConf.browsers = browserOverride;
       }
-
+      if (options.oneBrowser) {
+        karmaConf.browsers = [karmaConf.browsers.find((b) => b.toLowerCase().includes(options.oneBrowser.toLowerCase())) || karmaConf.browsers[0]]
+      }
       new KarmaServer(karmaConf, newKarmaCallback(done)).start();
     }
   }
@@ -296,9 +300,6 @@ function newKarmaCallback(done) {
       }
     } else {
       done();
-      if (argv.browserstack) {
-        process.exit(exitCode);
-      }
     }
   }
 }
@@ -423,7 +424,8 @@ gulp.task('build-bundle-verbose', gulp.series(makeWebpackPkg({
 
 // public tasks (dependencies are needed for each task since they can be ran on their own)
 gulp.task('test-only', test);
-gulp.task('test', gulp.series(clean, lint, 'test-only'));
+gulp.task('test-all-features-disabled', testTaskMaker({disableFeatures: require('./features.json'), oneBrowser: 'chrome', watch: false}))
+gulp.task('test', gulp.series(clean, lint, 'test-all-features-disabled', 'test-only'));
 
 gulp.task('test-coverage', gulp.series(clean, testCoverage));
 gulp.task(viewCoverage);
