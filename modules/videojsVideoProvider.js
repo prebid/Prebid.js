@@ -44,14 +44,20 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
     }
 
     let playBackMethod = PLAYBACK_METHODS.CLICK_TO_PLAY
-    const isMuted = player.muted() || player.autoplay() === 'muted'; // todo autoplayAdsMuted only applies to preRoll
-    if (player.autoplay()) {
+    // returns a boolean or a string with the autoplay strategy
+    const autoplay = player.autoplay();
+    const muted = player.muted() || autoplay === 'muted';
+    if (autoplay!==false) {
       playBackMethod = isMuted ? PLAYBACK_METHODS.AUTOPLAY_MUTED : PLAYBACK_METHODS.AUTOPLAY;
     }
     const supportedMediaTypes = Object.values(VIDEO_MIME_TYPE).filter(
       // Follows w3 spec https://www.w3.org/TR/2011/WD-html5-20110113/video.html#dom-navigator-canplaytype
       type => player.canPlayType(type) !== ''
-    ).concat([VPAID_MIME_TYPE])
+    )
+    if(videojs.ima.vpaidMode){
+      supportedMediaTypes.push(VPAID_MIME_TYPE)
+    }
+
     const video = {
       mimes: supportedMediaTypes,
       // Based on the protocol support provided by the videojs-ima plugin
@@ -66,8 +72,9 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
       // TODO: Make sure this returns dimensions in DIPS
       h: player.currentHeight(),
       w: player.currentWidth(),
-      placement: PLACEMENT.IN_STREAM,
-      // both linearity forms are supported
+      // May not be in stream if videojs is only used to serve ad content
+      // placement: PLACEMENT.IN_STREAM,
+      // both linearity forms are supported so the param is excluded
       // sequence - TODO not yet supported
       // battr: adConfig.battr, TODO: Not sure where this should be coming from
       maxextended: -1,
