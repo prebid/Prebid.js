@@ -106,6 +106,8 @@
     "url": "^0.11.0",
     "url-parse": "^1.0.5",
     "video.js": "^7.17.0",
+    "videojs-contrib-ads": "^6.9.0",
+    "videojs-ima": "^1.11.0",
     "webdriverio": "^7.6.1",
     "webpack": "^5.70.0",
     "webpack-bundle-analyzer": "^4.5.0",
