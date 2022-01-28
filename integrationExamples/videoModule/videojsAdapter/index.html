@@ -1,102 +1,119 @@
 <html>
 
 <head>
-    <script async src="../../../build/dev/prebid.js"></script>
-    <link href="https://vjs.zencdn.net/7.17.0/video-js.css" rel="stylesheet" />
-    <!-- Setup ad units -->
-    <script>
-      var adUnits = [{
-        code: 'div-gpt-ad-51545-0',
-        sizes: [[600, 500]],
-        mediaTypes: {
-          video: {
-            sizes: [[600, 500]]
-          }
-        },
+  <script async src="../../../build/dev/prebid.js"></script>
+  <link href="https://vjs.zencdn.net/7.17.0/video-js.css" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/videojs-contrib-ads/6.9.0/videojs-contrib-ads.css"
+    integrity="sha512-0gIqgiX1dWTChdWUl8XGIBDFvLo7aTvmd6FAhJjzWx5bzYsCJTiPJLKqLF3q31IN4Kfrc0NbTO+EthoT6O0olQ=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/videojs-ima/1.11.0/videojs.ima.css"
+    integrity="sha512-vvsEsf+dZDp6wbommO1Jbb2bpFhVQjw6pIzfE5fUY5Fgkmsgn/16sQWegqrd236T69kK5F1SbGZ+yK46a9il5A=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <!-- Setup ad units -->
+  <script>
+    var adUnits = [{
+      code: 'div-gpt-ad-51545-0',
+      sizes: [[600, 500]],
+      mediaTypes: {
         video: {
-          divId: 'vid-div-1',
-          adServer: {
-            vendorCode: "gam",
-            params: {
-              iu: '/19968336/prebid_cache_video_adunit',
-              cust_params: {
-                section: 'blog',
-                anotherKey: 'anotherValue'
-              },
-              output: 'vast'
-            }
-          },
-        },
-
-        bids: [{
-          bidder: 'ix',
+          sizes: [[600, 500]]
+        }
+      },
+      video: {
+        divId: 'vid-div-1',
+        adServer: {
+          vendorCode: "gam",
           params: {
-            siteId: '300',
-            size: [600, 500]
+            iu: '/19968336/prebid_cache_video_adunit',
+            cust_params: {
+              section: 'blog',
+              anotherKey: 'anotherValue'
+            },
+            output: 'vast'
           }
-        }]
-      }];
+        },
+      },
 
-      var pbjs = pbjs || {};
-      pbjs.que = pbjs.que || [];
+      bids: [{
+        bidder: 'ix',
+        params: {
+          siteId: '300',
+          size: [600, 500]
+        }
+      }]
+    }];
 
-      pbjs.que.push(function () {
-        pbjs.onEvent('adImpression', event => {
-          console.log('adImpression: ', event);
-        });
-        pbjs.setConfig({
-          video: {
-            providers: [{
-              divId: 'vid-div-1',
-              // vendorCode for videojs
-              vendorCode: 2,
-              playerConfig: {
-                params: {
-                  vendorConfig: {
-                    mediaid: 'd9J2zcaA',
-                    advertising: {
-                      adscheduleid: "00000000",
-                      client: 'vast',
-                      offset: "10",
-                      tag: [
-                        "http://playertest.longtailvideo.com/pre-bad.xml",
-                        "http://playertest.longtailvideo.com/mid.xml"
-                      ],
-                    }
+    var pbjs = pbjs || {};
+    pbjs.que = pbjs.que || [];
+
+    pbjs.que.push(function () {
+      pbjs.onEvent('adImpression', event => {
+        console.log('adImpression: ', event);
+      });
+      pbjs.setConfig({
+        video: {
+          providers: [{
+            divId: 'vid-div-1',
+            // vendorCode for videojs
+            vendorCode: 2,
+            playerConfig: {
+              params: {
+                vendorConfig: {
+                  mediaid: 'd9J2zcaA',
+                  advertising: {
+                    adscheduleid: "00000000",
+                    client: 'vast',
+                    offset: "10",
+                    tag: [
+                      'https://pubads.g.doubleclick.net/gampad/ads?sz=640x480&' +
+                      'iu=/124319096/external/ad_rule_samples&ciu_szs=300x250&ad_rule=1&' +
+                      'impl=s&gdfp_req=1&env=vp&output=xml_vmap1&unviewed_position_start=1&' +
+                      'cust_params=sample_ar%3Dpremidpostpod%26deployment%3Dgmf-js&cmsid=496&' +
+                      'vid=short_onecue&correlator=',
+                      "http://playertest.longtailvideo.com/mid.xml"
+                    ],
                   }
                 }
               }
-            },]
-          }
-        });
-        pbjs.addAdUnits(adUnits);
-        pbjs.requestBids();
+            }
+          },]
+        }
       });
-    </script>
+      pbjs.addAdUnits(adUnits);
+      pbjs.requestBids();
+    });
+  </script>
 </head>
 
 <body>
-    <h2>VideoJS Adapter Test</h2>
-    
-    <h5>Div-1 existing Player</h5>
+  <h2>VideoJS Adapter Test</h2>
 
-    <video id='vid-div-1' class="video-js vjs-big-play-centered" data-setup='{"controls": true, "autoplay": false, "preload": "auto"}'>
-      <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
-    </video>
+  <h5>Div-1 existing Player</h5>
 
-    <h5>Div-2 existing player without automatic setup</h5>
-    <video-js id='vid-div-2' data-setup='{"controls": true}'>
-      <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
-    </video-js>
+  <video id='vid-div-1' class="video-js vjs-big-play-centered"
+    data-setup='{"controls": true, "autoplay": false, "preload": "auto"}'>
+    <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+  </video>
 
-    <h5>Div-3 controlled Player</h5>
-    <div id='vid-div-3'></div>
+  <h5>Div-2 existing player without automatic setup</h5>
+  <video-js id='vid-div-2' data-setup='{"controls": true}'>
+    <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+  </video-js>
+
+  <h5>Div-3 controlled Player</h5>
+  <div id='vid-div-3'></div>
 
 
-    <script src="https://vjs.zencdn.net/7.17.0/video.min.js"></script>
-    <script>
-    </script>
+  <script src="https://vjs.zencdn.net/7.17.0/video.min.js"></script>
+  <script src="https://imasdk.googleapis.com/js/sdkloader/ima3.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-contrib-ads/6.9.0/videojs-contrib-ads.js"
+    integrity="sha512-XjyyAijQGlXZET35toG8igvVs8HvfVgKXGnbfAs2EpZ0o8vjJoIrxL9RBBQbQjzAODIe0jvWelFfZOA3Z/vdWg=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-ima/1.11.0/videojs.ima.js"
+    integrity="sha512-9ocW9fl8CKJhZp4cmDpLDGPuTQ93gvw1iIS6daMYc5Y0Xh1all8iwdoI+iNmZpiydpdDGyKMTriXDX0wfs2OEg=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
 </body>
 
 </html>
-
