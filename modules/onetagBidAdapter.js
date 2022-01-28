@@ -3,7 +3,7 @@
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { INSTREAM, OUTSTREAM } from '../src/video.js';
 import { Renderer } from '../src/Renderer.js';
-import find from 'core-js-pure/features/array/find.js';
+import find from 'prebidjs-polyfill/find.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { createEidsArray } from './userId/eids.js';

@@ -19,7 +19,7 @@
 import { submodule } from '../src/hook.js';
 import { ajaxBuilder } from '../src/ajax.js';
 import { isGptPubadsDefined, timestamp, generateUUID, logError } from '../src/utils.js';
-import find from 'core-js-pure/features/array/find.js';
+import find from 'prebidjs-polyfill/find.js';
 
 /** @type {Object} */
 const MessageType = {
