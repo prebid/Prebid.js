@@ -8,6 +8,7 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
   let videojs = videojs_;
   let player = null;
   let playerVersion = null;
+  let ima_options = null;
   const {playerConfig, divId} = config;
 
   // TODO: test with older videojs versions
@@ -29,9 +30,15 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
     player = videojs(divId, playerConfig, function() {
       // callback runs in both cases
     });
+    const vendorConfig = config.playerConfig?.params?.vendorConfig;
+    if(player.ima && vendorConfig?.advertising?.tag){
+      ima_options = { adTagUrl: vendorConfig?.advertising?.tag[0]};
+      player.ima(ima_options);
+    }
+
     // TODO: make sure ortb gets called in integration example
     // currently testing with a hacky solution by hooking it to window
-    // window.ortb = this.getOrtbParams
+    window.ortb = this.getOrtbParams
   }
 
   function getId() {
@@ -43,7 +50,7 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
       return null;
     }
 
-    let playBackMethod = PLAYBACK_METHODS.CLICK_TO_PLAY
+    let playBackMethod = PLAYBACK_METHODS.CLICK_TO_PLAY;
     // returns a boolean or a string with the autoplay strategy
     const autoplay = player.autoplay();
     const muted = player.muted() || autoplay === 'muted';
@@ -54,34 +61,34 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
       // Follows w3 spec https://www.w3.org/TR/2011/WD-html5-20110113/video.html#dom-navigator-canplaytype
       type => player.canPlayType(type) !== ''
     )
-    if(videojs.ima.vpaidMode){
-      supportedMediaTypes.push(VPAID_MIME_TYPE)
+    // IMA supports vpaid unless its expliclty turned off
+    if(ima_options && ima_options.vpaidMode !== 0  ){
+      supportedMediaTypes.push(VPAID_MIME_TYPE);
     }
 
     const video = {
       mimes: supportedMediaTypes,
       // Based on the protocol support provided by the videojs-ima plugin
       // https://developers.google.com/interactive-media-ads/docs/sdks/html5/client-side/compatibility
-      // Need to check for the plugins prescence by checking videojs.ima
-      protocols: videojs.ima ? [
+      // Need to check for the plugins 
+      protocols: ima_options ? [
         PROTOCOLS.VAST_2_0,
       ] : [],
-      api: [
+      api: ima_options ? [
         API_FRAMEWORKS.VPAID_2_0
-      ],
+      ] : [],
       // TODO: Make sure this returns dimensions in DIPS
       h: player.currentHeight(),
       w: player.currentWidth(),
-      // May not be in stream if videojs is only used to serve ad content
-      // placement: PLACEMENT.IN_STREAM,
+
+      // placement: PLACEMENT.IN_STREAM, TODO: Determine placement may not be in stream if videojs is only used to serve ad content
       // both linearity forms are supported so the param is excluded
       // sequence - TODO not yet supported
-      // battr: adConfig.battr, TODO: Not sure where this should be coming from
       maxextended: -1,
       boxingallowed: 1,
       playbackmethod: [ playBackMethod ],
       playbackend: PLAYBACK_END.VIDEO_COMPLETION,
-      // Per ortb 7.4 skip is omitted since neither the player nor ima plugin imposes a skip button
+      // Per ortb 7.4 skip is omitted since neither the player nor ima plugin imposes a skip button, or a skipmin/max
       pos: AD_POSITION.UNKNOWN // default value modified below
     };
 

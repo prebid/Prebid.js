@@ -1,11 +1,9 @@
-import {
-  VideojsProvider
-} from 'modules/videojsVideoProvider';
-import videojs from 'video.js';
+// Using require style imports for fine grained control of import time
+const {VideojsProvider} = require('modules/videojsVideoProvider')
 
-import {
+const {
   PROTOCOLS, API_FRAMEWORKS, VIDEO_MIME_TYPE, PLAYBACK_METHODS, PLACEMENT, VPAID_MIME_TYPE
-} from 'modules/videoModule/constants/ortb.js';
+} = require('modules/videoModule/constants/ortb.js');
 
 describe('videojsProvider', function () {
   describe('init', function () {
@@ -14,14 +12,12 @@ describe('videojsProvider', function () {
     let timeState;
     let callbackStorage;
     let utilsMock;
+    let videojs;
 
     beforeEach(() => {
       config = {};
-      //   adState = adStateFactory();
-      //   timeState = timeStateFactory();
-      //   callbackStorage = callbackStorageFactory();
       document.body.innerHTML = '';
-      utilsMock = null;
+      videojs = require('video.js').default
     });
 
     it('should trigger failure when videojs is missing', function () {
@@ -71,20 +67,17 @@ describe('videojsProvider', function () {
 
   describe('getOrtbParams', function () {
     beforeEach(() => {
-      const test_height = 100;
-      const test_width = 200;
-
-      if (videojs.getPlayer('test')) {
-        videojs.getPlayer('test').dispose()
-      }
+      videojs = require('video.js').default
+      config = {divId: 'test'};
       // initialize videojs element
       document.body.innerHTML = `
-      <video preload id='test' width="${test_width}" height="${test_height}">
+      <video preload id='test' width="${200}" height="${100}">
       <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
       </video>`
     });
-    it('should populate oRTB params', function () {
-      const provider = VideojsProvider({divId: 'test'}, videojs, null, null, null, null);
+
+    it('should populate oRTB params without ima present', function () {
+      const provider = VideojsProvider(config, videojs, null, null, null, null);
       provider.init();
 
       const oRTB = provider.getOrtbParams();
@@ -93,25 +86,53 @@ describe('videojsProvider', function () {
       const { video, content } = oRTB;
 
       expect(video.mimes).to.include(VIDEO_MIME_TYPE.MP4);
-      expect(video.protocols).to.include.members([
-        PROTOCOLS.VAST_2_0,
-      ]);
+      expect(video.protocols).to.deep.equal([]);
       expect(video.h).to.equal(100);
       expect(video.w).to.equal(200);
-      expect(video).to.not.have.property('pos');
       // Should we check for these if they are hard coded?
       expect(video.maxextended).to.equal(-1);
       expect(video.boxingallowed).to.equal(1);
       expect(video.playbackmethod).to.include(PLAYBACK_METHODS.CLICK_TO_PLAY);
       expect(video.playbackend).to.equal(1);
-      expect(video.api).to.include.members([API_FRAMEWORKS.VPAID_2_0]);
+      expect(video.api).to.deep.equal([]);
 
       expect(content.url).to.be.equal('http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4');
       expect(content).to.not.have.property('len');
     });
 
+    it('should change populated oRTB params when ima present', function () {
+      require('videojs-contrib-ads');
+      require('videojs-ima');
+      document.body.innerHTML = `
+      <video preload id='test' width="${200}" height="${100}">
+      <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+      </video>`
+
+      let player = videojs('test')
+      expect(player).has.property('ima')
+
+      config.playerConfig = {
+        params: {
+          vendorConfig: {
+            mediaid: 'vendor-id',
+            advertising: {
+              tag: ['test-tag']
+            }
+          }
+        }
+      }
+
+      const provider = VideojsProvider(config, videojs, null, null, null, null);
+      provider.init();
+      const { video, content } = provider.getOrtbParams();
+
+      expect(video.protocols).to.include(PROTOCOLS.VAST_2_0);
+      expect(video.api).to.include(API_FRAMEWORKS.VPAID_2_0);
+      expect(video.mimes).to.include(VPAID_MIME_TYPE)
+    });
+
     it('should populate position when fullscreen', function () {
-      const provider = VideojsProvider({divId: 'test'}, videojs, null, null, null, null);
+      const provider = VideojsProvider(config, videojs, null, null, null, null);
       provider.init();
       const player = videojs.getPlayer('test')
       player.isFullscreen = () => true;
@@ -119,20 +140,18 @@ describe('videojsProvider', function () {
       expect(video.pos).to.equal(7);
     });
 
-    it('should populate length when loaded', function (done) {
-      const provider = VideojsProvider({divId: 'test'}, videojs, null, null, null, null);
+    it('should populate length when loaded', function () {
+      const provider = VideojsProvider(config, videojs, null, null, null, null);
       provider.init();
       const player = videojs.getPlayer('test')
-      player.preload = true
-      setTimeout(() => {
-        const { video, content } = provider.getOrtbParams();
-        expect(content.len).to.equal(9 * 60 + 56);
-        done();
-      }, 1000);
+      player.readyState = () => 1
+      player.duration = () => 100
+      const { video, content } = provider.getOrtbParams();
+      expect(content.len).to.equal(100);
     });
 
     it('should return the correct playback method for autoplay', function () {
-      const provider = VideojsProvider({divId: 'test'}, videojs, null, null, null, null);
+      const provider = VideojsProvider(config, videojs, null, null, null, null);
       provider.init();
       const player = videojs.getPlayer('test')
       player.autoplay(true)
@@ -140,29 +159,45 @@ describe('videojsProvider', function () {
       expect(video.playbackmethod).to.include(PLAYBACK_METHODS.AUTOPLAY);
     });
 
-    it('should return the correct playback method for autoplay muted', function (done) {
-      const provider = VideojsProvider({divId: 'test'}, videojs, null, null, null, null);
+    it('should return the correct playback method for autoplay muted', function () {
+      const provider = VideojsProvider(config, videojs, null, null, null, null);
       provider.init();
       const player = videojs.getPlayer('test')
-      player.muted(true)
-      player.autoplay(true)
-      setTimeout(() => {
-        const { video, content } = provider.getOrtbParams();
-        expect(video.playbackmethod).to.include(PLAYBACK_METHODS.AUTOPLAY_MUTED);
-        done();
-      }, 100);
+      player.muted = () => true
+      player.autoplay = () => true
+      const { video, content } = provider.getOrtbParams();
+      expect(video.playbackmethod).to.include(PLAYBACK_METHODS.AUTOPLAY_MUTED);
     });
 
-    it('should return the correct playback method for the other autoplay muted', function (done) {
-      const provider = VideojsProvider({divId: 'test'}, videojs, null, null, null, null);
+    it('should return the correct playback method for the other autoplay muted', function () {
+      const provider = VideojsProvider(config, videojs, null, null, null, null);
       provider.init();
       const player = videojs.getPlayer('test')
-      player.autoplay('muted')
-      setTimeout(() => {
-        const { video, content } = provider.getOrtbParams();
-        expect(video.playbackmethod).to.include(PLAYBACK_METHODS.AUTOPLAY_MUTED);
-        done();
-      }, 100);
+      player.autoplay = () => 'muted'
+      const { video, content } = provider.getOrtbParams();
+      expect(video.playbackmethod).to.include(PLAYBACK_METHODS.AUTOPLAY_MUTED);
     });
+
+    it('should return the correct playback method for the other autoplay muted', function () {
+      const provider = VideojsProvider(config, videojs, null, null, null, null);
+      provider.init();
+      const player = videojs.getPlayer('test')
+      player.autoplay = () => 'muted'
+      const { video, content } = provider.getOrtbParams();
+      expect(video.playbackmethod).to.include(PLAYBACK_METHODS.AUTOPLAY_MUTED);
+    });
+
+    it('should return the correct position when video is above the fold', function () {
+      const provider = VideojsProvider({divId: 'test'}, videojs, null, null, null, null);
+      provider.init();
+      // const player = videojs.getPlayer('test')
+      // player.autoplay = () => 'muted'
+      // const { video, content } = provider.getOrtbParams();
+      expect(window.innerHeight).to.equal(600)
+      expect(window.innerWidth).to.equal(785)
+
+    });
+
+
   });
 });
