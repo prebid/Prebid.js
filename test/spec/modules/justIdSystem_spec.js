@@ -69,9 +69,9 @@ describe('JustIdSystem', function () {
     it('check getId arguments are passed to prebidGetId event', function() {
       const callbackSpy = sinon.spy();
 
-      const a = { x: "x" }
-      const b = { y: "y" }
-      const c = { z: "z" }
+      const a = { x: 'x' }
+      const b = { y: 'y' }
+      const c = { z: 'z' }
 
       justIdSubmodule.getId(a, b, c).callback(callbackSpy);
 
