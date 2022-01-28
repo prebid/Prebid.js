@@ -96,6 +96,7 @@ describe('videojsProvider', function () {
       expect(video.playbackmethod).to.include(PLAYBACK_METHODS.CLICK_TO_PLAY);
       expect(video.playbackend).to.equal(1);
       expect(video.api).to.deep.equal([]);
+      expect(video.placement).to.be.equal(PLACEMENT.IN_STREAM);
 
       expect(content.url).to.be.equal('http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4');
       expect(content).to.not.have.property('len');
@@ -123,13 +124,24 @@ describe('videojsProvider', function () {
         }
       }
 
-      const provider = VideojsProvider(config, videojs, null, null, null, utils);
+      let provider = VideojsProvider(config, videojs, null, null, null, utils);
       provider.init();
-      const { video, content } = provider.getOrtbParams();
+      let { video, content } = provider.getOrtbParams();
 
       expect(video.protocols).to.include(PROTOCOLS.VAST_2_0);
       expect(video.api).to.include(API_FRAMEWORKS.VPAID_2_0);
-      expect(video.mimes).to.include(VPAID_MIME_TYPE)
+      expect(video.mimes).to.include(VPAID_MIME_TYPE);
+      player.dispose();
+      
+      // Should not return instream placement when theres no source
+      document.body.innerHTML = `<video preload id='test' width="${200}" height="${100}"></video>`
+      player = videojs('test')
+      expect(player).has.property('ima')
+      provider = VideojsProvider(config, videojs, null, null, null, utils);
+      provider.init();
+      ({ video, content } = provider.getOrtbParams());
+      expect(video).to.not.have.property('placement')
+
     });
 
     it('should populate position when fullscreen', function () {
