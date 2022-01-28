@@ -53,6 +53,23 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
       return null;
     }
 
+    const content = {
+      // id:, TODO: find a suitable id for videojs sources
+      url: player.currentSrc()
+    };
+    // Only include length if player is ready
+    if (player.readyState() > 0) {
+      content.len = Math.round(player.duration());
+    }
+    const mediaItem = player.getMedia();
+    if (mediaItem) {
+      for (let param of ['album', 'artist', 'title']) {
+        if (mediaItem[param]) {
+          content[param] = mediaItem[param];
+        }
+      }
+    }
+
     let playBackMethod = PLAYBACK_METHODS.CLICK_TO_PLAY;
     // returns a boolean or a string with the autoplay strategy
     const autoplay = player.autoplay();
@@ -84,8 +101,7 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
       // TODO: Make sure this returns dimensions in DIPS
       h: player.currentHeight(),
       w: player.currentWidth(),
-
-      // placement: PLACEMENT.IN_STREAM, TODO: Determine placement may not be in stream if videojs is only used to serve ad content
+      // TODO: implement startdelay since its reccomend param
       // both linearity forms are supported so the param is excluded
       // sequence - TODO not yet supported
       maxextended: -1,
@@ -94,6 +110,12 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
       playbackend: PLAYBACK_END.VIDEO_COMPLETION,
       // Per ortb 7.4 skip is omitted since neither the player nor ima plugin imposes a skip button, or a skipmin/max
     };
+
+    // TODO: Determine placement may not be in stream if videojs is only used to serve ad content
+    // ~ Sort of resolved check if the player has a source to tell if the placement is instream
+    if(content.url){
+      video.placement = PLACEMENT.IN_STREAM; 
+    }
 
     // Placement according to IQG Guidelines 4.2.8
     // https://cdn2.hubspot.net/hubfs/2848641/TrustworthyAccountabilityGroup_May2017/Docs/TAG-Inventory-Quality-Guidelines-v2_2-10-18-2016.pdf?t=1509469105938
@@ -105,22 +127,6 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
       video.pos = utils.getPositionCode(findPosition(player.el()))
     }
 
-    const content = {
-      // id:, TODO: find a suitable id for videojs sources
-      url: player.currentSrc()
-    };
-    // Only include length if player is ready
-    if (player.readyState() > 0) {
-      content.len = Math.round(player.duration());
-    }
-    const mediaItem = player.getMedia();
-    if (mediaItem) {
-      for (let param of ['album', 'artist', 'title']) {
-        if (mediaItem[param]) {
-          content[param] = mediaItem[param];
-        }
-      }
-    }
 
     return {video, content};
   }
