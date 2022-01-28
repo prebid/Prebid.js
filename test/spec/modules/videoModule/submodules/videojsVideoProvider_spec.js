@@ -1,9 +1,10 @@
 // Using require style imports for fine grained control of import time
-const {VideojsProvider} = require('modules/videojsVideoProvider')
+const {VideojsProvider, utils} = require('modules/videojsVideoProvider')
 
 const {
   PROTOCOLS, API_FRAMEWORKS, VIDEO_MIME_TYPE, PLAYBACK_METHODS, PLACEMENT, VPAID_MIME_TYPE
 } = require('modules/videoModule/constants/ortb.js');
+const { AD_POSITION } = require('../../../../../modules/videoModule/constants/ortb');
 
 describe('videojsProvider', function () {
   describe('init', function () {
@@ -34,7 +35,7 @@ describe('videojsProvider', function () {
       document.body.appendChild(div);
       config.playerConfig = {};
       config.divId = 'test-div'
-      const provider = VideojsProvider(config, videojs, adState, timeState, callbackStorage, utilsMock);
+      const provider = VideojsProvider(config, videojs, adState, timeState, callbackStorage, utils);
       provider.init();
       expect(videojs.getPlayer('test-div')).to.be.an('object')
       videojs.getPlayer('test-div').dispose()
@@ -47,7 +48,7 @@ describe('videojsProvider', function () {
       const player = videojs(div, {})
       config.playerConfig = {};
       config.divId = 'test-div'
-      const provider = VideojsProvider(config, videojs, adState, timeState, callbackStorage, utilsMock);
+      const provider = VideojsProvider(config, videojs, adState, timeState, callbackStorage, utils);
       provider.init();
       expect(videojs.getPlayer('test-div')).to.be.equal(player)
       videojs.getPlayer('test-div').dispose()
@@ -77,7 +78,7 @@ describe('videojsProvider', function () {
     });
 
     it('should populate oRTB params without ima present', function () {
-      const provider = VideojsProvider(config, videojs, null, null, null, null);
+      const provider = VideojsProvider(config, videojs, null, null, null, utils);
       provider.init();
 
       const oRTB = provider.getOrtbParams();
@@ -122,7 +123,7 @@ describe('videojsProvider', function () {
         }
       }
 
-      const provider = VideojsProvider(config, videojs, null, null, null, null);
+      const provider = VideojsProvider(config, videojs, null, null, null, utils);
       provider.init();
       const { video, content } = provider.getOrtbParams();
 
@@ -132,7 +133,7 @@ describe('videojsProvider', function () {
     });
 
     it('should populate position when fullscreen', function () {
-      const provider = VideojsProvider(config, videojs, null, null, null, null);
+      const provider = VideojsProvider(config, videojs, null, null, null, utils);
       provider.init();
       const player = videojs.getPlayer('test')
       player.isFullscreen = () => true;
@@ -141,7 +142,7 @@ describe('videojsProvider', function () {
     });
 
     it('should populate length when loaded', function () {
-      const provider = VideojsProvider(config, videojs, null, null, null, null);
+      const provider = VideojsProvider(config, videojs, null, null, null, utils);
       provider.init();
       const player = videojs.getPlayer('test')
       player.readyState = () => 1
@@ -151,7 +152,7 @@ describe('videojsProvider', function () {
     });
 
     it('should return the correct playback method for autoplay', function () {
-      const provider = VideojsProvider(config, videojs, null, null, null, null);
+      const provider = VideojsProvider(config, videojs, null, null, null, utils);
       provider.init();
       const player = videojs.getPlayer('test')
       player.autoplay(true)
@@ -160,7 +161,7 @@ describe('videojsProvider', function () {
     });
 
     it('should return the correct playback method for autoplay muted', function () {
-      const provider = VideojsProvider(config, videojs, null, null, null, null);
+      const provider = VideojsProvider(config, videojs, null, null, null, utils);
       provider.init();
       const player = videojs.getPlayer('test')
       player.muted = () => true
@@ -170,7 +171,7 @@ describe('videojsProvider', function () {
     });
 
     it('should return the correct playback method for the other autoplay muted', function () {
-      const provider = VideojsProvider(config, videojs, null, null, null, null);
+      const provider = VideojsProvider(config, videojs, null, null, null, utils);
       provider.init();
       const player = videojs.getPlayer('test')
       player.autoplay = () => 'muted'
@@ -179,25 +180,55 @@ describe('videojsProvider', function () {
     });
 
     it('should return the correct playback method for the other autoplay muted', function () {
-      const provider = VideojsProvider(config, videojs, null, null, null, null);
+      const provider = VideojsProvider(config, videojs, null, null, null, utils);
       provider.init();
       const player = videojs.getPlayer('test')
       player.autoplay = () => 'muted'
       const { video, content } = provider.getOrtbParams();
       expect(video.playbackmethod).to.include(PLAYBACK_METHODS.AUTOPLAY_MUTED);
     });
+  });
+});
 
+
+describe('utils', function(){
+  beforeEach(() => {
+    expect(window.innerHeight).to.equal(600)
+    expect(window.innerWidth).to.equal(785)
+  });
+  describe('getPositionCode', function(){
     it('should return the correct position when video is above the fold', function () {
-      const provider = VideojsProvider({divId: 'test'}, videojs, null, null, null, null);
-      provider.init();
-      // const player = videojs.getPlayer('test')
-      // player.autoplay = () => 'muted'
-      // const { video, content } = provider.getOrtbParams();
-      expect(window.innerHeight).to.equal(600)
-      expect(window.innerWidth).to.equal(785)
+      const code = utils.getPositionCode({
+        left: window.innerWidth/10,
+        top: 0,
+        width: window.innerWidth - window.innerWidth/10,
+        height: window.innerHeight,
+      })
+      expect(code).to.equal(AD_POSITION.ABOVE_THE_FOLD)
+    });
 
+    it('should return the correct position when video is below the fold', function () {
+      const code = utils.getPositionCode({
+        left: window.innerWidth/10,
+        top: window.innerHeight,
+        width: window.innerWidth - window.innerWidth/10,
+        height: window.innerHeight/2,
+      })
+      expect(code).to.equal(AD_POSITION.BELOW_THE_FOLD)
+    });
+
+    it('should return the unkown position when the video is out of bounds', function () {
+      const code = utils.getPositionCode({
+        left: window.innerWidth/10,
+        top: window.innerHeight,
+        width: window.innerWidth,
+        height: window.innerHeight,
+      })
+      expect(code).to.equal(AD_POSITION.UNKNOWN)
     });
 
 
-  });
-});
+  })
+})
+
+

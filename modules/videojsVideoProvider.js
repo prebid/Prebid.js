@@ -31,8 +31,11 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
       // callback runs in both cases
     });
     const vendorConfig = config.playerConfig?.params?.vendorConfig;
-    if(player.ima && vendorConfig?.advertising?.tag){
-      ima_options = { adTagUrl: vendorConfig?.advertising?.tag[0]};
+    const tags = vendorConfig?.advertising?.tag;
+    if(player.ima && tags){
+      ima_options = { 
+        adTagUrl: tags[0]
+      };
       player.ima(ima_options);
     }
 
@@ -54,7 +57,8 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
     // returns a boolean or a string with the autoplay strategy
     const autoplay = player.autoplay();
     const muted = player.muted() || autoplay === 'muted';
-    if (autoplay!==false) {
+    // check if autoplay is truthy since it may be a bool or string
+    if (autoplay) {
       playBackMethod = muted ? PLAYBACK_METHODS.AUTOPLAY_MUTED : PLAYBACK_METHODS.AUTOPLAY;
     }
     const supportedMediaTypes = Object.values(VIDEO_MIME_TYPE).filter(
@@ -62,7 +66,7 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
       type => player.canPlayType(type) !== ''
     )
     // IMA supports vpaid unless its expliclty turned off
-    if(ima_options && ima_options.vpaidMode !== 0  ){
+    if(ima_options && ima_options.vpaidMode !== 0){
       supportedMediaTypes.push(VPAID_MIME_TYPE);
     }
 
@@ -89,27 +93,16 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
       playbackmethod: [ playBackMethod ],
       playbackend: PLAYBACK_END.VIDEO_COMPLETION,
       // Per ortb 7.4 skip is omitted since neither the player nor ima plugin imposes a skip button, or a skipmin/max
-      pos: AD_POSITION.UNKNOWN // default value modified below
     };
 
     // Placement according to IQG Guidelines 4.2.8
     // https://cdn2.hubspot.net/hubfs/2848641/TrustworthyAccountabilityGroup_May2017/Docs/TAG-Inventory-Quality-Guidelines-v2_2-10-18-2016.pdf?t=1509469105938
+    const findPosition = videojs.dom.findPosition;
     if (player.isFullscreen()) {
       video.pos = AD_POSITION.FULL_SCREEN;
     }
-    else if(videojs.dom.findPosition){
-      const {left, top, width, height} = videojs.dom.findPosition(player.el())
-      const bottom = window.innerHeight - top - height
-      const right = window.innerWidth - left - width
-      // Make sure video isn't overflowed horizontally
-      if(left >= 0 && right >= 0){
-        if(top>=0 && bottom>=0){
-          video.pos = AD_POSITION.ABOVE_THE_FOLD
-        }
-        else if(top>=0){
-          video.pos = AD_POSITION.BELOW_THE_FOLD
-        }
-      }
+    else if(findPosition){
+      video.pos = utils.getPositionCode(findPosition(player.el()))
     }
 
     const content = {
@@ -161,13 +154,26 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
   };
 }
 
+export const utils = {
+  getPositionCode: function({left, top, width, height}){
+    const bottom = window.innerHeight - top - height;
+    const right = window.innerWidth - left - width;
+
+    if (left < 0 || right < 0 || top < 0) {
+        return AD_POSITION.UNKNOWN;
+    }
+
+    return bottom >= 0 ? AD_POSITION.ABOVE_THE_FOLD : AD_POSITION.BELOW_THE_FOLD;
+  }
+};
+
 const videojsSubmoduleFactory = function (config) {
   const adState = null;
   const timeState = null;
   const callbackStorage = null;
   // videojs factory is stored to window by default
-  const vjs = window.videojs
-  return VideojsProvider(config, vjs, adState, timeState, callbackStorage, {});
+  const vjs = window.videojs;
+  return VideojsProvider(config, vjs, adState, timeState, callbackStorage, utils);
 }
 videojsSubmoduleFactory.vendorCode = VIDEO_JS_VENDOR;
 
