@@ -50,6 +50,23 @@ jobs:
           from: build/dist/prebid.js
           to: '"$UPLOAD_DEST"'
           arguments: --cache-control 'max-age=86400'
+  build_v5:
+    <<: *environment
+    steps:
+      - checkout
+      - run: echo "export UPLOAD_DEST='s3://embedproduction/files/instbid-$(git describe --tags).js'" >> "$BASH_ENV"
+      - restore_cache: *restore_dep_cache
+      - run: npm install
+      - save_cache: *save_dep_cache
+      - run: *install
+      - run:
+          name: Build Prebid.js version 5
+          command: gulp build --modules=modules.json
+      - aws-s3/copy:
+          from: build/dist/prebid.js
+          to: '"$UPLOAD_DEST"'
+          arguments: --cache-control 'max-age=86400'
+
 
 workflows:
   version: 2
@@ -61,3 +78,9 @@ workflows:
             branches:
               only:
                 - master
+      - build_v5:
+          context: org-aws
+          filters:
+            branches:
+              only:
+                - prebid5
