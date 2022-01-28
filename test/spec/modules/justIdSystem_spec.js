@@ -59,7 +59,7 @@ describe('JustIdSystem', function () {
     it('with cachedIdObj', function() {
       const callbackSpy = sinon.spy();
 
-      justIdSubmodule.getId(undefined,undefined,{uid:"userABC"}).callback(callbackSpy);
+      justIdSubmodule.getId(undefined, undefined, { uid: 'userABC' }).callback(callbackSpy);
 
       scriptTag.onload();
 
@@ -69,15 +69,15 @@ describe('JustIdSystem', function () {
     it('check getId arguments are passed to prebidGetId event', function() {
       const callbackSpy = sinon.spy();
 
-      const a = {x:"x"}
-      const b = {y:"y"}
-      const c = {z:"z"}
+      const a = { x: "x" }
+      const b = { y: "y" }
+      const c = { z: "z" }
 
       justIdSubmodule.getId(a, b, c).callback(callbackSpy);
 
       scriptTag.onload();
 
-      expect(onPrebidGetId.lastCall.lastArg.detail).to.deep.eq({config:a, consentData: b, cacheIdObj: c});
+      expect(onPrebidGetId.lastCall.lastArg.detail).to.deep.eq({ config: a, consentData: b, cacheIdObj: c });
     });
   });
 });
