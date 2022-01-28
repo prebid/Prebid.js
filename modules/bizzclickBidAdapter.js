@@ -1,8 +1,7 @@
+import { logMessage, getDNT, deepSetValue, deepAccess, _map, logWarn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import * as utils from '../src/utils.js';
 import {config} from '../src/config.js';
-
 const BIDDER_CODE = 'bizzclick';
 const ACCOUNTID_MACROS = '[account_id]';
 const URL_ENDPOINT = `https://us-e-node1.bizzclick.com/bid?rtb_seat_id=prebidjs&secret_key=${ACCOUNTID_MACROS}`;
@@ -39,11 +38,9 @@ const NATIVE_PARAMS = {
   }
 };
 const NATIVE_VERSION = '1.2';
-
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
-
   /**
    * Determines whether or not the given bid request is valid.
    *
@@ -53,7 +50,6 @@ export const spec = {
   isBidRequestValid: (bid) => {
     return Boolean(bid.params.accountId) && Boolean(bid.params.placementId)
   },
-
   /**
    * Make a server request from the list of BidRequests.
    *
@@ -64,7 +60,6 @@ export const spec = {
     if (validBidRequests && validBidRequests.length === 0) return []
     let accuontId = validBidRequests[0].params.accountId;
     const endpointURL = URL_ENDPOINT.replace(ACCOUNTID_MACROS, accuontId);
-
     let winTop = window;
     let location;
     try {
@@ -72,9 +67,8 @@ export const spec = {
       winTop = window.top;
     } catch (e) {
       location = winTop.location;
-      utils.logMessage(e);
+      logMessage(e);
     };
-
     let bids = [];
     for (let bidRequest of validBidRequests) {
       let impObject = prepareImpObject(bidRequest);
@@ -86,7 +80,7 @@ export const spec = {
         device: {
           w: winTop.screen.width,
           h: winTop.screen.height,
-          dnt: utils.getDNT() ? 1 : 0,
+          dnt: getDNT() ? 1 : 0,
           language: (navigator && navigator.language) ? navigator.language.indexOf('-') != -1 ? navigator.language.split('-')[0] : navigator.language : '',
         },
         site: {
@@ -103,17 +97,39 @@ export const spec = {
         user: {
           ext: {}
         },
+        ext: {
+          ts: Date.now()
+        },
         tmax: bidRequest.timeout,
         imp: [impObject],
       };
+
+      if (bidderRequest && bidderRequest.uspConsent) {
+        data.regs.ext.us_privacy = bidderRequest.uspConsent;
+      }
+
+      if (bidderRequest && bidderRequest.gdprConsent) {
+        let { gdprApplies, consentString } = bidderRequest.gdprConsent;
+        data.regs.ext.gdpr = gdprApplies ? 1 : 0;
+        data.user.ext.consent = consentString;
+      }
+
+      if (bidRequest.schain) {
+        data.source.ext.schain = bidRequest.schain;
+      }
+
+      let connection = navigator.connection || navigator.webkitConnection;
+      if (connection && connection.effectiveType) {
+        data.device.connectiontype = connection.effectiveType;
+      }
       if (bidRequest) {
         if (bidRequest.gdprConsent && bidRequest.gdprConsent.gdprApplies) {
-          utils.deepSetValue(data, 'regs.ext.gdpr', bidRequest.gdprConsent.gdprApplies ? 1 : 0);
-          utils.deepSetValue(data, 'user.ext.consent', bidRequest.gdprConsent.consentString);
+          deepSetValue(data, 'regs.ext.gdpr', bidRequest.gdprConsent.gdprApplies ? 1 : 0);
+          deepSetValue(data, 'user.ext.consent', bidRequest.gdprConsent.consentString);
         }
 
         if (bidRequest.uspConsent !== undefined) {
-          utils.deepSetValue(data, 'regs.ext.us_privacy', bidRequest.uspConsent);
+          deepSetValue(data, 'regs.ext.us_privacy', bidRequest.uspConsent);
         }
       }
       bids.push(data)
@@ -124,7 +140,6 @@ export const spec = {
       data: bids
     };
   },
-
   /**
    * Unpack the response from the server into a list of bids.
    *
@@ -134,11 +149,9 @@ export const spec = {
   interpretResponse: (serverResponse) => {
     if (!serverResponse || !serverResponse.body) return []
     let bizzclickResponse = serverResponse.body;
-
     let bids = [];
     for (let response of bizzclickResponse) {
       let mediaType = response.seatbid[0].bid[0].ext && response.seatbid[0].bid[0].ext.mediaType ? response.seatbid[0].bid[0].ext.mediaType : BANNER;
-
       let bid = {
         requestId: response.id,
         cpm: response.seatbid[0].bid[0].price,
@@ -152,6 +165,11 @@ export const spec = {
         mediaType: mediaType
       };
 
+      bid.meta = {};
+      if (response.seatbid[0].bid[0].adomain && response.seatbid[0].bid[0].adomain.length > 0) {
+        bid.meta.advertiserDomains = response.seatbid[0].bid[0].adomain;
+      }
+
       switch (mediaType) {
         case VIDEO:
           bid.vastXml = response.seatbid[0].bid[0].adm
@@ -163,14 +181,11 @@ export const spec = {
         default:
           bid.ad = response.seatbid[0].bid[0].adm
       }
-
       bids.push(bid);
     }
-
     return bids;
   },
 };
-
 /**
  * Determine type of request
  *
@@ -179,9 +194,8 @@ export const spec = {
  * @returns {boolean}
  */
 const checkRequestType = (bidRequest, type) => {
-  return (typeof utils.deepAccess(bidRequest, `mediaTypes.${type}`) !== 'undefined');
+  return (typeof deepAccess(bidRequest, `mediaTypes.${type}`) !== 'undefined');
 }
-
 const parseNative = admObject => {
   const { assets, link, imptrackers, jstracker } = admObject.native;
   const result = {
@@ -197,10 +211,8 @@ const parseNative = admObject => {
       result[kind] = content.text || content.value || { url: content.url, width: content.w, height: content.h };
     }
   });
-
   return result;
 }
-
 const prepareImpObject = (bidRequest) => {
   let impObject = {
     id: bidRequest.transactionId,
@@ -223,14 +235,12 @@ const prepareImpObject = (bidRequest) => {
   }
   return impObject
 };
-
 const addNativeParameters = bidRequest => {
   let impObject = {
     id: bidRequest.transactionId,
     ver: NATIVE_VERSION,
   };
-
-  const assets = utils._map(bidRequest.mediaTypes.native, (bidParams, key) => {
+  const assets = _map(bidRequest.mediaTypes.native, (bidParams, key) => {
     const props = NATIVE_PARAMS[key];
     const asset = {
       required: bidParams.required & 1,
@@ -239,34 +249,27 @@ const addNativeParameters = bidRequest => {
       asset.id = props.id;
       let wmin, hmin;
       let aRatios = bidParams.aspect_ratios;
-
       if (aRatios && aRatios[0]) {
         aRatios = aRatios[0];
         wmin = aRatios.min_width || 0;
         hmin = aRatios.ratio_height * wmin / aRatios.ratio_width | 0;
       }
-
       if (bidParams.sizes) {
         const sizes = flatten(bidParams.sizes);
         wmin = sizes[0];
         hmin = sizes[1];
       }
-
       asset[props.name] = {}
-
       if (bidParams.len) asset[props.name]['len'] = bidParams.len;
       if (props.type) asset[props.name]['type'] = props.type;
       if (wmin) asset[props.name]['wmin'] = wmin;
       if (hmin) asset[props.name]['hmin'] = hmin;
-
       return asset;
     }
   }).filter(Boolean);
-
   impObject.assets = assets;
   return impObject
 }
-
 const addBannerParameters = (bidRequest) => {
   let bannerObject = {};
   const size = parseSizes(bidRequest, 'banner');
@@ -274,7 +277,6 @@ const addBannerParameters = (bidRequest) => {
   bannerObject.h = size[1];
   return bannerObject;
 };
-
 const parseSizes = (bid, mediaType) => {
   let mediaTypes = bid.mediaTypes;
   if (mediaType === 'video') {
@@ -284,7 +286,7 @@ const parseSizes = (bid, mediaType) => {
         mediaTypes.video.w,
         mediaTypes.video.h
       ];
-    } else if (Array.isArray(utils.deepAccess(bid, 'mediaTypes.video.playerSize')) && bid.mediaTypes.video.playerSize.length === 1) {
+    } else if (Array.isArray(deepAccess(bid, 'mediaTypes.video.playerSize')) && bid.mediaTypes.video.playerSize.length === 1) {
       size = bid.mediaTypes.video.playerSize[0];
     } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0 && Array.isArray(bid.sizes[0]) && bid.sizes[0].length > 1) {
       size = bid.sizes[0];
@@ -297,30 +299,24 @@ const parseSizes = (bid, mediaType) => {
   } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0) {
     sizes = bid.sizes
   } else {
-    utils.logWarn('no sizes are setup or found');
+    logWarn('no sizes are setup or found');
   }
-
   return sizes
 }
-
 const addVideoParameters = (bidRequest) => {
   let videoObj = {};
   let supportParamsList = ['mimes', 'minduration', 'maxduration', 'protocols', 'startdelay', 'placement', 'skip', 'skipafter', 'minbitrate', 'maxbitrate', 'delivery', 'playbackmethod', 'api', 'linearity']
-
   for (let param of supportParamsList) {
     if (bidRequest.mediaTypes.video[param] !== undefined) {
       videoObj[param] = bidRequest.mediaTypes.video[param];
     }
   }
-
   const size = parseSizes(bidRequest, 'video');
   videoObj.w = size[0];
   videoObj.h = size[1];
   return videoObj;
 }
-
 const flatten = arr => {
   return [].concat(...arr);
 }
-
 registerBidder(spec);

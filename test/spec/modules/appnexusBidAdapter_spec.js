@@ -215,6 +215,40 @@ describe('AppNexusAdapter', function () {
       expect(payload.tags[0].hb_source).to.deep.equal(1);
     });
 
+    it('should include ORTB video values when video params were not set', function() {
+      let bidRequest = deepClone(bidRequests[0]);
+      bidRequest.params = {
+        placementId: '1234235',
+        video: {
+          skippable: true,
+          playback_method: ['auto_play_sound_off', 'auto_play_sound_unknown'],
+          context: 'outstream'
+        }
+      };
+      bidRequest.mediaTypes = {
+        video: {
+          playerSize: [640, 480],
+          context: 'outstream',
+          mimes: ['video/mp4'],
+          skip: 0,
+          minduration: 5,
+          api: [1, 5, 6],
+          playbackmethod: [2, 4]
+        }
+      };
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.tags[0].video).to.deep.equal({
+        minduration: 5,
+        playback_method: 2,
+        skippable: true,
+        context: 4
+      });
+      expect(payload.tags[0].video_frameworks).to.deep.equal([1, 4])
+    });
+
     it('should add video property when adUnit includes a renderer', function () {
       const videoData = {
         mediaTypes: {
@@ -1013,7 +1047,8 @@ describe('AppNexusAdapter', function () {
                 'trackers': [
                   {
                     'impression_urls': [
-                      'https://lax1-ib.adnxs.com/impression'
+                      'https://lax1-ib.adnxs.com/impression',
+                      'https://www.test.com/tracker'
                     ],
                     'video_events': {}
                   }
@@ -1298,6 +1333,20 @@ describe('AppNexusAdapter', function () {
       }
       let result = spec.interpretResponse({ body: responseAdvertiserId }, {bidderRequest});
       expect(Object.keys(result[0].meta)).to.include.members(['advertiserId']);
+    });
+
+    it('should add brand id', function() {
+      let responseBrandId = deepClone(response);
+      responseBrandId.tags[0].ads[0].brand_id = 123;
+
+      let bidderRequest = {
+        bids: [{
+          bidId: '3db3773286ee59',
+          adUnitCode: 'code'
+        }]
+      }
+      let result = spec.interpretResponse({ body: responseBrandId }, {bidderRequest});
+      expect(Object.keys(result[0].meta)).to.include.members(['brandId']);
     });
 
     it('should add advertiserDomains', function() {

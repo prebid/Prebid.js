@@ -84,7 +84,8 @@ describe('vdoaiBidAdapter', function () {
         'requestId': 'bidId123',
         'width': 300,
         'height': 250,
-        'netRevenue': true
+        'netRevenue': true,
+        'adDomain': ['text.abc']
       }
     };
     it('should get the correct bid response', function () {
@@ -97,10 +98,14 @@ describe('vdoaiBidAdapter', function () {
         'currency': 'EUR',
         'netRevenue': true,
         'ttl': 3000,
-        'ad': '<html><h3>I am an ad</h3></html>'
+        'ad': '<html><h3>I am an ad</h3></html>',
+        'meta': {
+          'advertiserDomains': ['text.abc']
+        }
       }];
       let result = spec.interpretResponse(serverResponse, bidRequest[0]);
       expect(Object.keys(result)).to.deep.equal(Object.keys(expectedResponse));
+      expect(result[0].meta.advertiserDomains).to.deep.equal(expectedResponse[0].meta.advertiserDomains);
     });
 
     it('handles instream video responses', function () {

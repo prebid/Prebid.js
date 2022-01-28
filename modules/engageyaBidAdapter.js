@@ -2,6 +2,7 @@ import {
   BANNER,
   NATIVE
 } from '../src/mediaTypes.js';
+import { createTrackPixelHtml } from '../src/utils.js';
 
 const {
   registerBidder
@@ -28,17 +29,68 @@ function isInIframe() {
   return isInIframe;
 }
 
+function getImageSrc(rec) {
+  return rec.thumbnail_path.indexOf('http') === -1 ? 'https:' + rec.thumbnail_path : rec.thumbnail_path;
+}
+
+function getImpressionTrackers(rec) {
+  if (!rec.trackers) {
+    return [];
+  }
+  const impressionTrackers = rec.trackers.impressionPixels || [];
+  const viewTrackers = rec.trackers.viewPixels || [];
+  return [...impressionTrackers, ...viewTrackers];
+}
+
+function parseNativeResponse(rec, response) {
+  return {
+    title: rec.title,
+    body: '',
+    image: {
+      url: getImageSrc(rec),
+      width: response.imageWidth,
+      height: response.imageHeight
+    },
+    privacyLink: '',
+    clickUrl: rec.clickUrl,
+    displayUrl: rec.url,
+    cta: '',
+    sponsoredBy: rec.displayName,
+    impressionTrackers: getImpressionTrackers(rec),
+  };
+}
+
+function parseBannerResponse(rec, response) {
+  if (rec.tag) {
+    return rec.tag;
+  }
+  let style;
+  try {
+    let additionalData = JSON.parse(response.widget.additionalData);
+    const css = additionalData.css || '';
+    style = css ? `<style>${css}</style>` : '';
+  } catch (e) {
+    style = '';
+  }
+  const title = rec.title && rec.title.trim() ? `<div class="eng_tag_ttl" style="display: none">${rec.title}</div>` : '';
+  const displayName = rec.displayName && title ? `<div class="eng_tag_brnd" style="display: none">${rec.displayName}</div>` : '';
+  const trackers = getImpressionTrackers(rec)
+    .map(createTrackPixelHtml)
+    .join('');
+  return `<html><body>${style}<div id="ENG_TAG"><a href="${rec.clickUrl}" target=_blank><img class="eng_tag_img" src="${getImageSrc(rec)}" style="width:${response.imageWidth}px;height:${response.imageHeight}px;" alt="${rec.title}"/>${displayName}${title}</a>${trackers}</div></body></html>`;
+}
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, NATIVE],
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return bid && bid.params && bid.params.hasOwnProperty('widgetId') && bid.params.hasOwnProperty('websiteId') && !isNaN(bid.params.widgetId) && !isNaN(bid.params.websiteId);
   },
 
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     var bidRequests = [];
     if (validBidRequests && validBidRequests.length > 0) {
-      validBidRequests.forEach(function(bidRequest) {
+      validBidRequests.forEach(function (bidRequest) {
         if (bidRequest.params) {
           var mediaType = bidRequest.hasOwnProperty('nativeParams') ? 1 : 2;
           var imageWidth = -1;
@@ -74,59 +126,31 @@ export const spec = {
     return bidRequests;
   },
 
-  interpretResponse: function(serverResponse, bidRequest) {
-    const bidResponses = [];
-    if (serverResponse.body && serverResponse.body.recs && serverResponse.body.recs.length > 0) {
-      var response = serverResponse.body;
-      var isNative = response.pbtypeId == 1;
-      response.recs.forEach(function(rec) {
-        var imageSrc = rec.thumbnail_path.indexOf('http') == -1 ? 'https:' + rec.thumbnail_path : rec.thumbnail_path;
-        if (isNative) {
-          bidResponses.push({
-            requestId: response.ireqId,
-            cpm: rec.ecpm,
-            width: response.imageWidth,
-            height: response.imageHeight,
-            creativeId: rec.postId,
-            currency: 'USD',
-            netRevenue: false,
-            ttl: 360,
-            native: {
-              title: rec.title,
-              body: '',
-              image: {
-                url: imageSrc,
-                width: response.imageWidth,
-                height: response.imageHeight
-              },
-              privacyLink: '',
-              clickUrl: rec.clickUrl,
-              displayUrl: rec.url,
-              cta: '',
-              sponsoredBy: rec.displayName,
-              impressionTrackers: [],
-            },
-          });
-        } else {
-          // var htmlTag = "<img src='https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png' style='position: absolute; left: 50%; top:50%; margin-left: -113px; margin-top:-79px;'>";
-          var htmlTag = '<html><div id="ENG_TAG"><a href="' + rec.clickUrl + '" target=_blank><img src="' + imageSrc + '" style="width:' + response.imageWidth + 'px;height:' + response.imageHeight + 'px;"/></a></div></html>';
-          var tag = rec.tag ? rec.tag : htmlTag;
-          bidResponses.push({
-            requestId: response.ireqId,
-            cpm: rec.ecpm,
-            width: response.imageWidth,
-            height: response.imageHeight,
-            creativeId: rec.postId,
-            currency: 'USD',
-            netRevenue: false,
-            ttl: 360,
-            ad: tag,
-          });
-        }
-      });
+  interpretResponse: function (serverResponse, bidRequest) {
+    if (!serverResponse.body || !serverResponse.body.recs || !serverResponse.body.recs.length) {
+      return [];
     }
-
-    return bidResponses;
+    var response = serverResponse.body;
+    var isNative = response.pbtypeId == 1;
+    return response.recs.map(rec => {
+      let bid = {
+        requestId: response.ireqId,
+        cpm: rec.ecpm,
+        width: response.imageWidth,
+        height: response.imageHeight,
+        creativeId: rec.postId,
+        currency: 'USD',
+        netRevenue: false,
+        ttl: 360,
+        meta: { advertiserDomains: rec.domain ? [rec.domain] : [] },
+      }
+      if (isNative) {
+        bid.native = parseNativeResponse(rec, response);
+      } else {
+        bid.ad = parseBannerResponse(rec, response);
+      }
+      return bid;
+    });
   }
 };
 

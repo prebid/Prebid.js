@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { deepAccess, logWarn, getBidIdParameter, parseQueryStringParameters, triggerPixel, generateUUID, isArray } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
@@ -6,26 +6,26 @@ import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'relaido';
 const BIDDER_DOMAIN = 'api.relaido.jp';
-const ADAPTER_VERSION = '1.0.4';
+const ADAPTER_VERSION = '1.0.6';
 const DEFAULT_TTL = 300;
 const UUID_KEY = 'relaido_uuid';
 
 const storage = getStorageManager();
 
 function isBidRequestValid(bid) {
-  if (!utils.deepAccess(bid, 'params.placementId')) {
-    utils.logWarn('placementId param is reqeuired.');
+  if (!deepAccess(bid, 'params.placementId')) {
+    logWarn('placementId param is reqeuired.');
     return false;
   }
   if (hasVideoMediaType(bid) && isVideoValid(bid)) {
     return true;
   } else {
-    utils.logWarn('Invalid mediaType video.');
+    logWarn('Invalid mediaType video.');
   }
   if (hasBannerMediaType(bid) && isBannerValid(bid)) {
     return true;
   } else {
-    utils.logWarn('Invalid mediaType banner.');
+    logWarn('Invalid mediaType banner.');
   }
   return false;
 }
@@ -35,7 +35,7 @@ function buildRequests(validBidRequests, bidderRequest) {
 
   for (let i = 0; i < validBidRequests.length; i++) {
     const bidRequest = validBidRequests[i];
-    const placementId = utils.getBidIdParameter('placementId', bidRequest.params);
+    const placementId = getBidIdParameter('placementId', bidRequest.params);
     const bidDomain = bidRequest.params.domain || BIDDER_DOMAIN;
     const bidUrl = `https://${bidDomain}/bid/v1/prebid/${placementId}`;
     const uuid = getUuid();
@@ -44,12 +44,12 @@ function buildRequests(validBidRequests, bidderRequest) {
     let height = 0;
 
     if (hasVideoMediaType(bidRequest) && isVideoValid(bidRequest)) {
-      const playerSize = getValidSizes(utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize'));
+      const playerSize = getValidSizes(deepAccess(bidRequest, 'mediaTypes.video.playerSize'));
       width = playerSize[0][0];
       height = playerSize[0][1];
       mediaType = VIDEO;
     } else if (hasBannerMediaType(bidRequest) && isBannerValid(bidRequest)) {
-      const sizes = getValidSizes(utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes'));
+      const sizes = getValidSizes(deepAccess(bidRequest, 'mediaTypes.banner.sizes'));
       width = sizes[0][0];
       height = sizes[0][1];
       mediaType = BANNER;
@@ -68,8 +68,14 @@ function buildRequests(validBidRequests, bidderRequest) {
       media_type: mediaType,
       uuid: uuid,
       width: width,
-      height: height
+      height: height,
+      pv: '$prebid.version$'
     };
+
+    const imuid = deepAccess(bidRequest, 'userId.imuid');
+    if (imuid) {
+      payload.imuid = imuid;
+    }
 
     // It may not be encoded, so add it at the end of the payload
     payload.ref = bidderRequest.refererInfo.referer;
@@ -136,43 +142,43 @@ function getUserSyncs(syncOptions, serverResponses) {
   }
   let syncUrl = `https://${BIDDER_DOMAIN}/tr/v1/prebid/sync.html`;
   if (serverResponses.length > 0) {
-    syncUrl = utils.deepAccess(serverResponses, '0.body.syncUrl') || syncUrl;
+    syncUrl = deepAccess(serverResponses, '0.body.syncUrl') || syncUrl;
   }
   return [{
     type: 'iframe',
-    url: syncUrl
+    url: `${syncUrl}?uu=${getUuid()}`
   }];
 }
 
 function onBidWon(bid) {
-  let query = utils.parseQueryStringParameters({
-    placement_id: utils.deepAccess(bid, 'params.0.placementId'),
-    creative_id: utils.deepAccess(bid, 'creativeId'),
-    price: utils.deepAccess(bid, 'cpm'),
-    auction_id: utils.deepAccess(bid, 'auctionId'),
-    bid_id: utils.deepAccess(bid, 'requestId'),
-    ad_id: utils.deepAccess(bid, 'adId'),
-    ad_unit_code: utils.deepAccess(bid, 'adUnitCode'),
+  let query = parseQueryStringParameters({
+    placement_id: deepAccess(bid, 'params.0.placementId'),
+    creative_id: deepAccess(bid, 'creativeId'),
+    price: deepAccess(bid, 'cpm'),
+    auction_id: deepAccess(bid, 'auctionId'),
+    bid_id: deepAccess(bid, 'requestId'),
+    ad_id: deepAccess(bid, 'adId'),
+    ad_unit_code: deepAccess(bid, 'adUnitCode'),
     ref: window.location.href,
   }).replace(/\&$/, '');
-  const bidDomain = utils.deepAccess(bid, 'params.0.domain') || BIDDER_DOMAIN;
+  const bidDomain = deepAccess(bid, 'params.0.domain') || BIDDER_DOMAIN;
   const burl = `https://${bidDomain}/tr/v1/prebid/win.gif?${query}`;
-  utils.triggerPixel(burl);
+  triggerPixel(burl);
 }
 
 function onTimeout(data) {
-  let query = utils.parseQueryStringParameters({
-    placement_id: utils.deepAccess(data, '0.params.0.placementId'),
-    timeout: utils.deepAccess(data, '0.timeout'),
-    auction_id: utils.deepAccess(data, '0.auctionId'),
-    bid_id: utils.deepAccess(data, '0.bidId'),
-    ad_unit_code: utils.deepAccess(data, '0.adUnitCode'),
+  let query = parseQueryStringParameters({
+    placement_id: deepAccess(data, '0.params.0.placementId'),
+    timeout: deepAccess(data, '0.timeout'),
+    auction_id: deepAccess(data, '0.auctionId'),
+    bid_id: deepAccess(data, '0.bidId'),
+    ad_unit_code: deepAccess(data, '0.adUnitCode'),
     version: ADAPTER_VERSION,
     ref: window.location.href,
   }).replace(/\&$/, '');
-  const bidDomain = utils.deepAccess(data, '0.params.0.domain') || BIDDER_DOMAIN;
+  const bidDomain = deepAccess(data, '0.params.0.domain') || BIDDER_DOMAIN;
   const timeoutUrl = `https://${bidDomain}/tr/v1/prebid/timeout.gif?${query}`;
-  utils.triggerPixel(timeoutUrl);
+  triggerPixel(timeoutUrl);
 }
 
 function createPlayerTag(playerUrl) {
@@ -199,7 +205,7 @@ function newRenderer(bidId, playerUrl) {
   try {
     renderer.setRender(outstreamRender);
   } catch (err) {
-    utils.logWarn('renderer.setRender Error', err);
+    logWarn('renderer.setRender Error', err);
   }
   return renderer;
 }
@@ -220,7 +226,7 @@ function isBannerValid(bid) {
   if (!isMobile()) {
     return false;
   }
-  const sizes = getValidSizes(utils.deepAccess(bid, 'mediaTypes.banner.sizes'));
+  const sizes = getValidSizes(deepAccess(bid, 'mediaTypes.banner.sizes'));
   if (sizes.length > 0) {
     return true;
   }
@@ -228,9 +234,9 @@ function isBannerValid(bid) {
 }
 
 function isVideoValid(bid) {
-  const playerSize = getValidSizes(utils.deepAccess(bid, 'mediaTypes.video.playerSize'));
+  const playerSize = getValidSizes(deepAccess(bid, 'mediaTypes.video.playerSize'));
   if (playerSize.length > 0) {
-    const context = utils.deepAccess(bid, 'mediaTypes.video.context');
+    const context = deepAccess(bid, 'mediaTypes.video.context');
     if (context && context === 'outstream') {
       return true;
     }
@@ -241,7 +247,7 @@ function isVideoValid(bid) {
 function getUuid() {
   const id = storage.getCookie(UUID_KEY)
   if (id) return id;
-  const newId = utils.generateUUID();
+  const newId = generateUUID();
   storage.setCookie(UUID_KEY, newId);
   return newId;
 }
@@ -255,18 +261,18 @@ export function isMobile() {
 }
 
 function hasBannerMediaType(bid) {
-  return !!utils.deepAccess(bid, 'mediaTypes.banner');
+  return !!deepAccess(bid, 'mediaTypes.banner');
 }
 
 function hasVideoMediaType(bid) {
-  return !!utils.deepAccess(bid, 'mediaTypes.video');
+  return !!deepAccess(bid, 'mediaTypes.video');
 }
 
 function getValidSizes(sizes) {
   let result = [];
-  if (sizes && utils.isArray(sizes) && sizes.length > 0) {
+  if (sizes && isArray(sizes) && sizes.length > 0) {
     for (let i = 0; i < sizes.length; i++) {
-      if (utils.isArray(sizes[i]) && sizes[i].length == 2) {
+      if (isArray(sizes[i]) && sizes[i].length == 2) {
         const width = sizes[i][0];
         const height = sizes[i][1];
         if (width == 1 && height == 1) {

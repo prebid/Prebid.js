@@ -122,6 +122,84 @@ describe('OpenxAdapter', function () {
     }
   };
 
+  // Sample bid requests
+
+  const BANNER_BID_REQUESTS_WITH_MEDIA_TYPES = [{
+    bidder: 'openx',
+    params: {
+      unit: '11',
+      delDomain: 'test-del-domain'
+    },
+    adUnitCode: '/adunit-code/test-path',
+    mediaTypes: {
+      banner: {
+        sizes: [[300, 250], [300, 600]]
+      }
+    },
+    bidId: 'test-bid-id-1',
+    bidderRequestId: 'test-bid-request-1',
+    auctionId: 'test-auction-1',
+    ortb2Imp: { ext: { data: { pbadslot: '/12345/my-gpt-tag-0' } } },
+  }, {
+    bidder: 'openx',
+    params: {
+      unit: '22',
+      delDomain: 'test-del-domain'
+    },
+    adUnitCode: 'adunit-code',
+    mediaTypes: {
+      banner: {
+        sizes: [[728, 90]]
+      }
+    },
+    bidId: 'test-bid-id-2',
+    bidderRequestId: 'test-bid-request-2',
+    auctionId: 'test-auction-2',
+    ortb2Imp: { ext: { data: { pbadslot: '/12345/my-gpt-tag-1' } } },
+  }];
+
+  const VIDEO_BID_REQUESTS_WITH_MEDIA_TYPES = [{
+    bidder: 'openx',
+    mediaTypes: {
+      video: {
+        playerSize: [640, 480]
+      }
+    },
+    params: {
+      unit: '12345678',
+      delDomain: 'test-del-domain'
+    },
+    adUnitCode: 'adunit-code',
+
+    bidId: '30b31c1838de1e',
+    bidderRequestId: '22edbae2733bf6',
+    auctionId: '1d1a030790a475',
+    transactionId: '4008d88a-8137-410b-aa35-fbfdabcb478e',
+    ortb2Imp: { ext: { data: { pbadslot: '/12345/my-gpt-tag-0' } } },
+  }];
+
+  const MULTI_FORMAT_BID_REQUESTS = [{
+    bidder: 'openx',
+    params: {
+      unit: '12345678',
+      delDomain: 'test-del-domain'
+    },
+    adUnitCode: 'adunit-code',
+    mediaTypes: {
+      banner: {
+        sizes: [[300, 250]]
+      },
+      video: {
+        playerSize: [300, 250]
+      }
+    },
+    bidId: '30b31c1838de1e',
+    bidderRequestId: '22edbae2733bf6',
+    auctionId: '1d1a030790a475',
+    transactionId: '4008d88a-8137-410b-aa35-fbfdabcb478e',
+    ortb2Imp: { ext: { data: { pbadslot: '/12345/my-gpt-tag-0' } } },
+  }];
+
   describe('inherited functions', function () {
     it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
@@ -181,28 +259,8 @@ describe('OpenxAdapter', function () {
 
     describe('when request is for a multiformat ad', function () {
       describe('and request config uses mediaTypes video and banner', () => {
-        const multiformatBid = {
-          bidder: 'openx',
-          params: {
-            unit: '12345678',
-            delDomain: 'test-del-domain'
-          },
-          adUnitCode: 'adunit-code',
-          mediaTypes: {
-            banner: {
-              sizes: [[300, 250]]
-            },
-            video: {
-              playerSize: [300, 250]
-            }
-          },
-          bidId: '30b31c1838de1e',
-          bidderRequestId: '22edbae2733bf6',
-          auctionId: '1d1a030790a475',
-          transactionId: '4008d88a-8137-410b-aa35-fbfdabcb478e'
-        };
         it('should return true multisize when required params found', function () {
-          expect(spec.isBidRequestValid(multiformatBid)).to.equal(true);
+          expect(spec.isBidRequestValid(MULTI_FORMAT_BID_REQUESTS[0])).to.equal(true);
         });
       });
     });
@@ -327,39 +385,7 @@ describe('OpenxAdapter', function () {
   });
 
   describe('buildRequests for banner ads', function () {
-    const bidRequestsWithMediaTypes = [{
-      'bidder': 'openx',
-      'params': {
-        'unit': '11',
-        'delDomain': 'test-del-domain'
-      },
-      'adUnitCode': '/adunit-code/test-path',
-      mediaTypes: {
-        banner: {
-          sizes: [[300, 250], [300, 600]]
-        }
-      },
-      'bidId': 'test-bid-id-1',
-      'bidderRequestId': 'test-bid-request-1',
-      'auctionId': 'test-auction-1',
-      'ortb2Imp': { ext: { data: { pbadslot: '/12345/my-gpt-tag-0' } } }
-    }, {
-      'bidder': 'openx',
-      'params': {
-        'unit': '22',
-        'delDomain': 'test-del-domain'
-      },
-      'adUnitCode': 'adunit-code',
-      mediaTypes: {
-        banner: {
-          sizes: [[728, 90]]
-        }
-      },
-      'bidId': 'test-bid-id-2',
-      'bidderRequestId': 'test-bid-request-2',
-      'auctionId': 'test-auction-2',
-      'ortb2Imp': { ext: { data: { pbadslot: '/12345/my-gpt-tag-1' } } }
-    }];
+    const bidRequestsWithMediaTypes = BANNER_BID_REQUESTS_WITH_MEDIA_TYPES;
 
     const bidRequestsWithPlatform = [{
       'bidder': 'openx',
@@ -1059,15 +1085,23 @@ describe('OpenxAdapter', function () {
         intentIqId: '1111-intentiqid',
         lipb: {lipbid: '1111-lipb'},
         lotamePanoramaId: '1111-lotameid',
-        merkleId: '1111-merkleid',
+        merkleId: {id: '1111-merkleid'},
         netId: 'fH5A3n2O8_CZZyPoJVD-eabc6ECb7jhxCicsds7qSg',
         parrableId: { eid: 'eidVersion.encryptionKeyReference.encryptedValue' },
         pubcid: '1111-pubcid',
         quantcastId: '1111-quantcastid',
-        sharedId: '1111-sharedid',
         tapadId: '111-tapadid',
         tdid: '1111-tdid',
-        verizonMediaId: '1111-verizonmediaid',
+        uid2: {id: '1111-uid2'},
+        flocId: {id: '12144', version: 'chrome.1.1'},
+        novatiq: {snowflake: '1111-novatiqid'},
+        admixerId: '1111-admixerid',
+        deepintentId: '1111-deepintentid',
+        dmdId: '111-dmdid',
+        nextrollId: '1111-nextrollid',
+        mwOpenLinkId: '1111-mwopenlinkid',
+        dapId: '1111-dapId',
+        amxId: '1111-amxid',
       };
 
       // generates the same set of tests for each id provider
@@ -1105,6 +1139,15 @@ describe('OpenxAdapter', function () {
             let userIdValue;
             // handle cases where userId key refers to an object
             switch (userIdProviderKey) {
+              case 'merkleId':
+                userIdValue = EXAMPLE_DATA_BY_ATTR.merkleId.id;
+                break;
+              case 'flocId':
+                userIdValue = EXAMPLE_DATA_BY_ATTR.flocId.id;
+                break;
+              case 'uid2':
+                userIdValue = EXAMPLE_DATA_BY_ATTR.uid2.id;
+                break;
               case 'lipb':
                 userIdValue = EXAMPLE_DATA_BY_ATTR.lipb.lipbid;
                 break;
@@ -1113,6 +1156,9 @@ describe('OpenxAdapter', function () {
                 break;
               case 'id5id':
                 userIdValue = EXAMPLE_DATA_BY_ATTR.id5id.uid;
+                break;
+              case 'novatiq':
+                userIdValue = EXAMPLE_DATA_BY_ATTR.novatiq.snowflake;
                 break;
               default:
                 userIdValue = EXAMPLE_DATA_BY_ATTR[userIdProviderKey];
@@ -1229,25 +1275,7 @@ describe('OpenxAdapter', function () {
   });
 
   describe('buildRequests for video', function () {
-    const bidRequestsWithMediaTypes = [{
-      'bidder': 'openx',
-      'mediaTypes': {
-        video: {
-          playerSize: [640, 480]
-        }
-      },
-      'params': {
-        'unit': '12345678',
-        'delDomain': 'test-del-domain'
-      },
-      'adUnitCode': 'adunit-code',
-
-      'bidId': '30b31c1838de1e',
-      'bidderRequestId': '22edbae2733bf6',
-      'auctionId': '1d1a030790a475',
-      'transactionId': '4008d88a-8137-410b-aa35-fbfdabcb478e',
-      'ortb2Imp': { ext: { data: { pbadslot: '/12345/my-gpt-tag-0' } } }
-    }];
+    const bidRequestsWithMediaTypes = VIDEO_BID_REQUESTS_WITH_MEDIA_TYPES;
     const mockBidderRequest = {refererInfo: {}};
 
     it('should send bid request to openx url via GET, with mediaTypes having video parameter', function () {
@@ -1500,26 +1528,7 @@ describe('OpenxAdapter', function () {
   });
 
   describe('buildRequest for multi-format ad', function () {
-    const multiformatBid = {
-      bidder: 'openx',
-      params: {
-        unit: '12345678',
-        delDomain: 'test-del-domain'
-      },
-      adUnitCode: 'adunit-code',
-      mediaTypes: {
-        banner: {
-          sizes: [[300, 250]]
-        },
-        video: {
-          playerSize: [300, 250]
-        }
-      },
-      bidId: '30b31c1838de1e',
-      bidderRequestId: '22edbae2733bf6',
-      auctionId: '1d1a030790a475',
-      transactionId: '4008d88a-8137-410b-aa35-fbfdabcb478e'
-    };
+    const multiformatBid = MULTI_FORMAT_BID_REQUESTS[0];
     let mockBidderRequest = {refererInfo: {}};
 
     it('should default to a banner request', function () {
@@ -1529,6 +1538,209 @@ describe('OpenxAdapter', function () {
       expect(dataParams.divids).to.have.string(multiformatBid.adUnitCode);
     });
   });
+
+  describe('buildRequests for all kinds of ads', function () {
+    utils._each({
+      banner: BANNER_BID_REQUESTS_WITH_MEDIA_TYPES[0],
+      video: VIDEO_BID_REQUESTS_WITH_MEDIA_TYPES[0],
+      multi: MULTI_FORMAT_BID_REQUESTS[0]
+    }, (bidRequest, name) => {
+      describe('with segments', function () {
+        const TESTS = [
+          {
+            name: 'should send proprietary segment data from ortb2.user.data',
+            config: {
+              ortb2: {
+                user: {
+                  data: [
+                    {name: 'dmp1', ext: {segtax: 4}, segment: [{id: 'foo'}, {id: 'bar'}]},
+                    {name: 'dmp2', segment: [{id: 'baz'}]},
+                  ]
+                }
+              }
+            },
+            expect: {sm: 'dmp1/4:foo|bar,dmp2:baz'},
+          },
+          {
+            name: 'should send proprietary segment data from ortb2.site.content.data',
+            config: {
+              ortb2: {
+                site: {
+                  content: {
+                    data: [
+                      {name: 'dmp1', ext: {segtax: 4}, segment: [{id: 'foo'}, {id: 'bar'}]},
+                      {name: 'dmp2', segment: [{id: 'baz'}]},
+                    ]
+                  }
+                }
+              }
+            },
+            expect: {scsm: 'dmp1/4:foo|bar,dmp2:baz'},
+          },
+          {
+            name: 'should send proprietary segment data from both ortb2.site.content.data and ortb2.user.data',
+            config: {
+              ortb2: {
+                user: {
+                  data: [
+                    {name: 'dmp1', ext: {segtax: 4}, segment: [{id: 'foo'}, {id: 'bar'}]},
+                    {name: 'dmp2', segment: [{id: 'baz'}]},
+                  ]
+                },
+                site: {
+                  content: {
+                    data: [
+                      {name: 'dmp3', ext: {segtax: 5}, segment: [{id: 'foo2'}, {id: 'bar2'}]},
+                      {name: 'dmp4', segment: [{id: 'baz2'}]},
+                    ]
+                  }
+                }
+              }
+            },
+            expect: {
+              sm: 'dmp1/4:foo|bar,dmp2:baz',
+              scsm: 'dmp3/5:foo2|bar2,dmp4:baz2'
+            },
+          },
+          {
+            name: 'should combine same provider segment data from ortb2.user.data',
+            config: {
+              ortb2: {
+                user: {
+                  data: [
+                    {name: 'dmp1', ext: {segtax: 4}, segment: [{id: 'foo'}, {id: 'bar'}]},
+                    {name: 'dmp1', ext: {}, segment: [{id: 'baz'}]},
+                  ]
+                }
+              }
+            },
+            expect: {sm: 'dmp1/4:foo|bar,dmp1:baz'},
+          },
+          {
+            name: 'should combine same provider segment data from ortb2.site.content.data',
+            config: {
+              ortb2: {
+                site: {
+                  content: {
+                    data: [
+                      {name: 'dmp1', ext: {segtax: 4}, segment: [{id: 'foo'}, {id: 'bar'}]},
+                      {name: 'dmp1', ext: {}, segment: [{id: 'baz'}]},
+                    ]
+                  }
+                }
+              }
+            },
+            expect: {scsm: 'dmp1/4:foo|bar,dmp1:baz'},
+          },
+          {
+            name: 'should not send any segment data if first party config is incomplete',
+            config: {
+              ortb2: {
+                user: {
+                  data: [
+                    {name: 'provider-with-no-segments'},
+                    {segment: [{id: 'segments-with-no-provider'}]},
+                    {},
+                  ]
+                }
+              }
+            }
+          },
+          {
+            name: 'should send first party data segments and liveintent segments from request',
+            config: {
+              ortb2: {
+                user: {
+                  data: [
+                    {name: 'dmp1', segment: [{id: 'foo'}, {id: 'bar'}]},
+                    {name: 'dmp2', segment: [{id: 'baz'}]},
+                  ]
+                },
+                site: {
+                  content: {
+                    data: [
+                      {name: 'dmp3', ext: {segtax: 5}, segment: [{id: 'foo2'}, {id: 'bar2'}]},
+                      {name: 'dmp4', segment: [{id: 'baz2'}]},
+                    ]
+                  }
+                }
+              }
+            },
+            request: {
+              userId: {
+                lipb: {
+                  lipbid: 'aaa',
+                  segments: ['l1', 'l2']
+                },
+              },
+            },
+            expect: {
+              sm: 'dmp1:foo|bar,dmp2:baz,liveintent:l1|l2',
+              scsm: 'dmp3/5:foo2|bar2,dmp4:baz2'
+            },
+          },
+          {
+            name: 'should send just liveintent segment from request if no first party config',
+            config: {},
+            request: {
+              userId: {
+                lipb: {
+                  lipbid: 'aaa',
+                  segments: ['l1', 'l2']
+                },
+              },
+            },
+            expect: {sm: 'liveintent:l1|l2'},
+          },
+          {
+            name: 'should send nothing if lipb section does not contain segments',
+            config: {},
+            request: {
+              userId: {
+                lipb: {
+                  lipbid: 'aaa',
+                },
+              },
+            },
+          },
+        ];
+        utils._each(TESTS, (t) => {
+          context('in ortb2.user.data', function () {
+            let bidRequests;
+            beforeEach(function () {
+              let fpdConfig = t.config
+              sinon
+                .stub(config, 'getConfig')
+                .withArgs(sinon.match(/^ortb2\.user\.data$|^ortb2\.site\.content\.data$/))
+                .callsFake((key) => {
+                  return utils.deepAccess(fpdConfig, key);
+                });
+              bidRequests = [{...bidRequest, ...t.request}];
+            });
+
+            afterEach(function () {
+              config.getConfig.restore();
+            });
+
+            const mockBidderRequest = {refererInfo: {}};
+            it(`${t.name} for type ${name}`, function () {
+              const request = spec.buildRequests(bidRequests, mockBidderRequest)
+              expect(request.length).to.equal(1);
+              if (t.expect) {
+                for (const key in t.expect) {
+                  expect(request[0].data[key]).to.exist;
+                  expect(request[0].data[key]).to.equal(t.expect[key]);
+                }
+              } else {
+                expect(request[0].data.sm).to.not.exist;
+                expect(request[0].data.scsm).to.not.exist;
+              }
+            });
+          });
+        });
+      });
+    });
+  })
 
   describe('interpretResponse for banner ads', function () {
     beforeEach(function () {

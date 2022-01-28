@@ -8,14 +8,17 @@ import {
   isArray,
 } from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
+import find from 'core-js-pure/features/array/find.js';
 
-export const storage = getStorageManager();
 const BIDDER_CODE = 'insticator';
 const ENDPOINT = 'https://ex.ingage.tech/v1/openrtb'; // production endpoint
 const USER_ID_KEY = 'hb_insticator_uid';
 const USER_ID_COOKIE_EXP = 2592000000; // 30 days
 const BID_TTL = 300; // 5 minutes
+const GVLID = 910;
 const ASI_REGEX = /^insticator\.com$/;
+
+export const storage = getStorageManager(GVLID, BIDDER_CODE);
 
 config.setDefaults({
   insticator: {
@@ -189,8 +192,7 @@ function buildRequest(validBidRequests, bidderRequest) {
 }
 
 function buildBid(bid, bidderRequest) {
-  const originalBid = bidderRequest.bids.find((b) => b.bidId === bid.impid);
-  const meta = Object.assign({}, bid.ext.meta, { advertiserDomains: bid.adomain });
+  const originalBid = find(bidderRequest.bids, (b) => b.bidId === bid.impid);
 
   return {
     requestId: bid.impid,
@@ -204,7 +206,9 @@ function buildBid(bid, bidderRequest) {
     mediaType: 'banner',
     ad: bid.adm,
     adUnitCode: originalBid.adUnitCode,
-    meta: meta,
+    meta: {
+      advertiserDomains: bid.bidADomain && bid.bidADomain.length ? bid.bidADomain : []
+    },
   };
 }
 
@@ -231,6 +235,7 @@ function validateSizes(sizes) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER],
 
   isBidRequestValid: function (bid) {
@@ -257,11 +262,13 @@ export const spec = {
 
   buildRequests: function (validBidRequests, bidderRequest) {
     const requests = [];
+    let endpointUrl = config.getConfig('insticator.endpointUrl') || ENDPOINT;
+    endpointUrl = endpointUrl.replace(/^http:/, 'https:');
 
     if (validBidRequests.length > 0) {
       requests.push({
         method: 'POST',
-        url: config.getConfig('insticator.endpointUrl') || ENDPOINT,
+        url: endpointUrl,
         options: {
           contentType: 'application/json',
           withCredentials: true,

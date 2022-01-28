@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { logWarn, createTrackPixelHtml } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'consumable';
@@ -145,7 +145,7 @@ export const spec = {
     if (syncOptions.pixelEnabled && serverResponses.length > 0) {
       return serverResponses[0].body.pixels;
     } else {
-      utils.logWarn(bidder + ': Please enable iframe based user syncing.');
+      logWarn(bidder + ': Please enable iframe based user syncing.');
     }
   }
 };
@@ -207,7 +207,7 @@ function getSize(sizes) {
 }
 
 function retrieveAd(decision, unitId, unitName) {
-  let ad = decision.contents && decision.contents[0] && decision.contents[0].body + utils.createTrackPixelHtml(decision.impressionUrl);
+  let ad = decision.contents && decision.contents[0] && decision.contents[0].body + createTrackPixelHtml(decision.impressionUrl);
 
   return ad;
 }

@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { isStr, _each, getBidIdParameter } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 
@@ -12,30 +12,52 @@ export const spec = {
 
   isBidRequestValid: function(bid) {
     return !!(
-      bid.params.placement_id && utils.isStr(bid.params.placement_id)
+      bid.params.placement_id && isStr(bid.params.placement_id)
     );
   },
 
-  buildRequests: function(validBidRequests) {
-    let requests = [];
+  buildRequests: function(validBidRequests, bidderRequest) {
+    const requests = [];
 
-    utils._each(validBidRequests, function(bid) {
+    _each(validBidRequests, function(bid) {
+      const postBody = {
+        'id': bid.auctionId,
+        'ext': {
+          'prebid': {
+            'storedrequest': {
+              'id': getBidIdParameter('placement_id', bid.params)
+            }
+          }
+        }
+      }
+
+      const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
+      const uspConsent = bidderRequest && bidderRequest.uspConsent
+
+      if (gdprConsent || uspConsent) {
+        postBody.regs = { ext: {} }
+
+        if (uspConsent) {
+          postBody.regs.ext.us_privacy = uspConsent;
+        }
+        if (typeof gdprConsent.gdprApplies !== 'undefined') {
+          postBody.regs.ext.gdpr = gdprConsent.gdprApplies ? 1 : 0;
+        }
+        if (typeof gdprConsent.consentString !== 'undefined') {
+          postBody.user = {
+            ext: { consent: gdprConsent.consentString }
+          }
+        }
+      }
+
       requests.push({
         method: 'POST',
         url: ENDPOINT,
+        data: JSON.stringify(postBody),
         options: {
           contentType: 'application/json',
           withCredentials: true
         },
-        data: JSON.stringify({
-          'ext': {
-            'prebid': {
-              'storedrequest': {
-                'id': utils.getBidIdParameter('placement_id', bid.params)
-              }
-            }
-          }
-        }),
         bidId: bid.bidId
       });
     });
@@ -47,29 +69,27 @@ export const spec = {
     const response = serverResponse.body;
     const bidResponses = [];
 
-    try {
-      utils._each(response.seatbid, (resp) => {
-        utils._each(resp.bid, (bid) => {
-          bidResponses.push({
-            requestId: bidRequest.bidId,
-            cpm: bid.price,
-            width: bid.w,
-            height: bid.h,
-            creativeId: bid.adid,
-            currency: response.cur,
-            netRevenue: false,
-            ttl: TIME_TO_LIVE,
-            meta: {
-              advertiserDomains: bid.adomain || []
-            },
-            ad: bid.adm
-          });
+    _each(response.seatbid, (resp) => {
+      _each(resp.bid, (bid) => {
+        bidResponses.push({
+          requestId: bidRequest.bidId,
+          cpm: bid.price,
+          width: bid.w,
+          height: bid.h,
+          creativeId: bid.adid,
+          currency: response.cur,
+          netRevenue: false,
+          ttl: TIME_TO_LIVE,
+          meta: {
+            advertiserDomains: bid.adomain || []
+          },
+          ad: bid.adm
         });
-      })
-    } catch (err) {
-      utils.logError(err);
-    }
+      });
+    });
+
     return bidResponses;
   }
 };
+
 registerBidder(spec);

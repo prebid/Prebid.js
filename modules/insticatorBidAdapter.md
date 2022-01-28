@@ -35,7 +35,11 @@ object are detailed here.
     var adUnits = [
            {
                code: 'test-div',
-               sizes: [[300, 250]],
+               mediaTypes: {
+                   banner: {
+                       sizes: [[300, 250], [300, 600]]
+                   }
+               },
                bids: [
                    {
                        bidder: 'insticator',

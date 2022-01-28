@@ -7,11 +7,11 @@
     "device": null,
     "os": "Windows"
   },
-  "bs_edge_18_windows_10": {
+  "bs_edge_90_windows_10": {
     "base": "BrowserStack",
     "os_version": "10",
     "browser": "edge",
-    "browser_version": "18.0",
+    "browser_version": "90.0",
     "device": null,
     "os": "Windows"
   },
@@ -23,11 +23,11 @@
     "device": null,
     "os": "Windows"
   },
-  "bs_chrome_89_windows_10": {
+  "bs_chrome_90_windows_10": {
     "base": "BrowserStack",
     "os_version": "10",
     "browser": "chrome",
-    "browser_version": "89.0",
+    "browser_version": "90.0",
     "device": null,
     "os": "Windows"
   },
@@ -39,11 +39,11 @@
     "device": null,
     "os": "Windows"
   },
-  "bs_firefox_73_windows_10": {
+  "bs_firefox_88_windows_10": {
     "base": "BrowserStack",
     "os_version": "10",
     "browser": "firefox",
-    "browser_version": "73.0",
+    "browser_version": "88.0",
     "device": null,
     "os": "Windows"
   },
@@ -55,11 +55,11 @@
     "device": null,
     "os": "Windows"
   },
-  "bs_safari_11_mac_catalina": {
+  "bs_safari_14_mac_bigsur": {
     "base": "BrowserStack",
-    "os_version": "Catalina",
+    "os_version": "Big Sur",
     "browser": "safari",
-    "browser_version": "13.0",
+    "browser_version": "14.0",
     "device": null,
     "os": "OS X"
   },
@@ -71,4 +71,5 @@
     "device": null,
     "os": "OS X"
   }
+  
 }

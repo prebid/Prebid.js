@@ -1,47 +1,37 @@
 import { expect } from 'chai';
-import * as utils from '../../../src/utils.js';
 import { spec } from 'modules/nextMillenniumBidAdapter.js';
 
 describe('nextMillenniumBidAdapterTests', function() {
-  let bidRequestData = {
-    bids: [
-      {
-        bidId: 'transaction_1234',
-        bidder: 'nextMillennium',
-        params: {
-          placement_id: '12345'
-        },
-        sizes: [[300, 250]]
+  const bidRequestData = [
+    {
+      bidId: 'bid1234',
+      auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+      bidder: 'nextMillennium',
+      params: { placement_id: '-1' },
+      sizes: [[300, 250]],
+      uspConsent: '1---',
+      gdprConsent: {
+        consentString: 'kjfdniwjnifwenrif3',
+        gdprApplies: true
       }
-    ]
-  };
+    }
+  ];
 
-  it('validate_pub_params', function() {
-    expect(
-      spec.isBidRequestValid({
-        bidder: 'nextMillennium',
-        params: {
-          placement_id: '12345'
-        }
-      })
-    ).to.equal(true);
+  it('Request params check with GDPR Consent', function () {
+    const request = spec.buildRequests(bidRequestData, bidRequestData[0]);
+    expect(JSON.parse(request[0].data).user.ext.consent).to.equal('kjfdniwjnifwenrif3');
+    expect(JSON.parse(request[0].data).regs.ext.us_privacy).to.equal('1---');
+    expect(JSON.parse(request[0].data).regs.ext.gdpr).to.equal(1);
   });
 
   it('validate_generated_params', function() {
-    let bidRequestData = [
-      {
-        bidId: 'bid1234',
-        bidder: 'nextMillennium',
-        params: { placement_id: '-1' },
-        sizes: [[300, 250]]
-      }
-    ];
-    let request = spec.buildRequests(bidRequestData);
+    const request = spec.buildRequests(bidRequestData);
     expect(request[0].bidId).to.equal('bid1234');
+    expect(JSON.parse(request[0].data).id).to.equal('b06c5141-fe8f-4cdf-9d7d-54415490a917');
   });
 
   it('validate_response_params', function() {
-    let serverResponse = {
+    const serverResponse = {
       body: {
         id: 'f7b3d2da-e762-410c-b069-424f92c4c4b2',
         seatbid: [
@@ -63,8 +53,9 @@ describe('nextMillenniumBidAdapterTests', function() {
       }
     };
 
-    let bids = spec.interpretResponse(serverResponse, bidRequestData.bids[0]);
+    let bids = spec.interpretResponse(serverResponse, bidRequestData[0]);
     expect(bids).to.have.lengthOf(1);
+
     let bid = bids[0];
 
     expect(bid.creativeId).to.equal('96846035');
@@ -73,21 +64,5 @@ describe('nextMillenniumBidAdapterTests', function() {
     expect(bid.width).to.equal(300);
     expect(bid.height).to.equal(250);
     expect(bid.currency).to.equal('USD');
-  });
-
-  it('validate_response_params_with passback', function() {
-    let serverResponse = {
-      body: [
-        {
-          hash: '1e100887dd614b0909bf6c49ba7f69fdd1360437',
-          content: 'Ad html passback',
-          size: [300, 250],
-          is_passback: 1
-        }
-      ]
-    };
-    let bids = spec.interpretResponse(serverResponse);
-
-    expect(bids).to.have.lengthOf(0);
   });
 });

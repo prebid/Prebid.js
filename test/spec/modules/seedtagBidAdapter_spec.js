@@ -16,7 +16,8 @@ function getSlotConfigs(mediaTypes, params) {
     bidder: 'seedtag',
     mediaTypes: mediaTypes,
     src: 'client',
-    transactionId: 'd704d006-0d6e-4a09-ad6c-179e7e758096'
+    transactionId: 'd704d006-0d6e-4a09-ad6c-179e7e758096',
+    adUnitCode: 'adunit-code'
   }
 }
 
@@ -219,6 +220,7 @@ describe('Seedtag Adapter', function() {
       expect(data.publisherToken).to.equal('0000-0000-01')
       expect(typeof data.version).to.equal('string')
       expect(['fixed', 'mobile', 'unknown'].indexOf(data.connectionType)).to.be.above(-1)
+      expect(data.bidRequests[0].adUnitCode).to.equal('adunit-code')
     })
 
     describe('adPosition param', function() {

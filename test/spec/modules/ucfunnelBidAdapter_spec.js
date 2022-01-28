@@ -14,7 +14,6 @@ const userId = {
   'netId': 'fH5A3n2O8_CZZyPoJVD-eabc6ECb7jhxCicsds7qSg',
   'parrableId': {'eid': '01.1608624401.fe44bca9b96873084a0d4e9d0ac5729f13790ba8f8e58fa4707b6b3c096df91c6b5f254992bdad4ab1dd4a89919081e9b877d7a039ac3183709277665bac124f28e277d109f0ff965058'},
   'pubcid': 'd8aa10fa-d86c-451d-aad8-5f16162a9e64',
-  'sharedid': {'id': '01ESHXW4HD29KMF387T63JQ9H5', 'third': '01ESHXW4HD29KMF387T63JQ9H5'},
   'tdid': 'D6885E90-2A7A-4E0F-87CB-7734ED1B99A3',
   'haloId': {},
   'uid2': {'id': 'eb33b0cb-8d35-4722-b9c0-1a31d4064888'},

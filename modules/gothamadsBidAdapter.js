@@ -1,6 +1,6 @@
+import { logMessage, deepSetValue, deepAccess, _map, logWarn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'gothamads';
@@ -79,7 +79,7 @@ export const spec = {
       winTop = window.top;
     } catch (e) {
       location = winTop.location;
-      utils.logMessage(e);
+      logMessage(e);
     };
 
     let bids = [];
@@ -110,12 +110,12 @@ export const spec = {
       };
 
       if (bidRequest.gdprConsent && bidRequest.gdprConsent.gdprApplies) {
-        utils.deepSetValue(data, 'regs.ext.gdpr', bidRequest.gdprConsent.gdprApplies ? 1 : 0);
-        utils.deepSetValue(data, 'user.ext.consent', bidRequest.gdprConsent.consentString);
+        deepSetValue(data, 'regs.ext.gdpr', bidRequest.gdprConsent.gdprApplies ? 1 : 0);
+        deepSetValue(data, 'user.ext.consent', bidRequest.gdprConsent.consentString);
       }
 
       if (bidRequest.uspConsent !== undefined) {
-        utils.deepSetValue(data, 'regs.ext.us_privacy', bidRequest.uspConsent);
+        deepSetValue(data, 'regs.ext.us_privacy', bidRequest.uspConsent);
       }
 
       bids.push(data)
@@ -186,7 +186,7 @@ export const spec = {
  * @returns {boolean}
  */
 const checkRequestType = (bidRequest, type) => {
-  return (typeof utils.deepAccess(bidRequest, `mediaTypes.${type}`) !== 'undefined');
+  return (typeof deepAccess(bidRequest, `mediaTypes.${type}`) !== 'undefined');
 }
 
 const parseNative = admObject => {
@@ -246,7 +246,7 @@ const addNativeParameters = bidRequest => {
     ver: NATIVE_VERSION,
   };
 
-  const assets = utils._map(bidRequest.mediaTypes.native, (bidParams, key) => {
+  const assets = _map(bidRequest.mediaTypes.native, (bidParams, key) => {
     const props = NATIVE_PARAMS[key];
     const asset = {
       required: bidParams.required & 1,
@@ -300,7 +300,7 @@ const parseSizes = (bid, mediaType) => {
         mediaTypes.video.w,
         mediaTypes.video.h
       ];
-    } else if (Array.isArray(utils.deepAccess(bid, 'mediaTypes.video.playerSize')) && bid.mediaTypes.video.playerSize.length === 1) {
+    } else if (Array.isArray(deepAccess(bid, 'mediaTypes.video.playerSize')) && bid.mediaTypes.video.playerSize.length === 1) {
       size = bid.mediaTypes.video.playerSize[0];
     } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0 && Array.isArray(bid.sizes[0]) && bid.sizes[0].length > 1) {
       size = bid.sizes[0];
@@ -313,7 +313,7 @@ const parseSizes = (bid, mediaType) => {
   } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0) {
     sizes = bid.sizes
   } else {
-    utils.logWarn('no sizes are setup or found');
+    logWarn('no sizes are setup or found');
   }
 
   return sizes

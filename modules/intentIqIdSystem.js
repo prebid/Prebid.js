@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import * as utils from '../src/utils.js'
+import { logError, logInfo } from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js'
 import {getStorageManager} from '../src/storageManager.js';
@@ -47,7 +47,7 @@ export function readData(key) {
       return storage.getCookie(key);
     }
   } catch (error) {
-    utils.logError(error);
+    logError(error);
   }
 }
 
@@ -59,7 +59,7 @@ export function readData(key) {
  */
 function storeData(key, value) {
   try {
-    utils.logInfo(MODULE_NAME + ': storing data: key=' + key + ' value=' + value);
+    logInfo(MODULE_NAME + ': storing data: key=' + key + ' value=' + value);
 
     if (value) {
       if (storage.hasLocalStorage()) {
@@ -71,7 +71,7 @@ function storeData(key, value) {
       }
     }
   } catch (error) {
-    utils.logError(error);
+    logError(error);
   }
 }
 
@@ -84,7 +84,7 @@ function tryParse(data) {
   try {
     return JSON.parse(data);
   } catch (err) {
-    utils.logError(err);
+    logError(err);
     return null;
   }
 }
@@ -114,7 +114,7 @@ export const intentIqIdSubmodule = {
   getId(config) {
     const configParams = (config && config.params) || {};
     if (!configParams || typeof configParams.partner !== 'number') {
-      utils.logError('User ID - intentIqId submodule requires a valid partner to be defined');
+      logError('User ID - intentIqId submodule requires a valid partner to be defined');
       return;
     }
 
@@ -155,7 +155,7 @@ export const intentIqIdSubmodule = {
           }
         },
         error: error => {
-          utils.logError(MODULE_NAME + ': ID fetch encountered an error', error);
+          logError(MODULE_NAME + ': ID fetch encountered an error', error);
           callback();
         }
       };

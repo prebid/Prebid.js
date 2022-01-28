@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { deepSetValue, logError, _each, getBidRequest, isNumber, isArray, deepAccess, isFn, isPlainObject, logWarn, getBidIdParameter, getUniqueIdentifierStr, isEmpty, isInteger } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
@@ -62,7 +62,7 @@ export const spec = {
     if (bidRequests[0].userId) {
       const eids = createEidsArray(bidRequests[0].userId);
       if (eids.length) {
-        utils.deepSetValue(requestParameters, 'user.ext.eids', eids);
+        deepSetValue(requestParameters, 'user.ext.eids', eids);
       }
     }
 
@@ -72,7 +72,7 @@ export const spec = {
     );
 
     if (requestObj.errors && requestObj.errors.length > 0) {
-      utils.logError('ID WARNING 0x01');
+      logError('ID WARNING 0x01');
     }
     requestObj.requests.forEach(request => request.bidderRequest = bidderRequest);
     return requestObj.requests;
@@ -86,13 +86,13 @@ export const spec = {
    */
   interpretResponse: function (serverResponse, {bidderRequest}) {
     const bids = [];
-    utils._each(serverResponse.body.bid, function (bidObject) {
+    _each(serverResponse.body.bid, function (bidObject) {
       if (!bidObject.price || bidObject.price === null ||
         bidObject.hasOwnProperty('errorCode') ||
         (!bidObject.adm && !bidObject.native)) {
         return;
       }
-      const bidRequest = utils.getBidRequest(bidObject.id, [bidderRequest]);
+      const bidRequest = getBidRequest(bidObject.id, [bidderRequest]);
       const bid = {};
 
       if (bidObject.native) {
@@ -132,7 +132,7 @@ export const spec = {
 
       // Deal ID. Composite ads can have multiple line items and the ID of the first
       // dealID line item will be used.
-      if (utils.isNumber(bidObject.lid) && bidObject.buying_type && bidObject.buying_type !== 'rtb') {
+      if (isNumber(bidObject.lid) && bidObject.buying_type && bidObject.buying_type !== 'rtb') {
         bid.dealId = bidObject.lid;
       } else if (Array.isArray(bidObject.lid) &&
         Array.isArray(bidObject.buying_type) &&
@@ -181,7 +181,7 @@ export const spec = {
       const syncs = [];
       serverResponses.forEach(response => {
         response.body.bid.forEach(bidObject => {
-          if (utils.isArray(bidObject.sync)) {
+          if (isArray(bidObject.sync)) {
             bidObject.sync.forEach(syncElement => {
               if (syncs.indexOf(syncElement) === -1) {
                 syncs.push(syncElement);
@@ -197,15 +197,15 @@ export const spec = {
 };
 
 function isInstreamVideo(bid) {
-  const mediaTypes = Object.keys(utils.deepAccess(bid, 'mediaTypes', {}));
-  const videoMediaType = utils.deepAccess(bid, 'mediaTypes.video');
-  const context = utils.deepAccess(bid, 'mediaTypes.video.context');
+  const mediaTypes = Object.keys(deepAccess(bid, 'mediaTypes', {}));
+  const videoMediaType = deepAccess(bid, 'mediaTypes.video');
+  const context = deepAccess(bid, 'mediaTypes.video.context');
   return bid.mediaType === 'video' || (mediaTypes.length === 1 && videoMediaType && context !== 'outstream');
 }
 
 function isOutstreamVideo(bid) {
-  const videoMediaType = utils.deepAccess(bid, 'mediaTypes.video');
-  const context = utils.deepAccess(bid, 'mediaTypes.video.context');
+  const videoMediaType = deepAccess(bid, 'mediaTypes.video');
+  const context = deepAccess(bid, 'mediaTypes.video.context');
   return videoMediaType && context === 'outstream';
 }
 
@@ -225,7 +225,7 @@ function getVideoTargetingParams(bid) {
 }
 
 function getBidFloor(bid) {
-  if (!utils.isFn(bid.getFloor)) {
+  if (!isFn(bid.getFloor)) {
     return null;
   }
   const floor = bid.getFloor({
@@ -233,7 +233,7 @@ function getBidFloor(bid) {
     mediaType: '*',
     size: '*'
   });
-  if (utils.isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
+  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
     return floor.floor;
   }
   return null;
@@ -259,31 +259,31 @@ function createRenderer(bidRequest) {
     id: bidRequest.adUnitCode,
     url: RENDERER_URL,
     loaded: false,
-    config: utils.deepAccess(bidRequest, 'renderer.options'),
+    config: deepAccess(bidRequest, 'renderer.options'),
     adUnitCode: bidRequest.adUnitCode
   });
   try {
     renderer.setRender(outstreamRender);
   } catch (err) {
-    utils.logWarn('Prebid Error calling setRender on renderer', err);
+    logWarn('Prebid Error calling setRender on renderer', err);
   }
   return renderer;
 }
 
 function getNormalizedBidRequest(bid) {
-  let adUnitId = utils.getBidIdParameter('adUnitCode', bid) || null;
-  let placementId = utils.getBidIdParameter('placementId', bid.params) || null;
+  let adUnitId = getBidIdParameter('adUnitCode', bid) || null;
+  let placementId = getBidIdParameter('placementId', bid.params) || null;
   let publisherId = null;
   let placementKey = null;
 
   if (placementId === null) {
-    publisherId = utils.getBidIdParameter('publisherId', bid.params) || null;
-    placementKey = utils.getBidIdParameter('placementKey', bid.params) || null;
+    publisherId = getBidIdParameter('publisherId', bid.params) || null;
+    placementKey = getBidIdParameter('placementKey', bid.params) || null;
   }
-  const keyValues = utils.getBidIdParameter('keyValues', bid.params) || null;
-  const singleSizeFilter = utils.getBidIdParameter('size', bid.params) || null;
-  const bidId = utils.getBidIdParameter('bidId', bid);
-  const transactionId = utils.getBidIdParameter('transactionId', bid);
+  const keyValues = getBidIdParameter('keyValues', bid.params) || null;
+  const singleSizeFilter = getBidIdParameter('size', bid.params) || null;
+  const bidId = getBidIdParameter('bidId', bid);
+  const transactionId = getBidIdParameter('transactionId', bid);
   const currency = config.getConfig('currency.adServerCurrency');
 
   let normalizedBidRequest = {};
@@ -332,8 +332,8 @@ function getNormalizedBidRequest(bid) {
   let bidFloor = getBidFloor(bid);
   let bidFloorCur = null;
   if (!bidFloor) {
-    bidFloor = utils.getBidIdParameter('bidFloor', bid.params);
-    bidFloorCur = utils.getBidIdParameter('bidFloorCur', bid.params);
+    bidFloor = getBidIdParameter('bidFloor', bid.params);
+    bidFloorCur = getBidIdParameter('bidFloorCur', bid.params);
   }
   if (bidFloor) {
     normalizedBidRequest.bidFloor = bidFloor;
@@ -344,7 +344,7 @@ function getNormalizedBidRequest(bid) {
 
 function getNormalizedNativeAd(rawNative) {
   const native = {};
-  if (!rawNative || !utils.isArray(rawNative.assets)) {
+  if (!rawNative || !isArray(rawNative.assets)) {
     return null;
   }
   // Assets
@@ -475,7 +475,7 @@ export function ImproveDigitalAdServerJSClient(endPoint) {
 
     let impressionObjects = [];
     let impressionObject;
-    if (utils.isArray(requestObject)) {
+    if (isArray(requestObject)) {
       for (let counter = 0; counter < requestObject.length; counter++) {
         impressionObject = this.createImpressionObject(requestObject[counter]);
         impressionObjects.push(impressionObject);
@@ -576,7 +576,7 @@ export function ImproveDigitalAdServerJSClient(endPoint) {
     if (requestParameters.requestId) {
       impressionBidRequestObject.id = requestParameters.requestId;
     } else {
-      impressionBidRequestObject.id = utils.getUniqueIdentifierStr();
+      impressionBidRequestObject.id = getUniqueIdentifierStr();
     }
     if (requestParameters.domain) {
       impressionBidRequestObject.domain = requestParameters.domain;
@@ -625,7 +625,7 @@ export function ImproveDigitalAdServerJSClient(endPoint) {
     if (placementObject.id) {
       impressionObject.id = placementObject.id;
     } else {
-      impressionObject.id = utils.getUniqueIdentifierStr();
+      impressionObject.id = getUniqueIdentifierStr();
     }
     if (placementObject.adTypes) {
       impressionObject.ad_types = placementObject.adTypes;
@@ -654,18 +654,18 @@ export function ImproveDigitalAdServerJSClient(endPoint) {
     if (placementObject.transactionId) {
       impressionObject.tid = placementObject.transactionId;
     }
-    if (!utils.isEmpty(placementObject.video)) {
+    if (!isEmpty(placementObject.video)) {
       const video = Object.assign({}, placementObject.video);
       // skip must be 0 or 1
       if (video.skip !== 1) {
         delete video.skipmin;
         delete video.skipafter;
         if (video.skip !== 0) {
-          utils.logWarn(`video.skip: invalid value '${video.skip}'. Expected 0 or 1`);
+          logWarn(`video.skip: invalid value '${video.skip}'. Expected 0 or 1`);
           delete video.skip;
         }
       }
-      if (!utils.isEmpty(video)) {
+      if (!isEmpty(video)) {
         impressionObject.video = video;
       }
     }
@@ -687,11 +687,11 @@ export function ImproveDigitalAdServerJSClient(endPoint) {
 
     // Set of desired creative sizes
     // Input Format: array of pairs, i.e. [[300, 250], [250, 250]]
-    if (placementObject.format && utils.isArray(placementObject.format)) {
+    if (placementObject.format && isArray(placementObject.format)) {
       const format = placementObject.format
         .filter(sizePair => sizePair.length === 2 &&
-            utils.isInteger(sizePair[0]) &&
-            utils.isInteger(sizePair[1]) &&
+            isInteger(sizePair[0]) &&
+            isInteger(sizePair[1]) &&
             sizePair[0] >= 0 &&
             sizePair[1] >= 0)
         .map(sizePair => {
