@@ -132,7 +132,7 @@ describe('videojsProvider', function () {
       expect(video.api).to.include(API_FRAMEWORKS.VPAID_2_0);
       expect(video.mimes).to.include(VPAID_MIME_TYPE);
       player.dispose();
-      
+
       // Should not return instream placement when theres no source
       document.body.innerHTML = `<video preload id='test' width="${200}" height="${100}"></video>`
       player = videojs('test')
@@ -141,7 +141,6 @@ describe('videojsProvider', function () {
       provider.init();
       ({ video, content } = provider.getOrtbParams());
       expect(video).to.not.have.property('placement')
-
     });
 
     it('should populate position when fullscreen', function () {
@@ -202,18 +201,17 @@ describe('videojsProvider', function () {
   });
 });
 
-
-describe('utils', function(){
+describe('utils', function() {
   beforeEach(() => {
     expect(window.innerHeight).to.equal(600)
     expect(window.innerWidth).to.equal(785)
   });
-  describe('getPositionCode', function(){
+  describe('getPositionCode', function() {
     it('should return the correct position when video is above the fold', function () {
       const code = utils.getPositionCode({
-        left: window.innerWidth/10,
+        left: window.innerWidth / 10,
         top: 0,
-        width: window.innerWidth - window.innerWidth/10,
+        width: window.innerWidth - window.innerWidth / 10,
         height: window.innerHeight,
       })
       expect(code).to.equal(AD_POSITION.ABOVE_THE_FOLD)
@@ -221,26 +219,22 @@ describe('utils', function(){
 
     it('should return the correct position when video is below the fold', function () {
       const code = utils.getPositionCode({
-        left: window.innerWidth/10,
+        left: window.innerWidth / 10,
         top: window.innerHeight,
-        width: window.innerWidth - window.innerWidth/10,
-        height: window.innerHeight/2,
+        width: window.innerWidth - window.innerWidth / 10,
+        height: window.innerHeight / 2,
       })
       expect(code).to.equal(AD_POSITION.BELOW_THE_FOLD)
     });
 
     it('should return the unkown position when the video is out of bounds', function () {
       const code = utils.getPositionCode({
-        left: window.innerWidth/10,
+        left: window.innerWidth / 10,
         top: window.innerHeight,
         width: window.innerWidth,
         height: window.innerHeight,
       })
       expect(code).to.equal(AD_POSITION.UNKNOWN)
     });
-
-
   })
 })
-
-

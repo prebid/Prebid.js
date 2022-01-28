@@ -8,7 +8,7 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
   let videojs = videojs_;
   let player = null;
   let playerVersion = null;
-  let ima_options = null;
+  let imaOptions = null;
   const {playerConfig, divId} = config;
 
   // TODO: test with older videojs versions
@@ -30,18 +30,19 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
     player = videojs(divId, playerConfig, function() {
       // callback runs in both cases
     });
-    const vendorConfig = config.playerConfig?.params?.vendorConfig;
-    const tags = vendorConfig?.advertising?.tag;
-    if(player.ima && tags){
-      ima_options = { 
+    // Todo: the linter doesn't like optional chaining is there a better way to do this
+    const vendorConfig = config.playerConfig && config.playerConfig.params && config.playerConfig.params.vendorConfig;
+    const tags = vendorConfig && vendorConfig.advertising && vendorConfig.advertising.tag;
+    if (player.ima && tags) {
+      imaOptions = {
         adTagUrl: tags[0]
       };
-      player.ima(ima_options);
+      player.ima(imaOptions);
     }
 
     // TODO: make sure ortb gets called in integration example
     // currently testing with a hacky solution by hooking it to window
-    window.ortb = this.getOrtbParams
+    // window.ortb = this.getOrtbParams
   }
 
   function getId() {
@@ -83,7 +84,7 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
       type => player.canPlayType(type) !== ''
     )
     // IMA supports vpaid unless its expliclty turned off
-    if(ima_options && ima_options.vpaidMode !== 0){
+    if (imaOptions && imaOptions.vpaidMode !== 0) {
       supportedMediaTypes.push(VPAID_MIME_TYPE);
     }
 
@@ -91,11 +92,11 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
       mimes: supportedMediaTypes,
       // Based on the protocol support provided by the videojs-ima plugin
       // https://developers.google.com/interactive-media-ads/docs/sdks/html5/client-side/compatibility
-      // Need to check for the plugins 
-      protocols: ima_options ? [
+      // Need to check for the plugins
+      protocols: imaOptions ? [
         PROTOCOLS.VAST_2_0,
       ] : [],
-      api: ima_options ? [
+      api: imaOptions ? [
         API_FRAMEWORKS.VPAID_2_0
       ] : [],
       // TODO: Make sure this returns dimensions in DIPS
@@ -113,8 +114,8 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
 
     // TODO: Determine placement may not be in stream if videojs is only used to serve ad content
     // ~ Sort of resolved check if the player has a source to tell if the placement is instream
-    if(content.url){
-      video.placement = PLACEMENT.IN_STREAM; 
+    if (content.url) {
+      video.placement = PLACEMENT.IN_STREAM;
     }
 
     // Placement according to IQG Guidelines 4.2.8
@@ -122,11 +123,9 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
     const findPosition = videojs.dom.findPosition;
     if (player.isFullscreen()) {
       video.pos = AD_POSITION.FULL_SCREEN;
-    }
-    else if(findPosition){
+    } else if (findPosition) {
       video.pos = utils.getPositionCode(findPosition(player.el()))
     }
-
 
     return {video, content};
   }
@@ -161,12 +160,12 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
 }
 
 export const utils = {
-  getPositionCode: function({left, top, width, height}){
+  getPositionCode: function({left, top, width, height}) {
     const bottom = window.innerHeight - top - height;
     const right = window.innerWidth - left - width;
 
     if (left < 0 || right < 0 || top < 0) {
-        return AD_POSITION.UNKNOWN;
+      return AD_POSITION.UNKNOWN;
     }
 
     return bottom >= 0 ? AD_POSITION.ABOVE_THE_FOLD : AD_POSITION.BELOW_THE_FOLD;
