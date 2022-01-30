@@ -23,6 +23,7 @@ const SUPPORTED_SYNC_METHODS = {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 918,
   version: ADAPTER_VERSION,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
   isBidRequestValid: function(bidRequest) {
