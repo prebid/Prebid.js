@@ -12,9 +12,9 @@ const ADAPTER_VERSION = '5.0.0';
 const TTL = 360;
 const CURRENCY = 'USD';
 const SELLER_ENDPOINT = 'https://hb.minutemedia-prebid.com/';
-const MODES = { //TODO: change endpoint
-  PRODUCTION: 'hb',
-  TEST: 'hb-test'
+const MODES = {
+  PRODUCTION: 'hb-mm',
+  TEST: 'hb-mm-test'
 }
 const SUPPORTED_SYNC_METHODS = {
   IFRAME: 'iframe',
