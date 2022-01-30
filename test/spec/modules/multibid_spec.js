@@ -11,7 +11,7 @@ import {
 import {parse as parseQuery} from 'querystring';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
-import find from 'core-js-pure/features/array/find.js';
+import find from 'prebidjs-polyfill/find.js';
 
 describe('multibid adapter', function () {
   let bidArray = [{
