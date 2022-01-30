@@ -3,12 +3,9 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 
-//TODO: change bidder param
-//TODO: change README file?
-
 const SUPPORTED_AD_TYPES = [VIDEO];
 const BIDDER_CODE = 'minutemedia';
-const ADAPTER_VERSION = '5.0.0';
+const ADAPTER_VERSION = '5.0.1';
 const TTL = 360;
 const CURRENCY = 'USD';
 const SELLER_ENDPOINT = 'https://hb.minutemedia-prebid.com/';
