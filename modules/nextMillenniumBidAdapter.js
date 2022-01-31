@@ -109,6 +109,7 @@ export const spec = {
     let bidders = []
     if (responses) {
       _each(responses, (response) => {
+        if (!(response && response.body && response.body.ext && response.body.ext.responsetimemillis)) return
         _each(Object.keys(response.body.ext.responsetimemillis), b => bidders.push(b))
       })
     }
