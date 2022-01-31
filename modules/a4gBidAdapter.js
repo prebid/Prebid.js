@@ -1,9 +1,9 @@
-import {registerBidder} from '../src/adapters/bidderFactory';
-import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { _each } from '../src/utils.js';
 
 const A4G_BIDDER_CODE = 'a4g';
 const A4G_CURRENCY = 'USD';
-const A4G_DEFAULT_BID_URL = '//ads.ad4game.com/v1/bid';
+const A4G_DEFAULT_BID_URL = 'https://ads.ad4game.com/v1/bid';
 const A4G_TTL = 120;
 
 const LOCATION_PARAM_NAME = 'siteurl';
@@ -28,12 +28,13 @@ export const spec = {
     const sizeParams = [];
     const zoneIds = [];
 
-    utils._each(validBidRequests, function(bid) {
+    _each(validBidRequests, function(bid) {
       if (!deliveryUrl && typeof bid.params.deliveryUrl === 'string') {
         deliveryUrl = bid.params.deliveryUrl;
       }
       idParams.push(bid.bidId);
-      sizeParams.push(bid.sizes.map(size => size.join(SIZE_SEPARATOR)).join(ARRAY_SIZE_SEPARATOR));
+      let bidSizes = (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) || bid.sizes;
+      sizeParams.push(bidSizes.map(size => size.join(SIZE_SEPARATOR)).join(ARRAY_SIZE_SEPARATOR));
       zoneIds.push(bid.params.zoneId);
     });
 
@@ -43,7 +44,7 @@ export const spec = {
 
     let data = {
       [IFRAME_PARAM_NAME]: 0,
-      [LOCATION_PARAM_NAME]: utils.getTopWindowUrl(),
+      [LOCATION_PARAM_NAME]: (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) ? bidderRequest.refererInfo.referer : window.location.href,
       [SIZE_PARAM_NAME]: sizeParams.join(ARRAY_PARAM_SEPARATOR),
       [ID_PARAM_NAME]: idParams.join(ARRAY_PARAM_SEPARATOR),
       [ZONE_ID_PARAM_NAME]: zoneIds.join(ARRAY_PARAM_SEPARATOR)
@@ -65,19 +66,21 @@ export const spec = {
 
   interpretResponse: function(serverResponses, request) {
     const bidResponses = [];
-    utils._each(serverResponses.body, function(response) {
+    _each(serverResponses.body, function(response) {
       if (response.cpm > 0) {
         const bidResponse = {
           requestId: response.id,
-          creativeId: response.id,
-          adId: response.id,
+          creativeId: response.crid || response.id,
           cpm: response.cpm,
           width: response.width,
           height: response.height,
           currency: A4G_CURRENCY,
           netRevenue: true,
           ttl: A4G_TTL,
-          ad: response.ad
+          ad: response.ad,
+          meta: {
+            advertiserDomains: response.adomain && response.adomain.length > 0 ? response.adomain : []
+          }
         };
         bidResponses.push(bidResponse);
       }

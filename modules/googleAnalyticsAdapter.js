@@ -2,10 +2,10 @@
  * ga.js - analytics adapter for google analytics
  */
 
-var events = require('../src/events');
-var utils = require('../src/utils');
+import { _each, logMessage } from '../src/utils.js';
+var events = require('../src/events.js');
 var CONSTANTS = require('../src/constants.json');
-var adapterManager = require('../src/adapterManager').default;
+var adapterManager = require('../src/adapterManager.js').default;
 
 var BID_REQUESTED = CONSTANTS.EVENTS.BID_REQUESTED;
 var BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
@@ -19,6 +19,7 @@ var _enableCheck = true;
 var _category = 'Prebid.js Bids';
 var _eventCount = 0;
 var _enableDistribution = false;
+var _cpmDistribution = null;
 var _trackerSend = null;
 var _sampled = true;
 
@@ -42,6 +43,9 @@ adapter.enableAnalytics = function ({ provider, options }) {
   if (options && typeof options.enableDistribution !== 'undefined') {
     _enableDistribution = options.enableDistribution;
   }
+  if (options && typeof options.cpmDistribution === 'function') {
+    _cpmDistribution = options.cpmDistribution;
+  }
 
   var bid = null;
 
@@ -50,7 +54,7 @@ adapter.enableAnalytics = function ({ provider, options }) {
 
     var existingEvents = events.getEvents();
 
-    utils._each(existingEvents, function (eventObj) {
+    _each(existingEvents, function (eventObj) {
       if (typeof eventObj !== 'object') {
         return;
       }
@@ -94,12 +98,12 @@ adapter.enableAnalytics = function ({ provider, options }) {
       sendBidWonToGa(bid);
     });
   } else {
-    utils.logMessage('Prebid.js google analytics disabled by sampling');
+    logMessage('Prebid.js google analytics disabled by sampling');
   }
 
   // finally set this function to return log message, prevents multiple adapter listeners
   this.enableAnalytics = function _enable() {
-    return utils.logMessage(`Analytics adapter already enabled, unnecessary call to \`enableAnalytics\`.`);
+    return logMessage(`Analytics adapter already enabled, unnecessary call to \`enableAnalytics\`.`);
   };
 };
 
@@ -125,7 +129,7 @@ function checkAnalytics() {
     _enableCheck = false;
   }
 
-  utils.logMessage('event count sent to GA: ' + _eventCount);
+  logMessage('event count sent to GA: ' + _eventCount);
 }
 
 function convertToCents(dollars) {
@@ -166,6 +170,9 @@ function getLoadTimeDistribution(time) {
 }
 
 function getCpmDistribution(cpm) {
+  if (_cpmDistribution) {
+    return _cpmDistribution(cpm);
+  }
   var distribution;
   if (cpm >= 0 && cpm < 0.5) {
     distribution = '$0-0.5';
@@ -235,7 +242,7 @@ function sendBidResponseToGa(bid) {
 
 function sendBidTimeouts(timedOutBidders) {
   _analyticsQueue.push(function () {
-    utils._each(timedOutBidders, function (bidderCode) {
+    _each(timedOutBidders, function (bidderCode) {
       _eventCount++;
       var bidderName = bidderCode.bidder;
       window[_gaGlobal](_trackerSend, 'event', _category, 'Timeouts', bidderName, _disableInteraction);
@@ -254,6 +261,11 @@ function sendBidWonToGa(bid) {
 
   checkAnalytics();
 }
+
+/**
+ * Exposed for testing purposes
+ */
+adapter.getCpmDistribution = getCpmDistribution;
 
 adapterManager.registerAnalyticsAdapter({
   adapter,

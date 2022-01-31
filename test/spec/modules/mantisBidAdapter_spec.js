@@ -1,9 +1,20 @@
 import {expect} from 'chai';
-import {spec} from 'modules/mantisBidAdapter';
-import {newBidder} from 'src/adapters/bidderFactory';
+import {spec, storage} from 'modules/mantisBidAdapter.js';
+import {newBidder} from 'src/adapters/bidderFactory.js';
+import {sfPostMessage, iframePostMessage} from 'modules/mantisBidAdapter';
 
 describe('MantisAdapter', function () {
   const adapter = newBidder(spec);
+  const sandbox = sinon.sandbox.create();
+  let clock;
+
+  beforeEach(function () {
+    clock = sandbox.useFakeTimers();
+  });
+
+  afterEach(function () {
+    sandbox.restore();
+  });
 
   describe('isBidRequestValid', function () {
     let bid = {
@@ -31,6 +42,68 @@ describe('MantisAdapter', function () {
     });
   });
 
+  describe('viewability', function() {
+    it('iframe (viewed)', () => {
+      let viewed = false;
+
+      sandbox.stub(document, 'getElementsByTagName').withArgs('iframe').returns([
+        {
+          name: 'mantis',
+          getBoundingClientRect: () => ({
+            top: 10,
+            bottom: 260,
+            left: 10,
+            right: 190,
+            width: 300,
+            height: 250
+          })
+        }
+      ]);
+
+      iframePostMessage({innerHeight: 500, innerWidth: 500}, 'mantis', () => viewed = true);
+
+      sandbox.clock.runAll();
+
+      expect(viewed).to.equal(true);
+    });
+
+    it('safeframe (viewed)', () => {
+      let viewed = false;
+
+      sfPostMessage({
+        ext: {
+          register: (width, height, callback) => {
+            expect(width).to.equal(100);
+            expect(height).to.equal(200);
+
+            callback();
+          },
+          inViewPercentage: () => 60
+        }
+      }, 100, 200, () => viewed = true);
+
+      expect(viewed).to.equal(true);
+    });
+
+    it('safeframe (unviewed)', () => {
+      let viewed = false;
+
+      sfPostMessage({
+        ext: {
+          register: (width, height, callback) => {
+            expect(width).to.equal(100);
+            expect(height).to.equal(200);
+
+            callback();
+          },
+          inViewPercentage: () => 30
+        }
+      }, 100, 200, () => viewed = true);
+
+      expect(viewed).to.equal(false);
+    });
+  });
+
   describe('buildRequests', function () {
     let bidRequests = [
       {
@@ -47,11 +120,29 @@ describe('MantisAdapter', function () {
       }
     ];
 
+    it('gdpr consent not required', function () {
+      const request = spec.buildRequests(bidRequests, {gdprConsent: {gdprApplies: false}});
+
+      expect(request.url).not.to.include('consent=false');
+    });
+
+    it('gdpr consent required', function () {
+      const request = spec.buildRequests(bidRequests, {gdprConsent: {gdprApplies: true}});
+
+      expect(request.url).to.include('consent=false');
+    });
+
+    it('usp consent', function () {
+      const request = spec.buildRequests(bidRequests, {uspConsent: 'foobar'});
+
+      expect(request.url).to.include('usp=foobar');
+    });
+
     it('domain override', function () {
-      window.mantis_domain = 'http://foo';
+      window.mantis_domain = 'https://foo';
       const request = spec.buildRequests(bidRequests);
 
-      expect(request.url).to.include('http://foo');
+      expect(request.url).to.include('https://foo');
 
       delete window.mantis_domain;
     });
@@ -79,13 +170,12 @@ describe('MantisAdapter', function () {
     });
 
     it('use storage uuid', function () {
-      window.localStorage.setItem('mantis:uuid', 'bar');
+      sandbox.stub(storage, 'hasLocalStorage').callsFake(() => true);
+      sandbox.stub(storage, 'getDataFromLocalStorage').withArgs('mantis:uuid').returns('bar');
 
       const request = spec.buildRequests(bidRequests);
 
       expect(request.url).to.include('uuid=bar');
-
-      window.localStorage.removeItem('mantis:uuid');
     });
 
     it('detect amp', function () {
@@ -128,6 +218,88 @@ describe('MantisAdapter', function () {
   });
 
   describe('interpretResponse', function () {
+    it('use ad ttl if provided', function () {
+      let response = {
+        body: {
+          ttl: 360,
+          uuid: 'uuid',
+          ads: [
+            {
+              bid: 'bid',
+              cpm: 1,
+              view: 'view',
+              width: 300,
+              ttl: 250,
+              height: 250,
+              html: '<!-- Creative -->'
+            }
+          ]
+        }
+      };
+
+      let expectedResponse = [
+        {
+          requestId: 'bid',
+          cpm: 1,
+          width: 300,
+          height: 250,
+          ttl: 250,
+          ad: '<!-- Creative -->',
+          creativeId: 'view',
+          netRevenue: true,
+          meta: {
+            advertiserDomains: []
+          },
+          currency: 'USD'
+        }
+      ];
+      let bidderRequest;
+
+      let result = spec.interpretResponse(response, {bidderRequest});
+      expect(result[0]).to.deep.equal(expectedResponse[0]);
+    });
+
+    it('use global ttl if provded', function () {
+      let response = {
+        body: {
+          ttl: 360,
+          uuid: 'uuid',
+          ads: [
+            {
+              bid: 'bid',
+              cpm: 1,
+              view: 'view',
+              domains: ['foobar.com'],
+              width: 300,
+              height: 250,
+              html: '<!-- Creative -->'
+            }
+          ]
+        }
+      };
+
+      let expectedResponse = [
+        {
+          requestId: 'bid',
+          cpm: 1,
+          width: 300,
+          height: 250,
+          ttl: 360,
+          ad: '<!-- Creative -->',
+          creativeId: 'view',
+          netRevenue: true,
+          meta: {
+            advertiserDomains: ['foobar.com']
+          },
+          currency: 'USD'
+        }
+      ];
+      let bidderRequest;
+
+      let result = spec.interpretResponse(response, {bidderRequest});
+      expect(result[0]).to.deep.equal(expectedResponse[0]);
+    });
+
     it('display ads returned', function () {
       let response = {
         body: {
@@ -138,6 +310,7 @@ describe('MantisAdapter', function () {
               cpm: 1,
               view: 'view',
               width: 300,
+              domains: ['foobar.com'],
               height: 250,
               html: '<!-- Creative -->'
             }
@@ -155,15 +328,22 @@ describe('MantisAdapter', function () {
           ad: '<!-- Creative -->',
           creativeId: 'view',
           netRevenue: true,
+          meta: {
+            advertiserDomains: ['foobar.com']
+          },
           currency: 'USD'
         }
       ];
       let bidderRequest;
 
+      sandbox.stub(storage, 'hasLocalStorage').returns(true);
+      const spy = sandbox.spy(storage, 'setDataInLocalStorage');
+
       let result = spec.interpretResponse(response, {bidderRequest});
+
+      expect(spy.calledWith('mantis:uuid', 'uuid'));
       expect(result[0]).to.deep.equal(expectedResponse[0]);
       expect(window.mantis_uuid).to.equal(response.body.uuid);
-      expect(window.localStorage.getItem('mantis:uuid')).to.equal(response.body.uuid);
     });
 
     it('no ads returned', function () {

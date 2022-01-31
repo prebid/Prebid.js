@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {spec} from 'modules/otmBidAdapter';
 
-describe('otmBidAdapterTests', function () {
+describe('otmBidAdapter', function () {
   it('validate_pub_params', function () {
     expect(spec.isBidRequestValid({
       bidder: 'otm',
