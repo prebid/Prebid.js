@@ -663,6 +663,27 @@ describe('The Criteo bidding adapter', function () {
       expect(request.data.user.uspIab).to.equal('1YNY');
     });
 
+    it('should properly build a request with schain object', function () {
+      const expectedSchain = {
+        someProperty: 'someValue'
+      };
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          schain: expectedSchain,
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          sizes: [[728, 90]],
+          params: {
+            zoneId: 123,
+          },
+        },
+      ];
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.source.ext.schain).to.equal(expectedSchain);
+    });
+
     it('should properly build a request with if ccpa consent field is not provided', function () {
       const bidRequests = [
         {
