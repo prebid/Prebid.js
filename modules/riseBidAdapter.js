@@ -1,4 +1,4 @@
-import { logWarn, isArray, isFn, deepAccess, isEmpty, contains, timestamp, getBidIdParameter } from '../src/utils.js';
+import { logWarn, logInfo, isArray, isFn, deepAccess, isEmpty, contains, timestamp, getBidIdParameter, triggerPixel } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
@@ -23,7 +23,7 @@ export const spec = {
   gvlid: 1043,
   version: ADAPTER_VERSION,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
-  isBidRequestValid: function(bidRequest) {
+  isBidRequestValid: function (bidRequest) {
     if (!bidRequest.params) {
       logWarn('no params have been set to Rise adapter');
       return false;
@@ -52,7 +52,7 @@ export const spec = {
       data: combinedRequestsObject
     }
   },
-  interpretResponse: function({body}) {
+  interpretResponse: function ({body}) {
     const bidResponses = [];
 
     if (body.bids) {
@@ -66,6 +66,7 @@ export const spec = {
           ttl: adUnit.ttl || TTL,
           creativeId: adUnit.requestId,
           netRevenue: body.params.netRevenue,
+          nurl: body.nurl,
           meta: {
             mediaType: adUnit.mediaType
           }
@@ -87,7 +88,7 @@ export const spec = {
 
     return bidResponses;
   },
-  getUserSyncs: function(syncOptions, serverResponses) {
+  getUserSyncs: function (syncOptions, serverResponses) {
     const syncs = [];
     for (const response of serverResponses) {
       if (syncOptions.iframeEnabled && response.body.params.userSyncURL) {
@@ -109,6 +110,16 @@ export const spec = {
       }
     }
     return syncs;
+  },
+  onBidWon: function (bid) {
+    if (bid == null) {
+      return;
+    }
+
+    logInfo('onBidWon:', bid);
+    if (bid.hasOwnProperty('nurl') && bid.nurl.length > 0) {
+      triggerPixel(bid.nurl);
+    }
   }
 };
 
