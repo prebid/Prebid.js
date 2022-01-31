@@ -305,7 +305,7 @@ export function newConfig() {
           memo[topic] = currBidderConfig[topic];
         } else {
           if (isPlainObject(currBidderConfig[topic])) {
-            memo[topic] = mergeDeep({}, config[topic], currBidderConfig[topic]);
+            memo[topic] = mergeDeep(deepClone(config[topic]), currBidderConfig[topic]);
           } else {
             memo[topic] = currBidderConfig[topic];
           }
