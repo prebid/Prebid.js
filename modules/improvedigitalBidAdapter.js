@@ -4,7 +4,7 @@ import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
 import { createEidsArray } from './userId/eids.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import includes from 'prebidjs-polyfill/includes.js';
 
 const BIDDER_CODE = 'improvedigital';
 const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
@@ -90,6 +90,7 @@ export const spec = {
     // End of adding first party data
 
     requestParameters.schain = bidRequests[0].schain;
+    requestParameters.coppa = config.getConfig('coppa') === true;
 
     if (bidRequests[0].userId) {
       const eids = createEidsArray(bidRequests[0].userId);
@@ -650,6 +651,10 @@ export function ImproveDigitalAdServerJSClient(endPoint) {
       for (let prop in extraRequestParameters) {
         impressionBidRequestObject[prop] = extraRequestParameters[prop];
       }
+    }
+
+    if (requestParameters.coppa) {
+      impressionBidRequestObject.coppa = 1;
     }
 
     return impressionBidRequestObject;

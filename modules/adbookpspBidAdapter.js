@@ -1,5 +1,5 @@
-import includes from 'core-js-pure/features/array/includes.js';
-import find from 'core-js-pure/features/array/find';
+import includes from 'prebidjs-polyfill/includes.js';
+import find from 'prebidjs-polyfill/find.js';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';

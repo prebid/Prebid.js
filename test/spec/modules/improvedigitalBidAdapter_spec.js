@@ -557,6 +557,25 @@ describe('Improve Digital Adapter Tests', function () {
       ]
       );
     });
+
+    it('should set coppa', function() {
+      sinon.stub(config, 'getConfig')
+        .withArgs('coppa')
+        .returns(true);
+      const bidRequest = Object.assign({}, simpleBidRequest);
+      const request = spec.buildRequests([bidRequest], bidderRequestReferrer)[0];
+      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.coppa).to.equal(1);
+
+      config.getConfig.restore();
+    });
+
+    it('should undefined coppa', function() {
+      const bidRequest = Object.assign({}, simpleBidRequest);
+      const request = spec.buildRequests([bidRequest], bidderRequestReferrer)[0];
+      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.coppa).to.equal(undefined);
+    });
   });
 
   const serverResponse = {
