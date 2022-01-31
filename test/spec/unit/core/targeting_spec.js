@@ -963,7 +963,7 @@ describe('targeting tests', function () {
         let bcffCalled = 0;
         bidCacheFilterFunction = bid => {
           bcffCalled++;
-          return bid.mediaType != 'video';
+          return bid.mediaType !== 'video';
         }
         bids = targetingInstance.getWinningBids(adUnitCodes);
 
