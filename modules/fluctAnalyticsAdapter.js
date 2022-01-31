@@ -1,9 +1,13 @@
+/* eslint-disable indent */
 import { ajax } from '../src/ajax.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { config } from '../src/config.js'
 import CONSTANTS from '../src/constants.json';
-import * as utils from '../src/utils.js';
+import {
+  logInfo,
+  generateUUID,
+} from '../src/utils.js';
 import find from 'core-js-pure/features/array/find.js';
 
 const url = 'https://an.adingo.jp'
@@ -114,27 +118,15 @@ const cache = {
 };
 
 /**
- * @returns {string|undefined}
- */
-const getSiteKey = () => find(config.getConfig('realTimeData.dataProviders') ?? [], provider => provider.name === 'browsi')?.params.siteKey
-
-/**
- * @param {string} auctionId
+ * @param {string} id // auctionId or divId
  * @returns {boolean}
  */
-const isBrowsiAuction = (auctionId) => Boolean(auctionId.match(new RegExp(`^${getSiteKey()}`, 'g')))
+const isBrowsiId = (id) => Boolean(id.match(/^browsi_/g))
 
-/**
- * @param {string} divId
- * @returns {boolean}
- */
-const isBrowsiDivId = (divId) => Boolean(divId.match(/^browsi_/g))
-
-/* eslint-disable-next-line compat/compat */
 let fluctAnalyticsAdapter = Object.assign(
   adapter({ url, analyticsType: 'endpoint' }), {
   track({ eventType, args }) {
-    utils.logInfo(`[${eventType}] ${Date.now()} :`, args);
+    logInfo(`[${eventType}] ${Date.now()} :`, args);
     switch (eventType) {
       case CONSTANTS.EVENTS.AUCTION_INIT: {
         /** @type {PbAuction} */
@@ -192,7 +184,7 @@ let fluctAnalyticsAdapter = Object.assign(
         ].forEach(bid => {
           cache.auctions[auctionId].bids[bid.requestId || bid.bidId] = bid
         })
-        if (!isBrowsiAuction(auctionId)) {
+        if (!isBrowsiId(auctionId)) {
           sendMessage(auctionId)
         }
         break;
@@ -208,10 +200,10 @@ let fluctAnalyticsAdapter = Object.assign(
           bidWon: true,
           timeout: false,
         })
-        if (!isBrowsiAuction(auctionId)) {
+        if (!isBrowsiId(auctionId)) {
           cache.timeouts[auctionId] = setTimeout(() => {
             sendMessage(auctionId);
-          }, config.getConfig('bidderTimeout') ?? 3000);
+          }, config.getConfig('bidderTimeout') || 3000);
         }
         break;
       }
@@ -222,20 +214,20 @@ let fluctAnalyticsAdapter = Object.assign(
 });
 
 /**
- * GPT slotから共通のpathを持つ、browsi_ad_ではないのadUnitCodeを返す
+ * GPT slotから共通のpathを持つ、`browsi_`ではないadUnitCodeを返す
  * @param {Object.<string, string>} slots
  * @param {string} adUnitCode
  * @returns {string}
  */
 export const getAdUnitCodeBeforeReplication = (slots, adUnitCode) => {
-  /** @type {string} */
-  const path = slots[find(Object.keys(slots), slot => {
-    /** @type {string|null} @example browsi_ad_0_ai_1_rc_ */
-    const browsiPrefix = adUnitCode.match(/^browsi_.*_(?=\d*$)/g)?.[0]
-    return slot === adUnitCode
-      || slot.match(new RegExp(`^${browsiPrefix}`, 'g'))?.[0]
-  })]
-  return find(Object.keys(slots), slot => !isBrowsiDivId(slots[slot]) && slots[slot] === path) ?? adUnitCode
+  const browsiCodePrefix = (adUnitCode.match(/^browsi_.*_(?=\d*$)/g) || [])[0]
+  if (browsiCodePrefix) {
+    const [, adUnitPath] = find(Object.entries(slots), ([code]) => code.match(new RegExp(`^${browsiCodePrefix}`), 'g'))
+    const [adUnitCode] = find(Object.entries(slots), ([code, path]) => !isBrowsiId(code) && path === adUnitPath)
+    return adUnitCode
+  } else {
+    return adUnitCode
+  }
 }
 
 /**
@@ -249,25 +241,19 @@ export const getAdUnitCodeBeforeReplication = (slots, adUnitCode) => {
  * }
  * ```
  */
+// eslint-disable-next-line no-undef
 const getAdUnitMap = () => googletag.pubads().getSlots().reduce((prev, slot) => Object.assign(prev, { [slot.getSlotElementId()]: slot.getAdUnitPath() }), {})
 
 /**
- * @param {string|undefined} adUnitCode
- * @returns {string|undefined}
- */
-export const getBrowsiRefreshCount = (adUnitCode) => adUnitCode?.match(/browsi_.*_(\d*$)/)?.[1]
-
-/**
- * @param {string} auctionId
  * @param {Array<AdUnit>} adUnits
- * @returns {string}
+ * @param {string} adUnitCode
+ * @param {string} bidder
+ * @returns {string|null}
  */
-const modifyBrowsiAuctionId = (auctionId, adUnits) => {
-  /** @type {string|undefined} */
-  const reloadCount = getBrowsiRefreshCount(find(adUnits, adUnit => isBrowsiDivId(adUnit.code))?.code)
-  return auctionId.match(new RegExp(`^${getSiteKey()}`, 'g')) && reloadCount
-    ? `${auctionId}_${reloadCount}`
-    : auctionId
+const findDwIdByAdUnitCode = (adUnits, adUnitCode, bidder) => {
+  const analytics = find(adUnits, adUnit => adUnit.code === adUnitCode).analytics
+  const dwid = find(analytics, obj => obj.bidder === bidder).dwid
+  return dwid
 }
 
 /**
@@ -283,18 +269,8 @@ const sendMessage = (auctionId) => {
     bids: undefined
   }))
 
-  /**
-   * @param {string} adUnitCode
-   * @param {string} bidder
-   * @returns {string|null}
-   */
-  const findDwIdByAdUnitCode = (adUnitCode, bidder) => {
-    const analytics = find(adUnits, adUnit => adUnit.code === adUnitCode).analytics
-    return find(analytics, obj => obj.bidder === bidder).dwid
-  }
-
   let payload = {
-    auctionId: modifyBrowsiAuctionId(auctionId, adUnits),
+    auctionId: isBrowsiId(auctionId) ? generateUUID() : auctionId,
     adUnits,
     bids: Object.values(bids).map(bid => {
       const { noBid, prebidWon, bidWon, timeout, adId, adUnitCode, adUrl, bidder, status, netRevenue, cpm, currency, originalCpm, originalCurrency, requestId, size, source, timeToRespond } = bid
@@ -303,7 +279,7 @@ const sendMessage = (auctionId) => {
         prebidWon,
         bidWon,
         timeout,
-        dwid: findDwIdByAdUnitCode(adUnitCode, bidder),
+        dwid: findDwIdByAdUnitCode(adUnits, adUnitCode, bidder),
         status,
         adId,
         adUrl,
@@ -328,13 +304,13 @@ const sendMessage = (auctionId) => {
     auctionEnd,
     auctionStatus,
   };
-  ajax(url, () => utils.logInfo(`[sendMessage] ${Date.now()} :`, payload), JSON.stringify(payload), { contentType: 'application/json', method: 'POST' });
+  ajax(url, () => logInfo(`[sendMessage] ${Date.now()} :`, payload), JSON.stringify(payload), { contentType: 'application/json', method: 'POST' });
 };
 
 window.addEventListener('browsiImpression', (data) => {
   const adUnitCode = Object.entries(getAdUnitMap())
     .reduce((prev, [code, path]) => {
-      return data.detail.adUnit === path && isBrowsiDivId(code)
+      return data.detail.adUnit === path && isBrowsiId(code)
         ? code
         : prev
     }, '')

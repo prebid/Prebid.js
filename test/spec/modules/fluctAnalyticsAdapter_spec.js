@@ -1,6 +1,5 @@
 import fluctAnalyticsAdapter, {
   getAdUnitCodeBeforeReplication,
-  getBrowsiRefreshCount
 } from '../../../modules/fluctAnalyticsAdapter';
 import { expect } from 'chai';
 import * as events from 'src/events.js';
@@ -20,16 +19,6 @@ describe('正規表現にマッチしている', () => {
     'div-gpt-ad-1629864618640-0': '/62532913/p_fluctmagazine_320x50_surface_15377',
     'browsi_ad_0_ai_1_rc_0': '/62532913/p_fluctmagazine_320x50_surface_15377'
   }
-
-  it('browsi枠のリフレッシュ回数を取得できる', () => {
-    const browsiAdUnit = getBrowsiRefreshCount('browsi_ad_0_ai_1_rc_0')
-    expect(browsiAdUnit).to.equal('0')
-  })
-
-  it('browsi枠ではないためリフレッシュ回数を取得できない', () => {
-    const browsiAdUnit = getBrowsiRefreshCount('div-gpt-ad-1629864618640-0')
-    expect(browsiAdUnit).to.equal(undefined)
-  })
 
   it('browsi枠codeから複製前の枠codeを取得できる', () => {
     const adUnitCode = getAdUnitCodeBeforeReplication(slots, 'browsi_ad_0_ai_1_rc_0')
