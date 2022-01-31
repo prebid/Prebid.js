@@ -2,6 +2,7 @@ import { logWarn, isStr, deepAccess, isArray, getBidIdParameter, deepSetValue, i
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {getStorageManager} from '../src/storageManager.js';
+import { config } from '../src/config.js';
 
 const GVLID = 24;
 export const storage = getStorageManager(GVLID);
@@ -76,6 +77,9 @@ export const spec = {
         displaymanager: 'Prebid.js',
         displaymanagerver: '$prebid.version$'
       };
+      if (bid.ortb2Imp) {
+        mergeDeep(imp, bid.ortb2Imp);
+      }
 
       copyOptProperty(bid.params.tag_id, imp, 'tagid');
 
@@ -166,6 +170,9 @@ export const spec = {
     if (!isEmpty(userExt)) {
       payload.user = {ext: userExt};
     }
+
+    const firstPartyData = config.getConfig('ortb2') || {};
+    mergeDeep(payload, firstPartyData);
 
     return {
       method: 'POST',
