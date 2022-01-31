@@ -1,8 +1,19 @@
-import { resetData, getCoreStorageManager, storageCallbacks, getStorageManager } from 'src/storageManager.js';
+import {
+  resetData,
+  getCoreStorageManager,
+  storageCallbacks,
+  getStorageManager,
+  newStorageManager
+} from 'src/storageManager.js';
 import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
+import {hook} from '../../../../src/hook.js';
 
 describe('storage manager', function() {
+  before(() => {
+    hook.ready();
+  });
+
   beforeEach(function() {
     resetData();
   });
@@ -95,4 +106,67 @@ describe('storage manager', function() {
       expect(localStorage.getItem('unrelated')).to.be.eq('dummy');
     });
   });
+
+  describe('when bidderSettings.allowStorage is defined', () => {
+    let mgr;
+    const DENIED_BIDDER = 'denied-bidder';
+    const DENY_KEY = 'storageAllowed';
+
+    const COOKIE = 'test-cookie';
+    const LS_KEY = 'test-localstorage';
+
+    function mockBidderSettings() {
+      return {
+        get(bidder, key) {
+          if (bidder === DENIED_BIDDER && key === DENY_KEY) {
+            return false;
+          } else {
+            return undefined;
+          }
+        }
+      }
+    }
+
+    beforeEach(() => {
+      mgr = newStorageManager({}, {bidderSettings: mockBidderSettings()});
+    });
+
+    afterEach(() => {
+      mgr.setCookie(COOKIE, 'delete', new Date().toUTCString());
+      mgr.removeDataFromLocalStorage(LS_KEY);
+    })
+
+    Object.entries({
+      disallowed: [DENIED_BIDDER, false],
+      allowed: ['allowed-bidder', true]
+    }).forEach(([test, [bidderCode, shouldWork]]) => {
+      const testDesc = (desc) => `should ${shouldWork ? '' : 'not'} ${desc} for ${test} bidders`
+
+      it(testDesc('allow cookies'), () => {
+        config.runWithBidder(bidderCode, () => {
+          mgr.setCookie(COOKIE, 'value');
+          expect(mgr.getCookie(COOKIE)).to.equal(shouldWork ? 'value' : null);
+        });
+      });
+
+      it(testDesc('allow localStorage'), () => {
+        config.runWithBidder(bidderCode, () => {
+          mgr.setDataInLocalStorage(LS_KEY, 'value');
+          expect(mgr.getDataFromLocalStorage(LS_KEY)).to.equal(shouldWork ? 'value' : null);
+        })
+      });
+
+      it(testDesc('report localStorage as available'), () => {
+        config.runWithBidder(bidderCode, () => {
+          expect(mgr.hasLocalStorage()).to.equal(shouldWork);
+        });
+      });
+
+      it(testDesc('report cookies as available'), () => {
+        config.runWithBidder(bidderCode, () => {
+          expect(mgr.cookiesAreEnabled()).to.equal(shouldWork);
+        })
+      })
+    });
+  })
 });

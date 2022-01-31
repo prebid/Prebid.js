@@ -1,6 +1,8 @@
 import {hook} from './hook.js';
-import { hasDeviceAccess, checkCookieSupport, logError } from './utils.js';
+import {hasDeviceAccess, checkCookieSupport, logError, logInfo} from './utils.js';
 import includes from 'prebidjs-polyfill/includes.js';
+import {bidderSettings as defaultBidderSettings} from './bidderSettings.js';
+import {config} from './config.js';
 
 const moduleTypeWhiteList = ['core', 'prebid-module'];
 
@@ -22,12 +24,24 @@ export let storageCallbacks = [];
  * - Module type: Some modules may need these functions but are not vendor. e.g prebid core files in src and modules like currency.
  * @param {storageOptions} options
  */
-export function newStorageManager({gvlid, moduleName, moduleType} = {}) {
+export function newStorageManager({gvlid, moduleName, moduleType} = {}, {bidderSettings = defaultBidderSettings} = {}) {
+  function isBidderDisallowed() {
+    const bidder = config.getCurrentBidder();
+    if (bidder == null) {
+      return false;
+    }
+    const storageAllowed = bidderSettings.get(bidder, 'storageAllowed');
+    return storageAllowed == null ? false : !storageAllowed;
+  }
   function isValid(cb) {
     if (includes(moduleTypeWhiteList, moduleType)) {
       let result = {
         valid: true
       }
+      return cb(result);
+    } else if (isBidderDisallowed()) {
+      logInfo(`bidderSettings denied access to device storage for bidder '${config.getCurrentBidder()}'`);
+      const result = {valid: false};
       return cb(result);
     } else {
       let value;
