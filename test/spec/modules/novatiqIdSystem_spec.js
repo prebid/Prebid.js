@@ -52,6 +52,24 @@ describe('novatiqIdSystem', function () {
       const response = novatiqIdSubmodule.getId(config);
       expect(response.id).should.be.not.empty;
     });
+
+    it('should set sharedStatus if sharedID is configured but returned null', function() {
+      const config = { params: { sourceid: '123', useSharedId: true } };
+      const response = novatiqIdSubmodule.getId(config);
+      expect(response.sharedStatus).to.equal('Not Found');
+    });
+
+    it('should set sharedStatus if sharedID is configured and is valid', function() {
+      const config = { params: { sourceid: '123', useSharedId: true } };
+
+      let stub = sinon.stub(novatiqIdSubmodule, 'getSharedId').returns('fakeId');
+
+      const response = novatiqIdSubmodule.getId(config);
+
+      stub.restore();
+
+      expect(response.sharedStatus).to.equal('Found');
+    });
   });
 
   describe('decode', function() {
