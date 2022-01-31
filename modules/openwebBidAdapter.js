@@ -2,7 +2,7 @@ import { isNumber, deepAccess, isArray, flatten, convertTypes, parseSizesInput }
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { ADPOD, BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
-import find from 'core-js-pure/features/array/find.js';
+import find from 'prebidjs-polyfill/find.js';
 
 const ENDPOINT = 'https://ghb.spotim.market/v2/auction';
 const BIDDER_CODE = 'openweb';
