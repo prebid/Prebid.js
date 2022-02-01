@@ -2,6 +2,8 @@ import chai from 'chai';
 import { getCacheUrl, store } from 'src/videoCache.js';
 import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr.js';
+import {auctionManager} from '../../src/auctionManager.js';
+import {AuctionIndex} from '../../src/auctionIndex.js';
 
 const should = chai.should();
 
@@ -30,23 +32,6 @@ function getMockBid(bidder, auctionId, bidderRequestId) {
     'auctionId': auctionId,
     'storedAuctionResponse': 11111
   };
-}
-
-function getMockBidRequest(bidder = 'appnexus', auctionId = '173afb6d132ba3', bidderRequestId = '3d1063078dfcc8') {
-  return {
-    'bidderCode': bidder,
-    'auctionId': auctionId,
-    'bidderRequestId': bidderRequestId,
-    'tid': '437fbbf5-33f5-487a-8e16-a7112903cfe5',
-    'bids': [getMockBid(bidder, auctionId, bidderRequestId)],
-    'auctionStart': 1510852447530,
-    'timeout': 5000,
-    'src': 's2s',
-    'doneCbCallCount': 0,
-    'refererInfo': {
-      'referer': 'http://mytestpage.com'
-    }
-  }
 }
 
 describe('The video cache', function () {
@@ -240,7 +225,7 @@ describe('The video cache', function () {
       JSON.parse(request.requestBody).should.deep.equal(payload);
     });
 
-    it('should include additional params in request payload should config.cache.vasttrack be true and bidderRequest argument was defined', () => {
+    it('should include additional params in request payload should config.cache.vasttrack be true - with timestamp', () => {
       config.setConfig({
         cache: {
           url: 'https://prebid.adnxs.com/pbc/v1/cache',
@@ -269,7 +254,21 @@ describe('The video cache', function () {
         auctionId: '1234-56789-abcde'
       }];
 
-      store(bids, function () { }, getMockBidRequest());
+      const stub = sinon.stub(auctionManager, 'index');
+      stub.get(() => new AuctionIndex(() => [{
+        getAuctionId() {
+          return '1234-56789-abcde';
+        },
+        getAuctionStart() {
+          return 1510852447530;
+        }
+      }]))
+      try {
+        store(bids, function () { });
+      } finally {
+        stub.restore();
+      }
+
       const request = server.requests[0];
       request.method.should.equal('POST');
       request.url.should.equal('https://prebid.adnxs.com/pbc/v1/cache');

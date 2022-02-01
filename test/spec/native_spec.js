@@ -1,10 +1,19 @@
 import { expect } from 'chai';
-import { fireNativeTrackers, getNativeTargeting, nativeBidIsValid, getAssetMessage, getAllAssetsMessage } from 'src/native.js';
+import {
+  fireNativeTrackers,
+  getNativeTargeting,
+  nativeBidIsValid,
+  getAssetMessage,
+  getAllAssetsMessage,
+  decorateAdUnitsWithNativeParams
+} from 'src/native.js';
 import CONSTANTS from 'src/constants.json';
+import {stubAuctionIndex} from '../helpers/indexStub.js';
 const utils = require('src/utils');
 
 const bid = {
   adId: '123',
+  transactionId: 'au',
   native: {
     title: 'Native Creative',
     body: 'Cool description great stuff',
@@ -32,6 +41,7 @@ const bid = {
 };
 
 const bidWithUndefinedFields = {
+  transactionId: 'au',
   native: {
     title: 'Native Creative',
     body: undefined,
@@ -52,6 +62,10 @@ describe('native.js', function () {
   let triggerPixelStub;
   let insertHtmlIntoIframeStub;
 
+  function deps(adUnit) {
+    return { index: stubAuctionIndex({ adUnits: [adUnit] }) };
+  }
+
   beforeEach(function () {
     triggerPixelStub = sinon.stub(utils, 'triggerPixel');
     insertHtmlIntoIframeStub = sinon.stub(utils, 'insertHtmlIntoIframe');
@@ -71,7 +85,8 @@ describe('native.js', function () {
   });
 
   it('sends placeholders for configured assets', function () {
-    const bidRequest = {
+    const adUnit = {
+      transactionId: 'au',
       nativeParams: {
         body: { sendId: true },
         clickUrl: { sendId: true },
@@ -85,7 +100,7 @@ describe('native.js', function () {
         }
       }
     };
-    const targeting = getNativeTargeting(bid, bidRequest);
+    const targeting = getNativeTargeting(bid, deps(adUnit));
 
     expect(targeting[CONSTANTS.NATIVE_KEYS.title]).to.equal(bid.native.title);
     expect(targeting[CONSTANTS.NATIVE_KEYS.body]).to.equal('hb_native_body:123');
@@ -95,7 +110,8 @@ describe('native.js', function () {
   });
 
   it('should only include native targeting keys with values', function () {
-    const bidRequest = {
+    const adUnit = {
+      transactionId: 'au',
       nativeParams: {
         body: { sendId: true },
         clickUrl: { sendId: true },
@@ -110,7 +126,7 @@ describe('native.js', function () {
       }
     };
 
-    const targeting = getNativeTargeting(bidWithUndefinedFields, bidRequest);
+    const targeting = getNativeTargeting(bidWithUndefinedFields, deps(adUnit));
 
     expect(Object.keys(targeting)).to.deep.equal([
       CONSTANTS.NATIVE_KEYS.title,
@@ -121,7 +137,8 @@ describe('native.js', function () {
   });
 
   it('should only include targeting that has sendTargetingKeys set to true', function () {
-    const bidRequest = {
+    const adUnit = {
+      transactionId: 'au',
       nativeParams: {
         image: {
           required: true,
@@ -136,7 +153,7 @@ describe('native.js', function () {
       }
 
     };
-    const targeting = getNativeTargeting(bid, bidRequest);
+    const targeting = getNativeTargeting(bid, deps(adUnit));
 
     expect(Object.keys(targeting)).to.deep.equal([
       CONSTANTS.NATIVE_KEYS.title
@@ -144,7 +161,8 @@ describe('native.js', function () {
   });
 
   it('should only include targeting if sendTargetingKeys not set to false', function () {
-    const bidRequest = {
+    const adUnit = {
+      transactionId: 'au',
       nativeParams: {
         image: {
           required: true,
@@ -181,7 +199,7 @@ describe('native.js', function () {
       }
 
     };
-    const targeting = getNativeTargeting(bid, bidRequest);
+    const targeting = getNativeTargeting(bid, deps(adUnit));
 
     expect(Object.keys(targeting)).to.deep.equal([
       CONSTANTS.NATIVE_KEYS.title,
@@ -193,7 +211,8 @@ describe('native.js', function () {
   });
 
   it('should copy over rendererUrl to bid object and include it in targeting', function () {
-    const bidRequest = {
+    const adUnit = {
+      transactionId: 'au',
       nativeParams: {
         image: {
           required: true,
@@ -209,7 +228,7 @@ describe('native.js', function () {
       }
 
     };
-    const targeting = getNativeTargeting(bid, bidRequest);
+    const targeting = getNativeTargeting(bid, deps(adUnit));
 
     expect(Object.keys(targeting)).to.deep.equal([
       CONSTANTS.NATIVE_KEYS.title,
@@ -227,7 +246,8 @@ describe('native.js', function () {
   });
 
   it('should copy over adTemplate to bid object and include it in targeting', function () {
-    const bidRequest = {
+    const adUnit = {
+      transactionId: 'au',
       nativeParams: {
         image: {
           required: true,
@@ -241,7 +261,7 @@ describe('native.js', function () {
       }
 
     };
-    const targeting = getNativeTargeting(bid, bidRequest);
+    const targeting = getNativeTargeting(bid, deps(adUnit));
 
     expect(Object.keys(targeting)).to.deep.equal([
       CONSTANTS.NATIVE_KEYS.title,
@@ -374,35 +394,33 @@ describe('native.js', function () {
 });
 
 describe('validate native', function () {
-  let bidReq = [{
-    bids: [{
-      bidderCode: 'test_bidder',
-      bidId: 'test_bid_id',
-      mediaTypes: {
-        native: {
-          title: {
-            required: true,
-          },
-          body: {
-            required: true,
-          },
-          image: {
-            required: true,
-            sizes: [150, 50],
-            aspect_ratios: [150, 50]
-          },
-          icon: {
-            required: true,
-            sizes: [50, 50]
-          },
-        }
+  const adUnit = {
+    transactionId: 'test_adunit',
+    mediaTypes: {
+      native: {
+        title: {
+          required: true,
+        },
+        body: {
+          required: true,
+        },
+        image: {
+          required: true,
+          sizes: [150, 50],
+          aspect_ratios: [150, 50]
+        },
+        icon: {
+          required: true,
+          sizes: [50, 50]
+        },
       }
-    }]
-  }];
+    }
+  }
 
   let validBid = {
     adId: 'abc123',
     requestId: 'test_bid_id',
+    transactionId: 'test_adunit',
     adUnitCode: '123/prebid_native_adunit',
     bidder: 'test_bidder',
     native: {
@@ -428,6 +446,7 @@ describe('validate native', function () {
   let noIconDimBid = {
     adId: 'abc234',
     requestId: 'test_bid_id',
+    transactionId: 'test_adunit',
     adUnitCode: '123/prebid_native_adunit',
     bidder: 'test_bidder',
     native: {
@@ -449,6 +468,7 @@ describe('validate native', function () {
   let noImgDimBid = {
     adId: 'abc345',
     requestId: 'test_bid_id',
+    transactionId: 'test_adunit',
     adUnitCode: '123/prebid_native_adunit',
     bidder: 'test_bidder',
     native: {
@@ -472,11 +492,13 @@ describe('validate native', function () {
   afterEach(function () {});
 
   it('should accept bid if no image sizes are defined', function () {
-    let result = nativeBidIsValid(validBid, bidReq);
+    decorateAdUnitsWithNativeParams([adUnit]);
+    const index = stubAuctionIndex({adUnits: [adUnit]})
+    let result = nativeBidIsValid(validBid, {index});
     expect(result).to.be.true;
-    result = nativeBidIsValid(noIconDimBid, bidReq);
+    result = nativeBidIsValid(noIconDimBid, {index});
     expect(result).to.be.true;
-    result = nativeBidIsValid(noImgDimBid, bidReq);
+    result = nativeBidIsValid(noImgDimBid, {index});
     expect(result).to.be.true;
   });
 });

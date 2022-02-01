@@ -60,17 +60,9 @@ const mockedNonMassBids = [
   },
 ];
 
-// mock bidder request:
-const mockedBidderRequest = {
-  bidderCode: 'ix',
-  bidderRequestId: 'bidder-request-id-1'
-};
-
 const noop = function() {};
 
 describe('MASS Module', function() {
-  let bidderRequest = Object.assign({}, mockedBidderRequest);
-
   it('should be enabled by default', function() {
     expect(isEnabled).to.equal(true);
   });
@@ -86,9 +78,7 @@ describe('MASS Module', function() {
       const originalBid = Object.assign({}, mockedBid);
       const bid = Object.assign({}, originalBid);
 
-      bidderRequest.bids = [bid];
-
-      addBidResponseHook.call({bidderRequest}, noop, 'ad-code-id', bid);
+      addBidResponseHook(noop, 'ad-code-id', bid);
 
       expect(bid).to.deep.equal(originalBid);
     });
@@ -100,9 +90,7 @@ describe('MASS Module', function() {
       const originalBid = Object.assign({}, mockedBid);
       const bid = Object.assign({}, originalBid);
 
-      bidderRequest.bids = [bid];
-
-      addBidResponseHook.call({bidderRequest}, noop, 'ad-code-id', bid);
+      addBidResponseHook(noop, 'ad-code-id', bid);
 
       expect(bid.ad).to.not.equal(originalBid.ad);
 

@@ -894,12 +894,6 @@ export function isValidMediaTypes(mediaTypes) {
   return true;
 }
 
-export function getBidderRequest(bidRequests, bidder, adUnitCode) {
-  return find(bidRequests, request => {
-    return request.bids
-      .filter(bid => bid.bidder === bidder && bid.adUnitCode === adUnitCode).length > 0;
-  }) || { start: null, auctionId: null };
-}
 /**
  * Returns user configured bidder params from adunit
  * @param {Object} adUnits
