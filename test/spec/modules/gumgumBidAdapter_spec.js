@@ -198,8 +198,8 @@ describe('gumgumAdapter', function () {
       slotRequest.params.slot = invalidSlotId;
       legacySlotRequest.params.inSlot = invalidSlotId;
 
-      req = spec.buildRequests([ slotRequest ])[0];
-      legReq = spec.buildRequests([ legacySlotRequest ])[0];
+      req = spec.buildRequests([slotRequest])[0];
+      legReq = spec.buildRequests([legacySlotRequest])[0];
 
       expect(req.data.si).to.equal(invalidSlotId);
       expect(legReq.data.si).to.equal(invalidSlotId);
@@ -742,7 +742,7 @@ describe('gumgumAdapter', function () {
       it('uses request size that nearest matches response size for in-screen', function () {
         const request = { ...bidRequest };
         const body = { ...serverResponse };
-        const expectedSize = [ 300, 50 ];
+        const expectedSize = [300, 50];
         let result;
 
         request.pi = 2;
