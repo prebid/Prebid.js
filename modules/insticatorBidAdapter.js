@@ -235,11 +235,11 @@ function validateSizes(sizes) {
   );
 }
 
-function getBidFloor(bidderRequest, mediaType, size) {
+function getBidFloor(bidRequest, mediaType, size) {
   var floor;
-  if (typeof bid.getFloor === 'function') {
+  if (typeof bidRequest.getFloor === 'function') {
     const size = sizes.length === 1 ? sizes[0] : '*';
-    const floorInfo = bid.getFloor({
+    const floorInfo = bidRequest.getFloor({
       currency: CURRENCY,
       mediaType,
       size
