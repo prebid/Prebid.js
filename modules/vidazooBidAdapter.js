@@ -24,7 +24,7 @@ export const SUPPORTED_ID_SYSTEMS = {
   'pubcid': 1,
   'tdid': 1,
 };
-const storage = getStorageManager({gvlid: GVLID});
+const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
 
 export function createDomain(subDomain = DEFAULT_SUB_DOMAIN) {
   return `https://${subDomain}.cootlogix.com`;

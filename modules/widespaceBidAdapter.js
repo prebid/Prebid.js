@@ -8,8 +8,6 @@ import includes from 'prebidjs-polyfill/includes.js';
 import find from 'prebidjs-polyfill/find.js';
 import { getStorageManager } from '../src/storageManager.js';
 
-export const storage = getStorageManager();
-
 const BIDDER_CODE = 'widespace';
 const WS_ADAPTER_VERSION = '2.0.1';
 const LS_KEYS = {
@@ -17,6 +15,7 @@ const LS_KEYS = {
   LC_UID: 'wsLcuid',
   CUST_DATA: 'wsCustomData'
 };
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 let preReqTime = 0;
 

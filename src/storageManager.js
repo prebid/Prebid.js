@@ -325,7 +325,7 @@ export function getStorageManager({gvlid, moduleName, bidderCode} = {}) {
   if (arguments.length > 1 || (arguments.length > 0 && !isPlainObject(arguments[0]))) {
     throw new Error('Invalid invocation for getStorageManager')
   }
-  return newStorageManager({gvlid, moduleName, bidderCode});
+  return newStorageManager({gvlid, moduleName: moduleName || bidderCode});
 }
 
 export function resetData() {

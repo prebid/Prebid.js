@@ -3,12 +3,12 @@ import {BANNER} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
 
-const storage = getStorageManager();
 const BIDDER_CODE = 'unicorn';
 const UNICORN_ENDPOINT = 'https://ds.uncn.jp/pb/0/bid.json';
 const UNICORN_DEFAULT_CURRENCY = 'JPY';
 const UNICORN_PB_COOKIE_KEY = '__pb_unicorn_aud';
 const UNICORN_PB_VERSION = '1.1';
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 /**
  * Placement ID and Account ID are required.

@@ -3,7 +3,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { config } from '../src/config.js';
-const storage = getStorageManager();
+
 const COOKIE_NAME = 'ucf_uid';
 const VER = 'ADGENT_PREBID-2018011501';
 const BIDDER_CODE = 'ucfunnel';
@@ -13,6 +13,7 @@ const VIDEO_CONTEXT = {
   INSTREAM: 0,
   OUSTREAM: 2
 }
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 export const spec = {
   code: BIDDER_CODE,

@@ -577,7 +577,7 @@ function bannerHasSingleSize(bidRequest) {
  * USER SYNC
  */
 
-export const storage = getStorageManager();
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 function getUserSyncs(syncOptions, responses, gdprConsent, uspConsent) {
   return responses

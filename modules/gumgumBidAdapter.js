@@ -6,9 +6,8 @@ import { getStorageManager } from '../src/storageManager.js';
 import includes from 'prebidjs-polyfill/includes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 
-const storage = getStorageManager();
-
 const BIDDER_CODE = 'gumgum'
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 const ALIAS_BIDDER_CODE = ['gg']
 const BID_ENDPOINT = `https://g2.gumgum.com/hbid/imp`
 const JCSI = { t: 0, rq: 8, pbv: '$prebid.version$' }

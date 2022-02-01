@@ -8,7 +8,7 @@ import { auctionManager } from '../src/auctionManager.js';
 import find from 'prebidjs-polyfill/find.js';
 
 const SOURCE = 'pbjs';
-const storageManager = getStorageManager();
+const storageManager = getStorageManager({bidderCode: 'pixfuture'});
 const USER_PARAMS = ['age', 'externalUid', 'segments', 'gender', 'dnt', 'language'];
 export const spec = {
   code: 'pixfuture',

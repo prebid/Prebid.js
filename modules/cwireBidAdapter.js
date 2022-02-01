@@ -28,7 +28,7 @@ const LS_CWID_KEY = 'cw_cwid';
 const CW_GROUPS_QUERY = 'cwgroups';
 const CW_CREATIVE_QUERY = 'cwcreative';
 
-const storage = getStorageManager();
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 /**
  * ------------------------------------

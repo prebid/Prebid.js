@@ -21,7 +21,7 @@ export const QUANTCAST_PROTOCOL = 'https';
 export const QUANTCAST_PORT = '8443';
 export const QUANTCAST_FPA = '__qca';
 
-export const storage = getStorageManager({gvlid: QUANTCAST_VENDOR_ID, moduleName: BIDDER_CODE});
+export const storage = getStorageManager({gvlid: QUANTCAST_VENDOR_ID, bidderCode: BIDDER_CODE});
 
 function makeVideoImp(bid) {
   const videoInMediaType = deepAccess(bid, 'mediaTypes.video') || {};
