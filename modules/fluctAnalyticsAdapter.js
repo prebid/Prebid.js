@@ -156,7 +156,7 @@ let fluctAnalyticsAdapter = Object.assign(
         /** @type {PbAuction} */
         let auctionEndEvent = args
         let { adUnitCodes, auctionId, bidsReceived, noBids } = auctionEndEvent
-        Object.assign(cache.auctions[auctionId], auctionEndEvent)
+        Object.assign(cache.auctions[auctionId], auctionEndEvent, { auctionIdSuffix: isBrowsiId(auctionId) ? generateUUID() : undefined })
 
         let prebidWonBidRequestIds = adUnitCodes.map(adUnitCode =>
           bidsReceived.reduce((highestCpmBid, bid) =>
@@ -184,9 +184,7 @@ let fluctAnalyticsAdapter = Object.assign(
         ].forEach(bid => {
           cache.auctions[auctionId].bids[bid.requestId || bid.bidId] = bid
         })
-        if (!isBrowsiId(auctionId)) {
-          sendMessage(auctionId)
-        }
+        sendMessage(auctionId)
         break;
       }
       case CONSTANTS.EVENTS.BID_WON: {
@@ -200,11 +198,9 @@ let fluctAnalyticsAdapter = Object.assign(
           bidWon: true,
           timeout: false,
         })
-        if (!isBrowsiId(auctionId)) {
-          cache.timeouts[auctionId] = setTimeout(() => {
-            sendMessage(auctionId);
-          }, config.getConfig('bidderTimeout') || 3000);
-        }
+        cache.timeouts[auctionId] = setTimeout(() => {
+          sendMessage(auctionId);
+        }, config.getConfig('bidderTimeout') || 3000);
         break;
       }
       default:
@@ -266,7 +262,7 @@ const findDwIdByAdUnitCode = (adUnits, adUnitCode, bidder) => {
  * @param {string} auctionId
  */
 const sendMessage = (auctionId) => {
-  let { adUnits, auctionEnd, auctionStatus, bids } = cache.auctions[auctionId]
+  let { adUnits, auctionEnd, auctionIdSuffix, auctionStatus, bids } = cache.auctions[auctionId]
   const slots = getAdUnitMap()
 
   adUnits = adUnits.map(adUnit => ({
@@ -276,7 +272,7 @@ const sendMessage = (auctionId) => {
   }))
 
   let payload = {
-    auctionId: isBrowsiId(auctionId) ? generateUUID() : auctionId,
+    auctionId: auctionIdSuffix ? `${auctionId}_${auctionIdSuffix}` : auctionId,
     adUnits,
     bids: Object.values(bids).map(bid => {
       const { noBid, prebidWon, bidWon, timeout, adId, adUnitCode, adUrl, bidder, status, netRevenue, cpm, currency, originalCpm, originalCurrency, requestId, size, source, timeToRespond } = bid
@@ -312,17 +308,6 @@ const sendMessage = (auctionId) => {
   };
   ajax(url, () => logInfo(`[sendMessage] ${Date.now()} :`, payload), JSON.stringify(payload), { contentType: 'application/json', method: 'POST' });
 };
-
-window.addEventListener('browsiImpression', (data) => {
-  const adUnitCode = Object.entries(getAdUnitMap())
-    .reduce((prev, [code, path]) => {
-      return data.detail.adUnit === path && isBrowsiId(code)
-        ? code
-        : prev
-    }, '')
-  const auction = find(Object.values(cache.auctions), auction => auction.adUnitCodes.includes(adUnitCode))
-  sendMessage(auction.auctionId)
-})
 
 fluctAnalyticsAdapter.originEnableAnalytics = fluctAnalyticsAdapter.enableAnalytics;
 fluctAnalyticsAdapter.enableAnalytics = (config) => {
