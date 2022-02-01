@@ -242,18 +242,6 @@ export const getAdUnitCodeBeforeReplication = (slots, adUnitCode) => {
 const getAdUnitMap = () => googletag.pubads().getSlots().reduce((prev, slot) => Object.assign(prev, { [slot.getSlotElementId()]: slot.getAdUnitPath() }), {})
 
 /**
- * @param {Array<AdUnit>} adUnits
- * @param {string} adUnitCode
- * @param {string} bidder
- * @returns {string|null}
- */
-const findDwIdByAdUnitCode = (adUnits, adUnitCode, bidder) => {
-  const analytics = find(adUnits, adUnit => adUnit.code === adUnitCode).analytics
-  const dwid = find(analytics, obj => obj.bidder === bidder).dwid
-  return dwid
-}
-
-/**
  * @param {string} auctionId
  */
 const sendMessage = (auctionId) => {
@@ -262,9 +250,23 @@ const sendMessage = (auctionId) => {
 
   adUnits = adUnits.map(adUnit => ({
     ...adUnit,
-    analytics: find(Object.values(cache.auctions).flatMap(auction => auction.adUnits), _adUnit => _adUnit.code === getAdUnitCodeBeforeReplication(slots, adUnit.code)).analytics,
+    analytics: (find(Object.values(cache.auctions).flatMap(auction => auction.adUnits), _adUnit => _adUnit.code === getAdUnitCodeBeforeReplication(slots, adUnit.code)) || {}).analytics,
     bids: undefined
   }))
+  /**
+   * @param {string} adUnitCode
+   * @param {string} bidder
+   * @returns {string|undefined}
+   */
+  const findDwId = (adUnitCode, bidder) => {
+    try {
+      return find(find(adUnits, adUnit => adUnit.code === adUnitCode).analytics, obj => obj.bidder === bidder).dwid
+    } catch (_error) {
+      // eslint-disable-next-line no-console
+      console.error(`${adUnitCode}: ${bidder} dwid is not found.`)
+      return undefined
+    }
+  }
 
   let payload = {
     auctionId: auctionIdSuffix ? `${auctionId}_${auctionIdSuffix}` : auctionId,
@@ -276,7 +278,7 @@ const sendMessage = (auctionId) => {
         prebidWon,
         bidWon,
         timeout,
-        dwid: findDwIdByAdUnitCode(adUnits, adUnitCode, bidder),
+        dwid: findDwId(adUnits, adUnitCode, bidder),
         status,
         adId,
         adUrl,
