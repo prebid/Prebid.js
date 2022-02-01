@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/riseBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
-import { VIDEO } from '../../../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
 import * as utils from 'src/utils.js';
 
 const ENDPOINT = 'https://hb.yellowblue.io/hb-multi';
@@ -55,6 +55,21 @@ describe('riseAdapter', function () {
         'bidId': '299ffc8cca0b87',
         'bidderRequestId': '1144f487e563f9',
         'auctionId': 'bfc420c3-8577-4568-9766-a8a935fb620d',
+        'mediaType': 'video',
+        'vastXml': '"<VAST version=\\\"2.0\\\">...</VAST>"'
+      },
+      {
+        'bidder': spec.code,
+        'adUnitCode': 'adunit-code',
+        'sizes': [[300, 250]],
+        'params': {
+          'org': 'jdye8weeyirk00000001'
+        },
+        'bidId': '299ffc8cca0b87',
+        'bidderRequestId': '1144f487e563f9',
+        'auctionId': 'bfc420c3-8577-4568-9766-a8a935fb620d',
+        'mediaType': 'banner',
+        'ad': '"<img src=\"https://...\"/>"'
       }
     ];
 
@@ -103,9 +118,13 @@ describe('riseAdapter', function () {
 
     it('should send the correct sizes array', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      // TODO: verify sizes for multiple bids in array using loop
       expect(request.data.bids[0].sizes).to.be.an('array');
       expect(request.data.bids[0].sizes).to.equal(bidRequests[0].sizes)
+    });
+
+    it('should send the correct media type', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.bids[0].mediaType).to.equal(bidRequests[0].mediaType)
     });
 
     it('should respect syncEnabled option', function() {
@@ -276,29 +295,65 @@ describe('riseAdapter', function () {
         requestId: '21e12606d47ba7',
         adomain: ['abc.com'],
         mediaType: VIDEO
+      },
+      {
+        cpm: 12.5,
+        ad: '"<img src=\"https://...\"/>"',
+        width: 300,
+        height: 250,
+        requestId: '21e12606d47ba7',
+        adomain: ['abc.com'],
+        mediaType: BANNER
       }]
     };
 
-    it('should get correct bid response', function () {
-      const expectedResponse = {
-        requestId: '21e12606d47ba7',
-        cpm: 12.5,
-        currency: 'USD',
-        width: 640,
-        height: 480,
-        ttl: TTL,
-        creativeId: '21e12606d47ba7',
-        netRevenue: true,
-        nurl: 'http://example.com/win/1234',
-        meta: {
-          mediaType: VIDEO,
-          advertiserDomains: ['abc.com']
-        },
-        vastXml: '<VAST version="3.0"></VAST>',
-      };
+    const expectedVideoResponse = {
+      requestId: '21e12606d47ba7',
+      cpm: 12.5,
+      currency: 'USD',
+      width: 640,
+      height: 480,
+      ttl: TTL,
+      creativeId: '21e12606d47ba7',
+      netRevenue: true,
+      nurl: 'http://example.com/win/1234',
+      meta: {
+        mediaType: VIDEO,
+        advertiserDomains: ['abc.com']
+      },
+      vastXml: '<VAST version="3.0"></VAST>',
+    };
 
+    const expectedBannerResponse = {
+      requestId: '21e12606d47ba7',
+      cpm: 12.5,
+      currency: 'USD',
+      width: 640,
+      height: 480,
+      ttl: TTL,
+      creativeId: '21e12606d47ba7',
+      netRevenue: true,
+      nurl: 'http://example.com/win/1234',
+      meta: {
+        mediaType: VIDEO,
+        advertiserDomains: ['abc.com']
+      },
+      ad: '"<img src=\"https://...\"/>"'
+    };
+
+    it('should get correct bid response', function () {
       const result = spec.interpretResponse({ body: response });
-      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse));
+      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedVideoResponse));
+    });
+
+    it('video type should have vastXml key', function () {
+      const result = spec.interpretResponse({ body: response });
+      expect(result[0].vastXml).to.equal(expectedVideoResponse.vastXml)
+    });
+
+    it('banner type should have ad key', function () {
+      const result = spec.interpretResponse({ body: response });
+      expect(result[1].ad).to.equal(expectedBannerResponse.ad)
     });
   })
 
