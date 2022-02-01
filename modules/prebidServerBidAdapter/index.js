@@ -768,10 +768,15 @@ const OPEN_RTB_PROTOCOL = {
       request.ext.prebid = mergeDeep(request.ext.prebid, s2sConfig.extPrebid);
     }
 
+    const commonFpd = getConfig('ortb2') || {};
+    mergeDeep(request, commonFpd);
+
     /**
      * @type {(string[]|string|undefined)} - OpenRTB property 'cur', currencies available for bids
      */
-    const adServerCur = config.getConfig('currency.adServerCurrency');
+
+    const adServerCur = request.cur
+
     if (adServerCur && typeof adServerCur === 'string') {
       // if the value is a string, wrap it with an array
       request.cur = [adServerCur];
@@ -848,9 +853,6 @@ const OPEN_RTB_PROTOCOL = {
     if (getConfig('coppa') === true) {
       deepSetValue(request, 'regs.coppa', 1);
     }
-
-    const commonFpd = getConfig('ortb2') || {};
-    mergeDeep(request, commonFpd);
 
     addBidderFirstPartyDataToRequest(request);
 
