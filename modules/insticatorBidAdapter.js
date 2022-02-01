@@ -195,14 +195,12 @@ function buildRequest(validBidRequests, bidderRequest) {
 function buildBid(bid, bidderRequest) {
   const originalBid = find(bidderRequest.bids, (b) => b.bidId === bid.impid);
 
-  console.log('buildBid');
-  console.log(bid);
   return {
     requestId: bid.impid,
     creativeId: bid.crid,
     cpm: bid.price,
     currency: CURRENCY,
-    bidfloor: getBidFloor(bidderRequest, 'banner', bid.sizes),
+    bidfloor: getBidFloor(bidderRequest, 'banner', [bid.w, bid.h]),
     netRevenue: true,
     ttl: bid.exp || config.getConfig('insticator.bidTTL') || BID_TTL,
     width: bid.w,
@@ -237,10 +235,9 @@ function validateSizes(sizes) {
   );
 }
 
-function getBidFloor(bidderRequest, mediaType, sizes) {
+function getBidFloor(bidderRequest, mediaType, size) {
   var floor;
   if (typeof bid.getFloor === 'function') {
-    const size = sizes.length === 1 ? sizes[0] : '*';
     const floorInfo = bid.getFloor({
       currency: CURRENCY,
       mediaType,
@@ -317,6 +314,7 @@ export const spec = {
     const bidsets = body.seatbid.map((seatbid) =>
       buildBidSet(seatbid, bidderRequest)
     );
+    console.log(bidsets);
 
     return bidsets.reduce((a, b) => a.concat(b), []);
   },
