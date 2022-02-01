@@ -73,6 +73,7 @@ function buildImpression(bidRequest) {
     banner: {
       format,
     },
+    bidfloor: getBidFloor(bidderRequest, 'banner', sizes),
     ext: {
       insticator: {
         adUnitId: bidRequest.params.adUnitId,
@@ -200,7 +201,6 @@ function buildBid(bid, bidderRequest) {
     creativeId: bid.crid,
     cpm: bid.price,
     currency: CURRENCY,
-    // bidfloor: getBidFloor(bidderRequest, 'banner', [bid.w, bid.h]),
     netRevenue: true,
     ttl: bid.exp || config.getConfig('insticator.bidTTL') || BID_TTL,
     width: bid.w,
@@ -238,6 +238,7 @@ function validateSizes(sizes) {
 function getBidFloor(bidderRequest, mediaType, size) {
   var floor;
   if (typeof bid.getFloor === 'function') {
+    const size = sizes.length === 1 ? sizes[0] : '*';
     const floorInfo = bid.getFloor({
       currency: CURRENCY,
       mediaType,
@@ -314,7 +315,6 @@ export const spec = {
     const bidsets = body.seatbid.map((seatbid) =>
       buildBidSet(seatbid, bidderRequest)
     );
-    console.log(bidsets);
 
     return bidsets.reduce((a, b) => a.concat(b), []);
   },
