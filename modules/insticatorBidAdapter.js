@@ -16,6 +16,7 @@ const USER_ID_KEY = 'hb_insticator_uid';
 const USER_ID_COOKIE_EXP = 2592000000; // 30 days
 const BID_TTL = 300; // 5 minutes
 const GVLID = 910;
+const CURRENCY = 'USD';
 const ASI_REGEX = /^insticator\.com$/;
 
 export const storage = getStorageManager(GVLID, BIDDER_CODE);
@@ -194,11 +195,14 @@ function buildRequest(validBidRequests, bidderRequest) {
 function buildBid(bid, bidderRequest) {
   const originalBid = find(bidderRequest.bids, (b) => b.bidId === bid.impid);
 
+  console.log('buildBid');
+  console.log(bid);
   return {
     requestId: bid.impid,
     creativeId: bid.crid,
     cpm: bid.price,
-    currency: 'USD',
+    currency: CURRENCY,
+    bidfloor: getBidFloor(bidderRequest, 'banner', bid.sizes),
     netRevenue: true,
     ttl: bid.exp || config.getConfig('insticator.bidTTL') || BID_TTL,
     width: bid.w,
@@ -231,6 +235,22 @@ function validateSizes(sizes) {
     sizes.length > 0 &&
     sizes.map(validateSize).reduce((a, b) => a && b, true)
   );
+}
+
+function getBidFloor(bidderRequest, mediaType, sizes) {
+  var floor;
+  if (typeof bid.getFloor === 'function') {
+    const size = sizes.length === 1 ? sizes[0] : '*';
+    const floorInfo = bid.getFloor({
+      currency: CURRENCY,
+      mediaType,
+      size
+    });
+    if (typeof floorInfo === 'object' && floorInfo.currency === CURRENCY && !isNaN(parseFloat(floorInfo.floor))) {
+      floor = parseFloat(floorInfo.floor);
+    }
+  }
+  return floor;
 }
 
 export const spec = {
