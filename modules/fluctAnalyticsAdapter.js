@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /* eslint-disable indent */
 import { ajax } from '../src/ajax.js';
 import adapter from '../src/AnalyticsAdapter.js';
@@ -67,14 +68,16 @@ const url = 'https://an.adingo.jp'
 /**
  * @typedef {Object} MediaTypes
  * @property {Object} banner
- * @property {string} banner.name
+ * @property {string|undefined} banner.name
  * @property {Array<Array<number>>} sizes
  */
 
 /**
  * @typedef {Object} AdUnit
+ * @property {string} code //: divId
+ * @property {string|undefined} _code //: 'original' divId when adUnit is replicated. (for browsi)
  * @property {Array<Analytics>} analytics
- * @property {Array<Bid>} bids
+ * @property {Array<Bid>|undefined} bids
  * @property {MediaTypes} mediaTypes
  * @property {Array<Array<number>>} sizes
  * @property {string} transactionId
@@ -154,7 +157,7 @@ let fluctAnalyticsAdapter = Object.assign(
         /** @type {PbAuction} */
         let auctionEndEvent = args
         let { adUnitCodes, auctionId, bidsReceived, noBids } = auctionEndEvent
-        Object.assign(cache.auctions[auctionId], auctionEndEvent, { auctionIdSuffix: isBrowsiId(auctionId) ? generateUUID() : undefined })
+        Object.assign(cache.auctions[auctionId], auctionEndEvent, { aidSuffix: isBrowsiId(auctionId) ? generateUUID() : undefined })
 
         let prebidWonBidRequestIds = adUnitCodes.map(adUnitCode =>
           bidsReceived.reduce((highestCpmBid, bid) =>
@@ -204,32 +207,11 @@ let fluctAnalyticsAdapter = Object.assign(
   }
 });
 
-/**
- * GPT slotから共通のpathを持つ、`browsi_`ではないadUnitCodeを返す
- * @param {Object.<string, string>} slots
- * @param {string} adUnitCode
- * @returns {string}
- */
-export const getAdUnitCodeBeforeReplication = (slots, adUnitCode) => {
-  const browsiCodePrefix = (adUnitCode.match(/^browsi_.*_(?=\d*$)/g) || [])[0]
-  if (browsiCodePrefix) {
-    const [, adUnitPath] = find(Object.entries(slots), ([code]) => code.match(new RegExp(`^${browsiCodePrefix}`), 'g')) || []
-    try {
-      const [orgAdUnitCode] = find(Object.entries(slots), ([code, path]) => !isBrowsiId(code) && path === adUnitPath)
-      return orgAdUnitCode
-    } catch (_error) {
-      // eslint-disable-next-line no-console
-      console.error(`${adUnitCode}: ${adUnitPath} is not found in another slots.`)
-      return adUnitCode
-    }
-  } else {
-    return adUnitCode
-  }
-}
+/** @typedef {{ [key: string]: string }} Slots */
 
 /**
  * 各adUnitCodeに対応したadUnitPathを取得する
- * @returns {Object.<string, string>}
+ * @returns {Slots}
  * @sample
  * ```
  * {
@@ -238,72 +220,80 @@ export const getAdUnitCodeBeforeReplication = (slots, adUnitCode) => {
  * }
  * ```
  */
-// eslint-disable-next-line no-undef
-const getAdUnitMap = () => googletag.pubads().getSlots().reduce((prev, slot) => Object.assign(prev, { [slot.getSlotElementId()]: slot.getAdUnitPath() }), {})
+const getAdUnitMap = () => window.googletag.pubads().getSlots().reduce((prev, slot) => Object.assign(prev, { [slot.getSlotElementId()]: slot.getAdUnitPath() }), {})
+
+/**
+ * @param {Array<AdUnit>} adUnits
+ * @param {Slots} slots
+ */
+export const convertReplicatedAdUnits = (adUnits, slots) =>
+  adUnits.map(adUnit => {
+    const adUnitPath = slots[adUnit.code]
+    try {
+      if (adUnitPath) {
+        const { analytics, code, mediaTypes: { banner: { name } } } = find(adUnits, _adUnit => adUnitPath.endsWith(_adUnit.mediaTypes.banner.name))
+        adUnit.analytics = analytics
+        adUnit._code = code
+        adUnit.mediaTypes.banner.name = name
+      }
+      adUnit.bids = undefined
+    } catch (error) {
+      console.error(error, { adUnitPath, adUnit, slots })
+    }
+    return adUnit
+  })
 
 /**
  * @param {string} auctionId
  */
 const sendMessage = (auctionId) => {
-  let { adUnits, auctionEnd, auctionIdSuffix, auctionStatus, bids } = cache.auctions[auctionId]
-  const slots = getAdUnitMap()
+  try {
+    let { adUnits, auctionEnd, aidSuffix, auctionStatus, bids } = cache.auctions[auctionId]
 
-  adUnits = adUnits.map(adUnit => ({
-    ...adUnit,
-    analytics: (find(Object.values(cache.auctions).flatMap(auction => auction.adUnits), _adUnit => _adUnit.code === getAdUnitCodeBeforeReplication(slots, adUnit.code)) || {}).analytics,
-    bids: undefined
-  }))
-  /**
-   * @param {string} adUnitCode
-   * @param {string} bidder
-   * @returns {string|undefined}
-   */
-  const findDwId = (adUnitCode, bidder) => {
-    try {
-      return find(find(adUnits, adUnit => adUnit.code === adUnitCode).analytics, obj => obj.bidder === bidder).dwid
-    } catch (_error) {
-      // eslint-disable-next-line no-console
-      console.error(`${adUnitCode}: ${bidder} dwid is not found.`)
-      return undefined
-    }
+    const slots = getAdUnitMap()
+    adUnits = convertReplicatedAdUnits(adUnits, slots)
+
+    const payload = {
+      auctionId: aidSuffix ? `${auctionId}_${aidSuffix}` : auctionId,
+      adUnits,
+      bids: Object.values(bids).map(bid => {
+        const { noBid, prebidWon, bidWon, timeout, adId, adUnitCode, adUrl, bidder, status, netRevenue, cpm, currency, originalCpm, originalCurrency, requestId, size, source, timeToRespond } = bid
+        /** @type {AdUnit} */
+        const adUnit = find(adUnits, adUnit => adUnit.code === adUnitCode) || {}
+        return {
+          noBid,
+          prebidWon,
+          bidWon,
+          timeout,
+          dwid: (find(adUnit.analytics || [], param => param.bidder === bidder) || {}).dwid,
+          status,
+          adId,
+          adUrl,
+          adUnitCode: adUnit._code || adUnit.code,
+          bidder,
+          netRevenue,
+          cpm,
+          currency,
+          originalCpm,
+          originalCurrency,
+          requestId,
+          size,
+          source,
+          timeToRespond,
+          bid: {
+            ...bid,
+            ad: undefined
+          },
+        }
+      }),
+      timestamp: Date.now(),
+      auctionEnd,
+      auctionStatus,
+    };
+    ajax(url, () => logInfo(`[sendMessage] ${Date.now()} :`, payload), JSON.stringify(payload), { contentType: 'application/json', method: 'POST' });
+  } catch (error) {
+    console.error(error)
   }
-
-  let payload = {
-    auctionId: auctionIdSuffix ? `${auctionId}_${auctionIdSuffix}` : auctionId,
-    adUnits,
-    bids: Object.values(bids).map(bid => {
-      const { noBid, prebidWon, bidWon, timeout, adId, adUnitCode, adUrl, bidder, status, netRevenue, cpm, currency, originalCpm, originalCurrency, requestId, size, source, timeToRespond } = bid
-      return {
-        noBid,
-        prebidWon,
-        bidWon,
-        timeout,
-        dwid: findDwId(adUnits, adUnitCode, bidder),
-        status,
-        adId,
-        adUrl,
-        adUnitCode: getAdUnitCodeBeforeReplication(slots, adUnitCode),
-        bidder,
-        netRevenue,
-        cpm,
-        currency,
-        originalCpm,
-        originalCurrency,
-        requestId,
-        size,
-        source,
-        timeToRespond,
-        bid: {
-          ...bid,
-          ad: undefined
-        },
-      }
-    }),
-    timestamp: Date.now(),
-    auctionEnd,
-    auctionStatus,
-  };
-  ajax(url, () => logInfo(`[sendMessage] ${Date.now()} :`, payload), JSON.stringify(payload), { contentType: 'application/json', method: 'POST' });
 };
 
 fluctAnalyticsAdapter.originEnableAnalytics = fluctAnalyticsAdapter.enableAnalytics;
