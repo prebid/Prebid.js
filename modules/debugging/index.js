@@ -13,10 +13,9 @@ const interceptorHooks = [];
 const bidInterceptor = new BidInterceptor();
 
 saveDebuggingConfig.before(function (next, debugConfig, ...args) {
-  const intKey = bidInterceptor.KEYS.rules;
-  if (debugConfig[intKey]) {
+  if (debugConfig.intercept) {
     debugConfig = deepClone(debugConfig);
-    debugConfig[intKey] = bidInterceptor.serializeConfig(debugConfig[intKey]);
+    debugConfig.intercept = bidInterceptor.serializeConfig(debugConfig.intercept);
   }
   next(debugConfig, ...args);
 });

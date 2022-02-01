@@ -4,16 +4,15 @@ import {bidderBidInterceptor} from '../../../modules/debugging/index.js';
 import {pbsBidInterceptor} from '../../../modules/debugging/pbsInterceptor.js';
 
 describe('bid interceptor', () => {
-  let interceptor, K, mockSetTimeout;
+  let interceptor, mockSetTimeout;
   beforeEach(() => {
     mockSetTimeout = sinon.stub().callsFake((fn) => fn());
     interceptor = new BidInterceptor({setTimeout: mockSetTimeout});
-    K = interceptor.KEYS;
   });
 
   function setRules(...rules) {
     interceptor.updateConfig({
-      [K.rules]: rules
+      intercept: rules
     });
   }
 
@@ -38,19 +37,19 @@ describe('bid interceptor', () => {
     }).forEach(([test, matcher]) => {
       describe(`by ${test}`, () => {
         it('should work on matching top-level properties', () => {
-          setRules({[K.match]: matcher});
+          setRules({when: matcher});
           const rule = interceptor.match({key: 'value'});
           expect(rule).to.not.eql(null);
         });
 
         it('should work on matching nested properties', () => {
-          setRules({[K.match]: {outer: {inner: matcher}}});
+          setRules({when: {outer: {inner: matcher}}});
           const rule = interceptor.match({outer: {inner: {key: 'value'}}});
           expect(rule).to.not.eql(null);
         });
 
         it('should not work on non-matching inputs', () => {
-          setRules({[K.match]: matcher});
+          setRules({when: matcher});
           expect(interceptor.match({key: 'different-value'})).to.not.be.ok;
           expect(interceptor.match({differentKey: 'value'})).to.not.be.ok;
         });
@@ -58,7 +57,7 @@ describe('bid interceptor', () => {
     });
 
     it('should respect rule order', () => {
-      setRules({[K.match]: {key: 'value'}}, {[K.match]: {}}, {[K.match]: {}});
+      setRules({when: {key: 'value'}}, {when: {}}, {when: {}});
       const rule = interceptor.match({});
       expect(rule.no).to.equal(2);
     });
@@ -69,7 +68,7 @@ describe('bid interceptor', () => {
         outer: {inner: {key: sinon.stub()}}
       };
       const extraArgs = [{}, {}];
-      setRules({[K.match]: matchDef});
+      setRules({when: matchDef});
       interceptor.match({key: {}, outer: {inner: {key: {}}}}, ...extraArgs);
       [matchDef.key, matchDef.outer.inner.key].forEach((fn) => {
         expect(fn.calledOnceWith(sinon.match.any, ...extraArgs.map(sinon.match.same))).to.be.true;
@@ -78,7 +77,7 @@ describe('bid interceptor', () => {
 
     it('should pass extra arguments to single-function matcher', () => {
       let matchDef = sinon.stub();
-      setRules({[K.match]: matchDef});
+      setRules({when: matchDef});
       const args = [{}, {}, {}];
       interceptor.match(...args);
       expect(matchDef.calledOnceWith(...args.map(sinon.match.same))).to.be.true;
@@ -87,7 +86,7 @@ describe('bid interceptor', () => {
 
   describe('rule', () => {
     function matchingRule({replace, options}) {
-      setRules({[K.match]: {}, [K.replace]: replace, [K.options]: options});
+      setRules({when: {}, then: replace, options: options});
       return interceptor.match({});
     }
 
@@ -208,8 +207,8 @@ describe('bid interceptor', () => {
         repl1 = sinon.stub().returns({replace: 1});
         repl2 = sinon.stub().returns({replace: 2});
         setRules(
-          {[K.match]: match1, [K.replace]: repl1, [K.options]: {[K.delay]: DELAY_1}},
-          {[K.match]: match2, [K.replace]: repl2, [K.options]: {[K.delay]: DELAY_2}},
+          {when: match1, then: repl1, options: {delay: DELAY_1}},
+          {when: match2, then: repl2, options: {delay: DELAY_2}},
         );
       });
 

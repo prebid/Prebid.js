@@ -18,22 +18,13 @@ export function BidInterceptor(opts = {}) {
 }
 
 Object.assign(BidInterceptor.prototype, {
-  KEYS: {
-    rules: 'intercept',
-    match: 'when',
-    replace: 'then',
-    options: 'options',
-    delay: 'delay',
-    suppress: 'suppressWarnings'
-  },
   DEFAULT_RULE_OPTIONS: {
     delay: 0
   },
   serializeConfig(ruleDefs) {
-    const suppress = `${this.KEYS.options}.${this.KEYS.suppress}`;
     function isSerializable(ruleDef, i) {
       const serializable = deepEqual(ruleDef, JSON.parse(JSON.stringify(ruleDef)), {checkTypes: true});
-      if (!serializable && !deepAccess(ruleDef, suppress)) {
+      if (!serializable && !deepAccess(ruleDef, 'options.suppressWarnings')) {
         logWarn(`Bid interceptor rule definition #${i + 1} is not serializable and will be lost after a refresh. Rule definition: `, ruleDef);
       }
       return serializable;
@@ -41,7 +32,7 @@ Object.assign(BidInterceptor.prototype, {
     return ruleDefs.filter(isSerializable);
   },
   updateConfig(config) {
-    this.rules = (config[this.KEYS.rules] || []).map((ruleDef, i) => this.rule(ruleDef, i + 1))
+    this.rules = (config.intercept || []).map((ruleDef, i) => this.rule(ruleDef, i + 1))
   },
   /**
    * @typedef {Object} RuleOptions
@@ -63,9 +54,9 @@ Object.assign(BidInterceptor.prototype, {
   rule(ruleDef, ruleNo) {
     return {
       no: ruleNo,
-      match: this.matcher(ruleDef[this.KEYS.match], ruleNo),
-      replace: this.replacer(ruleDef[this.KEYS.replace] || {}, ruleNo),
-      options: Object.assign({}, this.DEFAULT_RULE_OPTIONS, ruleDef[this.KEYS.options]),
+      match: this.matcher(ruleDef.when, ruleNo),
+      replace: this.replacer(ruleDef.then || {}, ruleNo),
+      options: Object.assign({}, this.DEFAULT_RULE_OPTIONS, ruleDef.options),
     }
   },
   /**
@@ -88,7 +79,7 @@ Object.assign(BidInterceptor.prototype, {
       return matchDef;
     }
     if (typeof matchDef !== 'object') {
-      logError(`Invalid '${this.KEYS.match}' definition for debug bid interceptor (in rule #${ruleNo})`);
+      logError(`Invalid 'when' definition for debug bid interceptor (in rule #${ruleNo})`);
       return () => false;
     }
     function matches(candidate, {ref = matchDef, args = []}) {
@@ -128,7 +119,7 @@ Object.assign(BidInterceptor.prototype, {
     if (typeof replDef === 'function') {
       replFn = ({args}) => replDef(...args);
     } else if (typeof replDef !== 'object') {
-      logError(`Invalid '${this.KEYS.replace}' definition for debug bid interceptor (in rule #${ruleNo})`);
+      logError(`Invalid 'then' definition for debug bid interceptor (in rule #${ruleNo})`);
       replFn = () => ({});
     } else {
       replFn = ({args, ref = replDef}) => {
@@ -169,45 +160,7 @@ Object.assign(BidInterceptor.prototype, {
     };
   },
   defaultAd(bid, bidResponse) {
-    return `
-        <html>
-          <head>
-            <style>
-             #ad {
-                width: ${bidResponse.width}px;
-                height: ${bidResponse.height}px;
-                background-color: #f6f6ae;
-                color: #85144b;
-                padding: 5px;
-                text-align: center;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-             }
-             #bidder {
-                font-family: monospace;
-                font-weight: normal;
-             }
-             #title {
-               font-size: x-large;
-               font-weight: bold;
-               margin-bottom: 5px;
-             }
-             #body {
-                font-size: large;
-                margin-top: 5px;
-             }
-            </style>
-          </head>
-          <body>
-          <div id="ad">
-            <div id="title">Mock ad: <span id="bidder">${bid.bidder}</span></div>
-            <div id="body">${bidResponse.width}x${bidResponse.height}</div>
-          </div>
-          </body>
-        </html>
-    `;
+    return `<html><head><style>#ad {width: ${bidResponse.width}px;height: ${bidResponse.height}px;background-color: #f6f6ae;color: #85144b;padding: 5px;text-align: center;display: flex;flex-direction: column;align-items: center;justify-content: center;}#bidder {font-family: monospace;font-weight: normal;}#title {font-size: x-large;font-weight: bold;margin-bottom: 5px;}#body {font-size: large;margin-top: 5px;}</style></head><body><div id="ad"><div id="title">Mock ad: <span id="bidder">${bid.bidder}</span></div><div id="body">${bidResponse.width}x${bidResponse.height}</div></div></body></html>`;
   },
   /**
    * Match a candidate bid against all registered rules.
@@ -259,7 +212,7 @@ Object.assign(BidInterceptor.prototype, {
       const callDone = delayExecution(done, matches.length);
       matches.forEach((match) => {
         const mockResponse = match.rule.replace(match.bid, bidRequest);
-        const delay = match.rule.options[this.KEYS.delay];
+        const delay = match.rule.options.delay;
         logMessage(`Intercepted bid request (matching rule #${match.rule.no}), mocking response in ${delay}ms. Request, response:`, match.bid, mockResponse)
         this.setTimeout(() => {
           addBid(mockResponse, match.bid);
