@@ -12,116 +12,20 @@ import find from 'core-js-pure/features/array/find.js';
 
 const url = 'https://an.adingo.jp'
 
-/**
- * @typedef {Object} BidResponse
- * @property {string} ad //: html tag
- * @property {string} adId
- * @property {string} adUnitCode //: 'div-gpt-ad-1612148277593-0'
- * @property {string} adUrl
- * @property {*} adserverTargeting
- * @property {string} auctionId
- * @property {string} bidder
- * @property {string} bidderCode
- * @property {number} cpm
- * @property {string} creativeId
- * @property {string} currency
- * @property {string} dealId
- * @property {number} height
- * @property {string} mediaType
- * @property {boolean} netRevenue
- * @property {number} originalCpm
- * @property {string} originalCurrency
- * @property {*} params
- * @property {string} pbAg
- * @property {string} pbCg
- * @property {string} pbDg
- * @property {string} pbHg
- * @property {string} pbLg
- * @property {string} pbMg
- * @property {string} pbLg
- * @property {string} requestId
- * @property {number} requestTimestamp
- * @property {number} responseTimestamp
- * @property {string} size
- * @property {string} source
- * @property {string} status
- * @property {string} statusMessage
- * @property {string} timeToRespond
- * @property {string} ttl
- * @property {number} width
- * @property {string|undefined} bidId //: exists when 'bidTimeout','noBid' event.
- *
- */
+/** @typedef {{ ad: string, adId: string, adUnitCode: string, adUrl: string, adserverTargeting: any, auctionId: string, bidder: string, bidderCode: string, cpm: number, creativeId: string, currency: string, dealId: string, height: number, mediaType: string, netRevenue: boolean, originalCpm: number, originalCurrency: string, params: any, pbAg: string, pbCg: string, pbDg: string, pbHg: string, pbLg: string, pbMg: string, pbLg: string, requestId: string, requestTimestamp: number, responseTimestamp: number, size: string, source: string, status: string, statusMessage: string, timeToRespond: string, ttl: string, width: number, bidId?: string}} BidResponse */
+/** @typedef {{bidder: string, params: any}} Bid */
+/** @typedef {{code: string, _code?: string, analytics?: {bidder: string, dwid: string}[], bids?: Bid[], mediaTypes: {banner: {name: string, sizes: number[][]}}, sizes: number[][], transactionId: string}} AdUnit */
+/** @typedef {{adUnitCodes: string[], adUnits: AdUnit[], auctionEnd: number, auctionId: string, auctionStatus: string, bidderRequests: any[], bidsReceived: BidResponse[], labels?: string, noBids: BidResponse[], timeout: number, timestamp: number, winningBids: BidResponse[], bids: {[key: string]: BidResponse}[]}} PbAuction */
+/** @typedef {{registered: boolean}} Gpt */
+/** @typedef {{ [key: string]: string }} Slots */
 
-/**
- * @typedef {Object} Bid
- * @property {string} bidder
- * @property {*} params
- */
-
-/**
- * @typedef {Object} Analytics
- * @property {string} bidder
- * @property {string} dwid
- */
-
-/**
- * @typedef {Object} MediaTypes
- * @property {Object} banner
- * @property {string|undefined} banner.name
- * @property {Array<Array<number>>} sizes
- */
-
-/**
- * @typedef {Object} AdUnit
- * @property {string} code //: divId
- * @property {string|undefined} _code //: 'original' divId when adUnit is replicated. (for browsi)
- * @property {Array<Analytics>} analytics
- * @property {Array<Bid>|undefined} bids
- * @property {MediaTypes} mediaTypes
- * @property {Array<Array<number>>} sizes
- * @property {string} transactionId
- */
-
-/**
- * @typedef {Object} PbAuction
- * @property {Array<string>} adUnitCodes //: ['div-gpt-ad-1612148277593-0']
- * @property {Array<AdUnit>} adUnits //: [{…}]
- * @property {number} auctionEnd - timestamp of when auction ended //: 1586675964364
- * @property {string} auctionId - Auction ID of the request this bid responded to
- * @property {string} auctionStatus //: 'inProgress'
- * @property {Array<*>} bidderRequests //: (2) [{…}, {…}]
- * @property {Array<BidResponse>} bidsReceived //: []
- * @property {string|undefined} labels //: undefined
- * @property {Array<BidResponse>} noBids //: []
- * @property {number} timeout //: 3000
- * @property {number} timestamp //: 1586675964364
- * @property {Array<BidResponse>} winningBids //: []
- * @property {Object<string, BidResponse>} bids
- */
-
-/**
- * @typedef {Object} Gpt
- * @property {boolean} registered
- */
-
-/**
- * @typedef {Object} Cache
- * @property {Object.<string, PbAuction>} auctions
- * @property {Object.<string, number>} timeouts
- * @property {Gpt} gpt
- */
-
-/** @type Cache */
+/** @type {{auctions: {[key: string]: PbAuction}, gpt: Gpt}} */
 const cache = {
   auctions: {},
   gpt: {},
 };
 
-/**
- * @param {string} id // auctionId or divId
- * @returns {boolean}
- */
+/** @type {(id: string) => boolean} */
 const isBrowsiId = (id) => Boolean(id.match(/^browsi_/g))
 
 let fluctAnalyticsAdapter = Object.assign(
@@ -207,11 +111,9 @@ let fluctAnalyticsAdapter = Object.assign(
   }
 });
 
-/** @typedef {{ [key: string]: string }} Slots */
-
 /**
  * 各adUnitCodeに対応したadUnitPathを取得する
- * @returns {Slots}
+ * @type {() => Slots}
  * @sample
  * ```
  * {
@@ -222,10 +124,7 @@ let fluctAnalyticsAdapter = Object.assign(
  */
 const getAdUnitMap = () => window.googletag.pubads().getSlots().reduce((prev, slot) => Object.assign(prev, { [slot.getSlotElementId()]: slot.getAdUnitPath() }), {})
 
-/**
- * @param {Array<AdUnit>} adUnits
- * @param {Slots} slots
- */
+/** @type {(adUnits: AdUnit[], slots: Slots) => AdUnit[]} */
 export const convertReplicatedAdUnits = (adUnits, slots) =>
   adUnits.map(adUnit => {
     const adUnitPath = slots[adUnit.code]
@@ -243,9 +142,7 @@ export const convertReplicatedAdUnits = (adUnits, slots) =>
     return adUnit
   })
 
-/**
- * @param {string} auctionId
- */
+/** @type {(auctionId: string) => void} */
 const sendMessage = (auctionId) => {
   try {
     let { adUnits, auctionEnd, aidSuffix, auctionStatus, bids } = cache.auctions[auctionId]
