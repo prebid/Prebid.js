@@ -223,8 +223,8 @@ export const getAdUnitCodeBeforeReplication = (slots, adUnitCode) => {
   const browsiCodePrefix = (adUnitCode.match(/^browsi_.*_(?=\d*$)/g) || [])[0]
   if (browsiCodePrefix) {
     const [, adUnitPath] = find(Object.entries(slots), ([code]) => code.match(new RegExp(`^${browsiCodePrefix}`), 'g'))
-    const [adUnitCode] = find(Object.entries(slots), ([code, path]) => !isBrowsiId(code) && path === adUnitPath)
-    return adUnitCode
+    const [orgAdUnitCode] = find(Object.entries(slots), ([code, path]) => !isBrowsiId(code) && path === adUnitPath) || [adUnitCode, adUnitPath]
+    return orgAdUnitCode
   } else {
     return adUnitCode
   }

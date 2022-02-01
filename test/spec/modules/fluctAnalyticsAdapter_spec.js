@@ -29,6 +29,12 @@ describe('正規表現にマッチしている', () => {
     const adUnitCode = getAdUnitCodeBeforeReplication(slots, 'div-gpt-ad-1629864618640-0')
     expect(adUnitCode).to.equal('div-gpt-ad-1629864618640-0')
   })
+
+  it('adUnitPathが一致する枠が存在しない', () => {
+    Object.assign(slots, { 'browsi_ad_500_ai_1_rc_0': 'DUMMY_PATH' })
+    const adUnitCode = getAdUnitCodeBeforeReplication(slots, 'browsi_ad_500_ai_1_rc_0')
+    expect(adUnitCode).to.equal('browsi_ad_500_ai_1_rc_0')
+  })
 })
 
 const {
