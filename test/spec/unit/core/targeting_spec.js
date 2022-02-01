@@ -227,6 +227,8 @@ describe('targeting tests', function () {
   let sandbox;
   let enableSendAllBids = false;
   let useBidCache;
+  let bidCacheFilterFunction;
+  let undef;
 
   beforeEach(function() {
     sandbox = sinon.sandbox.create();
@@ -241,12 +243,16 @@ describe('targeting tests', function () {
       if (key === 'useBidCache') {
         return useBidCache;
       }
+      if (key === 'bidCacheFilterFunction') {
+        return bidCacheFilterFunction;
+      }
       return origGetConfig.apply(config, arguments);
     });
   });
 
   afterEach(function () {
     sandbox.restore();
+    bidCacheFilterFunction = undef;
   });
 
   describe('getAllTargeting', function () {
@@ -783,6 +789,93 @@ describe('targeting tests', function () {
 
         expect(bids.length).to.equal(1);
         expect(bids[0].adId).to.equal('adid-2');
+      });
+
+      it('should use bidCacheFilterFunction', function() {
+        auctionManagerStub.returns([
+          createBidReceived({bidder: 'appnexus', cpm: 7, auctionId: 1, responseTimestamp: 100, adUnitCode: 'code-0', adId: 'adid-1', mediaType: 'banner'}),
+          createBidReceived({bidder: 'appnexus', cpm: 5, auctionId: 2, responseTimestamp: 102, adUnitCode: 'code-0', adId: 'adid-2', mediaType: 'banner'}),
+          createBidReceived({bidder: 'appnexus', cpm: 6, auctionId: 1, responseTimestamp: 101, adUnitCode: 'code-1', adId: 'adid-3', mediaType: 'banner'}),
+          createBidReceived({bidder: 'appnexus', cpm: 8, auctionId: 2, responseTimestamp: 103, adUnitCode: 'code-1', adId: 'adid-4', mediaType: 'banner'}),
+          createBidReceived({bidder: 'appnexus', cpm: 27, auctionId: 1, responseTimestamp: 100, adUnitCode: 'code-2', adId: 'adid-5', mediaType: 'video'}),
+          createBidReceived({bidder: 'appnexus', cpm: 25, auctionId: 2, responseTimestamp: 102, adUnitCode: 'code-2', adId: 'adid-6', mediaType: 'video'}),
+          createBidReceived({bidder: 'appnexus', cpm: 26, auctionId: 1, responseTimestamp: 101, adUnitCode: 'code-3', adId: 'adid-7', mediaType: 'video'}),
+          createBidReceived({bidder: 'appnexus', cpm: 28, auctionId: 2, responseTimestamp: 103, adUnitCode: 'code-3', adId: 'adid-8', mediaType: 'video'}),
+        ]);
+
+        let adUnitCodes = ['code-0', 'code-1', 'code-2', 'code-3'];
+        targetingInstance.setLatestAuctionForAdUnit('code-0', 2);
+        targetingInstance.setLatestAuctionForAdUnit('code-1', 2);
+        targetingInstance.setLatestAuctionForAdUnit('code-2', 2);
+        targetingInstance.setLatestAuctionForAdUnit('code-3', 2);
+
+        // Bid Caching On, No Filter Function
+        useBidCache = true;
+        bidCacheFilterFunction = undef;
+        let bids = targetingInstance.getWinningBids(adUnitCodes);
+
+        expect(bids.length).to.equal(4);
+        expect(bids[0].adId).to.equal('adid-1');
+        expect(bids[1].adId).to.equal('adid-4');
+        expect(bids[2].adId).to.equal('adid-5');
+        expect(bids[3].adId).to.equal('adid-8');
+
+        // Bid Caching Off, No Filter Function
+        useBidCache = false;
+        bidCacheFilterFunction = undef;
+        bids = targetingInstance.getWinningBids(adUnitCodes);
+
+        expect(bids.length).to.equal(4);
+        expect(bids[0].adId).to.equal('adid-2');
+        expect(bids[1].adId).to.equal('adid-4');
+        expect(bids[2].adId).to.equal('adid-6');
+        expect(bids[3].adId).to.equal('adid-8');
+
+        // Bid Caching On AGAIN, No Filter Function (should be same as first time)
+        useBidCache = true;
+        bidCacheFilterFunction = undef;
+        bids = targetingInstance.getWinningBids(adUnitCodes);
+
+        expect(bids.length).to.equal(4);
+        expect(bids[0].adId).to.equal('adid-1');
+        expect(bids[1].adId).to.equal('adid-4');
+        expect(bids[2].adId).to.equal('adid-5');
+        expect(bids[3].adId).to.equal('adid-8');
+
+        // Bid Caching On, with Filter Function to Exclude video
+        useBidCache = true;
+        let bcffCalled = 0;
+        bidCacheFilterFunction = bid => {
+          bcffCalled++;
+          return bid.mediaType !== 'video';
+        }
+        bids = targetingInstance.getWinningBids(adUnitCodes);
+
+        expect(bids.length).to.equal(4);
+        expect(bids[0].adId).to.equal('adid-1');
+        expect(bids[1].adId).to.equal('adid-4');
+        expect(bids[2].adId).to.equal('adid-6');
+        expect(bids[3].adId).to.equal('adid-8');
+        // filter function should have been called for each cached bid (4 times)
+        expect(bcffCalled).to.equal(4);
+
+        // Bid Caching Off, with Filter Function to Exclude video
+        // - should not use cached bids or call the filter function
+        useBidCache = false;
+        bcffCalled = 0;
+        bidCacheFilterFunction = bid => {
+          bcffCalled++;
+          return bid.mediaType !== 'video';
+        }
+        bids = targetingInstance.getWinningBids(adUnitCodes);
+
+        expect(bids.length).to.equal(4);
+        expect(bids[0].adId).to.equal('adid-2');
+        expect(bids[1].adId).to.equal('adid-4');
+        expect(bids[2].adId).to.equal('adid-6');
+        expect(bids[3].adId).to.equal('adid-8');
+        // filter function should not have been called
+        expect(bcffCalled).to.equal(0);
       });
 
       it('should not use rendered bid to get winning bid', function () {
