@@ -235,7 +235,7 @@ function validateSizes(sizes) {
   );
 }
 
-function getBidFloor(bidRequest, mediaType, size) {
+function getBidFloor(bidRequest, mediaType, sizes) {
   var floor;
   if (typeof bidRequest.getFloor === 'function') {
     const size = sizes.length === 1 ? sizes[0] : '*';
