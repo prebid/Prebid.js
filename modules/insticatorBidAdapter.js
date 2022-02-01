@@ -280,7 +280,7 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     const requests = [];
     let endpointUrl = config.getConfig('insticator.endpointUrl') || ENDPOINT;
-    endpointUrl = endpointUrl.replace(/^http:/, 'https:');
+    // endpointUrl = endpointUrl.replace(/^http:/, 'https:');
 
     if (validBidRequests.length > 0) {
       requests.push({
