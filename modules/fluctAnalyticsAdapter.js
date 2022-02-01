@@ -2,7 +2,6 @@
 import { ajax } from '../src/ajax.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-import { config } from '../src/config.js'
 import CONSTANTS from '../src/constants.json';
 import {
   logInfo,
@@ -113,7 +112,6 @@ const url = 'https://an.adingo.jp'
 /** @type Cache */
 const cache = {
   auctions: {},
-  timeouts: {},
   gpt: {},
 };
 
@@ -191,16 +189,13 @@ let fluctAnalyticsAdapter = Object.assign(
         /** @type {Bid} */
         let bidWonEvent = args
         let { auctionId, requestId } = bidWonEvent
-        clearTimeout(cache.timeouts[auctionId]);
         Object.assign(cache.auctions[auctionId].bids[requestId], bidWonEvent, {
           noBid: false,
           prebidWon: true,
           bidWon: true,
           timeout: false,
         })
-        cache.timeouts[auctionId] = setTimeout(() => {
-          sendMessage(auctionId);
-        }, config.getConfig('bidderTimeout') || 3000);
+        sendMessage(auctionId);
         break;
       }
       default:
