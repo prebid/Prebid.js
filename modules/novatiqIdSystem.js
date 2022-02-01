@@ -119,7 +119,7 @@ export const novatiqIdSubmodule = {
       }
 
       // sanity check
-      if (sharedId == undefined || sharedId == null || sharedId == '') {
+      if (sharedId == undefined || sharedId == '') {
         logInfo('NOVATIQ invalid sharedID, resetting to null');
         sharedId = null;
       }
