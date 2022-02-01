@@ -1,5 +1,5 @@
 import {hook} from './hook.js';
-import {hasDeviceAccess, checkCookieSupport, logError, logInfo} from './utils.js';
+import {hasDeviceAccess, checkCookieSupport, logError, logInfo, isPlainObject} from './utils.js';
 import includes from 'prebidjs-polyfill/includes.js';
 import {bidderSettings as defaultBidderSettings} from './bidderSettings.js';
 import {config} from './config.js';
@@ -318,11 +318,14 @@ export function getCoreStorageManager(moduleName) {
 /**
  * Note: Core modules or Prebid modules like Currency, SizeMapping should use getCoreStorageManager
  * This function returns storage functions to access cookies and localstorage. Bidders and User id modules should import this and use it in their module if needed. GVL ID and Module name are optional param but gvl id is needed for when gdpr enforcement module is used.
- * @param {Number=} gvlid Vendor id
- * @param {string=} moduleName BidderCode or module name
+ * @param {Number=} gvlid? Vendor id
+ * @param {string=} moduleName? BidderCode or module name
  */
-export function getStorageManager(gvlid, moduleName) {
-  return newStorageManager({gvlid: gvlid, moduleName: moduleName});
+export function getStorageManager({gvlid, moduleName, bidderCode} = {}) {
+  if (arguments.length > 1 || (arguments.length > 0 && !isPlainObject(arguments[0]))) {
+    throw new Error('Invalid invocation for getStorageManager')
+  }
+  return newStorageManager({gvlid, moduleName, bidderCode});
 }
 
 export function resetData() {

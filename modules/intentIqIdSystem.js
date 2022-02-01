@@ -15,7 +15,7 @@ const PCID_EXPIRY = 365;
 const MODULE_NAME = 'intentIqId';
 export const FIRST_PARTY_KEY = '_iiq_fdata';
 
-export const storage = getStorageManager(undefined, MODULE_NAME);
+export const storage = getStorageManager({gvlid: undefined, moduleName: MODULE_NAME});
 
 const INVALID_ID = 'INVALID_ID';
 

@@ -16,7 +16,7 @@ const USER_ID_COOKIE_EXP = 2592000000; // 30 days
 const BID_TTL = 300; // 5 minutes
 const GVLID = 910;
 
-export const storage = getStorageManager(GVLID, BIDDER_CODE);
+export const storage = getStorageManager({gvlid: GVLID, moduleName: BIDDER_CODE});
 
 config.setDefaults({
   insticator: {

@@ -13,7 +13,7 @@ import { isFn, isStr, isPlainObject, logError } from '../src/utils.js';
 const MODULE_NAME = 'hadronId';
 const AU_GVLID = 561;
 
-export const storage = getStorageManager(AU_GVLID, 'hadron');
+export const storage = getStorageManager({gvlid: AU_GVLID, moduleName: 'hadron'});
 
 /**
  * Param or default.

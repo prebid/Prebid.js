@@ -13,7 +13,7 @@ import * as utils from '../src/utils.js';
 const MODULE_NAME = 'qid';
 const AU_GVLID = 902;
 
-export const storage = getStorageManager(AU_GVLID, 'qid');
+export const storage = getStorageManager({gvlid: AU_GVLID, moduleName: 'qid'});
 
 /**
  * Param or default.

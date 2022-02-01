@@ -13,7 +13,7 @@ import { isFn, isStr, isPlainObject, logError } from '../src/utils.js';
 const MODULE_NAME = 'haloId';
 const AU_GVLID = 561;
 
-export const storage = getStorageManager(AU_GVLID, 'halo');
+export const storage = getStorageManager({gvlid: AU_GVLID, moduleName: 'halo'});
 
 /**
  * Param or default.

@@ -82,7 +82,7 @@ const LOCAL_STORAGE_USER_TARGETING_SECTION = 'targeting';
 /** @type {number} */
 const GVLID = 284;
 /** @type {object} */
-export const storage = getStorageManager(GVLID, SUBMODULE_NAME);
+export const storage = getStorageManager({gvlid: GVLID, moduleName: SUBMODULE_NAME});
 
 /** @type {null|Object} */
 let _weboContextualProfile = null;

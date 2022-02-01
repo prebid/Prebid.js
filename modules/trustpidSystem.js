@@ -13,7 +13,7 @@ const LOG_PREFIX = 'Trustpid module'
 let mnoAcronym = '';
 let mnoDomain = '';
 
-export const storage = getStorageManager(null, MODULE_NAME);
+export const storage = getStorageManager({gvlid: null, moduleName: MODULE_NAME});
 
 /**
  * Handle an event for an iframe.

@@ -5,7 +5,7 @@ import sinon from 'sinon';
 import {uspDataHandler} from '../../../src/adapterManager';
 import {parseUrl} from '../../../src/utils';
 
-export const storage = getStorageManager(24);
+export const storage = getStorageManager({gvlid: 24});
 const TEST_COOKIE_VALUE = 'cookievalue';
 describe('PublinkIdSystem', () => {
   describe('decode', () => {

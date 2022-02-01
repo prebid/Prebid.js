@@ -27,7 +27,7 @@ const getSegmentsFromOrtb = function (ortb2) {
 }
 
 const handleMeta = function () {
-  const storage = getStorageManager(GVLID, 'adnuntius')
+  const storage = getStorageManager({gvlid: GVLID, moduleName: 'adnuntius'})
   let adnMeta = null
   if (storage.localStorageIsEnabled()) {
     adnMeta = JSON.parse(storage.getDataFromLocalStorage('adn.metaData'))

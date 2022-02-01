@@ -88,7 +88,7 @@ const VIDEO_PARAMS_ALLOW_LIST = [
 ];
 const LOCAL_STORAGE_KEY = 'ixdiag';
 let hasRegisteredHandler = false;
-export const storage = getStorageManager(GLOBAL_VENDOR_ID, BIDDER_CODE);
+export const storage = getStorageManager({gvlid: GLOBAL_VENDOR_ID, moduleName: BIDDER_CODE});
 
 // Possible values for bidResponse.seatBid[].bid[].mtype which indicates the type of the creative markup so that it can properly be associated with the right sub-object of the BidRequest.Imp.
 const MEDIA_TYPES = {

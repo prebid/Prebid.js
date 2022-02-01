@@ -5,7 +5,7 @@ import {getStorageManager} from '../src/storageManager.js';
 import { config } from '../src/config.js';
 
 const GVLID = 24;
-export const storage = getStorageManager(GVLID);
+export const storage = getStorageManager({gvlid: GVLID});
 
 const BIDDER_CODE = 'conversant';
 const URL = 'https://web.hb.ad.cpe.dotomi.com/cvx/client/hb/ortb/25';

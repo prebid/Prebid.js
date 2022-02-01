@@ -21,7 +21,7 @@ function readFromLocalStorage() {
 }
 
 export function getStorage() {
-  return getStorageManager(ZEOTAP_VENDOR_ID, ZEOTAP_MODULE_NAME);
+  return getStorageManager({gvlid: ZEOTAP_VENDOR_ID, moduleName: ZEOTAP_MODULE_NAME});
 }
 
 export const storage = getStorage();

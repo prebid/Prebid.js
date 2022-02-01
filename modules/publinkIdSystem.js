@@ -16,7 +16,7 @@ const GVLID = 24;
 const PUBLINK_COOKIE = '_publink';
 const PUBLINK_S2S_COOKIE = '_publink_srv';
 
-export const storage = getStorageManager(GVLID);
+export const storage = getStorageManager({gvlid: GVLID});
 
 function isHex(s) {
   return /^[A-F0-9]+$/i.test(s);
