@@ -11,6 +11,7 @@ const BIDDER_ENDPOINT_WINNING = 'winning';
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 791,
   aliases: ['msq'], // short code
   supportedMediaTypes: [BANNER, NATIVE, VIDEO],
   /**
