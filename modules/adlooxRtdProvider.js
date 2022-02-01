@@ -20,7 +20,7 @@ import {
   getAdUnitSizes, logInfo, isPlainObject, logError, isStr, isInteger, isArray, isBoolean, mergeDeep, deepAccess,
   _each, deepSetValue, logWarn, getGptSlotInfoForAdUnitCode
 } from '../src/utils.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import includes from 'prebidjs-polyfill/includes.js';
 
 const MODULE_NAME = 'adloox';
 const MODULE = `${MODULE_NAME}RtdProvider`;
