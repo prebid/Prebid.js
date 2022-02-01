@@ -73,7 +73,7 @@ function buildImpression(bidRequest) {
     banner: {
       format,
     },
-    bidfloor: getBidFloor(bidderRequest, 'banner', sizes),
+    bidfloor: getBidFloor(bidRequest, 'banner', sizes),
     ext: {
       insticator: {
         adUnitId: bidRequest.params.adUnitId,
