@@ -1,4 +1,6 @@
 [
+  "adfBidAdapter",
+  "admanBidAdapter",
   "appnexusBidAdapter",
   "conversantBidAdapter",
   "emx_digitalBidAdapter",
@@ -20,6 +22,7 @@
   "synacormediaBidAdapter",
   "telariaBidAdapter",
   "yahoosspBidAdapter",
+
   "intentIqIdSystem",
   "pubProvidedIdSystem",
   "consentManagement",

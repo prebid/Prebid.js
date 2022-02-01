@@ -1,4 +1,6 @@
 [
+  "adfBidAdapter",
+  "admanBidAdapter",
   "appnexusBidAdapter",
   "conversantBidAdapter",
   "emx_digitalBidAdapter",

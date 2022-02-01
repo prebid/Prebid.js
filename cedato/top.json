@@ -1,5 +1,6 @@
 [
   "adfBidAdapter",
+  "admanBidAdapter",
   "appnexusBidAdapter",
   "conversantBidAdapter",
   "freewheel-sspBidAdapter",
