@@ -200,7 +200,7 @@ function buildBid(bid, bidderRequest) {
     creativeId: bid.crid,
     cpm: bid.price,
     currency: CURRENCY,
-    bidfloor: getBidFloor(bidderRequest, 'banner', [bid.w, bid.h]),
+    // bidfloor: getBidFloor(bidderRequest, 'banner', [bid.w, bid.h]),
     netRevenue: true,
     ttl: bid.exp || config.getConfig('insticator.bidTTL') || BID_TTL,
     width: bid.w,
