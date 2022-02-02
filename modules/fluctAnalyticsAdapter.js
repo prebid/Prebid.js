@@ -20,9 +20,10 @@ const url = 'https://an.adingo.jp'
 /** @typedef {{registered: boolean}} Gpt */
 /** @typedef {{ [key: string]: string }} Slots */
 
-/** @type {{auctions: {[key: string]: PbAuction}, gpt: Gpt}} */
+/** @type {{auctions: {[key: string]: PbAuction}, adUnits: AdUnit[], gpt: Gpt}} */
 const cache = {
   auctions: {},
+  adUnits: [],
   gpt: {},
 };
 
@@ -61,8 +62,9 @@ let fluctAnalyticsAdapter = Object.assign(
       case CONSTANTS.EVENTS.AUCTION_END: {
         /** @type {PbAuction} */
         let auctionEndEvent = args
-        let { adUnitCodes, auctionId, bidsReceived, noBids } = auctionEndEvent
+        let { adUnits, adUnitCodes, auctionId, bidsReceived, noBids } = auctionEndEvent
         Object.assign(cache.auctions[auctionId], auctionEndEvent, { aidSuffix: isBrowsiId(auctionId) ? generateUUID() : undefined })
+        cache.adUnits.push(...adUnits)
 
         let prebidWonBidRequestIds = adUnitCodes.map(adUnitCode =>
           bidsReceived.reduce((highestCpmBid, bid) =>
@@ -125,8 +127,8 @@ let fluctAnalyticsAdapter = Object.assign(
  */
 const getAdUnitMap = () => window.googletag.pubads().getSlots().reduce((prev, slot) => Object.assign(prev, { [slot.getSlotElementId()]: slot.getAdUnitPath() }), {})
 
-/** @type {{(adUnitCode: string, slots: Slots) => ?string}} */
-export const getAdUnitPathByCode = (adUnitCode, slots) => {
+/** @type {{(slots: Slots, adUnitCode: string) => ?string}} */
+export const getAdUnitPathByCode = (slots, adUnitCode) => {
   const browsiPrefix = adUnitCode.match(/^browsi_ad_\d+/g)
   if (browsiPrefix) {
     const [_, adUnitPath] = find(Object.entries(slots), ([code]) => code.match(new RegExp(`^${browsiPrefix}`), 'g')) || []
@@ -136,11 +138,11 @@ export const getAdUnitPathByCode = (adUnitCode, slots) => {
   }
 }
 
-/** @type {(adUnits: AdUnit[], slots: Slots) => AdUnit[]} */
-export const convertReplicatedAdUnits = (adUnits, slots) =>
+/** @type {(slots: Slots, adUnits: AdUnit[]) => AdUnit[]} */
+export const convertReplicatedAdUnits = (slots = getAdUnitMap(), adUnits = cache.adUnits) =>
   adUnits.map(_adUnit => {
     const adUnit = deepClone(_adUnit)
-    const adUnitPath = getAdUnitPathByCode(adUnit.code, slots)
+    const adUnitPath = getAdUnitPathByCode(slots, adUnit.code)
     try {
       if (adUnitPath) {
         const { analytics, code, mediaTypes: { banner: { name } } } = find(adUnits, _adUnit => adUnitPath.endsWith(_adUnit.mediaTypes.banner.name))
@@ -159,7 +161,7 @@ export const convertReplicatedAdUnits = (adUnits, slots) =>
 const sendMessage = (auctionId) => {
   try {
     let { adUnits, auctionEnd, aidSuffix, auctionStatus, bids } = cache.auctions[auctionId]
-    adUnits = convertReplicatedAdUnits(adUnits, getAdUnitMap())
+    adUnits = convertReplicatedAdUnits()
 
     const payload = {
       auctionId: aidSuffix ? `${auctionId}_${aidSuffix}` : auctionId,

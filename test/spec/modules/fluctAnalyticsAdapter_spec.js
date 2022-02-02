@@ -131,21 +131,21 @@ describe('複製枠のadUnitsをマッピングできる', () => {
         }
       }
     ]
-    expect(expected).to.deep.equal(convertReplicatedAdUnits(adUnits, slots))
+    expect(expected).to.deep.equal(convertReplicatedAdUnits(slots, adUnits))
   })
 
   it('adUnitCodeからadUnitPathを取得できる', () => {
-    const actual = getAdUnitPathByCode('div-gpt-ad-1629864618640-0', slots)
+    const actual = getAdUnitPathByCode(slots, 'div-gpt-ad-1629864618640-0')
     expect(actual).to.equal('/62532913/p_fluctmagazine_320x50_surface_15377')
   })
 
   it('複製元のadUnitPathを取得できる', () => {
-    const actual = getAdUnitPathByCode('browsi_ad_0_ai_1_rc_0', slots)
+    const actual = getAdUnitPathByCode(slots, 'browsi_ad_0_ai_1_rc_0')
     expect(actual).to.equal('/62532913/p_fluctmagazine_320x50_surface_15377')
   })
 
   it('近いadUnitCodeを持つ複製元のadUnitPathを取得できる', () => {
-    const actual = getAdUnitPathByCode('browsi_ad_0_ai_1_rc_1', slots)
+    const actual = getAdUnitPathByCode(slots, 'browsi_ad_0_ai_1_rc_1')
     expect(actual).to.equal('/62532913/p_fluctmagazine_320x50_surface_15377')
   })
 })
