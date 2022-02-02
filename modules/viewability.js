@@ -1,6 +1,6 @@
 import { logWarn, logInfo, isStr, isFn, triggerPixel, insertHtmlIntoIframe } from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
-import find from 'core-js-pure/features/array/find.js';
+import find from 'prebidjs-polyfill/find.js';
 
 export const MODULE_NAME = 'viewability';
 

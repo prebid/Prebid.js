@@ -2,7 +2,7 @@ import { mergeDeep, _each, logError, deepAccess, deepSetValue, isStr, isNumber, 
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import find from 'core-js-pure/features/array/find.js';
+import find from 'prebidjs-polyfill/find.js';
 import { Renderer } from '../src/Renderer.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 
