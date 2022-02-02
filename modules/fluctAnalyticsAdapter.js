@@ -7,6 +7,7 @@ import CONSTANTS from '../src/constants.json';
 import {
   logInfo,
   generateUUID,
+  deepClone,
 } from '../src/utils.js';
 import find from 'core-js-pure/features/array/find.js';
 
@@ -126,7 +127,8 @@ const getAdUnitMap = () => window.googletag.pubads().getSlots().reduce((prev, sl
 
 /** @type {(adUnits: AdUnit[], slots: Slots) => AdUnit[]} */
 export const convertReplicatedAdUnits = (adUnits, slots) =>
-  adUnits.map(adUnit => {
+  adUnits.map(_adUnit => {
+    const adUnit = deepClone(_adUnit)
     const adUnitPath = slots[adUnit.code]
     try {
       if (adUnitPath) {
