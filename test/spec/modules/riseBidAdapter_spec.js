@@ -55,7 +55,12 @@ describe('riseAdapter', function () {
         'bidId': '299ffc8cca0b87',
         'bidderRequestId': '1144f487e563f9',
         'auctionId': 'bfc420c3-8577-4568-9766-a8a935fb620d',
-        'mediaType': 'video',
+        'mediaTypes': {
+          'video': {
+            'playerSize': [[640, 480]],
+            'context': 'instream'
+          }
+        },
         'vastXml': '"<VAST version=\\\"2.0\\\">...</VAST>"'
       },
       {
@@ -68,7 +73,10 @@ describe('riseAdapter', function () {
         'bidId': '299ffc8cca0b87',
         'bidderRequestId': '1144f487e563f9',
         'auctionId': 'bfc420c3-8577-4568-9766-a8a935fb620d',
-        'mediaType': 'banner',
+        'mediaTypes': {
+          'banner': {
+          }
+        },
         'ad': '"<img src=\"https://...\"/>"'
       }
     ];
@@ -120,11 +128,14 @@ describe('riseAdapter', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.bids[0].sizes).to.be.an('array');
       expect(request.data.bids[0].sizes).to.equal(bidRequests[0].sizes)
+      expect(request.data.bids[1].sizes).to.be.an('array');
+      expect(request.data.bids[1].sizes).to.equal(bidRequests[1].sizes)
     });
 
     it('should send the correct media type', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.bids[0].mediaType).to.equal(bidRequests[0].mediaType)
+      expect(request.data.bids[0].mediaType).to.equal(VIDEO)
+      expect(request.data.bids[1].mediaType).to.equal(BANNER)
     });
 
     it('should respect syncEnabled option', function() {
@@ -344,6 +355,7 @@ describe('riseAdapter', function () {
     it('should get correct bid response', function () {
       const result = spec.interpretResponse({ body: response });
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedVideoResponse));
+      expect(Object.keys(result[1])).to.deep.equal(Object.keys(expectedBannerResponse));
     });
 
     it('video type should have vastXml key', function () {
