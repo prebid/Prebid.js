@@ -582,6 +582,138 @@ describe('teadsBidAdapter', () => {
       });
     });
 
+    describe('Global Placement Id', function () {
+      let bidRequests = [
+        {
+          'bidder': 'teads',
+          'params': {
+            'placementId': 10433394,
+            'pageId': 1234
+          },
+          'adUnitCode': 'adunit-code-1',
+          'sizes': [[300, 250], [300, 600]],
+          'bidId': '30b31c1838de1e',
+          'bidderRequestId': '22edbae2733bf6',
+          'auctionId': '1d1a030790a475',
+          'creativeId': 'er2ee',
+          'deviceWidth': 1680
+        },
+        {
+          'bidder': 'teads',
+          'params': {
+            'placementId': 10433395,
+            'pageId': 1234
+          },
+          'adUnitCode': 'adunit-code-2',
+          'sizes': [[300, 250], [300, 600]],
+          'bidId': '30b31c1838de1f',
+          'bidderRequestId': '22edbae2733bf6',
+          'auctionId': '1d1a030790a475',
+          'creativeId': 'er2ef',
+          'deviceWidth': 1680
+        }
+      ];
+
+      it('should add gpid if ortb2Imp.ext.data.pbadslot is present and is non empty (and ortb2Imp.ext.data.adserver.adslot is not present)', function () {
+        const updatedBidRequests = bidRequests.map(function(bidRequest, index) {
+          return {
+            ...bidRequest,
+            ortb2Imp: {
+              ext: {
+                data: {
+                  pbadslot: '1111/home-left-' + index
+                }
+              }
+            }
+          };
+        }
+        );
+        const request = spec.buildRequests(updatedBidRequests, bidderResquestDefault);
+        const payload = JSON.parse(request.data);
+
+        expect(payload.data[0].gpid).to.equal('1111/home-left-0');
+        expect(payload.data[1].gpid).to.equal('1111/home-left-1');
+      });
+
+      it('should add gpid if ortb2Imp.ext.data.pbadslot is present and is non empty (even if ortb2Imp.ext.data.adserver.adslot is present and is non empty too)', function () {
+        const updatedBidRequests = bidRequests.map(function(bidRequest, index) {
+          return {
+            ...bidRequest,
+            ortb2Imp: {
+              ext: {
+                data: {
+                  pbadslot: '1111/home-left-' + index,
+                  adserver: {
+                    adslot: '1111/home-left/div-' + index
+                  }
+                }
+              }
+            }
+          };
+        }
+        );
+        const request = spec.buildRequests(updatedBidRequests, bidderResquestDefault);
+        const payload = JSON.parse(request.data);
+
+        expect(payload.data[0].gpid).to.equal('1111/home-left-0');
+        expect(payload.data[1].gpid).to.equal('1111/home-left-1');
+      });
+
+      it('should not add gpid if both ortb2Imp.ext.data.pbadslot and ortb2Imp.ext.data.adserver.adslot are present but empty', function () {
+        const updatedBidRequests = bidRequests.map(bidRequest => ({
+          ...bidRequest,
+          ortb2Imp: {
+            ext: {
+              data: {
+                pbadslot: '',
+                adserver: {
+                  adslot: ''
+                }
+              }
+            }
+          }
+        }));
+
+        const request = spec.buildRequests(updatedBidRequests, bidderResquestDefault);
+        const payload = JSON.parse(request.data);
+
+        return payload.data.forEach(bid => {
+          expect(bid).not.to.have.property('gpid');
+        });
+      });
+
+      it('should not add gpid if both ortb2Imp.ext.data.pbadslot and ortb2Imp.ext.data.adserver.adslot are not present', function () {
+        const request = spec.buildRequests(bidRequests, bidderResquestDefault);
+        const payload = JSON.parse(request.data);
+
+        return payload.data.forEach(bid => {
+          expect(bid).not.to.have.property('gpid');
+        });
+      });
+
+      it('should add gpid if ortb2Imp.ext.data.pbadslot is not present but ortb2Imp.ext.data.adserver.adslot is present and is non empty', function () {
+        const updatedBidRequests = bidRequests.map(function(bidRequest, index) {
+          return {
+            ...bidRequest,
+            ortb2Imp: {
+              ext: {
+                data: {
+                  adserver: {
+                    adslot: '1111/home-left-' + index
+                  }
+                }
+              }
+            }
+          };
+        });
+        const request = spec.buildRequests(updatedBidRequests, bidderResquestDefault);
+        const payload = JSON.parse(request.data);
+
+        expect(payload.data[0].gpid).to.equal('1111/home-left-0');
+        expect(payload.data[1].gpid).to.equal('1111/home-left-1');
+      });
+    });
+
     function checkMediaTypesSizes(mediaTypes, expectedSizes) {
       const bidRequestWithBannerSizes = Object.assign(bidRequests[0], mediaTypes);
       const requestWithBannerSizes = spec.buildRequests([bidRequestWithBannerSizes], bidderResquestDefault);

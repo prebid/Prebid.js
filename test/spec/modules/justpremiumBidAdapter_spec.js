@@ -97,7 +97,7 @@ describe('justpremium adapter', function () {
       expect(jpxRequest.id).to.equal(adUnits[0].params.zone)
       expect(jpxRequest.mediaTypes && jpxRequest.mediaTypes.banner && jpxRequest.mediaTypes.banner.sizes).to.not.equal('undefined')
       expect(jpxRequest.version.prebid).to.equal('$prebid.version$')
-      expect(jpxRequest.version.jp_adapter).to.equal('1.8')
+      expect(jpxRequest.version.jp_adapter).to.equal('1.8.1')
       expect(jpxRequest.pubcid).to.equal('0000000')
       expect(jpxRequest.uids.tdid).to.equal('1111111')
       expect(jpxRequest.uids.id5id.uid).to.equal('2222222')
@@ -118,7 +118,10 @@ describe('justpremium adapter', function () {
             'price': 0.52,
             'format': 'lb',
             'adm': 'creative code',
-            'adomain': ['justpremium.com']
+            'adomain': ['justpremium.com'],
+            'ext': {
+              'pg': true
+            }
           }]
         },
         'pass': {
@@ -142,6 +145,9 @@ describe('justpremium adapter', function () {
           meta: {
             advertiserDomains: ['justpremium.com']
           },
+          adserverTargeting: {
+            'hb_deal_justpremium': 'jp_pg'
+          }
         }
       ]
 
@@ -159,6 +165,7 @@ describe('justpremium adapter', function () {
       expect(result[0].netRevenue).to.equal(true)
       expect(result[0].format).to.equal('lb')
       expect(result[0].meta.advertiserDomains[0]).to.equal('justpremium.com')
+      expect(result[0].adserverTargeting).to.deep.equal({'hb_deal_justpremium': 'jp_pg'})
     })
 
     it('Verify wrong server response', function () {

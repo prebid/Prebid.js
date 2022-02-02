@@ -8,6 +8,7 @@ import { OUTSTREAM } from '../src/video.js';
 const BIDDER_CODE = 'operaads';
 
 const ENDPOINT = 'https://s.adx.opera.com/ortb/v2/';
+const USER_SYNC_ENDPOINT = 'https://s.adx.opera.com/usersync/page';
 
 const OUTSTREAM_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 
@@ -137,6 +138,25 @@ export const spec = {
    * @return {UserSync[]} The user syncs which should be dropped.
    */
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
+    if ('iframeEnabled' in syncOptions && syncOptions.iframeEnabled) {
+      return [{
+        type: 'iframe',
+        url: USER_SYNC_ENDPOINT
+      }];
+    }
+    if ('pixelEnabled' in syncOptions && syncOptions.pixelEnabled) {
+      const pixels = deepAccess(serverResponses, '0.body.pixels')
+      if (Array.isArray(pixels)) {
+        const userSyncPixels = []
+        for (const pixel of pixels) {
+          userSyncPixels.push({
+            type: 'image',
+            url: pixel
+          })
+        }
+        return userSyncPixels;
+      }
+    }
     return [];
   },
 
@@ -212,7 +232,7 @@ function buildOpenRtbBidRequest(bidRequest, bidderRequest) {
       ext: {}
     },
     user: {
-      id: getUserId(bidRequest)
+      buyeruid: getUserId(bidRequest)
     }
   }
 

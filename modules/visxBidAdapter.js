@@ -203,7 +203,7 @@ export const spec = {
   },
   onTimeout: function(timeoutData) {
     // Call '/track/bid_timeout' with timeout data
-    triggerPixel(buildUrl(TRACK_TIMEOUT_PATH) + '?data=' + JSON.stringify(timeoutData));
+    triggerPixel(buildUrl(TRACK_TIMEOUT_PATH) + '//' + JSON.stringify(timeoutData));
   }
 };
 

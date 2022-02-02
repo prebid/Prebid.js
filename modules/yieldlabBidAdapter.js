@@ -1,7 +1,7 @@
 import { _each, isPlainObject, isArray, deepAccess } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import find from 'core-js-pure/features/array/find.js'
-import { VIDEO, BANNER } from '../src/mediaTypes.js'
+import { VIDEO, BANNER, NATIVE } from '../src/mediaTypes.js'
 import { Renderer } from '../src/Renderer.js'
 import { config } from '../src/config.js';
 
@@ -15,7 +15,7 @@ const GVLID = 70
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  supportedMediaTypes: [VIDEO, BANNER],
+  supportedMediaTypes: [VIDEO, BANNER, NATIVE],
 
   isBidRequestValid: function (bid) {
     if (bid && bid.params && bid.params.adslotId && bid.params.supplyId) {
@@ -149,6 +149,27 @@ export const spec = {
           }
         }
 
+        if (isNative(bidRequest, adType)) {
+          const url = `${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/?ts=${timestamp}${extId}${gdprApplies}${gdprConsent}${pvId}`
+          bidResponse.adUrl = url
+          bidResponse.mediaType = NATIVE
+          const nativeImageAssetObj = find(matchedBid.native.assets, e => e.id === 2)
+          const nativeImageAsset = nativeImageAssetObj ? nativeImageAssetObj.img : {url: '', w: 0, h: 0};
+          const nativeTitleAsset = find(matchedBid.native.assets, e => e.id === 1)
+          const nativeBodyAsset = find(matchedBid.native.assets, e => e.id === 3)
+          bidResponse.native = {
+            title: nativeTitleAsset ? nativeTitleAsset.title.text : '',
+            body: nativeBodyAsset ? nativeBodyAsset.data.value : '',
+            image: {
+              url: nativeImageAsset.url,
+              width: nativeImageAsset.w,
+              height: nativeImageAsset.h,
+            },
+            clickUrl: matchedBid.native.link.url,
+            impressionTrackers: matchedBid.native.imptrackers,
+          };
+        }
+
         bidResponses.push(bidResponse)
       }
     })
@@ -162,8 +183,18 @@ export const spec = {
  * @param {String} adtype
  * @returns {Boolean}
  */
-function isVideo (format, adtype) {
+function isVideo(format, adtype) {
   return deepAccess(format, 'mediaTypes.video') && adtype.toLowerCase() === 'video'
+}
+
+/**
+ * Is this a native format?
+ * @param {Object} format
+ * @param {String} adtype
+ * @returns {Boolean}
+ */
+function isNative(format, adtype) {
+  return deepAccess(format, 'mediaTypes.native') && adtype.toLowerCase() === 'native'
 }
 
 /**
@@ -171,7 +202,7 @@ function isVideo (format, adtype) {
  * @param {Object} format
  * @returns {Boolean}
  */
-function isOutstream (format) {
+function isOutstream(format) {
   let context = deepAccess(format, 'mediaTypes.video.context')
   return (context === 'outstream')
 }
@@ -181,7 +212,7 @@ function isOutstream (format) {
  * @param {Object} format
  * @returns {Array}
  */
-function getPlayerSize (format) {
+function getPlayerSize(format) {
   let playerSize = deepAccess(format, 'mediaTypes.video.playerSize')
   return (playerSize && isArray(playerSize[0])) ? playerSize[0] : playerSize
 }
@@ -191,7 +222,7 @@ function getPlayerSize (format) {
  * @param {String} size
  * @returns {Array}
  */
-function parseSize (size) {
+function parseSize(size) {
   return size.split('x').map(Number)
 }
 
@@ -200,7 +231,7 @@ function parseSize (size) {
  * @param {Array} eids
  * @returns {String}
  */
-function createUserIdString (eids) {
+function createUserIdString(eids) {
   let str = []
   for (let i = 0; i < eids.length; i++) {
     str.push(eids[i].source + ':' + eids[i].uids[0].id)
@@ -213,7 +244,7 @@ function createUserIdString (eids) {
  * @param {Object} obj
  * @returns {String}
  */
-function createQueryString (obj) {
+function createQueryString(obj) {
   let str = []
   for (var p in obj) {
     if (obj.hasOwnProperty(p)) {
@@ -233,7 +264,7 @@ function createQueryString (obj) {
  * @param {Object} obj
  * @returns {String}
  */
-function createTargetingString (obj) {
+function createTargetingString(obj) {
   let str = []
   for (var p in obj) {
     if (obj.hasOwnProperty(p)) {
@@ -250,7 +281,7 @@ function createTargetingString (obj) {
  * @param {Object} schain
  * @returns {String}
  */
-function createSchainString (schain) {
+function createSchainString(schain) {
   const ver = schain.ver || ''
   const complete = (schain.complete === 1 || schain.complete === 0) ? schain.complete : ''
   const keys = ['asi', 'sid', 'hp', 'rid', 'name', 'domain', 'ext']

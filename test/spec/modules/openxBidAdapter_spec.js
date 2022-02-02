@@ -1102,6 +1102,11 @@ describe('OpenxAdapter', function () {
         mwOpenLinkId: '1111-mwopenlinkid',
         dapId: '1111-dapId',
         amxId: '1111-amxid',
+        kpuid: '1111-kpuid',
+        publinkId: '1111-publinkid',
+        naveggId: '1111-naveggid',
+        imuid: '1111-imuid',
+        adtelligentId: '1111-adtelligentid'
       };
 
       // generates the same set of tests for each id provider
@@ -1600,32 +1605,6 @@ describe('OpenxAdapter', function () {
             expect: {
               sm: 'dmp1/4:foo|bar,dmp2:baz',
               scsm: 'dmp3/5:foo2|bar2,dmp4:baz2'
-            },
-          },
-          {
-            name: 'should not send duplicate proprietary segment data from first party config ',
-            config: {
-              ortb2: {
-                user: {
-                  data: [
-                    {name: 'dmp1', ext: {segtax: 4}, segment: [{id: 'foo'}, {id: 'bar'}, {id: 'foo'}]},
-                    {name: 'dmp1', ext: {segtax: 4}, segment: [{id: 'foo'}, {id: 'bar'}]},
-                  ]
-                },
-                site: {
-                  content: {
-                    data: [
-                      {name: 'dmp1', ext: {segtax: 4}, segment: [{id: 'foo'}, {id: 'bar'}]},
-                      {name: 'dmp3', ext: {segtax: 5}, segment: [{id: 'foo2'}, {id: 'foo2'}, {id: 'bar2'}]},
-                      {name: 'dmp3', ext: {segtax: 5}, segment: [{id: 'foo2'}, {id: 'bar2'}]},
-                    ]
-                  }
-                }
-              }
-            },
-            expect: {
-              sm: 'dmp1/4:foo|bar',
-              scsm: 'dmp1/4:foo|bar,dmp3/5:foo2|bar2'
             },
           },
           {

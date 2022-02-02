@@ -531,8 +531,12 @@ describe('gumgumAdapter', function () {
       const jcsi = JSON.stringify(JCSI);
       const bidRequest = spec.buildRequests(bidRequests)[0];
       const actualKeys = Object.keys(JSON.parse(bidRequest.data.jcsi)).sort();
-      expect(actualKeys).to.eq(actualKeys);
+      expect(actualKeys).to.eql(expectedKeys);
       expect(bidRequest.data.jcsi).to.eq(jcsi);
+    });
+    it('should include the local time and timezone offset', function () {
+      const bidRequest = spec.buildRequests(bidRequests)[0];
+      expect(!!bidRequest.data.lt).to.be.true;
     });
   })
 

@@ -6,6 +6,7 @@ const BIDDER_CODE = 'between';
 let ENDPOINT = 'https://ads.betweendigital.com/adjson?t=prebid';
 const CODE_TYPES = ['inpage', 'preroll', 'midroll', 'postroll'];
 
+const includes = require('core-js-pure/features/array/includes.js');
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['btw'],
@@ -53,7 +54,7 @@ export const spec = {
         params.mind = video.mind;
         params.pos = 'atf';
         ENDPOINT += '&jst=pvc';
-        params.codeType = CODE_TYPES.includes(video.codeType) ? video.codeType : 'inpage';
+        params.codeType = includes(CODE_TYPES, video.codeType) ? video.codeType : 'inpage';
       }
 
       if (i.params.itu !== undefined) {
