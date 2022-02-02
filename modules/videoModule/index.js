@@ -7,6 +7,10 @@ import { coreAdServerFactory } from './adServer.js';
 import find from 'core-js-pure/features/array/find.js';
 import { vastXmlEditorFactory } from './shared/vastXmlEditor.js';
 
+/**
+ * This module adds User Video support to prebid.js
+ * @module modules/videoModule
+ */
 
 events.addEvents(allVideoEvents);
 

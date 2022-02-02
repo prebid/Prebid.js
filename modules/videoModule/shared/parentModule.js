@@ -1,5 +1,5 @@
 /**
- * @typedef ParentModule
+ * @typedef {Object} ParentModule
  * @summary abstraction for any module to store and reference its submodules
  * @param {SubmoduleBuilder} submoduleBuilder_
  * @returns {ParentModule}
@@ -10,8 +10,7 @@ export function ParentModule(submoduleBuilder_) {
   const submodules = {};
 
   /**
-   * @function
-   * @name ParentModule#registerSubmodule
+   * @function ParentModule#registerSubmodule
    * @summary Stores a submodule
    * @param {String} id - unique identifier of the submodule instance
    * @param {String} vendorCode - identifier to the submodule type that must be built
@@ -32,8 +31,7 @@ export function ParentModule(submoduleBuilder_) {
   }
 
   /**
-   * @function
-   * @name ParentModule#getSubmodule
+   * @function ParentModule#getSubmodule
    * @summary Stores a submodule
    * @param {String} id - unique identifier of the submodule instance
    * @returns {Object} - a submodule instance
@@ -49,7 +47,7 @@ export function ParentModule(submoduleBuilder_) {
 }
 
 /**
- * @typedef SubmoduleBuilder
+ * @typedef {Object} SubmoduleBuilder
  * @summary Instantiates submodules
  * @param {vendorSubmoduleDirectory} submoduleDirectory_
  * @returns {SubmoduleBuilder}
@@ -59,8 +57,7 @@ export function SubmoduleBuilder(submoduleDirectory_) {
   const submoduleDirectory = submoduleDirectory_;
 
   /**
-   * @function
-   * @name SubmoduleBuilder#build
+   * @function SubmoduleBuilder#build
    * @param vendorCode - identifier to the submodule type that must be instantiated
    * @param config - additional information necessary to instantiate the submodule
    * @throws
