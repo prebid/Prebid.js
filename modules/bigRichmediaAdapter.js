@@ -3,7 +3,7 @@ import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {spec as baseAdapter} from './appnexusBidAdapter.js'; // eslint-disable-line prebid/validate-imports
 
-const BIDDER_CODE = 'hbv-richmedia';
+const BIDDER_CODE = 'big-richmedia';
 
 const metadataByRequestId = {};
 
@@ -33,7 +33,7 @@ export const spec = {
   buildRequests: function (bidRequests, bidderRequest) {
     if (!baseAdapter.buildRequests) { return []; }
 
-    const publisherId = config.getConfig('hbvRichmedia.publisherId');
+    const publisherId = config.getConfig('bigRichmedia.publisherId');
     if (typeof publisherId !== 'string') { return []; }
 
     bidRequests.forEach(bidRequest => {
@@ -52,7 +52,7 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse, params) {
-    const publisherId = config.getConfig('hbvRichmedia.publisherId');
+    const publisherId = config.getConfig('bigRichmedia.publisherId');
     if (typeof publisherId !== 'string') { return []; }
 
     const bids = baseAdapter.interpretResponse(serverResponse, params);
