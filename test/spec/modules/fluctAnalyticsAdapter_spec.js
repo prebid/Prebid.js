@@ -1,5 +1,6 @@
 import fluctAnalyticsAdapter, {
   convertReplicatedAdUnits,
+  getAdUnitPathByCode,
 } from '../../../modules/fluctAnalyticsAdapter';
 import { expect } from 'chai';
 import * as events from 'src/events.js';
@@ -8,7 +9,7 @@ import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr.js';
 import * as mockGpt from '../integration/faker/googletag.js';
 
-describe('正規表現にマッチしている', () => {
+describe('複製枠のadUnitsをマッピングできる', () => {
   const adUnits = [
     {
       'code': 'div-gpt-ad-1629864618640-0',
@@ -64,7 +65,7 @@ describe('正規表現にマッチしている', () => {
     'browsi_ad_0_ai_1_rc_0': '/62532913/p_fluctmagazine_320x50_surface_15377'
   }
 
-  it('複製元のadUnitCodeを取得できる', () => {
+  it('adUnitsに複製元codeとdwidを付与できる', () => {
     const expected = [
       {
         'code': 'div-gpt-ad-1629864618640-0',
@@ -131,6 +132,21 @@ describe('正規表現にマッチしている', () => {
       }
     ]
     expect(expected).to.deep.equal(convertReplicatedAdUnits(adUnits, slots))
+  })
+
+  it('adUnitCodeからadUnitPathを取得できる', () => {
+    const actual = getAdUnitPathByCode('div-gpt-ad-1629864618640-0', slots)
+    expect(actual).to.equal('/62532913/p_fluctmagazine_320x50_surface_15377')
+  })
+
+  it('複製元のadUnitPathを取得できる', () => {
+    const actual = getAdUnitPathByCode('browsi_ad_0_ai_1_rc_0', slots)
+    expect(actual).to.equal('/62532913/p_fluctmagazine_320x50_surface_15377')
+  })
+
+  it('近いadUnitCodeを持つ複製元のadUnitPathを取得できる', () => {
+    const actual = getAdUnitPathByCode('browsi_ad_0_ai_1_rc_1', slots)
+    expect(actual).to.equal('/62532913/p_fluctmagazine_320x50_surface_15377')
   })
 })
 
