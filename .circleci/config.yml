@@ -3,7 +3,7 @@
 # Check https://circleci.com/docs/2.0/language-javascript/ for more details
 #
 
-aliases: 
+aliases:
   - &environment
       docker:
         # specify the version you desire here
@@ -17,9 +17,8 @@ aliases:
 
   - &restore_dep_cache
       keys:
-        - v1-dependencies-{{ checksum "package.json" }}
-        # fallback to using the latest cache if no exact match is found
-        - v1-dependencies-
+        - v5.20.x-legacy-dependencies-{{ checksum "package.json" }}
+        - v5.20.x-legacy-dependencies-
 
   - &save_dep_cache
       paths:
@@ -72,7 +71,7 @@ jobs:
   build:
     <<: *environment
     steps: *unit_test_steps
-      
+
   e2etest:
     <<: *environment
     steps: *endtoend_test_steps
