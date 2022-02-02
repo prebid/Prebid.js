@@ -150,7 +150,7 @@ export const convertReplicatedAdUnits = (adUnits, slots) =>
       }
       adUnit.bids = undefined
     } catch (error) {
-      console.error(error, { adUnitPath, adUnit, slots })
+      console.error(error, { adUnitPath, adUnit, adUnits, slots })
     }
     return adUnit
   })
