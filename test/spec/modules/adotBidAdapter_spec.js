@@ -56,7 +56,7 @@ describe('Adot Adapter', function () {
             id: undefined
           }
         },
-        device: { ua: navigator.userAgent, language: 'en-US' },
+        device: { ua: navigator.userAgent, language: navigator.language },
         user: { ext: { consent: bidderRequest.gdprConsent.consentString } },
         regs: { ext: { gdpr: bidderRequest.gdprConsent.gdprApplies } },
         ext: {
