@@ -125,7 +125,7 @@ function buildUser() {
   };
 }
 
-function extractSchain(bids) {
+function extractSchain(bids, requestId) {
   if (!bids) return;
 
   const bid = bids.find(bid =>
@@ -133,7 +133,11 @@ function extractSchain(bids) {
     bid.schain.nodes &&
     bid.schain.nodes.find(node => ASI_REGEX.test(node.asi))
   );
-  return bid ? bid.schain : bids[0].schain;
+  const schain = bid ? bid.schain : bids[0].schain;
+  if (schain && schain.nodes && schain.nodes.length && schain.nodes[0]) {
+    schain.nodes[0].rid = requestId;
+  }
+  return schain;
 }
 
 function extractEids(bids) {
@@ -178,7 +182,7 @@ function buildRequest(validBidRequests, bidderRequest) {
     };
   }
 
-  const schain = extractSchain(bidderRequest.bids);
+  const schain = extractSchain(validBidRequests, bidderRequest.bidderRequestId);
 
   if (schain) {
     req.source.ext = { schain };
@@ -195,6 +199,7 @@ function buildRequest(validBidRequests, bidderRequest) {
 
 function buildBid(bid, bidderRequest) {
   const originalBid = find(bidderRequest.bids, (b) => b.bidId === bid.impid);
+  const meta = Object.assign({}, bid.ext.meta, { advertiserDomains: bid.adomain });
 
   return {
     requestId: bid.impid,
@@ -208,9 +213,7 @@ function buildBid(bid, bidderRequest) {
     mediaType: 'banner',
     ad: bid.adm,
     adUnitCode: originalBid.adUnitCode,
-    meta: {
-      advertiserDomains: bid.bidADomain && bid.bidADomain.length ? bid.bidADomain : []
-    },
+    meta: meta,
   };
 }
 
@@ -281,7 +284,7 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     const requests = [];
     let endpointUrl = config.getConfig('insticator.endpointUrl') || ENDPOINT;
-    endpointUrl = endpointUrl.replace(/^http:/, 'https:');
+    // endpointUrl = endpointUrl.replace(/^http:/, 'https:');
 
     if (validBidRequests.length > 0) {
       requests.push({
