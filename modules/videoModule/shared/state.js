@@ -1,6 +1,9 @@
 /**
- * @typedef State
+ * @typedef {Object} State
  * @summary simple state object. Can be subclassed
+ * @function updateState
+ * @function getState
+ * @function clearState
  */
 
 /**
@@ -11,8 +14,7 @@ export default function stateFactory() {
   let state = {};
 
   /**
-   * @function
-   * @name State#updateState
+   * @function State#updateState
    * @summary updates the state
    * @param {Object} stateUpdate
    */
@@ -21,8 +23,7 @@ export default function stateFactory() {
   }
 
   /**
-   * @function
-   * @name State#getState
+   * @function State#getState
    * @summary provides the current state
    * @returns {Object} the current state
    */
@@ -31,8 +32,7 @@ export default function stateFactory() {
   }
 
   /**
-   * @function
-   * @name State#clearState
+   * @function State#clearState
    * @summary erases the current state
    */
   function clearState() {
