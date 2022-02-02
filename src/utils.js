@@ -1273,7 +1273,7 @@ export function mergeDeep(target, ...sources) {
         mergeDeep(target[key], source[key]);
       } else if (isArray(source[key])) {
         if (!target[key]) {
-          Object.assign(target, { [key]: source[key] });
+          Object.assign(target, { [key]: [...source[key]] });
         } else if (isArray(target[key])) {
           source[key].forEach(obj => {
             let addItFlag = 1;
