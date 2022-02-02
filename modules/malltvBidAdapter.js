@@ -41,7 +41,7 @@ export const spec = {
     let contents = [];
     let data = {};
     let auctionId = bidderRequest ? bidderRequest.auctionId : '';
-    let gdrpApplies = false;
+    let gdrpApplies = true;
     let gdprConsent = '';
     let placements = validBidRequests.map(bidRequest => {
       if (!propertyId) { propertyId = bidRequest.params.propertyId; }
@@ -50,7 +50,7 @@ export const spec = {
       if (!url && bidderRequest) { url = bidderRequest.refererInfo.referer; }
       if (!contents.length && bidRequest.params.contents && bidRequest.params.contents.length) { contents = bidRequest.params.contents; }
       if (Object.keys(data).length === 0 && bidRequest.params.data && Object.keys(bidRequest.params.data).length !== 0) { data = bidRequest.params.data; }
-      if (bidderRequest && bidRequest.gdprConsent) { gdrpApplies = bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies ? bidderRequest.gdprConsent.gdprApplies : 'true'; }
+      if (bidderRequest && bidRequest.gdprConsent) { gdrpApplies = bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies ? bidderRequest.gdprConsent.gdprApplies : true; }
       if (bidderRequest && bidRequest.gdprConsent) { gdprConsent = bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString ? bidderRequest.gdprConsent.consentString : ''; }
       let adUnitId = bidRequest.adUnitCode;
       let placementId = bidRequest.params.placementId;
