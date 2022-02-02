@@ -64,9 +64,10 @@ describe('正規表現にマッチしている', () => {
     'browsi_ad_0_ai_1_rc_0': '/62532913/p_fluctmagazine_320x50_surface_15377'
   }
 
-  it('', () => {
-    const actual = [
+  it('複製元のadUnitCodeを取得できる', () => {
+    const expected = [
       {
+        'code': 'div-gpt-ad-1629864618640-0',
         '_code': 'div-gpt-ad-1629864618640-0',
         'analytics': [
           {
@@ -79,7 +80,6 @@ describe('正規表現にマッチしている', () => {
           },
         ],
         'bids': undefined,
-        'code': 'div-gpt-ad-1629864618640-0',
         'ext': {
           'device': 'SP',
         },
@@ -100,6 +100,7 @@ describe('正規表現にマッチしている', () => {
         },
       },
       {
+        'code': 'browsi_ad_0_ai_1_rc_0',
         '_code': 'div-gpt-ad-1629864618640-0',
         'analytics': [
           {
@@ -112,7 +113,6 @@ describe('正規表現にマッチしている', () => {
           },
         ],
         'bids': undefined,
-        'code': 'browsi_ad_0_ai_1_rc_0',
         'mediaTypes': {
           'banner': {
             'name': 'p_fluctmagazine_320x50_surface_15377',
@@ -130,7 +130,7 @@ describe('正規表現にマッチしている', () => {
         }
       }
     ]
-    expect(convertReplicatedAdUnits(adUnits, slots)).to.deep.equal(actual)
+    expect(expected).to.deep.equal(convertReplicatedAdUnits(adUnits, slots))
   })
 })
 
