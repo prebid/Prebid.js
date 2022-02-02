@@ -75,7 +75,9 @@ export const spec = {
       requestid: bidderRequestId,
       placements: placements,
       contents: contents,
-      data: data
+      data: data,
+      gdpr_applies: bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies ? bidderRequest.gdprConsent.gdprApplies : 'true',
+      gdpr_consent: bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString ? bidderRequest.gdprConsent.consentString : '',
     }
 
     return [{
