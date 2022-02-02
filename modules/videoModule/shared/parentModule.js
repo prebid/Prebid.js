@@ -1,15 +1,21 @@
-
-/*
-Used by any module to manage the relationship with its submodules.
+/**
+ * @typedef ParentModule
+ * @summary abstraction for any module to store and reference its submodules
+ * @param {SubmoduleBuilder} submoduleBuilder_
+ * @returns {ParentModule}
+ * @constructor
  */
 export function ParentModule(submoduleBuilder_) {
   const submoduleBuilder = submoduleBuilder_;
   const submodules = {};
 
-  /*
-  id: identifies the submodule instance
-  vendorCode: identifies the submodule type that must be built
-  config: additional information necessary to instantiate the instance
+  /**
+   * @function
+   * @name ParentModule#registerSubmodule
+   * @summary Stores a submodule
+   * @param {String} id - unique identifier of the submodule instance
+   * @param {String} vendorCode - identifier to the submodule type that must be built
+   * @param {Object} config - additional information necessary to instantiate the submodule
    */
   function registerSubmodule(id, vendorCode, config) {
     if (submodules[id]) {
@@ -25,6 +31,13 @@ export function ParentModule(submoduleBuilder_) {
     submodules[id] = submodule;
   }
 
+  /**
+   * @function
+   * @name ParentModule#getSubmodule
+   * @summary Stores a submodule
+   * @param {String} id - unique identifier of the submodule instance
+   * @returns {Object} - a submodule instance
+   */
   function getSubmodule(id) {
     return submodules[id];
   }
@@ -35,9 +48,24 @@ export function ParentModule(submoduleBuilder_) {
   }
 }
 
+/**
+ * @typedef SubmoduleBuilder
+ * @summary Instantiates submodules
+ * @param {vendorSubmoduleDirectory} submoduleDirectory_
+ * @returns {SubmoduleBuilder}
+ * @constructor
+ */
 export function SubmoduleBuilder(submoduleDirectory_) {
   const submoduleDirectory = submoduleDirectory_;
 
+  /**
+   * @function
+   * @name SubmoduleBuilder#build
+   * @param vendorCode - identifier to the submodule type that must be instantiated
+   * @param config - additional information necessary to instantiate the submodule
+   * @throws
+   * @returns {{init}|*} - a submodule instance
+   */
   function build(vendorCode, config) {
     const submoduleFactory = submoduleDirectory[vendorCode];
     if (!submoduleFactory) {
