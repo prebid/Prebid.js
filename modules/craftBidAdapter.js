@@ -2,8 +2,8 @@ import { logError, convertTypes, convertCamelToUnderscore, isArray, deepAccess, 
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { auctionManager } from '../src/auctionManager.js';
-import find from 'core-js-pure/features/array/find.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import find from 'prebidjs-polyfill/find.js';
+import includes from 'prebidjs-polyfill/includes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import {ajax} from '../src/ajax.js';
 

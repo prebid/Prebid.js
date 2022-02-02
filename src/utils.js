@@ -1,8 +1,8 @@
 /* eslint-disable no-console */
 import { config } from './config.js';
 import clone from 'just-clone';
-import find from 'core-js-pure/features/array/find.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import find from 'prebidjs-polyfill/find.js';
+import includes from 'prebidjs-polyfill/includes.js';
 
 const CONSTANTS = require('./constants.json');
 
@@ -894,12 +894,6 @@ export function isValidMediaTypes(mediaTypes) {
   return true;
 }
 
-export function getBidderRequest(bidRequests, bidder, adUnitCode) {
-  return find(bidRequests, request => {
-    return request.bids
-      .filter(bid => bid.bidder === bidder && bid.adUnitCode === adUnitCode).length > 0;
-  }) || { start: null, auctionId: null };
-}
 /**
  * Returns user configured bidder params from adunit
  * @param {Object} adUnits
