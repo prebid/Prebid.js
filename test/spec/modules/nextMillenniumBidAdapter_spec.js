@@ -40,7 +40,7 @@ describe('nextMillenniumBidAdapterTests', function() {
 
   it('Check if refresh_count param is incremented', function() {
     const request = spec.buildRequests(bidRequestData);
-    expect(JSON.parse(request[0].data).refresh_count).to.equal(3);
+    expect(JSON.parse(request[0].data).ext.nextMillennium.refresh_count).to.equal(3);
   });
 
   it('Test getUserSyncs function', function () {

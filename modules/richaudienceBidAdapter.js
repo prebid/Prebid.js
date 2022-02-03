@@ -1,4 +1,4 @@
-import { isEmpty, deepAccess, isStr } from '../src/utils.js';
+import {isEmpty, deepAccess, isStr} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
@@ -52,16 +52,22 @@ export const spec = {
         videoData: raiGetVideoInfo(bid),
         scr_rsl: raiGetResolution(),
         cpuc: (typeof window.navigator != 'undefined' ? window.navigator.hardwareConcurrency : null),
-        kws: (!isEmpty(bid.params.keywords) ? bid.params.keywords : null)
+        kws: (!isEmpty(bid.params.keywords) ? bid.params.keywords : null),
+        schain: bid.schain
       };
 
       REFERER = (typeof bidderRequest.refererInfo.referer != 'undefined' ? encodeURIComponent(bidderRequest.refererInfo.referer) : null)
 
       payload.gdpr_consent = '';
-      payload.gdpr = bidderRequest.gdprConsent.gdprApplies;
+      payload.gdpr = false;
 
       if (bidderRequest && bidderRequest.gdprConsent) {
-        payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
+        if (typeof bidderRequest.gdprConsent.gdprApplies != 'undefined') {
+          payload.gdpr = bidderRequest.gdprConsent.gdprApplies;
+        }
+        if (typeof bidderRequest.gdprConsent.consentString != 'undefined') {
+          payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
+        }
       }
 
       var payloadString = JSON.stringify(payload);
