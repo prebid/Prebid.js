@@ -4,7 +4,7 @@ import { ParentModule, SubmoduleBuilder } from './shared/parentModule.js';
 // define, ortb object,  events
 
 /**
- Video Provider Submodule interface to the Core Video module @VideoCore.
+ * Video Provider Submodule interface. All submodules of the Core Video module must adhere to this.
  * @description attached to a video player instance.
  * @typedef {Object} VideoProvider
  * @function init - Instantiates the Video Provider and the video player, if not already instantiated.
@@ -58,7 +58,7 @@ import { ParentModule, SubmoduleBuilder } from './shared/parentModule.js';
  * @name videoProviderConfig
  * @summary contains data indicating which submodule to create and which player instance to attach it to
  * @property {string} divId - unique identifier of the player instance
- * @property {string} vendorCode - identifier of the Video Provider type
+ * @property {number} vendorCode - numeric identifier of the Video Provider type i.e. video.js or jwplayer
  * @property {playerConfig} playerConfig
  */
 
@@ -164,9 +164,9 @@ export function VideoCore(parentModule_) {
 }
 
 /**
- * @typedef {function} videoCoreFactory
+ * @function videoCoreFactory
  * @summary Factory to create a Video Core instance
- * @returns {VideoCore} - an instance of the Core Video module
+ * @returns {VideoCore}
  */
 export function videoCoreFactory() {
   const videoSubmoduleBuilder = SubmoduleBuilder(videoVendorDirectory);
