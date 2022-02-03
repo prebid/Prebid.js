@@ -120,7 +120,19 @@ pbjs.que.push(function () {
 | sendToBidders|Boolean or Array|If true, will send the contextual profile to all bidders. If an array, will specify the bidders to send data| Optional. Default is `params.sendToBidders` (if any) or **true**.|
 | defaultProfile | Object | default value of the profile to be used when there are no response from contextual api (such as timeout)| Optional. Default is `{}` |
 | onData | Callback | If set, will receive the profile and metadata | Optional. Default is `params.onData` (if any) or log via prebid debug |
-| enabled | Boolean| if false, will ignore this configuration| default true|
+| enabled | Boolean| if false, will ignore this configuration| default true if this section is present|
+
+#### User-Centric Configuration
+
+| Name  |Type | Description   | Notes  |
+| :------------ | :------------ | :------------ |:------------ |
+| accountId|Number|WAM account id. If present, will be used on logging and statistics| Recommended.|
+| setPrebidTargeting|Boolean|If true, will use the user profile to set the prebid (GPT/GAM or AST) targeting of all adunits managed by prebid.js| Optional. Default is `params.setPrebidTargeting` (if any) or **true**.|
+| sendToBidders|Boolean or Array|If true, will send the user profile to all bidders| Optional. Default is `params.sendToBidders` (if any) or **true**.|
+| onData | Callback | If set, will receive the profile and site flag | Optional. Default is `params.onData` (if any) or log via prebid debug |
+| defaultProfile | Object | default value of the profile to be used when there are no response from contextual api (such as timeout)| Optional. Default is `{}` |
+| localStorageProfileKey| String | can be used to customize the local storage key | Optional |
+| enabled | Boolean| if false, will ignore this configuration| default true if this section is present|
 
 ##### Using onData callback
 
@@ -166,7 +178,6 @@ params: {
 }
 ```
 
-
 ##### Specify Bidders to Share Data
 
 It is possible specify some bidders to share data by set an array on the configuration `sendToBidders`. In case of using bid _aliases_, we should match the same string used in the adUnit configuration.
@@ -194,18 +205,6 @@ pbjs.setConfig({
     }
 });
 ```
-
-#### User-Centric Configuration
-
-| Name  |Type | Description   | Notes  |
-| :------------ | :------------ | :------------ |:------------ |
-| accountId|Number|WAM account id. If present, will be used on logging and statistics| Recommended.|
-| setPrebidTargeting|Boolean|If true, will use the user profile to set the prebid (GPT/GAM or AST) targeting of all adunits managed by prebid.js| Optional. Default is `params.setPrebidTargeting` (if any) or **true**.|
-| sendToBidders|Boolean or Array|If true, will send the user profile to all bidders| Optional. Default is `params.sendToBidders` (if any) or **true**.|
-| onData | Callback | If set, will receive the profile and site flag | Optional. Default is `params.onData` (if any) or log via prebid debug |
-| defaultProfile | Object | default value of the profile to be used when there are no response from contextual api (such as timeout)| Optional. Default is `{}` |
-| localStorageProfileKey| String | can be used to customize the local storage key | Optional |
-| enabled | Boolean| if false, will ignore this configuration| default true|
 
 ### Supported Bidders
 
