@@ -57,7 +57,7 @@ const SUPPORTED_USER_ID_SOURCES = [
 function hasPurpose1Consent(bidderRequest) {
   if (bidderRequest && bidderRequest.gdprConsent) {
     if (bidderRequest.gdprConsent.gdprApplies && bidderRequest.gdprConsent.apiVersion === 2) {
-      return !!false;
+      return deepAccess(bidderRequest.gdprConsent, 'vendorData.purpose.consents.1') === true;
     }
   }
   return true;
