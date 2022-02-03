@@ -7,10 +7,16 @@
  * @requires module:modules/realTimeData
  */
 
+/**
+ * @typedef dataCallbackMetadata
+ * @property {Boolean} user if true it is user-centric data
+ * @property {String} source describe the source of data, if "contextual" or "wam"
+*/
+
 /** onData callback type
  * @callback dataCallback
  * @param {Object} data profile data
- * @param {Boolean} site true if site, else it is user
+ * @param {dataCallbackMetadata} meta metadata
  * @returns {void}
  */
 
@@ -171,7 +177,7 @@ function initWeboUserData(moduleParams, weboUserDataConf) {
 const globalDefaults = {
   setPrebidTargeting: true,
   sendToBidders: true,
-  onData: (data, kind, def) => logMessage('onData(data,kind,default)', data, kind, def),
+  onData: (data, meta) => logMessage('onData(data, meta)', data, meta),
 }
 
 /** normalize submodule configuration
@@ -345,20 +351,25 @@ function handleOnData(weboCtxConf, weboUserDataConf) {
   const callbacks = [{
     onData: weboCtxConf.onData,
     fetchData: () => getContextualProfile(weboCtxConf),
-    site: true,
+    meta: {
+      user: false,
+      source: 'contextual',
+    },
   }, {
     onData: weboUserDataConf.onData,
     fetchData: () => getWeboUserDataProfile(weboUserDataConf),
-    site: false,
+    meta: {
+      user: true,
+      source: 'wam',
+    },
   }];
 
   callbacks.filter(obj => isFn(obj.onData)).forEach(obj => {
     try {
       const data = obj.fetchData();
-      obj.onData(data, obj.site);
+      obj.onData(data, obj.meta);
     } catch (e) {
-      const kind = (obj.site) ? 'site' : 'user';
-      logError(`error while executure onData callback with ${kind}-based data:`, e);
+      logError(`error while executure onData callback with ${obj.meta.source}-based data:`, e);
     }
   });
 }

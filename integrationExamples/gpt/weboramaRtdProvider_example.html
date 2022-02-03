@@ -26,9 +26,8 @@
                         params: {
                             setPrebidTargeting: true, // optional
                             sendToBidders: true,      // optional
-                            onData: function (data, site) { // optional
-                                var kind = (site) ? 'site' : 'user';
-                                console.log('onData', kind, data);
+                            onData: function (data, meta) { // optional
+                                console.log('onData', data, meta);
                             },
                             weboCtxConf: {
                                 token: "to-be-defined", // mandatory
@@ -42,9 +41,9 @@
                                 //, onData: function (data, ...) { ...}
                             },
                             weboUserDataConf: {
-                                accountId: 12345,         // optional
+                                accountId: 12345,         // recommended
                                 setPrebidTargeting: true, // override param.setPrebidTargeting or default true
-                                sendToBidders: true,      // override param.sendToBidders or default true
+                                sendToBidders: ['smartadserver'], // specify the bidder to share data
                                 defaultProfile: {         // optional
                                     webo_cs: ['Red'],
                                     webo_audiences: ['bam']

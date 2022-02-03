@@ -79,10 +79,10 @@ describe('weboramaRtdProvider', function () {
             weboCtxConf: {
               token: 'foo',
               targetURL: 'https://prebid.org',
-              onData: (data, site) => {
+              onData: (data, meta) => {
                 onDataResponse = {
                   data: data,
-                  site: site,
+                  meta: meta,
                 };
               },
             }
@@ -154,7 +154,7 @@ describe('weboramaRtdProvider', function () {
         });
         expect(onDataResponse).to.deep.equal({
           data: data,
-          site: true,
+          meta: {user: false, source: 'contextual'},
         });
       });
 
@@ -166,10 +166,10 @@ describe('weboramaRtdProvider', function () {
               token: 'foo',
               targetURL: 'https://prebid.org',
               sendToBidders: ['appnexus'],
-              onData: (data, site) => {
+              onData: (data, meta) => {
                 onDataResponse = {
                   data: data,
-                  site: site,
+                  meta: meta,
                 };
               },
             }
@@ -229,7 +229,7 @@ describe('weboramaRtdProvider', function () {
 
         expect(onDataResponse).to.deep.equal({
           data: data,
-          site: true,
+          meta: {user: false, source: 'contextual'},
         });
       });
 
@@ -329,10 +329,10 @@ describe('weboramaRtdProvider', function () {
           params: {
             setPrebidTargeting: false,
             sendToBidders: false,
-            onData: (data, site) => {
+            onData: (data, meta) => {
               onDataResponse = {
                 data: data,
-                site: site,
+                meta: meta,
               };
             },
             weboCtxConf: {
@@ -384,7 +384,7 @@ describe('weboramaRtdProvider', function () {
 
         expect(onDataResponse).to.deep.equal({
           data: data,
-          site: true,
+          meta: {user: false, source: 'contextual'},
         });
       });
 
@@ -502,10 +502,10 @@ describe('weboramaRtdProvider', function () {
               targetURL: 'https://prebid.org',
               setPrebidTargeting: true,
               defaultProfile: defaultProfile,
-              onData: (data, site) => {
+              onData: (data, meta) => {
                 onDataResponse = {
                   data: data,
-                  site: site,
+                  meta: meta,
                 };
               },
             }
@@ -573,7 +573,7 @@ describe('weboramaRtdProvider', function () {
         });
         expect(onDataResponse).to.deep.equal({
           data: defaultProfile,
-          site: true,
+          meta: {user: false, source: 'contextual'},
         });
       });
     });
@@ -585,10 +585,10 @@ describe('weboramaRtdProvider', function () {
           params: {
             weboUserDataConf: {
               accoundId: 12345,
-              onData: (data, site) => {
+              onData: (data, meta) => {
                 onDataResponse = {
                   data: data,
-                  site: site,
+                  meta: meta,
                 };
               },
             }
@@ -661,7 +661,7 @@ describe('weboramaRtdProvider', function () {
         });
         expect(onDataResponse).to.deep.equal({
           data: data,
-          site: false,
+          meta: {user: true, source: 'wam'},
         });
       });
 
@@ -672,10 +672,10 @@ describe('weboramaRtdProvider', function () {
             weboUserDataConf: {
               accountId: 12345,
               sendToBidders: ['appnexus'],
-              onData: (data, site) => {
+              onData: (data, meta) => {
                 onDataResponse = {
                   data: data,
-                  site: site,
+                  meta: meta,
                 };
               },
             }
@@ -736,7 +736,7 @@ describe('weboramaRtdProvider', function () {
 
         expect(onDataResponse).to.deep.equal({
           data: data,
-          site: false,
+          meta: {user: true, source: 'wam'},
         });
       });
 
@@ -837,10 +837,10 @@ describe('weboramaRtdProvider', function () {
           params: {
             setPrebidTargeting: false,
             sendToBidders: false,
-            onData: (data, site) => {
+            onData: (data, meta) => {
               onDataResponse = {
                 data: data,
-                site: site,
+                meta: meta,
               };
             },
             weboUserDataConf: {
@@ -893,7 +893,7 @@ describe('weboramaRtdProvider', function () {
         expect(getGlobal().getConfig('ortb2')).to.be.undefined;
         expect(onDataResponse).to.deep.equal({
           data: data,
-          site: false,
+          meta: {user: true, source: 'wam'},
         });
       });
 
@@ -1080,10 +1080,10 @@ describe('weboramaRtdProvider', function () {
               accoundId: 12345,
               setPrebidTargeting: true,
               defaultProfile: defaultProfile,
-              onData: (data, site) => {
+              onData: (data, meta) => {
                 onDataResponse = {
                   data: data,
-                  site: site,
+                  meta: meta,
                 };
               },
             }
@@ -1145,7 +1145,7 @@ describe('weboramaRtdProvider', function () {
         });
         expect(onDataResponse).to.deep.equal({
           data: defaultProfile,
-          site: false,
+          meta: {user: true, source: 'wam'},
         });
       });
     });

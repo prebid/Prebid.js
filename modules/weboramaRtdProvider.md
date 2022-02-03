@@ -65,9 +65,8 @@ pbjs.que.push(function () {
                 params: {
                     setPrebidTargeting: true, // optional
                     sendToBidders: true,      // optional
-                    onData: function(data, site){ // optional
-                        var kind = (site)? 'site' : 'user';
-                        console.log('onData', kind, data);
+                    onData: function(data, meta){ // optional
+                        console.log('onData', data, meta);
                     },
                     weboCtxConf: {
                         token: "to-be-defined", // mandatory
@@ -109,7 +108,7 @@ pbjs.que.push(function () {
 | params.sendToBidders | Boolean or Array | If true, may send the profile to all bidders. If an array, will specify the bidders to send data | Optional. Affects the `weboCtxConf` and `weboUserDataConf` sections |
 | params.weboCtxConf | Object | Weborama Contextual Configuration | Optional 
 | params.weboUserDataConf | Object | Weborama User-Centric Configuration | Optional |
-| params.onData | Callback | If set, will receive the profile and site flag | Optional. Affects the `weboCtxConf` and `weboUserDataConf` sections |
+| params.onData | Callback | If set, will receive the profile and metadata | Optional. Affects the `weboCtxConf` and `weboUserDataConf` sections |
 
 #### Contextual Configuration
 
@@ -120,8 +119,53 @@ pbjs.que.push(function () {
 | setPrebidTargeting|Boolean|If true, will use the contextual profile to set the prebid (GPT/GAM or AST) targeting of all adunits managed by prebid.js| Optional. Default is `params.setPrebidTargeting` (if any) or **true**.|
 | sendToBidders|Boolean or Array|If true, will send the contextual profile to all bidders. If an array, will specify the bidders to send data| Optional. Default is `params.sendToBidders` (if any) or **true**.|
 | defaultProfile | Object | default value of the profile to be used when there are no response from contextual api (such as timeout)| Optional. Default is `{}` |
-| onData | Callback | If set, will receive the profile and site flag | Optional. Default is `params.onData` (if any) or log via prebid debug |
+| onData | Callback | If set, will receive the profile and metadata | Optional. Default is `params.onData` (if any) or log via prebid debug |
 | enabled | Boolean| if false, will ignore this configuration| default true|
+
+##### Using onData callback
+
+We can specify a callback to handle the profile data from site-centric or user-centric data.
+
+This callback will be executed with the profile and a metadata with the following fields
+
+| Name  |Type | Description   | Notes  |
+| :------------ | :------------ | :------------ |:------------ |
+| user | Boolean | If true, it contains user-centric data |  |
+| source | String | Represent the source of data | can be `contextual`  or `wam`  |
+
+The metadata maybe not useful if we define the callback on site-centric of user-centric configuration, but if defined in the global level:
+
+```javascript
+params: {
+    onData: function(data, metadata){
+        var hasUserCentricData = metadata.user;
+        var dataSource = metadata.source;
+        console.log('onData', data, hasUserCentricData, dataSource);
+        },
+    }
+}
+```
+
+an interesting example is to set GAM targeting in global level instead in slot level only for contextual data:
+
+```javascript
+params: {
+    weboCtxConf: {
+        token: 'to-be-defined',
+        setPrebidTargeting: false,
+        onData: function(data, metadata){
+            var googletag = googletag || {};
+            googletag.cmd = googletag.cmd || [];
+            googletag.cmd.push(function () {
+                for(var key in data){
+                    googletag.pubads().setTargeting(key, data[key]);
+                }
+            });
+        },
+    }
+}
+```
+
 
 ##### Specify Bidders to Share Data
 
