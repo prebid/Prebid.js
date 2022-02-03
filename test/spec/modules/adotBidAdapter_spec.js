@@ -25,7 +25,7 @@ describe('Adot Adapter', function () {
   });
 
   describe('buildRequests', function () {
-    it('should build request', function () {
+    it('should build request (banner)', function () {
       const bidderRequestId = 'bidderRequestId';
       const validBidRequests = [{ bidderRequestId, mediaTypes: {} }, { bidderRequestId, bidId: 'bidId', mediaTypes: { banner: { sizes: [[300, 250]] } }, params: { placementId: 'placementId', adUnitCode: 200 } }];
       const bidderRequest = { position: 2, refererInfo: { referer: 'http://localhost.com' }, gdprConsent: { consentString: 'consentString', gdprApplies: true } };
@@ -43,6 +43,112 @@ describe('Adot Adapter', function () {
           banner: {
             pos: bidderRequest.position,
             format: [{ w: validBidRequests[1].mediaTypes.banner.sizes[0][0], h: validBidRequests[1].mediaTypes.banner.sizes[0][1] }]
+          },
+          bidfloorcur: 'USD',
+          bidfloor: 0
+        }],
+        site: {
+          page: bidderRequest.refererInfo.referer,
+          domain: 'localhost.com',
+          name: 'localhost.com',
+          publisher: {
+            // id: 'adot'
+            id: undefined
+          }
+        },
+        device: { ua: navigator.userAgent, language: navigator.language },
+        user: { ext: { consent: bidderRequest.gdprConsent.consentString } },
+        regs: { ext: { gdpr: bidderRequest.gdprConsent.gdprApplies } },
+        ext: {
+          adot: { adapter_version: 'v2.0.0' },
+          should_use_gzip: true
+        },
+        at: 1
+      }
+
+      expect(request).to.deep.equal([{
+        method: 'POST',
+        url: BIDDER_URL,
+        data: buildBidRequestResponse
+      }])
+    })
+
+    it('should build request (native)', function () {
+      const bidderRequestId = 'bidderRequestId';
+      const validBidRequests = [{ bidderRequestId, mediaTypes: {} }, { bidderRequestId, bidId: 'bidId', mediaTypes: { native: { title: { required: true, len: 50, sizes: [[300, 250]] }, wrong: {}, image: {} } }, params: { placementId: 'placementId', adUnitCode: 200 } }];
+      const bidderRequest = { position: 2, refererInfo: { referer: 'http://localhost.com' }, gdprConsent: { consentString: 'consentString', gdprApplies: true } };
+
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      const buildBidRequestResponse = {
+        id: bidderRequestId,
+        imp: [{
+          id: validBidRequests[1].bidId,
+          ext: {
+            placementId: validBidRequests[1].params.placementId,
+            adUnitCode: validBidRequests[1].adUnitCode,
+            container: undefined
+          },
+          native: {
+            request: '{\"assets\":[{\"id\":1,\"required\":true,\"title\":{\"len\":50,\"wmin\":300,\"hmin\":250}},{\"id\":3,\"img\":{\"type\":3}}]}'
+          },
+          bidfloorcur: 'USD',
+          bidfloor: 0
+        }],
+        site: {
+          page: bidderRequest.refererInfo.referer,
+          domain: 'localhost.com',
+          name: 'localhost.com',
+          publisher: {
+            // id: 'adot'
+            id: undefined
+          }
+        },
+        device: { ua: navigator.userAgent, language: navigator.language },
+        user: { ext: { consent: bidderRequest.gdprConsent.consentString } },
+        regs: { ext: { gdpr: bidderRequest.gdprConsent.gdprApplies } },
+        ext: {
+          adot: { adapter_version: 'v2.0.0' },
+          should_use_gzip: true
+        },
+        at: 1
+      }
+
+      expect(request).to.deep.equal([{
+        method: 'POST',
+        url: BIDDER_URL,
+        data: buildBidRequestResponse
+      }])
+    })
+
+    it('should build request (video)', function () {
+      const bidderRequestId = 'bidderRequestId';
+      const validBidRequests = [{ bidderRequestId, mediaTypes: {} }, { bidderRequestId, bidId: 'bidId', mediaTypes: { video: { playerSize: [[300, 250]], minduration: 1, maxduration: 2, api: 'api', linearity: 'linearity', mimes: [], placement: 'placement', playbackmethod: 'playbackmethod', protocols: 'protocol', startdelay: 'startdelay' } }, params: { placementId: 'placementId', adUnitCode: 200 } }];
+      const bidderRequest = { position: 2, refererInfo: { referer: 'http://localhost.com' }, gdprConsent: { consentString: 'consentString', gdprApplies: true } };
+
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      const buildBidRequestResponse = {
+        id: bidderRequestId,
+        imp: [{
+          id: validBidRequests[1].bidId,
+          ext: {
+            placementId: validBidRequests[1].params.placementId,
+            adUnitCode: validBidRequests[1].adUnitCode,
+            container: undefined
+          },
+          video: {
+            api: 'api',
+            h: 250,
+            linearity: 'linearity',
+            maxduration: 2,
+            mimes: [],
+            minduration: 1,
+            placement: 'placement',
+            playbackmethod: 'playbackmethod',
+            pos: 0,
+            protocols: 'protocol',
+            skip: 0,
+            startdelay: 'startdelay',
+            w: 300
           },
           bidfloorcur: 'USD',
           bidfloor: 0
