@@ -33,8 +33,11 @@ export const spec = {
         const mediaType = (Object.keys(bid.mediaTypes).length == 1) ? Object.keys(bid.mediaTypes)[0] : '*';
         const sizes = bid.sizes || '*';
         const floorInfo = bid.getFloor({currency: 'USD', mediaType: mediaType, size: sizes});
-        if (typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
-          adSlot.floor = parseFloat(floorInfo.floor);
+        if (typeof floorInfo === 'object' && floorInfo.currency === 'USD') {
+          let floor = parseFloat(floorInfo.floor)
+          if (!isNaN(floor) && floor > 0) {
+            adSlot.floor = parseFloat(floorInfo.floor);
+          }
         }
       }
 
