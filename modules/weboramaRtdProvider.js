@@ -17,7 +17,7 @@
 /**
  * @typedef {Object} ModuleParams
  * @property {?Boolean} setPrebidTargeting if true, will set the GAM targeting (default undefined)
- * @property {?Boolean} sendToBidders if true, will send the contextual profile to all bidders (default undefined)
+ * @property {?Boolean|?Array} sendToBidders if true, will send the contextual profile to all bidders, else expects a list of allowed bidders (default undefined)
  * @property {?dataCallback} onData callback
  * @property {?WeboCtxConf} weboCtxConf
  * @property {?WeboUserDataConf} weboUserDataConf
@@ -28,7 +28,7 @@
  * @property {string} token required token to be used on bigsea contextual API requests
  * @property {?string} targetURL specify the target url instead use the referer
  * @property {?Boolean} setPrebidTargeting if true, will set the GAM targeting (default params.setPrebidTargeting or true)
- * @property {?Boolean} sendToBidders if true, will send the contextual profile to all bidders (default params.sendToBidders or true)
+ * @property {?Boolean|?Array} sendToBidders if true, will send the contextual profile to all bidders, else expects a list of allowed bidders (default params.sendToBidders or true)
  * @property {?dataCallback} onData callback
  * @property {?object} defaultProfile to be used if the profile is not found
  * @property {?Boolean} enabled if false, will ignore this configuration
@@ -38,7 +38,7 @@
  * @typedef {Object} WeboUserDataConf
  * @property {?number} accountId wam account id
  * @property {?Boolean} setPrebidTargeting if true, will set the GAM targeting (default params.setPrebidTargeting or true)
- * @property {?Boolean} sendToBidders if true, will send the user-centric profile to all bidders (default params.sendToBidders or true)
+ * @property {?Boolean|?Array} sendToBidders if true, will send the user-centric profile to all bidders, else expects a list of allowed bidders (default params.sendToBidders or true)
  * @property {?object} defaultProfile to be used if the profile is not found
  * @property {?dataCallback} onData callback
  * @property {?string} localStorageProfileKey can be used to customize the local storage key (default is 'webo_wam2gam_entry')
@@ -57,7 +57,8 @@ import {
   logWarn,
   tryAppendQueryString,
   logMessage,
-  isFn
+  isFn,
+  isArray
 } from '../src/utils.js';
 import {
   submodule
@@ -315,20 +316,20 @@ export function getBidRequestData(reqBidsConfigObj, onDone, moduleConfig) {
 function handleBidRequestData(adUnits, moduleParams) {
   const weboCtxConf = moduleParams.weboCtxConf || {};
   const weboUserDataConf = moduleParams.weboUserDataConf || {};
-  const weboCtxConfTargeting = weboCtxConf.sendToBidders;
-  const weboUserDataConfTargeting = weboUserDataConf.sendToBidders;
+  const weboCtxConfSendToBidders = weboCtxConf.sendToBidders;
+  const weboUserDataSendToBidders = weboUserDataConf.sendToBidders;
 
-  if (weboCtxConfTargeting) {
+  if (weboCtxConfSendToBidders) {
     const contextualProfile = getContextualProfile(weboCtxConf);
     if (!isEmpty(contextualProfile)) {
-      setBidRequestProfile(adUnits, contextualProfile, true);
+      setBidRequestProfile(adUnits, contextualProfile, weboCtxConfSendToBidders, true);
     }
   }
 
-  if (weboUserDataConfTargeting) {
+  if (weboUserDataSendToBidders) {
     const weboUserDataProfile = getWeboUserDataProfile(weboUserDataConf);
     if (!isEmpty(weboUserDataProfile)) {
-      setBidRequestProfile(adUnits, weboUserDataProfile, false);
+      setBidRequestProfile(adUnits, weboUserDataProfile, weboUserDataSendToBidders, false);
     }
   }
 
@@ -365,16 +366,24 @@ function handleOnData(weboCtxConf, weboUserDataConf) {
 /** function that set bid request data on each segment (site or user centric)
  * @param {Object[]} adUnits
  * @param {Object} profile
+ * @param {Boolean|Array} sendToBidders
  * @param {Boolean} site true if site centric, else it is user centric
  * @returns {void}
  */
-function setBidRequestProfile(adUnits, profile, site) {
-  setGlobalOrtb2(profile, site);
+function setBidRequestProfile(adUnits, profile, sendToBidders, site) {
+  if (sendToBidders === true) {
+    setGlobalOrtb2(profile, site);
+  }
 
   adUnits.forEach(adUnit => {
     if (adUnit.hasOwnProperty('bids')) {
+      // if bid in sendToBidders
       const adUnitCode = adUnit.code || 'no code';
-      adUnit.bids.forEach(bid => handleBid(adUnitCode, profile, site, bid));
+      let bids = adUnit.bids;
+      if (isArray(sendToBidders)) {
+        bids = bids.filter(bid => sendToBidders.includes(bid.bidder));
+      }
+      bids.forEach(bid => handleBid(adUnitCode, profile, site, bid));
     }
   });
 }
