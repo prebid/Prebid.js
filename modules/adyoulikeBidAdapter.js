@@ -2,7 +2,7 @@ import { deepAccess, buildUrl, parseSizesInput } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { createEidsArray } from './userId/eids.js';
-import find from 'core-js-pure/features/array/find.js';
+import find from 'prebidjs-polyfill/find.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 
 const VERSION = '1.0';

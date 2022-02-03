@@ -10,7 +10,7 @@ import { submodule } from '../src/hook.js'
 import { getStorageManager } from '../src/storageManager.js'
 import { deepSetValue, deepAccess, isFn, mergeDeep, logError } from '../src/utils.js'
 import { config } from '../src/config.js'
-import includes from 'core-js-pure/features/array/includes.js'
+import includes from 'prebidjs-polyfill/includes.js'
 const MODULE_NAME = 'permutive'
 
 export const storage = getStorageManager(null, MODULE_NAME)
