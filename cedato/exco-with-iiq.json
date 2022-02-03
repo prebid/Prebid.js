@@ -23,6 +23,8 @@
   "telariaBidAdapter",
   "yahoosspBidAdapter",
 
+  "intentIqIdSystem",
+  "pubProvidedIdSystem",
   "consentManagement",
   "consentManagementUsp",
   "schain"
