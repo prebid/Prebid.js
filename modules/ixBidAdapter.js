@@ -59,21 +59,17 @@ const SOURCE_RTI_MAPPING = {
   'epsilon.com': '', // Publisher Link, publinkId
   'audigent.com': '', // Halo ID from Audigent, haloId
   'pubcid.org': '' // SharedID, pubcid
+  'trustpid.com': '' // Trustpid
 };
 const PROVIDERS = [
   'britepoolid',
-  'id5id',
   'lipbid',
-  'haloId',
   'criteoId',
-  'lotamePanoramaId',
   'merkleId',
   'parrableId',
   'connectid',
   'tapadId',
   'quantcastId',
-  'pubcid',
-  'TDID',
   'flocId',
   'pubProvidedId'
 ];
