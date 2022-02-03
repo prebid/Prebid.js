@@ -214,7 +214,7 @@ We currently support the following bidder adapters:
 * AppNexus SSP
 * Rubicon SSP
 
-We also set the bidder and global ortb2 `site` and `user` sections. The following bidders may support it, to be sure, check the `First Party Data Support` on the feature list for the particular bidder from here: https://docs.prebid.org/dev-docs/bidders 
+We also set the bidder (and global, if no specific bidders are set on `sendToBidders`) ortb2 `site.ext.data` and `user.ext.data` sections (as arbitrary data). The following bidders may support it, to be sure, check the `First Party Data Support` on the feature list for the particular bidder from here: https://docs.prebid.org/dev-docs/bidders 
 
 * Adagio
 * AdformOpenRTB
