@@ -12,6 +12,8 @@ import {
   currencyRates,
   ready
 } from 'modules/currency.js';
+import {createBid} from '../../../src/bidfactory.js';
+import CONSTANTS from '../../../src/constants.json';
 
 var assert = require('chai').assert;
 var expect = require('chai').expect;
@@ -22,6 +24,10 @@ describe('currency', function () {
   let clock;
 
   let fn = sinon.spy();
+
+  function makeBid(bidProps) {
+    return Object.assign(createBid(CONSTANTS.STATUS.GOOD), bidProps);
+  }
 
   beforeEach(function () {
     fakeCurrencyFileServer = sinon.fakeServer.create();
@@ -325,7 +331,7 @@ describe('currency', function () {
   describe('currency.addBidResponseDecorator', function () {
     it('should leave bid at 1 when currency support is not enabled and fromCurrency is USD', function () {
       setConfig({});
-      var bid = { 'cpm': 1, 'currency': 'USD' };
+      var bid = makeBid({ 'cpm': 1, 'currency': 'USD' });
       var innerBid;
       addBidResponseHook(function(adCodeId, bid) {
         innerBid = bid;
@@ -336,7 +342,7 @@ describe('currency', function () {
     it('should result in NO_BID when currency support is not enabled and fromCurrency is not USD', function () {
       setConfig({});
 
-      var bid = { 'cpm': 1, 'currency': 'GBP' };
+      var bid = makeBid({ 'cpm': 1, 'currency': 'GBP' });
       var innerBid;
       addBidResponseHook(function(adCodeId, bid) {
         innerBid = bid;
@@ -348,7 +354,7 @@ describe('currency', function () {
       setConfig({
         'adServerCurrency': 'USD'
       });
-      var bid = { 'cpm': 1, 'currency': 'USD' };
+      var bid = makeBid({ 'cpm': 1, 'currency': 'USD' });
       var innerBid;
       addBidResponseHook(function(adCodeId, bid) {
         innerBid = bid;
@@ -363,7 +369,7 @@ describe('currency', function () {
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
       setConfig({ 'adServerCurrency': 'JPY' });
       fakeCurrencyFileServer.respond();
-      var bid = { 'cpm': 1, 'currency': 'ABC' };
+      var bid = makeBid({ 'cpm': 1, 'currency': 'ABC' });
       var innerBid;
       addBidResponseHook(function(adCodeId, bid) {
         innerBid = bid;
@@ -375,7 +381,7 @@ describe('currency', function () {
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
       setConfig({ 'adServerCurrency': 'ABC' });
       fakeCurrencyFileServer.respond();
-      var bid = { 'cpm': 1, 'currency': 'GBP' };
+      var bid = makeBid({ 'cpm': 1, 'currency': 'GBP' });
       var innerBid;
       addBidResponseHook(function(adCodeId, bid) {
         innerBid = bid;
@@ -387,7 +393,7 @@ describe('currency', function () {
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
       setConfig({ 'adServerCurrency': 'JPY' });
       fakeCurrencyFileServer.respond();
-      var bid = { 'cpm': 1, 'currency': 'JPY' };
+      var bid = makeBid({ 'cpm': 1, 'currency': 'JPY' });
       var innerBid;
       addBidResponseHook(function(adCodeId, bid) {
         innerBid = bid;
@@ -400,7 +406,7 @@ describe('currency', function () {
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
       setConfig({ 'adServerCurrency': 'GBP' });
       fakeCurrencyFileServer.respond();
-      var bid = { 'cpm': 1, 'currency': 'USD' };
+      var bid = makeBid({ 'cpm': 1, 'currency': 'USD' });
       var innerBid;
       addBidResponseHook(function(adCodeId, bid) {
         innerBid = bid;
@@ -413,7 +419,7 @@ describe('currency', function () {
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
       setConfig({ 'adServerCurrency': 'GBP' });
       fakeCurrencyFileServer.respond();
-      var bid = { 'cpm': 1, 'currency': 'CNY' };
+      var bid = makeBid({ 'cpm': 1, 'currency': 'CNY' });
       var innerBid;
       addBidResponseHook(function(adCodeId, bid) {
         innerBid = bid;
@@ -426,7 +432,7 @@ describe('currency', function () {
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
       setConfig({ 'adServerCurrency': 'CNY' });
       fakeCurrencyFileServer.respond();
-      var bid = { 'cpm': 1, 'currency': 'JPY' };
+      var bid = makeBid({ 'cpm': 1, 'currency': 'JPY' });
       var innerBid;
       addBidResponseHook(function(adCodeId, bid) {
         innerBid = bid;
