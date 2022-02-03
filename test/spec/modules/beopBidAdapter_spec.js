@@ -124,7 +124,7 @@ describe('BeOp Bid Adapter tests', () => {
       expect(payload.tc_string).to.exist;
       expect(payload.tc_string).to.equal('BOJ8RZsOJ8RZsABAB8AAAAAZ+A==');
       expect(payload.url).to.exist;
-      expect(payload.url).to.equal('http://test.te');
+      expect(payload.url).to.equal('http://localhost:9876/context.html');
     });
   });
 

@@ -1,7 +1,7 @@
 import { isArray, deepAccess, getOrigin, logError } from '../src/utils.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import includes from 'prebidjs-polyfill/includes.js';
 
 const BIDDER_CODE = 'rtbhouse';
 const REGIONS = ['prebid-eu', 'prebid-us', 'prebid-asia'];
@@ -165,16 +165,26 @@ function mapBanner(slot) {
  * @returns {object} Site by OpenRTB 2.5 §3.2.13
  */
 function mapSite(slot, bidderRequest) {
-  const pubId = slot && slot.length > 0
-    ? slot[0].params.publisherId
-    : 'unknown';
-  return {
+  let pubId = 'unknown';
+  let channel = null;
+  if (slot && slot.length > 0) {
+    pubId = slot[0].params.publisherId;
+    channel = slot[0].params.channel &&
+    slot[0].params.channel
+      .toString()
+      .slice(0, 50);
+  }
+  let siteData = {
     publisher: {
       id: pubId.toString(),
     },
     page: bidderRequest.refererInfo.referer,
     name: getOrigin()
+  };
+  if (channel) {
+    siteData.channel = channel;
   }
+  return siteData;
 }
 
 /**

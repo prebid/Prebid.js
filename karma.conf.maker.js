@@ -111,7 +111,7 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
   var webpackConfig = newWebpackConfig(codeCoverage);
   var plugins = newPluginsArray(browserstack);
 
-  var files = file ? ['test/helpers/prebidGlobal.js', file] : ['test/test_index.js'];
+  var files = file ? ['test/test_deps.js', file] : ['test/test_index.js'];
   // This file opens the /debug.html tab automatically.
   // It has no real value unless you're running --watch, and intend to do some debugging in the browser.
   if (watchMode) {

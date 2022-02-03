@@ -1,6 +1,6 @@
 /*
  * Module for getting and setting Prebid configuration.
- */
+*/
 
 /**
  * @typedef {Object} MediaTypePriceGranularity
@@ -13,15 +13,14 @@
  */
 
 import { isValidPriceConfig } from './cpmBucketManager.js';
-import find from 'core-js-pure/features/array/find.js';
-import includes from 'core-js-pure/features/array/includes.js';
-import Set from 'core-js-pure/features/set';
+import find from 'prebidjs-polyfill/find.js';
+import includes from 'prebidjs-polyfill/includes.js';
 import {
   mergeDeep, deepClone, getParameterByName, isPlainObject, logMessage, logWarn, logError,
   isArray, isStr, isBoolean, deepAccess, bind
 } from './utils.js';
 
-const from = require('core-js-pure/features/array/from.js');
+const from = require('prebidjs-polyfill/arrayFrom.js');
 const CONSTANTS = require('./constants.json');
 
 const DEFAULT_DEBUG = getParameterByName(CONSTANTS.DEBUG_MODE).toUpperCase() === 'TRUE';
@@ -580,7 +579,7 @@ export function newConfig() {
       .forEach(listener => listener.callback(options));
   }
 
-  function setBidderConfig(config) {
+  function setBidderConfig(config, mergeFlag = false) {
     try {
       check(config);
       config.bidders.forEach(bidder => {
@@ -592,7 +591,8 @@ export function newConfig() {
           let option = (topic === 'fpd') ? convertFpd(config.config[topic]) : config.config[topic];
 
           if (isPlainObject(option)) {
-            bidderConfig[bidder][prop] = Object.assign({}, bidderConfig[bidder][prop] || {}, option);
+            const func = mergeFlag ? mergeDeep : Object.assign;
+            bidderConfig[bidder][prop] = func({}, bidderConfig[bidder][prop] || {}, option);
           } else {
             bidderConfig[bidder][prop] = option;
           }
@@ -601,6 +601,7 @@ export function newConfig() {
     } catch (e) {
       logError(e);
     }
+
     function check(obj) {
       if (!isPlainObject(obj)) {
         throw 'setBidderConfig bidder options must be an object';
@@ -612,6 +613,26 @@ export function newConfig() {
         throw 'setBidderConfig bidder options must contain a config object';
       }
     }
+  }
+
+  function mergeConfig(obj) {
+    if (!isPlainObject(obj)) {
+      logError('mergeConfig input must be an object');
+      return;
+    }
+
+    const mergedConfig = Object.keys(obj).reduce((accum, key) => {
+      const prevConf = _getConfig(key)[key] || {};
+      accum[key] = mergeDeep(prevConf, obj[key]);
+      return accum;
+    }, {});
+
+    setConfig({ ...mergedConfig });
+    return mergedConfig;
+  }
+
+  function mergeBidderConfig(obj) {
+    return setBidderConfig(obj, true);
   }
 
   /**
@@ -653,12 +674,14 @@ export function newConfig() {
     getConfig,
     readConfig,
     setConfig,
+    mergeConfig,
     setDefaults,
     resetConfig,
     runWithBidder,
     callbackWithBidder,
     setBidderConfig,
     getBidderConfig,
+    mergeBidderConfig,
     convertAdUnitFpd,
     getLegacyFpd,
     getLegacyImpFpd
