@@ -1,6 +1,11 @@
 import { GAM_VENDOR } from './videoModule/constants/vendorCodes.js';
 import { adServerDirectory } from './videoModule/vendorDirectory.js';
 
+/**
+ * @constructor
+ * @param {Object} dfpModule_ - the DFP ad server module
+ * @returns {AdServerProvider}
+ */
 function GamAdServerProvider(dfpModule_) {
   const dfp = dfpModule_;
 

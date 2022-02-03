@@ -11,6 +11,16 @@ import stateFactory from './videoModule/shared/state.js';
 import { JWPLAYER_VENDOR } from './videoModule/constants/vendorCodes.js';
 import { videoVendorDirectory } from './videoModule/vendorDirectory.js';
 
+/**
+ * @constructor
+ * @param {videoProviderConfig} config
+ * @param {Object} jwplayer_ - JW Player global factory
+ * @param {State} adState_
+ * @param {State} timeState_
+ * @param {CallbackStorage} callbackStorage_
+ * @param {Object} utils
+ * @returns {VideoProvider}
+ */
 export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callbackStorage_, utils) {
   const jwplayer = jwplayer_;
   let player = null;
@@ -633,6 +643,10 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
   }
 }
 
+/**
+ * @param {videoProviderConfig} config
+ * @returns {VideoProvider}
+ */
 const jwplayerSubmoduleFactory = function (config) {
   const adState = adStateFactory();
   const timeState = timeStateFactory();
@@ -779,6 +793,17 @@ export const utils = {
   }
 }
 
+/**
+ * Tracks which functions are attached to events
+ * @typedef CallbackStorage
+ * @function storeCallback
+ * @function getCallback
+ * @function clearStorage
+ */
+
+/**
+ * @returns {CallbackStorage}
+ */
 export function callbackStorageFactory() {
   let storage = {};
 
@@ -815,6 +840,9 @@ export function callbackStorageFactory() {
 
 // STATE
 
+/**
+ * @returns {State}
+ */
 export function adStateFactory() {
   const adState = Object.assign({}, stateFactory());
 
@@ -875,6 +903,9 @@ export function adStateFactory() {
   return adState;
 }
 
+/**
+ * @returns {State}
+ */
 export function timeStateFactory() {
   const timeState = Object.assign({}, stateFactory());
 
