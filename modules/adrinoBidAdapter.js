@@ -66,7 +66,9 @@ export const spec = {
   },
 
   onBidWon: function (bid) {
-    triggerPixel(BIDDER_HOST + '/bidder/won/' + bid['requestId']);
+    if (bid['requestId']) {
+      triggerPixel(BIDDER_HOST + '/bidder/won/' + bid['requestId']);
+    }
   }
 };
 
