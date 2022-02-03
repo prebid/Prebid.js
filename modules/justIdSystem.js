@@ -13,6 +13,11 @@ const LOG_PREFIX = 'User ID - JustId submodule: ';
 const GVLID = 160;
 const DEFAULT_URL = 'https://id.nsaudience.pl/getId.js';
 const DEFAULT_PARTNER = 'pbjs-just-id-module';
+const DEFAULT_ATM_VAR_NAME = '__atm';
+
+const MODE_BASIC = 'BASIC';
+const MODE_ADVANCED = 'ADVANCED';
+const DEFAULT_MODE = MODE_BASIC;
 
 /** @type {Submodule} */
 export const justIdSubmodule = {
@@ -29,8 +34,8 @@ export const justIdSubmodule = {
   /**
    * decode the stored id value for passing to bid requests
    * @function
-   * @param {{TDID:string}} value
-   * @returns {{tdid:Object}}
+   * @param {{uid:string}} value
+   * @returns {{justId:string}}
    */
   decode(value) {
     utils.logInfo(LOG_PREFIX, 'decode', value);
@@ -41,33 +46,131 @@ export const justIdSubmodule = {
   /**
    * performs action to obtain id and return a value in the callback's response argument
    * @function
-   * @param {SubmoduleConfig} [config]
+   * @param {SubmoduleConfig} config
+   * @param {ConsentData} consentData
+   * @param {(Object|undefined)} cacheIdObj
    * @returns {IdResponse|undefined}
    */
   getId(config, consentData, cacheIdObj) {
     utils.logInfo(LOG_PREFIX, 'getId', config, consentData, cacheIdObj);
-    const url = jtUtils.getUrl(config);
 
     return {
       callback: function(cbFun) {
-        const scriptTag = jtUtils.createScriptTag(url);
+        try {
+          utils.logInfo(LOG_PREFIX, 'fetching uid...');
 
-        scriptTag.addEventListener('justIdReady', event => {
-          utils.logInfo(LOG_PREFIX, 'received justId', event);
-          var justId = event.detail && event.detail.justId;
-          cbFun(utils.isStr(justId) && { uid: justId });
-        });
+          var configWrapper = new ConfigWrapper(config);
 
-        scriptTag.onload = () => {
-          utils.logInfo(LOG_PREFIX, 'script loaded', url);
-          scriptTag.dispatchEvent(new CustomEvent('prebidGetId', { detail: { config: config, consentData: consentData, cacheIdObj: cacheIdObj } }));
-        };
+          var uidProvider = configWrapper.isAdvancedMode()
+            ? new AdvancedUidProvider(configWrapper, consentData, cacheIdObj)
+            : new BasicUidProvider(configWrapper);
 
-        document.head.appendChild(scriptTag);
+          uidProvider.getUid(justId => {
+            if (utils.isEmptyStr(justId)) {
+              utils.logError(LOG_PREFIX, 'empty uid!');
+              cbFun();
+              return;
+            }
+            cbFun({uid: justId});
+          }, err => {
+            utils.logError(LOG_PREFIX, 'error during fetching', err);
+            cbFun();
+          });
+        } catch (e) {
+          utils.logError(LOG_PREFIX, 'Error during fetching...', e);
+        }
       }
     };
   }
 };
+
+export const ConfigWrapper = function(config) {
+  this.getConfig = function() {
+    return config;
+  }
+
+  this.getMode = function() {
+    return (params().mode || DEFAULT_MODE).toUpperCase();
+  }
+
+  this.getPartner = function() {
+    return params().partner || DEFAULT_PARTNER;
+  }
+
+  this.isAdvancedMode = function() {
+    return this.getMode() === MODE_ADVANCED;
+  }
+
+  this.getAtmVarName = function() {
+    return params().atmVarName || DEFAULT_ATM_VAR_NAME;
+  }
+
+  this.getUrl = function() {
+    const u = params().url || DEFAULT_URL;
+    const url = new URL(u);
+    url.searchParams.append('sourceId', this.getPartner());
+    return url.toString();
+  }
+
+  function params() {
+    return config.params || {};
+  }
+}
+
+const AdvancedUidProvider = function(configWrapper, consentData, cacheIdObj) {
+  const url = configWrapper.getUrl();
+
+  this.getUid = function(idCallback, errCallback) {
+    const scriptTag = jtUtils.createScriptTag(url);
+
+    scriptTag.addEventListener('justIdReady', event => {
+      utils.logInfo(LOG_PREFIX, 'received justId', event);
+      idCallback(event.detail && event.detail.justId);
+    });
+
+    scriptTag.onload = () => {
+      utils.logInfo(LOG_PREFIX, 'script loaded', url);
+      scriptTag.dispatchEvent(new CustomEvent('prebidGetId', { detail: { config: configWrapper.getConfig(), consentData: consentData, cacheIdObj: cacheIdObj } }));
+    };
+
+    scriptTag.onerror = errCallback;
+
+    document.head.appendChild(scriptTag);
+  }
+}
+
+const BasicUidProvider = function(configWrapper) {
+  const atmVarName = configWrapper.getAtmVarName();
+
+  this.getUid = function(idCallback, errCallback) {
+    var atm = getAtm();
+    if (typeof atm !== 'function') { // it may be AsyncFunction, so we can't use utils.isFn
+      utils.logInfo(LOG_PREFIX, 'ATM function not found!', atmVarName, atm);
+      errCallback('ATM not found');
+      return
+    }
+
+    atm = function() { // stub is replaced after ATM is loaded so we must refer them directly by global variable
+      return getAtm().apply(this, arguments);
+    }
+
+    atm('getReadyState', () => {
+      Promise.resolve(atm('getVersion')) // atm('getVersion') returns string || Promise<string>
+        .then(atmVersion => {
+          utils.logInfo(LOG_PREFIX, 'ATM Version', atmVersion);
+          if (utils.isStr(atmVersion)) { // getVersion command was introduced in same ATM version as getUid command
+            atm('getUid', idCallback);
+          } else {
+            errCallback('ATM getUid not supported');
+          }
+        })
+    });
+  }
+
+  function getAtm() {
+    return jtUtils.getAtm(atmVarName);
+  }
+}
 
 export const jtUtils = {
   createScriptTag(url) {
@@ -76,13 +179,8 @@ export const jtUtils = {
     scriptTag.src = url;
     return scriptTag;
   },
-  getUrl(config) {
-    const p = config && config.params;
-    const u = p && p.url;
-    const partner = p && p.partner;
-    const url = new URL(u || DEFAULT_URL);
-    url.searchParams.append('sourceId', partner || DEFAULT_PARTNER);
-    return url;
+  getAtm(atmVarName) {
+    return window[atmVarName];
   }
 }
 

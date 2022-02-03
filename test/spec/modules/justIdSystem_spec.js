@@ -1,4 +1,4 @@
-import { justIdSubmodule, jtUtils } from 'modules/justIdSystem.js';
+import { justIdSubmodule, ConfigWrapper, jtUtils } from 'modules/justIdSystem.js';
 
 const DEFAULT_URL = 'https://id.nsaudience.pl/getId.js';
 const DEFAULT_PARTNER = 'pbjs-just-id-module';
@@ -6,23 +6,23 @@ const DEFAULT_PARTNER = 'pbjs-just-id-module';
 describe('JustIdSystem', function () {
   describe('getUrl', function() {
     it('defaultUrl', function() {
-      expect(jtUtils.getUrl({}).toString()).to.eq(expectedUrl(DEFAULT_URL, DEFAULT_PARTNER));
+      expect(new ConfigWrapper({}).getUrl().toString()).to.eq(expectedUrl(DEFAULT_URL, DEFAULT_PARTNER));
     })
 
     it('customPartner', function() {
       const partner = 'abc';
-      expect(jtUtils.getUrl({params: {partner: partner}}).toString()).to.eq(expectedUrl(DEFAULT_URL, partner));
+      expect(new ConfigWrapper({params: {partner: partner}}).getUrl()).to.eq(expectedUrl(DEFAULT_URL, partner));
     })
 
     it('customUrl', function() {
       const url = 'https://example.com/getId.js';
-      expect(jtUtils.getUrl({params: {url: url}}).toString()).to.eq(expectedUrl(url, DEFAULT_PARTNER));
+      expect(new ConfigWrapper({params: {url: url}}).getUrl()).to.eq(expectedUrl(url, DEFAULT_PARTNER));
     })
 
     it('customPartnerAndUrl', function() {
       const partner = 'abc';
       const url = 'https://example.com/getId.js';
-      expect(jtUtils.getUrl({params: {partner: partner, url: url}}).toString()).to.eq(expectedUrl(url, partner));
+      expect(new ConfigWrapper({params: {partner: partner, url: url}}).getUrl()).to.eq(expectedUrl(url, partner));
     })
   });
 
@@ -33,7 +33,92 @@ describe('JustIdSystem', function () {
     })
   });
 
-  describe('getId', function() {
+  describe('getId atm', function() {
+    var atmMock = (cmd, param) => {
+      switch (cmd) {
+        case 'getReadyState':
+          param('ready')
+          return;
+        case 'getVersion':
+          return Promise.resolve('1.0');
+        case 'getUid':
+          param('user123');
+      }
+    }
+
+    var currentAtm;
+
+    var getAtmStub = sinon.stub(jtUtils, 'getAtm').callsFake(() => currentAtm);
+
+    it('all ok', function(done) {
+      currentAtm = atmMock;
+      const callbackSpy = sinon.stub();
+
+      callbackSpy.callsFake(idObj => {
+        try {
+          expect(idObj.uid).to.equal('user123');
+          done();
+        } catch (err) {
+          done(err);
+        }
+      })
+
+      const atmVarName = '__fakeAtm';
+
+      justIdSubmodule.getId({params: {atmVarName: atmVarName}}).callback(callbackSpy);
+
+      expect(getAtmStub.lastCall.lastArg).to.equal(atmVarName);
+    });
+
+    it('unsuported version', function(done) {
+      currentAtm = (cmd, param) => {
+        switch (cmd) {
+          case 'getReadyState':
+            param('ready')
+        }
+      }
+
+      const callbackSpy = sinon.stub();
+
+      callbackSpy.callsFake(idObj => {
+        try {
+          expect(idObj).to.be.undefined
+          done();
+        } catch (err) {
+          done(err);
+        }
+      })
+
+      justIdSubmodule.getId({}).callback(callbackSpy);
+    });
+
+    it('work with stub', function(done) {
+      var calls = [];
+      currentAtm = (cmd, param) => {
+        calls.push({cmd: cmd, param: param});
+      }
+
+      const callbackSpy = sinon.stub();
+
+      callbackSpy.callsFake(idObj => {
+        try {
+          expect(idObj.uid).to.equal('user123');
+          done();
+        } catch (err) {
+          done(err);
+        }
+      })
+
+      justIdSubmodule.getId({}).callback(callbackSpy);
+
+      currentAtm = atmMock;
+      expect(calls.length).to.equal(1);
+      expect(calls[0].cmd).to.equal('getReadyState');
+      calls[0].param('ready')
+    });
+  });
+
+  describe('getId advanced', function() {
     const scriptTag = document.createElement('script');
 
     const onPrebidGetId = sinon.stub().callsFake(event => {
@@ -48,8 +133,7 @@ describe('JustIdSystem', function () {
 
     it('without cachedIdObj', function() {
       const callbackSpy = sinon.spy();
-
-      justIdSubmodule.getId().callback(callbackSpy);
+      justIdSubmodule.getId({ params: { mode: 'ADVANCED' } }).callback(callbackSpy);
 
       scriptTag.onload();
 
@@ -59,7 +143,7 @@ describe('JustIdSystem', function () {
     it('with cachedIdObj', function() {
       const callbackSpy = sinon.spy();
 
-      justIdSubmodule.getId(undefined, undefined, { uid: 'userABC' }).callback(callbackSpy);
+      justIdSubmodule.getId({ params: { mode: 'ADVANCED' } }, undefined, { uid: 'userABC' }).callback(callbackSpy);
 
       scriptTag.onload();
 
@@ -69,7 +153,7 @@ describe('JustIdSystem', function () {
     it('check getId arguments are passed to prebidGetId event', function() {
       const callbackSpy = sinon.spy();
 
-      const a = { x: 'x' }
+      const a = { params: { mode: 'ADVANCED' } }
       const b = { y: 'y' }
       const c = { z: 'z' }
 
