@@ -36,6 +36,7 @@ export const storage = getCoreStorageManager('bidderFactory');
  * });
  *
  * @see BidderSpec for the full API and more thorough descriptions.
+ *
  */
 
 /**
