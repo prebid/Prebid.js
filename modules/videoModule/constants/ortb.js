@@ -87,7 +87,7 @@ export const VPAID_MIME_TYPE = JS_APP_MIME_TYPE;
  * @enum OrtbVideoParams.placement
  */
 export const PLACEMENT = {
-  IN_STREAM: 1,
+  INSTREAM: 1,
   BANNER: 2,
   ARTICLE: 3,
   FEED: 4,

@@ -89,14 +89,14 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
       h: player.getHeight(), // TODO does player call need optimization ?
       w: player.getWidth(), // TODO does player call need optimization ?
       startdelay: utils.getStartDelay(),
-      placement: utils.getPlacement(adConfig),
+      placement: utils.getPlacement(adConfig, player),
       // linearity is omitted because both forms are supported.
       // sequence - TODO not yet supported
       battr: adConfig.battr,
       maxextended: -1, // extension is allowed, and there is no time limit imposed.
       boxingallowed: 1,
       playbackmethod: [ utils.getPlaybackMethod(config) ],
-      playbackend: 1, // TODO: need to account for floating player
+      playbackend: 1, // TODO: need to account for floating player - https://developer.jwplayer.com/jwplayer/docs/jw8-embed-an-outstream-player
       // companionad - TODO add in future version
       // companiontype - TODO add in future version
       // minbitrate - TODO add in future version
@@ -774,12 +774,28 @@ export const utils = {
     // Might have to implement and set in Pb-video ; would required ad unit as param.
   },
 
-  getPlacement: function(adConfig) {
-    // TODO might be able to use getPlacement from ad utils!
+  /**
+   * Determine the ad placement
+   * @param {Object} adConfig
+   * @param {Object} player
+   * @return {PLACEMENT|OrtbVideoParams.placement|undefined}
+   */
+  getPlacement: function(adConfig, player) {
     if (!adConfig.outstream) {
       // https://developer.jwplayer.com/jwplayer/docs/jw8-embed-an-outstream-player for more info on outstream
-      return PLACEMENT.IN_STREAM;
+      return PLACEMENT.INSTREAM;
     }
+
+    if (player.getFloating()) {
+      return PLACEMENT.FLOATING;
+    }
+
+    const placement = adConfig.placement;
+    if (!placement) {
+      return;
+    }
+
+    return PLACEMENT[placement.toUpperCase()];
   },
 
   getPlaybackMethod: function({ autoplay, mute, autoplayAdsMuted }) {
@@ -914,7 +930,7 @@ export function adStateFactory() {
   function convertPlacementToOrtbCode(placement) {
     switch (placement) {
       case 'instream':
-        return PLACEMENT.IN_STREAM;
+        return PLACEMENT.INSTREAM;
 
       case 'banner':
         return PLACEMENT.BANNER;
