@@ -33,7 +33,8 @@ function getPlayerMock() {
     remove: function () {},
     getAudioTracks: function () {},
     getCurrentAudioTrack: function () {},
-    getPlugin: function () {}
+    getPlugin: function () {},
+    getFloating: function () {}
   })();
 }
 
@@ -383,7 +384,7 @@ describe('adStateFactory', function () {
     });
 
     let state = adState.getState();
-    expect(state.adPlacementType).to.be.equal(PLACEMENT.IN_STREAM);
+    expect(state.adPlacementType).to.be.equal(PLACEMENT.INSTREAM);
 
     adState.updateForEvent({
       placement: 'banner'
@@ -669,19 +670,45 @@ describe('utils', function () {
   describe('getPlacement', function () {
     const getPlacement = utils.getPlacement;
 
-    it('should be in_stream when not configured for outstream', function () {
+    it('should be INSTREAM when not configured for outstream', function () {
       let adConfig = {};
       let placement = getPlacement(adConfig);
-      expect(placement).to.be.equal(PLACEMENT.IN_STREAM);
+      expect(placement).to.be.equal(PLACEMENT.INSTREAM);
 
       adConfig = { outstream: false };
       placement = getPlacement(adConfig);
-      expect(placement).to.be.equal(PLACEMENT.IN_STREAM);
+      expect(placement).to.be.equal(PLACEMENT.INSTREAM);
     });
 
-    it('should be undefined on outstream', function () {
-      let adConfig = { outstream: true };
-      let placement = getPlacement(adConfig);
+    it('should be FLOATING when player is floating', function () {
+      const player = getPlayerMock();
+      player.getFloating = () => true;
+      const placement = getPlacement({outstream: true}, player);
+      expect(placement).to.be.equal(PLACEMENT.FLOATING);
+    });
+
+    it('should be the value  defined in the ad config', function () {
+      const player = getPlayerMock();
+      player.getFloating = () => false;
+
+      let placement = getPlacement({placement: 'banner', outstream: true}, player);
+      expect(placement).to.be.equal(PLACEMENT.BANNER);
+
+      placement = getPlacement({placement: 'article', outstream: true}, player);
+      expect(placement).to.be.equal(PLACEMENT.ARTICLE);
+
+      placement = getPlacement({placement: 'feed', outstream: true}, player);
+      expect(placement).to.be.equal(PLACEMENT.FEED);
+
+      placement = getPlacement({placement: 'interstitial', outstream: true}, player);
+      expect(placement).to.be.equal(PLACEMENT.INTERSTITIAL);
+
+      placement = getPlacement({placement: 'slider', outstream: true}, player);
+      expect(placement).to.be.equal(PLACEMENT.SLIDER);
+    });
+
+    it('should be undefined when undetermined', function () {
+      const placement = getPlacement({ outstream: true }, getPlayerMock());
       expect(placement).to.be.undefined;
     });
   });
