@@ -114,7 +114,7 @@ export const spec = {
 };
 
 function _getCookie() {
-  return storage.cookiesAreEnabled() ? storage.getCookie('gftuid') : false;
+  return storage.cookiesAreEnabled() ? storage.getCookie('gftuid') : 1;
 }
 
 registerBidder(spec);
