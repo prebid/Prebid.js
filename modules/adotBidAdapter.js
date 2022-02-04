@@ -6,7 +6,7 @@ import find from 'prebidjs-polyfill/find.js';
 import { config } from '../src/config.js';
 import { OUTSTREAM } from '../src/video.js';
 
-const BIDDER_CODE = 'adotb';
+const BIDDER_CODE = 'adot';
 const ADAPTER_VERSION = 'v2.0.0';
 const BID_METHOD = 'POST';
 const BIDDER_URL = 'https://dsp.adotmob.com/headerbidding{PUBLISHER_PATH}/bidrequest';
@@ -475,8 +475,8 @@ function buildCreativeBidData(bid, mediaType) {
   const nurl = (!bid.adm && bid.nurl) ? replaceAuctionPrice(bid.nurl, bid.price) : null;
 
   return {
-    width: bid.ext.adot.size.width,
-    height: bid.ext.adot.size.height,
+    width: bid.ext.adot.size && bid.ext.adot.size.w,
+    height: bid.ext.adot.size && bid.ext.adot.size.h,
     ad: adm,
     adUrl: nurl,
     vastXml: mediaType === VIDEO && !isStr(nurl) ? adm : null,

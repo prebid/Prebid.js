@@ -197,7 +197,7 @@ describe('Adot Adapter', function () {
 
     it('should return bidResponse with random media type', function () {
       const impId = 'impId';
-      const bid = { adm: 'adm', impid: impId, price: 2, crid: 'crid', dealid: 'dealid', adomain: 'adomain', ext: { adot: { media_type: 'media_type', size: { width: 300, height: 250 } } } }
+      const bid = { adm: 'adm', impid: impId, price: 2, crid: 'crid', dealid: 'dealid', adomain: 'adomain', ext: { adot: { media_type: 'media_type', size: { w: 300, h: 250 } } } }
       const serverResponse = { body: { cur: 'EUR', seatbid: [{ bid: {} }, { bid: [bid] }] } };
       const request = { data: { imp: [{ id: impId }] } };
       const bidResponse = {
@@ -210,8 +210,8 @@ describe('Adot Adapter', function () {
         mediaType: bid.ext.adot.media_type,
         dealId: bid.dealid,
         meta: { advertiserDomains: bid.adomain },
-        width: bid.ext.adot.size.width,
-        height: bid.ext.adot.size.height,
+        width: bid.ext.adot.size.w,
+        height: bid.ext.adot.size.h,
         ad: bid.adm,
         adUrl: null,
         vastXml: null,
@@ -254,7 +254,7 @@ describe('Adot Adapter', function () {
 
     it('should return bidResponse with video', function () {
       const impId = 'impId';
-      const bid = { nurl: 'nurl', impid: impId, price: 2, crid: 'crid', dealid: 'dealid', adomain: 'adomain', ext: { adot: { media_type: 'video', size: { width: 300, height: 250 }, container: {}, adUnitCode: 20, video: { type: 'outstream' } } } }
+      const bid = { nurl: 'nurl', impid: impId, price: 2, crid: 'crid', dealid: 'dealid', adomain: 'adomain', ext: { adot: { media_type: 'video', size: { w: 300, h: 250 }, container: {}, adUnitCode: 20, video: { type: 'outstream' } } } }
       const serverResponse = { body: { cur: 'EUR', seatbid: [{ bid: {} }, { bid: [bid] }] } };
       const request = { data: { imp: [{ id: impId }] } };
       const bidResponse = {
@@ -267,8 +267,8 @@ describe('Adot Adapter', function () {
         mediaType: bid.ext.adot.media_type,
         dealId: bid.dealid,
         meta: { advertiserDomains: bid.adomain },
-        width: bid.ext.adot.size.width,
-        height: bid.ext.adot.size.height,
+        w: bid.ext.adot.size.w,
+        h: bid.ext.adot.size.h,
         ad: null,
         adUrl: bid.nurl,
         vastXml: null,
@@ -286,8 +286,8 @@ describe('Adot Adapter', function () {
       expect(interpretedResponse[0].mediaType).to.deep.equal(bidResponse.mediaType);
       expect(interpretedResponse[0].dealId).to.deep.equal(bidResponse.dealId);
       expect(interpretedResponse[0].meta).to.deep.equal(bidResponse.meta);
-      expect(interpretedResponse[0].width).to.deep.equal(bidResponse.width);
-      expect(interpretedResponse[0].height).to.deep.equal(bidResponse.height);
+      expect(interpretedResponse[0].width).to.deep.equal(bidResponse.w);
+      expect(interpretedResponse[0].height).to.deep.equal(bidResponse.h);
       expect(interpretedResponse[0].ad).to.deep.equal(bidResponse.ad);
       expect(interpretedResponse[0].adUrl).to.deep.equal(bidResponse.adUrl);
       expect(interpretedResponse[0].vastXml).to.deep.equal(bidResponse.vastXml);
