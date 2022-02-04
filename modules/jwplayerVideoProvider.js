@@ -102,6 +102,8 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
       // minbitrate - TODO add in future version
       // maxbitrate - TODO add in future version
       // delivery - omitted because all are supported.
+      // minduration - Is there value to specifying ?
+      // maxduration - Is there value to specifying ?
       api: [
         API_FRAMEWORKS.VPAID_2_0
       ],
