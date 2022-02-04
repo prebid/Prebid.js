@@ -1,261 +1,122 @@
 import fluctAnalyticsAdapter, {
-  convertReplicatedAdUnits,
-  getAdUnitPathByCode,
+  convertReplicatedAdUnit,
 } from '../../../modules/fluctAnalyticsAdapter';
 import { expect } from 'chai';
 import * as events from 'src/events.js';
-import CONSTANTS from 'src/constants.json';
-import { config } from 'src/config.js';
+import find from 'core-js-pure/features/array/find.js';
+import { EVENTS } from 'src/constants.json';
 import { server } from 'test/mocks/xhr.js';
 import * as mockGpt from '../integration/faker/googletag.js';
+import $$PREBID_GLOBAL$$ from '../../../src/prebid';
+
+const adUnits = [
+  {
+    'code': 'div-gpt-ad-1587114265584-0',
+    'mediaTypes': {
+      'banner': {
+        'sizes': [
+          [
+            300,
+            250
+          ],
+          [
+            336,
+            280
+          ]
+        ],
+        'name': 'p_fluctmagazine_320x50_surface_15377'
+      }
+    },
+    'analytics': [
+      {
+        'bidder': 'bidder1',
+        'dwid': 'dwid1'
+      },
+      {
+        'bidder': 'bidder2',
+        'dwid': 'dwid2'
+      }
+    ],
+    'ext': {
+      'device': 'SP'
+    }
+  },
+  {
+    'code': 'browsi_ad_0_ai_1_rc_0',
+    'mediaTypes': {
+      'banner': {
+        'sizes': [
+          [
+            300,
+            250
+          ],
+          [
+            336,
+            280
+          ]
+        ]
+      }
+    }
+  }
+]
 
 describe('複製枠のadUnitsをマッピングできる', () => {
-  const adUnits = [
-    {
-      'code': 'div-gpt-ad-1629864618640-0',
-      'mediaTypes': {
-        'banner': {
-          'sizes': [
-            [
-              300,
-              250
-            ],
-            [
-              336,
-              280
-            ]
-          ],
-          'name': 'p_fluctmagazine_320x50_surface_15377'
-        }
-      },
+  const slots = {
+    'div-gpt-ad-1587114265584-0': '/62532913/p_fluctmagazine_320x50_surface_15377',
+    'browsi_ad_0_ai_1_rc_0': '/62532913/p_fluctmagazine_320x50_surface_15377'
+  }
+
+  it('adUnitsに複製元codeとdwidを付与できる', () => {
+    const expected = {
+      '_code': 'div-gpt-ad-1587114265584-0',
       'analytics': [
         {
           'bidder': 'bidder1',
-          'dwid': 'dwid1'
+          'dwid': 'dwid1',
         },
         {
           'bidder': 'bidder2',
-          'dwid': 'dwid2'
-        }
+          'dwid': 'dwid2',
+        },
       ],
-      'ext': {
-        'device': 'SP'
-      }
-    },
-    {
+      'bids': undefined,
       'code': 'browsi_ad_0_ai_1_rc_0',
       'mediaTypes': {
         'banner': {
+          'name': 'p_fluctmagazine_320x50_surface_15377',
           'sizes': [
             [
               300,
-              250
+              250,
             ],
             [
               336,
-              280
+              280,
             ]
           ]
         }
       }
     }
-  ]
-  const slots = {
-    'div-gpt-ad-1629864618640-0': '/62532913/p_fluctmagazine_320x50_surface_15377',
-    'browsi_ad_0_ai_1_rc_0': '/62532913/p_fluctmagazine_320x50_surface_15377'
-  }
-
-  it('adUnitsに複製元codeとdwidを付与できる', () => {
-    const expected = [
-      {
-        'code': 'div-gpt-ad-1629864618640-0',
-        '_code': 'div-gpt-ad-1629864618640-0',
-        'analytics': [
-          {
-            'bidder': 'bidder1',
-            'dwid': 'dwid1',
-          },
-          {
-            'bidder': 'bidder2',
-            'dwid': 'dwid2',
-          },
-        ],
-        'bids': undefined,
-        'ext': {
-          'device': 'SP',
-        },
-        'mediaTypes': {
-          'banner': {
-            'name': 'p_fluctmagazine_320x50_surface_15377',
-            'sizes': [
-              [
-                300,
-                250,
-              ],
-              [
-                336,
-                280,
-              ],
-            ],
-          },
-        },
-      },
-      {
-        'code': 'browsi_ad_0_ai_1_rc_0',
-        '_code': 'div-gpt-ad-1629864618640-0',
-        'analytics': [
-          {
-            'bidder': 'bidder1',
-            'dwid': 'dwid1',
-          },
-          {
-            'bidder': 'bidder2',
-            'dwid': 'dwid2',
-          },
-        ],
-        'bids': undefined,
-        'mediaTypes': {
-          'banner': {
-            'name': 'p_fluctmagazine_320x50_surface_15377',
-            'sizes': [
-              [
-                300,
-                250,
-              ],
-              [
-                336,
-                280,
-              ]
-            ]
-          }
-        }
-      }
-    ]
-    expect(expected).to.deep.equal(convertReplicatedAdUnits(slots, adUnits))
-  })
-
-  it('adUnitCodeからadUnitPathを取得できる', () => {
-    const actual = getAdUnitPathByCode(slots, 'div-gpt-ad-1629864618640-0')
-    expect(actual).to.equal('/62532913/p_fluctmagazine_320x50_surface_15377')
-  })
-
-  it('複製元のadUnitPathを取得できる', () => {
-    const actual = getAdUnitPathByCode(slots, 'browsi_ad_0_ai_1_rc_0')
-    expect(actual).to.equal('/62532913/p_fluctmagazine_320x50_surface_15377')
-  })
-
-  it('近いadUnitCodeを持つ複製元のadUnitPathを取得できる', () => {
-    const actual = getAdUnitPathByCode(slots, 'browsi_ad_0_ai_1_rc_1')
-    expect(actual).to.equal('/62532913/p_fluctmagazine_320x50_surface_15377')
+    const adUnit = find(adUnits, adUnit => adUnit.code === 'browsi_ad_0_ai_1_rc_0')
+    const actual = convertReplicatedAdUnit(adUnit, adUnits, slots)
+    expect(expected).to.deep.equal(actual)
   })
 })
-
-const {
-  EVENTS: {
-    AUCTION_INIT,
-    AUCTION_END,
-    BID_WON,
-  }
-} = CONSTANTS;
 
 const MOCK = {
   AUCTION_INIT: {
     'auctionId': 'eeca6754-525b-4c4c-a697-b06b1fc6c352',
     'timestamp': 1635837149209,
     'auctionStatus': 'inProgress',
-    'adUnits': [
-      {
-        'code': 'div-gpt-ad-1587114265584-0',
-        'mediaTypes': {
-          'banner': {
-            'sizes': [
-              [
-                320,
-                100
-              ],
-              [
-                320,
-                50
-              ]
-            ],
-            'name': 'p_fluctmagazine_320x50_surface_15377'
-          }
-        }
-      }
-    ]
+    'adUnits': adUnits
   },
   AUCTION_END: {
     'auctionId': 'eeca6754-525b-4c4c-a697-b06b1fc6c352',
     'timestamp': 1635837149209,
     'auctionEnd': 1635837149840,
     'auctionStatus': 'completed',
-    'adUnits': [
-      {
-        'code': 'div-gpt-ad-1587114265584-0',
-        'bids': [
-          {
-            'bidder': 'criteo',
-            'params': {
-              'networkId': '11021'
-            }
-          }
-        ],
-        'mediaTypes': {
-          'banner': {
-            'sizes': [
-              [
-                320,
-                100
-              ],
-              [
-                320,
-                50
-              ]
-            ],
-            'name': 'p_fluctmagazine_320x50_surface_15377'
-          }
-        },
-        'analytics': [
-          {
-            'bidder': 'appnexus',
-            'dwid': 'ecnavi_jp_22749357_soccer_king_hb_sp_network'
-          },
-          {
-            'bidder': 'criteo',
-            'dwid': '1609486'
-          },
-          {
-            'bidder': 'ix',
-            'dwid': '721766'
-          },
-          {
-            'bidder': 'logicad',
-            'dwid': 'JMk4_QAoN'
-          },
-          {
-            'bidder': 'pubmatic',
-            'dwid': '4065991'
-          }
-        ],
-        'ext': {
-          'device': 'SP'
-        },
-        'sizes': [
-          [
-            320,
-            100
-          ],
-          [
-            320,
-            50
-          ]
-        ],
-        'transactionId': '411f223f-299e-484f-8ffd-4ce75db58112',
-      }
-    ],
-    'adUnitCodes': [
-      'div-gpt-ad-1587114265584-0'
-    ],
+    'adUnits': adUnits,
+    'adUnitCodes': adUnits.map(adUnit => adUnit.code),
     'noBids': [],
     'bidsReceived': [
       {
@@ -309,27 +170,13 @@ const MOCK = {
     ],
     'winningBids': [],
     'timeout': 1500
-  }
+  },
+  SET_TARGETING: adUnits.reduce((prev, current) => Object.assign(prev, { [current.code]: {} }), {})
 }
 
 describe('fluct analytics adapter', () => {
-  let sandbox
   beforeEach(() => {
-    sandbox = sinon.sandbox.create()
-    sandbox.stub(events, 'getEvents').returns([])
-    config.resetConfig()
-    mockGpt.reset()
-    fluctAnalyticsAdapter.enableAnalytics({ provider: 'fluct' })
-  })
-
-  afterEach(() => {
-    config.resetConfig()
-    mockGpt.reset()
-    sandbox.restore()
-    fluctAnalyticsAdapter.disableAnalytics()
-  })
-
-  it('EVENT: `AUCTION_END` 時に値を送信できる', () => {
+    mockGpt.enable()
     window.googletag.pubads().setSlots([
       mockGpt.makeSlot({
         code: '/62532913/p_fluctmagazine_320x50_surface_15377',
@@ -340,9 +187,23 @@ describe('fluct analytics adapter', () => {
         divId: 'browsi_ad_0_ai_1_rc_0'
       })
     ])
-    events.emit(AUCTION_INIT, MOCK.AUCTION_INIT)
-    events.emit(AUCTION_END, MOCK.AUCTION_END)
+    $$PREBID_GLOBAL$$.adUnits = adUnits
+    fluctAnalyticsAdapter.enableAnalytics({ provider: 'fluct' })
+  })
+
+  afterEach(() => {
+    mockGpt.disable()
+    fluctAnalyticsAdapter.disableAnalytics()
+  })
+
+  it('EVENT: `AUCTION_END` 時に値を送信できる', () => {
+    events.emit(EVENTS.AUCTION_INIT, MOCK.AUCTION_INIT)
+    events.emit(EVENTS.AUCTION_END, MOCK.AUCTION_END)
+    events.emit(EVENTS.SET_TARGETING, MOCK.SET_TARGETING)
     expect(server.requests.length).to.equal(1)
-    expect(JSON.parse(server.requests[0].requestBody).auctionId).to.equal(MOCK.AUCTION_END.auctionId)
+
+    const actual = JSON.parse(server.requests[0].requestBody)
+    expect(actual.auctionId).to.equal(MOCK.AUCTION_END.auctionId)
+    expect(actual.adUnits.every(adUnit => adUnit.analytics)).to.equal(true)
   })
 })
