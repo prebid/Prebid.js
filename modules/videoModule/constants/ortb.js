@@ -58,7 +58,7 @@
  * @property {number|undefined} sourcerelationship - 0 means indirect, 1 means direct.
  * @property {number} len - Duration of content in seconds.
  * @property {string|undefined} language - Content language using ISO-639-1-alpha-2.
- * @property {number|undefined} embeddable - Indicator of whether or not the content is embeddable (e.g., an embeddable video player). 0 means no, 1 means yes. Defaults to 1.
+ * @property {number|undefined} embeddable - Indicator of whether or not the content is embeddable (e.g., an embeddable video player). 0 means no, 1 means yes.
  * @property {[Object]|undefined} data - Additional content data. Each Data object represents a different data source. See Section 3.2.21 of the oRTB v2.5 spec.
  * @property {Object|undefined} ext - Placeholder for exchange-specific extensions to OpenRTB.
  */
@@ -143,4 +143,4 @@ export const API_FRAMEWORKS = {
 export const CONTEXT = {
   VIDEO: 1,
   AUDIO: 3
-}
+};
