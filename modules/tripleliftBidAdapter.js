@@ -349,8 +349,7 @@ function _buildResponseObject(bidderRequest, bid) {
       meta: {}
     };
 
-    // replace includes with something better; write tests
-    if (_isVideoBidRequest(breq) && bid.ad.includes('VAST')) {
+    if (_isVideoBidRequest(breq) && bid.media_type === "video") {
       bidResponse.vastXml = bid.ad;
       bidResponse.mediaType = 'video';
       bidResponse.ttl = VIDEO_TIME_TO_LIVE;
@@ -365,9 +364,10 @@ function _buildResponseObject(bidderRequest, bid) {
     }
 
     if (bid.tl_source && bid.tl_source == 'hdx') {
-      bidResponse.meta.mediaType = 'banner';
-      if (_isVideoBidRequest(breq) && bid.ad.includes('VAST')) {
+      if (_isVideoBidRequest(breq) && bid.media_type === "video") {
         bidResponse.meta.mediaType = 'video'
+      } else {
+        bidResponse.meta.mediaType = 'banner'
       }
     }
 
