@@ -64,7 +64,7 @@ describe('gnetAdapter', function () {
       bidderRequestId: '1f4001782ac16c',
       auctionId: 'aba03555-4802-4c45-9f15-05ffa8594cff',
       transactionId: '894bdff6-61ec-4bec-a5a9-f36a5bfccef5',
-      gftuid: false
+      gftuid: null
     }];
 
     const bidderRequest = {
