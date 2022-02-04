@@ -66,7 +66,6 @@
 const VIDEO_PREFIX = 'video/';
 const APPLICATION_PREFIX = 'application/';
 
-
 /**
  * ORTB 2.5 section 3.2.7 - Video.mimes
  * @enum OrtbVideoParams.mimes

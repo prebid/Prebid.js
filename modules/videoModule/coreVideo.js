@@ -36,7 +36,6 @@ import { ParentModule, SubmoduleBuilder } from './shared/parentModule.js';
  * @param {Object} options - Optional params
  */
 
-
 /**
  * @function VideoProvider#onEvents
  * @param {[string]} events - List of event names for which the listener should be added
