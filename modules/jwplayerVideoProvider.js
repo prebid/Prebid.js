@@ -92,12 +92,16 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
       placement: utils.getPlacement(adConfig),
       // linearity is omitted because both forms are supported.
       // sequence - TODO not yet supported
-      battr: adConfig.battr,
-      maxextended: -1,
+      // battr - not yet supported
+      maxextended: -1, // extension is allowed, and there is no time limit imposed.
       boxingallowed: 1,
       playbackmethod: [ utils.getPlaybackMethod(config) ],
-      playbackend: 1,
+      playbackend: 1, // TODO: need to account for floating player
       // companionad - TODO add in future version
+      // companiontype - TODO add in future version
+      // minbitrate - TODO add in future version
+      // maxbitrate - TODO add in future version
+      // delivery - omitted because all are supported.
       api: [
         API_FRAMEWORKS.VPAID_2_0
       ],
@@ -109,7 +113,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
 
     Object.assign(video, utils.getSkipParams(adConfig));
 
-    if (player.getFullscreen()) { // TODO does player call needs optimization ?
+    if (player.getFullscreen()) { // TODO does player call need optimization ?
       // only specify ad position when in Fullscreen since computational cost is low
       // ad position options are listed in oRTB 2.5 section 5.4
       // https://www.iab.com/wp-content/uploads/2016/03/OpenRTB-API-Specification-Version-2-5-FINAL.pdf
@@ -129,8 +133,10 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
       cat: item.iabCategories,
       keywords: item.tags,
       len: duration,
-      livestream: Math.min(playbackMode, 1)
+      livestream: Math.min(playbackMode, 1),
+      embeddable: 1
     };
+    //language string Content language using ISO-639-1-alpha-2.
 
     return {
       video,
@@ -778,6 +784,12 @@ export const utils = {
       const isMuted = mute || autoplayAdsMuted; // todo autoplayAdsMuted only applies to preRoll
       return isMuted ? PLAYBACK_METHODS.AUTOPLAY_MUTED : PLAYBACK_METHODS.AUTOPLAY;
     }
+    /*
+     TODO
+      could support the following with float player:
+      5 Initiates on Entering Viewport with Sound On
+      6 Initiates on Entering Viewport with Sound Off by Default
+     */
     return PLAYBACK_METHODS.CLICK_TO_PLAY;
   },
 
