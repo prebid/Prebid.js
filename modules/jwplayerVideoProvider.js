@@ -92,7 +92,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
       placement: utils.getPlacement(adConfig),
       // linearity is omitted because both forms are supported.
       // sequence - TODO not yet supported
-      // battr - not yet supported
+      battr: adConfig.battr,
       maxextended: -1, // extension is allowed, and there is no time limit imposed.
       boxingallowed: 1,
       playbackmethod: [ utils.getPlaybackMethod(config) ],
@@ -136,7 +136,11 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
       livestream: Math.min(playbackMode, 1),
       embeddable: 1
     };
-    //language string Content language using ISO-639-1-alpha-2.
+
+    const isoLanguageCode = utils.getIsoLanguageCode(player);
+    if (isoLanguageCode) {
+      content.language = isoLanguageCode;
+    }
 
     return {
       video,
@@ -796,12 +800,28 @@ export const utils = {
   /**
    * Indicates if Omid is supported
    *
-   * @param {string=} adClient - The identifier of the ad plugin requesting the bid
+   * @param {string} adClient - The identifier of the ad plugin requesting the bid
    * @returns {boolean} - support of omid
    */
   isOmidSupported: function(adClient) {
     const omidIsLoaded = window.OmidSessionClient !== undefined;
     return omidIsLoaded && adClient === 'vast';
+  },
+
+  /**
+   * Gets ISO 639 language code of current audio track.
+   * @param {Object} player
+   * @returns {string|undefined} ISO 639 language code.
+   */
+  getIsoLanguageCode: function(player) {
+    const audioTracks = player.getAudioTracks();
+    if (!audioTracks || !audioTracks.length) {
+      return;
+    }
+
+    const currentTrackIndex = Math.max(player.getCurrentAudioTrack() || 0, 0); // returns -1 when there are no alternative tracks.
+    const audioTrack = audioTracks[currentTrackIndex];
+    return audioTrack && audioTrack.language;
   }
 }
 

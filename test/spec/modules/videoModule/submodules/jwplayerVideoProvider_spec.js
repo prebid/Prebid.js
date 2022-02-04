@@ -31,6 +31,9 @@ function getPlayerMock() {
     on: function () {},
     off: function () {},
     remove: function () {},
+    getAudioTracks: function () {},
+    getCurrentAudioTrack: function () {},
+    getPlugin: function () {}
   })();
 }
 
@@ -52,6 +55,7 @@ function getUtilsMock() {
     isOmidSupported: function () {},
     getSkipParams: function () {},
     getJwEvent: function () {},
+    getIsoLanguageCode: function () {}
   };
 }
 
@@ -750,6 +754,50 @@ describe('utils', function () {
       expect(isOmidSupported('')).to.be.false;
       expect(isOmidSupported(null)).to.be.false;
       expect(isOmidSupported()).to.be.false;
+    });
+  });
+
+  describe('getIsoLanguageCode', function () {
+    const sampleAudioTracks = [{language: 'ht'}, {language: 'fr'}, {language: 'es'}, {language: 'pt'}];
+
+    it('should return undefined when audio tracks are unavailable', function () {
+      const player = getPlayerMock();
+      let languageCode = utils.getIsoLanguageCode(player);
+      expect(languageCode).to.be.undefined;
+      player.getAudioTracks = () => [];
+      languageCode = utils.getIsoLanguageCode(player);
+      expect(languageCode).to.be.undefined;
+    });
+
+    it('should return the first audio track language code if the getCurrentAudioTrack returns undefined', function () {
+      const player = getPlayerMock();
+      player.getAudioTracks = () => sampleAudioTracks;
+      let languageCode = utils.getIsoLanguageCode(player);
+      expect(languageCode).to.be.equal('ht');
+    });
+
+    it('should return the first audio track  language code if the getCurrentAudioTrack returns null', function () {
+      const player = getPlayerMock();
+      player.getAudioTracks = () => sampleAudioTracks;
+      player.getCurrentAudioTrack = () => null;
+      let languageCode = utils.getIsoLanguageCode(player);
+      expect(languageCode).to.be.equal('ht');
+    });
+
+    it('should return the first audio track language code if the getCurrentAudioTrack returns -1', function () {
+      const player = getPlayerMock();
+      player.getAudioTracks = () => sampleAudioTracks;
+      player.getCurrentAudioTrack = () => -1;
+      const languageCode = utils.getIsoLanguageCode(player);
+      expect(languageCode).to.be.equal('ht');
+    });
+
+    it('should return the right audio track language code', function () {
+      const player = getPlayerMock();
+      player.getAudioTracks = () => sampleAudioTracks;
+      player.getCurrentAudioTrack = () => 2;
+      const languageCode = utils.getIsoLanguageCode(player);
+      expect(languageCode).to.be.equal('es');
     });
   });
 });

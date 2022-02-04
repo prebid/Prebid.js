@@ -1,10 +1,10 @@
 import { config } from '../../src/config.js';
 import events from '../../src/events.js';
-import {allVideoEvents, AUCTION_AD_LOAD_ATTEMPT } from './constants/events.js';
+import { allVideoEvents, AUCTION_AD_LOAD_ATTEMPT } from './constants/events.js';
 import CONSTANTS from '../../src/constants.json';
 import { videoCoreFactory } from './coreVideo.js';
 import { coreAdServerFactory } from './adServer.js';
-import find from 'core-js-pure/features/array/find.js';
+import find from 'prebidjs-polyfill/find.js';
 import { vastXmlEditorFactory } from './shared/vastXmlEditor.js';
 
 /**
