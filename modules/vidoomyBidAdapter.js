@@ -42,6 +42,11 @@ const isBidRequestValid = bid => {
     return false;
   }
 
+  if (bid.params.bidfloor && (isNaN(bid.params.bidfloor) || bid.params.bidfloor < 0)) {
+    logError(BIDDER_CODE + ': bid.params.bidfloor should be a number equal or greater than zero');
+    return false;
+  }
+
   return true;
 };
 
