@@ -96,7 +96,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
       maxextended: -1, // extension is allowed, and there is no time limit imposed.
       boxingallowed: 1,
       playbackmethod: [ utils.getPlaybackMethod(config) ],
-      playbackend: 1, // TODO: need to account for floating player - https://developer.jwplayer.com/jwplayer/docs/jw8-embed-an-outstream-player
+      playbackend: 1, // TODO: need to account for floating player - https://developer.jwplayer.com/jwplayer/docs/jw8-embed-an-outstream-player , https://developer.jwplayer.com/jwplayer/docs/jw8-player-configuration-reference#section-float-on-scroll
       // companionad - TODO add in future version
       // companiontype - TODO add in future version
       // minbitrate - TODO add in future version
