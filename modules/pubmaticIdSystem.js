@@ -125,17 +125,17 @@ function generateURL(config, consentData){
 
 function hasRequiredConfig(config) {
   if (config.storage.name !== STORAGE_NAME) {
-    logError(LOG_PREFIX + `storage name should be '${STORAGE_NAME}'.`);
+    logError(LOG_PREFIX + `config.storage name should be '${STORAGE_NAME}'.`);
     return false;
   }
 
   if(config.storage.expires !== STORAGE_EXPIRES) {
-  	logError(LOG_PREFIX + `storage expires should be ${STORAGE_EXPIRES}.`);
+  	logError(LOG_PREFIX + `config.storage expires should be ${STORAGE_EXPIRES}.`);
   	return false;
   }
 
   if(config.storage.refreshInSeconds !== STORAGE_REFRESH_IN_SECONDS) {
-  	logError(LOG_PREFIX + `storage refreshInSeconds should be ${STORAGE_REFRESH_IN_SECONDS}.`);
+  	logError(LOG_PREFIX + `config.storage.refreshInSeconds should be ${STORAGE_REFRESH_IN_SECONDS}.`);
   	return false;
   }
 
