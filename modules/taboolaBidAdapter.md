@@ -3,7 +3,7 @@
 ```
 Module Name: Taboola Adapter
 Module Type: Bidder Adapter
-Maintainer: someone@taboola.com //todo: need to fill this Maintainer email.
+Maintainer: headerbidding@taboola.com
 ```
 
 # Description
