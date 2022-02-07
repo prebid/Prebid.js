@@ -9,7 +9,8 @@ describe('limelightDigitalAdapter', function () {
     params: {
       host: 'exchange.ortb.net',
       adUnitId: 123,
-      adUnitType: 'banner'
+      adUnitType: 'banner',
+      publisherId: 'perfectPublisher'
     },
     placementCode: 'placement_0',
     auctionId: '74f78609-a92d-4cf1-869f-1b244bbfb5d2',
@@ -18,7 +19,17 @@ describe('limelightDigitalAdapter', function () {
         sizes: [[300, 250]]
       }
     },
-    transactionId: '3bb2f6da-87a6-4029-aeb0-bfe951372e62'
+    transactionId: '3bb2f6da-87a6-4029-aeb0-bfe951372e62',
+    userIdAsEids: [
+      {
+        source: 'test1.org',
+        uids: [
+          {
+            id: '123',
+          }
+        ]
+      }
+    ]
   }
   const bid2 = {
     bidId: '58ee9870c3164a',
@@ -32,7 +43,17 @@ describe('limelightDigitalAdapter', function () {
     placementCode: 'placement_1',
     auctionId: '482f88de-29ab-45c8-981a-d25e39454a34',
     sizes: [[350, 200]],
-    transactionId: '068867d1-46ec-40bb-9fa0-e24611786fb4'
+    transactionId: '068867d1-46ec-40bb-9fa0-e24611786fb4',
+    userIdAsEids: [
+      {
+        source: 'test2.org',
+        uids: [
+          {
+            id: '234',
+          }
+        ]
+      }
+    ]
   }
   const bid3 = {
     bidId: '019645c7d69460',
@@ -41,12 +62,26 @@ describe('limelightDigitalAdapter', function () {
     params: {
       host: 'exchange.ortb.net',
       adUnitId: 789,
-      adUnitType: 'video'
+      adUnitType: 'video',
+      publisherId: 'secondPerfectPublisher'
     },
     placementCode: 'placement_2',
     auctionId: 'e4771143-6aa7-41ec-8824-ced4342c96c8',
     sizes: [[800, 600]],
-    transactionId: '738d5915-6651-43b9-9b6b-d50517350917'
+    transactionId: '738d5915-6651-43b9-9b6b-d50517350917',
+    userIdAsEids: [
+      {
+        source: 'test3.org',
+        uids: [
+          {
+            id: '345',
+          },
+          {
+            id: '456',
+          }
+        ]
+      }
+    ]
   }
   const bid4 = {
     bidId: '019645c7d69460',
@@ -62,7 +97,17 @@ describe('limelightDigitalAdapter', function () {
     video: {
       playerSize: [800, 600]
     },
-    transactionId: '738d5915-6651-43b9-9b6b-d50517350917'
+    transactionId: '738d5915-6651-43b9-9b6b-d50517350917',
+    userIdAsEids: [
+      {
+        source: 'test.org',
+        uids: [
+          {
+            id: '111',
+          }
+        ]
+      }
+    ]
   }
 
   describe('buildRequests', function () {
@@ -82,19 +127,33 @@ describe('limelightDigitalAdapter', function () {
         expect(serverRequest.method).to.equal('POST')
       })
       it('Returns valid data if array of bids is valid', function () {
-        let data = serverRequest.data
-        expect(data).to.be.an('object')
-        expect(data).to.have.all.keys('deviceWidth', 'deviceHeight', 'secure', 'adUnits')
-        expect(data.deviceWidth).to.be.a('number')
-        expect(data.deviceHeight).to.be.a('number')
-        expect(data.secure).to.be.a('boolean')
+        let data = serverRequest.data;
+        expect(data).to.be.an('object');
+        expect(data).to.have.all.keys(
+          'deviceWidth',
+          'deviceHeight',
+          'secure',
+          'adUnits'
+        );
+        expect(data.deviceWidth).to.be.a('number');
+        expect(data.deviceHeight).to.be.a('number');
+        expect(data.secure).to.be.a('boolean');
         data.adUnits.forEach(adUnit => {
-          expect(adUnit).to.have.all.keys('id', 'bidId', 'type', 'sizes', 'transactionId')
-          expect(adUnit.id).to.be.a('number')
-          expect(adUnit.bidId).to.be.a('string')
-          expect(adUnit.type).to.be.a('string')
-          expect(adUnit.transactionId).to.be.a('string')
-          expect(adUnit.sizes).to.be.an('array')
+          expect(adUnit).to.have.all.keys(
+            'id',
+            'bidId',
+            'type',
+            'sizes',
+            'transactionId',
+            'publisherId',
+            'userIdAsEids'
+          );
+          expect(adUnit.id).to.be.a('number');
+          expect(adUnit.bidId).to.be.a('string');
+          expect(adUnit.type).to.be.a('string');
+          expect(adUnit.transactionId).to.be.a('string');
+          expect(adUnit.sizes).to.be.an('array');
+          expect(adUnit.userIdAsEids).to.be.an('array');
         })
       })
     })
@@ -192,7 +251,7 @@ describe('limelightDigitalAdapter', function () {
         expect(dataItem.meta.advertiserDomains).to.be.an('array');
         expect(dataItem.meta.mediaType).to.be.a('string');
       }
-      it('Returns an empty array if invalid response is passed', function () {
+      it('should return an empty array if invalid response is passed', function () {
         serverResponses = spec.interpretResponse('invalid_response');
         expect(serverResponses).to.be.an('array').that.is.empty;
       });
@@ -456,10 +515,10 @@ describe('limelightDigitalAdapter', function () {
 });
 
 function validateAdUnit(adUnit, bid) {
-  expect(adUnit.id).to.equal(bid.params.adUnitId)
-  expect(adUnit.bidId).to.equal(bid.bidId)
-  expect(adUnit.type).to.equal(bid.params.adUnitType.toUpperCase())
-  expect(adUnit.transactionId).to.equal(bid.transactionId)
+  expect(adUnit.id).to.equal(bid.params.adUnitId);
+  expect(adUnit.bidId).to.equal(bid.bidId);
+  expect(adUnit.type).to.equal(bid.params.adUnitType.toUpperCase());
+  expect(adUnit.transactionId).to.equal(bid.transactionId);
   let bidSizes = [];
   if (bid.mediaTypes) {
     if (bid.mediaTypes.video && bid.mediaTypes.video.playerSize) {
@@ -478,4 +537,6 @@ function validateAdUnit(adUnit, bid) {
       height: size[1]
     }
   }));
+  expect(adUnit.publisherId).to.equal(bid.params.publisherId);
+  expect(adUnit.userIdAsEids).to.deep.equal(bid.userIdAsEids);
 }

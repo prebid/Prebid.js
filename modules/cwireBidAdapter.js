@@ -16,7 +16,7 @@ import {
   logWarn,
 } from '../src/utils.js';
 import { Renderer } from '../src/Renderer.js';
-import find from 'core-js-pure/features/array/find.js';
+import find from 'prebidjs-polyfill/find.js';
 
 // ------------------------------------
 const BIDDER_CODE = 'cwire';
@@ -26,6 +26,7 @@ export const RENDERER_URL = 'https://cdn.cwi.re/prebid/renderer/LATEST/renderer.
 export const CW_PAGE_VIEW_ID = generateUUID();
 const LS_CWID_KEY = 'cw_cwid';
 const CW_GROUPS_QUERY = 'cwgroups';
+const CW_CREATIVE_QUERY = 'cwcreative';
 
 const storage = getStorageManager();
 
@@ -161,6 +162,7 @@ export const spec = {
 
     let refgroups = [];
 
+    const cwCreativeId = getQueryVariable(CW_CREATIVE_QUERY);
     const rgQuery = getQueryVariable(CW_GROUPS_QUERY);
     if (rgQuery !== null) {
       refgroups = rgQuery.split(',');
@@ -171,6 +173,7 @@ export const spec = {
     const payload = {
       cwid: localStorageCWID,
       refgroups,
+      cwcreative: cwCreativeId,
       slots: slots,
       httpRef: referer || '',
       pageViewId: CW_PAGE_VIEW_ID,

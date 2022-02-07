@@ -556,6 +556,33 @@ describe('AppNexusAdapter', function () {
       config.getConfig.restore();
     });
 
+    it('adds auction level keywords to request when set', function() {
+      let bidRequest = Object.assign({}, bidRequests[0]);
+      sinon
+        .stub(config, 'getConfig')
+        .withArgs('appnexusAuctionKeywords')
+        .returns({
+          gender: 'm',
+          music: ['rock', 'pop'],
+          test: ''
+        });
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.keywords).to.deep.equal([{
+        'key': 'gender',
+        'value': ['m']
+      }, {
+        'key': 'music',
+        'value': ['rock', 'pop']
+      }, {
+        'key': 'test'
+      }]);
+
+      config.getConfig.restore();
+    });
+
     it('should attach native params to the request', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
@@ -1004,12 +1031,16 @@ describe('AppNexusAdapter', function () {
 
   describe('interpretResponse', function () {
     let bfStub;
+    let bidderSettingsStorage;
+
     before(function() {
       bfStub = sinon.stub(bidderFactory, 'getIabSubCategory');
+      bidderSettingsStorage = $$PREBID_GLOBAL$$.bidderSettings;
     });
 
     after(function() {
       bfStub.restore();
+      $$PREBID_GLOBAL$$.bidderSettings = bidderSettingsStorage;
     });
 
     let response = {
@@ -1077,6 +1108,15 @@ describe('AppNexusAdapter', function () {
           'adUnitCode': 'code',
           'appnexus': {
             'buyerMemberId': 958
+          },
+          'meta': {
+            'dchain': {
+              'ver': '1.0',
+              'complete': 0,
+              'nodes': [{
+                'bsid': '958'
+              }]
+            }
           }
         }
       ];
@@ -1085,9 +1125,44 @@ describe('AppNexusAdapter', function () {
           bidId: '3db3773286ee59',
           adUnitCode: 'code'
         }]
-      }
+      };
       let result = spec.interpretResponse({ body: response }, {bidderRequest});
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
+    });
+
+    it('should reject 0 cpm bids', function () {
+      let zeroCpmResponse = deepClone(response);
+      zeroCpmResponse.tags[0].ads[0].cpm = 0;
+
+      let bidderRequest = {
+        bidderCode: 'appnexus'
+      };
+
+      let result = spec.interpretResponse({ body: zeroCpmResponse }, { bidderRequest });
+      expect(result.length).to.equal(0);
+    });
+
+    it('should allow 0 cpm bids if allowZeroCpmBids setConfig is true', function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        appnexus: {
+          allowZeroCpmBids: true
+        }
+      };
+
+      let zeroCpmResponse = deepClone(response);
+      zeroCpmResponse.tags[0].ads[0].cpm = 0;
+
+      let bidderRequest = {
+        bidderCode: 'appnexus',
+        bids: [{
+          bidId: '3db3773286ee59',
+          adUnitCode: 'code'
+        }]
+      };
+
+      let result = spec.interpretResponse({ body: zeroCpmResponse }, { bidderRequest });
+      expect(result.length).to.equal(1);
+      expect(result[0].cpm).to.equal(0);
     });
 
     it('handles nobid responses', function () {

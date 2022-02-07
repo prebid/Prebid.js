@@ -3,7 +3,7 @@
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { INSTREAM, OUTSTREAM } from '../src/video.js';
 import { Renderer } from '../src/Renderer.js';
-import find from 'core-js-pure/features/array/find.js';
+import find from 'prebidjs-polyfill/find.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { createEidsArray } from './userId/eids.js';
@@ -347,10 +347,12 @@ function getSizes(sizes) {
 function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
   let syncs = [];
   let params = '';
-  if (gdprConsent && typeof gdprConsent.consentString === 'string') {
-    params += '&gdpr_consent=' + gdprConsent.consentString;
+  if (gdprConsent) {
     if (typeof gdprConsent.gdprApplies === 'boolean') {
       params += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
+    }
+    if (typeof gdprConsent.consentString === 'string') {
+      params += '&gdpr_consent=' + gdprConsent.consentString;
     }
   }
   if (uspConsent && typeof uspConsent === 'string') {
