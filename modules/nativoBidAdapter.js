@@ -14,6 +14,12 @@ const SUPPORTED_AD_TYPES = [BANNER]
 
 const bidRequestMap = {}
 const adUnitsRequested = {}
+const extData = {}
+
+// Filtering
+const adsToFilter = []
+const advertisersToFilter = []
+const campaignsToFilter = []
 
 // Prebid adapter referrence doc: https://docs.prebid.org/dev-docs/bidder-adaptor.html
 
@@ -45,7 +51,7 @@ export const spec = {
     if (!bid.params) return bid.bidder === BIDDER_CODE
 
     // Check if any supplied parameters are invalid
-    const hasInvalidParameters = Object.keys(bid.params).some(key => {
+    const hasInvalidParameters = Object.keys(bid.params).some((key) => {
       const value = bid.params[key]
       const validityCheck = validParameter[key]
 
@@ -123,6 +129,20 @@ export const spec = {
       },
     ]
 
+    // Add filtering
+    if (adsToFilter.length > 0) {
+      params.unshift({ key: 'ntv_atf', value: adsToFilter.join(',') })
+    }
+
+    if (advertisersToFilter.length > 0) {
+      params.unshift({ key: 'ntv_avtf', value: advertisersToFilter.join(',') })
+    }
+
+    if (campaignsToFilter.length > 0) {
+      params.unshift({ key: 'ntv_ctf', value: campaignsToFilter.join(',') })
+    }
+
+    // Add placement IDs
     if (placementIds.size > 0) {
       // Convert Set to Array (IE 11 Safe)
       const placements = []
@@ -131,6 +151,7 @@ export const spec = {
       params.unshift({ key: 'ntv_ptd', value: placements.join(',') })
     }
 
+    // Add GDPR params
     if (bidderRequest.gdprConsent) {
       // Put on the beginning of the qs param array
       params.unshift({
@@ -139,6 +160,7 @@ export const spec = {
       })
     }
 
+    // Add USP params
     if (bidderRequest.uspConsent) {
       // Put on the beginning of the qs param array
       params.unshift({ key: 'us_privacy', value: bidderRequest.uspConsent })
@@ -194,6 +216,8 @@ export const spec = {
               advertiserDomains: bid.adomain,
             },
           }
+
+          if (bid.ext) extData[bid.id] = bid.ext
 
           bidResponses.push(bidResponse)
         })
@@ -300,7 +324,15 @@ export const spec = {
    * Will be called when a bid from the adapter won the auction.
    * @param {Object} bid - The bid that won the auction
    */
-  onBidWon: function (bid) {},
+  onBidWon: function (bid) {
+    const ext = extData[bid.dealId]
+
+    if (!ext) return
+
+    appendFilterData(adsToFilter, ext.adsToFilter)
+    appendFilterData(advertisersToFilter, ext.advertisersToFilter)
+    appendFilterData(campaignsToFilter, ext.campaignsToFilter)
+  },
 
   /**
    * Will be called when the adserver targeting has been set for a bid from the adapter.
@@ -375,3 +407,14 @@ function getLargestSize(sizes, method = area) {
  * @returns The calculated area
  */
 const area = (size) => size[0] * size[1]
+
+/**
+ * Save any filter data from winning bid requests for subsequent requests
+ * @param {Array} filter - The filter data bucket currently stored
+ * @param {Array} filterData - The filter data to add
+ */
+function appendFilterData(filter, filterData) {
+  if (filterData && Array.isArray(filterData) && filterData.length > 0) {
+    filterData.forEach((ad) => filter.push(ad))
+  }
+}
