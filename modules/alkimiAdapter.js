@@ -4,7 +4,7 @@ import { ajax } from '../src/ajax.js';
 import { VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'alkimi';
-export const ENDPOINT = 'https://exchange-dev.alkimi.asteriosoft.com/bid?prebid=true'
+export const ENDPOINT = 'https://exchange-dev.alkimi.asteriosoft.com/bid?prebid=true';
 
 export const spec = {
   code: BIDDER_CODE,
