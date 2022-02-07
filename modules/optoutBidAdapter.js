@@ -1,11 +1,11 @@
-import * as utils from '../src/utils.js';
+import { deepAccess } from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'optout';
 
 function getDomain(bidderRequest) {
-  return utils.deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || utils.deepAccess(window, 'location.href');
+  return deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || deepAccess(window, 'location.href');
 }
 
 function getCurrency() {
@@ -23,7 +23,7 @@ function hasPurpose1Consent(bidderRequest) {
   let result = false;
   if (bidderRequest && bidderRequest.gdprConsent) {
     if (bidderRequest.gdprConsent.apiVersion === 2) {
-      result = !!(utils.deepAccess(bidderRequest.gdprConsent, 'vendorData.purpose.consents.1') === true);
+      result = !!(deepAccess(bidderRequest.gdprConsent, 'vendorData.purpose.consents.1') === true);
     }
   }
   return result;

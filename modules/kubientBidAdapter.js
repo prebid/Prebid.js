@@ -1,6 +1,6 @@
+import { isArray, deepAccess } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'kubient';
 const END_POINT = 'https://kssp.kbntx.ch/kubprebidjs';
@@ -96,7 +96,7 @@ export const spec = {
           ad: bid.adm,
           meta: {}
         };
-        if (bid.meta && bid.meta.adomain && utils.isArray(bid.meta.adomain)) {
+        if (bid.meta && bid.meta.adomain && isArray(bid.meta.adomain)) {
           bidResponse.meta.advertiserDomains = bid.meta.adomain;
         }
         if (bid.mediaType === VIDEO) {
@@ -137,13 +137,13 @@ export const spec = {
 function kubientGetConsentGiven(gdprConsent) {
   let consentGiven = 0;
   if (typeof gdprConsent !== 'undefined') {
-    let apiVersion = utils.deepAccess(gdprConsent, `apiVersion`);
+    let apiVersion = deepAccess(gdprConsent, `apiVersion`);
     switch (apiVersion) {
       case 1:
-        consentGiven = utils.deepAccess(gdprConsent, `vendorData.vendorConsents.${VENDOR_ID}`) ? 1 : 0;
+        consentGiven = deepAccess(gdprConsent, `vendorData.vendorConsents.${VENDOR_ID}`) ? 1 : 0;
         break;
       case 2:
-        consentGiven = utils.deepAccess(gdprConsent, `vendorData.vendor.consents.${VENDOR_ID}`) ? 1 : 0;
+        consentGiven = deepAccess(gdprConsent, `vendorData.vendor.consents.${VENDOR_ID}`) ? 1 : 0;
         break;
     }
   }

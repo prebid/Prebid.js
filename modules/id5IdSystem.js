@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import * as utils from '../src/utils.js'
+import { deepAccess, logInfo, deepSetValue, logError, isEmpty, isEmptyStr, logWarn } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getRefererInfo } from '../src/refererDetection.js';
@@ -67,25 +67,25 @@ export const id5IdSubmodule = {
       }
     };
 
-    const abTestingResult = utils.deepAccess(value, 'ab_testing.result');
+    const abTestingResult = deepAccess(value, 'ab_testing.result');
     switch (abTestingResult) {
       case 'control':
         // A/B Testing is enabled and user is in the Control Group
-        utils.logInfo(LOG_PREFIX + 'A/B Testing - user is in the Control Group: ID5 ID is NOT exposed');
-        utils.deepSetValue(responseObj, 'id5id.ext.abTestingControlGroup', true);
+        logInfo(LOG_PREFIX + 'A/B Testing - user is in the Control Group: ID5 ID is NOT exposed');
+        deepSetValue(responseObj, 'id5id.ext.abTestingControlGroup', true);
         break;
       case 'error':
         // A/B Testing is enabled, but configured improperly, so skip A/B testing
-        utils.logError(LOG_PREFIX + 'A/B Testing ERROR! controlGroupPct must be a number >= 0 and <= 1');
+        logError(LOG_PREFIX + 'A/B Testing ERROR! controlGroupPct must be a number >= 0 and <= 1');
         break;
       case 'normal':
         // A/B Testing is enabled but user is not in the Control Group, so ID5 ID is shared
-        utils.logInfo(LOG_PREFIX + 'A/B Testing - user is NOT in the Control Group');
-        utils.deepSetValue(responseObj, 'id5id.ext.abTestingControlGroup', false);
+        logInfo(LOG_PREFIX + 'A/B Testing - user is NOT in the Control Group');
+        deepSetValue(responseObj, 'id5id.ext.abTestingControlGroup', false);
         break;
     }
 
-    utils.logInfo(LOG_PREFIX + 'Decoded ID', responseObj);
+    logInfo(LOG_PREFIX + 'Decoded ID', responseObj);
 
     return responseObj;
   },
@@ -120,19 +120,19 @@ export const id5IdSubmodule = {
     };
 
     // pass in optional data, but only if populated
-    if (hasGdpr && typeof consentData.consentString !== 'undefined' && !utils.isEmpty(consentData.consentString) && !utils.isEmptyStr(consentData.consentString)) {
+    if (hasGdpr && typeof consentData.consentString !== 'undefined' && !isEmpty(consentData.consentString) && !isEmptyStr(consentData.consentString)) {
       data.gdpr_consent = consentData.consentString;
     }
-    if (typeof usp !== 'undefined' && !utils.isEmpty(usp) && !utils.isEmptyStr(usp)) {
+    if (typeof usp !== 'undefined' && !isEmpty(usp) && !isEmptyStr(usp)) {
       data.us_privacy = usp;
     }
-    if (typeof signature !== 'undefined' && !utils.isEmptyStr(signature)) {
+    if (typeof signature !== 'undefined' && !isEmptyStr(signature)) {
       data.s = signature;
     }
-    if (typeof config.params.pd !== 'undefined' && !utils.isEmptyStr(config.params.pd)) {
+    if (typeof config.params.pd !== 'undefined' && !isEmptyStr(config.params.pd)) {
       data.pd = config.params.pd;
     }
-    if (typeof config.params.provider !== 'undefined' && !utils.isEmptyStr(config.params.provider)) {
+    if (typeof config.params.provider !== 'undefined' && !isEmptyStr(config.params.provider)) {
       data.provider = config.params.provider;
     }
 
@@ -151,7 +151,7 @@ export const id5IdSubmodule = {
           if (response) {
             try {
               responseObj = JSON.parse(response);
-              utils.logInfo(LOG_PREFIX + 'response received from the server', responseObj);
+              logInfo(LOG_PREFIX + 'response received from the server', responseObj);
 
               resetNb(config.params.partner);
 
@@ -165,17 +165,17 @@ export const id5IdSubmodule = {
                 removeLegacyCookies(config.params.partner);
               }
             } catch (error) {
-              utils.logError(LOG_PREFIX + error);
+              logError(LOG_PREFIX + error);
             }
           }
           callback(responseObj);
         },
         error: error => {
-          utils.logError(LOG_PREFIX + 'getId fetch encountered an error', error);
+          logError(LOG_PREFIX + 'getId fetch encountered an error', error);
           callback();
         }
       };
-      utils.logInfo(LOG_PREFIX + 'requesting an ID from the server', data);
+      logInfo(LOG_PREFIX + 'requesting an ID from the server', data);
       ajax(url, callbacks, JSON.stringify(data), { method: 'POST', withCredentials: true });
     };
     return { callback: resp };
@@ -198,29 +198,29 @@ export const id5IdSubmodule = {
     const partnerId = (config && config.params && config.params.partner) || 0;
     incrementNb(partnerId);
 
-    utils.logInfo(LOG_PREFIX + 'using cached ID', cacheIdObj);
+    logInfo(LOG_PREFIX + 'using cached ID', cacheIdObj);
     return cacheIdObj;
   }
 };
 
 function hasRequiredConfig(config) {
   if (!config || !config.params || !config.params.partner || typeof config.params.partner !== 'number') {
-    utils.logError(LOG_PREFIX + 'partner required to be defined as a number');
+    logError(LOG_PREFIX + 'partner required to be defined as a number');
     return false;
   }
 
   if (!config.storage || !config.storage.type || !config.storage.name) {
-    utils.logError(LOG_PREFIX + 'storage required to be set');
+    logError(LOG_PREFIX + 'storage required to be set');
     return false;
   }
 
   // in a future release, we may return false if storage type or name are not set as required
   if (config.storage.type !== LOCAL_STORAGE) {
-    utils.logWarn(LOG_PREFIX + `storage type recommended to be '${LOCAL_STORAGE}'. In a future release this may become a strict requirement`);
+    logWarn(LOG_PREFIX + `storage type recommended to be '${LOCAL_STORAGE}'. In a future release this may become a strict requirement`);
   }
   // in a future release, we may return false if storage type or name are not set as required
   if (config.storage.name !== ID5_STORAGE_NAME) {
-    utils.logWarn(LOG_PREFIX + `storage name recommended to be '${ID5_STORAGE_NAME}'. In a future release this may become a strict requirement`);
+    logWarn(LOG_PREFIX + `storage name recommended to be '${ID5_STORAGE_NAME}'. In a future release this may become a strict requirement`);
   }
 
   return true;
@@ -265,7 +265,7 @@ function getLegacyCookieSignature() {
  * @param {integer} partnerId
  */
 function removeLegacyCookies(partnerId) {
-  utils.logInfo(LOG_PREFIX + 'removing legacy cookies');
+  logInfo(LOG_PREFIX + 'removing legacy cookies');
   LEGACY_COOKIE_NAMES.forEach(function(cookie) {
     storage.setCookie(`${cookie}`, ' ', expDaysStr(-1));
     storage.setCookie(`${cookie}_nb`, ' ', expDaysStr(-1));
@@ -313,7 +313,7 @@ export function storeInLocalStorage(key, value, expDays) {
  * @returns {Object} an object which always contains at least the property "enabled"
  */
 function getAbTestingConfig(config) {
-  return utils.deepAccess(config, 'params.abTesting', { enabled: false });
+  return deepAccess(config, 'params.abTesting', { enabled: false });
 }
 
 submodule('userId', id5IdSubmodule);

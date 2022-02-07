@@ -1,3 +1,4 @@
+import { config } from 'src/config.js';
 import { expect } from 'chai'
 import { spec } from 'modules/yieldlabBidAdapter.js'
 import { newBidder } from 'src/adapters/bidderFactory.js'
@@ -16,7 +17,22 @@ const REQUEST = {
       'extraParam': true,
       'foo': 'bar'
     },
-    'extId': 'abc'
+    'extId': 'abc',
+    'iabContent': {
+      'id': 'foo_id',
+      'episode': '99',
+      'title': 'foo_title,bar_title',
+      'series': 'foo_series',
+      'season': 's1',
+      'artist': 'foo bar',
+      'genre': 'baz',
+      'isrc': 'CC-XXX-YY-NNNNN',
+      'url': 'http://foo_url.de',
+      'cat': ['cat1', 'cat2,ppp', 'cat3|||//'],
+      'context': '7',
+      'keywords': ['k1,', 'k2..'],
+      'live': '0'
+    }
   },
   'bidderRequestId': '143346cf0f1731',
   'auctionId': '2e41f65424c87c',
@@ -57,6 +73,12 @@ const VIDEO_REQUEST = Object.assign({}, REQUEST, {
   }
 })
 
+const NATIVE_REQUEST = Object.assign({}, REQUEST, {
+  'mediaTypes': {
+    'native': { }
+  }
+})
+
 const RESPONSE = {
   advertiser: 'yieldlab',
   curl: 'https://www.yieldlab.de',
@@ -67,6 +89,42 @@ const RESPONSE = {
   adsize: '728x90',
   adtype: 'BANNER'
 }
+
+const NATIVE_RESPONSE = Object.assign({}, RESPONSE, {
+  'adtype': 'NATIVE',
+  'native': {
+    'link': {
+      'url': 'https://www.yieldlab.de'
+    },
+    'assets': [
+      {
+        'id': 1,
+        'title': {
+          'text': 'This is a great headline'
+        }
+      },
+      {
+        'id': 2,
+        'img': {
+          'url': 'https://localhost:8080/yl-logo100x100.jpg',
+          'w': 100,
+          'h': 100
+        }
+      },
+      {
+        'id': 3,
+        'data': {
+          'value': 'Native body value'
+        }
+      }
+    ],
+    'imptrackers': [
+      'http://localhost:8080/ve?d=ODE9ZSY2MTI1MjAzNjMzMzYxPXN0JjA0NWUwZDk0NTY5Yi05M2FiLWUwZTQtOWFjNy1hYWY0MzFiZj1kaXQmMj12',
+      'http://localhost:8080/md/1111/9efa4e76-2030-4f04-bb9f-322541f8d611?mdata=false&pvid=false&ids=x:1',
+      'http://localhost:8080/imp?s=13216&d=2171514&a=12548955&ts=1633363025216&tid=fb134faa-7ca9-4e0e-ba39-b96549d0e540&l=0'
+    ]
+  }
+})
 
 const VIDEO_RESPONSE = Object.assign({}, RESPONSE, {
   'adtype': 'VIDEO'
@@ -84,6 +142,10 @@ const REQPARAMS = {
 const REQPARAMS_GDPR = Object.assign({}, REQPARAMS, {
   gdpr: true,
   consent: 'BN5lERiOMYEdiAKAWXEND1AAAAE6DABACMA'
+})
+
+const REQPARAMS_IAB_CONTENT = Object.assign({}, REQPARAMS, {
+  iab_content: 'id%3Afoo_id%2Cepisode%3A99%2Ctitle%3Afoo_title%252Cbar_title%2Cseries%3Afoo_series%2Cseason%3As1%2Cartist%3Afoo%2520bar%2Cgenre%3Abaz%2Cisrc%3ACC-XXX-YY-NNNNN%2Curl%3Ahttp%253A%252F%252Ffoo_url.de%2Ccat%3Acat1%7Ccat2%252Cppp%7Ccat3%257C%257C%257C%252F%252F%2Ccontext%3A7%2Ckeywords%3Ak1%252C%7Ck2..%2Clive%3A0'
 })
 
 describe('yieldlabBidAdapter', function () {
@@ -137,6 +199,40 @@ describe('yieldlabBidAdapter', function () {
 
     it('passes unencoded schain string to bid request', function () {
       expect(request.url).to.include('schain=1.0,1!indirectseller.com,1,1,,,,!indirectseller2.com,2,1,,indirectseller2%20name%20with%20comma%20%2C%20and%20bang%20%21,,')
+    })
+
+    it('passes iab_content string to bid request', function () {
+      expect(request.url).to.include('iab_content=id%3Afoo_id%2Cepisode%3A99%2Ctitle%3Afoo_title%252Cbar_title%2Cseries%3Afoo_series%2Cseason%3As1%2Cartist%3Afoo%2520bar%2Cgenre%3Abaz%2Cisrc%3ACC-XXX-YY-NNNNN%2Curl%3Ahttp%253A%252F%252Ffoo_url.de%2Ccat%3Acat1%7Ccat2%252Cppp%7Ccat3%257C%257C%257C%252F%252F%2Ccontext%3A7%2Ckeywords%3Ak1%252C%7Ck2..%2Clive%3A0')
+    })
+
+    const siteConfig = {
+      'ortb2': {
+        'site': {
+          'content': {
+            'id': 'id_from_config'
+          }
+        }
+      }
+    }
+
+    it('generates iab_content string from bidder params', function () {
+      config.setConfig(siteConfig);
+      const request = spec.buildRequests([REQUEST])
+      expect(request.url).to.include('iab_content=id%3Afoo_id%2Cepisode%3A99%2Ctitle%3Afoo_title%252Cbar_title%2Cseries%3Afoo_series%2Cseason%3As1%2Cartist%3Afoo%2520bar%2Cgenre%3Abaz%2Cisrc%3ACC-XXX-YY-NNNNN%2Curl%3Ahttp%253A%252F%252Ffoo_url.de%2Ccat%3Acat1%7Ccat2%252Cppp%7Ccat3%257C%257C%257C%252F%252F%2Ccontext%3A7%2Ckeywords%3Ak1%252C%7Ck2..%2Clive%3A0')
+      config.resetConfig();
+    })
+
+    it('generates iab_content string from first party data if not provided in bidder params', function () {
+      const requestWithoutIabContent = {
+        'params': {
+          'adslotId': '1111',
+          'supplyId': '2222'
+        }
+      }
+      config.setConfig(siteConfig);
+      const request = spec.buildRequests([requestWithoutIabContent])
+      expect(request.url).to.include('iab_content=id%3Aid_from_config')
+      config.resetConfig();
     })
 
     const refererRequest = spec.buildRequests(bidRequests, {
@@ -203,6 +299,11 @@ describe('yieldlabBidAdapter', function () {
       expect(result[0].ad).to.include('&consent=BN5lERiOMYEdiAKAWXEND1AAAAE6DABACMA')
     })
 
+    it('should append iab_content to adtag', function () {
+      const result = spec.interpretResponse({body: [RESPONSE]}, {validBidRequests: [REQUEST], queryParams: REQPARAMS_IAB_CONTENT})
+      expect(result[0].ad).to.include('&iab_content=id%3Afoo_id%2Cepisode%3A99%2Ctitle%3Afoo_title%252Cbar_title%2Cseries%3Afoo_series%2Cseason%3As1%2Cartist%3Afoo%2520bar%2Cgenre%3Abaz%2Cisrc%3ACC-XXX-YY-NNNNN%2Curl%3Ahttp%253A%252F%252Ffoo_url.de%2Ccat%3Acat1%7Ccat2%252Cppp%7Ccat3%257C%257C%257C%252F%252F%2Ccontext%3A7%2Ckeywords%3Ak1%252C%7Ck2..%2Clive%3A0')
+    })
+
     it('should get correct bid response when passing more than one size', function () {
       const REQUEST2 = Object.assign({}, REQUEST, {
         'sizes': [
@@ -238,6 +339,45 @@ describe('yieldlabBidAdapter', function () {
       expect(result[0].vastUrl).to.include('&id=abc')
     })
 
+    it('should add adUrl and native assets when type is Native', function () {
+      const result = spec.interpretResponse({body: [NATIVE_RESPONSE]}, {validBidRequests: [NATIVE_REQUEST], queryParams: REQPARAMS})
+
+      expect(result[0].requestId).to.equal('2d925f27f5079f')
+      expect(result[0].cpm).to.equal(0.01)
+      expect(result[0].mediaType).to.equal('native')
+      expect(result[0].adUrl).to.include('https://ad.yieldlab.net/d/1111/2222/?ts=')
+      expect(result[0].native.title).to.equal('This is a great headline')
+      expect(result[0].native.body).to.equal('Native body value')
+      expect(result[0].native.image.url).to.equal('https://localhost:8080/yl-logo100x100.jpg')
+      expect(result[0].native.image.width).to.equal(100)
+      expect(result[0].native.image.height).to.equal(100)
+      expect(result[0].native.clickUrl).to.equal('https://www.yieldlab.de')
+      expect(result[0].native.impressionTrackers.length).to.equal(3)
+    })
+
+    it('should add adUrl and default native assets when type is Native', function () {
+      const NATIVE_RESPONSE_2 = Object.assign({}, NATIVE_RESPONSE, {
+        'native': {
+          'link': {
+            'url': 'https://www.yieldlab.de'
+          },
+          'assets': [],
+          'imptrackers': []
+        }
+      })
+      const result = spec.interpretResponse({body: [NATIVE_RESPONSE_2]}, {validBidRequests: [NATIVE_REQUEST], queryParams: REQPARAMS})
+
+      expect(result[0].requestId).to.equal('2d925f27f5079f')
+      expect(result[0].cpm).to.equal(0.01)
+      expect(result[0].mediaType).to.equal('native')
+      expect(result[0].adUrl).to.include('https://ad.yieldlab.net/d/1111/2222/?ts=')
+      expect(result[0].native.title).to.equal('')
+      expect(result[0].native.body).to.equal('')
+      expect(result[0].native.image.url).to.equal('')
+      expect(result[0].native.image.width).to.equal(0)
+      expect(result[0].native.image.height).to.equal(0)
+    })
+
     it('should append gdpr parameters to vastUrl', function () {
       const result = spec.interpretResponse({body: [VIDEO_RESPONSE]}, {validBidRequests: [VIDEO_REQUEST], queryParams: REQPARAMS_GDPR})
 
@@ -267,6 +407,11 @@ describe('yieldlabBidAdapter', function () {
 
       expect(result[0].ad).to.include('&pvid=43513f11-55a0-4a83-94e5-0ebc08f54a2c')
       expect(result[0].vastUrl).to.include('&pvid=43513f11-55a0-4a83-94e5-0ebc08f54a2c')
+    })
+
+    it('should append iab_content to vastUrl', function () {
+      const result = spec.interpretResponse({body: [VIDEO_RESPONSE]}, {validBidRequests: [VIDEO_REQUEST], queryParams: REQPARAMS_IAB_CONTENT})
+      expect(result[0].vastUrl).to.include('&iab_content=id%3Afoo_id%2Cepisode%3A99%2Ctitle%3Afoo_title%252Cbar_title%2Cseries%3Afoo_series%2Cseason%3As1%2Cartist%3Afoo%2520bar%2Cgenre%3Abaz%2Cisrc%3ACC-XXX-YY-NNNNN%2Curl%3Ahttp%253A%252F%252Ffoo_url.de%2Ccat%3Acat1%7Ccat2%252Cppp%7Ccat3%257C%257C%257C%252F%252F%2Ccontext%3A7%2Ckeywords%3Ak1%252C%7Ck2..%2Clive%3A0')
     })
   })
 })

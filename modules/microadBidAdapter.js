@@ -1,6 +1,6 @@
+import { deepAccess, isEmpty, isStr } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
-import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'microad';
 
@@ -82,8 +82,8 @@ export const spec = {
         }
       }
 
-      const idlEnv = utils.deepAccess(bid, 'userId.idl_env')
-      if (!utils.isEmpty(idlEnv) && utils.isStr(idlEnv)) {
+      const idlEnv = deepAccess(bid, 'userId.idl_env')
+      if (!isEmpty(idlEnv) && isStr(idlEnv)) {
         params['idl_env'] = idlEnv
       }
 

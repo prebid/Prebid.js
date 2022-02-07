@@ -1,7 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { NATIVE, BANNER } from '../src/mediaTypes.js';
-import * as utils from '../src/utils.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import { parseSizesInput, deepAccess, parseQueryStringParameters } from '../src/utils.js';
+import includes from 'prebidjs-polyfill/includes.js';
 
 const BIDDER_CODE = 'adnow';
 const ENDPOINT = 'https://n.ads3-adnow.com/a';
@@ -61,13 +61,13 @@ export const spec = {
       };
 
       if (mediaType === BANNER) {
-        data.sizes = utils.parseSizesInput(
+        data.sizes = parseSizesInput(
           req.mediaTypes && req.mediaTypes.banner && req.mediaTypes.banner.sizes
         ).join('|')
       } else {
         data.width = data.height = 200;
 
-        let sizes = utils.deepAccess(req, 'mediaTypes.native.image.sizes', []);
+        let sizes = deepAccess(req, 'mediaTypes.native.image.sizes', []);
 
         if (sizes.length > 0) {
           const size = Array.isArray(sizes[0]) ? sizes[0] : sizes;
@@ -81,7 +81,7 @@ export const spec = {
       return {
         method: 'GET',
         url: ENDPOINT,
-        data: utils.parseQueryStringParameters(data),
+        data: parseQueryStringParameters(data),
         options: {
           withCredentials: false,
           crossOrigin: true

@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { logError, logWarn, parseSizesInput, generateUUID, isFn, logMessage, isPlainObject, isStr, isNumber, isArray } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'oneVideo';
@@ -28,7 +28,7 @@ export const spec = {
     }
     // MediaTypes Video / Banner validation
     if (typeof bid.mediaTypes.video === 'undefined' && typeof bid.mediaTypes.banner === 'undefined') {
-      utils.logError('Failed validation: adUnit mediaTypes.video OR mediaTypes.banner not declared');
+      logError('Failed validation: adUnit mediaTypes.video OR mediaTypes.banner not declared');
       return false;
     };
 
@@ -36,27 +36,27 @@ export const spec = {
       // Player size validation
       if (typeof bid.mediaTypes.video.playerSize === 'undefined') {
         if (bid.params.video && (typeof bid.params.video.playerWidth === 'undefined' || typeof bid.params.video.playerHeight === 'undefined')) {
-          utils.logError('Failed validation: Player size not declared in either mediaTypes.playerSize OR bid.params.video.plauerWidth & bid.params.video.playerHeight.');
+          logError('Failed validation: Player size not declared in either mediaTypes.playerSize OR bid.params.video.plauerWidth & bid.params.video.playerHeight.');
           return false;
         };
       };
       // Mimes validation
       if (typeof bid.mediaTypes.video.mimes === 'undefined') {
         if (!bid.params.video || typeof bid.params.video.mimes === 'undefined') {
-          utils.logError('Failed validation: adUnit mediaTypes.mimes OR params.video.mimes not declared');
+          logError('Failed validation: adUnit mediaTypes.mimes OR params.video.mimes not declared');
           return false;
         };
       };
       // Prevend DAP Outstream validation, Banner DAP validation & Multi-Format adUnit support
       if (bid.mediaTypes.video.context === 'outstream' && bid.params.video && bid.params.video.display === 1) {
-        utils.logError('Failed validation: Dynamic Ad Placement cannot be used with context Outstream (params.video.display=1)');
+        logError('Failed validation: Dynamic Ad Placement cannot be used with context Outstream (params.video.display=1)');
         return false;
       };
     };
 
     // Publisher Id (Exchange) validation
     if (typeof bid.params.pubId === 'undefined') {
-      utils.logError('Failed validation: Adapter cannot send requests without bid.params.pubId');
+      logError('Failed validation: Adapter cannot send requests without bid.params.pubId');
       return false;
     }
 
@@ -106,7 +106,7 @@ export const spec = {
       response = null;
     }
     if (!response || !bid || (!bid.adm && !bid.nurl) || !bid.price) {
-      utils.logWarn(`No valid bids from ${spec.code} bidder`);
+      logWarn(`No valid bids from ${spec.code} bidder`);
       return [];
     }
     size = getSize(bidRequest.sizes);
@@ -172,7 +172,7 @@ export const spec = {
 };
 
 function getSize(sizes) {
-  let parsedSizes = utils.parseSizesInput(sizes);
+  let parsedSizes = parseSizesInput(sizes);
   let [ width, height ] = parsedSizes.length ? parsedSizes[0].split('x') : [];
   return {
     width: parseInt(width, 10) || undefined,
@@ -194,7 +194,7 @@ function getRequestData(bid, consentData, bidRequest) {
     size: '*'
   };
   let bidData = {
-    id: utils.generateUUID(),
+    id: generateUUID(),
     at: 2,
     imp: [{
       id: '1',
@@ -286,7 +286,7 @@ function getRequestData(bid, consentData, bidRequest) {
     }
   }
 
-  if (utils.isFn(bid.getFloor)) {
+  if (isFn(bid.getFloor)) {
     let floorData = bid.getFloor(getFloorRequestObject);
     bidData.imp[0].bidfloor = floorData.floor;
     bidData.cur = floorData.currency;
@@ -344,7 +344,7 @@ function getRequestData(bid, consentData, bidRequest) {
     }
   }
   if (bid.params.video.e2etest) {
-    utils.logMessage('E2E test mode enabled: \n The following parameters are being overridden by e2etest mode:\n* bidfloor:null\n* width:300\n* height:250\n* mimes: video/mp4, application/javascript\n* api:2\n* site.page/ref: verizonmedia.com\n* tmax:1000');
+    logMessage('E2E test mode enabled: \n The following parameters are being overridden by e2etest mode:\n* bidfloor:null\n* width:300\n* height:250\n* mimes: video/mp4, application/javascript\n* api:2\n* site.page/ref: verizonmedia.com\n* tmax:1000');
     bidData.imp[0].bidfloor = null;
     bidData.imp[0].video.w = 300;
     bidData.imp[0].video.h = 250;
@@ -354,15 +354,15 @@ function getRequestData(bid, consentData, bidRequest) {
     bidData.site.ref = 'https://verizonmedia.com';
     bidData.tmax = 1000;
   }
-  if (bid.params.video.custom && utils.isPlainObject(bid.params.video.custom)) {
+  if (bid.params.video.custom && isPlainObject(bid.params.video.custom)) {
     bidData.imp[0].ext.custom = {};
     for (const key in bid.params.video.custom) {
-      if (utils.isStr(bid.params.video.custom[key]) || utils.isNumber(bid.params.video.custom[key])) {
+      if (isStr(bid.params.video.custom[key]) || isNumber(bid.params.video.custom[key])) {
         bidData.imp[0].ext.custom[key] = bid.params.video.custom[key];
       }
     }
   }
-  if (bid.params.video.content && utils.isPlainObject(bid.params.video.content)) {
+  if (bid.params.video.content && isPlainObject(bid.params.video.content)) {
     bidData.site.content = {};
     const contentStringKeys = ['id', 'title', 'series', 'season', 'genre', 'contentrating', 'language'];
     const contentNumberkeys = ['episode', 'prodq', 'context', 'livestream', 'len'];
@@ -370,14 +370,14 @@ function getRequestData(bid, consentData, bidRequest) {
     const contentObjectKeys = ['ext'];
     for (const contentKey in bid.params.video.content) {
       if (
-        (contentStringKeys.indexOf(contentKey) > -1 && utils.isStr(bid.params.video.content[contentKey])) ||
-        (contentNumberkeys.indexOf(contentKey) > -1 && utils.isNumber(bid.params.video.content[contentKey])) ||
-        (contentObjectKeys.indexOf(contentKey) > -1 && utils.isPlainObject(bid.params.video.content[contentKey])) ||
-        (contentArrayKeys.indexOf(contentKey) > -1 && utils.isArray(bid.params.video.content[contentKey]) &&
-        bid.params.video.content[contentKey].every(catStr => utils.isStr(catStr)))) {
+        (contentStringKeys.indexOf(contentKey) > -1 && isStr(bid.params.video.content[contentKey])) ||
+        (contentNumberkeys.indexOf(contentKey) > -1 && isNumber(bid.params.video.content[contentKey])) ||
+        (contentObjectKeys.indexOf(contentKey) > -1 && isPlainObject(bid.params.video.content[contentKey])) ||
+        (contentArrayKeys.indexOf(contentKey) > -1 && isArray(bid.params.video.content[contentKey]) &&
+        bid.params.video.content[contentKey].every(catStr => isStr(catStr)))) {
         bidData.site.content[contentKey] = bid.params.video.content[contentKey];
       } else {
-        utils.logMessage('oneVideo bid adapter validation error: ', contentKey, ' is either not supported is OpenRTB V2.5 or value is undefined');
+        logMessage('oneVideo bid adapter validation error: ', contentKey, ' is either not supported is OpenRTB V2.5 or value is undefined');
       }
     }
   }

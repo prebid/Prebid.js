@@ -8,7 +8,7 @@ The integration of [IM-UID](https://intimatemerger.com/r/uid) into Prebid.js con
 First, make sure to add the Intimate Merger submodule to your Prebid.js package with:
 
 ```
-gulp build --modules=imuIdSystem, userId
+gulp build --modules=imuIdSystem,userId
 ```
 
 The following configuration parameters are available:
@@ -19,8 +19,7 @@ pbjs.setConfig({
     userIds: [{
       name: 'imuid',
       params: {
-        cid 5126 // Set your Intimate Merger Customer ID here for production
-        }
+        cid: 5126 // Set your Intimate Merger Customer ID here for production
       }
     }]
   }
@@ -31,5 +30,5 @@ pbjs.setConfig({
 | --- | --- | --- | --- | --- |
 | name | Required | String | The name of this module. | `"imuid"` |
 | params | Required | Object | Details of module params. | |
-| params.cid | Required | String | This is the Customer ID value obtained via Intimate Merger. | `5126` |
+| params.cid | Required | Number | This is the Customer ID value obtained via Intimate Merger. | `5126` |
 | params.url | Optional | String | Use this to change the default endpoint URL. | `"https://example.com/some/api"` |

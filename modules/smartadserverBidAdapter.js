@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { deepAccess, deepClone, logError, isFn, isPlainObject } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { createEidsArray } from './userId/eids.js';
@@ -170,8 +170,8 @@ export const spec = {
         payload.us_privacy = bidderRequest.uspConsent;
       }
 
-      const videoMediaType = utils.deepAccess(bid, 'mediaTypes.video');
-      const bannerMediaType = utils.deepAccess(bid, 'mediaTypes.banner');
+      const videoMediaType = deepAccess(bid, 'mediaTypes.video');
+      const bannerMediaType = deepAccess(bid, 'mediaTypes.banner');
       const isAdUnitContainingVideo = videoMediaType && (videoMediaType.context === 'instream' || videoMediaType.context === 'outstream');
       if (!isAdUnitContainingVideo && bannerMediaType) {
         payload.sizes = spec.adaptBannerSizes(bannerMediaType.sizes);
@@ -182,7 +182,7 @@ export const spec = {
       } else if (isAdUnitContainingVideo && bannerMediaType) {
         // If there are video and banner media types in the ad unit, we clone the payload
         // to create a specific one for video.
-        let videoPayload = utils.deepClone(payload);
+        let videoPayload = deepClone(payload);
 
         spec.fillPayloadForVideoBidRequest(videoPayload, videoMediaType, bid.params.video);
         bidRequests.push(spec.createServerRequest(videoPayload, bid.params.domain));
@@ -238,7 +238,7 @@ export const spec = {
         bidResponses.push(bidResponse);
       }
     } catch (error) {
-      utils.logError('Error while parsing smart server response', error);
+      logError('Error while parsing smart server response', error);
     }
     return bidResponses;
   },
@@ -251,7 +251,7 @@ export const spec = {
    * @return {number} Floor price
    */
   getBidFloor: function (bid, currency) {
-    if (!utils.isFn(bid.getFloor)) {
+    if (!isFn(bid.getFloor)) {
       return DEFAULT_FLOOR;
     }
 
@@ -261,7 +261,7 @@ export const spec = {
       size: '*'
     });
 
-    if (utils.isPlainObject(floor) && !isNaN(floor.floor)) {
+    if (isPlainObject(floor) && !isNaN(floor.floor)) {
       return floor.floor;
     }
 

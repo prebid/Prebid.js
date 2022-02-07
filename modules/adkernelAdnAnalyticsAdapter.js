@@ -1,7 +1,7 @@
 import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
-import * as utils from '../src/utils.js';
+import { logError, parseUrl, _each } from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {config} from '../src/config.js';
@@ -90,7 +90,7 @@ analyticsAdapter.originEnableAnalytics = analyticsAdapter.enableAnalytics;
 
 analyticsAdapter.enableAnalytics = (config) => {
   if (!config.options.pubId) {
-    utils.logError('PubId is not defined. Analytics won\'t work');
+    logError('PubId is not defined. Analytics won\'t work');
     return;
   }
   analyticsAdapter.context = {
@@ -215,7 +215,7 @@ export function getUmtSource(pageUrl, referrer) {
       if (se) {
         return asUtm(se, ORGANIC, ORGANIC);
       }
-      let parsedUrl = utils.parseUrl(pageUrl);
+      let parsedUrl = parseUrl(pageUrl);
       let [refHost, refPath] = getReferrer(referrer);
       if (refHost && refHost !== parsedUrl.hostname) {
         return asUtm(refHost, REFERRAL, REFERRAL, '', refPath);
@@ -242,17 +242,17 @@ export function getUmtSource(pageUrl, referrer) {
   }
 
   function getReferrer(referrer) {
-    let ref = utils.parseUrl(referrer);
+    let ref = parseUrl(referrer);
     return [ref.hostname, ref.pathname];
   }
 
   function getUTM(pageUrl) {
-    let urlParameters = utils.parseUrl(pageUrl).search;
+    let urlParameters = parseUrl(pageUrl).search;
     if (!urlParameters['utm_campaign'] || !urlParameters['utm_source']) {
       return;
     }
     let utmArgs = [];
-    utils._each(UTM_TAGS, (utmTagName) => {
+    _each(UTM_TAGS, (utmTagName) => {
       let utmValue = urlParameters[utmTagName] || '';
       utmArgs.push(utmValue);
     });

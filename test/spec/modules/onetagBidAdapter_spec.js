@@ -1,6 +1,6 @@
 import { spec, isValid, hasTypeVideo } from 'modules/onetagBidAdapter.js';
 import { expect } from 'chai';
-import find from 'core-js-pure/features/array/find.js';
+import find from 'prebidjs-polyfill/find.js';
 import { BANNER, VIDEO } from 'src/mediaTypes.js';
 import {INSTREAM, OUTSTREAM} from 'src/video.js';
 
@@ -191,12 +191,8 @@ describe('onetag', function () {
               'pubId',
               'transactionId',
               'context',
-              'mimes',
               'playerSize',
-              'protocols',
-              'maxDuration',
-              'api',
-              'playbackmethod',
+              'mediaTypeInfo',
               'type'
             );
           } else if (isValid(BANNER, bid)) {
@@ -207,6 +203,7 @@ describe('onetag', function () {
               'bidderRequestId',
               'pubId',
               'transactionId',
+              'mediaTypeInfo',
               'sizes',
               'type'
             );

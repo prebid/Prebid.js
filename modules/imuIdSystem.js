@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import * as utils from '../src/utils.js'
+import { timestamp, logError } from '../src/utils.js';
 import { ajax } from '../src/ajax.js'
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -20,7 +20,7 @@ const cookiesMaxAge = 97200000000; // 37 months ((365 * 3 + 30) * 24 * 60 * 60 *
 
 export function setImDataInLocalStorage(value) {
   storage.setDataInLocalStorage(storageKey, value);
-  storage.setDataInLocalStorage(`${storageKey}_mt`, new Date(utils.timestamp()).toUTCString());
+  storage.setDataInLocalStorage(`${storageKey}_mt`, new Date(timestamp()).toUTCString());
 }
 
 export function removeImDataFromLocalStorage() {
@@ -32,7 +32,7 @@ function setImDataInCookie(value) {
   storage.setCookie(
     cookieKey,
     value,
-    new Date(utils.timestamp() + cookiesMaxAge).toUTCString(),
+    new Date(timestamp() + cookiesMaxAge).toUTCString(),
     'none'
   );
 }
@@ -73,7 +73,7 @@ export function getApiCallback(callback) {
           responseObj = JSON.parse(response);
           apiSuccessProcess(responseObj);
         } catch (error) {
-          utils.logError('User ID - imuid submodule: ' + error);
+          logError('User ID - imuid submodule: ' + error);
         }
       }
       if (callback && responseObj.uid) {
@@ -81,7 +81,7 @@ export function getApiCallback(callback) {
       }
     },
     error: error => {
-      utils.logError('User ID - imuid submodule was unable to get data from api: ' + error);
+      logError('User ID - imuid submodule was unable to get data from api: ' + error);
       if (callback) {
         callback();
       }
@@ -128,7 +128,7 @@ export const imuIdSubmodule = {
   getId(config) {
     const configParams = (config && config.params) || {};
     if (!configParams || typeof configParams.cid !== 'number') {
-      utils.logError('User ID - imuid submodule requires a valid cid to be defined');
+      logError('User ID - imuid submodule requires a valid cid to be defined');
       return undefined;
     }
     let apiUrl = getApiUrl(configParams.cid, configParams.url);
