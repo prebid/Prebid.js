@@ -13,11 +13,6 @@ support display format. Using OpenRTB standard.
 
 # Configuration
 
-## Bidder and usersync URLs
-
-The Outbrain adapter does not work without setting the correct bidder and usersync URLs.
-You will receive the URLs when contacting us.
-
 # Test Display Parameters
 ```
    var adUnits = [{
