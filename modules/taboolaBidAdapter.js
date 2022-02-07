@@ -142,7 +142,7 @@ function getBidResponses({body}) {
 
   const {seatbid, cur} = body.bidResponse;
 
-  if (!seatbid.length && !seatbid[0] && seatbid[0].bids) {
+  if (!seatbid.length || !seatbid[0].bid) {
     return [];
   }
 
