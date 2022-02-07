@@ -25,12 +25,14 @@ export const spec = {
       window.nmmRefreshCounts[bid.adUnitCode] = window.nmmRefreshCounts[bid.adUnitCode] || 0;
       const postBody = {
         'id': bid.auctionId,
-        'refresh_count': window.nmmRefreshCounts[bid.adUnitCode]++,
         'ext': {
           'prebid': {
             'storedrequest': {
               'id': getBidIdParameter('placement_id', bid.params)
             }
+          },
+          'nextMillennium': {
+            'refresh_count': window.nmmRefreshCounts[bid.adUnitCode]++,
           }
         }
       }
@@ -107,6 +109,7 @@ export const spec = {
     let bidders = []
     if (responses) {
       _each(responses, (response) => {
+        if (!(response && response.body && response.body.ext && response.body.ext.responsetimemillis)) return
         _each(Object.keys(response.body.ext.responsetimemillis), b => bidders.push(b))
       })
     }

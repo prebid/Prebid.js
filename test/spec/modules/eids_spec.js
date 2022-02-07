@@ -240,9 +240,9 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
-  it('haloId', function() {
+  it('hadronId', function() {
     const userId = {
-      haloId: 'some-random-id-value'
+      hadronId: 'some-random-id-value'
     };
     const newEids = createEidsArray(userId);
     expect(newEids.length).to.equal(1);
@@ -345,6 +345,21 @@ describe('eids array generation for known sub-modules', function() {
       uids: [{
         atype: 1,
         id,
+      }]
+    });
+  });
+
+  it('qid', function() {
+    const userId = {
+      qid: 'some-random-id-value'
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'adquery.io',
+      uids: [{
+        id: 'some-random-id-value',
+        atype: 1
       }]
     });
   });

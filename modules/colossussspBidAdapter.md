@@ -26,5 +26,19 @@ Module that connects to Colossus SSP demand sources
                 traffic: 'banner'
             }
         }]
-    ];
+    }, {
+        code: 'placementid_1',
+        mediaTypes: {
+            banner: {
+                sizes: [[300, 250], [300,600]]
+            }
+        },
+        bids: [{
+            bidder: 'colossusssp',
+            params: {
+                group_id: 0,
+                traffic: 'banner'
+            }
+        }]
+    }];
 ```
