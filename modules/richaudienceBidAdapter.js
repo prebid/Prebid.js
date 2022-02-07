@@ -290,7 +290,7 @@ function raiGetSyncInclude(config) {
     return raiSync;
   } catch (e) {
     return null;
-  }sudo
+  }
 }
 
 function raiGetFloor(bid, config) {
