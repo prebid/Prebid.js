@@ -143,6 +143,7 @@ describe('IQZoneBidAdapter', function () {
         expect(placement.bidId).to.be.a('string');
         expect(placement.schain).to.be.an('object');
         expect(placement.bidfloor).to.exist.and.to.equal(0);
+        expect(placement.type).to.exist.and.to.equal('publisher');
 
         if (placement.adFormat === BANNER) {
           expect(placement.sizes).to.be.an('array');
