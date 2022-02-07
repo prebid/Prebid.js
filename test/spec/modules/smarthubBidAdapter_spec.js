@@ -21,7 +21,7 @@ describe('SmartHubBidAdapter', function () {
         token: 'testToken',
         iabCat: ['IAB1-1', 'IAB3-1', 'IAB4-3'],
         minBidfloor: 111,
-        pos: 0,
+        pos: 1,
       }
     },
     {
@@ -40,7 +40,7 @@ describe('SmartHubBidAdapter', function () {
         token: 'testToken',
         iabCat: ['IAB1-1', 'IAB3-1', 'IAB4-3'],
         minBidfloor: 111,
-        pos: 0,
+        pos: 1,
       }
     },
     {
@@ -68,7 +68,7 @@ describe('SmartHubBidAdapter', function () {
         token: 'testToken',
         iabCat: ['IAB1-1', 'IAB3-1', 'IAB4-3'],
         minBidfloor: 111,
-        pos: 0,
+        pos: 1,
       }
     }
   ];
@@ -118,7 +118,7 @@ describe('SmartHubBidAdapter', function () {
     });
 
     it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal('https://testname-prebid.smart-hub.io');
+      expect(serverRequest.url).to.equal('https://testname-prebid.smart-hub.io/pbjs');
     });
 
     it('Returns general data valid', function () {
@@ -186,7 +186,7 @@ describe('SmartHubBidAdapter', function () {
     it('Returns data with gdprConsent and without uspConsent', function () {
       delete bidderRequest.uspConsent;
       serverRequest = spec.buildRequests(bids, bidderRequest);
-      let data = serverRequest.data;
+      let data = serverRequest[0].data;
       expect(data.gdpr).to.exist;
       expect(data.gdpr).to.be.a('string');
       expect(data.gdpr).to.equal(bidderRequest.gdprConsent);
@@ -198,7 +198,7 @@ describe('SmartHubBidAdapter', function () {
       bidderRequest.uspConsent = '1---';
       delete bidderRequest.gdprConsent;
       serverRequest = spec.buildRequests(bids, bidderRequest);
-      let data = serverRequest.data;
+      let data = serverRequest[0].data;
       expect(data.ccpa).to.exist;
       expect(data.ccpa).to.be.a('string');
       expect(data.ccpa).to.equal(bidderRequest.uspConsent);
@@ -207,8 +207,7 @@ describe('SmartHubBidAdapter', function () {
 
     it('Returns empty data if no valid requests are passed', function () {
       serverRequest = spec.buildRequests([], bidderRequest);
-      let data = serverRequest.data;
-      expect(data.placements).to.be.an('array').that.is.empty;
+      expect(serverRequest).to.be.an('array').that.is.empty;
     });
   });
 
