@@ -61,10 +61,6 @@ describe('weboramaRtdProvider', function () {
       sandbox = sinon.sandbox.create();
 
       storage.removeDataFromLocalStorage('webo_wam2gam_entry');
-
-      getGlobal().setConfig({
-        ortb2: undefined
-      });
     });
 
     afterEach(function () {
@@ -145,13 +141,6 @@ describe('weboramaRtdProvider', function () {
             },
           }
         });
-        expect(getGlobal().getConfig('ortb2')).to.deep.equal({
-          site: {
-            ext: {
-              data: data
-            },
-          }
-        });
         expect(onDataResponse).to.deep.equal({
           data: data,
           meta: {user: false, source: 'contextual'},
@@ -224,8 +213,6 @@ describe('weboramaRtdProvider', function () {
         expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal(data);
         expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.be.undefined;
         expect(reqBidsConfigObj.adUnits[0].bids[4].ortb2).to.be.undefined;
-
-        expect(getGlobal().getConfig('ortb2')).to.be.undefined;
 
         expect(onDataResponse).to.deep.equal({
           data: data,
@@ -320,7 +307,6 @@ describe('weboramaRtdProvider', function () {
           }
         });
         expect(reqBidsConfigObj.adUnits[0].bids[4].ortb2).to.be.undefined;
-        expect(getGlobal().getConfig('ortb2')).to.be.undefined;
       });
 
       it('should set gam targeting but not send to bidders with (submodule override) setPrebidTargeting=true/(global) sendToBidders=false', function () {
@@ -380,7 +366,6 @@ describe('weboramaRtdProvider', function () {
         });
 
         expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(1);
-        expect(getGlobal().getConfig('ortb2')).to.be.undefined;
 
         expect(onDataResponse).to.deep.equal({
           data: data,
@@ -454,7 +439,10 @@ describe('weboramaRtdProvider', function () {
 
         const targeting = weboramaSubmodule.getTargetingData(adUnitsCodes, moduleConfig);
 
-        expect(targeting).to.deep.equal({});
+        expect(targeting).to.deep.equal({
+          adunit1: {},
+          adunit2: {},
+        });
 
         expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
         expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('foo=bar;webo_ctx=foo;webo_ctx=bar;webo_ds=baz');
@@ -475,13 +463,6 @@ describe('weboramaRtdProvider', function () {
           }
         });
         expect(reqBidsConfigObj.adUnits[0].bids[4].ortb2).to.deep.equal({
-          site: {
-            ext: {
-              data: data
-            },
-          }
-        });
-        expect(getGlobal().getConfig('ortb2')).to.deep.equal({
           site: {
             ext: {
               data: data
@@ -558,13 +539,6 @@ describe('weboramaRtdProvider', function () {
           inventory: defaultProfile
         });
         expect(reqBidsConfigObj.adUnits[0].bids[4].ortb2).to.deep.equal({
-          site: {
-            ext: {
-              data: defaultProfile
-            },
-          }
-        });
-        expect(getGlobal().getConfig('ortb2')).to.deep.equal({
           site: {
             ext: {
               data: defaultProfile
@@ -652,13 +626,6 @@ describe('weboramaRtdProvider', function () {
             },
           }
         });
-        expect(getGlobal().getConfig('ortb2')).to.deep.equal({
-          user: {
-            ext: {
-              data: data
-            },
-          }
-        });
         expect(onDataResponse).to.deep.equal({
           data: data,
           meta: {user: true, source: 'wam'},
@@ -731,8 +698,6 @@ describe('weboramaRtdProvider', function () {
         expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal(data);
         expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.be.undefined;
         expect(reqBidsConfigObj.adUnits[0].bids[4].ortb2).to.be.undefined;
-
-        expect(getGlobal().getConfig('ortb2')).to.be.undefined;
 
         expect(onDataResponse).to.deep.equal({
           data: data,
@@ -828,7 +793,6 @@ describe('weboramaRtdProvider', function () {
           }
         });
         expect(reqBidsConfigObj.adUnits[0].bids[4].ortb2).to.be.undefined;
-        expect(getGlobal().getConfig('ortb2')).to.be.undefined;
       });
 
       it('should set gam targeting but not send to bidders with (submodule override) setPrebidTargeting=true/(global) sendToBidders=false', function () {
@@ -890,7 +854,6 @@ describe('weboramaRtdProvider', function () {
 
         expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(1);
         expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('foo=bar');
-        expect(getGlobal().getConfig('ortb2')).to.be.undefined;
         expect(onDataResponse).to.deep.equal({
           data: data,
           meta: {user: true, source: 'wam'},
@@ -964,7 +927,10 @@ describe('weboramaRtdProvider', function () {
 
         const targeting = weboramaSubmodule.getTargetingData(adUnitsCodes, moduleConfig);
 
-        expect(targeting).to.deep.equal({});
+        expect(targeting).to.deep.equal({
+          adunit1: {},
+          adunit2: {},
+        });
 
         expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
         expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('foo=bar;webo_cs=foo;webo_cs=bar;webo_audiences=baz');
@@ -985,13 +951,6 @@ describe('weboramaRtdProvider', function () {
           }
         });
         expect(reqBidsConfigObj.adUnits[0].bids[4].ortb2).to.deep.equal({
-          user: {
-            ext: {
-              data: data
-            },
-          }
-        });
-        expect(getGlobal().getConfig('ortb2')).to.deep.equal({
           user: {
             ext: {
               data: data
@@ -1054,13 +1013,6 @@ describe('weboramaRtdProvider', function () {
           visitor: defaultProfile
         });
         expect(reqBidsConfigObj.adUnits[0].bids[4].ortb2).to.deep.equal({
-          user: {
-            ext: {
-              data: defaultProfile
-            },
-          }
-        });
-        expect(getGlobal().getConfig('ortb2')).to.deep.equal({
           user: {
             ext: {
               data: defaultProfile
@@ -1130,13 +1082,6 @@ describe('weboramaRtdProvider', function () {
           visitor: defaultProfile
         });
         expect(reqBidsConfigObj.adUnits[0].bids[4].ortb2).to.deep.equal({
-          user: {
-            ext: {
-              data: defaultProfile
-            },
-          }
-        });
-        expect(getGlobal().getConfig('ortb2')).to.deep.equal({
           user: {
             ext: {
               data: defaultProfile

@@ -20,10 +20,31 @@
  * @returns {void}
  */
 
+/** setPrebidTargeting callback type
+ * @callback sendToBiddersCallback
+ * @param {String} adUnitCode
+ * @param {Object} data
+ * @param {dataCallbackMetadata} metadata
+ * @returns {Boolean}
+ */
+
+/** sendToBidders callback type
+ * @callback sendToBiddersCallback
+ * @param {String} bidder
+ * @param {String} adUnitCode
+ * @param {Object} data
+ * @param {dataCallbackMetadata} metadata
+ * @returns {Boolean}
+ */
+
+/** we can define some elements from a given list, true for all, false for none
+ * @typedef {Boolean|String|Array<String>} boolOrStringOrArray
+ */
+
 /**
  * @typedef {Object} ModuleParams
- * @property {?Boolean} setPrebidTargeting if true, will set the GAM targeting (default undefined)
- * @property {?Boolean|?Array<String>} sendToBidders if true, will send the contextual profile to all bidders, else expects a list of allowed bidders (default undefined)
+ * @property {?boolOrStringOrArray|sendToBiddersCallback} setPrebidTargeting if true, will set the GAM targeting (default undefined)
+ * @property {?boolOrStringOrArray|?Map<String,boolOrStringOrArray>|sendToBiddersCallback} sendToBidders if true, will send the contextual profile to all bidders, else expects a list of allowed bidders (default undefined)
  * @property {?dataCallback} onData callback
  * @property {?WeboCtxConf} weboCtxConf
  * @property {?WeboUserDataConf} weboUserDataConf
@@ -33,8 +54,8 @@
  * @typedef {Object} WeboCtxConf
  * @property {string} token required token to be used on bigsea contextual API requests
  * @property {?string} targetURL specify the target url instead use the referer
- * @property {?Boolean} setPrebidTargeting if true, will set the GAM targeting (default params.setPrebidTargeting or true)
- * @property {?Boolean|?Array<String>} sendToBidders if true, will send the contextual profile to all bidders, else expects a list of allowed bidders (default params.sendToBidders or true)
+ * @property {?boolOrStringOrArray|sendToBiddersCallback} setPrebidTargeting if true, will set the GAM targeting (default undefined)
+ * @property {?boolOrStringOrArray|?Map<String,boolOrStringOrArray>|sendToBiddersCallback} sendToBidders if true, will send the contextual profile to all bidders, else expects a list of allowed bidders (default undefined)
  * @property {?dataCallback} onData callback
  * @property {?object} defaultProfile to be used if the profile is not found
  * @property {?Boolean} enabled if false, will ignore this configuration
@@ -43,8 +64,8 @@
 /**
  * @typedef {Object} WeboUserDataConf
  * @property {?number} accountId wam account id
- * @property {?Boolean} setPrebidTargeting if true, will set the GAM targeting (default params.setPrebidTargeting or true)
- * @property {?Boolean|?Array<String>} sendToBidders if true, will send the user-centric profile to all bidders, else expects a list of allowed bidders (default params.sendToBidders or true)
+ * @property {?boolOrStringOrArray|sendToBiddersCallback} setPrebidTargeting if true, will set the GAM targeting (default undefined)
+ * @property {?boolOrStringOrArray|?Map<String,boolOrStringOrArray>|sendToBiddersCallback} sendToBidders if true, will send the contextual profile to all bidders, else expects a list of allowed bidders (default undefined)
  * @property {?object} defaultProfile to be used if the profile is not found
  * @property {?dataCallback} onData callback
  * @property {?string} localStorageProfileKey can be used to customize the local storage key (default is 'webo_wam2gam_entry')
@@ -64,7 +85,10 @@ import {
   tryAppendQueryString,
   logMessage,
   isFn,
-  isArray
+  isArray,
+  isStr,
+  isBoolean,
+  isPlainObject,
 } from '../src/utils.js';
 import {
   submodule
@@ -131,13 +155,18 @@ function initWeboCtx(moduleParams, weboCtxConf) {
     return false
   }
 
-  normalizeConf(moduleParams, weboCtxConf);
+  try {
+    normalizeConf(moduleParams, weboCtxConf);
+  } catch (e) {
+    logError(`unable to initialize: error on site-centric (contextual) configuration: ${e}`);
+    return false
+  }
 
   _weboCtxInitialized = false;
   _weboContextualProfile = null;
 
   if (!weboCtxConf.token) {
-    logWarn('missing param "token" for weborama contextual sub module initialization');
+    logError('missing param "token" for weborama contextual sub module initialization');
     return false;
   }
 
@@ -158,7 +187,12 @@ function initWeboUserData(moduleParams, weboUserDataConf) {
     return false;
   }
 
-  normalizeConf(moduleParams, weboUserDataConf);
+  try {
+    normalizeConf(moduleParams, weboUserDataConf);
+  } catch (e) {
+    logError(`unable to initialize: error on user-centric (wam) configuration: ${e}`);
+    return false
+  }
 
   _weboUserDataInitialized = false;
   _weboUserDataUserProfile = null;
@@ -166,6 +200,8 @@ function initWeboUserData(moduleParams, weboUserDataConf) {
   let message = 'weborama user-centric intialized with success';
   if (weboUserDataConf.hasOwnProperty('accountId')) {
     message = `weborama user-centric intialized with success for account: ${weboUserDataConf.accountId}`;
+  } else {
+    logWarn('weborama wam account id not found on user-centric configuration');
   }
 
   logMessage(message);
@@ -186,12 +222,128 @@ const globalDefaults = {
  * @return {void}
  */
 function normalizeConf(moduleParams, submoduleParams) {
+  // handle defaults
   Object.entries(globalDefaults).forEach(([propertyName, globalDefaultValue]) => {
     if (!submoduleParams.hasOwnProperty(propertyName)) {
       const hasModuleParam = moduleParams.hasOwnProperty(propertyName);
       submoduleParams[propertyName] = (hasModuleParam) ? moduleParams[propertyName] : globalDefaultValue;
     }
   })
+
+  // handle setPrebidTargeting
+  coerceSetPrebidTargeting(submoduleParams)
+
+  // handle sendToBidders
+  coerceSendToBidders(submoduleParams)
+
+  if (!isFn(submoduleParams.onData)) {
+    throw 'onData parameter should be a callback';
+  }
+}
+
+/** coerce set prebid targeting to function
+ * @param {WeboCtxConf|WeboUserDataConf} submoduleParams
+ * @return {void}
+ */
+function coerceSetPrebidTargeting(submoduleParams) {
+  const setPrebidTargeting = submoduleParams.setPrebidTargeting;
+
+  if (isFn(setPrebidTargeting)) {
+    return
+  }
+
+  if (isBoolean(setPrebidTargeting)) {
+    const shouldSetPrebidTargeting = setPrebidTargeting;
+
+    submoduleParams.setPrebidTargeting = function () {
+      return shouldSetPrebidTargeting;
+    };
+
+    return
+  }
+
+  if (isStr(setPrebidTargeting)) {
+    const allowedAdUnitCode = setPrebidTargeting;
+    submoduleParams.setPrebidTargeting = function (adUnitCode) {
+      return allowedAdUnitCode == adUnitCode;
+    };
+
+    return
+  }
+
+  if (isArray(setPrebidTargeting)) {
+    const allowedAdUnitCodes = setPrebidTargeting;
+    submoduleParams.setPrebidTargeting = function (adUnitCode) {
+      return allowedAdUnitCodes.includes(adUnitCode);
+    };
+
+    return
+  }
+
+  throw `unexpected format for setPrebidTargeting: ${typeof setPrebidTargeting}`;
+}
+
+/** coerce send to bidders to function
+ * @param {WeboCtxConf|WeboUserDataConf} submoduleParams
+ * @return {void}
+ */
+function coerceSendToBidders(submoduleParams) {
+  const sendToBidders = submoduleParams.sendToBidders;
+
+  if (isFn(sendToBidders)) {
+    return
+  }
+
+  if (isBoolean(sendToBidders)) {
+    const shouldSendToBidders = sendToBidders;
+
+    submoduleParams.sendToBidders = function () {
+      return shouldSendToBidders;
+    };
+
+    return
+  }
+
+  if (isStr(sendToBidders)) {
+    const allowedBidder = sendToBidders;
+    submoduleParams.sendToBidders = function (bidder) {
+      return allowedBidder == bidder;
+    };
+
+    return
+  }
+
+  if (isArray(sendToBidders)) {
+    const allowedBidders = sendToBidders;
+    submoduleParams.sendToBidders = function (bidder) {
+      return allowedBidders.includes(bidder);
+    };
+
+    return
+  }
+
+  if (isPlainObject(sendToBidders)) {
+    const sendToBiddersMap = sendToBidders;
+    submoduleParams.sendToBidders = function (bidder, adUnitCode) {
+      if (!sendToBiddersMap.hasOwnProperty(bidder)) {
+        return false
+      }
+
+      const value = sendToBiddersMap[bidder];
+
+      if (isBoolean(value)) { return value }
+
+      if (isStr(value)) { return value == adUnitCode }
+
+      if (isArray(value)) { return value.includes(adUnitCode) }
+
+      throw `unexpected format for sendToBidders[${bidder}]: ${typeof value}`;
+    };
+
+    return
+  }
+
+  throw `unexpected format for sendToBidders: ${typeof sendToBidders}`;
 }
 
 /** function that provides ad server targeting data to RTD-core
@@ -201,23 +353,42 @@ function normalizeConf(moduleParams, submoduleParams) {
  */
 function getTargetingData(adUnitsCodes, moduleConfig) {
   moduleConfig = moduleConfig || {};
+
   const moduleParams = moduleConfig.params || {};
   const weboCtxConf = moduleParams.weboCtxConf || {};
   const weboUserDataConf = moduleParams.weboUserDataConf || {};
   const weboCtxConfTargeting = weboCtxConf.setPrebidTargeting;
   const weboUserDataConfTargeting = weboUserDataConf.setPrebidTargeting;
 
+  const profileHandlers = [{
+    data: getContextualProfile(weboCtxConf),
+    metadata: { user: false, source: 'contextual' },
+    setTargeting: weboCtxConfTargeting,
+  }, {
+    data: getWeboUserDataProfile(weboUserDataConf),
+    metadata: { user: true, source: 'wam' },
+    setTargeting: weboUserDataConfTargeting,
+  }].filter(handler =>
+    !isEmpty(handler.data)
+  );
+
+  if (isEmpty(profileHandlers)) {
+    logMessage('no data to set targeting');
+    return {};
+  }
+
   try {
-    const profile = getCompleteProfile(moduleParams, weboCtxConfTargeting, weboUserDataConfTargeting);
-
-    if (isEmpty(profile)) {
-      return {};
-    }
-
     const td = adUnitsCodes.reduce((data, adUnitCode) => {
-      if (adUnitCode) {
-        data[adUnitCode] = profile;
-      }
+      data[adUnitCode] = profileHandlers.reduce((targeting, handler) => {
+        logMessage(`check if should set targeting for adunit '${adUnitCode}'`);
+
+        if (handler.setTargeting(adUnitCode, handler.data, handler.metadata)) {
+          logMessage(`set targeting for adunit '${adUnitCode}', source '${handler.metadata.source}'`);
+
+          mergeDeep(targeting, handler.data);
+        }
+        return targeting;
+      }, {});
       return data;
     }, {});
 
@@ -226,28 +397,6 @@ function getTargetingData(adUnitsCodes, moduleConfig) {
     logError('unable to format weborama rtd targeting data', e);
     return {};
   }
-}
-
-/** function that provides complete profile formatted to be used
- * @param {ModuleParams} moduleParams
- * @param {Boolean} weboCtxConfTargeting
- * @param {Boolean} weboUserDataConfTargeting
- * @returns {Object} complete profile
- */
-function getCompleteProfile(moduleParams, weboCtxConfTargeting, weboUserDataConfTargeting) {
-  const profile = {};
-
-  if (weboCtxConfTargeting) {
-    const contextualProfile = getContextualProfile(moduleParams.weboCtxConf || {});
-    mergeDeep(profile, contextualProfile);
-  }
-
-  if (weboUserDataConfTargeting) {
-    const weboUserDataProfile = getWeboUserDataProfile(moduleParams.weboUserDataConf || {});
-    mergeDeep(profile, weboUserDataProfile);
-  }
-
-  return profile;
 }
 
 /** return contextual profile
@@ -318,83 +467,57 @@ export function getBidRequestData(reqBidsConfigObj, onDone, moduleConfig) {
  * @param {ModuleParams} moduleParams
  * @returns {void}
  */
-
 function handleBidRequestData(adUnits, moduleParams) {
   const weboCtxConf = moduleParams.weboCtxConf || {};
   const weboUserDataConf = moduleParams.weboUserDataConf || {};
   const weboCtxConfSendToBidders = weboCtxConf.sendToBidders;
   const weboUserDataSendToBidders = weboUserDataConf.sendToBidders;
 
-  if (weboCtxConfSendToBidders) {
-    const contextualProfile = getContextualProfile(weboCtxConf);
-    if (!isEmpty(contextualProfile)) {
-      setBidRequestProfile(adUnits, contextualProfile, weboCtxConfSendToBidders, true);
-    }
-  }
-
-  if (weboUserDataSendToBidders) {
-    const weboUserDataProfile = getWeboUserDataProfile(weboUserDataConf);
-    if (!isEmpty(weboUserDataProfile)) {
-      setBidRequestProfile(adUnits, weboUserDataProfile, weboUserDataSendToBidders, false);
-    }
-  }
-
-  handleOnData(weboCtxConf, weboUserDataConf);
-}
-
-/** function that handle with onData callbacks
- * @param {WeboCtxConf} weboCtxConf
- * @param {WeboUserDataConf} weboUserDataConf
- */
-
-function handleOnData(weboCtxConf, weboUserDataConf) {
-  const callbacks = [{
+  const profileHandlers = [{
+    data: getContextualProfile(weboCtxConf),
+    metadata: { user: false, source: 'contextual' },
+    sendToBidders: weboCtxConfSendToBidders,
     onData: weboCtxConf.onData,
-    fetchData: () => getContextualProfile(weboCtxConf),
-    meta: {
-      user: false,
-      source: 'contextual',
-    },
   }, {
+    data: getWeboUserDataProfile(weboUserDataConf),
+    metadata: { user: true, source: 'wam' },
+    sendToBidders: weboUserDataSendToBidders,
     onData: weboUserDataConf.onData,
-    fetchData: () => getWeboUserDataProfile(weboUserDataConf),
-    meta: {
-      user: true,
-      source: 'wam',
-    },
-  }];
+  }].filter(handler =>
+    !isEmpty(handler.data)
+  );
 
-  callbacks.filter(obj => isFn(obj.onData)).forEach(obj => {
-    try {
-      const data = obj.fetchData();
-      obj.onData(data, obj.meta);
-    } catch (e) {
-      logError(`error while executure onData callback with ${obj.meta.source}-based data:`, e);
-    }
-  });
-}
-
-/** function that set bid request data on each segment (site or user centric)
- * @param {Object[]} adUnits
- * @param {Object} profile
- * @param {Boolean|Array<String>} sendToBidders
- * @param {Boolean} site true if site centric, else it is user centric
- * @returns {void}
- */
-function setBidRequestProfile(adUnits, profile, sendToBidders, site) {
-  if (sendToBidders === true) {
-    setGlobalOrtb2(profile, site);
+  if (isEmpty(profileHandlers)) {
+    logMessage('no data to send to bidders');
+    return;
   }
 
-  adUnits.forEach(adUnit => {
-    if (adUnit.hasOwnProperty('bids')) {
-      // if bid in sendToBidders
-      const adUnitCode = adUnit.code || 'no code';
-      let bids = adUnit.bids;
-      if (isArray(sendToBidders)) {
-        bids = bids.filter(bid => sendToBidders.includes(bid.bidder));
-      }
-      bids.forEach(bid => handleBid(adUnitCode, profile, site, bid));
+  try {
+    adUnits.filter(
+      adUnit => adUnit.hasOwnProperty('bids')
+    ).forEach(
+      adUnit => adUnit.bids.forEach(
+        bid => profileHandlers.forEach(ph => {
+          logMessage(`check if bidder '${bid.bidder}' and adunit '${adUnit.code} are share ${ph.metadata.source} data`);
+
+          if (ph.sendToBidders(bid.bidder, adUnit.code, ph.data, ph.metadata)) {
+            // TODO should reorder parameters...
+            logMessage(`handling bidder '${bid.bidder}' with ${ph.metadata.source} data`);
+
+            handleBid(bid, ph.data, ph.metadata.user);
+          }
+        })
+      )
+    );
+  } catch (e) {
+    logError('unable to send data to bidders:', e);
+  }
+
+  profileHandlers.forEach(ph => {
+    try {
+      ph.onData(ph.data, ph.metadata);
+    } catch (e) {
+      logError(`error while executure onData callback with ${ph.metadata.source}-based data:`, e);
     }
   });
 }
@@ -415,64 +538,39 @@ const SMARTADSERVER = 'smartadserver';
 const bidderAliasRegistry = adapterManager.aliasRegistry || {};
 
 /** handle individual bid
- * @param {string} adUnitCode
- * @param {Object} profile
- * @param {Boolean} site true if site centric, else it is user centric
  * @param {Object} bid
+ * @param {Object} profile
+ * @param {Boolean} user true if user-centric, else it is site centric data
  * @returns {void}
  */
-function handleBid(adUnitCode, profile, site, bid) {
+function handleBid(bid, profile, user) {
   const bidder = bidderAliasRegistry[bid.bidder] || bid.bidder;
-
-  logMessage(`handling on adunit '${adUnitCode}', bidder '${bidder}' and bid`, bid);
 
   switch (bidder) {
     case APPNEXUS:
-      handleAppnexusBid(profile, bid);
+      handleAppnexusBid(bid, profile);
 
       break;
 
     case PUBMATIC:
-      handlePubmaticBid(profile, bid);
+      handlePubmaticBid(bid, profile);
 
       break;
 
     case SMARTADSERVER:
-      handleSmartadserverBid(profile, bid);
+      handleSmartadserverBid(bid, profile);
 
       break;
     case RUBICON:
-      handleRubiconBid(profile, site, bid);
+      handleRubiconBid(bid, profile, user);
 
       break;
     default:
       logMessage(`unsupported bidder '${bidder}', trying via bidder ortb2 fpd`);
-      const section = ((site) ? 'site' : 'user');
+      const section = ((user) ? 'user' : 'site');
       const base = `ortb2.${section}.ext.data`;
 
       assignProfileToObject(bid, base, profile);
-  }
-}
-
-/**
- * set ortb2 global data
- * @param {Object} profile
- * @param {Boolean} site
- * @returns {void}
- */
-function setGlobalOrtb2(profile, site) {
-  const section = ((site) ? 'site' : 'user');
-  const base = `${section}.ext.data`;
-  const addOrtb2 = {};
-
-  assignProfileToObject(addOrtb2, base, profile);
-
-  if (!isEmpty(addOrtb2)) {
-    const testGlobal = getGlobal().getConfig('ortb2') || {};
-    const ortb2 = {
-      ortb2: mergeDeep({}, testGlobal, addOrtb2)
-    };
-    getGlobal().setConfig(ortb2);
   }
 }
 
@@ -491,33 +589,33 @@ function assignProfileToObject(destination, base, profile) {
 }
 
 /** handle rubicon bid
- * @param {Object} profile
- * @param {Boolean} site
  * @param {Object} bid
+ * @param {Object} profile
+ * @param {Boolean} user
  * @returns {void}
  */
-function handleRubiconBid(profile, site, bid) {
-  const section = (site) ? 'inventory' : 'visitor';
+function handleRubiconBid(bid, profile, user) {
+  const section = (user) ? 'visitor' : 'inventory';
   const base = `params.${section}`;
   assignProfileToObject(bid, base, profile);
 }
 
 /** handle appnexus/xandr bid
- * @param {Object} profile
  * @param {Object} bid
+ * @param {Object} profile
  * @returns {void}
  */
-function handleAppnexusBid(profile, bid) {
+function handleAppnexusBid(bid, profile) {
   const base = 'params.keywords';
   assignProfileToObject(bid, base, profile);
 }
 
 /** handle pubmatic bid
- * @param {Object} profile
  * @param {Object} bid
+ * @param {Object} profile
  * @returns {void}
  */
-function handlePubmaticBid(profile, bid) {
+function handlePubmaticBid(bid, profile) {
   const sep = '|';
   const subsep = ',';
   const bidKey = 'params.dctr';
@@ -540,11 +638,11 @@ function handlePubmaticBid(profile, bid) {
 }
 
 /** handle smartadserver bid
- * @param {Object} profile
  * @param {Object} bid
+ * @param {Object} profile
  * @returns {void}
  */
-function handleSmartadserverBid(profile, bid) {
+function handleSmartadserverBid(bid, profile) {
   const sep = ';';
   const bidKey = 'params.target';
   const target = [];
@@ -603,7 +701,7 @@ function fetchContextualProfile(weboCtxConf, onSuccess, onDone) {
   const url = `https://ctx.weborama.com/api/profile?${queryString}`;
 
   ajax(url, {
-    success: function(response, req) {
+    success: function (response, req) {
       if (req.status === 200) {
         try {
           const data = JSON.parse(response);
@@ -618,7 +716,7 @@ function fetchContextualProfile(weboCtxConf, onSuccess, onDone) {
         onDone();
       }
     },
-    error: function() {
+    error: function () {
       onDone();
       logError('unable to get weborama data');
     }
