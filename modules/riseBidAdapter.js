@@ -94,12 +94,10 @@ export const spec = {
       if (syncOptions.iframeEnabled && response.body.params.userSyncURL) {
         syncs.push({
           type: 'iframe',
-          // TODO: verify url is correct
           url: response.body.params.userSyncURL
         });
       }
       if (syncOptions.pixelEnabled && isArray(response.body.params.userSyncPixels)) {
-        // TODO: verify pixels is correct
         const pixels = response.body.params.userSyncPixels.map(pixel => {
           return {
             type: 'image',
