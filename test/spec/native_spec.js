@@ -5,7 +5,9 @@ import {
   nativeBidIsValid,
   getAssetMessage,
   getAllAssetsMessage,
-  decorateAdUnitsWithNativeParams
+  decorateAdUnitsWithNativeParams,
+  isOpenRTBBidRequestValid,
+  isNativeOpenRTBBidValid
 } from 'src/native.js';
 import CONSTANTS from 'src/constants.json';
 import {stubAuctionIndex} from '../helpers/indexStub.js';
