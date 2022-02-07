@@ -18,7 +18,7 @@ describe('SmartHubBidAdapter', function () {
       params: {
         partnerName: 'testname',
         seat: 'testSeat',
-        token: 'testToken',
+        token: 'testBanner',
         iabCat: ['IAB1-1', 'IAB3-1', 'IAB4-3'],
         minBidfloor: 111,
         pos: 1,
@@ -37,7 +37,7 @@ describe('SmartHubBidAdapter', function () {
       params: {
         partnerName: 'testname',
         seat: 'testSeat',
-        token: 'testToken',
+        token: 'testVideo',
         iabCat: ['IAB1-1', 'IAB3-1', 'IAB4-3'],
         minBidfloor: 111,
         pos: 1,

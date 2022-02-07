@@ -25,14 +25,14 @@ IQZone bid adapter supports Banner, Video (instream and outstream) and Native.
                     },
                     bids: [
                         {
-                            bidder: 'smurthub',
+                            bidder: 'smarthub',
                             params: {
                                 partnerName: 'testname',
                                 seat: 'testSeat',
-                                token: 'testToken',
+                                token: 'testBanner',
                                 iabCat: ['IAB1-1', 'IAB3-1', 'IAB4-3'],
                                 minBidfloor: 111,
-                                pos: 0,
+                                pos: 1,
                             }
                         }
                     ]
@@ -49,14 +49,14 @@ IQZone bid adapter supports Banner, Video (instream and outstream) and Native.
                     },
                     bids: [
                         {
-                            bidder: 'smurthub',
+                            bidder: 'smarthub',
                             params: {
                                 partnerName: 'testname',
                                 seat: 'testSeat',
-                                token: 'testToken',
+                                token: 'testVideo',
                                 iabCat: ['IAB1-1', 'IAB3-1', 'IAB4-3'],
                                 minBidfloor: 111,
-                                pos: 0,
+                                pos: 1,
                             }
                         }
                     ]
@@ -79,14 +79,14 @@ IQZone bid adapter supports Banner, Video (instream and outstream) and Native.
                     },
                     bids: [
                         {
-                            bidder: 'smurthub',
+                            bidder: 'smarthub',
                             params: {
                                 partnerName: 'testname',
                                 seat: 'testSeat',
-                                token: 'testToken',
+                                token: 'testNative',
                                 iabCat: ['IAB1-1', 'IAB3-1', 'IAB4-3'],
                                 minBidfloor: 111,
-                                pos: 0,
+                                pos: 1,
                             }
                         }
                     ]
