@@ -36,7 +36,7 @@ export const spec = {
 
     let payload = {
       requestId: bidderRequest.bidderRequestId,
-      bids,
+      signRequest: { bids, randomUUID: alkimiConfig && alkimiConfig.randomUUID },
       bidIds,
       referer: bidderRequest.refererInfo.referer,
       signature: alkimiConfig && alkimiConfig.signature
