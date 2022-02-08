@@ -1,6 +1,6 @@
 import { config } from '../../src/config.js';
 import events from '../../src/events.js';
-import { allVideoEvents, AUCTION_AD_LOAD_ATTEMPT } from './constants/events.js';
+import { allVideoEvents, AUCTION_AD_LOAD_ATTEMPT, allVideoAuctionEvents } from './constants/events.js';
 import CONSTANTS from '../../src/constants.json';
 import { videoCoreFactory } from './coreVideo.js';
 import { coreAdServerFactory } from './adServer.js';
@@ -13,6 +13,7 @@ import { vastXmlEditorFactory } from './shared/vastXmlEditor.js';
  */
 
 events.addEvents(allVideoEvents);
+events.addEvents(allVideoAuctionEvents);
 
 export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvents_, adServerCore_, vastXmlEditor_) {
   const videoCore = videoCore_;
