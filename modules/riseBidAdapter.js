@@ -277,18 +277,18 @@ function generateBidParameters(bid, bidderRequest) {
 
   const bidObject = {
     mediaType,
-    ad_unit_code: getBidIdParameter('adUnitCode', bid),
+    adUnitCode: getBidIdParameter('adUnitCode', bid),
     tmax: timeout,
     sizes: sizesArray,
-    floor_price: Math.max(getFloor(bid, mediaType), params.floorPrice),
-    bid_id: getBidIdParameter('bidId', bid),
-    bidder_request_id: getBidIdParameter('bidderRequestId', bid),
-    transaction_id: getBidIdParameter('transactionId', bid),
+    floorPrice: Math.max(getFloor(bid, mediaType), params.floorPrice),
+    bidId: getBidIdParameter('bidId', bid),
+    bidderRequestId: getBidIdParameter('bidderRequestId', bid),
+    transactionId: getBidIdParameter('transactionId', bid),
   };
 
   // fix floor price in case of NAN
-  if (isNaN(bidObject.floor_price)) {
-    bidObject.floor_price = 0;
+  if (isNaN(bidObject.floorPrice)) {
+    bidObject.floorPrice = 0;
   }
 
   const pos = deepAccess(bid, `mediaTypes.${mediaType}.pos`);
@@ -299,7 +299,7 @@ function generateBidParameters(bid, bidderRequest) {
   if (mediaType === VIDEO) {
     const playbackMethod = deepAccess(bid, `mediaTypes.video.playbackmethod`);
     if (playbackMethod) {
-      bidObject.playback_method = playbackMethod;
+      bidObject.playbackMethod = playbackMethod;
     }
 
     const placement = deepAccess(bid, `mediaTypes.video.placement`);
@@ -309,12 +309,12 @@ function generateBidParameters(bid, bidderRequest) {
 
     const minDuration = deepAccess(bid, `mediaTypes.video.minduration`);
     if (minDuration) {
-      bidObject.min_duration = minDuration;
+      bidObject.minDuration = minDuration;
     }
 
     const maxDuration = deepAccess(bid, `mediaTypes.video.maxduration`);
     if (maxDuration) {
-      bidObject.max_duration = maxDuration;
+      bidObject.maxDuration = maxDuration;
     }
 
     const skip = deepAccess(bid, `mediaTypes.video.skip`);
