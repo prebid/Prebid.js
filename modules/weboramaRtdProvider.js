@@ -847,7 +847,7 @@ function fetchContextualProfile(weboCtxConf, onSuccess, onDone) {
       logError('unable to get weborama data');
     }
   },
-  null, {
+    null, {
     method: 'GET',
     withCredentials: false,
   });
