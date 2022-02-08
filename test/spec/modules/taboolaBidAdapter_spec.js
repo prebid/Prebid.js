@@ -1,5 +1,6 @@
 import {expect} from 'chai';
 import {spec} from 'modules/taboolaBidAdapter.js';
+import {config} from '../../../src/config'
 
 describe('Taboola Adapter', function () {
   const commonBidRequest = {
@@ -66,6 +67,11 @@ describe('Taboola Adapter', function () {
   })
 
   describe('buildRequests', function () {
+    const defaultBidRequest = {
+      ...commonBidRequest,
+      ...displayBidRequestParams,
+    }
+
     const commonBidderRequest = {
       refererInfo: {
         referer: 'https://example.com/'
@@ -73,10 +79,6 @@ describe('Taboola Adapter', function () {
     }
 
     it('should build display request', function () {
-      const bidRequest = {
-        ...commonBidRequest,
-        ...displayBidRequestParams,
-      }
       const expectedData = {
         'imp': [{
           'id': 1,
@@ -97,10 +99,12 @@ describe('Taboola Adapter', function () {
         'device': {'ua': navigator.userAgent},
         'source': {'fd': 1},
         'bcat': [],
-        'badv': []
+        'badv': [],
+        'user': {'ext': {}},
+        'regs': {'coppa': 0, 'ext': {}}
       };
 
-      const res = spec.buildRequests([bidRequest], commonBidderRequest)
+      const res = spec.buildRequests([defaultBidRequest], commonBidderRequest)
 
       expect(res.url).to.equal('http://taboolahb.bidder.taboolasyndication.com?p=publisherId')
       expect(res.data).to.deep.equal(JSON.stringify(expectedData))
@@ -114,8 +118,7 @@ describe('Taboola Adapter', function () {
         bidfloorcur: 'EUR'
       }
       const bidRequest = {
-        ...commonBidRequest,
-        ...displayBidRequestParams,
+        ...defaultBidRequest,
         params: {...commonBidRequest.params, ...optionalParams}
       }
 
@@ -128,19 +131,55 @@ describe('Taboola Adapter', function () {
     });
 
     it('should pass bidder timeout', function () {
-      const bidRequest = {
-        ...commonBidRequest,
-        ...displayBidRequestParams,
-      }
-
       const bidderRequest = {
         ...commonBidderRequest,
         timeout: 500
       }
-      const res = spec.buildRequests([bidRequest], bidderRequest)
+      const res = spec.buildRequests([defaultBidRequest], bidderRequest)
       const resData = JSON.parse(res.data)
       expect(resData.tmax).to.equal(500)
     });
+
+    describe('handle privacy segments when building request', function () {
+      it('should pass GDPR consent', function () {
+        const bidderRequest = {
+          refererInfo: {
+            referer: 'https://example.com/'
+          },
+          gdprConsent: {
+            gdprApplies: true,
+            consentString: 'consentString',
+          }
+        };
+
+        const res = spec.buildRequests([defaultBidRequest], bidderRequest)
+        const resData = JSON.parse(res.data)
+        expect(resData.user.ext.consent).to.equal('consentString')
+        expect(resData.regs.ext.gdpr).to.equal(1)
+      });
+
+      it('should pass us privacy consent', function () {
+        const bidderRequest = {
+          refererInfo: {
+            referer: 'https://example.com/'
+          },
+          uspConsent: 'consentString'
+        }
+        const res = spec.buildRequests([defaultBidRequest], bidderRequest)
+        const resData = JSON.parse(res.data)
+        expect(resData.regs.ext.us_privacy).to.equal('consentString')
+      });
+
+      it('should pass coppa consent', function () {
+        config.setConfig({coppa: true})
+
+        const res = spec.buildRequests([defaultBidRequest], commonBidderRequest)
+        const resData = JSON.parse(res.data);
+        expect(resData.regs.coppa).to.equal(1)
+
+        config.resetConfig()
+      });
+    })
   })
 
   describe('interpretResponse', function () {
