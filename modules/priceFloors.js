@@ -672,8 +672,11 @@ export function addBidResponseHook(fn, adUnitCode, bid) {
   if (!floorData || !bid || floorData.skipped) {
     return fn.call(this, adUnitCode, bid);
   }
+
+  const matchingBidRequest = auctionManager.index.getBidRequest(bid)
+
   // get the matching rule
-  let floorInfo = getFirstMatchingFloor(floorData.data, null, {...bid, size: [bid.width, bid.height]});
+  let floorInfo = getFirstMatchingFloor(floorData.data, matchingBidRequest, {...bid, size: [bid.width, bid.height]});
 
   if (!floorInfo.matchingFloor) {
     logWarn(`${MODULE_NAME}: unable to determine a matching price floor for bidResponse`, bid);
