@@ -467,7 +467,19 @@ function getDataHandlers(moduleParams) {
     }
   }
 
-  // TODO add webo lite data
+  if (_weboLiteDataInitialized && moduleParams.weboLiteDataConf) {
+    const weboLiteDataConf = moduleParams.weboLiteDataConf;
+    const data = getWeboLiteDataProfile(weboLiteDataConf);
+    if (!isEmpty(data)) {
+      profileHandlers.push({
+        data: data,
+        metadata: { source: 'lite' },
+        setTargeting: weboLiteDataConf.setPrebidTargeting,
+        sendToBidders: weboLiteDataConf.sendToBidders,
+        onData: weboLiteDataConf.onData,
+      })
+    }
+  }
 
   return profileHandlers;
 }
@@ -649,45 +661,7 @@ function handleBid(bid, profile, metadata) {
 
       break;
     default:
-      if (isBoolean(metadata.user)) {
-        logMessage(`unsupported bidder '${bidder}', trying via bidder ortb2 fpd`);
-        const section = ((metadata.user) ? 'user' : 'site');
-        const base = `ortb2.${section}.ext.data`;
-
-        assignProfileToObject(bid, base, profile);
-      } else {
-        logMessage(`SKIP unsupported bidder '${bidder}', data from '${metadata.source}' is not defined as user or site-centric`);
-      }
-  }
-}
-
-/**
- * assign profile to object
- * @param {Object} destination
- * @param {string} base
- * @param {Object} profile
- * @returns {void}
- */
-function assignProfileToObject(destination, base, profile) {
-  Object.keys(profile).forEach(key => {
-    const path = `${base}.${key}`;
-    deepSetValue(destination, path, profile[key])
-  })
-}
-
-/** handle rubicon bid
- * @param {Object} bid
- * @param {Object} profile
- * @param {Object} metadata
- * @returns {void}
- */
-function handleRubiconBid(bid, profile, metadata) {
-  if (isBoolean(metadata.user)) {
-    const section = (metadata.user) ? 'visitor' : 'inventory';
-    const base = `params.${section}`;
-    assignProfileToObject(bid, base, profile);
-  } else {
-    logMessage(`SKIP bidder '${bid.bidder}', data from '${metadata.source}' is not defined as user or site-centric`);
+      handleBidViaORTB2(bid, profile, metadata);
   }
 }
 
@@ -752,6 +726,54 @@ function handleSmartadserverBid(bid, profile) {
     });
   });
   deepSetValue(bid, bidKey, target.join(sep));
+}
+
+/** handle rubicon bid
+ * @param {Object} bid
+ * @param {Object} profile
+ * @param {Object} metadata
+ * @returns {void}
+ */
+function handleRubiconBid(bid, profile, metadata) {
+  if (isBoolean(metadata.user)) {
+    const section = (metadata.user) ? 'visitor' : 'inventory';
+    const base = `params.${section}`;
+    assignProfileToObject(bid, base, profile);
+  } else {
+    logMessage(`SKIP bidder '${bid.bidder}', data from '${metadata.source}' is not defined as user or site-centric`);
+  }
+}
+
+/** handle generic bid via ortb2 arbitrary data
+ * @param {Object} bid
+ * @param {Object} profile
+ * @param {Object} metadata
+ * @returns {void}
+ */
+function handleBidViaORTB2(bid, profile, metadata) {
+  if (isBoolean(metadata.user)) {
+    logMessage(`bidder '${bid.bidder}' is not directly supported, trying set data via bidder ortb2 fpd`);
+    const section = ((metadata.user) ? 'user' : 'site');
+    const base = `ortb2.${section}.ext.data`;
+
+    assignProfileToObject(bid, base, profile);
+  } else {
+    logMessage(`SKIP unsupported bidder '${bid.bidder}', data from '${metadata.source}' is not defined as user or site-centric`);
+  }
+}
+
+/**
+ * assign profile to object
+ * @param {Object} destination
+ * @param {string} base
+ * @param {Object} profile
+ * @returns {void}
+ */
+function assignProfileToObject(destination, base, profile) {
+  Object.keys(profile).forEach(key => {
+    const path = `${base}.${key}`;
+    deepSetValue(destination, path, profile[key])
+  })
 }
 
 /** set bigsea contextual profile on module state
