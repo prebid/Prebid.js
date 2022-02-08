@@ -99,6 +99,7 @@ import {
   isStr,
   isBoolean,
   isPlainObject,
+  deepClone,
 } from '../src/utils.js';
 import {
   submodule
@@ -404,7 +405,7 @@ function getTargetingData(adUnitsCodes, moduleConfig) {
 
   const moduleParams = moduleConfig.params || {};
 
-  const profileHandlers = getDataHandlers(moduleParams);
+  const profileHandlers = buildProfileHandlers(moduleParams);
 
   if (isEmpty(profileHandlers)) {
     logMessage('no data to set targeting');
@@ -413,12 +414,14 @@ function getTargetingData(adUnitsCodes, moduleConfig) {
 
   try {
     const td = adUnitsCodes.reduce((data, adUnitCode) => {
-      data[adUnitCode] = profileHandlers.reduce((targeting, handler) => {
+      data[adUnitCode] = profileHandlers.reduce((targeting, ph) => {
         logMessage(`check if should set targeting for adunit '${adUnitCode}'`);
-        if (handler.setTargeting(adUnitCode, handler.data, handler.metadata)) {
-          logMessage(`set targeting for adunit '${adUnitCode}', source '${handler.metadata.source}'`);
+        const data = deepClone(ph.data);
+        const meta = deepClone(ph.metadata);
+        if (ph.setTargeting(adUnitCode, data, meta)) {
+          logMessage(`set targeting for adunit '${adUnitCode}', source '${ph.metadata.source}'`);
 
-          mergeDeep(targeting, handler.data);
+          mergeDeep(targeting, data);
         }
         return targeting;
       }, {});
@@ -436,7 +439,7 @@ function getTargetingData(adUnitsCodes, moduleConfig) {
  * @param {ModuleParams} moduleParams
  * @returns {Array<Object>} handlers
  */
-function getDataHandlers(moduleParams) {
+function buildProfileHandlers(moduleParams) {
   const profileHandlers = [];
 
   if (_weboCtxInitialized && moduleParams.weboCtxConf) {
@@ -450,6 +453,8 @@ function getDataHandlers(moduleParams) {
         sendToBidders: weboCtxConf.sendToBidders,
         onData: weboCtxConf.onData,
       })
+    } else {
+      logMessage('skip contextual profile: no data');
     }
   }
 
@@ -464,6 +469,8 @@ function getDataHandlers(moduleParams) {
         sendToBidders: weboUserDataConf.sendToBidders,
         onData: weboUserDataConf.onData,
       })
+    } else {
+      logMessage('skip wam profile: no data');
     }
   }
 
@@ -478,6 +485,8 @@ function getDataHandlers(moduleParams) {
         sendToBidders: weboLiteDataConf.sendToBidders,
         onData: weboLiteDataConf.onData,
       })
+    } else {
+      logMessage('skip webo lite profile: no data');
     }
   }
 
@@ -581,7 +590,7 @@ export function getBidRequestData(reqBidsConfigObj, onDone, moduleConfig) {
  * @returns {void}
  */
 function handleBidRequestData(adUnits, moduleParams) {
-  const profileHandlers = getDataHandlers(moduleParams);
+  const profileHandlers = buildProfileHandlers(moduleParams);
 
   if (isEmpty(profileHandlers)) {
     logMessage('no data to send to bidders');
@@ -596,10 +605,12 @@ function handleBidRequestData(adUnits, moduleParams) {
         bid => profileHandlers.forEach(ph => {
           logMessage(`check if bidder '${bid.bidder}' and adunit '${adUnit.code} are share ${ph.metadata.source} data`);
 
-          if (ph.sendToBidders(bid.bidder, adUnit.code, ph.data, ph.metadata)) {
+          const data = deepClone(ph.data);
+          const meta = deepClone(ph.metadata);
+          if (ph.sendToBidders(bid.bidder, adUnit.code, data, meta)) {
             logMessage(`handling bidder '${bid.bidder}' with ${ph.metadata.source} data`);
 
-            handleBid(bid, ph.data, ph.metadata);
+            handleBid(bid, data, ph.metadata);
           }
         })
       )
@@ -610,7 +621,9 @@ function handleBidRequestData(adUnits, moduleParams) {
 
   profileHandlers.forEach(ph => {
     try {
-      ph.onData(ph.data, ph.metadata);
+      const data = deepClone(ph.data);
+      const meta = deepClone(ph.metadata);
+      ph.onData(data, meta);
     } catch (e) {
       logError(`error while executure onData callback with ${ph.metadata.source}-based data:`, e);
     }
