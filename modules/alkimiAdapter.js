@@ -2,6 +2,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { deepClone, deepAccess } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { VIDEO } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'alkimi';
 export const ENDPOINT = 'https://exchange-dev.alkimi.asteriosoft.com/bid?prebid=true';
@@ -16,11 +17,11 @@ export const spec = {
 
   buildRequests: function (validBidRequests, bidderRequest) {
     let bids = [];
+    let bidIds = [];
     validBidRequests.forEach(bidRequest => {
       let sizes = prepareSizes(bidRequest.sizes)
 
       bids.push({
-        bidId: bidRequest.bidId,
         token: bidRequest.params.token,
         pos: bidRequest.params.pos,
         bidFloor: bidRequest.params.bidFloor,
@@ -28,12 +29,17 @@ export const spec = {
         height: sizes[0].height,
         impMediaType: getFormatType(bidRequest)
       })
+      bidIds.push(bidRequest.bidId)
     })
+
+    const alkimiConfig = config.getConfig('alkimi');
 
     let payload = {
       requestId: bidderRequest.bidderRequestId,
       bids,
-      referer: bidderRequest.refererInfo.referer
+      bidIds,
+      referer: bidderRequest.refererInfo.referer,
+      signature: alkimiConfig && alkimiConfig.signature
     }
 
     const options = {
@@ -82,13 +88,21 @@ export const spec = {
   },
 
   onBidWon: function (bid) {
-    if (bid.winUrl) {
-      const cpm = bid.cpm;
-      const winUrl = bid.winUrl.replace(/\$\{AUCTION_PRICE\}/, cpm);
-      ajax(winUrl, null);
-      return true;
+    let winUrl;
+    if (bid.winUrl || bid.vastUrl) {
+      winUrl = bid.winUrl ? bid.winUrl : bid.vastUrl;
+      winUrl = winUrl.replace(/\$\{AUCTION_PRICE\}/, bid.cpm);
+    } else if (bid.ad) {
+      let trackImg = bid.ad.match(/(?!^)<img src=".+dsp-win.+">/);
+      bid.ad = bid.ad.replace(trackImg[0], '');
+      winUrl = trackImg[0].split('"')[1];
+      winUrl = winUrl.replace(/\$%7BAUCTION_PRICE%7D/, bid.cpm);
+    } else {
+      return false;
     }
-    return false;
+
+    ajax(winUrl, null);
+    return true;
   }
 }
 
