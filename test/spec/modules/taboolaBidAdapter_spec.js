@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {spec} from 'modules/taboolaBidAdapter.js';
 
-describe.only('Taboola Adapter', function () {
+describe('Taboola Adapter', function () {
   const commonBidRequest = {
     bidder: 'taboola',
     params: {

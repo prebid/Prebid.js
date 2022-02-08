@@ -11,8 +11,6 @@ Maintainer: prebid@taboola.com
 Module that connects to Taboola bidder to fetch bids.
 support display format. Using OpenRTB standard.
 
-# Configuration
-
 # Test Display Parameters
 ```
    var adUnits = [{
@@ -34,5 +32,16 @@ support display format. Using OpenRTB standard.
                 }
             }]
         }];
-
 ```
+
+# Parameters
+
+| Name          | Scope    | Description                                  | Example                  | Type         |
+|---------------|----------|----------------------------------------------|--------------------------|--------------|
+| `tagId`       | required | Tag Id / Placement name                      | `below the article`      | `String`     |
+| `publisherId` | required | Tag Id / Placement name                      | `below the article`      | `String`     |
+| `bcat`        | optional | list of blocked advertiser categories (IAB)  | `['IAB1-1']`             | `Array`      |
+| `badv`        | optional | Blocked Advertiser Domains                   | `example.com`            | `String Url` |
+| `bidfloor`    | optional | CPM bid floor                                | `0.25`                   | `Integer`    |
+| `bidfloorcur` | optional | CPM bid floor currency                       | `Euro`                   | `Integer`    |
+
