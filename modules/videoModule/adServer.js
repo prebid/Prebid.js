@@ -43,7 +43,9 @@ export function AdServerCore(parentModule_) {
    */
   function registerAdServer(config) {
     const vendorCode = config.vendorCode;
-    parentModule.registerSubmodule(vendorCode, vendorCode, config);
+    try {
+      parentModule.registerSubmodule(vendorCode, vendorCode, config);
+    } catch(e) {}
   }
 
   /**

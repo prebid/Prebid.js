@@ -103,7 +103,9 @@ export function VideoCore(parentModule_) {
    * @param {videoProviderConfig} providerConfig
    */
   function registerProvider(providerConfig) {
-    parentModule.registerSubmodule(providerConfig.divId, providerConfig.vendorCode, providerConfig);
+    try {
+      parentModule.registerSubmodule(providerConfig.divId, providerConfig.vendorCode, providerConfig);
+    } catch (e) {}
   }
 
   /**
