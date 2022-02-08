@@ -73,15 +73,19 @@ function getGptSlotFromAdUnit(transactionId, {index = auctionManager.index} = {}
   return isGam && adUnit.ortb2Imp.ext.data.adserver.adslot;
 }
 
+function getAdUnitCode(request, response, {index = auctionManager.index} = {}) {
+  return request?.adUnitCode || index.getAdUnit(response).code;
+}
+
 /**
  * @summary floor field types with their matching functions to resolve the actual matched value
  */
 export let fieldMatchingFunctions = {
   'size': (bidRequest, bidResponse) => parseGPTSingleSizeArray(bidResponse.size) || '*',
   'mediaType': (bidRequest, bidResponse) => bidResponse.mediaType || 'banner',
-  'gptSlot': (bidRequest, bidResponse) => getGptSlotFromAdUnit((bidRequest || bidResponse).transactionId) || getGptSlotInfoForAdUnitCode((bidRequest || bidResponse).adUnitCode).gptSlot,
+  'gptSlot': (bidRequest, bidResponse) => getGptSlotFromAdUnit((bidRequest || bidResponse).transactionId) || getGptSlotInfoForAdUnitCode(getAdUnitCode(bidRequest, bidResponse)).gptSlot,
   'domain': (bidRequest, bidResponse) => referrerHostname || getHostNameFromReferer(getRefererInfo().referer),
-  'adUnitCode': (bidRequest, bidResponse) => (bidRequest || bidResponse).adUnitCode
+  'adUnitCode': (bidRequest, bidResponse) => getAdUnitCode(bidRequest, bidResponse)
 }
 
 /**
