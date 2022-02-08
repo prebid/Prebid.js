@@ -717,6 +717,11 @@ Object.assign(ORTB2.prototype, {
 
       Object.assign(imp, mediaTypes);
 
+      const instl = deepAccess(adUnit, 'ortb2Imp.instl');
+      if (instl) {
+        imp.instl = instl;
+      }
+
       // if storedAuctionResponse has been set, pass SRID
       const storedAuctionResponseBid = find(firstBidRequest.bids, bid => (bid.adUnitCode === adUnit.code && bid.storedAuctionResponse));
       if (storedAuctionResponseBid) {

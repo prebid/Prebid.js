@@ -1839,6 +1839,23 @@ describe('S2S Adapter', function () {
       expect(parsedRequestBody.bcat).to.deep.equal(bcat);
     });
 
+    it('should set imp.instl if ortb2Imp.instl is present', function() {
+      const consentConfig = { s2sConfig: CONFIG };
+      config.setConfig(consentConfig);
+      const bidRequest = utils.deepClone(REQUEST);
+      bidRequest.ad_units[0].ortb2Imp = {
+        instl: 1
+      };
+
+      adapter.callBids(bidRequest, BID_REQUESTS, addBidResponse, done, ajax);
+      const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
+
+      expect(parsedRequestBody.imp).to.be.a('array');
+      expect(parsedRequestBody.imp[0]).to.be.a('object');
+      expect(parsedRequestBody.imp[0]).to.have.property('instl');
+      expect(parsedRequestBody.imp[0].instl).to.equal(1);
+    });
+
     describe('pbAdSlot config', function () {
       it('should not send \"imp.ext.data.pbadslot\" if \"ortb2Imp.ext\" is undefined', function () {
         const consentConfig = { s2sConfig: CONFIG };
