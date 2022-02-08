@@ -1231,4 +1231,74 @@ describe('synacormediaBidAdapter ', function () {
       expect(usersyncs).to.be.an('array').that.is.empty;
     });
   });
+
+  describe('Bid Requests with price module should use if available', function () {
+    let validVideoBidRequest = {
+      bidder: 'synacormedia',
+      params: {
+        bidfloor: '0.50',
+        seatId: 'prebid',
+        placementId: 'demo1',
+        pos: 1,
+        video: {}
+      },
+      renderer: {
+        url: '../syncOutstreamPlayer.js'
+      },
+      mediaTypes: {
+        video: {
+          playerSize: [[300, 250]],
+          context: 'outstream'
+        }
+      },
+      adUnitCode: 'div-1',
+      transactionId: '0869f34e-090b-4b20-84ee-46ff41405a39',
+      sizes: [[300, 250]],
+      bidId: '22b3a2268d9f0e',
+      bidderRequestId: '1d195910597e13',
+      auctionId: '3375d336-2aea-4ee7-804c-6d26b621ad20',
+      src: 'client',
+      bidRequestsCount: 1,
+      bidderRequestsCount: 1,
+      bidderWinsCount: 0
+    };
+
+    let validBannerBidRequest = {
+      bidId: '9876abcd',
+      sizes: [[300, 250]],
+      params: {
+        bidfloor: '0.50',
+        seatId: 'prebid',
+        placementId: '1234',
+      }
+    };
+
+    let bidderRequest = {
+      refererInfo: {
+        referer: 'http://localhost:9999/'
+      },
+      bidderCode: 'synacormedia',
+      auctionId: 'f8a75621-d672-4cbb-9275-3db7d74fb110'
+    };
+
+    it('should return valid bidfloor using price module for banner/video impression', function () {
+      let bannerRequest = spec.buildRequests([validBannerBidRequest], bidderRequest);
+      let videoRequest = spec.buildRequests([validVideoBidRequest], bidderRequest);
+
+      expect(bannerRequest.data.imp[0].bidfloor).to.equal(0.5);
+      expect(videoRequest.data.imp[0].bidfloor).to.equal(0.5);
+
+      let priceModuleFloor = 3;
+      let floorResponse = { currency: 'USD', floor: priceModuleFloor };
+
+      validBannerBidRequest.getFloor = () => { return floorResponse; };
+      validVideoBidRequest.getFloor = () => { return floorResponse; };
+
+      bannerRequest = spec.buildRequests([validBannerBidRequest], bidderRequest);
+      videoRequest = spec.buildRequests([validVideoBidRequest], bidderRequest);
+
+      expect(bannerRequest.data.imp[0].bidfloor).to.equal(priceModuleFloor);
+      expect(videoRequest.data.imp[0].bidfloor).to.equal(priceModuleFloor);
+    });
+  });
 });

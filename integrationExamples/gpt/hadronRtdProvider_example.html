@@ -1,8 +1,8 @@
 <html>
 <head>
     <script>
-      var testHaloId = "030tstezbb07jv2yg08xizqr0bwpa0c0evvmq00eivtcg0nc9v970ntek210qskvk40trr7270wqxik90zq3u2d12pa5j3137rx2918nmsj905vat8b1elzfjf1hl5r1i1kkc2jl";
-      window.localStorage.setItem('auHaloId', testHaloId);
+      var testHadronId = "030tstezbb07jv2yg08xizqr0bwpa0c0evvmq00eivtcg0nc9v970ntek210qskvk40trr7270wqxik90zq3u2d12pa5j3137rx2918nmsj905vat8b1elzfjf1hl5r1i1kkc2jl";
+      window.localStorage.setItem('auHadronId', testHadronId);
     </script>
 
     <script>
@@ -47,7 +47,7 @@
                     auctionDelay: testAuctionDelay, // lower in real scenario to meet publisher spec
                     dataProviders: [
                         {
-                            name: "halo",
+                            name: "hadron",
                             waitForIt: true,
                             params: {
                                 segmentCache: false,
@@ -65,8 +65,8 @@
         });
 
         function sendAdserverRequest() {
-            document.getElementById('audigent_segments').innerHTML = window.localStorage.getItem('auHaloRtd');
-            document.getElementById('halo_id').innerHTML = testHaloId;
+            document.getElementById('audigent_segments').innerHTML = window.localStorage.getItem('auHadronRtd');
+            document.getElementById('hadron_id').innerHTML = testHadronId;
 
             if (pbjs.adserverRequestSent) return;
             pbjs.adserverRequestSent = true;
@@ -106,7 +106,7 @@
 </head>
 
 <body>
-<h2>Halo RTD Prebid</h2>
+<h2>Hadron RTD Prebid</h2>
 
 <div id='test-div'>
     <script>
@@ -114,11 +114,11 @@
     </script>
 </div>
 
-Halo Id:
-<div id='halo_id'>
+Hadron Id:
+<div id='hadron_id'>
 </div>
 
-Halo Real-Time Data:
+Hadron Real-Time Data:
 <div id='audigent_segments'>
 </div>
 </body>
