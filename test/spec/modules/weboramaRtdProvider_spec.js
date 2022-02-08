@@ -88,9 +88,10 @@ describe('weboramaRtdProvider', function () {
           webo_ctx: ['foo', 'bar'],
           webo_ds: ['baz'],
         };
-        const adUnitsCodes = ['adunit1', 'adunit2'];
+        const adUnitCode = 'adunit1';
         const reqBidsConfigObj = {
           adUnits: [{
+            code: adUnitCode,
             bids: [{
               bidder: 'smartadserver'
             }, {
@@ -120,11 +121,10 @@ describe('weboramaRtdProvider', function () {
 
         expect(onDoneSpy.calledOnce).to.be.true;
 
-        const targeting = weboramaSubmodule.getTargetingData(adUnitsCodes, moduleConfig);
+        const targeting = weboramaSubmodule.getTargetingData([adUnitCode], moduleConfig);
 
         expect(targeting).to.deep.equal({
           'adunit1': data,
-          'adunit2': data,
         });
 
         expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
@@ -143,7 +143,7 @@ describe('weboramaRtdProvider', function () {
         });
         expect(onDataResponse).to.deep.equal({
           data: data,
-          meta: {user: false, source: 'contextual'},
+          meta: { user: false, source: 'contextual' },
         });
       });
 
@@ -168,9 +168,10 @@ describe('weboramaRtdProvider', function () {
           webo_ctx: ['foo', 'bar'],
           webo_ds: ['baz'],
         };
-        const adUnitsCodes = ['adunit1', 'adunit2'];
+        const adUnitCode = 'adunit1';
         const reqBidsConfigObj = {
           adUnits: [{
+            code: adUnitCode,
             bids: [{
               bidder: 'smartadserver'
             }, {
@@ -200,11 +201,10 @@ describe('weboramaRtdProvider', function () {
 
         expect(onDoneSpy.calledOnce).to.be.true;
 
-        const targeting = weboramaSubmodule.getTargetingData(adUnitsCodes, moduleConfig);
+        const targeting = weboramaSubmodule.getTargetingData([adUnitCode], moduleConfig);
 
         expect(targeting).to.deep.equal({
           'adunit1': data,
-          'adunit2': data,
         });
 
         expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
@@ -216,7 +216,7 @@ describe('weboramaRtdProvider', function () {
 
         expect(onDataResponse).to.deep.equal({
           data: data,
-          meta: {user: false, source: 'contextual'},
+          meta: { user: false, source: 'contextual' },
         });
       });
 
@@ -235,9 +235,10 @@ describe('weboramaRtdProvider', function () {
           webo_ctx: ['foo', 'bar'],
           webo_ds: ['baz'],
         };
-        const adUnitsCodes = ['adunit1', 'adunit2'];
+        const adUnitCode = 'adunit1';
         const reqBidsConfigObj = {
           adUnits: [{
+            code: adUnitCode,
             bids: [{
               bidder: 'smartadserver',
               params: {
@@ -285,11 +286,10 @@ describe('weboramaRtdProvider', function () {
 
         expect(onDoneSpy.calledOnce).to.be.true;
 
-        const targeting = weboramaSubmodule.getTargetingData(adUnitsCodes, moduleConfig);
+        const targeting = weboramaSubmodule.getTargetingData([adUnitCode], moduleConfig);
 
         expect(targeting).to.deep.equal({
           'adunit1': data,
-          'adunit2': data,
         });
 
         expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
@@ -332,9 +332,10 @@ describe('weboramaRtdProvider', function () {
           webo_ctx: ['foo', 'bar'],
           webo_ds: ['baz'],
         };
-        const adUnitsCodes = ['adunit1', 'adunit2'];
+        const adUnitCode = 'adunit1';
         const reqBidsConfigObj = {
           adUnits: [{
+            code: adUnitCode,
             bids: [{
               bidder: 'smartadserver',
               params: {
@@ -358,18 +359,17 @@ describe('weboramaRtdProvider', function () {
 
         expect(onDoneSpy.calledOnce).to.be.true;
 
-        const targeting = weboramaSubmodule.getTargetingData(adUnitsCodes, moduleConfig);
+        const targeting = weboramaSubmodule.getTargetingData([adUnitCode], moduleConfig);
 
         expect(targeting).to.deep.equal({
           'adunit1': data,
-          'adunit2': data,
         });
 
         expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(1);
 
         expect(onDataResponse).to.deep.equal({
           data: data,
-          meta: {user: false, source: 'contextual'},
+          meta: { user: false, source: 'contextual' },
         });
       });
 
@@ -387,9 +387,10 @@ describe('weboramaRtdProvider', function () {
           webo_ctx: ['foo', 'bar'],
           webo_ds: ['baz'],
         };
-        const adUnitsCodes = ['adunit1', 'adunit2'];
+        const adUnitCode = 'adunit1';
         const reqBidsConfigObj = {
           adUnits: [{
+            code: adUnitCode,
             bids: [{
               bidder: 'smartadserver',
               params: {
@@ -437,11 +438,10 @@ describe('weboramaRtdProvider', function () {
 
         expect(onDoneSpy.calledOnce).to.be.true;
 
-        const targeting = weboramaSubmodule.getTargetingData(adUnitsCodes, moduleConfig);
+        const targeting = weboramaSubmodule.getTargetingData([adUnitCode], moduleConfig);
 
         expect(targeting).to.deep.equal({
-          adunit1: {},
-          adunit2: {},
+          'adunit1': {},
         });
 
         expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
@@ -493,9 +493,10 @@ describe('weboramaRtdProvider', function () {
           }
         };
 
-        const adUnitsCodes = ['adunit1', 'adunit2'];
+        const adUnitCode = 'adunit1';
         const reqBidsConfigObj = {
           adUnits: [{
+            code: adUnitCode,
             bids: [{
               bidder: 'smartadserver'
             }, {
@@ -524,11 +525,10 @@ describe('weboramaRtdProvider', function () {
 
         expect(onDoneSpy.calledOnce).to.be.true;
 
-        const targeting = weboramaSubmodule.getTargetingData(adUnitsCodes, moduleConfig);
+        const targeting = weboramaSubmodule.getTargetingData([adUnitCode], moduleConfig);
 
         expect(targeting).to.deep.equal({
           'adunit1': defaultProfile,
-          'adunit2': defaultProfile,
         });
 
         expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
@@ -547,7 +547,7 @@ describe('weboramaRtdProvider', function () {
         });
         expect(onDataResponse).to.deep.equal({
           data: defaultProfile,
-          meta: {user: false, source: 'contextual'},
+          meta: { user: false, source: 'contextual' },
         });
       });
     });
@@ -582,9 +582,10 @@ describe('weboramaRtdProvider', function () {
           .withArgs(DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY)
           .returns(JSON.stringify(entry));
 
-        const adUnitsCodes = ['adunit1', 'adunit2'];
+        const adUnitCode = 'adunit1';
         const reqBidsConfigObj = {
           adUnits: [{
+            code: adUnitCode,
             bids: [{
               bidder: 'smartadserver'
             }, {
@@ -605,11 +606,10 @@ describe('weboramaRtdProvider', function () {
 
         expect(onDoneSpy.calledOnce).to.be.true;
 
-        const targeting = weboramaSubmodule.getTargetingData(adUnitsCodes, moduleConfig);
+        const targeting = weboramaSubmodule.getTargetingData([adUnitCode], moduleConfig);
 
         expect(targeting).to.deep.equal({
           'adunit1': data,
-          'adunit2': data,
         });
 
         expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
@@ -628,7 +628,7 @@ describe('weboramaRtdProvider', function () {
         });
         expect(onDataResponse).to.deep.equal({
           data: data,
-          meta: {user: true, source: 'wam'},
+          meta: { user: true, source: 'wam' },
         });
       });
 
@@ -662,9 +662,10 @@ describe('weboramaRtdProvider', function () {
           .withArgs(DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY)
           .returns(JSON.stringify(entry));
 
-        const adUnitsCodes = ['adunit1', 'adunit2'];
+        const adUnitCode = 'adunit1';
         const reqBidsConfigObj = {
           adUnits: [{
+            code: adUnitCode,
             bids: [{
               bidder: 'smartadserver'
             }, {
@@ -685,11 +686,10 @@ describe('weboramaRtdProvider', function () {
 
         expect(onDoneSpy.calledOnce).to.be.true;
 
-        const targeting = weboramaSubmodule.getTargetingData(adUnitsCodes, moduleConfig);
+        const targeting = weboramaSubmodule.getTargetingData([adUnitCode], moduleConfig);
 
         expect(targeting).to.deep.equal({
           'adunit1': data,
-          'adunit2': data,
         });
 
         expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
@@ -701,7 +701,7 @@ describe('weboramaRtdProvider', function () {
 
         expect(onDataResponse).to.deep.equal({
           data: data,
-          meta: {user: true, source: 'wam'},
+          meta: { user: true, source: 'wam' },
         });
       });
 
@@ -729,9 +729,10 @@ describe('weboramaRtdProvider', function () {
           .withArgs(DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY)
           .returns(JSON.stringify(entry));
 
-        const adUnitsCodes = ['adunit1', 'adunit2'];
+        const adUnitCode = 'adunit1';
         const reqBidsConfigObj = {
           adUnits: [{
+            code: adUnitCode,
             bids: [{
               bidder: 'smartadserver',
               params: {
@@ -771,11 +772,10 @@ describe('weboramaRtdProvider', function () {
 
         expect(onDoneSpy.calledOnce).to.be.true;
 
-        const targeting = weboramaSubmodule.getTargetingData(adUnitsCodes, moduleConfig);
+        const targeting = weboramaSubmodule.getTargetingData([adUnitCode], moduleConfig);
 
         expect(targeting).to.deep.equal({
           'adunit1': data,
-          'adunit2': data,
         });
 
         expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
@@ -827,9 +827,10 @@ describe('weboramaRtdProvider', function () {
           .withArgs(DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY)
           .returns(JSON.stringify(entry));
 
-        const adUnitsCodes = ['adunit1', 'adunit2'];
+        const adUnitCode = 'adunit1';
         const reqBidsConfigObj = {
           adUnits: [{
+            code: adUnitCode,
             bids: [{
               bidder: 'smartadserver',
               params: {
@@ -845,18 +846,17 @@ describe('weboramaRtdProvider', function () {
 
         expect(onDoneSpy.calledOnce).to.be.true;
 
-        const targeting = weboramaSubmodule.getTargetingData(adUnitsCodes, moduleConfig);
+        const targeting = weboramaSubmodule.getTargetingData([adUnitCode], moduleConfig);
 
         expect(targeting).to.deep.equal({
           'adunit1': data,
-          'adunit2': data,
         });
 
         expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(1);
         expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('foo=bar');
         expect(onDataResponse).to.deep.equal({
           data: data,
-          meta: {user: true, source: 'wam'},
+          meta: { user: true, source: 'wam' },
         });
       });
 
@@ -883,9 +883,10 @@ describe('weboramaRtdProvider', function () {
           .withArgs(DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY)
           .returns(JSON.stringify(entry));
 
-        const adUnitsCodes = ['adunit1', 'adunit2'];
+        const adUnitCode = 'adunit1';
         const reqBidsConfigObj = {
           adUnits: [{
+            code: adUnitCode,
             bids: [{
               bidder: 'smartadserver',
               params: {
@@ -925,11 +926,10 @@ describe('weboramaRtdProvider', function () {
 
         expect(onDoneSpy.calledOnce).to.be.true;
 
-        const targeting = weboramaSubmodule.getTargetingData(adUnitsCodes, moduleConfig);
+        const targeting = weboramaSubmodule.getTargetingData([adUnitCode], moduleConfig);
 
         expect(targeting).to.deep.equal({
-          adunit1: {},
-          adunit2: {},
+          'adunit1': {},
         });
 
         expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
@@ -975,9 +975,10 @@ describe('weboramaRtdProvider', function () {
 
         sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
 
-        const adUnitsCodes = ['adunit1', 'adunit2'];
+        const adUnitCode = 'adunit1';
         const reqBidsConfigObj = {
           adUnits: [{
+            code: adUnitCode,
             bids: [{
               bidder: 'smartadserver'
             }, {
@@ -998,11 +999,10 @@ describe('weboramaRtdProvider', function () {
 
         expect(onDoneSpy.calledOnce).to.be.true;
 
-        const targeting = weboramaSubmodule.getTargetingData(adUnitsCodes, moduleConfig);
+        const targeting = weboramaSubmodule.getTargetingData([adUnitCode], moduleConfig);
 
         expect(targeting).to.deep.equal({
           'adunit1': defaultProfile,
-          'adunit2': defaultProfile,
         });
 
         expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
@@ -1044,9 +1044,10 @@ describe('weboramaRtdProvider', function () {
 
         sandbox.stub(storage, 'localStorageIsEnabled').returns(false);
 
-        const adUnitsCodes = ['adunit1', 'adunit2'];
+        const adUnitCode = 'adunit1';
         const reqBidsConfigObj = {
           adUnits: [{
+            code: adUnitCode,
             bids: [{
               bidder: 'smartadserver'
             }, {
@@ -1067,11 +1068,10 @@ describe('weboramaRtdProvider', function () {
 
         expect(onDoneSpy.calledOnce).to.be.true;
 
-        const targeting = weboramaSubmodule.getTargetingData(adUnitsCodes, moduleConfig);
+        const targeting = weboramaSubmodule.getTargetingData([adUnitCode], moduleConfig);
 
         expect(targeting).to.deep.equal({
           'adunit1': defaultProfile,
-          'adunit2': defaultProfile,
         });
 
         expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
@@ -1090,7 +1090,7 @@ describe('weboramaRtdProvider', function () {
         });
         expect(onDataResponse).to.deep.equal({
           data: defaultProfile,
-          meta: {user: true, source: 'wam'},
+          meta: { user: true, source: 'wam' },
         });
       });
     });
