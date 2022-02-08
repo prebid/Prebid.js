@@ -587,7 +587,7 @@ function handleBidRequestData(adUnits, moduleParams) {
           if (ph.sendToBidders(bid.bidder, adUnit.code, ph.data, ph.metadata)) {
             logMessage(`handling bidder '${bid.bidder}' with ${ph.metadata.source} data`);
 
-            handleBid(bid, ph.data, ph.metadata.user);
+            handleBid(bid, ph.data, ph.metadata);
           }
         })
       )
@@ -623,10 +623,10 @@ const bidderAliasRegistry = adapterManager.aliasRegistry || {};
 /** handle individual bid
  * @param {Object} bid
  * @param {Object} profile
- * @param {Boolean} user true if user-centric, else it is site centric data
+ * @param {Object} metadata
  * @returns {void}
  */
-function handleBid(bid, profile, user) {
+function handleBid(bid, profile, metadata) {
   const bidder = bidderAliasRegistry[bid.bidder] || bid.bidder;
 
   switch (bidder) {
@@ -645,18 +645,18 @@ function handleBid(bid, profile, user) {
 
       break;
     case RUBICON:
-      handleRubiconBid(bid, profile, user);
+      handleRubiconBid(bid, profile, metadata);
 
       break;
     default:
-      if (isBoolean(user)) {
+      if (isBoolean(metadata.user)) {
         logMessage(`unsupported bidder '${bidder}', trying via bidder ortb2 fpd`);
-        const section = ((user) ? 'user' : 'site');
+        const section = ((metadata.user) ? 'user' : 'site');
         const base = `ortb2.${section}.ext.data`;
 
         assignProfileToObject(bid, base, profile);
       } else {
-        logMessage(`SKIP unsupported bidder '${bidder}', data is not defined as user-centric or site-centric`);
+        logMessage(`SKIP unsupported bidder '${bidder}', data from '${metadata.source}' is not defined as user or site-centric`);
       }
   }
 }
@@ -678,16 +678,16 @@ function assignProfileToObject(destination, base, profile) {
 /** handle rubicon bid
  * @param {Object} bid
  * @param {Object} profile
- * @param {Boolean} user
+ * @param {Object} metadata
  * @returns {void}
  */
-function handleRubiconBid(bid, profile, user) {
-  if (isBoolean(user)) {
-    const section = (user) ? 'visitor' : 'inventory';
+function handleRubiconBid(bid, profile, metadata) {
+  if (isBoolean(metadata.user)) {
+    const section = (metadata.user) ? 'visitor' : 'inventory';
     const base = `params.${section}`;
     assignProfileToObject(bid, base, profile);
   } else {
-    logMessage(`SKIP bidder '${bid.bidder}', data is not defined as user-centric or site-centric`);
+    logMessage(`SKIP bidder '${bid.bidder}', data from '${metadata.source}' is not defined as user or site-centric`);
   }
 }
 
