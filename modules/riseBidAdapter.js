@@ -272,13 +272,11 @@ function generateBidsParams(validBidRequests, bidderRequest) {
 function generateBidParameters(bid, bidderRequest) {
   const {params} = bid;
   const mediaType = isBanner(bid) ? BANNER : VIDEO;
-  const timeout = config.getConfig('bidderTimeout');
   const sizesArray = getSizesArray(bid, mediaType);
 
   const bidObject = {
     mediaType,
     adUnitCode: getBidIdParameter('adUnitCode', bid),
-    tmax: timeout,
     sizes: sizesArray,
     floorPrice: Math.max(getFloor(bid, mediaType), params.floorPrice),
     bidId: getBidIdParameter('bidId', bid),
@@ -346,6 +344,7 @@ function generateGeneralParams(generalObject, bidderRequest) {
   const {syncEnabled, filterSettings} = config.getConfig('userSync') || {};
   const {bidderCode} = bidderRequest;
   const generalBidParams = generalObject.params;
+  const timeout = config.getConfig('bidderTimeout');
 
   const generalParams = {
     wrapper_type: 'prebidjs',
@@ -360,6 +359,7 @@ function generateGeneralParams(generalObject, bidderRequest) {
     device_type: getDeviceType(navigator.userAgent),
     ua: navigator.userAgent,
     session_id: getBidIdParameter('auctionId', generalObject),
+    tmax: timeout
   }
 
   const userIdsParam = getBidIdParameter('userId', generalObject);

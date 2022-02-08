@@ -121,7 +121,7 @@ describe('riseAdapter', function () {
 
     it('should send the correct bid Id', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.bids[0].bid_id).to.equal('299ffc8cca0b87');
+      expect(request.data.bids[0].bidId).to.equal('299ffc8cca0b87');
     });
 
     it('should send the correct sizes array', function () {
@@ -263,7 +263,7 @@ describe('riseAdapter', function () {
       expect(request.data.params).to.have.property('schain', '1.0,1!indirectseller.com,00001,1,,,');
     });
 
-    it('should set floor_price to getFloor.floor value if it is greater than params.floorPrice', function() {
+    it('should set flooPrice to getFloor.floor value if it is greater than params.floorPrice', function() {
       const bid = utils.deepClone(bidRequests[0]);
       bid.getFloor = () => {
         return {
@@ -274,10 +274,10 @@ describe('riseAdapter', function () {
       bid.params.floorPrice = 0.64;
       const request = spec.buildRequests([bid], bidderRequest);
       expect(request.data.bids[0]).to.be.an('object');
-      expect(request.data.bids[0]).to.have.property('floor_price', 3.32);
+      expect(request.data.bids[0]).to.have.property('floorPrice', 3.32);
     });
 
-    it('should set floor_price to params.floorPrice value if it is greater than getFloor.floor', function() {
+    it('should set floorPrice to params.floorPrice value if it is greater than getFloor.floor', function() {
       const bid = utils.deepClone(bidRequests[0]);
       bid.getFloor = () => {
         return {
@@ -288,7 +288,7 @@ describe('riseAdapter', function () {
       bid.params.floorPrice = 1.5;
       const request = spec.buildRequests([bid], bidderRequest);
       expect(request.data.bids[0]).to.be.an('object');
-      expect(request.data.bids[0]).to.have.property('floor_price', 1.5);
+      expect(request.data.bids[0]).to.have.property('floorPrice', 1.5);
     });
   });
 
