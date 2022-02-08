@@ -355,22 +355,35 @@ function getTargetingData(adUnitsCodes, moduleConfig) {
   moduleConfig = moduleConfig || {};
 
   const moduleParams = moduleConfig.params || {};
-  const weboCtxConf = moduleParams.weboCtxConf || {};
-  const weboUserDataConf = moduleParams.weboUserDataConf || {};
-  const weboCtxConfTargeting = weboCtxConf.setPrebidTargeting;
-  const weboUserDataConfTargeting = weboUserDataConf.setPrebidTargeting;
 
-  const profileHandlers = [{
-    data: getContextualProfile(weboCtxConf),
-    metadata: { user: false, source: 'contextual' },
-    setTargeting: weboCtxConfTargeting,
-  }, {
-    data: getWeboUserDataProfile(weboUserDataConf),
-    metadata: { user: true, source: 'wam' },
-    setTargeting: weboUserDataConfTargeting,
-  }].filter(handler =>
-    !isEmpty(handler.data)
-  );
+  const profileHandlers = [];
+  // TODO consider call submethods instead push to array and iterate
+
+  if (_weboCtxInitialized) {
+    const weboCtxConf = moduleParams.weboCtxConf || {};
+    const weboCtxConfTargeting = weboCtxConf.setPrebidTargeting;
+    const data = getContextualProfile(weboCtxConf);
+    if (!isEmpty(data)) {
+      profileHandlers.push({
+        data: data,
+        metadata: { user: false, source: 'contextual' },
+        setTargeting: weboCtxConfTargeting,
+      })
+    }
+  }
+
+  if (_weboUserDataInitialized) {
+    const weboUserDataConf = moduleParams.weboUserDataConf || {};
+    const weboUserDataConfTargeting = weboUserDataConf.setPrebidTargeting;
+    const data = getWeboUserDataProfile(weboUserDataConf);
+    if (!isEmpty(data)) {
+      profileHandlers.push({
+        data: data,
+        metadata: { user: true, source: 'wam' },
+        setTargeting: weboUserDataConfTargeting,
+      })
+    }
+  }
 
   if (isEmpty(profileHandlers)) {
     logMessage('no data to set targeting');
@@ -381,9 +394,11 @@ function getTargetingData(adUnitsCodes, moduleConfig) {
     const td = adUnitsCodes.reduce((data, adUnitCode) => {
       data[adUnitCode] = profileHandlers.reduce((targeting, handler) => {
         logMessage(`check if should set targeting for adunit '${adUnitCode}'`);
-
+        // if(! isFn(handler.setTargeting)){
+        //   throw `set targeting is not a function for ${handler.metadata.source}`;
+        // }
         if (handler.setTargeting(adUnitCode, handler.data, handler.metadata)) {
-          logMessage(`set targeting for adunit '${adUnitCode}', source '${handler.metadata.source}'`);
+          logMessage(`set targeting for adunit '${adUnitCode}', source ' '`);
 
           mergeDeep(targeting, handler.data);
         }
@@ -468,24 +483,37 @@ export function getBidRequestData(reqBidsConfigObj, onDone, moduleConfig) {
  * @returns {void}
  */
 function handleBidRequestData(adUnits, moduleParams) {
-  const weboCtxConf = moduleParams.weboCtxConf || {};
-  const weboUserDataConf = moduleParams.weboUserDataConf || {};
-  const weboCtxConfSendToBidders = weboCtxConf.sendToBidders;
-  const weboUserDataSendToBidders = weboUserDataConf.sendToBidders;
+  const profileHandlers = [];
 
-  const profileHandlers = [{
-    data: getContextualProfile(weboCtxConf),
-    metadata: { user: false, source: 'contextual' },
-    sendToBidders: weboCtxConfSendToBidders,
-    onData: weboCtxConf.onData,
-  }, {
-    data: getWeboUserDataProfile(weboUserDataConf),
-    metadata: { user: true, source: 'wam' },
-    sendToBidders: weboUserDataSendToBidders,
-    onData: weboUserDataConf.onData,
-  }].filter(handler =>
-    !isEmpty(handler.data)
-  );
+  // TODO consider call submethods instead push to array and iterate
+
+  if (_weboCtxInitialized) {
+    const weboCtxConf = moduleParams.weboCtxConf || {};
+    const weboCtxConfSendToBidders = weboCtxConf.sendToBidders;
+    const data = getContextualProfile(weboCtxConf);
+    if (!isEmpty(data)) {
+      profileHandlers.push({
+        data: data,
+        metadata: { user: false, source: 'contextual' },
+        sendToBidders: weboCtxConfSendToBidders,
+        onData: weboCtxConf.onData,
+      });
+    }
+  }
+
+  if (_weboUserDataInitialized) {
+    const weboUserDataConf = moduleParams.weboUserDataConf || {};
+    const weboUserDataSendToBidders = weboUserDataConf.sendToBidders;
+    const data = getWeboUserDataProfile(weboUserDataConf);
+    if (!isEmpty(data)) {
+      profileHandlers.push({
+        data: data,
+        metadata: { user: true, source: 'wam' },
+        sendToBidders: weboUserDataSendToBidders,
+        onData: weboUserDataConf.onData,
+      });
+    }
+  }
 
   if (isEmpty(profileHandlers)) {
     logMessage('no data to send to bidders');
@@ -501,7 +529,6 @@ function handleBidRequestData(adUnits, moduleParams) {
           logMessage(`check if bidder '${bid.bidder}' and adunit '${adUnit.code} are share ${ph.metadata.source} data`);
 
           if (ph.sendToBidders(bid.bidder, adUnit.code, ph.data, ph.metadata)) {
-            // TODO should reorder parameters...
             logMessage(`handling bidder '${bid.bidder}' with ${ph.metadata.source} data`);
 
             handleBid(bid, ph.data, ph.metadata.user);
