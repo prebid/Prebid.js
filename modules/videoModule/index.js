@@ -71,10 +71,19 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
   function enrichAdUnits(nextFn, bidRequest) {
     const adUnits = bidRequest.adUnits || pbGlobal.adUnits || [];
     adUnits.forEach(adUnit => {
-      const oRtbParams = videoCore.getOrtbParams(adUnit.video.divId);
-      adUnit.mediaTypes.video = Object.assign({}, adUnit.mediaTypes.video, oRtbParams);
+      enrichAdUnit(adUnit);
     });
     return nextFn.call(this, bidRequest);
+  }
+
+  function enrichAdUnit(adUnit) {
+    const videoMediaType = adUnit.mediaTypes.video;
+    if (!videoMediaType) {
+      return;
+    }
+
+    const oRtbParams = videoCore.getOrtbParams(adUnit.video.divId);
+    adUnit.mediaTypes.video = Object.assign({}, videoMediaType, oRtbParams);
   }
 
   function renderWinningBid(adUnit) {
