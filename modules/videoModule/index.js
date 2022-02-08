@@ -87,6 +87,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
   function renderWinningBid(adUnit) {
     const highestCpmBids = pbGlobal.getHighestCpmBids(adUnit.code);
     if (!highestCpmBids.length) {
+      pbEvents.emit(AUCTION_AD_LOAD_ATTEMPT, {});
       return;
     }
 
