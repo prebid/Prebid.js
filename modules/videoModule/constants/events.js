@@ -53,6 +53,10 @@ export const allVideoEvents = [
 
 export const AUCTION_AD_LOAD_ATTEMPT = 'auctionAdLoadAttempt';
 
+export const allVideoAuctionEvents = [
+  AUCTION_AD_LOAD_ATTEMPT
+];
+
 // Param options
 export const PLAYBACK_MODE = {
   VOD: 0,
