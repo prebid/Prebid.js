@@ -36,7 +36,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
 
         const adServerConfig = provider.adServer;
         if (adServerConfig) {
-          adServerCore.registerAdServer(adServerConfig.vendorCode, adServerConfig.params);
+          adServerCore.registerAdServer(adServerConfig);
         }
       });
     });
