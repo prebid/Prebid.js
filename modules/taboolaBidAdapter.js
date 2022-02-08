@@ -60,33 +60,7 @@ export const spec = {
       return [];
     }
 
-    return bids.map((bid, id) => {
-      const bidResponse = bidResponses[id];
-      if (!bidResponse) {
-        return;
-      }
-
-      const {price: cpm, crid: creativeId, adm: ad, w: width, h: height, adomain: advertiserDomains, meta = {}
-      } = bidResponse;
-
-      if (advertiserDomains && advertiserDomains.length > 0) {
-        meta.advertiserDomains = advertiserDomains
-      }
-
-      return {
-        requestId: bid.bidId,
-        ttl: 360,
-        mediaType: BANNER,
-        cpm,
-        creativeId,
-        currency,
-        ad,
-        width,
-        height,
-        meta,
-        netRevenue: false
-      };
-    }).filter(Boolean);
+    return bids.map((bid, id) => getBid(bid.bidId, currency, bidResponses[id])).filter(Boolean);
   },
 };
 
@@ -149,5 +123,33 @@ function getBidResponses({body}) {
   return {
     bidResponses: seatbid[0].bid,
     cur
+  };
+}
+
+function getBid(requestId, currency, bidResponse) {
+  if (!bidResponse) {
+    return;
+  }
+
+  const {
+    price: cpm, crid: creativeId, adm: ad, w: width, h: height, adomain: advertiserDomains, meta = {}
+  } = bidResponse;
+
+  if (advertiserDomains && advertiserDomains.length > 0) {
+    meta.advertiserDomains = advertiserDomains
+  }
+
+  return {
+    requestId,
+    ttl: 360,
+    mediaType: BANNER,
+    cpm,
+    creativeId,
+    currency,
+    ad,
+    width,
+    height,
+    meta,
+    netRevenue: false
   };
 }
