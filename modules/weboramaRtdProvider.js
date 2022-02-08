@@ -48,6 +48,7 @@
  * @property {?dataCallback} onData callback
  * @property {?WeboCtxConf} weboCtxConf
  * @property {?WeboUserDataConf} weboUserDataConf
+ * @property {?WeboLiteDataConf} weboLiteDataConf
  */
 
 /**
@@ -72,6 +73,15 @@
  * @property {?Boolean} enabled if false, will ignore this configuration
  */
 
+/**
+ * @typedef {Object} WeboLiteDataConf
+ * @property {?boolOrStringOrArray|sendToBiddersCallback} setPrebidTargeting if true, will set the GAM targeting (default undefined)
+ * @property {?boolOrStringOrArray|?Map<String,boolOrStringOrArray>|sendToBiddersCallback} sendToBidders if true, will send the contextual profile to all bidders, else expects a list of allowed bidders (default undefined)
+ * @property {?object} defaultProfile to be used if the profile is not found
+ * @property {?dataCallback} onData callback
+ * @property {?string} localStorageProfileKey can be used to customize the local storage key (default is 'webo_lite')
+ * @property {?Boolean} enabled if false, will ignore this configuration
+ */
 import {
   getGlobal
 } from '../src/prebidGlobal.js';
@@ -110,22 +120,31 @@ const SUBMODULE_NAME = 'weborama';
 export const DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY = 'webo_wam2gam_entry';
 /** @type {string} */
 const LOCAL_STORAGE_USER_TARGETING_SECTION = 'targeting';
+/** @type {string} */
+export const DEFAULT_LOCAL_STORAGE_LITE_PROFILE_KEY = '_lite';
+/** @type {string} */
+const LOCAL_STORAGE_LITE_TARGETING_SECTION = 'webo_lite';
 /** @type {number} */
 const GVLID = 284;
 /** @type {object} */
 export const storage = getStorageManager(GVLID, SUBMODULE_NAME);
-
-/** @type {null|Object} */
+/** @type {?Object} */
 let _weboContextualProfile = null;
 
 /** @type {Boolean} */
 let _weboCtxInitialized = false;
 
-/** @type {null|Object} */
+/** @type {?Object} */
 let _weboUserDataUserProfile = null;
 
 /** @type {Boolean} */
 let _weboUserDataInitialized = false;
+
+/** @type {?Object} */
+let _weboLiteDataProfile = null;
+
+/** @type {Boolean} */
+let _weboLiteDataInitialized = false;
 
 /** Initialize module
  * @param {object} moduleConfig
@@ -136,11 +155,13 @@ function init(moduleConfig) {
   const moduleParams = moduleConfig.params || {};
   const weboCtxConf = moduleParams.weboCtxConf;
   const weboUserDataConf = moduleParams.weboUserDataConf;
+  const weboLiteDataConf = moduleParams.weboLiteDataConf;
 
   _weboCtxInitialized = initWeboCtx(moduleParams, weboCtxConf);
   _weboUserDataInitialized = initWeboUserData(moduleParams, weboUserDataConf);
+  _weboLiteDataInitialized = initWeboLiteData(moduleParams, weboLiteDataConf);
 
-  return _weboCtxInitialized || _weboUserDataInitialized;
+  return _weboCtxInitialized || _weboUserDataInitialized || _weboLiteDataInitialized;
 }
 
 /** Initialize contextual sub module
@@ -209,11 +230,38 @@ function initWeboUserData(moduleParams, weboUserDataConf) {
   return true;
 }
 
+/** Initialize weboLiteData sub module
+ * @param {ModuleParams} moduleParams
+ * @param {WeboLiteDataConf} weboLiteDataConf
+ * @return {Boolean} true if sub module was initialized with success
+ */
+function initWeboLiteData(moduleParams, weboLiteDataConf) {
+  if (!weboLiteDataConf || weboLiteDataConf.enabled === false) {
+    moduleParams.weboLiteDataConf = null;
+
+    return false;
+  }
+
+  try {
+    normalizeConf(moduleParams, weboLiteDataConf);
+  } catch (e) {
+    logError(`unable to initialize: error on webo lite configuration: ${e}`);
+    return false
+  }
+
+  _weboLiteDataInitialized = false;
+  _weboLiteDataProfile = null;
+
+  logMessage('weborama lite intialized with success');
+
+  return true;
+}
+
 /** @type {Object} */
 const globalDefaults = {
   setPrebidTargeting: true,
   sendToBidders: true,
-  onData: (data, meta) => logMessage('onData(data, meta)', data, meta),
+  onData: () => { /* do nothing */ },
 }
 
 /** normalize submodule configuration
@@ -242,7 +290,7 @@ function normalizeConf(moduleParams, submoduleParams) {
 }
 
 /** coerce set prebid targeting to function
- * @param {WeboCtxConf|WeboUserDataConf} submoduleParams
+ * @param {WeboCtxConf|WeboUserDataConf|WeboLiteDataConf} submoduleParams
  * @return {void}
  */
 function coerceSetPrebidTargeting(submoduleParams) {
@@ -284,7 +332,7 @@ function coerceSetPrebidTargeting(submoduleParams) {
 }
 
 /** coerce send to bidders to function
- * @param {WeboCtxConf|WeboUserDataConf} submoduleParams
+ * @param {WeboCtxConf|WeboUserDataConf|WeboLiteDataConf} submoduleParams
  * @return {void}
  */
 function coerceSendToBidders(submoduleParams) {
@@ -356,34 +404,7 @@ function getTargetingData(adUnitsCodes, moduleConfig) {
 
   const moduleParams = moduleConfig.params || {};
 
-  const profileHandlers = [];
-  // TODO consider call submethods instead push to array and iterate
-
-  if (_weboCtxInitialized) {
-    const weboCtxConf = moduleParams.weboCtxConf || {};
-    const weboCtxConfTargeting = weboCtxConf.setPrebidTargeting;
-    const data = getContextualProfile(weboCtxConf);
-    if (!isEmpty(data)) {
-      profileHandlers.push({
-        data: data,
-        metadata: { user: false, source: 'contextual' },
-        setTargeting: weboCtxConfTargeting,
-      })
-    }
-  }
-
-  if (_weboUserDataInitialized) {
-    const weboUserDataConf = moduleParams.weboUserDataConf || {};
-    const weboUserDataConfTargeting = weboUserDataConf.setPrebidTargeting;
-    const data = getWeboUserDataProfile(weboUserDataConf);
-    if (!isEmpty(data)) {
-      profileHandlers.push({
-        data: data,
-        metadata: { user: true, source: 'wam' },
-        setTargeting: weboUserDataConfTargeting,
-      })
-    }
-  }
+  const profileHandlers = getDataHandlers(moduleParams);
 
   if (isEmpty(profileHandlers)) {
     logMessage('no data to set targeting');
@@ -394,11 +415,8 @@ function getTargetingData(adUnitsCodes, moduleConfig) {
     const td = adUnitsCodes.reduce((data, adUnitCode) => {
       data[adUnitCode] = profileHandlers.reduce((targeting, handler) => {
         logMessage(`check if should set targeting for adunit '${adUnitCode}'`);
-        // if(! isFn(handler.setTargeting)){
-        //   throw `set targeting is not a function for ${handler.metadata.source}`;
-        // }
         if (handler.setTargeting(adUnitCode, handler.data, handler.metadata)) {
-          logMessage(`set targeting for adunit '${adUnitCode}', source ' '`);
+          logMessage(`set targeting for adunit '${adUnitCode}', source '${handler.metadata.source}'`);
 
           mergeDeep(targeting, handler.data);
         }
@@ -412,6 +430,46 @@ function getTargetingData(adUnitsCodes, moduleConfig) {
     logError('unable to format weborama rtd targeting data', e);
     return {};
   }
+}
+
+/** function that provides data handlers based on the configuration
+ * @param {ModuleParams} moduleParams
+ * @returns {Array<Object>} handlers
+ */
+function getDataHandlers(moduleParams) {
+  const profileHandlers = [];
+
+  if (_weboCtxInitialized && moduleParams.weboCtxConf) {
+    const weboCtxConf = moduleParams.weboCtxConf;
+    const data = getContextualProfile(weboCtxConf);
+    if (!isEmpty(data)) {
+      profileHandlers.push({
+        data: data,
+        metadata: { user: false, source: 'contextual' },
+        setTargeting: weboCtxConf.setPrebidTargeting,
+        sendToBidders: weboCtxConf.sendToBidders,
+        onData: weboCtxConf.onData,
+      })
+    }
+  }
+
+  if (_weboUserDataInitialized && moduleParams.weboUserDataConf) {
+    const weboUserDataConf = moduleParams.weboUserDataConf;
+    const data = getWeboUserDataProfile(weboUserDataConf);
+    if (!isEmpty(data)) {
+      profileHandlers.push({
+        data: data,
+        metadata: { user: true, source: 'wam' },
+        setTargeting: weboUserDataConf.setPrebidTargeting,
+        sendToBidders: weboUserDataConf.sendToBidders,
+        onData: weboUserDataConf.onData,
+      })
+    }
+  }
+
+  // TODO add webo lite data
+
+  return profileHandlers;
 }
 
 /** return contextual profile
@@ -428,21 +486,49 @@ function getContextualProfile(weboCtxConf) {
  * @returns {Object} weboUserData profile
  */
 function getWeboUserDataProfile(weboUserDataConf) {
-  const weboUserDataDefaultUserProfile = weboUserDataConf.defaultProfile || {};
+  return getDataFromLocalStorage(weboUserDataConf,
+    () => _weboUserDataUserProfile,
+    (data) => _weboUserDataUserProfile = data,
+    DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY,
+    LOCAL_STORAGE_USER_TARGETING_SECTION);
+}
 
-  if (storage.localStorageIsEnabled() && !_weboUserDataUserProfile) {
-    const localStorageProfileKey = weboUserDataConf.localStorageProfileKey || DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY;
+/** return weboUserData profile
+ * @param {WeboLiteDataConf} weboLiteDataConf
+ * @returns {Object} weboLiteData profile
+ */
+function getWeboLiteDataProfile(weboLiteDataConf) {
+  return getDataFromLocalStorage(weboLiteDataConf,
+    () => _weboLiteDataProfile,
+    (data) => _weboLiteDataProfile = data,
+    DEFAULT_LOCAL_STORAGE_LITE_PROFILE_KEY,
+    LOCAL_STORAGE_LITE_TARGETING_SECTION);
+}
+
+/** return generic webo data profile
+ * @param {WeboUserDataConf|WeboLiteDataConf} weboDataConf
+ * @param {cacheGetCallback} cacheGet
+ * @param {cacheSetCallback} cacheSet
+ * @param {String} localStorageKey
+ * @param {String} targetingSection
+ * @returns {Object} webo (user|lite) data profile
+ */
+function getDataFromLocalStorage(weboDataConf, cacheGet, cacheSet, localStorageKey, targetingSection) {
+  const defaultProfile = weboDataConf.defaultProfile || {};
+
+  if (storage.localStorageIsEnabled() && !cacheGet()) {
+    const localStorageProfileKey = weboDataConf.localStorageProfileKey || localStorageKey;
 
     const entry = storage.getDataFromLocalStorage(localStorageProfileKey);
     if (entry) {
       const data = JSON.parse(entry);
       if (data && Object.keys(data).length > 0) {
-        _weboUserDataUserProfile = data[LOCAL_STORAGE_USER_TARGETING_SECTION];
+        cacheSet(data[targetingSection]);
       }
     }
   }
 
-  return _weboUserDataUserProfile || weboUserDataDefaultUserProfile;
+  return cacheGet() || defaultProfile;
 }
 
 /** function that will allow RTD sub-modules to modify the AdUnit object for each auction
@@ -483,37 +569,7 @@ export function getBidRequestData(reqBidsConfigObj, onDone, moduleConfig) {
  * @returns {void}
  */
 function handleBidRequestData(adUnits, moduleParams) {
-  const profileHandlers = [];
-
-  // TODO consider call submethods instead push to array and iterate
-
-  if (_weboCtxInitialized) {
-    const weboCtxConf = moduleParams.weboCtxConf || {};
-    const weboCtxConfSendToBidders = weboCtxConf.sendToBidders;
-    const data = getContextualProfile(weboCtxConf);
-    if (!isEmpty(data)) {
-      profileHandlers.push({
-        data: data,
-        metadata: { user: false, source: 'contextual' },
-        sendToBidders: weboCtxConfSendToBidders,
-        onData: weboCtxConf.onData,
-      });
-    }
-  }
-
-  if (_weboUserDataInitialized) {
-    const weboUserDataConf = moduleParams.weboUserDataConf || {};
-    const weboUserDataSendToBidders = weboUserDataConf.sendToBidders;
-    const data = getWeboUserDataProfile(weboUserDataConf);
-    if (!isEmpty(data)) {
-      profileHandlers.push({
-        data: data,
-        metadata: { user: true, source: 'wam' },
-        sendToBidders: weboUserDataSendToBidders,
-        onData: weboUserDataConf.onData,
-      });
-    }
-  }
+  const profileHandlers = getDataHandlers(moduleParams);
 
   if (isEmpty(profileHandlers)) {
     logMessage('no data to send to bidders');
@@ -593,11 +649,15 @@ function handleBid(bid, profile, user) {
 
       break;
     default:
-      logMessage(`unsupported bidder '${bidder}', trying via bidder ortb2 fpd`);
-      const section = ((user) ? 'user' : 'site');
-      const base = `ortb2.${section}.ext.data`;
+      if (isBoolean(user)) {
+        logMessage(`unsupported bidder '${bidder}', trying via bidder ortb2 fpd`);
+        const section = ((user) ? 'user' : 'site');
+        const base = `ortb2.${section}.ext.data`;
 
-      assignProfileToObject(bid, base, profile);
+        assignProfileToObject(bid, base, profile);
+      } else {
+        logMessage(`SKIP unsupported bidder '${bidder}', data is not defined as user-centric or site-centric`);
+      }
   }
 }
 
@@ -622,9 +682,13 @@ function assignProfileToObject(destination, base, profile) {
  * @returns {void}
  */
 function handleRubiconBid(bid, profile, user) {
-  const section = (user) ? 'visitor' : 'inventory';
-  const base = `params.${section}`;
-  assignProfileToObject(bid, base, profile);
+  if (isBoolean(user)) {
+    const section = (user) ? 'visitor' : 'inventory';
+    const base = `params.${section}`;
+    assignProfileToObject(bid, base, profile);
+  } else {
+    logMessage(`SKIP bidder '${bid.bidder}', data is not defined as user-centric or site-centric`);
+  }
 }
 
 /** handle appnexus/xandr bid

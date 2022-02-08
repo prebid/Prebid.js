@@ -6,7 +6,8 @@ import {
 } from 'test/mocks/xhr.js';
 import {
   storage,
-  DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY
+  DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY,
+  DEFAULT_LOCAL_STORAGE_LITE_PROFILE_KEY
 } from '../../../modules/weboramaRtdProvider.js';
 import {
   config
@@ -60,7 +61,8 @@ describe('weboramaRtdProvider', function () {
     beforeEach(function () {
       sandbox = sinon.sandbox.create();
 
-      storage.removeDataFromLocalStorage('webo_wam2gam_entry');
+      storage.removeDataFromLocalStorage(DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY);
+      storage.removeDataFromLocalStorage(DEFAULT_LOCAL_STORAGE_LITE_PROFILE_KEY)
     });
 
     afterEach(function () {
