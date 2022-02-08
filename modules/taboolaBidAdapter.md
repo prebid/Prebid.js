@@ -3,7 +3,7 @@
 ```
 Module Name: Taboola Adapter
 Module Type: Bidder Adapter
-Maintainer: headerbidding@taboola.com
+Maintainer: prebid@taboola.com
 ```
 
 # Description
