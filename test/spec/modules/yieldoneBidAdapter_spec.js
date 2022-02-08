@@ -1,10 +1,13 @@
 import { expect } from 'chai';
 import { spec } from 'modules/yieldoneBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import { deepClone } from 'src/utils.js';
 
 const ENDPOINT = 'https://y.one.impact-ad.jp/h_bid';
 const USER_SYNC_URL = 'https://y.one.impact-ad.jp/push_sync';
 const VIDEO_PLAYER_URL = 'https://img.ak.impact-ad.jp/ic/pone/ivt/firstview/js/dac-video-prebid.min.js';
+
+const DEFAULT_VIDEO_SIZE = {w: 640, h: 360};
 
 describe('yieldoneBidAdapter', function() {
   const adapter = newBidder(spec);
@@ -39,32 +42,7 @@ describe('yieldoneBidAdapter', function() {
   });
 
   describe('buildRequests', function () {
-    let bidRequests = [
-      {
-        'bidder': 'yieldone',
-        'params': {
-          placementId: '36891'
-        },
-        'adUnitCode': 'adunit-code1',
-        'sizes': [[300, 250], [336, 280]],
-        'bidId': '23beaa6af6cdde',
-        'bidderRequestId': '19c0c1efdf37e7',
-        'auctionId': '61466567-d482-4a16-96f0-fe5f25ffbdf1',
-      },
-      {
-        'bidder': 'yieldone',
-        'params': {
-          placementId: '47919'
-        },
-        'adUnitCode': 'adunit-code2',
-        'sizes': [[300, 250]],
-        'bidId': '382091349b149f"',
-        'bidderRequestId': '"1f9c98192de251"',
-        'auctionId': '61466567-d482-4a16-96f0-fe5f25ffbdf1',
-      }
-    ];
-
-    let bidderRequest = {
+    const bidderRequest = {
       refererInfo: {
         numIframes: 0,
         reachedTop: true,
@@ -73,35 +51,353 @@ describe('yieldoneBidAdapter', function() {
       }
     };
 
-    const request = spec.buildRequests(bidRequests, bidderRequest);
+    describe('Basic', function () {
+      const bidRequests = [
+        {
+          'bidder': 'yieldone',
+          'params': {placementId: '36891'},
+          'adUnitCode': 'adunit-code1',
+          'bidId': '23beaa6af6cdde',
+          'bidderRequestId': '19c0c1efdf37e7',
+          'auctionId': '61466567-d482-4a16-96f0-fe5f25ffbdf1',
+        },
+        {
+          'bidder': 'yieldone',
+          'params': {placementId: '47919'},
+          'adUnitCode': 'adunit-code2',
+          'bidId': '382091349b149f"',
+          'bidderRequestId': '"1f9c98192de251"',
+          'auctionId': '61466567-d482-4a16-96f0-fe5f25ffbdf1',
+        }
+      ];
+      const request = spec.buildRequests(bidRequests, bidderRequest);
 
-    it('sends bid request to our endpoint via GET', function () {
-      expect(request[0].method).to.equal('GET');
-      expect(request[1].method).to.equal('GET');
+      it('sends bid request to our endpoint via GET', function () {
+        expect(request[0].method).to.equal('GET');
+        expect(request[1].method).to.equal('GET');
+      });
+      it('attaches source and version to endpoint URL as query params', function () {
+        expect(request[0].url).to.equal(ENDPOINT);
+        expect(request[1].url).to.equal(ENDPOINT);
+      });
+      it('adUnitCode should be sent as uc parameters on any requests', function () {
+        expect(request[0].data.uc).to.equal('adunit-code1');
+        expect(request[1].data.uc).to.equal('adunit-code2');
+      });
     });
 
-    it('attaches source and version to endpoint URL as query params', function () {
-      expect(request[0].url).to.equal(ENDPOINT);
-      expect(request[1].url).to.equal(ENDPOINT);
+    describe('Old Format', function () {
+      const bidRequests = [
+        {
+          params: {placementId: '0'},
+          mediaType: 'banner',
+          sizes: [[300, 250], [336, 280]],
+        },
+        {
+          params: {placementId: '1'},
+          mediaType: 'banner',
+          sizes: [[336, 280]],
+        },
+        {
+          // It doesn't actually exist.
+          params: {placementId: '2'},
+        },
+        {
+          params: {placementId: '3'},
+          mediaType: 'video',
+          sizes: [[1280, 720], [1920, 1080]],
+        },
+        {
+          params: {placementId: '4'},
+          mediaType: 'video',
+          sizes: [[1920, 1080]],
+        },
+        {
+          params: {placementId: '5'},
+          mediaType: 'video',
+        },
+      ];
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+
+      it('parameter sz has more than one size on banner requests', function () {
+        expect(request[0].data.sz).to.equal('300x250,336x280');
+        expect(request[1].data.sz).to.equal('336x280');
+        expect(request[2].data.sz).to.equal('');
+        expect(request[3].data).to.not.have.property('sz');
+        expect(request[4].data).to.not.have.property('sz');
+        expect(request[5].data).to.not.have.property('sz');
+      });
+
+      it('width and height should be set as separate parameters on outstream requests', function () {
+        expect(request[0].data).to.not.have.property('w');
+        expect(request[1].data).to.not.have.property('w');
+        expect(request[2].data).to.not.have.property('w');
+        expect(request[3].data.w).to.equal(1280);
+        expect(request[3].data.h).to.equal(720);
+        expect(request[4].data.w).to.equal(1920);
+        expect(request[4].data.h).to.equal(1080);
+        expect(request[5].data.w).to.equal(DEFAULT_VIDEO_SIZE.w);
+        expect(request[5].data.h).to.equal(DEFAULT_VIDEO_SIZE.h);
+      });
     });
 
-    it('parameter sz has more than one size on banner requests', function () {
-      expect(request[0].data.sz).to.equal('300x250,336x280');
-      expect(request[1].data.sz).to.equal('300x250');
+    describe('New Format', function () {
+      const bidRequests = [
+        {
+          params: {placementId: '0'},
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250], [336, 280]],
+            },
+          },
+        },
+        {
+          params: {placementId: '1'},
+          mediaTypes: {
+            banner: {
+              sizes: [[336, 280]],
+            },
+          },
+        },
+        {
+          // It doesn't actually exist.
+          params: {placementId: '2'},
+          mediaTypes: {
+            banner: {
+            },
+          },
+        },
+        {
+          params: {placementId: '3'},
+          mediaTypes: {
+            video: {
+              context: 'outstream',
+              playerSize: [[1280, 720], [1920, 1080]],
+            },
+          },
+        },
+        {
+          params: {placementId: '4'},
+          mediaTypes: {
+            video: {
+              context: 'outstream',
+              playerSize: [1920, 1080],
+            },
+          },
+        },
+        {
+          params: {placementId: '5'},
+          mediaTypes: {
+            video: {
+              context: 'outstream',
+            },
+          },
+        },
+      ];
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+
+      it('parameter sz has more than one size on banner requests', function () {
+        expect(request[0].data.sz).to.equal('300x250,336x280');
+        expect(request[1].data.sz).to.equal('336x280');
+        expect(request[2].data.sz).to.equal('');
+        expect(request[3].data).to.not.have.property('sz');
+        expect(request[4].data).to.not.have.property('sz');
+        expect(request[5].data).to.not.have.property('sz');
+      });
+
+      it('width and height should be set as separate parameters on outstream requests', function () {
+        expect(request[0].data).to.not.have.property('w');
+        expect(request[1].data).to.not.have.property('w');
+        expect(request[2].data).to.not.have.property('w');
+        expect(request[3].data.w).to.equal(1280);
+        expect(request[3].data.h).to.equal(720);
+        expect(request[4].data.w).to.equal(1920);
+        expect(request[4].data.h).to.equal(1080);
+        expect(request[5].data.w).to.equal(DEFAULT_VIDEO_SIZE.w);
+        expect(request[5].data.h).to.equal(DEFAULT_VIDEO_SIZE.h);
+      });
     });
 
-    it('width and height should be set as separate parameters on outstream requests', function () {
-      const bidRequest = Object.assign({}, bidRequests[0]);
-      bidRequest.mediaTypes = {};
-      bidRequest.mediaTypes.video = {context: 'outstream'};
-      const request = spec.buildRequests([bidRequest], bidderRequest);
-      expect(request[0].data.w).to.equal('300');
-      expect(request[0].data.h).to.equal('250');
+    describe('Multiple Format', function () {
+      const bidRequests = [
+        {
+          // It will be treated as a banner.
+          params: {
+            placementId: '0',
+          },
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250], [336, 280]],
+            },
+            video: {
+              context: 'outstream',
+              playerSize: [1920, 1080],
+            },
+          },
+        },
+        {
+          // It will be treated as a video.
+          params: {
+            placementId: '1',
+            playerParams: {},
+          },
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250], [336, 280]],
+            },
+            video: {
+              context: 'outstream',
+              playerSize: [1920, 1080],
+            },
+          },
+        },
+      ];
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+
+      it('parameter sz has more than one size on banner requests', function () {
+        expect(request[0].data.sz).to.equal('300x250,336x280');
+        expect(request[1].data).to.not.have.property('sz');
+      });
+
+      it('width and height should be set as separate parameters on outstream requests', function () {
+        expect(request[0].data).to.not.have.property('w');
+        expect(request[1].data.w).to.equal(1920);
+        expect(request[1].data.h).to.equal(1080);
+      });
     });
 
-    it('adUnitCode should be sent as uc parameters on any requests', function () {
-      expect(request[0].data.uc).to.equal('adunit-code1');
-      expect(request[1].data.uc).to.equal('adunit-code2');
+    describe('FLUX Format', function () {
+      const bidRequests = [
+        {
+          // It will be treated as a banner.
+          params: {
+            placementId: '0',
+          },
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250], [336, 280]],
+            },
+            video: {
+              context: 'outstream',
+              playerSize: [[1, 1]],
+            },
+          },
+        },
+        {
+          // It will be treated as a video.
+          params: {
+            placementId: '1',
+            playerParams: {},
+            playerSize: [1920, 1080],
+          },
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250], [336, 280]],
+            },
+            video: {
+              context: 'outstream',
+              playerSize: [[1, 1]],
+            },
+          },
+        },
+        {
+          // It will be treated as a video.
+          params: {
+            placementId: '2',
+            playerParams: {},
+          },
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250], [336, 280]],
+            },
+            video: {
+              context: 'outstream',
+              playerSize: [[1, 1]],
+            },
+          },
+        },
+      ];
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+
+      it('parameter sz has more than one size on banner requests', function () {
+        expect(request[0].data.sz).to.equal('300x250,336x280');
+        expect(request[1].data).to.not.have.property('sz');
+        expect(request[2].data).to.not.have.property('sz');
+      });
+
+      it('width and height should be set as separate parameters on outstream requests', function () {
+        expect(request[0].data).to.not.have.property('w');
+        expect(request[1].data.w).to.equal(1920);
+        expect(request[1].data.h).to.equal(1080);
+        expect(request[2].data.w).to.equal(DEFAULT_VIDEO_SIZE.w);
+        expect(request[2].data.h).to.equal(DEFAULT_VIDEO_SIZE.h);
+      });
+    });
+
+    describe('LiveRampID', function () {
+      it('dont send LiveRampID if undefined', function () {
+        const bidRequests = [
+          {
+            params: {placementId: '0'},
+          },
+          {
+            params: {placementId: '1'},
+            userId: {},
+          },
+          {
+            params: {placementId: '2'},
+            userId: undefined,
+          },
+        ];
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        expect(request[0].data).to.not.have.property('lr_env');
+        expect(request[1].data).to.not.have.property('lr_env');
+        expect(request[2].data).to.not.have.property('lr_env');
+      });
+
+      it('should send LiveRampID if available', function () {
+        const bidRequests = [
+          {
+            params: {placementId: '0'},
+            userId: {idl_env: 'idl_env_sample'},
+          },
+        ];
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        expect(request[0].data.lr_env).to.equal('idl_env_sample');
+      });
+    });
+
+    describe('IMID', function () {
+      it('dont send IMID if undefined', function () {
+        const bidRequests = [
+          {
+            params: {placementId: '0'},
+          },
+          {
+            params: {placementId: '1'},
+            userId: {},
+          },
+          {
+            params: {placementId: '2'},
+            userId: undefined,
+          },
+        ];
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        expect(request[0].data).to.not.have.property('imuid');
+        expect(request[1].data).to.not.have.property('imuid');
+        expect(request[2].data).to.not.have.property('imuid');
+      });
+
+      it('should send IMID if available', function () {
+        const bidRequests = [
+          {
+            params: {placementId: '0'},
+            userId: {imuid: 'imuid_sample'},
+          },
+        ];
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        expect(request[0].data.imuid).to.equal('imuid_sample');
+      });
     });
   });
 
@@ -132,7 +428,10 @@ describe('yieldoneBidAdapter', function() {
         'crid': '2494768',
         'currency': 'JPY',
         'statusMessage': 'Bid available',
-        'dealId': 'P1-FIX-7800-DSP-MON'
+        'dealId': 'P1-FIX-7800-DSP-MON',
+        'admoain': [
+          'www.example.com'
+        ]
       }
     };
 
@@ -148,6 +447,11 @@ describe('yieldoneBidAdapter', function() {
         'netRevenue': true,
         'ttl': 3000,
         'referrer': '',
+        'meta': {
+          'advertiserDomains': [
+            'www.example.com'
+          ]
+        },
         'mediaType': 'banner',
         'ad': '<!-- adtag -->'
       }];
@@ -199,6 +503,9 @@ describe('yieldoneBidAdapter', function() {
         'netRevenue': true,
         'ttl': 3000,
         'referrer': '',
+        'meta': {
+          'advertiserDomains': []
+        },
         'mediaType': 'video',
         'vastXml': '<!-- vast -->',
         'renderer': {

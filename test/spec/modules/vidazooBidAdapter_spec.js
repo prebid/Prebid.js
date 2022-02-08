@@ -60,6 +60,7 @@ const SERVER_RESPONSE = {
       'exp': 30,
       'width': 300,
       'height': 250,
+      'advertiserDomains': ['securepubads.g.doubleclick.net'],
       'cookies': [{
         'src': 'https://sync.com',
         'type': 'iframe'
@@ -221,7 +222,10 @@ describe('VidazooBidAdapter', function () {
         currency: 'USD',
         netRevenue: true,
         ttl: 30,
-        ad: '<iframe>console.log("hello world")</iframe>'
+        ad: '<iframe>console.log("hello world")</iframe>',
+        meta: {
+          advertiserDomains: ['securepubads.g.doubleclick.net']
+        }
       });
     });
 

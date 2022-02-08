@@ -34,21 +34,21 @@ describe('AjaAdapter', function () {
   });
 
   describe('buildRequests', function () {
-    let bidRequests = [
+    const bidRequests = [
       {
-        'bidder': 'aja',
-        'params': {
-          'asi': '123456'
+        bidder: 'aja',
+        params: {
+          asi: '123456'
         },
-        'adUnitCode': 'adunit',
-        'sizes': [[300, 250]],
-        'bidId': '30b31c1838de1e',
-        'bidderRequestId': '22edbae2733bf6',
-        'auctionId': '1d1a030790a475',
+        adUnitCode: 'adunit',
+        sizes: [[300, 250]],
+        bidId: '30b31c1838de1e',
+        bidderRequestId: '22edbae2733bf6',
+        auctionId: '1d1a030790a475',
       }
     ];
 
-    let bidderRequest = {
+    const bidderRequest = {
       refererInfo: {
         referer: 'https://hoge.com'
       }
@@ -59,6 +59,44 @@ describe('AjaAdapter', function () {
       expect(requests[0].url).to.equal(ENDPOINT);
       expect(requests[0].method).to.equal('GET');
       expect(requests[0].data).to.equal('asi=123456&skt=5&prebid_id=30b31c1838de1e&prebid_ver=$prebid.version$&page_url=https%3A%2F%2Fhoge.com&');
+    });
+  });
+
+  describe('buildRequests with UserModule', function () {
+    const bidRequests = [
+      {
+        bidder: 'aja',
+        params: {
+          asi: '123456'
+        },
+        adUnitCode: 'adunit',
+        sizes: [[300, 250]],
+        bidId: '30b31c1838de1e',
+        bidderRequestId: '22edbae2733bf6',
+        auctionId: '1d1a030790a475',
+        userIdAsEids: [
+          {
+            source: 'pubcid.org',
+            uids: [{
+              id: 'some-random-id-value',
+              atype: 1
+            }]
+          }
+        ]
+      }
+    ];
+
+    const bidderRequest = {
+      refererInfo: {
+        referer: 'https://hoge.com'
+      }
+    };
+
+    it('sends bid request to ENDPOINT via GET', function () {
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      expect(requests[0].url).to.equal(ENDPOINT);
+      expect(requests[0].method).to.equal('GET');
+      expect(requests[0].data).to.equal('asi=123456&skt=5&prebid_id=30b31c1838de1e&prebid_ver=$prebid.version$&page_url=https%3A%2F%2Fhoge.com&eids=%7B%22eids%22%3A%5B%7B%22source%22%3A%22pubcid.org%22%2C%22uids%22%3A%5B%7B%22id%22%3A%22some-random-id-value%22%2C%22atype%22%3A1%7D%5D%7D%5D%7D&');
     });
   });
 
@@ -78,8 +116,11 @@ describe('AjaAdapter', function () {
             'tag': '<div></div>',
             'imps': [
               'https://as.amanad.adtdp.com/v1/imp'
+            ],
+            'adomain': [
+              'www.example.com'
             ]
-          }
+          },
         },
         'syncs': [
           'https://example.com'
@@ -98,7 +139,12 @@ describe('AjaAdapter', function () {
           'mediaType': 'banner',
           'currency': 'USD',
           'ttl': 300,
-          'netRevenue': true
+          'netRevenue': true,
+          'meta': {
+            'advertiserDomains': [
+              'www.example.com'
+            ]
+          }
         }
       ];
 
@@ -123,7 +169,10 @@ describe('AjaAdapter', function () {
             'purl': 'https://cdn/player',
             'progress': true,
             'loop': false,
-            'inread': false
+            'inread': false,
+            'adomain': [
+              'www.example.com'
+            ]
           }
         },
         'syncs': [
@@ -178,7 +227,10 @@ describe('AjaAdapter', function () {
                     'https://example.com/inview'
                   ],
                   'jstracker': '',
-                  'disable_trimming': false
+                  'disable_trimming': false,
+                  'adomain': [
+                    'www.example.com'
+                  ]
                 }
               ]
             }
@@ -218,7 +270,12 @@ describe('AjaAdapter', function () {
             'impressionTrackers': [
               'https://example.com/imp'
             ],
-            'privacyLink': 'https://aja-kk.co.jp/optout',
+            'privacyLink': 'https://aja-kk.co.jp/optout'
+          },
+          'meta': {
+            'advertiserDomains': [
+              'www.example.com'
+            ]
           }
         }
       ];

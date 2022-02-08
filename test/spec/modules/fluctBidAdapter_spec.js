@@ -1,7 +1,7 @@
 import {expect} from 'chai';
-import {spec} from 'modules/fluctBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
-import {config} from 'src/config.js';
+import {spec} from 'modules/fluctBidAdapter';
+import {newBidder} from 'src/adapters/bidderFactory';
+import {config} from 'src/config';
 
 describe('fluctAdapter', function () {
   const adapter = newBidder(spec);
@@ -78,6 +78,11 @@ describe('fluctAdapter', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.method).to.equal('POST');
     });
+
+    it('sends bid request to ENDPOINT with query parameter', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.url).to.equal('https://hb.adingo.jp/prebid?dfpUnitCode=%2F100000%2Funit_code&tagId=10000%3A100000001&groupId=1000000002');
+    });
   });
 
   describe('interpretResponse', function() {
@@ -114,6 +119,7 @@ describe('fluctAdapter', function () {
               adm: '<!-- test creative -->',
               burl: 'https://i.adingo.jp/?test=1&et=hb&bidid=237f4d1a293f99',
               crid: 'test_creative',
+              adomain: ['test_adomain']
             }]
           }]
         }
@@ -131,6 +137,9 @@ describe('fluctAdapter', function () {
           creativeId: 'test_creative',
           ttl: 300,
           ad: '<!-- test creative -->' + callBeaconSnippet,
+          meta: {
+            advertiserDomains: ['test_adomain'],
+          },
         }
       ];
 
@@ -186,6 +195,9 @@ describe('fluctAdapter', function () {
           ttl: 300,
           ad: '<!-- test creative -->' + callBeaconSnippet,
           dealId: 'test_deal',
+          meta: {
+            advertiserDomains: [],
+          },
         }
       ];
 

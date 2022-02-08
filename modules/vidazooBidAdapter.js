@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { _each, deepAccess, parseSizesInput } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -94,7 +94,7 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
     data: data
   };
 
-  utils._each(ext, (value, key) => {
+  _each(ext, (value, key) => {
     dto.data['ext.' + key] = value;
   });
 
@@ -103,13 +103,13 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
 
 function appendUserIdsToRequestPayload(payloadRef, userIds) {
   let key;
-  utils._each(userIds, (userId, idSystemProviderName) => {
+  _each(userIds, (userId, idSystemProviderName) => {
     if (SUPPORTED_ID_SYSTEMS[idSystemProviderName]) {
       key = `uid.${idSystemProviderName}`;
 
       switch (idSystemProviderName) {
         case 'digitrustid':
-          payloadRef[key] = utils.deepAccess(userId, 'data.id');
+          payloadRef[key] = deepAccess(userId, 'data.id');
           break;
         case 'lipb':
           payloadRef[key] = userId.lipbid;
@@ -131,7 +131,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   const topWindowUrl = bidderRequest.refererInfo.referer;
   const requests = [];
   validBidRequests.forEach(validBidRequest => {
-    const sizes = utils.parseSizesInput(validBidRequest.sizes);
+    const sizes = parseSizesInput(validBidRequest.sizes);
     const request = buildRequest(validBidRequest, topWindowUrl, sizes, bidderRequest);
     requests.push(request);
   });
@@ -149,7 +149,7 @@ function interpretResponse(serverResponse, request) {
 
   try {
     results.forEach(result => {
-      const { creativeId, ad, price, exp, width, height, currency } = result;
+      const { creativeId, ad, price, exp, width, height, currency, advertiserDomains } = result;
       if (!ad || !price) {
         return;
       }
@@ -162,7 +162,10 @@ function interpretResponse(serverResponse, request) {
         currency: currency || CURRENCY,
         netRevenue: true,
         ttl: exp || TTL_SECONDS,
-        ad: ad
+        ad: ad,
+        meta: {
+          advertiserDomains: advertiserDomains || []
+        }
       })
     });
     return output;
@@ -266,8 +269,8 @@ export function tryParseJSON(value) {
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   version: BIDDER_VERSION,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER],
   isBidRequestValid,
   buildRequests,

@@ -67,11 +67,11 @@ export const identityLinkSubmodule = {
             setEnvelopeSource(true);
             callback(JSON.parse(envelope).envelope);
           } else {
-            getEnvelope(url, callback);
+            getEnvelope(url, callback, configParams);
           }
         });
       } else {
-        getEnvelope(url, callback);
+        getEnvelope(url, callback, configParams);
       }
     };
 
@@ -79,7 +79,7 @@ export const identityLinkSubmodule = {
   }
 };
 // return envelope from third party endpoint
-function getEnvelope(url, callback) {
+function getEnvelope(url, callback, configParams) {
   const callbacks = {
     success: response => {
       let responseObj;
@@ -98,7 +98,7 @@ function getEnvelope(url, callback) {
     }
   };
 
-  if (!storage.getCookie('_lr_retry_request')) {
+  if (!configParams.notUse3P && !storage.getCookie('_lr_retry_request')) {
     setRetryCookie();
     utils.logInfo('identityLink: A 3P retrieval is attempted!');
     setEnvelopeSource(false);

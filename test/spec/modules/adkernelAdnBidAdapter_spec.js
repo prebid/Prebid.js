@@ -1,5 +1,6 @@
 import {expect} from 'chai';
-import {spec} from 'modules/adkernelAdnBidAdapter.js';
+import {spec} from 'modules/adkernelAdnBidAdapter';
+import {config} from 'src/config';
 
 describe('AdkernelAdn adapter', function () {
   const bid1_pub1 = {
@@ -106,7 +107,12 @@ describe('AdkernelAdn adapter', function () {
         bid: 5.0,
         tag: '<!-- tag goes here -->',
         w: 300,
-        h: 250
+        h: 250,
+        advertiserId: 777,
+        advertiserName: 'advertiser',
+        agencyName: 'agency',
+        advertiserDomains: ['example.com'],
+        primaryCatId: 'IAB1-1',
       }, {
         id: 'ad-unit-2',
         impid: '31d798477126c4',
@@ -114,7 +120,12 @@ describe('AdkernelAdn adapter', function () {
         bid: 2.5,
         tag: '<!-- tag goes here -->',
         w: 300,
-        h: 250
+        h: 250,
+        advertiserId: 777,
+        advertiserName: 'advertiser',
+        agencyName: 'agency',
+        advertiserDomains: ['example.com'],
+        secondaryCatIds: ['IAB1-4', 'IAB8-16', 'IAB25-5']
       }, {
         id: 'video_wrapper',
         impid: '57d602ad1c9545',
@@ -205,7 +216,6 @@ describe('AdkernelAdn adapter', function () {
     fullBidderRequest.bids = bidRequests;
     let pbRequests = spec.buildRequests(bidRequests, fullBidderRequest);
     let tagRequests = pbRequests.map(r => JSON.parse(r.data));
-
     return [pbRequests, tagRequests];
   }
 
@@ -262,6 +272,26 @@ describe('AdkernelAdn adapter', function () {
       expect(bidRequests[0]).to.have.property('user');
       expect(bidRequests[0].user).to.have.property('gdpr', 0);
       expect(bidRequests[0].user).to.not.have.property('consent');
+    });
+
+    it('should\'t contain consent string if gdpr isn\'t applied', function () {
+      config.setConfig({coppa: true});
+      let [_, bidRequests] = buildRequest([bid1_pub1]);
+      config.resetConfig();
+      expect(bidRequests[0]).to.have.property('user');
+      expect(bidRequests[0].user).to.have.property('coppa', 1);
+    });
+
+    it('should set bidfloor if configured', function() {
+      let bid = Object.assign({}, bid1_pub1);
+      bid.getFloor = function() {
+        return {
+          currency: 'USD',
+          floor: 0.145
+        }
+      };
+      let [, tagRequests] = buildRequest([bid]);
+      expect(tagRequests[0].imp[0]).to.have.property('bidfloor', 0.145);
     });
   });
 
@@ -355,6 +385,11 @@ describe('AdkernelAdn adapter', function () {
       expect(resp).to.have.property('mediaType', 'banner');
       expect(resp).to.have.property('ad');
       expect(resp.ad).to.have.string('<!-- tag goes here -->');
+      expect(resp.meta.advertiserId).to.be.eql(777);
+      expect(resp.meta.advertiserName).to.be.eql('advertiser');
+      expect(resp.meta.agencyName).to.be.eql('agency');
+      expect(resp.meta.advertiserDomains).to.be.eql(['example.com']);
+      expect(resp.meta.primaryCatId).to.be.eql('IAB1-1');
     });
 
     it('should return fully-initialized video bid-response', function () {

@@ -1,10 +1,10 @@
+import { isArray, deepClone } from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
 import { targeting } from '../src/targeting.js';
 import { auctionManager } from '../src/auctionManager.js';
-import * as utils from '../src/utils.js';
 
 const ANALYTICS_CODE = 'yieldone';
 const analyticsType = 'endpoint';
@@ -42,7 +42,7 @@ function makeAdUnitNameMap() {
 }
 
 function addAdUnitNameForArray(ar, map) {
-  if (utils.isArray(ar)) {
+  if (isArray(ar)) {
     ar.forEach((it) => { addAdUnitName(it, map) });
   }
 }
@@ -51,14 +51,14 @@ function addAdUnitName(params, map) {
   if (params.adUnitCode && map[params.adUnitCode]) {
     params.adUnitName = map[params.adUnitCode];
   }
-  if (utils.isArray(params.adUnits)) {
+  if (isArray(params.adUnits)) {
     params.adUnits.forEach((adUnit) => {
       if (adUnit.code && map[adUnit.code]) {
         adUnit.name = map[adUnit.code];
       }
     });
   }
-  if (utils.isArray(params.adUnitCodes)) {
+  if (isArray(params.adUnitCodes)) {
     params.adUnitNames = params.adUnitCodes.map((code) => map[code]);
   }
   ['bids', 'bidderRequests', 'bidsReceived', 'noBids'].forEach((it) => {
@@ -71,13 +71,13 @@ const yieldoneAnalytics = Object.assign(adapter({analyticsType}), {
   track({eventType, args = {}}) {
     if (eventType === CONSTANTS.EVENTS.BID_REQUESTED) {
       const reqBidderId = `${args.bidderCode}_${args.auctionId}`;
-      requestedBidders[reqBidderId] = utils.deepClone(args);
+      requestedBidders[reqBidderId] = deepClone(args);
       requestedBidders[reqBidderId].bids = [];
       args.bids.forEach((bid) => {
         requestedBids[`${bid.bidId}_${bid.auctionId}`] = bid;
       });
     }
-    if (eventType === CONSTANTS.EVENTS.BID_TIMEOUT && utils.isArray(args)) {
+    if (eventType === CONSTANTS.EVENTS.BID_TIMEOUT && isArray(args)) {
       const eventsStorage = yieldoneAnalytics.eventsStorage;
       const reqBidders = {};
       args.forEach((bid) => {

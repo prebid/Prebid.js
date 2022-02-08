@@ -1,13 +1,13 @@
+import { deepClone, getBidRequest, deepAccess } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { auctionManager } from '../src/auctionManager.js';
 import { INSTREAM } from '../src/video.js';
 import * as events from '../src/events.js';
-import * as utils from '../src/utils.js';
-import { BID_STATUS, EVENTS, TARGETING_KEYS } from '../src/constants.json';
+import CONSTANTS from '../src/constants.json'
 
-const {CACHE_ID, UUID} = TARGETING_KEYS;
-const {BID_WON, AUCTION_END} = EVENTS;
-const {RENDERED} = BID_STATUS;
+const {CACHE_ID, UUID} = CONSTANTS.TARGETING_KEYS;
+const {BID_WON, AUCTION_END} = CONSTANTS.EVENTS;
+const {RENDERED} = CONSTANTS.BID_STATUS;
 
 const INSTREAM_TRACKING_DEFAULT_CONFIG = {
   enabled: false,
@@ -17,7 +17,7 @@ const INSTREAM_TRACKING_DEFAULT_CONFIG = {
 
 // Set instreamTracking default values
 config.setDefaults({
-  'instreamTracking': utils.deepClone(INSTREAM_TRACKING_DEFAULT_CONFIG)
+  'instreamTracking': deepClone(INSTREAM_TRACKING_DEFAULT_CONFIG)
 });
 
 const whitelistedResources = /video|fetch|xmlhttprequest|other/;
@@ -50,8 +50,8 @@ export function trackInstreamDeliveredImpressions({adUnits, bidsReceived, bidder
 
   // filter for video bids
   const instreamBids = bidsReceived.filter(bid => {
-    const bidderRequest = utils.getBidRequest(bid.requestId, bidderRequests);
-    return bidderRequest && utils.deepAccess(bidderRequest, 'mediaTypes.video.context') === INSTREAM && bid.videoCacheKey;
+    const bidderRequest = getBidRequest(bid.requestId, bidderRequests);
+    return bidderRequest && deepAccess(bidderRequest, 'mediaTypes.video.context') === INSTREAM && bid.videoCacheKey;
   });
   if (!instreamBids.length) {
     return false;
@@ -60,7 +60,7 @@ export function trackInstreamDeliveredImpressions({adUnits, bidsReceived, bidder
   // find unique instream ad units
   const instreamAdUnitMap = {};
   adUnits.forEach(adUnit => {
-    if (!instreamAdUnitMap[adUnit.code] && utils.deepAccess(adUnit, 'mediaTypes.video.context') === INSTREAM) {
+    if (!instreamAdUnitMap[adUnit.code] && deepAccess(adUnit, 'mediaTypes.video.context') === INSTREAM) {
       instreamAdUnitMap[adUnit.code] = true;
     }
   });
