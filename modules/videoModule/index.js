@@ -27,12 +27,10 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
   function init() {
     getConfig('video', ({ video }) => {
       video.providers.forEach(provider => {
-        try {
-          videoCore.registerProvider(provider);
-          videoCore.onEvents(videoEvents, (type, payload) => {
-            pbEvents.emit(type, payload);
-          }, provider.divId);
-        } catch (e) {}
+        videoCore.registerProvider(provider);
+        videoCore.onEvents(videoEvents, (type, payload) => {
+          pbEvents.emit(type, payload);
+        }, provider.divId);
 
         const adServerConfig = provider.adServer;
         if (adServerConfig) {
@@ -87,6 +85,11 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
   }
 
   function renderWinningBid(adUnit) {
+    const highestCpmBids = pbGlobal.getHighestCpmBids(adUnit.code);
+    if (!highestCpmBids.length) {
+      return;
+    }
+
     const videoConfig = adUnit.video;
     const divId = videoConfig.divId;
     const adServerConfig = videoConfig.adServer;
@@ -102,8 +105,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
       return;
     }
 
-    const highestCpmBids = pbGlobal.getHighestCpmBids(adUnit.code);
-    const highestBid = highestCpmBids && highestCpmBids.shift();
+    const highestBid = highestCpmBids.shift();
     if (!highestBid) {
       return;
     }
