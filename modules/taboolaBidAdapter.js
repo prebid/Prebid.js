@@ -3,6 +3,7 @@
 
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
+import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'taboola';
 const GVLID = 42;
@@ -24,11 +25,31 @@ export const spec = {
   },
   buildRequests: (validBidRequests, bidderRequest) => {
     const [bidRequest] = validBidRequests;
+    const {refererInfo, gdprConsent = {}, uspConsent} = bidderRequest;
     const {bcat = [], badv = [], publisherId} = bidRequest.params;
-    const site = getSiteProperties(bidRequest.params, bidderRequest.refererInfo.referer);
+    const site = getSiteProperties(bidRequest.params, refererInfo.referer);
     const device = {ua: navigator.userAgent};
-    const timeout = bidderRequest.timeout;
     const imps = getImps(validBidRequests);
+    const user = {
+      ext: {}
+    };
+    const regs = {
+      coppa: 0,
+      ext: {}
+    };
+
+    if (gdprConsent.gdprApplies) {
+      user.ext.consent = bidderRequest.gdprConsent.consentString;
+      regs.ext.gdpr = 1;
+    }
+
+    if (uspConsent) {
+      regs.ext.us_privacy = uspConsent;
+    }
+
+    if (config.getConfig('coppa')) {
+      regs.coppa = 1
+    }
 
     const request = {
       id: bidderRequest.auctionId,
@@ -36,10 +57,13 @@ export const spec = {
       site,
       device,
       source: {fd: 1},
-      tmax: timeout,
-      bcat: bcat,
-      badv: badv
+      tmax: bidderRequest.timeout,
+      bcat,
+      badv,
+      user,
+      regs
     };
+
     const url = [END_POINT_URL, publisherId].join('?p=');
 
     return {
