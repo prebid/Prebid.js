@@ -2,7 +2,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import * as mediaTypes from '../src/mediaTypes.js';
 import {deepAccess, _map, isEmpty} from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
-import find from 'prebidjs-polyfill/find.js';
+import find from 'core-js-pure/features/array/find.js';
 import { OUTSTREAM, INSTREAM } from '../src/video.js';
 
 const BIDDER_CODE = 'dailyhunt';

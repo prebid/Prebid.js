@@ -1,8 +1,8 @@
-import { Renderer } from '../src/Renderer.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { isFn, isArray, isBoolean, isStr, isPlainObject, logError, replaceAuctionPrice } from '../src/utils.js';
-import find from 'prebidjs-polyfill/find.js';
+import {Renderer} from '../src/Renderer.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {isStr, isFn, isArray, isPlainObject, isBoolean, logError, replaceAuctionPrice} from '../src/utils.js';
+import find from 'core-js-pure/features/array/find.js';
 import { config } from '../src/config.js';
 import { OUTSTREAM } from '../src/video.js';
 
