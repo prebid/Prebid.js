@@ -118,6 +118,24 @@ describe('TheMediaGrid Adapter', function () {
       }
     ];
 
+    it('should be content categories and genre', function () {
+      const site = {
+        cat: ['IAB2'],
+        pagecat: ['IAB2-2'],
+        content: {
+          genre: 'Adventure'
+        }
+      };
+
+      const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
+        arg => arg === 'ortb2.site' ? site : null);
+      const request = spec.buildRequests([bidRequests[0]], bidderRequest);
+      const payload = parseRequest(request.data);
+      expect(payload.site.cat).to.deep.equal([...site.cat, ...site.pagecat]);
+      expect(payload.site.content.genre).to.deep.equal(site.content.genre);
+      getConfigStub.restore();
+    });
+
     it('should attach valid params to the tag', function () {
       const fpdUserIdVal = '0b0f84a1-1596-4165-9742-2e1a7dfac57f';
       const getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage').callsFake(
