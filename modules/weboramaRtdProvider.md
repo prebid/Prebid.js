@@ -97,7 +97,7 @@ pbjs.que.push(function () {
                             webo_cs: ['Red'],
                             webo_audiences: ['bam']
                         },
-                        localStorageProfileKey: 'webo_wam2gam_entry' // default
+                        localStorageProfileKey: 'webo_wam2gam_entry', // default
                         enabled: true,
                         //, onData: function (data, ...) { ...}
                     }
@@ -112,7 +112,7 @@ pbjs.que.push(function () {
                             lite_occupation: ['gérant', 'bénévole'],
                             lite_hobbies: ['sport', 'cinéma'],
                         },
-                        localStorageProfileKey: '_lite' // default
+                        localStorageProfileKey: '_lite', // default
                         enabled: true,
                         //, onData: function (data, ...) { ...}
                     }
