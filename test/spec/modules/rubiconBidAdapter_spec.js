@@ -3262,7 +3262,7 @@ describe('the rubicon adapter', function () {
             label: undefined,
             placement: {
               align: 'left',
-              attachTo: '#outstream_video1_placement',
+              attachTo: adUnit,
               position: 'append',
             },
             vastUrl: 'https://test.com/vast.xml',
