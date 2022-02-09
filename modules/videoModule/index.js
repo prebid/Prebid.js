@@ -86,9 +86,11 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
   }
 
   function renderWinningBid(adUnit) {
-    const highestCpmBids = pbGlobal.getHighestCpmBids(adUnit.code);
+    const adUnitCode = adUnit.code;
+    const options = { adUnitCode };
+    const highestCpmBids = pbGlobal.getHighestCpmBids(adUnitCode);
     if (!highestCpmBids.length) {
-      pbEvents.emit(AUCTION_AD_LOAD_ATTEMPT, {});
+      pbEvents.emit(AUCTION_AD_LOAD_ATTEMPT, options);
       return;
     }
 
@@ -100,8 +102,6 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
       adUrl = adServerCore.getAdTagUrl(adServerConfig.vendorCode, adUnit, adServerConfig.baseAdTagUrl);
     }
 
-    const adUnitCode = adUnit.code;
-    const options = { adUnitCode };
     if (adUrl) {
       loadAdTag(adUrl, divId, options);
       return;
