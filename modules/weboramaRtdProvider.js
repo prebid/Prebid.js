@@ -446,11 +446,11 @@ function getTargetingData(adUnitsCodes, moduleConfig) {
   try {
     const td = adUnitsCodes.reduce((data, adUnitCode) => {
       data[adUnitCode] = profileHandlers.reduce((targeting, ph) => {
-        logMessage(`check if should set targeting for adunit '${adUnitCode}'`);
+        // logMessage(`check if should set targeting for adunit '${adUnitCode}'`);
         const data = deepClone(ph.data);
         const meta = deepClone(ph.metadata);
         if (ph.setTargeting(adUnitCode, data, meta)) {
-          logMessage(`set targeting for adunit '${adUnitCode}', source '${ph.metadata.source}'`);
+          // logMessage(`set targeting for adunit '${adUnitCode}', source '${ph.metadata.source}'`);
 
           mergeDeep(targeting, data);
         }
@@ -645,12 +645,12 @@ function handleBidRequestData(adUnits, moduleParams) {
     ).forEach(
       adUnit => adUnit.bids.forEach(
         bid => profileHandlers.forEach(ph => {
-          logMessage(`check if bidder '${bid.bidder}' and adunit '${adUnit.code} are share ${ph.metadata.source} data`);
+          // logMessage(`check if bidder '${bid.bidder}' and adunit '${adUnit.code} are share ${ph.metadata.source} data`);
 
           const data = deepClone(ph.data);
           const meta = deepClone(ph.metadata);
           if (ph.sendToBidders(bid.bidder, adUnit.code, data, meta)) {
-            logMessage(`handling bidder '${bid.bidder}' with ${ph.metadata.source} data`);
+            // logMessage(`handling bidder '${bid.bidder}' with ${ph.metadata.source} data`);
 
             handleBid(bid, data, ph.metadata);
           }

@@ -132,9 +132,10 @@ pbjs.que.push(function () {
 | params | Object | | Optional |
 | params.setPrebidTargeting | Boolean | If true, may use the profile to set the prebid (GPT/GAM or AST) targeting of all adunits managed by prebid.js | Optional. Affects the `weboCtxConf` and `weboUserDataConf` sections |
 | params.sendToBidders | Boolean or Array | If true, may send the profile to all bidders. If an array, will specify the bidders to send data | Optional. Affects the `weboCtxConf` and `weboUserDataConf` sections |
-| params.weboCtxConf | Object | Weborama Contextual Configuration | Optional 
-| params.weboUserDataConf | Object | Weborama User-Centric Configuration | Optional |
-| params.onData | Callback | If set, will receive the profile and metadata | Optional. Affects the `weboCtxConf` and `weboUserDataConf` sections |
+| params.weboCtxConf | Object | Weborama Contextual Site-Centric Configuration | Optional 
+| params.weboUserDataConf | Object | Weborama WAM User-Centric Configuration | Optional |
+| params.weboLiteDataConf | Object | Weborama Lite Site-Centric Configuration | Optional |
+| params.onData | Callback | If set, will receive the profile and metadata | Optional. Affects the `weboCtxConf`, `weboUserDataConf` and `weboLiteDataConf` sections |
 
 #### Contextual Configuration
 
@@ -194,15 +195,17 @@ This callback will be executed with the adUnitCode, profile and a metadata with 
 
 | Name  |Type | Description   | Notes  |
 | :------------ | :------------ | :------------ |:------------ |
-| user | Boolean | If true, it contains user-centric data | Optional |
+| user | Boolean | If true, it contains user-centric data |  |
 | source | String | Represent the source of data | can be `contextual`, `wam` or `lite`  |
 
 It is possible customize the targeting based on the parameters:
 
 ```javascript
 setPrebidTargeting: function(adUnitCode, data, metadata){
-    if (adUnitCode == 'adUnitCode1'){
-        data['foo']=['bar']; // add this section only for adUnitCode1
+    // check metadata.source can be omitted if defined in params.weboUserDataConf
+    if (adUnitCode == 'adUnitCode1' && metadata.source == 'wam'){
+        data['foo']=['bar'];  // add this section only for adUnitCode1
+        delete data['other']; // remove this section
     }
     return true;
 }
@@ -241,7 +244,7 @@ This callback will be executed with the bidder name, adUnitCode, profile and a m
 
 | Name  |Type | Description   | Notes  |
 | :------------ | :------------ | :------------ |:------------ |
-| user | Boolean | If true, it contains user-centric data | Optional |
+| user | Boolean | If true, it contains user-centric data |  |
 | source | String | Represent the source of data | can be `contextual`, `wam` or `lite`  |
 
 It is possible customize the targeting based on the parameters:
@@ -289,7 +292,7 @@ This callback will be executed with the profile and a metadata with the followin
 
 | Name  |Type | Description   | Notes  |
 | :------------ | :------------ | :------------ |:------------ |
-| user | Boolean | If true, it contains user-centric data | Optional |
+| user | Boolean | If true, it contains user-centric data |  |
 | source | String | Represent the source of data | can be `contextual`, `wam` or `lite`  |
 
 The metadata maybe not useful if we define the callback on site-centric of user-centric configuration, but if defined in the global level:
