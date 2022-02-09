@@ -285,11 +285,11 @@ function normalizeConf(moduleParams, submoduleParams) {
     throw 'onData parameter should be a callback';
   }
 
-  // submoduleParams.defaultProfile = submoduleParams.defaultProfile || {};
+  submoduleParams.defaultProfile = submoduleParams.defaultProfile || {};
 
-  // if(!isValidProfile(submoduleParams.defaultProfile)){
-  //   throw 'defaultProfile is not valid';
-  // }
+  if (!isValidProfile(submoduleParams.defaultProfile)) {
+    throw 'defaultProfile is not valid';
+  }
 }
 
 /** coerce set prebid targeting to function
@@ -395,6 +395,35 @@ function coerceSendToBidders(submoduleParams) {
   }
 
   throw `unexpected format for sendToBidders: ${typeof sendToBidders}`;
+}
+/**
+ * check if profile is valid
+ * @param {*} profile
+ * @returns {Boolean}
+ */
+function isValidProfile(profile) {
+  if (!isPlainObject(profile)) {
+    return false;
+  }
+
+  const keys = Object.keys(profile);
+
+  for (var i in keys) {
+    const key = keys[i];
+    const value = profile[key];
+    if (!isArray(value)) {
+      return false;
+    }
+
+    for (var j in value) {
+      const elem = value[j]
+      if (!isStr(elem)) {
+        return false;
+      }
+    }
+  }
+
+  return true;
 }
 
 /** function that provides ad server targeting data to RTD-core
@@ -513,7 +542,8 @@ function getWeboUserDataProfile(weboUserDataConf) {
     () => _weboUserDataUserProfile,
     (data) => _weboUserDataUserProfile = data,
     DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY,
-    LOCAL_STORAGE_USER_TARGETING_SECTION);
+    LOCAL_STORAGE_USER_TARGETING_SECTION,
+    'wam');
 }
 
 /** return weboUserData profile
@@ -525,7 +555,8 @@ function getWeboLiteDataProfile(weboLiteDataConf) {
     () => _weboLiteDataProfile,
     (data) => _weboLiteDataProfile = data,
     DEFAULT_LOCAL_STORAGE_LITE_PROFILE_KEY,
-    LOCAL_STORAGE_LITE_TARGETING_SECTION);
+    LOCAL_STORAGE_LITE_TARGETING_SECTION,
+    'lite');
 }
 
 /** return generic webo data profile
@@ -534,9 +565,10 @@ function getWeboLiteDataProfile(weboLiteDataConf) {
  * @param {cacheSetCallback} cacheSet
  * @param {String} localStorageKey
  * @param {String} targetingSection
+ * @param {String} source
  * @returns {Object} webo (user|lite) data profile
  */
-function getDataFromLocalStorage(weboDataConf, cacheGet, cacheSet, localStorageKey, targetingSection) {
+function getDataFromLocalStorage(weboDataConf, cacheGet, cacheSet, localStorageKey, targetingSection, source) {
   const defaultProfile = weboDataConf.defaultProfile || {};
 
   if (storage.localStorageIsEnabled() && !cacheGet()) {
@@ -545,8 +577,16 @@ function getDataFromLocalStorage(weboDataConf, cacheGet, cacheSet, localStorageK
     const entry = storage.getDataFromLocalStorage(localStorageProfileKey);
     if (entry) {
       const data = JSON.parse(entry);
-      if (data && Object.keys(data).length > 0) {
-        cacheSet(data[targetingSection]);
+      if (data && isPlainObject(data) && data.hasOwnProperty(targetingSection)) {
+        const profile = data[targetingSection];
+        const valid = isValidProfile(profile);
+        if (!valid) {
+          logWarn(`found invalid ${source} profile on local storage key ${localStorageProfileKey}, section ${targetingSection}`);
+        }
+
+        if (valid && !isEmpty(data)) {
+          cacheSet(profile);
+        }
       }
     }
   }
@@ -796,7 +836,7 @@ function assignProfileToObject(destination, base, profile) {
  * @returns {void}
  */
 export function setWeboContextualProfile(data) {
-  if (data && Object.keys(data).length > 0) {
+  if (data && isPlainObject(data) && isValidProfile(data) && !isEmpty(data)) {
     _weboContextualProfile = data;
   }
 }
