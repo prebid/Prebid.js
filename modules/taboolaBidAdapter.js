@@ -4,6 +4,7 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
+import {getWindowSelf, getWindowTop} from '../src/utils.js'
 
 const BIDDER_CODE = 'taboola';
 const GVLID = 42;
@@ -27,10 +28,11 @@ export const spec = {
     const [bidRequest] = validBidRequests;
     const {refererInfo, gdprConsent = {}, uspConsent} = bidderRequest;
     const {bcat = [], badv = [], publisherId} = bidRequest.params;
-    const site = getSiteProperties(bidRequest.params, refererInfo.referer);
+    const site = getSiteProperties(bidRequest.params, refererInfo);
     const device = {ua: navigator.userAgent};
     const imps = getImps(validBidRequests);
     const user = {
+      buyerid: window.TRC ? window.TRC.user_id : 0,
       ext: {}
     };
     const regs = {
@@ -64,7 +66,7 @@ export const spec = {
       regs
     };
 
-    const url = [END_POINT_URL, publisherId].join('?p=');
+    const url = [END_POINT_URL, publisherId].join('?pid=');
 
     return {
       url,
@@ -87,16 +89,45 @@ export const spec = {
     return bids.map((bid, id) => getBid(bid.bidId, currency, bidResponses[id])).filter(Boolean);
   },
 };
+export const internal = {
+  getPageUrl: (refererInfo = {}) => {
+    if (refererInfo.canonicalUrl) {
+      return refererInfo.canonicalUrl;
+    }
+
+    if (config.getConfig('pageUrl')) {
+      return config.getConfig('pageUrl');
+    }
+
+    try {
+      return getWindowTop().location.href;
+    } catch (e) {
+      return getWindowSelf().location.href;
+    }
+  },
+  getReferrer: (refererInfo = {}) => {
+    if (refererInfo.referer) {
+      return refererInfo.referer;
+    }
+
+    try {
+      return getWindowTop().document.referrer;
+    } catch (e) {
+      return getWindowSelf().document.referrer;
+    }
+  }
+}
 
 registerBidder(spec);
 
-function getSiteProperties({publisherId, bcat = []}, page) {
+function getSiteProperties({publisherId, bcat = []}, refererInfo) {
+  const {getPageUrl, getReferrer} = internal;
   return {
     id: publisherId,
     name: publisherId,
     domain: window.location.host,
-    page,
-    cat: bcat,
+    page: getPageUrl(refererInfo),
+    ref: getReferrer(refererInfo),
     publisher: {
       id: publisherId
     },

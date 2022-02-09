@@ -1,6 +1,7 @@
 import {expect} from 'chai';
-import {spec} from 'modules/taboolaBidAdapter.js';
+import {spec, internal} from 'modules/taboolaBidAdapter.js';
 import {config} from '../../../src/config'
+import * as utils from '../../../src/utils'
 
 describe('Taboola Adapter', function () {
   const commonBidRequest = {
@@ -74,7 +75,8 @@ describe('Taboola Adapter', function () {
 
     const commonBidderRequest = {
       refererInfo: {
-        referer: 'https://example.com/'
+        referer: 'https://example.com/ref',
+        canonicalUrl: 'https://example.com/'
       }
     }
 
@@ -91,8 +93,8 @@ describe('Taboola Adapter', function () {
           'id': 'publisherId',
           'name': 'publisherId',
           'domain': window.location.host,
-          'page': 'https://example.com/',
-          'cat': [],
+          'page': commonBidderRequest.refererInfo.canonicalUrl,
+          'ref': commonBidderRequest.refererInfo.referer,
           'publisher': {'id': 'publisherId'},
           'content': {'language': 'en-US'}
         },
@@ -100,13 +102,16 @@ describe('Taboola Adapter', function () {
         'source': {'fd': 1},
         'bcat': [],
         'badv': [],
-        'user': {'ext': {}},
+        'user': {
+          'buyerid': 0,
+          'ext': {},
+        },
         'regs': {'coppa': 0, 'ext': {}}
       };
 
       const res = spec.buildRequests([defaultBidRequest], commonBidderRequest)
 
-      expect(res.url).to.equal('http://taboolahb.bidder.taboolasyndication.com?p=publisherId')
+      expect(res.url).to.equal('http://taboolahb.bidder.taboolasyndication.com?pid=publisherId')
       expect(res.data).to.deep.equal(JSON.stringify(expectedData))
     })
 
@@ -138,6 +143,20 @@ describe('Taboola Adapter', function () {
       const res = spec.buildRequests([defaultBidRequest], bidderRequest)
       const resData = JSON.parse(res.data)
       expect(resData.tmax).to.equal(500)
+    });
+
+    it('should use Taboola user id if exist', function () {
+      window.TRC = {
+        user_id: 51525152
+      }
+      const bidderRequest = {
+        ...commonBidderRequest,
+        timeout: 500
+      }
+      const res = spec.buildRequests([defaultBidRequest], bidderRequest)
+      const resData = JSON.parse(res.data)
+      expect(resData.user.buyerid).to.equal(51525152)
+      delete window.TRC;
     });
 
     describe('handle privacy segments when building request', function () {
@@ -284,5 +303,67 @@ describe('Taboola Adapter', function () {
 
   describe('getUserSyncs', function () {
     // todo: add UT for getUserSyncs
+  })
+
+  describe('internal functions', function () {
+    describe('getPageUrl', function() {
+      let origPageUrl;
+      const bidderRequest = {
+        refererInfo: {
+          canonicalUrl: 'http://canonical.url'
+        }
+      };
+
+      beforeEach(function() {
+        // remember original pageUrl in config
+        origPageUrl = config.getConfig('pageUrl');
+
+        // unset pageUrl in config
+        config.setConfig({ pageUrl: null });
+      });
+
+      afterEach(function() {
+        // set original pageUrl to config
+        config.setConfig({ pageUrl: origPageUrl });
+      });
+
+      it('should handle empty or missing data', function() {
+        expect(internal.getPageUrl(undefined)).to.equal(utils.getWindowTop().location.href);
+        expect(internal.getPageUrl('')).to.equal(utils.getWindowTop().location.href);
+      });
+
+      it('should use "pageUrl" from config', function() {
+        config.setConfig({ pageUrl: 'http://page.url' });
+
+        expect(internal.getPageUrl(undefined)).to.equal(config.getConfig('pageUrl'));
+      });
+
+      it('should use bidderRequest.refererInfo.canonicalUrl', function() {
+        expect(internal.getPageUrl(bidderRequest.refererInfo)).to.equal(bidderRequest.refererInfo.canonicalUrl);
+      });
+
+      it('should prefer bidderRequest.refererInfo.canonicalUrl over "pageUrl" from config', () => {
+        config.setConfig({ pageUrl: 'https://page.url' });
+
+        expect(internal.getPageUrl(bidderRequest.refererInfo)).to.equal(bidderRequest.refererInfo.canonicalUrl);
+      });
+    });
+
+    describe('getReferrer', function() {
+      it('should handle empty or missing data', function() {
+        expect(internal.getReferrer(undefined)).to.equal(utils.getWindowTop().document.referrer);
+        expect(internal.getReferrer('')).to.equal(utils.getWindowTop().document.referrer);
+      });
+
+      it('should use bidderRequest.refererInfo.referer', () => {
+        const bidderRequest = {
+          refererInfo: {
+            referer: 'foobar'
+          }
+        };
+
+        expect(internal.getReferrer(bidderRequest.refererInfo)).to.equal(bidderRequest.refererInfo.referer);
+      });
+    });
   })
 })
