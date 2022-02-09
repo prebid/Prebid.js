@@ -21,7 +21,7 @@
  */
 
 /** setPrebidTargeting callback type
- * @callback sendToBiddersCallback
+ * @callback setPrebidTargetingCallback
  * @param {String} adUnitCode
  * @param {Object} data
  * @param {dataCallbackMetadata} metadata
@@ -37,26 +37,22 @@
  * @returns {Boolean}
  */
 
-/** we can define some elements from a given list, true for all, false for none
- * @typedef {Boolean|String|Array<String>} boolOrStringOrArray
- */
-
 /**
  * @typedef {Object} ModuleParams
- * @property {?boolOrStringOrArray|sendToBiddersCallback} setPrebidTargeting if true, will set the GAM targeting (default undefined)
- * @property {?boolOrStringOrArray|?Map<String,boolOrStringOrArray>|sendToBiddersCallback} sendToBidders if true, will send the contextual profile to all bidders, else expects a list of allowed bidders (default undefined)
+ * @property {?setPrebidTargetingCallback|?Boolean|?Object} setPrebidTargeting if true, will set the GAM targeting (default undefined)
+ * @property {?sendToBiddersCallback|?Boolean|?Object} sendToBidders if true, will send the contextual profile to all bidders, else expects a list of allowed bidders (default undefined)
  * @property {?dataCallback} onData callback
- * @property {?WeboCtxConf} weboCtxConf
- * @property {?WeboUserDataConf} weboUserDataConf
- * @property {?WeboLiteDataConf} weboLiteDataConf
+ * @property {?WeboCtxConf} weboCtxConf site-centric contextual configuration
+ * @property {?WeboUserDataConf} weboUserDataConf user-centric wam configuration
+ * @property {?WeboLiteDataConf} weboLiteDataConf site-centric lite configuration
  */
 
 /**
  * @typedef {Object} WeboCtxConf
  * @property {string} token required token to be used on bigsea contextual API requests
  * @property {?string} targetURL specify the target url instead use the referer
- * @property {?boolOrStringOrArray|sendToBiddersCallback} setPrebidTargeting if true, will set the GAM targeting (default undefined)
- * @property {?boolOrStringOrArray|?Map<String,boolOrStringOrArray>|sendToBiddersCallback} sendToBidders if true, will send the contextual profile to all bidders, else expects a list of allowed bidders (default undefined)
+ * @property {?setPrebidTargetingCallback|?Boolean|?Object} setPrebidTargeting if true, will set the GAM targeting (default undefined)
+ * @property {?sendToBiddersCallback|?Boolean|?Object} sendToBidders if true, will send the contextual profile to all bidders, else expects a list of allowed bidders (default undefined)
  * @property {?dataCallback} onData callback
  * @property {?object} defaultProfile to be used if the profile is not found
  * @property {?Boolean} enabled if false, will ignore this configuration
@@ -65,8 +61,8 @@
 /**
  * @typedef {Object} WeboUserDataConf
  * @property {?number} accountId wam account id
- * @property {?boolOrStringOrArray|sendToBiddersCallback} setPrebidTargeting if true, will set the GAM targeting (default undefined)
- * @property {?boolOrStringOrArray|?Map<String,boolOrStringOrArray>|sendToBiddersCallback} sendToBidders if true, will send the contextual profile to all bidders, else expects a list of allowed bidders (default undefined)
+ * @property {?setPrebidTargetingCallback|?Boolean|?Object} setPrebidTargeting if true, will set the GAM targeting (default undefined)
+ * @property {?sendToBiddersCallback|?Boolean|?Object} sendToBidders if true, will send the contextual profile to all bidders, else expects a list of allowed bidders (default undefined)
  * @property {?object} defaultProfile to be used if the profile is not found
  * @property {?dataCallback} onData callback
  * @property {?string} localStorageProfileKey can be used to customize the local storage key (default is 'webo_wam2gam_entry')
@@ -75,8 +71,8 @@
 
 /**
  * @typedef {Object} WeboLiteDataConf
- * @property {?boolOrStringOrArray|sendToBiddersCallback} setPrebidTargeting if true, will set the GAM targeting (default undefined)
- * @property {?boolOrStringOrArray|?Map<String,boolOrStringOrArray>|sendToBiddersCallback} sendToBidders if true, will send the contextual profile to all bidders, else expects a list of allowed bidders (default undefined)
+ * @property {?setPrebidTargetingCallback|?Boolean|?Object} setPrebidTargeting if true, will set the GAM targeting (default undefined)
+ * @property {?sendToBiddersCallback|?Boolean|?Object} sendToBidders if true, will send the contextual profile to all bidders, else expects a list of allowed bidders (default undefined)
  * @property {?object} defaultProfile to be used if the profile is not found
  * @property {?dataCallback} onData callback
  * @property {?string} localStorageProfileKey can be used to customize the local storage key (default is 'webo_lite')
@@ -267,7 +263,7 @@ const globalDefaults = {
 
 /** normalize submodule configuration
  * @param {ModuleParams} moduleParams
- * @param {WeboCtxConf|WeboUserDataConf} submoduleParams
+ * @param {WeboCtxConf|WeboUserDataConf|WeboLiteDataConf} submoduleParams
  * @return {void}
  */
 function normalizeConf(moduleParams, submoduleParams) {
@@ -288,6 +284,12 @@ function normalizeConf(moduleParams, submoduleParams) {
   if (!isFn(submoduleParams.onData)) {
     throw 'onData parameter should be a callback';
   }
+
+  // submoduleParams.defaultProfile = submoduleParams.defaultProfile || {};
+
+  // if(!isValidProfile(submoduleParams.defaultProfile)){
+  //   throw 'defaultProfile is not valid';
+  // }
 }
 
 /** coerce set prebid targeting to function
@@ -480,7 +482,7 @@ function buildProfileHandlers(moduleParams) {
     if (!isEmpty(data)) {
       profileHandlers.push({
         data: data,
-        metadata: { source: 'lite' },
+        metadata: { user: false, source: 'lite' },
         setTargeting: weboLiteDataConf.setPrebidTargeting,
         sendToBidders: weboLiteDataConf.sendToBidders,
         onData: weboLiteDataConf.onData,
@@ -847,7 +849,7 @@ function fetchContextualProfile(weboCtxConf, onSuccess, onDone) {
       logError('unable to get weborama data');
     }
   },
-    null, {
+  null, {
     method: 'GET',
     withCredentials: false,
   });

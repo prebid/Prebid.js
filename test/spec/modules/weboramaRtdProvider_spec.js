@@ -886,7 +886,7 @@ describe('weboramaRtdProvider', function () {
         });
       });
 
-      it('should be possible update profile from callbacks for a given bidder/adUnitCode', function() {
+      it('should be possible update profile from callbacks for a given bidder/adUnitCode', function () {
         let onDataResponse = {};
         const moduleConfig = {
           params: {
@@ -1877,7 +1877,7 @@ describe('weboramaRtdProvider', function () {
         });
       });
 
-      it('should be possible update profile from callbacks for a given bidder/adUnitCode', function() {
+      it('should be possible update profile from callbacks for a given bidder/adUnitCode', function () {
         let onDataResponse = {};
         const moduleConfig = {
           params: {
@@ -2062,11 +2062,19 @@ describe('weboramaRtdProvider', function () {
         expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('lite_occupation=gérant;lite_occupation=bénévole;lite_hobbies=sport;lite_hobbies=cinéma');
         expect(reqBidsConfigObj.adUnits[0].bids[1].params.dctr).to.equal('lite_occupation=gérant,bénévole|lite_hobbies=sport,cinéma');
         expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal(data);
-        expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.be.undefined;
-        expect(reqBidsConfigObj.adUnits[0].bids[4].ortb2).to.be.undefined;
+        expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
+          inventory: data,
+        });
+        expect(reqBidsConfigObj.adUnits[0].bids[4].ortb2).to.deep.equal({
+          site: {
+            ext: {
+              data: data,
+            },
+          },
+        });
         expect(onDataResponse).to.deep.equal({
           data: data,
-          meta: { source: 'lite' },
+          meta: { user: false, source: 'lite' },
         });
       });
 
@@ -2174,7 +2182,7 @@ describe('weboramaRtdProvider', function () {
 
             expect(onDataResponse).to.deep.equal({
               data: data,
-              meta: { source: 'lite' },
+              meta: { user: false, source: 'lite' },
             });
           });
         });
@@ -2277,7 +2285,7 @@ describe('weboramaRtdProvider', function () {
 
             expect(onDataResponse).to.deep.equal({
               data: data,
-              meta: { source: 'lite' },
+              meta: { user: false, source: 'lite' },
             });
           });
         });
@@ -2618,7 +2626,7 @@ describe('weboramaRtdProvider', function () {
         expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('foo=bar');
         expect(onDataResponse).to.deep.equal({
           data: data,
-          meta: { source: 'lite' },
+          meta: { user: false, source: 'lite' },
         });
       });
 
@@ -2704,12 +2712,20 @@ describe('weboramaRtdProvider', function () {
         expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
           inventory: {
             foo: 'bar',
+            lite_occupation: ['gérant', 'bénévole'],
+            lite_hobbies: ['sport', 'cinéma'],
           },
           visitor: {
             baz: 'bam',
           }
         });
-        expect(reqBidsConfigObj.adUnits[0].bids[4].ortb2).to.be.undefined;
+        expect(reqBidsConfigObj.adUnits[0].bids[4].ortb2).to.deep.equal({
+          site: {
+            ext: {
+              data: data,
+            },
+          },
+        });
       });
 
       it('should use default profile in case of nothing on local storage', function () {
@@ -2761,8 +2777,16 @@ describe('weboramaRtdProvider', function () {
         expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('lite_hobbies=sport;lite_hobbies=cinéma');
         expect(reqBidsConfigObj.adUnits[0].bids[1].params.dctr).to.equal('lite_hobbies=sport,cinéma');
         expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal(defaultProfile);
-        expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.be.undefined;
-        expect(reqBidsConfigObj.adUnits[0].bids[4].ortb2).to.be.undefined;
+        expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
+          inventory: defaultProfile,
+        });
+        expect(reqBidsConfigObj.adUnits[0].bids[4].ortb2).to.deep.equal({
+          site: {
+            ext: {
+              data: defaultProfile,
+            },
+          },
+        });
       });
 
       it('should use default profile if cant read from local storage', function () {
@@ -2821,15 +2845,23 @@ describe('weboramaRtdProvider', function () {
         expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('lite_hobbies=sport;lite_hobbies=cinéma');
         expect(reqBidsConfigObj.adUnits[0].bids[1].params.dctr).to.equal('lite_hobbies=sport,cinéma');
         expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal(defaultProfile);
-        expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.be.undefined;
-        expect(reqBidsConfigObj.adUnits[0].bids[4].ortb2).to.be.undefined;
+        expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
+          inventory: defaultProfile,
+        });
+        expect(reqBidsConfigObj.adUnits[0].bids[4].ortb2).to.deep.equal({
+          site: {
+            ext: {
+              data: defaultProfile,
+            },
+          },
+        });
         expect(onDataResponse).to.deep.equal({
           data: defaultProfile,
-          meta: { source: 'lite' },
+          meta: { user: false, source: 'lite' },
         });
       });
 
-      it('should be possible update profile from callbacks for a given bidder/adUnitCode', function() {
+      it('should be possible update profile from callbacks for a given bidder/adUnitCode', function () {
         let onDataResponse = {};
         const moduleConfig = {
           params: {
@@ -2924,8 +2956,16 @@ describe('weboramaRtdProvider', function () {
           expect(adUnit.bids.length).to.equal(5);
           expect(adUnit.bids[0].params.target).to.equal('lite_occupation=gérant;lite_occupation=bénévole;lite_hobbies=sport;lite_hobbies=cinéma');
           expect(adUnit.bids[1].params.dctr).to.equal('lite_occupation=gérant,bénévole|lite_hobbies=sport,cinéma');
-          expect(adUnit.bids[3].params).to.be.undefined;
-          expect(adUnit.bids[4].ortb2).to.be.undefined;
+          expect(adUnit.bids[3].params).to.deep.equal({
+            inventory: data,
+          });
+          expect(adUnit.bids[4].ortb2).to.deep.equal({
+            site: {
+              ext: {
+                data: data,
+              },
+            },
+          });
         });
 
         expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal({
@@ -2937,7 +2977,7 @@ describe('weboramaRtdProvider', function () {
 
         expect(onDataResponse).to.deep.equal({
           data: data,
-          meta: { source: 'lite' },
+          meta: { user: false, source: 'lite' },
         });
       });
     });
