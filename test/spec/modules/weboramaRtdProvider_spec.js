@@ -162,8 +162,8 @@ describe('weboramaRtdProvider', function () {
             'rubicon': false,
             'other': false,
           },
-          'callback': (bidder) => {
-            return bidder == 'appnexus'
+          'callback': (bid) => {
+            return bid.bidder == 'appnexus'
           },
         };
 
@@ -265,8 +265,8 @@ describe('weboramaRtdProvider', function () {
       describe('should set gam targeting and send to one specific bidder and one adunit', function () {
         const testcases = {
           'map with one entry': { 'appnexus': ['adunit1'] },
-          'callback': (bidder, adUnitCode) => {
-            return bidder == 'appnexus' && adUnitCode == 'adunit1';
+          'callback': (bid, adUnitCode) => {
+            return bid.bidder == 'appnexus' && adUnitCode == 'adunit1';
           },
         };
 
@@ -899,8 +899,8 @@ describe('weboramaRtdProvider', function () {
                 }
                 return true;
               },
-              sendToBidders: (bidder, adUnitCode, data, meta) => {
-                if (bidder == 'appnexus' && adUnitCode == 'adunit1') {
+              sendToBidders: (bid, adUnitCode, data, meta) => {
+                if (bid.bidder == 'appnexus' && adUnitCode == 'adunit1') {
                   data['webo_bar'] = ['baz'];
                 }
                 return true;
@@ -1098,8 +1098,8 @@ describe('weboramaRtdProvider', function () {
             'rubicon': false,
             'other': false,
           },
-          'callback': (bidder) => {
-            return bidder == 'appnexus'
+          'callback': (bid) => {
+            return bid.bidder == 'appnexus'
           },
         };
 
@@ -1200,8 +1200,8 @@ describe('weboramaRtdProvider', function () {
       describe('should set gam targeting from local storage and send to one specific bidder and one adunit', function () {
         const testcases = {
           'map with one entry': { 'appnexus': ['adunit1'] },
-          'callback': (bidder, adUnitCode) => {
-            return bidder == 'appnexus' && adUnitCode == 'adunit1';
+          'callback': (bid, adUnitCode) => {
+            return bid.bidder == 'appnexus' && adUnitCode == 'adunit1';
           },
         };
 
@@ -1890,8 +1890,8 @@ describe('weboramaRtdProvider', function () {
                 }
                 return true;
               },
-              sendToBidders: (bidder, adUnitCode, data, meta) => {
-                if (bidder == 'appnexus' && adUnitCode == 'adunit1') {
+              sendToBidders: (bid, adUnitCode, data, meta) => {
+                if (bid.bidder == 'appnexus' && adUnitCode == 'adunit1') {
                   data['webo_bar'] = ['baz'];
                 }
                 return true;
@@ -2090,8 +2090,8 @@ describe('weboramaRtdProvider', function () {
             'rubicon': false,
             'other': false,
           },
-          'callback': (bidder) => {
-            return bidder == 'appnexus'
+          'callback': (bid) => {
+            return bid.bidder == 'appnexus'
           },
         };
 
@@ -2191,8 +2191,8 @@ describe('weboramaRtdProvider', function () {
       describe('should set gam targeting from local storage and send to one specific bidder and one adunit', function () {
         const testcases = {
           'map with one entry': { 'appnexus': ['adunit1'] },
-          'callback': (bidder, adUnitCode) => {
-            return bidder == 'appnexus' && adUnitCode == 'adunit1';
+          'callback': (bid, adUnitCode) => {
+            return bid.bidder == 'appnexus' && adUnitCode == 'adunit1';
           },
         };
 
@@ -2873,8 +2873,8 @@ describe('weboramaRtdProvider', function () {
                 }
                 return true;
               },
-              sendToBidders: (bidder, adUnitCode, data, meta) => {
-                if (bidder == 'appnexus' && adUnitCode == 'adunit1') {
+              sendToBidders: (bid, adUnitCode, data, meta) => {
+                if (bid.bidder == 'appnexus' && adUnitCode == 'adunit1') {
                   data['lito_bar'] = ['baz'];
                 }
                 return true;

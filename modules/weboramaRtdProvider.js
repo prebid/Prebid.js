@@ -30,7 +30,7 @@
 
 /** sendToBidders callback type
  * @callback sendToBiddersCallback
- * @param {String} bidder
+ * @param {Object} bid
  * @param {String} adUnitCode
  * @param {Object} data
  * @param {dataCallbackMetadata} metadata
@@ -357,8 +357,8 @@ function coerceSendToBidders(submoduleParams) {
 
   if (isStr(sendToBidders)) {
     const allowedBidder = sendToBidders;
-    submoduleParams.sendToBidders = function (bidder) {
-      return allowedBidder == bidder;
+    submoduleParams.sendToBidders = function (bid) {
+      return allowedBidder == bid.bidder;
     };
 
     return
@@ -366,8 +366,8 @@ function coerceSendToBidders(submoduleParams) {
 
   if (isArray(sendToBidders)) {
     const allowedBidders = sendToBidders;
-    submoduleParams.sendToBidders = function (bidder) {
-      return allowedBidders.includes(bidder);
+    submoduleParams.sendToBidders = function (bid) {
+      return allowedBidders.includes(bid.bidder);
     };
 
     return
@@ -375,7 +375,8 @@ function coerceSendToBidders(submoduleParams) {
 
   if (isPlainObject(sendToBidders)) {
     const sendToBiddersMap = sendToBidders;
-    submoduleParams.sendToBidders = function (bidder, adUnitCode) {
+    submoduleParams.sendToBidders = function (bid, adUnitCode) {
+      const bidder = bid.bidder;
       if (!sendToBiddersMap.hasOwnProperty(bidder)) {
         return false
       }
@@ -649,7 +650,7 @@ function handleBidRequestData(adUnits, moduleParams) {
 
           const data = deepClone(ph.data);
           const meta = deepClone(ph.metadata);
-          if (ph.sendToBidders(bid.bidder, adUnit.code, data, meta)) {
+          if (ph.sendToBidders(bid, adUnit.code, data, meta)) {
             // logMessage(`handling bidder '${bid.bidder}' with ${ph.metadata.source} data`);
 
             handleBid(bid, data, ph.metadata);

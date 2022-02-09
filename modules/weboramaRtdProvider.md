@@ -105,8 +105,8 @@ pbjs.que.push(function () {
                         setPrebidTargeting: function(adUnitCode){ // specify set target via callback
                             return adUnitCode == 'adUnitCode1';
                         },
-                        sendToBidders: function(bidder, adUnitCode){ // specify sendToBidders via callback
-                            return bidder == 'appnexus' && adUnitCode == 'adUnitCode1';
+                        sendToBidders: function(bid, adUnitCode){ // specify sendToBidders via callback
+                            return bid.bidder == 'appnexus' && adUnitCode == 'adUnitCode1';
                         }
                         defaultProfile: {           // optional
                             lite_occupation: ['gérant', 'bénévole'],
@@ -130,8 +130,8 @@ pbjs.que.push(function () {
 | name | String | Real time data module name | Mandatory. Always 'Weborama' |
 | waitForIt | Boolean | Mandatory. Required to ensure that the auction is delayed until prefetch is complete | Optional. Defaults to false but recommended to true |
 | params | Object | | Optional |
-| params.setPrebidTargeting | Boolean | If true, may use the profile to set the prebid (GPT/GAM or AST) targeting of all adunits managed by prebid.js | Optional. Affects the `weboCtxConf` and `weboUserDataConf` sections |
-| params.sendToBidders | Boolean or Array | If true, may send the profile to all bidders. If an array, will specify the bidders to send data | Optional. Affects the `weboCtxConf` and `weboUserDataConf` sections |
+| params.setPrebidTargeting | Boolean | If true, may use the profile to set the prebid (GPT/GAM or AST) targeting of all adunits managed by prebid.js | Optional. Affects the `weboCtxConf`, `weboUserDataConf` and `weboLiteDataConf` sections |
+| params.sendToBidders | Boolean or Array | If true, may send the profile to all bidders. If an array, will specify the bidders to send data | Optional. Affects the `weboCtxConf`, `weboUserDataConf` and `weboLiteDataConf` sections |
 | params.weboCtxConf | Object | Weborama Contextual Site-Centric Configuration | Optional 
 | params.weboUserDataConf | Object | Weborama WAM User-Centric Configuration | Optional |
 | params.weboLiteDataConf | Object | Weborama Lite Site-Centric Configuration | Optional |
@@ -221,7 +221,7 @@ This property support the following types
 | String|Will send data to only one bidder | `'appnexus'` |  |
 | Array of Strings|Will send data to only some bidders | `['appnexus','pubmatic']` |  |
 | Object |Will send data to only some bidders and some ad units | `{appnexus: true, pubmatic:['adUnitCode1']}` |  |
-| Callback |Will be executed for each adunit, expects return a true value to set prebid targeting or not| `function(bidder, adUnitCode){return bidder == 'appnexus' && adUnitCode == 'adUnitCode';}` |  |
+| Callback |Will be executed for each adunit, expects return a true value to set prebid targeting or not| `function(bid, adUnitCode){return bid.bidder == 'appnexus' && adUnitCode == 'adUnitCode';}` |  |
 
 A better look on the `Object` type
 
@@ -235,12 +235,12 @@ sendToBidders: {
 The complete callback function signature is:
 
 ```javascript
-sendToBidders: function(bidder, adUnitCode, data, metadata){
+sendToBidders: function(bid, adUnitCode, data, metadata){
     return true; // or false, depending on the logic
 }
 ```
 
-This callback will be executed with the bidder name, adUnitCode, profile and a metadata with the following fields
+This callback will be executed with the bid object (contains a field `bidder` with name), adUnitCode, profile and a metadata with the following fields
 
 | Name  |Type | Description   | Notes  |
 | :------------ | :------------ | :------------ |:------------ |
@@ -250,8 +250,8 @@ This callback will be executed with the bidder name, adUnitCode, profile and a m
 It is possible customize the targeting based on the parameters:
 
 ```javascript
-sendToBidders: function(bidder, adUnitCode, data, metadata){
-    if (bidder == 'appnexus' && adUnitCode == 'adUnitCode1'){
+sendToBidders: function(bid, adUnitCode, data, metadata){
+    if (bid.bidder == 'appnexus' && adUnitCode == 'adUnitCode1'){
         data['foo']=['bar']; // add this section only for appnexus + adUnitCode1
     }
     return true;
