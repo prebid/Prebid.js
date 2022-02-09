@@ -72,6 +72,7 @@ export const spec = {
     const response = (serverResponse || {}).body
 
     if (response && response.seatbid && response.seatbid[0].bid && response.seatbid[0].bid.length) {
+      var bidid = response.bidid
       response.seatbid.forEach(bidObj => {
         bidObj.bid.forEach(bid => {
           bidResponses.push({
@@ -88,7 +89,7 @@ export const spec = {
             height: bid.h,
             netRevenue: DEFAULT_NET_REVENUE,
             nurl: bid.nurl,
-            bidId: response.bidid
+            bidId: bidid
           })
         })
       })
@@ -118,6 +119,9 @@ export const spec = {
     ).replace(
       /\$\{AUCTON_BID_ID\}/,
       bid.bidId
+    ).replace(
+      /\$\{AUCTION_ID\}/,
+      bid.auctionId
     )
     spec.ajaxCall(winUrl, null)
     return true
