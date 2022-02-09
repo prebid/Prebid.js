@@ -356,6 +356,8 @@ function generateGeneralParams(generalObject, bidderRequest) {
   const generalBidParams = generalObject.params;
   const timeout = config.getConfig('bidderTimeout');
 
+  // these params are snake_case instead of camelCase to allow backwards compatability on the server.
+  // in the future, these will be converted to camelCase to match our convention.
   const generalParams = {
     wrapper_type: 'prebidjs',
     wrapper_vendor: '$$PREBID_GLOBAL$$',
