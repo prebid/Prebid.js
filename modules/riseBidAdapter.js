@@ -1,4 +1,4 @@
-import { logWarn, logInfo, isArray, isFn, deepAccess, isEmpty, contains, timestamp, getBidIdParameter, triggerPixel } from '../src/utils.js';
+import { logWarn, logInfo, isArray, isFn, deepAccess, isEmpty, contains, timestamp, getBidIdParameter, triggerPixel, isInteger } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
@@ -296,8 +296,18 @@ function generateBidParameters(bid, bidderRequest) {
 
   if (mediaType === VIDEO) {
     const playbackMethod = deepAccess(bid, `mediaTypes.video.playbackmethod`);
-    if (playbackMethod) {
-      bidObject.playbackMethod = playbackMethod;
+    const playbackMethodValue = null;
+
+    // verify playbackMethod is of type integer array, or integer only.
+    if (Array.isArray(playbackMethod) && isInteger(playbackMethod[0])) {
+      // only the first playbackMethod in the array will be used, according to OpenRTB 2.5 recommendation
+      playbackMethodValue = playbackMethod[0];
+    } else if (isInteger(playbackMethod)) {
+      playbackMethodValue = playbackMethod;
+    }
+
+    if (playbackMethodValue) {
+      bidObject.playbackMethod = playbackMethodValue;
     }
 
     const placement = deepAccess(bid, `mediaTypes.video.placement`);
