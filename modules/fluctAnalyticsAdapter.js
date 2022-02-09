@@ -46,7 +46,7 @@ const isBrowsiId = (id) => Boolean(id.match(/^browsi_/g))
  */
 const getAdUnitMap = () => window.googletag.pubads().getSlots().reduce((prev, slot) => Object.assign(prev, { [slot.getSlotElementId()]: slot.getAdUnitPath() }), {})
 
-/** @type {(_adUnit: AdUnit, adUnits: AdUnit[]) => AdUnit[], slots: Slots} */
+/** @type {(_adUnit: AdUnit, adUnits: AdUnit[], slots: Slots) => AdUnit} */
 export const convertReplicatedAdUnit = (_adUnit, adUnits = cache.adUnits, slots = getAdUnitMap()) => {
   /** @type {adUnit} */
   const adUnit = deepClone(_adUnit)
