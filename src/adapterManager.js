@@ -173,21 +173,42 @@ function getAdUnitCopyForClientAdapters(adUnits) {
 
 export let gdprDataHandler = {
   consentData: null,
-  setConsentData: function(consentInfo) {
+  generatedTime: null,
+  setConsentData: function(consentInfo, time = timestamp()) {
     gdprDataHandler.consentData = consentInfo;
+    gdprDataHandler.generatedTime = time;
   },
   getConsentData: function() {
     return gdprDataHandler.consentData;
+  },
+  getConsentMeta: function() {
+    if (gdprDataHandler.consentData && gdprDataHandler.consentData.vendorData && gdprDataHandler.generatedTime) {
+      return {
+        gdprApplies: gdprDataHandler.consentData.gdprApplies,
+        consentStringSize: gdprDataHandler.consentData.vendorData.tcString.length,
+        timestamp: gdprDataHandler.generatedTime,
+        apiVersion: gdprDataHandler.consentData.apiVersion
+      };
+    }
   }
 };
 
 export let uspDataHandler = {
   consentData: null,
-  setConsentData: function(consentInfo) {
+  generatedTime: null,
+  setConsentData: function(consentInfo, time = timestamp()) {
     uspDataHandler.consentData = consentInfo;
+    uspDataHandler.generatedTime = time;
   },
   getConsentData: function() {
     return uspDataHandler.consentData;
+  },
+  getConsentMeta: function() {
+    if (uspDataHandler.consentData && uspDataHandler.generatedTime) {
+      return {
+        usp: uspDataHandler.consentData,
+        timestamp: uspDataHandler.generatedTime}
+    }
   }
 };
 
