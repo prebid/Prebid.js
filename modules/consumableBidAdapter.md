@@ -4,7 +4,7 @@ Module Name: Consumable Bid Adapter
 
 Module Type: Consumable Adapter
 
-Maintainer: naffis@consumable.com
+Maintainer: prebid@consumable.com
 
 # Description
 

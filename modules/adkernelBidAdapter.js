@@ -77,7 +77,9 @@ export const spec = {
     {code: 'unibots'},
     {code: 'catapultx'},
     {code: 'ergadx'},
-    {code: 'turktelekom'}
+    {code: 'turktelekom'},
+    {code: 'felixads'},
+    {code: 'motionspots'}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
