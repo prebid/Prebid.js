@@ -1,4 +1,4 @@
-import includes from 'prebidjs-polyfill/includes.js';
+import includes from 'core-js-pure/features/array/includes.js';
 import { logError, logWarn, insertElement } from './utils.js';
 
 const _requestCache = {};

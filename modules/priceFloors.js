@@ -6,7 +6,7 @@ import events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
 import { getHook } from '../src/hook.js';
 import { createBid } from '../src/bidfactory.js';
-import find from 'prebidjs-polyfill/find.js';
+import find from 'core-js-pure/features/array/find.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import {auctionManager} from '../src/auctionManager.js';
 import {bidderSettings} from '../src/bidderSettings.js';
@@ -73,15 +73,19 @@ function getGptSlotFromAdUnit(transactionId, {index = auctionManager.index} = {}
   return isGam && adUnit.ortb2Imp.ext.data.adserver.adslot;
 }
 
+function getAdUnitCode(request, response, {index = auctionManager.index} = {}) {
+  return request?.adUnitCode || index.getAdUnit(response).code;
+}
+
 /**
  * @summary floor field types with their matching functions to resolve the actual matched value
  */
 export let fieldMatchingFunctions = {
   'size': (bidRequest, bidResponse) => parseGPTSingleSizeArray(bidResponse.size) || '*',
   'mediaType': (bidRequest, bidResponse) => bidResponse.mediaType || 'banner',
-  'gptSlot': (bidRequest, bidResponse) => getGptSlotFromAdUnit((bidRequest || bidResponse).transactionId) || getGptSlotInfoForAdUnitCode((bidRequest || bidResponse).adUnitCode).gptSlot,
+  'gptSlot': (bidRequest, bidResponse) => getGptSlotFromAdUnit((bidRequest || bidResponse).transactionId) || getGptSlotInfoForAdUnitCode(getAdUnitCode(bidRequest, bidResponse)).gptSlot,
   'domain': (bidRequest, bidResponse) => referrerHostname || getHostNameFromReferer(getRefererInfo().referer),
-  'adUnitCode': (bidRequest, bidResponse) => (bidRequest || bidResponse).adUnitCode
+  'adUnitCode': (bidRequest, bidResponse) => getAdUnitCode(bidRequest, bidResponse)
 }
 
 /**
@@ -672,8 +676,11 @@ export function addBidResponseHook(fn, adUnitCode, bid) {
   if (!floorData || !bid || floorData.skipped) {
     return fn.call(this, adUnitCode, bid);
   }
+
+  const matchingBidRequest = auctionManager.index.getBidRequest(bid)
+
   // get the matching rule
-  let floorInfo = getFirstMatchingFloor(floorData.data, null, {...bid, size: [bid.width, bid.height]});
+  let floorInfo = getFirstMatchingFloor(floorData.data, matchingBidRequest, {...bid, size: [bid.width, bid.height]});
 
   if (!floorInfo.matchingFloor) {
     logWarn(`${MODULE_NAME}: unable to determine a matching price floor for bidResponse`, bid);
