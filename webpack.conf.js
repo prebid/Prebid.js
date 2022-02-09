@@ -34,7 +34,7 @@ plugins.push( // this plugin must be last so it can be easily removed for karma 
           !(module.resource && neverBundle.some(name => module.resource.includes(name)))
         ) ||
         (
-          module.resource && (allowedModules.src.concat(['core-js', 'prebidjs-polyfill'])).some(
+          module.resource && (allowedModules.src.concat(['core-js'])).some(
             name => module.resource.includes(path.resolve('./node_modules/' + name))
           )
         )
