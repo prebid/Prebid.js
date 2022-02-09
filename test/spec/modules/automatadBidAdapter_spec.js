@@ -174,7 +174,7 @@ describe('automatadBidAdapter', function () {
     })
   })
 
-  describe('onTimeout', () => {
+  describe('onTimeout', function () {
     const timeoutData = {
       'bidId': '123',
       'bidder': 'automatad',
@@ -189,7 +189,7 @@ describe('automatadBidAdapter', function () {
       'timeout': 1000
     }
 
-    it('should exists and be a function', () => {
+    it('should exists and be a function', function () {
       expect(spec.onTimeout).to.exist.and.to.be.a('function');
     });
 

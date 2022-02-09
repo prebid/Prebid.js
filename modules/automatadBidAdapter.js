@@ -88,7 +88,7 @@ export const spec = {
             height: bid.h,
             netRevenue: DEFAULT_NET_REVENUE,
             nurl: bid.nurl,
-            bidId: bid.bidId
+            bidId: response.bidid
           })
         })
       })
