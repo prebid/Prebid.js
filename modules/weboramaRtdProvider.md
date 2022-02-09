@@ -303,7 +303,6 @@ params: {
         var hasUserCentricData = metadata.user;
         var dataSource = metadata.source;
         console.log('onData', data, hasUserCentricData, dataSource);
-        },
     }
 }
 ```
