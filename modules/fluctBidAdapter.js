@@ -1,6 +1,5 @@
 import { _each, isEmpty } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import URLSearchParams from 'core-js-pure/web/url-search-params'
 
 const BIDDER_CODE = 'fluct';
 const END_POINT = 'https://hb.adingo.jp/prebid';

@@ -5,7 +5,7 @@ import CONSTANTS from '../src/constants.json';
 import { ajax } from '../src/ajax.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { AUCTION_COMPLETED, AUCTION_IN_PROGRESS, getPriceGranularity } from '../src/auction.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import includes from 'prebidjs-polyfill/includes.js';
 
 const analyticsType = 'endpoint';
 const ENDPOINT = 'https://pb-logs.media.net/log?logid=kfk&evtid=prebid_analytics_events_client';
@@ -511,7 +511,7 @@ function bidResponseHandler(bid) {
   bidObj.originalCpm = originalCpm || cpm;
   let dfpbd = deepAccess(bid, 'adserverTargeting.hb_pb');
   if (!dfpbd) {
-    let priceGranularity = getPriceGranularity(mediaType, bid);
+    let priceGranularity = getPriceGranularity(bid);
     let priceGranularityKey = PRICE_GRANULARITY[priceGranularity];
     dfpbd = bid[priceGranularityKey] || cpm;
   }
