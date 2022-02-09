@@ -6,18 +6,23 @@
  */
 
 import * as utils from '../src/utils.js'
-import {submodule} from '../src/hook.js'
+import { submodule } from '../src/hook.js'
+import { loadExternalScript } from '../src/adloader.js'
+import includes from 'prebidjs-polyfill/includes.js';
 
 const MODULE_NAME = 'justId';
+const EXTERNAL_SCRIPT_MODULE_CODE = 'justtag';
 const LOG_PREFIX = 'User ID - JustId submodule: ';
 const GVLID = 160;
-const DEFAULT_URL = 'https://id.nsaudience.pl/getId.js';
 const DEFAULT_PARTNER = 'pbjs-just-id-module';
 const DEFAULT_ATM_VAR_NAME = '__atm';
 
 const MODE_BASIC = 'BASIC';
-const MODE_ADVANCED = 'ADVANCED';
+const MODE_COMBINED = 'COMBINED';
 const DEFAULT_MODE = MODE_BASIC;
+
+export const EX_URL_REQUIRED = new Error(`params.url is required in ${MODE_COMBINED} mode`);
+export const EX_INVALID_MODE = new Error(`Invalid params.mode. Allowed values: ${MODE_BASIC}, ${MODE_COMBINED}`);
 
 /** @type {Submodule} */
 export const justIdSubmodule = {
@@ -54,15 +59,20 @@ export const justIdSubmodule = {
   getId(config, consentData, cacheIdObj) {
     utils.logInfo(LOG_PREFIX, 'getId', config, consentData, cacheIdObj);
 
-    return {
+    var configWrapper
+    try {
+      configWrapper = new ConfigWrapper(config);
+    } catch (e) {
+      utils.logError(LOG_PREFIX, e);
+    }
+
+    return configWrapper && {
       callback: function(cbFun) {
         try {
           utils.logInfo(LOG_PREFIX, 'fetching uid...');
 
-          var configWrapper = new ConfigWrapper(config);
-
-          var uidProvider = configWrapper.isAdvancedMode()
-            ? new AdvancedUidProvider(configWrapper, consentData, cacheIdObj)
+          var uidProvider = configWrapper.isCombinedMode()
+            ? new CombinedUidProvider(configWrapper, consentData, cacheIdObj)
             : new BasicUidProvider(configWrapper);
 
           uidProvider.getUid(justId => {
@@ -97,8 +107,8 @@ export const ConfigWrapper = function(config) {
     return params().partner || DEFAULT_PARTNER;
   }
 
-  this.isAdvancedMode = function() {
-    return this.getMode() === MODE_ADVANCED;
+  this.isCombinedMode = function() {
+    return this.getMode() === MODE_COMBINED;
   }
 
   this.getAtmVarName = function() {
@@ -106,7 +116,7 @@ export const ConfigWrapper = function(config) {
   }
 
   this.getUrl = function() {
-    const u = params().url || DEFAULT_URL;
+    const u = params().url;
     const url = new URL(u);
     url.searchParams.append('sourceId', this.getPartner());
     return url.toString();
@@ -115,27 +125,42 @@ export const ConfigWrapper = function(config) {
   function params() {
     return config.params || {};
   }
+
+  // validation
+  if (!includes([MODE_BASIC, MODE_COMBINED], this.getMode())) {
+    throw EX_INVALID_MODE;
+  }
+
+  var url = params().url;
+  if (this.isCombinedMode() && (utils.isEmptyStr(url) || !utils.isStr(url))) {
+    throw EX_URL_REQUIRED;
+  }
 }
 
-const AdvancedUidProvider = function(configWrapper, consentData, cacheIdObj) {
+const CombinedUidProvider = function(configWrapper, consentData, cacheIdObj) {
   const url = configWrapper.getUrl();
 
   this.getUid = function(idCallback, errCallback) {
-    const scriptTag = jtUtils.createScriptTag(url);
+    const scriptTag = loadExternalScript(url, EXTERNAL_SCRIPT_MODULE_CODE, () => {
+      utils.logInfo(LOG_PREFIX, 'script loaded', url);
+
+      const eventDetails = {
+        detail: {
+          config: configWrapper.getConfig(),
+          consentData: consentData,
+          cacheIdObj: cacheIdObj
+        }
+      }
+
+      scriptTag.dispatchEvent(new CustomEvent('prebidGetId', eventDetails));
+    })
 
     scriptTag.addEventListener('justIdReady', event => {
       utils.logInfo(LOG_PREFIX, 'received justId', event);
       idCallback(event.detail && event.detail.justId);
     });
 
-    scriptTag.onload = () => {
-      utils.logInfo(LOG_PREFIX, 'script loaded', url);
-      scriptTag.dispatchEvent(new CustomEvent('prebidGetId', { detail: { config: configWrapper.getConfig(), consentData: consentData, cacheIdObj: cacheIdObj } }));
-    };
-
     scriptTag.onerror = errCallback;
-
-    document.head.appendChild(scriptTag);
   }
 }
 
@@ -173,12 +198,6 @@ const BasicUidProvider = function(configWrapper) {
 }
 
 export const jtUtils = {
-  createScriptTag(url) {
-    const scriptTag = document.createElement('script');
-    scriptTag.async = true;
-    scriptTag.src = url;
-    return scriptTag;
-  },
   getAtm(atmVarName) {
     return window[atmVarName];
   }
