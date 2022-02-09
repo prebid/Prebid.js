@@ -35,14 +35,14 @@ pbjs.que.push(function () {
                 name: "weborama",
                 waitForIt: true,
                 params: {
-                    weboCtxConf: {     // site-centric configuration (contextual), omit if not needed
+                    weboCtxConf: {     // contextual site-centric configuration, omit if not needed
                         token: "to-be-defined", // mandatory
                     },
-                    weboUserDataConf: { // user-centric configuration (wam), omit if not needed
-                        accountId: 12345,       // recommended, 
+                    weboUserDataConf: { // wam user-centric configuration, omit if not needed
+                        accountId: 12345,       // recommended
                     },
-                    weboLiteDataConf: { // webo-lite data
-                        enabled: true,
+                    weboLiteDataConf: { // webo-lite site-centric configuration, omit if not needed
+                        enabled: true,          // recommended 
                     },
                 }
             }]
@@ -153,7 +153,7 @@ pbjs.que.push(function () {
 
 | Name  |Type | Description   | Notes  |
 | :------------ | :------------ | :------------ |:------------ |
-| accountId|Number|WAM account id. If present, will be used on logging and statistics| Recommended.|
+| accountId|Number|WAM account id. If you don't have it, please contact weborama. | Recommended.|
 | setPrebidTargeting|Various|If true, will use the user profile to set the prebid (GPT/GAM or AST) targeting of all adunits managed by prebid.js| Optional. Default is `params.setPrebidTargeting` (if any) or **true**.|
 | sendToBidders|Various|If true, will send the user profile to all bidders| Optional. Default is `params.sendToBidders` (if any) or **true**.|
 | onData | Callback | If set, will receive the profile and site flag | Optional. Default is `params.onData` (if any) or log via prebid debug |
@@ -253,10 +253,27 @@ It is possible customize the targeting based on the parameters:
 sendToBidders: function(bid, adUnitCode, data, metadata){
     if (bid.bidder == 'appnexus' && adUnitCode == 'adUnitCode1'){
         data['foo']=['bar']; // add this section only for appnexus + adUnitCode1
+        delete data['other']; // remove this section
     }
     return true;
 }
 ```
+
+To be possible customize the way we send data to bidders via this callback:
+
+```javascript
+sendToBidders: function(bid, adUnitCode, data, metadata){
+    if (bid.bidder == 'other'){
+        /* use bid object to store data based on this specific logic, like in the example below */
+       
+        bid.params = bid.params || {};
+        bid.params['some_specific_key'] = data;
+
+        return false; // will prevent the module to follow the pre-defined logic per bidder
+    }
+    // others
+    return true;
+}
 
 In case of using bid _aliases_, we should match the same string used in the adUnit configuration.
 
