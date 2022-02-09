@@ -5,7 +5,7 @@ import {ajax} from '../src/ajax.js'
 
 const BIDDER = 'automatad'
 
-const ENDPOINT_URL = 'https://rtb2.automatad.com/ortb2'
+const ENDPOINT_URL = 'https://bid.atmtd.com'
 
 const DEFAULT_BID_TTL = 30
 const DEFAULT_CURRENCY = 'USD'
@@ -57,7 +57,7 @@ export const spec = {
     const payloadString = JSON.stringify(openrtbRequest)
     return {
       method: 'POST',
-      url: ENDPOINT_URL + '/resp',
+      url: ENDPOINT_URL + '/request',
       data: payloadString,
       options: {
         contentType: 'application/json',
@@ -88,6 +88,7 @@ export const spec = {
             height: bid.h,
             netRevenue: DEFAULT_NET_REVENUE,
             nurl: bid.nurl,
+            bidId: bid.bidId
           })
         })
       })
@@ -97,11 +98,9 @@ export const spec = {
 
     return bidResponses
   },
-  getUserSyncs: function(syncOptions, serverResponse) {
-    return [{
-      type: 'iframe',
-      url: 'https://rtb2.automatad.com/ortb2/async_usersync'
-    }]
+  onTimeout: function(timeoutData) {
+    const timeoutUrl = ENDPOINT_URL + '/timeout'
+    ajax(timeoutUrl, null, JSON.stringify(timeoutData))
   },
   onBidWon: function(bid) {
     if (!bid.nurl) { return }
@@ -117,8 +116,8 @@ export const spec = {
       /\$\{AUCTION_CURRENCY\}/,
       winCurr
     ).replace(
-      /\$\{AUCTION_ID\}/,
-      bid.auctionId
+      /\$\{AUCTON_BID_ID\}/,
+      bid.bidId
     )
     spec.ajaxCall(winUrl, null)
     return true
