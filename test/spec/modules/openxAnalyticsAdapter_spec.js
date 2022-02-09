@@ -4,7 +4,7 @@ import events from 'src/events.js';
 import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
-import find from 'core-js-pure/features/array/find.js';
+import find from 'prebidjs-polyfill/find.js';
 
 const {
   EVENTS: { AUCTION_INIT, BID_REQUESTED, BID_RESPONSE, BID_TIMEOUT, BID_WON, AUCTION_END }
@@ -62,8 +62,9 @@ describe('openx analytics adapter', function() {
       orgId: 'test-org-id',
       publisherAccountId: 123,
       publisherPlatformId: 'test-platform-id',
+      configId: 'my_config',
+      optimizerConfig: 'my my optimizer',
       sample: 1.0,
-      enableV2: true,
       payloadWaitTime: SLOT_LOAD_WAIT_TIME,
       payloadWaitTimePadding: SLOT_LOAD_WAIT_TIME
     };
@@ -291,6 +292,18 @@ describe('openx analytics adapter', function() {
 
       it('should track the orgId', function () {
         expect(auction.publisherAccountId).to.equal(DEFAULT_V2_ANALYTICS_CONFIG.publisherAccountId);
+      });
+
+      it('should track the optimizerConfig', function () {
+        expect(auction.optimizerConfig).to.equal(DEFAULT_V2_ANALYTICS_CONFIG.optimizerConfig);
+      });
+
+      it('should track the configId', function () {
+        expect(auction.configId).to.equal(DEFAULT_V2_ANALYTICS_CONFIG.configId);
+      });
+
+      it('should track the auction Id', function () {
+        expect(auction.auctionId).to.equal(auctionInit.auctionId);
       });
     });
 

@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { parseSizesInput, parseQueryStringParameters, logError } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 
@@ -36,7 +36,7 @@ export const spec = {
         requestid: req.bidId
       };
       if (mediaType === 'display') {
-        data.sizes = utils.parseSizesInput(
+        data.sizes = parseSizesInput(
           req.mediaTypes && req.mediaTypes.banner && req.mediaTypes.banner.sizes
         ).join('|')
       }
@@ -44,7 +44,7 @@ export const spec = {
       return {
         method: ENDPOINT_METHOD,
         url: ENDPOINT_URL,
-        data: utils.parseQueryStringParameters(data),
+        data: parseQueryStringParameters(data),
         options: { withCredentials: false, requestId: req.bidId, mediaType: mediaType }
       };
     });
@@ -128,7 +128,7 @@ export const spec = {
       }
       return bidResponses;
     } catch (err) {
-      utils.logError(err);
+      logError(err);
       return [];
     }
   },

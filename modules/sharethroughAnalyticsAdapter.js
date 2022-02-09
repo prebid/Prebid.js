@@ -1,6 +1,6 @@
+import { tryAppendQueryString } from '../src/utils.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-const utils = require('../src/utils.js');
 
 const emptyUrl = '';
 const analyticsType = 'endpoint';
@@ -42,18 +42,18 @@ var sharethroughAdapter = Object.assign(adapter(
 
   fireLoseBeacon(winningBidderCode, winningCPM, arid, type) {
     let loseBeaconUrl = this.STR_BEACON_HOST;
-    loseBeaconUrl = utils.tryAppendQueryString(loseBeaconUrl, 'winnerBidderCode', winningBidderCode);
-    loseBeaconUrl = utils.tryAppendQueryString(loseBeaconUrl, 'winnerCpm', winningCPM);
-    loseBeaconUrl = utils.tryAppendQueryString(loseBeaconUrl, 'arid', arid);
-    loseBeaconUrl = utils.tryAppendQueryString(loseBeaconUrl, 'type', type);
+    loseBeaconUrl = tryAppendQueryString(loseBeaconUrl, 'winnerBidderCode', winningBidderCode);
+    loseBeaconUrl = tryAppendQueryString(loseBeaconUrl, 'winnerCpm', winningCPM);
+    loseBeaconUrl = tryAppendQueryString(loseBeaconUrl, 'arid', arid);
+    loseBeaconUrl = tryAppendQueryString(loseBeaconUrl, 'type', type);
     loseBeaconUrl = this.appendEnvFields(loseBeaconUrl);
 
     this.fireBeacon(loseBeaconUrl);
   },
   appendEnvFields(url) {
-    url = utils.tryAppendQueryString(url, 'hbVersion', '$prebid.version$');
-    url = utils.tryAppendQueryString(url, 'strVersion', STR_VERSION);
-    url = utils.tryAppendQueryString(url, 'hbSource', 'prebid');
+    url = tryAppendQueryString(url, 'hbVersion', '$prebid.version$');
+    url = tryAppendQueryString(url, 'strVersion', STR_VERSION);
+    url = tryAppendQueryString(url, 'hbSource', 'prebid');
 
     return url;
   },

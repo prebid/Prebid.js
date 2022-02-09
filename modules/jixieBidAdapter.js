@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { logWarn, parseUrl, deepAccess, isArray } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -10,7 +10,7 @@ export const storage = getStorageManager();
 
 const BIDDER_CODE = 'jixie';
 const EVENTS_URL = 'https://hbtra.jixie.io/sync/hb?';
-const JX_OUTSTREAM_RENDERER_URL = 'https://scripts.jixie.io/jxhboutstream.js';
+const JX_OUTSTREAM_RENDERER_URL = 'https://scripts.jixie.media/jxhbrenderer.1.1.min.js';
 const REQUESTS_URL = 'https://hb.jixie.io/v2/hbpost';
 const sidTTLMins_ = 30;
 
@@ -95,7 +95,7 @@ function createRenderer_(bidAd, scriptUrl, createFcn) {
   try {
     renderer.setRender(createFcn);
   } catch (err) {
-    utils.logWarn('Prebid Error calling setRender on renderer', err);
+    logWarn('Prebid Error calling setRender on renderer', err);
   }
   return renderer;
 }
@@ -104,14 +104,19 @@ function getMiscDims_() {
   let ret = {
     pageurl: '',
     domain: '',
-    device: 'unknown'
+    device: 'unknown',
+    mkeywords: ''
   }
   try {
     let refererInfo_ = getRefererInfo();
     let url_ = ((refererInfo_ && refererInfo_.referer) ? refererInfo_.referer : window.location.href);
     ret.pageurl = url_;
-    ret.domain = utils.parseUrl(url_).host;
+    ret.domain = parseUrl(url_).host;
     ret.device = getDevice_();
+    let keywords = document.getElementsByTagName('meta')['keywords'];
+    if (keywords && keywords.content) {
+      ret.mkeywords = keywords.content;
+    }
   } catch (error) {}
   return ret;
 }
@@ -167,6 +172,7 @@ export const spec = {
       device: miscDims.device,
       domain: miscDims.domain,
       pageurl: miscDims.pageurl,
+      mkeywords: miscDims.mkeywords,
       bids: bids,
       cfg: jixieCfgBlob
     }, ids);
@@ -194,8 +200,8 @@ export const spec = {
         device: miscDims.device,
         pageurl: encodeURIComponent(miscDims.pageurl),
         domain: encodeURIComponent(miscDims.domain),
-        auctionid: utils.deepAccess(timeoutData, '0.auctionId'),
-        timeout: utils.deepAccess(timeoutData, '0.timeout'),
+        auctionid: deepAccess(timeoutData, '0.auctionId'),
+        timeout: deepAccess(timeoutData, '0.timeout'),
         count: timeoutData.length
       });
   },
@@ -224,7 +230,7 @@ export const spec = {
   },
 
   interpretResponse: function(response, bidRequest) {
-    if (response && response.body && utils.isArray(response.body.bids)) {
+    if (response && response.body && isArray(response.body.bids)) {
       const bidResponses = [];
       response.body.bids.forEach(function(oneBid) {
         let bnd = {};

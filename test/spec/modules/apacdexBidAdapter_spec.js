@@ -37,12 +37,13 @@ describe('ApacdexBidAdapter', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('should return false if there is no siteId param', () => {
+    it('should return false if there is no siteId or placementId param', () => {
       const bid = {
         'bidder': 'apacdex',
         'adUnitCode': 'adunit-code',
         params: {
           site_id: '1a2b3c4d5e6f1a2b3c4d',
+          placement_id: 'plcm12345678',
         },
         'mediaTypes': {
           banner: {

@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { deepAccess } from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
@@ -6,13 +6,12 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 const BIDDER_CODE = 'dspx';
 const ENDPOINT_URL = 'https://buyer.dspx.tv/request/';
 const ENDPOINT_URL_DEV = 'https://dcbuyer.dspx.tv/request/';
-const DEFAULT_VAST_FORMAT = 'vast2';
 const GVLID = 602;
 
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  aliases: ['dspx'],
+  aliases: [],
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function(bid) {
     return !!(bid.params.placement);
@@ -26,37 +25,30 @@ export const spec = {
       const referrer = bidderRequest.refererInfo.referer;
       const bidId = bidRequest.bidId;
       const isDev = params.devMode || false;
+      const pbcode = bidRequest.adUnitCode || false; // div id
+      const auctionId = bidRequest.auctionId || false;
 
       let endpoint = isDev ? ENDPOINT_URL_DEV : ENDPOINT_URL;
-      let payload = {};
 
-      if (isBannerRequest(bidRequest)) {
-        let size = getBannerSizes(bidRequest)[0];
-        payload = {
-          _f: 'html',
-          alternative: 'prebid_js',
-          inventory_item_id: placementId,
-          srw: size.width,
-          srh: size.height,
-          idt: 100,
-          rnd: rnd,
-          ref: referrer,
-          bid_id: bidId,
-        };
-      } else {
-        let size = getVideoSizes(bidRequest)[0];
-        let vastFormat = params.vastFormat || DEFAULT_VAST_FORMAT;
-        payload = {
-          _f: vastFormat,
-          alternative: 'prebid_js',
-          inventory_item_id: placementId,
-          srw: size.width,
-          srh: size.height,
-          idt: 100,
-          rnd: rnd,
-          ref: referrer,
-          bid_id: bidId,
-        };
+      let mediaTypesInfo = getMediaTypesInfo(bidRequest);
+      let type = isBannerRequest(bidRequest) ? BANNER : VIDEO;
+      let sizes = mediaTypesInfo[type];
+
+      let payload = {
+        _f: 'auto',
+        alternative: 'prebid_js',
+        inventory_item_id: placementId,
+        srw: sizes ? sizes[0].width : 0,
+        srh: sizes ? sizes[0].height : 0,
+        idt: 100,
+        rnd: rnd,
+        ref: referrer,
+        bid_id: bidId,
+        pbver: '$prebid.version$'
+      };
+
+      if (mediaTypesInfo[VIDEO] !== undefined && params.vastFormat !== undefined) {
+        payload.vf = params.vastFormat;
       }
 
       if (params.pfilter !== undefined) {
@@ -93,6 +85,15 @@ export const spec = {
       if (bidRequest.userId && bidRequest.userId.uid2) {
         payload.did_uid2 = bidRequest.userId.uid2;
       }
+
+      if (auctionId) {
+        payload.auctionId = auctionId;
+      }
+      if (pbcode) {
+        payload.pbcode = pbcode;
+      }
+
+      payload.media_types = convertMediaInfoForRequest(mediaTypesInfo);
 
       return {
         method: 'GET',
@@ -152,17 +153,19 @@ export const spec = {
       }
     }
 
-    if (syncOptions.iframeEnabled) {
-      serverResponses[0].body.userSync.iframeUrl.forEach((url) => syncs.push({
-        type: 'iframe',
-        url: appendToUrl(url, gdprParams)
-      }));
-    }
-    if (syncOptions.pixelEnabled && serverResponses.length > 0) {
-      serverResponses[0].body.userSync.imageUrl.forEach((url) => syncs.push({
-        type: 'image',
-        url: appendToUrl(url, gdprParams)
-      }));
+    if (serverResponses.length > 0 && serverResponses[0].body.userSync) {
+      if (syncOptions.iframeEnabled) {
+        serverResponses[0].body.userSync.iframeUrl.forEach((url) => syncs.push({
+          type: 'iframe',
+          url: appendToUrl(url, gdprParams)
+        }));
+      }
+      if (syncOptions.pixelEnabled) {
+        serverResponses[0].body.userSync.imageUrl.forEach((url) => syncs.push({
+          type: 'image',
+          url: appendToUrl(url, gdprParams)
+        }));
+      }
     }
     return syncs;
   }
@@ -197,7 +200,7 @@ function objectToQueryString(obj, prefix) {
  * @returns {boolean} True if it's a banner bid
  */
 function isBannerRequest(bid) {
-  return bid.mediaType === 'banner' || !!utils.deepAccess(bid, 'mediaTypes.banner') || !isVideoRequest(bid);
+  return bid.mediaType === 'banner' || !!deepAccess(bid, 'mediaTypes.banner') || !isVideoRequest(bid);
 }
 
 /**
@@ -207,7 +210,7 @@ function isBannerRequest(bid) {
  * @returns {boolean} True if it's a video bid
  */
 function isVideoRequest(bid) {
-  return bid.mediaType === 'video' || !!utils.deepAccess(bid, 'mediaTypes.video');
+  return bid.mediaType === 'video' || !!deepAccess(bid, 'mediaTypes.video');
 }
 
 /**
@@ -217,7 +220,7 @@ function isVideoRequest(bid) {
  * @returns {object} True if it's a video bid
  */
 function getVideoSizes(bid) {
-  return parseSizes(utils.deepAccess(bid, 'mediaTypes.video.playerSize') || bid.sizes);
+  return parseSizes(deepAccess(bid, 'mediaTypes.video.playerSize') || bid.sizes);
 }
 
 /**
@@ -227,7 +230,7 @@ function getVideoSizes(bid) {
  * @returns {object} True if it's a video bid
  */
 function getBannerSizes(bid) {
-  return parseSizes(utils.deepAccess(bid, 'mediaTypes.banner.sizes') || bid.sizes);
+  return parseSizes(deepAccess(bid, 'mediaTypes.banner.sizes') || bid.sizes);
 }
 
 /**
@@ -252,6 +255,45 @@ function parseSizes(sizes) {
     return sizes.map(size => parseSize(size));
   }
   return [parseSize(sizes)]; // or a single one ? (ie. [728,90])
+}
+
+/**
+ * Get MediaInfo object for server request
+ *
+ * @param mediaTypesInfo
+ * @returns {*}
+ */
+function convertMediaInfoForRequest(mediaTypesInfo) {
+  let requestData = {};
+  Object.keys(mediaTypesInfo).forEach(mediaType => {
+    requestData[mediaType] = mediaTypesInfo[mediaType].map(size => {
+      return size.width + 'x' + size.height;
+    }).join(',');
+  });
+  return requestData;
+}
+
+/**
+ * Get media types info
+ *
+ * @param bid
+ */
+function getMediaTypesInfo(bid) {
+  let mediaTypesInfo = {};
+
+  if (bid.mediaTypes) {
+    Object.keys(bid.mediaTypes).forEach(mediaType => {
+      if (mediaType === BANNER) {
+        mediaTypesInfo[mediaType] = getBannerSizes(bid);
+      }
+      if (mediaType === VIDEO) {
+        mediaTypesInfo[mediaType] = getVideoSizes(bid);
+      }
+    });
+  } else {
+    mediaTypesInfo[BANNER] = getBannerSizes(bid);
+  }
+  return mediaTypesInfo;
 }
 
 registerBidder(spec);

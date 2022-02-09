@@ -322,12 +322,22 @@ describe('ID5 analytics adapter', () => {
       expect(body.event).to.equal('auctionEnd');
       expect(body.payload.adUnits[0].bids[0].userId).to.eql({
         'criteoId': '__ID5_REDACTED__',
-        'id5id': '__ID5_REDACTED__',
+        'id5id': {
+          'uid': '__ID5_REDACTED__',
+          'ext': {
+            'linkType': 1
+          }
+        },
         'tdid': '__ID5_REDACTED__'
       });
       expect(body.payload.bidderRequests[0].bids[0].userId).to.eql({
         'sharedid': '__ID5_REDACTED__',
-        'id5id': '__ID5_REDACTED__',
+        'id5id': {
+          'uid': '__ID5_REDACTED__',
+          'ext': {
+            'linkType': 1
+          }
+        },
         'tdid': '__ID5_REDACTED__'
       });
       body.payload.adUnits[0].bids[0].userIdAsEids.forEach((userId) => {

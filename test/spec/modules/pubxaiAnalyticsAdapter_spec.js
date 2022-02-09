@@ -28,6 +28,7 @@ describe('pubxai analytics adapter', function() {
     };
 
     let location = utils.getWindowLocation();
+    let storage = window.top['sessionStorage'];
 
     let prebidEvent = {
       'auctionInit': {
@@ -514,6 +515,11 @@ describe('pubxai analytics adapter', function() {
         'path': location.pathname,
         'search': location.search
       },
+      'pmcDetail': {
+        'bidDensity': storage.getItem('pbx:dpbid'),
+        'maxBid': storage.getItem('pbx:mxbid'),
+        'auctionId': storage.getItem('pbx:aucid')
+      }
     };
 
     let expectedAfterBid = {
@@ -521,6 +527,7 @@ describe('pubxai analytics adapter', function() {
         'bidderCode': 'appnexus',
         'bidId': '248f9a4489835e',
         'adUnitCode': '/19968336/header-bid-tag-1',
+        'gptSlotCode': utils.getGptSlotInfoForAdUnitCode('/19968336/header-bid-tag-1').gptSlot || null,
         'auctionId': 'bc3806e4-873e-453c-8ae5-204f35e923b4',
         'sizes': '300x250',
         'renderStatus': 2,
@@ -576,12 +583,18 @@ describe('pubxai analytics adapter', function() {
         'deviceOS': getOS(),
         'browser': getBrowser()
       },
+      'pmcDetail': {
+        'bidDensity': storage.getItem('pbx:dpbid'),
+        'maxBid': storage.getItem('pbx:mxbid'),
+        'auctionId': storage.getItem('pbx:aucid')
+      },
       'initOptions': initOptions
     };
 
     let expectedAfterBidWon = {
       'winningBid': {
         'adUnitCode': '/19968336/header-bid-tag-1',
+        'gptSlotCode': utils.getGptSlotInfoForAdUnitCode('/19968336/header-bid-tag-1').gptSlot || null,
         'auctionId': 'bc3806e4-873e-453c-8ae5-204f35e923b4',
         'bidderCode': 'appnexus',
         'bidId': '248f9a4489835e',

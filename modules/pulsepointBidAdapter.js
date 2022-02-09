@@ -1,5 +1,5 @@
 /* eslint dot-notation:0, quote-props:0 */
-import * as utils from '../src/utils.js';
+import { convertTypes, deepAccess, isArray, logError, isFn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
 
@@ -77,7 +77,7 @@ export const spec = {
     }
   },
   transformBidParams: function(params, isOpenRtb) {
-    return utils.convertTypes({
+    return convertTypes({
       'cf': 'string',
       'cp': 'number',
       'ct': 'number'
@@ -124,8 +124,8 @@ function bidResponseAvailable(request, response) {
       };
       if (idToImpMap[id].video) {
         // for outstream, a renderer is specified
-        if (idToSlotConfig[id] && utils.deepAccess(idToSlotConfig[id], 'mediaTypes.video.context') === 'outstream') {
-          bid.renderer = outstreamRenderer(utils.deepAccess(idToSlotConfig[id], 'renderer.options'), utils.deepAccess(idToBidMap[id], 'ext.outstream'));
+        if (idToSlotConfig[id] && deepAccess(idToSlotConfig[id], 'mediaTypes.video.context') === 'outstream') {
+          bid.renderer = outstreamRenderer(deepAccess(idToSlotConfig[id], 'renderer.options'), deepAccess(idToBidMap[id], 'ext.outstream'));
         }
         bid.vastXml = idToBidMap[id].adm;
         bid.mediaType = 'video';
@@ -178,9 +178,9 @@ function banner(slot) {
  * Produce openrtb format objects based on the sizes configured for the slot.
  */
 function parseSizes(slot) {
-  const sizes = utils.deepAccess(slot, 'mediaTypes.banner.sizes');
-  if (sizes && utils.isArray(sizes)) {
-    return sizes.filter(sz => utils.isArray(sz) && sz.length === 2).map(sz => ({
+  const sizes = deepAccess(slot, 'mediaTypes.banner.sizes');
+  if (sizes && isArray(sizes)) {
+    return sizes.filter(sz => isArray(sz) && sz.length === 2).map(sz => ({
       w: sz[0],
       h: sz[1]
     }));
@@ -387,7 +387,7 @@ function parse(rawResponse) {
       return JSON.parse(rawResponse);
     }
   } catch (ex) {
-    utils.logError('pulsepointLite.safeParse', 'ERROR', ex);
+    logError('pulsepointLite.safeParse', 'ERROR', ex);
   }
   return null;
 }
@@ -421,12 +421,18 @@ function user(bidRequest, bidderRequest) {
   if (bidRequest) {
     if (bidRequest.userId) {
       ext.eids = [];
-      addExternalUserId(ext.eids, bidRequest.userId.pubcid, 'pubcommon');
+      addExternalUserId(ext.eids, bidRequest.userId.pubcid, 'pubcid.org');
       addExternalUserId(ext.eids, bidRequest.userId.britepoolid, 'britepool.com');
-      addExternalUserId(ext.eids, bidRequest.userId.criteoId, 'criteo');
-      addExternalUserId(ext.eids, bidRequest.userId.idl_env, 'identityLink');
-      addExternalUserId(ext.eids, utils.deepAccess(bidRequest, 'userId.id5id.uid'), 'id5-sync.com', utils.deepAccess(bidRequest, 'userId.id5id.ext'));
-      addExternalUserId(ext.eids, utils.deepAccess(bidRequest, 'userId.parrableId.eid'), 'parrable.com');
+      addExternalUserId(ext.eids, bidRequest.userId.criteoId, 'criteo.com');
+      addExternalUserId(ext.eids, bidRequest.userId.idl_env, 'liveramp.com');
+      addExternalUserId(ext.eids, deepAccess(bidRequest, 'userId.id5id.uid'), 'id5-sync.com', deepAccess(bidRequest, 'userId.id5id.ext'));
+      addExternalUserId(ext.eids, deepAccess(bidRequest, 'userId.parrableId.eid'), 'parrable.com');
+      addExternalUserId(ext.eids, bidRequest.userId.fabrickId, 'neustar.biz');
+      addExternalUserId(ext.eids, deepAccess(bidRequest, 'userId.haloId.haloId'), 'audigent.com');
+      addExternalUserId(ext.eids, bidRequest.userId.merkleId, 'merkleinc.com');
+      addExternalUserId(ext.eids, bidRequest.userId.lotamePanoramaId, 'crwdcntrl.net');
+      addExternalUserId(ext.eids, bidRequest.userId.connectid, 'verizonmedia.com');
+      addExternalUserId(ext.eids, deepAccess(bidRequest, 'userId.uid2.id'), 'uidapi.com');
       // liveintent
       if (bidRequest.userId.lipb && bidRequest.userId.lipb.lipbid) {
         addExternalUserId(ext.eids, bidRequest.userId.lipb.lipbid, 'liveintent.com');
@@ -526,7 +532,7 @@ function nativeResponse(imp, bid) {
 
 function bidFloor(slot) {
   let floor = slot.params.bidfloor;
-  if (utils.isFn(slot.getFloor)) {
+  if (isFn(slot.getFloor)) {
     const floorData = slot.getFloor({
       mediaType: slot.mediaTypes.banner ? 'banner' : slot.mediaTypes.video ? 'video' : 'Native',
       size: '*',

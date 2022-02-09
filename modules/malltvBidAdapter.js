@@ -1,10 +1,15 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getStorageManager } from '../src/storageManager.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'malltv';
 const ENDPOINT_URL = 'https://central.mall.tv/bid';
 const DIMENSION_SEPARATOR = 'x';
 const SIZE_SEPARATOR = ';';
+const BISKO_ID = 'biskoId';
+const STORAGE_ID = 'bisko-sid';
+const SEGMENTS = 'biskoSegments';
+const storage = getStorageManager();
 
 export const spec = {
   code: BIDDER_CODE,
@@ -25,23 +30,28 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
+    const storageId = storage.localStorageIsEnabled() ? storage.getDataFromLocalStorage(STORAGE_ID) || '' : '';
+    const biskoId = storage.localStorageIsEnabled() ? storage.getDataFromLocalStorage(BISKO_ID) || '' : '';
+    const segments = storage.localStorageIsEnabled() ? JSON.parse(storage.getDataFromLocalStorage(SEGMENTS)) || [] : [];
+
     let propertyId = '';
     let pageViewGuid = '';
-    let storageId = '';
     let bidderRequestId = '';
     let url = '';
     let contents = [];
     let data = {};
-
+    let auctionId = bidderRequest ? bidderRequest.auctionId : '';
+    let gdrpApplies = true;
+    let gdprConsent = '';
     let placements = validBidRequests.map(bidRequest => {
       if (!propertyId) { propertyId = bidRequest.params.propertyId; }
       if (!pageViewGuid && bidRequest.params) { pageViewGuid = bidRequest.params.pageViewGuid || ''; }
-      if (!storageId && bidRequest.params) { storageId = bidRequest.params.storageId || ''; }
       if (!bidderRequestId) { bidderRequestId = bidRequest.bidderRequestId; }
       if (!url && bidderRequest) { url = bidderRequest.refererInfo.referer; }
       if (!contents.length && bidRequest.params.contents && bidRequest.params.contents.length) { contents = bidRequest.params.contents; }
       if (Object.keys(data).length === 0 && bidRequest.params.data && Object.keys(bidRequest.params.data).length !== 0) { data = bidRequest.params.data; }
-
+      if (bidderRequest && bidRequest.gdprConsent) { gdrpApplies = bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies ? bidderRequest.gdprConsent.gdprApplies : true; }
+      if (bidderRequest && bidRequest.gdprConsent) { gdprConsent = bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString ? bidderRequest.gdprConsent.consentString : ''; }
       let adUnitId = bidRequest.adUnitCode;
       let placementId = bidRequest.params.placementId;
       let sizes = generateSizeParam(bidRequest.sizes);
@@ -57,14 +67,19 @@ export const spec = {
     });
 
     let body = {
+      auctionId: auctionId,
       propertyId: propertyId,
       pageViewGuid: pageViewGuid,
       storageId: storageId,
+      biskoId: biskoId,
+      segments: segments,
       url: url,
       requestid: bidderRequestId,
       placements: placements,
       contents: contents,
-      data: data
+      data: data,
+      gdpr_applies: gdrpApplies,
+      gdpr_consent: gdprConsent,
     }
 
     return [{

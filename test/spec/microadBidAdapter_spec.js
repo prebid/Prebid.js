@@ -265,6 +265,36 @@ describe('microadBidAdapter', () => {
         expect(request.url.lastIndexOf('https', 0) === 0).to.be.true;
       });
     });
+
+    it('should add Liveramp identity link if it is available in request parameters', () => {
+      const bidRequestWithLiveramp = Object.assign({}, bidRequestTemplate, {
+        userId: {idl_env: 'idl-env-sample'}
+      });
+      const requests = spec.buildRequests([bidRequestWithLiveramp], bidderRequest)
+      requests.forEach(request => {
+        expect(request.data).to.deep.equal(
+          Object.assign({}, expectedResultTemplate, {
+            cbt: request.data.cbt,
+            idl_env: 'idl-env-sample'
+          })
+        );
+      })
+    });
+
+    it('should not add Liveramp identity link if it is not available in request parameters', () => {
+      const bidRequestWithLiveramp = Object.assign({}, bidRequestTemplate, {
+        userId: {}
+      });
+      const requests = spec.buildRequests([bidRequestWithLiveramp], bidderRequest)
+      const expectedResult = Object.assign({}, expectedResultTemplate)
+      requests.forEach(request => {
+        expect(request.data).to.deep.equal(
+          Object.assign({}, expectedResultTemplate, {
+            cbt: request.data.cbt
+          })
+        );
+      })
+    });
   });
 
   describe('interpretResponse', () => {
