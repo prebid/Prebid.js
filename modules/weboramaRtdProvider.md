@@ -100,7 +100,7 @@ pbjs.que.push(function () {
                         localStorageProfileKey: 'webo_wam2gam_entry', // default
                         enabled: true,
                         //, onData: function (data, ...) { ...}
-                    }
+                    },
                     weboLiteDataConf: {
                         setPrebidTargeting: function(adUnitCode){ // specify set target via callback
                             return adUnitCode == 'adUnitCode1';
