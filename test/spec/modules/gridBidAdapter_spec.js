@@ -381,6 +381,24 @@ describe('TheMediaGrid Adapter', function () {
       expect(payload.user.ext.eids).to.deep.equal(eids);
     });
 
+    it('if userId is present payload must have user.ext param with right keys', function () {
+      const ortb2UserExtDevice = {
+        screenWidth: 1200,
+        screenHeight: 800,
+        language: 'ru'
+      };
+      const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
+        arg => arg === 'ortb2.user.ext.device' ? ortb2UserExtDevice : null);
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
+      expect(payload).to.have.property('user');
+      expect(payload.user).to.have.property('ext');
+      expect(payload.user.ext.device).to.deep.equal(ortb2UserExtDevice);
+      getConfigStub.restore();
+    });
+
     it('if schain is present payload must have source.ext.schain param', function () {
       const schain = {
         complete: 1,

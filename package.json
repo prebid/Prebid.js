@@ -1,6 +1,6 @@
 {
   "name": "prebid.js",
-  "version": "6.10.0-pre",
+  "version": "6.11.0-pre",
   "description": "Header Bidding Management Library",
   "main": "src/prebid.js",
   "scripts": {
@@ -97,7 +97,6 @@
     "mocha": "^5.0.0",
     "morgan": "^1.10.0",
     "opn": "^5.4.0",
-    "prebidjs-polyfill": "file:./plugins/poly",
     "resolve-from": "^5.0.0",
     "sinon": "^4.1.3",
     "through2": "^4.0.2",
