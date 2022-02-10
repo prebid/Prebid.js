@@ -69,7 +69,7 @@ export const spec = {
         test: 0,
         at: 2,
         tmax: bid.params.timeout || config.getConfig('bidderTimeout') || 100,
-        cur: 'USD',
+        cur: ['USD'],
         regs: {
           ext: {
             us_privacy: USP
@@ -96,19 +96,53 @@ export const spec = {
           name: bid.params.appname,
           bundle: bid.params.bundleid
         }
-      }
 
-      if (bid.params.contentId) {
-        requestData.content = {
-          id: bid.params.contentId,
-          title: bid.params.contentTitle,
-          len: bid.params.contentLength,
-          url: bid.params.contentUrl
-        };
+        if (bid.params.contentId) {
+          requestData.app.content = {
+            id: bid.params.contentId,
+            title: bid.params.contentTitle,
+            len: bid.params.contentLength,
+            url: bid.params.contentUrl
+          };
+        }
       }
 
       if (isSet(bid.params.idfa) || isSet(bid.params.aid)) {
         requestData.device.ifa = bid.params.idfa || bid.params.aid;
+      }
+
+      if (bid.schain) {
+        requestData.source = {
+          ext: {
+            schain: bid.schain
+          }
+        };
+      } else if (bid.params.schain) {
+        const section = bid.params.schain.split('!');
+        const verComplete = section[0].split(',');
+        const node = section[1].split(',');
+
+        requestData.source = {
+          ext: {
+            schain: {
+              validation: 'strict',
+              config: {
+                ver: verComplete[0],
+                complete: parseInt(verComplete[1]),
+                nodes: [
+                  {
+                    asi: decodeURIComponent(node[0]),
+                    sid: decodeURIComponent(node[1]),
+                    hp: parseInt(node[2]),
+                    rid: decodeURIComponent(node[3]),
+                    name: decodeURIComponent(node[4]),
+                    domain: decodeURIComponent(node[5])
+                  }
+                ]
+              }
+            }
+          }
+        };
       }
 
       utils._each(calculateSizes(VIDEO_BID, bid), (sizes) => {
@@ -129,7 +163,8 @@ export const spec = {
               lkqdcustomparameters: {}
             },
           },
-          bidfloorcur: 'USD'
+          bidfloorcur: 'USD',
+          secure: 1
         };
 
         for (let k = 1; k <= 40; k++) {
@@ -174,7 +209,7 @@ export const spec = {
               cpm: bid.price,
               width: bid.w,
               height: bid.h,
-              currency: seatbid.cur,
+              currency: serverBody.cur,
               netRevenue: true,
               ttl: BID_TTL_DEFAULT,
               ad: bid.adm,
