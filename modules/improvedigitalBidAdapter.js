@@ -4,7 +4,7 @@ import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
 import { createEidsArray } from './userId/eids.js';
-import includes from 'prebidjs-polyfill/includes.js';
+import includes from 'core-js-pure/features/array/includes.js';
 
 const BIDDER_CODE = 'improvedigital';
 const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';

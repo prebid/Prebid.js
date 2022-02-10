@@ -2,7 +2,7 @@ import { deepAccess, convertTypes, isArray, inIframe, _map, deepSetValue, _each,
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import includes from 'prebidjs-polyfill/includes.js'
+import includes from 'core-js-pure/features/array/includes.js'
 
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const VIDEO_TARGETING = ['startdelay', 'mimes', 'minduration', 'maxduration',
