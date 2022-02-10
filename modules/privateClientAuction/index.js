@@ -25,6 +25,7 @@ export function renderAdHook(fn, doc, id, options) {
   if (_privateClientAuctionConfig.auctionConfig) {
     const auctionConfig = _privateClientAuctionConfig.auctionConfig;
     auctionConfig.auctionSignals.winningContextualBid = bid;
+
     navigator
       .runAdAuction(auctionConfig)
       .then(results => {
