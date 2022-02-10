@@ -1,15 +1,91 @@
-// jshint esversion: 6, es3: false, node: true
 'use strict';
 
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import {getWindowSelf, getWindowTop} from '../src/utils.js'
+import {getStorageManager} from '../src/storageManager.js';
 
 const BIDDER_CODE = 'taboola';
 const GVLID = 42;
 const CURRENCY = 'USD';
-const END_POINT_URL = 'http://taboolahb.bidder.taboolasyndication.com'
+export const END_POINT_URL = 'https://taboolahb.bidder.taboolasyndication.com';
+const USER_ID = 'user-id';
+const STORAGE_KEY = `taboola global:${USER_ID}`;
+const COOKIE_KEY = 'trc_cookie_storage';
+
+/**
+ * try to extract User Id by that order:
+ *  local storage
+ *  first party cookie
+ *  rendered trc
+ *  new user set it to 0
+ */
+export const userData = {
+  storageManager: getStorageManager(GVLID, BIDDER_CODE),
+  getUserId: () => {
+    const {getFromLocalStorage, getFromCookie, getFromTRC} = userData;
+
+    try {
+      return getFromLocalStorage() || getFromCookie() || getFromTRC();
+    } catch (ex) {
+      return 0;
+    }
+  },
+  getFromCookie() {
+    const {cookiesAreEnabled, getCookie} = userData.storageManager;
+    if (cookiesAreEnabled()) {
+      const cookieData = getCookie(COOKIE_KEY);
+      const userId = userData.getCookieDataByKey(cookieData, USER_ID);
+      if (userId) {
+        return userId;
+      }
+    }
+  },
+  getCookieDataByKey(cookieData, key) {
+    const [, value = ''] = cookieData.split(`${key}=`)
+    return value;
+  },
+  getFromLocalStorage() {
+    const {hasLocalStorage, localStorageIsEnabled, getDataFromLocalStorage} = userData.storageManager;
+
+    if (hasLocalStorage() && localStorageIsEnabled()) {
+      return getDataFromLocalStorage(STORAGE_KEY);
+    }
+  },
+  getFromTRC() {
+    return window.TRC ? window.TRC.user_id : 0;
+  }
+}
+
+export const internal = {
+  getPageUrl: (refererInfo = {}) => {
+    if (refererInfo.canonicalUrl) {
+      return refererInfo.canonicalUrl;
+    }
+
+    if (config.getConfig('pageUrl')) {
+      return config.getConfig('pageUrl');
+    }
+
+    try {
+      return getWindowTop().location.href;
+    } catch (e) {
+      return getWindowSelf().location.href;
+    }
+  },
+  getReferrer: (refererInfo = {}) => {
+    if (refererInfo.referer) {
+      return refererInfo.referer;
+    }
+
+    try {
+      return getWindowTop().document.referrer;
+    } catch (e) {
+      return getWindowSelf().document.referrer;
+    }
+  }
+}
 
 export const spec = {
   supportedMediaTypes: [BANNER],
@@ -21,9 +97,6 @@ export const spec = {
            bidRequest.params.publisherId &&
            bidRequest.params.tagId);
   },
-  getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent) => {
-    return [];
-  },
   buildRequests: (validBidRequests, bidderRequest) => {
     const [bidRequest] = validBidRequests;
     const {refererInfo, gdprConsent = {}, uspConsent} = bidderRequest;
@@ -32,7 +105,7 @@ export const spec = {
     const device = {ua: navigator.userAgent};
     const imps = getImps(validBidRequests);
     const user = {
-      buyerid: window.TRC ? window.TRC.user_id : 0,
+      buyeruid: userData.getUserId(gdprConsent, uspConsent),
       ext: {}
     };
     const regs = {
@@ -89,36 +162,6 @@ export const spec = {
     return bids.map((bid, id) => getBid(bid.bidId, currency, bidResponses[id])).filter(Boolean);
   },
 };
-export const internal = {
-  getPageUrl: (refererInfo = {}) => {
-    if (refererInfo.canonicalUrl) {
-      return refererInfo.canonicalUrl;
-    }
-
-    if (config.getConfig('pageUrl')) {
-      return config.getConfig('pageUrl');
-    }
-
-    try {
-      return getWindowTop().location.href;
-    } catch (e) {
-      return getWindowSelf().location.href;
-    }
-  },
-  getReferrer: (refererInfo = {}) => {
-    if (refererInfo.referer) {
-      return refererInfo.referer;
-    }
-
-    try {
-      return getWindowTop().document.referrer;
-    } catch (e) {
-      return getWindowSelf().document.referrer;
-    }
-  }
-}
-
-registerBidder(spec);
 
 function getSiteProperties({publisherId, bcat = []}, refererInfo) {
   const {getPageUrl, getReferrer} = internal;
@@ -208,3 +251,5 @@ function getBid(requestId, currency, bidResponse) {
     netRevenue: false
   };
 }
+
+registerBidder(spec);
