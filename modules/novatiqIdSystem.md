@@ -2,8 +2,6 @@
 
 The Novatiq proprietary dynamic Hyper ID is a unique, non sequential and single use identifier for marketing activation. Our in network solution matches verification requests to telco network IDs safely and securely inside telecom infrastructure. The Novatiq Hyper ID can be used for identity validation and as a secured 1st party data delivery mechanism.
 
-&nbsp;
-
 ## Novatiq Hyper ID Configuration
 
 Enable by adding the Novatiq submodule to your Prebid.js package with:
@@ -30,7 +28,6 @@ pbjs.setConfig({
   }
 });
 ```    
-&nbsp;
 
 ### Parameters for the Novatiq Module
 | Param  | Scope | Type | Description | Example |
@@ -39,12 +36,8 @@ pbjs.setConfig({
 | params | Required | Object | Configuration specifications for the Novatiq module. | |
 | params.sourceid | Required | String | This is the Novatiq Partner Number obtained via Novatiq registration. | `1a3` |
 
-&nbsp;
-
 # Novatiq Hyper ID with Prebid SharedID support
 You can make use of the Prebid.js SharedId module as follows. 
-
-&nbsp;
 
 ## Novatiq Hyper ID Configuration
 
@@ -93,8 +86,6 @@ pbjs.setConfig({
 });
 ```
 
-&nbsp;
-
 ### Parameters for the Novatiq Module
 | Param  | Scope | Type | Description | Example |
 | --- | --- | --- | --- | --- |
@@ -103,20 +94,5 @@ pbjs.setConfig({
 | params.sourceid | Required | String | The Novatiq Partner Number obtained via Novatiq | `1a3` |
 | params.useSharedId | Optional | Boolean | Use the sharedID module if it's activated. | `true` |
 | params.sharedIdName | Optional | String | Same as the SharedID "name" parameter <br /> Defaults to "_pubcid" | `"demo_pubcid"` |
-
-&nbsp;
-
-### Parameters for the SharedID Module
-| Param  | Scope | Type | Description | Example |
-| --- | --- | --- | --- | --- |
-| name | Required | String | Module identification: `"pubCommonId"` | `"pubCommonId"` |
-| params | Required | Object | Configuration specifications for the SharedID module. | | |
-| params.storage | Required | Object |  | |
-| params.storage.type | Required | String | Storage type, Set to `"cookie"` | `"cookie"` |
-| params.storage.name | Optional | String | Storage cookie name. If this is changed must match sharedIdName <br /> in the Novatiq module | `"demo_pubcid"` ||
-| params.storage.expires | Required | integer | Time to expire | `365` |
-
-
-&nbsp;
 
 If you have any questions, please reach out to us at prebid@novatiq.com.
