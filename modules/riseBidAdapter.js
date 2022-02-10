@@ -294,9 +294,14 @@ function generateBidParameters(bid, bidderRequest) {
     bidObject.pos = pos;
   }
 
+  const gpid = deepAccess(bid, `ortb2Imp.ext.gpid`);
+  if (gpid) {
+    bidObject.gpid = gpid;
+  }
+
   if (mediaType === VIDEO) {
+    let playbackMethodValue = undefined;
     const playbackMethod = deepAccess(bid, `mediaTypes.video.playbackmethod`);
-    const playbackMethodValue = null;
 
     // verify playbackMethod is of type integer array, or integer only.
     if (Array.isArray(playbackMethod) && isInteger(playbackMethod[0])) {
