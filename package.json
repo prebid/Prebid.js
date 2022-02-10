@@ -4,7 +4,7 @@
   "description": "Header Bidding Management Library",
   "main": "src/prebid.js",
   "scripts": {
-    "test": "gulp test --file 'test/spec/modules/lkqdBidAdapter_spec.js'",
+    "test": "gulp test",
     "lint": "gulp lint"
   },
   "repository": {
