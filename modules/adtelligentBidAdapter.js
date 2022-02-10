@@ -3,7 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { ADPOD, BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
-import find from 'prebidjs-polyfill/find.js';
+import find from 'core-js-pure/features/array/find.js';
 
 const subdomainSuffixes = ['', 1, 2];
 const AUCTION_PATH = '/v2/auction/';

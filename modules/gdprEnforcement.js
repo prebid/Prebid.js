@@ -5,8 +5,8 @@
 import { deepAccess, logWarn, isArray, hasDeviceAccess } from '../src/utils.js';
 import { config } from '../src/config.js';
 import adapterManager, { gdprDataHandler } from '../src/adapterManager.js';
-import find from 'prebidjs-polyfill/find.js';
-import includes from 'prebidjs-polyfill/includes.js';
+import find from 'core-js-pure/features/array/find.js';
+import includes from 'core-js-pure/features/array/includes.js';
 import { registerSyncInner } from '../src/adapters/bidderFactory.js';
 import { getHook } from '../src/hook.js';
 import { validateStorageEnforcement } from '../src/storageManager.js';
