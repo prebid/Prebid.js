@@ -72,7 +72,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
     if (!player) {
       return;
     }
-    const config = player.getConfig();
+    const config = player.getConfig() || {};
     const adConfig = config.advertising || {};
     supportedMediaTypes = supportedMediaTypes || utils.getSupportedMediaTypes(MEDIA_TYPES);
 
