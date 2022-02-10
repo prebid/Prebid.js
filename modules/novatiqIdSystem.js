@@ -111,7 +111,7 @@ export const novatiqIdSubmodule = {
 
     logInfo('NOVATIQ sharedID returning: ' + sharedId);
 
-    return sharedId;    
+    return sharedId;
   },
 
   getSrcId(configParams) {
