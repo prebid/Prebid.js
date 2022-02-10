@@ -11,6 +11,7 @@
     "dmdIdSystem",
     "fabrickIdSystem",
     "flocIdSystem",
+    "hadronIdSystem",
     "haloIdSystem",
     "id5IdSystem",
     "identityLinkIdSystem",
@@ -32,10 +33,12 @@
     "quantcastIdSystem",
     "sharedIdSystem",
     "tapadIdSystem",
+    "trustpidSystem",
     "uid2IdSystem",
     "unifiedIdSystem",
     "verizonMediaIdSystem",
-    "zeotapIdPlusIdSystem"
+    "zeotapIdPlusIdSystem",
+    "adqueryIdSystem"
   ],
   "adpod": [
     "freeWheelAdserverVideo",
@@ -45,6 +48,7 @@
     "browsiRtdProvider",
     "dgkeywordRtdProvider",
     "geoedgeRtdProvider",
+    "hadronRtdProvider",
     "haloRtdProvider",
     "iasRtdProvider",
     "jwplayerRtdProvider",

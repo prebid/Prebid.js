@@ -484,7 +484,7 @@ describe('kargo adapter tests', function () {
           height: 250,
           targetingCustom: 'dmpmptest1234',
           metadata: {
-            landingPageDomain: 'https://foobar.com'
+            landingPageDomain: ['https://foobar.com']
           }
         },
         3: {

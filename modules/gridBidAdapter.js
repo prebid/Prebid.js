@@ -1,4 +1,4 @@
-import { isEmpty, deepAccess, logError, parseGPTSingleSizeArrayToRtbSize, generateUUID, logWarn } from '../src/utils.js';
+import { isEmpty, deepAccess, logError, parseGPTSingleSizeArrayToRtbSize, generateUUID, mergeDeep, logWarn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
@@ -173,8 +173,22 @@ export const spec = {
       };
     }
 
+    const ortb2UserData = config.getConfig('ortb2.user.data');
+    if (ortb2UserData && ortb2UserData.length) {
+      if (!user) {
+        user = { data: [] };
+      }
+      user = mergeDeep(user, { data: ortb2UserData });
+    }
+
     if (gdprConsent && gdprConsent.consentString) {
       userExt = {consent: gdprConsent.consentString};
+    }
+
+    const ortb2UserExtDevice = config.getConfig('ortb2.user.ext.device');
+    if (ortb2UserExtDevice) {
+      userExt = userExt || {};
+      userExt.device = { ...ortb2UserExtDevice };
     }
 
     if (userIdAsEids && userIdAsEids.length) {
@@ -291,10 +305,11 @@ export const spec = {
     if (!hasSynced && syncOptions.pixelEnabled) {
       let params = '';
 
-      if (gdprConsent && typeof gdprConsent.consentString === 'string') {
+      if (gdprConsent) {
         if (typeof gdprConsent.gdprApplies === 'boolean') {
-          params += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
-        } else {
+          params += `&gdpr=${Number(gdprConsent.gdprApplies)}`;
+        }
+        if (typeof gdprConsent.consentString === 'string') {
           params += `&gdpr_consent=${gdprConsent.consentString}`;
         }
       }

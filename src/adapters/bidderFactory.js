@@ -9,10 +9,11 @@ import CONSTANTS from '../constants.json';
 import events from '../events.js';
 import includes from 'core-js-pure/features/array/includes.js';
 import { ajax } from '../ajax.js';
-import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest, flatten, uniques, timestamp, deepAccess, isArray, isPlainObject } from '../utils.js';
+import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, flatten, uniques, timestamp, deepAccess, isArray, isPlainObject } from '../utils.js';
 import { ADPOD } from '../mediaTypes.js';
 import { getHook, hook } from '../hook.js';
 import { getCoreStorageManager } from '../storageManager.js';
+import {auctionManager} from '../auctionManager.js';
 
 export const storage = getCoreStorageManager('bidderFactory');
 
@@ -36,6 +37,7 @@ export const storage = getCoreStorageManager('bidderFactory');
  * });
  *
  * @see BidderSpec for the full API and more thorough descriptions.
+ *
  */
 
 /**
@@ -130,7 +132,7 @@ export const storage = getCoreStorageManager('bidderFactory');
  */
 
 // common params for all mediaTypes
-const COMMON_BID_RESPONSE_KEYS = ['requestId', 'cpm', 'ttl', 'creativeId', 'netRevenue', 'currency'];
+const COMMON_BID_RESPONSE_KEYS = ['cpm', 'ttl', 'creativeId', 'netRevenue', 'currency'];
 
 const DEFAULT_REFRESHIN_DAYS = 1;
 
@@ -187,7 +189,7 @@ export function newBidder(spec) {
       const adUnitCodesHandled = {};
       function addBidWithCode(adUnitCode, bid) {
         adUnitCodesHandled[adUnitCode] = true;
-        if (isValid(adUnitCode, bid, [bidderRequest])) {
+        if (isValid(adUnitCode, bid)) {
           addBidResponse(adUnitCode, bid);
         }
       }
@@ -230,7 +232,7 @@ export function newBidder(spec) {
       // Server requests have returned and been processed. Since `ajax` accepts a single callback,
       // we need to rig up a function which only executes after all the requests have been responded.
       const onResponse = delayExecution(configEnabledCallback(afterAllResponses), requests.length)
-      requests.forEach(_ => events.emit(CONSTANTS.EVENTS.BEFORE_BIDDER_HTTP, bidderRequest));
+      requests.forEach(requestObject => events.emit(CONSTANTS.EVENTS.BEFORE_BIDDER_HTTP, bidderRequest, requestObject));
       requests.forEach(processRequest);
 
       function formatGetParameters(data) {
@@ -451,16 +453,17 @@ export function getIabSubCategory(bidderCode, category) {
 }
 
 // check that the bid has a width and height set
-function validBidSize(adUnitCode, bid, bidRequests) {
+function validBidSize(adUnitCode, bid, {index = auctionManager.index} = {}) {
   if ((bid.width || parseInt(bid.width, 10) === 0) && (bid.height || parseInt(bid.height, 10) === 0)) {
     bid.width = parseInt(bid.width, 10);
     bid.height = parseInt(bid.height, 10);
     return true;
   }
 
-  const adUnit = getBidderRequest(bidRequests, bid.bidderCode, adUnitCode);
+  const bidRequest = index.getBidRequest(bid);
+  const mediaTypes = index.getMediaTypes(bid);
 
-  const sizes = adUnit && adUnit.bids && adUnit.bids[0] && adUnit.bids[0].sizes;
+  const sizes = (bidRequest && bidRequest.sizes) || (mediaTypes && mediaTypes.banner && mediaTypes.banner.sizes);
   const parsedSizes = parseSizesInput(sizes);
 
   // if a banner impression has one valid size, we assign that size to any bid
@@ -476,7 +479,7 @@ function validBidSize(adUnitCode, bid, bidRequests) {
 }
 
 // Validate the arguments sent to us by the adapter. If this returns false, the bid should be totally ignored.
-export function isValid(adUnitCode, bid, bidRequests) {
+export function isValid(adUnitCode, bid, {index = auctionManager.index} = {}) {
   function hasValidKeys() {
     let bidKeys = Object.keys(bid);
     return COMMON_BID_RESPONSE_KEYS.every(key => includes(bidKeys, key) && !includes([undefined, null], bid[key]));
@@ -501,15 +504,15 @@ export function isValid(adUnitCode, bid, bidRequests) {
     return false;
   }
 
-  if (bid.mediaType === 'native' && !nativeBidIsValid(bid, bidRequests)) {
+  if (bid.mediaType === 'native' && !nativeBidIsValid(bid, {index})) {
     logError(errorMessage('Native bid missing some required properties.'));
     return false;
   }
-  if (bid.mediaType === 'video' && !isValidVideoBid(bid, bidRequests)) {
+  if (bid.mediaType === 'video' && !isValidVideoBid(bid, {index})) {
     logError(errorMessage(`Video bid does not have required vastUrl or renderer property`));
     return false;
   }
-  if (bid.mediaType === 'banner' && !validBidSize(adUnitCode, bid, bidRequests)) {
+  if (bid.mediaType === 'banner' && !validBidSize(adUnitCode, bid, {index})) {
     logError(errorMessage(`Banner bids require a width and height`));
     return false;
   }

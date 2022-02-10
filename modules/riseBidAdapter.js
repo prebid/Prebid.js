@@ -1,4 +1,4 @@
-import { logWarn, isArray, isFn, deepAccess, isEmpty, contains, timestamp, getBidIdParameter } from '../src/utils.js';
+import { logWarn, logInfo, isArray, isFn, deepAccess, isEmpty, contains, timestamp, getBidIdParameter, triggerPixel } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
@@ -23,7 +23,7 @@ export const spec = {
   gvlid: 1043,
   version: ADAPTER_VERSION,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
-  isBidRequestValid: function(bidRequest) {
+  isBidRequestValid: function (bidRequest) {
     if (!bidRequest.params) {
       logWarn('no params have been set to Rise adapter');
       return false;
@@ -49,7 +49,7 @@ export const spec = {
 
     return requests;
   },
-  interpretResponse: function({body}) {
+  interpretResponse: function ({body}) {
     const bidResponses = [];
 
     const bidResponse = {
@@ -62,6 +62,7 @@ export const spec = {
       netRevenue: body.netRevenue,
       ttl: body.ttl || TTL,
       vastXml: body.vastXml,
+      nurl: body.nurl,
       mediaType: VIDEO
     };
 
@@ -73,7 +74,7 @@ export const spec = {
 
     return bidResponses;
   },
-  getUserSyncs: function(syncOptions, serverResponses) {
+  getUserSyncs: function (syncOptions, serverResponses) {
     const syncs = [];
     for (const response of serverResponses) {
       if (syncOptions.iframeEnabled && response.body.userSyncURL) {
@@ -93,8 +94,18 @@ export const spec = {
       }
     }
     return syncs;
-  }
-};
+  },
+  onBidWon: function (bid) {
+    if (bid == null) {
+      return;
+    }
+
+    logInfo('onBidWon:', bid);
+    if (bid.hasOwnProperty('nurl') && bid.nurl.length > 0) {
+      triggerPixel(bid.nurl);
+    }
+  },
+}
 
 registerBidder(spec);
 
@@ -159,7 +170,7 @@ function getSupplyChain(schainObject) {
     scStr += '!';
     scStr += `${getEncodedValIfNotEmpty(node.asi)},`;
     scStr += `${getEncodedValIfNotEmpty(node.sid)},`;
-    scStr += `${getEncodedValIfNotEmpty(node.hp)},`;
+    scStr += `${node.hp ? encodeURIComponent(node.hp) : ''},`;
     scStr += `${getEncodedValIfNotEmpty(node.rid)},`;
     scStr += `${getEncodedValIfNotEmpty(node.name)},`;
     scStr += `${getEncodedValIfNotEmpty(node.domain)}`;
