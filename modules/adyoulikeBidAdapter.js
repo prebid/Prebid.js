@@ -9,6 +9,7 @@ const VERSION = '1.0';
 const BIDDER_CODE = 'adyoulike';
 const DEFAULT_DC = 'hb-api';
 const CURRENCY = 'USD';
+const GVLID = 259;
 
 const NATIVE_IMAGE = {
   image: {
@@ -36,6 +37,7 @@ const NATIVE_IMAGE = {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, NATIVE, VIDEO],
   aliases: ['ayl'], // short code
   /**
