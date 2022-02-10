@@ -178,7 +178,7 @@ On this section we will explain the `params.weboUserDataConf` subconfiguration:
 | localStorageProfileKey| String | can be used to customize the local storage key | Optional |
 | enabled | Boolean| if false, will ignore this configuration| default true if this section is present|
 
-#### Webo LiTE User-Centric Configuration
+#### Webo LiTE Site-Centric Configuration
 
 To be possible use the integration between Weborama and LiTE you should also contact SFBX® to setup this product.
 
