@@ -27,11 +27,7 @@ describe('lkqdBidAdapter', () => {
   });
 
   context('isBidRequestValid', () => {
-    const videoBid = {
-
-    };
-
-    let bid = {
+    const bid = {
       bidder: BIDDER_CODE,
       params: {
         'siteId': SITE_ID,
@@ -60,7 +56,6 @@ describe('lkqdBidAdapter', () => {
   });
 
   context('buildRequests', () => {
-    const ENDPOINT = 'https://v.lkqd.net/ad';
     const bidRequests = [
       {
         'bidder': BIDDER_CODE,
