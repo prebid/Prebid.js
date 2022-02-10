@@ -8,9 +8,15 @@ Maintainer: prebid-support@weborama.com
 
 # Description
 
-Weborama provides a Semantic AI Contextual API that classifies in Real-time a web page seen by a web user within generic and custom topics. It enables publishers to better monetize their inventory and unlock it to programmatic.
+Weborama provides a Real-Time Data Submodule for `Prebid.js`, allowing to easy integrate different products such as:
 
-Contact prebid-support@weborama.com for information.
+* Semantic AI Contextual API that classifies in Real-time a web page seen by a web user within generic and custom topics. It enables publishers to better monetize their inventory and unlock it to programmatic.
+
+* Weborama Audience Manager (WAM) is a DMP (Data Management Platform) used by over 60 companies in the world. This platform distinguishes itself particularly by a high level interconnexion with the adtech & martech ecosystem and a transparent access to the database intelligence.
+
+* LiTE by SFBX® (Local inApp Trust Engine) provides “Zero Party Data” given by users, stored and calculated only on the user’s device. Through a unique cohorting system, it enables better monetization in a consent/consentless and identity-less mode.
+
+Contact prebid-support@weborama.com for more information.
 
 ### Publisher Usage
 
@@ -125,6 +131,8 @@ pbjs.que.push(function () {
 
 ### Parameter Descriptions for the Weborama Configuration Section
 
+This is the main configuration section
+
 | Name  |Type | Description   | Notes  |
 | :------------ | :------------ | :------------ |:------------ |
 | name | String | Real time data module name | Mandatory. Always 'Weborama' |
@@ -134,10 +142,14 @@ pbjs.que.push(function () {
 | params.sendToBidders | Boolean or Array | If true, may send the profile to all bidders. If an array, will specify the bidders to send data | Optional. Affects the `weboCtxConf`, `weboUserDataConf` and `weboLiteDataConf` sections |
 | params.weboCtxConf | Object | Weborama Contextual Site-Centric Configuration | Optional 
 | params.weboUserDataConf | Object | Weborama WAM User-Centric Configuration | Optional |
-| params.weboLiteDataConf | Object | Weborama Lite Site-Centric Configuration | Optional |
+| params.weboLiteDataConf | Object | Weborama LiTE Site-Centric Configuration | Optional |
 | params.onData | Callback | If set, will receive the profile and metadata | Optional. Affects the `weboCtxConf`, `weboUserDataConf` and `weboLiteDataConf` sections |
 
-#### Contextual Configuration
+#### Contextual Site-Centric Configuration
+
+To be possible use the integration with Weborama Contextual Service you must be a client with a valid API token. Please contact weborama if you don't have it.
+
+On this section we will explain the `params.weboCtxConf` subconfiguration:
 
 | Name  |Type | Description   | Notes  |
 | :------------ | :------------ | :------------ |:------------ |
@@ -149,7 +161,12 @@ pbjs.que.push(function () {
 | onData | Callback | If set, will receive the profile and metadata | Optional. Default is `params.onData` (if any) or log via prebid debug |
 | enabled | Boolean| if false, will ignore this configuration| default true if this section is present|
 
-#### User-Centric Configuration
+#### WAM User-Centric Configuration
+
+To be possible use the integration with Weborama Audience Manager (WAM) you must be a client with an account id and you lust include the `wamfactory` script in your pages with `wam2gam` feature activated. 
+Please contact weborama if you don't have it.
+
+On this section we will explain the `params.weboUserDataConf` subconfiguration:
 
 | Name  |Type | Description   | Notes  |
 | :------------ | :------------ | :------------ |:------------ |
@@ -161,7 +178,11 @@ pbjs.que.push(function () {
 | localStorageProfileKey| String | can be used to customize the local storage key | Optional |
 | enabled | Boolean| if false, will ignore this configuration| default true if this section is present|
 
-#### Webo Lite Configuration
+#### Webo LiTE User-Centric Configuration
+
+To be possible use the integration between Weborama and LiTE you should also contact SFBX® to setup this product.
+
+On this section we will explain the `params.weboLiteDataConf` subconfiguration:
 
 | Name  |Type | Description   | Notes  |
 | :------------ | :------------ | :------------ |:------------ |
