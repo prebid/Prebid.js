@@ -1,8 +1,0 @@
-{
-  "name": "prebidjs-polyfill",
-  "version": "1.0.0",
-  "private": true,
-  "author": "the prebid.js contributors",
-  "description": "stub es6 polyfills for prebid.js",
-  "license": "Apache-2.0"
-}

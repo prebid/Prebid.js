@@ -6,8 +6,8 @@ import {
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import find from 'prebidjs-polyfill/find.js';
-import includes from 'prebidjs-polyfill/includes.js';
+import find from 'core-js-pure/features/array/find.js';
+import includes from 'core-js-pure/features/array/includes.js';
 import { OUTSTREAM, INSTREAM } from '../src/video.js';
 
 const BIDDER_CODE = 'adrelevantis';
