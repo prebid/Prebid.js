@@ -8,6 +8,7 @@
 import { logInfo } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
+import {getStorageManager} from '../src/storageManager.js';
 
 /** @type {Submodule} */
 export const novatiqIdSubmodule = {
@@ -81,14 +82,6 @@ export const novatiqIdSubmodule = {
     return typeof configParams.useSharedId != 'undefined' && configParams.useSharedId === true;
   },
 
-  getFromLocalStorage(cookieOrStorageID) {
-    return window.localStorage.getItem(cookieOrStorageID);
-  },
-
-  getFromSessionStorage(cookieOrStorageID) {
-    return window.sessionStorage.getItem(cookieOrStorageID);
-  },
-
   // return null if we aren't supposed to use one or we are but there isn't one present
   getSharedId(configParams) {
     let sharedId = null;
@@ -101,40 +94,24 @@ export const novatiqIdSubmodule = {
         logInfo('NOVATIQ sharedID name redefined: ' + cookieOrStorageID);
       }
 
-      // Check local storage first
-      sharedId = this.getFromLocalStorage(cookieOrStorageID);
+      const storage = getStorageManager('', 'pubCommonId');
+
+      // first check local storage
+      if (storage.hasLocalStorage()) {
+        sharedId = storage.getDataFromLocalStorage(cookieOrStorageID);
+        logInfo('NOVATIQ sharedID retrieved from local storage:' + sharedId);
+      }
+
+      // if nothing check the local cookies
       if (sharedId == null) {
-        // next check session storage
-        sharedId = this.getFromSessionStorage(cookieOrStorageID);
-
-        // OK check cookies
-        if (sharedId == null) {
-          sharedId = this.getCookieValue(cookieOrStorageID);
-          logInfo('NOVATIQ retrieved sharedID from cookies: ' + sharedId);
-        } else {
-          logInfo('NOVATIQ retrieved sharedID from sessionstorage: ' + sharedId);
-        }
-      } else {
-        logInfo('NOVATIQ retrieved sharedID from localstorage: ' + sharedId);
-      }
-
-      // sanity check
-      if (sharedId == undefined || sharedId == '') {
-        logInfo('NOVATIQ invalid sharedID, resetting to null');
-        sharedId = null;
+        sharedId = storage.getCookie(cookieOrStorageID);
+        logInfo('NOVATIQ sharedID retrieved from cookies:' + sharedId);
       }
     }
 
-    return sharedId;
-  },
+    logInfo('NOVATIQ sharedID returning: ' + sharedId);
 
-  getCookieValue(name) {
-    let res = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
-    if (res != undefined) {
-      return res.pop();
-    } else {
-      return null;
-    }
+    return sharedId;    
   },
 
   getSrcId(configParams) {
