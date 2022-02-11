@@ -60,6 +60,16 @@ export function getBidderFunction(bidderName) {
         );
       }
       return bid
+    },
+    fluct: function (bid, data) {
+      if (data.im_segments && data.im_segments.length) {
+        deepSetValue(
+          bid,
+          'params.kv.imsids',
+          data.im_segments
+        );
+      }
+      return bid
     }
   }
   return biddersFunction[bidderName] || null;

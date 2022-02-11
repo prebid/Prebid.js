@@ -10,7 +10,7 @@ import {
 import {parse as parseQuery} from 'querystring';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
-import find from 'prebidjs-polyfill/find.js';
+import find from 'core-js-pure/features/array/find.js';
 import {createEidsArray} from 'modules/userId/eids.js';
 
 const INTEGRATION = `pbjs_lite_v$prebid.version$`; // $prebid.version$ will be substituted in by gulp in built prebid
@@ -3262,7 +3262,7 @@ describe('the rubicon adapter', function () {
             label: undefined,
             placement: {
               align: 'left',
-              attachTo: '#outstream_video1_placement',
+              attachTo: adUnit,
               position: 'append',
             },
             vastUrl: 'https://test.com/vast.xml',

@@ -2,7 +2,7 @@ import { isArray, deepAccess, logWarn, parseUrl } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import strIncludes from 'prebidjs-polyfill/includes.js';
+import strIncludes from 'core-js-pure/features/string/includes.js';
 
 const BIDDER_CODE = 'sspBC';
 const BIDDER_URL = 'https://ssp.wp.pl/bidder/';

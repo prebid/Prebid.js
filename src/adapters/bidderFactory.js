@@ -7,7 +7,7 @@ import { nativeBidIsValid } from '../native.js';
 import { isValidVideoBid } from '../video.js';
 import CONSTANTS from '../constants.json';
 import events from '../events.js';
-import includes from 'prebidjs-polyfill/includes.js';
+import includes from 'core-js-pure/features/array/includes.js';
 import { ajax } from '../ajax.js';
 import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, flatten, uniques, timestamp, deepAccess, isArray, isPlainObject } from '../utils.js';
 import { ADPOD } from '../mediaTypes.js';
@@ -37,6 +37,7 @@ export const storage = getCoreStorageManager('bidderFactory');
  * });
  *
  * @see BidderSpec for the full API and more thorough descriptions.
+ *
  */
 
 /**
@@ -219,7 +220,7 @@ export function newBidder(spec) {
       });
 
       processBidderRequests(spec, validBidRequests, bidderRequest, ajax, configEnabledCallback, {
-        onRequest: (_) => events.emit(CONSTANTS.EVENTS.BEFORE_BIDDER_HTTP, bidderRequest),
+        onRequest: requestObject => events.emit(CONSTANTS.EVENTS.BEFORE_BIDDER_HTTP, bidderRequest, requestObject),
         onResponse: (resp) => {
           onTimelyResponse(spec.code);
           responses.push(resp)
