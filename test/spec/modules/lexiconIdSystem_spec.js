@@ -101,29 +101,13 @@ describe('LexiconIdSystem', () => {
       });
     });
 
-    context('when an ID override is given', () => {
-      it('returns that ID', () => {
-        const completeCallback = sinon.spy();
-
-        const envelope = lexiconIdSubmodule.getId({
-          params: {
-            pid: '12345',
-            envelope: 'foo'
-          }
-        });
-
-        expect(envelope).to.eq('foo');
-      });
-    });
-
     context('when an endpoint override is given', () => {
       it('should call that endpoint', () => {
         const completeCallback = sinon.spy();
-
         const { callback } = lexiconIdSubmodule.getId({
           params: {
             pid: '12345',
-            url: 'https://staging-api-lexicon.33across.com/v1/envelope'
+            apiUrl: 'https://staging-api-lexicon.33across.com/v1/envelope'
           }
         });
 

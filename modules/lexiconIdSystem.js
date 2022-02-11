@@ -45,10 +45,7 @@ export const lexiconIdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   getId({ params = { } } = {}) {
-    /* eslint-disable no-console */
-    console.log('the params are', params);
-
-    const { pid, url = LEXICON_URL, envelope } = params;
+    const { pid, apiUrl = LEXICON_URL } = params;
 
     if (!pid || typeof pid !== 'string') {
       logError('Lexicon ID submodule requires a partner ID to be defined');
@@ -56,13 +53,9 @@ export const lexiconIdSubmodule = {
       return;
     }
 
-    if (envelope) {
-      return envelope;
-    }
-
     return {
       callback(cb) {
-        ajax.ajaxBuilder(AJAX_TIMEOUT)(`${url}?pid=${pid}`, {
+        ajax.ajaxBuilder(AJAX_TIMEOUT)(`${apiUrl}?pid=${pid}`, {
           success(response) {
             try {
               const responseJson = JSON.parse(response);
