@@ -43,7 +43,7 @@ describe('LexiconIdSystem', () => {
       expect(request.method).to.equal('GET');
       expect(request.withCredentials).to.be.true;
       expect(request.url).to.eq('https://api-lexicon.33across.com/v1/envelope?pid=12345');
-      expect(completeCallback.calledOnceWithExactly('foo')).to.be.true
+      expect(completeCallback.calledOnceWithExactly('foo')).to.be.true;
     });
 
     context('when the partner ID is not given', () => {
