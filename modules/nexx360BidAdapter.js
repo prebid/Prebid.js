@@ -27,7 +27,7 @@ export const spec = {
          * @param {validBidRequests[]} - an array of bids
          * @return ServerRequest Info describing the request to the server.
          */
-    buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function(validBidRequests, bidderRequest) {
     const adUnits = [];
     const test = config.getConfig('debug') ? 1 : 0;
     let adunitValue = null;
