@@ -27,15 +27,22 @@ function isBidResponseValid(bid) {
 function getPlacementReqData(bid) {
   const { params, bidId, mediaTypes } = bid;
   const schain = bid.schain || {};
-  const { placementId } = params;
+  const { placementId, endpointId } = params;
   const bidfloor = getBidFloor(bid);
 
   const placement = {
-    placementId,
     bidId,
     schain,
     bidfloor
   };
+
+  if (placementId) {
+    placement.placementId = placementId;
+    placement.type = 'publisher';
+  } else if (endpointId) {
+    placement.endpointId = endpointId;
+    placement.type = 'network';
+  }
 
   if (mediaTypes && mediaTypes[BANNER]) {
     placement.adFormat = BANNER;
@@ -88,7 +95,7 @@ export const spec = {
 
   isBidRequestValid: (bid = {}) => {
     const { params, bidId, mediaTypes } = bid;
-    let valid = Boolean(bidId && params && params.placementId);
+    let valid = Boolean(bidId && params && (params.placementId || params.endpointId));
 
     if (mediaTypes && mediaTypes[BANNER]) {
       valid = valid && Boolean(mediaTypes[BANNER] && mediaTypes[BANNER].sizes);
