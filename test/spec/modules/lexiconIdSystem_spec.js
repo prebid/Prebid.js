@@ -10,7 +10,7 @@ describe('LexiconIdSystem', () => {
     });
   });
 
-  describe('glvid', () => {
+  describe('gvlid', () => {
     it('should expose the vendor id', () => {
       expect(lexiconIdSubmodule.gvlid).to.equal(58);
     });
