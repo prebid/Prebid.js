@@ -8,7 +8,7 @@
 // ci trigger: 1
 
 import { timestamp, logError, logWarn, isEmpty, contains, inIframe, deepClone, isPlainObject } from '../src/utils.js';
-import find from 'prebidjs-polyfill/find.js';
+import find from 'core-js-pure/features/array/find.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getRefererInfo } from '../src/refererDetection.js';

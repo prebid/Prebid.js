@@ -1,4 +1,4 @@
-import find from 'prebidjs-polyfill/find.js';
+import find from 'core-js-pure/features/array/find.js';
 import {
   isInteger, isArray, deepAccess, mergeDeep, logWarn, logInfo, logError, getWindowTop, getWindowSelf, generateUUID, _map,
   getDNT, parseUrl, getUniqueIdentifierStr, isNumber, cleanObj, isFn, inIframe, deepClone, getGptSlotInfoForAdUnitCode

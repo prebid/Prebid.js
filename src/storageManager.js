@@ -1,6 +1,6 @@
 import {hook} from './hook.js';
 import {hasDeviceAccess, checkCookieSupport, logError, logInfo, isPlainObject} from './utils.js';
-import includes from 'prebidjs-polyfill/includes.js';
+import includes from 'core-js-pure/features/array/includes.js';
 import {bidderSettings as defaultBidderSettings} from './bidderSettings.js';
 
 const moduleTypeWhiteList = ['core', 'prebid-module'];

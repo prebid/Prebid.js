@@ -48,7 +48,7 @@ function isBidRequestValid(bid) {
 }
 
 function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
-  const { params, bidId, userId, adUnitCode } = bid;
+  const { params, bidId, userId, adUnitCode, schain } = bid;
   const { bidFloor, ext } = params;
   const hashUrl = hashCode(topWindowUrl);
   const dealId = getNextDealId(hashUrl);
@@ -71,7 +71,8 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
     uniqueDealId: uniqueDealId,
     bidderVersion: BIDDER_VERSION,
     prebidVersion: '$prebid.version$',
-    res: `${screen.width}x${screen.height}`
+    res: `${screen.width}x${screen.height}`,
+    schain: schain
   };
 
   appendUserIdsToRequestPayload(data, userId);
