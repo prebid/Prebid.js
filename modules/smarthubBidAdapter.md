@@ -31,7 +31,7 @@ IQZone bid adapter supports Banner, Video (instream and outstream) and Native.
                                 seat: 'testSeat',
                                 token: 'testBanner',
                                 iabCat: ['IAB1-1', 'IAB3-1', 'IAB4-3'],
-                                minBidfloor: 111,
+                                minBidfloor: 10,
                                 pos: 1,
                             }
                         }
@@ -42,7 +42,6 @@ IQZone bid adapter supports Banner, Video (instream and outstream) and Native.
                     mediaTypes: {
                         video: {
                             playerSize: [ [640, 480] ],
-                            context: 'instream',
                             minduration: 5,
                             maxduration: 60,
                         }
@@ -55,7 +54,7 @@ IQZone bid adapter supports Banner, Video (instream and outstream) and Native.
                                 seat: 'testSeat',
                                 token: 'testVideo',
                                 iabCat: ['IAB1-1', 'IAB3-1', 'IAB4-3'],
-                                minBidfloor: 111,
+                                minBidfloor: 10,
                                 pos: 1,
                             }
                         }
@@ -85,7 +84,7 @@ IQZone bid adapter supports Banner, Video (instream and outstream) and Native.
                                 seat: 'testSeat',
                                 token: 'testNative',
                                 iabCat: ['IAB1-1', 'IAB3-1', 'IAB4-3'],
-                                minBidfloor: 111,
+                                minBidfloor: 10,
                                 pos: 1,
                             }
                         }

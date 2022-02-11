@@ -20,7 +20,7 @@ describe('SmartHubBidAdapter', function () {
         seat: 'testSeat',
         token: 'testBanner',
         iabCat: ['IAB1-1', 'IAB3-1', 'IAB4-3'],
-        minBidfloor: 111,
+        minBidfloor: 10,
         pos: 1,
       }
     },
@@ -31,7 +31,7 @@ describe('SmartHubBidAdapter', function () {
         [VIDEO]: {
           playerSize: [[300, 300]],
           minduration: 5,
-          maxduration: 60
+          maxduration: 60,
         }
       },
       params: {
@@ -39,7 +39,7 @@ describe('SmartHubBidAdapter', function () {
         seat: 'testSeat',
         token: 'testVideo',
         iabCat: ['IAB1-1', 'IAB3-1', 'IAB4-3'],
-        minBidfloor: 111,
+        minBidfloor: 10,
         pos: 1,
       }
     },
@@ -67,7 +67,7 @@ describe('SmartHubBidAdapter', function () {
         seat: 'testSeat',
         token: 'testToken',
         iabCat: ['IAB1-1', 'IAB3-1', 'IAB4-3'],
-        minBidfloor: 111,
+        minBidfloor: 10,
         pos: 1,
       }
     }

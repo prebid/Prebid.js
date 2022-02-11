@@ -136,7 +136,7 @@ export const spec = {
 
   isBidRequestValid: (bid = {}) => {
     const { params, bidId, mediaTypes } = bid;
-    let valid = Boolean(bidId && params && params.partnerName && params.seat && params.token && params.iabCat && params.minBidfloor);
+    let valid = Boolean(bidId && params && params.partnerName && params.seat && params.token);
 
     if (mediaTypes && mediaTypes[BANNER]) {
       valid = valid && Boolean(mediaTypes[BANNER] && mediaTypes[BANNER].sizes);
