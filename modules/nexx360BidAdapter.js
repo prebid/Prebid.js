@@ -27,10 +27,11 @@ export const spec = {
          * @param {validBidRequests[]} - an array of bids
          * @return ServerRequest Info describing the request to the server.
          */
-  buildRequests: function(validBidRequests, bidderRequest) {
-    let adUnits = [];
+    buildRequests: function(validBidRequests, bidderRequest) {
+    const adUnits = [];
     const test = config.getConfig('debug') ? 1 : 0;
     let adunitValue = null;
+    let userEids = null;
     Object.keys(validBidRequests).forEach(key => {
       adunitValue = validBidRequests[key];
       adUnits.push({
@@ -42,6 +43,7 @@ export const spec = {
         transactionId: adunitValue.transactionId,
         mediatypes: adunitValue.mediaTypes
       });
+      if (adunitValue.userIdAsEids) userEids = adunitValue.userIdAsEids;
     });
     const payload = {
       adUnits,
@@ -57,11 +59,7 @@ export const spec = {
       }
       if (bidderRequest.uspConsent) { payload.uspConsent = bidderRequest.uspConsent; }
       if (bidderRequest.schain) { payload.schain = bidderRequest.schain; }
-      if (bidderRequest.userId) {
-        payload.userId = bidderRequest.userId;
-      } else if (bidderRequest.hasOwnProperty('bids') && typeof bidderRequest.bids == 'object' && bidderRequest.bids.length > 0 && bidderRequest.bids[0].hasOwnProperty('userId')) {
-        payload.userId = bidderRequest.bids[0].userId;
-      }
+      if (userEids !== null) payload.userEids = userEids;
     };
     if (test) payload.test = 1;
     const payloadString = JSON.stringify(payload);
