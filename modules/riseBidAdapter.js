@@ -300,8 +300,8 @@ function generateBidParameters(bid, bidderRequest) {
   }
 
   if (mediaType === VIDEO) {
-    let playbackMethodValue = undefined;
     const playbackMethod = deepAccess(bid, `mediaTypes.video.playbackmethod`);
+    let playbackMethodValue = undefined;
     
     // verify playbackMethod is of type integer array, or integer only.
     if (Array.isArray(playbackMethod) && isInteger(playbackMethod[0])) {
