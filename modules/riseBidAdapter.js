@@ -302,7 +302,7 @@ function generateBidParameters(bid, bidderRequest) {
   if (mediaType === VIDEO) {
     let playbackMethodValue = undefined;
     const playbackMethod = deepAccess(bid, `mediaTypes.video.playbackmethod`);
-
+    
     // verify playbackMethod is of type integer array, or integer only.
     if (Array.isArray(playbackMethod) && isInteger(playbackMethod[0])) {
       // only the first playbackMethod in the array will be used, according to OpenRTB 2.5 recommendation
