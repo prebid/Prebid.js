@@ -294,10 +294,15 @@ function generateBidParameters(bid, bidderRequest) {
     bidObject.pos = pos;
   }
 
-  if (mediaType === VIDEO) {
-    const playbackMethod = deepAccess(bid, `mediaTypes.video.playbackmethod`);
-    let playbackMethodValue = null;
+  const gpid = deepAccess(bid, `ortb2Imp.ext.gpid`);
+  if (gpid) {
+    bidObject.gpid = gpid;
+  }
 
+  if (mediaType === VIDEO) {
+    let playbackMethodValue = undefined;
+    const playbackMethod = deepAccess(bid, `mediaTypes.video.playbackmethod`);
+    
     // verify playbackMethod is of type integer array, or integer only.
     if (Array.isArray(playbackMethod) && isInteger(playbackMethod[0])) {
       // only the first playbackMethod in the array will be used, according to OpenRTB 2.5 recommendation
