@@ -84,7 +84,10 @@ describe('Taboola Adapter', function () {
       const expectedData = {
         'imp': [{
           'id': 1,
-          'banner': [{'h': displayBidRequestParams.sizes[0][0], 'w': displayBidRequestParams.sizes[0][1]}],
+          'banner': {
+            'h': displayBidRequestParams.sizes[0][0],
+            'w': displayBidRequestParams.sizes[0][1]
+          },
           'tagid': commonBidRequest.params.tagId,
           'bidfloor': null,
           'bidfloorcur': 'USD'

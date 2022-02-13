@@ -195,16 +195,11 @@ function getImps(validBidRequests) {
 }
 
 function getBanners(bid) {
-  return getSizes(bid.sizes);
-}
-
-function getSizes(sizes) {
-  return sizes.map(size => {
-    return {
-      h: size[0],
-      w: size[1]
-    }
-  })
+  const [size] = bid.sizes;
+  return {
+    h: size[0],
+    w: size[1]
+  }
 }
 
 function getBidResponses({body}) {
