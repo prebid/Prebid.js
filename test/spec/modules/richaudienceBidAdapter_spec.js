@@ -81,7 +81,7 @@ describe('Richaudience adapter tests', function () {
     mediaTypes: {
       banner: {
         sizes: [
-          [1800,1000],[1,1]]
+          [1800, 1000], [1, 1]]
       }
     },
     bidder: 'richaudience',
@@ -96,7 +96,7 @@ describe('Richaudience adapter tests', function () {
     user: {}
   }];
 
-  var DEFAULT_PARAMS_BANNER_OUTSTREAM = [{
+  var DEFAULT_PARAMS_BANNER_OUTSTREAM = [{ 
     adUnitCode: 'test-div',
     bidId: '2c7c8e9c900244',
     mediaTypes: {
