@@ -682,9 +682,13 @@ const OPEN_RTB_PROTOCOL = {
           if (typeof ortb2[prop] === 'string' && ortb2[prop]) {
             deepSetValue(imp, 'ext.data.pbadslot', ortb2[prop]);
           } else {
+            // remove pbadslot property if it doesn't meet the spec
             delete imp.ext.data.pbadslot;
           }
         } else if (prop === 'adserver') {
+          /**
+           * Copy GAM AdUnit and Name to imp
+           */
           ['name', 'adslot'].forEach(name => {
             /** @type {(string|undefined)} */
             const value = deepAccess(ortb2, `adserver.${name}`);
@@ -767,14 +771,11 @@ const OPEN_RTB_PROTOCOL = {
       request.ext.prebid = mergeDeep(request.ext.prebid, s2sConfig.extPrebid);
     }
 
-    const commonFpd = getConfig('ortb2') || {};
-    mergeDeep(request, commonFpd);
-
     /**
      * @type {(string[]|string|undefined)} - OpenRTB property 'cur', currencies available for bids
      */
 
-    const adServerCur = request.cur
+    const adServerCur = config.getConfig('currency.adServerCurrency');
 
     if (adServerCur && typeof adServerCur === 'string') {
       // if the value is a string, wrap it with an array
@@ -852,6 +853,9 @@ const OPEN_RTB_PROTOCOL = {
     if (getConfig('coppa') === true) {
       deepSetValue(request, 'regs.coppa', 1);
     }
+
+    const commonFpd = getConfig('ortb2') || {};
+    mergeDeep(request, commonFpd);
 
     addBidderFirstPartyDataToRequest(request);
 
