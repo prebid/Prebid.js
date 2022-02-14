@@ -1,10 +1,9 @@
 import { ftrackIdSubmodule } from 'modules/ftrackIdSystem.js';
-import { init, requestBidsHook, setSubmoduleRegistry, coreStorage } from 'modules/userId/index.js';
 import * as utils from 'src/utils.js';
 import { uspDataHandler } from 'src/adapterManager.js';
 let expect = require('chai').expect;
 
-let server, requests;
+let server;
 
 let configMock = {
   name: 'ftrack',
@@ -104,6 +103,7 @@ describe('FTRACK ID System', () => {
     });
 
     describe(`endpoint tests - `, () => {
+      let cacheUrlRegExp = /https:\/\/e\.flashtalking\.com\/cache/;
       beforeEach(() => {
         server = sinon.createFakeServer();
       });
@@ -114,7 +114,7 @@ describe('FTRACK ID System', () => {
 
       it(`should request the cacheId from the '/cache' endpoint`, () => {
         ftrackIdSubmodule.getId(configMock, null, null).callback();
-        expect((/.flashtalking\.com\/cache/).test(server.requests[0].url)).to.be.ok;
+        expect((cacheUrlRegExp).test(server.requests[0].url)).to.be.ok;
       });
 
       it(`should be the only method that gets a new ID aka hits the D9 endpoint`, () => {
@@ -136,7 +136,7 @@ describe('FTRACK ID System', () => {
           'SingleDeviceID': ['<SINGLE_DEVICE_ID>']
         };
         ftrackIdSubmodule.getId(configMock, consentDataMock, null).callback();
-        expect((/.flashtalking\.com\/cache/).test(server.requests[0].url)).to.be.ok;
+        expect((cacheUrlRegExp).test(server.requests[0].url)).to.be.ok;
         server.requests[0].respond(200, { 'Content-Type': 'application/json' }, '{"cache_id":"<CACHE ID>"}');
         expect((/lgc/).test(server.requests[1].url)).to.be.ok;
         server.requests[1].respond(200, { 'Content-Type': 'application/json' }, JSON.stringify(lgcResponseMock));
