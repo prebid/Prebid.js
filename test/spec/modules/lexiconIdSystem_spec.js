@@ -3,6 +3,8 @@ import * as utils from 'src/utils.js';
 
 import { server } from 'test/mocks/xhr.js';
 
+const name = lexiconIdSubmodule.name;
+
 describe('LexiconIdSystem', () => {
   describe('name', () => {
     it('should expose the name of the submodule', () => {
@@ -95,7 +97,7 @@ describe('LexiconIdSystem', () => {
           'Content-Type': 'application/json'
         }, 'invalid response');
 
-        expect(logErrorSpy.lastCall.args[0]).to.eq('lexicon: Response parsing error');
+        expect(logErrorSpy.lastCall.args[0]).to.eq(`${lexiconIdSubmodule.name}: ID reading error`);
 
         logErrorSpy.restore();
       });
@@ -129,6 +131,62 @@ describe('LexiconIdSystem', () => {
       });
     });
 
+    context('when the server returns an unsuccessful response', () => {
+      it('should log an error', () => {
+        const logErrorSpy = sinon.spy(utils, 'logError');
+        const completeCallback = sinon.spy();
+
+        const { callback } = lexiconIdSubmodule.getId({
+          params: {
+            pid: '12345'
+          }
+        });
+
+        callback(completeCallback);
+
+        const [request] = server.requests;
+
+        request.respond(200, {
+          'Content-Type': 'application/json'
+        }, JSON.stringify({
+          succeeded: false,
+          error: 'foo'
+        }));
+
+        expect(logErrorSpy.calledOnceWithExactly(`${lexiconIdSubmodule.name}: `, 'foo')).to.be.true;
+
+        logErrorSpy.restore();
+      });
+    });
+
+    context('when the server returns a successful response but without ID', () => {
+      it('should log a message', () => {
+        const logMessageSpy = sinon.spy(utils, 'logMessage');
+        const completeCallback = sinon.spy();
+
+        const { callback } = lexiconIdSubmodule.getId({
+          params: {
+            pid: '12345'
+          }
+        });
+
+        callback(completeCallback);
+
+        const [request] = server.requests;
+
+        request.respond(200, {
+          'Content-Type': 'application/json'
+        }, JSON.stringify({
+          succeeded: true,
+          data: {}
+        }));
+
+        expect(logMessageSpy.calledOnceWithExactly(`${lexiconIdSubmodule.name}: No envelope was received`)).to.be.true;
+
+        logMessageSpy.restore();
+      });
+    });
+
     context('when the server returns an error status code', () => {
       it('should log an error', () => {
         const logErrorSpy = sinon.spy(utils, 'logError');
@@ -146,7 +204,7 @@ describe('LexiconIdSystem', () => {
 
         request.respond(404);
 
-        expect(logErrorSpy.calledOnceWithExactly('lexicon: ID fetch encountered an error', 'Not Found')).to.be.true;
+        expect(logErrorSpy.calledOnceWithExactly(`${lexiconIdSubmodule.name}: ID error response`, 'Not Found')).to.be.true;
 
         logErrorSpy.restore();
       });
@@ -154,6 +212,12 @@ describe('LexiconIdSystem', () => {
   })
 
   describe('decode', () => {
-
+    it('should wrap the given value inside an object literal', () => {
+      expect(lexiconIdSubmodule.decode('foo')).to.deep.equal({
+        [lexiconIdSubmodule.name]: {
+          envelope: 'foo'
+        }
+      });
+    });
   });
 });

@@ -5,13 +5,29 @@
  * @requires module:modules/userId
  */
 
-import { logError } from '../src/utils.js';
-import * as ajax from '../src/ajax.js';
+import { logMessage, logError } from '../src/utils.js';
+import { ajaxBuilder } from '../src/ajax.js';
 import { submodule } from '../src/hook.js'
 
 const MODULE_NAME = 'lexicon';
 const LEXICON_URL = 'https://api-lexicon.33across.com/v1/envelope';
 const AJAX_TIMEOUT = 10000;
+
+function getEnvelope(response) {
+  if (!response.succeeded) {
+    logError(`${MODULE_NAME}: `, response.error);
+
+    return;
+  }
+
+  if (!response.data.envelope) {
+    logMessage(`${MODULE_NAME}: No envelope was received`);
+
+    return;
+  }
+
+  return response.data.envelope;
+}
 
 /** @type {Submodule} */
 export const lexiconIdSubmodule = {
@@ -27,12 +43,11 @@ export const lexiconIdSubmodule = {
    * decode the stored id value for passing to bid requests
    * @function
    * @param {string} id
-   * @returns {{lexicon:string}}
+   * @returns {{lexicon:{ envelope: string}}}
    */
   decode(id) {
-    // FIXME: Validate how the lexicon gets sent in userId vs userIdAsEids
     return {
-      lexicon: {
+      [MODULE_NAME]: {
         envelope: id
       }
     };
@@ -55,20 +70,19 @@ export const lexiconIdSubmodule = {
 
     return {
       callback(cb) {
-        ajax.ajaxBuilder(AJAX_TIMEOUT)(`${apiUrl}?pid=${pid}`, {
+        ajaxBuilder(AJAX_TIMEOUT)(`${apiUrl}?pid=${pid}`, {
           success(response) {
+            let envelope;
+
             try {
-              const responseJson = JSON.parse(response);
-
-              cb(responseJson.data.envelope);
+              envelope = getEnvelope(JSON.parse(response))
             } catch (err) {
-              logError(`${MODULE_NAME}: Response parsing error`, err);
-
-              cb();
+              logError(`${MODULE_NAME}: ID reading error`, err);
             }
+            cb(envelope);
           },
           error(err) {
-            logError(`${MODULE_NAME}: ID fetch encountered an error`, err);
+            logError(`${MODULE_NAME}: ID error response`, err);
 
             cb();
           }
