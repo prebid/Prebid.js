@@ -689,7 +689,7 @@ const OPEN_RTB_PROTOCOL = {
         } else if (prop === 'adserver') {
           /**
            * Copy GAM AdUnit and Name to imp
-           * 
+           *
            * Can remove block for lowercase validation | leave string validation on pbadslot
            */
           ['name', 'adslot'].forEach(name => {
@@ -701,8 +701,7 @@ const OPEN_RTB_PROTOCOL = {
           });
         } else if (prop === 'ortb2Imp') {
           deepSetValue(imp, `${prop}`, mergedImp[prop]);
-        }
-        else {
+        } else {
           deepSetValue(imp, `ext.data.${prop}`, ortb2[prop]);
         }
       });
