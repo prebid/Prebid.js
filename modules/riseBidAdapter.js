@@ -301,7 +301,7 @@ function generateBidParameters(bid, bidderRequest) {
 
   const placementId = bid.placementId || deepAccess(bid, 'mediaTypes.banner.name');
   if (placementId) {
-    generalParams.placementId = placementId;
+    bidObject.placementId = placementId;
   }
 
   if (mediaType === VIDEO) {
