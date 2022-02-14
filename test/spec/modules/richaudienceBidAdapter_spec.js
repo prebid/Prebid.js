@@ -75,6 +75,27 @@ describe('Richaudience adapter tests', function () {
     user: {}
   }];
 
+  var DEFAULT_PARAMS_SKIN = [{
+    adUnitCode: 'test-div',
+    bidId: '2c7c8e9c900244',
+    mediaTypes: {
+      banner: {
+        sizes: [
+          [1800,1000],[1,1]]
+      }
+    },
+    bidder: 'richaudience',
+    params: {
+      pid: 'ADb1f40rmi',
+      supplyType: 'site'
+    },
+    auctionId: '0cb3144c-d084-4686-b0d6-f5dbe917c563',
+    bidRequestsCount: 1,
+    bidderRequestId: '1858b7382993ca',
+    transactionId: '29df2112-348b-4961-8863-1b33684d95e6',
+    user: {}
+  }];
+
   var DEFAULT_PARAMS_BANNER_OUTSTREAM = [{
     adUnitCode: 'test-div',
     bidId: '2c7c8e9c900244',
@@ -275,6 +296,24 @@ describe('Richaudience adapter tests', function () {
 
     expect(requestContent).to.have.property('demand').and.to.equal('video');
     expect(requestContent.videoData).to.have.property('format').and.to.equal('outstream');
+  })
+
+  it('Verify build request to prebid skin', function() {
+    const request = spec.buildRequests(DEFAULT_PARAMS_SKIN, {
+      gdprConsent: {
+        consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+        gdprApplies: true
+      },
+      refererInfo: {
+        referer: 'https://domain.com',
+        numIframes: 0
+      }
+    });
+
+    expect(request[0]).to.have.property('method').and.to.equal('POST');
+    const requestContent = JSON.parse(request[0].data);
+
+    expect(requestContent).to.have.property('demand').and.to.equal('skin');
   })
 
   describe('gdpr test', function () {
