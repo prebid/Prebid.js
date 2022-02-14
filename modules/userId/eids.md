@@ -50,6 +50,13 @@ userIdAsEids = [
     },
 
     {
+        source: 'ftrack.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
+    },
+
+    {
         source: 'parrable.com',
         uids: [{
             id: 'some-random-id-value',

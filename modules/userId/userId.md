@@ -45,6 +45,14 @@ pbjs.setConfig({
                 refreshInSeconds: 8*3600 // User Id cache lifetime in seconds, defaulting to 'expires'
             },
         }, {
+            name: "ftrackId",
+            storage: {
+                type: "html5",
+                name: "ftrackId",
+                expires: 90,
+                refreshInSeconds: 8*3600
+            },
+        }, {
             name: 'parrableId',
             params: {
                 // Replace partner with comma-separated (if more than one) Parrable Partner Client ID(s) for Parrable-aware bid adapters in use
