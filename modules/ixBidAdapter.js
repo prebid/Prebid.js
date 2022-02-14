@@ -4,10 +4,10 @@ import { config } from '../src/config.js';
 import CONSTANTS from '../src/constants.json';
 import { getStorageManager, validateStorageEnforcement } from '../src/storageManager.js';
 import events from '../src/events.js';
-import find from 'prebidjs-polyfill/find.js';
+import find from 'core-js-pure/features/array/find.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { INSTREAM, OUTSTREAM } from '../src/video.js';
-import includes from 'prebidjs-polyfill/includes.js';
+import includes from 'core-js-pure/features/array/includes.js';
 import { Renderer } from '../src/Renderer.js';
 
 const BIDDER_CODE = 'ix';
@@ -58,22 +58,18 @@ const SOURCE_RTI_MAPPING = {
   'crwdcntrl.net': '', // Lotame Panorama ID, lotamePanoramaId
   'epsilon.com': '', // Publisher Link, publinkId
   'audigent.com': '', // Halo ID from Audigent, haloId
-  'pubcid.org': '' // SharedID, pubcid
+  'pubcid.org': '', // SharedID, pubcid
+  'trustpid.com': '' // Trustpid
 };
 const PROVIDERS = [
   'britepoolid',
-  'id5id',
   'lipbid',
-  'haloId',
   'criteoId',
-  'lotamePanoramaId',
   'merkleId',
   'parrableId',
   'connectid',
   'tapadId',
   'quantcastId',
-  'pubcid',
-  'TDID',
   'flocId',
   'pubProvidedId'
 ];

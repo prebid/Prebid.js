@@ -2,8 +2,8 @@ import { isNumber, isStr, isInteger, isBoolean, isArray, isEmpty, isArrayOfNums,
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
-import includes from 'prebidjs-polyfill/includes.js';
-import find from 'prebidjs-polyfill/find.js';
+import includes from 'core-js-pure/features/array/includes';
+import find from 'core-js-pure/features/array/find.js';
 import { createEidsArray } from './userId/eids.js';
 
 const BIDDER_CODE = 'yieldmo';
