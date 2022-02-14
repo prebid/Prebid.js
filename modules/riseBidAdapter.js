@@ -299,10 +299,15 @@ function generateBidParameters(bid, bidderRequest) {
     bidObject.gpid = gpid;
   }
 
+  const placementId = bid.placementId || deepAccess(bid, 'mediaTypes.banner.name');
+  if (placementId) {
+    generalParams.placement_id = placementId;
+  }
+
   if (mediaType === VIDEO) {
     const playbackMethod = deepAccess(bid, `mediaTypes.video.playbackmethod`);
-    let playbackMethodValue = undefined;
-    
+    let playbackMethodValue;
+
     // verify playbackMethod is of type integer array, or integer only.
     if (Array.isArray(playbackMethod) && isInteger(playbackMethod[0])) {
       // only the first playbackMethod in the array will be used, according to OpenRTB 2.5 recommendation
@@ -390,11 +395,6 @@ function generateGeneralParams(generalObject, bidderRequest) {
   }
   if (ortb2Metadata.user) {
     generalParams.user_metadata = JSON.stringify(ortb2Metadata.user);
-  }
-
-  const placementId = generalBidParams.placementId || deepAccess(generalObject, 'mediaTypes.banner.name');
-  if (placementId) {
-    generalParams.placement_id = placementId;
   }
 
   if (syncEnabled) {
