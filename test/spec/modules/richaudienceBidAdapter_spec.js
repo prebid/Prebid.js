@@ -81,7 +81,7 @@ describe('Richaudience adapter tests', function () {
     mediaTypes: {
       banner: {
         sizes: [
-          [1800,1000],[1,1]]
+          [1800, 1000], [1, 1]]
       }
     },
     bidder: 'richaudience',
