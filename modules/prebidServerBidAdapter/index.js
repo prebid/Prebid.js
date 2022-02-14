@@ -670,9 +670,11 @@ const OPEN_RTB_PROTOCOL = {
       }, {...deepAccess(adUnit, 'ortb2Imp.ext')});
 
       const imp = { id: impressionId, ext, secure: s2sConfig.secure };
-
+      // merge ortb2 imp with imp
+      // change block to update validate but not add with deepValue(imp)
       const ortb2 = {...deepAccess(adUnit, 'ortb2Imp.ext.data')};
-      Object.keys(ortb2).forEach(prop => {
+      const mergedImp = {...imp, ...ortb2}
+      Object.keys(mergedImp).forEach(prop => {
         /**
           * Prebid AdSlot
           * @type {(string|undefined)}
@@ -687,6 +689,8 @@ const OPEN_RTB_PROTOCOL = {
         } else if (prop === 'adserver') {
           /**
            * Copy GAM AdUnit and Name to imp
+           * 
+           * Can remove block for lowercase validation | leave string validation on pbadslot
            */
           ['name', 'adslot'].forEach(name => {
             /** @type {(string|undefined)} */
@@ -695,7 +699,10 @@ const OPEN_RTB_PROTOCOL = {
               deepSetValue(imp, `ext.data.adserver.${name.toLowerCase()}`, value);
             }
           });
-        } else {
+        } else if (prop === 'ortb2Imp') {
+          deepSetValue(imp, `${prop}`, mergedImp[prop]);
+        }
+        else {
           deepSetValue(imp, `ext.data.${prop}`, ortb2[prop]);
         }
       });
