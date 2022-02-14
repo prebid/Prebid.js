@@ -24,21 +24,22 @@ export const spec = {
       return;
     }
     return validBidRequests.map(function (bid) {
-      let floor = 0.0;
+      let adSlot = {
+        bidId: bid.bidId,
+        zoneId: bid.params.zoneid || ''
+      };
+
       if (typeof bid.getFloor === 'function') {
         const mediaType = (Object.keys(bid.mediaTypes).length == 1) ? Object.keys(bid.mediaTypes)[0] : '*';
         const sizes = bid.sizes || '*';
         const floorInfo = bid.getFloor({currency: 'USD', mediaType: mediaType, size: sizes});
-        if (typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
-          floor = parseFloat(floorInfo.floor);
+        if (typeof floorInfo === 'object' && floorInfo.currency === 'USD') {
+          let floor = parseFloat(floorInfo.floor)
+          if (!isNaN(floor) && floor > 0) {
+            adSlot.floor = parseFloat(floorInfo.floor);
+          }
         }
       }
-
-      let adSlot = {
-        bidId: bid.bidId,
-        zoneId: bid.params.zoneid || '',
-        floor: floor || 0.0
-      };
 
       if (bid.mediaTypes.banner) {
         adSlot.banner = bid.mediaTypes.banner;
