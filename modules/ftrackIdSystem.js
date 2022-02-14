@@ -407,17 +407,19 @@ export const ftrackIdSubmodule = {
 
                 try {
                   obj = new window.ActiveXObject('AcroPDF.PDF');
-                } catch (e) {}
+                } catch (e) {
+                  obj = null;
+                }
 
                 if (!obj) {
                   try {
                     obj = new window.ActiveXObject('PDF.PdfCtrl');
                   } catch (e) {
-                    return null;
+                    obj = null;
                   }
                 }
 
-                if (obj) {
+                if (obj !== null) {
                   var version = obj.GetVersions().split(',');
                   version = version[0].split('=');
                   version = parseFloat(version[1]);
