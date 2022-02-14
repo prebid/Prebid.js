@@ -1,17 +1,17 @@
 /* eslint-disable no-console */
 /* eslint-disable indent */
-import { ajax } from '../src/ajax.js';
-import adapter from '../src/AnalyticsAdapter.js';
-import adapterManager from '../src/adapterManager.js';
+import { ajax } from '../src/ajax.js'
+import adapter from '../src/AnalyticsAdapter.js'
+import adapterManager from '../src/adapterManager.js'
 // import { config } from '../src/config.js'
-import { EVENTS } from '../src/constants.json';
+import { EVENTS } from '../src/constants.json'
 import {
   logInfo,
   logError,
   generateUUID,
   deepClone,
-} from '../src/utils.js';
-import find from 'core-js-pure/features/array/find.js';
+} from '../src/utils.js'
+import find from 'core-js-pure/features/array/find.js'
 
 const url = 'https://an.adingo.jp'
 
@@ -28,7 +28,7 @@ const cache = {
   adUnits: {},
   gpt: {},
   timeouts: {},
-};
+}
 
 /** @type {(id: string) => boolean} */
 const isBrowsiId = (id) => Boolean(id.match(/^browsi_/g))
@@ -66,7 +66,7 @@ export const convertReplicatedAdUnit = (_adUnit, adUnits = cache.adUnits, slots 
 let fluctAnalyticsAdapter = Object.assign(
   adapter({ url, analyticsType: 'endpoint' }), {
   track({ eventType, args }) {
-    logInfo(`[${eventType}] ${Date.now()} :`, args);
+    logInfo(`[${eventType}] ${Date.now()} :`, args)
     try {
       switch (eventType) {
         case EVENTS.AUCTION_INIT: {
@@ -74,11 +74,11 @@ let fluctAnalyticsAdapter = Object.assign(
           let auctionInitEvent = args
           cache.auctions[auctionInitEvent.auctionId] = { ...auctionInitEvent, bids: {} }
           if (!cache.gpt.registered) {
-            window.googletag = window.googletag || { cmd: [] };
-            cache.gpt.registered = true;
+            window.googletag = window.googletag || { cmd: [] }
+            cache.gpt.registered = true
             $$PREBID_GLOBAL$$.adUnits.forEach(adUnit => Object.assign(cache.adUnits, { [adUnit.code]: adUnit }))
           }
-          break;
+          break
         }
         case EVENTS.BID_TIMEOUT: {
           /** @type {BidResponse[]} */
@@ -92,7 +92,7 @@ let fluctAnalyticsAdapter = Object.assign(
               timeout: true,
             }
           })
-          break;
+          break
         }
         case EVENTS.AUCTION_END: {
           /** @type {PbAuction} */
@@ -126,7 +126,7 @@ let fluctAnalyticsAdapter = Object.assign(
           ].forEach(bid => {
             cache.auctions[auctionId].bids[bid.requestId || bid.bidId] = bid
           })
-          break;
+          break
         }
         case EVENTS.SET_TARGETING: {
           let setTargetingEvent = args
@@ -141,7 +141,7 @@ let fluctAnalyticsAdapter = Object.assign(
           const auction = find(Object.values(cache.auctions), auction =>
             auction.adUnitCodes.every(adUnitCode => adUnitCodes.includes(adUnitCode)))
           sendMessage(auction.auctionId)
-          break;
+          break
         }
         case EVENTS.BID_WON: {
           /** @type {Bid} */
@@ -157,16 +157,16 @@ let fluctAnalyticsAdapter = Object.assign(
           // cache.timeouts[auctionId] = setTimeout(() => {
           sendMessage(auctionId)
           // }, config.getConfig('bidderTimeout'))
-          break;
+          break
         }
         default:
-          break;
+          break
       }
     } catch (error) {
       logError({ eventType, args, error })
     }
   }
-});
+})
 
 /** @type {(auctionId: string) => void} */
 const sendMessage = (auctionId) => {
@@ -210,19 +210,19 @@ const sendMessage = (auctionId) => {
     timestamp: Date.now(),
     auctionEnd,
     auctionStatus,
-  };
-  ajax(url, () => logInfo(`[sendMessage] ${Date.now()} :`, payload), JSON.stringify(payload), { contentType: 'application/json', method: 'POST' });
-};
+  }
+  ajax(url, () => logInfo(`[sendMessage] ${Date.now()} :`, payload), JSON.stringify(payload), { contentType: 'application/json', method: 'POST' })
+}
 
-fluctAnalyticsAdapter.originEnableAnalytics = fluctAnalyticsAdapter.enableAnalytics;
+fluctAnalyticsAdapter.originEnableAnalytics = fluctAnalyticsAdapter.enableAnalytics
 fluctAnalyticsAdapter.enableAnalytics = (config) => {
-  fluctAnalyticsAdapter.initOptions = config.options;
-  fluctAnalyticsAdapter.originEnableAnalytics(config);
-};
+  fluctAnalyticsAdapter.initOptions = config.options
+  fluctAnalyticsAdapter.originEnableAnalytics(config)
+}
 
 adapterManager.registerAnalyticsAdapter({
   adapter: fluctAnalyticsAdapter,
   code: 'fluct',
-});
+})
 
-export default fluctAnalyticsAdapter;
+export default fluctAnalyticsAdapter
