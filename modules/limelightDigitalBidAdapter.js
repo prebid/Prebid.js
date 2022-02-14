@@ -1,9 +1,28 @@
-import { logMessage, groupBy, uniques, flatten, deepAccess } from '../src/utils.js';
+import { logMessage, groupBy, flatten, uniques } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import {ajax} from '../src/ajax.js';
+import { ajax } from '../src/ajax.js';
 
 const BIDDER_CODE = 'limelightDigital';
+
+const USER_SYNCS = {
+  default: 'tracker-{client}.ortb.net',
+  vkl: 'tracker.ortb.vuukle.com',
+  adl: 'tracker.ortb.adelement.com',
+  gvd: 'tracker.bid.germaniavid.com',
+  gy: 'tracker.ortb.filmzie.com',
+  ext: 'tracker.ortb.tech',
+}
+
+const getIframeSync = function (client) {
+  let sync = USER_SYNCS[client] || USER_SYNCS['default'].replace(/{client}/gi, client);
+  return 'https://' + sync + '/sync.html'
+}
+
+const getImgSync = function (client) {
+  let sync = USER_SYNCS[client] || USER_SYNCS['default'].replace(/{client}/gi, client);
+  return 'https://' + sync + '/sync'
+}
 
 /**
  * Determines whether or not the given bid response is valid.
@@ -94,23 +113,23 @@ export const spec = {
   },
 
   getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
-    const syncs = serverResponses.map(response => response.body).reduce(flatten, [])
-      .map(response => deepAccess(response, 'ext.sync')).filter(Boolean);
-    const iframeSyncUrls = !syncOptions.iframeEnabled ? [] : syncs.map(sync => sync.iframe).filter(Boolean)
-      .filter(uniques).map(url => {
-        return {
-          type: 'iframe',
-          url: url
+    let iframeSyncs = [];
+    let imageSyncs = [];
+    for (let i = 0; i < serverResponses.length; i++) {
+      const serverResponseHeaders = serverResponses[i].headers;
+      const client = serverResponseHeaders != null ? (serverResponseHeaders.get('X-PLL-Client') || 'lm') : 'lm'
+      const iframeSync = syncOptions.iframeEnabled ? getIframeSync(client) : null
+      const imgSync = syncOptions.pixelEnabled ? getImgSync(client) : null
+      if (iframeSync != null) {
+        iframeSyncs.push(iframeSync)
+      } else {
+        if (imgSync != null) {
+          imageSyncs.push(imgSync)
         }
-      });
-    const pixelSyncUrls = !syncOptions.pixelEnabled ? [] : syncs.map(sync => sync.pixel).filter(Boolean)
-      .filter(uniques).map(url => {
-        return {
-          type: 'image',
-          url: url
-        }
-      });
-    return [iframeSyncUrls, pixelSyncUrls].reduce(flatten, []);
+      }
+    }
+    return [iframeSyncs.filter(uniques).map(it => { return { type: 'iframe', url: it } }),
+      imageSyncs.filter(uniques).map(it => { return { type: 'image', url: it } })].reduce(flatten, []).filter(uniques);
   }
 };
 
