@@ -5,25 +5,6 @@ import { ajax } from '../src/ajax.js';
 
 const BIDDER_CODE = 'limelightDigital';
 
-const USER_SYNCS = {
-  default: 'tracker-{client}.ortb.net',
-  vkl: 'tracker.ortb.vuukle.com',
-  adl: 'tracker.ortb.adelement.com',
-  gvd: 'tracker.bid.germaniavid.com',
-  gy: 'tracker.ortb.filmzie.com',
-  ext: 'tracker.ortb.tech',
-}
-
-const getIframeSync = function (client) {
-  let sync = USER_SYNCS[client] || USER_SYNCS['default'].replace(/{client}/gi, client);
-  return 'https://' + sync + '/sync.html'
-}
-
-const getImgSync = function (client) {
-  let sync = USER_SYNCS[client] || USER_SYNCS['default'].replace(/{client}/gi, client);
-  return 'https://' + sync + '/sync'
-}
-
 /**
  * Determines whether or not the given bid response is valid.
  *
@@ -117,9 +98,8 @@ export const spec = {
     let imageSyncs = [];
     for (let i = 0; i < serverResponses.length; i++) {
       const serverResponseHeaders = serverResponses[i].headers;
-      const client = serverResponseHeaders != null ? (serverResponseHeaders.get('X-PLL-Client') || 'lm') : 'lm'
-      const iframeSync = syncOptions.iframeEnabled ? getIframeSync(client) : null
-      const imgSync = syncOptions.pixelEnabled ? getImgSync(client) : null
+      const imgSync = (serverResponseHeaders != null && syncOptions.pixelEnabled) ? serverResponseHeaders.get('X-PLL-UserSync-Image') : null
+      const iframeSync = (serverResponseHeaders != null && syncOptions.iframeEnabled) ? serverResponseHeaders.get('X-PLL-UserSync-Iframe') : null
       if (iframeSync != null) {
         iframeSyncs.push(iframeSync)
       } else {

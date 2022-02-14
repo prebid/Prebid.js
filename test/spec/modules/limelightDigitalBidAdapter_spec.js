@@ -359,13 +359,16 @@ describe('limelightDigitalAdapter', function () {
     });
   });
   describe('getUserSyncs', function () {
-    it('should return trackers for pll(only iframe) if server responses contain pll X-PLL-Client header and iframe and image enabled', function () {
+    it('should return trackers for lm(only iframe) if server responses contain lm user sync header and iframe and image enabled', function () {
       const serverResponses = [
         {
           headers: {
             get: function (header) {
-              if (header === 'X-PLL-Client') {
-                return 'pll';
+              if (header === 'X-PLL-UserSync-Image') {
+                return 'https://tracker-lm.ortb.net/sync';
+              }
+              if (header === 'X-PLL-UserSync-Iframe') {
+                return 'https://tracker-lm.ortb.net/sync.html';
               }
             }
           },
@@ -379,7 +382,7 @@ describe('limelightDigitalAdapter', function () {
       expect(spec.getUserSyncs(syncOptions, serverResponses)).to.deep.equal([
         {
           type: 'iframe',
-          url: 'https://tracker-pll.ortb.net/sync.html'
+          url: 'https://tracker-lm.ortb.net/sync.html'
         }
       ]);
     });
@@ -388,8 +391,11 @@ describe('limelightDigitalAdapter', function () {
         {
           headers: {
             get: function (header) {
-              if (header === 'X-PLL-Client') {
-                return 'pll';
+              if (header === 'X-PLL-UserSync-Image') {
+                return 'https://tracker-1.ortb.net/sync';
+              }
+              if (header === 'X-PLL-UserSync-Iframe') {
+                return 'https://tracker-1.ortb.net/sync.html';
               }
             }
           },
@@ -402,7 +408,7 @@ describe('limelightDigitalAdapter', function () {
       };
       expect(spec.getUserSyncs(syncOptions, serverResponses)).to.be.an('array').that.is.empty;
     });
-    it('should return iframe sync urls for lm if iframe sync is enabled and headers are blank', function () {
+    it('should return no pixels if iframe sync is enabled and headers are blank', function () {
       const serverResponses = [
         {
           headers: null,
@@ -413,92 +419,18 @@ describe('limelightDigitalAdapter', function () {
         iframeEnabled: true,
         pixelEnabled: false
       };
-      expect(spec.getUserSyncs(syncOptions, serverResponses)).to.deep.equal([
-        {
-          type: 'iframe',
-          url: 'https://tracker-lm.ortb.net/sync.html'
-        }
-      ]);
+      expect(spec.getUserSyncs(syncOptions, serverResponses)).to.be.an('array').that.is.empty;
     });
-    it('should return image sync urls for vuukle if pixel sync is enabled and headers have vkl X-PLL-Client', function () {
+    it('should return image sync urls for lm if pixel sync is enabled and headers have lm pixel', function () {
       const serverResponses = [
         {
           headers: {
             get: function (header) {
-              if (header === 'X-PLL-Client') {
-                return 'vkl';
+              if (header === 'X-PLL-UserSync-Image') {
+                return 'https://tracker-lm.ortb.net/sync';
               }
-            }
-          },
-          body: []
-        }
-      ];
-      const syncOptions = {
-        iframeEnabled: false,
-        pixelEnabled: true
-      };
-      expect(spec.getUserSyncs(syncOptions, serverResponses)).to.deep.equal([
-        {
-          type: 'image',
-          url: 'https://tracker.ortb.vuukle.com/sync'
-        }
-      ]);
-    });
-    it('should return image sync urls for vuukle and adelement if pixel sync is enabled and two responses and headers have vkl and adl X-PLL-Client', function () {
-      const serverResponses = [
-        {
-          headers: {
-            get: function (header) {
-              if (header === 'X-PLL-Client') {
-                return 'vkl';
-              }
-            }
-          },
-          body: []
-        },
-        {
-          headers: {
-            get: function (header) {
-              if (header === 'X-PLL-Client') {
-                return 'adl';
-              }
-            }
-          },
-          body: []
-        }
-      ];
-      const syncOptions = {
-        iframeEnabled: false,
-        pixelEnabled: true
-      };
-      expect(spec.getUserSyncs(syncOptions, serverResponses)).to.deep.equal([
-        {
-          type: 'image',
-          url: 'https://tracker.ortb.vuukle.com/sync'
-        },
-        {
-          type: 'image',
-          url: 'https://tracker.ortb.adelement.com/sync'
-        }
-      ]);
-    });
-    it('should return image sync url for pll if pixel sync is enabled and two responses and headers have lm and lm X-PLL-Client', function () {
-      const serverResponses = [
-        {
-          headers: {
-            get: function (header) {
-              if (header === 'X-PLL-Client') {
-                return 'lm';
-              }
-            }
-          },
-          body: []
-        },
-        {
-          headers: {
-            get: function (header) {
-              if (header === 'X-PLL-Client') {
-                return 'lm';
+              if (header === 'X-PLL-UserSync-Iframe') {
+                return 'https://tracker-lm.ortb.net/sync.html';
               }
             }
           },
@@ -516,13 +448,100 @@ describe('limelightDigitalAdapter', function () {
         }
       ]);
     });
-    it('should return iframe sync url for pll if pixel sync is enabled and iframe is enables and headers have lm X-PLL-Client', function () {
+    it('should return image sync urls for client1 and clien2 if pixel sync is enabled and two responses and headers have two pixels', function () {
       const serverResponses = [
         {
           headers: {
             get: function (header) {
-              if (header === 'X-PLL-Client') {
-                return 'lm';
+              if (header === 'X-PLL-UserSync-Image') {
+                return 'https://tracker-1.ortb.net/sync';
+              }
+              if (header === 'X-PLL-UserSync-Iframe') {
+                return 'https://tracker-1.ortb.net/sync.html';
+              }
+            }
+          },
+          body: []
+        },
+        {
+          headers: {
+            get: function (header) {
+              if (header === 'X-PLL-UserSync-Image') {
+                return 'https://tracker-2.ortb.net/sync';
+              }
+              if (header === 'X-PLL-UserSync-Iframe') {
+                return 'https://tracker-2.ortb.net/sync.html';
+              }
+            }
+          },
+          body: []
+        }
+      ];
+      const syncOptions = {
+        iframeEnabled: false,
+        pixelEnabled: true
+      };
+      expect(spec.getUserSyncs(syncOptions, serverResponses)).to.deep.equal([
+        {
+          type: 'image',
+          url: 'https://tracker-1.ortb.net/sync'
+        },
+        {
+          type: 'image',
+          url: 'https://tracker-2.ortb.net/sync'
+        }
+      ]);
+    });
+    it('should return image sync url for pll if pixel sync is enabled and two responses and headers have two same pixels', function () {
+      const serverResponses = [
+        {
+          headers: {
+            get: function (header) {
+              if (header === 'X-PLL-UserSync-Image') {
+                return 'https://tracker-lm.ortb.net/sync';
+              }
+              if (header === 'X-PLL-UserSync-Iframe') {
+                return 'https://tracker-lm.ortb.net/sync.html';
+              }
+            }
+          },
+          body: []
+        },
+        {
+          headers: {
+            get: function (header) {
+              if (header === 'X-PLL-UserSync-Image') {
+                return 'https://tracker-lm.ortb.net/sync';
+              }
+              if (header === 'X-PLL-UserSync-Iframe') {
+                return 'https://tracker-lm.ortb.net/sync.html';
+              }
+            }
+          },
+          body: []
+        }
+      ];
+      const syncOptions = {
+        iframeEnabled: false,
+        pixelEnabled: true
+      };
+      expect(spec.getUserSyncs(syncOptions, serverResponses)).to.deep.equal([
+        {
+          type: 'image',
+          url: 'https://tracker-lm.ortb.net/sync'
+        }
+      ]);
+    });
+    it('should return iframe sync url for pll if pixel sync is enabled and iframe is enables and headers have both iframe and img pixels', function () {
+      const serverResponses = [
+        {
+          headers: {
+            get: function (header) {
+              if (header === 'X-PLL-UserSync-Image') {
+                return 'https://tracker-lm.ortb.net/sync';
+              }
+              if (header === 'X-PLL-UserSync-Iframe') {
+                return 'https://tracker-lm.ortb.net/sync.html';
               }
             }
           },
