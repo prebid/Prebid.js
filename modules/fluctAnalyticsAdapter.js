@@ -26,7 +26,6 @@ const url = 'https://an.adingo.jp'
 /** @type {{auctions: {[auctionId: string]: PbAuction}, adUnits: {[adUnitCode: string]: AdUnit}, gpt: Gpt, timeouts: {[auctionId: string]: number}}} */
 const cache = {
   auctions: {},
-  adUnits: {},
   gpt: {},
   timeouts: {},
 };
@@ -49,7 +48,7 @@ const isBrowsiId = (id) => Boolean(id.match(/^browsi_/g));
 const getAdUnitMap = () => window.googletag.pubads().getSlots().reduce((prev, slot) => Object.assign(prev, { [slot.getSlotElementId()]: slot.getAdUnitPath() }), {});
 
 /** @type {(_adUnit: AdUnit, adUnits: AdUnit[], slots: Slots) => AdUnit} */
-export const convertReplicatedAdUnit = (_adUnit, adUnits = cache.adUnits, slots = getAdUnitMap()) => {
+export const convertReplicatedAdUnit = (_adUnit, adUnits, slots = getAdUnitMap()) => {
   /** @type {adUnit} */
   const adUnit = deepClone(_adUnit);
   /** @type {?string} */
@@ -78,7 +77,6 @@ let fluctAnalyticsAdapter = Object.assign(
           if (!cache.gpt.registered) {
             window.googletag = window.googletag || { cmd: [] };
             cache.gpt.registered = true;
-            $$PREBID_GLOBAL$$.adUnits.forEach(adUnit => Object.assign(cache.adUnits, { [adUnit.code]: adUnit }));;
           }
           break;
         }
@@ -136,10 +134,6 @@ let fluctAnalyticsAdapter = Object.assign(
           /** @type {PbAuction} */
           const auction = find(Object.values(cache.auctions), auction =>
             auction.adUnitCodes.every(adUnitCode => adUnitCodes.includes(adUnitCode)));
-          adUnitCodes.forEach(adUnitCode => {
-            const adUnit = convertReplicatedAdUnit(find(cache.auctions[auction.auctionId].adUnits, adUnit => adUnit.code === adUnitCode));
-            Object.assign(cache.adUnits, { [adUnitCode]: adUnit });
-          });
           sendMessage(auction.auctionId);
           break;
         }
@@ -170,8 +164,8 @@ let fluctAnalyticsAdapter = Object.assign(
 
 /** @type {(auctionId: string) => void} */
 const sendMessage = (auctionId) => {
-  let { adUnitCodes, auctionEnd, aidSuffix, auctionStatus, bids } = cache.auctions[auctionId];
-  const adUnits = Object.values(cache.adUnits).filter(adUnit => adUnitCodes.includes(adUnit.code));
+  let { adUnitCodes, adUnits, auctionEnd, aidSuffix, auctionStatus, bids } = cache.auctions[auctionId];
+  adUnits = adUnits.map(adUnit => convertReplicatedAdUnit(adUnit, adUnitCodes.every(isBrowsiId) ? $$PREBID_GLOBAL$$.adUnits : adUnits));
   logInfo(adUnits);
 
   const payload = {
