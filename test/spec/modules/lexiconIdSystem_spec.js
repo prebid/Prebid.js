@@ -81,7 +81,7 @@ describe('LexiconIdSystem', () => {
     context('when the server JSON is invalid', () => {
       it('should log an error', () => {
         const logErrorSpy = sinon.spy(utils, 'logError');
-        const completeCallback = sinon.spy();
+        const completeCallback = () => {};
 
         const { callback } = lexiconIdSubmodule.getId({
           params: {
@@ -100,6 +100,26 @@ describe('LexiconIdSystem', () => {
         expect(logErrorSpy.lastCall.args[0]).to.eq(`${lexiconIdSubmodule.name}: ID reading error`);
 
         logErrorSpy.restore();
+      });
+
+      it('should execute complete callback with undefined value', () => {
+        const completeCallback = sinon.spy();
+
+        const { callback } = lexiconIdSubmodule.getId({
+          params: {
+            pid: '12345'
+          }
+        });
+
+        callback(completeCallback);
+
+        const [request] = server.requests;
+
+        request.respond(200, {
+          'Content-Type': 'application/json'
+        }, 'invalid response');
+
+        expect(completeCallback.calledOnceWithExactly(undefined)).to.be.true;
       });
     });
 
@@ -134,7 +154,7 @@ describe('LexiconIdSystem', () => {
     context('when the server returns an unsuccessful response', () => {
       it('should log an error', () => {
         const logErrorSpy = sinon.spy(utils, 'logError');
-        const completeCallback = sinon.spy();
+        const completeCallback = () => {};
 
         const { callback } = lexiconIdSubmodule.getId({
           params: {
@@ -157,12 +177,35 @@ describe('LexiconIdSystem', () => {
 
         logErrorSpy.restore();
       });
+
+      it('should execute complete callback with undefined value', () => {
+        const completeCallback = sinon.spy();
+
+        const { callback } = lexiconIdSubmodule.getId({
+          params: {
+            pid: '12345'
+          }
+        });
+
+        callback(completeCallback);
+
+        const [request] = server.requests;
+
+        request.respond(200, {
+          'Content-Type': 'application/json'
+        }, JSON.stringify({
+          succeeded: false,
+          error: 'foo'
+        }));
+
+        expect(completeCallback.calledOnceWithExactly(undefined)).to.be.true;
+      });
     });
 
     context('when the server returns a successful response but without ID', () => {
       it('should log a message', () => {
         const logMessageSpy = sinon.spy(utils, 'logMessage');
-        const completeCallback = sinon.spy();
+        const completeCallback = () => {};
 
         const { callback } = lexiconIdSubmodule.getId({
           params: {
@@ -185,12 +228,35 @@ describe('LexiconIdSystem', () => {
 
         logMessageSpy.restore();
       });
+
+      it('should execute complete callback with undefined value', () => {
+        const completeCallback = sinon.spy();
+
+        const { callback } = lexiconIdSubmodule.getId({
+          params: {
+            pid: '12345'
+          }
+        });
+
+        callback(completeCallback);
+
+        const [request] = server.requests;
+
+        request.respond(200, {
+          'Content-Type': 'application/json'
+        }, JSON.stringify({
+          succeeded: true,
+          data: {}
+        }));
+
+        expect(completeCallback.calledOnceWithExactly(undefined)).to.be.true;
+      });
     });
 
     context('when the server returns an error status code', () => {
       it('should log an error', () => {
         const logErrorSpy = sinon.spy(utils, 'logError');
-        const completeCallback = sinon.spy();
+        const completeCallback = () => {};
 
         const { callback } = lexiconIdSubmodule.getId({
           params: {
@@ -207,6 +273,24 @@ describe('LexiconIdSystem', () => {
         expect(logErrorSpy.calledOnceWithExactly(`${lexiconIdSubmodule.name}: ID error response`, 'Not Found')).to.be.true;
 
         logErrorSpy.restore();
+      });
+
+      it('should execute complete callback without any value', () => {
+        const completeCallback = sinon.spy();
+
+        const { callback } = lexiconIdSubmodule.getId({
+          params: {
+            pid: '12345'
+          }
+        });
+
+        callback(completeCallback);
+
+        const [request] = server.requests;
+
+        request.respond(404);
+
+        expect(completeCallback.calledOnceWithExactly()).to.be.true;
       });
     })
   })
