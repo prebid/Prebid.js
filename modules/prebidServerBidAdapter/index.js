@@ -1123,7 +1123,7 @@ export function PrebidServer() {
         },
         onError: done,
         onBid: function ({adUnit, bid}) {
-          if (isValid(adUnit, bid, bidRequests)) {
+          if (isValid(adUnit, bid)) {
             addBidResponse(adUnit, bid);
           }
         }
