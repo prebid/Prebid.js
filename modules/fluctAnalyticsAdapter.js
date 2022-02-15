@@ -55,7 +55,7 @@ export const convertReplicatedAdUnit = (_adUnit, adUnits, slots = getAdUnitMap()
   const adUnitPath = slots[adUnit.code];
   if (adUnitPath) {
     const { analytics, code, mediaTypes: { banner: { name } } } =
-      find(Object.values(adUnits), adUnit => Boolean(adUnitPath.match(new RegExp(`${adUnit.mediaTypes.banner.name}$`, 'g'))));
+      find(adUnits, adUnit => Boolean(adUnitPath.match(new RegExp(`${adUnit.mediaTypes.banner.name}$`, 'g'))));
     adUnit.analytics = analytics;
     adUnit._code = code;
     adUnit.mediaTypes.banner.name = name;
