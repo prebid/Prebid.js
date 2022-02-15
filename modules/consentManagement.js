@@ -289,6 +289,7 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
 
   if (!includes(Object.keys(cmpCallMap), userCMP)) {
     logWarn(`CMP framework (${userCMP}) is not a supported framework.  Aborting consentManagement module and resuming auction.`);
+    gdprDataHandler.setConsentData(null);
     return hookConfig.nextFn.apply(hookConfig.context, hookConfig.args);
   }
 
@@ -452,6 +453,7 @@ function exitModule(errMsg, hookConfig, extraArgs) {
         nextFn.apply(context, args);
       } else {
         logError(errMsg + ' Canceling auction as per consentManagement config.', extraArgs);
+        gdprDataHandler.setConsentData(null);
         if (typeof hookConfig.bidsBackHandler === 'function') {
           hookConfig.bidsBackHandler();
         } else {
@@ -471,7 +473,7 @@ export function resetConsentData() {
   consentData = undefined;
   userCMP = undefined;
   cmpVersion = 0;
-  gdprDataHandler.setConsentData(null);
+  gdprDataHandler.reset();
 }
 
 /**
@@ -509,6 +511,7 @@ export function setConsentConfig(config) {
   gdprScope = config.defaultGdprScope === true;
 
   logInfo('consentManagement module has been activated...');
+  gdprDataHandler.enable();
 
   if (userCMP === 'static') {
     if (isPlainObject(config.consentData)) {

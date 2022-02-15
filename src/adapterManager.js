@@ -31,6 +31,7 @@ import includes from 'core-js-pure/features/array/includes.js';
 import find from 'core-js-pure/features/array/find.js';
 import { adunitCounter } from './adUnits.js';
 import { getRefererInfo } from './refererDetection.js';
+import {ConsentHandler} from './consentHandler.js';
 
 var CONSTANTS = require('./constants.json');
 var events = require('./events.js');
@@ -171,25 +172,8 @@ function getAdUnitCopyForClientAdapters(adUnits) {
   return adUnitsClientCopy;
 }
 
-export let gdprDataHandler = {
-  consentData: null,
-  setConsentData: function(consentInfo) {
-    gdprDataHandler.consentData = consentInfo;
-  },
-  getConsentData: function() {
-    return gdprDataHandler.consentData;
-  }
-};
-
-export let uspDataHandler = {
-  consentData: null,
-  setConsentData: function(consentInfo) {
-    uspDataHandler.consentData = consentInfo;
-  },
-  getConsentData: function() {
-    return uspDataHandler.consentData;
-  }
-};
+export let gdprDataHandler = new ConsentHandler();
+export let uspDataHandler = new ConsentHandler();
 
 export let coppaDataHandler = {
   getCoppa: function() {
