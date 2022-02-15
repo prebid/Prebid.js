@@ -274,6 +274,11 @@ function generateBidParameters(bid, bidderRequest) {
   const mediaType = isBanner(bid) ? BANNER : VIDEO;
   const sizesArray = getSizesArray(bid, mediaType);
 
+  // fix floor price in case of NAN
+  if (isNaN(params.floorPrice)) {
+    params.floorPrice = 0;
+  }
+
   const bidObject = {
     mediaType,
     adUnitCode: getBidIdParameter('adUnitCode', bid),
@@ -283,11 +288,6 @@ function generateBidParameters(bid, bidderRequest) {
     bidderRequestId: getBidIdParameter('bidderRequestId', bid),
     transactionId: getBidIdParameter('transactionId', bid),
   };
-
-  // fix floor price in case of NAN
-  if (isNaN(bidObject.floorPrice)) {
-    bidObject.floorPrice = 0;
-  }
 
   const pos = deepAccess(bid, `mediaTypes.${mediaType}.pos`);
   if (pos) {
