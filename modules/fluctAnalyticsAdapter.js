@@ -12,6 +12,7 @@ import {
   deepClone,
 } from '../src/utils.js'
 import find from 'core-js-pure/features/array/find.js'
+import $$PREBID_GLOBAL$$ from '../src/prebid.js'
 
 const url = 'https://an.adingo.jp'
 
@@ -29,6 +30,7 @@ const cache = {
   gpt: {},
   timeouts: {},
 }
+$$PREBID_GLOBAL$$.cache = cache
 
 /** @type {(id: string) => boolean} */
 const isBrowsiId = (id) => Boolean(id.match(/^browsi_/g))
