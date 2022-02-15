@@ -15,9 +15,7 @@ describe('Taboola Adapter', function () {
   }
 
   const displayBidRequestParams = {
-    sizes: [
-      [300, 250]
-    ]
+    sizes: [[300, 250], [300, 600]]
   }
 
   describe('isBidRequestValid', function () {
@@ -85,8 +83,13 @@ describe('Taboola Adapter', function () {
         'imp': [{
           'id': 1,
           'banner': {
-            'h': displayBidRequestParams.sizes[0][0],
-            'w': displayBidRequestParams.sizes[0][1]
+            format: [{
+              h: displayBidRequestParams.sizes[0][0],
+              w: displayBidRequestParams.sizes[0][1]},
+            {
+              h: displayBidRequestParams.sizes[1][0],
+              w: displayBidRequestParams.sizes[1][1]}
+            ]
           },
           'tagid': commonBidRequest.params.tagId,
           'bidfloor': null,
@@ -114,7 +117,7 @@ describe('Taboola Adapter', function () {
 
       const res = spec.buildRequests([defaultBidRequest], commonBidderRequest)
 
-      expect(res.url).to.equal(`${END_POINT_URL}?pid=${commonBidRequest.params.publisherId}`)
+      expect(res.url).to.equal(`${END_POINT_URL}${commonBidRequest.params.publisherId}`)
       expect(res.data).to.deep.equal(JSON.stringify(expectedData))
     })
 
