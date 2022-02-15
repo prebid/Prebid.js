@@ -592,7 +592,7 @@ describe('TrustXAdapter', function () {
       expect(payload.imp[2].ext).to.deep.equal({
         divid: bidRequests[2].adUnitCode
       });
-      expect(payload.imp[2].instl).to.be.undefined();
+      expect(payload.imp[2].instl).to.be.undefined;
     });
     it('all id like request fields must be a string', function () {
       const bidderRequestWithNumId = Object.assign({}, bidderRequest, { bidderRequestId: 123123, auctionId: 345345543 });
