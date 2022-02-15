@@ -53,11 +53,13 @@ export const convertReplicatedAdUnit = (_adUnit, adUnits = cache.adUnits, slots 
   /** @type {?string} */
   const adUnitPath = slots[adUnit.code]
   if (adUnitPath) {
-    const { analytics, code, mediaTypes: { banner: { name } } } =
+    const { analytics, code, mediaTypes: { banner: { name } }, sizes, transactionId } =
       find(Object.values(adUnits), adUnit => Boolean(adUnitPath.match(new RegExp(`${adUnit.mediaTypes.banner.name}$`, 'g'))))
     adUnit.analytics = analytics
     adUnit._code = code
     adUnit.mediaTypes.banner.name = name
+    adUnit.sizes = sizes
+    adUnit.transactionId = transactionId
   }
   adUnit.bids = undefined
   return adUnit
