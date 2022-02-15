@@ -135,10 +135,8 @@ let fluctAnalyticsAdapter = Object.assign(
           const auction = find(Object.values(cache.auctions), auction =>
             auction.adUnitCodes.every(adUnitCode => adUnitCodes.includes(adUnitCode)))
           adUnitCodes.forEach(adUnitCode => {
-            if (isBrowsiId(adUnitCode)) {
-              const adUnit = convertReplicatedAdUnit(find(cache.auctions[auction.auctionId].adUnits, adUnit => adUnit.code === adUnitCode))
-              Object.assign(cache.adUnits, { [adUnitCode]: adUnit })
-            }
+            const adUnit = convertReplicatedAdUnit(find(cache.auctions[auction.auctionId].adUnits, adUnit => adUnit.code === adUnitCode))
+            Object.assign(cache.adUnits, { [adUnitCode]: adUnit })
           })
           sendMessage(auction.auctionId)
           break
