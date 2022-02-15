@@ -134,7 +134,7 @@ To build the project on your local machine we recommend, running:
 
     $ gulp serve-and-test --file <spec_file.js>
 
-This will run tesing but not linting. A web server will start at `http://localhost:9999` serving from the project root and generates the following files:
+This will run testing but not linting. A web server will start at `http://localhost:9999` serving from the project root and generates the following files:
 
 + `./build/dev/prebid.js` - Full source code for dev and debug
 + `./build/dev/prebid.js.map` - Source map for dev and debug
