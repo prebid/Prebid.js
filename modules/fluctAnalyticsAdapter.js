@@ -53,13 +53,11 @@ export const convertReplicatedAdUnit = (_adUnit, adUnits = cache.adUnits, slots 
   /** @type {?string} */
   const adUnitPath = slots[adUnit.code]
   if (adUnitPath) {
-    const { analytics, code, mediaTypes: { banner: { name } }, sizes, transactionId } =
+    const { analytics, code, mediaTypes: { banner: { name } } } =
       find(Object.values(adUnits), adUnit => Boolean(adUnitPath.match(new RegExp(`${adUnit.mediaTypes.banner.name}$`, 'g'))))
     adUnit.analytics = analytics
     adUnit._code = code
     adUnit.mediaTypes.banner.name = name
-    adUnit.sizes = sizes
-    adUnit.transactionId = transactionId
   }
   adUnit.bids = undefined
   return adUnit
@@ -133,15 +131,15 @@ let fluctAnalyticsAdapter = Object.assign(
         case EVENTS.SET_TARGETING: {
           let setTargetingEvent = args
           const adUnitCodes = Object.keys(setTargetingEvent)
-          adUnitCodes.forEach(adUnitCode => {
-            if (isBrowsiId(adUnitCode)) {
-              const adUnit = convertReplicatedAdUnit(find($$PREBID_GLOBAL$$.adUnits, adUnit => adUnit.code === adUnitCode))
-              Object.assign(cache.adUnits, { [adUnitCode]: adUnit })
-            }
-          })
           /** @type {PbAuction} */
           const auction = find(Object.values(cache.auctions), auction =>
             auction.adUnitCodes.every(adUnitCode => adUnitCodes.includes(adUnitCode)))
+          adUnitCodes.forEach(adUnitCode => {
+            if (isBrowsiId(adUnitCode)) {
+              const adUnit = convertReplicatedAdUnit(find(cache.auctions[auction.auctionId].adUnits, adUnit => adUnit.code === adUnitCode))
+              Object.assign(cache.adUnits, { [adUnitCode]: adUnit })
+            }
+          })
           sendMessage(auction.auctionId)
           break
         }
