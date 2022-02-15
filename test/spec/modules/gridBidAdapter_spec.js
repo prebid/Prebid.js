@@ -622,7 +622,7 @@ describe('TheMediaGrid Adapter', function () {
       const payload = parseRequest(request.data);
       expect(payload.imp[0].instl).to.equal(1);
       expect(payload.imp[1].instl).to.equal(2);
-      expect(payload.imp[2].instl).to.be.undefined();
+      expect(payload.imp[2].instl).to.be.undefined;
     });
 
     it('all id must be a string', function() {
