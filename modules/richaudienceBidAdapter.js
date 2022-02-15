@@ -300,7 +300,7 @@ function raiGetFloor(bid, config) {
       raiFloor = bid.params.bidfloor;
     } else if (typeof bid.getFloor == 'function') {
       let floorSpec = bid.getFloor({
-        currency: config.getConfig('currency.adServerCurrency'),
+        currency: config.getConfig('floors.data.currency') != null ? config.getConfig('floors.data.currency') : 'USD',
         mediaType: typeof bid.mediaTypes['banner'] == 'object' ? 'banner' : 'video',
         size: '*'
       })

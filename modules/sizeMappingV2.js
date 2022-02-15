@@ -6,7 +6,7 @@
 
 import { isArray, logError, isArrayOfNums, deepClone, logWarn, getWindowTop, deepEqual, logInfo, isValidMediaTypes, deepAccess, getDefinedParams, getUniqueIdentifierStr, flatten } from '../src/utils.js';
 import { adunitCounter } from '../src/adUnits.js';
-import includes from 'prebidjs-polyfill/includes.js';
+import includes from 'core-js-pure/features/array/includes.js';
 import { getHook } from '../src/hook.js';
 import { adUnitSetupChecks } from '../src/prebid.js';
 
