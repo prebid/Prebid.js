@@ -9,7 +9,7 @@ import {getStorageManager} from '../src/storageManager.js';
 const BIDDER_CODE = 'taboola';
 const GVLID = 42;
 const CURRENCY = 'USD';
-export const END_POINT_URL = 'https://taboolahb.bidder.taboolasyndication.com';
+export const END_POINT_URL = 'hb.bidder.taboola.com/TaboolaHBOpenRTBRequestHandlerServlet';
 const USER_ID = 'user-id';
 const STORAGE_KEY = `taboola global:${USER_ID}`;
 const COOKIE_KEY = 'trc_cookie_storage';
@@ -93,9 +93,9 @@ export const spec = {
   code: BIDDER_CODE,
   isBidRequestValid: (bidRequest) => {
     return !!(bidRequest.sizes &&
-           bidRequest.params &&
-           bidRequest.params.publisherId &&
-           bidRequest.params.tagId);
+              bidRequest.params &&
+              bidRequest.params.publisherId &&
+              bidRequest.params.tagId);
   },
   buildRequests: (validBidRequests, bidderRequest) => {
     const [bidRequest] = validBidRequests;
@@ -139,7 +139,7 @@ export const spec = {
       regs
     };
 
-    const url = [END_POINT_URL, publisherId].join('?pid=');
+    const url = [END_POINT_URL, publisherId].join('');
 
     return {
       url,
@@ -195,10 +195,17 @@ function getImps(validBidRequests) {
 }
 
 function getBanners(bid) {
-  const [size] = bid.sizes;
+  return getSizes(bid.sizes);
+}
+
+function getSizes(sizes) {
   return {
-    h: size[0],
-    w: size[1]
+    format: sizes.map(size => {
+      return {
+        h: size[0],
+        w: size[1]
+      }
+    })
   }
 }
 
