@@ -59,6 +59,8 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
       url: player.currentSrc()
     };
     // Only include length if player is ready
+    // player.readyState() returns a level of readiness from 0 to 4
+    // https://docs.videojs.com/player#readyState
     if (player.readyState() > 0) {
       content.len = Math.round(player.duration());
     }
@@ -114,6 +116,8 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
 
     // TODO: Determine placement may not be in stream if videojs is only used to serve ad content
     // ~ Sort of resolved check if the player has a source to tell if the placement is instream
+    // Still cannot reliably check what type of placement the player is if its outstream
+    // i.e. we can't tell if its interstitial, in article, etc.
     if (content.url) {
       video.placement = PLACEMENT.IN_STREAM;
     }
