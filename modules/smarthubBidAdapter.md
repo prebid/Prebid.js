@@ -10,7 +10,7 @@ Maintainer: support@smart-hub.io
 
 Connects to SmartHub exchange for bids.
 
-IQZone bid adapter supports Banner, Video (instream and outstream) and Native.
+SmartHub bid adapter supports Banner, Video (instream and outstream) and Native.
 
 # Test Parameters
 ```
@@ -27,7 +27,7 @@ IQZone bid adapter supports Banner, Video (instream and outstream) and Native.
                         {
                             bidder: 'smarthub',
                             params: {
-                                partnerName: 'testname',
+                                partnerName: 'pbjstest',
                                 seat: 'testSeat',
                                 token: 'testBanner',
                                 iabCat: ['IAB1-1', 'IAB3-1', 'IAB4-3'],
@@ -50,7 +50,7 @@ IQZone bid adapter supports Banner, Video (instream and outstream) and Native.
                         {
                             bidder: 'smarthub',
                             params: {
-                                partnerName: 'testname',
+                                partnerName: 'pbjstest',
                                 seat: 'testSeat',
                                 token: 'testVideo',
                                 iabCat: ['IAB1-1', 'IAB3-1', 'IAB4-3'],
@@ -80,7 +80,7 @@ IQZone bid adapter supports Banner, Video (instream and outstream) and Native.
                         {
                             bidder: 'smarthub',
                             params: {
-                                partnerName: 'testname',
+                                partnerName: 'pbjstest',
                                 seat: 'testSeat',
                                 token: 'testNative',
                                 iabCat: ['IAB1-1', 'IAB3-1', 'IAB4-3'],
