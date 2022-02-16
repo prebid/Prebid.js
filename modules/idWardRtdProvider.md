@@ -34,3 +34,11 @@ ID Ward’s Real-time Data Provider automatically obtains segment IDs from the I
 
 Please note that idWardRtdProvider should be integrated into the publisher website along with the [ID Ward Pixel](https://publishers-web.id-ward.com/pixel-integration).
 Please reach out to Id Ward representative(support@id-ward.com) if you have any questions or need further help to integrate Prebid, idWardRtdProvider, and Id Ward Pixel
+
+### Testing
+To view an example of available segments returned by Id Ward:
+```
+‘gulp serve --modules=rtdModule,idWardRtdProvider,pubmaticBidAdapter
+```
+and then point your browser at:
+"http://localhost:9999/integrationExamples/gpt/idward_segments_example.html"
