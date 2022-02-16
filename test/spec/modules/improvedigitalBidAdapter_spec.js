@@ -92,7 +92,8 @@ describe('Improve Digital Adapter Tests', function () {
     gdprConsent: {
       consentString: 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
       vendorData: {},
-      gdprApplies: true
+      gdprApplies: true,
+      addtlConsent: '1~1.35.41.101',
     },
   };
 
@@ -278,6 +279,7 @@ describe('Improve Digital Adapter Tests', function () {
       const request = spec.buildRequests([bidRequest], bidderRequestGdpr)[0];
       const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
       expect(params.bid_request.gdpr).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
+      expect(params.bid_request.user.ext.consented_providers_settings.consented_providers).to.exist.and.to.deep.equal([1, 35, 41, 101]);
     });
 
     it('should add CCPA consent string', function () {
@@ -512,6 +514,67 @@ describe('Improve Digital Adapter Tests', function () {
         ]
       });
       getConfigStub.restore();
+    });
+
+    it('should set pagecat and genre ➞ fpd:ortb2.site', function() {
+      config.setConfig(JSON.parse('{"ortb2":{"site":{"cat":["IAB2"],"pagecat":["IAB2-2"],"content":{"genre":"Adventure"}}}}'));
+      const bidRequest = Object.assign({}, simpleBidRequest);
+      const request = spec.buildRequests([bidRequest], bidderRequestReferrer)[0];
+      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.pagecat).to.be.an('array');
+      expect(params.bid_request.pagecat).to.deep.equal(['IAB2-2']);
+      expect(params.bid_request.genre).to.be.a('string');
+      expect(params.bid_request.genre).be.equal('Adventure');
+    });
+
+    it('should not set pagecat and genre when malformed data provided ➞ fpd:ortb2.site', function() {
+      config.setConfig(JSON.parse('{"ortb2":{"site":{"pagecat":"IAB2-2","content":{"genre":["Adventure"]}}}}'));
+      const bidRequest = Object.assign({}, simpleBidRequest);
+      const request = spec.buildRequests([bidRequest], bidderRequestReferrer)[0];
+      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.pagecat).does.not.exist;
+      expect(params.bid_request.genre).does.not.exist;
+    });
+
+    it('should use cat when pagecat not available ➞ fpd:ortb2.site', function() {
+      config.setConfig(JSON.parse('{"ortb2":{"site":{"cat":["IAB2"]}}}'));
+      const bidRequest = Object.assign({}, simpleBidRequest);
+      const request = spec.buildRequests([bidRequest], bidderRequestReferrer)[0];
+      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.pagecat).to.be.an('array');
+      expect(params.bid_request.pagecat).to.deep.equal(['IAB2']);
+    });
+
+    it('should format pagecat correctly ➞ fpd:ortb2.site', function() {
+      config.setConfig(JSON.parse('{"ortb2":{"site":{"cat":["IAB2", ["IAB-1"], "IAB3", 123, ""]}}}'));
+      const bidRequest = Object.assign({}, simpleBidRequest);
+      const request = spec.buildRequests([bidRequest], bidderRequestReferrer)[0];
+      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.pagecat).to.be.an('array');
+      expect(params.bid_request.pagecat).to.deep.equal([
+        'IAB2',
+        'IAB3'
+      ]
+      );
+    });
+
+    it('should set coppa', function() {
+      sinon.stub(config, 'getConfig')
+        .withArgs('coppa')
+        .returns(true);
+      const bidRequest = Object.assign({}, simpleBidRequest);
+      const request = spec.buildRequests([bidRequest], bidderRequestReferrer)[0];
+      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.coppa).to.equal(1);
+
+      config.getConfig.restore();
+    });
+
+    it('should undefined coppa', function() {
+      const bidRequest = Object.assign({}, simpleBidRequest);
+      const request = spec.buildRequests([bidRequest], bidderRequestReferrer)[0];
+      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.coppa).to.equal(undefined);
     });
   });
 

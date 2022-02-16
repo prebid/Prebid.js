@@ -19,6 +19,7 @@ import { adunitCounter } from './adUnits.js';
 import { executeRenderer, isRendererRequired } from './Renderer.js';
 import { createBid } from './bidfactory.js';
 import { storageCallbacks } from './storageManager.js';
+import { emitAdRenderSucceeded, emitAdRenderFail } from './adRendering.js';
 
 const $$PREBID_GLOBAL$$ = getGlobal();
 const CONSTANTS = require('./constants.json');
@@ -27,7 +28,7 @@ const events = require('./events.js');
 const { triggerUserSyncs } = userSync;
 
 /* private variables */
-const { ADD_AD_UNITS, BID_WON, REQUEST_BIDS, SET_TARGETING, AD_RENDER_FAILED, AD_RENDER_SUCCEEDED, STALE_RENDER } = CONSTANTS.EVENTS;
+const { ADD_AD_UNITS, BID_WON, REQUEST_BIDS, SET_TARGETING, STALE_RENDER } = CONSTANTS.EVENTS;
 const { PREVENT_WRITING_ON_MAIN_DOCUMENT, NO_AD, EXCEPTION, CANNOT_FIND_AD, MISSING_DOC_OR_ADID } = CONSTANTS.AD_RENDER_FAILED_REASON;
 
 const eventValidators = {
@@ -47,8 +48,7 @@ $$PREBID_GLOBAL$$.libLoaded = true;
 $$PREBID_GLOBAL$$.version = 'v$prebid.version$';
 logInfo('Prebid.js v$prebid.version$ loaded');
 
-// modules list generated from build
-$$PREBID_GLOBAL$$.installedModules = ['v$prebid.modulesList$'];
+$$PREBID_GLOBAL$$.installedModules = $$PREBID_GLOBAL$$.installedModules || [];
 
 // create adUnit array
 $$PREBID_GLOBAL$$.adUnits = $$PREBID_GLOBAL$$.adUnits || [];
@@ -147,7 +147,7 @@ function validateNativeMediaType(adUnit) {
 function validateAdUnitPos(adUnit, mediaType) {
   let pos = deepAccess(adUnit, `mediaTypes.${mediaType}.pos`);
 
-  if (!pos || !isNumber(pos) || !isFinite(pos)) {
+  if (!isNumber(pos) || isNaN(pos) || !isFinite(pos)) {
     let warning = `Value of property 'pos' on ad unit ${adUnit.code} should be of type: Number`;
 
     logWarn(warning);
@@ -386,27 +386,23 @@ $$PREBID_GLOBAL$$.setTargetingForAst = function (adUnitCodes) {
   events.emit(SET_TARGETING, targeting.getAllTargeting());
 };
 
-function emitAdRenderFail({ reason, message, bid, id }) {
-  const data = { reason, message };
-  if (bid) data.bid = bid;
-  if (id) data.adId = id;
-
-  logError(message);
-  events.emit(AD_RENDER_FAILED, data);
-}
-
-function emitAdRenderSucceeded({ doc, bid, id }) {
-  const data = { doc };
-  if (bid) data.bid = bid;
-  if (id) data.adId = id;
-
-  events.emit(AD_RENDER_SUCCEEDED, data);
+/**
+ * This function will check for presence of given node in given parent. If not present - will inject it.
+ * @param {Node} node node, whose existance is in question
+ * @param {Document} doc document element do look in
+ * @param {string} tagName tag name to look in
+ */
+function reinjectNodeIfRemoved(node, doc, tagName) {
+  const injectionNode = doc.querySelector(tagName);
+  if (!node.parentNode || node.parentNode !== injectionNode) {
+    insertElement(node, doc, tagName);
+  }
 }
 
 /**
  * This function will render the ad (based on params) in the given iframe document passed through.
  * Note that doc SHOULD NOT be the parent document page as we can't doc.write() asynchronously
- * @param  {HTMLDocument} doc document
+ * @param  {Document} doc document
  * @param  {string} id bid id to locate the ad
  * @alias module:pbjs.renderAd
  */
@@ -450,10 +446,11 @@ $$PREBID_GLOBAL$$.renderAd = hook('async', function (doc, id, options) {
           const {height, width, ad, mediaType, adUrl, renderer} = bid;
 
           const creativeComment = document.createComment(`Creative ${bid.creativeId} served by ${bid.bidder} Prebid.js Header Bidding`);
+          insertElement(creativeComment, doc, 'html');
 
           if (isRendererRequired(renderer)) {
             executeRenderer(renderer, bid);
-            insertElement(creativeComment, doc, 'html');
+            reinjectNodeIfRemoved(creativeComment, doc, 'html');
             emitAdRenderSucceeded({ doc, bid, id });
           } else if ((doc === document && !inIframe()) || mediaType === 'video') {
             const message = `Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`;
@@ -472,7 +469,7 @@ $$PREBID_GLOBAL$$.renderAd = hook('async', function (doc, id, options) {
             doc.write(ad);
             doc.close();
             setRenderSize(doc, width, height);
-            insertElement(creativeComment, doc, 'html');
+            reinjectNodeIfRemoved(creativeComment, doc, 'html');
             callBurl(bid);
             emitAdRenderSucceeded({ doc, bid, id });
           } else if (adUrl) {
@@ -485,7 +482,7 @@ $$PREBID_GLOBAL$$.renderAd = hook('async', function (doc, id, options) {
 
             insertElement(iframe, doc, 'body');
             setRenderSize(doc, width, height);
-            insertElement(creativeComment, doc, 'html');
+            reinjectNodeIfRemoved(creativeComment, doc, 'html');
             callBurl(bid);
             emitAdRenderSucceeded({ doc, bid, id });
           } else {
@@ -902,6 +899,8 @@ $$PREBID_GLOBAL$$.markWinningBidAsUsed = function (markBidRequest) {
  */
 $$PREBID_GLOBAL$$.getConfig = config.getConfig;
 $$PREBID_GLOBAL$$.readConfig = config.readConfig;
+$$PREBID_GLOBAL$$.mergeConfig = config.mergeConfig;
+$$PREBID_GLOBAL$$.mergeBidderConfig = config.mergeBidderConfig;
 
 /**
  * Set Prebid config options.

@@ -30,6 +30,7 @@ describe('automatadBidAdapter', function () {
         {
           'bid': [
             {
+              'bidId': '123',
               'adm': '<!-- creative code -->',
               'adomain': [
                 'someAdDomain'
@@ -173,14 +174,29 @@ describe('automatadBidAdapter', function () {
     })
   })
 
-  describe('getUserSyncs', function () {
-    it('should return iframe sync', function () {
-      let sync = spec.getUserSyncs()
-      expect(sync.length).to.equal(1)
-      expect(sync[0].type === 'iframe')
-      expect(typeof sync[0].url === 'string')
+  describe('onTimeout', function () {
+    const timeoutData = {
+      'bidId': '123',
+      'bidder': 'automatad',
+      'adUnitCode': 'div-13',
+      'auctionId': '1232',
+      'params': [
+        {
+          'siteId': 'test',
+          'placementId': 'test123'
+        }
+      ],
+      'timeout': 1000
+    }
+
+    it('should exists and be a function', function () {
+      expect(spec.onTimeout).to.exist.and.to.be.a('function');
+    });
+
+    it('should include timeoutData', function () {
+      expect(spec.onTimeout(timeoutData)).to.be.undefined;
     })
-  })
+  });
 
   describe('onBidWon', function () {
     let serverResponses = spec.interpretResponse(expectedResponse[0])

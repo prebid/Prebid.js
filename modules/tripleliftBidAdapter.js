@@ -1,4 +1,4 @@
-import { tryAppendQueryString, logMessage, isEmpty } from '../src/utils.js';
+import { tryAppendQueryString, logMessage, isEmpty, isStr, isPlainObject, isArray, logWarn } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
@@ -262,19 +262,36 @@ function getPubCommonEids(bidRequest) {
 function getEids(bidRequest, type, source, rtiPartner) {
   return bidRequest
     .map(getUserId(type)) // bids -> userIds of a certain type
-    .filter((x) => !!x) // filter out null userIds
+    .filter(filterEids(type)) // filter out unqualified userIds
     .map(formatEid(source, rtiPartner)); // userIds -> eid objects
 }
 
+const filterEids = type => (userId, i, arr) => {
+  let isValidUserId =
+    !!userId && // is not null nor empty
+    (isStr(userId)
+      ? !!userId
+      : isPlainObject(userId) && // or, is object
+        !isArray(userId) && // not an array
+        !isEmpty(userId) && // is not empty
+        userId.id && // contains nested id field
+        isStr(userId.id) && // nested id field is a string
+        !!userId.id); // that is not empty
+  if (!isValidUserId && arr[0] !== undefined) {
+    logWarn(`Triplelift: invalid ${type} userId format`);
+  }
+  return isValidUserId;
+};
+
 function getUserId(type) {
-  return (bid) => (bid && bid.userId && bid.userId[type]);
+  return bid => bid && bid.userId && bid.userId[type];
 }
 
 function formatEid(source, rtiPartner) {
-  return (id) => ({
+  return (userId) => ({
     source,
     uids: [{
-      id,
+      id: userId.id ? userId.id : userId,
       ext: { rtiPartner }
     }]
   });

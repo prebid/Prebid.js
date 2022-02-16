@@ -7,7 +7,7 @@ import { getStorageManager } from '../src/storageManager.js';
 const GVLID = 816;
 const BIDDER_CODE = 'nobid';
 const storage = getStorageManager(GVLID, BIDDER_CODE);
-window.nobidVersion = '1.3.1';
+window.nobidVersion = '1.3.2';
 window.nobid = window.nobid || {};
 window.nobid.bidResponses = window.nobid.bidResponses || {};
 window.nobid.timeoutTotal = 0;
@@ -152,6 +152,7 @@ function nobidBuildRequests(bids, bidderRequest) {
     if (cop) state['coppa'] = cop;
     const eids = getEIDs(deepAccess(bids, '0.userIdAsEids'));
     if (eids && eids.length > 0) state['eids'] = eids;
+    if (config && config.getConfig('ortb2')) state['ortb2'] = config.getConfig('ortb2');
     return state;
   }
   function newAdunit(adunitObject, adunits) {

@@ -5,6 +5,15 @@ const USER_IDS_CONFIG = {
 
   // key-name : {config}
 
+  // trustpid
+  'trustpid': {
+    source: 'trustpid.com',
+    atype: 1,
+    getValue: function (data) {
+      return data;
+    },
+  },
+
   // intentIqId
   'intentIqId': {
     source: 'intentiq.com',
@@ -14,6 +23,12 @@ const USER_IDS_CONFIG = {
   // naveggId
   'naveggId': {
     source: 'navegg.com',
+    atype: 1
+  },
+
+  // justId
+  'justId': {
+    source: 'justtag.com',
     atype: 1
   },
 
@@ -146,7 +161,13 @@ const USER_IDS_CONFIG = {
     atype: 1
   },
 
-  // haloId
+  // hadronId
+  'hadronId': {
+    source: 'audigent.com',
+    atype: 1
+  },
+
+  // haloId (deprecated in 7.0, use hadronId)
   'haloId': {
     source: 'audigent.com',
     atype: 1
@@ -181,15 +202,18 @@ const USER_IDS_CONFIG = {
     source: 'neustar.biz',
     atype: 1
   },
+
   // MediaWallah OpenLink
   'mwOpenLinkId': {
     source: 'mediawallahscript.com',
     atype: 1
   },
+
   'tapadId': {
     source: 'tapad.com',
     atype: 1
   },
+
   // Novatiq Snowflake
   'novatiq': {
     getValue: function(data) {
@@ -198,6 +222,7 @@ const USER_IDS_CONFIG = {
     source: 'novatiq.com',
     atype: 1
   },
+
   'uid2': {
     source: 'uidapi.com',
     atype: 3,
@@ -205,41 +230,61 @@ const USER_IDS_CONFIG = {
       return data.id;
     }
   },
+
   // Akamai Data Activation Platform (DAP)
   'dapId': {
     source: 'akamai.com',
     atype: 1
   },
+
   'deepintentId': {
     source: 'deepintent.com',
     atype: 3
   },
+
   // Admixer Id
   'admixerId': {
     source: 'admixer.net',
     atype: 3
   },
+
   // Adtelligent Id
   'adtelligentId': {
     source: 'adtelligent.com',
     atype: 3
   },
+
   amxId: {
     source: 'amxrtb.com',
     atype: 1,
   },
+
   'publinkId': {
     source: 'epsilon.com',
     atype: 3
   },
+
   'kpuid': {
     source: 'kpuid.com',
     atype: 3
   },
+
   'imuid': {
     source: 'intimatemerger.com',
     atype: 1
-  }
+  },
+
+  // Yahoo ConnectID
+  'connectId': {
+    source: 'yahoo.com',
+    atype: 3
+  },
+
+  // Adquery ID
+  'qid': {
+    source: 'adquery.io',
+    atype: 1
+  },
 };
 
 // this function will create an eid object for the given UserId sub-module

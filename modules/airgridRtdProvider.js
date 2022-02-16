@@ -33,7 +33,7 @@ export function attachScriptTagToDOM(rtdConfig) {
     edktInitializor.load = function(e) {
       var p = e || 'sdk';
       var n = document.createElement('script');
-      n.type = 'text/javascript';
+      n.type = 'module';
       n.async = true;
       n.src = 'https://cdn.edkt.io/' + p + '/edgekit.min.js';
       document.getElementsByTagName('head')[0].appendChild(n);

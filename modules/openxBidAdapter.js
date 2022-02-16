@@ -42,7 +42,12 @@ export const USER_ID_CODE_TO_QUERY_ARG = {
   novatiq: 'novatiqid', // Novatiq ID
   mwOpenLinkId: 'mwopenlinkid', // MediaWallah OpenLink ID
   dapId: 'dapid', // Akamai DAP ID
-  amxId: 'amxid' // AMX RTB ID
+  amxId: 'amxid', // AMX RTB ID
+  kpuid: 'kpuid', // Kinesso ID
+  publinkId: 'publinkid', // Publisher Link
+  naveggId: 'naveggid', // Navegg ID
+  imuid: 'imuid', // IM-UID by Intimate Merger
+  adtelligentId: 'adtelligentid' // Adtelligent ID
 };
 
 export const spec = {
@@ -256,27 +261,14 @@ function buildCommonQueryParamsFromBids(bids, bidderRequest) {
     nocache: new Date().getTime()
   };
 
-  const firstPartyData = config.getConfig('ortb2.user.data')
-  if (Array.isArray(firstPartyData) && firstPartyData.length > 0) {
-    // extract and merge valid segments by provider/taxonomy
-    const fpd = firstPartyData
-      .filter(
-        data => (Array.isArray(data.segment) &&
-                data.segment.length > 0 &&
-                data.name !== undefined &&
-                data.name.length > 0)
-      )
-      .reduce((acc, data) => {
-        const name = typeof data.ext === 'object' && data.ext.segtax ? `${data.name}/${data.ext.segtax}` : data.name;
-        acc[name] = (acc[name] || []).concat(data.segment.map(seg => seg.id));
-        return acc;
-      }, {})
-    const sm = Object.keys(fpd)
-      .map((name, _) => name + ':' + fpd[name].join('|'))
-      .join(',')
-    if (sm.length > 0) {
-      defaultParams.sm = encodeURIComponent(sm);
-    }
+  const userDataSegments = buildFpdQueryParams('ortb2.user.data');
+  if (userDataSegments.length > 0) {
+    defaultParams.sm = userDataSegments;
+  }
+
+  const siteContentDataSegments = buildFpdQueryParams('ortb2.site.content.data');
+  if (siteContentDataSegments.length > 0) {
+    defaultParams.scsm = siteContentDataSegments;
   }
 
   if (bids[0].params.platform) {
@@ -317,12 +309,37 @@ function buildCommonQueryParamsFromBids(bids, bidderRequest) {
   return defaultParams;
 }
 
+function buildFpdQueryParams(fpdPath) {
+  const firstPartyData = config.getConfig(fpdPath);
+  if (!Array.isArray(firstPartyData) || !firstPartyData.length) {
+    return '';
+  }
+  const fpd = firstPartyData
+    .filter(
+      data => (Array.isArray(data.segment) &&
+            data.segment.length > 0 &&
+            data.name !== undefined &&
+            data.name.length > 0)
+    )
+    .reduce((acc, data) => {
+      const name = typeof data.ext === 'object' && data.ext.segtax ? `${data.name}/${data.ext.segtax}` : data.name;
+      acc[name] = (acc[name] || []).concat(data.segment.map(seg => seg.id));
+      return acc;
+    }, {})
+  return Object.keys(fpd)
+    .map((name, _) => name + ':' + fpd[name].join('|'))
+    .join(',')
+}
+
 function appendUserIdsToQueryParams(queryParams, userIds) {
   _each(userIds, (userIdObjectOrValue, userIdProviderKey) => {
     const key = USER_ID_CODE_TO_QUERY_ARG[userIdProviderKey];
 
     if (USER_ID_CODE_TO_QUERY_ARG.hasOwnProperty(userIdProviderKey)) {
       switch (userIdProviderKey) {
+        case 'merkleId':
+          queryParams[key] = userIdObjectOrValue.id;
+          break;
         case 'flocId':
           queryParams[key] = userIdObjectOrValue.id;
           break;
@@ -333,7 +350,7 @@ function appendUserIdsToQueryParams(queryParams, userIds) {
           queryParams[key] = userIdObjectOrValue.lipbid;
           if (Array.isArray(userIdObjectOrValue.segments) && userIdObjectOrValue.segments.length > 0) {
             const liveIntentSegments = 'liveintent:' + userIdObjectOrValue.segments.join('|')
-            queryParams.sm = `${queryParams.sm ? queryParams.sm + encodeURIComponent(',') : ''}${encodeURIComponent(liveIntentSegments)}`;
+            queryParams.sm = `${queryParams.sm ? queryParams.sm + ',' : ''}${liveIntentSegments}`;
           }
           break;
         case 'parrableId':

@@ -231,7 +231,7 @@ export const spec = {
     if (!errorMessage && serverResponse.seatbid) {
       const serverBid = _getBidFromResponse(serverResponse.seatbid[0]);
       if (serverBid) {
-        if (!serverBid.adm) errorMessage = LOG_ERROR_MESS.noAdm + JSON.stringify(serverBid);
+        if (!serverBid.adm && !serverBid.nurl) errorMessage = LOG_ERROR_MESS.noAdm + JSON.stringify(serverBid);
         else if (!serverBid.price) errorMessage = LOG_ERROR_MESS.noPrice + JSON.stringify(serverBid);
         else if (serverBid.content_type !== 'video') errorMessage = LOG_ERROR_MESS.wrongContentType + serverBid.content_type;
         if (!errorMessage) {
@@ -246,17 +246,18 @@ export const spec = {
             netRevenue: true,
             ttl: TIME_TO_LIVE,
             dealId: serverBid.dealid,
-            vastXml: serverBid.adm,
             mediaType: VIDEO,
             meta: {
               advertiserDomains: serverBid.adomain ? serverBid.adomain : []
-            },
-            adResponse: {
-              content: serverBid.adm
             }
           };
 
-          if (serverBid.nurl) {
+          if (serverBid.adm) {
+            bidResponse.vastXml = serverBid.adm;
+            bidResponse.adResponse = {
+              content: bidResponse.vastXml
+            };
+          } else if (serverBid.nurl) {
             bidResponse.vastUrl = serverBid.nurl;
           }
 

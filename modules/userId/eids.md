@@ -3,6 +3,14 @@
 ```
 userIdAsEids = [
     {
+        source: 'trustpid.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
+        }]
+    },
+
+    {
         source: 'pubcid.org',
         uids: [{
             id: 'some-random-id-value',
@@ -28,7 +36,15 @@ userIdAsEids = [
             atype: 1
         }]
     },
-    
+
+    {
+        source: 'justtag.com',
+        uids: [{
+            id: 'justId',
+            atype: 1
+        }]
+    },
+
     {
         source: 'neustar.biz',
         uids: [{
@@ -203,9 +219,16 @@ userIdAsEids = [
             id: 'some-random-id-value',
             atype: 3
         }]
-    }, 
+    },
     {
          source: 'kpuid.com',
+         uids: [{
+              id: 'some-random-id-value',
+              atype: 3
+         }]
+    },
+    {
+         source: 'yahoo.com',
          uids: [{
               id: 'some-random-id-value',
               atype: 3

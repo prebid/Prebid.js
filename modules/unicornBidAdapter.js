@@ -8,7 +8,7 @@ const BIDDER_CODE = 'unicorn';
 const UNICORN_ENDPOINT = 'https://ds.uncn.jp/pb/0/bid.json';
 const UNICORN_DEFAULT_CURRENCY = 'JPY';
 const UNICORN_PB_COOKIE_KEY = '__pb_unicorn_aud';
-const UNICORN_PB_VERSION = '1.0';
+const UNICORN_PB_VERSION = '1.1';
 
 /**
  * Placement ID and Account ID are required.
@@ -58,11 +58,11 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
     id: bidderRequest.auctionId,
     at: 1,
     imp,
-    cur: UNICORN_DEFAULT_CURRENCY,
+    cur: [UNICORN_DEFAULT_CURRENCY],
     site: {
       id: deepAccess(validBidRequests[0], 'params.mediaId') || '',
       publisher: {
-        id: deepAccess(validBidRequests[0], 'params.publisherId') || 0
+        id: String(deepAccess(validBidRequests[0], 'params.publisherId') || 0)
       },
       domain: window.location.hostname,
       page: window.location.href,

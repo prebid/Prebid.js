@@ -38,7 +38,8 @@ const SUPPORTED_USER_ID_SOURCES = [
   'liveintent.com',
   'quantcast.com',
   'verizonmedia.com',
-  'liveramp.com'
+  'liveramp.com',
+  'yahoo.com'
 ];
 
 const pubapiTemplate = template`${'host'}/pubapi/3.0/${'network'}/${'placement'}/${'pageid'}/${'sizeid'}/ADTECH;v=2;cmd=bid;cors=yes;alias=${'alias'};misc=${'misc'};${'dynamicParams'}`;

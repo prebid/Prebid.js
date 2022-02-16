@@ -58,7 +58,11 @@ export const spec = {
   aliases: BIDDER_ALIAS,
   gvlid: GVLID,
   supportedMediaTypes: [ NATIVE, BANNER, VIDEO ],
-  isBidRequestValid: bid => !!bid.params.mid,
+  isBidRequestValid: (bid) => {
+    const params = bid.params || {};
+    const { mid, inv, mname } = params;
+    return !!(mid || (inv && mname));
+  },
   buildRequests: (validBidRequests, bidderRequest) => {
     let app, site;
 
@@ -104,12 +108,19 @@ export const spec = {
       }) : {};
       const bidfloor = floorInfo.floor;
       const bidfloorcur = floorInfo.currency;
+      const { mid, inv, mname } = bid.params;
 
       const imp = {
         id: id + 1,
-        tagid: bid.params.mid,
+        tagid: mid,
         bidfloor,
-        bidfloorcur
+        bidfloorcur,
+        ext: {
+          bidder: {
+            inv,
+            mname
+          }
+        }
       };
 
       const assets = _map(bid.nativeParams, (bidParams, key) => {
@@ -153,9 +164,6 @@ export const spec = {
             assets
           }
         };
-
-        bid.mediaType = NATIVE;
-        return imp;
       }
 
       const bannerParams = deepAccess(bid, 'mediaTypes.banner');
@@ -172,18 +180,14 @@ export const spec = {
         imp.banner = {
           format
         };
-        bid.mediaType = BANNER;
-
-        return imp;
       }
 
       const videoParams = deepAccess(bid, 'mediaTypes.video');
       if (videoParams) {
         imp.video = videoParams;
-        bid.mediaType = VIDEO;
-
-        return imp;
       }
+
+      return imp;
     });
 
     const request = {
@@ -243,6 +247,7 @@ export const spec = {
     return bids.map((bid, id) => {
       const bidResponse = bidResponses[id];
       if (bidResponse) {
+        const mediaType = deepAccess(bidResponse, 'ext.prebid.type');
         const result = {
           requestId: bid.bidId,
           cpm: bidResponse.price,
@@ -250,12 +255,12 @@ export const spec = {
           ttl: 360,
           netRevenue: bid.netRevenue === 'net',
           currency: cur,
-          mediaType: bid.mediaType,
+          mediaType,
           width: bidResponse.w,
           height: bidResponse.h,
           dealId: bidResponse.dealid,
           meta: {
-            mediaType: bid.mediaType,
+            mediaType,
             advertiserDomains: bidResponse.adomain
           }
         };
@@ -263,10 +268,10 @@ export const spec = {
         if (bidResponse.native) {
           result.native = parseNative(bidResponse);
         } else {
-          result[ bid.mediaType === VIDEO ? 'vastXml' : 'ad' ] = bidResponse.adm;
+          result[ mediaType === VIDEO ? 'vastXml' : 'ad' ] = bidResponse.adm;
         }
 
-        if (!bid.renderer && bid.mediaType === VIDEO && deepAccess(bid, 'mediaTypes.video.context') === 'outstream') {
+        if (!bid.renderer && mediaType === VIDEO && deepAccess(bid, 'mediaTypes.video.context') === 'outstream') {
           result.renderer = Renderer.install({id: bid.bidId, url: OUTSTREAM_RENDERER_URL, adUnitCode: bid.adUnitCode});
           result.renderer.setRender(renderer);
         }

@@ -8,6 +8,7 @@ import find from 'core-js-pure/features/array/find.js';
 import includes from 'core-js-pure/features/array/includes.js';
 import { OUTSTREAM, INSTREAM } from '../src/video.js';
 import { getStorageManager } from '../src/storageManager.js';
+import { bidderSettings } from '../src/bidderSettings.js';
 
 const BIDDER_CODE = 'appnexus';
 const URL = 'https://ib.adnxs.com/ut/v3/prebid';
@@ -78,7 +79,6 @@ export const spec = {
     { code: 'districtm', gvlid: 144 },
     { code: 'adasta' },
     { code: 'beintoo', gvlid: 618 },
-    { code: 'targetVideo' },
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
@@ -202,6 +202,17 @@ export const spec = {
       payload.app = appIdObj;
     }
 
+    let auctionKeywords = config.getConfig('appnexusAuctionKeywords');
+    if (isPlainObject(auctionKeywords)) {
+      let aucKeywords = transformBidderParamKeywords(auctionKeywords);
+
+      if (aucKeywords.length > 0) {
+        aucKeywords.forEach(deleteValues);
+      }
+
+      payload.keywords = aucKeywords;
+    }
+
     if (config.getConfig('adpod.brandCategoryExclusion')) {
       payload.brand_category_uniqueness = true;
     }
@@ -293,7 +304,8 @@ export const spec = {
       serverResponse.tags.forEach(serverBid => {
         const rtbBid = getRtbBid(serverBid);
         if (rtbBid) {
-          if (rtbBid.cpm !== 0 && includes(this.supportedMediaTypes, rtbBid.ad_type)) {
+          const cpmCheck = (bidderSettings.get(bidderRequest.bidderCode, 'allowZeroCpmBids') === true) ? rtbBid.cpm >= 0 : rtbBid.cpm > 0;
+          if (cpmCheck && includes(this.supportedMediaTypes, rtbBid.ad_type)) {
             const bid = newBid(serverBid, rtbBid, bidderRequest);
             bid.mediaType = parseMediaType(rtbBid);
             bids.push(bid);
@@ -598,6 +610,26 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     bid.meta = Object.assign({}, bid.meta, { advertiserId: rtbBid.advertiser_id });
   }
 
+  // temporary function; may remove at later date if/when adserver fully supports dchain
+  function setupDChain(rtbBid) {
+    let dchain = {
+      ver: '1.0',
+      complete: 0,
+      nodes: [{
+        bsid: rtbBid.buyer_member_id.toString()
+      }],
+    };
+
+    return dchain;
+  }
+  if (rtbBid.buyer_member_id) {
+    bid.meta = Object.assign({}, bid.meta, {dchain: setupDChain(rtbBid)});
+  }
+
+  if (rtbBid.brand_id) {
+    bid.meta = Object.assign({}, bid.meta, { brandId: rtbBid.brand_id });
+  }
+
   if (rtbBid.rtb.video) {
     // shared video properties used for all 3 contexts
     Object.assign(bid, {
@@ -696,9 +728,11 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     });
     try {
       if (rtbBid.rtb.trackers) {
-        const url = rtbBid.rtb.trackers[0].impression_urls[0];
-        const tracker = createTrackPixelHtml(url);
-        bid.ad += tracker;
+        for (let i = 0; i < rtbBid.rtb.trackers[0].impression_urls.length; i++) {
+          const url = rtbBid.rtb.trackers[0].impression_urls[i];
+          const tracker = createTrackPixelHtml(url);
+          bid.ad += tracker;
+        }
       }
     } catch (error) {
       logError('Error appending tracking pixel', error);

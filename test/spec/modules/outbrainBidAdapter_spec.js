@@ -2,6 +2,7 @@ import {expect} from 'chai';
 import {spec} from 'modules/outbrainBidAdapter.js';
 import {config} from 'src/config.js';
 import {server} from 'test/mocks/xhr';
+import { createEidsArray } from 'modules/userId/eids.js';
 
 describe('Outbrain Adapter', function () {
   describe('Bid request and response', function () {
@@ -343,6 +344,23 @@ describe('Outbrain Adapter', function () {
         expect(resData.regs.coppa).to.equal(1)
 
         config.resetConfig()
+      });
+
+      it('should pass extended ids', function () {
+        let bidRequest = {
+          bidId: 'bidId',
+          params: {},
+          userIdAsEids: createEidsArray({
+            idl_env: 'id-value',
+          }),
+          ...commonBidRequest,
+        };
+
+        let res = spec.buildRequests([bidRequest], commonBidderRequest);
+        const resData = JSON.parse(res.data)
+        expect(resData.user.ext.eids).to.deep.equal([
+          {source: 'liveramp.com', uids: [{id: 'id-value', atype: 3}]}
+        ]);
       });
     })
 

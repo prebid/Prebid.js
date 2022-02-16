@@ -21,7 +21,17 @@ let consoleLogExists = Boolean(consoleExists && window.console.log);
 let consoleInfoExists = Boolean(consoleExists && window.console.info);
 let consoleWarnExists = Boolean(consoleExists && window.console.warn);
 let consoleErrorExists = Boolean(consoleExists && window.console.error);
-var events = require('./events.js');
+
+const emitEvent = (function () {
+  // lazy load events to avoid circular import
+  let ev;
+  return function() {
+    if (ev == null) {
+      ev = require('./events.js');
+    }
+    return ev.emit.apply(ev, arguments);
+  }
+})();
 
 // this allows stubbing of utility functions that are used internally by other utility functions
 export const internal = {
@@ -264,14 +274,14 @@ export function logWarn() {
   if (debugTurnedOn() && consoleWarnExists) {
     console.warn.apply(console, decorateLog(arguments, 'WARNING:'));
   }
-  events.emit(CONSTANTS.EVENTS.AUCTION_DEBUG, {type: 'WARNING', arguments: arguments});
+  emitEvent(CONSTANTS.EVENTS.AUCTION_DEBUG, {type: 'WARNING', arguments: arguments});
 }
 
 export function logError() {
   if (debugTurnedOn() && consoleErrorExists) {
     console.error.apply(console, decorateLog(arguments, 'ERROR:'));
   }
-  events.emit(CONSTANTS.EVENTS.AUCTION_DEBUG, {type: 'ERROR', arguments: arguments});
+  emitEvent(CONSTANTS.EVENTS.AUCTION_DEBUG, {type: 'ERROR', arguments: arguments});
 }
 
 function decorateLog(args, prefix) {
@@ -482,15 +492,42 @@ export function insertElement(elm, doc, target, asLastChildChild) {
 }
 
 /**
+ * Returns a promise that completes when the given element triggers a 'load' or 'error' DOM event, or when
+ * `timeout` milliseconds have elapsed.
+ *
+ * @param {HTMLElement} element
+ * @param {Number} [timeout]
+ * @returns {Promise}
+ */
+export function waitForElementToLoad(element, timeout) {
+  let timer = null;
+  return new Promise((resolve) => {
+    const onLoad = function() {
+      element.removeEventListener('load', onLoad);
+      element.removeEventListener('error', onLoad);
+      if (timer != null) {
+        window.clearTimeout(timer);
+      }
+      resolve();
+    };
+    element.addEventListener('load', onLoad);
+    element.addEventListener('error', onLoad);
+    if (timeout != null) {
+      timer = window.setTimeout(onLoad, timeout);
+    }
+  });
+}
+
+/**
  * Inserts an image pixel with the specified `url` for cookie sync
  * @param {string} url URL string of the image pixel to load
  * @param  {function} [done] an optional exit callback, used when this usersync pixel is added during an async process
+ * @param  {Number} [timeout] an optional timeout in milliseconds for the image to load before calling `done`
  */
-export function triggerPixel(url, done) {
+export function triggerPixel(url, done, timeout) {
   const img = new Image();
   if (done && internal.isFn(done)) {
-    img.addEventListener('load', done);
-    img.addEventListener('error', done);
+    waitForElementToLoad(img, timeout).then(done);
   }
   img.src = url;
 }
@@ -538,18 +575,18 @@ export function insertHtmlIntoIframe(htmlCode) {
  * @param  {string} url URL to be requested
  * @param  {string} encodeUri boolean if URL should be encoded before inserted. Defaults to true
  * @param  {function} [done] an optional exit callback, used when this usersync pixel is added during an async process
+ * @param  {Number} [timeout] an optional timeout in milliseconds for the iframe to load before calling `done`
  */
-export function insertUserSyncIframe(url, done) {
+export function insertUserSyncIframe(url, done, timeout) {
   let iframeHtml = internal.createTrackPixelIframeHtml(url, false, 'allow-scripts allow-same-origin');
   let div = document.createElement('div');
   div.innerHTML = iframeHtml;
   let iframe = div.firstChild;
   if (done && internal.isFn(done)) {
-    iframe.addEventListener('load', done);
-    iframe.addEventListener('error', done);
+    waitForElementToLoad(iframe, timeout).then(done);
   }
   internal.insertElement(iframe, document, 'html', true);
-};
+}
 
 /**
  * Creates a snippet of HTML that retrieves the specified `url`
@@ -857,12 +894,6 @@ export function isValidMediaTypes(mediaTypes) {
   return true;
 }
 
-export function getBidderRequest(bidRequests, bidder, adUnitCode) {
-  return find(bidRequests, request => {
-    return request.bids
-      .filter(bid => bid.bidder === bidder && bid.adUnitCode === adUnitCode).length > 0;
-  }) || { start: null, auctionId: null };
-}
 /**
  * Returns user configured bidder params from adunit
  * @param {Object} adUnits
@@ -1242,9 +1273,20 @@ export function mergeDeep(target, ...sources) {
         mergeDeep(target[key], source[key]);
       } else if (isArray(source[key])) {
         if (!target[key]) {
-          Object.assign(target, { [key]: source[key] });
+          Object.assign(target, { [key]: [...source[key]] });
         } else if (isArray(target[key])) {
-          target[key] = target[key].concat(source[key]);
+          source[key].forEach(obj => {
+            let addItFlag = 1;
+            for (let i = 0; i < target[key].length; i++) {
+              if (deepEqual(target[key][i], obj)) {
+                addItFlag = 0;
+                break;
+              }
+            }
+            if (addItFlag) {
+              target[key].push(obj);
+            }
+          });
         }
       } else {
         Object.assign(target, { [key]: source[key] });

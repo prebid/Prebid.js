@@ -31,7 +31,7 @@ const adUnits = [
         bidder: 'bliink',
         params: {
           placement: 'banner',
-          tagId: '14f30eca-85d2-11e8-9eed-0242ac120007'
+          tagId: '41'
         }
       }
     ]
@@ -50,11 +50,34 @@ const adUnits = [
     mediaTypes: {
       video: {
         context: 'instream',
-        playerSize: [640, 480],
-        mimes: ['video/mp4'],
-        protocols: [1, 2, 3, 4, 5, 6, 7, 8],
-        playbackmethod: [2],
-        skip: 1
+        playerSize: [[640,480]],
+      }
+    },
+    bids: [
+      {
+        bidder: 'bliink',
+        params: {
+          tagId: '41',
+          placement: 'video',
+        }
+      }
+    ]
+  }
+]
+```
+
+## Sample outstream Video Ad Unit
+
+```js
+const adUnits = [
+  {
+    code: '/19968336/prebid_cache_video_adunit',
+    sizes: [[640,480]],
+    mediaType: 'video',
+    mediaTypes: {
+      video: {
+        context: 'outstream',
+        playerSize: [[640,480]],
       }
     },
     bids: [
