@@ -265,9 +265,8 @@ describe('BizzclickAdapter', function() {
 
     it('check schain is set properly', function() {
       expect(request.data[0].source.ext.schain.complete).to.equal(1);
-      expect(request.data[0].source.ext.schain.ver).to.equal("1.0");
+      expect(request.data[0].source.ext.schain.ver).to.equal('1.0');
     })
-
 
     it('Returns valid URL', function () {
       expect(request.url).to.equal('https://us-e-node1.bizzclick.com/bid?rtb_seat_id=prebidjs&secret_key=accountId');
