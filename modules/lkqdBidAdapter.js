@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { logError, _each, generateUUID, buildUrl } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { VIDEO } from '../src/mediaTypes.js';
@@ -42,7 +42,7 @@ export const spec = {
     const BIDDER_GDPR = BIDDER_REQUEST.gdprConsent && BIDDER_REQUEST.gdprConsent.gdprApplies ? 1 : null;
     const BIDDER_GDPRS = BIDDER_REQUEST.gdprConsent && BIDDER_REQUEST.gdprConsent.consentString ? BIDDER_REQUEST.gdprConsent.consentString : null;
 
-    utils._each(validBidRequests, (bid) => {
+    _each(validBidRequests, (bid) => {
       const DOMAIN = bid.params.pageurl || REFERER;
       const GDPR = BIDDER_GDPR || bid.params.gdpr || null;
       const GDPRS = BIDDER_GDPRS || bid.params.gdprs || null;
@@ -51,7 +51,7 @@ export const spec = {
       const VIDEO_BID = bid.video ? bid.video : {};
 
       const requestData = {
-        id: utils.generateUUID(),
+        id: generateUUID(),
         imp: [],
         site: {
           domain: DOMAIN
@@ -145,9 +145,9 @@ export const spec = {
         };
       }
 
-      utils._each(calculateSizes(VIDEO_BID, bid), (sizes) => {
+      _each(calculateSizes(VIDEO_BID, bid), (sizes) => {
         const impObj = {
-          id: utils.generateUUID(),
+          id: generateUUID(),
           displaymanager: bid.bidder,
           bidfloor: BID_FLOOR,
           video: {
@@ -178,7 +178,7 @@ export const spec = {
 
       serverRequestObjects.push({
         method: 'POST',
-        url: utils.buildUrl({
+        url: buildUrl({
           protocol: 'https',
           hostname: 'rtb.lkqd.net',
           pathname: '/ad',
@@ -200,8 +200,8 @@ export const spec = {
     const bidResponses = [];
 
     if (serverBody && serverBody.seatbid) {
-      utils._each(serverBody.seatbid, (seatbid) => {
-        utils._each(seatbid.bid, (bid) => {
+      _each(serverBody.seatbid, (seatbid) => {
+        _each(seatbid.bid, (bid) => {
           if (bid.price > 0) {
             const bidResponse = {
               requestId: bidRequest.id,
@@ -224,7 +224,7 @@ export const spec = {
         });
       });
     } else {
-      utils.logError('Error: No server response or server response was empty for the requested URL');
+      logError('Error: No server response or server response was empty for the requested URL');
     }
 
     return bidResponses;
