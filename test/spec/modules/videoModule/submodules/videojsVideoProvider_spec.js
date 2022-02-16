@@ -190,14 +190,6 @@ describe('videojsProvider', function () {
       expect(video.playbackmethod).to.include(PLAYBACK_METHODS.AUTOPLAY_MUTED);
     });
 
-    it('should return the correct playback method for the other autoplay muted', function () {
-      const provider = VideojsProvider(config, videojs, null, null, null, utils);
-      provider.init();
-      const player = videojs.getPlayer('test')
-      player.autoplay = () => 'muted'
-      const { video, content } = provider.getOrtbParams();
-      expect(video.playbackmethod).to.include(PLAYBACK_METHODS.AUTOPLAY_MUTED);
-    });
   });
 });
 
