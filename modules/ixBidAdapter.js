@@ -711,14 +711,8 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
       r.ext.ixdiag.msd += missingCount;
       r.ext.ixdiag.msi += missingBannerImpressions.length;
     } else {
-      impressionObjects.map((imp) => {
-        if (imp.hasOwnProperty('ext')) {
-          imp.ext.gpid = gpid;
-        } else {
-          imp.ext = {}
-          imp.ext.gpid = gpid;
-        }
-      });
+      // set imp.ext.gpid to resolved gpid for each imp
+      impressionObjects.forEach(imp => deepSetValue(imp, 'ext.gpid', gpid));
       r.imp.push(...impressionObjects);
     }
 
