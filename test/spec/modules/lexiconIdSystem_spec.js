@@ -97,7 +97,7 @@ describe('LexiconIdSystem', () => {
           'Content-Type': 'application/json'
         }, 'invalid response');
 
-        expect(logErrorSpy.lastCall.args[0]).to.eq(`${lexiconIdSubmodule.name}: ID reading error`);
+        expect(logErrorSpy.lastCall.args[0]).to.eq(`${lexiconIdSubmodule.name}: ID reading error:`);
 
         logErrorSpy.restore();
       });

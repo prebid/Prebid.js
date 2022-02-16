@@ -77,7 +77,7 @@ export const lexiconIdSubmodule = {
             try {
               envelope = getEnvelope(JSON.parse(response))
             } catch (err) {
-              logError(`${MODULE_NAME}: ID reading error`, err);
+              logError(`${MODULE_NAME}: ID reading error:`, err);
             }
             cb(envelope);
           },
