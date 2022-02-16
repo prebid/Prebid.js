@@ -43,6 +43,10 @@ function addRealTimeData(rtd) {
   }
 }
 
+/**
+  * Try parsing stringified array of segment IDs.
+  * @param {String} data
+  */
 function tryParse(data) {
   try {
     return JSON.parse(data);
