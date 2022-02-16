@@ -49,12 +49,12 @@ const BANNER_BID_REQUEST = {
     }
   },
   schain: {
-    ver: "1.0",
+    ver: '1.0',
     complete: 1,
     nodes: [
       {
-        asi: "example.com",
-        sid: "164",
+        asi: 'example.com',
+        sid: '164',
         hp: 1
       }
     ]
