@@ -60,13 +60,13 @@ export const spec = {
         const bidResponse = {
           requestId: adUnit.requestId,
           cpm: adUnit.cpm,
-          currency: body.params.currency,
+          currency: adUnit.currency,
           width: adUnit.width,
           height: adUnit.height,
           ttl: adUnit.ttl || TTL,
           creativeId: adUnit.requestId,
-          netRevenue: body.params.netRevenue,
-          nurl: body.nurl,
+          netRevenue: adUnit.netRevenue,
+          nurl: adUnit.nurl,
           meta: {
             mediaType: adUnit.mediaType
           }
