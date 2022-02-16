@@ -90,7 +90,7 @@ describe('videojsProvider', function () {
       expect(video.protocols).to.deep.equal([]);
       expect(video.h).to.equal(100);
       expect(video.w).to.equal(200);
-      // Should we check for these if they are hard coded?
+
       expect(video.maxextended).to.equal(-1);
       expect(video.boxingallowed).to.equal(1);
       expect(video.playbackmethod).to.include(PLAYBACK_METHODS.CLICK_TO_PLAY);
@@ -111,7 +111,6 @@ describe('videojsProvider', function () {
       </video>`
 
       let player = videojs('test')
-      expect(player).has.property('ima')
 
       config.playerConfig = {
         params: {
@@ -132,16 +131,18 @@ describe('videojsProvider', function () {
       expect(video.api).to.include(API_FRAMEWORKS.VPAID_2_0);
       expect(video.mimes).to.include(VPAID_MIME_TYPE);
       player.dispose();
+    });
 
-      // Should not return instream placement when theres no source
+    // We can't determine what type of outstream play is occuring
+    // if the src is absent so we should not set placement
+    it('should not set placement when src is absent', function() {
       document.body.innerHTML = `<video preload id='test' width="${200}" height="${100}"></video>`
       player = videojs('test')
-      expect(player).has.property('ima')
       provider = VideojsProvider(config, videojs, null, null, null, utils);
       provider.init();
       ({ video, content } = provider.getOrtbParams());
       expect(video).to.not.have.property('placement')
-    });
+    })
 
     it('should populate position when fullscreen', function () {
       const provider = VideojsProvider(config, videojs, null, null, null, utils);
@@ -189,15 +190,10 @@ describe('videojsProvider', function () {
       const { video, content } = provider.getOrtbParams();
       expect(video.playbackmethod).to.include(PLAYBACK_METHODS.AUTOPLAY_MUTED);
     });
-
   });
 });
 
 describe('utils', function() {
-  beforeEach(() => {
-    expect(window.innerHeight).to.equal(600)
-    expect(window.innerWidth).to.equal(785)
-  });
   describe('getPositionCode', function() {
     it('should return the correct position when video is above the fold', function () {
       const code = utils.getPositionCode({
