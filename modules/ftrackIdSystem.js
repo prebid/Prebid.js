@@ -14,7 +14,7 @@ import { uspDataHandler } from '../src/adapterManager.js';
 const MODULE_NAME = 'ftrackId';
 const LOG_PREFIX = 'FTRACK - ';
 const LOCAL_STORAGE_EXP_DAYS = 30;
-const VENDOR_ID = '000'; // TODO: how do we get a real vendor ID
+const VENDOR_ID = null;
 const LOCAL_STORAGE = 'html5';
 const FTRACK_STORAGE_NAME = 'ftrackId';
 const FTRACK_PRIVACY_STORAGE_NAME = `${FTRACK_STORAGE_NAME}_privacy`;
