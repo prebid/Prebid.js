@@ -67,6 +67,7 @@ export const spec = {
           creativeId: adUnit.requestId,
           netRevenue: adUnit.netRevenue,
           nurl: adUnit.nurl,
+          mediaType: adUnit.mediaType,
           meta: {
             mediaType: adUnit.mediaType
           }
@@ -150,7 +151,7 @@ function getSizesArray(bid, mediaType) {
 
   if (deepAccess(bid, `mediaTypes.${mediaType}.sizes`)) {
     sizesArray = bid.mediaTypes[mediaType].sizes;
-  } else if (Array.isArray(bid.sizes) && bid.sizes.length) {
+  } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0) {
     sizesArray = bid.sizes;
   }
 
