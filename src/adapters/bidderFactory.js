@@ -7,7 +7,7 @@ import { nativeBidIsValid } from '../native.js';
 import { isValidVideoBid } from '../video.js';
 import CONSTANTS from '../constants.json';
 import events from '../events.js';
-import includes from 'prebidjs-polyfill/includes.js';
+import includes from 'core-js-pure/features/array/includes.js';
 import { ajax } from '../ajax.js';
 import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, flatten, uniques, timestamp, deepAccess, isArray, isPlainObject } from '../utils.js';
 import { ADPOD } from '../mediaTypes.js';
@@ -37,6 +37,7 @@ export const storage = getCoreStorageManager('bidderFactory');
  * });
  *
  * @see BidderSpec for the full API and more thorough descriptions.
+ *
  */
 
 /**
@@ -231,7 +232,7 @@ export function newBidder(spec) {
       // Server requests have returned and been processed. Since `ajax` accepts a single callback,
       // we need to rig up a function which only executes after all the requests have been responded.
       const onResponse = delayExecution(configEnabledCallback(afterAllResponses), requests.length)
-      requests.forEach(_ => events.emit(CONSTANTS.EVENTS.BEFORE_BIDDER_HTTP, bidderRequest));
+      requests.forEach(requestObject => events.emit(CONSTANTS.EVENTS.BEFORE_BIDDER_HTTP, bidderRequest, requestObject));
       requests.forEach(processRequest);
 
       function formatGetParameters(data) {

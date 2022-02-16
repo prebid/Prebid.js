@@ -2,7 +2,7 @@ import {submodule} from '../src/hook.js';
 import {isFn, logError} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {getGlobal} from '../src/prebidGlobal.js';
-import includes from 'prebidjs-polyfill/includes.js';
+import includes from 'core-js-pure/features/array/includes.js';
 import '../src/adapterManager.js';
 let observerAvailable = true;
 function getIntersectionData(requestBidsObject, onDone, providerConfig, userConsent) {

@@ -61,7 +61,25 @@ describe('MediaSquare bid adapter tests', function () {
       code: 'publishername_atf_desktop_rg_pave'
     },
   }];
-
+  var FLOORS_PARAMS = [{
+    adUnitCode: 'banner-div',
+    bidId: 'aaaa1234',
+    auctionId: 'bbbb1234',
+    transactionId: 'cccc1234',
+    mediaTypes: {
+      banner: {
+        sizes: [
+          [300, 250]
+        ]
+      }
+    },
+    bidder: 'mediasquare',
+    params: {
+      owner: 'test',
+      code: 'publishername_atf_desktop_rg_pave'
+    },
+    getFloor: function (a) { return { currency: 'EUR', floor: 1.0 }; },
+  }];
   var BID_RESPONSE = {'body': {
     'responses': [{
       'transaction_id': 'cccc1234',
@@ -117,6 +135,12 @@ describe('MediaSquare bid adapter tests', function () {
     expect(requestContent.codes[0]).to.have.property('auctionId').and.to.equal('bbbb1234');
     expect(requestContent.codes[0]).to.have.property('transactionId').and.to.equal('cccc1234');
     expect(requestContent.codes[0]).to.have.property('mediatypes').exist;
+    expect(requestContent.codes[0]).to.have.property('floor').exist;
+    expect(requestContent.codes[0].floor).to.deep.equal({});
+    const requestfloor = spec.buildRequests(FLOORS_PARAMS, DEFAULT_OPTIONS);
+    const responsefloor = JSON.parse(requestfloor.data);
+    expect(responsefloor.codes[0]).to.have.property('floor').exist;
+    expect(responsefloor.codes[0].floor).to.have.property('floor').and.to.equal(1.0);
   });
 
   it('Verify parse response', function () {

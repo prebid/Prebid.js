@@ -599,6 +599,32 @@ describe('TheMediaGrid Adapter', function () {
       });
     });
 
+    it('should contain imp[].instl if available', function() {
+      const ortb2Imp = [{
+        instl: 1
+      }, {
+        instl: 2,
+        ext: {
+          data: {
+            adserver: {
+              name: 'ad_server_name',
+              adslot: '/222222/slot'
+            },
+            pbadslot: '/222222/slot'
+          }
+        }
+      }];
+      const bidRequestsWithOrtb2Imp = bidRequests.slice(0, 3).map((bid, ind) => {
+        return Object.assign(ortb2Imp[ind] ? { ortb2Imp: ortb2Imp[ind] } : {}, bid);
+      });
+      const request = spec.buildRequests(bidRequestsWithOrtb2Imp, bidderRequest);
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
+      expect(payload.imp[0].instl).to.equal(1);
+      expect(payload.imp[1].instl).to.equal(2);
+      expect(payload.imp[2].instl).to.be.undefined;
+    });
+
     it('all id must be a string', function() {
       const fpdUserIdNumVal = 2345543345;
       const getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage').callsFake(
