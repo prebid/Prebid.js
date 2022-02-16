@@ -1,6 +1,7 @@
 ### Overview
 
- ID Ward Real time data Provider automatically obtains and submit audience segments IDs to the bid-stream. 
+ID Ward is a data anonymization technology for privacy-preserving advertising. Publishers and advertisers are able to target and retarget custom audience segments covering 100% of consented audiences. 
+ID Ward’s Real-time Data Provider automatically obtains segment IDs from the ID Ward on-domain script (via localStorage) and passes them to the bid-stream.
 
 ### Integration
 
@@ -31,4 +32,5 @@
  });
  ```
 
-Please note that idWardRtdProvider should be integrated into the publisher website along with the ID Ward Pixel. See the integration guide [here](https://publishers-web.id-ward.com/pixel-integration).
+Please note that idWardRtdProvider should be integrated into the publisher website along with the [ID Ward Pixel](https://publishers-web.id-ward.com/pixel-integration).
+Please reach out to Id Ward representative(support@id-ward.com) if you have any questions or need further help to integrate Prebid, idWardRtdProvider, and Id Ward Pixel
