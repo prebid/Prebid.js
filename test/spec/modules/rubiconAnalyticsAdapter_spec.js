@@ -39,7 +39,8 @@ const {
     BIDDER_DONE,
     BID_WON,
     BID_TIMEOUT,
-    SET_TARGETING
+    SET_TARGETING,
+    BILLABLE_EVENT
   }
 } = CONSTANTS;
 
@@ -677,6 +678,11 @@ describe('rubicon analytics adapter', function () {
       });
       expect(rubiConf).to.deep.equal({
         analyticsEventDelay: 0,
+        dmBilling: {
+          enabled: false,
+          vendors: [],
+          waitForAuction: true
+        },
         pvid: '12345678',
         wrapperName: '1001_general',
         int_type: 'dmpbjs',
@@ -696,6 +702,11 @@ describe('rubicon analytics adapter', function () {
       });
       expect(rubiConf).to.deep.equal({
         analyticsEventDelay: 0,
+        dmBilling: {
+          enabled: false,
+          vendors: [],
+          waitForAuction: true
+        },
         pvid: '12345678',
         wrapperName: '1001_general',
         int_type: 'dmpbjs',
@@ -717,6 +728,11 @@ describe('rubicon analytics adapter', function () {
       });
       expect(rubiConf).to.deep.equal({
         analyticsEventDelay: 0,
+        dmBilling: {
+          enabled: false,
+          vendors: [],
+          waitForAuction: true
+        },
         pvid: '12345678',
         wrapperName: '1001_general',
         int_type: 'dmpbjs',
@@ -2160,6 +2176,210 @@ describe('rubicon analytics adapter', function () {
       expect(message.integration).to.equal('testType');
 
       rubiconAnalyticsAdapter.disableAnalytics();
+    });
+  });
+
+  describe('billing events integration', () => {
+    beforeEach(function () {
+      rubiconAnalyticsAdapter.enableAnalytics({
+        options: {
+          endpoint: '//localhost:9999/event',
+          accountId: 1001
+        }
+      });
+      // default dmBilling
+      config.setConfig({
+        rubicon: {
+          dmBilling: {
+            enabled: false,
+            vendors: [],
+            waitForAuction: true
+          }
+        }
+      })
+    });
+    afterEach(function () {
+      rubiconAnalyticsAdapter.disableAnalytics();
+    });
+    const basicBillingAuction = (billingEvents = []) => {
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+
+      // emit billing events
+      billingEvents.forEach(ev => events.emit(BILLABLE_EVENT, ev));
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[1]);
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      events.emit(SET_TARGETING, MOCK.SET_TARGETING);
+      events.emit(BID_WON, MOCK.BID_WON[0]);
+      events.emit(BID_WON, MOCK.BID_WON[1]);
+    }
+    it('should ignore billing events when not enabled', () => {
+      basicBillingAuction([{
+        vendor: 'vendorName',
+        type: 'auction',
+        billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965'
+      }]);
+      expect(server.requests.length).to.equal(1);
+      const request = server.requests[0];
+      const message = JSON.parse(request.requestBody);
+      expect(message.billableEvents).to.be.undefined;
+    });
+    it('should ignore billing events when enabled but vendor is not whitelisted', () => {
+      // off by default
+      config.setConfig({
+        rubicon: {
+          dmBilling: {
+            enabled: true
+          }
+        }
+      });
+      basicBillingAuction([{
+        vendor: 'vendorName',
+        type: 'auction',
+        billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965'
+      }]);
+      expect(server.requests.length).to.equal(1);
+      const request = server.requests[0];
+      const message = JSON.parse(request.requestBody);
+      expect(message.billableEvents).to.be.undefined;
+    });
+    it('should pass along billing event in same payload', () => {
+      // off by default
+      config.setConfig({
+        rubicon: {
+          dmBilling: {
+            enabled: true,
+            vendors: ['vendorName']
+          }
+        }
+      });
+      basicBillingAuction([{
+        vendor: 'vendorName',
+        type: 'auction',
+        billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965'
+      }]);
+      expect(server.requests.length).to.equal(1);
+      const request = server.requests[0];
+      const message = JSON.parse(request.requestBody);
+      expect(message).to.haveOwnProperty('auctions');
+      expect(message.billableEvents).to.deep.equal([{
+        accountId: 1001,
+        vendor: 'vendorName',
+        type: 'general', // mapping all events to endpoint as 'general' for now
+        billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965'
+      }]);
+    });
+    it('should pass along multiple billing events but filter out duplicates', () => {
+      // off by default
+      config.setConfig({
+        rubicon: {
+          dmBilling: {
+            enabled: true,
+            vendors: ['vendorName']
+          }
+        }
+      });
+      basicBillingAuction([
+        {
+          vendor: 'vendorName',
+          type: 'auction',
+          billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965'
+        },
+        {
+          vendor: 'vendorName',
+          type: 'auction',
+          billingId: '743db6e3-21f2-44d4-917f-cb3488c6076f'
+        },
+        {
+          vendor: 'vendorName',
+          type: 'auction',
+          billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965'
+        }
+      ]);
+      expect(server.requests.length).to.equal(1);
+      const request = server.requests[0];
+      const message = JSON.parse(request.requestBody);
+      expect(message).to.haveOwnProperty('auctions');
+      expect(message.billableEvents).to.deep.equal([
+        {
+          accountId: 1001,
+          vendor: 'vendorName',
+          type: 'general',
+          billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965'
+        },
+        {
+          accountId: 1001,
+          vendor: 'vendorName',
+          type: 'general',
+          billingId: '743db6e3-21f2-44d4-917f-cb3488c6076f'
+        }
+      ]);
+    });
+    it('should pass along event right away if no pending auction', () => {
+      // off by default
+      config.setConfig({
+        rubicon: {
+          dmBilling: {
+            enabled: true,
+            vendors: ['vendorName']
+          }
+        }
+      });
+
+      events.emit(BILLABLE_EVENT, {
+        vendor: 'vendorName',
+        type: 'auction',
+        billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965'
+      });
+      expect(server.requests.length).to.equal(1);
+      const request = server.requests[0];
+      const message = JSON.parse(request.requestBody);
+      expect(message).to.not.haveOwnProperty('auctions');
+      expect(message.billableEvents).to.deep.equal([
+        {
+          accountId: 1001,
+          vendor: 'vendorName',
+          type: 'general',
+          billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965'
+        }
+      ]);
+    });
+    it('should pass along event right away if pending auction but not waiting', () => {
+      // off by default
+      config.setConfig({
+        rubicon: {
+          dmBilling: {
+            enabled: true,
+            vendors: ['vendorName'],
+            waitForAuction: false
+          }
+        }
+      });
+      // should fire right away, and then auction later
+      basicBillingAuction([{
+        vendor: 'vendorName',
+        type: 'auction',
+        billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965'
+      }]);
+      expect(server.requests.length).to.equal(2);
+      const billingRequest = server.requests[0];
+      const billingMessage = JSON.parse(billingRequest.requestBody);
+      expect(billingMessage).to.not.haveOwnProperty('auctions');
+      expect(billingMessage.billableEvents).to.deep.equal([
+        {
+          accountId: 1001,
+          vendor: 'vendorName',
+          type: 'general',
+          billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965'
+        }
+      ]);
+      // auction event after
+      const auctionRequest = server.requests[1];
+      const auctionMessage = JSON.parse(auctionRequest.requestBody);
+      // should not double pass events!
+      expect(auctionMessage).to.not.haveOwnProperty('billableEvents');
     });
   });
 
