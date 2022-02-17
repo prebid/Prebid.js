@@ -60,12 +60,12 @@ export const spec = {
         const bidResponse = {
           requestId: adUnit.requestId,
           cpm: adUnit.cpm,
-          currency: adUnit.currency,
+          currency: adUnit.currency || CURRENCY,
           width: adUnit.width,
           height: adUnit.height,
           ttl: adUnit.ttl || TTL,
           creativeId: adUnit.requestId,
-          netRevenue: adUnit.netRevenue,
+          netRevenue: adUnit.netRevenue || true,
           nurl: adUnit.nurl,
           mediaType: adUnit.mediaType,
           meta: {
@@ -300,7 +300,7 @@ function generateBidParameters(bid, bidderRequest) {
     bidObject.gpid = gpid;
   }
 
-  const placementId = bid.placementId || deepAccess(bid, 'mediaTypes.banner.name');
+  const placementId = params.placementId || deepAccess(bid, `mediaTypes.${mediaType}.name`);
   if (placementId) {
     bidObject.placementId = placementId;
   }
