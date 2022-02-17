@@ -101,10 +101,10 @@ describe('riseAdapter', function () {
     }
     const placementId = '12345678';
 
-    it('sends the placementId as a query param', function () {
+    it('sends the placementId to ENDPOINT via POST', function () {
       bidRequests[0].params.placementId = placementId;
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.params.placement_id).to.equal(placementId);
+      expect(request.data.bids[0].placementId).to.equal(placementId);
     });
 
     it('sends bid request to ENDPOINT via POST', function () {
@@ -328,6 +328,7 @@ describe('riseAdapter', function () {
       creativeId: '21e12606d47ba7',
       netRevenue: true,
       nurl: 'http://example.com/win/1234',
+      mediaType: VIDEO,
       meta: {
         mediaType: VIDEO,
         advertiserDomains: ['abc.com']
@@ -345,8 +346,9 @@ describe('riseAdapter', function () {
       creativeId: '21e12606d47ba7',
       netRevenue: true,
       nurl: 'http://example.com/win/1234',
+      mediaType: BANNER,
       meta: {
-        mediaType: VIDEO,
+        mediaType: BANNER,
         advertiserDomains: ['abc.com']
       },
       ad: '"<img src=\"https://...\"/>"'
