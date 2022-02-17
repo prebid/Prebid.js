@@ -182,10 +182,10 @@ export let gdprDataHandler = {
     return gdprDataHandler.consentData;
   },
   getConsentMeta: function() {
-    if (gdprDataHandler.consentData && gdprDataHandler.consentData.vendorData && gdprDataHandler.consentData.vendorData.tcString && gdprDataHandler.generatedTime) {
+    if (gdprDataHandler.consentData && gdprDataHandler.consentData.vendorData && gdprDataHandler.generatedTime) {
       return {
         gdprApplies: gdprDataHandler.consentData.gdprApplies,
-        consentStringSize: gdprDataHandler.consentData.vendorData.tcString.length,
+        consentStringSize: (isStr(gdprDataHandler.consentData.vendorData.tcString)) ? gdprDataHandler.consentData.vendorData.tcString.length : 0,
         generatedAt: gdprDataHandler.generatedTime,
         apiVersion: gdprDataHandler.consentData.apiVersion
       };
