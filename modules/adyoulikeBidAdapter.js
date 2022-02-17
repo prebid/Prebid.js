@@ -433,7 +433,7 @@ function getNativeAssets(response, nativeConfig) {
 
         const icurl = getImageUrl(adJson, deepAccess(adJson, 'Content.Preview.Sponsor.Logo.Resource'), iconSize[0], iconSize[1]);
 
-        if (url) {
+        if (icurl) {
           native[key] = {
             url: icurl,
             width: iconSize[0],

@@ -8,6 +8,16 @@ const VERSION = '1.2';
 const NET_REVENUE = true;
 const TTL = 300;
 
+/**
+ * See modules/userId/eids.js for supported sources
+ */
+const SUPPORTED_USER_ID_SOURCES = [
+  'adserver.org',
+  'criteo.com',
+  'intimatemerger.com',
+  'liveramp.com',
+];
+
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['adingo'],
@@ -39,6 +49,9 @@ export const spec = {
       data.adUnitCode = request.adUnitCode;
       data.bidId = request.bidId;
       data.transactionId = request.transactionId;
+      data.user = {
+        eids: (request.userIdAsEids || []).filter((eid) => SUPPORTED_USER_ID_SOURCES.indexOf(eid.source) !== -1)
+      };
 
       data.sizes = [];
       _each(request.sizes, (size) => {
@@ -49,7 +62,11 @@ export const spec = {
       });
 
       data.params = request.params;
-      const searchParams = new URLSearchParams(request.params);
+      const searchParams = new URLSearchParams({
+        dfpUnitCode: request.params.dfpUnitCode,
+        tagId: request.params.tagId,
+        groupId: request.params.groupId,
+      });
 
       serverRequests.push({
         method: 'POST',

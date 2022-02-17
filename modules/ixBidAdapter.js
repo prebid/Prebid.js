@@ -203,10 +203,6 @@ function bidToImp(bid) {
     imp.ext.sid = String(bid.params.id);
   }
 
-  const dfpAdUnitCode = deepAccess(bid, 'ortb2Imp.ext.data.adserver.adslot');
-  if (dfpAdUnitCode) {
-    imp.ext.dfp_ad_unit_code = dfpAdUnitCode;
-  }
   return imp;
 }
 
@@ -488,6 +484,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   // Get ids from Prebid User ID Modules
   let eidInfo = getEidInfo(deepAccess(validBidRequests, '0.userIdAsEids'), deepAccess(validBidRequests, '0.userId.flocId'));
   let userEids = eidInfo.toSend;
+  const pageUrl = getPageUrl() || deepAccess(bidderRequest, 'refererInfo.referer');
 
   // RTI ids will be included in the bid request if the function getIdentityInfo() is loaded
   // and if the data for the partner exist
@@ -586,8 +583,8 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
       deepSetValue(r, 'regs.ext.us_privacy', bidderRequest.uspConsent);
     }
 
-    if (bidderRequest.refererInfo) {
-      r.site.page = bidderRequest.refererInfo.referer;
+    if (pageUrl) {
+      r.site.page = pageUrl;
     }
   }
 
@@ -684,9 +681,10 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
       currentImpressionSize = encodeURIComponent(JSON.stringify({ impressionObjects })).length;
     }
 
+    const gpid = impressions[transactionIds[adUnitIndex]].gpid;
+    const dfpAdUnitCode = impressions[transactionIds[adUnitIndex]].dfp_ad_unit_code;
     if (impressionObjects.length && BANNER in impressionObjects[0]) {
-      const { id, banner: { topframe }, ext } = impressionObjects[0];
-      const gpid = impressions[transactionIds[adUnitIndex]].gpid;
+      const { id, banner: { topframe } } = impressionObjects[0];
       const _bannerImpression = {
         id,
         banner: {
@@ -695,9 +693,9 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
         },
       }
 
-      if (ext.dfp_ad_unit_code || gpid) {
+      if (dfpAdUnitCode || gpid) {
         _bannerImpression.ext = {};
-        _bannerImpression.ext.dfp_ad_unit_code = ext.dfp_ad_unit_code;
+        _bannerImpression.ext.dfp_ad_unit_code = dfpAdUnitCode;
         _bannerImpression.ext.gpid = gpid;
       }
 
@@ -713,6 +711,8 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
       r.ext.ixdiag.msd += missingCount;
       r.ext.ixdiag.msi += missingBannerImpressions.length;
     } else {
+      // set imp.ext.gpid to resolved gpid for each imp
+      impressionObjects.forEach(imp => deepSetValue(imp, 'ext.gpid', gpid));
       r.imp.push(...impressionObjects);
     }
 
@@ -889,6 +889,7 @@ function createVideoImps(validBidRequest, videoImps) {
     videoImps[validBidRequest.transactionId] = {};
     videoImps[validBidRequest.transactionId].ixImps = [];
     videoImps[validBidRequest.transactionId].ixImps.push(imp);
+    videoImps[validBidRequest.transactionId].gpid = deepAccess(validBidRequest, 'ortb2Imp.ext.gpid');
   }
 }
 
@@ -909,20 +910,37 @@ function createBannerImps(validBidRequest, missingBannerSizes, bannerImps) {
 
   const bannerSizeDefined = includesSize(deepAccess(validBidRequest, 'mediaTypes.banner.sizes'), deepAccess(validBidRequest, 'params.size'));
 
+  if (!bannerImps.hasOwnProperty(validBidRequest.transactionId)) {
+    bannerImps[validBidRequest.transactionId] = {};
+  }
+
+  bannerImps[validBidRequest.transactionId].gpid = deepAccess(validBidRequest, 'ortb2Imp.ext.gpid');
+  bannerImps[validBidRequest.transactionId].dfp_ad_unit_code = deepAccess(validBidRequest, 'ortb2Imp.ext.data.adserver.adslot');
+
   // Create IX imps from params.size
   if (bannerSizeDefined) {
-    if (!bannerImps.hasOwnProperty(validBidRequest.transactionId)) {
-      bannerImps[validBidRequest.transactionId] = {};
-    }
     if (!bannerImps[validBidRequest.transactionId].hasOwnProperty('ixImps')) {
       bannerImps[validBidRequest.transactionId].ixImps = []
     }
     bannerImps[validBidRequest.transactionId].ixImps.push(imp);
-    bannerImps[validBidRequest.transactionId].gpid = deepAccess(validBidRequest, 'ortb2Imp.ext.gpid');
   }
 
   if (ixConfig.hasOwnProperty('detectMissingSizes') && ixConfig.detectMissingSizes) {
     updateMissingSizes(validBidRequest, missingBannerSizes, imp);
+  }
+}
+
+/**
+ * Returns the `pageUrl` set by publisher on the page if it is an valid url
+ */
+function getPageUrl() {
+  const pageUrl = config.getConfig('pageUrl');
+  try {
+    const url = new URL(pageUrl);
+    return url.href;
+  } catch (_) {
+    logWarn(`IX Bid Adapter: invalid pageUrl config property value set: ${pageUrl}`);
+    return undefined;
   }
 }
 
@@ -1330,7 +1348,7 @@ export const spec = {
         bid = parseBid(innerBids[j], responseBody.cur, bidRequest);
 
         if (!deepAccess(bid, 'mediaTypes.video.renderer') && deepAccess(bid, 'mediaTypes.video.context') === 'outstream') {
-          bid.mediaTypes.video.renderer = createRenderer(innerBids[j].bidId);
+          bid.renderer = createRenderer(innerBids[j].bidId);
         }
 
         bids.push(bid);
