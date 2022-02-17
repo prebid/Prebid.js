@@ -19,7 +19,7 @@ describe('KubientAdapter', function () {
     },
     getFloor: function(params) {
       return {
-        floor: 0.05,
+        floor: 0,
         currency: 'USD'
       };
     },
@@ -127,10 +127,9 @@ describe('KubientAdapter', function () {
         expect(data.uspConsent).to.exist.and.to.equal(uspConsentData);
         for (let j = 0; j < data['adSlots'].length; j++) {
           let adSlot = data['adSlots'][i];
-          expect(adSlot).to.have.all.keys('bidId', 'zoneId', 'floor', 'banner', 'schain');
+          expect(adSlot).to.have.all.keys('bidId', 'zoneId', 'banner', 'schain');
           expect(adSlot.bidId).to.be.a('string').and.to.equal(bidBanner.bidId);
           expect(adSlot.zoneId).to.be.a('string').and.to.equal(bidBanner.params.zoneid);
-          expect(adSlot.floor).to.be.a('number');
           expect(adSlot.schain).to.be.an('object');
           expect(adSlot.banner).to.be.an('object');
         }
@@ -202,10 +201,9 @@ describe('KubientAdapter', function () {
         expect(data.uspConsent).to.exist.and.to.equal(uspConsentData);
         for (let j = 0; j < data['adSlots'].length; j++) {
           let adSlot = data['adSlots'][i];
-          expect(adSlot).to.have.all.keys('bidId', 'zoneId', 'floor', 'banner', 'schain');
+          expect(adSlot).to.have.all.keys('bidId', 'zoneId', 'banner', 'schain');
           expect(adSlot.bidId).to.be.a('string').and.to.equal(bidBanner.bidId);
           expect(adSlot.zoneId).to.be.a('string').and.to.equal(bidBanner.params.zoneid);
-          expect(adSlot.floor).to.be.a('number');
           expect(adSlot.schain).to.be.an('object');
           expect(adSlot.banner).to.be.an('object');
         }
