@@ -67,6 +67,8 @@
                 bidsBackHandler: sendAdserverRequest,
                 timeout: PREBID_TIMEOUT
             });
+
+            document.getElementById( "user-segments" ).innerHTML = JSON.stringify( pbjs.getConfig('ortb2') );
         });
 
         function sendAdserverRequest() {
@@ -104,7 +106,7 @@
         googletag.cmd.push(function() { googletag.display('div-gpt-ad-1460505748561-0'); });
     </script>
 </div>
-<h5>Segments Sent to Bidding Adapter</h5>
+<h5>First Party Data (ortb2) Sent to Bidding Adapter</h5>
 <div id="user-segments"></div>
 </body>
 </html>
