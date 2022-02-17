@@ -94,18 +94,16 @@ export const spec = {
   },
 
   getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
-    let iframeSyncs = [];
-    let imageSyncs = [];
+    const iframeSyncs = [];
+    const imageSyncs = [];
     for (let i = 0; i < serverResponses.length; i++) {
       const serverResponseHeaders = serverResponses[i].headers;
       const imgSync = (serverResponseHeaders != null && syncOptions.pixelEnabled) ? serverResponseHeaders.get('X-PLL-UserSync-Image') : null
       const iframeSync = (serverResponseHeaders != null && syncOptions.iframeEnabled) ? serverResponseHeaders.get('X-PLL-UserSync-Iframe') : null
       if (iframeSync != null) {
         iframeSyncs.push(iframeSync)
-      } else {
-        if (imgSync != null) {
-          imageSyncs.push(imgSync)
-        }
+      } else if (imgSync != null) {
+        imageSyncs.push(imgSync)
       }
     }
     return [iframeSyncs.filter(uniques).map(it => { return { type: 'iframe', url: it } }),
