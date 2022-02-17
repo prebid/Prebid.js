@@ -96,12 +96,17 @@ export const spec = {
           divid: adUnitCode.toString()
         }
       };
-      if (ortb2Imp && ortb2Imp.ext && ortb2Imp.ext.data) {
-        impObj.ext.data = ortb2Imp.ext.data;
-        if (impObj.ext.data.adserver && impObj.ext.data.adserver.adslot) {
-          impObj.ext.gpid = impObj.ext.data.adserver.adslot.toString();
-        } else {
-          impObj.ext.gpid = ortb2Imp.ext.data.pbadslot && ortb2Imp.ext.data.pbadslot.toString();
+      if (ortb2Imp) {
+        if (ortb2Imp.instl) {
+          impObj.instl = ortb2Imp.instl;
+        }
+        if (ortb2Imp.ext && ortb2Imp.ext.data) {
+          impObj.ext.data = ortb2Imp.ext.data;
+          if (impObj.ext.data.adserver && impObj.ext.data.adserver.adslot) {
+            impObj.ext.gpid = impObj.ext.data.adserver.adslot.toString();
+          } else {
+            impObj.ext.gpid = ortb2Imp.ext.data.pbadslot && ortb2Imp.ext.data.pbadslot.toString();
+          }
         }
       }
       if (!isEmpty(keywords)) {
