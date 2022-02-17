@@ -8,7 +8,7 @@
 import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js';
 import {logError, formatQS} from '../src/utils.js';
-import includes from 'prebidjs-polyfill/includes.js';
+import includes from 'core-js-pure/features/array/includes.js';
 
 const MODULE_NAME = 'connectId';
 const VENDOR_ID = 25;
