@@ -7,7 +7,8 @@
 
 import { logMessage, logError } from '../src/utils.js';
 import { ajaxBuilder } from '../src/ajax.js';
-import { submodule } from '../src/hook.js'
+import { submodule } from '../src/hook.js';
+import { uspDataHandler } from '../src/adapterManager.js';
 
 const MODULE_NAME = 'lexicon';
 const LEXICON_URL = 'https://api-lexicon.33across.com/v1/envelope';
@@ -27,6 +28,25 @@ function getEnvelope(response) {
   }
 
   return response.data.envelope;
+}
+
+function calculateQueryStringParams(pid, gdprConsentData) {
+  const uspString = uspDataHandler.getConsentData();
+  const gdprApplies = Boolean(gdprConsentData?.gdprApplies);
+  const params = {
+    pid,
+    gdpr: Number(gdprApplies),
+  };
+
+  if (uspString) {
+    params.us_privacy = uspString;
+  }
+
+  if (gdprApplies) {
+    params.gdpr_consent = gdprConsentData.consentString || '';
+  }
+
+  return params;
 }
 
 /** @type {Submodule} */
@@ -59,18 +79,18 @@ export const lexiconIdSubmodule = {
    * @param {SubmoduleConfig} [config]
    * @returns {IdResponse|undefined}
    */
-  getId({ params = { } } = {}) {
-    const { pid, apiUrl = LEXICON_URL } = params;
-
-    if (!pid || typeof pid !== 'string') {
+  getId({ params = { } }, gdprConsentData) {
+    if (typeof params.pid !== 'string') {
       logError('Lexicon ID submodule requires a partner ID to be defined');
 
       return;
     }
 
+    const { pid, apiUrl = LEXICON_URL } = params;
+
     return {
       callback(cb) {
-        ajaxBuilder(AJAX_TIMEOUT)(`${apiUrl}?pid=${pid}`, {
+        ajaxBuilder(AJAX_TIMEOUT)(apiUrl, {
           success(response) {
             let envelope;
 
@@ -86,7 +106,7 @@ export const lexiconIdSubmodule = {
 
             cb();
           }
-        }, undefined, { withCredentials: true });
+        }, calculateQueryStringParams(pid, gdprConsentData), { method: 'GET', withCredentials: true });
       }
     };
   }

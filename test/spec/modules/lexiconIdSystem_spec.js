@@ -2,6 +2,7 @@ import { lexiconIdSubmodule } from 'modules/lexiconIdSystem.js';
 import * as utils from 'src/utils.js';
 
 import { server } from 'test/mocks/xhr.js';
+import { uspDataHandler } from 'src/adapterManager.js';
 
 const name = lexiconIdSubmodule.name;
 
@@ -44,8 +45,115 @@ describe('LexiconIdSystem', () => {
 
       expect(request.method).to.equal('GET');
       expect(request.withCredentials).to.be.true;
-      expect(request.url).to.eq('https://api-lexicon.33across.com/v1/envelope?pid=12345');
+      expect(request.url).to.contain('https://api-lexicon.33across.com/v1/envelope?pid=12345');
       expect(completeCallback.calledOnceWithExactly('foo')).to.be.true;
+    });
+
+    context('when GDPR applies', () => {
+      it('should call endpoint with \'gdpr=1\'', () => {
+        const completeCallback = () => {};
+        const { callback } = lexiconIdSubmodule.getId({
+          params: {
+            pid: '12345'
+          }
+        }, {
+          gdprApplies: true
+        });
+
+        callback(completeCallback);
+
+        const [request] = server.requests;
+
+        expect(request.url).to.contain('gdpr=1');
+      });
+
+      context('and the consent string is given', () => {
+        it('should call endpoint with the GDPR consent string', () => {
+          [
+            { consentString: '', expected: '' },
+            { consentString: undefined, expected: '' },
+            { consentString: 'foo', expected: 'foo' }
+          ].forEach(({ consentString, expected }, index) => {
+            const completeCallback = () => {};
+            const { callback } = lexiconIdSubmodule.getId({
+              params: {
+                pid: '12345'
+              }
+            }, {
+              gdprApplies: true,
+              consentString
+            });
+
+            callback(completeCallback);
+
+            expect(server.requests[index].url).to.contain(`gdpr_consent=${expected}`);
+          });
+        });
+      });
+    });
+
+    context('when GDPR doesn\'t apply', () => {
+      it('should call endpoint with \'gdpr=0\' and no GDPR consent string parameter', () => {
+        const completeCallback = () => {};
+        const { callback } = lexiconIdSubmodule.getId({
+          params: {
+            pid: '12345'
+          }
+        }, {
+          gdprApplies: false,
+          consentString: 'foo'
+        });
+
+        callback(completeCallback);
+
+        const [request] = server.requests;
+
+        expect(request.url).to.contain('gdpr=0');
+        expect(request.url).not.to.contain('gdpr_consent');
+      });
+    });
+
+    context('when a valid US Privacy string is given', () => {
+      it('should call endpoint with the US Privacy parameter', () => {
+        const completeCallback = () => {};
+        const { callback } = lexiconIdSubmodule.getId({
+          params: {
+            pid: '12345'
+          }
+        });
+
+        sinon.stub(uspDataHandler, 'getConsentData').returns('1YYY');
+
+        callback(completeCallback);
+
+        const [request] = server.requests;
+
+        expect(request.url).to.contain('us_privacy=1YYY');
+
+        uspDataHandler.getConsentData.restore();
+      });
+    });
+
+    context('when an invalid US Privacy is given', () => {
+      it('should call endpoint without the US Privacy parameter', () => {
+        const completeCallback = () => {};
+        const { callback } = lexiconIdSubmodule.getId({
+          params: {
+            pid: '12345'
+          }
+        });
+
+        // null or any other falsy value is considered invalid.
+        sinon.stub(uspDataHandler, 'getConsentData').returns(null);
+
+        callback(completeCallback);
+
+        const [request] = server.requests;
+
+        expect(request.url).not.to.contain('us_privacy');
+
+        uspDataHandler.getConsentData.restore();
+      });
     });
 
     context('when the partner ID is not given', () => {
@@ -147,7 +255,7 @@ describe('LexiconIdSystem', () => {
           expires: 1645667805067
         }));
 
-        expect(request.url).to.eq('https://staging-api-lexicon.33across.com/v1/envelope?pid=12345');
+        expect(request.url).to.contain('https://staging-api-lexicon.33across.com/v1/envelope?pid=12345');
       });
     });
 
