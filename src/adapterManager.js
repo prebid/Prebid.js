@@ -182,11 +182,11 @@ export let gdprDataHandler = {
     return gdprDataHandler.consentData;
   },
   getConsentMeta: function() {
-    if (gdprDataHandler.consentData && gdprDataHandler.consentData.vendorData && gdprDataHandler.generatedTime) {
+    if (gdprDataHandler.consentData && gdprDataHandler.consentData.vendorData && gdprDataHandler.consentData.vendorData.tcString && gdprDataHandler.generatedTime) {
       return {
         gdprApplies: gdprDataHandler.consentData.gdprApplies,
         consentStringSize: gdprDataHandler.consentData.vendorData.tcString.length,
-        timestamp: gdprDataHandler.generatedTime,
+        generatedAt: gdprDataHandler.generatedTime,
         apiVersion: gdprDataHandler.consentData.apiVersion
       };
     }
@@ -207,7 +207,8 @@ export let uspDataHandler = {
     if (uspDataHandler.consentData && uspDataHandler.generatedTime) {
       return {
         usp: uspDataHandler.consentData,
-        timestamp: uspDataHandler.generatedTime}
+        generatedAt: uspDataHandler.generatedTime
+      }
     }
   }
 };

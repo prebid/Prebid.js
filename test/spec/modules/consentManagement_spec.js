@@ -698,7 +698,7 @@ describe('consentManagement', function () {
           expect(consentMeta.consentStringSize).to.be.above(0)
           expect(consentMeta.gdprApplies).to.be.true;
           expect(consentMeta.apiVersion).to.equal(2);
-          expect(consentMeta.timestamp).to.be.above(1644367751709);
+          expect(consentMeta.generatedAt).to.be.above(1644367751709);
         });
 
         it('performs lookup check and stores consentData for a valid existing user with additional consent', function () {

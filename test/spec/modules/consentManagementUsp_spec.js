@@ -391,7 +391,7 @@ describe('consentManagement', function () {
         sinon.assert.notCalled(utils.logError);
 
         expect(consentMeta.usp).to.equal(testConsentData.uspString);
-        expect(consentMeta.timestamp).to.be.above(1644367751709);
+        expect(consentMeta.generatedAt).to.be.above(1644367751709);
       });
     });
   });

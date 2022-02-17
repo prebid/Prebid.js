@@ -20,7 +20,7 @@ import { executeRenderer, isRendererRequired } from './Renderer.js';
 import { createBid } from './bidfactory.js';
 import { storageCallbacks } from './storageManager.js';
 import { emitAdRenderSucceeded, emitAdRenderFail } from './adRendering.js';
-import {gdprDataHandler, uspDataHandler} from './adapterManager.js'
+import { gdprDataHandler, uspDataHandler } from './adapterManager.js'
 
 const $$PREBID_GLOBAL$$ = getGlobal();
 const CONSTANTS = require('./constants.json');
