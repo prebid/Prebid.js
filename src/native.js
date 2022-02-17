@@ -1,7 +1,8 @@
-import { deepAccess, getKeyByValue, insertHtmlIntoIframe, isNumber, isPlainObject, logError, triggerPixel } from './utils.js';
+import { deepAccess, getKeyByValue, insertHtmlIntoIframe, isInteger, isNumber, isPlainObject, logError, triggerPixel, isBoolean } from './utils.js';
 import {includes} from './polyfill.js';
 import {auctionManager} from './auctionManager.js';
 import CONSTANTS from './constants.json';
+import { NATIVE } from './mediaTypes.js';
 
 export const nativeAdapters = [];
 
@@ -410,5 +411,133 @@ function getNativeKeys(adUnit) {
   return {
     ...CONSTANTS.NATIVE_KEYS,
     ...extraNativeKeys
+  }
+}
+
+const { ASSET_TYPES, IMAGE_TYPES, PREBID_NATIVE_DATA_KEYS_TO_ORTB } = CONSTANTS;
+
+export function toOrtbNative(nativeAssets) {
+  if (!nativeAssets && !isPlainObject(nativeAssets)) {
+    logError('Native assets object is empty or not an object: ', nativeAssets);
+  }
+  const ortb = {
+    ver: '1.2',
+    assets: []
+  };
+  for (let key in nativeAssets) {
+    const asset = nativeAssets[key];
+    let required = 0;
+    if (asset.required && isBoolean(asset.required)) {
+      required = Number(asset.required);
+    }
+    const ortbAsset = {
+      id: ortb.assets.length,
+      required
+    };
+      // all data cases
+    if (key in PREBID_NATIVE_DATA_KEYS_TO_ORTB) {
+      ortbAsset.data = {
+        type: ASSET_TYPES[PREBID_NATIVE_DATA_KEYS_TO_ORTB[key]]
+      }
+    } else if (key === 'icon' || key === 'image') {
+      ortbAsset.img = {
+        type: key === 'icon' ? IMAGE_TYPES.ICON : IMAGE_TYPES.MAIN,
+      }
+      // if min_width and min_height are defined in aspect_ratio, they are preferred
+      if (asset.aspect_ratios) {
+        if (!isPlainObject(asset.aspect_ratios)) {
+          logError("image.aspect_ratios was passed, but it's not a plain object:", asset.aspect_ratios);
+        } else {
+          const {min_width: minWidth, min_height: minHeight} = asset.aspect_ratios;
+          if (!isInteger(minWidth) || !isInteger(minHeight)) {
+            logError('image.aspect_ratios min_width or min_height are invalid: ', minWidth, minHeight);
+          } else {
+            ortbAsset.img.wmin = minWidth;
+            ortbAsset.img.hmin = minHeight;
+          }
+        }
+      }
+
+      // if asset.sizes exist, by spec we should delete wmin and hmin
+      if (asset.sizes) {
+        if (asset.sizes.length != 2 || !isInteger(asset.sizes[0]) || !isInteger(asset.sizes[1])) {
+          logError('image.sizes was passed, but its value is not an array of integers:', asset.sizes);
+        } else {
+          ortbAsset.img.w = asset.sizes[0];
+          ortbAsset.img.h = asset.sizes[1];
+          delete ortbAsset.img.hmin;
+          delete ortbAsset.img.wmin;
+        }
+      }
+    } else if (key === 'title') {
+      ortbAsset.title = {
+        len: asset.len || 140
+      }
+    } else if (key === 'ext') {
+      ortbAsset.ext = {
+        asset
+      };
+      delete ortbAsset.required;
+    }
+
+    ortb.assets.push(ortbAsset);
+  }
+  return ortb;
+}
+
+export function fromOrtbNative(openRTBRequest) {
+  if (!isOpenRTBBidRequestValid(openRTBRequest)) {
+    return;
+  }
+
+  const oldNativeObject = {};
+  for (const asset of openRTBRequest.assets) {
+    if (asset.title) {
+      const title = {
+        required: asset.required ? Boolean(asset.required) : false,
+        len: asset.title.len
+      }
+      oldNativeObject.title = title;
+    } else if (asset.img) {
+      const image = {
+        required: asset.required ? Boolean(asset.required) : false,
+      }
+      if (asset.img.w && asset.img.h) {
+        image.sizes = [asset.img.w, asset.img.h];
+      } else if (asset.img.wmin && asset.img.hmin) {
+        image.aspect_ratios = {
+          min_width: asset.img.wmin,
+          min_height: asset.img.hmin,
+          ratio_width: asset.img.wmin,
+          ratio_height: asset.img.hmin
+        }
+      }
+
+      if (asset.img.type === IMAGE_TYPES.MAIN) {
+        oldNativeObject.image = image;
+      } else {
+        oldNativeObject.icon = image;
+      }
+    } else if (asset.data) {
+      let assetType = Object.keys(ASSET_TYPES).find(k => ASSET_TYPES[k] === asset.data.type);
+      let prebidAssetName = Object.keys(PREBID_NATIVE_DATA_KEYS_TO_ORTB).find(k => PREBID_NATIVE_DATA_KEYS_TO_ORTB[k] === assetType);
+      oldNativeObject[prebidAssetName] = {
+        required: asset.required ? Boolean(asset.required) : false,
+      }
+      if (asset.data.len) {
+        oldNativeObject[prebidAssetName].len = asset.data.len;
+      }
+    }
+    // video was not supported by old prebid assets
+  }
+  return oldNativeObject;
+}
+
+export function convertOrtbRequestToProprietaryNative(bidRequests) {
+  // convert Native ORTB definition to old-style prebid native definition
+  for (const bidRequest in bidRequests) {
+    if (bidRequest.mediaTypes && bidRequest.mediaTypes[NATIVE] && bidRequest.mediaTypes[NATIVE].ortb) {
+      bidRequest.mediaTypes[NATIVE] = fromOrtbNative(bidRequest.mediaTypes[NATIVE].ortb);
+    }
   }
 }
