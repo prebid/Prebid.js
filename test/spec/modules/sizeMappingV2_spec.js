@@ -13,7 +13,7 @@ import {
   getAdUnitDetail,
   getFilteredMediaTypes,
   getBids,
-  internal, setupAdUnitsForLabels
+  internal, setupAdUnitMediaTypes
 } from '../../../modules/sizeMappingV2.js';
 
 import { adUnitSetupChecks } from '../../../src/prebid.js';
@@ -1350,7 +1350,7 @@ describe('sizeMappingV2', function () {
         isLabelActivated: true,
       };
 
-      const actual = setupAdUnitsForLabels(adUnits, [])[0];
+      const actual = setupAdUnitMediaTypes(adUnits, [])[0];
 
       expect(actual.mediaTypes).to.deep.equal(adUnitDetail.transformedMediaTypes);
       const bids = bidderMap(actual);
@@ -1372,7 +1372,7 @@ describe('sizeMappingV2', function () {
         isLabelActivated: true,
       };
 
-      const actual = setupAdUnitsForLabels(adUnits, [])[0];
+      const actual = setupAdUnitMediaTypes(adUnits, [])[0];
       expect(actual).to.be.undefined;
       sinon.assert.callCount(utils.logInfo, 1);
       sinon.assert.calledWith(utils.logInfo, `Size Mapping V2:: Ad Unit: adUnit1(1) => Ad unit disabled since there are no active media types after sizeConfig filtration.`);
@@ -1383,7 +1383,7 @@ describe('sizeMappingV2', function () {
         { minViewPort: [], relevantMediaTypes: ['none'] },
         { minViewPort: [700, 0], relevantMediaTypes: ['banner'] }
       ];
-      const actual = setupAdUnitsForLabels(adUnits, [])[0];
+      const actual = setupAdUnitMediaTypes(adUnits, [])[0];
       expect(actual).to.not.be.undefined;
       const bids = bidderMap(actual);
       expect(bids.rubicon.mediaTypes).to.be.undefined;
@@ -1397,7 +1397,7 @@ describe('sizeMappingV2', function () {
         { minViewPort: [400, 0], relevantMediaTypes: ['banner'] }
       ];
 
-      const actual = setupAdUnitsForLabels(adUnits, [])[0];
+      const actual = setupAdUnitMediaTypes(adUnits, [])[0];
       expect(actual).to.not.be.undefined;
       const bids = bidderMap(actual);
       expect(bids.rubicon.mediaTypes).to.be.undefined;
@@ -1435,7 +1435,7 @@ describe('sizeMappingV2', function () {
         isLabelActivated: true,
       };
 
-      const actual = setupAdUnitsForLabels(adUnits, [])[0];
+      const actual = setupAdUnitMediaTypes(adUnits, [])[0];
       const bids = bidderMap(actual);
       expect(bids.rubicon).to.be.undefined;
       sinon.assert.callCount(utils.logInfo, 1);
@@ -1448,7 +1448,7 @@ describe('sizeMappingV2', function () {
         .returns(false);
 
       try {
-        setupAdUnitsForLabels(adUnits, []);
+        setupAdUnitMediaTypes(adUnits, []);
       } finally {
         utils.isValidMediaTypes.restore();
       }
@@ -1459,7 +1459,7 @@ describe('sizeMappingV2', function () {
 
     it('should log a message if ad unit is disabled due to a failing label check', function () {
       adUnitDetail.isLabelActivated = false;
-      setupAdUnitsForLabels(adUnits, []);
+      setupAdUnitMediaTypes(adUnits, []);
       sinon.assert.callCount(utils.logInfo, 1);
       sinon.assert.calledWith(utils.logInfo, `Size Mapping V2:: Ad Unit: adUnit1(1) => Ad unit is disabled due to failing label check.`);
     });
@@ -1468,7 +1468,7 @@ describe('sizeMappingV2', function () {
       const stub = sinon.stub(internal, 'isLabelActivated').returns(false);
 
       try {
-        setupAdUnitsForLabels(adUnits, []);
+        setupAdUnitMediaTypes(adUnits, []);
       } finally {
         stub.restore();
       }
@@ -1483,7 +1483,7 @@ describe('sizeMappingV2', function () {
         { minViewPort: [0, 0], relevantMediaTypes: ['banner'] }
       ];
       adUnitDetail.transformedMediaTypes.native = {};
-      const actual = setupAdUnitsForLabels(adUnits, [])[0];
+      const actual = setupAdUnitMediaTypes(adUnits, [])[0];
       const bids = bidderMap(actual);
       expect(bids.rubicon.mediaTypes).to.deep.equal({banner: adUnitDetail.transformedMediaTypes.banner});
     });

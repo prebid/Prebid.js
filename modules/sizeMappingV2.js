@@ -269,11 +269,11 @@ export function checkBidderSizeConfigFormat(sizeConfig) {
   return didCheckPass;
 }
 
-getHook('setupAdUnitsForLabels').before(function (fn, adUnits, labels) {
+getHook('setupAdUnitMediaTypes').before(function (fn, adUnits, labels) {
   if (isUsingNewSizeMapping(adUnits)) {
-    return fn.bail(setupAdUnitsForLabels(adUnits, labels));
+    return fn.bail(setupAdUnitMediaTypes(adUnits, labels));
   } else {
-    return fn.call(adUnits, labels);
+    return fn.call(this, adUnits, labels);
   }
 });
 
@@ -462,7 +462,7 @@ export function getAdUnitDetail(adUnit, labels, adUnitInstance) {
   };
 }
 
-export function setupAdUnitsForLabels(adUnits, labels) {
+export function setupAdUnitMediaTypes(adUnits, labels) {
   const duplCounter = {};
   return adUnits.reduce((result, adUnit) => {
     const instance = (() => {
