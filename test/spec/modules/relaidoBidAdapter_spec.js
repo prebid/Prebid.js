@@ -303,6 +303,7 @@ describe('RelaidoAdapter', function () {
       expect(response.currency).to.equal(serverResponse.body.ads[0].currency);
       expect(response.creativeId).to.equal(serverResponse.body.ads[0].creativeId);
       expect(response.vastXml).to.equal(serverResponse.body.ads[0].vast);
+      expect(response.playerUrl).to.equal(serverResponse.body.playerUrl);
       expect(response.meta.advertiserDomains).to.equal(serverResponse.body.ads[0].adomain);
       expect(response.meta.mediaType).to.equal(VIDEO);
       expect(response.ad).to.be.undefined;
@@ -320,9 +321,27 @@ describe('RelaidoAdapter', function () {
       expect(response.currency).to.equal(serverResponse.body.ads[0].currency);
       expect(response.creativeId).to.equal(serverResponse.body.ads[0].creativeId);
       expect(response.vastXml).to.be.undefined;
+      expect(response.playerUrl).to.equal(serverResponse.body.playerUrl);
       expect(response.ad).to.include(`<div id="rop-prebid">`);
       expect(response.ad).to.include(`<script src="https://relaido/player.js"></script>`);
       expect(response.ad).to.include(`window.RelaidoPlayer.renderAd`);
+    });
+
+    it('should build bid response by video and playerUrl in ads', function () {
+      serverResponse.body.ads[0].playerUrl = 'https://relaido/player-customized.js';
+      const bidResponses = spec.interpretResponse(serverResponse, serverRequest);
+      expect(bidResponses).to.have.lengthOf(1);
+      const response = bidResponses[0];
+      expect(response.playerUrl).to.equal(serverResponse.body.ads[0].playerUrl);
+    });
+
+    it('should build bid response by banner and playerUrl in ads', function () {
+      serverResponse.body.ads[0].playerUrl = 'https://relaido/player-customized.js';
+      serverResponse.body.ads[0].mediaType = 'banner';
+      const bidResponses = spec.interpretResponse(serverResponse, serverRequest);
+      expect(bidResponses).to.have.lengthOf(1);
+      const response = bidResponses[0];
+      expect(response.playerUrl).to.equal(serverResponse.body.ads[0].playerUrl);
     });
 
     it('should not build bid response', function () {
