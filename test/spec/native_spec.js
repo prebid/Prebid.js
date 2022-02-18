@@ -598,6 +598,7 @@ describe('validate native', function () {
           },
           body: {
             required: true,
+            len: 45
           },
           image: {
             required: true,
@@ -637,7 +638,8 @@ describe('validate native', function () {
       id: 1,
       required: 1,
       data: {
-        type: 2
+        type: 2,
+        len: 45
       }
     });
 

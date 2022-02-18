@@ -416,6 +416,11 @@ function getNativeKeys(adUnit) {
 
 const { ASSET_TYPES, IMAGE_TYPES, PREBID_NATIVE_DATA_KEYS_TO_ORTB } = CONSTANTS;
 
+/**
+ * converts Prebid proprietary native assets to OpenRTB format
+ * @param {object} nativeAssets an object that describes a native bid request in Prebid proprietary format
+ * @returns an OpenRTB format of the same bid
+ */
 export function toOrtbNative(nativeAssets) {
   if (!nativeAssets && !isPlainObject(nativeAssets)) {
     logError('Native assets object is empty or not an object: ', nativeAssets);
@@ -434,11 +439,15 @@ export function toOrtbNative(nativeAssets) {
       id: ortb.assets.length,
       required
     };
-      // all data cases
+    // data cases
     if (key in PREBID_NATIVE_DATA_KEYS_TO_ORTB) {
       ortbAsset.data = {
         type: ASSET_TYPES[PREBID_NATIVE_DATA_KEYS_TO_ORTB[key]]
       }
+      if (asset.len) {
+        ortbAsset.data.len = asset.len;
+      }
+    // icon or image case
     } else if (key === 'icon' || key === 'image') {
       ortbAsset.img = {
         type: key === 'icon' ? IMAGE_TYPES.ICON : IMAGE_TYPES.MAIN,
@@ -458,7 +467,7 @@ export function toOrtbNative(nativeAssets) {
         }
       }
 
-      // if asset.sizes exist, by spec we should delete wmin and hmin
+      // if asset.sizes exist, by OpenRTB spec we should remove wmin and hmin
       if (asset.sizes) {
         if (asset.sizes.length != 2 || !isInteger(asset.sizes[0]) || !isInteger(asset.sizes[1])) {
           logError('image.sizes was passed, but its value is not an array of integers:', asset.sizes);
@@ -469,14 +478,17 @@ export function toOrtbNative(nativeAssets) {
           delete ortbAsset.img.wmin;
         }
       }
+    // title case
     } else if (key === 'title') {
       ortbAsset.title = {
         len: asset.len || 140
       }
+    // all extensions to the native bid request are passed as is
     } else if (key === 'ext') {
       ortbAsset.ext = {
         asset
       };
+      // in `ext` case, required field is not needed
       delete ortbAsset.required;
     }
 
@@ -485,6 +497,14 @@ export function toOrtbNative(nativeAssets) {
   return ortb;
 }
 
+/**
+ * This function converts an OpenRTB native request object to Prebid proprietary
+ * format. The purpose of this function is to help adapters to handle the
+ * transition phase where publishers may be using OpenRTB objects but the
+ *  bidder does not yet support it.
+ * @param {object} openRTBRequest an OpenRTB v1.2 request object
+ * @returns a Prebid proprietary native format
+ */
 export function fromOrtbNative(openRTBRequest) {
   if (!isOpenRTBBidRequestValid(openRTBRequest)) {
     return;
@@ -533,6 +553,13 @@ export function fromOrtbNative(openRTBRequest) {
   return oldNativeObject;
 }
 
+/**
+ * Converts an OpenRTB request to a proprietary Prebid.js format.
+ * The proprietary Prebid format has many limitations and will be dropped in
+ * the future; adapters are encouraged to stop using it in favour of OpenRTB format.
+ * @param {BidRequest[]} bidRequests an array of valid bid requests
+ * @returns an array of valid bid requests where the openRTB bids are converted to proprietary format.
+ */
 export function convertOrtbRequestToProprietaryNative(bidRequests) {
   // convert Native ORTB definition to old-style prebid native definition
   for (const bidRequest in bidRequests) {
