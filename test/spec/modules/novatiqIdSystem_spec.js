@@ -134,13 +134,6 @@ describe('novatiqIdSystem', function () {
       const url = novatiqIdSubmodule.getSyncUrl(false, '', defaultUrlParams);
       const response = novatiqIdSubmodule.sendAsyncSyncRequest('testuuid', url);
       expect(response.callback).should.not.be.empty;
-
-      // lets make sure the callback works
-      function successCallbackFunction(id) {
-        // do nothing, this wont always work successfully in a test
-      }
-
-      response.callback(successCallbackFunction);
     });
   });
 
