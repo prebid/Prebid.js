@@ -1,4 +1,4 @@
-import { deepAccess, getKeyByValue, insertHtmlIntoIframe, isInteger, isNumber, isPlainObject, logError, triggerPixel, isBoolean } from './utils.js';
+import { deepAccess, getKeyByValue, insertHtmlIntoIframe, isInteger, isNumber, isPlainObject, logError, triggerPixel, isBoolean, isArray } from './utils.js';
 import {includes} from './polyfill.js';
 import {auctionManager} from './auctionManager.js';
 import CONSTANTS from './constants.json';
@@ -561,8 +561,9 @@ export function fromOrtbNative(openRTBRequest) {
  * @returns an array of valid bid requests where the openRTB bids are converted to proprietary format.
  */
 export function convertOrtbRequestToProprietaryNative(bidRequests) {
+  if (!bidRequests || !isArray(bidRequests)) return bidRequests;
   // convert Native ORTB definition to old-style prebid native definition
-  for (const bidRequest in bidRequests) {
+  for (const bidRequest of bidRequests) {
     if (bidRequest.mediaTypes && bidRequest.mediaTypes[NATIVE] && bidRequest.mediaTypes[NATIVE].ortb) {
       bidRequest.mediaTypes[NATIVE] = fromOrtbNative(bidRequest.mediaTypes[NATIVE].ortb);
     }

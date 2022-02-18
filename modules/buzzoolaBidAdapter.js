@@ -34,7 +34,7 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
-    bidderRequest = convertOrtbRequestToProprietaryNative(bidderRequest);
+    bidderRequest.bids = convertOrtbRequestToProprietaryNative(bidderRequest.bids);
 
     return {
       url: ENDPOINT,

@@ -12,7 +12,7 @@ import {
 } from 'src/native.js';
 import CONSTANTS from 'src/constants.json';
 import { stubAuctionIndex } from '../helpers/indexStub.js';
-import { fromOrtbNative } from '../../src/native.js';
+import { convertOrtbRequestToProprietaryNative, fromOrtbNative } from '../../src/native.js';
 const utils = require('src/utils');
 
 const bid = {
@@ -772,5 +772,112 @@ describe('validate native', function () {
       required: true,
       len: 140
     })
+  });
+
+  it('should convert ortb bid requests to proprietary requests', () => {
+    const validBidRequests = [{
+      bidId: 'bidId3',
+      adUnitCode: 'adUnitCode3',
+      transactionId: 'transactionId3',
+      mediaTypes: {
+        banner: {}
+      },
+      params: {
+        publisher: 'publisher2',
+        placement: 'placement3'
+      }
+    }];
+    const resultRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+    expect(resultRequests).to.be.deep.equals(validBidRequests);
+
+    validBidRequests[0].mediaTypes.native = {
+      ortb: {
+        ver: '1.2',
+        context: 2,
+        contextsubtype: 20,
+        plcmttype: 11,
+        plcmtcnt: 1,
+        aurlsupport: 0,
+        privacy: 1,
+        eventrackers: [
+          {
+            event: 1,
+            methods: [1, 2]
+          },
+          {
+            event: 2,
+            methods: [1]
+          }
+        ],
+        assets: [
+          {
+            id: 123,
+            required: 1,
+            title: {
+              len: 140
+            }
+          },
+          {
+            id: 128,
+            required: 0,
+            img: {
+              wmin: 836,
+              hmin: 627,
+              type: 3
+            }
+          },
+          {
+            id: 124,
+            required: 1,
+            img: {
+              wmin: 50,
+              hmin: 50,
+              type: 1
+            }
+          },
+          {
+            id: 126,
+            required: 1,
+            data: {
+              type: 1,
+              len: 25
+            }
+          },
+          {
+            id: 127,
+            required: 1,
+            data: {
+              type: 2,
+              len: 140
+            }
+          }
+        ]
+      }
+    };
+
+    const resultRequests2 = convertOrtbRequestToProprietaryNative(validBidRequests);
+    expect(resultRequests2[0].mediaTypes.native).to.deep.include({
+      title: {
+        required: true,
+        len: 140
+      },
+      icon: {
+        required: true,
+        aspect_ratios: {
+          min_width: 50,
+          min_height: 50,
+          ratio_width: 50,
+          ratio_height: 50
+        }
+      },
+      sponsoredBy: {
+        required: true,
+        len: 25
+      },
+      body: {
+        required: true,
+        len: 140
+      }
+    });
   });
 });
