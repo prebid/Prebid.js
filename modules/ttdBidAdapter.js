@@ -240,7 +240,8 @@ function video(bid) {
     maxduration: maxduration,
     api: api,
     mimes: mimes,
-    placement: placement
+    placement: placement,
+    protocols: protocols
   };
 
   if (typeof playerSize !== 'undefined') {
@@ -253,7 +254,6 @@ function video(bid) {
     }
   }
 
-  video.protocols = protocols;
   if (playbackmethod) {
     video.playbackmethod = playbackmethod;
   }
