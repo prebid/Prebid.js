@@ -19,7 +19,8 @@ import {
   logMessage,
   logWarn,
   shuffle,
-  timestamp
+  timestamp,
+  isStr
 } from './utils.js';
 import {getLabels, resolveStatus} from './sizeMapping.js';
 import {decorateAdUnitsWithNativeParams, nativeAdapters} from './native.js';
