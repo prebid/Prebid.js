@@ -18,7 +18,7 @@ const url = 'https://an.adingo.jp'
 
 /** @typedef {{ad: string, adId: string, adUnitCode: string, adUrl: string, adserverTargeting: any, auctionId: string, bidder: string, bidderCode: string, cpm: number, creativeId: string, currency: string, dealId: string, height: number, mediaType: string, netRevenue: boolean, originalCpm: number, originalCurrency: string, params: any, pbAg: string, pbCg: string, pbDg: string, pbHg: string, pbLg: string, pbMg: string, pbLg: string, requestId: string, requestTimestamp: number, responseTimestamp: number, size: string, source: string, status: string, statusMessage: string, timeToRespond: string, ttl: string, width: number, bidId?: string}} BidResponse */
 /** @typedef {{bidder: string, params: any}} Bid */
-/** @typedef {{code: string, _code?: string, analytics?: {bidder: string, dwid: string}[], bids?: Bid[], mediaTypes: {banner: {name: string, sizes: number[][]}}, sizes: number[][], transactionId: string}} AdUnit */
+/** @typedef {{code: string, _code?: string, path?: string, analytics?: {bidder: string, dwid: string}[], bids?: Bid[], mediaTypes: {banner: {name: string, sizes: number[][]}}, sizes: number[][], transactionId: string}} AdUnit */
 /** @typedef {{adUnitCodes: string[], adUnits: AdUnit[], auctionEnd: number, auctionId: string, auctionStatus: string, bidderRequests: any[], bidsReceived: BidResponse[], labels?: string, noBids: BidResponse[], timeout: number, timestamp: number, winningBids: BidResponse[], bids: {[key: string]: BidResponse}[]}} PbAuction */
 /** @typedef {{registered: boolean}} Gpt */
 /** @typedef {{[key: string]: string }} Slots */
@@ -49,17 +49,20 @@ const getAdUnitMap = () => window.googletag.pubads().getSlots().reduce((prev, sl
 
 /** @type {(_adUnit: AdUnit, adUnits: AdUnit[], slots: Slots) => AdUnit} */
 export const convertReplicatedAdUnit = (_adUnit, adUnits, slots = getAdUnitMap()) => {
-  /** @type {adUnit} */
+  /** @type {AdUnit} */
   const adUnit = deepClone(_adUnit);
-  /** @type {?string} */
-  const adUnitPath = slots[adUnit.code];
-  if (adUnitPath) {
-    const { analytics, code, mediaTypes: { banner: { name } } } =
-      find(adUnits, adUnit => Boolean(adUnitPath.match(new RegExp(`${adUnit.mediaTypes.banner.name}$`, 'g'))));
+  if (isBrowsiId(adUnit.code)) {
+    /** @type {?string} */
+    const adUnitPath = slots[adUnit.code];
+    /** @type {AdUnit} */
+    const adUnitWithSamePath = find(adUnits, adUnit => (adUnit.path || adUnit.code) === adUnitPath);
+    logInfo({ adUnitPath, adUnitWithSamePath })
+
+    const { analytics, code, mediaTypes: { banner: { name } } } = adUnitWithSamePath
     adUnit.analytics = analytics;
     adUnit._code = code;
     adUnit.mediaTypes.banner.name = name;
-  };
+  }
   adUnit.bids = undefined;
   return adUnit;
 };
