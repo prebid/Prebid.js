@@ -216,7 +216,7 @@ function banner(bid) {
 }
 
 function video(bid) {
-  const minduration = utils.deepAccess(bid, 'mediaTypes.video.minduration');
+  let minduration = utils.deepAccess(bid, 'mediaTypes.video.minduration');
   const maxduration = utils.deepAccess(bid, 'mediaTypes.video.maxduration');
   const playerSize = utils.deepAccess(bid, 'mediaTypes.video.playerSize');
   const api = utils.deepAccess(bid, 'mediaTypes.video.api');
@@ -232,6 +232,9 @@ function video(bid) {
   const minbitrate = utils.deepAccess(bid, 'mediaTypes.video.minbitrate');
   const maxbitrate = utils.deepAccess(bid, 'mediaTypes.video.maxbitrate');
 
+  if (!minduration || !utils.isInteger(minduration)) {
+    minduration = 0
+  }
   let video = {
     minduration: minduration,
     maxduration: maxduration,
@@ -341,10 +344,6 @@ export const spec = {
     }
 
     if (mediaTypesVideo) {
-      if (!mediaTypesVideo.minduration || !utils.isInteger(mediaTypesVideo.minduration)) {
-        utils.logWarn(BIDDER_CODE + ': mediaTypes.video.minduration must be set to the minimum video ad duration in seconds');
-        return false;
-      }
       if (!mediaTypesVideo.maxduration || !utils.isInteger(mediaTypesVideo.maxduration)) {
         utils.logWarn(BIDDER_CODE + ': mediaTypes.video.maxduration must be set to the maximum video ad duration in seconds');
         return false;

@@ -65,7 +65,6 @@ The Trade Desk bid adapter supports Banner and Video.
                 code: 'test-div-video-minimal',
                 mediaTypes: {
                     video: {
-                        minduration: 5,
                         maxduration: 30,
                         api: [1, 3],
                         mimes: ['video/mp4'],

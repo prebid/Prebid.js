@@ -131,12 +131,6 @@ describe('ttdBidAdapter', function () {
         expect(spec.isBidRequestValid(bid)).to.equal(true);
       });
 
-      it('should return false if minduration is missing', function () {
-        let bid = makeBid();
-        delete bid.mediaTypes.video.minduration;
-        expect(spec.isBidRequestValid(bid)).to.equal(false);
-      });
-
       it('should return false if maxduration is missing', function () {
         let bid = makeBid();
         delete bid.mediaTypes.video.maxduration;
@@ -657,6 +651,14 @@ describe('ttdBidAdapter', function () {
       const requestBody = testBuildRequests(baseVideoBidRequests, baseBidderRequest).data;
       expect(requestBody.imp[0].video.minduration).to.equal(5);
       expect(requestBody.imp[0].video.maxduration).to.equal(30);
+    });
+
+    it('sets the minduration to 0 if missing', function () {
+      let clonedVideoRequests = deepClone(baseVideoBidRequests);
+      delete clonedVideoRequests[0].mediaTypes.video.minduration
+
+      const requestBody = testBuildRequests(clonedVideoRequests, baseBidderRequest).data;
+      expect(requestBody.imp[0].video.minduration).to.equal(0);
     });
 
     it('includes the api frameworks in the bid request', function () {
