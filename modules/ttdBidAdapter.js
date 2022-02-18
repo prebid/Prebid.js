@@ -4,7 +4,7 @@ import { createEidsArray } from './userId/eids.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
-const BIDADAPTERVERSION = 'TTD-PREBID-2022.02.17';
+const BIDADAPTERVERSION = 'TTD-PREBID-2022.02.18';
 const BIDDER_CODE = 'ttd';
 const BIDDER_CODE_LONG = 'thetradedesk';
 const BIDDER_ENDPOINT = 'https://direct.adsrvr.org/bid/bidder/';
