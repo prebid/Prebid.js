@@ -53,12 +53,9 @@ The Trade Desk bid adapter supports Banner and Video.
                             publisherId: '1427ab10f2e448057ed3b422',
                             siteId: 'site-123',
                             placementId: 'footer1',
-                            categories: ['IAB23', 'IAB11-3'],
-                            secure: 1,
                             banner: {
                                 expdir: [1, 3]
                             },
-                            keywords: ['highViewability', 'shopping']
                         }
                     }
                 ]
@@ -70,7 +67,6 @@ The Trade Desk bid adapter supports Banner and Video.
                     video: {
                         minduration: 5,
                         maxduration: 30,
-                        playerSize: [640, 480],
                         api: [1, 3],
                         mimes: ['video/mp4'],
                         placement: 3,

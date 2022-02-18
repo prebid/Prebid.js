@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/ttdBidAdapter';
 import { deepClone } from 'src/utils.js';
+import { config } from 'src/config';
 
 describe('ttdBidAdapter', function () {
   function testBuildRequests(bidRequests, bidderRequestBase) {
@@ -80,27 +81,9 @@ describe('ttdBidAdapter', function () {
         expect(spec.isBidRequestValid(bid)).to.equal(false);
       });
 
-      it('should return false if categories is passed in correctly', function () {
+      it('should return false if neither mediaTypes.banner nor mediaTypes.video is passed', function () {
         let bid = makeBid();
-        bid.params.categories = ['IAB23', 'IAB11-3'];
-        expect(spec.isBidRequestValid(bid)).to.equal(true);
-      });
-
-      it('should return false if categories is not passed as an array', function () {
-        let bid = makeBid();
-        bid.params.categories = 'IAB23';
-        expect(spec.isBidRequestValid(bid)).to.equal(false);
-      });
-
-      it('should return false if categories is not passed as an array of strings', function () {
-        let bid = makeBid();
-        bid.params.categories = [233];
-        expect(spec.isBidRequestValid(bid)).to.equal(false);
-      });
-
-      it('should return false if categories is not passed as an array of strings', function () {
-        let bid = makeBid();
-        bid.params.categories = [233];
+        delete bid.mediaTypes
         expect(spec.isBidRequestValid(bid)).to.equal(false);
       });
     });
@@ -110,22 +93,6 @@ describe('ttdBidAdapter', function () {
         let bid = makeBid();
         bid.mediaTypes.banner.pos = 1;
         expect(spec.isBidRequestValid(bid)).to.equal(true);
-      });
-
-      it('should return true if banner.expdir is passed correctly', function () {
-        let bid = makeBid();
-        bid.params.banner = {
-          expdir: [1, 3]
-        };
-        expect(spec.isBidRequestValid(bid)).to.equal(true);
-      });
-
-      it('should return false if banner.expdir is not passed as an array', function () {
-        let bid = makeBid();
-        bid.params.banner = {
-          expdir: 1
-        };
-        expect(spec.isBidRequestValid(bid)).to.equal(false);
       });
     });
 
@@ -173,12 +140,6 @@ describe('ttdBidAdapter', function () {
       it('should return false if maxduration is missing', function () {
         let bid = makeBid();
         delete bid.mediaTypes.video.maxduration;
-        expect(spec.isBidRequestValid(bid)).to.equal(false);
-      });
-
-      it('should return false if playerSize is missing', function () {
-        let bid = makeBid();
-        delete bid.mediaTypes.video.playerSize;
         expect(spec.isBidRequestValid(bid)).to.equal(false);
       });
 
@@ -327,22 +288,17 @@ describe('ttdBidAdapter', function () {
       expect(requestBody.imp[0].banner.expdir).to.equal(expdir);
     });
 
-    it('sets categories correctly if sent', function () {
-      let clonedBannerRequests = deepClone(baseBannerBidRequests);
-      const categories = ['IAB8-5', 'IAB14-3'];
-      clonedBannerRequests[0].params.categories = categories;
-
-      const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
-      expect(requestBody.site.pagecat).to.equal(categories);
-    });
-
     it('sets keywords properly if sent', function () {
       let clonedBannerRequests = deepClone(baseBannerBidRequests);
-      const keywords = ['highViewability', 'clothing', 'holiday shopping'];
-      clonedBannerRequests[0].params.keywords = keywords;
 
+      config.setConfig({ortb2: {
+        site: {
+          keywords: 'highViewability, clothing, holiday shopping'
+        }
+      }});
       const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
-      expect(requestBody.ext.ttdprebid.keywords).to.deep.equal(keywords);
+      config.resetConfig();
+      expect(requestBody.ext.ttdprebid.keywords).to.deep.equal(['highViewability', 'clothing', 'holiday shopping']);
     });
 
     it('sets ext properly', function () {
@@ -350,14 +306,6 @@ describe('ttdBidAdapter', function () {
 
       const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
       expect(requestBody.ext.ttdprebid.pbjs).to.equal('$prebid.version$');
-    });
-
-    it('sets secure correctly if sent', function () {
-      let clonedBannerRequests = deepClone(baseBannerBidRequests);
-      clonedBannerRequests[0].params.secure = 1;
-
-      const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
-      expect(requestBody.imp[0].secure).to.equal(1);
     });
 
     it('adds gdpr consent info to the request', function () {
@@ -380,6 +328,15 @@ describe('ttdBidAdapter', function () {
 
       const requestBody = testBuildRequests(baseBannerBidRequests, clonedBidderRequest).data;
       expect(requestBody.regs.ext.us_privacy).to.equal(consentString);
+    });
+
+    it('adds coppa consent info to the request', function () {
+      let clonedBidderRequest = deepClone(baseBidderRequest);
+
+      config.setConfig({coppa: true});
+      const requestBody = testBuildRequests(baseBannerBidRequests, clonedBidderRequest).data;
+      config.resetConfig();
+      expect(requestBody.regs.coppa).to.equal(1);
     });
 
     it('adds schain info to the request', function () {
@@ -450,6 +407,33 @@ describe('ttdBidAdapter', function () {
 
       const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
       expect(requestBody.user.ext.eids).to.deep.equal(expectedEids);
+    });
+
+    it('adds first party site data to the request', function () {
+      let clonedBidderRequest = deepClone(baseBidderRequest);
+
+      config.setConfig({ortb2: {
+        site: {
+          name: 'example',
+          domain: 'page.example.com',
+          cat: ['IAB2'],
+          sectioncat: ['IAB2-2'],
+          pagecat: ['IAB2-2'],
+          page: 'https://page.example.com/here.html',
+          ref: 'https://ref.example.com',
+          keywords: 'power tools, drills'
+        }
+      }});
+      const requestBody = testBuildRequests(baseBannerBidRequests, clonedBidderRequest).data;
+      config.resetConfig();
+      expect(requestBody.site.name).to.equal('example');
+      expect(requestBody.site.domain).to.equal('page.example.com');
+      expect(requestBody.site.cat[0]).to.equal('IAB2');
+      expect(requestBody.site.sectioncat[0]).to.equal('IAB2-2');
+      expect(requestBody.site.pagecat[0]).to.equal('IAB2-2');
+      expect(requestBody.site.page).to.equal('https://page.example.com/here.html');
+      expect(requestBody.site.ref).to.equal('https://ref.example.com');
+      expect(requestBody.site.keywords).to.equal('power tools, drills');
     });
   });
 
@@ -547,6 +531,69 @@ describe('ttdBidAdapter', function () {
           assert.fail('no matching impression id found');
         }
       });
+    });
+  });
+
+  describe('buildRequests-display-video-multiformat', function () {
+    const baseMultiformatBidRequests = [{
+      'bidder': 'ttd',
+      'params': {
+        'supplySourceId': 'supplier',
+        'publisherId': '13144370',
+        'placementId': '1gaa015'
+      },
+      'mediaTypes': {
+        'video': {
+          'playerSize': [640, 480],
+          'api': [1, 3],
+          'mimes': ['video/mp4'],
+          'protocols': [2, 3, 5, 6],
+          'minduration': 5,
+          'maxduration': 30
+        },
+        'banner': {
+          'sizes': [[300, 250], [300, 600]]
+        }
+      },
+      'adUnitCode': 'div-gpt-ad-1460505748561-0',
+      'transactionId': '8651474f-58b1-4368-b812-84f8c937a099',
+      'bidId': '243310435309b5',
+      'bidderRequestId': '18084284054531',
+      'auctionId': 'e7b34fa3-8654-424e-8c49-03e509e53d8c',
+      'src': 'client',
+      'bidRequestsCount': 1
+    }];
+
+    const baseBidderRequest = {
+      'bidderCode': 'ttd',
+      'auctionId': 'e7b34fa3-8654-424e-8c49-03e509e53d8c',
+      'bidderRequestId': '18084284054531',
+      'auctionStart': 1540945362095,
+      'timeout': 3000,
+      'refererInfo': {
+        'referer': 'https://www.example.com/test',
+        'reachedTop': true,
+        'numIframes': 0,
+        'stack': [
+          'https://www.example.com/test'
+        ]
+      },
+      'start': 1540945362099,
+      'doneCbCallCount': 0
+    };
+
+    it('includes the video ad size in the bid request', function () {
+      const requestBody = testBuildRequests(baseMultiformatBidRequests, baseBidderRequest).data;
+      expect(requestBody.imp[0].video.w).to.equal(640);
+      expect(requestBody.imp[0].video.h).to.equal(480);
+    });
+
+    it('includes the banner ad size in the bid request', function () {
+      const requestBody = testBuildRequests(baseMultiformatBidRequests, baseBidderRequest).data;
+      expect(requestBody.imp[0].banner.format[0].w).to.equal(300);
+      expect(requestBody.imp[0].banner.format[0].h).to.equal(250);
+      expect(requestBody.imp[0].banner.format[1].w).to.equal(300);
+      expect(requestBody.imp[0].banner.format[1].h).to.equal(600);
     });
   });
 
@@ -717,7 +764,10 @@ describe('ttdBidAdapter', function () {
                 'w': 728,
                 'ttl': 60,
                 'dealid': 'ttd-dealid-1',
-                'adomain': ['advertiser.com']
+                'adomain': ['advertiser.com'],
+                'ext': {
+                  'mediatype': 1
+                }
               }
             ],
             'seat': 'MOCK'
@@ -824,7 +874,9 @@ describe('ttdBidAdapter', function () {
                 'w': 300,
                 'h': 600,
                 'cat': [],
-                'ext': null
+                'ext': {
+                  'mediatype': 1
+                }
               },
               {
                 'id': 'large',
@@ -840,7 +892,9 @@ describe('ttdBidAdapter', function () {
                 'w': 728,
                 'h': 90,
                 'cat': [],
-                'ext': null
+                'ext': {
+                  'mediatype': 1
+                }
               }
             ],
             'seat': 'supplyVendorBuyerId132'
@@ -973,7 +1027,8 @@ describe('ttdBidAdapter', function () {
                     'dealid': '7013542'
                   },
                   'imptrackers': [],
-                  'viewabilityvendors': []
+                  'viewabilityvendors': [],
+                  'mediatype': 2
                 },
                 'h': 480,
                 'impid': '2eabb87dfbcae4',
@@ -1085,6 +1140,172 @@ describe('ttdBidAdapter', function () {
       let result = spec.interpretResponse(admIncoming, serverRequest);
       expect(result.length).to.equal(1);
       expect(result[0]).to.deep.equal(vastXmlExpectedBid);
+    });
+  });
+
+  describe('interpretResponse-display-and-video', function () {
+    const incoming = {
+      'body': {
+        'id': 'e7b34fa3-8654-424e-8c49-03e509e53d8c',
+        'seatbid': [
+          {
+            'bid': [
+              {
+                'id': 'small',
+                'impid': 'small',
+                'price': 4.25,
+                'adm': '<img src=\"https://test.adsrvr.org/feedback/prebid?iid=a6702d4e-8d0f-4c48-b251-ce7db4150b46&crid=creativeId999&wp=${AUCTION_PRICE}&aid=small&wpc=USD&sfe=f8d2db2&puid=&tdid=825c1228-ca8c-4657-b40f-2df500621527&pid=&ag=adgroupid&sig=dFthumiovXraET6E7SiXy41xVCF0HgbuBSVkvazJp-w.&cf=&fq=0&td_s=www.test.com&rcats=&mcat=&mste=&mfld=0&mssi=&mfsi=&uhow=&agsa=&rgco=&rgre=&rgme=&rgci=&rgz=&svbttd=1&dt=Other&osf=&os=&br=&rlangs=en&mlang=&svpid=13144370&did=&rcxt=Other&lat=&lon=&tmpc=&daid=&vp=0&osi=&osv=&bp=250.25&c=OAA.&dur=&crrelr=&ipl=bottom&vc=0&said=e7b34fa3-8654-424e-8c49-03e509e53d8c&ict=Unknown\" width=\"1\" height=\"1\" style=\"display: none;\"/>Default Test Ad Tag',
+                'cid': 'campaignId132',
+                'crid': 'creativeId999',
+                'adomain': [
+                  'http://foo'
+                ],
+                'dealid': null,
+                'w': 300,
+                'h': 600,
+                'cat': [],
+                'ext': {
+                  'mediatype': 1
+                }
+              },
+              {
+                'crid': 'mokivv6m',
+                'ext': {
+                  'advid': '7ieo6xk',
+                  'agid': '7q9n3s2',
+                  'deal': {
+                    'dealid': '7013542'
+                  },
+                  'imptrackers': [],
+                  'viewabilityvendors': [],
+                  'mediatype': 2
+                },
+                'h': 480,
+                'impid': '2eabb87dfbcae4',
+                'nurl': 'https://insight.adsrvr.org/enduser/vast?iid=00000000-0000-0000-0000-000000000000&crid=v3pek2eh&wp=${AUCTION_PRICE}&aid=&wpc=&sfe=0&puid=&tdid=00000000-0000-0000-0000-000000000000&pid=&ag=&adv=&sig=AAAAAAAAAAAAAA.&cf=&fq=0&td_s=&rcats=&mcat=&mste=&mfld=4&mssi=&mfsi=&uhow=&agsa=&rgco=&rgre=&rgme=&rgci=&rgz=&svbttd=0&dt=&osf=&os=&br=&rlangs=en&mlang=en&svpid=&did=&rcxt=&lat=&lon=&tmpc=&daid=&vp=0&osi=&osv=&dc=0&vcc=QAFIAVABiAECwAEDyAED0AED6AEG8AEBgAIDigIMCAIIBQgDCAYICwgMmgIECAEIAqACA6gCAsACAA..&sv=noop&pidi=&advi=&cmpi=&agi=&cridi=&svi=&cmp=&skip=1&c=&dur=&crrelr=',
+                'price': 13.6,
+                'ttl': 500,
+                'w': 600
+              }
+            ],
+            'seat': 'supplyVendorBuyerId132'
+          }
+        ],
+        'cur': 'USD'
+      }
+    };
+
+    const expectedBids = [
+      {
+        'requestId': 'small',
+        'cpm': 4.25,
+        'width': 300,
+        'height': 600,
+        'creativeId': 'creativeId999',
+        'currency': 'USD',
+        'dealId': null,
+        'netRevenue': true,
+        'ttl': 360,
+        'ad': '<img src=\"https://test.adsrvr.org/feedback/prebid?iid=a6702d4e-8d0f-4c48-b251-ce7db4150b46&crid=creativeId999&wp=4.25&aid=small&wpc=USD&sfe=f8d2db2&puid=&tdid=825c1228-ca8c-4657-b40f-2df500621527&pid=&ag=adgroupid&sig=dFthumiovXraET6E7SiXy41xVCF0HgbuBSVkvazJp-w.&cf=&fq=0&td_s=www.test.com&rcats=&mcat=&mste=&mfld=0&mssi=&mfsi=&uhow=&agsa=&rgco=&rgre=&rgme=&rgci=&rgz=&svbttd=1&dt=Other&osf=&os=&br=&rlangs=en&mlang=&svpid=13144370&did=&rcxt=Other&lat=&lon=&tmpc=&daid=&vp=0&osi=&osv=&bp=250.25&c=OAA.&dur=&crrelr=&ipl=bottom&vc=0&said=e7b34fa3-8654-424e-8c49-03e509e53d8c&ict=Unknown\" width=\"1\" height=\"1\" style=\"display: none;\"/>Default Test Ad Tag',
+        'mediaType': 'banner',
+        'meta': {
+          'advertiserDomains': ['http://foo']
+        }
+      },
+      {
+        'requestId': '2eabb87dfbcae4',
+        'cpm': 13.6,
+        'creativeId': 'mokivv6m',
+        'dealId': null,
+        'currency': 'USD',
+        'netRevenue': true,
+        'ttl': 500,
+        'width': 640,
+        'height': 480,
+        'mediaType': 'video',
+        'vastUrl': 'https://insight.adsrvr.org/enduser/vast?iid=00000000-0000-0000-0000-000000000000&crid=v3pek2eh&wp=13.6&aid=&wpc=&sfe=0&puid=&tdid=00000000-0000-0000-0000-000000000000&pid=&ag=&adv=&sig=AAAAAAAAAAAAAA.&cf=&fq=0&td_s=&rcats=&mcat=&mste=&mfld=4&mssi=&mfsi=&uhow=&agsa=&rgco=&rgre=&rgme=&rgci=&rgz=&svbttd=0&dt=&osf=&os=&br=&rlangs=en&mlang=en&svpid=&did=&rcxt=&lat=&lon=&tmpc=&daid=&vp=0&osi=&osv=&dc=0&vcc=QAFIAVABiAECwAEDyAED0AED6AEG8AEBgAIDigIMCAIIBQgDCAYICwgMmgIECAEIAqACA6gCAsACAA..&sv=noop&pidi=&advi=&cmpi=&agi=&cridi=&svi=&cmp=&skip=1&c=&dur=&crrelr=',
+        'meta': {}
+      }
+    ];
+
+    const serverRequest = {
+      'method': 'POST',
+      'url': 'https://direct.adsrvr.org/bid/bidder/supplier',
+      'data': {
+        'id': 'c47237df-c108-419f-9c2b-da513dc3c133',
+        'imp': [
+          {
+            'id': 'small',
+            'tagid': 'test1',
+            'banner': {
+              'w': 300,
+              'h': 600,
+              'format': [
+                {
+                  'w': 300,
+                  'h': 600
+                }
+              ]
+            },
+          },
+          {
+            'id': '2eabb87dfbcae4',
+            'tagid': 'video',
+            'video': {
+              'api': [
+                1,
+                3
+              ],
+              'mimes': [
+                'video/mp4'
+              ],
+              'minduration': 5,
+              'maxduration': 30,
+              'w': 640,
+              'h': 480,
+              'protocols': [
+                2,
+                3,
+                5,
+                6
+              ]
+            }
+          }
+        ],
+        'site': {
+          'page': 'http://www.test.com',
+          'publisher': {
+            'id': '111'
+          }
+        },
+        'device': {
+          'ua': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.122 Safari/537.36',
+          'dnt': 0,
+          'language': 'en-US',
+          'connectiontype': 0
+        },
+        'user': {},
+        'at': 1,
+        'cur': [
+          'USD'
+        ],
+        'regs': {},
+        'ext': {
+          'ttdprebid': {
+            'ver': 'TTD-PREBID-2019.11.12',
+            'pbjs': '2.31.0'
+          }
+        }
+      },
+      'options': {
+        'withCredentials': true
+      }
+    };
+
+    it('should get the correct bid response', function () {
+      let result = spec.interpretResponse(incoming, serverRequest);
+      expect(result.length).to.equal(2);
+      expect(result).to.deep.equal(expectedBids);
     });
   });
 });
