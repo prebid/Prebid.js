@@ -5,7 +5,7 @@ import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
 import { getStorageManager } from '../src/storageManager.js';
 import { getRefererInfo } from '../src/refererDetection.js';
-import strIncludes from 'prebidjs-polyfill/includes.js';
+import strIncludes from 'core-js-pure/features/string/includes.js';
 
 const storage = getStorageManager();
 const yuktamediaAnalyticsVersion = 'v3.1.0';

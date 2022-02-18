@@ -1,5 +1,5 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js'
-import find from 'prebidjs-polyfill/find.js'
+import find from 'core-js-pure/features/array/find.js'
 import { BANNER } from '../src/mediaTypes.js'
 
 const ENDPOINT = 'https://prebid.mes.glomex.cloud/request-bid'
