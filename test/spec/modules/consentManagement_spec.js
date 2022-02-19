@@ -715,6 +715,26 @@ describe('consentManagement', function () {
           expect(consent).to.be.null;
         });
 
+        it('allows the auction when CMP is unresponsive', (done) => {
+          setConsentConfig({
+            cmpApi: 'iab',
+            timeout: 10,
+            defaultGdprScope: true
+          });
+
+          requestBidsHook(() => {
+            didHookReturn = true;
+          }, {});
+
+          setTimeout(() => {
+            expect(didHookReturn).to.be.true;
+            const consent = gdprDataHandler.getConsentData();
+            expect(consent.gdprApplies).to.be.true;
+            expect(consent.consentString).to.be.undefined;
+            done();
+          }, 20);
+        });
+
         it('It still considers it a valid cmp response if gdprApplies is not a boolean', function () {
           // gdprApplies is undefined, should just still store consent response but use whatever defaultGdprScope was
           let testConsentData = {

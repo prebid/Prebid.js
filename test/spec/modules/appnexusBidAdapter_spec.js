@@ -556,6 +556,33 @@ describe('AppNexusAdapter', function () {
       config.getConfig.restore();
     });
 
+    it('adds auction level keywords to request when set', function() {
+      let bidRequest = Object.assign({}, bidRequests[0]);
+      sinon
+        .stub(config, 'getConfig')
+        .withArgs('appnexusAuctionKeywords')
+        .returns({
+          gender: 'm',
+          music: ['rock', 'pop'],
+          test: ''
+        });
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.keywords).to.deep.equal([{
+        'key': 'gender',
+        'value': ['m']
+      }, {
+        'key': 'music',
+        'value': ['rock', 'pop']
+      }, {
+        'key': 'test'
+      }]);
+
+      config.getConfig.restore();
+    });
+
     it('should attach native params to the request', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],

@@ -8,7 +8,9 @@ const _approvedLoadExternalJSList = [
   'criteo',
   'outstream',
   'adagio',
-  'browsi'
+  'browsi',
+  'brandmetrics',
+  'justtag'
 ]
 
 /**

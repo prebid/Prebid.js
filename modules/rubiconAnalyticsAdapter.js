@@ -234,6 +234,9 @@ function sendMessage(auctionId, bidWonId, trigger) {
 
     let auction = {
       clientTimeoutMillis: auctionCache.timeout,
+      auctionStart: auctionCache.timestamp,
+      auctionEnd: auctionCache.endTs,
+      bidderOrder: auctionCache.bidderOrder,
       samplingFactor,
       accountId,
       adUnits: Object.keys(adUnitMap).map(i => adUnitMap[i]),
@@ -384,8 +387,9 @@ export function parseBidResponse(bid, previousBidResponse, auctionFloorData) {
     'floorRuleValue', () => deepAccess(bid, 'floorData.floorRuleValue'),
     'floorRule', () => debugTurnedOn() ? deepAccess(bid, 'floorData.floorRule') : undefined,
     'adomains', () => {
-      let adomains = deepAccess(bid, 'meta.advertiserDomains');
-      return Array.isArray(adomains) && adomains.length > 0 ? adomains.slice(0, 10) : undefined
+      const adomains = deepAccess(bid, 'meta.advertiserDomains');
+      const validAdomains = Array.isArray(adomains) && adomains.filter(domain => typeof domain === 'string');
+      return validAdomains && validAdomains.length > 0 ? validAdomains.slice(0, 10) : undefined
     }
   ]);
 }
@@ -582,6 +586,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         cacheEntry.bids = {};
         cacheEntry.bidsWon = {};
         cacheEntry.gamHasRendered = {};
+        cacheEntry.bidderOrder = [];
         cacheEntry.referrer = deepAccess(args, 'bidderRequests.0.refererInfo.referer');
         const floorData = deepAccess(args, 'bidderRequests.0.bids.0.floorData');
         if (floorData) {
@@ -607,6 +612,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         }
         break;
       case BID_REQUESTED:
+        cache.auctions[args.auctionId].bidderOrder.push(args.bidderCode);
         Object.assign(cache.auctions[args.auctionId].bids, args.bids.reduce((memo, bid) => {
           // mark adUnits we expect bidWon events for
           cache.auctions[args.auctionId].bidsWon[bid.adUnitCode] = false;

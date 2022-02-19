@@ -42,6 +42,11 @@ const isBidRequestValid = bid => {
     return false;
   }
 
+  if (bid.params.bidfloor && (isNaN(bid.params.bidfloor) || bid.params.bidfloor < 0)) {
+    logError(BIDDER_CODE + ': bid.params.bidfloor should be a number equal or greater than zero');
+    return false;
+  }
+
   return true;
 };
 
@@ -77,6 +82,7 @@ const buildRequests = (validBidRequests, bidderRequest) => {
     const hostname = aElement.hostname
 
     const videoContext = deepAccess(bid, 'mediaTypes.video.context');
+    const bidfloor = deepAccess(bid, `params.bidfloor`, 0);
 
     const queryParams = {
       id: bid.params.id,
@@ -90,6 +96,8 @@ const buildRequests = (validBidRequests, bidderRequest) => {
       dt: /Mobi/.test(navigator.userAgent) ? 2 : 1,
       pid: bid.params.pid,
       requestId: bid.bidId,
+      schain: bid.schain || '',
+      bidfloor,
       d: getDomainWithoutSubdomain(hostname), // 'vidoomy.com',
       sp: encodeURIComponent(aElement.href),
       usp: bidderRequest.uspConsent || '',

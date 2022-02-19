@@ -19,8 +19,10 @@ export const spec = {
 
   buildRequests: function(validBidRequests, bidderRequest) {
     const requests = [];
+    window.nmmRefreshCounts = window.nmmRefreshCounts || {};
 
     _each(validBidRequests, function(bid) {
+      window.nmmRefreshCounts[bid.adUnitCode] = window.nmmRefreshCounts[bid.adUnitCode] || 0;
       const postBody = {
         'id': bid.auctionId,
         'ext': {
@@ -28,6 +30,9 @@ export const spec = {
             'storedrequest': {
               'id': getBidIdParameter('placement_id', bid.params)
             }
+          },
+          'nextMillennium': {
+            'refresh_count': window.nmmRefreshCounts[bid.adUnitCode]++,
           }
         }
       }
@@ -41,12 +46,14 @@ export const spec = {
         if (uspConsent) {
           postBody.regs.ext.us_privacy = uspConsent;
         }
-        if (typeof gdprConsent.gdprApplies !== 'undefined') {
-          postBody.regs.ext.gdpr = gdprConsent.gdprApplies ? 1 : 0;
-        }
-        if (typeof gdprConsent.consentString !== 'undefined') {
-          postBody.user = {
-            ext: { consent: gdprConsent.consentString }
+        if (gdprConsent) {
+          if (typeof gdprConsent.gdprApplies !== 'undefined') {
+            postBody.regs.ext.gdpr = gdprConsent.gdprApplies ? 1 : 0;
+          }
+          if (typeof gdprConsent.consentString !== 'undefined') {
+            postBody.user = {
+              ext: { consent: gdprConsent.consentString }
+            }
           }
         }
       }
@@ -102,6 +109,7 @@ export const spec = {
     let bidders = []
     if (responses) {
       _each(responses, (response) => {
+        if (!(response && response.body && response.body.ext && response.body.ext.responsetimemillis)) return
         _each(Object.keys(response.body.ext.responsetimemillis), b => bidders.push(b))
       })
     }

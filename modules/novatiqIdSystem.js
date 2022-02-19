@@ -8,21 +8,22 @@
 import { logInfo } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
+import {getStorageManager} from '../src/storageManager.js';
 
 /** @type {Submodule} */
 export const novatiqIdSubmodule = {
 
-/**
-* used to link submodule with config
-* @type {string}
-*/
+  /**
+ * used to link submodule with config
+ * @type {string}
+ */
   name: 'novatiq',
 
   /**
-* decode the stored id value for passing to bid requests
-* @function
-* @returns {novatiq: {snowflake: string}}
-*/
+ * decode the stored id value for passing to bid requests
+ * @function
+ * @returns {novatiq: {snowflake: string}}
+ */
   decode(novatiqId, config) {
     let responseObj = {
       novatiq: {
@@ -33,11 +34,11 @@ export const novatiqIdSubmodule = {
   },
 
   /**
-* performs action to obtain id and return a value in the callback's response argument
-* @function
-* @param {SubmoduleConfig} config
-* @returns {id: string}
-*/
+ * performs action to obtain id and return a value in the callback's response argument
+ * @function
+ * @param {SubmoduleConfig} config
+ * @returns {id: string}
+ */
   getId(config) {
     function snowflakeId(placeholder) {
       return placeholder
@@ -47,18 +48,70 @@ export const novatiqIdSubmodule = {
 
     const configParams = config.params || {};
     const srcId = this.getSrcId(configParams);
+    const sharedId = this.getSharedId(configParams);
+
+    logInfo('NOVATIQ config params: ' + JSON.stringify(configParams));
     logInfo('NOVATIQ Sync request used sourceid param: ' + srcId);
+    logInfo('NOVATIQ Sync request Shared ID: ' + sharedId);
 
     let partnerhost;
     partnerhost = window.location.hostname;
     logInfo('NOVATIQ partner hostname: ' + partnerhost);
 
     const novatiqId = snowflakeId();
-    const url = 'https://spadsync.com/sync?sptoken=' + novatiqId + '&sspid=' + srcId + '&ssphost=' + partnerhost;
+
+    let url = 'https://spadsync.com/sync?sptoken=' + novatiqId + '&sspid=' + srcId + '&ssphost=' + partnerhost;
+
+    // for testing
+    let sharedStatus = 'Not Found';
+
+    // append on the shared ID if we have one
+    if (sharedId != null) {
+      url = url + '&sharedId=' + sharedId;
+      sharedStatus = 'Found';
+    }
+
     ajax(url, undefined, undefined, { method: 'GET', withCredentials: false });
 
     logInfo('NOVATIQ snowflake: ' + novatiqId);
-    return { 'id': novatiqId }
+    return { 'id': novatiqId,
+      'sharedStatus': sharedStatus }
+  },
+
+  useSharedId(configParams) {
+    return typeof configParams.useSharedId != 'undefined' && configParams.useSharedId === true;
+  },
+
+  // return null if we aren't supposed to use one or we are but there isn't one present
+  getSharedId(configParams) {
+    let sharedId = null;
+    if (this.useSharedId(configParams)) {
+      let cookieOrStorageID = '_pubcid';
+
+      // Has the cookieOrStorageID been redefined?
+      if (typeof configParams.sharedIdName != 'undefined' && configParams.sharedIdName != null && configParams.sharedIdName != '') {
+        cookieOrStorageID = configParams.sharedIdName;
+        logInfo('NOVATIQ sharedID name redefined: ' + cookieOrStorageID);
+      }
+
+      const storage = getStorageManager('', 'pubCommonId');
+
+      // first check local storage
+      if (storage.hasLocalStorage()) {
+        sharedId = storage.getDataFromLocalStorage(cookieOrStorageID);
+        logInfo('NOVATIQ sharedID retrieved from local storage:' + sharedId);
+      }
+
+      // if nothing check the local cookies
+      if (sharedId == null) {
+        sharedId = storage.getCookie(cookieOrStorageID);
+        logInfo('NOVATIQ sharedID retrieved from cookies:' + sharedId);
+      }
+    }
+
+    logInfo('NOVATIQ sharedID returning: ' + sharedId);
+
+    return sharedId;
   },
 
   getSrcId(configParams) {
