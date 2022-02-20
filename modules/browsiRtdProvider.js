@@ -346,7 +346,7 @@ function getTargetingData(uc, c, us, a) {
     const transactionId = a.adUnits.find(adUnit => adUnit.code === auc).transactionId;
     events.emit(CONSTANTS.EVENTS.BILLABLE_EVENT, {
       vendor: 'browsi',
-      type: 'ad_request',
+      type: 'adRequest',
       billingId: generateUUID(),
       transactionId: transactionId,
       auctionId: auctionId
