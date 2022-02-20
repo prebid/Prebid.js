@@ -197,6 +197,13 @@ function raiGetSizes(bid) {
 
 function raiGetDemandType(bid) {
   let raiFormat = 'display';
+  if (typeof bid.sizes != 'undefined') {
+    bid.sizes.forEach(function (sz) {
+      if ((sz[0] == '1800' && sz[1] == '1000') || (sz[0] == '1' && sz[1] == '1')) {
+        raiFormat = 'skin'
+      }
+    })
+  }
   if (bid.mediaTypes != undefined) {
     if (bid.mediaTypes.video != undefined) {
       raiFormat = 'video';

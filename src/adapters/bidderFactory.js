@@ -219,132 +219,34 @@ export function newBidder(spec) {
         }
       });
 
-      let requests = spec.buildRequests(validBidRequests, bidderRequest);
-      if (!requests || requests.length === 0) {
-        afterAllResponses();
-        return;
-      }
-      if (!Array.isArray(requests)) {
-        requests = [requests];
-      }
-
-      // Callbacks don't compose as nicely as Promises. We should call done() once _all_ the
-      // Server requests have returned and been processed. Since `ajax` accepts a single callback,
-      // we need to rig up a function which only executes after all the requests have been responded.
-      const onResponse = delayExecution(configEnabledCallback(afterAllResponses), requests.length)
-      requests.forEach(requestObject => events.emit(CONSTANTS.EVENTS.BEFORE_BIDDER_HTTP, bidderRequest, requestObject));
-      requests.forEach(processRequest);
-
-      function formatGetParameters(data) {
-        if (data) {
-          return `?${typeof data === 'object' ? parseQueryStringParameters(data) : data}`;
-        }
-
-        return '';
-      }
-
-      function processRequest(request) {
-        switch (request.method) {
-          case 'GET':
-            ajax(
-              `${request.url}${formatGetParameters(request.data)}`,
-              {
-                success: configEnabledCallback(onSuccess),
-                error: onFailure
-              },
-              undefined,
-              Object.assign({
-                method: 'GET',
-                withCredentials: true
-              }, request.options)
-            );
-            break;
-          case 'POST':
-            ajax(
-              request.url,
-              {
-                success: configEnabledCallback(onSuccess),
-                error: onFailure
-              },
-              typeof request.data === 'string' ? request.data : JSON.stringify(request.data),
-              Object.assign({
-                method: 'POST',
-                contentType: 'text/plain',
-                withCredentials: true
-              }, request.options)
-            );
-            break;
-          default:
-            logWarn(`Skipping invalid request from ${spec.code}. Request type ${request.type} must be GET or POST`);
-            onResponse();
-        }
-
-        // If the server responds successfully, use the adapter code to unpack the Bids from it.
-        // If the adapter code fails, no bids should be added. After all the bids have been added,
-        // make sure to call the `onResponse` function so that we're one step closer to calling done().
-        function onSuccess(response, responseObj) {
+      processBidderRequests(spec, validBidRequests, bidderRequest, ajax, configEnabledCallback, {
+        onRequest: requestObject => events.emit(CONSTANTS.EVENTS.BEFORE_BIDDER_HTTP, bidderRequest, requestObject),
+        onResponse: (resp) => {
           onTimelyResponse(spec.code);
-
-          try {
-            response = JSON.parse(response);
-          } catch (e) { /* response might not be JSON... that's ok. */ }
-
-          // Make response headers available for #1742. These are lazy-loaded because most adapters won't need them.
-          response = {
-            body: response,
-            headers: headerParser(responseObj)
-          };
-          responses.push(response);
-
-          let bids;
-          try {
-            bids = spec.interpretResponse(response, request);
-          } catch (err) {
-            logError(`Bidder ${spec.code} failed to interpret the server's response. Continuing without bids`, null, err);
-            onResponse();
-            return;
-          }
-
-          if (bids) {
-            if (isArray(bids)) {
-              bids.forEach(addBidUsingRequestMap);
-            } else {
-              addBidUsingRequestMap(bids);
-            }
-          }
-          onResponse(bids);
-
-          function addBidUsingRequestMap(bid) {
-            const bidRequest = bidRequestMap[bid.requestId];
-            if (bidRequest) {
-              // creating a copy of original values as cpm and currency are modified later
-              bid.originalCpm = bid.cpm;
-              bid.originalCurrency = bid.currency;
-              bid.meta = bid.meta || Object.assign({}, bid[bidRequest.bidder]);
-              const prebidBid = Object.assign(createBid(CONSTANTS.STATUS.GOOD, bidRequest), bid);
-              addBidWithCode(bidRequest.adUnitCode, prebidBid);
-            } else {
-              logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bid.requestId}. Ignoring.`);
-            }
-          }
-
-          function headerParser(xmlHttpResponse) {
-            return {
-              get: responseObj.getResponseHeader.bind(responseObj)
-            };
-          }
-        }
-
-        // If the server responds with an error, there's not much we can do. Log it, and make sure to
-        // call onResponse() so that we're one step closer to calling done().
-        function onFailure(errorMessage, error) {
+          responses.push(resp)
+        },
+        // If the server responds with an error, there's not much we can do beside logging.
+        onError: (errorMessage, error) => {
           onTimelyResponse(spec.code);
           adapterManager.callBidderError(spec.code, error, bidderRequest)
           events.emit(CONSTANTS.EVENTS.BIDDER_ERROR, { error, bidderRequest });
           logError(`Server call for ${spec.code} failed: ${errorMessage} ${error.status}. Continuing without bids.`);
-          onResponse();
-        }
-      }
+        },
+        onBid: (bid) => {
+          const bidRequest = bidRequestMap[bid.requestId];
+          if (bidRequest) {
+            // creating a copy of original values as cpm and currency are modified later
+            bid.originalCpm = bid.cpm;
+            bid.originalCurrency = bid.currency;
+            bid.meta = bid.meta || Object.assign({}, bid[bidRequest.bidder]);
+            const prebidBid = Object.assign(createBid(CONSTANTS.STATUS.GOOD, bidRequest), bid);
+            addBidWithCode(bidRequest.adUnitCode, prebidBid);
+          } else {
+            logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bid.requestId}. Ignoring.`);
+          }
+        },
+        onCompletion: afterAllResponses,
+      });
     }
   });
 
@@ -360,6 +262,125 @@ export function newBidder(spec) {
     return true;
   }
 }
+
+/**
+ * Run a set of bid requests - that entails converting them to HTTP requests, sending
+ * them over the network, and parsing the responses.
+ *
+ * @param spec bid adapter spec
+ * @param bids bid requests to run
+ * @param bidderRequest the bid request object that `bids` is connected to
+ * @param ajax ajax method to use
+ * @param wrapCallback {function(callback)} a function used to wrap every callback (for the purpose of `config.currentBidder`)
+ * @param onRequest {function({})} invoked once for each HTTP request built by the adapter - with the raw request
+ * @param onResponse {function({})} invoked once on each successful HTTP response - with the raw response
+ * @param onError {function(String, {})} invoked once for each HTTP error - with status code and response
+ * @param onBid {function({})} invoked once for each bid in the response - with the bid as returned by interpretResponse
+ * @param onCompletion {function()} invoked once when all bid requests have been processed
+ */
+export const processBidderRequests = hook('sync', function (spec, bids, bidderRequest, ajax, wrapCallback, {onRequest, onResponse, onError, onBid, onCompletion}) {
+  let requests = spec.buildRequests(bids, bidderRequest);
+  if (!requests || requests.length === 0) {
+    onCompletion();
+    return;
+  }
+  if (!Array.isArray(requests)) {
+    requests = [requests];
+  }
+
+  const requestDone = delayExecution(onCompletion, requests.length);
+
+  requests.forEach((request) => {
+    // If the server responds successfully, use the adapter code to unpack the Bids from it.
+    // If the adapter code fails, no bids should be added. After all the bids have been added,
+    // make sure to call the `requestDone` function so that we're one step closer to calling onCompletion().
+    const onSuccess = wrapCallback(function(response, responseObj) {
+      try {
+        response = JSON.parse(response);
+      } catch (e) { /* response might not be JSON... that's ok. */ }
+
+      // Make response headers available for #1742. These are lazy-loaded because most adapters won't need them.
+      response = {
+        body: response,
+        headers: headerParser(responseObj)
+      };
+      onResponse(response);
+
+      let bids;
+      try {
+        bids = spec.interpretResponse(response, request);
+      } catch (err) {
+        logError(`Bidder ${spec.code} failed to interpret the server's response. Continuing without bids`, null, err);
+        requestDone();
+        return;
+      }
+
+      if (bids) {
+        if (isArray(bids)) {
+          bids.forEach(onBid);
+        } else {
+          onBid(bids);
+        }
+      }
+      requestDone();
+
+      function headerParser(xmlHttpResponse) {
+        return {
+          get: responseObj.getResponseHeader.bind(responseObj)
+        };
+      }
+    });
+
+    const onFailure = wrapCallback(function (errorMessage, error) {
+      onError(errorMessage, error);
+      requestDone();
+    });
+
+    onRequest(request);
+    switch (request.method) {
+      case 'GET':
+        ajax(
+          `${request.url}${formatGetParameters(request.data)}`,
+          {
+            success: onSuccess,
+            error: onFailure
+          },
+          undefined,
+          Object.assign({
+            method: 'GET',
+            withCredentials: true
+          }, request.options)
+        );
+        break;
+      case 'POST':
+        ajax(
+          request.url,
+          {
+            success: onSuccess,
+            error: onFailure
+          },
+          typeof request.data === 'string' ? request.data : JSON.stringify(request.data),
+          Object.assign({
+            method: 'POST',
+            contentType: 'text/plain',
+            withCredentials: true
+          }, request.options)
+        );
+        break;
+      default:
+        logWarn(`Skipping invalid request from ${spec.code}. Request type ${request.type} must be GET or POST`);
+        requestDone();
+    }
+
+    function formatGetParameters(data) {
+      if (data) {
+        return `?${typeof data === 'object' ? parseQueryStringParameters(data) : data}`;
+      }
+
+      return '';
+    }
+  })
+}, 'processBidderRequests')
 
 export const registerSyncInner = hook('async', function(spec, responses, gdprConsent, uspConsent) {
   const aliasSyncEnabled = config.getConfig('userSync.aliasSyncEnabled');
