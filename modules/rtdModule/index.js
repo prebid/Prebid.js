@@ -353,6 +353,7 @@ export function getAdUnitTargeting(auction) {
     if (!kv) {
       return
     }
+    logInfo('RTD set ad unit targeting of' ,kv, 'for' ,adUnit);
     adUnit[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING] = Object.assign(adUnit[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING] || {}, kv);
   });
   return auction.adUnits;

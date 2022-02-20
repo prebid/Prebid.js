@@ -677,11 +677,6 @@ describe('rubicon analytics adapter', function () {
       });
       expect(rubiConf).to.deep.equal({
         analyticsEventDelay: 0,
-        dmBilling: {
-          enabled: false,
-          vendors: [],
-          waitForAuction: true
-        },
         pvid: '12345678',
         wrapperName: '1001_general',
         int_type: 'dmpbjs',
@@ -701,11 +696,6 @@ describe('rubicon analytics adapter', function () {
       });
       expect(rubiConf).to.deep.equal({
         analyticsEventDelay: 0,
-        dmBilling: {
-          enabled: false,
-          vendors: [],
-          waitForAuction: true
-        },
         pvid: '12345678',
         wrapperName: '1001_general',
         int_type: 'dmpbjs',
@@ -727,11 +717,6 @@ describe('rubicon analytics adapter', function () {
       });
       expect(rubiConf).to.deep.equal({
         analyticsEventDelay: 0,
-        dmBilling: {
-          enabled: false,
-          vendors: [],
-          waitForAuction: true
-        },
         pvid: '12345678',
         wrapperName: '1001_general',
         int_type: 'dmpbjs',

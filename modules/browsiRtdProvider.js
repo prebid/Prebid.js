@@ -15,7 +15,7 @@
  * @property {?string} keyName
  */
 
-import { deepClone, logError, isGptPubadsDefined, isNumber, isFn, deepSetValue } from '../src/utils.js';
+import {deepClone, logError, isGptPubadsDefined, isNumber, isFn, deepSetValue, logInfo} from '../src/utils.js';
 import {submodule} from '../src/hook.js';
 import {ajaxBuilder} from '../src/ajax.js';
 import {loadExternalScript} from '../src/adloader.js';
@@ -110,6 +110,7 @@ export function setData(data) {
 }
 
 function getRTD(auc) {
+  logInfo(`Browsi RTD provider is fetching data for ${auc}`);
   try {
     const _bp = (_browsiData && _browsiData.p) || {};
     return auc.reduce((rp, uc) => {
@@ -351,6 +352,7 @@ function getTargetingData(uc, c, us, a) {
       auctionId: auctionId
     })
   });
+  logInfo('Browsi RTD provider returned targeting data', targetingData ,'for' ,uc)
   return targetingData;
 }
 

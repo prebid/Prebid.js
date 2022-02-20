@@ -1,4 +1,4 @@
-import { generateUUID, mergeDeep, deepAccess, parseUrl, logError, pick, isEmpty, logWarn, debugTurnedOn, parseQS, getWindowLocation, isAdUnitCodeMatchingSlot, isNumber, isGptPubadsDefined, _each, deepSetValue, deepClone, logInfo } from '../src/utils.js';
+import { generateUUID, mergeDeep, deepAccess, parseUrl, logError, pick, isEmpty, logWarn, debugTurnedOn, parseQS, getWindowLocation, isAdUnitCodeMatchingSlot, isNumber, isGptPubadsDefined, _each, deepSetValue } from '../src/utils.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
@@ -6,14 +6,12 @@ import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { getStorageManager } from '../src/storageManager.js';
-import events from '../src/events';
 
 const RUBICON_GVL_ID = 52;
 export const storage = getStorageManager(RUBICON_GVL_ID, 'rubicon');
 const COOKIE_NAME = 'rpaSession';
 const LAST_SEEN_EXPIRE_TIME = 1800000; // 30 mins
 const END_EXPIRE_TIME = 21600000; // 6 hours
-const MODULE_NAME = 'Rubicon Analytics';
 
 const pbsErrorMap = {
   1: 'timeout-error',
@@ -24,9 +22,6 @@ const pbsErrorMap = {
 }
 
 let prebidGlobal = getGlobal();
-prebidGlobal.emitEvent = events.emit;
-prebidGlobal.generateUUID = generateUUID;
-
 const {
   EVENTS: {
     AUCTION_INIT,
@@ -36,8 +31,7 @@ const {
     BIDDER_DONE,
     BID_TIMEOUT,
     BID_WON,
-    SET_TARGETING,
-    BILLABLE_EVENT
+    SET_TARGETING
   },
   STATUS: {
     GOOD,
@@ -61,19 +55,13 @@ const cache = {
   targeting: {},
   timeouts: {},
   gpt: {},
-  billing: {}
 };
 
 const BID_REJECTED_IPF = 'rejected-ipf';
 
 export let rubiConf = {
   pvid: generateUUID().slice(0, 8),
-  analyticsEventDelay: 0,
-  dmBilling: {
-    enabled: false,
-    vendors: [],
-    waitForAuction: true
-  }
+  analyticsEventDelay: 0
 };
 // we are saving these as global to this module so that if a pub accidentally overwrites the entire
 // rubicon object, then we do not lose other data
@@ -88,7 +76,7 @@ export function getHostNameFromReferer(referer) {
   try {
     rubiconAdapter.referrerHostname = parseUrl(referer, { noDecodeWholeURL: true }).hostname;
   } catch (e) {
-    logError(`${MODULE_NAME}: Unable to parse hostname from supplied url: `, referer, e);
+    logError('Rubicon Analytics: Unable to parse hostname from supplied url: ', referer, e);
     rubiconAdapter.referrerHostname = '';
   }
   return rubiconAdapter.referrerHostname
@@ -125,56 +113,6 @@ function formatSource(src) {
     src = 'server';
   }
   return src.toLowerCase();
-}
-
-function getBillingPayload(event) {
-  // for now we are mapping all events to type "general", later we will expand support for specific types
-  let billingEvent = deepClone(event);
-  billingEvent.type = 'general';
-  billingEvent.accountId = accountId;
-  // mark as sent
-  deepSetValue(cache.billing, `${event.vendor}.${event.billingId}`, true);
-  logInfo(`${MODULE_NAME}: Remaining Billing Events:`, deepClone(cache.billing));
-  return billingEvent;
-}
-
-function sendBillingEvent(event) {
-  let message = getBasicEventDetails(undefined, 'soloBilling');
-  message.billableEvents = [getBillingPayload(event)];
-  ajax(
-    rubiconAdapter.getUrl(),
-    null,
-    JSON.stringify(message),
-    {
-      contentType: 'application/json'
-    }
-  );
-}
-
-function getBasicEventDetails(auctionId, trigger) {
-  let auctionCache = cache.auctions[auctionId];
-  let referrer = config.getConfig('pageUrl') || pageReferer || (auctionCache && auctionCache.referrer);
-  let message = {
-    timestamps: {
-      prebidLoaded: rubiconAdapter.MODULE_INITIALIZED_TIME,
-      auctionEnded: auctionCache ? auctionCache.endTs : undefined,
-      eventTime: Date.now()
-    },
-    trigger,
-    integration: rubiConf.int_type || DEFAULT_INTEGRATION,
-    version: '$prebid.version$',
-    referrerUri: referrer,
-    referrerHostname: rubiconAdapter.referrerHostname || getHostNameFromReferer(referrer),
-    channel: 'web',
-  };
-  if (rubiConf.wrapperName) {
-    message.wrapper = {
-      name: rubiConf.wrapperName,
-      family: rubiConf.wrapperFamily,
-      rule: rubiConf.rule_name
-    }
-  }
-  return message;
 }
 
 function sendMessage(auctionId, bidWonId, trigger) {
@@ -222,8 +160,28 @@ function sendMessage(auctionId, bidWonId, trigger) {
       samplingFactor
     });
   }
-  let message = getBasicEventDetails(auctionId, trigger);
   let auctionCache = cache.auctions[auctionId];
+  let referrer = config.getConfig('pageUrl') || (auctionCache && auctionCache.referrer);
+  let message = {
+    timestamps: {
+      prebidLoaded: rubiconAdapter.MODULE_INITIALIZED_TIME,
+      auctionEnded: auctionCache.endTs,
+      eventTime: Date.now()
+    },
+    trigger,
+    integration: rubiConf.int_type || DEFAULT_INTEGRATION,
+    version: '$prebid.version$',
+    referrerUri: referrer,
+    referrerHostname: rubiconAdapter.referrerHostname || getHostNameFromReferer(referrer),
+    channel: 'web',
+  };
+  if (rubiConf.wrapperName) {
+    message.wrapper = {
+      name: rubiConf.wrapperName,
+      family: rubiConf.wrapperFamily,
+      rule: rubiConf.rule_name
+    }
+  }
   if (auctionCache && !auctionCache.sent) {
     let adUnitMap = Object.keys(auctionCache.bids).reduce((adUnits, bidId) => {
       let bid = auctionCache.bids[bidId];
@@ -363,12 +321,6 @@ function sendMessage(auctionId, bidWonId, trigger) {
     ];
   }
 
-  // if we have not sent any billingEvents send them
-  const pendingBillingEvents = getPendingBillingEvents(auctionCache);
-  if (pendingBillingEvents && pendingBillingEvents.length) {
-    message.billableEvents = pendingBillingEvents;
-  }
-
   ajax(
     this.getUrl(),
     null,
@@ -377,17 +329,6 @@ function sendMessage(auctionId, bidWonId, trigger) {
       contentType: 'application/json'
     }
   );
-}
-
-function getPendingBillingEvents(auctionCache) {
-  if (auctionCache && auctionCache.billing && auctionCache.billing.length) {
-    return auctionCache.billing.reduce((accum, billingEvent) => {
-      if (deepAccess(cache.billing, `${billingEvent.vendor}.${billingEvent.billingId}`) === false) {
-        accum.push(getBillingPayload(billingEvent));
-      }
-      return accum;
-    }, []);
-  }
 }
 
 function adUnitIsOnlyInstream(adUnit) {
@@ -418,7 +359,7 @@ function getBidPrice(bid) {
   try {
     return Number(prebidGlobal.convertCurrency(cpm, currency, 'USD'));
   } catch (err) {
-    logWarn(`${MODULE_NAME}: Could not determine the bidPriceUSD of the bid `, bid);
+    logWarn('Rubicon Analytics Adapter: Could not determine the bidPriceUSD of the bid ', bid);
   }
 }
 
@@ -508,7 +449,7 @@ function getRpaCookie() {
     try {
       return JSON.parse(window.atob(encodedCookie));
     } catch (e) {
-      logError(`${MODULE_NAME}: Unable to decode ${COOKIE_NAME} value: `, e);
+      logError(`Rubicon Analytics: Unable to decode ${COOKIE_NAME} value: `, e);
     }
   }
   return {};
@@ -518,7 +459,7 @@ function setRpaCookie(decodedCookie) {
   try {
     storage.setDataInLocalStorage(COOKIE_NAME, window.btoa(JSON.stringify(decodedCookie)));
   } catch (e) {
-    logError(`${MODULE_NAME}: Unable to encode ${COOKIE_NAME} value: `, e);
+    logError(`Rubicon Analytics: Unable to encode ${COOKIE_NAME} value: `, e);
   }
 }
 
@@ -583,29 +524,6 @@ function subscribeToGamSlots() {
   });
 }
 
-let pageReferer;
-
-const isBillingEventValid = event => {
-  // vendor is whitelisted
-  const isWhitelistedVendor = rubiConf.dmBilling.vendors.includes(event.vendor);
-  // event is not duplicated
-  const isNotDuplicate = typeof deepAccess(cache.billing, `${event.vendor}.${event.billingId}`) !== 'boolean';
-  return isWhitelistedVendor && isNotDuplicate;
-}
-
-const sendOrAddEventToQueue = event => {
-  // if any auction is not sent yet, then add it to the auction queue
-  const pendingAuction = Object.keys(cache.auctions).find(auctionId => !cache.auctions[auctionId].sent);
-
-  if (rubiConf.dmBilling.waitForAuction && pendingAuction) {
-    cache.auctions[pendingAuction].billing = cache.auctions[pendingAuction].billing || [];
-    cache.auctions[pendingAuction].billing.push(event);
-  } else {
-    // send it
-    sendBillingEvent(event);
-  }
-}
-
 let baseAdapter = adapter({ analyticsType: 'endpoint' });
 let rubiconAdapter = Object.assign({}, baseAdapter, {
   MODULE_INITIALIZED_TIME: Date.now(),
@@ -621,7 +539,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
       if (config.options.endpoint) {
         this.getUrl = () => config.options.endpoint;
       } else {
-        logError(`${MODULE_NAME}: required endpoint missing`);
+        logError('required endpoint missing from rubicon analytics');
         error = true;
       }
       if (typeof config.options.sampling !== 'undefined') {
@@ -629,7 +547,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
       }
       if (typeof config.options.samplingFactor !== 'undefined') {
         if (typeof config.options.sampling !== 'undefined') {
-          logWarn(`${MODULE_NAME}: Both options.samplingFactor and options.sampling enabled defaulting to samplingFactor`);
+          logWarn('Both options.samplingFactor and options.sampling enabled in rubicon analytics, defaulting to samplingFactor');
         }
         samplingFactor = parseFloat(config.options.samplingFactor);
         config.options.sampling = 1 / samplingFactor;
@@ -639,10 +557,10 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
     let validSamplingFactors = [1, 10, 20, 40, 100];
     if (validSamplingFactors.indexOf(samplingFactor) === -1) {
       error = true;
-      logError(`${MODULE_NAME}: invalid samplingFactor ${samplingFactor} - must be one of ${validSamplingFactors.join(', ')}`);
+      logError('invalid samplingFactor for rubicon analytics: ' + samplingFactor + ', must be one of ' + validSamplingFactors.join(', '));
     } else if (!accountId) {
       error = true;
-      logError(`${MODULE_NAME}: required accountId missing for rubicon analytics`);
+      logError('required accountId missing for rubicon analytics');
     }
 
     if (!error) {
@@ -668,8 +586,8 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         cacheEntry.bids = {};
         cacheEntry.bidsWon = {};
         cacheEntry.gamHasRendered = {};
-        cacheEntry.referrer = pageReferer = deepAccess(args, 'bidderRequests.0.refererInfo.referer');
         cacheEntry.bidderOrder = [];
+        cacheEntry.referrer = deepAccess(args, 'bidderRequests.0.refererInfo.referer');
         const floorData = deepAccess(args, 'bidderRequests.0.bids.0.floorData');
         if (floorData) {
           cacheEntry.floorData = { ...floorData };
@@ -798,7 +716,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
           auctionEntry.floorData.enforcements = { ...args.floorData.enforcements };
         }
         if (!bid) {
-          logError(`${MODULE_NAME}: Could not find associated bid request for bid response with requestId: `, args.requestId);
+          logError('Rubicon Anlytics Adapter Error: Could not find associated bid request for bid response with requestId: ', args.requestId);
           break;
         }
         bid.source = formatSource(bid.source || args.source);
@@ -896,14 +814,6 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
           }
         });
         break;
-      case BILLABLE_EVENT:
-        if (rubiConf.dmBilling.enabled && isBillingEventValid(args)) {
-          // add to the map indicating it has not been sent yet
-          deepSetValue(cache.billing, `${args.vendor}.${args.billingId}`, false)
-          sendOrAddEventToQueue(args);
-        } else {
-          logWarn(`${MODULE_NAME}: Billing event ignored`, args);
-        }
     }
   }
 });
