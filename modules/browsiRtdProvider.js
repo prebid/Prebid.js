@@ -23,6 +23,9 @@ import {getStorageManager} from '../src/storageManager.js';
 import find from 'core-js-pure/features/array/find.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import includes from 'core-js-pure/features/array/includes.js';
+import { generateUUID } from '../src/utils.js';
+import events from '../src/events.js';
+import CONSTANTS from '../src/constants.json';
 
 const storage = getStorageManager();
 
@@ -332,12 +335,21 @@ export const browsiSubmodule = {
   getBidRequestData: setBidRequestsData
 };
 
-function getTargetingData(uc) {
+function getTargetingData(uc, c, us, a) {
   const targetingData = getRTD(uc);
+  const auctionId = a.auctionId
   uc.forEach(auc => {
     if (isNumber(_ic[auc])) {
       _ic[auc] = _ic[auc] + 1;
     }
+    const transactionId = a.adUnits.find(adUnit => adUnit.code === auc).transactionId;
+    events.emit(CONSTANTS.EVENTS.BILLABLE_EVENT, {
+      vendor: 'browsi',
+      type: 'ad_request',
+      billingId: generateUUID(),
+      transactionId: transactionId,
+      auctionId: auctionId
+    })
   });
   return targetingData;
 }
