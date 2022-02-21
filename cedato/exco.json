@@ -23,6 +23,8 @@
   "telariaBidAdapter",
   "unrulyBidAdapter",
   "yahoosspBidAdapter",
+  "beachfrontBidAdapter",
+  "tripleliftBidAdapter",
 
   "consentManagement",
   "consentManagementUsp",

@@ -23,6 +23,8 @@
   "unrulyBidAdapter",
   "yahoosspBidAdapter",
   "yieldmoBidAdapter",
+  "beachfrontBidAdapter",
+  "tripleliftBidAdapter",
 
   "consentManagement",
   "consentManagementUsp",
