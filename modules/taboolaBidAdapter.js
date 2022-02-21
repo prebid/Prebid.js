@@ -9,17 +9,17 @@ import {getStorageManager} from '../src/storageManager.js';
 const BIDDER_CODE = 'taboola';
 const GVLID = 42;
 const CURRENCY = 'USD';
-export const END_POINT_URL = 'hb.bidder.taboola.com/TaboolaHBOpenRTBRequestHandlerServlet';
+export const END_POINT_URL = 'http://hb.bidder.taboola.com/TaboolaHBOpenRTBRequestHandlerServlet';
 const USER_ID = 'user-id';
 const STORAGE_KEY = `taboola global:${USER_ID}`;
 const COOKIE_KEY = 'trc_cookie_storage';
 
 /**
- * try to extract User Id by that order:
- *  local storage
- *  first party cookie
- *  rendered trc
- *  new user set it to 0
+ *  extract User Id by that order:
+ * 1. local storage
+ * 2. first party cookie
+ * 3. rendered trc
+ * 4. new user set it to 0
  */
 export const userData = {
   storageManager: getStorageManager(GVLID, BIDDER_CODE),
@@ -139,7 +139,7 @@ export const spec = {
       regs
     };
 
-    const url = [END_POINT_URL, publisherId].join('');
+    const url = [END_POINT_URL, publisherId].join('/');
 
     return {
       url,
