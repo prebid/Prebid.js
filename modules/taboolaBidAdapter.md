@@ -9,8 +9,8 @@ Maintainer: prebid@taboola.com
 # Description
 
 Module that connects to Taboola bidder to fetch bids.
-- Supports ‘display’ format
-- Uses OpenRTB standard
+- Supports `display` format
+- Uses `OpenRTB` standard
 
 The Taboola Bidding adapter requires setup before beginning. Please contact us on prebid@taboola.com
 
