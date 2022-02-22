@@ -79,6 +79,14 @@ let fluctAnalyticsAdapter = Object.assign(
           cache.auctions[auctionInitEvent.auctionId] = { ...auctionInitEvent, bids: {} };
           if (!cache.gpt.registered) {
             window.googletag = window.googletag || { cmd: [] };
+            window.googletag.pubads()?.addEventListener('slotOnload', (event) => {
+              const adUnitCode = event.slot.getSlotElementId();
+              if (isBrowsiId(adUnitCode)) {
+                const auction = find(Object.values(cache.auctions), auction =>
+                  auction.adUnitCodes.every(_adUnitCode => _adUnitCode === adUnitCode));
+                sendMessage(auction.auctionId);
+              }
+            })
             cache.gpt.registered = true;
           }
           break;
@@ -129,15 +137,8 @@ let fluctAnalyticsAdapter = Object.assign(
           ].forEach(bid => {
             cache.auctions[auctionId].bids[bid.requestId || bid.bidId] = bid
           });
-          break;
-        }
-        case EVENTS.SET_TARGETING: {
-          let setTargetingEvent = args;
-          const adUnitCodes = Object.keys(setTargetingEvent);
-          /** @type {PbAuction} */
-          const auction = find(Object.values(cache.auctions), auction =>
-            auction.adUnitCodes.every(adUnitCode => adUnitCodes.includes(adUnitCode)));
-          sendMessage(auction.auctionId);
+          if (adUnitCodes.every(adUnitCode => !isBrowsiId(adUnitCode)))
+            sendMessage(auctionId);
           break;
         }
         case EVENTS.BID_WON: {
@@ -160,6 +161,7 @@ let fluctAnalyticsAdapter = Object.assign(
           break;
       }
     } catch (error) {
+      // console.error({ eventType, args, error })
       logError({ eventType, args, error });
     }
   }

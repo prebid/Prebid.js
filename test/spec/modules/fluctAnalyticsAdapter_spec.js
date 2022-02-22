@@ -3,7 +3,6 @@ import fluctAnalyticsAdapter, {
 } from '../../../modules/fluctAnalyticsAdapter';
 import { expect } from 'chai';
 import * as events from 'src/events.js';
-import find from 'core-js-pure/features/array/find.js';
 import { EVENTS } from 'src/constants.json';
 import { server } from 'test/mocks/xhr.js';
 import * as mockGpt from '../integration/faker/googletag.js';
@@ -40,23 +39,6 @@ const adUnits = [
     ],
     'ext': {
       'device': 'SP'
-    }
-  },
-  {
-    'code': 'browsi_ad_0_ai_1_rc_0',
-    'mediaTypes': {
-      'banner': {
-        'sizes': [
-          [
-            300,
-            250
-          ],
-          [
-            336,
-            280
-          ]
-        ]
-      }
     }
   }
 ]
@@ -98,8 +80,24 @@ describe('複製枠のadUnitsをマッピングできる', () => {
         }
       }
     }
-    const adUnit = find(adUnits, adUnit => adUnit.code === 'browsi_ad_0_ai_1_rc_0')
-    const actual = convertReplicatedAdUnit(adUnit, adUnits, slots)
+    const adUnit = {
+      'code': 'browsi_ad_0_ai_1_rc_0',
+      'mediaTypes': {
+        'banner': {
+          'sizes': [
+            [
+              300,
+              250
+            ],
+            [
+              336,
+              280
+            ]
+          ]
+        }
+      }
+    }
+    const actual = convertReplicatedAdUnit(adUnit, [...adUnits, adUnit], slots)
     expect(expected).to.deep.equal(actual)
   })
 })
@@ -200,7 +198,6 @@ describe('fluct analytics adapter', () => {
   it('EVENT: `AUCTION_END` 時に値を送信できる', () => {
     events.emit(EVENTS.AUCTION_INIT, MOCK.AUCTION_INIT)
     events.emit(EVENTS.AUCTION_END, MOCK.AUCTION_END)
-    events.emit(EVENTS.SET_TARGETING, MOCK.SET_TARGETING)
     expect(server.requests.length).to.equal(1)
 
     const actual = JSON.parse(server.requests[0].requestBody)
