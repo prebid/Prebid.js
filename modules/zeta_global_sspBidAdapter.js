@@ -108,6 +108,7 @@ export const spec = {
     payload.site.domain = config.getConfig('publisherDomain') || getDomainFromURL(payload.site.page);
 
     payload.device.ua = navigator.userAgent;
+    payload.device.language = navigator.language;
     payload.device.devicetype = isMobile() ? 1 : isConnectedTV() ? 3 : 2;
     payload.site.mobile = payload.device.devicetype === 1 ? 1 : 0;
 
