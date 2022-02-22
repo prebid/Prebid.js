@@ -113,6 +113,7 @@ describe('the price floors module', function () {
     bidder: 'rubicon',
     adUnitCode: 'test_div_1',
     auctionId: '1234-56-789',
+    transactionId: 'tr_test_div_1'
   };
 
   function getAdUnitMock(code = 'adUnit-code') {
@@ -1734,5 +1735,50 @@ describe('the price floors module', function () {
       // should be undefined now
       expect(_floorDataForAuction[AUCTION_END_EVENT.auctionId]).to.be.undefined;
     });
+  });
+
+  describe('fieldMatchingFunctions', () => {
+    let sandbox;
+
+    const req = {
+      ...basicBidRequest,
+    }
+
+    const resp = {
+      transactionId: req.transactionId,
+      size: [100, 100],
+      mediaType: 'banner',
+    }
+
+    beforeEach(() => {
+      sandbox = sinon.sandbox.create();
+      sandbox.stub(auctionManager, 'index').get(() => stubAuctionIndex({
+        adUnits: [
+          {
+            code: req.adUnitCode,
+            transactionId: req.transactionId,
+            ortb2Imp: {ext: {data: {adserver: {name: 'gam', adslot: 'slot'}}}}
+          }
+        ]
+      }));
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    })
+
+    Object.entries({
+      size: '100x100',
+      mediaType: resp.mediaType,
+      gptSlot: 'slot',
+      domain: 'localhost',
+      adUnitCode: req.adUnitCode,
+    }).forEach(([test, expected]) => {
+      describe(`${test}`, () => {
+        it('should work with only bidResponse', () => {
+          expect(fieldMatchingFunctions[test](undefined, resp)).to.eql(expected)
+        })
+      });
+    })
   });
 });
