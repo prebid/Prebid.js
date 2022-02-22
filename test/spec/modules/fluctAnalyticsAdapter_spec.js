@@ -12,6 +12,7 @@ import $$PREBID_GLOBAL$$ from '../../../src/prebid';
 const adUnits = [
   {
     'code': 'div-gpt-ad-1587114265584-0',
+    'path': '/62532913/p_fluctmagazine_320x50_surface_15377',
     'mediaTypes': {
       'banner': {
         'sizes': [
