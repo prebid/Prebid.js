@@ -51,16 +51,20 @@ const getAdUnitMap = () => window.googletag.pubads().getSlots().reduce((prev, sl
 export const convertReplicatedAdUnit = (_adUnit, adUnits = $$PREBID_GLOBAL$$.adUnits, slots = getAdUnitMap()) => {
   /** @type {AdUnit} */
   const adUnit = deepClone(_adUnit);
-  try {
-    if (isBrowsiId(adUnit.code)) {
-      const adUnitPath = slots[adUnit.code];
+  if (isBrowsiId(adUnit.code)) {
+    const adUnitPath = slots[adUnit.code];
+    try {
       const { analytics, code, mediaTypes: { banner: { name } } } = find(adUnits, adUnit => adUnit.path === adUnitPath);
       adUnit.analytics = analytics;
       adUnit._code = code;
       adUnit.mediaTypes.banner.name = name;
+    } catch (_error) {
+      logError({
+        message: '対応するDWIDを持つ枠が見つかりませんでした。',
+        adUnitCode: adUnit.code,
+        adUnitPath,
+      });
     }
-  } catch (_error) {
-    logError(`ad unit not found with same path ${adUnitPath} as ${adUnit.code}.`);
   }
   adUnit.bids = undefined;
   return adUnit;
