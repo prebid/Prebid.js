@@ -14,6 +14,11 @@ export function addHooks(overrides) {
   addBidderRequests.before(addBidderRequestsBound, 5);
 }
 
+export function removeHooks() {
+  addBidResponse.getHooks({hook: addBidResponseBound}).remove();
+  addBidderRequests.getHooks({hook: addBidderRequestsBound}).remove();
+}
+
 /**
  * @param {{bidder:string, adUnitCode:string}} overrideObj
  * @param {string} bidderCode

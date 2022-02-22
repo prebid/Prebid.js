@@ -4,11 +4,10 @@ import {BidInterceptor} from './bidInterceptor.js';
 import {hook} from '../../src/hook.js';
 import {pbsBidInterceptor} from './pbsInterceptor.js';
 import {addHooks, removeHooks} from './legacy.js';
-import {config} from './config.js';
+import {config} from '../../src/config.js';
+import {OVERRIDE_KEY} from '../../src/debugging.js';
 
 const {logMessage} = prefixLog('DEBUG:');
-
-const OVERRIDE_KEY = '$$PREBID_GLOBAL$$:debugging';
 
 const interceptorHooks = [];
 const bidInterceptor = new BidInterceptor();
@@ -23,9 +22,10 @@ function enableDebugging(debugConfig, fromSession = false) {
   logMessage(`Debug overrides enabled${fromSession ? ' from session' : ''}`);
 }
 
-function disableDebugging() {
+export function disableDebugging() {
   bidInterceptor.updateConfig(({}));
   resetHooks(false);
+  // also disable "legacy" overrides
   removeHooks();
   logMessage('Debug overrides disabled');
 }
@@ -57,8 +57,6 @@ export function getConfig(debugging, {sessionStorage = window.sessionStorage} = 
   }
 }
 
-config.getConfig('debugging', ({debugging}) => getConfig(debugging));
-
 export function sessionLoader(storage) {
   let overrides;
   try {
@@ -70,14 +68,6 @@ export function sessionLoader(storage) {
     enableDebugging(overrides, true);
   }
 }
-
-saveDebuggingConfig.before(function (next, debugConfig, ...args) {
-  if (debugConfig.intercept) {
-    debugConfig = deepClone(debugConfig);
-    debugConfig.intercept = bidInterceptor.serializeConfig(debugConfig.intercept);
-  }
-  next(debugConfig, ...args);
-});
 
 function resetHooks(enable) {
   interceptorHooks.forEach(([getHookFn, interceptor]) => {
@@ -109,3 +99,6 @@ export function bidderBidInterceptor(next, interceptBids, spec, bids, bidRequest
 
 registerBidInterceptor(() => processBidderRequests, bidderBidInterceptor);
 registerBidInterceptor(() => hook.get('processPBSRequest'), pbsBidInterceptor);
+
+config.getConfig('debugging', ({debugging}) => getConfig(debugging));
+sessionLoader();
