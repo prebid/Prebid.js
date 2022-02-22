@@ -75,11 +75,12 @@ adomikAdapter.maxPartLength = function () {
 };
 
 adomikAdapter.sendTypedEvent = function() {
+  let [testId, testValue] = adomikAdapter.getKeyValues();
   const groupedTypedEvents = adomikAdapter.buildTypedEvents();
 
   const bulkEvents = {
-    testId: adomikAdapter.currentContext.testId,
-    testValue: adomikAdapter.currentContext.testValue,
+    testId: testId,
+    testValue: testValue,
     uid: adomikAdapter.currentContext.uid,
     ahbaid: adomikAdapter.currentContext.id,
     hostname: window.location.hostname,
@@ -131,7 +132,8 @@ adomikAdapter.sendTypedEvent = function() {
 };
 
 adomikAdapter.sendWonEvent = function (wonEvent) {
-  let keyValues = { testId: adomikAdapter.currentContext.testId, testValue: adomikAdapter.currentContext.testValue }
+  let [testId, testValue] = adomikAdapter.getKeyValues();
+  keyValues = { testId: testId, testValue: testValue }
   wonEvent = {...wonEvent, ...keyValues}
   const stringWonEvent = JSON.stringify(wonEvent)
   logInfo('Won event sent to adomik prebid analytic ' + stringWonEvent);
@@ -202,6 +204,19 @@ adomikAdapter.buildTypedEvents = function () {
   return groupedTypedEvents;
 }
 
+adomikAdapter.getKeyValues = function () {
+  let preventTest = sessionStorage.getItem(window.location.hostname + "_NoAdomikTest")
+  let inScope = sessionStorage.getItem(window.location.hostname + "_AdomikTestInScope")
+  let keyValues = JSON.parse(sessionStorage.getItem(window.location.hostname + "_AdomikTest"))
+  let testId;
+  let testValue;
+  if (typeof(keyValues) === 'object' && keyValues != undefined && !preventTest && inScope) {
+    testId = keyValues.testId
+    testValue = keyValues.testOptionLabel
+  }
+  return [testId, testValue]
+}
+
 adomikAdapter.adapterEnableAnalytics = adomikAdapter.enableAnalytics;
 
 adomikAdapter.enableAnalytics = function (config) {
@@ -217,8 +232,6 @@ adomikAdapter.enableAnalytics = function (config) {
       adomikAdapter.currentContext = {
         uid: initOptions.id,
         url: initOptions.url,
-        testId: initOptions.testId,
-        testValue: initOptions.testValue,
         id: '',
         timeouted: false,
         sampling: config.sampling
