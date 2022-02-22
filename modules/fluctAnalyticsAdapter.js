@@ -53,7 +53,8 @@ export const convertReplicatedAdUnit = (_adUnit, adUnits = $$PREBID_GLOBAL$$.adU
   const adUnit = deepClone(_adUnit);
   if (isBrowsiId(adUnit.code)) {
     try {
-      const { analytics, code, mediaTypes: { banner: { name } } } = find(adUnits, adUnit => adUnit.path === slots[adUnit.code]);
+      const adUnitPath = slots[adUnit.code];
+      const { analytics, code, mediaTypes: { banner: { name } } } = find(adUnits, adUnit => adUnit.path === adUnitPath);
       adUnit.analytics = analytics;
       adUnit._code = code;
       adUnit.mediaTypes.banner.name = name;
