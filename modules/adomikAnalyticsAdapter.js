@@ -83,11 +83,12 @@ adomikAdapter.maxPartLength = function () {
 };
 
 adomikAdapter.sendTypedEvent = function() {
+  let [testId, testValue] = adomikAdapter.getKeyValues();
   const groupedTypedEvents = adomikAdapter.buildTypedEvents();
 
   const bulkEvents = {
-    testId: adomikAdapter.currentContext.testId,
-    testValue: adomikAdapter.currentContext.testValue,
+    testId: testId,
+    testValue: testValue,
     uid: adomikAdapter.currentContext.uid,
     ahbaid: adomikAdapter.currentContext.id,
     hostname: window.location.hostname,
@@ -139,10 +140,16 @@ adomikAdapter.sendTypedEvent = function() {
 };
 
 adomikAdapter.sendWonEvent = function (wonEvent) {
+<<<<<<< HEAD
   let keyValues = { testId: adomikAdapter.currentContext.testId, testValue: adomikAdapter.currentContext.testValue }
   let samplingInfo = { sampling: adomikAdapter.currentContext.sampling }
   wonEvent = { ...wonEvent, ...keyValues, ...samplingInfo }
 
+=======
+  let [testId, testValue] = adomikAdapter.getKeyValues();
+  keyValues = { testId: testId, testValue: testValue }
+  wonEvent = {...wonEvent, ...keyValues}
+>>>>>>> adomikAnayticsAdapter/receive KV from sessionStorage
   const stringWonEvent = JSON.stringify(wonEvent)
   logInfo('Won event sent to adomik prebid analytic ' + stringWonEvent);
 
