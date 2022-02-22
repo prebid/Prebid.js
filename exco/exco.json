@@ -2,6 +2,7 @@
   "adfBidAdapter",
   "admanBidAdapter",
   "appnexusBidAdapter",
+  "beachfrontBidAdapter",
   "conversantBidAdapter",
   "emx_digitalBidAdapter",
   "freewheel-sspBidAdapter",
@@ -21,6 +22,7 @@
   "spotxBidAdapter",
   "synacormediaBidAdapter",
   "telariaBidAdapter",
+  "tripleliftBidAdapter",
   "unrulyBidAdapter",
   "yahoosspBidAdapter",
 

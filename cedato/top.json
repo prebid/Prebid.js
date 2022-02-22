@@ -2,6 +2,7 @@
   "adfBidAdapter",
   "admanBidAdapter",
   "appnexusBidAdapter",
+  "beachfrontBidAdapter",
   "conversantBidAdapter",
   "freewheel-sspBidAdapter",
   "gridBidAdapter",

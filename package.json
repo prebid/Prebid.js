@@ -4,12 +4,12 @@
   "description": "Header Bidding Management Library",
   "main": "src/prebid.js",
   "scripts": {
-    "bundle:cedato": "gulp build --modules=cedato/cedato.json && cp build/dist/prebid.js cedato/prebid_mp_${npm_package_version}_$(date +\"%m_%d\").js",
-    "bundle:exco": "gulp build --modules=cedato/exco.json && cp build/dist/prebid.js exco/prebid_mp_${npm_package_version}_$(date +\"%m_%d\").js",
+    "bundle:cedato": "gulp build --modules=cedato/cedato.json && cp build/dist/prebid.js cedato/prebid_mp_5.20.0_02_22.js",
+    "bundle:exco": "gulp build --modules=exco/exco.json && cp build/dist/prebid.js exco/prebid_mp_5.20.0_02_22.js",
     "bundle:zippor": "gulp build --modules=cedato/zippor.json && cp build/dist/prebid.js cedato/prebid_zippor_${npm_package_version}_$(date +\"%m_%d\").js",
     "bundle:vuukle": "gulp build --modules=cedato/vuukle.json && cp build/dist/prebid.js cedato/prebid_vuukle_${npm_package_version}_$(date +\"%m_%d\").js",
     "bundle:apester": "gulp build --modules=cedato/apester.json && cp build/dist/prebid.js cedato/prebid_apester_${npm_package_version}_$(date +\"%m_%d\").js",
-    "bundle:top": "gulp build --modules=cedato/top.json && cp build/dist/prebid.js cedato/prebid_top_${npm_package_version}_$(date +\"%m_%d\").js",
+    "bundle:top": "gulp build --modules=cedato/top.json && cp build/dist/prebid.js cedato/prebid_top_5.20.0_02_22.js",
     "test": "gulp test",
     "lint": "gulp lint"
   },
