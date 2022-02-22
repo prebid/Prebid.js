@@ -59,11 +59,11 @@ export const convertReplicatedAdUnit = (_adUnit, adUnits = $$PREBID_GLOBAL$$.adU
       adUnit._code = code;
       adUnit.mediaTypes.banner.name = name;
     } catch (_error) {
-      logError({
+      logError(JSON.stringify({
         message: '対応するDWIDを持つ枠が見つかりませんでした。',
         adUnitCode: adUnit.code,
         adUnitPath,
-      });
+      }));
     }
   }
   adUnit.bids = undefined;
