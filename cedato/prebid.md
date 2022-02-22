@@ -16,6 +16,7 @@ prebid 5.9
 ```sh
 npm run bundle:cedato
 npm run bundle:zippor
+npm run bundle:exco
 ```
 
 
