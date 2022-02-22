@@ -5,14 +5,20 @@ export const XML_MIME_TYPE = 'application/xml';
 export function VastXmlEditor(xmlUtil_) {
   const xmlUtil = xmlUtil_;
 
-  function getVastXmlWithTrackingNodes(vastXml, impressionUrl, impressionId, errorUrl) {
+  function getVastXmlWithTracking(vastXml, adId, impressionUrl, impressionId, errorUrl) {
     const impressionDoc = getImpressionDoc(impressionUrl, impressionId);
     const errorDoc = getErrorDoc(errorUrl);
-    if (!impressionDoc && !errorDoc) {
+    if (!adId && !impressionDoc && !errorDoc) {
       return vastXml;
     }
 
     const vastXmlDoc = xmlUtil.parse(vastXml);
+    appendTrackingNodes(vastXmlDoc, impressionDoc, errorDoc);
+    replaceAdId(vastXmlDoc, adId);
+    return xmlUtil.serialize(vastXmlDoc);
+  }
+
+  function appendTrackingNodes(vastXmlDoc, impressionDoc, errorDoc) {
     const nodes = vastXmlDoc.querySelectorAll('InLine,Wrapper');
     const nodeCount = nodes.length;
     for (let i = 0; i < nodeCount; i++) {
@@ -22,12 +28,19 @@ export function VastXmlEditor(xmlUtil_) {
       appendChild(node, impressionDoc, requiresCopy);
       appendChild(node, errorDoc, requiresCopy);
     }
+  }
 
-    return xmlUtil.serialize(vastXmlDoc);
+  function replaceAdId(vastXmlDoc, adId) {
+    const adNode = vastXmlDoc.querySelector('Ad');
+    if (!adNode) {
+      return;
+    }
+
+    adNode.id = adId;
   }
 
   return {
-    getVastXmlWithTrackingNodes,
+    getVastXmlWithTracking,
     buildVastWrapper
   }
 

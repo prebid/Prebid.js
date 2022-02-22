@@ -923,6 +923,7 @@ export function adStateFactory() {
       waterfallCount: event.wcount,
       adPodCount: event.podcount,
       adPodIndex: event.sequence,
+      // need wrapper ad ids
     };
     this.updateState(updates);
   }

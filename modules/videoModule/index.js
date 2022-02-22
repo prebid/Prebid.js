@@ -1,6 +1,6 @@
 import { config } from '../../src/config.js';
 import events from '../../src/events.js';
-import { allVideoEvents, AUCTION_AD_LOAD_ATTEMPT, allVideoAuctionEvents } from './constants/events.js';
+import { allVideoEvents, AUCTION_AD_LOAD_ATTEMPT, allVideoAuctionEvents, AD_IMPRESSION } from './constants/events.js';
 import CONSTANTS from '../../src/constants.json';
 import { videoCoreFactory } from './coreVideo.js';
 import { coreAdServerFactory } from './adServer.js';
@@ -24,6 +24,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
   const videoEvents = videoEvents_;
   const adServerCore = adServerCore_;
   const vastXmlEditor = vastXmlEditor_;
+  const trackedBids = {};
 
   function init() {
     getConfig('video', ({ video }) => {
@@ -61,7 +62,11 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
       const videoConfig = adUnit && adUnit.video;
       const adServerConfig = videoConfig && videoConfig.adServer;
       const trackingConfig = adServerConfig && adServerConfig.tracking;
-      addTrackingNodesToVastXml(bid, trackingConfig);
+      addTrackingToVastXml(bid, trackingConfig);
+    });
+
+    pbEvents.on(AD_IMPRESSION, function (paylod) {
+
     });
   }
 
@@ -125,16 +130,12 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     videoCore.setAdTagUrl(adUrl, divId, options);
   }
 
-  function addTrackingNodesToVastXml(bid, trackingConfig) {
-    if (!trackingConfig) {
-      return;
-    }
-
-    let { vastXml, vastUrl, adId } = bid;
+  function addTrackingToVastXml(bid, trackingConfig = {}) {
+    let { vastXml, vastUrl, adId, adUnitCode, requestId, auctionId } = bid;
     let impressionUrl;
     let impressionId;
     let errorUrl;
-
+    const adIdOverride = 'pb-' + generateId(12);
     const impressionTracking = trackingConfig.impression;
     const errorTracking = trackingConfig.error;
 
@@ -148,12 +149,17 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     }
 
     if (vastXml) {
-      vastXml = vastXmlEditor.getVastXmlWithTrackingNodes(vastXml, impressionUrl, impressionId, errorUrl);
+      vastXml = vastXmlEditor.getVastXmlWithTracking(vastXml, adIdOverride, impressionUrl, impressionId, errorUrl);
     } else if (vastUrl) {
-      vastXml = vastXmlEditor.buildVastWrapper(adId, vastUrl, impressionUrl, impressionId, errorUrl);
+      vastXml = vastXmlEditor.buildVastWrapper(adIdOverride, vastUrl, impressionUrl, impressionId, errorUrl);
     }
 
+    trackedBids[adIdOverride] = { adId, adUnitCode, requestId, auctionId };
     bid.vastXml = vastXml;
+  }
+
+  function generateId(length) {
+    return Math.floor(Math.random() * 10 ** length);
   }
 }
 
