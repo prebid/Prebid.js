@@ -19,7 +19,7 @@ import {
   logMessage,
   logWarn,
   shuffle,
-  timestamp
+  timestamp,
 } from './utils.js';
 import { getLabels, resolveStatus } from './sizeMapping.js';
 import { decorateAdUnitsWithNativeParams, nativeAdapters } from './native.js';
@@ -31,7 +31,7 @@ import includes from 'core-js-pure/features/array/includes.js';
 import find from 'core-js-pure/features/array/find.js';
 import { adunitCounter } from './adUnits.js';
 import { getRefererInfo } from './refererDetection.js';
-import {ConsentHandler} from './consentHandler.js';
+import {GdprConsentHandler, UspConsentHandler} from './consentHandler.js';
 
 var CONSTANTS = require('./constants.json');
 var events = require('./events.js');
@@ -172,8 +172,8 @@ function getAdUnitCopyForClientAdapters(adUnits) {
   return adUnitsClientCopy;
 }
 
-export let gdprDataHandler = new ConsentHandler();
-export let uspDataHandler = new ConsentHandler();
+export let gdprDataHandler = new GdprConsentHandler();
+export let uspDataHandler = new UspConsentHandler();
 
 export let coppaDataHandler = {
   getCoppa: function() {

@@ -45,6 +45,108 @@ describe('Engageya adapter', function () {
     ]
   })
 
+  describe('isValidSize', function () {
+    const bid = {
+      bidder: 'engageya',
+      params: {
+        widgetId: 85610,
+        websiteId: 91140,
+        pageUrl: '[PAGE_URL]'
+      }
+    };
+    it('Exact match, 236X202', function () {
+      bid.sizes = [[236, 202]];
+      const isValid = spec.isBidRequestValid(bid);
+      expect(isValid).to.be.true;
+    });
+    it('Exact match, 300X200', function () {
+      bid.sizes = [[300, 200]];
+      const isValid = spec.isBidRequestValid(bid);
+      expect(isValid).to.be.true;
+    });
+    it('Exact match, 600X500', function () {
+      bid.sizes = [[600, 500]];
+      const isValid = spec.isBidRequestValid(bid);
+      expect(isValid).to.be.true;
+    });
+
+    it('Ratio max limit, 236X212', function () {
+      bid.sizes = [[236, 212]];
+      const isValid = spec.isBidRequestValid(bid);
+      expect(isValid).to.be.true;
+    });
+    it('Ratio max limit, 300X209', function () {
+      bid.sizes = [[300, 209]];
+      const isValid = spec.isBidRequestValid(bid);
+      expect(isValid).to.be.true;
+    });
+    it('Ratio max limit, 600X524', function () {
+      bid.sizes = [[600, 524]];
+      const isValid = spec.isBidRequestValid(bid);
+      expect(isValid).to.be.true;
+    });
+
+    it('Ratio & width max limit, 248X222', function () {
+      bid.sizes = [[248, 222]];
+      const isValid = spec.isBidRequestValid(bid);
+      expect(isValid).to.be.true;
+    });
+    it('Ratio & width max limit, 315X220', function () {
+      bid.sizes = [[315, 220]];
+      const isValid = spec.isBidRequestValid(bid);
+      expect(isValid).to.be.true;
+    });
+    it('Ratio & width max limit, 631X551', function () {
+      bid.sizes = [[631, 551]];
+      const isValid = spec.isBidRequestValid(bid);
+      expect(isValid).to.be.true;
+    });
+
+    it('Width too big, 320X285', function () {
+      bid.sizes = [[320, 285]];
+      const isValid = spec.isBidRequestValid(bid);
+      expect(isValid).to.be.false;
+    });
+    it('Width too big, 316X220', function () {
+      bid.sizes = [[316, 220]];
+      const isValid = spec.isBidRequestValid(bid);
+      expect(isValid).to.be.false;
+    });
+    it('Width too big, 632X551', function () {
+      bid.sizes = [[632, 551]];
+      const isValid = spec.isBidRequestValid(bid);
+      expect(isValid).to.be.false;
+    });
+
+    it('Ratio too big, 600X525', function () {
+      bid.sizes = [[600, 525]];
+      const isValid = spec.isBidRequestValid(bid);
+      expect(isValid).to.be.false;
+    });
+
+    it('Ratio min limit, 236X192', function () {
+      bid.sizes = [[236, 192]];
+      const isValid = spec.isBidRequestValid(bid);
+      expect(isValid).to.be.true;
+    });
+    it('Ratio min limit, 300X190', function () {
+      bid.sizes = [[300, 190]];
+      const isValid = spec.isBidRequestValid(bid);
+      expect(isValid).to.be.true;
+    });
+    it('Ratio min limit, 600X475', function () {
+      bid.sizes = [[600, 475]];
+      const isValid = spec.isBidRequestValid(bid);
+      expect(isValid).to.be.true;
+    });
+
+    it('Ratio too small, 600X474', function () {
+      bid.sizes = [[600, 474]];
+      const isValid = spec.isBidRequestValid(bid);
+      expect(isValid).to.be.false;
+    });
+  })
+
   describe('isBidRequestValid', function () {
     it('Valid bid case', function () {
       let validBid = {

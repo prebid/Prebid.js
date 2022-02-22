@@ -1,3 +1,4 @@
+import {isStr, timestamp} from './utils.js';
 
 export class ConsentHandler {
   #enabled;
@@ -5,6 +6,7 @@ export class ConsentHandler {
   #promise;
   #resolve;
   #ready;
+  generatedTime;
 
   constructor() {
     this.reset();
@@ -24,6 +26,7 @@ export class ConsentHandler {
     this.#enabled = false;
     this.#data = null;
     this.#ready = false;
+    this.generatedTime = null;
   }
 
   /**
@@ -58,11 +61,38 @@ export class ConsentHandler {
     return this.#promise;
   }
 
-  setConsentData(data) {
+  setConsentData(data, time = timestamp()) {
+    this.generatedTime = time;
     this.#resolve(data);
   }
 
   getConsentData() {
     return this.#data;
+  }
+}
+
+export class UspConsentHandler extends ConsentHandler {
+  getConsentMeta() {
+    const consentData = this.getConsentData();
+    if (consentData && this.generatedTime) {
+      return {
+        usp: consentData,
+        generatedAt: this.generatedTime
+      };
+    }
+  }
+}
+
+export class GdprConsentHandler extends ConsentHandler {
+  getConsentMeta() {
+    const consentData = this.getConsentData();
+    if (consentData && consentData.vendorData && this.generatedTime) {
+      return {
+        gdprApplies: consentData.gdprApplies,
+        consentStringSize: (isStr(consentData.vendorData.tcString)) ? consentData.vendorData.tcString.length : 0,
+        generatedAt: this.generatedTime,
+        apiVersion: consentData.apiVersion
+      }
+    }
   }
 }
