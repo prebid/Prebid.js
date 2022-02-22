@@ -18,6 +18,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 const BIDDER_CODE = '33across';
 const END_POINT = 'https://ssc.33across.com/api/v1/hb';
 const SYNC_ENDPOINT = 'https://ssc-cms.33across.com/ps/?m=xch&rt=html&ru=deb';
+const GVLID = 58;
 
 const CURRENCY = 'USD';
 const GUID_PATTERN = /^[a-zA-Z0-9_-]{22}$/;
@@ -735,6 +736,7 @@ export const spec = {
 
   code: BIDDER_CODE,
   supportedMediaTypes: [ BANNER, VIDEO ],
+  gvlid: GVLID,
   isBidRequestValid,
   buildRequests,
   interpretResponse,
