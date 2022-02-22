@@ -5,45 +5,8 @@ import {ADPOD, BANNER, VIDEO} from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'smaato';
 const SMAATO_ENDPOINT = 'https://prebid.ad.smaato.net/oapi/prebid';
-const SMAATO_CLIENT = 'prebid_js_$prebid.version$_1.6';
+const SMAATO_CLIENT = 'prebid_js_$prebid.version$_1.6'
 const CURRENCY = 'USD';
-const CLIENT = 'prebid_js_$prebid.version$_1.1';
-const GVLID = 82;
-
-/**
-* Transform BidRequest to OpenRTB-formatted BidRequest Object
-* @param {Array<BidRequest>} validBidRequests
-* @param {any} bidderRequest
-* @returns {string}
-*/
-const buildOpenRtbBidRequestPayload = (validBidRequests, bidderRequest) => {
-  /**
-   * Turn incoming prebid sizes into openRtb format mapping.
-   * @param {*} sizes in format [[10, 10], [20, 20]]
-   * @returns array of openRtb format mappings [{w: 10, h: 10}, {w: 20, h: 20}]
-   */
-  const parseSizes = (sizes) => {
-    return sizes.map((size) => {
-      return {w: size[0], h: size[1]};
-    })
-  }
-
-  const imp = validBidRequests.map(br => {
-    const bannerMediaType = utils.deepAccess(br, 'mediaTypes.banner');
-    const videoMediaType = utils.deepAccess(br, 'mediaTypes.video');
-    let result = {
-      id: br.bidId,
-      tagid: utils.deepAccess(br, 'params.adspaceId')
-    }
-
-    if (bannerMediaType) {
-      const sizes = parseSizes(utils.getAdUnitSizes(br));
-      result.banner = {
-        w: sizes[0].w,
-        h: sizes[0].h,
-        format: sizes
-      }
-    }
 
 const buildOpenRtbBidRequest = (bidRequest, bidderRequest) => {
   const requestTemplate = {
@@ -147,7 +110,6 @@ const buildServerRequest = (validBidRequest, data) => {
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
-  gvlid: GVLID,
 
   /**
    * Determines whether or not the given bid request is valid.
