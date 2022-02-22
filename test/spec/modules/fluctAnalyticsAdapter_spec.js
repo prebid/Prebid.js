@@ -200,8 +200,87 @@ describe('fluct analytics adapter', () => {
     events.emit(EVENTS.AUCTION_END, MOCK.AUCTION_END)
     expect(server.requests.length).to.equal(1)
 
-    const actual = JSON.parse(server.requests[0].requestBody)
-    expect(actual.auctionId).to.equal(MOCK.AUCTION_END.auctionId)
-    expect(actual.adUnits.every(adUnit => adUnit.analytics)).to.equal(true)
+    const { auctionId, adUnits, bidsReceived } = MOCK.AUCTION_END
+    const expected = {
+      auctionId,
+      adUnits,
+      timestamp: undefined,
+      auctionEnd: undefined,
+      "bids": [
+        {
+          "noBid": false,
+          "prebidWon": true,
+          "bidWon": false,
+          "timeout": false,
+          "status": "rendered",
+          "adId": "5c28bc93-b1a0-481b-ae59-0641f316ad1a",
+          "adUnitCode": "div-gpt-ad-1587114265584-0",
+          "bidder": "criteo",
+          "netRevenue": true,
+          "cpm": 5.386152744293213,
+          "currency": "JPY",
+          "originalCpm": 5.386152744293213,
+          "originalCurrency": "JPY",
+          "requestId": "22697ff3e5bf7ee",
+          "size": "320x100",
+          "source": "client",
+          "timeToRespond": 216,
+          "bid": {
+            "bidderCode": "criteo",
+            "width": 320,
+            "height": 100,
+            "statusMessage": "Bid available",
+            "adId": "5c28bc93-b1a0-481b-ae59-0641f316ad1a",
+            "requestId": "22697ff3e5bf7ee",
+            "mediaType": "banner",
+            "source": "client",
+            "cpm": 5.386152744293213,
+            "currency": "JPY",
+            "netRevenue": true,
+            "ttl": 60,
+            "creativeId": "11017985",
+            "dealId": "",
+            "originalCpm": 5.386152744293213,
+            "originalCurrency": "JPY",
+            "meta": {},
+            "auctionId": "eeca6754-525b-4c4c-a697-b06b1fc6c352",
+            "responseTimestamp": 1635837149448,
+            "requestTimestamp": 1635837149232,
+            "bidder": "criteo",
+            "adUnitCode": "div-gpt-ad-1587114265584-0",
+            "timeToRespond": 216,
+            "pbLg": "5.00",
+            "pbMg": "5.30",
+            "pbHg": "5.38",
+            "pbAg": "5.30",
+            "pbDg": "5.35",
+            "pbCg": "4.00",
+            "size": "320x100",
+            "adserverTargeting": {
+              "fbs_bidder": "criteo",
+              "fbs_adid": "5c28bc93-b1a0-481b-ae59-0641f316ad1a",
+              "fbs_pb": "4.00",
+              "fbs_size": "320x100",
+              "fbs_source": "client",
+              "fbs_format": "banner",
+              "fbs_adomain": ""
+            },
+            "status": "rendered",
+            "params": [
+              {
+                "networkId": "11021"
+              }
+            ],
+            "noBid": false,
+            "prebidWon": true,
+            "bidWon": false,
+            "timeout": false
+          }
+        }
+      ],
+      "auctionStatus": "completed"
+    }
+    const actual = Object.assign(JSON.parse(server.requests[0].requestBody), { timestamp: undefined, auctionEnd: undefined })
+    expect(expected).to.deep.equal(actual)
   })
 })
