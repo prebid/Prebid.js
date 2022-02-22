@@ -2,9 +2,8 @@
  * This module gives publishers extra set of features to enforce individual purposes of TCF v2
  */
 
-import * as utils from '../src/utils.js';
+import { deepAccess, logWarn, isArray, hasDeviceAccess } from '../src/utils.js';
 import { config } from '../src/config.js';
-import { hasDeviceAccess } from '../src/utils.js';
 import adapterManager, { gdprDataHandler } from '../src/adapterManager.js';
 import find from 'core-js-pure/features/array/find.js';
 import includes from 'core-js-pure/features/array/includes.js';
@@ -136,9 +135,9 @@ export function validateRules(rule, consentData, currentModule, gvlId) {
   }
 
   // get data from the consent string
-  const purposeConsent = utils.deepAccess(consentData, `vendorData.purpose.consents.${purposeId}`);
-  const vendorConsent = utils.deepAccess(consentData, `vendorData.vendor.consents.${gvlId}`);
-  const liTransparency = utils.deepAccess(consentData, `vendorData.purpose.legitimateInterests.${purposeId}`);
+  const purposeConsent = deepAccess(consentData, `vendorData.purpose.consents.${purposeId}`);
+  const vendorConsent = deepAccess(consentData, `vendorData.vendor.consents.${gvlId}`);
+  const liTransparency = deepAccess(consentData, `vendorData.purpose.legitimateInterests.${purposeId}`);
 
   /*
     Since vendor exceptions have already been handled, the purpose as a whole is allowed if it's not being enforced
@@ -170,7 +169,7 @@ export function deviceAccessHook(fn, gvlid, moduleName, result) {
     hasEnforcementHook: true
   });
   if (!hasDeviceAccess()) {
-    utils.logWarn('Device access is disabled by Publisher');
+    logWarn('Device access is disabled by Publisher');
     result.valid = false;
     fn.call(this, gvlid, moduleName, result);
   } else {
@@ -190,7 +189,7 @@ export function deviceAccessHook(fn, gvlid, moduleName, result) {
           result.valid = true;
           fn.call(this, gvlid, moduleName, result);
         } else {
-          curModule && utils.logWarn(`TCF2 denied device access for ${curModule}`);
+          curModule && logWarn(`TCF2 denied device access for ${curModule}`);
           result.valid = false;
           storageBlocked.push(curModule);
           fn.call(this, gvlid, moduleName, result);
@@ -222,7 +221,7 @@ export function userSyncHook(fn, ...args) {
       if (isAllowed) {
         fn.call(this, ...args);
       } else {
-        utils.logWarn(`User sync not allowed for ${curBidder}`);
+        logWarn(`User sync not allowed for ${curBidder}`);
         storageBlocked.push(curBidder);
       }
     } else {
@@ -250,7 +249,7 @@ export function userIdHook(fn, submodules, consentData) {
         if (isAllowed) {
           return submodule;
         } else {
-          utils.logWarn(`User denied permission to fetch user id for ${moduleName} User id module`);
+          logWarn(`User denied permission to fetch user id for ${moduleName} User id module`);
           storageBlocked.push(moduleName);
         }
         return undefined;
@@ -282,7 +281,7 @@ export function makeBidRequestsHook(fn, adUnits, ...args) {
           if (includes(biddersBlocked, currBidder)) return false;
           const isAllowed = !!validateRules(purpose2Rule, consentData, currBidder, gvlId);
           if (!isAllowed) {
-            utils.logWarn(`TCF2 blocked auction for ${currBidder}`);
+            logWarn(`TCF2 blocked auction for ${currBidder}`);
             biddersBlocked.push(currBidder);
           }
           return isAllowed;
@@ -308,7 +307,7 @@ export function enableAnalyticsHook(fn, config) {
   const consentData = gdprDataHandler.getConsentData();
   if (consentData && consentData.gdprApplies) {
     if (consentData.apiVersion === 2) {
-      if (!utils.isArray(config)) {
+      if (!isArray(config)) {
         config = [config]
       }
       config = config.filter(conf => {
@@ -317,7 +316,7 @@ export function enableAnalyticsHook(fn, config) {
         const isAllowed = !!validateRules(purpose7Rule, consentData, analyticsAdapterCode, gvlid);
         if (!isAllowed) {
           analyticsBlocked.push(analyticsAdapterCode);
-          utils.logWarn(`TCF2 blocked analytics adapter ${conf.provider}`);
+          logWarn(`TCF2 blocked analytics adapter ${conf.provider}`);
         }
         return isAllowed;
       });
@@ -362,9 +361,9 @@ const hasPurpose7 = (rule) => { return rule.purpose === TCF2.purpose7.name }
  * @param {Object} config - GDPR enforcement config object
  */
 export function setEnforcementConfig(config) {
-  const rules = utils.deepAccess(config, 'gdpr.rules');
+  const rules = deepAccess(config, 'gdpr.rules');
   if (!rules) {
-    utils.logWarn('TCF2: enforcing P1 and P2 by default');
+    logWarn('TCF2: enforcing P1 and P2 by default');
     enforcementRules = DEFAULT_RULES;
   } else {
     enforcementRules = rules;

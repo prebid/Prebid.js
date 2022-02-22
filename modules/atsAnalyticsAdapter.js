@@ -1,7 +1,7 @@
+import { logError, logInfo } from '../src/utils.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adaptermanager from '../src/adapterManager.js';
-import * as utils from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import {getStorageManager} from '../src/storageManager.js';
 
@@ -13,9 +13,6 @@ export const storage = getStorageManager();
  */
 
 const analyticsType = 'endpoint';
-// dev endpoints
-// const preflightUrl = 'https://analytics-check.publishersite.xyz/check/';
-// export const analyticsUrl = 'https://analyticsv2.publishersite.xyz';
 
 const preflightUrl = 'https://check.analytics.rlcdn.com/check/';
 export const analyticsUrl = 'https://analytics.rlcdn.com';
@@ -23,7 +20,7 @@ export const analyticsUrl = 'https://analytics.rlcdn.com';
 let handlerRequest = [];
 let handlerResponse = [];
 
-let atsAnalyticsAdapterVersion = 1;
+let atsAnalyticsAdapterVersion = 3;
 
 let browsersList = [
   /* Googlebot */
@@ -207,12 +204,6 @@ let browsersList = [
   },
 ];
 
-function setSamplingCookie(samplRate) {
-  let now = new Date();
-  now.setTime(now.getTime() + 3600000);
-  storage.setCookie('_lr_sampling_rate', samplRate, now.toUTCString());
-}
-
 let listOfSupportedBrowsers = ['Safari', 'Chrome', 'Firefox', 'Microsoft Edge'];
 
 function bidRequestedHandler(args) {
@@ -231,7 +222,8 @@ function bidRequestedHandler(args) {
       auction_start: new Date(args.auctionStart).toJSON(),
       domain: window.location.hostname,
       pid: atsAnalyticsAdapter.context.pid,
-      adapter_version: atsAnalyticsAdapterVersion
+      adapter_version: atsAnalyticsAdapterVersion,
+      bid_won: false
     };
   });
   return requests;
@@ -256,58 +248,45 @@ export function parseBrowser() {
     let browserName = result && result.length ? result[0].name : '';
     return (listOfSupportedBrowsers.indexOf(browserName) >= 0) ? browserName : 'Unknown';
   } catch (err) {
-    utils.logError('ATS Analytics - Error while checking user browser!', err);
+    logError('ATS Analytics - Error while checking user browser!', err);
   }
 }
 
-function sendDataToAnalytic () {
+function sendDataToAnalytic (events) {
   // send data to ats analytic endpoint
   try {
-    let dataToSend = {'Data': atsAnalyticsAdapter.context.events};
+    let dataToSend = {'Data': events};
     let strJSON = JSON.stringify(dataToSend);
-    utils.logInfo('ATS Analytics - tried to send analytics data!');
+    logInfo('ATS Analytics - tried to send analytics data!');
     ajax(analyticsUrl, function () {
+      logInfo('ATS Analytics - events sent successfully!');
     }, strJSON, {method: 'POST', contentType: 'application/json'});
   } catch (err) {
-    utils.logError('ATS Analytics - request encounter an error: ', err);
+    logError('ATS Analytics - request encounter an error: ', err);
   }
 }
 
 // preflight request, to check did publisher have permission to send data to analytics endpoint
-function preflightRequest (envelopeSourceCookieValue) {
-  ajax(preflightUrl + atsAnalyticsAdapter.context.pid, function (data) {
-    let samplingRateObject = JSON.parse(data);
-    utils.logInfo('ATS Analytics - Sampling Rate: ', samplingRateObject);
-    let samplingRate = samplingRateObject['samplingRate'];
-    setSamplingCookie(samplingRate);
-    let samplingRateNumber = Number(samplingRate);
-    if (data && samplingRate && atsAnalyticsAdapter.shouldFireRequest(samplingRateNumber) && envelopeSourceCookieValue != null) {
-      sendDataToAnalytic();
-    }
-  }, undefined, { method: 'GET', crossOrigin: true });
-}
-
-function callHandler(evtype, args) {
-  if (evtype === CONSTANTS.EVENTS.BID_REQUESTED) {
-    handlerRequest = handlerRequest.concat(bidRequestedHandler(args));
-  } else if (evtype === CONSTANTS.EVENTS.BID_RESPONSE) {
-    handlerResponse.push(bidResponseHandler(args));
-  }
-  if (evtype === CONSTANTS.EVENTS.AUCTION_END) {
-    if (handlerRequest.length) {
-      let events = [];
-      if (handlerResponse.length) {
-        events = handlerRequest.filter(request => handlerResponse.filter(function(response) {
-          if (request.bid_id === response.bid_id) {
-            Object.assign(request, response);
-          }
-        }));
-      } else {
-        events = handlerRequest;
+function preflightRequest (envelopeSourceCookieValue, events) {
+  logInfo('ATS Analytics - preflight request!');
+  ajax(preflightUrl + atsAnalyticsAdapter.context.pid,
+    {
+      success: function (data) {
+        let samplingRateObject = JSON.parse(data);
+        logInfo('ATS Analytics - Sampling Rate: ', samplingRateObject);
+        let samplingRate = samplingRateObject.samplingRate;
+        atsAnalyticsAdapter.setSamplingCookie(samplingRate);
+        let samplingRateNumber = Number(samplingRate);
+        if (data && samplingRate && atsAnalyticsAdapter.shouldFireRequest(samplingRateNumber) && envelopeSourceCookieValue != null) {
+          logInfo('ATS Analytics - events to send: ', events);
+          sendDataToAnalytic(events);
+        }
+      },
+      error: function () {
+        atsAnalyticsAdapter.setSamplingCookie(0);
+        logInfo('ATS Analytics - Sampling Rate Request Error!');
       }
-      atsAnalyticsAdapter.context.events = events;
-    }
-  }
+    }, undefined, {method: 'GET', crossOrigin: true});
 }
 
 let atsAnalyticsAdapter = Object.assign(adapter(
@@ -317,23 +296,7 @@ let atsAnalyticsAdapter = Object.assign(adapter(
 {
   track({eventType, args}) {
     if (typeof args !== 'undefined') {
-      callHandler(eventType, args);
-    }
-    if (eventType === CONSTANTS.EVENTS.AUCTION_END) {
-      let envelopeSourceCookieValue = storage.getCookie('_lr_env_src_ats');
-      try {
-        utils.logInfo('ATS Analytics - preflight request!');
-        let samplingRateCookie = storage.getCookie('_lr_sampling_rate');
-        if (!samplingRateCookie) {
-          preflightRequest(envelopeSourceCookieValue);
-        } else {
-          if (atsAnalyticsAdapter.shouldFireRequest(parseInt(samplingRateCookie)) && envelopeSourceCookieValue != null) {
-            sendDataToAnalytic();
-          }
-        }
-      } catch (err) {
-        utils.logError('ATS Analytics - preflight request encounter an error: ', err);
-      }
+      atsAnalyticsAdapter.callHandler(eventType, args);
     }
   }
 });
@@ -341,29 +304,98 @@ let atsAnalyticsAdapter = Object.assign(adapter(
 // save the base class function
 atsAnalyticsAdapter.originEnableAnalytics = atsAnalyticsAdapter.enableAnalytics;
 
-// add check to not fire request every time, but instead to send 1/10 events
+// add check to not fire request every time, but instead to send 1/100
 atsAnalyticsAdapter.shouldFireRequest = function (samplingRate) {
-  let shouldFireRequestValue = (Math.floor((Math.random() * samplingRate + 1)) === samplingRate);
-  utils.logInfo('ATS Analytics - Should Fire Request: ', shouldFireRequestValue);
-  return shouldFireRequestValue;
+  if (samplingRate !== 0) {
+    let shouldFireRequestValue = (Math.floor((Math.random() * 100 + 1)) === 100);
+    logInfo('ATS Analytics - Should Fire Request: ', shouldFireRequestValue);
+    return shouldFireRequestValue;
+  } else {
+    logInfo('ATS Analytics - Should Fire Request: ', false);
+    return false;
+  }
 };
 
 atsAnalyticsAdapter.getUserAgent = function () {
   return window.navigator.userAgent;
 };
+
+atsAnalyticsAdapter.setSamplingCookie = function (samplRate) {
+  const now = new Date();
+  now.setTime(now.getTime() + 86400000);
+  storage.setCookie('_lr_sampling_rate', samplRate, now.toUTCString());
+}
+
 // override enableAnalytics so we can get access to the config passed in from the page
 atsAnalyticsAdapter.enableAnalytics = function (config) {
   if (!config.options.pid) {
-    utils.logError('ATS Analytics - Publisher ID (pid) option is not defined. Analytics won\'t work');
+    logError('ATS Analytics - Publisher ID (pid) option is not defined. Analytics won\'t work');
     return;
   }
   atsAnalyticsAdapter.context = {
     events: [],
-    pid: config.options.pid
+    pid: config.options.pid,
+    bidWonTimeout: config.options.bidWonTimeout
   };
   let initOptions = config.options;
+  logInfo('ATS Analytics - adapter enabled! ');
   atsAnalyticsAdapter.originEnableAnalytics(initOptions); // call the base class function
 };
+
+atsAnalyticsAdapter.callHandler = function (evtype, args) {
+  if (evtype === CONSTANTS.EVENTS.BID_REQUESTED) {
+    handlerRequest = handlerRequest.concat(bidRequestedHandler(args));
+  } else if (evtype === CONSTANTS.EVENTS.BID_RESPONSE) {
+    handlerResponse.push(bidResponseHandler(args));
+  }
+  if (evtype === CONSTANTS.EVENTS.AUCTION_END) {
+    let bidWonTimeout = atsAnalyticsAdapter.context.bidWonTimeout ? atsAnalyticsAdapter.context.bidWonTimeout : 2000;
+    let events = [];
+    setTimeout(() => {
+      let winningBids = $$PREBID_GLOBAL$$.getAllWinningBids();
+      logInfo('ATS Analytics - winning bids: ', winningBids)
+      // prepare format data for sending to analytics endpoint
+      if (handlerRequest.length) {
+        let wonEvent = {};
+        if (handlerResponse.length) {
+          events = handlerRequest.filter(request => handlerResponse.filter(function (response) {
+            if (request.bid_id === response.bid_id) {
+              Object.assign(request, response);
+            }
+          }));
+          if (winningBids.length) {
+            events = events.filter(event => winningBids.filter(function (won) {
+              wonEvent.bid_id = won.requestId;
+              wonEvent.bid_won = true;
+              if (event.bid_id === wonEvent.bid_id) {
+                Object.assign(event, wonEvent);
+              }
+            }))
+          }
+        } else {
+          events = handlerRequest;
+        }
+        // check should we send data to analytics or not, check first cookie value _lr_sampling_rate
+        try {
+          let envelopeSourceCookieValue = storage.getCookie('_lr_env_src_ats');
+          let samplingRateCookie = storage.getCookie('_lr_sampling_rate');
+          if (!samplingRateCookie) {
+            preflightRequest(envelopeSourceCookieValue, events);
+          } else {
+            if (atsAnalyticsAdapter.shouldFireRequest(parseInt(samplingRateCookie)) && envelopeSourceCookieValue != null) {
+              logInfo('ATS Analytics - events to send: ', events);
+              sendDataToAnalytic(events);
+            }
+          }
+          // empty events array to not send duplicate events
+          events = [];
+        } catch (err) {
+          logError('ATS Analytics - preflight request encounter an error: ', err);
+        }
+      }
+    }, bidWonTimeout);
+  }
+}
 
 adaptermanager.registerAnalyticsAdapter({
   adapter: atsAnalyticsAdapter,

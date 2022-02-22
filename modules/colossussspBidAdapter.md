@@ -13,19 +13,32 @@ Module that connects to Colossus SSP demand sources
 # Test Parameters
 ```
     var adUnits = [{
-                code: 'placementid_0',
-                mediaTypes: {
-                    banner: {
-                        sizes: [[300, 250], [300,600]]
-                    }
-                },
-                bids: [{
-                        bidder: 'colossusssp',
-                        params: {
-                            placement_id: 0,
-                            traffic: 'banner'
-                        }
-                    }]
-                }
-            ];
+        code: 'placementid_0',
+        mediaTypes: {
+            banner: {
+                sizes: [[300, 250], [300,600]]
+            }
+        },
+        bids: [{
+            bidder: 'colossusssp',
+            params: {
+                placement_id: 0,
+                traffic: 'banner'
+            }
+        }]
+    }, {
+        code: 'placementid_1',
+        mediaTypes: {
+            banner: {
+                sizes: [[300, 250], [300,600]]
+            }
+        },
+        bids: [{
+            bidder: 'colossusssp',
+            params: {
+                group_id: 0,
+                traffic: 'banner'
+            }
+        }]
+    }];
 ```

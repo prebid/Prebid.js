@@ -55,10 +55,10 @@ describe('IntentIQ tests', function () {
     expect(callBackSpy.calledOnce).to.be.true;
   });
 
-  it('should ignore NA and invalid responses in decode', function () {
+  it('should ignore INVALID_ID and invalid responses in decode', function () {
     // let resp = JSON.stringify({'RESULT': 'NA'});
     // expect(intentIqIdSubmodule.decode(resp)).to.equal(undefined);
-    expect(intentIqIdSubmodule.decode('NA')).to.equal(undefined);
+    expect(intentIqIdSubmodule.decode('INVALID_ID')).to.equal(undefined);
     expect(intentIqIdSubmodule.decode('')).to.equal(undefined);
     expect(intentIqIdSubmodule.decode(undefined)).to.equal(undefined);
   });
@@ -134,37 +134,7 @@ describe('IntentIQ tests', function () {
     expect(callBackSpy.calledOnce).to.be.true;
   });
 
-  it('should ignore {RESULT: NA} in get id', function () {
-    let callBackSpy = sinon.spy();
-    let submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
-    submoduleCallback(callBackSpy);
-    let request = server.requests[0];
-    expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=10&pt=17&dpn=1&iiqidtype=2&iiqpcid=');
-    request.respond(
-      200,
-      responseHeader,
-      JSON.stringify({RESULT: 'NA'})
-    );
-    expect(callBackSpy.calledOnce).to.be.true;
-    expect(callBackSpy.args[0][0]).to.be.undefined;
-  });
-
-  it('should ignore NA in get id', function () {
-    let callBackSpy = sinon.spy();
-    let submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
-    submoduleCallback(callBackSpy);
-    let request = server.requests[0];
-    expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=10&pt=17&dpn=1&iiqidtype=2&iiqpcid=');
-    request.respond(
-      200,
-      responseHeader,
-      'NA'
-    );
-    expect(callBackSpy.calledOnce).to.be.true;
-    expect(callBackSpy.args[0][0]).to.be.undefined;
-  });
-
-  it('should parse result from json response', function () {
+  it('save result if ls=true', function () {
     let callBackSpy = sinon.spy();
     let submoduleCallback = intentIqIdSubmodule.getId(allConfigParams).callback;
     submoduleCallback(callBackSpy);
@@ -173,9 +143,39 @@ describe('IntentIQ tests', function () {
     request.respond(
       200,
       responseHeader,
-      JSON.stringify({pid: 'test_pid', data: 'test_personid'})
+      JSON.stringify({pid: 'test_pid', data: 'test_personid', ls: true})
     );
     expect(callBackSpy.calledOnce).to.be.true;
     expect(callBackSpy.args[0][0]).to.be.eq('test_personid');
+  });
+
+  it('dont save result if ls=false', function () {
+    let callBackSpy = sinon.spy();
+    let submoduleCallback = intentIqIdSubmodule.getId(allConfigParams).callback;
+    submoduleCallback(callBackSpy);
+    let request = server.requests[0];
+    expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=10&pt=17&dpn=1&pcid=12&pai=11&iiqidtype=2&iiqpcid=');
+    request.respond(
+      200,
+      responseHeader,
+      JSON.stringify({pid: 'test_pid', data: 'test_personid', ls: false})
+    );
+    expect(callBackSpy.calledOnce).to.be.true;
+    expect(callBackSpy.args[0][0]).to.be.undefined;
+  });
+
+  it('save result as INVALID_ID on empty data and ls=true ', function () {
+    let callBackSpy = sinon.spy();
+    let submoduleCallback = intentIqIdSubmodule.getId(allConfigParams).callback;
+    submoduleCallback(callBackSpy);
+    let request = server.requests[0];
+    expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=10&pt=17&dpn=1&pcid=12&pai=11&iiqidtype=2&iiqpcid=');
+    request.respond(
+      200,
+      responseHeader,
+      JSON.stringify({pid: 'test_pid', data: '', ls: true})
+    );
+    expect(callBackSpy.calledOnce).to.be.true;
+    expect(callBackSpy.args[0][0]).to.be.eq('INVALID_ID');
   });
 });

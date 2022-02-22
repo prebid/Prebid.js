@@ -8,7 +8,7 @@ import {
   newBidder
 } from 'src/adapters/bidderFactory.js';
 
-const ENDPOINT = 'https://adserver.gnetproject.com/prebid.php';
+const ENDPOINT = 'https://service.gnetrtb.com/api/adrequest';
 
 describe('gnetAdapter', function () {
   const adapter = newBidder(spec);
@@ -23,8 +23,7 @@ describe('gnetAdapter', function () {
     let bid = {
       bidder: 'gnet',
       params: {
-        websiteId: '4',
-        externalId: '4d52cccf30309282256012cf30309282'
+        websiteId: '1', adunitId: '1'
       }
     };
 
@@ -44,8 +43,7 @@ describe('gnetAdapter', function () {
     const bidRequests = [{
       bidder: 'gnet',
       params: {
-        websiteId: '4',
-        externalId: '4d52cccf30309282256012cf30309282'
+        websiteId: '1', adunitId: '1'
       },
       adUnitCode: '/150790500/4_ZONA_IAB_300x250_5',
       sizes: [
@@ -59,7 +57,7 @@ describe('gnetAdapter', function () {
 
     const bidderRequest = {
       refererInfo: {
-        referer: 'https://gnetproject.com/'
+        referer: 'https://gnetrtb.com'
       }
     };
 
@@ -68,14 +66,13 @@ describe('gnetAdapter', function () {
       expect(requests[0].url).to.equal(ENDPOINT);
       expect(requests[0].method).to.equal('POST');
       expect(requests[0].data).to.equal(JSON.stringify({
-        'referer': 'https://gnetproject.com/',
+        'referer': 'https://gnetrtb.com',
         'adUnitCode': '/150790500/4_ZONA_IAB_300x250_5',
         'bidId': '2a19afd5173318',
         'transactionId': '894bdff6-61ec-4bec-a5a9-f36a5bfccef5',
         'sizes': ['300x250'],
         'params': {
-          'websiteId': '4',
-          'externalId': '4d52cccf30309282256012cf30309282'
+          'websiteId': '1', 'adunitId': '1'
         }
       }));
     });
@@ -121,6 +118,9 @@ describe('gnetAdapter', function () {
           height: 250,
           ad: '<html><h3>I am an ad</h3></html>',
           ttl: 300,
+          meta: {
+            advertiserDomains: []
+          },
           creativeId: '173560700',
           netRevenue: true
         }

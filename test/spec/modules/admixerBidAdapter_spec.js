@@ -4,7 +4,7 @@ import {newBidder} from 'src/adapters/bidderFactory.js';
 import {config} from '../../../src/config.js';
 
 const BIDDER_CODE = 'admixer';
-const ENDPOINT_URL = 'https://inv-nets.admixer.net/prebid.1.1.aspx';
+const ENDPOINT_URL = 'https://inv-nets.admixer.net/prebid.1.2.aspx';
 const ENDPOINT_URL_CUSTOM = 'https://custom.admixer.net/prebid.aspx';
 const ZONE_ID = '2eb6bd58-865c-47ce-af7f-a918108c3fd2';
 
@@ -67,7 +67,7 @@ describe('AdmixerAdapter', function () {
 
     it('should add referrer and imp to be equal bidRequest', function () {
       const request = spec.buildRequests(validRequest, bidderRequest);
-      const payload = JSON.parse(request.data.substr(5));
+      const payload = request.data;
       expect(payload.referrer).to.not.be.undefined;
       expect(payload.imps[0]).to.deep.equal(validRequest[0]);
     });
@@ -75,7 +75,7 @@ describe('AdmixerAdapter', function () {
     it('sends bid request to ENDPOINT via GET', function () {
       const request = spec.buildRequests(validRequest, bidderRequest);
       expect(request.url).to.equal(ENDPOINT_URL);
-      expect(request.method).to.equal('GET');
+      expect(request.method).to.equal('POST');
     });
 
     it('sends bid request to CUSTOM_ENDPOINT via GET', function () {
@@ -85,7 +85,7 @@ describe('AdmixerAdapter', function () {
       });
       const request = config.runWithBidder(BIDDER_CODE, () => spec.buildRequests(validRequest, bidderRequest));
       expect(request.url).to.equal(ENDPOINT_URL_CUSTOM);
-      expect(request.method).to.equal('GET');
+      expect(request.method).to.equal('POST');
     });
   });
 
@@ -101,7 +101,7 @@ describe('AdmixerAdapter', function () {
           'creativeId': 'ccca3e5e-0c54-4761-9667-771322fbdffc',
           'ttl': 360,
           'netRevenue': false,
-          'bidId': '5e4e763b6bc60b',
+          'requestId': '5e4e763b6bc60b',
           'dealId': 'asd123',
           'meta': {'advertiserId': 123, 'networkId': 123, 'advertiserDomains': ['test.com']}
         }]
@@ -112,13 +112,12 @@ describe('AdmixerAdapter', function () {
       const ads = response.body.ads;
       let expectedResponse = [
         {
-          'requestId': ads[0].bidId,
+          'requestId': ads[0].requestId,
           'cpm': ads[0].cpm,
           'creativeId': ads[0].creativeId,
           'width': ads[0].width,
           'height': ads[0].height,
           'ad': ads[0].ad,
-          'vastUrl': undefined,
           'currency': ads[0].currency,
           'netRevenue': ads[0].netRevenue,
           'ttl': ads[0].ttl,

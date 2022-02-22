@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js'
+import { _map } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { BANNER } from '../src/mediaTypes.js'
 
@@ -7,7 +7,7 @@ const SSP_ENDPOINT = 'https://ssp.astraone.io/auction/prebid';
 const TTL = 60;
 
 function buildBidRequests(validBidRequests) {
-  return utils._map(validBidRequests, function(validBidRequest) {
+  return _map(validBidRequests, function(validBidRequest) {
     const params = validBidRequest.params;
     const bidRequest = {
       bidId: validBidRequest.bidId,

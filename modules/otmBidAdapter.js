@@ -1,95 +1,146 @@
-import {BANNER} from '../src/mediaTypes.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import {logInfo, logError, getBidIdParameter, _each, getValue, isFn, isPlainObject} from '../src/utils.js';
+import { BANNER } from '../src/mediaTypes.js';
+
+const BIDDER_CODE = 'otm';
+const OTM_BID_URL = 'https://ssp.otm-r.com/adjson';
+const DEF_CUR = 'RUB'
 
 export const spec = {
-  code: 'otm',
-  supportedMediaTypes: [BANNER],
+
+  code: BIDDER_CODE,
+  url: OTM_BID_URL,
+  supportedMediaTypes: [ BANNER ],
+
+  /**
+   * Determines whether or not the given bid request is valid.
+   *
+   * @param {object} bid The bid to validate.
+   * @return boolean True if this is a valid bid, and false otherwise.
+   */
   isBidRequestValid: function (bid) {
     return !!bid.params.tid;
   },
-  buildRequests: function (bidRequests) {
-    const requests = bidRequests.map(function (bid) {
-      const size = getMaxPrioritySize(bid.sizes);
-      const params = {
-        tz: getTz(),
-        w: size[0],
-        h: size[1],
-        s: bid.params.tid,
-        bidid: bid.bidId,
-        transactionid: bid.transactionId,
-        auctionid: bid.auctionId,
-        bidfloor: bid.params.bidfloor
-      };
 
-      return {method: 'GET', url: 'https://ssp.otm-r.com/adjson', data: params}
-    });
+  /**
+   * Build bidder requests.
+   *
+   * @param validBidRequests
+   * @param bidderRequest
+   * @returns {[]}
+   */
+  buildRequests: function (validBidRequests, bidderRequest) {
+    logInfo('validBidRequests', validBidRequests);
 
-    return requests;
-  },
-  interpretResponse: function (serverResponse, bidRequest) {
-    if (!serverResponse || !serverResponse.body) {
-      return [];
+    const bidRequests = [];
+    let tz = new Date().getTimezoneOffset()
+    let referrer = '';
+    if (bidderRequest && bidderRequest.refererInfo) {
+      referrer = bidderRequest.refererInfo.referer;
     }
 
-    const answer = [];
+    _each(validBidRequests, (bid) => {
+      let domain = getValue(bid.params, 'domain') || ''
+      let tid = getValue(bid.params, 'tid')
+      let cur = getValue(bid.params, 'currency') || DEF_CUR
+      let bidid = getBidIdParameter('bidId', bid)
+      let transactionid = getBidIdParameter('transactionId', bid)
+      let auctionid = getBidIdParameter('auctionId', bid)
+      let bidfloor = _getBidFloor(bid)
 
-    serverResponse.body.forEach(bid => {
-      if (bid.ad) {
-        answer.push({
-          requestId: bid.bidid,
-          cpm: bid.cpm,
-          width: bid.w,
-          height: bid.h,
-          creativeId: bid.creativeid,
-          currency: bid.currency || 'RUB',
-          netRevenue: true,
-          ad: bid.ad,
-          ttl: bid.ttl,
-          transactionId: bid.transactionid
-        });
-      }
-    });
-
-    return answer;
+      _each(bid.sizes, size => {
+        let width = 0;
+        let height = 0;
+        if (size.length && typeof size[0] === 'number' && typeof size[1] === 'number') {
+          width = size[0];
+          height = size[1];
+        }
+        bidRequests.push({
+          method: 'GET',
+          url: OTM_BID_URL,
+          data: {
+            tz: tz,
+            w: width,
+            h: height,
+            domain: domain,
+            l: referrer,
+            s: tid,
+            cur: cur,
+            bidid: bidid,
+            transactionid: transactionid,
+            auctionid: auctionid,
+            bidfloor: bidfloor,
+          },
+        })
+      })
+    })
+    return bidRequests;
   },
+
+  /**
+   * Generate response.
+   *
+   * @param serverResponse
+   * @param request
+   * @returns {[]|*[]}
+   */
+  interpretResponse: function (serverResponse, request) {
+    logInfo('serverResponse', serverResponse.body);
+
+    const responsesBody = serverResponse ? serverResponse.body : {};
+    const bidResponses = [];
+    try {
+      if (responsesBody.length === 0) {
+        return [];
+      }
+
+      _each(responsesBody, (bid) => {
+        if (bid.ad) {
+          bidResponses.push({
+            requestId: bid.bidid,
+            cpm: bid.cpm,
+            width: bid.w,
+            height: bid.h,
+            creativeId: bid.creativeid,
+            currency: bid.currency || 'RUB',
+            netRevenue: true,
+            ad: bid.ad,
+            ttl: bid.ttl,
+            transactionId: bid.transactionid,
+            meta: {
+              advertiserDomains: bid.adDomain ? [bid.adDomain] : []
+            }
+          });
+        }
+      });
+    } catch (error) {
+      logError(error);
+    }
+
+    return bidResponses;
+  }
 };
 
-function getTz() {
-  return new Date().getTimezoneOffset();
-}
-
-function getMaxPrioritySize(sizes) {
-  var maxPrioritySize = null;
-
-  const sizesByPriority = [
-    [300, 250],
-    [240, 400],
-    [728, 90],
-    [300, 600],
-    [970, 250],
-    [300, 50],
-    [320, 100]
-  ];
-
-  const sizeToString = (size) => {
-    return size[0] + 'x' + size[1];
-  };
-
-  const sizesAsString = sizes.map(sizeToString);
-
-  sizesByPriority.forEach(size => {
-    if (!maxPrioritySize) {
-      if (sizesAsString.indexOf(sizeToString(size)) !== -1) {
-        maxPrioritySize = size;
-      }
-    }
-  });
-
-  if (maxPrioritySize) {
-    return maxPrioritySize;
-  } else {
-    return sizes[0];
+/**
+ * Get floor value
+ * @param bid
+ * @returns {null|*}
+ * @private
+ */
+function _getBidFloor(bid) {
+  if (!isFn(bid.getFloor)) {
+    return bid.params.bidfloor ? bid.params.bidfloor : 0;
   }
+
+  let floor = bid.getFloor({
+    currency: DEF_CUR,
+    mediaType: '*',
+    size: '*'
+  });
+  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === DEF_CUR) {
+    return floor.floor;
+  }
+  return 0;
 }
 
 registerBidder(spec);

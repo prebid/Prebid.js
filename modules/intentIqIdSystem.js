@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import * as utils from '../src/utils.js'
+import { logError, logInfo } from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js'
 import {getStorageManager} from '../src/storageManager.js';
@@ -17,34 +17,7 @@ export const FIRST_PARTY_KEY = '_iiq_fdata';
 
 export const storage = getStorageManager(undefined, MODULE_NAME);
 
-const NOT_AVAILABLE = 'NA';
-
-/**
- * Verify the response is valid - Id value or Not Found (ignore not available response)
- * @param response
- * @param respJson - parsed json response
- * @returns {boolean}
- */
-function isValidResponse(response, respJson) {
-  if (!response || response == '' || response === NOT_AVAILABLE) {
-    // Empty or NA response
-    return false;
-  } else if (respJson && (respJson.RESULT === NOT_AVAILABLE || respJson.data == '' || respJson.data === NOT_AVAILABLE)) {
-    // Response type is json with value NA
-    return false;
-  } else { return true; }
-}
-
-/**
- * Verify the response json is valid
- * @param respJson - parsed json response
- * @returns {boolean}
- */
-function isValidResponseJson(respJson) {
-  if (respJson && 'data' in respJson) {
-    return true;
-  } else { return false; }
-}
+const INVALID_ID = 'INVALID_ID';
 
 /**
  * Generate standard UUID string
@@ -74,7 +47,7 @@ export function readData(key) {
       return storage.getCookie(key);
     }
   } catch (error) {
-    utils.logError(error);
+    logError(error);
   }
 }
 
@@ -86,7 +59,7 @@ export function readData(key) {
  */
 function storeData(key, value) {
   try {
-    utils.logInfo(MODULE_NAME + ': storing data: key=' + key + ' value=' + value);
+    logInfo(MODULE_NAME + ': storing data: key=' + key + ' value=' + value);
 
     if (value) {
       if (storage.hasLocalStorage()) {
@@ -98,7 +71,7 @@ function storeData(key, value) {
       }
     }
   } catch (error) {
-    utils.logError(error);
+    logError(error);
   }
 }
 
@@ -111,7 +84,7 @@ function tryParse(data) {
   try {
     return JSON.parse(data);
   } catch (err) {
-    utils.logError(err);
+    logError(err);
     return null;
   }
 }
@@ -130,7 +103,7 @@ export const intentIqIdSubmodule = {
    * @returns {{intentIqId: {string}}|undefined}
    */
   decode(value) {
-    return isValidResponse(value, undefined) ? { 'intentIqId': value } : undefined;
+    return value && value != '' && INVALID_ID != value ? { 'intentIqId': value } : undefined;
   },
   /**
    * performs action to obtain id and return a value in the callback's response argument
@@ -141,7 +114,7 @@ export const intentIqIdSubmodule = {
   getId(config) {
     const configParams = (config && config.params) || {};
     if (!configParams || typeof configParams.partner !== 'number') {
-      utils.logError('User ID - intentIqId submodule requires a valid partner to be defined');
+      logError('User ID - intentIqId submodule requires a valid partner to be defined');
       return;
     }
 
@@ -157,22 +130,24 @@ export const intentIqIdSubmodule = {
     let url = `https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=${configParams.partner}&pt=17&dpn=1`;
     url += configParams.pcid ? '&pcid=' + encodeURIComponent(configParams.pcid) : '';
     url += configParams.pai ? '&pai=' + encodeURIComponent(configParams.pai) : '';
-    if (firstPartyData) {
-      url += firstPartyData.pcid ? '&iiqidtype=2&iiqpcid=' + encodeURIComponent(firstPartyData.pcid) : '';
-      url += firstPartyData.pid ? '&pid=' + encodeURIComponent(firstPartyData.pid) : '';
-    }
+    url += firstPartyData.pcid ? '&iiqidtype=2&iiqpcid=' + encodeURIComponent(firstPartyData.pcid) : '';
+    url += firstPartyData.pid ? '&pid=' + encodeURIComponent(firstPartyData.pid) : '';
 
     const resp = function (callback) {
       const callbacks = {
         success: response => {
           let respJson = tryParse(response);
-          if (isValidResponse(response, respJson) && isValidResponseJson(respJson)) {
+          // If response is a valid json and should save is true
+          if (respJson && respJson.ls) {
             // Store pid field if found in response json
-            if (firstPartyData && 'pcid' in firstPartyData && 'pid' in respJson) {
-              firstPartyData = {
-                'pcid': firstPartyData.pcid,
-                'pid': respJson.pid }
+            if ('pid' in respJson) {
+              firstPartyData.pid = respJson.pid;
               storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData));
+            }
+
+            // If should save and data is empty, means we should save as INVALID_ID
+            if (respJson.data == '') {
+              respJson.data = INVALID_ID;
             }
             callback(respJson.data);
           } else {
@@ -180,7 +155,7 @@ export const intentIqIdSubmodule = {
           }
         },
         error: error => {
-          utils.logError(MODULE_NAME + ': ID fetch encountered an error', error);
+          logError(MODULE_NAME + ': ID fetch encountered an error', error);
           callback();
         }
       };

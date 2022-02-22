@@ -18,7 +18,7 @@
 
 import { submodule } from '../src/hook.js';
 import { ajaxBuilder } from '../src/ajax.js';
-import * as utils from '../src/utils.js';
+import { isGptPubadsDefined, timestamp, generateUUID, logError } from '../src/utils.js';
 import find from 'core-js-pure/features/array/find.js';
 
 /** @type {Object} */
@@ -52,7 +52,7 @@ function handleAdMessage(e) {
   }
 
   if (data.type === MessageType.IMPRESSION_REQUEST) {
-    if (utils.isGptPubadsDefined()) {
+    if (isGptPubadsDefined()) {
       // 1. Find the last iframed window before window.top where the tracker was injected
       // (the tracker could be injected in nested iframes)
       const adWin = getTopIFrameWin(e.source);
@@ -65,7 +65,7 @@ function handleAdMessage(e) {
           adDeliveryId = adSlot.getTargeting('RSDK_ADID');
           adDeliveryId = adDeliveryId.length
             ? adDeliveryId[0]
-            : `${utils.timestamp()}-${utils.generateUUID()}`;
+            : `${timestamp()}-${generateUUID()}`;
         }
       }
     }
@@ -136,7 +136,7 @@ export function getTopIFrameWin(win, topWin) {
  * @return {Object[]} slot GoogleTag slots
  */
 function getAllSlots() {
-  return utils.isGptPubadsDefined() && window.googletag.pubads().getSlots();
+  return isGptPubadsDefined() && window.googletag.pubads().getSlots();
 }
 
 /**
@@ -246,7 +246,7 @@ function getReconciliationData(adUnitsCodes) {
 
     const adSlot = getSlotByCode(adUnitCode);
     const adUnitId = adSlot ? adSlot.getAdUnitPath() : adUnitCode;
-    const adDeliveryId = `${utils.timestamp()}-${utils.generateUUID()}`;
+    const adDeliveryId = `${timestamp()}-${generateUUID()}`;
 
     dataToReturn[adUnitCode] = {
       RSDK_AUID: adUnitId,
@@ -287,7 +287,7 @@ function init(moduleConfig) {
     _moduleParams = Object.assign({}, DEFAULT_PARAMS, params);
     initListeners();
   } else {
-    utils.logError('missing params for Reconciliation provider');
+    logError('missing params for Reconciliation provider');
   }
   return true;
 }

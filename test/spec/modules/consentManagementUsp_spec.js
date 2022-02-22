@@ -58,6 +58,12 @@ describe('consentManagement', function () {
         sinon.assert.notCalled(utils.logInfo);
       });
 
+      it('should not produce any USP metadata', function() {
+        setConsentConfig({});
+        let consentMeta = uspDataHandler.getConsentMeta();
+        expect(consentMeta).to.be.undefined;
+      });
+
       it('should exit the consent manager if only config.gdpr is an object', function() {
         setConsentConfig({ gdpr: { cmpApi: 'iab' } });
         expect(consentAPI).to.be.undefined;
@@ -365,6 +371,27 @@ describe('consentManagement', function () {
 
         expect(didHookReturn).to.be.true;
         expect(consent).to.equal(testConsentData.uspString);
+      });
+
+      it('returns USP consent metadata', function () {
+        let testConsentData = {
+          uspString: '1NY'
+        };
+
+        uspapiStub = sinon.stub(window, '__uspapi').callsFake((...args) => {
+          args[2](testConsentData, true);
+        });
+
+        setConsentConfig(goodConfig);
+        requestBidsHook(() => { didHookReturn = true; }, {});
+
+        let consentMeta = uspDataHandler.getConsentMeta();
+
+        sinon.assert.notCalled(utils.logWarn);
+        sinon.assert.notCalled(utils.logError);
+
+        expect(consentMeta.usp).to.equal(testConsentData.uspString);
+        expect(consentMeta.generatedAt).to.be.above(1644367751709);
       });
     });
   });

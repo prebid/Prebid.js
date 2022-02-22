@@ -1,0 +1,27 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
+// https://github.com/microsoft/vscode-dev-containers/tree/main/containers/javascript-node
+{
+	"name": "Ubuntu",
+
+	"build": {
+		"dockerfile": "Dockerfile",		
+		"args": { "VARIANT": "12" }
+	},
+
+	"postCreateCommand": "bash .devcontainer/postCreate.sh",
+
+	// Set *default* container specific settings.json values on container create.
+	"settings": {},
+
+
+	// Add the IDs of extensions you want installed when the container is created.
+	"extensions": [
+		"nickdodd79.gulptasks"
+	],
+
+	// 9999 is web server, 9876 is karma
+	"forwardPorts": [9876, 9999],
+
+	// Comment out connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
+	"remoteUser": "node"
+}

@@ -5,7 +5,9 @@
 
 import {config} from '../../src/config.js';
 import {setupBeforeHookFnOnce, getHook} from '../../src/hook.js';
-import * as utils from '../../src/utils.js';
+import {
+  logWarn, deepAccess, getUniqueIdentifierStr, deepSetValue, groupBy
+} from '../../src/utils.js';
 import events from '../../src/events.js';
 import CONSTANTS from '../../src/constants.json';
 import {addBidderRequests} from '../../src/auction.js';
@@ -50,7 +52,7 @@ export function validateMultibid(conf) {
   let duplicate = conf.filter(entry => {
     // Check if entry.bidder is not defined or typeof string, filter entry and reset configuration
     if ((!entry.bidder || typeof entry.bidder !== 'string') && (!entry.bidders || !Array.isArray(entry.bidders))) {
-      utils.logWarn('Filtering multibid entry. Missing required bidder or bidders property.');
+      logWarn('Filtering multibid entry. Missing required bidder or bidders property.');
       check = false;
       return false;
     }
@@ -97,26 +99,26 @@ export function adjustBidderRequestsHook(fn, bidderRequests) {
    * @param {Object} bid object
 */
 export function addBidResponseHook(fn, adUnitCode, bid) {
-  let floor = utils.deepAccess(bid, 'floorData.floorValue');
+  let floor = deepAccess(bid, 'floorData.floorValue');
 
   if (!config.getConfig('multibid')) resetMultiConfig();
   // Checks if multiconfig exists and bid bidderCode exists within config and is an adpod bid
   // Else checks if multiconfig exists and bid bidderCode exists within config
   // Else continue with no modifications
-  if (hasMultibid && multiConfig[bid.bidderCode] && utils.deepAccess(bid, 'video.context') === 'adpod') {
+  if (hasMultibid && multiConfig[bid.bidderCode] && deepAccess(bid, 'video.context') === 'adpod') {
     fn.call(this, adUnitCode, bid);
   } else if (hasMultibid && multiConfig[bid.bidderCode]) {
     // Set property multibidPrefix on bid
     if (multiConfig[bid.bidderCode].prefix) bid.multibidPrefix = multiConfig[bid.bidderCode].prefix;
     bid.originalBidder = bid.bidderCode;
     // Check if stored bids for auction include adUnitCode.bidder and max limit not reach for ad unit
-    if (utils.deepAccess(multibidUnits, `${adUnitCode}.${bid.bidderCode}`)) {
+    if (deepAccess(multibidUnits, [adUnitCode, bid.bidderCode])) {
       // Store request id under new property originalRequestId, create new unique bidId,
       // and push bid into multibid stored bids for auction if max not reached and bid cpm above floor
       if (!multibidUnits[adUnitCode][bid.bidderCode].maxReached && (!floor || floor <= bid.cpm)) {
         bid.originalRequestId = bid.requestId;
 
-        bid.requestId = utils.getUniqueIdentifierStr();
+        bid.requestId = getUniqueIdentifierStr();
         multibidUnits[adUnitCode][bid.bidderCode].ads.push(bid);
 
         let length = multibidUnits[adUnitCode][bid.bidderCode].ads.length;
@@ -126,12 +128,12 @@ export function addBidResponseHook(fn, adUnitCode, bid) {
 
         fn.call(this, adUnitCode, bid);
       } else {
-        utils.logWarn(`Filtering multibid received from bidder ${bid.bidderCode}: ` + ((multibidUnits[adUnitCode][bid.bidderCode].maxReached) ? `Maximum bid limit reached for ad unit code ${adUnitCode}` : 'Bid cpm under floors value.'));
+        logWarn(`Filtering multibid received from bidder ${bid.bidderCode}: ` + ((multibidUnits[adUnitCode][bid.bidderCode].maxReached) ? `Maximum bid limit reached for ad unit code ${adUnitCode}` : 'Bid cpm under floors value.'));
       }
     } else {
-      if (utils.deepAccess(bid, 'floorData.floorValue')) utils.deepSetValue(multibidUnits, `${adUnitCode}.${bid.bidderCode}`, {floor: utils.deepAccess(bid, 'floorData.floorValue')});
+      if (deepAccess(bid, 'floorData.floorValue')) deepSetValue(multibidUnits, [adUnitCode, bid.bidderCode], {floor: deepAccess(bid, 'floorData.floorValue')});
 
-      utils.deepSetValue(multibidUnits, `${adUnitCode}.${bid.bidderCode}`, {ads: [bid]});
+      deepSetValue(multibidUnits, [adUnitCode, bid.bidderCode], {ads: [bid]});
       if (multibidUnits[adUnitCode][bid.bidderCode].ads.length === multiConfig[bid.bidderCode].maxbids) multibidUnits[adUnitCode][bid.bidderCode].maxReached = true;
 
       fn.call(this, adUnitCode, bid);
@@ -170,11 +172,11 @@ export function targetBidPoolHook(fn, bidsReceived, highestCpmCallback, adUnitBi
   if (hasMultibid) {
     const dealPrioritization = config.getConfig('sendBidsControl.dealPrioritization');
     let modifiedBids = [];
-    let buckets = utils.groupBy(bidsReceived, 'adUnitCode');
+    let buckets = groupBy(bidsReceived, 'adUnitCode');
     let bids = [].concat.apply([], Object.keys(buckets).reduce((result, slotId) => {
       let bucketBids = [];
       // Get bids and group by property originalBidder
-      let bidsByBidderName = utils.groupBy(buckets[slotId], 'originalBidder');
+      let bidsByBidderName = groupBy(buckets[slotId], 'originalBidder');
       let adjustedBids = [].concat.apply([], Object.keys(bidsByBidderName).map(key => {
         // Reset all bidderCodes to original bidder values and sort by CPM
         return bidsByBidderName[key].sort((bidA, bidB) => {
@@ -183,7 +185,7 @@ export function targetBidPoolHook(fn, bidsReceived, highestCpmCallback, adUnitBi
           return bidA.cpm > bidB.cpm ? -1 : (bidA.cpm < bidB.cpm ? 1 : 0);
         }).map((bid, index) => {
           // For each bid (post CPM sort), set dynamic bidderCode using prefix and index if less than maxbid amount
-          if (utils.deepAccess(multiConfig, `${bid.bidderCode}.prefix`) && index !== 0 && index < multiConfig[bid.bidderCode].maxbids) {
+          if (deepAccess(multiConfig, `${bid.bidderCode}.prefix`) && index !== 0 && index < multiConfig[bid.bidderCode].maxbids) {
             bid.bidderCode = multiConfig[bid.bidderCode].prefix + (index + 1);
           }
 
@@ -191,7 +193,7 @@ export function targetBidPoolHook(fn, bidsReceived, highestCpmCallback, adUnitBi
         })
       }));
       // Get adjustedBids by bidderCode and reduce using highestCpmCallback
-      let bidsByBidderCode = utils.groupBy(adjustedBids, 'bidderCode');
+      let bidsByBidderCode = groupBy(adjustedBids, 'bidderCode');
       Object.keys(bidsByBidderCode).forEach(key => bucketBids.push(bidsByBidderCode[key].reduce(highestCpmCallback)));
       // if adUnitBidLimit is set, pass top N number bids
       if (adUnitBidLimit > 0) {

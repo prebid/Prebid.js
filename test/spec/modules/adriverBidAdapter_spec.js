@@ -3,6 +3,7 @@ import { spec } from 'modules/adriverBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as bidderFactory from 'src/adapters/bidderFactory.js';
 import { auctionManager } from 'src/auctionManager.js';
+
 const ENDPOINT = 'https://pb.adriver.ru/cgi-bin/bid.cgi';
 
 describe('adriverAdapter', function () {
@@ -15,17 +16,44 @@ describe('adriverAdapter', function () {
   });
 
   describe('isBidRequestValid', function () {
-    let bid = {
-      'bidder': 'adriver',
-      'params': {
-        'placementId': '55:test_placement',
-        'siteid': 'testSiteID'
+    const bid = {
+      bidder: 'adriver',
+      params: {
+        placementId: '55:test_placement',
+        siteid: 'testSiteID'
       },
-      'adUnitCode': 'adunit-code',
-      'sizes': [[300, 250], [300, 600], [300, 250]],
-      'bidId': '30b31c1838de1e',
-      'bidderRequestId': '22edbae2733bf6',
-      'auctionId': '1d1a030790a475',
+      adUnitCode: 'adunit-code',
+      sizes: [[300, 250], [300, 600], [300, 250]],
+      bidId: '30b31c1838de1e',
+      bidderRequestId: '22edbae2733bf6',
+      auctionId: '1d1a030790a475',
+      userIdAsEids: [
+        {
+          source: 'id5-sync.com',
+          uids: [
+            {
+              id: '',
+              atype: 1,
+              ext: {
+                linkType: 0,
+                abTestingControlGroup: true
+              }
+            }
+          ]
+        },
+        {
+          source: 'sharedid.org',
+          uids: [
+            {
+              id: '01F4W41TMN7NBXBA0PXJMPB7GF',
+              atype: 1,
+              ext: {
+                third: '01F4W41TMN7NBXBA0PXJMPB7GF'
+              }
+            }
+          ]
+        }
+      ]
     };
 
     it('should return true when required params found', function () {
@@ -37,27 +65,163 @@ describe('adriverAdapter', function () {
     let getAdUnitsStub;
     const floor = 3;
 
-    let bidRequests = [
+    const bidRequests = [
       {
-        'bidder': 'adriver',
-        'params': {
-          'placementId': '55:test_placement',
-          'siteid': 'testSiteID',
-          'dealid': 'dealidTest'
+        bidder: 'adriver',
+        params: {
+          placementId: '55:test_placement',
+          siteid: 'testSiteID',
+          dealid: 'dealidTest'
         },
-        'adUnitCode': 'adunit-code',
-        'sizes': [[300, 250], [300, 600], [300, 250]],
-        'bidId': '30b31c1838de1e',
-        'bidderRequestId': '22edbae2733bf6',
-        'auctionId': '1d1a030790a475',
-        'transactionId': '04f2659e-c005-4eb1-a57c-fa93145e3843'
+        adUnitCode: 'adunit-code',
+        sizes: [[300, 250], [300, 600], [300, 250]],
+        bidId: '30b31c1838de1e',
+        bidderRequestId: '22edbae2733bf6',
+        auctionId: '1d1a030790a475',
+        transactionId: '04f2659e-c005-4eb1-a57c-fa93145e3843',
+        userIdAsEids: [
+          {
+            source: 'id5-sync.com',
+            uids: [
+              {
+                id: '',
+                atype: 1,
+                ext: {
+                  linkType: 0,
+                  abTestingControlGroup: true
+                }
+              }
+            ]
+          },
+          {
+            source: 'sharedid.org',
+            uids: [
+              {
+                id: '01F4W41TMN7NBXBA0PXJMPB7GF',
+                atype: 1,
+                ext: {
+                  third: '01F4W41TMN7NBXBA0PXJMPB7GF'
+                }
+              }
+            ]
+          }
+        ]
       }
     ];
+
+    const bidderRequest = {
+      'bidderCode': 'adriver',
+      'auctionId': '2cdbf766-c37e-464c-a924-d8cf2a2f7ed2',
+      'bidderRequestId': '10415226a1f2ac',
+      'bids': [
+        {
+          'bidder': 'adriver',
+          'params': {
+            'siteid': '216200',
+            'bidfloor': 1.33,
+            'placementId': 'test1'
+          },
+          'auctionId': '2cdbf766-c37e-464c-a924-d8cf2a2f7ed2',
+          'floorData': {
+            'skipped': false,
+            'skipRate': 5,
+            'modelVersion': 'BlackBerryZap',
+            'location': 'setConfig'
+          },
+          'userId': {
+            'id5id': {
+              'uid': 'ID5-ZHMO7vyrzH4ggO1TVF8lZ31h77BjNP6pLgMwIrhvtw!ID5*wP-eG3RLeJjkl1O5yeOMcf3Ksrsq1OeqM5nQZLgPvOMAACaMv9QnPWzdhdbFYu3r',
+              'ext': {
+                'linkType': 2,
+                'abTestingControlGroup': false
+              }
+            },
+            'sharedid': {
+              'id': '01F4W41TMN7NBXBA0PXJMPB7GF',
+              'third': '01F4W41TMN7NBXBA0PXJMPB7GF'
+            }
+          },
+          'userIdAsEids': [
+            {
+              'source': 'id5-sync.com',
+              'uids': [
+                {
+                  'id': 'ID5-ZHMO7vyrzH4ggO1TVF8lZ31h77BjNP6pLgMwIrhvtw!ID5*wP-eG3RLeJjkl1O5yeOMcf3Ksrsq1OeqM5nQZLgPvOMAACaMv9QnPWzdhdbFYu3r',
+                  'atype': 1,
+                  'ext': {
+                    'linkType': 2,
+                    'abTestingControlGroup': false
+                  }
+                }
+              ]
+            },
+            {
+              'source': 'sharedid.org',
+              'uids': [
+                {
+                  'id': '01F4W41TMN7NBXBA0PXJMPB7GF',
+                  'atype': 1,
+                  'ext': {
+                    'third': '01F4W41TMN7NBXBA0PXJMPB7GF'
+                  }
+                }
+              ]
+            }
+          ],
+          'mediaTypes': {
+            'banner': {
+              'sizes': [
+                [
+                  300,
+                  250
+                ],
+                [
+                  600,
+                  500
+                ]
+              ]
+            }
+          },
+          'adUnitCode': 'div-gpt-ad-51545-0',
+          'transactionId': '01dfccdf-70d0-461f-b284-9132877ebe02',
+          'sizes': [
+            [
+              300,
+              250
+            ],
+            [
+              600,
+              500
+            ]
+          ],
+          'bidId': '2794d8415635b3',
+          'bidderRequestId': '10415226a1f2ac',
+          'src': 'client',
+          'bidRequestsCount': 1,
+          'bidderRequestsCount': 1,
+          'bidderWinsCount': 0
+        }
+      ],
+      'auctionStart': 1622465003758,
+      'timeout': 1000,
+      'refererInfo': {
+        'referer': 'http://localhost:9999/integrationExamples/gpt/adUnitFloors.html',
+        'reachedTop': true,
+        'isAmp': false,
+        'numIframes': 0,
+        'stack': [
+          'http://localhost:9999/integrationExamples/gpt/adUnitFloors.html'
+        ],
+        'canonicalUrl': null
+      },
+      'start': 1622465003762
+    };
 
     let floorTestData = {
       'currency': 'USD',
       'floor': floor
     };
+
     bidRequests[0].getFloor = _ => {
       return floorTestData;
     };
@@ -77,6 +241,14 @@ describe('adriverAdapter', function () {
       const payload = JSON.parse(request.data);
 
       expect(payload.cur).to.exist;
+    });
+
+    it('should exist timeout', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.tmax).to.exist;
+      expect(payload.tmax).to.equal(1000);
     });
 
     it('should exist at', function () {
@@ -225,7 +397,34 @@ describe('adriverAdapter', function () {
         bidId: '30b31c1838de1e',
         bidderRequestId: '22edbae2733bf6',
         auctionId: '1d1a030790a475',
-        transactionId: '04f2659e-c005-4eb1-a57c-fa93145e3843'
+        transactionId: '04f2659e-c005-4eb1-a57c-fa93145e3843',
+        userIdAsEids: [
+          {
+            source: 'id5-sync.com',
+            uids: [
+              {
+                id: '',
+                atype: 1,
+                ext: {
+                  linkType: 0,
+                  abTestingControlGroup: true
+                }
+              }
+            ]
+          },
+          {
+            source: 'sharedid.org',
+            uids: [
+              {
+                id: '01F4W41TMN7NBXBA0PXJMPB7GF',
+                atype: 1,
+                ext: {
+                  third: '01F4W41TMN7NBXBA0PXJMPB7GF'
+                }
+              }
+            ]
+          }
+        ]
       }
     ];
 
@@ -318,6 +517,68 @@ describe('adriverAdapter', function () {
       expect(payload.imp[0].bidfloor).to.equal(3.33);
       expect(payload.imp[0].bidfloorcur).to.equal('RUB');
       expect(payload.imp[0].bidfloorcur).to.equal('RUB');
+    });
+  });
+
+  describe('user ids', function () {
+    let bidRequests = [
+      {
+        bidder: 'adriver',
+        params: {
+          placementId: '55:test_placement',
+          siteid: 'testSiteID',
+          dealid: 'dealidTest',
+        },
+        adUnitCode: 'adunit-code',
+        sizes: [[300, 250], [300, 600], [300, 250]],
+        bidId: '30b31c1838de1e',
+        bidderRequestId: '22edbae2733bf6',
+        auctionId: '1d1a030790a475',
+        transactionId: '04f2659e-c005-4eb1-a57c-fa93145e3843',
+        userIdAsEids: [
+          {
+            source: 'id5-sync.com',
+            uids: [
+              {
+                id: '',
+                atype: 1,
+                ext: {
+                  linkType: 0,
+                  abTestingControlGroup: true
+                }
+              }
+            ]
+          },
+          {
+            source: 'sharedid.org',
+            uids: [
+              {
+                id: '01F4W41TMN7NBXBA0PXJMPB7GF',
+                atype: 1,
+                ext: {
+                  third: '01F4W41TMN7NBXBA0PXJMPB7GF'
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ];
+
+    it('user id id5-sync.com', function () {
+      const request = spec.buildRequests(bidRequests);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.user.ext.eids[0].source).to.equal('id5-sync.com');
+      expect(payload.user.ext.eids[0].uids[0].id).to.equal('');
+    });
+
+    it('user id sharedid.org', function () {
+      const request = spec.buildRequests(bidRequests);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.user.ext.eids[1].source).to.equal('sharedid.org');
+      expect(payload.user.ext.eids[1].uids[0].id).to.equal('01F4W41TMN7NBXBA0PXJMPB7GF');
     });
   });
 });

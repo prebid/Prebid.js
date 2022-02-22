@@ -42,6 +42,10 @@ export function detectReferer(win) {
    * @returns {string|null}
    */
   function getCanonicalUrl(doc) {
+    let pageURL = config.getConfig('pageUrl');
+
+    if (pageURL) return pageURL;
+
     try {
       const element = doc.querySelector("link[rel='canonical']");
 

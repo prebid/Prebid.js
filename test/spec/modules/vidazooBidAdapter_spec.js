@@ -37,7 +37,8 @@ const BID = {
   'transactionId': 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf',
   'sizes': [[300, 250], [300, 600]],
   'bidderRequestId': '1fdb5ff1b6eaa7',
-  'requestId': 'b0777d85-d061-450e-9bc7-260dd54bbb7a'
+  'requestId': 'b0777d85-d061-450e-9bc7-260dd54bbb7a',
+  'schain': 'a0819c69-005b-41ed-af06-1be1e0aefefc'
 };
 
 const BIDDER_REQUEST = {
@@ -60,6 +61,7 @@ const SERVER_RESPONSE = {
       'exp': 30,
       'width': 300,
       'height': 250,
+      'advertiserDomains': ['securepubads.g.doubleclick.net'],
       'cookies': [{
         'src': 'https://sync.com',
         'type': 'iframe'
@@ -162,6 +164,7 @@ describe('VidazooBidAdapter', function () {
           uniqueDealId: `${hashUrl}_${Date.now().toString()}`,
           bidderVersion: adapter.version,
           prebidVersion: version,
+          schain: BID.schain,
           res: `${window.top.screen.width}x${window.top.screen.height}`,
           'ext.param1': 'loremipsum',
           'ext.param2': 'dolorsitamet',
@@ -221,7 +224,10 @@ describe('VidazooBidAdapter', function () {
         currency: 'USD',
         netRevenue: true,
         ttl: 30,
-        ad: '<iframe>console.log("hello world")</iframe>'
+        ad: '<iframe>console.log("hello world")</iframe>',
+        meta: {
+          advertiserDomains: ['securepubads.g.doubleclick.net']
+        }
       });
     });
 

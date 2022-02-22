@@ -9,35 +9,33 @@ import { getGlobal } from '../src/prebidGlobal.js'
 import { submodule } from '../src/hook.js'
 import { getStorageManager } from '../src/storageManager.js'
 import { deepSetValue, deepAccess, isFn, mergeDeep, logError } from '../src/utils.js'
+import { config } from '../src/config.js'
 import includes from 'core-js-pure/features/array/includes.js'
 const MODULE_NAME = 'permutive'
 
 export const storage = getStorageManager(null, MODULE_NAME)
 
-function init (config, userConsent) {
+function init (moduleConfig, userConsent) {
   return true
 }
 
 /**
-* Set segment targeting from cache and then try to wait for Permutive
-* to initialise to get realtime segment targeting
-*/
-export function initSegments (reqBidsConfigObj, callback, customConfig) {
+ * Set segment targeting from cache and then try to wait for Permutive
+ * to initialise to get realtime segment targeting
+ * @param {Object} reqBidsConfigObj
+ * @param {function} callback - Called when submodule is done
+ * @param {customModuleConfig} reqBidsConfigObj - Publisher config for module
+ */
+export function initSegments (reqBidsConfigObj, callback, customModuleConfig) {
   const permutiveOnPage = isPermutiveOnPage()
-  const config = mergeDeep({
-    waitForIt: false,
-    params: {
-      maxSegs: 500,
-      acBidders: [],
-      overwrites: {}
-    }
-  }, customConfig)
+  const moduleConfig = getModuleConfig(customModuleConfig)
+  const segmentData = getSegments(moduleConfig.params.maxSegs)
 
-  setSegments(reqBidsConfigObj, config)
+  setSegments(reqBidsConfigObj, moduleConfig, segmentData)
 
-  if (config.waitForIt && permutiveOnPage) {
+  if (moduleConfig.waitForIt && permutiveOnPage) {
     window.permutive.ready(function () {
-      setSegments(reqBidsConfigObj, config)
+      setSegments(reqBidsConfigObj, moduleConfig, segmentData)
       callback()
     }, 'realtime')
   } else {
@@ -45,27 +43,107 @@ export function initSegments (reqBidsConfigObj, callback, customConfig) {
   }
 }
 
-function setSegments (reqBidsConfigObj, config) {
-  const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits
-  const data = getSegments(config.params.maxSegs)
+/**
+ * Merges segments into existing bidder config
+ * @param {Object} customModuleConfig - Publisher config for module
+ * @return {Object} Merged defatul and custom config
+ */
+function getModuleConfig (customModuleConfig) {
+  return mergeDeep({
+    waitForIt: false,
+    params: {
+      maxSegs: 500,
+      acBidders: [],
+      overwrites: {}
+    }
+  }, customModuleConfig)
+}
+
+/**
+ * Sets ortb2 config for ac bidders
+ * @param {Object} auctionDetails
+ * @param {Object} customModuleConfig - Publisher config for module
+ */
+export function setBidderRtb (auctionDetails, customModuleConfig) {
+  const bidderConfig = config.getBidderConfig()
+  const moduleConfig = getModuleConfig(customModuleConfig)
+  const acBidders = deepAccess(moduleConfig, 'params.acBidders')
+  const maxSegs = deepAccess(moduleConfig, 'params.maxSegs')
+  const segmentData = getSegments(maxSegs)
+
+  acBidders.forEach(function (bidder) {
+    const currConfig = bidderConfig[bidder] || {}
+    const nextConfig = mergeOrtbConfig(currConfig, segmentData)
+
+    config.setBidderConfig({
+      bidders: [bidder],
+      config: nextConfig
+    })
+  })
+}
+
+/**
+ * Merges segments into existing bidder config
+ * @param {Object} currConfig - Current bidder config
+ * @param {Object} segmentData - Segment data
+ * @return {Object} Merged ortb2 object
+ */
+function mergeOrtbConfig (currConfig, segmentData) {
+  const segment = segmentData.ac.map(seg => {
+    return { id: seg }
+  })
+  const name = 'permutive.com'
+  const ortbConfig = mergeDeep({}, currConfig)
+  const currSegments = deepAccess(ortbConfig, 'ortb2.user.data') || []
+  const userSegment = currSegments
+    .filter(el => el.name !== name)
+    .concat({ name, segment })
+
+  deepSetValue(ortbConfig, 'ortb2.user.data', userSegment)
+
+  return ortbConfig
+}
+
+/**
+ * Set segments on bid request object
+ * @param {Object} reqBidsConfigObj - Bid request object
+ * @param {Object} moduleConfig - Module configuration
+ * @param {Object} segmentData - Segment object
+ */
+function setSegments (reqBidsConfigObj, moduleConfig, segmentData) {
+  const adUnits = (reqBidsConfigObj && reqBidsConfigObj.adUnits) || getGlobal().adUnits
   const utils = { deepSetValue, deepAccess, isFn, mergeDeep }
+  const aliasMap = {
+    appnexusAst: 'appnexus'
+  }
+
+  if (!adUnits) {
+    return
+  }
 
   adUnits.forEach(adUnit => {
     adUnit.bids.forEach(bid => {
-      const { bidder } = bid
-      const acEnabled = isAcEnabled(config, bidder)
-      const customFn = getCustomBidderFn(config, bidder)
+      let { bidder } = bid
+      if (typeof aliasMap[bidder] !== 'undefined') {
+        bidder = aliasMap[bidder]
+      }
+      const acEnabled = isAcEnabled(moduleConfig, bidder)
+      const customFn = getCustomBidderFn(moduleConfig, bidder)
       const defaultFn = getDefaultBidderFn(bidder)
 
       if (customFn) {
-        customFn(bid, data, acEnabled, utils, defaultFn)
+        customFn(bid, segmentData, acEnabled, utils, defaultFn)
       } else if (defaultFn) {
-        defaultFn(bid, data, acEnabled)
+        defaultFn(bid, segmentData, acEnabled)
       }
     })
   })
 }
 
+/**
+ * Catch and log errors
+ * @param {function} fn - Function to safely evaluate
+ */
 function makeSafe (fn) {
   try {
     fn()
@@ -74,8 +152,8 @@ function makeSafe (fn) {
   }
 }
 
-function getCustomBidderFn (config, bidder) {
-  const overwriteFn = deepAccess(config, `params.overwrites.${bidder}`)
+function getCustomBidderFn (moduleConfig, bidder) {
+  const overwriteFn = deepAccess(moduleConfig, `params.overwrites.${bidder}`)
 
   if (overwriteFn && isFn(overwriteFn)) {
     return overwriteFn
@@ -85,13 +163,13 @@ function getCustomBidderFn (config, bidder) {
 }
 
 /**
-* Returns a function that receives a `bid` object, a `data` object and a `acEnabled` boolean
-* and which will set the right segment targeting keys for `bid` based on `data` and `acEnabled`
-* @param {string} bidder
-* @param {object} data
-*/
+ * Returns a function that receives a `bid` object, a `data` object and a `acEnabled` boolean
+ * and which will set the right segment targeting keys for `bid` based on `data` and `acEnabled`
+ * @param {string} bidder - Bidder name
+ * @return {Object} Bidder function
+ */
 function getDefaultBidderFn (bidder) {
-  const bidderMapper = {
+  const bidderMap = {
     appnexus: function (bid, data, acEnabled) {
       if (acEnabled && data.ac && data.ac.length) {
         deepSetValue(bid, 'params.keywords.p_standard', data.ac)
@@ -118,31 +196,36 @@ function getDefaultBidderFn (bidder) {
       }
 
       return bid
-    },
-    trustx: function (bid, data, acEnabled) {
-      if (acEnabled && data.ac && data.ac.length) {
-        deepSetValue(bid, 'params.keywords.p_standard', data.ac)
-      }
-
-      return bid
     }
   }
 
-  return bidderMapper[bidder]
+  return bidderMap[bidder]
 }
 
-export function isAcEnabled (config, bidder) {
-  const acBidders = deepAccess(config, 'params.acBidders') || []
+/**
+ * Check whether ac is enabled for bidder
+ * @param {Object} moduleConfig - Module configuration
+ * @param {string} bidder - Bidder name
+ * @return {boolean}
+ */
+export function isAcEnabled (moduleConfig, bidder) {
+  const acBidders = deepAccess(moduleConfig, 'params.acBidders') || []
   return includes(acBidders, bidder)
 }
 
+/**
+ * Check whether Permutive is on page
+ * @return {boolean}
+ */
 export function isPermutiveOnPage () {
   return typeof window.permutive !== 'undefined' && typeof window.permutive.ready === 'function'
 }
 
 /**
-* Returns all relevant segment IDs in an object
-*/
+ * Get all relevant segment IDs in an object
+ * @param {number} maxSegs - Maximum number of segments to be included
+ * @return {Object}
+ */
 export function getSegments (maxSegs) {
   const legacySegs = readSegments('_psegs').map(Number).filter(seg => seg >= 1000000).map(String)
   const _ppam = readSegments('_ppam')
@@ -166,6 +249,7 @@ export function getSegments (maxSegs) {
  * Gets an array of segment IDs from LocalStorage
  * or returns an empty array
  * @param {string} key
+ * @return {string[]|number[]}
  */
 function readSegments (key) {
   try {
@@ -178,9 +262,16 @@ function readSegments (key) {
 /** @type {RtdSubmodule} */
 export const permutiveSubmodule = {
   name: MODULE_NAME,
-  getBidRequestData: function (reqBidsConfigObj, callback, customConfig) {
+  getBidRequestData: function (reqBidsConfigObj, callback, customModuleConfig) {
     makeSafe(function () {
-      initSegments(reqBidsConfigObj, callback, customConfig)
+      // Legacy route with custom parameters
+      initSegments(reqBidsConfigObj, callback, customModuleConfig)
+    })
+  },
+  onAuctionInitEvent: function (auctionDetails, customModuleConfig) {
+    makeSafe(function () {
+      // Route for bidders supporting ORTB2
+      setBidderRtb(auctionDetails, customModuleConfig)
     })
   },
   init: init

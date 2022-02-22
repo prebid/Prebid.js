@@ -513,6 +513,11 @@ describe('KoblerAdapter', function () {
     });
 
     it('should generate bids from OpenRTB response', function () {
+      config.setConfig({
+        'currency': {
+          'adServerCurrency': 'NOK'
+        }
+      });
       const responseWithTwoBids = {
         body: {
           seatbid: [
@@ -521,12 +526,12 @@ describe('KoblerAdapter', function () {
                 {
                   impid: '6194ddef-89a4-404f-9efd-6b718fc23308',
                   price: 7.981,
-                  nurl: 'https://atag.essrtb.com/serve/prebid_win_notification?payload=sdhfusdaobfadslf234324&sp=${AUCTION_PRICE}&asp=${AD_SERVER_PRICE}',
+                  nurl: 'https://atag.essrtb.com/serve/prebid_win_notification?payload=sdhfusdaobfadslf234324&sp=${AUCTION_PRICE}&sp_cur=${AUCTION_PRICE_CURRENCY}&asp=${AD_SERVER_PRICE}&asp_cur=${AD_SERVER_PRICE_CURRENCY}',
                   crid: 'edea9b03-3a57-41aa-9c00-abd673e22006',
                   dealid: '',
                   w: 320,
                   h: 250,
-                  adm: '<script src="https://atag.essrtb.com/serve/prebid_ad_tag?payload=sdhfusdaobfadslf234324&sp=${AUCTION_PRICE}"></script>',
+                  adm: '<script src="https://atag.essrtb.com/serve/prebid_ad_tag?payload=sdhfusdaobfadslf234324&sp=${AUCTION_PRICE}&cur=${AUCTION_PRICE_CURRENCY}"></script>',
                   adomain: [
                     'https://kobler.no'
                   ]
@@ -534,12 +539,12 @@ describe('KoblerAdapter', function () {
                 {
                   impid: '2ec0b40f-d3ca-4ba5-8ce3-48290565690f',
                   price: 6.71234,
-                  nurl: 'https://atag.essrtb.com/serve/prebid_win_notification?payload=nbashgufvishdafjk23432&sp=${AUCTION_PRICE}&asp=${AD_SERVER_PRICE}',
+                  nurl: 'https://atag.essrtb.com/serve/prebid_win_notification?payload=nbashgufvishdafjk23432&sp=${AUCTION_PRICE}&sp_cur=${AUCTION_PRICE_CURRENCY}&asp=${AD_SERVER_PRICE}&asp_cur=${AD_SERVER_PRICE_CURRENCY}',
                   crid: 'fa2d5af7-2678-4204-9023-44c526160742',
                   dealid: '2783483223432342',
                   w: 580,
                   h: 400,
-                  adm: '<script src="https://atag.essrtb.com/serve/prebid_ad_tag?payload=nbashgufvishdafjk23432&sp=${AUCTION_PRICE}"></script>',
+                  adm: '<script src="https://atag.essrtb.com/serve/prebid_ad_tag?payload=nbashgufvishdafjk23432&sp=${AUCTION_PRICE}&cur=${AUCTION_PRICE_CURRENCY}"></script>',
                   adomain: [
                     'https://bid.kobler.no'
                   ]
@@ -563,8 +568,8 @@ describe('KoblerAdapter', function () {
           dealId: '',
           netRevenue: true,
           ttl: 600,
-          ad: '<script src="https://atag.essrtb.com/serve/prebid_ad_tag?payload=sdhfusdaobfadslf234324&sp=${AUCTION_PRICE}"></script>',
-          nurl: 'https://atag.essrtb.com/serve/prebid_win_notification?payload=sdhfusdaobfadslf234324&sp=${AUCTION_PRICE}&asp=${AD_SERVER_PRICE}',
+          ad: '<script src="https://atag.essrtb.com/serve/prebid_ad_tag?payload=sdhfusdaobfadslf234324&sp=${AUCTION_PRICE}&cur=NOK"></script>',
+          nurl: 'https://atag.essrtb.com/serve/prebid_win_notification?payload=sdhfusdaobfadslf234324&sp=${AUCTION_PRICE}&sp_cur=${AUCTION_PRICE_CURRENCY}&asp=${AD_SERVER_PRICE}&asp_cur=${AD_SERVER_PRICE_CURRENCY}',
           meta: {
             advertiserDomains: [
               'https://kobler.no'
@@ -581,8 +586,8 @@ describe('KoblerAdapter', function () {
           dealId: '2783483223432342',
           netRevenue: true,
           ttl: 600,
-          ad: '<script src="https://atag.essrtb.com/serve/prebid_ad_tag?payload=nbashgufvishdafjk23432&sp=${AUCTION_PRICE}"></script>',
-          nurl: 'https://atag.essrtb.com/serve/prebid_win_notification?payload=nbashgufvishdafjk23432&sp=${AUCTION_PRICE}&asp=${AD_SERVER_PRICE}',
+          ad: '<script src="https://atag.essrtb.com/serve/prebid_ad_tag?payload=nbashgufvishdafjk23432&sp=${AUCTION_PRICE}&cur=NOK"></script>',
+          nurl: 'https://atag.essrtb.com/serve/prebid_win_notification?payload=nbashgufvishdafjk23432&sp=${AUCTION_PRICE}&sp_cur=${AUCTION_PRICE_CURRENCY}&asp=${AD_SERVER_PRICE}&asp_cur=${AD_SERVER_PRICE_CURRENCY}',
           meta: {
             advertiserDomains: [
               'https://bid.kobler.no'
@@ -617,9 +622,15 @@ describe('KoblerAdapter', function () {
     });
 
     it('Should trigger pixel with replaced nurl if nurl is not empty', function () {
+      config.setConfig({
+        'currency': {
+          'adServerCurrency': 'NOK'
+        }
+      });
       spec.onBidWon({
         cpm: 8.341,
-        nurl: 'https://atag.essrtb.com/serve/prebid_win_notification?payload=sdhfusdaobfadslf234324&sp=${AUCTION_PRICE}&asp=${AD_SERVER_PRICE}',
+        currency: 'NOK',
+        nurl: 'https://atag.essrtb.com/serve/prebid_win_notification?payload=sdhfusdaobfadslf234324&sp=${AUCTION_PRICE}&sp_cur=${AUCTION_PRICE_CURRENCY}&asp=${AD_SERVER_PRICE}&asp_cur=${AD_SERVER_PRICE_CURRENCY}',
         adserverTargeting: {
           hb_pb: 8
         }
@@ -627,7 +638,7 @@ describe('KoblerAdapter', function () {
 
       expect(utils.triggerPixel.callCount).to.be.equal(1);
       expect(utils.triggerPixel.firstCall.args[0]).to.be.equal(
-        'https://atag.essrtb.com/serve/prebid_win_notification?payload=sdhfusdaobfadslf234324&sp=8.341&asp=8'
+        'https://atag.essrtb.com/serve/prebid_win_notification?payload=sdhfusdaobfadslf234324&sp=8.341&sp_cur=NOK&asp=8&asp_cur=NOK'
       );
     });
   });

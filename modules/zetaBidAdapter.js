@@ -1,9 +1,10 @@
-import * as utils from '../src/utils.js';
+import { logWarn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 const BIDDER_CODE = 'zeta_global';
+const PREBID_DEFINER_ID = '44253'
 const ENDPOINT_URL = 'https://prebid.rfihub.com/prebid';
-const USER_SYNC_URL = 'https://p.rfihub.com/cm?pub=42770&in=1';
+const USER_SYNC_URL = 'https://p.rfihub.com/cm?in=1&pub=';
 const DEFAULT_CUR = 'USD';
 const TTL = 200;
 const NET_REV = true;
@@ -23,30 +24,30 @@ export const spec = {
     if (!(bid &&
           bid.bidId &&
           bid.params)) {
-      utils.logWarn('Invalid bid request - missing required bid data');
+      logWarn('Invalid bid request - missing required bid data');
       return false;
     }
 
     if (!(bid.params.user &&
           bid.params.user.buyeruid)) {
-      utils.logWarn('Invalid bid request - missing required user data');
+      logWarn('Invalid bid request - missing required user data');
       return false;
     }
 
     if (!(bid.params.device &&
           bid.params.device.ip)) {
-      utils.logWarn('Invalid bid request - missing required device data');
+      logWarn('Invalid bid request - missing required device data');
       return false;
     }
 
     if (!(bid.params.device.geo &&
           bid.params.device.geo.country)) {
-      utils.logWarn('Invalid bid request - missing required geo data');
+      logWarn('Invalid bid request - missing required geo data');
       return false;
     }
 
     if (!bid.params.definerId) {
-      utils.logWarn('Invalid bid request - missing required definer data');
+      logWarn('Invalid bid request - missing required definer data');
       return false;
     }
 
@@ -87,10 +88,12 @@ export const spec = {
       badv: params.badv,
       bapp: params.bapp,
       source: params.source ? params.source : {},
+      regs: params.regs ? params.regs : {},
       ext: params.ext ? params.ext : {}
     };
 
     payload.device.ua = navigator.userAgent;
+    payload.device.ip = navigator.ip;
     payload.site.page = bidderRequest.refererInfo.referer;
     payload.site.mobile = /(ios|ipod|ipad|iphone|android)/i.test(navigator.userAgent) ? 1 : 0;
     payload.ext.definerId = params.definerId;
@@ -99,20 +102,18 @@ export const spec = {
       payload.test = params.test;
     }
     if (request.gdprConsent) {
-      payload.regs = {
-        ext: {
-          gdpr: request.gdprConsent.gdprApplies === true ? 1 : 0
-        }
-      };
+      payload.regs.ext = Object.assign(
+        payload.regs.ext,
+        {gdpr: request.gdprConsent.gdprApplies === true ? 1 : 0}
+      );
     }
     if (request.gdprConsent && request.gdprConsent.gdprApplies) {
-      payload.user = {
-        ext: {
-          consent: request.gdprConsent.consentString
-        }
-      };
+      payload.user.ext = Object.assign(
+        payload.user.ext,
+        {consent: request.gdprConsent.consentString}
+      );
     }
-    const postUrl = params.definerId !== '0' ? ENDPOINT_URL.concat('/', params.definerId) : ENDPOINT_URL;
+    const postUrl = params.definerId !== PREBID_DEFINER_ID ? ENDPOINT_URL.concat('/', params.definerId) : ENDPOINT_URL;
     return {
       method: 'POST',
       url: postUrl,
@@ -149,20 +150,24 @@ export const spec = {
   },
 
   /**
-     * Register the user sync pixels which should be dropped after the auction.
-     *
-     * @param {SyncOptions} syncOptions Which user syncs are allowed?
-     * @param {ServerResponse[]} serverResponses List of server's responses.
-     * @param gdprConsent The GDPR consent parameters
-     * @param uspConsent The USP consent parameters
-     * @return {UserSync[]} The user syncs which should be dropped.
-     */
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
+   * Register the user sync pixels which should be dropped after the auction.
+   *
+   * @param {SyncOptions} syncOptions Which user syncs are allowed?
+   * @param {ServerResponse[]} serverResponses List of server's responses.
+   * @param definerId The calling entity's definer id
+   * @param gdprConsent The GDPR consent parameters
+   * @param uspConsent The USP consent parameters
+   * @return {UserSync[]} The user syncs which should be dropped.
+   */
+  getUserSyncs: function(syncOptions, serverResponses, definerId, gdprConsent, uspConsent) {
     const syncs = [];
+    if (definerId === '' || definerId === null) {
+      definerId = PREBID_DEFINER_ID;
+    }
     if (syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
-        url: USER_SYNC_URL
+        url: USER_SYNC_URL.concat(definerId)
       });
     }
     return syncs;

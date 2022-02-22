@@ -98,6 +98,19 @@ describe('freewheelSSP BidAdapter Test', () => {
         'bidId': '30b31c1838de1e',
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '1d1a030790a475',
+        'schain': {
+          'ver': '1.0',
+          'complete': 1,
+          'nodes': [
+            {
+              'asi': 'example.com',
+              'sid': '0',
+              'hp': 1,
+              'rid': 'bidrequestid',
+              'domain': 'example.com'
+            }
+          ]
+        }
       }
     ];
 
@@ -110,6 +123,12 @@ describe('freewheelSSP BidAdapter Test', () => {
       expect(payload.componentId).to.equal('prebid');
       expect(payload.componentSubId).to.equal('mustang');
       expect(payload.playerSize).to.equal('300x600');
+    });
+
+    it('should return a properly formatted request with schain defined', function () {
+      const request = spec.buildRequests(bidRequests);
+      const payload = request[0].data;
+      expect(payload.schain).to.deep.equal(bidRequests[0].schain)
     });
 
     it('sends bid request to ENDPOINT via GET', () => {
@@ -368,7 +387,7 @@ describe('freewheelSSP BidAdapter Test', () => {
       ];
 
       let result = spec.interpretResponse(response, request[0]);
-      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
+      expect(result[0].meta.advertiserDomains).to.deep.equal([]);
       expect(result[0].dealId).to.equal('NRJ-PRO-00008');
       expect(result[0].campaignId).to.equal('SMF-WOW-55555');
       expect(result[0].bannerId).to.equal('12345');
@@ -395,7 +414,7 @@ describe('freewheelSSP BidAdapter Test', () => {
       ];
 
       let result = spec.interpretResponse(response, request[0]);
-      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
+      expect(result[0].meta.advertiserDomains).to.deep.equal([]);
       expect(result[0].dealId).to.equal('NRJ-PRO-00008');
       expect(result[0].campaignId).to.equal('SMF-WOW-55555');
       expect(result[0].bannerId).to.equal('12345');
@@ -522,7 +541,7 @@ describe('freewheelSSP BidAdapter Test', () => {
       ];
 
       let result = spec.interpretResponse(response, request[0]);
-      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
+      expect(result[0].meta.advertiserDomains).to.deep.equal([]);
       expect(result[0].dealId).to.equal('NRJ-PRO-00008');
       expect(result[0].campaignId).to.equal('SMF-WOW-55555');
       expect(result[0].bannerId).to.equal('12345');
@@ -551,7 +570,7 @@ describe('freewheelSSP BidAdapter Test', () => {
       ];
 
       let result = spec.interpretResponse(response, request[0]);
-      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
+      expect(result[0].meta.advertiserDomains).to.deep.equal([]);
       expect(result[0].dealId).to.equal('NRJ-PRO-00008');
       expect(result[0].campaignId).to.equal('SMF-WOW-55555');
       expect(result[0].bannerId).to.equal('12345');

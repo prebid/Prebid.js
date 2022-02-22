@@ -191,6 +191,62 @@ describe('synacormediaBidAdapter ', function () {
       uspConsent: '1YYY'
     };
 
+    let validBidRequestWithUserIds = {
+      bidId: '9876abcd',
+      sizes: [[300, 250], [300, 600]],
+      params: {
+        seatId: 'prebid',
+        tagId: '1234',
+        bidfloor: '0.50'
+      },
+      userIdAsEids: [
+        {
+          source: 'pubcid.org',
+          uids: [{
+            id: 'cid0032l2344jskdsl3',
+            atype: 1
+          }]
+        },
+        {
+          source: 'liveramp.com',
+          uids: [{
+            id: 'lrv39010k42dl',
+            atype: 1,
+            ext: {
+              rtiPartner: 'TDID'
+            }
+          }]
+        },
+        {
+          source: 'neustar.biz',
+          uids: [{
+            id: 'neustar809-044-23njhwer3',
+            atype: 1
+          }]
+        }
+      ]
+    };
+
+    let expectedEids = [
+      {
+        source: 'pubcid.org',
+        uids: [{
+          id: 'cid0032l2344jskdsl3',
+          atype: 1
+        }]
+      },
+      {
+        source: 'liveramp.com',
+        uids: [{
+          id: 'lrv39010k42dl',
+          atype: 1,
+          ext: {
+            rtiPartner: 'TDID'
+          }
+        }]
+      }
+    ];
+
     let expectedDataImp1 = {
       banner: {
         format: [
@@ -631,7 +687,21 @@ describe('synacormediaBidAdapter ', function () {
       expect(req.data.id).to.equal('xyz123');
       expect(req.data.regs.ext.us_privacy).to.equal('1YYY');
       expect(req.data.imp).to.eql([expectedDataImp1]);
-    })
+    });
+    it('should contain user object when user ids are present in the bidder request', function () {
+      let req = spec.buildRequests([validBidRequestWithUserIds], bidderRequest);
+      expect(req).be.an('object');
+      expect(req).to.have.property('method', 'POST');
+      expect(req).to.have.property('url');
+      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?');
+      expect(req.data).to.exist.and.to.be.an('object');
+      expect(req.data.id).to.equal('xyz123');
+      expect(req.data.user).be.an('object');
+      expect(req.data.user).to.have.property('ext');
+      expect(req.data.user.ext).to.have.property('eids');
+      expect(req.data.user.ext.eids).to.eql(expectedEids);
+      expect(req.data.imp).to.eql([expectedDataImp1]);
+    });
   });
 
   describe('Bid Requests with placementId should be backward compatible ', function () {
@@ -1159,6 +1229,76 @@ describe('synacormediaBidAdapter ', function () {
         pixelEnabled: true
       }, null);
       expect(usersyncs).to.be.an('array').that.is.empty;
+    });
+  });
+
+  describe('Bid Requests with price module should use if available', function () {
+    let validVideoBidRequest = {
+      bidder: 'synacormedia',
+      params: {
+        bidfloor: '0.50',
+        seatId: 'prebid',
+        placementId: 'demo1',
+        pos: 1,
+        video: {}
+      },
+      renderer: {
+        url: '../syncOutstreamPlayer.js'
+      },
+      mediaTypes: {
+        video: {
+          playerSize: [[300, 250]],
+          context: 'outstream'
+        }
+      },
+      adUnitCode: 'div-1',
+      transactionId: '0869f34e-090b-4b20-84ee-46ff41405a39',
+      sizes: [[300, 250]],
+      bidId: '22b3a2268d9f0e',
+      bidderRequestId: '1d195910597e13',
+      auctionId: '3375d336-2aea-4ee7-804c-6d26b621ad20',
+      src: 'client',
+      bidRequestsCount: 1,
+      bidderRequestsCount: 1,
+      bidderWinsCount: 0
+    };
+
+    let validBannerBidRequest = {
+      bidId: '9876abcd',
+      sizes: [[300, 250]],
+      params: {
+        bidfloor: '0.50',
+        seatId: 'prebid',
+        placementId: '1234',
+      }
+    };
+
+    let bidderRequest = {
+      refererInfo: {
+        referer: 'http://localhost:9999/'
+      },
+      bidderCode: 'synacormedia',
+      auctionId: 'f8a75621-d672-4cbb-9275-3db7d74fb110'
+    };
+
+    it('should return valid bidfloor using price module for banner/video impression', function () {
+      let bannerRequest = spec.buildRequests([validBannerBidRequest], bidderRequest);
+      let videoRequest = spec.buildRequests([validVideoBidRequest], bidderRequest);
+
+      expect(bannerRequest.data.imp[0].bidfloor).to.equal(0.5);
+      expect(videoRequest.data.imp[0].bidfloor).to.equal(0.5);
+
+      let priceModuleFloor = 3;
+      let floorResponse = { currency: 'USD', floor: priceModuleFloor };
+
+      validBannerBidRequest.getFloor = () => { return floorResponse; };
+      validVideoBidRequest.getFloor = () => { return floorResponse; };
+
+      bannerRequest = spec.buildRequests([validBannerBidRequest], bidderRequest);
+      videoRequest = spec.buildRequests([validVideoBidRequest], bidderRequest);
+
+      expect(bannerRequest.data.imp[0].bidfloor).to.equal(priceModuleFloor);
+      expect(videoRequest.data.imp[0].bidfloor).to.equal(priceModuleFloor);
     });
   });
 });
