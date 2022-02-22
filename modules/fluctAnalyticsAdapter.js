@@ -48,20 +48,23 @@ const isBrowsiId = (id) => Boolean(id.match(/^browsi_/g));
 const getAdUnitMap = () => window.googletag.pubads().getSlots().reduce((prev, slot) => Object.assign(prev, { [slot.getSlotElementId()]: slot.getAdUnitPath() }), {});
 
 /** @type {(_adUnit: AdUnit, adUnits: AdUnit[], slots: Slots) => AdUnit} */
-export const convertReplicatedAdUnit = (_adUnit, adUnits, slots = getAdUnitMap()) => {
+export const convertReplicatedAdUnit = (_adUnit, adUnits = $$PREBID_GLOBAL$$.adUnits, slots = getAdUnitMap()) => {
   /** @type {AdUnit} */
   const adUnit = deepClone(_adUnit);
   if (isBrowsiId(adUnit.code)) {
-    /** @type {?string} */
-    const adUnitPath = slots[adUnit.code];
-    /** @type {AdUnit} */
-    const adUnitWithSamePath = find(adUnits, adUnit => (adUnit.path || adUnit.code) === adUnitPath);
-    logInfo({ adUnitPath, adUnitWithSamePath })
-
-    const { analytics, code, mediaTypes: { banner: { name } } } = adUnitWithSamePath
-    adUnit.analytics = analytics;
-    adUnit._code = code;
-    adUnit.mediaTypes.banner.name = name;
+    try {
+      const { analytics, code, mediaTypes: { banner: { name } } } = find(adUnits, adUnit => adUnit.path === slots[adUnit.code]);
+      adUnit.analytics = analytics;
+      adUnit._code = code;
+      adUnit.mediaTypes.banner.name = name;
+    } catch (_error) {
+      logError({
+        message: 'dwid is not found.',
+        adUnit,
+        adUnits,
+        slots,
+      })
+    }
   }
   adUnit.bids = undefined;
   return adUnit;
