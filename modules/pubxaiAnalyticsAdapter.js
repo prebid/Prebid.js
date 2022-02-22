@@ -144,9 +144,9 @@ function send(data, status) {
     data.initOptions = initOptions;
     data.pageDetail = {};
     Object.assign(data.pageDetail, {
-          host: location.host,
-          path: location.pathname,
-          search: location.search
+      host: location.host,
+      path: location.pathname,
+      search: location.search
     });
     if (typeof data !== 'undefined' && typeof data.auctionInit !== 'undefined') {
       data.pageDetail.adUnitCount = data.auctionInit.adUnitCodes ? data.auctionInit.adUnitCodes.length : null;
