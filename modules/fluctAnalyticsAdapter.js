@@ -51,21 +51,16 @@ const getAdUnitMap = () => window.googletag.pubads().getSlots().reduce((prev, sl
 export const convertReplicatedAdUnit = (_adUnit, adUnits = $$PREBID_GLOBAL$$.adUnits, slots = getAdUnitMap()) => {
   /** @type {AdUnit} */
   const adUnit = deepClone(_adUnit);
-  if (isBrowsiId(adUnit.code)) {
-    try {
+  try {
+    if (isBrowsiId(adUnit.code)) {
       const adUnitPath = slots[adUnit.code];
       const { analytics, code, mediaTypes: { banner: { name } } } = find(adUnits, adUnit => adUnit.path === adUnitPath);
       adUnit.analytics = analytics;
       adUnit._code = code;
       adUnit.mediaTypes.banner.name = name;
-    } catch (_error) {
-      logError({
-        message: 'dwid is not found.',
-        adUnit,
-        adUnits,
-        slots,
-      })
     }
+  } catch (_error) {
+    logError(`ad unit not found with same path ${adUnitPath} as ${adUnit.code}.`);
   }
   adUnit.bids = undefined;
   return adUnit;
