@@ -6,6 +6,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 const BIDDER_CODE = 'smaato';
 const SMAATO_ENDPOINT = 'https://prebid.ad.smaato.net/oapi/prebid';
 const CLIENT = 'prebid_js_$prebid.version$_1.1'
+const GVLID = 82;
 
 /**
 * Transform BidRequest to OpenRTB-formatted BidRequest Object
@@ -131,6 +132,7 @@ const buildOpenRtbBidRequestPayload = (validBidRequests, bidderRequest) => {
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
+  gvlid: GVLID,
 
   /**
       * Determines whether or not the given bid request is valid.
