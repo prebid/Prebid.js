@@ -52,6 +52,8 @@ export const allVideoEvents = [
 ];
 
 export const AUCTION_AD_LOAD_ATTEMPT = 'auctionAdLoadAttempt';
+export const BID_VIDEO_IMPRESSION = 'bidVideoImpression';
+export const BID_VIDEO_ERROR = 'bidVideoError';
 
 export const allVideoAuctionEvents = [
   AUCTION_AD_LOAD_ATTEMPT
