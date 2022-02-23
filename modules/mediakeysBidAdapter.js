@@ -653,11 +653,6 @@ export const spec = {
     if (fpd.user) {
       mergeDeep(payload, { user: fpd.user });
     }
-    // Here we can handle device.geo prop
-    const deviceGeo = deepAccess(fpd, 'device.geo');
-    if (deviceGeo) {
-      mergeDeep(payload.device, { geo: deviceGeo });
-    }
 
     const request = {
       method: 'POST',

@@ -110,6 +110,7 @@ const buildServerRequest = (validBidRequest, data) => {
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
+  gvlid: 82,
 
   /**
    * Determines whether or not the given bid request is valid.

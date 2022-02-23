@@ -51,7 +51,8 @@ describe('imRtdProvider', function () {
   describe('getBidderFunction', function () {
     const assumedBidder = [
       'ix',
-      'pubmatic'
+      'pubmatic',
+      'fluct'
     ];
     assumedBidder.forEach(bidderName => {
       it(`should return bidderFunction with assumed bidder: ${bidderName}`, function () {
@@ -69,6 +70,34 @@ describe('imRtdProvider', function () {
     });
     it(`should return null with unexpected bidder`, function () {
       expect(getBidderFunction('test')).to.equal(null);
+    });
+    describe('fluct bidder function', function () {
+      it('should return a bid w/o im_segments if not any exists', function () {
+        const bid = {bidder: 'fluct'};
+        expect(getBidderFunction('fluct')(bid, '')).to.eql(bid);
+      });
+      it('should return a bid w/ im_segments if any exists', function () {
+        const bid = {
+          bidder: 'fluct',
+          params: {
+            kv: {
+              foo: ['foo1']
+            }
+          }
+        };
+        expect(getBidderFunction('fluct')(bid, {im_segments: ['12345', '67890']}))
+          .to.eql(
+            {
+              bidder: 'fluct',
+              params: {
+                kv: {
+                  foo: ['foo1'],
+                  imsids: ['12345', '67890']
+                }
+              }
+            }
+          );
+      });
     });
   })
 
