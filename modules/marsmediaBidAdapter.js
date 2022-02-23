@@ -16,7 +16,6 @@ function MarsmediaAdapter() {
   let SUPPORTED_VIDEO_DELIVERY = [1];
   let SUPPORTED_VIDEO_API = [1, 2, 5];
   let slotsToBids = {};
-  let that = this;
   let version = '2.5';
 
   this.isBidRequestValid = function (bid) {
