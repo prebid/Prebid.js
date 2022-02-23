@@ -523,6 +523,8 @@ export function newConfig() {
    * updates when specific properties are updated by passing a topic string as
    * the first parameter.
    *
+   * If `options.init` is true, the listener will be immediately called with the current options.
+   *
    * Returns an `unsubscribe` function for removing the subscriber from the
    * set of listeners
    *
@@ -536,8 +538,9 @@ export function newConfig() {
    * // unsubscribe
    * const unsubscribe = subscribe(...);
    * unsubscribe(); // no longer listening
+   *
    */
-  function subscribe(topic, listener) {
+  function subscribe(topic, listener, options = {}) {
     let callback = listener;
 
     if (typeof topic !== 'string') {
@@ -545,6 +548,7 @@ export function newConfig() {
       // meaning it gets called for any config change
       callback = topic;
       topic = ALL_TOPICS;
+      options = listener || {};
     }
 
     if (typeof callback !== 'function') {
@@ -554,6 +558,15 @@ export function newConfig() {
 
     const nl = { topic, callback };
     listeners.push(nl);
+
+    if (options.init) {
+      if (topic === ALL_TOPICS) {
+        callback(getConfig())
+      } else {
+        // eslint-disable-next-line standard/no-callback-literal
+        callback({[topic]: getConfig(topic)});
+      }
+    }
 
     // save and call this function to remove the listener
     return function unsubscribe() {

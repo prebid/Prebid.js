@@ -19,6 +19,7 @@ import find from 'core-js-pure/features/array/find.js';
 import {synchronizePromise} from '../../helpers/syncPromise.js';
 import 'src/prebid.js';
 import {hook} from '../../../src/hook.js';
+import {reset as resetDebugging} from '../../../src/debugging.js';
 
 var assert = require('chai').assert;
 var expect = require('chai').expect;
@@ -197,6 +198,7 @@ describe('Unit: Prebid Module', function () {
 
   before(() => {
     hook.ready();
+    resetDebugging();
   });
 
   beforeEach(function () {

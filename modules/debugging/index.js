@@ -49,6 +49,7 @@ function saveDebuggingConfig(debugConfig, {sessionStorage = window.sessionStorag
 }
 
 export function getConfig(debugging, {sessionStorage = window.sessionStorage} = {}) {
+  if (debugging == null) return;
   saveDebuggingConfig(debugging, {sessionStorage});
   if (!debugging.enabled) {
     disableDebugging();
@@ -100,5 +101,5 @@ export function bidderBidInterceptor(next, interceptBids, spec, bids, bidRequest
 registerBidInterceptor(() => processBidderRequests, bidderBidInterceptor);
 registerBidInterceptor(() => hook.get('processPBSRequest'), pbsBidInterceptor);
 
-config.getConfig('debugging', ({debugging}) => getConfig(debugging));
 sessionLoader();
+config.getConfig('debugging', ({debugging}) => getConfig(debugging), {init: true});

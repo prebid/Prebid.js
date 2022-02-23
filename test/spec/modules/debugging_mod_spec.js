@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {BidInterceptor} from '../../../modules/debugging/bidInterceptor.js';
-import {bidderBidInterceptor, disableDebugging, getConfig, sessionLoader,} from '../../../modules/debugging/index.js';
+import {bidderBidInterceptor, disableDebugging, getConfig, sessionLoader, } from '../../../modules/debugging/index.js';
 import {pbsBidInterceptor} from '../../../modules/debugging/pbsInterceptor.js';
 import {config} from '../../../src/config.js';
 import {

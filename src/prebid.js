@@ -13,7 +13,6 @@ import { config } from './config.js';
 import { auctionManager } from './auctionManager.js';
 import { filters, targeting } from './targeting.js';
 import { hook } from './hook.js';
-import { sessionLoader } from './debugging.js';
 import includes from 'core-js-pure/features/array/includes.js';
 import { adunitCounter } from './adUnits.js';
 import { executeRenderer, isRendererRequired } from './Renderer.js';
@@ -21,6 +20,7 @@ import { createBid } from './bidfactory.js';
 import { storageCallbacks } from './storageManager.js';
 import { emitAdRenderSucceeded, emitAdRenderFail } from './adRendering.js';
 import { gdprDataHandler, uspDataHandler } from './adapterManager.js'
+import {ready} from './debugging.js';
 
 const $$PREBID_GLOBAL$$ = getGlobal();
 const CONSTANTS = require('./constants.json');
@@ -35,9 +35,6 @@ const { PREVENT_WRITING_ON_MAIN_DOCUMENT, NO_AD, EXCEPTION, CANNOT_FIND_AD, MISS
 const eventValidators = {
   bidWon: checkDefinedPlacement
 };
-
-// initialize existing debugging sessions if present
-sessionLoader();
 
 /* Public vars */
 $$PREBID_GLOBAL$$.bidderSettings = $$PREBID_GLOBAL$$.bidderSettings || {};
@@ -564,93 +561,95 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
  * @alias module:pbjs.requestBids
  */
 $$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels, auctionId } = {}) {
-  events.emit(REQUEST_BIDS);
-  const cbTimeout = timeout || config.getConfig('bidderTimeout');
-  adUnits = (adUnits && config.convertAdUnitFpd(isArray(adUnits) ? adUnits : [adUnits])) || $$PREBID_GLOBAL$$.adUnits;
+  ready().then(() => {
+    events.emit(REQUEST_BIDS);
+    const cbTimeout = timeout || config.getConfig('bidderTimeout');
+    adUnits = (adUnits && config.convertAdUnitFpd(isArray(adUnits) ? adUnits : [adUnits])) || $$PREBID_GLOBAL$$.adUnits;
 
-  logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', arguments);
+    logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', arguments);
 
-  let _s2sConfigs = [];
-  const s2sBidders = [];
-  config.getConfig('s2sConfig', config => {
-    if (config && config.s2sConfig) {
-      _s2sConfigs = Array.isArray(config.s2sConfig) ? config.s2sConfig : [config.s2sConfig];
-    }
-  });
-
-  _s2sConfigs.forEach(s2sConfig => {
-    s2sBidders.push(...s2sConfig.bidders);
-  });
-
-  adUnits = checkAdUnitSetup(adUnits);
-
-  if (adUnitCodes && adUnitCodes.length) {
-    // if specific adUnitCodes supplied filter adUnits for those codes
-    adUnits = adUnits.filter(unit => includes(adUnitCodes, unit.code));
-  } else {
-    // otherwise derive adUnitCodes from adUnits
-    adUnitCodes = adUnits && adUnits.map(unit => unit.code);
-  }
-
-  /*
-   * for a given adunit which supports a set of mediaTypes
-   * and a given bidder which supports a set of mediaTypes
-   * a bidder is eligible to participate on the adunit
-   * if it supports at least one of the mediaTypes on the adunit
-   */
-  adUnits.forEach(adUnit => {
-    // get the adunit's mediaTypes, defaulting to banner if mediaTypes isn't present
-    const adUnitMediaTypes = Object.keys(adUnit.mediaTypes || { 'banner': 'banner' });
-
-    // get the bidder's mediaTypes
-    const allBidders = adUnit.bids.map(bid => bid.bidder);
-    const bidderRegistry = adapterManager.bidderRegistry;
-
-    const bidders = (s2sBidders) ? allBidders.filter(bidder => !includes(s2sBidders, bidder)) : allBidders;
-
-    adUnit.transactionId = generateUUID();
-
-    bidders.forEach(bidder => {
-      const adapter = bidderRegistry[bidder];
-      const spec = adapter && adapter.getSpec && adapter.getSpec();
-      // banner is default if not specified in spec
-      const bidderMediaTypes = (spec && spec.supportedMediaTypes) || ['banner'];
-
-      // check if the bidder's mediaTypes are not in the adUnit's mediaTypes
-      const bidderEligible = adUnitMediaTypes.some(type => includes(bidderMediaTypes, type));
-      if (!bidderEligible) {
-        // drop the bidder from the ad unit if it's not compatible
-        logWarn(unsupportedBidderMessage(adUnit, bidder));
-        adUnit.bids = adUnit.bids.filter(bid => bid.bidder !== bidder);
-      } else {
-        adunitCounter.incrementBidderRequestsCounter(adUnit.code, bidder);
+    let _s2sConfigs = [];
+    const s2sBidders = [];
+    config.getConfig('s2sConfig', config => {
+      if (config && config.s2sConfig) {
+        _s2sConfigs = Array.isArray(config.s2sConfig) ? config.s2sConfig : [config.s2sConfig];
       }
     });
-    adunitCounter.incrementRequestsCounter(adUnit.code);
-  });
 
-  if (!adUnits || adUnits.length === 0) {
-    logMessage('No adUnits configured. No bids requested.');
-    if (typeof bidsBackHandler === 'function') {
-      // executeCallback, this will only be called in case of first request
-      try {
-        bidsBackHandler();
-      } catch (e) {
-        logError('Error executing bidsBackHandler', null, e);
-      }
+    _s2sConfigs.forEach(s2sConfig => {
+      s2sBidders.push(...s2sConfig.bidders);
+    });
+
+    adUnits = checkAdUnitSetup(adUnits);
+
+    if (adUnitCodes && adUnitCodes.length) {
+      // if specific adUnitCodes supplied filter adUnits for those codes
+      adUnits = adUnits.filter(unit => includes(adUnitCodes, unit.code));
+    } else {
+      // otherwise derive adUnitCodes from adUnits
+      adUnitCodes = adUnits && adUnits.map(unit => unit.code);
     }
-    return;
-  }
 
-  const auction = auctionManager.createAuction({ adUnits, adUnitCodes, callback: bidsBackHandler, cbTimeout, labels, auctionId });
+    /*
+     * for a given adunit which supports a set of mediaTypes
+     * and a given bidder which supports a set of mediaTypes
+     * a bidder is eligible to participate on the adunit
+     * if it supports at least one of the mediaTypes on the adunit
+     */
+    adUnits.forEach(adUnit => {
+      // get the adunit's mediaTypes, defaulting to banner if mediaTypes isn't present
+      const adUnitMediaTypes = Object.keys(adUnit.mediaTypes || { 'banner': 'banner' });
 
-  let adUnitsLen = adUnits.length;
-  if (adUnitsLen > 15) {
-    logInfo(`Current auction ${auction.getAuctionId()} contains ${adUnitsLen} adUnits.`, adUnits);
-  }
+      // get the bidder's mediaTypes
+      const allBidders = adUnit.bids.map(bid => bid.bidder);
+      const bidderRegistry = adapterManager.bidderRegistry;
 
-  adUnitCodes.forEach(code => targeting.setLatestAuctionForAdUnit(code, auction.getAuctionId()));
-  auction.callBids();
+      const bidders = (s2sBidders) ? allBidders.filter(bidder => !includes(s2sBidders, bidder)) : allBidders;
+
+      adUnit.transactionId = generateUUID();
+
+      bidders.forEach(bidder => {
+        const adapter = bidderRegistry[bidder];
+        const spec = adapter && adapter.getSpec && adapter.getSpec();
+        // banner is default if not specified in spec
+        const bidderMediaTypes = (spec && spec.supportedMediaTypes) || ['banner'];
+
+        // check if the bidder's mediaTypes are not in the adUnit's mediaTypes
+        const bidderEligible = adUnitMediaTypes.some(type => includes(bidderMediaTypes, type));
+        if (!bidderEligible) {
+          // drop the bidder from the ad unit if it's not compatible
+          logWarn(unsupportedBidderMessage(adUnit, bidder));
+          adUnit.bids = adUnit.bids.filter(bid => bid.bidder !== bidder);
+        } else {
+          adunitCounter.incrementBidderRequestsCounter(adUnit.code, bidder);
+        }
+      });
+      adunitCounter.incrementRequestsCounter(adUnit.code);
+    });
+
+    if (!adUnits || adUnits.length === 0) {
+      logMessage('No adUnits configured. No bids requested.');
+      if (typeof bidsBackHandler === 'function') {
+        // executeCallback, this will only be called in case of first request
+        try {
+          bidsBackHandler();
+        } catch (e) {
+          logError('Error executing bidsBackHandler', null, e);
+        }
+      }
+      return;
+    }
+
+    const auction = auctionManager.createAuction({ adUnits, adUnitCodes, callback: bidsBackHandler, cbTimeout, labels, auctionId });
+
+    let adUnitsLen = adUnits.length;
+    if (adUnitsLen > 15) {
+      logInfo(`Current auction ${auction.getAuctionId()} contains ${adUnitsLen} adUnits.`, adUnits);
+    }
+
+    adUnitCodes.forEach(code => targeting.setLatestAuctionForAdUnit(code, auction.getAuctionId()));
+    auction.callBids();
+  });
 });
 
 export function executeCallbacks(fn, reqBidsConfigObj) {
