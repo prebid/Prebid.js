@@ -12,17 +12,18 @@ export function videoImpressionVerifierFactory(isCacheUsed) {
   return videoImpressionVerifier(vastXmlEditor, bidTracker);
 }
 
-function videoImpressionVerifier(vastXmlEditor_) {
+function videoImpressionVerifier(vastXmlEditor_, bidTracker_) {
+  const verifier = baseImpressionVerifier(bidTracker_);
+  const superTrackBid = verifier.trackBid;
   const vastXmlEditor = vastXmlEditor_;
-  const trackedBids = {};
 
-  function trackBid(bid) {
-    let { vastXml, vastUrl, adId, adUnitCode, requestId, auctionId } = bid;
-    const uuid = 'pb-' + generateId(12);
-
+  verifier.trackBid = function(bid) {
+    let { vastXml, vastUrl } = bid;
     if (!vastXml && !vastUrl) {
       return;
     }
+
+    const uuid = superTrackBid(bid);
 
     if (vastUrl) {
       const url = new URL(vastUrl);
@@ -31,7 +32,68 @@ function videoImpressionVerifier(vastXmlEditor_) {
     } else if (vastXml) {
       bid.vastXml = vastXmlEditor.getVastXmlWithTracking(vastXml, uuid);
     }
-    trackedBids[uuid] = { adId, adUnitCode, requestId, auctionId };
+
+    return uuid;
+  }
+
+  return verifier;
+}
+
+function cachedVideoImpressionVerifier(vastXmlEditor_, bidTracker_) {
+  const verifier = baseImpressionVerifier(bidTracker_);
+  const superTrackBid = verifier.trackBid;
+  const superGetTrackedBid = verifier.getTrackedBid;
+  const vastXmlEditor = vastXmlEditor_;
+
+  verifier.trackBid = function (bid, globalAdUnits) {
+    const adIdOverride = superTrackBid(bid);
+    let { vastXml, vastUrl, adId, adUnitCode } = bid;
+    const adUnit = find(globalAdUnits, adUnit => adUnitCode === adUnit.code);
+    const videoConfig = adUnit && adUnit.video;
+    const adServerConfig = videoConfig && videoConfig.adServer;
+    const trackingConfig = adServerConfig && adServerConfig.tracking;
+    let impressionUrl;
+    let impressionId;
+    let errorUrl;
+    const impressionTracking = trackingConfig.impression;
+    const errorTracking = trackingConfig.error;
+
+    if (impressionTracking) {
+      impressionUrl = impressionTracking.url;
+      impressionId = impressionTracking.id || adId + '-impression';
+    }
+
+    if (errorTracking) {
+      errorUrl = errorTracking.url;
+    }
+
+    if (vastXml) {
+      vastXml = vastXmlEditor.getVastXmlWithTracking(vastXml, adIdOverride, impressionUrl, impressionId, errorUrl);
+    } else if (vastUrl) {
+      vastXml = vastXmlEditor.buildVastWrapper(adIdOverride, vastUrl, impressionUrl, impressionId, errorUrl);
+    }
+
+    bid.vastXml = vastXml;
+    return adIdOverride;
+  }
+
+  verifier.getTrackedBid = function (adId, adTagUrl, adWrapperIds) {
+    // When the video is cached, the ad tag loaded into the player is a parent wrapper of the cache url.
+    // As a result, the ad tag Url cannot include identifiers.
+    return superGetTrackedBid(adId, null, adWrapperIds);
+  }
+
+  return verifier;
+}
+
+function baseImpressionVerifier(bidTracker_) {
+  const bidTracker = bidTracker_;
+
+  function trackBid(bid) {
+    let { adId, adUnitCode, requestId, auctionId } = bid;
+    const uuid = 'pb-' + generateId(12);
+    bidTracker.store(uuid, { adId, adUnitCode, requestId, auctionId });
+    return uuid;
   }
 
   // get tracked Bid from adUrl ad id, adWrapper Ids
@@ -42,29 +104,37 @@ function videoImpressionVerifier(vastXmlEditor_) {
   // return actual bid object
 
   function getTrackedBid(adId, adTagUrl, adWrapperIds) {
-    return trackedBids[adId] || getBidForAdTagUrl(adTagUrl) || getBidForAdWrappers(adWrapperIds);
-  }
-
-  function getBidForAdTagUrl(adTagUrl) {
-    const url = new URL(adTagUrl);
-    const queryParams = url.searchParams;
-    let uuid = queryParams.get('pb_uuid');
-    return uuid && trackedBids[uuid];
-  }
-
-  function getBidForAdWrappers(adWrapperIds) {
-    for (const wrapperId in adWrapperIds) {
-      const bid = trackedBids[wrapperId];
-      if (bid) {
-        return bid;
-      }
-    }
+    return bidTracker.remove(adId) || getBidForAdTagUrl(adTagUrl) || getBidForAdWrappers(adWrapperIds);
   }
 
   return {
     trackBid,
     getTrackedBid
   };
+
+  function getBidForAdTagUrl(adTagUrl) {
+    if (!adTagUrl) {
+      return;
+    }
+
+    const url = new URL(adTagUrl);
+    const queryParams = url.searchParams;
+    let uuid = queryParams.get('pb_uuid');
+    return uuid && bidTracker.remove(uuid);
+  }
+
+  function getBidForAdWrappers(adWrapperIds) {
+    if (!adWrapperIds || !adWrapperIds.length) {
+      return;
+    }
+
+    for (const wrapperId in adWrapperIds) {
+      const bidInfo = bidTracker.remove(wrapperId);
+      if (bidInfo) {
+        return bidInfo;
+      }
+    }
+  }
 }
 
 function tracker() {
@@ -88,50 +158,6 @@ function tracker() {
     store,
     remove
   }
-}
-
-function cachedVideoImpressionVerifier(vastXmlEditor_) {
-  const vastXmlEditor = vastXmlEditor_;
-  const trackedBids = {};
-
-  function registerBid(bid, globalAdUnits) {
-    let { vastXml, vastUrl, adId, adUnitCode, requestId, auctionId } = bid;
-    const adUnit = find(globalAdUnits, adUnit => adUnitCode === adUnit.code);
-    const videoConfig = adUnit && adUnit.video;
-    const adServerConfig = videoConfig && videoConfig.adServer;
-    const trackingConfig = adServerConfig && adServerConfig.tracking;
-    let impressionUrl;
-    let impressionId;
-    let errorUrl;
-    const adIdOverride = 'pb-' + generateId(12);
-    const impressionTracking = trackingConfig.impression;
-    const errorTracking = trackingConfig.error;
-
-    if (impressionTracking) {
-      impressionUrl = impressionTracking.url;
-      impressionId = impressionTracking.id || adId + '-impression';
-    }
-
-    if (errorTracking) {
-      errorUrl = errorTracking.url;
-    }
-
-    if (vastXml) {
-      vastXml = vastXmlEditor.getVastXmlWithTracking(vastXml, adIdOverride, impressionUrl, impressionId, errorUrl);
-    } else if (vastUrl) {
-      vastXml = vastXmlEditor.buildVastWrapper(adIdOverride, vastUrl, impressionUrl, impressionId, errorUrl);
-    }
-
-    trackedBids[adIdOverride] = { adId, adUnitCode, requestId, auctionId };
-    bid.vastXml = vastXml;
-  }
-
-  // verify id from ad id or wrapper ids
-
-  return {
-    registerBid,
-    getTrackedBid,
-  };
 }
 
 export function generateId(length) {
