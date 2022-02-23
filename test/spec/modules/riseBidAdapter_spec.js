@@ -3,7 +3,7 @@ import { spec } from 'modules/riseBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
 import { VIDEO } from '../../../src/mediaTypes.js';
-import { deepClone } from 'src/utils.js';
+import * as utils from 'src/utils.js';
 
 const ENDPOINT = 'https://hb.yellowblue.io/hb';
 const TEST_ENDPOINT = 'https://hb.yellowblue.io/hb-test';
@@ -257,12 +257,12 @@ describe('riseAdapter', function () {
       const requests = spec.buildRequests(bidRequests, bidderRequest);
       for (const request of requests) {
         expect(request.data).to.be.an('object');
-        expect(request.data).to.have.property('schain', '1.0,1!indirectseller.com,00001,,,,');
+        expect(request.data).to.have.property('schain', '1.0,1!indirectseller.com,00001,1,,,');
       }
     });
 
     it('should set floor_price to getFloor.floor value if it is greater than params.floorPrice', function() {
-      const bid = deepClone(bidRequests[0]);
+      const bid = utils.deepClone(bidRequests[0]);
       bid.getFloor = () => {
         return {
           currency: 'USD',
@@ -276,7 +276,7 @@ describe('riseAdapter', function () {
     });
 
     it('should set floor_price to params.floorPrice value if it is greater than getFloor.floor', function() {
-      const bid = deepClone(bidRequests[0]);
+      const bid = utils.deepClone(bidRequests[0]);
       bid.getFloor = () => {
         return {
           currency: 'USD',
@@ -299,7 +299,8 @@ describe('riseAdapter', function () {
       requestId: '21e12606d47ba7',
       netRevenue: true,
       currency: 'USD',
-      adomain: ['abc.com']
+      adomain: ['abc.com'],
+      nurl: 'http://example.com/win/1234',
     };
 
     it('should get correct bid response', function () {
@@ -315,6 +316,7 @@ describe('riseAdapter', function () {
           ttl: TTL,
           vastXml: '<VAST version="3.0"></VAST>',
           mediaType: VIDEO,
+          nurl: 'http://example.com/win/1234',
           meta: {
             advertiserDomains: ['abc.com']
           }
@@ -401,5 +403,29 @@ describe('riseAdapter', function () {
       const syncs = spec.getUserSyncs({ pixelEnabled: false }, [imageSyncResponse]);
       expect(syncs).to.deep.equal([]);
     });
+  })
+
+  describe('onBidWon', function() {
+    beforeEach(function() {
+      sinon.stub(utils, 'triggerPixel');
+    });
+    afterEach(function() {
+      utils.triggerPixel.restore();
+    });
+
+    it('Should trigger pixel if bid nurl', function() {
+      const bid = {
+        'bidder': spec.code,
+        'adUnitCode': 'adunit-code',
+        'sizes': [['640', '480']],
+        'nurl': 'http://example.com/win/1234',
+        'params': {
+          'org': 'jdye8weeyirk00000001'
+        }
+      };
+
+      spec.onBidWon(bid);
+      expect(utils.triggerPixel.callCount).to.equal(1)
+    })
   })
 });

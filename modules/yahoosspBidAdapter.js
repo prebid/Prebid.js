@@ -6,6 +6,7 @@ import { Renderer } from '../src/Renderer.js';
 
 const INTEGRATION_METHOD = 'prebid.js';
 const BIDDER_CODE = 'yahoossp';
+const GVLID = 25;
 const ADAPTER_VERSION = '1.0.2';
 const PREBID_VERSION = '$prebid.version$';
 const DEFAULT_BID_TTL = 300;
@@ -515,6 +516,7 @@ function createRenderer(bidderRequest, bidResponse) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   aliases: [],
   supportedMediaTypes: [BANNER, VIDEO],
 
