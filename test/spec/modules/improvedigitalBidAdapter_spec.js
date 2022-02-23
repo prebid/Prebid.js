@@ -1102,12 +1102,12 @@ describe('Improve Digital Adapter Tests', function () {
 
     it('should not affect non-RAZR bids', function () {
       const bids = spec.interpretResponse(serverResponse, {bidderRequest});
-      expect(bids[0].ad).to.not.include('razrBidId');
+      expect(bids[0].renderer).to.not.exist;
     });
 
     it('should detect RAZR bids', function () {
       const bids = spec.interpretResponse(serverResponseRazr, {bidderRequest});
-      expect(bids[0].ad).to.include('razrBidId');
+      expect(bids[0].renderer).to.exist;
     });
   });
 
