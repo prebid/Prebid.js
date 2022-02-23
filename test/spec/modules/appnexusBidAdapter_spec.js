@@ -1439,4 +1439,28 @@ describe('AppNexusAdapter', function () {
       expect(Object.keys(result[0].meta.advertiserDomains)).to.deep.equal([]);
     });
   });
+
+  describe('transformBidParams', function () {
+    it('convert keywords param differently for psp endpoint', function () {
+      sinon.stub(config, 'getConfig')
+        .withArgs('s2sConfig')
+        .returns({
+          endpoint: {
+            p1Consent: 'https://ib.adnxs.com/openrtb2/prebid'
+          }
+        });
+
+      const oldParams = {
+        keywords: {
+          genre: ['rock', 'pop'],
+          pets: 'dog'
+        }
+      };
+
+      const newParams = spec.transformBidParams(oldParams, true);
+      expect(newParams.keywords).to.equal('genre=rock,genre=pop,pets=dog');
+
+      config.getConfig.restore();
+    });
+  });
 });
