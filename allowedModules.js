@@ -1,9 +1,12 @@
 
 const sharedWhiteList = [
-  'prebidjs-polyfill/arrayFrom',
-  'prebidjs-polyfill/find',
-  'prebidjs-polyfill/findIndex',
-  'prebidjs-polyfill/includes',
+  'core-js-pure/features/array/find', // no ie11
+  'core-js-pure/features/array/includes', // no ie11
+  'core-js-pure/features/set', // ie11 supports Set but not Set#values
+  'core-js-pure/features/string/includes', // no ie11
+  'core-js-pure/features/number/is-integer', // no ie11,
+  'core-js-pure/features/array/from', // no ie11
+  'core-js-pure/web/url-search-params' // no ie11
 ];
 
 module.exports = {

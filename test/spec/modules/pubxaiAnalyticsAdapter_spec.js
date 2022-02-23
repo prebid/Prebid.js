@@ -636,6 +636,11 @@ describe('pubxai analytics adapter', function() {
         'statusMessage': 'Bid available',
         'timeToRespond': 267
       },
+      'pageDetail': {
+        'host': location.host,
+        'path': location.pathname,
+        'search': location.search
+      },
       'deviceDetail': {
         'platform': navigator.platform,
         'deviceType': getDeviceType(),

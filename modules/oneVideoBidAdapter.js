@@ -10,6 +10,7 @@ export const spec = {
   SYNC_ENDPOINT1: 'https://pixel.advertising.com/ups/57304/sync?gdpr=&gdpr_consent=&_origin=0&redir=true',
   SYNC_ENDPOINT2: 'https://match.adsrvr.org/track/cmf/generic?ttd_pid=adaptv&ttd_tpi=1',
   supportedMediaTypes: ['video', 'banner'],
+  gvlid: 25,
   /**
    * Determines whether or not the given bid request is valid.
    *

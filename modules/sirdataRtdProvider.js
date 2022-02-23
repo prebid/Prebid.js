@@ -10,7 +10,7 @@ import {getGlobal} from '../src/prebidGlobal.js';
 import { deepAccess, logError, deepEqual, deepSetValue, isEmpty, mergeDeep } from '../src/utils.js';
 import {submodule} from '../src/hook.js';
 import {ajax} from '../src/ajax.js';
-import findIndex from 'prebidjs-polyfill/findIndex.js';
+import findIndex from 'core-js-pure/features/array/find-index.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { config } from '../src/config.js';
 
