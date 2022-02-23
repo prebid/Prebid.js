@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { isSafariBrowser, deepAccess, getWindowTop, mergeDeep } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import find from 'core-js-pure/features/array/find.js';
@@ -60,10 +60,16 @@ export const spec = {
     const bundle = find(bidRequests, hasBundleParam);
     const tid = find(bidRequests, hasTidParam);
     const schain = bidRequests[0].schain;
+    let ortb2 = config.getConfig('ortb2');
+    const eids = handleEids(bidRequests);
     bidUrl = bidUrl ? bidUrl.params.bidUrl : URL;
     url = url ? url.params.url : (getAppDomain() || getTopWindowLocation(bidderRequest));
     test = test ? test.params.test : undefined;
     var adRequests = bidRequests.map(bidToAdRequest);
+
+    if (eids) {
+      ortb2 = mergeDeep(ortb2 || {}, eids);
+    }
 
     const payload = {
       auctionId: auctionId ? auctionId.auctionId : undefined,
@@ -81,10 +87,12 @@ export const spec = {
       version: VERSION,
       gdprApplies: bidderRequest.gdprConsent ? bidderRequest.gdprConsent.gdprApplies : undefined,
       gdprConsent: bidderRequest.gdprConsent ? bidderRequest.gdprConsent.consentString : undefined,
-      cookieSupport: !utils.isSafariBrowser() && storage.cookiesAreEnabled(),
+      coppa: getCoppa(),
+      usPrivacy: bidderRequest.uspConsent,
+      cookieSupport: !isSafariBrowser() && storage.cookiesAreEnabled(),
       rcv: getAdblockerRecovered(),
       adRequests: [...adRequests],
-      rtbData: handleEids(bidRequests),
+      rtbData: ortb2,
       schain: schain
     };
 
@@ -226,11 +234,11 @@ function bidToAdRequest(bid) {
     adRequest.auc = bid.auc;
   }
 
-  adRequest.native = utils.deepAccess(bid, 'mediaTypes.native');
+  adRequest.native = deepAccess(bid, 'mediaTypes.native');
 
-  adRequest.video = utils.deepAccess(bid, 'mediaTypes.video');
+  adRequest.video = deepAccess(bid, 'mediaTypes.video');
 
-  if ((adRequest.native || adRequest.video) && utils.deepAccess(bid, 'mediaTypes.banner')) {
+  if ((adRequest.native || adRequest.video) && deepAccess(bid, 'mediaTypes.banner')) {
     adRequest.banner = true;
   }
 
@@ -238,7 +246,7 @@ function bidToAdRequest(bid) {
 }
 
 function getSizes(bid) {
-  if (utils.deepAccess(bid, 'mediaTypes.banner.sizes')) {
+  if (deepAccess(bid, 'mediaTypes.banner.sizes')) {
     return bid.mediaTypes.banner.sizes;
   } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0) {
     return bid.sizes;
@@ -255,38 +263,14 @@ function sizeToFormat(size) {
 
 function getAdblockerRecovered() {
   try {
-    return utils.getWindowTop().I12C && utils.getWindowTop().I12C.Morph === 1;
+    return getWindowTop().I12C && getWindowTop().I12C.Morph === 1;
   } catch (e) {}
 }
 
-function AddExternalUserId(eids, value, source, atype, rtiPartner) {
-  if (utils.isStr(value)) {
-    var eid = {
-      source,
-      uids: [{
-        id: value,
-        atype
-      }]
-    };
-
-    if (rtiPartner) {
-      eid.uids[0] = {ext: {rtiPartner}};
-    }
-
-    eids.push(eid);
-  }
-}
-
 function handleEids(bidRequests) {
-  let eids = [];
   const bidRequest = bidRequests[0];
-  if (bidRequest && bidRequest.userId) {
-    AddExternalUserId(eids, utils.deepAccess(bidRequest, `userId.pubcid`), 'pubcid.org', 1); // Also add this to eids
-    AddExternalUserId(eids, utils.deepAccess(bidRequest, `userId.id5id.uid`), 'id5-sync.com', 1);
-    AddExternalUserId(eids, utils.deepAccess(bidRequest, `userId.criteoId`), 'criteo.com', 1);
-  }
-  if (eids.length > 0) {
-    return {user: {ext: {eids}}};
+  if (bidRequest && bidRequest.userIdAsEids) {
+    return {user: {ext: {eids: bidRequest.userIdAsEids}}};
   }
 
   return undefined;
@@ -333,4 +317,9 @@ function getDeviceHeight() {
   return window.innerHeight;
 }
 
+function getCoppa() {
+  if (typeof config.getConfig('coppa') === 'boolean') {
+    return config.getConfig('coppa');
+  }
+}
 registerBidder(spec);

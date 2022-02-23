@@ -1,6 +1,6 @@
+import { generateUUID, deepAccess, createTrackPixelHtml, getDNT } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
-import * as utils from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const CONSTANTS = {
@@ -221,7 +221,7 @@ var dsuModule = (function() {
   }
 
   function generateDsu() {
-    var dsuId = utils.generateUUID();
+    var dsuId = generateUUID();
     var loc = location();
 
     var dsuIdSuffix = hashWithKey(dsuId + loc.toString());
@@ -303,7 +303,7 @@ function getConsentStringFromPrebid(gdprConsentConfig) {
 }
 
 function getIabConsentString(bidderRequest) {
-  if (utils.deepAccess(bidderRequest, 'gdprConsent')) {
+  if (deepAccess(bidderRequest, 'gdprConsent')) {
     return getConsentStringFromPrebid(bidderRequest.gdprConsent);
   }
 
@@ -318,7 +318,7 @@ function injectPixels(ad, pixels, scripts) {
   let trackedAd = ad;
   if (pixels) {
     pixels.forEach(pixel => {
-      const tracker = utils.createTrackPixelHtml(pixel);
+      const tracker = createTrackPixelHtml(pixel);
       trackedAd += tracker;
     });
   }
@@ -420,7 +420,7 @@ function buildRequests(bidRequests, bidderRequest) {
     med: encodeURIComponent(window.location.href),
     auid: bidderRequest.auctionId,
     ref: document.referrer,
-    dnt: utils.getDNT() ? 1 : 0,
+    dnt: getDNT() ? 1 : 0,
     sr: getScreenParams()
   };
 

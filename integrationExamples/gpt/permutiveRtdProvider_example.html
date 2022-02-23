@@ -50,7 +50,7 @@
                     params: {
                       placementId: 13144370,
                       keywords: {
-                        inline_kvs: ['1']
+                        test_kv: ['true']
                       }
                     }
                   },
@@ -64,7 +64,7 @@
                         area: ['home']
                       },
                       visitor: {
-                        inline_kvs: ['1']
+                        test_kv: ['true']
                       }
                     }
                   },
@@ -78,11 +78,20 @@
                         {
                           settings: {},
                           targeting: {
-                            inline_kvs: ['1', '2', '3', '4']
+                            test_kv: ['true']
                           }
                         }
                       ],
                       ozoneData: {}
+                    }
+                  },
+                  {
+                    bidder: 'trustx',
+                    params: {
+                      uid: 45,
+                      keywords: {
+                        test_kv: ['true']
+                      }
                     }
                   }
                 ]
@@ -127,13 +136,13 @@
               pbjs.setConfig({
                 debug: true,
                 realTimeData: {
-                  auctionDelay: 50, // maximum time for RTD modules to respond
+                  auctionDelay: 80, // maximum time for RTD modules to respond
                   dataProviders: [
                     {
                       name: 'permutive',
                       waitForIt: true,
                       params: {
-                        acBidders: ['appnexus', 'rubicon', 'ozone'],
+                        acBidders: ['appnexus', 'rubicon', 'ozone', 'trustx'],
                         maxSegs: 500,
                         overwrites: {
                           rubicon: function (bid, data, acEnabled, utils, defaultFn) {
@@ -148,6 +157,41 @@
                       }
                     }
                   ]
+                }
+              });
+              pbjs.setBidderConfig({
+                bidders: ['appnexus', 'rubicon'],
+                config: {
+                  ortb2: {
+                    site: {
+                      name: "example",
+                      domain: "page.example.com",
+                      cat: ["IAB2"],
+                      sectioncat: ["IAB2-2"],
+                      pagecat: ["IAB2-2"],
+                      page: "https://page.example.com/here.html",
+                      ref: "https://ref.example.com",
+                      keywords: "power tools, drills",
+                      search: "drill",
+                      content: {}
+                    },
+                    user: {
+                      yob: 1985,
+                      gender: 'm',
+                      keywords: 'a,b',
+                      data: [
+                        {
+                          name: 'www.dataprovider1.com',
+                          ext: { taxonomyname: 'iab_audience_taxonomy' },
+                          segment: [{ id: '687' }, { id: '123' }]
+                        },
+                        {
+                          name: 'permutive.com',
+                          segment: [{ id: '1' }]
+                        }
+                      ]
+                    }
+                  }
                 }
               });
               pbjs.addAdUnits(adUnits);

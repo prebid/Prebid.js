@@ -1,11 +1,11 @@
+import { isArray, logError, deepAccess, isEmpty, triggerPixel, replaceAuctionPrice } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
-import * as utils from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 
 const BIDDER_CODE = 'axonix';
-const BIDDER_VERSION = '1.0.0';
+const BIDDER_VERSION = '1.0.2';
 
 const CURRENCY = 'USD';
 const DEFAULT_REGION = 'us-east-1';
@@ -68,9 +68,9 @@ export const spec = {
     // video bid request validation
     if (bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty(VIDEO)) {
       if (!bid.mediaTypes[VIDEO].hasOwnProperty('mimes') ||
-        !utils.isArray(bid.mediaTypes[VIDEO].mimes) ||
+        !isArray(bid.mediaTypes[VIDEO].mimes) ||
         bid.mediaTypes[VIDEO].mimes.length === 0) {
-        utils.logError('mimes are mandatory for video bid request. Ad Unit: ', JSON.stringify(bid));
+        logError('mimes are mandatory for video bid request. Ad Unit: ', JSON.stringify(bid));
 
         return false;
       }
@@ -81,11 +81,18 @@ export const spec = {
 
   buildRequests: function(validBidRequests, bidderRequest) {
     // device.connectiontype
-    let connection = navigator.connection || navigator.webkitConnection;
-    let connectiontype = 'unknown';
+    let connection = window.navigator && (window.navigator.connection || window.navigator.mozConnection || window.navigator.webkitConnection)
+    let connectionType = 'unknown';
+    let effectiveType = '';
 
-    if (connection && connection.effectiveType) {
-      connectiontype = connection.effectiveType;
+    if (connection) {
+      if (connection.type) {
+        connectionType = connection.type;
+      }
+
+      if (connection.effectiveType) {
+        effectiveType = connection.effectiveType;
+      }
     }
 
     const requests = validBidRequests.map(validBidRequest => {
@@ -105,7 +112,8 @@ export const spec = {
         app,
         site,
         validBidRequest,
-        connectiontype,
+        connectionType,
+        effectiveType,
         devicetype: isMobile() ? 1 : isConnectedTV() ? 3 : 2,
         bidfloor: getBidFloor(validBidRequest),
         dnt: (navigator.doNotTrack === 'yes' || navigator.doNotTrack === '1' || navigator.msDoNotTrack === '1') ? 1 : 0,
@@ -132,15 +140,17 @@ export const spec = {
   },
 
   interpretResponse: function(serverResponse) {
-    if (!utils.isArray(serverResponse)) {
+    const response = serverResponse ? serverResponse.body : [];
+
+    if (!isArray(response)) {
       return [];
     }
 
     const responses = [];
 
-    for (const response of serverResponse) {
-      if (response.requestId) {
-        responses.push(Object.assign(response, {
+    for (const resp of response) {
+      if (resp.requestId) {
+        responses.push(Object.assign(resp, {
           ttl: config.getConfig('_bidderTimeout')
         }));
       }
@@ -150,9 +160,9 @@ export const spec = {
   },
 
   onTimeout: function(timeoutData) {
-    const params = utils.deepAccess(timeoutData, '0.params.0');
+    const params = deepAccess(timeoutData, '0.params.0');
 
-    if (!utils.isEmpty(params)) {
+    if (!isEmpty(params)) {
       ajax(getURL(params, 'prebid/timeout'), null, timeoutData[0], {
         method: 'POST',
         options: {
@@ -163,15 +173,12 @@ export const spec = {
     }
   },
 
-  onBidWon: function(bids) {
-    for (const bid of bids) {
-      const { nurl } = bid || {};
+  onBidWon: function(bid) {
+    const { nurl } = bid || {};
 
-      if (bid.nurl) {
-        utils.replaceAuctionPrice(nurl, bid.cpm)
-        utils.triggerPixel(nurl);
-      };
-    }
+    if (bid.nurl) {
+      triggerPixel(replaceAuctionPrice(nurl, bid.cpm));
+    };
   }
 }
 

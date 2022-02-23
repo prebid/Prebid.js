@@ -255,7 +255,8 @@ describe('Hybrid.ai Adapter', function() {
                   currency: 'USD',
                   content: 'html',
                   width: 100,
-                  height: 100
+                  height: 100,
+                  advertiserDomains: ['hybrid.ai']
                 }
               ]
             }
@@ -269,6 +270,7 @@ describe('Hybrid.ai Adapter', function() {
           expect(bids[0].height).to.equal(100)
           expect(bids[0].currency).to.equal('USD')
           expect(bids[0].netRevenue).to.equal(true)
+          expect(bids[0].meta.advertiserDomains).to.deep.equal(['hybrid.ai'])
           expect(typeof bids[0].ad).to.equal('string')
         })
         it('should return a In-Image bid', function() {

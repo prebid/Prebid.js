@@ -1,19 +1,18 @@
 import {expect} from 'chai';
-import {spec} from 'modules/mantisBidAdapter.js';
+import {spec, storage} from 'modules/mantisBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
 import {sfPostMessage, iframePostMessage} from 'modules/mantisBidAdapter';
 
 describe('MantisAdapter', function () {
   const adapter = newBidder(spec);
-  let sandbox;
+  const sandbox = sinon.sandbox.create();
   let clock;
 
-  beforeEach(function() {
-    sandbox = sinon.sandbox.create();
+  beforeEach(function () {
     clock = sandbox.useFakeTimers();
   });
 
-  afterEach(function() {
+  afterEach(function () {
     sandbox.restore();
   });
 
@@ -171,13 +170,12 @@ describe('MantisAdapter', function () {
     });
 
     it('use storage uuid', function () {
-      window.localStorage.setItem('mantis:uuid', 'bar');
+      sandbox.stub(storage, 'hasLocalStorage').callsFake(() => true);
+      sandbox.stub(storage, 'getDataFromLocalStorage').withArgs('mantis:uuid').returns('bar');
 
       const request = spec.buildRequests(bidRequests);
 
       expect(request.url).to.include('uuid=bar');
-
-      window.localStorage.removeItem('mantis:uuid');
     });
 
     it('detect amp', function () {
@@ -249,6 +247,9 @@ describe('MantisAdapter', function () {
           ad: '<!-- Creative -->',
           creativeId: 'view',
           netRevenue: true,
+          meta: {
+            advertiserDomains: []
+          },
           currency: 'USD'
         }
       ];
@@ -268,6 +269,7 @@ describe('MantisAdapter', function () {
               bid: 'bid',
               cpm: 1,
               view: 'view',
+              domains: ['foobar.com'],
               width: 300,
               height: 250,
               html: '<!-- Creative -->'
@@ -286,6 +288,9 @@ describe('MantisAdapter', function () {
           ad: '<!-- Creative -->',
           creativeId: 'view',
           netRevenue: true,
+          meta: {
+            advertiserDomains: ['foobar.com']
+          },
           currency: 'USD'
         }
       ];
@@ -305,6 +310,7 @@ describe('MantisAdapter', function () {
               cpm: 1,
               view: 'view',
               width: 300,
+              domains: ['foobar.com'],
               height: 250,
               html: '<!-- Creative -->'
             }
@@ -322,15 +328,22 @@ describe('MantisAdapter', function () {
           ad: '<!-- Creative -->',
           creativeId: 'view',
           netRevenue: true,
+          meta: {
+            advertiserDomains: ['foobar.com']
+          },
           currency: 'USD'
         }
       ];
       let bidderRequest;
 
+      sandbox.stub(storage, 'hasLocalStorage').returns(true);
+      const spy = sandbox.spy(storage, 'setDataInLocalStorage');
+
       let result = spec.interpretResponse(response, {bidderRequest});
+
+      expect(spy.calledWith('mantis:uuid', 'uuid'));
       expect(result[0]).to.deep.equal(expectedResponse[0]);
       expect(window.mantis_uuid).to.equal(response.body.uuid);
-      expect(window.localStorage.getItem('mantis:uuid')).to.equal(response.body.uuid);
     });
 
     it('no ads returned', function () {

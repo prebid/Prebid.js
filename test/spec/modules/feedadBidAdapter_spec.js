@@ -13,7 +13,7 @@ describe('FeedAdAdapter', function () {
     it('should only support video and banner ads', function () {
       expect(spec.supportedMediaTypes).to.be.a('array');
       expect(spec.supportedMediaTypes).to.include(BANNER);
-      expect(spec.supportedMediaTypes).to.include(VIDEO);
+      expect(spec.supportedMediaTypes).not.to.include(VIDEO);
       expect(spec.supportedMediaTypes).not.to.include(NATIVE);
     });
     it('should export the BidderSpec functions', function () {
@@ -23,6 +23,9 @@ describe('FeedAdAdapter', function () {
       expect(spec.onTimeout).to.be.a('function');
       expect(spec.onBidWon).to.be.a('function');
     });
+    it('should export the TCF vendor ID', function () {
+      expect(spec.gvlid).to.equal(781);
+    })
   });
 
   describe('isBidRequestValid', function () {
@@ -168,6 +171,21 @@ describe('FeedAdAdapter', function () {
       expect(result.data.bids).to.be.lengthOf(1);
       expect(result.data.bids[0]).to.deep.equal(bid);
     });
+    it('should pass through additional bid parameters', function () {
+      let bid = {
+        code: 'feedad',
+        mediaTypes: {
+          banner: {
+            sizes: [[320, 250]]
+          }
+        },
+        params: {clientToken: 'clientToken', placementId: 'placement-id', another: 'parameter', more: 'parameters'}
+      };
+      let result = spec.buildRequests([bid], bidderRequest);
+      expect(result.data.bids).to.be.lengthOf(1);
+      expect(result.data.bids[0].params.another).to.equal('parameter');
+      expect(result.data.bids[0].params.more).to.equal('parameters');
+    });
     it('should detect empty media types', function () {
       let bid = {
         code: 'feedad',
@@ -247,6 +265,40 @@ describe('FeedAdAdapter', function () {
       };
       let result = spec.buildRequests([bid, bid, bid]);
       expect(result).to.be.empty;
+    });
+    it('should not include GDPR data if the bidder request has none available', function () {
+      let bid = {
+        code: 'feedad',
+        mediaTypes: {
+          banner: {
+            sizes: [[320, 250]]
+          }
+        },
+        params: {clientToken: 'clientToken', placementId: 'placement-id'}
+      };
+      let result = spec.buildRequests([bid], bidderRequest);
+      expect(result.data.gdprApplies).to.be.undefined;
+      expect(result.data.consentIabTcf).to.be.undefined;
+    });
+    it('should include GDPR data if the bidder requests contains it', function () {
+      let bid = {
+        code: 'feedad',
+        mediaTypes: {
+          banner: {
+            sizes: [[320, 250]]
+          }
+        },
+        params: {clientToken: 'clientToken', placementId: 'placement-id'}
+      };
+      let request = Object.assign({}, bidderRequest, {
+        gdprConsent: {
+          consentString: 'the consent string',
+          gdprApplies: true
+        }
+      });
+      let result = spec.buildRequests([bid], request);
+      expect(result.data.gdprApplies).to.equal(request.gdprConsent.gdprApplies);
+      expect(result.data.consentIabTcf).to.equal(request.gdprConsent.consentString);
     });
   });
 
@@ -404,7 +456,7 @@ describe('FeedAdAdapter', function () {
             prebid_bid_id: bidId,
             prebid_transaction_id: transactionId,
             referer,
-            sdk_version: '1.0.0'
+            sdk_version: '1.0.2'
           };
           subject(data);
           expect(server.requests.length).to.equal(1);

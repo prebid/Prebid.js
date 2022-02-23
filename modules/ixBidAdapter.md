@@ -13,30 +13,10 @@ Description
 This module connects publishers to Index Exchange's (IX) network of demand
 sources through Prebid.js. This module is GDPR and CCPA compliant.
 
-It is compatible with both the older ad unit format where the `sizes` and
-`mediaType` properties are placed at the top-level of the ad unit, and the newer
-format where this information is encapsulated within the `mediaTypes` object. We
-recommend that you use the newer format when possible as it will be better able
+It is compatible with the newer PrebidJS 5.0 ad unit format where the `banner` and/or `video` properties are encapsulated within the `adUnits[].mediaTypes` object. We
+recommend that you use this newer format when possible as it will be better able
 to accommodate new feature additions.
 
-If a mix of properties from both formats are present within an ad unit, the
-newer format's properties will take precedence.
-
-Here are examples of both formats.
-
-##### Older Format
-```javascript
-var adUnits = [{
-    // ...
-
-    sizes: [
-        [300, 250],
-        [300, 600]
-    ]
-
-    // ...
-}];
-```
 
 ##### Newer Format
 ```javascript
@@ -51,10 +31,7 @@ var adUnits = [{
         },
         video: {
             context: 'instream',
-            playerSize: [
-                [300, 250],
-                [300, 600]
-            ]
+            playerSize: [300, 250]
         }
     },
     // ...
@@ -69,29 +46,58 @@ var adUnits = [{
 | Video  | Fully supported for all IX approved sizes.
 | Native | Not supported.
 
-# Bid Parameters
+
+
+# Ad unit or Bidder Parameters
+
+These params can be specified in the ad unit level `adUnits[].mediaTypes`, which will be the preferred way going forward with PBJS 5.0
 
 Each of the IX-specific parameters provided under the `adUnits[].bids[].params`
 object are detailed here.
+
 
 ### Banner
 
 | Key | Scope | Type | Description
 | --- | --- | --- | ---
-| siteId | Required | String | An IX-specific identifier that is associated with a specific size on this ad unit. This is similar to a placement ID or an ad unit ID that some other modules have. Examples: `'3723'`, `'6482'`, `'3639'`
-| size | Required | Number[] | The single size associated with the site ID. It should be one of the sizes listed in the ad unit under `adUnits[].sizes` or `adUnits[].mediaTypes.banner.sizes`. Examples: `[300, 250]`, `[300, 600]`, `[728, 90]`
+| siteId | Required | String | An IX-specific identifier that is associated with this ad unit. It will be associated to the single size, if the size provided. This is similar to a placement ID or an ad unit ID that some other modules have. Examples: `'3723'`, `'6482'`, `'3639'`
+| sizes | Required | Number[Number[]] | The size / sizes associated with the site ID. It should be one of the sizes listed in the ad unit under `adUnits[].mediaTypes.banner.sizes`. Examples: `[300, 250]`, `[300, 600]`, `[728, 90]`
 
 ### Video
 
 | Key | Scope | Type | Description
 | --- | --- | --- | ---
-| siteId | Required | String | An IX-specific identifier that is associated with a specific size on this ad unit. This is similar to a placement ID or an ad unit ID that some other modules have. Examples: `'3723'`, `'6482'`, `'3639'`
-| size | Required | Number[] | The single size associated with the site ID. It should be one of the sizes listed in the ad unit under `adUnits[].sizes` or `adUnits[].mediaTypes.video.playerSize`. Examples: `[300, 250]`, `[300, 600]`
-| video | Required | Hash | The video object will serve as the properties of the video ad. You can create any field under the video object that is mentioned in the `OpenRTB Spec v2.5`. Some fields like `mimes, protocols, minduration, maxduration` are required. Properties not defined at this level, will be pulled from the Adunit level.
+| siteId | Required | String | An IX-specific identifier that is associated with this ad unit. It will be associated to the single size, if the size is provided. This is similar to a placement ID or an ad unit ID that some other modules have. Examples: `'3723'`, `'6482'`, `'3639'`
+| size | Optional (Deprecated)| Number[] | The single size associated with the site ID. It should be one of the sizes listed in the ad unit under `adUnits[].sizes` or `adUnits[].mediaTypes.video.playerSize`. Examples: `[300, 250]`, `[300, 600]`
+| video | Optional | Hash | The video object will serve as the properties of the video ad. You can create any field under the video object that is mentioned in the `OpenRTB Spec v2.5`. Some fields like `mimes, protocols, minduration, maxduration` are required. Properties not defined at this level, will be pulled from the Adunit level.
+|video.w| Required | Integer | The video player size width in pixels that will be passed to demand partners.
+|video.h| Required | Integer | The video player size height in pixels that will be passed to demand partners.
+|video.playerSize| Optional* | Integer | The video player size that will be passed to demand partners. * In the absence of `video.w` and `video.h`, this field is required.
 | video.mimes | Required | String[] | Array list of content MIME types supported. Popular MIME types include, but are not limited to, `"video/x-ms- wmv"` for Windows Media and `"video/x-flv"` for Flash Video.
 |video.minduration| Required | Integer | Minimum video ad duration in seconds.
 |video.maxduration| Required | Integer | Maximum video ad duration in seconds.
 |video.protocol / video.protocols| Required | Integer / Integer[] | Either a single protocol provided as an integer, or protocols provided as a list of integers. `2` - VAST 2.0, `3` - VAST 3.0, `5` - VAST 2.0 Wrapper, `6` - VAST 3.0 Wrapper
+
+## Deprecation warning
+
+We are deprecating the older format
+of having `mediaType` and `sizes` at the ad unit level.
+
+Here are examples of the format.
+
+##### Older Deprecated Format
+```javascript
+var adUnits = [{
+    // ...
+
+    sizes: [
+        [300, 250],
+        [300, 600]
+    ]
+
+    // ...
+}];
+```
 
 
 Setup Guide
@@ -100,9 +106,14 @@ Setup Guide
 Follow these steps to configure and add the IX module to your Prebid.js
 integration.
 
+Both video and banner params will be read from the `adUnits[].mediaTypes.video` and `adUnits[].mediaTypes.banner` respectively.
+
 The examples in this guide assume the following starting configuration (you may remove banner or video, if either does not apply).
 
+
 In regards to video, `context` can either be `'instream'` or `'outstream'`. Note that `outstream` requires additional configuration on the adUnit.
+
+
 
 ```javascript
 var adUnits = [{
@@ -134,21 +145,23 @@ var adUnits = [{
 
 ### 1. Add IX to the appropriate ad units
 
-For each size in an ad unit that IX will be bidding on, add one of the following
+For each ad unit that IX will be bidding on, add one of the following
 bid objects under `adUnits[].bids`:
+- size is optional and deprecated
 
 ```javascript
 {
     bidder: 'ix',
     params: {
         siteId: '',
-        size: []
+        size: [] // deprecated
     }
 }
 ```
 
-Set `params.siteId` and `params.size` in each bid object to the values provided
+Set `params.siteId` in the bid object to the values provided
 by your IX representative.
+- `params.size` is not required anymore
 
 **Examples**
 
@@ -167,14 +180,7 @@ var adUnits = [{
     bids: [{
         bidder: 'ix',
         params: {
-            siteId: '12345',
-            size: [300, 250]
-        }
-    }, {
-        bidder: 'ix',
-        params: {
-            siteId: '12345',
-            size: [300, 600]
+            siteId: '12345'
         }
     }]
 }];
@@ -185,35 +191,30 @@ var adUnits = [{
     code: 'video-div-a',
     mediaTypes: {
         video: {
+            // Preferred location for openrtb v2.5 compatible video obj
             context: 'instream',
-            playerSize: [
-                [300, 250],
-                [300, 600]
-            ]
+            playerSize: [300, 250],
+            mimes: [
+                    'video/mp4',
+                    'video/webm'
+                ],
+            minduration: 0,
+            maxduration: 60,
+            protocols: [6]
         }
     },
     bids: [{
         bidder: 'ix',
         params: {
-            siteId: '12345',
-            size: [300, 250],
-            video: {
-                mimes: [
-                    'video/mp4',
-                    'video/webm'
-                ],
-                minduration: 0,
-                maxduration: 60,
-                protocols: [6]
-            }
+            siteId: '12345'
         }
     }, {
         bidder: 'ix',
         params: {
             siteId: '12345',
-            size: [300, 600],
             video: {
                 // openrtb v2.5 compatible video obj
+                // If required, use this to override mediaTypes.video.XX properties
             }
         }
     }]
@@ -231,7 +232,14 @@ var adUnits = [{
     mediaTypes: {
         video: {
             context: 'outstream',
-            playerSize: [[300, 250]]
+            playerSize: [300, 250],
+            mimes: [
+                    'video/mp4',
+                    'video/webm'
+                ],
+            minduration: 0,
+            maxduration: 60,
+            protocols: [6]
         }
     },
     renderer: {
@@ -244,15 +252,8 @@ var adUnits = [{
         bidder: 'ix',
         params: {
             siteId: '12345',
-            size: [300, 250],
             video: {
-                mimes: [
-                    'video/mp4',
-                    'video/webm'
-                ],
-                minduration: 0,
-                maxduration: 60,
-                protocols: [6]
+                // If required, use this to override mediaTypes.video.XX properties   
             }
         }
     }]
@@ -413,11 +414,9 @@ FAQs
 
 ### Why do I have to input size in `adUnits[].bids[].params` for IX when the size is already in the ad unit?
 
-There is one important reason why we recommend it:
+No, only `siteId` is required.
 
-1. An IX site ID is recommended to map to a single size, whereas an ad unit can have multiple
-sizes. To ensure that the right site ID is mapped to the correct size in the ad unit, 
-we require the size to be explicitly stated or our bidder will auto assign the site ID to sizes that are not assigned.
+The `size` parameter is no longer a required field, the `siteId` will now be associated with all the sizes in the ad unit.
 
 ### How do I view IX's bid request in the network?
 

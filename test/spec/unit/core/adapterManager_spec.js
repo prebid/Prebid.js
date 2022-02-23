@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import adapterManager, { allS2SBidders, clientTestAdapters, gdprDataHandler } from 'src/adapterManager.js';
+import adapterManager, { allS2SBidders, clientTestAdapters, gdprDataHandler, coppaDataHandler } from 'src/adapterManager.js';
 import {
   getAdUnits,
   getServerTestingConfig,
@@ -14,6 +14,7 @@ import { setSizeConfig } from 'src/sizeMapping.js';
 import find from 'core-js-pure/features/array/find.js';
 import includes from 'core-js-pure/features/array/includes.js';
 import s2sTesting from 'modules/s2sTesting.js';
+import {hook} from '../../../../src/hook.js';
 var events = require('../../../../src/events');
 
 const CONFIG = {
@@ -90,6 +91,7 @@ describe('adapterManager tests', function () {
   describe('callBids', function () {
     before(function () {
       config.setConfig({s2sConfig: { enabled: false }});
+      hook.ready();
     });
 
     beforeEach(function () {
@@ -162,7 +164,7 @@ describe('adapterManager tests', function () {
         'bidderCode': 'appnexus',
         'auctionId': '1863e370099523',
         'bidderRequestId': '2946b569352ef2',
-        'tid': '34566b569352ef2',
+        'uniquePbsTid': '34566b569352ef2',
         'bids': [
           {
             'bidder': 'appnexus',
@@ -436,6 +438,38 @@ describe('adapterManager tests', function () {
     });
   }); // end onBidViewable
 
+  describe('onBidderError', function () {
+    const bidder = 'appnexus';
+    const appnexusSpec = { onBidderError: sinon.stub() };
+    const appnexusAdapter = {
+      bidder,
+      getSpec: function() { return appnexusSpec; },
+    }
+    before(function () {
+      config.setConfig({s2sConfig: { enabled: false }});
+    });
+
+    beforeEach(function () {
+      adapterManager.bidderRegistry[bidder] = appnexusAdapter;
+    });
+
+    afterEach(function () {
+      delete adapterManager.bidderRegistry[bidder];
+    });
+
+    it('should call spec\'s onBidderError callback when callBidderError is called', function () {
+      const bidRequests = getBidRequests();
+      const bidderRequest = find(bidRequests, bidRequest => bidRequest.bidderCode === bidder);
+      const xhrErrorMock = {
+        status: 500,
+        statusText: 'Internal Server Error'
+      };
+      adapterManager.callBidderError(bidder, xhrErrorMock, bidderRequest);
+      sinon.assert.calledOnce(appnexusSpec.onBidderError);
+      sinon.assert.calledWithExactly(appnexusSpec.onBidderError, { error: xhrErrorMock, bidderRequest });
+    });
+  }); // end onBidderError
+
   describe('S2S tests', function () {
     beforeEach(function () {
       config.setConfig({s2sConfig: CONFIG});
@@ -447,7 +481,7 @@ describe('adapterManager tests', function () {
       'bidderCode': 'appnexus',
       'auctionId': '1863e370099523',
       'bidderRequestId': '2946b569352ef2',
-      'tid': '34566b569352ef2',
+      'uniquePbsTid': '34566b569352ef2',
       'timeout': 1000,
       'src': 's2s',
       'adUnitsS2SCopy': [
@@ -676,7 +710,7 @@ describe('adapterManager tests', function () {
       'bidderCode': 'appnexus',
       'auctionId': '1863e370099523',
       'bidderRequestId': '2946b569352ef2',
-      'tid': '34566b569352ef2',
+      'uniquePbsTid': '34566b569352ef2',
       'timeout': 1000,
       'src': 's2s',
       'adUnitsS2SCopy': [
@@ -812,7 +846,7 @@ describe('adapterManager tests', function () {
       'bidderCode': 'pubmatic',
       'auctionId': '1863e370099523',
       'bidderRequestId': '2946b569352ef2',
-      'tid': '2342342342lfi23',
+      'uniquePbsTid': '2342342342lfi23',
       'timeout': 1000,
       'src': 's2s',
       'adUnitsS2SCopy': [
@@ -1007,6 +1041,21 @@ describe('adapterManager tests', function () {
         adapterManager.callBids(adUnits, bidRequests, () => {}, () => {});
         expect(cnt).to.equal(2);
         sinon.assert.calledTwice(prebidServerAdapterMock.callBids);
+      });
+
+      it('should have one tid for ALL s2s bidRequests', function () {
+        let adUnits = utils.deepClone(getAdUnits()).map(adUnit => {
+          adUnit.bids = adUnit.bids.filter(bid => includes(['appnexus', 'pubmatic'], bid.bidder));
+          return adUnit;
+        })
+        let bidRequests = adapterManager.makeBidRequests(adUnits, 1111, 2222, 1000);
+        adapterManager.callBids(adUnits, bidRequests, () => {}, () => {});
+        sinon.assert.calledTwice(prebidServerAdapterMock.callBids);
+        const firstBid = prebidServerAdapterMock.callBids.firstCall.args[0];
+        const secondBid = prebidServerAdapterMock.callBids.secondCall.args[0];
+
+        // TIDS should be the same
+        expect(firstBid.tid).to.equal(secondBid.tid);
       });
 
       it('should fire for simultaneous s2s and client requests', function () {
@@ -1621,6 +1670,26 @@ describe('adapterManager tests', function () {
       })
     });
 
+    it('should add nativeParams to adUnits after BEFORE_REQUEST_BIDS', () => {
+      function beforeReqBids(adUnits) {
+        adUnits.forEach(adUnit => {
+          adUnit.mediaTypes.native = {
+            type: 'image',
+          }
+        })
+      }
+      events.on(CONSTANTS.EVENTS.BEFORE_REQUEST_BIDS, beforeReqBids);
+      adapterManager.makeBidRequests(
+        adUnits,
+        Date.now(),
+        utils.getUniqueIdentifierStr(),
+        function callback() {},
+        []
+      );
+      events.off(CONSTANTS.EVENTS.BEFORE_REQUEST_BIDS, beforeReqBids);
+      expect(adUnits.map((u) => u.nativeParams).some(i => i == null)).to.be.false;
+    });
+
     it('should make separate bidder request objects for each bidder', () => {
       adUnits = [utils.deepClone(getAdUnits()[0])];
 
@@ -1665,14 +1734,17 @@ describe('adapterManager tests', function () {
     });
 
     describe('sizeMapping', function () {
+      let sandbox;
       beforeEach(function () {
+        sandbox = sinon.sandbox.create();
         allS2SBidders.length = 0;
         clientTestAdapters.length = 0;
-        sinon.stub(window, 'matchMedia').callsFake(() => ({matches: true}));
+        // always have matchMedia return true for us
+        sandbox.stub(utils.getWindowTop(), 'matchMedia').callsFake(() => ({matches: true}));
       });
 
       afterEach(function () {
-        matchMedia.restore();
+        sandbox.restore();
         config.resetConfig();
         setSizeConfig([]);
       });
@@ -1904,7 +1976,25 @@ describe('adapterManager tests', function () {
         expect(bidRequests[0].gdprConsent).to.be.undefined;
       });
     });
-
+    describe('coppa consent module', function () {
+      afterEach(() => {
+        config.resetConfig();
+      });
+      it('test coppa configuration with value false', function () {
+        config.setConfig({ coppa: 0 });
+        const coppa = coppaDataHandler.getCoppa();
+        expect(coppa).to.be.false;
+      });
+      it('test coppa configuration with value true', function () {
+        config.setConfig({ coppa: 1 });
+        const coppa = coppaDataHandler.getCoppa();
+        expect(coppa).to.be.true;
+      });
+      it('test coppa configuration', function () {
+        const coppa = coppaDataHandler.getCoppa();
+        expect(coppa).to.be.false;
+      });
+    });
     describe('s2sTesting - testServerOnly', () => {
       beforeEach(() => {
         config.setConfig({ s2sConfig: getServerTestingConfig(CONFIG) });

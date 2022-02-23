@@ -12,8 +12,6 @@ Module that connects to pubGENIUS's demand sources
 
 # Test Parameters
 
-Test bids have $0.01 CPM by default. Use `bidFloor` in bidder params to control CPM for testing purposes.
-
 ```
 var adUnits = [
   {
@@ -45,7 +43,6 @@ var adUnits = [
         bidder: 'pubgenius',
         params: {
           adUnitId: '1000',
-          bidFloor: 0.5,
           test: true
         }
       }
@@ -66,19 +63,18 @@ var adUnits = [
         bidder: 'pubgenius',
         params: {
           adUnitId: '1001',
-          bidFloor: 1,
           test: true,
 
-          // other video parameters as in OpenRTB v2.5 spec
+          // Other video parameters can be put here as in OpenRTB v2.5 spec.
+          // This overrides the same parameters in mediaTypes.video.
           video: {
-            skip: 1
-
-            // the following overrides mediaTypes.video of the ad unit
             placement: 1,
+
+            // w and h overrides mediaTypes.video.playerSize.
             w: 640,
             h: 360,
-            mimes: ['video/mp4'],
-            protocols: [3],
+
+            skip: 1
           }
         }
       }

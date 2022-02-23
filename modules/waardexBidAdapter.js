@@ -1,7 +1,7 @@
+import { logError, isArray, deepAccess, getBidIdParameter } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
-import * as utils from '../src/utils.js';
 import find from 'core-js-pure/features/array/find.js';
 
 const ENDPOINT = `https://hb.justbidit.xyz:8843/prebid`;
@@ -9,38 +9,38 @@ const BIDDER_CODE = 'waardex';
 
 const isBidRequestValid = bid => {
   if (!bid.bidId) {
-    utils.logError(BIDDER_CODE + ': bid.bidId should be non-empty');
+    logError(BIDDER_CODE + ': bid.bidId should be non-empty');
     return false;
   }
 
   if (!bid.params) {
-    utils.logError(BIDDER_CODE + ': bid.params should be non-empty');
+    logError(BIDDER_CODE + ': bid.params should be non-empty');
     return false;
   }
 
   if (!+bid.params.zoneId) {
-    utils.logError(BIDDER_CODE + ': bid.params.zoneId should be non-empty Number');
+    logError(BIDDER_CODE + ': bid.params.zoneId should be non-empty Number');
     return false;
   }
 
   if (bid.mediaTypes && bid.mediaTypes.video) {
     if (!bid.mediaTypes.video.playerSize) {
-      utils.logError(BIDDER_CODE + ': bid.mediaTypes.video.playerSize should be non-empty');
+      logError(BIDDER_CODE + ': bid.mediaTypes.video.playerSize should be non-empty');
       return false;
     }
 
-    if (!utils.isArray(bid.mediaTypes.video.playerSize)) {
-      utils.logError(BIDDER_CODE + ': bid.mediaTypes.video.playerSize should be an Array');
+    if (!isArray(bid.mediaTypes.video.playerSize)) {
+      logError(BIDDER_CODE + ': bid.mediaTypes.video.playerSize should be an Array');
       return false;
     }
 
     if (!bid.mediaTypes.video.playerSize[0]) {
-      utils.logError(BIDDER_CODE + ': bid.mediaTypes.video.playerSize should be non-empty');
+      logError(BIDDER_CODE + ': bid.mediaTypes.video.playerSize should be non-empty');
       return false;
     }
 
-    if (!utils.isArray(bid.mediaTypes.video.playerSize[0])) {
-      utils.logError(BIDDER_CODE + ': bid.mediaTypes.video.playerSize should be non-empty Array');
+    if (!isArray(bid.mediaTypes.video.playerSize[0])) {
+      logError(BIDDER_CODE + ': bid.mediaTypes.video.playerSize should be non-empty Array');
       return false;
     }
   }
@@ -95,7 +95,7 @@ const getBidRequestsToSend = validBidRequests => {
 const getBidRequestToSend = validBidRequest => {
   const result = {
     bidId: validBidRequest.bidId,
-    bidfloor: parseFloat(validBidRequest.params.bidfloor) || 0,
+    bidfloor: 0,
     position: parseInt(validBidRequest.params.position) || 1,
     instl: parseInt(validBidRequest.params.instl) || 0,
   };
@@ -139,22 +139,22 @@ const transformSizes = requestSizes => {
 
 const createVideoObject = (videoMediaTypes, videoParams) => {
   return {
-    w: utils.deepAccess(videoMediaTypes, 'playerSize')[0][0],
-    h: utils.deepAccess(videoMediaTypes, 'playerSize')[0][1],
-    mimes: utils.getBidIdParameter('mimes', videoParams) || ['application/javascript', 'video/mp4', 'video/webm'],
-    minduration: utils.getBidIdParameter('minduration', videoParams) || 0,
-    maxduration: utils.getBidIdParameter('maxduration', videoParams) || 500,
-    protocols: utils.getBidIdParameter('protocols', videoParams) || [2, 3, 5, 6],
-    startdelay: utils.getBidIdParameter('startdelay', videoParams) || 0,
-    placement: utils.getBidIdParameter('placement', videoParams) || videoMediaTypes.context === 'outstream' ? 3 : 1,
-    skip: utils.getBidIdParameter('skip', videoParams) || 1,
-    skipafter: utils.getBidIdParameter('skipafter', videoParams) || 0,
-    minbitrate: utils.getBidIdParameter('minbitrate', videoParams) || 0,
-    maxbitrate: utils.getBidIdParameter('maxbitrate', videoParams) || 3500,
-    delivery: utils.getBidIdParameter('delivery', videoParams) || [2],
-    playbackmethod: utils.getBidIdParameter('playbackmethod', videoParams) || [1, 2, 3, 4],
-    api: utils.getBidIdParameter('api', videoParams) || [2],
-    linearity: utils.getBidIdParameter('linearity', videoParams) || 1
+    w: deepAccess(videoMediaTypes, 'playerSize')[0][0],
+    h: deepAccess(videoMediaTypes, 'playerSize')[0][1],
+    mimes: getBidIdParameter('mimes', videoParams) || ['application/javascript', 'video/mp4', 'video/webm'],
+    minduration: getBidIdParameter('minduration', videoParams) || 0,
+    maxduration: getBidIdParameter('maxduration', videoParams) || 500,
+    protocols: getBidIdParameter('protocols', videoParams) || [2, 3, 5, 6],
+    startdelay: getBidIdParameter('startdelay', videoParams) || 0,
+    placement: getBidIdParameter('placement', videoParams) || videoMediaTypes.context === 'outstream' ? 3 : 1,
+    skip: getBidIdParameter('skip', videoParams) || 1,
+    skipafter: getBidIdParameter('skipafter', videoParams) || 0,
+    minbitrate: getBidIdParameter('minbitrate', videoParams) || 0,
+    maxbitrate: getBidIdParameter('maxbitrate', videoParams) || 3500,
+    delivery: getBidIdParameter('delivery', videoParams) || [2],
+    playbackmethod: getBidIdParameter('playbackmethod', videoParams) || [1, 2, 3, 4],
+    api: getBidIdParameter('api', videoParams) || [2],
+    linearity: getBidIdParameter('linearity', videoParams) || 1
   };
 };
 

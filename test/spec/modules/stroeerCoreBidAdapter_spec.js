@@ -429,6 +429,15 @@ describe('stroeerCore bid adapter', function () {
       const result = spec.interpretResponse({body: {bids: []}});
       assert.deepStrictEqual(result, []);
     });
+
+    it('should add data to meta object', () => {
+      const response = buildBidderResponse();
+      response.bids[0] = Object.assign(response.bids[0], {adomain: ['website.org', 'domain.com']});
+      const result = spec.interpretResponse({body: response});
+      assert.deepPropertyVal(result[0], 'meta', {advertiserDomains: ['website.org', 'domain.com']});
+      // nothing provided for the second bid
+      assert.deepPropertyVal(result[1], 'meta', {advertiserDomains: undefined});
+    });
   });
 
   describe('get user syncs entry point', () => {

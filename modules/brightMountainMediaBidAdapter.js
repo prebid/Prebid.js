@@ -1,85 +1,145 @@
+import { generateUUID, deepAccess, logWarn, deepSetValue } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import * as utils from '../src/utils.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
 
-const BIDDER_CODE = 'brightmountainmedia';
-const AD_URL = 'https://console.brightmountainmedia.com/hb/bid';
+const BIDDER_CODE = 'bmtm';
+const AD_URL = 'https://one.elitebidder.com/api/hb?sid=';
+const SYNC_URL = 'https://console.brightmountainmedia.com:8443/cookieSync';
+const CURRENCY = 'USD';
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [BANNER, VIDEO, NATIVE],
+  aliases: ['brightmountainmedia'],
+  supportedMediaTypes: [BANNER, VIDEO],
 
   isBidRequestValid: (bid) => {
-    return Boolean(bid.bidId && bid.params && bid.params.placement_id);
+    if (bid.bidId && bid.bidder && bid.params && bid.params.placement_id) {
+      return true;
+    }
+    if (bid.params.placement_id == 0 && bid.params.test === 1) {
+      return true;
+    }
+    return false;
   },
 
   buildRequests: (validBidRequests, bidderRequest) => {
-    let winTop = window;
-    let location;
-    try {
-      location = new URL(bidderRequest.refererInfo.referer)
-      winTop = window.top;
-    } catch (e) {
-      location = winTop.location;
-      utils.logMessage(e);
+    let requestData = [];
+    let size = [0, 0];
+    let oRTBRequest = {
+      at: 2,
+      site: buildSite(bidderRequest),
+      device: buildDevice(),
+      cur: [CURRENCY],
+      tmax: 1000,
+      regs: buildRegs(bidderRequest),
+      user: {},
+      source: {},
     };
-    let placements = [];
-    let request = {
-      'deviceWidth': winTop.screen.width,
-      'deviceHeight': winTop.screen.height,
-      'language': (navigator && navigator.language) ? navigator.language : '',
-      'secure': 1,
-      'host': location.host,
-      'page': location.pathname,
-      'placements': placements
-    };
-    if (bidderRequest) {
-      if (bidderRequest.gdprConsent) {
-        request.gdpr_consent = bidderRequest.gdprConsent.consentString || 'ALL'
-        request.gdpr_require = bidderRequest.gdprConsent.gdprApplies ? 1 : 0
+
+    validBidRequests.forEach((bid) => {
+      oRTBRequest['id'] = generateUUID();
+      oRTBRequest['imp'] = [
+        {
+          id: '1',
+          bidfloor: 0,
+          bidfloorcur: CURRENCY,
+          secure: document.location.protocol === 'https:' ? 1 : 0,
+          ext: {
+            placement_id: bid.params.placement_id,
+            prebidVersion: '$prebid.version$',
+          }
+        },
+      ];
+
+      if (deepAccess(bid, 'mediaTypes.banner')) {
+        if (bid.mediaTypes.banner.sizes) {
+          size = bid.mediaTypes.banner.sizes[0];
+        }
+
+        oRTBRequest.imp[0].banner = {
+          h: size[0],
+          w: size[1],
+        }
+      } else {
+        if (bid.mediaTypes.video.playerSize) {
+          size = bid.mediaTypes.video.playerSize[0];
+        }
+
+        oRTBRequest.imp[0].video = {
+          h: size[0],
+          w: size[1],
+          mimes: bid.mediaTypes.video.mimes ? bid.mediaTypes.video.mimes : [],
+          skip: bid.mediaTypes.video.skip ? 1 : 0,
+          playbackmethod: bid.mediaTypes.video.playbackmethod ? bid.mediaTypes.video.playbackmethod : [],
+          protocols: bid.mediaTypes.video.protocols ? bid.mediaTypes.video.protocols : [],
+          api: bid.mediaTypes.video.api ? bid.mediaTypes.video.api : [],
+          minduration: bid.mediaTypes.video.minduration ? bid.mediaTypes.video.minduration : 1,
+          maxduration: bid.mediaTypes.video.maxduration ? bid.mediaTypes.video.maxduration : 999,
+        }
       }
-    }
-    for (let i = 0; i < validBidRequests.length; i++) {
-      let bid = validBidRequests[i];
-      let traff = bid.params.traffic || BANNER
-      let placement = {
-        placementId: bid.params.placement_id,
-        bidId: bid.bidId,
-        sizes: bid.mediaTypes[traff].sizes,
-        traffic: traff
-      };
-      if (bid.schain) {
-        placement.schain = bid.schain;
-      }
-      placements.push(placement);
-    }
-    return {
-      method: 'POST',
-      url: AD_URL,
-      data: request
-    };
+
+      oRTBRequest.imp[0].bidfloor = getFloor(bid, size);
+      oRTBRequest.user = getUserIdAsEids(bid.userIdAsEids)
+      oRTBRequest.source = getSchain(bid.schain)
+
+      requestData.push({
+        method: 'POST',
+        url: `${AD_URL}${bid.params.placement_id}`,
+        data: JSON.stringify(oRTBRequest),
+        bidRequest: bid,
+      })
+    });
+    return requestData;
   },
 
-  interpretResponse: (serverResponse) => {
-    let response = [];
-    try {
-      serverResponse = serverResponse.body;
-      for (let i = 0; i < serverResponse.length; i++) {
-        let resItem = serverResponse[i];
+  interpretResponse: (serverResponse, { bidRequest }) => {
+    let bidResponse = [];
+    let bid;
+    let response;
 
-        response.push(resItem);
-      }
+    try {
+      response = serverResponse.body
+      bid = response.seatbid[0].bid[0];
     } catch (e) {
-      utils.logMessage(e);
+      response = null;
+    }
+
+    if (!response || !bid || !bid.adm || !bid.price) {
+      logWarn(`Bidder ${spec.code} no valid bid`);
+      return [];
+    }
+
+    let tempResponse = {
+      requestId: bidRequest.bidId,
+      cpm: bid.price,
+      currency: response.cur,
+      width: bid.w,
+      height: bid.h,
+      creativeId: bid.crid,
+      mediaType: deepAccess(bidRequest, 'mediaTypes.banner') ? BANNER : VIDEO,
+      ttl: 3000,
+      netRevenue: true,
+      meta: {
+        advertiserDomains: bid.adomain
+      }
     };
-    return response;
+
+    if (tempResponse.mediaType === BANNER) {
+      tempResponse.ad = replaceAuctionPrice(bid.adm, bid.price);
+    } else {
+      tempResponse.vastXml = replaceAuctionPrice(bid.adm, bid.price);
+    }
+
+    bidResponse.push(tempResponse);
+    return bidResponse;
   },
 
   getUserSyncs: (syncOptions) => {
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
-        url: 'https://console.brightmountainmedia.com:8443/cookieSync'
+        url: SYNC_URL
       }];
     }
   },
@@ -87,3 +147,107 @@ export const spec = {
 };
 
 registerBidder(spec);
+
+function buildSite(bidderRequest) {
+  let site = {
+    name: window.location.hostname,
+    publisher: {
+      domain: window.location.hostname,
+    }
+  };
+
+  if (bidderRequest && bidderRequest.refererInfo) {
+    deepSetValue(
+      site,
+      'page',
+      bidderRequest.refererInfo.referer.href ? bidderRequest.refererInfo.referer.href : '',
+    );
+    deepSetValue(
+      site,
+      'ref',
+      bidderRequest.refererInfo.referer ? bidderRequest.refererInfo.referer : '',
+    );
+  }
+  return site;
+}
+
+function buildDevice() {
+  return {
+    ua: navigator.userAgent,
+    w: window.top.screen.width,
+    h: window.top.screen.height,
+    js: 1,
+    language: navigator.language,
+    dnt: navigator.doNotTrack === 'yes' || navigator.doNotTrack == '1' ||
+      navigator.msDoNotTrack == '1' ? 1 : 0,
+  }
+}
+
+function buildRegs(bidderRequest) {
+  let regs = {
+    coppa: config.getConfig('coppa') == true ? 1 : 0,
+  };
+
+  if (bidderRequest && bidderRequest.gdprConsent) {
+    deepSetValue(
+      regs,
+      'ext.gdpr',
+      bidderRequest.gdprConsent.gdprApplies ? 1 : 0,
+    );
+    deepSetValue(
+      regs,
+      'ext.gdprConsentString',
+      bidderRequest.gdprConsent.consentString || 'ALL',
+    );
+  }
+
+  if (bidderRequest && bidderRequest.uspConsent) {
+    deepSetValue(regs,
+      'ext.us_privacy',
+      bidderRequest.uspConsent);
+  }
+  return regs;
+}
+
+function replaceAuctionPrice(str, cpm) {
+  if (!str) return;
+  return str.replace(/\$\{AUCTION_PRICE\}/g, cpm);
+}
+
+function getFloor(bid, size) {
+  if (typeof bid.getFloor === 'function') {
+    let floorInfo = {};
+    floorInfo = bid.getFloor({
+      currency: 'USD',
+      mediaType: 'banner',
+      size: size,
+    });
+
+    if (typeof floorInfo === 'object' && floorInfo.currency === 'USD') {
+      return parseFloat(floorInfo.floor);
+    }
+  }
+  return 0;
+}
+
+function getUserIdAsEids(userIds) {
+  if (userIds) {
+    return {
+      ext: {
+        eids: userIds,
+      }
+    }
+  };
+  return {};
+}
+
+function getSchain(schain) {
+  if (schain) {
+    return {
+      ext: {
+        schain: schain,
+      }
+    }
+  }
+  return {};
+}

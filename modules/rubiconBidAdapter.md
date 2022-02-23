@@ -70,9 +70,9 @@ globalsupport@rubiconproject.com for more information.
        bids: [{
         bidder: 'rubicon',
         params: {
-            accountId: '7780',
-            siteId: '87184',
-            zoneId: '412394',
+            accountId: 7780,
+            siteId: 87184,
+            zoneId: 412394,
             video: {
                 language: 'en'
             }

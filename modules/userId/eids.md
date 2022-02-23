@@ -3,6 +3,14 @@
 ```
 userIdAsEids = [
     {
+        source: 'trustpid.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
+        }]
+    },
+
+    {
         source: 'pubcid.org',
         uids: [{
             id: 'some-random-id-value',
@@ -18,6 +26,22 @@ userIdAsEids = [
             ext: {
                 rtiPartner: 'TDID'
             }
+        }]
+    },
+
+    {
+        source: 'navegg.com',
+        uids: [{
+            id: 'naveggId',
+            atype: 1
+        }]
+    },
+
+    {
+        source: 'justtag.com',
+        uids: [{
+            id: 'justId',
+            atype: 1
         }]
     },
 
@@ -85,6 +109,14 @@ userIdAsEids = [
     },
 
     {
+        source: 'hcn.health',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3
+        }]
+    },
+
+    {
         source: 'criteo.com',
         uids: [{
             id: 'some-random-id-value',
@@ -101,18 +133,15 @@ userIdAsEids = [
     },
 
     {
-        source: 'sharedid.org',
+        source: 'zeotap.com',
         uids: [{
             id: 'some-random-id-value',
-            atype: 1,
-            ext: {
-                third: 'some-random-id-value'
-             }
-         }]
+            atype: 1
+        }]
     },
 
     {
-        source: 'zeotap.com',
+        source: 'nextroll.com',
         uids: [{
             id: 'some-random-id-value',
             atype: 1
@@ -143,11 +172,67 @@ userIdAsEids = [
         }]
     },
     {
+        source: 'mediawallahscript.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
+        }]
+    },
+    {
         source: 'tapad.com',
         uids: [{
             id: 'some-random-id-value',
             atype: 1
         }]
+    },
+    {
+        source: 'novatiq.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
+        }]
+    },
+    {
+        source: 'uidapi.com',
+        uids: [{
+            id: 'some-random-id-value',
+             atype: 3
+        }]
+    },
+    {
+    source: 'akamai.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
+        }]
+    },
+    {
+        source: 'admixer.net',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3
+        }]
+    },
+    {
+        source: 'deepintent.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3
+        }]
+    },
+    {
+         source: 'kpuid.com',
+         uids: [{
+              id: 'some-random-id-value',
+              atype: 3
+         }]
+    },
+    {
+         source: 'yahoo.com',
+         uids: [{
+              id: 'some-random-id-value',
+              atype: 3
+         }]
     }
 ]
 ```

@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { logError } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
@@ -40,7 +40,7 @@ export const spec = {
       uspConsent: bidderRequest.uspConsent,
       currencyCode: config.getConfig('currency.adServerCurrency'),
       coppa: config.getConfig('coppa'),
-      firstPartyData: config.getConfig('fpd'),
+      firstPartyData: config.getLegacyFpd(config.getConfig('ortb2')),
       prebidVersion: '$prebid.version$'
     };
 
@@ -83,7 +83,7 @@ export const spec = {
         bidResponses.push(bidResponse);
       }
     } catch (error) {
-      utils.logError('Error while parsing inmar response', error);
+      logError('Error while parsing inmar response', error);
     }
     return bidResponses;
   },

@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js'
+import { _map, logWarn, deepAccess, isArray } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import {BANNER, VIDEO} from '../src/mediaTypes.js'
 import find from 'core-js-pure/features/array/find.js';
@@ -11,7 +11,7 @@ const VIDEO_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVi
 const TTL = 60;
 
 function buildBidRequests(validBidRequests) {
-  return utils._map(validBidRequests, function(validBidRequest) {
+  return _map(validBidRequests, function(validBidRequest) {
     const params = validBidRequest.params;
     const bidRequest = {
       bidId: validBidRequest.bidId,
@@ -53,7 +53,7 @@ const createRenderer = (bid) => {
   try {
     renderer.setRender(outstreamRender);
   } catch (err) {
-    utils.logWarn('Prebid Error calling setRender on renderer', err);
+    logWarn('Prebid Error calling setRender on renderer', err);
   }
 
   return renderer;
@@ -70,7 +70,10 @@ function buildBid(bidData) {
     netRevenue: true,
     mediaType: BANNER,
     ttl: TTL,
-    content: bidData.content
+    content: bidData.content,
+    meta: {
+      advertiserDomains: bidData.advertiserDomains || [],
+    }
   };
 
   if (bidData.placement === 'video') {
@@ -108,8 +111,8 @@ function hasVideoMandatoryParams(mediaTypes) {
   const isHasVideoContext = !!mediaTypes.video && (mediaTypes.video.context === 'instream' || mediaTypes.video.context === 'outstream');
 
   const isPlayerSize =
-    !!utils.deepAccess(mediaTypes, 'video.playerSize') &&
-    utils.isArray(utils.deepAccess(mediaTypes, 'video.playerSize'));
+    !!deepAccess(mediaTypes, 'video.playerSize') &&
+    isArray(deepAccess(mediaTypes, 'video.playerSize'));
 
   return isHasVideoContext && isPlayerSize;
 }
@@ -129,7 +132,7 @@ function wrapInImageBanner(bid, bidData) {
         var s = document.getElementById("prebidrenderer");
         s.onload = function () {
           var _html = "${encodeURIComponent(JSON.stringify(bid))}";
-          window._ao_ssp.registerInImage(JSON.parse(decodeURIComponent(_html)));
+          window._hyb_prebid_ssp.registerInImage(JSON.parse(decodeURIComponent(_html)));
         }
         s.src = "https://st.hybrid.ai/prebidrenderer.js?t=" + Date.now();
         if (parent.window.frames[window.name]) {
@@ -157,7 +160,7 @@ function wrapBanner(bid, bidData) {
         var s = document.getElementById("prebidrenderer");
         s.onload = function () {
             var _html = "${encodeURIComponent(JSON.stringify(bid))}";
-            window._ao_ssp.registerAds(JSON.parse(decodeURIComponent(_html)));
+            window._hyb_prebid_ssp.registerAds(JSON.parse(decodeURIComponent(_html)));
         }
         s.src = "https://st.hybrid.ai/prebidrenderer.js?t=" + Date.now();
       </script>
@@ -228,8 +231,8 @@ export const spec = {
     let bidRequests = JSON.parse(bidRequest.data).bidRequests;
     const serverBody = serverResponse.body;
 
-    if (serverBody && serverBody.bids && utils.isArray(serverBody.bids)) {
-      return utils._map(serverBody.bids, function(bid) {
+    if (serverBody && serverBody.bids && isArray(serverBody.bids)) {
+      return _map(serverBody.bids, function(bid) {
         let rawBid = find(bidRequests, function (item) {
           return item.bidId === bid.bidId;
         });

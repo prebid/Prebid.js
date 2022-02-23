@@ -73,7 +73,10 @@ export const spec = {
           currency: matchedBid.currency,
           netRevenue: matchedBid.netRevenue,
           ttl: matchedBid.ttl,
-          ad: matchedBid.ad
+          ad: matchedBid.ad,
+          meta: {
+            advertiserDomains: matchedBid.adomain ? matchedBid.adomain : []
+          }
         }
 
         bidResponses.push(bidResponse)
