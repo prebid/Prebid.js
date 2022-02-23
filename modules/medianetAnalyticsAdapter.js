@@ -1,4 +1,4 @@
-import { triggerPixel, deepAccess, getWindowTop, uniques, groupBy, isEmpty, _map, isPlainObject, logInfo, logError } from '../src/utils.js';
+import { triggerPixel, deepAccess, getHighestCpm, getWindowTop, uniques, groupBy, isEmpty, _map, isPlainObject, logInfo, logError } from '../src/utils.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
@@ -490,6 +490,27 @@ function _getSizes(mediaTypes, sizes) {
   }
 }
 
+/*
+  - The code is used to determine if the current bid is higher than the previous bid.
+  - If it is, then the code will return true and if not, it will return false.
+  */
+function canSelectCurrentBid(previousBid, currentBid) {
+  if (!(previousBid instanceof Bid)) return false;
+
+  // For first bid response the previous bid will be containing bid request obj
+  // in which the cpm would be undefined so the current bid can directly be selected.
+  const isFirstBidResponse = previousBid.cpm === undefined && currentBid.cpm !== undefined;
+  if (isFirstBidResponse) return true;
+
+  // if there are 2 bids, get the highest bid
+  const selectedBid = getHighestCpm(previousBid, currentBid);
+
+  // Return true if selectedBid is currentBid,
+  // The timeToRespond field is used as an identifier for distinguishing
+  // between the current iterating bid and the previous bid.
+  return selectedBid.timeToRespond === currentBid.timeToRespond;
+}
+
 function bidResponseHandler(bid) {
   const { width, height, mediaType, cpm, requestId, timeToRespond, auctionId, dealId } = bid;
   const {originalCpm, bidderCode, creativeId, adId, currency} = bid;
@@ -498,7 +519,7 @@ function bidResponseHandler(bid) {
     return;
   }
   let bidObj = auctions[auctionId].findBid('bidId', requestId);
-  if (!(bidObj instanceof Bid)) {
+  if (!canSelectCurrentBid(bidObj, bid)) {
     return;
   }
   Object.assign(
