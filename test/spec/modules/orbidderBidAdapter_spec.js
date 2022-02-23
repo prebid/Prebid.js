@@ -283,6 +283,27 @@ describe('orbidderBidAdapter', () => {
     });
   });
 
+  describe('buildRequests with price floor module', () => {
+    const bidRequest = deepClone(defaultBidRequestBanner);
+    bidRequest.params.bidfloor = 1;
+    bidRequest.getFloor = (floorObj) => {
+      return {
+        floor: bidRequest.floors.values['banner|640x480'],
+        currency: floorObj.currency,
+        mediaType: floorObj.mediaType
+      }
+    };
+
+    bidRequest.floors = {
+      currency: 'EUR',
+      values: {
+        'banner|640x480': 15.07
+      }
+    };
+    const request = buildRequest(bidRequest);
+    expect(request.data.params.bidfloor).to.equal(15.07);
+  });
+
   describe('interpretResponse', () => {
     it('banner: should get correct bid response', () => {
       const serverResponse = [
