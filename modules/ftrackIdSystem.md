@@ -42,6 +42,9 @@ pbjs.setConfig({
   userSync: {
     userIds: [{
       name: 'FTrack',
+      params: {
+        url: 'https://d9.flashtalking.com/d9core' // required, if not populated ftrack will not run
+      },
       storage: {
         type: 'html5',           // "html5" is the required storage type
         name: 'FTrackId',        // "FTrackId" is the required storage name

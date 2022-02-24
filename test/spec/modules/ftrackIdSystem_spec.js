@@ -7,6 +7,9 @@ let server;
 
 let configMock = {
   name: 'ftrack',
+  params: {
+    url: 'https://d9.flashtalking.com/d9core'
+  },
   storage: {
     name: 'ftrackId',
     type: 'html5',
@@ -28,71 +31,115 @@ describe('FTRACK ID System', () => {
     });
   });
 
-  describe('Publisher config:', () => {
+  describe('ftrackIdSubmodule.isConfigOk():', () => {
     let logWarnStub;
     let logErrorStub;
+
     beforeEach(() => {
       logWarnStub = sinon.stub(utils, 'logWarn');
       logErrorStub = sinon.stub(utils, 'logError');
     });
+
     afterEach(() => {
       logWarnStub.restore();
       logErrorStub.restore();
     });
 
-    it(`should be rejected if 'storage' property is missing`, () => {
-      expect(ftrackIdSubmodule.getId({name: 'ftrack'})).to.be.undefined;
-      expect(logErrorStub.args[0][0]).to.equal(`FTRACK - storage required to be set`);
+    it(`should be rejected if 'config.storage' property is missing`, () => {
+      let configMock1 = JSON.parse(JSON.stringify(configMock));
+      delete configMock1.storage;
+      delete configMock1.params;
+
+      ftrackIdSubmodule.isConfigOk(configMock1);
+      expect(logErrorStub.args[0][0]).to.equal(`FTRACK - config.storage required to be set.`);
     });
 
-    it(`should be rejected if 'storage.type' property is missing`, () => {
-      expect(ftrackIdSubmodule.getId({
-        name: 'ftrack',
-        storage: {
-          type: 'html5',
-          expires: 90,
-          refreshInSeconds: 8 * 3600
-        }
-      }, null, null)).to.be.undefined;
-      expect(logErrorStub.args[0][0]).to.equal(`FTRACK - storage required to be set`);
+    it(`should be rejected if 'config.storage.name' property is missing`, () => {
+      let configMock1 = JSON.parse(JSON.stringify(configMock));
+      delete configMock1.storage.name;
+
+      ftrackIdSubmodule.isConfigOk(configMock1);
+      expect(logErrorStub.args[0][0]).to.equal(`FTRACK - config.storage required to be set.`);
     });
 
-    it(`should be rejected if 'storage.name' property is missing`, () => {
-      expect(ftrackIdSubmodule.getId({
-        name: 'ftrack',
-        storage: {
-          name: 'ftrackId',
-          expires: 90,
-          refreshInSeconds: 8 * 3600
-        }
-      }, null, null)).to.be.undefined;
-      expect(logErrorStub.args[0][0]).to.equal(`FTRACK - storage required to be set`);
+    it(`should be rejected if 'config.storage.name' is not 'ftrackId'`, () => {
+      let configMock1 = JSON.parse(JSON.stringify(configMock));
+      configMock1.storage.name = "not-ftrack";
+
+      ftrackIdSubmodule.isConfigOk(configMock1);
+      expect(logWarnStub.args[0][0]).to.equal(`FTRACK - config.storage.name recommended to be "ftrackId".`);
     });
 
-    it(`should be rejected if 'storage.name' is not 'ftrackId'`, () => {
-      expect(ftrackIdSubmodule.getId({
-        name: 'ftrack',
-        storage: {
-          name: 'lorem ipsum',
-          type: 'html5',
-          expires: 90,
-          refreshInSeconds: 8 * 3600
-        }
-      }, null, null).callback()).to.equal(undefined);
-      expect(logWarnStub.args[0][0]).to.equal(`FTRACK - storage name recommended to be 'ftrackId'.`);
+    it(`should be rejected if 'congig.storage.type' property is missing`, () => {
+      let configMock1 = JSON.parse(JSON.stringify(configMock));
+      delete configMock1.storage.type;
+
+      ftrackIdSubmodule.isConfigOk(configMock1);
+      expect(logErrorStub.args[0][0]).to.equal(`FTRACK - config.storage required to be set.`);
     });
 
-    it(`should be rejected if 'storage.type' is not 'html5'`, () => {
-      expect(ftrackIdSubmodule.getId({
-        name: 'ftrack',
-        storage: {
-          name: 'ftrackId',
-          type: 'cookies',
-          expires: 90,
-          refreshInSeconds: 8 * 3600
-        }
-      }, null, null).callback()).to.equal(undefined);
-      expect(logWarnStub.args[0][0]).to.equal(`FTRACK - storage type recommended to be 'html5'.`);
+    it(`should be rejected if 'config.storage.type' is not 'html5'`, () => {
+      let configMock1 = JSON.parse(JSON.stringify(configMock));
+      configMock1.storage.type = "not-html5";
+
+      ftrackIdSubmodule.isConfigOk(configMock1);
+      expect(logWarnStub.args[0][0]).to.equal(`FTRACK - config.storage.type recommended to be "html5".`);
+    });
+
+    it(`should be rejected if 'config.params.url' does not exist`, () => {
+      let configMock1 = JSON.parse(JSON.stringify(configMock));
+      delete configMock1.params.url;
+
+      ftrackIdSubmodule.isConfigOk(configMock1);
+      expect(logWarnStub.args[0][0]).to.equal(`FTRACK - config.params.url is required for ftrack to run. Url should be "https://d9.flashtalking.com/d9core".`);
+    });
+
+    it(`should be rejected if 'storage.param.url' does not exist or is not 'https://d9.flashtalking.com/d9core'`, () => {
+      let configMock1 = JSON.parse(JSON.stringify(configMock));
+      configMock1.params.url = 'https://d9.NOT.flashtalking.com/d9core';
+
+      ftrackIdSubmodule.isConfigOk(configMock1);
+      expect(logWarnStub.args[0][0]).to.equal(`FTRACK - config.params.url is required for ftrack to run. Url should be "https://d9.flashtalking.com/d9core".`);
+    });
+  });
+
+  describe(`ftrackIdSubmodule.isThereConsent():`, () => {
+    let uspDataHandlerStub;
+    beforeEach(() => {
+      uspDataHandlerStub = sinon.stub(uspDataHandler, 'getConsentData');
+    });
+
+    afterEach(() => {
+      uspDataHandlerStub.restore();
+    });
+
+    describe(`returns 'false' if:`, () => {
+      it(`GDPR: if gdprApplies is truthy`, () => {
+        expect(ftrackIdSubmodule.isThereConsent({gdprApplies: 1})).to.not.be.ok;
+        expect(ftrackIdSubmodule.isThereConsent({gdprApplies: true})).to.not.be.ok;
+      });
+
+      it(`US_PRIVACY version 1: if 'Opt Out Sale' is 'Y'`, () => {
+        uspDataHandlerStub.returns('1YYY');
+        expect(ftrackIdSubmodule.isThereConsent({})).to.not.be.ok;
+      });
+    });
+
+    describe(`returns 'true' if`, () => {
+      it(`GDPR: if gdprApplies is undefined, false or 0`, () => {
+        expect(ftrackIdSubmodule.isThereConsent({gdprApplies: 0})).to.be.ok;
+        expect(ftrackIdSubmodule.isThereConsent({gdprApplies: false})).to.be.ok;
+        expect(ftrackIdSubmodule.isThereConsent({gdprApplies: null})).to.be.ok;
+        expect(ftrackIdSubmodule.isThereConsent({})).to.be.ok;
+      });
+
+      it(`US_PRIVACY version 1: if 'Opt Out Sale' is not 'Y' ('N','-')`, () => {
+        uspDataHandlerStub.returns('1NNN');
+        expect(ftrackIdSubmodule.isThereConsent(null)).to.be.ok;
+
+        uspDataHandlerStub.returns('1---');
+        expect(ftrackIdSubmodule.isThereConsent(null)).to.be.ok;
+      });
     });
   });
 
@@ -102,89 +149,59 @@ describe('FTRACK ID System', () => {
       expect((/cookie/gi).test(JSON.stringify(ftrackIdSubmodule))).to.not.be.ok;
     });
 
-    describe(`endpoint tests - `, () => {
-      let cacheUrlRegExp = /https:\/\/e\.flashtalking\.com\/cache/;
-      beforeEach(() => {
-        server = sinon.createFakeServer();
-      });
+    it(`should be the only method that gets a new ID aka hits the D9 endpoint`, () => {
+      let appendChildStub = sinon.stub(window.document.body, 'appendChild');
 
-      afterEach(() => {
-        server.restore();
-      });
+      ftrackIdSubmodule.getId(configMock, null, null).callback();
+      expect(window.document.body.appendChild.called).to.be.ok;
+      let actualScriptTag = window.document.body.appendChild.args[0][0];
+      expect(actualScriptTag.tagName.toLowerCase()).to.equal("script");
+      expect(actualScriptTag.getAttribute("src")).to.equal("https://d9.flashtalking.com/d9core");
+      appendChildStub.resetHistory();
 
-      it(`should request the cacheId from the '/cache' endpoint`, () => {
-        ftrackIdSubmodule.getId(configMock, null, null).callback();
-        expect((cacheUrlRegExp).test(server.requests[0].url)).to.be.ok;
-      });
+      ftrackIdSubmodule.decode('value', configMock);
+      expect(window.document.body.appendChild.called).to.not.be.ok;
+      expect(window.document.body.appendChild.args).to.deep.equal([]);
+      appendChildStub.resetHistory();
 
-      it(`should be the only method that gets a new ID aka hits the D9 endpoint`, () => {
-        ftrackIdSubmodule.getId(configMock, null, null).callback();
-        expect(server.requests).to.have.length(1);
-        server.resetHistory();
+      ftrackIdSubmodule.extendId(configMock, null, {cache: {id: ''}});
+      expect(window.document.body.appendChild.called).to.not.be.ok;
+      expect(window.document.body.appendChild.args).to.deep.equal([]);
 
-        ftrackIdSubmodule.decode('value', configMock);
-        expect(server.requests).to.have.length(0);
-        server.resetHistory();
-
-        ftrackIdSubmodule.extendId(configMock, null, {cache: {id: ''}});
-        expect(server.requests).to.have.length(0);
-      });
-
-      it(`should populate localstorage (end-to-end test)`, () => {
-        let lgcResponseMock = {
-          'DeviceID': ['<DEVICE_ID>'],
-          'SingleDeviceID': ['<SINGLE_DEVICE_ID>']
-        };
-        ftrackIdSubmodule.getId(configMock, consentDataMock, null).callback();
-        expect((cacheUrlRegExp).test(server.requests[0].url)).to.be.ok;
-        server.requests[0].respond(200, { 'Content-Type': 'application/json' }, '{"cache_id":"<CACHE ID>"}');
-        expect((/lgc/).test(server.requests[1].url)).to.be.ok;
-        server.requests[1].respond(200, { 'Content-Type': 'application/json' }, JSON.stringify(lgcResponseMock));
-
-        expect(localStorage.getItem('ftrackId')).to.equal(JSON.stringify(lgcResponseMock));
-        expect(localStorage.getItem('ftrackId_exp')).to.be.ok;
-        expect(localStorage.getItem('ftrackId_privacy')).to.equal(JSON.stringify({'gdpr': {'applies': 0, 'consentString': '<CONSENT_STRING>', 'pd': null}, 'usPrivacy': {'value': null}}));
-        expect(localStorage.getItem('ftrackId_privacy_exp')).to.be.ok;
-      });
+      appendChildStub.restore();
     });
 
-    describe(`consent options - `, () => {
-      let uspDataHandlerStub;
-      beforeEach(() => {
-        uspDataHandlerStub = sinon.stub(uspDataHandler, 'getConsentData');
-      });
+    it(`should populate localstorage and return the IDS (end-to-end test)`, () => {
+      let ftrackId,
+        ftrackIdExp,
+        forceCallback = false;
 
-      afterEach(() => {
-        uspDataHandlerStub.restore();
-      });
+      // Confirm that our item is not in localStorage yet
+      expect(window.localStorage.getItem('ftrack-rtd')).to.not.be.ok;
+      expect(window.localStorage.getItem('ftrack-rtd_exp')).to.not.be.ok;
 
-      describe(`getId() should return undefined`, () => {
-        it(`GDPR: if gdprApplies is truthy`, () => {
-          expect(ftrackIdSubmodule.getId(configMock, {gdprApplies: 1}, null)).to.not.be.ok;
-          expect(ftrackIdSubmodule.getId(configMock, {gdprApplies: true}, null)).to.not.be.ok;
-        });
+      ftrackIdSubmodule.getId(configMock, consentDataMock, null).callback();
+      return new Promise(function(resolve, reject) {
+        window.testTimer = function () {
+          // Sinon fake server is changing the readyState to 4, so instead
+          // we are forcing the callback
+          if (!forceCallback && window.hasOwnProperty("D9r")) {
+            window.D9r.callback({ "DeviceID": ["<DEVICE_ID>"], "SingleDeviceID": ["<SINGLE_DEVICE_ID>"] });
+            forceCallback = true;
+          }
 
-        it(`US_PRIVACY version 1: if 'Opt Out Sale' is 'Y'`, () => {
-          uspDataHandlerStub.returns('1YYY');
-          expect(ftrackIdSubmodule.getId(configMock, {}, null)).to.not.be.ok;
-        });
-      });
+          ftrackId = window.localStorage.getItem('ftrackId');
+          ftrackIdExp = window.localStorage.getItem('ftrackId_exp');
 
-      describe(`getId() should run`, () => {
-        it(`GDPR: if gdprApplies is undefined, false or 0`, () => {
-          expect(ftrackIdSubmodule.getId(configMock, {gdprApplies: 0}, null)).to.be.ok;
-          expect(ftrackIdSubmodule.getId(configMock, {gdprApplies: false}, null)).to.be.ok;
-          expect(ftrackIdSubmodule.getId(configMock, {gdprApplies: null}, null)).to.be.ok;
-          expect(ftrackIdSubmodule.getId(configMock, {}, null)).to.be.ok;
-        });
-
-        it(`US_PRIVACY version 1: if 'Opt Out Sale' is not 'Y' ('N','-')`, () => {
-          uspDataHandlerStub.returns('1NNN');
-          expect(ftrackIdSubmodule.getId(configMock, null, null)).to.be.ok;
-
-          uspDataHandlerStub.returns('1---');
-          expect(ftrackIdSubmodule.getId(configMock, null, null)).to.be.ok;
-        });
+          if (!!ftrackId && !!ftrackIdExp) {
+            expect(window.localStorage.getItem('ftrackId')).to.be.ok;
+            expect(window.localStorage.getItem('ftrackId_exp')).to.be.ok;
+            resolve();
+          } else {
+            window.setTimeout(window.testTimer, 25);
+          }
+        };
+        window.testTimer();
       });
     });
   });

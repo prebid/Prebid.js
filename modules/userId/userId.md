@@ -52,6 +52,9 @@ pbjs.setConfig({
                 expires: 90,
                 refreshInSeconds: 8*3600
             },
+            params: {
+                url: 'https://d9.flashtalking.com/d9core', // required, if not populated ftrack will not run
+            }
         }, {
             name: 'parrableId',
             params: {
