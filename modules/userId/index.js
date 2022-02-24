@@ -614,7 +614,7 @@ function getEncryptedEidsForSource(source, encrypt, customFunction) {
   let eidsSignals = {};
 
   if (isFn(customFunction)) {
-    logInfo(`${MODULE_NAME} - Getting encrypted signal from custom function : ` + customFunction.name + `& source : ` + source);
+    logInfo(`${MODULE_NAME} - Getting encrypted signal from custom function : ${customFunction.name} & source : ${source} `);
     // Publishers are expected to define a common function which will be proxy for signal function.
     let customSignals = customFunction(source);
     eidsSignals[source] = customSignals ? encryptSignals(customSignals) : null; // by default encrypt using base64 to avoid JSON errors
