@@ -191,6 +191,7 @@ export const spec = {
       if (bidRequest && bidRequest.userId) {
         addExternalUserId(eids, deepAccess(bidRequest, `userId.id5id.uid`), 'id5-sync.com', 'ID5ID');
         addExternalUserId(eids, deepAccess(bidRequest, `userId.tdid`), 'adserver.org', 'TDID');
+        addExternalUserId(eids, deepAccess(bidRequest, `userId.idl_env`), 'liveramp.com', 'idl');
       }
       if (eids.length > 0) {
         rtbBidRequest.user.ext.eids = eids;
