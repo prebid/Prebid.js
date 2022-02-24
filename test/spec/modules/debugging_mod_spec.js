@@ -1,8 +1,15 @@
 import {expect} from 'chai';
 import {BidInterceptor} from '../../../modules/debugging/bidInterceptor.js';
-import {bidderBidInterceptor, disableDebugging, getConfig, sessionLoader, } from '../../../modules/debugging/index.js';
+import {
+  bidderBidInterceptor,
+  disableDebugging,
+  getConfig,
+  sessionLoader,
+} from '../../../modules/debugging/debugging.js';
+import '../../../modules/debugging/index.js';
 import {pbsBidInterceptor} from '../../../modules/debugging/pbsInterceptor.js';
 import {config} from '../../../src/config.js';
+import {hook} from '../../../src/hook.js';
 import {
   addBidderRequestsBound,
   addBidderRequestsHook,
@@ -11,12 +18,13 @@ import {
 } from '../../../modules/debugging/legacy.js';
 
 import {addBidderRequests, addBidResponse} from '../../../src/auction.js';
+import {prefixLog} from '../../../src/utils.js';
 
 describe('bid interceptor', () => {
   let interceptor, mockSetTimeout;
   beforeEach(() => {
     mockSetTimeout = sinon.stub().callsFake((fn) => fn());
-    interceptor = new BidInterceptor({setTimeout: mockSetTimeout});
+    interceptor = new BidInterceptor({setTimeout: mockSetTimeout, logger: prefixLog('TEST')});
   });
 
   function setRules(...rules) {
@@ -461,6 +469,7 @@ describe('pbsBidInterceptor', () => {
 
 describe('bid overrides', function () {
   let sandbox;
+  const logger = prefixLog('TEST');
 
   beforeEach(function () {
     sandbox = sinon.sandbox.create();
@@ -478,20 +487,23 @@ describe('bid overrides', function () {
     });
 
     afterEach(function () {
-      disableDebugging();
+      disableDebugging({hook, logger});
     });
 
     it('should happen when enabled with setConfig', function () {
       getConfig({
         enabled: true
-      });
+      }, {config, hook, logger});
 
       expect(addBidResponse.getHooks().some(hook => hook.hook === addBidResponseBound)).to.equal(true);
       expect(addBidderRequests.getHooks().some(hook => hook.hook === addBidderRequestsBound)).to.equal(true);
     });
     it('should happen when configuration found in sessionStorage', function () {
       sessionLoader({
-        getItem: () => ('{"enabled": true}')
+        storage: {getItem: () => ('{"enabled": true}')},
+        config,
+        hook,
+        logger
       });
       expect(addBidResponse.getHooks().some(hook => hook.hook === addBidResponseBound)).to.equal(true);
       expect(addBidderRequests.getHooks().some(hook => hook.hook === addBidderRequestsBound)).to.equal(true);
@@ -540,7 +552,7 @@ describe('bid overrides', function () {
         let next = (adUnitCode, bid) => {
           bids.push(bid);
         };
-        addBidResponseHook.bind(overrides)(next, bid.adUnitCode, bid);
+        addBidResponseHook.bind({overrides, logger})(next, bid.adUnitCode, bid);
       });
     }
 
@@ -649,7 +661,7 @@ describe('bid overrides', function () {
       let next = (b) => {
         bidderRequests = b;
       };
-      addBidderRequestsHook.bind(overrides)(next, mockBidRequests);
+      addBidderRequestsHook.bind({overrides, logger})(next, mockBidRequests);
     }
 
     it('should allow us to exclude bidders', function () {

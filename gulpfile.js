@@ -115,7 +115,7 @@ function viewReview(done) {
 
 viewReview.displayName = 'view-review';
 
-function makeDevpackPkg() {
+function devWebpackConfig() {
   var cloned = _.cloneDeep(webpackConfig);
   cloned.devtool = 'source-map';
 
@@ -126,7 +126,17 @@ function makeDevpackPkg() {
     .flatMap((rule) => rule.use)
     .filter((use) => use.loader === 'babel-loader')
     .forEach((use) => use.options = Object.assign({}, use.options, babelConfig));
+  return cloned;
+}
 
+function prodWebpackConfig() {
+  var cloned = _.cloneDeep(webpackConfig);
+  delete cloned.devtool;
+  return cloned;
+}
+
+function makeDevpackPkg() {
+  const cloned = devWebpackConfig();
   var externalModules = helpers.getArgModules();
 
   const analyticsSources = helpers.getAnalyticsSources();
@@ -140,9 +150,7 @@ function makeDevpackPkg() {
 }
 
 function makeWebpackPkg() {
-  var cloned = _.cloneDeep(webpackConfig);
-  delete cloned.devtool;
-
+  const cloned = prodWebpackConfig();
   var externalModules = helpers.getArgModules();
 
   const analyticsSources = helpers.getAnalyticsSources();
@@ -154,6 +162,23 @@ function makeWebpackPkg() {
     .pipe(terser())
     .pipe(gulpif(file => file.basename === 'prebid-core.js', header(banner, { prebid: prebid })))
     .pipe(gulp.dest('build/dist'));
+}
+
+function makeStandaloneDebugging(dev = false) {
+  const cfg = dev ? devWebpackConfig() : prodWebpackConfig();
+  cfg.plugins.pop();
+  return function () {
+    let stream = gulp.src(['modules/debugging/standalone.js'])
+      .pipe(through.obj(function(file, enc, done) {
+        file.named = 'debugging-standalone';
+        this.push(file);
+        done();
+      })).pipe(webpackStream(cfg, webpack));
+    if (!dev) {
+      stream = stream.pipe(terser());
+    }
+    return stream.pipe(gulp.dest(dev ? 'build/dev' : 'build/dist'));
+  }
 }
 
 function getModulesListToAddInBanner(modules) {
@@ -405,8 +430,8 @@ gulp.task(clean);
 
 gulp.task(escapePostbidConfig);
 
-gulp.task('build-bundle-dev', gulp.series(makeDevpackPkg, gulpBundle.bind(null, true)));
-gulp.task('build-bundle-prod', gulp.series(makeWebpackPkg, gulpBundle.bind(null, false)));
+gulp.task('build-bundle-dev', gulp.series(gulp.parallel(makeStandaloneDebugging(true), makeDevpackPkg), gulpBundle.bind(null, true)));
+gulp.task('build-bundle-prod', gulp.series(gulp.parallel(makeStandaloneDebugging(false), makeWebpackPkg), gulpBundle.bind(null, false)));
 
 // public tasks (dependencies are needed for each task since they can be ran on their own)
 gulp.task('test-only', test);
