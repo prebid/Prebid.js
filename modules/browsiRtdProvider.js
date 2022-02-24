@@ -15,7 +15,7 @@
  * @property {?string} keyName
  */
 
-import {deepClone, logError, isGptPubadsDefined, isNumber, isFn, deepSetValue, logInfo} from '../src/utils.js';
+import {deepClone, logError, isGptPubadsDefined, isNumber, isFn, deepSetValue, logInfo, generateUUID} from '../src/utils.js';
 import {submodule} from '../src/hook.js';
 import {ajaxBuilder} from '../src/ajax.js';
 import {loadExternalScript} from '../src/adloader.js';
@@ -23,7 +23,6 @@ import {getStorageManager} from '../src/storageManager.js';
 import find from 'core-js-pure/features/array/find.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import includes from 'core-js-pure/features/array/includes.js';
-import { generateUUID } from '../src/utils.js';
 import events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
 
@@ -352,7 +351,7 @@ function getTargetingData(uc, c, us, a) {
       auctionId: auctionId
     })
   });
-  logInfo('Browsi RTD provider returned targeting data', targetingData ,'for' ,uc)
+  logInfo('Browsi RTD provider returned targeting data', targetingData, 'for', uc)
   return targetingData;
 }
 
