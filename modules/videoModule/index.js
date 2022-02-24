@@ -58,13 +58,11 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     });
 
     pbEvents.on(AD_IMPRESSION, function (payload) {
-      const bid = getBid(payload);
-      pbEvents.emit(BID_VIDEO_IMPRESSION, { bid, adEvent: payload });
+      triggerVideoBidEvent(BID_VIDEO_IMPRESSION, payload);
     });
 
     pbEvents.on(AD_ERROR, function (payload) {
-      const bid = getBid(payload);
-      pbEvents.emit(BID_VIDEO_ERROR, { bid, adEvent: payload });
+      triggerVideoBidEvent(BID_VIDEO_ERROR, payload);
     });
   }
 
@@ -128,9 +126,19 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     videoCore.setAdTagUrl(adUrl, divId, options);
   }
 
+  function triggerVideoBidEvent(eventName, adEventPayload) {
+    const bid = getBid(adEventPayload);
+    if (!bid) {
+      return;
+    }
+    pbEvents.emit(eventName, { bid, adEvent: adEventPayload });
+  }
+
   function getBid(adPayload) {
     const { adId, adTagUrl, adWrapperIds } = adPayload;
-    const bidInfo = videoImpressionVerifier.getTrackedBid(adId, adTagUrl, adWrapperIds);
+    const { bidAdId = adId, adUnitCode, requestId, auctionId } = videoImpressionVerifier.getTrackedBid(adId, adTagUrl, adWrapperIds);
+    const { bids } = pbGlobal.getBidResponsesForAdUnitCode(adUnitCode);
+    return bids.find(bid => bid.adId === bidAdId && bid.requestId === requestId && bid.auctionId === auctionId);
   }
 }
 
