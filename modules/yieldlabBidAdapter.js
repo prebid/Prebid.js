@@ -200,7 +200,7 @@ export const spec = {
       }
       syncs.push({
         type: 'iframe',
-        url: `https://ad.yieldlab.net/d/6846326/766/2x2?${params.join('&')}`
+        url: `${ENDPOINT}/d/6846326/766/2x2?${params.join('&')}`
       });
     }
 
