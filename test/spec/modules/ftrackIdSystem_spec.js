@@ -64,7 +64,7 @@ describe('FTRACK ID System', () => {
 
     it(`should be rejected if 'config.storage.name' is not 'ftrackId'`, () => {
       let configMock1 = JSON.parse(JSON.stringify(configMock));
-      configMock1.storage.name = "not-ftrack";
+      configMock1.storage.name = 'not-ftrack';
 
       ftrackIdSubmodule.isConfigOk(configMock1);
       expect(logWarnStub.args[0][0]).to.equal(`FTRACK - config.storage.name recommended to be "ftrackId".`);
@@ -80,7 +80,7 @@ describe('FTRACK ID System', () => {
 
     it(`should be rejected if 'config.storage.type' is not 'html5'`, () => {
       let configMock1 = JSON.parse(JSON.stringify(configMock));
-      configMock1.storage.type = "not-html5";
+      configMock1.storage.type = 'not-html5';
 
       ftrackIdSubmodule.isConfigOk(configMock1);
       expect(logWarnStub.args[0][0]).to.equal(`FTRACK - config.storage.type recommended to be "html5".`);
@@ -155,8 +155,8 @@ describe('FTRACK ID System', () => {
       ftrackIdSubmodule.getId(configMock, null, null).callback();
       expect(window.document.body.appendChild.called).to.be.ok;
       let actualScriptTag = window.document.body.appendChild.args[0][0];
-      expect(actualScriptTag.tagName.toLowerCase()).to.equal("script");
-      expect(actualScriptTag.getAttribute("src")).to.equal("https://d9.flashtalking.com/d9core");
+      expect(actualScriptTag.tagName.toLowerCase()).to.equal('script');
+      expect(actualScriptTag.getAttribute('src')).to.equal('https://d9.flashtalking.com/d9core');
       appendChildStub.resetHistory();
 
       ftrackIdSubmodule.decode('value', configMock);
@@ -185,8 +185,8 @@ describe('FTRACK ID System', () => {
         window.testTimer = function () {
           // Sinon fake server is changing the readyState to 4, so instead
           // we are forcing the callback
-          if (!forceCallback && window.hasOwnProperty("D9r")) {
-            window.D9r.callback({ "DeviceID": ["<DEVICE_ID>"], "SingleDeviceID": ["<SINGLE_DEVICE_ID>"] });
+          if (!forceCallback && window.hasOwnProperty('D9r')) {
+            window.D9r.callback({ 'DeviceID': ['<DEVICE_ID>'], 'SingleDeviceID': ['<SINGLE_DEVICE_ID>'] });
             forceCallback = true;
           }
 

@@ -136,7 +136,7 @@ export const ftrackIdSubmodule = {
       utils.logWarn(LOG_PREFIX + 'config.params.url is required for ftrack to run. Url should be "' + FTRACK_URL + '".');
       return false;
     }
-     
+
     return true;
   },
 
