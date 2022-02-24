@@ -11,8 +11,8 @@ const BIDDER_ENDPOINT = 'https://direct.adsrvr.org/bid/bidder/';
 const USER_SYNC_ENDPOINT = 'https://match.adsrvr.org';
 
 const MEDIA_TYPE = {
-  BANNER: 1,
-  VIDEO: 2
+  DISPLAY: 'Display',
+  VIDEO: 'Video'
 };
 
 function getExt(firstPartyData) {
