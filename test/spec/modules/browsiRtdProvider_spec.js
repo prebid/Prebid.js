@@ -15,6 +15,16 @@ describe('browsi Real time  data sub module', function () {
       }
     }]
   };
+  const auction = {adUnits: [
+    {
+      code: 'adMock',
+      transactionId: 1
+    },
+    {
+      code: 'hasPrediction',
+      transactionId: 1
+    }
+  ]};
 
   it('should init and return true', function () {
     browsiRTD.collectData();
@@ -61,13 +71,13 @@ describe('browsi Real time  data sub module', function () {
   describe('should return data to RTD module', function () {
     it('should return empty if no ad units defined', function () {
       browsiRTD.setData({});
-      expect(browsiRTD.browsiSubmodule.getTargetingData([])).to.eql({});
+      expect(browsiRTD.browsiSubmodule.getTargetingData([], null, null, auction)).to.eql({});
     });
 
     it('should return NA if no prediction for ad unit', function () {
       makeSlot({code: 'adMock', divId: 'browsiAd_2'});
       browsiRTD.setData({});
-      expect(browsiRTD.browsiSubmodule.getTargetingData(['adMock'])).to.eql({adMock: {bv: 'NA'}});
+      expect(browsiRTD.browsiSubmodule.getTargetingData(['adMock'], null, null, auction)).to.eql({adMock: {bv: 'NA'}});
     });
 
     it('should return prediction from server', function () {
@@ -78,7 +88,7 @@ describe('browsi Real time  data sub module', function () {
         pmd: undefined
       };
       browsiRTD.setData(data);
-      expect(browsiRTD.browsiSubmodule.getTargetingData(['hasPrediction'])).to.eql({hasPrediction: {bv: '0.20'}});
+      expect(browsiRTD.browsiSubmodule.getTargetingData(['hasPrediction'], null, null, auction)).to.eql({hasPrediction: {bv: '0.20'}});
     })
   })
 

@@ -36,6 +36,7 @@
  * @param {string[]} adUnitsCodes
  * @param {SubmoduleConfig} config
  * @param {UserConsentData} userConsent
+ * @param {auction} auction
  */
 
 /**
