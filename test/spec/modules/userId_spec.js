@@ -2652,6 +2652,109 @@ describe('User ID', function () {
           expect(domain).to.be.eq('realdomain.co.uk');
         });
       });
+
+      describe('Call registerSignalSources to register signal sources with gtag', function () {
+        var googletag = {}
+        var encrypt = false;
+        function getCustomSignal(name, value) {
+          var signal = [];
+          return signal;
+        }
+
+        afterEach(() => {
+          googletag = {};
+        })
+
+        it('pbjs.registerSignalSources should be defined', () => {
+          expect(typeof (getGlobal()).registerSignalSources).to.equal('function');
+        });
+        it('Should called pbjs.registerSignalSources should register signals', () => {
+          var signalSources = ['pubcid.org', 'criteo.com', 'id5-sync.com'];
+          var encrypt = false;
+          pbjs.registerSignalSources(googletag, signalSources, encrypt);
+          expect(googletag.encryptedSignalProviders.length).to.be.equal(3);
+          var customSignalSources = ['pubmatic.com', 'mysegments.com'];
+          pbjs.registerSignalSources(googletag, customSignalSources, encrypt, getCustomSignal);
+          expect(googletag.encryptedSignalProviders.length).to.be.equal(5);
+        });
+      })
+
+      describe('Call getEncryptedEidsForSource to get encrypted Eids for source', function() {
+        var signalSources = ['pubcid.org'];
+        var users = [
+          {
+            'source': 'pubcid.org',
+            'uids': [
+              {
+                'id': '36ed43f8-0e90-4675-9354-05c46cde0e13',
+                'atype': 1
+              }
+            ]
+          }
+        ]
+
+        it('pbjs.getEncryptedEidsForSource should be defined', () => {
+          expect(typeof (getGlobal()).getEncryptedEidsForSource).to.equal('function');
+        });
+
+        it('pbjs.getEncryptedEidsForSource should return the string without encryption if encryption is false', (done) => {
+          setSubmoduleRegistry([sharedIdSystemSubmodule]);
+          init(config);
+          config.setConfig({
+            userSync: {
+              syncDelay: 0,
+              userIds: [
+                {
+                  'name': 'sharedId',
+                  'storage': {
+                    'type': 'cookie',
+                    'name': '_pubcid',
+                    'expires': 365
+                  }
+                },
+                {
+                  'name': 'pubcid.org'
+                }
+              ]
+            },
+          });
+          var encrypt = false;
+          pbjs.getEncryptedEidsForSource(signalSources[0], encrypt).then((data) => {
+            var users = (getGlobal()).getUserIdsAsEids();
+            expect(data).to.equal(users[0].uids[0].id);
+            done();
+          }).catch(done);
+        });
+
+        it('pbjs.getEncryptedEidsForSource should return the string base64 encryption if encryption is true', (done) => {
+          var encrypt = true;
+          var expectedString = '1||eyJzb3VyY2UiOiJwdWJjaWQub3JnIiwidWlkcyI6W3siaWQiOiIzNmVkNDNmOC0wZTkwLTQ2NzUtOTM1NC0wNWM0NmNkZTBlMTMiLCJhdHlwZSI6MX1dfQ=='
+          sinon.stub((getGlobal()), 'getUserIdsAsEids').returns(users);
+          pbjs.getEncryptedEidsForSource(signalSources[0], encrypt).then((result) => {
+            expect(result).to.equal(expectedString);
+            done();
+          }).catch(done);
+        });
+
+        it('pbjs.getEncryptedEidsForSource should return string if custom function is defined', () => {
+          function getCustomSignal(source) {
+            var signal = [];
+            switch (source) {
+              case 'pubmatic.com' :
+                signal = '{"keywords":["tech","auto"]}';
+                break;
+            }
+            return signal;
+          }
+          var expectedString = '"1||{\"keywords\":[\"tech\",\"auto\"]}"';
+          var encrypt = false;
+          var source = 'pubmatic.com';
+          pbjs.getEncryptedEidsForSource(source, encrypt, getCustomSignal).then((result) => {
+            expect(result).to.equal(expectedString);
+            done();
+          });
+        });
+      })
     });
   })
 });
