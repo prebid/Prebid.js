@@ -113,7 +113,7 @@ export const spec = {
       };
 
       const gdprConsent = getGdprConsent(bidderRequest);
-
+      rtbBidRequest.ext.gdpr_consent = gdprConsent;
       deepSetValue(rtbBidRequest, 'regs.ext.gdpr', gdprConsent.consent_required === true ? 1 : 0);
       deepSetValue(rtbBidRequest, 'user.ext.consent', gdprConsent.consent_string);
 
@@ -368,7 +368,6 @@ function replaceMacros(url, macros) {
 }
 
 function getGdprConsent(bidderRequest) {
-
   const gdprConsent = bidderRequest.gdprConsent;
 
   if (gdprConsent && gdprConsent.consentString && gdprConsent.gdprApplies) {
