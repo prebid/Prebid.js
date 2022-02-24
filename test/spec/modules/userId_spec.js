@@ -2719,7 +2719,7 @@ describe('User ID', function () {
             },
           });
           var encrypt = false;
-          pbjs.getEncryptedEidsForSource(signalSources[0], encrypt).then((data) => {
+          (getGlobal()).getEncryptedEidsForSource(signalSources[0], encrypt).then((data) => {
             var users = (getGlobal()).getUserIdsAsEids();
             expect(data).to.equal(users[0].uids[0].id);
             done();
@@ -2730,7 +2730,7 @@ describe('User ID', function () {
           var encrypt = true;
           var expectedString = '1||eyJzb3VyY2UiOiJwdWJjaWQub3JnIiwidWlkcyI6W3siaWQiOiIzNmVkNDNmOC0wZTkwLTQ2NzUtOTM1NC0wNWM0NmNkZTBlMTMiLCJhdHlwZSI6MX1dfQ=='
           sinon.stub((getGlobal()), 'getUserIdsAsEids').returns(users);
-          pbjs.getEncryptedEidsForSource(signalSources[0], encrypt).then((result) => {
+          (getGlobal()).getEncryptedEidsForSource(signalSources[0], encrypt).then((result) => {
             expect(result).to.equal(expectedString);
             done();
           }).catch(done);
@@ -2749,7 +2749,7 @@ describe('User ID', function () {
           var expectedString = '"1||{\"keywords\":[\"tech\",\"auto\"]}"';
           var encrypt = false;
           var source = 'pubmatic.com';
-          pbjs.getEncryptedEidsForSource(source, encrypt, getCustomSignal).then((result) => {
+          (getGlobal()).getEncryptedEidsForSource(source, encrypt, getCustomSignal).then((result) => {
             expect(result).to.equal(expectedString);
             done();
           });

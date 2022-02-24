@@ -613,21 +613,21 @@ function getEncryptedEidsForSource(source, encrypt, customFunction) {
   let eids = [];
   let eidsSignals = {};
 
-  if (typeof customFunction === 'function') {
+  if (isFn(customFunction)) {
     logInfo(`${MODULE_NAME} - Getting encrypted signal from custom function : ` + customFunction.name + `& source : ` + source);
     // Publishers are expected to define a common function which will be proxy for signal function.
-    var customSignals = customFunction(source);
-    eidsSignals[source] = customSignals ? encryptSignals(customFunction(source)) : null; // by default encrypt using base64 to avoid JSON errors
+    let customSignals = customFunction(source);
+    eidsSignals[source] = customSignals ? encryptSignals(customSignals) : null; // by default encrypt using base64 to avoid JSON errors
   } else {
     // initialize signal with eids by default
     eids = (getGlobal()).getUserIdsAsEids();
-    logInfo(`${MODULE_NAME} - Getting encrypted signal for eids : ` + JSON.stringify(eids));
+    logInfo(`${MODULE_NAME} - Getting encrypted signal for eids :${JSON.stringify(eids)}`);
     eids.forEach((eid) => {
       eidsSignals[eid.source] = encrypt === true ? encryptSignals(eid) : eid.uids[0].id; // If encryption is enabled append version (1||) and encrypt entire object
     });
   }
   let promise = Promise.resolve(eidsSignals[source]);
-  logInfo(`${MODULE_NAME} - Fetching encrypted eids: ` + eidsSignals[source]);
+  logInfo(`${MODULE_NAME} - Fetching encrypted eids: ${eidsSignals[source]}`);
   return promise;
 }
 
@@ -646,11 +646,11 @@ function encryptSignals(signals, version = 1) {
 function registerSignalSources(gtag, signalSources, encrypt, customFunction) {
   gtag.encryptedSignalProviders = gtag.encryptedSignalProviders || [];
   signalSources.forEach(function (source) {
-    logInfo(`${MODULE_NAME} - Registering signal provider: ` + source);
+    logInfo(`${MODULE_NAME} - Registering signal provider: ${source}`);
     gtag.encryptedSignalProviders.push({
       id: source,
       collectorFunction: function () {
-        return (getGlobal()).getEncryptedEidsForSource(source, encrypt, customFunction);
+        return getEncryptedEidsForSource(source, encrypt, customFunction);
       }
     });
   });
