@@ -29,7 +29,7 @@ const cache = {
   gpt: {},
   timeouts: {},
 };
-$$PREBID_GLOBAL$$.cache = cache;
+$$PREBID_GLOBAL$$.fluct = {cache: cache};
 
 /** @type {(id: string) => boolean} */
 const isBrowsiId = (id) => Boolean(id.match(/^browsi_/g));
