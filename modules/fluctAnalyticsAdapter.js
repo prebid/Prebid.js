@@ -12,12 +12,13 @@ import {
   deepClone,
 } from '../src/utils.js'
 import find from 'core-js-pure/features/array/find.js'
+import $$PREBID_GLOBAL$$ from '../src/prebid.js'
 
 const url = 'https://an.adingo.jp'
 
 /** @typedef {{ad: string, adId: string, adUnitCode: string, adUrl: string, adserverTargeting: any, auctionId: string, bidder: string, bidderCode: string, cpm: number, creativeId: string, currency: string, dealId: string, height: number, mediaType: string, netRevenue: boolean, originalCpm: number, originalCurrency: string, params: any, pbAg: string, pbCg: string, pbDg: string, pbHg: string, pbLg: string, pbMg: string, pbLg: string, requestId: string, requestTimestamp: number, responseTimestamp: number, size: string, source: string, status: string, statusMessage: string, timeToRespond: string, ttl: string, width: number, bidId?: string}} BidResponse */
 /** @typedef {{bidder: string, params: any}} Bid */
-/** @typedef {{code: string, _code?: string, analytics?: {bidder: string, dwid: string}[], bids?: Bid[], mediaTypes: {banner: {name: string, sizes: number[][]}}, sizes: number[][], transactionId: string}} AdUnit */
+/** @typedef {{code: string, _code?: string, path?: string, analytics?: {bidder: string, dwid: string}[], bids?: Bid[], mediaTypes: {banner: {name: string, sizes: number[][]}}, sizes: number[][], transactionId: string}} AdUnit */
 /** @typedef {{adUnitCodes: string[], adUnits: AdUnit[], auctionEnd: number, auctionId: string, auctionStatus: string, bidderRequests: any[], bidsReceived: BidResponse[], labels?: string, noBids: BidResponse[], timeout: number, timestamp: number, winningBids: BidResponse[], bids: {[key: string]: BidResponse}[]}} PbAuction */
 /** @typedef {{registered: boolean}} Gpt */
 /** @typedef {{[key: string]: string }} Slots */
@@ -25,13 +26,13 @@ const url = 'https://an.adingo.jp'
 /** @type {{auctions: {[auctionId: string]: PbAuction}, adUnits: {[adUnitCode: string]: AdUnit}, gpt: Gpt, timeouts: {[auctionId: string]: number}}} */
 const cache = {
   auctions: {},
-  adUnits: {},
   gpt: {},
   timeouts: {},
-}
+};
+$$PREBID_GLOBAL$$.fluct = {cache: cache};
 
 /** @type {(id: string) => boolean} */
-const isBrowsiId = (id) => Boolean(id.match(/^browsi_/g))
+const isBrowsiId = (id) => Boolean(id.match(/^browsi_/g));
 
 /**
  * 各adUnitCodeに対応したadUnitPathを取得する
@@ -44,45 +45,58 @@ const isBrowsiId = (id) => Boolean(id.match(/^browsi_/g))
  * }
  * ```
  */
-const getAdUnitMap = () => window.googletag.pubads().getSlots().reduce((prev, slot) => Object.assign(prev, { [slot.getSlotElementId()]: slot.getAdUnitPath() }), {})
+const getAdUnitMap = () => window.googletag.pubads().getSlots().reduce((prev, slot) => Object.assign(prev, { [slot.getSlotElementId()]: slot.getAdUnitPath() }), {});
 
 /** @type {(_adUnit: AdUnit, adUnits: AdUnit[], slots: Slots) => AdUnit} */
-export const convertReplicatedAdUnit = (_adUnit, adUnits = cache.adUnits, slots = getAdUnitMap()) => {
-  /** @type {adUnit} */
-  const adUnit = deepClone(_adUnit)
-  /** @type {?string} */
-  const adUnitPath = slots[adUnit.code]
-  if (adUnitPath) {
-    const { analytics, code, mediaTypes: { banner: { name } } } =
-      find(Object.values(adUnits), adUnit => Boolean(adUnitPath.match(new RegExp(`${adUnit.mediaTypes.banner.name}$`, 'g'))))
-    adUnit.analytics = analytics
-    adUnit._code = code
-    adUnit.mediaTypes.banner.name = name
+export const convertReplicatedAdUnit = (_adUnit, adUnits = $$PREBID_GLOBAL$$.adUnits, slots = getAdUnitMap()) => {
+  /** @type {AdUnit} */
+  const adUnit = deepClone(_adUnit);
+  if (isBrowsiId(adUnit.code)) {
+    const adUnitPath = slots[adUnit.code];
+    try {
+      const { analytics, code, mediaTypes: { banner: { name } } } = find(adUnits, adUnit => adUnit.path === adUnitPath);
+      adUnit.analytics = analytics;
+      adUnit._code = code;
+      adUnit.mediaTypes.banner.name = name;
+    } catch (_error) {
+      logError(JSON.stringify({
+        message: '対応するDWIDを持つ枠が見つかりませんでした。',
+        adUnitCode: adUnit.code,
+        adUnitPath,
+      }));
+    }
   }
-  adUnit.bids = undefined
-  return adUnit
-}
+  adUnit.bids = undefined;
+  return adUnit;
+};
 
 let fluctAnalyticsAdapter = Object.assign(
   adapter({ url, analyticsType: 'endpoint' }), {
   track({ eventType, args }) {
-    logInfo(`[${eventType}] ${Date.now()} :`, args)
+    logInfo(`[${eventType}] ${Date.now()} :`, args);
     try {
       switch (eventType) {
         case EVENTS.AUCTION_INIT: {
           /** @type {PbAuction} */
-          let auctionInitEvent = args
-          cache.auctions[auctionInitEvent.auctionId] = { ...auctionInitEvent, bids: {} }
+          let auctionInitEvent = args;
+          cache.auctions[auctionInitEvent.auctionId] = { ...auctionInitEvent, bids: {} };
           if (!cache.gpt.registered) {
-            window.googletag = window.googletag || { cmd: [] }
-            cache.gpt.registered = true
-            $$PREBID_GLOBAL$$.adUnits.forEach(adUnit => Object.assign(cache.adUnits, { [adUnit.code]: adUnit }))
+            window.googletag = window.googletag || { cmd: [] };
+            window.googletag.pubads()?.addEventListener('slotOnload', (event) => {
+              const adUnitCode = event.slot.getSlotElementId();
+              if (isBrowsiId(adUnitCode)) {
+                const auction = find(Object.values(cache.auctions), auction =>
+                  auction.adUnitCodes.every(_adUnitCode => _adUnitCode === adUnitCode));
+                sendMessage(auction.auctionId);
+              }
+            })
+            cache.gpt.registered = true;
           }
-          break
+          break;
         }
         case EVENTS.BID_TIMEOUT: {
           /** @type {BidResponse[]} */
-          let timeoutEvent = args
+          let timeoutEvent = args;
           timeoutEvent.forEach(bid => {
             cache.auctions[bid.auctionId].bids[bid.bidId] = {
               ...bid,
@@ -90,15 +104,15 @@ let fluctAnalyticsAdapter = Object.assign(
               prebidWon: false,
               bidWon: false,
               timeout: true,
-            }
-          })
-          break
+            };
+          });
+          break;
         }
         case EVENTS.AUCTION_END: {
           /** @type {PbAuction} */
-          let auctionEndEvent = args
-          let { adUnitCodes, auctionId, bidsReceived, noBids } = auctionEndEvent
-          Object.assign(cache.auctions[auctionId], auctionEndEvent, { aidSuffix: isBrowsiId(auctionId) ? generateUUID() : undefined })
+          let auctionEndEvent = args;
+          let { adUnitCodes, auctionId, bidsReceived, noBids } = auctionEndEvent;
+          Object.assign(cache.auctions[auctionId], auctionEndEvent, { aidSuffix: isBrowsiId(auctionId) ? generateUUID() : undefined });
 
           let prebidWonBidRequestIds = adUnitCodes.map(adUnitCode =>
             bidsReceived.reduce((highestCpmBid, bid) =>
@@ -125,54 +139,42 @@ let fluctAnalyticsAdapter = Object.assign(
             })),
           ].forEach(bid => {
             cache.auctions[auctionId].bids[bid.requestId || bid.bidId] = bid
-          })
-          break
-        }
-        case EVENTS.SET_TARGETING: {
-          let setTargetingEvent = args
-          const adUnitCodes = Object.keys(setTargetingEvent)
-          adUnitCodes.forEach(adUnitCode => {
-            if (isBrowsiId(adUnitCode)) {
-              const adUnit = convertReplicatedAdUnit(find($$PREBID_GLOBAL$$.adUnits, adUnit => adUnit.code === adUnitCode))
-              Object.assign(cache.adUnits, { [adUnitCode]: adUnit })
-            }
-          })
-          /** @type {PbAuction} */
-          const auction = find(Object.values(cache.auctions), auction =>
-            auction.adUnitCodes.every(adUnitCode => adUnitCodes.includes(adUnitCode)))
-          sendMessage(auction.auctionId)
-          break
+          });
+          if (adUnitCodes.every(adUnitCode => !isBrowsiId(adUnitCode)))
+            sendMessage(auctionId);
+          break;
         }
         case EVENTS.BID_WON: {
           /** @type {Bid} */
-          let bidWonEvent = args
-          let { auctionId, requestId } = bidWonEvent
+          let bidWonEvent = args;
+          let { auctionId, requestId } = bidWonEvent;
           Object.assign(cache.auctions[auctionId].bids[requestId], bidWonEvent, {
             noBid: false,
             prebidWon: true,
             bidWon: true,
             timeout: false,
-          })
-          // clearTimeout(cache.timeouts[auctionId])
+          });
+          // clearTimeout(cache.timeouts[auctionId]);
           // cache.timeouts[auctionId] = setTimeout(() => {
-          sendMessage(auctionId)
-          // }, config.getConfig('bidderTimeout'))
-          break
+          sendMessage(auctionId);
+          // }, config.getConfig('bidderTimeout'));
+          break;
         }
         default:
-          break
+          break;
       }
     } catch (error) {
-      logError({ eventType, args, error })
+      // console.error({ eventType, args, error })
+      logError({ eventType, args, error });
     }
   }
-})
+});
 
 /** @type {(auctionId: string) => void} */
 const sendMessage = (auctionId) => {
-  let { adUnitCodes, auctionEnd, aidSuffix, auctionStatus, bids } = cache.auctions[auctionId]
-  const adUnits = Object.values(cache.adUnits).filter(adUnit => adUnitCodes.includes(adUnit.code))
-  logInfo(adUnits)
+  let { adUnitCodes, adUnits, auctionEnd, aidSuffix, auctionStatus, bids } = cache.auctions[auctionId];
+  adUnits = adUnits.map(adUnit => convertReplicatedAdUnit(adUnit, adUnitCodes.every(isBrowsiId) ? $$PREBID_GLOBAL$$.adUnits : adUnits));
+  logInfo(adUnits);
 
   const payload = {
     auctionId: aidSuffix ? `${auctionId}_${aidSuffix}` : auctionId,
@@ -180,7 +182,7 @@ const sendMessage = (auctionId) => {
     bids: Object.values(bids).map(bid => {
       const { noBid, prebidWon, bidWon, timeout, adId, adUnitCode, adUrl, bidder, status, netRevenue, cpm, currency, originalCpm, originalCurrency, requestId, size, source, timeToRespond } = bid
       /** @type {AdUnit} */
-      const adUnit = find(adUnits, adUnit => adUnit.code === adUnitCode) || {}
+      const adUnit = find(adUnits, adUnit => adUnit.code === adUnitCode) || {};
       return {
         noBid,
         prebidWon,
@@ -205,24 +207,24 @@ const sendMessage = (auctionId) => {
           ...bid,
           ad: undefined
         },
-      }
+      };
     }),
     timestamp: Date.now(),
     auctionEnd,
     auctionStatus,
   }
-  ajax(url, () => logInfo(`[sendMessage] ${Date.now()} :`, payload), JSON.stringify(payload), { contentType: 'application/json', method: 'POST' })
+  ajax(url, () => logInfo(`[sendMessage] ${Date.now()} :`, payload), JSON.stringify(payload), { contentType: 'application/json', method: 'POST' });
 }
 
-fluctAnalyticsAdapter.originEnableAnalytics = fluctAnalyticsAdapter.enableAnalytics
+fluctAnalyticsAdapter.originEnableAnalytics = fluctAnalyticsAdapter.enableAnalytics;
 fluctAnalyticsAdapter.enableAnalytics = (config) => {
-  fluctAnalyticsAdapter.initOptions = config.options
-  fluctAnalyticsAdapter.originEnableAnalytics(config)
-}
+  fluctAnalyticsAdapter.initOptions = config.options;
+  fluctAnalyticsAdapter.originEnableAnalytics(config);
+};
 
 adapterManager.registerAnalyticsAdapter({
   adapter: fluctAnalyticsAdapter,
   code: 'fluct',
-})
+});
 
-export default fluctAnalyticsAdapter
+export default fluctAnalyticsAdapter;
