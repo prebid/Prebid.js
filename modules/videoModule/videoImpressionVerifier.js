@@ -2,6 +2,44 @@ import find from 'core-js-pure/features/array/find';
 import URL from 'core-js-pure/web/url';
 import { vastXmlEditorFactory } from './shared/vastXmlEditor.js';
 
+const PB_PREFIX = 'pb_';
+const UUID_MARKER = PB_PREFIX + 'uuid';
+
+/**
+ * Video Impression Verifier interface. All implementations of a Video Impression Verifier must comply with this interface.
+ * @description adds tracking markers to an ad and extracts the bid identifiers from ad event information.
+ * @typedef {Object} VideoImpressionVerifier
+ * @function trackBid - requests that a bid's ad be tracked for impression verification.
+ * @function getBidIdentifiers - requests information from the ad event data that can be used to match the ad to a tracked bid.
+ */
+
+/**
+ * @function VideoImpressionVerifier#trackBid
+ * @param {Object} bid - Bid that should be tracked.
+ * @return {String} - Identifier for the bid being tracked.
+ */
+
+/**
+ * @function VideoImpressionVerifier#getBidIdentifiers
+ * @param {String} adId - In the VAST tag, this value is present in the Ad element's id property.
+ * @param {String} adTagUrl - The ad tag url that was loaded into the player.
+ * @param {[String]} adWrapperIds - List of ad id's that were obtained from the different wrappers. Each redirect points to an ad wrapper.
+ * @return {bidIdentifier} - Object allowing the bid matching the ad event to be identified.
+ */
+
+/**
+ * @typedef {Object} bidIdentifier
+ * @property {String} adId - Bid identifier.
+ * @property {String} adUnitCode - Identifier for the Ad Unit for which the bid was made.
+ * @property {String} auctionId - Id of the auction in which the bid was made.
+ * @property {String} requestId - Id of the bid request which resulted in the bid.
+ */
+
+/**
+ * Factory function for obtaining a Video Impression Verifier.
+ * @param {Boolean} isCacheUsed - wether Prebid is configured to use a cache.
+ * @return {VideoImpressionVerifier}
+ */
 export function videoImpressionVerifierFactory(isCacheUsed) {
   const vastXmlEditor = vastXmlEditorFactory();
   const bidTracker = tracker();
@@ -27,7 +65,7 @@ function videoImpressionVerifier(vastXmlEditor_, bidTracker_) {
 
     if (vastUrl) {
       const url = new URL(vastUrl);
-      url.searchParams.append('pb_uuid', uuid);
+      url.searchParams.append(UUID_MARKER, uuid);
       bid.vastUrl = url.toString();
     } else if (vastXml) {
       bid.vastXml = vastXmlEditor.getVastXmlWithTracking(vastXml, uuid);
@@ -42,7 +80,7 @@ function videoImpressionVerifier(vastXmlEditor_, bidTracker_) {
 function cachedVideoImpressionVerifier(vastXmlEditor_, bidTracker_) {
   const verifier = baseImpressionVerifier(bidTracker_);
   const superTrackBid = verifier.trackBid;
-  const superGetTrackedBid = verifier.getTrackedBid;
+  const superGetBidIdentifiers = verifier.getBidIdentifiers;
   const vastXmlEditor = vastXmlEditor_;
 
   verifier.trackBid = function (bid, globalAdUnits) {
@@ -77,10 +115,10 @@ function cachedVideoImpressionVerifier(vastXmlEditor_, bidTracker_) {
     return adIdOverride;
   }
 
-  verifier.getTrackedBid = function (adId, adTagUrl, adWrapperIds) {
+  verifier.getBidIdentifiers = function (adId, adTagUrl, adWrapperIds) {
     // When the video is cached, the ad tag loaded into the player is a parent wrapper of the cache url.
     // As a result, the ad tag Url cannot include identifiers.
-    return superGetTrackedBid(adId, null, adWrapperIds);
+    return superGetBidIdentifiers(adId, null, adWrapperIds);
   }
 
   return verifier;
@@ -91,25 +129,18 @@ function baseImpressionVerifier(bidTracker_) {
 
   function trackBid(bid) {
     let { adId, adUnitCode, requestId, auctionId } = bid;
-    const uuid = 'pb-' + generateId(12);
+    const uuid = PB_PREFIX + generateId(12);
     bidTracker.store(uuid, { adId, adUnitCode, requestId, auctionId });
     return uuid;
   }
 
-  // get tracked Bid from adUrl ad id, adWrapper Ids
-  // get uuid from url, ad id, wrapper ids
-  // match to tracked bid
-  // find actual bid object
-  // remove from tracked
-  // return actual bid object
-
-  function getTrackedBid(adId, adTagUrl, adWrapperIds) {
+  function getBidIdentifiers(adId, adTagUrl, adWrapperIds) {
     return bidTracker.remove(adId) || getBidForAdTagUrl(adTagUrl) || getBidForAdWrappers(adWrapperIds);
   }
 
   return {
     trackBid,
-    getTrackedBid
+    getBidIdentifiers
   };
 
   function getBidForAdTagUrl(adTagUrl) {
@@ -119,7 +150,7 @@ function baseImpressionVerifier(bidTracker_) {
 
     const url = new URL(adTagUrl);
     const queryParams = url.searchParams;
-    let uuid = queryParams.get('pb_uuid');
+    let uuid = queryParams.get(UUID_MARKER);
     return uuid && bidTracker.remove(uuid);
   }
 
