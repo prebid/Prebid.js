@@ -617,7 +617,7 @@ function getEncryptedEidsForSource(source, encrypt, customFunction) {
     logInfo(`${MODULE_NAME} - Getting encrypted signal from custom function : ` + customFunction.name + `& source : ` + source);
     // Publishers are expected to define a common function which will be proxy for signal function.
     var customSignals = customFunction(source);
-    eidsSignals[source] = customSignals ? encryptSignals(customFunction(source)): null; // by default encrypt using base64 to avoid JSON errors
+    eidsSignals[source] = customSignals ? encryptSignals(customFunction(source)) : null; // by default encrypt using base64 to avoid JSON errors
   } else {
     // initialize signal with eids by default
     eids = (getGlobal()).getUserIdsAsEids();
