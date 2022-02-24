@@ -671,9 +671,8 @@ const OPEN_RTB_PROTOCOL = {
 
       const imp = { id: impressionId, ext, secure: s2sConfig.secure };
       const ortb2 = {...deepAccess(adUnit, 'ortb2Imp.ext.data')};
-      const mergedImp = {...imp, ...ortb2}
 
-      Object.keys(mergedImp).forEach(prop => {
+      Object.keys(ortb2).forEach(prop => {
         /**
           * Prebid AdSlot
           * @type {(string|undefined)}
@@ -696,14 +695,45 @@ const OPEN_RTB_PROTOCOL = {
               deepSetValue(imp, `ext.data.adserver.${name.toLowerCase()}`, value);
             }
           });
-        } else if (prop === 'ortb2Imp') {
-          deepSetValue(imp, `${prop}`, mergedImp[prop]);
         } else {
           deepSetValue(imp, `ext.data.${prop}`, ortb2[prop]);
         }
       });
 
       Object.assign(imp, mediaTypes);
+
+      const impE = {...deepAccess(adUnit, 'ortb2Imp.ext')};
+      const impression = { id: impressionId, ext, secure: s2sConfig.secure };
+
+      Object.keys(impE).forEach(prop => {
+        /**
+          * Prebid AdSlot
+          * @type {(string|undefined)}
+        */
+        if (prop === 'pbadslot') {
+          if (typeof impE[prop] === 'string' && impE[prop]) {
+            deepSetValue(impression, 'ext.data.pbadslot', impE[prop]);
+          } else {
+            // remove pbadslot property if it doesn't meet the spec
+            delete imp.ext.data.pbadslot;
+          }
+        } else if (prop === 'adserver') {
+          /**
+           * Copy GAM AdUnit and Name to imp
+           */
+          ['name', 'adslot'].forEach(name => {
+            /** @type {(string|undefined)} */
+            const value = deepAccess(impE, `adserver.${name}`);
+            if (typeof value === 'string' && value) {
+              deepSetValue(impression, `ext.data.adserver.${name.toLowerCase()}`, value);
+            }
+          });
+        } else {
+          deepSetValue(impression, `ext.data.${prop}`, impE[prop]);
+        }
+      });
+
+      Object.assign(impression, mediaTypes);
 
       // if storedAuctionResponse has been set, pass SRID
       const storedAuctionResponseBid = find(firstBidRequest.bids, bid => (bid.adUnitCode === adUnit.code && bid.storedAuctionResponse));
