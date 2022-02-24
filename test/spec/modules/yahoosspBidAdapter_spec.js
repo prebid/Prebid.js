@@ -1365,5 +1365,21 @@ describe('YahooSSP Bid Adapter:', () => {
         expect(response[0].ttl).to.equal(500);
       });
     });
+
+    describe('Aliasing support', () => {
+      it('should return default bidder code value', () => {
+        const { serverResponse, bidderRequest } = generateResponseMock('banner');
+        const response = spec.interpretResponse(serverResponse, {bidderRequest});
+        expect(response[0].bidderCode).to.equal('yahoossp');
+      });
+
+      it('should return default bidder code value', () => {
+        const { serverResponse, bidderRequest } = generateResponseMock('banner');
+        const aliasedBidderName = 'foobarbaz';
+        bidderRequest.bidderCode = aliasedBidderName;
+        const response = spec.interpretResponse(serverResponse, {bidderRequest});
+        expect(response[0].bidderCode).to.equal(aliasedBidderName);
+      })
+    });
   });
 });
