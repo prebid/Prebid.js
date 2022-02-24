@@ -123,7 +123,7 @@ export function notifyTranslationModule(fn) {
   fn.call(this, 'dfp');
 }
 
-getHook('registerAdserver').before(notifyTranslationModule);
+if (config.getConfig('brandCategoryTranslation.translationFile')) { getHook('registerAdserver').before(notifyTranslationModule); }
 
 /**
  * @typedef {Object} DfpAdpodOptions
@@ -271,7 +271,7 @@ function getCustParams(bid, options) {
   const prebidTargetingSet = Object.assign({},
     // Why are we adding standard keys here ? Refer https://github.com/prebid/Prebid.js/issues/3664
     { hb_uuid: bid && bid.videoCacheKey },
-    // hb_uuid will be deprecated and replaced by hb_cache_id
+    // hb_cache_id became optional in prebid 5.0 after 4.x enabled the concept of optional keys. Discussion led to reversing the prior expectation of deprecating hb_uuid
     { hb_cache_id: bid && bid.videoCacheKey },
     allTargetingData,
     adserverTargeting,

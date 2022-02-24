@@ -1,10 +1,15 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getStorageManager } from '../src/storageManager.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'gjirafa';
 const ENDPOINT_URL = 'https://central.gjirafa.com/bid';
 const DIMENSION_SEPARATOR = 'x';
 const SIZE_SEPARATOR = ';';
+const BISKO_ID = 'biskoId';
+const STORAGE_ID = 'bisko-sid';
+const SEGMENTS = 'biskoSegments';
+const storage = getStorageManager();
 
 export const spec = {
   code: BIDDER_CODE,
@@ -25,9 +30,12 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
+    const storageId = storage.localStorageIsEnabled() ? storage.getDataFromLocalStorage(STORAGE_ID) || '' : '';
+    const biskoId = storage.localStorageIsEnabled() ? storage.getDataFromLocalStorage(BISKO_ID) || '' : '';
+    const segments = storage.localStorageIsEnabled() ? JSON.parse(storage.getDataFromLocalStorage(SEGMENTS)) || [] : [];
+
     let propertyId = '';
     let pageViewGuid = '';
-    let storageId = '';
     let bidderRequestId = '';
     let url = '';
     let contents = [];
@@ -36,7 +44,6 @@ export const spec = {
     let placements = validBidRequests.map(bidRequest => {
       if (!propertyId) { propertyId = bidRequest.params.propertyId; }
       if (!pageViewGuid && bidRequest.params) { pageViewGuid = bidRequest.params.pageViewGuid || ''; }
-      if (!storageId && bidRequest.params) { storageId = bidRequest.params.storageId || ''; }
       if (!bidderRequestId) { bidderRequestId = bidRequest.bidderRequestId; }
       if (!url && bidderRequest) { url = bidderRequest.refererInfo.referer; }
       if (!contents.length && bidRequest.params.contents && bidRequest.params.contents.length) { contents = bidRequest.params.contents; }
@@ -60,6 +67,8 @@ export const spec = {
       propertyId: propertyId,
       pageViewGuid: pageViewGuid,
       storageId: storageId,
+      biskoId: biskoId,
+      segments: segments,
       url: url,
       requestid: bidderRequestId,
       placements: placements,

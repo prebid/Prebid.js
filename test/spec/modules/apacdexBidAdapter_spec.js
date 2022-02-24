@@ -37,12 +37,13 @@ describe('ApacdexBidAdapter', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('should return false if there is no siteId param', () => {
+    it('should return false if there is no siteId or placementId param', () => {
       const bid = {
         'bidder': 'apacdex',
         'adUnitCode': 'adunit-code',
         params: {
           site_id: '1a2b3c4d5e6f1a2b3c4d',
+          placement_id: 'plcm12345678',
         },
         'mediaTypes': {
           banner: {
@@ -218,15 +219,6 @@ describe('ApacdexBidAdapter', function () {
         'uids': [{
           'id': '2ae366c2-2576-45e5-bd21-72ed10598f17',
           'atype': 1
-        }]
-      }, {
-        'source': 'sharedid.org',
-        'uids': [{
-          'id': '01EZXQDVAPER4KE1VBS29XKV4Z',
-          'atype': 1,
-          'ext': {
-            'third': '01EZXQDVAPER4KE1VBS29XKV4Z'
-          }
         }]
       }],
     },

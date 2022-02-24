@@ -1,9 +1,9 @@
-import * as utils from '../src/utils.js';
+import { logError } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'iprom';
 const ENDPOINT_URL = 'https://core.iprom.net/programmatic';
-const VERSION = 'v1.0.0';
+const VERSION = 'v1.0.2';
 const DEFAULT_CURRENCY = 'EUR';
 const DEFAULT_NETREVENUE = true;
 const DEFAULT_TTL = 360;
@@ -13,18 +13,18 @@ export const spec = {
   isBidRequestValid: function ({ bidder, params = {} } = {}) {
     // id parameter checks
     if (!params.id) {
-      utils.logError(`${bidder}: Parameter 'id' missing`);
+      logError(`${bidder}: Parameter 'id' missing`);
       return false;
     } else if (typeof params.id !== 'string') {
-      utils.logError(`${bidder}: Parameter 'id' needs to be a string`);
+      logError(`${bidder}: Parameter 'id' needs to be a string`);
       return false;
     }
     // dimension parameter checks
     if (!params.dimension) {
-      utils.logError(`${bidder}: Required parameter 'dimension' missing`);
+      logError(`${bidder}: Required parameter 'dimension' missing`);
       return false;
     } else if (typeof params.dimension !== 'string') {
-      utils.logError(`${bidder}: Parameter 'dimension' needs to be a string`);
+      logError(`${bidder}: Parameter 'dimension' needs to be a string`);
       return false;
     }
 
@@ -52,7 +52,7 @@ export const spec = {
     const bidResponses = [];
 
     bids.forEach(bid => {
-      bidResponses.push({
+      const b = {
         ad: bid.ad,
         requestId: bid.requestId,
         cpm: bid.cpm,
@@ -62,7 +62,14 @@ export const spec = {
         currency: bid.currency || DEFAULT_CURRENCY,
         netRevenue: bid.netRevenue || DEFAULT_NETREVENUE,
         ttl: bid.ttl || DEFAULT_TTL,
-      });
+        meta: {},
+      };
+
+      if (bid.aDomains && bid.aDomains.length) {
+        b.meta.advertiserDomains = bid.aDomains;
+      }
+
+      bidResponses.push(b);
     });
 
     return bidResponses;

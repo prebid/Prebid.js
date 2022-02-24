@@ -5,7 +5,8 @@ const sharedWhiteList = [
   'core-js-pure/features/set', // ie11 supports Set but not Set#values
   'core-js-pure/features/string/includes', // no ie11
   'core-js-pure/features/number/is-integer', // no ie11,
-  'core-js-pure/features/array/from' // no ie11
+  'core-js-pure/features/array/from', // no ie11
+  'core-js-pure/web/url-search-params' // no ie11
 ];
 
 module.exports = {

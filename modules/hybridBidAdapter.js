@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js'
+import { _map, logWarn, deepAccess, isArray } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { auctionManager } from '../src/auctionManager.js'
 import { BANNER, VIDEO } from '../src/mediaTypes.js'
@@ -21,7 +21,7 @@ const placementTypes = {
 };
 
 function buildBidRequests(validBidRequests) {
-  return utils._map(validBidRequests, function(validBidRequest) {
+  return _map(validBidRequests, function(validBidRequest) {
     const params = validBidRequest.params;
     const bidRequest = {
       bidId: validBidRequest.bidId,
@@ -63,7 +63,7 @@ const createRenderer = (bid) => {
   try {
     renderer.setRender(outstreamRender);
   } catch (err) {
-    utils.logWarn('Prebid Error calling setRender on renderer', err);
+    logWarn('Prebid Error calling setRender on renderer', err);
   }
 
   return renderer;
@@ -143,8 +143,8 @@ function hasVideoMandatoryParams(mediaTypes) {
   const isHasVideoContext = !!mediaTypes.video && (mediaTypes.video.context === 'instream' || mediaTypes.video.context === 'outstream');
 
   const isPlayerSize =
-    !!utils.deepAccess(mediaTypes, 'video.playerSize') &&
-    utils.isArray(utils.deepAccess(mediaTypes, 'video.playerSize'));
+    !!deepAccess(mediaTypes, 'video.playerSize') &&
+    isArray(deepAccess(mediaTypes, 'video.playerSize'));
 
   return isHasVideoContext && isPlayerSize;
 }
@@ -237,8 +237,8 @@ export const spec = {
     let bidRequests = JSON.parse(bidRequest.data).bidRequests;
     const serverBody = serverResponse.body;
 
-    if (serverBody && serverBody.bids && utils.isArray(serverBody.bids)) {
-      return utils._map(serverBody.bids, function(bid) {
+    if (serverBody && serverBody.bids && isArray(serverBody.bids)) {
+      return _map(serverBody.bids, function(bid) {
         let rawBid = find(bidRequests, function (item) {
           return item.bidId === bid.bidId;
         });

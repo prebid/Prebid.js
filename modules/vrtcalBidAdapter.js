@@ -1,6 +1,7 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import {ajax} from '../src/ajax.js';
+import {isFn, isPlainObject} from '../src/utils.js';
 
 export const spec = {
   code: 'vrtcal',
@@ -10,8 +11,17 @@ export const spec = {
   },
   buildRequests: function (bidRequests) {
     const requests = bidRequests.map(function (bid) {
-      const params = {
+      let floor = 0;
 
+      if (isFn(bid.getFloor)) {
+        const floorInfo = bid.getFloor({ currency: 'USD', mediaType: 'banner', size: bid.sizes.map(([w, h]) => ({w, h})) });
+
+        if (isPlainObject(floorInfo) && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
+          floor = Math.max(floor, parseFloat(floorInfo.floor));
+        }
+      }
+
+      const params = {
         prebidJS: 1,
         prebidAdUnitCode: bid.adUnitCode,
         id: bid.bidId,
@@ -19,7 +29,7 @@ export const spec = {
           id: '1',
           banner: {
           },
-          bidfloor: 0.75
+          bidfloor: floor
         }],
         site: {
           id: 'VRTCAL_FILLED',
@@ -69,6 +79,12 @@ export const spec = {
         ad: response.seatbid[0].bid[0].adm,
         nurl: response.seatbid[0].bid[0].nurl
       };
+
+      if (response.seatbid[0].bid[0].adomain && response.seatbid[0].bid[0].adomain.length) {
+        bidResponse.meta = {
+          advertiserDomains: response.seatbid[0].bid[0].adomain
+        };
+      }
 
       bidResponses.push(bidResponse);
     }

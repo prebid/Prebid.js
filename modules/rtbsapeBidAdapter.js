@@ -1,9 +1,8 @@
-import * as utils from '../src/utils.js';
+import { deepAccess, triggerPixel } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {OUTSTREAM} from '../src/video.js';
 import {Renderer} from '../src/Renderer.js';
-import {triggerPixel} from '../src/utils.js';
 
 const BIDDER_CODE = 'rtbsape';
 const ENDPOINT = 'https://ssp-rtb.sape.ru/prebid';
@@ -64,30 +63,32 @@ export const spec = {
     let bids = {};
     bidRequest.data.bids.forEach(bid => bids[bid.bidId] = bid);
 
-    return serverResponse.body.bids.map(bid => {
-      let requestBid = bids[bid.requestId];
-      let context = utils.deepAccess(requestBid, 'mediaTypes.video.context');
+    return serverResponse.body.bids
+      .filter(bid => typeof (bid.meta || {}).advertiserDomains !== 'undefined')
+      .map(bid => {
+        let requestBid = bids[bid.requestId];
+        let context = deepAccess(requestBid, 'mediaTypes.video.context');
 
-      if (context === OUTSTREAM && (bid.vastUrl || bid.vastXml)) {
-        let renderer = Renderer.install({
-          id: bid.requestId,
-          url: RENDERER_SRC,
-          loaded: false
-        });
+        if (context === OUTSTREAM && (bid.vastUrl || bid.vastXml)) {
+          let renderer = Renderer.install({
+            id: bid.requestId,
+            url: RENDERER_SRC,
+            loaded: false
+          });
 
-        let muted = utils.deepAccess(requestBid, 'params.video.playerMuted');
-        if (typeof muted === 'undefined') {
-          muted = true;
+          let muted = deepAccess(requestBid, 'params.video.playerMuted');
+          if (typeof muted === 'undefined') {
+            muted = true;
+          }
+
+          bid.playerMuted = muted;
+          bid.renderer = renderer
+
+          renderer.setRender(setOutstreamRenderer);
         }
 
-        bid.playerMuted = muted;
-        bid.renderer = renderer
-
-        renderer.setRender(setOutstreamRenderer);
-      }
-
-      return bid;
-    });
+        return bid;
+      });
   },
 
   /**

@@ -23,6 +23,32 @@ describe('betweenBidAdapterTests', function () {
     let req_data = JSON.parse(request.data)[0].data;
     expect(req_data.bidid).to.equal('bid1234');
   });
+
+  it('validate_video_params', function () {
+    let bidRequestData = [{
+      bidId: 'bid1234',
+      bidder: 'between',
+      params: {w: 240, h: 400, s: 1112},
+      mediaTypes: {
+        video: {
+          context: 'outstream',
+          playerSize: [970, 250],
+          maxd: 123,
+          mind: 234,
+          codeType: 'unknown code type'
+        }
+      },
+    }];
+    let request = spec.buildRequests(bidRequestData);
+    let req_data = JSON.parse(request.data)[0].data;
+
+    expect(req_data.mediaType).to.equal(2);
+    expect(req_data.maxd).to.equal(123);
+    expect(req_data.mind).to.equal(234);
+    expect(req_data.pos).to.equal('atf');
+    expect(req_data.codeType).to.equal('inpage');
+  });
+
   it('validate itu param', function() {
     let bidRequestData = [{
       bidId: 'bid1234',
@@ -77,6 +103,54 @@ describe('betweenBidAdapterTests', function () {
 
     expect(req_data.subid).to.equal(1138);
   });
+
+  it('validate eids parameter', function() {
+    const USER_ID_DATA = [
+      {
+        source: 'admixer.net',
+        uids: [
+          { id: '5706411dc1c54268ac2ed668b27f92a3', atype: 3 }
+        ]
+      }
+    ];
+
+    let bidRequestData = [{
+      bidId: 'bid1234',
+      bidder: 'between',
+      params: {
+        w: 240,
+        h: 400,
+        s: 1112,
+      },
+      sizes: [[240, 400]],
+      userIdAsEids: USER_ID_DATA,
+    }];
+
+    let request = spec.buildRequests(bidRequestData);
+    let req_data = JSON.parse(request.data)[0].data;
+
+    expect(req_data.eids).to.have.deep.members(USER_ID_DATA);
+  });
+
+  it('validate eids parameter, if userIdAsEids = undefined', function() {
+    let bidRequestData = [{
+      bidId: 'bid1234',
+      bidder: 'between',
+      params: {
+        w: 240,
+        h: 400,
+        s: 1112,
+      },
+      sizes: [[240, 400]],
+      userIdAsEids: undefined
+    }];
+
+    let request = spec.buildRequests(bidRequestData);
+    let req_data = JSON.parse(request.data)[0].data;
+
+    expect(req_data.eids).to.have.deep.members([]);
+  });
+
   it('validate click3rd param', function() {
     let bidRequestData = [{
       bidId: 'bid1234',
@@ -182,6 +256,21 @@ describe('betweenBidAdapterTests', function () {
     expect(bid.requestId).to.equal('bid1234');
     expect(bid.ad).to.equal('Ad html');
   });
+
+  it('validate_response_video_params', function () {
+    let serverResponse = {
+      body: [{
+        mediaType: 2,
+        vastXml: 'vastXml',
+      }]
+    };
+    let bids = spec.interpretResponse(serverResponse);
+    expect(bids).to.have.lengthOf(1);
+    let bid = bids[0];
+    expect(bid.mediaType).to.equal(2);
+    expect(bid.vastXml).to.equal('vastXml');
+  });
+
   it('validate response params without currency', function () {
     let serverResponse = {
       body: [{
@@ -222,51 +311,6 @@ describe('betweenBidAdapterTests', function () {
     expect(req_data.sizes).to.deep.equal(['970x250', '240x400', '728x90'])
   });
 
-  it('check sharedId with id and third', function() {
-    const bidRequestData = [{
-      bidId: 'bid123',
-      bidder: 'between',
-      mediaTypes: {
-        banner: {
-          sizes: [[728, 90]]
-        }
-      },
-      params: {
-        s: 1112,
-      },
-      userId: {
-        sharedid: {
-          id: '01EXQE7JKNDRDDVATB0S2GX1NT',
-          third: '01EXQE7JKNDRDDVATB0S2GX1NT'
-        }
-      }
-    }];
-    const shid = JSON.parse(spec.buildRequests(bidRequestData).data)[0].data.shid;
-    const shid3 = JSON.parse(spec.buildRequests(bidRequestData).data)[0].data.shid3;
-    expect(shid).to.equal('01EXQE7JKNDRDDVATB0S2GX1NT') && expect(shid3).to.equal('01EXQE7JKNDRDDVATB0S2GX1NT');
-  });
-  it('check sharedId with only id', function() {
-    const bidRequestData = [{
-      bidId: 'bid123',
-      bidder: 'between',
-      mediaTypes: {
-        banner: {
-          sizes: [[728, 90]]
-        }
-      },
-      params: {
-        s: 1112,
-      },
-      userId: {
-        sharedid: {
-          id: '01EXQE7JKNDRDDVATB0S2GX1NT',
-        }
-      }
-    }];
-    const shid = JSON.parse(spec.buildRequests(bidRequestData).data)[0].data.shid;
-    const shid3 = JSON.parse(spec.buildRequests(bidRequestData).data)[0].data.shid3;
-    expect(shid).to.equal('01EXQE7JKNDRDDVATB0S2GX1NT') && expect(shid3).to.equal('');
-  });
   it('check adomain', function() {
     const serverResponse = {
       body: [{

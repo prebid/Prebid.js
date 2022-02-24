@@ -1,19 +1,20 @@
-import * as utils from '../src/utils.js';
+import { logInfo, deepAccess, logWarn, isArray, getParameterByName } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 
-const storage = getStorageManager();
+const GVLID = 816;
 const BIDDER_CODE = 'nobid';
-window.nobidVersion = '1.3.0';
+const storage = getStorageManager(GVLID, BIDDER_CODE);
+window.nobidVersion = '1.3.2';
 window.nobid = window.nobid || {};
 window.nobid.bidResponses = window.nobid.bidResponses || {};
 window.nobid.timeoutTotal = 0;
 window.nobid.bidWonTotal = 0;
 window.nobid.refreshCount = 0;
 function log(msg, obj) {
-  utils.logInfo('-NoBid- ' + msg, obj)
+  logInfo('-NoBid- ' + msg, obj)
 }
 function nobidSetCookie(cname, cvalue, hours) {
   var d = new Date();
@@ -28,7 +29,7 @@ function nobidHasPurpose1Consent(bidderRequest) {
   let result = true;
   if (bidderRequest && bidderRequest.gdprConsent) {
     if (bidderRequest.gdprConsent.gdprApplies && bidderRequest.gdprConsent.apiVersion === 2) {
-      result = !!(utils.deepAccess(bidderRequest.gdprConsent, 'vendorData.purpose.consents.1') === true);
+      result = !!(deepAccess(bidderRequest.gdprConsent, 'vendorData.purpose.consents.1') === true);
     }
   }
   return result;
@@ -111,11 +112,11 @@ function nobidBuildRequests(bids, bidderRequest) {
         var height = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
         return `${width}x${height}`;
       } catch (e) {
-        utils.logWarn('Could not parse screen dimensions, error details:', e);
+        logWarn('Could not parse screen dimensions, error details:', e);
       }
     }
     var getEIDs = function(eids) {
-      if (utils.isArray(eids) && eids.length > 0) {
+      if (isArray(eids) && eids.length > 0) {
         let src = [];
         eids.forEach((eid) => {
           let ids = [];
@@ -144,12 +145,14 @@ function nobidBuildRequests(bids, bidderRequest) {
     state['ref'] = document.referrer;
     state['gdpr'] = gdprConsent(bidderRequest);
     state['usp'] = uspConsent(bidderRequest);
+    state['pjbdr'] = (bidderRequest && bidderRequest.bidderCode) ? bidderRequest.bidderCode : 'nobid';
     const sch = schain(bids);
     if (sch) state['schain'] = sch;
     const cop = coppa();
     if (cop) state['coppa'] = cop;
-    const eids = getEIDs(utils.deepAccess(bids, '0.userIdAsEids'));
+    const eids = getEIDs(deepAccess(bids, '0.userIdAsEids'));
     if (eids && eids.length > 0) state['eids'] = eids;
+    if (config && config.getConfig('ortb2')) state['ortb2'] = config.getConfig('ortb2');
     return state;
   }
   function newAdunit(adunitObject, adunits) {
@@ -226,8 +229,8 @@ function nobidBuildRequests(bids, bidderRequest) {
     var placementId = bid.params['placementId'];
 
     var adType = 'banner';
-    const videoMediaType = utils.deepAccess(bid, 'mediaTypes.video');
-    const context = utils.deepAccess(bid, 'mediaTypes.video.context');
+    const videoMediaType = deepAccess(bid, 'mediaTypes.video');
+    const context = deepAccess(bid, 'mediaTypes.video.context');
     if (bid.mediaType === VIDEO || (videoMediaType && (context === 'instream' || context === 'outstream'))) {
       adType = 'video';
     }
@@ -337,6 +340,10 @@ window.addEventListener('message', function (event) {
 }, false);
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
+  aliases: [
+    { code: 'duration', gvlid: 674 }
+  ],
   supportedMediaTypes: [BANNER, VIDEO],
   /**
  * Determines whether or not the given bid request is valid.
@@ -357,7 +364,7 @@ export const spec = {
   buildRequests: function(validBidRequests, bidderRequest) {
     function resolveEndpoint() {
       var ret = 'https://ads.servenobid.com/';
-      var env = (typeof utils.getParameterByName === 'function') && (utils.getParameterByName('nobid-env'));
+      var env = (typeof getParameterByName === 'function') && (getParameterByName('nobid-env'));
       if (!env) ret = 'https://ads.servenobid.com/';
       else if (env == 'beta') ret = 'https://beta.servenobid.com/';
       else if (env == 'dev') ret = '//localhost:8282/';
@@ -442,7 +449,7 @@ export const spec = {
       }
       return syncs;
     } else {
-      utils.logWarn('-NoBid- Please enable iframe based user sync.', syncOptions);
+      logWarn('-NoBid- Please enable iframe based user sync.', syncOptions);
       return [];
     }
   },
