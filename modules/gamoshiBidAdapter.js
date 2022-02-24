@@ -1,4 +1,16 @@
-import { isFn, isPlainObject, isStr, isNumber, getDNT, deepSetValue, inIframe, isArray, deepAccess, logError, logWarn } from '../src/utils.js';
+import {
+  deepAccess,
+  deepSetValue,
+  getDNT,
+  inIframe,
+  isArray,
+  isFn,
+  isNumber,
+  isPlainObject,
+  isStr,
+  logError,
+  logWarn
+} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {Renderer} from '../src/Renderer.js';
@@ -99,17 +111,11 @@ export const spec = {
         source: {ext: {}},
         regs: {ext: {}}
       };
-      const gdprConsent = bidderRequest.gdprConsent;
 
-      if (gdprConsent && gdprConsent.consentString && gdprConsent.gdprApplies) {
-        rtbBidRequest.ext.gdpr_consent = {
-          consent_string: gdprConsent.consentString,
-          consent_required: gdprConsent.gdprApplies
-        };
+      const gdprConsent = getGdprConsent(bidderRequest);
 
-        deepSetValue(rtbBidRequest, 'regs.ext.gdpr', gdprConsent.gdprApplies === true ? 1 : 0);
-        deepSetValue(rtbBidRequest, 'user.ext.consent', gdprConsent.consentString);
-      }
+      deepSetValue(rtbBidRequest, 'regs.ext.gdpr', gdprConsent.consent_required === true ? 1 : 0);
+      deepSetValue(rtbBidRequest, 'user.ext.consent', gdprConsent.consent_string);
 
       if (validBidRequests[0].schain) {
         deepSetValue(rtbBidRequest, 'source.ext.schain', validBidRequests[0].schain);
@@ -359,6 +365,23 @@ function replaceMacros(url, macros) {
     .replace('[GDPR]', macros.gdpr)
     .replace('[CONSENT]', macros.consent)
     .replace('[US_PRIVACY]', macros.uspConsent);
+}
+
+function getGdprConsent(bidderRequest) {
+
+  const gdprConsent = bidderRequest.gdprConsent;
+
+  if (gdprConsent && gdprConsent.consentString && gdprConsent.gdprApplies) {
+    return {
+      consent_string: gdprConsent.consentString,
+      consent_required: gdprConsent.gdprApplies
+    };
+  }
+
+  return {
+    consent_required: false,
+    consent_string: '',
+  };
 }
 
 registerBidder(spec);
