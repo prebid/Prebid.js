@@ -285,6 +285,12 @@ const USER_IDS_CONFIG = {
     source: 'adquery.io',
     atype: 1
   },
+
+  // DAC ID
+  'dacId': {
+    source: 'dac.co.jp',
+    atype: 1
+  },
 };
 
 // this function will create an eid object for the given UserId sub-module
