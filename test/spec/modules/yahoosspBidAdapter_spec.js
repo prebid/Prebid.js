@@ -1367,13 +1367,13 @@ describe('YahooSSP Bid Adapter:', () => {
     });
 
     describe('Aliasing support', () => {
-      it('should return default bidder code value', () => {
+      it('should return the default bidder code value', () => {
         const { serverResponse, bidderRequest } = generateResponseMock('banner');
         const response = spec.interpretResponse(serverResponse, {bidderRequest});
         expect(response[0].bidderCode).to.equal('yahoossp');
       });
 
-      it('should return default bidder code value', () => {
+      it('should return the aliased bidder code value', () => {
         const { serverResponse, bidderRequest } = generateResponseMock('banner');
         const aliasedBidderName = 'foobarbaz';
         bidderRequest.bidderCode = aliasedBidderName;
