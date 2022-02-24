@@ -121,9 +121,8 @@ function interpretResponse(serverResponse, bidRequest) {
     return [];
   }
 
-  const playerUrl = bidRequest.player || body.playerUrl;
-
   for (const res of body.ads) {
+    const playerUrl = res.playerUrl || bidRequest.player || body.playerUrl;
     let bidResponse = {
       requestId: res.bidId,
       width: res.width,
@@ -131,6 +130,7 @@ function interpretResponse(serverResponse, bidRequest) {
       cpm: res.price,
       currency: res.currency,
       creativeId: res.creativeId,
+      playerUrl: playerUrl,
       dealId: body.dealId || '',
       ttl: body.ttl || DEFAULT_TTL,
       netRevenue: true,
