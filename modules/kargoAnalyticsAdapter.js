@@ -8,14 +8,16 @@ const KARGO_BIDDER_CODE = 'kargo';
 const CONSTANTS = require('../src/constants.json');
 
 const analyticsType = 'endpoint';
+
 let _bidResponseData = {
   timeout: 0,
   auctionId: '',
   adUnitCode: '',
   bidId: '',
   domain: '',
-  isNoBid: 0
+  isNoBid: false
 };
+let _isTimeout = false;
 
 var kargoAnalyticsAdapter = Object.assign(
   adapter({ analyticsType }), {
@@ -48,6 +50,8 @@ var kargoAnalyticsAdapter = Object.assign(
 function handleTimeout (timeouts) {
   _each(timeouts, timeout => {
     if (timeout.bidder === KARGO_BIDDER_CODE) {
+      _isTimeout = true;
+
       const { auctionId, adUnitCode, bidId } = timeout;
 
       _bidResponseData = {
@@ -57,18 +61,19 @@ function handleTimeout (timeouts) {
         bidId,
         domain: window.location.hostname,
       };
+      return;
     }
   });
 }
 
 function handleNoBid (nobid) {
   if (nobid.bidder === KARGO_BIDDER_CODE) {
-    _bidResponseData.isNoBid = 1;
+    _bidResponseData.isNoBid = true;
   }
 }
 
 function handleBidderDone (bidderDone) {
-  if (bidderDone.bidderCode === KARGO_BIDDER_CODE) {
+  if (bidderDone.bidderCode === KARGO_BIDDER_CODE && _isTimeout) {
     sendData('', _bidResponseData);
   }
 }
