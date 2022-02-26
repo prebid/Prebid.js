@@ -118,6 +118,7 @@ let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE
         wonBid.floorData = args.floorData;
         wonBid.rUp = args.rUp;
         wonBid.meta = args.meta;
+        wonBid.dealId = args.dealId;
         if (wonBid.sendStatus != 0) {
           livewrappedAnalyticsAdapter.sendEvents();
         }
@@ -295,7 +296,8 @@ function getWins(gdpr, auctionIds) {
           buc: bid.buc,
           lw: bid.lw,
           rUp: bid.rUp,
-          meta: bid.meta
+          meta: bid.meta,
+          dealId: bid.dealId
         });
       }
     });

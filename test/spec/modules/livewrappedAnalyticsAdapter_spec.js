@@ -41,6 +41,7 @@ const BID1 = {
   meta: {
     data: 'value1'
   },
+  dealId: 'dealid',
   getStatusCode() {
     return CONSTANTS.STATUS.GOOD;
   }
@@ -59,7 +60,8 @@ const BID2 = Object.assign({}, BID1, {
   adId: '3ecff0db240757',
   meta: {
     data: 'value2'
-  }
+  },
+  dealId: undefined
 });
 
 const BID3 = {
@@ -246,7 +248,8 @@ const ANALYTICS_MESSAGE = {
       auctionId: 0,
       meta: {
         data: 'value1'
-      }
+      },
+      dealId: 'dealid'
     },
     {
       timeStamp: 1519149562216,
