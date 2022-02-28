@@ -1,4 +1,4 @@
-import {isArray, logMessage, deepAccess, logWarn, parseSizesInput, deepSetValue, generateUUID, isEmpty, logError, _each, isFn} from '../src/utils.js';
+import {isArray, logMessage, deepAccess, logWarn, parseSizesInput, deepSetValue, generateUUID, isEmpty, logError, _each, isFn, formatQS} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER} from '../src/mediaTypes.js';
@@ -171,43 +171,31 @@ export const spec = {
     return bidResponses;
   },
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
-    let allUserSyncs = [];
-    if (!hasSynced && (syncOptions.iframeEnabled || syncOptions.pixelEnabled)) {
-      responses.forEach(csResp => {
-        if (csResp.body && csResp.body.ext && csResp.body.ext.usersyncs) {
-          try {
-            let response = csResp.body.ext.usersyncs
-            let bidders = response.bidder_status;
-            for (let synci in bidders) {
-              let thisSync = bidders[synci];
-              if (thisSync.no_cookie) {
-                let url = thisSync.usersync.url;
-                let type = thisSync.usersync.type;
+    if (!hasSynced && syncOptions.iframeEnabled) {
+      // data is only assigned if params are available to pass to syncEndpoint
+      let params = {};
 
-                if (!url) {
-                  logError(`No sync url for bidder luponmedia.`);
-                } else if ((type === 'image' || type === 'redirect') && syncOptions.pixelEnabled) {
-                  logMessage(`Invoking image pixel user sync for luponmedia`);
-                  allUserSyncs.push({type: 'image', url: url});
-                } else if (type == 'iframe' && syncOptions.iframeEnabled) {
-                  logMessage(`Invoking iframe user sync for luponmedia`);
-                  allUserSyncs.push({type: 'iframe', url: url});
-                } else {
-                  logError(`User sync type "${type}" not supported for luponmedia`);
-                }
-              }
-            }
-          } catch (e) {
-            logError(e);
-          }
+      if (gdprConsent) {
+        if (typeof gdprConsent.gdprApplies === 'boolean') {
+          params['gdpr'] = Number(gdprConsent.gdprApplies);
         }
-      });
-    } else {
-      logWarn('Luponmedia: Please enable iframe/pixel based user sync.');
-    }
+        if (typeof gdprConsent.consentString === 'string') {
+          params['gdpr_consent'] = gdprConsent.consentString;
+        }
+      }
 
-    hasSynced = true;
-    return allUserSyncs;
+      if (uspConsent) {
+        params['us_privacy'] = encodeURIComponent(uspConsent);
+      }
+
+      params = Object.keys(params).length ? `?${formatQS(params)}` : '';
+
+      hasSynced = true;
+      return {
+        type: 'iframe',
+        url: `https://user-sync.adxpremium.services/load-cookie.html` + params
+      };
+    }
   },
   onBidWon: bid => {
     const bidString = JSON.stringify(bid);
