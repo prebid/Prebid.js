@@ -90,6 +90,7 @@ export const spec = {
     // End of adding first party data
 
     requestParameters.schain = bidRequests[0].schain;
+    requestParameters.coppa = config.getConfig('coppa') === true;
 
     if (bidRequests[0].userId) {
       const eids = createEidsArray(bidRequests[0].userId);
@@ -650,6 +651,10 @@ export function ImproveDigitalAdServerJSClient(endPoint) {
       for (let prop in extraRequestParameters) {
         impressionBidRequestObject[prop] = extraRequestParameters[prop];
       }
+    }
+
+    if (requestParameters.coppa) {
+      impressionBidRequestObject.coppa = 1;
     }
 
     return impressionBidRequestObject;

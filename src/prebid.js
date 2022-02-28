@@ -19,6 +19,8 @@ import { adunitCounter } from './adUnits.js';
 import { executeRenderer, isRendererRequired } from './Renderer.js';
 import { createBid } from './bidfactory.js';
 import { storageCallbacks } from './storageManager.js';
+import { emitAdRenderSucceeded, emitAdRenderFail } from './adRendering.js';
+import { gdprDataHandler, uspDataHandler } from './adapterManager.js'
 
 const $$PREBID_GLOBAL$$ = getGlobal();
 const CONSTANTS = require('./constants.json');
@@ -27,7 +29,7 @@ const events = require('./events.js');
 const { triggerUserSyncs } = userSync;
 
 /* private variables */
-const { ADD_AD_UNITS, BID_WON, REQUEST_BIDS, SET_TARGETING, AD_RENDER_FAILED, AD_RENDER_SUCCEEDED, STALE_RENDER } = CONSTANTS.EVENTS;
+const { ADD_AD_UNITS, BID_WON, REQUEST_BIDS, SET_TARGETING, STALE_RENDER } = CONSTANTS.EVENTS;
 const { PREVENT_WRITING_ON_MAIN_DOCUMENT, NO_AD, EXCEPTION, CANNOT_FIND_AD, MISSING_DOC_OR_ADID } = CONSTANTS.AD_RENDER_FAILED_REASON;
 
 const eventValidators = {
@@ -146,7 +148,7 @@ function validateNativeMediaType(adUnit) {
 function validateAdUnitPos(adUnit, mediaType) {
   let pos = deepAccess(adUnit, `mediaTypes.${mediaType}.pos`);
 
-  if (!pos || !isNumber(pos) || !isFinite(pos)) {
+  if (!isNumber(pos) || isNaN(pos) || !isFinite(pos)) {
     let warning = `Value of property 'pos' on ad unit ${adUnit.code} should be of type: Number`;
 
     logWarn(warning);
@@ -267,6 +269,24 @@ $$PREBID_GLOBAL$$.getAdserverTargeting = function (adUnitCode) {
   return targeting.getAllTargeting(adUnitCode);
 };
 
+/**
+ * returns all consent data
+ * @return {Object} Map of consent types and data
+ * @alias module:pbjs.getConsentData
+ */
+function getConsentMetadata() {
+  return {
+    gdpr: gdprDataHandler.getConsentMeta(),
+    usp: uspDataHandler.getConsentMeta(),
+    coppa: !!(config.getConfig('coppa'))
+  }
+}
+
+$$PREBID_GLOBAL$$.getConsentMetadata = function () {
+  logInfo('Invoking $$PREBID_GLOBAL$$.getConsentMetadata');
+  return getConsentMetadata();
+};
+
 function getBids(type) {
   const responses = auctionManager[type]()
     .filter(bind.call(adUnitsFilter, this, auctionManager.getAdUnitCodes()));
@@ -384,23 +404,6 @@ $$PREBID_GLOBAL$$.setTargetingForAst = function (adUnitCodes) {
   // emit event
   events.emit(SET_TARGETING, targeting.getAllTargeting());
 };
-
-function emitAdRenderFail({ reason, message, bid, id }) {
-  const data = { reason, message };
-  if (bid) data.bid = bid;
-  if (id) data.adId = id;
-
-  logError(message);
-  events.emit(AD_RENDER_FAILED, data);
-}
-
-function emitAdRenderSucceeded({ doc, bid, id }) {
-  const data = { doc };
-  if (bid) data.bid = bid;
-  if (id) data.adId = id;
-
-  events.emit(AD_RENDER_SUCCEEDED, data);
-}
 
 /**
  * This function will check for presence of given node in given parent. If not present - will inject it.

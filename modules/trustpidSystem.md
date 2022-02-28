@@ -23,7 +23,7 @@ pbjs.setConfig({
         storage: {
           type: "html5",
           name: "trustpid",
-          expires: 60, //days
+          expires: 1, //days
         },
       }
     ],
