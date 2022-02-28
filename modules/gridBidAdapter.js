@@ -269,11 +269,11 @@ export const spec = {
 
     const site = config.getConfig('ortb2.site');
     if (site) {
-      const pageCategory = [...site.cat, ...site.pagecat];
-      if (pageCategory && Array.isArray(pageCategory)) {
-        request.site.cat = pageCategory.filter((category) => {
-          return category && typeof category === 'string'
-        });
+      const pageCategory = [...(site.cat || []), ...(site.pagecat || [])].filter((category) => {
+        return category && typeof category === 'string'
+      });
+      if (pageCategory.length) {
+        request.site.cat = pageCategory;
       }
       const genre = deepAccess(site, 'content.genre');
       if (genre && typeof genre === 'string') {
