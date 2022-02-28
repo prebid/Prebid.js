@@ -1,6 +1,7 @@
 import { getWindowTop, deepAccess, logMessage } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { ajax } from '../src/ajax.js';
 
 const BIDDER_CODE = 'colossusssp';
 const G_URL = 'https://colossusssp.com/?c=o&m=multi';
@@ -46,7 +47,10 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: (bid) => {
-    return Boolean(bid.bidId && bid.params && !isNaN(bid.params.placement_id));
+    const validPlacamentId = bid.params && !isNaN(bid.params.placement_id);
+    const validGroupId = bid.params && !isNaN(bid.params.group_id);
+
+    return Boolean(bid.bidId && (validPlacamentId || validGroupId));
   },
 
   /**
@@ -60,13 +64,13 @@ export const spec = {
     const location = winTop.location;
     let placements = [];
     let request = {
-      'deviceWidth': winTop.screen.width,
-      'deviceHeight': winTop.screen.height,
-      'language': (navigator && navigator.language) ? navigator.language : '',
-      'secure': location.protocol === 'https:' ? 1 : 0,
-      'host': location.host,
-      'page': location.pathname,
-      'placements': placements,
+      deviceWidth: winTop.screen.width,
+      deviceHeight: winTop.screen.height,
+      language: (navigator && navigator.language) ? navigator.language : '',
+      secure: location.protocol === 'https:' ? 1 : 0,
+      host: location.host,
+      page: location.pathname,
+      placements: placements,
     };
 
     if (bidderRequest) {
@@ -84,6 +88,7 @@ export const spec = {
       let traff = bid.params.traffic || BANNER
       let placement = {
         placementId: bid.params.placement_id,
+        groupId: bid.params.group_id,
         bidId: bid.bidId,
         sizes: bid.mediaTypes[traff].sizes,
         traffic: traff,
@@ -175,6 +180,12 @@ export const spec = {
       type: 'image',
       url: G_URL_SYNC
     }];
+  },
+
+  onBidWon: (bid) => {
+    if (bid.nurl) {
+      ajax(bid.nurl, null);
+    }
   }
 };
 

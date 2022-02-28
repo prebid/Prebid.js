@@ -55,7 +55,6 @@ var adUnits = [
         publisherId: '5cebea3c9eea646c7b623d5e',
         IABCategories: "['IAB1', 'IAB5']",
         device:{
-          ip: '123.145.167.189',
           ifa:"AEBE52E7-03EE-455A-B3C4-E57283966239",
         },
         app: {

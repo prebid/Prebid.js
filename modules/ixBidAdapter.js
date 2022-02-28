@@ -1,8 +1,8 @@
-import { deepAccess, parseGPTSingleSizeArray, inIframe, deepClone, logError, logWarn, isFn, contains, isInteger, isArray, deepSetValue, parseQueryStringParameters, isEmpty, mergeDeep, convertTypes } from '../src/utils.js';
+import { deepAccess, parseGPTSingleSizeArray, inIframe, deepClone, logError, logWarn, isFn, contains, isInteger, isArray, deepSetValue, parseQueryStringParameters, isEmpty, mergeDeep, convertTypes, hasDeviceAccess } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
-import { EVENTS } from '../src/constants.json';
-import { getStorageManager } from '../src/storageManager.js';
+import CONSTANTS from '../src/constants.json';
+import { getStorageManager, validateStorageEnforcement } from '../src/storageManager.js';
 import events from '../src/events.js';
 import find from 'core-js-pure/features/array/find.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -53,23 +53,25 @@ const SOURCE_RTI_MAPPING = {
   'neustar.biz': 'fabrickId',
   'zeotap.com': 'zeotapIdPlus',
   'uidapi.com': 'UID2',
-  'adserver.org': 'TDID'
+  'adserver.org': 'TDID',
+  'id5-sync.com': '', // ID5 Universal ID, configured as id5Id
+  'crwdcntrl.net': '', // Lotame Panorama ID, lotamePanoramaId
+  'epsilon.com': '', // Publisher Link, publinkId
+  'audigent.com': '', // Halo ID from Audigent, haloId
+  'pubcid.org': '', // SharedID, pubcid
+  'trustpid.com': '' // Trustpid
 };
 const PROVIDERS = [
   'britepoolid',
-  'id5id',
   'lipbid',
-  'haloId',
   'criteoId',
-  'lotamePanoramaId',
   'merkleId',
   'parrableId',
   'connectid',
   'tapadId',
   'quantcastId',
-  'pubcid',
-  'TDID',
-  'flocId'
+  'flocId',
+  'pubProvidedId'
 ];
 const REQUIRED_VIDEO_PARAMS = ['mimes', 'minduration', 'maxduration']; // note: protocol/protocols is also reqd
 const VIDEO_PARAMS_ALLOW_LIST = [
@@ -194,17 +196,13 @@ function bidToImp(bid) {
   imp.id = bid.bidId;
 
   imp.ext = {};
-  imp.ext.siteID = bid.params.siteId;
+  imp.ext.siteID = bid.params.siteId.toString();
 
   if (bid.params.hasOwnProperty('id') &&
     (typeof bid.params.id === 'string' || typeof bid.params.id === 'number')) {
     imp.ext.sid = String(bid.params.id);
   }
 
-  const dfpAdUnitCode = deepAccess(bid, 'ortb2Imp.ext.data.adserver.adslot');
-  if (dfpAdUnitCode) {
-    imp.ext.dfp_ad_unit_code = dfpAdUnitCode;
-  }
   return imp;
 }
 
@@ -444,16 +442,19 @@ function getEidInfo(allEids, flocData) {
   let seenSources = {};
   if (isArray(allEids)) {
     for (const eid of allEids) {
-      if (SOURCE_RTI_MAPPING[eid.source] && deepAccess(eid, 'uids.0')) {
+      if (SOURCE_RTI_MAPPING.hasOwnProperty(eid.source) && deepAccess(eid, 'uids.0')) {
         seenSources[eid.source] = true;
-        eid.uids[0].ext = {
-          rtiPartner: SOURCE_RTI_MAPPING[eid.source]
-        };
+        if (SOURCE_RTI_MAPPING[eid.source] != '') {
+          eid.uids[0].ext = {
+            rtiPartner: SOURCE_RTI_MAPPING[eid.source]
+          };
+        }
         delete eid.uids[0].atype;
         toSend.push(eid);
       }
     }
   }
+
   const isValidFlocId = flocData && flocData.id && flocData.version;
   if (isValidFlocId) {
     const flocEid = {
@@ -466,6 +467,7 @@ function getEidInfo(allEids, flocData) {
 
   return { toSend, seenSources };
 }
+
 /**
  * Builds a request object to be sent to the ad server based on bid requests.
  *
@@ -482,6 +484,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   // Get ids from Prebid User ID Modules
   let eidInfo = getEidInfo(deepAccess(validBidRequests, '0.userIdAsEids'), deepAccess(validBidRequests, '0.userId.flocId'));
   let userEids = eidInfo.toSend;
+  const pageUrl = getPageUrl() || deepAccess(bidderRequest, 'refererInfo.referer');
 
   // RTI ids will be included in the bid request if the function getIdentityInfo() is loaded
   // and if the data for the partner exist
@@ -580,8 +583,8 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
       deepSetValue(r, 'regs.ext.us_privacy', bidderRequest.uspConsent);
     }
 
-    if (bidderRequest.refererInfo) {
-      r.site.page = bidderRequest.refererInfo.referer;
+    if (pageUrl) {
+      r.site.page = pageUrl;
     }
   }
 
@@ -678,8 +681,10 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
       currentImpressionSize = encodeURIComponent(JSON.stringify({ impressionObjects })).length;
     }
 
+    const gpid = impressions[transactionIds[adUnitIndex]].gpid;
+    const dfpAdUnitCode = impressions[transactionIds[adUnitIndex]].dfp_ad_unit_code;
     if (impressionObjects.length && BANNER in impressionObjects[0]) {
-      const { id, banner: { topframe }, ext } = impressionObjects[0];
+      const { id, banner: { topframe } } = impressionObjects[0];
       const _bannerImpression = {
         id,
         banner: {
@@ -688,10 +693,10 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
         },
       }
 
-      if (ext.dfp_ad_unit_code) {
-        _bannerImpression.ext = {
-          dfp_ad_unit_code: ext.dfp_ad_unit_code
-        }
+      if (dfpAdUnitCode || gpid) {
+        _bannerImpression.ext = {};
+        _bannerImpression.ext.dfp_ad_unit_code = dfpAdUnitCode;
+        _bannerImpression.ext.gpid = gpid;
       }
 
       if ('bidfloor' in impressionObjects[0]) {
@@ -706,6 +711,8 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
       r.ext.ixdiag.msd += missingCount;
       r.ext.ixdiag.msi += missingBannerImpressions.length;
     } else {
+      // set imp.ext.gpid to resolved gpid for each imp
+      impressionObjects.forEach(imp => deepSetValue(imp, 'ext.gpid', gpid));
       r.imp.push(...impressionObjects);
     }
 
@@ -882,6 +889,7 @@ function createVideoImps(validBidRequest, videoImps) {
     videoImps[validBidRequest.transactionId] = {};
     videoImps[validBidRequest.transactionId].ixImps = [];
     videoImps[validBidRequest.transactionId].ixImps.push(imp);
+    videoImps[validBidRequest.transactionId].gpid = deepAccess(validBidRequest, 'ortb2Imp.ext.gpid');
   }
 }
 
@@ -902,11 +910,15 @@ function createBannerImps(validBidRequest, missingBannerSizes, bannerImps) {
 
   const bannerSizeDefined = includesSize(deepAccess(validBidRequest, 'mediaTypes.banner.sizes'), deepAccess(validBidRequest, 'params.size'));
 
+  if (!bannerImps.hasOwnProperty(validBidRequest.transactionId)) {
+    bannerImps[validBidRequest.transactionId] = {};
+  }
+
+  bannerImps[validBidRequest.transactionId].gpid = deepAccess(validBidRequest, 'ortb2Imp.ext.gpid');
+  bannerImps[validBidRequest.transactionId].dfp_ad_unit_code = deepAccess(validBidRequest, 'ortb2Imp.ext.data.adserver.adslot');
+
   // Create IX imps from params.size
   if (bannerSizeDefined) {
-    if (!bannerImps.hasOwnProperty(validBidRequest.transactionId)) {
-      bannerImps[validBidRequest.transactionId] = {};
-    }
     if (!bannerImps[validBidRequest.transactionId].hasOwnProperty('ixImps')) {
       bannerImps[validBidRequest.transactionId].ixImps = []
     }
@@ -915,6 +927,20 @@ function createBannerImps(validBidRequest, missingBannerSizes, bannerImps) {
 
   if (ixConfig.hasOwnProperty('detectMissingSizes') && ixConfig.detectMissingSizes) {
     updateMissingSizes(validBidRequest, missingBannerSizes, imp);
+  }
+}
+
+/**
+ * Returns the `pageUrl` set by publisher on the page if it is an valid url
+ */
+function getPageUrl() {
+  const pageUrl = config.getConfig('pageUrl');
+  try {
+    const url = new URL(pageUrl);
+    return url.href;
+  } catch (_) {
+    logWarn(`IX Bid Adapter: invalid pageUrl config property value set: ${pageUrl}`);
+    return undefined;
   }
 }
 
@@ -991,7 +1017,7 @@ function createMissingBannerImp(bid, imp, newSize) {
  *
  * @param {ErrorData} data
  */
-function errorEventHandler(data) {
+function storeErrorEventData(data) {
   if (!storage.localStorageIsEnabled()) {
     return;
   }
@@ -1031,6 +1057,24 @@ function errorEventHandler(data) {
   }
 
   storage.setDataInLocalStorage(LOCAL_STORAGE_KEY, JSON.stringify(currentStorage));
+}
+
+/**
+ * Event handler for storing data into local storage. It will only store data if
+ * local storage premissions are avaliable
+ */
+function localStorageHandler(data) {
+  if (data.type === 'ERROR' && data.arguments && data.arguments[1] && data.arguments[1].bidder === BIDDER_CODE) {
+    const DEFAULT_ENFORCEMENT_SETTINGS = {
+      hasEnforcementHook: false,
+      valid: hasDeviceAccess()
+    };
+    validateStorageEnforcement(GLOBAL_VENDOR_ID, BIDDER_CODE, DEFAULT_ENFORCEMENT_SETTINGS, (permissions) => {
+      if (permissions.valid) {
+        storeErrorEventData(data);
+      }
+    });
+  }
 }
 
 /**
@@ -1129,8 +1173,8 @@ export const spec = {
    */
   isBidRequestValid: function (bid) {
     if (!hasRegisteredHandler) {
-      events.on(EVENTS.AUCTION_DEBUG, errorEventHandler);
-      events.on(EVENTS.AD_RENDER_FAILED, errorEventHandler);
+      events.on(CONSTANTS.EVENTS.AUCTION_DEBUG, localStorageHandler);
+      events.on(CONSTANTS.EVENTS.AD_RENDER_FAILED, localStorageHandler);
       hasRegisteredHandler = true;
     }
 
@@ -1168,7 +1212,12 @@ export const spec = {
     }
 
     if (typeof bid.params.siteId !== 'string' && typeof bid.params.siteId !== 'number') {
-      logError('IX Bid Adapter: siteId must be string or number value.', { bidder: BIDDER_CODE, code: ERROR_CODES.SITE_ID_INVALID_VALUE });
+      logError('IX Bid Adapter: siteId must be string or number type.', { bidder: BIDDER_CODE, code: ERROR_CODES.SITE_ID_INVALID_VALUE });
+      return false;
+    }
+
+    if (typeof bid.params.siteId !== 'string' && isNaN(Number(bid.params.siteId))) {
+      logError('IX Bid Adapter: siteId must valid value', { bidder: BIDDER_CODE, code: ERROR_CODES.SITE_ID_INVALID_VALUE });
       return false;
     }
 
@@ -1299,7 +1348,7 @@ export const spec = {
         bid = parseBid(innerBids[j], responseBody.cur, bidRequest);
 
         if (!deepAccess(bid, 'mediaTypes.video.renderer') && deepAccess(bid, 'mediaTypes.video.context') === 'outstream') {
-          bid.mediaTypes.video.renderer = createRenderer(innerBids[j].bidId);
+          bid.renderer = createRenderer(innerBids[j].bidId);
         }
 
         bids.push(bid);

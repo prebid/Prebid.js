@@ -867,10 +867,10 @@ function _handleEids(payload, validBidRequests) {
 
 function _checkMediaType(bid, newBid) {
   // Create a regex here to check the strings
-  if (bid.ext && bid.ext['BidType'] != undefined) {
-    newBid.mediaType = MEDIATYPE[bid.ext.BidType];
+  if (bid.ext && bid.ext['bidtype'] != undefined) {
+    newBid.mediaType = MEDIATYPE[bid.ext.bidtype];
   } else {
-    logInfo(LOG_WARN_PREFIX + 'bid.ext.BidType does not exist, checking alternatively for mediaType')
+    logInfo(LOG_WARN_PREFIX + 'bid.ext.bidtype does not exist, checking alternatively for mediaType')
     var adm = bid.adm;
     var admStr = '';
     var videoRegex = new RegExp(/VAST\s+version/);
@@ -1080,7 +1080,7 @@ export const spec = {
       bid = deepClone(originalBid);
       bid.params.adSlot = bid.params.adSlot || '';
       _parseAdSlot(bid);
-      if (bid.params.hasOwnProperty('video')) {
+      if ((bid.mediaTypes && bid.mediaTypes.hasOwnProperty('video')) || bid.params.hasOwnProperty('video')) {
         // Nothing to do
       } else {
         // If we have a native mediaType configured alongside banner, its ok if the banner size is not set in width and height

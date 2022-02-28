@@ -114,6 +114,7 @@ let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE
         let wonBid = cache.auctions[args.auctionId].bids[args.requestId];
         wonBid.won = true;
         wonBid.floorData = args.floorData;
+        wonBid.rUp = args.rUp;
         if (wonBid.sendStatus != 0) {
           livewrappedAnalyticsAdapter.sendEvents();
         }
@@ -288,7 +289,8 @@ function getWins(gdpr, auctionIds) {
           auctionId: auctionIdPos,
           auc: bid.auc,
           buc: bid.buc,
-          lw: bid.lw
+          lw: bid.lw,
+          rUp: bid.rUp
         });
       }
     });
