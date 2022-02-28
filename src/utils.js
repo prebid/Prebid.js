@@ -1,8 +1,8 @@
 /* eslint-disable no-console */
 import { config } from './config.js';
 import clone from 'just-clone';
-import find from 'prebidjs-polyfill/find.js';
-import includes from 'prebidjs-polyfill/includes.js';
+import find from 'core-js-pure/features/array/find.js';
+import includes from 'core-js-pure/features/array/includes.js';
 
 const CONSTANTS = require('./constants.json');
 
@@ -282,6 +282,20 @@ export function logError() {
     console.error.apply(console, decorateLog(arguments, 'ERROR:'));
   }
   emitEvent(CONSTANTS.EVENTS.AUCTION_DEBUG, {type: 'ERROR', arguments: arguments});
+}
+
+export function prefixLog(prefix) {
+  function decorate(fn) {
+    return function (...args) {
+      fn(prefix, ...args);
+    }
+  }
+  return {
+    logError: decorate(logError),
+    logWarn: decorate(logWarn),
+    logMessage: decorate(logMessage),
+    logInfo: decorate(logInfo),
+  }
 }
 
 function decorateLog(args, prefix) {
@@ -1241,15 +1255,21 @@ export function buildUrl(obj) {
  * This function deeply compares two objects checking for their equivalence.
  * @param {Object} obj1
  * @param {Object} obj2
+ * @param checkTypes {boolean} if set, two objects with identical properties but different constructors will *not*
+ * be considered equivalent.
  * @returns {boolean}
  */
-export function deepEqual(obj1, obj2) {
+export function deepEqual(obj1, obj2, {checkTypes = false} = {}) {
   if (obj1 === obj2) return true;
-  else if ((typeof obj1 === 'object' && obj1 !== null) && (typeof obj2 === 'object' && obj2 !== null)) {
+  else if (
+    (typeof obj1 === 'object' && obj1 !== null) &&
+    (typeof obj2 === 'object' && obj2 !== null) &&
+    (!checkTypes || (obj1.constructor === obj2.constructor))
+  ) {
     if (Object.keys(obj1).length !== Object.keys(obj2).length) return false;
     for (let prop in obj1) {
       if (obj2.hasOwnProperty(prop)) {
-        if (!deepEqual(obj1[prop], obj2[prop])) {
+        if (!deepEqual(obj1[prop], obj2[prop], {checkTypes})) {
           return false;
         }
       } else {

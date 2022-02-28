@@ -1,7 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { NATIVE, BANNER } from '../src/mediaTypes.js';
 import { parseSizesInput, deepAccess, parseQueryStringParameters } from '../src/utils.js';
-import includes from 'prebidjs-polyfill/includes.js';
+import includes from 'core-js-pure/features/array/includes.js';
 
 const BIDDER_CODE = 'adnow';
 const ENDPOINT = 'https://n.ads3-adnow.com/a';

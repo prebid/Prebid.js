@@ -19,18 +19,19 @@ import {
   logMessage,
   logWarn,
   shuffle,
-  timestamp
+  timestamp,
+  isStr
 } from './utils.js';
-import {getLabels, resolveStatus} from './sizeMapping.js';
-import {decorateAdUnitsWithNativeParams, nativeAdapters} from './native.js';
-import {newBidder} from './adapters/bidderFactory.js';
-import {ajaxBuilder} from './ajax.js';
-import {config, RANDOM} from './config.js';
-import {hook} from './hook.js';
-import includes from 'prebidjs-polyfill/includes.js';
-import find from 'prebidjs-polyfill/find.js';
-import {adunitCounter} from './adUnits.js';
-import {getRefererInfo} from './refererDetection.js';
+import { getLabels, resolveStatus } from './sizeMapping.js';
+import { decorateAdUnitsWithNativeParams, nativeAdapters } from './native.js';
+import { newBidder } from './adapters/bidderFactory.js';
+import { ajaxBuilder } from './ajax.js';
+import { config, RANDOM } from './config.js';
+import { hook } from './hook.js';
+import includes from 'core-js-pure/features/array/includes.js';
+import find from 'core-js-pure/features/array/find.js';
+import { adunitCounter } from './adUnits.js';
+import { getRefererInfo } from './refererDetection.js';
 
 var CONSTANTS = require('./constants.json');
 var events = require('./events.js');
@@ -173,21 +174,43 @@ function getAdUnitCopyForClientAdapters(adUnits) {
 
 export let gdprDataHandler = {
   consentData: null,
-  setConsentData: function(consentInfo) {
+  generatedTime: null,
+  setConsentData: function(consentInfo, time = timestamp()) {
     gdprDataHandler.consentData = consentInfo;
+    gdprDataHandler.generatedTime = time;
   },
   getConsentData: function() {
     return gdprDataHandler.consentData;
+  },
+  getConsentMeta: function() {
+    if (gdprDataHandler.consentData && gdprDataHandler.consentData.vendorData && gdprDataHandler.generatedTime) {
+      return {
+        gdprApplies: gdprDataHandler.consentData.gdprApplies,
+        consentStringSize: (isStr(gdprDataHandler.consentData.vendorData.tcString)) ? gdprDataHandler.consentData.vendorData.tcString.length : 0,
+        generatedAt: gdprDataHandler.generatedTime,
+        apiVersion: gdprDataHandler.consentData.apiVersion
+      };
+    }
   }
 };
 
 export let uspDataHandler = {
   consentData: null,
-  setConsentData: function(consentInfo) {
+  generatedTime: null,
+  setConsentData: function(consentInfo, time = timestamp()) {
     uspDataHandler.consentData = consentInfo;
+    uspDataHandler.generatedTime = time;
   },
   getConsentData: function() {
     return uspDataHandler.consentData;
+  },
+  getConsentMeta: function() {
+    if (uspDataHandler.consentData && uspDataHandler.generatedTime) {
+      return {
+        usp: uspDataHandler.consentData,
+        generatedAt: uspDataHandler.generatedTime
+      }
+    }
   }
 };
 
