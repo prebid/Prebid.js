@@ -943,7 +943,22 @@ describe('AppNexusAdapter', function () {
           flocId: {
             id: 'sample-flocid-value',
             version: 'chrome.1.0'
-          }
+          },
+          pubProvidedId: [{
+            source: 'puburl.com',
+            uids: [{
+              id: 'pubid1',
+              atype: 1,
+              ext: {
+                stype: 'ppuid'
+              }
+            }]
+          }, {
+            source: 'puburl2.com',
+            uids: [{
+              id: 'pubid2'
+            }]
+          }]
         }
       });
 
@@ -979,6 +994,16 @@ describe('AppNexusAdapter', function () {
         source: 'uidapi.com',
         id: 'sample-uid2-value',
         rti_partner: 'UID2'
+      });
+
+      expect(payload.eids).to.deep.include({
+        source: 'puburl.com',
+        id: 'pubid1'
+      });
+
+      expect(payload.eids).to.deep.include({
+        source: 'puburl2.com',
+        id: 'pubid2'
       });
     });
 
