@@ -768,7 +768,7 @@ describe('ttdBidAdapter', function () {
                 'dealid': 'ttd-dealid-1',
                 'adomain': ['advertiser.com'],
                 'ext': {
-                  'mediatype': 1
+                  'mediatype': 'Display'
                 }
               }
             ],
@@ -877,7 +877,7 @@ describe('ttdBidAdapter', function () {
                 'h': 600,
                 'cat': [],
                 'ext': {
-                  'mediatype': 1
+                  'mediatype': 'Display'
                 }
               },
               {
@@ -895,7 +895,7 @@ describe('ttdBidAdapter', function () {
                 'h': 90,
                 'cat': [],
                 'ext': {
-                  'mediatype': 1
+                  'mediatype': 'Display'
                 }
               }
             ],
@@ -1030,7 +1030,7 @@ describe('ttdBidAdapter', function () {
                   },
                   'imptrackers': [],
                   'viewabilityvendors': [],
-                  'mediatype': 2
+                  'mediatype': 'Video'
                 },
                 'h': 480,
                 'impid': '2eabb87dfbcae4',
@@ -1167,7 +1167,7 @@ describe('ttdBidAdapter', function () {
                 'h': 600,
                 'cat': [],
                 'ext': {
-                  'mediatype': 1
+                  'mediatype': 'Display'
                 }
               },
               {
@@ -1180,7 +1180,7 @@ describe('ttdBidAdapter', function () {
                   },
                   'imptrackers': [],
                   'viewabilityvendors': [],
-                  'mediatype': 2
+                  'mediatype': 'Video'
                 },
                 'h': 480,
                 'impid': '2eabb87dfbcae4',
