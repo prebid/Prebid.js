@@ -493,6 +493,15 @@ describe('kargo adapter tests', function () {
           adm: '<div id="2"></div>',
           width: 300,
           height: 250
+        },
+        4: {
+          id: 'bar',
+          cpm: 2.5,
+          adm: '<div id="4"></div>',
+          width: 300,
+          height: 250,
+          metadata: {},
+          currency: 'EUR'
         }
       }}, {
         currency: 'USD',
@@ -508,6 +517,11 @@ describe('kargo adapter tests', function () {
           }
         }, {
           bidId: 3,
+          params: {
+            placementId: 'bar'
+          }
+        }, {
+          bidId: 4,
           params: {
             placementId: 'bar'
           }
@@ -551,6 +565,17 @@ describe('kargo adapter tests', function () {
         dealId: undefined,
         netRevenue: true,
         currency: 'USD',
+        meta: undefined
+      }, {
+        requestId: '4',
+        cpm: 2.5,
+        width: 300,
+        height: 250,
+        ad: '<div id="4"></div>',
+        creativeId: 'bar',
+        dealId: undefined,
+        netRevenue: true,
+        currency: 'EUR',
         meta: undefined
       }];
       expect(resp).to.deep.equal(expectation);
