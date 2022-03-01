@@ -523,7 +523,6 @@ describe('kargo adapter tests', function () {
         width: 300,
         height: 250,
         ad: '<div id="4"></div>',
-        ttl: 300,
         creativeId: 'bar',
         dealId: undefined,
         netRevenue: true,
