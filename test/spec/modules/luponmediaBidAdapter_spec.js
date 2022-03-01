@@ -234,100 +234,121 @@ describe('luponmediaBidAdapter', function () {
     });
   });
 
-  describe('getUserSyncs', function () {
-    const bidResponse1 = {
-      'body': {
-        'ext': {
-          'responsetimemillis': {
-            'luponmedia': 233
-          },
-          'tmaxrequest': 1500,
-          'usersyncs': {
-            'status': 'ok',
-            'bidder_status': [
-              {
-                'bidder': 'luponmedia',
-                'no_cookie': true,
-                'usersync': {
-                  'url': 'https://adxpremium.services/api/usersync',
-                  'type': 'redirect'
-                }
-              },
-              {
-                'bidder': 'luponmedia',
-                'no_cookie': true,
-                'usersync': {
-                  'url': 'https://adxpremium.services/api/iframeusersync',
-                  'type': 'iframe'
-                }
-              }
-            ]
-          }
-        }
-      }
-    };
+  describe('get user sync', function () {
+    const syncUrl = 'https://user-sync.adxpremium.services/load-cookie.html';
 
-    const bidResponse2 = {
-      'body': {
-        'ext': {
-          'responsetimemillis': {
-            'luponmedia': 233
-          },
-          'tmaxrequest': 1500,
-          'usersyncs': {
-            'status': 'no_cookie',
-            'bidder_status': []
-          }
-        }
-      }
-    };
-
-    it('should use a sync url from first response (pixel and iframe)', function () {
-      const syncs = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: true }, [bidResponse1, bidResponse2]);
-      expect(syncs).to.deep.equal([
-        {
-          type: 'image',
-          url: 'https://adxpremium.services/api/usersync'
-        },
-        {
-          type: 'iframe',
-          url: 'https://adxpremium.services/api/iframeusersync'
-        }
-      ]);
-    });
-
-    it('handle empty response (e.g. timeout)', function () {
-      const syncs = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: true }, []);
-      expect(syncs).to.deep.equal([]);
-    });
-
-    it('returns empty syncs when not pixel enabled and not iframe enabled', function () {
-      const syncs = spec.getUserSyncs({ pixelEnabled: false, iframeEnabled: false }, [bidResponse1]);
-      expect(syncs).to.deep.equal([]);
-    });
-
-    it('returns pixel syncs when pixel enabled and not iframe enabled', function() {
+    beforeEach(function () {
       resetUserSync();
-
-      const syncs = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: false }, [bidResponse1]);
-      expect(syncs).to.deep.equal([
-        {
-          type: 'image',
-          url: 'https://adxpremium.services/api/usersync'
-        }
-      ]);
     });
 
-    it('returns iframe syncs when not pixel enabled and iframe enabled', function() {
-      resetUserSync();
+    it('should register the LuponMedia iframe', function () {
+      let syncs = spec.getUserSyncs({
+        iframeEnabled: true
+      });
 
-      const syncs = spec.getUserSyncs({ pixelEnabled: false, iframeEnabled: true }, [bidResponse1]);
-      expect(syncs).to.deep.equal([
-        {
-          type: 'iframe',
-          url: 'https://adxpremium.services/api/iframeusersync'
-        }
-      ]);
+      expect(syncs).to.deep.equal({type: 'iframe', url: syncUrl});
+    });
+
+    it('should not register the LuponMedia iframe more than once', function () {
+      let syncs = spec.getUserSyncs({
+        iframeEnabled: true
+      });
+      expect(syncs).to.deep.equal({type: 'iframe', url: syncUrl});
+
+      // when called again, should still have only been called once
+      syncs = spec.getUserSyncs();
+      expect(syncs).to.equal(undefined);
+    });
+
+    it('should pass gdpr params if consent is true', function () {
+      expect(spec.getUserSyncs({iframeEnabled: true}, {}, {
+        gdprApplies: true, consentString: 'foo'
+      })).to.deep.equal({
+        type: 'iframe', url: `${syncUrl}?gdpr=1&gdpr_consent=foo`
+      });
+    });
+
+    it('should pass gdpr params if consent is false', function () {
+      expect(spec.getUserSyncs({iframeEnabled: true}, {}, {
+        gdprApplies: false, consentString: 'foo'
+      })).to.deep.equal({
+        type: 'iframe', url: `${syncUrl}?gdpr=0&gdpr_consent=foo`
+      });
+    });
+
+    it('should pass gdpr param gdpr_consent only when gdprApplies is undefined', function () {
+      expect(spec.getUserSyncs({iframeEnabled: true}, {}, {
+        consentString: 'foo'
+      })).to.deep.equal({
+        type: 'iframe', url: `${syncUrl}?gdpr_consent=foo`
+      });
+    });
+
+    it('should pass no params if gdpr consentString is not defined', function () {
+      expect(spec.getUserSyncs({iframeEnabled: true}, {}, {})).to.deep.equal({
+        type: 'iframe', url: `${syncUrl}`
+      });
+    });
+
+    it('should pass no params if gdpr consentString is a number', function () {
+      expect(spec.getUserSyncs({iframeEnabled: true}, {}, {
+        consentString: 0
+      })).to.deep.equal({
+        type: 'iframe', url: `${syncUrl}`
+      });
+    });
+
+    it('should pass no params if gdpr consentString is null', function () {
+      expect(spec.getUserSyncs({iframeEnabled: true}, {}, {
+        consentString: null
+      })).to.deep.equal({
+        type: 'iframe', url: `${syncUrl}`
+      });
+    });
+
+    it('should pass no params if gdpr consentString is a object', function () {
+      expect(spec.getUserSyncs({iframeEnabled: true}, {}, {
+        consentString: {}
+      })).to.deep.equal({
+        type: 'iframe', url: `${syncUrl}`
+      });
+    });
+
+    it('should pass no params if gdpr is not defined', function () {
+      expect(spec.getUserSyncs({iframeEnabled: true}, {}, undefined)).to.deep.equal({
+        type: 'iframe', url: `${syncUrl}`
+      });
+    });
+
+    it('should pass us_privacy if uspConsent is defined', function () {
+      expect(spec.getUserSyncs({iframeEnabled: true}, {}, undefined, '1NYN')).to.deep.equal({
+        type: 'iframe', url: `${syncUrl}?us_privacy=1NYN`
+      });
+    });
+
+    it('should pass us_privacy after gdpr if both are present', function () {
+      expect(spec.getUserSyncs({iframeEnabled: true}, {}, {
+        consentString: 'foo'
+      }, '1NYN')).to.deep.equal({
+        type: 'iframe', url: `${syncUrl}?gdpr_consent=foo&us_privacy=1NYN`
+      });
+    });
+
+    it('should pass gdprApplies', function () {
+      expect(spec.getUserSyncs({iframeEnabled: true}, {}, {
+        gdprApplies: true
+      }, '1NYN')).to.deep.equal({
+        type: 'iframe', url: `${syncUrl}?gdpr=1&us_privacy=1NYN`
+      });
+    });
+
+    it('should pass all correctly', function () {
+      expect(spec.getUserSyncs({iframeEnabled: true}, {}, {
+        gdprApplies: true,
+        consentString: 'foo'
+      }, '1NYN')).to.deep.equal({
+        type: 'iframe', url: `${syncUrl}?gdpr=1&gdpr_consent=foo&us_privacy=1NYN`
+      });
     });
   });
 
