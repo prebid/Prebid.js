@@ -82,7 +82,7 @@ describe('GmosspAdapter', function () {
       bidRequests[0].userId.idl_env = '';
 
       const requests = spec.buildRequests(bidRequests, bidderRequest);
-      const result = 'tid=791e9d84-af92-4903-94da-24c7426d9d0c&bid=2b84475b5b636e&ver=$prebid.version$&sid=123456&url=' + encodeURIComponent(window.top.location.href) + '&ref=' + encodeURIComponent(document.referrer) + '&cur=JPY&dnt=0&';
+      const result = 'tid=791e9d84-af92-4903-94da-24c7426d9d0c&bid=2b84475b5b636e&ver=$prebid.version$&sid=123456&ref=' + encodeURIComponent(document.referrer) + '&cur=JPY&dnt=0&';
       expect(requests[0].data).to.equal(result);
     });
   });
