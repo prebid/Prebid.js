@@ -15,7 +15,8 @@ export const appendGptSlots = adUnits => {
   }
 
   const adUnitMap = adUnits.reduce((acc, adUnit) => {
-    acc[adUnit.code] = adUnit;
+    acc[adUnit.code] = acc[adUnit.code] || [];
+    acc[adUnit.code].push(adUnit);
     return acc;
   }, {});
 
@@ -25,15 +26,17 @@ export const appendGptSlots = adUnits => {
       : isAdUnitCodeMatchingSlot(slot));
 
     if (matchingAdUnitCode) {
-      const adUnit = adUnitMap[matchingAdUnitCode];
-      adUnit.ortb2Imp = adUnit.ortb2Imp || {};
-      adUnit.ortb2Imp.ext = adUnit.ortb2Imp.ext || {};
-      adUnit.ortb2Imp.ext.data = adUnit.ortb2Imp.ext.data || {};
+      const adUnits = adUnitMap[matchingAdUnitCode];
+      adUnits.forEach(adUnit => {
+        adUnit.ortb2Imp = adUnit.ortb2Imp || {};
+        adUnit.ortb2Imp.ext = adUnit.ortb2Imp.ext || {};
+        adUnit.ortb2Imp.ext.data = adUnit.ortb2Imp.ext.data || {};
 
-      const context = adUnit.ortb2Imp.ext.data;
-      context.adserver = context.adserver || {};
-      context.adserver.name = 'gam';
-      context.adserver.adslot = sanitizeSlotPath(slot.getAdUnitPath());
+        const context = adUnit.ortb2Imp.ext.data;
+        context.adserver = context.adserver || {};
+        context.adserver.name = 'gam';
+        context.adserver.adslot = sanitizeSlotPath(slot.getAdUnitPath());
+      });
     }
   });
 };
