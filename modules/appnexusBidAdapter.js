@@ -270,6 +270,13 @@ export const spec = {
       addUserId(eids, deepAccess(bidRequests[0], `userId.idl_env`), 'liveramp.com', null);
       addUserId(eids, deepAccess(bidRequests[0], `userId.tdid`), 'adserver.org', 'TDID');
       addUserId(eids, deepAccess(bidRequests[0], `userId.uid2.id`), 'uidapi.com', 'UID2');
+      if (bidRequests[0].userId.pubProvidedId) {
+        bidRequests[0].userId.pubProvidedId.forEach(ppId => {
+          ppId.uids.forEach(uid => {
+            eids.push({ source: ppId.source, id: uid.id });
+          });
+        });
+      }
 
       if (eids.length) {
         payload.eids = eids;
