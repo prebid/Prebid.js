@@ -1,7 +1,7 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 
-export const storage = getStorageManager();
+export const storage = getStorageManager({bidderCode: 'mantis'});
 
 function inIframe() {
   try {

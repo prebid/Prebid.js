@@ -324,7 +324,11 @@ describe('smaatoBidAdapterTest', () => {
           const config = {
             ortb2: {
               site: {
-                keywords: 'power tools,drills'
+                keywords: 'power tools,drills',
+                publisher: {
+                  id: 'otherpublisherid',
+                  name: 'publishername'
+                }
               },
               user: {
                 keywords: 'a,b',

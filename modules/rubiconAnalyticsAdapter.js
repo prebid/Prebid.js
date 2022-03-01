@@ -8,7 +8,7 @@ import { getGlobal } from '../src/prebidGlobal.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const RUBICON_GVL_ID = 52;
-export const storage = getStorageManager(RUBICON_GVL_ID, 'rubicon');
+export const storage = getStorageManager({gvlid: RUBICON_GVL_ID, moduleName: 'rubicon'});
 const COOKIE_NAME = 'rpaSession';
 const LAST_SEEN_EXPIRE_TIME = 1800000; // 30 mins
 const END_EXPIRE_TIME = 21600000; // 6 hours
