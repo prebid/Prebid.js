@@ -153,17 +153,17 @@ Example showing `localStorage` for user id data for some submodules
 pbjs.setConfig({
     userSync: {
         userIds: [
-            {
-            name: 'trustpid',
+        {
+            name: "trustpid",
             params: {
-              maxDelayTime: 2500
+              maxDelayTime: 2500,
             },
-            bidders: ['adform'],
+            bidders: ["adf", "adformPBS", "ix"],
             storage: {
-              type: 'html5',
-              name: 'trustpid',
-              expires: 60
-            }
+              type: "html5",
+              name: "trustpid",
+              expires: 1, // expiration days
+            },
         }, {
             name: "unifiedId",
             params: {
