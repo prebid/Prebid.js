@@ -53,6 +53,7 @@ describe('Open8Adapter', function() {
     });
   });
   describe('interpretResponse', function() {
+    const adomin = ['example.com']
     const bannerResponse = {
       slotKey: 'slotkey1234',
       userId: 'userid1234',
@@ -80,7 +81,8 @@ describe('Open8Adapter', function() {
           h: 250,
           adm: '<div></div>',
           imps: ['//example.com/imp']
-        }
+        },
+        adomain: adomin
       }
     };
     const videoResponse = {
@@ -110,6 +112,7 @@ describe('Open8Adapter', function() {
           w: 320,
           h: 180
         },
+        adomain: adomin
       }
     };
 
@@ -135,12 +138,14 @@ describe('Open8Adapter', function() {
         'mediaType': 'banner',
         'currency': 'JPY',
         'ttl': 360,
-        'netRevenue': true
+        'netRevenue': true,
+        'meta': { }
       }];
 
       let bidderRequest;
       let result = spec.interpretResponse({ body: bannerResponse }, { bidderRequest });
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
+      expect(result[0]).to.nested.contain.property('meta.advertiserDomains', adomin);
     });
 
     it('handles video responses', function() {
@@ -167,12 +172,14 @@ describe('Open8Adapter', function() {
         'adResponse': {},
         'currency': 'JPY',
         'ttl': 360,
-        'netRevenue': true
+        'netRevenue': true,
+        'meta': { }
       }];
 
       let bidderRequest;
       let result = spec.interpretResponse({ body: videoResponse }, { bidderRequest });
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
+      expect(result[0]).to.nested.contain.property('meta.advertiserDomains', adomin);
     });
 
     it('handles nobid responses', function() {
