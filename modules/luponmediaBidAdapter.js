@@ -1,4 +1,4 @@
-import {isArray, logMessage, deepAccess, logWarn, parseSizesInput, deepSetValue, generateUUID, isEmpty, logError, _each, isFn, formatQS} from '../src/utils.js';
+import {isArray, deepAccess, logWarn, parseSizesInput, deepSetValue, generateUUID, isEmpty, logError, _each, isFn, formatQS} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER} from '../src/mediaTypes.js';
