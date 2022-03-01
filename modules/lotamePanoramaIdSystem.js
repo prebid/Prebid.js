@@ -29,7 +29,7 @@ const DAY_MS = 60 * 60 * 24 * 1000;
 const MISSING_CORE_CONSENT = 111;
 const GVLID = 95;
 
-export const storage = getStorageManager(GVLID, MODULE_NAME);
+export const storage = getStorageManager({gvlid: GVLID, moduleName: MODULE_NAME});
 let cookieDomain;
 
 /**
