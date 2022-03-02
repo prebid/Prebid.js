@@ -61,15 +61,24 @@ export const spec = {
           }
         }
 
+        const consentData = bidderRequest.gdprConsent || {};
+
+        const gdprConsent = {
+          apiVersion: consentData.apiVersion || 2,
+          gdprApplies: consentData.gdprApplies || 0,
+          consentString: consentData.consentString || '',
+        }
+
         return {
           type: streamType,
+          adUnitCode: bid.adUnitCode,
           bidId: bid.bidId,
           mediaType: type,
           context: context,
           playerId: getBidIdParameter('playerId', bid.params),
           auctionId: bidderRequest.auctionId,
           bidderCode: BIDDER_CODE,
-          gdprConsent: bidderRequest.gdprConsent,
+          gdprConsent: gdprConsent,
           start: +new Date(),
           timeout: 3000,
           size: {
@@ -159,6 +168,7 @@ function createBids(bidRes, reqData) {
     let bidUnit = {};
     bidUnit.cpm = bid.cpm;
     bidUnit.requestId = bid.bidId;
+    bidUnit.adUnitCode = reqBid.adUnitCode;
     bidUnit.currency = bid.currency;
     bidUnit.mediaType = bid.mediaType || VIDEO;
     bidUnit.ttl = TTL;
@@ -183,7 +193,8 @@ function createBids(bidRes, reqData) {
     } else if (bid.context === 'outstream') {
       const renderer = Renderer.install({
         id: bid.bidId,
-        url: '//',
+        url: 'https://static.showheroes.com/renderer.js',
+        adUnitCode: reqBid.adUnitCode,
         config: {
           playerId: reqBid.playerId,
           width: bid.size.width,

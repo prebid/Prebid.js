@@ -1,4 +1,4 @@
-import { isEmpty, deepAccess, logError, parseGPTSingleSizeArrayToRtbSize, generateUUID, logWarn } from '../src/utils.js';
+import { isEmpty, deepAccess, logError, parseGPTSingleSizeArrayToRtbSize, generateUUID, mergeDeep, logWarn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
@@ -12,7 +12,7 @@ const TIME_TO_LIVE = 360;
 const USER_ID_KEY = 'tmguid';
 const GVLID = 686;
 const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
-export const storage = getStorageManager(GVLID, BIDDER_CODE);
+export const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
 const LOG_ERROR_MESS = {
   noAuid: 'Bid from response has no auid parameter - ',
   noAdm: 'Bid from response has no adm parameter - ',
@@ -96,12 +96,17 @@ export const spec = {
           divid: adUnitCode.toString()
         }
       };
-      if (ortb2Imp && ortb2Imp.ext && ortb2Imp.ext.data) {
-        impObj.ext.data = ortb2Imp.ext.data;
-        if (impObj.ext.data.adserver && impObj.ext.data.adserver.adslot) {
-          impObj.ext.gpid = impObj.ext.data.adserver.adslot.toString();
-        } else {
-          impObj.ext.gpid = ortb2Imp.ext.data.pbadslot && ortb2Imp.ext.data.pbadslot.toString();
+      if (ortb2Imp) {
+        if (ortb2Imp.instl) {
+          impObj.instl = ortb2Imp.instl;
+        }
+        if (ortb2Imp.ext && ortb2Imp.ext.data) {
+          impObj.ext.data = ortb2Imp.ext.data;
+          if (impObj.ext.data.adserver && impObj.ext.data.adserver.adslot) {
+            impObj.ext.gpid = impObj.ext.data.adserver.adslot.toString();
+          } else {
+            impObj.ext.gpid = ortb2Imp.ext.data.pbadslot && ortb2Imp.ext.data.pbadslot.toString();
+          }
         }
       }
       if (!isEmpty(keywords)) {
@@ -173,8 +178,22 @@ export const spec = {
       };
     }
 
+    const ortb2UserData = config.getConfig('ortb2.user.data');
+    if (ortb2UserData && ortb2UserData.length) {
+      if (!user) {
+        user = { data: [] };
+      }
+      user = mergeDeep(user, { data: ortb2UserData });
+    }
+
     if (gdprConsent && gdprConsent.consentString) {
       userExt = {consent: gdprConsent.consentString};
+    }
+
+    const ortb2UserExtDevice = config.getConfig('ortb2.user.ext.device');
+    if (ortb2UserExtDevice) {
+      userExt = userExt || {};
+      userExt.device = { ...ortb2UserExtDevice };
     }
 
     if (userIdAsEids && userIdAsEids.length) {
@@ -291,10 +310,11 @@ export const spec = {
     if (!hasSynced && syncOptions.pixelEnabled) {
       let params = '';
 
-      if (gdprConsent && typeof gdprConsent.consentString === 'string') {
+      if (gdprConsent) {
         if (typeof gdprConsent.gdprApplies === 'boolean') {
-          params += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
-        } else {
+          params += `&gdpr=${Number(gdprConsent.gdprApplies)}`;
+        }
+        if (typeof gdprConsent.consentString === 'string') {
           params += `&gdpr_consent=${gdprConsent.consentString}`;
         }
       }

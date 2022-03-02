@@ -16,6 +16,9 @@ import * as auctionModule from 'src/auction.js';
 import { registerBidder } from 'src/adapters/bidderFactory.js';
 import { _sendAdToCreative } from 'src/secureCreatives.js';
 import find from 'core-js-pure/features/array/find.js';
+import {synchronizePromise} from '../../helpers/syncPromise.js';
+import 'src/prebid.js';
+import {hook} from '../../../src/hook.js';
 
 var assert = require('chai').assert;
 var expect = require('chai').expect;
@@ -190,13 +193,21 @@ window.apntag = {
 }
 
 describe('Unit: Prebid Module', function () {
-  let bidExpiryStub;
+  let bidExpiryStub, promiseSandbox;
+
+  before(() => {
+    hook.ready();
+  });
+
   beforeEach(function () {
+    promiseSandbox = sinon.createSandbox();
+    synchronizePromise(promiseSandbox);
     bidExpiryStub = sinon.stub(filters, 'isBidNotExpired').callsFake(() => true);
     configObj.setConfig({ useBidCache: true });
   });
 
   afterEach(function() {
+    promiseSandbox.restore();
     $$PREBID_GLOBAL$$.adUnits = [];
     bidExpiryStub.restore();
     configObj.setConfig({ useBidCache: false });
@@ -422,6 +433,7 @@ describe('Unit: Prebid Module', function () {
     let bid;
     let auction;
     let ajaxStub;
+    let indexStub;
     let cbTimeout = 3000;
     let targeting;
 
@@ -487,7 +499,8 @@ describe('Unit: Prebid Module', function () {
             ],
             'bidId': '4d0a6829338a07',
             'bidderRequestId': '331f3cf3f1d9c8',
-            'auctionId': '20882439e3238c'
+            'auctionId': '20882439e3238c',
+            'transactionId': 'trdiv-gpt-ad-1460505748561-0',
           }
         ],
         'auctionStart': 1505250713622,
@@ -505,6 +518,7 @@ describe('Unit: Prebid Module', function () {
       let auctionManagerInstance = newAuctionManager();
       targeting = newTargeting(auctionManagerInstance);
       let adUnits = [{
+        transactionId: 'trdiv-gpt-ad-1460505748561-0',
         code: 'div-gpt-ad-1460505748561-0',
         sizes: [[300, 250], [300, 600]],
         bids: [{
@@ -516,6 +530,8 @@ describe('Unit: Prebid Module', function () {
       }];
       let adUnitCodes = ['div-gpt-ad-1460505748561-0'];
       auction = auctionManagerInstance.createAuction({adUnits, adUnitCodes});
+      indexStub = sinon.stub(auctionManager, 'index');
+      indexStub.get(() => auctionManagerInstance.index);
       ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(function() {
         return function(url, callback) {
           const fakeResponse = sinon.stub();
@@ -527,6 +543,7 @@ describe('Unit: Prebid Module', function () {
 
     afterEach(function () {
       ajaxStub.restore();
+      indexStub.restore();
     });
 
     it('should get correct ' + CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + ' when using bid.cpm is between 0 to 5', function() {
@@ -566,6 +583,7 @@ describe('Unit: Prebid Module', function () {
     let cbTimeout = 3000;
     let auctionManagerInstance;
     let targeting;
+    let indexStub;
 
     const bannerResponse = {
       'version': '0.0.1',
@@ -644,6 +662,7 @@ describe('Unit: Prebid Module', function () {
       }
 
       const adUnit = {
+        transactionId: `tr${code}`,
         code: code,
         sizes: [[300, 250], [300, 600]],
         bids: [{
@@ -656,22 +675,22 @@ describe('Unit: Prebid Module', function () {
 
       let _mediaTypes = {};
       if (mediaTypes.indexOf('banner') !== -1) {
-        _mediaTypes['banner'] = {
+        Object.assign(_mediaTypes, {
           'banner': {}
-        };
+        });
       }
       if (mediaTypes.indexOf('video') !== -1) {
-        _mediaTypes['video'] = {
+        Object.assign(_mediaTypes, {
           'video': {
             context: 'instream',
             playerSize: [300, 250]
           }
-        };
+        });
       }
       if (mediaTypes.indexOf('native') !== -1) {
-        _mediaTypes['native'] = {
+        Object.assign(_mediaTypes, {
           'native': {}
-        };
+        });
       }
 
       if (Object.keys(_mediaTypes).length > 0) {
@@ -733,35 +752,41 @@ describe('Unit: Prebid Module', function () {
 
     before(function () {
       currentPriceBucket = configObj.getConfig('priceGranularity');
-      sinon.stub(adapterManager, 'makeBidRequests').callsFake(() => ([{
-        'bidderCode': 'appnexus',
-        'auctionId': '20882439e3238c',
-        'bidderRequestId': '331f3cf3f1d9c8',
-        'bids': [
-          {
-            'bidder': 'appnexus',
-            'params': {
-              'placementId': '10433394'
-            },
-            'adUnitCode': 'div-gpt-ad-1460505748561-0',
-            'sizes': [
-              [
-                300,
-                250
+      sinon.stub(adapterManager, 'makeBidRequests').callsFake(() => {
+        const br = {
+          'bidderCode': 'appnexus',
+          'auctionId': '20882439e3238c',
+          'bidderRequestId': '331f3cf3f1d9c8',
+          'bids': [
+            {
+              'bidder': 'appnexus',
+              'params': {
+                'placementId': '10433394'
+              },
+              'adUnitCode': 'div-gpt-ad-1460505748561-0',
+              'transactionId': 'trdiv-gpt-ad-1460505748561-0',
+              'sizes': [
+                [
+                  300,
+                  250
+                ],
+                [
+                  300,
+                  600
+                ]
               ],
-              [
-                300,
-                600
-              ]
-            ],
-            'bidId': '4d0a6829338a07',
-            'bidderRequestId': '331f3cf3f1d9c8',
-            'auctionId': '20882439e3238c'
-          }
-        ],
-        'auctionStart': 1505250713622,
-        'timeout': 3000
-      }]));
+              'bidId': '4d0a6829338a07',
+              'bidderRequestId': '331f3cf3f1d9c8',
+              'auctionId': '20882439e3238c'
+            }
+          ],
+          'auctionStart': 1505250713622,
+          'timeout': 3000
+        };
+        const au = auction.getAdUnits().find((au) => au.transactionId === br.bids[0].transactionId);
+        br.bids[0].mediaTypes = Object.assign({}, au.mediaTypes);
+        return [br];
+      });
     });
 
     after(function () {
@@ -769,8 +794,14 @@ describe('Unit: Prebid Module', function () {
       adapterManager.makeBidRequests.restore();
     })
 
+    beforeEach(() => {
+      indexStub = sinon.stub(auctionManager, 'index');
+      indexStub.get(() => auctionManagerInstance.index);
+    });
+
     afterEach(function () {
       ajaxStub.restore();
+      indexStub.restore();
     });
 
     it('should get correct ' + CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + ' with cpm between 0 - 5', function() {
@@ -1002,12 +1033,7 @@ describe('Unit: Prebid Module', function () {
         adUnitCode: config.adUnitCodes[0],
       };
 
-      const event = {
-        source: { postMessage: sinon.stub() },
-        origin: 'origin.sf.com'
-      };
-
-      _sendAdToCreative(mockAdObject, event);
+      _sendAdToCreative(mockAdObject, sinon.stub());
 
       expect(slots[0].spyGetSlotElementId.called).to.equal(false);
       expect(slots[1].spyGetSlotElementId.called).to.equal(true);
@@ -1135,13 +1161,15 @@ describe('Unit: Prebid Module', function () {
             height: 0
           }
         },
-        getElementsByTagName: sinon.stub()
+        getElementsByTagName: sinon.stub(),
+        querySelector: sinon.stub()
       };
 
       elStub = {
         insertBefore: sinon.stub()
       };
       doc.getElementsByTagName.returns([elStub]);
+      doc.querySelector.returns(elStub);
 
       spyLogError = sinon.spy(utils, 'logError');
       spyLogMessage = sinon.spy(utils, 'logMessage');
@@ -1852,11 +1880,23 @@ describe('Unit: Prebid Module', function () {
                   pos: 2
                 }
               }
+            },
+            {
+              code: 'test6',
+              bids: [],
+              sizes: [300, 250],
+              mediaTypes: {
+                banner: {
+                  sizes: [300, 250],
+                  pos: 0
+                }
+              }
             }];
             $$PREBID_GLOBAL$$.requestBids({
               adUnits: adUnit
             });
             expect(auctionArgs.adUnits[0].mediaTypes.banner.pos).to.equal(2);
+            expect(auctionArgs.adUnits[1].mediaTypes.banner.pos).to.equal(0);
           });
         });
 

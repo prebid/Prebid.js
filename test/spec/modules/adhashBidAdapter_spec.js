@@ -77,7 +77,7 @@ describe('adhashBidAdapter', function () {
       );
       expect(result.length).to.equal(1);
       expect(result[0].method).to.equal('POST');
-      expect(result[0].url).to.equal('https://bidder.adhash.org/rtb?version=1.0&prebid=true');
+      expect(result[0].url).to.equal('https://bidder.adhash.com/rtb?version=1.0&prebid=true&publisher=0xc3b09b27e9c6ef73957901aa729b9e69e5bbfbfb');
       expect(result[0].bidRequest).to.equal(bidRequest);
       expect(result[0].data).to.have.property('timezone');
       expect(result[0].data).to.have.property('location');
@@ -93,7 +93,7 @@ describe('adhashBidAdapter', function () {
       const result = spec.buildRequests([ bidRequest ], { gdprConsent: true });
       expect(result.length).to.equal(1);
       expect(result[0].method).to.equal('POST');
-      expect(result[0].url).to.equal('https://bidder.adhash.org/rtb?version=1.0&prebid=true');
+      expect(result[0].url).to.equal('https://bidder.adhash.com/rtb?version=1.0&prebid=true&publisher=0xc3b09b27e9c6ef73957901aa729b9e69e5bbfbfb');
       expect(result[0].bidRequest).to.equal(bidRequest);
       expect(result[0].data).to.have.property('timezone');
       expect(result[0].data).to.have.property('location');

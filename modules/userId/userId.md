@@ -1,6 +1,7 @@
 ## User ID Example Configuration
 
 Example showing `cookie` storage for user id data for each of the submodules
+
 ```
 pbjs.setConfig({
     userSync: {
@@ -147,10 +148,23 @@ pbjs.setConfig({
 ```
 
 Example showing `localStorage` for user id data for some submodules
+
 ```
 pbjs.setConfig({
     userSync: {
-        userIds: [{
+        userIds: [
+            {
+            name: 'trustpid',
+            params: {
+              maxDelayTime: 2500
+            },
+            bidders: ['adform'],
+            storage: {
+              type: 'html5',
+              name: 'trustpid',
+              expires: 60
+            }
+        }, {
             name: "unifiedId",
             params: {
                 partner: "prebid",
@@ -278,7 +292,7 @@ pbjs.setConfig({
                  name: "knssoId",
                  expires: 30
                   },
-        }   
+        }
         },
         {
             name: 'imuid',
@@ -297,6 +311,14 @@ pbjs.setConfig({
               type: 'html5',
               expires: 15
             }
+        }
+        {
+            name: "qid",
+            storage: {
+                type: "html5",
+                name: "qid",
+                expires: 365
+            }
         }],
         syncDelay: 5000
     }
@@ -304,6 +326,7 @@ pbjs.setConfig({
 ```
 
 Example showing how to configure a `value` object to pass directly to bid adapters
+
 ```
 pbjs.setConfig({
     userSync: {

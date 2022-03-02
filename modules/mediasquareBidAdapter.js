@@ -7,11 +7,11 @@ const BIDDER_CODE = 'mediasquare';
 const BIDDER_URL_PROD = 'https://pbs-front.mediasquare.fr/'
 const BIDDER_URL_TEST = 'https://bidder-test.mediasquare.fr/'
 const BIDDER_ENDPOINT_AUCTION = 'msq_prebid';
-const BIDDER_ENDPOINT_SYNC = 'cookie_sync';
 const BIDDER_ENDPOINT_WINNING = 'winning';
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 791,
   aliases: ['msq'], // short code
   supportedMediaTypes: [BANNER, NATIVE, VIDEO],
   /**
@@ -32,10 +32,16 @@ export const spec = {
   buildRequests: function(validBidRequests, bidderRequest) {
     let codes = [];
     let endpoint = document.location.search.match(/msq_test=true/) ? BIDDER_URL_TEST : BIDDER_URL_PROD;
+    let floor = {};
     const test = config.getConfig('debug') ? 1 : 0;
     let adunitValue = null;
     Object.keys(validBidRequests).forEach(key => {
       adunitValue = validBidRequests[key];
+      if (typeof adunitValue.getFloor === 'function') {
+        floor = adunitValue.getFloor({currency: 'EUR', mediaType: '*', size: '*'});
+      } else {
+        floor = {};
+      }
       codes.push({
         owner: adunitValue.params.owner,
         code: adunitValue.params.code,
@@ -43,7 +49,8 @@ export const spec = {
         bidId: adunitValue.bidId,
         auctionId: adunitValue.auctionId,
         transactionId: adunitValue.transactionId,
-        mediatypes: adunitValue.mediaTypes
+        mediatypes: adunitValue.mediaTypes,
+        floor: floor
       });
     });
     const payload = {
@@ -132,18 +139,11 @@ export const spec = {
      * @return {UserSync[]} The user syncs which should be dropped.
      */
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
-    let params = '';
-    let endpoint = document.location.search.match(/msq_test=true/) ? BIDDER_URL_TEST : BIDDER_URL_PROD;
     if (typeof serverResponses === 'object' && serverResponses != null && serverResponses.length > 0 && serverResponses[0].hasOwnProperty('body') &&
         serverResponses[0].body.hasOwnProperty('cookies') && typeof serverResponses[0].body.cookies === 'object') {
       return serverResponses[0].body.cookies;
     } else {
-      if (gdprConsent && typeof gdprConsent.consentString === 'string') { params += typeof gdprConsent.gdprApplies === 'boolean' ? `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}` : `&gdpr_consent=${gdprConsent.consentString}`; }
-      if (uspConsent && typeof uspConsent === 'string') { params += '&uspConsent=' + uspConsent }
-      return {
-        type: 'iframe',
-        url: endpoint + BIDDER_ENDPOINT_SYNC + '?type=iframe' + params
-      };
+      return [];
     }
   },
 

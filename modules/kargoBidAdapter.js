@@ -10,7 +10,7 @@ const SYNC = 'https://crb.kargo.com/api/v1/initsyncrnd/{UUID}?seed={SEED}&idx={I
 const SYNC_COUNT = 5;
 const GVLID = 972;
 const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO]
-const storage = getStorageManager(GVLID, BIDDER_CODE);
+const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
 
 let sessionId,
   lastPageUrl,
@@ -73,8 +73,8 @@ export const spec = {
       let meta;
       if (adUnit.metadata && adUnit.metadata.landingPageDomain) {
         meta = {
-          clickUrl: adUnit.metadata.landingPageDomain,
-          advertiserDomains: [adUnit.metadata.landingPageDomain]
+          clickUrl: adUnit.metadata.landingPageDomain[0],
+          advertiserDomains: adUnit.metadata.landingPageDomain
         };
       }
       bidResponses.push({
