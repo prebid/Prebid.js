@@ -1,10 +1,22 @@
-import { convertCamelToUnderscore, isArray, isNumber, isPlainObject, deepAccess, logError, convertTypes, getParameterByName, getBidRequest, isEmpty, transformBidderParamKeywords, isFn } from '../src/utils.js';
-import { config } from '../src/config.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
-import find from 'prebidjs-polyfill/find.js';
-import includes from 'prebidjs-polyfill/includes.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {
+  convertCamelToUnderscore,
+  convertTypes,
+  deepAccess,
+  getBidRequest,
+  getParameterByName,
+  isArray,
+  isEmpty,
+  isFn,
+  isNumber,
+  isPlainObject,
+  logError,
+  transformBidderParamKeywords
+} from '../src/utils.js';
+import {config} from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER} from '../src/mediaTypes.js';
+import {find, includes} from '../src/polyfill.js';
+import {getStorageManager} from '../src/storageManager.js';
 
 export const storage = getStorageManager();
 

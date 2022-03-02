@@ -2,9 +2,9 @@
  * This module adds MASS support to Prebid.js.
  */
 
-import { config } from '../src/config.js';
-import { getHook } from '../src/hook.js';
-import find from 'prebidjs-polyfill/find.js';
+import {config} from '../src/config.js';
+import {getHook} from '../src/hook.js';
+import {find} from '../src/polyfill.js';
 
 const defaultCfg = {
   dealIdPattern: /^MASS/i

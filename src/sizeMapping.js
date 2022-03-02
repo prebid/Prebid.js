@@ -1,6 +1,6 @@
 import { config } from './config.js';
 import {logWarn, isPlainObject, deepAccess, deepClone, getWindowTop} from './utils.js';
-import includes from 'prebidjs-polyfill/includes.js';
+import {includes} from './polyfill.js';
 
 let sizeConfig = [];
 

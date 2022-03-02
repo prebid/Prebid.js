@@ -1,6 +1,6 @@
 import {hook} from './hook.js';
 import { hasDeviceAccess, checkCookieSupport, logError } from './utils.js';
-import includes from 'prebidjs-polyfill/includes.js';
+import {includes} from './polyfill.js';
 
 const moduleTypeWhiteList = ['core', 'prebid-module'];
 

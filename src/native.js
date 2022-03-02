@@ -1,5 +1,5 @@
 import { deepAccess, getBidRequest, getKeyByValue, insertHtmlIntoIframe, logError, triggerPixel } from './utils.js';
-import includes from 'prebidjs-polyfill/includes.js';
+import {includes} from './polyfill.js';
 
 const CONSTANTS = require('./constants.json');
 

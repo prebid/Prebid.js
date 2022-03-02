@@ -6,14 +6,26 @@
 
 import adapterManager from '../src/adapterManager.js';
 import adapter from '../src/AnalyticsAdapter.js';
-import { loadExternalScript } from '../src/adloader.js';
-import { auctionManager } from '../src/auctionManager.js';
-import { AUCTION_COMPLETED } from '../src/auction.js';
+import {loadExternalScript} from '../src/adloader.js';
+import {auctionManager} from '../src/auctionManager.js';
+import {AUCTION_COMPLETED} from '../src/auction.js';
 import CONSTANTS from '../src/constants.json';
-import find from 'prebidjs-polyfill/find.js';
+import {find} from '../src/polyfill.js';
 import {
-  deepAccess, logInfo, isPlainObject, logError, isStr, isNumber, getGptSlotInfoForAdUnitCode,
-  isFn, mergeDeep, logMessage, insertElement, logWarn, getUniqueIdentifierStr, parseUrl
+  deepAccess,
+  getGptSlotInfoForAdUnitCode,
+  getUniqueIdentifierStr,
+  insertElement,
+  isFn,
+  isNumber,
+  isPlainObject,
+  isStr,
+  logError,
+  logInfo,
+  logMessage,
+  logWarn,
+  mergeDeep,
+  parseUrl
 } from '../src/utils.js';
 
 const MODULE = 'adlooxAnalyticsAdapter';

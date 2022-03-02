@@ -1,12 +1,8 @@
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {
-  parseQueryStringParameters,
-  parseSizesInput
-} from '../src/utils.js';
-import includes from 'prebidjs-polyfill/includes.js';
-import find from 'prebidjs-polyfill/find.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {parseQueryStringParameters, parseSizesInput} from '../src/utils.js';
+import {find, includes} from '../src/polyfill.js';
+import {getStorageManager} from '../src/storageManager.js';
 
 export const storage = getStorageManager();
 

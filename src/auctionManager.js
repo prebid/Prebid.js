@@ -21,7 +21,7 @@
 
 import { uniques, flatten, logWarn } from './utils.js';
 import { newAuction, getStandardBidderSettings, AUCTION_COMPLETED } from './auction.js';
-import find from 'prebidjs-polyfill/find.js';
+import {find} from './polyfill.js';
 
 const CONSTANTS = require('./constants.json');
 

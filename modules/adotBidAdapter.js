@@ -1,9 +1,9 @@
 import {Renderer} from '../src/Renderer.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {isStr, isArray, isNumber, isPlainObject, isBoolean, logError, replaceAuctionPrice} from '../src/utils.js';
-import find from 'prebidjs-polyfill/find.js';
-import { config } from '../src/config.js';
+import {isArray, isBoolean, isNumber, isPlainObject, isStr, logError, replaceAuctionPrice} from '../src/utils.js';
+import {find} from '../src/polyfill.js';
+import {config} from '../src/config.js';
 
 const ADAPTER_VERSION = 'v1.0.0';
 const BID_METHOD = 'POST';

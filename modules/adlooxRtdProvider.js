@@ -11,16 +11,28 @@
 /* eslint standard/no-callback-literal: "off" */
 /* eslint prebid/validate-imports: "off" */
 
-import { command as analyticsCommand, COMMAND } from './adlooxAnalyticsAdapter.js';
-import { config as _config } from '../src/config.js';
-import { submodule } from '../src/hook.js';
-import { ajax } from '../src/ajax.js';
-import { getGlobal } from '../src/prebidGlobal.js';
+import {command as analyticsCommand, COMMAND} from './adlooxAnalyticsAdapter.js';
+import {config as _config} from '../src/config.js';
+import {submodule} from '../src/hook.js';
+import {ajax} from '../src/ajax.js';
+import {getGlobal} from '../src/prebidGlobal.js';
 import {
-  getAdUnitSizes, logInfo, isPlainObject, logError, isStr, isInteger, isArray, isBoolean, mergeDeep, deepAccess,
-  _each, deepSetValue, logWarn, getGptSlotInfoForAdUnitCode
+  _each,
+  deepAccess,
+  deepSetValue,
+  getAdUnitSizes,
+  getGptSlotInfoForAdUnitCode,
+  isArray,
+  isBoolean,
+  isInteger,
+  isPlainObject,
+  isStr,
+  logError,
+  logInfo,
+  logWarn,
+  mergeDeep
 } from '../src/utils.js';
-import includes from 'prebidjs-polyfill/includes.js';
+import {includes} from '../src/polyfill.js';
 
 const MODULE_NAME = 'adloox';
 const MODULE = `${MODULE_NAME}RtdProvider`;

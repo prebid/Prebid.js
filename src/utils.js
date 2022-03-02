@@ -1,8 +1,7 @@
 /* eslint-disable no-console */
 import { config } from './config.js';
 import clone from 'just-clone';
-import find from 'prebidjs-polyfill/find.js';
-import includes from 'prebidjs-polyfill/includes.js';
+import {find, includes} from './polyfill.js';
 
 const CONSTANTS = require('./constants.json');
 

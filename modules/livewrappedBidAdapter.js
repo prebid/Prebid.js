@@ -1,9 +1,9 @@
-import { isSafariBrowser, deepAccess, getWindowTop, mergeDeep } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import find from 'prebidjs-polyfill/find.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {deepAccess, getWindowTop, isSafariBrowser, mergeDeep} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
+import {find} from '../src/polyfill.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {getStorageManager} from '../src/storageManager.js';
 
 export const storage = getStorageManager();
 

@@ -1,14 +1,13 @@
-
 /**
  * This module adds GDPR consentManagement support to prebid.js.  It interacts with
  * supported CMPs (Consent Management Platforms) to grab the user's consent information
  * and make it available for any GDPR supported adapters to read/pass this information to
  * their system.
  */
-import { logInfo, isFn, getAdUnitSizes, logWarn, isStr, isPlainObject, logError, isNumber } from '../src/utils.js';
-import { config } from '../src/config.js';
-import { gdprDataHandler } from '../src/adapterManager.js';
-import includes from 'prebidjs-polyfill/includes.js';
+import {getAdUnitSizes, isFn, isNumber, isPlainObject, isStr, logError, logInfo, logWarn} from '../src/utils.js';
+import {config} from '../src/config.js';
+import {gdprDataHandler} from '../src/adapterManager.js';
+import {includes} from '../src/polyfill.js';
 
 const DEFAULT_CMP = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 10000;

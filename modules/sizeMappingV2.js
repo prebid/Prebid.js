@@ -4,12 +4,26 @@
  * rendering. Read full API documentation on Prebid.org, http://prebid.org/dev-docs/modules/sizeMappingV2.html
  */
 
-import { isArray, logError, isArrayOfNums, deepClone, logWarn, getWindowTop, deepEqual, logInfo, isValidMediaTypes, deepAccess, getDefinedParams, getUniqueIdentifierStr, flatten } from '../src/utils.js';
-import { processNativeAdUnitParams } from '../src/native.js';
-import { adunitCounter } from '../src/adUnits.js';
-import includes from 'prebidjs-polyfill/includes.js';
-import { getHook } from '../src/hook.js';
-import { adUnitSetupChecks } from '../src/prebid.js';
+import {
+  deepAccess,
+  deepClone,
+  deepEqual,
+  flatten,
+  getDefinedParams,
+  getUniqueIdentifierStr,
+  getWindowTop,
+  isArray,
+  isArrayOfNums,
+  isValidMediaTypes,
+  logError,
+  logInfo,
+  logWarn
+} from '../src/utils.js';
+import {processNativeAdUnitParams} from '../src/native.js';
+import {adunitCounter} from '../src/adUnits.js';
+import {includes} from '../src/polyfill.js';
+import {getHook} from '../src/hook.js';
+import {adUnitSetupChecks} from '../src/prebid.js';
 
 // Allows for stubbing of these functions while writing unit tests.
 export const internal = {
