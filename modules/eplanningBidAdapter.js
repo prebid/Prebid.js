@@ -3,9 +3,8 @@ import { getGlobal } from '../src/prebidGlobal.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 
-export const storage = getStorageManager();
-
 const BIDDER_CODE = 'eplanning';
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 const rnd = Math.random();
 const DEFAULT_SV = 'pbjs.e-planning.net';
 const DEFAULT_ISV = 'i.e-planning.net';

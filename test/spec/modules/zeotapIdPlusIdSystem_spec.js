@@ -54,7 +54,7 @@ describe('Zeotap ID System', function() {
     it('when a stored Zeotap ID exists it is added to bids', function() {
       let store = getStorage();
       expect(getStorageManagerSpy.calledOnce).to.be.true;
-      sinon.assert.calledWith(getStorageManagerSpy, 301, 'zeotapIdPlus');
+      sinon.assert.calledWith(getStorageManagerSpy, {gvlid: 301, moduleName: 'zeotapIdPlus'});
     });
   });
 
