@@ -586,7 +586,8 @@ const isBillingEventValid = event => {
   const isWhitelistedVendor = rubiConf.dmBilling.vendors.includes(event.vendor);
   // event is not duplicated
   const isNotDuplicate = typeof deepAccess(cache.billing, `${event.vendor}.${event.billingId}`) !== 'boolean';
-  return isWhitelistedVendor && isNotDuplicate;
+  // billingId is defined and a string
+  return typeof event.billingId === 'string' && isWhitelistedVendor && isNotDuplicate;
 }
 
 const sendOrAddEventToQueue = event => {

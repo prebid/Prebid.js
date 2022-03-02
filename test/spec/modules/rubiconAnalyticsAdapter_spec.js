@@ -13,6 +13,7 @@ import {
   setConfig,
   addBidResponseHook,
 } from 'modules/currency.js';
+import truncate from 'lodash.truncate';
 let Ajv = require('ajv');
 let schema = require('./rubiconAnalyticsSchema.json');
 let ajv = new Ajv({
@@ -2240,6 +2241,42 @@ describe('rubicon analytics adapter', function () {
         type: 'auction',
         billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965'
       }]);
+      expect(server.requests.length).to.equal(1);
+      const request = server.requests[0];
+      const message = JSON.parse(request.requestBody);
+      expect(message.billableEvents).to.be.undefined;
+    });
+    it('should ignore billing events if billingId is not defined or billingId is not a string', () => {
+      // off by default
+      config.setConfig({
+        rubicon: {
+          dmBilling: {
+            enabled: true,
+            vendors: ['vendorName']
+          }
+        }
+      });
+      basicBillingAuction([
+        {
+          vendor: 'vendorName',
+          type: 'auction',
+        },
+        {
+          vendor: 'vendorName',
+          type: 'auction',
+          billingId: true
+        },
+        {
+          vendor: 'vendorName',
+          type: 'auction',
+          billingId: 1233434
+        },
+        {
+          vendor: 'vendorName',
+          type: 'auction',
+          billingId: null
+        }
+      ]);
       expect(server.requests.length).to.equal(1);
       const request = server.requests[0];
       const message = JSON.parse(request.requestBody);
