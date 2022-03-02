@@ -9,7 +9,8 @@ const _approvedLoadExternalJSList = [
   'outstream',
   'adagio',
   'browsi',
-  'brandmetrics'
+  'brandmetrics',
+  'justtag'
 ]
 
 /**

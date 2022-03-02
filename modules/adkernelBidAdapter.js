@@ -93,7 +93,8 @@ export const spec = {
     {code: 'catapultx'},
     {code: 'ergadx'},
     {code: 'turktelekom'},
-    {code: 'felixads'}
+    {code: 'felixads'},
+    {code: 'motionspots'}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 

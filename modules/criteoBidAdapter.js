@@ -13,7 +13,7 @@ const BIDDER_CODE = 'criteo';
 const CDB_ENDPOINT = 'https://bidder.criteo.com/cdb';
 const PROFILE_ID_INLINE = 207;
 export const PROFILE_ID_PUBLISHERTAG = 185;
-const storage = getStorageManager(GVLID);
+const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
 const LOG_PREFIX = 'Criteo: ';
 
 /*
@@ -312,9 +312,9 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
         if (!checkNativeSendId(bidRequest)) {
           logWarn(LOG_PREFIX + 'all native assets containing URL should be sent as placeholders with sendId(icon, image, clickUrl, displayUrl, privacyLink, privacyIcon)');
         }
-        slot.sizes = parseSizes(retrieveBannerSizes(bidRequest), parseNativeSize);
+        slot.sizes = parseSizes(deepAccess(bidRequest, 'mediaTypes.banner.sizes'), parseNativeSize);
       } else {
-        slot.sizes = parseSizes(retrieveBannerSizes(bidRequest), parseSize);
+        slot.sizes = parseSizes(deepAccess(bidRequest, 'mediaTypes.banner.sizes'), parseSize);
       }
       if (hasVideoMediaType(bidRequest)) {
         const video = {
@@ -375,11 +375,10 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
   return request;
 }
 
-function retrieveBannerSizes(bidRequest) {
-  return deepAccess(bidRequest, 'mediaTypes.banner.sizes') || bidRequest.sizes;
-}
-
 function parseSizes(sizes, parser) {
+  if (sizes == undefined) {
+    return [];
+  }
   if (Array.isArray(sizes[0])) { // is there several sizes ? (ie. [[728,90],[200,300]])
     return sizes.map(size => parser(size));
   }

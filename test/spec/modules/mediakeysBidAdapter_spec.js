@@ -575,12 +575,15 @@ describe('mediakeysBidAdapter', function () {
               },
               user: {
                 yob: 1985,
-                gender: 'm'
-              },
-              device: {
+                gender: 'm',
                 geo: {
                   country: 'FR',
                   city: 'Marseille'
+                },
+                ext: {
+                  data: {
+                    registered: true
+                  }
                 }
               }
             }
@@ -596,8 +599,9 @@ describe('mediakeysBidAdapter', function () {
         expect(data.site.ext.data.category).to.equal('sport');
         expect(data.user.yob).to.equal(1985);
         expect(data.user.gender).to.equal('m');
-        expect(data.device.geo.country).to.equal('FR');
-        expect(data.device.geo.city).to.equal('Marseille');
+        expect(data.user.geo.country).to.equal('FR');
+        expect(data.user.geo.city).to.equal('Marseille');
+        expect(data.user.ext.data.registered).to.be.true;
       });
     });
 

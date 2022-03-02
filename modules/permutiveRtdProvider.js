@@ -14,7 +14,7 @@ import {includes} from '../src/polyfill.js';
 
 const MODULE_NAME = 'permutive'
 
-export const storage = getStorageManager(null, MODULE_NAME)
+export const storage = getStorageManager({gvlid: null, moduleName: MODULE_NAME})
 
 function init (moduleConfig, userConsent) {
   return true

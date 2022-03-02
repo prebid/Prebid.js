@@ -20,6 +20,7 @@ import { executeRenderer, isRendererRequired } from './Renderer.js';
 import { createBid } from './bidfactory.js';
 import { storageCallbacks } from './storageManager.js';
 import { emitAdRenderSucceeded, emitAdRenderFail } from './adRendering.js';
+import { gdprDataHandler, uspDataHandler } from './adapterManager.js'
 
 const $$PREBID_GLOBAL$$ = getGlobal();
 const CONSTANTS = require('./constants.json');
@@ -266,6 +267,24 @@ $$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCode = function (adUnitCode) {
 $$PREBID_GLOBAL$$.getAdserverTargeting = function (adUnitCode) {
   logInfo('Invoking $$PREBID_GLOBAL$$.getAdserverTargeting', arguments);
   return targeting.getAllTargeting(adUnitCode);
+};
+
+/**
+ * returns all consent data
+ * @return {Object} Map of consent types and data
+ * @alias module:pbjs.getConsentData
+ */
+function getConsentMetadata() {
+  return {
+    gdpr: gdprDataHandler.getConsentMeta(),
+    usp: uspDataHandler.getConsentMeta(),
+    coppa: !!(config.getConfig('coppa'))
+  }
+}
+
+$$PREBID_GLOBAL$$.getConsentMetadata = function () {
+  logInfo('Invoking $$PREBID_GLOBAL$$.getConsentMetadata');
+  return getConsentMetadata();
 };
 
 function getBids(type) {
