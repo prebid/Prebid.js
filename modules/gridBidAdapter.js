@@ -272,6 +272,20 @@ export const spec = {
       request.regs.coppa = 1;
     }
 
+    const site = config.getConfig('ortb2.site');
+    if (site) {
+      const pageCategory = [...(site.cat || []), ...(site.pagecat || [])].filter((category) => {
+        return category && typeof category === 'string'
+      });
+      if (pageCategory.length) {
+        request.site.cat = pageCategory;
+      }
+      const genre = deepAccess(site, 'content.genre');
+      if (genre && typeof genre === 'string') {
+        request.site.content = {...request.site.content, genre};
+      }
+    }
+
     return {
       method: 'POST',
       url: ENDPOINT_URL,
