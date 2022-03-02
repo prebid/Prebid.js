@@ -193,10 +193,10 @@ export const spec = {
       params.push(`ts=${timestamp()}`);
       params.push(`type=h`)
       if (gdprConsent && (typeof gdprConsent.gdprApplies === 'boolean')) {
-        params.push(`gdpr=${gdprConsent.gdprApplies ? '1' : '0'}`);
+        params.push(`gdpr=${Number(gdprConsent.gdprApplies)}`);
       }
       if (gdprConsent && (typeof gdprConsent.consentString === 'string')) {
-        params.push(`consent=${gdprConsent.consentString}`);
+        params.push(`gdpr_consent=${gdprConsent.consentString}`);
       }
       syncs.push({
         type: 'iframe',

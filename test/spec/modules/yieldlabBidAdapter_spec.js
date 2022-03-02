@@ -433,7 +433,7 @@ describe('yieldlabBidAdapter', function () {
       const sync = spec.getUserSyncs(syncOptions, [], bidRequest.gdprConsent, bidRequest.uspConsent);
       expect(expectedUrlSnippets.every(urlSnippet => sync[0].url.includes(urlSnippet)));
       expect(sync[0].url).to.have.string('gdpr=' + Number(bidRequest.gdprConsent.gdprApplies));
-      expect(sync[0].url).to.have.string('consent=' + bidRequest.gdprConsent.consentString);
+      expect(sync[0].url).to.have.string('gdpr_consent=' + bidRequest.gdprConsent.consentString);
       // USP consent should be ignored
       expect(sync[0].url).not.have.string('usp_consent=');
       expect(sync[0].type).to.have.string('iframe');
@@ -445,7 +445,7 @@ describe('yieldlabBidAdapter', function () {
       }
       const sync = spec.getUserSyncs(syncOptions, [], gdprConsent, undefined);
       expect(expectedUrlSnippets.every(urlSnippet => sync[0].url.includes(urlSnippet)));
-      expect(sync[0].url).to.have.string('consent=' + gdprConsent.consentString);
+      expect(sync[0].url).to.have.string('gdpr_consent=' + gdprConsent.consentString);
       expect(sync[0].url).not.have.string('gdpr=');
       expect(sync[0].type).to.have.string('iframe');
     });
