@@ -31,7 +31,7 @@ let adomikAdapter = Object.assign(adapter({}),
           break;
 
         case bidResponse:
-          adomikAdapter.saveBidResponse(args, 'bidResponse');
+          adomikAdapter.saveBidResponse(args);
           break;
 
         case bidWon:
@@ -66,15 +66,14 @@ adomikAdapter.initializeBucketEvents = function() {
   adomikAdapter.bucketEvents = [];
 }
 
-adomikAdapter.saveBidResponse = function(args, from) {
+adomikAdapter.saveBidResponse = function(args) {
   let responseSaved = adomikAdapter.bucketEvents.find((bucketEvent) =>
     bucketEvent.type == 'response' && bucketEvent.event.id == args.id
   );
-  if (responseSaved)
-    return true;
+  if (responseSaved) { return true; }
   adomikAdapter.bucketEvents.push({
     type: 'response',
-    event: { ...adomikAdapter.buildBidResponse(args), ...{ from: from } }
+    event: adomikAdapter.buildBidResponse(args)
   });
 }
 
@@ -124,10 +123,8 @@ adomikAdapter.sendTypedEvent = function() {
   const stringBulkEvents = JSON.stringify(bulkEvents)
   logInfo('Events sent to adomik prebid analytic ' + stringBulkEvents);
 
-  // Encode object in base64
   const encodedBuf = window.btoa(stringBulkEvents);
 
-  // Create final url and split it (+endpoint length)
   const encodedUri = encodeURIComponent(encodedBuf);
   const maxLength = adomikAdapter.maxPartLength();
   const splittedUrl = encodedUri.match(new RegExp(`.{1,${maxLength}}`, 'g'));
@@ -140,24 +137,18 @@ adomikAdapter.sendTypedEvent = function() {
 };
 
 adomikAdapter.sendWonEvent = function (wonEvent) {
-<<<<<<< HEAD
-  let keyValues = { testId: adomikAdapter.currentContext.testId, testValue: adomikAdapter.currentContext.testValue }
-  let samplingInfo = { sampling: adomikAdapter.currentContext.sampling }
-  wonEvent = { ...wonEvent, ...keyValues, ...samplingInfo }
-
-=======
   let [testId, testValue] = adomikAdapter.getKeyValues();
-  keyValues = { testId: testId, testValue: testValue }
-  wonEvent = {...wonEvent, ...keyValues}
->>>>>>> adomikAnayticsAdapter/receive KV from sessionStorage
-  const stringWonEvent = JSON.stringify(wonEvent)
+  let keyValues = { testId: testId, testValue: testValue };
+  let samplingInfo = { sampling: adomikAdapter.currentContext.sampling };
+  wonEvent = { ...adomikAdapter.buildBidResponse(wonEvent), ...keyValues, ...samplingInfo };
+
+  const stringWonEvent = JSON.stringify(wonEvent);
   logInfo('Won event sent to adomik prebid analytic ' + stringWonEvent);
 
-  // Encode object in base64
   const encodedBuf = window.btoa(stringWonEvent);
   const encodedUri = encodeURIComponent(encodedBuf);
   const img = new Image(1, 1);
-  img.src = `https://${adomikAdapter.currentContext.url}/?q=${encodedUri}&id=${adomikAdapter.currentContext.id}&won=true`
+  img.src = `https://${adomikAdapter.currentContext.url}/?q=${encodedUri}&id=${adomikAdapter.currentContext.id}&won=true`;
 }
 
 adomikAdapter.buildBidResponse = function (bid) {
@@ -219,12 +210,23 @@ adomikAdapter.buildTypedEvents = function () {
   return groupedTypedEvents;
 }
 
+adomikAdapter.getKeyValues = function () {
+  let preventTest = sessionStorage.getItem(window.location.hostname + '_NoAdomikTest')
+  let inScope = sessionStorage.getItem(window.location.hostname + '_AdomikTestInScope')
+  let keyValues = JSON.parse(sessionStorage.getItem(window.location.hostname + '_AdomikTest'))
+  let testId;
+  let testValue;
+  if (typeof (keyValues) === 'object' && keyValues != undefined && !preventTest && inScope) {
+    testId = keyValues.testId
+    testValue = keyValues.testOptionLabel
+  }
+  return [testId, testValue]
+}
+
 adomikAdapter.enable = function(options) {
   adomikAdapter.currentContext = {
     uid: options.id,
     url: options.url,
-    testId: options.testId,
-    testValue: options.testValue,
     id: '',
     timeouted: false,
     sampling: options.sampling
@@ -235,24 +237,15 @@ adomikAdapter.enable = function(options) {
 
 adomikAdapter.checkOptions = function(options) {
   if (typeof options !== 'undefined') {
-    if (options.id && options.url)
-      adomikAdapter.enable(options);
-    else
-      logInfo('Adomik Analytics disabled because id and/or url is missing from config', options);
-  }
-  else
-    logInfo('Adomik Analytics disabled because config is missing');
+    if (options.id && options.url) { adomikAdapter.enable(options); } else { logInfo('Adomik Analytics disabled because id and/or url is missing from config', options); }
+  } else { logInfo('Adomik Analytics disabled because config is missing'); }
 };
 
 adomikAdapter.checkSampling = function(options) {
   _sampled = typeof options === 'undefined' ||
   typeof options.sampling === 'undefined' ||
-  Math.random() < parseFloat(options.sampling);
-
-  if (_sampled)
-    adomikAdapter.checkOptions(options)
-  else
-    logInfo('Adomik Analytics ignored for sampling', options.sampling);
+  (options.sampling > 0 && Math.random() < parseFloat(options.sampling));
+  if (_sampled) { adomikAdapter.checkOptions(options) } else { logInfo('Adomik Analytics ignored for sampling', options.sampling); }
 };
 
 adomikAdapter.adapterEnableAnalytics = adomikAdapter.enableAnalytics;
