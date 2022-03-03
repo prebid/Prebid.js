@@ -1,61 +1,82 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 
-const ADMIXER_ENDPOINT = 'https://article.kbopping.com/article_manager/AdCall';
+const ADMARU_ENDPOINT = 'https://p1.admaru.net/AdCall';
 const BIDDER_CODE = 'admaru';
 
 const DEFAULT_BID_TTL = 360;
-const DEFAULT_CURRENCY = 'USD';
-const DEFAULT_REVENUE = false;
+
+function parseBid(rawBid, currency) {
+  const bid = {};
+
+  bid.cpm = rawBid.price;
+  bid.impid = rawBid.impid;
+  bid.requestId = rawBid.impid;
+  bid.netRevenue = true;
+  bid.dealId = '';
+  bid.creativeId = rawBid.crid;
+  bid.currency = currency;
+  bid.ad = rawBid.adm;
+  bid.width = rawBid.w;
+  bid.height = rawBid.h;
+  bid.mediaType = BANNER;
+  bid.ttl = DEFAULT_BID_TTL;
+
+  return bid;
+}
 
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
 
   isBidRequestValid: function (bid) {
-    return !!(bid && bid.params && bid.params.media_key && bid.params.adunit_id);
+    return !!(bid && bid.params && bid.params.pub_id && bid.params.adspace_id);
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
     return validBidRequests.map(bid => {
       const payload = {
-        media_key: bid.params.media_key,
-        adunit_id: bid.params.adunit_id,
-        req_id: bid.bidId,
+        pub_id: bid.params.pub_id,
+        adspace_id: bid.params.adspace_id,
         referrer: bidderRequest.refererInfo.referer,
         os: getOs(),
         platform: getPlatform(),
+        bidderRequestId: bid.bidderRequestId,
+        bidId: bid.bidId
       };
 
       return {
         method: 'GET',
-        url: ADMIXER_ENDPOINT,
+        url: ADMARU_ENDPOINT,
         data: payload,
       }
     })
   },
 
   interpretResponse: function (serverResponse, bidRequest) {
-    const serverBody = serverResponse.body;
     const bidResponses = [];
+    let bid = null;
 
-    if (serverBody && serverBody.error_code === 0 && serverBody.body && serverBody.body.length > 0) {
-      let bidData = serverBody.body[0];
-
-      const bidResponse = {
-        ad: bidData.ad,
-        requestId: serverBody.req_id,
-        creativeId: bidData.ad_id,
-        cpm: bidData.cpm,
-        width: bidData.width,
-        height: bidData.height,
-        currency: bidData.currency ? bidData.currency : DEFAULT_CURRENCY,
-        netRevenue: DEFAULT_REVENUE,
-        ttl: DEFAULT_BID_TTL
-      };
-
-      bidResponses.push(bidResponse);
+    if (!serverResponse.hasOwnProperty('body') || !serverResponse.body.hasOwnProperty('seatbid')) {
+      return bidResponses;
     }
+
+    const serverBody = serverResponse.body;
+    const seatbid = serverBody.seatbid;
+
+    for (let i = 0; i < seatbid.length; i++) {
+      if (!seatbid[i].hasOwnProperty('bid')) {
+        continue;
+      }
+
+      const innerBids = seatbid[i].bid;
+      for (let j = 0; j < innerBids.length; j++) {
+        bid = parseBid(innerBids[j], serverBody.cur);
+
+        bidResponses.push(bid);
+      }
+    }
+
     return bidResponses;
   }
 }
