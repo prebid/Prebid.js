@@ -517,6 +517,14 @@ Object.assign(ORTB2.prototype, {
     // transform ad unit into array of OpenRTB impression objects
     let impIds = new Set();
     adUnits.forEach(adUnit => {
+      // TODO: support labels / conditional bids
+      // for now, just warn about them
+      adUnit.bids.forEach((bid) => {
+        if (bid.mediaTypes != null) {
+          logWarn(`Prebid Server adapter does not (yet) support bidder-specific mediaTypes for the same adUnit. Size mapping configuration will be ignored for adUnit: ${adUnit.code}, bidder: ${bid.bidder}`);
+        }
+      })
+
       // in case there is a duplicate imp.id, add '-2' suffix to the second imp.id.
       // e.g. if there are 2 adUnits (case of twin adUnit codes) with code 'test',
       // first imp will have id 'test' and second imp will have id 'test-2'
