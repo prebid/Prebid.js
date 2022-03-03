@@ -229,7 +229,7 @@ describe('OguryBidAdapter', function () {
     const defaultTimeout = 1000;
     const expectedRequestObject = {
       id: bidRequests[0].auctionId,
-      at: 2,
+      at: 1,
       tmax: defaultTimeout,
       imp: [{
         id: bidRequests[0].bidId,
@@ -271,7 +271,7 @@ describe('OguryBidAdapter', function () {
       },
       ext: {
         prebidversion: '$prebid.version$',
-        adapterversion: '1.2.9'
+        adapterversion: '1.2.10'
       }
     };
 
@@ -482,7 +482,7 @@ describe('OguryBidAdapter', function () {
           advertiserDomains: openRtbBidResponse.body.seatbid[0].bid[0].adomain
         },
         nurl: openRtbBidResponse.body.seatbid[0].bid[0].nurl,
-        adapterVersion: '1.2.9',
+        adapterVersion: '1.2.10',
         prebidVersion: '$prebid.version$'
       }, {
         requestId: openRtbBidResponse.body.seatbid[0].bid[1].impid,
@@ -499,7 +499,7 @@ describe('OguryBidAdapter', function () {
           advertiserDomains: openRtbBidResponse.body.seatbid[0].bid[1].adomain
         },
         nurl: openRtbBidResponse.body.seatbid[0].bid[1].nurl,
-        adapterVersion: '1.2.9',
+        adapterVersion: '1.2.10',
         prebidVersion: '$prebid.version$'
       }]
 

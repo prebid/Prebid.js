@@ -5,6 +5,15 @@ const USER_IDS_CONFIG = {
 
   // key-name : {config}
 
+  // trustpid
+  'trustpid': {
+    source: 'trustpid.com',
+    atype: 1,
+    getValue: function (data) {
+      return data;
+    },
+  },
+
   // intentIqId
   'intentIqId': {
     source: 'intentiq.com',
@@ -14,6 +23,12 @@ const USER_IDS_CONFIG = {
   // naveggId
   'naveggId': {
     source: 'navegg.com',
+    atype: 1
+  },
+
+  // justId
+  'justId': {
+    source: 'justtag.com',
     atype: 1
   },
 
@@ -146,7 +161,13 @@ const USER_IDS_CONFIG = {
     atype: 1
   },
 
-  // haloId
+  // hadronId
+  'hadronId': {
+    source: 'audigent.com',
+    atype: 1
+  },
+
+  // haloId (deprecated in 7.0, use hadronId)
   'haloId': {
     source: 'audigent.com',
     atype: 1
