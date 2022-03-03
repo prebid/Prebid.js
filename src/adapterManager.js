@@ -22,7 +22,7 @@ import {
   timestamp,
   isStr
 } from './utils.js';
-import { getLabels, resolveStatus } from './sizeMapping.js';
+import {processAdUnitsForLabels} from './sizeMapping.js';
 import { decorateAdUnitsWithNativeParams, nativeAdapters } from './native.js';
 import { newBidder } from './adapters/bidderFactory.js';
 import { ajaxBuilder } from './ajax.js';
@@ -57,75 +57,45 @@ var _analyticsRegistry = {};
  * @property {Array<string>} activeLabels the labels specified as being active by requestBids
  */
 
-function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels, src}) {
+function getBids({bidderCode, auctionId, bidderRequestId, adUnits, src}) {
   return adUnits.reduce((result, adUnit) => {
-    let {
-      active,
-      mediaTypes: filteredMediaTypes,
-      filterResults
-    } = resolveStatus(
-      getLabels(adUnit, labels),
-      adUnit.mediaTypes,
-      adUnit.sizes
+    result.push(adUnit.bids.filter(bid => bid.bidder === bidderCode)
+      .reduce((bids, bid) => {
+        bid = Object.assign({}, bid, getDefinedParams(adUnit, [
+          'nativeParams',
+          'ortb2Imp',
+          'mediaType',
+          'renderer',
+          'storedAuctionResponse'
+        ]));
+
+        const mediaTypes = bid.mediaTypes == null ? adUnit.mediaTypes : bid.mediaTypes
+
+        if (isValidMediaTypes(mediaTypes)) {
+          bid = Object.assign({}, bid, {
+            mediaTypes
+          });
+        } else {
+          logError(
+            `mediaTypes is not correctly configured for adunit ${adUnit.code}`
+          );
+        }
+
+        bids.push(Object.assign({}, bid, {
+          adUnitCode: adUnit.code,
+          transactionId: adUnit.transactionId,
+          sizes: deepAccess(mediaTypes, 'banner.sizes') || deepAccess(mediaTypes, 'video.playerSize') || [],
+          bidId: bid.bid_id || getUniqueIdentifierStr(),
+          bidderRequestId,
+          auctionId,
+          src,
+          bidRequestsCount: adunitCounter.getRequestsCounter(adUnit.code),
+          bidderRequestsCount: adunitCounter.getBidderRequestsCounter(adUnit.code, bid.bidder),
+          bidderWinsCount: adunitCounter.getBidderWinsCounter(adUnit.code, bid.bidder),
+        }));
+        return bids;
+      }, [])
     );
-
-    if (!active) {
-      logInfo(`Size mapping disabled adUnit "${adUnit.code}"`);
-    } else if (filterResults) {
-      logInfo(`Size mapping filtered adUnit "${adUnit.code}" banner sizes from `, filterResults.before, 'to ', filterResults.after);
-    }
-
-    if (active) {
-      result.push(adUnit.bids.filter(bid => bid.bidder === bidderCode)
-        .reduce((bids, bid) => {
-          bid = Object.assign({}, bid, getDefinedParams(adUnit, [
-            'nativeParams',
-            'ortb2Imp',
-            'mediaType',
-            'renderer',
-            'storedAuctionResponse'
-          ]));
-
-          let {
-            active,
-            mediaTypes,
-            filterResults
-          } = resolveStatus(getLabels(bid, labels), filteredMediaTypes);
-
-          if (!active) {
-            logInfo(`Size mapping deactivated adUnit "${adUnit.code}" bidder "${bid.bidder}"`);
-          } else if (filterResults) {
-            logInfo(`Size mapping filtered adUnit "${adUnit.code}" bidder "${bid.bidder}" banner sizes from `, filterResults.before, 'to ', filterResults.after);
-          }
-
-          if (isValidMediaTypes(mediaTypes)) {
-            bid = Object.assign({}, bid, {
-              mediaTypes
-            });
-          } else {
-            logError(
-              `mediaTypes is not correctly configured for adunit ${adUnit.code}`
-            );
-          }
-
-          if (active) {
-            bids.push(Object.assign({}, bid, {
-              adUnitCode: adUnit.code,
-              transactionId: adUnit.transactionId,
-              sizes: deepAccess(mediaTypes, 'banner.sizes') || deepAccess(mediaTypes, 'video.playerSize') || [],
-              bidId: bid.bid_id || getUniqueIdentifierStr(),
-              bidderRequestId,
-              auctionId,
-              src,
-              bidRequestsCount: adunitCounter.getRequestsCounter(adUnit.code),
-              bidderRequestsCount: adunitCounter.getBidderRequestsCounter(adUnit.code, bid.bidder),
-              bidderWinsCount: adunitCounter.getBidderWinsCounter(adUnit.code, bid.bidder),
-            }));
-          }
-          return bids;
-        }, [])
-      );
-    }
     return result;
   }, []).reduce(flatten, []).filter(val => val !== '');
 }
@@ -234,6 +204,17 @@ export function getAllS2SBidders() {
   })
 }
 
+/**
+ * Filter and/or modify media types for ad units based on the given labels.
+ *
+ * This should return adUnits that are active for the given labels, modified to have their `mediaTypes`
+ * conform to size mapping configuration. If different bids for the same adUnit should use different `mediaTypes`,
+ * they should be exposed under `adUnit.bids[].mediaTypes`.
+ */
+export const setupAdUnitMediaTypes = hook('sync', (adUnits, labels) => {
+  return processAdUnitsForLabels(adUnits, labels);
+}, 'setupAdUnitMediaTypes')
+
 adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, auctionId, cbTimeout, labels) {
   /**
    * emit and pass adunits for external modification
@@ -241,6 +222,7 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
    */
   events.emit(CONSTANTS.EVENTS.BEFORE_REQUEST_BIDS, adUnits);
   decorateAdUnitsWithNativeParams(adUnits);
+  adUnits = setupAdUnitMediaTypes(adUnits, labels);
 
   let bidderCodes = getBidderCodes(adUnits);
   if (config.getConfig('bidderSequence') === RANDOM) {
@@ -304,7 +286,7 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
           auctionId,
           bidderRequestId,
           uniquePbsTid,
-          bids: hookedGetBids({bidderCode, auctionId, bidderRequestId, 'adUnits': deepClone(adUnitsS2SCopy), labels, src: CONSTANTS.S2S.SRC}),
+          bids: hookedGetBids({bidderCode, auctionId, bidderRequestId, 'adUnits': deepClone(adUnitsS2SCopy), src: CONSTANTS.S2S.SRC}),
           auctionStart: auctionStart,
           timeout: s2sConfig.timeout,
           src: CONSTANTS.S2S.SRC,
