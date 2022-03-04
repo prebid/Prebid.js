@@ -38,7 +38,7 @@ export const spec = {
       const payload = {
         pub_id: bid.params.pub_id,
         adspace_id: bid.params.adspace_id,
-        referrer: bidderRequest.refererInfo.referer,
+        // refererInfo: bidderRequest.refererInfo.referer,
         os: getOs(),
         platform: getPlatform(),
         bidderRequestId: bid.bidderRequestId,

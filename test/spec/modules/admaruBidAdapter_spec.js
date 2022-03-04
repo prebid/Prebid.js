@@ -15,13 +15,13 @@ describe('Admaru Adapter', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
-  
+
   describe('isBidRequestValidForBanner', () => {
     let bid = {
       'bidder': 'admaru',
       'params': {
     	  'pub_id': '1234',
-          'adspace_id': '1234'
+        'adspace_id': '1234'
       },
       'adUnitCode': 'adunit-code',
       'mediaTypes': {
@@ -50,14 +50,14 @@ describe('Admaru Adapter', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
-  
+
   describe('buildRequestsForBanner', () => {
     let bidRequests = [
       {
         'bidder': 'admaru',
         'params': {
         	'pub_id': '1234',
-            'adspace_id': '1234'
+          'adspace_id': '1234'
         },
         'adUnitCode': 'adunit-code',
         'mediaTypes': {
@@ -79,7 +79,7 @@ describe('Admaru Adapter', function () {
       const payload = request[0].data;
       expect(payload.pub_id).to.equal('1234');
       expect(payload.adspace_id).to.equal('1234');
-      expect(payload.referrer).to.equal('https://admaru.com/test/admaru_prebid/test.html');
+      // expect(payload.refererInfo).to.equal('{"referer": "https://www.admaru.com/test/admaru_prebid/icv_reminder/test.html","reachedTop": true,"numIframes": 1,"stack": ["https://www.admaru.com/test/admaru_prebid/icv_reminder/test.html","https://www.admaru.com/test/admaru_prebid/icv_reminder/test.html"]}');
       expect(payload.os).to.equal('windows');
       expect(payload.platform).to.equal('pc_web');
       expect(payload.bidderRequestId).to.equal('1a8ff729f6c1a3');
@@ -92,14 +92,14 @@ describe('Admaru Adapter', function () {
       expect(request[0].method).to.equal('GET');
     });
   });
-  
+
   describe('interpretResponseForBanner', () => {
     let bidRequests = [
       {
         'bidder': 'admaru',
         'params': {
         	'pub_id': '1234',
-            'adspace_id': '1234'
+          'adspace_id': '1234'
         },
         'adUnitCode': 'adunit-code',
         'mediaTypes': {
@@ -116,7 +116,7 @@ describe('Admaru Adapter', function () {
       }
     ];
 
-    let ad = '<img src="https://admaru.com/images/logo_admaru.png">';
+    let response = '<img src="https://admaru.com/images/logo_admaru.png">';
 
     it('should get correct bid response', () => {
       var request = spec.buildRequests(bidRequests);
@@ -130,7 +130,7 @@ describe('Admaru Adapter', function () {
           dealId: '',
           creativeId: '16293398',
           currency: 'USD',
-          ad: ad,
+          ad: response,
           width: 300,
           height: 250,
           mediaType: 'BANNER',
