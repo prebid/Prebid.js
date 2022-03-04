@@ -1,22 +1,22 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import { getRefererInfo } from '../src/refererDetection.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {getRefererInfo} from '../src/refererDetection.js';
+import {getStorageManager} from '../src/storageManager.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import { OUTSTREAM } from '../src/video.js';
+import {OUTSTREAM} from '../src/video.js';
 import {
-  isArray,
-  isNumber,
-  generateUUID,
-  parseSizesInput,
   deepAccess,
+  generateUUID,
+  getBidIdParameter,
   getParameterByName,
   getValue,
-  getBidIdParameter,
+  isArray,
+  isNumber,
   logError,
   logWarn,
+  parseSizesInput,
 } from '../src/utils.js';
-import { Renderer } from '../src/Renderer.js';
-import find from 'core-js-pure/features/array/find.js';
+import {Renderer} from '../src/Renderer.js';
+import {find} from '../src/polyfill.js';
 
 // ------------------------------------
 const BIDDER_CODE = 'cwire';

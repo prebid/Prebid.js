@@ -1,14 +1,30 @@
-import { deepAccess, parseGPTSingleSizeArray, inIframe, deepClone, logError, logWarn, isFn, contains, isInteger, isArray, deepSetValue, parseQueryStringParameters, isEmpty, mergeDeep, convertTypes, hasDeviceAccess } from '../src/utils.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
+import {
+  contains,
+  convertTypes,
+  deepAccess,
+  deepClone,
+  deepSetValue,
+  hasDeviceAccess,
+  inIframe,
+  isArray,
+  isEmpty,
+  isFn,
+  isInteger,
+  logError,
+  logWarn,
+  mergeDeep,
+  parseGPTSingleSizeArray,
+  parseQueryStringParameters
+} from '../src/utils.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {config} from '../src/config.js';
 import CONSTANTS from '../src/constants.json';
-import { getStorageManager, validateStorageEnforcement } from '../src/storageManager.js';
+import {getStorageManager, validateStorageEnforcement} from '../src/storageManager.js';
 import events from '../src/events.js';
-import find from 'core-js-pure/features/array/find.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { INSTREAM, OUTSTREAM } from '../src/video.js';
-import includes from 'core-js-pure/features/array/includes.js';
-import { Renderer } from '../src/Renderer.js';
+import {find, includes} from '../src/polyfill.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {INSTREAM, OUTSTREAM} from '../src/video.js';
+import {Renderer} from '../src/Renderer.js';
 
 const BIDDER_CODE = 'ix';
 const ALIAS_BIDDER_CODE = 'roundel';

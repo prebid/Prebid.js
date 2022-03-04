@@ -1,9 +1,9 @@
-import { isSafariBrowser, deepAccess, getWindowTop, mergeDeep } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import find from 'core-js-pure/features/array/find.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {deepAccess, getWindowTop, isSafariBrowser, mergeDeep} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
+import {find} from '../src/polyfill.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {getStorageManager} from '../src/storageManager.js';
 
 const BIDDER_CODE = 'livewrapped';
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});

@@ -1,10 +1,26 @@
-import { deepSetValue, logError, _each, getBidRequest, isNumber, isArray, deepAccess, isFn, isPlainObject, logWarn, getBidIdParameter, getUniqueIdentifierStr, isEmpty, isInteger, isStr, mergeDeep } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import {
+  _each,
+  deepAccess,
+  deepSetValue,
+  getBidIdParameter,
+  getBidRequest,
+  getUniqueIdentifierStr,
+  isArray,
+  isEmpty,
+  isFn,
+  isInteger,
+  isNumber,
+  isPlainObject,
+  isStr,
+  logError,
+  logWarn, mergeDeep
+} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
-import { createEidsArray } from './userId/eids.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import {createEidsArray} from './userId/eids.js';
+import {includes} from '../src/polyfill.js';
 
 const BIDDER_CODE = 'improvedigital';
 const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
