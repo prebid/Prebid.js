@@ -401,30 +401,39 @@ describe('TrustXAdapter', function () {
       expect(payload.site.content).to.deep.equal(jsContent);
     });
 
-    it('if segment is present in permutive targeting, payload must have right params', function () {
-      const permSegments = [{id: 'test_perm_1'}, {id: 'test_perm_2'}];
-      const bidRequestsWithPermutiveTargeting = bidRequests.map((bid) => {
-        return Object.assign({
-          rtd: {
-            p_standard: {
-              targeting: {
-                segments: permSegments
-              }
-            }
-          }
-        }, bid);
-      });
-      const request = spec.buildRequests(bidRequestsWithPermutiveTargeting, bidderRequest);
-      expect(request.data).to.be.an('string');
+    it('shold have user.data filled from config ortb2.user.data', function () {
+      const userData = [
+        {
+          name: 'someName',
+          segment: [1, 2, { anyKey: 'anyVal' }, 'segVal', { id: 'segId' }, { value: 'segValue' }, { id: 'segId2', name: 'segName' }]
+        },
+        {
+          name: 'permutive.com',
+          segment: [1, 2, 'segVal', { id: 'segId' }, { anyKey: 'anyVal' }, { value: 'segValue' }, { id: 'segId2', name: 'segName' }]
+        },
+        {
+          someKey: 'another data'
+        }
+      ];
+
+      const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
+        arg => arg === 'ortb2.user.data' ? userData : null);
+      const request = spec.buildRequests([bidRequests[0]], bidderRequest);
       const payload = parseRequest(request.data);
-      expect(payload).to.have.property('user');
-      expect(payload.user.data).to.deep.equal([{
-        name: 'permutive',
-        segment: [
-          {name: 'p_standard', value: permSegments[0].id},
-          {name: 'p_standard', value: permSegments[1].id}
-        ]
-      }]);
+      expect(payload.user.data).to.deep.equal([
+        {
+          name: 'someName',
+          segment: [1, 2, { anyKey: 'anyVal' }, 'segVal', { id: 'segId' }, { value: 'segValue' }, { id: 'segId2', name: 'segName' }]
+        },
+        {
+          name: 'permutive.com',
+          segment: [{ value: '1' }, { value: '2' }, { value: 'segVal' }, { value: 'segId' }, { value: 'segValue' }, { value: 'segId2', name: 'segName' }]
+        },
+        {
+          someKey: 'another data'
+        }
+      ]);
+      getConfigStub.restore();
     });
 
     it('should contain the keyword values if it present in ortb2.(site/user)', function () {
