@@ -47,7 +47,7 @@ describe('Vast XML Editor', function () {
   const expectedErrorUrl = 'https://test.error.com/ping.gif';
 
   it('should add Impression Nodes to the Ad Wrapper', function () {
-    const vastXml = vastXmlEditor.getVastXmlWithTrackingNodes(adWrapperXml, expectedImpressionUrl, expectedImpressionId);
+    const vastXml = vastXmlEditor.getVastXmlWithTracking(adWrapperXml, null, expectedImpressionUrl, expectedImpressionId);
     const expectedXml = `<VAST version="4.0">
     <Ad id="123">
         <Wrapper>
@@ -60,7 +60,7 @@ describe('Vast XML Editor', function () {
   });
 
   it('should add Impression Nodes to the InLine', function () {
-    const vastXml = vastXmlEditor.getVastXmlWithTrackingNodes(inlineXml, expectedImpressionUrl, expectedImpressionId);
+    const vastXml = vastXmlEditor.getVastXmlWithTracking(inlineXml, null, expectedImpressionUrl, expectedImpressionId);
     const expectedXml = `<VAST version="4.0">
     <Ad id="abc">
         <InLine>
@@ -73,7 +73,7 @@ describe('Vast XML Editor', function () {
   });
 
   it('should add Impression Nodes to the Ad Wrapper and Inline', function () {
-    const vastXml = vastXmlEditor.getVastXmlWithTrackingNodes(inLineWithWrapper, expectedImpressionUrl, expectedImpressionId);
+    const vastXml = vastXmlEditor.getVastXmlWithTracking(inLineWithWrapper, null, expectedImpressionUrl, expectedImpressionId);
     const expectedXml = `<VAST version="4.0">
     <Ad id="123">
         <Wrapper>
@@ -92,7 +92,7 @@ describe('Vast XML Editor', function () {
   });
 
   it('should add Error Nodes to the Ad Wrapper', function () {
-    const vastXml = vastXmlEditor.getVastXmlWithTrackingNodes(adWrapperXml, null, null, expectedErrorUrl);
+    const vastXml = vastXmlEditor.getVastXmlWithTracking(adWrapperXml, null, null, null, expectedErrorUrl);
     const expectedXml = `<VAST version="4.0">
     <Ad id="123">
         <Wrapper>
@@ -105,7 +105,7 @@ describe('Vast XML Editor', function () {
   });
 
   it('should add Error Nodes to the InLine', function () {
-    const vastXml = vastXmlEditor.getVastXmlWithTrackingNodes(inlineXml, null, null, expectedErrorUrl);
+    const vastXml = vastXmlEditor.getVastXmlWithTracking(inlineXml, null, null, null, expectedErrorUrl);
     const expectedXml = `<VAST version="4.0">
     <Ad id="abc">
         <InLine>
@@ -118,7 +118,7 @@ describe('Vast XML Editor', function () {
   });
 
   it('should add Error Nodes to the Ad Wrapper and Inline', function () {
-    const vastXml = vastXmlEditor.getVastXmlWithTrackingNodes(inLineWithWrapper, null, null, expectedErrorUrl);
+    const vastXml = vastXmlEditor.getVastXmlWithTracking(inLineWithWrapper, null, null, null, expectedErrorUrl);
     const expectedXml = `<VAST version="4.0">
     <Ad id="123">
         <Wrapper>
@@ -137,7 +137,7 @@ describe('Vast XML Editor', function () {
   });
 
   it('should add Impression Nodes and Error Nodes to the Ad Wrapper', function () {
-    const vastXml = vastXmlEditor.getVastXmlWithTrackingNodes(adWrapperXml, expectedImpressionUrl, expectedImpressionId, expectedErrorUrl);
+    const vastXml = vastXmlEditor.getVastXmlWithTracking(adWrapperXml, null, expectedImpressionUrl, expectedImpressionId, expectedErrorUrl);
     const expectedXml = `<VAST version="4.0">
     <Ad id="123">
         <Wrapper>
@@ -150,7 +150,7 @@ describe('Vast XML Editor', function () {
   });
 
   it('should add Impression Nodes and Error Nodes to the InLine', function () {
-    const vastXml = vastXmlEditor.getVastXmlWithTrackingNodes(inlineXml, expectedImpressionUrl, expectedImpressionId, expectedErrorUrl);
+    const vastXml = vastXmlEditor.getVastXmlWithTracking(inlineXml, null, expectedImpressionUrl, expectedImpressionId, expectedErrorUrl);
     const expectedXml = `<VAST version="4.0">
     <Ad id="abc">
         <InLine>
@@ -163,7 +163,7 @@ describe('Vast XML Editor', function () {
   });
 
   it('should add Impression Nodes and Error Nodes to the Ad Wrapper and Inline', function () {
-    const vastXml = vastXmlEditor.getVastXmlWithTrackingNodes(inLineWithWrapper, expectedImpressionUrl, expectedImpressionId, expectedErrorUrl);
+    const vastXml = vastXmlEditor.getVastXmlWithTracking(inLineWithWrapper, null, expectedImpressionUrl, expectedImpressionId, expectedErrorUrl);
     const expectedXml = `<VAST version="4.0">
     <Ad id="123">
         <Wrapper>
@@ -176,6 +176,32 @@ describe('Vast XML Editor', function () {
             <AdSystem version="6">Prebid org</AdSystem>
             <AdTitle>Random Title</AdTitle>
         <Impression id="${expectedImpressionId}"><![CDATA[${expectedImpressionUrl}]]></Impression><Error><![CDATA[${expectedErrorUrl}]]></Error></InLine>
+    </Ad>
+</VAST>`;
+    expect(vastXml).to.equal(expectedXml);
+  });
+
+  it('should override the ad id in inline', function () {
+    const vastXml = vastXmlEditor.getVastXmlWithTracking(inlineXml, 'adIdOverride');
+    const expectedXml = `<VAST version="4.0">
+    <Ad id="adIdOverride">
+        <InLine>
+            <AdSystem version="6">Prebid org</AdSystem>
+            <AdTitle>Random Title</AdTitle>
+        </InLine>
+    </Ad>
+</VAST>`;
+    expect(vastXml).to.equal(expectedXml);
+  });
+
+  it('should override the ad id in the Ad Wrapper', function () {
+    const vastXml = vastXmlEditor.getVastXmlWithTracking(adWrapperXml, 'adIdOverride');
+    const expectedXml = `<VAST version="4.0">
+    <Ad id="adIdOverride">
+        <Wrapper>
+            <AdSystem version="6">Prebid org</AdSystem>
+            <VASTAdTagURI><![CDATA[https://random.adTag.com]]></VASTAdTagURI>
+        </Wrapper>
     </Ad>
 </VAST>`;
     expect(vastXml).to.equal(expectedXml);

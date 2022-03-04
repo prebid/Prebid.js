@@ -31,6 +31,10 @@ export function VastXmlEditor(xmlUtil_) {
   }
 
   function replaceAdId(vastXmlDoc, adId) {
+    if (!adId) {
+      return;
+    }
+
     const adNode = vastXmlDoc.querySelector('Ad');
     if (!adNode) {
       return;
