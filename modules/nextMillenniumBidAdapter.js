@@ -4,6 +4,7 @@ import { BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'nextMillennium';
 const ENDPOINT = 'https://pbs.nextmillmedia.com/openrtb2/auction';
+const SYNC_ENDPOINT = 'https://statics.nextmillmedia.com/load-cookie.html?v=4';
 const TIME_TO_LIVE = 360;
 
 export const spec = {
@@ -18,8 +19,10 @@ export const spec = {
 
   buildRequests: function(validBidRequests, bidderRequest) {
     const requests = [];
+    window.nmmRefreshCounts = window.nmmRefreshCounts || {};
 
     _each(validBidRequests, function(bid) {
+      window.nmmRefreshCounts[bid.adUnitCode] = window.nmmRefreshCounts[bid.adUnitCode] || 0;
       const postBody = {
         'id': bid.auctionId,
         'ext': {
@@ -27,6 +30,9 @@ export const spec = {
             'storedrequest': {
               'id': getBidIdParameter('placement_id', bid.params)
             }
+          },
+          'nextMillennium': {
+            'refresh_count': window.nmmRefreshCounts[bid.adUnitCode]++,
           }
         }
       }
@@ -40,12 +46,14 @@ export const spec = {
         if (uspConsent) {
           postBody.regs.ext.us_privacy = uspConsent;
         }
-        if (typeof gdprConsent.gdprApplies !== 'undefined') {
-          postBody.regs.ext.gdpr = gdprConsent.gdprApplies ? 1 : 0;
-        }
-        if (typeof gdprConsent.consentString !== 'undefined') {
-          postBody.user = {
-            ext: { consent: gdprConsent.consentString }
+        if (gdprConsent) {
+          if (typeof gdprConsent.gdprApplies !== 'undefined') {
+            postBody.regs.ext.gdpr = gdprConsent.gdprApplies ? 1 : 0;
+          }
+          if (typeof gdprConsent.consentString !== 'undefined') {
+            postBody.user = {
+              ext: { consent: gdprConsent.consentString }
+            }
           }
         }
       }
@@ -89,7 +97,32 @@ export const spec = {
     });
 
     return bidResponses;
-  }
+  },
+
+  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
+    if (!syncOptions.iframeEnabled) {
+      return
+    }
+
+    let syncurl = gdprConsent && gdprConsent.gdprApplies ? `${SYNC_ENDPOINT}&gdpr=1&gdpr_consent=${gdprConsent.consentString}` : SYNC_ENDPOINT
+
+    let bidders = []
+    if (responses) {
+      _each(responses, (response) => {
+        if (!(response && response.body && response.body.ext && response.body.ext.responsetimemillis)) return
+        _each(Object.keys(response.body.ext.responsetimemillis), b => bidders.push(b))
+      })
+    }
+
+    if (bidders.length) {
+      syncurl += `&bidders=${bidders.join(',')}`
+    }
+
+    return [{
+      type: 'iframe',
+      url: syncurl
+    }];
+  },
 };
 
 registerBidder(spec);

@@ -1,4 +1,4 @@
-import { mergeDeep, _each, logError, deepAccess, deepSetValue, isStr, isNumber, logWarn, convertTypes, isArray, parseSizesInput, logMessage } from '../src/utils.js';
+import { mergeDeep, _each, logError, deepAccess, deepSetValue, isStr, isNumber, logWarn, convertTypes, isArray, parseSizesInput, logMessage, formatQS } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
@@ -8,7 +8,7 @@ import { getGlobal } from '../src/prebidGlobal.js';
 
 const DEFAULT_INTEGRATION = 'pbjs_lite';
 const DEFAULT_PBS_INTEGRATION = 'pbjs';
-const DEFAULT_RENDERER_URL = 'https://video-outstream.rubiconproject.com/apex-2.0.0.js';
+const DEFAULT_RENDERER_URL = 'https://video-outstream.rubiconproject.com/apex-2.2.1.js';
 // renderer code at https://github.com/rubicon-project/apex2
 
 let rubiConf = {};
@@ -765,20 +765,22 @@ export const spec = {
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
     if (!hasSynced && syncOptions.iframeEnabled) {
       // data is only assigned if params are available to pass to syncEndpoint
-      let params = '';
+      let params = {};
 
-      if (gdprConsent && typeof gdprConsent.consentString === 'string') {
-        // add 'gdpr' only if 'gdprApplies' is defined
+      if (gdprConsent) {
         if (typeof gdprConsent.gdprApplies === 'boolean') {
-          params += `?gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
-        } else {
-          params += `?gdpr_consent=${gdprConsent.consentString}`;
+          params['gdpr'] = Number(gdprConsent.gdprApplies);
+        }
+        if (typeof gdprConsent.consentString === 'string') {
+          params['gdpr_consent'] = gdprConsent.consentString;
         }
       }
 
       if (uspConsent) {
-        params += `${params ? '&' : '?'}us_privacy=${encodeURIComponent(uspConsent)}`;
+        params['us_privacy'] = encodeURIComponent(uspConsent);
       }
+
+      params = Object.keys(params).length ? `?${formatQS(params)}` : '';
 
       hasSynced = true;
       return {
@@ -862,7 +864,7 @@ function renderBid(bid) {
       height: bid.height,
       vastUrl: bid.vastUrl,
       placement: {
-        attachTo: `#${bid.adUnitCode}`,
+        attachTo: adUnitElement,
         align: config.align || 'center',
         position: config.position || 'append'
       },
@@ -992,6 +994,8 @@ function applyFPD(bidRequest, mediaType, data) {
 
   let fpd = mergeDeep({}, config.getConfig('ortb2') || {}, BID_FPD);
   let impData = deepAccess(bidRequest.ortb2Imp, 'ext.data') || {};
+
+  const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
   const SEGTAX = {user: [4], site: [1, 2, 5, 6]};
   const MAP = {user: 'tg_v.', site: 'tg_i.', adserver: 'tg_i.dfp_ad_unit_code', pbadslot: 'tg_i.pbadslot', keywords: 'kw'};
   const validate = function(prop, key, parentName) {
@@ -1020,16 +1024,6 @@ function applyFPD(bidRequest, mediaType, data) {
     data[loc] = (data[loc]) ? data[loc].concat(',', val) : val;
   }
 
-  Object.keys(impData).forEach((key) => {
-    if (key === 'adserver') {
-      ['name', 'adslot'].forEach(prop => {
-        if (impData[key][prop]) impData[key][prop] = impData[key][prop].toString().replace(/^\/+/, '');
-      });
-    } else if (key === 'pbadslot') {
-      impData[key] = impData[key].toString().replace(/^\/+/, '');
-    }
-  });
-
   if (mediaType === BANNER) {
     ['site', 'user'].forEach(name => {
       Object.keys(fpd[name]).forEach((key) => {
@@ -1045,11 +1039,29 @@ function applyFPD(bidRequest, mediaType, data) {
       });
     });
     Object.keys(impData).forEach((key) => {
-      (key === 'adserver') ? addBannerData(impData[key].adslot, name, key) : addBannerData(impData[key], 'site', key);
+      if (key !== 'adserver') {
+        addBannerData(impData[key], 'site', key);
+      } else if (impData[key].name === 'gam') {
+        addBannerData(impData[key].adslot, name, key)
+      }
     });
+
+    // add in gpid
+    if (gpid) {
+      data['p_gpid'] = gpid;
+    }
+
+    // only send one of pbadslot or dfp adunit code (prefer pbadslot)
+    if (data['tg_i.pbadslot']) {
+      delete data['tg_i.dfp_ad_unit_code'];
+    }
   } else {
     if (Object.keys(impData).length) {
       mergeDeep(data.imp[0].ext, {data: impData});
+    }
+    // add in gpid
+    if (gpid) {
+      data.imp[0].ext.gpid = gpid;
     }
 
     mergeDeep(data, fpd);

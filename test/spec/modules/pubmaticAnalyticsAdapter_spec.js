@@ -95,6 +95,9 @@ const BID2 = Object.assign({}, BID, {
     'hb_pb': '1.500',
     'hb_size': '728x90',
     'hb_source': 'server'
+  },
+  meta: {
+    advertiserDomains: ['example.com']
   }
 });
 
@@ -382,6 +385,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].di).to.equal('the-deal-id');
       expect(data.s[1].ps[0].dc).to.equal('PMP');
       expect(data.s[1].ps[0].mi).to.equal('matched-impression');
+      expect(data.s[1].ps[0].adv).to.equal('example.com');
       expect(data.s[1].ps[0].l1).to.equal(3214);
       expect(data.s[1].ps[0].l2).to.equal(0);
       expect(data.s[1].ps[0].ss).to.equal(1);
@@ -651,6 +655,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].di).to.equal('the-deal-id');
       expect(data.s[1].ps[0].dc).to.equal('PMP');
       expect(data.s[1].ps[0].mi).to.equal('matched-impression');
+      expect(data.s[1].ps[0].adv).to.equal('example.com');
       expect(data.s[1].ps[0].l1).to.equal(3214);
       expect(data.s[1].ps[0].l2).to.equal(0);
       expect(data.s[1].ps[0].ss).to.equal(1);
@@ -708,6 +713,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].di).to.equal('the-deal-id');
       expect(data.s[1].ps[0].dc).to.equal('PMP');
       expect(data.s[1].ps[0].mi).to.equal('matched-impression');
+      expect(data.s[1].ps[0].adv).to.equal('example.com');
       expect(data.s[1].ps[0].l1).to.equal(3214);
       expect(data.s[1].ps[0].l2).to.equal(0);
       expect(data.s[1].ps[0].ss).to.equal(1);
@@ -754,6 +760,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].di).to.equal('the-deal-id');
       expect(data.s[1].ps[0].dc).to.equal('PMP');
       expect(data.s[1].ps[0].mi).to.equal('matched-impression');
+      expect(data.s[1].ps[0].adv).to.equal('example.com');
       expect(data.s[1].ps[0].l1).to.equal(3214);
       expect(data.s[1].ps[0].l2).to.equal(0);
       expect(data.s[1].ps[0].ss).to.equal(1);
@@ -771,9 +778,10 @@ describe('pubmatic analytics adapter', function () {
       expect(data.kgpv).to.equal('*');
     });
 
-    it('Logger: regexPattern in bid.bidResponse', function() {
+    it('Logger: regexPattern in bid.bidResponse and url in adomain', function() {
       const BID2_COPY = utils.deepClone(BID2);
       BID2_COPY.regexPattern = '*';
+      BID2_COPY.meta.advertiserDomains = ['https://www.example.com/abc/223']
       events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
       events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
       events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
@@ -808,6 +816,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].di).to.equal('the-deal-id');
       expect(data.s[1].ps[0].dc).to.equal('PMP');
       expect(data.s[1].ps[0].mi).to.equal('matched-impression');
+      expect(data.s[1].ps[0].adv).to.equal('example.com');
       expect(data.s[1].ps[0].l1).to.equal(3214);
       expect(data.s[1].ps[0].l2).to.equal(0);
       expect(data.s[1].ps[0].ss).to.equal(1);
@@ -859,6 +868,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].di).to.equal('the-deal-id');
       expect(data.s[1].ps[0].dc).to.equal('PMP');
       expect(data.s[1].ps[0].mi).to.equal('matched-impression');
+      expect(data.s[1].ps[0].adv).to.equal('example.com');
       expect(data.s[1].ps[0].l1).to.equal(3214);
       expect(data.s[1].ps[0].l2).to.equal(0);
       expect(data.s[1].ps[0].ss).to.equal(1);
@@ -912,6 +922,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].di).to.equal('the-deal-id');
       expect(data.s[1].ps[0].dc).to.equal('PMP');
       expect(data.s[1].ps[0].mi).to.equal('matched-impression');
+      expect(data.s[1].ps[0].adv).to.equal('example.com');
       expect(data.s[1].ps[0].l1).to.equal(3214);
       expect(data.s[1].ps[0].l2).to.equal(0);
       expect(data.s[1].ps[0].ss).to.equal(1);
@@ -1011,6 +1022,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].di).to.equal('the-deal-id');
       expect(data.s[1].ps[0].dc).to.equal('PMP');
       expect(data.s[1].ps[0].mi).to.equal('matched-impression');
+      expect(data.s[1].ps[0].adv).to.equal('example.com');
       expect(data.s[1].ps[0].l1).to.equal(3214);
       expect(data.s[1].ps[0].l2).to.equal(0);
       expect(data.s[1].ps[0].ss).to.equal(1);

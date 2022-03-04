@@ -6,9 +6,9 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { ajax } from '../src/ajax.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { Renderer } from '../src/Renderer.js';
-export const storage = getStorageManager();
 
 const BIDDER_CODE = 'jixie';
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 const EVENTS_URL = 'https://hbtra.jixie.io/sync/hb?';
 const JX_OUTSTREAM_RENDERER_URL = 'https://scripts.jixie.media/jxhbrenderer.1.1.min.js';
 const REQUESTS_URL = 'https://hb.jixie.io/v2/hbpost';

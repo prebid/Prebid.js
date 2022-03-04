@@ -4,7 +4,8 @@ import {getStorageManager} from '../src/storageManager.js';
 
 const CONSTANTS = {
   BIDDER_CODE: 'invibes',
-  BID_ENDPOINT: 'https://bid.videostep.com/Bid/VideoAdContent',
+  BID_ENDPOINT: '.videostep.com/Bid/VideoAdContent',
+  BID_SUBDOMAIN: 'https://bid',
   SYNC_ENDPOINT: 'https://k.r66net.com/GetUserSync',
   TIME_TO_LIVE: 300,
   DEFAULT_CURRENCY: 'EUR',
@@ -15,7 +16,7 @@ const CONSTANTS = {
   META_TAXONOMY: ['networkId', 'networkName', 'agencyId', 'agencyName', 'advertiserId', 'advertiserName', 'advertiserDomains', 'brandId', 'brandName', 'primaryCatId', 'secondaryCatIds', 'mediaType']
 };
 
-const storage = getStorageManager(CONSTANTS.INVIBES_VENDOR_ID);
+const storage = getStorageManager({gvlid: CONSTANTS.INVIBES_VENDOR_ID, bidderCode: CONSTANTS.BIDDER_CODE});
 
 export const spec = {
   code: CONSTANTS.BIDDER_CODE,
@@ -77,13 +78,15 @@ function isBidRequestValid(bid) {
 function buildRequest(bidRequests, bidderRequest) {
   bidderRequest = bidderRequest || {};
   const _placementIds = [];
-  let _loginId, _customEndpoint, _userId;
+  const _adUnitCodes = [];
+  let _customEndpoint, _userId, _domainId;
   let _ivAuctionStart = bidderRequest.auctionStart || Date.now();
 
   bidRequests.forEach(function (bidRequest) {
     bidRequest.startTime = new Date().getTime();
     _placementIds.push(bidRequest.params.placementId);
-    _loginId = _loginId || bidRequest.params.loginId;
+    _adUnitCodes.push(bidRequest.adUnitCode);
+    _domainId = _domainId || bidRequest.params.domainId;
     _customEndpoint = _customEndpoint || bidRequest.params.customEndpoint;
     _customUserSync = _customUserSync || bidRequest.params.customUserSync;
     _userId = _userId || bidRequest.userId;
@@ -99,7 +102,7 @@ function buildRequest(bidRequests, bidderRequest) {
   let userIdModel = getUserIds(_userId);
   let bidParamsJson = {
     placementIds: _placementIds,
-    loginId: _loginId,
+    adUnitCodes: _adUnitCodes,
     auctionStartTime: _ivAuctionStart,
     bidVersion: CONSTANTS.PREBID_VERSION
   };
@@ -143,9 +146,11 @@ function buildRequest(bidRequests, bidderRequest) {
     }
   }
 
+  let endpoint = createEndpoint(_customEndpoint, _domainId, _placementIds);
+
   return {
     method: CONSTANTS.METHOD,
-    url: _customEndpoint || CONSTANTS.BID_ENDPOINT,
+    url: endpoint,
     data: data,
     options: {withCredentials: true},
     // for POST: { contentType: 'application/json', withCredentials: true }
@@ -181,9 +186,12 @@ function handleResponse(responseObj, bidRequests) {
   const bidResponses = [];
   for (let i = 0; i < bidRequests.length; i++) {
     let bidRequest = bidRequests[i];
+    let usedPlacementId = responseObj.UseAdUnitCode === true
+      ? bidRequest.params.placementId + '_' + bidRequest.adUnitCode
+      : bidRequest.params.placementId;
 
-    if (invibes.placementBids.indexOf(bidRequest.params.placementId) > -1) {
-      logInfo('Invibes Adapter - Placement was previously bid on ' + bidRequest.params.placementId);
+    if (invibes.placementBids.indexOf(usedPlacementId) > -1) {
+      logInfo('Invibes Adapter - Placement was previously bid on ' + usedPlacementId);
       continue;
     }
 
@@ -191,21 +199,21 @@ function handleResponse(responseObj, bidRequests) {
     if (responseObj.AdPlacements != null) {
       for (let j = 0; j < responseObj.AdPlacements.length; j++) {
         let bidModel = responseObj.AdPlacements[j].BidModel;
-        if (bidModel != null && bidModel.PlacementId == bidRequest.params.placementId) {
+        if (bidModel != null && bidModel.PlacementId == usedPlacementId) {
           requestPlacement = responseObj.AdPlacements[j];
           break;
         }
       }
     } else {
       let bidModel = responseObj.BidModel;
-      if (bidModel != null && bidModel.PlacementId == bidRequest.params.placementId) {
+      if (bidModel != null && bidModel.PlacementId == usedPlacementId) {
         requestPlacement = responseObj;
       }
     }
 
-    let bid = createBid(bidRequest, requestPlacement, responseObj.MultipositionEnabled);
+    let bid = createBid(bidRequest, requestPlacement, responseObj.MultipositionEnabled, usedPlacementId);
     if (bid !== null) {
-      invibes.placementBids.push(bidRequest.params.placementId);
+      invibes.placementBids.push(usedPlacementId);
       bidResponses.push(bid);
     }
   }
@@ -213,9 +221,9 @@ function handleResponse(responseObj, bidRequests) {
   return bidResponses;
 }
 
-function createBid(bidRequest, requestPlacement, multipositionEnabled) {
+function createBid(bidRequest, requestPlacement, multipositionEnabled, usedPlacementId) {
   if (requestPlacement === null || requestPlacement.BidModel === null) {
-    logInfo('Invibes Adapter - Placement not configured for bidding ' + bidRequest.params.placementId);
+    logInfo('Invibes Adapter - Placement not configured for bidding ' + usedPlacementId);
     return null;
   }
 
@@ -272,6 +280,48 @@ function createBid(bidRequest, requestPlacement, multipositionEnabled) {
     ad: renderCreative(bidModel),
     meta: addMeta(bidModel.Meta)
   };
+}
+
+function createEndpoint(customEndpoint, domainId, placementIds) {
+  if (customEndpoint != null) {
+    return customEndpoint;
+  }
+
+  if (domainId != null) {
+    return extractEndpointFromId(domainId - 1000);
+  }
+
+  if (placementIds.length > 0) {
+    for (var i = 0; i < placementIds.length; i++) {
+      const id = extractFromPlacement(placementIds[i]);
+      if (id != null) {
+        return extractEndpointFromId(id);
+      }
+    }
+  }
+
+  return extractEndpointFromId(1);
+}
+
+function extractEndpointFromId(domainId) {
+  if (domainId < 2) {
+    return CONSTANTS.BID_SUBDOMAIN + CONSTANTS.BID_ENDPOINT;
+  }
+
+  return CONSTANTS.BID_SUBDOMAIN + domainId + CONSTANTS.BID_ENDPOINT;
+}
+
+function extractFromPlacement(placementId) {
+  if (placementId == null) { return null; }
+
+  var pattern = /_ivbs([0-9]+)/g;
+
+  var match = pattern.exec(placementId);
+  if (match != null && match[1] != null) {
+    return parseInt(match[1]);
+  }
+
+  return null;
 }
 
 function addMeta(bidModelMeta) {
@@ -684,7 +734,7 @@ let keywords = (function () {
   return kw;
 }());
 
-// =====================
+// ======================
 
 export function resetInvibes() {
   invibes.optIn = undefined;

@@ -42,7 +42,12 @@ export const USER_ID_CODE_TO_QUERY_ARG = {
   novatiq: 'novatiqid', // Novatiq ID
   mwOpenLinkId: 'mwopenlinkid', // MediaWallah OpenLink ID
   dapId: 'dapid', // Akamai DAP ID
-  amxId: 'amxid' // AMX RTB ID
+  amxId: 'amxid', // AMX RTB ID
+  kpuid: 'kpuid', // Kinesso ID
+  publinkId: 'publinkid', // Publisher Link
+  naveggId: 'naveggid', // Navegg ID
+  imuid: 'imuid', // IM-UID by Intimate Merger
+  adtelligentId: 'adtelligentid' // Adtelligent ID
 };
 
 export const spec = {
