@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import * as utils from '../../../src/utils.js';
+import { config } from '../../../src/config.js';
 import {
   spec,
   CW_PAGE_VIEW_ID,
@@ -85,6 +86,7 @@ describe('C-WIRE bid adapter', () => {
 
   afterEach(() => {
     sandbox.restore();
+    config.resetConfig();
   });
 
   // START TESTING
@@ -138,12 +140,68 @@ describe('C-WIRE bid adapter', () => {
 
   describe('C-WIRE - buildRequests()', function () {
     it('creates a valid request', function () {
+      const bid01 = new BidRequestBuilder({
+        mediaTypes: {
+          banner: {
+            sizes: [[1, 1]],
+          }
+        }
+      }).withParams().build();
+
+      config.setConfig({
+        cwcreative: 54321,
+        cwapikey: 'xxx-xxx-yyy-zzz-uuid',
+        refgroups: 'group_1',
+      });
+
+      const bidderRequest01 = new BidderRequestBuilder().build();
+
+      const requests = spec.buildRequests([bid01], bidderRequest01);
+
+      expect(requests.data.slots.length).to.equal(1);
+      expect(requests.data.cwid).to.be.null;
+      expect(requests.data.cwid).to.be.null;
+      expect(requests.data.slots[0].sizes[0]).to.equal('1x1');
+      expect(requests.data.cwcreative).to.equal(54321);
+      expect(requests.data.cwapikey).to.equal('xxx-xxx-yyy-zzz-uuid');
+      expect(requests.data.refgroups[0]).to.equal('group_1');
+    });
+
+    it('creates a valid request - config is overriden by URL params', function () {
       // for whatever reason stub for getWindowLocation does not work
       // so this was the closest way to test for get params
       const params = sandbox.stub(utils, 'getParameterByName');
-      params.withArgs('cwgroups').returns('group_1');
-      params.withArgs('cwcreative').returns('54321');
+      params.withArgs('cwgroups').returns('group_2');
+      params.withArgs('cwcreative').returns('654321');
 
+      const bid01 = new BidRequestBuilder({
+        mediaTypes: {
+          banner: {
+            sizes: [[1, 1]],
+          }
+        }
+      }).withParams().build();
+
+      config.setConfig({
+        cwcreative: 54321,
+        cwapikey: 'xxx-xxx-yyy-zzz',
+        refgroups: 'group_1',
+      });
+
+      const bidderRequest01 = new BidderRequestBuilder().build();
+
+      const requests = spec.buildRequests([bid01], bidderRequest01);
+
+      expect(requests.data.slots.length).to.equal(1);
+      expect(requests.data.cwid).to.be.null;
+      expect(requests.data.cwid).to.be.null;
+      expect(requests.data.slots[0].sizes[0]).to.equal('1x1');
+      expect(requests.data.cwcreative).to.equal(654321);
+      expect(requests.data.cwapikey).to.equal('xxx-xxx-yyy-zzz');
+      expect(requests.data.refgroups[0]).to.equal('group_2');
+    });
+
+    it('creates a valid request - if config not set null or empty array is sent', function () {
       const bid01 = new BidRequestBuilder({
         mediaTypes: {
           banner: {
@@ -158,9 +216,11 @@ describe('C-WIRE bid adapter', () => {
 
       expect(requests.data.slots.length).to.equal(1);
       expect(requests.data.cwid).to.be.null;
+      expect(requests.data.cwid).to.be.null;
       expect(requests.data.slots[0].sizes[0]).to.equal('1x1');
-      expect(requests.data.cwcreative).to.equal('54321');
-      expect(requests.data.refgroups[0]).to.equal('group_1');
+      expect(requests.data.cwcreative).to.equal(null);
+      expect(requests.data.cwapikey).to.equal(null);
+      expect(requests.data.refgroups.length).to.equal(0);
     });
   });
 

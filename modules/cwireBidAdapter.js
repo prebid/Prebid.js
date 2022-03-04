@@ -1,6 +1,7 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {getStorageManager} from '../src/storageManager.js';
+import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {OUTSTREAM} from '../src/video.js';
 import {
@@ -13,6 +14,7 @@ import {
   isNumber,
   logError,
   logWarn,
+  isEmpty,
   parseSizesInput,
 } from '../src/utils.js';
 import {Renderer} from '../src/Renderer.js';
@@ -162,9 +164,19 @@ export const spec = {
 
     let refgroups = [];
 
-    const cwCreativeId = getQueryVariable(CW_CREATIVE_QUERY);
+    const cwCreativeId = parseInt(getQueryVariable(CW_CREATIVE_QUERY), 10) || null;
+    const cwCreativeIdFromConfig = config.getConfig('cwcreative');
+    const refGroupsFromConfig = config.getConfig('refgroups');
+    const cwApiKeyFromConfig = config.getConfig('cwapikey');
     const rgQuery = getQueryVariable(CW_GROUPS_QUERY);
+
+    if (!isEmpty(refGroupsFromConfig)) {
+      refgroups = refGroupsFromConfig.split(',');
+    }
+
     if (rgQuery !== null) {
+      // override if query param is present
+      refgroups = [];
       refgroups = rgQuery.split(',');
     }
 
@@ -173,8 +185,9 @@ export const spec = {
     const payload = {
       cwid: localStorageCWID,
       refgroups,
-      cwcreative: cwCreativeId,
+      cwcreative: cwCreativeId || cwCreativeIdFromConfig || null,
       slots: slots,
+      cwapikey: cwApiKeyFromConfig || null,
       httpRef: referer || '',
       pageViewId: CW_PAGE_VIEW_ID,
     };
