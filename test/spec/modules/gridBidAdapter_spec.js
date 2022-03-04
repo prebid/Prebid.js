@@ -546,6 +546,41 @@ describe('TheMediaGrid Adapter', function () {
       getConfigStub.restore();
     });
 
+    it('shold have user.data filled from config ortb2.user.data', function () {
+      const userData = [
+        {
+          name: 'someName',
+          segment: [1, 2, { anyKey: 'anyVal' }, 'segVal', { id: 'segId' }, { value: 'segValue' }, { id: 'segId2', name: 'segName' }]
+        },
+        {
+          name: 'permutive.com',
+          segment: [1, 2, 'segVal', { id: 'segId' }, { anyKey: 'anyVal' }, { value: 'segValue' }, { id: 'segId2', name: 'segName' }]
+        },
+        {
+          someKey: 'another data'
+        }
+      ];
+
+      const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
+        arg => arg === 'ortb2.user.data' ? userData : null);
+      const request = spec.buildRequests([bidRequests[0]], bidderRequest);
+      const payload = parseRequest(request.data);
+      expect(payload.user.data).to.deep.equal([
+        {
+          name: 'someName',
+          segment: [1, 2, { anyKey: 'anyVal' }, 'segVal', { id: 'segId' }, { value: 'segValue' }, { id: 'segId2', name: 'segName' }]
+        },
+        {
+          name: 'permutive.com',
+          segment: [{ value: '1' }, { value: '2' }, { value: 'segVal' }, { value: 'segId' }, { value: 'segValue' }, { value: 'segId2', name: 'segName' }]
+        },
+        {
+          someKey: 'another data'
+        }
+      ]);
+      getConfigStub.restore();
+    });
+
     it('shold be right tmax when timeout in config is less then timeout in bidderRequest', function() {
       const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
         arg => arg === 'bidderTimeout' ? 2000 : null);

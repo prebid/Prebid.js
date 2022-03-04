@@ -25,6 +25,8 @@ const LOG_ERROR_MESS = {
   hasNoArrayOfBids: 'Seatbid from response has no array of bid objects - '
 };
 
+const modulesToFix = ['permutive.com'];
+
 let hasSynced = false;
 
 export const spec = {
@@ -171,9 +173,7 @@ export const spec = {
       user = {
         data: [{
           name: 'iow_labs_pub_data',
-          segment: jwpseg.map((seg) => {
-            return {name: 'jwpseg', value: seg};
-          })
+          segment: segmentProcessing(jwpseg, 'jwpseg'),
         }]
       };
     }
@@ -183,7 +183,9 @@ export const spec = {
       if (!user) {
         user = { data: [] };
       }
-      user = mergeDeep(user, { data: ortb2UserData });
+      user = mergeDeep(user, {
+        data: ortb2UserData.map((ortb2Data) => ortb2Data && modulesToFix.includes(ortb2Data.name) ? fixRTDDataFormat(ortb2Data) : ortb2Data)
+      });
     }
 
     if (gdprConsent && gdprConsent.consentString) {
@@ -487,6 +489,33 @@ function makeNewUserIdInFPDStorage() {
 
 function getUserIdFromFPDStorage() {
   return storage.getDataFromLocalStorage(USER_ID_KEY) || makeNewUserIdInFPDStorage();
+}
+
+function segmentProcessing(segment, forceSegName) {
+  return segment
+    .map((seg) => {
+      const value = seg && (seg.value || seg.id || seg);
+      if (typeof value === 'string' || typeof value === 'number') {
+        return {
+          value: value.toString(),
+          ...(forceSegName && { name: forceSegName }),
+          ...(seg.name && { name: seg.name }),
+        };
+      }
+      return null;
+    })
+    .filter((seg) => !!seg);
+}
+
+function fixRTDDataFormat(data) {
+  const { name, segment } = data || {};
+  if (name && segment && segment.length) {
+    return {
+      name,
+      segment: segmentProcessing(segment),
+    };
+  }
+  return data;
 }
 
 function reformatKeywords(pageKeywords) {
