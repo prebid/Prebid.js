@@ -23,7 +23,7 @@ const LEGACY_OPTOUT_COOKIE_NAME = '_parrable_optout';
 const ONE_YEAR_MS = 364 * 24 * 60 * 60 * 1000;
 const EXPIRE_COOKIE_DATE = 'Thu, 01 Jan 1970 00:00:00 GMT';
 
-const storage = getStorageManager(PARRABLE_GVLID);
+const storage = getStorageManager({gvlid: PARRABLE_GVLID});
 
 function getExpirationDate() {
   const oneYearFromNow = new Date(timestamp() + ONE_YEAR_MS);

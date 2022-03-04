@@ -26,6 +26,12 @@ const USER_IDS_CONFIG = {
     atype: 1
   },
 
+  // justId
+  'justId': {
+    source: 'justtag.com',
+    atype: 1
+  },
+
   // pubCommonId
   'pubcid': {
     source: 'pubcid.org',
