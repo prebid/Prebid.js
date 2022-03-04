@@ -1,8 +1,8 @@
 import { _each, getBidIdParameter, isArray, deepClone, parseUrl, getUniqueIdentifierStr, deepSetValue, logError, deepAccess, isInteger, logWarn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { ADPOD, BANNER, VIDEO } from '../src/mediaTypes.js'
-import { createEidsArray } from './userId/eids.js';
-import {config} from '../src/config.js';
+import { createEidsArray } from './userId/eids.js'
+import {config} from '../src/config.js'
 
 const ORTB_VIDEO_PARAMS = {
   'mimes': (value) => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string'),
@@ -12,7 +12,7 @@ const ORTB_VIDEO_PARAMS = {
   'w': (value) => isInteger(value),
   'h': (value) => isInteger(value),
   'startdelay': (value) => isInteger(value),
-  'placement': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 5),
+  'placement': (value) => isInteger(value) && value >= 1 && value <= 5,
   'linearity': (value) => [1, 2].indexOf(value) !== -1,
   'skip': (value) => [0, 1].indexOf(value) !== -1,
   'skipmin': (value) => isInteger(value),
@@ -25,8 +25,8 @@ const ORTB_VIDEO_PARAMS = {
   'boxingallowed': (value) => [0, 1].indexOf(value) !== -1,
   'playbackmethod': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 6),
   'playbackend': (value) => [1, 2, 3].indexOf(value) !== -1,
-  'delivery': (value) => [1, 2, 3].indexOf(value) !== -1,
-  'pos': (value) => Array.isArray(value) && value.every(v => v >= 0 && v <= 7),
+  'delivery': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 3),
+  'pos': (value) => isInteger(value) && value >= 1 && value <= 7,
   'api': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 6)
 }
 

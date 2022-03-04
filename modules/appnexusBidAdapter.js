@@ -61,7 +61,7 @@ const SCRIPT_TAG_START = '<script';
 const VIEWABILITY_URL_START = /\/\/cdn\.adnxs\.com\/v|\/\/cdn\.adnxs\-simple\.com\/v/;
 const VIEWABILITY_FILE_NAME = 'trk.js';
 const GVLID = 32;
-const storage = getStorageManager(GVLID, BIDDER_CODE);
+const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
 
 export const spec = {
   code: BIDDER_CODE,
@@ -270,6 +270,13 @@ export const spec = {
       addUserId(eids, deepAccess(bidRequests[0], `userId.idl_env`), 'liveramp.com', null);
       addUserId(eids, deepAccess(bidRequests[0], `userId.tdid`), 'adserver.org', 'TDID');
       addUserId(eids, deepAccess(bidRequests[0], `userId.uid2.id`), 'uidapi.com', 'UID2');
+      if (bidRequests[0].userId.pubProvidedId) {
+        bidRequests[0].userId.pubProvidedId.forEach(ppId => {
+          ppId.uids.forEach(uid => {
+            eids.push({ source: ppId.source, id: uid.id });
+          });
+        });
+      }
 
       if (eids.length) {
         payload.eids = eids;
@@ -360,11 +367,20 @@ export const spec = {
   },
 
   transformBidParams: function (params, isOpenRtb) {
+    let conversionFn = transformBidderParamKeywords;
+    if (isOpenRtb === true) {
+      let s2sConfig = config.getConfig('s2sConfig');
+      let s2sEndpointUrl = deepAccess(s2sConfig, 'endpoint.p1Consent');
+      if (s2sEndpointUrl && s2sEndpointUrl.match('/openrtb2/prebid')) {
+        conversionFn = convertKeywordsToString;
+      }
+    }
+
     params = convertTypes({
       'member': 'string',
       'invCode': 'string',
       'placementId': 'number',
-      'keywords': transformBidderParamKeywords,
+      'keywords': conversionFn,
       'publisherId': 'number'
     }, params);
 
@@ -1155,6 +1171,33 @@ function getBidFloor(bid) {
     return floor.floor;
   }
   return null;
+}
+
+// keywords: { 'genre': ['rock', 'pop'], 'pets': ['dog'] } goes to 'genre=rock,genre=pop,pets=dog'
+function convertKeywordsToString(keywords) {
+  let result = '';
+  Object.keys(keywords).forEach(key => {
+    // if 'text' or ''
+    if (isStr(keywords[key])) {
+      if (keywords[key] !== '') {
+        result += `${key}=${keywords[key]},`
+      } else {
+        result += `${key},`;
+      }
+    } else if (isArray(keywords[key])) {
+      if (keywords[key][0] === '') {
+        result += `${key},`
+      } else {
+        keywords[key].forEach(val => {
+          result += `${key}=${val},`
+        });
+      }
+    }
+  });
+
+  // remove last trailing comma
+  result = result.substring(0, result.length - 1);
+  return result;
 }
 
 registerBidder(spec);

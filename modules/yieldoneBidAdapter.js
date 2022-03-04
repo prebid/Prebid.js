@@ -62,6 +62,12 @@ export const spec = {
         payload.lr_env = idlEnv;
       }
 
+      // IMID
+      const imuid = deepAccess(bidRequest, 'userId.imuid');
+      if (isStr(imuid) && !isEmpty(imuid)) {
+        payload.imuid = imuid;
+      }
+
       return {
         method: 'GET',
         url: ENDPOINT_URL,
