@@ -1,18 +1,18 @@
 import {
   deepAccess,
-  parseUrl,
-  isNumber,
   getBidIdParameter,
-  isPlainObject,
-  isFn,
-  isStr,
-  replaceAuctionPrice,
   isArray,
+  isFn,
+  isNumber,
+  isPlainObject,
+  isStr,
+  parseUrl,
+  replaceAuctionPrice,
 } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE} from '../src/mediaTypes.js';
 
-import find from 'core-js-pure/features/array/find.js';
+import {find} from '../src/polyfill.js';
 
 const BIDDER_CODE = 'nextroll';
 const BIDDER_ENDPOINT = 'https://d.adroll.com/bid/prebid/';
@@ -244,8 +244,8 @@ function _buildResponse(bidResponse, bid) {
   return response;
 }
 
-const privacyLink = 'https://info.evidon.com/pub_info/573';
-const privacyIcon = 'https://c.betrad.com/pub/icon1.png';
+const privacyLink = 'https://app.adroll.com/optout/personalized';
+const privacyIcon = 'https://s.adroll.com/j/ad-choices-small.png';
 
 function _getNativeResponse(adm, price) {
   let baseResponse = {

@@ -1,5 +1,5 @@
 import { deepAccess, getKeyByValue, insertHtmlIntoIframe, logError, triggerPixel } from './utils.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import {includes} from './polyfill.js';
 import {auctionManager} from './auctionManager.js';
 
 const CONSTANTS = require('./constants.json');

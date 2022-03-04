@@ -7,7 +7,7 @@ import { getStorageManager } from '../src/storageManager.js';
 const GVLID = 358;
 const DEFAULT_CUR = 'USD';
 const BIDDER_CODE = 'mgid';
-export const storage = getStorageManager(GVLID, BIDDER_CODE);
+export const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
 const ENDPOINT_URL = 'https://prebid.mgid.com/prebid/';
 const LOG_WARN_PREFIX = '[MGID warn]: ';
 const LOG_INFO_PREFIX = '[MGID info]: ';
