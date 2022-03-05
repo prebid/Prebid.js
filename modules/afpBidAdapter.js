@@ -1,7 +1,7 @@
-import includes from 'core-js-pure/features/array/includes.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { Renderer } from '../src/Renderer.js'
-import { BANNER, VIDEO } from '../src/mediaTypes.js'
+import {includes} from '../src/polyfill.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {Renderer} from '../src/Renderer.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
 
 export const IS_DEV = location.hostname === 'localhost'
 export const BIDDER_CODE = 'afp'

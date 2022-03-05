@@ -1,10 +1,24 @@
-import { mergeDeep, _each, logError, deepAccess, deepSetValue, isStr, isNumber, logWarn, convertTypes, isArray, parseSizesInput, logMessage, formatQS } from '../src/utils.js';
+import {
+  _each,
+  convertTypes,
+  deepAccess,
+  deepSetValue,
+  formatQS,
+  isArray,
+  isNumber,
+  isStr,
+  logError,
+  logMessage,
+  logWarn,
+  mergeDeep,
+  parseSizesInput
+} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import find from 'core-js-pure/features/array/find.js';
-import { Renderer } from '../src/Renderer.js';
-import { getGlobal } from '../src/prebidGlobal.js';
+import {find} from '../src/polyfill.js';
+import {Renderer} from '../src/Renderer.js';
+import {getGlobal} from '../src/prebidGlobal.js';
 
 const DEFAULT_INTEGRATION = 'pbjs_lite';
 const DEFAULT_PBS_INTEGRATION = 'pbjs';
