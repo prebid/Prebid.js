@@ -201,11 +201,11 @@ describe('C-WIRE bid adapter', () => {
         }).build();
 
       const bid02 = new BidRequestBuilder()
-      .withParams({
-        cwcreative: 1234,
-        cwapikey: 'api_key_5',
-        refgroups: 'group_5',
-      }).build();
+        .withParams({
+          cwcreative: 1234,
+          cwapikey: 'api_key_5',
+          refgroups: 'group_5',
+        }).build();
 
       const bidderRequest01 = new BidderRequestBuilder().build();
 
@@ -226,14 +226,14 @@ describe('C-WIRE bid adapter', () => {
         }).build();
 
       const bid02 = new BidRequestBuilder()
-      .withParams({
-        cwapikey: 'api_key_5',
-      }).build();
+        .withParams({
+          cwapikey: 'api_key_5',
+        }).build();
 
       const bid03 = new BidRequestBuilder()
-      .withParams({
-        refgroups: 'group_5',
-      }).build();
+        .withParams({
+          refgroups: 'group_5',
+        }).build();
       const bidderRequest01 = new BidderRequestBuilder().build();
 
       const requests = spec.buildRequests([bid01, bid02, bid03], bidderRequest01);
