@@ -146,13 +146,11 @@ describe('C-WIRE bid adapter', () => {
             sizes: [[1, 1]],
           }
         }
-      }).withParams().build();
-
-      config.setConfig({
+      }).withParams({
         cwcreative: 54321,
         cwapikey: 'xxx-xxx-yyy-zzz-uuid',
         refgroups: 'group_1',
-      });
+      }).build();
 
       const bidderRequest01 = new BidderRequestBuilder().build();
 
@@ -165,6 +163,87 @@ describe('C-WIRE bid adapter', () => {
       expect(requests.data.cwcreative).to.equal(54321);
       expect(requests.data.cwapikey).to.equal('xxx-xxx-yyy-zzz-uuid');
       expect(requests.data.refgroups[0]).to.equal('group_1');
+    });
+
+    it('creates a valid request - read debug params from second bid', function () {
+      const bid01 = new BidRequestBuilder().withParams().build();
+
+      const bid02 = new BidRequestBuilder({
+        mediaTypes: {
+          banner: {
+            sizes: [[1, 1]],
+          }
+        }
+      }).withParams({
+        cwcreative: 1234,
+        cwapikey: 'api_key_5',
+        refgroups: 'group_5',
+      }).build();
+
+      const bidderRequest01 = new BidderRequestBuilder().build();
+
+      const requests = spec.buildRequests([bid01, bid02], bidderRequest01);
+
+      expect(requests.data.slots.length).to.equal(2);
+      expect(requests.data.cwid).to.be.null;
+      expect(requests.data.cwid).to.be.null;
+      expect(requests.data.cwcreative).to.equal(1234);
+      expect(requests.data.cwapikey).to.equal('api_key_5');
+      expect(requests.data.refgroups[0]).to.equal('group_5');
+    });
+
+    it('creates a valid request - read debug params from first bid, ignore second', function () {
+      const bid01 = new BidRequestBuilder()
+        .withParams({
+          cwcreative: 33,
+          cwapikey: 'api_key_33',
+          refgroups: 'group_33',
+        }).build();
+
+      const bid02 = new BidRequestBuilder()
+      .withParams({
+        cwcreative: 1234,
+        cwapikey: 'api_key_5',
+        refgroups: 'group_5',
+      }).build();
+
+      const bidderRequest01 = new BidderRequestBuilder().build();
+
+      const requests = spec.buildRequests([bid01, bid02], bidderRequest01);
+
+      expect(requests.data.slots.length).to.equal(2);
+      expect(requests.data.cwid).to.be.null;
+      expect(requests.data.cwid).to.be.null;
+      expect(requests.data.cwcreative).to.equal(33);
+      expect(requests.data.cwapikey).to.equal('api_key_33');
+      expect(requests.data.refgroups[0]).to.equal('group_33');
+    });
+
+    it('creates a valid request - read debug params from 3 different slots', function () {
+      const bid01 = new BidRequestBuilder()
+        .withParams({
+          cwcreative: 33,
+        }).build();
+
+      const bid02 = new BidRequestBuilder()
+      .withParams({
+        cwapikey: 'api_key_5',
+      }).build();
+
+      const bid03 = new BidRequestBuilder()
+      .withParams({
+        refgroups: 'group_5',
+      }).build();
+      const bidderRequest01 = new BidderRequestBuilder().build();
+
+      const requests = spec.buildRequests([bid01, bid02, bid03], bidderRequest01);
+
+      expect(requests.data.slots.length).to.equal(3);
+      expect(requests.data.cwid).to.be.null;
+      expect(requests.data.cwid).to.be.null;
+      expect(requests.data.cwcreative).to.equal(33);
+      expect(requests.data.cwapikey).to.equal('api_key_5');
+      expect(requests.data.refgroups[0]).to.equal('group_5');
     });
 
     it('creates a valid request - config is overriden by URL params', function () {
@@ -180,13 +259,11 @@ describe('C-WIRE bid adapter', () => {
             sizes: [[1, 1]],
           }
         }
-      }).withParams().build();
-
-      config.setConfig({
+      }).withParams({
         cwcreative: 54321,
         cwapikey: 'xxx-xxx-yyy-zzz',
         refgroups: 'group_1',
-      });
+      }).build();
 
       const bidderRequest01 = new BidderRequestBuilder().build();
 

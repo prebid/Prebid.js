@@ -17,20 +17,10 @@ Below, the list of C-WIRE params and where they can be set.
 | ---------- | ------------- | ------------- | ---- | ---------|
 | pageId |  | x | number | YES |
 | placementId |  | x | number | YES |
-| refgroups | x | | string | NO |
-| cwcreative | x |  | integer | NO |
-| cwapikey | x | | string | NO |
+| refgroups | | x | string | NO |
+| cwcreative |  | x | integer | NO |
+| cwapikey | | x | string | NO |
 | adUnitElementId |  | x | string | NO |
-
-
-### Global configuration
-```javascript
-pbjs.setConfig({
-  cwcreative: 42,                                     // optional - id of creative to force
-  refgroups: 'test-user',                             // optional - name of group or coma separated list of groups to force
-  cwapikey: 'b08d7fd1-d088-4e17-af29-24decff7582c',   // optional - api key for integration testing      
-});
-````
 
 
 ### adUnit configuration
@@ -49,7 +39,10 @@ var adUnits = [
       params: {
         pageId: 1422,                 // required - number
         placementId: 2211521,         // required - number
-        adUnitElementId: 'other_div', // optional, div id to write to, if not set it will default to ad unit code  
+        adUnitElementId: 'other_div', // optional, div id to write to, if not set it will default to ad unit code
+        cwcreative: 42,               // optional - id of creative to force
+        refgroups: 'test-user',       // optional - name of group or coma separated list of groups to force
+        cwapikey: 'api_key_xyz',      // optional - api key for integration testing        
       }
     }]
   }
