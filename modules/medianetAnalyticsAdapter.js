@@ -1,11 +1,23 @@
-import { triggerPixel, deepAccess, getHighestCpm, getWindowTop, uniques, groupBy, isEmpty, _map, isPlainObject, logInfo, logError } from '../src/utils.js';
+import {
+  _map,
+  deepAccess,
+  getWindowTop,
+  groupBy,
+  isEmpty,
+  isPlainObject,
+  logError,
+  logInfo,
+  triggerPixel,
+  uniques,
+  getHighestCpm
+} from '../src/utils.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
-import { ajax } from '../src/ajax.js';
-import { getRefererInfo } from '../src/refererDetection.js';
-import { AUCTION_COMPLETED, AUCTION_IN_PROGRESS, getPriceGranularity } from '../src/auction.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import {ajax} from '../src/ajax.js';
+import {getRefererInfo} from '../src/refererDetection.js';
+import {AUCTION_COMPLETED, AUCTION_IN_PROGRESS, getPriceGranularity} from '../src/auction.js';
+import {includes} from '../src/polyfill.js';
 
 const analyticsType = 'endpoint';
 const ENDPOINT = 'https://pb-logs.media.net/log?logid=kfk&evtid=prebid_analytics_events_client';

@@ -1,18 +1,18 @@
 import {
   deepAccess,
-  parseUrl,
-  isNumber,
   getBidIdParameter,
-  isPlainObject,
-  isFn,
-  isStr,
-  replaceAuctionPrice,
   isArray,
+  isFn,
+  isNumber,
+  isPlainObject,
+  isStr,
+  parseUrl,
+  replaceAuctionPrice,
 } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE} from '../src/mediaTypes.js';
 
-import find from 'core-js-pure/features/array/find.js';
+import {find} from '../src/polyfill.js';
 
 const BIDDER_CODE = 'nextroll';
 const BIDDER_ENDPOINT = 'https://d.adroll.com/bid/prebid/';

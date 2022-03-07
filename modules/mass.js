@@ -2,8 +2,8 @@
  * This module adds MASS support to Prebid.js.
  */
 
-import { config } from '../src/config.js';
-import { getHook } from '../src/hook.js';
+import {config} from '../src/config.js';
+import {getHook} from '../src/hook.js';
 import {auctionManager} from '../src/auctionManager.js';
 
 const defaultCfg = {

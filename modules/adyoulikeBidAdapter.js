@@ -1,8 +1,8 @@
-import { deepAccess, buildUrl, parseSizesInput } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import { createEidsArray } from './userId/eids.js';
-import find from 'core-js-pure/features/array/find.js';
+import {buildUrl, deepAccess, parseSizesInput} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
+import {createEidsArray} from './userId/eids.js';
+import {find} from '../src/polyfill.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 
 const VERSION = '1.0';
