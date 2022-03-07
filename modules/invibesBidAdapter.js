@@ -16,7 +16,7 @@ const CONSTANTS = {
   META_TAXONOMY: ['networkId', 'networkName', 'agencyId', 'agencyName', 'advertiserId', 'advertiserName', 'advertiserDomains', 'brandId', 'brandName', 'primaryCatId', 'secondaryCatIds', 'mediaType']
 };
 
-const storage = getStorageManager(CONSTANTS.INVIBES_VENDOR_ID);
+const storage = getStorageManager({gvlid: CONSTANTS.INVIBES_VENDOR_ID, bidderCode: CONSTANTS.BIDDER_CODE});
 
 export const spec = {
   code: CONSTANTS.BIDDER_CODE,

@@ -1,13 +1,9 @@
-import { config } from '../src/config.js';
-import { BANNER } from '../src/mediaTypes.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import {
-  deepAccess,
-  generateUUID,
-  logError,
-} from '../src/utils.js';
-import { getStorageManager } from '../src/storageManager.js';
-import find from 'core-js-pure/features/array/find.js';
+import {config} from '../src/config.js';
+import {BANNER} from '../src/mediaTypes.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {deepAccess, generateUUID, logError, } from '../src/utils.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {find} from '../src/polyfill.js';
 
 const BIDDER_CODE = 'insticator';
 const ENDPOINT = 'https://ex.ingage.tech/v1/openrtb'; // production endpoint
@@ -16,7 +12,7 @@ const USER_ID_COOKIE_EXP = 2592000000; // 30 days
 const BID_TTL = 300; // 5 minutes
 const GVLID = 910;
 
-export const storage = getStorageManager(GVLID, BIDDER_CODE);
+export const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
 
 config.setDefaults({
   insticator: {

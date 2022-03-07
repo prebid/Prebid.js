@@ -1,20 +1,7 @@
-import {
-  BANNER,
-  NATIVE,
-  VIDEO
-} from '../src/mediaTypes.js';
-import {
-  convertCamelToUnderscore,
-  isStr,
-  isArray,
-  isNumber,
-  isPlainObject,
-  replaceAuctionPrice
-} from '../src/utils.js';
-import find from 'core-js-pure/features/array/find.js';
-import {
-  registerBidder
-} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {convertCamelToUnderscore, isArray, isNumber, isPlainObject, isStr, replaceAuctionPrice} from '../src/utils.js';
+import {find} from '../src/polyfill.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 const BID_METHOD = 'POST';
 const BIDDER_URL = 'http://13.234.201.146:8088/va/ad';
