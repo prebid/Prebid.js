@@ -8,7 +8,7 @@ export const BIDDER_CODE = 'adplus';
 export const ADPLUS_ENDPOINT = 'https://ssp.ad-plus.com.tr/server/headerBidding';
 export const DGID_CODE = 'adplus_dg_id';
 export const SESSION_CODE = 'adplus_s_id';
-export const storage = getStorageManager(undefined, BIDDER_CODE);
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 const COOKIE_EXP = 1000 * 60 * 60 * 24; // 1 day
 // #endregion
 

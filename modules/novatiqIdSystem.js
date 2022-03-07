@@ -202,7 +202,7 @@ export const novatiqIdSubmodule = {
     let sharedId = null;
     if (this.useSharedId(configParams)) {
       let cookieOrStorageID = this.getCookieOrStorageID(configParams);
-      const storage = getStorageManager('', 'pubCommonId');
+      const storage = getStorageManager({moduleName: 'pubCommonId'});
 
       // first check local storage
       if (storage.hasLocalStorage()) {

@@ -1,7 +1,7 @@
-import find from 'core-js-pure/features/array/find.js';
-import { getBidRequest } from '../src/utils.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import {find} from '../src/polyfill.js';
+import {getBidRequest} from '../src/utils.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 const SOURCE = 'pbjs';
 const BIDDER_CODE = 'targetVideo';

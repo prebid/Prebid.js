@@ -1,9 +1,9 @@
-import { _each, isPlainObject, isArray, deepAccess } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import find from 'core-js-pure/features/array/find.js'
-import { VIDEO, BANNER, NATIVE } from '../src/mediaTypes.js'
-import { Renderer } from '../src/Renderer.js'
-import { config } from '../src/config.js';
+import {_each, deepAccess, isArray, isPlainObject} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {find} from '../src/polyfill.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {Renderer} from '../src/Renderer.js';
+import {config} from '../src/config.js';
 
 const ENDPOINT = 'https://ad.yieldlab.net'
 const BIDDER_CODE = 'yieldlab'
