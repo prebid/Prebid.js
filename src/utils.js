@@ -1,8 +1,7 @@
 /* eslint-disable no-console */
 import { config } from './config.js';
 import clone from 'just-clone';
-import find from 'core-js-pure/features/array/find.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import {find, includes} from './polyfill.js';
 
 const CONSTANTS = require('./constants.json');
 
@@ -707,7 +706,7 @@ export function getKeyByValue(obj, value) {
 export function getBidderCodes(adUnits = $$PREBID_GLOBAL$$.adUnits) {
   // this could memoize adUnits
   return adUnits.map(unit => unit.bids.map(bid => bid.bidder)
-    .reduce(flatten, [])).reduce(flatten).filter(uniques);
+    .reduce(flatten, [])).reduce(flatten, []).filter(uniques);
 }
 
 export function isGptPubadsDefined() {

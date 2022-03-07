@@ -2,7 +2,7 @@ import {assert} from 'chai';
 import {spec} from 'modules/stroeerCoreBidAdapter.js';
 import * as utils from 'src/utils.js';
 import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
-import find from 'core-js-pure/features/array/find.js';
+import {find} from 'src/polyfill.js';
 
 describe('stroeerCore bid adapter', function () {
   let sandbox;

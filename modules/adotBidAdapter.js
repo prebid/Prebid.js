@@ -1,9 +1,9 @@
 import {Renderer} from '../src/Renderer.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {isStr, isFn, isArray, isPlainObject, isBoolean, logError, replaceAuctionPrice} from '../src/utils.js';
-import find from 'core-js-pure/features/array/find.js';
-import { config } from '../src/config.js';
+import {isArray, isBoolean, isFn, isPlainObject, isStr, logError, replaceAuctionPrice} from '../src/utils.js';
+import {find} from '../src/polyfill.js';
+import {config} from '../src/config.js';
 import { OUTSTREAM } from '../src/video.js';
 
 const BIDDER_CODE = 'adot';

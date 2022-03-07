@@ -1,10 +1,23 @@
-import { isNumber, isStr, isInteger, isBoolean, isArray, isEmpty, isArrayOfNums, getWindowTop, parseQueryStringParameters, parseUrl, deepSetValue, deepAccess, logError } from '../src/utils.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { Renderer } from '../src/Renderer.js';
-import includes from 'core-js-pure/features/array/includes';
-import find from 'core-js-pure/features/array/find.js';
-import { createEidsArray } from './userId/eids.js';
+import {
+  deepAccess,
+  deepSetValue,
+  getWindowTop,
+  isArray,
+  isArrayOfNums,
+  isBoolean,
+  isEmpty,
+  isInteger,
+  isNumber,
+  isStr,
+  logError,
+  parseQueryStringParameters,
+  parseUrl
+} from '../src/utils.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {Renderer} from '../src/Renderer.js';
+import {find, includes} from '../src/polyfill.js';
+import {createEidsArray} from './userId/eids.js';
 
 const BIDDER_CODE = 'yieldmo';
 const CURRENCY = 'USD';

@@ -8,9 +8,8 @@ import {fireNativeTrackers, getAllAssetsMessage, getAssetMessage} from './native
 import constants from './constants.json';
 import {deepAccess, isApnGetTagDefined, isGptPubadsDefined, logError, logWarn, replaceAuctionPrice} from './utils.js';
 import {auctionManager} from './auctionManager.js';
-import find from 'core-js-pure/features/array/find.js';
+import {find, includes} from './polyfill.js';
 import {executeRenderer, isRendererRequired} from './Renderer.js';
-import includes from 'core-js-pure/features/array/includes.js';
 import {config} from './config.js';
 import {emitAdRenderFail, emitAdRenderSucceeded} from './adRendering.js';
 

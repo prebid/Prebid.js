@@ -1,12 +1,12 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { getAdUnitSizes, parseSizesInput } from '../src/utils.js';
 import { getRefererInfo } from '../src/refererDetection.js';
+import {includes} from '../src/polyfill.js'
 
 const BIDDER_CODE = 'between';
 let ENDPOINT = 'https://ads.betweendigital.com/adjson?t=prebid';
 const CODE_TYPES = ['inpage', 'preroll', 'midroll', 'postroll'];
 
-const includes = require('core-js-pure/features/array/includes.js');
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['btw'],

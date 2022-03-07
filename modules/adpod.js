@@ -13,22 +13,35 @@
  */
 
 import {
-  generateUUID, deepAccess, logWarn, logInfo, isArrayOfNums, isArray, isNumber, logError, groupBy, compareOn,
-  isPlainObject
+  compareOn,
+  deepAccess,
+  generateUUID,
+  groupBy,
+  isArray,
+  isArrayOfNums,
+  isNumber,
+  isPlainObject,
+  logError,
+  logInfo,
+  logWarn
 } from '../src/utils.js';
-import { addBidToAuction, doCallbacksIfTimedout, AUCTION_IN_PROGRESS, callPrebidCache, getPriceByGranularity, getPriceGranularity } from '../src/auction.js';
-import { checkAdUnitSetup } from '../src/prebid.js';
-import { checkVideoBidSetup } from '../src/video.js';
-import { setupBeforeHookFnOnce, module } from '../src/hook.js';
-import { store } from '../src/videoCache.js';
-import { config } from '../src/config.js';
-import { ADPOD } from '../src/mediaTypes.js';
-import Set from 'core-js-pure/features/set';
-import find from 'core-js-pure/features/array/find.js';
-import { auctionManager } from '../src/auctionManager.js';
+import {
+  addBidToAuction,
+  AUCTION_IN_PROGRESS,
+  callPrebidCache,
+  doCallbacksIfTimedout,
+  getPriceByGranularity,
+  getPriceGranularity
+} from '../src/auction.js';
+import {checkAdUnitSetup} from '../src/prebid.js';
+import {checkVideoBidSetup} from '../src/video.js';
+import {module, setupBeforeHookFnOnce} from '../src/hook.js';
+import {store} from '../src/videoCache.js';
+import {config} from '../src/config.js';
+import {ADPOD} from '../src/mediaTypes.js';
+import {find, arrayFrom as from} from '../src/polyfill.js';
+import {auctionManager} from '../src/auctionManager.js';
 import CONSTANTS from '../src/constants.json';
-
-const from = require('core-js-pure/features/array/from.js');
 
 const TARGETING_KEY_PB_CAT_DUR = 'hb_pb_cat_dur';
 const TARGETING_KEY_CACHE_ID = 'hb_cache_id';
