@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { PbVideo } from 'modules/videoModule/index.js';
 import CONSTANTS from 'src/constants.json';
+import { AD_IMPRESSION, AD_ERROR, BID_VIDEO_IMPRESSION, BID_VIDEO_ERROR } from 'modules/videoModule/constants/events.js';
 
 let ortbParamsMock;
 let videoCoreMock;
@@ -10,7 +11,8 @@ let pbGlobalMock;
 let pbEventsMock;
 let videoEventsMock;
 let adServerMock;
-let vastXmlEditorMock;
+let videoImpressionVerifierFactoryMock;
+let videoImpressionVerifierMock;
 
 function resetTestVars() {
   ortbParamsMock = {
@@ -29,7 +31,8 @@ function resetTestVars() {
   };
   pbGlobalMock = {
     requestBids: requestBidsMock,
-    getHighestCpmBids: sinon.spy()
+    getHighestCpmBids: sinon.spy(),
+    getBidResponsesForAdUnitCode: sinon.spy()
   };
   pbEventsMock = {
     emit: sinon.spy(),
@@ -40,13 +43,16 @@ function resetTestVars() {
     registerAdServer: sinon.spy(),
     getAdTagUrl: sinon.spy()
   };
-  vastXmlEditorMock = {
-    getVastXmlWithTrackingNodes: sinon.spy(),
-    buildVastWrapper: sinon.spy()
+
+  videoImpressionVerifierMock = {
+    trackBid: sinon.spy(),
+    getBidIdentifiers: sinon.spy()
   };
+
+  videoImpressionVerifierFactoryMock = () => videoImpressionVerifierMock;
 }
 
-let pbVideoFactory = (videoCore, getConfig, pbGlobal, pbEvents, videoEvents, adServer, vastXmlEditor) => {
+let pbVideoFactory = (videoCore, getConfig, pbGlobal, pbEvents, videoEvents, adServer, videoImpressionVerifierFactory) => {
   const pbVideo = PbVideo(
     videoCore || videoCoreMock,
     getConfig || getConfigMock,
@@ -54,7 +60,7 @@ let pbVideoFactory = (videoCore, getConfig, pbGlobal, pbEvents, videoEvents, adS
     pbEvents || pbEventsMock,
     videoEvents || videoEventsMock,
     adServer || adServerMock,
-    vastXmlEditor || vastXmlEditorMock
+    videoImpressionVerifierFactory || videoImpressionVerifierFactoryMock
   );
   pbVideo.init();
   return pbVideo;
@@ -112,8 +118,9 @@ describe('Prebid Video', function () {
 
       it('should register the ad server provider', function () {
         expect(adServerMock.registerAdServer.calledOnce).to.be.true;
-        expect(adServerMock.registerAdServer.getCall(0).args[0]).to.be.equal(test_vendor_code);
-        expect(adServerMock.registerAdServer.getCall(0).args[1]).to.be.equal(test_params);
+        const adServerConfig = adServerMock.registerAdServer.getCall(0).args[0];
+        expect(adServerConfig.vendorCode).to.be.equal(test_vendor_code);
+        expect(adServerConfig.params).to.be.deep.equal(test_params);
       });
     });
   });
@@ -154,7 +161,11 @@ describe('Prebid Video', function () {
     let auctionEndCallback;
     const pbEvents = {
       emit: () => {},
-      on: (event, callback) => auctionEndCallback = callback
+      on: (event, callback) => {
+        if (event === CONSTANTS.EVENTS.AUCTION_END) {
+          auctionEndCallback = callback
+        }
+      }
     };
 
     const expectedVendorCode = 5;
@@ -224,103 +235,77 @@ describe('Prebid Video', function () {
   });
 
   describe('Ad tracking', function () {
+    const expectedAdEventPayload = { adEventPayloadMarker: 'marker' };
+    const expectedBid = { bidMarker: 'marker' };
     let bidAdjustmentCb;
-    const adUnitCode = 'test_ad_unit_code';
-    const sampleBid = {
-      adId: 'test_ad_id',
-      adUnitCode,
-      vastUrl: 'test_ad_url'
-    };
-    const sampleAdUnit = {
-      code: adUnitCode,
-    };
+    let adImpressionCb;
+    let adErrorCb;
+
     const pbEvents = {
       on: (event, callback) => {
         if (event === CONSTANTS.EVENTS.BID_ADJUSTMENT) {
           bidAdjustmentCb = callback;
+        } else if (event === AD_IMPRESSION) {
+          adImpressionCb = callback;
+        } else if (event === AD_ERROR) {
+          adErrorCb = callback;
         }
       },
-      emit: () => {}
+      emit: sinon.spy()
     };
-    const expectedImpressionUrl = 'test_impression_url';
-    const expectedImpressionId = 'test_impression_id';
-    const expectedErrorUrl = 'test_error_url';
-    const expectedVastXml = 'test_xml';
 
-    it('should not listen for bid adjustments when caching is not configured', function () {
-      pbVideoFactory(null, () => null);
-      expect(pbEventsMock.on.neverCalledWith(CONSTANTS.EVENTS.BID_ADJUSTMENT)).to.be.true;
+    it('should ask Impression Verifier to track bid on Bid Adjustment', function () {
+      pbVideoFactory(null, null, null, pbEvents);
+      bidAdjustmentCb();
+      expect(videoImpressionVerifierMock.trackBid.calledOnce).to.be.true;
     });
 
-    it('should not modify the bid\'s adXml when the tracking config is omitted', function () {
-      const adUnit = Object.assign({}, sampleAdUnit, { video: { adServer: { tracking: null } } });
-      const pbGlobal = Object.assign({}, pbGlobalMock, { adUnits: [ adUnit ] });
-      pbVideoFactory(null, () => ({}), pbGlobal, pbEvents);
+    it('should trigger video bid impression when the bid matched', function () {
+      pbEvents.emit.resetHistory();
+      const pbGlobal = Object.assign({}, pbGlobalMock, { getBidResponsesForAdUnitCode: () => ({ bids: [expectedBid] }) });
+      const videoImpressionVerifier = Object.assign({}, videoImpressionVerifierMock, { getBidIdentifiers: () => ({}) });
+      pbVideoFactory(null, null, pbGlobal, pbEvents, null, null, () => videoImpressionVerifier);
+      adImpressionCb(expectedAdEventPayload);
 
-      bidAdjustmentCb(sampleBid);
-      expect(vastXmlEditorMock.getVastXmlWithTrackingNodes.called).to.be.false;
-      expect(vastXmlEditorMock.buildVastWrapper.called).to.be.false;
+      expect(pbEvents.emit.calledOnce).to.be.true;
+      expect(pbEvents.emit.getCall(0).args[0]).to.be.equal(BID_VIDEO_IMPRESSION);
+      const payload = pbEvents.emit.getCall(0).args[1];
+      expect(payload.bid).to.be.equal(expectedBid);
+      expect(payload.adEvent).to.be.equal(expectedAdEventPayload);
     });
 
-    it('should request a vast wrapper when only an ad url is provided', function () {
-      const adUnit = Object.assign({}, sampleAdUnit, { video: { adServer: { tracking: { } } } });
-      const pbGlobal = Object.assign({}, pbGlobalMock, { adUnits: [ adUnit ] });
-      pbVideoFactory(null, () => ({}), pbGlobal, pbEvents);
+    it('should trigger video bid error when the bid matched', function () {
+      pbEvents.emit.resetHistory();
+      const pbGlobal = Object.assign({}, pbGlobalMock, { getBidResponsesForAdUnitCode: () => ({ bids: [expectedBid] }) });
+      const videoImpressionVerifier = Object.assign({}, videoImpressionVerifierMock, { getBidIdentifiers: () => ({}) });
+      pbVideoFactory(null, null, pbGlobal, pbEvents, null, null, () => videoImpressionVerifier);
+      adErrorCb(expectedAdEventPayload);
 
-      bidAdjustmentCb(sampleBid);
-      expect(vastXmlEditorMock.getVastXmlWithTrackingNodes.called).to.be.false;
-      expect(vastXmlEditorMock.buildVastWrapper.called).to.be.true;
+      expect(pbEvents.emit.calledOnce).to.be.true;
+      expect(pbEvents.emit.getCall(0).args[0]).to.be.equal(BID_VIDEO_ERROR);
+      const payload = pbEvents.emit.getCall(0).args[1];
+      expect(payload.bid).to.be.equal(expectedBid);
+      expect(payload.adEvent).to.be.equal(expectedAdEventPayload);
     });
 
-    it('should request the addition of tracking nodes when an ad xml is provided', function () {
-      const adUnit = Object.assign({}, sampleAdUnit, { video: { adServer: { tracking: { } } } });
-      const pbGlobal = Object.assign({}, pbGlobalMock, { adUnits: [ adUnit ] });
-      pbVideoFactory(null, () => ({}), pbGlobal, pbEvents);
+    it('should not trigger a bid impression when the bid did not match', function () {
+      pbEvents.emit.resetHistory();
+      const pbGlobal = Object.assign({}, pbGlobalMock, { getBidResponsesForAdUnitCode: () => ({ bids: [expectedBid] }) });
+      const videoImpressionVerifier = Object.assign({}, videoImpressionVerifierMock, { getBidIdentifiers: () => ({ auctionId: 'id' }) });
+      pbVideoFactory(null, null, pbGlobal, pbEvents, null, null, () => videoImpressionVerifier);
+      adImpressionCb(expectedAdEventPayload);
 
-      const bid = Object.assign({}, sampleBid, { vastXml: 'test_xml' });
-      bidAdjustmentCb(bid);
-      expect(vastXmlEditorMock.getVastXmlWithTrackingNodes.called).to.be.true;
-      expect(vastXmlEditorMock.buildVastWrapper.called).to.be.false;
+      expect(pbEvents.emit.called).to.be.false;
     });
 
-    it('should pass the tracking information as args to the xml editing function', function () {
-      const adUnit = Object.assign({}, sampleAdUnit, { video: { adServer: { tracking: {
-        impression: {
-          url: expectedImpressionUrl,
-          id: expectedImpressionId
-        },
-        error: {
-          url: expectedErrorUrl
-        }
-      } } } });
-      const pbGlobal = Object.assign({}, pbGlobalMock, { adUnits: [ adUnit ] });
-      pbVideoFactory(null, () => ({}), pbGlobal, pbEvents);
+    it('should not trigger a bid error when the bid did not match', function () {
+      pbEvents.emit.resetHistory();
+      const pbGlobal = Object.assign({}, pbGlobalMock, { getBidResponsesForAdUnitCode: () => ({ bids: [expectedBid] }) });
+      const videoImpressionVerifier = Object.assign({}, videoImpressionVerifierMock, { getBidIdentifiers: () => ({ auctionId: 'id' }) });
+      pbVideoFactory(null, null, pbGlobal, pbEvents, null, null, () => videoImpressionVerifier);
+      adErrorCb(expectedAdEventPayload);
 
-      const bid = Object.assign({}, sampleBid, { vastXml: expectedVastXml });
-      bidAdjustmentCb(bid);
-      expect(vastXmlEditorMock.getVastXmlWithTrackingNodes.called).to.be.true;
-      expect(vastXmlEditorMock.getVastXmlWithTrackingNodes.calledWith(expectedVastXml, expectedImpressionUrl, expectedImpressionId, expectedErrorUrl))
-      expect(vastXmlEditorMock.buildVastWrapper.called).to.be.false;
-    });
-
-    it('should generate the impression id when not specified in config', function () {
-      const adUnit = Object.assign({}, sampleAdUnit, { video: { adServer: { tracking: {
-        impression: {
-          url: expectedImpressionUrl,
-        },
-        error: {
-          url: expectedErrorUrl
-        }
-      } } } });
-      const pbGlobal = Object.assign({}, pbGlobalMock, { adUnits: [ adUnit ] });
-      pbVideoFactory(null, () => ({}), pbGlobal, pbEvents);
-
-      const bid = Object.assign({}, sampleBid, { vastXml: expectedVastXml });
-      bidAdjustmentCb(bid);
-      const expectedGeneratedId = sampleBid.adId + '-impression';
-      expect(vastXmlEditorMock.getVastXmlWithTrackingNodes.called).to.be.true;
-      expect(vastXmlEditorMock.getVastXmlWithTrackingNodes.calledWith(expectedVastXml, expectedImpressionUrl, expectedGeneratedId, expectedErrorUrl))
-      expect(vastXmlEditorMock.buildVastWrapper.called).to.be.false;
+      expect(pbEvents.emit.called).to.be.false;
     });
   });
 });
