@@ -590,7 +590,6 @@ export const spec = {
         adId: deepAccess(bid, 'adId') ? bid.adId : bid.impid || bid.crid,
         adUnitCode: bidderRequest.adUnitCode,
         requestId: bid.impid,
-        bidderCode: spec.code,
         cpm: cpm,
         width: bid.w,
         height: bid.h,

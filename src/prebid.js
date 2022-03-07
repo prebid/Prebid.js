@@ -14,7 +14,7 @@ import { auctionManager } from './auctionManager.js';
 import { filters, targeting } from './targeting.js';
 import { hook } from './hook.js';
 import { sessionLoader } from './debugging.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import {includes} from './polyfill.js';
 import { adunitCounter } from './adUnits.js';
 import { executeRenderer, isRendererRequired } from './Renderer.js';
 import { createBid } from './bidfactory.js';
