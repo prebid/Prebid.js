@@ -222,7 +222,8 @@ export const setupAdUnitMediaTypes = hook('sync', (adUnits, labels) => {
  */
 export function getS2SBidderSet(s2sConfigs) {
   if (!isArray(s2sConfigs)) s2sConfigs = [s2sConfigs];
-  const serverBidders = new Set();
+  // `null` represents the "no bid bidder" - when an ad unit is meant only for S2S adapters, like stored impressions
+  const serverBidders = new Set([null]);
   s2sConfigs.filter((s2s) => s2s && s2s.enabled)
     .flatMap((s2s) => s2s.bidders)
     .forEach((bidder) => serverBidders.add(bidder));
@@ -371,7 +372,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
   // $.source.tid MUST be a unique UUID and also THE SAME between all PBS Requests for a given Auction
   const sourceTid = generateUUID();
   _s2sConfigs.forEach((s2sConfig) => {
-    if (s2sConfig && uniqueServerBidRequests[counter] && includes(s2sConfig.bidders, uniqueServerBidRequests[counter].bidderCode)) {
+    if (s2sConfig && uniqueServerBidRequests[counter] && getS2SBidderSet(s2sConfig).has(uniqueServerBidRequests[counter].bidderCode)) {
       // s2s should get the same client side timeout as other client side requests.
       const s2sAjax = ajaxBuilder(requestBidsTimeout, requestCallbacks ? {
         request: requestCallbacks.request.bind(null, 's2s'),
@@ -392,11 +393,8 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
             return doneCb.bind(bidRequest);
           });
 
-          // only log adapters that actually have adUnit bids
-          let allBidders = s2sBidRequest.ad_units.reduce((adapters, adUnit) => {
-            return adapters.concat((adUnit.bids || []).reduce((adapters, bid) => adapters.concat(bid.bidder), []));
-          }, []);
-          logMessage(`CALLING S2S HEADER BIDDERS ==== ${adaptersServerSide.filter(adapter => includes(allBidders, adapter)).join(',')}`);
+          const bidders = getBidderCodes(s2sBidRequest.ad_units).filter((bidder) => adaptersServerSide.includes(bidder));
+          logMessage(`CALLING S2S HEADER BIDDERS ==== ${bidders.length > 0 ? bidders.join(', ') : 'No bidder specified, using "ortb2Imp" definition(s) only'}`);
 
           // fire BID_REQUESTED event for each s2s bidRequest
           uniqueServerRequests.forEach(bidRequest => {

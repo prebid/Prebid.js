@@ -2308,10 +2308,16 @@ describe('adapterManager tests', function () {
   });
 
   describe('getS2SBidderSet', () => {
+    it('should always return the "null" bidder', () => {
+      expect([...getS2SBidderSet({bidders: []})]).to.eql([null]);
+    });
+
     it('should not consider disabled s2s adapters', () => {
       const actual = getS2SBidderSet([{enabled: false, bidders: ['A', 'B']}, {enabled: true, bidders: ['C']}]);
-      expect([...actual]).to.eql(['C']);
+      expect([...actual]).to.include.members(['C']);
+      expect([...actual]).not.to.include.members(['A', 'B']);
     });
+
     it('should accept both single config objects and an array of them', () => {
       const conf = {enabled: true, bidders: ['A', 'B']};
       expect(getS2SBidderSet(conf)).to.eql(getS2SBidderSet([conf]));

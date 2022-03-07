@@ -169,13 +169,13 @@ function validateAdUnit(adUnit) {
     logError(msg(`defines 'adUnit.bids' that is not an array. Removing adUnit from auction`));
     return null;
   }
-  if (bids == null && adUnit.ortb2Imp == null) {
-    logError(msg(`has no 'adUnit.bids' and no 'adUnit.ortb2Imp'. Removing adUnit from auction`));
+  if (bids == null && adUnit.ortb2Imp == null && adUnit.storedAuctionResponse == null) {
+    logError(msg(`has no 'adUnit.bids', 'adUnit.ortb2Imp' or 'adUnit.storedAuctionResponse'. Removing adUnit from auction`));
     return null;
   }
-  if (adUnit.ortb2Imp != null && (bids == null || bids.length === 0)) {
-    adUnit.bids = [];
-    logMessage(msg(`defines 'adUnit.ortb2Imp' with no 'adUnit.bids'; will be seen only by S2S adapters`));
+  if ((adUnit.ortb2Imp != null || adUnit.storedAuctionResponse != null) && (bids == null || bids.length === 0)) {
+    adUnit.bids = [{bidder: null}]; // the 'null' bidder is treated as an s2s-only placeholder by adapterManager
+    logMessage(msg(`defines 'adUnit.${adUnit.storedAuctionResponse == null ? 'ortb2Imp' : 'storedAuctionResponse'}' with no 'adUnit.bids'; it will be seen only by S2S adapters`));
   }
 
   if (!mediaTypes || Object.keys(mediaTypes).length === 0) {
