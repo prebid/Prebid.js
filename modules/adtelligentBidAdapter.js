@@ -18,7 +18,6 @@ const HOST_GETTERS = {
   navelix: () => 'ghb.hb.navelix.com',
   appaloosa: () => 'ghb.hb.appaloosa.media',
   onefiftytwomedia: () => 'ghb.ads.152media.com',
-  mediafuse: () => 'ghb.hbmp.mediafuse.com',
   bidsxchange: () => 'ghb.hbd.bidsxchange.com',
   streamkey: () => 'ghb.hb.streamkey.net',
 }
@@ -37,11 +36,7 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: 410,
   aliases: ['onefiftytwomedia', 'selectmedia', 'appaloosa', 'bidsxchange', 'streamkey',
-    { code: 'navelix', gvlid: 380 },
-    {
-      code: 'mediafuse',
-      skipPbsAliasing: true
-    }
+    { code: 'navelix', gvlid: 380 }
   ],
   supportedMediaTypes: [VIDEO, BANNER],
   isBidRequestValid: function (bid) {

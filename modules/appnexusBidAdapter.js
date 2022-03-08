@@ -79,6 +79,7 @@ export const spec = {
     { code: 'districtm', gvlid: 144 },
     { code: 'adasta' },
     { code: 'beintoo', gvlid: 618 },
+    { code: 'mediafuse' },
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
