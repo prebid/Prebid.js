@@ -15,14 +15,13 @@
  * @property {?string} keyName
  */
 
-import { deepClone, logError, isGptPubadsDefined, isNumber, isFn, deepSetValue } from '../src/utils.js';
+import {deepClone, deepSetValue, isFn, isGptPubadsDefined, isNumber, logError} from '../src/utils.js';
 import {submodule} from '../src/hook.js';
 import {ajaxBuilder} from '../src/ajax.js';
 import {loadExternalScript} from '../src/adloader.js';
 import {getStorageManager} from '../src/storageManager.js';
-import find from 'core-js-pure/features/array/find.js';
+import {find, includes} from '../src/polyfill.js';
 import {getGlobal} from '../src/prebidGlobal.js';
-import includes from 'core-js-pure/features/array/includes.js';
 
 const storage = getStorageManager();
 

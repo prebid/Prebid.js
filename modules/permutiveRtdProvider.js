@@ -5,12 +5,13 @@
  * @module modules/permutiveRtdProvider
  * @requires module:modules/realTimeData
  */
-import { getGlobal } from '../src/prebidGlobal.js'
-import { submodule } from '../src/hook.js'
-import { getStorageManager } from '../src/storageManager.js'
-import { deepSetValue, deepAccess, isFn, mergeDeep, logError } from '../src/utils.js'
-import { config } from '../src/config.js'
-import includes from 'core-js-pure/features/array/includes.js'
+import {getGlobal} from '../src/prebidGlobal.js';
+import {submodule} from '../src/hook.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {deepAccess, deepSetValue, isFn, logError, mergeDeep} from '../src/utils.js';
+import {config} from '../src/config.js';
+import {includes} from '../src/polyfill.js';
+
 const MODULE_NAME = 'permutive'
 
 export const storage = getStorageManager({gvlid: null, moduleName: MODULE_NAME})

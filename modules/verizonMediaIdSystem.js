@@ -7,8 +7,8 @@
 
 import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js';
-import { logError, formatQS } from '../src/utils.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import {formatQS, logError} from '../src/utils.js';
+import {includes} from '../src/polyfill.js';
 
 const MODULE_NAME = 'verizonMediaId';
 const VENDOR_ID = 25;

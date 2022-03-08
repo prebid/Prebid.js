@@ -1,18 +1,37 @@
-import find from 'core-js-pure/features/array/find.js';
+import {find} from '../src/polyfill.js';
 import {
-  isInteger, isArray, deepAccess, mergeDeep, logWarn, logInfo, logError, getWindowTop, getWindowSelf, generateUUID, _map,
-  getDNT, parseUrl, getUniqueIdentifierStr, isNumber, cleanObj, isFn, inIframe, deepClone, getGptSlotInfoForAdUnitCode
+  _map,
+  cleanObj,
+  deepAccess,
+  deepClone,
+  generateUUID,
+  getDNT,
+  getGptSlotInfoForAdUnitCode,
+  getUniqueIdentifierStr,
+  getWindowSelf,
+  getWindowTop,
+  inIframe,
+  isArray,
+  isFn,
+  isInteger,
+  isNumber,
+  logError,
+  logInfo,
+  logWarn,
+  mergeDeep,
+  parseUrl
 } from '../src/utils.js';
-import { config } from '../src/config.js';
+import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import { loadExternalScript } from '../src/adloader.js';
-import { verify } from 'criteo-direct-rsa-validate/build/verify.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { getRefererInfo } from '../src/refererDetection.js';
-import { createEidsArray } from './userId/eids.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { Renderer } from '../src/Renderer.js';
-import { OUTSTREAM } from '../src/video.js';
+import {loadExternalScript} from '../src/adloader.js';
+import {verify} from 'criteo-direct-rsa-validate/build/verify.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {getRefererInfo} from '../src/refererDetection.js';
+import {createEidsArray} from './userId/eids.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {Renderer} from '../src/Renderer.js';
+import {OUTSTREAM} from '../src/video.js';
+
 const BIDDER_CODE = 'adagio';
 const LOG_PREFIX = 'Adagio:';
 const FEATURES_VERSION = '1';
