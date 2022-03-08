@@ -671,9 +671,8 @@ const OPEN_RTB_PROTOCOL = {
 
       const imp = { id: impressionId, ext, secure: s2sConfig.secure };
       const ortb2 = {...deepAccess(adUnit, 'ortb2Imp.ext.data')};
-      const mergedImp = {...imp, ...ortb2}
 
-      Object.keys(mergedImp).forEach(prop => {
+      Object.keys(ortb2).forEach(prop => {
         /**
           * Prebid AdSlot
           * @type {(string|undefined)}
@@ -696,8 +695,6 @@ const OPEN_RTB_PROTOCOL = {
               deepSetValue(imp, `ext.data.adserver.${name.toLowerCase()}`, value);
             }
           });
-        } else if (prop === 'ortb2Imp') {
-          deepSetValue(imp, `${prop}`, mergedImp[prop]);
         } else {
           deepSetValue(imp, `ext.data.${prop}`, ortb2[prop]);
         }
