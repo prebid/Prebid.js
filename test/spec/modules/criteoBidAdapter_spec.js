@@ -430,7 +430,11 @@ describe('The Criteo bidding adapter', function () {
           bidder: 'criteo',
           adUnitCode: 'bid-123',
           transactionId: 'transaction-123',
-          sizes: [[728, 90]],
+          mediaTypes: {
+            banner: {
+              sizes: [[728, 90]]
+            }
+          },
           params: {}
         },
       ];
@@ -445,7 +449,11 @@ describe('The Criteo bidding adapter', function () {
           bidder: 'criteo',
           adUnitCode: 'bid-123',
           transactionId: 'transaction-123',
-          sizes: [[728, 90]],
+          mediaTypes: {
+            banner: {
+              sizes: [[728, 90]]
+            }
+          },
           params: {
             zoneId: 123,
             publisherSubId: '123',
@@ -473,7 +481,11 @@ describe('The Criteo bidding adapter', function () {
     it('should keep undefined sizes for non native banner', function () {
       const bidRequests = [
         {
-          sizes: [[undefined, undefined]],
+          mediaTypes: {
+            banner: {
+              sizes: [[undefined, undefined]]
+            }
+          },
           params: {},
         },
       ];
@@ -486,7 +498,11 @@ describe('The Criteo bidding adapter', function () {
     it('should keep undefined size for non native banner', function () {
       const bidRequests = [
         {
-          sizes: [undefined, undefined],
+          mediaTypes: {
+            banner: {
+              sizes: [undefined, undefined]
+            }
+          },
           params: {},
         },
       ];
@@ -499,7 +515,11 @@ describe('The Criteo bidding adapter', function () {
     it('should properly detect and get sizes of native sizeless banner', function () {
       const bidRequests = [
         {
-          sizes: [[undefined, undefined]],
+          mediaTypes: {
+            banner: {
+              sizes: [[undefined, undefined]]
+            }
+          },
           params: {
             nativeCallback: function() {}
           },
@@ -514,7 +534,11 @@ describe('The Criteo bidding adapter', function () {
     it('should properly detect and get size of native sizeless banner', function () {
       const bidRequests = [
         {
-          sizes: [undefined, undefined],
+          mediaTypes: {
+            banner: {
+              sizes: [undefined, undefined]
+            }
+          },
           params: {
             nativeCallback: function() {}
           },
@@ -585,7 +609,11 @@ describe('The Criteo bidding adapter', function () {
           bidder: 'criteo',
           adUnitCode: 'bid-123',
           transactionId: 'transaction-123',
-          sizes: [[728, 90]],
+          mediaTypes: {
+            banner: {
+              sizes: [[728, 90]]
+            }
+          },
           params: {
             zoneId: 123,
           },
@@ -594,7 +622,11 @@ describe('The Criteo bidding adapter', function () {
           bidder: 'criteo',
           adUnitCode: 'bid-234',
           transactionId: 'transaction-234',
-          sizes: [[300, 250], [728, 90]],
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250], [728, 90]]
+            }
+          },
           params: {
             networkId: 456,
           },
@@ -625,7 +657,11 @@ describe('The Criteo bidding adapter', function () {
           bidder: 'criteo',
           adUnitCode: 'bid-123',
           transactionId: 'transaction-123',
-          sizes: [[728, 90]],
+          mediaTypes: {
+            banner: {
+              sizes: [[728, 90]]
+            }
+          },
           params: {
             zoneId: 123,
           },
@@ -647,7 +683,11 @@ describe('The Criteo bidding adapter', function () {
           bidder: 'criteo',
           adUnitCode: 'bid-123',
           transactionId: 'transaction-123',
-          sizes: [[728, 90]],
+          mediaTypes: {
+            banner: {
+              sizes: [[728, 90]]
+            }
+          },
           params: {
             zoneId: 123,
           },
@@ -663,13 +703,42 @@ describe('The Criteo bidding adapter', function () {
       expect(request.data.user.uspIab).to.equal('1YNY');
     });
 
+    it('should properly build a request with schain object', function () {
+      const expectedSchain = {
+        someProperty: 'someValue'
+      };
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          schain: expectedSchain,
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          mediaTypes: {
+            banner: {
+              sizes: [[728, 90]]
+            }
+          },
+          params: {
+            zoneId: 123,
+          },
+        },
+      ];
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.source.ext.schain).to.equal(expectedSchain);
+    });
+
     it('should properly build a request with if ccpa consent field is not provided', function () {
       const bidRequests = [
         {
           bidder: 'criteo',
           adUnitCode: 'bid-123',
           transactionId: 'transaction-123',
-          sizes: [[728, 90]],
+          mediaTypes: {
+            banner: {
+              sizes: [[728, 90]]
+            }
+          },
           params: {
             zoneId: 123,
           },
@@ -690,7 +759,7 @@ describe('The Criteo bidding adapter', function () {
           bidder: 'criteo',
           adUnitCode: 'bid-123',
           transactionId: 'transaction-123',
-          sizes: [[728, 90]],
+          sizes: [[640, 480]],
           mediaTypes: {
             video: {
               playerSize: [640, 480],
@@ -717,6 +786,7 @@ describe('The Criteo bidding adapter', function () {
       expect(request.method).to.equal('POST');
       const ortbRequest = request.data;
       expect(ortbRequest.slots[0].video.mimes).to.deep.equal(['video/mp4', 'video/x-flv']);
+      expect(ortbRequest.slots[0].sizes).to.deep.equal([]);
       expect(ortbRequest.slots[0].video.playersizes).to.deep.equal(['640x480']);
       expect(ortbRequest.slots[0].video.maxduration).to.equal(30);
       expect(ortbRequest.slots[0].video.api).to.deep.equal([1, 2]);
@@ -734,7 +804,7 @@ describe('The Criteo bidding adapter', function () {
           bidder: 'criteo',
           adUnitCode: 'bid-123',
           transactionId: 'transaction-123',
-          sizes: [[728, 90]],
+          sizes: [[640, 480], [800, 600]],
           mediaTypes: {
             video: {
               playerSize: [[640, 480], [800, 600]],
@@ -760,6 +830,7 @@ describe('The Criteo bidding adapter', function () {
       expect(request.url).to.match(/^https:\/\/bidder\.criteo\.com\/cdb\?profileId=207&av=\d+&wv=[^&]+&cb=\d/);
       expect(request.method).to.equal('POST');
       const ortbRequest = request.data;
+      expect(ortbRequest.slots[0].sizes).to.deep.equal([]);
       expect(ortbRequest.slots[0].video.mimes).to.deep.equal(['video/mp4', 'video/x-flv']);
       expect(ortbRequest.slots[0].video.playersizes).to.deep.equal(['640x480', '800x600']);
       expect(ortbRequest.slots[0].video.maxduration).to.equal(30);
@@ -772,13 +843,56 @@ describe('The Criteo bidding adapter', function () {
       expect(ortbRequest.slots[0].video.placement).to.equal(2);
     });
 
+    it('should properly build a video request when mediaTypes.video.skip=0', function () {
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          sizes: [[300, 250]],
+          mediaTypes: {
+            video: {
+              playerSize: [ [300, 250] ],
+              mimes: ['video/mp4', 'video/MPV', 'video/H264', 'video/webm', 'video/ogg'],
+              minduration: 1,
+              maxduration: 30,
+              playbackmethod: [2, 3, 4, 5, 6],
+              api: [1, 2, 3, 4, 5, 6],
+              protocols: [1, 2, 3, 4, 5, 6, 7, 8],
+              skip: 0
+            }
+          },
+          params: {
+            networkId: 123
+          }
+        }
+      ];
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.url).to.match(/^https:\/\/bidder\.criteo\.com\/cdb\?profileId=207&av=\d+&wv=[^&]+&cb=\d/);
+      expect(request.method).to.equal('POST');
+      const ortbRequest = request.data;
+      expect(ortbRequest.slots[0].sizes).to.deep.equal([]);
+      expect(ortbRequest.slots[0].video.playersizes).to.deep.equal(['300x250']);
+      expect(ortbRequest.slots[0].video.mimes).to.deep.equal(['video/mp4', 'video/MPV', 'video/H264', 'video/webm', 'video/ogg']);
+      expect(ortbRequest.slots[0].video.minduration).to.equal(1);
+      expect(ortbRequest.slots[0].video.maxduration).to.equal(30);
+      expect(ortbRequest.slots[0].video.playbackmethod).to.deep.equal([2, 3, 4, 5, 6]);
+      expect(ortbRequest.slots[0].video.api).to.deep.equal([1, 2, 3, 4, 5, 6]);
+      expect(ortbRequest.slots[0].video.protocols).to.deep.equal([1, 2, 3, 4, 5, 6, 7, 8]);
+      expect(ortbRequest.slots[0].video.skip).to.equal(0);
+    });
+
     it('should properly build a request with ceh', function () {
       const bidRequests = [
         {
           bidder: 'criteo',
           adUnitCode: 'bid-123',
           transactionId: 'transaction-123',
-          sizes: [[728, 90]],
+          mediaTypes: {
+            banner: {
+              sizes: [[728, 90]]
+            }
+          },
           params: {
             zoneId: 123,
           },
@@ -800,7 +914,11 @@ describe('The Criteo bidding adapter', function () {
           bidder: 'criteo',
           adUnitCode: 'bid-123',
           transactionId: 'transaction-123',
-          sizes: [[728, 90]],
+          mediaTypes: {
+            banner: {
+              sizes: [[728, 90]]
+            }
+          },
           params: {
             zoneId: 123
           }
@@ -825,7 +943,11 @@ describe('The Criteo bidding adapter', function () {
           bidder: 'criteo',
           adUnitCode: 'bid-123',
           transactionId: 'transaction-123',
-          sizes: [[728, 90]],
+          mediaTypes: {
+            banner: {
+              sizes: [[728, 90]]
+            }
+          },
           params: {
             zoneId: 123,
             ext: {
@@ -869,7 +991,11 @@ describe('The Criteo bidding adapter', function () {
           bidder: 'criteo',
           adUnitCode: 'bid-123',
           transactionId: 'transaction-123',
-          sizes: [[728, 90]],
+          mediaTypes: {
+            banner: {
+              sizes: [[728, 90]]
+            }
+          },
           params: {
             zoneId: 123,
             ext: {

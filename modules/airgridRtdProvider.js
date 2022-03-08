@@ -16,7 +16,7 @@ const SUBMODULE_NAME = 'airgrid';
 const AG_TCF_ID = 782;
 export const AG_AUDIENCE_IDS_KEY = 'edkt_matched_audience_ids'
 
-export const storage = getStorageManager(AG_TCF_ID, SUBMODULE_NAME);
+export const storage = getStorageManager({gvlid: AG_TCF_ID, moduleName: SUBMODULE_NAME});
 
 /**
  * Attach script tag to DOM
@@ -33,7 +33,7 @@ export function attachScriptTagToDOM(rtdConfig) {
     edktInitializor.load = function(e) {
       var p = e || 'sdk';
       var n = document.createElement('script');
-      n.type = 'text/javascript';
+      n.type = 'module';
       n.async = true;
       n.src = 'https://cdn.edkt.io/' + p + '/edgekit.min.js';
       document.getElementsByTagName('head')[0].appendChild(n);

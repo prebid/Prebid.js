@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { deepSetValue, convertTypes, tryAppendQueryString, logWarn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js'
 import {config} from '../src/config.js';
@@ -47,12 +47,12 @@ export const spec = {
 
     // coppa compliance
     if (config.getConfig('coppa') === true) {
-      utils.deepSetValue(data, 'user.coppa', 1);
+      deepSetValue(data, 'user.coppa', 1);
     }
 
     // adding schain object
     if (validBidRequests[0].schain) {
-      utils.deepSetValue(data, 'source.ext.schain', validBidRequests[0].schain);
+      deepSetValue(data, 'source.ext.schain', validBidRequests[0].schain);
     }
 
     // Attaching GDPR Consent Params
@@ -61,18 +61,18 @@ export const spec = {
       if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
         gdprApplies = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
       }
-      utils.deepSetValue(data, 'user.ext.gdpr', gdprApplies);
-      utils.deepSetValue(data, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
+      deepSetValue(data, 'user.ext.gdpr', gdprApplies);
+      deepSetValue(data, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
     }
 
     // CCPA
     if (bidderRequest.uspConsent) {
-      utils.deepSetValue(data, 'user.ext.us_privacy', bidderRequest.uspConsent);
+      deepSetValue(data, 'user.ext.us_privacy', bidderRequest.uspConsent);
     }
 
     // EIDS Support
     if (validBidRequests[0].userId) {
-      utils.deepSetValue(data, 'user.ext.eids', createEidsArray(validBidRequests[0].userId));
+      deepSetValue(data, 'user.ext.eids', createEidsArray(validBidRequests[0].userId));
     }
 
     validBidRequests.map(bid => {
@@ -139,7 +139,7 @@ export const spec = {
   },
 
   transformBidParams: function (params, isOpenRtb) {
-    return utils.convertTypes({
+    return convertTypes({
       'siteId': 'number',
       'networkId': 'number'
     }, params);
@@ -149,19 +149,19 @@ export const spec = {
     let syncEndpoint = 'https://cdn.connectad.io/connectmyusers.php?';
 
     if (gdprConsent) {
-      syncEndpoint = utils.tryAppendQueryString(syncEndpoint, 'gdpr', (gdprConsent.gdprApplies ? 1 : 0));
+      syncEndpoint = tryAppendQueryString(syncEndpoint, 'gdpr', (gdprConsent.gdprApplies ? 1 : 0));
     }
 
     if (gdprConsent && typeof gdprConsent.consentString === 'string') {
-      syncEndpoint = utils.tryAppendQueryString(syncEndpoint, 'gdpr_consent', gdprConsent.consentString);
+      syncEndpoint = tryAppendQueryString(syncEndpoint, 'gdpr_consent', gdprConsent.consentString);
     }
 
     if (uspConsent) {
-      syncEndpoint = utils.tryAppendQueryString(syncEndpoint, 'us_privacy', uspConsent);
+      syncEndpoint = tryAppendQueryString(syncEndpoint, 'us_privacy', uspConsent);
     }
 
     if (config.getConfig('coppa') === true) {
-      syncEndpoint = utils.tryAppendQueryString(syncEndpoint, 'coppa', 1);
+      syncEndpoint = tryAppendQueryString(syncEndpoint, 'coppa', 1);
     }
 
     if (syncOptions.iframeEnabled) {
@@ -170,7 +170,7 @@ export const spec = {
         url: syncEndpoint
       }];
     } else {
-      utils.logWarn('Bidder ConnectAd: Please activate iFrame Sync');
+      logWarn('Bidder ConnectAd: Please activate iFrame Sync');
     }
   }
 };

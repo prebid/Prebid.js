@@ -1,9 +1,8 @@
 'use strict';
 
-import * as utils from '../src/utils.js';
+import { getBidIdParameter, deepAccess, _each, triggerPixel } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
-import {triggerPixel} from '../src/utils.js';
 
 const BIDDER_CODE = 'growads';
 
@@ -23,8 +22,8 @@ export const spec = {
     const zoneCounters = {};
 
     return validBidRequests.map(bidRequest => {
-      zoneId = utils.getBidIdParameter('zoneId', bidRequest.params);
-      domain = utils.getBidIdParameter('domain', bidRequest.params);
+      zoneId = getBidIdParameter('zoneId', bidRequest.params);
+      domain = getBidIdParameter('domain', bidRequest.params);
 
       if (!(zoneId in zoneCounters)) {
         zoneCounters[zoneId] = 0;
@@ -77,8 +76,8 @@ export const spec = {
       width = parseInt(response.width);
       height = parseInt(response.height);
 
-      minCPM = utils.getBidIdParameter('minCPM', request.params);
-      maxCPM = utils.getBidIdParameter('maxCPM', request.params);
+      minCPM = getBidIdParameter('minCPM', request.params);
+      maxCPM = getBidIdParameter('maxCPM', request.params);
       width = parseInt(response.width);
       height = parseInt(response.height);
 
@@ -102,7 +101,7 @@ export const spec = {
           netRevenue: true,
           ttl: response.ttl,
           adUnitCode: request.adUnitCode,
-          referrer: utils.deepAccess(request, 'refererInfo.referer')
+          referrer: deepAccess(request, 'refererInfo.referer')
         };
 
         if (response.hasOwnProperty(NATIVE)) {
@@ -137,7 +136,7 @@ export const spec = {
           bid.ad = response.ad;
           bid.mediaType = BANNER;
           // Ensure that response ad matches one of the placement sizes.
-          utils._each(utils.deepAccess(request, 'mediaTypes.banner.sizes', []), function (size) {
+          _each(deepAccess(request, 'mediaTypes.banner.sizes', []), function (size) {
             if (width === size[0] && height === size[1]) {
               isCorrectSize = true;
             }

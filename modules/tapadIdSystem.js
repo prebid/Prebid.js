@@ -1,7 +1,7 @@
+import { logMessage } from '../src/utils.js';
 import { uspDataHandler } from '../src/adapterManager.js';
 import { submodule } from '../src/hook.js';
 import * as ajax from '../src/ajax.js'
-import * as utils from '../src/utils.js';
 
 export const graphUrl = 'https://rtga.tapad.com/v1/graph';
 
@@ -30,7 +30,7 @@ export const tapadIdSubmodule = {
     const configParams = config.params || {};
 
     if (configParams.companyId == null || isNaN(Number(configParams.companyId))) {
-      utils.logMessage('Please provide a valid Company Id. Contact prebid@tapad.com for assistance.');
+      logMessage('Please provide a valid Company Id. Contact prebid@tapad.com for assistance.');
     }
 
     return {
@@ -49,7 +49,7 @@ export const tapadIdSubmodule = {
                 complete(undefined);
               }
               if (e.status === 403) {
-                utils.logMessage('Invalid Company Id. Contact prebid@tapad.com for assistance.');
+                logMessage('Invalid Company Id. Contact prebid@tapad.com for assistance.');
               }
             }
           }

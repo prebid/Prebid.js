@@ -4,7 +4,7 @@
  * @module modules/idxIdSystem
  * @requires module:modules/userId
  */
-import * as utils from '../src/utils.js'
+import { isStr, isPlainObject, logError } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 
@@ -34,7 +34,7 @@ export const idxIdSubmodule = {
    * @return { Object | string | undefined }
    */
   decode(value) {
-    const idxVal = value ? utils.isStr(value) ? value : utils.isPlainObject(value) ? value.id : undefined : undefined;
+    const idxVal = value ? isStr(value) ? value : isPlainObject(value) ? value.id : undefined : undefined;
     return idxVal ? {
       'idx': idxVal
     } : undefined;
@@ -52,7 +52,7 @@ export const idxIdSubmodule = {
         const idxObj = JSON.parse(idxString);
         return idxObj && idxObj.idx ? { id: idxObj.idx } : undefined;
       } catch (error) {
-        utils.logError(error);
+        logError(error);
       }
     }
     return undefined;

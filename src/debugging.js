@@ -1,20 +1,24 @@
+import {config} from './config.js';
+import {addBidderRequests, addBidResponse} from './auction.js';
+import {hook} from './hook.js';
+import {prefixLog} from './utils.js';
 
-import { config } from './config.js';
-import { logMessage as utilsLogMessage, logWarn as utilsLogWarn } from './utils.js';
-import { addBidderRequests, addBidResponse } from './auction.js';
+const {logWarn, logMessage} = prefixLog('DEBUG:');
 
 const OVERRIDE_KEY = '$$PREBID_GLOBAL$$:debugging';
 
 export let addBidResponseBound;
 export let addBidderRequestsBound;
 
-function logMessage(msg) {
-  utilsLogMessage('DEBUG: ' + msg);
-}
-
-function logWarn(msg) {
-  utilsLogWarn('DEBUG: ' + msg);
-}
+export const onEnableOverrides = [
+  (overrides) => {
+    removeHooks();
+    addHooks(overrides);
+  }
+];
+export const onDisableOverrides = [
+  removeHooks
+];
 
 function addHooks(overrides) {
   addBidResponseBound = addBidResponseHook.bind(overrides);
@@ -31,13 +35,12 @@ function removeHooks() {
 
 export function enableOverrides(overrides, fromSession = false) {
   config.setConfig({'debug': true});
-  removeHooks();
-  addHooks(overrides);
+  onEnableOverrides.forEach((fn) => fn(overrides));
   logMessage(`bidder overrides enabled${fromSession ? ' from session' : ''}`);
 }
 
 export function disableOverrides() {
-  removeHooks();
+  onDisableOverrides.forEach((fn) => fn());
   logMessage('bidder overrides disabled');
 }
 
@@ -76,6 +79,7 @@ export function applyBidOverrides(overrideObj, bidObj, bidType) {
   return Object.keys(overrideObj).filter(key => (['adUnitCode', 'bidder'].indexOf(key) === -1)).reduce(function(result, key) {
     logMessage(`bidder overrides changed '${result.adUnitCode}/${result.bidderCode}' ${bidType}.${key} from '${result[key]}.js' to '${overrideObj[key]}'`);
     result[key] = overrideObj[key];
+    result.isDebug = true;
     return result;
   }, bidObj);
 }
@@ -102,7 +106,7 @@ export function addBidResponseHook(next, adUnitCode, bid) {
 export function addBidderRequestsHook(next, bidderRequests) {
   const overrides = this;
 
-  const includedBidderRequests = bidderRequests.filter(function(bidderRequest) {
+  const includedBidderRequests = bidderRequests.filter(function (bidderRequest) {
     if (bidderExcluded(overrides.bidders, bidderRequest.bidderCode)) {
       logWarn(`bidRequest '${bidderRequest.bidderCode}' excluded from auction by bidder overrides`);
       return false;
@@ -125,19 +129,27 @@ export function addBidderRequestsHook(next, bidderRequests) {
   next(includedBidderRequests);
 }
 
-export function getConfig(debugging) {
-  if (!debugging.enabled) {
-    disableOverrides();
+export const saveDebuggingConfig = hook('sync', function (debugConfig, {sessionStorage = window.sessionStorage} = {}) {
+  if (!debugConfig.enabled) {
     try {
-      window.sessionStorage.removeItem(OVERRIDE_KEY);
+      sessionStorage.removeItem(OVERRIDE_KEY);
     } catch (e) {}
   } else {
     try {
-      window.sessionStorage.setItem(OVERRIDE_KEY, JSON.stringify(debugging));
+      sessionStorage.setItem(OVERRIDE_KEY, JSON.stringify(debugConfig));
     } catch (e) {}
+  }
+});
+
+export function getConfig(debugging, {sessionStorage = window.sessionStorage} = {}) {
+  saveDebuggingConfig(debugging, {sessionStorage});
+  if (!debugging.enabled) {
+    disableOverrides();
+  } else {
     enableOverrides(debugging);
   }
 }
+
 config.getConfig('debugging', ({debugging}) => getConfig(debugging));
 
 export function sessionLoader(storage) {

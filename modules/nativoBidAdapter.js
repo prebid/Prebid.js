@@ -1,10 +1,12 @@
-import * as utils from '../src/utils.js'
+import { deepAccess, isEmpty } from '../src/utils.js'
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { BANNER } from '../src/mediaTypes.js'
 // import { config } from 'src/config'
 
 const BIDDER_CODE = 'nativo'
 const BIDDER_ENDPOINT = 'https://exchange.postrelease.com/prebid'
+
+const GVLID = 263
 
 const TIME_TO_LIVE = 360
 
@@ -15,8 +17,19 @@ const adUnitsRequested = {}
 
 // Prebid adapter referrence doc: https://docs.prebid.org/dev-docs/bidder-adaptor.html
 
+// Validity checks for optionsl paramters
+const validParameter = {
+  url: (value) => typeof value === 'string',
+  placementId: (value) => {
+    const isString = typeof value === 'string'
+    const isNumber = typeof value === 'number'
+    return isString || isNumber
+  },
+}
+
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   aliases: ['ntv'], // short code
   supportedMediaTypes: SUPPORTED_AD_TYPES,
 
@@ -27,7 +40,23 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return bid.params && !!bid.params.placementId
+    // We don't need any specific parameters to make a bid request
+    // If not parameters are supplied just verify it's the correct bidder code
+    if (!bid.params) return bid.bidder === BIDDER_CODE
+
+    // Check if any supplied parameters are invalid
+    const hasInvalidParameters = Object.keys(bid.params).some(key => {
+      const value = bid.params[key]
+      const validityCheck = validParameter[key]
+
+      // We don't have a test for this so it's not a paramter we care about
+      if (!validityCheck) return false
+
+      // Return if the check is not passed
+      return !validityCheck(value)
+    })
+
+    return !hasInvalidParameters
   },
 
   /**
@@ -39,27 +68,37 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    const placementIds = []
+    const placementIds = new Set()
     const placmentBidIdMap = {}
     let placementId, pageUrl
     validBidRequests.forEach((request) => {
-      pageUrl = pageUrl || request.params.url // Use the first url value found
-      placementId = request.params.placementId
-      placementIds.push(placementId)
-      placmentBidIdMap[placementId] = {
+      pageUrl = deepAccess(
+        request,
+        'params.url',
+        bidderRequest.refererInfo.referer
+      )
+      placementId = deepAccess(request, 'params.placementId')
+
+      if (placementId) {
+        placementIds.add(placementId)
+      }
+
+      var key = placementId || request.adUnitCode
+      placmentBidIdMap[key] = {
         bidId: request.bidId,
         size: getLargestSize(request.sizes),
       }
     })
     bidRequestMap[bidderRequest.bidderRequestId] = placmentBidIdMap
 
-    if (!pageUrl) pageUrl = bidderRequest.refererInfo.referer
-
     // Build adUnit data
     const adUnitData = {
       adUnits: validBidRequests.map((adUnit) => {
         // Track if we've already requested for this ad unit code
-        adUnitsRequested[adUnit.adUnitCode] = adUnitsRequested[adUnit.adUnitCode] !== undefined ? adUnitsRequested[adUnit.adUnitCode]++ : 0
+        adUnitsRequested[adUnit.adUnitCode] =
+          adUnitsRequested[adUnit.adUnitCode] !== undefined
+            ? adUnitsRequested[adUnit.adUnitCode] + 1
+            : 0
         return {
           adUnitCode: adUnit.adUnitCode,
           mediaTypes: adUnit.mediaTypes,
@@ -69,7 +108,6 @@ export const spec = {
 
     // Build QS Params
     let params = [
-      { key: 'ntv_ptd', value: placementIds.toString() },
       { key: 'ntv_pb_rid', value: bidderRequest.bidderRequestId },
       {
         key: 'ntv_ppc',
@@ -77,13 +115,21 @@ export const spec = {
       },
       {
         key: 'ntv_dbr',
-        value: btoa(JSON.stringify(adUnitsRequested))
+        value: btoa(JSON.stringify(adUnitsRequested)),
       },
       {
         key: 'ntv_url',
         value: encodeURIComponent(pageUrl),
-      }
+      },
     ]
+
+    if (placementIds.size > 0) {
+      // Convert Set to Array (IE 11 Safe)
+      const placements = []
+      placementIds.forEach((value) => placements.push(value))
+      // Append to query string paramters
+      params.unshift({ key: 'ntv_ptd', value: placements.join(',') })
+    }
 
     if (bidderRequest.gdprConsent) {
       // Put on the beginning of the qs param array
@@ -117,7 +163,7 @@ export const spec = {
    */
   interpretResponse: function (response, request) {
     // If the bid response was empty, return []
-    if (!response || !response.body || utils.isEmpty(response.body)) return []
+    if (!response || !response.body || isEmpty(response.body)) return []
 
     try {
       const body =
@@ -132,7 +178,7 @@ export const spec = {
       let bidResponse, adUnit
       seatbids.forEach((seatbid) => {
         seatbid.bid.forEach((bid) => {
-          adUnit = this.getRequestId(body.id, bid.impid)
+          adUnit = this.getAdUnitData(body.id, bid)
           bidResponse = {
             requestId: adUnit.bidId,
             cpm: bid.price,
@@ -213,7 +259,7 @@ export const spec = {
     let body
     serverResponses.forEach((response) => {
       // If the bid response was empty, return []
-      if (!response || !response.body || utils.isEmpty(response.body)) {
+      if (!response || !response.body || isEmpty(response.body)) {
         return syncs
       }
 
@@ -265,14 +311,16 @@ export const spec = {
   /**
    * Maps Prebid's bidId to Nativo's placementId values per unique bidderRequestId
    * @param {String} bidderRequestId - The unique ID value associated with the bidderRequest
-   * @param {String} placementId - The placement ID value from Nativo
+   * @param {Object} bid - The placement ID value from Nativo
    * @returns {String} - The bidId value associated with the corresponding placementId
    */
-  getRequestId: function (bidderRequestId, placementId) {
-    return (
-      bidRequestMap[bidderRequestId] &&
-      bidRequestMap[bidderRequestId][placementId]
-    )
+  getAdUnitData: function (bidderRequestId, bid) {
+    var data = deepAccess(bidRequestMap, `${bidderRequestId}.${bid.impid}`)
+
+    if (data) return data
+
+    var unitCode = deepAccess(bid, 'ext.ad_unit_id')
+    return deepAccess(bidRequestMap, `${bidderRequestId}.${unitCode}`)
   },
 }
 registerBidder(spec)

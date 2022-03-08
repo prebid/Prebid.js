@@ -1,6 +1,5 @@
+import { getBidIdParameter, isFn, isInteger } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { isInteger } from '../src/utils.js';
-import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'getintent';
 const IS_NET_REVENUE = true;
@@ -124,7 +123,7 @@ function buildGiBidRequest(bidRequest) {
     giBidRequest.size = produceSize(bidRequest.sizes);
   }
 
-  const currency = utils.getBidIdParameter(CURRENCY_PARAM, bidRequest.params);
+  const currency = getBidIdParameter(CURRENCY_PARAM, bidRequest.params);
   const floorInfo = getBidFloor(bidRequest, currency);
   if (floorInfo.floor) {
     giBidRequest[FLOOR_PARAM] = floorInfo.floor;
@@ -143,7 +142,7 @@ function buildGiBidRequest(bidRequest) {
 function getBidFloor(bidRequest, currency) {
   let floorInfo = {};
 
-  if (utils.isFn(bidRequest.getFloor)) {
+  if (isFn(bidRequest.getFloor)) {
     floorInfo = bidRequest.getFloor({
       currency: currency || DEFAULT_CURRENCY,
       mediaType: bidRequest.mediaType,
