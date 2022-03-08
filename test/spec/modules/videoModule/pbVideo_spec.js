@@ -184,16 +184,27 @@ describe('Prebid Video', function () {
     };
     const auctionResults = { adUnits: [ expectedAdUnit, {} ] };
 
+    beforeEach(() => {
+      adServerMock.getAdTagUrl.resetHistory();
+      videoCoreMock.setAdTagUrl.resetHistory();
+    });
+
     it('should request ad tag url from adServer when configured to use adServer', function () {
-      pbVideoFactory(null, null, null, pbEvents);
+      const expectedVastUrl = 'expectedVastUrl';
+      const expectedVastXml = 'expectedVastXml';
+      const pbGlobal = Object.assign({}, pbGlobalMock, {
+        getHighestCpmBids: () => [{
+          vastUrl: expectedVastUrl,
+          vastXml: expectedVastXml
+        }, {}, {}, {}]
+      });
+      pbVideoFactory(null, null, pbGlobal, pbEvents);
 
       auctionEndCallback(auctionResults);
       expect(adServerMock.getAdTagUrl.calledOnce).to.be.true;
       expect(adServerMock.getAdTagUrl.getCall(0).args[0]).is.equal(expectedVendorCode);
       expect(adServerMock.getAdTagUrl.getCall(0).args[1]).is.equal(expectedAdUnit);
       expect(adServerMock.getAdTagUrl.getCall(0).args[2]).is.equal(expectedAdTag);
-
-      expect(videoCoreMock.setAdTagUrl.called).to.be.false;
     });
 
     it('should load ad tag when ad server return ad tag', function () {
@@ -201,7 +212,15 @@ describe('Prebid Video', function () {
       const adServerCore = Object.assign({}, adServerMock, {
         getAdTagUrl: () => expectedAdTag
       });
-      pbVideoFactory(null, null, null, pbEvents, null, adServerCore);
+      const expectedVastUrl = 'expectedVastUrl';
+      const expectedVastXml = 'expectedVastXml';
+      const pbGlobal = Object.assign({}, pbGlobalMock, {
+        getHighestCpmBids: () => [{
+          vastUrl: expectedVastUrl,
+          vastXml: expectedVastXml
+        }, {}, {}, {}]
+      });
+      pbVideoFactory(null, null, pbGlobal, pbEvents, null, adServerCore);
       auctionEndCallback(auctionResults);
       expect(videoCoreMock.setAdTagUrl.calledOnce).to.be.true;
       expect(videoCoreMock.setAdTagUrl.args[0][0]).to.be.equal(expectedAdTag);

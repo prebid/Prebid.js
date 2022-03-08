@@ -13,7 +13,6 @@ const expectedImpressionId = 'test_impression_id';
 const expectedErrorUrl = 'test_error_url';
 const expectedVastXml = 'test_xml';
 
-
 it('should not modify the bid\'s adXml when the tracking config is omitted', function () {
   const adUnit = Object.assign({}, sampleAdUnit, { video: { adServer: { tracking: null } } });
   const pbGlobal = Object.assign({}, pbGlobalMock, { adUnits: [ adUnit ] });
@@ -47,14 +46,14 @@ it('should request the addition of tracking nodes when an ad xml is provided', f
 
 it('should pass the tracking information as args to the xml editing function', function () {
   const adUnit = Object.assign({}, sampleAdUnit, { video: { adServer: { tracking: {
-          impression: {
-            url: expectedImpressionUrl,
-            id: expectedImpressionId
-          },
-          error: {
-            url: expectedErrorUrl
-          }
-        } } } });
+    impression: {
+      url: expectedImpressionUrl,
+      id: expectedImpressionId
+    },
+    error: {
+      url: expectedErrorUrl
+    }
+  } } } });
   const pbGlobal = Object.assign({}, pbGlobalMock, { adUnits: [ adUnit ] });
   pbVideoFactory(null, () => ({}), pbGlobal, pbEvents);
 
@@ -67,13 +66,13 @@ it('should pass the tracking information as args to the xml editing function', f
 
 it('should generate the impression id when not specified in config', function () {
   const adUnit = Object.assign({}, sampleAdUnit, { video: { adServer: { tracking: {
-          impression: {
-            url: expectedImpressionUrl,
-          },
-          error: {
-            url: expectedErrorUrl
-          }
-        } } } });
+    impression: {
+      url: expectedImpressionUrl,
+    },
+    error: {
+      url: expectedErrorUrl
+    }
+  } } } });
   const pbGlobal = Object.assign({}, pbGlobalMock, { adUnits: [ adUnit ] });
   pbVideoFactory(null, () => ({}), pbGlobal, pbEvents);
 
