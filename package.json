@@ -126,5 +126,8 @@
     "fun-hooks": "^0.9.9",
     "just-clone": "^1.0.2",
     "live-connect-js": "2.0.0"
+  },
+  "optionalDependencies": {
+    "fsevents": "^2.3.2"
   }
 }
