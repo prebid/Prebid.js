@@ -1,7 +1,6 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {triggerPixel} from '../src/utils.js';
 import {NATIVE} from '../src/mediaTypes.js';
-import includes from 'prebidjs-polyfill/includes.js';
 
 const BIDDER_CODE = 'adrino';
 const REQUEST_METHOD = 'POST';
@@ -19,7 +18,7 @@ export const spec = {
       !!(bid.params.hash) &&
       (typeof bid.params.hash === 'string') &&
       !!(bid.mediaTypes) &&
-      includes(Object.keys(bid.mediaTypes), NATIVE) &&
+      Object.keys(bid.mediaTypes).includes(NATIVE) &&
       (bid.bidder === BIDDER_CODE);
   },
 
