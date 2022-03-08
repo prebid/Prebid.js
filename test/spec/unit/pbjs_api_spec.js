@@ -1900,23 +1900,21 @@ describe('Unit: Prebid Module', function () {
             expect(auctionArgs.adUnits[1].mediaTypes.banner.pos).to.equal(0);
           });
 
-          ['ortb2Imp', 'storedAuctionResponse'].forEach((prop) => {
-            it(`should allow no bids if ${prop} is specified`, () => {
-              const adUnit = {
-                code: 'test',
-                mediaTypes: {
-                  banner: {
-                    sizes: [[300, 250]]
-                  }
-                },
-                [prop]: {}
-              };
-              $$PREBID_GLOBAL$$.requestBids({
-                adUnits: [adUnit]
-              });
-              sinon.assert.match(auctionArgs.adUnits[0], adUnit);
+          it(`should allow no bids if 'ortb2Imp' is specified`, () => {
+            const adUnit = {
+              code: 'test',
+              mediaTypes: {
+                banner: {
+                  sizes: [[300, 250]]
+                }
+              },
+              ortb2Imp: {}
+            };
+            $$PREBID_GLOBAL$$.requestBids({
+              adUnits: [adUnit]
             });
-          })
+            sinon.assert.match(auctionArgs.adUnits[0], adUnit);
+          });
         });
 
         describe('negative tests for validating adUnits', function() {
@@ -2052,7 +2050,7 @@ describe('Unit: Prebid Module', function () {
             });
             expect(auctionArgs.adUnits.length).to.equal(1);
             expect(auctionArgs.adUnits[1]).to.not.exist;
-            assert.ok(logErrorSpy.calledWith("adUnit.code 'bad-ad-unit-2' has no 'adUnit.bids', 'adUnit.ortb2Imp' or 'adUnit.storedAuctionResponse'. Removing adUnit from auction"));
+            assert.ok(logErrorSpy.calledWith("adUnit.code 'bad-ad-unit-2' has no 'adUnit.bids' and no 'adUnit.ortb2Imp'. Removing adUnit from auction"));
           });
         });
       });
