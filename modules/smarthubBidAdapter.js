@@ -6,16 +6,17 @@ import {config} from '../src/config.js';
 const BIDDER_CODE = 'smarthub';
 
 function isBidResponseValid(bid) {
-  if (!bid.requestId || !bid.cpm || !bid.creativeId ||
-    !bid.ttl || !bid.currency) {
+  if (!bid.requestId || !bid.cpm || !bid.creativeId || !bid.ttl || !bid.currency) {
     return false;
   }
-
+  if (!bid.hasOwnProperty('netRevenue')) {
+    return false;
+  }
   switch (bid.mediaType) {
     case BANNER:
       return Boolean(bid.width && bid.height && bid.ad);
     case VIDEO:
-      return Boolean(bid.vastUrl || bid.vastXml);
+      return Boolean(bid.width && bid.height && (bid.vastUrl || bid.vastXml));
     case NATIVE:
       return Boolean(bid.native && bid.native.impressionTrackers && bid.native.impressionTrackers.length);
     default:

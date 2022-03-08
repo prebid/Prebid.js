@@ -255,6 +255,8 @@ describe('SmartHubBidAdapter', function () {
           mediaType: 'video',
           cpm: 0.5,
           requestId: '23fhj33i987f',
+          width: 300,
+          height: 250,
           ttl: 120,
           creativeId: '2',
           netRevenue: true,
@@ -271,7 +273,7 @@ describe('SmartHubBidAdapter', function () {
 
       let dataItem = videoResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'vastUrl', 'ttl', 'creativeId',
-        'netRevenue', 'currency', 'dealId', 'mediaType', 'meta');
+        'netRevenue', 'currency', 'dealId', 'mediaType', 'meta', 'width', 'height');
       expect(dataItem.requestId).to.equal('23fhj33i987f');
       expect(dataItem.cpm).to.equal(0.5);
       expect(dataItem.vastUrl).to.equal('test.com');
