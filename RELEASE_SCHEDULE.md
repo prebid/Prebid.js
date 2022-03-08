@@ -3,12 +3,7 @@
 - [Release Process](#release-process)
   - [1. Make sure that all PRs have been named and labeled properly per the PR Process](#1-make-sure-that-all-prs-have-been-named-and-labeled-properly-per-the-pr-process)
   - [2. Make sure all browserstack tests are passing](#2-make-sure-all-browserstack-tests-are-passing)
-  - [3. Prepare Prebid Code](#3-prepare-prebid-code)
-  - [4. Verify the Release](#4-verify-the-release)
-  - [5. Create a GitHub release](#5-create-a-github-release)
-  - [6. Update coveralls _(skip for legacy)_](#6-update-coveralls-skip-for-legacy)
-  - [7. Distribute the code](#7-distribute-the-code)
-  - [8. Increment Version for Next Release](#8-increment-version-for-next-release)
+  - [3. Start the release](#3-start-the-release)
 - [Beta Releases](#beta-releases)
 - [FAQs](#faqs)
 
@@ -21,11 +16,9 @@ it will be about a week before the Prebid Org [Download Page](http://prebid.org/
 
 You can determine what is in a given build using the [releases page](https://github.com/prebid/Prebid.js/releases)
 
-Announcements regarding releases will be made to the #headerbidding-dev channel in subredditadops.slack.com.
+Announcements regarding releases will be made to the #prebid-js channel in prebid.slack.com.
 
 ## Release Process
-
-_Note: If `github.com/prebid/Prebid.js` is not configured as the git origin for your repo, all of the following git commands will have to be modified to reference the proper remote (e.g. `upstream`)_
 
 ### 1. Make sure that all PRs have been named and labeled properly per the [PR Process](https://github.com/prebid/Prebid.js/blob/master/PR_REVIEW.md#general-pr-review-process)
    * Do this by checking the latest draft release from the [releases page](https://github.com/prebid/Prebid.js/releases) and make sure nothing appears in the first section called "In This Release". If they do, please open the PRs and add the appropriate labels.
@@ -57,61 +50,10 @@ _Note: If `github.com/prebid/Prebid.js` is not configured as the git origin for 
    ```
 
 
-### 3. Prepare Prebid Code
+### 3. Start the release
 
-   Update the package.json version to become the current release. Then commit your changes.
-
-   ```
-   git commit -m "Prebid 4.x.x Release"
-   git push
-   ```
-
-### 4. Verify the Release
-
-   Make sure your there are no more merges to master branch. Prebid code is clean and up to date.
-
-### 5. Create a GitHub release
-
-   Edit the most recent [release notes](https://github.com/prebid/Prebid.js/releases) draft and make sure the correct version is set and the master branch is selected in the dropdown. Click `Publish release`. GitHub will create release tag.
-
-   Pull these changes locally by running command
-   ```
-   git pull
-   git fetch --tags
-   ```
-
-   and verify the tag.
-
-### 6. Update coveralls _(skip for legacy)_
-
-   We use https://coveralls.io/ to show parts of code covered by unit tests.
-
-   Set the environment variables. You may want to add these to your `~/.bashrc` for convenience.
-   ```
-   export COVERALLS_SERVICE_NAME="travis-ci"
-   export COVERALLS_REPO_TOKEN="talk to Matt Kendall"
-   ```
-
-   Run `gulp coveralls` to update code coverage history.
-
-### 7. Distribute the code
-
-   _Note: do not go to step 8 until step 7 has been verified completed._
-
-   Reach out to any of the Appnexus folks to trigger the jenkins job.
-
-   // TODO:
-   Jenkins job is moving files to appnexus cdn, pushing prebid.js to npm, purging cache and sending notification to slack.
-   Move all the files from Appnexus CDN to jsDelivr and create bash script to do above tasks.
-
-### 8. Increment Version for Next Release
-
-   Update the version by manually editing Prebid's `package.json` to become "4.x.x-pre" (using the values for the next release). Then commit your changes.
-   ```
-   git commit -m "Increment pre version"
-   git push
-   ```
-
+Follow the instructions at https://github.com/prebid/prebidjs-releaser. Note that you will need to be a member of the [https://github.com/orgs/prebid/teams/prebidjs-release](prebidjs-release) GitHub team.
+    
 ## Beta Releases
 
 Prebid.js features may be released as Beta or as Generally Available (GA).

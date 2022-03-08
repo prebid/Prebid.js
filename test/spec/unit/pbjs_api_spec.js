@@ -15,7 +15,7 @@ import * as ajaxLib from 'src/ajax.js';
 import * as auctionModule from 'src/auction.js';
 import { registerBidder } from 'src/adapters/bidderFactory.js';
 import { _sendAdToCreative } from 'src/secureCreatives.js';
-import find from 'core-js-pure/features/array/find.js';
+import {find} from 'src/polyfill.js';
 import {synchronizePromise} from '../../helpers/syncPromise.js';
 import 'src/prebid.js';
 import {hook} from '../../../src/hook.js';

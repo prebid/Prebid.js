@@ -9,12 +9,12 @@
  * @requires module:modules/realTimeData
  */
 
-import { submodule } from '../src/hook.js';
-import { config } from '../src/config.js';
-import { ajaxBuilder } from '../src/ajax.js';
-import { logError } from '../src/utils.js';
-import find from 'core-js-pure/features/array/find.js';
-import { getGlobal } from '../src/prebidGlobal.js';
+import {submodule} from '../src/hook.js';
+import {config} from '../src/config.js';
+import {ajaxBuilder} from '../src/ajax.js';
+import {logError} from '../src/utils.js';
+import {find} from '../src/polyfill.js';
+import {getGlobal} from '../src/prebidGlobal.js';
 
 const SUBMODULE_NAME = 'jwplayer';
 const segCache = {};
