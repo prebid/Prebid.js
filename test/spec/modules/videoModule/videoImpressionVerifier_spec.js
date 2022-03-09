@@ -1,3 +1,29 @@
+import { baseImpressionVerifier, PB_PREFIX } from 'modules/videoModule/videoImpressionVerifier.js';
+
+let trackerMock;
+trackerMock = {
+  store: sinon.spy(),
+  remove: sinon.spy()
+}
+
+describe('Base Impression Verifier', function() {
+  describe('trackBid', function () {
+    it('should generate uuid', function () {
+      const baseVerifier = baseImpressionVerifier(trackerMock);
+      const uuid = baseVerifier.trackBid({});
+      expect(uuid.substring(0, 3)).to.equal(PB_PREFIX);
+      expect(uuid.length).to.be.equal(15);
+    });
+  });
+
+  describe('getBidIdentifiers', function () {
+    it('should match ad id to uuid', function () {
+
+    });
+  });
+});
+
+/*
 const adUnitCode = 'test_ad_unit_code';
 const sampleBid = {
   adId: 'test_ad_id',
@@ -83,3 +109,4 @@ it('should generate the impression id when not specified in config', function ()
   // expect(vastXmlEditorMock.getVastXmlWithTrackingNodes.calledWith(expectedVastXml, expectedImpressionUrl, expectedGeneratedId, expectedErrorUrl))
   // expect(vastXmlEditorMock.buildVastWrapper.called).to.be.false;
 });
+*/
