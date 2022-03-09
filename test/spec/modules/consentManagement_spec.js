@@ -132,6 +132,11 @@ describe('consentManagement', function () {
         });
         expect(gdprScope).to.be.equal(false);
       });
+
+      it('should enable gdprDataHandler', () => {
+        setConsentConfig({gdpr: {}});
+        expect(gdprDataHandler.enabled).to.be.true;
+      });
     });
 
     describe('static consent string setConsentConfig value', () => {
@@ -326,6 +331,14 @@ describe('consentManagement', function () {
         expect(consent).to.be.null;
       });
 
+      it('should call gpdrDataHandler.setConsentData() when unknown CMP api is used', () => {
+        setConsentConfig({gdpr: {cmpApi: 'invalid'}});
+        let hookRan = false;
+        requestBidsHook(() => { hookRan = true; }, {});
+        expect(hookRan).to.be.true;
+        expect(gdprDataHandler.ready).to.be.true;
+      })
+
       it('should throw proper errors when CMP is not found', function () {
         setConsentConfig(goodConfigWithCancelAuction);
 
@@ -337,6 +350,7 @@ describe('consentManagement', function () {
         sinon.assert.calledTwice(utils.logError);
         expect(didHookReturn).to.be.false;
         expect(consent).to.be.null;
+        expect(gdprDataHandler.ready).to.be.true;
       });
     });
 
@@ -748,6 +762,7 @@ describe('consentManagement', function () {
           expect(didHookReturn).to.be.false;
           expect(bidsBackHandlerReturn).to.be.true;
           expect(consent).to.be.null;
+          expect(gdprDataHandler.ready).to.be.true;
         });
 
         it('allows the auction when CMP is unresponsive', (done) => {
@@ -766,6 +781,7 @@ describe('consentManagement', function () {
             const consent = gdprDataHandler.getConsentData();
             expect(consent.gdprApplies).to.be.true;
             expect(consent.consentString).to.be.undefined;
+            expect(gdprDataHandler.ready).to.be.true;
             done();
           }, 20);
         });
