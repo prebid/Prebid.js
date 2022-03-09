@@ -2,8 +2,8 @@ import find from 'core-js-pure/features/array/find';
 import URL from 'core-js-pure/web/url';
 import { vastXmlEditorFactory } from './shared/vastXmlEditor.js';
 
-const PB_PREFIX = 'pb_';
-const UUID_MARKER = PB_PREFIX + 'uuid';
+export const PB_PREFIX = 'pb_';
+export const UUID_MARKER = PB_PREFIX + 'uuid';
 
 /**
  * Video Impression Verifier interface. All implementations of a Video Impression Verifier must comply with this interface.
@@ -50,7 +50,7 @@ export function videoImpressionVerifierFactory(isCacheUsed) {
   return videoImpressionVerifier(vastXmlEditor, bidTracker);
 }
 
-function videoImpressionVerifier(vastXmlEditor_, bidTracker_) {
+export function videoImpressionVerifier(vastXmlEditor_, bidTracker_) {
   const verifier = baseImpressionVerifier(bidTracker_);
   const superTrackBid = verifier.trackBid;
   const vastXmlEditor = vastXmlEditor_;
@@ -77,7 +77,7 @@ function videoImpressionVerifier(vastXmlEditor_, bidTracker_) {
   return verifier;
 }
 
-function cachedVideoImpressionVerifier(vastXmlEditor_, bidTracker_) {
+export function cachedVideoImpressionVerifier(vastXmlEditor_, bidTracker_) {
   const verifier = baseImpressionVerifier(bidTracker_);
   const superTrackBid = verifier.trackBid;
   const superGetBidIdentifiers = verifier.getBidIdentifiers;
@@ -124,7 +124,7 @@ function cachedVideoImpressionVerifier(vastXmlEditor_, bidTracker_) {
   return verifier;
 }
 
-function baseImpressionVerifier(bidTracker_) {
+export function baseImpressionVerifier(bidTracker_) {
   const bidTracker = bidTracker_;
 
   function trackBid(bid) {
@@ -168,7 +168,7 @@ function baseImpressionVerifier(bidTracker_) {
   }
 }
 
-function tracker() {
+export function tracker() {
   const model = {};
 
   function store(key, value) {
