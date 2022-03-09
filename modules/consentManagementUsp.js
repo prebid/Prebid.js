@@ -186,6 +186,7 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
 
   if (!uspCallMap[consentAPI]) {
     logWarn(`USP framework (${consentAPI}) is not a supported framework. Aborting consentManagement module and resuming auction.`);
+    uspDataHandler.setConsentData(null);
     return hookConfig.nextFn.apply(hookConfig.context, hookConfig.args);
   }
 
@@ -276,6 +277,7 @@ function exitModule(errMsg, hookConfig, extraArgs) {
 
     if (errMsg) {
       logWarn(errMsg + ' Resuming auction without consent data as per consentManagement config.', extraArgs);
+      uspDataHandler.setConsentData(null) // let core know that no consent data is available
     }
     nextFn.apply(context, args);
   }
@@ -287,7 +289,7 @@ function exitModule(errMsg, hookConfig, extraArgs) {
 export function resetConsentData() {
   consentData = undefined;
   consentAPI = undefined;
-  uspDataHandler.setConsentData(null);
+  uspDataHandler.reset();
 }
 
 /**
@@ -315,6 +317,7 @@ export function setConsentConfig(config) {
   }
 
   logInfo('USPAPI consentManagement module has been activated...');
+  uspDataHandler.enable();
 
   if (consentAPI === 'static') {
     if (isPlainObject(config.consentData) && isPlainObject(config.consentData.getUSPData)) {

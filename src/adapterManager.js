@@ -20,7 +20,6 @@ import {
   logWarn,
   shuffle,
   timestamp,
-  isStr
 } from './utils.js';
 import {processAdUnitsForLabels} from './sizeMapping.js';
 import { decorateAdUnitsWithNativeParams, nativeAdapters } from './native.js';
@@ -31,6 +30,7 @@ import { hook } from './hook.js';
 import {includes, find} from './polyfill.js';
 import { adunitCounter } from './adUnits.js';
 import { getRefererInfo } from './refererDetection.js';
+import {GdprConsentHandler, UspConsentHandler} from './consentHandler.js';
 
 var CONSTANTS = require('./constants.json');
 var events = require('./events.js');
@@ -141,47 +141,8 @@ function getAdUnitCopyForClientAdapters(adUnits) {
   return adUnitsClientCopy;
 }
 
-export let gdprDataHandler = {
-  consentData: null,
-  generatedTime: null,
-  setConsentData: function(consentInfo, time = timestamp()) {
-    gdprDataHandler.consentData = consentInfo;
-    gdprDataHandler.generatedTime = time;
-  },
-  getConsentData: function() {
-    return gdprDataHandler.consentData;
-  },
-  getConsentMeta: function() {
-    if (gdprDataHandler.consentData && gdprDataHandler.consentData.vendorData && gdprDataHandler.generatedTime) {
-      return {
-        gdprApplies: gdprDataHandler.consentData.gdprApplies,
-        consentStringSize: (isStr(gdprDataHandler.consentData.vendorData.tcString)) ? gdprDataHandler.consentData.vendorData.tcString.length : 0,
-        generatedAt: gdprDataHandler.generatedTime,
-        apiVersion: gdprDataHandler.consentData.apiVersion
-      };
-    }
-  }
-};
-
-export let uspDataHandler = {
-  consentData: null,
-  generatedTime: null,
-  setConsentData: function(consentInfo, time = timestamp()) {
-    uspDataHandler.consentData = consentInfo;
-    uspDataHandler.generatedTime = time;
-  },
-  getConsentData: function() {
-    return uspDataHandler.consentData;
-  },
-  getConsentMeta: function() {
-    if (uspDataHandler.consentData && uspDataHandler.generatedTime) {
-      return {
-        usp: uspDataHandler.consentData,
-        generatedAt: uspDataHandler.generatedTime
-      }
-    }
-  }
-};
+export let gdprDataHandler = new GdprConsentHandler();
+export let uspDataHandler = new UspConsentHandler();
 
 export let coppaDataHandler = {
   getCoppa: function() {

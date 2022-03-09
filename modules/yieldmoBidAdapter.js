@@ -232,6 +232,7 @@ function addPlacement(request) {
  */
 function createNewBannerBid(response) {
   return {
+    dealId: response.publisherDealId,
     requestId: response['callback_id'],
     cpm: response.cpm,
     width: response.width,
@@ -257,6 +258,7 @@ function createNewVideoBid(response, bidRequest) {
   const imp = find((deepAccess(bidRequest, 'data.imp') || []), imp => imp.id === response.impid);
 
   let result = {
+    dealId: response.dealid,
     requestId: imp.id,
     cpm: response.price,
     width: imp.video.w,
