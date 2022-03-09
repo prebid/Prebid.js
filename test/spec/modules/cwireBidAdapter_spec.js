@@ -25,7 +25,6 @@ const BID_DEFAULTS = {
   params: {
     placementId: 123456,
     pageId: 777,
-    adUnitElementId: 'target-div'
   },
   sizes: [[300, 250], [1, 1]],
 };
@@ -120,21 +119,6 @@ describe('C-WIRE bid adapter', () => {
       delete bid01.params.pageId;
       bid01.params.pageId = '3320';
       expect(spec.isBidRequestValid(bid01)).to.equal(false);
-    });
-
-    it('should use params.adUnitElementId if provided', function () {
-      const bid01 = new BidRequestBuilder().withParams().build();
-
-      expect(spec.isBidRequestValid(bid01)).to.equal(true);
-      expect(bid01.params.adUnitElementId).to.exist;
-      expect(bid01.params.adUnitElementId).to.equal('target-div');
-    });
-
-    it('should use default adUnitCode if no adUnitElementId provided', function () {
-      const bid01 = new BidRequestBuilder().withParams({}, ['adUnitElementId']).build();
-      expect(spec.isBidRequestValid(bid01)).to.equal(true);
-      expect(bid01.params.adUnitElementId).to.exist;
-      expect(bid01.params.adUnitElementId).to.equal('original-div');
     });
   });
 
@@ -278,7 +262,7 @@ describe('C-WIRE bid adapter', () => {
       expect(requests.data.refgroups[0]).to.equal('group_2');
     });
 
-    it('creates a valid request - if config not set null or empty array is sent', function () {
+    it('creates a valid request - if params are not set, null or empty array are sent to the API', function () {
       const bid01 = new BidRequestBuilder({
         mediaTypes: {
           banner: {

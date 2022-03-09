@@ -99,11 +99,9 @@ export const mapSlotsData = function(validBidRequests) {
     // get the pacement and page ids
     let placementId = getValue(bid.params, 'placementId');
     let pageId = getValue(bid.params, 'pageId');
-    let adUnitElementId = getValue(bid.params, 'adUnitElementId');
     // get the rest of the auction/bid/transaction info
     bidObj.auctionId = getBidIdParameter('auctionId', bid);
     bidObj.adUnitCode = getBidIdParameter('adUnitCode', bid);
-    bidObj.adUnitElementId = adUnitElementId;
     bidObj.bidId = getBidIdParameter('bidId', bid);
     bidObj.bidderRequestId = getBidIdParameter('bidderRequestId', bid);
     bidObj.placementId = placementId;
@@ -131,11 +129,6 @@ export const spec = {
    */
   isBidRequestValid: function(bid) {
     bid.params = bid.params || {};
-
-    // if ad unit elemt id not provided - use adUnitCode by default
-    if (!bid.params.adUnitElementId) {
-      bid.params.adUnitElementId = bid.code;
-    }
 
     if (!bid.params.placementId || !isNumber(bid.params.placementId)) {
       logError('placementId not provided or invalid');
