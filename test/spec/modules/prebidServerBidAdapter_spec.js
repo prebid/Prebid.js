@@ -2917,7 +2917,8 @@ describe('S2S Adapter', function () {
       bidRequest.ad_units[0].ortb2Imp = {
         banner: {
           api: 7
-        }
+        },
+        instl: 1
       };
 
       adapter.callBids(bidRequest, BID_REQUESTS, addBidResponse, done, ajax);
@@ -2927,6 +2928,8 @@ describe('S2S Adapter', function () {
       expect(parsedRequestBody.imp[0]).to.be.a('object');
       expect(parsedRequestBody.imp[0]).to.have.property('banner');
       expect(parsedRequestBody.imp[0].banner.api).to.equal(7);
+      expect(parsedRequestBody.imp[0]).to.have.property('instl');
+      expect(parsedRequestBody.imp[0].instl).to.equal(1);
     });
 
     it('adds debug flag', function () {
