@@ -8,9 +8,9 @@ import {
 } from 'modules/consentManagementUsp.js';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
-import { uspDataHandler } from 'src/adapterManager.js';
+import {gdprDataHandler, uspDataHandler} from 'src/adapterManager.js';
+import 'src/prebid.js';
 
-let assert = require('chai').assert;
 let expect = require('chai').expect;
 
 function createIFrameMarker() {
@@ -96,6 +96,21 @@ describe('consentManagement', function () {
         setConsentConfig(allConfig);
         expect(consentAPI).to.be.equal('daa');
         expect(consentTimeout).to.be.equal(7500);
+      });
+
+      it('should enable uspDataHandler', () => {
+        setConsentConfig({usp: {cmpApi: 'daa', timeout: 7500}});
+        expect(uspDataHandler.enabled).to.be.true;
+      });
+
+      it('should call setConsentData(null) on invalid CMP api', () => {
+        setConsentConfig({usp: {cmpApi: 'invalid'}});
+        let hookRan = false;
+        requestBidsHook(() => {
+          hookRan = true;
+        }, {});
+        expect(hookRan).to.be.true;
+        expect(uspDataHandler.ready).to.be.true;
       });
     });
 
@@ -225,6 +240,32 @@ describe('consentManagement', function () {
         expect(didHookReturn).to.be.true;
         expect(consent).to.equal(testConsentData.uspString);
         sinon.assert.called(uspStub);
+      });
+
+      it('should call uspDataHandler.setConsentData(null) on error', () => {
+        let hookRan = false;
+        uspStub = sinon.stub(window, '__uspapi').callsFake((...args) => {
+          args[2](null, false);
+        });
+        requestBidsHook(() => {
+          hookRan = true;
+        }, {});
+        expect(hookRan).to.be.true;
+        expect(uspDataHandler.ready).to.be.true;
+        expect(uspDataHandler.getConsentData()).to.equal(null);
+      });
+
+      it('should call uspDataHandler.setConsentData(null) on timeout', (done) => {
+        setConsentConfig({usp: {timeout: 10}});
+        let hookRan = false;
+        uspStub = sinon.stub(window, '__uspapi').callsFake(() => {});
+        requestBidsHook(() => { hookRan = true; }, {});
+        setTimeout(() => {
+          expect(hookRan).to.be.true;
+          expect(uspDataHandler.ready).to.be.true;
+          expect(uspDataHandler.getConsentData()).to.equal(null);
+          done();
+        }, 20)
       });
     });
 
