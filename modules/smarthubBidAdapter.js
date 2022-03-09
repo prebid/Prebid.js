@@ -6,10 +6,7 @@ import {config} from '../src/config.js';
 const BIDDER_CODE = 'smarthub';
 
 function isBidResponseValid(bid) {
-  if (!bid.requestId || !bid.cpm || !bid.creativeId || !bid.ttl || !bid.currency) {
-    return false;
-  }
-  if (!bid.hasOwnProperty('netRevenue')) {
+  if (!bid.requestId || !bid.cpm || !bid.creativeId || !bid.ttl || !bid.currency || !bid.hasOwnProperty('netRevenue')) {
     return false;
   }
   switch (bid.mediaType) {
