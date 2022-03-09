@@ -2889,7 +2889,7 @@ describe('S2S Adapter', function () {
       expect(parsedRequestBody.imp).to.be.a('array');
       expect(parsedRequestBody.imp[0]).to.be.a('object');
       expect(parsedRequestBody.imp[0]).to.have.property('banner');
-      expect(parsedRequestBody.imp[0].banner).to.equal(7);
+      expect(parsedRequestBody.imp[0].banner.api).to.equal(7);
     });
 
     it('adds debug flag', function () {
