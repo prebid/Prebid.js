@@ -1,5 +1,4 @@
-import find from 'core-js-pure/features/array/find';
-import URL from 'core-js-pure/web/url';
+import find from 'prebidjs-polyfill/find.js';
 import { vastXmlEditorFactory } from './shared/vastXmlEditor.js';
 
 export const PB_PREFIX = 'pb_';
