@@ -700,7 +700,7 @@ const OPEN_RTB_PROTOCOL = {
         }
       });
 
-      Object.assign(imp, mediaTypes);
+      mergeDeep(imp, mediaTypes);
 
       // if storedAuctionResponse has been set, pass SRID
       const storedAuctionResponseBid = find(firstBidRequest.bids, bid => (bid.adUnitCode === adUnit.code && bid.storedAuctionResponse));
