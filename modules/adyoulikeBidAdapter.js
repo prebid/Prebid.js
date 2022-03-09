@@ -219,10 +219,11 @@ function getPageRefreshed() {
 /* Create endpoint url */
 function createEndpoint(bidRequests, bidderRequest) {
   let host = getHostname(bidRequests);
+  const endpoint = bidRequests.mediaTypes?.video ? '/hb-api/prebid-video/v1' : '/hb-api/prebid/v1';
   return buildUrl({
     protocol: 'https',
     host: `${DEFAULT_DC}${host}.omnitagjs.com`,
-    pathname: '/hb-api/prebid/v1',
+    pathname: endpoint,
     search: createEndpointQS(bidderRequest)
   });
 }
