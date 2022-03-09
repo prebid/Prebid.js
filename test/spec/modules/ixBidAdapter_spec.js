@@ -173,6 +173,26 @@ describe('IndexexchangeAdapter', function () {
     }
   ];
 
+  const DEFAULT_BANNER_VALID_BID_PARAM_NO_SIZE = [
+    {
+      bidder: 'ix',
+      params: {
+        siteId: '123'
+      },
+      mediaTypes: {
+        banner: {
+          sizes: [[300, 250], [300, 600]]
+        }
+      },
+      adUnitCode: 'div-gpt-ad-1460505748561-0',
+      transactionId: '173f49a8-7549-4218-a23c-e7ba59b47229',
+      bidId: '1a2b3c4d',
+      bidderRequestId: '11a22b33c44d',
+      auctionId: '1aa2bb3cc4dd',
+      schain: SAMPLE_SCHAIN
+    }
+  ];
+
   const DEFAULT_VIDEO_VALID_BID = [
     {
       bidder: 'ix',
@@ -673,6 +693,22 @@ describe('IndexexchangeAdapter', function () {
     it('should return true for video bid when there are multiple mediaTypes (banner, outstream)', function () {
       const bid = utils.deepClone(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0]);
       expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
+    it('should set bid[].renderer if renderer not defined at mediaType.video level', function () {
+      const bid = spec.interpretResponse({ body: DEFAULT_VIDEO_BID_RESPONSE }, {
+        data: DEFAULT_BIDDER_REQUEST_DATA, validBidRequests: DEFAULT_MULTIFORMAT_BANNER_VALID_BID
+      });
+      expect(bid[0].renderer).to.be.exist;
+    });
+
+    it('should not set bid[].renderer if renderer defined at mediaType.video level', function () {
+      const outstreamAdUnit = DEFAULT_MULTIFORMAT_BANNER_VALID_BID;
+      outstreamAdUnit[0].mediaTypes.video.renderer = {}
+      const bid = spec.interpretResponse({ body: DEFAULT_VIDEO_BID_RESPONSE }, {
+        data: DEFAULT_BIDDER_REQUEST_DATA, validBidRequests: DEFAULT_MULTIFORMAT_BANNER_VALID_BID
+      });
+      expect(bid[0].renderer).to.be.undefined;
     });
 
     it('should return false when there is only bidFloor', function () {
@@ -1375,6 +1411,7 @@ describe('IndexexchangeAdapter', function () {
     delete bidWithoutSchain[0].schain;
     const requestWithoutSchain = spec.buildRequests(bidWithoutSchain, DEFAULT_OPTION)[0];
     const queryWithoutSchain = requestWithoutSchain.data;
+    const GPID = '/19968336/some-adunit-path';
 
     it('request should be made to IX endpoint with GET method', function () {
       expect(requestMethod).to.equal('GET');
@@ -1414,8 +1451,19 @@ describe('IndexexchangeAdapter', function () {
     });
 
     it('should send gpid in request if ortb2Imp.ext.gpid exists', function () {
-      const GPID = '/19968336/some-adunit-path';
       const validBids = utils.deepClone(DEFAULT_BANNER_VALID_BID);
+      validBids[0].ortb2Imp = {
+        ext: {
+          gpid: GPID
+        }
+      };
+      const requests = spec.buildRequests(validBids, DEFAULT_OPTION);
+      const { ext: { gpid } } = JSON.parse(requests[0].data.r).imp[0];
+      expect(gpid).to.equal(GPID);
+    });
+
+    it('should send gpid in request if ortb2Imp.ext.gpid exists when no size present', function () {
+      const validBids = utils.deepClone(DEFAULT_BANNER_VALID_BID_PARAM_NO_SIZE);
       validBids[0].ortb2Imp = {
         ext: {
           gpid: GPID
@@ -1488,6 +1536,14 @@ describe('IndexexchangeAdapter', function () {
       expect(payload.source.ext.schain).to.deep.equal(SAMPLE_SCHAIN);
       expect(payload.imp).to.be.an('array');
       expect(payload.imp).to.have.lengthOf(1);
+    });
+
+    it('payload should set site.page to pageUrl when it exists in config object', function () {
+      const url = 'https://example.com/index.html';
+      config.setConfig({ pageUrl: url });
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION)[0].data;
+      const payload = JSON.parse(request.r);
+      expect(payload.site.page).to.contains(url);
     });
 
     it('payload should have correct format and value for r.id when bidderRequestId is a number ', function () {
@@ -1699,6 +1755,10 @@ describe('IndexexchangeAdapter', function () {
     });
 
     describe('first party data', () => {
+      beforeEach(() => {
+        config.resetConfig();
+      });
+
       it('should add first party data to page url in bid request if it exists in config', function () {
         config.setConfig({
           ix: {
@@ -2103,6 +2163,19 @@ describe('IndexexchangeAdapter', function () {
       expect(impression.video.protocols[0]).to.equal(6);
       expect(impression.video.api).to.equal(2);
       expect(impression.video.mimes[0]).to.equal('video/mp4');
+    });
+
+    it('should send gpid in request if ortb2Imp.ext.gpid exists', function () {
+      const GPID = '/19968336/some-adunit-path';
+      const validBids = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+      validBids[0].ortb2Imp = {
+        ext: {
+          gpid: GPID
+        }
+      };
+      const requests = spec.buildRequests(validBids, DEFAULT_OPTION);
+      const { ext: { gpid } } = JSON.parse(requests[0].data.r).imp[0];
+      expect(gpid).to.equal(GPID);
     });
   });
 

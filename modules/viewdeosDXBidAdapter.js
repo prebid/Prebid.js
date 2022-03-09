@@ -1,8 +1,8 @@
-import { deepAccess, isArray, flatten, logError, parseSizesInput } from '../src/utils.js';
+import {deepAccess, flatten, isArray, logError, parseSizesInput} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {VIDEO, BANNER} from '../src/mediaTypes.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
-import findIndex from 'core-js-pure/features/array/find-index.js';
+import {findIndex} from '../src/polyfill.js';
 
 const URL = 'https://ghb.sync.viewdeos.com/auction/';
 const OUTSTREAM_SRC = 'https://player.sync.viewdeos.com/outstream-unit/2.01/outstream.min.js';

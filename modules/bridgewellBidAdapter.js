@@ -1,7 +1,7 @@
-import { _each, inIframe, deepSetValue } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE } from '../src/mediaTypes.js';
-import find from 'core-js-pure/features/array/find.js';
+import {_each, deepSetValue, inIframe} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import {find} from '../src/polyfill.js';
 
 const BIDDER_CODE = 'bridgewell';
 const REQUEST_ENDPOINT = 'https://prebid.scupio.com/recweb/prebid.aspx?cb=';

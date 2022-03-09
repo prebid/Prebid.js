@@ -3,9 +3,14 @@ import { expect } from 'chai';
 import { sessionLoader, addBidResponseHook, addBidderRequestsHook, getConfig, disableOverrides, addBidResponseBound, addBidderRequestsBound } from 'src/debugging.js';
 import { addBidResponse, addBidderRequests } from 'src/auction.js';
 import { config } from 'src/config.js';
+import {hook} from '../../src/hook.js';
 
 describe('bid overrides', function () {
   let sandbox;
+
+  before(() => {
+    hook.ready();
+  });
 
   beforeEach(function () {
     sandbox = sinon.sandbox.create();
@@ -109,8 +114,14 @@ describe('bid overrides', function () {
       });
 
       expect(bids.length).to.equal(2);
-      expect(bids[0].cpm).to.equal(2);
-      expect(bids[1].cpm).to.equal(2);
+      sinon.assert.match(bids[0], {
+        cpm: 2,
+        isDebug: true,
+      })
+      sinon.assert.match(bids[1], {
+        cpm: 2,
+        isDebug: true,
+      });
     });
 
     it('should allow us to override bids by bidder', function () {
@@ -123,8 +134,14 @@ describe('bid overrides', function () {
       });
 
       expect(bids.length).to.equal(2);
-      expect(bids[0].cpm).to.equal(2);
-      expect(bids[1].cpm).to.equal(0.5);
+      sinon.assert.match(bids[0], {
+        cpm: 2,
+        isDebug: true
+      });
+      sinon.assert.match(bids[1], {
+        cpm: 0.5,
+        isDebug: sinon.match.falsy
+      })
     });
 
     it('should allow us to override bids by adUnitCode', function () {
@@ -139,8 +156,14 @@ describe('bid overrides', function () {
       });
 
       expect(bids.length).to.equal(2);
-      expect(bids[0].cpm).to.equal(0.5);
-      expect(bids[1].cpm).to.equal(2);
+      sinon.assert.match(bids[0], {
+        cpm: 0.5,
+        isDebug: sinon.match.falsy,
+      });
+      sinon.assert.match(bids[1], {
+        cpm: 2,
+        isDebug: true,
+      });
     });
   });
 
