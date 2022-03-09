@@ -127,7 +127,7 @@ describe('Prebid Video', function () {
 
   describe('Ad unit Enrichment', function () {
     it('registers before:bidRequest hook', function () {
-      const pbVideo = pbVideoFactory();
+      pbVideoFactory();
       expect(requestBidsMock.before.calledOnce).to.be.true;
     });
 
@@ -138,7 +138,7 @@ describe('Prebid Video', function () {
         before: callback_ => beforeBidRequestCallback = callback_
       };
 
-      const pbVideo = pbVideoFactory(null, null, { requestBids });
+      pbVideoFactory(null, null, { requestBids });
       expect(beforeBidRequestCallback).to.not.be.undefined;
       const nextFn = sinon.spy();
       const adUnits = [{
