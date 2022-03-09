@@ -2924,11 +2924,7 @@ describe('S2S Adapter', function () {
       adapter.callBids(bidRequest, BID_REQUESTS, addBidResponse, done, ajax);
       const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
 
-      expect(parsedRequestBody.imp).to.be.a('array');
-      expect(parsedRequestBody.imp[0]).to.be.a('object');
-      expect(parsedRequestBody.imp[0]).to.have.property('banner');
       expect(parsedRequestBody.imp[0].banner.api).to.equal(7);
-      expect(parsedRequestBody.imp[0]).to.have.property('instl');
       expect(parsedRequestBody.imp[0].instl).to.equal(1);
     });
 
