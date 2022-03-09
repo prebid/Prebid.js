@@ -111,12 +111,11 @@ export function buildDfpVideoUrl(options) {
   const uspConsent = uspDataHandler.getConsentData();
   if (uspConsent) { queryParams.us_privacy = uspConsent; }
 
-  return buildUrl({
+  return buildUrl(Object.assign({
     protocol: 'https',
     host: 'securepubads.g.doubleclick.net',
-    pathname: '/gampad/ads',
-    search: queryParams
-  });
+    pathname: '/gampad/ads'
+  }, urlComponents, { search: queryParams }));
 }
 
 export function notifyTranslationModule(fn) {
