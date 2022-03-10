@@ -73,7 +73,7 @@ describe('adhashBidAdapter', function () {
     it('should build the request correctly', function () {
       const result = spec.buildRequests(
         [ bidRequest ],
-        { gdprConsent: true, refererInfo: { referer: 'http://example.com/' } }
+        { gdprConsent: { gdprApplies: true, consentString: 'example' }, refererInfo: { referer: 'http://example.com/' } }
       );
       expect(result.length).to.equal(1);
       expect(result[0].method).to.equal('POST');
@@ -90,7 +90,7 @@ describe('adhashBidAdapter', function () {
       expect(result[0].data).to.have.property('recentAds');
     });
     it('should build the request correctly without referer', function () {
-      const result = spec.buildRequests([ bidRequest ], { gdprConsent: true });
+      const result = spec.buildRequests([ bidRequest ], { gdprConsent: { gdprApplies: true, consentString: 'example' } });
       expect(result.length).to.equal(1);
       expect(result[0].method).to.equal('POST');
       expect(result[0].url).to.equal('https://bidder.adhash.com/rtb?version=1.0&prebid=true&publisher=0xc3b09b27e9c6ef73957901aa729b9e69e5bbfbfb');

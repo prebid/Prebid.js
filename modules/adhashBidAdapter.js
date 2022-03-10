@@ -128,7 +128,8 @@ export const spec = {
           blockedCreatives: [],
           currentTimestamp: new Date().getTime(),
           recentAds: [],
-          GDPR: gdprConsent
+          GDPRApplies: gdprConsent ? gdprConsent.gdprApplies : null,
+          GDPR: gdprConsent ? gdprConsent.consentString : null
         },
         options: {
           withCredentials: false,
