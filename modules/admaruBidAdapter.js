@@ -39,8 +39,8 @@ export const spec = {
         pub_id: bid.params.pub_id,
         adspace_id: bid.params.adspace_id,
         // refererInfo: bidderRequest.refererInfo.referer,
-        os: getOs(),
-        platform: getPlatform(),
+        // os: getOs(),
+        // platform: getPlatform(),
         bidderRequestId: bid.bidderRequestId,
         bidId: bid.bidId
       };
@@ -80,7 +80,7 @@ export const spec = {
     return bidResponses;
   }
 }
-
+/*
 function getOs() {
   let ua = navigator.userAgent;
   if (ua.match(/(iPhone|iPod|iPad)/)) {
@@ -101,5 +101,5 @@ function getPlatform() {
 function isMobile() {
   return (/(ios|ipod|ipad|iphone|android)/i).test(navigator.userAgent.toLowerCase());
 }
-
+*/
 registerBidder(spec);
