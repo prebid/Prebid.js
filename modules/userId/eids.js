@@ -50,7 +50,7 @@ const USER_IDS_CONFIG = {
 
   // ftrack
   'ftrackId': {
-    source: 'flashtalking.com',
+    source: 'flashtalking.com/identity-framework#FTrack',
     atype: 1,
     getValue: function(data) {
       return data.uid
