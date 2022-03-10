@@ -410,6 +410,23 @@ describe('The DFP video support module', function () {
     expect(customParams).to.have.property('hb_cache_id', 'def');
   });
 
+  it('should keep the url protocol, host, and pathname when using url and params', function () {
+    const url = parse(buildDfpVideoUrl({
+      adUnit: adUnit,
+      bid: bid,
+      url: 'http://video.adserver.example/ads?sz=640x480&iu=/123/aduniturl&impl=s',
+      params: {
+        cust_params: {
+          hb_rand: 'random'
+        }
+      }
+    }));
+
+    expect(url.protocol).to.equal('http:');
+    expect(url.host).to.equal('video.adserver.example');
+    expect(url.pathname).to.equal('/ads');
+  });
+
   describe('adpod unit tests', function () {
     let amStub;
     let amGetAdUnitsStub;
