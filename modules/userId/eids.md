@@ -50,7 +50,7 @@ userIdAsEids = [
     },
 
     {
-        source: 'flashtalking.com/identity-framework#FTrack',
+        source: 'flashtalking.com',
         uids: [{
             id: 'some-random-id-value',
             atype: 1
