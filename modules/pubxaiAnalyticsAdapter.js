@@ -142,13 +142,14 @@ function send(data, status) {
     let location = getWindowLocation();
     const storage = getStorage();
     data.initOptions = initOptions;
+    data.pageDetail = {};
+    Object.assign(data.pageDetail, {
+      host: location.host,
+      path: location.pathname,
+      search: location.search
+    });
     if (typeof data !== 'undefined' && typeof data.auctionInit !== 'undefined') {
-      Object.assign(data.pageDetail, {
-        host: location.host,
-        path: location.pathname,
-        search: location.search,
-        adUnitCount: data.auctionInit.adUnitCodes ? data.auctionInit.adUnitCodes.length : null
-      });
+      data.pageDetail.adUnitCount = data.auctionInit.adUnitCodes ? data.auctionInit.adUnitCodes.length : null;
       data.initOptions.auctionId = data.auctionInit.auctionId;
       delete data.auctionInit;
 
