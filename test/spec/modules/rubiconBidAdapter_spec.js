@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import {expect} from 'chai';
 import {
   spec,
@@ -601,7 +600,6 @@ describe('the rubicon adapter', function () {
           const referenceOrdering = ['account_id', 'site_id', 'zone_id', 'size_id', 'alt_size_ids', 'p_pos', 'rf', 'p_geo.latitude', 'p_geo.longitude', 'kw', 'tg_v.ucat', 'tg_v.lastsearch', 'tg_v.likes', 'tg_i.rating', 'tg_i.prodtype', 'tk_flint', 'x_source.tid', 'l_pb_bid_id', 'x_source.pchain', 'p_screen_res', 'rp_secure', 'tk_user_key', 'tg_fl.eid', 'rp_maxbids', 'slots', 'rand'];
 
           request.data.split('&').forEach((item, i) => {
-            console.log(item.split('=')[0]);
             expect(item.split('=')[0]).to.equal(referenceOrdering[i]);
           });
         });
