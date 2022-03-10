@@ -1,11 +1,11 @@
 import { Renderer } from '../src/Renderer.js';
 import {ajax} from '../src/ajax.js';
-import * as utils from '../src/utils.js';
+import { createTrackPixelHtml, getBidIdParameter, logError, logWarn, tryAppendQueryString } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'open8';
-const URL = '//as.vt.open8.com/v1/control/prebid';
+const URL = 'https://as.vt.open8.com/v1/control/prebid';
 const AD_TYPE = {
   VIDEO: 1,
   BANNER: 2
@@ -24,9 +24,9 @@ export const spec = {
     for (var i = 0; i < validBidRequests.length; i++) {
       var bid = validBidRequests[i];
       var queryString = '';
-      var slotKey = utils.getBidIdParameter('slotKey', bid.params);
-      queryString = utils.tryAppendQueryString(queryString, 'slot_key', slotKey);
-      queryString = utils.tryAppendQueryString(queryString, 'imp_id', generateImpId());
+      var slotKey = getBidIdParameter('slotKey', bid.params);
+      queryString = tryAppendQueryString(queryString, 'slot_key', slotKey);
+      queryString = tryAppendQueryString(queryString, 'imp_id', generateImpId());
       queryString += ('bid_id=' + bid.bidId);
 
       requests.push({
@@ -91,11 +91,11 @@ export const spec = {
       if (bannerAd.imps) {
         try {
           bannerAd.imps.forEach(impTrackUrl => {
-            const tracker = utils.createTrackPixelHtml(impTrackUrl);
+            const tracker = createTrackPixelHtml(impTrackUrl);
             bid.ad += tracker;
           });
         } catch (error) {
-          utils.logError('Error appending imp tracking pixel', error);
+          logError('Error appending imp tracking pixel', error);
         }
       }
     }
@@ -159,7 +159,7 @@ function newRenderer(bidderResponse) {
   try {
     renderer.setRender(outstreamRender);
   } catch (err) {
-    utils.logWarn('Prebid Error calling setRender on newRenderer', err);
+    logWarn('Prebid Error calling setRender on newRenderer', err);
   }
 
   return renderer;
