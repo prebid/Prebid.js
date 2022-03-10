@@ -1,7 +1,7 @@
 import { spec } from 'modules/open8BidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 
-const ENDPOINT = '//as.vt.open8.com/v1/control/prebid';
+const ENDPOINT = 'https://as.vt.open8.com/v1/control/prebid';
 
 describe('Open8Adapter', function() {
   const adapter = newBidder(spec);
