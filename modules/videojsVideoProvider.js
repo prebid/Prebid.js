@@ -202,15 +202,20 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
 
       case SETUP_FAILED:
         setupFailedCallback = callback;
-        eventHandler = function(){
-          const e = player.error()
-          Object.assign(payload, {
-            playerVersion,
-            errorCode: e.errorTypes,
-            errorMessage: e.message,
-          });
-          callback(type, payload);
-          setupFailedCallback = null;
+        eventHandler = () => {
+          // Videojs has no specific setup error handler
+          // so we imitate it by hooking to the general error
+          // handler and checking to see if the player has been setup
+          if (player.readyState() == 0){
+            const e = player.error()
+            Object.assign(payload, {
+              playerVersion,
+              errorCode: e.errorTypes,
+              errorMessage: e.message,
+            });
+            callback(type, payload);
+            setupFailedCallback = null;
+          }
         };
         break;
       default:
