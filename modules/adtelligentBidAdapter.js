@@ -21,6 +21,7 @@ const HOST_GETTERS = {
   mediafuse: () => 'ghb.hbmp.mediafuse.com',
   bidsxchange: () => 'ghb.hbd.bidsxchange.com',
   streamkey: () => 'ghb.hb.streamkey.net',
+  janet: () => 'ghb.bidder.jmgads.com',
 }
 const getUri = function (bidderCode) {
   let bidderWithoutSuffix = bidderCode.split('_')[0];
