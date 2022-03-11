@@ -61,7 +61,7 @@ export const spec = {
     const serverBody = serverResponse.body;
     const seatbid = serverBody.seatbid;
 
-    for (let i = 0; i < seatbid.length; i++) { 
+    for (let i = 0; i < seatbid.length; i++) {
       if (!seatbid[i].hasOwnProperty('bid')) {
         continue;
       }
