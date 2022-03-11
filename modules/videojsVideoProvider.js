@@ -6,10 +6,14 @@ import { videoVendorDirectory } from './videoModule/vendorDirectory.js';
 
 export function VideojsProvider(config, videojs_, adState_, timeState_, callbackStorage_, utils) {
   let videojs = videojs_;
+  const callbackStorage = callbackStorage_;
+
   let player = null;
   let playerVersion = null;
   let imaOptions = null;
   const {playerConfig, divId} = config;
+
+  let setupCompleteCallback, setupFailedCallback;
 
   // TODO: test with older videojs versions
   let minimumSupportedPlayerVersion = '7.17.0';
@@ -139,9 +143,81 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
   }
 
   function onEvents(events, callback) {
+    if (!callback) {
+      return;
+    }
+    for (let i = 0; i < events.length; i++) {
+      const type = events[i];
+      let payload = {
+        divId,
+        type
+      };
+
+      registerPreSetupListeners(type, callback, payload);
+      if (!player) {
+        return;
+      }
+
+      // registerPostSetupListeners(type, callback, payload);
+    }
+  }
+
+  function getSetupCompletePayload() {
+    return {
+      divId,
+      playerVersion,
+      type: SETUP_COMPLETE,
+    };
+  }
+
+  function registerPreSetupListeners(type, callback, payload) {
+    let eventHandler;
+    switch (type) {
+      case SETUP_COMPLETE:
+        setupCompleteCallback = callback;
+        eventHandler = () => {
+          payload = getSetupCompletePayload();
+          callback(type, payload);
+          setupCompleteCallback = null;
+        };
+        break;
+
+      case SETUP_FAILED:
+        setupFailedCallback = callback;
+        eventHandler = function(){
+          const e = player.error()
+          Object.assign(payload, {
+            playerVersion,
+            errorCode: e.errorTypes,
+            errorMessage: e.message,
+          });
+          callback(type, payload);
+          setupFailedCallback = null;
+        };
+        break;
+      default:
+        return;
+    }
+
+    
+    player && player.on(utils.getVideojsEventName(type), eventHandler);
+
   }
 
   function offEvents(events, callback) {
+    for(let event of events) {
+      const videojsEvent = utils.getVideojsEventName(event)
+      if (!callback) {
+        player.off(videojsEvent);
+        continue;
+      }
+
+      const eventHandler = callbackStorage.getCallback(event, callback);
+      if (eventHandler) {
+        player.off(videojsEvent, eventHandler);
+      }
+
+    }
   }
 
   function destroy() {
@@ -201,7 +277,7 @@ export const utils = {
 const videojsSubmoduleFactory = function (config) {
   const adState = null;
   const timeState = null;
-  const callbackStorage = null;
+  const callbackStorage = callbackStorageFactory();
   // videojs factory is stored to window by default
   const vjs = window.videojs;
   return VideojsProvider(config, vjs, adState, timeState, callbackStorage, utils);
@@ -210,3 +286,37 @@ videojsSubmoduleFactory.vendorCode = VIDEO_JS_VENDOR;
 
 videoVendorDirectory[VIDEO_JS_VENDOR] = videojsSubmoduleFactory;
 export default videojsSubmoduleFactory;
+
+export function callbackStorageFactory() {
+  let storage = {};
+
+  function storeCallback(eventType, eventHandler, callback) {
+    let eventHandlers = storage[eventType];
+    if (!eventHandlers) {
+      eventHandlers = storage[eventType] = {};
+    }
+
+    eventHandlers[callback] = eventHandler;
+  }
+
+  function getCallback(eventType, callback) {
+    let eventHandlers = storage[eventType];
+    if (!eventHandlers) {
+      return;
+    }
+
+    const eventHandler = eventHandlers[callback];
+    delete eventHandlers[callback];
+    return eventHandler;
+  }
+
+  function clearStorage() {
+    storage = {};
+  }
+
+  return {
+    storeCallback,
+    getCallback,
+    clearStorage
+  }
+}
