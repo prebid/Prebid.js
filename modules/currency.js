@@ -1,7 +1,7 @@
 import { logInfo, logWarn, logError, logMessage } from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { createBid } from '../src/bidfactory.js';
-import { STATUS } from '../src/constants.json';
+import CONSTANTS from '../src/constants.json';
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 import { getHook } from '../src/hook.js';
@@ -19,6 +19,25 @@ export var currencySupportEnabled = false;
 export var currencyRates = {};
 var bidderCurrencyDefault = {};
 var defaultRates;
+
+export const ready = (() => {
+  let isDone, resolver, promise;
+  function reset() {
+    isDone = false;
+    resolver = null;
+    promise = new Promise((resolve) => {
+      resolver = resolve;
+      if (isDone) resolve();
+    })
+  }
+  function done() {
+    isDone = true;
+    if (resolver != null) { resolver() }
+  }
+  reset();
+
+  return {done, reset, promise: () => promise}
+})();
 
 /**
  * Configuration function for currency
@@ -138,11 +157,15 @@ function initCurrency(url) {
             logInfo('currencyRates set to ' + JSON.stringify(currencyRates));
             currencyRatesLoaded = true;
             processBidResponseQueue();
+            ready.done();
           } catch (e) {
             errorSettingsRates('Failed to parse currencyRates response: ' + response);
           }
         },
-        error: errorSettingsRates
+        error: function (...args) {
+          errorSettingsRates(...args);
+          ready.done();
+        }
       }
     );
   }
@@ -197,6 +220,8 @@ export function addBidResponseHook(fn, adUnitCode, bid) {
   bidResponseQueue.push(wrapFunction(fn, this, [adUnitCode, bid]));
   if (!currencySupportEnabled || currencyRatesLoaded) {
     processBidResponseQueue();
+  } else {
+    fn.bail(ready.promise());
   }
 }
 
@@ -219,10 +244,7 @@ function wrapFunction(fn, context, params) {
         }
       } catch (e) {
         logWarn('Returning NO_BID, getCurrencyConversion threw error: ', e);
-        params[1] = createBid(STATUS.NO_BID, {
-          bidder: bid.bidderCode || bid.bidder,
-          bidId: bid.requestId
-        });
+        params[1] = createBid(CONSTANTS.STATUS.NO_BID, bid.getIdentifiers());
       }
     }
     return fn.apply(context, params);

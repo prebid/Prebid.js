@@ -158,6 +158,125 @@ describe('invibesBidAdapter:', function () {
       expect(request.method).to.equal('GET');
     });
 
+    it('sends bid request to custom endpoint via GET', function () {
+      const request = spec.buildRequests([{
+        bidId: 'b1',
+        bidder: BIDDER_CODE,
+        params: {
+          placementId: 'placement',
+          customEndpoint: 'sub.domain.com/Bid/VideoAdContent'
+        },
+        adUnitCode: 'test-div1'
+      }]);
+      expect(request.url).to.equal('sub.domain.com/Bid/VideoAdContent');
+      expect(request.method).to.equal('GET');
+    });
+
+    it('sends bid request to default endpoint when no placement', function () {
+      const request = spec.buildRequests([{
+        bidId: 'b1',
+        bidder: BIDDER_CODE,
+        params: {
+        },
+        adUnitCode: 'test-div1'
+      }]);
+      expect(request.url).to.equal(ENDPOINT);
+      expect(request.method).to.equal('GET');
+    });
+
+    it('sends bid request to default endpoint when null placement', function () {
+      const request = spec.buildRequests([{
+        bidId: 'b1',
+        bidder: BIDDER_CODE,
+        params: {
+          placementId: null
+        },
+        adUnitCode: 'test-div1'
+      }]);
+      expect(request.url).to.equal(ENDPOINT);
+      expect(request.method).to.equal('GET');
+    });
+
+    it('sends bid request to default endpoint 1 via GET', function () {
+	  const request = spec.buildRequests([{
+        bidId: 'b1',
+        bidder: BIDDER_CODE,
+        params: {
+          placementId: 'placement'
+        },
+        adUnitCode: 'test-div1'
+      }]);
+      expect(request.url).to.equal('https://bid.videostep.com/Bid/VideoAdContent');
+      expect(request.method).to.equal('GET');
+    });
+
+    it('sends bid request to network id endpoint 1 via GET', function () {
+      const request = spec.buildRequests([{
+        bidId: 'b1',
+        bidder: BIDDER_CODE,
+        params: {
+          placementId: 'placement',
+          domainId: 1001
+        },
+        adUnitCode: 'test-div1'
+      }]);
+      expect(request.url).to.equal('https://bid.videostep.com/Bid/VideoAdContent');
+      expect(request.method).to.equal('GET');
+    });
+
+    it('sends bid request to network id endpoint 2 via GET', function () {
+      const request = spec.buildRequests([{
+        bidId: 'b1',
+        bidder: BIDDER_CODE,
+        params: {
+          placementId: 'placement',
+          domainId: 1002
+        },
+        adUnitCode: 'test-div1'
+      }]);
+      expect(request.url).to.equal('https://bid2.videostep.com/Bid/VideoAdContent');
+      expect(request.method).to.equal('GET');
+    });
+
+    it('sends bid request to network id by placement 1 via GET', function () {
+      const request = spec.buildRequests([{
+        bidId: 'b1',
+        bidder: BIDDER_CODE,
+        params: {
+          placementId: 'infeed_ivbs1'
+        },
+        adUnitCode: 'test-div1'
+      }]);
+      expect(request.url).to.equal('https://bid.videostep.com/Bid/VideoAdContent');
+      expect(request.method).to.equal('GET');
+    });
+
+    it('sends bid request to network id by placement 2 via GET', function () {
+      const request = spec.buildRequests([{
+        bidId: 'b1',
+        bidder: BIDDER_CODE,
+        params: {
+          placementId: 'infeed_ivbs2'
+        },
+        adUnitCode: 'test-div1'
+      }]);
+      expect(request.url).to.equal('https://bid2.videostep.com/Bid/VideoAdContent');
+      expect(request.method).to.equal('GET');
+    });
+
+    it('sends bid request to network id by placement 10 via GET', function () {
+      const request = spec.buildRequests([{
+        bidId: 'b1',
+        bidder: BIDDER_CODE,
+        params: {
+          placementId: 'infeed_ivbs10'
+        },
+        adUnitCode: 'test-div1'
+      }]);
+      expect(request.url).to.equal('https://bid10.videostep.com/Bid/VideoAdContent');
+      expect(request.method).to.equal('GET');
+    });
+
     it('sends cookies with the bid request', function () {
       const request = spec.buildRequests(bidRequests);
       expect(request.options.withCredentials).to.equal(true);

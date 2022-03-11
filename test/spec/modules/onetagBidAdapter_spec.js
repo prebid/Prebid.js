@@ -1,6 +1,6 @@
 import { spec, isValid, hasTypeVideo } from 'modules/onetagBidAdapter.js';
 import { expect } from 'chai';
-import find from 'core-js-pure/features/array/find.js';
+import {find} from 'src/polyfill.js';
 import { BANNER, VIDEO } from 'src/mediaTypes.js';
 import {INSTREAM, OUTSTREAM} from 'src/video.js';
 

@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import * as utils from '../../../src/utils.js';
+import { config } from '../../../src/config.js';
 import {
   spec,
   CW_PAGE_VIEW_ID,
@@ -24,7 +25,6 @@ const BID_DEFAULTS = {
   params: {
     placementId: 123456,
     pageId: 777,
-    adUnitElementId: 'target-div'
   },
   sizes: [[300, 250], [1, 1]],
 };
@@ -36,11 +36,6 @@ const BidderRequestBuilder = function BidderRequestBuilder(options) {
     bidderRequestId: BID_DEFAULTS.request.bidderRequestId,
     transactionId: BID_DEFAULTS.request.transactionId,
     timeout: 3000,
-    refererInfo: {
-      numIframes: 0,
-      reachedTop: true,
-      referer: 'http://test.io/index.html?pbjs_debug=true'
-    }
   };
 
   const request = {
@@ -82,17 +77,15 @@ const BidRequestBuilder = function BidRequestBuilder(options, deleteKeys) {
 };
 
 describe('C-WIRE bid adapter', () => {
-  let utilsMock;
   let sandbox;
 
   beforeEach(() => {
-    utilsMock = sinon.mock(utils);
     sandbox = sinon.createSandbox();
   });
 
   afterEach(() => {
-    utilsMock.restore();
     sandbox.restore();
+    config.resetConfig();
   });
 
   // START TESTING
@@ -127,21 +120,6 @@ describe('C-WIRE bid adapter', () => {
       bid01.params.pageId = '3320';
       expect(spec.isBidRequestValid(bid01)).to.equal(false);
     });
-
-    it('should use params.adUnitElementId if provided', function () {
-      const bid01 = new BidRequestBuilder().withParams().build();
-
-      expect(spec.isBidRequestValid(bid01)).to.equal(true);
-      expect(bid01.params.adUnitElementId).to.exist;
-      expect(bid01.params.adUnitElementId).to.equal('target-div');
-    });
-
-    it('should use default adUnitCode if no adUnitElementId provided', function () {
-      const bid01 = new BidRequestBuilder().withParams({}, ['adUnitElementId']).build();
-      expect(spec.isBidRequestValid(bid01)).to.equal(true);
-      expect(bid01.params.adUnitElementId).to.exist;
-      expect(bid01.params.adUnitElementId).to.equal('original-div');
-    });
   });
 
   describe('C-WIRE - buildRequests()', function () {
@@ -152,13 +130,158 @@ describe('C-WIRE bid adapter', () => {
             sizes: [[1, 1]],
           }
         }
-      }).withParams().build();
+      }).withParams({
+        cwcreative: 54321,
+        cwapikey: 'xxx-xxx-yyy-zzz-uuid',
+        refgroups: 'group_1',
+      }).build();
+
       const bidderRequest01 = new BidderRequestBuilder().build();
 
       const requests = spec.buildRequests([bid01], bidderRequest01);
+
       expect(requests.data.slots.length).to.equal(1);
       expect(requests.data.cwid).to.be.null;
+      expect(requests.data.cwid).to.be.null;
       expect(requests.data.slots[0].sizes[0]).to.equal('1x1');
+      expect(requests.data.cwcreative).to.equal(54321);
+      expect(requests.data.cwapikey).to.equal('xxx-xxx-yyy-zzz-uuid');
+      expect(requests.data.refgroups[0]).to.equal('group_1');
+    });
+
+    it('creates a valid request - read debug params from second bid', function () {
+      const bid01 = new BidRequestBuilder().withParams().build();
+
+      const bid02 = new BidRequestBuilder({
+        mediaTypes: {
+          banner: {
+            sizes: [[1, 1]],
+          }
+        }
+      }).withParams({
+        cwcreative: 1234,
+        cwapikey: 'api_key_5',
+        refgroups: 'group_5',
+      }).build();
+
+      const bidderRequest01 = new BidderRequestBuilder().build();
+
+      const requests = spec.buildRequests([bid01, bid02], bidderRequest01);
+
+      expect(requests.data.slots.length).to.equal(2);
+      expect(requests.data.cwid).to.be.null;
+      expect(requests.data.cwid).to.be.null;
+      expect(requests.data.cwcreative).to.equal(1234);
+      expect(requests.data.cwapikey).to.equal('api_key_5');
+      expect(requests.data.refgroups[0]).to.equal('group_5');
+    });
+
+    it('creates a valid request - read debug params from first bid, ignore second', function () {
+      const bid01 = new BidRequestBuilder()
+        .withParams({
+          cwcreative: 33,
+          cwapikey: 'api_key_33',
+          refgroups: 'group_33',
+        }).build();
+
+      const bid02 = new BidRequestBuilder()
+        .withParams({
+          cwcreative: 1234,
+          cwapikey: 'api_key_5',
+          refgroups: 'group_5',
+        }).build();
+
+      const bidderRequest01 = new BidderRequestBuilder().build();
+
+      const requests = spec.buildRequests([bid01, bid02], bidderRequest01);
+
+      expect(requests.data.slots.length).to.equal(2);
+      expect(requests.data.cwid).to.be.null;
+      expect(requests.data.cwid).to.be.null;
+      expect(requests.data.cwcreative).to.equal(33);
+      expect(requests.data.cwapikey).to.equal('api_key_33');
+      expect(requests.data.refgroups[0]).to.equal('group_33');
+    });
+
+    it('creates a valid request - read debug params from 3 different slots', function () {
+      const bid01 = new BidRequestBuilder()
+        .withParams({
+          cwcreative: 33,
+        }).build();
+
+      const bid02 = new BidRequestBuilder()
+        .withParams({
+          cwapikey: 'api_key_5',
+        }).build();
+
+      const bid03 = new BidRequestBuilder()
+        .withParams({
+          refgroups: 'group_5',
+        }).build();
+      const bidderRequest01 = new BidderRequestBuilder().build();
+
+      const requests = spec.buildRequests([bid01, bid02, bid03], bidderRequest01);
+
+      expect(requests.data.slots.length).to.equal(3);
+      expect(requests.data.cwid).to.be.null;
+      expect(requests.data.cwid).to.be.null;
+      expect(requests.data.cwcreative).to.equal(33);
+      expect(requests.data.cwapikey).to.equal('api_key_5');
+      expect(requests.data.refgroups[0]).to.equal('group_5');
+    });
+
+    it('creates a valid request - config is overriden by URL params', function () {
+      // for whatever reason stub for getWindowLocation does not work
+      // so this was the closest way to test for get params
+      const params = sandbox.stub(utils, 'getParameterByName');
+      params.withArgs('cwgroups').returns('group_2');
+      params.withArgs('cwcreative').returns('654321');
+
+      const bid01 = new BidRequestBuilder({
+        mediaTypes: {
+          banner: {
+            sizes: [[1, 1]],
+          }
+        }
+      }).withParams({
+        cwcreative: 54321,
+        cwapikey: 'xxx-xxx-yyy-zzz',
+        refgroups: 'group_1',
+      }).build();
+
+      const bidderRequest01 = new BidderRequestBuilder().build();
+
+      const requests = spec.buildRequests([bid01], bidderRequest01);
+
+      expect(requests.data.slots.length).to.equal(1);
+      expect(requests.data.cwid).to.be.null;
+      expect(requests.data.cwid).to.be.null;
+      expect(requests.data.slots[0].sizes[0]).to.equal('1x1');
+      expect(requests.data.cwcreative).to.equal(654321);
+      expect(requests.data.cwapikey).to.equal('xxx-xxx-yyy-zzz');
+      expect(requests.data.refgroups[0]).to.equal('group_2');
+    });
+
+    it('creates a valid request - if params are not set, null or empty array are sent to the API', function () {
+      const bid01 = new BidRequestBuilder({
+        mediaTypes: {
+          banner: {
+            sizes: [[1, 1]],
+          }
+        }
+      }).withParams().build();
+
+      const bidderRequest01 = new BidderRequestBuilder().build();
+
+      const requests = spec.buildRequests([bid01], bidderRequest01);
+
+      expect(requests.data.slots.length).to.equal(1);
+      expect(requests.data.cwid).to.be.null;
+      expect(requests.data.cwid).to.be.null;
+      expect(requests.data.slots[0].sizes[0]).to.equal('1x1');
+      expect(requests.data.cwcreative).to.equal(null);
+      expect(requests.data.cwapikey).to.equal(null);
+      expect(requests.data.refgroups.length).to.equal(0);
     });
   });
 

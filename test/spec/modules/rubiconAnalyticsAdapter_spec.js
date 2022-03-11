@@ -246,7 +246,7 @@ const MOCK = {
     }
   },
   BID_REQUESTED: {
-    'bidder': 'rubicon',
+    'bidderCode': 'rubicon',
     'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
     'bidderRequestId': '1be65d7958826a',
     'bids': [
@@ -384,6 +384,10 @@ const ANALYTICS_MESSAGE = {
   'referrerHostname': 'www.test.com',
   'auctions': [
     {
+
+      'auctionEnd': 1519767013781,
+      'auctionStart': 1519767010567,
+      'bidderOrder': ['rubicon'],
       'requestId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
       'clientTimeoutMillis': 3000,
       'serverTimeoutMillis': 1000,
@@ -853,6 +857,32 @@ describe('rubicon analytics adapter', function () {
       expect(message).to.deep.equal(ANALYTICS_MESSAGE);
     });
 
+    it('should pass along bidderOrder correctly', function () {
+      const appnexusBid = utils.deepClone(MOCK.BID_REQUESTED);
+      appnexusBid.bidderCode = 'appnexus';
+      const pubmaticBid = utils.deepClone(MOCK.BID_REQUESTED);
+      pubmaticBid.bidderCode = 'pubmatic';
+      const indexBid = utils.deepClone(MOCK.BID_REQUESTED);
+      indexBid.bidderCode = 'ix';
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, pubmaticBid);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+      events.emit(BID_REQUESTED, indexBid);
+      events.emit(BID_REQUESTED, appnexusBid);
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      events.emit(SET_TARGETING, MOCK.SET_TARGETING);
+      clock.tick(SEND_TIMEOUT + 1000);
+
+      let message = JSON.parse(server.requests[0].requestBody);
+      expect(message.auctions[0].bidderOrder).to.deep.equal([
+        'pubmatic',
+        'rubicon',
+        'ix',
+        'appnexus'
+      ]);
+    });
+
     it('should pass along user ids', function () {
       let auctionInit = utils.deepClone(MOCK.AUCTION_INIT);
       auctionInit.bidderRequests[0].bids[0].userId = {
@@ -984,6 +1014,36 @@ describe('rubicon analytics adapter', function () {
       let message = JSON.parse(server.requests[0].requestBody);
       validate(message);
       expect(message.auctions[0].adUnits[0].bids[0].bidResponse.adomains).to.be.undefined;
+      expect(message.auctions[0].adUnits[1].bids[0].bidResponse.adomains).to.be.undefined;
+    });
+
+    it('should NOT pass along adomians with other edge cases', function () {
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+
+      // should filter out non string values and pass valid ones
+      let bidResponse1 = utils.deepClone(MOCK.BID_RESPONSE[0]);
+      bidResponse1.meta = {
+        advertiserDomains: [123, 'prebid.org', false, true, [], 'magnite.com', {}]
+      }
+
+      // array of arrays (as seen when passed by kargo bid adapter)
+      let bidResponse2 = utils.deepClone(MOCK.BID_RESPONSE[1]);
+      bidResponse2.meta = {
+        advertiserDomains: [['prebid.org']]
+      }
+
+      events.emit(BID_RESPONSE, bidResponse1);
+      events.emit(BID_RESPONSE, bidResponse2);
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      events.emit(SET_TARGETING, MOCK.SET_TARGETING);
+      events.emit(BID_WON, MOCK.BID_WON[0]);
+      events.emit(BID_WON, MOCK.BID_WON[1]);
+
+      let message = JSON.parse(server.requests[0].requestBody);
+      validate(message);
+      expect(message.auctions[0].adUnits[0].bids[0].bidResponse.adomains).to.deep.equal(['prebid.org', 'magnite.com']);
       expect(message.auctions[0].adUnits[1].bids[0].bidResponse.adomains).to.be.undefined;
     });
 
