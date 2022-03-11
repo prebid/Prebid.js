@@ -20,13 +20,13 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
 
   function init() {
     if (!videojs) {
-    // TODO: come up with code for player absent
+      triggerSetupFailure(-1, 'Videojs not present')
       return;
     }
     playerVersion = videojs.VERSION;
 
     if (playerVersion < minimumSupportedPlayerVersion) {
-    // TODO: come up with code for version not supported
+      triggerSetupFailure(-2, 'Videojs version not supported')
       return;
     }
 
@@ -47,6 +47,18 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
     // TODO: make sure ortb gets called in integration example
     // currently testing with a hacky solution by hooking it to window
     // window.ortb = this.getOrtbParams
+  }
+
+  function triggerSetupFailure(errorCode, msg) {
+    const payload = {
+      divId,
+      playerVersion,
+      type: SETUP_FAILED,
+      errorCode,
+      errorMessage: msg,
+      sourceError: null
+    };
+    setupFailedCallback && setupFailedCallback(SETUP_FAILED, payload);
   }
 
   function getId() {
