@@ -38,9 +38,6 @@ export const spec = {
       const payload = {
         pub_id: bid.params.pub_id,
         adspace_id: bid.params.adspace_id,
-        // refererInfo: bidderRequest.refererInfo.referer,
-        // os: getOs(),
-        // platform: getPlatform(),
         bidderRequestId: bid.bidderRequestId,
         bidId: bid.bidId
       };
@@ -80,26 +77,5 @@ export const spec = {
     return bidResponses;
   }
 }
-/*
-function getOs() {
-  let ua = navigator.userAgent;
-  if (ua.match(/(iPhone|iPod|iPad)/)) {
-    return 'ios';
-  } else if (ua.match(/Android/)) {
-    return 'android';
-  } else if (ua.match(/Window/)) {
-    return 'windows';
-  } else {
-    return 'etc';
-  }
-}
 
-function getPlatform() {
-  return (isMobile()) ? 'm_web' : 'pc_web';
-}
-
-function isMobile() {
-  return (/(ios|ipod|ipad|iphone|android)/i).test(navigator.userAgent.toLowerCase());
-}
-*/
 registerBidder(spec);
