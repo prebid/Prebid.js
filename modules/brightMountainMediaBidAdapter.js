@@ -126,9 +126,9 @@ export const spec = {
     };
 
     if (tempResponse.mediaType === BANNER) {
-      tempResponse.ad = replaceAuctionPrice(bid.adm, bid.price);
+      tempResponse.ad = replaceAuctionPrice(bid.adm, bid.originalCpm || bid.price);
     } else {
-      tempResponse.vastXml = replaceAuctionPrice(bid.adm, bid.price);
+      tempResponse.vastXml = replaceAuctionPrice(bid.adm, bid.originalCpm || bid.price);
     }
 
     bidResponse.push(tempResponse);
