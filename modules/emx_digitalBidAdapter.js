@@ -1,9 +1,19 @@
-import { isArray, logWarn, logError, parseUrl, deepAccess, isStr, _each, getBidIdParameter, isFn, isPlainObject } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { Renderer } from '../src/Renderer.js';
-import includes from 'core-js-pure/features/array/includes.js';
-import find from 'core-js-pure/features/array/find.js';
+import {
+  _each,
+  deepAccess,
+  getBidIdParameter,
+  isArray,
+  isFn,
+  isPlainObject,
+  isStr,
+  logError,
+  logWarn,
+  parseUrl
+} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {Renderer} from '../src/Renderer.js';
+import {find, includes} from '../src/polyfill.js';
 
 const BIDDER_CODE = 'emx_digital';
 const ENDPOINT = 'hb.emxdgt.com';
@@ -257,10 +267,18 @@ export const spec = {
         tagid,
         secure
       };
+
+      // adding gpid support
+      let gpid = deepAccess(bid, 'ortb2Imp.ext.data.adserver.adslot');
+      if (!gpid) {
+        gpid = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+      }
+      if (gpid) {
+        data.ext = {gpid: gpid.toString()};
+      }
       let typeSpecifics = isVideo ? { video: emxAdapter.buildVideo(bid) } : { banner: emxAdapter.buildBanner(bid) };
       let bidfloorObj = bidfloor > 0 ? { bidfloor, bidfloorcur: DEFAULT_CUR } : {};
       let emxBid = Object.assign(data, typeSpecifics, bidfloorObj);
-
       emxImps.push(emxBid);
     });
 

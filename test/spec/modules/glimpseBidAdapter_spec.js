@@ -178,24 +178,6 @@ describe('GlimpseProtocolAdapter', () => {
     const bidRequests = [getBidRequest()]
     const bidderRequest = getBidderRequest()
 
-    it('Adds a demo flag', () => {
-      const request = spec.buildRequests(bidRequests, bidderRequest)
-      const payload = JSON.parse(request.data)
-      expect(payload.data.demo).to.be.false
-    })
-
-    it('Adds an account id', () => {
-      const request = spec.buildRequests(bidRequests, bidderRequest)
-      const payload = JSON.parse(request.data)
-      expect(payload.data.account).to.equal(-1)
-    })
-
-    it('Adds a demand provider', () => {
-      const request = spec.buildRequests(bidRequests, bidderRequest)
-      const payload = JSON.parse(request.data)
-      expect(payload.data.demand).to.equal('glimpse')
-    })
-
     it('Adds GDPR consent', () => {
       const request = spec.buildRequests(bidRequests, bidderRequest)
       const payload = JSON.parse(request.data)

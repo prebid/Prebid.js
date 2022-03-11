@@ -11,7 +11,7 @@ const DEFAULT_AD_UNIT_CODE = '/19968336/header-bid-tag-1';
 const DEFAULT_AD_UNIT_TYPE = 'banner';
 const DEFAULT_PARAMS_BID_OVERRIDE = {};
 const DEFAULT_VIDEO_CONTEXT = 'instream';
-const ADAPTER_VERSION = '1.0.1';
+const ADAPTER_VERSION = '1.0.2';
 const PREBID_VERSION = '$prebid.version$';
 const INTEGRATION_METHOD = 'prebid.js';
 
@@ -175,6 +175,16 @@ describe('YahooSSP Bid Adapter:', () => {
   it('PLACEHOLDER TO PASS GULP', () => {
     const obj = {};
     expect(obj).to.be.an('object');
+  });
+
+  describe('Validate basic properties', () => {
+    it('should define the correct bidder code', () => {
+      expect(spec.code).to.equal('yahoossp')
+    });
+
+    it('should define the correct vendor ID', () => {
+      expect(spec.gvlid).to.equal(25)
+    });
   });
 
   describe('getUserSyncs()', () => {
@@ -655,6 +665,33 @@ describe('YahooSSP Bid Adapter:', () => {
       };
       const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
       expect(data.imp[0].ext.data).to.deep.equal(validBidRequests[0].ortb2Imp.ext.data);
+    });
+    // adUnit.ortb2Imp.instl
+    it(`should allow adUnit.ortb2Imp.instl numeric boolean "1" to be added to the bid-request`, () => {
+      let { validBidRequests, bidderRequest } = generateBuildRequestMock({})
+      validBidRequests[0].ortb2Imp = {
+        instl: 1
+      };
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.imp[0].instl).to.deep.equal(validBidRequests[0].ortb2Imp.instl);
+    });
+
+    it(`should prevent adUnit.ortb2Imp.instl boolean "true" to be added to the bid-request`, () => {
+      let { validBidRequests, bidderRequest } = generateBuildRequestMock({})
+      validBidRequests[0].ortb2Imp = {
+        instl: true
+      };
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.imp[0].instl).to.not.exist;
+    });
+
+    it(`should prevent adUnit.ortb2Imp.instl boolean "false" to be added to the bid-request`, () => {
+      let { validBidRequests, bidderRequest } = generateBuildRequestMock({})
+      validBidRequests[0].ortb2Imp = {
+        instl: false
+      };
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.imp[0].instl).to.not.exist;
     });
   });
 
@@ -1326,6 +1363,14 @@ describe('YahooSSP Bid Adapter:', () => {
         bidderRequest.bids[0].params.ttl = 400;
         const response = spec.interpretResponse(serverResponse, {bidderRequest});
         expect(response[0].ttl).to.equal(500);
+      });
+    });
+
+    describe('Aliasing support', () => {
+      it('should return undefined as the bidder code value', () => {
+        const { serverResponse, bidderRequest } = generateResponseMock('banner');
+        const response = spec.interpretResponse(serverResponse, {bidderRequest});
+        expect(response[0].bidderCode).to.be.undefined;
       });
     });
   });

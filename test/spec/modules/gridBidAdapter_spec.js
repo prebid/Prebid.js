@@ -118,6 +118,24 @@ describe('TheMediaGrid Adapter', function () {
       }
     ];
 
+    it('should be content categories and genre', function () {
+      const site = {
+        cat: ['IAB2'],
+        pagecat: ['IAB2-2'],
+        content: {
+          genre: 'Adventure'
+        }
+      };
+
+      const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
+        arg => arg === 'ortb2.site' ? site : null);
+      const request = spec.buildRequests([bidRequests[0]], bidderRequest);
+      const payload = parseRequest(request.data);
+      expect(payload.site.cat).to.deep.equal([...site.cat, ...site.pagecat]);
+      expect(payload.site.content.genre).to.deep.equal(site.content.genre);
+      getConfigStub.restore();
+    });
+
     it('should attach valid params to the tag', function () {
       const fpdUserIdVal = '0b0f84a1-1596-4165-9742-2e1a7dfac57f';
       const getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage').callsFake(
@@ -381,6 +399,24 @@ describe('TheMediaGrid Adapter', function () {
       expect(payload.user.ext.eids).to.deep.equal(eids);
     });
 
+    it('if userId is present payload must have user.ext param with right keys', function () {
+      const ortb2UserExtDevice = {
+        screenWidth: 1200,
+        screenHeight: 800,
+        language: 'ru'
+      };
+      const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
+        arg => arg === 'ortb2.user.ext.device' ? ortb2UserExtDevice : null);
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
+      expect(payload).to.have.property('user');
+      expect(payload.user).to.have.property('ext');
+      expect(payload.user.ext.device).to.deep.equal(ortb2UserExtDevice);
+      getConfigStub.restore();
+    });
+
     it('if schain is present payload must have source.ext.schain param', function () {
       const schain = {
         complete: 1,
@@ -579,6 +615,32 @@ describe('TheMediaGrid Adapter', function () {
       expect(payload.imp[2].ext).to.deep.equal({
         divid: bidRequests[2].adUnitCode
       });
+    });
+
+    it('should contain imp[].instl if available', function() {
+      const ortb2Imp = [{
+        instl: 1
+      }, {
+        instl: 2,
+        ext: {
+          data: {
+            adserver: {
+              name: 'ad_server_name',
+              adslot: '/222222/slot'
+            },
+            pbadslot: '/222222/slot'
+          }
+        }
+      }];
+      const bidRequestsWithOrtb2Imp = bidRequests.slice(0, 3).map((bid, ind) => {
+        return Object.assign(ortb2Imp[ind] ? { ortb2Imp: ortb2Imp[ind] } : {}, bid);
+      });
+      const request = spec.buildRequests(bidRequestsWithOrtb2Imp, bidderRequest);
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
+      expect(payload.imp[0].instl).to.equal(1);
+      expect(payload.imp[1].instl).to.equal(2);
+      expect(payload.imp[2].instl).to.be.undefined;
     });
 
     it('all id must be a string', function() {
