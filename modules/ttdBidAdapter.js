@@ -458,7 +458,7 @@ export const spec = {
             {
               width: bid.w,
               height: bid.h,
-              ad: utils.replaceAuctionPrice(bid.adm, bid.originalCpm || cpm),
+              ad: utils.replaceAuctionPrice(bid.adm, cpm),
               mediaType: BANNER
             }
           );
@@ -472,9 +472,9 @@ export const spec = {
             }
           );
           if (bid.nurl) {
-            bidResponse.vastUrl = utils.replaceAuctionPrice(bid.nurl, bid.originalCpm || cpm);
+            bidResponse.vastUrl = utils.replaceAuctionPrice(bid.nurl, cpm);
           } else {
-            bidResponse.vastXml = utils.replaceAuctionPrice(bid.adm, bid.originalCpm || cpm);
+            bidResponse.vastXml = utils.replaceAuctionPrice(bid.adm, cpm);
           }
         }
 
