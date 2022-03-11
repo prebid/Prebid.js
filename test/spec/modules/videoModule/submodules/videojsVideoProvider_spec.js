@@ -6,6 +6,10 @@ const {
 } = require('modules/videoModule/constants/ortb.js');
 const { AD_POSITION } = require('../../../../../modules/videoModule/constants/ortb');
 
+import {
+  PLAYBACK_MODE, SETUP_COMPLETE, SETUP_FAILED, PLAY, AD_IMPRESSION
+} from 'modules/videoModule/constants/events.js'
+
 describe('videojsProvider', function () {
   describe('init', function () {
     let config;
@@ -22,11 +26,24 @@ describe('videojsProvider', function () {
     });
 
     it('should trigger failure when videojs is missing', function () {
-      // TODO: Implement when callbacks are added
+      const provider = VideojsProvider(config, null, adState, timeState, callbackStorage, utils);
+      const setupFailed = sinon.spy();
+      provider.onEvents([SETUP_FAILED], setupFailed);
+      provider.init();
+      expect(setupFailed.calledOnce).to.be.true;
+      const payload = setupFailed.args[0][1];
+      expect(payload.errorCode).to.be.equal(-1);
     });
 
     it('should trigger failure when videojs version is under min supported version', function () {
-      // TODO: Implement when callbacks are added
+      videojs.VERSION = '0.0.0'
+      const provider = VideojsProvider(config, videojs, adState, timeState, callbackStorage, utils);
+      const setupFailed = sinon.spy();
+      provider.onEvents([SETUP_FAILED], setupFailed);
+      provider.init();
+      expect(setupFailed.calledOnce).to.be.true;
+      const payload = setupFailed.args[0][1];
+      expect(payload.errorCode).to.be.equal(-2);
     });
 
     it('should instantiate the player when uninstantied', function () {
@@ -37,6 +54,7 @@ describe('videojsProvider', function () {
       config.divId = 'test-div'
       const provider = VideojsProvider(config, videojs, adState, timeState, callbackStorage, utils);
       provider.init();
+
       expect(videojs.getPlayer('test-div')).to.be.an('object')
       videojs.getPlayer('test-div').dispose()
     });
@@ -55,7 +73,18 @@ describe('videojsProvider', function () {
     });
 
     it('should trigger setup complete when player is already instantied', function () {
-      // TODO: Implement when callbacks are added
+      const div = document.createElement('div');
+      div.setAttribute('id', 'test-div');
+      document.body.appendChild(div);
+      videojs(div, {})
+      config.playerConfig = {};
+      config.divId = 'test-div'
+      const provider = VideojsProvider(config, videojs, adState, timeState, callbackStorage, utils);
+
+      const setupComplete = sinon.spy();
+      provider.onEvents([SETUP_COMPLETE], setupComplete);
+      provider.init();
+      expect(setupComplete.calledOnce).to.be.true;
     });
   });
 
@@ -78,7 +107,7 @@ describe('videojsProvider', function () {
     });
 
     it('should populate oRTB params without ima present', function () {
-      const provider = VideojsProvider(config, videojs, null, null, null, utils);
+      const provider = VideojsProvider(config, videojs,  adState, timeState, callbackStorage, utils);
       provider.init();
 
       const oRTB = provider.getOrtbParams();
