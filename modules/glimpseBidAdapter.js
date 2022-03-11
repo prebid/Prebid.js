@@ -42,16 +42,15 @@ export const spec = {
     const url = buildQuery(bidderRequest)
     const auth = getVaultJwt()
     const referer = getReferer(bidderRequest)
-    const bidRequests = validBidRequests.map(processBidRequest)
-    const firstPartyData = getFirstPartyData()
+    const imp = validBidRequests.map(processBid)
+    const fpd = getFirstPartyData()
 
     const data = {
       auth,
       data: {
         referer,
-        bidRequests,
-        site: firstPartyData.site,
-        user: firstPartyData.user,
+        imp,
+        fpd,
         bidderCode: spec.code,
       }
     }
@@ -127,18 +126,13 @@ function isCcpaApplies(bidderRequest) {
   return isString(bidderRequest.uspConsent) && bidderRequest.uspConsent.substr(1, 3) !== '---'
 }
 
-function processBidRequest(bidRequest) {
-  const demand = bidRequest.params.demand || 'glimpse'
-  const sizes = normalizeSizes(bidRequest.sizes)
-  const keywords = bidRequest.params.keywords || {}
+function processBid(bid) {
+  const sizes = normalizeSizes(bid.sizes)
 
   return {
-    demand,
+    bid: bid.bidId,
+    pid: bid.params.placementId,
     sizes,
-    keywords,
-    bidId: bidRequest.bidId,
-    placementId: bidRequest.params.placementId,
-    unitCode: bidRequest.adUnitCode,
   }
 }
 
