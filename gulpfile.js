@@ -28,6 +28,7 @@ var fs = require('fs');
 var jsEscape = require('gulp-js-escape');
 const path = require('path');
 const execa = require('execa');
+const merge = require('merge-stream');
 
 var prebid = require('./package.json');
 var dateString = 'Updated : ' + (new Date()).toISOString().substring(0, 10);
@@ -49,7 +50,7 @@ function bundleToStdout() {
 bundleToStdout.displayName = 'bundle-to-stdout';
 
 function clean() {
-  return gulp.src(['build'], {
+  return gulp.src(['build', 'dist'], {
     read: false,
     allowEmpty: true
   })
@@ -145,6 +146,13 @@ function makeWebpackPkg() {
     .pipe(terser())
     .pipe(gulpif(file => file.basename === 'prebid-core.js', header(banner, { prebid: prebid })))
     .pipe(gulp.dest('build/dist'));
+}
+
+function buildDistFolder() {
+  const min = gulp.src(['**/*', '!prebid.js*'], {cwd: 'build/dist'}).pipe(gulp.dest('dist/min'));
+  const dev = gulp.src(['**/*', '!prebid.js*'], {cwd: 'build/dev'}).pipe(gulp.dest('dist/dev'));
+  const nfp = gulp.src(['prebid.js*'], {cwd: 'build/dist'}).pipe(gulp.dest('dist/not-for-prod'));
+  return merge([min, dev, nfp]);
 }
 
 function getModulesListToAddInBanner(modules) {
@@ -408,7 +416,8 @@ gulp.task(viewCoverage);
 
 gulp.task('coveralls', gulp.series('test-coverage', coveralls));
 
-gulp.task('build', gulp.series(clean, 'build-bundle-prod'));
+gulp.task('build-dist', buildDistFolder)
+gulp.task('build', gulp.series(clean, gulp.parallel('build-bundle-dev', 'build-bundle-prod'), 'build-dist'));
 gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
 
 gulp.task('serve', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, test)));
