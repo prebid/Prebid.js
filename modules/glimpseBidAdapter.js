@@ -1,7 +1,7 @@
 import { BANNER } from '../src/mediaTypes.js'
 import { config } from '../src/config.js'
 import { getStorageManager } from '../src/storageManager.js'
-import { isArray } from '../src/utils.js'
+import { isArray, tryAppendQueryString } from '../src/utils.js'
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 
 const GVLID = 1012
@@ -39,9 +39,9 @@ export const spec = {
    * @returns {ServerRequest}
    */
   buildRequests: (validBidRequests, bidderRequest) => {
+    const url = buildQuery(bidderRequest)
     const auth = getVaultJwt()
     const referer = getReferer(bidderRequest)
-    const gdprConsent = getGdprConsentChoice(bidderRequest)
     const bidRequests = validBidRequests.map(processBidRequest)
     const firstPartyData = getFirstPartyData()
 
@@ -49,7 +49,6 @@ export const spec = {
       auth,
       data: {
         referer,
-        gdprConsent,
         bidRequests,
         site: firstPartyData.site,
         user: firstPartyData.user,
@@ -59,7 +58,7 @@ export const spec = {
 
     return {
       method: 'POST',
-      url: ENDPOINT,
+      url,
       data: JSON.stringify(data),
       options: {},
     }
@@ -104,27 +103,28 @@ function getReferer(bidderRequest) {
   return ''
 }
 
-function getGdprConsentChoice(bidderRequest) {
-  const hasGdprConsent =
-    hasValue(bidderRequest) &&
-    hasValue(bidderRequest.gdprConsent)
-
-  if (hasGdprConsent) {
-    const gdprConsent = bidderRequest.gdprConsent
-    const hasGdprApplies = hasBooleanValue(gdprConsent.gdprApplies)
-
-    return {
-      consentString: gdprConsent.consentString || '',
-      vendorData: gdprConsent.vendorData || {},
-      gdprApplies: hasGdprApplies ? gdprConsent.gdprApplies : true,
-    }
+function buildQuery(bidderRequest) {
+  let url = ENDPOINT + '?'
+  url = tryAppendQueryString(url, 'ver', '$prebid.version$')
+  if (isGdprApplies(bidderRequest)) {
+    const consentString = bidderRequest.gdprConsent.consentString
+    url = tryAppendQueryString(url, 'reg', 'gdpr')
+    url = tryAppendQueryString(url, 'cmp_cs', consentString)
+  } else if (isCcpaApplies(bidderRequest)) {
+    url = tryAppendQueryString(url, 'reg', 'ccpa')
+    url = tryAppendQueryString(url, 'us_privacy', bidderRequest.uspConsent)
+  } else {
+    url = tryAppendQueryString(url, 'reg', 'none')
   }
+  return url
+}
 
-  return {
-    consentString: '',
-    vendorData: {},
-    gdprApplies: false,
-  }
+function isGdprApplies(bidderRequest) {
+  return bidderRequest.gdprConsent && hasBooleanValue(bidderRequest.gdprConsent.gdprApplies)
+}
+
+function isCcpaApplies(bidderRequest) {
+  return bidderRequest.uspConsent && bidderRequest.uspConsent.substr(1, 3) !== '---'
 }
 
 function processBidRequest(bidRequest) {
