@@ -50,6 +50,10 @@ export const spec = {
         data = tryAppendQueryString(data, 'imark', '1');
       }
       data = tryAppendQueryString(data, 'tp', bidderRequest.refererInfo.referer);
+      const hyperId = getHyperId(validReq);
+      if (hyperId != null) {
+        data = tryAppendQueryString(data, 'hyper_id', hyperId);
+      }
       // remove the trailing "&"
       if (data.lastIndexOf('&') === data.length - 1) {
         data = data.substring(0, data.length - 1);
@@ -261,6 +265,18 @@ function getSizes(validReq) {
 function getCurrencyType() {
   if (config.getConfig('currency.adServerCurrency') && config.getConfig('currency.adServerCurrency').toUpperCase() === 'USD') return 'USD';
   return 'JPY';
+}
+
+/**
+ *
+ * @param validReq request
+ * @return {null|string}
+ */
+function getHyperId(validReq) {
+  if (validReq.userId && validReq.userId.novatiq && validReq.userId.novatiq.syncResponse === 1) {
+    return validReq.userId.novatiq.id;
+  }
+  return null;
 }
 
 registerBidder(spec);
