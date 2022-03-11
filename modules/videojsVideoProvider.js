@@ -173,6 +173,28 @@ export const utils = {
     }
 
     return bottom >= 0 ? AD_POSITION.ABOVE_THE_FOLD : AD_POSITION.BELOW_THE_FOLD;
+  },
+  getVideojsEventName: function(eventName) {
+    switch (eventName) {
+      case SETUP_COMPLETE:
+        return 'ready';
+      case SETUP_FAILED:
+        return 'error';
+      case DESTROYED:
+        return 'dispose';
+      case CONTENT_LOADED:
+        return 'loadeddata';
+      case SEEK_START:
+        return 'seeking';
+      case SEEK_END:
+        return 'timeupdate';
+      case VOLUME:
+        return 'volumechange';
+      case PLAYER_RESIZE:
+        return 'playerresize';
+      default:
+        return eventName;
+    }
   }
 };
 
