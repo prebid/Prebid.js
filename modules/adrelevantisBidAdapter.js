@@ -139,7 +139,7 @@ export const spec = {
     if (fpdcfg && fpdcfg.context) {
       let fdata = {
         keywords: fpdcfg.context.keywords || '',
-        category: fpdcfg.context.category || ''
+        category: fpdcfg.context.data.category || ''
       }
       payload.fpd = fdata;
     }
