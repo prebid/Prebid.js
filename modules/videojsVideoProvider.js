@@ -36,10 +36,14 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
       return;
     }
 
-    // returns the player if it exists, or attempts to instantiate a new one
-    player = videojs(divId, playerConfig, function() {
-      // callback runs in both cases
-    });
+    // creates or finds player by divId
+    player = videojs(divId, playerConfig)
+
+    if(player){
+      setupCompleteCallback && setupCompleteCallback(SETUP_COMPLETE, getSetupCompletePayload());
+    }
+
+
     // Todo: the linter doesn't like optional chaining is there a better way to do this
     const vendorConfig = config.playerConfig && config.playerConfig.params && config.playerConfig.params.vendorConfig;
     const tags = vendorConfig && vendorConfig.advertising && vendorConfig.advertising.tag;
