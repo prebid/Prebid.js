@@ -197,9 +197,9 @@ export const spec = {
         bidResponse.dealId = dealId;
       }
       if (bid.vastXml) {
-        bidResponse.vastXml = replaceAuctionPrice(bid.vastXml, bid.originalCpm);
+        bidResponse.vastXml = replaceAuctionPrice(bid.vastXml, bid.cpm);
       } else {
-        bidResponse.ad = replaceAuctionPrice(bid.ad, bid.originalCpm);
+        bidResponse.ad = replaceAuctionPrice(bid.ad, bid.cpm);
       }
       bidResponse.meta = {};
       if (bid.meta && bid.meta.advertiserDomains && isArray(bid.meta.advertiserDomains)) {
