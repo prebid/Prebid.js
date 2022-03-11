@@ -88,7 +88,18 @@ export function buildDfpVideoUrl(options) {
     sz: parseSizesInput(deepAccess(adUnit, 'mediaTypes.video.playerSize')).join('|'),
     url: encodeURIComponent(location.href),
   };
-  const encodedCustomParams = getCustParams(bid, options);
+
+  const urlSearchComponent = urlComponents.search;
+  const urlSzParam = urlSearchComponent && urlSearchComponent.sz
+  if (urlSzParam) {
+    derivedParams.sz = urlSzParam + '|' + derivedParams.sz;
+  }
+
+  let encodedCustomParams = getCustParams(bid, options);
+  const urlCustParams = urlSearchComponent.cust_params;
+  if (urlCustParams) {
+    encodedCustomParams = urlCustParams + '%26' + encodedCustomParams;
+  }
 
   const queryParams = Object.assign({},
     defaultParamConstants,
@@ -228,7 +239,6 @@ function buildUrlFromAdserverUrlComponents(components, bid, options) {
 
   const encodedCustomParams = getCustParams(bid, options);
   components.search.cust_params = (components.search.cust_params) ? components.search.cust_params + '%26' + encodedCustomParams : encodedCustomParams;
-
   return buildUrl(components);
 }
 
