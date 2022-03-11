@@ -28,7 +28,7 @@ export const spec = {
     return (
       hasValue(bid) &&
       hasValue(bid.params) &&
-      hasStringValue(bid.params.placementId)
+      isString(bid.params.placementId)
     )
   },
 
@@ -94,7 +94,7 @@ function getReferer(bidderRequest) {
   const hasReferer =
     hasValue(bidderRequest) &&
     hasValue(bidderRequest.refererInfo) &&
-    hasStringValue(bidderRequest.refererInfo.referer)
+    isString(bidderRequest.refererInfo.referer)
 
   if (hasReferer) {
     return bidderRequest.refererInfo.referer
@@ -120,11 +120,11 @@ function buildQuery(bidderRequest) {
 }
 
 function isGdprApplies(bidderRequest) {
-  return bidderRequest.gdprConsent && hasBooleanValue(bidderRequest.gdprConsent.gdprApplies)
+  return hasValue(bidderRequest.gdprConsent) && isBoolean(bidderRequest.gdprConsent.gdprApplies)
 }
 
 function isCcpaApplies(bidderRequest) {
-  return bidderRequest.uspConsent && bidderRequest.uspConsent.substr(1, 3) !== '---'
+  return isString(bidderRequest.uspConsent) && bidderRequest.uspConsent.substr(1, 3) !== '---'
 }
 
 function processBidRequest(bidRequest) {
@@ -193,7 +193,7 @@ function isValidBidResponse(bidResponse) {
     hasValue(bidResponse.body) &&
     hasValue(bidResponse.body.data) &&
     hasArrayValue(bidResponse.body.data.bids) &&
-    hasStringValue(bidResponse.body.auth)
+    isString(bidResponse.body.auth)
   )
 }
 
@@ -204,14 +204,14 @@ function hasValue(value) {
   )
 }
 
-function hasBooleanValue(value) {
+function isBoolean(value) {
   return (
     hasValue(value) &&
     typeof value === 'boolean'
   )
 }
 
-function hasStringValue(value) {
+function isString(value) {
   return (
     hasValue(value) &&
     typeof value === 'string' &&
