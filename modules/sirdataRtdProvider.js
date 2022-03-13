@@ -398,6 +398,54 @@ export function addSegmentData(adUnits, data, moduleConfig, onDone) {
               }
               break;
 
+            case 'yahoossp':
+              // For curation Yahoo is pid 30339
+              curationId = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('curationId') ? moduleConfig.params.bidders[bidderIndex].curationId : '30339');
+              if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
+                curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore);
+              }
+              sirdataMergedList = sirdataList.concat(curationData.segments).concat(curationData.categories);
+              if (sirdataMergedList && sirdataMergedList.length > 0) {
+                if (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
+                  loadCustomFunction(moduleConfig.params.bidders[bidderIndex].customFunction, adUnit, sirdataMergedList, data, bid);
+                } else {
+                  setBidderOrtb2(bid.bidder, data.segments.concat(curationData.segments), sirdataMergedList);
+                }
+              }
+              break;
+
+            case 'openx':
+              // For curation OpenX is pid 30342
+              curationId = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('curationId') ? moduleConfig.params.bidders[bidderIndex].curationId : '30342');
+              if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
+                curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore);
+              }
+              sirdataMergedList = sirdataList.concat(curationData.segments).concat(curationData.categories);
+              if (sirdataMergedList && sirdataMergedList.length > 0) {
+                if (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
+                  loadCustomFunction(moduleConfig.params.bidders[bidderIndex].customFunction, adUnit, sirdataMergedList, data, bid);
+                } else {
+                  setBidderOrtb2(bid.bidder, data.segments.concat(curationData.segments), sirdataMergedList);
+                }
+              }
+              break;
+
+            case 'pubmatic':
+              // For curation Pubmatic is pid 30345
+              curationId = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('curationId') ? moduleConfig.params.bidders[bidderIndex].curationId : '30345');
+              if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
+                curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore);
+              }
+              sirdataMergedList = sirdataList.concat(curationData.segments).concat(curationData.categories);
+              if (sirdataMergedList && sirdataMergedList.length > 0) {
+                if (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
+                  loadCustomFunction(moduleConfig.params.bidders[bidderIndex].customFunction, adUnit, sirdataMergedList, data, bid);
+                } else {
+                  setBidderOrtb2(bid.bidder, data.segments.concat(curationData.segments), sirdataMergedList);
+                }
+              }
+              break;
+
             default:
               if (!biddersParamsExist || indexFound) {
                 if (!utils.deepAccess(bid, 'ortb2.site.ext.data.sd_rtd')) {
