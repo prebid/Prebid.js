@@ -11,7 +11,7 @@ const ADQUERY_USER_SYNC_DOMAIN = ADQUERY_BIDDER_DOMAIN_PROTOCOL + '://' + ADQUER
 const ADQUERY_DEFAULT_CURRENCY = 'PLN';
 const ADQUERY_NET_REVENUE = true;
 const ADQUERY_TTL = 360;
-const storage = getStorageManager(ADQUERY_GVLID);
+const storage = getStorageManager({gvlid: ADQUERY_GVLID, bidderCode: ADQUERY_BIDDER_CODE});
 
 /** @type {BidderSpec} */
 export const spec = {
