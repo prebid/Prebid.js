@@ -51,7 +51,7 @@ export function getSegmentsAndCategories(reqBidsConfigObj, onDone, moduleConfig,
 
   var actualUrl = moduleConfig.params.actualUrl || getRefererInfo().referer;
 
-  const url = 'https://kvt.' + sirdataDomain + '/api/v1/public/p/' + moduleConfig.params.partnerId + '/d/' + moduleConfig.params.key + '/s?callback=&gdpr=' + gdprApplies + '&gdpr_consent=' + tcString + (actualUrl ? '&url=' + actualUrl : '');
+  const url = 'https://kvt.' + sirdataDomain + '/api/v1/public/p/' + moduleConfig.params.partnerId + '/d/' + moduleConfig.params.key + '/s?callback=&gdpr=' + gdprApplies + '&gdpr_consent=' + tcString + (actualUrl ? '&url=' + encodeURIComponent(actualUrl) : '');
   ajax(url, {
     success: function (response, req) {
       if (req.status === 200) {
@@ -89,10 +89,10 @@ export function setGlobalOrtb2(segments, categories) {
   try {
     let addOrtb2 = {};
     let testGlobal = getGlobal().getConfig('ortb2') || {};
-    if (!utils.deepAccess(testGlobal, 'user.ext.data.sd_rtd') || !utils.deepEqual(testGlobal.user.ext.data.sd_rtd, segments)) {
+    if (!utils.deepEqual(testGlobal.user.ext.data.sd_rtd, segments)) {
       utils.deepSetValue(addOrtb2, 'user.ext.data.sd_rtd', segments || {});
     }
-    if (!utils.deepAccess(testGlobal, 'site.ext.data.sd_rtd') || !utils.deepEqual(testGlobal.site.ext.data.sd_rtd, categories)) {
+    if (!utils.deepEqual(testGlobal.site.ext.data.sd_rtd, categories)) {
       utils.deepSetValue(addOrtb2, 'site.ext.data.sd_rtd', categories || {});
     }
     if (!utils.isEmpty(addOrtb2)) {
@@ -110,10 +110,10 @@ export function setBidderOrtb2(bidder, segments, categories) {
   try {
     let addOrtb2 = {};
     let testBidder = utils.deepAccess(config.getBidderConfig(), bidder + '.ortb2') || {};
-    if (!utils.deepAccess(testBidder, 'user.ext.data.sd_rtd') || !utils.deepEqual(testBidder.user.ext.data.sd_rtd, segments)) {
+    if (!utils.deepEqual(testBidder.user.ext.data.sd_rtd, segments)) {
       utils.deepSetValue(addOrtb2, 'user.ext.data.sd_rtd', segments || {});
     }
-    if (!utils.deepAccess(testBidder, 'site.ext.data.sd_rtd') || !utils.deepEqual(testBidder.site.ext.data.sd_rtd, categories)) {
+    if (!utils.deepEqual(testBidder.site.ext.data.sd_rtd, categories)) {
       utils.deepSetValue(addOrtb2, 'site.ext.data.sd_rtd', categories || {});
     }
     if (!utils.isEmpty(addOrtb2)) {
@@ -165,9 +165,8 @@ export function addSegmentData(adUnits, data, moduleConfig, onDone) {
   const globalMinScore = moduleConfig.params.hasOwnProperty('contextualMinRelevancyScore') ? moduleConfig.params.contextualMinRelevancyScore : 30;
   var sirdataData = getSegAndCatsArray(data, globalMinScore);
 
-  if (!sirdataData || (sirdataData.segments.length < 1 && sirdataData.categories.length < 1)) { utils.logError('no cats'); onDone(); return adUnits; }
-
   const sirdataList = sirdataData.segments.concat(sirdataData.categories);
+  const sirdataMergedList = [];
 
   var curationData = {'segments': [], 'categories': []};
   var curationId = '1';
@@ -186,9 +185,10 @@ export function addSegmentData(adUnits, data, moduleConfig, onDone) {
       if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
         curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], globalMinScore);
       }
+      sirdataMergedList = sirdataList.concat(curationData.segments).concat(curationData.categories);
       window.googletag.pubads().getSlots().forEach(function(n) {
-        if (typeof n.setTargeting !== 'undefined') {
-          n.setTargeting('sd_rtd', sirdataList.concat(curationData.segments).concat(curationData.categories));
+        if (typeof n.setTargeting !== 'undefined' && sirdataMergedList && sirdataMergedList.length > 0) {
+          n.setTargeting('sd_rtd', sirdataMergedList);
         }
       })
     } catch (e) { utils.logError(e); }
@@ -208,6 +208,7 @@ export function addSegmentData(adUnits, data, moduleConfig, onDone) {
       indexFound = (!!(typeof bidderIndex == 'number' && bidderIndex >= 0));
       try {
         curationData = {'segments': [], 'categories': []};
+        sirdataMergedList = [];
         let minScore = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('contextualMinRelevancyScore') ? moduleConfig.params.bidders[bidderIndex].contextualMinRelevancyScore : globalMinScore)
 
         if (!biddersParamsExist || (indexFound && (!moduleConfig.params.bidders[bidderIndex].hasOwnProperty('adUnitCodes') || moduleConfig.params.bidders[bidderIndex].adUnitCodes.indexOf(adUnit.code) !== -1))) {
@@ -233,10 +234,13 @@ export function addSegmentData(adUnits, data, moduleConfig, onDone) {
               if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
                 curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore);
               }
-              if (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
-                loadCustomFunction(moduleConfig.params.bidders[bidderIndex].customFunction, adUnit, sirdataList.concat(curationData.segments).concat(curationData.categories), data, bid);
-              } else {
-                utils.deepSetValue(bid, 'params.keywords.sd_rtd', sirdataList.concat(curationData.segments).concat(curationData.categories));
+              sirdataMergedList = sirdataList.concat(curationData.segments).concat(curationData.categories);
+              if (sirdataMergedList && sirdataMergedList.length > 0) {
+                if (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
+                  loadCustomFunction(moduleConfig.params.bidders[bidderIndex].customFunction, adUnit, sirdataMergedList, data, bid);
+                } else {
+                  utils.deepSetValue(bid, 'params.keywords.sd_rtd', sirdataMergedList);
+                }
               }
               break;
 
@@ -251,15 +255,18 @@ export function addSegmentData(adUnits, data, moduleConfig, onDone) {
               if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
                 curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore);
               }
-              if (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
-                loadCustomFunction(moduleConfig.params.bidders[bidderIndex].customFunction, adUnit, sirdataList.concat(curationData.segments).concat(curationData.categories), data, bid);
-              } else {
-                sirdataList.concat(curationData.segments).concat(curationData.categories).forEach(function(entry) {
-                  if (target.indexOf('sd_rtd=' + entry) === -1) {
-                    target.push('sd_rtd=' + entry);
-                  }
-                });
-                utils.deepSetValue(bid, 'params.target', target.join(';'));
+              sirdataMergedList = sirdataList.concat(curationData.segments).concat(curationData.categories);
+              if (sirdataMergedList && sirdataMergedList.length > 0) {
+                if (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
+                  loadCustomFunction(moduleConfig.params.bidders[bidderIndex].customFunction, adUnit, sirdataMergedList, data, bid);
+                } else {
+                  sirdataMergedList.forEach(function(entry) {
+                    if (target.indexOf('sd_rtd=' + entry) === -1) {
+                      target.push('sd_rtd=' + entry);
+                    }
+                  });
+                  utils.deepSetValue(bid, 'params.target', target.join(';'));
+                }
               }
               break;
 
@@ -269,10 +276,13 @@ export function addSegmentData(adUnits, data, moduleConfig, onDone) {
               if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
                 curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore);
               }
-              if (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
-                loadCustomFunction(moduleConfig.params.bidders[bidderIndex].customFunction, adUnit, sirdataList.concat(curationData.segments).concat(curationData.categories), data, bid);
-              } else {
-                setBidderOrtb2(bid.bidder, data.segments.concat(curationData.segments), sirdataList.concat(curationData.segments).concat(curationData.categories));
+              sirdataMergedList = sirdataList.concat(curationData.segments).concat(curationData.categories);
+              if (sirdataMergedList && sirdataMergedList.length > 0) {
+                if (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
+                  loadCustomFunction(moduleConfig.params.bidders[bidderIndex].customFunction, adUnit, sirdataMergedList, data, bid);
+                } else {
+                  setBidderOrtb2(bid.bidder, data.segments.concat(curationData.segments), sirdataMergedList);
+                }
               }
               break;
 
@@ -284,20 +294,23 @@ export function addSegmentData(adUnits, data, moduleConfig, onDone) {
                 if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
                   curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore);
                 }
-                if (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
-                  loadCustomFunction(moduleConfig.params.bidders[bidderIndex].customFunction, adUnit, sirdataList.concat(curationData.segments).concat(curationData.categories), data, bid);
-                } else {
-                  var cappIxCategories = [];
-                  var ixLength = 0;
-                  var ixLimit = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('sizeLimit') ? moduleConfig.params.bidders[bidderIndex].sizeLimit : 1000);
-                  // Push ids For publisher use and for curation if exists but limit size because the bidder uses GET parameters
-                  sirdataList.concat(curationData.segments).concat(curationData.categories).forEach(function(entry) {
-                    if (ixLength < ixLimit) {
-                      cappIxCategories.push(entry);
-                      ixLength += entry.toString().length;
-                    }
-                  });
-                  getGlobal().setConfig({ix: {firstPartyData: {sd_rtd: cappIxCategories}}});
+                sirdataMergedList = sirdataList.concat(curationData.segments).concat(curationData.categories);
+                if (sirdataMergedList && sirdataMergedList.length > 0) {
+                  if (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
+                    loadCustomFunction(moduleConfig.params.bidders[bidderIndex].customFunction, adUnit, sirdataMergedList, data, bid);
+                  } else {
+                    var cappIxCategories = [];
+                    var ixLength = 0;
+                    var ixLimit = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('sizeLimit') ? moduleConfig.params.bidders[bidderIndex].sizeLimit : 1000);
+                    // Push ids For publisher use and for curation if exists but limit size because the bidder uses GET parameters
+                    sirdataMergedList.forEach(function(entry) {
+                      if (ixLength < ixLimit) {
+                        cappIxCategories.push(entry);
+                        ixLength += entry.toString().length;
+                      }
+                    });
+                    getGlobal().setConfig({ix: {firstPartyData: {sd_rtd: cappIxCategories}}});
+                  }
                 }
               }
               break;
@@ -310,10 +323,13 @@ export function addSegmentData(adUnits, data, moduleConfig, onDone) {
               } else {
                 data.shared_taxonomy[curationId] = {contextual_categories: {}};
               }
-              if (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
-                loadCustomFunction(moduleConfig.params.bidders[bidderIndex].customFunction, adUnit, sirdataList.concat(curationData.segments).concat(curationData.categories), data, bid);
-              } else {
-                utils.deepSetValue(bid, 'ortb2.user.ext.data', {segments: sirdataData.segments.concat(curationData.segments), contextual_categories: {...data.contextual_categories, ...data.shared_taxonomy[curationId].contextual_categories}});
+              sirdataMergedList = sirdataList.concat(curationData.segments).concat(curationData.categories);
+              if (sirdataMergedList && sirdataMergedList.length > 0) {
+                if (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
+                  loadCustomFunction(moduleConfig.params.bidders[bidderIndex].customFunction, adUnit, sirdataMergedList, data, bid);
+                } else {
+                  utils.deepSetValue(bid, 'ortb2.user.ext.data', {segments: sirdataData.segments.concat(curationData.segments), contextual_categories: {...data.contextual_categories, ...data.shared_taxonomy[curationId].contextual_categories}});
+                }
               }
               break;
 
@@ -323,10 +339,13 @@ export function addSegmentData(adUnits, data, moduleConfig, onDone) {
               if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
                 curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore);
               }
-              if (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
-                loadCustomFunction(moduleConfig.params.bidders[bidderIndex].customFunction, adUnit, sirdataList.concat(curationData.segments).concat(curationData.categories), data, bid);
-              } else {
-                setBidderOrtb2(bid.bidder, sirdataList.concat(curationData.segments).concat(curationData.categories), sirdataList.concat(curationData.segments).concat(curationData.categories));
+              sirdataMergedList = sirdataList.concat(curationData.segments).concat(curationData.categories);
+              if (sirdataMergedList && sirdataMergedList.length > 0) {
+                if (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
+                  loadCustomFunction(moduleConfig.params.bidders[bidderIndex].customFunction, adUnit, sirdataMergedList, data, bid);
+                } else {
+                  setBidderOrtb2(bid.bidder, data.segments.concat(curationData.segments), sirdataMergedList);
+                }
               }
               break;
 
@@ -336,10 +355,13 @@ export function addSegmentData(adUnits, data, moduleConfig, onDone) {
               if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
                 curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore);
               }
-              if (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
-                loadCustomFunction(moduleConfig.params.bidders[bidderIndex].customFunction, adUnit, sirdataList.concat(curationData.segments).concat(curationData.categories), data, bid);
-              } else {
-                setBidderOrtb2(bid.bidder, data.segments.concat(curationData.segments), sirdataList.concat(curationData.segments).concat(curationData.categories));
+              sirdataMergedList = sirdataList.concat(curationData.segments).concat(curationData.categories);
+              if (sirdataMergedList && sirdataMergedList.length > 0) {
+                if (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
+                  loadCustomFunction(moduleConfig.params.bidders[bidderIndex].customFunction, adUnit, sirdataMergedList, data, bid);
+                } else {
+                  setBidderOrtb2(bid.bidder, data.segments.concat(curationData.segments), sirdataMergedList);
+                }
               }
               break;
 
@@ -350,10 +372,13 @@ export function addSegmentData(adUnits, data, moduleConfig, onDone) {
               if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
                 curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore);
               }
-              if (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
-                loadCustomFunction(moduleConfig.params.bidders[bidderIndex].customFunction, adUnit, sirdataList.concat(curationData.segments).concat(curationData.categories), data, bid);
-              } else {
-                setBidderOrtb2(bid.bidder, data.segments.concat(curationData.segments), sirdataList.concat(curationData.segments).concat(curationData.categories));
+              sirdataMergedList = sirdataList.concat(curationData.segments).concat(curationData.categories);
+              if (sirdataMergedList && sirdataMergedList.length > 0) {
+                if (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
+                  loadCustomFunction(moduleConfig.params.bidders[bidderIndex].customFunction, adUnit, sirdataMergedList, data, bid);
+                } else {
+                  setBidderOrtb2(bid.bidder, data.segments.concat(curationData.segments), sirdataMergedList);
+                }
               }
               break;
 
@@ -363,10 +388,13 @@ export function addSegmentData(adUnits, data, moduleConfig, onDone) {
               if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
                 curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore);
               }
-              if (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
-                loadCustomFunction(moduleConfig.params.bidders[bidderIndex].customFunction, adUnit, sirdataList.concat(curationData.segments).concat(curationData.categories), data, bid);
-              } else {
-                setBidderOrtb2(bid.bidder, data.segments.concat(curationData.segments), sirdataList.concat(curationData.segments).concat(curationData.categories));
+              sirdataMergedList = sirdataList.concat(curationData.segments).concat(curationData.categories);
+              if (sirdataMergedList && sirdataMergedList.length > 0) {
+                if (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
+                  loadCustomFunction(moduleConfig.params.bidders[bidderIndex].customFunction, adUnit, sirdataMergedList, data, bid);
+                } else {
+                  setBidderOrtb2(bid.bidder, data.segments.concat(curationData.segments), sirdataMergedList);
+                }
               }
               break;
 
