@@ -15,7 +15,7 @@
  * @property {?string} keyName
  */
 
-import {deepClone, deepSetValue, isFn, isGptPubadsDefined, isNumber, logError} from '../src/utils.js';
+import {deepClone, deepSetValue, isFn, isGptPubadsDefined, isNumber, logError, logInfo, generateUUID} from '../src/utils.js';
 import {submodule} from '../src/hook.js';
 import {ajaxBuilder} from '../src/ajax.js';
 import {loadExternalScript} from '../src/adloader.js';
