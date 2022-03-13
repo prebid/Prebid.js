@@ -1,6 +1,8 @@
 import * as browsiRTD from '../../../modules/browsiRtdProvider.js';
 import {makeSlot} from '../integration/faker/googletag.js';
 import * as utils from '../../../src/utils'
+import {default as events} from '../../../src/events';
+import * as sinon from 'sinon';
 
 describe('browsi Real time  data sub module', function () {
   const conf = {
@@ -25,6 +27,18 @@ describe('browsi Real time  data sub module', function () {
       transactionId: 1
     }
   ]};
+
+  let sandbox;
+  let eventsEmitSpy;
+
+  before(() => {
+    sandbox = sinon.sandbox.create();
+    eventsEmitSpy = sandbox.spy(events, ['emit']);
+  });
+
+  after(() => {
+    sandbox.restore();
+  });
 
   it('should init and return true', function () {
     browsiRTD.collectData();
@@ -143,6 +157,79 @@ describe('browsi Real time  data sub module', function () {
     it('should set ad unit params with prediction values', function () {
       expect(utils.deepAccess(fakeAdUnits[0], 'ortb2Imp.ext.data.browsi')).to.eql({bv: '0.20'});
       expect(utils.deepAccess(fakeAdUnits[1], 'ortb2Imp.ext.data.browsi')).to.eql({bv: '0.10'});
+    })
+  })
+
+  describe('should emit billable event', function () {
+    beforeEach(() => {
+      eventsEmitSpy.resetHistory();
+    })
+    it('should send one event per ad unit code', function () {
+      const auction = {adUnits: [
+        {
+          code: 'a',
+          transactionId: 1
+        },
+        {
+          code: 'b',
+          transactionId: 2
+        },
+        {
+          code: 'a',
+          transactionId: 3
+        },
+      ]};
+
+      browsiRTD.browsiSubmodule.getTargetingData(['a', 'b'], null, null, auction);
+      expect(eventsEmitSpy.callCount).to.equal(2);
+    })
+    it('should send events only for received ad unit codes', function () {
+      const auction = {adUnits: [
+        {
+          code: 'a',
+          transactionId: 1
+        },
+        {
+          code: 'b',
+          transactionId: 2
+        },
+        {
+          code: 'c',
+          transactionId: 3
+        },
+      ]};
+
+      browsiRTD.browsiSubmodule.getTargetingData(['a'], null, null, auction);
+      expect(eventsEmitSpy.callCount).to.equal(1);
+      browsiRTD.browsiSubmodule.getTargetingData(['b'], null, null, auction);
+      expect(eventsEmitSpy.callCount).to.equal(2);
+    })
+    it('should use 1st transaction ID in case of twin ad unit codes', function () {
+      const auction = {
+        auctionId: '123',
+        adUnits: [
+          {
+            code: 'a',
+            transactionId: 1
+          },
+          {
+            code: 'a',
+            transactionId: 3
+          },
+        ]};
+
+      const expectedCall = {
+        vendor: 'browsi',
+        type: 'adRequest',
+        transactionId: 1,
+        auctionId: '123'
+      }
+
+      browsiRTD.browsiSubmodule.getTargetingData(['a'], null, null, auction);
+      const callArguments = eventsEmitSpy.getCalls()[0].args[1];
+      // billing id is random, we can't check its value
+      delete callArguments['billingId'];
+      expect(callArguments).to.eql(expectedCall);
     })
   })
 });
