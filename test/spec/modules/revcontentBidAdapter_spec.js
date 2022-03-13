@@ -93,6 +93,31 @@ describe('revcontent adapter', function () {
       assert.equal(request.device.ua, navigator.userAgent);
     });
 
+    it('should send info about device and use getFloor', function () {
+      let validBidRequests = [{
+        bidder: 'revcontent',
+        nativeParams: {},
+        params: {
+          size: {width: 300, height: 250},
+          apiKey: '8a33fa9cf220ae685dcc3544f847cdda858d3b1c',
+          userId: 673,
+          domain: 'test.com',
+          endpoint: 'trends-s0.revcontent.com',
+          bidfloor: 0.05
+        }
+      }];
+      validBidRequests[0].getFloor = () => {
+        return {
+          floor: 0.07,
+          currency: 'USD'
+        };
+      };
+      let request = spec.buildRequests(validBidRequests, {refererInfo: {referer: 'page'}});
+      request = JSON.parse(request[0].data);
+      assert.equal(request.imp[0].bidfloor, 0.07);
+      assert.equal(request.device.ua, navigator.userAgent);
+    });
+
     it('should send info about the site and default bidfloor', function () {
       let validBidRequests = [{
         bidder: 'revcontent',
@@ -129,7 +154,6 @@ describe('revcontent adapter', function () {
       assert.deepEqual(request.site, {
         domain: 'test.com',
         page: 'page',
-        cat: ['IAB17'],
         publisher: {id: 673, domain: 'test.com'}
       });
     });
@@ -140,7 +164,8 @@ describe('revcontent adapter', function () {
       let serverResponse = {};
       let bidRequest = {};
 
-      assert.ok(!spec.interpretResponse(serverResponse, bidRequest));
+      let result = spec.interpretResponse(serverResponse, bidRequest);
+      assert.equal(result.length, 0);
     });
 
     const serverResponse = {
@@ -153,7 +178,7 @@ describe('revcontent adapter', function () {
                 id: '6bbe3eed-f443-4e2b-a8da-57fd6327b37d',
                 impid: '1',
                 price: 0.1,
-                adid: '4162547',
+                crid: '4162547',
                 nurl: 'https://trends-s0.revcontent.com/push/track/?p=${AUCTION_PRICE}&d=nTCdHIfsgKOLFuV7DS1LF%2FnTk5HiFduGU65BgKgB%2BvKyG9YV7ceQWN76HMbBE0C6gwQeXUjravv3Hq5x9TT8CM6r2oUNgkGC9mhgv2yroTH9i3cSoH%2BilxyY19fMXFirtBz%2BF%2FEXKi4bsNh%2BDMPfj0L4elo%2FJEZmx4nslvOneJJjsFjJJtUJc%2F3UPivOisSCa%2B36mAgFQqt%2FSWBriYB%2BVAufz70LaGspF6T6jDzuIyVFJUpLhZVDtLRSJEzh7Lyzzw1FmYarp%2FPg0gZDY48aDdjw5A3Tlj%2Bap0cPHLDprNOyF0dmHDn%2FOVJEDRTWvrQ2JNK1t%2Fg1bGHIih0ec6XBVIBNurqRpLFBuUY6LgXCt0wRZWTByTEZ8AEv8IoYVILJAL%2BXL%2F9IyS4eTcdOUfn5X7gT8QBghCrAFrsCg8ZXKgWddTEXbpN1lU%2FzHdI5eSHkxkJ6WcYxSkY9PyripaIbmKiyb98LQMgTD%2B20RJO5dAmXTQTAcauw6IUPTjgSPEU%2Bd6L5Txd3CM00Hbd%2Bw1bREIQcpKEmlMwrRSwe4bu1BCjlh5A9gvU9Xc2sf7ekS3qPPmtp059r5IfzdNFQJB5aH9HqeDEU%2FxbMHx4ggMgojLBBL1fKrCKLAteEDQxd7PVmFJv7GHU2733vt5TnjKiEhqxHVFyi%2B0MIYMGIziM5HfUqfq3KUf%2F%2FeiCtJKXjg7FS6hOambdimSt7BdGDIZq9QECWdXsXcQqqVLwli27HYDMFVU3TWWRyjkjbhnQID9gQJlcpwIi87jVAODb6qP%2FKGQ%3D%3D',
                 adm: '{"ver":"1.1","assets":[{"id":3,"required":1,"img":{"url":"//img.revcontent.com/?url=https://revcontent-p0.s3.amazonaws.com/content/images/15761052960288727821.jpg&static=true"}},{"id":0,"required":1,"title":{"text":"Do You Eat Any of These Craving-trigger Foods?"}},{"id":5,"required":1,"data":{"value":""}}],"link":{"url":"https://trends-s0.revcontent.com/click.php?d=A7EVbNYBVyonty19Ak08zCr9J54qg%2Bmduq6p0Zyn5%2F%2Bapm4deUo9VAXmOGEIbUBf6i7m3%2F%2FWJm%2FzTha8SJ%2Br9MZL9jhhUxDeiKb6aRY1biLrvr6tFUd1phvtKqVmPd76l9VBLFMxS1brSzKjRCJlIGmyGJg7ueFvxpE9X%2BpHmdbE2uqUdRC49ENO3XZyHCCKMAZ8XD29fasX9Kli9mKpZTqw8vayFlXbVYSUwB8wfSwCt1sIUrt0aICYc0jcyWU3785GTS1xXzQj%2FIVszFYYrdTWd%2BDijjNZtFny0OomPHp8lRy5VcQVCuLpw0Fks4myvsE38XcNvs4wO3tWTNrI%2BMqcW1%2BD2OnMSq5nN5FCbmi2ly%2F1LbN9fibaFvW%2FQbzQhN9ZsAwmhm409UTtdmSA6hd96vDxDWLeUJhVO3UQyI0yq2TtVnB9tEICD8mZNWwYehOab%2BQ1EWmTerF6ZCDx8RyZus1UrsDfRwvTCyUjCmkZhmeo4QVJkpPy6QobCsngSaxkkKhH%2Fb7coZyBXXEt3ORoYBLUbfRO6nR8GdIt8413vrYr4gTAroh46VcWK0ls0gFNe2u3%2FqP%2By1yLKbzDVaR%2Fa02G%2Biiqbw86sCYfsy7qK9atyjNTm8RkH6JLESUzxc6IEazu4iwHKGnu5phTacmseXCi8y9Y5AdBZn8VnLP%2F2a%2FyAqq93xEH%2BIrkAdhGRY1tY39rBYAtvH%2FVyNFZcong%2FutUMYbp0WhDNyfl6iWxmpE28Cx9KDcqXss0NIwQm0AWeu8ogJCIG3faAkm5PdFsUdf2X9h3HuFDbnbvnXW27ml6z9GykEzv%2F8aSZlMZ"}}'
               }
@@ -310,7 +335,7 @@ describe('revcontent adapter', function () {
         }
       };
       let bidRequest = {
-        data: {},
+        data: '{}',
         bids: [{bidId: 'bidId1'}]
       };
       const result = spec.interpretResponse(serverResponse, bidRequest)[0];

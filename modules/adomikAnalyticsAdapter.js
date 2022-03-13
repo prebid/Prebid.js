@@ -1,9 +1,8 @@
 import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
-import { logInfo } from '../src/utils.js';
-import find from 'core-js-pure/features/array/find.js';
-import findIndex from 'core-js-pure/features/array/find-index.js';
+import {logInfo} from '../src/utils.js';
+import {find, findIndex} from '../src/polyfill.js';
 
 // Events used in adomik analytics adapter
 const auctionInit = CONSTANTS.EVENTS.AUCTION_INIT;
@@ -12,6 +11,9 @@ const bidRequested = CONSTANTS.EVENTS.BID_REQUESTED;
 const bidResponse = CONSTANTS.EVENTS.BID_RESPONSE;
 const bidWon = CONSTANTS.EVENTS.BID_WON;
 const bidTimeout = CONSTANTS.EVENTS.BID_TIMEOUT;
+const ua = navigator.userAgent;
+
+var _sampled = true;
 
 let adomikAdapter = Object.assign(adapter({}),
   {
@@ -47,7 +49,7 @@ let adomikAdapter = Object.assign(adapter({}),
               type: 'request',
               event: {
                 bidder: bid.bidder.toUpperCase(),
-                placementCode: bid.placementCode
+                placementCode: bid.adUnitCode
               }
             });
           });
@@ -67,13 +69,20 @@ adomikAdapter.initializeBucketEvents = function() {
   adomikAdapter.bucketEvents = [];
 }
 
+adomikAdapter.maxPartLength = function () {
+  return (ua.includes(' MSIE ')) ? 1600 : 60000;
+};
+
 adomikAdapter.sendTypedEvent = function() {
   const groupedTypedEvents = adomikAdapter.buildTypedEvents();
 
   const bulkEvents = {
+    testId: adomikAdapter.currentContext.testId,
+    testValue: adomikAdapter.currentContext.testValue,
     uid: adomikAdapter.currentContext.uid,
     ahbaid: adomikAdapter.currentContext.id,
     hostname: window.location.hostname,
+    sampling: adomikAdapter.currentContext.sampling,
     eventsByPlacementCode: groupedTypedEvents.map(function(typedEventsByType) {
       let sizes = [];
       const eventKeys = ['request', 'response', 'winner'];
@@ -108,9 +117,10 @@ adomikAdapter.sendTypedEvent = function() {
   // Encode object in base64
   const encodedBuf = window.btoa(stringBulkEvents);
 
-  // Create final url and split it in 1600 characters max (+endpoint length)
+  // Create final url and split it (+endpoint length)
   const encodedUri = encodeURIComponent(encodedBuf);
-  const splittedUrl = encodedUri.match(/.{1,1600}/g);
+  const maxLength = adomikAdapter.maxPartLength();
+  const splittedUrl = encodedUri.match(new RegExp(`.{1,${maxLength}}`, 'g'));
 
   splittedUrl.forEach((split, i) => {
     const partUrl = `${split}&id=${adomikAdapter.currentContext.id}&part=${i}&on=${splittedUrl.length - 1}`;
@@ -120,8 +130,10 @@ adomikAdapter.sendTypedEvent = function() {
 };
 
 adomikAdapter.sendWonEvent = function (wonEvent) {
+  let keyValues = { testId: adomikAdapter.currentContext.testId, testValue: adomikAdapter.currentContext.testValue }
+  wonEvent = {...wonEvent, ...keyValues}
   const stringWonEvent = JSON.stringify(wonEvent)
-  logInfo('Won event sent to adomik prebid analytic ' + wonEvent);
+  logInfo('Won event sent to adomik prebid analytic ' + stringWonEvent);
 
   // Encode object in base64
   const encodedBuf = window.btoa(stringWonEvent);
@@ -193,17 +205,28 @@ adomikAdapter.adapterEnableAnalytics = adomikAdapter.enableAnalytics;
 
 adomikAdapter.enableAnalytics = function (config) {
   adomikAdapter.currentContext = {};
-
   const initOptions = config.options;
-  if (initOptions) {
-    adomikAdapter.currentContext = {
-      uid: initOptions.id,
-      url: initOptions.url,
-      id: '',
-      timeouted: false,
+
+  _sampled = typeof config === 'undefined' ||
+             typeof config.sampling === 'undefined' ||
+             Math.random() < parseFloat(config.sampling);
+
+  if (_sampled) {
+    if (initOptions) {
+      adomikAdapter.currentContext = {
+        uid: initOptions.id,
+        url: initOptions.url,
+        testId: initOptions.testId,
+        testValue: initOptions.testValue,
+        id: '',
+        timeouted: false,
+        sampling: config.sampling
+      }
+      logInfo('Adomik Analytics enabled with config', initOptions);
+      adomikAdapter.adapterEnableAnalytics(config);
     }
-    logInfo('Adomik Analytics enabled with config', initOptions);
-    adomikAdapter.adapterEnableAnalytics(config);
+  } else {
+    logInfo('Adomik Analytics ignored for sampling', config.sampling);
   }
 };
 

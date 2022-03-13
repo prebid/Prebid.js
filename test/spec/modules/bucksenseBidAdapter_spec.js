@@ -128,7 +128,10 @@ describe('Bucksense Adapter', function() {
           'creativeId': 'creative002',
           'currency': 'USD',
           'netRevenue': false,
-          'ad': '<div id=\"bks-banner\"><a href=\"https://www.bucksense.com\" target=\"_blank\"><img src=\"https://i.bksn.se/s/1334/c5acdc75ba096bk.jpg\" width=\"300\" height=\"250\"/></a></div>'
+          'ad': '<div id=\"bks-banner\"><a href=\"https://www.bucksense.com\" target=\"_blank\"><img src=\"https://i.bksn.se/s/1334/c5acdc75ba096bk.jpg\" width=\"300\" height=\"250\"/></a></div>',
+          'meta': {
+            'advertiserDomains': ['http://www.bucksense.com/']
+          }
         }
       };
     });

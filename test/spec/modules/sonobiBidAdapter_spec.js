@@ -2,10 +2,11 @@ import { expect } from 'chai'
 import { spec, _getPlatform } from 'modules/sonobiBidAdapter.js'
 import { newBidder } from 'src/adapters/bidderFactory.js'
 import {userSync} from '../../../src/userSync.js';
+import { config } from 'src/config.js';
+import * as utils from '../../../src/utils.js';
 
 describe('SonobiBidAdapter', function () {
   const adapter = newBidder(spec)
-
   describe('.code', function () {
     it('should return a bidder code of sonobi', function () {
       expect(spec.code).to.equal('sonobi')
@@ -237,11 +238,17 @@ describe('SonobiBidAdapter', function () {
   });
 
   describe('.buildRequests', function () {
+    let sandbox;
     beforeEach(function() {
       sinon.stub(userSync, 'canBidderRegisterSync');
+      sinon.stub(utils, 'getGptSlotInfoForAdUnitCode')
+        .onFirstCall().returns({gptSlot: '/123123/gpt_publisher/adunit-code-3', divId: 'adunit-code-3-div-id'});
+      sandbox = sinon.createSandbox();
     });
     afterEach(function() {
       userSync.canBidderRegisterSync.restore();
+      utils.getGptSlotInfoForAdUnitCode.restore();
+      sandbox.restore();
     });
     let bidRequest = [{
       'schain': {
@@ -271,6 +278,30 @@ describe('SonobiBidAdapter', function () {
       'adUnitCode': 'adunit-code-1',
       'sizes': [[300, 250], [300, 600]],
       'bidId': '30b31c1838de1f',
+      ortb2Imp: {
+        ext: {
+          data: {
+            pbadslot: '/123123/gpt_publisher/adunit-code-1'
+          }
+        }
+      }
+    },
+    {
+      'bidder': 'sonobi',
+      'params': {
+        'placement_id': '1a2b3c4d5e6f1a2b3c4e',
+        'sizes': [[300, 250], [300, 600]],
+        'referrer': 'overrides_top_window_location'
+      },
+      'adUnitCode': 'adunit-code-3',
+      'sizes': [[120, 600], [300, 600], [160, 600]],
+      'bidId': '30b31c1838de1d',
+      'getFloor': ({currency, mediaType, size}) => {
+        return {
+          currency: 'USD',
+          floor: 0.42
+        }
+      }
     },
     {
       'bidder': 'sonobi',
@@ -285,8 +316,9 @@ describe('SonobiBidAdapter', function () {
     }];
 
     let keyMakerData = {
-      '30b31c1838de1f': '1a2b3c4d5e6f1a2b3c4d|300x250,300x600|f=1.25',
-      '/7780971/sparks_prebid_LB|30b31c1838de1e': '300x250,300x600',
+      '30b31c1838de1f': '1a2b3c4d5e6f1a2b3c4d|300x250,300x600|f=1.25|gpid=/123123/gpt_publisher/adunit-code-1',
+      '30b31c1838de1d': '1a2b3c4d5e6f1a2b3c4e|300x250,300x600|f=0.42|gpid=/123123/gpt_publisher/adunit-code-3',
+      '/7780971/sparks_prebid_LB|30b31c1838de1e': '300x250,300x600|gpid=/7780971/sparks_prebid_LB',
     };
 
     let bidderRequests = {
@@ -303,6 +335,50 @@ describe('SonobiBidAdapter', function () {
       },
       uspConsent: 'someCCPAString'
     };
+
+    it('should set fpd if there is any data in ortb2', function() {
+      const ortb2 = {
+        site: {
+          ext: {
+            data: {
+              pageType: 'article',
+              category: 'tools'
+            }
+          }
+        },
+        user: {
+          ext: {
+            data: {
+              registered: true,
+              interests: ['cars']
+            }
+          }
+        }
+      };
+
+      sandbox.stub(config, 'getConfig').callsFake(key => {
+        const config = {
+          ortb2: ortb2
+        };
+        return utils.deepAccess(config, key);
+      });
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
+      expect(bidRequests.data.fpd).to.equal(JSON.stringify(ortb2));
+    });
+
+    it('should populate coppa as 1 if set in config', function () {
+      config.setConfig({coppa: true});
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
+
+      expect(bidRequests.data.coppa).to.equal(1);
+    });
+
+    it('should populate coppa as 0 if set in config', function () {
+      config.setConfig({coppa: false});
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
+
+      expect(bidRequests.data.coppa).to.equal(0);
+    });
 
     it('should return a properly formatted request', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
@@ -424,18 +500,6 @@ describe('SonobiBidAdapter', function () {
               'atype': 1
             }
           ]
-        },
-        {
-          'source': 'sharedid.org',
-          'uids': [
-            {
-              'id': '01ERJ6W40EXJZNQJVJZWASEG7J',
-              'atype': 1,
-              'ext': {
-                'third': '01ERJ6W40EXJZNQJVJZWASEG7J'
-              }
-            }
-          ]
         }
       ];
       bidRequest[1].userIdAsEids = [
@@ -445,18 +509,6 @@ describe('SonobiBidAdapter', function () {
             {
               'id': '97b1ff9b-6bf1-41fc-95de-acfd33dbb95a',
               'atype': 1
-            }
-          ]
-        },
-        {
-          'source': 'sharedid.org',
-          'uids': [
-            {
-              'id': '01ERJ6W40EXJZNQJVJZWASEG7J',
-              'atype': 1,
-              'ext': {
-                'third': '01ERJ6W40EXJZNQJVJZWASEG7J'
-              }
             }
           ]
         }
@@ -473,18 +525,6 @@ describe('SonobiBidAdapter', function () {
             {
               'id': '97b1ff9b-6bf1-41fc-95de-acfd33dbb95a',
               'atype': 1
-            }
-          ]
-        },
-        {
-          'source': 'sharedid.org',
-          'uids': [
-            {
-              'id': '01ERJ6W40EXJZNQJVJZWASEG7J',
-              'atype': 1,
-              'ext': {
-                'third': '01ERJ6W40EXJZNQJVJZWASEG7J'
-              }
             }
           ]
         }
@@ -615,6 +655,7 @@ describe('SonobiBidAdapter', function () {
             'sbi_crid': '1234abcd',
             'sbi_aid': '30292e432662bd5f86d90774b944b039',
             'sbi_mouse': 1.07,
+            'sbi_adomain': 'sonobi.com'
           },
           '30b31c1838de1e': {
             'sbi_size': '300x250',
@@ -622,7 +663,9 @@ describe('SonobiBidAdapter', function () {
             'sbi_aid': '30292e432662bd5f86d90774b944b038',
             'sbi_mouse': 1.25,
             'sbi_dozer': 'dozerkey',
-            'sbi_ct': 'video'
+            'sbi_ct': 'video',
+            'sbi_adomain': 'sonobi.com'
+
           },
           '/7780971/sparks_prebid_LB_OUTSTREAM|30b31c1838de1g': {
             'sbi_size': '300x600',
@@ -630,6 +673,8 @@ describe('SonobiBidAdapter', function () {
             'sbi_crid': '1234abcd',
             'sbi_aid': '30292e432662bd5f86d90774b944b038',
             'sbi_mouse': 1.07,
+            'sbi_adomain': 'sonobi.com'
+
           },
           '/7780971/sparks_prebid_LB|30b31c1838de1g': {},
           '30b31c1838de1zzzz': {
@@ -640,6 +685,7 @@ describe('SonobiBidAdapter', function () {
             sbi_mouse: 1.25,
             sbi_size: 'preroll',
             'sbi_crid': 'somecrid',
+            'sbi_adomain': 'sonobi.com'
 
           }
 
@@ -666,7 +712,10 @@ describe('SonobiBidAdapter', function () {
         'creativeId': '1234abcd',
         'netRevenue': true,
         'currency': 'USD',
-        'aid': '30292e432662bd5f86d90774b944b039'
+        'aid': '30292e432662bd5f86d90774b944b039',
+        meta: {
+          advertiserDomains: ['sonobi.com']
+        }
       },
       {
         'requestId': '30b31c1838de1e',
@@ -680,7 +729,10 @@ describe('SonobiBidAdapter', function () {
         'currency': 'USD',
         'dealId': 'dozerkey',
         'aid': '30292e432662bd5f86d90774b944b038',
-        'mediaType': 'video'
+        'mediaType': 'video',
+        meta: {
+          advertiserDomains: ['sonobi.com']
+        }
       },
       {
         'requestId': '30b31c1838de1g',
@@ -692,7 +744,10 @@ describe('SonobiBidAdapter', function () {
         'creativeId': '1234abcd',
         'netRevenue': true,
         'currency': 'USD',
-        'aid': '30292e432662bd5f86d90774b944b038'
+        'aid': '30292e432662bd5f86d90774b944b038',
+        meta: {
+          advertiserDomains: ['sonobi.com']
+        }
       },
       {
         'requestId': '30b31c1838de1zzzz',
@@ -707,7 +762,10 @@ describe('SonobiBidAdapter', function () {
         'dealId': 'dozerkey',
         'aid': 'force_1550072228_da1c5d030cb49150c5db8a2136175755',
         'mediaType': 'video',
-        renderer: () => {}
+        renderer: () => {},
+        meta: {
+          advertiserDomains: ['sonobi.com']
+        }
       },
     ];
 
@@ -727,6 +785,7 @@ describe('SonobiBidAdapter', function () {
           expect(resp.width).to.equal(prebidResponse[i].width);
           expect(resp.height).to.equal(prebidResponse[i].height);
           expect(resp.renderer).to.be.ok;
+          expect(resp.ad).to.equal(undefined);
         } else if (resp.mediaType === 'video') {
           expect(resp.vastUrl.indexOf('vast.xml')).to.be.greaterThan(0);
           expect(resp.ad).to.be.undefined;

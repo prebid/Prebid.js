@@ -36,8 +36,30 @@
           pbjs.setConfig({
             mass: {
               enabled: true,
+
+              // official MASS-supported config:
+              dealIdPattern: /^MASS/i,
               renderUrl: 'https://cdn.massplatform.net/bootloader.js',
-              dealIdPattern: /^MASS/i
+
+              // custom configs:
+              custom: [
+                // simple:
+                {
+                  dealIdPattern: /^abc/i,
+                  renderUrl: 'https://my.domain.com/script.js'
+                },
+
+                // flexible:
+                {
+                  match: function(bid) {
+                    // return true or false, based on given bid
+                  },
+
+                  render: function(payload) {
+                    // render the ad
+                  }
+                }
+              ]
             }
           });
         });

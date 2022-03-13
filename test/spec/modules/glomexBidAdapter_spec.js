@@ -41,7 +41,8 @@ const RESPONSE = {
       currency: 'EUR',
       netRevenue: true,
       ttl: 300,
-      ad: '<ad />'
+      ad: '<ad />',
+      adomain: ['glomex.com']
     }
   ]
 }
@@ -128,6 +129,7 @@ describe('glomexBidAdapter', function () {
       expect(result[0].netRevenue).to.equal(true)
       expect(result[0].ttl).to.equal(300)
       expect(result[0].ad).to.equal('<ad />')
+      expect(result[0].meta.advertiserDomains).to.deep.equal(['glomex.com'])
     })
   })
 })

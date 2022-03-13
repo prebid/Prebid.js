@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/gothamadsBidAdapter.js';
+import { config } from 'src/config.js';
 
 const NATIVE_BID_REQUEST = {
   code: 'native_example',
@@ -44,7 +45,10 @@ const BANNER_BID_REQUEST = {
   code: 'banner_example',
   mediaTypes: {
     banner: {
-      sizes: [[300, 250], [300, 600]]
+      sizes: [
+        [300, 250],
+        [300, 600]
+      ]
     }
   },
   bidder: 'gothamads',
@@ -53,7 +57,11 @@ const BANNER_BID_REQUEST = {
     accountId: 'accountId'
   },
   timeout: 1000,
-
+  gdprConsent: {
+    consentString: 'BOEFEAyOEFEAyAHABDENAI4AAAB9vABAASA',
+    gdprApplies: 1,
+  },
+  uspConsent: 'uspConsent'
 }
 
 const bidRequest = {
@@ -65,26 +73,27 @@ const bidRequest = {
 const VIDEO_BID_REQUEST = {
   code: 'video1',
   sizes: [640, 480],
-  mediaTypes: { video: {
-    minduration: 0,
-    maxduration: 999,
-    boxingallowed: 1,
-    skip: 0,
-    mimes: [
-      'application/javascript',
-      'video/mp4'
-    ],
-    w: 1920,
-    h: 1080,
-    protocols: [
-      2
-    ],
-    linearity: 1,
-    api: [
-      1,
-      2
-    ]
-  }
+  mediaTypes: {
+    video: {
+      minduration: 0,
+      maxduration: 999,
+      boxingallowed: 1,
+      skip: 0,
+      mimes: [
+        'application/javascript',
+        'video/mp4'
+      ],
+      w: 1920,
+      h: 1080,
+      protocols: [
+        2
+      ],
+      linearity: 1,
+      api: [
+        1,
+        2
+      ]
+    }
   },
 
   bidder: 'gothamads',
@@ -148,20 +157,29 @@ const NATIVE_BID_RESPONSE = {
       impid: 'request_imp_id',
       price: 5,
       adomain: ['example.com'],
-      adm: { native:
+      adm: {
+        native: {
+          assets: [{
+            id: 0,
+            title: 'dummyText'
+          },
           {
-            assets: [
-              {id: 0, title: 'dummyText'},
-              {id: 3, image: imgData},
-              {
-                id: 5,
-                data: {value: 'organization.name'}
-              }
-            ],
-            link: {url: 'example.com'},
-            imptrackers: ['tracker1.com', 'tracker2.com', 'tracker3.com'],
-            jstracker: 'tracker1.com'
+            id: 3,
+            image: imgData
+          },
+          {
+            id: 5,
+            data: {
+              value: 'organization.name'
+            }
           }
+          ],
+          link: {
+            url: 'example.com'
+          },
+          imptrackers: ['tracker1.com', 'tracker2.com', 'tracker3.com'],
+          jstracker: 'tracker1.com'
+        }
       },
       crid: 'crid',
       ext: {
@@ -171,8 +189,23 @@ const NATIVE_BID_RESPONSE = {
   }],
 };
 
-describe('GothamAdsAdapter', function() {
-  describe('isBidRequestValid', function() {
+describe('GothamAdsAdapter', function () {
+  describe('with COPPA', function () {
+    beforeEach(function () {
+      sinon.stub(config, 'getConfig')
+        .withArgs('coppa')
+        .returns(true);
+    });
+    afterEach(function () {
+      config.getConfig.restore();
+    });
+
+    it('should send the Coppa "required" flag set to "1" in the request', function () {
+      let serverRequest = spec.buildRequests([BANNER_BID_REQUEST]);
+      expect(serverRequest.data[0].regs.coppa).to.equal(1);
+    });
+  });
+  describe('isBidRequestValid', function () {
     it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(NATIVE_BID_REQUEST)).to.equal(true);
     });
@@ -221,6 +254,12 @@ describe('GothamAdsAdapter', function() {
       expect(request.data).to.exist;
     });
 
+    it('check consent and ccpa string is set properly', function () {
+      expect(request.data[0].regs.ext.gdpr).to.equal(1);
+      expect(request.data[0].user.ext.consent).to.equal(BANNER_BID_REQUEST.gdprConsent.consentString);
+      expect(request.data[0].regs.ext.us_privacy).to.equal(BANNER_BID_REQUEST.uspConsent);
+    });
+
     it('sends bid request to our endpoint via POST', function () {
       expect(request.method).to.equal('POST');
     });
@@ -250,7 +289,7 @@ describe('GothamAdsAdapter', function() {
   });
 
   describe('interpretResponse', function () {
-    it('Empty response must return empty array', function() {
+    it('Empty response must return empty array', function () {
       const emptyResponse = null;
       let response = spec.interpretResponse(emptyResponse);
 
@@ -273,6 +312,7 @@ describe('GothamAdsAdapter', function() {
         creativeId: BANNER_BID_RESPONSE.seatbid[0].bid[0].crid,
         dealId: BANNER_BID_RESPONSE.seatbid[0].bid[0].dealid,
         mediaType: 'banner',
+        meta: BANNER_BID_RESPONSE.seatbid[0].bid[0].adomain,
         ad: BANNER_BID_RESPONSE.seatbid[0].bid[0].adm
       }
 
@@ -281,13 +321,14 @@ describe('GothamAdsAdapter', function() {
       expect(bannerResponses).to.be.an('array').that.is.not.empty;
       let dataItem = bannerResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId',
-        'netRevenue', 'currency', 'dealId', 'mediaType');
+        'netRevenue', 'currency', 'dealId', 'mediaType', 'meta');
       expect(dataItem.requestId).to.equal(expectedBidResponse.requestId);
       expect(dataItem.cpm).to.equal(expectedBidResponse.cpm);
       expect(dataItem.ad).to.equal(expectedBidResponse.ad);
       expect(dataItem.ttl).to.equal(expectedBidResponse.ttl);
       expect(dataItem.creativeId).to.equal(expectedBidResponse.creativeId);
       expect(dataItem.netRevenue).to.be.true;
+      expect(dataItem.meta).to.have.property('advertiserDomains', expectedBidResponse.meta);
       expect(dataItem.currency).to.equal(expectedBidResponse.currency);
       expect(dataItem.width).to.equal(expectedBidResponse.width);
       expect(dataItem.height).to.equal(expectedBidResponse.height);
@@ -309,6 +350,7 @@ describe('GothamAdsAdapter', function() {
         creativeId: VIDEO_BID_RESPONSE.seatbid[0].bid[0].crid,
         dealId: VIDEO_BID_RESPONSE.seatbid[0].bid[0].dealid,
         mediaType: 'video',
+        meta: VIDEO_BID_RESPONSE.seatbid[0].bid[0].adomain,
         vastXml: VIDEO_BID_RESPONSE.seatbid[0].bid[0].adm,
         vastUrl: VIDEO_BID_RESPONSE.seatbid[0].bid[0].ext.vastUrl
       }
@@ -318,12 +360,13 @@ describe('GothamAdsAdapter', function() {
       expect(videoResponses).to.be.an('array').that.is.not.empty;
       let dataItem = videoResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'vastXml', 'vastUrl', 'ttl', 'creativeId',
-        'netRevenue', 'currency', 'dealId', 'mediaType');
+        'netRevenue', 'currency', 'dealId', 'mediaType', 'meta');
       expect(dataItem.requestId).to.equal(expectedBidResponse.requestId);
       expect(dataItem.cpm).to.equal(expectedBidResponse.cpm);
-      expect(dataItem.vastXml).to.equal(expectedBidResponse.vastXml)
+      expect(dataItem.vastXml).to.equal(expectedBidResponse.vastXml);
       expect(dataItem.ttl).to.equal(expectedBidResponse.ttl);
       expect(dataItem.creativeId).to.equal(expectedBidResponse.creativeId);
+      expect(dataItem.meta).to.have.property('advertiserDomains', expectedBidResponse.meta);
       expect(dataItem.netRevenue).to.be.true;
       expect(dataItem.currency).to.equal(expectedBidResponse.currency);
       expect(dataItem.width).to.equal(expectedBidResponse.width);
@@ -345,8 +388,11 @@ describe('GothamAdsAdapter', function() {
         netRevenue: true,
         creativeId: NATIVE_BID_RESPONSE.seatbid[0].bid[0].crid,
         dealId: NATIVE_BID_RESPONSE.seatbid[0].bid[0].dealid,
+        meta: NATIVE_BID_RESPONSE.seatbid[0].bid[0].adomain,
         mediaType: 'native',
-        native: {clickUrl: NATIVE_BID_RESPONSE.seatbid[0].bid[0].adm.native.link.url}
+        native: {
+          clickUrl: NATIVE_BID_RESPONSE.seatbid[0].bid[0].adm.native.link.url
+        }
       }
 
       let nativeResponses = spec.interpretResponse(nativeResponse);
@@ -354,11 +400,12 @@ describe('GothamAdsAdapter', function() {
       expect(nativeResponses).to.be.an('array').that.is.not.empty;
       let dataItem = nativeResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'native', 'ttl', 'creativeId',
-        'netRevenue', 'currency', 'dealId', 'mediaType');
+        'netRevenue', 'currency', 'dealId', 'mediaType', 'meta');
       expect(dataItem.requestId).to.equal(expectedBidResponse.requestId);
       expect(dataItem.cpm).to.equal(expectedBidResponse.cpm);
-      expect(dataItem.native.clickUrl).to.equal(expectedBidResponse.native.clickUrl)
+      expect(dataItem.native.clickUrl).to.equal(expectedBidResponse.native.clickUrl);
       expect(dataItem.ttl).to.equal(expectedBidResponse.ttl);
+      expect(dataItem.meta).to.have.property('advertiserDomains', expectedBidResponse.meta);
       expect(dataItem.creativeId).to.equal(expectedBidResponse.creativeId);
       expect(dataItem.netRevenue).to.be.true;
       expect(dataItem.currency).to.equal(expectedBidResponse.currency);

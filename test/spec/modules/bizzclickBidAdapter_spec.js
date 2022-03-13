@@ -48,6 +48,17 @@ const BANNER_BID_REQUEST = {
       sizes: [[300, 250], [300, 600]]
     }
   },
+  schain: {
+    ver: '1.0',
+    complete: 1,
+    nodes: [
+      {
+        asi: 'example.com',
+        sid: '164',
+        hp: 1
+      }
+    ]
+  },
   bidder: 'bizzclick',
   params: {
     placementId: 'hash',
@@ -252,6 +263,11 @@ describe('BizzclickAdapter', function() {
       expect(request.data[0].regs.ext.us_privacy).to.equal(BANNER_BID_REQUEST.uspConsent);
     })
 
+    it('check schain is set properly', function() {
+      expect(request.data[0].source.ext.schain.complete).to.equal(1);
+      expect(request.data[0].source.ext.schain.ver).to.equal('1.0');
+    })
+
     it('Returns valid URL', function () {
       expect(request.url).to.equal('https://us-e-node1.bizzclick.com/bid?rtb_seat_id=prebidjs&secret_key=accountId');
     });
@@ -299,6 +315,8 @@ describe('BizzclickAdapter', function() {
         netRevenue: true,
         creativeId: BANNER_BID_RESPONSE.seatbid[0].bid[0].crid,
         dealId: BANNER_BID_RESPONSE.seatbid[0].bid[0].dealid,
+
+        meta: {advertiserDomains: BANNER_BID_RESPONSE.seatbid[0].bid[0].adomain},
         mediaType: 'banner',
         ad: BANNER_BID_RESPONSE.seatbid[0].bid[0].adm
       }
@@ -308,11 +326,12 @@ describe('BizzclickAdapter', function() {
       expect(bannerResponses).to.be.an('array').that.is.not.empty;
       let dataItem = bannerResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId',
-        'netRevenue', 'currency', 'dealId', 'mediaType');
+        'netRevenue', 'currency', 'dealId', 'meta', 'mediaType');
       expect(dataItem.requestId).to.equal(expectedBidResponse.requestId);
       expect(dataItem.cpm).to.equal(expectedBidResponse.cpm);
       expect(dataItem.ad).to.equal(expectedBidResponse.ad);
       expect(dataItem.ttl).to.equal(expectedBidResponse.ttl);
+      expect(dataItem.meta.advertiserDomains).to.equal(expectedBidResponse.meta.advertiserDomains);
       expect(dataItem.creativeId).to.equal(expectedBidResponse.creativeId);
       expect(dataItem.netRevenue).to.be.true;
       expect(dataItem.currency).to.equal(expectedBidResponse.currency);
@@ -337,6 +356,7 @@ describe('BizzclickAdapter', function() {
         dealId: VIDEO_BID_RESPONSE.seatbid[0].bid[0].dealid,
         mediaType: 'video',
         vastXml: VIDEO_BID_RESPONSE.seatbid[0].bid[0].adm,
+        meta: {advertiserDomains: VIDEO_BID_RESPONSE.seatbid[0].bid[0].adomain},
         vastUrl: VIDEO_BID_RESPONSE.seatbid[0].bid[0].ext.vastUrl
       }
 
@@ -345,12 +365,13 @@ describe('BizzclickAdapter', function() {
       expect(videoResponses).to.be.an('array').that.is.not.empty;
       let dataItem = videoResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'vastXml', 'vastUrl', 'ttl', 'creativeId',
-        'netRevenue', 'currency', 'dealId', 'mediaType');
+        'netRevenue', 'currency', 'dealId', 'meta', 'mediaType');
       expect(dataItem.requestId).to.equal(expectedBidResponse.requestId);
       expect(dataItem.cpm).to.equal(expectedBidResponse.cpm);
       expect(dataItem.vastXml).to.equal(expectedBidResponse.vastXml)
       expect(dataItem.ttl).to.equal(expectedBidResponse.ttl);
       expect(dataItem.creativeId).to.equal(expectedBidResponse.creativeId);
+      expect(dataItem.meta.advertiserDomains).to.equal(expectedBidResponse.meta.advertiserDomains);
       expect(dataItem.netRevenue).to.be.true;
       expect(dataItem.currency).to.equal(expectedBidResponse.currency);
       expect(dataItem.width).to.equal(expectedBidResponse.width);
@@ -373,6 +394,7 @@ describe('BizzclickAdapter', function() {
         creativeId: NATIVE_BID_RESPONSE.seatbid[0].bid[0].crid,
         dealId: NATIVE_BID_RESPONSE.seatbid[0].bid[0].dealid,
         mediaType: 'native',
+        meta: {advertiserDomains: NATIVE_BID_RESPONSE.seatbid[0].bid[0].adomain},
         native: {clickUrl: NATIVE_BID_RESPONSE.seatbid[0].bid[0].adm.native.link.url}
       }
 
@@ -381,9 +403,10 @@ describe('BizzclickAdapter', function() {
       expect(nativeResponses).to.be.an('array').that.is.not.empty;
       let dataItem = nativeResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'native', 'ttl', 'creativeId',
-        'netRevenue', 'currency', 'dealId', 'mediaType');
+        'netRevenue', 'currency', 'dealId', 'mediaType', 'meta');
       expect(dataItem.requestId).to.equal(expectedBidResponse.requestId);
       expect(dataItem.cpm).to.equal(expectedBidResponse.cpm);
+      expect(dataItem.meta.advertiserDomains).to.equal(expectedBidResponse.meta.advertiserDomains);
       expect(dataItem.native.clickUrl).to.equal(expectedBidResponse.native.clickUrl)
       expect(dataItem.ttl).to.equal(expectedBidResponse.ttl);
       expect(dataItem.creativeId).to.equal(expectedBidResponse.creativeId);

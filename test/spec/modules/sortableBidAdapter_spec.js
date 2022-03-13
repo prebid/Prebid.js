@@ -16,10 +16,6 @@ describe('sortableBidAdapter', function() {
           'keywords': {
             'key1': 'val1',
             'key2': 'val2'
-          },
-          'floorSizeMap': {
-            '728x90': 0.15,
-            '300x250': 1.20
           }
         },
         'adUnitCode': 'adunit-code',
@@ -66,27 +62,6 @@ describe('sortableBidAdapter', function() {
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('should return false when the floorSizeMap is invalid', function () {
-      let bid = makeBid();
-      bid.params.floorSizeMap = {
-        'sixforty by foureighty': 1234
-      };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-      bid.params.floorSizeMap = {
-        '728x90': 'three'
-      }
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-      bid.params.floorSizeMap = 'a';
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
-
-    it('should return true when the floorSizeMap is missing or empty', function () {
-      let bid = makeBid();
-      bid.params.floorSizeMap = {};
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
-      delete bid.params.floorSizeMap;
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
-    });
     it('should return false when the keywords are invalid', function () {
       let bid = makeBid();
       bid.params.keywords = {
@@ -135,10 +110,13 @@ describe('sortableBidAdapter', function() {
         'keywords': {
           'key1': 'val1',
           'key2': 'val2'
-        },
-        'floorSizeMap': {
-          '728x90': 0.15,
-          '300x250': 1.20
+        }
+      },
+      'ortb2Imp': {
+        'ext': {
+          'data': {
+            'pbadslot': 'abc/123'
+          }
         }
       },
       'sizes': [
@@ -202,14 +180,11 @@ describe('sortableBidAdapter', function() {
       );
       expect(requestBody.site.publisher.id).to.equal('example.com');
       expect(requestBody.imp[0].tagid).to.equal('403370');
-      expect(requestBody.imp[0].bidfloor).to.equal(0.21);
+      expect(requestBody.imp[0].floor).to.equal(0.21);
     });
 
-    it('should have the floor size map set', function () {
-      expect(requestBody.imp[0].ext.floorSizeMap).to.deep.equal({
-        '728x90': 0.15,
-        '300x250': 1.20
-      });
+    it('includes pbadslot in the bid request', function () {
+      expect(requestBody.imp[0].ext.gpid).to.equal('abc/123');
     });
 
     it('sets domain and href correctly', function () {
@@ -284,8 +259,7 @@ describe('sortableBidAdapter', function() {
         'tagId': '403370',
         'siteId': 'example.com',
         'floor': 0.21,
-        'keywords': {},
-        'floorSizeMap': {}
+        'keywords': {}
       },
       'sizes': [
         [300, 250]
@@ -329,7 +303,39 @@ describe('sortableBidAdapter', function() {
       const gdprRequest = spec.buildRequests(gdprBidRequests, {refererInfo: { referer: 'http://localhost:9876/' }});
       const gdprRequestBody = JSON.parse(gdprRequest.data);
       expect(gdprRequestBody.regs).to.deep.equal({ext: {}});
-      expect(gdprRequestBody.user).to.equal(undefined);
+      expect(gdprRequestBody.user.ext.consent).to.equal(undefined);
+    })
+
+    const eidsBidRequests = [{
+      'bidder': 'sortable',
+      'params': {
+        'tagId': '403370',
+        'siteId': 'example.com',
+        'floor': 0.21,
+        'keywords': {}
+      },
+      'bidId': '30b31c1838de1e',
+      'bidderRequestId': '22edbae2733bf6',
+      'auctionId': '1d1a030790a475'
+    }];
+
+    it('should not set user ids when none present', function() {
+      const eidsRequest = spec.buildRequests(eidsBidRequests, {refererInfo: {
+        referer: 'http://localhost:9876/'
+      }});
+      const eidsRequestBody = JSON.parse(eidsRequest.data);
+
+      expect(eidsRequestBody.user.ext.eids).to.equal(undefined);
+    })
+
+    it('should set user ids when present', function() {
+      eidsBidRequests[0].userId = { criteoId: 'sample-userid' };
+      const eidsRequest = spec.buildRequests(eidsBidRequests, {refererInfo: {
+        referer: 'http://localhost:9876/'
+      }});
+      const eidsRequestBody = JSON.parse(eidsRequest.data);
+
+      expect(eidsRequestBody.user.ext.eids.length).to.equal(1);
     })
   });
 
@@ -398,6 +404,7 @@ describe('sortableBidAdapter', function() {
       'currency': 'USD',
       'netRevenue': true,
       'mediaType': 'banner',
+      'meta': { 'advertiserDomains': [] },
       'ttl': 60,
       'ad': '<!-- creative --><div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="http://nurl"></div>'
     };
@@ -413,6 +420,7 @@ describe('sortableBidAdapter', function() {
       'netRevenue': true,
       'sortable': { 'ad_format': 'native' },
       'mediaType': 'native',
+      'meta': { 'advertiserDomains': [] },
       'ttl': 60,
       'native': {
         'clickUrl': 'https://www.sortable.com/',

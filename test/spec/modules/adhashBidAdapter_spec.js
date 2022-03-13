@@ -77,7 +77,7 @@ describe('adhashBidAdapter', function () {
       );
       expect(result.length).to.equal(1);
       expect(result[0].method).to.equal('POST');
-      expect(result[0].url).to.equal('https://bidder.adhash.org/rtb?version=1.0&prebid=true');
+      expect(result[0].url).to.equal('https://bidder.adhash.com/rtb?version=1.0&prebid=true&publisher=0xc3b09b27e9c6ef73957901aa729b9e69e5bbfbfb');
       expect(result[0].bidRequest).to.equal(bidRequest);
       expect(result[0].data).to.have.property('timezone');
       expect(result[0].data).to.have.property('location');
@@ -93,7 +93,7 @@ describe('adhashBidAdapter', function () {
       const result = spec.buildRequests([ bidRequest ], { gdprConsent: true });
       expect(result.length).to.equal(1);
       expect(result[0].method).to.equal('POST');
-      expect(result[0].url).to.equal('https://bidder.adhash.org/rtb?version=1.0&prebid=true');
+      expect(result[0].url).to.equal('https://bidder.adhash.com/rtb?version=1.0&prebid=true&publisher=0xc3b09b27e9c6ef73957901aa729b9e69e5bbfbfb');
       expect(result[0].bidRequest).to.equal(bidRequest);
       expect(result[0].data).to.have.property('timezone');
       expect(result[0].data).to.have.property('location');
@@ -123,9 +123,8 @@ describe('adhashBidAdapter', function () {
     it('should interpret the response correctly', function () {
       const serverResponse = {
         body: {
-          creatives: [{
-            costEUR: 1.234
-          }]
+          creatives: [{ costEUR: 1.234 }],
+          advertiserDomains: 'adhash.org'
         }
       };
       const result = spec.interpretResponse(serverResponse, request);
@@ -138,6 +137,7 @@ describe('adhashBidAdapter', function () {
       expect(result[0].netRevenue).to.equal(true);
       expect(result[0].currency).to.equal('EUR');
       expect(result[0].ttl).to.equal(60);
+      expect(result[0].meta.advertiserDomains).to.eql(['adhash.org']);
     });
 
     it('should return empty array when there are no creatives returned', function () {

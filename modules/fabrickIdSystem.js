@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import * as utils from '../src/utils.js'
+import { logError } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getRefererInfo } from '../src/refererDetection.js';
@@ -47,7 +47,7 @@ export const fabrickIdSubmodule = {
         window.fabrickMod1(configParams, consentData, cacheIdObj);
       }
       if (!configParams || !configParams.apiKey || typeof configParams.apiKey !== 'string') {
-        utils.logError('fabrick submodule requires an apiKey.');
+        logError('fabrick submodule requires an apiKey.');
         return;
       }
       try {
@@ -96,7 +96,7 @@ export const fabrickIdSubmodule = {
                   try {
                     responseObj = JSON.parse(response);
                   } catch (error) {
-                    utils.logError(error);
+                    logError(error);
                     responseObj = {};
                   }
                 }
@@ -104,7 +104,7 @@ export const fabrickIdSubmodule = {
               }
             },
             error: error => {
-              utils.logError(`fabrickId fetch encountered an error`, error);
+              logError(`fabrickId fetch encountered an error`, error);
               callback();
             }
           };
@@ -112,10 +112,10 @@ export const fabrickIdSubmodule = {
         };
         return {callback: resp};
       } catch (e) {
-        utils.logError(`fabrickIdSystem encountered an error`, e);
+        logError(`fabrickIdSystem encountered an error`, e);
       }
     } catch (e) {
-      utils.logError(`fabrickIdSystem encountered an error`, e);
+      logError(`fabrickIdSystem encountered an error`, e);
     }
   }
 };

@@ -5,7 +5,7 @@
 import adapter from '../src/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
-import * as utils from '../src/utils.js';
+import { getWindowTop } from '../src/utils.js';
 
 const emptyUrl = '';
 const analyticsType = 'endpoint';
@@ -13,12 +13,12 @@ const events = Object.keys(CONSTANTS.EVENTS).map(key => CONSTANTS.EVENTS[key]);
 const VERSION = '2.0.0';
 
 const adagioEnqueue = function adagioEnqueue(action, data) {
-  utils.getWindowTop().ADAGIO.queue.push({ action, data, ts: Date.now() });
+  getWindowTop().ADAGIO.queue.push({ action, data, ts: Date.now() });
 }
 
 function canAccessTopWindow() {
   try {
-    if (utils.getWindowTop().location.href) {
+    if (getWindowTop().location.href) {
       return true;
     }
   } catch (error) {
@@ -41,7 +41,7 @@ adagioAdapter.enableAnalytics = config => {
     return;
   }
 
-  const w = utils.getWindowTop();
+  const w = getWindowTop();
 
   w.ADAGIO = w.ADAGIO || {};
   w.ADAGIO.queue = w.ADAGIO.queue || [];

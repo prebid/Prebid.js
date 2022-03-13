@@ -2,6 +2,7 @@
 
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'adhese';
 const GVLID = 553;
@@ -20,11 +21,15 @@ export const spec = {
     if (validBidRequests.length === 0) {
       return null;
     }
+
     const { gdprConsent, refererInfo } = bidderRequest;
 
+    const adheseConfig = config.getConfig('adhese');
     const gdprParams = (gdprConsent && gdprConsent.consentString) ? { xt: [gdprConsent.consentString] } : {};
     const refererParams = (refererInfo && refererInfo.referer) ? { xf: [base64urlEncode(refererInfo.referer)] } : {};
-    const commonParams = { ...gdprParams, ...refererParams };
+    const globalCustomParams = (adheseConfig && adheseConfig.globalTargets) ? cleanTargets(adheseConfig.globalTargets) : {};
+    const commonParams = { ...globalCustomParams, ...gdprParams, ...refererParams };
+    const vastContentAsUrl = !(adheseConfig && adheseConfig.vastContentAsUrl == false);
 
     const slots = validBidRequests.map(bid => ({
       slotname: bidToSlotName(bid),
@@ -34,6 +39,7 @@ export const spec = {
     const payload = {
       slots: slots,
       parameters: commonParams,
+      vastContentAsUrl: vastContentAsUrl,
       user: {
         ext: {
           eids: getEids(validBidRequests),
@@ -95,7 +101,7 @@ function adResponse(bid, ad) {
 
   const bidResponse = getbaseAdResponse({
     requestId: bid.bidId,
-    mediaType: getMediaType(markup),
+    mediaType: ad.extension.mediaType,
     cpm: Number(price.amount),
     currency: price.currency,
     width: Number(ad.width),
@@ -106,11 +112,18 @@ function adResponse(bid, ad) {
       originData: adDetails.originData,
       origin: adDetails.origin,
       originInstance: adDetails.originInstance
+    },
+    meta: {
+      advertiserDomains: ad.adomain || []
     }
   });
 
   if (bidResponse.mediaType === VIDEO) {
-    bidResponse.vastXml = markup;
+    if (ad.cachedBodyUrl) {
+      bidResponse.vastUrl = ad.cachedBodyUrl
+    } else {
+      bidResponse.vastXml = markup;
+    }
   } else {
     const counter = ad.impressionCounter ? "<img src='" + ad.impressionCounter + "' style='height:1px; width:1px; margin: -1px -1px; display:none;'/>" : '';
     bidResponse.ad = markup + counter;
@@ -170,11 +183,6 @@ function getbaseAdResponse(response) {
 
 function isAdheseAd(ad) {
   return !ad.origin || ad.origin === 'JERLICIA';
-}
-
-function getMediaType(markup) {
-  const isVideo = markup.trim().toLowerCase().match(/<\?xml|<vast/);
-  return isVideo ? VIDEO : BANNER;
 }
 
 function getAdMarkup(ad) {
