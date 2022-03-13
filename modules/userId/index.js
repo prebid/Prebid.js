@@ -130,20 +130,31 @@
   * @property {(string[]|undefined)} submoduleNames - submodules to refresh
   */
 
-import find from 'core-js-pure/features/array/find.js';
-import { config } from '../../src/config.js';
+import {find, includes} from '../../src/polyfill.js';
+import {config} from '../../src/config.js';
 import events from '../../src/events.js';
-import { getGlobal } from '../../src/prebidGlobal.js';
-import { gdprDataHandler } from '../../src/adapterManager.js';
+import {getGlobal} from '../../src/prebidGlobal.js';
+import {gdprDataHandler} from '../../src/adapterManager.js';
 import CONSTANTS from '../../src/constants.json';
-import { module, hook } from '../../src/hook.js';
-import { createEidsArray, buildEidPermissions } from './eids.js';
-import { getCoreStorageManager } from '../../src/storageManager.js';
+import {hook, module} from '../../src/hook.js';
+import {buildEidPermissions, createEidsArray} from './eids.js';
+import {getCoreStorageManager} from '../../src/storageManager.js';
 import {
-  getPrebidInternal, isPlainObject, logError, isArray, cyrb53Hash, deepAccess, timestamp, delayExecution, logInfo, isFn,
-  logWarn, isEmptyStr, isNumber, isGptPubadsDefined
+  cyrb53Hash,
+  deepAccess,
+  delayExecution,
+  getPrebidInternal,
+  isArray,
+  isEmptyStr,
+  isFn,
+  isGptPubadsDefined,
+  isNumber,
+  isPlainObject,
+  logError,
+  logInfo,
+  logWarn,
+  timestamp
 } from '../../src/utils.js';
-import includes from 'core-js-pure/features/array/includes.js';
 
 const MODULE_NAME = 'User ID';
 const COOKIE = 'cookie';
