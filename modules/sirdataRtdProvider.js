@@ -142,9 +142,11 @@ export function getSegAndCatsArray(data, minScore) {
   try {
     if (data && data.contextual_categories) {
       for (let catId in data.contextual_categories) {
-        let value = data.contextual_categories[catId];
-        if (value >= minScore && sirdataData.categories.indexOf(catId) === -1) {
-          sirdataData.categories.push(catId.toString());
+        if (data.contextual_categories.hasOwnProperty(catId)) {
+          let value = data.contextual_categories[catId];
+          if (value >= minScore && sirdataData.categories.indexOf(catId) === -1) {
+            sirdataData.categories.push(catId.toString());
+          }
         }
       }
     }
@@ -152,7 +154,9 @@ export function getSegAndCatsArray(data, minScore) {
   try {
     if (data && data.segments) {
       for (let segId in data.segments) {
-        sirdataData.segments.push(data.segments[segId].toString());
+        if (data.segments.hasOwnProperty(segId)) {
+          sirdataData.segments.push(data.segments[segId].toString());
+        }
       }
     }
   } catch (e) { utils.logError(e); }
@@ -166,7 +170,7 @@ export function addSegmentData(adUnits, data, moduleConfig, onDone) {
   var sirdataData = getSegAndCatsArray(data, globalMinScore);
 
   const sirdataList = sirdataData.segments.concat(sirdataData.categories);
-  const sirdataMergedList = [];
+  var sirdataMergedList = [];
 
   var curationData = {'segments': [], 'categories': []};
   var curationId = '1';
