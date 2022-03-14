@@ -92,6 +92,16 @@ function stringifyScreenSize() {
   return [(window.screen && window.screen.width) || -1, (window.screen && window.screen.height) || -1].join('.');
 }
 
+function renameKeyValues(source) {
+  let result = {};
+  for (let prop in IAS_KEY_MAPPINGS) {
+    if (source.hasOwnProperty(prop)) {
+      result[IAS_KEY_MAPPINGS[prop]] = source[prop];
+    }
+  }
+  return result;
+}
+
 function formatTargetingData(adUnit) {
   let result = {};
   if (iasTargeting[BRAND_SAFETY_OBJECT_FIELD_NAME]) {
@@ -106,7 +116,7 @@ function formatTargetingData(adUnit) {
   if (iasTargeting[SLOTS_OBJECT_FIELD_NAME] && adUnit in iasTargeting[SLOTS_OBJECT_FIELD_NAME]) {
     utils.mergeDeep(result, iasTargeting[SLOTS_OBJECT_FIELD_NAME][adUnit]);
   }
-  return result;
+  return renameKeyValues(result);
 }
 
 function constructQueryString(anId, adUnits) {
