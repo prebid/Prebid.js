@@ -161,7 +161,7 @@ function handleEventRequest(reply, data, adObject) {
 }
 
 export function _sendAdToCreative(adObject, reply) {
-  const { adId, ad, adUrl, width, height, renderer, cpm } = adObject;
+  const { adId, ad, adUrl, width, height, renderer, cpm, originalCpm } = adObject;
   // rendering for outstream safeframe
   if (isRendererRequired(renderer)) {
     executeRenderer(renderer, adObject);
@@ -169,8 +169,8 @@ export function _sendAdToCreative(adObject, reply) {
     resizeRemoteCreative(adObject);
     reply({
       message: 'Prebid Response',
-      ad: replaceAuctionPrice(ad, cpm),
-      adUrl: replaceAuctionPrice(adUrl, cpm),
+      ad: replaceAuctionPrice(ad, originalCpm || cpm),
+      adUrl: replaceAuctionPrice(adUrl, originalCpm || cpm),
       adId,
       width,
       height
