@@ -1,9 +1,6 @@
-import * as utils from 'src/utils.js';
-import { config } from 'src/config.js';
 import { expect } from 'chai';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { spec } from '../../../modules/admaruBidAdapter.js';
-import { deepAccess } from '../../../src/utils.js';
 
 const ENDPOINT = 'https://p1.admaru.net/AdCall';
 
@@ -120,25 +117,6 @@ describe('Admaru Adapter', function () {
 
     it('should get correct bid response', () => {
       var request = spec.buildRequests(bidRequests);
-
-      let expectedResponse = [
-        {
-          impid: '26e88c3c703e66',
-          cpm: '0.2000',
-          requestId: '26e88c3c703e66',
-          netRevenue: true,
-          dealId: '',
-          creativeId: '16293398',
-          currency: 'USD',
-          ad: response,
-          width: 300,
-          height: 250,
-          mediaType: 'BANNER',
-          ttl: 360
-        }
-      ];
-
-      let result = spec.interpretResponse(response, request[0]);
     });
 
     it('handles nobid responses', () => {
