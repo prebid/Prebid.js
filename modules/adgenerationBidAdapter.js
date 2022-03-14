@@ -25,7 +25,7 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    const ADGENE_PREBID_VERSION = '1.2.0';
+    const ADGENE_PREBID_VERSION = '1.3.0';
     let serverRequests = [];
     for (let i = 0, len = validBidRequests.length; i < len; i++) {
       const validReq = validBidRequests[i];
