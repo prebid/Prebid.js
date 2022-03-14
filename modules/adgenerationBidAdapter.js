@@ -275,8 +275,8 @@ function getCurrencyType() {
  * @return {null|string}
  */
 function getHyperId(validReq) {
-  if (validReq.userId && validReq.userId.novatiq && validReq.userId.novatiq.syncResponse === 1) {
-    return validReq.userId.novatiq.id;
+  if (validReq.userId && validReq.userId.novatiq && validReq.userId.novatiq.snowflake.syncResponse === 1) {
+    return validReq.userId.novatiq.snowflake.id;
   }
   return null;
 }
