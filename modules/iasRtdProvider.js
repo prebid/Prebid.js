@@ -187,6 +187,7 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
     undefined,
     { method: 'GET' }
   );
+  callback()
 }
 
 /** @type {RtdSubmodule} */
