@@ -1,35 +1,34 @@
-import { Renderer } from '../src/Renderer.js';
+import {Renderer} from '../src/Renderer.js';
 import {
-  isEmpty,
+  chunk,
   convertCamelToUnderscore,
-  isFn,
-  createTrackPixelHtml,
   convertTypes,
+  createTrackPixelHtml,
+  deepAccess,
   deepClone,
   fill,
-  getParameterByName,
+  getBidRequest,
   getMaxValueFromArray,
   getMinValueFromArray,
-  chunk,
+  getParameterByName,
   isArray,
   isArrayOfNums,
+  isEmpty,
+  isFn,
   isNumber,
-  isStr,
   isPlainObject,
+  isStr,
   logError,
   logInfo,
   logMessage,
-  deepAccess,
-  getBidRequest,
   transformBidderParamKeywords
 } from '../src/utils.js';
-import { config } from '../src/config.js';
-import { registerBidder, getIabSubCategory } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE, VIDEO, ADPOD } from '../src/mediaTypes.js';
-import { auctionManager } from '../src/auctionManager.js';
-import find from 'core-js-pure/features/array/find.js';
-import includes from 'core-js-pure/features/array/includes.js';
-import { OUTSTREAM, INSTREAM } from '../src/video.js';
+import {config} from '../src/config.js';
+import {getIabSubCategory, registerBidder} from '../src/adapters/bidderFactory.js';
+import {ADPOD, BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {auctionManager} from '../src/auctionManager.js';
+import {find, includes} from '../src/polyfill.js';
+import {INSTREAM, OUTSTREAM} from '../src/video.js';
 
 const BIDDER_CODE = 'goldbach';
 const URL = 'https://ib.adnxs.com/ut/v3/prebid';
@@ -89,9 +88,11 @@ const mappingFileUrl = 'https://acdn.adnxs-simple.com/prebid/appnexus-mapping/ma
 const SCRIPT_TAG_START = '<script';
 const VIEWABILITY_URL_START = /\/\/cdn\.adnxs\.com\/v|\/\/cdn\.adnxs\-simple\.com\/v/;
 const VIEWABILITY_FILE_NAME = 'trk.js';
+const GVLID = 580;
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   /**

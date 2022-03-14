@@ -10,7 +10,7 @@ const GVLID = 14;
 const ANALYTICS_VERSION = '1.0.2';
 const DEFAULT_QUEUE_TIMEOUT = 4000;
 const DEFAULT_HOST = 'tag.adkernel.com';
-const storageObj = getStorageManager(GVLID);
+const storageObj = getStorageManager({gvlid: GVLID});
 
 const ADK_HB_EVENTS = {
   AUCTION_INIT: 'auctionInit',
