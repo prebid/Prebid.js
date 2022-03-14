@@ -4,8 +4,7 @@ import { config } from '../src/config.js';
 import { registerBidder, getIabSubCategory } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO, ADPOD } from '../src/mediaTypes.js';
 import { auctionManager } from '../src/auctionManager.js';
-import find from 'core-js-pure/features/array/find.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import {find, includes} from '../src/polyfill.js';
 import { OUTSTREAM, INSTREAM } from '../src/video.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { bidderSettings } from '../src/bidderSettings.js';
@@ -61,25 +60,11 @@ const SCRIPT_TAG_START = '<script';
 const VIEWABILITY_URL_START = /\/\/cdn\.adnxs\.com\/v|\/\/cdn\.adnxs\-simple\.com\/v/;
 const VIEWABILITY_FILE_NAME = 'trk.js';
 const GVLID = 32;
-const storage = getStorageManager(GVLID, BIDDER_CODE);
+const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
 
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  aliases: [
-    { code: 'mediafuseAst', gvlid: 32 },
-    { code: 'brealtime' },
-    { code: 'emxdigital', gvlid: 183 },
-    { code: 'pagescience' },
-    { code: 'defymedia' },
-    { code: 'gourmetads' },
-    { code: 'matomy' },
-    { code: 'featureforward' },
-    { code: 'oftmedia' },
-    { code: 'districtm', gvlid: 144 },
-    { code: 'adasta' },
-    { code: 'beintoo', gvlid: 618 },
-  ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   /**
