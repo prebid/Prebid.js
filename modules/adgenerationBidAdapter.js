@@ -50,9 +50,11 @@ export const spec = {
         data = tryAppendQueryString(data, 'imark', '1');
       }
       data = tryAppendQueryString(data, 'tp', bidderRequest.refererInfo.referer);
-      const hyperId = getHyperId(validReq);
-      if (hyperId != null) {
-        data = tryAppendQueryString(data, 'hyper_id', hyperId);
+      if (isIos()) {
+        const hyperId = getHyperId(validReq);
+        if (hyperId != null) {
+          data = tryAppendQueryString(data, 'hyper_id', hyperId);
+        }
       }
       // remove the trailing "&"
       if (data.lastIndexOf('&') === data.length - 1) {
@@ -277,6 +279,10 @@ function getHyperId(validReq) {
     return validReq.userId.novatiq.id;
   }
   return null;
+}
+
+function isIos() {
+  return (/(ios|ipod|ipad|iphone)/i).test(window.navigator.userAgent);
 }
 
 registerBidder(spec);

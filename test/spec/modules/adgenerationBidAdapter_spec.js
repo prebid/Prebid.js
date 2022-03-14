@@ -136,7 +136,15 @@ describe('AdgenerationAdapter', function () {
     });
 
     it('should attache params to the bannerWithHyperId request', function () {
+      const defaultUA = window.navigator.userAgent;
+      window.navigator.__defineGetter__('userAgent', function() {
+        return 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1';
+      });
       const request = spec.buildRequests(bidRequests, bidderRequest)[2];
+
+      window.navigator.__defineGetter__('userAgent', function() {
+        return defaultUA;
+      });
       expect(request.data).to.equal(data.bannerWithHyperId);
     });
     it('allows setConfig to set bidder currency for JPY', function () {
