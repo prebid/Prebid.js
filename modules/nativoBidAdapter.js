@@ -12,6 +12,63 @@ const TIME_TO_LIVE = 360
 
 const SUPPORTED_AD_TYPES = [BANNER]
 
+/**
+ * Keep track of bid data by keys
+ * @returns {Object} - Map of bid data that can be referenced by multiple keys
+ */
+const BidDataMap = () => {
+  const referenceMap = {}
+  const bids = []
+
+  /**
+   * Add a refence to the index by key value
+   * @param {String} key - The key to store the index reference
+   * @param {Integer} index - The index value of the bidData
+   */
+  function adKeyReference(key, index) {
+    if (!referenceMap.hasOwnProperty(key)) {
+      referenceMap[key] = index
+    }
+  }
+
+  /**
+   * Adds a bid to the map
+   * @param {Object} bid - Bid data
+   * @param {Array/String} keys - Keys to reference the index value
+   */
+  function addBidData(bid, keys) {
+    const index = bids.length
+    bids.push(bid)
+
+    if (Array.isArray(keys)) {
+      keys.forEach((key) => {
+        adKeyReference(String(key), index)
+      })
+      return
+    }
+
+    adKeyReference(String(keys), index)
+  }
+
+  /**
+   * Get's the bid data refrerenced by the key
+   * @param {String} key - The key value to find the bid data by
+   * @returns {Object} - The bid data
+   */
+  function getBidData(key) {
+    const stringKey = String(key)
+    if (referenceMap.hasOwnProperty(stringKey)) {
+      return bids[referenceMap[stringKey]]
+    }
+  }
+
+  // Return API
+  return {
+    addBidData,
+    getBidData,
+  }
+}
+
 const bidRequestMap = {}
 const adUnitsRequested = {}
 const extData = {}
@@ -75,8 +132,8 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     const placementIds = new Set()
-    const placmentBidIdMap = {}
     let placementId, pageUrl
+    const bidDataMap = BidDataMap()
     validBidRequests.forEach((request) => {
       pageUrl = deepAccess(
         request,
@@ -89,13 +146,13 @@ export const spec = {
         placementIds.add(placementId)
       }
 
-      var key = request.adUnitCode || placementId
-      placmentBidIdMap[key] = {
+      const bidData = {
         bidId: request.bidId,
         size: getLargestSize(request.sizes),
       }
+      bidDataMap.addBidData(bidData, [placementId, request.adUnitCode])
     })
-    bidRequestMap[bidderRequest.bidderRequestId] = placmentBidIdMap
+    bidRequestMap[bidderRequest.bidderRequestId] = bidDataMap
 
     // Build adUnit data
     const adUnitData = {
@@ -347,12 +404,12 @@ export const spec = {
    * @returns {String} - The bidId value associated with the corresponding placementId
    */
   getAdUnitData: function (bidderRequestId, bid) {
-    var data = deepAccess(bidRequestMap, `${bidderRequestId}.${bid.impid}`)
+    const bidDataMap = bidRequestMap[bidderRequestId]
 
-    if (data) return data
+    const placementId = bid.impid
+    const adUnitCode = deepAccess(bid, 'ext.ad_unit_id')
 
-    var unitCode = deepAccess(bid, 'ext.ad_unit_id')
-    return deepAccess(bidRequestMap, `${bidderRequestId}.${unitCode}`)
+    return bidDataMap.getBidData(adUnitCode) || bidDataMap.getBidData(placementId)
   },
 }
 registerBidder(spec)
