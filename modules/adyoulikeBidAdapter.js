@@ -500,7 +500,6 @@ function createBid(response, bidRequests) {
     bid.ad = response.Ad;
   }
 
-  console.log("bid: ", bid);
   return bid;
 }
 
