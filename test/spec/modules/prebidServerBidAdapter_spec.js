@@ -2910,6 +2910,24 @@ describe('S2S Adapter', function () {
       expect(requestBid.coopSync).to.be.undefined;
     });
 
+    it('should set imp banner if ortb2Imp.banner is present', function() {
+      const consentConfig = { s2sConfig: CONFIG };
+      config.setConfig(consentConfig);
+      const bidRequest = utils.deepClone(REQUEST);
+      bidRequest.ad_units[0].ortb2Imp = {
+        banner: {
+          api: 7
+        },
+        instl: 1
+      };
+
+      adapter.callBids(bidRequest, BID_REQUESTS, addBidResponse, done, ajax);
+      const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
+
+      expect(parsedRequestBody.imp[0].banner.api).to.equal(7);
+      expect(parsedRequestBody.imp[0].instl).to.equal(1);
+    });
+
     it('adds debug flag', function () {
       config.setConfig({debug: true});
 
