@@ -2670,7 +2670,7 @@ describe('User ID', function () {
         });
       })
 
-      describe('Call getEncryptedEidsForSource to get encrypted Eids for source', function() {
+      describe.only('Call getEncryptedEidsForSource to get encrypted Eids for source', function() {
         var signalSources = ['pubcid.org'];
 
         it('pbjs.getEncryptedEidsForSource should be defined', () => {
@@ -2744,14 +2744,16 @@ describe('User ID', function () {
               ]
             }
           ];
-          setSubmoduleRegistry([sharedIdSystemSubmodule]);
+          setSubmoduleRegistry([sharedIdSystemSubmodule,amxIdSubmodule]);
           init(config);
           config.setConfig({
             userSync: {
               syncDelay: 0,
               userIds: [{
                 name: 'pubCommonId', value: {'pubcid': '11111'}
-              }]
+              },
+              { name: 'amxId', value: {'amxId': 'amx-id-value-amx-id-value-amx-id-value'} },
+            ]
             }
           });
           expect(typeof (getGlobal()).getUserIdsAsEidBySource).to.equal('function');
