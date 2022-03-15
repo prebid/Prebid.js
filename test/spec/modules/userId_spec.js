@@ -2744,16 +2744,16 @@ describe('User ID', function () {
               ]
             }
           ];
-          setSubmoduleRegistry([sharedIdSystemSubmodule,amxIdSubmodule]);
+          setSubmoduleRegistry([sharedIdSystemSubmodule, amxIdSubmodule]);
           init(config);
           config.setConfig({
             userSync: {
               syncDelay: 0,
               userIds: [{
                 name: 'pubCommonId', value: {'pubcid': '11111'}
-              },
-              { name: 'amxId', value: {'amxId': 'amx-id-value-amx-id-value-amx-id-value'} },
-            ]
+              }, {
+                name: 'amxId', value: {'amxId': 'amx-id-value-amx-id-value-amx-id-value'}
+              }]
             }
           });
           expect(typeof (getGlobal()).getUserIdsAsEidBySource).to.equal('function');
