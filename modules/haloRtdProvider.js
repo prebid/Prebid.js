@@ -18,7 +18,7 @@ const AU_GVLID = 561;
 
 export const HALOID_LOCAL_NAME = 'auHaloId';
 export const RTD_LOCAL_NAME = 'auHaloRtd';
-export const storage = getStorageManager(AU_GVLID, SUBMODULE_NAME);
+export const storage = getStorageManager({gvlid: AU_GVLID, moduleName: SUBMODULE_NAME});
 
 /**
  * Deep set an object unless value present.

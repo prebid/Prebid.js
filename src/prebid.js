@@ -14,7 +14,7 @@ import { auctionManager } from './auctionManager.js';
 import { filters, targeting } from './targeting.js';
 import { hook } from './hook.js';
 import { sessionLoader } from './debugging.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import {includes} from './polyfill.js';
 import { adunitCounter } from './adUnits.js';
 import { executeRenderer, isRendererRequired } from './Renderer.js';
 import { createBid } from './bidfactory.js';
@@ -446,9 +446,8 @@ $$PREBID_GLOBAL$$.renderAd = hook('async', function (doc, id, options) {
 
         if (shouldRender) {
           // replace macros according to openRTB with price paid = bid.cpm
-          bid.ad = replaceAuctionPrice(bid.ad, bid.cpm);
-          bid.adUrl = replaceAuctionPrice(bid.adUrl, bid.cpm);
-
+          bid.ad = replaceAuctionPrice(bid.ad, bid.originalCpm || bid.cpm);
+          bid.adUrl = replaceAuctionPrice(bid.adUrl, bid.originalCpm || bid.cpm);
           // replacing clickthrough if submitted
           if (options && options.clickThrough) {
             const {clickThrough} = options;

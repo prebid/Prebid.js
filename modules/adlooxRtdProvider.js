@@ -11,16 +11,29 @@
 /* eslint standard/no-callback-literal: "off" */
 /* eslint prebid/validate-imports: "off" */
 
-import { command as analyticsCommand, COMMAND } from './adlooxAnalyticsAdapter.js';
-import { config as _config } from '../src/config.js';
-import { submodule } from '../src/hook.js';
-import { ajax } from '../src/ajax.js';
-import { getGlobal } from '../src/prebidGlobal.js';
+import {command as analyticsCommand, COMMAND} from './adlooxAnalyticsAdapter.js';
+import {config as _config} from '../src/config.js';
+import {submodule} from '../src/hook.js';
+import {ajax} from '../src/ajax.js';
+import {getGlobal} from '../src/prebidGlobal.js';
+import {getRefererInfo} from '../src/refererDetection.js';
 import {
-  getAdUnitSizes, logInfo, isPlainObject, logError, isStr, isInteger, isArray, isBoolean, mergeDeep, deepAccess,
-  _each, deepSetValue, logWarn, getGptSlotInfoForAdUnitCode
+  _each,
+  deepAccess,
+  deepSetValue,
+  getAdUnitSizes,
+  getGptSlotInfoForAdUnitCode,
+  isArray,
+  isBoolean,
+  isInteger,
+  isPlainObject,
+  isStr,
+  logError,
+  logInfo,
+  logWarn,
+  mergeDeep
 } from '../src/utils.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import {includes} from '../src/polyfill.js';
 
 const MODULE_NAME = 'adloox';
 const MODULE = `${MODULE_NAME}RtdProvider`;
@@ -285,6 +298,7 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
     }
   }
 
+  const refererInfo = getRefererInfo();
   const args = [
     [ 'v', `pbjs-${getGlobal().version}` ],
     [ 'c', config.params.clientid ],
@@ -293,7 +307,7 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
     [ 'imp', config.params.imps ],
     [ 'fc_ip', config.params.freqcap_ip ],
     [ 'fc_ipua', config.params.freqcap_ipua ],
-    [ 'pn', document.location.pathname ]
+    [ 'pn', (refererInfo.canonicalUrl || refererInfo.referer || '').substr(0, 300).split(/[?#]/)[0] ]
   ];
 
   if (!adUnits.length) {

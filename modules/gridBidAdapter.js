@@ -12,7 +12,7 @@ const TIME_TO_LIVE = 360;
 const USER_ID_KEY = 'tmguid';
 const GVLID = 686;
 const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
-export const storage = getStorageManager(GVLID, BIDDER_CODE);
+export const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
 const LOG_ERROR_MESS = {
   noAuid: 'Bid from response has no auid parameter - ',
   noAdm: 'Bid from response has no adm parameter - ',
@@ -270,6 +270,20 @@ export const spec = {
         request.regs = {};
       }
       request.regs.coppa = 1;
+    }
+
+    const site = config.getConfig('ortb2.site');
+    if (site) {
+      const pageCategory = [...(site.cat || []), ...(site.pagecat || [])].filter((category) => {
+        return category && typeof category === 'string'
+      });
+      if (pageCategory.length) {
+        request.site.cat = pageCategory;
+      }
+      const genre = deepAccess(site, 'content.genre');
+      if (genre && typeof genre === 'string') {
+        request.site.content = {...request.site.content, genre};
+      }
     }
 
     return {

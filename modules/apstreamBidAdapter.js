@@ -8,7 +8,7 @@ const CONSTANTS = {
   BIDDER_CODE: 'apstream',
   GVLID: 394
 };
-const storage = getStorageManager(CONSTANTS.GVLID, CONSTANTS.BIDDER_CODE);
+const storage = getStorageManager({gvlid: CONSTANTS.GVLID, bidderCode: CONSTANTS.BIDDER_CODE});
 
 var dsuModule = (function() {
   'use strict';
