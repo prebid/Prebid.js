@@ -310,7 +310,7 @@ export const spec = {
         .replace(/<h1>(.*)<\/h1>/gm, '\n\n===== $1 =====\n\n') // Header H1
         .replace(/<h[2-6]>(.*)<\/h[2-6]>/gm, '\n\n*** $1 ***\n\n') // Headers
         .replace(/(<([^>]+)>)/igm, ''); // Remove any other tags
-      //logMessage('https://console.appnexus.com/docs/understanding-the-debug-auction');
+      // logMessage('https://console.appnexus.com/docs/understanding-the-debug-auction');
       logMessage(debugText);
     }
 
