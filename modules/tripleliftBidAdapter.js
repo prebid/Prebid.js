@@ -180,7 +180,15 @@ function _getORTBVideo(bidRequest) {
     logWarn('Video size not defined', err);
   }
   if (video.context === 'instream') video.placement = 1;
-  if (video.context === 'outstream') video.placement = 3;
+  if (video.context === 'outstream') {
+    if (!video.placement) {
+      video.placement = 3
+    } else if ([3, 4, 5].indexOf(video.placement) === -1) {
+      logMessage(`video.placement value of ${video.placement} is invalid for outstream context. Setting placement to 3`)
+      video.placement = 3
+    }
+  }
+
   // clean up oRTB object
   delete video.playerSize;
   return video;
@@ -349,7 +357,7 @@ function _buildResponseObject(bidderRequest, bid) {
       meta: {}
     };
 
-    if (_isVideoBidRequest(breq) && bid.media_type === "video") {
+    if (_isVideoBidRequest(breq) && bid.media_type === 'video') {
       bidResponse.vastXml = bid.ad;
       bidResponse.mediaType = 'video';
       bidResponse.ttl = VIDEO_TIME_TO_LIVE;
@@ -364,7 +372,7 @@ function _buildResponseObject(bidderRequest, bid) {
     }
 
     if (bid.tl_source && bid.tl_source == 'hdx') {
-      if (_isVideoBidRequest(breq) && bid.media_type === "video") {
+      if (_isVideoBidRequest(breq) && bid.media_type === 'video') {
         bidResponse.meta.mediaType = 'video'
       } else {
         bidResponse.meta.mediaType = 'banner'
