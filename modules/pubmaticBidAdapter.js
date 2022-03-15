@@ -1065,6 +1065,12 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: (validBidRequests, bidderRequest) => {
+    if (bidderRequest && bidderRequest.bidderCode === GROUPM_ALIAS.code) {
+      // We have got the buildRequests function call for GroupM
+      logInfo('For all publishers using GroupM bidder, the PubMatic bidder will also be enabled so PubMatic server will respond back with the bids that needs to be submitted for PubMatic and GroupM in the network call sent by PubMatic bidder. Hence we do not want to create a network call for GroupM. This way we are trying to save a network call from browser.');
+      return;
+    }
+
     var refererInfo;
     if (bidderRequest && bidderRequest.refererInfo) {
       refererInfo = bidderRequest.refererInfo;
@@ -1285,6 +1291,13 @@ export const spec = {
                 newBid.adserverTargeting = {
                   'hb_buyid_pubmatic': seatbidder.ext.buyid
                 };
+              }
+
+              // if from the server-response the bid.ext.marketplace is set then
+              //    submit the bid to Prebid as marketplace name
+              if (bid.ext && !!bid.ext.marketplace) {
+                newBid.bidderCode = bid.ext.marketplace;
+                newBid.bidder = bid.ext.marketplace;
               }
 
               bidResponses.push(newBid);
