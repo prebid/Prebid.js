@@ -2668,15 +2668,6 @@ describe('User ID', function () {
         it('pbjs.registerSignalSources should be defined', () => {
           expect(typeof (getGlobal()).registerSignalSources).to.equal('function');
         });
-        it('Should called pbjs.registerSignalSources should register signals', () => {
-          var signalSources = ['pubcid.org', 'criteo.com', 'id5-sync.com'];
-          var encrypt = false;
-          pbjs.registerSignalSources(googletag, signalSources, encrypt);
-          expect(googletag.encryptedSignalProviders.length).to.be.equal(3);
-          var customSignalSources = ['pubmatic.com', 'mysegments.com'];
-          pbjs.registerSignalSources(googletag, customSignalSources, encrypt, getCustomSignal);
-          expect(googletag.encryptedSignalProviders.length).to.be.equal(5);
-        });
       })
 
       describe('Call getEncryptedEidsForSource to get encrypted Eids for source', function() {

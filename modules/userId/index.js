@@ -668,20 +668,44 @@ function encryptSignals(signals, version = 1) {
   return `${version}||${encryptedSig}`;
 }
 
-function registerSignalSources(gtag, signalSources, encrypt, customFunction) {
+function getSignalSources(encryptedSignal) {
+  let sources = encryptedSignal && encryptedSignal.eids && encryptedSignal.eids.sources;
+  let customSources = encryptedSignal && encryptedSignal.custom && encryptedSignal.custom.sources;
+  sources = sources || [];
+  customSources = customSources || [];
+  let stdSources = sources.map(function(source) {
+    return {
+      source: [source],
+      customFunc: undefined,
+      encrypt: encryptedSignal.eids && encryptedSignal.eids.encrypt
+    }
+  })
+  customSources.forEach(function(source) {
+    return Object.assign(source, { encrypt: encryptedSignal.custom.encrypt });
+  })
+  return Object.assign(stdSources, customSources);
+}
+
+function registerSignalSources(gtag) {
   if (!isGptPubadsDefined()) {
     return;
   }
   gtag.encryptedSignalProviders = gtag.encryptedSignalProviders || [];
-  signalSources.forEach(function (source) {
-    logInfo(`${MODULE_NAME} - Registering signal provider: ${source}`);
-    gtag.encryptedSignalProviders.push({
-      id: source,
-      collectorFunction: function () {
-        return getEncryptedEidsForSource(source, encrypt, customFunction);
-      }
-    });
-  });
+  let { encryptedSignal } = (getGlobal()).getConfig().userSync;
+  if (encryptSignals) {
+    let { registerDelay } = encryptedSignal;
+    let combinedSignalSources = getSignalSources(encryptedSignal);
+    setTimeout(function() {
+      combinedSignalSources.forEach(function ({source, encrypt, customFunc}) {
+        gtag.encryptedSignalProviders.push({
+          id: source[0],
+          collectorFunction: function () {
+            return getEncryptedEidsForSource(source[0], encrypt, customFunc);
+          }
+        });
+      });
+    }, registerDelay)
+  }
 }
 
 /**

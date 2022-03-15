@@ -89,13 +89,32 @@
                                 type: 'html5'
                             }
                         }],
-                        encryptedSignalSources = [  
-                                "sharedid.org", 
-                                "criteo.com",
-                                "id5-sync.com", 
-                                "pubcid.org", 
-                                "audigent.com"
-                        ],
+                        encryptedSignal: {
+                            "eids": {
+                                "sources": [
+                                    "sharedid.org",
+                                    "criteo.com",
+                                    "pubcid.org",
+                                    "audigent.com"
+                                ],
+                                "encrypt": false
+                            },
+                            "custom": {
+                                "sources": [{
+                                    source: ['pubmatic.com'],
+                                    customFunc: () => {
+                                        return '{"keywords":["tech","auto"]}';
+                                    },
+                                },{
+                                    source: ['segment.com'],
+                                    customFunc: () => {
+                                        return '[{ "id": "1", "value": "seg1" },{ "id": "2", "value": "seg2" }]';
+                                    },
+                                }],
+                                "encrypt": true
+                            },
+                            "registerDelay": 3000
+                        },                       
                         auctionDelay: 10000
                     }
                 });
@@ -115,17 +134,7 @@
                     pbjs.que.push(function() {
                         pbjs.setTargetingForGPTAsync();
                         googletag.encryptedSignalProviders= [];
-                        // Optional: Timeout added for now to get eids from all the partners before registering the signal
-                        setTimeout(function(){
-                            var signalSources =  pbjs.getConfig().userSync.encryptedSignalSources;
-                            var encrypt = false;
-                            //Register signal sources
-                            signalSources && pbjs.registerSignalSources(googletag, signalSources, encrypt);
-                            //Register custom signals
-                            var customSignalSources = ["pubmatic.com", "mysegments.com"];
-                            customSignalSources && pbjs.registerSignalSources(googletag, customSignalSources, encrypt, getCustomSignal);
-                            //googletag.pubads().refresh();
-                        },REGISTER_SIGNAL_SOURCES_TIMEOUT)
+                        pbjs.registerSignalSources(googletag);
                         googletag.pubads().refresh();
                     });
                 });
