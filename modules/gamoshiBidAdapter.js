@@ -1,9 +1,21 @@
-import { isFn, isPlainObject, isStr, isNumber, getDNT, deepSetValue, inIframe, isArray, deepAccess, logError, logWarn } from '../src/utils.js';
+import {
+  deepAccess,
+  deepSetValue,
+  getDNT,
+  inIframe,
+  isArray,
+  isFn,
+  isNumber,
+  isPlainObject,
+  isStr,
+  logError,
+  logWarn
+} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {Renderer} from '../src/Renderer.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import {includes} from '../src/polyfill.js';
 
 const ENDPOINTS = {
   'gamoshi': 'https://rtb.gamoshi.io'

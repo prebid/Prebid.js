@@ -42,7 +42,7 @@ export const spec = {
         }
       }
     }
-    return !!bid.params.uid;
+    return !!bid.params.uid && !isNaN(parseInt(bid.params.uid));
   },
   buildRequests: function(validBidRequests, bidderRequest) {
     const auids = [];
@@ -203,6 +203,15 @@ export const spec = {
   },
   onTimeout: function(timeoutData) {
     // Call '/track/bid_timeout' with timeout data
+    timeoutData.forEach(({ params }) => {
+      if (params) {
+        params.forEach((item) => {
+          if (item && item.uid) {
+            item.uid = parseInt(item.uid);
+          }
+        });
+      }
+    });
     triggerPixel(buildUrl(TRACK_TIMEOUT_PATH) + '//' + JSON.stringify(timeoutData));
   }
 };
@@ -249,7 +258,7 @@ function buildImpObject(bid) {
     ...(banner && { banner }),
     ...(video && { video }),
     ext: {
-      bidder: { uid: Number(uid) },
+      bidder: { uid: parseInt(uid) },
     }
   };
 

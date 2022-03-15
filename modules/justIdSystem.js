@@ -8,7 +8,7 @@
 import * as utils from '../src/utils.js'
 import { submodule } from '../src/hook.js'
 import { loadExternalScript } from '../src/adloader.js'
-import includes from 'core-js-pure/features/array/includes.js';
+import {includes} from '../src/polyfill.js';
 
 const MODULE_NAME = 'justId';
 const EXTERNAL_SCRIPT_MODULE_CODE = 'justtag';
