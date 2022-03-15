@@ -89,7 +89,7 @@
                                 type: 'html5'
                             }
                         }],
-                        signalSources = [  
+                        encryptedSignalSources = [  
                                 "sharedid.org", 
                                 "criteo.com",
                                 "id5-sync.com", 
@@ -117,7 +117,7 @@
                         googletag.encryptedSignalProviders= [];
                         // Optional: Timeout added for now to get eids from all the partners before registering the signal
                         setTimeout(function(){
-                            var signalSources =  pbjs.getConfig().userSync.signalSources;
+                            var signalSources =  pbjs.getConfig().userSync.encryptedSignalSources;
                             var encrypt = false;
                             //Register signal sources
                             signalSources && pbjs.registerSignalSources(googletag, signalSources, encrypt);
