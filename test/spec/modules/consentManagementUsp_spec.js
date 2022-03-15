@@ -77,17 +77,17 @@ describe('consentManagement', function () {
         sinon.assert.calledOnce(utils.logWarn);
         sinon.assert.notCalled(utils.logInfo);
       });
+
+      it('should immediately start looking up consent data', () => {
+        setConsentConfig({usp: {cmpApi: 'invalid'}});
+        expect(uspDataHandler.ready).to.be.true;
+      });
     });
 
     describe('valid setConsentConfig value', function () {
-      beforeEach(() => {
-        window.__uspapi = sinon.stub();
-      });
-
       afterEach(function () {
         config.resetConfig();
         $$PREBID_GLOBAL$$.requestBids.removeAll();
-        delete window.__uspapi;
       });
 
       it('results in all user settings overriding system defaults', function () {
@@ -117,11 +117,6 @@ describe('consentManagement', function () {
         expect(hookRan).to.be.true;
         expect(uspDataHandler.ready).to.be.true;
       });
-
-      it('should immediately start looking up consent data', () => {
-        setConsentConfig({usp: {cmpApi: 'iab', timeout: 7500}});
-        sinon.assert.callCount(window.__uspapi, 1);
-      })
     });
 
     describe('static consent string setConsentConfig value', () => {
@@ -265,7 +260,7 @@ describe('consentManagement', function () {
         expect(uspDataHandler.getConsentData()).to.equal(null);
       });
 
-      it('should call uspDataHandler.setConsentData(null) on timeout', () => {
+      it('should call uspDataHandler.setConsentData(null) on timeout', (done) => {
         setConsentConfig({usp: {timeout: 10}});
         let hookRan = false;
         uspStub = sinon.stub(window, '__uspapi').callsFake(() => {});

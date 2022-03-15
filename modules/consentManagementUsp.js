@@ -294,6 +294,6 @@ export function setConsentConfig(config) {
   }
   addedConsentHook = true;
   uspDataHandler.enable();
-  loadConsentData();
+  loadConsentData(); // immediately look up consent data to make it available without requiring an auction
 }
 config.getConfig('consentManagement', config => setConsentConfig(config.consentManagement));
