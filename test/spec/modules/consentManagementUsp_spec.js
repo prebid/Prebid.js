@@ -8,7 +8,7 @@ import {
 } from 'modules/consentManagementUsp.js';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
-import {gdprDataHandler, uspDataHandler} from 'src/adapterManager.js';
+import {uspDataHandler} from 'src/adapterManager.js';
 import 'src/prebid.js';
 
 let expect = require('chai').expect;
@@ -80,9 +80,14 @@ describe('consentManagement', function () {
     });
 
     describe('valid setConsentConfig value', function () {
+      beforeEach(() => {
+        window.__uspapi = sinon.stub();
+      });
+
       afterEach(function () {
         config.resetConfig();
         $$PREBID_GLOBAL$$.requestBids.removeAll();
+        delete window.__uspapi;
       });
 
       it('results in all user settings overriding system defaults', function () {
@@ -112,6 +117,11 @@ describe('consentManagement', function () {
         expect(hookRan).to.be.true;
         expect(uspDataHandler.ready).to.be.true;
       });
+
+      it('should immediately start looking up consent data', () => {
+        setConsentConfig({usp: {cmpApi: 'iab', timeout: 7500}});
+        sinon.assert.callCount(window.__uspapi, 1);
+      })
     });
 
     describe('static consent string setConsentConfig value', () => {
@@ -255,7 +265,7 @@ describe('consentManagement', function () {
         expect(uspDataHandler.getConsentData()).to.equal(null);
       });
 
-      it('should call uspDataHandler.setConsentData(null) on timeout', (done) => {
+      it('should call uspDataHandler.setConsentData(null) on timeout', () => {
         setConsentConfig({usp: {timeout: 10}});
         let hookRan = false;
         uspStub = sinon.stub(window, '__uspapi').callsFake(() => {});
