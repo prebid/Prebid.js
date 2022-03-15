@@ -2681,17 +2681,6 @@ describe('User ID', function () {
 
       describe('Call getEncryptedEidsForSource to get encrypted Eids for source', function() {
         var signalSources = ['pubcid.org'];
-        var users = [
-          {
-            'source': 'pubcid.org',
-            'uids': [
-              {
-                'id': '36ed43f8-0e90-4675-9354-05c46cde0e13',
-                'atype': 1
-              }
-            ]
-          }
-        ]
 
         it('pbjs.getEncryptedEidsForSource should be defined', () => {
           expect(typeof (getGlobal()).getEncryptedEidsForSource).to.equal('function');
@@ -2728,10 +2717,8 @@ describe('User ID', function () {
 
         it('pbjs.getEncryptedEidsForSource should return the string base64 encryption if encryption is true', (done) => {
           var encrypt = true;
-          var expectedString = '1||eyJzb3VyY2UiOiJwdWJjaWQub3JnIiwidWlkcyI6W3siaWQiOiIzNmVkNDNmOC0wZTkwLTQ2NzUtOTM1NC0wNWM0NmNkZTBlMTMiLCJhdHlwZSI6MX1dfQ=='
-          sinon.stub((getGlobal()), 'getUserIdsAsEids').returns(users);
           (getGlobal()).getEncryptedEidsForSource(signalSources[0], encrypt).then((result) => {
-            expect(result).to.equal(expectedString);
+            expect(result.startsWith('1||')).to.true;
             done();
           }).catch(done);
         });
@@ -2753,6 +2740,31 @@ describe('User ID', function () {
             expect(result).to.equal(expectedString);
             done();
           });
+        });
+        it('pbjs.getUserIdsAsEidBySource', function () {
+          var users = [
+            {
+              'source': 'pubcid.org',
+              'uids': [
+                {
+                  'id': '11111',
+                  'atype': 1
+                }
+              ]
+            }
+          ];
+          setSubmoduleRegistry([sharedIdSystemSubmodule]);
+          init(config);
+          config.setConfig({
+            userSync: {
+              syncDelay: 0,
+              userIds: [{
+                name: 'pubCommonId', value: {'pubcid': '11111'}
+              }]
+            }
+          });
+          expect(typeof (getGlobal()).getUserIdsAsEidBySource).to.equal('function');
+          expect((getGlobal()).getUserIdsAsEidBySource(signalSources[0])).to.deep.equal(users);
         });
       })
     });

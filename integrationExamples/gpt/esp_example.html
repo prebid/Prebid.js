@@ -16,6 +16,7 @@
             ];
             var PREBID_TIMEOUT = 1000;
             var FAILSAFE_TIMEOUT = 3000;
+            var REGISTER_SIGNAL_SOURCES_TIMEOUT = 3000; // TIMEOUT ADDED TO REGISTER SIGNALS AFTER PARTNER CALLS ARE MADE
 
             var adUnits = [
                 {
@@ -66,21 +67,6 @@
                         enabledBidders: ['pubmatic'],
                         syncDelay: 3000,
                         userIds: [{
-                            name: 'id5Id',
-                            params: {
-                                partner: 173,            // change to the Partner Number you received from ID5
-                                abTesting: {             // optional
-                                    enabled: true,         // false by default
-                                    controlGroupPct: 0.1   // valid values are 0.0 - 1.0 (inclusive)
-                                }
-                            },
-                            storage: {
-                                type: 'html5',           // "html5" is the required storage type
-                                name: 'id5id',           // "id5id" is the required storage name
-                                expires: 90,             // storage lasts for 90 days
-                                refreshInSeconds: 8 * 3600 // refresh ID every 8 hours to ensure it's fresh
-                            }
-                        },{
                             name: "sharedId",
                             storage: {
                                 type: "cookie",
@@ -103,6 +89,13 @@
                                 type: 'html5'
                             }
                         }],
+                        signalSources = [  
+                                "sharedid.org", 
+                                "criteo.com",
+                                "id5-sync.com", 
+                                "pubcid.org", 
+                                "audigent.com"
+                        ],
                         auctionDelay: 10000
                     }
                 });
@@ -122,23 +115,17 @@
                     pbjs.que.push(function() {
                         pbjs.setTargetingForGPTAsync();
                         googletag.encryptedSignalProviders= [];
-                        // Timeout added for now to get eids from all the partners before registering the signal
+                        // Optional: Timeout added for now to get eids from all the partners before registering the signal
                         setTimeout(function(){
-                            var signalSources =  [  
-                                "sharedid.org", 
-                                "criteo.com",
-                                "id5-sync.com", 
-                                "pubcid.org", 
-                                "audigent.com"
-                            ];
+                            var signalSources =  pbjs.getConfig().userSync.signalSources;
                             var encrypt = false;
                             //Register signal sources
-                            pbjs.registerSignalSources(googletag, signalSources, encrypt);
+                            signalSources && pbjs.registerSignalSources(googletag, signalSources, encrypt);
                             //Register custom signals
                             var customSignalSources = ["pubmatic.com", "mysegments.com"];
-                            pbjs.registerSignalSources(googletag, customSignalSources, encrypt, getCustomSignal);
+                            customSignalSources && pbjs.registerSignalSources(googletag, customSignalSources, encrypt, getCustomSignal);
                             //googletag.pubads().refresh();
-                        },3000)
+                        },REGISTER_SIGNAL_SOURCES_TIMEOUT)
                         googletag.pubads().refresh();
                     });
                 });
