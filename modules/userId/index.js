@@ -703,7 +703,7 @@ function registerSignalSources(gtag) {
   }
   gtag.encryptedSignalProviders = gtag.encryptedSignalProviders || [];
   let { encryptedSignal } = (getGlobal()).getConfig().userSync;
-  if (encryptSignals) {
+  if (encryptedSignal) {
     let { registerDelay } = encryptedSignal;
     let combinedSignalSources = getSignalSources(encryptedSignal);
     setTimeout(function() {
