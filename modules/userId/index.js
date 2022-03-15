@@ -694,7 +694,7 @@ function getSignalSources(encryptedSignal) {
   customSources.forEach(function(source) {
     return Object.assign(source, { encrypt: encryptedSignal.custom.encrypt });
   })
-  return Object.assign(stdSources, customSources);
+  return stdSources.concat(customSources);
 }
 
 function registerSignalSources(gtag) {
