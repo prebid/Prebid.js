@@ -113,12 +113,6 @@ describe('Admaru Adapter', function () {
       }
     ];
 
-    let response = '<img src="https://admaru.com/images/logo_admaru.png">';
-
-    it('should get correct bid response', () => {
-      var request = spec.buildRequests(bidRequests);
-    });
-
     it('handles nobid responses', () => {
       var request = spec.buildRequests(bidRequests);
       let response = '';
