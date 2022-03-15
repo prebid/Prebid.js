@@ -360,7 +360,6 @@ export function buildEidPermissions(submodules) {
 }
 
 // this function will return USER_IDS_CONFIG
-// which will help to access source of particular userid module
-export function getUserIdsConfig(subModuleKey) {
+export function getUserIdsConfig() {
   return USER_IDS_CONFIG;
 }
