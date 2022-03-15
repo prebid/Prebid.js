@@ -130,7 +130,6 @@ function getBillingPayload(event) {
   billingEvent.accountId = accountId;
   // mark as sent
   deepSetValue(cache.billing, `${event.vendor}.${event.billingId}`, true);
-  logInfo(`${MODULE_NAME}: Remaining Billing Events:`, deepClone(cache.billing));
   return billingEvent;
 }
 
