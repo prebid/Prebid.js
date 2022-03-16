@@ -401,7 +401,7 @@ describe('TrustXAdapter', function () {
       expect(payload.site.content).to.deep.equal(jsContent);
     });
 
-    it('shold have user.data filled from config ortb2.user.data', function () {
+    it('should have user.data filled from config ortb2.user.data', function () {
       const userData = [
         {
           name: 'someName',
@@ -539,7 +539,7 @@ describe('TrustXAdapter', function () {
       getConfigStub.restore();
     });
 
-    it('shold be right tmax when timeout in config is less then timeout in bidderRequest', function() {
+    it('should be right tmax when timeout in config is less then timeout in bidderRequest', function() {
       const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
         arg => arg === 'bidderTimeout' ? 2000 : null);
       const request = spec.buildRequests([bidRequests[0]], bidderRequest);
@@ -548,7 +548,7 @@ describe('TrustXAdapter', function () {
       expect(payload.tmax).to.equal(2000);
       getConfigStub.restore();
     });
-    it('shold be right tmax when timeout in bidderRequest is less then timeout in config', function() {
+    it('should be right tmax when timeout in bidderRequest is less then timeout in config', function() {
       const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
         arg => arg === 'bidderTimeout' ? 5000 : null);
       const request = spec.buildRequests([bidRequests[0]], bidderRequest);
