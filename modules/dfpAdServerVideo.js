@@ -95,11 +95,7 @@ export function buildDfpVideoUrl(options) {
     derivedParams.sz = urlSzParam + '|' + derivedParams.sz;
   }
 
-  let encodedCustomParams = getCustParams(bid, options);
-  const urlCustParams = urlSearchComponent.cust_params;
-  if (urlCustParams) {
-    encodedCustomParams = urlCustParams + '%26' + encodedCustomParams;
-  }
+  let encodedCustomParams = getCustParams(bid, options, urlSearchComponent && urlSearchComponent.cust_params);
 
   const queryParams = Object.assign({},
     defaultParamConstants,
@@ -237,8 +233,7 @@ function buildUrlFromAdserverUrlComponents(components, bid, options) {
   const descriptionUrl = getDescriptionUrl(bid, components, 'search');
   if (descriptionUrl) { components.search.description_url = descriptionUrl; }
 
-  const encodedCustomParams = getCustParams(bid, options);
-  components.search.cust_params = (components.search.cust_params) ? components.search.cust_params + '%26' + encodedCustomParams : encodedCustomParams;
+  components.search.cust_params = getCustParams(bid, options, components.search.cust_params);
   return buildUrl(components);
 }
 
@@ -267,7 +262,7 @@ function getDescriptionUrl(bid, components, prop) {
  * @param {Object} options this is the options passed in from the `buildDfpVideoUrl` function
  * @return {Object} Encoded key value pairs for cust_params
  */
-function getCustParams(bid, options) {
+function getCustParams(bid, options, urlCustParams) {
   const adserverTargeting = (bid && bid.adserverTargeting) || {};
 
   let allTargetingData = {};
@@ -290,7 +285,12 @@ function getCustParams(bid, options) {
   // merge the prebid + publisher targeting sets
   const publisherTargetingSet = deepAccess(options, 'params.cust_params');
   const targetingSet = Object.assign({}, prebidTargetingSet, publisherTargetingSet);
-  return encodeURIComponent(formatQS(targetingSet));
+  let encodedParams = encodeURIComponent(formatQS(targetingSet));
+  if (urlCustParams) {
+    encodedParams = urlCustParams + '%26' + encodedParams;
+  }
+
+  return encodedParams;
 }
 
 registerVideoSupport('dfp', {
