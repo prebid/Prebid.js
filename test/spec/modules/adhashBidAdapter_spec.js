@@ -129,6 +129,7 @@ describe('adhashBidAdapter', function () {
         badWords: [
           ['onqjbeq1', 'full', 1],
           ['onqjbeq2', 'partial', 1],
+          ['tbbqjbeq', 'full', -1],
         ],
         maxScore: 2
       }
@@ -154,35 +155,42 @@ describe('adhashBidAdapter', function () {
 
     it('should return empty array when there are bad words (full)', function () {
       bodyStub = sinon.stub(window.top.document.body, 'innerText').get(function() {
-        return 'example text badWord1 badWord1 example badWord1 text';
+        return 'example text badWord1 badWord1 example badWord1 text' + ' word'.repeat(493);
       });
       expect(spec.interpretResponse(serverResponse, request).length).to.equal(0);
     });
 
     it('should return empty array when there are bad words (partial)', function () {
       bodyStub = sinon.stub(window.top.document.body, 'innerText').get(function() {
-        return 'example text partialBadWord2 badword2 example BadWord2text';
+        return 'example text partialBadWord2 badword2 example BadWord2text' + ' word'.repeat(494);
       });
       expect(spec.interpretResponse(serverResponse, request).length).to.equal(0);
     });
 
     it('should return non-empty array when there are not enough bad words (full)', function () {
       bodyStub = sinon.stub(window.top.document.body, 'innerText').get(function() {
-        return 'example text badWord1 badWord1 example text';
+        return 'example text badWord1 badWord1 example text' + ' word'.repeat(494);
       });
       expect(spec.interpretResponse(serverResponse, request).length).to.equal(1);
     });
 
     it('should return non-empty array when there are not enough bad words (partial)', function () {
       bodyStub = sinon.stub(window.top.document.body, 'innerText').get(function() {
-        return 'example text partialBadWord2 example';
+        return 'example text partialBadWord2 example' + ' word'.repeat(496);
       });
       expect(spec.interpretResponse(serverResponse, request).length).to.equal(1);
     });
 
     it('should return non-empty array when there are no-bad word matches', function () {
       bodyStub = sinon.stub(window.top.document.body, 'innerText').get(function() {
-        return 'example text partialBadWord1 example text';
+        return 'example text partialBadWord1 example text' + ' word'.repeat(495);
+      });
+      expect(spec.interpretResponse(serverResponse, request).length).to.equal(1);
+    });
+
+    it('should return non-empty array when there are bad words and good words', function () {
+      bodyStub = sinon.stub(window.top.document.body, 'innerText').get(function() {
+        return 'example text badWord1 badWord1 example badWord1 goodWord goodWord ' + ' word'.repeat(492);
       });
       expect(spec.interpretResponse(serverResponse, request).length).to.equal(1);
     });

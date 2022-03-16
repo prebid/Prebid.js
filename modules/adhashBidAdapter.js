@@ -42,11 +42,16 @@ function brandSafety(badWords, maxScore) {
    * @returns {float} final score
    */
   const scoreCalculator = (points, occurances) => {
+    let positive = true;
+    if (points < 0) {
+      points *= -1;
+      positive = false;
+    }
     let result = 0;
     for (let i = 0; i < occurances; i++) {
       result += Math.max(points - i * BAD_WORD_STEP, BAD_WORD_MIN);
     }
-    return result;
+    return positive ? result : -result;
   };
 
   // Default parameters if the bidder is unable to send some of them
@@ -57,7 +62,6 @@ function brandSafety(badWords, maxScore) {
     let score = 0;
     const content = window.top.document.body.innerText.toLowerCase();
     const words = content.trim().split(/\s+/).length;
-    const factor = words < 500 ? 1 : words < 2000 ? 2 : 4;
     for (const [word, rule, points] of badWords) {
       if (rule === 'full' && new RegExp('\\b' + rot13(word) + '\\b', 'i').test(content)) {
         const occurances = content.match(new RegExp('\\b' + rot13(word) + '\\b', 'g')).length;
@@ -67,7 +71,7 @@ function brandSafety(badWords, maxScore) {
         score += scoreCalculator(points, occurances);
       }
     }
-    return score < maxScore * factor;
+    return score < maxScore * words / 500;
   } catch (e) {
     return true;
   }
