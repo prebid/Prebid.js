@@ -74,9 +74,9 @@ const adUnitsRequested = {}
 const extData = {}
 
 // Filtering
-const adsToFilter = []
-const advertisersToFilter = []
-const campaignsToFilter = []
+const adsToFilter = new Set()
+const advertisersToFilter = new Set()
+const campaignsToFilter = new Set()
 
 // Prebid adapter referrence doc: https://docs.prebid.org/dev-docs/bidder-adaptor.html
 
@@ -187,16 +187,16 @@ export const spec = {
     ]
 
     // Add filtering
-    if (adsToFilter.length > 0) {
-      params.unshift({ key: 'ntv_atf', value: adsToFilter.join(',') })
+    if (adsToFilter.size > 0) {
+      params.unshift({ key: 'ntv_atf', value: Array.from(adsToFilter).join(',') })
     }
 
-    if (advertisersToFilter.length > 0) {
-      params.unshift({ key: 'ntv_avtf', value: advertisersToFilter.join(',') })
+    if (advertisersToFilter.size > 0) {
+      params.unshift({ key: 'ntv_avtf', value: Array.from(advertisersToFilter).join(',') })
     }
 
-    if (campaignsToFilter.length > 0) {
-      params.unshift({ key: 'ntv_ctf', value: campaignsToFilter.join(',') })
+    if (campaignsToFilter.size > 0) {
+      params.unshift({ key: 'ntv_ctf', value: Array.from(campaignsToFilter).join(',') })
     }
 
     // Add placement IDs
@@ -409,7 +409,9 @@ export const spec = {
     const placementId = bid.impid
     const adUnitCode = deepAccess(bid, 'ext.ad_unit_id')
 
-    return bidDataMap.getBidData(adUnitCode) || bidDataMap.getBidData(placementId)
+    return (
+      bidDataMap.getBidData(adUnitCode) || bidDataMap.getBidData(placementId)
+    )
   },
 }
 registerBidder(spec)
@@ -472,6 +474,6 @@ const area = (size) => size[0] * size[1]
  */
 function appendFilterData(filter, filterData) {
   if (filterData && Array.isArray(filterData) && filterData.length > 0) {
-    filterData.forEach((ad) => filter.push(ad))
+    filterData.forEach((ad) => filter.add(ad))
   }
 }
