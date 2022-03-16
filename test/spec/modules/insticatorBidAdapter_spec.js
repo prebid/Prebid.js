@@ -12,7 +12,7 @@ let utils = require('src/utils.js');
 describe('InsticatorBidAdapter', function () {
   const adapter = newBidder(spec);
 
-  const bidderRequestId = '22edbae2733bf6'
+  const bidderRequestId = '22edbae2733bf6';
   let bidRequest = {
     bidder: 'insticator',
     adUnitCode: 'adunit-code',
