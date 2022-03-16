@@ -698,13 +698,14 @@ function getSignalSources(encryptedSignal) {
 }
 
 function registerSignalSources(gtag) {
-  if (!isGptPubadsDefined()) {
+  if (!gtag) {
     return;
   }
   gtag.encryptedSignalProviders = gtag.encryptedSignalProviders || [];
   let { encryptedSignal } = (getGlobal()).getConfig().userSync;
   if (encryptedSignal) {
     let { registerDelay } = encryptedSignal;
+    registerDelay = registerDelay || 0;
     let combinedSignalSources = getSignalSources(encryptedSignal);
     setTimeout(function() {
       combinedSignalSources.forEach(function ({source, encrypt, customFunc}) {
