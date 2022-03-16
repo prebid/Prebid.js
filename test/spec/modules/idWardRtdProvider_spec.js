@@ -16,10 +16,8 @@ describe('idWardRtdProvider', function() {
 
   const cmoduleConfig = {
     'name': 'idWard',
-    'waitForIt': true,
     'params': {
-      'cohortStorageKey': 'cohort_ids',
-      'segtax': 503
+      'cohortStorageKey': 'cohort_ids'
     }
   }
 

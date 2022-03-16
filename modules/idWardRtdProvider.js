@@ -16,21 +16,6 @@ const SUBMODULE_NAME = 'idWard';
 export const storage = getStorageManager(null, SUBMODULE_NAME);
 
 /**
-  * Lazy merge objects.
-  * @param {String} target
-  * @param {String} source
-  */
-function mergeLazy(target, source) {
-  if (!isPlainObject(target)) {
-    target = {};
-  }
-  if (!isPlainObject(source)) {
-    source = {};
-  }
-  return mergeDeep(target, source);
-}
-
-/**
   * Add real-time data & merge segments.
   * @param {Object} rtd
   */
@@ -39,7 +24,7 @@ function addRealTimeData(rtd) {
     const ortb2 = config.getConfig('ortb2') || {};
     logMessage('idWardRtdProvider: merging original: ', ortb2);
     logMessage('idWardRtdProvider: merging in: ', rtd.ortb2);
-    config.setConfig({ortb2: mergeLazy(ortb2, rtd.ortb2)});
+    config.setConfig({ortb2: mergeDeep(ortb2, rtd.ortb2)});
   }
 }
 
@@ -57,7 +42,7 @@ function tryParse(data) {
 }
 
 /**
-  * Real-time data retrieval from Audigent
+  * Real-time data retrieval from ID Ward
   * @param {Object} reqBidsConfigObj
   * @param {function} onDone
   * @param {Object} rtdConfig
