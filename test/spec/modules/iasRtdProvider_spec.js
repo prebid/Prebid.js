@@ -92,7 +92,8 @@ describe('iasRtdProvider is a RTD provider that', function () {
       expect(targetingKeys['vio']).to.be.not.null;
       expect(targetingKeys['fr']).to.be.not.null;
       expect(targetingKeys['ias-kw']).to.be.not.null;
-      expect(targetingKeys['id']).to.be.not.null;
+      expect(targetingKeys['id']).to.be.undefined;
+      expect(targetingKeys['ias_id']).to.be.not.null;
       expect(targeting['one-div-id']['adt']).to.be.eq('veryLow');
       expect(targeting['one-div-id']['alc']).to.be.eq('veryLow');
       expect(targeting['one-div-id']['dlm']).to.be.eq('veryLow');
@@ -101,7 +102,7 @@ describe('iasRtdProvider is a RTD provider that', function () {
       expect(targeting['one-div-id']['off']).to.be.eq('veryLow');
       expect(targeting['one-div-id']['vio']).to.be.eq('veryLow');
       expect(targeting['one-div-id']['fr']).to.be.eq('false');
-      expect(targeting['one-div-id']['id']).to.be.eq('4813f7a2-1f22-11ec-9bfd-0a1107f94461');
+      expect(targeting['one-div-id']['ias_id']).to.be.eq('4813f7a2-1f22-11ec-9bfd-0a1107f94461');
     });
   });
 });
@@ -110,7 +111,10 @@ const config = {
   name: 'ias',
   waitForIt: true,
   params: {
-    pubId: 1234
+    pubId: 1234,
+    keyMappings: {
+      'id': 'ias_id'
+    }
   }
 };
 
