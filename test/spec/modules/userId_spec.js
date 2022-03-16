@@ -2654,12 +2654,7 @@ describe('User ID', function () {
       });
 
       describe('Call registerSignalSources to register signal sources with gtag', function () {
-        var googletag = {}
-        var encrypt = false;
-        function getCustomSignal(name, value) {
-          var signal = [];
-          return signal;
-        }
+        var googletag = {};
 
         afterEach(() => {
           googletag = {};
@@ -2670,7 +2665,7 @@ describe('User ID', function () {
         });
       })
 
-      describe.only('Call getEncryptedEidsForSource to get encrypted Eids for source', function() {
+      describe('Call getEncryptedEidsForSource to get encrypted Eids for source', function() {
         var signalSources = ['pubcid.org'];
 
         it('pbjs.getEncryptedEidsForSource should be defined', () => {
@@ -2716,13 +2711,7 @@ describe('User ID', function () {
 
         it('pbjs.getEncryptedEidsForSource should return string if custom function is defined', () => {
           function getCustomSignal(source) {
-            var signal = [];
-            switch (source) {
-              case 'pubmatic.com' :
-                signal = '{"keywords":["tech","auto"]}';
-                break;
-            }
-            return signal;
+            return '{"keywords":["tech","auto"]}';
           }
           var expectedString = '"1||{\"keywords\":[\"tech\",\"auto\"]}"';
           var encrypt = false;
