@@ -12,6 +12,7 @@ const USER_SYNC_URL_IMAGE = 'https://image8.pubmatic.com/AdServer/ImgSync?p=';
 const DEFAULT_CURRENCY = 'USD';
 const AUCTION_TYPE = 1;
 const GROUPM_ALIAS = {code: 'groupm', gvlid: 98};
+const MARKETPLACE_PARTNERS = ['groupm']
 const UNDEFINED = undefined;
 const DEFAULT_WIDTH = 0;
 const DEFAULT_HEIGHT = 0;
@@ -1295,7 +1296,7 @@ export const spec = {
 
               // if from the server-response the bid.ext.marketplace is set then
               //    submit the bid to Prebid as marketplace name
-              if (bid.ext && !!bid.ext.marketplace) {
+              if (bid.ext && !!bid.ext.marketplace && MARKETPLACE_PARTNERS.includes(bid.ext.marketplace)) {
                 newBid.bidderCode = bid.ext.marketplace;
                 newBid.bidder = bid.ext.marketplace;
               }
