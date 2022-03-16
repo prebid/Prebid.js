@@ -28,9 +28,7 @@ describe('InsticatorBidAdapter', function () {
     bidId: '30b31c1838de1e',
     ortb2Imp: {
       ext: {
-        data: {
-          pbadslot: 'pbadslot/test'
-        }
+        gpid: '1111/homepage'
       }
     },
     schain: {
@@ -232,7 +230,7 @@ describe('InsticatorBidAdapter', function () {
           ]
         },
         ext: {
-          gpid: bidRequest.ortb2Imp.ext.data.pbadslot,
+          gpid: bidRequest.ortb2Imp.ext.gpid,
           insticator: {
             adUnitId: bidRequest.params.adUnitId,
           },

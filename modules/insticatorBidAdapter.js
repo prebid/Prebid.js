@@ -66,7 +66,7 @@ function buildImpression(bidRequest) {
     });
   }
 
-  const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot');
+  const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
 
   if (gpid) {
     ext.gpid = gpid;
