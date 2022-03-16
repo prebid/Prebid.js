@@ -26,6 +26,13 @@ describe('InsticatorBidAdapter', function () {
       }
     },
     bidId: '30b31c1838de1e',
+    ortb2Imp: {
+      ext: {
+        data: {
+          pbadslot: 'pbadslot/test'
+        }
+      }
+    },
     schain: {
       ver: '1.0',
       complete: 1,
@@ -225,6 +232,7 @@ describe('InsticatorBidAdapter', function () {
           ]
         },
         ext: {
+          gpid: bidRequest.ortb2Imp.ext.data.pbadslot,
           insticator: {
             adUnitId: bidRequest.params.adUnitId,
           },
