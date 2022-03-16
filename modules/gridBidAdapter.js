@@ -25,8 +25,6 @@ const LOG_ERROR_MESS = {
   hasNoArrayOfBids: 'Seatbid from response has no array of bid objects - '
 };
 
-const modulesToFix = ['permutive.com'];
-
 let hasSynced = false;
 
 export const spec = {
@@ -184,7 +182,7 @@ export const spec = {
         user = { data: [] };
       }
       user = mergeDeep(user, {
-        data: ortb2UserData.map((ortb2Data) => ortb2Data && modulesToFix.includes(ortb2Data.name) ? fixRTDDataFormat(ortb2Data) : ortb2Data)
+        data: [...ortb2UserData]
       });
     }
 
@@ -505,17 +503,6 @@ function segmentProcessing(segment, forceSegName) {
       return null;
     })
     .filter((seg) => !!seg);
-}
-
-function fixRTDDataFormat(data) {
-  const { name, segment } = data || {};
-  if (name && segment && segment.length) {
-    return {
-      name,
-      segment: segmentProcessing(segment),
-    };
-  }
-  return data;
 }
 
 function reformatKeywords(pageKeywords) {
