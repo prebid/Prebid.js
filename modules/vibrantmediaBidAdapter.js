@@ -6,7 +6,7 @@
  * Note: Only BANNER and VIDEO are currently supported by the prebid server.
  */
 
-import {logError, logInfo} from '../src/utils.js';
+import {logError, triggerPixel} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {OUTSTREAM} from '../src/video.js';
@@ -213,7 +213,9 @@ export const spec = {
    * @param {*} bidData the data associated with the won bid. See example above for data format.
    */
   onBidWon: function(bidData) {
-    logInfo('Bid won: ' + JSON.stringify(bidData));
+    if (bidData && bidData.meta && bidData.meta.wp) {
+      triggerPixel(`${bidData.meta.wp}${bidData.status}`);
+    }
   }
 };
 
