@@ -420,19 +420,48 @@ describe('TrustXAdapter', function () {
         arg => arg === 'ortb2.user.data' ? userData : null);
       const request = spec.buildRequests([bidRequests[0]], bidderRequest);
       const payload = parseRequest(request.data);
-      expect(payload.user.data).to.deep.equal([
+      expect(payload.user.data).to.deep.equal(userData);
+      getConfigStub.restore();
+    });
+
+    it('should have right value in user.data when jwpsegments are present', function () {
+      const userData = [
         {
           name: 'someName',
           segment: [1, 2, { anyKey: 'anyVal' }, 'segVal', { id: 'segId' }, { value: 'segValue' }, { id: 'segId2', name: 'segName' }]
         },
         {
           name: 'permutive.com',
-          segment: [{ value: '1' }, { value: '2' }, { value: 'segVal' }, { value: 'segId' }, { value: 'segValue' }, { value: 'segId2', name: 'segName' }]
+          segment: [1, 2, 'segVal', { id: 'segId' }, { anyKey: 'anyVal' }, { value: 'segValue' }, { id: 'segId2', name: 'segName' }]
         },
         {
           someKey: 'another data'
         }
-      ]);
+      ];
+      const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
+        arg => arg === 'ortb2.user.data' ? userData : null);
+
+      const jsContent = {id: 'test_jw_content_id'};
+      const jsSegments = ['test_seg_1', 'test_seg_2'];
+      const bidRequestsWithJwTargeting = Object.assign({}, bidRequests[0], {
+        rtd: {
+          jwplayer: {
+            targeting: {
+              segments: jsSegments,
+              content: jsContent
+            }
+          }
+        }
+      });
+      const request = spec.buildRequests([bidRequestsWithJwTargeting], bidderRequest);
+      const payload = parseRequest(request.data);
+      expect(payload.user.data).to.deep.equal([{
+        name: 'iow_labs_pub_data',
+        segment: [
+          {name: 'jwpseg', value: jsSegments[0]},
+          {name: 'jwpseg', value: jsSegments[1]}
+        ]
+      }, ...userData]);
       getConfigStub.restore();
     });
 
