@@ -706,7 +706,7 @@ Object.assign(ORTB2.prototype, {
       // get bidder params in form { <bidder code>: {...params} }
       // initialize reduce function with the user defined `ext` properties on the ad unit
       const ext = adUnit.bids.reduce((acc, bid) => {
-        if (bid.bidder == null) return;
+        if (bid.bidder == null) return acc;
         const adapter = adapterManager.bidderRegistry[bid.bidder];
         if (adapter && adapter.getSpec().transformBidParams) {
           bid.params = adapter.getSpec().transformBidParams(bid.params, true, adUnit, bidRequests);
