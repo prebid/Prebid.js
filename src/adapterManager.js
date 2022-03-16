@@ -531,12 +531,11 @@ adapterManager.enableAnalytics = function (config) {
   }
 
   _each(config, adapterConfig => {
-    var adapter = _analyticsRegistry[adapterConfig.provider].adapter;
-    if (adapter) {
-      adapter.enableAnalytics(adapterConfig);
+    const entry = _analyticsRegistry[adapterConfig.provider];
+    if (entry && entry.adapter) {
+      entry.adapter.enableAnalytics(adapterConfig);
     } else {
-      logError(`Prebid Error: no analytics adapter found in registry for
-        ${adapterConfig.provider}.`);
+      logError(`Prebid Error: no analytics adapter found in registry for '${adapterConfig.provider}'.`);
     }
   });
 }
