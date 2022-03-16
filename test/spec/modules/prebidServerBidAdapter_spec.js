@@ -2646,21 +2646,6 @@ describe('S2S Adapter', function () {
       sinon.assert.calledOnce(logErrorSpy);
     });
 
-    it('should log an error when bidders is missing', function () {
-      const options = {
-        accountId: '1',
-        enabled: true,
-        timeout: 1000,
-        adapter: 's2s',
-        endpoint: {
-          p1Consent: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
-        }
-      };
-
-      config.setConfig({ s2sConfig: options });
-      sinon.assert.calledOnce(logErrorSpy);
-    });
-
     it('should log an error when endpoint is missing', function () {
       const options = {
         accountId: '1',
