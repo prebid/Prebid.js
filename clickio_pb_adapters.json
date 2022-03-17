@@ -19,5 +19,6 @@
 	"smartadserverBidAdapter",
 	"sovrnBidAdapter",
 	"teadsBidAdapter",
-	"oguryBidAdapter"
+	"oguryBidAdapter",
+	"adriverBidAdapter"
 ]
