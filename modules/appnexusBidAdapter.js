@@ -1,4 +1,4 @@
-import { convertCamelToUnderscore, isArray, isNumber, isPlainObject, logError, logInfo, deepAccess, logMessage, convertTypes, isStr, getParameterByName, deepClone, chunk, logWarn, getBidRequest, createTrackPixelHtml, isEmpty, transformBidderParamKeywords, getMaxValueFromArray, fill, getMinValueFromArray, isArrayOfNums, isFn } from '../src/utils.js';
+import { convertCamelToUnderscore, isArray, isNumber, isPlainObject, logError, logInfo, deepAccess, logMessage, convertTypes, isStr, getParameterByName, deepClone, chunk, logWarn, getBidRequest, createTrackPixelHtml, isEmpty, transformBidderParamKeywords, getMaxValueFromArray, fill, getMinValueFromArray, isArrayOfNums, isFn, getGptSlotInfoForAdUnitCode } from '../src/utils.js';
 import { Renderer } from '../src/Renderer.js';
 import { config } from '../src/config.js';
 import { registerBidder, getIabSubCategory } from '../src/adapters/bidderFactory.js';
@@ -1072,14 +1072,15 @@ function hideSASIframe(elementId) {
 }
 
 function outstreamRender(bid) {
-  hidedfpContainer(bid.adUnitCode);
-  hideSASIframe(bid.adUnitCode);
+  const code = getGptSlotInfoForAdUnitCode(bid.adUnitCode).divId || bid.adUnitCode;
+  hidedfpContainer(code);
+  hideSASIframe(code);
   // push to render queue because ANOutstreamVideo may not be loaded yet
   bid.renderer.push(() => {
     window.ANOutstreamVideo.renderAd({
       tagId: bid.adResponse.tag_id,
       sizes: [bid.getSize().split('x')],
-      targetId: bid.adUnitCode, // target div id to render video
+      targetId: code, // target div id to render video
       uuid: bid.adResponse.uuid,
       adResponse: bid.adResponse,
       rendererOptions: bid.renderer.getConfig()
