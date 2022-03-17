@@ -1,20 +1,36 @@
 /** @module adaptermanger */
 
 import {
-  _each, getUserConfiguredParams, groupBy, logInfo, deepAccess, isValidMediaTypes,
-  getUniqueIdentifierStr, deepClone, logWarn, logError, logMessage, isArray, generateUUID,
-  flatten, getBidderCodes, getDefinedParams, shuffle, timestamp, getBidderRequest, bind
+  _each,
+  bind,
+  deepAccess,
+  deepClone,
+  flatten,
+  generateUUID,
+  getBidderCodes,
+  getDefinedParams,
+  getUniqueIdentifierStr,
+  getUserConfiguredParams,
+  groupBy,
+  isArray,
+  isValidMediaTypes,
+  logError,
+  logInfo,
+  logMessage,
+  logWarn,
+  shuffle,
+  timestamp,
 } from './utils.js';
-import { getLabels, resolveStatus } from './sizeMapping.js';
-import { processNativeAdUnitParams, nativeAdapters } from './native.js';
+import {processAdUnitsForLabels} from './sizeMapping.js';
+import { decorateAdUnitsWithNativeParams, nativeAdapters } from './native.js';
 import { newBidder } from './adapters/bidderFactory.js';
 import { ajaxBuilder } from './ajax.js';
 import { config, RANDOM } from './config.js';
 import { hook } from './hook.js';
-import includes from 'core-js-pure/features/array/includes.js';
-import find from 'core-js-pure/features/array/find.js';
+import {includes, find} from './polyfill.js';
 import { adunitCounter } from './adUnits.js';
 import { getRefererInfo } from './refererDetection.js';
+import {GdprConsentHandler, UspConsentHandler} from './consentHandler.js';
 
 var CONSTANTS = require('./constants.json');
 var events = require('./events.js');
@@ -41,84 +57,45 @@ var _analyticsRegistry = {};
  * @property {Array<string>} activeLabels the labels specified as being active by requestBids
  */
 
-function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels, src}) {
+function getBids({bidderCode, auctionId, bidderRequestId, adUnits, src}) {
   return adUnits.reduce((result, adUnit) => {
-    let {
-      active,
-      mediaTypes: filteredMediaTypes,
-      filterResults
-    } = resolveStatus(
-      getLabels(adUnit, labels),
-      adUnit.mediaTypes,
-      adUnit.sizes
+    result.push(adUnit.bids.filter(bid => bid.bidder === bidderCode)
+      .reduce((bids, bid) => {
+        bid = Object.assign({}, bid, getDefinedParams(adUnit, [
+          'nativeParams',
+          'ortb2Imp',
+          'mediaType',
+          'renderer',
+          'storedAuctionResponse'
+        ]));
+
+        const mediaTypes = bid.mediaTypes == null ? adUnit.mediaTypes : bid.mediaTypes
+
+        if (isValidMediaTypes(mediaTypes)) {
+          bid = Object.assign({}, bid, {
+            mediaTypes
+          });
+        } else {
+          logError(
+            `mediaTypes is not correctly configured for adunit ${adUnit.code}`
+          );
+        }
+
+        bids.push(Object.assign({}, bid, {
+          adUnitCode: adUnit.code,
+          transactionId: adUnit.transactionId,
+          sizes: deepAccess(mediaTypes, 'banner.sizes') || deepAccess(mediaTypes, 'video.playerSize') || [],
+          bidId: bid.bid_id || getUniqueIdentifierStr(),
+          bidderRequestId,
+          auctionId,
+          src,
+          bidRequestsCount: adunitCounter.getRequestsCounter(adUnit.code),
+          bidderRequestsCount: adunitCounter.getBidderRequestsCounter(adUnit.code, bid.bidder),
+          bidderWinsCount: adunitCounter.getBidderWinsCounter(adUnit.code, bid.bidder),
+        }));
+        return bids;
+      }, [])
     );
-
-    if (!active) {
-      logInfo(`Size mapping disabled adUnit "${adUnit.code}"`);
-    } else if (filterResults) {
-      logInfo(`Size mapping filtered adUnit "${adUnit.code}" banner sizes from `, filterResults.before, 'to ', filterResults.after);
-    }
-
-    if (active) {
-      result.push(adUnit.bids.filter(bid => bid.bidder === bidderCode)
-        .reduce((bids, bid) => {
-          if (FEATURES.NATIVE) {
-            const nativeParams =
-              adUnit.nativeParams || deepAccess(adUnit, 'mediaTypes.native');
-            if (nativeParams) {
-              bid = Object.assign({}, bid, {
-                nativeParams: processNativeAdUnitParams(nativeParams),
-              });
-            }
-          }
-
-          bid = Object.assign({}, bid, getDefinedParams(adUnit, [
-            'ortb2Imp',
-            'mediaType',
-            'renderer',
-            'storedAuctionResponse'
-          ]));
-
-          let {
-            active,
-            mediaTypes,
-            filterResults
-          } = resolveStatus(getLabels(bid, labels), filteredMediaTypes);
-
-          if (!active) {
-            logInfo(`Size mapping deactivated adUnit "${adUnit.code}" bidder "${bid.bidder}"`);
-          } else if (filterResults) {
-            logInfo(`Size mapping filtered adUnit "${adUnit.code}" bidder "${bid.bidder}" banner sizes from `, filterResults.before, 'to ', filterResults.after);
-          }
-
-          if (isValidMediaTypes(mediaTypes)) {
-            bid = Object.assign({}, bid, {
-              mediaTypes
-            });
-          } else {
-            logError(
-              `mediaTypes is not correctly configured for adunit ${adUnit.code}`
-            );
-          }
-
-          if (active) {
-            bids.push(Object.assign({}, bid, {
-              adUnitCode: adUnit.code,
-              transactionId: adUnit.transactionId,
-              sizes: deepAccess(mediaTypes, 'banner.sizes') || deepAccess(mediaTypes, 'video.playerSize') || [],
-              bidId: bid.bid_id || getUniqueIdentifierStr(),
-              bidderRequestId,
-              auctionId,
-              src,
-              bidRequestsCount: adunitCounter.getRequestsCounter(adUnit.code),
-              bidderRequestsCount: adunitCounter.getBidderRequestsCounter(adUnit.code, bid.bidder),
-              bidderWinsCount: adunitCounter.getBidderWinsCounter(adUnit.code, bid.bidder),
-            }));
-          }
-          return bids;
-        }, [])
-      );
-    }
     return result;
   }, []).reduce(flatten, []).filter(val => val !== '');
 }
@@ -164,25 +141,8 @@ function getAdUnitCopyForClientAdapters(adUnits) {
   return adUnitsClientCopy;
 }
 
-export let gdprDataHandler = {
-  consentData: null,
-  setConsentData: function(consentInfo) {
-    gdprDataHandler.consentData = consentInfo;
-  },
-  getConsentData: function() {
-    return gdprDataHandler.consentData;
-  }
-};
-
-export let uspDataHandler = {
-  consentData: null,
-  setConsentData: function(consentInfo) {
-    uspDataHandler.consentData = consentInfo;
-  },
-  getConsentData: function() {
-    return uspDataHandler.consentData;
-  }
-};
+export let gdprDataHandler = new GdprConsentHandler();
+export let uspDataHandler = new UspConsentHandler();
 
 export let coppaDataHandler = {
   getCoppa: function() {
@@ -205,12 +165,27 @@ export function getAllS2SBidders() {
   })
 }
 
+/**
+ * Filter and/or modify media types for ad units based on the given labels.
+ *
+ * This should return adUnits that are active for the given labels, modified to have their `mediaTypes`
+ * conform to size mapping configuration. If different bids for the same adUnit should use different `mediaTypes`,
+ * they should be exposed under `adUnit.bids[].mediaTypes`.
+ */
+export const setupAdUnitMediaTypes = hook('sync', (adUnits, labels) => {
+  return processAdUnitsForLabels(adUnits, labels);
+}, 'setupAdUnitMediaTypes')
+
 adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, auctionId, cbTimeout, labels) {
   /**
    * emit and pass adunits for external modification
    * @see {@link https://github.com/prebid/Prebid.js/issues/4149|Issue}
    */
   events.emit(CONSTANTS.EVENTS.BEFORE_REQUEST_BIDS, adUnits);
+  if (FEATURES.NATIVE) {
+    decorateAdUnitsWithNativeParams(adUnits);
+  }
+  adUnits = setupAdUnitMediaTypes(adUnits, labels);
 
   let bidderCodes = getBidderCodes(adUnits);
   if (config.getConfig('bidderSequence') === RANDOM) {
@@ -274,7 +249,7 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
           auctionId,
           bidderRequestId,
           uniquePbsTid,
-          bids: hookedGetBids({bidderCode, auctionId, bidderRequestId, 'adUnits': deepClone(adUnitsS2SCopy), labels, src: CONSTANTS.S2S.SRC}),
+          bids: hookedGetBids({bidderCode, auctionId, bidderRequestId, 'adUnits': deepClone(adUnitsS2SCopy), src: CONSTANTS.S2S.SRC}),
           auctionStart: auctionStart,
           timeout: s2sConfig.timeout,
           src: CONSTANTS.S2S.SRC,
@@ -406,12 +381,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
           s2sAdapter.callBids(
             s2sBidRequest,
             serverBidRequests,
-            (adUnitCode, bid) => {
-              let bidderRequest = getBidderRequest(serverBidRequests, bid.bidderCode, adUnitCode);
-              if (bidderRequest) {
-                addBidResponse.call(bidderRequest, adUnitCode, bid)
-              }
-            },
+            addBidResponse,
             () => doneCbs.forEach(done => done()),
             s2sAjax
           );
@@ -444,7 +414,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
           adapter.callBids,
           adapter,
           bidRequest,
-          addBidResponse.bind(bidRequest),
+          addBidResponse,
           adapterDone,
           ajax,
           onTimelyResponse,
@@ -563,12 +533,11 @@ adapterManager.enableAnalytics = function (config) {
   }
 
   _each(config, adapterConfig => {
-    var adapter = _analyticsRegistry[adapterConfig.provider].adapter;
-    if (adapter) {
-      adapter.enableAnalytics(adapterConfig);
+    const entry = _analyticsRegistry[adapterConfig.provider];
+    if (entry && entry.adapter) {
+      entry.adapter.enableAnalytics(adapterConfig);
     } else {
-      logError(`Prebid Error: no analytics adapter found in registry for
-        ${adapterConfig.provider}.`);
+      logError(`Prebid Error: no analytics adapter found in registry for '${adapterConfig.provider}'.`);
     }
   });
 }

@@ -21,7 +21,8 @@
 
 import { uniques, flatten, logWarn } from './utils.js';
 import { newAuction, getStandardBidderSettings, AUCTION_COMPLETED } from './auction.js';
-import find from 'core-js-pure/features/array/find.js';
+import {find} from './polyfill.js';
+import {AuctionIndex} from './auctionIndex.js';
 
 const CONSTANTS = require('./constants.json');
 
@@ -122,6 +123,8 @@ export function newAuctionManager() {
   function _addAuction(auction) {
     _auctions.push(auction);
   }
+
+  auctionManager.index = new AuctionIndex(() => _auctions);
 
   return auctionManager;
 }

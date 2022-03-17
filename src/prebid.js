@@ -14,12 +14,13 @@ import { auctionManager } from './auctionManager.js';
 import { filters, targeting } from './targeting.js';
 import { hook } from './hook.js';
 import { sessionLoader } from './debugging.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import {includes} from './polyfill.js';
 import { adunitCounter } from './adUnits.js';
 import { executeRenderer, isRendererRequired } from './Renderer.js';
 import { createBid } from './bidfactory.js';
 import { storageCallbacks } from './storageManager.js';
 import { emitAdRenderSucceeded, emitAdRenderFail } from './adRendering.js';
+import { gdprDataHandler, uspDataHandler } from './adapterManager.js'
 
 const $$PREBID_GLOBAL$$ = getGlobal();
 const CONSTANTS = require('./constants.json');
@@ -271,6 +272,24 @@ $$PREBID_GLOBAL$$.getAdserverTargeting = function (adUnitCode) {
   return targeting.getAllTargeting(adUnitCode);
 };
 
+/**
+ * returns all consent data
+ * @return {Object} Map of consent types and data
+ * @alias module:pbjs.getConsentData
+ */
+function getConsentMetadata() {
+  return {
+    gdpr: gdprDataHandler.getConsentMeta(),
+    usp: uspDataHandler.getConsentMeta(),
+    coppa: !!(config.getConfig('coppa'))
+  }
+}
+
+$$PREBID_GLOBAL$$.getConsentMetadata = function () {
+  logInfo('Invoking $$PREBID_GLOBAL$$.getConsentMetadata');
+  return getConsentMetadata();
+};
+
 function getBids(type) {
   const responses = auctionManager[type]()
     .filter(bind.call(adUnitsFilter, this, auctionManager.getAdUnitCodes()));
@@ -430,9 +449,8 @@ $$PREBID_GLOBAL$$.renderAd = hook('async', function (doc, id, options) {
 
         if (shouldRender) {
           // replace macros according to openRTB with price paid = bid.cpm
-          bid.ad = replaceAuctionPrice(bid.ad, bid.cpm);
-          bid.adUrl = replaceAuctionPrice(bid.adUrl, bid.cpm);
-
+          bid.ad = replaceAuctionPrice(bid.ad, bid.originalCpm || bid.cpm);
+          bid.adUrl = replaceAuctionPrice(bid.adUrl, bid.originalCpm || bid.cpm);
           // replacing clickthrough if submitted
           if (options && options.clickThrough) {
             const {clickThrough} = options;

@@ -11,6 +11,7 @@ const BIDDER_ENDPOINT_WINNING = 'winning';
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 791,
   aliases: ['msq'], // short code
   supportedMediaTypes: [BANNER, NATIVE, VIDEO],
   /**
@@ -31,10 +32,16 @@ export const spec = {
   buildRequests: function(validBidRequests, bidderRequest) {
     let codes = [];
     let endpoint = document.location.search.match(/msq_test=true/) ? BIDDER_URL_TEST : BIDDER_URL_PROD;
+    let floor = {};
     const test = config.getConfig('debug') ? 1 : 0;
     let adunitValue = null;
     Object.keys(validBidRequests).forEach(key => {
       adunitValue = validBidRequests[key];
+      if (typeof adunitValue.getFloor === 'function') {
+        floor = adunitValue.getFloor({currency: 'EUR', mediaType: '*', size: '*'});
+      } else {
+        floor = {};
+      }
       codes.push({
         owner: adunitValue.params.owner,
         code: adunitValue.params.code,
@@ -42,7 +49,8 @@ export const spec = {
         bidId: adunitValue.bidId,
         auctionId: adunitValue.auctionId,
         transactionId: adunitValue.transactionId,
-        mediatypes: adunitValue.mediaTypes
+        mediatypes: adunitValue.mediaTypes,
+        floor: floor
       });
     });
     const payload = {

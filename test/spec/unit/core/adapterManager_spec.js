@@ -11,9 +11,9 @@ import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import { registerBidder } from 'src/adapters/bidderFactory.js';
 import { setSizeConfig } from 'src/sizeMapping.js';
-import find from 'core-js-pure/features/array/find.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import {find, includes} from 'src/polyfill.js';
 import s2sTesting from 'modules/s2sTesting.js';
+import {hook} from '../../../../src/hook.js';
 var events = require('../../../../src/events');
 
 const CONFIG = {
@@ -90,6 +90,7 @@ describe('adapterManager tests', function () {
   describe('callBids', function () {
     before(function () {
       config.setConfig({s2sConfig: { enabled: false }});
+      hook.ready();
     });
 
     beforeEach(function () {
@@ -1667,6 +1668,30 @@ describe('adapterManager tests', function () {
         return adUnit;
       })
     });
+
+    if (FEATURES.NATIVE) {
+      it('should add nativeParams to adUnits after BEFORE_REQUEST_BIDS', () => {
+        function beforeReqBids(adUnits) {
+          adUnits.forEach(adUnit => {
+            adUnit.mediaTypes.native = {
+              type: 'image',
+            }
+          })
+        }
+
+        events.on(CONSTANTS.EVENTS.BEFORE_REQUEST_BIDS, beforeReqBids);
+        adapterManager.makeBidRequests(
+          adUnits,
+          Date.now(),
+          utils.getUniqueIdentifierStr(),
+          function callback() {
+          },
+          []
+        );
+        events.off(CONSTANTS.EVENTS.BEFORE_REQUEST_BIDS, beforeReqBids);
+        expect(adUnits.map((u) => u.nativeParams).some(i => i == null)).to.be.false;
+      });
+    }
 
     it('should make separate bidder request objects for each bidder', () => {
       adUnits = [utils.deepClone(getAdUnits()[0])];

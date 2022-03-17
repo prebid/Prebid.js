@@ -1,9 +1,9 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 import * as mediaTypes from '../src/mediaTypes.js';
-import {deepAccess, _map, isEmpty} from '../src/utils.js';
-import { ajax } from '../src/ajax.js';
-import find from 'core-js-pure/features/array/find.js';
-import { OUTSTREAM, INSTREAM } from '../src/video.js';
+import {_map, deepAccess, isEmpty} from '../src/utils.js';
+import {ajax} from '../src/ajax.js';
+import {find} from '../src/polyfill.js';
+import {INSTREAM, OUTSTREAM} from '../src/video.js';
 
 const BIDDER_CODE = 'dailyhunt';
 const BIDDER_ALIAS = 'dh';

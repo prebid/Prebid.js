@@ -22,6 +22,7 @@ var _enableDistribution = false;
 var _cpmDistribution = null;
 var _trackerSend = null;
 var _sampled = true;
+var _sendFloors = false;
 
 let adapter = {};
 
@@ -45,6 +46,9 @@ adapter.enableAnalytics = function ({ provider, options }) {
   }
   if (options && typeof options.cpmDistribution === 'function') {
     _cpmDistribution = options.cpmDistribution;
+  }
+  if (options && typeof options.sendFloors !== 'undefined') {
+    _sendFloors = options.sendFloors;
   }
 
   var bid = null;
@@ -203,7 +207,17 @@ function sendBidRequestToGa(bid) {
   if (bid && bid.bidderCode) {
     _analyticsQueue.push(function () {
       _eventCount++;
-      window[_gaGlobal](_trackerSend, 'event', _category, 'Requests', bid.bidderCode, 1, _disableInteraction);
+      if (_sendFloors) {
+        var floor = 'No Floor';
+        if (bid.floorData) {
+          floor = bid.floorData.floorValue;
+        } else if (bid.bids.length) {
+          floor = bid.bids[0].getFloor().floor;
+        }
+        window[_gaGlobal](_trackerSend, 'event', _category, 'Requests by Floor=' + floor, bid.bidderCode, 1, _disableInteraction);
+      } else {
+        window[_gaGlobal](_trackerSend, 'event', _category, 'Requests', bid.bidderCode, 1, _disableInteraction);
+      }
     });
   }
 
@@ -229,8 +243,12 @@ function sendBidResponseToGa(bid) {
           _eventCount++;
           window[_gaGlobal](_trackerSend, 'event', 'Prebid.js CPM Distribution', cpmDis, bidder, 1, _disableInteraction);
         }
-
-        window[_gaGlobal](_trackerSend, 'event', _category, 'Bids', bidder, cpmCents, _disableInteraction);
+        if (_sendFloors) {
+          var floor = (bid.floorData) ? bid.floorData.floorValue : 'No Floor';
+          window[_gaGlobal](_trackerSend, 'event', _category, 'Bids by Floor=' + floor, 'Size=' + bid.size + ',' + bidder, cpmCents, _disableInteraction);
+        } else {
+          window[_gaGlobal](_trackerSend, 'event', _category, 'Bids', bidder, cpmCents, _disableInteraction);
+        }
         window[_gaGlobal](_trackerSend, 'event', _category, 'Bid Load Time', bidder, bid.timeToRespond, _disableInteraction);
       }
     });
@@ -256,7 +274,12 @@ function sendBidWonToGa(bid) {
   var cpmCents = convertToCents(bid.cpm);
   _analyticsQueue.push(function () {
     _eventCount++;
-    window[_gaGlobal](_trackerSend, 'event', _category, 'Wins', bid.bidderCode, cpmCents, _disableInteraction);
+    if (_sendFloors) {
+      var floor = (bid.floorData) ? bid.floorData.floorValue : 'No Floor';
+      window[_gaGlobal](_trackerSend, 'event', _category, 'Wins by Floor=' + floor, 'Size=' + bid.size + ',' + bid.bidderCode, cpmCents, _disableInteraction);
+    } else {
+      window[_gaGlobal](_trackerSend, 'event', _category, 'Wins', bid.bidderCode, cpmCents, _disableInteraction);
+    }
   });
 
   checkAnalytics();
