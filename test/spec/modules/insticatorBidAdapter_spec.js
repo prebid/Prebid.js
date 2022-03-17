@@ -12,7 +12,7 @@ let utils = require('src/utils.js');
 describe('InsticatorBidAdapter', function () {
   const adapter = newBidder(spec);
 
-  const bidderRequestId = '22edbae2733bf6'
+  const bidderRequestId = '22edbae2733bf6';
   let bidRequest = {
     bidder: 'insticator',
     adUnitCode: 'adunit-code',
@@ -26,6 +26,11 @@ describe('InsticatorBidAdapter', function () {
       }
     },
     bidId: '30b31c1838de1e',
+    ortb2Imp: {
+      ext: {
+        gpid: '1111/homepage'
+      }
+    },
     schain: {
       ver: '1.0',
       complete: 1,
@@ -225,6 +230,7 @@ describe('InsticatorBidAdapter', function () {
           ]
         },
         ext: {
+          gpid: bidRequest.ortb2Imp.ext.gpid,
           insticator: {
             adUnitId: bidRequest.params.adUnitId,
           },
