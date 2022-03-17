@@ -288,7 +288,7 @@ const USER_IDS_CONFIG = {
 
   // DAC ID
   'dacId': {
-    source: 'dac.co.jp',
+    source: 'impact-ad.jp',
     atype: 1
   },
 };
