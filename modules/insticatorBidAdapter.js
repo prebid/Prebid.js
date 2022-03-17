@@ -181,13 +181,13 @@ function buildRequest(validBidRequests, bidderRequest) {
   const schain = extractSchain(validBidRequests, bidderRequest.bidderRequestId);
 
   if (schain) {
-    req.source.ext = { schain };
+    req.source.ext = {schain};
   }
 
   const eids = extractEids(validBidRequests);
 
   if (eids) {
-    req.user.ext = { eids };
+    req.user.ext = {eids};
   }
 
   return req;
@@ -195,14 +195,14 @@ function buildRequest(validBidRequests, bidderRequest) {
 
 function buildBid(bid, bidderRequest) {
   const originalBid = find(bidderRequest.bids, (b) => b.bidId === bid.impid);
-  let meta = {}
+  let meta = {};
 
   if (bid.ext && bid.ext.meta) {
-    meta = bid.ext.meta
+    meta = bid.ext.meta;
   }
 
   if (bid.adomain) {
-    meta.advertiserDomains = bid.adomain
+    meta.advertiserDomains = bid.adomain;
   }
 
   return {
