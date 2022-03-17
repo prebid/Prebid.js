@@ -866,12 +866,12 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         break;
       case AUCTION_END:
         // see how long it takes for the payload to come fire
-        let auctionCache = cache.auctions[args.auctionId];
+        let auctionData = cache.auctions[args.auctionId];
         // if for some reason the auction did not do its normal thing, this could be undefied so bail
-        if (!auctionCache) {
+        if (!auctionData) {
           break;
         }
-        auctionCache.endTs = Date.now();
+        auctionData.endTs = Date.now();
 
         const isOnlyInstreamAuction = args.adUnits && args.adUnits.every(adUnit => adUnitIsOnlyInstream(adUnit));
         // If only instream, do not wait around, just send payload
