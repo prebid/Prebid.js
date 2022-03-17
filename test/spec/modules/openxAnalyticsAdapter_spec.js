@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import openxAdapter, {AUCTION_STATES} from 'modules/openxAnalyticsAdapter.js';
-import events from 'src/events.js';
+import * as events from 'src/events.js';
 import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
