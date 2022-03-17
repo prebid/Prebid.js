@@ -1,7 +1,7 @@
 import { pick, isFn, isStr, isPlainObject, deepAccess } from '../../src/utils.js';
 
 // Each user-id sub-module is expected to mention respective config here
-const USER_IDS_CONFIG = {
+export const USER_IDS_CONFIG = {
 
   // key-name : {config}
 
@@ -357,9 +357,4 @@ export function buildEidPermissions(submodules) {
       });
     });
   return eidPermissions;
-}
-
-// this function will return USER_IDS_CONFIG
-export function getUserIdsConfig() {
-  return USER_IDS_CONFIG;
 }

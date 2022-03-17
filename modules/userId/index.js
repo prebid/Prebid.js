@@ -137,7 +137,7 @@ import {getGlobal} from '../../src/prebidGlobal.js';
 import {gdprDataHandler} from '../../src/adapterManager.js';
 import CONSTANTS from '../../src/constants.json';
 import {hook, module} from '../../src/hook.js';
-import {buildEidPermissions, createEidsArray, getUserIdsConfig} from './eids.js';
+import {buildEidPermissions, createEidsArray, USER_IDS_CONFIG} from './eids.js';
 import {getCoreStorageManager} from '../../src/storageManager.js';
 import {
   cyrb53Hash,
@@ -153,7 +153,8 @@ import {
   logError,
   logInfo,
   logWarn,
-  timestamp
+  timestamp,
+  isEmpty
 } from '../../src/utils.js';
 
 const MODULE_NAME = 'User ID';
@@ -471,10 +472,9 @@ function getSubmoduleId(submodules, sourceName) {
   if (!Array.isArray(submodules) || !submodules.length) {
     return {};
   }
-  const USER_IDS_CONFIG = getUserIdsConfig();
   const submodule = submodules.filter(sub => isPlainObject(sub.idObj) &&
   Object.keys(sub.idObj).length && USER_IDS_CONFIG[Object.keys(sub.idObj)[0]].source === sourceName)
-  return submodule[0].idObj
+  return !isEmpty(submodule) ? submodule[0].idObj : []
 }
 
 /**
@@ -652,15 +652,16 @@ function getEncryptedEidsForSource(source, encrypt, customFunction) {
   if (isFn(customFunction)) {
     logInfo(`${MODULE_NAME} - Getting encrypted signal from custom function : ${customFunction.name} & source : ${source} `);
     // Publishers are expected to define a common function which will be proxy for signal function.
-    let customSignals = customFunction(source);
+    const customSignals = customFunction(source);
     eidsSignals[source] = customSignals ? encryptSignals(customSignals) : null; // by default encrypt using base64 to avoid JSON errors
   } else {
     // initialize signal with eids by default
     eids = getUserIdsAsEidBySource(source);
     logInfo(`${MODULE_NAME} - Getting encrypted signal for eids :${JSON.stringify(eids)}`);
-    eids.forEach((eid) => {
+    if (!isEmpty(eids)) {
+      const eid = eids[0];
       eidsSignals[eid.source] = encrypt === true ? encryptSignals(eid) : eid.uids[0].id; // If encryption is enabled append version (1||) and encrypt entire object
-    });
+    }
   }
   let promise = Promise.resolve(eidsSignals[source]);
   logInfo(`${MODULE_NAME} - Fetching encrypted eids: ${eidsSignals[source]}`);
@@ -679,44 +680,29 @@ function encryptSignals(signals, version = 1) {
   return `${version}||${encryptedSig}`;
 }
 
-function getSignalSources(encryptedSignal) {
-  let sources = encryptedSignal && encryptedSignal.eids && encryptedSignal.eids.sources;
-  let customSources = encryptedSignal && encryptedSignal.custom && encryptedSignal.custom.sources;
-  sources = sources || [];
-  customSources = customSources || [];
-  let stdSources = sources.map(function(source) {
-    return {
-      source: [source],
-      customFunc: undefined,
-      encrypt: encryptedSignal.eids && encryptedSignal.eids.encrypt
-    }
-  })
-  customSources.forEach(function(source) {
-    return Object.assign(source, { encrypt: encryptedSignal.custom.encrypt });
-  })
-  return stdSources.concat(customSources);
-}
-
-function registerSignalSources(gtag) {
-  if (!gtag) {
+function registerSignalSources() {
+  if (!isGptPubadsDefined()) {
     return;
   }
-  gtag.encryptedSignalProviders = gtag.encryptedSignalProviders || [];
-  let { encryptedSignal } = (getGlobal()).getConfig().userSync;
-  if (encryptedSignal) {
-    let { registerDelay } = encryptedSignal;
-    registerDelay = registerDelay || 0;
-    let combinedSignalSources = getSignalSources(encryptedSignal);
+  window.googletag.encryptedSignalProviders = window.googletag.encryptedSignalProviders || [];
+  const encryptedSignalSources = config.getConfig('userSync.encryptedSignalSources');
+  if (encryptedSignalSources) {
+    const registerDelay = encryptedSignalSources.registerDelay || 0;
     setTimeout(function() {
-      combinedSignalSources.forEach(function ({source, encrypt, customFunc}) {
-        gtag.encryptedSignalProviders.push({
-          id: source[0],
-          collectorFunction: function () {
-            return getEncryptedEidsForSource(source[0], encrypt, customFunc);
-          }
-        });
-      });
+      encryptedSignalSources['sources'].forEach(function ({source, encrypt, customFunc}) {
+        source.forEach(function (source) {
+          window.googletag.encryptedSignalProviders.push(
+            {
+              id: source,
+              collectorFunction: function () {
+                return getEncryptedEidsForSource(source, encrypt, customFunc);
+              }
+            });
+        })
+      })
     }, registerDelay)
+  } else {
+    logWarn(`${MODULE_NAME} - ESP : encryptedSignalSources config not defined under userSync Object`);
   }
 }
 
