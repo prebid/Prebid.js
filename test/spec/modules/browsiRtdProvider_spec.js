@@ -1,7 +1,7 @@
 import * as browsiRTD from '../../../modules/browsiRtdProvider.js';
 import {makeSlot} from '../integration/faker/googletag.js';
 import * as utils from '../../../src/utils'
-import {default as events} from '../../../src/events';
+import * as events from '../../../src/events';
 import * as sinon from 'sinon';
 
 describe('browsi Real time  data sub module', function () {
