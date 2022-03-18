@@ -63,7 +63,7 @@ export const onBidWon = function (bid) {
   const adServerPrice = deepAccess(bid, 'adserverTargeting.hb_pb', 0);
   const adServerPriceCurrency = config.getConfig('currency.adServerCurrency') || SUPPORTED_CURRENCY;
   if (isStr(bid.nurl) && bid.nurl !== '') {
-    const winNotificationUrl = replaceAuctionPrice(bid.nurl, cpm)
+    const winNotificationUrl = replaceAuctionPrice(bid.nurl, bid.originalCpm || cpm)
       .replace(/\${AUCTION_PRICE_CURRENCY}/g, cpmCurrency)
       .replace(/\${AD_SERVER_PRICE}/g, adServerPrice)
       .replace(/\${AD_SERVER_PRICE_CURRENCY}/g, adServerPriceCurrency);
