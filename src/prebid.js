@@ -14,7 +14,7 @@ import { auctionManager } from './auctionManager.js';
 import { filters, targeting } from './targeting.js';
 import { hook } from './hook.js';
 import { sessionLoader } from './debugging.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import {includes} from './polyfill.js';
 import { adunitCounter } from './adUnits.js';
 import { executeRenderer, isRendererRequired } from './Renderer.js';
 import { createBid } from './bidfactory.js';
@@ -446,9 +446,8 @@ $$PREBID_GLOBAL$$.renderAd = hook('async', function (doc, id, options) {
 
         if (shouldRender) {
           // replace macros according to openRTB with price paid = bid.cpm
-          bid.ad = replaceAuctionPrice(bid.ad, bid.cpm);
-          bid.adUrl = replaceAuctionPrice(bid.adUrl, bid.cpm);
-
+          bid.ad = replaceAuctionPrice(bid.ad, bid.originalCpm || bid.cpm);
+          bid.adUrl = replaceAuctionPrice(bid.adUrl, bid.originalCpm || bid.cpm);
           // replacing clickthrough if submitted
           if (options && options.clickThrough) {
             const {clickThrough} = options;
@@ -475,16 +474,6 @@ $$PREBID_GLOBAL$$.renderAd = hook('async', function (doc, id, options) {
             const message = `Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`;
             emitAdRenderFail({reason: PREVENT_WRITING_ON_MAIN_DOCUMENT, message, bid, id});
           } else if (ad) {
-            // will check if browser is firefox and below version 67, if so execute special doc.open()
-            // for details see: https://github.com/prebid/Prebid.js/pull/3524
-            // TODO remove this browser specific code at later date (when Firefox < 67 usage is mostly gone)
-            if (navigator.userAgent && navigator.userAgent.toLowerCase().indexOf('firefox/') > -1) {
-              const firefoxVerRegx = /firefox\/([\d\.]+)/;
-              let firefoxVer = navigator.userAgent.toLowerCase().match(firefoxVerRegx)[1]; // grabs the text in the 1st matching group
-              if (firefoxVer && parseInt(firefoxVer, 10) < 67) {
-                doc.open('text/html', 'replace');
-              }
-            }
             doc.write(ad);
             doc.close();
             setRenderSize(doc, width, height);

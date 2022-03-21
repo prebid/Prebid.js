@@ -4,7 +4,7 @@ import adapterManager from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
 import { ajax } from 'src/ajax.js';
 import { config } from 'src/config.js';
-import events from 'src/events.js';
+import * as events from 'src/events.js';
 import CONSTANTS from 'src/constants.json';
 import { server } from 'test/mocks/xhr.js';
 import { createEidsArray } from 'modules/userId/eids.js';
@@ -2908,6 +2908,24 @@ describe('S2S Adapter', function () {
       let requestBid = JSON.parse(server.requests[0].requestBody);
 
       expect(requestBid.coopSync).to.be.undefined;
+    });
+
+    it('should set imp banner if ortb2Imp.banner is present', function() {
+      const consentConfig = { s2sConfig: CONFIG };
+      config.setConfig(consentConfig);
+      const bidRequest = utils.deepClone(REQUEST);
+      bidRequest.ad_units[0].ortb2Imp = {
+        banner: {
+          api: 7
+        },
+        instl: 1
+      };
+
+      adapter.callBids(bidRequest, BID_REQUESTS, addBidResponse, done, ajax);
+      const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
+
+      expect(parsedRequestBody.imp[0].banner.api).to.equal(7);
+      expect(parsedRequestBody.imp[0].instl).to.equal(1);
     });
 
     it('adds debug flag', function () {
