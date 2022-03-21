@@ -100,6 +100,38 @@ describe('Outbrain Adapter', function () {
         }
         expect(spec.isBidRequestValid(bid)).to.equal(false)
       })
+      it('should fail if tag id is not string', function () {
+        const bid = {
+          bidder: 'outbrain',
+          params: {
+            tagid: 123
+          },
+          ...nativeBidRequestParams,
+        }
+        expect(spec.isBidRequestValid(bid)).to.equal(false)
+      })
+      it('should fail if badv does not include strings', function () {
+        const bid = {
+          bidder: 'outbrain',
+          params: {
+            tagid: 123,
+            badv: ['a', 2, 'c']
+          },
+          ...nativeBidRequestParams,
+        }
+        expect(spec.isBidRequestValid(bid)).to.equal(false)
+      })
+      it('should fail if bcat does not include strings', function () {
+        const bid = {
+          bidder: 'outbrain',
+          params: {
+            tagid: 123,
+            bcat: ['a', 2, 'c']
+          },
+          ...nativeBidRequestParams,
+        }
+        expect(spec.isBidRequestValid(bid)).to.equal(false)
+      })
       it('should succeed with outbrain config', function () {
         const bid = {
           bidder: 'outbrain',
@@ -378,6 +410,46 @@ describe('Outbrain Adapter', function () {
         const res = spec.buildRequests([bidRequest], commonBidderRequest)
         const resData = JSON.parse(res.data)
         expect(resData.imp[0].bidfloor).to.equal(1.23)
+      });
+
+      it('should transform string sizes to numbers', function () {
+        let bidRequest = {
+          bidId: 'bidId',
+          params: {},
+          ...commonBidRequest,
+          ...nativeBidRequestParams,
+        };
+        bidRequest.nativeParams.image.sizes = ['120', '100']
+
+        const expectedNativeAssets = {
+          assets: [
+            {
+              required: 1,
+              id: 3,
+              img: {
+                type: 3,
+                w: 120,
+                h: 100
+              }
+            },
+            {
+              required: 1,
+              id: 0,
+              title: {}
+            },
+            {
+              required: 0,
+              id: 5,
+              data: {
+                type: 1
+              }
+            }
+          ]
+        }
+
+        let res = spec.buildRequests([bidRequest], commonBidderRequest);
+        const resData = JSON.parse(res.data)
+        expect(resData.imp[0].native.request).to.equal(JSON.stringify(expectedNativeAssets));
       });
     })
 

@@ -27,9 +27,28 @@ export const spec = {
   gvlid: GVLID,
   supportedMediaTypes: [ NATIVE, BANNER ],
   isBidRequestValid: (bid) => {
+    if (typeof bid.params !== 'object') {
+      return false;
+    }
+
+    if (typeof deepAccess(bid, 'params.publisher.id') !== 'string') {
+      return false;
+    }
+
+    if (!!bid.params.tagid && typeof bid.params.tagid !== 'string') {
+      return false;
+    }
+
+    if (!!bid.params.bcat && (typeof bid.params.bcat !== 'object' || !bid.params.bcat.every(item => typeof item === 'string'))) {
+      return false;
+    }
+
+    if (!!bid.params.badv && (typeof bid.params.badv !== 'object' || !bid.params.badv.every(item => typeof item === 'string'))) {
+      return false;
+    }
+
     return (
       !!config.getConfig('outbrain.bidderUrl') &&
-      !!deepAccess(bid, 'params.publisher.id') &&
       !!(bid.nativeParams || bid.sizes)
     );
   },
@@ -258,8 +277,8 @@ function getNativeAssets(bid) {
 
       if (bidParams.sizes) {
         const sizes = flatten(bidParams.sizes);
-        w = sizes[0];
-        h = sizes[1];
+        w = parseInt(sizes[0], 10);
+        h = parseInt(sizes[1], 10);
       }
 
       asset[props.name] = {
