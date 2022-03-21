@@ -2654,11 +2654,6 @@ describe('User ID', function () {
       });
 
       describe('Call registerSignalSources to register signal sources with gtag', function () {
-        var googletag = {};
-
-        afterEach(() => {
-          googletag = {};
-        })
 
         it('pbjs.registerSignalSources should be defined', () => {
           expect(typeof (getGlobal()).registerSignalSources).to.equal('function');
@@ -2666,7 +2661,7 @@ describe('User ID', function () {
       })
 
       describe('Call getEncryptedEidsForSource to get encrypted Eids for source', function() {
-        var signalSources = ['pubcid.org'];
+        const signalSources = ['pubcid.org'];
 
         it('pbjs.getEncryptedEidsForSource should be defined', () => {
           expect(typeof (getGlobal()).getEncryptedEidsForSource).to.equal('function');
@@ -2693,16 +2688,16 @@ describe('User ID', function () {
               ]
             },
           });
-          var encrypt = false;
+          const encrypt = false;
           (getGlobal()).getEncryptedEidsForSource(signalSources[0], encrypt).then((data) => {
-            var users = (getGlobal()).getUserIdsAsEids();
+            let users = (getGlobal()).getUserIdsAsEids();
             expect(data).to.equal(users[0].uids[0].id);
             done();
           }).catch(done);
         });
 
         it('pbjs.getEncryptedEidsForSource should return the string base64 encryption if encryption is true', (done) => {
-          var encrypt = true;
+          const encrypt = true;
           (getGlobal()).getEncryptedEidsForSource(signalSources[0], encrypt).then((result) => {
             expect(result.startsWith('1||')).to.true;
             done();
@@ -2710,20 +2705,19 @@ describe('User ID', function () {
         });
 
         it('pbjs.getEncryptedEidsForSource should return string if custom function is defined', () => {
-          function getCustomSignal(source) {
+          const getCustomSignal = () => {
             return '{"keywords":["tech","auto"]}';
           }
-          var expectedString = '"1||{\"keywords\":[\"tech\",\"auto\"]}"';
-          var encrypt = false;
-          var source = 'pubmatic.com';
+          const expectedString = '"1||{\"keywords\":[\"tech\",\"auto\"]}"';
+          const encrypt = false;
+          const source = 'pubmatic.com';
           (getGlobal()).getEncryptedEidsForSource(source, encrypt, getCustomSignal).then((result) => {
             expect(result).to.equal(expectedString);
             done();
           });
         });
-        it('pbjs.getUserIdsAsEidBySource', function () {
-          var users = [
-            {
+        it('pbjs.getUserIdsAsEidBySource', () => {
+          const users = {
               'source': 'pubcid.org',
               'uids': [
                 {
@@ -2731,8 +2725,7 @@ describe('User ID', function () {
                   'atype': 1
                 }
               ]
-            }
-          ];
+          }
           setSubmoduleRegistry([sharedIdSystemSubmodule, amxIdSubmodule]);
           init(config);
           config.setConfig({

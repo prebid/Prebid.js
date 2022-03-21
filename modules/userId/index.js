@@ -638,7 +638,7 @@ function getUserIdsAsEids() {
 
 function getUserIdsAsEidBySource(sourceName) {
   initializeSubmodulesAndExecuteCallbacks();
-  return createEidsArray(getSubmoduleId(initializedSubmodules, sourceName));
+  return createEidsArray(getSubmoduleId(initializedSubmodules, sourceName))[0];
 };
 
 /**
@@ -646,7 +646,6 @@ function getUserIdsAsEidBySource(sourceName) {
  * Sample use case is exposing this function to ESP
  */
 function getEncryptedEidsForSource(source, encrypt, customFunction) {
-  let eids = [];
   let eidsSignals = {};
 
   if (isFn(customFunction)) {
@@ -656,14 +655,13 @@ function getEncryptedEidsForSource(source, encrypt, customFunction) {
     eidsSignals[source] = customSignals ? encryptSignals(customSignals) : null; // by default encrypt using base64 to avoid JSON errors
   } else {
     // initialize signal with eids by default
-    eids = getUserIdsAsEidBySource(source);
-    logInfo(`${MODULE_NAME} - Getting encrypted signal for eids :${JSON.stringify(eids)}`);
-    if (!isEmpty(eids)) {
-      const eid = eids[0];
+    const eid = getUserIdsAsEidBySource(source);
+    logInfo(`${MODULE_NAME} - Getting encrypted signal for eids :${JSON.stringify(eid)}`);
+    if (!isEmpty(eid)) {
       eidsSignals[eid.source] = encrypt === true ? encryptSignals(eid) : eid.uids[0].id; // If encryption is enabled append version (1||) and encrypt entire object
     }
   }
-  let promise = Promise.resolve(eidsSignals[source]);
+  const promise = Promise.resolve(eidsSignals[source]);
   logInfo(`${MODULE_NAME} - Fetching encrypted eids: ${eidsSignals[source]}`);
   return promise;
 }
@@ -680,6 +678,9 @@ function encryptSignals(signals, version = 1) {
   return `${version}||${encryptedSig}`;
 }
 
+/**
+* This function will be exposed in the global-name-space so that publisher can register the signals-ESP.
+*/
 function registerSignalSources() {
   if (!isGptPubadsDefined()) {
     return;
@@ -688,17 +689,14 @@ function registerSignalSources() {
   const encryptedSignalSources = config.getConfig('userSync.encryptedSignalSources');
   if (encryptedSignalSources) {
     const registerDelay = encryptedSignalSources.registerDelay || 0;
-    setTimeout(function() {
-      encryptedSignalSources['sources'].forEach(function ({source, encrypt, customFunc}) {
-        source.forEach(function (source) {
-          window.googletag.encryptedSignalProviders.push(
-            {
-              id: source,
-              collectorFunction: function () {
-                return getEncryptedEidsForSource(source, encrypt, customFunc);
-              }
-            });
-        })
+    setTimeout(() => {
+      encryptedSignalSources['sources'].forEach(({ source, encrypt, customFunc }) => {
+        source.forEach((src) => {
+          window.googletag.encryptedSignalProviders.push({
+            id: src,
+            collectorFunction: () => getEncryptedEidsForSource(src, encrypt, customFunc)
+          });
+        });
       })
     }, registerDelay)
   } else {
