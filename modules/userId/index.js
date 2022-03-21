@@ -128,6 +128,7 @@
 /**
   * @typedef {Object} RefreshUserIdsOptions
   * @property {(string[]|undefined)} submoduleNames - submodules to refresh
+ *  @property {Boolean?} refresh - if false, nothing is refreshed - useful if you need a promise to ID resolution
   */
 
 import {find, includes} from '../../src/polyfill.js';
@@ -197,6 +198,8 @@ export let auctionDelay;
 
 /** @type {(string|undefined)} */
 let ppidSource;
+
+let configListener;
 
 /** @param {Submodule[]} submodules */
 export function setSubmoduleRegistry(submodules) {
@@ -504,58 +507,132 @@ function addIdDataToAdUnitBids(adUnits, submodules) {
   });
 }
 
-/**
- * This is a common function that will initialize subModules if not already done and it will also execute subModule callbacks
- */
-function initializeSubmodulesAndExecuteCallbacks(continueAuction) {
-  let delayed = false;
+function delayFor(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
-  // initialize submodules only when undefined
-  if (typeof initializedSubmodules === 'undefined') {
-    initializedSubmodules = initSubmodules(submodules, gdprDataHandler.getConsentData());
-    if (initializedSubmodules.length) {
-      setPrebidServerEidPermissions(initializedSubmodules);
-      // list of submodules that have callbacks that need to be executed
-      const submodulesWithCallbacks = initializedSubmodules.filter(item => isFn(item.callback));
+function idSystemInitializer({delay = delayFor} = {}) {
+  /**
+   * @returns a {promise, resolve, reject} trio where `promise` is resolved by calling `resolve` or `reject`.
+   */
+  function breakpoint() {
+    const [SUCCESS, FAIL, RESULT] = [0, 1, 2];
+    const status = {};
 
-      if (submodulesWithCallbacks.length) {
-        if (continueAuction && auctionDelay > 0) {
-          // delay auction until ids are available
-          delayed = true;
-          let continued = false;
-          const continueCallback = function () {
-            if (!continued) {
-              continued = true;
-              continueAuction();
-            }
-          }
-          logInfo(`${MODULE_NAME} - auction delayed by ${auctionDelay} at most to fetch ids`);
-
-          timeoutID = setTimeout(continueCallback, auctionDelay);
-          processSubmoduleCallbacks(submodulesWithCallbacks, continueCallback);
+    function finisher(slot) {
+      return function (val) {
+        if (status[slot] != null) {
+          status[slot](val);
         } else {
-          // wait for auction complete before processing submodule callbacks
-          events.on(CONSTANTS.EVENTS.AUCTION_END, function auctionEndHandler() {
-            events.off(CONSTANTS.EVENTS.AUCTION_END, auctionEndHandler);
-
-            // when syncDelay is zero, process callbacks now, otherwise delay process with a setTimeout
-            if (syncDelay > 0) {
-              setTimeout(function () {
-                processSubmoduleCallbacks(submodulesWithCallbacks);
-              }, syncDelay);
-            } else {
-              processSubmoduleCallbacks(submodulesWithCallbacks);
-            }
-          });
+          status[slot] = true;
+          status[RESULT] = val;
         }
+      }
+    }
+
+    return {
+      promise: new Promise((resolve, reject) => {
+        if (status[SUCCESS] != null) {
+          resolve(status[RESULT]);
+        } else if (status[FAIL] != null) {
+          reject(status[RESULT]);
+        } else {
+          status[SUCCESS] = resolve;
+          status[FAIL] = reject;
+        }
+      }),
+      resolve: finisher(SUCCESS),
+      reject: finisher(FAIL)
+    }
+  }
+
+  const startInit = breakpoint();
+  const startCallbacks = breakpoint();
+  let cancel;
+  let initialized = false;
+
+  function cancelAndTry(promise) {
+    if (cancel != null) {
+      cancel.reject();
+    }
+    cancel = breakpoint();
+    return Promise.race([promise, cancel.promise]);
+  }
+
+  // grab a reference to global vars so that the promise chains remain isolated;
+  // multiple calls to `init` (from tests) might otherwise cause them to interfere with each other
+  let initModules = initializedSubmodules;
+  let allModules = submodules;
+
+  function checkRefs(fn) {
+    // unfortunately tests have their own global state that needs to be guarded, so even if we keep ours tidy,
+    // we cannot let things like submodule callbacks run (they pollute things like the global `server` XHR mock)
+    return function(...args) {
+      if (initModules === initializedSubmodules && allModules === submodules) {
+        return fn(...args);
       }
     }
   }
 
-  if (continueAuction && !delayed) {
-    continueAuction();
-  }
+  let done = cancelAndTry(
+    startInit.promise
+      .then(() => gdprDataHandler.promise)
+      .then(checkRefs((consentData) => {
+        initSubmodules(initModules, allModules, consentData);
+      }))
+      .then(() => startCallbacks.promise)
+      .then(checkRefs(() => {
+        const modWithCb = initModules.filter(item => isFn(item.callback));
+        if (modWithCb.length) {
+          return new Promise((resolve) => processSubmoduleCallbacks(modWithCb, resolve));
+        }
+      }))
+  );
+
+  /**
+   * with `ready` = true, starts initialization; with `refresh` = true, reinitialize submodules (optionally
+   * filtered by `submoduleNames`).
+   */
+  return function ({refresh = false, submoduleNames = null, ready = false} = {}) {
+    if (ready && !initialized) {
+      initialized = true;
+      startInit.resolve();
+      // submodule callbacks should run immediately if `auctionDelay` > 0, or `syncDelay` ms after the
+      // auction ends otherwise
+      if (auctionDelay > 0) {
+        startCallbacks.resolve();
+      } else {
+        events.on(CONSTANTS.EVENTS.AUCTION_END, function auctionEndHandler() {
+          events.off(CONSTANTS.EVENTS.AUCTION_END, auctionEndHandler);
+          delay(syncDelay).then(startCallbacks.resolve);
+        });
+      }
+    }
+    if (refresh) {
+      done = cancelAndTry(
+        done
+          .catch(() => null)
+          .then(() => gdprDataHandler.promise) // fetch again in case a refresh was forced before this was resolved
+          .then(checkRefs((consentData) => {
+            const cbModules = initSubmodules(
+              initModules,
+              allModules.filter((sm) => submoduleNames == null || submoduleNames.includes(sm.submodule.name)),
+              consentData,
+              true
+            ).filter((sm) => {
+              return sm.callback != null;
+            });
+            if (cbModules.length) {
+              return new Promise((resolve) => processSubmoduleCallbacks(cbModules, resolve));
+            }
+          }))
+      );
+    }
+    return done;
+  };
 }
+
+let initIdSystem;
 
 /**
  * Hook is executed before adapters, but after consentManagement. Consent data is requied because
@@ -566,9 +643,11 @@ function initializeSubmodulesAndExecuteCallbacks(continueAuction) {
  * @param {Object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
  * @param {function} fn required; The next function in the chain, used by hook.js
  */
-export function requestBidsHook(fn, reqBidsConfigObj) {
-  // initialize submodules only when undefined
-  initializeSubmodulesAndExecuteCallbacks(function () {
+export function requestBidsHook(fn, reqBidsConfigObj, {delay = delayFor} = {}) {
+  Promise.race([
+    initIdSystem(),
+    delay(auctionDelay)
+  ]).then(() => {
     // pass available user id data to bid adapters
     addIdDataToAdUnitBids(reqBidsConfigObj.adUnits || getGlobal().adUnits, initializedSubmodules);
 
@@ -600,74 +679,36 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
  * This function will be exposed in global-name-space so that userIds stored by Prebid UserId module can be used by external codes as well.
  * Simple use case will be passing these UserIds to A9 wrapper solution
  */
-function getUserIds() {
-  // initialize submodules only when undefined
-  initializeSubmodulesAndExecuteCallbacks();
-  return getCombinedSubmoduleIds(initializedSubmodules);
+function getUserIds(cb) {
+  if (cb && isFn(cb)) {
+    initIdSystem().then(() => cb(getUserIds()), () => getUserIds(cb));
+  }
+  return getCombinedSubmoduleIds(initializedSubmodules)
 }
 
 /**
  * This function will be exposed in global-name-space so that userIds stored by Prebid UserId module can be used by external codes as well.
  * Simple use case will be passing these UserIds to A9 wrapper solution
  */
-function getUserIdsAsEids() {
-  // initialize submodules only when undefined
-  initializeSubmodulesAndExecuteCallbacks();
-  return createEidsArray(getCombinedSubmoduleIds(initializedSubmodules));
+function getUserIdsAsEids(cb) {
+  if (cb && isFn(cb)) {
+    initIdSystem().then(() => cb(getUserIdsAsEids()), () => getUserIdsAsEids(cb));
+  }
+  return createEidsArray(getUserIds())
 }
 
 /**
 * This function will be exposed in the global-name-space so that userIds can be refreshed after initialization.
 * @param {RefreshUserIdsOptions} options
 */
-function refreshUserIds(options, callback) {
-  let submoduleNames = options ? options.submoduleNames : null;
-  if (!submoduleNames) {
-    submoduleNames = [];
-  }
-
-  initializeSubmodulesAndExecuteCallbacks(function() {
-    let consentData = gdprDataHandler.getConsentData()
-
-    // gdpr consent with purpose one is required, otherwise exit immediately
-    let {userIdModules, hasValidated} = validateGdprEnforcement(submodules, consentData);
-    if (!hasValidated && !hasGDPRConsent(consentData)) {
-      logWarn(`${MODULE_NAME} - gdpr permission not valid for local storage or cookies, exit module`);
-      return;
-    }
-
-    // we always want the latest consentData stored, even if we don't execute any submodules
-    const storedConsentData = getStoredConsentData();
-    setStoredConsentData(consentData);
-
-    let callbackSubmodules = [];
-    for (let submodule of userIdModules) {
-      if (submoduleNames.length > 0 &&
-        submoduleNames.indexOf(submodule.submodule.name) === -1) {
-        continue;
+function refreshUserIds({refresh = true, submoduleNames} = {}, callback) {
+  return initIdSystem({refresh, submoduleNames})
+    .then(() => {
+      if (callback && isFn(callback)) {
+        callback();
       }
-
-      logInfo(`${MODULE_NAME} - refreshing ${submodule.submodule.name}`);
-      populateSubmoduleId(submodule, consentData, storedConsentData, true);
-      updateInitializedSubmodules(submodule);
-
-      if (initializedSubmodules.length) {
-        setPrebidServerEidPermissions(initializedSubmodules);
-      }
-
-      if (isFn(submodule.callback)) {
-        callbackSubmodules.push(submodule);
-      }
-    }
-
-    if (callbackSubmodules.length > 0) {
-      processSubmoduleCallbacks(callbackSubmodules);
-    }
-
-    if (callback) {
-      callback();
-    }
-  });
+      return getUserIds();
+    });
 }
 
 /**
@@ -728,12 +769,7 @@ function populateSubmoduleId(submodule, consentData, storedConsentData, forceRef
   }
 }
 
-/**
- * @param {SubmoduleContainer[]} submodules
- * @param {ConsentData} consentData
- * @returns {SubmoduleContainer[]} initialized submodules
- */
-function initSubmodules(submodules, consentData) {
+function initSubmodules(dest, submodules, consentData, forceRefresh = false) {
   // gdpr consent with purpose one is required, otherwise exit immediately
   let { userIdModules, hasValidated } = validateGdprEnforcement(submodules, consentData);
   if (!hasValidated && !hasGDPRConsent(consentData)) {
@@ -745,25 +781,30 @@ function initSubmodules(submodules, consentData) {
   const storedConsentData = getStoredConsentData();
   setStoredConsentData(consentData);
 
-  return userIdModules.reduce((carry, submodule) => {
-    populateSubmoduleId(submodule, consentData, storedConsentData, false);
+  const initialized = userIdModules.reduce((carry, submodule) => {
+    populateSubmoduleId(submodule, consentData, storedConsentData, forceRefresh);
     carry.push(submodule);
     return carry;
   }, []);
+  if (initialized.length) {
+    setPrebidServerEidPermissions(initialized);
+  }
+  initialized.forEach(updateInitializedSubmodules.bind(null, dest));
+  return initialized;
 }
 
-function updateInitializedSubmodules(submodule) {
+function updateInitializedSubmodules(dest, submodule) {
   let updated = false;
-  for (let i = 0; i < initializedSubmodules.length; i++) {
-    if (submodule.config.name.toLowerCase() === initializedSubmodules[i].config.name.toLowerCase()) {
+  for (let i = 0; i < dest.length; i++) {
+    if (submodule.config.name.toLowerCase() === dest[i].config.name.toLowerCase()) {
       updated = true;
-      initializedSubmodules[i] = submodule;
+      dest[i] = submodule;
       break;
     }
   }
 
   if (!updated) {
-    initializedSubmodules.push(submodule);
+    dest.push(submodule);
   }
 }
 
@@ -812,8 +853,9 @@ function updateSubmodules() {
   // do this to avoid reprocessing submodules
   const addedSubmodules = submoduleRegistry.filter(i => !find(submodules, j => j.name === i.name));
 
+  submodules.splice(0, submodules.length);
   // find submodule and the matching configuration, if found create and append a SubmoduleContainer
-  submodules = addedSubmodules.map(i => {
+  addedSubmodules.map(i => {
     const submoduleConfig = find(configs, j => j.name && (j.name.toLowerCase() === i.name.toLowerCase() ||
       (i.aliasName && j.name.toLowerCase() === i.aliasName.toLowerCase())));
     if (submoduleConfig && i.name !== submoduleConfig.name) submoduleConfig.name = i.name;
@@ -824,7 +866,8 @@ function updateSubmodules() {
       callback: undefined,
       idObj: undefined
     } : null;
-  }).filter(submodule => submodule !== null);
+  }).filter(submodule => submodule !== null)
+    .forEach((sm) => submodules.push(sm));
 
   if (!addedUserIdHook && submodules.length) {
     // priority value 40 will load after consentManagement with a priority of 50
@@ -850,12 +893,17 @@ export function attachIdSystem(submodule) {
  * so a callback is added to fire after the consentManagement module.
  * @param {{getConfig:function}} config
  */
-export function init(config) {
+export function init(config, {delay = delayFor} = {}) {
   ppidSource = undefined;
   submodules = [];
   configRegistry = [];
   addedUserIdHook = false;
-  initializedSubmodules = undefined;
+  initializedSubmodules = [];
+  initIdSystem = idSystemInitializer({delay});
+  if (configListener != null) {
+    configListener();
+  }
+  submoduleRegistry = [];
 
   // list of browser enabled storage types
   validStorageTypes = [
@@ -874,7 +922,7 @@ export function init(config) {
   }
 
   // listen for config userSyncs to be set
-  config.getConfig('userSync', conf => {
+  configListener = config.getConfig('userSync', conf => {
     // Note: support for 'usersync' was dropped as part of Prebid.js 4.0
     const userSync = conf.userSync;
     ppidSource = userSync.ppid;
@@ -883,6 +931,7 @@ export function init(config) {
       syncDelay = isNumber(userSync.syncDelay) ? userSync.syncDelay : DEFAULT_SYNC_DELAY;
       auctionDelay = isNumber(userSync.auctionDelay) ? userSync.auctionDelay : NO_AUCTION_DELAY;
       updateSubmodules();
+      initIdSystem({ready: true});
     }
   });
 
