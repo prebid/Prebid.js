@@ -2652,9 +2652,10 @@ describe('User ID', function () {
           expect(domain).to.be.eq('realdomain.co.uk');
         });
       });
+    });
 
+    describe('handles config with ESP configuration in user sync object', function() {
       describe('Call registerSignalSources to register signal sources with gtag', function () {
-
         it('pbjs.registerSignalSources should be defined', () => {
           expect(typeof (getGlobal()).registerSignalSources).to.equal('function');
         });
@@ -2716,15 +2717,16 @@ describe('User ID', function () {
             done();
           });
         });
+
         it('pbjs.getUserIdsAsEidBySource', () => {
           const users = {
-              'source': 'pubcid.org',
-              'uids': [
-                {
-                  'id': '11111',
-                  'atype': 1
-                }
-              ]
+            'source': 'pubcid.org',
+            'uids': [
+              {
+                'id': '11111',
+                'atype': 1
+              }
+            ]
           }
           setSubmoduleRegistry([sharedIdSystemSubmodule, amxIdSubmodule]);
           init(config);
