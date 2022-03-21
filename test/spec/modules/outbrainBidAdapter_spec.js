@@ -471,7 +471,7 @@ describe('Outbrain Adapter', function () {
                     impid: '1',
                     price: 1.1,
                     nurl: 'http://example.com/win/${AUCTION_PRICE}',
-                    adm: '{"ver":"1.2","assets":[{"id":3,"required":1,"img":{"url":"http://example.com/img/url","w":120,"h":100}},{"id":0,"required":1,"title":{"text":"Test title"}},{"id":5,"data":{"value":"Test sponsor"}}],"link":{"url":"http://example.com/click/url"},"eventtrackers":[{"event":1,"method":1,"url":"http://example.com/impression"}]}',
+                    adm: '{"ver":"1.2","assets":[{"id":3,"required":1,"img":{"url":"http://example.com/img/url","w":120,"h":100}},{"id":0,"required":1,"title":{"text":"Test title"}},{"id":5,"data":{"value":"Test sponsor"}}],"privacy":"http://example.com/privacy","link":{"url":"http://example.com/click/url"},"eventtrackers":[{"event":1,"method":1,"url":"http://example.com/impression"}]}',
                     adomain: [
                       'example.com'
                     ],
@@ -524,7 +524,8 @@ describe('Outbrain Adapter', function () {
               sponsoredBy: 'Test sponsor',
               impressionTrackers: [
                 'http://example.com/impression',
-              ]
+              ],
+              privacyLink: 'http://example.com/privacy'
             }
           }
         ]

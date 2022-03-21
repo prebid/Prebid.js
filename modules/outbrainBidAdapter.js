@@ -216,7 +216,7 @@ export const spec = {
 registerBidder(spec);
 
 function parseNative(bid) {
-  const { assets, link, eventtrackers } = JSON.parse(bid.adm);
+  const { assets, link, privacy, eventtrackers } = JSON.parse(bid.adm);
   const result = {
     clickUrl: link.url,
     clickTrackers: link.clicktrackers || undefined
@@ -228,6 +228,9 @@ function parseNative(bid) {
       result[kind] = content.text || content.value || { url: content.url, width: content.w, height: content.h };
     }
   });
+  if (privacy) {
+    result.privacyLink = privacy;
+  }
   if (eventtrackers) {
     result.impressionTrackers = [];
     eventtrackers.forEach(tracker => {
