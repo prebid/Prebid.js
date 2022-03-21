@@ -78,18 +78,18 @@
 		var googletag = googletag || {};
 		googletag.cmd = googletag.cmd || [];
 
-		googletag.cmd.push(() => {
+		googletag.cmd.push(function () {
 			googletag.pubads().disableInitialLoad();
 		});
 
-		pbjs.que.push(() => {
+		pbjs.que.push(function () {
 			pbjs.addAdUnits(adUnits);
 			pbjs.requestBids({ bidsBackHandler: sendAdServerRequest });
 		});
 
 		function sendAdServerRequest() {
-			googletag.cmd.push(() => {
-				pbjs.que.push(() => {
+			googletag.cmd.push(function () {
+				pbjs.que.push(function () {
 					pbjs.setTargetingForGPTAsync('/19968336/prebid_native_example_1');
 					googletag.pubads().refresh();
 				});
@@ -99,7 +99,7 @@
 
 	<script>
 		// GPT Setup
-		googletag.cmd.push(() => {
+		googletag.cmd.push(function () {
 			googletag
 				.defineSlot('/19968336/prebid_native_example_1', [360, 360], 'div-1')
 				.addService(googletag.pubads());
@@ -115,7 +115,7 @@
 	<div id='div-1'>
 		<p>No response</p>
 		<script>
-			googletag.cmd.push(() => { googletag.display('div-1'); });
+			googletag.cmd.push(function () { googletag.display('div-1'); });
 		</script>
 	</div>
 </body>

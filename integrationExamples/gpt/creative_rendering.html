@@ -1,9 +1,4 @@
-<!-- #1 deprecated method - use preferred method below  instead-->
-<script>
-    try{ window.top.$$PREBID_GLOBAL$$.renderAd(document, '%%PATTERN:hb_adid%%'); } catch(e) {/*ignore*/}
-</script>
-
-<!-- #2 preferred method for showing ad - handles cases when $$PREBID_GLOBAL$$ is not in the top window -->
+<!-- preferred method for showing ad - handles cases when $$PREBID_GLOBAL$$ is not in the top window -->
 <script>
 var w = window;
 for (i = 0; i < 10; i++) {

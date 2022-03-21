@@ -18,22 +18,23 @@ ZEDO has its own renderer and will render the video unit if not defined in the c
 # display
 ```
 
-    var adUnits = [
-        {
-            code: 'banner-ad-div',
-            sizes: [[300, 250], [728, 90]],
-            bids: [
-                {
-                    bidder: 'zedo',
-                    params: {
-                        channelCode: 2264004118, // required
-                        dimId: 9,  // required
-                        pubId: 1   // optional
-                    }
+    var adUnits = [{
+            code: 'div-gpt-ad-1460505748561-0',
+            mediaTypes: {
+                banner: {
+                    sizes: [[300, 250], [300,600]],
                 }
-            ]
-        }
-    ];
+            },
+            // Replace this object to test a new Adapter!
+            bids: [{
+                bidder: 'zedo',
+                params: {
+                    channelCode: 2264004735, //REQUIRED 
+                    dimId:9 //REQUIRED
+                }
+            }]
+
+        }];
 ```
 # video
 ```
@@ -54,7 +55,7 @@ ZEDO has its own renderer and will render the video unit if not defined in the c
                 bidder: 'zedo', 
                 params: 
                 { 
-                    channelCode: 2264004593, // required
+                    channelCode: 2264004735, // required
                     dimId: 85, // required
                     pubId: 1 // optional
                 } 

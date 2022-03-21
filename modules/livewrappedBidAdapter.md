@@ -8,7 +8,7 @@
 
 Connects to Livewrapped Header Bidding wrapper for bids.
 
-Livewrapped supports banner.
+Livewrapped supports banner, native and video.
 
 # Test Parameters
 
@@ -20,7 +20,7 @@ var adUnits = [
        bids: [{
          bidder: 'livewrapped',
          params: {
-           adUnitId: '6A32352E-BC17-4B94-B2A7-5BF1724417D7'
+           adUnitId: 'D801852A-681F-11E8-86A7-0A44794250D4'
          }
        }]
    }

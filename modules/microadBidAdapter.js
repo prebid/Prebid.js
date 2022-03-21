@@ -1,5 +1,6 @@
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { BANNER } from '../src/mediaTypes';
+import { deepAccess, isEmpty, isStr } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'microad';
 
@@ -81,6 +82,11 @@ export const spec = {
         }
       }
 
+      const idlEnv = deepAccess(bid, 'userId.idl_env')
+      if (!isEmpty(idlEnv) && isStr(idlEnv)) {
+        params['idl_env'] = idlEnv
+      }
+
       requests.push({
         method: 'GET',
         url: ENDPOINT_URLS[ENVIRONMENT],
@@ -105,6 +111,7 @@ export const spec = {
         creativeId: body.creativeId,
         netRevenue: body.netRevenue,
         currency: body.currency,
+        meta: body.meta || { advertiserDomains: [] }
       };
 
       if (body.dealId) {

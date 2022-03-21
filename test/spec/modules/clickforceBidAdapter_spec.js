@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { spec } from 'modules/clickforceBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
+import { spec } from 'modules/clickforceBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 describe('ClickforceAdapter', function () {
   const adapter = newBidder(spec);
@@ -75,7 +75,10 @@ describe('ClickforceAdapter', function () {
       'currency': 'USD',
       'ttl': 60,
       'netRevenue': true,
-      'zone': '6682'
+      'zone': '6682',
+      'adomain': [
+        'www.example.com'
+      ]
     }];
 
     let response1 = [{
@@ -116,6 +119,11 @@ describe('ClickforceAdapter', function () {
       'ttl': 60,
       'ad': '<!-- test creative -->',
       'mediaType': 'banner',
+      'meta': {
+        'advertiserDomains': [
+          'www.example.com'
+        ]
+      }
     }];
 
     let expectedResponse1 = [{
@@ -144,6 +152,9 @@ describe('ClickforceAdapter', function () {
         },
         'clickUrl': 'cu',
         'impressionTrackers': ['iu']
+      },
+      'meta': {
+        'advertiserDomains': []
       }
     }];
 
@@ -175,7 +186,7 @@ describe('ClickforceAdapter', function () {
       }
       let userSync = spec.getUserSyncs(syncOptions);
       expect(userSync[0].type).to.equal('iframe');
-      expect(userSync[0].url).to.equal('https://cdn.doublemax.net/js/capmapping.htm');
+      expect(userSync[0].url).to.equal('https://cdn.holmesmind.com/js/capmapping.htm');
     });
 
     it('should register type is image', function () {
@@ -184,7 +195,7 @@ describe('ClickforceAdapter', function () {
       }
       let userSync = spec.getUserSyncs(syncOptions);
       expect(userSync[0].type).to.equal('image');
-      expect(userSync[0].url).to.equal('https://c.doublemax.net/cm');
+      expect(userSync[0].url).to.equal('https://c.holmesmind.com/cm');
     });
   });
 });

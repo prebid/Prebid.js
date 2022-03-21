@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { spec } from 'modules/bidglassBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
+import { spec } from 'modules/bidglassBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 describe('Bid Glass Adapter', function () {
   const adapter = newBidder(spec);
@@ -65,7 +65,10 @@ describe('Bid Glass Adapter', function () {
             'creativeId': '-1',
             'width': '300',
             'height': '250',
-            'requestId': '30b31c1838de1e'
+            'requestId': '30b31c1838de1e',
+            'meta': {
+              'advertiserDomains': ['https://example.com']
+            }
           }]
         }
       };
@@ -83,7 +86,10 @@ describe('Bid Glass Adapter', function () {
         'mediaType': 'banner',
         'netRevenue': true,
         'ttl': 10,
-        'ad': '<!-- Creative -->'
+        'ad': '<!-- Creative -->',
+        'meta': {
+          'advertiserDomains': ['https://example.com']
+        }
       }];
 
       let result = spec.interpretResponse(response);

@@ -4,7 +4,7 @@ Module Name: ReadPeak Bid Adapter
 
 Module Type: Bidder Adapter
 
-Maintainer: kurre.stahlberg@readpeak.com
+Maintainer: devteam@readpeak.com
 
 # Description
 
@@ -23,7 +23,8 @@ Please reach out to your account team or hello@readpeak.com for more information
             params: {
                 bidfloor: 5.00,
                 publisherId: 'test',
-                siteId: 'test'
+                siteId: 'test',
+                tagId: 'test-tag-1'
             },
         }]
     }];

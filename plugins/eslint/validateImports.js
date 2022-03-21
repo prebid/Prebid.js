@@ -31,6 +31,14 @@ function flagErrors(context, node, importPath) {
     ) {
       context.report(node, `import "${importPath}" cannot require module entry point`);
     }
+
+    // don't allow extension-less local imports
+    if (
+      !importPath.match(/^\w+/) &&
+      !['.js', '.json'].includes(path.extname(absImportPath))
+    ) {
+      context.report(node, `import "${importPath}" should include extension as .js or .json`);
+    }
   }
 }
 
@@ -54,7 +62,7 @@ module.exports = {
             let importPath = node.source.value.trim();
             flagErrors(context, node, importPath);
           },
-          "ExportNamedDeclaration[source]"(node) {
+          'ExportNamedDeclaration[source]'(node) {
             let importPath = node.source.value.trim();
             flagErrors(context, node, importPath);
           }

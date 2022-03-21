@@ -1,6 +1,6 @@
-import * as utils from '../src/utils';
-import {config} from '../src/config';
-import {registerBidder} from '../src/adapters/bidderFactory';
+import { parseSizesInput, _each } from '../src/utils.js';
+import {config} from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 // use protocol relative urls for http or https
 const MADVERTISE_ENDPOINT = 'https://mobile.mng-ads.com/';
@@ -15,7 +15,7 @@ export const spec = {
     if (typeof bid.params !== 'object') {
       return false;
     }
-    let sizes = utils.parseSizesInput(bid.sizes);
+    let sizes = parseSizesInput(bid.sizes);
     if (!sizes || sizes.length === 0) {
       return false;
     }
@@ -46,7 +46,7 @@ export const spec = {
         }
       }
 
-      utils._each(bidRequest.params, (item, key) => src = src + '&' + key + '=' + item);
+      _each(bidRequest.params, (item, key) => src = src + '&' + key + '=' + item);
 
       if (typeof bidRequest.params.u == 'undefined') {
         src = src + '&u=' + navigator.userAgent;
@@ -86,7 +86,11 @@ export const spec = {
       creativeId: responseObj.creativeId,
       netRevenue: responseObj.netRevenue,
       currency: responseObj.currency,
-      dealId: responseObj.dealId
+      dealId: responseObj.dealId,
+      meta: {
+        advertiserDomains: Array.isArray(responseObj.adomain) ? responseObj.adomain : []
+      }
+
     };
     return [bid];
   },

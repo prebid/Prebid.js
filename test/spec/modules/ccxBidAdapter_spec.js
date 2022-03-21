@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { spec } from 'modules/ccxBidAdapter';
-import * as utils from 'src/utils';
+import { spec } from 'modules/ccxBidAdapter.js';
+import * as utils from 'src/utils.js';
 
 describe('ccxAdapter', function () {
   let bids = [
@@ -248,6 +248,31 @@ describe('ccxAdapter', function () {
     });
   });
 
+  describe('GDPR conformity', function () {
+    it('should transmit correct data', function () {
+      let bidsClone = utils.deepClone(bids);
+      let gdprConsent = {
+        consentString: 'awefasdfwefasdfasd',
+        gdprApplies: true
+      };
+      let response = spec.buildRequests(bidsClone, {'bids': bidsClone, 'gdprConsent': gdprConsent});
+      let data = JSON.parse(response.data);
+
+      expect(data.regs.ext.gdpr).to.equal(1);
+      expect(data.user.ext.consent).to.equal('awefasdfwefasdfasd');
+    });
+  });
+
+  describe('GDPR absence conformity', function () {
+    it('should transmit correct data', function () {
+      let response = spec.buildRequests(bids, {bids});
+      let data = JSON.parse(response.data);
+
+      expect(data.regs).to.be.undefined;
+      expect(data.user).to.be.undefined;
+    });
+  });
+
   let response = {
     id: '0b9de793-8eda-481e-a548-c187d58b28d9',
     seatbid: [
@@ -312,7 +337,10 @@ describe('ccxAdapter', function () {
           netRevenue: false,
           ttl: 5,
           currency: 'PLN',
-          ad: '<script>TEST</script>'
+          ad: '<script>TEST</script>',
+          meta: {
+            advertiserDomains: ['clickonometrics.com']
+          }
         },
         {
           requestId: '2e56e1af51a5d8',
@@ -323,7 +351,10 @@ describe('ccxAdapter', function () {
           netRevenue: false,
           ttl: 5,
           currency: 'PLN',
-          vastXml: '<xml>'
+          vastXml: '<xml>',
+          meta: {
+            advertiserDomains: ['clickonometrics.com']
+          }
         }
       ];
       expect(spec.interpretResponse({body: response})).to.deep.have.same.members(bidResponses);
@@ -341,7 +372,10 @@ describe('ccxAdapter', function () {
           netRevenue: false,
           ttl: 5,
           currency: 'PLN',
-          ad: '<script>TEST</script>'
+          ad: '<script>TEST</script>',
+          meta: {
+            advertiserDomains: ['clickonometrics.com']
+          }
         }
       ];
       expect(spec.interpretResponse({body: response})).to.deep.have.same.members(bidResponses);
@@ -398,6 +432,60 @@ describe('ccxAdapter', function () {
       let syncOptions = {iframeEnabled: true, pixelEnabled: true};
       response.ext.usersync = {};
       expect(spec.getUserSyncs(syncOptions, [{body: response}])).to.be.empty;
+    });
+  });
+  describe('mediaTypesVideoParams', function () {
+    it('Valid video mediaTypes', function () {
+      let bids = [
+        {
+          adUnitCode: 'video',
+          auctionId: '0b9de793-8eda-481e-a548-c187d58b28d9',
+          bidId: '3u94t90ut39tt3t',
+          bidder: 'ccx',
+          bidderRequestId: '23ur20r239r2r',
+          mediaTypes: {
+            video: {
+              playerSize: [[640, 480]],
+              protocols: [2, 3, 5, 6],
+              mimes: ['video/mp4', 'video/x-flv'],
+              playbackmethod: [1, 2, 3, 4],
+              skip: 1,
+              skipafter: 5
+            }
+          },
+          params: {
+            placementId: 608
+          },
+          sizes: [[640, 480]],
+          transactionId: 'aefddd38-cfa0-48ab-8bdd-325de4bab5f9'
+        }
+      ];
+
+      let imps = [
+        {
+          video: {
+            w: 640,
+            h: 480,
+            protocols: [2, 3, 5, 6],
+            mimes: ['video/mp4', 'video/x-flv'],
+            playbackmethod: [1, 2, 3, 4],
+            skip: 1,
+            skipafter: 5
+          },
+          id: '3u94t90ut39tt3t',
+          secure: 1,
+          ext: {
+            pid: 608
+          }
+        }
+      ];
+
+      let bidsClone = utils.deepClone(bids);
+
+      let response = spec.buildRequests(bidsClone, {'bids': bidsClone});
+      let data = JSON.parse(response.data);
+
+      expect(data.imp).to.deep.have.same.members(imps);
     });
   });
 });

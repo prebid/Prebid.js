@@ -1,8 +1,6 @@
-import * as utils from '../src/utils';
-import {createBid as createBidFactory} from '../src/bidfactory';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import {VIDEO} from '../src/mediaTypes';
-import {STATUS} from '../src/constants';
+import { logError, isEmpty, deepAccess, triggerPixel, logWarn, isArray } from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {VIDEO} from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'telaria';
 const DOMAIN = 'tremorhub.com';
@@ -11,7 +9,11 @@ const EVENTS_ENDPOINT = `events.${DOMAIN}/diag`;
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['tremor', 'tremorvideo'],
+  gvlid: 52,
+  aliases: [
+    { code: 'tremor', gvlid: 52 },
+    { code: 'tremorvideo', gvlid: 52 }
+  ],
   supportedMediaTypes: [VIDEO],
   /**
    * Determines if the request is valid
@@ -73,7 +75,7 @@ export const spec = {
         }
       });
     } catch (error) {
-      utils.logError(error);
+      logError(error);
       width = 0;
       height = 0;
     }
@@ -83,10 +85,12 @@ export const spec = {
       if (bidResult && bidResult.error) {
         errorMessage += `: ${bidResult.error}`;
       }
-      utils.logError(errorMessage);
-    } else if (!utils.isEmpty(bidResult.seatbid)) {
+      logError(errorMessage);
+    } else if (!isEmpty(bidResult.seatbid)) {
       bidResult.seatbid[0].bid.forEach(tag => {
-        bids.push(createBid(STATUS.GOOD, bidderRequest, tag, width, height, BIDDER_CODE));
+        if (tag) {
+          bids.push(createBid(bidderRequest, tag, width, height));
+        }
       });
     }
 
@@ -102,7 +106,7 @@ export const spec = {
   getUserSyncs: function (syncOptions, serverResponses) {
     const syncs = [];
     if (syncOptions.pixelEnabled && serverResponses.length) {
-      (utils.deepAccess(serverResponses, '0.body.ext.telaria.userSync') || []).forEach(url => syncs.push({type: 'image', url: url}));
+      (deepAccess(serverResponses, '0.body.ext.telaria.userSync') || []).forEach(url => syncs.push({type: 'image', url: url}));
     }
     return syncs;
   },
@@ -114,21 +118,17 @@ export const spec = {
   onTimeout: function (timeoutData) {
     let url = getTimeoutUrl(timeoutData);
     if (url) {
-      utils.triggerPixel(url);
+      triggerPixel(url);
     }
   }
 };
 
-function getScheme() {
-  return ((document.location.protocol === 'https:') ? 'https' : 'http') + '://';
-}
-
-function getSrcPageUrl(params) {
-  return (params && params['srcPageUrl']) || encodeURIComponent(document.location.href);
+function getDefaultSrcPageUrl() {
+  return encodeURIComponent(document.location.href);
 }
 
 function getEncodedValIfNotEmpty(val) {
-  return !utils.isEmpty(val) ? encodeURIComponent(val) : '';
+  return (val !== '' && val !== undefined) ? encodeURIComponent(val) : '';
 }
 
 /**
@@ -139,7 +139,7 @@ function getEncodedValIfNotEmpty(val) {
  * @returns {string}
  */
 function getSupplyChainAsUrlParam(schainObject) {
-  if (utils.isEmpty(schainObject)) {
+  if (isEmpty(schainObject)) {
     return '';
   }
 
@@ -161,25 +161,28 @@ function getSupplyChainAsUrlParam(schainObject) {
 function getUrlParams(params, schainFromBidRequest) {
   let urlSuffix = '';
 
-  if (!utils.isEmpty(params)) {
+  if (!isEmpty(params)) {
     for (let key in params) {
-      if (key !== 'schain' && params.hasOwnProperty(key) && !utils.isEmpty(params[key])) {
+      if (key !== 'schain' && params.hasOwnProperty(key) && !isEmpty(params[key])) {
         urlSuffix += `&${key}=${params[key]}`;
       }
     }
-    urlSuffix += getSupplyChainAsUrlParam(!utils.isEmpty(schainFromBidRequest) ? schainFromBidRequest : params['schain']);
+    urlSuffix += getSupplyChainAsUrlParam(!isEmpty(schainFromBidRequest) ? schainFromBidRequest : params['schain']);
   }
 
   return urlSuffix;
 }
 
 export const getTimeoutUrl = function(timeoutData) {
-  let params = utils.deepAccess(timeoutData, '0.params.0');
+  let params = deepAccess(timeoutData, '0.params.0');
 
-  if (!utils.isEmpty(params)) {
-    let url = `${getScheme()}${EVENTS_ENDPOINT}`;
+  if (!isEmpty(params)) {
+    let url = `https://${EVENTS_ENDPOINT}`;
 
-    url += `?srcPageUrl=${getSrcPageUrl(params)}`;
+    params = Object.assign({
+      srcPageUrl: getDefaultSrcPageUrl()
+    }, params);
+
     url += `${getUrlParams(params)}`;
 
     url += '&hb=1&evt=TO';
@@ -196,14 +199,14 @@ export const getTimeoutUrl = function(timeoutData) {
  * @returns {string}
  */
 function generateUrl(bid, bidderRequest) {
-  let playerSize = utils.deepAccess(bid, 'mediaTypes.video.playerSize');
+  let playerSize = deepAccess(bid, 'mediaTypes.video.playerSize');
   if (!playerSize) {
-    utils.logWarn(`Although player size isn't required it is highly recommended`);
+    logWarn(`Although player size isn't required it is highly recommended`);
   }
 
   let width, height;
   if (playerSize) {
-    if (utils.isArray(playerSize) && (playerSize.length === 2) && (!isNaN(playerSize[0]) && !isNaN(playerSize[1]))) {
+    if (isArray(playerSize) && (playerSize.length === 2) && (!isNaN(playerSize[0]) && !isNaN(playerSize[1]))) {
       width = playerSize[0];
       height = playerSize[1];
     } else if (typeof playerSize === 'object') {
@@ -212,11 +215,11 @@ function generateUrl(bid, bidderRequest) {
     }
   }
 
-  let supplyCode = utils.deepAccess(bid, 'params.supplyCode');
-  let adCode = utils.deepAccess(bid, 'params.adCode');
+  let supplyCode = deepAccess(bid, 'params.supplyCode');
+  let adCode = deepAccess(bid, 'params.adCode');
 
   if (supplyCode && adCode) {
-    let url = `${getScheme()}${supplyCode}.${TAG_ENDPOINT}?adCode=${adCode}`;
+    let url = `https://${supplyCode}.${TAG_ENDPOINT}?adCode=${adCode}`;
 
     if (width) {
       url += (`&playerWidth=${width}`);
@@ -225,9 +228,12 @@ function generateUrl(bid, bidderRequest) {
       url += (`&playerHeight=${height}`);
     }
 
-    url += `${getUrlParams(bid.params, bid.schain)}`;
+    const params = Object.assign({
+      srcPageUrl: getDefaultSrcPageUrl()
+    }, bid.params);
+    delete params.adCode;
 
-    url += `&srcPageUrl=${getSrcPageUrl(bid.params)}`;
+    url += `${getUrlParams(params, bid.schain)}`;
 
     url += (`&transactionId=${bid.transactionId}`);
 
@@ -251,35 +257,32 @@ function generateUrl(bid, bidderRequest) {
 }
 
 /**
- * Create and return a bid object based on status and tag
- * @param status
+ * Create and return a bid response
  * @param reqBid
  * @param response
  * @param width
  * @param height
- * @param bidderCode
  */
-function createBid(status, reqBid, response, width, height, bidderCode) {
-  let bid = createBidFactory(status, reqBid);
-
+function createBid(reqBid, response, width, height) {
   // TTL 5 mins by default, future support for extended imp wait time
-  if (response) {
-    Object.assign(bid, {
-      requestId: reqBid.bidId,
-      cpm: response.price,
-      creativeId: response.crid || '-1',
-      vastXml: response.adm,
-      vastUrl: reqBid.vastUrl,
-      mediaType: 'video',
-      width: width,
-      height: height,
-      bidderCode: bidderCode,
-      adId: response.id,
-      currency: 'USD',
-      netRevenue: true,
-      ttl: 300,
-      ad: response.adm
-    });
+  const bid = {
+    requestId: reqBid.bidId,
+    cpm: response.price,
+    creativeId: response.crid || '-1',
+    vastXml: response.adm,
+    vastUrl: reqBid.vastUrl,
+    mediaType: 'video',
+    width: width,
+    height: height,
+    currency: 'USD',
+    netRevenue: true,
+    ttl: 300,
+    ad: response.adm,
+    meta: {}
+  };
+
+  if (response.adomain && response.adomain.length > 0) {
+    bid.meta.advertiserDomains = response.adomain;
   }
 
   return bid;

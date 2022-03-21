@@ -16,12 +16,17 @@ Use `videoreach` as bidder.
 ```
     var adUnits = [{
       code: 'your-slot', //use exactly the same code as your slot div id.
-      sizes: [[1, 1]],
-      bids: [{
-          bidder: 'videoreach',
-          params: { 
-              TagId: 'XXXXX'
+      mediaTypes: {
+          banner: {
+              sizes: [[1,1]]
           }
+      },
+      bids: [{
+        bidder: 'videoreach',
+        params: { 
+            TagId: 'XXXXX'
+        }
       }]
     }];
+
 ```

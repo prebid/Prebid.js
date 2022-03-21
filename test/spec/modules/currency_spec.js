@@ -1,14 +1,19 @@
 
 import {
   getCurrencyRates
-} from 'test/fixtures/fixtures';
+} from 'test/fixtures/fixtures.js';
+
+import { getGlobal } from 'src/prebidGlobal.js';
 
 import {
   setConfig,
   addBidResponseHook,
   currencySupportEnabled,
-  currencyRates
-} from 'modules/currency';
+  currencyRates,
+  ready
+} from 'modules/currency.js';
+import {createBid} from '../../../src/bidfactory.js';
+import CONSTANTS from '../../../src/constants.json';
 
 var assert = require('chai').assert;
 var expect = require('chai').expect;
@@ -20,8 +25,13 @@ describe('currency', function () {
 
   let fn = sinon.spy();
 
+  function makeBid(bidProps) {
+    return Object.assign(createBid(CONSTANTS.STATUS.GOOD), bidProps);
+  }
+
   beforeEach(function () {
     fakeCurrencyFileServer = sinon.fakeServer.create();
+    ready.reset();
   });
 
   afterEach(function () {
@@ -43,8 +53,12 @@ describe('currency', function () {
     it('results in currencySupportEnabled = false when currency not configured', function () {
       setConfig({});
       expect(currencySupportEnabled).to.equal(false);
+      expect(getGlobal().convertCurrency).to.be.undefined;
     });
-
+    it('adds conversion function onto pbjs global var once initiated', function () {
+      setConfig({ 'adServerCurrency': 'JPY' });
+      expect(getGlobal().convertCurrency).to.be.a('function');
+    });
     it('results in currencySupportEnabled = true and currencyRates being loaded when configured', function () {
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
       setConfig({ 'adServerCurrency': 'JPY' });
@@ -124,6 +138,38 @@ describe('currency', function () {
     });
   });
 
+  describe('global currency function', function () {
+    it('still returns conversion if default rates present with fetch not returned yet', function () {
+      setConfig({
+        'adServerCurrency': 'USD',
+        'defaultRates': {
+          'USD': { EUR: 2, JPY: 100 }
+        }
+      });
+      // first conversion should use default rates
+      expect(getGlobal().convertCurrency(1.0, 'USD', 'EUR')).to.equal(2);
+      expect(getGlobal().convertCurrency(1.0, 'USD', 'JPY')).to.equal(100);
+      fakeCurrencyFileServer.respond();
+    });
+    it('uses fetch rates if returned', function () {
+      fakeCurrencyFileServer.respondWith(JSON.stringify({
+        'dataAsOf': '2017-04-25',
+        'conversions': {
+          'USD': { EUR: 4, JPY: 200 }
+        }
+      }));
+      setConfig({
+        'adServerCurrency': 'USD',
+        'defaultRates': {
+          'USD': { EUR: 2, JPY: 100 }
+        }
+      });
+      // now respond and should use updates rates
+      fakeCurrencyFileServer.respond();
+      expect(getGlobal().convertCurrency(1.0, 'USD', 'EUR')).to.equal(4);
+      expect(getGlobal().convertCurrency(1.0, 'USD', 'JPY')).to.equal(200);
+    });
+  });
   describe('bidder override', function () {
     it('allows setConfig to set bidder currency', function () {
       setConfig({});
@@ -248,7 +294,7 @@ describe('currency', function () {
   });
 
   describe('currency.addBidResponseDecorator bidResponseQueue', function () {
-    it('not run until currency rates file is loaded', function () {
+    it('not run until currency rates file is loaded', function (done) {
       setConfig({});
 
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
@@ -258,21 +304,34 @@ describe('currency', function () {
       setConfig({ 'adServerCurrency': 'JPY' });
 
       var marker = false;
-      addBidResponseHook(function() {
+      let promiseResolved = false;
+      addBidResponseHook(Object.assign(function() {
         marker = true;
-      }, 'elementId', bid);
+      }, {
+        bail: function (promise) {
+          promise.then(() => promiseResolved = true);
+        }
+      }), 'elementId', bid);
 
       expect(marker).to.equal(false);
 
-      fakeCurrencyFileServer.respond();
-      expect(marker).to.equal(true);
+      setTimeout(() => {
+        expect(promiseResolved).to.be.false;
+        fakeCurrencyFileServer.respond();
+
+        setTimeout(() => {
+          expect(marker).to.equal(true);
+          expect(promiseResolved).to.be.true;
+          done();
+        });
+      });
     });
   });
 
   describe('currency.addBidResponseDecorator', function () {
     it('should leave bid at 1 when currency support is not enabled and fromCurrency is USD', function () {
       setConfig({});
-      var bid = { 'cpm': 1, 'currency': 'USD' };
+      var bid = makeBid({ 'cpm': 1, 'currency': 'USD' });
       var innerBid;
       addBidResponseHook(function(adCodeId, bid) {
         innerBid = bid;
@@ -283,7 +342,7 @@ describe('currency', function () {
     it('should result in NO_BID when currency support is not enabled and fromCurrency is not USD', function () {
       setConfig({});
 
-      var bid = { 'cpm': 1, 'currency': 'GBP' };
+      var bid = makeBid({ 'cpm': 1, 'currency': 'GBP' });
       var innerBid;
       addBidResponseHook(function(adCodeId, bid) {
         innerBid = bid;
@@ -295,7 +354,7 @@ describe('currency', function () {
       setConfig({
         'adServerCurrency': 'USD'
       });
-      var bid = { 'cpm': 1, 'currency': 'USD' };
+      var bid = makeBid({ 'cpm': 1, 'currency': 'USD' });
       var innerBid;
       addBidResponseHook(function(adCodeId, bid) {
         innerBid = bid;
@@ -310,7 +369,7 @@ describe('currency', function () {
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
       setConfig({ 'adServerCurrency': 'JPY' });
       fakeCurrencyFileServer.respond();
-      var bid = { 'cpm': 1, 'currency': 'ABC' };
+      var bid = makeBid({ 'cpm': 1, 'currency': 'ABC' });
       var innerBid;
       addBidResponseHook(function(adCodeId, bid) {
         innerBid = bid;
@@ -322,7 +381,7 @@ describe('currency', function () {
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
       setConfig({ 'adServerCurrency': 'ABC' });
       fakeCurrencyFileServer.respond();
-      var bid = { 'cpm': 1, 'currency': 'GBP' };
+      var bid = makeBid({ 'cpm': 1, 'currency': 'GBP' });
       var innerBid;
       addBidResponseHook(function(adCodeId, bid) {
         innerBid = bid;
@@ -334,7 +393,7 @@ describe('currency', function () {
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
       setConfig({ 'adServerCurrency': 'JPY' });
       fakeCurrencyFileServer.respond();
-      var bid = { 'cpm': 1, 'currency': 'JPY' };
+      var bid = makeBid({ 'cpm': 1, 'currency': 'JPY' });
       var innerBid;
       addBidResponseHook(function(adCodeId, bid) {
         innerBid = bid;
@@ -347,7 +406,7 @@ describe('currency', function () {
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
       setConfig({ 'adServerCurrency': 'GBP' });
       fakeCurrencyFileServer.respond();
-      var bid = { 'cpm': 1, 'currency': 'USD' };
+      var bid = makeBid({ 'cpm': 1, 'currency': 'USD' });
       var innerBid;
       addBidResponseHook(function(adCodeId, bid) {
         innerBid = bid;
@@ -360,7 +419,7 @@ describe('currency', function () {
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
       setConfig({ 'adServerCurrency': 'GBP' });
       fakeCurrencyFileServer.respond();
-      var bid = { 'cpm': 1, 'currency': 'CNY' };
+      var bid = makeBid({ 'cpm': 1, 'currency': 'CNY' });
       var innerBid;
       addBidResponseHook(function(adCodeId, bid) {
         innerBid = bid;
@@ -373,7 +432,7 @@ describe('currency', function () {
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
       setConfig({ 'adServerCurrency': 'CNY' });
       fakeCurrencyFileServer.respond();
-      var bid = { 'cpm': 1, 'currency': 'JPY' };
+      var bid = makeBid({ 'cpm': 1, 'currency': 'JPY' });
       var innerBid;
       addBidResponseHook(function(adCodeId, bid) {
         innerBid = bid;

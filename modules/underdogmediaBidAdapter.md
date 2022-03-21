@@ -13,7 +13,11 @@ Module that connects to Underdog Media's servers to fetch bids.
     var adUnits = [
         {
             code: 'test-div',
-            sizes: [[300, 250]],  // a display size
+            mediaTypes: {
+            banner: {
+                sizes: [[300, 250]],  // a display size
+            }
+          },
             bids: [
                 {
                     bidder: "underdogmedia",

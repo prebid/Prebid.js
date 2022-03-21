@@ -1,5 +1,4 @@
 import { expect } from 'chai';
-import { config } from 'src/config';
 import { spec } from 'modules/mytargetBidAdapter';
 
 describe('MyTarget Adapter', function() {
@@ -115,74 +114,45 @@ describe('MyTarget Adapter', function() {
       expect(settings.windowSize.width).to.equal(window.screen.width);
       expect(settings.windowSize.height).to.equal(window.screen.height);
     });
-
-    it('should pass currency from currency.adServerCurrency', function() {
-      const configStub = sinon.stub(config, 'getConfig').callsFake(
-        key => key === 'currency.adServerCurrency' ? 'USD' : '');
-
-      let bidRequest = spec.buildRequests(bidRequests, bidderRequest);
-      let settings = bidRequest.data.settings;
-
-      expect(settings).to.be.an('object');
-      expect(settings.currency).to.equal('USD');
-      expect(settings.windowSize).to.be.an('object');
-      expect(settings.windowSize.width).to.equal(window.screen.width);
-      expect(settings.windowSize.height).to.equal(window.screen.height);
-
-      configStub.restore();
-    });
-
-    it('should ignore currency other than "RUB" or "USD"', function() {
-      const configStub = sinon.stub(config, 'getConfig').callsFake(
-        key => key === 'currency.adServerCurrency' ? 'EUR' : '');
-
-      let bidRequest = spec.buildRequests(bidRequests, bidderRequest);
-      let settings = bidRequest.data.settings;
-
-      expect(settings).to.be.an('object');
-      expect(settings.currency).to.equal('RUB');
-
-      configStub.restore();
-    });
   });
 
   describe('interpretResponse', function () {
     let serverResponse = {
       body: {
         'bidder_status':
-       [
-         {
-           'bidder': 'mail.ru',
-           'response_time_ms': 100,
-           'num_bids': 2
-         }
-       ],
+          [
+            {
+              'bidder': 'mail.ru',
+              'response_time_ms': 100,
+              'num_bids': 2
+            }
+          ],
         'bids':
-        [
-          {
-            'displayUrl': 'https://ad.mail.ru/hbid_imp/12345',
-            'size':
+          [
             {
-              'height': '400',
-              'width': '240'
+              'displayUrl': 'https://ad.mail.ru/hbid_imp/12345',
+              'size':
+                {
+                  'height': '400',
+                  'width': '240'
+                },
+              'id': '1',
+              'currency': 'RUB',
+              'price': 100,
+              'ttl': 360,
+              'creativeId': '123456'
             },
-            'id': '1',
-            'currency': 'RUB',
-            'price': 100,
-            'ttl': 360,
-            'creativeId': '123456'
-          },
-          {
-            'adm': '<p>Ad</p>',
-            'size':
             {
-              'height': '250',
-              'width': '300'
-            },
-            'id': '2',
-            'price': 200
-          }
-        ]
+              'adm': '<p>Ad</p>',
+              'size':
+                {
+                  'height': '250',
+                  'width': '300'
+                },
+              'id': '2',
+              'price': 200
+            }
+          ]
       }
     };
 

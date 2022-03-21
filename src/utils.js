@@ -1,11 +1,11 @@
-import { config } from './config';
+/* eslint-disable no-console */
+import { config } from './config.js';
 import clone from 'just-clone';
-import find from 'core-js/library/fn/array/find';
-import includes from 'core-js/library/fn/array/includes';
-import { parse } from './url';
-const CONSTANTS = require('./constants');
+import {find, includes} from './polyfill.js';
 
-export { default as deepAccess } from 'dlv/index';
+const CONSTANTS = require('./constants.json');
+
+export { default as deepAccess } from 'dlv/index.js';
 export { default as deepSetValue } from 'dset';
 
 var tArr = 'Array';
@@ -21,16 +21,24 @@ let consoleInfoExists = Boolean(consoleExists && window.console.info);
 let consoleWarnExists = Boolean(consoleExists && window.console.warn);
 let consoleErrorExists = Boolean(consoleExists && window.console.error);
 
+const emitEvent = (function () {
+  // lazy load events to avoid circular import
+  let ev;
+  return function() {
+    if (ev == null) {
+      ev = require('./events.js');
+    }
+    return ev.emit.apply(ev, arguments);
+  }
+})();
+
 // this allows stubbing of utility functions that are used internally by other utility functions
 export const internal = {
   checkCookieSupport,
   createTrackPixelIframeHtml,
   getWindowSelf,
   getWindowTop,
-  getAncestorOrigins,
-  getTopFrameReferrer,
   getWindowLocation,
-  getTopWindowLocation,
   insertUserSyncIframe,
   insertElement,
   isFn,
@@ -38,8 +46,19 @@ export const internal = {
   logError,
   logWarn,
   logMessage,
-  logInfo
+  logInfo,
+  parseQS,
+  formatQS,
+  deepEqual
 };
+
+let prebidInternal = {}
+/**
+ * Returns object that is used as internal prebid namespace
+ */
+export function getPrebidInternal() {
+  return prebidInternal;
+}
 
 var uniqueRef = {};
 export let bind = function(a, b) { return b; }.bind(null, 1, uniqueRef)() === uniqueRef
@@ -51,28 +70,6 @@ export let bind = function(a, b) { return b; }.bind(null, 1, uniqueRef)() === un
       return self.apply(bind, args.concat(Array.prototype.slice.call(arguments)));
     };
   };
-
-/*
- *   Substitutes into a string from a given map using the token
- *   Usage
- *   var str = 'text %%REPLACE%% this text with %%SOMETHING%%';
- *   var map = {};
- *   map['replace'] = 'it was subbed';
- *   map['something'] = 'something else';
- *   console.log(replaceTokenInString(str, map, '%%')); => "text it was subbed this text with something else"
- */
-export function replaceTokenInString(str, map, token) {
-  _each(map, function (value, key) {
-    value = (value === undefined) ? '' : value;
-
-    var keyString = token + key.toUpperCase() + token;
-    var re = new RegExp(keyString, 'g');
-
-    str = str.replace(re, value);
-  });
-
-  return str;
-}
 
 /* utility method to get incremental integer starting from 1 */
 var getIncrementalInteger = (function () {
@@ -122,7 +119,7 @@ export function getBidIdParameter(key, paramsObj) {
 
 export function tryAppendQueryString(existingUrl, key, value) {
   if (value) {
-    return existingUrl += key + '=' + encodeURIComponent(value) + '&';
+    return existingUrl + key + '=' + encodeURIComponent(value) + '&';
   }
 
   return existingUrl;
@@ -130,12 +127,13 @@ export function tryAppendQueryString(existingUrl, key, value) {
 
 // parse a query string object passed in bid params
 // bid params should be an object such as {key: "value", key1 : "value1"}
+// aliases to formatQS
 export function parseQueryStringParameters(queryObj) {
   let result = '';
   for (var k in queryObj) {
     if (queryObj.hasOwnProperty(k)) { result += k + '=' + encodeURIComponent(queryObj[k]) + '&'; }
   }
-
+  result = result.replace(/&$/, '');
   return result;
 }
 
@@ -169,6 +167,7 @@ export function getAdUnitSizes(adUnit) {
     } else {
       sizes.push(bannerSizes);
     }
+  // TODO - remove this else block when we're ready to deprecate adUnit.sizes for bidders
   } else if (Array.isArray(adUnit.sizes)) {
     if (Array.isArray(adUnit.sizes[0])) {
       sizes = adUnit.sizes;
@@ -243,54 +242,6 @@ function isValidGPTSingleSize(singleSize) {
   return isArray(singleSize) && singleSize.length === 2 && (!isNaN(singleSize[0]) && !isNaN(singleSize[1]));
 }
 
-/**
- * @deprecated This function will be removed soon. Use http://prebid.org/dev-docs/bidder-adaptor.html#referrers
- */
-export function getTopWindowLocation() {
-  if (inIframe()) {
-    let loc;
-    try {
-      loc = internal.getAncestorOrigins() || internal.getTopFrameReferrer();
-    } catch (e) {
-      logInfo('could not obtain top window location', e);
-    }
-    if (loc) return parse(loc, {'decodeSearchAsString': true});
-  }
-  return internal.getWindowLocation();
-}
-
-/**
- * @deprecated This function will be removed soon. Use http://prebid.org/dev-docs/bidder-adaptor.html#referrers
- */
-export function getTopFrameReferrer() {
-  try {
-    // force an exception in x-domain environments. #1509
-    window.top.location.toString();
-    let referrerLoc = '';
-    let currentWindow;
-    do {
-      currentWindow = currentWindow ? currentWindow.parent : window;
-      if (currentWindow.document && currentWindow.document.referrer) {
-        referrerLoc = currentWindow.document.referrer;
-      }
-    }
-    while (currentWindow !== window.top);
-    return referrerLoc;
-  } catch (e) {
-    return window.document.referrer;
-  }
-}
-
-/**
- * @deprecated This function will be removed soon. Use http://prebid.org/dev-docs/bidder-adaptor.html#referrers
- */
-export function getAncestorOrigins() {
-  if (window.document.location && window.document.location.ancestorOrigins &&
-    window.document.location.ancestorOrigins.length >= 1) {
-    return window.document.location.ancestorOrigins[window.document.location.ancestorOrigins.length - 1];
-  }
-}
-
 export function getWindowTop() {
   return window.top;
 }
@@ -301,30 +252,6 @@ export function getWindowSelf() {
 
 export function getWindowLocation() {
   return window.location;
-}
-
-/**
- * @deprecated This function will be removed soon. Use http://prebid.org/dev-docs/bidder-adaptor.html#referrers
- */
-export function getTopWindowUrl() {
-  let href;
-  try {
-    href = internal.getTopWindowLocation().href;
-  } catch (e) {
-    href = '';
-  }
-  return href;
-}
-
-/**
- * @deprecated This function will be removed soon. Use http://prebid.org/dev-docs/bidder-adaptor.html#referrers
- */
-export function getTopWindowReferrer() {
-  try {
-    return window.top.document.referrer;
-  } catch (e) {
-    return document.referrer;
-  }
 }
 
 /**
@@ -346,20 +273,45 @@ export function logWarn() {
   if (debugTurnedOn() && consoleWarnExists) {
     console.warn.apply(console, decorateLog(arguments, 'WARNING:'));
   }
+  emitEvent(CONSTANTS.EVENTS.AUCTION_DEBUG, {type: 'WARNING', arguments: arguments});
 }
 
 export function logError() {
   if (debugTurnedOn() && consoleErrorExists) {
     console.error.apply(console, decorateLog(arguments, 'ERROR:'));
   }
+  emitEvent(CONSTANTS.EVENTS.AUCTION_DEBUG, {type: 'ERROR', arguments: arguments});
+}
+
+export function prefixLog(prefix) {
+  function decorate(fn) {
+    return function (...args) {
+      fn(prefix, ...args);
+    }
+  }
+  return {
+    logError: decorate(logError),
+    logWarn: decorate(logWarn),
+    logMessage: decorate(logMessage),
+    logInfo: decorate(logInfo),
+  }
 }
 
 function decorateLog(args, prefix) {
   args = [].slice.call(args);
+  let bidder = config.getCurrentBidder();
+
   prefix && args.unshift(prefix);
-  args.unshift('display: inline-block; color: #fff; background: #3b88c3; padding: 1px 4px; border-radius: 3px;');
-  args.unshift('%cPrebid');
+  if (bidder) {
+    args.unshift(label('#aaa'));
+  }
+  args.unshift(label('#3b88c3'));
+  args.unshift('%cPrebid' + (bidder ? `%c${bidder}` : ''));
   return args;
+
+  function label(color) {
+    return `display: inline-block; color: #fff; background: ${color}; padding: 1px 4px; border-radius: 3px;`
+  }
 }
 
 export function hasConsoleLogger() {
@@ -393,53 +345,9 @@ export function createInvisibleIframe() {
  *   and if it does return the value
  */
 export function getParameterByName(name) {
-  var regexS = '[\\?&]' + name + '=([^&#]*)';
-  var regex = new RegExp(regexS);
-  var results = regex.exec(window.location.search);
-  if (results === null) {
-    return '';
-  }
-
-  return decodeURIComponent(results[1].replace(/\+/g, ' '));
+  return parseQS(getWindowLocation().search)[name] || '';
 }
 
-/**
- * This function validates paramaters.
- * @param  {Object} paramObj          [description]
- * @param  {string[]} requiredParamsArr [description]
- * @return {boolean}                   Bool if paramaters are valid
- */
-export function hasValidBidRequest(paramObj, requiredParamsArr, adapter) {
-  var found = false;
-
-  function findParam(value, key) {
-    if (key === requiredParamsArr[i]) {
-      found = true;
-    }
-  }
-
-  for (var i = 0; i < requiredParamsArr.length; i++) {
-    found = false;
-
-    _each(paramObj, findParam);
-
-    if (!found) {
-      logError('Params are missing for bid request. One of these required paramaters are missing: ' + requiredParamsArr, adapter);
-      return false;
-    }
-  }
-
-  return true;
-}
-
-// Handle addEventListener gracefully in older browsers
-export function addEventHandler(element, event, func) {
-  if (element.addEventListener) {
-    element.addEventListener(event, func, true);
-  } else if (element.attachEvent) {
-    element.attachEvent('on' + event, func);
-  }
-}
 /**
  * Return if the object is of the
  * given type.
@@ -544,15 +452,6 @@ export function contains(a, obj) {
   return false;
 }
 
-export let indexOf = (function () {
-  if (Array.prototype.indexOf) {
-    return Array.prototype.indexOf;
-  }
-
-  // ie8 no longer supported
-  // return polyfills.indexOf;
-}());
-
 /**
  * Map an array or object into another array
  * given a function
@@ -606,15 +505,42 @@ export function insertElement(elm, doc, target, asLastChildChild) {
 }
 
 /**
+ * Returns a promise that completes when the given element triggers a 'load' or 'error' DOM event, or when
+ * `timeout` milliseconds have elapsed.
+ *
+ * @param {HTMLElement} element
+ * @param {Number} [timeout]
+ * @returns {Promise}
+ */
+export function waitForElementToLoad(element, timeout) {
+  let timer = null;
+  return new Promise((resolve) => {
+    const onLoad = function() {
+      element.removeEventListener('load', onLoad);
+      element.removeEventListener('error', onLoad);
+      if (timer != null) {
+        window.clearTimeout(timer);
+      }
+      resolve();
+    };
+    element.addEventListener('load', onLoad);
+    element.addEventListener('error', onLoad);
+    if (timeout != null) {
+      timer = window.setTimeout(onLoad, timeout);
+    }
+  });
+}
+
+/**
  * Inserts an image pixel with the specified `url` for cookie sync
  * @param {string} url URL string of the image pixel to load
  * @param  {function} [done] an optional exit callback, used when this usersync pixel is added during an async process
+ * @param  {Number} [timeout] an optional timeout in milliseconds for the image to load before calling `done`
  */
-export function triggerPixel(url, done) {
+export function triggerPixel(url, done, timeout) {
   const img = new Image();
   if (done && internal.isFn(done)) {
-    img.addEventListener('load', done);
-    img.addEventListener('error', done);
+    waitForElementToLoad(img, timeout).then(done);
   }
   img.src = url;
 }
@@ -662,18 +588,18 @@ export function insertHtmlIntoIframe(htmlCode) {
  * @param  {string} url URL to be requested
  * @param  {string} encodeUri boolean if URL should be encoded before inserted. Defaults to true
  * @param  {function} [done] an optional exit callback, used when this usersync pixel is added during an async process
+ * @param  {Number} [timeout] an optional timeout in milliseconds for the iframe to load before calling `done`
  */
-export function insertUserSyncIframe(url, done) {
+export function insertUserSyncIframe(url, done, timeout) {
   let iframeHtml = internal.createTrackPixelIframeHtml(url, false, 'allow-scripts allow-same-origin');
   let div = document.createElement('div');
   div.innerHTML = iframeHtml;
   let iframe = div.firstChild;
   if (done && internal.isFn(done)) {
-    iframe.addEventListener('load', done);
-    iframe.addEventListener('error', done);
+    waitForElementToLoad(iframe, timeout).then(done);
   }
   internal.insertElement(iframe, document, 'html', true);
-};
+}
 
 /**
  * Creates a snippet of HTML that retrieves the specified `url`
@@ -718,32 +644,6 @@ export function createTrackPixelIframeHtml(url, encodeUri = true, sandbox = '') 
       scrolling="no"
       src="${url}">
     </iframe>`;
-}
-
-/**
- * Returns iframe document in a browser agnostic way
- * @param  {Object} iframe reference
- * @return {Object}        iframe `document` reference
- */
-export function getIframeDocument(iframe) {
-  if (!iframe) {
-    return;
-  }
-
-  let doc;
-  try {
-    if (iframe.contentWindow) {
-      doc = iframe.contentWindow.document;
-    } else if (iframe.contentDocument.document) {
-      doc = iframe.contentDocument.document;
-    } else {
-      doc = iframe.contentDocument;
-    }
-  } catch (e) {
-    internal.logError('Cannot get iframe document', e);
-  }
-
-  return doc;
 }
 
 export function getValueString(param, val, defaultValue) {
@@ -806,11 +706,17 @@ export function getKeyByValue(obj, value) {
 export function getBidderCodes(adUnits = $$PREBID_GLOBAL$$.adUnits) {
   // this could memoize adUnits
   return adUnits.map(unit => unit.bids.map(bid => bid.bidder)
-    .reduce(flatten, [])).reduce(flatten).filter(uniques);
+    .reduce(flatten, [])).reduce(flatten, []).filter(uniques);
 }
 
 export function isGptPubadsDefined() {
   if (window.googletag && isFn(window.googletag.pubads) && isFn(window.googletag.pubads().getSlots)) {
+    return true;
+  }
+}
+
+export function isApnGetTagDefined() {
+  if (window.apntag && isFn(window.apntag.getTag)) {
     return true;
   }
 }
@@ -865,16 +771,6 @@ export function adUnitsFilter(filter, bid) {
   return includes(filter, bid && bid.adUnitCode);
 }
 
-/**
- * Check if parent iframe of passed document supports content rendering via 'srcdoc' property
- * @param {HTMLDocument} doc document to check support of 'srcdoc'
- */
-export function isSrcdocSupported(doc) {
-  // Firefox is excluded due to https://bugzilla.mozilla.org/show_bug.cgi?id=1265961
-  return doc.defaultView && doc.defaultView.frameElement &&
-    'srcdoc' in doc.defaultView.frameElement && !/firefox/i.test(navigator.userAgent);
-}
-
 export function deepClone(obj) {
   return clone(obj);
 }
@@ -888,7 +784,7 @@ export function inIframe() {
 }
 
 export function isSafariBrowser() {
-  return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  return /^((?!chrome|android|crios|fxios).)*safari/i.test(navigator.userAgent);
 }
 
 export function replaceAuctionPrice(str, cpm) {
@@ -896,41 +792,37 @@ export function replaceAuctionPrice(str, cpm) {
   return str.replace(/\$\{AUCTION_PRICE\}/g, cpm);
 }
 
+export function replaceClickThrough(str, clicktag) {
+  if (!str || !clicktag || typeof clicktag !== 'string') return;
+  return str.replace(/\${CLICKTHROUGH}/g, clicktag);
+}
+
 export function timestamp() {
   return new Date().getTime();
 }
 
-export function checkCookieSupport() {
-  if (window.navigator.cookieEnabled || !!document.cookie.length) {
-    return true;
-  }
-}
-export function cookiesAreEnabled() {
-  if (internal.checkCookieSupport()) {
-    return true;
-  }
-  window.document.cookie = 'prebid.cookieTest';
-  return window.document.cookie.indexOf('prebid.cookieTest') != -1;
-}
-
-export function getCookie(name) {
-  let m = window.document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]*)\\s*(;|$)');
-  return m ? decodeURIComponent(m[2]) : null;
-}
-
-export function setCookie(key, value, expires, sameSite) {
-  document.cookie = `${key}=${encodeURIComponent(value)}${(expires !== '') ? `; expires=${expires}` : ''}; path=/${sameSite ? `; SameSite=${sameSite}` : ''}`;
+/**
+ * The returned value represents the time elapsed since the time origin. @see https://developer.mozilla.org/en-US/docs/Web/API/Performance/now
+ * @returns {number}
+ */
+export function getPerformanceNow() {
+  return (window.performance && window.performance.now && window.performance.now()) || 0;
 }
 
 /**
+ * When the deviceAccess flag config option is false, no cookies should be read or set
  * @returns {boolean}
  */
-export function localStorageIsEnabled () {
-  try {
-    localStorage.setItem('prebid.cookieTest', '1');
-    return localStorage.getItem('prebid.cookieTest') === '1';
-  } catch (error) {
-    return false;
+export function hasDeviceAccess() {
+  return config.getConfig('deviceAccess') !== false;
+}
+
+/**
+ * @returns {(boolean|undefined)}
+ */
+export function checkCookieSupport() {
+  if (window.navigator.cookieEnabled || !!document.cookie.length) {
+    return true;
   }
 }
 
@@ -954,7 +846,7 @@ export function delayExecution(func, numRequiredCalls) {
   return function () {
     numCalls++;
     if (numCalls === numRequiredCalls) {
-      func.apply(null, arguments);
+      func.apply(this, arguments);
     }
   }
 }
@@ -971,19 +863,6 @@ export function groupBy(xs, key) {
     (rv[x[key]] = rv[x[key]] || []).push(x);
     return rv;
   }, {});
-}
-
-/**
- * Returns content for a friendly iframe to execute a URL in script tag
- * @param {string} url URL to be executed in a script tag in a friendly iframe
- * <!--PRE_SCRIPT_TAG_MACRO--> and <!--POST_SCRIPT_TAG_MACRO--> are macros left to be replaced if required
- */
-export function createContentToExecuteExtScriptInFriendlyFrame(url) {
-  if (!url) {
-    return '';
-  }
-
-  return `<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"><html><head><base target="_top" /><script>inDapIF=true;</script></head><body><!--PRE_SCRIPT_TAG_MACRO--><script src="${url}"></script><!--POST_SCRIPT_TAG_MACRO--></body></html>`;
 }
 
 /**
@@ -1028,12 +907,6 @@ export function isValidMediaTypes(mediaTypes) {
   return true;
 }
 
-export function getBidderRequest(bidRequests, bidder, adUnitCode) {
-  return find(bidRequests, request => {
-    return request.bids
-      .filter(bid => bid.bidder === bidder && bid.adUnitCode === adUnitCode).length > 0;
-  }) || { start: null, auctionId: null };
-}
 /**
  * Returns user configured bidder params from adunit
  * @param {Object} adUnits
@@ -1089,6 +962,24 @@ export function isSlotMatchingAdUnitCode(adUnitCode) {
 }
 
 /**
+ * @summary Uses the adUnit's code in order to find a matching gptSlot on the page
+ */
+export function getGptSlotInfoForAdUnitCode(adUnitCode) {
+  let matchingSlot;
+  if (isGptPubadsDefined()) {
+    // find the first matching gpt slot on the page
+    matchingSlot = find(window.googletag.pubads().getSlots(), isSlotMatchingAdUnitCode(adUnitCode));
+  }
+  if (matchingSlot) {
+    return {
+      gptSlot: matchingSlot.getAdUnitPath(),
+      divId: matchingSlot.getSlotElementId()
+    }
+  }
+  return {};
+};
+
+/**
  * Constructs warning message for when unsupported bidders are dropped from an adunit
  * @param {Object} adUnit ad unit from which the bidder is being dropped
  * @param {string} bidder bidder code that is not compatible with the adUnit
@@ -1102,18 +993,6 @@ export function unsupportedBidderMessage(adUnit, bidder) {
     containing bidders that don't support ${mediaType}: ${bidder}.
     This bidder won't fetch demand.
   `;
-}
-
-/**
- * Delete property from object
- * @param {Object} object
- * @param {string} prop
- * @return {Object} object
- */
-export function deletePropertyFromObject(object, prop) {
-  let result = Object.assign({}, object);
-  delete result[prop];
-  return result;
 }
 
 /**
@@ -1252,26 +1131,6 @@ export function convertTypes(types, params) {
   return params;
 }
 
-export function setDataInLocalStorage(key, value) {
-  if (hasLocalStorage()) {
-    window.localStorage.setItem(key, value);
-  }
-}
-
-export function getDataFromLocalStorage(key) {
-  if (hasLocalStorage()) {
-    return window.localStorage.getItem(key);
-  }
-}
-
-export function hasLocalStorage() {
-  try {
-    return !!window.localStorage;
-  } catch (e) {
-    logError('Local storage api disabled');
-  }
-}
-
 export function isArrayOfNums(val, size) {
   return (isArray(val)) && ((size) ? val.length === size : true) && (val.every(v => isInteger(v)));
 }
@@ -1333,4 +1192,166 @@ export function compareOn(property) {
     }
     return 0;
   }
+}
+
+export function parseQS(query) {
+  return !query ? {} : query
+    .replace(/^\?/, '')
+    .split('&')
+    .reduce((acc, criteria) => {
+      let [k, v] = criteria.split('=');
+      if (/\[\]$/.test(k)) {
+        k = k.replace('[]', '');
+        acc[k] = acc[k] || [];
+        acc[k].push(v);
+      } else {
+        acc[k] = v || '';
+      }
+      return acc;
+    }, {});
+}
+
+export function formatQS(query) {
+  return Object
+    .keys(query)
+    .map(k => Array.isArray(query[k])
+      ? query[k].map(v => `${k}[]=${v}`).join('&')
+      : `${k}=${query[k]}`)
+    .join('&');
+}
+
+export function parseUrl(url, options) {
+  let parsed = document.createElement('a');
+  if (options && 'noDecodeWholeURL' in options && options.noDecodeWholeURL) {
+    parsed.href = url;
+  } else {
+    parsed.href = decodeURIComponent(url);
+  }
+  // in window.location 'search' is string, not object
+  let qsAsString = (options && 'decodeSearchAsString' in options && options.decodeSearchAsString);
+  return {
+    href: parsed.href,
+    protocol: (parsed.protocol || '').replace(/:$/, ''),
+    hostname: parsed.hostname,
+    port: +parsed.port,
+    pathname: parsed.pathname.replace(/^(?!\/)/, '/'),
+    search: (qsAsString) ? parsed.search : internal.parseQS(parsed.search || ''),
+    hash: (parsed.hash || '').replace(/^#/, ''),
+    host: parsed.host || window.location.host
+  };
+}
+
+export function buildUrl(obj) {
+  return (obj.protocol || 'http') + '://' +
+    (obj.host ||
+      obj.hostname + (obj.port ? `:${obj.port}` : '')) +
+    (obj.pathname || '') +
+    (obj.search ? `?${internal.formatQS(obj.search || '')}` : '') +
+    (obj.hash ? `#${obj.hash}` : '');
+}
+
+/**
+ * This function deeply compares two objects checking for their equivalence.
+ * @param {Object} obj1
+ * @param {Object} obj2
+ * @param checkTypes {boolean} if set, two objects with identical properties but different constructors will *not*
+ * be considered equivalent.
+ * @returns {boolean}
+ */
+export function deepEqual(obj1, obj2, {checkTypes = false} = {}) {
+  if (obj1 === obj2) return true;
+  else if (
+    (typeof obj1 === 'object' && obj1 !== null) &&
+    (typeof obj2 === 'object' && obj2 !== null) &&
+    (!checkTypes || (obj1.constructor === obj2.constructor))
+  ) {
+    if (Object.keys(obj1).length !== Object.keys(obj2).length) return false;
+    for (let prop in obj1) {
+      if (obj2.hasOwnProperty(prop)) {
+        if (!deepEqual(obj1[prop], obj2[prop], {checkTypes})) {
+          return false;
+        }
+      } else {
+        return false;
+      }
+    }
+    return true;
+  } else {
+    return false;
+  }
+}
+
+export function mergeDeep(target, ...sources) {
+  if (!sources.length) return target;
+  const source = sources.shift();
+
+  if (isPlainObject(target) && isPlainObject(source)) {
+    for (const key in source) {
+      if (isPlainObject(source[key])) {
+        if (!target[key]) Object.assign(target, { [key]: {} });
+        mergeDeep(target[key], source[key]);
+      } else if (isArray(source[key])) {
+        if (!target[key]) {
+          Object.assign(target, { [key]: [...source[key]] });
+        } else if (isArray(target[key])) {
+          source[key].forEach(obj => {
+            let addItFlag = 1;
+            for (let i = 0; i < target[key].length; i++) {
+              if (deepEqual(target[key][i], obj)) {
+                addItFlag = 0;
+                break;
+              }
+            }
+            if (addItFlag) {
+              target[key].push(obj);
+            }
+          });
+        }
+      } else {
+        Object.assign(target, { [key]: source[key] });
+      }
+    }
+  }
+
+  return mergeDeep(target, ...sources);
+}
+
+/**
+ * returns a hash of a string using a fast algorithm
+ * source: https://stackoverflow.com/a/52171480/845390
+ * @param str
+ * @param seed (optional)
+ * @returns {string}
+ */
+export function cyrb53Hash(str, seed = 0) {
+  // IE doesn't support imul
+  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/imul#Polyfill
+  let imul = function(opA, opB) {
+    if (isFn(Math.imul)) {
+      return Math.imul(opA, opB);
+    } else {
+      opB |= 0; // ensure that opB is an integer. opA will automatically be coerced.
+      // floating points give us 53 bits of precision to work with plus 1 sign bit
+      // automatically handled for our convienence:
+      // 1. 0x003fffff /*opA & 0x000fffff*/ * 0x7fffffff /*opB*/ = 0x1fffff7fc00001
+      //    0x1fffff7fc00001 < Number.MAX_SAFE_INTEGER /*0x1fffffffffffff*/
+      var result = (opA & 0x003fffff) * opB;
+      // 2. We can remove an integer coersion from the statement above because:
+      //    0x1fffff7fc00001 + 0xffc00000 = 0x1fffffff800001
+      //    0x1fffffff800001 < Number.MAX_SAFE_INTEGER /*0x1fffffffffffff*/
+      if (opA & 0xffc00000) result += (opA & 0xffc00000) * opB | 0;
+      return result | 0;
+    }
+  };
+
+  let h1 = 0xdeadbeef ^ seed;
+  let h2 = 0x41c6ce57 ^ seed;
+  for (let i = 0, ch; i < str.length; i++) {
+    ch = str.charCodeAt(i);
+    h1 = imul(h1 ^ ch, 2654435761);
+    h2 = imul(h2 ^ ch, 1597334677);
+  }
+  h1 = imul(h1 ^ (h1 >>> 16), 2246822507) ^ imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = imul(h2 ^ (h2 >>> 16), 2246822507) ^ imul(h1 ^ (h1 >>> 13), 3266489909);
+  return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString();
 }

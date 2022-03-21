@@ -1,6 +1,6 @@
-import * as utils from '../src/utils';
-import { VIDEO, BANNER } from '../src/mediaTypes';
-import { registerBidder } from '../src/adapters/bidderFactory';
+import { logInfo, getBidIdParameter } from '../src/utils.js';
+import { VIDEO, BANNER } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'ebdr';
 export const spec = {
   code: BIDDER_CODE,
@@ -18,11 +18,11 @@ export const spec = {
     let zoneid = '';
     let requestId = '';
     bids.forEach(bid => {
-      utils.logInfo('Log bid', bid);
-      let bidFloor = utils.getBidIdParameter('bidfloor', bid.params);
+      logInfo('Log bid', bid);
+      let bidFloor = getBidIdParameter('bidfloor', bid.params);
       let whArr = getWidthAndHeight(bid);
       let _mediaTypes = (bid.mediaTypes && bid.mediaTypes.video) ? VIDEO : BANNER;
-      zoneid = utils.getBidIdParameter('zoneid', bid.params);
+      zoneid = getBidIdParameter('zoneid', bid.params);
       requestId = bid.bidderRequestId;
       ebdrImps.push({
         id: bid.bidId,
@@ -36,9 +36,9 @@ export const spec = {
         w: whArr[0],
         h: whArr[1]
       };
-      ebdrParams['latitude'] = utils.getBidIdParameter('latitude', bid.params);
-      ebdrParams['longitude'] = utils.getBidIdParameter('longitude', bid.params);
-      ebdrParams['ifa'] = (utils.getBidIdParameter('IDFA', bid.params).length > utils.getBidIdParameter('ADID', bid.params).length) ? utils.getBidIdParameter('IDFA', bid.params) : utils.getBidIdParameter('ADID', bid.params);
+      ebdrParams['latitude'] = getBidIdParameter('latitude', bid.params);
+      ebdrParams['longitude'] = getBidIdParameter('longitude', bid.params);
+      ebdrParams['ifa'] = (getBidIdParameter('IDFA', bid.params).length > getBidIdParameter('ADID', bid.params).length) ? getBidIdParameter('IDFA', bid.params) : getBidIdParameter('ADID', bid.params);
     });
     let ebdrBidReq = {
       id: requestId,
@@ -57,13 +57,13 @@ export const spec = {
     };
     return {
       method: 'GET',
-      url: '//' + rtbServerDomain + '/hb?' + '&zoneid=' + zoneid + '&br=' + encodeURIComponent(JSON.stringify(ebdrBidReq)),
+      url: 'https://' + rtbServerDomain + '/hb?' + '&zoneid=' + zoneid + '&br=' + encodeURIComponent(JSON.stringify(ebdrBidReq)),
       bids: ebdrReq
     };
   },
   interpretResponse: function(serverResponse, bidRequest) {
-    utils.logInfo('Log serverResponse', serverResponse);
-    utils.logInfo('Log bidRequest', bidRequest);
+    logInfo('Log serverResponse', serverResponse);
+    logInfo('Log bidRequest', bidRequest);
     let ebdrResponseImps = [];
     const ebdrResponseObj = serverResponse.body;
     if (!ebdrResponseObj || !ebdrResponseObj.seatbid || ebdrResponseObj.seatbid.length === 0 || !ebdrResponseObj.seatbid[0].bid || ebdrResponseObj.seatbid[0].bid.length === 0) {
@@ -98,7 +98,11 @@ export const spec = {
         height: ebdrBid.h,
         currency: 'USD',
         netRevenue: true,
-        ttl: 3600 }
+        ttl: 3600,
+        meta: {
+          advertiserDomains: ebdrBid.adomain || []
+        }
+      };
       if (vastURL) {
         response.vastUrl = vastURL;
       }

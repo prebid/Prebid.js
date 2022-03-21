@@ -1,6 +1,6 @@
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { BANNER } from '../src/mediaTypes';
-import { config } from '../src/config';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
 
 export const ADAPTER_VERSION = '1.0.0';
 const SUPPORTED_AD_TYPES = [BANNER];
@@ -16,6 +16,7 @@ const BIDDER_API_ENDPOINT = '/v1/prebid/bid';
 
 export const spec = {
   code: 'appier',
+  aliases: ['appierBR', 'appierExt', 'appierGM'],
   supportedMediaTypes: SUPPORTED_AD_TYPES,
 
   /**

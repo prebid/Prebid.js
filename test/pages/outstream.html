@@ -62,7 +62,14 @@
 
 		pbjs.que.push(function () {
 			pbjs.setConfig({ debug: true });
-			pbjs.addAdUnits(outstreamVideoAdUnit);
+      pbjs.addAdUnits(outstreamVideoAdUnit);
+      pbjs.bidderSettings = {
+        appnexus: {
+          bidCpmAdjustment: function () {
+            return 10;
+          }
+        }
+      };
 			pbjs.requestBids({ bidsBackHandler: initAdServer });
 		});
 
