@@ -67,6 +67,13 @@ export const spec = {
         }
       }
 
+      if (typeof bidderRequest.getFloor === 'function') {
+        const floor = _getFloor(bidderRequest, bid.nativeParams ? NATIVE : BANNER);
+        if (floor) {
+          imp.bidfloor = floor;
+        }
+      }
+
       return imp;
     });
 
@@ -290,4 +297,16 @@ function transformSizes(requestSizes) {
   }
 
   return [];
+}
+
+function _getFloor(bidderRequest, type) {
+  const floorInfo = bidderRequest.getFloor({
+    currency: CURRENCY,
+    mediaType: type,
+    size: '*'
+  });
+  if (typeof floorInfo === 'object' && floorInfo.currency === CURRENCY && !isNaN(parseFloat(floorInfo.floor))) {
+    return parseFloat(floorInfo.floor);
+  }
+  return null;
 }

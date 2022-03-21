@@ -362,6 +362,23 @@ describe('Outbrain Adapter', function () {
           {source: 'liveramp.com', uids: [{id: 'id-value', atype: 3}]}
         ]);
       });
+
+      it('should pass bidfloor', function () {
+        const bidRequest = {
+          ...commonBidRequest,
+          ...nativeBidRequestParams,
+        }
+        commonBidderRequest.getFloor = function() {
+          return {
+            currency: 'USD',
+            floor: 1.23,
+          }
+        }
+
+        const res = spec.buildRequests([bidRequest], commonBidderRequest)
+        const resData = JSON.parse(res.data)
+        expect(resData.imp[0].bidfloor).to.equal(1.23)
+      });
     })
 
     describe('interpretResponse', function () {
