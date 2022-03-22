@@ -690,7 +690,7 @@ function registerSignalSources() {
   if (encryptedSignalSources) {
     const registerDelay = encryptedSignalSources.registerDelay || 0;
     setTimeout(() => {
-      encryptedSignalSources['sources'].forEach(({ source, encrypt, customFunc }) => {
+      encryptedSignalSources['sources'] && encryptedSignalSources['sources'].forEach(({ source, encrypt, customFunc }) => {
         source.forEach((src) => {
           window.googletag.encryptedSignalProviders.push({
             id: src,
