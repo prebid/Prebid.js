@@ -301,8 +301,32 @@ describe('invibesBidAdapter:', function () {
     });
 
     it('does not have capped ids if local storage variable is correctly formatted but no opt in', function () {
+      let bidderRequest = {
+        auctionStart: Date.now(),
+        gdprConsent: {
+          vendorData: {
+            gdprApplies: true,
+            hasGlobalConsent: false,
+            purpose: {
+              consents: {
+                1: false,
+                2: false,
+                3: false,
+                4: false,
+                5: false,
+                6: false,
+                7: false,
+                8: false,
+                9: false,
+                10: false
+              }
+            }
+          }
+        }
+      };
+
       localStorage.ivvcap = '{"9731":[1,1768600800000]}';
-      const request = spec.buildRequests(bidRequests, {auctionStart: Date.now()});
+      const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.capCounts).to.equal('');
     });
 
@@ -496,14 +520,14 @@ describe('invibesBidAdapter:', function () {
       let request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.li.split(',')[1] && request.data.li.split(',')[6]).to.equal('true');
     });
-    it('should send oi = 0 when vendorData is null', function () {
+    it('should send oi = 1 when vendorData is null (calculation will be performed by ADWEB)', function () {
       let bidderRequest = {
         gdprConsent: {
           vendorData: null
         }
       };
       let request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.oi).to.equal(0);
+      expect(request.data.oi).to.equal(1);
     });
 
     it('should send oi = 2 when consent was approved on tcf v2', function () {
@@ -962,7 +986,29 @@ describe('invibesBidAdapter:', function () {
 	  UseAdUnitCode: true
     };
 
-    var buildResponse = function(placementId, cid, blcids, creativeId) {
+    var buildResponse = function(placementId, cid, blcids, creativeId, ShouldSetLId) {
+      if (ShouldSetLId) {
+        return {
+          MultipositionEnabled: true,
+          AdPlacements: [{
+            Ads: [{
+              BidPrice: 0.5,
+              VideoExposedId: creativeId,
+              Cid: cid,
+              Blcids: blcids
+            }],
+            BidModel: {
+              BidVersion: 1,
+              PlacementId: placementId,
+              AuctionStartTime: Date.now(),
+              CreativeHtml: '<!-- Creative -->'
+            }
+          }],
+          ShouldSetLId: true,
+          LId: 'dvdjkams6nkq'
+        }
+      }
+
       return {
         MultipositionEnabled: true,
         AdPlacements: [{
@@ -1063,6 +1109,22 @@ describe('invibesBidAdapter:', function () {
         expect(result[0].meta.advertiserName).to.equal('theadvertiser');
         expect(result[0].meta.advertiserDomains).to.contain('theadvertiser.com');
         expect(result[0].meta.advertiserDomains).to.contain('theadvertiser_2.com');
+      });
+    });
+
+    context('AdWeb generates LIDs', function() {
+      it('works when no LID is not sent from AdWeb', function() {
+        var firstResponse = buildResponse('12345', 1, [], 123);
+
+        var firstResult = spec.interpretResponse({body: firstResponse}, {bidRequests});
+        expect(firstResult[0].creativeId).to.equal(123);
+      });
+
+      it('sets lid when AdWeb sends it', function() {
+        var firstResponse = buildResponse('12345', 1, [], 123, true);
+
+        spec.interpretResponse({body: firstResponse}, {bidRequests});
+        expect(global.document.cookie.indexOf('ivbsdid')).to.greaterThanOrEqual(0);
       });
     });
 

@@ -9,7 +9,7 @@ const CONSTANTS = {
   SYNC_ENDPOINT: 'https://k.r66net.com/GetUserSync',
   TIME_TO_LIVE: 300,
   DEFAULT_CURRENCY: 'EUR',
-  PREBID_VERSION: 7,
+  PREBID_VERSION: 8,
   METHOD: 'GET',
   INVIBES_VENDOR_ID: 436,
   USERID_PROVIDERS: ['pubcid', 'pubProvidedId', 'uid2', 'zeotapIdPlus', 'id5id'],
@@ -95,7 +95,6 @@ function buildRequest(bidRequests, bidderRequest) {
   invibes.optIn = invibes.optIn || readGdprConsent(bidderRequest.gdprConsent);
 
   invibes.visitId = invibes.visitId || generateRandomId();
-  invibes.noCookies = invibes.noCookies || invibes.getCookie('ivNoCookie');
   let lid = initDomainId(invibes.domainOptions);
 
   const currentQueryStringParams = parseQueryStringParams();
@@ -129,7 +128,9 @@ function buildRequest(bidRequests, bidderRequest) {
     purposes: invibes.purposes.toString(),
     li: invibes.legitimateInterests.toString(),
 
-    tc: invibes.gdpr_consent
+    tc: invibes.gdpr_consent,
+    canPbWriteCookie: canPrebidWriteCookies(),
+    IvbsCDS: invibes.getCookie('IvbsCDS')
   };
 
   if (lid) {
@@ -171,6 +172,15 @@ function handleResponse(responseObj, bidRequests) {
 
   responseObj = responseObj.body || responseObj;
   responseObj = responseObj.videoAdContentResult || responseObj;
+
+  if (responseObj.ShouldSetLId && responseObj.LId) {
+    if ((!invibes.optIn || !invibes.purposes[0]) && responseObj.PrivacyPolicyRule && responseObj.TcModel && responseObj.TcModel.PurposeConsents) {
+      invibes.optIn = responseObj.PrivacyPolicyRule;
+      invibes.purposes = responseObj.TcModel.PurposeConsents;
+    }
+
+    invibes.setCookie('ivbsdid', JSON.stringify(responseObj.LId), 365);
+  }
 
   if (typeof invibes.bidResponse === 'object') {
     if (responseObj.MultipositionEnabled === true) {
@@ -528,7 +538,11 @@ function readGdprConsent(gdprConsent) {
     return 2;
   }
 
-  return 0;
+  // no gdpr module installed. AdWeb will decide if we can read cookies.
+  for (index = 0; index < invibes.purposes.length; ++index) {
+    invibes.purposes[index] = true;
+  }
+  return 1;
 }
 
 function tryCopyValueToArray(value, target, length) {
@@ -644,6 +658,57 @@ invibes.getCookie = function (name) {
   return storage.getCookie(name);
 };
 
+invibes.setCookie = function(name, value, exdays, domain) {
+  if (!storage.cookiesAreEnabled()) {
+    return;
+  }
+
+  if (!invibes.optIn || !invibes.purposes[0]) {
+    return;
+  }
+
+  if (exdays > 365) {
+    exdays = 365;
+  }
+
+  domain = domain || detectTopmostCookieDomain();
+  let exdate = new Date();
+  let exms = exdays * 24 * 60 * 60 * 1000;
+  exdate.setTime(exdate.getTime() + exms);
+
+  storage.setCookie(name, value, exdays ? exdate.toUTCString() : '', null, domain);
+}
+
+let canPrebidWriteCookies = function() {
+  if (!storage.cookiesAreEnabled()) {
+    return false;
+  }
+
+  let testCookie = invibes.Uid.generate();
+  storage.setCookie(testCookie, testCookie, 1, null);
+  var valueFromCookie = storage.getCookie(testCookie);
+  storage.setCookie(testCookie, '', -1, null);
+
+  return valueFromCookie && valueFromCookie === testCookie;
+}
+
+let detectTopmostCookieDomain = function () {
+  let testCookie = invibes.Uid.generate();
+  let hostParts = location.hostname.split('.');
+  if (hostParts.length === 1) {
+    return location.hostname;
+  }
+  for (let i = hostParts.length - 1; i >= 0; i--) {
+    let domain = '.' + hostParts.slice(i).join('.');
+    invibes.setCookie(testCookie, testCookie, 1, domain);
+    let val = invibes.getCookie(testCookie);
+    if (val === testCookie) {
+      invibes.setCookie(testCookie, testCookie, -1, domain);
+      return domain;
+    }
+  }
+};
+
 let initDomainId = function (options) {
   let cookiePersistence = {
     cname: 'ivbsdid',
@@ -738,7 +803,6 @@ let keywords = (function () {
 
 export function resetInvibes() {
   invibes.optIn = undefined;
-  invibes.noCookies = undefined;
   invibes.dom = undefined;
   invibes.bidResponse = undefined;
   invibes.domainOptions = undefined;
