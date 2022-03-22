@@ -140,6 +140,9 @@ pbjs.setConfig({
                  name: "knssoId",
                  expires: 30
                   },
+        {
+             name: "dacId"
+        }
         ],
         syncDelay: 5000,
         auctionDelay: 1000

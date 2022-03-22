@@ -1,12 +1,22 @@
-import { convertCamelToUnderscore, isArray, isNumber, isPlainObject, deepAccess, logError, convertTypes, getParameterByName, getBidRequest, isEmpty, transformBidderParamKeywords, isFn } from '../src/utils.js';
-import { config } from '../src/config.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
-import find from 'prebidjs-polyfill/find.js';
-import includes from 'prebidjs-polyfill/includes.js';
-import { getStorageManager } from '../src/storageManager.js';
-
-export const storage = getStorageManager();
+import {
+  convertCamelToUnderscore,
+  convertTypes,
+  deepAccess,
+  getBidRequest,
+  getParameterByName,
+  isArray,
+  isEmpty,
+  isFn,
+  isNumber,
+  isPlainObject,
+  logError,
+  transformBidderParamKeywords
+} from '../src/utils.js';
+import {config} from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER} from '../src/mediaTypes.js';
+import {find, includes} from '../src/polyfill.js';
+import {getStorageManager} from '../src/storageManager.js';
 
 const BIDDER_CODE = 'winr';
 const URL = 'https://ib.adnxs.com/ut/v3/prebid';
@@ -16,6 +26,8 @@ const APP_DEVICE_PARAMS = ['geo', 'device_id']; // appid is collected separately
 const SOURCE = 'pbjs';
 const DEFAULT_CURRENCY = 'USD';
 const GATE_COOKIE_NAME = 'wnr_gate';
+
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 function buildBid(bidData) {
   const bid = bidData;

@@ -26,6 +26,12 @@ const USER_IDS_CONFIG = {
     atype: 1
   },
 
+  // justId
+  'justId': {
+    source: 'justtag.com',
+    atype: 1
+  },
+
   // pubCommonId
   'pubcid': {
     source: 'pubcid.org',
@@ -277,6 +283,12 @@ const USER_IDS_CONFIG = {
   // Adquery ID
   'qid': {
     source: 'adquery.io',
+    atype: 1
+  },
+
+  // DAC ID
+  'dacId': {
+    source: 'impact-ad.jp',
     atype: 1
   },
 };

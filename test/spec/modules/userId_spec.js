@@ -14,7 +14,7 @@ import {
 import {createEidsArray} from 'modules/userId/eids.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
-import events from 'src/events.js';
+import * as events from 'src/events.js';
 import CONSTANTS from 'src/constants.json';
 import {getGlobal} from 'src/prebidGlobal.js';
 import {
@@ -23,7 +23,7 @@ import {
   setConsentConfig
 } from 'modules/consentManagement.js';
 import {server} from 'test/mocks/xhr.js';
-import find from 'prebidjs-polyfill/find.js';
+import {find} from 'src/polyfill.js';
 import {unifiedIdSubmodule} from 'modules/unifiedIdSystem.js';
 import {britepoolIdSubmodule} from 'modules/britepoolIdSystem.js';
 import {id5IdSubmodule} from 'modules/id5IdSystem.js';

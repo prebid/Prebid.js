@@ -2,7 +2,7 @@ import { loadExternalScript } from './adloader.js';
 import {
   logError, logWarn, logMessage, deepAccess
 } from './utils.js';
-import find from 'prebidjs-polyfill/find.js';
+import {find} from './polyfill.js';
 const moduleCode = 'outstream';
 
 /**
