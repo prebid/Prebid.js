@@ -40,12 +40,17 @@ export const spec = {
    * @param {object} bid the Sovrn bid to validate
    * @return boolean for whether or not a bid is valid
    */
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function c(bid) {
+    // const validateVideoParams = (video) => !video || (video.context !== ADPOD && ORTB_VIDEO_PARAMS.mimes(video.mimes)
     return !!(
       bid.params.tagid &&
       !isNaN(parseFloat(bid.params.tagid)) &&
-      isFinite(bid.params.tagid) &&
-      deepAccess(bid, 'mediaTypes.video.context') !== ADPOD
+      isFinite(bid.params.tagid) && (
+        !bid?.mediaTypes?.video || (
+          bid.mediaTypes.video.context !== ADPOD &&
+          ORTB_VIDEO_PARAMS.mimes(bid.mediaTypes.video.mimes)
+        )
+      )
     )
   },
 
