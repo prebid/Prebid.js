@@ -77,7 +77,8 @@ export const spec = {
       if (bid.nativeParams) {
         imp.native = {
           request: JSON.stringify({
-            assets: getNativeAssets(bid)
+            assets: getNativeAssets(bid),
+            privacy: 1
           })
         }
       } else {
@@ -86,8 +87,8 @@ export const spec = {
         }
       }
 
-      if (typeof bidderRequest.getFloor === 'function') {
-        const floor = _getFloor(bidderRequest, bid.nativeParams ? NATIVE : BANNER);
+      if (typeof bid.getFloor === 'function') {
+        const floor = _getFloor(bid, bid.nativeParams ? NATIVE : BANNER);
         if (floor) {
           imp.bidfloor = floor;
         }
@@ -321,8 +322,8 @@ function transformSizes(requestSizes) {
   return [];
 }
 
-function _getFloor(bidderRequest, type) {
-  const floorInfo = bidderRequest.getFloor({
+function _getFloor(bid, type) {
+  const floorInfo = bid.getFloor({
     currency: CURRENCY,
     mediaType: type,
     size: '*'
