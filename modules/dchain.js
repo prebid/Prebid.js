@@ -1,7 +1,7 @@
-import includes from 'core-js-pure/features/array/includes.js';
-import { config } from '../src/config.js';
-import { getHook } from '../src/hook.js';
-import { _each, isStr, isArray, isPlainObject, hasOwn, deepClone, deepAccess, logWarn, logError } from '../src/utils.js';
+import {includes} from '../src/polyfill.js';
+import {config} from '../src/config.js';
+import {getHook} from '../src/hook.js';
+import {_each, deepAccess, deepClone, hasOwn, isArray, isPlainObject, isStr, logError, logWarn} from '../src/utils.js';
 
 const shouldBeAString = ' should be a string';
 const shouldBeAnObject = ' should be an object';

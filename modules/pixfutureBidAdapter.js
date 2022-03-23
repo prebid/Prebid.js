@@ -1,14 +1,22 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { BANNER } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
-import includes from 'core-js-pure/features/array/includes.js';
-import { convertCamelToUnderscore, isArray, isNumber, isPlainObject, deepAccess, isEmpty, transformBidderParamKeywords, isFn } from '../src/utils.js';
-import { auctionManager } from '../src/auctionManager.js';
-import find from 'core-js-pure/features/array/find.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {BANNER} from '../src/mediaTypes.js';
+import {config} from '../src/config.js';
+import {find, includes} from '../src/polyfill.js';
+import {
+  convertCamelToUnderscore,
+  deepAccess,
+  isArray,
+  isEmpty,
+  isFn,
+  isNumber,
+  isPlainObject,
+  transformBidderParamKeywords
+} from '../src/utils.js';
+import {auctionManager} from '../src/auctionManager.js';
 
 const SOURCE = 'pbjs';
-const storageManager = getStorageManager();
+const storageManager = getStorageManager({bidderCode: 'pixfuture'});
 const USER_PARAMS = ['age', 'externalUid', 'segments', 'gender', 'dnt', 'language'];
 export const spec = {
   code: 'pixfuture',

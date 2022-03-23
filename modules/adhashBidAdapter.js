@@ -1,6 +1,6 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import includes from 'core-js-pure/features/array/includes.js';
-import { BANNER } from '../src/mediaTypes.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {includes} from '../src/polyfill.js';
+import {BANNER} from '../src/mediaTypes.js';
 
 const VERSION = '1.0';
 
