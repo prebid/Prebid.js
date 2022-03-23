@@ -823,7 +823,7 @@ function getPrintNumber(adUnitCode, bidderRequest) {
     return 1;
   }
   const adagioBid = find(bidderRequest.bids, bid => bid.adUnitCode === adUnitCode);
-  return adagioBid.bidRequestsCount || 1;
+  return adagioBid.bidderRequestsCount || 1;
 }
 
 /**

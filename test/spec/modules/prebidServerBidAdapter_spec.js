@@ -4,7 +4,7 @@ import adapterManager from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
 import { ajax } from 'src/ajax.js';
 import { config } from 'src/config.js';
-import events from 'src/events.js';
+import * as events from 'src/events.js';
 import CONSTANTS from 'src/constants.json';
 import { server } from 'test/mocks/xhr.js';
 import { createEidsArray } from 'modules/userId/eids.js';
