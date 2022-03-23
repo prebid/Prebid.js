@@ -708,10 +708,10 @@ describe('auctionmanager.js', function () {
         checkPbDg('1.99', '1.99', '0 - 3 hits at to 1 cent increment'));
 
       it('should return proper price bucket increments for dense mode when cpm is in range 3-8',
-        checkPbDg('4.39', '4.35', '3 - 8 hits at 5 cent increment'));
+        checkPbDg('4.39', '4.40', '3 - 8 hits at 5 cent increment'));
 
       it('should return proper price bucket increments for dense mode when cpm is in range 8-20',
-        checkPbDg('19.99', '19.50', '8 - 20 hits at 50 cent increment'));
+        checkPbDg('19.99', '20.00', '8 - 20 hits at 50 cent increment'));
 
       it('should return proper price bucket increments for dense mode when cpm is 20+',
         checkPbDg('73.07', '20.00', '20+ caps at 20.00'));

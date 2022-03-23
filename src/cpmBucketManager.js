@@ -126,7 +126,7 @@ function getCpmTarget(cpm, bucket, granularityMultiplier) {
   // min precison should be 2 to move decimal place over.
   let pow = Math.pow(10, precision + 2);
   let cpmToFloor = ((cpm * pow) - (bucketMin * pow)) / (increment * pow);
-  let cpmTarget = ((Math.floor(cpmToFloor)) * increment) + bucketMin;
+  let cpmTarget = ((Math.ceil(cpmToFloor)) * increment) + bucketMin;
   // force to 10 decimal places to deal with imprecise decimal/binary conversions
   //    (for example 0.1 * 3 = 0.30000000000000004)
   cpmTarget = Number(cpmTarget.toFixed(10));

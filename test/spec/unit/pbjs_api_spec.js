@@ -533,28 +533,28 @@ describe('Unit: Prebid Module', function () {
       RESPONSE.tags[0].ads[0].cpm = 2.1234;
       auction.callBids(cbTimeout);
       let bidTargeting = targeting.getAllTargeting();
-      expect(bidTargeting['div-gpt-ad-1460505748561-0'][CONSTANTS.TARGETING_KEYS.PRICE_BUCKET]).to.equal('2.12');
+      expect(bidTargeting['div-gpt-ad-1460505748561-0'][CONSTANTS.TARGETING_KEYS.PRICE_BUCKET]).to.equal('2.13');
     });
 
     it('should get correct ' + CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + ' when using bid.cpm is between 5 to 8', function() {
       RESPONSE.tags[0].ads[0].cpm = 6.78;
       auction.callBids(cbTimeout);
       let bidTargeting = targeting.getAllTargeting();
-      expect(bidTargeting['div-gpt-ad-1460505748561-0'][CONSTANTS.TARGETING_KEYS.PRICE_BUCKET]).to.equal('6.75');
+      expect(bidTargeting['div-gpt-ad-1460505748561-0'][CONSTANTS.TARGETING_KEYS.PRICE_BUCKET]).to.equal('6.80');
     });
 
     it('should get correct ' + CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + ' when using bid.cpm is between 8 to 20', function() {
       RESPONSE.tags[0].ads[0].cpm = 19.5234;
       auction.callBids(cbTimeout);
       let bidTargeting = targeting.getAllTargeting();
-      expect(bidTargeting['div-gpt-ad-1460505748561-0'][CONSTANTS.TARGETING_KEYS.PRICE_BUCKET]).to.equal('19.50');
+      expect(bidTargeting['div-gpt-ad-1460505748561-0'][CONSTANTS.TARGETING_KEYS.PRICE_BUCKET]).to.equal('20.00');
     });
 
     it('should get correct ' + CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + ' when using bid.cpm is between 20 to 25', function() {
       RESPONSE.tags[0].ads[0].cpm = 21.5234;
       auction.callBids(cbTimeout);
       let bidTargeting = targeting.getAllTargeting();
-      expect(bidTargeting['div-gpt-ad-1460505748561-0'][CONSTANTS.TARGETING_KEYS.PRICE_BUCKET]).to.equal('21.00');
+      expect(bidTargeting['div-gpt-ad-1460505748561-0'][CONSTANTS.TARGETING_KEYS.PRICE_BUCKET]).to.equal('22.00');
     });
   });
 
@@ -784,7 +784,7 @@ describe('Unit: Prebid Module', function () {
 
       auction.callBids(cbTimeout);
       let bidTargeting = targeting.getAllTargeting();
-      expect(bidTargeting['div-gpt-ad-1460505748561-0'][CONSTANTS.TARGETING_KEYS.PRICE_BUCKET]).to.equal('3.25');
+      expect(bidTargeting['div-gpt-ad-1460505748561-0'][CONSTANTS.TARGETING_KEYS.PRICE_BUCKET]).to.equal('3.50');
     });
 
     it('should get correct ' + CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + ' with cpm between 21 - 100', function() {
@@ -798,7 +798,7 @@ describe('Unit: Prebid Module', function () {
 
       auction.callBids(cbTimeout);
       let bidTargeting = targeting.getAllTargeting();
-      expect(bidTargeting['div-gpt-ad-1460505748561-0'][CONSTANTS.TARGETING_KEYS.PRICE_BUCKET]).to.equal('43.00');
+      expect(bidTargeting['div-gpt-ad-1460505748561-0'][CONSTANTS.TARGETING_KEYS.PRICE_BUCKET]).to.equal('44.00');
     });
 
     it('should only apply price granularity if bid media type matches', function () {
@@ -812,7 +812,7 @@ describe('Unit: Prebid Module', function () {
 
       auction.callBids(cbTimeout);
       let bidTargeting = targeting.getAllTargeting();
-      expect(bidTargeting['div-gpt-ad-1460505748561-0'][CONSTANTS.TARGETING_KEYS.PRICE_BUCKET]).to.equal('3.00');
+      expect(bidTargeting['div-gpt-ad-1460505748561-0'][CONSTANTS.TARGETING_KEYS.PRICE_BUCKET]).to.equal('3.50');
     });
   });
 

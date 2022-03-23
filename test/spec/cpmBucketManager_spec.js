@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import {getPriceBucketString, isValidPriceConfig} from 'src/cpmBucketManager.js';
+import { getPriceBucketString, isValidPriceConfig } from 'src/cpmBucketManager.js';
 let cpmFixtures = require('test/fixtures/cpmInputsOutputs.json');
 
 describe('cpmBucketManager', function () {
@@ -28,7 +28,7 @@ describe('cpmBucketManager', function () {
       }
       ]
     };
-    let expected = '{"low":"5.00","med":"16.50","high":"16.50","auto":"16.50","dense":"16.50","custom":"16.5000"}';
+    let expected = '{"low":"5.00","med":"16.60","high":"16.51","auto":"17.00","dense":"17.00","custom":"16.5500"}';
     let output = getPriceBucketString(cpm, customConfig);
     expect(JSON.stringify(output)).to.deep.equal(expected);
   });
@@ -49,7 +49,7 @@ describe('cpmBucketManager', function () {
       }
       ]
     };
-    let expected = '{"low":"5.00","med":"14.50","high":"14.50","auto":"14.50","dense":"14.50","custom":"14.5000"}';
+    let expected = '{"low":"5.00","med":"14.60","high":"14.51","auto":"15.00","dense":"15.00","custom":"14.8000"}';
     let output = getPriceBucketString(cpm, customConfig);
     expect(JSON.stringify(output)).to.deep.equal(expected);
   });
@@ -70,7 +70,7 @@ describe('cpmBucketManager', function () {
       }
       ]
     };
-    let expected = '{"low":"552.45","med":"1823.09","high":"1823.09","auto":"1823.09","dense":"1823.09","custom":"1823.0850"}';
+    let expected = '{"low":"552.45","med":"1834.13","high":"1824.19","auto":"1878.33","dense":"1878.33","custom":"1828.6095"}';
     let output = getPriceBucketString(cpm, customConfig, 110.49);
     expect(JSON.stringify(output)).to.deep.equal(expected);
   });
@@ -84,12 +84,12 @@ describe('cpmBucketManager', function () {
       }]
     };
     let cpm = 2.21;
-    let expected = '{"low":"2.00","med":"2.20","high":"2.21","auto":"2.20","dense":"2.21","custom":"2.2000"}';
+    let expected = '{"low":"2.50","med":"2.30","high":"2.21","auto":"2.25","dense":"2.21","custom":"2.3000"}';
     let output = getPriceBucketString(cpm, customConfig);
     expect(JSON.stringify(output)).to.deep.equal(expected);
 
     cpm = 3.15;
-    expected = '{"low":"3.00","med":"3.10","high":"3.15","auto":"3.15","dense":"3.15","custom":"3.1000"}';
+    expected = '{"low":"3.50","med":"3.20","high":"3.15","auto":"3.15","dense":"3.15","custom":"3.2000"}';
     output = getPriceBucketString(cpm, customConfig);
     expect(JSON.stringify(output)).to.deep.equal(expected);
 
@@ -101,7 +101,7 @@ describe('cpmBucketManager', function () {
       }]
     };
     cpm = 4.89;
-    expected = '{"low":"4.50","med":"4.80","high":"4.89","auto":"4.85","dense":"4.85","custom":"4.880"}';
+    expected = '{"low":"5.00","med":"4.90","high":"4.89","auto":"4.90","dense":"4.90","custom":"4.960"}';
     output = getPriceBucketString(cpm, customConfig);
     expect(JSON.stringify(output)).to.deep.equal(expected);
 
@@ -113,12 +113,12 @@ describe('cpmBucketManager', function () {
       }]
     };
     cpm = 2.98;
-    expected = '{"low":"2.50","med":"2.90","high":"2.98","auto":"2.95","dense":"2.98","custom":"2.950"}';
+    expected = '{"low":"3.00","med":"3.00","high":"2.98","auto":"3.00","dense":"2.98","custom":"3.000"}';
     output = getPriceBucketString(cpm, customConfig);
     expect(JSON.stringify(output)).to.deep.equal(expected);
 
     cpm = 2.99;
-    expected = '{"low":"2.50","med":"2.90","high":"2.99","auto":"2.95","dense":"2.99","custom":"2.950"}';
+    expected = '{"low":"3.00","med":"3.00","high":"3.00","auto":"3.00","dense":"3.00","custom":"3.000"}';
     output = getPriceBucketString(cpm, customConfig);
     expect(JSON.stringify(output)).to.deep.equal(expected);
 
@@ -130,17 +130,17 @@ describe('cpmBucketManager', function () {
       }]
     };
     cpm = 4.01;
-    expected = '{"low":"4.00","med":"4.00","high":"4.01","auto":"4.00","dense":"4.00","custom":"4.01"}';
+    expected = '{"low":"4.50","med":"4.10","high":"4.01","auto":"4.05","dense":"4.05","custom":"4.01"}';
     output = getPriceBucketString(cpm, customConfig);
     expect(JSON.stringify(output)).to.deep.equal(expected);
 
     cpm = 4.68;
-    expected = '{"low":"4.50","med":"4.60","high":"4.68","auto":"4.65","dense":"4.65","custom":"4.68"}';
+    expected = '{"low":"5.00","med":"4.70","high":"4.68","auto":"4.70","dense":"4.70","custom":"4.68"}';
     output = getPriceBucketString(cpm, customConfig);
     expect(JSON.stringify(output)).to.deep.equal(expected);
 
     cpm = 4.69;
-    expected = '{"low":"4.50","med":"4.60","high":"4.69","auto":"4.65","dense":"4.65","custom":"4.69"}';
+    expected = '{"low":"5.00","med":"4.70","high":"4.70","auto":"4.70","dense":"4.70","custom":"4.70"}';
     output = getPriceBucketString(cpm, customConfig);
     expect(JSON.stringify(output)).to.deep.equal(expected);
   });
@@ -156,7 +156,7 @@ describe('cpmBucketManager', function () {
         }
       ]
     };
-    let expected = '{"low":"5.00","med":"16.50","high":"16.50","auto":"16.50","dense":"16.50","custom":"17"}';
+    let expected = '{"low":"5.00","med":"16.60","high":"16.51","auto":"17.00","dense":"17.00","custom":"17"}';
     let output = getPriceBucketString(cpm, customConfig);
     expect(JSON.stringify(output)).to.deep.equal(expected);
   });
@@ -171,7 +171,7 @@ describe('cpmBucketManager', function () {
         }
       ]
     };
-    let expected = '{"low":"5.00","med":"16.50","high":"16.50","auto":"16.50","dense":"16.50","custom":"16.50"}';
+    let expected = '{"low":"5.00","med":"16.60","high":"16.51","auto":"17.00","dense":"17.00","custom":"16.55"}';
     let output = getPriceBucketString(cpm, customConfig);
     expect(JSON.stringify(output)).to.deep.equal(expected);
   });
