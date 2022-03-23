@@ -14,12 +14,7 @@ const BLOCKED_AD_SIZES = [
   '1x1',
   '1x2'
 ];
-const SUPPORTED_USER_ID_SOURCES = [
-  'liveramp.com', // Liveramp IdentityLink
-  'nextroll.com', // NextRoll XID
-  'verizonmedia.com', // Verizon Media ConnectID
-  'pubcid.org' // PubCommon ID
-];
+const DEFAULT_MAX_TTL = 420; // 7 minutes
 export const spec = {
   code: 'synacormedia',
   supportedMediaTypes: [ BANNER, VIDEO ],
@@ -95,7 +90,7 @@ export const spec = {
 
     // User ID
     if (validBidReqs[0] && validBidReqs[0].userIdAsEids && Array.isArray(validBidReqs[0].userIdAsEids)) {
-      const eids = this.processEids(validBidReqs[0].userIdAsEids);
+      const eids = validBidReqs[0].userIdAsEids;
       if (eids.length) {
         deepSetValue(openRtbBidRequest, 'user.ext.eids', eids);
       }
@@ -112,16 +107,6 @@ export const spec = {
         }
       };
     }
-  },
-
-  processEids: function(userIdAsEids) {
-    const eids = [];
-    userIdAsEids.forEach(function(eid) {
-      if (SUPPORTED_USER_ID_SOURCES.indexOf(eid.source) > -1) {
-        eids.push(eid);
-      }
-    });
-    return eids;
   },
 
   buildBannerImpressions: function (adSizes, bid, tagIdOrPlacementId, pos, videoOrBannerKey) {
@@ -248,6 +233,19 @@ export const spec = {
               }
             });
           }
+
+          let maxTtl = DEFAULT_MAX_TTL;
+          if (bid.ext && bid.ext['imds.tv'] && bid.ext['imds.tv'].ttl) {
+            const bidTtlMax = parseInt(bid.ext['imds.tv'].ttl, 10);
+            maxTtl = !isNaN(bidTtlMax) && bidTtlMax > 0 ? bidTtlMax : DEFAULT_MAX_TTL;
+          }
+
+          let ttl = maxTtl;
+          if (bid.exp) {
+            const bidTtl = parseInt(bid.exp, 10);
+            ttl = !isNaN(bidTtl) && bidTtl > 0 ? Math.min(bidTtl, maxTtl) : maxTtl;
+          }
+
           const bidObj = {
             requestId: impid,
             cpm: parseFloat(bid.price),
@@ -258,7 +256,7 @@ export const spec = {
             netRevenue: true,
             mediaType: isVideo ? VIDEO : BANNER,
             ad: creative,
-            ttl: 60
+            ttl,
           };
 
           if (bid.adomain != undefined || bid.adomain != null) {
