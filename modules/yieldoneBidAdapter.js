@@ -68,6 +68,12 @@ export const spec = {
         payload.imuid = imuid;
       }
 
+      // DACID
+      const dacId = deepAccess(bidRequest, 'userId.dacId.id');
+      if (isStr(dacId) && !isEmpty(dacId)) {
+        payload.dac_id = dacId;
+      }
+
       return {
         method: 'GET',
         url: ENDPOINT_URL,

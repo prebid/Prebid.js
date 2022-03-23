@@ -399,6 +399,39 @@ describe('yieldoneBidAdapter', function() {
         expect(request[0].data.imuid).to.equal('imuid_sample');
       });
     });
+
+    describe('DAC ID', function () {
+      it('dont send DAC ID if undefined', function () {
+        const bidRequests = [
+          {
+            params: {placementId: '0'},
+          },
+          {
+            params: {placementId: '1'},
+            userId: {},
+          },
+          {
+            params: {placementId: '2'},
+            userId: undefined,
+          },
+        ];
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        expect(request[0].data).to.not.have.property('dac_id');
+        expect(request[1].data).to.not.have.property('dac_id');
+        expect(request[2].data).to.not.have.property('dac_id');
+      });
+
+      it('should send DAC ID if available', function () {
+        const bidRequests = [
+          {
+            params: {placementId: '0'},
+            userId: {dacId: {id: 'dacId_sample'}},
+          },
+        ];
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        expect(request[0].data.dac_id).to.equal('dacId_sample');
+      });
+    });
   });
 
   describe('interpretResponse', function () {
