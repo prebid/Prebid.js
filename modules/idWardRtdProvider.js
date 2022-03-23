@@ -13,8 +13,7 @@ import {isPlainObject, mergeDeep, logMessage, logError} from '../src/utils.js';
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'idWard';
 
-export const storage = getStorageManager(null, SUBMODULE_NAME);
-
+export const storage = getStorageManager({moduleName: SUBMODULE_NAME});
 /**
   * Add real-time data & merge segments.
   * @param {Object} rtd

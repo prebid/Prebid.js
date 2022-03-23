@@ -18,7 +18,7 @@ const LOCAL_STORAGE = 'html5';
 const FTRACK_STORAGE_NAME = 'ftrackId';
 const FTRACK_PRIVACY_STORAGE_NAME = `${FTRACK_STORAGE_NAME}_privacy`;
 const FTRACK_URL = 'https://d9.flashtalking.com/d9core';
-const storage = getStorageManager(VENDOR_ID, MODULE_NAME);
+const storage = getStorageManager({gvlid: VENDOR_ID, moduleName: MODULE_NAME});
 
 let consentInfo = {
   gdpr: {
