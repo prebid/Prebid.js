@@ -361,7 +361,6 @@ function watchTaskMaker(options = {}) {
   }
 }
 
-
 const watch = watchTaskMaker({alsoWatch: ['test/**/*.js'], task: () => gulp.series(clean, gulp.parallel(lint, 'build-bundle-dev', test))});
 const watchFast = watchTaskMaker({livereload: false, task: () => gulp.series('build-bundle-dev')});
 

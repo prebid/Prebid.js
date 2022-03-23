@@ -3,9 +3,7 @@ const browsers = Object.fromEntries(
     .filter(([k, v]) => {
       // run only on latest; exclude Safari
       // (Webdriver's `browser.url(...)` times out on Safari if the page loads a video; does it wait for playback to complete?)
-      return v.browser_version === 'latest' &&
-        //v.browser !== 'safari'
-      v.browser === 'chrome'
+      return v.browser_version === 'latest' && v.browser !== 'safari'
     })
 );
 
@@ -28,7 +26,7 @@ function getCapabilities() {
         osVersion: browser.os_version,
         networkLogs: true,
         consoleLogs: 'verbose',
-        buildName: 'Prebidjs E2E ' + new Date().toLocaleString()
+        buildName: `Prebidjs E2E (${browser.browser} ${browser.browser_version}) ${new Date().toLocaleString()}`
       },
       acceptInsecureCerts: true,
     });

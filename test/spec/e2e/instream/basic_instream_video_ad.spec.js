@@ -17,7 +17,7 @@ const EXPECTED_TARGETING_KEYS = {
 setupTest({
   url: TEST_PAGE_URL,
   waitFor: ALERT_BOX_CSS_SELECTOR,
-}, 'Prebid.js Instream Video Ad Test', function (){
+}, 'Prebid.js Instream Video Ad Test', function () {
   it('should load the targeting keys with correct values', function () {
     const result = browser.execute(function () {
       return window.top.pbjs.getAdserverTargeting('video1');
