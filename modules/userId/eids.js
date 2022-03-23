@@ -63,6 +63,20 @@ export const USER_IDS_CONFIG = {
     }
   },
 
+  // ftrack
+  'ftrackId': {
+    source: 'flashtalking.com',
+    atype: 1,
+    getValue: function(data) {
+      return data.uid
+    },
+    getUidExt: function(data) {
+      if (data.ext) {
+        return data.ext;
+      }
+    }
+  },
+
   // parrableId
   'parrableId': {
     source: 'parrable.com',
