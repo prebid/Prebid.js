@@ -1,4 +1,4 @@
-import find from 'prebidjs-polyfill/find.js';
+import { find } from '../../src/polyfill.js';
 import { vastXmlEditorFactory } from './shared/vastXmlEditor.js';
 
 export const PB_PREFIX = 'pb_';
