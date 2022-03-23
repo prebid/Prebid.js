@@ -138,7 +138,11 @@ analyticsAdapter.enableAnalytics = function(config) {
     toselector: config.options.toselector || function(bid) {
       let code = getGptSlotInfoForAdUnitCode(bid.adUnitCode).divId || bid.adUnitCode;
       // https://mathiasbynens.be/notes/css-escapes
-      code = code.replace(/^\d/, '\\3$& ');
+      try {
+        code = CSS.escape(code);
+      } catch (_) {
+        code = code.replace(/^\d/, '\\3$& ');
+      }
       return `#${code}`
     },
     client: config.options.client,
