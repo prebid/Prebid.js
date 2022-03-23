@@ -17,6 +17,11 @@
       "required": [
         "bidsWon"
       ]
+    },
+    {
+      "required": [
+        "billableEvents"
+      ]
     }
   ],
   "properties": {
@@ -237,9 +242,44 @@
         ]
       }
     },
-    "wrapperName": {
-      "type": "string"
-    }
+    "billableEvents":{
+      "type":"array",
+      "minItems":1,
+      "items":{
+         "type":"object",
+         "required":[
+           "accountId",
+            "vendor",
+            "type",
+            "billingId"
+         ],
+         "properties":{
+            "vendor":{
+               "type":"string",
+               "description":"The name of the vendor who emitted the billable event"
+            },
+            "type":{
+               "type":"string",
+               "description":"The type of billable event",
+               "enum":[
+                  "impression",
+                  "pageLoad",
+                  "auction",
+                  "request",
+                  "general"
+               ]
+            },
+            "billingId":{
+               "type":"string",
+               "description":"A UUID which is responsible more mapping this event to"
+            },
+            "accountId": {
+              "type": "number",
+              "description": "The account id for the rubicon publisher"
+            }
+         }
+      }
+   }
   },
   "definitions": {
     "gam": {
