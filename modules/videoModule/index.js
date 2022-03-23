@@ -1,4 +1,5 @@
 import { config } from '../../src/config.js';
+import { find } from '../../src/polyfill.js';
 import events from '../../src/events.js';
 import { allVideoEvents, AUCTION_AD_LOAD_ATTEMPT, allVideoAuctionEvents,
   AD_IMPRESSION, AD_ERROR, BID_VIDEO_IMPRESSION, BID_VIDEO_ERROR } from './constants/events.js';
@@ -138,7 +139,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     const { adId, adTagUrl, wrapperAdIds } = adPayload;
     const { bidAdId = adId, adUnitCode, requestId, auctionId } = videoImpressionVerifier.getBidIdentifiers(adId, adTagUrl, wrapperAdIds);
     const { bids } = pbGlobal.getBidResponsesForAdUnitCode(adUnitCode);
-    return bids.find(bid => bid.adId === bidAdId && bid.requestId === requestId && bid.auctionId === auctionId);
+    return find(bids, bid => bid.adId === bidAdId && bid.requestId === requestId && bid.auctionId === auctionId);
   }
 }
 
