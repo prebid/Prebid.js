@@ -1,9 +1,19 @@
-import { isArray, logWarn, logError, parseUrl, deepAccess, isStr, _each, getBidIdParameter, isFn, isPlainObject } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { Renderer } from '../src/Renderer.js';
-import includes from 'prebidjs-polyfill/includes.js';
-import find from 'prebidjs-polyfill/find.js';
+import {
+  _each,
+  deepAccess,
+  getBidIdParameter,
+  isArray,
+  isFn,
+  isPlainObject,
+  isStr,
+  logError,
+  logWarn,
+  parseUrl
+} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {Renderer} from '../src/Renderer.js';
+import {find, includes} from '../src/polyfill.js';
 
 const BIDDER_CODE = 'emx_digital';
 const ENDPOINT = 'hb.emxdgt.com';

@@ -1,17 +1,69 @@
-import { deepSetValue, logError, _each, getBidRequest, isNumber, isArray, deepAccess, isFn, isPlainObject, logWarn, getBidIdParameter, getUniqueIdentifierStr, isEmpty, isInteger, isStr } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import {
+  _each,
+  deepAccess,
+  deepSetValue,
+  getBidIdParameter,
+  getBidRequest,
+  getUniqueIdentifierStr,
+  isArray,
+  isEmpty,
+  isFn,
+  isInteger,
+  isNumber,
+  isPlainObject,
+  isStr,
+  logError,
+  logWarn, mergeDeep
+} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
-import { createEidsArray } from './userId/eids.js';
-import includes from 'prebidjs-polyfill/includes.js';
+import {createEidsArray} from './userId/eids.js';
+import {includes} from '../src/polyfill.js';
 
 const BIDDER_CODE = 'improvedigital';
 const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 const VIDEO_TARGETING = ['skip', 'skipmin', 'skipafter'];
 
+const ID_RAZR = {
+  RENDERER_URL: 'https://razr.improvedigital.com/renderer.js',
+  addBidData({bid, bidRequest}) {
+    if (this.isValidBid(bid)) {
+      bid.renderer = Renderer.install({
+        url: this.RENDERER_URL,
+        config: {bidRequest}
+      });
+      bid.renderer.setRender(this.render);
+    }
+  },
+
+  isValidBid(bid) {
+    return bid && /razr:\\?\/\\?\//.test(bid.ad);
+  },
+
+  render(bid) {
+    const {bidRequest} = bid.renderer.getConfig();
+
+    const payload = {
+      type: 'prebid',
+      bidRequest,
+      bid,
+      config: mergeDeep(
+        {},
+        config.getConfig('improvedigital.rendererConfig'),
+        deepAccess(bidRequest, 'params.rendererConfig')
+      )
+    };
+
+    const razr = window.razr = window.razr || {};
+    razr.queue = razr.queue || [];
+    razr.queue.push(payload);
+  }
+};
+
 export const spec = {
-  version: '7.6.0',
+  version: '7.7.0',
   code: BIDDER_CODE,
   gvlid: 253,
   aliases: ['id'],
@@ -196,6 +248,11 @@ export const spec = {
           advertiserDomains: bidObject.adomain
         };
       }
+
+      ID_RAZR.addBidData({
+        bidRequest,
+        bid
+      });
 
       bids.push(bid);
     });

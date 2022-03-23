@@ -1,11 +1,10 @@
-import { logError, timestamp } from '../src/utils.js';
-import adapter from '../src/AnalyticsAdapter.js'
-import adaptermanager from '../src/adapterManager.js'
-import CONSTANTS from '../src/constants.json'
-import {ajaxBuilder} from '../src/ajax.js'
-import {config} from '../src/config.js'
-import find from 'prebidjs-polyfill/find.js'
-import includes from 'prebidjs-polyfill/includes.js'
+import {logError, timestamp} from '../src/utils.js';
+import adapter from '../src/AnalyticsAdapter.js';
+import adaptermanager from '../src/adapterManager.js';
+import CONSTANTS from '../src/constants.json';
+import {ajaxBuilder} from '../src/ajax.js';
+import {config} from '../src/config.js';
+import {find, includes} from '../src/polyfill.js';
 
 const ajax = ajaxBuilder(0)
 

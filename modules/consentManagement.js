@@ -1,14 +1,13 @@
-
 /**
  * This module adds GDPR consentManagement support to prebid.js.  It interacts with
  * supported CMPs (Consent Management Platforms) to grab the user's consent information
  * and make it available for any GDPR supported adapters to read/pass this information to
  * their system.
  */
-import { logInfo, isFn, getAdUnitSizes, logWarn, isStr, isPlainObject, logError, isNumber } from '../src/utils.js';
-import { config } from '../src/config.js';
-import { gdprDataHandler } from '../src/adapterManager.js';
-import includes from 'prebidjs-polyfill/includes.js';
+import {getAdUnitSizes, isFn, isNumber, isPlainObject, isStr, logError, logInfo, logWarn} from '../src/utils.js';
+import {config} from '../src/config.js';
+import {gdprDataHandler} from '../src/adapterManager.js';
+import {includes} from '../src/polyfill.js';
 
 const DEFAULT_CMP = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 10000;
@@ -288,6 +287,7 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
 
   if (!includes(Object.keys(cmpCallMap), userCMP)) {
     logWarn(`CMP framework (${userCMP}) is not a supported framework.  Aborting consentManagement module and resuming auction.`);
+    gdprDataHandler.setConsentData(null);
     return hookConfig.nextFn.apply(hookConfig.context, hookConfig.args);
   }
 
@@ -451,6 +451,7 @@ function exitModule(errMsg, hookConfig, extraArgs) {
         nextFn.apply(context, args);
       } else {
         logError(errMsg + ' Canceling auction as per consentManagement config.', extraArgs);
+        gdprDataHandler.setConsentData(null);
         if (typeof hookConfig.bidsBackHandler === 'function') {
           hookConfig.bidsBackHandler();
         } else {
@@ -470,7 +471,7 @@ export function resetConsentData() {
   consentData = undefined;
   userCMP = undefined;
   cmpVersion = 0;
-  gdprDataHandler.setConsentData(null);
+  gdprDataHandler.reset();
 }
 
 /**
@@ -508,6 +509,7 @@ export function setConsentConfig(config) {
   gdprScope = config.defaultGdprScope === true;
 
   logInfo('consentManagement module has been activated...');
+  gdprDataHandler.enable();
 
   if (userCMP === 'static') {
     if (isPlainObject(config.consentData)) {

@@ -38,6 +38,14 @@ userIdAsEids = [
     },
 
     {
+        source: 'justtag.com',
+        uids: [{
+            id: 'justId',
+            atype: 1
+        }]
+    },
+
+    {
         source: 'neustar.biz',
         uids: [{
             id: 'some-random-id-value',
