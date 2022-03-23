@@ -15,6 +15,7 @@
     "hadronIdSystem",
     "haloIdSystem",
     "id5IdSystem",
+    "ftrackIdSystem",
     "identityLinkIdSystem",
     "idxIdSystem",
     "imuIdSystem",
