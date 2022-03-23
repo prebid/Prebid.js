@@ -5,6 +5,7 @@ const argv = require('yargs').argv;
 
 const host = argv.host || 'localhost';
 const port = argv.port || 4444;
+const dev = argv.dev || false;
 
 const REPLACE = {
   'https://ib.adnxs.com/ut/v3/prebid': `http://${host}:${port}/appnexus`
@@ -29,6 +30,6 @@ function writeBundle(response, {modules = [], dev = false}) {
 
 module.exports = function (req, res, next) {
   res.type('text/javascript');
-  writeBundle(res, {modules: req.query.modules, dev: req.query.dev});
+  writeBundle(res, {modules: req.query.modules, dev});
   next();
 }

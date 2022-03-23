@@ -320,8 +320,12 @@ function buildPostbid() {
     .pipe(gulp.dest('build/postbid/'));
 }
 
-function startIntegServer() {
-  const srv = spawn('node', ['./test/fake-server/index.js', `--port=${INTEG_SERVER_PORT}`, `--host=${INTEG_SERVER_HOST}`]);
+function startIntegServer(dev = false) {
+  const args = ['./test/fake-server/index.js', `--port=${INTEG_SERVER_PORT}`, `--host=${INTEG_SERVER_HOST}`];
+  if (dev) {
+    args.push('--dev=true')
+  }
+  const srv = spawn('node', args);
   srv.stdout.on('data', (data) => {
     console.log(`stdout: ${data}`);
   });
@@ -391,6 +395,7 @@ gulp.task('serve', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', wa
 gulp.task('serve-fast', gulp.series(clean, gulp.parallel('build-bundle-dev', watchFast)));
 gulp.task('serve-and-test', gulp.series(clean, gulp.parallel('build-bundle-dev', watchFast, testTaskMaker({watch: true}))));
 gulp.task('serve-e2e', gulp.series(clean, 'build-bundle-prod', gulp.parallel(startIntegServer, startLocalServer)))
+gulp.task('serve-e2e-dev', gulp.series(clean, 'build-bundle-dev', gulp.parallel(() => startIntegServer(true), startLocalServer)))
 
 gulp.task('default', gulp.series(clean, makeWebpackPkg));
 
