@@ -2705,17 +2705,17 @@ describe('User ID', function () {
           }).catch(done);
         });
 
-        it('pbjs.getEncryptedEidsForSource should return string if custom function is defined', () => {
+        it('pbjs.getEncryptedEidsForSource should return string if custom function is defined', (done) => {
           const getCustomSignal = () => {
             return '{"keywords":["tech","auto"]}';
           }
-          const expectedString = '"1||{\"keywords\":[\"tech\",\"auto\"]}"';
+          const expectedString = '1||eyJrZXl3b3JkcyI6WyJ0ZWNoIiwiYXV0byJdfQ==';
           const encrypt = false;
           const source = 'pubmatic.com';
           (getGlobal()).getEncryptedEidsForSource(source, encrypt, getCustomSignal).then((result) => {
             expect(result).to.equal(expectedString);
             done();
-          });
+          }).catch(done);
         });
 
         it('pbjs.getUserIdsAsEidBySource', () => {
