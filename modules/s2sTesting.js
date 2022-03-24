@@ -1,12 +1,12 @@
-import { setS2STestingModule } from '../src/adapterManager.js';
+import {PARTITIONS, partitionBidders, filterBidsForAdUnit, getS2SBidderSet} from '../src/adapterManager.js';
+import {find} from '../src/polyfill.js';
+import {getBidderCodes, logWarn} from '../src/utils.js';
 
-let s2sTesting = {};
-
-const SERVER = 'server';
-const CLIENT = 'client';
-
-s2sTesting.SERVER = SERVER;
-s2sTesting.CLIENT = CLIENT;
+const {CLIENT, SERVER} = PARTITIONS;
+export const s2sTesting = {
+  ...PARTITIONS,
+  clientTestBidders: new Set()
+};
 
 s2sTesting.bidSource = {}; // store bidder sources determined from s2sConfig bidderControl
 s2sTesting.globalRand = Math.random(); // if 10% of bidderA and 10% of bidderB should be server-side, make it the same 10%
@@ -40,7 +40,7 @@ s2sTesting.getSourceBidderMap = function(adUnits = [], allS2SBidders = []) {
     [SERVER]: Object.keys(sourceBidders[SERVER]),
     [CLIENT]: Object.keys(sourceBidders[CLIENT])
   };
-};
+}
 
 /**
  * @function calculateBidSources determines the source for each s2s bidder based on bidderControl weightings.  these can be overridden at the adUnit level
@@ -53,7 +53,7 @@ s2sTesting.calculateBidSources = function(s2sConfig = {}) {
   (s2sConfig.bidders || []).forEach((bidder) => {
     s2sTesting.bidSource[bidder] = s2sTesting.getSource(bidderControl[bidder] && bidderControl[bidder].bidSource) || SERVER; // default to server
   });
-};
+}
 
 /**
  * @function getSource() gets a random source based on the given sourceWeights (export just for testing)
@@ -76,10 +76,59 @@ s2sTesting.getSource = function(sourceWeights = {}, bidSources = [SERVER, CLIENT
     // choose the first source with an incremental weight > random weight
     if (rndWeight < srcIncWeight[source]) return source;
   }
-};
+}
 
-// inject the s2sTesting module into the adapterManager rather than importing it
-// importing it causes the packager to include it even when it's not explicitly included in the build
-setS2STestingModule(s2sTesting);
+function doingS2STesting(s2sConfig) {
+  return s2sConfig && s2sConfig.enabled && s2sConfig.testing;
+}
+
+function isTestingServerOnly(s2sConfig) {
+  return Boolean(doingS2STesting(s2sConfig) && s2sConfig.testServerOnly);
+}
+
+const adUnitsContainServerRequests = (adUnits, s2sConfig) => Boolean(
+  find(adUnits, adUnit => find(adUnit.bids, bid => (
+    bid.bidSource ||
+    (s2sConfig.bidderControl && s2sConfig.bidderControl[bid.bidder])
+  ) && bid.finalSource === SERVER))
+);
+
+partitionBidders.before(function (next, adUnits, s2sConfigs) {
+  const serverBidders = getS2SBidderSet(s2sConfigs);
+  let serverOnly = false;
+
+  s2sConfigs.forEach((s2sConfig) => {
+    if (doingS2STesting(s2sConfig)) {
+      s2sTesting.calculateBidSources(s2sConfig);
+      const bidderMap = s2sTesting.getSourceBidderMap(adUnits, [...serverBidders]);
+      // get all adapters doing client testing
+      bidderMap[CLIENT].forEach((bidder) => s2sTesting.clientTestBidders.add(bidder))
+    }
+    if (isTestingServerOnly(s2sConfig) && adUnitsContainServerRequests(adUnits, s2sConfig)) {
+      logWarn('testServerOnly: True.  All client requests will be suppressed.');
+      serverOnly = true;
+    }
+  });
+
+  next.bail(getBidderCodes(adUnits).reduce((memo, bidder) => {
+    if (serverBidders.has(bidder)) {
+      memo[SERVER].push(bidder);
+    }
+    if (!serverOnly && (!serverBidders.has(bidder) || s2sTesting.clientTestBidders.has(bidder))) {
+      memo[CLIENT].push(bidder);
+    }
+    return memo;
+  }, {[CLIENT]: [], [SERVER]: []}));
+});
+
+filterBidsForAdUnit.before(function(next, bids, s2sConfig) {
+  if (s2sConfig == null) {
+    next.bail(bids.filter((bid) => !s2sTesting.clientTestBidders.size || bid.finalSource !== SERVER));
+  } else {
+    const serverBidders = getS2SBidderSet(s2sConfig);
+    next.bail(bids.filter((bid) => serverBidders.has(bid.bidder) &&
+      (!doingS2STesting(s2sConfig) || bid.finalSource !== CLIENT)));
+  }
+});
 
 export default s2sTesting;
