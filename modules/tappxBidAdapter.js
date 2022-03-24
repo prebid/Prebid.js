@@ -84,6 +84,7 @@ export const spec = {
    *
    * @param {*} serverResponse
    * @param {*} originalRequest
+   * @return Bids[] An array of Bids well formatted (IAB)
    */
   interpretResponse: function(serverResponse, originalRequest) {
     const responseBody = serverResponse.body;
@@ -108,6 +109,8 @@ export const spec = {
    * @param {*} syncOptions
    * @param {*} serverResponses
    * @param {*} gdprConsent
+   * @param {*} uspConsent
+   * @return [] The value type with the url
    */
   getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
     let url = `https://${hostDomain}/cs/usersync.php?`;
