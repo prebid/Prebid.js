@@ -1,6 +1,6 @@
 import {deepClone, delayExecution} from '../../src/utils.js';
 import {createBid} from '../../src/bidfactory.js';
-import * as CONSTANTS from '../../src/constants.json';
+import {default as CONSTANTS} from '../../src/constants.json';
 
 export function pbsBidInterceptor (next, interceptBids, s2sBidRequest, bidRequests, ajax, {
   onResponse,
