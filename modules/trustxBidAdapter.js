@@ -1,4 +1,4 @@
-import { isEmpty, deepAccess, logError, logWarn, parseGPTSingleSizeArrayToRtbSize } from '../src/utils.js';
+import {isEmpty, deepAccess, logError, logWarn, parseGPTSingleSizeArrayToRtbSize, mergeDeep} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
@@ -21,6 +21,7 @@ const LOG_ERROR_MESS = {
   hasEmptySeatbidArray: 'Response has empty seatbid array',
   hasNoArrayOfBids: 'Seatbid from response has no array of bid objects - '
 };
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [ BANNER, VIDEO ],
@@ -173,14 +174,23 @@ export const spec = {
       request.site.content = content;
     }
 
-    const userData = [];
-    addSegments('iow_labs_pub_data', 'jwpseg', jwpseg, userData);
-    addSegments('permutive', 'p_standard', permutiveseg, userData, 'permutive.com');
-
-    if (userData.length) {
+    if (jwpseg && jwpseg.length) {
       user = {
-        data: userData
+        data: [{
+          name: 'iow_labs_pub_data',
+          segment: segmentProcessing(jwpseg, 'jwpseg'),
+        }]
       };
+    }
+
+    const ortb2UserData = config.getConfig('ortb2.user.data');
+    if (ortb2UserData && ortb2UserData.length) {
+      if (!user) {
+        user = { data: [] };
+      }
+      user = mergeDeep(user, {
+        data: [...ortb2UserData]
+      });
     }
 
     if (gdprConsent && gdprConsent.consentString) {
@@ -431,34 +441,20 @@ function createBannerRequest(bid, mediaType) {
   return result;
 }
 
-function addSegments(name, segName, segments, data, bidConfigName) {
-  if (segments && segments.length) {
-    data.push({
-      name: name,
-      segment: segments
-        .map((seg) => seg && (seg.id || seg))
-        .filter((seg) => seg && (typeof seg === 'string' || typeof seg === 'number'))
-        .map((seg) => ({ name: segName, value: seg.toString() }))
-    });
-  } else if (bidConfigName) {
-    const configData = config.getConfig('ortb2.user.data');
-    let segData = null;
-    configData && configData.some(({name, segment}) => {
-      if (name === bidConfigName) {
-        segData = segment;
-        return true;
+function segmentProcessing(segment, forceSegName) {
+  return segment
+    .map((seg) => {
+      const value = seg && (seg.value || seg.id || seg);
+      if (typeof value === 'string' || typeof value === 'number') {
+        return {
+          value: value.toString(),
+          ...(forceSegName && { name: forceSegName }),
+          ...(seg.name && { name: seg.name }),
+        };
       }
-    });
-    if (segData && segData.length) {
-      data.push({
-        name: name,
-        segment: segData
-          .map((seg) => seg && (seg.id || seg))
-          .filter((seg) => seg && (typeof seg === 'string' || typeof seg === 'number'))
-          .map((seg) => ({ name: segName, value: seg.toString() }))
-      });
-    }
-  }
+      return null;
+    })
+    .filter((seg) => !!seg);
 }
 
 function reformatKeywords(pageKeywords) {

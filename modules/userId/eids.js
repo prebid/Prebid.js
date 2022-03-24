@@ -63,6 +63,20 @@ export const USER_IDS_CONFIG = {
     }
   },
 
+  // ftrack
+  'ftrackId': {
+    source: 'flashtalking.com',
+    atype: 1,
+    getValue: function(data) {
+      return data.uid
+    },
+    getUidExt: function(data) {
+      if (data.ext) {
+        return data.ext;
+      }
+    }
+  },
+
   // parrableId
   'parrableId': {
     source: 'parrable.com',
@@ -283,6 +297,12 @@ export const USER_IDS_CONFIG = {
   // Adquery ID
   'qid': {
     source: 'adquery.io',
+    atype: 1
+  },
+
+  // DAC ID
+  'dacId': {
+    source: 'impact-ad.jp',
     atype: 1
   },
 };
