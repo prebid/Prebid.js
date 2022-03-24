@@ -138,7 +138,7 @@ import {getGlobal} from '../../src/prebidGlobal.js';
 import {gdprDataHandler} from '../../src/adapterManager.js';
 import CONSTANTS from '../../src/constants.json';
 import {hook, module} from '../../src/hook.js';
-import {buildEidPermissions, createEidsArray} from './eids.js';
+import {buildEidPermissions, createEidsArray, USER_IDS_CONFIG} from './eids.js';
 import {getCoreStorageManager} from '../../src/storageManager.js';
 import {
   cyrb53Hash,
@@ -154,7 +154,8 @@ import {
   logError,
   logInfo,
   logWarn,
-  timestamp
+  timestamp,
+  isEmpty
 } from '../../src/utils.js';
 
 const MODULE_NAME = 'User ID';
@@ -466,6 +467,20 @@ function getCombinedSubmoduleIds(submodules) {
 }
 
 /**
+ * This function will return a submodule ID object for particular source name
+ * @param {SubmoduleContainer[]} submodules
+ * @param {string} sourceName
+ */
+function getSubmoduleId(submodules, sourceName) {
+  if (!Array.isArray(submodules) || !submodules.length) {
+    return {};
+  }
+  const submodule = submodules.filter(sub => isPlainObject(sub.idObj) &&
+    Object.keys(sub.idObj).length && USER_IDS_CONFIG[Object.keys(sub.idObj)[0]]?.source === sourceName);
+  return !isEmpty(submodule) ? submodule[0].idObj : [];
+}
+
+/**
  * This function will create a combined object for bidder with allowed subModule Ids
  * @param {SubmoduleContainer[]} submodules
  * @param {string} bidder
@@ -695,6 +710,82 @@ function getUserIdsAsEids(cb) {
     initIdSystem().then(() => cb(getUserIdsAsEids()), () => getUserIdsAsEids(cb));
   }
   return createEidsArray(getUserIds())
+}
+
+/**
+ * This function will be exposed in global-name-space so that userIds stored by Prebid UserId module can be used by external codes as well.
+ * Simple use case will be passing these UserIds to A9 wrapper solution
+ */
+
+function getUserIdsAsEidBySource(sourceName, cb) {
+  if (cb && isFn(cb)) {
+    initIdSystem().then(() => cb(getUserIdsAsEidBySource(sourceName)), () => getUserIdsAsEidBySource(sourceName, cb));
+  }
+  return createEidsArray(getSubmoduleId(initializedSubmodules, sourceName))[0];
+}
+
+/**
+ * This function will be exposed in global-name-space so that userIds for a source can be exposed
+ * Sample use case is exposing this function to ESP
+ */
+function getEncryptedEidsForSource(source, encrypt, customFunction) {
+  return initIdSystem().then(() => {
+    let eidsSignals = {};
+
+    if (isFn(customFunction)) {
+      logInfo(`${MODULE_NAME} - Getting encrypted signal from custom function : ${customFunction.name} & source : ${source} `);
+      // Publishers are expected to define a common function which will be proxy for signal function.
+      const customSignals = customFunction(source);
+      eidsSignals[source] = customSignals ? encryptSignals(customSignals) : null; // by default encrypt using base64 to avoid JSON errors
+    } else {
+      // initialize signal with eids by default
+      const eid = getUserIdsAsEidBySource(source);
+      logInfo(`${MODULE_NAME} - Getting encrypted signal for eids :${JSON.stringify(eid)}`);
+      if (!isEmpty(eid)) {
+        eidsSignals[eid.source] = encrypt === true ? encryptSignals(eid) : eid.uids[0].id; // If encryption is enabled append version (1||) and encrypt entire object
+      }
+    }
+    logInfo(`${MODULE_NAME} - Fetching encrypted eids: ${eidsSignals[source]}`);
+    return eidsSignals[source];
+  })
+}
+
+function encryptSignals(signals, version = 1) {
+  let encryptedSig = '';
+  switch (version) {
+    case 1: // Base64 Encryption
+      encryptedSig = typeof signals === 'object' ? window.btoa(JSON.stringify(signals)) : window.btoa(signals); // Test encryption. To be replaced with better algo
+      break;
+    default:
+      break;
+  }
+  return `${version}||${encryptedSig}`;
+}
+
+/**
+* This function will be exposed in the global-name-space so that publisher can register the signals-ESP.
+*/
+function registerSignalSources() {
+  if (!isGptPubadsDefined()) {
+    return;
+  }
+  window.googletag.encryptedSignalProviders = window.googletag.encryptedSignalProviders || [];
+  const encryptedSignalSources = config.getConfig('userSync.encryptedSignalSources');
+  if (encryptedSignalSources) {
+    const registerDelay = encryptedSignalSources.registerDelay || 0;
+    setTimeout(() => {
+      encryptedSignalSources['sources'] && encryptedSignalSources['sources'].forEach(({ source, encrypt, customFunc }) => {
+        source.forEach((src) => {
+          window.googletag.encryptedSignalProviders.push({
+            id: src,
+            collectorFunction: () => getEncryptedEidsForSource(src, encrypt, customFunc)
+          });
+        });
+      })
+    }, registerDelay)
+  } else {
+    logWarn(`${MODULE_NAME} - ESP : encryptedSignalSources config not defined under userSync Object`);
+  }
 }
 
 /**
@@ -938,7 +1029,10 @@ export function init(config, {delay = delayFor} = {}) {
   // exposing getUserIds function in global-name-space so that userIds stored in Prebid can be used by external codes.
   (getGlobal()).getUserIds = getUserIds;
   (getGlobal()).getUserIdsAsEids = getUserIdsAsEids;
+  (getGlobal()).getEncryptedEidsForSource = getEncryptedEidsForSource;
+  (getGlobal()).registerSignalSources = registerSignalSources;
   (getGlobal()).refreshUserIds = refreshUserIds;
+  (getGlobal()).getUserIdsAsEidBySource = getUserIdsAsEidBySource;
 }
 
 // init config update listener to start the application
