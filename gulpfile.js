@@ -156,9 +156,9 @@ function gulpBundle(dev) {
   return bundle(dev).pipe(gulp.dest('build/' + (dev ? 'dev' : 'dist')));
 }
 
-function nodeBundle(modules) {
+function nodeBundle(modules, dev = false) {
   return new Promise((resolve, reject) => {
-    bundle(false, modules)
+    bundle(dev, modules)
       .on('error', (err) => {
         reject(err);
       })
@@ -394,7 +394,7 @@ gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
 gulp.task('serve', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, test)));
 gulp.task('serve-fast', gulp.series(clean, gulp.parallel('build-bundle-dev', watchFast)));
 gulp.task('serve-and-test', gulp.series(clean, gulp.parallel('build-bundle-dev', watchFast, testTaskMaker({watch: true}))));
-gulp.task('serve-e2e', gulp.series(clean, 'build-bundle-prod', gulp.parallel(startIntegServer, startLocalServer)))
+gulp.task('serve-e2e', gulp.series(clean, 'build-bundle-prod', gulp.parallel(() => startIntegServer(), startLocalServer)))
 gulp.task('serve-e2e-dev', gulp.series(clean, 'build-bundle-dev', gulp.parallel(() => startIntegServer(true), startLocalServer)))
 
 gulp.task('default', gulp.series(clean, makeWebpackPkg));

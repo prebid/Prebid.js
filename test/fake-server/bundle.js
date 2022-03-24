@@ -1,8 +1,7 @@
 const fs = require('fs');
 const path = require('path');
-const prebid = require('../../package.json');
+const makeBundle = require('../../gulpfile.js');
 const argv = require('yargs').argv;
-
 const host = argv.host || 'localhost';
 const port = argv.port || 4444;
 const dev = argv.dev || false;
@@ -11,25 +10,32 @@ const REPLACE = {
   'https://ib.adnxs.com/ut/v3/prebid': `http://${host}:${port}/appnexus`
 };
 
-function readAndReplace(fn) {
-  const contents = fs.readFileSync(fn);
-  return Object.entries(REPLACE).reduce((text, [orig, repl]) => {
-    return text.replace(new RegExp(orig, 'g'), repl)
-  }, contents.toString());
-}
+const replaceStrings = (() => {
+  const rules = Object.entries(REPLACE).map(([orig, repl]) => {
+    return [new RegExp(orig, 'g'), repl];
+  });
+  return function(text) {
+    return rules.reduce((text, [pat, repl]) => text.replace(pat, repl), text);
+  }
+})();
 
-function writeBundle(response, {modules = [], dev = false}) {
-  const root = `./build/${dev ? 'dev' : 'dist'}`;
-  modules = Array.isArray(modules) ? modules : [modules];
-  const files = ['prebid-core.js'].concat((modules).map((m) => `${m}.js`));
-  files.forEach((fn) => {
-    response.write(readAndReplace(path.join(root, fn)));
-  })
-  response.write(`\n${prebid.globalVarName}.processQueue();`);
-}
+const getBundle = (() => {
+  const cache = {};
+  return function (modules = []) {
+    modules = Array.isArray(modules) ? [...modules] : [modules];
+    modules.sort();
+    const key = modules.join(',');
+    if (!cache.hasOwnProperty(key)) {
+      cache[key] = makeBundle(modules, dev).then(replaceStrings);
+    }
+    return cache[key];
+  }
+})();
 
 module.exports = function (req, res, next) {
   res.type('text/javascript');
-  writeBundle(res, {modules: req.query.modules, dev});
-  next();
+  getBundle(req.query.modules).then((bundle) => {
+    res.write(bundle);
+    next();
+  }).catch(next);
 }
