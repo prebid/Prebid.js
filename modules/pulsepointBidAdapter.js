@@ -2,6 +2,7 @@
 import { convertTypes, deepAccess, isArray, logError, isFn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
+import { config } from '../src/config.js';
 
 const NATIVE_DEFAULTS = {
   TITLE_LEN: 100,
@@ -453,6 +454,11 @@ function user(bidRequest, bidderRequest) {
         }
         ext.digitrust = digitrust;
       }
+    }
+    const additionalEids = config.getBidderConfig('additionalEids');
+    if (additionalEids && isArray(additionalEids)) {
+      ext.eids = ext.eids || [];
+      ext.eids.push(...additionalEids);
     }
   }
   return { ext };

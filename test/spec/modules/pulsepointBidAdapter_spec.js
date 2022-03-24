@@ -2,6 +2,7 @@
 import {expect} from 'chai';
 import {spec} from 'modules/pulsepointBidAdapter.js';
 import {deepClone} from 'src/utils.js';
+import { config } from 'src/config.js';
 
 describe('PulsePoint Adapter Tests', function () {
   const slotConfigs = [{
@@ -700,6 +701,92 @@ describe('PulsePoint Adapter Tests', function () {
     userVerify(ortbRequest.user.ext.eids[9], 'verizonmedia.com', 'connect_user5');
     userVerify(ortbRequest.user.ext.eids[10], 'uidapi.com', 'uid2_user6');
     userVerify(ortbRequest.user.ext.eids[11], 'liveintent.com', 'liveintent_id123');
+  });
+  it('Verify additional eids config', function () {
+    const bidRequests = deepClone(slotConfigs);
+    let sandbox = sinon.sandbox.create();
+    try {
+      sandbox.stub(config, 'getBidderConfig').callsFake((key) => {
+        var config = {
+          additionalEids: [
+            {
+              'source': 'publisher123.com',
+              'uids': [
+                {
+                  'id': 'visitorXYZ'
+                }
+              ]
+            }
+          ]
+        };
+        return config[key];
+      });
+      const userVerify = function(obj, source, id) {
+        expect(obj).to.deep.equal({
+          source,
+          uids: [{
+            id
+          }]
+        });
+      };
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request).to.be.not.null;
+      const ortbRequest = request.data;
+      expect(request.data).to.be.not.null;
+      // user object
+      expect(ortbRequest.user).to.not.be.undefined;
+      expect(ortbRequest.user.ext).to.not.be.undefined;
+      expect(ortbRequest.user.ext.eids).to.not.be.undefined;
+      expect(ortbRequest.user.ext.eids).to.have.lengthOf(1);
+      userVerify(ortbRequest.user.ext.eids[0], 'publisher123.com', 'visitorXYZ');
+    } finally {
+      sandbox.restore();
+    }
+  });
+  it('Verify additional eids config appended with external ids from other sources', function () {
+    const bidRequests = deepClone(slotConfigs);
+    bidRequests[0].userId = {
+      britepoolid: 'britepool_id123'
+    };
+    let sandbox = sinon.sandbox.create();
+    try {
+      sandbox.stub(config, 'getBidderConfig').callsFake((key) => {
+        var config = {
+          additionalEids: [
+            {
+              'source': 'publisher123.com',
+              'uids': [
+                {
+                  'id': 'visitorXYZ'
+                }
+              ]
+            }
+          ]
+        };
+        return config[key];
+      });
+      const userVerify = function(obj, source, id) {
+        expect(obj).to.deep.equal({
+          source,
+          uids: [{
+            id
+          }]
+        });
+      };
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request).to.be.not.null;
+      const ortbRequest = request.data;
+      expect(request.data).to.be.not.null;
+      // user object
+      expect(ortbRequest.user).to.not.be.undefined;
+      expect(ortbRequest.user.ext).to.not.be.undefined;
+      expect(ortbRequest.user.ext.eids).to.not.be.undefined;
+      expect(ortbRequest.user.ext.eids).to.have.lengthOf(2);
+      userVerify(ortbRequest.user.ext.eids[0], 'britepool.com', 'britepool_id123');
+      userVerify(ortbRequest.user.ext.eids[1], 'publisher123.com', 'visitorXYZ');
+    } finally {
+      sandbox.restore();
+    }
   });
   it('Verify multiple adsizes', function () {
     const bidRequests = deepClone(slotConfigs);
