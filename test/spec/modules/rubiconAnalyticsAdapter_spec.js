@@ -2098,6 +2098,35 @@ describe('rubicon analytics adapter', function () {
       expect(message.auctions[0].adUnits[1].pattern).to.equal('1234/mycoolsite/*&gpt_skyscraper&deviceType=mobile');
     });
 
+    it('should pass gpid if defined', function () {
+      let bidRequest = utils.deepClone(MOCK.BID_REQUESTED);
+      bidRequest.bids[0].ortb2Imp = {
+        ext: {
+          gpid: '1234/mycoolsite/lowerbox'
+        }
+      };
+      bidRequest.bids[1].ortb2Imp = {
+        ext: {
+          gpid: '1234/mycoolsite/leaderboard'
+        }
+      };
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, bidRequest);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      events.emit(SET_TARGETING, MOCK.SET_TARGETING);
+
+      clock.tick(SEND_TIMEOUT + 1000);
+
+      expect(server.requests.length).to.equal(1);
+
+      let message = JSON.parse(server.requests[0].requestBody);
+      validate(message);
+      expect(message.auctions[0].adUnits[0].gpid).to.equal('1234/mycoolsite/lowerbox');
+      expect(message.auctions[0].adUnits[1].gpid).to.equal('1234/mycoolsite/leaderboard');
+    });
+
     it('should pass bidderDetail for multibid auctions', function () {
       let bidResponse = utils.deepClone(MOCK.BID_RESPONSE[1]);
       bidResponse.targetingBidder = 'rubi2';
