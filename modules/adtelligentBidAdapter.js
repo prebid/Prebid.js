@@ -37,11 +37,7 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: 410,
   aliases: ['onefiftytwomedia', 'selectmedia', 'appaloosa', 'bidsxchange', 'streamkey', 'janet',
-    { code: 'navelix', gvlid: 380 },
-    {
-      code: 'mediafuse',
-      skipPbsAliasing: true
-    }
+    { code: 'navelix', gvlid: 380 }
   ],
   supportedMediaTypes: [VIDEO, BANNER],
   isBidRequestValid: function (bid) {

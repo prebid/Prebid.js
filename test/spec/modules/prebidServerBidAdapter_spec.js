@@ -17,6 +17,7 @@ import {hook} from '../../../src/hook.js';
 import {decorateAdUnitsWithNativeParams} from '../../../src/native.js';
 import {auctionManager} from '../../../src/auctionManager.js';
 import {stubAuctionIndex} from '../../helpers/indexStub.js';
+import {registerBidder} from 'src/adapters/bidderFactory.js';
 
 let CONFIG = {
   accountId: '1',
@@ -1224,9 +1225,15 @@ describe('S2S Adapter', function () {
         }
       });
       config.setConfig({ s2sConfig: s2sConfig });
-
+      registerBidder({
+        code:'bidderCodeForTestSkipBPSAlias',
+        aliases:[{
+          code: 'bidderCodeForTestSkipBPSAlias_Alias',
+          skipPbsAliasing: true
+        }]
+      })
       const aliasBidder = {
-        bidder: 'mediafuse',
+        bidder: 'bidderCodeForTestSkipBPSAlias_Alias',
         params: { aid: 123 }
       };
 
