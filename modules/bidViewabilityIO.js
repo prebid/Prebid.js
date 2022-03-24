@@ -1,7 +1,7 @@
+import { logMessage } from '../src/utils.js';
 import { config } from '../src/config.js';
 import * as events from '../src/events.js';
-import { EVENTS } from '../src/constants.json';
-import * as utils from '../src/utils.js';
+import CONSTANTS from '../src/constants.json';
 
 const MODULE_NAME = 'bidViewabilityIO';
 const CONFIG_ENABLED = 'enabled';
@@ -23,8 +23,8 @@ export let isSupportedMediaType = (bid) => {
   return supportedMediaTypes.indexOf(bid.mediaType) > -1;
 }
 
-let logMessage = (message) => {
-  return utils.logMessage(`${MODULE_NAME}: ${message}`);
+let _logMessage = (message) => {
+  return logMessage(`${MODULE_NAME}: ${message}`);
 }
 
 // returns options for the iO that detects if the ad is viewable
@@ -42,8 +42,8 @@ export let getViewableOptions = (bid) => {
 export let markViewed = (bid, entry, observer) => {
   return () => {
     observer.unobserve(entry.target);
-    events.emit(EVENTS.BID_VIEWABLE, bid);
-    logMessage(`id: ${entry.target.getAttribute('id')} code: ${bid.adUnitCode} was viewed`);
+    events.emit(CONSTANTS.EVENTS.BID_VIEWABLE, bid);
+    _logMessage(`id: ${entry.target.getAttribute('id')} code: ${bid.adUnitCode} was viewed`);
   }
 }
 
@@ -59,13 +59,13 @@ export let viewCallbackFactory = (bid) => {
   return (entries, observer) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
-        logMessage(`viewable timer starting for id: ${entry.target.getAttribute('id')} code: ${bid.adUnitCode}`);
+        _logMessage(`viewable timer starting for id: ${entry.target.getAttribute('id')} code: ${bid.adUnitCode}`);
         entry.target.view_tracker = setTimeout(markViewed(bid, entry, observer), IAB_VIEWABLE_DISPLAY_TIME);
       } else {
-        logMessage(`id: ${entry.target.getAttribute('id')} code: ${bid.adUnitCode} is out of view`);
+        _logMessage(`id: ${entry.target.getAttribute('id')} code: ${bid.adUnitCode} is out of view`);
         if (entry.target.view_tracker) {
           clearTimeout(entry.target.view_tracker);
-          logMessage(`viewable timer stopped for id: ${entry.target.getAttribute('id')} code: ${bid.adUnitCode}`);
+          _logMessage(`viewable timer stopped for id: ${entry.target.getAttribute('id')} code: ${bid.adUnitCode}`);
         }
       }
     });
@@ -77,7 +77,7 @@ export let init = () => {
     if (conf[MODULE_NAME][CONFIG_ENABLED] && CLIENT_SUPPORTS_IO) {
       // if the module is enabled and the browser supports Intersection Observer,
       // then listen to AD_RENDER_SUCCEEDED to setup IO's for supported mediaTypes
-      events.on(EVENTS.AD_RENDER_SUCCEEDED, ({doc, bid, id}) => {
+      events.on(CONSTANTS.EVENTS.AD_RENDER_SUCCEEDED, ({doc, bid, id}) => {
         if (isSupportedMediaType(bid)) {
           let viewable = new IntersectionObserver(viewCallbackFactory(bid), getViewableOptions(bid));
           let element = document.getElementById(bid.adUnitCode);

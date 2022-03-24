@@ -37,6 +37,44 @@ function setImDataInCookie(value) {
   );
 }
 
+/**
+* @param {string} bidderName
+*/
+export function getBidderFunction(bidderName) {
+  const biddersFunction = {
+    ix: function (bid, data) {
+      if (data.im_segments && data.im_segments.length) {
+        config.setConfig({
+          ix: {firstPartyData: {im_segments: data.im_segments}},
+        });
+      }
+      return bid
+    },
+    pubmatic: function (bid, data) {
+      if (data.im_segments && data.im_segments.length) {
+        const dctr = deepAccess(bid, 'params.dctr');
+        deepSetValue(
+          bid,
+          'params.dctr',
+          `${dctr ? dctr + '|' : ''}im_segments=${data.im_segments.join(',')}`
+        );
+      }
+      return bid
+    },
+    fluct: function (bid, data) {
+      if (data.im_segments && data.im_segments.length) {
+        deepSetValue(
+          bid,
+          'params.kv.imsids',
+          data.im_segments
+        );
+      }
+      return bid
+    }
+  }
+  return biddersFunction[bidderName] || null;
+}
+
 export function getCustomBidderFunction(config, bidder) {
   const overwriteFn = deepAccess(config, `params.overwrites.${bidder}`)
 
@@ -73,9 +111,12 @@ export function setRealTimeData(bidConfig, moduleConfig, data) {
 
   adUnits.forEach(adUnit => {
     adUnit.bids.forEach(bid => {
+      const bidderFunction = getBidderFunction(bid.bidder);
       const overwriteFunction = getCustomBidderFunction(moduleConfig, bid.bidder);
       if (overwriteFunction) {
         overwriteFunction(bid, data, utils, config);
+      } else if (bidderFunction) {
+        bidderFunction(bid, data);
       }
     })
   });

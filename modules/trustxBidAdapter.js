@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import {isEmpty, deepAccess, logError, logWarn, parseGPTSingleSizeArrayToRtbSize, mergeDeep} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
@@ -6,9 +6,8 @@ import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'trustx';
 const ENDPOINT_URL = 'https://grid.bidswitch.net/hbjson?sp=trustx';
-const ADDITIONAL_SYNC_URL = 'https://x.bidswitch.net/sync?ssp=themediagrid';
 const TIME_TO_LIVE = 360;
-const ADAPTER_SYNC_URL = 'https://sofia.trustx.org/push_sync';
+const ADAPTER_SYNC_URL = 'https://x.bidswitch.net/sync?ssp=themediagrid';
 const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 
 const LOG_ERROR_MESS = {
@@ -22,6 +21,7 @@ const LOG_ERROR_MESS = {
   hasEmptySeatbidArray: 'Response has empty seatbid array',
   hasNoArrayOfBids: 'Seatbid from response has no array of bid objects - '
 };
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [ BANNER, VIDEO ],
@@ -76,7 +76,7 @@ export const spec = {
       if (!userIdAsEids) {
         userIdAsEids = bid.userIdAsEids;
       }
-      const {params: {uid, keywords}, mediaTypes, bidId, adUnitCode, rtd} = bid;
+      const {params: {uid, keywords}, mediaTypes, bidId, adUnitCode, rtd, ortb2Imp} = bid;
       bidsMap[bidId] = bid;
       const bidFloor = _getFloor(mediaTypes || {}, bid);
       if (rtd) {
@@ -95,14 +95,28 @@ export const spec = {
         }
       }
       let impObj = {
-        id: bidId,
+        id: bidId && bidId.toString(),
         tagid: uid.toString(),
         ext: {
-          divid: adUnitCode
+          divid: adUnitCode && adUnitCode.toString()
         }
       };
 
-      if (!utils.isEmpty(keywords)) {
+      if (ortb2Imp) {
+        if (ortb2Imp.instl) {
+          impObj.instl = ortb2Imp.instl;
+        }
+        if (ortb2Imp.ext && ortb2Imp.ext.data) {
+          impObj.ext.data = ortb2Imp.ext.data;
+          if (impObj.ext.data.adserver && impObj.ext.data.adserver.adslot) {
+            impObj.ext.gpid = impObj.ext.data.adserver.adslot.toString();
+          } else {
+            impObj.ext.gpid = ortb2Imp.ext.data.pbadslot && ortb2Imp.ext.data.pbadslot.toString();
+          }
+        }
+      }
+
+      if (!isEmpty(keywords)) {
         if (!pageKeywords) {
           pageKeywords = keywords;
         }
@@ -132,7 +146,7 @@ export const spec = {
     });
 
     const source = {
-      tid: auctionId,
+      tid: auctionId && auctionId.toString(),
       ext: {
         wrapper: 'Prebid_js',
         wrapper_version: '$prebid.version$'
@@ -147,7 +161,7 @@ export const spec = {
     const tmax = timeout ? Math.min(bidderTimeout, timeout) : bidderTimeout;
 
     let request = {
-      id: bidderRequestId,
+      id: bidderRequestId && bidderRequestId.toString(),
       site: {
         page: referer
       },
@@ -160,14 +174,23 @@ export const spec = {
       request.site.content = content;
     }
 
-    const userData = [];
-    addSegments('iow_labs_pub_data', 'jwpseg', jwpseg, userData);
-    addSegments('permutive', 'p_standard', permutiveseg, userData, 'permutive.com');
-
-    if (userData.length) {
+    if (jwpseg && jwpseg.length) {
       user = {
-        data: userData
+        data: [{
+          name: 'iow_labs_pub_data',
+          segment: segmentProcessing(jwpseg, 'jwpseg'),
+        }]
       };
+    }
+
+    const ortb2UserData = config.getConfig('ortb2.user.data');
+    if (ortb2UserData && ortb2UserData.length) {
+      if (!user) {
+        user = { data: [] };
+      }
+      user = mergeDeep(user, {
+        data: [...ortb2UserData]
+      });
     }
 
     if (gdprConsent && gdprConsent.consentString) {
@@ -188,8 +211,8 @@ export const spec = {
       request.user = user;
     }
 
-    const userKeywords = utils.deepAccess(config.getConfig('ortb2.user'), 'keywords') || null;
-    const siteKeywords = utils.deepAccess(config.getConfig('ortb2.site'), 'keywords') || null;
+    const userKeywords = deepAccess(config.getConfig('ortb2.user'), 'keywords') || null;
+    const siteKeywords = deepAccess(config.getConfig('ortb2.site'), 'keywords') || null;
 
     if (userKeywords) {
       pageKeywords = pageKeywords || {};
@@ -267,17 +290,17 @@ export const spec = {
         _addBidResponse(_getBidFromResponse(respItem), bidRequest, bidResponses, RendererConst);
       });
     }
-    if (errorMessage) utils.logError(errorMessage);
+    if (errorMessage) logError(errorMessage);
     return bidResponses;
   },
   getUserSyncs: function(syncOptions, responses, gdprConsent, uspConsent) {
     if (syncOptions.pixelEnabled) {
-      const syncsPerBidder = config.getConfig('userSync.syncsPerBidder');
       let params = [];
-      if (gdprConsent && typeof gdprConsent.consentString === 'string') {
+      if (gdprConsent) {
         if (typeof gdprConsent.gdprApplies === 'boolean') {
-          params.push(`gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`);
-        } else {
+          params.push(`gdpr=${Number(gdprConsent.gdprApplies)}`);
+        }
+        if (typeof gdprConsent.consentString === 'string') {
           params.push(`gdpr_consent=${gdprConsent.consentString}`);
         }
       }
@@ -285,28 +308,21 @@ export const spec = {
         params.push(`us_privacy=${uspConsent}`);
       }
       const stringParams = params.join('&');
-      const syncs = [{
+      return {
         type: 'image',
-        url: ADAPTER_SYNC_URL + (stringParams ? `?${stringParams}` : '')
-      }];
-      if (syncsPerBidder > 1) {
-        syncs.push({
-          type: 'image',
-          url: ADDITIONAL_SYNC_URL + (stringParams ? `&${stringParams}` : '')
-        });
-      }
-      return syncs;
+        url: ADAPTER_SYNC_URL + stringParams
+      };
     }
   }
 }
 
 function _getBidFromResponse(respItem) {
   if (!respItem) {
-    utils.logError(LOG_ERROR_MESS.emptySeatbid);
+    logError(LOG_ERROR_MESS.emptySeatbid);
   } else if (!respItem.bid) {
-    utils.logError(LOG_ERROR_MESS.hasNoArrayOfBids + JSON.stringify(respItem));
+    logError(LOG_ERROR_MESS.hasNoArrayOfBids + JSON.stringify(respItem));
   } else if (!respItem.bid[0]) {
-    utils.logError(LOG_ERROR_MESS.noBid);
+    logError(LOG_ERROR_MESS.noBid);
   }
   return respItem && respItem.bid && respItem.bid[0];
 }
@@ -315,7 +331,7 @@ function _addBidResponse(serverBid, bidRequest, bidResponses, RendererConst) {
   if (!serverBid) return;
   let errorMessage;
   if (!serverBid.auid) errorMessage = LOG_ERROR_MESS.noAuid + JSON.stringify(serverBid);
-  if (!serverBid.adm) errorMessage = LOG_ERROR_MESS.noAdm + JSON.stringify(serverBid);
+  if (!serverBid.adm && !serverBid.nurl) errorMessage = LOG_ERROR_MESS.noAdm + JSON.stringify(serverBid);
   else {
     const { bidsMap } = bidRequest;
     const bid = bidsMap[serverBid.impid];
@@ -336,11 +352,15 @@ function _addBidResponse(serverBid, bidRequest, bidResponses, RendererConst) {
         },
       };
       if (serverBid.content_type === 'video') {
-        bidResponse.vastXml = serverBid.adm;
+        if (serverBid.adm) {
+          bidResponse.vastXml = serverBid.adm;
+          bidResponse.adResponse = {
+            content: bidResponse.vastXml
+          };
+        } else if (serverBid.nurl) {
+          bidResponse.vastUrl = serverBid.nurl;
+        }
         bidResponse.mediaType = VIDEO;
-        bidResponse.adResponse = {
-          content: bidResponse.vastXml
-        };
         if (!bid.renderer && (!bid.mediaTypes || !bid.mediaTypes.video || bid.mediaTypes.video.context === 'outstream')) {
           bidResponse.renderer = createRenderer(bidResponse, {
             id: bid.bidId,
@@ -356,7 +376,7 @@ function _addBidResponse(serverBid, bidRequest, bidResponses, RendererConst) {
     }
   }
   if (errorMessage) {
-    utils.logError(errorMessage);
+    logError(errorMessage);
   }
 }
 
@@ -379,7 +399,7 @@ function createRenderer (bid, rendererParams, RendererConst) {
   try {
     rendererInst.setRender(outstreamRender);
   } catch (err) {
-    utils.logWarn('Prebid Error calling setRender on renderer', err);
+    logWarn('Prebid Error calling setRender on renderer', err);
   }
 
   return rendererInst;
@@ -390,7 +410,7 @@ function createVideoRequest(bid, mediaType) {
   const size = (playerSize || bid.sizes || [])[0];
   if (!size) return;
 
-  let result = utils.parseGPTSingleSizeArrayToRtbSize(size);
+  let result = parseGPTSingleSizeArrayToRtbSize(size);
 
   if (mimes) {
     result.mimes = mimes;
@@ -412,8 +432,8 @@ function createBannerRequest(bid, mediaType) {
   const sizes = mediaType.sizes || bid.sizes;
   if (!sizes || !sizes.length) return;
 
-  let format = sizes.map((size) => utils.parseGPTSingleSizeArrayToRtbSize(size));
-  let result = utils.parseGPTSingleSizeArrayToRtbSize(sizes[0]);
+  let format = sizes.map((size) => parseGPTSingleSizeArrayToRtbSize(size));
+  let result = parseGPTSingleSizeArrayToRtbSize(sizes[0]);
 
   if (format.length) {
     result.format = format
@@ -421,32 +441,20 @@ function createBannerRequest(bid, mediaType) {
   return result;
 }
 
-function addSegments(name, segName, segments, data, bidConfigName) {
-  if (segments && segments.length) {
-    data.push({
-      name: name,
-      segment: segments.map((seg) => {
-        return {name: segName, value: seg};
-      })
-    });
-  } else if (bidConfigName) {
-    const configData = config.getConfig('ortb2.user.data');
-    let segData = null;
-    configData && configData.some(({name, segment}) => {
-      if (name === bidConfigName) {
-        segData = segment;
-        return true;
+function segmentProcessing(segment, forceSegName) {
+  return segment
+    .map((seg) => {
+      const value = seg && (seg.value || seg.id || seg);
+      if (typeof value === 'string' || typeof value === 'number') {
+        return {
+          value: value.toString(),
+          ...(forceSegName && { name: forceSegName }),
+          ...(seg.name && { name: seg.name }),
+        };
       }
-    });
-    if (segData && segData.length) {
-      data.push({
-        name: name,
-        segment: segData.map((seg) => {
-          return {name: segName, value: seg};
-        })
-      });
-    }
-  }
+      return null;
+    })
+    .filter((seg) => !!seg);
 }
 
 function reformatKeywords(pageKeywords) {

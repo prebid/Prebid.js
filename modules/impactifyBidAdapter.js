@@ -1,5 +1,5 @@
+import { deepAccess, deepSetValue, generateUUID } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import {ajax} from '../src/ajax.js';
 import { createEidsArray } from './userId/eids.js';
@@ -43,14 +43,14 @@ const createOpenRtbRequest = (validBidRequests, bidderRequest) => {
   }
 
   // Set Schain in request
-  let schain = utils.deepAccess(validBidRequests, '0.schain');
+  let schain = deepAccess(validBidRequests, '0.schain');
   if (schain) request.source.ext = { schain: schain };
 
   // Set eids
-  let bidUserId = utils.deepAccess(validBidRequests, '0.userId');
+  let bidUserId = deepAccess(validBidRequests, '0.userId');
   let eids = createEidsArray(bidUserId);
   if (eids.length) {
-    utils.deepSetValue(request, 'user.ext.eids', eids);
+    deepSetValue(request, 'user.ext.eids', eids);
   }
 
   // Set device/user/site
@@ -71,23 +71,23 @@ const createOpenRtbRequest = (validBidRequests, bidderRequest) => {
   let gdprApplies = 0;
   if (bidderRequest.gdprConsent) {
     if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') gdprApplies = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
-    utils.deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
+    deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
   }
-  utils.deepSetValue(request, 'regs.ext.gdpr', gdprApplies);
+  deepSetValue(request, 'regs.ext.gdpr', gdprApplies);
 
   if (bidderRequest.uspConsent) {
-    utils.deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+    deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent);
     this.syncStore.uspConsent = bidderRequest.uspConsent;
   }
 
-  if (GETCONFIG('coppa') == true) utils.deepSetValue(request, 'regs.coppa', 1);
+  if (GETCONFIG('coppa') == true) deepSetValue(request, 'regs.coppa', 1);
 
   if (bidderRequest.uspConsent) {
-    utils.deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+    deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent);
   }
 
   // Set buyer uid
-  utils.deepSetValue(request, 'user.buyeruid', utils.generateUUID());
+  deepSetValue(request, 'user.buyeruid', generateUUID());
 
   // Create imps with bids
   validBidRequests.forEach((bid) => {

@@ -1,6 +1,6 @@
+import { isFn, deepAccess, logMessage } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'krushmedia';
 const AD_URL = 'https://ads4.krushmedia.com/?c=rtb&m=hb';
@@ -24,8 +24,8 @@ function isBidResponseValid(bid) {
 }
 
 function getBidFloor(bid) {
-  if (!utils.isFn(bid.getFloor)) {
-    return utils.deepAccess(bid, 'params.bidfloor', 0);
+  if (!isFn(bid.getFloor)) {
+    return deepAccess(bid, 'params.bidfloor', 0);
   }
 
   try {
@@ -56,7 +56,7 @@ export const spec = {
       winTop = window.top;
     } catch (e) {
       location = winTop.location;
-      utils.logMessage(e);
+      logMessage(e);
     };
 
     const placements = [];

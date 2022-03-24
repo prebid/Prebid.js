@@ -4,6 +4,7 @@ import { newBidder } from 'src/adapters/bidderFactory.js';
 import { INSTREAM } from '../../../src/video';
 
 const ENDPOINT = `https://d.vidoomy.com/api/rtbserver/prebid/`;
+const PIXELS = ['/test.png', '/test2.png?gdpr={{GDPR}}&gdpr_consent={{GDPR_CONSENT}}']
 
 describe('vidoomyBidAdapter', function() {
   const adapter = newBidder(spec);
@@ -15,7 +16,8 @@ describe('vidoomyBidAdapter', function() {
         'bidder': 'vidoomy',
         'params': {
           pid: '123123',
-          id: '123123'
+          id: '123123',
+          bidfloor: 0.5
         },
         'adUnitCode': 'code',
         'sizes': [[300, 250]]
@@ -28,6 +30,11 @@ describe('vidoomyBidAdapter', function() {
 
     it('should return false when pid is empty', function () {
       bid.params.pid = '';
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('should return false when bidfloor is invalid', function () {
+      bid.params.bidfloor = 'not a number';
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
@@ -101,24 +108,24 @@ describe('vidoomyBidAdapter', function() {
     });
 
     it('attaches source and version to endpoint URL as query params', function () {
-      expect(request[0].url).to.include(ENDPOINT);
-      expect(request[1].url).to.include(ENDPOINT);
+      expect(request[0].url).to.equal(ENDPOINT);
+      expect(request[1].url).to.equal(ENDPOINT);
     });
 
     it('only accepts first width and height sizes', function () {
-      expect(request[0].url).to.include('w=300');
-      expect(request[0].url).to.include('h=250');
-      expect(request[0].url).to.not.include('w=200');
-      expect(request[0].url).to.not.include('h=100');
-      expect(request[1].url).to.include('w=400');
-      expect(request[1].url).to.include('h=225');
+      expect('' + request[0].data.w).to.equal('300');
+      expect('' + request[0].data.h).to.equal('250');
+      expect('' + request[0].data.w).to.not.equal('200');
+      expect('' + request[0].data.h).to.not.equal('100');
+      expect('' + request[1].data.w).to.equal('400');
+      expect('' + request[1].data.h).to.equal('225');
     });
 
     it('should send id and pid parameters', function () {
-      expect(request[0].url).to.include('id=123123');
-      expect(request[0].url).to.include('pid=123123');
-      expect(request[1].url).to.include('id=456456');
-      expect(request[1].url).to.include('pid=456456');
+      expect('' + request[0].data.id).to.equal('123123');
+      expect('' + request[0].data.pid).to.equal('123123');
+      expect('' + request[1].data.id).to.equal('456456');
+      expect('' + request[1].data.pid).to.equal('456456');
     });
   });
 
@@ -182,7 +189,8 @@ describe('vidoomyBidAdapter', function() {
           'networkName': null,
           'primaryCatId': 'IAB3-1',
           'secondaryCatIds': null
-        }
+        },
+        'pixels': PIXELS
       }
     }
 
@@ -205,6 +213,23 @@ describe('vidoomyBidAdapter', function() {
       let result = spec.interpretResponse(serverResponseBanner, bidRequest);
 
       expect(result[0].requestId).to.equal(serverResponseBanner.body.requestId);
+    });
+
+    it('should sync user cookies', function () {
+      const GDPR_CONSENT = 'GDPR_TEST'
+      const result = spec.getUserSyncs({
+        pixelEnabled: true
+      }, [serverResponseBanner], { consentString: GDPR_CONSENT, gdprApplies: 1 }, null)
+      expect(result).to.eql([
+        {
+          type: 'image',
+          url: PIXELS[0]
+        },
+        {
+          type: 'image',
+          url: `/test2.png?gdpr=1&gdpr_consent=${GDPR_CONSENT}`
+        }
+      ])
     });
   });
 });

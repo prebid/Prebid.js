@@ -568,6 +568,134 @@ describe('triplelift adapter', function () {
       expect(payload.user.ext.eids).to.have.lengthOf(4);
     });
 
+    it('should remove malformed ids that would otherwise break call', function () {
+      let tdidId = '6bca7f6b-a98a-46c0-be05-6020f7604598';
+      let idlEnvId = null; // fail; can't be null
+      let criteoId = '53e30ea700424f7bbdd793b02abc5d7';
+      let pubcid = ''; // fail; can't be empty string
+
+      let bidRequestsMultiple = [
+        { ...bidRequests[0], userId: { tdid: tdidId, idl_env: idlEnvId, criteoId, pubcid } },
+        { ...bidRequests[0], userId: { tdid: tdidId, idl_env: idlEnvId, criteoId, pubcid } },
+        { ...bidRequests[0], userId: { tdid: tdidId, idl_env: idlEnvId, criteoId, pubcid } }
+      ];
+
+      let request = tripleliftAdapterSpec.buildRequests(bidRequestsMultiple, bidderRequest);
+      let payload = request.data;
+
+      expect(payload.user).to.deep.equal({
+        ext: {
+          eids: [
+            {
+              source: 'adserver.org',
+              uids: [
+                {
+                  id: tdidId,
+                  ext: { rtiPartner: 'TDID' }
+                }
+              ],
+            },
+            {
+              source: 'criteo.com',
+              uids: [
+                {
+                  id: criteoId,
+                  ext: { rtiPartner: 'criteoId' }
+                }
+              ]
+            }
+          ]
+        }
+      });
+
+      expect(payload.user.ext.eids).to.be.an('array');
+      expect(payload.user.ext.eids).to.have.lengthOf(2);
+
+      tdidId = {}; // fail; can't be empty object
+      idlEnvId = { id: '987654' }; // pass
+      criteoId = [{ id: '123456' }]; // fail; can't be an array
+      pubcid = '3261d8ad-435d-481d-abd1-9f1a9ec99f0e'; // pass
+
+      bidRequestsMultiple = [
+        { ...bidRequests[0], userId: { tdid: tdidId, idl_env: idlEnvId, criteoId, pubcid } },
+        { ...bidRequests[0], userId: { tdid: tdidId, idl_env: idlEnvId, criteoId, pubcid } },
+        { ...bidRequests[0], userId: { tdid: tdidId, idl_env: idlEnvId, criteoId, pubcid } }
+      ];
+
+      request = tripleliftAdapterSpec.buildRequests(bidRequestsMultiple, bidderRequest);
+      payload = request.data;
+
+      expect(payload.user).to.deep.equal({
+        ext: {
+          eids: [
+            {
+              source: 'liveramp.com',
+              uids: [
+                {
+                  id: '987654',
+                  ext: { rtiPartner: 'idl' }
+                }
+              ]
+            },
+            {
+              source: 'pubcid.org',
+              uids: [
+                {
+                  id: pubcid,
+                  ext: { rtiPartner: 'pubcid' }
+                }
+              ]
+            }
+          ]
+        }
+      });
+
+      expect(payload.user.ext.eids).to.be.an('array');
+      expect(payload.user.ext.eids).to.have.lengthOf(2);
+
+      tdidId = { id: '987654' }; // pass
+      idlEnvId = { id: 987654 }; // fail; can't be an int
+      criteoId = '53e30ea700424f7bbdd793b02abc5d7'; // pass
+      pubcid = { id: '' }; // fail; can't be an empty string
+
+      bidRequestsMultiple = [
+        { ...bidRequests[0], userId: { tdid: tdidId, idl_env: idlEnvId, criteoId, pubcid } },
+        { ...bidRequests[0], userId: { tdid: tdidId, idl_env: idlEnvId, criteoId, pubcid } },
+        { ...bidRequests[0], userId: { tdid: tdidId, idl_env: idlEnvId, criteoId, pubcid } }
+      ];
+
+      request = tripleliftAdapterSpec.buildRequests(bidRequestsMultiple, bidderRequest);
+      payload = request.data;
+
+      expect(payload.user).to.deep.equal({
+        ext: {
+          eids: [
+            {
+              source: 'adserver.org',
+              uids: [
+                {
+                  id: '987654',
+                  ext: { rtiPartner: 'TDID' }
+                }
+              ],
+            },
+            {
+              source: 'criteo.com',
+              uids: [
+                {
+                  id: criteoId,
+                  ext: { rtiPartner: 'criteoId' }
+                }
+              ]
+            }
+          ]
+        }
+      });
+
+      expect(payload.user.ext.eids).to.be.an('array');
+      expect(payload.user.ext.eids).to.have.lengthOf(2);
+    });
+
     it('should return a query string for TL call', function () {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       const url = request.url;
@@ -809,6 +937,8 @@ describe('triplelift adapter', function () {
       expect(result).to.have.length(2);
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
       expect(Object.keys(result[1])).to.have.members(Object.keys(expectedResponse[1]));
+      expect(result[0].ttl).to.equal(300);
+      expect(result[1].ttl).to.equal(3600);
     });
 
     it('should return multiple responses to support SRA', function () {

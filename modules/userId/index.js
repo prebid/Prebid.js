@@ -130,18 +130,32 @@
   * @property {(string[]|undefined)} submoduleNames - submodules to refresh
   */
 
-import find from 'core-js-pure/features/array/find.js';
-import { config } from '../../src/config.js';
-import events from '../../src/events.js';
-import * as utils from '../../src/utils.js';
-import { getGlobal } from '../../src/prebidGlobal.js';
-import { gdprDataHandler } from '../../src/adapterManager.js';
+import {find, includes} from '../../src/polyfill.js';
+import {config} from '../../src/config.js';
+import * as events from '../../src/events.js';
+import {getGlobal} from '../../src/prebidGlobal.js';
+import {gdprDataHandler} from '../../src/adapterManager.js';
 import CONSTANTS from '../../src/constants.json';
-import { module, hook } from '../../src/hook.js';
-import { createEidsArray, buildEidPermissions } from './eids.js';
-import { getCoreStorageManager } from '../../src/storageManager.js';
-import {getPrebidInternal} from '../../src/utils.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import {hook, module} from '../../src/hook.js';
+import {buildEidPermissions, createEidsArray, USER_IDS_CONFIG} from './eids.js';
+import {getCoreStorageManager} from '../../src/storageManager.js';
+import {
+  cyrb53Hash,
+  deepAccess,
+  delayExecution,
+  getPrebidInternal,
+  isArray,
+  isEmptyStr,
+  isFn,
+  isGptPubadsDefined,
+  isNumber,
+  isPlainObject,
+  logError,
+  logInfo,
+  logWarn,
+  timestamp,
+  isEmpty
+} from '../../src/utils.js';
 
 const MODULE_NAME = 'User ID';
 const COOKIE = 'cookie';
@@ -182,6 +196,9 @@ export let syncDelay;
 /** @type {(number|undefined)} */
 export let auctionDelay;
 
+/** @type {(string|undefined)} */
+let ppidSource;
+
 /** @param {Submodule[]} submodules */
 export function setSubmoduleRegistry(submodules) {
   submoduleRegistry = submodules;
@@ -199,7 +216,7 @@ export function setStoredValue(submodule, value) {
   const domainOverride = (typeof submodule.submodule.domainOverride === 'function') ? submodule.submodule.domainOverride() : null;
 
   try {
-    const valueStr = utils.isPlainObject(value) ? JSON.stringify(value) : value;
+    const valueStr = isPlainObject(value) ? JSON.stringify(value) : value;
     const expiresStr = (new Date(Date.now() + (storage.expires * (60 * 60 * 24 * 1000)))).toUTCString();
     if (storage.type === COOKIE) {
       coreStorage.setCookie(storage.name, valueStr, expiresStr, 'Lax', domainOverride);
@@ -214,13 +231,13 @@ export function setStoredValue(submodule, value) {
       }
     }
   } catch (error) {
-    utils.logError(error);
+    logError(error);
   }
 }
 
 function setPrebidServerEidPermissions(initializedSubmodules) {
   let setEidPermissions = getPrebidInternal().setEidPermissions;
-  if (typeof setEidPermissions === 'function' && utils.isArray(initializedSubmodules)) {
+  if (typeof setEidPermissions === 'function' && isArray(initializedSubmodules)) {
     setEidPermissions(buildEidPermissions(initializedSubmodules));
   }
 }
@@ -253,7 +270,7 @@ function getStoredValue(storage, key = undefined) {
       storedValue = JSON.parse(storedValue);
     }
   } catch (e) {
-    utils.logError(e);
+    logError(e);
   }
   return storedValue;
 }
@@ -278,7 +295,7 @@ function makeStoredConsentDataHash(consentData) {
     storedConsentData.apiVersion = consentData.apiVersion;
   }
 
-  return utils.cyrb53Hash(JSON.stringify(storedConsentData));
+  return cyrb53Hash(JSON.stringify(storedConsentData));
 }
 
 /**
@@ -290,7 +307,7 @@ export function setStoredConsentData(consentData) {
     const expiresStr = (new Date(Date.now() + (CONSENT_DATA_COOKIE_STORAGE_CONFIG.expires * (60 * 60 * 24 * 1000)))).toUTCString();
     coreStorage.setCookie(CONSENT_DATA_COOKIE_STORAGE_CONFIG.name, makeStoredConsentDataHash(consentData), expiresStr, 'Lax');
   } catch (error) {
-    utils.logError(error);
+    logError(error);
   }
 }
 
@@ -302,7 +319,7 @@ function getStoredConsentData() {
   try {
     return coreStorage.getCookie(CONSENT_DATA_COOKIE_STORAGE_CONFIG.name);
   } catch (e) {
-    utils.logError(e);
+    logError(e);
   }
 }
 
@@ -332,10 +349,10 @@ function hasGDPRConsent(consentData) {
     if (!consentData.consentString) {
       return false;
     }
-    if (consentData.apiVersion === 1 && utils.deepAccess(consentData, 'vendorData.purposeConsents.1') === false) {
+    if (consentData.apiVersion === 1 && deepAccess(consentData, 'vendorData.purposeConsents.1') === false) {
       return false;
     }
-    if (consentData.apiVersion === 2 && utils.deepAccess(consentData, 'vendorData.purpose.consents.1') === false) {
+    if (consentData.apiVersion === 2 && deepAccess(consentData, 'vendorData.purpose.consents.1') === false) {
       return false;
     }
   }
@@ -363,7 +380,7 @@ export function findRootDomain(fullDomain = window.location.hostname) {
   const TEST_COOKIE_VALUE = 'writeable';
   do {
     rootDomain = domainParts.slice(startIndex).join('.');
-    let expirationDate = new Date(utils.timestamp() + 10 * 1000).toUTCString();
+    let expirationDate = new Date(timestamp() + 10 * 1000).toUTCString();
 
     // Write a test cookie
     coreStorage.setCookie(
@@ -403,7 +420,7 @@ export function findRootDomain(fullDomain = window.location.hostname) {
 function processSubmoduleCallbacks(submodules, cb) {
   let done = () => {};
   if (cb) {
-    done = utils.delayExecution(() => {
+    done = delayExecution(() => {
       clearTimeout(timeoutID);
       cb();
     }, submodules.length);
@@ -418,7 +435,7 @@ function processSubmoduleCallbacks(submodules, cb) {
         // cache decoded value (this is copied to every adUnit bid)
         submodule.idObj = submodule.submodule.decode(idObj, submodule.config);
       } else {
-        utils.logInfo(`${MODULE_NAME}: ${submodule.submodule.name} - request id responded with an empty value`);
+        logInfo(`${MODULE_NAME}: ${submodule.submodule.name} - request id responded with an empty value`);
       }
       done();
     });
@@ -436,7 +453,7 @@ function getCombinedSubmoduleIds(submodules) {
   if (!Array.isArray(submodules) || !submodules.length) {
     return {};
   }
-  const combinedSubmoduleIds = submodules.filter(i => utils.isPlainObject(i.idObj) && Object.keys(i.idObj).length).reduce((carry, i) => {
+  const combinedSubmoduleIds = submodules.filter(i => isPlainObject(i.idObj) && Object.keys(i.idObj).length).reduce((carry, i) => {
     Object.keys(i.idObj).forEach(key => {
       carry[key] = i.idObj[key];
     });
@@ -444,6 +461,20 @@ function getCombinedSubmoduleIds(submodules) {
   }, {});
 
   return combinedSubmoduleIds;
+}
+
+/**
+ * This function will return a submodule ID object for particular source name
+ * @param {SubmoduleContainer[]} submodules
+ * @param {string} sourceName
+ */
+function getSubmoduleId(submodules, sourceName) {
+  if (!Array.isArray(submodules) || !submodules.length) {
+    return {};
+  }
+  const submodule = submodules.filter(sub => isPlainObject(sub.idObj) &&
+  Object.keys(sub.idObj).length && USER_IDS_CONFIG[Object.keys(sub.idObj)[0]].source === sourceName)
+  return !isEmpty(submodule) ? submodule[0].idObj : []
 }
 
 /**
@@ -456,8 +487,8 @@ function getCombinedSubmoduleIdsForBidder(submodules, bidder) {
     return {};
   }
   return submodules
-    .filter(i => !i.config.bidders || !utils.isArray(i.config.bidders) || includes(i.config.bidders, bidder))
-    .filter(i => utils.isPlainObject(i.idObj) && Object.keys(i.idObj).length)
+    .filter(i => !i.config.bidders || !isArray(i.config.bidders) || includes(i.config.bidders, bidder))
+    .filter(i => isPlainObject(i.idObj) && Object.keys(i.idObj).length)
     .reduce((carry, i) => {
       Object.keys(i.idObj).forEach(key => {
         carry[key] = i.idObj[key];
@@ -475,7 +506,7 @@ function addIdDataToAdUnitBids(adUnits, submodules) {
     return;
   }
   adUnits.forEach(adUnit => {
-    if (adUnit.bids && utils.isArray(adUnit.bids)) {
+    if (adUnit.bids && isArray(adUnit.bids)) {
       adUnit.bids.forEach(bid => {
         const combinedSubmoduleIds = getCombinedSubmoduleIdsForBidder(submodules, bid.bidder);
         if (Object.keys(combinedSubmoduleIds).length) {
@@ -500,7 +531,7 @@ function initializeSubmodulesAndExecuteCallbacks(continueAuction) {
     if (initializedSubmodules.length) {
       setPrebidServerEidPermissions(initializedSubmodules);
       // list of submodules that have callbacks that need to be executed
-      const submodulesWithCallbacks = initializedSubmodules.filter(item => utils.isFn(item.callback));
+      const submodulesWithCallbacks = initializedSubmodules.filter(item => isFn(item.callback));
 
       if (submodulesWithCallbacks.length) {
         if (continueAuction && auctionDelay > 0) {
@@ -513,7 +544,7 @@ function initializeSubmodulesAndExecuteCallbacks(continueAuction) {
               continueAuction();
             }
           }
-          utils.logInfo(`${MODULE_NAME} - auction delayed by ${auctionDelay} at most to fetch ids`);
+          logInfo(`${MODULE_NAME} - auction delayed by ${auctionDelay} at most to fetch ids`);
 
           timeoutID = setTimeout(continueCallback, auctionDelay);
           processSubmoduleCallbacks(submodulesWithCallbacks, continueCallback);
@@ -555,6 +586,26 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
   initializeSubmodulesAndExecuteCallbacks(function () {
     // pass available user id data to bid adapters
     addIdDataToAdUnitBids(reqBidsConfigObj.adUnits || getGlobal().adUnits, initializedSubmodules);
+
+    // userSync.ppid should be one of the 'source' values in getUserIdsAsEids() eg pubcid.org or id5-sync.com
+    const matchingUserId = ppidSource && (getUserIdsAsEids() || []).find(userID => userID.source === ppidSource);
+    if (matchingUserId && typeof deepAccess(matchingUserId, 'uids.0.id') === 'string') {
+      const ppidValue = matchingUserId.uids[0].id.replace(/[\W_]/g, '');
+      if (ppidValue.length >= 32 && ppidValue.length <= 150) {
+        if (isGptPubadsDefined()) {
+          window.googletag.pubads().setPublisherProvidedId(ppidValue);
+        } else {
+          window.googletag = window.googletag || {};
+          window.googletag.cmd = window.googletag.cmd || [];
+          window.googletag.cmd.push(function() {
+            window.googletag.pubads().setPublisherProvidedId(ppidValue);
+          });
+        }
+      } else {
+        logWarn(`User ID - Googletag Publisher Provided ID for ${ppidSource} is not between 32 and 150 characters - ${ppidValue}`);
+      }
+    }
+
     // calling fn allows prebid to continue processing
     fn.call(this, reqBidsConfigObj);
   });
@@ -581,6 +632,79 @@ function getUserIdsAsEids() {
 }
 
 /**
+ * This function will be exposed in global-name-space so that userIds stored by Prebid UserId module can be used by external codes as well.
+ * Simple use case will be passing these UserIds to A9 wrapper solution
+ */
+
+function getUserIdsAsEidBySource(sourceName) {
+  initializeSubmodulesAndExecuteCallbacks();
+  return createEidsArray(getSubmoduleId(initializedSubmodules, sourceName))[0];
+};
+
+/**
+ * This function will be exposed in global-name-space so that userIds for a source can be exposed
+ * Sample use case is exposing this function to ESP
+ */
+function getEncryptedEidsForSource(source, encrypt, customFunction) {
+  let eidsSignals = {};
+
+  if (isFn(customFunction)) {
+    logInfo(`${MODULE_NAME} - Getting encrypted signal from custom function : ${customFunction.name} & source : ${source} `);
+    // Publishers are expected to define a common function which will be proxy for signal function.
+    const customSignals = customFunction(source);
+    eidsSignals[source] = customSignals ? encryptSignals(customSignals) : null; // by default encrypt using base64 to avoid JSON errors
+  } else {
+    // initialize signal with eids by default
+    const eid = getUserIdsAsEidBySource(source);
+    logInfo(`${MODULE_NAME} - Getting encrypted signal for eids :${JSON.stringify(eid)}`);
+    if (!isEmpty(eid)) {
+      eidsSignals[eid.source] = encrypt === true ? encryptSignals(eid) : eid.uids[0].id; // If encryption is enabled append version (1||) and encrypt entire object
+    }
+  }
+  const promise = Promise.resolve(eidsSignals[source]);
+  logInfo(`${MODULE_NAME} - Fetching encrypted eids: ${eidsSignals[source]}`);
+  return promise;
+}
+
+function encryptSignals(signals, version = 1) {
+  let encryptedSig = '';
+  switch (version) {
+    case 1: // Base64 Encryption
+      encryptedSig = typeof signals === 'object' ? window.btoa(JSON.stringify(signals)) : window.btoa(signals); // Test encryption. To be replaced with better algo
+      break;
+    default:
+      break;
+  }
+  return `${version}||${encryptedSig}`;
+}
+
+/**
+* This function will be exposed in the global-name-space so that publisher can register the signals-ESP.
+*/
+function registerSignalSources() {
+  if (!isGptPubadsDefined()) {
+    return;
+  }
+  window.googletag.encryptedSignalProviders = window.googletag.encryptedSignalProviders || [];
+  const encryptedSignalSources = config.getConfig('userSync.encryptedSignalSources');
+  if (encryptedSignalSources) {
+    const registerDelay = encryptedSignalSources.registerDelay || 0;
+    setTimeout(() => {
+      encryptedSignalSources['sources'] && encryptedSignalSources['sources'].forEach(({ source, encrypt, customFunc }) => {
+        source.forEach((src) => {
+          window.googletag.encryptedSignalProviders.push({
+            id: src,
+            collectorFunction: () => getEncryptedEidsForSource(src, encrypt, customFunc)
+          });
+        });
+      })
+    }, registerDelay)
+  } else {
+    logWarn(`${MODULE_NAME} - ESP : encryptedSignalSources config not defined under userSync Object`);
+  }
+}
+
+/**
 * This function will be exposed in the global-name-space so that userIds can be refreshed after initialization.
 * @param {RefreshUserIdsOptions} options
 */
@@ -596,7 +720,7 @@ function refreshUserIds(options, callback) {
     // gdpr consent with purpose one is required, otherwise exit immediately
     let {userIdModules, hasValidated} = validateGdprEnforcement(submodules, consentData);
     if (!hasValidated && !hasGDPRConsent(consentData)) {
-      utils.logWarn(`${MODULE_NAME} - gdpr permission not valid for local storage or cookies, exit module`);
+      logWarn(`${MODULE_NAME} - gdpr permission not valid for local storage or cookies, exit module`);
       return;
     }
 
@@ -611,7 +735,7 @@ function refreshUserIds(options, callback) {
         continue;
       }
 
-      utils.logInfo(`${MODULE_NAME} - refreshing ${submodule.submodule.name}`);
+      logInfo(`${MODULE_NAME} - refreshing ${submodule.submodule.name}`);
       populateSubmoduleId(submodule, consentData, storedConsentData, true);
       updateInitializedSubmodules(submodule);
 
@@ -619,7 +743,7 @@ function refreshUserIds(options, callback) {
         setPrebidServerEidPermissions(initializedSubmodules);
       }
 
-      if (utils.isFn(submodule.callback)) {
+      if (isFn(submodule.callback)) {
         callbackSubmodules.push(submodule);
       }
     }
@@ -663,7 +787,7 @@ function populateSubmoduleId(submodule, consentData, storedConsentData, forceRef
       response = submodule.submodule.extendId(submodule.config, consentData, storedId);
     }
 
-    if (utils.isPlainObject(response)) {
+    if (isPlainObject(response)) {
       if (response.id) {
         // A getId/extendId result assumed to be valid user id data, which should be saved to users local storage or cookies
         setStoredValue(submodule, response.id);
@@ -685,7 +809,7 @@ function populateSubmoduleId(submodule, consentData, storedConsentData, forceRef
     submodule.idObj = submodule.config.value;
   } else {
     const response = submodule.submodule.getId(submodule.config, consentData, undefined);
-    if (utils.isPlainObject(response)) {
+    if (isPlainObject(response)) {
       if (typeof response.callback === 'function') { submodule.callback = response.callback; }
       if (response.id) { submodule.idObj = submodule.submodule.decode(response.id, submodule.config); }
     }
@@ -701,7 +825,7 @@ function initSubmodules(submodules, consentData) {
   // gdpr consent with purpose one is required, otherwise exit immediately
   let { userIdModules, hasValidated } = validateGdprEnforcement(submodules, consentData);
   if (!hasValidated && !hasGDPRConsent(consentData)) {
-    utils.logWarn(`${MODULE_NAME} - gdpr permission not valid for local storage or cookies, exit module`);
+    logWarn(`${MODULE_NAME} - gdpr permission not valid for local storage or cookies, exit module`);
     return [];
   }
 
@@ -746,17 +870,17 @@ function getValidSubmoduleConfigs(configRegistry, submoduleRegistry, activeStora
   }
   return configRegistry.reduce((carry, config) => {
     // every submodule config obj must contain a valid 'name'
-    if (!config || utils.isEmptyStr(config.name)) {
+    if (!config || isEmptyStr(config.name)) {
       return carry;
     }
     // Validate storage config contains 'type' and 'name' properties with non-empty string values
     // 'type' must be a value currently enabled in the browser
     if (config.storage &&
-      !utils.isEmptyStr(config.storage.type) &&
-      !utils.isEmptyStr(config.storage.name) &&
+      !isEmptyStr(config.storage.type) &&
+      !isEmptyStr(config.storage.name) &&
       activeStorageTypes.indexOf(config.storage.type) !== -1) {
       carry.push(config);
-    } else if (utils.isPlainObject(config.value)) {
+    } else if (isPlainObject(config.value)) {
       carry.push(config);
     } else if (!config.storage && !config.value) {
       carry.push(config);
@@ -793,7 +917,7 @@ function updateSubmodules() {
   if (!addedUserIdHook && submodules.length) {
     // priority value 40 will load after consentManagement with a priority of 50
     getGlobal().requestBids.before(requestBidsHook, 40);
-    utils.logInfo(`${MODULE_NAME} - usersync config updated for ${submodules.length} submodules: `, submodules.map(a => a.submodule.name));
+    logInfo(`${MODULE_NAME} - usersync config updated for ${submodules.length} submodules: `, submodules.map(a => a.submodule.name));
     addedUserIdHook = true;
   }
 }
@@ -815,6 +939,7 @@ export function attachIdSystem(submodule) {
  * @param {{getConfig:function}} config
  */
 export function init(config) {
+  ppidSource = undefined;
   submodules = [];
   configRegistry = [];
   addedUserIdHook = false;
@@ -828,22 +953,23 @@ export function init(config) {
 
   // exit immediately if opt out cookie or local storage keys exists.
   if (validStorageTypes.indexOf(COOKIE) !== -1 && coreStorage.getCookie(PBJS_USER_ID_OPTOUT_NAME)) {
-    utils.logInfo(`${MODULE_NAME} - opt-out cookie found, exit module`);
+    logInfo(`${MODULE_NAME} - opt-out cookie found, exit module`);
     return;
   }
   if (validStorageTypes.indexOf(LOCAL_STORAGE) !== -1 && coreStorage.getDataFromLocalStorage(PBJS_USER_ID_OPTOUT_NAME)) {
-    utils.logInfo(`${MODULE_NAME} - opt-out localStorage found, exit module`);
+    logInfo(`${MODULE_NAME} - opt-out localStorage found, exit module`);
     return;
   }
 
   // listen for config userSyncs to be set
-  config.getConfig(conf => {
+  config.getConfig('userSync', conf => {
     // Note: support for 'usersync' was dropped as part of Prebid.js 4.0
     const userSync = conf.userSync;
+    ppidSource = userSync.ppid;
     if (userSync && userSync.userIds) {
       configRegistry = userSync.userIds;
-      syncDelay = utils.isNumber(userSync.syncDelay) ? userSync.syncDelay : DEFAULT_SYNC_DELAY;
-      auctionDelay = utils.isNumber(userSync.auctionDelay) ? userSync.auctionDelay : NO_AUCTION_DELAY;
+      syncDelay = isNumber(userSync.syncDelay) ? userSync.syncDelay : DEFAULT_SYNC_DELAY;
+      auctionDelay = isNumber(userSync.auctionDelay) ? userSync.auctionDelay : NO_AUCTION_DELAY;
       updateSubmodules();
     }
   });
@@ -851,7 +977,10 @@ export function init(config) {
   // exposing getUserIds function in global-name-space so that userIds stored in Prebid can be used by external codes.
   (getGlobal()).getUserIds = getUserIds;
   (getGlobal()).getUserIdsAsEids = getUserIdsAsEids;
+  (getGlobal()).getEncryptedEidsForSource = getEncryptedEidsForSource;
+  (getGlobal()).registerSignalSources = registerSignalSources;
   (getGlobal()).refreshUserIds = refreshUserIds;
+  (getGlobal()).getUserIdsAsEidBySource = getUserIdsAsEidBySource;
 }
 
 // init config update listener to start the application

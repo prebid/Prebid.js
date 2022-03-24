@@ -637,7 +637,7 @@ describe('PulsePoint Adapter Tests', function () {
     expect(ortbRequest.user.ext).to.not.be.undefined;
     expect(ortbRequest.user.ext.eids).to.not.be.undefined;
     expect(ortbRequest.user.ext.eids).to.have.lengthOf(2);
-    expect(ortbRequest.user.ext.eids[0].source).to.equal('pubcommon');
+    expect(ortbRequest.user.ext.eids[0].source).to.equal('pubcid.org');
     expect(ortbRequest.user.ext.eids[0].uids).to.have.lengthOf(1);
     expect(ortbRequest.user.ext.eids[0].uids[0].id).to.equal('userid_pubcid');
     expect(ortbRequest.user.ext.eids[1].source).to.equal('adserver.org');
@@ -659,6 +659,16 @@ describe('PulsePoint Adapter Tests', function () {
       parrableId: { eid: 'parrable_id234' },
       lipb: {
         lipbid: 'liveintent_id123'
+      },
+      haloId: {
+        haloId: 'halo_user1'
+      },
+      lotamePanoramaId: 'lotame_user2',
+      merkleId: 'merkle_user3',
+      fabrickId: 'fabrick_user4',
+      connectid: 'connect_user5',
+      uid2: {
+        id: 'uid2_user6'
       }
     };
     const userVerify = function(obj, source, id) {
@@ -677,13 +687,19 @@ describe('PulsePoint Adapter Tests', function () {
     expect(ortbRequest.user).to.not.be.undefined;
     expect(ortbRequest.user.ext).to.not.be.undefined;
     expect(ortbRequest.user.ext.eids).to.not.be.undefined;
-    expect(ortbRequest.user.ext.eids).to.have.lengthOf(6);
+    expect(ortbRequest.user.ext.eids).to.have.lengthOf(12);
     userVerify(ortbRequest.user.ext.eids[0], 'britepool.com', 'britepool_id123');
-    userVerify(ortbRequest.user.ext.eids[1], 'criteo', 'criteo_id234');
-    userVerify(ortbRequest.user.ext.eids[2], 'identityLink', 'idl_id123');
+    userVerify(ortbRequest.user.ext.eids[1], 'criteo.com', 'criteo_id234');
+    userVerify(ortbRequest.user.ext.eids[2], 'liveramp.com', 'idl_id123');
     userVerify(ortbRequest.user.ext.eids[3], 'id5-sync.com', 'id5id_234');
     userVerify(ortbRequest.user.ext.eids[4], 'parrable.com', 'parrable_id234');
-    userVerify(ortbRequest.user.ext.eids[5], 'liveintent.com', 'liveintent_id123');
+    userVerify(ortbRequest.user.ext.eids[5], 'neustar.biz', 'fabrick_user4');
+    userVerify(ortbRequest.user.ext.eids[6], 'audigent.com', 'halo_user1');
+    userVerify(ortbRequest.user.ext.eids[7], 'merkleinc.com', 'merkle_user3');
+    userVerify(ortbRequest.user.ext.eids[8], 'crwdcntrl.net', 'lotame_user2');
+    userVerify(ortbRequest.user.ext.eids[9], 'verizonmedia.com', 'connect_user5');
+    userVerify(ortbRequest.user.ext.eids[10], 'uidapi.com', 'uid2_user6');
+    userVerify(ortbRequest.user.ext.eids[11], 'liveintent.com', 'liveintent_id123');
   });
   it('Verify multiple adsizes', function () {
     const bidRequests = deepClone(slotConfigs);
