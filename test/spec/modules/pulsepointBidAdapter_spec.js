@@ -706,7 +706,7 @@ describe('PulsePoint Adapter Tests', function () {
     const bidRequests = deepClone(slotConfigs);
     let sandbox = sinon.sandbox.create();
     try {
-      sandbox.stub(config, 'getBidderConfig').callsFake((key) => {
+      sandbox.stub(config, 'getConfig').callsFake((key) => {
         var config = {
           additionalEids: [
             {
@@ -750,7 +750,7 @@ describe('PulsePoint Adapter Tests', function () {
     };
     let sandbox = sinon.sandbox.create();
     try {
-      sandbox.stub(config, 'getBidderConfig').callsFake((key) => {
+      sandbox.stub(config, 'getConfig').callsFake((key) => {
         var config = {
           additionalEids: [
             {

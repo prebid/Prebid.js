@@ -455,7 +455,7 @@ function user(bidRequest, bidderRequest) {
         ext.digitrust = digitrust;
       }
     }
-    const additionalEids = config.getBidderConfig('additionalEids');
+    const additionalEids = config.getConfig('additionalEids');
     if (additionalEids && isArray(additionalEids)) {
       ext.eids = ext.eids || [];
       ext.eids.push(...additionalEids);
