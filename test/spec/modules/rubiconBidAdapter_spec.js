@@ -10,7 +10,7 @@ import {
 import {parse as parseQuery} from 'querystring';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
-import find from 'core-js-pure/features/array/find.js';
+import {find} from 'src/polyfill.js';
 import {createEidsArray} from 'modules/userId/eids.js';
 
 const INTEGRATION = `pbjs_lite_v$prebid.version$`; // $prebid.version$ will be substituted in by gulp in built prebid
@@ -597,7 +597,7 @@ describe('the rubicon adapter', function () {
           sandbox.stub(Math, 'random').callsFake(() => 0.1);
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
 
-          const referenceOrdering = ['account_id', 'site_id', 'zone_id', 'size_id', 'alt_size_ids', 'p_pos', 'rf', 'p_geo.latitude', 'p_geo.longitude', 'kw', 'tg_v.ucat', 'tg_v.lastsearch', 'tg_v.likes', 'tg_i.rating', 'tg_i.prodtype', 'tk_flint', 'x_source.tid', 'x_source.pchain', 'p_screen_res', 'rp_secure', 'tk_user_key', 'tg_fl.eid', 'rp_maxbids', 'slots', 'rand'];
+          const referenceOrdering = ['account_id', 'site_id', 'zone_id', 'size_id', 'alt_size_ids', 'p_pos', 'rf', 'p_geo.latitude', 'p_geo.longitude', 'kw', 'tg_v.ucat', 'tg_v.lastsearch', 'tg_v.likes', 'tg_i.rating', 'tg_i.prodtype', 'tk_flint', 'x_source.tid', 'l_pb_bid_id', 'x_source.pchain', 'p_screen_res', 'rp_secure', 'tk_user_key', 'tg_fl.eid', 'rp_maxbids', 'slots', 'rand'];
 
           request.data.split('&').forEach((item, i) => {
             expect(item.split('=')[0]).to.equal(referenceOrdering[i]);
@@ -884,20 +884,33 @@ describe('the rubicon adapter', function () {
                   'ext': { 'segtax': 1 },
                   'segment': [
                     { 'id': '987' }
+		    ]
+		  }, {
+		    'name': 'www.dataprovider1.com',
+		    'ext': { 'segtax': 2 },
+		    'segment': [
+		      { 'id': '432' }
+		    ]
+                }, {
+                  'name': 'www.dataprovider1.com',
+                  'ext': { 'segtax': 5 },
+                  'segment': [
+                    { 'id': '55' }
                   ]
                 }, {
                   'name': 'www.dataprovider1.com',
-                  'ext': { 'segtax': 2 },
+                  'ext': { 'segtax': 6 },
                   'segment': [
-                    { 'id': '432' }
+                    { 'id': '66' }
                   ]
-                }]
+                }
+                ]
               }
             };
             const user = {
               data: [{
                 'name': 'www.dataprovider1.com',
-                'ext': { 'segtax': 3 },
+                'ext': { 'segtax': 4 },
                 'segment': [
                   { 'id': '687' },
                   { 'id': '123' }
@@ -932,7 +945,7 @@ describe('the rubicon adapter', function () {
               'tg_v.gender': 'M',
               'tg_v.age': '40',
               'tg_v.iab': '687,123',
-              'tg_i.iab': '987,432',
+              'tg_i.iab': '987,432,55,66',
               'tg_v.yob': '1984',
               'tg_i.rating': '4-star,5-star',
               'tg_i.page': 'home',
@@ -1395,7 +1408,7 @@ describe('the rubicon adapter', function () {
             expect(data['tg_i.pbadslot']).to.equal('abc');
           });
 
-          it('should send \"tg_i.pbadslot\" if \"ortb2Imp.ext.data.pbadslot\" value is a valid string, but all leading slash characters should be removed', function () {
+          it('should send \"tg_i.pbadslot\" if \"ortb2Imp.ext.data.pbadslot\" value is a valid string', function () {
             bidderRequest.bids[0].ortb2Imp = {
               ext: {
                 data: {
@@ -1409,7 +1422,45 @@ describe('the rubicon adapter', function () {
 
             expect(data).to.be.an('Object');
             expect(data).to.have.property('tg_i.pbadslot');
-            expect(data['tg_i.pbadslot']).to.equal('a/b/c');
+            expect(data['tg_i.pbadslot']).to.equal('/a/b/c');
+          });
+
+          it('should send gpid as p_gpid if valid', function () {
+            bidderRequest.bids[0].ortb2Imp = {
+              ext: {
+                gpid: '/1233/sports&div1'
+              }
+            }
+
+            const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            const data = parseQuery(request.data);
+
+            expect(data).to.be.an('Object');
+            expect(data).to.have.property('p_gpid');
+            expect(data['p_gpid']).to.equal('/1233/sports&div1');
+          });
+
+          it('should send gpid and pbadslot since it is prefered over dfp code', function () {
+            bidderRequest.bids[0].ortb2Imp = {
+              ext: {
+                gpid: '/1233/sports&div1',
+                data: {
+                  pbadslot: 'pb_slot',
+                  adserver: {
+                    adslot: '/1234/sports',
+                    name: 'gam'
+                  }
+                }
+              }
+            }
+
+            const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            const data = parseQuery(request.data);
+
+            expect(data).to.be.an('Object');
+            expect(data['p_gpid']).to.equal('/1233/sports&div1');
+            expect(data).to.not.have.property('tg_i.dfp_ad_unit_code');
+            expect(data['tg_i.pbadslot']).to.equal('pb_slot');
           });
         });
 
@@ -1457,12 +1508,13 @@ describe('the rubicon adapter', function () {
             expect(data).to.not.have.property('tg_i.dfp_ad_unit_code');
           });
 
-          it('should send \"tg_i.dfp_ad_unit_code\" if \"ortb2Imp.ext.data.adServer.adslot\" value is a valid string', function () {
+          it('should send NOT \"tg_i.dfp_ad_unit_code\" if \"ortb2Imp.ext.data.adServer.adslot\" value is a valid string but not gam', function () {
             bidderRequest.bids[0].ortb2Imp = {
               ext: {
                 data: {
                   adserver: {
-                    adslot: 'abc'
+                    adslot: '/a/b/c',
+                    name: 'not gam'
                   }
                 }
               }
@@ -1472,16 +1524,16 @@ describe('the rubicon adapter', function () {
             const data = parseQuery(request.data);
 
             expect(data).to.be.an('Object');
-            expect(data).to.have.property('tg_i.dfp_ad_unit_code');
-            expect(data['tg_i.dfp_ad_unit_code']).to.equal('abc');
+            expect(data).to.not.have.property('tg_i.dfp_ad_unit_code');
           });
 
-          it('should send \"tg_i.dfp_ad_unit_code\" if \"ortb2Imp.ext.data.adServer.adslot\" value is a valid string, but all leading slash characters should be removed', function () {
+          it('should send \"tg_i.dfp_ad_unit_code\" if \"ortb2Imp.ext.data.adServer.adslot\" value is a valid string and name is gam', function () {
             bidderRequest.bids[0].ortb2Imp = {
               ext: {
                 data: {
                   adserver: {
-                    adslot: 'a/b/c'
+                    name: 'gam',
+                    adslot: '/a/b/c'
                   }
                 }
               }
@@ -1492,7 +1544,7 @@ describe('the rubicon adapter', function () {
 
             expect(data).to.be.an('Object');
             expect(data).to.have.property('tg_i.dfp_ad_unit_code');
-            expect(data['tg_i.dfp_ad_unit_code']).to.equal('a/b/c');
+            expect(data['tg_i.dfp_ad_unit_code']).to.equal('/a/b/c');
           });
         });
       });
@@ -3210,7 +3262,7 @@ describe('the rubicon adapter', function () {
             label: undefined,
             placement: {
               align: 'left',
-              attachTo: '#outstream_video1_placement',
+              attachTo: adUnit,
               position: 'append',
             },
             vastUrl: 'https://test.com/vast.xml',
@@ -3328,6 +3380,23 @@ describe('the rubicon adapter', function () {
         consentString: 'foo'
       }, '1NYN')).to.deep.equal({
         type: 'iframe', url: `${emilyUrl}?gdpr_consent=foo&us_privacy=1NYN`
+      });
+    });
+
+    it('should pass gdprApplies', function () {
+      expect(spec.getUserSyncs({iframeEnabled: true}, {}, {
+        gdprApplies: true
+      }, '1NYN')).to.deep.equal({
+        type: 'iframe', url: `${emilyUrl}?gdpr=1&us_privacy=1NYN`
+      });
+    });
+
+    it('should pass all correctly', function () {
+      expect(spec.getUserSyncs({iframeEnabled: true}, {}, {
+        gdprApplies: true,
+        consentString: 'foo'
+      }, '1NYN')).to.deep.equal({
+        type: 'iframe', url: `${emilyUrl}?gdpr=1&gdpr_consent=foo&us_privacy=1NYN`
       });
     });
   });

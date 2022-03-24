@@ -1,5 +1,5 @@
-import includes from 'core-js-pure/features/array/includes.js';
-import * as utils from './utils.js';
+import {includes} from './polyfill.js';
+import { logError, logWarn, insertElement } from './utils.js';
 
 const _requestCache = {};
 // The below list contains modules or vendors whom Prebid allows to load external JS.
@@ -8,7 +8,9 @@ const _approvedLoadExternalJSList = [
   'criteo',
   'outstream',
   'adagio',
-  'browsi'
+  'browsi',
+  'brandmetrics',
+  'justtag'
 ]
 
 /**
@@ -20,11 +22,11 @@ const _approvedLoadExternalJSList = [
  */
 export function loadExternalScript(url, moduleCode, callback) {
   if (!moduleCode || !url) {
-    utils.logError('cannot load external script without url and moduleCode');
+    logError('cannot load external script without url and moduleCode');
     return;
   }
   if (!includes(_approvedLoadExternalJSList, moduleCode)) {
-    utils.logError(`${moduleCode} not whitelisted for loading external JavaScript`);
+    logError(`${moduleCode} not whitelisted for loading external JavaScript`);
     return;
   }
   // only load each asset once
@@ -49,7 +51,7 @@ export function loadExternalScript(url, moduleCode, callback) {
     _requestCache[url].callbacks.push(callback);
   }
 
-  utils.logWarn(`module ${moduleCode} is loading external JavaScript`);
+  logWarn(`module ${moduleCode} is loading external JavaScript`);
   return requestResource(url, function () {
     _requestCache[url].loaded = true;
     try {
@@ -57,7 +59,7 @@ export function loadExternalScript(url, moduleCode, callback) {
         _requestCache[url].callbacks[i]();
       }
     } catch (e) {
-      utils.logError('Error executing callback', 'adloader.js:loadExternalScript', e);
+      logError('Error executing callback', 'adloader.js:loadExternalScript', e);
     }
   });
 
@@ -84,7 +86,7 @@ export function loadExternalScript(url, moduleCode, callback) {
     jptScript.src = tagSrc;
 
     // add the new script tag to the page
-    utils.insertElement(jptScript);
+    insertElement(jptScript);
 
     return jptScript;
   }

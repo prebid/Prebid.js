@@ -3,6 +3,14 @@
 ```
 userIdAsEids = [
     {
+        source: 'trustpid.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
+        }]
+    },
+
+    {
         source: 'pubcid.org',
         uids: [{
             id: 'some-random-id-value',
@@ -18,6 +26,22 @@ userIdAsEids = [
             ext: {
                 rtiPartner: 'TDID'
             }
+        }]
+    },
+
+    {
+        source: 'navegg.com',
+        uids: [{
+            id: 'naveggId',
+            atype: 1
+        }]
+    },
+
+    {
+        source: 'justtag.com',
+        uids: [{
+            id: 'justId',
+            atype: 1
         }]
     },
 
@@ -39,6 +63,13 @@ userIdAsEids = [
                 abTestingControlGroup: false
             }
         }]
+    },
+
+    {
+        source: 'flashtalking.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
     },
 
     {
@@ -176,6 +207,13 @@ userIdAsEids = [
         }]
     },
     {
+    source: 'akamai.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
+        }]
+    },
+    {
         source: 'admixer.net',
         uids: [{
             id: 'some-random-id-value',
@@ -188,6 +226,20 @@ userIdAsEids = [
             id: 'some-random-id-value',
             atype: 3
         }]
+    },
+    {
+         source: 'kpuid.com',
+         uids: [{
+              id: 'some-random-id-value',
+              atype: 3
+         }]
+    },
+    {
+         source: 'yahoo.com',
+         uids: [{
+              id: 'some-random-id-value',
+              atype: 3
+         }]
     }
 ]
 ```

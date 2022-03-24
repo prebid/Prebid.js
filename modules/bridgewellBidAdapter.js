@@ -1,7 +1,7 @@
-import * as utils from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE } from '../src/mediaTypes.js';
-import find from 'core-js-pure/features/array/find.js';
+import {_each, deepSetValue, inIframe} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import {find} from '../src/polyfill.js';
 
 const BIDDER_CODE = 'bridgewell';
 const REQUEST_ENDPOINT = 'https://prebid.scupio.com/recweb/prebid.aspx?cb=';
@@ -40,7 +40,7 @@ export const spec = {
     var bidderUrl = REQUEST_ENDPOINT + Math.random();
     var userIds;
 
-    utils._each(validBidRequests, function (bid) {
+    _each(validBidRequests, function (bid) {
       userIds = bid.userId;
 
       if (bid.params.cid) {
@@ -83,7 +83,7 @@ export const spec = {
           prebid: '$prebid.version$',
           bridgewell: BIDDER_VERSION
         },
-        inIframe: utils.inIframe(),
+        inIframe: inIframe(),
         url: topUrl,
         referrer: getTopWindowReferrer(),
         adUnits: adUnits,
@@ -104,7 +104,7 @@ export const spec = {
     const bidResponses = [];
 
     // map responses to requests
-    utils._each(bidRequest.validBidRequests, function (req) {
+    _each(bidRequest.validBidRequests, function (req) {
       const bidResponse = {};
 
       if (!serverResponse.body) {
@@ -168,7 +168,7 @@ export const spec = {
         bidResponse.mediaType = matchedResponse.mediaType;
 
         if (matchedResponse.adomain) {
-          utils.deepSetValue(bidResponse, 'meta.advertiserDomains', Array.isArray(matchedResponse.adomain) ? matchedResponse.adomain : [matchedResponse.adomain]);
+          deepSetValue(bidResponse, 'meta.advertiserDomains', Array.isArray(matchedResponse.adomain) ? matchedResponse.adomain : [matchedResponse.adomain]);
         }
 
         // check required parameters by matchedResponse.mediaType

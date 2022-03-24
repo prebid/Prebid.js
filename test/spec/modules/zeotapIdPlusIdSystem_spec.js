@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import find from 'core-js-pure/features/array/find.js';
+import {find} from 'src/polyfill.js';
 import { config } from 'src/config.js';
 import { init, requestBidsHook, setSubmoduleRegistry } from 'modules/userId/index.js';
 import { storage, getStorage, zeotapIdPlusSubmodule } from 'modules/zeotapIdPlusIdSystem.js';
@@ -54,7 +54,7 @@ describe('Zeotap ID System', function() {
     it('when a stored Zeotap ID exists it is added to bids', function() {
       let store = getStorage();
       expect(getStorageManagerSpy.calledOnce).to.be.true;
-      sinon.assert.calledWith(getStorageManagerSpy, 301, 'zeotapIdPlus');
+      sinon.assert.calledWith(getStorageManagerSpy, {gvlid: 301, moduleName: 'zeotapIdPlus'});
     });
   });
 

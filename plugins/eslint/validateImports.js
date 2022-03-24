@@ -62,7 +62,7 @@ module.exports = {
             let importPath = node.source.value.trim();
             flagErrors(context, node, importPath);
           },
-          "ExportNamedDeclaration[source]"(node) {
+          'ExportNamedDeclaration[source]'(node) {
             let importPath = node.source.value.trim();
             flagErrors(context, node, importPath);
           }

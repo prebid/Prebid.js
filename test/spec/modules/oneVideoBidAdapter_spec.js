@@ -237,11 +237,27 @@ describe('OneVideoBidAdapter', function () {
           },
           video: {
             context: 'outstream',
-            playerSize: [640, 480]
+            playerSize: [640, 480],
+            mimes: ['video/mp4', 'application/javascript']
           }
+        },
+        bidder: 'oneVideo',
+        sizes: [640, 480],
+        bidId: '30b3efwfwe1e',
+        adUnitCode: 'video1',
+        params: {
+          video: {
+            protocols: [2, 5],
+            api: [2]
+          },
+          site: {
+            page: 'https://news.yahoo.com/portfolios',
+            referrer: 'http://www.yahoo.com'
+          },
+          pubId: 'brxd'
         }
-      }
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
+      };
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
     })
   });
 
@@ -264,7 +280,7 @@ describe('OneVideoBidAdapter', function () {
       const placement = bidRequest.params.video.placement;
       const rewarded = bidRequest.params.video.rewarded;
       const inventoryid = bidRequest.params.video.inventoryid;
-      const VERSION = '3.1.1';
+      const VERSION = '3.1.2';
       expect(data.imp[0].video.w).to.equal(width);
       expect(data.imp[0].video.h).to.equal(height);
       expect(data.imp[0].bidfloor).to.equal(bidRequest.params.bidfloor);

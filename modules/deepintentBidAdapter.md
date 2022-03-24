@@ -8,7 +8,7 @@ Maintainer: prebid@deepintent.com
 
 # Description
 
-Deepintent currently supports the BANNER type ads through prebid js
+Deepintent currently supports the BANNER and VIDEO type ads through prebid js
 
 Module that connects to Deepintent's demand sources.
 
@@ -38,6 +38,41 @@ Module that connects to Deepintent's demand sources.
       ]
     }
   ];
+```
+
+# Sample Video Ad Unit
+```
+var adVideoAdUnits = [
+{
+    code: 'test-div-video',
+    mediaTypes: {
+        video: {
+            playerSize: [640, 480],           // required
+            context: 'instream'               //required
+        }
+    },
+    bids: [{
+      bidder: 'deepintent',
+      params: {
+        tagId: '1300',  // Required parameter                 // required
+        video: {
+          mimes: ['video/mp4','video/x-flv'],   // required
+          skippable: true,                      // optional
+          minduration: 5,                       // optional
+          maxduration: 30,                      // optional
+          startdelay: 5,                        // optional
+          playbackmethod: [1,3],                // optional
+          api: [ 1, 2 ],                        // optional
+          protocols: [ 2, 3 ],                  // optional
+          battr: [ 13, 14 ],                    // optional
+          linearity: 1,                         // optional
+          placement: 2,                         // optional
+          minbitrate: 10,                       // optional
+          maxbitrate: 10                        // optional
+        }
+      }
+    }]
+}]
 ```
 
 ###Recommended User Sync Configuration

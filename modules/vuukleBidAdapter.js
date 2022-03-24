@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { parseSizesInput } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'vuukle';
@@ -14,7 +14,7 @@ export const spec = {
 
   buildRequests: function(bidRequests) {
     const requests = bidRequests.map(function (bid) {
-      const parseSized = utils.parseSizesInput(bid.sizes);
+      const parseSized = parseSizesInput(bid.sizes);
       const arrSize = parseSized[0].split('x');
       const params = {
         url: encodeURIComponent(window.location.href),
