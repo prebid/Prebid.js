@@ -2615,7 +2615,7 @@ describe('User ID', function () {
           }).catch(done);
         });
 
-        it('should return string if custom function is defined', () => {
+        it('pbjs.getEncryptedEidsForSource should return string if custom function is defined', () => {
           const getCustomSignal = () => {
             return '{"keywords":["tech","auto"]}';
           }
