@@ -976,6 +976,19 @@ function _blockedIabCategoriesValidation(payload, blockedIabCategories) {
   }
 }
 
+function _checkAndValidateacat(acatParams) {
+  return acatParams
+    .filter(function(category) {
+      if (typeof category === 'string') { // only strings
+        return true;
+      } else {
+        logWarn(LOG_WARN_PREFIX + 'acat: Each category should be a string, ignoring category: ' + category);
+        return false;
+      }
+    })
+    .map(category => category.trim())
+}
+
 function _assignRenderer(newBid, request) {
   let bidParams, context, adUnitCode;
   if (request.bidderRequest && request.bidderRequest.bids) {
@@ -1105,6 +1118,9 @@ export const spec = {
       }
       if (bid.params.hasOwnProperty('bcat') && isArray(bid.params.bcat)) {
         blockedIabCategories = blockedIabCategories.concat(bid.params.bcat);
+      }
+      if (bid.params.hasOwnProperty('acat') && isArray(bid.params.acat)) {
+        payload.ext.acat = _checkAndValidateacat(bid.params.acat);
       }
       var impObj = _createImpressionObject(bid, conf);
       if (impObj) {
