@@ -1263,7 +1263,7 @@ describe('S2S Adapter', function () {
       const alias = 'foobar_1';
       const aliasBidder = {
         bidder: alias,
-        params: { aid: 123456 }
+        params: { aid: 1234567 }
       };
 
       const request = utils.deepClone(REQUEST);
