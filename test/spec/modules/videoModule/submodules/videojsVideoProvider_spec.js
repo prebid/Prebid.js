@@ -10,19 +10,19 @@ import {
   PLAYBACK_MODE, SETUP_COMPLETE, SETUP_FAILED, PLAY, AD_IMPRESSION
 } from 'modules/videoModule/constants/events.js'
 
-describe('videojsProvider', function () {
-  describe('init', function () {
-    let config;
-    let adState;
-    let timeState;
-    let callbackStorage;
-    let utilsMock;
-    let videojs;
+const videojs = require('video.js').default
 
+describe('videojsProvider', function () {
+  let config;
+  let adState;
+  let timeState;
+  let callbackStorage;
+  let utilsMock;
+
+  describe('init', function () {
     beforeEach(() => {
       config = {};
       document.body.innerHTML = '';
-      videojs = require('video.js').default
     });
 
     it('should trigger failure when videojs is missing', function () {
@@ -36,8 +36,7 @@ describe('videojsProvider', function () {
     });
 
     it('should trigger failure when videojs version is under min supported version', function () {
-      videojs.VERSION = '0.0.0'
-      const provider = VideojsProvider(config, videojs, adState, timeState, callbackStorage, utils);
+      const provider = VideojsProvider(config, {...videojs, VERSION:'0.0.0'}, adState, timeState, callbackStorage, utils);
       const setupFailed = sinon.spy();
       provider.onEvents([SETUP_FAILED], setupFailed);
       provider.init();
@@ -47,19 +46,18 @@ describe('videojsProvider', function () {
     });
 
     it('should instantiate the player when uninstantied', function () {
-      const div = document.createElement('div');
-      div.setAttribute('id', 'test-div');
-      document.body.appendChild(div);
-      config.playerConfig = {};
+      config.playerConfig = {testAttr:true};
       config.divId = 'test-div'
-      const provider = VideojsProvider(config, videojs, adState, timeState, callbackStorage, utils);
+      const mockVideojs = sinon.spy();
+      const provider = VideojsProvider(config, mockVideojs, adState, timeState, callbackStorage, utils);
       provider.init();
-
-      expect(videojs.getPlayer('test-div')).to.be.an('object')
-      videojs.getPlayer('test-div').dispose()
+      expect(mockVideojs.calledWith(config.divId)).to.be.true
+      expect(mockVideojs.calledWith(config.divId, config.playerConfig)).to.be.true
+      // Called once to check for player and again to instantiate
+      expect(mockVideojs.callCount == 2).to.be.true
     });
 
-    it('should not reinstantiate the player when instantated', function () {
+    it('should not reinstantiate the player', function () {
       const div = document.createElement('div');
       div.setAttribute('id', 'test-div');
       document.body.appendChild(div);
@@ -72,7 +70,7 @@ describe('videojsProvider', function () {
       videojs.getPlayer('test-div').dispose()
     });
 
-    it('should trigger setup complete when player is already instantied', function () {
+    it('should trigger setup complete when player is already insantiated', function () {
       const div = document.createElement('div');
       div.setAttribute('id', 'test-div');
       document.body.appendChild(div);
@@ -85,6 +83,8 @@ describe('videojsProvider', function () {
       provider.onEvents([SETUP_COMPLETE], setupComplete);
       provider.init();
       expect(setupComplete.calledOnce).to.be.true;
+      videojs.getPlayer('test-div').dispose()
+
     });
   });
 
@@ -97,7 +97,6 @@ describe('videojsProvider', function () {
 
   describe('getOrtbParams', function () {
     beforeEach(() => {
-      videojs = require('video.js').default
       config = {divId: 'test'};
       // initialize videojs element
       document.body.innerHTML = `
@@ -166,10 +165,9 @@ describe('videojsProvider', function () {
     // if the src is absent so we should not set placement
     it('should not set placement when src is absent', function() {
       document.body.innerHTML = `<video preload id='test' width="${200}" height="${100}"></video>`
-      player = videojs('test')
-      provider = VideojsProvider(config, videojs, null, null, null, utils);
+      const provider = VideojsProvider(config, videojs, null, null, null, utils);
       provider.init();
-      ({ video, content } = provider.getOrtbParams());
+      const { video, content } = provider.getOrtbParams();
       expect(video).to.not.have.property('placement')
     })
 
