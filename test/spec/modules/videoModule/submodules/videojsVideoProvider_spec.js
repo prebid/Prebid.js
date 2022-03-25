@@ -45,16 +45,28 @@ describe('videojsProvider', function () {
       expect(payload.errorCode).to.be.equal(-2);
     });
 
+    it('should trigger failure when the div is not found', function () {
+      config.divId = 'fake-div'
+      const provider = VideojsProvider(config, videojs, adState, timeState, callbackStorage, utils);
+      const setupFailed = sinon.spy();
+      provider.onEvents([SETUP_FAILED], setupFailed);
+      provider.init();
+      expect(setupFailed.calledOnce).to.be.true;
+      const payload = setupFailed.args[0][1];
+      expect(payload.errorCode).to.be.equal(-3);
+    });
+
     it('should instantiate the player when uninstantied', function () {
       config.playerConfig = {testAttr:true};
       config.divId = 'test-div'
+      const div = document.createElement('div');
+      div.setAttribute('id', 'test-div');
+      document.body.appendChild(div);
+
       const mockVideojs = sinon.spy();
       const provider = VideojsProvider(config, mockVideojs, adState, timeState, callbackStorage, utils);
       provider.init();
-      expect(mockVideojs.calledWith(config.divId)).to.be.true
       expect(mockVideojs.calledWith(config.divId, config.playerConfig)).to.be.true
-      // Called once to check for player and again to instantiate
-      expect(mockVideojs.callCount == 2).to.be.true
     });
 
     it('should not reinstantiate the player', function () {
@@ -78,14 +90,13 @@ describe('videojsProvider', function () {
       config.playerConfig = {};
       config.divId = 'test-div'
       const provider = VideojsProvider(config, videojs, adState, timeState, callbackStorage, utils);
-
       const setupComplete = sinon.spy();
       provider.onEvents([SETUP_COMPLETE], setupComplete);
       provider.init();
       expect(setupComplete.calledOnce).to.be.true;
       videojs.getPlayer('test-div').dispose()
-
     });
+
   });
 
   describe('getId', function () {

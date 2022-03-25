@@ -38,6 +38,11 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
       return;
     }
 
+    if (!document.getElementById(divId)) {
+      triggerSetupFailure(-3, `No div found with id ${divId}`)
+      return;
+    }
+
     player = videojs(divId)
 
     function adSetup(){
@@ -56,8 +61,8 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
     if(!player){
       // setupCompleteCallback should already be hooked to player.ready so no need to include it here
       player = videojs(divId, playerConfig, adSetup)
-      setupCompleteCallback && player.on('ready', callback_to_handler[setupCompleteCallback])
       setupFailedCallback && player.on('error', callback_to_handler[setupFailedCallback])
+      setupCompleteCallback && player.on('ready', callback_to_handler[setupCompleteCallback])
       return
     }
 
@@ -215,6 +220,7 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
           callback(type, payload);
           setupCompleteCallback = null;
         };
+        break;
       case SETUP_FAILED:
         setupFailedCallback = callback
         eventHandler = () => {
@@ -231,7 +237,10 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
             callback(type, payload);
             setupFailedCallback = null;
           }
-        };
+        }
+        break;
+      default:
+        return
     }
     callback_to_handler[callback] = eventHandler
     player && player.on(utils.getVideojsEventName(type), eventHandler);
