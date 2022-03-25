@@ -137,7 +137,12 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
 
   function getBid(adPayload) {
     const { adId, adTagUrl, wrapperAdIds } = adPayload;
-    const { bidAdId = adId, adUnitCode, requestId, auctionId } = videoImpressionVerifier.getBidIdentifiers(adId, adTagUrl, wrapperAdIds);
+    const bidIdentifiers = videoImpressionVerifier.getBidIdentifiers(adId, adTagUrl, wrapperAdIds);
+    if (!bidIdentifiers) {
+      return;
+    }
+
+    const { bidAdId = adId, adUnitCode, requestId, auctionId } = bidIdentifiers;
     const { bids } = pbGlobal.getBidResponsesForAdUnitCode(adUnitCode);
     return find(bids, bid => bid.adId === bidAdId && bid.requestId === requestId && bid.auctionId === auctionId);
   }
