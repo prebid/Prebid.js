@@ -13,7 +13,7 @@ export const spec = {
 
   isBidRequestValid: function(bid) {
     return !!(
-      bid.params.placement_id && isStr(bid.params.placement_id) || bid.params.group_id && isStr(bid.params.group_id)
+      (bid.params.placement_id && isStr(bid.params.placement_id)) || (bid.params.group_id && isStr(bid.params.group_id))
     );
   },
 
@@ -31,6 +31,7 @@ export const spec = {
               'id': getPlacementId(bid)
             }
           },
+
           'nextMillennium': {
             'refresh_count': window.nmmRefreshCounts[bid.adUnitCode]++,
           }
@@ -149,10 +150,10 @@ function getTopWindow(curWindow, nesting = 0) {
   }
 
   try {
-    curWindow.parent.document
-
-    return getTopWindow(curWindow.parent.window, ++nesting)
-  } catch(err) {
+    if (curWindow.parent.document) {
+      return getTopWindow(curWindow.parent.window, ++nesting)
+    }
+  } catch (err) {
     return curWindow
   }
 }
