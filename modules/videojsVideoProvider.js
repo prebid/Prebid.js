@@ -12,7 +12,9 @@ import { videoVendorDirectory } from './videoModule/vendorDirectory.js';
 
 export function VideojsProvider(config, videojs_, adState_, timeState_, callbackStorage_, utils) {
   let videojs = videojs_;
-  const callbackStorage = callbackStorage_;
+  // Supplied callbacks are typically wrapped by handlers
+  // we use this dict to keep track of these pairings
+  const callback_to_handler = {};
 
   let player = null;
   let playerVersion = null;
@@ -36,23 +38,31 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
       return;
     }
 
-    // creates or finds player by divId
-    player = videojs(divId, playerConfig)
+    player = videojs(divId)
 
-    if(player){
-      setupCompleteCallback && setupCompleteCallback(SETUP_COMPLETE, getSetupCompletePayload());
+    function adSetup(){
+      // Todo: the linter doesn't like optional chaining is there a better way to do this
+      const vendorConfig = config.playerConfig && config.playerConfig.params && config.playerConfig.params.vendorConfig;
+      const tags = vendorConfig && vendorConfig.advertising && vendorConfig.advertising.tag;
+      if (player.ima && tags) {
+        imaOptions = {
+          adTagUrl: tags[0]
+        };
+        player.ima(imaOptions);
+      }
     }
 
-
-    // Todo: the linter doesn't like optional chaining is there a better way to do this
-    const vendorConfig = config.playerConfig && config.playerConfig.params && config.playerConfig.params.vendorConfig;
-    const tags = vendorConfig && vendorConfig.advertising && vendorConfig.advertising.tag;
-    if (player.ima && tags) {
-      imaOptions = {
-        adTagUrl: tags[0]
-      };
-      player.ima(imaOptions);
+    // Instantiate player if it does not exist
+    if(!player){
+      // setupCompleteCallback should already be hooked to player.ready so no need to include it here
+      player = videojs(divId, playerConfig, adSetup)
+      setupCompleteCallback && player.on('ready', callback_to_handler[setupCompleteCallback])
+      setupFailedCallback && player.on('error', callback_to_handler[setupFailedCallback])
+      return
     }
+
+    setupCompleteCallback && setupCompleteCallback(SETUP_COMPLETE, getSetupCompletePayload());
+    adSetup();
 
     // TODO: make sure ortb gets called in integration example
     // currently testing with a hacky solution by hooking it to window
@@ -164,23 +174,26 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
   function setAdTagUrl(adTagUrl, options) {
   }
 
+  // Should this function return some sort of signal
+  // to specify whether or not the callback was succesfully hooked?
   function onEvents(events, callback) {
     if (!callback) {
       return;
     }
+
     for (let i = 0; i < events.length; i++) {
       const type = events[i];
       let payload = {
         divId,
         type
       };
-
+      
       registerPreSetupListeners(type, callback, payload);
       if (!player) {
         return;
       }
 
-      // registerPostSetupListeners(type, callback, payload);
+      registerPostSetupListeners(type, callback, payload);
     }
   }
 
@@ -196,21 +209,19 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
     let eventHandler;
     switch (type) {
       case SETUP_COMPLETE:
-        setupCompleteCallback = callback;
+        setupCompleteCallback = callback
         eventHandler = () => {
           payload = getSetupCompletePayload();
           callback(type, payload);
           setupCompleteCallback = null;
         };
-        break;
-
       case SETUP_FAILED:
-        setupFailedCallback = callback;
+        setupFailedCallback = callback
         eventHandler = () => {
           // Videojs has no specific setup error handler
           // so we imitate it by hooking to the general error
           // handler and checking to see if the player has been setup
-          if (player.readyState() == 0){
+          if (player.readyState() == 0) {
             const e = player.error()
             Object.assign(payload, {
               playerVersion,
@@ -221,18 +232,13 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
             setupFailedCallback = null;
           }
         };
-        break;
-      default:
-        return;
     }
-
-    
+    callback_to_handler[callback] = eventHandler
     player && player.on(utils.getVideojsEventName(type), eventHandler);
-
   }
 
   function offEvents(events, callback) {
-    for(let event of events) {
+    for (let event of events) {
       const videojsEvent = utils.getVideojsEventName(event)
       if (!callback) {
         player.off(videojsEvent);
@@ -243,7 +249,6 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
       if (eventHandler) {
         player.off(videojsEvent, eventHandler);
       }
-
     }
   }
 
@@ -313,37 +318,3 @@ videojsSubmoduleFactory.vendorCode = VIDEO_JS_VENDOR;
 
 videoVendorDirectory[VIDEO_JS_VENDOR] = videojsSubmoduleFactory;
 export default videojsSubmoduleFactory;
-
-export function callbackStorageFactory() {
-  let storage = {};
-
-  function storeCallback(eventType, eventHandler, callback) {
-    let eventHandlers = storage[eventType];
-    if (!eventHandlers) {
-      eventHandlers = storage[eventType] = {};
-    }
-
-    eventHandlers[callback] = eventHandler;
-  }
-
-  function getCallback(eventType, callback) {
-    let eventHandlers = storage[eventType];
-    if (!eventHandlers) {
-      return;
-    }
-
-    const eventHandler = eventHandlers[callback];
-    delete eventHandlers[callback];
-    return eventHandler;
-  }
-
-  function clearStorage() {
-    storage = {};
-  }
-
-  return {
-    storeCallback,
-    getCallback,
-    clearStorage
-  }
-}
