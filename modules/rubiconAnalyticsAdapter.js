@@ -232,6 +232,7 @@ function sendMessage(auctionId, bidWonId, trigger) {
           'adserverTargeting', () => !isEmpty(cache.targeting[bid.adUnit.adUnitCode]) ? stringProperties(cache.targeting[bid.adUnit.adUnitCode]) : undefined,
           'gam', gam => !isEmpty(gam) ? gam : undefined,
           'pbAdSlot',
+          'gpid',
           'pattern'
         ]);
         adUnit.bids = [];
@@ -770,7 +771,8 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
                 }
               },
               'pbAdSlot', () => deepAccess(bid, 'ortb2Imp.ext.data.pbadslot'),
-              'pattern', () => deepAccess(bid, 'ortb2Imp.ext.data.aupname')
+              'pattern', () => deepAccess(bid, 'ortb2Imp.ext.data.aupname'),
+              'gpid', () => deepAccess(bid, 'ortb2Imp.ext.gpid')
             ])
           ]);
           return memo;
