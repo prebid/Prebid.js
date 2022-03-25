@@ -13,7 +13,7 @@ export const spec = {
 
   isBidRequestValid: function(bid) {
     return !!(
-      bid.params.placement_id && isStr(bid.params.placement_id)
+      bid.params.placement_id && isStr(bid.params.placement_id) || bid.params.group_id && isStr(bid.params.group_id)
     );
   },
 
