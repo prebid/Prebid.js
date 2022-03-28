@@ -237,7 +237,7 @@ export function newBidder(spec) {
           const bidRequest = bidRequestMap[bid.requestId];
           if (bidRequest) {
             if (isUnknownBidder(bid.bidderCode, bidRequest.bidder)) {
-              logWarn(bid.bidderCode + ' is not a registered partner or known bidder. Continuing without bids.');
+              logWarn(bid.bidderCode + ' is not a registered partner or known bidder of '+bidRequest.bidder+', hence continuing without bid. If you wish to support this bidder, please mark allowUnknownBidderCodes as true in bidderSettings.');
               return;
             } else {
               bid.adapterCode = bidRequest.bidder;
@@ -261,7 +261,7 @@ export function newBidder(spec) {
     let currentBidderSettings = !!bidderSettings.get(bidderCode, 'allowUnknownBidderCodes');
     let unknownBiddersList = bidderSettings.get(bidderCode, 'allowedUnknownBidderCodes');
     if (!!unknownBidder && bidderCode !== unknownBidder) {
-      if (!currentBidderSettings || (currentBidderSettings && isArray(unknownBiddersList) && (unknownBiddersList[0] !== '*' && !unknownBiddersList.includes(unknownBidder)))) {
+      if (!currentBidderSettings || (isArray(unknownBiddersList) && (unknownBiddersList[0] !== '*' && !unknownBiddersList.includes(unknownBidder)))) {
         return true;
       }
     }
