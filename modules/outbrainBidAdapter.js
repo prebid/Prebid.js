@@ -77,8 +77,7 @@ export const spec = {
       if (bid.nativeParams) {
         imp.native = {
           request: JSON.stringify({
-            assets: getNativeAssets(bid),
-            privacy: 1
+            assets: getNativeAssets(bid)
           })
         }
       } else {
