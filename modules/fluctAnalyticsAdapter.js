@@ -1,246 +1,45 @@
+/* eslint-disable no-console */
+/* eslint-disable indent */
 import { ajax } from '../src/ajax.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-import { config } from '../src/config.js'
-import CONSTANTS from '../src/constants.json';
-import * as utils from '../src/utils.js';
-import find from 'core-js-pure/features/array/find.js';
+import { config } from '../src/config.js';
+import { EVENTS } from '../src/constants.json';
+import {
+  logInfo,
+  logError,
+  generateUUID,
+  deepClone,
+  isGptPubadsDefined,
+} from '../src/utils.js';
+import * as _find from 'core-js-pure/features/array/find.js';
+import $$PREBID_GLOBAL$$ from '../src/prebid.js';
+/** @type {<T>(array: T[], predicate: (value: T, index: number, obj: T[]) => boolean, thisArg?: any) => T} */
+const find = _find;
 
-const url = 'https://an.adingo.jp'
+const url = 'https://an.adingo.jp';
 
-/**
- * @typedef {Object} BidResponse
- * @property {string} ad //: html tag
- * @property {string} adId
- * @property {string} adUnitCode //: 'div-gpt-ad-1612148277593-0'
- * @property {string} adUrl
- * @property {*} adserverTargeting
- * @property {string} auctionId
- * @property {string} bidder
- * @property {string} bidderCode
- * @property {number} cpm
- * @property {string} creativeId
- * @property {string} currency
- * @property {string} dealId
- * @property {number} height
- * @property {string} mediaType
- * @property {boolean} netRevenue
- * @property {number} originalCpm
- * @property {string} originalCurrency
- * @property {*} params
- * @property {string} pbAg
- * @property {string} pbCg
- * @property {string} pbDg
- * @property {string} pbHg
- * @property {string} pbLg
- * @property {string} pbMg
- * @property {string} pbLg
- * @property {string} requestId
- * @property {number} requestTimestamp
- * @property {number} responseTimestamp
- * @property {string} size
- * @property {string} source
- * @property {string} status
- * @property {string} statusMessage
- * @property {string} timeToRespond
- * @property {string} ttl
- * @property {number} width
- * @property {string|undefined} bidId //: exists when 'bidTimeout','noBid' event.
- *
- */
-
-/**
- * @typedef {Object} Bid
- * @property {string} bidder
- * @property {*} params
- */
-
-/**
- * @typedef {Object} Analytics
- * @property {string} bidder
- * @property {string} dwid
- */
-
-/**
- * @typedef {Object} MediaTypes
- * @property {Object} banner
- * @property {string} banner.name
- * @property {Array<Array<number>>} sizes
- */
-
-/**
- * @typedef {Object} AdUnit
- * @property {Array<Analytics>} analytics
- * @property {Array<Bid>} bids
- * @property {MediaTypes} mediaTypes
- * @property {Array<Array<number>>} sizes
- * @property {string} transactionId
- */
-
-/**
- * @typedef {Object} PbAuction
- * @property {Array<string>} adUnitCodes //: ['div-gpt-ad-1612148277593-0']
- * @property {Array<AdUnit>} adUnits //: [{…}]
- * @property {number} auctionEnd - timestamp of when auction ended //: 1586675964364
- * @property {string} auctionId - Auction ID of the request this bid responded to
- * @property {string} auctionStatus //: 'inProgress'
- * @property {Array<*>} bidderRequests //: (2) [{…}, {…}]
- * @property {Array<BidResponse>} bidsReceived //: []
- * @property {string|undefined} labels //: undefined
- * @property {Array<BidResponse>} noBids //: []
- * @property {number} timeout //: 3000
- * @property {number} timestamp //: 1586675964364
- * @property {Array<BidResponse>} winningBids //: []
- * @property {Object<string, BidResponse>} bids
- */
-
-/**
- * @typedef {Object} Gpt
- * @property {boolean} registered
- */
-
-/**
- * @typedef {Object} Cache
- * @property {Object.<string, PbAuction>} auctions
- * @property {Object.<string, number>} timeouts
- * @property {Gpt} gpt
- */
-
-/** @type Cache */
+/** @typedef {{ad: string, adId: string, adUnitCode: string, adUrl: string, adserverTargeting: any, auctionId: string, bidder: string, bidderCode: string, cpm: number, creativeId: string, currency: string, dealId: string, height: number, mediaType: string, netRevenue: boolean, originalCpm: number, originalCurrency: string, params: any, pbAg: string, pbCg: string, pbDg: string, pbHg: string, pbLg: string, pbMg: string, pbLg: string, requestId: string, requestTimestamp: number, responseTimestamp: number, size: string, source: string, status: string, statusMessage: string, timeToRespond: string, ttl: string, width: number, bidId?: string}} BidResponse */
+/** @typedef {{bidder: string, params: any}} Bid */
+/** @typedef {{code: string, _code?: string, path?: string, analytics?: {bidder: string, dwid: string}[], bids?: Bid[], mediaTypes: {banner: {name: string, sizes: number[][]}}, sizes: number[][], transactionId: string}} AdUnit */
+/** @typedef {BidResponse & {noBid: boolean, prebidWon: boolean, bidWon: boolean, timeout: boolean}} ModBidResponse */
+/** @typedef {{adUnitCodes: string[], adUnits: AdUnit[], auctionEnd: number, auctionId: string, auctionStatus: string, bidderRequests: any[], bidsReceived: BidResponse[], labels?: string, noBids: BidResponse[], timeout: number, timestamp: number, winningBids: BidResponse[], bids: {[requestId: string]: ModBidResponse}}} PbAuction */
+/** @typedef {{registered: boolean}} Gpt */
+/** @typedef {{[divId: string]: string }} Slots `{divId: adUnitPath}` */
+/** @type {{auctions: {[auctionId: string]: PbAuction}, adUnits: {[adUnitCode: string]: AdUnit}, gpt: Gpt, timeouts: {[auctionId: string]: number}}} */
 const cache = {
   auctions: {},
-  timeouts: {},
   gpt: {},
+  timeouts: {},
 };
+$$PREBID_GLOBAL$$.fluct = { cache: cache }; /** for debug */
 
-/**
- * @returns {string|undefined}
- */
-const getSiteKey = () => find(config.getConfig('realTimeData.dataProviders') ?? [], provider => provider.name === 'browsi')?.params.siteKey
-
-/**
- * @param {string} auctionId
- * @returns {boolean}
- */
-const isBrowsiAuction = (auctionId) => Boolean(auctionId.match(new RegExp(`^${getSiteKey()}`, 'g')))
-
-/**
- * @param {string} divId
- * @returns {boolean}
- */
-const isBrowsiDivId = (divId) => Boolean(divId.match(/^browsi_ad_/g))
-
-/* eslint-disable-next-line compat/compat */
-let fluctAnalyticsAdapter = Object.assign(
-  adapter({ url, analyticsType: 'endpoint' }), {
-  track({ eventType, args }) {
-    utils.logInfo(`[${eventType}] ${Date.now()} :`, args);
-    switch (eventType) {
-      case CONSTANTS.EVENTS.AUCTION_INIT: {
-        /** @type {PbAuction} */
-        let auctionInitEvent = args
-        cache.auctions[auctionInitEvent.auctionId] = { ...auctionInitEvent, bids: {} }
-        if (!cache.gpt.registered) {
-          cache.gpt.registered = true;
-          window.googletag = window.googletag || { cmd: [] };
-        }
-        break;
-      }
-      case CONSTANTS.EVENTS.BID_TIMEOUT: {
-        /** @type {BidResponse[]} */
-        let timeoutEvent = args
-        timeoutEvent.forEach(bid => {
-          cache.auctions[bid.auctionId].bids[bid.bidId] = {
-            ...bid,
-            noBid: true,
-            prebidWon: false,
-            bidWon: false,
-            timeout: true,
-          }
-        })
-        break;
-      }
-      case CONSTANTS.EVENTS.AUCTION_END: {
-        /** @type {PbAuction} */
-        let auctionEndEvent = args
-        let { adUnitCodes, auctionId, bidsReceived, noBids } = auctionEndEvent
-        Object.assign(cache.auctions[auctionId], auctionEndEvent)
-
-        let prebidWonBidRequestIds = adUnitCodes.map(adUnitCode =>
-          bidsReceived.reduce((highestCpmBid, bid) =>
-            adUnitCode === bid.adUnitCode
-              ? highestCpmBid.cpm > bid.cpm ? highestCpmBid : bid
-              : highestCpmBid
-            , {}).requestId
-        );
-
-        [
-          ...bidsReceived.map(bid => ({
-            ...bid,
-            noBid: false,
-            prebidWon: prebidWonBidRequestIds.includes(bid.requestId),
-            bidWon: false,
-            timeout: false,
-          })),
-          ...noBids.map(bid => ({
-            ...bid,
-            noBid: true,
-            prebidWon: false,
-            bidWon: false,
-            timeout: false,
-          })),
-        ].forEach(bid => {
-          cache.auctions[auctionId].bids[bid.requestId || bid.bidId] = bid
-        })
-        if (!isBrowsiAuction(auctionId)) {
-          sendMessage(auctionId)
-        }
-        break;
-      }
-      case CONSTANTS.EVENTS.BID_WON: {
-        /** @type {Bid} */
-        let bidWonEvent = args
-        let { auctionId, requestId } = bidWonEvent
-        clearTimeout(cache.timeouts[auctionId]);
-        Object.assign(cache.auctions[auctionId].bids[requestId], bidWonEvent, {
-          noBid: false,
-          prebidWon: true,
-          bidWon: true,
-          timeout: false,
-        })
-        if (!isBrowsiAuction(auctionId)) {
-          cache.timeouts[auctionId] = setTimeout(() => {
-            sendMessage(auctionId);
-          }, config.getConfig('bidderTimeout') ?? 3000);
-        }
-        break;
-      }
-      default:
-        break;
-    }
-  }
-});
-
-/**
- * GPT slotから共通のpathを持つ、browsi_ad_ではないのadUnitCodeを返す
- * @param {Object.<string, string>} slots
- * @param {string} adUnitCode
- * @returns {string}
- */
-export const getAdUnitCodeBeforeReplication = (slots, adUnitCode) => {
-  /** @type {string} */
-  const path = slots[find(Object.keys(slots), slot => {
-    /** @type {string|null} @example browsi_ad_0_ai_1_rc_ */
-    const browsiPrefix = adUnitCode.match(/^browsi_ad_.*_(?=\d*$)/g)?.[0]
-    return slot === adUnitCode
-      || slot.match(new RegExp(`^${browsiPrefix}`, 'g'))?.[0]
-  })]
-  return find(Object.keys(slots), slot => !isBrowsiDivId(slots[slot]) && slots[slot] === path) ?? adUnitCode
-}
+/** @type {(id: string) => boolean} */
+const isBrowsiId = (id) => Boolean(id.match(/^browsi_/g));
 
 /**
  * 各adUnitCodeに対応したadUnitPathを取得する
- * @returns {Object.<string, string>}
+ * @type {() => Slots}
  * @sample
  * ```
  * {
@@ -249,65 +48,165 @@ export const getAdUnitCodeBeforeReplication = (slots, adUnitCode) => {
  * }
  * ```
  */
-const getAdUnitMap = () => googletag.pubads().getSlots().reduce((prev, slot) => Object.assign(prev, { [slot.getSlotElementId()]: slot.getAdUnitPath() }), {})
+const getAdUnitMap = () => window.googletag.pubads().getSlots().reduce((prev, slot) => Object.assign(prev, { [slot.getSlotElementId()]: slot.getAdUnitPath() }), {});
 
-/**
- * @param {string|undefined} adUnitCode
- * @returns {string|undefined}
- */
-export const getBrowsiRefreshCount = (adUnitCode) => adUnitCode?.match(/browsi_.*_(\d*$)/)?.[1]
+/** @type {(_adUnit: AdUnit, adUnits: AdUnit[], slots: Slots) => AdUnit} */
+export const convertReplicatedAdUnit = (_adUnit, adUnits = $$PREBID_GLOBAL$$.adUnits, slots = getAdUnitMap()) => {
+  /** @type {AdUnit} */
+  const adUnit = deepClone(_adUnit);
 
-/**
- * @param {string} auctionId
- * @param {Array<AdUnit>} adUnits
- * @returns {string}
- */
-const modifyBrowsiAuctionId = (auctionId, adUnits) => {
-  /** @type {string|undefined} */
-  const reloadCount = getBrowsiRefreshCount(find(adUnits, adUnit => isBrowsiDivId(adUnit.code))?.code)
-  return auctionId.match(new RegExp(`^${getSiteKey()}`, 'g')) && reloadCount
-    ? `${auctionId}_${reloadCount}`
-    : auctionId
+  /** browsi枠: */
+  if (!adUnit.analytics) {
+    /** `adUnit.analytics`が存在しない場合、`adUnit.path`も存在しない */
+    const adUnitPath = slots[adUnit.code];
+    try {
+      /**
+       * browsi枠は`adUnit.path`を持たない
+       * 共通のadUnitPathを持つ（複製元の）枠を探す
+       */
+      const { analytics, code, mediaTypes: { banner: { name } } } = find(adUnits, adUnit => adUnitPath.match(new RegExp(`${adUnit.path}$`)));
+      adUnit.analytics = analytics;
+      adUnit._code = adUnit.code; /** 変換前: `browsi_ad_..` */
+      adUnit.code = code;
+      adUnit.mediaTypes.banner.name = name;
+    } catch (_error) {
+      logError(JSON.stringify({
+        message: '対応するDWIDを持つ枠が見つかりませんでした。',
+        adUnitCode: adUnit.code,
+        adUnitPath,
+      }));
+    }
+  }
+  adUnit.bids = undefined;
+  return adUnit;
+};
+
+/** @typedef {{slot: {getSlotElementId: () => string}}} GptEvent */
+/** @type {(event: GptEvent) => void} */
+const browsiEventListener = (event) => {
+  const divId = event.slot.getSlotElementId();
+  if (isBrowsiId(divId)) {
+    const auction = find(Object.values(cache.auctions), auction =>
+      auction.adUnitCodes.every(adUnitCode => adUnitCode === divId));
+    sendMessage(auction.auctionId);
+  }
 }
 
-/**
- * @param {string} auctionId
- */
-const sendMessage = (auctionId) => {
-  let { adUnits, auctionEnd, auctionStatus, bids } = cache.auctions[auctionId]
-  const slots = getAdUnitMap()
+let fluctAnalyticsAdapter = Object.assign(
+  adapter({ url, analyticsType: 'endpoint' }), {
+  track({ eventType, args }) {
+    logInfo(`[${eventType}] ${Date.now()} :`, args);
+    try {
+      switch (eventType) {
+        case EVENTS.AUCTION_INIT: {
+          /** @type {PbAuction} */
+          let auctionInitEvent = args;
+          cache.auctions[auctionInitEvent.auctionId] = { ...auctionInitEvent, bids: {} };
+          if (!cache.gpt.registered && isGptPubadsDefined()) {
+            window.googletag.pubads().addEventListener('slotOnload', browsiEventListener)
+            cache.gpt.registered = true;
+          }
+          break;
+        }
+        case EVENTS.BID_TIMEOUT: {
+          /** @type {BidResponse[]} */
+          let timeoutEvent = args;
+          timeoutEvent.forEach(bid => {
+            cache.auctions[bid.auctionId].bids[bid.bidId] = {
+              ...bid,
+              noBid: true,
+              prebidWon: false,
+              bidWon: false,
+              timeout: true,
+            };
+          });
+          break;
+        }
+        case EVENTS.AUCTION_END: {
+          /** @type {PbAuction} */
+          let auctionEndEvent = args;
+          let { adUnitCodes, auctionId, bidsReceived, noBids } = auctionEndEvent;
+          Object.assign(cache.auctions[auctionId], auctionEndEvent, { aidSuffix: isBrowsiId(auctionId) ? generateUUID() : undefined });
 
-  adUnits = adUnits.map(adUnit => ({
-    ...adUnit,
-    analytics: adUnit.analytics ?? find(Object.values(cache.auctions).flatMap(auction => auction.adUnits), _adUnit => _adUnit.code === getAdUnitCodeBeforeReplication(slots, adUnit.code)).analytics,
-    bids: undefined
-  }))
+          let prebidWonBidRequestIds = adUnitCodes.map(adUnitCode =>
+            bidsReceived.reduce((highestCpmBid, bid) =>
+              adUnitCode === bid.adUnitCode
+                ? highestCpmBid.cpm > bid.cpm ? highestCpmBid : bid
+                : highestCpmBid
+              , {}).requestId
+          );
 
-  /**
-   * @param {string} adUnitCode
-   * @param {string} bidder
-   * @returns {string|null}
-   */
-  const findDwIdByAdUnitCode = (adUnitCode, bidder) => {
-    const analytics = find(adUnits, adUnit => adUnit.code === adUnitCode)?.analytics
-    return find(analytics ?? [], obj => obj.bidder === bidder)?.dwid ?? null
+          const bidResults = [
+            ...bidsReceived.map(bid => ({
+              ...bid,
+              noBid: false,
+              prebidWon: prebidWonBidRequestIds.includes(bid.requestId),
+              bidWon: false,
+              timeout: false,
+            })),
+            ...noBids.map(bid => ({
+              ...bid,
+              noBid: true,
+              prebidWon: false,
+              bidWon: false,
+              timeout: false,
+            })),
+          ];
+          bidResults.forEach(bid => cache.auctions[auctionId].bids[bid.requestId || bid.bidId] = bid);
+
+          /** browsi auction の場合 `browsiEventListener` から送信する */
+          if (!isBrowsiId(auctionId))
+            sendMessage(auctionId);
+          break;
+        }
+        case EVENTS.BID_WON: {
+          /** @type {Bid} */
+          let bidWonEvent = args;
+          let { auctionId, requestId } = bidWonEvent;
+          Object.assign(cache.auctions[auctionId].bids[requestId], bidWonEvent, {
+            noBid: false,
+            prebidWon: true,
+            bidWon: true,
+            timeout: false,
+          });
+          /** 複数の `BID_WON` イベントをまとめて送信する */
+          clearTimeout(cache.timeouts[auctionId]);
+          cache.timeouts[auctionId] = setTimeout(() => {
+            sendMessage(auctionId);
+          }, Math.min(config.getConfig('timeoutBuffer') || 400, 400));
+          break;
+        }
+        default:
+          break;
+      }
+    } catch (error) {
+      // console.error({ eventType, args, error })
+      logError({ eventType, args, error });
+    }
   }
+});
 
-  let payload = {
-    auctionId: modifyBrowsiAuctionId(auctionId, adUnits),
+/** @type {(auctionId: string) => void} */
+const sendMessage = (auctionId) => {
+  let { adUnits, auctionEnd, aidSuffix, auctionStatus, bids } = cache.auctions[auctionId];
+  adUnits = adUnits.map(adUnit => convertReplicatedAdUnit(adUnit, $$PREBID_GLOBAL$$.adUnits));
+
+  const payload = {
+    auctionId: aidSuffix ? `${auctionId}_${aidSuffix}` : auctionId,
     adUnits,
     bids: Object.values(bids).map(bid => {
-      const { noBid, prebidWon, bidWon, timeout, adId, adUnitCode, adUrl, bidder, status, netRevenue, cpm, currency, originalCpm, originalCurrency, requestId, size, source, timeToRespond } = bid
+      const { noBid, prebidWon, bidWon, timeout, adId, adUnitCode, adUrl, bidder, status, netRevenue, cpm, currency, originalCpm, originalCurrency, requestId, size, source, timeToRespond } = bid;
+      const adUnit = find(adUnits, adUnit => [adUnit._code, adUnit.code].includes(adUnitCode));
       return {
         noBid,
         prebidWon,
         bidWon,
         timeout,
-        dwid: findDwIdByAdUnitCode(adUnitCode, bidder),
+        dwid: find(adUnit.analytics, param => param.bidder === bidder).dwid,
         status,
         adId,
         adUrl,
-        adUnitCode: getAdUnitCodeBeforeReplication(slots, adUnitCode),
+        adUnitCode: adUnit.code,
         bidder,
         netRevenue,
         cpm,
@@ -322,25 +221,14 @@ const sendMessage = (auctionId) => {
           ...bid,
           ad: undefined
         },
-      }
+      };
     }),
     timestamp: Date.now(),
     auctionEnd,
     auctionStatus,
-  };
-  ajax(url, () => utils.logInfo(`[sendMessage] ${Date.now()} :`, payload), JSON.stringify(payload), { contentType: 'application/json', method: 'POST' });
-};
-
-window.addEventListener('browsiImpression', (data) => {
-  const adUnitCode = Object.entries(getAdUnitMap())
-    .reduce((prev, [code, path]) => {
-      return data.detail.adUnit === path && isBrowsiDivId(code)
-        ? code
-        : prev
-    }, '')
-  const auction = find(Object.values(cache.auctions), auction => auction.adUnitCodes.includes(adUnitCode))
-  sendMessage(auction.auctionId)
-})
+  }
+  ajax(url, () => logInfo(`[sendMessage] ${Date.now()} :`, payload), JSON.stringify(payload), { contentType: 'application/json', method: 'POST' });
+}
 
 fluctAnalyticsAdapter.originEnableAnalytics = fluctAnalyticsAdapter.enableAnalytics;
 fluctAnalyticsAdapter.enableAnalytics = (config) => {
