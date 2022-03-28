@@ -2,7 +2,7 @@ import { config } from '../../src/config.js';
 import { find } from '../../src/polyfill.js';
 import * as events from '../../src/events.js';
 import { allVideoEvents, AUCTION_AD_LOAD_ATTEMPT, allVideoAuctionEvents,
-  AD_IMPRESSION, AD_ERROR, BID_VIDEO_IMPRESSION, BID_VIDEO_ERROR } from './constants/events.js';
+  AD_IMPRESSION, AD_ERROR, BID_VIDEO_IMPRESSION, BID_VIDEO_ERROR, allVideoBidEvents } from './constants/events.js';
 import CONSTANTS from '../../src/constants.json';
 import { videoCoreFactory } from './coreVideo.js';
 import { coreAdServerFactory } from './adServer.js';
@@ -15,6 +15,7 @@ import { videoImpressionVerifierFactory } from './videoImpressionVerifier.js';
 
 events.addEvents(allVideoEvents);
 events.addEvents(allVideoAuctionEvents);
+events.addEvents(allVideoBidEvents);
 
 export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvents_, adServerCore_, videoImpressionVerifierFactory_) {
   const videoCore = videoCore_;
