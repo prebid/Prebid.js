@@ -114,10 +114,6 @@ describe('sharethrough adapter spec', function () {
             sharedid: {
               id: 'fake-sharedid',
             },
-            flocId: {
-              id: 'fake-flocid',
-              version: '42',
-            },
           },
           crumbs: {
             pubcid: 'fake-pubcid-in-crumbs-obj',
@@ -222,7 +218,6 @@ describe('sharethrough adapter spec', function () {
               'crwdcntrl.net': { id: 'fake-lotame' },
               'parrable.com': { id: 'fake-parrable' },
               'netid.de': { id: 'fake-netid' },
-              'chrome.com': { id: 'fake-flocid' },
             };
             expect(openRtbReq.user.ext.eids).to.be.an('array').that.have.length(Object.keys(expectedEids).length);
             for (const eid of openRtbReq.user.ext.eids) {
