@@ -301,14 +301,14 @@ export function setConsentConfig(config) {
   if (!config || typeof config !== 'object') {
     logWarn('consentManagement.usp config not defined, using defaults');
   }
-  if (isStr(config.cmpApi)) {
+  if (config && isStr(config.cmpApi)) {
     consentAPI = config.cmpApi;
   } else {
     consentAPI = DEFAULT_CONSENT_API;
     logInfo(`consentManagement.usp config did not specify cmpApi. Using system default setting (${DEFAULT_CONSENT_API}).`);
   }
 
-  if (isNumber(config.timeout)) {
+  if (config && isNumber(config.timeout)) {
     consentTimeout = config.timeout;
   } else {
     consentTimeout = DEFAULT_CONSENT_TIMEOUT;
