@@ -373,11 +373,6 @@ function addUserId(bidData, userId) {
             : ('verizonMediaId,' + userIdObjectOrValue);
         }
         break;
-      case 'flocId':
-        if (userIdObjectOrValue.id) {
-          bidData['cid'] = userIdObjectOrValue.id;
-        }
-        break;
       default:
         bidData[userIdProviderKey] = userIdObjectOrValue;
         break;
