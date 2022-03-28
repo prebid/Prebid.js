@@ -1,21 +1,42 @@
 import Adapter from '../../src/adapter.js';
-import { createBid } from '../../src/bidfactory.js';
+import {createBid} from '../../src/bidfactory.js';
 import {
-  getPrebidInternal, logError, isStr, isPlainObject, logWarn, generateUUID, bind, logMessage,
-  triggerPixel, insertUserSyncIframe, deepAccess, mergeDeep, deepSetValue, cleanObj, parseSizesInput,
-  getBidRequest, getDefinedParams, createTrackPixelHtml, pick, deepClone, uniques, flatten, isNumber,
-  isEmpty, isArray, logInfo, timestamp
+  bind,
+  cleanObj,
+  createTrackPixelHtml,
+  deepAccess,
+  deepClone,
+  deepSetValue,
+  flatten,
+  generateUUID,
+  getBidRequest,
+  getDefinedParams,
+  getPrebidInternal,
+  insertUserSyncIframe,
+  isArray,
+  isEmpty,
+  isNumber,
+  isPlainObject,
+  isStr,
+  logError,
+  logInfo,
+  logMessage,
+  logWarn,
+  mergeDeep,
+  parseSizesInput,
+  pick, timestamp,
+  triggerPixel,
+  uniques
 } from '../../src/utils.js';
 import CONSTANTS from '../../src/constants.json';
 import adapterManager from '../../src/adapterManager.js';
 import { config } from '../../src/config.js';
 import { VIDEO, NATIVE } from '../../src/mediaTypes.js';
 import { isValid } from '../../src/adapters/bidderFactory.js';
-import events from '../../src/events.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import * as events from '../../src/events.js';
+import {find, includes} from '../../src/polyfill.js';
 import { S2S_VENDORS } from './config.js';
 import { ajax } from '../../src/ajax.js';
-import find from 'core-js-pure/features/array/find.js';
 import {hook} from '../../src/hook.js';
 
 const getConfig = config.getConfig;
@@ -78,6 +99,7 @@ let eidPermissions;
  * @type {S2SDefaultConfig}
  */
 const s2sDefaultConfig = {
+  bidders: Object.freeze([]),
   timeout: 1000,
   syncTimeout: 1000,
   maxBids: 1,
@@ -122,7 +144,7 @@ function updateConfigDefaultVendor(option) {
  */
 function validateConfigRequiredProps(option) {
   const keys = Object.keys(option);
-  if (['accountId', 'bidders', 'endpoint'].filter(key => {
+  if (['accountId', 'endpoint'].filter(key => {
     if (!includes(keys, key)) {
       logError(key + ' missing in server to server config');
       return true;
@@ -517,6 +539,14 @@ Object.assign(ORTB2.prototype, {
     // transform ad unit into array of OpenRTB impression objects
     let impIds = new Set();
     adUnits.forEach(adUnit => {
+      // TODO: support labels / conditional bids
+      // for now, just warn about them
+      adUnit.bids.forEach((bid) => {
+        if (bid.mediaTypes != null) {
+          logWarn(`Prebid Server adapter does not (yet) support bidder-specific mediaTypes for the same adUnit. Size mapping configuration will be ignored for adUnit: ${adUnit.code}, bidder: ${bid.bidder}`);
+        }
+      })
+
       // in case there is a duplicate imp.id, add '-2' suffix to the second imp.id.
       // e.g. if there are 2 adUnits (case of twin adUnit codes) with code 'test',
       // first imp will have id 'test' and second imp will have id 'test-2'
@@ -677,6 +707,7 @@ Object.assign(ORTB2.prototype, {
       // get bidder params in form { <bidder code>: {...params} }
       // initialize reduce function with the user defined `ext` properties on the ad unit
       const ext = adUnit.bids.reduce((acc, bid) => {
+        if (bid.bidder == null) return acc;
         const adapter = adapterManager.bidderRegistry[bid.bidder];
         if (adapter && adapter.getSpec().transformBidParams) {
           bid.params = adapter.getSpec().transformBidParams(bid.params, true, adUnit, bidRequests);
@@ -685,7 +716,7 @@ Object.assign(ORTB2.prototype, {
         return acc;
       }, {...deepAccess(adUnit, 'ortb2Imp.ext')});
 
-      const imp = { id: impressionId, ext, secure: s2sConfig.secure };
+      const imp = { ...adUnit.ortb2Imp, id: impressionId, ext, secure: s2sConfig.secure };
 
       const ortb2 = {...deepAccess(adUnit, 'ortb2Imp.ext.data')};
       Object.keys(ortb2).forEach(prop => {
@@ -716,7 +747,7 @@ Object.assign(ORTB2.prototype, {
         }
       });
 
-      Object.assign(imp, mediaTypes);
+      mergeDeep(imp, mediaTypes);
 
       // if storedAuctionResponse has been set, pass SRID
       const storedAuctionResponseBid = find(firstBidRequest.bids, bid => (bid.adUnitCode === adUnit.code && bid.storedAuctionResponse));
@@ -885,10 +916,15 @@ Object.assign(ORTB2.prototype, {
       // a seatbid object contains a `bid` array and a `seat` string
       response.seatbid.forEach(seatbid => {
         (seatbid.bid || []).forEach(bid => {
-          const bidRequest = this.getBidRequest(bid.impid, seatbid.seat);
-          if (bidRequest == null && !s2sConfig.allowUnknownBidderCodes) {
-            logWarn(`PBS adapter received bid from unknown bidder (${seatbid.seat}), but 's2sConfig.allowUnknownBidderCodes' is not set. Ignoring bid.`);
-            return;
+          let bidRequest = this.getBidRequest(bid.impid, seatbid.seat);
+          if (bidRequest == null) {
+            if (!s2sConfig.allowUnknownBidderCodes) {
+              logWarn(`PBS adapter received bid from unknown bidder (${seatbid.seat}), but 's2sConfig.allowUnknownBidderCodes' is not set. Ignoring bid.`);
+              return;
+            }
+            // for stored impression, a request was made with bidder code `null`. Pick it up here so that NO_BID, BID_WON, etc events
+            // can work as expected (otherwise, the original request will always result in NO_BID).
+            bidRequest = this.getBidRequest(bid.impid, null);
           }
 
           const cpm = bid.price;

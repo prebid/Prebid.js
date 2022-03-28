@@ -4,10 +4,9 @@ import { getStorageManager } from '../src/storageManager.js'
 import { isArray } from '../src/utils.js'
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 
-const storageManager = getStorageManager()
-
 const GVLID = 1012
 const BIDDER_CODE = 'glimpse'
+const storageManager = getStorageManager({bidderCode: BIDDER_CODE})
 const ENDPOINT = 'https://api.glimpsevault.io/ads/serving/public/v1/prebid'
 const LOCAL_STORAGE_KEY = {
   vault: {

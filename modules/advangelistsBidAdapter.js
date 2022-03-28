@@ -1,9 +1,8 @@
-import { isEmpty, deepAccess, isFn, parseSizesInput, generateUUID, parseUrl } from '../src/utils.js';
-import { config } from '../src/config.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { VIDEO, BANNER } from '../src/mediaTypes.js';
-import find from 'core-js-pure/features/array/find.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import {deepAccess, generateUUID, isEmpty, isFn, parseSizesInput, parseUrl} from '../src/utils.js';
+import {config} from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {find, includes} from '../src/polyfill.js';
 
 const ADAPTER_VERSION = '1.0';
 const BIDDER_CODE = 'advangelists';
