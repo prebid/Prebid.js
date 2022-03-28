@@ -301,6 +301,10 @@ export function setConsentConfig(config) {
   if (!config || typeof config !== 'object') {
     logWarn('consentManagement.usp config not defined, using defaults');
   }
+  if (config && config.disable === true) {
+    logWarn('consentManagement.usp installed but disabled');
+    return;
+  }
   if (config && isStr(config.cmpApi)) {
     consentAPI = config.cmpApi;
   } else {
