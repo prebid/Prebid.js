@@ -400,7 +400,7 @@ describe('Outbrain Adapter', function () {
           ...commonBidRequest,
           ...nativeBidRequestParams,
         }
-        commonBidderRequest.getFloor = function() {
+        bidRequest.getFloor = function() {
           return {
             currency: 'USD',
             floor: 1.23,
