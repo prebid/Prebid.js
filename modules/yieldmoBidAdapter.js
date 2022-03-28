@@ -59,6 +59,7 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (bidRequests, bidderRequest) {
+    const stage = isStage(bidderRequest);
     const bannerBidRequests = bidRequests.filter(request => hasBannerMediaType(request));
     const videoBidRequests = bidRequests.filter(request => hasVideoMediaType(request));
     let serverRequests = [];
@@ -121,8 +122,8 @@ export const spec = {
         serverRequest.eids = JSON.stringify(eids);
       };
       // check if url exceeded max length
-      const url = `${BANNER_SERVER_ENDPOINT}?${parseQueryStringParameters(serverRequest)}`;
-      let extraCharacters = url.length - MAX_BANNER_REQUEST_URL_LENGTH;
+      const fullUrl = `${BANNER_SERVER_ENDPOINT}?${parseQueryStringParameters(serverRequest)}`;
+      let extraCharacters = fullUrl.length - MAX_BANNER_REQUEST_URL_LENGTH;
       if (extraCharacters > 0) {
         for (let i = 0; i < BANNER_REQUEST_PROPERTIES_TO_REDUCE.length; i++) {
           extraCharacters = shortcutProperty(extraCharacters, serverRequest, BANNER_REQUEST_PROPERTIES_TO_REDUCE[i]);
@@ -135,7 +136,7 @@ export const spec = {
 
       serverRequests.push({
         method: 'GET',
-        url: BANNER_SERVER_ENDPOINT,
+        url: getBannerUrl(stage),
         data: serverRequest
       });
     }
@@ -642,4 +643,15 @@ function canAccessTopWindow() {
   } catch (error) {
     return false;
   }
+}
+
+function isStage(bidderRequest) {
+  return bidderRequest.refererInfo?.referer?.contains('pb_force_a');
+}
+
+function getBannerUrl(isStage) {
+  if (isStage) {
+    return BANNER_STG_SERVER_ENDPOINT;
+  }
+  return BANNER_SERVER_ENDPOINT;
 }
