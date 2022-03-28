@@ -23,9 +23,10 @@ const BIDDER_CODE = 'yieldmo';
 const CURRENCY = 'USD';
 const TIME_TO_LIVE = 300;
 const NET_REVENUE = true;
-const BANNER_SERVER_ENDPOINT = 'https://ads.yieldmo.com/exchange/prebid';
-const BANNER_STG_SERVER_ENDPOINT = 'http://qa-test-01.aws.in.yieldmo.com:8080/bidder?bidderId=1&placementId=2438568554933461939';
-const VIDEO_SERVER_ENDPOINT = 'https://ads.yieldmo.com/exchange/prebidvideo';
+const BANNER_PATH = '/exchange/prebid';
+const VIDEO_PATH = '/exchange/prebidvideo';
+const STAGE_DOMAIN = 'https://ads-stg.yieldmo.com';
+const PROD_DOMAIN = 'https://ads.yieldmo.com';
 const OUTSTREAM_VIDEO_PLAYER_URL = 'https://prebid-outstream.yieldmo.com/bundle.js';
 const OPENRTB_VIDEO_BIDPARAMS = ['mimes', 'startdelay', 'placement', 'startdelay', 'skipafter', 'protocols', 'api',
   'playbackmethod', 'maxduration', 'minduration', 'pos', 'skip', 'skippable'];
@@ -60,6 +61,8 @@ export const spec = {
    */
   buildRequests: function (bidRequests, bidderRequest) {
     const stage = isStage(bidderRequest);
+    const bannerUrl = getAdserverUrl(BANNER_PATH, stage);
+    const videoUrl = getAdserverUrl(VIDEO_PATH, stage);
     const bannerBidRequests = bidRequests.filter(request => hasBannerMediaType(request));
     const videoBidRequests = bidRequests.filter(request => hasVideoMediaType(request));
     let serverRequests = [];
@@ -122,7 +125,7 @@ export const spec = {
         serverRequest.eids = JSON.stringify(eids);
       };
       // check if url exceeded max length
-      const fullUrl = `${BANNER_SERVER_ENDPOINT}?${parseQueryStringParameters(serverRequest)}`;
+      const fullUrl = `${bannerUrl}?${parseQueryStringParameters(serverRequest)}`;
       let extraCharacters = fullUrl.length - MAX_BANNER_REQUEST_URL_LENGTH;
       if (extraCharacters > 0) {
         for (let i = 0; i < BANNER_REQUEST_PROPERTIES_TO_REDUCE.length; i++) {
@@ -136,7 +139,7 @@ export const spec = {
 
       serverRequests.push({
         method: 'GET',
-        url: getBannerUrl(stage),
+        url: bannerUrl,
         data: serverRequest
       });
     }
@@ -148,7 +151,7 @@ export const spec = {
       };
       serverRequests.push({
         method: 'POST',
-        url: VIDEO_SERVER_ENDPOINT,
+        url: videoUrl,
         data: serverRequest
       });
     }
@@ -649,9 +652,7 @@ function isStage(bidderRequest) {
   return bidderRequest.refererInfo?.referer?.contains('pb_force_a');
 }
 
-function getBannerUrl(isStage) {
-  if (isStage) {
-    return BANNER_STG_SERVER_ENDPOINT;
-  }
-  return BANNER_SERVER_ENDPOINT;
+function getAdserverUrl(path, stage) {
+  const domain = stage ? STAGE_DOMAIN : PROD_DOMAIN;
+  return `${domain}${path}`;
 }
