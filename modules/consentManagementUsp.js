@@ -298,12 +298,12 @@ export function resetConsentData() {
  */
 export function setConsentConfig(config) {
   config = config && config.usp;
+  if (config && config.disable === true) {
+    logWarn('consentManagement.usp installed but disabled, exiting module');
+    return;
+  }
   if (!config || typeof config !== 'object') {
     logWarn('consentManagement.usp config not defined, using defaults');
-  }
-  if (config && config.disable === true) {
-    logWarn('consentManagement.usp installed but disabled');
-    return;
   }
   if (config && isStr(config.cmpApi)) {
     consentAPI = config.cmpApi;
