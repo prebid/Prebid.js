@@ -299,8 +299,7 @@ export function resetConsentData() {
 export function setConsentConfig(config) {
   config = config && config.usp;
   if (!config || typeof config !== 'object') {
-    logWarn('consentManagement.usp config not defined, exiting usp consent manager');
-    return;
+    logWarn('consentManagement.usp config not defined, using defaults');
   }
   if (isStr(config.cmpApi)) {
     consentAPI = config.cmpApi;
