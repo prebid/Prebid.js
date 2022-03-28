@@ -260,7 +260,7 @@ export function newBidder(spec) {
   function isUnknownBidder(unknownBidder, bidderCode) {
     let currentBidderSettings = !!bidderSettings.get(bidderCode, 'allowUnknownBidderCodes');
     let unknownBiddersList = bidderSettings.get(bidderCode, 'allowedUnknownBidderCodes');
-    if (!!unknownBidder && bidderCode !== unknownBidder) {
+    if (!!unknownBidder && !!bidderCode && bidderCode !== unknownBidder) {
       if (!currentBidderSettings || (isArray(unknownBiddersList) && (unknownBiddersList[0] !== '*' && !unknownBiddersList.includes(unknownBidder)))) {
         return true;
       }
