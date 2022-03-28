@@ -86,7 +86,6 @@ const PROVIDERS = [
   'connectid',
   'tapadId',
   'quantcastId',
-  'flocId',
   'pubProvidedId'
 ];
 const REQUIRED_VIDEO_PARAMS = ['mimes', 'minduration', 'maxduration']; // note: protocol/protocols is also reqd
@@ -449,11 +448,10 @@ function getBidRequest(id, impressions, validBidRequests) {
  * From the userIdAsEids array, filter for the ones our adserver can use, and modify them
  * for our purposes, e.g. add rtiPartner
  * @param {array} allEids userIdAsEids passed in by prebid
- * @param {object} flocId flocId passed in by prebid
  * @return {object} contains toSend (eids to send to the adserver) and seenSources (used to filter
  *                  identity info from IX Library)
  */
-function getEidInfo(allEids, flocData) {
+function getEidInfo(allEids) {
   let toSend = [];
   let seenSources = {};
   if (isArray(allEids)) {
@@ -469,16 +467,6 @@ function getEidInfo(allEids, flocData) {
         toSend.push(eid);
       }
     }
-  }
-
-  const isValidFlocId = flocData && flocData.id && flocData.version;
-  if (isValidFlocId) {
-    const flocEid = {
-      'source': 'chrome.com',
-      'uids': [{ 'id': flocData.id, 'ext': { 'rtiPartner': 'flocId', 'ver': flocData.version } }]
-    };
-    toSend.push(flocEid);
-    seenSources['chrome.com'] = true;
   }
 
   return { toSend, seenSources };
@@ -498,7 +486,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   // Always use secure HTTPS protocol.
   let baseUrl = SECURE_BID_URL;
   // Get ids from Prebid User ID Modules
-  let eidInfo = getEidInfo(deepAccess(validBidRequests, '0.userIdAsEids'), deepAccess(validBidRequests, '0.userId.flocId'));
+  let eidInfo = getEidInfo(deepAccess(validBidRequests, '0.userIdAsEids'));
   let userEids = eidInfo.toSend;
   const pageUrl = getPageUrl() || deepAccess(bidderRequest, 'refererInfo.referer');
 
