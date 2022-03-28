@@ -45,9 +45,7 @@ describe('consentManagement', function () {
       });
 
       it('should not run if disable is true', function () {
-        setConsentConfig({usp: {
-        disable: true
-      }});
+        setConsentConfig({usp: {disable: true}});
         expect(consentAPI).to.be.undefined;
         expect(consentTimeout).to.be.undefined;
         sinon.assert.callCount(utils.logWarn, 1);
