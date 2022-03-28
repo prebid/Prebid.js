@@ -245,16 +245,6 @@ function getBidRequestFloor(bid) {
 
 function userIdAsEids(bidRequest) {
   const eids = createEidsArray(deepAccess(bidRequest, 'userId')) || [];
-
-  const flocData = deepAccess(bidRequest, 'userId.flocId');
-  const isFlocIdValid = flocData && flocData.id && flocData.version;
-  if (isFlocIdValid) {
-    eids.push({
-      source: 'chrome.com',
-      uids: [{ id: flocData.id, atype: 1, ext: { ver: flocData.version } }],
-    });
-  }
-
   return eids;
 }
 
