@@ -61,6 +61,7 @@ describe('consentManagement', function () {
       it('should not exit the consent manager if config.usp is not an object', function() {
         setConsentConfig({});
         expect(consentAPI).to.be.equal('iab');
+        expect(consentTimeout).to.be.equal(50);
         sinon.assert.callCount(utils.logInfo, 3);
       });
 
@@ -73,12 +74,14 @@ describe('consentManagement', function () {
       it('should exit the consent manager if only config.gdpr is an object', function() {
         setConsentConfig({ gdpr: { cmpApi: 'iab' } });
         expect(consentAPI).to.be.equal('iab');
+        expect(consentTimeout).to.be.equal(50);
         sinon.assert.callCount(utils.logInfo, 3);
       });
 
       it('should exit consentManagementUsp module if config is "undefined"', function() {
         setConsentConfig(undefined);
         expect(consentAPI).to.be.equal('iab');
+        expect(consentTimeout).to.be.equal(50);
         sinon.assert.callCount(utils.logInfo, 3);
       });
     });
