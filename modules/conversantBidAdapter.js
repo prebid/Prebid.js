@@ -136,6 +136,12 @@ export const spec = {
 
     let userExt = {};
 
+    // pass schain object if it is present
+    const schain = deepAccess(validBidRequests, '0.schain');
+    if (schain) {
+      deepSetValue(payload, 'source.ext.schain', schain);
+    }
+
     if (bidderRequest) {
       // Add GDPR flag and consent string
       if (bidderRequest.gdprConsent) {
