@@ -149,7 +149,7 @@ export const spec = {
         }
       }
 
-      const mimes = getBidIdParameter('mimes', bid.params) || ['application/javascript', 'video/mp4', 'video/webm'];
+      const mimes = deepAccess(bid, 'mediaTypes.video.mimes') || getBidIdParameter('mimes', bid.params) || ['application/javascript', 'video/mp4', 'video/webm'];
 
       const spotxReq = {
         id: bid.bidId,
@@ -176,28 +176,30 @@ export const spec = {
         spotxReq.bidfloor = getBidIdParameter('price_floor', bid.params);
       }
 
-      if (getBidIdParameter('start_delay', bid.params) != '') {
-        spotxReq.video.startdelay = 0 + Boolean(getBidIdParameter('start_delay', bid.params));
+      const startdelay = deepAccess(bid, 'mediaTypes.video.startdelay') || getBidIdParameter('start_delay', bid.params);
+      if (startdelay != '') {
+        spotxReq.video.startdelay = 0 + Boolean(startdelay);
       }
 
-      if (getBidIdParameter('min_duration', bid.params) != '') {
-        spotxReq.video.minduration = getBidIdParameter('min_duration', bid.params);
+      const minduration = deepAccess(bid, 'mediaTypes.video.minduration') || getBidIdParameter('min_duration', bid.params);
+      if (minduration != '') {
+        spotxReq.video.minduration = minduration;
       }
 
-      if (getBidIdParameter('max_duration', bid.params) != '') {
-        spotxReq.video.maxduration = getBidIdParameter('max_duration', bid.params);
+      const maxduration = deepAccess(bid, 'mediaTypes.video.maxduration') || getBidIdParameter('max_duration', bid.params);
+      if (maxduration != '') {
+        spotxReq.video.maxduration = maxduration;
       }
 
-      if (getBidIdParameter('placement_type', bid.params) != '') {
-        spotxReq.video.ext.placement = getBidIdParameter('placement_type', bid.params);
+      placement
+      const placement = deepAccess(bid, 'mediaTypes.video.placement') || getBidIdParameter('placement_type', bid.params);
+      if (placement != '') {
+        spotxReq.video.ext.placement = placement;
       }
 
-      if (getBidIdParameter('position', bid.params) != '') {
-        spotxReq.video.ext.pos = getBidIdParameter('position', bid.params);
-      } else {
-        if (deepAccess(bid, 'mediaTypes.video.pos')) {
-          spotxReq.video.ext.pos = deepAccess(bid, 'mediaTypes.video.pos');
-        }
+      const position = deepAccess(bid, 'mediaTypes.video.pos') || getBidIdParameter('position', bid.params);
+      if (position != '') {
+        spotxReq.video.ext.pos = position;
       }
 
       if (bid.crumbs && bid.crumbs.pubcid) {
