@@ -11,7 +11,7 @@ const NOTIFY_URL = 'https://ssp.wp.pl/bidder/notify';
 const TRACKER_URL = 'https://bdr.wpcdn.pl/tag/jstracker.js';
 const GVLID = 676;
 const TMAX = 450;
-const BIDDER_VERSION = '5.41';
+const BIDDER_VERSION = '5.5';
 const W = window;
 const { navigator } = W;
 const oneCodeDetection = {};
@@ -547,6 +547,7 @@ const spec = {
         'bidid-' prefix indicates oneCode (parameterless) request and response
       */
       response.seatbid.forEach(seatbid => {
+        let creativeCache;
         seat = seatbid.seat;
         seatbid.bid.forEach(serverBid => {
           // get data from bid response
@@ -572,11 +573,12 @@ const spec = {
 
               ext also might contain publisherId and custom ad label
             */
-            const { siteid, slotid, pubid, adlabel } = ext;
+            const { siteid, slotid, pubid, adlabel, cache } = ext;
             site.id = siteid || site.id;
             site.slot = slotid || site.slot;
             site.publisherId = pubid;
             site.adLabel = adlabel;
+            creativeCache = cache;
           }
 
           if (bidRequest && site.id && !strIncludes(site.id, 'bidid')) {
@@ -608,6 +610,7 @@ const spec = {
               bid.mediaType = 'video';
               bid.vastXml = serverBid.adm;
               bid.vastContent = serverBid.adm;
+              bid.vastUrl = creativeCache;
             } else if (isNativeAd(serverBid)) {
               // native
               bid.mediaType = 'native';
