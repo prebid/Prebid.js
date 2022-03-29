@@ -311,11 +311,6 @@ export const spec = {
 
       applyFPD(bidRequest, VIDEO, data);
 
-      // if storedAuctionResponse has been set, pass SRID
-      if (bidRequest.storedAuctionResponse) {
-        deepSetValue(data.imp[0], 'ext.prebid.storedauctionresponse.id', bidRequest.storedAuctionResponse.toString());
-      }
-
       // set ext.prebid.auctiontimestamp using auction time
       deepSetValue(data.imp[0], 'ext.prebid.auctiontimestamp', bidderRequest.auctionStart);
 
