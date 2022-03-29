@@ -141,7 +141,7 @@ function getPlacementId(bid) {
     if (bid.mediaTypes.video) size = bid.mediaTypes.video.sizes && bid.mediaTypes.video.playerSize
   }
 
-  const host = windowTop && windowTop.location && windowTop.location.host || ''
+  const host = (windowTop && windowTop.location && windowTop.location.host) || ''
   return `g${groupId};${size.join('x')};${host}`
 }
 

@@ -58,8 +58,8 @@ describe('nextMillenniumBidAdapterTests', function() {
     const request = spec.buildRequests(bidRequestDataGI);
     const requestData = JSON.parse(request[0].data)
     const storeRequestId = requestData.ext.prebid.storedrequest.id
-    const template = 'g1234;300x250;'
-    expect(storeRequestId).to.equal(template);
+    const templateRE = /^g\d+;\d+x\d+;/
+    expect(templateRE.test(storeRequestId)).to.true;
   });
 
   it('Check if refresh_count param is incremented', function() {
