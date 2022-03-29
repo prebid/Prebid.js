@@ -4,7 +4,7 @@
  * @module modules/trustpidSystem
  * @requires module:modules/userId
  */
-import { logInfo, logError } from '../src/utils.js';
+import { logInfo } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 
