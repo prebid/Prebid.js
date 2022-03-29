@@ -27,5 +27,6 @@
   "smilewantedBidAdapter",
   "spotxBidAdapter",
   "telariaBidAdapter",
-  "tripleliftBidAdapter"
+  "tripleliftBidAdapter",
+  "yahoosspBidAdapter"
 ]
