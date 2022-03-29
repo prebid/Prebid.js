@@ -138,7 +138,7 @@ function getPlacementId(bid) {
   let size = []
   if (bid.mediaTypes) {
     if (bid.mediaTypes.banner) size = bid.mediaTypes.banner.sizes && bid.mediaTypes.banner.sizes[0]
-    if (bid.mediaTypes.video) size = bid.mediaTypes.video.sizes && bid.mediaTypes.video.playerSize
+    if (bid.mediaTypes.video) size = bid.mediaTypes.video.playerSize
   }
 
   const host = (windowTop && windowTop.location && windowTop.location.host) || ''
