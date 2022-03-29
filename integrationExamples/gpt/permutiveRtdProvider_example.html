@@ -46,6 +46,12 @@
                 },
                 bids: [
                   {
+                    bidder: 'ix',
+                    params: {
+                      siteId: '123456',
+                    }
+                  },
+                  {
                     bidder: 'appnexus',
                     params: {
                       placementId: 13144370,
@@ -135,6 +141,7 @@
             pbjs.que.push(function() {
               pbjs.setConfig({
                 debug: true,
+                pageUrl: 'http://www.test.com/test.html',
                 realTimeData: {
                   auctionDelay: 80, // maximum time for RTD modules to respond
                   dataProviders: [
@@ -142,8 +149,19 @@
                       name: 'permutive',
                       waitForIt: true,
                       params: {
-                        acBidders: ['appnexus', 'rubicon', 'ozone', 'trustx'],
+                        acBidders: ['appnexus', 'rubicon', 'ozone', 'trustx', 'ix'],
                         maxSegs: 500,
+                        transformations: [
+                          {
+                            id: 'iabAudienceTaxonomy11',
+                            config: {
+                              iabIds: {
+                                1000001: '777777',
+                                1000002: '888888'
+                              }
+                            }
+                          }
+                        ],
                         overwrites: {
                           rubicon: function (bid, data, acEnabled, utils, defaultFn) {
                             if (defaultFn){
@@ -160,7 +178,7 @@
                 }
               });
               pbjs.setBidderConfig({
-                bidders: ['appnexus', 'rubicon'],
+                bidders: ['appnexus', 'rubicon', 'ix'],
                 config: {
                   ortb2: {
                     site: {
