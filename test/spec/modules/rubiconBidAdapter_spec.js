@@ -248,7 +248,6 @@ describe('the rubicon adapter', function () {
       criteoId: '1111',
     };
     bid.userIdAsEids = createEidsArray(bid.userId);
-    bid.storedAuctionResponse = 11111;
   }
 
   function createVideoBidderRequestNoVideo() {
@@ -2082,22 +2081,6 @@ describe('the rubicon adapter', function () {
           expect(request.data.user.keywords).to.deep.equal('d');
           expect(request.data.site.ext.data).to.deep.equal(expected.siteData);
           expect(request.data.user.ext.data).to.deep.equal(expected.userData);
-        });
-
-        it('should include storedAuctionResponse in video bid request', function () {
-          createVideoBidderRequest();
-
-          sandbox.stub(Date, 'now').callsFake(() =>
-            bidderRequest.auctionStart + 100
-          );
-
-          const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          expect(request.data.imp).to.exist.and.to.be.a('array');
-          expect(request.data.imp).to.have.lengthOf(1);
-          expect(request.data.imp[0].ext).to.exist.and.to.be.a('object');
-          expect(request.data.imp[0].ext.prebid).to.exist.and.to.be.a('object');
-          expect(request.data.imp[0].ext.prebid.storedauctionresponse).to.exist.and.to.be.a('object');
-          expect(request.data.imp[0].ext.prebid.storedauctionresponse.id).to.equal('11111');
         });
 
         it('should include pbadslot in bid request', function () {
