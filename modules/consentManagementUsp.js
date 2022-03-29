@@ -224,6 +224,8 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
  * If it's bad, we exit the module depending on config settings.
  * If it's good, then we store the value and exits the module.
  * @param {object} consentObject required; object returned by USPAPI that contains user's consent choices
+ * @param {function(string)} onSuccess callback accepting the resolved consent USP consent string
+ * @param {function(string, ...{}?)} onError callback accepting error message and any extra error arguments (used purely for logging)
  */
 function processUspData(consentObject, {onSuccess, onError}) {
   const valid = !!(consentObject && consentObject.usPrivacy);

@@ -34,9 +34,7 @@ const cmpCallMap = {
 
 /**
  * This function reads the consent string from the config to obtain the consent information of the user.
- * @param {function(string)} cmpSuccess acts as a success callback when the value is read from config; pass along consentObject (string) from CMP
- * @param {function(string)} cmpError acts as an error callback while interacting with the config string; pass along an error message (string)
- * @param {object} hookConfig contains module related variables (see comment in requestBidsHook function)
+ * @param {function({})} onSuccess acts as a success callback when the value is read from config; pass along consentObject from CMP
  */
 function lookupStaticConsentData({onSuccess}) {
   onSuccess(staticConsentData);
@@ -46,9 +44,10 @@ function lookupStaticConsentData({onSuccess}) {
  * This function handles interacting with an IAB compliant CMP to obtain the consent information of the user.
  * Given the async nature of the CMP's API, we pass in acting success/error callback functions to exit this function
  * based on the appropriate result.
- * @param {function(string)} cmpSuccess acts as a success callback when CMP returns a value; pass along consentObject (string) from CMP
- * @param {function(string)} cmpError acts as an error callback while interacting with CMP; pass along an error message (string)
- * @param {object} hookConfig contains module related variables (see comment in requestBidsHook function)
+ * @param {function({})} onSuccess acts as a success callback when CMP returns a value; pass along consentObjectfrom CMP
+ * @param {function(string, ...{}?)} cmpError acts as an error callback while interacting with CMP; pass along an error message (string) and any extra error arguments (purely for logging)
+ * @param width
+ * @param height size info passed to the SafeFrame API (used only for TCFv1 when Prebid is running within a safeframe)
  */
 function lookupIabConsent({onSuccess, onError, width, height}) {
   function findCMP() {
