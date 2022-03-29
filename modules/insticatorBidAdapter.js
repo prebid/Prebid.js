@@ -50,6 +50,12 @@ function setUserId(userId) {
 
 function buildImpression(bidRequest) {
   const format = [];
+  const ext = {
+    insticator: {
+      adUnitId: bidRequest.params.adUnitId,
+    },
+  }
+
   const sizes =
     deepAccess(bidRequest, 'mediaTypes.banner.sizes') || bidRequest.sizes;
 
@@ -60,17 +66,19 @@ function buildImpression(bidRequest) {
     });
   }
 
+  const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
+
+  if (gpid) {
+    ext.gpid = gpid;
+  }
+
   return {
     id: bidRequest.bidId,
     tagid: bidRequest.adUnitCode,
     banner: {
       format,
     },
-    ext: {
-      insticator: {
-        adUnitId: bidRequest.params.adUnitId,
-      },
-    },
+    ext,
   };
 }
 
