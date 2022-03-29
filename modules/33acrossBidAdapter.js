@@ -1,16 +1,26 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import {
-  deepAccess, uniques, isArray, getWindowTop, isGptPubadsDefined, isSlotMatchingAdUnitCode, logInfo, logWarn,
-  getWindowSelf
+  deepAccess,
+  uniques,
+  isArray,
+  getWindowTop,
+  isGptPubadsDefined,
+  isSlotMatchingAdUnitCode,
+  logInfo,
+  logWarn,
+  getWindowSelf,
+  mergeDeep,
 } from '../src/utils.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
+// **************************** UTILS *************************** //
 const BIDDER_CODE = '33across';
 const END_POINT = 'https://ssc.33across.com/api/v1/hb';
 const SYNC_ENDPOINT = 'https://ssc-cms.33across.com/ps/?m=xch&rt=html&ru=deb';
 
 const CURRENCY = 'USD';
+const GVLID = 58;
 const GUID_PATTERN = /^[a-zA-Z0-9_-]{22}$/;
 
 const PRODUCT = {
@@ -41,6 +51,14 @@ const adapterState = {
 };
 
 const NON_MEASURABLE = 'nm';
+
+function getTTXConfig() {
+  const ttxSettings = Object.assign({},
+    config.getConfig('ttxSettings')
+  );
+
+  return ttxSettings;
+}
 
 // **************************** VALIDATION *************************** //
 function isBidRequestValid(bid) {
@@ -74,6 +92,7 @@ function _validateGUID(bid) {
 
 function _validateBanner(bid) {
   const banner = deepAccess(bid, 'mediaTypes.banner');
+
   // If there's no banner no need to validate against banner rules
   if (banner === undefined) {
     return true;
@@ -140,91 +159,125 @@ function _validateVideo(bid) {
 // NOTE: With regards to gdrp consent data, the server will independently
 // infer the gdpr applicability therefore, setting the default value to false
 function buildRequests(bidRequests, bidderRequest) {
+  const {
+    ttxSettings,
+    gdprConsent,
+    uspConsent,
+    pageUrl
+  } = _buildRequestParams(bidRequests, bidderRequest);
+
+  const groupedRequests = _buildRequestGroups(ttxSettings, bidRequests);
+
+  const serverRequests = [];
+
+  for (const key in groupedRequests) {
+    serverRequests.push(
+      _createServerRequest({
+        bidRequests: groupedRequests[key],
+        gdprConsent,
+        uspConsent,
+        pageUrl,
+        ttxSettings
+      })
+    )
+  }
+
+  return serverRequests;
+}
+
+function _buildRequestParams(bidRequests, bidderRequest) {
+  const ttxSettings = getTTXConfig();
+
   const gdprConsent = Object.assign({
     consentString: undefined,
     gdprApplies: false
   }, bidderRequest && bidderRequest.gdprConsent);
 
   const uspConsent = bidderRequest && bidderRequest.uspConsent;
+
   const pageUrl = (bidderRequest && bidderRequest.refererInfo) ? (bidderRequest.refererInfo.referer) : (undefined);
 
   adapterState.uniqueSiteIds = bidRequests.map(req => req.params.siteId).filter(uniques);
 
-  return bidRequests.map(bidRequest => _createServerRequest(
-    {
-      bidRequest,
-      gdprConsent,
-      uspConsent,
-      pageUrl
-    })
-  );
+  return {
+    ttxSettings,
+    gdprConsent,
+    uspConsent,
+    pageUrl
+  }
+}
+
+function _buildRequestGroups(ttxSettings, bidRequests) {
+  const bidRequestsComplete = bidRequests.map(_inferProduct);
+  const enableSRAMode = ttxSettings && ttxSettings.enableSRAMode;
+  const keyFunc = (enableSRAMode === true) ? _getSRAKey : _getMRAKey;
+
+  return _groupBidRequests(bidRequestsComplete, keyFunc);
+}
+
+function _groupBidRequests(bidRequests, keyFunc) {
+  const groupedRequests = {};
+
+  bidRequests.forEach((req) => {
+    const key = keyFunc(req);
+
+    groupedRequests[key] = groupedRequests[key] || [];
+    groupedRequests[key].push(req);
+  });
+
+  return groupedRequests;
+}
+
+function _getSRAKey(bidRequest) {
+  return `${bidRequest.params.siteId}:${bidRequest.params.productId}`;
+}
+
+function _getMRAKey(bidRequest) {
+  return `${bidRequest.bidId}`;
 }
 
 // Infer the necessary data from valid bid for a minimal ttxRequest and create HTTP request
-// NOTE: At this point, TTX only accepts request for a single impression
-function _createServerRequest({bidRequest, gdprConsent = {}, uspConsent, pageUrl}) {
+function _createServerRequest({ bidRequests, gdprConsent = {}, uspConsent, pageUrl, ttxSettings }) {
   const ttxRequest = {};
-  const params = bidRequest.params;
+  const { siteId, test } = bidRequests[0].params;
 
   /*
    * Infer data for the request payload
    */
-  ttxRequest.imp = [{}];
+  ttxRequest.imp = [];
 
-  if (deepAccess(bidRequest, 'mediaTypes.banner')) {
-    ttxRequest.imp[0].banner = {
-      ..._buildBannerORTB(bidRequest)
-    }
-  }
+  bidRequests.forEach((req) => {
+    ttxRequest.imp.push(_buildImpORTB(req));
+  });
 
-  if (deepAccess(bidRequest, 'mediaTypes.video')) {
-    ttxRequest.imp[0].video = _buildVideoORTB(bidRequest);
-  }
-
-  ttxRequest.imp[0].ext = {
-    ttx: {
-      prod: _getProduct(bidRequest)
-    }
-  };
-
-  ttxRequest.site = { id: params.siteId };
+  ttxRequest.site = { id: siteId };
 
   if (pageUrl) {
     ttxRequest.site.page = pageUrl;
   }
 
-  // Go ahead send the bidId in request to 33exchange so it's kept track of in the bid response and
-  // therefore in ad targetting process
-  ttxRequest.id = bidRequest.bidId;
+  ttxRequest.id = bidRequests[0].auctionId;
 
   if (gdprConsent.consentString) {
-    ttxRequest.user = setExtension(
-      ttxRequest.user,
-      'consent',
-      gdprConsent.consentString
-    )
+    ttxRequest.user = setExtensions(ttxRequest.user, {
+      'consent': gdprConsent.consentString
+    });
   }
 
-  if (Array.isArray(bidRequest.userIdAsEids) && bidRequest.userIdAsEids.length > 0) {
-    ttxRequest.user = setExtension(
-      ttxRequest.user,
-      'eids',
-      bidRequest.userIdAsEids
-    )
+  if (Array.isArray(bidRequests[0].userIdAsEids) && bidRequests[0].userIdAsEids.length > 0) {
+    ttxRequest.user = setExtensions(ttxRequest.user, {
+      'eids': bidRequests[0].userIdAsEids
+    });
   }
 
-  ttxRequest.regs = setExtension(
-    ttxRequest.regs,
-    'gdpr',
-    Number(gdprConsent.gdprApplies)
-  );
+  ttxRequest.regs = setExtensions(ttxRequest.regs, {
+    'gdpr': Number(gdprConsent.gdprApplies)
+  });
 
   if (uspConsent) {
-    ttxRequest.regs = setExtension(
-      ttxRequest.regs,
-      'us_privacy',
-      uspConsent
-    )
+    ttxRequest.regs = setExtensions(ttxRequest.regs, {
+      'us_privacy': uspConsent
+    });
   }
 
   ttxRequest.ext = {
@@ -237,16 +290,14 @@ function _createServerRequest({bidRequest, gdprConsent = {}, uspConsent, pageUrl
     }
   };
 
-  if (bidRequest.schain) {
-    ttxRequest.source = setExtension(
-      ttxRequest.source,
-      'schain',
-      bidRequest.schain
-    )
+  if (bidRequests[0].schain) {
+    ttxRequest.source = setExtensions(ttxRequest.source, {
+      'schain': bidRequests[0].schain
+    });
   }
 
   // Finally, set the openRTB 'test' param if this is to be a test bid
-  if (params.test === 1) {
+  if (test === 1) {
     ttxRequest.test = 1;
   }
 
@@ -259,8 +310,7 @@ function _createServerRequest({bidRequest, gdprConsent = {}, uspConsent, pageUrl
   };
 
   // Allow the ability to configure the HB endpoint for testing purposes.
-  const ttxSettings = config.getConfig('ttxSettings');
-  const url = (ttxSettings && ttxSettings.url) || `${END_POINT}?guid=${params.siteId}`;
+  const url = (ttxSettings && ttxSettings.url) || `${END_POINT}?guid=${siteId}`;
 
   // Return the server request
   return {
@@ -272,12 +322,34 @@ function _createServerRequest({bidRequest, gdprConsent = {}, uspConsent, pageUrl
 }
 
 // BUILD REQUESTS: SET EXTENSIONS
-function setExtension(obj = {}, key, value) {
-  return Object.assign({}, obj, {
-    ext: Object.assign({}, obj.ext, {
-      [key]: value
-    })
+function setExtensions(obj = {}, extFields) {
+  return mergeDeep({}, obj, {
+    'ext': extFields
   });
+}
+
+// BUILD REQUESTS: IMP
+function _buildImpORTB(bidRequest) {
+  const imp = {
+    id: bidRequest.bidId,
+    ext: {
+      ttx: {
+        prod: deepAccess(bidRequest, 'params.productId')
+      }
+    }
+  };
+
+  if (deepAccess(bidRequest, 'mediaTypes.banner')) {
+    imp.banner = {
+      ..._buildBannerORTB(bidRequest)
+    }
+  }
+
+  if (deepAccess(bidRequest, 'mediaTypes.video')) {
+    imp.video = _buildVideoORTB(bidRequest);
+  }
+
+  return imp;
 }
 
 // BUILD REQUESTS: SIZE INFERENCE
@@ -297,6 +369,14 @@ function _getSize(size) {
 }
 
 // BUILD REQUESTS: PRODUCT INFERENCE
+function _inferProduct(bidRequest) {
+  return mergeDeep({}, bidRequest, {
+    params: {
+      productId: _getProduct(bidRequest)
+    }
+  });
+}
+
 function _getProduct(bidRequest) {
   const { params, mediaTypes } = bidRequest;
 
@@ -367,7 +447,7 @@ function _buildVideoORTB(bidRequest) {
 
   const video = {}
 
-  const {w, h} = _getSize(videoParams.playerSize[0]);
+  const { w, h } = _getSize(videoParams.playerSize[0]);
   video.w = w;
   video.h = h;
 
@@ -388,11 +468,11 @@ function _buildVideoORTB(bidRequest) {
   if (product === PRODUCT.INSTREAM) {
     video.startdelay = video.startdelay || 0;
     video.placement = 1;
-  };
+  }
 
   // bidfloors
   if (typeof bidRequest.getFloor === 'function') {
-    const bidfloors = _getBidFloors(bidRequest, {w: video.w, h: video.h}, VIDEO);
+    const bidfloors = _getBidFloors(bidRequest, { w: video.w, h: video.h }, VIDEO);
 
     if (bidfloors) {
       Object.assign(video, {
@@ -404,6 +484,7 @@ function _buildVideoORTB(bidRequest) {
       });
     }
   }
+
   return video;
 }
 
@@ -556,54 +637,61 @@ function _isIframe() {
 }
 
 // **************************** INTERPRET RESPONSE ******************************** //
-// NOTE: At this point, the response from 33exchange will only ever contain one bid
-// i.e. the highest bid
 function interpretResponse(serverResponse, bidRequest) {
-  const bidResponses = [];
+  const { seatbid, cur = 'USD' } = serverResponse.body;
 
-  // If there are bids, look at the first bid of the first seatbid (see NOTE above for assumption about ttx)
-  if (serverResponse.body.seatbid.length > 0 && serverResponse.body.seatbid[0].bid.length > 0) {
-    bidResponses.push(_createBidResponse(serverResponse.body));
+  if (!isArray(seatbid)) {
+    return [];
   }
 
-  return bidResponses;
+  // Pick seats with valid bids and convert them into an Array of responses
+  // in format expected by Prebid Core
+  return seatbid
+    .filter((seat) => (
+      isArray(seat.bid) &&
+      seat.bid.length > 0
+    ))
+    .reduce((acc, seat) => {
+      return acc.concat(
+        seat.bid.map((bid) => _createBidResponse(bid, cur))
+      );
+    }, []);
 }
 
-// All this assumes that only one bid is ever returned by ttx
-function _createBidResponse(response) {
+function _createBidResponse(bid, cur) {
   const isADomainPresent =
-    response.seatbid[0].bid[0].adomain && response.seatbid[0].bid[0].adomain.length;
-  const bid = {
-    requestId: response.id,
+    bid.adomain && bid.adomain.length;
+  const bidResponse = {
+    requestId: bid.impid,
     bidderCode: BIDDER_CODE,
-    cpm: response.seatbid[0].bid[0].price,
-    width: response.seatbid[0].bid[0].w,
-    height: response.seatbid[0].bid[0].h,
-    ad: response.seatbid[0].bid[0].adm,
-    ttl: response.seatbid[0].bid[0].ttl || 60,
-    creativeId: response.seatbid[0].bid[0].crid,
-    mediaType: deepAccess(response.seatbid[0].bid[0], 'ext.ttx.mediaType', BANNER),
-    currency: response.cur,
+    cpm: bid.price,
+    width: bid.w,
+    height: bid.h,
+    ad: bid.adm,
+    ttl: bid.ttl || 60,
+    creativeId: bid.crid,
+    mediaType: deepAccess(bid, 'ext.ttx.mediaType', BANNER),
+    currency: cur,
     netRevenue: true
   }
 
   if (isADomainPresent) {
-    bid.meta = {
-      advertiserDomains: response.seatbid[0].bid[0].adomain
+    bidResponse.meta = {
+      advertiserDomains: bid.adomain
     };
   }
 
-  if (bid.mediaType === VIDEO) {
-    const vastType = deepAccess(response.seatbid[0].bid[0], 'ext.ttx.vastType', 'xml');
+  if (bidResponse.mediaType === VIDEO) {
+    const vastType = deepAccess(bid, 'ext.ttx.vastType', 'xml');
 
     if (vastType === 'xml') {
-      bid.vastXml = bid.ad;
+      bidResponse.vastXml = bidResponse.ad;
     } else {
-      bid.vastUrl = bid.ad;
+      bidResponse.vastUrl = bidResponse.ad;
     }
   }
 
-  return bid;
+  return bidResponse;
 }
 
 // **************************** USER SYNC *************************** //
@@ -648,6 +736,7 @@ export const spec = {
 
   code: BIDDER_CODE,
   supportedMediaTypes: [ BANNER, VIDEO ],
+  gvlid: GVLID,
   isBidRequestValid,
   buildRequests,
   interpretResponse,

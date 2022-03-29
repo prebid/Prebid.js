@@ -11,7 +11,7 @@ describe('adnuntiusBidAdapter', function () {
   const GVLID = 855;
   const usi = utils.generateUUID()
   const meta = [{ key: 'usi', value: usi }]
-  const storage = getStorageManager(GVLID, 'adnuntius')
+  const storage = getStorageManager({gvlid: GVLID, moduleName: 'adnuntius'})
   storage.setDataInLocalStorage('adn.metaData', JSON.stringify(meta))
 
   afterEach(function () {
@@ -19,6 +19,7 @@ describe('adnuntiusBidAdapter', function () {
   });
   const tzo = new Date().getTimezoneOffset();
   const ENDPOINT_URL = `${URL}${tzo}&format=json&userId=${usi}`;
+  const ENDPOINT_URL_NOCOOKIE = `${URL}${tzo}&format=json&userId=${usi}&noCookies=true`;
   const ENDPOINT_URL_SEGMENTS = `${URL}${tzo}&format=json&segments=segment1,segment2,segment3&userId=${usi}`;
   const ENDPOINT_URL_CONSENT = `${URL}${tzo}&format=json&consentString=consentString&userId=${usi}`;
   const adapter = newBidder(spec);
@@ -251,6 +252,24 @@ describe('adnuntiusBidAdapter', function () {
       expect(request[0]).to.have.property('url')
       expect(request[0].url).to.equal(ENDPOINT_URL_SEGMENTS);
     });
+
+    it('should user user ID if present in ortb2.user.id field', function () {
+      config.setBidderConfig({
+        bidders: ['adnuntius', 'other'],
+        config: {
+          ortb2: {
+            user: {
+              id: usi
+            }
+          }
+        }
+      });
+
+      const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidRequests));
+      expect(request.length).to.equal(1);
+      expect(request[0]).to.have.property('url')
+      expect(request[0].url).to.equal(ENDPOINT_URL);
+    });
   });
 
   describe('user privacy', function () {
@@ -266,6 +285,22 @@ describe('adnuntiusBidAdapter', function () {
       expect(request.length).to.equal(1);
       expect(request[0]).to.have.property('url')
       expect(request[0].url).to.equal(ENDPOINT_URL);
+    });
+  });
+
+  describe('use cookie', function () {
+    it('should send noCookie in url if set to false.', function () {
+      config.setBidderConfig({
+        bidders: ['adnuntius'],
+        config: {
+          useCookie: false
+        }
+      });
+
+      const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidRequests));
+      expect(request.length).to.equal(1);
+      expect(request[0]).to.have.property('url')
+      expect(request[0].url).to.equal(ENDPOINT_URL_NOCOOKIE);
     });
   });
 

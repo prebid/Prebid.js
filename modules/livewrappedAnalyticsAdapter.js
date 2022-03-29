@@ -86,6 +86,8 @@ let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE
         bidResponse.readyToSend = 1;
         bidResponse.mediaType = args.mediaType == 'native' ? 2 : (args.mediaType == 'video' ? 4 : 1);
         bidResponse.floorData = args.floorData;
+        bidResponse.meta = args.meta;
+
         if (!bidResponse.ttr) {
           bidResponse.ttr = time - bidResponse.start;
         }
@@ -114,6 +116,9 @@ let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE
         let wonBid = cache.auctions[args.auctionId].bids[args.requestId];
         wonBid.won = true;
         wonBid.floorData = args.floorData;
+        wonBid.rUp = args.rUp;
+        wonBid.meta = args.meta;
+        wonBid.dealId = args.dealId;
         if (wonBid.sendStatus != 0) {
           livewrappedAnalyticsAdapter.sendEvents();
         }
@@ -250,7 +255,8 @@ function getResponses(gdpr, auctionIds) {
           auctionId: auctionIdPos,
           auc: bid.auc,
           buc: bid.buc,
-          lw: bid.lw
+          lw: bid.lw,
+          meta: bid.meta
         });
       }
     });
@@ -288,7 +294,10 @@ function getWins(gdpr, auctionIds) {
           auctionId: auctionIdPos,
           auc: bid.auc,
           buc: bid.buc,
-          lw: bid.lw
+          lw: bid.lw,
+          rUp: bid.rUp,
+          meta: bid.meta,
+          dealId: bid.dealId
         });
       }
     });

@@ -92,7 +92,8 @@ describe('Improve Digital Adapter Tests', function () {
     gdprConsent: {
       consentString: 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
       vendorData: {},
-      gdprApplies: true
+      gdprApplies: true,
+      addtlConsent: '1~1.35.41.101',
     },
   };
 
@@ -278,6 +279,7 @@ describe('Improve Digital Adapter Tests', function () {
       const request = spec.buildRequests([bidRequest], bidderRequestGdpr)[0];
       const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
       expect(params.bid_request.gdpr).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
+      expect(params.bid_request.user.ext.consented_providers_settings.consented_providers).to.exist.and.to.deep.equal([1, 35, 41, 101]);
     });
 
     it('should add CCPA consent string', function () {
@@ -513,6 +515,67 @@ describe('Improve Digital Adapter Tests', function () {
       });
       getConfigStub.restore();
     });
+
+    it('should set pagecat and genre ➞ fpd:ortb2.site', function() {
+      config.setConfig(JSON.parse('{"ortb2":{"site":{"cat":["IAB2"],"pagecat":["IAB2-2"],"content":{"genre":"Adventure"}}}}'));
+      const bidRequest = Object.assign({}, simpleBidRequest);
+      const request = spec.buildRequests([bidRequest], bidderRequestReferrer)[0];
+      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.pagecat).to.be.an('array');
+      expect(params.bid_request.pagecat).to.deep.equal(['IAB2-2']);
+      expect(params.bid_request.genre).to.be.a('string');
+      expect(params.bid_request.genre).be.equal('Adventure');
+    });
+
+    it('should not set pagecat and genre when malformed data provided ➞ fpd:ortb2.site', function() {
+      config.setConfig(JSON.parse('{"ortb2":{"site":{"pagecat":"IAB2-2","content":{"genre":["Adventure"]}}}}'));
+      const bidRequest = Object.assign({}, simpleBidRequest);
+      const request = spec.buildRequests([bidRequest], bidderRequestReferrer)[0];
+      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.pagecat).does.not.exist;
+      expect(params.bid_request.genre).does.not.exist;
+    });
+
+    it('should use cat when pagecat not available ➞ fpd:ortb2.site', function() {
+      config.setConfig(JSON.parse('{"ortb2":{"site":{"cat":["IAB2"]}}}'));
+      const bidRequest = Object.assign({}, simpleBidRequest);
+      const request = spec.buildRequests([bidRequest], bidderRequestReferrer)[0];
+      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.pagecat).to.be.an('array');
+      expect(params.bid_request.pagecat).to.deep.equal(['IAB2']);
+    });
+
+    it('should format pagecat correctly ➞ fpd:ortb2.site', function() {
+      config.setConfig(JSON.parse('{"ortb2":{"site":{"cat":["IAB2", ["IAB-1"], "IAB3", 123, ""]}}}'));
+      const bidRequest = Object.assign({}, simpleBidRequest);
+      const request = spec.buildRequests([bidRequest], bidderRequestReferrer)[0];
+      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.pagecat).to.be.an('array');
+      expect(params.bid_request.pagecat).to.deep.equal([
+        'IAB2',
+        'IAB3'
+      ]
+      );
+    });
+
+    it('should set coppa', function() {
+      sinon.stub(config, 'getConfig')
+        .withArgs('coppa')
+        .returns(true);
+      const bidRequest = Object.assign({}, simpleBidRequest);
+      const request = spec.buildRequests([bidRequest], bidderRequestReferrer)[0];
+      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.coppa).to.equal(1);
+
+      config.getConfig.restore();
+    });
+
+    it('should undefined coppa', function() {
+      const bidRequest = Object.assign({}, simpleBidRequest);
+      const request = spec.buildRequests([bidRequest], bidderRequestReferrer)[0];
+      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.coppa).to.equal(undefined);
+    });
   });
 
   const serverResponse = {
@@ -536,6 +599,33 @@ describe('Improve Digital Adapter Tests', function () {
           'w': 600,
           'cid': '99006',
           'adm': 'document.writeln(\"<a href=\\\"https:\\/\\/ice.360yield.com\\/click\\/wVmhKEKFeJufyP3hFfp7fv95ynoKe7vnG9V-j8EyAzklSoKRkownAclw4Zzcw-OcbJMg2KfjNiO8GoO9WP1jbNM8Q5GtmClbG9hZPBS4v6oBBiDi50AjRqHQsDAoBOJrIJtVyCfrnAIxvbysozCpLt20ov6jz2JPi6fe.D55HNeDLDyiLNgxVPa3y9jJZf65JBirCjOoZ-1Mj1BLB.57VdMaEhpGjjl5HnPgw0Pv7Hm1BO7PB9nCXJ9IwOH3IrKo.Wyy1iKDk6zeGwGOkQHSOMuQnCHyD35x6bhDQrpl5H6fTRTR8D2m5.-Zjh3fs8SKlo0i25EjKPw65iF.tvgcnq01U08OIh86EeSciamJgV0hNsk20TcTubfsoPN4are4nQ0y2gB-lz9tf3AjqHpSz5NoJWrpWtnrBHbjm.dS1XUQB1tzcLpIkA34nDe2eNxRZbZkZNSSs.Y8jQemfbjuLpttcemHqidFZo3xp37eSfUImw.HbyFdnK-wxFDYudgsIDxGJWI=\\/\\/https%3A%2F%2Fwww.improvedigital.com\\\" target=\\\"_blank\\\"><img style=\\\"border: 0;\\\" border=\\\"0\\\" width=\\\"600\\\" height=\\\"290\\\" src=\\\"https:\\/\\/creative.360yield.com\\/file\\/221728\\/ImproveDigital600x290.jpg\\\" alt=\\\"\\\"\\/><\\/a>\");document.writeln(\"<improvedigital_ad_output_information tp_id=\\\"\\\" buyer_id=\\\"0\\\" rtb_advertiser=\\\"\\\" campaign_id=\\\"99006\\\" line_item_id=\\\"268515\\\" creative_id=\\\"422031\\\" crid=\\\"0\\\" placement_id=\\\"1053688\\\"><\\/improvedigital_ad_output_information>\");'
+        }
+      ],
+      'debug': ''
+    }
+  };
+
+  const serverResponseRazr = {
+    'body': {
+      'id': '687a06c541d8d1',
+      'site_id': 191642,
+      'bid': [
+        {
+          'isNet': false,
+          'id': '33e9500b21129f',
+          'advid': '5279',
+          'price': 1.45888594164456,
+          'nurl': 'https://ice.360yield.com/imp_pixel?ic=wVmhKI07hCVyGC1sNdFp.6buOSiGYOw8jPyZLlcMY2RCwD4ek3Fy6.xUI7U002skGBs3objMBoNU-Frpvmb9js3NKIG0YZJgWaNdcpXY9gOXE9hY4-wxybCjVSNzhOQB-zic73hzcnJnKeoGgcfvt8fMy18-yD0aVdYWt4zbqdoITOkKNCPBEgbPFu1rcje-o7a64yZ7H3dKvtnIixXQYc1Ep86xGSBGXY6xW2KfUOMT6vnkemxO72divMkMdhR8cAuqIubbx-ZID8-xf5c9k7p6DseeBW0I8ionrlTHx.rGosgxhiFaMqtr7HiA7PBzKvPdeEYN0hQ8RYo8JzYL82hA91A3V2m9Ij6y0DfIJnnrKN8YORffhxmJ6DzwEl1zjrVFbD01bqB3Vdww8w8PQJSkKQkd313tr-atU8LS26fnBmOngEkVHwAr2WCKxuUvxHmuVBTA-Lgz7wKwMoOJCA3hFxMavVb0ZFB7CK0BUTVU6z0De92Q.FJKNCHLMbjX3vcAQ90=',
+          'h': 290,
+          'pid': 1053688,
+          'sync': [
+            'https://link1',
+            'https://link2'
+          ],
+          'crid': '422031',
+          'w': 600,
+          'cid': '99006',
+          'adm': 'document.writeln("<script async src=\"https:\/\/cdn.inskinad.com\/isfe\/tags\/dsp.js\"><\/script>\n<script type=\"text\/javascript\">\n      (function() {\n        var ns = window.inskin = window.inskin || {};\n        ns.dsp = ns.dsp || [];\n        ns.dsp.push({\n          uri: \"razr:\/\/provider\/format\"\n        });\n      })();\n<\/script>");document.writeln("<improvedigital_ad_output_information tp_id=\"\" buyer_id=\"0\" rtb_advertiser=\"\" campaign_id=\"123456\" line_item_id=\"123456\" creative_id=\"123456\" crid=\"0\" placement_id=\"123456\"><\/improvedigital_ad_output_information>");'
         }
       ],
       'debug': ''
@@ -1008,6 +1098,16 @@ describe('Improve Digital Adapter Tests', function () {
       expect(bids[0].renderer).to.exist;
       delete (bids[0].renderer);
       expect(bids).to.deep.equal(expectedBidOutstreamVideo);
+    });
+
+    it('should not affect non-RAZR bids', function () {
+      const bids = spec.interpretResponse(serverResponse, {bidderRequest});
+      expect(bids[0].renderer).to.not.exist;
+    });
+
+    it('should detect RAZR bids', function () {
+      const bids = spec.interpretResponse(serverResponseRazr, {bidderRequest});
+      expect(bids[0].renderer).to.exist;
     });
   });
 

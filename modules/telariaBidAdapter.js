@@ -1,8 +1,6 @@
 import { logError, isEmpty, deepAccess, triggerPixel, logWarn, isArray } from '../src/utils.js';
-import {createBid as createBidFactory} from '../src/bidfactory.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {VIDEO} from '../src/mediaTypes.js';
-import {STATUS} from '../src/constants.json';
 
 const BIDDER_CODE = 'telaria';
 const DOMAIN = 'tremorhub.com';
@@ -11,7 +9,11 @@ const EVENTS_ENDPOINT = `events.${DOMAIN}/diag`;
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['tremor', 'tremorvideo'],
+  gvlid: 52,
+  aliases: [
+    { code: 'tremor', gvlid: 52 },
+    { code: 'tremorvideo', gvlid: 52 }
+  ],
   supportedMediaTypes: [VIDEO],
   /**
    * Determines if the request is valid
@@ -86,7 +88,9 @@ export const spec = {
       logError(errorMessage);
     } else if (!isEmpty(bidResult.seatbid)) {
       bidResult.seatbid[0].bid.forEach(tag => {
-        bids.push(createBid(STATUS.GOOD, bidderRequest, tag, width, height, BIDDER_CODE));
+        if (tag) {
+          bids.push(createBid(bidderRequest, tag, width, height));
+        }
       });
     }
 
@@ -253,38 +257,31 @@ function generateUrl(bid, bidderRequest) {
 }
 
 /**
- * Create and return a bid object based on status and tag
- * @param status
+ * Create and return a bid response
  * @param reqBid
  * @param response
  * @param width
  * @param height
- * @param bidderCode
  */
-function createBid(status, reqBid, response, width, height, bidderCode) {
-  let bid = createBidFactory(status, reqBid);
-
+function createBid(reqBid, response, width, height) {
   // TTL 5 mins by default, future support for extended imp wait time
-  if (response) {
-    Object.assign(bid, {
-      requestId: reqBid.bidId,
-      cpm: response.price,
-      creativeId: response.crid || '-1',
-      vastXml: response.adm,
-      vastUrl: reqBid.vastUrl,
-      mediaType: 'video',
-      width: width,
-      height: height,
-      bidderCode: bidderCode,
-      currency: 'USD',
-      netRevenue: true,
-      ttl: 300,
-      ad: response.adm
-    });
-  }
+  const bid = {
+    requestId: reqBid.bidId,
+    cpm: response.price,
+    creativeId: response.crid || '-1',
+    vastXml: response.adm,
+    vastUrl: reqBid.vastUrl,
+    mediaType: 'video',
+    width: width,
+    height: height,
+    currency: 'USD',
+    netRevenue: true,
+    ttl: 300,
+    ad: response.adm,
+    meta: {}
+  };
 
-  bid.meta = bid.meta || {};
-  if (response && response.adomain && response.adomain.length > 0) {
+  if (response.adomain && response.adomain.length > 0) {
     bid.meta.advertiserDomains = response.adomain;
   }
 

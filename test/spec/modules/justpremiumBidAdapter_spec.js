@@ -97,12 +97,13 @@ describe('justpremium adapter', function () {
       expect(jpxRequest.id).to.equal(adUnits[0].params.zone)
       expect(jpxRequest.mediaTypes && jpxRequest.mediaTypes.banner && jpxRequest.mediaTypes.banner.sizes).to.not.equal('undefined')
       expect(jpxRequest.version.prebid).to.equal('$prebid.version$')
-      expect(jpxRequest.version.jp_adapter).to.equal('1.8.1')
+      expect(jpxRequest.version.jp_adapter).to.equal('1.8.2')
       expect(jpxRequest.pubcid).to.equal('0000000')
       expect(jpxRequest.uids.tdid).to.equal('1111111')
       expect(jpxRequest.uids.id5id.uid).to.equal('2222222')
       expect(jpxRequest.uids.digitrustid.data.id).to.equal('3333333')
       expect(jpxRequest.us_privacy).to.equal('1YYN')
+      expect(jpxRequest.ggExt).to.be.null
     })
   })
 

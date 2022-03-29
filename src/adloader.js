@@ -1,4 +1,4 @@
-import includes from 'core-js-pure/features/array/includes.js';
+import {includes} from './polyfill.js';
 import { logError, logWarn, insertElement } from './utils.js';
 
 const _requestCache = {};
@@ -8,7 +8,9 @@ const _approvedLoadExternalJSList = [
   'criteo',
   'outstream',
   'adagio',
-  'browsi'
+  'browsi',
+  'brandmetrics',
+  'justtag'
 ]
 
 /**

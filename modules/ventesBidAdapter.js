@@ -1,17 +1,11 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {convertCamelToUnderscore, isStr, isArray, isNumber, isPlainObject, replaceAuctionPrice} from '../src/utils.js';
-import find from 'core-js-pure/features/array/find.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import {convertCamelToUnderscore, isArray, isNumber, isPlainObject, isStr, replaceAuctionPrice} from '../src/utils.js';
+import {find} from '../src/polyfill.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 const BID_METHOD = 'POST';
 const BIDDER_URL = 'http://13.234.201.146:8088/va/ad';
-const FIRST_PRICE = 1;
-const NET_REVENUE = true;
-const TTL = 10;
-const USER_PARAMS = ['age', 'externalUid', 'segments', 'gender', 'dnt', 'language'];
-const DEVICE_PARAMS = ['ua', 'geo', 'dnt', 'lmt', 'ip', 'ipv6', 'devicetype'];
-const APP_DEVICE_PARAMS = ['geo', 'device_id']; // appid is collected separately
+
 const DOMAIN_REGEX = new RegExp('//([^/]*)');
 
 function groupBy(values, key) {
@@ -26,7 +20,11 @@ function groupBy(values, key) {
 
   return Object
     .keys(groups)
-    .map(id => ({id, key, values: groups[id]}));
+    .map(id => ({
+      id,
+      key,
+      values: groups[id]
+    }));
 }
 
 function validateMediaTypes(mediaTypes, allowedMediaTypes) {
@@ -45,22 +43,22 @@ function isBanner(mediaTypes) {
 
 function validateBanner(banner) {
   return isPlainObject(banner) &&
-    isArray(banner.sizes) &&
-    (banner.sizes.length > 0) &&
-    banner.sizes.every(validateMediaSizes);
+      isArray(banner.sizes) &&
+      (banner.sizes.length > 0) &&
+      banner.sizes.every(validateMediaSizes);
 }
 
 function validateMediaSizes(mediaSize) {
   return isArray(mediaSize) &&
-    (mediaSize.length === 2) &&
-    mediaSize.every(size => (isNumber(size) && size >= 0));
+      (mediaSize.length === 2) &&
+      mediaSize.every(size => (isNumber(size) && size >= 0));
 }
 
 function hasUserInfo(bid) {
   return !!bid.params.user;
 }
 
-function validateParameters(parameters, adUnit) {
+function validateParameters(parameters) {
   if (!(parameters.placementId)) {
     return false;
   }
@@ -101,8 +99,8 @@ function generateSiteFromAdUnitContext(bidRequests, adUnitContext) {
 
 function validateServerRequest(serverRequest) {
   return isPlainObject(serverRequest) &&
-    isPlainObject(serverRequest.data) &&
-    isArray(serverRequest.data.imp)
+      isPlainObject(serverRequest.data) &&
+      isArray(serverRequest.data.imp)
 }
 
 function createServerRequestFromAdUnits(adUnits, bidRequestId, adUnitContext) {
@@ -122,14 +120,15 @@ function generateBidRequestsFromAdUnits(bidRequests, bidRequestId, adUnitContext
   let userObj = {};
   if (userObjBid) {
     Object.keys(userObjBid.params.user)
-      .filter(param => includes(USER_PARAMS, param))
       .forEach((param) => {
         let uparam = convertCamelToUnderscore(param);
         if (param === 'segments' && isArray(userObjBid.params.user[param])) {
           let segs = [];
           userObjBid.params.user[param].forEach(val => {
             if (isNumber(val)) {
-              segs.push({'id': val});
+              segs.push({
+                'id': val
+              });
             } else if (isPlainObject(val)) {
               segs.push(val);
             }
@@ -146,7 +145,6 @@ function generateBidRequestsFromAdUnits(bidRequests, bidRequestId, adUnitContext
   if (deviceObjBid && deviceObjBid.params && deviceObjBid.params.device) {
     deviceObj = {};
     Object.keys(deviceObjBid.params.device)
-      .filter(param => includes(DEVICE_PARAMS, param))
       .forEach(param => deviceObj[param] = deviceObjBid.params.device[param]);
     if (!deviceObjBid.hasOwnProperty('ua')) {
       deviceObj.ua = navigator.userAgent;
@@ -159,37 +157,41 @@ function generateBidRequestsFromAdUnits(bidRequests, bidRequestId, adUnitContext
     deviceObj.ua = navigator.userAgent;
     deviceObj.language = navigator.language;
   }
-  const appDeviceObjBid = find(bidRequests, hasAppInfo);
-  let appIdObj;
-  if (appDeviceObjBid && appDeviceObjBid.params && appDeviceObjBid.params.app && appDeviceObjBid.params.app.id) {
-    Object.keys(appDeviceObjBid.params.app)
-      .filter(param => includes(APP_DEVICE_PARAMS, param))
-      .forEach(param => appDeviceObjBid[param] = appDeviceObjBid.params.app[param]);
-  }
 
   const payload = {}
   payload.id = bidRequestId
-  payload.at = FIRST_PRICE
+  payload.at = 1
   payload.cur = ['USD']
   payload.imp = bidRequests.reduce(generateImpressionsFromAdUnit, [])
-  payload.site = generateSiteFromAdUnitContext(bidRequests, adUnitContext)
-  payload.device = deviceObj
-  if (appDeviceObjBid && payload.site != null) {
+  const appDeviceObjBid = find(bidRequests, hasAppInfo);
+  if (!appDeviceObjBid) {
+    payload.site = generateSiteFromAdUnitContext(bidRequests, adUnitContext)
+  } else {
+    let appIdObj;
+    if (appDeviceObjBid && appDeviceObjBid.params && appDeviceObjBid.params.app && appDeviceObjBid.params.app.id) {
+      appIdObj = {};
+      Object.keys(appDeviceObjBid.params.app)
+        .forEach(param => appIdObj[param] = appDeviceObjBid.params.app[param]);
+    }
     payload.app = appIdObj;
   }
+  payload.device = deviceObj;
   payload.user = userObj
-  // payload.regs = getRegulationFromAdUnitContext(adUnitContext)
-  // payload.ext = generateBidRequestExtension()
-
   return payload
 }
 
 function generateImpressionsFromAdUnit(acc, adUnit) {
-  const {bidId, mediaTypes, params} = adUnit;
-  const {placementId} = params;
+  const {
+    bidId,
+    mediaTypes,
+    params
+  } = adUnit;
+  const {
+    placementId
+  } = params;
   const pmp = {};
 
-  if (placementId) pmp.deals = [{id: placementId}]
+  if (placementId) pmp.deals = [{ id: placementId }]
 
   const imps = Object
     .keys(mediaTypes)
@@ -204,21 +206,40 @@ function generateImpressionsFromAdUnit(acc, adUnit) {
 }
 
 function generateBannerFromAdUnit(impId, data, params) {
-  const {position, placementId} = params;
+  const {
+    position,
+    placementId
+  } = params;
   const pos = position || 0;
   const pmp = {};
-  const ext = {placementId};
+  const ext = {
+    placementId
+  };
 
-  if (placementId) pmp.deals = [{id: placementId}]
+  if (placementId) pmp.deals = [{ id: placementId }]
 
-  return data.sizes.map(([w, h]) => ({id: `${impId}`, banner: {format: [{w, h}], w, h, pos}, pmp, ext, tagid: placementId}));
+  return data.sizes.map(([w, h]) => ({
+    id: `${impId}`,
+    banner: {
+      format: [{
+        w,
+        h
+      }],
+      w,
+      h,
+      pos
+    },
+    pmp,
+    ext,
+    tagid: placementId
+  }));
 }
 
 function validateServerResponse(serverResponse) {
   return isPlainObject(serverResponse) &&
-    isPlainObject(serverResponse.body) &&
-    isStr(serverResponse.body.cur) &&
-    isArray(serverResponse.body.seatbid);
+      isPlainObject(serverResponse.body) &&
+      isStr(serverResponse.body.cur) &&
+      isArray(serverResponse.body.seatbid);
 }
 
 function seatBidsToAds(seatBid, bidResponse, serverRequest) {
@@ -241,10 +262,8 @@ function validateBids(bid) {
   return true;
 }
 
-const VAST_REGEXP = /VAST\s+version/;
-
 function getMediaType(adm) {
-  const videoRegex = new RegExp(VAST_REGEXP);
+  const videoRegex = new RegExp(/VAST\s+version/);
 
   if (videoRegex.test(adm)) {
     return VIDEO;
@@ -273,14 +292,16 @@ function generateAdFromBid(bid, bidResponse) {
     requestId: bid.impid,
     cpm: bid.price,
     currency: bidResponse.cur,
-    ttl: TTL,
+    ttl: 10,
     creativeId: bid.crid,
     mediaType: mediaType,
-    netRevenue: NET_REVENUE
+    netRevenue: true
   };
 
   if (bid.adomain) {
-    base.meta = { advertiserDomains: bid.adomain };
+    base.meta = {
+      advertiserDomains: bid.adomain
+    };
   }
 
   const size = getSizeFromBid(bid);
@@ -292,17 +313,21 @@ function generateAdFromBid(bid, bidResponse) {
     width: size.width,
     ad: creative.markup,
     adUrl: creative.markupUrl,
-    // vastXml: isVideo && !isStr(creative.markupUrl) ? creative.markup : null,
-    // vastUrl: isVideo && isStr(creative.markupUrl) ? creative.markupUrl : null,
     renderer: creative.renderer
   };
 }
 
 function getSizeFromBid(bid) {
   if (isNumber(bid.w) && isNumber(bid.h)) {
-    return { width: bid.w, height: bid.h };
+    return {
+      width: bid.w,
+      height: bid.h
+    };
   }
-  return { width: null, height: null };
+  return {
+    width: null,
+    height: null
+  };
 }
 
 function getCreativeFromBid(bid) {
@@ -333,12 +358,12 @@ const venavenBidderSpec = {
     const allowedBidderCodes = [this.code];
 
     return isPlainObject(adUnit) &&
-      allowedBidderCodes.indexOf(adUnit.bidder) !== -1 &&
-      isStr(adUnit.adUnitCode) &&
-      isStr(adUnit.bidderRequestId) &&
-      isStr(adUnit.bidId) &&
-      validateMediaTypes(adUnit.mediaTypes, this.supportedMediaTypes) &&
-      validateParameters(adUnit.params, adUnit);
+          allowedBidderCodes.indexOf(adUnit.bidder) !== -1 &&
+          isStr(adUnit.adUnitCode) &&
+          isStr(adUnit.bidderRequestId) &&
+          isStr(adUnit.bidId) &&
+          validateMediaTypes(adUnit.mediaTypes, this.supportedMediaTypes) &&
+          validateParameters(adUnit.params);
   },
   buildRequests(bidRequests, bidderRequest) {
     if (!bidRequests) return null;
@@ -367,4 +392,6 @@ const venavenBidderSpec = {
 
 registerBidder(venavenBidderSpec);
 
-export {venavenBidderSpec as spec};
+export {
+  venavenBidderSpec as spec
+};

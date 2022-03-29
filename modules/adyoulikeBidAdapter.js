@@ -1,13 +1,15 @@
-import { deepAccess, buildUrl, parseSizesInput } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import find from 'core-js-pure/features/array/find.js';
+import {buildUrl, deepAccess, parseSizesInput} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
+import {createEidsArray} from './userId/eids.js';
+import {find} from '../src/polyfill.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 
 const VERSION = '1.0';
 const BIDDER_CODE = 'adyoulike';
 const DEFAULT_DC = 'hb-api';
 const CURRENCY = 'USD';
+const GVLID = 259;
 
 const NATIVE_IMAGE = {
   image: {
@@ -35,6 +37,7 @@ const NATIVE_IMAGE = {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, NATIVE, VIDEO],
   aliases: ['ayl'], // short code
   /**
@@ -58,6 +61,7 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (bidRequests, bidderRequest) {
+    let hasVideo = false;
     const payload = {
       Version: VERSION,
       Bids: bidRequests.reduce((accumulator, bidReq) => {
@@ -85,6 +89,7 @@ export const spec = {
           accumulator[bidReq.bidId].Native = nativeReq;
         }
         if (mediatype === VIDEO) {
+          hasVideo = true;
           accumulator[bidReq.bidId].Video = bidReq.mediaTypes.video;
 
           const size = bidReq.mediaTypes.video.playerSize;
@@ -97,15 +102,19 @@ export const spec = {
       PageRefreshed: getPageRefreshed()
     };
 
-    if (bidderRequest && bidderRequest.gdprConsent) {
+    if (bidderRequest.gdprConsent) {
       payload.gdprConsent = {
         consentString: bidderRequest.gdprConsent.consentString,
         consentRequired: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : null
       };
     }
 
-    if (bidderRequest && bidderRequest.uspConsent) {
+    if (bidderRequest.uspConsent) {
       payload.uspConsent = bidderRequest.uspConsent;
+    }
+
+    if (deepAccess(bidderRequest, 'userId')) {
+      payload.userId = createEidsArray(bidderRequest.userId);
     }
 
     const data = JSON.stringify(payload);
@@ -115,7 +124,7 @@ export const spec = {
 
     return {
       method: 'POST',
-      url: createEndpoint(bidRequests, bidderRequest),
+      url: createEndpoint(bidRequests, bidderRequest, hasVideo),
       data,
       options
     };
@@ -175,11 +184,13 @@ function getCanonicalUrl() {
 
 /* Get mediatype from bidRequest */
 function getMediatype(bidRequest) {
+  if (deepAccess(bidRequest, 'mediaTypes.banner')) {
+    return BANNER;
+  }
   if (deepAccess(bidRequest, 'mediaTypes.video')) {
     return VIDEO;
-  } else if (deepAccess(bidRequest, 'mediaTypes.banner')) {
-    return BANNER;
-  } else if (deepAccess(bidRequest, 'mediaTypes.native')) {
+  }
+  if (deepAccess(bidRequest, 'mediaTypes.native')) {
     return NATIVE;
   }
 }
@@ -208,12 +219,13 @@ function getPageRefreshed() {
 }
 
 /* Create endpoint url */
-function createEndpoint(bidRequests, bidderRequest) {
+function createEndpoint(bidRequests, bidderRequest, hasVideo) {
   let host = getHostname(bidRequests);
+  const endpoint = hasVideo ? '/hb-api/prebid-video/v1' : '/hb-api/prebid/v1';
   return buildUrl({
     protocol: 'https',
     host: `${DEFAULT_DC}${host}.omnitagjs.com`,
-    pathname: '/hb-api/prebid/v1',
+    pathname: endpoint,
     search: createEndpointQS(bidderRequest)
   });
 }
@@ -340,7 +352,7 @@ function getTrackers(eventsArray, jsTrackers) {
 
 function getVideoAd(response) {
   var adJson = {};
-  if (typeof response.Ad === 'string') {
+  if (typeof response.Ad === 'string' && response.Ad.indexOf('\/\*PREBID\*\/') > 0) {
     adJson = JSON.parse(response.Ad.match(/\/\*PREBID\*\/(.*)\/\*PREBID\*\//)[1]);
     return deepAccess(adJson, 'Content.MainVideo.Vast');
   }
@@ -424,7 +436,7 @@ function getNativeAssets(response, nativeConfig) {
 
         const icurl = getImageUrl(adJson, deepAccess(adJson, 'Content.Preview.Sponsor.Logo.Resource'), iconSize[0], iconSize[1]);
 
-        if (url) {
+        if (icurl) {
           native[key] = {
             url: icurl,
             width: iconSize[0],
@@ -473,13 +485,15 @@ function createBid(response, bidRequests) {
     meta: response.Meta || { advertiserDomains: [] }
   };
 
-  if (request && request.Native) {
+  // retreive video response if present
+  const vast64 = response.Vast || getVideoAd(response);
+  if (vast64) {
+    bid.vastXml = window.atob(vast64);
+    bid.mediaType = 'video';
+  } else if (request.Native) {
+    // format Native response if Native was requested
     bid.native = getNativeAssets(response, request.Native);
     bid.mediaType = 'native';
-  } else if (request && request.Video) {
-    const vast64 = response.Vast || getVideoAd(response);
-    bid.vastXml = vast64 ? window.atob(vast64) : '';
-    bid.mediaType = 'video';
   } else {
     bid.width = response.Width;
     bid.height = response.Height;

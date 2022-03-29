@@ -6,14 +6,27 @@
 
 import adapterManager from '../src/adapterManager.js';
 import adapter from '../src/AnalyticsAdapter.js';
-import { loadExternalScript } from '../src/adloader.js';
-import { auctionManager } from '../src/auctionManager.js';
-import { AUCTION_COMPLETED } from '../src/auction.js';
-import { EVENTS } from '../src/constants.json';
-import find from 'core-js-pure/features/array/find.js';
+import {loadExternalScript} from '../src/adloader.js';
+import {auctionManager} from '../src/auctionManager.js';
+import {AUCTION_COMPLETED} from '../src/auction.js';
+import CONSTANTS from '../src/constants.json';
+import {find} from '../src/polyfill.js';
+import {getRefererInfo} from '../src/refererDetection.js';
 import {
-  deepAccess, logInfo, isPlainObject, logError, isStr, isNumber, getGptSlotInfoForAdUnitCode,
-  isFn, mergeDeep, logMessage, insertElement, logWarn, getUniqueIdentifierStr, parseUrl
+  deepAccess,
+  getGptSlotInfoForAdUnitCode,
+  getUniqueIdentifierStr,
+  insertElement,
+  isFn,
+  isNumber,
+  isPlainObject,
+  isStr,
+  logError,
+  logInfo,
+  logMessage,
+  logWarn,
+  mergeDeep,
+  parseUrl
 } from '../src/utils.js';
 
 const MODULE = 'adlooxAnalyticsAdapter';
@@ -45,6 +58,10 @@ MACRO['targetelt'] = function(b, c) {
 };
 MACRO['creatype'] = function(b, c) {
   return b.mediaType == 'video' ? ADLOOX_MEDIATYPE.VIDEO : ADLOOX_MEDIATYPE.DISPLAY;
+};
+MACRO['pageurl'] = function(b, c) {
+  const refererInfo = getRefererInfo();
+  return (refererInfo.canonicalUrl || refererInfo.referer || '').substr(0, 300).split(/[?#]/)[0];
 };
 MACRO['pbadslot'] = function(b, c) {
   const adUnit = find(auctionManager.getAdUnits(), a => b.adUnitCode === a.code);
@@ -199,9 +216,9 @@ analyticsAdapter.url = function(url, args, bid) {
   return url + a2qs(args);
 }
 
-analyticsAdapter[`handle_${EVENTS.AUCTION_END}`] = function(auctionDetails) {
+analyticsAdapter[`handle_${CONSTANTS.EVENTS.AUCTION_END}`] = function(auctionDetails) {
   if (!(auctionDetails.auctionStatus == AUCTION_COMPLETED && auctionDetails.bidsReceived.length > 0)) return;
-  analyticsAdapter[`handle_${EVENTS.AUCTION_END}`] = NOOP;
+  analyticsAdapter[`handle_${CONSTANTS.EVENTS.AUCTION_END}`] = NOOP;
 
   logMessage(MODULE, 'preloading verification JS');
 
@@ -214,7 +231,7 @@ analyticsAdapter[`handle_${EVENTS.AUCTION_END}`] = function(auctionDetails) {
   insertElement(link);
 }
 
-analyticsAdapter[`handle_${EVENTS.BID_WON}`] = function(bid) {
+analyticsAdapter[`handle_${CONSTANTS.EVENTS.BID_WON}`] = function(bid) {
   if (deepAccess(bid, 'ext.adloox.video.adserver')) {
     logMessage(MODULE, `measuring '${bid.mediaType}' ad unit code '${bid.adUnitCode}' via Ad Server module`);
     return;

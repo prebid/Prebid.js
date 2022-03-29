@@ -1,5 +1,7 @@
-import { expect } from 'chai';
-import { spec } from 'modules/undertoneBidAdapter.js';
+import {expect} from 'chai';
+import {spec} from 'modules/undertoneBidAdapter.js';
+import {BANNER, VIDEO} from '../../../src/mediaTypes';
+import {deepClone} from '../../../src/utils';
 
 const URL = 'https://hb.undertone.com/hb';
 const BIDDER_CODE = 'undertone';
@@ -276,6 +278,57 @@ describe('Undertone Adapter', () => {
       sandbox.restore();
     });
 
+    describe('getFloor', function () {
+      it('should send 0 floor when getFloor is undefined', function() {
+        const request = spec.buildRequests(videoBidReq, bidderReq);
+        const bidReq = JSON.parse(request.data)['x-ut-hb-params'][0];
+        expect(bidReq.mediaType).to.deep.equal(VIDEO);
+        expect(bidReq.bidfloor).to.deep.equal(0);
+      });
+      it('should send mocked floor when defined on video media-type', function() {
+        const clonedVideoBidReqArr = deepClone(videoBidReq);
+        const mockedFloorResponse = {
+          currency: 'USD',
+          floor: 2.3
+        };
+        clonedVideoBidReqArr[1].getFloor = () => mockedFloorResponse;
+
+        const request = spec.buildRequests(clonedVideoBidReqArr, bidderReq);
+        const bidReq1 = JSON.parse(request.data)['x-ut-hb-params'][0];
+        const bidReq2 = JSON.parse(request.data)['x-ut-hb-params'][1];
+        expect(bidReq1.mediaType).to.deep.equal(VIDEO);
+        expect(bidReq1.bidfloor).to.deep.equal(0);
+
+        expect(bidReq2.mediaType).to.deep.equal(VIDEO);
+        expect(bidReq2.bidfloor).to.deep.equal(mockedFloorResponse.floor);
+      });
+      it('should send mocked floor on banner media-type', function() {
+        const clonedValidBidReqArr = [deepClone(validBidReq)];
+        const mockedFloorResponse = {
+          currency: 'USD',
+          floor: 2.3
+        };
+        clonedValidBidReqArr[0].getFloor = () => mockedFloorResponse;
+
+        const request = spec.buildRequests(clonedValidBidReqArr, bidderReq);
+        const bidReq = JSON.parse(request.data)['x-ut-hb-params'][0];
+        expect(bidReq.mediaType).to.deep.equal(BANNER);
+        expect(bidReq.bidfloor).to.deep.equal(mockedFloorResponse.floor);
+      });
+      it('should send 0 floor on invalid currency', function() {
+        const clonedValidBidReqArr = [deepClone(validBidReq)];
+        const mockedFloorResponse = {
+          currency: 'EUR',
+          floor: 2.3
+        };
+        clonedValidBidReqArr[0].getFloor = () => mockedFloorResponse;
+
+        const request = spec.buildRequests(clonedValidBidReqArr, bidderReq);
+        const bidReq = JSON.parse(request.data)['x-ut-hb-params'][0];
+        expect(bidReq.mediaType).to.deep.equal(BANNER);
+        expect(bidReq.bidfloor).to.deep.equal(0);
+      });
+    });
     describe('supply chain', function () {
       it('should send supply chain if found on first bid', function () {
         const request = spec.buildRequests(supplyChainedBidReqs, bidderReq);

@@ -36,7 +36,7 @@ export const spec = {
     */
   buildRequests: function(validBidRequests, bidderRequest) {
     const slots = validBidRequests.map(beOpRequestSlotsMaker);
-    let pageUrl = deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || config.getConfig('pageUrl') || deepAccess(window, 'location.href');
+    let pageUrl = deepAccess(window, 'location.href') || deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || config.getConfig('pageUrl');
     let fpd = config.getLegacyFpd(config.getConfig('ortb2'));
     let gdpr = bidderRequest.gdprConsent;
     let firstSlot = slots[0];
@@ -99,16 +99,18 @@ export const spec = {
 }
 
 function buildTrackingParams(data, info, value) {
+  const accountId = data.params.accountId;
   return {
-    pid: data.params.accountId,
+    pid: accountId === undefined ? data.ad.match(/account: \“([a-f\d]{24})\“/)[1] : accountId,
     nid: data.params.networkId,
     nptnid: data.params.networkPartnerId,
-    bid: data.bidId,
+    bid: data.bidId || data.requestId,
     sl_n: data.adUnitCode,
     aid: data.auctionId,
     se_ca: 'bid',
     se_ac: info,
-    se_va: value
+    se_va: value,
+    url: window.location.href
   };
 }
 
