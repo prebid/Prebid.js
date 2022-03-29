@@ -20,7 +20,7 @@ describe('nextMillenniumBidAdapterTests', function() {
 
   const bidRequestDataGI = [
     {
-      adUnitCode: 'test-div',
+      adUnitCode: 'test-div-gi',
       bidId: 'bid1234',
       auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
       bidder: 'nextMillennium',
@@ -56,10 +56,11 @@ describe('nextMillenniumBidAdapterTests', function() {
 
   it('use parameters group_id', function() {
     const request = spec.buildRequests(bidRequestDataGI);
-    const requestData = JSON.parse(request[0].data)
-    const storeRequestId = requestData.ext.prebid.storedrequest.id
-    const templateRE = /^g\d+;\d+x\d+;/
-    expect(templateRE.test(storeRequestId)).to.true;
+    const requestData = JSON.parse(request[0].data);
+    const storeRequestId = requestData.ext.prebid.storedrequest.id;
+    const templateRE = /^g\d+;\d+x\d+;/;
+    expect(storeRequestId).to.be.equal('1---');
+    expect(templateRE.test(storeRequestId)).to.be.true;
   });
 
   it('Check if refresh_count param is incremented', function() {
