@@ -16,6 +16,7 @@ import {config as _config} from '../src/config.js';
 import {submodule} from '../src/hook.js';
 import {ajax} from '../src/ajax.js';
 import {getGlobal} from '../src/prebidGlobal.js';
+import {getRefererInfo} from '../src/refererDetection.js';
 import {
   _each,
   deepAccess,
@@ -297,6 +298,7 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
     }
   }
 
+  const refererInfo = getRefererInfo();
   const args = [
     [ 'v', `pbjs-${getGlobal().version}` ],
     [ 'c', config.params.clientid ],
@@ -305,7 +307,7 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
     [ 'imp', config.params.imps ],
     [ 'fc_ip', config.params.freqcap_ip ],
     [ 'fc_ipua', config.params.freqcap_ipua ],
-    [ 'pn', document.location.pathname ]
+    [ 'pn', (refererInfo.canonicalUrl || refererInfo.referer || '').substr(0, 300).split(/[?#]/)[0] ]
   ];
 
   if (!adUnits.length) {
