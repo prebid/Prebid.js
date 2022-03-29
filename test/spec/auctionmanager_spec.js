@@ -1152,8 +1152,7 @@ describe('auctionmanager.js', function () {
           enabled: true,
           bidRequests: [{
             bidderCode: BIDDER_CODE,
-            adUnitCode: ADUNIT_CODE,
-            storedAuctionResponse: '11111'
+            adUnitCode: ADUNIT_CODE
           }]
         }
       });
@@ -1211,8 +1210,6 @@ describe('auctionmanager.js', function () {
 
       const bid = find(auctionBidRequests[0].bids, bid => bid.adUnitCode === ADUNIT_CODE);
       assert.equal(typeof bid !== 'undefined', true);
-      assert.equal(bid.hasOwnProperty('storedAuctionResponse'), true);
-      assert.equal(bid.storedAuctionResponse, '11111');
     });
   });
 
