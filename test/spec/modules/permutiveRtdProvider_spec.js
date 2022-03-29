@@ -42,10 +42,17 @@ describe('permutiveRtdProvider', function () {
         return { id: seg }
       })
 
+      const expectedBidderExtensionData = {
+        ix: {
+          segtax: '4'
+        }
+      }
+
       setBidderRtb({}, moduleConfig)
 
       acBidders.forEach(bidder => {
         expect(bidderConfig[bidder].ortb2.user.data).to.deep.include.members([{
+          ext: expectedBidderExtensionData[bidder] || {},
           name: 'permutive.com',
           segment: expectedTargetingData
         }])
@@ -91,11 +98,22 @@ describe('permutiveRtdProvider', function () {
   describe('Getting segments', function () {
     it('should retrieve segments in the expected structure', function () {
       const data = transformedTargeting()
-      expect(getSegments(250)).to.deep.equal(data)
+      expect(getSegments(250, {})).to.deep.equal(data)
+    })
+    it('should apply bidder transformations', function () {
+      const transformedSegments = ['1', '2', '3']
+      const transformations = {
+        ix: segments => transformedSegments
+      }
+
+      const expectedSegmentData = transformedTargeting()
+      expectedSegmentData['ix'] = transformedSegments
+
+      expect(getSegments(10, transformations)).to.deep.equal(expectedSegmentData)
     })
     it('should enforce max segments', function () {
       const max = 1
-      const segments = getSegments(max)
+      const segments = getSegments(max, {})
 
       for (const key in segments) {
         expect(segments[key]).to.have.length(max)
@@ -293,6 +311,10 @@ describe('permutiveRtdProvider', function () {
       expect(isAcEnabled({ params: { acBidders: ['ozone'] } }, 'ozone')).to.equal(true)
       expect(isAcEnabled({ params: { acBidders: ['kjdvb'] } }, 'ozone')).to.equal(false)
     })
+    it('checks if AC is enabled for Index', function () {
+      expect(isAcEnabled({ params: { acBidders: ['ix'] } }, 'ix')).to.equal(true)
+      expect(isAcEnabled({ params: { acBidders: ['kjdvb'] } }, 'ix')).to.equal(false)
+    })
   })
 })
 
@@ -313,7 +335,7 @@ function getConfig () {
     name: 'permutive',
     waitForIt: true,
     params: {
-      acBidders: ['appnexus', 'rubicon', 'ozone', 'trustx'],
+      acBidders: ['appnexus', 'rubicon', 'ozone', 'trustx', 'ix'],
       maxSegs: 500
     }
   }
@@ -326,7 +348,8 @@ function transformedTargeting () {
     ac: [...data._pcrprs, ...data._ppam, ...data._psegs.filter(seg => seg >= 1000000)],
     appnexus: data._papns,
     rubicon: data._prubicons,
-    gam: data._pdfps
+    gam: data._pdfps,
+    ix: data._psegs.filter(seg => seg >= 1000000)
   }
 }
 
