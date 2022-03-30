@@ -2,7 +2,7 @@ import * as utils from 'src/utils.js';
 import { expect } from 'chai';
 import optimonAnalyticsAdapter from '../../../modules/optimonAnalyticsAdapter.js';
 import adapterManager from 'src/adapterManager';
-import events from 'src/events';
+import * as events from 'src/events';
 import constants from 'src/constants.json'
 
 const AD_UNIT_CODE = 'demo-adunit-1';

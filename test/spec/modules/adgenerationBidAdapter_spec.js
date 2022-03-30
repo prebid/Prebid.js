@@ -84,6 +84,23 @@ describe('AdgenerationAdapter', function () {
         bidderRequestId: '14a9f773e30243',
         auctionId: '4aae9f05-18c6-4fcd-80cf-282708cd584a',
         transactionTd: 'f76f6dfd-d64f-4645-a29f-682bac7f431a'
+      },
+      { // bannerWithHyperId
+        bidder: 'adg',
+        params: {
+          id: '58278', // banner
+        },
+        adUnitCode: 'adunit-code',
+        sizes: [[320, 100]],
+        bidId: '2f6ac468a9c15e',
+        bidderRequestId: '14a9f773e30243',
+        auctionId: '4aae9f05-18c6-4fcd-80cf-282708cd584a',
+        transactionTd: 'f76f6dfd-d64f-4645-a29f-682bac7f431a',
+        userId: {
+          novatiq: {
+            snowflake: {'id': 'novatiqId', syncResponse: 1}
+          }
+        }
       }
     ];
     const bidderRequest = {
@@ -92,9 +109,10 @@ describe('AdgenerationAdapter', function () {
       }
     };
     const data = {
-      banner: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=300x250%2C320x100&currency=JPY&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.2.0&imark=1&tp=https%3A%2F%2Fexample.com`,
-      bannerUSD: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=300x250%2C320x100&currency=USD&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.2.0&imark=1&tp=https%3A%2F%2Fexample.com`,
-      native: 'posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=1x1&currency=JPY&pbver=' + prebid.version + '&sdkname=prebidjs&adapterver=1.2.0&tp=https%3A%2F%2Fexample.com'
+      banner: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=300x250%2C320x100&currency=JPY&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.3.0&imark=1&tp=https%3A%2F%2Fexample.com`,
+      bannerUSD: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=300x250%2C320x100&currency=USD&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.3.0&imark=1&tp=https%3A%2F%2Fexample.com`,
+      native: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=1x1&currency=JPY&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.3.0&tp=https%3A%2F%2Fexample.com`,
+      bannerWithHyperId: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=320x100&currency=JPY&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.3.0&imark=1&tp=https%3A%2F%2Fexample.com&hyper_id=novatiqId`,
     };
     it('sends bid request to ENDPOINT via GET', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
@@ -117,6 +135,19 @@ describe('AdgenerationAdapter', function () {
     it('should attache params to the native request', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest)[1];
       expect(request.data).to.equal(data.native);
+    });
+
+    it('should attache params to the bannerWithHyperId request', function () {
+      const defaultUA = window.navigator.userAgent;
+      window.navigator.__defineGetter__('userAgent', function() {
+        return 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1';
+      });
+      const request = spec.buildRequests(bidRequests, bidderRequest)[2];
+
+      window.navigator.__defineGetter__('userAgent', function() {
+        return defaultUA;
+      });
+      expect(request.data).to.equal(data.bannerWithHyperId);
     });
     it('allows setConfig to set bidder currency for JPY', function () {
       config.setConfig({
@@ -797,6 +828,11 @@ describe('AdgenerationAdapter', function () {
     });
 
     it('handles ADGBrowserM responses', function () {
+      config.setConfig({
+        currency: {
+          adServerCurrency: 'JPY'
+        }
+      });
       const result = spec.interpretResponse({body: serverResponse.normal.upperBillboard}, bidRequests.upperBillboard)[0];
       expect(result.requestId).to.equal(bidResponses.normal.upperBillboard.requestId);
       expect(result.width).to.equal(bidResponses.normal.upperBillboard.width);
