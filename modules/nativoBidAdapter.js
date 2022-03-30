@@ -473,7 +473,7 @@ const area = (size) => size[0] * size[1]
  * @param {Array} filterData - The filter data to add
  */
 function appendFilterData(filter, filterData) {
-  if (filterData && Array.isArray(filterData) && filterData.length > 0) {
+  if (filterData && Array.isArray(filterData) && filterData.length) {
     filterData.forEach((ad) => filter.add(ad))
   }
 }
