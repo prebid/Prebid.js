@@ -601,7 +601,7 @@ describe('Improve Digital Adapter Tests', function () {
       expect(payload.site.content).does.exist.and.equal('XYZ');
       expect(payload.site.page).does.exist.and.equal('https://improveditigal.com/');
       expect(payload.site.domain).does.exist.and.equal('improveditigal.com');
-      getConfigStub.restore();
+      getConfigStub.reset();
 
       request = spec.buildRequests([simpleBidRequest], bidderRequestReferrer)[0];
       payload = JSON.parse(request.data);
@@ -609,7 +609,6 @@ describe('Improve Digital Adapter Tests', function () {
       expect(payload.site.page).does.exist.and.equal('https://blah.com/test.html');
       expect(payload.site.domain).does.exist.and.equal('blah.com');
 
-      getConfigStub = sinon.stub(config, 'getConfig');
       getConfigStub.withArgs('ortb2.site').returns({
         content: 'ZZZ',
       });
@@ -628,9 +627,8 @@ describe('Improve Digital Adapter Tests', function () {
       let payload = JSON.parse(request.data);
       expect(payload.site.page).does.exist.and.equal('https://improvidigital.com/test-page');
       expect(payload.site.domain).does.exist.and.equal('improvidigital.com');
-      getConfigStub.restore();
+      getConfigStub.reset();
 
-      getConfigStub = sinon.stub(config, 'getConfig');
       getConfigStub.withArgs('pageUrl').returns(undefined);
       request = spec.buildRequests([simpleBidRequest], bidderRequestReferrer)[0];
       payload = JSON.parse(request.data);
