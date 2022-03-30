@@ -566,6 +566,88 @@ describe('Improve Digital Adapter Tests', function () {
       expect(payload.imp[0].ext.gpid).to.not.exist;
       expect(payload.imp[0].instl).to.not.exist;
     });
+
+    it('should not set site when app is defined in FPD', function () {
+      const getConfigStub = sinon.stub(config, 'getConfig');
+      getConfigStub.withArgs('ortb2.app').returns({ content: 'XYZ' });
+      let request = spec.buildRequests([simpleBidRequest], bidderRequest)[0];
+      let payload = JSON.parse(request.data);
+      expect(payload.site).does.not.exist;
+      expect(payload.app).does.exist;
+      expect(payload.app.content).does.exist.and.equal('XYZ');
+      getConfigStub.restore();
+    });
+
+    it('should not set site when app is defined in CONFIG', function () {
+      const getConfigStub = sinon.stub(config, 'getConfig');
+      getConfigStub.withArgs('app').returns({ content: 'XYZ' });
+      let request = spec.buildRequests([simpleBidRequest], bidderRequest)[0];
+      let payload = JSON.parse(request.data);
+      expect(payload.site).does.not.exist;
+      expect(payload.app).does.exist;
+      expect(payload.app.content).does.exist.and.equal('XYZ');
+      getConfigStub.restore();
+    });
+
+    it('should set correct site params', function () {
+      let getConfigStub = sinon.stub(config, 'getConfig');
+      getConfigStub.withArgs('site').returns({
+        content: 'XYZ',
+        page: 'https://improveditigal.com/',
+        domain: 'improveditigal.com'
+      });
+      let request = spec.buildRequests([simpleBidRequest], bidderRequestReferrer)[0];
+      let payload = JSON.parse(request.data);
+      expect(payload.site.content).does.exist.and.equal('XYZ');
+      expect(payload.site.page).does.exist.and.equal('https://improveditigal.com/');
+      expect(payload.site.domain).does.exist.and.equal('improveditigal.com');
+      getConfigStub.restore();
+
+      request = spec.buildRequests([simpleBidRequest], bidderRequestReferrer)[0];
+      payload = JSON.parse(request.data);
+      expect(payload.site.content).does.not.exist;
+      expect(payload.site.page).does.exist.and.equal('https://blah.com/test.html');
+      expect(payload.site.domain).does.exist.and.equal('blah.com');
+
+      getConfigStub = sinon.stub(config, 'getConfig');
+      getConfigStub.withArgs('ortb2.site').returns({
+        content: 'ZZZ',
+      });
+      request = spec.buildRequests([simpleBidRequest], bidderRequestReferrer)[0];
+      payload = JSON.parse(request.data);
+      expect(payload.site.content).does.exist.and.equal('ZZZ');
+      expect(payload.site.page).does.exist.and.equal('https://blah.com/test.html');
+      expect(payload.site.domain).does.exist.and.equal('blah.com');
+      getConfigStub.restore();
+    });
+
+    it('should set pageUrl as site param', function () {
+      let getConfigStub = sinon.stub(config, 'getConfig');
+      getConfigStub.withArgs('pageUrl').returns('https://improvidigital.com/test-page');
+      let request = spec.buildRequests([simpleBidRequest], bidderRequestReferrer)[0];
+      let payload = JSON.parse(request.data);
+      expect(payload.site.page).does.exist.and.equal('https://improvidigital.com/test-page');
+      expect(payload.site.domain).does.exist.and.equal('improvidigital.com');
+      getConfigStub.restore();
+
+      getConfigStub = sinon.stub(config, 'getConfig');
+      getConfigStub.withArgs('pageUrl').returns(undefined);
+      request = spec.buildRequests([simpleBidRequest], bidderRequestReferrer)[0];
+      payload = JSON.parse(request.data);
+      expect(payload.site.page).does.exist.and.equal('https://blah.com/test.html');
+      expect(payload.site.domain).does.exist.and.equal('blah.com');
+      getConfigStub.restore();
+    });
+
+    it('should set site when app not available', function () {
+      const getConfigStub = sinon.stub(config, 'getConfig');
+      getConfigStub.withArgs('app').returns(undefined);
+      let request = spec.buildRequests([simpleBidRequest], bidderRequest)[0];
+      let payload = JSON.parse(request.data);
+      expect(payload.site).does.exist;
+      expect(payload.app).does.not.exist;
+      getConfigStub.restore();
+    });
   });
 
   const serverResponse = {

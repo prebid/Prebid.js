@@ -131,22 +131,9 @@ export const spec = {
       if (typeof bidderRequest.uspConsent !== typeof undefined) {
         deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent);
       }
-      // Site
-      const url = config.getConfig('pageUrl') || deepAccess(bidderRequest, 'refererInfo.referer');
-      const urlObj = parseUrl(url);
-      deepSetValue(request, 'site.page', url);
-      deepSetValue(request, 'site.domain', urlObj && urlObj.hostname);
     }
 
-    // First party data
-    const fpd = config.getConfig('ortb2');
-    if (fpd) {
-      if (fpd.site) {
-        request.site = request.site ? {...request.site, ...fpd.site} : fpd.site;
-      } else if (fpd.app) {
-        request.app = fpd.app;
-      }
-    }
+    ID_REQUEST.buildSiteOrApp(request, bidderRequest);
 
     const bidRequest0 = bidRequests[0];
 
@@ -421,6 +408,28 @@ const ID_REQUEST = {
       return floor.floor;
     }
     return null;
+  },
+
+  buildSiteOrApp(request, bidderRequest) {
+    const app = {};
+    const configAppSettings = config.getConfig('app') || {};
+    const fpdAppSettings = config.getConfig('ortb2.app') || {};
+    mergeDeep(app, configAppSettings, fpdAppSettings);
+
+    if (Object.keys(app).length !== 0) {
+      request.app = app;
+    } else {
+      const site = {};
+      const url = config.getConfig('pageUrl') || deepAccess(bidderRequest, 'refererInfo.referer');
+      if (url) {
+        site.page = url;
+        site.domain = parseUrl(url).hostname;
+      }
+      const configSiteSettings = config.getConfig('site') || {};
+      const fpdSiteSettings = config.getConfig('ortb2.site') || {};
+      mergeDeep(site, configSiteSettings, fpdSiteSettings);
+      request.site = site;
+    }
   },
 };
 
