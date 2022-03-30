@@ -1,11 +1,26 @@
 import {
-  isStr, isArray, isPlainObject, deepSetValue, isNumber, deepAccess, getAdUnitSizes, parseGPTSingleSizeArrayToRtbSize,
-  cleanObj, contains, getDNT, parseUrl, createTrackPixelHtml, _each, isArrayOfNums, mergeDeep, isEmpty, inIframe
+  _each,
+  cleanObj,
+  contains,
+  createTrackPixelHtml,
+  deepAccess,
+  deepSetValue,
+  getAdUnitSizes,
+  getDNT,
+  inIframe,
+  isArray,
+  isArrayOfNums,
+  isEmpty,
+  isNumber,
+  isPlainObject,
+  isStr,
+  mergeDeep,
+  parseGPTSingleSizeArrayToRtbSize,
+  parseUrl
 } from '../src/utils.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import find from 'core-js-pure/features/array/find.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import {find, includes} from '../src/polyfill.js';
 import {config} from '../src/config.js';
 
 /*

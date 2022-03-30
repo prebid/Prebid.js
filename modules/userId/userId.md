@@ -46,6 +46,17 @@ pbjs.setConfig({
                 refreshInSeconds: 8*3600 // User Id cache lifetime in seconds, defaulting to 'expires'
             },
         }, {
+            name: "ftrackId",
+            storage: {
+                type: "html5",
+                name: "ftrackId",
+                expires: 90,
+                refreshInSeconds: 8*3600
+            },
+            params: {
+                url: 'https://d9.flashtalking.com/d9core', // required, if not populated ftrack will not run
+            }
+        }, {
             name: 'parrableId',
             params: {
                 // Replace partner with comma-separated (if more than one) Parrable Partner Client ID(s) for Parrable-aware bid adapters in use
@@ -140,6 +151,9 @@ pbjs.setConfig({
                  name: "knssoId",
                  expires: 30
                   },
+        {
+             name: "dacId"
+        }
         ],
         syncDelay: 5000,
         auctionDelay: 1000

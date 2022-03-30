@@ -1,10 +1,10 @@
-import { deepAccess, deepSetValue, deepClone, logWarn, logError } from '../src/utils.js';
-import find from 'core-js-pure/features/array/find.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { VIDEO } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
-import { Renderer } from '../src/Renderer.js';
-import { createEidsArray } from './userId/eids.js';
+import {deepAccess, deepClone, deepSetValue, logError, logWarn} from '../src/utils.js';
+import {find} from '../src/polyfill.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {VIDEO} from '../src/mediaTypes.js';
+import {config} from '../src/config.js';
+import {Renderer} from '../src/Renderer.js';
+import {createEidsArray} from './userId/eids.js';
 
 const DEV_MODE = window.location.search.match(/bbpbs_debug=true/);
 

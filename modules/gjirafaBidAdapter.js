@@ -9,7 +9,7 @@ const SIZE_SEPARATOR = ';';
 const BISKO_ID = 'biskoId';
 const STORAGE_ID = 'bisko-sid';
 const SEGMENTS = 'biskoSegments';
-const storage = getStorageManager();
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 export const spec = {
   code: BIDDER_CODE,

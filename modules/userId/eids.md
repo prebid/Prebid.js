@@ -38,6 +38,14 @@ userIdAsEids = [
     },
 
     {
+        source: 'justtag.com',
+        uids: [{
+            id: 'justId',
+            atype: 1
+        }]
+    },
+
+    {
         source: 'neustar.biz',
         uids: [{
             id: 'some-random-id-value',
@@ -55,6 +63,13 @@ userIdAsEids = [
                 abTestingControlGroup: false
             }
         }]
+    },
+
+    {
+        source: 'flashtalking.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
     },
 
     {
