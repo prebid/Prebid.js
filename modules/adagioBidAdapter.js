@@ -1,18 +1,37 @@
-import find from 'core-js-pure/features/array/find.js';
+import {find} from '../src/polyfill.js';
 import {
-  isInteger, isArray, deepAccess, mergeDeep, logWarn, logInfo, logError, getWindowTop, getWindowSelf, generateUUID, _map,
-  getDNT, parseUrl, getUniqueIdentifierStr, isNumber, cleanObj, isFn, inIframe, deepClone, getGptSlotInfoForAdUnitCode
+  _map,
+  cleanObj,
+  deepAccess,
+  deepClone,
+  generateUUID,
+  getDNT,
+  getGptSlotInfoForAdUnitCode,
+  getUniqueIdentifierStr,
+  getWindowSelf,
+  getWindowTop,
+  inIframe,
+  isArray,
+  isFn,
+  isInteger,
+  isNumber,
+  logError,
+  logInfo,
+  logWarn,
+  mergeDeep,
+  parseUrl
 } from '../src/utils.js';
-import { config } from '../src/config.js';
+import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import { loadExternalScript } from '../src/adloader.js';
-import { verify } from 'criteo-direct-rsa-validate/build/verify.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { getRefererInfo } from '../src/refererDetection.js';
-import { createEidsArray } from './userId/eids.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { Renderer } from '../src/Renderer.js';
-import { OUTSTREAM } from '../src/video.js';
+import {loadExternalScript} from '../src/adloader.js';
+import {verify} from 'criteo-direct-rsa-validate/build/verify.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {getRefererInfo} from '../src/refererDetection.js';
+import {createEidsArray} from './userId/eids.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {Renderer} from '../src/Renderer.js';
+import {OUTSTREAM} from '../src/video.js';
+
 const BIDDER_CODE = 'adagio';
 const LOG_PREFIX = 'Adagio:';
 const FEATURES_VERSION = '1';
@@ -21,7 +40,7 @@ const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
 const ADAGIO_TAG_URL = 'https://script.4dex.io/localstore.js';
 const ADAGIO_LOCALSTORAGE_KEY = 'adagioScript';
 const GVLID = 617;
-export const storage = getStorageManager(GVLID, 'adagio');
+export const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
 export const RENDERER_URL = 'https://script.4dex.io/outstream-player.js';
 const MAX_SESS_DURATION = 30 * 60 * 1000;
 const ADAGIO_PUBKEY = 'AL16XT44Sfp+8SHVF1UdC7hydPSMVLMhsYknKDdwqq+0ToDSJrP0+Qh0ki9JJI2uYm/6VEYo8TJED9WfMkiJ4vf02CW3RvSWwc35bif2SK1L8Nn/GfFYr/2/GG/Rm0vUsv+vBHky6nuuYls20Og0HDhMgaOlXoQ/cxMuiy5QSktp';
@@ -268,8 +287,6 @@ function getSite(bidderRequest) {
   } else if (refererInfo.stack && refererInfo.stack.length && refererInfo.stack[0]) {
     // important note check if refererInfo.stack[0] is 'thruly' because a `null` value
     // will be considered as "localhost" by the parseUrl function.
-    // As the isBidRequestValid returns false when it does not reach the referer
-    // this should never called.
     const url = parseUrl(refererInfo.stack[0]);
     domain = url.hostname;
   }
@@ -308,7 +325,7 @@ function getElementFromTopWindow(element, currentWindow) {
 function autoDetectAdUnitElementIdFromGpt(adUnitCode) {
   const autoDetectedAdUnit = getGptSlotInfoForAdUnitCode(adUnitCode);
 
-  if (autoDetectedAdUnit && autoDetectedAdUnit.divId) {
+  if (autoDetectedAdUnit.divId) {
     return autoDetectedAdUnit.divId;
   }
 };
@@ -806,7 +823,7 @@ function getPrintNumber(adUnitCode, bidderRequest) {
     return 1;
   }
   const adagioBid = find(bidderRequest.bids, bid => bid.adUnitCode === adUnitCode);
-  return adagioBid.bidRequestsCount || 1;
+  return adagioBid.bidderRequestsCount || 1;
 }
 
 /**
@@ -872,12 +889,6 @@ export const spec = {
     bid.params = bid.params || {};
 
     autoFillParams(bid);
-
-    if (!internal.getRefererInfo().reachedTop) {
-      logWarn(`${LOG_PREFIX} the main page url is unreachabled.`);
-      // internal.enqueue(debugData());
-      return false;
-    }
 
     if (!(bid.params.organizationId && bid.params.site && bid.params.placement)) {
       logWarn(`${LOG_PREFIX} at least one required param is missing.`);

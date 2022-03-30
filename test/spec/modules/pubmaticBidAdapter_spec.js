@@ -3861,4 +3861,80 @@ describe('PubMatic adapter', function () {
       })
     });
   });
+
+  describe('Video request params', function() {
+    let sandbox, utilsMock, newVideoRequest;
+    beforeEach(() => {
+      utilsMock = sinon.mock(utils);
+      sandbox = sinon.sandbox.create();
+      sandbox.spy(utils, 'logWarn');
+      newVideoRequest = utils.deepClone(videoBidRequests)
+    });
+
+    afterEach(() => {
+      utilsMock.restore();
+      sandbox.restore();
+    })
+
+    it('Should log warning if video params from mediaTypes and params obj of bid are not present', function () {
+      delete newVideoRequest[0].mediaTypes.video;
+      delete newVideoRequest[0].params.video;
+
+      let request = spec.buildRequests(newVideoRequest, {
+        auctionId: 'new-auction-id'
+      });
+
+      sinon.assert.calledOnce(utils.logWarn);
+      expect(request).to.equal(undefined);
+    });
+
+    it('Should consider video params from mediaType object of bid', function () {
+      delete newVideoRequest[0].params.video;
+
+      let request = spec.buildRequests(newVideoRequest, {
+        auctionId: 'new-auction-id'
+      });
+      let data = JSON.parse(request.data);
+      expect(data.imp[0].video).to.exist;
+      expect(data.imp[0]['video']['w']).to.equal(videoBidRequests[0].mediaTypes.video.playerSize[0]);
+      expect(data.imp[0]['video']['h']).to.equal(videoBidRequests[0].mediaTypes.video.playerSize[1]);
+      expect(data.imp[0]['video']['battr']).to.equal(undefined);
+    });
+  });
+
+  describe('GroupM params', function() {
+    let sandbox, utilsMock, newBidRequests, newBidResponses;
+    beforeEach(() => {
+      utilsMock = sinon.mock(utils);
+      sandbox = sinon.sandbox.create();
+      sandbox.spy(utils, 'logInfo');
+      newBidRequests = utils.deepClone(bidRequests)
+      newBidRequests[0].bidder = 'groupm';
+      newBidResponses = utils.deepClone(bidResponses);
+      newBidResponses.body.seatbid[0].bid[0].ext.marketplace = 'groupm'
+    });
+
+    afterEach(() => {
+      utilsMock.restore();
+      sandbox.restore();
+    })
+
+    it('Should log info when bidder is groupm  and return', function () {
+      let request = spec.buildRequests(newBidRequests, {bidderCode: 'groupm',
+        auctionId: 'new-auction-id'
+      });
+      sinon.assert.calledOnce(utils.logInfo);
+      expect(request).to.equal(undefined);
+    });
+
+    it('Should add bidder code & bidder as groupm for marketplace groupm response', function () {
+      let request = spec.buildRequests(newBidRequests, {
+        auctionId: 'new-auction-id'
+      });
+      let response = spec.interpretResponse(newBidResponses, request);
+      expect(response).to.be.an('array').with.length.above(0);
+      expect(response[0].bidderCode).to.equal('groupm');
+      expect(response[0].bidder).to.equal('groupm');
+    });
+  });
 });

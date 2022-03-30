@@ -61,7 +61,25 @@ describe('MediaSquare bid adapter tests', function () {
       code: 'publishername_atf_desktop_rg_pave'
     },
   }];
-
+  var FLOORS_PARAMS = [{
+    adUnitCode: 'banner-div',
+    bidId: 'aaaa1234',
+    auctionId: 'bbbb1234',
+    transactionId: 'cccc1234',
+    mediaTypes: {
+      banner: {
+        sizes: [
+          [300, 250]
+        ]
+      }
+    },
+    bidder: 'mediasquare',
+    params: {
+      owner: 'test',
+      code: 'publishername_atf_desktop_rg_pave'
+    },
+    getFloor: function (a) { return { currency: 'EUR', floor: 1.0 }; },
+  }];
   var BID_RESPONSE = {'body': {
     'responses': [{
       'transaction_id': 'cccc1234',
@@ -117,6 +135,12 @@ describe('MediaSquare bid adapter tests', function () {
     expect(requestContent.codes[0]).to.have.property('auctionId').and.to.equal('bbbb1234');
     expect(requestContent.codes[0]).to.have.property('transactionId').and.to.equal('cccc1234');
     expect(requestContent.codes[0]).to.have.property('mediatypes').exist;
+    expect(requestContent.codes[0]).to.have.property('floor').exist;
+    expect(requestContent.codes[0].floor).to.deep.equal({});
+    const requestfloor = spec.buildRequests(FLOORS_PARAMS, DEFAULT_OPTIONS);
+    const responsefloor = JSON.parse(requestfloor.data);
+    expect(responsefloor.codes[0]).to.have.property('floor').exist;
+    expect(responsefloor.codes[0].floor).to.have.property('floor').and.to.equal(1.0);
   });
 
   it('Verify parse response', function () {
@@ -148,6 +172,14 @@ describe('MediaSquare bid adapter tests', function () {
     expect(bid.mediasquare.match).to.exist;
     expect(bid.mediasquare.match).to.equal(true);
   });
+  it('Verifies hasConsent', function () {
+    const request = spec.buildRequests(DEFAULT_PARAMS, DEFAULT_OPTIONS);
+    BID_RESPONSE.body.responses[0].hasConsent = true;
+    const response = spec.interpretResponse(BID_RESPONSE, request);
+    const bid = response[0];
+    expect(bid.mediasquare.hasConsent).to.exist;
+    expect(bid.mediasquare.hasConsent).to.equal(true);
+  });
   it('Verifies bidder code', function () {
     expect(spec.code).to.equal('mediasquare');
   });
@@ -161,13 +193,15 @@ describe('MediaSquare bid adapter tests', function () {
   });
   it('Verifies bid won', function () {
     const request = spec.buildRequests(DEFAULT_PARAMS, DEFAULT_OPTIONS);
+    BID_RESPONSE.body.responses[0].match = true
+    BID_RESPONSE.body.responses[0].hasConsent = true;
     const response = spec.interpretResponse(BID_RESPONSE, request);
     const won = spec.onBidWon(response[0]);
     expect(won).to.equal(true);
   });
   it('Verifies user sync without cookie in bid response', function () {
     var syncs = spec.getUserSyncs({}, [BID_RESPONSE], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
-    expect(syncs).to.have.property('type').and.to.equal('iframe');
+    expect(syncs).to.have.lengthOf(0);
   });
   it('Verifies user sync with cookies in bid response', function () {
     BID_RESPONSE.body.cookies = [{'type': 'image', 'url': 'http://www.cookie.sync.org/'}];
@@ -178,13 +212,13 @@ describe('MediaSquare bid adapter tests', function () {
   });
   it('Verifies user sync with no bid response', function() {
     var syncs = spec.getUserSyncs({}, null, DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
-    expect(syncs).to.have.property('type').and.to.equal('iframe');
+    expect(syncs).to.have.lengthOf(0);
   });
   it('Verifies user sync with no bid body response', function() {
     var syncs = spec.getUserSyncs({}, [], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
-    expect(syncs).to.have.property('type').and.to.equal('iframe');
+    expect(syncs).to.have.lengthOf(0);
     var syncs = spec.getUserSyncs({}, [{}], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
-    expect(syncs).to.have.property('type').and.to.equal('iframe');
+    expect(syncs).to.have.lengthOf(0);
   });
   it('Verifies native in bid response', function () {
     const request = spec.buildRequests(NATIVE_PARAMS, DEFAULT_OPTIONS);

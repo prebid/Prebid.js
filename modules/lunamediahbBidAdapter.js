@@ -1,9 +1,11 @@
 import { logMessage } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'lunamediahb';
 const AD_URL = 'https://balancer.lmgssp.com/?c=o&m=multi';
+const SYNC_URL = 'https://cookie.lmgssp.com';
 
 function isBidResponseValid(bid) {
   if (!bid.requestId || !bid.cpm || !bid.creativeId ||
@@ -14,7 +16,7 @@ function isBidResponseValid(bid) {
     case BANNER:
       return Boolean(bid.width && bid.height && bid.ad);
     case VIDEO:
-      return Boolean(bid.vastUrl);
+      return Boolean(bid.vastUrl) || Boolean(bid.vastXml);
     case NATIVE:
       return Boolean(bid.native && bid.native.impressionTrackers);
     default:
@@ -74,10 +76,13 @@ export const spec = {
       if (mediaType && mediaType[BANNER] && mediaType[BANNER].sizes) {
         placement.sizes = mediaType[BANNER].sizes;
         placement.traffic = BANNER;
-      } else if (mediaType && mediaType[VIDEO] && mediaType[VIDEO].playerSize) {
-        placement.wPlayer = mediaType[VIDEO].playerSize[0];
-        placement.hPlayer = mediaType[VIDEO].playerSize[1];
+      } else if (mediaType && mediaType[VIDEO]) {
+        if (mediaType[VIDEO].playerSize) {
+          placement.wPlayer = mediaType[VIDEO].playerSize[0];
+          placement.hPlayer = mediaType[VIDEO].playerSize[1];
+        }
         placement.traffic = VIDEO;
+        placement.videoContext = mediaType[VIDEO].context || 'instream'
       } else if (mediaType && mediaType[NATIVE]) {
         placement.native = mediaType[NATIVE];
         placement.traffic = NATIVE;
@@ -102,6 +107,29 @@ export const spec = {
     }
     return response;
   },
+
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
+    let syncType = syncOptions.iframeEnabled ? 'iframe' : 'image';
+    let syncUrl = SYNC_URL + `/${syncType}?pbjs=1`;
+    if (gdprConsent && gdprConsent.consentString) {
+      if (typeof gdprConsent.gdprApplies === 'boolean') {
+        syncUrl += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+      } else {
+        syncUrl += `&gdpr=0&gdpr_consent=${gdprConsent.consentString}`;
+      }
+    }
+    if (uspConsent && uspConsent.consentString) {
+      syncUrl += `&ccpa_consent=${uspConsent.consentString}`;
+    }
+
+    const coppa = config.getConfig('coppa') ? 1 : 0;
+    syncUrl += `&coppa=${coppa}`;
+
+    return [{
+      type: syncType,
+      url: syncUrl
+    }];
+  }
 };
 
 registerBidder(spec);

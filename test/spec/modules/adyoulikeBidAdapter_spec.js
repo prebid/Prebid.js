@@ -95,6 +95,60 @@ describe('Adyoulike Adapter', function () {
     }
   ];
 
+  const bidRequestWithMultipleMediatype = [
+    {
+      'bidId': 'bid_id_0',
+      'bidder': 'adyoulike',
+      'placementCode': 'adunit/hb-0',
+      'params': {
+        'placement': 'placement_0'
+      },
+      'sizes': '300x250',
+      'mediaTypes': {
+        'banner': {
+          'sizes': ['640x480']
+        },
+        'video': {
+          'playerSize': [640, 480],
+          'context': 'outstream'
+        },
+        'native': {
+          'image': {
+            'required': true,
+          },
+          'title': {
+            'required': true,
+            'len': 80
+          },
+          'cta': {
+            'required': false
+          },
+        }
+      },
+      'transactionId': 'bid_id_0_transaction_id'
+    }
+  ];
+
+  const bidRequestWithVideo = [
+    {
+      'bidId': 'bid_id_0',
+      'bidder': 'adyoulike',
+      'placementCode': 'adunit/hb-0',
+      'params': {
+        'placement': 'placement_0'
+      },
+      'sizes': '300x250',
+      'mediaTypes':
+      {
+        'video': {
+          'context': 'instream',
+          'playerSize': [[ 640, 480 ]]
+        }
+      },
+      'transactionId': 'bid_id_0_transaction_id'
+    }
+  ];
+
   const bidRequestWithNativeImageType = [
     {
       'bidId': 'bid_id_0',
@@ -313,7 +367,7 @@ describe('Adyoulike Adapter', function () {
     'secondaryCatIds': ['IAB-222', 'IAB-333'],
     'mediaType': 'banner'
   };
-  const admSample = "\u003cscript id=\"ayl-prebid-a11a121205932e75e622af275681965d\"\u003e\n(function(){\n\twindow.isPrebid = true\n\tvar prebidResults = /*PREBID*/{\"OnEvents\":{\"CLICK\":[{\"Kind\":\"PIXEL_URL\",\"Url\":\"https://testPixelCLICK.com/fake\"}],\"IMPRESSION\":[{\"Kind\":\"PIXEL_URL\",\"Url\":\"https://testPixelIMP.com/fake\"},{\"Kind\":\"JAVASCRIPT_URL\",\"Url\":\"https://testJsIMP.com/fake.js\"}]},\"Disabled\":false,\"Attempt\":\"a11a121205932e75e622af275681965d\",\"ApiPrefix\":\"https://fo-api.omnitagjs.com/fo-api\",\"TrackingPrefix\":\"https://tracking.omnitagjs.com/tracking\",\"DynamicPrefix\":\"https://tag-dyn.omnitagjs.com/fo-dyn\",\"StaticPrefix\":\"https://fo-static.omnitagjs.com/fo-static\",\"BlobPrefix\":\"https://fo-api.omnitagjs.com/fo-api/blobs\",\"SspPrefix\":\"https://fo-ssp.omnitagjs.com/fo-ssp\",\"VisitorPrefix\":\"https://visitor.omnitagjs.com/visitor\",\"Trusted\":true,\"Placement\":\"e622af275681965d3095808561a1e510\",\"PlacementAccess\":\"ALL\",\"Site\":\"6e2df7a92203c3c7a25561ed63f25a27\",\"Lang\":\"EN\",\"SiteLogo\":null,\"HasSponsorImage\":false,\"ResizeIframe\":true,\"IntegrationConfig\":{\"Kind\":\"WIDGET\",\"Widget\":{\"ExtraStyleSheet\":\"\",\"Placeholders\":{\"Body\":{\"Color\":{\"R\":77,\"G\":21,\"B\":82,\"A\":100},\"BackgroundColor\":{\"R\":255,\"G\":255,\"B\":255,\"A\":100},\"FontFamily\":\"Lato\",\"Width\":\"100%\",\"Align\":\"\",\"BoxShadow\":true},\"CallToAction\":{\"Color\":{\"R\":26,\"G\":157,\"B\":212,\"A\":100}},\"Description\":{\"Length\":130},\"Image\":{\"Width\":600,\"Height\":600,\"Lowres\":false,\"Raw\":false},\"Size\":{\"Height\":\"250px\",\"Width\":\"300px\"},\"Sponsor\":{\"Color\":{\"R\":35,\"G\":35,\"B\":35,\"A\":100},\"Label\":true,\"WithoutLogo\":false},\"Title\":{\"Color\":{\"R\":219,\"G\":181,\"B\":255,\"A\":100}}},\"Selector\":{\"Kind\":\"CSS\",\"Css\":\"#ayl-prebid-a11a121205932e75e622af275681965d\"},\"Insertion\":\"AFTER\",\"ClickFormat\":true,\"Creative20\":true,\"WidgetKind\":\"CREATIVE_TEMPLATE_4\"}},\"Legal\":\"Sponsored\",\"ForcedCampaign\":\"f1c80d4bb5643c222ae8de75e9b2f991\",\"ForcedTrack\":\"\",\"ForcedCreative\":\"\",\"ForcedSource\":\"\",\"DisplayMode\":\"DEFAULT\",\"Campaign\":\"f1c80d4bb5643c222ae8de75e9b2f991\",\"CampaignAccess\":\"ALL\",\"CampaignKind\":\"AD_TRAFFIC\",\"DataSource\":\"LOCAL\",\"DataSourceUrl\":\"\",\"DataSourceOnEventsIsolated\":false,\"DataSourceWithoutCookie\":false,\"Content\":{\"Preview\":{\"Thumbnail\":{\"Image\":{\"Kind\":\"EXTERNAL\",\"Data\":{\"External\":{\"Url\":\"https://tag-dyn.omnitagjs.com/fo-dyn/native/preview/image?key=fd4362d35bb174d6f1c80d4bb5643c22\\u0026kind=INTERNAL\\u0026ztop=0.000000\\u0026zleft=0.000000\\u0026zwidth=0.333333\\u0026zheight=1.000000\\u0026width=[width]\\u0026height=[height]\"}},\"ZoneTop\":0,\"ZoneLeft\":0,\"ZoneWidth\":1,\"ZoneHeight\":1,\"Smart\":false,\"NoTransform\":false,\"Quality\":\"NORMAL\"}},\"Text\":{\"CALLTOACTION\":\"Click here to learn more\",\"DESCRIPTION\":\"Considérant l'extrémité conjoncturelle, il serait bon d'anticiper toutes les voies de bon sens.\",\"SPONSOR\":\"Tested by\",\"TITLE\":\"Adserver Traffic Redirect Internal\"},\"Sponsor\":{\"Name\":\"QA Team\"},\"Credit\":{\"Logo\":{\"Resource\":{\"Kind\":\"EXTERNAL\",\"Data\":{\"External\":{\"Url\":\"https://fo-static.omnitagjs.com/fo-static/native/images/info-ayl.png\"}},\"ZoneTop\":0,\"ZoneLeft\":0,\"ZoneWidth\":1,\"ZoneHeight\":1,\"Smart\":false,\"NoTransform\":false,\"Quality\":\"NORMAL\"}},\"Url\":\"https://blobs.omnitagjs.com/adchoice/\"}},\"Landing\":{\"Url\":\"https://www.w3.org/People/mimasa/test/xhtml/entities/entities-11.xhtml#lat1\",\"LegacyTracking\":false},\"ViewButtons\":{\"Close\":{\"Skip\":6000}},\"InternalContentFields\":{\"AnimatedImage\":false}},\"AdDomain\":\"adyoulike.com\",\"Opener\":\"REDIRECT\",\"PerformUITriggers\":[\"CLICK\"],\"RedirectionTarget\":\"TAB\"}/*PREBID*/;\n\tvar insertAds = function insertAds() {\insertAds();\n\t}\n})();\n\u003c/script\u003e";
+  const admSample = "\u003cscript id=\"ayl-prebid-a11a121205932e75e622af275681965d\"\u003e\n(function(){\n\twindow.isPrebid = true\n\tvar prebidResults = /*PREBID*/{\"OnEvents\": {\"CLICK\": [{\"Kind\": \"PIXEL_URL\",\"Url\": \"https://testPixelCLICK.com/fake\"}],\"IMPRESSION\": [{\"Kind\": \"PIXEL_URL\",\"Url\": \"https://testPixelIMP.com/fake\"}, {\"Kind\": \"JAVASCRIPT_URL\",\"Url\": \"https://testJsIMP.com/fake.js\"}]},\"Disabled\": false,\"Attempt\": \"a11a121205932e75e622af275681965d\",\"ApiPrefix\": \"https://fo-api.omnitagjs.com/fo-api\",\"TrackingPrefix\": \"https://tracking.omnitagjs.com/tracking\",\"DynamicPrefix\": \"https://tag-dyn.omnitagjs.com/fo-dyn\",\"StaticPrefix\": \"https://fo-static.omnitagjs.com/fo-static\",\"BlobPrefix\": \"https://fo-api.omnitagjs.com/fo-api/blobs\",\"SspPrefix\": \"https://fo-ssp.omnitagjs.com/fo-ssp\",\"VisitorPrefix\": \"https://visitor.omnitagjs.com/visitor\",\"Trusted\": true,\"Placement\": \"e622af275681965d3095808561a1e510\",\"PlacementAccess\": \"ALL\",\"Site\": \"6e2df7a92203c3c7a25561ed63f25a27\",\"Lang\": \"EN\",\"SiteLogo\": null,\"HasSponsorImage\": true,\"ResizeIframe\": true,\"IntegrationConfig\": {\"Kind\": \"WIDGET\",\"Widget\": {\"ExtraStyleSheet\": \"\",\"Placeholders\": {\"Body\": {\"Color\": {\"R\": 77,\"G\": 21,\"B\": 82,\"A\": 100},\"BackgroundColor\": {\"R\": 255,\"G\": 255,\"B\": 255,\"A\": 100},\"FontFamily\": \"Lato\",\"Width\": \"100%\",\"Align\": \"\",\"BoxShadow\": true},\"CallToAction\": {\"Color\": {\"R\": 26,\"G\": 157,\"B\": 212,\"A\": 100}},\"Description\": {\"Length\": 130},\"Image\": {\"Width\": 600,\"Height\": 600,\"Lowres\": false,\"Raw\": false},\"Size\": {\"Height\": \"250px\",\"Width\": \"300px\"},\"Title\": {\"Color\": {\"R\": 219,\"G\": 181,\"B\": 255,\"A\": 100}}},\"Selector\": {\"Kind\": \"CSS\",\"Css\": \"#ayl-prebid-a11a121205932e75e622af275681965d\"},\"Insertion\": \"AFTER\",\"ClickFormat\": true,\"Creative20\": true,\"WidgetKind\": \"CREATIVE_TEMPLATE_4\"}},\"Legal\": \"Sponsored\",\"ForcedCampaign\": \"f1c80d4bb5643c222ae8de75e9b2f991\",\"ForcedTrack\": \"\",\"ForcedCreative\": \"\",\"ForcedSource\": \"\",\"DisplayMode\": \"DEFAULT\",\"Campaign\": \"f1c80d4bb5643c222ae8de75e9b2f991\",\"CampaignAccess\": \"ALL\",\"CampaignKind\": \"AD_TRAFFIC\",\"DataSource\": \"LOCAL\",\"DataSourceUrl\": \"\",\"DataSourceOnEventsIsolated\": false,\"DataSourceWithoutCookie\": false,\"Content\": {\"Preview\": {\"Thumbnail\": {\"Image\": {\"Kind\": \"EXTERNAL\",\"Data\": {\"External\": {\"Url\": \"https://tag-dyn.omnitagjs.com/fo-dyn/native/preview/image?key=fd4362d35bb174d6f1c80d4bb5643c22\\u0026kind=INTERNAL\\u0026ztop=0.000000\\u0026zleft=0.000000\\u0026zwidth=0.333333\\u0026zheight=1.000000\\u0026width=[width]\\u0026height=[height]\"}},\"ZoneTop\": 0,\"ZoneLeft\": 0,\"ZoneWidth\": 1,\"ZoneHeight\": 1,\"Smart\": false,\"NoTransform\": false,\"Quality\": \"NORMAL\"}},\"Text\": {\"CALLTOACTION\": \"Click here to learn more\",\"DESCRIPTION\": \"Considérant l'extrémité conjoncturelle, il serait bon d'anticiper toutes les voies de bon sens.\",\"SPONSOR\": \"Tested by\",\"TITLE\": \"Adserver Traffic Redirect Internal\"},\"Sponsor\": {\"Name\": \"QA Team\",\"Logo\": {\"Resource\": {\"Kind\": \"EXTERNAL\",\"Data\": {\"External\": {\"Url\": \"https://fo-static.omnitagjs.com/fo-static/native/images/info-ayl.svg\"}},\"ZoneTop\": 0,\"ZoneLeft\": 0,\"ZoneWidth\": 1,\"ZoneHeight\": 1,\"Smart\": false,\"NoTransform\": false,\"Quality\": \"NORMAL\"}}},\"Credit\": {\"Logo\": {\"Resource\": {\"Kind\": \"EXTERNAL\",\"Data\": {\"External\": {\"Url\": \"https://fo-static.omnitagjs.com/fo-static/native/images/info-ayl.png\"}},\"ZoneTop\": 0,\"ZoneLeft\": 0,\"ZoneWidth\": 1,\"ZoneHeight\": 1,\"Smart\": false,\"NoTransform\": false,\"Quality\": \"NORMAL\"}},\"Url\": \"https://blobs.omnitagjs.com/adchoice/\"}},\"Landing\": {\"Url\": \"https://www.w3.org/People/mimasa/test/xhtml/entities/entities-11.xhtml#lat1\",\"LegacyTracking\": false},\"ViewButtons\": {\"Close\": {\"Skip\": 6000}},\"InternalContentFields\": {\"AnimatedImage\": false}},\"AdDomain\": \"adyoulike.com\",\"Opener\": \"REDIRECT\",\"PerformUITriggers\": [\"CLICK\"],\"RedirectionTarget\": \"TAB\"}/*PREBID*/;\n\tvar insertAds = function insertAds() {\insertAds();\n\t}\n})();\n\u003c/script\u003e";
   const responseWithSinglePlacement = [
     {
       'BidID': 'bid_id_0',
@@ -336,6 +390,11 @@ describe('Adyoulike Adapter', function () {
         'height': 600,
         'url': 'https://blobs.omnitagjs.com/blobs/f1/f1c80d4bb5643c22/fd4362d35bb174d6f1c80d4bb5643c22',
         'width': 300
+      },
+      'icon': {
+        'height': 50,
+        'url': 'https://fo-static.omnitagjs.com/fo-static/native/images/info-ayl.svg',
+        'width': 50,
       },
       'privacyIcon': 'https://fo-static.omnitagjs.com/fo-static/native/images/info-ayl.png',
       'privacyLink': 'https://blobs.omnitagjs.com/adchoice/',
@@ -376,6 +435,11 @@ describe('Adyoulike Adapter', function () {
         height: 600,
         url: 'https://blobs.omnitagjs.com/blobs/f1/f1c80d4bb5643c22/fd4362d35bb174d6f1c80d4bb5643c22',
         width: 300,
+      },
+      icon: {
+        height: 50,
+        url: 'https://fo-static.omnitagjs.com/fo-static/native/images/info-ayl.svg',
+        width: 50,
       },
       impressionTrackers: [
         'https://testPixelIMP.com/fake',
@@ -542,6 +606,11 @@ describe('Adyoulike Adapter', function () {
       expect(payload.Bids['bid_id_0'].Native).deep.equal(sentNativeImageType);
     });
 
+    it('Should target video enpoint for video mediatype', function() {
+      const request = spec.buildRequests(bidRequestWithVideo, bidderRequest);
+      expect(request.url).to.contain(getEndpoint());
+    });
+
     it('should add gdpr/usp consent information to the request', function () {
       let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
       let uspConsentData = '1YCC';
@@ -590,6 +659,32 @@ describe('Adyoulike Adapter', function () {
       expect(payload.gdprConsent.consentRequired).to.be.null;
     });
 
+    it('should add userid eids information to the request', function () {
+      let bidderRequest = {
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 3000,
+        'userId': {
+          pubcid: '01EAJWWNEPN3CYMM5N8M5VXY22',
+          unsuported: '666'
+        }
+      };
+
+      bidderRequest.bids = bidRequestWithSinglePlacement;
+
+      const request = spec.buildRequests(bidRequestWithSinglePlacement, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.userId).to.exist;
+      expect(payload.userId).to.deep.equal([{
+        'source': 'pubcid.org',
+        'uids': [{
+          'atype': 1,
+          'id': '01EAJWWNEPN3CYMM5N8M5VXY22'
+        }]
+      }]);
+    });
+
     it('sends bid request to endpoint with single placement', function () {
       const request = spec.buildRequests(bidRequestWithSinglePlacement, bidderRequest);
       const payload = JSON.parse(request.data);
@@ -609,6 +704,21 @@ describe('Adyoulike Adapter', function () {
     it('sends bid request to endpoint with single placement without canonical', function () {
       canonicalQuery.restore();
       const request = spec.buildRequests(bidRequestWithSinglePlacement, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(request.url).to.contain(getEndpoint());
+      expect(request.method).to.equal('POST');
+
+      expect(request.url).to.not.contains('CanonicalUrl=' + encodeURIComponent(canonicalUrl));
+      expect(payload.Version).to.equal('1.0');
+      expect(payload.Bids['bid_id_0'].PlacementID).to.be.equal('placement_0');
+      expect(payload.PageRefreshed).to.equal(false);
+      expect(payload.Bids['bid_id_0'].TransactionID).to.be.equal('bid_id_0_transaction_id');
+    });
+
+    it('sends bid request to endpoint with single placement multiple mediatype', function () {
+      canonicalQuery.restore();
+      const request = spec.buildRequests(bidRequestWithMultipleMediatype, bidderRequest);
       const payload = JSON.parse(request.data);
 
       expect(request.url).to.contain(getEndpoint());
@@ -730,5 +840,9 @@ describe('Adyoulike Adapter', function () {
       expect(result.length).to.equal(1);
       expect(result).to.deep.equal(videoResult);
     });
+
+    it('should expose gvlid', function() {
+      expect(spec.gvlid).to.equal(259)
+    })
   });
 });

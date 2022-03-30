@@ -10,7 +10,7 @@ const SYNC = 'https://crb.kargo.com/api/v1/initsyncrnd/{UUID}?seed={SEED}&idx={I
 const SYNC_COUNT = 5;
 const GVLID = 972;
 const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO]
-const storage = getStorageManager(GVLID, BIDDER_CODE);
+const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
 
 let sessionId,
   lastPageUrl,
@@ -73,8 +73,8 @@ export const spec = {
       let meta;
       if (adUnit.metadata && adUnit.metadata.landingPageDomain) {
         meta = {
-          clickUrl: adUnit.metadata.landingPageDomain,
-          advertiserDomains: [adUnit.metadata.landingPageDomain]
+          clickUrl: adUnit.metadata.landingPageDomain[0],
+          advertiserDomains: adUnit.metadata.landingPageDomain
         };
       }
       bidResponses.push({
@@ -87,7 +87,7 @@ export const spec = {
         creativeId: adUnit.id,
         dealId: adUnit.targetingCustom,
         netRevenue: true,
-        currency: bidRequest.currency,
+        currency: adUnit.currency || bidRequest.currency,
         meta: meta
       });
     }
@@ -172,28 +172,6 @@ export const spec = {
     return spec._getCrbFromCookie();
   },
 
-  _getKruxUserId() {
-    return spec._getLocalStorageSafely('kxkar_user');
-  },
-
-  _getKruxSegments() {
-    return spec._getLocalStorageSafely('kxkar_segs');
-  },
-
-  _getKrux() {
-    const segmentsStr = spec._getKruxSegments();
-    let segments = [];
-
-    if (segmentsStr) {
-      segments = segmentsStr.split(',');
-    }
-
-    return {
-      userID: spec._getKruxUserId(),
-      segments: segments
-    };
-  },
-
   _getLocalStorageSafely(key) {
     try {
       return storage.getDataFromLocalStorage(key);
@@ -205,7 +183,7 @@ export const spec = {
   _getUserIds(tdid, usp, gdpr) {
     const crb = spec._getCrb();
     const userIds = {
-      kargoID: crb.userId,
+      kargoID: crb.lexId,
       clientID: crb.clientId,
       crbIDs: crb.syncIds || {},
       optOut: crb.optOut,
@@ -235,7 +213,6 @@ export const spec = {
   _getAllMetadata(tdid, usp, gdpr) {
     return {
       userIDs: spec._getUserIds(tdid, usp, gdpr),
-      krux: spec._getKrux(),
       pageURL: window.location.href,
       rawCRB: spec._readCookie('krg_crb'),
       rawCRBLocalStorage: spec._getLocalStorageSafely('krg_crb')

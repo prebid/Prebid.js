@@ -116,16 +116,19 @@ describe('CriteoId module', function () {
         expect(setCookieStub.calledWith('cto_bundle')).to.be.false;
         expect(setLocalStorageStub.calledWith('cto_bundle')).to.be.false;
       } else if (response.bundle) {
-        expect(setCookieStub.calledWith('cto_bundle', response.bundle, expirationTs)).to.be.true;
+        expect(setCookieStub.calledWith('cto_bundle', response.bundle, expirationTs, null, '.com')).to.be.true;
+        expect(setCookieStub.calledWith('cto_bundle', response.bundle, expirationTs, null, '.testdev.com')).to.be.true;
         expect(setLocalStorageStub.calledWith('cto_bundle', response.bundle)).to.be.true;
         expect(triggerPixelStub.called).to.be.false;
       }
 
       if (response.bidId) {
-        expect(setCookieStub.calledWith('cto_bidid', response.bidId, expirationTs)).to.be.true;
+        expect(setCookieStub.calledWith('cto_bidid', response.bidId, expirationTs, null, '.com')).to.be.true;
+        expect(setCookieStub.calledWith('cto_bidid', response.bidId, expirationTs, null, '.testdev.com')).to.be.true;
         expect(setLocalStorageStub.calledWith('cto_bidid', response.bidId)).to.be.true;
       } else {
-        expect(setCookieStub.calledWith('cto_bidid', '', pastDateString)).to.be.true;
+        expect(setCookieStub.calledWith('cto_bidid', '', pastDateString, null, '.com')).to.be.true;
+        expect(setCookieStub.calledWith('cto_bidid', '', pastDateString, null, '.testdev.com')).to.be.true;
         expect(removeFromLocalStorageStub.calledWith('cto_bidid')).to.be.true;
       }
     });

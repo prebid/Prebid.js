@@ -1,17 +1,69 @@
-import { deepSetValue, logError, _each, getBidRequest, isNumber, isArray, deepAccess, isFn, isPlainObject, logWarn, getBidIdParameter, getUniqueIdentifierStr, isEmpty, isInteger } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import {
+  _each,
+  deepAccess,
+  deepSetValue,
+  getBidIdParameter,
+  getBidRequest,
+  getUniqueIdentifierStr,
+  isArray,
+  isEmpty,
+  isFn,
+  isInteger,
+  isNumber,
+  isPlainObject,
+  isStr,
+  logError,
+  logWarn, mergeDeep
+} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
-import { createEidsArray } from './userId/eids.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import {createEidsArray} from './userId/eids.js';
+import {includes} from '../src/polyfill.js';
 
 const BIDDER_CODE = 'improvedigital';
 const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 const VIDEO_TARGETING = ['skip', 'skipmin', 'skipafter'];
 
+const ID_RAZR = {
+  RENDERER_URL: 'https://razr.improvedigital.com/renderer.js',
+  addBidData({bid, bidRequest}) {
+    if (this.isValidBid(bid)) {
+      bid.renderer = Renderer.install({
+        url: this.RENDERER_URL,
+        config: {bidRequest}
+      });
+      bid.renderer.setRender(this.render);
+    }
+  },
+
+  isValidBid(bid) {
+    return bid && /razr:\\?\/\\?\//.test(bid.ad);
+  },
+
+  render(bid) {
+    const {bidRequest} = bid.renderer.getConfig();
+
+    const payload = {
+      type: 'prebid',
+      bidRequest,
+      bid,
+      config: mergeDeep(
+        {},
+        config.getConfig('improvedigital.rendererConfig'),
+        deepAccess(bidRequest, 'params.rendererConfig')
+      )
+    };
+
+    const razr = window.razr = window.razr || {};
+    razr.queue = razr.queue || [];
+    razr.queue.push(payload);
+  }
+};
+
 export const spec = {
-  version: '7.4.0',
+  version: '7.7.0',
   code: BIDDER_CODE,
   gvlid: 253,
   aliases: ['id'],
@@ -45,8 +97,24 @@ export const spec = {
       libVersion: this.version
     };
 
-    if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString) {
-      requestParameters.gdpr = bidderRequest.gdprConsent.consentString;
+    const gdprConsent = deepAccess(bidderRequest, 'gdprConsent')
+    if (gdprConsent) {
+      // GDPR Consent String
+      if (gdprConsent.consentString) {
+        requestParameters.gdpr = gdprConsent.consentString;
+      }
+
+      // Additional Consent String
+      const additionalConsent = deepAccess(gdprConsent, 'addtlConsent');
+      if (additionalConsent && additionalConsent.indexOf('~') !== -1) {
+        // Google Ad Tech Provider IDs
+        const atpIds = additionalConsent.substring(additionalConsent.indexOf('~') + 1);
+        deepSetValue(
+          requestParameters,
+          'user.ext.consented_providers_settings.consented_providers',
+          atpIds.split('.').map(id => parseInt(id, 10))
+        );
+      }
     }
 
     if (bidderRequest && bidderRequest.uspConsent) {
@@ -57,7 +125,24 @@ export const spec = {
       requestParameters.referrer = bidderRequest.refererInfo.referer;
     }
 
+    // Adding first party data
+    const site = config.getConfig('ortb2.site');
+    if (site) {
+      const pageCategory = site.pagecat || site.cat;
+      if (pageCategory && isArray(pageCategory)) {
+        requestParameters.pagecat = pageCategory.filter((category) => {
+          return category && isStr(category)
+        });
+      }
+      const genre = deepAccess(site, 'content.genre');
+      if (genre && isStr(genre)) {
+        requestParameters.genre = genre;
+      }
+    }
+    // End of adding first party data
+
     requestParameters.schain = bidRequests[0].schain;
+    requestParameters.coppa = config.getConfig('coppa') === true;
 
     if (bidRequests[0].userId) {
       const eids = createEidsArray(bidRequests[0].userId);
@@ -163,6 +248,11 @@ export const spec = {
           advertiserDomains: bidObject.adomain
         };
       }
+
+      ID_RAZR.addBidData({
+        bidRequest,
+        bid
+      });
 
       bids.push(bid);
     });
@@ -605,6 +695,12 @@ export function ImproveDigitalAdServerJSClient(endPoint) {
     if (requestParameters.schain) {
       impressionBidRequestObject.schain = requestParameters.schain;
     }
+    if (requestParameters.pagecat) {
+      impressionBidRequestObject.pagecat = requestParameters.pagecat;
+    }
+    if (requestParameters.genre) {
+      impressionBidRequestObject.genre = requestParameters.genre;
+    }
     if (requestParameters.user) {
       impressionBidRequestObject.user = requestParameters.user;
     }
@@ -612,6 +708,10 @@ export function ImproveDigitalAdServerJSClient(endPoint) {
       for (let prop in extraRequestParameters) {
         impressionBidRequestObject[prop] = extraRequestParameters[prop];
       }
+    }
+
+    if (requestParameters.coppa) {
+      impressionBidRequestObject.coppa = 1;
     }
 
     return impressionBidRequestObject;

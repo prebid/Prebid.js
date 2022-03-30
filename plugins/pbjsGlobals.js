@@ -1,11 +1,13 @@
 
 let t = require('@babel/core').types;
 let prebid = require('../package.json');
+const path = require('path');
 
 module.exports = function(api, options) {
+  const pbGlobal = options.globalVarName || prebid.globalVarName;
   let replace = {
     '$prebid.version$': prebid.version,
-    '$$PREBID_GLOBAL$$': options.globalVarName || prebid.globalVarName,
+    '$$PREBID_GLOBAL$$': pbGlobal,
     '$$REPO_AND_VERSION$$': `${prebid.repository.url.split('/')[3]}_prebid_${prebid.version}`
   };
 
@@ -13,8 +15,33 @@ module.exports = function(api, options) {
     '$$REPO_AND_VERSION$$'
   ];
 
+  const PREBID_ROOT = path.resolve(__dirname, '..');
+
+  function getModuleName(filename) {
+    const modPath = path.parse(path.relative(PREBID_ROOT, filename));
+    if (modPath.ext.toLowerCase() !== '.js') {
+      return null;
+    }
+    if (modPath.dir === 'modules') {
+      // modules/moduleName.js -> moduleName
+      return modPath.name;
+    }
+    if (modPath.name.toLowerCase() === 'index' && path.dirname(modPath.dir) === 'modules') {
+      // modules/moduleName/index.js -> moduleName
+      return path.basename(modPath.dir);
+    }
+    return null;
+  }
+
   return {
     visitor: {
+      Program(path, state) {
+        const modName = getModuleName(state.filename);
+        if (modName != null) {
+          // append "registration" of module file to $$PREBID_GLOBAL$$.installedModules
+          path.node.body.push(...api.parse(`window.${pbGlobal}.installedModules.push('${modName}');`, {filename: state.filename}).program.body);
+        }
+      },
       StringLiteral(path) {
         Object.keys(replace).forEach(name => {
           if (path.node.value.includes(name)) {
