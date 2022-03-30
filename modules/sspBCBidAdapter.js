@@ -463,6 +463,7 @@ const renderCreative = (site, auctionId, bid, seat, request) => {
   window.ref = "${site.ref}";
   window.adlabel = "${site.adLabel ? site.adLabel : ''}";
   window.pubid = "${site.publisherId ? site.publisherId : ''}";
+  window.requestPVID = "${pageView.id}";
   `;
 
   adcode += `</script>
