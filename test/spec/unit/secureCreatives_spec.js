@@ -8,7 +8,7 @@ import {auctionManager} from 'src/auctionManager.js';
 import * as auctionModule from 'src/auction.js';
 import * as native from 'src/native.js';
 import {fireNativeTrackers, getAllAssetsMessage} from 'src/native.js';
-import events from 'src/events.js';
+import * as events from 'src/events.js';
 import { config as configObj } from 'src/config.js';
 import 'src/prebid.js';
 

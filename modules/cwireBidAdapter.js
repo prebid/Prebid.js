@@ -1,22 +1,22 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import { getRefererInfo } from '../src/refererDetection.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {getRefererInfo} from '../src/refererDetection.js';
+import {getStorageManager} from '../src/storageManager.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import { OUTSTREAM } from '../src/video.js';
+import {OUTSTREAM} from '../src/video.js';
 import {
-  isArray,
-  isNumber,
-  generateUUID,
-  parseSizesInput,
   deepAccess,
+  generateUUID,
+  getBidIdParameter,
   getParameterByName,
   getValue,
-  getBidIdParameter,
+  isArray,
+  isNumber,
   logError,
   logWarn,
+  parseSizesInput,
 } from '../src/utils.js';
-import { Renderer } from '../src/Renderer.js';
-import find from 'core-js-pure/features/array/find.js';
+import {Renderer} from '../src/Renderer.js';
+import {find} from '../src/polyfill.js';
 
 // ------------------------------------
 const BIDDER_CODE = 'cwire';
@@ -91,14 +91,17 @@ export const mapSlotsData = function(validBidRequests) {
   const slots = [];
   validBidRequests.forEach(bid => {
     const bidObj = {};
+    // get testing / debug params
+    let cwcreative = getValue(bid.params, 'cwcreative');
+    let refgroups = getValue(bid.params, 'refgroups');
+    let cwapikey = getValue(bid.params, 'cwapikey');
+
     // get the pacement and page ids
     let placementId = getValue(bid.params, 'placementId');
     let pageId = getValue(bid.params, 'pageId');
-    let adUnitElementId = getValue(bid.params, 'adUnitElementId');
     // get the rest of the auction/bid/transaction info
     bidObj.auctionId = getBidIdParameter('auctionId', bid);
     bidObj.adUnitCode = getBidIdParameter('adUnitCode', bid);
-    bidObj.adUnitElementId = adUnitElementId;
     bidObj.bidId = getBidIdParameter('bidId', bid);
     bidObj.bidderRequestId = getBidIdParameter('bidderRequestId', bid);
     bidObj.placementId = placementId;
@@ -106,6 +109,9 @@ export const mapSlotsData = function(validBidRequests) {
     bidObj.mediaTypes = getBidIdParameter('mediaTypes', bid);
     bidObj.transactionId = getBidIdParameter('transactionId', bid);
     bidObj.sizes = getSlotSizes(bid);
+    bidObj.cwcreative = cwcreative;
+    bidObj.refgroups = refgroups;
+    bidObj.cwapikey = cwapikey;
     slots.push(bidObj);
   });
 
@@ -124,11 +130,6 @@ export const spec = {
   isBidRequestValid: function(bid) {
     bid.params = bid.params || {};
 
-    // if ad unit elemt id not provided - use adUnitCode by default
-    if (!bid.params.adUnitElementId) {
-      bid.params.adUnitElementId = bid.code;
-    }
-
     if (!bid.params.placementId || !isNumber(bid.params.placementId)) {
       logError('placementId not provided or invalid');
       return false;
@@ -140,6 +141,21 @@ export const spec = {
     }
 
     return true;
+  },
+
+  /**
+   * ------------------------------------
+   * itterate trough slots array and try
+   * to extract first occurence of a given
+   * key, if not found - return null
+   * ------------------------------------
+   */
+  getFirstValueOrNull: function(slots, key) {
+    const found = slots.find((item) => {
+      return (typeof item[key] !== 'undefined');
+    });
+
+    return (found) ? found[key] : null;
   },
 
   /**
@@ -162,9 +178,19 @@ export const spec = {
 
     let refgroups = [];
 
-    const cwCreativeId = getQueryVariable(CW_CREATIVE_QUERY);
+    const cwCreativeId = parseInt(getQueryVariable(CW_CREATIVE_QUERY), 10) || null;
+    const cwCreativeIdFromConfig = this.getFirstValueOrNull(slots, 'cwcreative');
+    const refGroupsFromConfig = this.getFirstValueOrNull(slots, 'refgroups');
+    const cwApiKeyFromConfig = this.getFirstValueOrNull(slots, 'cwapikey');
     const rgQuery = getQueryVariable(CW_GROUPS_QUERY);
+
+    if (refGroupsFromConfig !== null) {
+      refgroups = refGroupsFromConfig.split(',');
+    }
+
     if (rgQuery !== null) {
+      // override if query param is present
+      refgroups = [];
       refgroups = rgQuery.split(',');
     }
 
@@ -173,8 +199,9 @@ export const spec = {
     const payload = {
       cwid: localStorageCWID,
       refgroups,
-      cwcreative: cwCreativeId,
+      cwcreative: cwCreativeId || cwCreativeIdFromConfig,
       slots: slots,
+      cwapikey: cwApiKeyFromConfig,
       httpRef: referer || '',
       pageViewId: CW_PAGE_VIEW_ID,
     };

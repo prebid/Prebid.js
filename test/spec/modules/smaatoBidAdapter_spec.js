@@ -127,6 +127,15 @@ describe('smaatoBidAdapterTest', () => {
         }
       };
 
+      let sandbox;
+      beforeEach(() => {
+        sandbox = sinon.sandbox.create();
+      });
+
+      afterEach(() => {
+        sandbox.restore();
+      })
+
       it('auction type is 1 (first price auction)', () => {
         const reqs = spec.buildRequests([singleBannerBidRequest], defaultBidderRequest);
 
@@ -319,8 +328,7 @@ describe('smaatoBidAdapterTest', () => {
       });
 
       it('sends first party data', () => {
-        this.sandbox = sinon.sandbox.create()
-        this.sandbox.stub(config, 'getConfig').callsFake(key => {
+        sandbox.stub(config, 'getConfig').callsFake(key => {
           const config = {
             ortb2: {
               site: {
@@ -349,7 +357,6 @@ describe('smaatoBidAdapterTest', () => {
         expect(req.user.ext.consent).to.equal(CONSENT_STRING);
         expect(req.site.keywords).to.eql('power tools,drills');
         expect(req.site.publisher.id).to.equal('publisherId');
-        this.sandbox.restore();
       });
 
       it('has no user ids', () => {

@@ -55,7 +55,8 @@ export const spec = {
     });
     const payload = {
       codes: codes,
-      referer: encodeURIComponent(bidderRequest.refererInfo.referer)
+      referer: encodeURIComponent(bidderRequest.refererInfo.referer),
+      pbjs: '$prebid.version$'
     };
     if (bidderRequest) { // modules informations (gdpr, ccpa, schain, userId)
       if (bidderRequest.gdprConsent) {
@@ -116,6 +117,9 @@ export const spec = {
         if ('match' in value) {
           bidResponse['mediasquare']['match'] = value['match'];
         }
+        if ('hasConsent' in value) {
+          bidResponse['mediasquare']['hasConsent'] = value['hasConsent'];
+        }
         if ('native' in value) {
           bidResponse['native'] = value['native'];
           bidResponse['mediaType'] = 'native';
@@ -153,19 +157,22 @@ export const spec = {
      */
   onBidWon: function(bid) {
     // fires a pixel to confirm a winning bid
-    let params = [];
+    let params = {'pbjs': '$prebid.version$'};
     let endpoint = document.location.search.match(/msq_test=true/) ? BIDDER_URL_TEST : BIDDER_URL_PROD;
     let paramsToSearchFor = ['cpm', 'size', 'mediaType', 'currency', 'creativeId', 'adUnitCode', 'timeToRespond', 'requestId', 'auctionId']
     if (bid.hasOwnProperty('mediasquare')) {
-      if (bid['mediasquare'].hasOwnProperty('bidder')) { params.push('bidder=' + bid['mediasquare']['bidder']); }
-      if (bid['mediasquare'].hasOwnProperty('code')) { params.push('code=' + bid['mediasquare']['code']); }
-      if (bid['mediasquare'].hasOwnProperty('match')) { params.push('match=' + bid['mediasquare']['match']); }
+      if (bid['mediasquare'].hasOwnProperty('bidder')) { params['bidder'] = bid['mediasquare']['bidder']; }
+      if (bid['mediasquare'].hasOwnProperty('code')) { params['code'] = bid['mediasquare']['code']; }
+      if (bid['mediasquare'].hasOwnProperty('match')) { params['match'] = bid['mediasquare']['match']; }
+      if (bid['mediasquare'].hasOwnProperty('hasConsent')) { params['hasConsent'] = bid['mediasquare']['hasConsent']; }
     };
     for (let i = 0; i < paramsToSearchFor.length; i++) {
-      if (bid.hasOwnProperty(paramsToSearchFor[i])) { params.push(paramsToSearchFor[i] + '=' + bid[paramsToSearchFor[i]]); }
+      if (bid.hasOwnProperty(paramsToSearchFor[i])) {
+        params[paramsToSearchFor[i]] = bid[paramsToSearchFor[i]];
+        if (typeof params[paramsToSearchFor[i]] == 'number') { params[paramsToSearchFor[i]] = params[paramsToSearchFor[i]].toString() }
+      }
     }
-    if (params.length > 0) { params = '?' + params.join('&'); }
-    ajax(endpoint + BIDDER_ENDPOINT_WINNING + params, null, undefined, {method: 'GET', withCredentials: true});
+    ajax(endpoint + BIDDER_ENDPOINT_WINNING, null, JSON.stringify(params), {method: 'POST', withCredentials: true});
     return true;
   }
 
