@@ -312,7 +312,7 @@ export const permutiveSubmodule = {
   onAuctionInitEvent: function (auctionDetails, customModuleConfig) {
     makeSafe(function () {
       // Route for bidders supporting ORTB2
-      setBidderRtb(auctionDetails, customModuleConfig, ortb2UserDataTransformations)
+      setBidderRtb(auctionDetails, customModuleConfig)
     })
   },
   init: init
