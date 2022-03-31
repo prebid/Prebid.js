@@ -125,12 +125,6 @@
  * @property {(function|undefined)} callback - function that will return an id
  */
 
-/**
-  * @typedef {Object} RefreshUserIdsOptions
-  * @property {(string[]|undefined)} submoduleNames - submodules to refresh
- *  @property {Boolean?} refresh - if false, nothing is refreshed - useful if you need a promise to ID resolution
-  */
-
 import {find, includes} from '../../src/polyfill.js';
 import {config} from '../../src/config.js';
 import * as events from '../../src/events.js';
