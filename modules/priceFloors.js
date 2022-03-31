@@ -17,7 +17,7 @@ import {
 import {getGlobal} from '../src/prebidGlobal.js';
 import {config} from '../src/config.js';
 import {ajaxBuilder} from '../src/ajax.js';
-import events from '../src/events.js';
+import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
 import {getHook} from '../src/hook.js';
 import {createBid} from '../src/bidfactory.js';
@@ -138,7 +138,7 @@ export function getFirstMatchingFloor(floorData, bidObject, responseObject = {})
 
   let matchingData = {
     floorMin: floorData.floorMin || 0,
-    floorRuleValue: floorData.values[matchingRule] || floorData.default,
+    floorRuleValue: isNaN(floorData.values[matchingRule]) ? floorData.default : floorData.values[matchingRule],
     matchingData: allPossibleMatches[0], // the first possible match is an "exact" so contains all data relevant for anlaytics adapters
     matchingRule
   };

@@ -12,11 +12,12 @@ let utils = require('src/utils.js');
 describe('InsticatorBidAdapter', function () {
   const adapter = newBidder(spec);
 
+  const bidderRequestId = '22edbae2733bf6';
   let bidRequest = {
     bidder: 'insticator',
     adUnitCode: 'adunit-code',
     params: {
-      adUnitId: '1a2b3c4d5e6f1a2b3c4d'
+      adUnitId: '1a2b3c4d5e6f1a2b3c4d',
     },
     sizes: [[300, 250], [300, 600]],
     mediaTypes: {
@@ -25,10 +26,38 @@ describe('InsticatorBidAdapter', function () {
       }
     },
     bidId: '30b31c1838de1e',
+    ortb2Imp: {
+      ext: {
+        gpid: '1111/homepage'
+      }
+    },
+    schain: {
+      ver: '1.0',
+      complete: 1,
+      nodes: [
+        {
+          asi: 'insticator.com',
+          sid: '00001',
+          hp: 1,
+          rid: bidderRequestId
+        }
+      ]
+    },
+    userIdAsEids: [
+      {
+        source: 'criteo.com',
+        uids: [
+          {
+            id: '123',
+            atype: 1
+          }
+        ]
+      }
+    ],
   };
 
   let bidderRequest = {
-    bidderRequestId: '22edbae2733bf6',
+    bidderRequestId,
     auctionId: '74f78609-a92d-4cf1-869f-1b244bbfb5d2',
     timeout: 300,
     gdprConsent: {
@@ -144,12 +173,23 @@ describe('InsticatorBidAdapter', function () {
       const data = JSON.parse(requests[0].data);
 
       expect(data).to.be.an('object');
-      expect(data).to.have.all.keys('id', 'tmax', 'source', 'site', 'device', 'regs', 'user', 'imp');
+      expect(data).to.have.all.keys('id', 'tmax', 'source', 'site', 'device', 'regs', 'user', 'imp', 'ext');
       expect(data.id).to.equal(bidderRequest.bidderRequestId);
       expect(data.tmax).to.equal(bidderRequest.timeout);
-      expect(data.source).to.eql({
-        fd: 1,
-        tid: bidderRequest.auctionId,
+      expect(data.source).to.have.all.keys('fd', 'tid', 'ext');
+      expect(data.source.fd).to.equal(1);
+      expect(data.source.tid).to.equal(bidderRequest.auctionId);
+      expect(data.source.ext).to.have.property('schain').to.deep.equal({
+        ver: '1.0',
+        complete: 1,
+        nodes: [
+          {
+            asi: 'insticator.com',
+            sid: '00001',
+            hp: 1,
+            rid: bidderRequest.bidderRequestId
+          }
+        ]
       });
       expect(data.site).to.be.an('object');
       expect(data.site.domain).not.to.be.empty;
@@ -167,6 +207,18 @@ describe('InsticatorBidAdapter', function () {
       expect(data.regs.ext.gdprConsentString).to.equal(bidderRequest.gdprConsent.consentString);
       expect(data.user).to.be.an('object');
       expect(data.user.id).to.equal(USER_ID_DUMMY_VALUE);
+      expect(data.user.ext).to.have.property('eids');
+      expect(data.user.ext.eids).to.deep.equal([
+        {
+          source: 'criteo.com',
+          uids: [
+            {
+              id: '123',
+              atype: 1
+            }
+          ]
+        }
+      ]);
       expect(data.imp).to.be.an('array').that.have.lengthOf(1);
       expect(data.imp).to.deep.equal([{
         id: bidRequest.bidId,
@@ -178,11 +230,20 @@ describe('InsticatorBidAdapter', function () {
           ]
         },
         ext: {
+          gpid: bidRequest.ortb2Imp.ext.gpid,
           insticator: {
             adUnitId: bidRequest.params.adUnitId,
           },
         }
       }]);
+      expect(data.ext).to.be.an('object');
+      expect(data.ext.insticator).to.be.an('object')
+      expect(data.ext.insticator).to.deep.equal({
+        adapter: {
+          vendor: 'prebid',
+          prebid: '$prebid.version$'
+        }
+      });
     });
 
     it('should generate new userId if not valid user is stored', function () {
@@ -281,7 +342,12 @@ describe('InsticatorBidAdapter', function () {
                 h: 200,
                 adm: 'adm1',
                 exp: 60,
-                bidADomain: ['test1.com'],
+                adomain: ['test1.com'],
+                ext: {
+                  meta: {
+                    test: 1
+                  }
+                }
               },
               {
                 impid: 'bid2',
@@ -290,7 +356,7 @@ describe('InsticatorBidAdapter', function () {
                 w: 600,
                 h: 200,
                 adm: 'adm2',
-                bidADomain: ['test2.com'],
+                adomain: ['test2.com'],
               },
               {
                 impid: 'bid3',
@@ -299,7 +365,7 @@ describe('InsticatorBidAdapter', function () {
                 w: 300,
                 h: 200,
                 adm: 'adm3',
-                bidADomain: ['test3.com'],
+                adomain: ['test3.com'],
               }
             ],
           },
@@ -321,7 +387,8 @@ describe('InsticatorBidAdapter', function () {
         meta: {
           advertiserDomains: [
             'test1.com'
-          ]
+          ],
+          test: 1
         },
         ad: 'adm1',
         adUnitCode: 'adunit-code-1',
