@@ -14,7 +14,7 @@ import {
   fieldMatchingFunctions,
   allowedFields
 } from 'modules/priceFloors.js';
-import events from 'src/events.js';
+import * as events from 'src/events.js';
 import * as mockGpt from '../integration/faker/googletag.js';
 import 'src/prebid.js';
 import {createBid} from '../../../src/bidfactory.js';
@@ -230,6 +230,44 @@ describe('the price floors module', function () {
   });
 
   describe('getFirstMatchingFloor', function () {
+    it('uses a 0 floor as overrite', function () {
+      let inputFloorData = {
+        currency: 'USD',
+        schema: {
+          delimiter: '|',
+          fields: ['adUnitCode']
+        },
+        values: {
+          'test_div_1': 0,
+          'test_div_2': 2
+        },
+        default: 0.5
+      };
+
+      expect(getFirstMatchingFloor(inputFloorData, basicBidRequest, {mediaType: 'banner', size: '*'})).to.deep.equal({
+        floorMin: 0,
+        floorRuleValue: 0,
+        matchingFloor: 0,
+        matchingData: 'test_div_1',
+        matchingRule: 'test_div_1'
+      });
+
+      expect(getFirstMatchingFloor(inputFloorData, {...basicBidRequest, adUnitCode: 'test_div_2'}, {mediaType: 'banner', size: '*'})).to.deep.equal({
+        floorMin: 0,
+        floorRuleValue: 2,
+        matchingFloor: 2,
+        matchingData: 'test_div_2',
+        matchingRule: 'test_div_2'
+      });
+
+      expect(getFirstMatchingFloor(inputFloorData, {...basicBidRequest, adUnitCode: 'test_div_3'}, {mediaType: 'banner', size: '*'})).to.deep.equal({
+        floorMin: 0,
+        floorRuleValue: 0.5,
+        matchingFloor: 0.5,
+        matchingData: 'test_div_3',
+        matchingRule: undefined
+      });
+    });
     it('selects the right floor for different mediaTypes', function () {
       // banner with * size (not in rule file so does not do anything)
       expect(getFirstMatchingFloor({...basicFloorData}, basicBidRequest, {mediaType: 'banner', size: '*'})).to.deep.equal({
