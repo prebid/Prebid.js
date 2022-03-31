@@ -127,6 +127,7 @@ The following macros are available
 
  * `%%pbadslot%%`: [Prebid Ad Slot](https://docs.prebid.org/features/pbAdSlot.html) returns [`AdUnit.code`](https://docs.prebid.org/features/pbAdSlot.html) if set otherwise returns [`AdUnit.code`](https://docs.prebid.org/dev-docs/adunit-reference.html#adunit)
      * it is recommended you read the [Prebid Ad Slot section in the Adloox RTD Provider documentation](./adlooxRtdProvider.md#prebid-ad-slot)
+ * `%%pageurl%%`: [`canonicalUrl`](https://docs.prebid.org/dev-docs/publisher-api-reference/setConfig.html#setConfig-Page-URL) from the [`refererInfo` object](https://docs.prebid.org/dev-docs/bidder-adaptor.html#referrers) otherwise uses `referer`
 
 ### Functions
 

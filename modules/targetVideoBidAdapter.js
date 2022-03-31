@@ -7,10 +7,12 @@ const SOURCE = 'pbjs';
 const BIDDER_CODE = 'targetVideo';
 const ENDPOINT_URL = 'https://ib.adnxs.com/ut/v3/prebid';
 const MARGIN = 1.35;
+const GVLID = 786;
 
 export const spec = {
 
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER],
 
   /**
