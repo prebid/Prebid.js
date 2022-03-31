@@ -191,7 +191,6 @@ export const spec = {
         spotxReq.video.maxduration = maxduration;
       }
 
-      placement
       const placement = deepAccess(bid, 'mediaTypes.video.placement') || getBidIdParameter('placement_type', bid.params);
       if (placement != '') {
         spotxReq.video.ext.placement = placement;
