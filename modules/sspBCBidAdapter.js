@@ -466,6 +466,10 @@ const renderCreative = (site, auctionId, bid, seat, request) => {
   window.requestPVID = "${pageView.id}";
   `;
 
+  if (gam) {
+    adcode += `window.gam = ${JSON.stringify(gam)};`;
+  }
+
   adcode += `</script>
     </head>
     <body>
