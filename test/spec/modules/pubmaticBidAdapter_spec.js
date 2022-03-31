@@ -3201,6 +3201,16 @@ describe('PubMatic adapter', function () {
         let data = JSON.parse(request.data);
         expect(data.ext.acat).to.exist.and.to.deep.equal(['IAB1', 'IAB2']);
       });
+
+	  it('acat: pass only unique strings', function() {
+        multipleBidRequests[0].params.acat = ['IAB1', 'IAB2', 'IAB1', 'IAB2', 'IAB1', 'IAB2'];
+        multipleBidRequests[1].params.acat = ['IAB1', 'IAB2', 'IAB1', 'IAB2', 'IAB1', 'IAB3'];
+        let request = spec.buildRequests(multipleBidRequests, {
+          auctionId: 'new-auction-id'
+        });
+        let data = JSON.parse(request.data);
+        expect(data.ext.acat).to.exist.and.to.deep.equal(['IAB1', 'IAB2', 'IAB3']);
+      });
 	  });
 
     describe('Request param bcat checking', function() {

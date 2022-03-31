@@ -976,17 +976,23 @@ function _blockedIabCategoriesValidation(payload, blockedIabCategories) {
   }
 }
 
-function _checkAndValidateacat(acatParams) {
-  return acatParams
+function _checkAndValidateacat(payload, allowedIabCategories) {
+  allowedIabCategories = allowedIabCategories
     .filter(function(category) {
-      if (typeof category === 'string') { // only strings
+      if (typeof category === 'string') { // returns only strings
         return true;
       } else {
         logWarn(LOG_WARN_PREFIX + 'acat: Each category should be a string, ignoring category: ' + category);
         return false;
       }
     })
-    .map(category => category.trim())
+    .map(category => category.trim()) // trim all categories
+    .filter((category, index, arr) => arr.indexOf(category) === index); // return unique values only
+
+  if (allowedIabCategories.length > 0) {
+    logWarn(LOG_WARN_PREFIX + 'acat: Selected: ', allowedIabCategories);
+    payload.ext.acat = allowedIabCategories;
+  }
 }
 
 function _assignRenderer(newBid, request) {
@@ -1088,6 +1094,7 @@ export const spec = {
     var dctrArr = [];
     var bid;
     var blockedIabCategories = [];
+    var allowedIabCategories = [];
 
     validBidRequests.forEach(originalBid => {
       bid = deepClone(originalBid);
@@ -1120,7 +1127,7 @@ export const spec = {
         blockedIabCategories = blockedIabCategories.concat(bid.params.bcat);
       }
       if (bid.params.hasOwnProperty('acat') && isArray(bid.params.acat)) {
-        payload.ext.acat = _checkAndValidateacat(bid.params.acat);
+        allowedIabCategories = allowedIabCategories.concat(bid.params.acat);
       }
       var impObj = _createImpressionObject(bid, conf);
       if (impObj) {
@@ -1192,6 +1199,7 @@ export const spec = {
 
     _handleEids(payload, validBidRequests);
     _blockedIabCategoriesValidation(payload, blockedIabCategories);
+    _checkAndValidateacat(payload, allowedIabCategories);
     _handleFlocId(payload, validBidRequests);
     // First Party Data
     const commonFpd = config.getConfig('ortb2') || {};
