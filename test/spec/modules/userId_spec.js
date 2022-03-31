@@ -367,7 +367,7 @@ describe('User ID', function () {
           }]
         }
       });
-      getGlobal().getUserIds((uids) => {
+      getGlobal().getUserIdsAsync().then((uids) => {
         expect(uids).to.deep.equal(ids);
         expect(getGlobal().getUserIds()).to.deep.equal(ids);
         done();
@@ -387,9 +387,8 @@ describe('User ID', function () {
           }]
         }
       });
-      getGlobal().getUserIdsAsEids((eids) => {
-        expect(eids).to.deep.equal(createEidsArray(ids));
-        expect(getGlobal().getUserIdsAsEids()).to.deep.equal(eids);
+      getGlobal().getUserIdsAsync().then((ids) => {
+        expect(getGlobal().getUserIdsAsEids()).to.deep.equal(createEidsArray(ids));
         done();
       });
     });
@@ -457,37 +456,41 @@ describe('User ID', function () {
           getId: sinon.stub().returns({callback: mockIdCallback})
         };
         init(config);
-        setSubmoduleRegistry([mockIdSystem, sharedIdSystemSubmodule]);
+        setSubmoduleRegistry([mockIdSystem]);
         config.setConfig({
           userSync: {
-            syncDelay: 10,
+            auctionDelay: 10,
             userIds: [{
               name: 'mockId',
               storage: {name: 'MOCKID', type: 'cookie'}
-            }, {
-              name: 'pubCommonId',
-              value: { pubcid: '11111' },
             }]
           }
         });
       });
 
-      Object.entries({
-        'getUserIds': (cb) => getGlobal().getUserIds(cb),
-        'getUserIdsAsEids': (cb) => getGlobal().getUserIdsAsEids(cb),
-        'getUserIdsAsEidBySource': (cb) => getGlobal().getUserIdsAsEidBySource('pubcid.org', cb)
-      }).forEach(([fname, attachCallback]) => {
-        it(`should force init - regardless of auction state - and propagate to ${fname} callbacks`, () => {
-          let result = null;
-          attachCallback((val) => { result = val });
-          return new Promise((resolve) => setTimeout(resolve)).then(() => {
-            expect(result).to.equal(null); // auction has not ended, callback should not have been called
-            mockIdCallback.callsFake((cb) => cb(MOCK_ID));
-            return getGlobal().refreshUserIds();
-          }).then(() => {
-            expect(result).not.to.equal(null); // auction still not over, but refresh was explicitly forced
-          })
+      it('should still resolve promises returned by getUserIdsAsync', () => {
+        let result = null;
+        getGlobal().getUserIdsAsync().then((val) => { result = val; });
+        return clearStack().then(() => {
+          expect(result).to.equal(null); // auction has not ended, callback should not have been called
+          mockIdCallback.callsFake((cb) => cb(MOCK_ID));
+          return getGlobal().refreshUserIds().then(clearStack);
+        }).then(() => {
+          expect(result).to.deep.equal(getGlobal().getUserIds()) // auction still not over, but refresh was explicitly forced
         });
+      });
+
+      it('should not stop auctions', (done) => {
+        // simulate an infinite `auctionDelay`; refreshing should still allow the auction to continue
+        // as soon as ID submodules have completed init
+        requestBidsHook(() => {
+          done();
+        }, {adUnits: [getAdUnitMock()]}, {delay: delay()});
+        getGlobal().refreshUserIds();
+        clearStack().then(() => {
+          // simulate init complete
+          mockIdCallback.callArg(0, {id: {MOCKID: '1111'}});
+        })
       });
     });
 
@@ -516,7 +519,7 @@ describe('User ID', function () {
         }
       });
 
-      getGlobal().getUserIds((uids) => {
+      getGlobal().getUserIdsAsync().then((uids) => {
         expect(uids.id.mockId).to.equal('1111');
         // update to new config value
         config.setConfig({
@@ -2651,8 +2654,8 @@ describe('User ID', function () {
           }
         });
         expect(typeof (getGlobal()).getUserIdsAsEidBySource).to.equal('function');
-        (getGlobal()).getUserIdsAsEidBySource(signalSources[0], (actual) => {
-          expect(actual).to.deep.equal(users);
+        (getGlobal()).getUserIdsAsync().then(() => {
+          expect(getGlobal().getUserIdsAsEidBySource(signalSources[0])).to.deep.equal(users);
           done();
         });
       });

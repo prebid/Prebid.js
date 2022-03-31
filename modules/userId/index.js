@@ -660,7 +660,7 @@ let initIdSystem;
  */
 export function requestBidsHook(fn, reqBidsConfigObj, {delay = delayFor} = {}) {
   Promise.race([
-    initIdSystem(),
+    getUserIdsAsync(),
     delay(auctionDelay)
   ]).then(() => {
     // pass available user id data to bid adapters
@@ -694,10 +694,7 @@ export function requestBidsHook(fn, reqBidsConfigObj, {delay = delayFor} = {}) {
  * This function will be exposed in global-name-space so that userIds stored by Prebid UserId module can be used by external codes as well.
  * Simple use case will be passing these UserIds to A9 wrapper solution
  */
-function getUserIds(cb) {
-  if (cb && isFn(cb)) {
-    initIdSystem().then(() => cb(getUserIds()), () => getUserIds(cb));
-  }
+function getUserIds() {
   return getCombinedSubmoduleIds(initializedSubmodules)
 }
 
@@ -705,10 +702,7 @@ function getUserIds(cb) {
  * This function will be exposed in global-name-space so that userIds stored by Prebid UserId module can be used by external codes as well.
  * Simple use case will be passing these UserIds to A9 wrapper solution
  */
-function getUserIdsAsEids(cb) {
-  if (cb && isFn(cb)) {
-    initIdSystem().then(() => cb(getUserIdsAsEids()), () => getUserIdsAsEids(cb));
-  }
+function getUserIdsAsEids() {
   return createEidsArray(getUserIds())
 }
 
@@ -717,10 +711,7 @@ function getUserIdsAsEids(cb) {
  * Simple use case will be passing these UserIds to A9 wrapper solution
  */
 
-function getUserIdsAsEidBySource(sourceName, cb) {
-  if (cb && isFn(cb)) {
-    initIdSystem().then(() => cb(getUserIdsAsEidBySource(sourceName)), () => getUserIdsAsEidBySource(sourceName, cb));
-  }
+function getUserIdsAsEidBySource(sourceName) {
   return createEidsArray(getSubmoduleId(initializedSubmodules, sourceName))[0];
 }
 
@@ -789,17 +780,37 @@ function registerSignalSources() {
 }
 
 /**
-* This function will be exposed in the global-name-space so that userIds can be refreshed after initialization.
-* @param {RefreshUserIdsOptions} options
-*/
-function refreshUserIds({refresh = true, submoduleNames} = {}, callback) {
-  return initIdSystem({refresh, submoduleNames})
+ * Force (re)initialization of ID submodules.
+ *
+ * This will force a refresh of the specified ID submodules regardless of `auctionDelay` / `syncDelay` settings, and
+ * return a promise that resolves to the same value as `getUserIds()` when the refresh is complete.
+ * If a refresh is already in progress, it will be canceled (rejecting promises returned by previous calls to `refreshUserIds`).
+ *
+ * @param submoduleNames? submodules to refresh. If omitted, refresh all submodules.
+ * @param callback? called when the refresh is complete
+ */
+function refreshUserIds({submoduleNames} = {}, callback) {
+  return initIdSystem({refresh: true, submoduleNames})
     .then(() => {
       if (callback && isFn(callback)) {
         callback();
       }
       return getUserIds();
     });
+}
+
+/**
+ * @returns a promise that resolves to the same value as `getUserIds()`, but only once all ID submodules have completed
+ * initialization. This can also be used to synchronize calls to other ID accessors, e.g.
+ *
+ * ```
+ * pbjs.getUserIdsAsync().then(() => {
+ *   const eids = pbjs.getUserIdsAsEids(); // guaranteed to be completely initialized at this point
+ * });
+ * ```
+ */
+function getUserIdsAsync() {
+  return initIdSystem().then(() => getUserIds(), () => getUserIdsAsync());
 }
 
 /**
@@ -1032,6 +1043,7 @@ export function init(config, {delay = delayFor} = {}) {
   (getGlobal()).getEncryptedEidsForSource = getEncryptedEidsForSource;
   (getGlobal()).registerSignalSources = registerSignalSources;
   (getGlobal()).refreshUserIds = refreshUserIds;
+  (getGlobal()).getUserIdsAsync = getUserIdsAsync;
   (getGlobal()).getUserIdsAsEidBySource = getUserIdsAsEidBySource;
 }
 
