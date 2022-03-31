@@ -83,7 +83,7 @@ describe('automatadBidAdapter', function () {
       expect(spec.isBidRequestValid(bidRequestAllParams)).to.equal(true)
     })
 
-    it('should return true if only required params present',function(){
+    it('should return true if only required params present', function() {
       expect(spec.isBidRequestValid(bidRequestRequiredParams)).to.equal(true)
     })
 
