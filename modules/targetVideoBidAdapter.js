@@ -137,6 +137,7 @@ function createVideoTag(bid) {
 function newBid(serverBid, rtbBid, bidderRequest) {
   const bidRequest = getBidRequest(serverBid.uuid, [bidderRequest]);
   const sizes = getSizes(bidRequest);
+  const bidParams = bidderRequest.bids.length ? bidderRequest.bids[0].params : {};
   const bid = {
     requestId: serverBid.uuid,
     cpm: rtbBid.cpm * MARGIN,
@@ -158,7 +159,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
   if (rtbBid.rtb.video) {
     Object.assign(bid, {
       vastImpUrl: rtbBid.notify_url,
-      ad: getBannerHtml(rtbBid.notify_url + '&redir=' + encodeURIComponent(rtbBid.rtb.video.asset_url)),
+      ad: getBannerHtml(rtbBid.notify_url + '&redir=' + encodeURIComponent(rtbBid.rtb.video.asset_url), bidParams),
       ttl: 3600
     });
   }
@@ -170,7 +171,8 @@ function getRtbBid(tag) {
   return tag && tag.ads && tag.ads.length && find(tag.ads, ad => ad.rtb);
 }
 
-function getBannerHtml(vastUrl) {
+function getBannerHtml(vastUrl, bidParams) {
+  const bidParamsJSON = JSON.stringify(bidParams);
   return `<!DOCTYPE html>
     <html lang="en">
     <head>
@@ -181,7 +183,7 @@ function getBannerHtml(vastUrl) {
     <body>
       <div id="targetVideoPlayer"></div>
       <script src="https://player.target-video.com/custom/targetvideo-banner.js"></script>
-      <script>initPlayer("${vastUrl}");</script>
+      <script>initPlayer('${vastUrl}', '${bidParamsJSON}');</script>
     </body>
   </html>`;
 }
