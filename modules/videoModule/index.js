@@ -7,6 +7,7 @@ import CONSTANTS from '../../src/constants.json';
 import { videoCoreFactory } from './coreVideo.js';
 import { coreAdServerFactory } from './adServer.js';
 import { videoImpressionVerifierFactory } from './videoImpressionVerifier.js';
+import { mergeDeep } from '../../src/utils'
 
 /**
  * This module adds User Video support to prebid.js
@@ -85,7 +86,10 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     }
 
     const oRtbParams = videoCore.getOrtbParams(adUnit.video.divId);
+
     adUnit.mediaTypes.video = Object.assign({}, videoMediaType, oRtbParams.video);
+    let ortb2 = { ortb2: mergeDeep({}, getConfig('ortb2'), { site: oRtbParams.content }) };
+    pbGlobal.setConfig(ortb2);
   }
 
   function renderWinningBid(adUnit) {
