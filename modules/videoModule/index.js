@@ -85,7 +85,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     }
 
     const oRtbParams = videoCore.getOrtbParams(adUnit.video.divId);
-    adUnit.mediaTypes.video = Object.assign({}, videoMediaType, oRtbParams);
+    adUnit.mediaTypes.video = Object.assign({}, videoMediaType, oRtbParams.video);
   }
 
   function renderWinningBid(adUnit) {
