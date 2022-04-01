@@ -91,6 +91,10 @@ export const spec = {
 
         netRevenue: true,
         ttl: DEFAULT_TTL,
+
+        meta: {
+          advertiserDomains: rtbBid.adomain && rtbBid.adomain.length > 0 ? rtbBid.adomain : [],
+        }
       };
 
       prBid.ad = rtbBid.adm;

@@ -159,6 +159,8 @@ describe('Yandex adapter', function () {
       expect(rtbBid.currency).to.equal('USD');
       expect(rtbBid.netRevenue).to.equal(true);
       expect(rtbBid.ttl).to.equal(180);
+
+      expect(rtbBid.meta.advertiserDomains).to.deep.equal(['example.com']);
     });
   });
 });
