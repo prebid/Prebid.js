@@ -11,6 +11,7 @@ import * as events from 'src/events.js';
 import {hook} from '../../../../src/hook.js';
 import {auctionManager} from '../../../../src/auctionManager.js';
 import {stubAuctionIndex} from '../../../helpers/indexStub.js';
+import { bidderSettings } from '../../../../src/bidderSettings.js';
 
 const CODE = 'sampleBidder';
 const MOCK_BIDS_REQUEST = {
@@ -1022,6 +1023,101 @@ describe('validate bid response: ', function () {
     expect(addBidResponseStub.firstCall.args[0]).to.equal('mock/placement');
     expect(logErrorSpy.callCount).to.equal(0);
   });
+
+  describe(' Check for unknownBiddersList ', function() {
+    let bidRequest;
+    let bids1;
+    let logWarnSpy;
+    let bidderSettingStub;
+
+    beforeEach(function () {
+      bidRequest = {
+        bids: [{
+          bidId: '1',
+          bidder: CODE,
+          auctionId: 'first-bid-id',
+          adUnitCode: 'mock/placement',
+          transactionId: 'au',
+        }]
+      };
+
+      bids1 = Object.assign({},
+        bids[0],
+        {
+          bidderCode: 'unknownBidder'
+        }
+      );
+      logWarnSpy = sinon.spy(utils, 'logWarn');
+      bidderSettingStub = sinon.stub(bidderSettings, 'get');
+    });
+
+    afterEach(function () {
+      logWarnSpy.restore();
+      bidderSettingStub.restore();
+    });
+
+    it('should log warning when bidder is unknown and allowUknownBidderCode flag is false', function () {
+      bidderSettingStub.returns(false);
+
+      const bidder = newBidder(spec);
+      spec.interpretResponse.returns(bids1);
+      bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+
+      expect(addBidResponseStub.calledOnce).to.equal(false);
+      expect(logWarnSpy.callCount).to.equal(1);
+    });
+
+    it('should log warning when the particular bidder is not specified in unknowBidderCodes and allowUknownBidderCode flag is true', function () {
+      bidderSettingStub.withArgs(CODE, 'allowUnknownBidderCodes').returns(true);
+      bidderSettingStub.withArgs(CODE, 'allowedUnknownBidderCodes').returns(['unknownBidder02']);
+
+      const bidder = newBidder(spec);
+      spec.interpretResponse.returns(bids1);
+      bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+
+      expect(addBidResponseStub.calledOnce).to.equal(false);
+      expect(logWarnSpy.callCount).to.equal(1);
+    });
+
+    it('should accept the bid, when unknowBidderCodes is empty and allowUknownBidderCode flag is true', function () {
+      bidderSettingStub.withArgs(CODE, 'allowUnknownBidderCodes').returns(true);
+      bidderSettingStub.withArgs(CODE, 'allowedUnknownBidderCodes').returns();
+
+      const bidder = newBidder(spec);
+      spec.interpretResponse.returns(bids1);
+      bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+
+      expect(addBidResponseStub.calledOnce).to.equal(true);
+      expect(logWarnSpy.callCount).to.equal(0);
+      expect(logErrorSpy.callCount).to.equal(0);
+    });
+
+    it('should accept the bid, when unknowBidderCodes is empty and allowUknownBidderCode flag is true', function () {
+      bidderSettingStub.withArgs(CODE, 'allowUnknownBidderCodes').returns(true);
+      bidderSettingStub.withArgs(CODE, 'allowedUnknownBidderCodes').returns(['*']);
+
+      const bidder = newBidder(spec);
+      spec.interpretResponse.returns(bids1);
+      bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+
+      expect(addBidResponseStub.calledOnce).to.equal(true);
+      expect(logWarnSpy.callCount).to.equal(0);
+      expect(logErrorSpy.callCount).to.equal(0);
+    });
+
+    it('should accept the bid, when unknowBidderCodes has bidder name and allowUknownBidderCode flag is true', function () {
+      bidderSettingStub.withArgs(CODE, 'allowUnknownBidderCodes').returns(true);
+      bidderSettingStub.withArgs(CODE, 'allowedUnknownBidderCodes').returns(['unknownBidder']);
+
+      const bidder = newBidder(spec);
+      spec.interpretResponse.returns(bids1);
+      bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+
+      expect(addBidResponseStub.calledOnce).to.equal(true);
+      expect(logWarnSpy.callCount).to.equal(0);
+      expect(logErrorSpy.callCount).to.equal(0);
+    });
+  })
 });
 
 describe('preload mapping url hook', function() {
