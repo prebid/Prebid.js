@@ -976,7 +976,7 @@ function _blockedIabCategoriesValidation(payload, blockedIabCategories) {
   }
 }
 
-function _checkAndValidateacat(payload, allowedIabCategories) {
+function _allowedIabCategoriesValidation(payload, allowedIabCategories) {
   allowedIabCategories = allowedIabCategories
     .filter(function(category) {
       if (typeof category === 'string') { // returns only strings
@@ -1199,7 +1199,7 @@ export const spec = {
 
     _handleEids(payload, validBidRequests);
     _blockedIabCategoriesValidation(payload, blockedIabCategories);
-    _checkAndValidateacat(payload, allowedIabCategories);
+    _allowedIabCategoriesValidation(payload, allowedIabCategories);
     _handleFlocId(payload, validBidRequests);
     // First Party Data
     const commonFpd = config.getConfig('ortb2') || {};
