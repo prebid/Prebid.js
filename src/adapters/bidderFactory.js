@@ -239,8 +239,6 @@ export function newBidder(spec) {
             if (isUnknownBidder(bid.bidderCode, bidRequest.bidder)) {
               logWarn(`${bid.bidderCode} is not a registered partner or known bidder of ${bidRequest.bidder}, hence continuing without bid. If you wish to support this bidder, please mark allowUnknownBidderCodes as true in bidderSettings.`);
               return;
-            } else {
-              bid.adapterCode = bidRequest.bidder;
             }
             // creating a copy of original values as cpm and currency are modified later
             bid.originalCpm = bid.cpm;
