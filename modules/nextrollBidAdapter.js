@@ -65,7 +65,6 @@ export const spec = {
             }
           },
 
-          user: _getUser(validBidRequests),
           site: _getSite(bidRequest, topLocation),
           seller: _getSeller(bidRequest),
           device: _getDevice(bidRequest),
@@ -184,22 +183,6 @@ function _getNativeAssets(mediaTypeNative) {
   return NATIVE_ASSET_MAP
     .map(assetMap => _getAsset(mediaTypeNative, assetMap))
     .filter(asset => asset !== undefined);
-}
-
-function _getUser(requests) {
-  const id = deepAccess(requests, '0.userId.nextrollId');
-  if (id === undefined) {
-    return;
-  }
-
-  return {
-    ext: {
-      eid: [{
-        'source': 'nextroll',
-        id
-      }]
-    }
-  };
 }
 
 function _getFloor(bidRequest) {
