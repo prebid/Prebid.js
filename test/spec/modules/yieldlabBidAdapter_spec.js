@@ -414,4 +414,40 @@ describe('yieldlabBidAdapter', function () {
       expect(result[0].vastUrl).to.include('&iab_content=id%3Afoo_id%2Cepisode%3A99%2Ctitle%3Afoo_title%252Cbar_title%2Cseries%3Afoo_series%2Cseason%3As1%2Cartist%3Afoo%2520bar%2Cgenre%3Abaz%2Cisrc%3ACC-XXX-YY-NNNNN%2Curl%3Ahttp%253A%252F%252Ffoo_url.de%2Ccat%3Acat1%7Ccat2%252Cppp%7Ccat3%257C%257C%257C%252F%252F%2Ccontext%3A7%2Ckeywords%3Ak1%252C%7Ck2..%2Clive%3A0')
     })
   })
+
+  describe('getUserSyncs', function () {
+    const syncOptions = {
+      iframeEnabled: true,
+      pixelEnabled: false
+    };
+    const expectedUrlSnippets = ['https://ad.yieldlab.net/d/6846326/766/2x2?', 'ts=', 'type=h'];
+
+    it('should return user sync as expected', function () {
+      const bidRequest = {
+        gdprConsent: {
+          consentString: 'BN5lERiOMYEdiAKAWXEND1AAAAE6DABACMA',
+          gdprApplies: true
+        },
+        uspConsent: '1YYY'
+      };
+      const sync = spec.getUserSyncs(syncOptions, [], bidRequest.gdprConsent, bidRequest.uspConsent);
+      expect(expectedUrlSnippets.every(urlSnippet => sync[0].url.includes(urlSnippet)));
+      expect(sync[0].url).to.have.string('gdpr=' + Number(bidRequest.gdprConsent.gdprApplies));
+      expect(sync[0].url).to.have.string('gdpr_consent=' + bidRequest.gdprConsent.consentString);
+      // USP consent should be ignored
+      expect(sync[0].url).not.have.string('usp_consent=');
+      expect(sync[0].type).to.have.string('iframe');
+    });
+
+    it('should return user sync even without gdprApplies in gdprConsent', function () {
+      const gdprConsent = {
+        consentString: 'BN5lERiOMYEdiAKAWXEND1AAAAE6DABACMA'
+      }
+      const sync = spec.getUserSyncs(syncOptions, [], gdprConsent, undefined);
+      expect(expectedUrlSnippets.every(urlSnippet => sync[0].url.includes(urlSnippet)));
+      expect(sync[0].url).to.have.string('gdpr_consent=' + gdprConsent.consentString);
+      expect(sync[0].url).not.have.string('gdpr=');
+      expect(sync[0].type).to.have.string('iframe');
+    });
+  });
 })

@@ -1,13 +1,14 @@
 // ADRIVER BID ADAPTER for Prebid 1.13
 import { logInfo, getWindowLocation, getBidIdParameter, _each } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'adriver';
 const ADRIVER_BID_URL = 'https://pb.adriver.ru/cgi-bin/bid.cgi';
 const TIME_TO_LIVE = 3000;
 
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 export const spec = {
-
   code: BIDDER_CODE,
 
   /**
@@ -98,6 +99,15 @@ export const spec = {
       });
     });
 
+    let userid = validBidRequests[0].userId;
+    let adrcidCookie = storage.getDataFromLocalStorage('adrcid') || validBidRequests[0].userId.adrcid;
+
+    if (adrcidCookie) {
+      payload.adrcid = adrcidCookie;
+      payload.id5 = userid.id5id;
+      payload.sharedid = userid.pubcid;
+      payload.unifiedid = userid.tdid;
+    }
     const payloadString = JSON.stringify(payload);
 
     return {

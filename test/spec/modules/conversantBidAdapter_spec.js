@@ -2,6 +2,8 @@ import {expect} from 'chai';
 import {spec, storage} from 'modules/conversantBidAdapter.js';
 import * as utils from 'src/utils.js';
 import {createEidsArray} from 'modules/userId/eids.js';
+import { config } from '../../../src/config.js';
+import {deepAccess} from 'src/utils';
 
 describe('Conversant adapter tests', function() {
   const siteId = '108060';
@@ -119,7 +121,34 @@ describe('Conversant adapter tests', function() {
       bidId: 'bid005',
       bidderRequestId: '117d765b87bed38',
       auctionId: 'req000'
-    }];
+    },
+    // video with first party data
+    {
+      bidder: 'conversant',
+      params: {
+        site_id: siteId
+      },
+      mediaTypes: {
+        video: {
+          context: 'instream',
+          mimes: ['video/mp4', 'video/x-flv']
+        }
+      },
+      ortb2Imp: {
+        instl: 1,
+        ext: {
+          data: {
+            pbadslot: 'homepage-top-rect'
+          }
+        }
+      },
+      placementCode: 'pcode006',
+      transactionId: 'tx006',
+      bidId: 'bid006',
+      bidderRequestId: '117d765b87bed38',
+      auctionId: 'req000'
+    }
+  ];
 
   const bidResponses = {
     body: {
@@ -216,7 +245,7 @@ describe('Conversant adapter tests', function() {
     expect(payload).to.have.property('id', 'req000');
     expect(payload).to.have.property('at', 1);
     expect(payload).to.have.property('imp');
-    expect(payload.imp).to.be.an('array').with.lengthOf(6);
+    expect(payload.imp).to.be.an('array').with.lengthOf(7);
 
     expect(payload.imp[0]).to.have.property('id', 'bid000');
     expect(payload.imp[0]).to.have.property('secure', 1);
@@ -306,6 +335,16 @@ describe('Conversant adapter tests', function() {
     expect(payload.imp[5].video).to.not.have.property('maxduration');
     expect(payload.imp[5]).to.not.have.property('banner');
 
+    expect(payload.imp[6]).to.have.property('id', 'bid006');
+    expect(payload.imp[6]).to.have.property('video');
+    expect(payload.imp[6].video).to.have.property('mimes');
+    expect(payload.imp[6].video.mimes).to.deep.equal(['video/mp4', 'video/x-flv']);
+    expect(payload.imp[6]).to.not.have.property('banner');
+    expect(payload.imp[6]).to.have.property('instl');
+    expect(payload.imp[6]).to.have.property('ext');
+    expect(payload.imp[6].ext).to.have.property('data');
+    expect(payload.imp[6].ext.data).to.have.property('pbadslot');
+
     expect(payload).to.have.property('site');
     expect(payload.site).to.have.property('id', siteId);
     expect(payload.site).to.have.property('mobile').that.is.oneOf([0, 1]);
@@ -319,6 +358,34 @@ describe('Conversant adapter tests', function() {
     expect(payload.device).to.have.property('ua', navigator.userAgent);
 
     expect(payload).to.not.have.property('user'); // there should be no user by default
+  });
+
+  it('Verify first party data', () => {
+    const bidderRequest = {refererInfo: {referer: 'http://test.com?a=b&c=123'}};
+    const cfg = {ortb2: {site: {content: {series: 'MySeries', season: 'MySeason', episode: 3, title: 'MyTitle'}}}};
+    config.setConfig(cfg);
+    const request = spec.buildRequests(bidRequests, bidderRequest);
+    const payload = request.data;
+    expect(payload.site).to.have.property('content');
+    expect(payload.site.content).to.have.property('series');
+    expect(payload.site.content).to.have.property('season');
+    expect(payload.site.content).to.have.property('episode');
+    expect(payload.site.content).to.have.property('title');
+    config.resetConfig();
+  });
+
+  it('Verify supply chain data', () => {
+    const bidderRequest = {refererInfo: {referer: 'http://test.com?a=b&c=123'}};
+    const schain = {complete: 1, ver: '1.0', nodes: [{asi: 'bidderA.com', sid: '00001', hp: 1}]};
+    const bidsWithSchain = bidRequests.map((bid) => {
+      return Object.assign({
+        schain: schain
+      }, bid);
+    });
+    const request = spec.buildRequests(bidsWithSchain, bidderRequest);
+    const payload = request.data;
+    expect(deepAccess(payload, 'source.ext.schain.nodes')).to.exist;
+    expect(payload.source.ext.schain.nodes[0].asi).equals(schain.nodes[0].asi);
   });
 
   it('Verify override url', function() {
