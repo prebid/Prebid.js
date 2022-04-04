@@ -2,7 +2,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'biddo';
-const ENDPOINT_URL = 'https://ad.biddo.net/delivery/impress';
+const ENDPOINT_URL = 'https://ad.adopx.net/delivery/impress';
 
 export const spec = {
   code: BIDDER_CODE,
