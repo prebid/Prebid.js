@@ -130,7 +130,7 @@ export const spec = {
       })
     }
     if (syncOptions.pixelEnabled && serverResponses.length !== 0) {
-      const pxsFromResponse = serverResponses.map(res => res?.body?.pxs).reduce((acc, cur) => acc.concat(cur), []);
+      const pxsFromResponse = serverResponses.map(res => res?.body?.pxs).reduce((acc, cur) => acc.concat(cur), []).filter((obj) => obj !== undefined);
       pixels = [...pixels, ...pxsFromResponse];
     }
     return pixels
