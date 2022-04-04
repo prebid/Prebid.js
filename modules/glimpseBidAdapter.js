@@ -1,27 +1,18 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import { BANNER } from '../src/mediaTypes.js';
-import { getStorageManager } from '../src/storageManager.js';
-import {
-  isArray,
-  isEmpty,
-  isEmptyStr,
-  isStr,
-  isPlainObject,
-} from '../src/utils.js';
+import { BANNER } from '../src/mediaTypes.js'
+import { config } from '../src/config.js'
+import { getStorageManager } from '../src/storageManager.js'
+import { isArray } from '../src/utils.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
 
-const GVLID = 1012;
-const BIDDER_CODE = 'glimpse';
-const storageManager = getStorageManager({
-  gvlid: GVLID,
-  bidderCode: BIDDER_CODE,
-});
-const ENDPOINT = 'https://market.glimpsevault.io/public/v1/prebid';
+const GVLID = 1012
+const BIDDER_CODE = 'glimpse'
+const storageManager = getStorageManager({bidderCode: BIDDER_CODE})
+const ENDPOINT = 'https://api.glimpsevault.io/ads/serving/public/v1/prebid'
 const LOCAL_STORAGE_KEY = {
   vault: {
     jwt: 'gp_vault_jwt',
   },
-};
+}
 
 export const spec = {
   gvlid: GVLID,
@@ -29,121 +20,126 @@ export const spec = {
   supportedMediaTypes: [BANNER],
 
   /**
-   * Determines if the bid request is valid
+   * Determines whether or not the given bid request is valid
    * @param bid {BidRequest} The bid to validate
    * @return {boolean}
    */
   isBidRequestValid: (bid) => {
-    const pid = bid?.params?.pid;
-    return isStr(pid) && !isEmptyStr(pid);
+    return (
+      hasValue(bid) &&
+      hasValue(bid.params) &&
+      hasStringValue(bid.params.placementId)
+    )
   },
 
   /**
-   * Builds the http request
+   * Builds http request for Glimpse bids
    * @param validBidRequests {BidRequest[]}
    * @param bidderRequest {BidderRequest}
    * @returns {ServerRequest}
    */
   buildRequests: (validBidRequests, bidderRequest) => {
-    const url = buildQuery(bidderRequest);
-    const auth = getVaultJwt();
-    const referer = getReferer(bidderRequest);
-    const imp = validBidRequests.map(processBidRequest);
-    const fpd = getFirstPartyData();
+    const auth = getVaultJwt()
+    const referer = getReferer(bidderRequest)
+    const gdprConsent = getGdprConsentChoice(bidderRequest)
+    const bidRequests = validBidRequests.map(processBidRequest)
+    const firstPartyData = getFirstPartyData()
 
     const data = {
       auth,
       data: {
         referer,
-        imp,
-        fpd,
-      },
-    };
+        gdprConsent,
+        bidRequests,
+        site: firstPartyData.site,
+        user: firstPartyData.user,
+        bidderCode: spec.code,
+      }
+    }
 
     return {
       method: 'POST',
-      url,
+      url: ENDPOINT,
       data: JSON.stringify(data),
       options: {},
-    };
+    }
   },
 
   /**
-   * Parse http response
-   * @param response {ServerResponse}
+   * Parse response from Glimpse server
+   * @param bidResponse {ServerResponse}
    * @returns {Bid[]}
    */
-  interpretResponse: (response) => {
-    if (isValidResponse(response)) {
-      const { auth, data } = response.body;
-      setVaultJwt(auth);
-      const bids = data.bids.map(processBidResponse);
-      return bids;
+  interpretResponse: (bidResponse) => {
+    const isValidResponse = isValidBidResponse(bidResponse)
+
+    if (isValidResponse) {
+      const {auth, data} = bidResponse.body
+      setVaultJwt(auth)
+      return data.bids
     }
-    return [];
+
+    return []
   },
-};
+}
 
 function setVaultJwt(auth) {
-  storageManager.setDataInLocalStorage(LOCAL_STORAGE_KEY.vault.jwt, auth);
+  storageManager.setDataInLocalStorage(LOCAL_STORAGE_KEY.vault.jwt, auth)
 }
 
 function getVaultJwt() {
-  return (
-    storageManager.getDataFromLocalStorage(LOCAL_STORAGE_KEY.vault.jwt) || ''
-  );
+  return storageManager.getDataFromLocalStorage(LOCAL_STORAGE_KEY.vault.jwt) || ''
 }
 
 function getReferer(bidderRequest) {
-  return bidderRequest?.refererInfo?.referer || '';
-}
+  const hasReferer =
+    hasValue(bidderRequest) &&
+    hasValue(bidderRequest.refererInfo) &&
+    hasStringValue(bidderRequest.refererInfo.referer)
 
-function buildQuery(bidderRequest) {
-  let url = appendQueryParam(ENDPOINT, 'ver', '$prebid.version$');
-
-  const timeout = config.getConfig('bidderTimeout');
-  url = appendQueryParam(url, 'tmax', timeout);
-
-  if (gdprApplies(bidderRequest)) {
-    const consentString = bidderRequest.gdprConsent.consentString;
-    url = appendQueryParam(url, 'reg', 'gdpr');
-    url = appendQueryParam(url, 'cs', consentString);
-  } else if (ccpaApplies(bidderRequest)) {
-    url = appendQueryParam(url, 'reg', 'ccpa');
-    url = appendQueryParam(url, 'cs', bidderRequest.uspConsent);
-  } else {
-    url = appendQueryParam(url, 'reg', 'none');
+  if (hasReferer) {
+    return bidderRequest.refererInfo.referer
   }
-  return url;
+
+  return ''
 }
 
-function appendQueryParam(url, key, value) {
-  if (!value) {
-    return url;
+function getGdprConsentChoice(bidderRequest) {
+  const hasGdprConsent =
+    hasValue(bidderRequest) &&
+    hasValue(bidderRequest.gdprConsent)
+
+  if (hasGdprConsent) {
+    const gdprConsent = bidderRequest.gdprConsent
+    const hasGdprApplies = hasBooleanValue(gdprConsent.gdprApplies)
+
+    return {
+      consentString: gdprConsent.consentString || '',
+      vendorData: gdprConsent.vendorData || {},
+      gdprApplies: hasGdprApplies ? gdprConsent.gdprApplies : true,
+    }
   }
-  const prefix = url.includes('?') ? '&' : '?';
-  return `${url}${prefix}${key}=${encodeURIComponent(value)}`;
-}
-
-function gdprApplies(bidderRequest) {
-  return Boolean(bidderRequest?.gdprConsent?.gdprApplies);
-}
-
-function ccpaApplies(bidderRequest) {
-  return (
-    !isEmptyStr(bidderRequest.uspConsent) &&
-    bidderRequest.uspConsent.substr(1, 3) !== '---'
-  );
-}
-
-function processBidRequest(bid) {
-  const sizes = normalizeSizes(bid.sizes);
 
   return {
-    bid: bid.bidId,
-    pid: bid.params.pid,
+    consentString: '',
+    vendorData: {},
+    gdprApplies: false,
+  }
+}
+
+function processBidRequest(bidRequest) {
+  const demand = bidRequest.params.demand || 'glimpse'
+  const sizes = normalizeSizes(bidRequest.sizes)
+  const keywords = bidRequest.params.keywords || {}
+
+  return {
+    demand,
     sizes,
-  };
+    keywords,
+    bidId: bidRequest.bidId,
+    placementId: bidRequest.params.placementId,
+    unitCode: bidRequest.adUnitCode,
+  }
 }
 
 function normalizeSizes(sizes) {
@@ -151,51 +147,84 @@ function normalizeSizes(sizes) {
     isArray(sizes) &&
     sizes.length === 2 &&
     !isArray(sizes[0]) &&
-    !isArray(sizes[1]);
+    !isArray(sizes[1])
 
   if (isSingleSize) {
-    return [sizes];
+    return [sizes]
   }
 
-  return sizes;
+  return sizes
 }
 
 function getFirstPartyData() {
-  let fpd = config.getConfig('ortb2') || {};
-  optimizeObject(fpd);
-  return fpd;
-}
+  const siteKeywords = parseGlobalKeywords('site')
+  const userKeywords = parseGlobalKeywords('user')
 
-function optimizeObject(obj) {
-  if (!isPlainObject(obj)) {
-    return;
-  }
-  for (const [key, value] of Object.entries(obj)) {
-    optimizeObject(value);
-    // only delete empty object, array, or string
-    if (
-      (isPlainObject(value) || isArray(value) || isStr(value)) &&
-      isEmpty(value)
-    ) {
-      delete obj[key];
-    }
-  }
-}
-
-function isValidResponse(bidResponse) {
-  const auth = bidResponse?.body?.auth;
-  const bids = bidResponse?.body?.data?.bids;
-  return isStr(auth) && isArray(bids) && !isEmpty(bids);
-}
-
-function processBidResponse(bid) {
-  const meta = bid.meta || {};
-  meta.advertiserDomains = bid.meta?.advertiserDomains || [];
+  const siteAttributes = getConfig('ortb2.site.ext.data', {})
+  const userAttributes = getConfig('ortb2.user.ext.data', {})
 
   return {
-    ...bid,
-    meta,
-  };
+    site: {
+      keywords: siteKeywords,
+      attributes: siteAttributes,
+    },
+    user: {
+      keywords: userKeywords,
+      attributes: userAttributes,
+    },
+  }
 }
 
-registerBidder(spec);
+function parseGlobalKeywords(scope) {
+  const keywords = getConfig(`ortb2.${scope}.keywords`, '')
+
+  return keywords
+    .split(', ')
+    .filter((keyword) => keyword !== '')
+}
+
+function getConfig(path, defaultValue) {
+  return config.getConfig(path) || defaultValue
+}
+
+function isValidBidResponse(bidResponse) {
+  return (
+    hasValue(bidResponse) &&
+    hasValue(bidResponse.body) &&
+    hasValue(bidResponse.body.data) &&
+    hasArrayValue(bidResponse.body.data.bids) &&
+    hasStringValue(bidResponse.body.auth)
+  )
+}
+
+function hasValue(value) {
+  return (
+    value !== undefined &&
+    value !== null
+  )
+}
+
+function hasBooleanValue(value) {
+  return (
+    hasValue(value) &&
+    typeof value === 'boolean'
+  )
+}
+
+function hasStringValue(value) {
+  return (
+    hasValue(value) &&
+    typeof value === 'string' &&
+    value.length > 0
+  )
+}
+
+function hasArrayValue(value) {
+  return (
+    hasValue(value) &&
+    isArray(value) &&
+    value.length > 0
+  )
+}
+
+registerBidder(spec)
