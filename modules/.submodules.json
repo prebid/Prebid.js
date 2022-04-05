@@ -58,6 +58,7 @@
     "jwplayerRtdProvider",
     "medianetRtdProvider",
     "optimeraRtdProvider",
+    "pafRtdProvider",
     "permutiveRtdProvider",
     "reconciliationRtdProvider",
     "sirdataRtdProvider",
