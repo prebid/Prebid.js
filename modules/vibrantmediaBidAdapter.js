@@ -13,6 +13,7 @@ import {OUTSTREAM} from '../src/video.js';
 
 const BIDDER_CODE = 'vibrantmedia';
 const VIBRANT_MEDIA_PREBID_URL = 'https://prebid.intellitxt.com/prebid';
+const VALID_PIXEL_URL_REGEX = /^https?:\/\/[a-z0-9-]+(\.[a-z0-9-]+)+([/?].*)?$/;
 const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
 
 /**
@@ -49,6 +50,10 @@ const isBaseUrl = function(url) {
   const urlMinusScheme = url.substring(url.indexOf('://') + 3);
   const endOfDomain = urlMinusScheme.indexOf('/');
   return (endOfDomain === -1) || (endOfDomain === (urlMinusScheme.length - 1));
+};
+
+const isValidPixelUrl = function (candidateUrl) {
+  return VALID_PIXEL_URL_REGEX.test(candidateUrl);
 };
 
 /**
@@ -213,7 +218,7 @@ export const spec = {
    * @param {*} bidData the data associated with the won bid. See example above for data format.
    */
   onBidWon: function(bidData) {
-    if (bidData && bidData.meta && bidData.meta.wp) {
+    if (bidData && bidData.meta && isValidPixelUrl(bidData.meta.wp)) {
       triggerPixel(`${bidData.meta.wp}${bidData.status}`);
     }
   }
