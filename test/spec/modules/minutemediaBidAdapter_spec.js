@@ -396,10 +396,5 @@ describe('minutemediaAdapter', function () {
       const syncs = spec.getUserSyncs({ iframeEnabled: true }, []);
       expect(syncs).to.deep.equal([]);
     });
-
-    it('should handle when user syncs are disabled', function() {
-      const syncs = spec.getUserSyncs({ pixelEnabled: false }, [imageSyncResponse]);
-      expect(syncs).to.deep.equal([]);
-    });
   })
 });
