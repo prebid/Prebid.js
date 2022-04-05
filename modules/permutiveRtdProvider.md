@@ -56,8 +56,14 @@ Key-values details for custom parameters:
 | params                 | Object   |                                                                                               | -       |
 | params.acBidders       | String[] | An array of bidders which should receive AC cohorts.                                          | `[]`    |
 | params.maxSegs         | Integer  | Maximum number of cohorts to be included in either the `permutive` or `p_standard` key-value. | `500`   |
-| params.transformations | Object[] | An array of configurations for ORTB2 user data transformations                                |
+| params.transformations | Object[] | An array of configurations for ORTB2 user data transformations                                |         |
 
 ### The `transformations` parameter
 
 This array contains configurations for transformations we'll apply to the Permutive object in the ORTB2 `user.data` array. The results of these transformations will be appended to the `user.data` array that's attached to ORTB2 bid requests.
+
+#### Supported transformations
+
+| Name           | ID  | Config structure                                  | Description                                                                          |
+| -------------- | --- | ------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| IAB taxonomies | iab | { segtax: number, iabIds: Object<number, number>} | Transform segment IDs from Permutive to IAB (note: alpha version, subject to change) |
