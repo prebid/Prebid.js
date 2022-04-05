@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec} from 'modules/invamiaBidAdapter.js';
+import {spec} from 'modules/biddoBidAdapter.js';
 
 describe('biddo bid adapter tests', function () {
   describe('bid requests', function () {
