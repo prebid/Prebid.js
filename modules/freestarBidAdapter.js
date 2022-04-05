@@ -1,121 +1,11 @@
-import { _each, logError, isFn, isPlainObject, isNumber, isStr, deepAccess, parseUrl, _map, getUniqueIdentifierStr, createTrackPixelHtml } from '../src/utils.js';
+import { _each, isFn, isPlainObject, isNumber, isStr, deepAccess, parseUrl, _map, getUniqueIdentifierStr, createTrackPixelHtml } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { BANNER } from '../src/mediaTypes.js';
 import { createEidsArray } from './userId/eids.js';
 
-const BIDDER_CODE = 'sortable';
+const BIDDER_CODE = 'freestar';
 const SERVER_URL = 'https://c.deployads.com';
-
-function setAssetRequired(native, asset) {
-  if (native.required) {
-    asset.required = 1;
-  }
-  return asset;
-}
-
-function buildNativeRequest(nativeMediaType) {
-  const assets = [];
-  const title = nativeMediaType.title;
-  if (title) {
-    assets.push(setAssetRequired(title, {
-      title: {len: title.len}
-    }));
-  }
-  const img = nativeMediaType.image;
-  if (img) {
-    assets.push(setAssetRequired(img, {
-      img: {
-        type: 3, // Main
-        wmin: 1,
-        hmin: 1
-      }
-    }));
-  }
-  const icon = nativeMediaType.icon;
-  if (icon) {
-    assets.push(setAssetRequired(icon, {
-      img: {
-        type: 1, // Icon
-        wmin: 1,
-        hmin: 1
-      }
-    }));
-  }
-  const body = nativeMediaType.body;
-  if (body) {
-    assets.push(setAssetRequired(body, {data: {type: 2}}));
-  }
-  const cta = nativeMediaType.cta;
-  if (cta) {
-    assets.push(setAssetRequired(cta, {data: {type: 12}}));
-  }
-  const sponsoredBy = nativeMediaType.sponsoredBy;
-  if (sponsoredBy) {
-    assets.push(setAssetRequired(sponsoredBy, {data: {type: 1}}));
-  }
-
-  _each(assets, (asset, id) => asset.id = id);
-  return {
-    ver: '1',
-    request: JSON.stringify({
-      ver: '1',
-      assets
-    })
-  };
-}
-
-function tryParseNativeResponse(adm) {
-  let native = null;
-  try {
-    native = JSON.parse(adm);
-  } catch (e) {
-    logError('Sortable bid adapter unable to parse native bid response:\n\n' + e);
-  }
-  return native && native.native;
-}
-
-function createImgObject(img) {
-  if (img.w || img.h) {
-    return {
-      url: img.url,
-      width: img.w,
-      height: img.h
-    };
-  } else {
-    return img.url;
-  }
-}
-
-function interpretNativeResponse(response) {
-  const native = {};
-  if (response.link) {
-    native.clickUrl = response.link.url;
-  }
-  _each(response.assets, asset => {
-    switch (asset.id) {
-      case 1:
-        native.title = asset.title.text;
-        break;
-      case 2:
-        native.image = createImgObject(asset.img);
-        break;
-      case 3:
-        native.icon = createImgObject(asset.img);
-        break;
-      case 4:
-        native.body = asset.data.value;
-        break;
-      case 5:
-        native.cta = asset.data.value;
-        break;
-      case 6:
-        native.sponsoredBy = asset.data.value;
-        break;
-    }
-  });
-  return native;
-}
 
 function transformSyncs(responses, type, syncs) {
   _each(responses, res => {
@@ -149,10 +39,10 @@ function getBidFloor(bid) {
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [BANNER, NATIVE, VIDEO],
+  supportedMediaTypes: [BANNER],
 
   isBidRequestValid: function(bid) {
-    const sortableConfig = config.getConfig('sortable');
+    const sortableConfig = config.getConfig('freestar');
     const haveSiteId = (sortableConfig && !!sortableConfig.siteId) || bid.params.siteId;
     const floor = getBidFloor(bid);
     const validFloor = !floor || isNumber(floor);
@@ -161,14 +51,14 @@ export const spec = {
         Object.keys(bid.params.keywords).every(key =>
           isStr(key) && isStr(bid.params.keywords[key])
         ))
-    const isBanner = !bid.mediaTypes || bid.mediaTypes[BANNER] || !(bid.mediaTypes[NATIVE] || bid.mediaTypes[VIDEO]);
+    const isBanner = !bid.mediaTypes || bid.mediaTypes[BANNER];
     const bannerSizes = isBanner ? deepAccess(bid, `mediaType.${BANNER}.sizes`) || bid.sizes : null;
     return !!(bid.params.tagId && haveSiteId && validFloor && validKeywords && (!isBanner ||
       (bannerSizes && bannerSizes.length > 0 && bannerSizes.every(sizeArr => sizeArr.length == 2 && sizeArr.every(num => isNumber(num))))));
   },
 
   buildRequests: function(validBidReqs, bidderRequest) {
-    const sortableConfig = config.getConfig('sortable') || {};
+    const sortableConfig = config.getConfig('freestar') || {};
     const globalSiteId = sortableConfig.siteId;
     let loc = parseUrl(bidderRequest.refererInfo.referer);
 
@@ -178,43 +68,9 @@ export const spec = {
         tagid: bid.params.tagId,
         ext: {}
       };
-      const bannerMediaType = deepAccess(bid, `mediaTypes.${BANNER}`);
-      const nativeMediaType = deepAccess(bid, `mediaTypes.${NATIVE}`);
-      const videoMediaType = deepAccess(bid, `mediaTypes.${VIDEO}`);
-      if (bannerMediaType || !(nativeMediaType || videoMediaType)) {
-        const bannerSizes = (bannerMediaType && bannerMediaType.sizes) || bid.sizes;
-        rv.banner = {
-          format: _map(bannerSizes, ([width, height]) => ({w: width, h: height}))
-        };
-      }
-      if (nativeMediaType) {
-        rv.native = buildNativeRequest(nativeMediaType);
-      }
-      if (videoMediaType && videoMediaType.context === 'instream') {
-        const video = {placement: 1};
-        video.mimes = videoMediaType.mimes || [];
-        video.minduration = deepAccess(bid, 'params.video.minduration') || 10;
-        video.maxduration = deepAccess(bid, 'params.video.maxduration') || 60;
-        const startDelay = deepAccess(bid, 'params.video.startdelay');
-        if (startDelay != null) {
-          video.startdelay = startDelay;
-        }
-        if (videoMediaType.playerSize && videoMediaType.playerSize.length) {
-          const size = videoMediaType.playerSize[0];
-          video.w = size[0];
-          video.h = size[1];
-        }
-        if (videoMediaType.api) {
-          video.api = videoMediaType.api;
-        }
-        if (videoMediaType.protocols) {
-          video.protocols = videoMediaType.protocols;
-        }
-        if (videoMediaType.playbackmethod) {
-          video.playbackmethod = videoMediaType.playbackmethod;
-        }
-        rv.video = video;
-      }
+      rv.banner = {
+        format: _map(bid.sizes, ([width, height]) => ({w: width, h: height}))
+      };
       const floor = getBidFloor(bid);
       if (floor) {
         rv.floor = floor;
@@ -309,23 +165,10 @@ export const spec = {
             }
           };
           if (bid.adm) {
-            const adFormat = deepAccess(bid, 'ext.ad_format')
-            if (adFormat === 'native') {
-              let native = tryParseNativeResponse(bid.adm);
-              if (!native) {
-                return;
-              }
-              bidObj.mediaType = NATIVE;
-              bidObj.native = interpretNativeResponse(native);
-            } else if (adFormat === 'instream') {
-              bidObj.mediaType = VIDEO;
-              bidObj.vastXml = bid.adm;
-            } else {
-              bidObj.mediaType = BANNER;
-              bidObj.ad = bid.adm;
-              if (bid.nurl) {
-                bidObj.ad += createTrackPixelHtml(decodeURIComponent(bid.nurl));
-              }
+            bidObj.mediaType = BANNER;
+            bidObj.ad = bid.adm;
+            if (bid.nurl) {
+              bidObj.ad += createTrackPixelHtml(decodeURIComponent(bid.nurl));
             }
           } else if (bid.nurl) {
             bidObj.adUrl = bid.nurl;
