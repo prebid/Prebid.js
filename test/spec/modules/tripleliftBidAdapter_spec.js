@@ -787,6 +787,28 @@ describe('triplelift adapter', function () {
         size: '*'
       })).to.be.true;
     });
+    it('should not set bid floor if currency is not USD', function() {
+      bidRequests.forEach(request => {
+        request.getFloor = () => {};
+        sinon.spy(request, 'getFloor')
+      });
+
+      tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+
+      // banner request with non-USD currency
+      expect(bidRequests[0].getFloor.calledWith({
+        currency: 'EUR',
+        mediaType: 'banner',
+        size: '*'
+      })).to.be.false;
+
+      // banner request with non-USD currency
+      expect(bidRequests[1].getFloor.calledWith({
+        currency: 'CAD',
+        mediaType: 'video',
+        size: '*'
+      })).to.be.false;
+    });
     it('should send global config fpd if kvps are available', function() {
       const sens = null;
       const category = ['news', 'weather', 'hurricane'];
