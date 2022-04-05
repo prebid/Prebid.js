@@ -23,7 +23,7 @@ Module that connects to Invamia demand sources.
       bids: [{
         bidder: 'biddo',
         params: {
-          zoneId: 379783,
+          zoneId: 7254,
         },
       }],
     }];
