@@ -42,8 +42,8 @@ export const spec = {
   supportedMediaTypes: [BANNER],
 
   isBidRequestValid: function(bid) {
-    const sortableConfig = config.getConfig('freestar');
-    const haveSiteId = (sortableConfig && !!sortableConfig.siteId) || bid.params.siteId;
+    const fsConfig = config.getConfig('freestar');
+    const haveSiteId = (fsConfig && !!fsConfig.siteId) || bid.params.siteId;
     const floor = getBidFloor(bid);
     const validFloor = !floor || isNumber(floor);
     const validKeywords = !bid.params.keywords ||
@@ -58,11 +58,11 @@ export const spec = {
   },
 
   buildRequests: function(validBidReqs, bidderRequest) {
-    const sortableConfig = config.getConfig('freestar') || {};
-    const globalSiteId = sortableConfig.siteId;
+    const fsConfig = config.getConfig('freestar') || {};
+    const globalSiteId = fsConfig.siteId;
     let loc = parseUrl(bidderRequest.refererInfo.referer);
 
-    const sortableImps = _map(validBidReqs, bid => {
+    const fsImps = _map(validBidReqs, bid => {
       const rv = {
         id: bid.bidId,
         tagid: bid.params.tagId,
@@ -89,9 +89,9 @@ export const spec = {
     const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
     const bidUserId = validBidReqs[0].userId;
     const eids = createEidsArray(bidUserId);
-    const sortableBidReq = {
+    const fsBidReq = {
       id: getUniqueIdentifierStr(),
-      imp: sortableImps,
+      imp: fsImps,
       source: {
         ext: {
           schain: validBidReqs[0].schain
@@ -117,35 +117,35 @@ export const spec = {
       }
     };
     if (bidderRequest && bidderRequest.timeout > 0) {
-      sortableBidReq.tmax = bidderRequest.timeout;
+      fsBidReq.tmax = bidderRequest.timeout;
     }
     if (gdprConsent) {
-      sortableBidReq.user = {
+      fsBidReq.user = {
         ext: {
           consent: gdprConsent.consentString
         }
       };
       if (typeof gdprConsent.gdprApplies == 'boolean') {
-        sortableBidReq.regs.ext.gdpr = gdprConsent.gdprApplies ? 1 : 0
+        fsBidReq.regs.ext.gdpr = gdprConsent.gdprApplies ? 1 : 0
       }
     }
     if (eids.length) {
-      sortableBidReq.user.ext.eids = eids;
+      fsBidReq.user.ext.eids = eids;
     }
     if (bidderRequest.uspConsent) {
-      sortableBidReq.regs.ext.us_privacy = bidderRequest.uspConsent;
+      fsBidReq.regs.ext.us_privacy = bidderRequest.uspConsent;
     }
     return {
       method: 'POST',
       url: `${SERVER_URL}/openrtb2/auction?src=$$REPO_AND_VERSION$$&host=${loc.hostname}`,
-      data: JSON.stringify(sortableBidReq),
+      data: JSON.stringify(fsBidReq),
       options: {contentType: 'text/plain'}
     };
   },
 
   interpretResponse: function(serverResponse) {
     const { body: {id, seatbid} } = serverResponse;
-    const sortableBids = [];
+    const fsBids = [];
     if (id && seatbid) {
       _each(seatbid, seatbid => {
         _each(seatbid.bid, bid => {
@@ -176,11 +176,11 @@ export const spec = {
           if (bid.ext) {
             bidObj[BIDDER_CODE] = bid.ext;
           }
-          sortableBids.push(bidObj);
+          fsBids.push(bidObj);
         });
       });
     }
-    return sortableBids;
+    return fsBids;
   },
 
   getUserSyncs: (syncOptions, responses) => {
