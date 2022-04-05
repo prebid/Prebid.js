@@ -4,7 +4,7 @@ import { deepAccess } from '../src/utils.js';
 const BIDDER_CODE = 'justpremium'
 const GVLID = 62
 const ENDPOINT_URL = 'https://pre.ads.justpremium.com/v/2.0/t/xhr'
-const JP_ADAPTER_VERSION = '1.8.1'
+const JP_ADAPTER_VERSION = '1.8.2'
 const pixels = []
 
 export const spec = {
@@ -19,6 +19,7 @@ export const spec = {
   buildRequests: (validBidRequests, bidderRequest) => {
     const c = preparePubCond(validBidRequests)
     const dim = getWebsiteDim()
+    const ggExt = getGumGumParams()
     const payload = {
       zone: validBidRequests.map(b => {
         return parseInt(b.params.zone)
@@ -32,7 +33,8 @@ export const spec = {
       wh: dim.innerHeight,
       c: c,
       id: validBidRequests[0].params.zone,
-      sizes: {}
+      sizes: {},
+      ggExt: ggExt
     }
     validBidRequests.forEach(b => {
       const zone = b.params.zone
@@ -251,6 +253,21 @@ function getWebsiteDim () {
     innerWidth: top.innerWidth,
     innerHeight: top.innerHeight
   }
+}
+
+function getGumGumParams () {
+  if (!window.top) return null
+
+  const urlParams = new URLSearchParams(window.top.location.search)
+  const ggParams = {
+    'ggAdbuyid': urlParams.get('gg_adbuyid'),
+    'ggDealid': urlParams.get('gg_dealid'),
+    'ggEadbuyid': urlParams.get('gg_eadbuyid')
+  }
+
+  const checkIfEmpty = (obj) => Object.keys(obj).length === 0 ? null : obj
+  const removeNullEntries = (obj) => Object.fromEntries(Object.entries(obj).filter(([_, v]) => v != null))
+  return checkIfEmpty(removeNullEntries(ggParams))
 }
 
 registerBidder(spec)
