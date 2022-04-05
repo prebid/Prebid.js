@@ -7,12 +7,12 @@
  * @requires module:modules/realTimeData
  */
 import {getGlobal} from '../src/prebidGlobal.js';
-import { deepAccess, logError, deepEqual, deepSetValue, isEmpty, mergeDeep } from '../src/utils.js';
+import {deepAccess, deepEqual, deepSetValue, isEmpty, logError, mergeDeep} from '../src/utils.js';
 import {submodule} from '../src/hook.js';
 import {ajax} from '../src/ajax.js';
-import findIndex from 'core-js-pure/features/array/find-index.js';
-import { getRefererInfo } from '../src/refererDetection.js';
-import { config } from '../src/config.js';
+import {findIndex} from '../src/polyfill.js';
+import {getRefererInfo} from '../src/refererDetection.js';
+import {config} from '../src/config.js';
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';

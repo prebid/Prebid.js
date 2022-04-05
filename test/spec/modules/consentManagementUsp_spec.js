@@ -8,9 +8,9 @@ import {
 } from 'modules/consentManagementUsp.js';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
-import { uspDataHandler } from 'src/adapterManager.js';
+import {uspDataHandler} from 'src/adapterManager.js';
+import 'src/prebid.js';
 
-let assert = require('chai').assert;
 let expect = require('chai').expect;
 
 function createIFrameMarker() {
@@ -58,6 +58,12 @@ describe('consentManagement', function () {
         sinon.assert.notCalled(utils.logInfo);
       });
 
+      it('should not produce any USP metadata', function() {
+        setConsentConfig({});
+        let consentMeta = uspDataHandler.getConsentMeta();
+        expect(consentMeta).to.be.undefined;
+      });
+
       it('should exit the consent manager if only config.gdpr is an object', function() {
         setConsentConfig({ gdpr: { cmpApi: 'iab' } });
         expect(consentAPI).to.be.undefined;
@@ -70,6 +76,11 @@ describe('consentManagement', function () {
         expect(consentAPI).to.be.undefined;
         sinon.assert.calledOnce(utils.logWarn);
         sinon.assert.notCalled(utils.logInfo);
+      });
+
+      it('should immediately start looking up consent data', () => {
+        setConsentConfig({usp: {cmpApi: 'invalid'}});
+        expect(uspDataHandler.ready).to.be.true;
       });
     });
 
@@ -90,6 +101,21 @@ describe('consentManagement', function () {
         setConsentConfig(allConfig);
         expect(consentAPI).to.be.equal('daa');
         expect(consentTimeout).to.be.equal(7500);
+      });
+
+      it('should enable uspDataHandler', () => {
+        setConsentConfig({usp: {cmpApi: 'daa', timeout: 7500}});
+        expect(uspDataHandler.enabled).to.be.true;
+      });
+
+      it('should call setConsentData(null) on invalid CMP api', () => {
+        setConsentConfig({usp: {cmpApi: 'invalid'}});
+        let hookRan = false;
+        requestBidsHook(() => {
+          hookRan = true;
+        }, {});
+        expect(hookRan).to.be.true;
+        expect(uspDataHandler.ready).to.be.true;
       });
     });
 
@@ -219,6 +245,32 @@ describe('consentManagement', function () {
         expect(didHookReturn).to.be.true;
         expect(consent).to.equal(testConsentData.uspString);
         sinon.assert.called(uspStub);
+      });
+
+      it('should call uspDataHandler.setConsentData(null) on error', () => {
+        let hookRan = false;
+        uspStub = sinon.stub(window, '__uspapi').callsFake((...args) => {
+          args[2](null, false);
+        });
+        requestBidsHook(() => {
+          hookRan = true;
+        }, {});
+        expect(hookRan).to.be.true;
+        expect(uspDataHandler.ready).to.be.true;
+        expect(uspDataHandler.getConsentData()).to.equal(null);
+      });
+
+      it('should call uspDataHandler.setConsentData(null) on timeout', (done) => {
+        setConsentConfig({usp: {timeout: 10}});
+        let hookRan = false;
+        uspStub = sinon.stub(window, '__uspapi').callsFake(() => {});
+        requestBidsHook(() => { hookRan = true; }, {});
+        setTimeout(() => {
+          expect(hookRan).to.be.true;
+          expect(uspDataHandler.ready).to.be.true;
+          expect(uspDataHandler.getConsentData()).to.equal(null);
+          done();
+        }, 20)
       });
     });
 
@@ -365,6 +417,27 @@ describe('consentManagement', function () {
 
         expect(didHookReturn).to.be.true;
         expect(consent).to.equal(testConsentData.uspString);
+      });
+
+      it('returns USP consent metadata', function () {
+        let testConsentData = {
+          uspString: '1NY'
+        };
+
+        uspapiStub = sinon.stub(window, '__uspapi').callsFake((...args) => {
+          args[2](testConsentData, true);
+        });
+
+        setConsentConfig(goodConfig);
+        requestBidsHook(() => { didHookReturn = true; }, {});
+
+        let consentMeta = uspDataHandler.getConsentMeta();
+
+        sinon.assert.notCalled(utils.logWarn);
+        sinon.assert.notCalled(utils.logError);
+
+        expect(consentMeta.usp).to.equal(testConsentData.uspString);
+        expect(consentMeta.generatedAt).to.be.above(1644367751709);
       });
     });
   });

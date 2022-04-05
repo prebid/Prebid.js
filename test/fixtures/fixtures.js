@@ -1231,7 +1231,7 @@ export function getCurrencyRates() {
   };
 }
 
-export function createBidReceived({bidder, cpm, auctionId, responseTimestamp, adUnitCode, adId, status, ttl, requestId}) {
+export function createBidReceived({bidder, cpm, auctionId, responseTimestamp, adUnitCode, adId, status, ttl, requestId, mediaType}) {
   let bid = {
     'bidderCode': bidder,
     'width': '300',
@@ -1259,6 +1259,7 @@ export function createBidReceived({bidder, cpm, auctionId, responseTimestamp, ad
       'hb_pb': cpm,
       'foobar': '300x250'
     }),
+    'mediaType': mediaType,
     'netRevenue': true,
     'currency': 'USD',
     'ttl': (!ttl) ? 300 : ttl

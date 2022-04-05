@@ -20,6 +20,25 @@ export var currencyRates = {};
 var bidderCurrencyDefault = {};
 var defaultRates;
 
+export const ready = (() => {
+  let isDone, resolver, promise;
+  function reset() {
+    isDone = false;
+    resolver = null;
+    promise = new Promise((resolve) => {
+      resolver = resolve;
+      if (isDone) resolve();
+    })
+  }
+  function done() {
+    isDone = true;
+    if (resolver != null) { resolver() }
+  }
+  reset();
+
+  return {done, reset, promise: () => promise}
+})();
+
 /**
  * Configuration function for currency
  * @param  {string} [config.adServerCurrency = 'USD']
@@ -138,11 +157,15 @@ function initCurrency(url) {
             logInfo('currencyRates set to ' + JSON.stringify(currencyRates));
             currencyRatesLoaded = true;
             processBidResponseQueue();
+            ready.done();
           } catch (e) {
             errorSettingsRates('Failed to parse currencyRates response: ' + response);
           }
         },
-        error: errorSettingsRates
+        error: function (...args) {
+          errorSettingsRates(...args);
+          ready.done();
+        }
       }
     );
   }
@@ -197,6 +220,8 @@ export function addBidResponseHook(fn, adUnitCode, bid) {
   bidResponseQueue.push(wrapFunction(fn, this, [adUnitCode, bid]));
   if (!currencySupportEnabled || currencyRatesLoaded) {
     processBidResponseQueue();
+  } else {
+    fn.bail(ready.promise());
   }
 }
 
@@ -219,10 +244,7 @@ function wrapFunction(fn, context, params) {
         }
       } catch (e) {
         logWarn('Returning NO_BID, getCurrencyConversion threw error: ', e);
-        params[1] = createBid(CONSTANTS.STATUS.NO_BID, {
-          bidder: bid.bidderCode || bid.bidder,
-          bidId: bid.requestId
-        });
+        params[1] = createBid(CONSTANTS.STATUS.NO_BID, bid.getIdentifiers());
       }
     }
     return fn.apply(context, params);

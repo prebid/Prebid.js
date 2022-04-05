@@ -1,9 +1,7 @@
 /* eslint-disable no-console */
 import { config } from './config.js';
-import { getGlobal } from './prebidGlobal.js';
 import clone from 'just-clone';
-import find from 'core-js-pure/features/array/find.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import {find, includes} from './polyfill.js';
 
 const CONSTANTS = require('./constants.json');
 
@@ -22,7 +20,17 @@ let consoleLogExists = Boolean(consoleExists && window.console.log);
 let consoleInfoExists = Boolean(consoleExists && window.console.info);
 let consoleWarnExists = Boolean(consoleExists && window.console.warn);
 let consoleErrorExists = Boolean(consoleExists && window.console.error);
-var events = require('./events.js');
+
+const emitEvent = (function () {
+  // lazy load events to avoid circular import
+  let ev;
+  return function() {
+    if (ev == null) {
+      ev = require('./events.js');
+    }
+    return ev.emit.apply(ev, arguments);
+  }
+})();
 
 // this allows stubbing of utility functions that are used internally by other utility functions
 export const internal = {
@@ -265,14 +273,28 @@ export function logWarn() {
   if (debugTurnedOn() && consoleWarnExists) {
     console.warn.apply(console, decorateLog(arguments, 'WARNING:'));
   }
-  events.emit(CONSTANTS.EVENTS.AUCTION_DEBUG, {type: 'WARNING', arguments: arguments});
+  emitEvent(CONSTANTS.EVENTS.AUCTION_DEBUG, {type: 'WARNING', arguments: arguments});
 }
 
 export function logError() {
   if (debugTurnedOn() && consoleErrorExists) {
     console.error.apply(console, decorateLog(arguments, 'ERROR:'));
   }
-  events.emit(CONSTANTS.EVENTS.AUCTION_DEBUG, {type: 'ERROR', arguments: arguments});
+  emitEvent(CONSTANTS.EVENTS.AUCTION_DEBUG, {type: 'ERROR', arguments: arguments});
+}
+
+export function prefixLog(prefix) {
+  function decorate(fn) {
+    return function (...args) {
+      fn(prefix, ...args);
+    }
+  }
+  return {
+    logError: decorate(logError),
+    logWarn: decorate(logWarn),
+    logMessage: decorate(logMessage),
+    logInfo: decorate(logInfo),
+  }
 }
 
 function decorateLog(args, prefix) {
@@ -684,7 +706,7 @@ export function getKeyByValue(obj, value) {
 export function getBidderCodes(adUnits = $$PREBID_GLOBAL$$.adUnits) {
   // this could memoize adUnits
   return adUnits.map(unit => unit.bids.map(bid => bid.bidder)
-    .reduce(flatten, [])).reduce(flatten).filter(uniques);
+    .reduce(flatten, [])).reduce(flatten, []).filter(uniques);
 }
 
 export function isGptPubadsDefined() {
@@ -885,12 +907,6 @@ export function isValidMediaTypes(mediaTypes) {
   return true;
 }
 
-export function getBidderRequest(bidRequests, bidder, adUnitCode) {
-  return find(bidRequests, request => {
-    return request.bids
-      .filter(bid => bid.bidder === bidder && bid.adUnitCode === adUnitCode).length > 0;
-  }) || { start: null, auctionId: null };
-}
 /**
  * Returns user configured bidder params from adunit
  * @param {Object} adUnits
@@ -1238,15 +1254,21 @@ export function buildUrl(obj) {
  * This function deeply compares two objects checking for their equivalence.
  * @param {Object} obj1
  * @param {Object} obj2
+ * @param checkTypes {boolean} if set, two objects with identical properties but different constructors will *not*
+ * be considered equivalent.
  * @returns {boolean}
  */
-export function deepEqual(obj1, obj2) {
+export function deepEqual(obj1, obj2, {checkTypes = false} = {}) {
   if (obj1 === obj2) return true;
-  else if ((typeof obj1 === 'object' && obj1 !== null) && (typeof obj2 === 'object' && obj2 !== null)) {
+  else if (
+    (typeof obj1 === 'object' && obj1 !== null) &&
+    (typeof obj2 === 'object' && obj2 !== null) &&
+    (!checkTypes || (obj1.constructor === obj2.constructor))
+  ) {
     if (Object.keys(obj1).length !== Object.keys(obj2).length) return false;
     for (let prop in obj1) {
       if (obj2.hasOwnProperty(prop)) {
-        if (!deepEqual(obj1[prop], obj2[prop])) {
+        if (!deepEqual(obj1[prop], obj2[prop], {checkTypes})) {
           return false;
         }
       } else {
@@ -1270,7 +1292,7 @@ export function mergeDeep(target, ...sources) {
         mergeDeep(target[key], source[key]);
       } else if (isArray(source[key])) {
         if (!target[key]) {
-          Object.assign(target, { [key]: source[key] });
+          Object.assign(target, { [key]: [...source[key]] });
         } else if (isArray(target[key])) {
           source[key].forEach(obj => {
             let addItFlag = 1;
@@ -1332,10 +1354,4 @@ export function cyrb53Hash(str, seed = 0) {
   h1 = imul(h1 ^ (h1 >>> 16), 2246822507) ^ imul(h2 ^ (h2 >>> 13), 3266489909);
   h2 = imul(h2 ^ (h2 >>> 16), 2246822507) ^ imul(h1 ^ (h1 >>> 13), 3266489909);
   return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString();
-}
-
-export function isAllowZeroCpmBidsEnabled(bidderCode) {
-  const bidderSettings = getGlobal().bidderSettings;
-  return ((bidderSettings[bidderCode] && bidderSettings[bidderCode].allowZeroCpmBids === true) ||
-   (bidderSettings.standard && bidderSettings.standard.allowZeroCpmBids === true));
 }

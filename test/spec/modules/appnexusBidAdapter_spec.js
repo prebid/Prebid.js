@@ -556,6 +556,33 @@ describe('AppNexusAdapter', function () {
       config.getConfig.restore();
     });
 
+    it('adds auction level keywords to request when set', function() {
+      let bidRequest = Object.assign({}, bidRequests[0]);
+      sinon
+        .stub(config, 'getConfig')
+        .withArgs('appnexusAuctionKeywords')
+        .returns({
+          gender: 'm',
+          music: ['rock', 'pop'],
+          test: ''
+        });
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.keywords).to.deep.equal([{
+        'key': 'gender',
+        'value': ['m']
+      }, {
+        'key': 'music',
+        'value': ['rock', 'pop']
+      }, {
+        'key': 'test'
+      }]);
+
+      config.getConfig.restore();
+    });
+
     it('should attach native params to the request', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
@@ -916,7 +943,22 @@ describe('AppNexusAdapter', function () {
           flocId: {
             id: 'sample-flocid-value',
             version: 'chrome.1.0'
-          }
+          },
+          pubProvidedId: [{
+            source: 'puburl.com',
+            uids: [{
+              id: 'pubid1',
+              atype: 1,
+              ext: {
+                stype: 'ppuid'
+              }
+            }]
+          }, {
+            source: 'puburl2.com',
+            uids: [{
+              id: 'pubid2'
+            }]
+          }]
         }
       });
 
@@ -952,6 +994,16 @@ describe('AppNexusAdapter', function () {
         source: 'uidapi.com',
         id: 'sample-uid2-value',
         rti_partner: 'UID2'
+      });
+
+      expect(payload.eids).to.deep.include({
+        source: 'puburl.com',
+        id: 'pubid1'
+      });
+
+      expect(payload.eids).to.deep.include({
+        source: 'puburl2.com',
+        id: 'pubid2'
       });
     });
 
@@ -1410,6 +1462,30 @@ describe('AppNexusAdapter', function () {
       let result = spec.interpretResponse({ body: responseAdvertiserId }, {bidderRequest});
       expect(Object.keys(result[0].meta)).to.include.members(['advertiserDomains']);
       expect(Object.keys(result[0].meta.advertiserDomains)).to.deep.equal([]);
+    });
+  });
+
+  describe('transformBidParams', function () {
+    it('convert keywords param differently for psp endpoint', function () {
+      sinon.stub(config, 'getConfig')
+        .withArgs('s2sConfig')
+        .returns({
+          endpoint: {
+            p1Consent: 'https://ib.adnxs.com/openrtb2/prebid'
+          }
+        });
+
+      const oldParams = {
+        keywords: {
+          genre: ['rock', 'pop'],
+          pets: 'dog'
+        }
+      };
+
+      const newParams = spec.transformBidParams(oldParams, true);
+      expect(newParams.keywords).to.equal('genre=rock,genre=pop,pets=dog');
+
+      config.getConfig.restore();
     });
   });
 });

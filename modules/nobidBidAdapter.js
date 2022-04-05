@@ -6,7 +6,7 @@ import { getStorageManager } from '../src/storageManager.js';
 
 const GVLID = 816;
 const BIDDER_CODE = 'nobid';
-const storage = getStorageManager(GVLID, BIDDER_CODE);
+const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
 window.nobidVersion = '1.3.2';
 window.nobid = window.nobid || {};
 window.nobid.bidResponses = window.nobid.bidResponses || {};

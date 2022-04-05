@@ -1,7 +1,7 @@
 import { logError, replaceAuctionPrice, parseUrl } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
-import { NATIVE } from '../src/mediaTypes.js';
+import { NATIVE, BANNER } from '../src/mediaTypes.js';
 
 export const ENDPOINT = 'https://app.readpeak.com/header/prebid';
 
@@ -19,10 +19,9 @@ const BIDDER_CODE = 'readpeak';
 export const spec = {
   code: BIDDER_CODE,
 
-  supportedMediaTypes: [NATIVE],
+  supportedMediaTypes: [NATIVE, BANNER],
 
-  isBidRequestValid: bid =>
-    !!(bid && bid.params && bid.params.publisherId && bid.nativeParams),
+  isBidRequestValid: bid => !!(bid && bid.params && bid.params.publisherId),
 
   buildRequests: (bidRequests, bidderRequest) => {
     const currencyObj = config.getConfig('currency');
@@ -31,8 +30,7 @@ export const spec = {
     const request = {
       id: bidRequests[0].bidderRequestId,
       imp: bidRequests
-        .map(slot => impression(slot))
-        .filter(imp => imp.native != null),
+        .map(slot => impression(slot)),
       site: site(bidRequests, bidderRequest),
       app: app(bidRequests),
       device: device(),
@@ -96,10 +94,16 @@ function bidResponseAvailable(bidRequest, bidResponse) {
         creativeId: idToBidMap[id].crid,
         ttl: 300,
         netRevenue: true,
-        mediaType: NATIVE,
-        currency: bidResponse.cur,
-        native: nativeResponse(idToImpMap[id], idToBidMap[id])
+        mediaType: idToImpMap[id].native ? NATIVE : BANNER,
+        currency: bidResponse.cur
       };
+      if (idToImpMap[id].native) {
+        bid.native = nativeResponse(idToImpMap[id], idToBidMap[id]);
+      } else if (idToImpMap[id].banner) {
+        bid.ad = idToBidMap[id].adm
+        bid.width = idToBidMap[id].w
+        bid.height = idToBidMap[id].h
+      }
       if (idToBidMap[id].adomain) {
         bid.meta = {
           advertiserDomains: idToBidMap[id].adomain
@@ -121,13 +125,19 @@ function impression(slot) {
     });
     bidFloorFromModule = floorInfo.currency === 'USD' ? floorInfo.floor : undefined;
   }
-  return {
+  const imp = {
     id: slot.bidId,
-    native: nativeImpression(slot),
     bidfloor: bidFloorFromModule || slot.params.bidfloor || 0,
     bidfloorcur: (bidFloorFromModule && 'USD') || slot.params.bidfloorcur || 'USD',
     tagId: slot.params.tagId || '0'
   };
+
+  if (slot.mediaTypes.native) {
+    imp.native = nativeImpression(slot);
+  } else if (slot.mediaTypes.banner) {
+    imp.banner = bannerImpression(slot);
+  }
+  return imp
 }
 
 function nativeImpression(slot) {
@@ -216,6 +226,15 @@ function dataAsset(id, params, type, defaultLen) {
       }
     }
     : null;
+}
+
+function bannerImpression(slot) {
+  var sizes = slot.mediaTypes.banner.sizes || slot.sizes;
+  return {
+    format: sizes.map((s) => ({ w: s[0], h: s[1] })),
+    w: sizes[0][0],
+    h: sizes[0][1],
+  }
 }
 
 function site(bidRequests, bidderRequest) {
