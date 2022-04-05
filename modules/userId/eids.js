@@ -314,6 +314,32 @@ export const USER_IDS_CONFIG = {
       return data.envelope;
     }
   },
+
+  // PAF Data
+  'pafData': {
+    getValue: function(data) {
+      if (data && Array.isArray(data.identifiers) && data.identifiers[0]) {
+        return data.identifiers[0].value;
+      }
+    },
+    source: 'paf',
+    atype: 1,
+    getEidExt: function(data) {
+      if (data && data.preferences) {
+        return {preferences: data.preferences};
+      }
+    },
+    getUidExt: function(data) {
+      if (data && Array.isArray(data.identifiers) && data.identifiers[0]) {
+        const id = data.identifiers[0];
+        return {
+          version: id.version,
+          type: id.type,
+          source: id.source
+        };
+      }
+    }
+  },
 };
 
 // this function will create an eid object for the given UserId sub-module
