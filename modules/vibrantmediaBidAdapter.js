@@ -13,7 +13,7 @@ import {OUTSTREAM} from '../src/video.js';
 
 const BIDDER_CODE = 'vibrantmedia';
 const VIBRANT_MEDIA_PREBID_URL = 'https://prebid.intellitxt.com/prebid';
-const VALID_PIXEL_URL_REGEX = /^https?:\/\/[a-z0-9-]+(\.[a-z0-9-]+)+([/?].*)?$/;
+const VALID_PIXEL_URL_REGEX = /^https?:\/\/[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)+([/?].*)?$/;
 const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
 
 /**
