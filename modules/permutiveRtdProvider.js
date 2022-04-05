@@ -281,9 +281,9 @@ const unknownIabSegmentId = '_unknown_'
  * under `user.data` in the bid request.
  */
 const ortb2UserDataTransformations = {
-  iabAudienceTaxonomy11: (userData, config) => ({
+  iab: (userData, config) => ({
     name: userData.name,
-    ext: { segtax: '4' },
+    ext: { segtax: config.segtax },
     segment: (userData.segment || [])
       .map(segment => ({ id: iabSegmentId(segment.id, config.iabIds) }))
       .filter(segment => segment.id !== unknownIabSegmentId)

@@ -63,8 +63,9 @@ describe('permutiveRtdProvider', function () {
         moduleConfig.params,
         {
           transformations: [{
-            id: 'iabAudienceTaxonomy11',
+            id: 'iab',
             config: {
+              segtax: 4,
               iabIds: {
                 1000001: '9000009',
                 1000002: '9000008'
@@ -84,7 +85,7 @@ describe('permutiveRtdProvider', function () {
           },
           {
             name: 'permutive.com',
-            ext: { segtax: '4' },
+            ext: { segtax: 4 },
             segment: [{ id: '9000009' }, { id: '9000008' }]
           }
         ])
