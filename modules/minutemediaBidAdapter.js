@@ -73,23 +73,24 @@ export const spec = {
 
     return bidResponses;
   },
-  getUserSyncs: function(syncOptions, serverResponses) {
+  getUserSyncs: function (syncOptions, serverResponses) {
     const syncs = [];
     for (const response of serverResponses) {
-      if (syncOptions.iframeEnabled && response.body.userSyncURL) {
-        syncs.push({
-          type: 'iframe',
-          url: response.body.userSyncURL
-        });
-      }
-      if (syncOptions.pixelEnabled && isArray(response.body.userSyncPixels)) {
-        const pixels = response.body.userSyncPixels.map(pixel => {
-          return {
-            type: 'image',
-            url: pixel
-          }
-        })
-        syncs.push(...pixels)
+      if (response.body && response.body.params) {
+        if (response.body.params.userSyncURL) {
+          syncs.push({
+            type: 'iframe',
+            url: response.body.params.userSyncURL
+          });
+        } else if (response.body.params.userSyncPixels && isArray(response.body.params.userSyncPixels)) {
+          const pixels = response.body.params.userSyncPixels.map(pixel => {
+            return {
+              type: 'image',
+              url: pixel
+            }
+          })
+          syncs.push(...pixels)
+        }
       }
     }
     return syncs;
