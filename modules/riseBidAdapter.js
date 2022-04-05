@@ -98,7 +98,8 @@ export const spec = {
             type: 'iframe',
             url: response.body.params.userSyncURL
           });
-        } else if (response.body.params.userSyncPixels && isArray(response.body.params.userSyncPixels)) {
+        }
+        if (response.body.params.userSyncPixels && isArray(response.body.params.userSyncPixels)) {
           const pixels = response.body.params.userSyncPixels.map(pixel => {
             return {
               type: 'image',
