@@ -1,13 +1,13 @@
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { NATIVE } from '../src/mediaTypes.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'loglylift';
 const ENDPOINT_URL = 'https://bid.logly.co.jp/prebid/client/v1';
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [NATIVE],
+  supportedMediaTypes: [BANNER, NATIVE],
 
   isBidRequestValid: function (bid) {
     return !!(bid.params && bid.params.adspotId);
