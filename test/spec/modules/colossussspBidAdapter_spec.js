@@ -61,6 +61,7 @@ describe('ColossussspAdapter', function () {
     });
     it('Should return false when placement_id is not a number', function () {
       bid.params.placement_id = 'aaa';
+      delete bid.params.group_id;
       expect(spec.isBidRequestValid(bid)).to.be.false;
     });
   });
@@ -108,7 +109,7 @@ describe('ColossussspAdapter', function () {
       }
     });
     it('Returns empty data if no valid requests are passed', function () {
-      serverRequest = spec.buildRequests([]);
+      serverRequest = spec.buildRequests([], bidderRequest);
       let data = serverRequest.data;
       expect(data.placements).to.be.an('array').that.is.empty;
     });
@@ -198,13 +199,13 @@ describe('ColossussspAdapter', function () {
   })
 
   describe('getUserSyncs', function () {
-    let userSync = spec.getUserSyncs();
+    let userSync = spec.getUserSyncs({}, {}, {}, {});
     it('Returns valid URL and type', function () {
       expect(userSync).to.be.an('array').with.lengthOf(1);
       expect(userSync[0].type).to.exist;
       expect(userSync[0].url).to.exist;
-      expect(userSync[0].type).to.be.equal('image');
-      expect(userSync[0].url).to.be.equal('https://colossusssp.com/?c=o&m=cookie');
+      expect(userSync[0].type).to.be.equal('hms.gif');
+      expect(userSync[0].url).to.be.equal('https://sync.colossusssp.com/hms.gif?pbjs=1&coppa=0');
     });
   });
 });

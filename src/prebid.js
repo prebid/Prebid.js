@@ -14,11 +14,13 @@ import { auctionManager } from './auctionManager.js';
 import { filters, targeting } from './targeting.js';
 import { hook } from './hook.js';
 import { sessionLoader } from './debugging.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import {includes} from './polyfill.js';
 import { adunitCounter } from './adUnits.js';
 import { executeRenderer, isRendererRequired } from './Renderer.js';
 import { createBid } from './bidfactory.js';
 import { storageCallbacks } from './storageManager.js';
+import { emitAdRenderSucceeded, emitAdRenderFail } from './adRendering.js';
+import { gdprDataHandler, uspDataHandler } from './adapterManager.js'
 
 const $$PREBID_GLOBAL$$ = getGlobal();
 const CONSTANTS = require('./constants.json');
@@ -27,7 +29,7 @@ const events = require('./events.js');
 const { triggerUserSyncs } = userSync;
 
 /* private variables */
-const { ADD_AD_UNITS, BID_WON, REQUEST_BIDS, SET_TARGETING, AD_RENDER_FAILED, AD_RENDER_SUCCEEDED, STALE_RENDER } = CONSTANTS.EVENTS;
+const { ADD_AD_UNITS, BID_WON, REQUEST_BIDS, SET_TARGETING, STALE_RENDER } = CONSTANTS.EVENTS;
 const { PREVENT_WRITING_ON_MAIN_DOCUMENT, NO_AD, EXCEPTION, CANNOT_FIND_AD, MISSING_DOC_OR_ADID } = CONSTANTS.AD_RENDER_FAILED_REASON;
 
 const eventValidators = {
@@ -146,7 +148,7 @@ function validateNativeMediaType(adUnit) {
 function validateAdUnitPos(adUnit, mediaType) {
   let pos = deepAccess(adUnit, `mediaTypes.${mediaType}.pos`);
 
-  if (!pos || !isNumber(pos) || !isFinite(pos)) {
+  if (!isNumber(pos) || isNaN(pos) || !isFinite(pos)) {
     let warning = `Value of property 'pos' on ad unit ${adUnit.code} should be of type: Number`;
 
     logWarn(warning);
@@ -157,7 +159,34 @@ function validateAdUnitPos(adUnit, mediaType) {
   return adUnit
 }
 
+function validateAdUnit(adUnit) {
+  const msg = (msg) => `adUnit.code '${adUnit.code}' ${msg}`;
+
+  const mediaTypes = adUnit.mediaTypes;
+  const bids = adUnit.bids;
+
+  if (bids != null && !isArray(bids)) {
+    logError(msg(`defines 'adUnit.bids' that is not an array. Removing adUnit from auction`));
+    return null;
+  }
+  if (bids == null && adUnit.ortb2Imp == null) {
+    logError(msg(`has no 'adUnit.bids' and no 'adUnit.ortb2Imp'. Removing adUnit from auction`));
+    return null;
+  }
+  if (!mediaTypes || Object.keys(mediaTypes).length === 0) {
+    logError(msg(`does not define a 'mediaTypes' object.  This is a required field for the auction, so this adUnit has been removed.`));
+    return null;
+  }
+  if (adUnit.ortb2Imp != null && (bids == null || bids.length === 0)) {
+    adUnit.bids = [{bidder: null}]; // the 'null' bidder is treated as an s2s-only placeholder by adapterManager
+    logMessage(msg(`defines 'adUnit.ortb2Imp' with no 'adUnit.bids'; it will be seen only by S2S adapters`));
+  }
+
+  return adUnit;
+}
+
 export const adUnitSetupChecks = {
+  validateAdUnit,
   validateBannerMediaType,
   validateVideoMediaType,
   validateNativeMediaType,
@@ -168,19 +197,11 @@ export const checkAdUnitSetup = hook('sync', function (adUnits) {
   const validatedAdUnits = [];
 
   adUnits.forEach(adUnit => {
+    adUnit = validateAdUnit(adUnit);
+    if (adUnit == null) return;
+
     const mediaTypes = adUnit.mediaTypes;
-    const bids = adUnit.bids;
     let validatedBanner, validatedVideo, validatedNative;
-
-    if (!bids || !isArray(bids)) {
-      logError(`Detected adUnit.code '${adUnit.code}' did not have 'adUnit.bids' defined or 'adUnit.bids' is not an array. Removing adUnit from auction.`);
-      return;
-    }
-
-    if (!mediaTypes || Object.keys(mediaTypes).length === 0) {
-      logError(`Detected adUnit.code '${adUnit.code}' did not have a 'mediaTypes' object defined.  This is a required field for the auction, so this adUnit has been removed.`);
-      return;
-    }
 
     if (mediaTypes.banner) {
       validatedBanner = validateBannerMediaType(adUnit);
@@ -265,6 +286,24 @@ $$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCode = function (adUnitCode) {
 $$PREBID_GLOBAL$$.getAdserverTargeting = function (adUnitCode) {
   logInfo('Invoking $$PREBID_GLOBAL$$.getAdserverTargeting', arguments);
   return targeting.getAllTargeting(adUnitCode);
+};
+
+/**
+ * returns all consent data
+ * @return {Object} Map of consent types and data
+ * @alias module:pbjs.getConsentData
+ */
+function getConsentMetadata() {
+  return {
+    gdpr: gdprDataHandler.getConsentMeta(),
+    usp: uspDataHandler.getConsentMeta(),
+    coppa: !!(config.getConfig('coppa'))
+  }
+}
+
+$$PREBID_GLOBAL$$.getConsentMetadata = function () {
+  logInfo('Invoking $$PREBID_GLOBAL$$.getConsentMetadata');
+  return getConsentMetadata();
 };
 
 function getBids(type) {
@@ -385,23 +424,6 @@ $$PREBID_GLOBAL$$.setTargetingForAst = function (adUnitCodes) {
   events.emit(SET_TARGETING, targeting.getAllTargeting());
 };
 
-function emitAdRenderFail({ reason, message, bid, id }) {
-  const data = { reason, message };
-  if (bid) data.bid = bid;
-  if (id) data.adId = id;
-
-  logError(message);
-  events.emit(AD_RENDER_FAILED, data);
-}
-
-function emitAdRenderSucceeded({ doc, bid, id }) {
-  const data = { doc };
-  if (bid) data.bid = bid;
-  if (id) data.adId = id;
-
-  events.emit(AD_RENDER_SUCCEEDED, data);
-}
-
 /**
  * This function will check for presence of given node in given parent. If not present - will inject it.
  * @param {Node} node node, whose existance is in question
@@ -443,9 +465,8 @@ $$PREBID_GLOBAL$$.renderAd = hook('async', function (doc, id, options) {
 
         if (shouldRender) {
           // replace macros according to openRTB with price paid = bid.cpm
-          bid.ad = replaceAuctionPrice(bid.ad, bid.cpm);
-          bid.adUrl = replaceAuctionPrice(bid.adUrl, bid.cpm);
-
+          bid.ad = replaceAuctionPrice(bid.ad, bid.originalCpm || bid.cpm);
+          bid.adUrl = replaceAuctionPrice(bid.adUrl, bid.originalCpm || bid.cpm);
           // replacing clickthrough if submitted
           if (options && options.clickThrough) {
             const {clickThrough} = options;
@@ -472,16 +493,6 @@ $$PREBID_GLOBAL$$.renderAd = hook('async', function (doc, id, options) {
             const message = `Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`;
             emitAdRenderFail({reason: PREVENT_WRITING_ON_MAIN_DOCUMENT, message, bid, id});
           } else if (ad) {
-            // will check if browser is firefox and below version 67, if so execute special doc.open()
-            // for details see: https://github.com/prebid/Prebid.js/pull/3524
-            // TODO remove this browser specific code at later date (when Firefox < 67 usage is mostly gone)
-            if (navigator.userAgent && navigator.userAgent.toLowerCase().indexOf('firefox/') > -1) {
-              const firefoxVerRegx = /firefox\/([\d\.]+)/;
-              let firefoxVer = navigator.userAgent.toLowerCase().match(firefoxVerRegx)[1]; // grabs the text in the 1st matching group
-              if (firefoxVer && parseInt(firefoxVer, 10) < 67) {
-                doc.open('text/html', 'replace');
-              }
-            }
             doc.write(ad);
             doc.close();
             setRenderSize(doc, width, height);

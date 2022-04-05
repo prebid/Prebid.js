@@ -3,11 +3,11 @@
 # Check https://circleci.com/docs/2.0/language-javascript/ for more details
 #
 
-aliases: 
+aliases:
   - &environment
       docker:
         # specify the version you desire here
-        - image: circleci/node:12.16.1
+        - image: circleci/node:12.16.1-browsers
       resource_class: xlarge
         # Specify service dependencies here if necessary
         # CircleCI maintains a library of pre-built images
@@ -72,7 +72,7 @@ jobs:
   build:
     <<: *environment
     steps: *unit_test_steps
-      
+
   e2etest:
     <<: *environment
     steps: *endtoend_test_steps

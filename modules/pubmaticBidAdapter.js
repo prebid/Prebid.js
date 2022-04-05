@@ -12,6 +12,7 @@ const USER_SYNC_URL_IMAGE = 'https://image8.pubmatic.com/AdServer/ImgSync?p=';
 const DEFAULT_CURRENCY = 'USD';
 const AUCTION_TYPE = 1;
 const GROUPM_ALIAS = {code: 'groupm', gvlid: 98};
+const MARKETPLACE_PARTNERS = ['groupm']
 const UNDEFINED = undefined;
 const DEFAULT_WIDTH = 0;
 const DEFAULT_HEIGHT = 0;
@@ -1065,6 +1066,12 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: (validBidRequests, bidderRequest) => {
+    if (bidderRequest && MARKETPLACE_PARTNERS.includes(bidderRequest.bidderCode)) {
+      // We have got the buildRequests function call for Marketplace Partners
+      logInfo('For all publishers using ' + bidderRequest.bidderCode + ' bidder, the PubMatic bidder will also be enabled so PubMatic server will respond back with the bids that needs to be submitted for PubMatic and ' + bidderRequest.bidderCode + ' in the network call sent by PubMatic bidder. Hence we do not want to create a network call for ' + bidderRequest.bidderCode + '. This way we are trying to save a network call from browser.');
+      return;
+    }
+
     var refererInfo;
     if (bidderRequest && bidderRequest.refererInfo) {
       refererInfo = bidderRequest.refererInfo;
@@ -1080,7 +1087,7 @@ export const spec = {
       bid = deepClone(originalBid);
       bid.params.adSlot = bid.params.adSlot || '';
       _parseAdSlot(bid);
-      if (bid.params.hasOwnProperty('video')) {
+      if ((bid.mediaTypes && bid.mediaTypes.hasOwnProperty('video')) || bid.params.hasOwnProperty('video')) {
         // Nothing to do
       } else {
         // If we have a native mediaType configured alongside banner, its ok if the banner size is not set in width and height
@@ -1285,6 +1292,13 @@ export const spec = {
                 newBid.adserverTargeting = {
                   'hb_buyid_pubmatic': seatbidder.ext.buyid
                 };
+              }
+
+              // if from the server-response the bid.ext.marketplace is set then
+              //    submit the bid to Prebid as marketplace name
+              if (bid.ext && !!bid.ext.marketplace && MARKETPLACE_PARTNERS.includes(bid.ext.marketplace)) {
+                newBid.bidderCode = bid.ext.marketplace;
+                newBid.bidder = bid.ext.marketplace;
               }
 
               bidResponses.push(newBid);

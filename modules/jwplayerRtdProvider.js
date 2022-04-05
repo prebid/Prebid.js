@@ -9,12 +9,12 @@
  * @requires module:modules/realTimeData
  */
 
-import { submodule } from '../src/hook.js';
-import { config } from '../src/config.js';
-import { ajaxBuilder } from '../src/ajax.js';
-import { logError } from '../src/utils.js';
-import find from 'core-js-pure/features/array/find.js';
-import { getGlobal } from '../src/prebidGlobal.js';
+import {submodule} from '../src/hook.js';
+import {config} from '../src/config.js';
+import {ajaxBuilder} from '../src/ajax.js';
+import {logError} from '../src/utils.js';
+import {find} from '../src/polyfill.js';
+import {getGlobal} from '../src/prebidGlobal.js';
 
 const SUBMODULE_NAME = 'jwplayer';
 const segCache = {};
@@ -155,8 +155,10 @@ export function enrichAdUnits(adUnits) {
       if (!vat) {
         return;
       }
+      const contentId = getContentId(vat.mediaID);
+      const contentData = getContentData(vat.segments);
       const targeting = formatTargetingResponse(vat);
-      addTargetingToBids(adUnit.bids, targeting);
+      enrichBids(adUnit.bids, targeting, contentId, contentData);
     };
     loadVat(jwTargeting, onVatResponse);
   });
@@ -235,6 +237,9 @@ export function getVatFromPlayer(playerID, mediaID) {
   };
 }
 
+/*
+  deprecated
+ */
 export function formatTargetingResponse(vat) {
   const { segments, mediaID } = vat;
   const targeting = {};
@@ -243,23 +248,83 @@ export function formatTargetingResponse(vat) {
   }
 
   if (mediaID) {
-    const id = 'jw_' + mediaID;
     targeting.content = {
-      id
+      id: getContentId(mediaID)
     }
   }
   return targeting;
 }
 
-function addTargetingToBids(bids, targeting) {
-  if (!bids || !targeting) {
+export function getContentId(mediaID) {
+  if (!mediaID) {
     return;
   }
 
-  bids.forEach(bid => addTargetingToBid(bid, targeting));
+  return 'jw_' + mediaID;
 }
 
+export function getContentData(segments) {
+  if (!segments || !segments.length) {
+    return;
+  }
+
+  const formattedSegments = segments.reduce((convertedSegments, rawSegment) => {
+    convertedSegments.push({
+      id: rawSegment,
+      value: rawSegment
+    });
+    return convertedSegments;
+  }, []);
+
+  return {
+    name: 'jwplayer',
+    ext: {
+      segtax: 502
+    },
+    segment: formattedSegments
+  };
+}
+
+export function addOrtbSiteContent(bid, contentId, contentData) {
+  if (!contentId && !contentData) {
+    return;
+  }
+
+  let ortb2 = bid.ortb2 || {};
+  let site = ortb2.site = ortb2.site || {};
+  let content = site.content = site.content || {};
+
+  if (contentId) {
+    content.id = contentId;
+  }
+
+  if (contentData) {
+    const data = content.data = content.data || [];
+    data.push(contentData);
+  }
+
+  bid.ortb2 = ortb2;
+}
+
+function enrichBids(bids, targeting, contentId, contentData) {
+  if (!bids) {
+    return;
+  }
+
+  bids.forEach(bid => {
+    addTargetingToBid(bid, targeting);
+    addOrtbSiteContent(bid, contentId, contentData);
+  });
+}
+
+/*
+  deprecated
+ */
 export function addTargetingToBid(bid, targeting) {
+  if (!targeting) {
+    return;
+  }
+
   const rtd = bid.rtd || {};
   const jwRtd = {};
   jwRtd[SUBMODULE_NAME] = Object.assign({}, rtd[SUBMODULE_NAME], { targeting });

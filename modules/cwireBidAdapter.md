@@ -2,7 +2,7 @@
 
 Module Name: C-WIRE Bid Adapter
 Module Type: Adagio Adapter
-Maintainer: dragan@cwire.ch
+Maintainer: publishers@cwire.ch
 
 ## Description
 
@@ -17,7 +17,10 @@ Below, the list of C-WIRE params and where they can be set.
 | ---------- | ------------- | ------------- | ---- | ---------|
 | pageId |  | x | number | YES |
 | placementId |  | x | number | YES |
-| adUnitElementId |  | x | string | NO |
+| refgroups | | x | string | NO |
+| cwcreative |  | x | integer | NO |
+| cwapikey | | x | string | NO |
+
 
 ### adUnit configuration
 
@@ -35,7 +38,9 @@ var adUnits = [
       params: {
         pageId: 1422,                 // required - number
         placementId: 2211521,         // required - number
-        adUnitElementId: 'other_div', // optional, div id to write to, if not set it will default to ad unit code  
+        cwcreative: 42,               // optional - id of creative to force
+        refgroups: 'test-user',       // optional - name of group or coma separated list of groups to force
+        cwapikey: 'api_key_xyz',      // optional - api key for integration testing        
       }
     }]
   }

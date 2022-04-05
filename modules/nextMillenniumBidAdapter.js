@@ -13,7 +13,7 @@ export const spec = {
 
   isBidRequestValid: function(bid) {
     return !!(
-      bid.params.placement_id && isStr(bid.params.placement_id)
+      (bid.params.placement_id && isStr(bid.params.placement_id)) || (bid.params.group_id && isStr(bid.params.group_id))
     );
   },
 
@@ -28,9 +28,10 @@ export const spec = {
         'ext': {
           'prebid': {
             'storedrequest': {
-              'id': getBidIdParameter('placement_id', bid.params)
+              'id': getPlacementId(bid)
             }
           },
+
           'nextMillennium': {
             'refresh_count': window.nmmRefreshCounts[bid.adUnitCode]++,
           }
@@ -46,10 +47,12 @@ export const spec = {
         if (uspConsent) {
           postBody.regs.ext.us_privacy = uspConsent;
         }
+
         if (gdprConsent) {
           if (typeof gdprConsent.gdprApplies !== 'undefined') {
             postBody.regs.ext.gdpr = gdprConsent.gdprApplies ? 1 : 0;
           }
+
           if (typeof gdprConsent.consentString !== 'undefined') {
             postBody.user = {
               ext: { consent: gdprConsent.consentString }
@@ -91,6 +94,7 @@ export const spec = {
           meta: {
             advertiserDomains: bid.adomain || []
           },
+
           ad: bid.adm
         });
       });
@@ -109,6 +113,7 @@ export const spec = {
     let bidders = []
     if (responses) {
       _each(responses, (response) => {
+        if (!(response && response.body && response.body.ext && response.body.ext.responsetimemillis)) return
         _each(Object.keys(response.body.ext.responsetimemillis), b => bidders.push(b))
       })
     }
@@ -123,5 +128,35 @@ export const spec = {
     }];
   },
 };
+
+function getPlacementId(bid) {
+  const groupId = getBidIdParameter('group_id', bid.params)
+  const placementId = getBidIdParameter('placement_id', bid.params)
+  if (!groupId) return placementId
+
+  let windowTop = getTopWindow(window)
+  let size = []
+  if (bid.mediaTypes) {
+    if (bid.mediaTypes.banner) size = bid.mediaTypes.banner.sizes && bid.mediaTypes.banner.sizes[0]
+    if (bid.mediaTypes.video) size = bid.mediaTypes.video.playerSize
+  }
+
+  const host = (windowTop && windowTop.location && windowTop.location.host) || ''
+  return `g${groupId};${size.join('x')};${host}`
+}
+
+function getTopWindow(curWindow, nesting = 0) {
+  if (nesting > 10) {
+    return curWindow
+  }
+
+  try {
+    if (curWindow.parent.document) {
+      return getTopWindow(curWindow.parent.window, ++nesting)
+    }
+  } catch (err) {
+    return curWindow
+  }
+}
 
 registerBidder(spec);
