@@ -75,7 +75,7 @@ export function setBidderRtb (auctionDetails, customModuleConfig) {
 
   acBidders.forEach(function (bidder) {
     const currConfig = bidderConfig[bidder] || {}
-    const nextConfig = mergeOrtbConfig(currConfig, segmentData.ac, transformationConfigs) // ORTB2 uses the `ac` segment IDs
+    const nextConfig = updateOrtbConfig(currConfig, segmentData.ac, transformationConfigs) // ORTB2 uses the `ac` segment IDs
 
     config.setBidderConfig({
       bidders: [bidder],
@@ -85,15 +85,14 @@ export function setBidderRtb (auctionDetails, customModuleConfig) {
 }
 
 /**
- * Merges segment data into existing bidder config
- * Segments are retrieved from the `ac` property of `segmentData`
+ * Updates `user.data` object in existing bidder config with Permutive segments
  * @param {Object} currConfig - Current bidder config
  * @param {Object[]} transformationConfigs - array of objects with `id` and `config` properties, used to determine
  *                                           the transformations on user data to include the ORTB2 object
  * @param {string[]} segmentIDs - Permutive segment IDs
  * @return {Object} Merged ortb2 object
  */
-function mergeOrtbConfig (currConfig, segmentIDs, transformationConfigs) {
+function updateOrtbConfig (currConfig, segmentIDs, transformationConfigs) {
   const name = 'permutive.com'
 
   const permutiveUserData = {
