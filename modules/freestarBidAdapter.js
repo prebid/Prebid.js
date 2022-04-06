@@ -83,7 +83,7 @@ export const spec = {
           rv.ext[partner] = params;
         });
       }
-      rv.ext.gpid = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+      rv.ext.gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
       return rv;
     });
     const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
