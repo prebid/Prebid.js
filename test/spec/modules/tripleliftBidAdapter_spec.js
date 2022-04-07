@@ -812,7 +812,6 @@ describe('triplelift adapter', function () {
       });
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       const { data: payload } = request;
-      console.log(JSON.stringify(payload))
       expect(payload.ext.fpd.user).to.not.exist;
       expect(payload.ext.fpd.context.ext.data).to.haveOwnProperty('category');
       expect(payload.ext.fpd.context).to.haveOwnProperty('pmp_elig');
