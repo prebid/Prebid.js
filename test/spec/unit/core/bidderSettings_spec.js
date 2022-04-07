@@ -49,6 +49,22 @@ describe('ScopedSettings', () => {
       }
       expect(settings.get('scope', 'key')).to.equal(false);
     })
+
+    it('should retrieve setting from parentScope', () => {
+      data = {
+        parentScope: {key: 'value'}
+      };
+      expect(settings.get('scope', 'key', 'parentScope')).to.equal('value');
+    });
+
+    it('should retrieve setting from default scope if parentScope is null', () => {
+      data = {
+        fallback: {
+          key: 'value'
+        }
+      };
+      expect(settings.get('scope', 'key', 'parentScope')).to.equal('value');
+    });
   });
 
   describe('getOwn', () => {
