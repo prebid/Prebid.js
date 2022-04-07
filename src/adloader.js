@@ -18,7 +18,7 @@ const _approvedLoadExternalJSList = [
  * Each unique URL will be loaded at most 1 time.
  * @param {string} url the url to load
  * @param {string} moduleCode bidderCode or module code of the module requesting this resource
- * @param {function} [callback] callback function to be called after the script is loaded.
+ * @param {function} [callback] callback function to be called after the script is loaded
  */
 export function loadExternalScript(url, moduleCode, callback, context) {
   if (!moduleCode || !url) {
