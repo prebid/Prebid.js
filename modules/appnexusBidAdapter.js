@@ -591,7 +591,6 @@ function formatRequest(payload, bidderRequest) {
 }
 
 function newRenderer(adUnitCode, rtbBid, rendererOptions = {}) {
-  debugger;
   const renderer = Renderer.install({
     id: rtbBid.renderer_id,
     url: rtbBid.renderer_url,
