@@ -43,7 +43,8 @@ export const spec = {
   getUserSyncs: function (syncOptions, serverResponses) {
     const syncs = [];
 
-    if (syncOptions.iframeEnabled && serverResponses.length > 0) {
+    // sync if mediaType is native because not native ad itself has a function for sync
+    if (syncOptions.iframeEnabled && serverResponses.length > 0 && serverResponses[0].body.bids[0].native) {
       syncs.push({
         type: 'iframe',
         url: 'https://sync.logly.co.jp/sync/sync.html'
