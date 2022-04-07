@@ -13,7 +13,7 @@ import {
   setConfig,
   addBidResponseHook,
 } from 'modules/currency.js';
-import truncate from 'lodash.truncate';
+
 let Ajv = require('ajv');
 let schema = require('./rubiconAnalyticsSchema.json');
 let ajv = new Ajv({
