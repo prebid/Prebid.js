@@ -1028,7 +1028,8 @@ describe('validate bid response: ', function () {
     let bidRequest;
     let bids1;
     let logWarnSpy;
-    let bidderSettingStub;
+    let bidderSettingStub, aliasRegistryStub;
+    let aliasRegistry;
 
     beforeEach(function () {
       bidRequest = {
@@ -1044,16 +1045,21 @@ describe('validate bid response: ', function () {
       bids1 = Object.assign({},
         bids[0],
         {
-          bidderCode: 'unknownBidder'
+          bidderCode: 'unknownBidder',
+          adapterCode: 'knownAdapter1'
         }
       );
       logWarnSpy = sinon.spy(utils, 'logWarn');
       bidderSettingStub = sinon.stub(bidderSettings, 'get');
+      aliasRegistry = {};
+      aliasRegistryStub = sinon.stub(adapterManager, 'aliasRegistry');
+      aliasRegistryStub.get(() => aliasRegistry);
     });
 
     afterEach(function () {
       logWarnSpy.restore();
       bidderSettingStub.restore();
+      aliasRegistryStub.restore();
     });
 
     it('should log warning when bidder is unknown and allowUknownBidderCode flag is false', function () {
@@ -1108,6 +1114,19 @@ describe('validate bid response: ', function () {
     it('should accept the bid, when unknowBidderCodes has bidder name and allowUknownBidderCode flag is true', function () {
       bidderSettingStub.withArgs(CODE, 'allowUnknownBidderCodes').returns(true);
       bidderSettingStub.withArgs(CODE, 'allowedUnknownBidderCodes').returns(['unknownBidder']);
+
+      const bidder = newBidder(spec);
+      spec.interpretResponse.returns(bids1);
+      bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+
+      expect(addBidResponseStub.calledOnce).to.equal(true);
+      expect(logWarnSpy.callCount).to.equal(0);
+      expect(logErrorSpy.callCount).to.equal(0);
+    });
+
+    it('should accept the bid, when bidder is an alias of the adapter', function () {
+      bidderSettingStub.withArgs(CODE, 'allowUnknownBidderCodes').returns(false);
+      aliasRegistry = {'unknownBidder': 'knownAdapter1'};
 
       const bidder = newBidder(spec);
       spec.interpretResponse.returns(bids1);
