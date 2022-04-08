@@ -138,7 +138,7 @@ export function getFirstMatchingFloor(floorData, bidObject, responseObject = {})
 
   let matchingData = {
     floorMin: floorData.floorMin || 0,
-    floorRuleValue: floorData.values[matchingRule] || floorData.default,
+    floorRuleValue: isNaN(floorData.values[matchingRule]) ? floorData.default : floorData.values[matchingRule],
     matchingData: allPossibleMatches[0], // the first possible match is an "exact" so contains all data relevant for anlaytics adapters
     matchingRule
   };
