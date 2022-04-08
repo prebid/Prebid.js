@@ -53,7 +53,7 @@ export function Renderer(options) {
     if (!isRendererPreferredFromAdUnit(adUnitCode)) {
       // we expect to load a renderer url once only so cache the request to load script
       this.cmd.unshift(runRender) // should render run first ?
-      loadExternalScript(url, moduleCode, this.callback, this.context);
+      loadExternalScript(url, moduleCode, this.callback, this.documentContext);
     } else {
       logWarn(`External Js not loaded by Renderer since renderer url and callback is already defined on adUnit ${adUnitCode}`);
       runRender()
@@ -115,15 +115,15 @@ export function isRendererRequired(renderer) {
  * @param {Document} doc context document of bid
  */
 export function executeRenderer(renderer, bid, doc) {
-  let context = null;
-  if (renderer.config && renderer.config.contextResolver) {
-    context = renderer.config.contextResolver(bid, document, doc);// a user provided callback, which should return a Document, and expect the parameters; bid, sourceDocument, renderDocument
+  let docContext = null;
+  if (renderer.config && renderer.config.documentResolver) {
+    docContext = renderer.config.documentResolver(bid, document, doc);// a user provided callback, which should return a Document, and expect the parameters; bid, sourceDocument, renderDocument
   }
-  if (!context) {
-    context = document;
+  if (!docContext) {
+    docContext = document;
   }
-  renderer.context = context;
-  renderer.render(bid, renderer.context);
+  renderer.documentContext = docContext;
+  renderer.render(bid, renderer.documentContext);
 }
 
 function isRendererPreferredFromAdUnit(adUnitCode) {

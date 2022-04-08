@@ -1146,12 +1146,12 @@ function hideSASIframe(elementId) {
   }
 }
 
-function outstreamRender(bid, context) {
+function outstreamRender(bid, doc) {
   hidedfpContainer(bid.adUnitCode);
   hideSASIframe(bid.adUnitCode);
   // push to render queue because ANOutstreamVideo may not be loaded yet
   bid.renderer.push(() => {
-    const win = getWindowFromDocument(context) || window;
+    const win = getWindowFromDocument(doc) || window;
     win.ANOutstreamVideo.renderAd({
       tagId: bid.adResponse.tag_id,
       sizes: [bid.getSize().split('x')],
