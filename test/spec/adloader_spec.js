@@ -63,6 +63,7 @@ describe('adLoader', function () {
       const doc2 = getDocSpec();
       adLoader.loadExternalScript('someURL', 'criteo', () => {}, doc1);
       adLoader.loadExternalScript('someURL', 'criteo', () => {}, doc1);
+      adLoader.loadExternalScript('someURL', 'criteo', () => {}, doc1);
       adLoader.loadExternalScript('someURL', 'criteo', () => {}, doc2);
       adLoader.loadExternalScript('someURL', 'criteo', () => {}, doc2);
       expect(utilsinsertElementStub.callCount).to.equal(2);
