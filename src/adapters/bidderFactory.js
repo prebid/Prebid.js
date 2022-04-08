@@ -236,7 +236,7 @@ export function newBidder(spec) {
         onBid: (bid) => {
           const bidRequest = bidRequestMap[bid.requestId];
           if (bidRequest) {
-            if(!bid.adapterCode){
+            if (!bid.adapterCode) {
               bid.adapterCode = adapterManager.aliasRegistry[bidRequest.bidder] || bidRequest.bidder;
             }
             if (isUnknownBidder(bid.bidderCode, bidRequest.bidder, bid.adapterCode)) {
