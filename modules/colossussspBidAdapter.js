@@ -112,7 +112,7 @@ export const spec = {
         placementId: bid.params.placement_id,
         groupId: bid.params.group_id,
         bidId: bid.bidId,
-        sizes: bid.mediaTypes[traff].sizes,
+        sizes: bid.mediaTypes[traff].sizes || bid.mediaTypes[traff].playerSize,
         traffic: traff,
         eids: [],
         floor: {}
