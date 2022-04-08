@@ -232,14 +232,16 @@ describe('FTRACK ID System', () => {
         });
 
         it(`- only household ID`, () => {
+          // Household ID only returns when paired with one of the other IDs, so for now
+          // it is setup to just return all three IDs if the user asks for Household ID
           let configMock1 = JSON.parse(JSON.stringify(configMock));
           delete configMock1.params.ids['device id'];
           delete configMock1.params.ids['single device id'];
           configMock1.params.ids['household id'] = true;
           ftrackIdSubmodule.getId(configMock1, null, null).callback();
 
-          expect(window.D9r).to.not.have.property('DeviceID');
-          expect(window.D9r).to.not.have.property('SingleDeviceID');
+          expect(window.D9r).to.have.property('DeviceID', true);
+          expect(window.D9r).to.have.property('SingleDeviceID', true);
           expect(window.D9r).to.have.property('HHID', true);
         });
       });
