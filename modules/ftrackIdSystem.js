@@ -98,8 +98,6 @@ export const ftrackIdSubmodule = {
             window.D9r.SingleDeviceID = true;
           }
           if (config.params.ids.hasOwnProperty('household id') && config.params.ids['household id'] === true) {
-            window.D9r.DeviceID = true;
-            window.D9r.SingleDeviceID = true;
             window.D9r.HHID = true;
           }
         }
