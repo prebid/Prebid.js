@@ -28,13 +28,13 @@ General gulp commands include separate commands for serving the codebase on a bu
 - Make sure the code is not setting cookies or localstorage directly -- it must use the `StorageManager`.
 - Review for obvious errors or bad coding practice / use best judgement here.
 - If the change is a new feature / change to core prebid.js - review the change with a Tech Lead on the project and make sure they agree with the nature of change.
-- If the change results in needing updates to docs (such as public API change, module interface etc), add a label for "needs docs" and inform the submitter they must submit a docs PR to update the appropriate area of Prebid.org **before the PR can merge**. Help them with finding where the docs are located on prebid.org if needed. 
+- If the change results in needing updates to docs (such as public API change, module interface etc), add a label for "needs docs" and inform the submitter they must submit a docs PR to update the appropriate area of Prebid.org **before the PR can merge**. Help them with finding where the docs are located on prebid.org if needed.
 - If all above is good, add a `LGTM` comment and, if the change is in PBS-core or is an important module like the prebidServerBidAdapter, request 1 additional core member to review.
 - Once there are 2 `LGTM` on the PR, merge to master
 - The [draft release](https://github.com/prebid/Prebid.js/releases) notes are managed by [release drafter](https://github.com/release-drafter/release-drafter). To get the PR added to the release notes do the steps below. A GitHub action will use that information to build the release notes.
     - Adjust the PR Title to be appropriate for release notes
     - Add a label for `feature`, `maintenance`, `fix`, `bugfix` or `bug` to categorize the PR
-    - Add a SemVer label of `major`, `minor` or `patch` to indicate the scope of change    
+    - Add a SemVer label of `major`, `minor` or `patch` to indicate the scope of change
 
 ### Reviewing a New or Updated Bid Adapter
 
@@ -50,8 +50,8 @@ Follow steps above for general review process. In addition, please verify the fo
 - Verify that code re-use is being done properly and that changes introduced by a bidder don't impact other bidders.
 - If the adapter being submitted is an alias type, check with the bidder contact that is being aliased to make sure it's allowed.
 - All bidder parameter conventions must be followed:
-    - Video params must be read from AdUnit.mediaTypes.video when available; however bidder config can override the ad unit. 
-    - First party data must be read from [`fpd.context` and `fpd.user`](https://docs.prebid.org/dev-docs/publisher-api-reference.html#setConfig-fpd).
+    - Video params must be read from AdUnit.mediaTypes.video when available; however bidder config can override the ad unit.
+    - First party data must be read from [`ortb2.site` and `ortb2.user`](https://docs.prebid.org/dev-docs/publisher-api-reference/setConfig.html#setConfig-fpd).
     - Adapters that accept a floor parameter must also support the [floors module](https://docs.prebid.org/dev-docs/modules/floors.html) -- look for a call to the `getFloor()` function.
     - Adapters cannot accept an schain parameter. Rather, they must look for the schain parameter at bidRequest.schain.
     - The bidRequest page referrer must checked in addition to any bidder-specific parameter.
@@ -115,7 +115,7 @@ Follow steps above for general review process. In addition:
 - The RTD Provider must include a `providerRtdProvider.md` file. This file must have example parameters and document a sense of what to expect: what should change in the bidrequest, or what targeting data should be added?
 - Try running the new sub-module and confirm the provided test parameters.
 - Confirm that the module
-  - is not loading external code. If it is, escalate to the #prebid-js Slack channel. 
+  - is not loading external code. If it is, escalate to the #prebid-js Slack channel.
   - is reading `config` from the function signature rather than calling `getConfig`.
   - is sending data to the bid request only as either First Party Data or in bidRequest.rtd.RTDPROVIDERCODE.
   - is making HTTPS requests as early as possible, but not more often than needed.
@@ -128,7 +128,7 @@ Follow steps above for general review process. In addition:
 Each week, Prebid Org assigns one person to keep an eye on incoming issues and PRs. Every Monday morning a reminder is sent to the prebid-js slack channel with a link to the spreadsheet. If you're on rotation, please check that list each Monday to see if you're on-duty.
 
 When on-duty:
-- Review issues and PRs at least once per weekday for new items. Encourage a 48 "SLA" on PRs/issues assigned. Aim for touchpoint once every 48/hours. 
+- Review issues and PRs at least once per weekday for new items. Encourage a 48 "SLA" on PRs/issues assigned. Aim for touchpoint once every 48/hours.
 - For PRs: assign PRs to individuals on the **PR review list**. Try to be equitable -- not all PRs are created equally. Use the "Assigned" field and add the "Needs Review" label.
 - For Issues: try to address questions and troubleshooting requests on your own, assigning them to others as needed. Please add labels as appropriate (I.E. bug, question, backlog etc).
 - Issues that are questions or troubleshooting requests may be closed if the originator doesn't respond within a week to requests for confirmation or details.
