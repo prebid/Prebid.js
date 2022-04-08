@@ -1136,6 +1136,31 @@ describe('validate bid response: ', function () {
       expect(logWarnSpy.callCount).to.equal(0);
       expect(logErrorSpy.callCount).to.equal(0);
     });
+
+    it('should not accept the bid, when bidder is an alias of the other adapter and allowUnknownBidderCodes is false', function () {
+      bidderSettingStub.withArgs(CODE, 'allowUnknownBidderCodes').returns(false);
+      aliasRegistry = {'unknownBidder': 'unknownAdapter1'};
+
+      const bidder = newBidder(spec);
+      spec.interpretResponse.returns(bids1);
+      bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+
+      expect(addBidResponseStub.calledOnce).to.equal(false);
+      expect(logWarnSpy.callCount).to.equal(1);
+    });
+
+    it('should not accept the bid, when bidder is an alias of the other adapter and allowUnknownBidderCodes is true', function () {
+      bidderSettingStub.withArgs(CODE, 'allowUnknownBidderCodes').returns(true);
+      bidderSettingStub.withArgs(CODE, 'allowedUnknownBidderCodes').returns(['*']);
+      aliasRegistry = {'unknownBidder': 'unknownAdapter1'};
+
+      const bidder = newBidder(spec);
+      spec.interpretResponse.returns(bids1);
+      bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+
+      expect(addBidResponseStub.calledOnce).to.equal(false);
+      expect(logWarnSpy.callCount).to.equal(1);
+    });
   })
 });
 
