@@ -19,7 +19,7 @@ const _approvedLoadExternalJSList = [
  * @param {string} url the url to load
  * @param {string} moduleCode bidderCode or module code of the module requesting this resource
  * @param {function} [callback] callback function to be called after the script is loaded
- * @param {Document} doc the context document, in which the script will be loaded
+ * @param {Document} [doc] the context document, in which the script will be loaded, defaults to loaded document
  */
 export function loadExternalScript(url, moduleCode, callback, doc) {
   if (!moduleCode || !url) {
