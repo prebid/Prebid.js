@@ -236,9 +236,7 @@ export function newBidder(spec) {
         onBid: (bid) => {
           const bidRequest = bidRequestMap[bid.requestId];
           if (bidRequest) {
-            if (!bid.adapterCode) {
-              bid.adapterCode = adapterManager.aliasRegistry[bidRequest.bidder] || bidRequest.bidder;
-            }
+            bid.adapterCode = adapterManager.getAdapterCode(bidRequest.bidder);
             if (isUnknownBidder(bid.bidderCode, bidRequest.bidder, bid.adapterCode)) {
               logWarn(`${bid.bidderCode} is not a registered partner or known bidder of ${bidRequest.bidder}, hence continuing without bid. If you wish to support this bidder, please mark allowUnknownBidderCodes as true in bidderSettings.`);
               return;

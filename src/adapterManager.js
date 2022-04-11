@@ -575,4 +575,11 @@ adapterManager.callBidderError = function(bidder, error, bidderRequest) {
   tryCallBidderMethod(bidder, 'onBidderError', param);
 };
 
+adapterManager.getAdapterCode = function(bidderCode) {
+  if (_aliasRegistry[bidderCode]) {
+    return this.getAdapterCode(_aliasRegistry[bidderCode])
+  }
+  return bidderCode;
+};
+
 export default adapterManager;

@@ -1030,6 +1030,7 @@ describe('validate bid response: ', function () {
     let logWarnSpy;
     let bidderSettingStub, aliasRegistryStub;
     let aliasRegistry;
+    let adapterManagerStub;
 
     beforeEach(function () {
       bidRequest = {
@@ -1054,12 +1055,15 @@ describe('validate bid response: ', function () {
       aliasRegistry = {};
       aliasRegistryStub = sinon.stub(adapterManager, 'aliasRegistry');
       aliasRegistryStub.get(() => aliasRegistry);
+      adapterManagerStub = sinon.stub(adapterManager, 'getAdapterCode');
+      adapterManagerStub.withArgs('unknownBidder').returns('knownAdapter1');
     });
 
     afterEach(function () {
       logWarnSpy.restore();
       bidderSettingStub.restore();
       aliasRegistryStub.restore();
+      adapterManagerStub.restore();
     });
 
     it('should log warning when bidder is unknown and allowUknownBidderCode flag is false', function () {
