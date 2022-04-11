@@ -306,7 +306,15 @@ export function newConfig() {
           memo[topic] = currBidderConfig[topic];
         } else {
           if (isPlainObject(currBidderConfig[topic])) {
-            memo[topic] = mergeDeep({}, config[topic], currBidderConfig[topic]);
+            /* gu-mod-start */
+            if (topic === 'customPriceBucket') {
+              // It doesn't make sense to deeply merge price buckets
+              // Rather we will just select the bidder-specific one if it's available
+              memo[topic] = Object.assign({}, config[topic], currBidderConfig[topic]);
+            } else {
+              memo[topic] = mergeDeep({}, config[topic], currBidderConfig[topic]);
+            }
+            /* gu-mod-end */
           } else {
             memo[topic] = currBidderConfig[topic];
           }
