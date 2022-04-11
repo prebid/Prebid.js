@@ -577,9 +577,9 @@ adapterManager.callBidderError = function(bidder, error, bidderRequest) {
 
 adapterManager.getAdapterCode = function(bidderCode) {
   if (_aliasRegistry[bidderCode]) {
-    return this.getAdapterCode(_aliasRegistry[bidderCode])
+    return this.getAdapterCode(_aliasRegistry[bidderCode]) || _aliasRegistry[bidderCode]
   }
-  return bidderCode;
+  return null;
 };
 
 export default adapterManager;

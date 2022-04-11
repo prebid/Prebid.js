@@ -1068,7 +1068,7 @@ describe('validate bid response: ', function () {
 
     it('should log warning when bidder is unknown and allowUknownBidderCode flag is false', function () {
       bidderSettingStub.returns(false);
-      adapterManagerStub.withArgs('unknownBidder').returns('unknownBidder')
+      adapterManagerStub.withArgs('unknownBidder').returns(null)
 
       const bidder = newBidder(spec);
       spec.interpretResponse.returns(bids1);
@@ -1081,7 +1081,7 @@ describe('validate bid response: ', function () {
     it('should log warning when the particular bidder is not specified in unknowBidderCodes and allowUknownBidderCode flag is true', function () {
       bidderSettingStub.withArgs(CODE, 'allowUnknownBidderCodes').returns(true);
       bidderSettingStub.withArgs(CODE, 'allowedUnknownBidderCodes').returns(['unknownBidder02']);
-      adapterManagerStub.withArgs('unknownBidder').returns('unknownBidder')
+      adapterManagerStub.withArgs('unknownBidder').returns(null)
 
       const bidder = newBidder(spec);
       spec.interpretResponse.returns(bids1);
