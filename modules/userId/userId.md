@@ -168,17 +168,6 @@ pbjs.setConfig({
     userSync: {
         userIds: [
         {
-            name: "trustpid",
-            params: {
-              maxDelayTime: 2500,
-            },
-            bidders: ["adf", "adformPBS", "ix"],
-            storage: {
-              type: "html5",
-              name: "trustpid",
-              expires: 1, // expiration days
-            },
-        }, {
             name: "unifiedId",
             params: {
                 partner: "prebid",
