@@ -271,6 +271,10 @@ export const spec = {
         rd_ifs: bidderRequest.refererInfo.numIframes,
         rd_stk: bidderRequest.refererInfo.stack.map((url) => encodeURIComponent(url)).join(',')
       }
+      let pubPageUrl = config.getConfig('pageUrl');
+      if (isStr(pubPageUrl) && pubPageUrl !== '') {
+        refererinfo.rd_can = pubPageUrl;
+      }
       payload.referrer_detection = refererinfo;
     }
 
