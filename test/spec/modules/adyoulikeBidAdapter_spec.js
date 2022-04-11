@@ -129,6 +129,26 @@ describe('Adyoulike Adapter', function () {
     }
   ];
 
+  const bidRequestWithVideo = [
+    {
+      'bidId': 'bid_id_0',
+      'bidder': 'adyoulike',
+      'placementCode': 'adunit/hb-0',
+      'params': {
+        'placement': 'placement_0'
+      },
+      'sizes': '300x250',
+      'mediaTypes':
+      {
+        'video': {
+          'context': 'instream',
+          'playerSize': [[ 640, 480 ]]
+        }
+      },
+      'transactionId': 'bid_id_0_transaction_id'
+    }
+  ];
+
   const bidRequestWithNativeImageType = [
     {
       'bidId': 'bid_id_0',
@@ -584,6 +604,11 @@ describe('Adyoulike Adapter', function () {
       expect(payload.PageRefreshed).to.equal(false);
       expect(payload.Bids['bid_id_0'].TransactionID).to.be.equal('bid_id_0_transaction_id');
       expect(payload.Bids['bid_id_0'].Native).deep.equal(sentNativeImageType);
+    });
+
+    it('Should target video enpoint for video mediatype', function() {
+      const request = spec.buildRequests(bidRequestWithVideo, bidderRequest);
+      expect(request.url).to.contain(getEndpoint());
     });
 
     it('should add gdpr/usp consent information to the request', function () {

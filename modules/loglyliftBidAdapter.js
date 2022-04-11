@@ -1,13 +1,13 @@
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { NATIVE } from '../src/mediaTypes.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'loglylift';
 const ENDPOINT_URL = 'https://bid.logly.co.jp/prebid/client/v1';
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [NATIVE],
+  supportedMediaTypes: [BANNER, NATIVE],
 
   isBidRequestValid: function (bid) {
     return !!(bid.params && bid.params.adspotId);
@@ -43,7 +43,8 @@ export const spec = {
   getUserSyncs: function (syncOptions, serverResponses) {
     const syncs = [];
 
-    if (syncOptions.iframeEnabled && serverResponses.length > 0) {
+    // sync if mediaType is native because not native ad itself has a function for sync
+    if (syncOptions.iframeEnabled && serverResponses.length > 0 && serverResponses[0].body.bids[0].native) {
       syncs.push({
         type: 'iframe',
         url: 'https://sync.logly.co.jp/sync/sync.html'

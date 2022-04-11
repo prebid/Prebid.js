@@ -194,49 +194,23 @@ describe('sizeMappingV2', function () {
       utils.logError.restore();
     });
 
-    it('should filter out adUnit if it does not contain the required property mediaTypes', function () {
-      let adUnits = utils.deepClone(AD_UNITS);
-      delete adUnits[0].mediaTypes;
-      // before checkAdUnitSetupHook is called, the length of adUnits should be '2'
-      expect(adUnits.length).to.equal(2);
-      adUnits = checkAdUnitSetupHook(adUnits);
+    describe('basic validation', () => {
+      let validateAdUnit;
 
-      // after checkAdUnitSetupHook is called, the length of adUnits should be '1'
-      expect(adUnits.length).to.equal(1);
-      expect(adUnits[0].code).to.equal('div-gpt-ad-1460505748561-1');
-    });
+      beforeEach(() => {
+        validateAdUnit = sinon.stub(adUnitSetupChecks, 'validateAdUnit');
+      });
 
-    it('should filter out adUnit if it does not contain the required property "bids"', function() {
-      let adUnits = utils.deepClone(AD_UNITS);
-      delete adUnits[0].mediaTypes;
-      // before checkAdUnitSetupHook is called, the length of the adUnits should equal '2'
-      expect(adUnits.length).to.equal(2);
-      adUnits = checkAdUnitSetupHook(adUnits);
+      afterEach(() => {
+        validateAdUnit.restore();
+      });
 
-      // after checkAdUnitSetupHook is called, the length of the adUnits should be '1'
-      expect(adUnits.length).to.equal(1);
-      expect(adUnits[0].code).to.equal('div-gpt-ad-1460505748561-1');
-    });
-
-    it('should filter out adUnit if it has declared property mediaTypes with an empty object', function () {
-      let adUnits = utils.deepClone(AD_UNITS);
-      adUnits[0].mediaTypes = {};
-      // before checkAdUnitSetupHook is called, the length of adUnits should be '2'
-      expect(adUnits.length).to.equal(2);
-      adUnits = checkAdUnitSetupHook(adUnits);
-
-      // after checkAdUnitSetupHook is called, the length of adUnits should be '1'
-      expect(adUnits.length).to.equal(1);
-      expect(adUnits[0].code).to.equal('div-gpt-ad-1460505748561-1');
-    });
-
-    it('should log an error message if Ad Unit does not contain the required property "mediaTypes"', function () {
-      let adUnits = utils.deepClone(AD_UNITS);
-      delete adUnits[0].mediaTypes;
-
-      checkAdUnitSetupHook(adUnits);
-      sinon.assert.callCount(utils.logError, 1);
-      sinon.assert.calledWith(utils.logError, 'Detected adUnit.code \'div-gpt-ad-1460505748561-0\' did not have a \'mediaTypes\' object defined. This is a required field for the auction, so this adUnit has been removed.');
+      it('should filter out adUnits that do not pass adUnitSetupChecks.validateAdUnit', () => {
+        validateAdUnit.returns(null);
+        const adUnits = checkAdUnitSetupHook(utils.deepClone(AD_UNITS));
+        AD_UNITS.forEach((u) => sinon.assert.calledWith(validateAdUnit, u));
+        expect(adUnits.length).to.equal(0);
+      });
     });
 
     describe('banner mediaTypes checks', function () {

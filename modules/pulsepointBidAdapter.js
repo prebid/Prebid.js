@@ -419,59 +419,12 @@ function user(bidRequest, bidderRequest) {
     }
   }
   if (bidRequest) {
-    if (bidRequest.userId) {
-      ext.eids = [];
-      addExternalUserId(ext.eids, bidRequest.userId.pubcid, 'pubcid.org');
-      addExternalUserId(ext.eids, bidRequest.userId.britepoolid, 'britepool.com');
-      addExternalUserId(ext.eids, bidRequest.userId.criteoId, 'criteo.com');
-      addExternalUserId(ext.eids, bidRequest.userId.idl_env, 'liveramp.com');
-      addExternalUserId(ext.eids, deepAccess(bidRequest, 'userId.id5id.uid'), 'id5-sync.com', deepAccess(bidRequest, 'userId.id5id.ext'));
-      addExternalUserId(ext.eids, deepAccess(bidRequest, 'userId.parrableId.eid'), 'parrable.com');
-      addExternalUserId(ext.eids, bidRequest.userId.fabrickId, 'neustar.biz');
-      addExternalUserId(ext.eids, deepAccess(bidRequest, 'userId.haloId.haloId'), 'audigent.com');
-      addExternalUserId(ext.eids, bidRequest.userId.merkleId, 'merkleinc.com');
-      addExternalUserId(ext.eids, bidRequest.userId.lotamePanoramaId, 'crwdcntrl.net');
-      addExternalUserId(ext.eids, bidRequest.userId.connectid, 'verizonmedia.com');
-      addExternalUserId(ext.eids, deepAccess(bidRequest, 'userId.uid2.id'), 'uidapi.com');
-      // liveintent
-      if (bidRequest.userId.lipb && bidRequest.userId.lipb.lipbid) {
-        addExternalUserId(ext.eids, bidRequest.userId.lipb.lipbid, 'liveintent.com');
-      }
-      // TTD
-      addExternalUserId(ext.eids, bidRequest.userId.tdid, 'adserver.org', {
-        rtiPartner: 'TDID'
-      });
-      // digitrust
-      const digitrustResponse = bidRequest.userId.digitrustid;
-      if (digitrustResponse && digitrustResponse.data) {
-        var digitrust = {};
-        if (digitrustResponse.data.id) {
-          digitrust.id = digitrustResponse.data.id;
-        }
-        if (digitrustResponse.data.keyv) {
-          digitrust.keyv = digitrustResponse.data.keyv;
-        }
-        ext.digitrust = digitrust;
-      }
+    let eids = bidRequest.userIdAsEids;
+    if (eids) {
+      ext.eids = eids;
     }
   }
   return { ext };
-}
-
-/**
- * Produces external userid object in ortb 3.0 model.
- */
-function addExternalUserId(eids, id, source, uidExt) {
-  if (id) {
-    var uid = { id };
-    if (uidExt) {
-      uid.ext = uidExt;
-    }
-    eids.push({
-      source,
-      uids: [ uid ]
-    });
-  }
 }
 
 /**

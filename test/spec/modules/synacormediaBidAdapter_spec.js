@@ -244,6 +244,13 @@ describe('synacormediaBidAdapter ', function () {
             rtiPartner: 'TDID'
           }
         }]
+      },
+      {
+        source: 'neustar.biz',
+        uids: [{
+          id: 'neustar809-044-23njhwer3',
+          atype: 1
+        }]
       }
     ];
 
@@ -989,7 +996,7 @@ describe('synacormediaBidAdapter ', function () {
         netRevenue: true,
         mediaType: 'video',
         ad: '<?xml version="1.0" encoding="UTF-8"?>\n<VAST version="3.0">\n<Ad id="11339128001692337~9999~0">\n<Wrapper>\n<AdSystem>Synacor Media Ad Server - 9999</AdSystem>\n<VASTAdTagURI>https://uat-net.technoratimedia.com/openrtb/tags?ID=QVVDVElPTl9JRD1lOTBhYWU1My1hZDkwLTRkNDEtYTQxMC1lZDY1MjIxMDc0ZGMmQVVDVElPTl9CSURfSUQ9MTEzMzkxMjgwMDE2OTIzMzd-OTk5OX4wJkFVQ1RJT05fU0VBVF9JRD05OTk5JkFVQ1RJT05fSU1QX0lEPXYyZGE3MzIyYjJkZjYxZi02NDB4NDgwJkFDVE9SX1JFRj1ha2thLnRjcDovL2F3cy1lYXN0MUBhZHMxMy5jYXAtdXNlMS5zeW5hY29yLmNvbToyNTUxL3VzZXIvJGNMYmZiIy0xOTk4NTIzNTk3JlNFQVRfSUQ9cHJlYmlk&AUCTION_PRICE=0.45</VASTAdTagURI>\n</Wrapper>\n</Ad>\n</VAST>',
-        ttl: 60,
+        ttl: 420,
         meta: { advertiserDomains: ['psacentral.org'] },
         videoCacheKey: 'QVVDVElPTl9JRD1lOTBhYWU1My1hZDkwLTRkNDEtYTQxMC1lZDY1MjIxMDc0ZGMmQVVDVElPTl9CSURfSUQ9MTEzMzkxMjgwMDE2OTIzMzd-OTk5OX4wJkFVQ1RJT05fU0VBVF9JRD05OTk5JkFVQ1RJT05fSU1QX0lEPXYyZGE3MzIyYjJkZjYxZi02NDB4NDgwJkFDVE9SX1JFRj1ha2thLnRjcDovL2F3cy1lYXN0MUBhZHMxMy5jYXAtdXNlMS5zeW5hY29yLmNvbToyNTUxL3VzZXIvJGNMYmZiIy0xOTk4NTIzNTk3JlNFQVRfSUQ9cHJlYmlk',
         vastUrl: 'https://uat-net.technoratimedia.com/openrtb/tags?ID=QVVDVElPTl9JRD1lOTBhYWU1My1hZDkwLTRkNDEtYTQxMC1lZDY1MjIxMDc0ZGMmQVVDVElPTl9CSURfSUQ9MTEzMzkxMjgwMDE2OTIzMzd-OTk5OX4wJkFVQ1RJT05fU0VBVF9JRD05OTk5JkFVQ1RJT05fSU1QX0lEPXYyZGE3MzIyYjJkZjYxZi02NDB4NDgwJkFDVE9SX1JFRj1ha2thLnRjcDovL2F3cy1lYXN0MUBhZHMxMy5jYXAtdXNlMS5zeW5hY29yLmNvbToyNTUxL3VzZXIvJGNMYmZiIy0xOTk4NTIzNTk3JlNFQVRfSUQ9cHJlYmlk&AUCTION_PRICE=0.45'
@@ -1010,7 +1017,7 @@ describe('synacormediaBidAdapter ', function () {
         netRevenue: true,
         mediaType: BANNER,
         ad: '<script src=\"//uat-net.technoratimedia.com/openrtb/tags?ID=k5JkFVQ1RJT05fSU1QX0lEPXYyZjczN&AUCTION_PRICE=0.13\"></script>',
-        ttl: 60
+        ttl: 420
       });
     });
 
@@ -1032,7 +1039,7 @@ describe('synacormediaBidAdapter ', function () {
         netRevenue: true,
         mediaType: BANNER,
         ad: '<script src=\"//uat-net.technoratimedia.com/openrtb/tags?ID=k5JkFVQ1RJT05fSU1QX0lEPXYyZjczN&AUCTION_PRICE=0.13\"></script>',
-        ttl: 60
+        ttl: 420
       });
 
       expect(resp[1]).to.eql({
@@ -1045,7 +1052,7 @@ describe('synacormediaBidAdapter ', function () {
         netRevenue: true,
         mediaType: BANNER,
         ad: '<script src=\"//uat-net.technoratimedia.com/openrtb/tags?ID=OTk5OX4wJkFVQ1RJT05fU0VBVF9JR&AUCTION_PRICE=1.99\"></script>',
-        ttl: 60
+        ttl: 420
       });
     });
 
@@ -1156,7 +1163,7 @@ describe('synacormediaBidAdapter ', function () {
         netRevenue: true,
         mediaType: 'video',
         ad: '<?xml version="1.0" encoding="UTF-8"?>\n<VAST version="3.0">\n<Ad id="11339128001692337~9999~0">\n<Wrapper>\n<AdSystem>Synacor Media Ad Server - 9999</AdSystem>\n<VASTAdTagURI>https://uat-net.technoratimedia.com/openrtb/tags?ID=QVVDVElPTl9JRD1lOTBhYWU1My1hZDkwLTRkNDEtYTQxMC1lZDY1MjIxMDc0ZGMmQVVDVElPTl9CSURfSUQ9MTEzMzkxMjgwMDE2OTIzMzd-OTk5OX4wJkFVQ1RJT05fU0VBVF9JRD05OTk5JkFVQ1RJT05fSU1QX0lEPXYyZGE3MzIyYjJkZjYxZi02NDB4NDgwJkFDVE9SX1JFRj1ha2thLnRjcDovL2F3cy1lYXN0MUBhZHMxMy5jYXAtdXNlMS5zeW5hY29yLmNvbToyNTUxL3VzZXIvJGNMYmZiIy0xOTk4NTIzNTk3JlNFQVRfSUQ9cHJlYmlk&AUCTION_PRICE=0.45</VASTAdTagURI>\n</Wrapper>\n</Ad>\n</VAST>',
-        ttl: 60,
+        ttl: 420,
         meta: { advertiserDomains: ['psacentral.org'] },
         videoCacheKey: 'QVVDVElPTl9JRD1lOTBhYWU1My1hZDkwLTRkNDEtYTQxMC1lZDY1MjIxMDc0ZGMmQVVDVElPTl9CSURfSUQ9MTEzMzkxMjgwMDE2OTIzMzd-OTk5OX4wJkFVQ1RJT05fU0VBVF9JRD05OTk5JkFVQ1RJT05fSU1QX0lEPXYyZGE3MzIyYjJkZjYxZi02NDB4NDgwJkFDVE9SX1JFRj1ha2thLnRjcDovL2F3cy1lYXN0MUBhZHMxMy5jYXAtdXNlMS5zeW5hY29yLmNvbToyNTUxL3VzZXIvJGNMYmZiIy0xOTk4NTIzNTk3JlNFQVRfSUQ9cHJlYmlk',
         vastUrl: 'https://uat-net.technoratimedia.com/openrtb/tags?ID=QVVDVElPTl9JRD1lOTBhYWU1My1hZDkwLTRkNDEtYTQxMC1lZDY1MjIxMDc0ZGMmQVVDVElPTl9CSURfSUQ9MTEzMzkxMjgwMDE2OTIzMzd-OTk5OX4wJkFVQ1RJT05fU0VBVF9JRD05OTk5JkFVQ1RJT05fSU1QX0lEPXYyZGE3MzIyYjJkZjYxZi02NDB4NDgwJkFDVE9SX1JFRj1ha2thLnRjcDovL2F3cy1lYXN0MUBhZHMxMy5jYXAtdXNlMS5zeW5hY29yLmNvbToyNTUxL3VzZXIvJGNMYmZiIy0xOTk4NTIzNTk3JlNFQVRfSUQ9cHJlYmlk&AUCTION_PRICE=0.45'
@@ -1209,8 +1216,62 @@ describe('synacormediaBidAdapter ', function () {
         netRevenue: true,
         mediaType: BANNER,
         ad: '<script src=\"//uat-net.technoratimedia.com/openrtb/tags?ID=k5JkFVQ1RJT05fSU1QX0lEPXYyZjczN&AUCTION_PRICE=0.13\"></script>',
-        ttl: 60
+        ttl: 420
       });
+    });
+
+    it('should return ttl equal to DEFAULT_TTL_MAX if bid.exp and bid.ext["imds.tv"].ttl are both undefined', function() {
+      const br = { ...bidResponse };
+      serverResponse.body.seatbid[0].bid.push(br);
+      const resp = spec.interpretResponse(serverResponse, bidRequest);
+      expect(resp).to.be.an('array').to.have.lengthOf(1);
+      expect(resp[0]).to.have.property('ttl');
+      expect(resp[0].ttl).to.equal(420);
+    });
+
+    it('should return ttl equal to bid.ext["imds.tv"].ttl if it is defined but bid.exp is undefined', function() {
+      let br = { ext: { 'imds.tv': { ttl: 4321 } }, ...bidResponse };
+      serverResponse.body.seatbid[0].bid.push(br);
+      let resp = spec.interpretResponse(serverResponse, bidRequest);
+      expect(resp).to.be.an('array').to.have.lengthOf(1);
+      expect(resp[0]).to.have.property('ttl');
+      expect(resp[0].ttl).to.equal(4321);
+    });
+
+    it('should return ttl equal to bid.exp if bid.exp is less than or equal to DEFAULT_TTL_MAX and bid.ext["imds.tv"].ttl is undefined', function() {
+      const br = { exp: 123, ...bidResponse };
+      serverResponse.body.seatbid[0].bid.push(br);
+      const resp = spec.interpretResponse(serverResponse, bidRequest);
+      expect(resp).to.be.an('array').to.have.lengthOf(1);
+      expect(resp[0]).to.have.property('ttl');
+      expect(resp[0].ttl).to.equal(123);
+    });
+
+    it('should return ttl equal to DEFAULT_TTL_MAX if bid.exp is greater than DEFAULT_TTL_MAX and bid.ext["imds.tv"].ttl is undefined', function() {
+      const br = { exp: 4321, ...bidResponse };
+      serverResponse.body.seatbid[0].bid.push(br);
+      const resp = spec.interpretResponse(serverResponse, bidRequest);
+      expect(resp).to.be.an('array').to.have.lengthOf(1);
+      expect(resp[0]).to.have.property('ttl');
+      expect(resp[0].ttl).to.equal(420);
+    });
+
+    it('should return ttl equal to bid.exp if bid.exp is less than or equal to bid.ext["imds.tv"].ttl', function() {
+      const br = { exp: 1234, ext: { 'imds.tv': { ttl: 4321 } }, ...bidResponse };
+      serverResponse.body.seatbid[0].bid.push(br);
+      const resp = spec.interpretResponse(serverResponse, bidRequest);
+      expect(resp).to.be.an('array').to.have.lengthOf(1);
+      expect(resp[0]).to.have.property('ttl');
+      expect(resp[0].ttl).to.equal(1234);
+    });
+
+    it('should return ttl equal to bid.ext["imds.tv"].ttl if bid.exp is greater than bid.ext["imds.tv"].ttl', function() {
+      const br = { exp: 4321, ext: { 'imds.tv': { ttl: 1234 } }, ...bidResponse };
+      serverResponse.body.seatbid[0].bid.push(br);
+      const resp = spec.interpretResponse(serverResponse, bidRequest);
+      expect(resp).to.be.an('array').to.have.lengthOf(1);
+      expect(resp[0]).to.have.property('ttl');
+      expect(resp[0].ttl).to.equal(1234);
     });
   });
   describe('getUserSyncs', function () {
