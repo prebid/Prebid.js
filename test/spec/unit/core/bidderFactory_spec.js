@@ -1055,7 +1055,8 @@ describe('validate bid response: ', function () {
       aliasRegistry = {};
       aliasRegistryStub = sinon.stub(adapterManager, 'aliasRegistry');
       aliasRegistryStub.get(() => aliasRegistry);
-      adapterManagerStub = sinon.stub(adapterManager, 'getAdapterCode').returns('knownAdapter1');
+      adapterManagerStub = sinon.stub(adapterManager, 'getAdapterCode');
+      adapterManagerStub.returns('knownAdapter1')
     });
 
     afterEach(function () {
@@ -1067,6 +1068,7 @@ describe('validate bid response: ', function () {
 
     it('should log warning when bidder is unknown and allowUknownBidderCode flag is false', function () {
       bidderSettingStub.returns(false);
+      adapterManagerStub.withArgs('unknownBidder').returns('unknownBidder')
 
       const bidder = newBidder(spec);
       spec.interpretResponse.returns(bids1);
@@ -1079,6 +1081,7 @@ describe('validate bid response: ', function () {
     it('should log warning when the particular bidder is not specified in unknowBidderCodes and allowUknownBidderCode flag is true', function () {
       bidderSettingStub.withArgs(CODE, 'allowUnknownBidderCodes').returns(true);
       bidderSettingStub.withArgs(CODE, 'allowedUnknownBidderCodes').returns(['unknownBidder02']);
+      adapterManagerStub.withArgs('unknownBidder').returns('unknownBidder')
 
       const bidder = newBidder(spec);
       spec.interpretResponse.returns(bids1);
@@ -1143,6 +1146,7 @@ describe('validate bid response: ', function () {
     it('should not accept the bid, when bidder is an alias of the other adapter and allowUnknownBidderCodes is false', function () {
       bidderSettingStub.withArgs(CODE, 'allowUnknownBidderCodes').returns(false);
       aliasRegistry = {'unknownBidder': 'unknownAdapter1'};
+      adapterManagerStub.withArgs('unknownBidder').returns('unknownAdapter1')
 
       const bidder = newBidder(spec);
       spec.interpretResponse.returns(bids1);
@@ -1156,6 +1160,7 @@ describe('validate bid response: ', function () {
       bidderSettingStub.withArgs(CODE, 'allowUnknownBidderCodes').returns(true);
       bidderSettingStub.withArgs(CODE, 'allowedUnknownBidderCodes').returns(['*']);
       aliasRegistry = {'unknownBidder': 'unknownAdapter1'};
+      adapterManagerStub.withArgs('unknownBidder').returns('unknownAdapter1')
 
       const bidder = newBidder(spec);
       spec.interpretResponse.returns(bids1);
@@ -1163,6 +1168,19 @@ describe('validate bid response: ', function () {
 
       expect(addBidResponseStub.calledOnce).to.equal(false);
       expect(logWarnSpy.callCount).to.equal(1);
+    });
+
+    it('should accept the bid, when bidder is an nested alias of the adapter and allowUnknownBidderCodes is false', function () {
+      bidderSettingStub.withArgs(CODE, 'allowUnknownBidderCodes').returns(false);
+      aliasRegistry = {'unknownBidder': 'aliasedBidder', 'aliasedBidder': 'knownAdapter1'};
+
+      const bidder = newBidder(spec);
+      spec.interpretResponse.returns(bids1);
+      bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+
+      expect(addBidResponseStub.calledOnce).to.equal(true);
+      expect(logWarnSpy.callCount).to.equal(0);
+      expect(logErrorSpy.callCount).to.equal(0);
     });
   })
 });

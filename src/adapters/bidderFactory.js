@@ -259,7 +259,7 @@ export function newBidder(spec) {
   function isUnknownBidder(responseBidder, requestBidder, adapterCode) {
     let currentBidderSettings = !!bidderSettings.get(requestBidder, 'allowUnknownBidderCodes', adapterCode || null);
     let unknownBiddersList = bidderSettings.get(requestBidder, 'allowedUnknownBidderCodes', adapterCode || null);
-    if (!!responseBidder && adapterManager.aliasRegistry[responseBidder] !== adapterCode && !!requestBidder && requestBidder !== responseBidder) {
+    if (!!responseBidder && adapterManager.getAdapterCode(responseBidder) !== adapterCode && !!requestBidder && requestBidder !== responseBidder) {
       if (adapterManager.aliasRegistry[responseBidder] || !currentBidderSettings || (isArray(unknownBiddersList) && (unknownBiddersList[0] !== '*' && !unknownBiddersList.includes(responseBidder)))) {
         return true;
       }
