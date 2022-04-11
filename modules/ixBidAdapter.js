@@ -20,7 +20,7 @@ import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import CONSTANTS from '../src/constants.json';
 import {getStorageManager, validateStorageEnforcement} from '../src/storageManager.js';
-import events from '../src/events.js';
+import * as events from '../src/events.js';
 import {find, includes} from '../src/polyfill.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {INSTREAM, OUTSTREAM} from '../src/video.js';

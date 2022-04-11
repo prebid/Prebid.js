@@ -1,5 +1,5 @@
 import {logError} from './utils.js';
-import events from './events.js';
+import * as events from './events.js';
 import CONSTANTS from './constants.json';
 
 const {AD_RENDER_FAILED, AD_RENDER_SUCCEEDED} = CONSTANTS.EVENTS;
