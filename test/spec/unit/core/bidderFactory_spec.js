@@ -1055,8 +1055,7 @@ describe('validate bid response: ', function () {
       aliasRegistry = {};
       aliasRegistryStub = sinon.stub(adapterManager, 'aliasRegistry');
       aliasRegistryStub.get(() => aliasRegistry);
-      adapterManagerStub = sinon.stub(adapterManager, 'getAdapterCode');
-      adapterManagerStub.withArgs('unknownBidder').returns('knownAdapter1');
+      adapterManagerStub = sinon.stub(adapterManager, 'getAdapterCode').returns('knownAdapter1');
     });
 
     afterEach(function () {
