@@ -126,7 +126,7 @@ describe('Adagio bid adapter', () => {
     
     $$PREBID_GLOBAL$$.bidderSettings = {
         adagio: {
-          adserverTargeting: true 
+          storageAllowed: true 
         }
     };
 
