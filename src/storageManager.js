@@ -28,10 +28,10 @@ export let storageCallbacks = [];
 export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = {}, {bidderSettings = defaultBidderSettings} = {}) {
   function isBidderDisallowed() {
     if (bidderCode == null) {
-      return false;
+      return true;
     }
     const storageAllowed = bidderSettings.get(bidderCode, 'storageAllowed');
-    return storageAllowed == null ? false : !storageAllowed;
+    return storageAllowed == null ? true : !storageAllowed;
   }
   function isValid(cb) {
     if (includes(moduleTypeWhiteList, moduleType)) {
