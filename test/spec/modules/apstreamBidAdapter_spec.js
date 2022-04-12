@@ -200,8 +200,6 @@ describe('AP Stream adapter', function() {
 
     describe('dsu', function() {
       it('should pass DSU from local storage if set', function() {
-        let dsu = 'some_dsu';
-        localStorage.setItem('apr_dsu', dsu);
 
         const bidderRequest = {
           gdprConsent: {
@@ -216,30 +214,7 @@ describe('AP Stream adapter', function() {
         };
 
         const request = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
-
-        assert.equal(request.dsu, dsu);
-      });
-
-      it('should generate new DSU if nothing in local storage', function() {
-        localStorage.removeItem('apr_dsu');
-
-        const bidderRequest = {
-          gdprConsent: {
-            gdprApplies: true,
-            consentString: 'consentDataString',
-            vendorData: {
-              vendorConsents: {
-                '394': true
-              }
-            }
-          }
-        };
-
-        const request = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
-        let dsu = localStorage.getItem('apr_dsu');
-
-        assert.isNotEmpty(dsu);
-        assert.equal(request.dsu, dsu);
+        assert.isNotEmpty(request.dsu);
       });
     });
   });
