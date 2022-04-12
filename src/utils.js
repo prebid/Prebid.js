@@ -1362,8 +1362,5 @@ export function cyrb53Hash(str, seed = 0) {
  * @returns {Window}
  */
 export function getWindowFromDocument(doc) {
-  if (!doc) {
-    return null;
-  }
-  return doc.defaultView || doc.parentWindow;
+  return (doc) ? doc.defaultView : null;
 }

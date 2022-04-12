@@ -1125,7 +1125,7 @@ function buildNativeRequest(params) {
  */
 function hidedfpContainer(elementId) {
   try {
-    var el = document.getElementById(elementId).querySelectorAll("div[id^='google_ads']");
+    const el = document.getElementById(elementId).querySelectorAll("div[id^='google_ads']");
     if (el[0]) {
       el[0].style.setProperty('display', 'none');
     }
