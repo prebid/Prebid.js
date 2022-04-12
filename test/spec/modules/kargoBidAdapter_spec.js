@@ -39,7 +39,7 @@ describe('kargo adapter tests', function () {
     beforeEach(function () {
       $$PREBID_GLOBAL$$.bidderSettings = {
         kargo: {
-          storageAllowed: true 
+          storageAllowed: true
         }
       };
       undefinedCurrency = false;
