@@ -28,7 +28,7 @@ export let storageCallbacks = [];
 export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = {}, {bidderSettings = defaultBidderSettings} = {}) {
   function isBidderDisallowed() {
     if (bidderCode == null) {
-      return true;
+      return false;
     }
     const storageAllowed = bidderSettings.get(bidderCode, 'storageAllowed');
     return storageAllowed == null ? true : !storageAllowed;
