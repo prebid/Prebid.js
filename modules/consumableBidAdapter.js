@@ -122,9 +122,29 @@ export const spec = {
           bid.currency = 'USD';
           bid.creativeId = decision.adId;
           bid.ttl = 30;
-          bid.meta = { advertiserDomains: decision.adomain ? decision.adomain : [] }
           bid.netRevenue = true;
           bid.referrer = bidRequest.bidderRequest.refererInfo.referer;
+
+          bid.meta = {
+            advertiserDomains: decision.adomain || []
+          };
+
+          if (decision.cats) {
+            if (decision.cats.length > 0) {
+              bid.meta.primaryCatId = decision.cats[0];
+              if (decision.cats.length > 1) {
+                bid.meta.secondaryCatIds = decision.cats.slice(1);
+              }
+            }
+          }
+
+          if (decision.networkId) {
+            bid.meta.networkId = decision.networkId;
+          }
+
+          if (decision.mediaType) {
+            bid.meta.mediaType = decision.mediaType;
+          }
 
           bidResponses.push(bid);
         }
@@ -136,13 +156,15 @@ export const spec = {
 
   getUserSyncs: function(syncOptions, serverResponses) {
     if (syncOptions.iframeEnabled) {
-      return [{
-        type: 'iframe',
-        url: 'https://sync.serverbid.com/ss/' + siteId + '.html'
-      }];
+      if (!serverResponses || serverResponses.length === 0 || !serverResponses[0].body.bdr || serverResponses[0].body.bdr !== 'cx') {
+        return [{
+          type: 'iframe',
+          url: 'https://sync.serverbid.com/ss/' + siteId + '.html'
+        }];
+      }
     }
 
-    if (syncOptions.pixelEnabled && serverResponses.length > 0) {
+    if (syncOptions.pixelEnabled && serverResponses && serverResponses.length > 0) {
       return serverResponses[0].body.pixels;
     } else {
       logWarn(bidder + ': Please enable iframe based user syncing.');

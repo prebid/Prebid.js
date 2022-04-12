@@ -148,6 +148,11 @@ describe('User ID', function () {
   });
 
   beforeEach(function () {
+    // TODO: this whole suite needs to be redesigned; it is passing by accident
+    // some tests do not pass if consent data is available
+    // (there are functions here with signature `getId(config, storedId)`, but storedId is actually consentData)
+    // also, this file is ginormous; do we really need to test *all* id systems as one?
+    resetConsentData();
     sandbox = sinon.sandbox.create();
     consentData = null;
     mockGdprConsent(sandbox, () => consentData);
