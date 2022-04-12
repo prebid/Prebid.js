@@ -33,6 +33,11 @@ describe('AP Stream adapter', function() {
 
     let mockConfig;
     beforeEach(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        apstream: {
+          storageAllowed: true
+        }
+      };
       mockConfig = {
         apstream: {
           publisherId: '4321'
@@ -44,6 +49,7 @@ describe('AP Stream adapter', function() {
     });
 
     afterEach(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {};
       config.getConfig.restore();
     });
 
