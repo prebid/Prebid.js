@@ -95,11 +95,17 @@ describe('invibesBidAdapter:', function () {
 
   beforeEach(function () {
     resetInvibes();
+    $$PREBID_GLOBAL$$.bidderSettings = {
+      invibes: {
+        storageAllowed: true
+      }
+    };
     document.cookie = '';
     this.cStub1 = sinon.stub(console, 'info');
   });
 
   afterEach(function () {
+    $$PREBID_GLOBAL$$.bidderSettings = {};
     this.cStub1.restore();
   });
 
