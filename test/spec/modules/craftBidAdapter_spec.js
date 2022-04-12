@@ -66,6 +66,16 @@ describe('craftAdapter', function () {
   });
 
   describe('buildRequests', function () {
+    before(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        craft: {
+          storageAllowed: true
+        }
+      };
+    });
+    after(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {};
+    });
     let bidRequests = [{
       bidder: 'craft',
       params: {
