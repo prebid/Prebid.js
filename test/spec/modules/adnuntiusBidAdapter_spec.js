@@ -17,7 +17,7 @@ describe('adnuntiusBidAdapter', function () {
   beforeEach(function () {
     $$PREBID_GLOBAL$$.bidderSettings = {
       adnuntias: {
-        storageAllowed: true 
+        storageAllowed: true
       }
     };
   });
