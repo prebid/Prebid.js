@@ -721,6 +721,11 @@ describe('E-Planning Adapter', function () {
       });
     }
     beforeEach(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        eplanning: {
+          storageAllowed: true
+        }
+      };
       getLocalStorageSpy = sandbox.spy(storage, 'getDataFromLocalStorage');
       setDataInLocalStorageSpy = sandbox.spy(storage, 'setDataInLocalStorage');
 
@@ -733,6 +738,7 @@ describe('E-Planning Adapter', function () {
       focusStub.returns(true);
     });
     afterEach(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {};
       sandbox.restore();
       if (document.getElementById(ADUNIT_CODE_VIEW)) {
         document.body.removeChild(element);
