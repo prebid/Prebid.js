@@ -293,6 +293,16 @@ describe('VidazooBidAdapter', function () {
   });
 
   describe('vidazoo session id', function () {
+    before(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        vidazoo: {
+          storageAllowed: true
+        }
+      };
+    });
+    after(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {};
+    });
     it('should get undefined vidazoo session id', function () {
       const sessionId = getVidazooSessionId();
       expect(sessionId).to.be.empty;
@@ -307,6 +317,16 @@ describe('VidazooBidAdapter', function () {
   });
 
   describe('deal id', function () {
+    before(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        vidazoo: {
+          storageAllowed: true
+        }
+      };
+    });
+    after(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {};
+    });
     const key = 'myDealKey';
 
     it('should get the next deal id', function () {
@@ -326,6 +346,16 @@ describe('VidazooBidAdapter', function () {
   });
 
   describe('unique deal id', function () {
+    before(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        vidazoo: {
+          storageAllowed: true
+        }
+      };
+    });
+    after(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {};
+    });
     const key = 'myKey';
     let uniqueDealId;
     uniqueDealId = getUniqueDealId(key);
@@ -346,6 +376,16 @@ describe('VidazooBidAdapter', function () {
   });
 
   describe('storage utils', function () {
+    before(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        vidazoo: {
+          storageAllowed: true
+        }
+      };
+    });
+    after(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {};
+    });
     it('should get value from storage with create param', function () {
       const now = Date.now();
       const clock = useFakeTimers({
