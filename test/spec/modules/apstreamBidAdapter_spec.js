@@ -200,7 +200,6 @@ describe('AP Stream adapter', function() {
 
     describe('dsu', function() {
       it('should pass DSU from local storage if set', function() {
-
         const bidderRequest = {
           gdprConsent: {
             gdprApplies: true,
