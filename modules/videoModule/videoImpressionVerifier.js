@@ -96,12 +96,12 @@ export function cachedVideoImpressionVerifier(vastXmlEditor_, bidTracker_) {
     const errorTracking = trackingConfig.error;
 
     if (impressionTracking) {
-      impressionUrl = impressionTracking.url;
+      impressionUrl = getTrackingUrl(impressionTracking.getUrl, bid);
       impressionId = impressionTracking.id || adId + '-impression';
     }
 
     if (errorTracking) {
-      errorUrl = errorTracking.url;
+      errorUrl = getTrackingUrl(errorTracking.getUrl, bid);
     }
 
     if (vastXml) {
@@ -121,6 +121,14 @@ export function cachedVideoImpressionVerifier(vastXmlEditor_, bidTracker_) {
   }
 
   return verifier;
+
+  function getTrackingUrl(getUrl, bid) {
+    if (!getUrl || typeof getUrl !== 'function') {
+      return;
+    }
+
+    return getUrl(bid);
+  }
 }
 
 export function baseImpressionVerifier(bidTracker_) {
