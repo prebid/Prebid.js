@@ -123,12 +123,19 @@ describe('Adagio bid adapter', () => {
 
     adagioMock = sinon.mock(adagio);
     utilsMock = sinon.mock(utils);
+    
+    $$PREBID_GLOBAL$$.bidderSettings = {
+        adagio: {
+          adserverTargeting: true 
+        }
+    };
 
     sandbox = sinon.createSandbox();
   });
 
   afterEach(() => {
     window.ADAGIO = undefined;
+    $$PREBID_GLOBAL$$.bidderSettings = {};
 
     adagioMock.restore();
     utilsMock.restore();
