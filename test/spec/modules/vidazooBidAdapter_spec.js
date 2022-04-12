@@ -252,8 +252,7 @@ describe('VidazooBidAdapter', function () {
       const bid = utils.deepClone(BID);
 
       const userId = (function () {
-        switch (idSystemProvider) {
-          case 'digitrustid': return { data: { id: id } };
+        switch (idSystemProvider) 
           case 'lipb': return { lipbid: id };
           case 'parrableId': return { eid: id };
           case 'id5id': return { uid: id };
@@ -366,7 +365,7 @@ describe('VidazooBidAdapter', function () {
         const current = getUniqueDealId(key);
         expect(current).to.be.equal(uniqueDealId);
         done();
-      }, 200);
+      }, 2000);
     });
 
     it('should get new unique deal id on expiration', function () {
