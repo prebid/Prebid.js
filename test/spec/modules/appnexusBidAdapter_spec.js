@@ -100,6 +100,55 @@ describe('AppNexusAdapter', function () {
       expect(payload.tags[0].private_sizes).to.deep.equal([{width: 300, height: 250}]);
     });
 
+    it('should add position in request', function() {
+      // set from bid.params
+      let bidRequest = deepClone(bidRequests[0]);
+      bidRequest.params.position = 'above';
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.tags[0].position).to.exist;
+      expect(payload.tags[0].position).to.deep.equal(1);
+
+      // set from mediaTypes.banner.pos = 1
+      bidRequest = deepClone(bidRequests[0]);
+      bidRequest.mediaTypes = {
+        banner: { pos: 1 }
+      };
+
+      const request2 = spec.buildRequests([bidRequest]);
+      const payload2 = JSON.parse(request2.data);
+
+      expect(payload2.tags[0].position).to.exist;
+      expect(payload2.tags[0].position).to.deep.equal(1);
+
+      // set from mediaTypes.video.pos = 3
+      bidRequest = deepClone(bidRequests[0]);
+      bidRequest.mediaTypes = {
+        video: { pos: 3 }
+      };
+
+      const request3 = spec.buildRequests([bidRequest]);
+      const payload3 = JSON.parse(request3.data);
+
+      expect(payload3.tags[0].position).to.exist;
+      expect(payload3.tags[0].position).to.deep.equal(2);
+
+      // bid.params trumps mediatypes
+      bidRequest = deepClone(bidRequests[0]);
+      bidRequest.params.position = 'above';
+      bidRequest.mediaTypes = {
+        banner: { pos: 3 }
+      };
+
+      const request4 = spec.buildRequests([bidRequest]);
+      const payload4 = JSON.parse(request4.data);
+
+      expect(payload4.tags[0].position).to.exist;
+      expect(payload4.tags[0].position).to.deep.equal(1);
+    });
+
     it('should add publisher_id in request', function() {
       let bidRequest = Object.assign({},
         bidRequests[0],
@@ -116,7 +165,7 @@ describe('AppNexusAdapter', function () {
       expect(payload.tags[0].publisher_id).to.deep.equal(1231234);
       expect(payload.publisher_id).to.exist;
       expect(payload.publisher_id).to.deep.equal(1231234);
-    })
+    });
 
     it('should add source and verison to the tag', function () {
       const request = spec.buildRequests(bidRequests);
