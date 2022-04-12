@@ -16,6 +16,11 @@ describe('The Criteo bidding adapter', function () {
   let utilsMock, sandbox;
 
   beforeEach(function () {
+    $$PREBID_GLOBAL$$.bidderSettings = {
+      criteo: {
+        storageAllowed: true
+      }
+    };
     // Remove FastBid to avoid side effects
     localStorage.removeItem('criteo_fast_bid');
     utilsMock = sinon.mock(utils);
@@ -24,6 +29,7 @@ describe('The Criteo bidding adapter', function () {
   });
 
   afterEach(function() {
+    $$PREBID_GLOBAL$$.bidderSettings = {};
     global.Criteo = undefined;
     utilsMock.restore();
     sandbox.restore();
