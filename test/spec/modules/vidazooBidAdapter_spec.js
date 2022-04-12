@@ -137,6 +137,11 @@ describe('VidazooBidAdapter', function () {
   describe('build requests', function () {
     let sandbox;
     before(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        vidazoo: {
+          storageAllowed: true
+        }
+      };
       sandbox = sinon.sandbox.create();
       sandbox.stub(Date, 'now').returns(1000);
     });
@@ -173,6 +178,7 @@ describe('VidazooBidAdapter', function () {
     });
 
     after(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {};
       sandbox.restore();
     });
   });
