@@ -14,9 +14,19 @@ describe('adnuntiusBidAdapter', function () {
   const storage = getStorageManager({gvlid: GVLID, moduleName: 'adnuntius'})
   storage.setDataInLocalStorage('adn.metaData', JSON.stringify(meta))
 
+  beforeEach(function () {
+    $$PREBID_GLOBAL$$.bidderSettings = {
+      adnuntias: {
+        storageAllowed: true 
+      }
+    };
+  });
+
   afterEach(function () {
     config.resetConfig();
+    $$PREBID_GLOBAL$$.bidderSettings = {};
   });
+
   const tzo = new Date().getTimezoneOffset();
   const ENDPOINT_URL = `${URL}${tzo}&format=json&userId=${usi}`;
   const ENDPOINT_URL_NOCOOKIE = `${URL}${tzo}&format=json&userId=${usi}&noCookies=true`;
