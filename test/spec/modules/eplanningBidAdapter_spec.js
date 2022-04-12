@@ -331,12 +331,18 @@ describe('E-Planning Adapter', function () {
     let getWindowSelfStub;
     let innerWidth;
     beforeEach(() => {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        eplanning: {
+          storageAllowed: true
+        }
+      };
       sandbox = sinon.sandbox.create();
       getWindowSelfStub = sandbox.stub(utils, 'getWindowSelf');
       getWindowSelfStub.returns(createWindow(800));
     });
 
     afterEach(() => {
+      $$PREBID_GLOBAL$$.bidderSettings = {};
       sandbox.restore();
     });
 
