@@ -1,9 +1,9 @@
-import {_each, deepAccess, isArray, isPlainObject} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {find} from '../src/polyfill.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {Renderer} from '../src/Renderer.js';
-import {config} from '../src/config.js';
+import { _each, deepAccess, isArray, isPlainObject, timestamp } from '../src/utils.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { find } from '../src/polyfill.js'
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js'
+import { Renderer } from '../src/Renderer.js'
+import { config } from '../src/config.js'
 
 const ENDPOINT = 'https://ad.yieldlab.net'
 const BIDDER_CODE = 'yieldlab'
@@ -174,6 +174,37 @@ export const spec = {
       }
     })
     return bidResponses
+  },
+
+  /**
+   * Register the user sync pixels which should be dropped after the auction.
+   *
+   * @param {SyncOptions} syncOptions Which user syncs are allowed?
+   * @param {ServerResponse[]} serverResponses List of server's responses.
+   * @param {Object} gdprConsent Is the GDPR Consent object wrapping gdprApplies {boolean} and consentString {string} attributes.
+   * @param {string} uspConsent Is the US Privacy Consent string.
+   * @return {UserSync[]} The user syncs which should be dropped.
+   */
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
+    const syncs = [];
+
+    if (syncOptions.iframeEnabled) {
+      let params = [];
+      params.push(`ts=${timestamp()}`);
+      params.push(`type=h`)
+      if (gdprConsent && (typeof gdprConsent.gdprApplies === 'boolean')) {
+        params.push(`gdpr=${Number(gdprConsent.gdprApplies)}`);
+      }
+      if (gdprConsent && (typeof gdprConsent.consentString === 'string')) {
+        params.push(`gdpr_consent=${gdprConsent.consentString}`);
+      }
+      syncs.push({
+        type: 'iframe',
+        url: `${ENDPOINT}/d/6846326/766/2x2?${params.join('&')}`
+      });
+    }
+
+    return syncs;
   }
 };
 
