@@ -365,7 +365,7 @@ describe('VidazooBidAdapter', function () {
         const current = getUniqueDealId(key);
         expect(current).to.be.equal(uniqueDealId);
         done();
-      }, 2000);
+      }, 1000);
     });
 
     it('should get new unique deal id on expiration', function () {
