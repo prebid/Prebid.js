@@ -37,6 +37,11 @@ describe('kargo adapter tests', function () {
     var bids, undefinedCurrency, noAdServerCurrency, cookies = [], localStorageItems = [], sessionIds = [], requestCount = 0;
 
     beforeEach(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        kargo: {
+          storageAllowed: true 
+        }
+      };
       undefinedCurrency = false;
       noAdServerCurrency = false;
       sandbox.stub(config, 'getConfig').callsFake(function(key) {
@@ -95,6 +100,7 @@ describe('kargo adapter tests', function () {
 
       cookies.length = 0;
       localStorageItems.length = 0;
+      $$PREBID_GLOBAL$$.bidderSettings = {};
     });
 
     function setCookie(cname, cvalue, exdays = 1) {
