@@ -252,7 +252,7 @@ describe('VidazooBidAdapter', function () {
       const bid = utils.deepClone(BID);
 
       const userId = (function () {
-        switch (idSystemProvider) 
+        switch (idSystemProvider) {
           case 'lipb': return { lipbid: id };
           case 'parrableId': return { eid: id };
           case 'id5id': return { uid: id };
