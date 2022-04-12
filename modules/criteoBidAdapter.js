@@ -1,11 +1,11 @@
-import { isArray, getUniqueIdentifierStr, parseUrl, deepAccess, logWarn, logError, logInfo } from '../src/utils.js';
+import {deepAccess, getUniqueIdentifierStr, isArray, logError, logInfo, logWarn, parseUrl} from '../src/utils.js';
 import {loadExternalScript} from '../src/adloader.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import find from 'core-js-pure/features/array/find.js';
-import { verify } from 'criteo-direct-rsa-validate/build/verify.js'; // ref#2
-import { getStorageManager } from '../src/storageManager.js';
+import {find} from '../src/polyfill.js';
+import {verify} from 'criteo-direct-rsa-validate/build/verify.js'; // ref#2
+import {getStorageManager} from '../src/storageManager.js';
 
 const GVLID = 91;
 export const ADAPTER_VERSION = 34;
