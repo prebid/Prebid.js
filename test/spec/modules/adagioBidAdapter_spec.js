@@ -123,11 +123,11 @@ describe('Adagio bid adapter', () => {
 
     adagioMock = sinon.mock(adagio);
     utilsMock = sinon.mock(utils);
-    
+
     $$PREBID_GLOBAL$$.bidderSettings = {
-        adagio: {
-          storageAllowed: true 
-        }
+      adagio: {
+        storageAllowed: true 
+      }
     };
 
     sandbox = sinon.createSandbox();
