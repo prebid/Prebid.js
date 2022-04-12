@@ -550,11 +550,19 @@ function getPreparedBidForAuction({adUnitCode, bid, bidderRequest, auctionId}) {
 
   // Use the config value 'mediaTypeGranularity' if it has been defined for mediaType, else use 'customPriceBucket'
   const mediaTypeGranularity = getMediaTypeGranularity(bid.mediaType, bidReq, config.getConfig('mediaTypePriceGranularity'));
+
+  /* gu-mod-start */
+  // Get custom price config on a per-bidder basis
+  // This will fall back to the default if a bidder specific value is not provided
+  const customPriceBucket = config.runWithBidder(bid.bidderCode, () =>
+    config.getConfig('customPriceBucket'));
+
   const priceStringsObj = getPriceBucketString(
     bidObject.cpm,
-    (typeof mediaTypeGranularity === 'object') ? mediaTypeGranularity : config.getConfig('customPriceBucket'),
+    (typeof mediaTypeGranularity === 'object') ? mediaTypeGranularity : customPriceBucket,
     config.getConfig('currency.granularityMultiplier')
   );
+  /* gu-mod-end */
   bidObject.pbLg = priceStringsObj.low;
   bidObject.pbMg = priceStringsObj.med;
   bidObject.pbHg = priceStringsObj.high;
