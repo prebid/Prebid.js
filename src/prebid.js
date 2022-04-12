@@ -486,7 +486,7 @@ $$PREBID_GLOBAL$$.renderAd = hook('async', function (doc, id, options) {
           insertElement(creativeComment, doc, 'html');
 
           if (isRendererRequired(renderer)) {
-            executeRenderer(renderer, bid);
+            executeRenderer(renderer, bid, doc);
             reinjectNodeIfRemoved(creativeComment, doc, 'html');
             emitAdRenderSucceeded({ doc, bid, id });
           } else if ((doc === document && !inIframe()) || mediaType === 'video') {
