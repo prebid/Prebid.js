@@ -105,7 +105,7 @@ export const spec = {
       const impObj = {
         id: bidId.toString(),
         tagid: secid.toString(),
-        video: createVideoForImp(video, sizes, mediaTypes && mediaTypes.video),
+        video: createVideoForImp(Object.assign({}, video, mediaTypes && mediaTypes.video), sizes),
         ext: {
           divid: adUnitCode.toString()
         }
