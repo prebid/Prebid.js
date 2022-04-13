@@ -5,7 +5,7 @@ import { logInfo } from '../src/utils.js';
 import find from 'core-js-pure/features/array/find.js';
 import findIndex from 'core-js-pure/features/array/find-index.js';
 
-// Events used in adomik analytics adapter
+// Events used in adomik analytics adapter.
 const auctionInit = CONSTANTS.EVENTS.AUCTION_INIT;
 const auctionEnd = CONSTANTS.EVENTS.AUCTION_END;
 const bidRequested = CONSTANTS.EVENTS.BID_REQUESTED;
