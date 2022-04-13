@@ -100,6 +100,38 @@ describe('Outbrain Adapter', function () {
         }
         expect(spec.isBidRequestValid(bid)).to.equal(false)
       })
+      it('should fail if tag id is not string', function () {
+        const bid = {
+          bidder: 'outbrain',
+          params: {
+            tagid: 123
+          },
+          ...nativeBidRequestParams,
+        }
+        expect(spec.isBidRequestValid(bid)).to.equal(false)
+      })
+      it('should fail if badv does not include strings', function () {
+        const bid = {
+          bidder: 'outbrain',
+          params: {
+            tagid: 123,
+            badv: ['a', 2, 'c']
+          },
+          ...nativeBidRequestParams,
+        }
+        expect(spec.isBidRequestValid(bid)).to.equal(false)
+      })
+      it('should fail if bcat does not include strings', function () {
+        const bid = {
+          bidder: 'outbrain',
+          params: {
+            tagid: 123,
+            bcat: ['a', 2, 'c']
+          },
+          ...nativeBidRequestParams,
+        }
+        expect(spec.isBidRequestValid(bid)).to.equal(false)
+      })
       it('should succeed with outbrain config', function () {
         const bid = {
           bidder: 'outbrain',
@@ -362,6 +394,63 @@ describe('Outbrain Adapter', function () {
           {source: 'liveramp.com', uids: [{id: 'id-value', atype: 3}]}
         ]);
       });
+
+      it('should pass bidfloor', function () {
+        const bidRequest = {
+          ...commonBidRequest,
+          ...nativeBidRequestParams,
+        }
+        bidRequest.getFloor = function() {
+          return {
+            currency: 'USD',
+            floor: 1.23,
+          }
+        }
+
+        const res = spec.buildRequests([bidRequest], commonBidderRequest)
+        const resData = JSON.parse(res.data)
+        expect(resData.imp[0].bidfloor).to.equal(1.23)
+      });
+
+      it('should transform string sizes to numbers', function () {
+        let bidRequest = {
+          bidId: 'bidId',
+          params: {},
+          ...commonBidRequest,
+          ...nativeBidRequestParams,
+        };
+        bidRequest.nativeParams.image.sizes = ['120', '100']
+
+        const expectedNativeAssets = {
+          assets: [
+            {
+              required: 1,
+              id: 3,
+              img: {
+                type: 3,
+                w: 120,
+                h: 100
+              }
+            },
+            {
+              required: 1,
+              id: 0,
+              title: {}
+            },
+            {
+              required: 0,
+              id: 5,
+              data: {
+                type: 1
+              }
+            }
+          ]
+        }
+
+        let res = spec.buildRequests([bidRequest], commonBidderRequest);
+        const resData = JSON.parse(res.data)
+        expect(resData.imp[0].native.request).to.equal(JSON.stringify(expectedNativeAssets));
+      });
     })
 
     describe('interpretResponse', function () {
@@ -382,7 +471,7 @@ describe('Outbrain Adapter', function () {
                     impid: '1',
                     price: 1.1,
                     nurl: 'http://example.com/win/${AUCTION_PRICE}',
-                    adm: '{"ver":"1.2","assets":[{"id":3,"required":1,"img":{"url":"http://example.com/img/url","w":120,"h":100}},{"id":0,"required":1,"title":{"text":"Test title"}},{"id":5,"data":{"value":"Test sponsor"}}],"link":{"url":"http://example.com/click/url"},"eventtrackers":[{"event":1,"method":1,"url":"http://example.com/impression"}]}',
+                    adm: '{"ver":"1.2","assets":[{"id":3,"required":1,"img":{"url":"http://example.com/img/url","w":120,"h":100}},{"id":0,"required":1,"title":{"text":"Test title"}},{"id":5,"data":{"value":"Test sponsor"}}],"privacy":"http://example.com/privacy","link":{"url":"http://example.com/click/url"},"eventtrackers":[{"event":1,"method":1,"url":"http://example.com/impression"}]}',
                     adomain: [
                       'example.com'
                     ],
@@ -435,7 +524,8 @@ describe('Outbrain Adapter', function () {
               sponsoredBy: 'Test sponsor',
               impressionTrackers: [
                 'http://example.com/impression',
-              ]
+              ],
+              privacyLink: 'http://example.com/privacy'
             }
           }
         ]

@@ -14,7 +14,7 @@ import {
 import {createEidsArray} from 'modules/userId/eids.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
-import events from 'src/events.js';
+import * as events from 'src/events.js';
 import CONSTANTS from 'src/constants.json';
 import {getGlobal} from 'src/prebidGlobal.js';
 import {
@@ -23,7 +23,7 @@ import {
   setConsentConfig
 } from 'modules/consentManagement.js';
 import {server} from 'test/mocks/xhr.js';
-import find from 'core-js-pure/features/array/find.js';
+import {find} from 'src/polyfill.js';
 import {unifiedIdSubmodule} from 'modules/unifiedIdSystem.js';
 import {britepoolIdSubmodule} from 'modules/britepoolIdSystem.js';
 import {id5IdSubmodule} from 'modules/id5IdSystem.js';
@@ -51,6 +51,8 @@ import {akamaiDAPIdSubmodule} from 'modules/akamaiDAPIdSystem.js'
 import {kinessoIdSubmodule} from 'modules/kinessoIdSystem.js'
 import {adqueryIdSubmodule} from 'modules/adqueryIdSystem.js';
 import * as mockGpt from '../integration/faker/googletag.js';
+import 'src/prebid.js';
+import {hook} from '../../../src/hook.js';
 
 let assert = require('chai').assert;
 let expect = require('chai').expect;
@@ -107,10 +109,16 @@ describe('User ID', function () {
   }
 
   before(function () {
+    hook.ready();
     localStorage.removeItem(PBJS_USER_ID_OPTOUT_NAME);
   });
 
   beforeEach(function () {
+    // TODO: this whole suite needs to be redesigned; it is passing by accident
+    // some tests do not pass if consent data is available
+    // (there are functions here with signature `getId(config, storedId)`, but storedId is actually consentData)
+    // also, this file is ginormous; do we really need to test *all* id systems as one?
+    resetConsentData();
     coreStorage.setCookie(CONSENT_LOCAL_STORAGE_NAME, '', EXPIRED_COOKIE_DATE);
   });
 
@@ -2652,6 +2660,98 @@ describe('User ID', function () {
           expect(domain).to.be.eq('realdomain.co.uk');
         });
       });
+    });
+
+    describe('handles config with ESP configuration in user sync object', function() {
+      describe('Call registerSignalSources to register signal sources with gtag', function () {
+        it('pbjs.registerSignalSources should be defined', () => {
+          expect(typeof (getGlobal()).registerSignalSources).to.equal('function');
+        });
+      })
+
+      describe('Call getEncryptedEidsForSource to get encrypted Eids for source', function() {
+        const signalSources = ['pubcid.org'];
+
+        it('pbjs.getEncryptedEidsForSource should be defined', () => {
+          expect(typeof (getGlobal()).getEncryptedEidsForSource).to.equal('function');
+        });
+
+        it('pbjs.getEncryptedEidsForSource should return the string without encryption if encryption is false', (done) => {
+          setSubmoduleRegistry([sharedIdSystemSubmodule]);
+          init(config);
+          config.setConfig({
+            userSync: {
+              syncDelay: 0,
+              userIds: [
+                {
+                  'name': 'sharedId',
+                  'storage': {
+                    'type': 'cookie',
+                    'name': '_pubcid',
+                    'expires': 365
+                  }
+                },
+                {
+                  'name': 'pubcid.org'
+                }
+              ]
+            },
+          });
+          const encrypt = false;
+          (getGlobal()).getEncryptedEidsForSource(signalSources[0], encrypt).then((data) => {
+            let users = (getGlobal()).getUserIdsAsEids();
+            expect(data).to.equal(users[0].uids[0].id);
+            done();
+          }).catch(done);
+        });
+
+        it('pbjs.getEncryptedEidsForSource should return the string base64 encryption if encryption is true', (done) => {
+          const encrypt = true;
+          (getGlobal()).getEncryptedEidsForSource(signalSources[0], encrypt).then((result) => {
+            expect(result.startsWith('1||')).to.true;
+            done();
+          }).catch(done);
+        });
+
+        it('pbjs.getEncryptedEidsForSource should return string if custom function is defined', (done) => {
+          const getCustomSignal = () => {
+            return '{"keywords":["tech","auto"]}';
+          }
+          const expectedString = '1||eyJrZXl3b3JkcyI6WyJ0ZWNoIiwiYXV0byJdfQ==';
+          const encrypt = false;
+          const source = 'pubmatic.com';
+          (getGlobal()).getEncryptedEidsForSource(source, encrypt, getCustomSignal).then((result) => {
+            expect(result).to.equal(expectedString);
+            done();
+          }).catch(done);
+        });
+
+        it('pbjs.getUserIdsAsEidBySource', () => {
+          const users = {
+            'source': 'pubcid.org',
+            'uids': [
+              {
+                'id': '11111',
+                'atype': 1
+              }
+            ]
+          }
+          setSubmoduleRegistry([sharedIdSystemSubmodule, amxIdSubmodule]);
+          init(config);
+          config.setConfig({
+            userSync: {
+              syncDelay: 0,
+              userIds: [{
+                name: 'pubCommonId', value: {'pubcid': '11111'}
+              }, {
+                name: 'amxId', value: {'amxId': 'amx-id-value-amx-id-value-amx-id-value'}
+              }]
+            }
+          });
+          expect(typeof (getGlobal()).getUserIdsAsEidBySource).to.equal('function');
+          expect((getGlobal()).getUserIdsAsEidBySource(signalSources[0])).to.deep.equal(users);
+        });
+      })
     });
   })
 });

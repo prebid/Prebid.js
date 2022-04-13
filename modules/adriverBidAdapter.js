@@ -7,7 +7,7 @@ const BIDDER_CODE = 'adriver';
 const ADRIVER_BID_URL = 'https://pb.adriver.ru/cgi-bin/bid.cgi';
 const TIME_TO_LIVE = 3000;
 
-export const storage = getStorageManager(BIDDER_CODE);
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 export const spec = {
   code: BIDDER_CODE,
 

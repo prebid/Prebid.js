@@ -1,12 +1,12 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { getAdUnitSizes, parseSizesInput } from '../src/utils.js';
 import { getRefererInfo } from '../src/refererDetection.js';
+import {includes} from '../src/polyfill.js'
 
 const BIDDER_CODE = 'between';
 let ENDPOINT = 'https://ads.betweendigital.com/adjson?t=prebid';
 const CODE_TYPES = ['inpage', 'preroll', 'midroll', 'postroll'];
 
-const includes = require('core-js-pure/features/array/includes.js');
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['btw'],
@@ -118,7 +118,7 @@ export const spec = {
         mediaType: serverResponse.body[i].mediaType,
         ttl: serverResponse.body[i].ttl,
         creativeId: serverResponse.body[i].creativeid,
-        currency: serverResponse.body[i].currency || 'RUB',
+        currency: serverResponse.body[i].currency || 'USD',
         netRevenue: serverResponse.body[i].netRevenue || true,
         ad: serverResponse.body[i].ad,
         meta: {
@@ -158,10 +158,16 @@ export const spec = {
     //   type: 'iframe',
     //   url: 'https://acdn.adnxs.com/dmp/async_usersync.html'
     // });
-    syncs.push({
-      type: 'iframe',
-      url: 'https://ads.betweendigital.com/sspmatch-iframe'
-    });
+    syncs.push(
+      {
+        type: 'iframe',
+        url: 'https://ads.betweendigital.com/sspmatch-iframe'
+      },
+      {
+        type: 'image',
+        url: 'https://ads.betweendigital.com/sspmatch'
+      }
+    );
     return syncs;
   }
 }

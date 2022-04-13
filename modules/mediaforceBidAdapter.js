@@ -262,7 +262,7 @@ export const spec = {
   onBidWon: function(bid) {
     const cpm = deepAccess(bid, 'adserverTargeting.hb_pb') || '';
     if (isStr(bid.burl) && bid.burl !== '') {
-      bid.burl = replaceAuctionPrice(bid.burl, cpm);
+      bid.burl = replaceAuctionPrice(bid.burl, bid.originalCpm || cpm);
       triggerPixel(bid.burl);
     }
   },

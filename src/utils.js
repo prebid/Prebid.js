@@ -1,8 +1,7 @@
 /* eslint-disable no-console */
 import { config } from './config.js';
 import clone from 'just-clone';
-import find from 'core-js-pure/features/array/find.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import {find, includes} from './polyfill.js';
 
 const CONSTANTS = require('./constants.json');
 
@@ -707,7 +706,7 @@ export function getKeyByValue(obj, value) {
 export function getBidderCodes(adUnits = $$PREBID_GLOBAL$$.adUnits) {
   // this could memoize adUnits
   return adUnits.map(unit => unit.bids.map(bid => bid.bidder)
-    .reduce(flatten, [])).reduce(flatten).filter(uniques);
+    .reduce(flatten, [])).reduce(flatten, []).filter(uniques);
 }
 
 export function isGptPubadsDefined() {
@@ -1355,4 +1354,13 @@ export function cyrb53Hash(str, seed = 0) {
   h1 = imul(h1 ^ (h1 >>> 16), 2246822507) ^ imul(h2 ^ (h2 >>> 13), 3266489909);
   h2 = imul(h2 ^ (h2 >>> 16), 2246822507) ^ imul(h1 ^ (h1 >>> 13), 3266489909);
   return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString();
+}
+
+/**
+ * returns a window object, which holds the provided document or null
+ * @param {Document} doc
+ * @returns {Window}
+ */
+export function getWindowFromDocument(doc) {
+  return (doc) ? doc.defaultView : null;
 }
