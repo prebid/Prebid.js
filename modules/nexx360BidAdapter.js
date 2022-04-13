@@ -23,6 +23,9 @@ export const spec = {
          * @return boolean True if this is a valid bid, and false otherwise.
          */
   isBidRequestValid: function(bid) {
+    if (!!bid.params.bidfloorCurrency && !['EUR', 'USD'].includes(bid.params.bidfloorCurrency)) return false;
+    if (!!bid.params.bidfloor && typeof bid.params.bidfloor !== 'number') return false;
+    if (!!bid.params.keywords && typeof bid.params.keywords !== 'object') return false;
     return !!(bid.params.account && bid.params.tagId);
   },
   /**

@@ -146,6 +146,37 @@ describe('Nexx360 bid adapter tests', function () {
       }]
     },
   };
+
+  it('We verify isBidRequestValid with uncorrect bidfloorCurrency', function() {
+    const bid = { params: {
+      'account': '1067',
+      'tagId': 'luvxjvgn',
+      'bidfloorCurrency': 'AAA',
+    }};
+    expect(spec.isBidRequestValid(bid)).to.be.equal(false);
+  });
+
+  it('We verify isBidRequestValid with uncorrect bidfloor', function() {
+    const bid = { params: {
+      'account': '1067',
+      'tagId': 'luvxjvgn',
+      'bidfloorCurrency': 'EUR',
+      'bidfloor': 'EUR',
+    }};
+    expect(spec.isBidRequestValid(bid)).to.be.equal(false);
+  });
+
+  it('We verify isBidRequestValid with uncorrect keywords', function() {
+    const bid = { params: {
+      'account': '1067',
+      'tagId': 'luvxjvgn',
+      'bidfloorCurrency': 'EUR',
+      'bidfloor': 0.8,
+      'keywords': 'test',
+    }};
+    expect(spec.isBidRequestValid(bid)).to.be.equal(false);
+  });
+
   it('Verify banner build request', function () {
     const request = spec.buildRequests(DISPLAY_BID_REQUEST, DEFAULT_OPTIONS);
     expect(request).to.have.property('url').and.to.equal('https://fast.nexx360.io/prebid');
