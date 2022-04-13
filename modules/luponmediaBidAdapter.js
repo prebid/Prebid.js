@@ -297,29 +297,32 @@ function newOrtbBidRequest(bidRequest, bidderRequest, currentImps) {
     }
   }
 
-  let bidFloor;
-  if (isFn(bidRequest.getFloor) && !config.getConfig('disableFloors')) {
-    let floorInfo;
-    try {
-      floorInfo = bidRequest.getFloor({
-        currency: 'USD',
-        mediaType: 'video',
-        size: parseSizes(bidRequest, 'video')
-      });
-    } catch (e) {
-      logError('LuponMedia: getFloor threw an error: ', e);
-    }
-    bidFloor = typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseInt(floorInfo.floor)) ? parseFloat(floorInfo.floor) : undefined;
-  } else {
-    bidFloor = parseFloat(deepAccess(bidRequest, 'params.floor'));
-  }
-  if (!isNaN(bidFloor)) {
-    data.imp[0].bidfloor = bidFloor;
-  }
+  setBidFloor(bidRequest, data);
 
   appendSiteAppDevice(data, bidRequest, bidderRequest);
 
+  setGdprAndPrivacy(bidderRequest, data);
+  setUserId(bidRequest, data);
 
+  if (config.getConfig('coppa') === true) {
+    deepSetValue(data, 'regs.coppa', 1);
+  }
+
+  if (bidRequest.schain && hasValidSupplyChainParams(bidRequest.schain)) {
+    deepSetValue(data, 'source.ext.schain', bidRequest.schain);
+  }
+
+  setSiteAndUserData(bidRequest, bidderRequest, data);
+
+  const pbAdSlot = deepAccess(bidRequest, 'fpd.context.pbAdSlot');
+  if (typeof pbAdSlot === 'string' && pbAdSlot) {
+    deepSetValue(data.imp[0].ext, 'context.data.adslot', pbAdSlot);
+  }
+
+  return data;
+}
+
+function setGdprAndPrivacy(bidderRequest, data) {
   if (bidderRequest.gdprConsent) {
     // note - gdprApplies & consentString may be undefined in certain use-cases for consentManagement module
     let gdprApplies;
@@ -334,7 +337,9 @@ function newOrtbBidRequest(bidRequest, bidderRequest, currentImps) {
   if (bidderRequest.uspConsent) {
     deepSetValue(data, 'regs.ext.us_privacy', bidderRequest.uspConsent);
   }
+}
 
+function setUserId(bidRequest, data) {
   // Set user uuid
   deepSetValue(data, 'user.id', generateUUID());
 
@@ -346,68 +351,18 @@ function newOrtbBidRequest(bidRequest, bidderRequest, currentImps) {
   }
 
   if (bidRequest.userId && typeof bidRequest.userId === 'object' &&
-        (bidRequest.userId.tdid || bidRequest.userId.pubcid || bidRequest.userId.lipb || bidRequest.userId.idl_env)) {
+      (bidRequest.userId.tdid || bidRequest.userId.pubcid || bidRequest.userId.lipb || bidRequest.userId.idl_env)) {
+
     deepSetValue(data, 'user.ext.eids', []);
+    setAdserverOrg(bidRequest, data);
+    setPubcommon(bidRequest, data);
+    setLiveIntent(bidRequest, data);
+    setIdentityLink(bidRequest, data);
 
-    if (bidRequest.userId.tdid) {
-      data.user.ext.eids.push({
-        source: 'adserver.org',
-        uids: [{
-          id: bidRequest.userId.tdid,
-          ext: {
-            rtiPartner: 'TDID'
-          }
-        }]
-      });
-    }
-
-    if (bidRequest.userId.pubcid) {
-      data.user.ext.eids.push({
-        source: 'pubcommon',
-        uids: [{
-          id: bidRequest.userId.pubcid,
-        }]
-      });
-    }
-
-    // support liveintent ID
-    if (bidRequest.userId.lipb && bidRequest.userId.lipb.lipbid) {
-      data.user.ext.eids.push({
-        source: 'liveintent.com',
-        uids: [{
-          id: bidRequest.userId.lipb.lipbid
-        }]
-      });
-
-      data.user.ext.tpid = {
-        source: 'liveintent.com',
-        uid: bidRequest.userId.lipb.lipbid
-      };
-
-      if (Array.isArray(bidRequest.userId.lipb.segments) && bidRequest.userId.lipb.segments.length) {
-        deepSetValue(data, 'rp.target.LIseg', bidRequest.userId.lipb.segments);
-      }
-    }
-
-    // support identityLink (aka LiveRamp)
-    if (bidRequest.userId.idl_env) {
-      data.user.ext.eids.push({
-        source: 'liveramp.com',
-        uids: [{
-          id: bidRequest.userId.idl_env
-        }]
-      });
-    }
   }
+}
 
-  if (config.getConfig('coppa') === true) {
-    deepSetValue(data, 'regs.coppa', 1);
-  }
-
-  if (bidRequest.schain && hasValidSupplyChainParams(bidRequest.schain)) {
-    deepSetValue(data, 'source.ext.schain', bidRequest.schain);
-  }
-
+function setSiteAndUserData(bidRequest, bidderRequest, data) {
   const siteData = Object.assign({}, bidRequest.params.inventory, config.getConfig('fpd.context'));
   const userData = Object.assign({}, bidRequest.params.visitor, config.getConfig('fpd.user'));
 
@@ -429,13 +384,84 @@ function newOrtbBidRequest(bidRequest, bidderRequest, currentImps) {
 
     deepSetValue(data, 'ext.prebid.bidderconfig.0', bidderData);
   }
+}
 
-  const pbAdSlot = deepAccess(bidRequest, 'fpd.context.pbAdSlot');
-  if (typeof pbAdSlot === 'string' && pbAdSlot) {
-    deepSetValue(data.imp[0].ext, 'context.data.adslot', pbAdSlot);
+function setAdserverOrg(bidRequest, data) {
+  if (bidRequest.userId.tdid) {
+    data.user.ext.eids.push({
+      source: 'adserver.org',
+      uids: [{
+        id: bidRequest.userId.tdid,
+        ext: {
+          rtiPartner: 'TDID'
+        }
+      }]
+    });
   }
+}
 
-  return data;
+function setLiveIntent(bidRequest, data) {
+  if (bidRequest.userId.lipb && bidRequest.userId.lipb.lipbid) {
+    data.user.ext.eids.push({
+      source: 'liveintent.com',
+      uids: [{
+        id: bidRequest.userId.lipb.lipbid
+      }]
+    });
+
+    data.user.ext.tpid = {
+      source: 'liveintent.com',
+      uid: bidRequest.userId.lipb.lipbid
+    };
+
+    if (Array.isArray(bidRequest.userId.lipb.segments) && bidRequest.userId.lipb.segments.length) {
+      deepSetValue(data, 'rp.target.LIseg', bidRequest.userId.lipb.segments);
+    }
+  }
+}
+
+function setIdentityLink(bidRequest, data) {
+  if (bidRequest.userId.idl_env) {
+    data.user.ext.eids.push({
+      source: 'liveramp.com',
+      uids: [{
+        id: bidRequest.userId.idl_env
+      }]
+    });
+  }
+}
+
+function setPubcommon(bidRequest, data) {
+  if (bidRequest.userId.pubcid) {
+    data.user.ext.eids.push({
+      source: 'pubcommon',
+      uids: [{
+        id: bidRequest.userId.pubcid,
+      }]
+    });
+  }
+}
+
+function setBidFloor(bidRequest, data) {
+  let bidFloor;
+  if (isFn(bidRequest.getFloor) && !config.getConfig('disableFloors')) {
+    let floorInfo;
+    try {
+      floorInfo = bidRequest.getFloor({
+        currency: 'USD',
+        mediaType: 'video',
+        size: parseSizes(bidRequest, 'video')
+      });
+    } catch (e) {
+      logError('LuponMedia: getFloor threw an error: ', e);
+    }
+    bidFloor = typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseInt(floorInfo.floor)) ? parseFloat(floorInfo.floor) : undefined;
+  } else {
+    bidFloor = parseFloat(deepAccess(bidRequest, 'params.floor'));
+  }
+  if (!isNaN(bidFloor)) {
+    data.imp[0].bidfloor = bidFloor;
+  }
 }
 
 function _getPageUrl(bidRequest, bidderRequest) {
