@@ -352,13 +352,11 @@ function setUserId(bidRequest, data) {
 
   if (bidRequest.userId && typeof bidRequest.userId === 'object' &&
       (bidRequest.userId.tdid || bidRequest.userId.pubcid || bidRequest.userId.lipb || bidRequest.userId.idl_env)) {
-
     deepSetValue(data, 'user.ext.eids', []);
     setAdserverOrg(bidRequest, data);
     setPubcommon(bidRequest, data);
     setLiveIntent(bidRequest, data);
     setIdentityLink(bidRequest, data);
-
   }
 }
 
