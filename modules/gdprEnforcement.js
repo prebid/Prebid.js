@@ -9,7 +9,7 @@ import {find, includes} from '../src/polyfill.js';
 import {registerSyncInner} from '../src/adapters/bidderFactory.js';
 import {getHook} from '../src/hook.js';
 import {validateStorageEnforcement} from '../src/storageManager.js';
-import events from '../src/events.js';
+import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
 
 const TCF2 = {

@@ -147,19 +147,12 @@ export function checkAdUnitSetupHook(adUnits) {
   }
   const validatedAdUnits = [];
   adUnits.forEach(adUnit => {
-    const bids = adUnit.bids;
+    adUnit = adUnitSetupChecks.validateAdUnit(adUnit);
+    if (adUnit == null) return;
+
     const mediaTypes = adUnit.mediaTypes;
     let validatedBanner, validatedVideo, validatedNative;
 
-    if (!bids || !isArray(bids)) {
-      logError(`Detected adUnit.code '${adUnit.code}' did not have 'adUnit.bids' defined or 'adUnit.bids' is not an array. Removing adUnit from auction.`);
-      return;
-    }
-
-    if (!mediaTypes || Object.keys(mediaTypes).length === 0) {
-      logError(`Detected adUnit.code '${adUnit.code}' did not have a 'mediaTypes' object defined. This is a required field for the auction, so this adUnit has been removed.`);
-      return;
-    }
     if (mediaTypes.banner) {
       if (mediaTypes.banner.sizes) {
         // Ad unit is using 'mediaTypes.banner.sizes' instead of the new property 'sizeConfig'. Apply the old checks!
