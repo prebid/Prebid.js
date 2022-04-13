@@ -6,14 +6,16 @@
 
 <head>
     <script async src="../../build/dev/prebid.js"></script>
+    <script src="https://cdn.jwplayer.com/libraries/e2SgwEeG.js"></script>
+
     <script>
+      var pbjs = pbjs || {};
+      pbjs.que = pbjs.que || [];
+
       var adUnits = [{
         code: 'div-gpt-ad-51545-0',
-        sizes: [[600, 500]],
         mediaTypes: {
-          video: {
-            sizes: [[600, 500]]
-          }
+          video: {}
         },
         video: {
           divId: 'vid-div-1',
@@ -35,68 +37,83 @@
           bidder: 'ix',
           params: {
             siteId: '300',
-            size: [600, 500]
+          }
+        }, {
+          bidder: "gridNM",
+          params: {
+            source: 'demo',
+            secid: "demo",
+            pubid: "demo"
           }
         }]
       }];
 
-      var pbjs = pbjs || {};
-      pbjs.que = pbjs.que || [];
-    </script>
-    <script>
+
       pbjs.que.push(function () {
-        pbjs.onEvent('adImpression', event => {
-          console.log('adImpression: ', event);
-        });
-        pbjs.addAdUnits(adUnits);
         pbjs.setConfig({
           video: {
             providers: [{
               divId: 'vid-div-1',
               vendorCode: 1,
               playerConfig: {
-                licenseKey: "INSERT LICENSE KEY HERE",
+                
                 params: {
                   vendorConfig: {
                     "file": "http://content.bitsontherun.com/videos/3XnJSIm4-52qL9xLP.mp4",
                     mediaid: 'd9J2zcaA',
-                    "advertising": {
-                      "adscheduleid": "00000000",
-                      client: 'vast',
-                      "offset": "10",
-                      "tag": [
-                        "http://playertest.longtailvideo.com/pre-bad.xml",
-                        "http://playertest.longtailvideo.com/mid.xml"
-                      ],
+                    advertising: { client: 'googima' }
                     }
-                  }
                 }
               }
             }, {
               divId: 'vid-div-2',
               vendorCode: 1,
               playerConfig: {
-                licenseKey: "INSERT LICENSE KEY HERE",
+
                 params: {
                   vendorConfig: {
-                    "file": "http://content.bitsontherun.com/videos/3XnJSIm4-52qL9xLP.mp4",
-                    mediaid: 'd9J2zcaA',
-                    "advertising": {
-                      "adscheduleid": "00000000",
-                      client: 'vast',
-                      "offset": "10",
-                      "tag": [
-                        "http://playertest.longtailvideo.com/pre-bad.xml",
-                        "http://playertest.longtailvideo.com/mid.xml"
-                      ],
-                    }
+                    "file": "http://content.bitsontherun.com/videos/bkaovAYt-DZ7jSYgM.mp4",
+                    mediaid: 'bkaovAYt',
+                    advertising: { client: 'googima' }
                   }
                 }
               }
             }]
           }
         });
-        pbjs.requestBids();
+
+        pbjs.onEvent('setupComplete', () => {
+          console.log('player setup complete');
+        });
+
+        pbjs.onEvent('setupFailed', () => {
+          console.log('player setup failed!');
+        });
+
+        pbjs.onEvent('auctionAdLoadAttempt', event => {
+          console.log('The Video Module is attempting to load an ad into the player! \n', event);
+        });
+
+        pbjs.onEvent('adImpression', event => {
+          console.log('An ad impression has occurred!: \n', event);
+        });
+
+        pbjs.onEvent('bidVideoImpression', event => {
+          console.log('The ad impression resulted from a bid! \n', event);
+        });
+
+        pbjs.onEvent('adError', event => {
+          console.log('An ad error has occurred!: ', event);
+        });
+
+        pbjs.onEvent('bidVideoError', event => {
+          console.log('The ad error resulted from a bid! \n', event);
+        });
+
+        pbjs.addAdUnits(adUnits);
+        pbjs.requestBids({
+          adUnits
+        });
       });
     </script>
 </head>
