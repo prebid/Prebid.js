@@ -7,7 +7,7 @@ import CONSTANTS from '../../src/constants.json';
 import { videoCoreFactory } from './coreVideo.js';
 import { coreAdServerFactory } from './adServer.js';
 import { videoImpressionVerifierFactory } from './videoImpressionVerifier.js';
-import { mergeDeep } from '../../src/utils'
+import { mergeDeep } from '../../src/utils.js';
 
 /**
  * This module adds User Video support to prebid.js
