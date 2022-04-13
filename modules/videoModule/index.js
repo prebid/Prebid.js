@@ -1,8 +1,10 @@
 import { config } from '../../src/config.js';
 import { find } from '../../src/polyfill.js';
 import * as events from '../../src/events.js';
-import { allVideoEvents, AUCTION_AD_LOAD_ATTEMPT, allVideoAuctionEvents,
-  AD_IMPRESSION, AD_ERROR, BID_VIDEO_IMPRESSION, BID_VIDEO_ERROR, allVideoBidEvents } from './constants/events.js';
+import {
+  allVideoEvents, AUCTION_AD_LOAD_ATTEMPT, allVideoAuctionEvents,
+  AD_IMPRESSION, AD_ERROR, BID_VIDEO_IMPRESSION, BID_VIDEO_ERROR, allVideoBidEvents, AUCTION_AD_LOAD_ABORT
+} from './constants/events.js'
 import CONSTANTS from '../../src/constants.json';
 import { videoCoreFactory } from './coreVideo.js';
 import { coreAdServerFactory } from './adServer.js';
@@ -95,11 +97,6 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
   function renderWinningBid(adUnit) {
     const adUnitCode = adUnit.code;
     const options = { adUnitCode };
-    const highestCpmBids = pbGlobal.getHighestCpmBids(adUnitCode);
-    if (!highestCpmBids.length) {
-      pbEvents.emit(AUCTION_AD_LOAD_ATTEMPT, options);
-      return;
-    }
 
     const videoConfig = adUnit.video;
     const divId = videoConfig.divId;
@@ -111,6 +108,12 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
 
     if (adUrl) {
       loadAdTag(adUrl, divId, options);
+      return;
+    }
+
+    const highestCpmBids = pbGlobal.getHighestCpmBids(adUnitCode);
+    if (!highestCpmBids.length) {
+      pbEvents.emit(AUCTION_AD_LOAD_ABORT, options);
       return;
     }
 
