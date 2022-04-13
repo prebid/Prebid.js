@@ -151,11 +151,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
   }
 
   function setAdTagUrl(adTagUrl, options) {
-    if (!player) {
-      return;
-    }
-
-    if (player.getPlugin('bidding')) {
+    if (!player || player.getPlugin('bidding') || player.getPlugin('biddingCore')) {
       return;
     }
 
@@ -701,6 +697,10 @@ export const utils = {
       // TODO verify accuracy
       advertising.outstream = true;
     }
+
+    const bids = advertising.bids || {};
+    bids.prebid = true;
+    advertising.bids = bids;
 
     jwConfig.advertising = advertising;
     return jwConfig;
