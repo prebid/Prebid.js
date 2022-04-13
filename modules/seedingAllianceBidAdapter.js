@@ -189,12 +189,12 @@ function parseNative(bid) {
 
   if (link.clicktrackers) {
     link.clicktrackers.forEach(function (clicktracker, index) {
-      link.clicktrackers[index] = clicktracker.replace(/\$\{AUCTION_PRICE\}/, bid.price);
+      link.clicktrackers[index] = clicktracker.replace(/\$\{AUCTION_PRICE\}/g, bid.price);
     });
   }
   if (imptrackers) {
     imptrackers.forEach(function (imptracker, index) {
-      imptrackers[index] = imptracker.replace(/\$\{AUCTION_PRICE\}/, bid.price);
+      imptrackers[index] = imptracker.replace(/\$\{AUCTION_PRICE\}/g, bid.price);
     });
   }
 
