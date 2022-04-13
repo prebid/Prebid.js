@@ -25,9 +25,8 @@
            apiHostname: '<see your Akamai account rep>',
            apiVersion: "x1",
            domain: 'your-domain.com',
-           identityType: 'email' | 'mobile' | ... | 'dap-signature:1.0.0',
-           segtax: <Akamai_taxonomy_name>,
-           tokenTtl: 5,
+           identityType: 'email' | 'mobile' | ... | 'dap-signature:1.3.0',
+           segtax: 504
          }
        }
      ]
