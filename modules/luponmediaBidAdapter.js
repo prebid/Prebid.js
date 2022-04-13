@@ -7,13 +7,6 @@ import { ajax } from '../src/ajax.js';
 const BIDDER_CODE = 'luponmedia';
 const ENDPOINT_URL = 'https://rtb.adxpremium.services/openrtb2/auction';
 
-const DIGITRUST_PROP_NAMES = {
-  PREBID_SERVER: {
-    id: 'id',
-    keyv: 'keyv'
-  }
-};
-
 var sizeMap = {
   1: '468x60',
   2: '728x90',
@@ -326,10 +319,6 @@ function newOrtbBidRequest(bidRequest, bidderRequest, currentImps) {
 
   appendSiteAppDevice(data, bidRequest, bidderRequest);
 
-  const digiTrust = _getDigiTrustQueryParams(bidRequest, 'PREBID_SERVER');
-  if (digiTrust) {
-    deepSetValue(data, 'user.ext.digitrust', digiTrust);
-  }
 
   if (bidderRequest.gdprConsent) {
     // note - gdprApplies & consentString may be undefined in certain use-cases for consentManagement module
@@ -447,38 +436,6 @@ function newOrtbBidRequest(bidRequest, bidderRequest, currentImps) {
   }
 
   return data;
-}
-
-function _getDigiTrustQueryParams(bidRequest = {}, endpointName) {
-  if (!endpointName || !DIGITRUST_PROP_NAMES[endpointName]) {
-    return null;
-  }
-  const propNames = DIGITRUST_PROP_NAMES[endpointName];
-
-  function getDigiTrustId() {
-    const bidRequestDigitrust = deepAccess(bidRequest, 'userId.digitrustid.data');
-    if (bidRequestDigitrust) {
-      return bidRequestDigitrust;
-    }
-
-    let digiTrustUser = (window.DigiTrust && (config.getConfig('digiTrustId') || window.DigiTrust.getUser({member: 'T9QSFKPDN9'})));
-    return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || null;
-  }
-
-  let digiTrustId = getDigiTrustId();
-  // Verify there is an ID and this user has not opted out
-  if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
-    return null;
-  }
-
-  const digiTrustQueryParams = {
-    [propNames.id]: digiTrustId.id,
-    [propNames.keyv]: digiTrustId.keyv
-  };
-  if (propNames.pref) {
-    digiTrustQueryParams[propNames.pref] = 0;
-  }
-  return digiTrustQueryParams;
 }
 
 function _getPageUrl(bidRequest, bidderRequest) {
