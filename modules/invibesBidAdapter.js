@@ -95,7 +95,6 @@ function buildRequest(bidRequests, bidderRequest) {
   invibes.optIn = invibes.optIn || readGdprConsent(bidderRequest.gdprConsent);
 
   invibes.visitId = invibes.visitId || generateRandomId();
-  let lid = initDomainId(invibes.domainOptions);
 
   const currentQueryStringParams = parseQueryStringParams();
   let userIdModel = getUserIds(_userId);
@@ -112,7 +111,7 @@ function buildRequest(bidRequests, bidderRequest) {
     location: getDocumentLocation(topWin),
     videoAdHtmlId: generateRandomId(),
     showFallback: currentQueryStringParams['advs'] === '0',
-    ivbsCampIdsLocal: invibes.getCookie('IvbsCampIdsLocal'),
+    ivbsCampIdsLocal: readFromLocalStorage('IvbsCampIdsLocal'),
 
     bidParamsJson: JSON.stringify(bidParamsJson),
     capCounts: getCappedCampaignsAsString(),
@@ -129,10 +128,20 @@ function buildRequest(bidRequests, bidderRequest) {
     li: invibes.legitimateInterests.toString(),
 
     tc: invibes.gdpr_consent,
-    canPbWriteCookie: canPrebidWriteCookies(),
-    IvbsCDS: invibes.getCookie('IvbsCDS')
+    isLocalStorageEnabled: storage.hasLocalStorage(),
   };
 
+  let lid = readFromLocalStorage('ivbsdid');
+  if(!lid){ 
+    let str = invibes.getCookie('ivbsdid');
+    if(str){
+      try{
+        let cookieLid = JSON.parse(str);
+        lid = cookieLid.id ? cookieLid.id : cookieLid;
+       }catch(e){
+       }
+    }
+  }
   if (lid) {
     data.lId = lid;
   }
@@ -173,14 +182,16 @@ function handleResponse(responseObj, bidRequests) {
   responseObj = responseObj.body || responseObj;
   responseObj = responseObj.videoAdContentResult || responseObj;
 
-  if (responseObj.ShouldSetLId && responseObj.LId) {
-    if ((!invibes.optIn || !invibes.purposes[0]) && responseObj.PrivacyPolicyRule && responseObj.TcModel && responseObj.TcModel.PurposeConsents) {
+  if(responseObj.ShouldSetLId && responseObj.LId){
+
+    if((!invibes.optIn || !invibes.purposes[0]) && responseObj.PrivacyPolicyRule && responseObj.TcModel && responseObj.TcModel.PurposeConsents ){
       invibes.optIn = responseObj.PrivacyPolicyRule;
       invibes.purposes = responseObj.TcModel.PurposeConsents;
     }
 
-    invibes.setCookie('ivbsdid', JSON.stringify(responseObj.LId), 365);
+    setInLocalStorage('ivbsdid', responseObj.LId);
   }
+
 
   if (typeof invibes.bidResponse === 'object') {
     if (responseObj.MultipositionEnabled === true) {
@@ -421,6 +432,23 @@ function renderCreative(bidModel) {
     .replace('creativeHtml', bidModel.CreativeHtml);
 }
 
+function readFromLocalStorage(key){
+  if (invibes.GdprModuleInstalled && (!invibes.optIn || !invibes.purposes[0])) {
+    return;
+  }
+
+  return storage.getDataFromLocalStorage(key) || '';
+}
+
+function setInLocalStorage(key, value){
+  if (!invibes.optIn || !invibes.purposes[0]) {
+    return;
+  }
+
+  storage.setDataInLocalStorage(key, value);
+}
+
+
 function getCappedCampaignsAsString() {
   const key = 'ivvcap';
 
@@ -481,14 +509,9 @@ function buildSyncUrl() {
   syncUrl += '?visitId=' + invibes.visitId;
   syncUrl += '&optIn=' + invibes.optIn;
 
-  const did = invibes.getCookie('ivbsdid');
+  const did = readFromLocalStorage('ivbsdid');
   if (did) {
     syncUrl += '&ivbsdid=' + encodeURIComponent(did);
-  }
-
-  const bks = invibes.getCookie('ivvbks');
-  if (bks) {
-    syncUrl += '&ivvbks=' + encodeURIComponent(bks);
   }
 
   return syncUrl;
@@ -496,6 +519,7 @@ function buildSyncUrl() {
 
 function readGdprConsent(gdprConsent) {
   if (gdprConsent && gdprConsent.vendorData) {
+    invibes.GdprModuleInstalled = true;
     invibes.gdpr_consent = getVendorConsentData(gdprConsent.vendorData);
 
     if (!gdprConsent.vendorData.gdprApplies || gdprConsent.vendorData.hasGlobalConsent) {
@@ -538,11 +562,8 @@ function readGdprConsent(gdprConsent) {
     return 2;
   }
 
-  // no gdpr module installed. AdWeb will decide if we can read cookies.
-  for (index = 0; index < invibes.purposes.length; ++index) {
-    invibes.purposes[index] = true;
-  }
-  return 1;
+  invibes.GdprModuleInstalled = false;
+  return 0;
 }
 
 function tryCopyValueToArray(value, target, length) {
@@ -651,83 +672,11 @@ invibes.getCookie = function (name) {
     return;
   }
 
-  if (!invibes.optIn || !invibes.purposes[0]) {
+  if (invibes.GdprModuleInstalled && (!invibes.optIn || !invibes.purposes[0])) {
     return;
   }
 
   return storage.getCookie(name);
-};
-
-invibes.setCookie = function(name, value, exdays, domain) {
-  if (!storage.cookiesAreEnabled()) {
-    return;
-  }
-
-  if (!invibes.optIn || !invibes.purposes[0]) {
-    return;
-  }
-
-  if (exdays > 365) {
-    exdays = 365;
-  }
-
-  domain = domain || detectTopmostCookieDomain();
-  let exdate = new Date();
-  let exms = exdays * 24 * 60 * 60 * 1000;
-  exdate.setTime(exdate.getTime() + exms);
-
-  storage.setCookie(name, value, exdays ? exdate.toUTCString() : '', null, domain);
-}
-
-let canPrebidWriteCookies = function() {
-  if (!storage.cookiesAreEnabled()) {
-    return false;
-  }
-
-  let testCookie = invibes.Uid.generate();
-  storage.setCookie(testCookie, testCookie, 1, null);
-  var valueFromCookie = storage.getCookie(testCookie);
-  storage.setCookie(testCookie, '', -1, null);
-
-  return valueFromCookie && valueFromCookie === testCookie;
-}
-
-let detectTopmostCookieDomain = function () {
-  let testCookie = invibes.Uid.generate();
-  let hostParts = location.hostname.split('.');
-  if (hostParts.length === 1) {
-    return location.hostname;
-  }
-  for (let i = hostParts.length - 1; i >= 0; i--) {
-    let domain = '.' + hostParts.slice(i).join('.');
-    invibes.setCookie(testCookie, testCookie, 1, domain);
-    let val = invibes.getCookie(testCookie);
-    if (val === testCookie) {
-      invibes.setCookie(testCookie, testCookie, -1, domain);
-      return domain;
-    }
-  }
-};
-
-let initDomainId = function (options) {
-  let cookiePersistence = {
-    cname: 'ivbsdid',
-    load: function () {
-      let str = invibes.getCookie(this.cname) || '';
-      try {
-        return JSON.parse(str);
-      } catch (e) {
-      }
-    }
-  };
-
-  options = options || {};
-
-  var persistence = options.persistence || cookiePersistence;
-
-  let state = persistence.load();
-
-  return state ? (state.id || state.tempId) : undefined;
 };
 
 let keywords = (function () {
