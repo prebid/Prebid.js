@@ -1,5 +1,6 @@
 import { GAM_VENDOR } from './videoModule/constants/vendorCodes.js';
 import { adServerDirectory } from './videoModule/vendorDirectory.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 
 /**
  * @constructor
@@ -18,7 +19,7 @@ function GamAdServerProvider(dfpModule_) {
   }
 }
 function gamSubmoduleFactory() {
-  const dfp = $$PREBID_GLOBAL$$.adServers.dfp;
+  const dfp = getGlobal().adServers.dfp;
   const gamProvider = GamAdServerProvider(dfp);
   return gamProvider;
 }
