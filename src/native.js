@@ -567,7 +567,9 @@ export function convertOrtbRequestToProprietaryNative(bidRequests) {
     if (bidRequest.mediaTypes && bidRequest.mediaTypes[NATIVE] && bidRequest.mediaTypes[NATIVE].ortb) {
       bidRequest.mediaTypes[NATIVE] = fromOrtbNative(bidRequest.mediaTypes[NATIVE].ortb);
       bidRequest.nativeParams = bidRequest.mediaTypes[NATIVE];
-      processNativeAdUnitParams(bidRequest.nativeParams);
+      if (bidRequest.nativeParams) {
+        processNativeAdUnitParams(bidRequest.nativeParams);
+      }
     }
   }
   return bidRequests;
