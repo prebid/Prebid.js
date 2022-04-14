@@ -1199,7 +1199,7 @@ export const spec = {
 
     _handleEids(payload, validBidRequests);
     _blockedIabCategoriesValidation(payload, blockedIabCategories);
-    _allowedIabCategoriesValidation(payload, allowedIabCategories);
+
     _handleFlocId(payload, validBidRequests);
     // First Party Data
     const commonFpd = config.getConfig('ortb2') || {};
@@ -1208,6 +1208,12 @@ export const spec = {
     }
     if (commonFpd.user) {
       mergeDeep(payload, {user: commonFpd.user});
+    }
+    if (commonFpd.ext?.prebid?.bidderparams?.[bidderRequest.bidderCode]?.acat) {
+      const acatParams = commonFpd.ext.prebid.bidderparams[bidderRequest.bidderCode].acat;
+      _allowedIabCategoriesValidation(payload, acatParams);
+    } else if (allowedIabCategories.length) {
+      _allowedIabCategoriesValidation(payload, allowedIabCategories);
     }
 
     // Note: Do not move this block up

@@ -3211,7 +3211,33 @@ describe('PubMatic adapter', function () {
         let data = JSON.parse(request.data);
         expect(data.ext.acat).to.exist.and.to.deep.equal(['IAB1', 'IAB2', 'IAB3']);
       });
-	  });
+      it('ortb2.ext.prebid.bidderparams.pubmatic.acat should be passed in request payload', function() {
+        let sandbox = sinon.sandbox.create();
+        sandbox.stub(config, 'getConfig').callsFake(key => {
+          const config = {
+            'ortb2': {
+              ext: {
+                prebid: {
+                  bidderparams: {
+                    pubmatic: {
+                      acat: ['IAB1', 'IAB2', 'IAB1', 'IAB2', 'IAB1', 'IAB2']
+                    }
+                  }
+                }
+              }
+            }
+          };
+          return config[key];
+        });
+        const request = spec.buildRequests(bidRequests, {
+          auctionId: 'new-auction-id',
+          bidderCode: 'pubmatic'
+        });
+        let data = JSON.parse(request.data);
+        expect(data.ext.acat).to.deep.equal(['IAB1', 'IAB2']);
+        sandbox.restore();
+      });
+    });
 
     describe('Request param bcat checking', function() {
       let multipleBidRequests = [
