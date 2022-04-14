@@ -162,8 +162,8 @@ describe('Zeotap ID System', function() {
         ZEOTAP_COOKIE_NAME,
         ENCODED_ZEOTAP_COOKIE
       );
-      setSubmoduleRegistry([zeotapIdPlusSubmodule]);
       init(config);
+      setSubmoduleRegistry([zeotapIdPlusSubmodule]);
       config.setConfig(getConfigMock());
     });
 
