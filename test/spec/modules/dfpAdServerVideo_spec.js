@@ -410,6 +410,59 @@ describe('The DFP video support module', function () {
     expect(customParams).to.have.property('hb_cache_id', 'def');
   });
 
+  it('should keep the url protocol, host, and pathname when using url and params', function () {
+    const url = parse(buildDfpVideoUrl({
+      adUnit: adUnit,
+      bid: bid,
+      url: 'http://video.adserver.example/ads?sz=640x480&iu=/123/aduniturl&impl=s',
+      params: {
+        cust_params: {
+          hb_rand: 'random'
+        }
+      }
+    }));
+
+    expect(url.protocol).to.equal('http:');
+    expect(url.host).to.equal('video.adserver.example');
+    expect(url.pathname).to.equal('/ads');
+  });
+
+  it('should append to the url size param', () => {
+    const url = parse(buildDfpVideoUrl({
+      adUnit: adUnit,
+      bid: bid,
+      url: 'http://video.adserver.example/ads?sz=360x240&iu=/123/aduniturl&impl=s',
+      params: {
+        cust_params: {
+          hb_rand: 'random'
+        }
+      }
+    }));
+
+    const queryObject = utils.parseQS(url.query);
+    expect(queryObject.sz).to.equal('360x240|640x480');
+  });
+
+  it('should append to the existing url cust params', () => {
+    const url = parse(buildDfpVideoUrl({
+      adUnit: adUnit,
+      bid: bid,
+      url: 'http://video.adserver.example/ads?sz=360x240&iu=/123/aduniturl&impl=s&cust_params=existing_key%3Dexisting_value%26other_key%3Dother_value',
+      params: {
+        cust_params: {
+          hb_rand: 'random'
+        }
+      }
+    }));
+
+    const queryObject = utils.parseQS(url.query);
+    const customParams = utils.parseQS('?' + decodeURIComponent(queryObject.cust_params));
+
+    expect(customParams).to.have.property('existing_key', 'existing_value');
+    expect(customParams).to.have.property('other_key', 'other_value');
+    expect(customParams).to.have.property('hb_rand', 'random');
+  });
+
   describe('adpod unit tests', function () {
     let amStub;
     let amGetAdUnitsStub;

@@ -232,6 +232,7 @@ function sendMessage(auctionId, bidWonId, trigger) {
           'adserverTargeting', () => !isEmpty(cache.targeting[bid.adUnit.adUnitCode]) ? stringProperties(cache.targeting[bid.adUnit.adUnitCode]) : undefined,
           'gam', gam => !isEmpty(gam) ? gam : undefined,
           'pbAdSlot',
+          'gpid',
           'pattern'
         ]);
         adUnit.bids = [];
@@ -545,13 +546,19 @@ function subscribeToGamSlots() {
   window.googletag.pubads().addEventListener('slotRenderEnded', event => {
     const isMatchingAdSlot = isAdUnitCodeMatchingSlot(event.slot);
     // loop through auctions and adUnits and mark the info
-    Object.keys(cache.auctions).forEach(auctionId => {
+    // only mark first auction which finds a match
+    let hasMatch = false;
+    Object.keys(cache.auctions).find(auctionId => {
       (Object.keys(cache.auctions[auctionId].bids) || []).forEach(bidId => {
         let bid = cache.auctions[auctionId].bids[bidId];
         // if this slot matches this bids adUnit, add the adUnit info
-        if (isMatchingAdSlot(bid.adUnit.adUnitCode)) {
+        // only mark it if it already has not been marked
+        if (!bid.adUnit.gamRendered && isMatchingAdSlot(bid.adUnit.adUnitCode)) {
           // mark this adUnit as having been rendered by gam
           cache.auctions[auctionId].gamHasRendered[bid.adUnit.adUnitCode] = true;
+
+          // this current auction has an adunit that matched the slot, so mark it as matched so next auciton is skipped
+          hasMatch = true;
 
           bid.adUnit.gam = pick(event, [
             // these come in as `null` from Gpt, which when stringified does not get removed
@@ -562,6 +569,9 @@ function subscribeToGamSlots() {
             'adSlot', () => event.slot.getAdUnitPath(),
             'isSlotEmpty', () => event.isEmpty || undefined
           ]);
+
+          // this lets us know next iteration not to check this bids adunit
+          bid.adUnit.gamRendered = true;
         }
       });
       // Now if all adUnits have gam rendered, send the payload
@@ -574,6 +584,7 @@ function subscribeToGamSlots() {
           sendMessage.call(rubiconAdapter, auctionId, undefined, 'gam')
         }
       }
+      return hasMatch;
     });
   });
 }
@@ -770,7 +781,8 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
                 }
               },
               'pbAdSlot', () => deepAccess(bid, 'ortb2Imp.ext.data.pbadslot'),
-              'pattern', () => deepAccess(bid, 'ortb2Imp.ext.data.aupname')
+              'pattern', () => deepAccess(bid, 'ortb2Imp.ext.data.aupname'),
+              'gpid', () => deepAccess(bid, 'ortb2Imp.ext.gpid')
             ])
           ]);
           return memo;

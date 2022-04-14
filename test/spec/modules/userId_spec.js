@@ -51,6 +51,8 @@ import {akamaiDAPIdSubmodule} from 'modules/akamaiDAPIdSystem.js'
 import {kinessoIdSubmodule} from 'modules/kinessoIdSystem.js'
 import {adqueryIdSubmodule} from 'modules/adqueryIdSystem.js';
 import * as mockGpt from '../integration/faker/googletag.js';
+import 'src/prebid.js';
+import {hook} from '../../../src/hook.js';
 
 let assert = require('chai').assert;
 let expect = require('chai').expect;
@@ -107,10 +109,16 @@ describe('User ID', function () {
   }
 
   before(function () {
+    hook.ready();
     localStorage.removeItem(PBJS_USER_ID_OPTOUT_NAME);
   });
 
   beforeEach(function () {
+    // TODO: this whole suite needs to be redesigned; it is passing by accident
+    // some tests do not pass if consent data is available
+    // (there are functions here with signature `getId(config, storedId)`, but storedId is actually consentData)
+    // also, this file is ginormous; do we really need to test *all* id systems as one?
+    resetConsentData();
     coreStorage.setCookie(CONSENT_LOCAL_STORAGE_NAME, '', EXPIRED_COOKIE_DATE);
   });
 
@@ -2705,17 +2713,17 @@ describe('User ID', function () {
           }).catch(done);
         });
 
-        it('pbjs.getEncryptedEidsForSource should return string if custom function is defined', () => {
+        it('pbjs.getEncryptedEidsForSource should return string if custom function is defined', (done) => {
           const getCustomSignal = () => {
             return '{"keywords":["tech","auto"]}';
           }
-          const expectedString = '"1||{\"keywords\":[\"tech\",\"auto\"]}"';
+          const expectedString = '1||eyJrZXl3b3JkcyI6WyJ0ZWNoIiwiYXV0byJdfQ==';
           const encrypt = false;
           const source = 'pubmatic.com';
           (getGlobal()).getEncryptedEidsForSource(source, encrypt, getCustomSignal).then((result) => {
             expect(result).to.equal(expectedString);
             done();
-          });
+          }).catch(done);
         });
 
         it('pbjs.getUserIdsAsEidBySource', () => {

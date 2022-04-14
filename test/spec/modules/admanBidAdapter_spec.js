@@ -181,7 +181,7 @@ describe('AdmanAdapter', function () {
       expect(userSync[0].type).to.exist;
       expect(userSync[0].url).to.exist;
       expect(userSync[0].type).to.be.equal('image');
-      expect(userSync[0].url).to.be.equal('https://pub.admanmedia.com/image?pbjs=1&coppa=0');
+      expect(userSync[0].url).to.be.equal('https://sync.admanmedia.com/image?pbjs=1&coppa=0');
     });
   });
 });

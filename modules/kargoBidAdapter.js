@@ -87,7 +87,7 @@ export const spec = {
         creativeId: adUnit.id,
         dealId: adUnit.targetingCustom,
         netRevenue: true,
-        currency: (adUnit.currency && adUnit.currency) || bidRequest.currency,
+        currency: adUnit.currency || bidRequest.currency,
         meta: meta
       });
     }
