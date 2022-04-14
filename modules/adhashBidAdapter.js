@@ -63,11 +63,21 @@ function brandSafety(badWords, maxScore) {
     const content = window.top.document.body.innerText.toLowerCase();
     const words = content.trim().split(/\s+/).length;
     for (const [word, rule, points] of badWords) {
-      if (rule === 'full' && new RegExp('\\b' + rot13(word) + '\\b', 'i').test(content)) {
-        const occurances = content.match(new RegExp('\\b' + rot13(word) + '\\b', 'g')).length;
+      var decodedWord = rot13(word);
+      if (rule === 'full' && new RegExp('\\b' + decodedWord + '\\b', 'i').test(content)) {
+        const occurances = content.match(new RegExp('\\b' + decodedWord + '\\b', 'g')).length;
         score += scoreCalculator(points, occurances);
       } else if (rule === 'partial' && content.indexOf(rot13(word.toLowerCase())) > -1) {
-        const occurances = content.match(new RegExp(rot13(word), 'g')).length;
+        const occurances = content.match(new RegExp(decodedWord, 'g')).length;
+        score += scoreCalculator(points, occurances);
+      } else if (rule === 'starts' && new RegExp('\\b' + decodedWord, 'i').test(content)) {
+        const occurances = content.match(new RegExp('\\b' + decodedWord, 'g')).length;
+        score += scoreCalculator(points, occurances);
+      } else if (rule === 'ends' && new RegExp(decodedWord + '\\b', 'i').test(content)) {
+        const occurances = content.match(new RegExp(decodedWord + '\\b', 'g')).length;
+        score += scoreCalculator(points, occurances);
+      } else if (rule === 'regexp' && new RegExp(decodedWord, 'i').test(content)) {
+        const occurances = content.match(new RegExp(decodedWord, 'g')).length;
         score += scoreCalculator(points, occurances);
       }
     }

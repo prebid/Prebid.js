@@ -130,6 +130,9 @@ describe('adhashBidAdapter', function () {
           ['onqjbeq1', 'full', 1],
           ['onqjbeq2', 'partial', 1],
           ['tbbqjbeq', 'full', -1],
+          ['fgnegf', 'starts', 1],
+          ['raqf', 'ends', 1],
+          ['kkk[no]lll', 'regexp', 1],
         ],
         maxScore: 2
       }
@@ -163,6 +166,27 @@ describe('adhashBidAdapter', function () {
     it('should return empty array when there are bad words (partial)', function () {
       bodyStub = sinon.stub(window.top.document.body, 'innerText').get(function() {
         return 'example text partialBadWord2 badword2 example BadWord2text' + ' word'.repeat(494);
+      });
+      expect(spec.interpretResponse(serverResponse, request).length).to.equal(0);
+    });
+
+    it('should return empty array when there are bad words (starts)', function () {
+      bodyStub = sinon.stub(window.top.document.body, 'innerText').get(function() {
+        return 'example text startsWith starts text startsAgain' + ' word'.repeat(494);
+      });
+      expect(spec.interpretResponse(serverResponse, request).length).to.equal(0);
+    });
+
+    it('should return empty array when there are bad words (ends)', function () {
+      bodyStub = sinon.stub(window.top.document.body, 'innerText').get(function() {
+        return 'example text wordEnds ends text anotherends' + ' word'.repeat(494);
+      });
+      expect(spec.interpretResponse(serverResponse, request).length).to.equal(0);
+    });
+
+    it('should return empty array when there are bad words (regexp)', function () {
+      bodyStub = sinon.stub(window.top.document.body, 'innerText').get(function() {
+        return 'example text xxxayyy zzxxxAyyyzz text xxxbyyy' + ' word'.repeat(494);
       });
       expect(spec.interpretResponse(serverResponse, request).length).to.equal(0);
     });
