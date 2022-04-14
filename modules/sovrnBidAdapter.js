@@ -197,30 +197,30 @@ export const spec = {
 
     try {
       return seatbid
-      .filter(seat => seat)
-      .map(seat => seat.bid.map(sovrnBid => {
-        const bid = {
-          requestId: sovrnBid.impid,
-          cpm: parseFloat(sovrnBid.price),
-          width: parseInt(sovrnBid.w),
-          height: parseInt(sovrnBid.h),
-          creativeId: sovrnBid.crid || sovrnBid.id,
-          dealId: sovrnBid.dealid || null,
-          currency: 'USD',
-          netRevenue: true,
-          mediaType: sovrnBid.nurl ? BANNER : VIDEO,
-          ttl: sovrnBid.ext?.ttl || 90,
-          meta: { advertiserDomains: sovrnBid && sovrnBid.adomain ? sovrnBid.adomain : [] }
-        }
+        .filter(seat => seat)
+        .map(seat => seat.bid.map(sovrnBid => {
+          const bid = {
+            requestId: sovrnBid.impid,
+            cpm: parseFloat(sovrnBid.price),
+            width: parseInt(sovrnBid.w),
+            height: parseInt(sovrnBid.h),
+            creativeId: sovrnBid.crid || sovrnBid.id,
+            dealId: sovrnBid.dealid || null,
+            currency: 'USD',
+            netRevenue: true,
+            mediaType: sovrnBid.nurl ? BANNER : VIDEO,
+            ttl: sovrnBid.ext?.ttl || 90,
+            meta: { advertiserDomains: sovrnBid && sovrnBid.adomain ? sovrnBid.adomain : [] }
+          }
 
-        if (sovrnBid.nurl) {
-          bid.ad = decodeURIComponent(`${sovrnBid.adm}<img src="${sovrnBid.nurl}">`)
-        } else {
-          bid.vastXml = decodeURIComponent(sovrnBid.adm)
-        }
+          if (sovrnBid.nurl) {
+            bid.ad = decodeURIComponent(`${sovrnBid.adm}<img src="${sovrnBid.nurl}">`)
+          } else {
+            bid.vastXml = decodeURIComponent(sovrnBid.adm)
+          }
 
-        return bid
-      }))
+          return bid
+        }))
         .flat()
     } catch (e) {
       logError('Could not interpret bidresponse, error details:', e)
