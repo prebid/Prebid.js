@@ -10,6 +10,7 @@ import { videoCoreFactory } from './coreVideo.js';
 import { coreAdServerFactory } from './adServer.js';
 import { videoImpressionVerifierFactory } from './videoImpressionVerifier.js';
 import { mergeDeep } from '../../src/utils.js';
+import { getGlobal } from '../../src/prebidGlobal.js';
 
 /**
  * This module adds User Video support to prebid.js
@@ -159,7 +160,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
 export function pbVideoFactory() {
   const videoCore = videoCoreFactory();
   const adServerCore = coreAdServerFactory();
-  const pbVideo = PbVideo(videoCore, config.getConfig, $$PREBID_GLOBAL$$, events, allVideoEvents, adServerCore, videoImpressionVerifierFactory);
+  const pbVideo = PbVideo(videoCore, config.getConfig, getGlobal(), events, allVideoEvents, adServerCore, videoImpressionVerifierFactory);
   pbVideo.init();
   return pbVideo;
 }

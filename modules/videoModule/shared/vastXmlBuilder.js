@@ -1,6 +1,7 @@
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 export function buildVastWrapper(adId, adTagUrl, impressionUrl, impressionId, errorUrl) {
-  let wrapperBody = getAdSystemNode('Prebid org', $$PREBID_GLOBAL$$.version);
+  let wrapperBody = getAdSystemNode('Prebid org', getGlobal().version);
 
   if (adTagUrl) {
     wrapperBody += getAdTagUriNode(adTagUrl);
