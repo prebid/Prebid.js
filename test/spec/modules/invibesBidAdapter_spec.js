@@ -527,7 +527,7 @@ describe('invibesBidAdapter:', function () {
         }
       };
       let request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.oi).to.equal(1);
+      expect(request.data.oi).to.equal(0);
     });
 
     it('should send oi = 2 when consent was approved on tcf v2', function () {
@@ -1185,22 +1185,29 @@ describe('invibesBidAdapter:', function () {
 
     it('returns an iframe with params if enabled', function () {
       top.window.invibes.optIn = 1;
-      global.document.cookie = 'ivvbks=17639.0,1,2';
       let response = spec.getUserSyncs({iframeEnabled: true});
       expect(response.type).to.equal('iframe');
       expect(response.url).to.include(SYNC_ENDPOINT);
       expect(response.url).to.include('optIn');
-      expect(response.url).to.include('ivvbks');
     });
 
     it('returns an iframe with params including if enabled', function () {
       top.window.invibes.optIn = 1;
-      global.document.cookie = 'ivvbks=17639.0,1,2;ivbsdid={"id":"dvdjkams6nkq","cr":' + Date.now() + ',"hc":0}';
+      global.document.cookie = 'ivbsdid={"id":"dvdjkams6nkq","cr":' + Date.now() + ',"hc":0}';
       let response = spec.getUserSyncs({iframeEnabled: true});
       expect(response.type).to.equal('iframe');
       expect(response.url).to.include(SYNC_ENDPOINT);
       expect(response.url).to.include('optIn');
-      expect(response.url).to.include('ivvbks');
+      expect(response.url).to.include('ivbsdid');
+    });
+
+    it('returns an iframe with params including if enabled read from LocalStorage', function () {
+      top.window.invibes.optIn = 1;
+      localStorage.ivbsdid = 'dvdjkams6nkq';
+      let response = spec.getUserSyncs({iframeEnabled: true});
+      expect(response.type).to.equal('iframe');
+      expect(response.url).to.include(SYNC_ENDPOINT);
+      expect(response.url).to.include('optIn');
       expect(response.url).to.include('ivbsdid');
     });
 

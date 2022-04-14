@@ -132,14 +132,14 @@ function buildRequest(bidRequests, bidderRequest) {
   };
 
   let lid = readFromLocalStorage('ivbsdid');
-  if(!lid){ 
+  if (!lid) {
     let str = invibes.getCookie('ivbsdid');
-    if(str){
-      try{
+    if (str) {
+      try {
         let cookieLid = JSON.parse(str);
         lid = cookieLid.id ? cookieLid.id : cookieLid;
-       }catch(e){
-       }
+      } catch (e) {
+      }
     }
   }
   if (lid) {
@@ -182,16 +182,14 @@ function handleResponse(responseObj, bidRequests) {
   responseObj = responseObj.body || responseObj;
   responseObj = responseObj.videoAdContentResult || responseObj;
 
-  if(responseObj.ShouldSetLId && responseObj.LId){
-
-    if((!invibes.optIn || !invibes.purposes[0]) && responseObj.PrivacyPolicyRule && responseObj.TcModel && responseObj.TcModel.PurposeConsents ){
+  if (responseObj.ShouldSetLId && responseObj.LId) {
+    if ((!invibes.optIn || !invibes.purposes[0]) && responseObj.PrivacyPolicyRule && responseObj.TcModel && responseObj.TcModel.PurposeConsents) {
       invibes.optIn = responseObj.PrivacyPolicyRule;
       invibes.purposes = responseObj.TcModel.PurposeConsents;
     }
 
     setInLocalStorage('ivbsdid', responseObj.LId);
   }
-
 
   if (typeof invibes.bidResponse === 'object') {
     if (responseObj.MultipositionEnabled === true) {
@@ -432,7 +430,7 @@ function renderCreative(bidModel) {
     .replace('creativeHtml', bidModel.CreativeHtml);
 }
 
-function readFromLocalStorage(key){
+function readFromLocalStorage(key) {
   if (invibes.GdprModuleInstalled && (!invibes.optIn || !invibes.purposes[0])) {
     return;
   }
@@ -440,14 +438,13 @@ function readFromLocalStorage(key){
   return storage.getDataFromLocalStorage(key) || '';
 }
 
-function setInLocalStorage(key, value){
+function setInLocalStorage(key, value) {
   if (!invibes.optIn || !invibes.purposes[0]) {
     return;
   }
 
   storage.setDataInLocalStorage(key, value);
 }
-
 
 function getCappedCampaignsAsString() {
   const key = 'ivvcap';
@@ -509,7 +506,18 @@ function buildSyncUrl() {
   syncUrl += '?visitId=' + invibes.visitId;
   syncUrl += '&optIn=' + invibes.optIn;
 
-  const did = readFromLocalStorage('ivbsdid');
+  let did = readFromLocalStorage('ivbsdid');
+  if (!did) {
+    let str = invibes.getCookie('ivbsdid');
+    if (str) {
+      try {
+        let cookieLid = JSON.parse(str);
+        did = cookieLid.id ? cookieLid.id : cookieLid;
+      } catch (e) {
+      }
+    }
+  }
+
   if (did) {
     syncUrl += '&ivbsdid=' + encodeURIComponent(did);
   }
