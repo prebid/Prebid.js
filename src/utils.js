@@ -1355,3 +1355,12 @@ export function cyrb53Hash(str, seed = 0) {
   h2 = imul(h2 ^ (h2 >>> 16), 2246822507) ^ imul(h1 ^ (h1 >>> 13), 3266489909);
   return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString();
 }
+
+/**
+ * returns a window object, which holds the provided document or null
+ * @param {Document} doc
+ * @returns {Window}
+ */
+export function getWindowFromDocument(doc) {
+  return (doc) ? doc.defaultView : null;
+}
