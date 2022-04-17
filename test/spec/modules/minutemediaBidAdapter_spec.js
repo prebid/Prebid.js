@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/riseBidAdapter.js';
+import { spec } from 'modules/minutemediaBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
 import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
@@ -10,7 +10,7 @@ const TEST_ENDPOINT = 'https://hb.minutemedia-prebid.com/hb-multi-mm-test';
 const TTL = 360;
 /* eslint no-console: ["error", { allow: ["log", "warn", "error"] }] */
 
-describe('riseAdapter', function () {
+describe('minutemediaAdapter', function () {
   const adapter = newBidder(spec);
 
   describe('inherited functions', function () {
@@ -97,7 +97,7 @@ describe('riseAdapter', function () {
     ];
 
     const bidderRequest = {
-      bidderCode: 'rise',
+      bidderCode: 'minutemedia',
     }
     const placementId = '12345678';
 
