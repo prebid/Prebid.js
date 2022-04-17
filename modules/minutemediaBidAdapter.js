@@ -92,22 +92,20 @@ export const spec = {
   getUserSyncs: function (syncOptions, serverResponses) {
     const syncs = [];
     for (const response of serverResponses) {
-      if (response.body && response.body.params) {
-        if (response.body.params.userSyncURL) {
-          syncs.push({
-            type: 'iframe',
-            url: response.body.params.userSyncURL
-          });
-        }
-        if (response.body.params.userSyncPixels && isArray(response.body.params.userSyncPixels)) {
-          const pixels = response.body.params.userSyncPixels.map(pixel => {
-            return {
-              type: 'image',
-              url: pixel
-            }
-          })
-          syncs.push(...pixels)
-        }
+      if (syncOptions.iframeEnabled && response.body.params.userSyncURL) {
+        syncs.push({
+          type: 'iframe',
+          url: response.body.params.userSyncURL
+        });
+      }
+      if (syncOptions.pixelEnabled && isArray(response.body.params.userSyncPixels)) {
+        const pixels = response.body.params.userSyncPixels.map(pixel => {
+          return {
+            type: 'image',
+            url: pixel
+          }
+        })
+        syncs.push(...pixels)
       }
     }
     return syncs;
