@@ -307,15 +307,15 @@ describe('minutemediaAdapter', function () {
         adomain: ['abc.com'],
         mediaType: VIDEO
       },
-        {
-          cpm: 12.5,
-          ad: '"<img src=\"https://...\"/>"',
-          width: 300,
-          height: 250,
-          requestId: '21e12606d47ba7',
-          adomain: ['abc.com'],
-          mediaType: BANNER
-        }]
+      {
+        cpm: 12.5,
+        ad: '"<img src=\"https://...\"/>"',
+        width: 300,
+        height: 250,
+        requestId: '21e12606d47ba7',
+        adomain: ['abc.com'],
+        mediaType: BANNER
+      }]
     };
 
     const expectedVideoResponse = {
