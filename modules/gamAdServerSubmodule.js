@@ -1,5 +1,5 @@
 import { GAM_VENDOR } from './videoModule/constants/vendorCodes.js';
-import { adServerDirectory } from './videoModule/vendorDirectory.js';
+import { adServerDirectory } from './adServerModule/vendorDirectory.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 
 /**
