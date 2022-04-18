@@ -1024,13 +1024,12 @@ describe('validate bid response: ', function () {
     expect(logErrorSpy.callCount).to.equal(0);
   });
 
-  describe(' Check for unknownBiddersList ', function() {
+  describe(' Check for alternateBiddersList ', function() {
     let bidRequest;
     let bids1;
     let logWarnSpy;
     let bidderSettingStub, aliasRegistryStub;
     let aliasRegistry;
-    let adapterManagerStub;
 
     beforeEach(function () {
       bidRequest = {
@@ -1046,7 +1045,7 @@ describe('validate bid response: ', function () {
       bids1 = Object.assign({},
         bids[0],
         {
-          bidderCode: 'unknownBidder',
+          bidderCode: 'validAlternateBidder',
           adapterCode: 'knownAdapter1'
         }
       );
@@ -1055,20 +1054,16 @@ describe('validate bid response: ', function () {
       aliasRegistry = {};
       aliasRegistryStub = sinon.stub(adapterManager, 'aliasRegistry');
       aliasRegistryStub.get(() => aliasRegistry);
-      adapterManagerStub = sinon.stub(adapterManager, 'getAdapterCode');
-      adapterManagerStub.returns('knownAdapter1')
     });
 
     afterEach(function () {
       logWarnSpy.restore();
       bidderSettingStub.restore();
       aliasRegistryStub.restore();
-      adapterManagerStub.restore();
     });
 
-    it('should log warning when bidder is unknown and allowUknownBidderCode flag is false', function () {
+    it('should log warning when bidder is unknown and allowAlternateBidderCodes flag is false', function () {
       bidderSettingStub.returns(false);
-      adapterManagerStub.withArgs('unknownBidder').returns(null)
 
       const bidder = newBidder(spec);
       spec.interpretResponse.returns(bids1);
@@ -1078,10 +1073,21 @@ describe('validate bid response: ', function () {
       expect(logWarnSpy.callCount).to.equal(1);
     });
 
-    it('should log warning when the particular bidder is not specified in unknowBidderCodes and allowUknownBidderCode flag is true', function () {
-      bidderSettingStub.withArgs(CODE, 'allowUnknownBidderCodes').returns(true);
-      bidderSettingStub.withArgs(CODE, 'allowedUnknownBidderCodes').returns(['unknownBidder02']);
-      adapterManagerStub.withArgs('unknownBidder').returns(null)
+    it('should accept the bid, when allowAlternateBidderCodes flag is undefined (default should be true)', function () {
+      bidderSettingStub.returns(undefined);
+
+      const bidder = newBidder(spec);
+      spec.interpretResponse.returns(bids1);
+      bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+
+      expect(addBidResponseStub.calledOnce).to.equal(true);
+      expect(logWarnSpy.callCount).to.equal(0);
+      expect(logErrorSpy.callCount).to.equal(0);
+    });
+
+    it('should log warning when the particular bidder is not specified in allowedAlternateBidderCodes and allowAlternateBidderCodes flag is true', function () {
+      bidderSettingStub.withArgs(CODE, 'allowAlternateBidderCodes').returns(true);
+      bidderSettingStub.withArgs(CODE, 'allowedAlternateBidderCodes').returns(['invalidAlternateBidder02']);
 
       const bidder = newBidder(spec);
       spec.interpretResponse.returns(bids1);
@@ -1091,9 +1097,9 @@ describe('validate bid response: ', function () {
       expect(logWarnSpy.callCount).to.equal(1);
     });
 
-    it('should accept the bid, when unknowBidderCodes is empty and allowUknownBidderCode flag is true', function () {
-      bidderSettingStub.withArgs(CODE, 'allowUnknownBidderCodes').returns(true);
-      bidderSettingStub.withArgs(CODE, 'allowedUnknownBidderCodes').returns();
+    it('should accept the bid, when allowedAlternateBidderCodes is empty and allowAlternateBidderCodes flag is true', function () {
+      bidderSettingStub.withArgs(CODE, 'allowAlternateBidderCodes').returns(true);
+      bidderSettingStub.withArgs(CODE, 'allowedAlternateBidderCodes').returns();
 
       const bidder = newBidder(spec);
       spec.interpretResponse.returns(bids1);
@@ -1104,9 +1110,9 @@ describe('validate bid response: ', function () {
       expect(logErrorSpy.callCount).to.equal(0);
     });
 
-    it('should accept the bid, when unknowBidderCodes is empty and allowUknownBidderCode flag is true', function () {
-      bidderSettingStub.withArgs(CODE, 'allowUnknownBidderCodes').returns(true);
-      bidderSettingStub.withArgs(CODE, 'allowedUnknownBidderCodes').returns(['*']);
+    it('should accept the bid, when allowedAlternateBidderCodes is marked as * and allowAlternateBidderCodes flag is true', function () {
+      bidderSettingStub.withArgs(CODE, 'allowAlternateBidderCodes').returns(true);
+      bidderSettingStub.withArgs(CODE, 'allowedAlternateBidderCodes').returns(['*']);
 
       const bidder = newBidder(spec);
       spec.interpretResponse.returns(bids1);
@@ -1117,9 +1123,9 @@ describe('validate bid response: ', function () {
       expect(logErrorSpy.callCount).to.equal(0);
     });
 
-    it('should accept the bid, when unknowBidderCodes has bidder name and allowUknownBidderCode flag is true', function () {
-      bidderSettingStub.withArgs(CODE, 'allowUnknownBidderCodes').returns(true);
-      bidderSettingStub.withArgs(CODE, 'allowedUnknownBidderCodes').returns(['unknownBidder']);
+    it('should accept the bid, when allowedAlternateBidderCodes contains bidder name and allowAlternateBidderCodes flag is true', function () {
+      bidderSettingStub.withArgs(CODE, 'allowAlternateBidderCodes').returns(true);
+      bidderSettingStub.withArgs(CODE, 'allowedAlternateBidderCodes').returns(['validAlternateBidder']);
 
       const bidder = newBidder(spec);
       spec.interpretResponse.returns(bids1);
@@ -1130,23 +1136,9 @@ describe('validate bid response: ', function () {
       expect(logErrorSpy.callCount).to.equal(0);
     });
 
-    it('should accept the bid, when bidder is an alias of the adapter', function () {
-      bidderSettingStub.withArgs(CODE, 'allowUnknownBidderCodes').returns(false);
-      aliasRegistry = {'unknownBidder': 'knownAdapter1'};
-
-      const bidder = newBidder(spec);
-      spec.interpretResponse.returns(bids1);
-      bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
-
-      expect(addBidResponseStub.calledOnce).to.equal(true);
-      expect(logWarnSpy.callCount).to.equal(0);
-      expect(logErrorSpy.callCount).to.equal(0);
-    });
-
-    it('should not accept the bid, when bidder is an alias of the other adapter and allowUnknownBidderCodes is false', function () {
-      bidderSettingStub.withArgs(CODE, 'allowUnknownBidderCodes').returns(false);
-      aliasRegistry = {'unknownBidder': 'unknownAdapter1'};
-      adapterManagerStub.withArgs('unknownBidder').returns('unknownAdapter1')
+    it('should not accept the bid, when bidder is an alias but bidderSetting is missing for the bidder. It should fallback to standard setting and reject the bid', function () {
+      bidderSettingStub.withArgs(CODE, 'allowAlternateBidderCodes').returns(false);
+      aliasRegistry = {'validAlternateBidder': CODE};
 
       const bidder = newBidder(spec);
       spec.interpretResponse.returns(bids1);
@@ -1156,11 +1148,8 @@ describe('validate bid response: ', function () {
       expect(logWarnSpy.callCount).to.equal(1);
     });
 
-    it('should not accept the bid, when bidder is an alias of the other adapter and allowUnknownBidderCodes is true', function () {
-      bidderSettingStub.withArgs(CODE, 'allowUnknownBidderCodes').returns(true);
-      bidderSettingStub.withArgs(CODE, 'allowedUnknownBidderCodes').returns(['*']);
-      aliasRegistry = {'unknownBidder': 'unknownAdapter1'};
-      adapterManagerStub.withArgs('unknownBidder').returns('unknownAdapter1')
+    it('should not accept the bid, when bidderSetting is missing for the bidder. It should fallback to standard setting and reject the bid', function () {
+      bidderSettingStub.withArgs(CODE, 'allowAlternateBidderCodes').returns(false);
 
       const bidder = newBidder(spec);
       spec.interpretResponse.returns(bids1);
@@ -1168,19 +1157,6 @@ describe('validate bid response: ', function () {
 
       expect(addBidResponseStub.calledOnce).to.equal(false);
       expect(logWarnSpy.callCount).to.equal(1);
-    });
-
-    it('should accept the bid, when bidder is an nested alias of the adapter and allowUnknownBidderCodes is false', function () {
-      bidderSettingStub.withArgs(CODE, 'allowUnknownBidderCodes').returns(false);
-      aliasRegistry = {'unknownBidder': 'aliasedBidder', 'aliasedBidder': 'knownAdapter1'};
-
-      const bidder = newBidder(spec);
-      spec.interpretResponse.returns(bids1);
-      bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
-
-      expect(addBidResponseStub.calledOnce).to.equal(true);
-      expect(logWarnSpy.callCount).to.equal(0);
-      expect(logErrorSpy.callCount).to.equal(0);
     });
   })
 });

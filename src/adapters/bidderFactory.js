@@ -236,9 +236,9 @@ export function newBidder(spec) {
         onBid: (bid) => {
           const bidRequest = bidRequestMap[bid.requestId];
           if (bidRequest) {
-            bid.adapterCode = adapterManager.getAdapterCode(bidRequest.bidder);
-            if (isUnknownBidder(bid.bidderCode, bidRequest.bidder, bid.adapterCode)) {
-              logWarn(`${bid.bidderCode} is not a registered partner or known bidder of ${bidRequest.bidder}, hence continuing without bid. If you wish to support this bidder, please mark allowUnknownBidderCodes as true in bidderSettings.`);
+            bid.adapterCode = bidRequest.bidder;
+            if (isInvalidAlternateBidder(bid.bidderCode, bidRequest.bidder)) {
+              logWarn(`${bid.bidderCode} is not a registered partner or known bidder of ${bidRequest.bidder}, hence continuing without bid. If you wish to support this bidder, please mark allowAlternateBidderCodes as true in bidderSettings.`);
               return;
             }
             // creating a copy of original values as cpm and currency are modified later
@@ -256,11 +256,11 @@ export function newBidder(spec) {
     }
   });
 
-  function isUnknownBidder(responseBidder, requestBidder, adapterCode) {
-    let allowUknownBidderCodes = !!bidderSettings.get(requestBidder, 'allowUnknownBidderCodes', adapterCode || null);
-    let unknownBiddersList = bidderSettings.get(requestBidder, 'allowedUnknownBidderCodes', adapterCode || null);
-    if (!!responseBidder && adapterManager.getAdapterCode(responseBidder) !== adapterCode && !!requestBidder && requestBidder !== responseBidder) {
-      if (adapterManager.aliasRegistry[responseBidder] || !allowUknownBidderCodes || (isArray(unknownBiddersList) && (unknownBiddersList[0] !== '*' && !unknownBiddersList.includes(responseBidder)))) {
+  function isInvalidAlternateBidder(responseBidder, requestBidder) {
+    let allowAlternateBidderCodes = bidderSettings.get(requestBidder, 'allowAlternateBidderCodes');
+    let alternateBiddersList = bidderSettings.get(requestBidder, 'allowedAlternateBidderCodes');
+    if (!!responseBidder && !!requestBidder && requestBidder !== responseBidder) {
+      if ((allowAlternateBidderCodes !== undefined && !allowAlternateBidderCodes) || (isArray(alternateBiddersList) && (alternateBiddersList[0] !== '*' && !alternateBiddersList.includes(responseBidder)))) {
         return true;
       }
     }
