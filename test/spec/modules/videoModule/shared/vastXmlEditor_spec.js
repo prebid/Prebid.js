@@ -1,4 +1,4 @@
-import { vastXmlEditorFactory } from 'modules/videoModule/shared/vastXmlEditor.js';
+import { vastXmlEditorFactory } from 'modules/shared/vastXmlEditor.js';
 import { expect } from 'chai';
 
 describe('Vast XML Editor', function () {

@@ -7,7 +7,7 @@ import {
 } from './constants/events.js'
 import CONSTANTS from '../../src/constants.json';
 import { videoCoreFactory } from './coreVideo.js';
-import { coreAdServerFactory } from './adServer.js';
+import { coreAdServerFactory } from '../adServerModule/adServer.js';
 import { videoImpressionVerifierFactory } from './videoImpressionVerifier.js';
 import { mergeDeep } from '../../src/utils.js';
 import { getGlobal } from '../../src/prebidGlobal.js';
