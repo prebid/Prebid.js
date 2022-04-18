@@ -70,11 +70,12 @@ export function setBidderRtb (auctionDetails, customModuleConfig) {
   const moduleConfig = getModuleConfig(customModuleConfig)
   const acBidders = deepAccess(moduleConfig, 'params.acBidders')
   const maxSegs = deepAccess(moduleConfig, 'params.maxSegs')
+  const transformationConfigs = deepAccess(moduleConfig, 'params.transformations') || []
   const segmentData = getSegments(maxSegs)
 
   acBidders.forEach(function (bidder) {
     const currConfig = bidderConfig[bidder] || {}
-    const nextConfig = mergeOrtbConfig(currConfig, segmentData)
+    const nextConfig = updateOrtbConfig(currConfig, segmentData.ac, transformationConfigs) // ORTB2 uses the `ac` segment IDs
 
     config.setBidderConfig({
       bidders: [bidder],
@@ -84,23 +85,33 @@ export function setBidderRtb (auctionDetails, customModuleConfig) {
 }
 
 /**
- * Merges segments into existing bidder config
+ * Updates `user.data` object in existing bidder config with Permutive segments
  * @param {Object} currConfig - Current bidder config
- * @param {Object} segmentData - Segment data
+ * @param {Object[]} transformationConfigs - array of objects with `id` and `config` properties, used to determine
+ *                                           the transformations on user data to include the ORTB2 object
+ * @param {string[]} segmentIDs - Permutive segment IDs
  * @return {Object} Merged ortb2 object
  */
-function mergeOrtbConfig (currConfig, segmentData) {
-  const segment = segmentData.ac.map(seg => {
-    return { id: seg }
-  })
+function updateOrtbConfig (currConfig, segmentIDs, transformationConfigs) {
   const name = 'permutive.com'
-  const ortbConfig = mergeDeep({}, currConfig)
-  const currSegments = deepAccess(ortbConfig, 'ortb2.user.data') || []
-  const userSegment = currSegments
-    .filter(el => el.name !== name)
-    .concat({ name, segment })
 
-  deepSetValue(ortbConfig, 'ortb2.user.data', userSegment)
+  const permutiveUserData = {
+    name,
+    segment: segmentIDs.map(segmentId => ({ id: segmentId })),
+  }
+
+  const transformedUserData = transformationConfigs
+    .filter(({ id }) => ortb2UserDataTransformations.hasOwnProperty(id))
+    .map(({ id, config }) => ortb2UserDataTransformations[id](permutiveUserData, config))
+
+  const ortbConfig = mergeDeep({}, currConfig)
+  const currentUserData = deepAccess(ortbConfig, 'ortb2.user.data') || []
+
+  const updatedUserData = currentUserData
+    .filter(el => el.name !== name)
+    .concat(permutiveUserData, transformedUserData)
+
+  deepSetValue(ortbConfig, 'ortb2.user.data', updatedUserData)
 
   return ortbConfig
 }
@@ -236,11 +247,11 @@ export function getSegments (maxSegs) {
     ac: [..._pcrprs, ..._ppam, ...legacySegs],
     rubicon: readSegments('_prubicons'),
     appnexus: readSegments('_papns'),
-    gam: readSegments('_pdfps')
+    gam: readSegments('_pdfps'),
   }
 
-  for (const type in segments) {
-    segments[type] = segments[type].slice(0, maxSegs)
+  for (const bidder in segments) {
+    segments[bidder] = segments[bidder].slice(0, maxSegs)
   }
 
   return segments
@@ -258,6 +269,34 @@ function readSegments (key) {
   } catch (e) {
     return []
   }
+}
+
+const unknownIabSegmentId = '_unknown_'
+
+/**
+ * Functions to apply to ORT2B2 `user.data` objects.
+ * Each function should return an a new object containing a `name`, (optional) `ext` and `segment`
+ * properties. The result of the each transformation defined here will be appended to the array
+ * under `user.data` in the bid request.
+ */
+const ortb2UserDataTransformations = {
+  iab: (userData, config) => ({
+    name: userData.name,
+    ext: { segtax: config.segtax },
+    segment: (userData.segment || [])
+      .map(segment => ({ id: iabSegmentId(segment.id, config.iabIds) }))
+      .filter(segment => segment.id !== unknownIabSegmentId)
+  })
+}
+
+/**
+ * Transform a Permutive segment ID into an IAB audience taxonomy ID.
+ * @param {string} permutiveSegmentId
+ * @param {Object} iabIds object of mappings between Permutive and IAB segment IDs (key: permutive ID, value: IAB ID)
+ * @return {string} IAB audience taxonomy ID associated with the Permutive segment ID
+ */
+function iabSegmentId(permutiveSegmentId, iabIds) {
+  return iabIds[permutiveSegmentId] || unknownIabSegmentId
 }
 
 /** @type {RtdSubmodule} */

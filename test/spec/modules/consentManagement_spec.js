@@ -53,6 +53,11 @@ describe('consentManagement', function () {
         expect(consentMetadata).to.be.undefined;
         sinon.assert.calledOnce(utils.logWarn);
       })
+
+      it('should immediately look up consent data', () => {
+        setConsentConfig({gdpr: {cmpApi: 'invalid'}});
+        expect(gdprDataHandler.ready).to.be.true;
+      })
     });
 
     describe('valid setConsentConfig value', function () {
@@ -751,6 +756,11 @@ describe('consentManagement', function () {
           });
 
           setConsentConfig(goodConfigWithAllowAuction);
+
+          sinon.assert.calledOnce(utils.logWarn);
+          sinon.assert.notCalled(utils.logError);
+
+          [utils.logWarn, utils.logError].forEach((stub) => stub.reset());
 
           requestBidsHook(() => {
             didHookReturn = true;
