@@ -84,11 +84,15 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
 
   function enrichAdUnit(adUnit) {
     const videoMediaType = adUnit.mediaTypes.video;
-    if (!videoMediaType) {
+    const videoConfig = adUnit.video;
+    if (!videoMediaType || !videoConfig) {
       return;
     }
 
-    const oRtbParams = videoCore.getOrtbParams(adUnit.video.divId);
+    const oRtbParams = videoCore.getOrtbParams(videoConfig.divId);
+    if (!oRtbParams) {
+      return;
+    }
 
     adUnit.mediaTypes.video = Object.assign({}, videoMediaType, oRtbParams.video);
     let ortb2 = { ortb2: mergeDeep({}, getConfig('ortb2'), { site: oRtbParams.content }) };
