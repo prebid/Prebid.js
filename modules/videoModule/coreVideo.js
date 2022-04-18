@@ -1,5 +1,5 @@
 import { videoVendorDirectory } from './vendorDirectory.js';
-import { ParentModule, SubmoduleBuilder } from './shared/parentModule.js';
+import { ParentModule, SubmoduleBuilder } from '../shared/parentModule.js';
 
 // define, ortb object,  events
 

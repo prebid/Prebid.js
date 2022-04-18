@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { AdServerCore } from 'modules/videoModule/adServer.js';
+import { AdServerCore } from 'modules/adServerModule/adServer.js';
 
 describe('Ad Server Core', function () {
   const parentModuleMock = {

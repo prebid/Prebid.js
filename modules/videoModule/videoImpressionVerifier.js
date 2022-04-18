@@ -1,5 +1,5 @@
 import { find } from '../../src/polyfill.js';
-import { vastXmlEditorFactory } from './shared/vastXmlEditor.js';
+import { vastXmlEditorFactory } from '../shared/vastXmlEditor.js';
 
 export const PB_PREFIX = 'pb_';
 export const UUID_MARKER = PB_PREFIX + 'uuid';

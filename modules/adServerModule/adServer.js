@@ -1,5 +1,5 @@
 import { adServerDirectory } from './vendorDirectory.js';
-import { ParentModule, SubmoduleBuilder } from './shared/parentModule.js';
+import { ParentModule, SubmoduleBuilder } from '../shared/parentModule.js';
 
 /**
  * Ad Server Provider interface. All submodules of Ad Server Core must adhere to this.
