@@ -136,9 +136,9 @@ export function baseImpressionVerifier(bidTracker_) {
 
   function trackBid(bid) {
     let { adId, adUnitCode, requestId, auctionId } = bid;
-    const uuid = PB_PREFIX + generateId(12);
-    bidTracker.store(uuid, { adId, adUnitCode, requestId, auctionId });
-    return uuid;
+    const trackingId = PB_PREFIX + getId(12);
+    bidTracker.store(trackingId, { adId, adUnitCode, requestId, auctionId });
+    return trackingId;
   }
 
   function getBidIdentifiers(adId, adTagUrl, adWrapperIds) {
@@ -198,6 +198,6 @@ export function tracker() {
   }
 }
 
-export function generateId(length) {
+export function getId(length) {
   return Math.floor(Math.random() * 10 ** length);
 }
