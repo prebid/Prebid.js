@@ -6,7 +6,7 @@
 
 <head>
     <script async src="../../build/dev/prebid.js"></script>
-    <script src="http://cdn.jwplayer.com/libraries/l5MchIxB.js"></script>
+    <script src="https://cdn.jwplayer.com/libraries/l5MchIxB.js"></script>
 
     <script>
       var pbjs = pbjs || {};
@@ -57,6 +57,9 @@
                     advertising: { client: 'googima' }
                     }
                 }
+              },
+              adServer: {
+                vendorCode: "gam"
               }
             }, {
               divId: 'vid-div-2',
@@ -70,6 +73,9 @@
                     advertising: { client: 'googima' }
                   }
                 }
+              },
+              adServer: {
+                vendorCode: "gam"
               }
             }]
           }
