@@ -24,15 +24,14 @@ const adUnits = [
         sizes: [[300, 250]],
       },
     },
-    bids: [{
-      bidder: 'glimpse',
-      params: {
-        placementId: 'e53a7f564f8f44cc913b',
-        keywords: {
-          country: 'uk',
+    bids: [
+      {
+        bidder: 'glimpse',
+        params: {
+          pid: 'e53a7f564f8f44cc913b',
         },
       },
-    }],
+    ],
   },
-]
+];
 ```
