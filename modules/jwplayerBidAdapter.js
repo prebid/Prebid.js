@@ -1,14 +1,15 @@
 import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
 import { config } from 'src/config';
-import { BANNER, VIDEO, NATIVE } from 'src/mediaTypes';
+import { VIDEO } from 'src/mediaTypes';
 const BIDDER_CODE = 'jwplayer';
 const GVLID = 1046;
+const SUPPORTED_AD_TYPES = [VIDEO];
 
 export const spec = {
     code: BIDDER_CODE,
     gvlid: GVLID,
-    supportedMediaTypes: [BANNER, VIDEO, NATIVE],
+    supportedMediaTypes: SUPPORTED_AD_TYPES,
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -34,12 +35,10 @@ export const spec = {
    */
     interpretResponse: function(serverResponse, request) {},
     getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {},
-    onTimeout: function(timeoutData) {},
 
-  /**
-   * Add element selector to javascript tracker to improve native viewability
-   * @param {Bid} bid
-   */
+
+    // Optional?
+    onTimeout: function(timeoutData) {},
     onBidWon: function(bid) {},
     onSetTargeting: function(bid) {},
     onBidderError: function({ error, bidderRequest }) {}
