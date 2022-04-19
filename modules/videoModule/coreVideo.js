@@ -1,4 +1,4 @@
-import { videoVendorDirectory } from './vendorDirectory.js';
+import { module } from '../../src/hook.js';
 import { ParentModule, SubmoduleBuilder } from '../shared/parentModule.js';
 
 // define, ortb object,  events
@@ -89,6 +89,8 @@ import { ParentModule, SubmoduleBuilder } from '../shared/parentModule.js';
  * @function offEvents
  */
 
+const videoVendorDirectory = {};
+
 /**
  * @constructor
  * @param {ParentModule} parentModule_
@@ -174,3 +176,9 @@ export function videoCoreFactory() {
   const parentModule = ParentModule(videoSubmoduleBuilder);
   return VideoCore(parentModule);
 }
+
+function attachVideoProvider(submoduleFactory) {
+  videoVendorDirectory[submoduleFactory.vendorCode] = submoduleFactory;
+}
+
+module('videoModule', attachVideoProvider);

@@ -1,6 +1,6 @@
 import { GAM_VENDOR } from './videoModule/constants/vendorCodes.js';
-import { adServerDirectory } from './adServerModule/vendorDirectory.js';
 import { getGlobal } from '../src/prebidGlobal.js';
+import { submodule } from '../src/hook.js';
 
 /**
  * @constructor
@@ -25,4 +25,5 @@ function gamSubmoduleFactory() {
 }
 
 gamSubmoduleFactory.vendorCode = GAM_VENDOR;
-adServerDirectory[GAM_VENDOR] = gamSubmoduleFactory;
+
+submodule('adServer', gamSubmoduleFactory);
