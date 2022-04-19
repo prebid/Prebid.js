@@ -1,5 +1,5 @@
-import { adServerDirectory } from './vendorDirectory.js';
 import { ParentModule, SubmoduleBuilder } from '../shared/parentModule.js';
+import { module } from '../../src/hook.js';
 
 /**
  * Ad Server Provider interface. All submodules of Ad Server Core must adhere to this.
@@ -28,6 +28,8 @@ import { ParentModule, SubmoduleBuilder } from '../shared/parentModule.js';
  * @function registerAdServer
  * @function getAdTagUrl
  */
+
+const adServerDirectory = {};
 
 /**
  * @constructor
@@ -77,3 +79,9 @@ export function coreAdServerFactory() {
   const adServerCore = AdServerCore(parentModule);
   return adServerCore;
 }
+
+function attachAdServerFactory(submoduleFactory) {
+  adServerDirectory[submoduleFactory.vendorCode] = submoduleFactory;
+}
+
+module('adServer', attachAdServerFactory)
