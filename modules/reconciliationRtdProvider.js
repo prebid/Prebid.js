@@ -16,10 +16,10 @@
  * @property {?boolean} allowAccess
  */
 
-import { submodule } from '../src/hook.js';
-import { ajaxBuilder } from '../src/ajax.js';
-import * as utils from '../src/utils.js';
-import find from 'core-js-pure/features/array/find.js';
+import {submodule} from '../src/hook.js';
+import {ajaxBuilder} from '../src/ajax.js';
+import {generateUUID, isGptPubadsDefined, logError, timestamp} from '../src/utils.js';
+import {find} from '../src/polyfill.js';
 
 /** @type {Object} */
 const MessageType = {
@@ -29,7 +29,7 @@ const MessageType = {
 /** @type {ModuleParams} */
 const DEFAULT_PARAMS = {
   initUrl: 'https://confirm.fiduciadlt.com/init',
-  impressionUrl: 'https://confirm.fiduciadlt.com/imp',
+  impressionUrl: 'https://confirm.fiduciadlt.com/pimp',
   allowAccess: false,
 };
 /** @type {ModuleParams} */
@@ -52,7 +52,7 @@ function handleAdMessage(e) {
   }
 
   if (data.type === MessageType.IMPRESSION_REQUEST) {
-    if (utils.isGptPubadsDefined()) {
+    if (isGptPubadsDefined()) {
       // 1. Find the last iframed window before window.top where the tracker was injected
       // (the tracker could be injected in nested iframes)
       const adWin = getTopIFrameWin(e.source);
@@ -65,7 +65,7 @@ function handleAdMessage(e) {
           adDeliveryId = adSlot.getTargeting('RSDK_ADID');
           adDeliveryId = adDeliveryId.length
             ? adDeliveryId[0]
-            : utils.generateUUID();
+            : `${timestamp()}-${generateUUID()}`;
         }
       }
     }
@@ -78,7 +78,7 @@ function handleAdMessage(e) {
       adDeliveryId,
     });
 
-    track.trackGet(_moduleParams.impressionUrl, args);
+    track.trackPost(_moduleParams.impressionUrl, args);
 
     // Send response back to the Advertiser tag
     let response = {
@@ -136,7 +136,7 @@ export function getTopIFrameWin(win, topWin) {
  * @return {Object[]} slot GoogleTag slots
  */
 function getAllSlots() {
-  return utils.isGptPubadsDefined() && window.googletag.pubads().getSlots();
+  return isGptPubadsDefined() && window.googletag.pubads().getSlots();
 }
 
 /**
@@ -187,26 +187,6 @@ export function getSlotByWin(win) {
 }
 
 /**
- * serialize object and return query params string
- * @param {Object} data
- * @return {string}
- */
-export function stringify(query) {
-  const parts = [];
-
-  for (let key in query) {
-    if (query.hasOwnProperty(key)) {
-      let val = query[key];
-      if (typeof query[key] !== 'object') {
-        parts.push(`${key}=${encodeURIComponent(val)}`);
-      } else {
-        parts.push(`${key}=${encodeURIComponent(stringify(val))}`);
-      }
-    }
-  }
-  return parts.join('&');
-}
-/**
  * Init Reconciliation post messages listeners to handle
  * impressions messages from ad creative
  */
@@ -236,9 +216,6 @@ function trackInit(adUnits) {
  * @param {Object} data
  */
 export const track = {
-  trackGet(url, data) {
-    utils.triggerPixel(`${url}?${stringify(data)}`);
-  },
   trackPost(url, data) {
     const ajax = ajaxBuilder();
 
@@ -269,7 +246,7 @@ function getReconciliationData(adUnitsCodes) {
 
     const adSlot = getSlotByCode(adUnitCode);
     const adUnitId = adSlot ? adSlot.getAdUnitPath() : adUnitCode;
-    const adDeliveryId = utils.generateUUID();
+    const adDeliveryId = `${timestamp()}-${generateUUID()}`;
 
     dataToReturn[adUnitCode] = {
       RSDK_AUID: adUnitId,
@@ -310,7 +287,7 @@ function init(moduleConfig) {
     _moduleParams = Object.assign({}, DEFAULT_PARAMS, params);
     initListeners();
   } else {
-    utils.logError('missing params for Reconciliation provider');
+    logError('missing params for Reconciliation provider');
   }
   return true;
 }

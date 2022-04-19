@@ -1,9 +1,8 @@
-import * as utils from '../src/utils.js';
-import { config } from '../src/config.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { VIDEO, BANNER } from '../src/mediaTypes.js';
-import find from 'core-js-pure/features/array/find.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import {deepAccess, generateUUID, isEmpty, isFn, parseSizesInput, parseUrl} from '../src/utils.js';
+import {config} from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {find, includes} from '../src/polyfill.js';
 
 const ADAPTER_VERSION = '1.0';
 const BIDDER_CODE = 'advangelists';
@@ -11,7 +10,7 @@ const BIDDER_CODE = 'advangelists';
 export const VIDEO_ENDPOINT = 'https://nep.advangelists.com/xp/get?pubid=';// 0cf8d6d643e13d86a5b6374148a4afac';
 export const BANNER_ENDPOINT = 'https://nep.advangelists.com/xp/get?pubid=';// 0cf8d6d643e13d86a5b6374148a4afac';
 export const OUTSTREAM_SRC = 'https://player-cdn.beachfrontmedia.com/playerapi/loader/outstream.js';
-export const VIDEO_TARGETING = ['mimes', 'playbackmethod', 'maxduration', 'skip'];
+export const VIDEO_TARGETING = ['mimes', 'playbackmethod', 'maxduration', 'skip', 'playerSize', 'context'];
 export const DEFAULT_MIMES = ['video/mp4', 'application/javascript'];
 
 let pubid = '';
@@ -56,7 +55,7 @@ export const spec = {
 
   interpretResponse(serverResponse, {bidRequest}) {
     let response = serverResponse.body;
-    if (response !== null && utils.isEmpty(response) == false) {
+    if (response !== null && isEmpty(response) == false) {
       if (isVideoBid(bidRequest)) {
         let bidResponse = {
           requestId: response.id,
@@ -66,6 +65,7 @@ export const spec = {
           height: response.seatbid[0].bid[0].h,
           ttl: response.seatbid[0].bid[0].ttl || 60,
           creativeId: response.seatbid[0].bid[0].crid,
+          meta: { 'advertiserDomains': response.seatbid[0].bid[0].adomain },
           currency: response.cur,
           mediaType: VIDEO,
           netRevenue: true
@@ -92,6 +92,7 @@ export const spec = {
           ttl: response.seatbid[0].bid[0].ttl || 60,
           creativeId: response.seatbid[0].bid[0].crid,
           currency: response.cur,
+          meta: { 'advertiserDomains': response.seatbid[0].bid[0].adomain },
           mediaType: BANNER,
           netRevenue: true
         }
@@ -101,11 +102,21 @@ export const spec = {
 };
 
 function isBannerBid(bid) {
-  return utils.deepAccess(bid, 'mediaTypes.banner') || !isVideoBid(bid);
+  return deepAccess(bid, 'mediaTypes.banner') || !isVideoBid(bid);
 }
 
 function isVideoBid(bid) {
-  return utils.deepAccess(bid, 'mediaTypes.video');
+  return deepAccess(bid, 'mediaTypes.video');
+}
+
+function getBannerBidFloor(bid) {
+  let floorInfo = isFn(bid.getFloor) ? bid.getFloor({ currency: 'USD', mediaType: 'banner', size: '*' }) : {};
+  return floorInfo.floor || getBannerBidParam(bid, 'bidfloor');
+}
+
+function getVideoBidFloor(bid) {
+  let floorInfo = isFn(bid.getFloor) ? bid.getFloor({ currency: 'USD', mediaType: 'video', size: '*' }) : {};
+  return floorInfo.floor || getVideoBidParam(bid, 'bidfloor');
 }
 
 function isVideoBidValid(bid) {
@@ -117,11 +128,11 @@ function isBannerBidValid(bid) {
 }
 
 function getVideoBidParam(bid, key) {
-  return utils.deepAccess(bid, 'params.video.' + key) || utils.deepAccess(bid, 'params.' + key);
+  return deepAccess(bid, 'params.video.' + key) || deepAccess(bid, 'params.' + key);
 }
 
 function getBannerBidParam(bid, key) {
-  return utils.deepAccess(bid, 'params.banner.' + key) || utils.deepAccess(bid, 'params.' + key);
+  return deepAccess(bid, 'params.banner.' + key) || deepAccess(bid, 'params.' + key);
 }
 
 function isMobile() {
@@ -172,7 +183,7 @@ function getFirstSize(sizes) {
 }
 
 function parseSizes(sizes) {
-  return utils.parseSizesInput(sizes).map(size => {
+  return parseSizesInput(sizes).map(size => {
     let [ width, height ] = size.split('x');
     return {
       w: parseInt(width, 10) || undefined,
@@ -182,11 +193,11 @@ function parseSizes(sizes) {
 }
 
 function getVideoSizes(bid) {
-  return parseSizes(utils.deepAccess(bid, 'mediaTypes.video.playerSize') || bid.sizes);
+  return parseSizes(deepAccess(bid, 'mediaTypes.video.playerSize') || bid.sizes);
 }
 
 function getBannerSizes(bid) {
-  return parseSizes(utils.deepAccess(bid, 'mediaTypes.banner.sizes') || bid.sizes);
+  return parseSizes(deepAccess(bid, 'mediaTypes.banner.sizes') || bid.sizes);
 }
 
 function getTopWindowReferrer() {
@@ -198,12 +209,19 @@ function getTopWindowReferrer() {
 }
 
 function getVideoTargetingParams(bid) {
-  return Object.keys(Object(bid.params.video))
-    .filter(param => includes(VIDEO_TARGETING, param))
-    .reduce((obj, param) => {
-      obj[ param ] = bid.params.video[ param ];
-      return obj;
-    }, {});
+  const result = {};
+  const excludeProps = ['playerSize', 'context', 'w', 'h'];
+  Object.keys(Object(bid.mediaTypes.video))
+    .filter(key => !includes(excludeProps, key))
+    .forEach(key => {
+      result[ key ] = bid.mediaTypes.video[ key ];
+    });
+  Object.keys(Object(bid.params.video))
+    .filter(key => includes(VIDEO_TARGETING, key))
+    .forEach(key => {
+      result[ key ] = bid.params.video[ key ];
+    });
+  return result;
 }
 
 function createVideoRequestData(bid, bidderRequest) {
@@ -212,7 +230,7 @@ function createVideoRequestData(bid, bidderRequest) {
 
   let sizes = getVideoSizes(bid);
   let firstSize = getFirstSize(sizes);
-
+  let bidfloor = (getVideoBidFloor(bid) == null || typeof getVideoBidFloor(bid) == 'undefined') ? 2 : getVideoBidFloor(bid);
   let video = getVideoTargetingParams(bid);
   const o = {
     'device': {
@@ -267,11 +285,11 @@ function createVideoRequestData(bid, bidderRequest) {
       'displaymanager': '' + BIDDER_CODE,
       'displaymanagerver': '' + ADAPTER_VERSION,
       'tagId': placement,
-      'bidfloor': 2.0,
+      'bidfloor': bidfloor,
       'bidfloorcur': 'USD',
       'secure': secure,
       'video': Object.assign({
-        'id': utils.generateUUID(),
+        'id': generateUUID(),
         'pos': 0,
         'w': firstSize.w,
         'h': firstSize.h,
@@ -292,7 +310,7 @@ function createVideoRequestData(bid, bidderRequest) {
 
 function getTopWindowLocation(bidderRequest) {
   let url = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
-  return utils.parseUrl(config.getConfig('pageUrl') || url, { decodeSearchAsString: true });
+  return parseUrl(config.getConfig('pageUrl') || url, { decodeSearchAsString: true });
 }
 
 function createBannerRequestData(bid, bidderRequest) {
@@ -300,6 +318,7 @@ function createBannerRequestData(bid, bidderRequest) {
   let topReferrer = getTopWindowReferrer();
 
   let sizes = getBannerSizes(bid);
+  let bidfloor = (getBannerBidFloor(bid) == null || typeof getBannerBidFloor(bid) == 'undefined') ? 2 : getBannerBidFloor(bid);
 
   const o = {
     'device': {
@@ -354,11 +373,11 @@ function createBannerRequestData(bid, bidderRequest) {
       'displaymanager': '' + BIDDER_CODE,
       'displaymanagerver': '' + ADAPTER_VERSION,
       'tagId': placement,
-      'bidfloor': 2.0,
+      'bidfloor': bidfloor,
       'bidfloorcur': 'USD',
       'secure': secure,
       'banner': {
-        'id': utils.generateUUID(),
+        'id': generateUUID(),
         'pos': 0,
         'w': size['w'],
         'h': size['h']

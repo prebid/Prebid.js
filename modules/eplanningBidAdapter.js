@@ -1,21 +1,24 @@
-import * as utils from '../src/utils.js';
+import { isEmpty, getWindowSelf, parseSizesInput } from '../src/utils.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 
-export const storage = getStorageManager();
-
 const BIDDER_CODE = 'eplanning';
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 const rnd = Math.random();
-const DEFAULT_SV = 'ads.us.e-planning.net';
+const DEFAULT_SV = 'pbjs.e-planning.net';
 const DEFAULT_ISV = 'i.e-planning.net';
-const PARAMS = ['ci', 'sv', 't', 'ml'];
-const DOLLARS = 'USD';
+const PARAMS = ['ci', 'sv', 't', 'ml', 'sn'];
+const DOLLAR_CODE = 'USD';
 const NET_REVENUE = true;
 const TTL = 120;
 const NULL_SIZE = '1x1';
 const FILE = 'file';
 const STORAGE_RENDER_PREFIX = 'pbsr_';
 const STORAGE_VIEW_PREFIX = 'pbvi_';
+const mobileUserAgent = isMobileUserAgent();
+const PRIORITY_ORDER_FOR_MOBILE_SIZES_ASC = ['1x1', '300x50', '320x50', '300x250'];
+const PRIORITY_ORDER_FOR_DESKTOP_SIZES_ASC = ['1x1', '970x90', '970x250', '160x600', '300x600', '728x90', '300x250'];
 
 export const spec = {
   code: BIDDER_CODE,
@@ -43,7 +46,7 @@ export const spec = {
       url = 'https://' + urlConfig.isv + '/layers/t_pbjs_2.json';
       params = {};
     } else {
-      url = 'https://' + (urlConfig.sv || DEFAULT_SV) + '/hb/1/' + urlConfig.ci + '/' + dfpClientId + '/' + getDomain(pageUrl) + '/' + sec;
+      url = 'https://' + (urlConfig.sv || DEFAULT_SV) + '/pbjs/1/' + urlConfig.ci + '/' + dfpClientId + '/' + getDomain(pageUrl) + '/' + sec;
       const referrerUrl = bidderRequest.refererInfo.referer.reachedTop ? window.top.document.referrer : bidderRequest.refererInfo.referer;
 
       if (storage.hasLocalStorage()) {
@@ -54,7 +57,6 @@ export const spec = {
         rnd: rnd,
         e: spaces.str,
         ur: pageUrl || FILE,
-        r: 'pbjs',
         pbv: '$prebid.version$',
         ncb: '1',
         vs: spaces.vs
@@ -79,6 +81,13 @@ export const spec = {
       if (bidderRequest && bidderRequest.uspConsent) {
         params.ccpa = bidderRequest.uspConsent;
       }
+
+      if ((getGlobal()).getUserIds && typeof (getGlobal()).getUserIds === 'function') {
+        const userIds = (getGlobal()).getUserIds();
+        for (var id in userIds) {
+          params['e_' + id] = (typeof userIds[id] === 'object') ? encodeURIComponent(JSON.stringify(userIds[id])) : encodeURIComponent(userIds[id]);
+        }
+      }
     }
 
     return {
@@ -92,9 +101,9 @@ export const spec = {
     const response = serverResponse.body;
     let bidResponses = [];
 
-    if (response && !utils.isEmpty(response.sp)) {
+    if (response && !isEmpty(response.sp)) {
       response.sp.forEach(space => {
-        if (!utils.isEmpty(space.a)) {
+        if (!isEmpty(space.a)) {
           space.a.forEach(ad => {
             const bidResponse = {
               requestId: request.adUnitToBidId[space.k],
@@ -105,8 +114,13 @@ export const spec = {
               ttl: TTL,
               creativeId: ad.crid,
               netRevenue: NET_REVENUE,
-              currency: DOLLARS,
+              currency: DOLLAR_CODE,
             };
+            if (ad.adom) {
+              bidResponse.meta = {
+                advertiserDomains: ad.adom
+              };
+            }
             bidResponses.push(bidResponse);
           });
         }
@@ -117,9 +131,9 @@ export const spec = {
   },
   getUserSyncs: function(syncOptions, serverResponses) {
     const syncs = [];
-    const response = !utils.isEmpty(serverResponses) && serverResponses[0].body;
+    const response = !isEmpty(serverResponses) && serverResponses[0].body;
 
-    if (response && !utils.isEmpty(response.cs)) {
+    if (response && !isEmpty(response.cs)) {
       const responseSyncs = response.cs;
       responseSyncs.forEach(sync => {
         if (typeof sync === 'string' && syncOptions.pixelEnabled) {
@@ -140,6 +154,18 @@ export const spec = {
   },
 }
 
+function getUserAgent() {
+  return window.navigator.userAgent;
+}
+function getInnerWidth() {
+  return getWindowSelf().innerWidth;
+}
+function isMobileUserAgent() {
+  return getUserAgent().match(/(mobile)|(ip(hone|ad))|(android)|(blackberry)|(nokia)|(phone)|(opera\smini)/i);
+}
+function isMobileDevice() {
+  return (getInnerWidth() <= 1024) || window.orientation || mobileUserAgent;
+}
 function getUrlConfig(bidRequests) {
   if (isTestRequest(bidRequests)) {
     return getTestConfig(bidRequests.filter(br => br.params.t));
@@ -173,8 +199,32 @@ function getTestConfig(bidRequests) {
   };
 }
 
+function compareSizesByPriority(size1, size2) {
+  var priorityOrderForSizesAsc = isMobileDevice() ? PRIORITY_ORDER_FOR_MOBILE_SIZES_ASC : PRIORITY_ORDER_FOR_DESKTOP_SIZES_ASC;
+  var index1 = priorityOrderForSizesAsc.indexOf(size1);
+  var index2 = priorityOrderForSizesAsc.indexOf(size2);
+  if (index1 > -1) {
+    if (index2 > -1) {
+      return (index1 < index2) ? 1 : -1;
+    } else {
+      return -1;
+    }
+  } else {
+    return (index2 > -1) ? 1 : 0;
+  }
+}
+
+function getSizesSortedByPriority(sizes) {
+  return parseSizesInput(sizes).sort(compareSizesByPriority);
+}
+
 function getSize(bid, first) {
-  return bid.sizes && bid.sizes.length ? utils.parseSizesInput(first ? bid.sizes[0] : bid.sizes).join(',') : NULL_SIZE;
+  var arraySizes = bid.sizes && bid.sizes.length ? getSizesSortedByPriority(bid.sizes) : [];
+  if (arraySizes.length) {
+    return first ? arraySizes[0] : arraySizes.join(',');
+  } else {
+    return NULL_SIZE;
+  }
 }
 
 function getSpacesStruct(bids) {
@@ -197,7 +247,14 @@ function getSpaces(bidRequests, ml) {
   let es = {str: '', vs: '', map: {}};
   es.str = Object.keys(spacesStruct).map(size => spacesStruct[size].map((bid, i) => {
     es.vs += getVs(bid);
-    let name = ml ? cleanName(bid.adUnitCode) : getSize(bid, true) + '_' + i;
+
+    let name;
+    if (ml) {
+      name = cleanName(bid.adUnitCode);
+    } else {
+      name = (bid.params && bid.params.sn) || (getSize(bid, true) + '_' + i);
+    }
+
     es.map[name] = bid.bidId;
     return name + ':' + getSize(bid);
   }).join('+')).join('+');

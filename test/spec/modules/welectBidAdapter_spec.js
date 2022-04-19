@@ -1,5 +1,5 @@
-import {expect} from 'chai';
-import {spec as adapter} from 'modules/welectBidAdapter.js';
+import { expect } from 'chai';
+import { spec as adapter } from 'modules/welectBidAdapter.js';
 
 describe('WelectAdapter', function () {
   describe('Check methods existance', function () {
@@ -103,7 +103,7 @@ describe('WelectAdapter', function () {
     // Formatted requets
     let request1 = {
       method: 'POST',
-      url: 'https://www.welect.de/api/v2/preflight/by_alias/exampleAlias',
+      url: 'https://www.welect.de/api/v2/preflight/exampleAlias',
       data: data1,
       options: {
         contentType: 'application/json',
@@ -114,7 +114,7 @@ describe('WelectAdapter', function () {
 
     let request2 = {
       method: 'POST',
-      url: 'https://www.welect2.de/api/v2/preflight/by_alias/exampleAlias',
+      url: 'https://www.welect2.de/api/v2/preflight/exampleAlias',
       data: data2,
       options: {
         contentType: 'application/json',
@@ -147,6 +147,9 @@ describe('WelectAdapter', function () {
           ad: {
             video: 'some vast url'
           },
+          meta: {
+            advertiserDomains: [],
+          },
           cpm: 17,
           creativeId: 'svmpreview',
           currency: 'EUR',
@@ -171,7 +174,7 @@ describe('WelectAdapter', function () {
         }
       },
       method: 'POST',
-      url: 'https://www.welect.de/api/v2/preflight/by_alias/exampleAlias',
+      url: 'https://www.welect.de/api/v2/preflight/exampleAlias',
       options: {
         contentType: 'application/json',
         withCredentials: false,
@@ -182,6 +185,9 @@ describe('WelectAdapter', function () {
     let result = {
       ad: {
         video: 'some vast url'
+      },
+      meta: {
+        advertiserDomains: []
       },
       cpm: 17,
       creativeId: 'svmpreview',
@@ -198,7 +204,7 @@ describe('WelectAdapter', function () {
       expect(adapter.interpretResponse(unavailableResponse, bid)).to.deep.equal([]);
     });
 
-    it('if response reflects availability, should equal result', function() {
+    it('if response reflects availability, should equal result', function () {
       expect(adapter.interpretResponse(availableResponse, bid)).to.deep.equal([result])
     })
   });

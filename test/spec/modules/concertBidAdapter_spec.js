@@ -116,7 +116,7 @@ describe('ConcertAdapter', function () {
   describe('spec.interpretResponse', function() {
     it('should return bids in the shape expected by prebid', function() {
       const bids = spec.interpretResponse(bidResponse, bidRequest);
-      const requiredFields = ['requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId', 'netRevenue', 'currency'];
+      const requiredFields = ['requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'meta', 'creativeId', 'netRevenue', 'currency'];
 
       requiredFields.forEach(function(field) {
         expect(bids[0]).to.have.property(field);

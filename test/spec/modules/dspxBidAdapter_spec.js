@@ -61,7 +61,12 @@ describe('dspxAdapter', function () {
       ],
       'bidId': '30b31c1838de1e1',
       'bidderRequestId': '22edbae2733bf61',
-      'auctionId': '1d1a030790a475'
+      'auctionId': '1d1a030790a475',
+      'adUnitCode': 'testDiv1',
+      'userId': {
+        'netId': '123',
+        'uid2': '456'
+      }
     },
     {
       'bidder': 'dspx',
@@ -94,20 +99,8 @@ describe('dspxAdapter', function () {
       ],
       'bidId': '30b31c1838de1e3',
       'bidderRequestId': '22edbae2733bf69',
-      'auctionId': '1d1a030790a477'
-    },
-    {
-      'bidder': 'dspx',
-      'params': {
-        'placement': '101',
-        'devMode': true
-      },
-      'sizes': [
-        [300, 250]
-      ],
-      'bidId': '30b31c1838de1e4',
-      'bidderRequestId': '22edbae2733bf67',
-      'auctionId': '1d1a030790a478'
+      'auctionId': '1d1a030790a477',
+      'adUnitCode': 'testDiv2'
     },
     {
       'bidder': 'dspx',
@@ -119,11 +112,36 @@ describe('dspxAdapter', function () {
         'video': {
           'playerSize': [640, 480],
           'context': 'instream'
+        },
+        'banner': {
+          'sizes': [
+            [300, 250]
+          ]
+        }
+      },
+
+      'bidId': '30b31c1838de1e4',
+      'bidderRequestId': '22edbae2733bf67',
+      'auctionId': '1d1a030790a478',
+      'adUnitCode': 'testDiv3'
+    },
+    {
+      'bidder': 'dspx',
+      'params': {
+        'placement': '101',
+        'devMode': true,
+        'vastFormat': 'vast4'
+      },
+      'mediaTypes': {
+        'video': {
+          'playerSize': [640, 480],
+          'context': 'instream'
         }
       },
       'bidId': '30b31c1838de1e41',
       'bidderRequestId': '22edbae2733bf67',
-      'auctionId': '1d1a030790a478'
+      'auctionId': '1d1a030790a478',
+      'adUnitCode': 'testDiv4'
     }
 
     ];
@@ -144,16 +162,16 @@ describe('dspxAdapter', function () {
     it('sends bid request to our endpoint via GET', function () {
       expect(request1.method).to.equal('GET');
       expect(request1.url).to.equal(ENDPOINT_URL);
-      let data = request1.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid');
-      expect(data).to.equal('_f=html&alternative=prebid_js&inventory_item_id=6682&srw=300&srh=250&idt=100&bid_id=30b31c1838de1e1&pfilter%5Bfloorprice%5D=1000000&pfilter%5Bprivate_auction%5D=0&pfilter%5Bgeo%5D%5Bcountry%5D=DE&pfilter%5Bgdpr_consent%5D=BOJ%2FP2HOJ%2FP2HABABMAAAAAZ%2BA%3D%3D&pfilter%5Bgdpr%5D=true&bcat=IAB2%2CIAB4&dvt=desktop');
+      let data = request1.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid').replace(/pbver=.*?&/g, 'pbver=test&');
+      expect(data).to.equal('_f=auto&alternative=prebid_js&inventory_item_id=6682&srw=300&srh=250&idt=100&bid_id=30b31c1838de1e1&pbver=test&pfilter%5Bfloorprice%5D=1000000&pfilter%5Bprivate_auction%5D=0&pfilter%5Bgeo%5D%5Bcountry%5D=DE&pfilter%5Bgdpr_consent%5D=BOJ%2FP2HOJ%2FP2HABABMAAAAAZ%2BA%3D%3D&pfilter%5Bgdpr%5D=true&bcat=IAB2%2CIAB4&dvt=desktop&did_netid=123&did_uid2=456&auctionId=1d1a030790a475&pbcode=testDiv1&media_types%5Bbanner%5D=300x250');
     });
 
     var request2 = spec.buildRequests([bidRequests[1]], bidderRequest)[0];
     it('sends bid request to our DEV endpoint via GET', function () {
       expect(request2.method).to.equal('GET');
       expect(request2.url).to.equal(ENDPOINT_URL_DEV);
-      let data = request2.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid');
-      expect(data).to.equal('_f=html&alternative=prebid_js&inventory_item_id=101&srw=300&srh=250&idt=100&bid_id=30b31c1838de1e2&pfilter%5Bgdpr_consent%5D=BOJ%2FP2HOJ%2FP2HABABMAAAAAZ%2BA%3D%3D&pfilter%5Bgdpr%5D=true&prebidDevMode=1');
+      let data = request2.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid').replace(/pbver=.*?&/g, 'pbver=test&');
+      expect(data).to.equal('_f=auto&alternative=prebid_js&inventory_item_id=101&srw=300&srh=250&idt=100&bid_id=30b31c1838de1e2&pbver=test&pfilter%5Bgdpr_consent%5D=BOJ%2FP2HOJ%2FP2HABABMAAAAAZ%2BA%3D%3D&pfilter%5Bgdpr%5D=true&prebidDevMode=1&auctionId=1d1a030790a476&media_types%5Bbanner%5D=300x250');
     });
 
     // Without gdprConsent
@@ -166,23 +184,23 @@ describe('dspxAdapter', function () {
     it('sends bid request without gdprConsent to our endpoint via GET', function () {
       expect(request3.method).to.equal('GET');
       expect(request3.url).to.equal(ENDPOINT_URL);
-      let data = request3.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid');
-      expect(data).to.equal('_f=html&alternative=prebid_js&inventory_item_id=6682&srw=300&srh=250&idt=100&bid_id=30b31c1838de1e3&pfilter%5Bfloorprice%5D=1000000&pfilter%5Bprivate_auction%5D=0&pfilter%5Bgeo%5D%5Bcountry%5D=DE&bcat=IAB2%2CIAB4&dvt=desktop');
+      let data = request3.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid').replace(/pbver=.*?&/g, 'pbver=test&');
+      expect(data).to.equal('_f=auto&alternative=prebid_js&inventory_item_id=6682&srw=300&srh=250&idt=100&bid_id=30b31c1838de1e3&pbver=test&pfilter%5Bfloorprice%5D=1000000&pfilter%5Bprivate_auction%5D=0&pfilter%5Bgeo%5D%5Bcountry%5D=DE&bcat=IAB2%2CIAB4&dvt=desktop&auctionId=1d1a030790a477&pbcode=testDiv2&media_types%5Bbanner%5D=300x250');
     });
 
     var request4 = spec.buildRequests([bidRequests[3]], bidderRequestWithoutGdpr)[0];
     it('sends bid request without gdprConsent  to our DEV endpoint via GET', function () {
       expect(request4.method).to.equal('GET');
       expect(request4.url).to.equal(ENDPOINT_URL_DEV);
-      let data = request4.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid');
-      expect(data).to.equal('_f=html&alternative=prebid_js&inventory_item_id=101&srw=300&srh=250&idt=100&bid_id=30b31c1838de1e4&prebidDevMode=1');
+      let data = request4.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid').replace(/pbver=.*?&/g, 'pbver=test&');
+      expect(data).to.equal('_f=auto&alternative=prebid_js&inventory_item_id=101&srw=300&srh=250&idt=100&bid_id=30b31c1838de1e4&pbver=test&prebidDevMode=1&auctionId=1d1a030790a478&pbcode=testDiv3&media_types%5Bvideo%5D=640x480&media_types%5Bbanner%5D=300x250');
     });
 
     var request5 = spec.buildRequests([bidRequests[4]], bidderRequestWithoutGdpr)[0];
-    it('sends bid video request to our rads endpoint via GET', function () {
+    it('sends bid video request to our endpoint via GET', function () {
       expect(request5.method).to.equal('GET');
-      let data = request5.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid');
-      expect(data).to.equal('_f=vast2&alternative=prebid_js&inventory_item_id=101&srw=640&srh=480&idt=100&bid_id=30b31c1838de1e41&prebidDevMode=1');
+      let data = request5.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid').replace(/pbver=.*?&/g, 'pbver=test&');
+      expect(data).to.equal('_f=auto&alternative=prebid_js&inventory_item_id=101&srw=640&srh=480&idt=100&bid_id=30b31c1838de1e41&pbver=test&vf=vast4&prebidDevMode=1&auctionId=1d1a030790a478&pbcode=testDiv4&media_types%5Bvideo%5D=640x480');
     });
   });
 
@@ -199,7 +217,8 @@ describe('dspxAdapter', function () {
         'currency': 'EUR',
         'ttl': 60,
         'netRevenue': true,
-        'zone': '6682'
+        'zone': '6682',
+        'adomain': ['bdomain']
       }
     };
     let serverVideoResponse = {
@@ -229,7 +248,8 @@ describe('dspxAdapter', function () {
       netRevenue: true,
       ttl: 300,
       type: 'sspHTML',
-      ad: '<!-- test creative -->'
+      ad: '<!-- test creative -->',
+      meta: {advertiserDomains: ['bdomain']}
     }, {
       requestId: '23beaa6af6cdde',
       cpm: 0.5,
@@ -242,7 +262,8 @@ describe('dspxAdapter', function () {
       ttl: 300,
       type: 'vast2',
       vastXml: '{"reason":7001,"status":"accepted"}',
-      mediaType: 'video'
+      mediaType: 'video',
+      meta: {advertiserDomains: []}
     }];
 
     it('should get the correct bid response by display ad', function () {
@@ -255,6 +276,8 @@ describe('dspxAdapter', function () {
       }];
       let result = spec.interpretResponse(serverResponse, bidRequest[0]);
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
+      expect(result[0].meta.advertiserDomains.length).to.equal(1);
+      expect(result[0].meta.advertiserDomains[0]).to.equal(expectedResponse[0].meta.advertiserDomains[0]);
     });
 
     it('should get the correct dspx video bid response by display ad', function () {
@@ -273,6 +296,7 @@ describe('dspxAdapter', function () {
       }];
       let result = spec.interpretResponse(serverVideoResponse, bidRequest[0]);
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[1]));
+      expect(result[0].meta.advertiserDomains.length).to.equal(0);
     });
 
     it('handles empty bid response', function () {
@@ -281,6 +305,85 @@ describe('dspxAdapter', function () {
       };
       let result = spec.interpretResponse(response);
       expect(result.length).to.equal(0);
+    });
+  });
+
+  describe(`getUserSyncs test usage`, function () {
+    let serverResponses;
+
+    beforeEach(function () {
+      serverResponses = [{
+        body: {
+          requestId: '23beaa6af6cdde',
+          cpm: 0.5,
+          width: 0,
+          height: 0,
+          creativeId: 100500,
+          dealId: '',
+          currency: 'EUR',
+          netRevenue: true,
+          ttl: 300,
+          type: 'sspHTML',
+          ad: '<!-- test creative -->',
+          userSync: {
+            iframeUrl: ['anyIframeUrl?a=1'],
+            imageUrl: ['anyImageUrl', 'anyImageUrl2']
+          }
+        }
+      }];
+    });
+
+    it(`return value should be an array`, function () {
+      expect(spec.getUserSyncs({ iframeEnabled: true })).to.be.an('array');
+    });
+    it(`array should have only one object and it should have a property type = 'iframe'`, function () {
+      expect(spec.getUserSyncs({ iframeEnabled: true }, serverResponses).length).to.be.equal(1);
+      let [userSync] = spec.getUserSyncs({ iframeEnabled: true }, serverResponses);
+      expect(userSync).to.have.property('type');
+      expect(userSync.type).to.be.equal('iframe');
+    });
+    it(`we have valid sync url for iframe`, function () {
+      let [userSync] = spec.getUserSyncs({ iframeEnabled: true }, serverResponses, {consentString: 'anyString'});
+      expect(userSync.url).to.be.equal('anyIframeUrl?a=1&gdpr_consent=anyString')
+      expect(userSync.type).to.be.equal('iframe');
+    });
+    it(`we have valid sync url for image`, function () {
+      let [userSync] = spec.getUserSyncs({ pixelEnabled: true }, serverResponses, {gdprApplies: true, consentString: 'anyString'});
+      expect(userSync.url).to.be.equal('anyImageUrl?gdpr=1&gdpr_consent=anyString')
+      expect(userSync.type).to.be.equal('image');
+    });
+    it(`we have valid sync url for image and iframe`, function () {
+      let userSync = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, serverResponses, {gdprApplies: true, consentString: 'anyString'});
+      expect(userSync.length).to.be.equal(3);
+      expect(userSync[0].url).to.be.equal('anyIframeUrl?a=1&gdpr=1&gdpr_consent=anyString')
+      expect(userSync[0].type).to.be.equal('iframe');
+      expect(userSync[1].url).to.be.equal('anyImageUrl?gdpr=1&gdpr_consent=anyString')
+      expect(userSync[1].type).to.be.equal('image');
+      expect(userSync[2].url).to.be.equal('anyImageUrl2?gdpr=1&gdpr_consent=anyString')
+      expect(userSync[2].type).to.be.equal('image');
+    });
+  });
+
+  describe(`getUserSyncs test usage in passback response`, function () {
+    let serverResponses;
+
+    beforeEach(function () {
+      serverResponses = [{
+        body: {
+          reason: 8002,
+          status: 'error',
+          msg: 'passback',
+        }
+      }];
+    });
+
+    it(`check for zero array when iframeEnabled`, function () {
+      expect(spec.getUserSyncs({ iframeEnabled: true })).to.be.an('array');
+      expect(spec.getUserSyncs({ iframeEnabled: true }, serverResponses).length).to.be.equal(0);
+    });
+    it(`check for zero array when iframeEnabled`, function () {
+      expect(spec.getUserSyncs({ pixelEnabled: true })).to.be.an('array');
+      expect(spec.getUserSyncs({ pixelEnabled: true }, serverResponses).length).to.be.equal(0);
     });
   });
 });

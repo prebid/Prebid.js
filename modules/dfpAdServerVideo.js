@@ -8,7 +8,8 @@ import { deepAccess, isEmpty, logError, parseSizesInput, formatQS, parseUrl, bui
 import { config } from '../src/config.js';
 import { getHook, submodule } from '../src/hook.js';
 import { auctionManager } from '../src/auctionManager.js';
-import events from '../src/events.js';
+import { gdprDataHandler, uspDataHandler } from '../src/adapterManager.js';
+import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
 
 /**
@@ -87,7 +88,14 @@ export function buildDfpVideoUrl(options) {
     sz: parseSizesInput(deepAccess(adUnit, 'mediaTypes.video.playerSize')).join('|'),
     url: encodeURIComponent(location.href),
   };
-  const encodedCustomParams = getCustParams(bid, options);
+
+  const urlSearchComponent = urlComponents.search;
+  const urlSzParam = urlSearchComponent && urlSearchComponent.sz
+  if (urlSzParam) {
+    derivedParams.sz = urlSzParam + '|' + derivedParams.sz;
+  }
+
+  let encodedCustomParams = getCustParams(bid, options, urlSearchComponent && urlSearchComponent.cust_params);
 
   const queryParams = Object.assign({},
     defaultParamConstants,
@@ -100,19 +108,28 @@ export function buildDfpVideoUrl(options) {
   const descriptionUrl = getDescriptionUrl(bid, options, 'params');
   if (descriptionUrl) { queryParams.description_url = descriptionUrl; }
 
-  return buildUrl({
+  const gdprConsent = gdprDataHandler.getConsentData();
+  if (gdprConsent) {
+    if (typeof gdprConsent.gdprApplies === 'boolean') { queryParams.gdpr = Number(gdprConsent.gdprApplies); }
+    if (gdprConsent.consentString) { queryParams.gdpr_consent = gdprConsent.consentString; }
+    if (gdprConsent.addtlConsent) { queryParams.addtl_consent = gdprConsent.addtlConsent; }
+  }
+
+  const uspConsent = uspDataHandler.getConsentData();
+  if (uspConsent) { queryParams.us_privacy = uspConsent; }
+
+  return buildUrl(Object.assign({
     protocol: 'https',
     host: 'securepubads.g.doubleclick.net',
-    pathname: '/gampad/ads',
-    search: queryParams
-  });
+    pathname: '/gampad/ads'
+  }, urlComponents, { search: queryParams }));
 }
 
 export function notifyTranslationModule(fn) {
   fn.call(this, 'dfp');
 }
 
-getHook('registerAdserver').before(notifyTranslationModule);
+if (config.getConfig('brandCategoryTranslation.translationFile')) { getHook('registerAdserver').before(notifyTranslationModule); }
 
 /**
  * @typedef {Object} DfpAdpodOptions
@@ -183,6 +200,16 @@ export function buildAdpodVideoUrl({code, params, callback} = {}) {
       { cust_params: encodedCustomParams }
     );
 
+    const gdprConsent = gdprDataHandler.getConsentData();
+    if (gdprConsent) {
+      if (typeof gdprConsent.gdprApplies === 'boolean') { queryParams.gdpr = Number(gdprConsent.gdprApplies); }
+      if (gdprConsent.consentString) { queryParams.gdpr_consent = gdprConsent.consentString; }
+      if (gdprConsent.addtlConsent) { queryParams.addtl_consent = gdprConsent.addtlConsent; }
+    }
+
+    const uspConsent = uspDataHandler.getConsentData();
+    if (uspConsent) { queryParams.us_privacy = uspConsent; }
+
     const masterTag = buildUrl({
       protocol: 'https',
       host: 'securepubads.g.doubleclick.net',
@@ -206,9 +233,7 @@ function buildUrlFromAdserverUrlComponents(components, bid, options) {
   const descriptionUrl = getDescriptionUrl(bid, components, 'search');
   if (descriptionUrl) { components.search.description_url = descriptionUrl; }
 
-  const encodedCustomParams = getCustParams(bid, options);
-  components.search.cust_params = (components.search.cust_params) ? components.search.cust_params + '%26' + encodedCustomParams : encodedCustomParams;
-
+  components.search.cust_params = getCustParams(bid, options, components.search.cust_params);
   return buildUrl(components);
 }
 
@@ -237,7 +262,7 @@ function getDescriptionUrl(bid, components, prop) {
  * @param {Object} options this is the options passed in from the `buildDfpVideoUrl` function
  * @return {Object} Encoded key value pairs for cust_params
  */
-function getCustParams(bid, options) {
+function getCustParams(bid, options, urlCustParams) {
   const adserverTargeting = (bid && bid.adserverTargeting) || {};
 
   let allTargetingData = {};
@@ -250,7 +275,7 @@ function getCustParams(bid, options) {
   const prebidTargetingSet = Object.assign({},
     // Why are we adding standard keys here ? Refer https://github.com/prebid/Prebid.js/issues/3664
     { hb_uuid: bid && bid.videoCacheKey },
-    // hb_uuid will be deprecated and replaced by hb_cache_id
+    // hb_cache_id became optional in prebid 5.0 after 4.x enabled the concept of optional keys. Discussion led to reversing the prior expectation of deprecating hb_uuid
     { hb_cache_id: bid && bid.videoCacheKey },
     allTargetingData,
     adserverTargeting,
@@ -260,7 +285,12 @@ function getCustParams(bid, options) {
   // merge the prebid + publisher targeting sets
   const publisherTargetingSet = deepAccess(options, 'params.cust_params');
   const targetingSet = Object.assign({}, prebidTargetingSet, publisherTargetingSet);
-  return encodeURIComponent(formatQS(targetingSet));
+  let encodedParams = encodeURIComponent(formatQS(targetingSet));
+  if (urlCustParams) {
+    encodedParams = urlCustParams + '%26' + encodedParams;
+  }
+
+  return encodedParams;
 }
 
 registerVideoSupport('dfp', {

@@ -2,6 +2,7 @@ import { setConsentConfig, requestBidsHook, resetConsentData, userCMP, consentTi
 import { gdprDataHandler } from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
+import 'src/prebid.js';
 
 let expect = require('chai').expect;
 
@@ -45,6 +46,18 @@ describe('consentManagement', function () {
         expect(userCMP).to.be.undefined;
         sinon.assert.calledOnce(utils.logWarn);
       });
+
+      it('should not produce any consent metadata', function() {
+        setConsentConfig(undefined)
+        let consentMetadata = gdprDataHandler.getConsentMeta();
+        expect(consentMetadata).to.be.undefined;
+        sinon.assert.calledOnce(utils.logWarn);
+      })
+
+      it('should immediately look up consent data', () => {
+        setConsentConfig({gdpr: {cmpApi: 'invalid'}});
+        expect(gdprDataHandler.ready).to.be.true;
+      })
     });
 
     describe('valid setConsentConfig value', function () {
@@ -123,6 +136,11 @@ describe('consentManagement', function () {
           definedInConfig: true
         });
         expect(gdprScope).to.be.equal(false);
+      });
+
+      it('should enable gdprDataHandler', () => {
+        setConsentConfig({gdpr: {}});
+        expect(gdprDataHandler.enabled).to.be.true;
       });
     });
 
@@ -318,6 +336,14 @@ describe('consentManagement', function () {
         expect(consent).to.be.null;
       });
 
+      it('should call gpdrDataHandler.setConsentData() when unknown CMP api is used', () => {
+        setConsentConfig({gdpr: {cmpApi: 'invalid'}});
+        let hookRan = false;
+        requestBidsHook(() => { hookRan = true; }, {});
+        expect(hookRan).to.be.true;
+        expect(gdprDataHandler.ready).to.be.true;
+      })
+
       it('should throw proper errors when CMP is not found', function () {
         setConsentConfig(goodConfigWithCancelAuction);
 
@@ -329,6 +355,7 @@ describe('consentManagement', function () {
         sinon.assert.calledTwice(utils.logError);
         expect(didHookReturn).to.be.false;
         expect(consent).to.be.null;
+        expect(gdprDataHandler.ready).to.be.true;
       });
     });
 
@@ -537,6 +564,15 @@ describe('consentManagement', function () {
         // from CMP window postMessage listener.
         testIFramedPage('with/JSON response', false, 'encoded_consent_data_via_post_message', 1);
         testIFramedPage('with/String response', true, 'encoded_consent_data_via_post_message', 1);
+
+        it('should contain correct V1 CMP definition', (done) => {
+          setConsentConfig(goodConfigWithAllowAuction);
+          requestBidsHook(() => {
+            const nbArguments = window.__cmp.toString().split('\n')[0].split(', ').length;
+            expect(nbArguments).to.equal(3);
+            done();
+          }, {});
+        });
       });
 
       describe('v2 CMP workflow for iframe pages:', function () {
@@ -562,6 +598,15 @@ describe('consentManagement', function () {
 
         testIFramedPage('with/JSON response', false, 'abc12345234', 2);
         testIFramedPage('with/String response', true, 'abc12345234', 2);
+
+        it('should contain correct v2 CMP definition', (done) => {
+          setConsentConfig(goodConfigWithAllowAuction);
+          requestBidsHook(() => {
+            const nbArguments = window.__tcfapi.toString().split('\n')[0].split(', ').length;
+            expect(nbArguments).to.equal(4);
+            done();
+          }, {});
+        });
       });
     });
 
@@ -649,6 +694,33 @@ describe('consentManagement', function () {
           expect(consent.apiVersion).to.equal(2);
         });
 
+        it('produces gdpr metadata', function () {
+          let testConsentData = {
+            tcString: 'abc12345234',
+            gdprApplies: true,
+            purposeOneTreatment: false,
+            eventStatus: 'tcloaded',
+            vendorData: {
+              tcString: 'abc12345234'
+            }
+          };
+          cmpStub = sinon.stub(window, '__tcfapi').callsFake((...args) => {
+            args[2](testConsentData, true);
+          });
+
+          setConsentConfig(goodConfigWithAllowAuction);
+
+          requestBidsHook(() => {
+            didHookReturn = true;
+          }, {});
+          let consentMeta = gdprDataHandler.getConsentMeta();
+          sinon.assert.notCalled(utils.logError);
+          expect(consentMeta.consentStringSize).to.be.above(0)
+          expect(consentMeta.gdprApplies).to.be.true;
+          expect(consentMeta.apiVersion).to.equal(2);
+          expect(consentMeta.generatedAt).to.be.above(1644367751709);
+        });
+
         it('performs lookup check and stores consentData for a valid existing user with additional consent', function () {
           let testConsentData = {
             tcString: 'abc12345234',
@@ -685,6 +757,11 @@ describe('consentManagement', function () {
 
           setConsentConfig(goodConfigWithAllowAuction);
 
+          sinon.assert.calledOnce(utils.logWarn);
+          sinon.assert.notCalled(utils.logError);
+
+          [utils.logWarn, utils.logError].forEach((stub) => stub.reset());
+
           requestBidsHook(() => {
             didHookReturn = true;
           }, { bidsBackHandler: () => bidsBackHandlerReturn = true });
@@ -695,6 +772,28 @@ describe('consentManagement', function () {
           expect(didHookReturn).to.be.false;
           expect(bidsBackHandlerReturn).to.be.true;
           expect(consent).to.be.null;
+          expect(gdprDataHandler.ready).to.be.true;
+        });
+
+        it('allows the auction when CMP is unresponsive', (done) => {
+          setConsentConfig({
+            cmpApi: 'iab',
+            timeout: 10,
+            defaultGdprScope: true
+          });
+
+          requestBidsHook(() => {
+            didHookReturn = true;
+          }, {});
+
+          setTimeout(() => {
+            expect(didHookReturn).to.be.true;
+            const consent = gdprDataHandler.getConsentData();
+            expect(consent.gdprApplies).to.be.true;
+            expect(consent.consentString).to.be.undefined;
+            expect(gdprDataHandler.ready).to.be.true;
+            done();
+          }, 20);
         });
 
         it('It still considers it a valid cmp response if gdprApplies is not a boolean', function () {

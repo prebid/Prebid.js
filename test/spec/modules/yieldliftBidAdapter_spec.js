@@ -208,6 +208,7 @@ describe('YieldLift', function () {
         expect(bids[index]).to.have.property('height', RESPONSE.body.seatbid[0].bid[index].h);
         expect(bids[index]).to.have.property('ad', RESPONSE.body.seatbid[0].bid[index].adm);
         expect(bids[index]).to.have.property('creativeId', RESPONSE.body.seatbid[0].bid[index].crid);
+        expect(bids[index].meta).to.have.property('adomain', RESPONSE.body.seatbid[0].bid[index].adomain);
         expect(bids[index]).to.have.property('ttl', 30);
         expect(bids[index]).to.have.property('netRevenue', true);
       }

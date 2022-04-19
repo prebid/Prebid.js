@@ -1,14 +1,8 @@
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {
-  parseQueryStringParameters,
-  parseSizesInput
-} from '../src/utils.js';
-import includes from 'core-js-pure/features/array/includes.js';
-import find from 'core-js-pure/features/array/find.js';
-import { getStorageManager } from '../src/storageManager.js';
-
-export const storage = getStorageManager();
+import {parseQueryStringParameters, parseSizesInput} from '../src/utils.js';
+import {find, includes} from '../src/polyfill.js';
+import {getStorageManager} from '../src/storageManager.js';
 
 const BIDDER_CODE = 'widespace';
 const WS_ADAPTER_VERSION = '2.0.1';
@@ -17,6 +11,7 @@ const LS_KEYS = {
   LC_UID: 'wsLcuid',
   CUST_DATA: 'wsCustomData'
 };
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 let preReqTime = 0;
 
@@ -61,7 +56,7 @@ export const spec = {
         'gdprCmp': bidderRequest && bidderRequest.gdprConsent ? 1 : 0,
         'hb': '1',
         'hb.cd': CUST_DATA ? encodedParamValue(CUST_DATA) : '',
-        'hb.floor': bid.bidfloor || '',
+        'hb.floor': '',
         'hb.spb': i === 0 ? pixelSyncPossibility() : -1,
         'hb.ver': WS_ADAPTER_VERSION,
         'hb.name': 'prebidjs-$prebid.version$',
@@ -95,10 +90,9 @@ export const spec = {
 
       // Include debug data when available
       if (!isInHostileIframe) {
-        const DEBUG_AD = (find(window.top.location.hash.split('&'),
+        data.forceAdId = (find(window.top.location.hash.split('&'),
           val => includes(val, 'WS_DEBUG_FORCEADID')
         ) || '').split('=')[1];
-        data.forceAdId = DEBUG_AD;
       }
 
       // GDPR Consent info
@@ -151,7 +145,10 @@ export const spec = {
           netRevenue: Boolean(bid.netRev),
           ttl: bid.ttl,
           referrer: getTopWindowReferrer(),
-          ad: bid.code
+          ad: bid.code,
+          meta: {
+            advertiserDomains: bid.adomain || []
+          }
         });
       }
     });
@@ -223,7 +220,6 @@ function visibleOnLoad(element) {
     const topPos = element.getBoundingClientRect().top;
     return topPos < screen.height && topPos >= window.top.pageYOffset ? 1 : 0;
   }
-  ;
   return '';
 }
 

@@ -1,7 +1,6 @@
 import {
   reconciliationSubmodule,
   track,
-  stringify,
   getTopIFrameWin,
   getSlotByWin
 } from 'modules/reconciliationRtdProvider.js';
@@ -18,16 +17,14 @@ describe('Reconciliation Real time data submodule', function () {
     }]
   };
 
-  let trackPostStub, trackGetStub;
+  let trackPostStub;
 
   beforeEach(function () {
     trackPostStub = sinon.stub(track, 'trackPost');
-    trackGetStub = sinon.stub(track, 'trackGet');
   });
 
   afterEach(function () {
     trackPostStub.restore();
-    trackGetStub.restore();
   });
 
   describe('reconciliationSubmodule', function () {
@@ -90,30 +87,6 @@ describe('Reconciliation Real time data submodule', function () {
         expect(trackPostStub.getCalls()[0].args[1].adUnits[0].adUnitId).to.eql(adUnit.code);
         expect(trackPostStub.getCalls()[0].args[1].adUnits[0].adDeliveryId).be.a('string');
         expect(trackPostStub.getCalls()[0].args[1].publisherMemberId).to.eql('test_prebid_publisher');
-      });
-    });
-
-    describe('stringify parameters', function () {
-      it('should return query for flat object', function () {
-        const parameters = {
-          adUnitId: '/adunit',
-          adDeliveryId: '12345'
-        };
-
-        expect(stringify(parameters)).to.eql('adUnitId=%2Fadunit&adDeliveryId=12345');
-      });
-
-      it('should return query with nested parameters', function () {
-        const parameters = {
-          adUnitId: '/adunit',
-          adDeliveryId: '12345',
-          ext: {
-            adSize: '300x250',
-            adType: 'banner'
-          }
-        };
-
-        expect(stringify(parameters)).to.eql('adUnitId=%2Fadunit&adDeliveryId=12345&ext=adSize%3D300x250%26adType%3Dbanner');
       });
     });
 
@@ -206,21 +179,40 @@ describe('Reconciliation Real time data submodule', function () {
           window.parent.postMessage(JSON.stringify({
             type: 'rsdk:impression:req',
             args: {
-              sourceMemberId: 'test_member_id',
-              sourceImpressionId: '123'
+              tagOwnerMemberId: "test_member_id",
+              dataSources: [
+                {
+                  memberId: "member_test",
+                  dataFeedName: "12345",
+                  impressionId: "54321",
+                  impressionIdDataField: "imp_id",
+                  allowedRecipientTypes: 41
+                }
+              ],
+              dataRecipients: [
+                {
+                  type: 1,
+                  memberId: "test_publisher_recipient"
+                },
+                {
+                  type: 16,
+                  memberId: "test_agency_recipient"
+                }
+              ]
             }
           }), '*');
         </script>`);
         adSlotIframe.contentDocument.close();
 
         setTimeout(() => {
-          expect(trackGetStub.calledOnce).to.be.true;
-          expect(trackGetStub.getCalls()[0].args[0]).to.eql('https://confirm.fiduciadlt.com/imp');
-          expect(trackGetStub.getCalls()[0].args[1].adUnitId).to.eql('/reconciliationAdunit');
-          expect(trackGetStub.getCalls()[0].args[1].adDeliveryId).to.eql('12345');
-          expect(trackGetStub.getCalls()[0].args[1].sourceMemberId).to.eql('test_member_id'); ;
-          expect(trackGetStub.getCalls()[0].args[1].sourceImpressionId).to.eql('123'); ;
-          expect(trackGetStub.getCalls()[0].args[1].publisherMemberId).to.eql('test_prebid_publisher');
+          expect(trackPostStub.calledOnce).to.be.true;
+          expect(trackPostStub.getCalls()[0].args[0]).to.eql('https://confirm.fiduciadlt.com/pimp');
+          expect(trackPostStub.getCalls()[0].args[1].adUnitId).to.eql('/reconciliationAdunit');
+          expect(trackPostStub.getCalls()[0].args[1].adDeliveryId).to.eql('12345');
+          expect(trackPostStub.getCalls()[0].args[1].tagOwnerMemberId).to.eql('test_member_id'); ;
+          expect(trackPostStub.getCalls()[0].args[1].dataSources.length).to.eql(1);
+          expect(trackPostStub.getCalls()[0].args[1].dataRecipients.length).to.eql(2);
+          expect(trackPostStub.getCalls()[0].args[1].publisherMemberId).to.eql('test_prebid_publisher');
           done();
         }, 100);
       });

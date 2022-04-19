@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { logError } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
@@ -17,7 +17,7 @@ export const spec = {
    * @returns {boolean} True if this is a valid bid, and false otherwise
    */
   isBidRequestValid: function(bid) {
-    return !!(bid.params && bid.params.partnerId && bid.params.adnetId);
+    return !!(bid.params && bid.params.partnerId);
   },
 
   /**
@@ -40,7 +40,7 @@ export const spec = {
       uspConsent: bidderRequest.uspConsent,
       currencyCode: config.getConfig('currency.adServerCurrency'),
       coppa: config.getConfig('coppa'),
-      firstPartyData: config.getConfig('fpd'),
+      firstPartyData: config.getLegacyFpd(config.getConfig('ortb2')),
       prebidVersion: '$prebid.version$'
     };
 
@@ -49,9 +49,6 @@ export const spec = {
     return {
       method: 'POST',
       url: 'https://prebid.owneriq.net:8443/bidder/pb/bid',
-      options: {
-        withCredentials: false
-      },
       data: payloadString,
     };
   },
@@ -86,7 +83,7 @@ export const spec = {
         bidResponses.push(bidResponse);
       }
     } catch (error) {
-      utils.logError('Error while parsing inmar response', error);
+      logError('Error while parsing inmar response', error);
     }
     return bidResponses;
   },

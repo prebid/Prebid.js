@@ -87,7 +87,7 @@ describe('Verizon Media ID Submodule', () => {
         pixelId: PIXEL_ID,
         '1p': '0',
         gdpr: '1',
-        euconsent: consentData.gdpr.consentString,
+        gdpr_consent: consentData.gdpr.consentString,
         us_privacy: consentData.uspConsent
       };
       const requestQueryParams = utils.parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
@@ -107,7 +107,7 @@ describe('Verizon Media ID Submodule', () => {
         he: HASHED_EMAIL,
         '1p': '0',
         gdpr: '1',
-        euconsent: consentData.gdpr.consentString,
+        gdpr_consent: consentData.gdpr.consentString,
         us_privacy: consentData.uspConsent
       };
       const requestQueryParams = utils.parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
@@ -134,7 +134,7 @@ describe('Verizon Media ID Submodule', () => {
 
       const requestQueryParams = utils.parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
       expect(requestQueryParams.gdpr).to.equal('1');
-      expect(requestQueryParams.euconsent).to.equal(consentData.gdpr.consentString);
+      expect(requestQueryParams.gdpr_consent).to.equal(consentData.gdpr.consentString);
     });
 
     it('sets GDPR consent data flag correctly when call is NOT under GDPR jurisdiction.', () => {
@@ -147,7 +147,7 @@ describe('Verizon Media ID Submodule', () => {
 
       const requestQueryParams = utils.parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
       expect(requestQueryParams.gdpr).to.equal('0');
-      expect(requestQueryParams.euconsent).to.equal('');
+      expect(requestQueryParams.gdpr_consent).to.equal('');
     });
 
     [1, '1', true].forEach(firstPartyParamValue => {
@@ -165,12 +165,34 @@ describe('Verizon Media ID Submodule', () => {
   });
 
   describe('decode()', () => {
-    const VALID_API_RESPONSE = {
-      vmuid: '1234'
-    };
-    it('should return a newly constructed object with the vmuid property', () => {
-      expect(verizonMediaIdSubmodule.decode(VALID_API_RESPONSE)).to.deep.equal(VALID_API_RESPONSE);
-      expect(verizonMediaIdSubmodule.decode(VALID_API_RESPONSE)).to.not.equal(VALID_API_RESPONSE);
+    const VALID_API_RESPONSES = [{
+      key: 'vmiud',
+      expected: '1234',
+      payload: {
+        vmuid: '1234'
+      }
+    },
+    {
+      key: 'connectid',
+      expected: '4567',
+      payload: {
+        connectid: '4567'
+      }
+    },
+    {
+      key: 'both',
+      expected: '4567',
+      payload: {
+        vmuid: '1234',
+        connectid: '4567'
+      }
+    }];
+    VALID_API_RESPONSES.forEach(responseData => {
+      it('should return a newly constructed object with the connectid for a payload with ${responseData.key} key(s)', () => {
+        expect(verizonMediaIdSubmodule.decode(responseData.payload)).to.deep.equal(
+          {connectid: responseData.expected}
+        );
+      });
     });
 
     [{}, '', {foo: 'bar'}].forEach((response) => {

@@ -3,12 +3,18 @@
 **Module Name**: One Video Bidder Adapter
 **Module Type**: Bidder Adapter
 **Maintainer**: deepthi.neeladri.sravana@verizonmedia.com
+                adam.browning@verizonmedia.com
 
 # Description
 Connects to Verizon Media's Video SSP (AKA ONE Video / Adap.tv) demand source to fetch bids.
-
+# Prebid.js V5.0 Support
+The oneVideo adapter now reads `mediaTypes.video` for mandatory parameters such as `playerSize` & `mimes`.
+Note: You can use the `bid.params.video` object to specify explicit overrides for whatever is declared in `mediaTypes.video`.
+Important: You must pass `bid.params.video = {}` as bare minimum for the adapter to work.
 # Integration Examples:
-## Instream Video adUnit example & parameters
+
+## Instream Video adUnit using mediaTypes.video
+*Note:* By default, the adapter will read the mandatory parameters from mediaTypes.video.
 *Note:* The Video SSP ad server will respond with an VAST XML to load into your defined player.
 ```
   var adUnits = [
@@ -17,7 +23,18 @@ Connects to Verizon Media's Video SSP (AKA ONE Video / Adap.tv) demand source to
           mediaTypes: {
             video: {
                   context: 'instream',
-                  playerSize: [480, 640]
+                  playerSize: [480, 640],
+                  mimes: ['video/mp4', 'application/javascript'],
+                  protocols: [2,5],
+                  api: [2],
+                  position: 1,
+                  delivery: [2],
+                  minduration: 10,
+                  maxduration: 30,
+                  placement: 1,
+                  playbackmethod: [1,5],
+                  protocols: [2,5],
+                  api: [2],
             }
           },
           bids: [
@@ -25,22 +42,70 @@ Connects to Verizon Media's Video SSP (AKA ONE Video / Adap.tv) demand source to
               bidder: 'oneVideo',
               params: {
                 video: {
-                  playerWidth: 480,
-                  playerHeight: 640,
+                  sid: YOUR_VSSP_ORG_ID,
+                  hp: 1,
+                  rewarded: 1,
+                  inventoryid: 123,
+                  ttl: 300,
+                  custom: {
+                    key1: "value1",
+                    key2: 123345
+                  }
+                },
+                bidfloor: 0.5,
+                site: {
+                    id: 1,
+                    page: 'https://verizonmedia.com',
+                    referrer: 'https://verizonmedia.com'
+                  },
+                pubId: 'HBExchange'
+                }
+            }
+          ]
+      }
+  ]
+```
+## Instream Video adUnit using params.video overrides
+*Note:* If the mandatory parameters are not specified in mediaTypes.video the adapter will read check to see if overrides are set in params.video. Decalring values using params.video will always override the settings in mediaTypes.video.
+*Note:* The Video SSP ad server will respond with an VAST XML to load into your defined player.
+```
+  var adUnits = [
+    {
+        code: 'video1',
+          mediaTypes: {
+            video: {
+                  context: 'instream',
+            }
+          },
+          bids: [
+            {
+              bidder: 'oneVideo',
+              params: {
+                video: {
+                  playerWidth: 640,
+                  playerHeight: 480,
                   mimes: ['video/mp4', 'application/javascript'],
                   protocols: [2,5],
                   api: [2],
                   position: 1,
                   delivery: [2],
+                  minduration: 10,
+                  maxduration: 30,
+                  placement: 1,
                   playbackmethod: [1,5],
+                  protocols: [2,5],
+                  api: [2],
                   sid: YOUR_VSSP_ORG_ID,
                   hp: 1,
                   rewarded: 1,
-                  placement: 1,
                   inventoryid: 123,
-                  minduration: 10,
-                  maxduration: 30,
+                  ttl: 300,
+                  custom: {
+                    key1: "value1",
+                    key2: 123345
+                  }
                 },
+                bidfloor: 0.5,
                 site: {
                     id: 1,
                     page: 'https://verizonmedia.com',
@@ -62,7 +127,19 @@ Connects to Verizon Media's Video SSP (AKA ONE Video / Adap.tv) demand source to
           mediaTypes: {
             video: {
                   context: 'outstream',
-                  playerSize: [480, 640]
+                  playerSize: [480, 640],
+                  mimes: ['video/mp4', 'application/javascript'],
+                  protocols: [2,5],
+                  api: [2],
+                  position: 1,
+                  delivery: [2],
+                  minduration: 10,
+                  maxduration: 30,
+                  placement: 1,
+                  playbackmethod: [1,5],
+                  protocols: [2,5],
+                  api: [2],
+
             }
           },
           bids: [
@@ -70,22 +147,12 @@ Connects to Verizon Media's Video SSP (AKA ONE Video / Adap.tv) demand source to
               bidder: 'oneVideo',
               params: {
                 video: {
-                  playerWidth: 480,
-                  playerHeight: 640,
-                  mimes: ['video/mp4', 'application/javascript'],
-                  protocols: [2,5],
-                  api: [2],
-                  position: 1,
-                  delivery: [2],
-                  playbackmethod: [1,5],
                   sid: YOUR_VSSP_ORG_ID,
                   hp: 1,
                   rewarded: 1,
-                  placement: 1,
-                  inventoryid: 123,
-                  minduration: 10,
-                  maxduration: 30,
+                  ttl: 250
                 },
+                bidfloor: 0.5,
                 site: {
                     id: 1,
                     page: 'https://verizonmedia.com',
@@ -108,7 +175,8 @@ Connects to Verizon Media's Video SSP (AKA ONE Video / Adap.tv) demand source to
       mediaTypes: {
         video: {
           context: "instream",
-          playerSize: [480, 640]
+          playerSize: [480, 640],
+          mimes: ['video/mp4', 'application/javascript'],
         }
       },
       bids: [
@@ -116,12 +184,9 @@ Connects to Verizon Media's Video SSP (AKA ONE Video / Adap.tv) demand source to
           bidder: 'oneVideo',
           params: {
             video: {
-              playerWidth: 480,
-              playerHeight: 640,
-              mimes: ['video/mp4', 'application/javascript'],
-              position: 1,
-              display: 1
+              ttl: 250
             },
+            bidfloor: 0.5,
             site: {
               id: 1,
               page: 'https://verizonmedia.com',
@@ -155,6 +220,7 @@ Connects to Verizon Media's Video SSP (AKA ONE Video / Adap.tv) demand source to
               mimes: ['video/mp4', 'application/javascript'],
               display: 1
             },
+            bidfloor: 0.5,
             site: {
               id: 1,
               page: 'https://verizonmedia.com',
@@ -180,6 +246,7 @@ var adUnits = [
         video: {
           context: "instream",
           playerSize: [480, 640]
+          mimes: ['video/mp4', 'application/javascript'],
         }
       },
       bids: [
@@ -187,12 +254,8 @@ var adUnits = [
           bidder: 'oneVideo',
           params: {
             video: {
-              playerWidth: 300,
-              playerHeight: 250,
-              mimes: ['video/mp4', 'application/javascript'],
               e2etest: true
             }
-            pubId: 'YOUR_PUBLISHER_ID'
           }
         }
       ]
@@ -216,7 +279,10 @@ var adUnits = [
           mediaTypes: {
             video: {
                   context: 'instream',
-                  playerSize: [480, 640]
+                  playerSize: [480, 640],
+                  mimes: ['video/mp4', 'application/javascript'],
+                  protocols: [2,5],
+                  api: [2],
             }
           },
           bids: [
@@ -224,13 +290,9 @@ var adUnits = [
               bidder: 'oneVideo',
               params: {
                 video: {
-                  playerWidth: 480,
-                  playerHeight: 640,
-                  mimes: ['video/mp4', 'application/javascript'],
-                  protocols: [2,5],
-                  api: [2],
-                  sid:
+                  sid: 123456
                 },
+                bidfloor: 0.5,
                 site: {
                     id: 1,
                     page: 'https://verizonmedia.com',
@@ -268,7 +330,10 @@ var adUnits = [
           mediaTypes: {
             video: {
                   context: 'instream',
-                  playerSize: [480, 640]
+                  playerSize: [480, 640],
+                  mimes: ['video/mp4', 'application/javascript'],
+                  protocols: [2,5],
+                  api: [2],
             }
           },
           bids: [
@@ -276,17 +341,14 @@ var adUnits = [
               bidder: 'oneVideo',
               params: {
                 video: {
-                  playerWidth: 480,
-                  playerHeight: 640,
-                  mimes: ['video/mp4', 'application/javascript'],
-                  protocols: [2,5],
-                  api: [2],
+                  ttl: 250
                 },
+                bidfloor: 0.5,
                 site: {
                     id: 1,
                     page: 'https://verizonmedia.com',
                     referrer: 'https://verizonmedia.com'
-                  },
+                  },            
                 pubId: 'HBExchange'
                 }
             }
@@ -294,3 +356,87 @@ var adUnits = [
       }
   ]
 ```
+# Content Object Support
+The oneVideoBidAdapter supports passing of OpenRTB V2.5 Content Object.
+
+```
+const adUnits = [{
+            code: 'video1',
+            mediaTypes: {
+                video: {
+                    context: 'outstream',
+                    playerSize: [640, 480],
+                    mimes: ['video/mp4', 'application/javascript'],
+                    protocols: [2, 5],
+                    api: [1, 2],
+                }
+            },
+            bids: [{
+                bidder: 'oneVideo',
+                params: {
+                    video: {
+                        ttl: 300,
+                        content: {
+                            id: "1234",
+                            title: "Title",
+                            series: "Series",
+                            season: "Season",
+                            episode: 1
+                            cat: [
+                                "IAB1",
+                                "IAB1-1",
+                                "IAB1-2",
+                                "IAB2",
+                                "IAB2-1"
+                            ],
+                            genre: "Genre",
+                            contentrating: "C-Rating",
+                            language: "EN",
+                            prodq: 1,
+                            context: 1,
+                            livestream: 0,
+                            len: 360,
+                            ext: {
+                                network: "ext-network",
+                                channel: "ext-channel"
+                            }
+                        }
+                      },
+                      bidfloor: 0.5,
+                      pubId: 'HBExchange'
+                    }
+                }
+            }]
+        }]
+```
+
+
+# TTL Support
+The oneVideoBidAdapter supports passing of "Time To Live" (ttl)  that indicates to prebid chache for how long to keep the chaced winning bid alive.
+Value is Number in seconds
+You can enter any number between 1 - 3600 (seconds)
+```
+const adUnits = [{
+            code: 'video1',
+            mediaTypes: {
+                video: {
+                    context: 'outstream',
+                    playerSize: [640, 480],
+                    mimes: ['video/mp4', 'application/javascript'],
+                    protocols: [2, 5],
+                    api: [1, 2],
+                }
+            },
+            bids: [{
+                bidder: 'oneVideo',
+                params: {
+                    video: {
+                        ttl: 300
+                    },
+                    bidfloor: 0.5,
+                    pubId: 'HBExchange'
+                }
+            }]
+        }]
+```
+

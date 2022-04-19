@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { _each, isEmpty } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'fluct';
@@ -6,6 +6,16 @@ const END_POINT = 'https://hb.adingo.jp/prebid';
 const VERSION = '1.2';
 const NET_REVENUE = true;
 const TTL = 300;
+
+/**
+ * See modules/userId/eids.js for supported sources
+ */
+const SUPPORTED_USER_ID_SOURCES = [
+  'adserver.org',
+  'criteo.com',
+  'intimatemerger.com',
+  'liveramp.com',
+];
 
 export const spec = {
   code: BIDDER_CODE,
@@ -31,16 +41,19 @@ export const spec = {
     const serverRequests = [];
     const referer = bidderRequest.refererInfo.referer;
 
-    utils._each(validBidRequests, (request) => {
+    _each(validBidRequests, (request) => {
       const data = Object();
 
       data.referer = referer;
       data.adUnitCode = request.adUnitCode;
       data.bidId = request.bidId;
       data.transactionId = request.transactionId;
+      data.user = {
+        eids: (request.userIdAsEids || []).filter((eid) => SUPPORTED_USER_ID_SOURCES.indexOf(eid.source) !== -1)
+      };
 
       data.sizes = [];
-      utils._each(request.sizes, (size) => {
+      _each(request.sizes, (size) => {
         data.sizes.push({
           w: size[0],
           h: size[1]
@@ -48,10 +61,15 @@ export const spec = {
       });
 
       data.params = request.params;
+      const searchParams = new URLSearchParams({
+        dfpUnitCode: request.params.dfpUnitCode,
+        tagId: request.params.tagId,
+        groupId: request.params.groupId,
+      });
 
       serverRequests.push({
         method: 'POST',
-        url: END_POINT,
+        url: END_POINT + '?' + searchParams.toString(),
         options: {
           contentType: 'application/json',
           withCredentials: true,
@@ -78,7 +96,7 @@ export const spec = {
     const bidResponses = [];
 
     const res = serverResponse.body;
-    if (!utils.isEmpty(res) && !utils.isEmpty(res.seatbid) && !utils.isEmpty(res.seatbid[0].bid)) {
+    if (!isEmpty(res) && !isEmpty(res.seatbid) && !isEmpty(res.seatbid[0].bid)) {
       const bid = res.seatbid[0].bid[0];
       const dealId = bid.dealid;
       const beaconUrl = bid.burl;
@@ -96,8 +114,11 @@ export const spec = {
         creativeId: bid.crid,
         ttl: TTL,
         ad: bid.adm + callImpBeacon,
+        meta: {
+          advertiserDomains: bid.adomain || [],
+        },
       };
-      if (!utils.isEmpty(dealId)) {
+      if (!isEmpty(dealId)) {
         data.dealId = dealId;
       }
       bidResponses.push(data);

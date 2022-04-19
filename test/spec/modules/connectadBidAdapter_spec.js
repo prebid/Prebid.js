@@ -303,7 +303,43 @@ describe('ConnectAd Adapter', function () {
     });
 
     describe('bid responses', function () {
-      it('should return complete bid response', function () {
+      it('should return complete bid response with adomain', function () {
+        const ADOMAINS = ['connectad.io'];
+
+        let serverResponse = {
+          body: {
+            decisions: {
+              '2f95c00074b931': {
+                adId: '0',
+                adomain: ['connectad.io'],
+                contents: [
+                  {
+                    body: '<<<---- Creative --->>>'
+                  }
+                ],
+                height: '250',
+                width: '300',
+                pricing: {
+                  clearPrice: 11.899999999999999
+                }
+              }
+            }
+          }
+        };
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        const bids = spec.interpretResponse(serverResponse, request);
+
+        expect(bids).to.be.lengthOf(1);
+        expect(bids[0].cpm).to.equal(11.899999999999999);
+        expect(bids[0].width).to.equal('300');
+        expect(bids[0].height).to.equal('250');
+        expect(bids[0].ad).to.have.length.above(1);
+        expect(bids[0].meta.advertiserDomains).to.deep.equal(ADOMAINS);
+      });
+
+      it('should return complete bid response with empty adomain', function () {
+        const ADOMAINS = [];
+
         let serverResponse = {
           body: {
             decisions: {
@@ -331,6 +367,7 @@ describe('ConnectAd Adapter', function () {
         expect(bids[0].width).to.equal('300');
         expect(bids[0].height).to.equal('250');
         expect(bids[0].ad).to.have.length.above(1);
+        expect(bids[0].meta.advertiserDomains).to.deep.equal(ADOMAINS);
       });
 
       it('should return empty bid response', function () {

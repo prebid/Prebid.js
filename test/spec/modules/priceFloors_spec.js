@@ -14,7 +14,12 @@ import {
   fieldMatchingFunctions,
   allowedFields
 } from 'modules/priceFloors.js';
-import events from 'src/events.js';
+import * as events from 'src/events.js';
+import * as mockGpt from '../integration/faker/googletag.js';
+import 'src/prebid.js';
+import {createBid} from '../../../src/bidfactory.js';
+import {auctionManager} from '../../../src/auctionManager.js';
+import {stubAuctionIndex} from '../../helpers/indexStub.js';
 
 describe('the price floors module', function () {
   let logErrorSpy;
@@ -23,6 +28,8 @@ describe('the price floors module', function () {
   let clock;
   const basicFloorData = {
     modelVersion: 'basic model',
+    modelWeight: 10,
+    modelTimestamp: 1606772895,
     currency: 'USD',
     schema: {
       delimiter: '|',
@@ -37,6 +44,7 @@ describe('the price floors module', function () {
   const basicFloorDataHigh = {
     floorMin: 7.0,
     modelVersion: 'basic model',
+    modelWeight: 10,
     currency: 'USD',
     schema: {
       delimiter: '|',
@@ -51,6 +59,7 @@ describe('the price floors module', function () {
   const basicFloorDataLow = {
     floorMin: 2.3,
     modelVersion: 'basic model',
+    modelWeight: 10,
     currency: 'USD',
     schema: {
       delimiter: '|',
@@ -104,6 +113,7 @@ describe('the price floors module', function () {
     bidder: 'rubicon',
     adUnitCode: 'test_div_1',
     auctionId: '1234-56-789',
+    transactionId: 'tr_test_div_1'
   };
 
   function getAdUnitMock(code = 'adUnit-code') {
@@ -184,6 +194,8 @@ describe('the price floors module', function () {
       let resultingData = getFloorsDataForAuction(inputFloorData, 'test_div_1');
       expect(resultingData).to.deep.equal({
         modelVersion: 'basic model',
+        modelWeight: 10,
+        modelTimestamp: 1606772895,
         currency: 'USD',
         schema: {
           delimiter: '|',
@@ -201,6 +213,8 @@ describe('the price floors module', function () {
       resultingData = getFloorsDataForAuction(inputFloorData, 'this_is_a_div');
       expect(resultingData).to.deep.equal({
         modelVersion: 'basic model',
+        modelWeight: 10,
+        modelTimestamp: 1606772895,
         currency: 'USD',
         schema: {
           delimiter: '^',
@@ -216,6 +230,44 @@ describe('the price floors module', function () {
   });
 
   describe('getFirstMatchingFloor', function () {
+    it('uses a 0 floor as overrite', function () {
+      let inputFloorData = {
+        currency: 'USD',
+        schema: {
+          delimiter: '|',
+          fields: ['adUnitCode']
+        },
+        values: {
+          'test_div_1': 0,
+          'test_div_2': 2
+        },
+        default: 0.5
+      };
+
+      expect(getFirstMatchingFloor(inputFloorData, basicBidRequest, {mediaType: 'banner', size: '*'})).to.deep.equal({
+        floorMin: 0,
+        floorRuleValue: 0,
+        matchingFloor: 0,
+        matchingData: 'test_div_1',
+        matchingRule: 'test_div_1'
+      });
+
+      expect(getFirstMatchingFloor(inputFloorData, {...basicBidRequest, adUnitCode: 'test_div_2'}, {mediaType: 'banner', size: '*'})).to.deep.equal({
+        floorMin: 0,
+        floorRuleValue: 2,
+        matchingFloor: 2,
+        matchingData: 'test_div_2',
+        matchingRule: 'test_div_2'
+      });
+
+      expect(getFirstMatchingFloor(inputFloorData, {...basicBidRequest, adUnitCode: 'test_div_3'}, {mediaType: 'banner', size: '*'})).to.deep.equal({
+        floorMin: 0,
+        floorRuleValue: 0.5,
+        matchingFloor: 0.5,
+        matchingData: 'test_div_3',
+        matchingRule: undefined
+      });
+    });
     it('selects the right floor for different mediaTypes', function () {
       // banner with * size (not in rule file so does not do anything)
       expect(getFirstMatchingFloor({...basicFloorData}, basicBidRequest, {mediaType: 'banner', size: '*'})).to.deep.equal({
@@ -390,6 +442,90 @@ describe('the price floors module', function () {
         matchingFloor: 5.0
       });
     });
+    describe('with gpt enabled', function () {
+      let gptFloorData;
+      let indexStub, adUnits;
+      beforeEach(function () {
+        gptFloorData = {
+          currency: 'USD',
+          schema: {
+            fields: ['gptSlot']
+          },
+          values: {
+            '/12345/sports/soccer': 1.1,
+            '/12345/sports/basketball': 2.2,
+            '/12345/news/politics': 3.3,
+            '/12345/news/weather': 4.4,
+            '*': 5.5,
+          },
+          default: 0.5
+        };
+        // reset it so no lingering stuff from other test specs
+        mockGpt.reset();
+        mockGpt.makeSlot({
+          code: '/12345/sports/soccer',
+          divId: 'test_div_1'
+        });
+        mockGpt.makeSlot({
+          code: '/12345/sports/basketball',
+          divId: 'test_div_2'
+        });
+        indexStub = sinon.stub(auctionManager, 'index');
+        indexStub.get(() => stubAuctionIndex({adUnits}))
+      });
+      afterEach(function () {
+        // reset it so no lingering stuff from other test specs
+        mockGpt.reset();
+        indexStub.restore();
+      });
+      it('picks the right rule when looking for gptSlot', function () {
+        expect(getFirstMatchingFloor(gptFloorData, basicBidRequest)).to.deep.equal({
+          floorMin: 0,
+          floorRuleValue: 1.1,
+          matchingFloor: 1.1,
+          matchingData: '/12345/sports/soccer',
+          matchingRule: '/12345/sports/soccer'
+        });
+
+        let newBidRequest = { ...basicBidRequest, adUnitCode: 'test_div_2' }
+        expect(getFirstMatchingFloor(gptFloorData, newBidRequest)).to.deep.equal({
+          floorMin: 0,
+          floorRuleValue: 2.2,
+          matchingFloor: 2.2,
+          matchingData: '/12345/sports/basketball',
+          matchingRule: '/12345/sports/basketball'
+        });
+      });
+      it('picks the gptSlot from the adUnit and does not call the slotMatching', function () {
+        const newBidRequest1 = { ...basicBidRequest, transactionId: 'au1' };
+        adUnits = [{code: newBidRequest1.code, transactionId: 'au1'}];
+        utils.deepSetValue(adUnits[0], 'ortb2Imp.ext.data.adserver', {
+          name: 'gam',
+          adslot: '/12345/news/politics'
+        })
+        expect(getFirstMatchingFloor(gptFloorData, newBidRequest1)).to.deep.equal({
+          floorMin: 0,
+          floorRuleValue: 3.3,
+          matchingFloor: 3.3,
+          matchingData: '/12345/news/politics',
+          matchingRule: '/12345/news/politics'
+        });
+
+        const newBidRequest2 = { ...basicBidRequest, adUnitCode: 'test_div_2', transactionId: 'au2' };
+        adUnits = [{code: newBidRequest2.adUnitCode, transactionId: newBidRequest2.transactionId}];
+        utils.deepSetValue(adUnits[0], 'ortb2Imp.ext.data.adserver', {
+          name: 'gam',
+          adslot: '/12345/news/weather'
+        })
+        expect(getFirstMatchingFloor(gptFloorData, newBidRequest2)).to.deep.equal({
+          floorMin: 0,
+          floorRuleValue: 4.4,
+          matchingFloor: 4.4,
+          matchingData: '/12345/news/weather',
+          matchingRule: '/12345/news/weather'
+        });
+      });
+    });
   });
   describe('pre-auction tests', function () {
     let exposedAdUnits;
@@ -429,6 +565,8 @@ describe('the price floors module', function () {
         skipped: true,
         floorMin: undefined,
         modelVersion: undefined,
+        modelWeight: undefined,
+        modelTimestamp: undefined,
         location: 'noData',
         skipRate: 0,
         fetchStatus: undefined,
@@ -463,6 +601,8 @@ describe('the price floors module', function () {
         skipped: false,
         floorMin: undefined,
         modelVersion: 'adUnit Model Version',
+        modelWeight: 10,
+        modelTimestamp: 1606772895,
         location: 'adUnit',
         skipRate: 0,
         fetchStatus: undefined,
@@ -496,6 +636,8 @@ describe('the price floors module', function () {
       validateBidRequests(true, {
         skipped: false,
         modelVersion: 'adUnit Model Version',
+        modelWeight: 10,
+        modelTimestamp: 1606772895,
         location: 'adUnit',
         skipRate: 0,
         floorMin: 7,
@@ -510,6 +652,8 @@ describe('the price floors module', function () {
         skipped: false,
         floorMin: undefined,
         modelVersion: 'basic model',
+        modelWeight: 10,
+        modelTimestamp: 1606772895,
         location: 'setConfig',
         skipRate: 0,
         fetchStatus: undefined,
@@ -531,6 +675,8 @@ describe('the price floors module', function () {
         skipped: false,
         floorMin: undefined,
         modelVersion: 'basic model',
+        modelWeight: 10,
+        modelTimestamp: 1606772895,
         location: 'setConfig',
         skipRate: 0,
         fetchStatus: undefined,
@@ -545,6 +691,8 @@ describe('the price floors module', function () {
         skipped: false,
         floorMin: undefined,
         modelVersion: 'basic model',
+        modelWeight: 10,
+        modelTimestamp: 1606772895,
         location: 'setConfig',
         skipRate: 0,
         fetchStatus: undefined,
@@ -559,6 +707,8 @@ describe('the price floors module', function () {
         skipped: false,
         floorMin: undefined,
         modelVersion: 'basic model',
+        modelWeight: 10,
+        modelTimestamp: 1606772895,
         location: 'setConfig',
         skipRate: 0,
         fetchStatus: undefined,
@@ -582,6 +732,8 @@ describe('the price floors module', function () {
         skipped: false,
         floorMin: undefined,
         modelVersion: 'basic model',
+        modelWeight: 10,
+        modelTimestamp: 1606772895,
         location: 'setConfig',
         skipRate: 50,
         fetchStatus: undefined,
@@ -596,6 +748,8 @@ describe('the price floors module', function () {
         skipped: false,
         floorMin: undefined,
         modelVersion: 'basic model',
+        modelWeight: 10,
+        modelTimestamp: 1606772895,
         location: 'setConfig',
         skipRate: 10,
         fetchStatus: undefined,
@@ -610,6 +764,8 @@ describe('the price floors module', function () {
         skipped: false,
         floorMin: undefined,
         modelVersion: 'basic model',
+        modelWeight: 10,
+        modelTimestamp: 1606772895,
         location: 'setConfig',
         skipRate: 0,
         fetchStatus: undefined,
@@ -674,6 +830,8 @@ describe('the price floors module', function () {
         skipped: false,
         floorMin: undefined,
         modelVersion: 'model-1',
+        modelWeight: 10,
+        modelTimestamp: undefined,
         location: 'setConfig',
         skipRate: 0,
         fetchStatus: undefined,
@@ -687,6 +845,8 @@ describe('the price floors module', function () {
         skipped: false,
         floorMin: undefined,
         modelVersion: 'model-2',
+        modelWeight: 40,
+        modelTimestamp: undefined,
         location: 'setConfig',
         skipRate: 0,
         fetchStatus: undefined,
@@ -700,6 +860,8 @@ describe('the price floors module', function () {
         skipped: false,
         floorMin: undefined,
         modelVersion: 'model-3',
+        modelWeight: 50,
+        modelTimestamp: undefined,
         location: 'setConfig',
         skipRate: 0,
         fetchStatus: undefined,
@@ -729,6 +891,8 @@ describe('the price floors module', function () {
         skipped: false,
         floorMin: undefined,
         modelVersion: 'basic model',
+        modelWeight: 10,
+        modelTimestamp: 1606772895,
         location: 'setConfig',
         skipRate: 0,
         fetchStatus: undefined,
@@ -808,6 +972,8 @@ describe('the price floors module', function () {
         skipped: false,
         floorMin: undefined,
         modelVersion: 'basic model',
+        modelWeight: 10,
+        modelTimestamp: 1606772895,
         location: 'setConfig',
         skipRate: 0,
         fetchStatus: 'timeout',
@@ -846,6 +1012,8 @@ describe('the price floors module', function () {
         skipped: false,
         floorMin: undefined,
         modelVersion: 'fetch model name',
+        modelWeight: 10,
+        modelTimestamp: 1606772895,
         location: 'fetch',
         skipRate: 0,
         fetchStatus: 'success',
@@ -883,6 +1051,8 @@ describe('the price floors module', function () {
         skipped: false,
         floorMin: undefined,
         modelVersion: 'fetch model name',
+        modelWeight: 10,
+        modelTimestamp: 1606772895,
         location: 'fetch',
         skipRate: 0,
         fetchStatus: 'success',
@@ -923,6 +1093,8 @@ describe('the price floors module', function () {
         skipped: false,
         floorMin: undefined,
         modelVersion: 'fetch model name',
+        modelWeight: 10,
+        modelTimestamp: 1606772895,
         location: 'fetch',
         skipRate: 95,
         fetchStatus: 'success',
@@ -945,6 +1117,8 @@ describe('the price floors module', function () {
         skipped: false,
         floorMin: undefined,
         modelVersion: 'basic model',
+        modelWeight: 10,
+        modelTimestamp: 1606772895,
         location: 'setConfig',
         skipRate: 0,
         fetchStatus: 'error',
@@ -969,6 +1143,8 @@ describe('the price floors module', function () {
         skipped: false,
         floorMin: undefined,
         modelVersion: 'basic model',
+        modelWeight: 10,
+        modelTimestamp: 1606772895,
         location: 'setConfig',
         skipRate: 0,
         fetchStatus: 'success',
@@ -1268,6 +1444,41 @@ describe('the price floors module', function () {
           floor: 1.3334 // 1.3334 * 0.75 = 1.000005 which is the floor (we cut off getFloor at 4 decimal points)
         });
       });
+
+      it('should use standard cpmAdjustment if no bidder cpmAdjustment', function () {
+        getGlobal().bidderSettings = {
+          rubicon: {
+            bidCpmAdjustment: function (bidCpm, bidResponse) {
+              return bidResponse.cpm * 0.5;
+            },
+          },
+          standard: {
+            bidCpmAdjustment: function (bidCpm, bidResponse) {
+              return bidResponse.cpm * 0.75;
+            },
+          }
+        };
+        _floorDataForAuction[bidRequest.auctionId] = utils.deepClone(basicFloorConfig);
+        _floorDataForAuction[bidRequest.auctionId].data.values = { '*': 1.0 };
+        let appnexusBid = {
+          ...bidRequest,
+          bidder: 'appnexus'
+        };
+
+        // the conversion should be what the bidder would need to return in order to match the actual floor
+        // rubicon
+        expect(bidRequest.getFloor()).to.deep.equal({
+          currency: 'USD',
+          floor: 2.0 // a 2.0 bid after rubicons cpm adjustment would be 1.0 and thus is the floor after adjust
+        });
+
+        // appnexus
+        expect(appnexusBid.getFloor()).to.deep.equal({
+          currency: 'USD',
+          floor: 1.3334 // 1.3334 * 0.75 = 1.000005 which is the floor (we cut off getFloor at 4 decimal points)
+        });
+      });
+
       it('should work when cpmAdjust function uses bid object', function () {
         getGlobal().bidderSettings = {
           rubicon: {
@@ -1403,17 +1614,12 @@ describe('the price floors module', function () {
     });
   });
   describe('bidResponseHook tests', function () {
-    let returnedBidResponse;
-    let bidderRequest = {
-      bidderCode: 'appnexus',
-      auctionId: '123456',
-      bids: [{
-        bidder: 'appnexus',
-        adUnitCode: 'test_div_1',
-        auctionId: '123456',
-        bidId: '1111'
-      }]
-    };
+    const AUCTION_ID = '123456';
+    let returnedBidResponse, indexStub;
+    let adUnit = {
+      transactionId: 'au',
+      code: 'test_div_1'
+    }
     let basicBidResponse = {
       bidderCode: 'appnexus',
       width: 300,
@@ -1421,38 +1627,46 @@ describe('the price floors module', function () {
       cpm: 0.5,
       mediaType: 'banner',
       requestId: '1111',
+      transactionId: 'au',
     };
     beforeEach(function () {
       returnedBidResponse = {};
+      indexStub = sinon.stub(auctionManager, 'index');
+      indexStub.get(() => stubAuctionIndex({adUnits: [adUnit]}));
     });
+
+    afterEach(() => {
+      indexStub.restore();
+    });
+
     function runBidResponse(bidResp = basicBidResponse) {
       let next = (adUnitCode, bid) => {
         returnedBidResponse = bid;
       };
-      addBidResponseHook.bind({ bidderRequest })(next, bidResp.adUnitCode, bidResp);
+      addBidResponseHook(next, bidResp.adUnitCode, Object.assign(createBid(CONSTANTS.STATUS.GOOD, {auctionId: AUCTION_ID}), bidResp));
     };
     it('continues with the auction if not floors data is present without any flooring', function () {
       runBidResponse();
       expect(returnedBidResponse).to.not.haveOwnProperty('floorData');
     });
     it('if no matching rule it should not floor and should call log warn', function () {
-      _floorDataForAuction[bidderRequest.auctionId] = utils.deepClone(basicFloorConfig);
-      _floorDataForAuction[bidderRequest.auctionId].data.values = { 'video': 1.0 };
+      _floorDataForAuction[AUCTION_ID] = utils.deepClone(basicFloorConfig);
+      _floorDataForAuction[AUCTION_ID].data.values = { 'video': 1.0 };
       runBidResponse();
       expect(returnedBidResponse).to.not.haveOwnProperty('floorData');
       expect(logWarnSpy.calledOnce).to.equal(true);
     });
     it('if it finds a rule and floors should update the bid accordingly', function () {
-      _floorDataForAuction[bidderRequest.auctionId] = utils.deepClone(basicFloorConfig);
-      _floorDataForAuction[bidderRequest.auctionId].data.values = { 'banner': 1.0 };
+      _floorDataForAuction[AUCTION_ID] = utils.deepClone(basicFloorConfig);
+      _floorDataForAuction[AUCTION_ID].data.values = { 'banner': 1.0 };
       runBidResponse();
       expect(returnedBidResponse).to.haveOwnProperty('floorData');
       expect(returnedBidResponse.status).to.equal(CONSTANTS.BID_STATUS.BID_REJECTED);
       expect(returnedBidResponse.cpm).to.equal(0);
     });
     it('if it finds a rule and does not floor should update the bid accordingly', function () {
-      _floorDataForAuction[bidderRequest.auctionId] = utils.deepClone(basicFloorConfig);
-      _floorDataForAuction[bidderRequest.auctionId].data.values = { 'banner': 0.3 };
+      _floorDataForAuction[AUCTION_ID] = utils.deepClone(basicFloorConfig);
+      _floorDataForAuction[AUCTION_ID].data.values = { 'banner': 0.3 };
       runBidResponse();
       expect(returnedBidResponse).to.haveOwnProperty('floorData');
       expect(returnedBidResponse.floorData).to.deep.equal({
@@ -1474,7 +1688,7 @@ describe('the price floors module', function () {
       expect(returnedBidResponse.cpm).to.equal(0.5);
     });
     it('if should work with more complex rules and update accordingly', function () {
-      _floorDataForAuction[bidderRequest.auctionId] = {
+      _floorDataForAuction[AUCTION_ID] = {
         ...basicFloorConfig,
         data: {
           currency: 'USD',
@@ -1559,5 +1773,50 @@ describe('the price floors module', function () {
       // should be undefined now
       expect(_floorDataForAuction[AUCTION_END_EVENT.auctionId]).to.be.undefined;
     });
+  });
+
+  describe('fieldMatchingFunctions', () => {
+    let sandbox;
+
+    const req = {
+      ...basicBidRequest,
+    }
+
+    const resp = {
+      transactionId: req.transactionId,
+      size: [100, 100],
+      mediaType: 'banner',
+    }
+
+    beforeEach(() => {
+      sandbox = sinon.sandbox.create();
+      sandbox.stub(auctionManager, 'index').get(() => stubAuctionIndex({
+        adUnits: [
+          {
+            code: req.adUnitCode,
+            transactionId: req.transactionId,
+            ortb2Imp: {ext: {data: {adserver: {name: 'gam', adslot: 'slot'}}}}
+          }
+        ]
+      }));
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    })
+
+    Object.entries({
+      size: '100x100',
+      mediaType: resp.mediaType,
+      gptSlot: 'slot',
+      domain: 'localhost',
+      adUnitCode: req.adUnitCode,
+    }).forEach(([test, expected]) => {
+      describe(`${test}`, () => {
+        it('should work with only bidResponse', () => {
+          expect(fieldMatchingFunctions[test](undefined, resp)).to.eql(expected)
+        })
+      });
+    })
   });
 });

@@ -1,8 +1,18 @@
-import * as utils from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import {
+  deepAccess,
+  getBidIdParameter,
+  isArray,
+  isFn,
+  isNumber,
+  isPlainObject,
+  isStr,
+  parseUrl,
+  replaceAuctionPrice,
+} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE} from '../src/mediaTypes.js';
 
-import find from 'core-js-pure/features/array/find.js';
+import {find} from '../src/polyfill.js';
 
 const BIDDER_CODE = 'nextroll';
 const BIDDER_ENDPOINT = 'https://d.adroll.com/bid/prebid/';
@@ -29,7 +39,7 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    let topLocation = utils.parseUrl(utils.deepAccess(bidderRequest, 'refererInfo.referer'));
+    let topLocation = parseUrl(deepAccess(bidderRequest, 'refererInfo.referer'));
 
     return validBidRequests.map((bidRequest) => {
       return {
@@ -42,12 +52,12 @@ export const spec = {
           id: bidRequest.bidId,
           imp: {
             id: bidRequest.bidId,
-            bidfloor: utils.getBidIdParameter('bidfloor', bidRequest.params),
+            bidfloor: _getFloor(bidRequest),
             banner: _getBanner(bidRequest),
-            native: _getNative(utils.deepAccess(bidRequest, 'mediaTypes.native')),
+            native: _getNative(deepAccess(bidRequest, 'mediaTypes.native')),
             ext: {
               zone: {
-                id: utils.getBidIdParameter('zoneId', bidRequest.params)
+                id: getBidIdParameter('zoneId', bidRequest.params)
               },
               nextroll: {
                 adapter_version: ADAPTER_VERSION
@@ -139,13 +149,13 @@ function _getTitleAsset(title, _assetMap) {
 }
 
 function _getMinAspectRatio(aspectRatio, property) {
-  if (!utils.isPlainObject(aspectRatio)) return 1;
+  if (!isPlainObject(aspectRatio)) return 1;
 
   const ratio = aspectRatio['ratio_' + property];
   const min = aspectRatio['min_' + property];
 
-  if (utils.isNumber(ratio)) return ratio;
-  if (utils.isNumber(min)) return min;
+  if (isNumber(ratio)) return ratio;
+  if (isNumber(min)) return min;
 
   return 1;
 }
@@ -177,7 +187,7 @@ function _getNativeAssets(mediaTypeNative) {
 }
 
 function _getUser(requests) {
-  const id = utils.deepAccess(requests, '0.userId.nextroll');
+  const id = deepAccess(requests, '0.userId.nextrollId');
   if (id === undefined) {
     return;
   }
@@ -192,6 +202,23 @@ function _getUser(requests) {
   };
 }
 
+function _getFloor(bidRequest) {
+  if (!isFn(bidRequest.getFloor)) {
+    return (bidRequest.params.bidfloor) ? bidRequest.params.bidfloor : null;
+  }
+
+  let floor = bidRequest.getFloor({
+    currency: 'USD',
+    mediaType: '*',
+    size: '*'
+  });
+
+  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
+    return floor.floor;
+  }
+  return null;
+}
+
 function _buildResponse(bidResponse, bid) {
   let response = {
     requestId: bidResponse.id,
@@ -202,11 +229,14 @@ function _buildResponse(bidResponse, bid) {
     dealId: bidResponse.dealId,
     currency: 'USD',
     netRevenue: true,
-    ttl: 300
+    ttl: 300,
+    meta: {
+      advertiserDomains: bidResponse.adomain || []
+    }
   };
-  if (utils.isStr(bid.adm)) {
+  if (isStr(bid.adm)) {
     response.mediaType = BANNER;
-    response.ad = utils.replaceAuctionPrice(bid.adm, bid.price);
+    response.ad = replaceAuctionPrice(bid.adm, bid.price);
   } else {
     response.mediaType = NATIVE;
     response.native = _getNativeResponse(bid.adm, bid.price);
@@ -214,15 +244,15 @@ function _buildResponse(bidResponse, bid) {
   return response;
 }
 
-const privacyLink = 'https://info.evidon.com/pub_info/573';
-const privacyIcon = 'https://c.betrad.com/pub/icon1.png';
+const privacyLink = 'https://app.adroll.com/optout/personalized';
+const privacyIcon = 'https://s.adroll.com/j/ad-choices-small.png';
 
 function _getNativeResponse(adm, price) {
   let baseResponse = {
     clickTrackers: (adm.link && adm.link.clicktrackers) || [],
     jstracker: adm.jstracker || [],
-    clickUrl: utils.replaceAuctionPrice(adm.link.url, price),
-    impressionTrackers: adm.imptrackers.map(impTracker => utils.replaceAuctionPrice(impTracker, price)),
+    clickUrl: replaceAuctionPrice(adm.link.url, price),
+    impressionTrackers: adm.imptrackers.map(impTracker => replaceAuctionPrice(impTracker, price)),
     privacyLink: privacyLink,
     privacyIcon: privacyIcon
   };
@@ -257,19 +287,19 @@ function _getSite(bidRequest, topLocation) {
     page: topLocation.href,
     domain: topLocation.hostname,
     publisher: {
-      id: utils.getBidIdParameter('publisherId', bidRequest.params)
+      id: getBidIdParameter('publisherId', bidRequest.params)
     }
   };
 }
 
 function _getSeller(bidRequest) {
   return {
-    id: utils.getBidIdParameter('sellerId', bidRequest.params)
+    id: getBidIdParameter('sellerId', bidRequest.params)
   };
 }
 
 function _getSizes(bidRequest) {
-  if (!utils.isArray(bidRequest.sizes)) {
+  if (!isArray(bidRequest.sizes)) {
     return undefined;
   }
   return bidRequest.sizes.filter(_isValidSize).map(size => {

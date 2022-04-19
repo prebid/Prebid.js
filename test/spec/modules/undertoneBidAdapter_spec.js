@@ -1,5 +1,7 @@
-import { expect } from 'chai';
-import { spec } from 'modules/undertoneBidAdapter.js';
+import {expect} from 'chai';
+import {spec} from 'modules/undertoneBidAdapter.js';
+import {BANNER, VIDEO} from '../../../src/mediaTypes';
+import {deepClone} from '../../../src/utils';
 
 const URL = 'https://hb.undertone.com/hb';
 const BIDDER_CODE = 'undertone';
@@ -60,6 +62,23 @@ const videoBidReq = [{
   bidId: '263be71e91dd9d',
   auctionId: '9ad1fa8d-2297-4660-a018-b39945054746'
 }];
+const schainObj = {
+  'ver': '1.0',
+  'complete': 1,
+  'nodes': [
+    {
+      'asi': 'indirectseller.com',
+      'sid': '00001',
+      'hp': 1
+    },
+
+    {
+      'asi': 'indirectseller-2.com',
+      'sid': '00002',
+      'hp': 2
+    }
+  ]
+};
 const bidReq = [{
   adUnitCode: 'div-gpt-ad-1460505748561-0',
   bidder: BIDDER_CODE,
@@ -72,6 +91,29 @@ const bidReq = [{
   auctionId: '9ad1fa8d-2297-4660-a018-b39945054746'
 },
 {
+  adUnitCode: 'div-gpt-ad-1460505748561-0',
+  bidder: BIDDER_CODE,
+  params: {
+    publisherId: 12345
+  },
+  sizes: [[1, 1]],
+  bidId: '453cf42d72bb3c',
+  auctionId: '6c22f5a5-59df-4dc6-b92c-f433bcf0a874',
+  schain: schainObj
+}];
+
+const supplyChainedBidReqs = [{
+  adUnitCode: 'div-gpt-ad-1460505748561-0',
+  bidder: BIDDER_CODE,
+  params: {
+    placementId: '10433394',
+    publisherId: 12345,
+  },
+  sizes: [[300, 250], [300, 600]],
+  bidId: '263be71e91dd9d',
+  auctionId: '9ad1fa8d-2297-4660-a018-b39945054746',
+  schain: schainObj
+}, {
   adUnitCode: 'div-gpt-ad-1460505748561-0',
   bidder: BIDDER_CODE,
   params: {
@@ -236,6 +278,69 @@ describe('Undertone Adapter', () => {
       sandbox.restore();
     });
 
+    describe('getFloor', function () {
+      it('should send 0 floor when getFloor is undefined', function() {
+        const request = spec.buildRequests(videoBidReq, bidderReq);
+        const bidReq = JSON.parse(request.data)['x-ut-hb-params'][0];
+        expect(bidReq.mediaType).to.deep.equal(VIDEO);
+        expect(bidReq.bidfloor).to.deep.equal(0);
+      });
+      it('should send mocked floor when defined on video media-type', function() {
+        const clonedVideoBidReqArr = deepClone(videoBidReq);
+        const mockedFloorResponse = {
+          currency: 'USD',
+          floor: 2.3
+        };
+        clonedVideoBidReqArr[1].getFloor = () => mockedFloorResponse;
+
+        const request = spec.buildRequests(clonedVideoBidReqArr, bidderReq);
+        const bidReq1 = JSON.parse(request.data)['x-ut-hb-params'][0];
+        const bidReq2 = JSON.parse(request.data)['x-ut-hb-params'][1];
+        expect(bidReq1.mediaType).to.deep.equal(VIDEO);
+        expect(bidReq1.bidfloor).to.deep.equal(0);
+
+        expect(bidReq2.mediaType).to.deep.equal(VIDEO);
+        expect(bidReq2.bidfloor).to.deep.equal(mockedFloorResponse.floor);
+      });
+      it('should send mocked floor on banner media-type', function() {
+        const clonedValidBidReqArr = [deepClone(validBidReq)];
+        const mockedFloorResponse = {
+          currency: 'USD',
+          floor: 2.3
+        };
+        clonedValidBidReqArr[0].getFloor = () => mockedFloorResponse;
+
+        const request = spec.buildRequests(clonedValidBidReqArr, bidderReq);
+        const bidReq = JSON.parse(request.data)['x-ut-hb-params'][0];
+        expect(bidReq.mediaType).to.deep.equal(BANNER);
+        expect(bidReq.bidfloor).to.deep.equal(mockedFloorResponse.floor);
+      });
+      it('should send 0 floor on invalid currency', function() {
+        const clonedValidBidReqArr = [deepClone(validBidReq)];
+        const mockedFloorResponse = {
+          currency: 'EUR',
+          floor: 2.3
+        };
+        clonedValidBidReqArr[0].getFloor = () => mockedFloorResponse;
+
+        const request = spec.buildRequests(clonedValidBidReqArr, bidderReq);
+        const bidReq = JSON.parse(request.data)['x-ut-hb-params'][0];
+        expect(bidReq.mediaType).to.deep.equal(BANNER);
+        expect(bidReq.bidfloor).to.deep.equal(0);
+      });
+    });
+    describe('supply chain', function () {
+      it('should send supply chain if found on first bid', function () {
+        const request = spec.buildRequests(supplyChainedBidReqs, bidderReq);
+        const commons = JSON.parse(request.data)['commons'];
+        expect(commons.schain).to.deep.equal(schainObj);
+      });
+      it('should not send supply chain if not found on first bid', function () {
+        const request = spec.buildRequests(bidReq, bidderReq);
+        const commons = JSON.parse(request.data)['commons'];
+        expect(commons.schain).to.not.exist;
+      });
+    });
     it('should send request to correct url via POST not in GDPR or CCPA', function () {
       const request = spec.buildRequests(bidReq, bidderReq);
       const domainStart = bidderReq.refererInfo.referer.indexOf('//');
@@ -358,6 +463,7 @@ describe('Undertone Adapter', () => {
       expect(bid.cpm).to.equal(100);
       expect(bid.width).to.equal(300);
       expect(bid.height).to.equal(250);
+      expect(bid.meta.advertiserDomains).to.deep.equal([]);
       expect(bid.creativeId).to.equal(15);
       expect(bid.currency).to.equal('USD');
       expect(bid.netRevenue).to.equal(true);

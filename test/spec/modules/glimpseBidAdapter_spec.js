@@ -1,179 +1,431 @@
 import { expect } from 'chai';
 import { spec } from 'modules/glimpseBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import { config } from 'src/config';
+import { BANNER } from '../../../src/mediaTypes';
 
-/**
- * Test Helpers
- */
+const ENDPOINT = 'https://market.glimpsevault.io/public/v1/prebid';
 
-const API = 'https://api.glimpseprotocol.io/cloud/v1/vault/prebid';
+const nonStringValues = [null, undefined, 123, true, {}, [], () => {}];
+const nonArrayValues = [null, undefined, 123, true, {}, 'str', () => {}];
 
-const templateBidRequest = {
-  bidder: 'glimpse',
-  params: {
-    placementId: 'glimpse-demo-300x250',
+const mock = {
+  bidRequest: {
+    bidder: 'glimpse',
+    bidId: '26a80b71cfd671',
+    bidderRequestId: '133baeded6ac94',
+    auctionId: '96692a73-307b-44b8-8e4f-ddfb40341570',
+    adUnitCode: 'banner-div-a',
+    sizes: [[300, 250]],
+    params: {
+      pid: 'glimpse-demo-300x250',
+    },
   },
-  adUnitCode: 'banner-div-a',
-  sizes: [[300, 250]],
-  bidId: '26a80b71cfd671',
-  bidderRequestId: '133baeded6ac94',
-  auctionId: '96692a73-307b-44b8-8e4f-ddfb40341570',
+  bidderRequest: {
+    bidderCode: 'glimpse',
+    bidderRequestId: '133baeded6ac94',
+    auctionId: '96692a73-307b-44b8-8e4f-ddfb40341570',
+    timeout: 3000,
+    gdprConsent: {
+      consentString:
+        'COzP517OzP517AcABBENAlCsAP_AAAAAAAwIF8NX-T5eL2vju2Zdt7JEaYwfZxyigOgThgQIsW8NwIeFbBoGP2EgHBG4JCQAGBAkkgCBAQMsHGBcCQAAgIgRiRKMYE2MjzNKBJJAigkbc0FACDVunsHS2ZCY70-8O__bPAviADAvUC-AAAAA.YAAAAAAAAAAA',
+      vendorData: {},
+      gdprApplies: true,
+    },
+    uspConsent: '1YYY',
+    refererInfo: {
+      numIframes: 0,
+      reachedTop: true,
+      referer: 'https://demo.glimpseprotocol.io/prebid/desktop',
+      stack: ['https://demo.glimpseprotocol.io/prebid/desktop'],
+    },
+  },
+  bidResponse: {
+    auth: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJoZWxsbyI6IndvcmxkISJ9.1p6T0ORhJ6riLprhXBGdzRhG3Q1egM27uFhPGNapPxs',
+    data: {
+      bids: [
+        {
+          requestId: '133baeded6ac94',
+          creativeId: 'glimpse-demo-300x250',
+          adUnitCode: 'banner-div-a',
+          currency: 'GBP',
+          ad: '<div>Hello, World!</div>',
+          width: 300,
+          height: 250,
+          cpm: 1.04,
+          netRevenue: true,
+          mediaType: 'banner',
+          ttl: 300,
+        },
+      ],
+    },
+  },
 };
 
-const templateBidderRequest = {
-  bidderCode: 'glimpse',
-  auctionId: '96692a73-307b-44b8-8e4f-ddfb40341570',
-  bidderRequestId: '133baeded6ac94',
-  timeout: 3000,
-  gdprConsent: {
-    apiVersion: 2,
-    consentString:
-      'COzP517OzP517AcABBENAlCsAP_AAAAAAAwIF8NX-T5eL2vju2Zdt7JEaYwfZxyigOgThgQIsW8NwIeFbBoGP2EgHBG4JCQAGBAkkgCBAQMsHGBcCQAAgIgRiRKMYE2MjzNKBJJAigkbc0FACDVunsHS2ZCY70-8O__bPAviADAvUC-AAAAA.YAAAAAAAAAAA',
-    gdprApplies: true,
-    vendorData: {},
-  },
-  refererInfo: {
-    referer: 'https://demo.glimpseprotocol.io/prebid/desktop',
-    reachedTop: true,
-    numIframes: 0,
-    stack: ['https://demo.glimpseprotocol.io/prebid/desktop'],
-  },
-};
-
-const templateBidResponse = {
-  ad: '<div>HelloWorld</div>',
-  adUnitCode: 'banner-div-a',
-  bidder: 'glimpse',
-  cpm: 1.04,
-  creativeId: 'glimpse-demo-300x250',
-  currency: 'GBP',
-  height: 250,
-  mediaType: 'banner',
-  netRevenue: true,
-  pbAg: '1.04',
-  pbDg: '1.04',
-  pbHg: '1.04',
-  pbLg: '1.00',
-  pbMg: '1.05',
-  requestId: '133baeded6ac94',
-  ttl: 60,
-  width: 300,
-};
-
-const copyBidResponse = () => ({ ...templateBidResponse });
-const copyBidderRequest = () => ({ ...templateBidderRequest, bids: copyBidRequests() });
-const copyBidRequest = () => ({ ...templateBidRequest });
-
-const copyBidRequests = () => [copyBidRequest()];
-const copyBidResponses = () => ({
-  body: [copyBidResponse()],
+const getBidRequest = () => getDeepCopy(mock.bidRequest);
+const getBidderRequest = () => ({
+  bids: [getBidRequest()],
+  ...getDeepCopy(mock.bidderRequest),
 });
 
-/**
- * Tests
- */
+const getBidResponse = () => ({
+  body: getDeepCopy(mock.bidResponse),
+});
 
-describe('GlimpseProtocolAdapter', function () {
-  const adapter = newBidder(spec);
+function getDeepCopy(object) {
+  return JSON.parse(JSON.stringify(object));
+}
 
-  describe('inherited functions', function () {
-    it('exists and is a function', function () {
-      expect(adapter.callBids).to.exist.and.to.be.a('function');
-      expect(adapter.getSpec).to.exist.and.to.be.a('function');
+describe('GlimpseProtocolAdapter', () => {
+  const glimpseAdapter = newBidder(spec);
+
+  describe('spec', () => {
+    it('Has defined the glimpse gvlid', () => {
+      expect(spec.gvlid).to.equal(1012);
+    });
+
+    it('Has defined glimpse as the bidder', () => {
+      expect(spec.code).to.equal('glimpse');
+    });
+
+    it('Has defined valid mediaTypes', () => {
+      expect(spec.supportedMediaTypes).to.deep.equal([BANNER]);
     });
   });
 
-  describe('isBidRequestValid', function () {
-    it('should return true when params.placementId is valid', function () {
-      expect(spec.isBidRequestValid(templateBidRequest)).to.equal(true);
-    });
-
-    it('should return false when params.placementId is invalid', function () {
-      let bid = copyBidRequest();
-      delete bid.params;
-      bid.params = {
-        placementId: 0,
-      };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
-
-    it('should return false when params is not passed', function () {
-      let bid = copyBidRequest();
-      delete bid.params;
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
-
-    it('should return false when params.placementId is not passed', function () {
-      let bid = copyBidRequest();
-      delete bid.params.placementId;
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+  describe('Inherited functions', () => {
+    it('Functions exist and are valid types', () => {
+      expect(glimpseAdapter.callBids).to.exist.and.to.be.a('function');
+      expect(glimpseAdapter.getSpec).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('buildRequests', function () {
-    const bidRequest = copyBidRequest();
-    const bidRequests = [bidRequest];
+  describe('isBidRequestValid', () => {
+    it('Returns true if placement id is non-empty string', () => {
+      const bidRequest = getBidRequest();
 
-    it('should add version and source information', function () {
-      const request = spec.buildRequests(bidRequests);
+      const isValidBidRequest = spec.isBidRequestValid(bidRequest);
+      expect(isValidBidRequest).to.be.true;
+    });
+
+    it('Returns false if no pid is provided', () => {
+      const bidRequest = getBidRequest();
+      delete bidRequest.params.pid;
+
+      const isValidBidRequest = spec.isBidRequestValid(bidRequest);
+      expect(isValidBidRequest).to.be.false;
+    });
+
+    it('Returns false if pid is empty string', () => {
+      const bidRequest = getBidRequest();
+      bidRequest.params.pid = '';
+
+      const isValidBidRequest = spec.isBidRequestValid(bidRequest);
+      expect(isValidBidRequest).to.be.false;
+    });
+
+    it('Returns false if pid is not string', () => {
+      const bidRequest = getBidRequest();
+      const invalidPids = nonStringValues;
+
+      invalidPids.forEach((invalidPid) => {
+        bidRequest.params.pid = invalidPid;
+        const isValidBidRequest = spec.isBidRequestValid(bidRequest);
+        expect(isValidBidRequest).to.be.false;
+      });
+    });
+  });
+
+  describe('buildRequests', () => {
+    const bidRequests = [getBidRequest()];
+    const bidderRequest = getBidderRequest();
+
+    it('Adds additional info to api request query', () => {
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const url = new URL(request.url);
+      const queries = new URLSearchParams(url.search);
+
+      expect(queries.get('ver')).to.exist;
+      expect(queries.get('tmax')).to.exist;
+      expect(queries.get('gdpr')).to.equal(
+        bidderRequest.gdprConsent.consentString
+      );
+      expect(queries.get('ccpa')).to.equal(bidderRequest.uspConsent);
+    });
+
+    it('Has correct payload shape', () => {
+      const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = JSON.parse(request.data);
 
-      expect(payload.sdk).to.exist;
-      expect(payload.sdk).to.deep.equal({
-        source: 'pbjs',
-        version: '$prebid.version$',
+      expect(payload.auth).to.be.a('string');
+      expect(payload.data).to.be.an('object');
+      expect(payload.data.referer).to.be.a('string');
+      expect(payload.data.imp).to.be.an('array');
+      expect(payload.data.fpd).to.be.an('object');
+    });
+
+    it('Has referer information', () => {
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      const expected = mock.bidderRequest.refererInfo.referer;
+
+      expect(payload.data.referer).to.equal(expected);
+    });
+
+    it('Has correct bids (imp) shape', () => {
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      const imp = payload.data.imp;
+
+      imp.forEach((i) => {
+        expect(i.bid).to.be.a('string');
+        expect(i.pid).to.be.a('string');
+        expect(i.sizes).to.be.an('array').that.deep.include([300, 250]);
+      });
+    });
+  });
+
+  describe('interpretResponse', () => {
+    it('Returns valid bids', () => {
+      const bidResponse = getBidResponse();
+      const bids = spec.interpretResponse(bidResponse);
+
+      expect(bids).to.have.lengthOf(1);
+      expect(bids[0].adUnitCode).to.equal(mock.bidRequest.adUnitCode);
+    });
+
+    it('Returns no bids if auth is not string', () => {
+      const bidResponse = getBidResponse();
+      const invalidAuths = nonStringValues;
+
+      invalidAuths.forEach((invalidAuth) => {
+        bidResponse.body.auth = invalidAuth;
+
+        const bids = spec.interpretResponse(bidResponse);
+        expect(bids).to.have.lengthOf(0);
       });
     });
 
-    it('should send request to API via POST', function () {
-      const request = spec.buildRequests(bidRequests);
-      expect(request.url).to.equal(API);
-      expect(request.method).to.equal('POST');
+    it('Returns no bids if bids is empty', () => {
+      const bidResponse = getBidResponse();
+      bidResponse.body.data.bids = [];
+
+      const bids = spec.interpretResponse(bidResponse);
+      expect(bids).to.have.lengthOf(0);
     });
 
-    it('should add GDPR consent', function () {
-      const bidderRequest = copyBidderRequest();
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      const payload = JSON.parse(request.data);
+    it('Returns no bids if bids is not array', () => {
+      const bidResponse = getBidResponse();
+      const invalidBids = nonArrayValues;
 
-      expect(payload.gdprConsent).to.exist;
-      const { gdprConsent } = payload;
-      expect(gdprConsent.gdprApplies).to.be.true;
-      expect(gdprConsent.consentString).to.equal(bidderRequest.gdprConsent.consentString);
+      invalidBids.forEach((invalidBid) => {
+        bidResponse.body.data.bids = invalidBid;
+
+        const bids = spec.interpretResponse(bidResponse);
+        expect(bids).to.have.lengthOf(0);
+      });
     });
 
-    it('should add referer info', function () {
-      const bidderRequest = copyBidderRequest();
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      const payload = JSON.parse(request.data);
+    it('Contains advertiserDomains', () => {
+      const bidResponse = getBidResponse();
 
-      expect(payload.refererInfo.referer).to.equal(templateBidderRequest.refererInfo.referer);
+      const bids = spec.interpretResponse(bidResponse);
+      bids.forEach((bid) => {
+        expect(bid.meta.advertiserDomains).to.be.an('array');
+      });
     });
   });
 
-  describe('interpretResponse', function () {
-    it('should handle valid bid responses', function () {
-      const response = copyBidResponses();
+  describe('optimize request fpd data', () => {
+    const bidRequests = [getBidRequest()];
+    const bidderRequest = getBidderRequest();
 
-      const bids = spec.interpretResponse(response);
-      expect(bids).to.have.length(1);
-      expect(bids[0].adUnitCode).to.equal(templateBidRequest.adUnitCode);
+    const fpdMockBase = {
+      site: {
+        keywords: 'site,keywords',
+        ext: {
+          data: {
+            fpdProvider: {
+              dataArray: ['data1', 'data2'],
+              dataObject: {
+                data1: 'data1',
+                data2: 'data2',
+              },
+              dataString: 'data1,data2',
+            },
+          },
+        },
+      },
+      user: {
+        keywords: 'user,keywords',
+        ext: {
+          data: {
+            fpdProvider: {
+              dataArray: ['data1', 'data2'],
+              dataObject: {
+                data1: 'data1',
+                data2: 'data2',
+              },
+              dataString: 'data1,data2',
+            },
+          },
+        },
+      },
+    };
+
+    afterEach(() => {
+      config.getConfig.restore();
     });
 
-    it('should handle no bid responses', function () {
-      const response = copyBidResponses();
-      response.body = [];
+    it('should keep all non-empty fields', () => {
+      const fpdMock = fpdMockBase;
+      sinon.stub(config, 'getConfig').withArgs('ortb2').returns(fpdMock);
+      const expected = fpdMockBase;
 
-      const bids = spec.interpretResponse(response);
-      expect(bids).to.have.length(0);
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      const fpd = payload.data.fpd;
+
+      expect(fpd).to.deep.equal(expected);
     });
 
-    it('should return no bid on an invalid response', function () {
-      const response = copyBidResponses();
-      delete response.body;
+    it('should remove all empty objects', () => {
+      const fpdMock = getDeepCopy(fpdMockBase);
+      fpdMock.site.ext.data.fpdProvider.dataObject = {};
+      fpdMock.user.ext.data.fpdProvider = {};
+      sinon.stub(config, 'getConfig').withArgs('ortb2').returns(fpdMock);
 
-      const bids = spec.interpretResponse(response);
-      expect(bids).to.have.length(0);
+      const expected = {
+        site: {
+          keywords: 'site,keywords',
+          ext: {
+            data: {
+              fpdProvider: {
+                dataArray: ['data1', 'data2'],
+                dataString: 'data1,data2',
+              },
+            },
+          },
+        },
+        user: {
+          keywords: 'user,keywords',
+        },
+      };
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      const fpd = payload.data.fpd;
+
+      expect(fpd).to.deep.equal(expected);
+    });
+
+    it('should remove all empty arrays', () => {
+      const fpdMock = getDeepCopy(fpdMockBase);
+      fpdMock.site.ext.data.fpdProvider.dataArray = [];
+      fpdMock.user.ext.data.fpdProvider.dataArray = [];
+      sinon.stub(config, 'getConfig').withArgs('ortb2').returns(fpdMock);
+
+      const expected = {
+        site: {
+          keywords: 'site,keywords',
+          ext: {
+            data: {
+              fpdProvider: {
+                dataObject: {
+                  data1: 'data1',
+                  data2: 'data2',
+                },
+                dataString: 'data1,data2',
+              },
+            },
+          },
+        },
+        user: {
+          keywords: 'user,keywords',
+          ext: {
+            data: {
+              fpdProvider: {
+                dataObject: {
+                  data1: 'data1',
+                  data2: 'data2',
+                },
+                dataString: 'data1,data2',
+              },
+            },
+          },
+        },
+      };
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      const fpd = payload.data.fpd;
+
+      expect(fpd).to.deep.equal(expected);
+    });
+
+    it('should remove all empty strings', () => {
+      const fpdMock = getDeepCopy(fpdMockBase);
+      fpdMock.site.keywords = '';
+      fpdMock.site.ext.data.fpdProvider.dataString = '';
+      fpdMock.user.keywords = '';
+      fpdMock.user.ext.data.fpdProvider.dataString = '';
+      sinon.stub(config, 'getConfig').withArgs('ortb2').returns(fpdMock);
+
+      const expected = {
+        site: {
+          ext: {
+            data: {
+              fpdProvider: {
+                dataArray: ['data1', 'data2'],
+                dataObject: {
+                  data1: 'data1',
+                  data2: 'data2',
+                },
+              },
+            },
+          },
+        },
+        user: {
+          ext: {
+            data: {
+              fpdProvider: {
+                dataArray: ['data1', 'data2'],
+                dataObject: {
+                  data1: 'data1',
+                  data2: 'data2',
+                },
+              },
+            },
+          },
+        },
+      };
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      const fpd = payload.data.fpd;
+
+      expect(fpd).to.deep.equal(expected);
+    });
+
+    it('should remove all empty fields', () => {
+      const fpdMock = getDeepCopy(fpdMockBase);
+      fpdMock.site.keywords = '';
+      fpdMock.site.ext.data.fpdProvider.dataArray = [];
+      fpdMock.site.ext.data.fpdProvider.dataObject = {};
+      fpdMock.site.ext.data.fpdProvider.dataString = '';
+      fpdMock.user.keywords = '';
+      fpdMock.user.ext.data.fpdProvider.dataArray = [];
+      fpdMock.user.ext.data.fpdProvider.dataObject = {};
+      fpdMock.user.ext.data.fpdProvider.dataString = '';
+      sinon.stub(config, 'getConfig').withArgs('ortb2').returns(fpdMock);
+
+      const expected = {};
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      const fpd = payload.data.fpd;
+
+      expect(fpd).to.deep.equal(expected);
     });
   });
 });

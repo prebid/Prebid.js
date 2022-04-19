@@ -1,9 +1,9 @@
 'use strict';
 
-import { getAdUnitSizes, logWarn, deepSetValue } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import {deepSetValue, getAdUnitSizes, isFn, isPlainObject, logWarn} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {includes} from '../src/polyfill.js';
 import {config} from '../src/config.js';
 
 const BID_SCHEME = 'https://';
@@ -14,6 +14,7 @@ const BLOCKED_AD_SIZES = [
   '1x1',
   '1x2'
 ];
+const DEFAULT_MAX_TTL = 420; // 7 minutes
 export const spec = {
   code: 'synacormedia',
   supportedMediaTypes: [ BANNER, VIDEO ],
@@ -24,7 +25,7 @@ export const spec = {
       bid.mediaTypes.hasOwnProperty('video');
   },
   isBidRequestValid: function(bid) {
-    const hasRequiredParams = bid && bid.params && bid.params.hasOwnProperty('placementId') && bid.params.hasOwnProperty('seatId');
+    const hasRequiredParams = bid && bid.params && (bid.params.hasOwnProperty('placementId') || bid.params.hasOwnProperty('tagId')) && bid.params.hasOwnProperty('seatId');
     const hasAdSizes = bid && getAdUnitSizes(bid).filter(size => BLOCKED_AD_SIZES.indexOf(size.join('x')) === -1).length > 0
     return !!(hasRequiredParams && hasAdSizes);
   },
@@ -61,11 +62,7 @@ export const spec = {
       } else {
         seatId = bid.params.seatId;
       }
-      const placementId = bid.params.placementId;
-      const bidFloor = bid.params.bidfloor ? parseFloat(bid.params.bidfloor) : null;
-      if (isNaN(bidFloor)) {
-        logWarn(`Synacormedia: there is an invalid bid floor: ${bid.params.bidfloor}`);
-      }
+      const tagIdOrPlacementId = bid.params.tagId || bid.params.placementId;
       let pos = parseInt(bid.params.pos, 10);
       if (isNaN(pos)) {
         logWarn(`Synacormedia: there is an invalid POS: ${bid.params.pos}`);
@@ -77,9 +74,9 @@ export const spec = {
 
       let imps = [];
       if (videoOrBannerKey === 'banner') {
-        imps = this.buildBannerImpressions(adSizes, bid, placementId, pos, bidFloor, videoOrBannerKey);
+        imps = this.buildBannerImpressions(adSizes, bid, tagIdOrPlacementId, pos, videoOrBannerKey);
       } else if (videoOrBannerKey === 'video') {
-        imps = this.buildVideoImpressions(adSizes, bid, placementId, pos, bidFloor, videoOrBannerKey);
+        imps = this.buildVideoImpressions(adSizes, bid, tagIdOrPlacementId, pos, videoOrBannerKey);
       }
       if (imps.length > 0) {
         imps.forEach(i => openRtbBidRequest.imp.push(i));
@@ -89,6 +86,14 @@ export const spec = {
     // CCPA
     if (bidderRequest && bidderRequest.uspConsent) {
       deepSetValue(openRtbBidRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+    }
+
+    // User ID
+    if (validBidReqs[0] && validBidReqs[0].userIdAsEids && Array.isArray(validBidReqs[0].userIdAsEids)) {
+      const eids = validBidReqs[0].userIdAsEids;
+      if (eids.length) {
+        deepSetValue(openRtbBidRequest, 'user.ext.eids', eids);
+      }
     }
 
     if (openRtbBidRequest.imp.length && seatId) {
@@ -104,7 +109,7 @@ export const spec = {
     }
   },
 
-  buildBannerImpressions: function(adSizes, bid, placementId, pos, bidFloor, videoOrBannerKey) {
+  buildBannerImpressions: function (adSizes, bid, tagIdOrPlacementId, pos, videoOrBannerKey) {
     let format = [];
     let imps = [];
     adSizes.forEach((size, i) => {
@@ -125,8 +130,12 @@ export const spec = {
           format,
           pos
         },
-        tagid: placementId,
+        tagid: tagIdOrPlacementId,
       };
+      const bidFloor = getBidFloor(bid, 'banner', '*');
+      if (isNaN(bidFloor)) {
+        logWarn(`Synacormedia: there is an invalid bid floor: ${bid.params.bidfloor}`);
+      }
       if (bidFloor !== null && !isNaN(bidFloor)) {
         imp.bidfloor = bidFloor;
       }
@@ -135,7 +144,7 @@ export const spec = {
     return imps;
   },
 
-  buildVideoImpressions: function(adSizes, bid, placementId, pos, bidFloor, videoOrBannerKey) {
+  buildVideoImpressions: function(adSizes, bid, tagIdOrPlacementId, pos, videoOrBannerKey) {
     let imps = [];
     adSizes.forEach((size, i) => {
       if (!size || size.length != 2) {
@@ -145,8 +154,13 @@ export const spec = {
       const size1 = size[1];
       const imp = {
         id: `${videoOrBannerKey.substring(0, 1)}${bid.bidId}-${size0}x${size1}`,
-        tagid: placementId
+        tagid: tagIdOrPlacementId
       };
+      const bidFloor = getBidFloor(bid, 'video', size);
+      if (isNaN(bidFloor)) {
+        logWarn(`Synacormedia: there is an invalid bid floor: ${bid.params.bidfloor}`);
+      }
+
       if (bidFloor !== null && !isNaN(bidFloor)) {
         imp.bidfloor = bidFloor;
       }
@@ -157,6 +171,9 @@ export const spec = {
         pos
       };
       if (bid.mediaTypes.video) {
+        if (!bid.params.video) {
+          bid.params.video = {};
+        }
         this.setValidVideoParams(bid.mediaTypes.video, bid.params.video);
       }
       if (bid.params.video) {
@@ -182,7 +199,6 @@ export const spec = {
       logWarn('Synacormedia: server returned empty/non-json response: ' + JSON.stringify(serverResponse.body));
       return;
     }
-
     const {id, seatbid: seatbids} = serverResponse.body;
     let bids = [];
     if (id && seatbids) {
@@ -217,9 +233,21 @@ export const spec = {
               }
             });
           }
+
+          let maxTtl = DEFAULT_MAX_TTL;
+          if (bid.ext && bid.ext['imds.tv'] && bid.ext['imds.tv'].ttl) {
+            const bidTtlMax = parseInt(bid.ext['imds.tv'].ttl, 10);
+            maxTtl = !isNaN(bidTtlMax) && bidTtlMax > 0 ? bidTtlMax : DEFAULT_MAX_TTL;
+          }
+
+          let ttl = maxTtl;
+          if (bid.exp) {
+            const bidTtl = parseInt(bid.exp, 10);
+            ttl = !isNaN(bidTtl) && bidTtl > 0 ? Math.min(bidTtl, maxTtl) : maxTtl;
+          }
+
           const bidObj = {
             requestId: impid,
-            adId: bid.id.replace(/~/g, '-'),
             cpm: parseFloat(bid.price),
             width: parseInt(width, 10),
             height: parseInt(height, 10),
@@ -228,8 +256,13 @@ export const spec = {
             netRevenue: true,
             mediaType: isVideo ? VIDEO : BANNER,
             ad: creative,
-            ttl: 60
+            ttl,
           };
+
+          if (bid.adomain != undefined || bid.adomain != null) {
+            bidObj.meta = { advertiserDomains: bid.adomain };
+          }
+
           if (isVideo) {
             const [, uuid] = nurl.match(/ID=([^&]*)&?/);
             if (!config.getConfig('cache.url')) {
@@ -256,5 +289,21 @@ export const spec = {
     return syncs;
   }
 };
+
+function getBidFloor(bid, mediaType, size) {
+  if (!isFn(bid.getFloor)) {
+    return bid.params.bidfloor ? parseFloat(bid.params.bidfloor) : null;
+  }
+  let floor = bid.getFloor({
+    currency: 'USD',
+    mediaType,
+    size
+  });
+
+  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
+    return floor.floor;
+  }
+  return null;
+}
 
 registerBidder(spec);

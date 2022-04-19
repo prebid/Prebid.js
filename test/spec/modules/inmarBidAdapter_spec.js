@@ -17,7 +17,6 @@ describe('Inmar adapter tests', function () {
     },
     bidder: 'inmar',
     params: {
-      adnetId: 'ADb1f40rmi',
       partnerId: 12345
     },
     auctionId: '0cb3144c-d084-4686-b0d6-f5dbe917c563',
@@ -39,7 +38,6 @@ describe('Inmar adapter tests', function () {
     },
     bidder: 'inmar',
     params: {
-      adnetId: 'ADb1f40rmi',
       partnerId: 12345
     },
     auctionId: '0cb3144c-d084-4686-b0d6-f5dbe917c563',
@@ -60,7 +58,6 @@ describe('Inmar adapter tests', function () {
     ],
     bidder: 'inmar',
     params: {
-      adnetId: 'ADb1f40rmi',
       partnerId: 12345,
     },
     auctionId: '851adee7-d843-48f9-a7e9-9ff00573fcbf',
@@ -118,7 +115,6 @@ describe('Inmar adapter tests', function () {
 
     expect(request).to.have.property('method').and.to.equal('POST');
     const requestContent = JSON.parse(request.data);
-    expect(requestContent.bidRequests[0].params).to.have.property('adnetId').and.to.equal('ADb1f40rmi');
     expect(requestContent.bidRequests[0].params).to.have.property('partnerId').and.to.equal(12345);
     expect(requestContent.bidRequests[0]).to.have.property('auctionId').and.to.equal('0cb3144c-d084-4686-b0d6-f5dbe917c563');
     expect(requestContent.bidRequests[0]).to.have.property('bidId').and.to.equal('2c7c8e9c900244');
@@ -198,17 +194,10 @@ describe('Inmar adapter tests', function () {
     })).to.equal(false);
     expect(spec.isBidRequestValid({
       params: {
-        adnetId: 'ADb1f40rmi'
       }
     })).to.equal(false);
     expect(spec.isBidRequestValid({
       params: {
-        partnerId: 12345
-      }
-    })).to.equal(false);
-    expect(spec.isBidRequestValid({
-      params: {
-        adnetId: 'ADb1f40rmi',
         partnerId: 12345
       }
     })).to.equal(true);

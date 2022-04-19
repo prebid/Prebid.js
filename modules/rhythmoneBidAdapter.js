@@ -1,12 +1,14 @@
+
 'use strict';
 
-import * as utils from '../src/utils.js';
+import { deepAccess, getDNT, parseSizesInput, isArray } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 function RhythmOneBidAdapter() {
   this.code = 'rhythmone';
   this.supportedMediaTypes = [VIDEO, BANNER];
+  this.gvlid = 36;
 
   let SUPPORTED_VIDEO_PROTOCOLS = [2, 3, 5, 6];
   let SUPPORTED_VIDEO_MIMES = ['video/mp4'];
@@ -38,16 +40,16 @@ function RhythmOneBidAdapter() {
       slotsToBids[BRs[i].adUnitCode] = BRs[i];
       var impObj = {};
       impObj.id = BRs[i].adUnitCode;
-      impObj.bidfloor = parseFloat(utils.deepAccess(BRs[i], 'params.floor')) || 0;
+      impObj.bidfloor = 0;
       impObj.secure = isSecure;
 
-      if (utils.deepAccess(BRs[i], 'mediaTypes.banner') || utils.deepAccess(BRs[i], 'mediaType') === 'banner') {
+      if (deepAccess(BRs[i], 'mediaTypes.banner') || deepAccess(BRs[i], 'mediaType') === 'banner') {
         let banner = frameBanner(BRs[i]);
         if (banner) {
           impObj.banner = banner;
         }
       }
-      if (utils.deepAccess(BRs[i], 'mediaTypes.video') || utils.deepAccess(BRs[i], 'mediaType') === 'video') {
+      if (deepAccess(BRs[i], 'mediaTypes.video') || deepAccess(BRs[i], 'mediaType') === 'video') {
         impObj.video = frameVideo(BRs[i]);
       }
       if (!(impObj.banner || impObj.video)) {
@@ -85,7 +87,7 @@ function RhythmOneBidAdapter() {
     return {
       ua: navigator.userAgent,
       ip: '', // Empty Ip string is required, server gets the ip from HTTP header
-      dnt: utils.getDNT() ? 1 : 0,
+      dnt: getDNT() ? 1 : 0,
     }
   }
 
@@ -105,7 +107,7 @@ function RhythmOneBidAdapter() {
     if (adUnit.mediaTypes && adUnit.mediaTypes.banner) {
       sizeList = adUnit.mediaTypes.banner.sizes;
     }
-    var sizeStringList = utils.parseSizesInput(sizeList);
+    var sizeStringList = parseSizesInput(sizeList);
     var format = [];
     sizeStringList.forEach(function(size) {
       if (size) {
@@ -129,9 +131,9 @@ function RhythmOneBidAdapter() {
 
   function frameVideo(bid) {
     var size = [];
-    if (utils.deepAccess(bid, 'mediaTypes.video.playerSize')) {
+    if (deepAccess(bid, 'mediaTypes.video.playerSize')) {
       var dimensionSet = bid.mediaTypes.video.playerSize;
-      if (utils.isArray(bid.mediaTypes.video.playerSize[0])) {
+      if (isArray(bid.mediaTypes.video.playerSize[0])) {
         dimensionSet = bid.mediaTypes.video.playerSize[0];
       }
       var validSize = getValidSizeSet(dimensionSet)
@@ -140,15 +142,15 @@ function RhythmOneBidAdapter() {
       }
     }
     return {
-      mimes: utils.deepAccess(bid, 'mediaTypes.video.mimes') || SUPPORTED_VIDEO_MIMES,
-      protocols: utils.deepAccess(bid, 'mediaTypes.video.protocols') || SUPPORTED_VIDEO_PROTOCOLS,
+      mimes: deepAccess(bid, 'mediaTypes.video.mimes') || SUPPORTED_VIDEO_MIMES,
+      protocols: deepAccess(bid, 'mediaTypes.video.protocols') || SUPPORTED_VIDEO_PROTOCOLS,
       w: size[0],
       h: size[1],
-      startdelay: utils.deepAccess(bid, 'mediaTypes.video.startdelay') || 0,
-      skip: utils.deepAccess(bid, 'mediaTypes.video.skip') || 0,
-      playbackmethod: utils.deepAccess(bid, 'mediaTypes.video.playbackmethod') || SUPPORTED_VIDEO_PLAYBACK_METHODS,
-      delivery: utils.deepAccess(bid, 'mediaTypes.video.delivery') || SUPPORTED_VIDEO_DELIVERY,
-      api: utils.deepAccess(bid, 'mediaTypes.video.api') || SUPPORTED_VIDEO_API,
+      startdelay: deepAccess(bid, 'mediaTypes.video.startdelay') || 0,
+      skip: deepAccess(bid, 'mediaTypes.video.skip') || 0,
+      playbackmethod: deepAccess(bid, 'mediaTypes.video.playbackmethod') || SUPPORTED_VIDEO_PLAYBACK_METHODS,
+      delivery: deepAccess(bid, 'mediaTypes.video.delivery') || SUPPORTED_VIDEO_DELIVERY,
+      api: deepAccess(bid, 'mediaTypes.video.api') || SUPPORTED_VIDEO_API,
     }
   }
 
@@ -170,14 +172,14 @@ function RhythmOneBidAdapter() {
       device: frameDevice(),
       user: {
         ext: {
-          consent: utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies') ? bidderRequest.gdprConsent.consentString : ''
+          consent: deepAccess(bidderRequest, 'gdprConsent.gdprApplies') ? bidderRequest.gdprConsent.consentString : ''
         }
       },
       at: 1,
       tmax: 1000,
       regs: {
         ext: {
-          gdpr: utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies') ? Boolean(bidderRequest.gdprConsent.gdprApplies & 1) : false
+          gdpr: deepAccess(bidderRequest, 'gdprConsent.gdprApplies') ? Boolean(bidderRequest.gdprConsent.gdprApplies & 1) : false
         }
       }
     };
@@ -253,6 +255,9 @@ function RhythmOneBidAdapter() {
         cpm: parseFloat(bid.price),
         width: bid.w,
         height: bid.h,
+        meta: {
+          advertiserDomains: bid.adomain
+        },
         creativeId: bid.crid,
         currency: 'USD',
         netRevenue: true,

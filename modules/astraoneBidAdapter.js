@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js'
+import { _map } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { BANNER } from '../src/mediaTypes.js'
 
@@ -7,7 +7,7 @@ const SSP_ENDPOINT = 'https://ssp.astraone.io/auction/prebid';
 const TTL = 60;
 
 function buildBidRequests(validBidRequests) {
-  return utils._map(validBidRequests, function(validBidRequest) {
+  return _map(validBidRequests, function(validBidRequest) {
     const params = validBidRequest.params;
     const bidRequest = {
       bidId: validBidRequest.bidId,
@@ -31,7 +31,9 @@ function buildBid(bidData) {
     creativeId: bidData.content.seanceId,
     currency: bidData.currency,
     netRevenue: true,
-    mediaType: BANNER,
+    meta: {
+      mediaType: BANNER,
+    },
     ttl: TTL,
     content: bidData.content
   };
@@ -62,7 +64,7 @@ function wrapAd(bid, bidData) {
                 parentDocument.style.height = "100%";
                 parentDocument.style.width = "100%";
             }
-            var _html = "${encodeURIComponent(JSON.stringify(bid))}";
+            var _html = "${encodeURIComponent(JSON.stringify({...bid, content: bidData.content}))}";
             window._ao_ssp.registerInImage(JSON.parse(decodeURIComponent(_html)));
         </script>
     </body>
@@ -126,14 +128,9 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse) {
-    const serverBody = serverResponse.body;
-    if (serverBody && utils.isArray(serverBody)) {
-      return utils._map(serverBody, function(bid) {
-        return buildBid(bid);
-      });
-    } else {
-      return [];
-    }
+    const bids = serverResponse.body && serverResponse.body.bids;
+
+    return Array.isArray(bids) ? bids.map(bid => buildBid(bid)) : []
   }
 
 }
