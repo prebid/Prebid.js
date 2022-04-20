@@ -16,12 +16,9 @@ export class ScopedSettings {
    * @param path {String}
    * @returns {*}
    */
-  get(scope, path, parentScope) {
+  get(scope, path) {
     let value = this.getOwn(scope, path);
     if (typeof value === 'undefined') {
-      if (parentScope) {
-        return this.get(parentScope, path)
-      }
       value = this.getOwn(null, path);
     }
     return value;
