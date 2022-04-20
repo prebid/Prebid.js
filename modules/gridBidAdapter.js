@@ -69,6 +69,7 @@ export const spec = {
     let user = null;
     let userExt = null;
     let endpoint = null;
+    let forceBidderName = false;
     let {bidderRequestId, auctionId, gdprConsent, uspConsent, timeout, refererInfo} = bidderRequest || {};
 
     const referer = refererInfo ? encodeURIComponent(refererInfo.referer) : '';
@@ -91,7 +92,7 @@ export const spec = {
       if (!endpoint) {
         endpoint = ALIAS_CONFIG[bid.bidder] && ALIAS_CONFIG[bid.bidder].endpoint;
       }
-      const {params: {uid, keywords}, mediaTypes, bidId, adUnitCode, rtd, ortb2Imp} = bid;
+      const { params: { uid, keywords, forceBidder }, mediaTypes, bidId, adUnitCode, rtd, ortb2Imp } = bid;
       bidsMap[bidId] = bid;
       const bidFloor = _getFloor(mediaTypes || {}, bid);
       const jwTargeting = rtd && rtd.jwplayer && rtd.jwplayer.targeting;
@@ -150,7 +151,16 @@ export const spec = {
       if (impObj.banner || impObj.video) {
         imp.push(impObj);
       }
+
+      if (!forceBidderName && forceBidder && ALIAS_CONFIG[forceBidder]) {
+        forceBidderName = forceBidder;
+      }
     });
+
+    if (forceBidderName && ALIAS_CONFIG[forceBidderName]) {
+      endpoint = ALIAS_CONFIG[forceBidderName].endpoint;
+      this.forceBidderName = forceBidderName;
+    }
 
     const source = {
       tid: auctionId && auctionId.toString(),
@@ -326,9 +336,11 @@ export const spec = {
       errorMessage = LOG_ERROR_MESS.hasEmptySeatbidArray;
     }
 
+    const bidderCode = this.forceBidderName || this.code;
+
     if (!errorMessage && serverResponse.seatbid) {
       serverResponse.seatbid.forEach(respItem => {
-        _addBidResponse(_getBidFromResponse(respItem), bidRequest, bidResponses, RendererConst, this.code);
+        _addBidResponse(_getBidFromResponse(respItem), bidRequest, bidResponses, RendererConst, bidderCode);
       });
     }
     if (errorMessage) logError(errorMessage);
@@ -351,7 +363,8 @@ export const spec = {
         params += `&us_privacy=${uspConsent}`;
       }
 
-      const syncUrl = (ALIAS_CONFIG[this.code] && ALIAS_CONFIG[this.code].syncurl) || SYNC_URL;
+      const bidderCode = this.forceBidderName || this.code;
+      const syncUrl = (ALIAS_CONFIG[bidderCode] && ALIAS_CONFIG[bidderCode].syncurl) || SYNC_URL;
 
       hasSynced = true;
       return {
