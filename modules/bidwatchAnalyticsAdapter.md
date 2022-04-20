@@ -3,7 +3,7 @@ Module Name: bidwatch Analytics Adapter
 
 Module Type: Analytics Adapter
 
-Maintainer: contact@bidwatch.io
+Maintainer: tech@bidwatch.io
 
 # Description
 
