@@ -53,7 +53,7 @@ function handleBidWon(args) {
 }
 
 function handleAuctionEnd() {
-  ajax(endpoint + '/analytics/auctions', null, JSON.stringify(allEvents), {method: 'POST', withCredentials: true});
+  ajax(endpoint + '.bidwatch.io/analytics/auctions', null, JSON.stringify(allEvents), {method: 'POST', withCredentials: true});
 }
 
 let bidwatchAnalytics = Object.assign(adapter({url, analyticsType}), {
