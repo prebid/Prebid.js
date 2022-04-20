@@ -1205,7 +1205,6 @@ export const spec = {
     }
 
     _handleEids(payload, validBidRequests);
-    _blockedIabCategoriesValidation(payload, blockedIabCategories);
 
     _handleFlocId(payload, validBidRequests);
     // First Party Data
@@ -1216,13 +1215,16 @@ export const spec = {
     if (commonFpd.user) {
       mergeDeep(payload, {user: commonFpd.user});
     }
+    if (commonFpd.bcat) {
+      blockedIabCategories = blockedIabCategories.concat(commonFpd.bcat)
+    }
     if (commonFpd.ext?.prebid?.bidderparams?.[bidderRequest.bidderCode]?.acat) {
       const acatParams = commonFpd.ext.prebid.bidderparams[bidderRequest.bidderCode].acat;
       _allowedIabCategoriesValidation(payload, acatParams);
     } else if (allowedIabCategories.length) {
       _allowedIabCategoriesValidation(payload, allowedIabCategories);
     }
-
+    _blockedIabCategoriesValidation(payload, blockedIabCategories);
     // Note: Do not move this block up
     // if site object is set in Prebid config then we need to copy required fields from site into app and unset the site object
     if (typeof config.getConfig('app') === 'object') {

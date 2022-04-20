@@ -3341,6 +3341,26 @@ describe('PubMatic adapter', function () {
         let data = JSON.parse(request.data);
         expect(data.bcat).to.deep.equal(undefined);
       });
+
+	  it('ortb2.bcat should merged with slot level bcat param', function() {
+        multipleBidRequests[0].params.bcat = ['IAB-1', 'IAB-2'];
+        let sandbox = sinon.sandbox.create();
+        sandbox.stub(config, 'getConfig').callsFake(key => {
+          const config = {
+            'ortb2': {
+              bcat: ['IAB-3', 'IAB-4']
+            }
+          };
+          return config[key];
+        });
+        const request = spec.buildRequests(multipleBidRequests, {
+          auctionId: 'new-auction-id',
+          bidderCode: 'pubmatic'
+        });
+        let data = JSON.parse(request.data);
+        expect(data.bcat).to.deep.equal(['IAB-1', 'IAB-2', 'IAB-3', 'IAB-4']);
+        sandbox.restore();
+      });
     });
 
     describe('Response checking', function () {
