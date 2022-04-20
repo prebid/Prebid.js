@@ -25,11 +25,21 @@ const LOG_ERROR_MESS = {
   hasNoArrayOfBids: 'Seatbid from response has no array of bid objects - '
 };
 
+const ALIAS_CONFIG = {
+  'trustx': {
+    endpoint: 'https://grid.bidswitch.net/hbjson?sp=trustx',
+    syncurl: 'https://x.bidswitch.net/sync?ssp=themediagrid',
+    bidResponseExternal: {
+      netRevenue: false
+    }
+  }
+};
+
 let hasSynced = false;
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['playwire', 'adlivetech'],
+  aliases: ['playwire', 'adlivetech', 'trustx'],
   supportedMediaTypes: [ BANNER, VIDEO ],
   /**
    * Determines whether or not the given bid request is valid.
@@ -58,6 +68,7 @@ export const spec = {
     let userIdAsEids = null;
     let user = null;
     let userExt = null;
+    let endpoint = null;
     let {bidderRequestId, auctionId, gdprConsent, uspConsent, timeout, refererInfo} = bidderRequest || {};
 
     const referer = refererInfo ? encodeURIComponent(refererInfo.referer) : '';
@@ -76,6 +87,9 @@ export const spec = {
       }
       if (!userIdAsEids) {
         userIdAsEids = bid.userIdAsEids;
+      }
+      if (!endpoint) {
+        endpoint = ALIAS_CONFIG[bid.bidder] && ALIAS_CONFIG[bid.bidder].endpoint;
       }
       const {params: {uid, keywords}, mediaTypes, bidId, adUnitCode, rtd, ortb2Imp} = bid;
       bidsMap[bidId] = bid;
@@ -288,9 +302,8 @@ export const spec = {
 
     return {
       method: 'POST',
-      url: ENDPOINT_URL,
+      url: endpoint || ENDPOINT_URL,
       data: JSON.stringify(request),
-      newFormat: true,
       bidsMap
     };
   },
@@ -299,9 +312,10 @@ export const spec = {
    *
    * @param {*} serverResponse A successful response from the server.
    * @param {*} bidRequest
+   * @param {*} RendererConst
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse, bidRequest) {
+  interpretResponse: function(serverResponse, bidRequest, RendererConst = Renderer) {
     serverResponse = serverResponse && serverResponse.body;
     const bidResponses = [];
 
@@ -314,13 +328,14 @@ export const spec = {
 
     if (!errorMessage && serverResponse.seatbid) {
       serverResponse.seatbid.forEach(respItem => {
-        _addBidResponse(_getBidFromResponse(respItem), bidRequest, bidResponses);
+        _addBidResponse(_getBidFromResponse(respItem), bidRequest, bidResponses, RendererConst, this.code);
       });
     }
     if (errorMessage) logError(errorMessage);
     return bidResponses;
   },
-  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
+  getUserSyncs: function (...args) {
+    const [syncOptions,, gdprConsent, uspConsent] = args;
     if (!hasSynced && syncOptions.pixelEnabled) {
       let params = '';
 
@@ -336,10 +351,12 @@ export const spec = {
         params += `&us_privacy=${uspConsent}`;
       }
 
+      const syncUrl = (ALIAS_CONFIG[this.code] && ALIAS_CONFIG[this.code].syncurl) || SYNC_URL;
+
       hasSynced = true;
       return {
         type: 'image',
-        url: SYNC_URL + params
+        url: syncUrl + params
       };
     }
   }
@@ -383,7 +400,7 @@ function _getBidFromResponse(respItem) {
   return respItem && respItem.bid && respItem.bid[0];
 }
 
-function _addBidResponse(serverBid, bidRequest, bidResponses) {
+function _addBidResponse(serverBid, bidRequest, bidResponses, RendererConst, bidderCode) {
   if (!serverBid) return;
   let errorMessage;
   if (!serverBid.auid) errorMessage = LOG_ERROR_MESS.noAuid + JSON.stringify(serverBid);
@@ -425,13 +442,14 @@ function _addBidResponse(serverBid, bidRequest, bidResponses) {
           bidResponse.renderer = createRenderer(bidResponse, {
             id: bid.bidId,
             url: RENDERER_URL
-          });
+          }, RendererConst);
         }
       } else {
         bidResponse.ad = serverBid.adm;
         bidResponse.mediaType = BANNER;
       }
-      bidResponses.push(bidResponse);
+      const bidResponseExternal = (ALIAS_CONFIG[bidderCode] && ALIAS_CONFIG[bidderCode].bidResponseExternal) || {};
+      bidResponses.push(mergeDeep(bidResponse, bidResponseExternal));
     }
   }
   if (errorMessage) {
@@ -559,8 +577,8 @@ function outstreamRender (bid) {
   });
 }
 
-function createRenderer (bid, rendererParams) {
-  const renderer = Renderer.install({
+function createRenderer (bid, rendererParams, RendererConst) {
+  const renderer = RendererConst.install({
     id: rendererParams.id,
     url: rendererParams.url,
     loaded: false
