@@ -79,7 +79,7 @@ bidwatchAnalytics.originEnableAnalytics = bidwatchAnalytics.enableAnalytics;
 bidwatchAnalytics.enableAnalytics = function (config) {
   bidwatchAnalytics.originEnableAnalytics(config); // call the base class function
   initOptions = config.options;
-  if (initOptions.domain) { endpoint = "https://"+initOptions.domain; }
+  if (initOptions.domain) { endpoint = 'https://' + initOptions.domain; }
 };
 
 adapterManager.registerAnalyticsAdapter({
