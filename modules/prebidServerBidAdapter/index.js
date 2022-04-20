@@ -75,7 +75,7 @@ let eidPermissions;
  * @typedef {Object} S2SDefaultConfig
  * @summary Base config properties for server to server header bidding
  * @property {string} [adapter='prebidServer'] adapter code to use for S2S
- * @property {boolean} [allowAlternateBidderCodes=false] allow bids from bidders that were not explicitly requested
+ * @property {boolean} [allowUnknownBidderCodes=false] allow bids from bidders that were not explicitly requested
  * @property {boolean} [enabled=false] enables S2S bidding
  * @property {number} [timeout=1000] timeout for S2S bidders - should be lower than `pbjs.requestBids({timeout})`
  * @property {number} [syncTimeout=1000] timeout for cookie sync iframe / image rendering
@@ -104,7 +104,7 @@ const s2sDefaultConfig = {
   syncTimeout: 1000,
   maxBids: 1,
   adapter: 'prebidServer',
-  allowAlternateBidderCodes: false,
+  allowUnknownBidderCodes: false,
   adapterOptions: {},
   syncUrlModifier: {}
 };
@@ -918,8 +918,8 @@ Object.assign(ORTB2.prototype, {
         (seatbid.bid || []).forEach(bid => {
           let bidRequest = this.getBidRequest(bid.impid, seatbid.seat);
           if (bidRequest == null) {
-            if (!s2sConfig.allowAlternateBidderCodes) {
-              logWarn(`PBS adapter received bid from unknown bidder (${seatbid.seat}), but 's2sConfig.allowAlternateBidderCodes' is not set. Ignoring bid.`);
+            if (!s2sConfig.allowUnknownBidderCodes) {
+              logWarn(`PBS adapter received bid from unknown bidder (${seatbid.seat}), but 's2sConfig.allowUnknownBidderCodes' is not set. Ignoring bid.`);
               return;
             }
             // for stored impression, a request was made with bidder code `null`. Pick it up here so that NO_BID, BID_WON, etc events
