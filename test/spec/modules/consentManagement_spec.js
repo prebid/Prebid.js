@@ -281,6 +281,9 @@ describe('consentManagement', function () {
           definedInConfig: true
         });
         expect(gdprScope).to.be.equal(false);
+        const consent = gdprDataHandler.getConsentData();
+        expect(consent.consentString).to.eql(staticConfig.consentData.getTCData.tcString);
+        expect(consent.vendorData).to.eql(staticConfig.consentData.getTCData);
         expect(staticConsentData).to.be.equal(staticConfig.consentData);
       });
     });

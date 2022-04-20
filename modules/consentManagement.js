@@ -36,8 +36,8 @@ const cmpCallMap = {
  * This function reads the consent string from the config to obtain the consent information of the user.
  * @param {function({})} onSuccess acts as a success callback when the value is read from config; pass along consentObject from CMP
  */
-function lookupStaticConsentData({onSuccess}) {
-  onSuccess(staticConsentData);
+function lookupStaticConsentData({onSuccess, onError}) {
+  processCmpData(staticConsentData, {onSuccess, onError})
 }
 
 /**
