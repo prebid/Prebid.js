@@ -1,7 +1,6 @@
 import {
   _sendAdToCreative, getReplier, receiveMessage
 } from 'src/secureCreatives.js';
-import * as secureCreatives from 'src/secureCreatives.js';
 import * as utils from 'src/utils.js';
 import {getAdUnits, getBidRequests, getBidResponses} from 'test/fixtures/fixtures.js';
 import {auctionManager} from 'src/auctionManager.js';
@@ -164,6 +163,7 @@ describe('secureCreatives', () => {
       stubGetAllAssetsMessage.restore();
       stubEmit.restore();
       resetAuction();
+      adResponse.adId = bidId;
     });
 
     describe('Prebid Request', function() {
@@ -341,6 +341,31 @@ describe('secureCreatives', () => {
         sinon.assert.neverCalledWith(stubEmit, CONSTANTS.EVENTS.STALE_RENDER);
       });
 
+      it('Prebid native should not fire BID_WON when receiveMessage is called more than once', () => {
+        let adId = 3;
+        pushBidResponseToAuction({ adId });
+
+        const data = {
+          adId: adId,
+          message: 'Prebid Native',
+          action: 'allAssetRequest'
+        };
+
+        const ev = makeEvent({
+          data: JSON.stringify(data),
+          source: {
+            postMessage: sinon.stub()
+          },
+          origin: 'any origin'
+        });
+
+        receiveMessage(ev);
+        sinon.assert.calledWith(stubEmit, CONSTANTS.EVENTS.BID_WON, adResponse);
+
+        receiveMessage(ev);
+        stubEmit.withArgs(CONSTANTS.EVENTS.BID_WON, adResponse).calledOnce;
+      });
+
       it('Prebid native should fire trackers', function () {
         let adId = 2;
         pushBidResponseToAuction({adId});
@@ -378,9 +403,6 @@ describe('secureCreatives', () => {
         sinon.assert.notCalled(spyAddWinningBid);
 
         expect(adResponse).to.have.property('status', CONSTANTS.BID_STATUS.RENDERED);
-
-        // revert back to 'adId = 1'
-        adResponse.adId = bidId;
       });
     });
 
