@@ -764,20 +764,19 @@ Object.assign(ORTB2.prototype, {
           ? (amount) => amount
           : (amount, from, to) => {
             if (from === to) return amount;
-            let result;
+            let result = null;
             try {
               result = getGlobal().convertCurrency(amount, from, to);
             } catch (e) {
-              result = amount;
             }
-            return result == null ? amount : result;
+            return result;
           }
         const s2sCurrency = config.getConfig('currency.adServerCurrency') || DEFAULT_S2S_CURRENCY;
 
         return adUnit.bids
           .map((bid) => this.getBidRequest(imp.id, bid.bidder))
-          .filter((bid) => bid && typeof bid.getFloor === 'function')
           .map((bid) => {
+            if (!bid || typeof bid.getFloor !== 'function') return;
             try {
               const {currency, floor} = bid.getFloor({
                 currency: s2sCurrency
@@ -790,13 +789,20 @@ Object.assign(ORTB2.prototype, {
               logError('PBS: getFloor threw an error: ', e);
             }
           })
-          .filter((floor) => floor && floor.currency != null && floor.floor != null && !isNaN(floor.floor))
           .reduce((min, floor) => {
+            // if any bid does not have a valid floor, do not attempt to send any to PBS
+            if (floor == null || floor.currency == null || floor.floor == null || isNaN(floor.floor)) {
+              min.min = null;
+            }
+            if (min.min === null) {
+              return min;
+            }
+            // otherwise, pick the minimum one (or, in some strange confluence of circumstances, the one in the best currency)
             if (min.ref == null) {
               min.ref = min.min = floor;
             } else {
               const value = convertCurrency(floor.floor, floor.currency, min.ref.currency);
-              if (value < min.ref.floor) {
+              if (value != null && value < min.ref.floor) {
                 min.ref.floor = value;
                 min.min = floor;
               }
