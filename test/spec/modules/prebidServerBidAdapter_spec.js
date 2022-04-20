@@ -2460,8 +2460,8 @@ describe('S2S Adapter', function () {
       expect(addBidResponse.called).to.be.false;
     });
 
-    it('allows unrequested bids if config.allowUnknownBidderCodes', function () {
-      const cfg = {...CONFIG, allowUnknownBidderCodes: true};
+    it('allows unrequested bids if config.allowAlternateBidderCodes', function () {
+      const cfg = {...CONFIG, allowAlternateBidderCodes: true};
       config.setConfig({s2sConfig: cfg});
       adapter.callBids({...REQUEST, s2sConfig: cfg}, BID_REQUESTS, addBidResponse, done, ajax);
       const response = deepClone(RESPONSE_OPENRTB);
@@ -2472,7 +2472,7 @@ describe('S2S Adapter', function () {
     });
 
     it('uses "null" request\'s ID for all responses, when a null request is present', function () {
-      const cfg = {...CONFIG, allowUnknownBidderCodes: true};
+      const cfg = {...CONFIG, allowAlternateBidderCodes: true};
       config.setConfig({s2sConfig: cfg});
       const req = {...REQUEST, s2sConfig: cfg, ad_units: [{...REQUEST.ad_units[0], bids: [{bidder: null, bid_id: 'testId'}]}]};
       const bidReq = {...BID_REQUESTS[0], bidderCode: null, bids: [{...BID_REQUESTS[0].bids[0], bidder: null, bidId: 'testId'}]}
