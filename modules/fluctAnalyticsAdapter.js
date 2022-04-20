@@ -202,7 +202,7 @@ const sendMessage = (auctionId) => {
         prebidWon,
         bidWon,
         timeout,
-        dwid: find(adUnit.analytics, param => param.bidder === bidder).dwid,
+        dwid: find(adUnit.analytics, param => param.bidder === bidder)?.dwid,
         status,
         adId,
         adUrl,
