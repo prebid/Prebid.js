@@ -23,6 +23,8 @@ export const DAP_DEFAULT_TOKEN_TTL = 3600; // in seconds
 export const DAP_MAX_RETRY_TOKENIZE = 1;
 export const DAP_CLIENT_ENTROPY = 'dap_client_entropy'
 export const DAP_AUDIO_FP = 'dap_e17'
+export const DAP_FONTS_FP = 'dap_e2'
+export const DAP_WEBGL_FP = 'dap_e3'
 export const ENTROPY_EXPIRY = 3600; // in seconds
 
 export const storage = getStorageManager({gvlid: null, moduleName: SUBMODULE_NAME});
@@ -152,14 +154,12 @@ export const dapUtils = {
 
   dapCalculateEntropy: function() {
     dapUtils.dapGetAudioFp();
+    // fonts fp and webgl fp
+    setTimeout(dapUtils.dapGetFontsAndWebglFp, 0);
     let entropyDict = {}
     let entropy = {}
     // canvas fp
     entropy.e1 = dapUtils.dapGetCanvasFp();
-    // fonts fp
-    entropy.e2 = dapUtils.dapGetFontsFp();
-    // webgl fp
-    entropy.e3 = dapUtils.dapGetWebglFp();
     // misc fp
     entropy.e4 = window.screen.colorDepth ? JSON.stringify(window.screen.colorDepth) : 'NA';
     entropy.e5 = navigator.deviceMemory ? JSON.stringify(navigator.deviceMemory) : 'NA';
@@ -267,6 +267,7 @@ export const dapUtils = {
       return hashFonts.toString();
     } catch (err) {
       logMessage('Error while calcualting dapGetFontsFp() ' + strOnError);
+      return 'NC';
     }
   },
 
@@ -282,7 +283,7 @@ export const dapUtils = {
       webglContext = canvas.getContext('webgl2') || canvas.getContext('experimental-webgl2') || canvas.getContext('webgl') || canvas.getContext('experimental-webgl') || canvas.getContext('moz-webgl');
     } catch (e) {
       logMessage('Exeception occured: ', e);
-      return;
+      return 'NC';
     }
 
     try {
@@ -314,17 +315,24 @@ export const dapUtils = {
         webglContext.vertexAttribPointer(webglProgram.vertexPosAttrib, webglBuffer.itemSize, webglContext.FLOAT, !1, 0, 0);
         webglContext.uniform2f(webglProgram.offsetUniform, 1, 1);
         webglContext.drawArrays(webglContext.TRIANGLE_STRIP, 0, webglBuffer.numItems);
+        var pixels = new Uint8Array(width * height * 4);
+        webglContext.readPixels(0, 0, width, height, webglContext.RGBA, webglContext.UNSIGNED_BYTE, pixels);
+        webglString = JSON.stringify(pixels).replace(/,?"[0-9]+":/g, '');
+        logMessage('webgl fp', webglString);
+        const hashWebgl = sha256(webglString);
+        return hashWebgl.toString();
       }
     } catch (e) {
       logMessage('Exeception occured: ', e);
+      return 'NC';
     }
+  },
 
-    var pixels = new Uint8Array(width * height * 4);
-    webglContext.readPixels(0, 0, width, height, webglContext.RGBA, webglContext.UNSIGNED_BYTE, pixels);
-    webglString = JSON.stringify(pixels).replace(/,?"[0-9]+":/g, '');
-    logMessage('webgl fp', webglString);
-    const hashWebgl = sha256(webglString);
-    return hashWebgl.toString();
+  dapGetFontsAndWebglFp: function() {
+    let fontsFp = dapUtils.dapGetFontsFp();
+    localStorage.setItem(DAP_FONTS_FP, JSON.stringify(fontsFp));
+    let webGlFp = dapUtils.dapGetWebglFp();
+    localStorage.setItem(DAP_WEBGL_FP, JSON.stringify(webGlFp));
   },
 
   dapGetAudioFp: function(entropy) {
@@ -753,6 +761,12 @@ export const dapUtils = {
       let audioFp = JSON.parse(localStorage.getItem(DAP_AUDIO_FP));
       audioFp = audioFp || 'NA';
       entropyDict.entropy.e17 = audioFp;
+      let fontsFp = JSON.parse(localStorage.getItem(DAP_FONTS_FP));
+      fontsFp = fontsFp || 'NA';
+      entropyDict.entropy.e2 = fontsFp;
+      let webGlFp = JSON.parse(localStorage.getItem(DAP_WEBGL_FP));
+      webGlFp = webGlFp || 'NA';
+      entropyDict.entropy.e3 = webGlFp;
       apiParams.entropy = entropyDict.entropy;
     } else {
       logMessage('Entropy not added to Tokenize apiParams.');
