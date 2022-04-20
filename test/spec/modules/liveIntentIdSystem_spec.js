@@ -66,7 +66,7 @@ describe('LiveIntentId', function() {
       consentString: 'consentDataString'
     })
     liveIntentIdSubmodule.getId(defaultConfigParams);
-    expect(server.requests[0].url).to.match(/https:\/\/rp.liadm.com\/j\?wpn=prebid.*us_privacy=1YNY.*&gdpr=1&gdpr_consent=consentDataString.*/);
+    expect(server.requests[0].url).to.match(/https:\/\/rp.liadm.com\/j\?.*&us_privacy=1YNY.*&wpn=prebid.*&gdpr=1&gdpr_consent=consentDataString.*/);
   });
 
   it('should fire an event when getId and a hash is provided', function() {
@@ -88,7 +88,7 @@ describe('LiveIntentId', function() {
         }
       }
     }});
-    expect(server.requests[0].url).to.match(/https:\/\/collector.liveintent.com\/j\?aid=a-0001&wpn=prebid.*/);
+    expect(server.requests[0].url).to.match(/https:\/\/collector.liveintent.com\/j\?.*aid=a-0001.*&wpn=prebid.*/);
   });
 
   it('should initialize LiveConnect and emit an event with a privacy string when decode', function() {
@@ -195,7 +195,7 @@ describe('LiveIntentId', function() {
 
   it('should include the LiveConnect identifier when calling the LiveIntent Identity Exchange endpoint', function() {
     const oldCookie = 'a-xxxx--123e4567-e89b-12d3-a456-426655440000'
-    getDataFromLocalStorageStub.withArgs('_li_duid').returns(oldCookie);
+    getCookieStub.withArgs('_lc2_fpi').returns(oldCookie)
     let callBackSpy = sinon.spy();
     let submoduleCallback = liveIntentIdSubmodule.getId(defaultConfigParams).callback;
     submoduleCallback(callBackSpy);
@@ -211,7 +211,7 @@ describe('LiveIntentId', function() {
 
   it('should include the LiveConnect identifier and additional Identifiers to resolve', function() {
     const oldCookie = 'a-xxxx--123e4567-e89b-12d3-a456-426655440000'
-    getDataFromLocalStorageStub.withArgs('_li_duid').returns(oldCookie);
+    getCookieStub.withArgs('_lc2_fpi').returns(oldCookie);
     getDataFromLocalStorageStub.withArgs('_thirdPC').returns('third-pc');
     const configParams = { params: {
       ...defaultConfigParams.params,
