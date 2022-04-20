@@ -12,7 +12,7 @@ describe('Adot Adapter', function () {
     })
 
     it('should return true if video and isValidVideo', function () {
-      const bid = { mediaTypes: { video: { 'mimes': 1, 'minduration': 1, 'maxduration': 1, 'protocols': 1 } } };
+      const bid = { mediaTypes: { video: { 'mimes': 1, 'protocols': 1 } } };
       const isBidRequestValid = spec.isBidRequestValid(bid);
       expect(isBidRequestValid).to.equal(true);
     })

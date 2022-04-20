@@ -109,7 +109,7 @@ describe('ColossussspAdapter', function () {
       }
     });
     it('Returns empty data if no valid requests are passed', function () {
-      serverRequest = spec.buildRequests([]);
+      serverRequest = spec.buildRequests([], bidderRequest);
       let data = serverRequest.data;
       expect(data.placements).to.be.an('array').that.is.empty;
     });
