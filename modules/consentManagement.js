@@ -335,8 +335,8 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
       let height = 1;
       if (Array.isArray(adUnits) && adUnits.length > 0) {
         let sizes = getAdUnitSizes(adUnits[0]);
-        width = sizes[0][0];
-        height = sizes[0][1];
+        width = sizes?.[0]?.[0] || 1;
+        height = sizes?.[0]?.[1] || 1;
       }
 
       return function (cb) {
