@@ -1,5 +1,6 @@
 import { find } from '../../src/polyfill.js';
 import { vastXmlEditorFactory } from '../shared/vastXmlEditor.js';
+import { generateUUID } from '../../src/utils.js';
 
 export const PB_PREFIX = 'pb_';
 export const UUID_MARKER = PB_PREFIX + 'uuid';
@@ -136,7 +137,7 @@ export function baseImpressionVerifier(bidTracker_) {
 
   function trackBid(bid) {
     let { adId, adUnitCode, requestId, auctionId } = bid;
-    const trackingId = PB_PREFIX + getId(12);
+    const trackingId = PB_PREFIX + generateUUID(10**13);
     bidTracker.store(trackingId, { adId, adUnitCode, requestId, auctionId });
     return trackingId;
   }
@@ -196,8 +197,4 @@ export function tracker() {
     store,
     remove
   }
-}
-
-export function getId(length) {
-  return Math.floor(Math.random() * 10 ** length);
 }
