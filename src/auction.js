@@ -552,17 +552,26 @@ function getPreparedBidForAuction({adUnitCode, bid, bidderRequest, auctionId}) {
   const mediaTypeGranularity = getMediaTypeGranularity(bid.mediaType, bidReq, config.getConfig('mediaTypePriceGranularity'));
 
   /* gu-mod-start */
-  // Get custom price config on a per-bidder basis
+
+  // First check if there is a `guCustomPriceBucket` function supplied to the config
+  // If there is call the function on the current bid
+  // This is so we can decide the granularity based on info such as slot size
+  const guCustomPriceBucketFn = config.runWithBidder(bid.bidderCode, () => config.getConfig('guCustomPriceBucket'));
+  const guCustomPriceBucket = typeof guCustomPriceBucketFn === 'function' ? guCustomPriceBucketFn(bid) : undefined;
+
+  // Get custom price config on a per-bidder basis if `guCustomPriceBucket` is not available
   // This will fall back to the default if a bidder specific value is not provided
-  const customPriceBucket = config.runWithBidder(bid.bidderCode, () =>
-    config.getConfig('customPriceBucket'));
+  const customPriceBucket = guCustomPriceBucket || (config.runWithBidder(bid.bidderCode, () =>
+    config.getConfig('customPriceBucket')));
 
   const priceStringsObj = getPriceBucketString(
     bidObject.cpm,
     (typeof mediaTypeGranularity === 'object') ? mediaTypeGranularity : customPriceBucket,
     config.getConfig('currency.granularityMultiplier')
   );
+
   /* gu-mod-end */
+
   bidObject.pbLg = priceStringsObj.low;
   bidObject.pbMg = priceStringsObj.med;
   bidObject.pbHg = priceStringsObj.high;
