@@ -610,6 +610,32 @@ describe('TheMediaGrid Adapter', function () {
       getConfigStub.restore();
     });
 
+    it('should have right value in site.content when jwpsegments are present in bid.ortb2', function () {
+      const data = [
+        {
+          name: 'jwplayer',
+          ext: {
+            segtax: 502
+          },
+          segment: [{ id: 'test_seg_1', value: 'test_seg_1' }, { id: 'test_seg_2', value: 'test_seg_2' }]
+        }
+      ];
+      const siteContent = {
+        id: 'jw_content_id',
+        data: data
+      };
+      const bidRequestsWithJwData = Object.assign({}, bidRequests[0], {
+        ortb2: {
+          site: {
+            content: siteContent
+          }
+        }
+      });
+      const request = spec.buildRequests([bidRequestsWithJwData], bidderRequest);
+      const payload = parseRequest(request.data);
+      expect(payload.site.content).to.deep.equal(siteContent);
+    });
+
     it('should be right tmax when timeout in config is less then timeout in bidderRequest', function() {
       const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
         arg => arg === 'bidderTimeout' ? 2000 : null);

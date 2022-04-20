@@ -53,6 +53,7 @@ export const spec = {
     }
     let pageKeywords = null;
     let jwpseg = null;
+    let bidOrtb2 = null;
     let content = null;
     let schain = null;
     let userIdAsEids = null;
@@ -77,7 +78,7 @@ export const spec = {
       if (!userIdAsEids) {
         userIdAsEids = bid.userIdAsEids;
       }
-      const {params: {uid, keywords}, mediaTypes, bidId, adUnitCode, rtd, ortb2Imp} = bid;
+      const {params: {uid, keywords}, mediaTypes, bidId, adUnitCode, rtd, ortb2Imp, ortb2} = bid;
       bidsMap[bidId] = bid;
       const bidFloor = _getFloor(mediaTypes || {}, bid);
       const jwTargeting = rtd && rtd.jwplayer && rtd.jwplayer.targeting;
@@ -89,6 +90,14 @@ export const spec = {
           content = jwTargeting.content;
         }
       }
+      if (ortb2) {
+        if (!bidOrtb2) {
+          bidOrtb2 = ortb2;
+        } else {
+          bidOrtb2 = mergeDeep(bidOrtb2, ortb2);
+        }
+      }
+
       let impObj = {
         id: bidId.toString(),
         tagid: uid.toString(),
@@ -165,6 +174,11 @@ export const spec = {
 
     if (content) {
       request.site.content = content;
+    }
+
+    const ortb2SiteContent = deepAccess(bidOrtb2, 'site.content');
+    if (ortb2SiteContent) {
+      request.site.content = mergeDeep(request.site.content || {}, ortb2SiteContent);
     }
 
     if (jwpseg && jwpseg.length) {
