@@ -2,7 +2,7 @@ import * as utils from '../src/utils.js';
 import { registerBidder } from 'src/adapters/bidderFactory';
 import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
-const BIDDER_CODE = 'example';
+const BIDDER_CODE = 'mediaaisle';
 const baseUrl =  'https://prometheus-ix.ecdrsvc.com/prometheus/bid';
 export const spec = {
     code: BIDDER_CODE,
@@ -15,6 +15,8 @@ export const spec = {
     },
     buildRequests: function(validBidRequests, bidderRequest) {
       const referer = bidderRequest.refererInfo.referer || '';
+      const fpd = config.getConfig('ortb2');
+
       return validBidRequests.map((bidRequest) => {
         let req = {
           url: baseUrl,
@@ -29,7 +31,8 @@ export const spec = {
             bidRequestCount: bidRequest.bidRequestCount,
             params: bidRequest.params,
             sizes: bidRequest.sizes,
-            mediaTypes: bidRequest.mediaTypes
+            mediaTypes: bidRequest.mediaTypes,
+            fpd: fpd ? JSON.stringify(fpd) : JSON.stringify({})
           }
         };
         return req;
@@ -55,6 +58,6 @@ export const spec = {
     onBidWon: function(bid) {},
     onSetTargeting: function(bid) {},
     onBidderError: function({ error, bidderRequest }) {},
-    supportedMediaTypes: [BANNER, VIDEO]
+    supportedMediaTypes: [BANNER]
 }
 registerBidder(spec);
