@@ -531,7 +531,7 @@ describe('S2S Adapter', function () {
     });
 
     it('should set id to auction ID and source.tid to tid', function () {
-      config.setConfig({s2sConfig: CONFIG});
+      config.setConfig({ s2sConfig: CONFIG });
 
       adapter.callBids(OUTSTREAM_VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
 
@@ -543,8 +543,8 @@ describe('S2S Adapter', function () {
 
     it('should block request if config did not define p1Consent URL in endpoint object config', function () {
       let badConfig = utils.deepClone(CONFIG);
-      badConfig.endpoint = {noP1Consent: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'};
-      config.setConfig({s2sConfig: badConfig});
+      badConfig.endpoint = { noP1Consent: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction' };
+      config.setConfig({ s2sConfig: badConfig });
 
       let badCfgRequest = utils.deepClone(REQUEST);
       badCfgRequest.s2sConfig = badConfig;
@@ -556,8 +556,8 @@ describe('S2S Adapter', function () {
 
     it('should block request if config did not define noP1Consent URL in endpoint object config', function () {
       let badConfig = utils.deepClone(CONFIG);
-      badConfig.endpoint = {p1Consent: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'};
-      config.setConfig({s2sConfig: badConfig});
+      badConfig.endpoint = { p1Consent: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction' };
+      config.setConfig({ s2sConfig: badConfig });
 
       let badCfgRequest = utils.deepClone(REQUEST);
       badCfgRequest.s2sConfig = badConfig;
@@ -585,7 +585,7 @@ describe('S2S Adapter', function () {
     it('should block request if config did not define any URLs in endpoint object config', function () {
       let badConfig = utils.deepClone(CONFIG);
       badConfig.endpoint = {};
-      config.setConfig({s2sConfig: badConfig});
+      config.setConfig({ s2sConfig: badConfig });
 
       let badCfgRequest = utils.deepClone(REQUEST);
       badCfgRequest.s2sConfig = badConfig;
@@ -596,7 +596,7 @@ describe('S2S Adapter', function () {
     });
 
     it('should add outstream bc renderer exists on mediatype', function () {
-      config.setConfig({s2sConfig: CONFIG});
+      config.setConfig({ s2sConfig: CONFIG });
 
       adapter.callBids(OUTSTREAM_VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
 
@@ -609,7 +609,7 @@ describe('S2S Adapter', function () {
       let ortb2Config = utils.deepClone(CONFIG);
       ortb2Config.endpoint.p1Consent = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
 
-      config.setConfig({s2sConfig: ortb2Config});
+      config.setConfig({ s2sConfig: ortb2Config });
 
       let videoBid = utils.deepClone(VIDEO_REQUEST);
       videoBid.ad_units[0].mediaTypes.video.context = 'instream';
@@ -625,7 +625,7 @@ describe('S2S Adapter', function () {
       let ortb2Config = utils.deepClone(CONFIG);
       ortb2Config.endpoint.p1Consent = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
 
-      config.setConfig({s2sConfig: ortb2Config});
+      config.setConfig({ s2sConfig: ortb2Config });
 
       let videoBid = utils.deepClone(VIDEO_REQUEST);
       videoBid.ad_units[0].mediaTypes.video.context = 'instream';
@@ -651,7 +651,7 @@ describe('S2S Adapter', function () {
       });
 
       it('adds gdpr consent information to ortb2 request depending on presence of module', function () {
-        let consentConfig = {consentManagement: {cmpApi: 'iab'}, s2sConfig: CONFIG};
+        let consentConfig = { consentManagement: { cmpApi: 'iab' }, s2sConfig: CONFIG };
         config.setConfig(consentConfig);
 
         let gdprBidRequest = utils.deepClone(BID_REQUESTS);
@@ -667,7 +667,7 @@ describe('S2S Adapter', function () {
         expect(requestBid.user.ext.consent).is.equal('abc123');
 
         config.resetConfig();
-        config.setConfig({s2sConfig: CONFIG});
+        config.setConfig({ s2sConfig: CONFIG });
 
         adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
         requestBid = JSON.parse(server.requests[1].requestBody);
@@ -677,7 +677,7 @@ describe('S2S Adapter', function () {
       });
 
       it('adds additional consent information to ortb2 request depending on presence of module', function () {
-        let consentConfig = {consentManagement: {cmpApi: 'iab'}, s2sConfig: CONFIG};
+        let consentConfig = { consentManagement: { cmpApi: 'iab' }, s2sConfig: CONFIG };
         config.setConfig(consentConfig);
 
         let gdprBidRequest = utils.deepClone(BID_REQUESTS);
@@ -695,7 +695,7 @@ describe('S2S Adapter', function () {
         expect(requestBid.user.ext.ConsentedProvidersSettings.consented_providers).is.equal('superduperconsent');
 
         config.resetConfig();
-        config.setConfig({s2sConfig: CONFIG});
+        config.setConfig({ s2sConfig: CONFIG });
 
         adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
         requestBid = JSON.parse(server.requests[1].requestBody);
@@ -706,9 +706,9 @@ describe('S2S Adapter', function () {
 
       it('check gdpr info gets added into cookie_sync request: have consent data', function () {
         let cookieSyncConfig = utils.deepClone(CONFIG);
-        cookieSyncConfig.syncEndpoint = {p1Consent: 'https://prebid.adnxs.com/pbs/v1/cookie_sync'};
+        cookieSyncConfig.syncEndpoint = { p1Consent: 'https://prebid.adnxs.com/pbs/v1/cookie_sync' };
 
-        let consentConfig = {consentManagement: {cmpApi: 'iab'}, s2sConfig: cookieSyncConfig};
+        let consentConfig = { consentManagement: { cmpApi: 'iab' }, s2sConfig: cookieSyncConfig };
         config.setConfig(consentConfig);
 
         let gdprBidRequest = utils.deepClone(BID_REQUESTS);
@@ -732,9 +732,9 @@ describe('S2S Adapter', function () {
 
       it('check gdpr info gets added into cookie_sync request: have consent data but gdprApplies is false', function () {
         let cookieSyncConfig = utils.deepClone(CONFIG);
-        cookieSyncConfig.syncEndpoint = {p1Consent: 'https://prebid.adnxs.com/pbs/v1/cookie_sync'};
+        cookieSyncConfig.syncEndpoint = { p1Consent: 'https://prebid.adnxs.com/pbs/v1/cookie_sync' };
 
-        let consentConfig = {consentManagement: {cmpApi: 'iab'}, s2sConfig: cookieSyncConfig};
+        let consentConfig = { consentManagement: { cmpApi: 'iab' }, s2sConfig: cookieSyncConfig };
         config.setConfig(consentConfig);
 
         const s2sBidRequest = utils.deepClone(REQUEST);
@@ -755,9 +755,9 @@ describe('S2S Adapter', function () {
 
       it('checks gdpr info gets added to cookie_sync request: applies is false', function () {
         let cookieSyncConfig = utils.deepClone(CONFIG);
-        cookieSyncConfig.syncEndpoint = {p1Consent: 'https://prebid.adnxs.com/pbs/v1/cookie_sync'};
+        cookieSyncConfig.syncEndpoint = { p1Consent: 'https://prebid.adnxs.com/pbs/v1/cookie_sync' };
 
-        let consentConfig = {consentManagement: {cmpApi: 'iab'}, s2sConfig: cookieSyncConfig};
+        let consentConfig = { consentManagement: { cmpApi: 'iab' }, s2sConfig: cookieSyncConfig };
         config.setConfig(consentConfig);
 
         let gdprBidRequest = utils.deepClone(BID_REQUESTS);
@@ -783,7 +783,7 @@ describe('S2S Adapter', function () {
       });
 
       it('is added to ortb2 request when in bidRequest', function () {
-        config.setConfig({s2sConfig: CONFIG});
+        config.setConfig({ s2sConfig: CONFIG });
 
         let uspBidRequest = utils.deepClone(BID_REQUESTS);
         uspBidRequest[0].uspConsent = '1NYN';
@@ -794,7 +794,7 @@ describe('S2S Adapter', function () {
         expect(requestBid.regs.ext.us_privacy).is.equal('1NYN');
 
         config.resetConfig();
-        config.setConfig({s2sConfig: CONFIG});
+        config.setConfig({ s2sConfig: CONFIG });
 
         adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
         requestBid = JSON.parse(server.requests[1].requestBody);
@@ -804,8 +804,8 @@ describe('S2S Adapter', function () {
 
       it('is added to cookie_sync request when in bidRequest', function () {
         let cookieSyncConfig = utils.deepClone(CONFIG);
-        cookieSyncConfig.syncEndpoint = {p1Consent: 'https://prebid.adnxs.com/pbs/v1/cookie_sync'};
-        config.setConfig({s2sConfig: cookieSyncConfig});
+        cookieSyncConfig.syncEndpoint = { p1Consent: 'https://prebid.adnxs.com/pbs/v1/cookie_sync' };
+        config.setConfig({ s2sConfig: cookieSyncConfig });
 
         let uspBidRequest = utils.deepClone(BID_REQUESTS);
         uspBidRequest[0].uspConsent = '1YNN';
@@ -828,7 +828,7 @@ describe('S2S Adapter', function () {
       });
 
       it('is added to ortb2 request when in bidRequest', function () {
-        config.setConfig({s2sConfig: CONFIG});
+        config.setConfig({ s2sConfig: CONFIG });
 
         let consentBidRequest = utils.deepClone(BID_REQUESTS);
         consentBidRequest[0].uspConsent = '1NYN';
@@ -845,7 +845,7 @@ describe('S2S Adapter', function () {
         expect(requestBid.user.ext.consent).is.equal('abc123');
 
         config.resetConfig();
-        config.setConfig({s2sConfig: CONFIG});
+        config.setConfig({ s2sConfig: CONFIG });
 
         adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
         requestBid = JSON.parse(server.requests[1].requestBody);
@@ -856,8 +856,8 @@ describe('S2S Adapter', function () {
 
       it('is added to cookie_sync request when in bidRequest', function () {
         let cookieSyncConfig = utils.deepClone(CONFIG);
-        cookieSyncConfig.syncEndpoint = {p1Consent: 'https://prebid.adnxs.com/pbs/v1/cookie_sync'};
-        config.setConfig({s2sConfig: cookieSyncConfig});
+        cookieSyncConfig.syncEndpoint = { p1Consent: 'https://prebid.adnxs.com/pbs/v1/cookie_sync' };
+        config.setConfig({ s2sConfig: cookieSyncConfig });
 
         let consentBidRequest = utils.deepClone(BID_REQUESTS);
         consentBidRequest[0].uspConsent = '1YNN';
@@ -883,8 +883,8 @@ describe('S2S Adapter', function () {
     it('adds device and app objects to request', function () {
       const _config = {
         s2sConfig: CONFIG,
-        device: {ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC'},
-        app: {bundle: 'com.test.app'},
+        device: { ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC' },
+        app: { bundle: 'com.test.app' },
       };
 
       config.setConfig(_config);
@@ -897,7 +897,7 @@ describe('S2S Adapter', function () {
       });
       expect(requestBid.app).to.deep.equal({
         bundle: 'com.test.app',
-        publisher: {'id': '1'}
+        publisher: { 'id': '1' }
       });
     });
 
@@ -910,8 +910,8 @@ describe('S2S Adapter', function () {
 
       const _config = {
         s2sConfig: s2sConfig,
-        device: {ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC'},
-        app: {bundle: 'com.test.app'},
+        device: { ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC' },
+        app: { bundle: 'com.test.app' },
       };
 
       config.setConfig(_config);
@@ -924,15 +924,15 @@ describe('S2S Adapter', function () {
       });
       expect(requestBid.app).to.deep.equal({
         bundle: 'com.test.app',
-        publisher: {'id': '1'}
+        publisher: { 'id': '1' }
       });
     });
 
     it('adds debugging value from storedAuctionResponse to OpenRTB', function () {
       const _config = {
         s2sConfig: CONFIG,
-        device: {ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC'},
-        app: {bundle: 'com.test.app'}
+        device: { ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC' },
+        app: { bundle: 'com.test.app' }
       };
 
       config.setConfig(_config);
@@ -984,11 +984,11 @@ describe('S2S Adapter', function () {
         ).to.be.true;
 
         // if getFloor does not return number
-        getFloorResponse = {currency: 'EUR', floor: 'not a number'};
+        getFloorResponse = { currency: 'EUR', floor: 'not a number' };
         runTest(undefined, undefined);
 
         // if getFloor does not return currency
-        getFloorResponse = {floor: 1.1};
+        getFloorResponse = { floor: 1.1 };
         runTest(undefined, undefined);
       });
 
@@ -1003,7 +1003,7 @@ describe('S2S Adapter', function () {
         sinon.spy(BID_REQUESTS[0].bids[0], 'getFloor');
 
         // returns USD and string floor
-        getFloorResponse = {currency: 'USD', floor: '1.23'};
+        getFloorResponse = { currency: 'USD', floor: '1.23' };
         runTest(1.23, 'USD');
         // make sure getFloor was called
         expect(
@@ -1013,14 +1013,14 @@ describe('S2S Adapter', function () {
         ).to.be.true;
 
         // returns non USD and number floor
-        getFloorResponse = {currency: 'EUR', floor: 0.85};
+        getFloorResponse = { currency: 'EUR', floor: 0.85 };
         runTest(0.85, 'EUR');
       });
 
       it('should correctly pass adServerCurrency when set to getFloor not default', function () {
         config.setConfig({
           s2sConfig: CONFIG,
-          currency: {adServerCurrency: 'JPY'},
+          currency: { adServerCurrency: 'JPY' },
         });
 
         // we have to start requestCount at 1 because a conversion rates fetch occurs when adServerCur is not USD!
@@ -1030,7 +1030,7 @@ describe('S2S Adapter', function () {
         sinon.spy(BID_REQUESTS[0].bids[0], 'getFloor');
 
         // returns USD and string floor
-        getFloorResponse = {currency: 'JPY', floor: 97.2};
+        getFloorResponse = { currency: 'JPY', floor: 97.2 };
         runTest(97.2, 'JPY');
         // make sure getFloor was called with JPY
         expect(
