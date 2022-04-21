@@ -18,5 +18,4 @@ Analytics adapter for bidwatch.io.
           domain: 'test.endpoint',
     }
 }
-
 ```
