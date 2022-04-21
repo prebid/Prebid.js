@@ -757,7 +757,7 @@ Object.assign(ORTB2.prototype, {
       }
 
       const floor = (() => {
-        // we have to pick a floor for the imp - here we attempt to find the minimimum floor
+        // we have to pick a floor for the imp - here we attempt to find the minimum floor
         // across all bids for this adUnit
 
         const convertCurrency = typeof getGlobal().convertCurrency !== 'function'
