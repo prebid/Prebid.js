@@ -1161,9 +1161,9 @@ describe('S2S Adapter', function () {
                   banner: {sizes: [1, 1]}
                 },
                 bids: [
+                  {bidder: 'b2', bid_id: 2},
                   {bidder: 'b3', bid_id: 3},
                   {bidder: 'b1', bid_id: 1},
-                  {bidder: 'b2', bid_id: 2},
                 ]
               }
             ]
@@ -1184,20 +1184,39 @@ describe('S2S Adapter', function () {
         })
 
         Object.entries({
-          'is available': [true, 10, '0.1'],
-          'is not available': [false, 1, '10']
-        }).forEach(([t, [enableCurrency, expectedFloor, expectedCur]]) => {
+          'is available': {
+            expectDesc: 'minimum after conversion',
+            expectedFloor: 10,
+            expectedCur: '0.1',
+            conversionFn: (amount, from, to) => {
+              from = parseFloat(from);
+              to = parseFloat(to);
+              return amount * from / to;
+            },
+          },
+          'is not available': {
+            expectDesc: 'absolute minimum',
+            expectedFloor: 1,
+            expectedCur: '10',
+            conversionFn: null
+          },
+          'is not working': {
+            expectDesc: 'first',
+            expectedFloor: 2,
+            expectedCur: '1',
+            conversionFn: () => {
+              throw new Error();
+            }
+          }
+        }).forEach(([t, {expectDesc, expectedFloor, expectedCur, conversionFn}]) => {
           describe(`and currency conversion ${t}`, () => {
             let mockConvertCurrency;
             const origConvertCurrency = getGlobal().convertCurrency;
             beforeEach(() => {
-              if (enableCurrency) {
-                getGlobal().convertCurrency = mockConvertCurrency = sinon.stub().callsFake((amount, from, to) => {
-                  from = parseFloat(from);
-                  to = parseFloat(to);
-                  return amount * from / to;
-                })
+              if (conversionFn) {
+                getGlobal().convertCurrency = mockConvertCurrency = sinon.stub().callsFake(conversionFn)
               } else {
+                mockConvertCurrency = null;
                 delete getGlobal().convertCurrency;
               }
             });
@@ -1210,7 +1229,7 @@ describe('S2S Adapter', function () {
               }
             })
 
-            it('should pick the minimum', () => {
+            it(`should pick the ${expectDesc}`, () => {
               adapter.callBids(s2sReq, BID_REQUESTS, addBidResponse, done, ajax);
               const pbsReq = JSON.parse(server.requests[server.requests.length - 1].requestBody);
               expect(pbsReq.imp[0].bidfloor).to.eql(expectedFloor);
