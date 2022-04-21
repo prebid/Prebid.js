@@ -787,6 +787,17 @@ describe('triplelift adapter', function () {
         size: '*'
       })).to.be.true;
     });
+    it('should catch error if getFloor throws error', function() {
+      let logErrorSpy = sinon.spy(utils, 'logError');
+
+      bidRequests[0].getFloor = () => {
+        throw new Error('An exception!');
+      };
+
+      tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+
+      expect(logErrorSpy.calledOnce).to.equal(true);
+    });
     it('should send global config fpd if kvps are available', function() {
       const sens = null;
       const category = ['news', 'weather', 'hurricane'];
