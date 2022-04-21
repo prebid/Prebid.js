@@ -31,6 +31,7 @@ import {createEidsArray} from './userId/eids.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
 import {OUTSTREAM} from '../src/video.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 
 const BIDDER_CODE = 'adagio';
 const LOG_PREFIX = 'Adagio:';
@@ -868,7 +869,9 @@ function storeRequestInAdagioNS(bidRequest) {
     }],
     auctionId: bidRequest.auctionId,
     pageviewId: internal.getPageviewId(),
-    printNumber
+    printNumber,
+    localPbjs: '$$PREBID_GLOBAL$$',
+    localPbjsRef: getGlobal()
   });
 
   // (legacy) Store internal adUnit information
