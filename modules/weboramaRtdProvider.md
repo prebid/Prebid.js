@@ -26,7 +26,139 @@ Compile the Weborama RTD module into your Prebid build:
 
 Add the Weborama RTD provider to your Prebid config.
 
-Minimal Configuration:
+Minimal Configuration (should work for):
+
+```javascript
+var pbjs = pbjs || {};
+pbjs.que = pbjs.que || [];
+
+pbjs.que.push(function () {
+    pbjs.setConfig({
+        debug: true, // to be possible log on console, *should* be disable in production
+        realTimeData: {
+            auctionDelay: 1000,
+            dataProviders: [{
+                name: "weborama",
+                waitForIt: true,
+                params: {
+                    weboCtxConf: {     // contextual site-centric configuration, *omit if not needed*
+                        token: "<<to-be-defined>>", // mandatory
+                    },
+                    weboUserDataConf: { // wam user-centric configuration, *omit if not needed*
+                        enabled: true,
+                    },
+                    weboLiteDataConf: { // webo-lite site-centric configuration, *omit if not needed*
+                        enabled: true, 
+                    },
+                }
+            }]
+        }
+    });
+});
+```
+
+A more complete example can be found below. We can define default profiles for each section to be used in case of find no data.
+
+We can control if we will set prebid targeting or send data to bidders in a global level or on each section (`contextual`, `wam` or `lite`).
+
+By default we try to send the data to all destinations, always. To restrict we can have two choices:
+
+* Set `setPrebidTargeting` or `sendToBidders` explicity to `true` or `false` on each section;
+* Set `setPrebidTargeting` or `sendToBidders` globally to `false` and only enable on the right sections;
+
+```javascript
+var pbjs = pbjs || {};
+pbjs.que = pbjs.que || [];
+
+pbjs.que.push(function () {
+    pbjs.setConfig({
+        debug: true, // to be possible log on console, *should* be disable in production
+        realTimeData: {
+            auctionDelay: 1000,
+            dataProviders: [{
+                name: "weborama",
+                waitForIt: true,
+                params: {
+                    weboCtxConf: {
+                        token: "<<to-be-defined>>", // mandatory
+                        targetURL: "https://example.org", // default is document.URL
+                        setPrebidTargeting: true, // override param.setPrebidTargeting. default is true
+                        sendToBidders: true,      // override param.sendToBidders. default is true
+                        defaultProfile: {         // optional, used if nothing is found
+                            webo_ctx: [ ... ],    // contextual segments
+                            webo_ds: [ ...],      // data science segments
+                        },
+                        enabled: true,
+                    },
+                    weboUserDataConf: {
+                        setPrebidTargeting: true, // override param.setPrebidTargeting. default is true
+                        sendToBidders: true,      // override param.sendToBidders. default is true
+                        defaultProfile: {            // optional, used if nothing is found
+                            webo_cs: [...],        // wam custom segments
+                            webo_audiences: [...], // wam audiences 
+                        },
+                        enabled: true,
+                    },
+                    weboLiteDataConf: {
+                        setPrebidTargeting: true, // override param.setPrebidTargeting. default is true
+                        sendToBidders: true,      // override param.sendToBidders. default is true
+                        defaultProfile: {           // optional, used if nothing is found
+                            l...
+                        },
+                        enabled: true,
+                    },
+                }
+            }]
+        }
+    });
+});
+```
+
+Imagine we need to configure the following options using the previous example, we can write the configuration like the one below.
+
+||contextual|wam|lite|
+| :------------ | :------------ | :------------ |:------------ |
+|setPrebidTargeting|true|false|true|
+|sendToBidders|false|true|true|
+
+```javascript
+var pbjs = pbjs || {};
+pbjs.que = pbjs.que || [];
+
+pbjs.que.push(function () {
+    pbjs.setConfig({
+        debug: true, // to be possible log on console, *should* be disable in production
+        realTimeData: {
+            auctionDelay: 1000,
+            dataProviders: [{
+                name: "weborama",
+                waitForIt: true,
+                params: {
+                    setPrebidTargeting: false, // optional. set the default value of each section.
+                    sendToBidders: false,      // optional. set the default value of each section.
+                    weboCtxConf: {
+                        token: "<<to-be-defined>>", // mandatory
+                        targetURL: "https://example.org", // default is document.URL
+                        setPrebidTargeting: true, // override param.setPrebidTargeting. default is true
+                        enabled: true,
+                    },
+                    weboUserDataConf: {
+                        sendToBidders: true,      // override param.sendToBidders. default is true
+                        enabled: true,
+                    },
+                    weboLiteDataConf: {
+                        setPrebidTargeting: true, // override param.setPrebidTargeting. default is true
+                        sendToBidders: true,      // override param.sendToBidders. default is true
+                        enabled: true,
+                    },
+                }
+            }]
+        }
+    });
+});
+```
+
+We can also define a list of adunits / bidders to send data instead only use boolean values.
 
 ```javascript
 var pbjs = pbjs || {};
@@ -41,15 +173,23 @@ pbjs.que.push(function () {
                 name: "weborama",
                 waitForIt: true,
                 params: {
-                    weboCtxConf: {     // contextual site-centric configuration, omit if not needed
+                    weboCtxConf: {
                         token: "to-be-defined", // mandatory
-                    },
-                    weboUserDataConf: { // wam user-centric configuration, omit if not needed
+                        setPrebidTargeting: ['adUnitCode1',...], // set target only on certain adunits 
+                        sendToBidders: ['appnexus',...], // overide, send to only some bidders
                         enabled: true,
                     },
-                    weboLiteDataConf: { // webo-lite site-centric configuration, omit if not needed
-                        enabled: true, 
+                    weboUserDataConf: {
+                        accountId: 12345,           // recommended, used for logging
+                        setPrebidTargeting: ['adUnitCode2',...], // set target only on certain adunits 
+                        sendToBidders: ['rubicon',...], // overide, send to only some bidders
+                        enabled: true,
                     },
+                    weboLiteDataConf: {
+                        setPrebidTargeting: ['adUnitCode3',...], // set target only on certain adunits 
+                        sendToBidders: ['smartadserver',...], // overide, send to only some bidders
+                        enabled: true,
+                    }
                 }
             }]
         }
@@ -57,7 +197,7 @@ pbjs.que.push(function () {
 });
 ```
 
-More Complete Configuration:
+Finally, we can combine several styles in the same configuration if needed. Including the callback style.
 
 ```javascript
 var pbjs = pbjs || {};
