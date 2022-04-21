@@ -6,7 +6,7 @@ Module Type: Rtd Provider
 Maintainer: prebid-support@weborama.com
 ```
 
-# Description
+## Description
 
 Weborama provides a Real-Time Data Submodule for `Prebid.js`, allowing to easy integrate different products such as:
 
@@ -45,10 +45,10 @@ pbjs.que.push(function () {
                         token: "to-be-defined", // mandatory
                     },
                     weboUserDataConf: { // wam user-centric configuration, omit if not needed
-                        accountId: 12345,       // recommended
+                        enabled: true,
                     },
                     weboLiteDataConf: { // webo-lite site-centric configuration, omit if not needed
-                        enabled: true,          // recommended 
+                        enabled: true, 
                     },
                 }
             }]
@@ -140,7 +140,7 @@ This is the main configuration section
 | params | Object | | Optional |
 | params.setPrebidTargeting | Boolean | If true, may use the profile to set the prebid (GPT/GAM or AST) targeting of all adunits managed by prebid.js | Optional. Affects the `weboCtxConf`, `weboUserDataConf` and `weboLiteDataConf` sections |
 | params.sendToBidders | Boolean or Array | If true, may send the profile to all bidders. If an array, will specify the bidders to send data | Optional. Affects the `weboCtxConf`, `weboUserDataConf` and `weboLiteDataConf` sections |
-| params.weboCtxConf | Object | Weborama Contextual Site-Centric Configuration | Optional 
+| params.weboCtxConf | Object | Weborama Contextual Site-Centric Configuration | Optional |
 | params.weboUserDataConf | Object | Weborama WAM User-Centric Configuration | Optional |
 | params.weboLiteDataConf | Object | Weborama LiTE Site-Centric Configuration | Optional |
 | params.onData | Callback | If set, will receive the profile and metadata | Optional. Affects the `weboCtxConf`, `weboUserDataConf` and `weboLiteDataConf` sections |
@@ -155,15 +155,16 @@ On this section we will explain the `params.weboCtxConf` subconfiguration:
 | :------------ | :------------ | :------------ |:------------ |
 | token | String | Security Token provided by Weborama, unique per client | Mandatory |
 | targetURL | String | Url to be profiled in the contextual api | Optional. Defaults to `document.URL` |
-| setPrebidTargeting|Various|If true, will use the contextual profile to set the prebid (GPT/GAM or AST) targeting of all adunits managed by prebid.js| Optional. Default is `params.setPrebidTargeting` (if any) or **true**.|
-| sendToBidders|Various|If true, will send the contextual profile to all bidders. If an array, will specify the bidders to send data| Optional. Default is `params.sendToBidders` (if any) or **true**.|
+| setPrebidTargeting|Various|If true, will use the contextual profile to set the prebid (GPT/GAM or AST) targeting of all adunits managed by prebid.js| Optional. Default is `params.setPrebidTargeting` (if any) or `true`.|
+| sendToBidders|Various|If true, will send the contextual profile to all bidders. If an array, will specify the bidders to send data| Optional. Default is `params.sendToBidders` (if any) or `true`.|
 | defaultProfile | Object | default value of the profile to be used when there are no response from contextual api (such as timeout)| Optional. Default is `{}` |
 | onData | Callback | If set, will receive the profile and metadata | Optional. Default is `params.onData` (if any) or log via prebid debug |
-| enabled | Boolean| if false, will ignore this configuration| default true if this section is present|
+| enabled | Boolean| if false, will ignore this configuration| Default is `true` if this section is present|
+| baseURLProfileAPI | String| if present, update the domain of the contextual api| Optional. Default is `ctx.weborama.com` |
 
 #### WAM User-Centric Configuration
 
-To be possible use the integration with Weborama Audience Manager (WAM) you must be a client with an account id and you lust include the `wamfactory` script in your pages with `wam2gam` feature activated. 
+To be possible use the integration with Weborama Audience Manager (WAM) you must be a client with an account id and you lust include the `wamfactory` script in your pages with `wam2gam` feature activated.
 Please contact weborama if you don't have it.
 
 On this section we will explain the `params.weboUserDataConf` subconfiguration:
@@ -171,12 +172,12 @@ On this section we will explain the `params.weboUserDataConf` subconfiguration:
 | Name  |Type | Description   | Notes  |
 | :------------ | :------------ | :------------ |:------------ |
 | accountId|Number|WAM account id. If you don't have it, please contact weborama. | Recommended.|
-| setPrebidTargeting|Various|If true, will use the user profile to set the prebid (GPT/GAM or AST) targeting of all adunits managed by prebid.js| Optional. Default is `params.setPrebidTargeting` (if any) or **true**.|
-| sendToBidders|Various|If true, will send the user profile to all bidders| Optional. Default is `params.sendToBidders` (if any) or **true**.|
+| setPrebidTargeting|Various|If true, will use the user profile to set the prebid (GPT/GAM or AST) targeting of all adunits managed by prebid.js| Optional. Default is `params.setPrebidTargeting` (if any) or `true`.|
+| sendToBidders|Various|If true, will send the user profile to all bidders| Optional. Default is `params.sendToBidders` (if any) or `true`.|
 | onData | Callback | If set, will receive the profile and site flag | Optional. Default is `params.onData` (if any) or log via prebid debug |
 | defaultProfile | Object | default value of the profile to be used when there are no response from contextual api (such as timeout)| Optional. Default is `{}` |
 | localStorageProfileKey| String | can be used to customize the local storage key | Optional |
-| enabled | Boolean| if false, will ignore this configuration| default true if this section is present|
+| enabled | Boolean| if false, will ignore this configuration| Default is `true` if this section is present|
 
 #### Webo LiTE Site-Centric Configuration
 
@@ -186,12 +187,12 @@ On this section we will explain the `params.weboLiteDataConf` subconfiguration:
 
 | Name  |Type | Description   | Notes  |
 | :------------ | :------------ | :------------ |:------------ |
-| setPrebidTargeting|Various|If true, will use the user profile to set the prebid (GPT/GAM or AST) targeting of all adunits managed by prebid.js| Optional. Default is `params.setPrebidTargeting` (if any) or **true**.|
-| sendToBidders|Varios|If true, will send the user profile to all bidders| Optional. Default is `params.sendToBidders` (if any) or **true**.|
+| setPrebidTargeting|Various|If true, will use the user profile to set the prebid (GPT/GAM or AST) targeting of all adunits managed by prebid.js| Optional. Default is `params.setPrebidTargeting` (if any) or `true`.|
+| sendToBidders|Varios|If true, will send the user profile to all bidders| Optional. Default is `params.sendToBidders` (if any) or `true`.|
 | onData | Callback | If set, will receive the profile and site flag | Optional. Default is `params.onData` (if any) or log via prebid debug |
 | defaultProfile | Object | default value of the profile to be used when there are no response from contextual api (such as timeout)| Optional. Default is `{}` |
 | localStorageProfileKey| String | can be used to customize the local storage key | Optional |
-| enabled | Boolean| if false, will ignore this configuration| default true if this section is present|
+| enabled | Boolean| if false, will ignore this configuration| Default is `true` if this section is present|
 
 ##### Property setPrebidTargeting supported types
 
@@ -368,12 +369,13 @@ params: {
 ### Supported Bidders
 
 We currently support the following bidder adapters:
+
 * SmartADServer SSP
 * PubMatic SSP
 * AppNexus SSP
 * Rubicon SSP
 
-We also set the bidder (and global, if no specific bidders are set on `sendToBidders`) ortb2 `site.ext.data` and `user.ext.data` sections (as arbitrary data). The following bidders may support it, to be sure, check the `First Party Data Support` on the feature list for the particular bidder from here: https://docs.prebid.org/dev-docs/bidders 
+We also set the bidder (and global, if no specific bidders are set on `sendToBidders`) ortb2 `site.ext.data` and `user.ext.data` sections (as arbitrary data). The following bidders may support it, to be sure, check the `First Party Data Support` on the feature list for the particular bidder from [here](https://docs.prebid.org/dev-docs/bidders).
 
 * Adagio
 * AdformOpenRTB

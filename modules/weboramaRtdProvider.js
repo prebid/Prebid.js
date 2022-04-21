@@ -56,6 +56,7 @@
  * @property {?dataCallback} onData callback
  * @property {?object} defaultProfile to be used if the profile is not found
  * @property {?Boolean} enabled if false, will ignore this configuration
+ * @property {?string} baseURLProfileAPI to be used to point to a different domain than ctx.weborama.com
  */
 
 /**
@@ -113,6 +114,8 @@ const adapterManager = require('../src/adapterManager.js').default;
 const MODULE_NAME = 'realTimeData';
 /** @type {string} */
 const SUBMODULE_NAME = 'weborama';
+/** @type {string} */
+const BASE_URL_CONTEXTUAL_PROFILE_API = 'ctx.weborama.com';
 /** @type {string} */
 export const DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY = 'webo_wam2gam_entry';
 /** @type {string} */
@@ -862,14 +865,15 @@ export function setWeboContextualProfile(data) {
 function fetchContextualProfile(weboCtxConf, onSuccess, onDone) {
   const targetURL = weboCtxConf.targetURL || document.URL;
   const token = weboCtxConf.token;
+  const baseURLProfileAPI = weboCtxConf.baseURLProfileAPI || BASE_URL_CONTEXTUAL_PROFILE_API;
 
   let queryString = '';
   queryString = tryAppendQueryString(queryString, 'token', token);
   queryString = tryAppendQueryString(queryString, 'url', targetURL);
 
-  const url = `https://ctx.weborama.com/api/profile?${queryString}`;
+  const urlProfileAPI = `https://${baseURLProfileAPI}/api/profile?${queryString}`;
 
-  ajax(url, {
+  ajax(urlProfileAPI, {
     success: function (response, req) {
       if (req.status === 200) {
         try {
