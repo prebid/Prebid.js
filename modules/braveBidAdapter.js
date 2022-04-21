@@ -173,7 +173,6 @@ export const spec = {
   },
 
   onBidWon: (bid) => {
-
     if (isStr(bid.nurl) && bid.nurl !== '') {
       triggerPixel(bid.nurl);
     }
