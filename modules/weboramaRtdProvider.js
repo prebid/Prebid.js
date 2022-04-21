@@ -7,10 +7,18 @@
  * @requires module:modules/realTimeData
  */
 
+/** onData callback type
+ * @callback dataCallback
+ * @param {Object} data profile data
+ * @param {Boolean} site true if site, else it is user
+ * @returns {void}
+ */
+
 /**
  * @typedef {Object} ModuleParams
  * @property {?Boolean} setPrebidTargeting if true, will set the GAM targeting (default undefined)
  * @property {?Boolean} sendToBidders if true, will send the contextual profile to all bidders (default undefined)
+ * @property {?dataCallback} onData callback
  * @property {?WeboCtxConf} weboCtxConf
  * @property {?WeboUserDataConf} weboUserDataConf
  */
@@ -21,7 +29,9 @@
  * @property {?string} targetURL specify the target url instead use the referer
  * @property {?Boolean} setPrebidTargeting if true, will set the GAM targeting (default params.setPrebidTargeting or true)
  * @property {?Boolean} sendToBidders if true, will send the contextual profile to all bidders (default params.sendToBidders or true)
+ * @property {?dataCallback} onData callback
  * @property {?object} defaultProfile to be used if the profile is not found
+ * @property {?Boolean} enabled if false, will ignore this configuration
  */
 
 /**
@@ -30,7 +40,9 @@
  * @property {?Boolean} setPrebidTargeting if true, will set the GAM targeting (default params.setPrebidTargeting or true)
  * @property {?Boolean} sendToBidders if true, will send the user-centric profile to all bidders (default params.sendToBidders or true)
  * @property {?object} defaultProfile to be used if the profile is not found
+ * @property {?dataCallback} onData callback
  * @property {?string} localStorageProfileKey can be used to customize the local storage key (default is 'webo_wam2gam_entry')
+ * @property {?Boolean} enabled if false, will ignore this configuration
  */
 
 import {
@@ -44,7 +56,8 @@ import {
   logError,
   logWarn,
   tryAppendQueryString,
-  logMessage
+  logMessage,
+  isFn
 } from '../src/utils.js';
 import {
   submodule
@@ -69,7 +82,7 @@ const LOCAL_STORAGE_USER_TARGETING_SECTION = 'targeting';
 /** @type {number} */
 const GVLID = 284;
 /** @type {object} */
-export const storage = getStorageManager(GVLID, SUBMODULE_NAME);
+export const storage = getStorageManager({gvlid: GVLID, moduleName: SUBMODULE_NAME});
 
 /** @type {null|Object} */
 let _weboContextualProfile = null;
@@ -105,7 +118,9 @@ function init(moduleConfig) {
  * @return {Boolean} true if sub module was initialized with success
  */
 function initWeboCtx(moduleParams, weboCtxConf) {
-  if (!weboCtxConf) {
+  if (!weboCtxConf || weboCtxConf.enabled === false) {
+    moduleParams.weboCtxConf = null;
+
     return false
   }
 
@@ -130,7 +145,9 @@ function initWeboCtx(moduleParams, weboCtxConf) {
  * @return {Boolean} true if sub module was initialized with success
  */
 function initWeboUserData(moduleParams, weboUserDataConf) {
-  if (!weboUserDataConf) {
+  if (!weboUserDataConf || weboUserDataConf.enabled === false) {
+    moduleParams.weboUserDataConf = null;
+
     return false;
   }
 
@@ -153,6 +170,7 @@ function initWeboUserData(moduleParams, weboUserDataConf) {
 const globalDefaults = {
   setPrebidTargeting: true,
   sendToBidders: true,
+  onData: (data, kind, def) => logMessage('onData(data,kind,default)', data, kind, def),
 }
 
 /** normalize submodule configuration
@@ -313,6 +331,35 @@ function handleBidRequestData(adUnits, moduleParams) {
       setBidRequestProfile(adUnits, weboUserDataProfile, false);
     }
   }
+
+  handleOnData(weboCtxConf, weboUserDataConf);
+}
+
+/** function that handle with onData callbacks
+ * @param {WeboCtxConf} weboCtxConf
+ * @param {WeboUserDataConf} weboUserDataConf
+ */
+
+function handleOnData(weboCtxConf, weboUserDataConf) {
+  const callbacks = [{
+    onData: weboCtxConf.onData,
+    fetchData: () => getContextualProfile(weboCtxConf),
+    site: true,
+  }, {
+    onData: weboUserDataConf.onData,
+    fetchData: () => getWeboUserDataProfile(weboUserDataConf),
+    site: false,
+  }];
+
+  callbacks.filter(obj => isFn(obj.onData)).forEach(obj => {
+    try {
+      const data = obj.fetchData();
+      obj.onData(data, obj.site);
+    } catch (e) {
+      const kind = (obj.site) ? 'site' : 'user';
+      logError(`error while executure onData callback with ${kind}-based data:`, e);
+    }
+  });
 }
 
 /** function that set bid request data on each segment (site or user centric)

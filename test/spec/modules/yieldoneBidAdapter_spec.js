@@ -366,6 +366,39 @@ describe('yieldoneBidAdapter', function() {
         expect(request[0].data.lr_env).to.equal('idl_env_sample');
       });
     });
+
+    describe('IMID', function () {
+      it('dont send IMID if undefined', function () {
+        const bidRequests = [
+          {
+            params: {placementId: '0'},
+          },
+          {
+            params: {placementId: '1'},
+            userId: {},
+          },
+          {
+            params: {placementId: '2'},
+            userId: undefined,
+          },
+        ];
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        expect(request[0].data).to.not.have.property('imuid');
+        expect(request[1].data).to.not.have.property('imuid');
+        expect(request[2].data).to.not.have.property('imuid');
+      });
+
+      it('should send IMID if available', function () {
+        const bidRequests = [
+          {
+            params: {placementId: '0'},
+            userId: {imuid: 'imuid_sample'},
+          },
+        ];
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        expect(request[0].data.imuid).to.equal('imuid_sample');
+      });
+    });
   });
 
   describe('interpretResponse', function () {

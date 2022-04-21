@@ -7,7 +7,10 @@ import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr.js';
 import CONSTANTS from 'src/constants.json';
-import events from 'src/events.js';
+import * as events from 'src/events.js';
+import {hook} from '../../../../src/hook.js';
+import {auctionManager} from '../../../../src/auctionManager.js';
+import {stubAuctionIndex} from '../../../helpers/indexStub.js';
 
 const CODE = 'sampleBidder';
 const MOCK_BIDS_REQUEST = {
@@ -43,6 +46,10 @@ describe('bidders created by newBidder', function () {
   let addBidResponseStub;
   let doneStub;
 
+  before(() => {
+    hook.ready();
+  });
+
   beforeEach(function () {
     spec = {
       code: CODE,
@@ -59,17 +66,22 @@ describe('bidders created by newBidder', function () {
   describe('when the ajax response is irrelevant', function () {
     let ajaxStub;
     let getConfigSpy;
+    let aliasRegistryStub, aliasRegistry;
 
     beforeEach(function () {
       ajaxStub = sinon.stub(ajax, 'ajax');
       addBidResponseStub.reset();
       getConfigSpy = sinon.spy(config, 'getConfig');
       doneStub.reset();
+      aliasRegistry = {};
+      aliasRegistryStub = sinon.stub(adapterManager, 'aliasRegistry');
+      aliasRegistryStub.get(() => aliasRegistry);
     });
 
     afterEach(function () {
       ajaxStub.restore();
       getConfigSpy.restore();
+      aliasRegistryStub.restore();
     });
 
     it('should let registerSyncs run with invalid alias and aliasSync enabled', function () {
@@ -116,6 +128,7 @@ describe('bidders created by newBidder', function () {
       });
       spec.code = 'aliasBidder';
       const bidder = newBidder(spec);
+      aliasRegistry = {[spec.code]: CODE};
       bidder.callBids({ bids: [] }, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
       expect(getConfigSpy.withArgs('userSync.filterSettings').calledOnce).to.equal(false);
     });
@@ -548,6 +561,30 @@ describe('bidders created by newBidder', function () {
 
       expect(logErrorSpy.calledOnce).to.equal(true);
     });
+
+    it('should require requestId from interpretResponse', () => {
+      const bidder = newBidder(spec);
+      const bid = {
+        'ad': 'creative',
+        'cpm': '1.99',
+        'creativeId': 'some-id',
+        'currency': 'USD',
+        'netRevenue': true,
+        'ttl': 360
+      };
+      spec.isBidRequestValid.returns(true);
+      spec.buildRequests.returns({
+        method: 'POST',
+        url: 'test.url.com',
+        data: {}
+      });
+      spec.getUserSyncs.returns([]);
+      spec.interpretResponse.returns(bid);
+
+      bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+
+      expect(addBidResponseStub.called).to.be.false;
+    });
   });
 
   describe('when the ajax call fails', function () {
@@ -783,7 +820,7 @@ describe('registerBidder', function () {
 
 describe('validate bid response: ', function () {
   let spec;
-  let bidder;
+  let indexStub, adUnits, bidderRequests;
   let addBidResponseStub;
   let doneStub;
   let ajaxStub;
@@ -824,24 +861,33 @@ describe('validate bid response: ', function () {
       callbacks.success('response body', { getResponseHeader: fakeResponse });
     });
     logErrorSpy = sinon.spy(utils, 'logError');
+    indexStub = sinon.stub(auctionManager, 'index');
+    adUnits = [];
+    bidderRequests = [];
+    indexStub.get(() => stubAuctionIndex({adUnits: adUnits, bidderRequests: bidderRequests}))
   });
 
   afterEach(function () {
     ajaxStub.restore();
     logErrorSpy.restore();
+    indexStub.restore;
   });
 
   it('should add native bids that do have required assets', function () {
+    adUnits = [{
+      transactionId: 'au',
+      nativeParams: {
+        title: {'required': true},
+      }
+    }]
     let bidRequest = {
       bids: [{
         bidId: '1',
         auctionId: 'first-bid-id',
         adUnitCode: 'mock/placement',
+        transactionId: 'au',
         params: {
           param: 5
-        },
-        nativeParams: {
-          title: {'required': true},
         },
         mediaType: 'native',
       }]
@@ -869,21 +915,24 @@ describe('validate bid response: ', function () {
   });
 
   it('should not add native bids that do not have required assets', function () {
+    adUnits = [{
+      transactionId: 'au',
+      nativeParams: {
+        title: {'required': true},
+      },
+    }];
     let bidRequest = {
       bids: [{
         bidId: '1',
         auctionId: 'first-bid-id',
         adUnitCode: 'mock/placement',
+        transactionId: 'au',
         params: {
           param: 5
-        },
-        nativeParams: {
-          title: {'required': true},
         },
         mediaType: 'native',
       }]
     };
-
     let bids1 = Object.assign({},
       bids[0],
       {
@@ -905,17 +954,21 @@ describe('validate bid response: ', function () {
   });
 
   it('should add bid when renderer is present on outstream bids', function () {
+    adUnits = [{
+      transactionId: 'au',
+      mediaTypes: {
+        video: {context: 'outstream'}
+      }
+    }]
     let bidRequest = {
       bids: [{
         bidId: '1',
         auctionId: 'first-bid-id',
+        transactionId: 'au',
         adUnitCode: 'mock/placement',
         params: {
           param: 5
         },
-        mediaTypes: {
-          video: {context: 'outstream'}
-        }
       }]
     };
 
@@ -951,7 +1004,7 @@ describe('validate bid response: ', function () {
         sizes: [[300, 250]],
       }]
     };
-
+    bidderRequests = [bidRequest];
     let bids1 = Object.assign({},
       bids[0],
       {

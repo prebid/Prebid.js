@@ -1,10 +1,23 @@
-import { logInfo, logError, getWindowLocation, parseQS, logMessage, _each, deepAccess, logWarn, _map, flatten, uniques, isEmpty, parseSizesInput } from '../src/utils.js';
+import {
+  _each,
+  _map,
+  deepAccess,
+  flatten,
+  getWindowLocation,
+  isEmpty,
+  logError,
+  logInfo,
+  logMessage,
+  logWarn,
+  parseQS,
+  parseSizesInput,
+  uniques
+} from '../src/utils.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
-import { ajax } from '../src/ajax.js';
-import find from 'core-js-pure/features/array/find.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import {ajax} from '../src/ajax.js';
+import {find, includes} from '../src/polyfill.js';
 
 export const AUCTION_STATES = {
   INIT: 'initialized', // auction has initialized

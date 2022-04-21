@@ -168,6 +168,8 @@ function initCurrency(url) {
         }
       }
     );
+  } else {
+    ready.done();
   }
 }
 
@@ -244,10 +246,7 @@ function wrapFunction(fn, context, params) {
         }
       } catch (e) {
         logWarn('Returning NO_BID, getCurrencyConversion threw error: ', e);
-        params[1] = createBid(CONSTANTS.STATUS.NO_BID, {
-          bidder: bid.bidderCode || bid.bidder,
-          bidId: bid.requestId
-        });
+        params[1] = createBid(CONSTANTS.STATUS.NO_BID, bid.getIdentifiers());
       }
     }
     return fn.apply(context, params);

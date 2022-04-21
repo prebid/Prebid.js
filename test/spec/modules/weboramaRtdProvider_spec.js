@@ -20,9 +20,9 @@ const responseHeader = {
   'Content-Type': 'application/json'
 };
 
-describe('weboramaRtdProvider', function() {
-  describe('weboramaSubmodule', function() {
-    it('successfully instantiates and call contextual api', function() {
+describe('weboramaRtdProvider', function () {
+  describe('weboramaSubmodule', function () {
+    it('successfully instantiates and call contextual api', function () {
       const moduleConfig = {
         params: {
           weboCtxConf: {
@@ -35,7 +35,7 @@ describe('weboramaRtdProvider', function() {
       expect(weboramaSubmodule.init(moduleConfig)).to.equal(true);
     });
 
-    it('instantiate without contextual token should fail', function() {
+    it('instantiate without contextual token should fail', function () {
       const moduleConfig = {
         params: {
           weboCtxConf: {}
@@ -44,7 +44,7 @@ describe('weboramaRtdProvider', function() {
       expect(weboramaSubmodule.init(moduleConfig)).to.equal(false);
     });
 
-    it('instantiate with empty weboUserData conf should return true', function() {
+    it('instantiate with empty weboUserData conf should return true', function () {
       const moduleConfig = {
         params: {
           weboUserDataConf: {}
@@ -54,10 +54,10 @@ describe('weboramaRtdProvider', function() {
     });
   });
 
-  describe('Handle Set Targeting', function() {
+  describe('Handle Set Targeting', function () {
     let sandbox;
 
-    beforeEach(function() {
+    beforeEach(function () {
       sandbox = sinon.sandbox.create();
 
       storage.removeDataFromLocalStorage('webo_wam2gam_entry');
@@ -67,17 +67,24 @@ describe('weboramaRtdProvider', function() {
       });
     });
 
-    afterEach(function() {
+    afterEach(function () {
       sandbox.restore();
     });
 
-    describe('Add Contextual Data', function() {
-      it('should set gam targeting and send to bidders by default', function() {
+    describe('Add Contextual Data', function () {
+      it('should set gam targeting and send to bidders by default', function () {
+        let onDataResponse = {};
         const moduleConfig = {
           params: {
             weboCtxConf: {
               token: 'foo',
               targetURL: 'https://prebid.org',
+              onData: (data, site) => {
+                onDataResponse = {
+                  data: data,
+                  site: site,
+                };
+              },
             }
           }
         };
@@ -145,9 +152,13 @@ describe('weboramaRtdProvider', function() {
             },
           }
         });
+        expect(onDataResponse).to.deep.equal({
+          data: data,
+          site: true,
+        });
       });
 
-      it('should set gam targeting but not send to bidders with setPrebidTargeting=true/sendToBidders=false', function() {
+      it('should set gam targeting but not send to bidders with setPrebidTargeting=true/sendToBidders=false', function () {
         const moduleConfig = {
           params: {
             weboCtxConf: {
@@ -237,11 +248,18 @@ describe('weboramaRtdProvider', function() {
         expect(getGlobal().getConfig('ortb2')).to.be.undefined;
       });
 
-      it('should set gam targeting but not send to bidders with (submodule override) setPrebidTargeting=true/(global) sendToBidders=false', function() {
+      it('should set gam targeting but not send to bidders with (submodule override) setPrebidTargeting=true/(global) sendToBidders=false', function () {
+        let onDataResponse = {};
         const moduleConfig = {
           params: {
             setPrebidTargeting: false,
             sendToBidders: false,
+            onData: (data, site) => {
+              onDataResponse = {
+                data: data,
+                site: site,
+              };
+            },
             weboCtxConf: {
               token: 'foo',
               targetURL: 'https://prebid.org',
@@ -288,9 +306,14 @@ describe('weboramaRtdProvider', function() {
 
         expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(1);
         expect(getGlobal().getConfig('ortb2')).to.be.undefined;
+
+        expect(onDataResponse).to.deep.equal({
+          data: data,
+          site: true,
+        });
       });
 
-      it('should not set gam targeting with setPrebidTargeting=false but send to bidders', function() {
+      it('should not set gam targeting with setPrebidTargeting=false but send to bidders', function () {
         const moduleConfig = {
           params: {
             weboCtxConf: {
@@ -392,10 +415,11 @@ describe('weboramaRtdProvider', function() {
         });
       });
 
-      it('should use default profile in case of api error', function() {
+      it('should use default profile in case of api error', function () {
         const defaultProfile = {
           webo_ctx: ['baz'],
         };
+        let onDataResponse = {};
         const moduleConfig = {
           params: {
             weboCtxConf: {
@@ -403,6 +427,12 @@ describe('weboramaRtdProvider', function() {
               targetURL: 'https://prebid.org',
               setPrebidTargeting: true,
               defaultProfile: defaultProfile,
+              onData: (data, site) => {
+                onDataResponse = {
+                  data: data,
+                  site: site,
+                };
+              },
             }
           }
         };
@@ -466,14 +496,27 @@ describe('weboramaRtdProvider', function() {
             },
           }
         });
+        expect(onDataResponse).to.deep.equal({
+          data: defaultProfile,
+          site: true,
+        });
       });
     });
 
-    describe('Add user-centric data (WAM2GAM)', function() {
-      it('should set gam targeting from local storage and send to bidders by default', function() {
+    describe('Add user-centric data (WAM2GAM)', function () {
+      it('should set gam targeting from local storage and send to bidders by default', function () {
+        let onDataResponse = {};
         const moduleConfig = {
           params: {
-            weboUserDataConf: {}
+            weboUserDataConf: {
+              accountID: 12345,
+              onData: (data, site) => {
+                onDataResponse = {
+                  data: data,
+                  site: site,
+                };
+              },
+            }
           }
         };
         const data = {
@@ -541,9 +584,13 @@ describe('weboramaRtdProvider', function() {
             },
           }
         });
+        expect(onDataResponse).to.deep.equal({
+          data: data,
+          site: false,
+        });
       });
 
-      it('should set gam targeting but not send to bidders with setPrebidTargeting=true/sendToBidders=false', function() {
+      it('should set gam targeting but not send to bidders with setPrebidTargeting=true/sendToBidders=false', function () {
         const moduleConfig = {
           params: {
             weboUserDataConf: {
@@ -633,11 +680,18 @@ describe('weboramaRtdProvider', function() {
         expect(getGlobal().getConfig('ortb2')).to.be.undefined;
       });
 
-      it('should set gam targeting but not send to bidders with (submodule override) setPrebidTargeting=true/(global) sendToBidders=false', function() {
+      it('should set gam targeting but not send to bidders with (submodule override) setPrebidTargeting=true/(global) sendToBidders=false', function () {
+        let onDataResponse = {};
         const moduleConfig = {
           params: {
             setPrebidTargeting: false,
             sendToBidders: false,
+            onData: (data, site) => {
+              onDataResponse = {
+                data: data,
+                site: site,
+              };
+            },
             weboUserDataConf: {
               setPrebidTargeting: true, // submodule parameter will override module parameter
             }
@@ -685,9 +739,13 @@ describe('weboramaRtdProvider', function() {
         expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(1);
         expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('foo=bar');
         expect(getGlobal().getConfig('ortb2')).to.be.undefined;
+        expect(onDataResponse).to.deep.equal({
+          data: data,
+          site: false,
+        });
       });
 
-      it('should not set gam targeting with setPrebidTargeting=false but send to bidders', function() {
+      it('should not set gam targeting with setPrebidTargeting=false but send to bidders', function () {
         const moduleConfig = {
           params: {
             weboUserDataConf: {
@@ -789,7 +847,7 @@ describe('weboramaRtdProvider', function() {
         });
       });
 
-      it('should use default profile in case of nothing on local storage', function() {
+      it('should use default profile in case of nothing on local storage', function () {
         const defaultProfile = {
           webo_audiences: ['baz']
         };
@@ -857,15 +915,22 @@ describe('weboramaRtdProvider', function() {
         });
       });
 
-      it('should use default profile if cant read from local storage', function() {
+      it('should use default profile if cant read from local storage', function () {
         const defaultProfile = {
           webo_audiences: ['baz']
         };
+        let onDataResponse = {};
         const moduleConfig = {
           params: {
             weboUserDataConf: {
               setPrebidTargeting: true,
               defaultProfile: defaultProfile,
+              onData: (data, site) => {
+                onDataResponse = {
+                  data: data,
+                  site: site,
+                };
+              },
             }
           }
         };
@@ -922,6 +987,10 @@ describe('weboramaRtdProvider', function() {
               data: defaultProfile
             },
           }
+        });
+        expect(onDataResponse).to.deep.equal({
+          data: defaultProfile,
+          site: false,
         });
       });
     });
