@@ -126,9 +126,10 @@ export const DEFAULT_LOCAL_STORAGE_LITE_PROFILE_KEY = '_lite';
 const LOCAL_STORAGE_LITE_TARGETING_SECTION = 'webo_lite';
 /** @type {number} */
 const GVLID = 284;
-/** @type {object} */
-export const storage = getStorageManager(GVLID, SUBMODULE_NAME);
 /** @type {?Object} */
+export const storage = getStorageManager({gvlid: GVLID, moduleName: SUBMODULE_NAME});
+
+/** @type {null|Object} */
 let _weboContextualProfile = null;
 
 /** @type {Boolean} */

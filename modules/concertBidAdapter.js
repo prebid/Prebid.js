@@ -166,7 +166,7 @@ export const spec = {
 
 registerBidder(spec);
 
-const storage = getStorageManager();
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 /**
  * Check or generate a UID for the current user.

@@ -1,4 +1,4 @@
-const includes = require('prebidjs-polyfill/includes.js');
+import {includes} from 'src/polyfill.js';
 const expect = require('chai').expect;
 const { host, protocol, waitForElement } = require('../../../helpers/testing-utils');
 
