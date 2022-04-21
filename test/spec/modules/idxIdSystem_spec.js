@@ -3,6 +3,7 @@ import {find} from 'src/polyfill.js';
 import { config } from 'src/config.js';
 import { init, requestBidsHook, setSubmoduleRegistry } from 'modules/userId/index.js';
 import { storage, idxIdSubmodule } from 'modules/idxIdSystem.js';
+import {mockGdprConsent} from '../../helpers/consentData.js';
 
 const IDX_COOKIE_NAME = '_idx';
 const IDX_DUMMY_VALUE = 'idx value for testing';
@@ -85,14 +86,21 @@ describe('IDx ID System', () => {
 
   describe('requestBids hook', () => {
     let adUnits;
+    let sandbox;
 
     beforeEach(() => {
+      sandbox = sinon.sandbox.create();
+      mockGdprConsent(sandbox);
       adUnits = [getAdUnitMock()];
-      setSubmoduleRegistry([idxIdSubmodule]);
       init(config);
+      setSubmoduleRegistry([idxIdSubmodule]);
       config.setConfig(getConfigMock());
       getCookieStub.withArgs(IDX_COOKIE_NAME).returns(IDX_COOKIE_STORED);
     });
+
+    afterEach(() => {
+      sandbox.restore();
+    })
 
     it('when a stored IDx exists it is added to bids', (done) => {
       requestBidsHook(() => {
