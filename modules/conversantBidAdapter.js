@@ -5,9 +5,9 @@ import {getStorageManager} from '../src/storageManager.js';
 import { config } from '../src/config.js';
 
 const GVLID = 24;
-export const storage = getStorageManager(GVLID);
 
 const BIDDER_CODE = 'conversant';
+export const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
 const URL = 'https://web.hb.ad.cpe.dotomi.com/cvx/client/hb/ortb/25';
 
 export const spec = {
@@ -135,6 +135,12 @@ export const spec = {
     };
 
     let userExt = {};
+
+    // pass schain object if it is present
+    const schain = deepAccess(validBidRequests, '0.schain');
+    if (schain) {
+      deepSetValue(payload, 'source.ext.schain', schain);
+    }
 
     if (bidderRequest) {
       // Add GDPR flag and consent string

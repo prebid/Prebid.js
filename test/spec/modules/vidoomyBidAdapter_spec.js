@@ -16,7 +16,8 @@ describe('vidoomyBidAdapter', function() {
         'bidder': 'vidoomy',
         'params': {
           pid: '123123',
-          id: '123123'
+          id: '123123',
+          bidfloor: 0.5
         },
         'adUnitCode': 'code',
         'sizes': [[300, 250]]
@@ -29,6 +30,11 @@ describe('vidoomyBidAdapter', function() {
 
     it('should return false when pid is empty', function () {
       bid.params.pid = '';
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('should return false when bidfloor is invalid', function () {
+      bid.params.bidfloor = 'not a number';
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 

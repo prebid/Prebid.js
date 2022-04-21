@@ -18,6 +18,47 @@ describe('nextMillenniumBidAdapterTests', function() {
     }
   ];
 
+  const bidRequestDataGI = [
+    {
+      adUnitCode: 'test-banner-gi',
+      bidId: 'bid1234',
+      auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+      bidder: 'nextMillennium',
+      params: { group_id: '1234' },
+      mediaTypes: {
+        banner: {
+          sizes: [[300, 250]]
+        }
+      },
+
+      sizes: [[300, 250]],
+      uspConsent: '1---',
+      gdprConsent: {
+        consentString: 'kjfdniwjnifwenrif3',
+        gdprApplies: true
+      }
+    },
+
+    {
+      adUnitCode: 'test-video-gi',
+      bidId: 'bid1234',
+      auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+      bidder: 'nextMillennium',
+      params: { group_id: '1234' },
+      mediaTypes: {
+        video: {
+          playerSize: [640, 480],
+        }
+      },
+
+      uspConsent: '1---',
+      gdprConsent: {
+        consentString: 'kjfdniwjnifwenrif3',
+        gdprApplies: true
+      }
+    },
+  ];
+
   it('Request params check with GDPR and USP Consent', function () {
     const request = spec.buildRequests(bidRequestData, bidRequestData[0]);
     expect(JSON.parse(request[0].data).user.ext.consent).to.equal('kjfdniwjnifwenrif3');
@@ -36,6 +77,16 @@ describe('nextMillenniumBidAdapterTests', function() {
     const request = spec.buildRequests(bidRequestData);
     expect(request[0].bidId).to.equal('bid1234');
     expect(JSON.parse(request[0].data).id).to.equal('b06c5141-fe8f-4cdf-9d7d-54415490a917');
+  });
+
+  it('use parameters group_id', function() {
+    for (let test of bidRequestDataGI) {
+      const request = spec.buildRequests([test]);
+      const requestData = JSON.parse(request[0].data);
+      const storeRequestId = requestData.ext.prebid.storedrequest.id;
+      const templateRE = /^g\d+;\d+x\d+;/;
+      expect(templateRE.test(storeRequestId)).to.be.true;
+    };
   });
 
   it('Check if refresh_count param is incremented', function() {
