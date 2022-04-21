@@ -69,8 +69,6 @@ var validBidRequestsMulti = [
     transactionId: '2e63c0ed-b10c-4008-aed5-84582cecfe87'
   }
 ];
-// use 'pubcid', 'tdid', 'id5id', 'parrableId', 'idl_env', 'criteoId'
-// see http://prebid.org/dev-docs/modules/userId.html
 var validBidRequestsWithUserIdData = [
   {
     adUnitCode: 'div-gpt-ad-1460505748561-0',
@@ -291,7 +289,6 @@ var validBidRequests1OutstreamVideo2020 = [
   }
 ];
 
-// WHEN sent as bidderRequest to buildRequests you should send the child: .bidderRequest
 var validBidderRequest1OutstreamVideo2020 = {
   bidderRequest: {
     auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99',
@@ -394,7 +391,6 @@ var validBidderRequest1OutstreamVideo2020 = {
     timeout: 3000
   }
 };
-// WHEN sent as bidderRequest to buildRequests you should send the child: .bidderRequest
 var validBidderRequest = {
   bidderRequest: {
     auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99',
@@ -419,11 +415,6 @@ var validBidderRequest = {
   }
 };
 
-// bidder request with GDPR - change the values for testing:
-// gdprConsent.gdprApplies (true/false)
-// gdprConsent.vendorData.purposeConsents (make empty, make null, remove it)
-// gdprConsent.vendorData.vendorConsents (remove 524, remove all, make the element null, remove it)
-// WHEN sent as bidderRequest to buildRequests you should send the child: .bidderRequest
 var bidderRequestWithFullGdpr = {
   bidderRequest: {
     auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99',
@@ -512,7 +503,6 @@ var gdpr1 = {
   'gdprApplies': true
 };
 
-// simulating the Mirror
 var bidderRequestWithPartialGdpr = {
   bidderRequest: {
     auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99',
@@ -558,7 +548,6 @@ var bidderRequestWithPartialGdpr = {
   }
 };
 
-// make sure the impid matches the request bidId
 var validResponse = {
   'body': {
     'id': 'd6198807-7a53-4141-b2db-d2cb754d68ba',
@@ -1113,7 +1102,6 @@ var multiRequest1 = [
   }
 ];
 
-// WHEN sent as bidderRequest to buildRequests you should send the child: .bidderRequest
 var multiBidderRequest1 = {
   bidderRequest: {
     'bidderCode': 'ozone',
@@ -1507,7 +1495,6 @@ var multiResponse1 = {
 
 describe('ozone Adapter', function () {
   describe('isBidRequestValid', function () {
-    // A test ad unit that will consistently return test creatives
     let validBidReq = {
       bidder: BIDDER_CODE,
       params: {
@@ -1941,7 +1928,6 @@ describe('ozone Adapter', function () {
       const request = spec.buildRequests(validBidRequestsNoSizes, validBidderRequest.bidderRequest);
       expect(request).to.be.a('array');
       expect(request[0]).to.have.all.keys(['bidderRequest', 'data', 'method', 'url']);
-      // need to reset the singleRequest config flag:
       config.setConfig({'ozone': {'singleRequest': true}});
     });
 
@@ -1965,7 +1951,6 @@ describe('ozone Adapter', function () {
       expect(payload.user.ext.consent).to.equal(consentString);
     });
 
-    // mirror
     it('should add gdpr consent information to the request when vendorData is missing vendorConsents (Mirror)', function () {
       let consentString = 'BOcocyaOcocyaAfEYDENCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NphLgA==';
       let bidderRequest = validBidderRequest.bidderRequest;
@@ -2018,7 +2003,6 @@ describe('ozone Adapter', function () {
       };
 
       let bidRequests = validBidRequests;
-      // values from http://prebid.org/dev-docs/modules/userId.html#pubcommon-id
       bidRequests[0]['userId'] = {
         'digitrustid': {data: {id: 'DTID', keyv: 4, privacy: {optout: false}, producer: 'ABC', version: 2}},
         'id5id': { uid: '1111', ext: { linkType: 2, abTestingControlGroup: false } },
@@ -2038,13 +2022,11 @@ describe('ozone Adapter', function () {
 
     it('should pick up the value of pubcid when built using the pubCommonId module (not userId)', function () {
       let bidRequests = validBidRequests;
-      // values from http://prebid.org/dev-docs/modules/userId.html#pubcommon-id
       bidRequests[0]['userId'] = {
         'digitrustid': {data: {id: 'DTID', keyv: 4, privacy: {optout: false}, producer: 'ABC', version: 2}},
         'id5id': { uid: '1111', ext: { linkType: 2, abTestingControlGroup: false } },
         'idl_env': '3333',
         'parrableid': 'eidVersion.encryptionKeyReference.encryptedValue',
-        // 'pubcid': '5555', // remove pubcid from here to emulate the OLD module & cause the failover code to kick in
         'tdid': '6666',
         'sharedid': {'id': '01EAJWWNEPN3CYMM5N8M5VXY22', 'third': '01EAJWWNEPN3CYMM5N8M5VXY22'}
       };
@@ -2170,7 +2152,6 @@ describe('ozone Adapter', function () {
     });
     it('should use oztestmode GET value if set', function() {
       var specMock = utils.deepClone(spec);
-      // mock the getGetParametersAsObject function to simulate GET parameters for oztestmode:
       specMock.getGetParametersAsObject = function() {
         return {'oztestmode': 'mytestvalue_123'};
       };
@@ -2181,7 +2162,6 @@ describe('ozone Adapter', function () {
     });
     it('should pass through GET params if present: ozf, ozpf, ozrp, ozip', function() {
       var specMock = utils.deepClone(spec);
-      // mock the getGetParametersAsObject function to simulate GET parameters :
       specMock.getGetParametersAsObject = function() {
         return {ozf: '1', ozpf: '0', ozrp: '2', ozip: '123'};
       };
@@ -2194,7 +2174,6 @@ describe('ozone Adapter', function () {
     });
     it('should pass through GET params if present: ozf, ozpf, ozrp, ozip with alternative values', function() {
       var specMock = utils.deepClone(spec);
-      // mock the getGetParametersAsObject function to simulate GET parameters :
       specMock.getGetParametersAsObject = function() {
         return {ozf: 'false', ozpf: 'true', ozrp: 'xyz', ozip: 'hello'};
       };
@@ -2207,7 +2186,6 @@ describe('ozone Adapter', function () {
     });
     it('should use oztestmode GET value if set, even if there is no customdata in config', function() {
       var specMock = utils.deepClone(spec);
-      // mock the getGetParametersAsObject function to simulate GET parameters for oztestmode:
       specMock.getGetParametersAsObject = function() {
         return {'oztestmode': 'mytestvalue_123'};
       };
@@ -2217,7 +2195,6 @@ describe('ozone Adapter', function () {
       expect(data.imp[0].ext.ozone.customData[0].targeting.oztestmode).to.equal('mytestvalue_123');
     });
     it('should use GET values auction=dev & cookiesync=dev if set', function() {
-      // mock the getGetParametersAsObject function to simulate GET parameters for oztestmode:
       var specMock = utils.deepClone(spec);
       specMock.getGetParametersAsObject = function() {
         return {};
@@ -2227,8 +2204,6 @@ describe('ozone Adapter', function () {
       expect(url).to.equal('https://elb.the-ozone-project.com/openrtb2/auction');
       let cookieUrl = specMock.getCookieSyncUrl();
       expect(cookieUrl).to.equal('https://elb.the-ozone-project.com/static/load-cookie.html');
-
-      // now mock the response from getGetParametersAsObject & do the request again
 
       specMock = utils.deepClone(spec);
       specMock.getGetParametersAsObject = function() {
@@ -2241,7 +2216,6 @@ describe('ozone Adapter', function () {
       expect(cookieUrl).to.equal('https://test.ozpr.net/static/load-cookie.html');
     });
     it('should use a valid ozstoredrequest GET value if set to override the placementId values, and set oz_rw if we find it', function() {
-      // mock the getGetParametersAsObject function to simulate GET parameters for ozstoredrequest:
       var specMock = utils.deepClone(spec);
       specMock.getGetParametersAsObject = function() {
         return {'ozstoredrequest': '1122334455'}; // 10 digits are valid
@@ -2252,7 +2226,6 @@ describe('ozone Adapter', function () {
       expect(data.imp[0].ext.prebid.storedrequest.id).to.equal('1122334455');
     });
     it('should NOT use an invalid ozstoredrequest GET value if set to override the placementId values, and set oz_rw to 0', function() {
-      // mock the getGetParametersAsObject function to simulate GET parameters for ozstoredrequest:
       var specMock = utils.deepClone(spec);
       specMock.getGetParametersAsObject = function() {
         return {'ozstoredrequest': 'BADVAL'}; // 10 digits are valid
@@ -2423,6 +2396,26 @@ describe('ozone Adapter', function () {
       expect(utils.deepAccess(payload, 'imp.0.floor.banner.currency')).to.equal('USD');
       expect(utils.deepAccess(payload, 'imp.0.floor.banner.floor')).to.equal(0.8);
       config.resetConfig();
+    });
+
+    it('handles schain object in each bidrequest (will be the same in each br)', function () {
+      let br = JSON.parse(JSON.stringify(validBidRequests));
+      let schainConfigObject = {
+        'ver': '1.0',
+        'complete': 1,
+        'nodes': [
+          {
+            'asi': 'bidderA.com',
+            'sid': '00001',
+            'hp': 1
+          }
+        ]
+      };
+      br[0]['schain'] = schainConfigObject;
+      const request = spec.buildRequests(br, validBidderRequest.bidderRequest);
+      const data = JSON.parse(request.data);
+      expect(data.source.ext).to.haveOwnProperty('schain');
+      expect(data.source.ext.schain).to.deep.equal(schainConfigObject); // .deep.equal() : Target object deeply (but not strictly) equals `{a: 1}`
     });
   });
 
@@ -2624,7 +2617,6 @@ describe('ozone Adapter', function () {
       expect(result[1]['impid']).to.equal('3025f169863b7f8');
       expect(result[1]['id']).to.equal('18552976939844999');
       expect(result[1]['adserverTargeting']['oz_ozappnexus_adId']).to.equal('3025f169863b7f8-0-oz-2');
-      // change the bid values so a different second bid for an impid by the same bidder gets dropped
       validres = JSON.parse(JSON.stringify(multiResponse1));
       validres.body.seatbid[0].bid[1].price = 1.1;
       validres.body.seatbid[0].bid[1].cpm = 1.1;
@@ -2647,7 +2639,6 @@ describe('ozone Adapter', function () {
       expect(result).to.be.empty;
     });
     it('should append the various values if they exist', function() {
-      // get the cookie bag populated
       spec.buildRequests(validBidRequests, validBidderRequest.bidderRequest);
       const result = spec.getUserSyncs({iframeEnabled: true}, 'good server response', gdpr1);
       expect(result).to.be.an('array');
@@ -2657,14 +2648,12 @@ describe('ozone Adapter', function () {
       expect(result[0].url).to.include('gdpr_consent=BOh7mtYOh7mtYAcABBENCU-AAAAncgPIXJiiAoao0PxBFkgCAC8ACIAAQAQQAAIAAAIAAAhBGAAAQAQAEQgAAAAAAABAAAAAAAAAAAAAAACAAAAAAAACgAAAAABAAAAQAAAAAAA');
     });
     it('should append ccpa (usp data)', function() {
-      // get the cookie bag populated
       spec.buildRequests(validBidRequests, validBidderRequest.bidderRequest);
       const result = spec.getUserSyncs({iframeEnabled: true}, 'good server response', gdpr1, '1YYN');
       expect(result).to.be.an('array');
       expect(result[0].url).to.include('usp_consent=1YYN');
     });
     it('should use "" if no usp is sent to cookieSync', function() {
-      // get the cookie bag populated
       spec.buildRequests(validBidRequests, validBidderRequest.bidderRequest);
       const result = spec.getUserSyncs({iframeEnabled: true}, 'good server response', gdpr1);
       expect(result).to.be.an('array');
@@ -2885,6 +2874,29 @@ describe('ozone Adapter', function () {
       expect(response[0].bid.length).to.equal(2);
       expect(response[0].seat).to.equal('ozappnexus');
       expect(response[1].bid.length).to.equal(2);
+    });
+  });
+  /**
+   * spec.getWhitelabelConfigItem test - get a config value for a whitelabelled bidder,
+   * from a standard ozone.oz_xxxx_yyy string
+   */
+  describe('getWhitelabelConfigItem', function() {
+    it('should fetch the whitelabelled equivalent config value correctly', function () {
+      var specMock = utils.deepClone(spec);
+      config.setConfig({'ozone': {'oz_omp_floor': 'ozone-floor-value'}});
+      config.setConfig({'markbidder': {'mb_omp_floor': 'markbidder-floor-value'}});
+      specMock.propertyBag.whitelabel = {bidder: 'ozone', keyPrefix: 'oz'};
+      let testKey = 'ozone.oz_omp_floor';
+      let ozone_value = specMock.getWhitelabelConfigItem(testKey);
+      expect(ozone_value).to.equal('ozone-floor-value');
+      specMock.propertyBag.whitelabel = {bidder: 'markbidder', keyPrefix: 'mb'};
+      let markbidder_config = specMock.getWhitelabelConfigItem(testKey);
+      expect(markbidder_config).to.equal('markbidder-floor-value');
+      config.setConfig({'markbidder': {'singleRequest': 'markbidder-singlerequest-value'}});
+      let testKey2 = 'ozone.singleRequest';
+      let markbidder_config2 = specMock.getWhitelabelConfigItem(testKey2);
+      expect(markbidder_config2).to.equal('markbidder-singlerequest-value');
+      config.resetConfig();
     });
   });
 });

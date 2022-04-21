@@ -244,16 +244,6 @@ describe('Adagio bid adapter', () => {
       expect(spec.isBidRequestValid(bid03)).to.equal(false);
       expect(spec.isBidRequestValid(bid04)).to.equal(false);
     });
-
-    it('should return false when refererInfo.reachedTop is false', function() {
-      sandbox.spy(utils, 'logWarn');
-      sandbox.stub(adagio, 'getRefererInfo').returns({ reachedTop: false });
-      const bid = new BidRequestBuilder().withParams().build();
-
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-      sinon.assert.callCount(utils.logWarn, 1);
-      sinon.assert.calledWith(utils.logWarn, 'Adagio: the main page url is unreachabled.');
-    });
   });
 
   describe('buildRequests()', function() {
@@ -1151,14 +1141,24 @@ describe('Adagio bid adapter', () => {
       };
       const bid01 = new BidRequestBuilder({
         'mediaTypes': {
-          banner: { sizes: [[300, 250]] }
+          banner: { sizes: [[300, 250]] },
+          video: {
+            context: 'outstream',
+            playerSize: [300, 250],
+            renderer: {
+              url: 'https://url.tld',
+              render: () => true
+            }
+          }
         }
       }).withParams().build();
 
-      const params = spec.transformBidParams({ organizationId: '1000' }, true, adUnit, [{ bidderCode: 'adagio', bids: [bid01] }]);
+      const params = spec.transformBidParams({ organizationId: '1000' }, true, adUnit, [{ bidderCode: 'adagio', auctionId: bid01.auctionId, bids: [bid01] }]);
 
       expect(params.organizationId).to.exist;
-      expect(params.organizationId).to.exist;
+      expect(params.auctionId).to.exist;
+      expect(params.playerName).to.exist;
+      expect(params.playerName).to.equal('other');
       expect(params.features).to.exist;
       expect(params.features.page_dimensions).to.exist;
       expect(params.features.adunit_position).to.exist;

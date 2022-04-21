@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { parseSizesInput, logError, isEmpty } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js'
 import { config } from '../src/config.js'
@@ -34,14 +34,14 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     return validBidRequests.map(bidRequest => {
-      const sizes = utils.parseSizesInput(bidRequest.params.size || bidRequest.sizes);
+      const sizes = parseSizesInput(bidRequest.params.size || bidRequest.sizes);
       const currency =
         config.getConfig(`currency.bidderCurrencyDefault.${BIDDER_CODE}`) ||
         config.getConfig('currency.adServerCurrency') ||
         DEFAULT_CURRENCY;
 
       if (ALLOWED_CURRENCIES.indexOf(currency) === -1) {
-        utils.logError('Currency is not supported - ' + currency);
+        logError('Currency is not supported - ' + currency);
         return;
       }
 
@@ -72,7 +72,7 @@ export const spec = {
     const bidResponses = [];
     const response = serverResponse.body;
 
-    if (utils.isEmpty(response)) {
+    if (isEmpty(response)) {
       return bidResponses;
     }
 

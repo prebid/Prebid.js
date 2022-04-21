@@ -1,6 +1,7 @@
 ## User ID Example Configuration
 
 Example showing `cookie` storage for user id data for each of the submodules
+
 ```
 pbjs.setConfig({
     userSync: {
@@ -44,6 +45,17 @@ pbjs.setConfig({
                 expires: 90,          // Expiration in days
                 refreshInSeconds: 8*3600 // User Id cache lifetime in seconds, defaulting to 'expires'
             },
+        }, {
+            name: "ftrackId",
+            storage: {
+                type: "html5",
+                name: "ftrackId",
+                expires: 90,
+                refreshInSeconds: 8*3600
+            },
+            params: {
+                url: 'https://d9.flashtalking.com/d9core', // required, if not populated ftrack will not run
+            }
         }, {
             name: 'parrableId',
             params: {
@@ -130,12 +142,19 @@ pbjs.setConfig({
                     token: "Registered token or default sharedid.org token" // Default sharedid.org token: "A3dHTSoNUMjjERBLlrvJSelNnwWUCwVQhZ5tNQ+sll7y+LkPPVZXtB77u2y7CweRIxiYaGwGXNlW1/dFp8VMEgIAAAB+eyJvcmlnaW4iOiJodHRwczovL3NoYXJlZGlkLm9yZzo0NDMiLCJmZWF0dXJlIjoiSW50ZXJlc3RDb2hvcnRBUEkiLCJleHBpcnkiOjE2MjYyMjA3OTksImlzU3ViZG9tYWluIjp0cnVlLCJpc1RoaXJkUGFydHkiOnRydWV9"
            }
         },{
-            name: 'quantcastId',
-            storage: {
-                type: 'cookie',
-                expires : 30
-            }
-        }],
+             name: "kpuid",
+             params:{
+                    accountid: 124 // example of account id
+                   },
+             storage: {
+                 type: "cookie",
+                 name: "knssoId",
+                 expires: 30
+                  },
+        {
+             name: "dacId"
+        }
+        ],
         syncDelay: 5000,
         auctionDelay: 1000
     }
@@ -143,10 +162,23 @@ pbjs.setConfig({
 ```
 
 Example showing `localStorage` for user id data for some submodules
+
 ```
 pbjs.setConfig({
     userSync: {
-        userIds: [{
+        userIds: [
+            {
+            name: 'trustpid',
+            params: {
+              maxDelayTime: 2500
+            },
+            bidders: ['adform'],
+            storage: {
+              type: 'html5',
+              name: 'trustpid',
+              expires: 60
+            }
+        }, {
             name: "unifiedId",
             params: {
                 partner: "prebid",
@@ -264,6 +296,43 @@ pbjs.setConfig({
                 name: "_dpes_id",
                 expires: 90
             }
+        },{
+             name: "kpuid",
+                   params:{
+                     accountid: 124 // example of account id
+                   },
+             storage: {
+                 type: "html5",
+                 name: "knssoId",
+                 expires: 30
+                  },
+        }
+        },
+        {
+            name: 'imuid',
+            params: {
+                cid: 5126 // Set your Intimate Merger Customer ID here for production
+            }
+        },
+        {
+            name: 'connectId',
+            params: {
+              pixelId: 58776,
+              he: '0bef996248d63cea1529cb86de31e9547a712d9f380146e98bbd39beec70355a'
+            },
+            storage: {
+              name: 'connectId',
+              type: 'html5',
+              expires: 15
+            }
+        }
+        {
+            name: "qid",
+            storage: {
+                type: "html5",
+                name: "qid",
+                expires: 365
+            }
         }],
         syncDelay: 5000
     }
@@ -271,6 +340,7 @@ pbjs.setConfig({
 ```
 
 Example showing how to configure a `value` object to pass directly to bid adapters
+
 ```
 pbjs.setConfig({
     userSync: {
@@ -295,6 +365,9 @@ pbjs.setConfig({
         {
             name: "novatiq",
             value: { "snowflake": "81b001ec-8914-488c-a96e-8c220d4ee08895ef" }
+        },
+        {
+            name: 'naveggId',
         }],
         syncDelay: 5000
     }

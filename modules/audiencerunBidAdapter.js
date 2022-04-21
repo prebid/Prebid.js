@@ -1,39 +1,37 @@
-import * as utils from '../src/utils.js';
+import {
+  deepAccess,
+  isFn,
+  logError,
+  getValue,
+  getBidIdParameter,
+  _each,
+  isArray,
+  triggerPixel,
+  formatQS,
+} from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
+import { createEidsArray } from './userId/eids.js';
 
 const BIDDER_CODE = 'audiencerun';
 const BASE_URL = 'https://d.audiencerun.com';
 const AUCTION_URL = `${BASE_URL}/prebid`;
 const TIMEOUT_EVENT_URL = `${BASE_URL}/ps/pbtimeout`;
+const ERROR_EVENT_URL = `${BASE_URL}/js_log`;
 const DEFAULT_CURRENCY = 'USD';
 
 let requestedBids = [];
 
 /**
- * Gets bidder request referer
- *
- * @param {Object} bidderRequest
- * @return {string}
- */
-function getPageUrl(bidderRequest) {
-  return (
-    config.getConfig('pageUrl') ||
-    utils.deepAccess(bidderRequest, 'refererInfo.referer') ||
-    null
-  );
-}
-
-/**
- * Returns bidfloor through floors module if available
+ * Returns bidfloor through floors module if available.
  *
  * @param {Object} bid
  * @returns {number}
  */
 function getBidFloor(bid) {
-  if (!utils.isFn(bid.getFloor)) {
-    return utils.deepAccess(bid, 'params.bidfloor', 0);
+  if (!isFn(bid.getFloor)) {
+    return deepAccess(bid, 'params.bidfloor', 0);
   }
 
   try {
@@ -44,25 +42,59 @@ function getBidFloor(bid) {
     });
     return bidFloor.floor;
   } catch (_) {
-    return 0
+    return 0;
   }
 }
 
+/**
+ * Returns the most top page referer.
+ *
+ * @returns {string}
+ */
+function getPageReferer() {
+  let t, e;
+  do {
+    t = t ? t.parent : window;
+    try {
+      e = t.document.referrer;
+    } catch (_) {
+      break;
+    }
+  } while (t !== window.top);
+  return e;
+}
+
+/**
+ * Returns bidder request page url.
+ *
+ * @param {Object} bidderRequest
+ * @return {string}
+ */
+function getPageUrl(bidderRequest) {
+  return (
+    config.getConfig('pageUrl') ||
+    deepAccess(bidderRequest, 'refererInfo.referer') ||
+    getPageReferer() ||
+    null
+  );
+}
+
 export const spec = {
-  version: '1.1.0',
+  version: '1.2.0',
   code: BIDDER_CODE,
+  gvlid: 944,
   supportedMediaTypes: [BANNER],
 
   /**
    * Determines whether or not the given bid request is valid.
    *
-   * @param {object} bid The bid to validate.
+   * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
     let isValid = true;
-    if (!utils.deepAccess(bid, 'params.zoneId')) {
-      utils.logError('AudienceRun zoneId parameter is required. Bid aborted.');
+    if (!deepAccess(bid, 'params.zoneId')) {
+      logError('AudienceRun zoneId parameter is required. Bid aborted.');
       isValid = false;
     }
     return isValid;
@@ -77,29 +109,36 @@ export const spec = {
    */
   buildRequests: function (bidRequests, bidderRequest) {
     const bids = bidRequests.map((bid) => {
-      const sizes = utils.deepAccess(bid, 'mediaTypes.banner.sizes', []);
+      const sizes = deepAccess(bid, 'mediaTypes.banner.sizes', []);
       return {
-        zoneId: utils.getValue(bid.params, 'zoneId'),
+        zoneId: getValue(bid.params, 'zoneId'),
         sizes: sizes.map((size) => ({
           w: size[0],
           h: size[1],
         })),
         bidfloor: getBidFloor(bid),
         bidId: bid.bidId,
-        bidderRequestId: utils.getBidIdParameter('bidderRequestId', bid),
-        adUnitCode: utils.getBidIdParameter('adUnitCode', bid),
-        auctionId: utils.getBidIdParameter('auctionId', bid),
-        transactionId: utils.getBidIdParameter('transactionId', bid),
+        bidderRequestId: getBidIdParameter('bidderRequestId', bid),
+        adUnitCode: getBidIdParameter('adUnitCode', bid),
+        auctionId: getBidIdParameter('auctionId', bid),
+        transactionId: getBidIdParameter('transactionId', bid),
       };
     });
 
     const payload = {
       libVersion: this.version,
-      referer: getPageUrl(bidderRequest),
+      pageUrl: config.getConfig('pageUrl'),
+      pageReferer: getPageReferer(),
+      referer: deepAccess(bidderRequest, 'refererInfo.referer'),
+      refererInfo: deepAccess(bidderRequest, 'refererInfo'),
       currencyCode: config.getConfig('currency.adServerCurrency'),
       timeout: config.getConfig('bidderTimeout'),
       bids,
     };
+
+    payload.uspConsent = deepAccess(bidderRequest, 'uspConsent');
+    payload.schain = deepAccess(bidRequests, '0.schain');
+    payload.userId = deepAccess(bidRequests, '0.userId') ? createEidsArray(bidRequests[0].userId) : [];
 
     if (bidderRequest && bidderRequest.gdprConsent) {
       payload.gdpr = {
@@ -117,7 +156,7 @@ export const spec = {
 
     return {
       method: 'POST',
-      url: AUCTION_URL,
+      url: deepAccess(bidRequests, '0.params.auctionUrl', AUCTION_URL),
       data: JSON.stringify(payload),
       options: {
         withCredentials: true,
@@ -133,7 +172,7 @@ export const spec = {
    */
   interpretResponse: function (serverResponse, bidRequest) {
     const bids = [];
-    utils._each(serverResponse.body.bid, function (bidObject) {
+    _each(serverResponse.body.bid, function (bidObject) {
       if (!bidObject.cpm || bidObject.cpm === null || !bidObject.adm) {
         return;
       }
@@ -196,19 +235,33 @@ export const spec = {
    * @param {Array} timeoutData timeout specific data
    */
   onTimeout: function (timeoutData) {
-    if (!utils.isArray(timeoutData)) {
+    if (!isArray(timeoutData)) {
       return;
     }
 
     timeoutData.forEach((bid) => {
-      const bidOnTimeout = requestedBids.find((requestedBid) => requestedBid.bidId === bid.bidId);
+      const bidOnTimeout = requestedBids.find(
+        (requestedBid) => requestedBid.bidId === bid.bidId
+      );
 
       if (bidOnTimeout) {
-        utils.triggerPixel(
+        triggerPixel(
           `${TIMEOUT_EVENT_URL}/${bidOnTimeout.zoneId}/${bidOnTimeout.bidId}`
         );
       }
     });
+  },
+
+  /**
+   * Registers bidder specific code, which will execute if the bidder responded with an error.
+   * @param {{bidderRequest: object}} args An object from which we extract bidderRequest object.
+   */
+  onBidderError: function ({ bidderRequest }) {
+    const queryString = formatQS({
+      message: `Prebid.js: Server call for ${bidderRequest.bidderCode} failed.`,
+      url: encodeURIComponent(getPageUrl(bidderRequest)),
+    });
+    triggerPixel(`${ERROR_EVENT_URL}/?${queryString}`);
   },
 };
 
