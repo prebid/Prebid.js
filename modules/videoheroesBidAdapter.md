@@ -24,7 +24,7 @@ var adUnits = [{
   bids: [{
     bidder: 'videoheroes',
     params : {
-      placementId : "to0QI2aPgkbBZq6vgf0oHitouZduz0qw" // test placementId, please replace after test
+      placementId : "1a8d9c22db19906cb8a5fd4518d05f62" // test placementId, please replace after test
     }
   }]
 }];
@@ -65,7 +65,7 @@ var adUnits = [{
   bids: [{
       bidder: 'videoheroes',
       params: {
-        placementId : "to0QI2aPgkbBZq6vgf0oHitouZduz0qw" // test placementId, please replace after test
+        placementId : "1a8d9c22db19906cb8a5fd4518d05f62" // test placementId, please replace after test
       }
   }]
 }];
@@ -99,7 +99,7 @@ var adUnits = [{
   bids: [{
       bidder: 'videoheroes',
       params: {
-        placementId : "to0QI2aPgkbBZq6vgf0oHitouZduz0qw" // test placementId, please replace after test
+        placementId : "1a8d9c22db19906cb8a5fd4518d05f62" // test placementId, please replace after test
       }
   }]
 }];
@@ -110,7 +110,7 @@ var adUnits = [{
 
 | Name | Scope | Type | Description | Example
 | ---- | ----- | ---- | ----------- | -------
-| `placementId` | required | String | The placement ID from Video Heroes  | "to0QI2aPgkbBZq6vgf0oHitouZduz0qw"
+| `placementId` | required | String | The placement ID from Video Heroes  | "1a8d9c22db19906cb8a5fd4518d05f62"
 
 
 # Ad Unit and page Setup:
