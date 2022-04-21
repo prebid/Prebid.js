@@ -905,6 +905,7 @@ describe('weboramaRtdProvider', function () {
                 }
                 return true;
               },
+              baseURLProfileAPI: 'ctx.test.weborama.com',
               onData: (data, meta) => {
                 onDataResponse = {
                   data: data,
@@ -958,7 +959,7 @@ describe('weboramaRtdProvider', function () {
         let request = server.requests[0];
 
         expect(request.method).to.equal('GET');
-        expect(request.url).to.equal('https://ctx.weborama.com/api/profile?token=foo&url=https%3A%2F%2Fprebid.org&');
+        expect(request.url).to.equal('https://ctx.test.weborama.com/api/profile?token=foo&url=https%3A%2F%2Fprebid.org&');
         expect(request.withCredentials).to.be.false;
 
         request.respond(200, responseHeader, JSON.stringify(data));
