@@ -1,6 +1,4 @@
-import fluctAnalyticsAdapter, {
-  convertReplicatedAdUnit,
-} from '../../../modules/fluctAnalyticsAdapter';
+import fluctAnalyticsAdapter from '../../../modules/fluctAnalyticsAdapter';
 import { expect } from 'chai';
 import * as events from 'src/events.js';
 import { EVENTS } from 'src/constants.json';
@@ -27,66 +25,20 @@ const adUnits = [
         name: 'p_fluctmagazine_320x50_surface_15377'
       }
     },
-    analytics: [
-      {
-        bidder: 'bidder1',
-        dwid: 'dwid1'
-      },
-      {
-        bidder: 'bidder2',
-        dwid: 'dwid2'
-      }
-    ],
     ext: {
       device: 'SP'
-    }
+    },
+    bids: [
+      {
+        bidder: 'bidder1',
+        params: {
+          networkId: 11021
+        },
+        dwid: 'dwid1'
+      },
+    ],
   }
 ]
-
-describe('複製枠のadUnitsをマッピングできる', () => {
-  const slots = {
-    'div-gpt-ad-1587114265584-0': '/62532913/p_fluctmagazine_320x50_surface_15377',
-    'browsi_ad_0_ai_1_rc_0': '/62532913/p_fluctmagazine_320x50_surface_15377'
-  }
-  it('adUnitsに複製元codeとdwidを付与できる', () => {
-    const browsiAdUnit = {
-      code: 'browsi_ad_0_ai_1_rc_0',
-      mediaTypes: {
-        banner: {
-          name: 'p_fluctmagazine_320x50_surface_15377',
-          sizes: [
-            [
-              300,
-              250,
-            ],
-            [
-              336,
-              280,
-            ]
-          ]
-        }
-      }
-    }
-    const actual = convertReplicatedAdUnit(browsiAdUnit, [browsiAdUnit, ...adUnits], slots)
-    const expected = {
-      ...browsiAdUnit,
-      code: 'div-gpt-ad-1587114265584-0',
-      _code: browsiAdUnit.code,
-      bids: undefined,
-      analytics: [
-        {
-          bidder: 'bidder1',
-          dwid: 'dwid1',
-        },
-        {
-          bidder: 'bidder2',
-          dwid: 'dwid2',
-        },
-      ],
-    }
-    expect(expected).to.deep.equal(actual)
-  })
-})
 
 const MOCK = {
   AUCTION_INIT: {
@@ -105,7 +57,9 @@ const MOCK = {
     'noBids': [],
     'bidsReceived': [
       {
-        'bidderCode': 'bidder1',
+        'dwid': adUnits[0].bids[0].dwid,
+        'bidder': adUnits[0].bids[0].bidder,
+        'bidderCode': adUnits[0].bids[0].bidder,
         'width': 320,
         'height': 100,
         'statusMessage': 'Bid available',
@@ -126,7 +80,6 @@ const MOCK = {
         'auctionId': 'eeca6754-525b-4c4c-a697-b06b1fc6c352',
         'responseTimestamp': 1635837149448,
         'requestTimestamp': 1635837149232,
-        'bidder': 'bidder1',
         'adUnitCode': 'div-gpt-ad-1587114265584-0',
         'timeToRespond': 216,
         'pbLg': '5.00',
@@ -211,6 +164,7 @@ describe('fluct analytics adapter', () => {
           source: "client",
           timeToRespond: 216,
           bid: {
+            dwid: "dwid1",
             bidderCode: "bidder1",
             width: 320,
             height: 100,
