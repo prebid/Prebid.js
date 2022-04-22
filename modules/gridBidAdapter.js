@@ -171,9 +171,7 @@ export const spec = {
       user = {
         data: [{
           name: 'iow_labs_pub_data',
-          segment: jwpseg.map((seg) => {
-            return {name: 'jwpseg', value: seg};
-          })
+          segment: segmentProcessing(jwpseg, 'jwpseg'),
         }]
       };
     }
@@ -183,7 +181,9 @@ export const spec = {
       if (!user) {
         user = { data: [] };
       }
-      user = mergeDeep(user, { data: ortb2UserData });
+      user = mergeDeep(user, {
+        data: [...ortb2UserData]
+      });
     }
 
     if (gdprConsent && gdprConsent.consentString) {
@@ -487,6 +487,22 @@ function makeNewUserIdInFPDStorage() {
 
 function getUserIdFromFPDStorage() {
   return storage.getDataFromLocalStorage(USER_ID_KEY) || makeNewUserIdInFPDStorage();
+}
+
+function segmentProcessing(segment, forceSegName) {
+  return segment
+    .map((seg) => {
+      const value = seg && (seg.value || seg.id || seg);
+      if (typeof value === 'string' || typeof value === 'number') {
+        return {
+          value: value.toString(),
+          ...(forceSegName && { name: forceSegName }),
+          ...(seg.name && { name: seg.name }),
+        };
+      }
+      return null;
+    })
+    .filter((seg) => !!seg);
 }
 
 function reformatKeywords(pageKeywords) {

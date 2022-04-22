@@ -43,10 +43,10 @@ export const spec = {
         payload.consent_string = bidderRequest.gdprConsent.consentString;
         payload.consent_required = bidderRequest.gdprConsent.gdprApplies;
       }
-
+      const baseUrl = bidRequest.params.baseUrl || ENDPOINT_URL;
       return {
         method: 'POST',
-        url: ENDPOINT_URL + '?' + formatQS({ t: bidRequest.params.apiKey }),
+        url: baseUrl + '?' + formatQS({ t: bidRequest.params.apiKey }),
         data: JSON.stringify(payload),
       };
     });

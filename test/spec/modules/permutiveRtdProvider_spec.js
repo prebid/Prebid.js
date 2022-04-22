@@ -51,6 +51,46 @@ describe('permutiveRtdProvider', function () {
         }])
       })
     })
+    it('should include ortb2 user data transformation for IAB audience taxonomy', function() {
+      const moduleConfig = getConfig()
+      const bidderConfig = config.getBidderConfig()
+      const acBidders = moduleConfig.params.acBidders
+      const expectedTargetingData = transformedTargeting().ac.map(seg => {
+        return { id: seg }
+      })
+
+      Object.assign(
+        moduleConfig.params,
+        {
+          transformations: [{
+            id: 'iab',
+            config: {
+              segtax: 4,
+              iabIds: {
+                1000001: '9000009',
+                1000002: '9000008'
+              }
+            }
+          }]
+        }
+      )
+
+      setBidderRtb({}, moduleConfig)
+
+      acBidders.forEach(bidder => {
+        expect(bidderConfig[bidder].ortb2.user.data).to.deep.include.members([
+          {
+            name: 'permutive.com',
+            segment: expectedTargetingData
+          },
+          {
+            name: 'permutive.com',
+            ext: { segtax: 4 },
+            segment: [{ id: '9000009' }, { id: '9000008' }]
+          }
+        ])
+      })
+    })
     it('should not overwrite ortb2 config', function () {
       const moduleConfig = getConfig()
       const bidderConfig = config.getBidderConfig()
@@ -78,7 +118,15 @@ describe('permutiveRtdProvider', function () {
         config: sampleOrtbConfig
       })
 
-      setBidderRtb({}, moduleConfig)
+      const transformedUserData = {
+        name: 'transformation',
+        ext: { test: true },
+        segment: [1, 2, 3]
+      }
+
+      setBidderRtb({}, moduleConfig, {
+        testTransformation: userData => transformedUserData
+      })
 
       acBidders.forEach(bidder => {
         expect(bidderConfig[bidder].ortb2.site.name).to.equal(sampleOrtbConfig.ortb2.site.name)
@@ -293,6 +341,10 @@ describe('permutiveRtdProvider', function () {
       expect(isAcEnabled({ params: { acBidders: ['ozone'] } }, 'ozone')).to.equal(true)
       expect(isAcEnabled({ params: { acBidders: ['kjdvb'] } }, 'ozone')).to.equal(false)
     })
+    it('checks if AC is enabled for Index', function () {
+      expect(isAcEnabled({ params: { acBidders: ['ix'] } }, 'ix')).to.equal(true)
+      expect(isAcEnabled({ params: { acBidders: ['kjdvb'] } }, 'ix')).to.equal(false)
+    })
   })
 })
 
@@ -313,7 +365,7 @@ function getConfig () {
     name: 'permutive',
     waitForIt: true,
     params: {
-      acBidders: ['appnexus', 'rubicon', 'ozone', 'trustx'],
+      acBidders: ['appnexus', 'rubicon', 'ozone', 'trustx', 'ix'],
       maxSegs: 500
     }
   }
@@ -326,7 +378,7 @@ function transformedTargeting () {
     ac: [...data._pcrprs, ...data._ppam, ...data._psegs.filter(seg => seg >= 1000000)],
     appnexus: data._papns,
     rubicon: data._prubicons,
-    gam: data._pdfps
+    gam: data._pdfps,
   }
 }
 

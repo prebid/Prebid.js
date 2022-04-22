@@ -129,6 +129,26 @@ describe('Adyoulike Adapter', function () {
     }
   ];
 
+  const bidRequestWithVideo = [
+    {
+      'bidId': 'bid_id_0',
+      'bidder': 'adyoulike',
+      'placementCode': 'adunit/hb-0',
+      'params': {
+        'placement': 'placement_0'
+      },
+      'sizes': '300x250',
+      'mediaTypes':
+      {
+        'video': {
+          'context': 'instream',
+          'playerSize': [[ 640, 480 ]]
+        }
+      },
+      'transactionId': 'bid_id_0_transaction_id'
+    }
+  ];
+
   const bidRequestWithNativeImageType = [
     {
       'bidId': 'bid_id_0',
@@ -442,13 +462,15 @@ describe('Adyoulike Adapter', function () {
     'Placement': 'placement_0',
     'Vast': 'PFZBU1Q+RW1wdHkgc2FtcGxlPC92YXN0Pg==',
     'Price': 0.5,
-    'Height': 600,
+    'Height': 300,
+    'Width': 530
   }];
 
   const videoResult = [{
     cpm: 0.5,
     creativeId: undefined,
     currency: 'USD',
+    height: 300,
     netRevenue: true,
     requestId: 'bid_id_0',
     ttl: 3600,
@@ -456,7 +478,8 @@ describe('Adyoulike Adapter', function () {
     meta: {
       advertiserDomains: []
     },
-    vastXml: '<VAST>Empty sample</vast>'
+    vastXml: '<VAST>Empty sample</vast>',
+    width: 530
   }];
 
   const responseWithMultiplePlacements = [
@@ -584,6 +607,11 @@ describe('Adyoulike Adapter', function () {
       expect(payload.PageRefreshed).to.equal(false);
       expect(payload.Bids['bid_id_0'].TransactionID).to.be.equal('bid_id_0_transaction_id');
       expect(payload.Bids['bid_id_0'].Native).deep.equal(sentNativeImageType);
+    });
+
+    it('Should target video enpoint for video mediatype', function() {
+      const request = spec.buildRequests(bidRequestWithVideo, bidderRequest);
+      expect(request.url).to.contain(getEndpoint());
     });
 
     it('should add gdpr/usp consent information to the request', function () {
