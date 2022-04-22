@@ -15,7 +15,7 @@ Analytics adapter for bidwatch.io.
 {
   provider: 'bidwatch',
     options : {
-          domain: 'test.endpoint',
+          domain: 'test.endpoint'
     }
 }
 ```
