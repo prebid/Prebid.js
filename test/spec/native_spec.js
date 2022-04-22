@@ -8,11 +8,11 @@ import {
   decorateAdUnitsWithNativeParams,
   isOpenRTBBidRequestValid,
   isNativeOpenRTBBidValid,
-  toOrtbNative,
+  toOrtbNativeRequest,
 } from 'src/native.js';
 import CONSTANTS from 'src/constants.json';
 import { stubAuctionIndex } from '../helpers/indexStub.js';
-import { convertOrtbRequestToProprietaryNative, fromOrtbNative } from '../../src/native.js';
+import { convertOrtbRequestToProprietaryNative, fromOrtbNativeRequest } from '../../src/native.js';
 const utils = require('src/utils');
 
 const bid = {
@@ -620,7 +620,7 @@ describe('validate native', function () {
       },
     };
 
-    const ortb = toOrtbNative(adUnit.mediaTypes.native);
+    const ortb = toOrtbNativeRequest(adUnit.mediaTypes.native);
     expect(ortb).to.be.a('object');
     expect(ortb.assets).to.be.a('array');
 
@@ -737,7 +737,7 @@ describe('validate native', function () {
       ]
     };
 
-    const oldNativeRequest = fromOrtbNative(openRTBRequest);
+    const oldNativeRequest = fromOrtbNativeRequest(openRTBRequest);
 
     expect(oldNativeRequest).to.be.a('object');
     expect(oldNativeRequest.title).to.include({

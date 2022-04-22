@@ -182,30 +182,17 @@ export const hasNonNativeBidder = adUnit =>
  * @return {Boolean} If object is valid
  */
 export function nativeBidIsValid(bid, {index = auctionManager.index} = {}) {
-  const bidRequest = index.getAdUnit(bid);
-  if (!bidRequest) { return false; }
-
-  if (deepAccess(bid, 'native.ortb') && deepAccess(bidRequest, 'nativeParams.ortb')) {
-    return isNativeOpenRTBBidValid(bid.native.ortb, bidRequest.nativeParams.ortb);
+  const adUnit = index.getAdUnit(bid);
+  if (!adUnit) { return false; }
+  let ortbResponse, ortbRequest;
+  if (deepAccess(bid, 'native.ortb') && deepAccess(adUnit, 'nativeParams.ortb')) {
+    ortbResponse = bid.native.ortb;
+    ortbRequest = adUnit.nativeParams.ortb;
+  } else {
+    ortbRequest = toOrtbNativeRequest(adUnit.nativeParams);
+    ortbResponse = toOrtbNativeResponse(bid.native, ortbRequest);
   }
-  // all native bid responses must define a landing page url
-  if (!deepAccess(bid, 'native.clickUrl')) {
-    return false;
-  }
-
-  const requestedAssets = bidRequest.nativeParams;
-  if (!requestedAssets) {
-    return true;
-  }
-
-  const requiredAssets = Object.keys(requestedAssets).filter(
-    key => requestedAssets[key].required
-  );
-  const returnedAssets = Object.keys(bid['native']).filter(
-    key => bid['native'][key]
-  );
-
-  return requiredAssets.every(asset => includes(returnedAssets, asset));
+  return isNativeOpenRTBBidValid(ortbResponse, ortbRequest);
 }
 
 export function isNativeOpenRTBBidValid(bidORTB, bidRequestORTB) {
@@ -417,13 +404,14 @@ function getNativeKeys(adUnit) {
 const { ASSET_TYPES, IMAGE_TYPES, PREBID_NATIVE_DATA_KEYS_TO_ORTB } = CONSTANTS;
 
 /**
- * converts Prebid proprietary native assets to OpenRTB format
+ * converts Prebid legacy native assets request to OpenRTB format
  * @param {object} nativeAssets an object that describes a native bid request in Prebid proprietary format
- * @returns an OpenRTB format of the same bid
+ * @returns an OpenRTB format of the same bid request
  */
-export function toOrtbNative(nativeAssets) {
+export function toOrtbNativeRequest(nativeAssets) {
   if (!nativeAssets && !isPlainObject(nativeAssets)) {
     logError('Native assets object is empty or not an object: ', nativeAssets);
+    return;
   }
   const ortb = {
     ver: '1.2',
@@ -481,6 +469,8 @@ export function toOrtbNative(nativeAssets) {
     // title case
     } else if (key === 'title') {
       ortbAsset.title = {
+        // in openRTB, len is required for titles, while in legacy prebid was not.
+        // for this reason, if len is missing in legacy prebid, we're adding a default value of 140.
         len: asset.len || 140
       }
     // all extensions to the native bid request are passed as is
@@ -503,9 +493,9 @@ export function toOrtbNative(nativeAssets) {
  * transition phase where publishers may be using OpenRTB objects but the
  *  bidder does not yet support it.
  * @param {object} openRTBRequest an OpenRTB v1.2 request object
- * @returns a Prebid proprietary native format
+ * @returns a Prebid legacy native format request
  */
-export function fromOrtbNative(openRTBRequest) {
+export function fromOrtbNativeRequest(openRTBRequest) {
   if (!isOpenRTBBidRequestValid(openRTBRequest)) {
     return;
   }
@@ -565,7 +555,7 @@ export function convertOrtbRequestToProprietaryNative(bidRequests) {
   // convert Native ORTB definition to old-style prebid native definition
   for (const bidRequest of bidRequests) {
     if (bidRequest.mediaTypes && bidRequest.mediaTypes[NATIVE] && bidRequest.mediaTypes[NATIVE].ortb) {
-      bidRequest.mediaTypes[NATIVE] = fromOrtbNative(bidRequest.mediaTypes[NATIVE].ortb);
+      bidRequest.mediaTypes[NATIVE] = fromOrtbNativeRequest(bidRequest.mediaTypes[NATIVE].ortb);
       bidRequest.nativeParams = bidRequest.mediaTypes[NATIVE];
       if (bidRequest.nativeParams) {
         processNativeAdUnitParams(bidRequest.nativeParams);
@@ -573,4 +563,58 @@ export function convertOrtbRequestToProprietaryNative(bidRequests) {
     }
   }
   return bidRequests;
+}
+
+function toOrtbNativeResponse(legacyResponse, ortbRequest) {
+  const ortbResponse = {
+    link: {},
+    assets: [],
+    eventtrackers: []
+  };
+  Object.keys(legacyResponse).filter(key => !!legacyResponse[key]).forEach(key => {
+    const value = legacyResponse[key];
+    switch (key) {
+      // process titles
+      case 'title':
+        const titleAsset = ortbRequest.assets.find(asset => asset.title != null);
+        titleAsset.title = {
+          text: value
+        };
+        ortbResponse.assets.push(titleAsset);
+        break;
+      case 'image':
+      case 'icon':
+        const imageType = key === 'image' ? 3 : 1;
+        const imageAsset = ortbRequest.assets.find(asset => asset.img != null && asset.img.type == imageType);
+        imageAsset.img = {
+          url: value
+        };
+        ortbResponse.assets.push(imageAsset);
+        break;
+      case 'clickUrl':
+        ortbResponse.link.url = value;
+        break;
+      case 'clickTrackers':
+        ortbResponse.link.clicktrackers = value;
+        break;
+      case 'impressionTrackers':
+      case 'javascriptTrackers':
+        ortbResponse.eventtrackers.push({
+          event: 1,
+          method: key == 'impressionTrackers' ? 1 : 2,
+          url: value,
+        });
+        break;
+      default:
+        if (key in PREBID_NATIVE_DATA_KEYS_TO_ORTB) {
+          const dataAsset = ortbRequest.assets.find(asset => asset.data != null && asset.data.type === ASSET_TYPES[PREBID_NATIVE_DATA_KEYS_TO_ORTB[key]]);
+          dataAsset.data = {
+            value
+          };
+          ortbResponse.assets.push(dataAsset);
+        }
+        break;
+    }
+  });
+  return ortbResponse;
 }
