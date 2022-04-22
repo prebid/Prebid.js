@@ -1,8 +1,9 @@
-import {deepAccess, isArray, logWarn, parseUrl} from '../src/utils.js';
-import {ajax} from '../src/ajax.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {includes as strIncludes} from '../src/polyfill.js';
+import { deepAccess, isArray, logWarn, parseUrl, getWindowTop } from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { includes as strIncludes } from '../src/polyfill.js';
 
 const BIDDER_CODE = 'sspBC';
 const BIDDER_URL = 'https://ssp.wp.pl/bidder/';
@@ -11,7 +12,8 @@ const NOTIFY_URL = 'https://ssp.wp.pl/bidder/notify';
 const TRACKER_URL = 'https://bdr.wpcdn.pl/tag/jstracker.js';
 const GVLID = 676;
 const TMAX = 450;
-const BIDDER_VERSION = '5.5';
+const BIDDER_VERSION = '5.6';
+const DEFAULT_CURRENCY = 'PLN';
 const W = window;
 const { navigator } = W;
 const oneCodeDetection = {};
@@ -19,6 +21,25 @@ const adUnitsCalled = {};
 const adSizesCalled = {};
 const pageView = {};
 var consentApiVersion;
+
+/**
+ * Get preferred language of browser (i.e. user)
+ * @returns {string} languageCode - ISO language code
+ */
+const getBrowserLanguage = () => navigator.language || (navigator.languages && navigator.languages[0]);
+
+/**
+ * Get language of top level html object
+ * @returns {string} languageCode - ISO language code
+ */
+const getContentLanguage = () => {
+  try {
+    const topWindow = getWindowTop();
+    return topWindow.document.body.parentNode.lang;
+  } catch (err) {
+    logWarn('Could not read language form top-level html', err);
+  }
+};
 
 /**
  * Get bid parameters for notification
@@ -150,6 +171,12 @@ const applyGdpr = (bidderRequest, ortbRequest) => {
     ortbRequest.user = Object.assign(ortbRequest.user, { 'consent': consentString });
   }
 }
+
+/**
+ * Get currency (either default or adserver)
+ * @returns {string} currency name
+ */
+const getCurrency = () => config.getConfig('currency.adServerCurrency') || DEFAULT_CURRENCY;
 
 /**
  * Get value for first occurence of key within the collection
@@ -319,6 +346,7 @@ const mapImpression = slot => {
   };
 
   // Check floorprices for this imp
+  const currency = getCurrency();
   if (typeof slot.getFloor === 'function') {
     var bannerFloor = 0;
     var nativeFloor = 0;
@@ -328,20 +356,24 @@ const mapImpression = slot => {
       bannerFloor = slot.sizes.reduce(function (prev, next) {
         var currentFloor = slot.getFloor({
           mediaType: 'banner',
-          size: next
+          size: next,
+          currency
         }).floor;
         return prev > currentFloor ? prev : currentFloor;
       }, 0);
     }
 
     nativeFloor = slot.getFloor({
-      mediaType: 'native'
+      mediaType: 'native', currency
     });
     videoFloor = slot.getFloor({
-      mediaType: 'video'
+      mediaType: 'video', currency
     });
     imp.bidfloor = Math.max(bannerFloor, nativeFloor, videoFloor);
+  } else {
+    imp.bidfloor = 0;
   }
+  imp.bidfloorcur = currency;
   return imp;
 }
 
@@ -520,9 +552,12 @@ const spec = {
         ref
       },
       imp: validBidRequests.map(slot => mapImpression(slot)),
+      cur: [getCurrency()],
       tmax,
       user: {},
       regs: {},
+      device: { language: getBrowserLanguage() },
+      content: { language: getContentLanguage() },
       test: testMode,
     };
 
