@@ -352,6 +352,17 @@ describe('GamoshiAdapter', () => {
       expect(response.data.imp[0].bidfloor).to.equal(bidRequestWithBidfloorEquals1.params.bidfloor);
     });
 
+    it('sends instl if instl exists', () => {
+      let bidRequest2 = utils.deepClone(bidRequest);
+
+      const instl = { instl: 1 };
+      const bidRequestWithInstl = Object.assign({}, bidRequest2, {ortb2Imp: instl});
+
+      const response = spec.buildRequests([bidRequestWithInstl], bidRequest2)[0];
+
+      expect(response.imp[0].instl).to.equal(1);
+    });
+
     it('builds request banner object correctly', () => {
       let response;
       const bidRequestWithBanner = utils.deepClone(bidRequest);
