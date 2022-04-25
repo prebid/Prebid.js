@@ -571,7 +571,7 @@ Object.assign(ORTB2.prototype, {
             function newAsset(obj) {
               return Object.assign({
                 required: params.required ? 1 : 0,
-                id: idCounter++
+                id: (isNumber(params.id)) ? params.id : idCounter++
               }, obj ? cleanObj(obj) : {});
             }
 
