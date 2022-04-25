@@ -12,7 +12,7 @@ describe('Base Impression Verifier', function() {
       const baseVerifier = baseImpressionVerifier(trackerMock);
       const uuid = baseVerifier.trackBid({});
       expect(uuid.substring(0, 3)).to.equal(PB_PREFIX);
-      expect(uuid.length).to.be.equal(15);
+      expect(uuid.length).to.be.lessThan(16);
     });
   });
 
