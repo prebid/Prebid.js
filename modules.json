@@ -1,4 +1,5 @@
 [
+  "prebidServerBidAdapter"
   "adlooxAnalyticsAdapter",
   "adlooxRtdProvider",
   "sirdataRtdProvider",
