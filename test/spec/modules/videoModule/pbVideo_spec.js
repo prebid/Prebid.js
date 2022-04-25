@@ -10,7 +10,8 @@ let requestBidsMock;
 let pbGlobalMock;
 let pbEventsMock;
 let videoEventsMock;
-let adServerMock;
+let gamSubmoduleMock;
+let gamSubmoduleFactoryMock;
 let videoImpressionVerifierFactoryMock;
 let videoImpressionVerifierMock;
 
@@ -18,7 +19,7 @@ function resetTestVars() {
   ortbParamsMock = {
     'video': {},
     'content': {}
-  }
+  };
   videoCoreMock = {
     registerProvider: sinon.spy(),
     onEvents: sinon.spy(),
@@ -32,17 +33,19 @@ function resetTestVars() {
   pbGlobalMock = {
     requestBids: requestBidsMock,
     getHighestCpmBids: sinon.spy(),
-    getBidResponsesForAdUnitCode: sinon.spy()
+    getBidResponsesForAdUnitCode: sinon.spy(),
+    setConfig: sinon.spy()
   };
   pbEventsMock = {
     emit: sinon.spy(),
     on: sinon.spy()
   };
   videoEventsMock = [];
-  adServerMock = {
-    registerAdServer: sinon.spy(),
+  gamSubmoduleMock = {
     getAdTagUrl: sinon.spy()
   };
+
+  gamSubmoduleFactoryMock = sinon.spy(() => gamSubmoduleMock);
 
   videoImpressionVerifierMock = {
     trackBid: sinon.spy(),
@@ -52,14 +55,14 @@ function resetTestVars() {
   videoImpressionVerifierFactoryMock = () => videoImpressionVerifierMock;
 }
 
-let pbVideoFactory = (videoCore, getConfig, pbGlobal, pbEvents, videoEvents, adServer, videoImpressionVerifierFactory) => {
+let pbVideoFactory = (videoCore, getConfig, pbGlobal, pbEvents, videoEvents, gamSubmoduleFactory, videoImpressionVerifierFactory) => {
   const pbVideo = PbVideo(
     videoCore || videoCoreMock,
     getConfig || getConfigMock,
     pbGlobal || pbGlobalMock,
     pbEvents || pbEventsMock,
     videoEvents || videoEventsMock,
-    adServer || adServerMock,
+    gamSubmoduleFactory || gamSubmoduleFactoryMock,
     videoImpressionVerifierFactory || videoImpressionVerifierFactoryMock
   );
   pbVideo.init();
@@ -116,11 +119,8 @@ describe('Prebid Video', function () {
       const test_params = { test: 'params' };
       providers[0].adServer = { vendorCode: test_vendor_code, params: test_params };
 
-      it('should register the ad server provider', function () {
-        expect(adServerMock.registerAdServer.calledOnce).to.be.true;
-        const adServerConfig = adServerMock.registerAdServer.getCall(0).args[0];
-        expect(adServerConfig.vendorCode).to.be.equal(test_vendor_code);
-        expect(adServerConfig.params).to.be.deep.equal(test_params);
+      it('should instantiate the GAM Submodule', function () {
+        expect(gamSubmoduleFactoryMock.calledOnce).to.be.true;
       });
     });
   });
@@ -131,14 +131,23 @@ describe('Prebid Video', function () {
       expect(requestBidsMock.before.calledOnce).to.be.true;
     });
 
-    it('requests oRtb params and writes them to ad unit', function() {
-      const getOrtbParamsSpy = sinon.spy(videoCoreMock, 'getOrtbParams');
+    it('requests oRtb params and writes them to ad unit and config', function() {
+      const getOrtbParamsSpy = videoCoreMock.getOrtbParams = sinon.spy(() => ({
+        video: {
+          test: 'videoTestValue'
+        },
+        content: {
+          test: 'contentTestValue'
+        }
+      }));
+      const setConfigSpy = pbGlobalMock.setConfig;
+      setConfigSpy.resetHistory();
       let beforeBidRequestCallback;
       const requestBids = {
         before: callback_ => beforeBidRequestCallback = callback_
       };
 
-      pbVideoFactory(null, null, { requestBids });
+      pbVideoFactory(null, null, { requestBids, setConfig: setConfigSpy });
       expect(beforeBidRequestCallback).to.not.be.undefined;
       const nextFn = sinon.spy();
       const adUnits = [{
@@ -151,14 +160,24 @@ describe('Prebid Video', function () {
       beforeBidRequestCallback(nextFn, { adUnits });
       expect(getOrtbParamsSpy.calledOnce).to.be.true;
       const adUnit = adUnits[0];
-      expect(adUnit.mediaTypes.video).to.have.property('video');
-      expect(adUnit.mediaTypes.video).to.have.property('content');
+      expect(adUnit.mediaTypes.video).to.have.property('test', 'videoTestValue');
+      expect(setConfigSpy.calledOnce).to.be.true;
+      expect(setConfigSpy.getCall(0).args[0]).to.be.deep.equal({ ortb2: { site: { test: 'contentTestValue' } } });
       expect(nextFn.calledOnce).to.be.true;
     });
   });
 
   describe('Ad tag injection', function () {
     let auctionEndCallback;
+    let providers = [{ divId: 'div1', adServer: {} }, { divId: 'div2' }];
+    let getConfig = (propertyName, callbackFn) => {
+      if (propertyName === 'video') {
+        callbackFn({
+          video: { providers }
+        });
+      }
+    };
+
     const pbEvents = {
       emit: () => {},
       on: (event, callback) => {
@@ -185,7 +204,7 @@ describe('Prebid Video', function () {
     const auctionResults = { adUnits: [ expectedAdUnit, {} ] };
 
     beforeEach(() => {
-      adServerMock.getAdTagUrl.resetHistory();
+      gamSubmoduleMock.getAdTagUrl.resetHistory();
       videoCoreMock.setAdTagUrl.resetHistory();
     });
 
@@ -198,18 +217,17 @@ describe('Prebid Video', function () {
           vastXml: expectedVastXml
         }, {}, {}, {}]
       });
-      pbVideoFactory(null, null, pbGlobal, pbEvents);
+      pbVideoFactory(null, getConfig, pbGlobal, pbEvents);
 
       auctionEndCallback(auctionResults);
-      expect(adServerMock.getAdTagUrl.calledOnce).to.be.true;
-      expect(adServerMock.getAdTagUrl.getCall(0).args[0]).is.equal(expectedVendorCode);
-      expect(adServerMock.getAdTagUrl.getCall(0).args[1]).is.equal(expectedAdUnit);
-      expect(adServerMock.getAdTagUrl.getCall(0).args[2]).is.equal(expectedAdTag);
+      expect(gamSubmoduleMock.getAdTagUrl.calledOnce).to.be.true;
+      expect(gamSubmoduleMock.getAdTagUrl.getCall(0).args[0]).is.equal(expectedAdUnit);
+      expect(gamSubmoduleMock.getAdTagUrl.getCall(0).args[1]).is.equal(expectedAdTag);
     });
 
-    it('should load ad tag when ad server return ad tag', function () {
+    it('should load ad tag when ad server returns ad tag', function () {
       const expectedAdTag = 'resulting ad tag';
-      const adServerCore = Object.assign({}, adServerMock, {
+      const gamSubmoduleFactory = () => ({
         getAdTagUrl: () => expectedAdTag
       });
       const expectedVastUrl = 'expectedVastUrl';
@@ -220,7 +238,7 @@ describe('Prebid Video', function () {
           vastXml: expectedVastXml
         }, {}, {}, {}]
       });
-      pbVideoFactory(null, null, pbGlobal, pbEvents, null, adServerCore);
+      pbVideoFactory(null, getConfig, pbGlobal, pbEvents, null, gamSubmoduleFactory);
       auctionEndCallback(auctionResults);
       expect(videoCoreMock.setAdTagUrl.calledOnce).to.be.true;
       expect(videoCoreMock.setAdTagUrl.args[0][0]).to.be.equal(expectedAdTag);

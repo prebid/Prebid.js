@@ -137,7 +137,7 @@ export function baseImpressionVerifier(bidTracker_) {
 
   function trackBid(bid) {
     let { adId, adUnitCode, requestId, auctionId } = bid;
-    const trackingId = PB_PREFIX + generateUUID(10**13);
+    const trackingId = PB_PREFIX + generateUUID(10 ** 13);
     bidTracker.store(trackingId, { adId, adUnitCode, requestId, auctionId });
     return trackingId;
   }

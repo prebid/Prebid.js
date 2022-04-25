@@ -7,7 +7,7 @@ import {
 } from './constants/events.js'
 import CONSTANTS from '../../src/constants.json';
 import { videoCoreFactory } from './coreVideo.js';
-import { coreAdServerFactory } from '../adServerModule/adServer.js';
+import { gamSubmoduleFactory } from './gamAdServerSubmodule.js';
 import { videoImpressionVerifierFactory } from './videoImpressionVerifier.js';
 import { mergeDeep } from '../../src/utils.js';
 import { getGlobal } from '../../src/prebidGlobal.js';
@@ -21,14 +21,15 @@ events.addEvents(allVideoEvents);
 events.addEvents(allVideoAuctionEvents);
 events.addEvents(allVideoBidEvents);
 
-export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvents_, adServerCore_, videoImpressionVerifierFactory_) {
+export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvents_, gamAdServerFactory_, videoImpressionVerifierFactory_) {
   const videoCore = videoCore_;
   const getConfig = getConfig_;
   const pbGlobal = pbGlobal_;
   const requestBids = pbGlobal.requestBids;
   const pbEvents = pbEvents_;
   const videoEvents = videoEvents_;
-  const adServerCore = adServerCore_;
+  const gamAdServerFactory = gamAdServerFactory_;
+  let gamSubmodule;
   const videoImpressionVerifierFactory = videoImpressionVerifierFactory_;
   let videoImpressionVerifier;
 
@@ -43,8 +44,8 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
         }, provider.divId);
 
         const adServerConfig = provider.adServer;
-        if (adServerConfig) {
-          adServerCore.registerAdServer(adServerConfig);
+        if (!gamSubmodule && adServerConfig) {
+          gamSubmodule = gamAdServerFactory();
         }
       });
     });
@@ -108,7 +109,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     const adServerConfig = videoConfig.adServer;
     let adUrl;
     if (adServerConfig) {
-      adUrl = adServerCore.getAdTagUrl(adServerConfig.vendorCode, adUnit, adServerConfig.baseAdTagUrl);
+      adUrl = gamSubmodule.getAdTagUrl(adUnit, adServerConfig.baseAdTagUrl, adServerConfig.params);
     }
 
     if (adUrl) {
@@ -163,8 +164,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
 
 export function pbVideoFactory() {
   const videoCore = videoCoreFactory();
-  const adServerCore = coreAdServerFactory();
-  const pbVideo = PbVideo(videoCore, config.getConfig, getGlobal(), events, allVideoEvents, adServerCore, videoImpressionVerifierFactory);
+  const pbVideo = PbVideo(videoCore, config.getConfig, getGlobal(), events, allVideoEvents, gamSubmoduleFactory, videoImpressionVerifierFactory);
   pbVideo.init();
   return pbVideo;
 }
