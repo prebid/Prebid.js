@@ -7,7 +7,7 @@ import {
   AUTOSTART_BLOCKED, PLAY_ATTEMPT_FAILED, CONTENT_LOADED, PLAY, PAUSE, BUFFER, TIME, SEEK_START, SEEK_END, MUTE, VOLUME,
   RENDITION_UPDATE, ERROR, COMPLETE, PLAYLIST_COMPLETE, FULLSCREEN, PLAYER_RESIZE, VIEWABLE, CAST, PLAYBACK_MODE
 } from './videoModule/constants/events.js';
-import stateFactory from './shared/state.js';
+import stateFactory from './videoModule/shared/state.js';
 import { JWPLAYER_VENDOR } from './videoModule/constants/vendorCodes.js';
 import { submodule } from '../src/hook.js';
 
