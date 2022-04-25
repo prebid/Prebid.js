@@ -59,6 +59,8 @@ module.exports = {
           loader: 'babel-loader',
           // presets and plugins for Prebid.js must be manually specified separate from your other babel rule.
           // this can be accomplished by requiring prebid's .babelrc.js file (requires Babel 7 and Node v8.9.0+)
+          // as of Prebid 6, babelrc.js only targets modern browsers. One can change the targets and build for
+          // older browsers if they prefer, but integration tests on ie11 were removed in Prebid.js 6.0
           options: require('prebid.js/.babelrc.js')
         }
       }
@@ -128,16 +130,22 @@ Once setup, run the following command to globally install the `gulp-cli` package
 
 ## Build for Development
 
-To build the project on your local machine, run:
+To build the project on your local machine we recommend, running:
 
-    $ gulp serve
+    $ gulp serve-and-test --file <spec_file.js>
 
-This runs some code quality checks, starts a web server at `http://localhost:9999` serving from the project root and generates the following files:
+This will run testing but not linting. A web server will start at `http://localhost:9999` serving from the project root and generates the following files:
 
 + `./build/dev/prebid.js` - Full source code for dev and debug
 + `./build/dev/prebid.js.map` - Source map for dev and debug
-+ `./build/dist/prebid.js` - Minified production code
-+ `./prebid.js_<version>.zip` - Distributable zip archive
++ `./build/dev/prebid-core.js`
++ `./build/dev/prebid-core.js.map`
+
+
+Development may be a bit slower but if you prefer linting and additional watch files you can also still run just:
+
+    $ gulp serve 
+
 
 ### Build Optimization
 
@@ -272,7 +280,7 @@ As you make code changes, the bundles will be rebuilt and the page reloaded auto
 
 ## Contribute
 
-Many SSPs, bidders, and publishers have contributed to this project. [Hundreds of bidders](https://github.com/prebid/Prebid.js/tree/master/src/adapters) are supported by Prebid.js.
+Many SSPs, bidders, and publishers have contributed to this project. [Hundreds of bidders](https://github.com/prebid/Prebid.js/tree/master/modules) are supported by Prebid.js.
 
 For guidelines, see [Contributing](./CONTRIBUTING.md).
 
@@ -314,7 +322,7 @@ For instructions on writing tests for Prebid.js, see [Testing Prebid.js](http://
 
 ### Supported Browsers
 
-Prebid.js is supported on IE11 and modern browsers.
+Prebid.js is supported on IE11 and modern browsers until 5.x. 6.x+ transpiles to target >0.25%; not Opera Mini; not IE11. 
 
 ### Governance
 Review our governance model [here](https://github.com/prebid/Prebid.js/tree/master/governance.md).

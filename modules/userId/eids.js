@@ -1,9 +1,18 @@
 import { pick, isFn, isStr, isPlainObject, deepAccess } from '../../src/utils.js';
 
 // Each user-id sub-module is expected to mention respective config here
-const USER_IDS_CONFIG = {
+export const USER_IDS_CONFIG = {
 
   // key-name : {config}
+
+  // trustpid
+  'trustpid': {
+    source: 'trustpid.com',
+    atype: 1,
+    getValue: function (data) {
+      return data;
+    },
+  },
 
   // intentIqId
   'intentIqId': {
@@ -14,6 +23,12 @@ const USER_IDS_CONFIG = {
   // naveggId
   'naveggId': {
     source: 'navegg.com',
+    atype: 1
+  },
+
+  // justId
+  'justId': {
+    source: 'justtag.com',
     atype: 1
   },
 
@@ -41,6 +56,20 @@ const USER_IDS_CONFIG = {
     },
     source: 'id5-sync.com',
     atype: 1,
+    getUidExt: function(data) {
+      if (data.ext) {
+        return data.ext;
+      }
+    }
+  },
+
+  // ftrack
+  'ftrackId': {
+    source: 'flashtalking.com',
+    atype: 1,
+    getValue: function(data) {
+      return data.uid
+    },
     getUidExt: function(data) {
       if (data.ext) {
         return data.ext;
@@ -146,7 +175,13 @@ const USER_IDS_CONFIG = {
     atype: 1
   },
 
-  // haloId
+  // hadronId
+  'hadronId': {
+    source: 'audigent.com',
+    atype: 1
+  },
+
+  // haloId (deprecated in 7.0, use hadronId)
   'haloId': {
     source: 'audigent.com',
     atype: 1
@@ -257,7 +292,19 @@ const USER_IDS_CONFIG = {
   'connectId': {
     source: 'yahoo.com',
     atype: 3
-  }
+  },
+
+  // Adquery ID
+  'qid': {
+    source: 'adquery.io',
+    atype: 1
+  },
+
+  // DAC ID
+  'dacId': {
+    source: 'impact-ad.jp',
+    atype: 1
+  },
 };
 
 // this function will create an eid object for the given UserId sub-module

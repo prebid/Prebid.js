@@ -176,13 +176,13 @@ function isMediaTypesEmpty(mediaTypes) {
  * @return {FeedAdApiBidRequest}
  */
 function createApiBidRParams(request) {
-  return {
+  return Object.assign({}, request.params, {
     ad_type: 0,
     client_token: request.params.clientToken,
     placement_id: request.params.placementId,
     sdk_version: `prebid_${VERSION}`,
     app_hybrid: false,
-  };
+  });
 }
 
 /**

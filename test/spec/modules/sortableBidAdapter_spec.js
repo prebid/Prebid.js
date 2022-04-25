@@ -112,6 +112,13 @@ describe('sortableBidAdapter', function() {
           'key2': 'val2'
         }
       },
+      'ortb2Imp': {
+        'ext': {
+          'data': {
+            'pbadslot': 'abc/123'
+          }
+        }
+      },
       'sizes': [
         [300, 250]
       ],
@@ -174,6 +181,10 @@ describe('sortableBidAdapter', function() {
       expect(requestBody.site.publisher.id).to.equal('example.com');
       expect(requestBody.imp[0].tagid).to.equal('403370');
       expect(requestBody.imp[0].floor).to.equal(0.21);
+    });
+
+    it('includes pbadslot in the bid request', function () {
+      expect(requestBody.imp[0].ext.gpid).to.equal('abc/123');
     });
 
     it('sets domain and href correctly', function () {

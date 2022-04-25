@@ -1,14 +1,26 @@
-import { Renderer } from '../src/Renderer.js';
+import {Renderer} from '../src/Renderer.js';
 import {
-  logError, convertTypes, convertCamelToUnderscore, isArray, deepClone, logWarn, logMessage, getBidRequest, deepAccess,
-  isStr, createTrackPixelHtml, isEmpty, transformBidderParamKeywords, chunk, isArrayOfNums
+  chunk,
+  convertCamelToUnderscore,
+  convertTypes,
+  createTrackPixelHtml,
+  deepAccess,
+  deepClone,
+  getBidRequest,
+  isArray,
+  isArrayOfNums,
+  isEmpty,
+  isStr,
+  logError,
+  logMessage,
+  logWarn,
+  transformBidderParamKeywords
 } from '../src/utils.js';
-import { config } from '../src/config.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import find from 'core-js-pure/features/array/find.js';
-import includes from 'core-js-pure/features/array/includes.js';
-import { OUTSTREAM, INSTREAM } from '../src/video.js';
+import {config} from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {find, includes} from '../src/polyfill.js';
+import {INSTREAM, OUTSTREAM} from '../src/video.js';
 
 const BIDDER_CODE = 'adrelevantis';
 const URL = 'https://ssp.adrelevantis.com/prebid';
@@ -127,7 +139,7 @@ export const spec = {
     if (fpdcfg && fpdcfg.context) {
       let fdata = {
         keywords: fpdcfg.context.keywords || '',
-        category: fpdcfg.context.category || ''
+        category: fpdcfg.context.data.category || ''
       }
       payload.fpd = fdata;
     }

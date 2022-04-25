@@ -3,6 +3,7 @@ import { spec } from 'modules/visxBidAdapter.js';
 import { config } from 'src/config.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as utils from 'src/utils.js';
+import { makeSlot } from '../integration/faker/googletag.js';
 
 describe('VisxAdapter', function () {
   const adapter = newBidder(spec);
@@ -17,7 +18,7 @@ describe('VisxAdapter', function () {
     let bid = {
       'bidder': 'visx',
       'params': {
-        'uid': '903536'
+        'uid': 903536
       },
       'adUnitCode': 'adunit-code',
       'sizes': [[300, 250], [300, 600]],
@@ -35,6 +36,15 @@ describe('VisxAdapter', function () {
       delete bid.params;
       bid.params = {
         'uid': 0
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('should return false when uid can not be parsed as number', function () {
+      let bid = Object.assign({}, bid);
+      delete bid.params;
+      bid.params = {
+        'uid': 'sdvsdv'
       };
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
@@ -101,7 +111,7 @@ describe('VisxAdapter', function () {
       {
         'bidder': 'visx',
         'params': {
-          'uid': 903535
+          'uid': '903535'
         },
         'adUnitCode': 'adunit-code-2',
         'sizes': [[728, 90], [300, 250]],
@@ -145,17 +155,17 @@ describe('VisxAdapter', function () {
     const expectedFullImps = [{
       'id': '30b31c1838de1e',
       'banner': {'format': [{'w': 300, 'h': 250}, {'w': 300, 'h': 600}]},
-      'ext': {'bidder': {'uid': 903535}}
+      'ext': {'bidder': {'uid': 903535, 'adslotExists': false}}
     },
     {
       'id': '3150ccb55da321',
       'banner': {'format': [{'w': 728, 'h': 90}, {'w': 300, 'h': 250}]},
-      'ext': {'bidder': {'uid': 903535}}
+      'ext': {'bidder': {'uid': 903535, 'adslotExists': false}}
     },
     {
       'id': '42dbe3a7168a6a',
       'banner': {'format': [{'w': 300, 'h': 250}, {'w': 300, 'h': 600}]},
-      'ext': {'bidder': {'uid': 903536}}
+      'ext': {'bidder': {'uid': 903536, 'adslotExists': false}}
     },
     {
       'id': '39a4e3a7168a6a',
@@ -452,7 +462,122 @@ describe('VisxAdapter', function () {
         'imp': [{
           'id': '39aff3a7169a6a',
           'banner': {'format': [{'w': 300, 'h': 250}, {'w': 300, 'h': 600}]},
-          'ext': {'bidder': {'uid': 903538}}
+          'ext': {'bidder': {'uid': 903538, 'adslotExists': false}}
+        }],
+        'tmax': 3000,
+        'cur': ['EUR'],
+        'source': {
+          'ext': {
+            'wrapperType': 'Prebid_js',
+            'wrapperVersion': '$prebid.version$'
+          }
+        },
+        'site': {'page': referrer}
+      });
+    });
+  });
+
+  describe('buildRequests (check ad slot exists)', function () {
+    function parseRequest(url) {
+      const res = {};
+      (url.split('?')[1] || '').split('&').forEach((it) => {
+        const couple = it.split('=');
+        res[couple[0]] = decodeURIComponent(couple[1]);
+      });
+      return res;
+    }
+    const bidderRequest = {
+      timeout: 3000,
+      refererInfo: {
+        referer: 'https://example.com'
+      }
+    };
+    const referrer = bidderRequest.refererInfo.referer;
+    const bidRequests = [
+      {
+        'bidder': 'visx',
+        'params': {
+          'uid': 903535
+        },
+        'adUnitCode': 'visx-adunit-code-1',
+        'sizes': [[300, 250], [300, 600]],
+        'bidId': '30b31c1838de1e',
+        'bidderRequestId': '22edbae2733bf6',
+        'auctionId': '1d1a030790a475',
+      },
+      {
+        'bidder': 'visx',
+        'params': {
+          'uid': 903535
+        },
+        'adUnitCode': 'visx-adunit-code-2',
+        'sizes': [[300, 250], [300, 600]],
+        'bidId': '30b31c1838de1e',
+        'bidderRequestId': '22edbae2733bf6',
+        'auctionId': '1d1a030790a475',
+      }
+    ];
+    let sandbox;
+    let documentStub;
+
+    before(function() {
+      sandbox = sinon.sandbox.create();
+      documentStub = sandbox.stub(document, 'getElementById');
+      documentStub.withArgs('visx-adunit-code-1').returns({
+        id: 'visx-adunit-code-1'
+      });
+      documentStub.withArgs('visx-adunit-element-2').returns({
+        id: 'visx-adunit-element-2'
+      });
+    });
+
+    after(function() {
+      sandbox.restore();
+    });
+
+    it('should find ad slot by ad unit code as element id', function () {
+      const request = spec.buildRequests([bidRequests[0]], bidderRequest);
+      const payload = parseRequest(request.url);
+      expect(payload).to.be.an('object');
+      expect(payload).to.have.property('auids', '903535');
+
+      const postData = request.data;
+      expect(postData).to.be.an('object');
+      expect(postData).to.deep.equal({
+        'id': '22edbae2733bf6',
+        'imp': [{
+          'id': '30b31c1838de1e',
+          'banner': {'format': [{'w': 300, 'h': 250}, {'w': 300, 'h': 600}]},
+          'ext': {'bidder': {'uid': 903535, 'adslotExists': true}}
+        }],
+        'tmax': 3000,
+        'cur': ['EUR'],
+        'source': {
+          'ext': {
+            'wrapperType': 'Prebid_js',
+            'wrapperVersion': '$prebid.version$'
+          }
+        },
+        'site': {'page': referrer}
+      });
+    });
+
+    it('should find ad slot by ad unit code as adUnitPath', function () {
+      makeSlot({code: 'visx-adunit-code-2', divId: 'visx-adunit-element-2'});
+
+      const request = spec.buildRequests([bidRequests[1]], bidderRequest);
+      const payload = parseRequest(request.url);
+      expect(payload).to.be.an('object');
+      expect(payload).to.have.property('auids', '903535');
+
+      const postData = request.data;
+      expect(postData).to.be.an('object');
+      expect(postData).to.deep.equal({
+        'id': '22edbae2733bf6',
+        'imp': [{
+          'id': '30b31c1838de1e',
+          'banner': {'format': [{'w': 300, 'h': 250}, {'w': 300, 'h': 600}]},
+          'ext': {'bidder': {'uid': 903535, 'adslotExists': true}}
         }],
         'tmax': 3000,
         'cur': ['EUR'],
@@ -1147,9 +1272,10 @@ describe('VisxAdapter', function () {
     });
 
     it('onTimeout', function () {
-      const data = { timeout: 3000, bidId: '23423', params: { uid: 1 } };
+      const data = [{ timeout: 3000, adUnitCode: 'adunit-code-1', auctionId: '1cbd2feafe5e8b', bidder: 'visx', bidId: '23423', params: [{ uid: '1' }] }];
+      const expectedData = [{ ...data[0], params: [{ uid: 1 }] }];
       spec.onTimeout(data);
-      expect(utils.triggerPixel.calledOnceWith('https://t.visx.net/track/bid_timeout?data=' + JSON.stringify(data))).to.equal(true);
+      expect(utils.triggerPixel.calledOnceWith('https://t.visx.net/track/bid_timeout//' + JSON.stringify(expectedData))).to.equal(true);
     });
   });
 

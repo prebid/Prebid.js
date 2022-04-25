@@ -173,7 +173,7 @@ describe('pubGENIUS adapter', () => {
 
       expectedRequest = {
         method: 'POST',
-        url: 'https://ortb.adpearl.io/prebid/auction',
+        url: 'https://auction.adpearl.io/prebid/auction',
         data: {
           id: 'fake-auction-id',
           imp: [
@@ -493,7 +493,7 @@ describe('pubGENIUS adapter', () => {
       };
       expectedSync = {
         type: 'iframe',
-        url: 'https://ortb.adpearl.io/usersync/pixels.html?',
+        url: 'https://auction.adpearl.io/usersync/pixels.html?',
       };
     });
 
@@ -551,7 +551,7 @@ describe('pubGENIUS adapter', () => {
       onTimeout(timeoutData);
 
       expect(server.requests[0].method).to.equal('POST');
-      expect(server.requests[0].url).to.equal('https://ortb.adpearl.io/prebid/events?type=timeout');
+      expect(server.requests[0].url).to.equal('https://auction.adpearl.io/prebid/events?type=timeout');
       expect(JSON.parse(server.requests[0].requestBody)).to.deep.equal(timeoutData);
     });
   });

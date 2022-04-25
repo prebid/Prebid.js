@@ -15,21 +15,28 @@
  * @property {?string} keyName
  */
 
-import { deepClone, logError, isGptPubadsDefined } from '../src/utils.js';
+import {deepClone, deepSetValue, isFn, isGptPubadsDefined, isNumber, logError, logInfo, generateUUID} from '../src/utils.js';
 import {submodule} from '../src/hook.js';
 import {ajaxBuilder} from '../src/ajax.js';
 import {loadExternalScript} from '../src/adloader.js';
 import {getStorageManager} from '../src/storageManager.js';
-import find from 'core-js-pure/features/array/find.js';
+import {find, includes} from '../src/polyfill.js';
+import {getGlobal} from '../src/prebidGlobal.js';
+import * as events from '../src/events.js';
+import CONSTANTS from '../src/constants.json';
 
 const storage = getStorageManager();
 
 /** @type {ModuleParams} */
 let _moduleParams = {};
 /** @type {null|Object} */
-let _predictionsData = null;
+let _browsiData = null;
 /** @type {string} */
 const DEF_KEYNAME = 'browsiViewability';
+/** @type {null | function} */
+let _dataReadyCallback = null;
+/** @type {null|Object} */
+let _ic = {};
 
 /**
  * add browsi script to page
@@ -78,35 +85,81 @@ export function collectData() {
   getPredictionsFromServer(`//${_moduleParams.url}/prebid?${toUrlParams(predictorData)}`);
 }
 
-export function setData(data) {
-  _predictionsData = data;
+/**
+ * wait for data from server
+ * call callback when data is ready
+ * @param {function} callback
+ */
+function waitForData(callback) {
+  if (_browsiData) {
+    _dataReadyCallback = null;
+    callback(_browsiData);
+  } else {
+    _dataReadyCallback = callback;
+  }
 }
 
-function sendDataToModule(adUnitsCodes) {
+export function setData(data) {
+  _browsiData = data;
+  if (isFn(_dataReadyCallback)) {
+    _dataReadyCallback(_browsiData);
+    _dataReadyCallback = null;
+  }
+}
+
+function getRTD(auc) {
+  logInfo(`Browsi RTD provider is fetching data for ${auc}`);
   try {
-    const _predictions = (_predictionsData && _predictionsData.p) || {};
-    return adUnitsCodes.reduce((rp, adUnitCode) => {
-      if (!adUnitCode) {
+    const _bp = (_browsiData && _browsiData.p) || {};
+    return auc.reduce((rp, uc) => {
+      _ic[uc] = _ic[uc] || 0;
+      const _c = _ic[uc];
+      if (!uc) {
         return rp
       }
-      const adSlot = getSlotByCode(adUnitCode);
-      const identifier = adSlot ? getMacroId(_predictionsData['pmd'], adSlot) : adUnitCode;
-      const predictionData = _predictions[identifier];
-      rp[adUnitCode] = getKVObject(-1, _predictionsData['kn']);
-      if (!predictionData) {
+      const adSlot = getSlotByCode(uc);
+      const identifier = adSlot ? getMacroId(_browsiData['pmd'], adSlot) : uc;
+      const _pd = _bp[identifier];
+      rp[uc] = getKVObject(-1);
+      if (!_pd) {
         return rp
       }
-      if (predictionData.p) {
-        if (!isIdMatchingAdUnit(adSlot, predictionData.w)) {
+      if (_pd.ps) {
+        if (!isIdMatchingAdUnit(adSlot, _pd.w)) {
           return rp;
         }
-        rp[adUnitCode] = getKVObject(predictionData.p, _predictionsData.kn);
+        rp[uc] = getKVObject(getCurrentData(_pd.ps, _c));
       }
       return rp;
     }, {});
   } catch (e) {
     return {};
   }
+}
+
+/**
+ * get prediction
+ * return -1 if prediction not found
+ * @param {object} predictionObject
+ * @param {number} _c
+ * @return {number}
+ */
+export function getCurrentData(predictionObject, _c) {
+  if (!predictionObject || !isNumber(_c)) {
+    return -1;
+  }
+  if (isNumber(predictionObject[_c])) {
+    return predictionObject[_c];
+  }
+  if (Object.keys(predictionObject).length > 1) {
+    while (_c > 0) {
+      _c--;
+      if (isNumber(predictionObject[_c])) {
+        return predictionObject[_c];
+      }
+    }
+  }
+  return -1;
 }
 
 /**
@@ -122,11 +175,15 @@ function getAllSlots() {
  * @param {string?} keyName
  * @return {Object} key:value
  */
-function getKVObject(p, keyName) {
+function getKVObject(p) {
   const prValue = p < 0 ? 'NA' : (Math.floor(p * 10) / 10).toFixed(2);
   let prObject = {};
-  prObject[((_moduleParams['keyName'] || keyName || DEF_KEYNAME).toString())] = prValue.toString();
+  prObject[getKey()] = prValue.toString();
   return prObject;
+}
+
+function getKey() {
+  return ((_moduleParams['keyName'] || (_browsiData && _browsiData['kn']) || DEF_KEYNAME).toString())
 }
 /**
  * check if placement id matches one of given ad units
@@ -238,6 +295,28 @@ function toUrlParams(data) {
     .join('&');
 }
 
+function setBidRequestsData(bidObj, callback) {
+  let adUnitCodes = bidObj.adUnitCodes;
+  let adUnits = bidObj.adUnits || getGlobal().adUnits || [];
+  if (adUnitCodes) {
+    adUnits = adUnits.filter(au => includes(adUnitCodes, au.code));
+  } else {
+    adUnitCodes = adUnits.map(au => au.code);
+  }
+  waitForData(() => {
+    const data = getRTD(adUnitCodes);
+    if (data) {
+      adUnits.forEach(adUnit => {
+        const adUnitCode = adUnit.code;
+        if (data[adUnitCode]) {
+          deepSetValue(adUnit, 'ortb2Imp.ext.data.browsi', {[getKey()]: data[adUnitCode][getKey()]});
+        }
+      });
+    }
+    callback();
+  })
+}
+
 /** @type {RtdSubmodule} */
 export const browsiSubmodule = {
   /**
@@ -250,9 +329,30 @@ export const browsiSubmodule = {
    * @function
    * @param {string[]} adUnitsCodes
    */
-  getTargetingData: sendDataToModule,
+  getTargetingData: getTargetingData,
   init: init,
+  getBidRequestData: setBidRequestsData
 };
+
+function getTargetingData(uc, c, us, a) {
+  const targetingData = getRTD(uc);
+  const auctionId = a.auctionId
+  uc.forEach(auc => {
+    if (isNumber(_ic[auc])) {
+      _ic[auc] = _ic[auc] + 1;
+    }
+    const transactionId = a.adUnits.find(adUnit => adUnit.code === auc).transactionId;
+    events.emit(CONSTANTS.EVENTS.BILLABLE_EVENT, {
+      vendor: 'browsi',
+      type: 'adRequest',
+      billingId: generateUUID(),
+      transactionId: transactionId,
+      auctionId: auctionId
+    })
+  });
+  logInfo('Browsi RTD provider returned targeting data', targetingData, 'for', uc)
+  return targetingData;
+}
 
 function init(moduleConfig) {
   _moduleParams = moduleConfig.params;

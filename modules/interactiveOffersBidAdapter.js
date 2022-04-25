@@ -83,7 +83,8 @@ function parseRequestPrebidjsToOpenRTB(prebidRequest) {
   let openRTBRequest = JSON.parse(JSON.stringify(DEFAULT['OpenRTBBidRequest']));
   openRTBRequest.id = prebidRequest.auctionId;
   openRTBRequest.ext = {
-    auctionstart: Date.now()
+    refererInfo: prebidRequest.refererInfo,
+    auctionId: prebidRequest.auctionId
   };
 
   openRTBRequest.site = JSON.parse(JSON.stringify(DEFAULT['OpenRTBBidRequestSite']));
@@ -111,15 +112,17 @@ function parseRequestPrebidjsToOpenRTB(prebidRequest) {
   openRTBRequest.user = JSON.parse(JSON.stringify(DEFAULT['OpenRTBBidRequestUser']));
 
   openRTBRequest.imp = [];
-  prebidRequest.bids.forEach(function(bid, impId) {
-    impId++;
+  prebidRequest.bids.forEach(function(bid) {
     if (!ret.partnerId) {
       ret.partnerId = bid.params.partnerId;
     }
     let imp = JSON.parse(JSON.stringify(DEFAULT['OpenRTBBidRequestImp']));
-    imp.id = impId;
+    imp.id = bid.bidId;
     imp.secure = secure;
-    imp.tagid = bid.bidId;
+    imp.tagid = bid.adUnitCode;
+    imp.ext = {
+      rawdata: bid
+    };
 
     openRTBRequest.site.publisher.id = openRTBRequest.site.publisher.id || 0;
     openRTBRequest.tmax = openRTBRequest.tmax || bid.params.tmax || 0;
@@ -152,7 +155,7 @@ function parseResponseOpenRTBToPrebidjs(openRTBResponse) {
         if (seatbid.bid && seatbid.bid.forEach) {
           seatbid.bid.forEach(function(bid) {
             let prebid = JSON.parse(JSON.stringify(DEFAULT['PrebidBid']));
-            prebid.requestId = bid.ext.tagid;
+            prebid.requestId = bid.impid;
             prebid.ad = bid.adm;
             prebid.creativeId = bid.crid;
             prebid.cpm = bid.price;

@@ -1,19 +1,23 @@
-import { isArray, deepAccess, logWarn, parseUrl } from '../src/utils.js';
-import { ajax } from '../src/ajax.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import strIncludes from 'core-js-pure/features/string/includes.js';
+import {deepAccess, isArray, logWarn, parseUrl} from '../src/utils.js';
+import {ajax} from '../src/ajax.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {includes as strIncludes} from '../src/polyfill.js';
 
 const BIDDER_CODE = 'sspBC';
 const BIDDER_URL = 'https://ssp.wp.pl/bidder/';
 const SYNC_URL = 'https://ssp.wp.pl/bidder/usersync';
 const NOTIFY_URL = 'https://ssp.wp.pl/bidder/notify';
+const TRACKER_URL = 'https://bdr.wpcdn.pl/tag/jstracker.js';
+const GVLID = 676;
 const TMAX = 450;
-const BIDDER_VERSION = '5.2';
+const BIDDER_VERSION = '5.41';
 const W = window;
 const { navigator } = W;
 const oneCodeDetection = {};
+const adUnitsCalled = {};
 const adSizesCalled = {};
+const pageView = {};
 var consentApiVersion;
 
 /**
@@ -27,8 +31,8 @@ const getNotificationPayload = bidData => {
       const result = {
         requestId: undefined,
         siteId: [],
-        adUnit: [],
         slotId: [],
+        tagid: [],
       }
       bids.forEach(bid => {
         let params = isArray(bid.params) ? bid.params[0] : bid.params;
@@ -53,7 +57,7 @@ const getNotificationPayload = bidData => {
           result.adomain = meta.advertiserDomains && meta.advertiserDomains[0];
           result.networkName = meta.networkName;
         }
-        result.adUnit.push(bid.adUnitCode)
+        result.tagid.push(bid.adUnitCode);
         result.requestId = bid.auctionId || result.requestId;
         result.timeout = bid.timeout || result.timeout;
       })
@@ -70,6 +74,7 @@ const cookieSupport = () => {
 };
 
 const applyClientHints = ortbRequest => {
+  const { location } = document;
   const { connection = {}, deviceMemory, userAgentData = {} } = navigator;
   const viewport = W.visualViewport || false;
   const segments = [];
@@ -84,6 +89,16 @@ const applyClientHints = ortbRequest => {
     'CH-BrowserBrands': JSON.stringify(userAgentData.brands),
     'CH-isMobile': userAgentData.mobile,
   };
+
+  /**
+    Check / generate page view id
+    Should be generated dureing first call to applyClientHints(),
+    and re-generated if pathname has changed
+  */
+  if (!pageView.id || location.pathname !== pageView.path) {
+    pageView.path = location.pathname;
+    pageView.id = Math.floor(1E20 * Math.random());
+  }
 
   Object.keys(hints).forEach(key => {
     const hint = hints[key];
@@ -100,9 +115,26 @@ const applyClientHints = ortbRequest => {
       id: '12',
       name: 'NetInfo',
       segment: segments,
+    }, {
+      id: '7',
+      name: 'pvid',
+      segment: [
+        {
+          value: `${pageView.id}`
+        }
+      ]
     }];
 
-  ortbRequest.user = Object.assign(ortbRequest.user, { data });
+  const ch = { data };
+  ortbRequest.user = { ...ortbRequest.user, ...ch };
+};
+
+const applyUserIds = (validBidRequest, ortbRequest) => {
+  const eids = validBidRequest.userIdAsEids
+  if (eids && eids.length) {
+    const ids = { eids };
+    ortbRequest.user = { ...ortbRequest.user, ...ids };
+  }
 };
 
 /**
@@ -114,8 +146,8 @@ const applyGdpr = (bidderRequest, ortbRequest) => {
   if (gdprConsent) {
     const { apiVersion, gdprApplies, consentString } = gdprConsent;
     consentApiVersion = apiVersion;
-    ortbRequest.regs = Object.assign(ortbRequest.regs, { '[ortb_extensions.gdpr]': gdprApplies ? 1 : 0 });
-    ortbRequest.user = Object.assign(ortbRequest.user, { '[ortb_extensions.consent]': consentString });
+    ortbRequest.regs = Object.assign(ortbRequest.regs, { 'gdpr': gdprApplies ? 1 : 0 });
+    ortbRequest.user = Object.assign(ortbRequest.user, { 'consent': consentString });
   }
 }
 
@@ -129,6 +161,7 @@ const setOnAny = (collection, key) => collection.reduce((prev, next) => prev || 
  */
 const sendNotification = payload => {
   ajax(NOTIFY_URL, null, JSON.stringify(payload), {
+    contentType: 'application/json',
     withCredentials: false,
     method: 'POST',
     crossOrigin: true
@@ -267,11 +300,17 @@ const mapImpression = slot => {
      send this info as ext.pbsize
   */
   const slotSize = slot.sizes.length ? slot.sizes.reduce((prev, next) => prev[0] * prev[1] <= next[0] * next[1] ? next : prev).join('x') : '1x1';
-  adSizesCalled[slotSize] = adSizesCalled[slotSize] ? adSizesCalled[slotSize] += 1 : 1;
-  ext.data = Object.assign({ pbsize: `${slotSize}_${adSizesCalled[slotSize]}` }, ext.data);
+
+  if (!adUnitsCalled[adUnitCode]) {
+    // this is a new adunit - assign & save pbsize
+    adSizesCalled[slotSize] = adSizesCalled[slotSize] ? adSizesCalled[slotSize] += 1 : 1;
+    adUnitsCalled[adUnitCode] = `${slotSize}_${adSizesCalled[slotSize]}`
+  }
+
+  ext.data = Object.assign({ pbsize: adUnitsCalled[adUnitCode] }, ext.data);
 
   const imp = {
-    id: id && siteId ? id : 'bidid-' + bidId,
+    id: id && siteId ? id.padStart(3, '0') : 'bidid-' + bidId,
     banner: mapBanner(slot),
     native: mapNative(slot),
     video: mapVideo(slot),
@@ -314,7 +353,7 @@ const isVideoAd = bid => {
 const isNativeAd = bid => {
   const xmlTester = new RegExp(/^{['"]native['"]/);
 
-  return bid.adm && bid.adm.match(xmlTester);
+  return bid.admNative || (bid.adm && bid.adm.match(xmlTester));
 }
 
 const parseNative = nativeData => {
@@ -324,6 +363,9 @@ const parseNative = nativeData => {
     switch (id) {
       case 0:
         result.title = asset.title.text;
+        break;
+      case 1:
+        result.cta = asset.data.value;
         break;
       case 2:
         result.icon = {
@@ -419,11 +461,9 @@ const renderCreative = (site, auctionId, bid, seat, request) => {
   window.gdpr = ${JSON.stringify(request.gdprConsent)};
   window.page = "${site.page}";
   window.ref = "${site.ref}";
+  window.adlabel = "${site.adLabel ? site.adLabel : ''}";
+  window.pubid = "${site.publisherId ? site.publisherId : ''}";
   `;
-
-  if (gam) {
-    adcode += `window.gam = ${JSON.stringify(gam)};`;
-  }
 
   adcode += `</script>
     </head>
@@ -438,6 +478,7 @@ const renderCreative = (site, auctionId, bid, seat, request) => {
 
 const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   aliases: [],
   supportedMediaTypes: [BANNER, NATIVE, VIDEO],
   isBidRequestValid(bid) {
@@ -482,6 +523,7 @@ const spec = {
 
     applyGdpr(bidderRequest, payload);
     applyClientHints(payload);
+    applyUserIds(validBidRequests[0], payload);
 
     return {
       method: 'POST',
@@ -527,10 +569,14 @@ const spec = {
             /*
               bid response might include ext object containing siteId / slotId, as detected by OneCode
               update site / slot data in this case
+
+              ext also might contain publisherId and custom ad label
             */
-            const { siteid, slotid } = ext;
+            const { siteid, slotid, pubid, adlabel } = ext;
             site.id = siteid || site.id;
             site.slot = slotid || site.slot;
+            site.publisherId = pubid;
+            site.adLabel = adlabel;
           }
 
           if (bidRequest && site.id && !strIncludes(site.id, 'bidid')) {
@@ -567,10 +613,28 @@ const spec = {
               bid.mediaType = 'native';
               // check native object
               try {
-                const nativeData = JSON.parse(serverBid.adm).native;
+                const nativeData = serverBid.admNative || JSON.parse(serverBid.adm).native;
                 bid.native = parseNative(nativeData);
                 bid.width = 1;
                 bid.height = 1;
+
+                // append viewability tracker
+                const jsData = {
+                  rid: bidRequest.auctionId,
+                  crid: bid.creativeId,
+                  adunit: bidRequest.adUnitCode,
+                  url: bid.native.clickUrl,
+                  vendor: seat,
+                  site: site.id,
+                  slot: site.slot,
+                  cpm: bid.cpm.toPrecision(4),
+                }
+                const jsTracker = '<script type="text/javascript" async="true" src="' + TRACKER_URL + '" ' + Object.keys(jsData).reduce((acc, current) => { return acc + ` data-wpar-${current}="${jsData[current]}"` }, '') + '><\/script>';
+                if (bid.native.javascriptTrackers) {
+                  bid.native.javascriptTrackers.push(jsTracker);
+                } else {
+                  bid.native.javascriptTrackers = [jsTracker];
+                }
               } catch (err) {
                 logWarn('Could not parse native data', serverBid.adm);
                 bid.cpm = 0;
@@ -593,15 +657,15 @@ const spec = {
 
     return bids;
   },
-  getUserSyncs(syncOptions) {
+  getUserSyncs(syncOptions, serverResponses, gdprConsent) {
+    let mySyncs = [];
     if (syncOptions.iframeEnabled && consentApiVersion != 1) {
-      return [{
+      mySyncs.push({
         type: 'iframe',
         url: `${SYNC_URL}?tcf=${consentApiVersion}`,
-      }];
-    } else {
-      logWarn('sspBC adapter requires iframe based user sync.');
-    }
+      });
+    };
+    return mySyncs;
   },
 
   onTimeout(timeoutData) {

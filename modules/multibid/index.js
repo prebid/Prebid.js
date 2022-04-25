@@ -8,7 +8,7 @@ import {setupBeforeHookFnOnce, getHook} from '../../src/hook.js';
 import {
   logWarn, deepAccess, getUniqueIdentifierStr, deepSetValue, groupBy
 } from '../../src/utils.js';
-import events from '../../src/events.js';
+import * as events from '../../src/events.js';
 import CONSTANTS from '../../src/constants.json';
 import {addBidderRequests} from '../../src/auction.js';
 import {getHighestCpmBidsFromBidPool, sortByDealAndPriceBucketOrCpm} from '../../src/targeting.js';
@@ -112,7 +112,7 @@ export function addBidResponseHook(fn, adUnitCode, bid) {
     if (multiConfig[bid.bidderCode].prefix) bid.multibidPrefix = multiConfig[bid.bidderCode].prefix;
     bid.originalBidder = bid.bidderCode;
     // Check if stored bids for auction include adUnitCode.bidder and max limit not reach for ad unit
-    if (deepAccess(multibidUnits, `${adUnitCode}.${bid.bidderCode}`)) {
+    if (deepAccess(multibidUnits, [adUnitCode, bid.bidderCode])) {
       // Store request id under new property originalRequestId, create new unique bidId,
       // and push bid into multibid stored bids for auction if max not reached and bid cpm above floor
       if (!multibidUnits[adUnitCode][bid.bidderCode].maxReached && (!floor || floor <= bid.cpm)) {
@@ -131,9 +131,9 @@ export function addBidResponseHook(fn, adUnitCode, bid) {
         logWarn(`Filtering multibid received from bidder ${bid.bidderCode}: ` + ((multibidUnits[adUnitCode][bid.bidderCode].maxReached) ? `Maximum bid limit reached for ad unit code ${adUnitCode}` : 'Bid cpm under floors value.'));
       }
     } else {
-      if (deepAccess(bid, 'floorData.floorValue')) deepSetValue(multibidUnits, `${adUnitCode}.${bid.bidderCode}`, {floor: deepAccess(bid, 'floorData.floorValue')});
+      if (deepAccess(bid, 'floorData.floorValue')) deepSetValue(multibidUnits, [adUnitCode, bid.bidderCode], {floor: deepAccess(bid, 'floorData.floorValue')});
 
-      deepSetValue(multibidUnits, `${adUnitCode}.${bid.bidderCode}`, {ads: [bid]});
+      deepSetValue(multibidUnits, [adUnitCode, bid.bidderCode], {ads: [bid]});
       if (multibidUnits[adUnitCode][bid.bidderCode].ads.length === multiConfig[bid.bidderCode].maxbids) multibidUnits[adUnitCode][bid.bidderCode].maxReached = true;
 
       fn.call(this, adUnitCode, bid);

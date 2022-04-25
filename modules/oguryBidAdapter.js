@@ -1,7 +1,7 @@
 'use strict';
 
 import { BANNER } from '../src/mediaTypes.js';
-import { getAdUnitSizes, logWarn, isFn } from '../src/utils.js';
+import { getAdUnitSizes, logWarn, isFn, getWindowTop, getWindowSelf } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { ajax } from '../src/ajax.js'
 
@@ -10,6 +10,7 @@ const DEFAULT_TIMEOUT = 1000;
 const BID_HOST = 'https://mweb-hb.presage.io/api/header-bidding-request';
 const TIMEOUT_MONITORING_HOST = 'https://ms-ads-monitoring-events.presage.io';
 const MS_COOKIE_SYNC_DOMAIN = 'https://ms-cookie-sync.presage.io';
+const ADAPTER_VERSION = '1.2.10';
 
 function isBidRequestValid(bid) {
   const adUnitSizes = getAdUnitSizes(bid);
@@ -40,10 +41,10 @@ function buildRequests(validBidRequests, bidderRequest) {
   const openRtbBidRequestBanner = {
     id: bidderRequest.auctionId,
     tmax: DEFAULT_TIMEOUT,
-    at: 2,
+    at: 1,
     regs: {
       ext: {
-        gdpr: 1
+        gdpr: bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies ? 1 : 0
       },
     },
     site: {
@@ -55,17 +56,14 @@ function buildRequests(validBidRequests, bidderRequest) {
         consent: ''
       }
     },
-    imp: []
+    imp: [],
+    ext: {
+      adapterversion: ADAPTER_VERSION,
+      prebidversion: '$prebid.version$'
+    }
   };
 
-  if (bidderRequest.hasOwnProperty('gdprConsent') &&
-    bidderRequest.gdprConsent.hasOwnProperty('gdprApplies')) {
-    openRtbBidRequestBanner.regs.ext.gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0
-  }
-
-  if (bidderRequest.hasOwnProperty('gdprConsent') &&
-    bidderRequest.gdprConsent.hasOwnProperty('consentString') &&
-    bidderRequest.gdprConsent.consentString.length > 0) {
+  if (bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString) {
     openRtbBidRequestBanner.user.ext.consent = bidderRequest.gdprConsent.consentString
   }
 
@@ -73,7 +71,7 @@ function buildRequests(validBidRequests, bidderRequest) {
     const sizes = getAdUnitSizes(bidRequest)
       .map(size => ({ w: size[0], h: size[1] }));
 
-    if (bidRequest.hasOwnProperty('mediaTypes') &&
+    if (bidRequest.mediaTypes &&
       bidRequest.mediaTypes.hasOwnProperty('banner')) {
       openRtbBidRequestBanner.site.id = bidRequest.params.assetKey;
 
@@ -83,7 +81,8 @@ function buildRequests(validBidRequests, bidderRequest) {
         bidfloor: getFloor(bidRequest),
         banner: {
           format: sizes
-        }
+        },
+        ext: bidRequest.params
       });
     }
   });
@@ -122,7 +121,9 @@ function interpretResponse(openRtbBidResponse) {
         meta: {
           advertiserDomains: bid.adomain
         },
-        nurl: bid.nurl
+        nurl: bid.nurl,
+        adapterVersion: ADAPTER_VERSION,
+        prebidVersion: '$prebid.version$'
       };
 
       bidResponse.ad = bid.adm;
@@ -145,12 +146,24 @@ function getFloor(bid) {
   return floorResult.currency === 'USD' ? floorResult.floor : 0;
 }
 
+function getWindowContext() {
+  try {
+    return getWindowTop()
+  } catch (e) {
+    return getWindowSelf()
+  }
+}
+
 function onBidWon(bid) {
-  if (bid && bid.hasOwnProperty('nurl') && bid.nurl.length > 0) ajax(bid['nurl'], null);
+  const w = getWindowContext()
+  w.OG_PREBID_BID_OBJECT = {
+    ...(bid && { ...bid }),
+  }
+  if (bid && bid.nurl) ajax(bid.nurl, null);
 }
 
 function onTimeout(timeoutData) {
-  ajax(`${TIMEOUT_MONITORING_HOST}/bid_timeout`, null, JSON.stringify(timeoutData[0]), {
+  ajax(`${TIMEOUT_MONITORING_HOST}/bid_timeout`, null, JSON.stringify({...timeoutData[0], location: window.location.href}), {
     method: 'POST',
     contentType: 'application/json'
   });
@@ -165,6 +178,7 @@ export const spec = {
   interpretResponse,
   getFloor,
   onBidWon,
+  getWindowContext,
   onTimeout
 }
 

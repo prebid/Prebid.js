@@ -172,8 +172,6 @@ function interpretResponse(serverResponse, bidRequest) {
 
 function _assignFloor(bid) {
   if (!isFn(bid.getFloor)) {
-    // eslint-disable-next-line no-console
-    console.log(bid.params.bidFloor);
     return bid.params.bidFloor ? bid.params.bidFloor : null;
   }
   const floor = bid.getFloor({
