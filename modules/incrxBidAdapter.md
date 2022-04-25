@@ -22,7 +22,7 @@ var adUnits = [
        bids: [{
          bidder: 'incrementx',
          params: {
-           placementId: 'VZ-HB-B784382V6C6G3C'
+           placementId: 'PNX-HB-F796830VCF3C4B'
          }
        }]
    },

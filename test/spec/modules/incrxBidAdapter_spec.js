@@ -8,7 +8,7 @@ describe('IncrementX', function () {
   const bidRequest = {
     bidder: 'IncrementX',
     params: {
-      placementId: 'PNX-HB-XXXX830VCFXXXX'
+      placementId: 'PNX-HB-F796830VCF3C4B'
     },
     mediaTypes: {
       banner: {
@@ -64,7 +64,7 @@ describe('IncrementX', function () {
   describe('interpretResponse', function () {
     let serverResponse = {
       body: {
-        vzhPlacementId: 'PNX-HB-XXXX830VCFXXXX',
+        vzhPlacementId: 'PNX-HB-F796830VCF3C4B',
         bid: 'BID-XXXX-XXXX',
         adWidth: '300',
         adHeight: '250',
