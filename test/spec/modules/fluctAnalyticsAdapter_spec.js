@@ -55,6 +55,30 @@ const MOCK = {
     'adUnits': adUnits,
     'adUnitCodes': adUnits.map(adUnit => adUnit.code),
     'noBids': [],
+    'bidderRequests': [
+      {
+        'bidderCode': adUnits[0].bids[0].bidder,
+        'auctionId': 'eeca6754-525b-4c4c-a697-b06b1fc6c352',
+        'bidderRequestId': '9481bc7a501fb8',
+        'bids': [
+          {
+            'bidder': adUnits[0].bids[0].bidder,
+            'dwid': adUnits[0].bids[0].dwid,
+            'params': adUnits[0].bids[0].params,
+            'adUnitCode': adUnits[0].code,
+            // 'transactionId': 'transactionId',
+            'bidId': '22697ff3e5bf7ee',
+            'bidderRequestId': '9481bc7a501fb8',
+            'auctionId': 'eeca6754-525b-4c4c-a697-b06b1fc6c352',
+            'src': 'client',
+            'bidRequestsCount': 1,
+            'bidderRequestsCount': 1,
+            'bidderWinsCount': 0,
+          }
+        ],
+        'auctionStart': 1635837149209,
+      }
+    ],
     'bidsReceived': [
       {
         'dwid': adUnits[0].bids[0].dwid,

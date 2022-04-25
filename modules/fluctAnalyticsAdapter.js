@@ -10,7 +10,10 @@ import {
   logError,
   generateUUID,
 } from '../src/utils.js';
+import * as _find from 'core-js-pure/features/array/find.js';
 import $$PREBID_GLOBAL$$ from '../src/prebid.js';
+/** @type {<T>(array: T[], predicate: (value: T, index: number, obj: T[]) => boolean, thisArg?: any) => T} */
+const find = _find;
 
 const url = 'https://an.adingo.jp';
 
@@ -62,7 +65,7 @@ let fluctAnalyticsAdapter = Object.assign(
         case EVENTS.AUCTION_END: {
           /** @type {PbAuction} */
           let auctionEndEvent = args;
-          let { adUnitCodes, auctionId, bidsReceived, noBids } = auctionEndEvent;
+          let { adUnitCodes, auctionId, bidderRequests, bidsReceived, noBids } = auctionEndEvent;
           Object.assign(cache.auctions[auctionId], auctionEndEvent, { aidSuffix: isBrowsiId(auctionId) ? generateUUID() : undefined });
 
           let prebidWonBidRequestIds = adUnitCodes.map(adUnitCode =>
@@ -73,6 +76,9 @@ let fluctAnalyticsAdapter = Object.assign(
               , {}).requestId
           );
 
+          const requestBids = []
+          bidderRequests.forEach(bidderRequest => bidderRequest.bids.forEach(bid => requestBids.push(bid)))
+
           const bidResults = [
             ...bidsReceived.map(bid => ({
               ...bid,
@@ -80,6 +86,7 @@ let fluctAnalyticsAdapter = Object.assign(
               prebidWon: prebidWonBidRequestIds.includes(bid.requestId),
               bidWon: false,
               timeout: false,
+              dwid: (find(requestBids, requestBid => requestBid.bidId === bid.requestId) || {}).dwid,
             })),
             ...noBids.map(bid => ({
               ...bid,
