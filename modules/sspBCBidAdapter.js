@@ -81,6 +81,9 @@ const getNotificationPayload = bidData => {
         result.tagid.push(bid.adUnitCode);
         result.requestId = bid.auctionId || result.requestId;
         result.timeout = bid.timeout || result.timeout;
+        result.ext = {
+          pvid: pageView.id
+        };
       })
       return result;
     }
@@ -118,7 +121,7 @@ const applyClientHints = ortbRequest => {
   */
   if (!pageView.id || location.pathname !== pageView.path) {
     pageView.path = location.pathname;
-    pageView.id = Math.floor(1E20 * Math.random());
+    pageView.id = Math.floor(1E20 * Math.random()).toString();
   }
 
   Object.keys(hints).forEach(key => {
@@ -141,7 +144,7 @@ const applyClientHints = ortbRequest => {
       name: 'pvid',
       segment: [
         {
-          value: `${pageView.id}`
+          value: pageView.id
         }
       ]
     }];
@@ -579,6 +582,7 @@ const spec = {
     const bids = [];
     const site = JSON.parse(request.data).site; // get page and referer data from request
     site.sn = response.sn || 'mc_adapter'; // WPM site name (wp_sn)
+    pageView.sn = site.sn; // store site_name (for syncing and notifications)
     let seat;
 
     if (response.seatbid !== undefined) {
@@ -705,7 +709,7 @@ const spec = {
     if (syncOptions.iframeEnabled && consentApiVersion != 1) {
       mySyncs.push({
         type: 'iframe',
-        url: `${SYNC_URL}?tcf=${consentApiVersion}`,
+        url: `${SYNC_URL}?tcf=${consentApiVersion}&pvid=${pageView.id}&sn=${pageView.sn}`,
       });
     };
     return mySyncs;
