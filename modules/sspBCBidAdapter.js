@@ -509,7 +509,8 @@ const renderCreative = (site, auctionId, bid, seat, request) => {
     </head>
     <body>
     <div id="c"></div>
-    <script id="wpjslib" crossorigin src="//std.wpcdn.pl/wpjslib/wpjslib-inline.js" async defer></script>
+    <script async crossorigin nomodule src="https://std.wpcdn.pl/wpjslib/wpjslib-inline.js" id="wpjslib"></script>
+    <script async crossorigin type="module" src="https://std.wpcdn.pl/wpjslib6/wpjslib-inline.js" id="wpjslib6"></script>
   </body>
   </html>`;
 
