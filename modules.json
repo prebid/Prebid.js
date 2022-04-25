@@ -1,5 +1,6 @@
 [
-  "prebidServerBidAdapter"
+  "prebidServerBidAdapter",
+  "s2sTesting",
   "adlooxAnalyticsAdapter",
   "adlooxRtdProvider",
   "sirdataRtdProvider",
