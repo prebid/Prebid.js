@@ -240,6 +240,54 @@ describe('jixie Adapter', function () {
       getLocalStorageStub.restore();
       miscDimsStub.restore();
     });// it
+
+    it('should populate eids when supported userIds are available', function () {
+        const oneSpecialBidReq = Object.assign({}, bidRequests_[0], {
+          userId: {
+            tdid: '11111111-2222-3333-4444-555555555555',
+            uid2: { id: 'AbCdEfGhIjKlMnO9qdQBW7qtMw8f1WTUvtkHe6u+fqLfhbtsqrJ697Z6YoI3IB9klGUv1wvlFIbwH7ELDlqQBGtj8AC1v7fMJ/Q45E7W90dts7UQLTDMLNmtHBRDXVb0Fpas4Vh3yN1jGVQNhzXC/RpGIVtZE8dCxcjfa7VfcTNcvxxxxx==' },
+            pubProvidedId: [{
+              source: 'puburl1.com',
+              uids: [{
+                id: 'pubid1',
+                atype: 1,
+                ext: {
+                  stype: 'ppuid'
+                }
+              }]
+            }, {
+              source: 'puburl2.com',
+              uids: [{
+                id: 'pubid2'
+              }]
+            }]
+          }
+        });
+        const request = spec.buildRequests([oneSpecialBidReq], bidderRequest_);
+        const payload = JSON.parse(request.data);
+        expect(payload.eids).to.deep.include({
+            source: 'adserver.org',
+            id: '11111111-2222-3333-4444-555555555555',
+            rti_partner: 'TDID'
+        });
+    
+        expect(payload.eids).to.deep.include({
+            source: 'uidapi.com',
+            id: 'AbCdEfGhIjKlMnO9qdQBW7qtMw8f1WTUvtkHe6u+fqLfhbtsqrJ697Z6YoI3IB9klGUv1wvlFIbwH7ELDlqQBGtj8AC1v7fMJ/Q45E7W90dts7UQLTDMLNmtHBRDXVb0Fpas4Vh3yN1jGVQNhzXC/RpGIVtZE8dCxcjfa7VfcTNcvxxxxx==',
+            rti_partner: 'UID2'
+        });
+    
+        expect(payload.eids).to.deep.include({
+            source: 'puburl1.com',
+            id: 'pubid1'
+        });
+    
+        expect(payload.eids).to.deep.include({
+            source: 'puburl2.com',
+            id: 'pubid2'
+        });
+    
+      });
   });// describe
 
   /**
@@ -603,4 +651,7 @@ describe('jixie Adapter', function () {
       getConfigStub.restore();
     })
   });// describe
+
+  
 });
+      

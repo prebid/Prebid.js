@@ -121,6 +121,18 @@ function getMiscDims_() {
   return ret;
 }
 
+function addUserId(eids, id, source, rti) {
+    if (id) {
+      if (rti) {
+        eids.push({ source, id, rti_partner: rti });
+      } else {
+        eids.push({ source, id });
+      }
+    }
+    return eids;
+  }
+  
+
 // easier for replacement in the unit test
 export const internal = {
   getDevice: getDevice_,
@@ -163,7 +175,22 @@ export const spec = {
     }
 
     let ids = fetchIds_();
+    let eids = [];
     let miscDims = internal.getMiscDims();
+    
+    if (validBidRequests[0].userId) {
+        addUserId(eids, deepAccess(validBidRequests[0], `userId.tdid`), 'adserver.org', 'TDID');
+        addUserId(eids, deepAccess(validBidRequests[0], `userId.uid2.id`), 'uidapi.com', 'UID2');
+        if (validBidRequests[0].userId.pubProvidedId) {
+            validBidRequests[0].userId.pubProvidedId.forEach(ppId => {
+              ppId.uids.forEach(uid => {
+                eids.push({ source: ppId.source, id: uid.id });
+              });
+            });
+          }
+   
+    }
+    
     let transformedParams = Object.assign({}, {
       auctionid: bidderRequest.auctionId,
       timeout: bidderRequest.timeout,
@@ -174,6 +201,7 @@ export const spec = {
       pageurl: miscDims.pageurl,
       mkeywords: miscDims.mkeywords,
       bids: bids,
+      eids: eids,  
       cfg: jixieCfgBlob
     }, ids);
     return Object.assign({}, {
