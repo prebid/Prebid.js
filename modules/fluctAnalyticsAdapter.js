@@ -87,9 +87,8 @@ export const convertReplicatedAdUnit = (_adUnit, adUnits = $$PREBID_GLOBAL$$.adU
 const browsiEventListener = (event) => {
   const divId = event.slot.getSlotElementId();
   if (isBrowsiId(divId)) {
-    const auction = find(Object.values(cache.auctions), auction =>
-      auction.adUnitCodes.every(adUnitCode => adUnitCode === divId)) || {};
-    sendMessage(auction.auctionId);
+    const auction = find(Object.values(cache.auctions), auction => auction.adUnitCodes.every(adUnitCode => adUnitCode === divId));
+    auction && sendMessage(auction.auctionId);
   }
 }
 
