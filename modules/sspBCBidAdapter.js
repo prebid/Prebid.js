@@ -553,7 +553,8 @@ const spec = {
         publisher: publisherId ? { id: publisherId } : undefined,
         page,
         domain,
-        ref
+        ref,
+        content: { language: getContentLanguage() },
       },
       imp: validBidRequests.map(slot => mapImpression(slot)),
       cur: [getCurrency()],
@@ -561,7 +562,6 @@ const spec = {
       user: {},
       regs: {},
       device: { language: getBrowserLanguage() },
-      content: { language: getContentLanguage() },
       test: testMode,
     };
 
