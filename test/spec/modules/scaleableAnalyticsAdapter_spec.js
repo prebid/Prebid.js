@@ -1,6 +1,6 @@
 import scaleableAnalytics from 'modules/scaleableAnalyticsAdapter.js';
 import { expect } from 'chai';
-import events from 'src/events.js';
+import * as events from 'src/events.js';
 import CONSTANTS from 'src/constants.json';
 import { server } from 'test/mocks/xhr.js';
 

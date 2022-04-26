@@ -1,6 +1,7 @@
 import { isArray, deepAccess } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'kubient';
 const END_POINT = 'https://kssp.kbntx.ch/kubprebidjs';
@@ -23,21 +24,22 @@ export const spec = {
       return;
     }
     return validBidRequests.map(function (bid) {
-      let floor = 0.0;
+      let adSlot = {
+        bidId: bid.bidId,
+        zoneId: bid.params.zoneid || ''
+      };
+
       if (typeof bid.getFloor === 'function') {
         const mediaType = (Object.keys(bid.mediaTypes).length == 1) ? Object.keys(bid.mediaTypes)[0] : '*';
         const sizes = bid.sizes || '*';
         const floorInfo = bid.getFloor({currency: 'USD', mediaType: mediaType, size: sizes});
-        if (typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
-          floor = parseFloat(floorInfo.floor);
+        if (typeof floorInfo === 'object' && floorInfo.currency === 'USD') {
+          let floor = parseFloat(floorInfo.floor)
+          if (!isNaN(floor) && floor > 0) {
+            adSlot.floor = parseFloat(floorInfo.floor);
+          }
         }
       }
-
-      let adSlot = {
-        bidId: bid.bidId,
-        zoneId: bid.params.zoneid || '',
-        floor: floor || 0.0
-      };
 
       if (bid.mediaTypes.banner) {
         adSlot.banner = bid.mediaTypes.banner;
@@ -59,7 +61,11 @@ export const spec = {
         gdpr: (bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) ? 1 : 0,
         consentGiven: kubientGetConsentGiven(bidderRequest.gdprConsent),
         uspConsent: bidderRequest.uspConsent
-      };
+      }
+
+      if (config.getConfig('coppa') === true) {
+        data.coppa = 1
+      }
 
       if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
         data.referer = bidderRequest.refererInfo.referer
@@ -109,30 +115,38 @@ export const spec = {
     return bidResponses;
   },
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
-    const syncs = [];
-    let gdprParams = '';
-    if (gdprConsent && typeof gdprConsent.consentString === 'string') {
-      gdprParams = `?consent_str=${gdprConsent.consentString}`;
+    let kubientSync = kubientGetSyncInclude(config);
+
+    if (!syncOptions.pixelEnabled || kubientSync.image === 'exclude') {
+      return [];
+    }
+
+    let values = {};
+    if (gdprConsent) {
       if (typeof gdprConsent.gdprApplies === 'boolean') {
-        gdprParams = gdprParams + `&gdpr=${Number(gdprConsent.gdprApplies)}`;
+        values['gdpr'] = Number(gdprConsent.gdprApplies);
       }
-      gdprParams = gdprParams + `&consent_given=` + kubientGetConsentGiven(gdprConsent);
+      if (typeof gdprConsent.consentString === 'string') {
+        values['consent'] = gdprConsent.consentString;
+      }
     }
-    if (syncOptions.iframeEnabled) {
-      syncs.push({
-        type: 'iframe',
-        url: 'https://kdmp.kbntx.ch/init.html' + gdprParams
-      });
+
+    if (uspConsent) {
+      values['usp'] = uspConsent;
     }
-    if (syncOptions.pixelEnabled) {
-      syncs.push({
-        type: 'image',
-        url: 'https://kdmp.kbntx.ch/init.png' + gdprParams
-      });
-    }
-    return syncs;
+
+    return [{
+      type: 'image',
+      url: 'https://matching.kubient.net/match/sp?' + encodeQueryData(values)
+    }];
   }
 };
+
+function encodeQueryData(data) {
+  return Object.keys(data).map(function(key) {
+    return [key, data[key]].map(encodeURIComponent).join('=');
+  }).join('&');
+}
 
 function kubientGetConsentGiven(gdprConsent) {
   let consentGiven = 0;
@@ -148,5 +162,23 @@ function kubientGetConsentGiven(gdprConsent) {
     }
   }
   return consentGiven;
+}
+
+function kubientGetSyncInclude(config) {
+  try {
+    let kubientSync = {};
+    if (config.getConfig('userSync').filterSettings != null && typeof config.getConfig('userSync').filterSettings != 'undefined') {
+      let filterSettings = config.getConfig('userSync').filterSettings
+      if (filterSettings.iframe !== null && typeof filterSettings.iframe !== 'undefined') {
+        kubientSync.iframe = ((isArray(filterSettings.image.bidders) && filterSettings.iframe.bidders.indexOf('kubient') !== -1) || filterSettings.iframe.bidders === '*') ? filterSettings.iframe.filter : 'exclude';
+      }
+      if (filterSettings.image !== null && typeof filterSettings.image !== 'undefined') {
+        kubientSync.image = ((isArray(filterSettings.image.bidders) && filterSettings.image.bidders.indexOf('kubient') !== -1) || filterSettings.image.bidders === '*') ? filterSettings.image.filter : 'exclude';
+      }
+    }
+    return kubientSync;
+  } catch (e) {
+    return null;
+  }
 }
 registerBidder(spec);

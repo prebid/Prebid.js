@@ -27,9 +27,28 @@ export const spec = {
   gvlid: GVLID,
   supportedMediaTypes: [ NATIVE, BANNER ],
   isBidRequestValid: (bid) => {
+    if (typeof bid.params !== 'object') {
+      return false;
+    }
+
+    if (typeof deepAccess(bid, 'params.publisher.id') !== 'string') {
+      return false;
+    }
+
+    if (!!bid.params.tagid && typeof bid.params.tagid !== 'string') {
+      return false;
+    }
+
+    if (!!bid.params.bcat && (typeof bid.params.bcat !== 'object' || !bid.params.bcat.every(item => typeof item === 'string'))) {
+      return false;
+    }
+
+    if (!!bid.params.badv && (typeof bid.params.badv !== 'object' || !bid.params.badv.every(item => typeof item === 'string'))) {
+      return false;
+    }
+
     return (
       !!config.getConfig('outbrain.bidderUrl') &&
-      !!deepAccess(bid, 'params.publisher.id') &&
       !!(bid.nativeParams || bid.sizes)
     );
   },
@@ -64,6 +83,13 @@ export const spec = {
       } else {
         imp.banner = {
           format: transformSizes(bid.sizes)
+        }
+      }
+
+      if (typeof bid.getFloor === 'function') {
+        const floor = _getFloor(bid, bid.nativeParams ? NATIVE : BANNER);
+        if (floor) {
+          imp.bidfloor = floor;
         }
       }
 
@@ -190,7 +216,7 @@ export const spec = {
 registerBidder(spec);
 
 function parseNative(bid) {
-  const { assets, link, eventtrackers } = JSON.parse(bid.adm);
+  const { assets, link, privacy, eventtrackers } = JSON.parse(bid.adm);
   const result = {
     clickUrl: link.url,
     clickTrackers: link.clicktrackers || undefined
@@ -202,6 +228,9 @@ function parseNative(bid) {
       result[kind] = content.text || content.value || { url: content.url, width: content.w, height: content.h };
     }
   });
+  if (privacy) {
+    result.privacyLink = privacy;
+  }
   if (eventtrackers) {
     result.impressionTrackers = [];
     eventtrackers.forEach(tracker => {
@@ -251,8 +280,8 @@ function getNativeAssets(bid) {
 
       if (bidParams.sizes) {
         const sizes = flatten(bidParams.sizes);
-        w = sizes[0];
-        h = sizes[1];
+        w = parseInt(sizes[0], 10);
+        h = parseInt(sizes[1], 10);
       }
 
       asset[props.name] = {
@@ -290,4 +319,16 @@ function transformSizes(requestSizes) {
   }
 
   return [];
+}
+
+function _getFloor(bid, type) {
+  const floorInfo = bid.getFloor({
+    currency: CURRENCY,
+    mediaType: type,
+    size: '*'
+  });
+  if (typeof floorInfo === 'object' && floorInfo.currency === CURRENCY && !isNaN(parseFloat(floorInfo.floor))) {
+    return parseFloat(floorInfo.floor);
+  }
+  return null;
 }

@@ -1,13 +1,24 @@
-import includes from 'core-js-pure/features/array/includes.js';
-import find from 'core-js-pure/features/array/find';
-import { config } from '../src/config.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {find, includes} from '../src/polyfill.js';
+import {config} from '../src/config.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {getStorageManager} from '../src/storageManager.js';
 import {
-  isPlainObject, deepSetValue, deepAccess, logWarn, inIframe, isNumber, logError, isArray, uniques,
-  flatten, triggerPixel, isStr, isEmptyStr, generateUUID
+  deepAccess,
+  deepSetValue,
+  flatten,
+  generateUUID,
+  inIframe,
+  isArray,
+  isEmptyStr,
+  isNumber,
+  isPlainObject,
+  isStr,
+  logError,
+  logWarn,
+  triggerPixel,
+  uniques
 } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 /**
  * CONSTANTS
@@ -363,7 +374,7 @@ function impBidsToPrebidBids(
 }
 
 const impToPrebidBid =
-  (bidderRequestBody, bidResponseCurrency, referrer, targetingMap) => (bid) => {
+  (bidderRequestBody, bidResponseCurrency, referrer, targetingMap) => (bid, bidIndex) => {
     try {
       const bidRequest = findBidRequest(bidderRequestBody, bid);
 
@@ -377,7 +388,7 @@ const impToPrebidBid =
       let prebidBid = {
         ad: bid.adm,
         adId: bid.adid,
-        adserverTargeting: targetingMap[bid.impid],
+        adserverTargeting: targetingMap[bidIndex],
         adUnitCode: bidRequest.tagid,
         bidderRequestId: bidderRequestBody.id,
         bidId: bid.id,
@@ -408,6 +419,9 @@ const impToPrebidBid =
         };
       }
 
+      if (deepAccess(bid, 'ext.pa_win') === true) {
+        prebidBid.auctionWinner = true;
+      }
       return prebidBid;
     } catch (error) {
       logError(`${BIDDER_CODE}: Error while building bid`, error);
@@ -429,29 +443,43 @@ function buildTargetingMap(bids) {
   const values = impIds.reduce((result, id) => {
     result[id] = {
       lineItemIds: [],
+      orderIds: [],
       dealIds: [],
       adIds: [],
+      adAndOrderIndexes: []
     };
 
     return result;
   }, {});
 
-  bids.forEach((bid) => {
-    values[bid.impid].lineItemIds.push(bid.ext.liid);
-    values[bid.impid].dealIds.push(bid.dealid);
-    values[bid.impid].adIds.push(bid.adid);
+  bids.forEach((bid, bidIndex) => {
+    let impId = bid.impid;
+    values[impId].lineItemIds.push(bid.ext.liid);
+    values[impId].dealIds.push(bid.dealid);
+    values[impId].adIds.push(bid.adid);
+
+    if (deepAccess(bid, 'ext.ordid')) {
+      values[impId].orderIds.push(bid.ext.ordid);
+      bid.ext.ordid.split(TARGETING_VALUE_SEPARATOR).forEach((ordid, ordIndex) => {
+        let adIdIndex = values[impId].adIds.indexOf(bid.adid);
+        values[impId].adAndOrderIndexes.push(adIdIndex + '_' + ordIndex)
+      })
+    }
   });
 
   const targetingMap = {};
 
-  for (const id of impIds) {
-    targetingMap[id] = {
+  bids.forEach((bid, bidIndex) => {
+    let id = bid.impid;
+
+    targetingMap[bidIndex] = {
       hb_liid_adbookpsp: values[id].lineItemIds.join(TARGETING_VALUE_SEPARATOR),
       hb_deal_adbookpsp: values[id].dealIds.join(TARGETING_VALUE_SEPARATOR),
+      hb_ad_ord_adbookpsp: values[id].adAndOrderIndexes.join(TARGETING_VALUE_SEPARATOR),
       hb_adid_c_adbookpsp: values[id].adIds.join(TARGETING_VALUE_SEPARATOR),
+      hb_ordid_adbookpsp: values[id].orderIds.join(TARGETING_VALUE_SEPARATOR),
     };
-  }
-
+  })
   return targetingMap;
 }
 
@@ -560,7 +588,7 @@ function bannerHasSingleSize(bidRequest) {
  * USER SYNC
  */
 
-export const storage = getStorageManager();
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 function getUserSyncs(syncOptions, responses, gdprConsent, uspConsent) {
   return responses

@@ -15,7 +15,7 @@ const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'dap';
 
 export const SEGMENTS_STORAGE_KEY = 'akamaiDapSegments';
-export const storage = getStorageManager(null, SUBMODULE_NAME);
+export const storage = getStorageManager({gvlid: null, moduleName: SUBMODULE_NAME});
 
 /**
  * Lazy merge objects.

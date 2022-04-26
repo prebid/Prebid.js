@@ -88,11 +88,13 @@ export const spec = {
           host: location.host
         },
         source: {
-          tid: bidRequest.transactionId
+          tid: bidRequest.transactionId,
+          ext: {
+            schain: {}
+          }
         },
         regs: {
           coppa: config.getConfig('coppa') === true ? 1 : 0,
-          ext: {}
         },
         user: {
           ext: {}
@@ -115,7 +117,7 @@ export const spec = {
       }
 
       if (bidRequest.schain) {
-        data.source.ext.schain = bidRequest.schain;
+        deepSetValue(data, 'source.ext.schain', bidRequest.schain);
       }
 
       let connection = navigator.connection || navigator.webkitConnection;

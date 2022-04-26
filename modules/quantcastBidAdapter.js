@@ -1,9 +1,9 @@
-import { deepAccess, logInfo, logError, isEmpty, isArray } from '../src/utils.js';
-import { ajax } from '../src/ajax.js';
-import { config } from '../src/config.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import find from 'core-js-pure/features/array/find.js';
+import {deepAccess, isArray, isEmpty, logError, logInfo} from '../src/utils.js';
+import {ajax} from '../src/ajax.js';
+import {config} from '../src/config.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {find} from '../src/polyfill.js';
 
 const BIDDER_CODE = 'quantcast';
 const DEFAULT_BID_FLOOR = 0.0000000001;
@@ -21,7 +21,7 @@ export const QUANTCAST_PROTOCOL = 'https';
 export const QUANTCAST_PORT = '8443';
 export const QUANTCAST_FPA = '__qca';
 
-export const storage = getStorageManager(QUANTCAST_VENDOR_ID, BIDDER_CODE);
+export const storage = getStorageManager({gvlid: QUANTCAST_VENDOR_ID, bidderCode: BIDDER_CODE});
 
 function makeVideoImp(bid) {
   const videoInMediaType = deepAccess(bid, 'mediaTypes.video') || {};

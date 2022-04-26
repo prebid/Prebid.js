@@ -1,10 +1,23 @@
-import { isNumber, isStr, isInteger, isBoolean, isArray, isEmpty, isArrayOfNums, getWindowTop, parseQueryStringParameters, parseUrl, deepSetValue, deepAccess, logError } from '../src/utils.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { Renderer } from '../src/Renderer.js';
-import includes from 'core-js-pure/features/array/includes';
-import find from 'core-js-pure/features/array/find.js';
-import { createEidsArray } from './userId/eids.js';
+import {
+  deepAccess,
+  deepSetValue,
+  getWindowTop,
+  isArray,
+  isArrayOfNums,
+  isBoolean,
+  isEmpty,
+  isInteger,
+  isNumber,
+  isStr,
+  logError,
+  parseQueryStringParameters,
+  parseUrl
+} from '../src/utils.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {Renderer} from '../src/Renderer.js';
+import {find, includes} from '../src/polyfill.js';
+import {createEidsArray} from './userId/eids.js';
 
 const BIDDER_CODE = 'yieldmo';
 const CURRENCY = 'USD';
@@ -219,6 +232,7 @@ function addPlacement(request) {
  */
 function createNewBannerBid(response) {
   return {
+    dealId: response.publisherDealId,
     requestId: response['callback_id'],
     cpm: response.cpm,
     width: response.width,
@@ -244,6 +258,7 @@ function createNewVideoBid(response, bidRequest) {
   const imp = find((deepAccess(bidRequest, 'data.imp') || []), imp => imp.id === response.impid);
 
   let result = {
+    dealId: response.dealid,
     requestId: imp.id,
     cpm: response.price,
     width: imp.video.w,
