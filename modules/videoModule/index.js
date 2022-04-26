@@ -1,16 +1,16 @@
 import { config } from '../../src/config.js';
 import { find } from '../../src/polyfill.js';
 import * as events from '../../src/events.js';
+import { mergeDeep } from '../../src/utils.js';
+import { getGlobal } from '../../src/prebidGlobal.js';
+import CONSTANTS from '../../src/constants.json';
 import {
   allVideoEvents, AUCTION_AD_LOAD_ATTEMPT, allVideoAuctionEvents,
-  AD_IMPRESSION, AD_ERROR, BID_VIDEO_IMPRESSION, BID_VIDEO_ERROR, allVideoBidEvents, AUCTION_AD_LOAD_ABORT
+  AD_IMPRESSION, AD_ERROR, BID_IMPRESSION, BID_ERROR, allVideoBidEvents, AUCTION_AD_LOAD_ABORT
 } from './constants/events.js'
-import CONSTANTS from '../../src/constants.json';
 import { videoCoreFactory } from './coreVideo.js';
 import { gamSubmoduleFactory } from './gamAdServerSubmodule.js';
 import { videoImpressionVerifierFactory } from './videoImpressionVerifier.js';
-import { mergeDeep } from '../../src/utils.js';
-import { getGlobal } from '../../src/prebidGlobal.js';
 
 /**
  * This module adds User Video support to prebid.js
@@ -20,6 +20,8 @@ import { getGlobal } from '../../src/prebidGlobal.js';
 events.addEvents(allVideoEvents);
 events.addEvents(allVideoAuctionEvents);
 events.addEvents(allVideoBidEvents);
+
+const videoPrefix = 'video_';
 
 export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvents_, gamAdServerFactory_, videoImpressionVerifierFactory_) {
   const videoCore = videoCore_;
@@ -40,7 +42,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
       video.providers.forEach(provider => {
         videoCore.registerProvider(provider);
         videoCore.onEvents(videoEvents, (type, payload) => {
-          pbEvents.emit(type, payload);
+          pbEvents.emit(videoPrefix + type, payload);
         }, provider.divId);
 
         const adServerConfig = provider.adServer;
@@ -65,11 +67,11 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     });
 
     pbEvents.on(AD_IMPRESSION, function (payload) {
-      triggerVideoBidEvent(BID_VIDEO_IMPRESSION, payload);
+      triggerVideoBidEvent(BID_IMPRESSION, payload);
     });
 
     pbEvents.on(AD_ERROR, function (payload) {
-      triggerVideoBidEvent(BID_VIDEO_ERROR, payload);
+      triggerVideoBidEvent(BID_ERROR, payload);
     });
   }
 
@@ -119,7 +121,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
 
     const highestCpmBids = pbGlobal.getHighestCpmBids(adUnitCode);
     if (!highestCpmBids.length) {
-      pbEvents.emit(AUCTION_AD_LOAD_ABORT, options);
+      pbEvents.emit(videoPrefix + AUCTION_AD_LOAD_ABORT, options);
       return;
     }
 
@@ -137,7 +139,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
   // options: adXml, winner, adUnitCode,
   function loadAdTag(adUrl, divId, options) {
     const payload = Object.assign({ adUrl }, options);
-    pbEvents.emit(AUCTION_AD_LOAD_ATTEMPT, payload);
+    pbEvents.emit(videoPrefix + AUCTION_AD_LOAD_ATTEMPT, payload);
     videoCore.setAdTagUrl(adUrl, divId, options);
   }
 
@@ -146,7 +148,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     if (!bid) {
       return;
     }
-    pbEvents.emit(eventName, { bid, adEvent: adEventPayload });
+    pbEvents.emit(videoPrefix + eventName, { bid, adEvent: adEventPayload });
   }
 
   function getBid(adPayload) {

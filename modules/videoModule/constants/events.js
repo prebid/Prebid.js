@@ -53,14 +53,14 @@ export const allVideoEvents = [
 
 export const AUCTION_AD_LOAD_ATTEMPT = 'auctionAdLoadAttempt';
 export const AUCTION_AD_LOAD_ABORT = 'auctionAdLoadAbort';
-export const BID_VIDEO_IMPRESSION = 'bidVideoImpression';
-export const BID_VIDEO_ERROR = 'bidVideoError';
+export const BID_IMPRESSION = 'bidImpression';
+export const BID_ERROR = 'bidError';
 
 export const allVideoAuctionEvents = [
   AUCTION_AD_LOAD_ATTEMPT, AUCTION_AD_LOAD_ABORT
 ];
 
-export const allVideoBidEvents = [BID_VIDEO_IMPRESSION, BID_VIDEO_ERROR];
+export const allVideoBidEvents = [BID_IMPRESSION, BID_ERROR];
 
 // Param options
 export const PLAYBACK_MODE = {

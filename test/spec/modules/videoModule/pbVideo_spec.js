@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { PbVideo } from 'modules/videoModule/index.js';
 import CONSTANTS from 'src/constants.json';
-import { AD_IMPRESSION, AD_ERROR, BID_VIDEO_IMPRESSION, BID_VIDEO_ERROR } from 'modules/videoModule/constants/events.js';
+import { AD_IMPRESSION, AD_ERROR, BID_IMPRESSION, BID_ERROR } from 'modules/videoModule/constants/events.js';
 
 let ortbParamsMock;
 let videoCoreMock;
@@ -109,7 +109,7 @@ describe('Prebid Video', function () {
         const expectedPayload = {'test': 'data'};
         eventHandler(expectedType, expectedPayload);
         expect(pbEventsMock.emit.calledOnce).to.be.true;
-        expect(pbEventsMock.emit.getCall(0).args[0]).to.be.equal(expectedType);
+        expect(pbEventsMock.emit.getCall(0).args[0]).to.be.equal('video_' + expectedType);
         expect(pbEventsMock.emit.getCall(0).args[1]).to.be.equal(expectedPayload);
       });
     });
@@ -305,7 +305,7 @@ describe('Prebid Video', function () {
       adImpressionCb(expectedAdEventPayload);
 
       expect(pbEvents.emit.calledOnce).to.be.true;
-      expect(pbEvents.emit.getCall(0).args[0]).to.be.equal(BID_VIDEO_IMPRESSION);
+      expect(pbEvents.emit.getCall(0).args[0]).to.be.equal('video_' + BID_IMPRESSION);
       const payload = pbEvents.emit.getCall(0).args[1];
       expect(payload.bid).to.be.equal(expectedBid);
       expect(payload.adEvent).to.be.equal(expectedAdEventPayload);
@@ -319,7 +319,7 @@ describe('Prebid Video', function () {
       adErrorCb(expectedAdEventPayload);
 
       expect(pbEvents.emit.calledOnce).to.be.true;
-      expect(pbEvents.emit.getCall(0).args[0]).to.be.equal(BID_VIDEO_ERROR);
+      expect(pbEvents.emit.getCall(0).args[0]).to.be.equal('video_' + BID_ERROR);
       const payload = pbEvents.emit.getCall(0).args[1];
       expect(payload.bid).to.be.equal(expectedBid);
       expect(payload.adEvent).to.be.equal(expectedAdEventPayload);
