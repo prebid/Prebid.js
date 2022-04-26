@@ -1,14 +1,18 @@
-/** @module polyfill
-Misc polyfills
-*/
-require('core-js/fn/array/find');
-require('core-js/fn/array/find-index');
-require('core-js/fn/array/includes');
-require('core-js/fn/object/assign');
+// These stubs are here to help transition away from core-js polyfills for browsers we are no longer supporting.
+// You should not need these for new code; use stock JS instead!
 
-// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/isInteger
-Number.isInteger = Number.isInteger || function(value) {
-  return typeof value === 'number' &&
-    isFinite(value) &&
-    Math.floor(value) === value;
-};
+export function includes(target, elem, start) {
+  return (target && target.includes(elem, start)) || false;
+}
+
+export function arrayFrom() {
+  return Array.from.apply(Array, arguments);
+}
+
+export function find(arr, pred, thisArg) {
+  return arr && arr.find(pred, thisArg);
+}
+
+export function findIndex(arr, pred, thisArg) {
+  return arr && arr.findIndex(pred, thisArg);
+}

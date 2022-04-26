@@ -1,57 +1,49 @@
-const utils = require('src/utils');
+import {find} from './polyfill.js';
+import { isEmpty } from './utils.js';
 
 const _defaultPrecision = 2;
 const _lgPriceConfig = {
   'buckets': [{
-    'min': 0,
     'max': 5,
     'increment': 0.5
   }]
 };
 const _mgPriceConfig = {
   'buckets': [{
-    'min': 0,
     'max': 20,
     'increment': 0.1
   }]
 };
 const _hgPriceConfig = {
   'buckets': [{
-    'min': 0,
     'max': 20,
     'increment': 0.01
   }]
 };
 const _densePriceConfig = {
   'buckets': [{
-    'min': 0,
     'max': 3,
     'increment': 0.01
   },
   {
-    'min': 3,
     'max': 8,
     'increment': 0.05
   },
   {
-    'min': 8,
     'max': 20,
     'increment': 0.5
   }]
 };
 const _autoPriceConfig = {
   'buckets': [{
-    'min': 0,
     'max': 5,
     'increment': 0.05
   },
   {
-    'min': 5,
     'max': 10,
     'increment': 0.1
   },
   {
-    'min': 10,
     'max': 20,
     'increment': 0.5
   }]
@@ -86,39 +78,59 @@ function getCpmStringValue(cpm, config, granularityMultiplier) {
   }, {
     'max': 0,
   });
-  let bucket = config.buckets.find(bucket => {
+
+  let bucketFloor = 0;
+  let bucket = find(config.buckets, bucket => {
     if (cpm > cap.max * granularityMultiplier) {
-      const precision = bucket.precision || _defaultPrecision;
+      // cpm exceeds cap, just return the cap.
+      let precision = bucket.precision;
+      if (typeof precision === 'undefined') {
+        precision = _defaultPrecision;
+      }
       cpmStr = (bucket.max * granularityMultiplier).toFixed(precision);
-    } else if (cpm <= bucket.max * granularityMultiplier && cpm >= bucket.min * granularityMultiplier) {
+    } else if (cpm <= bucket.max * granularityMultiplier && cpm >= bucketFloor * granularityMultiplier) {
+      bucket.min = bucketFloor;
       return bucket;
+    } else {
+      bucketFloor = bucket.max;
     }
   });
   if (bucket) {
-    cpmStr = getCpmTarget(cpm, bucket.increment, bucket.precision, granularityMultiplier);
+    cpmStr = getCpmTarget(cpm, bucket, granularityMultiplier);
   }
   return cpmStr;
 }
 
 function isValidPriceConfig(config) {
-  if (utils.isEmpty(config) || !config.buckets || !Array.isArray(config.buckets)) {
+  if (isEmpty(config) || !config.buckets || !Array.isArray(config.buckets)) {
     return false;
   }
   let isValid = true;
   config.buckets.forEach(bucket => {
-    if (typeof bucket.min === 'undefined' || !bucket.max || !bucket.increment) {
+    if (!bucket.max || !bucket.increment) {
       isValid = false;
     }
   });
   return isValid;
 }
 
-function getCpmTarget(cpm, increment, precision, granularityMultiplier) {
-  if (!precision) {
-    precision = _defaultPrecision;
-  }
-  let bucketSize = 1 / (increment * granularityMultiplier);
-  return (Math.floor(cpm * bucketSize) / bucketSize).toFixed(precision);
+function getCpmTarget(cpm, bucket, granularityMultiplier) {
+  const precision = typeof bucket.precision !== 'undefined' ? bucket.precision : _defaultPrecision;
+  const increment = bucket.increment * granularityMultiplier;
+  const bucketMin = bucket.min * granularityMultiplier;
+
+  // start increments at the bucket min and then add bucket min back to arrive at the correct rounding
+  // note - we're padding the values to avoid using decimals in the math prior to flooring
+  // this is done as JS can return values slightly below the expected mark which would skew the price bucket target
+  //   (eg 4.01 / 0.01 = 400.99999999999994)
+  // min precison should be 2 to move decimal place over.
+  let pow = Math.pow(10, precision + 2);
+  let cpmToFloor = ((cpm * pow) - (bucketMin * pow)) / (increment * pow);
+  let cpmTarget = ((Math.floor(cpmToFloor)) * increment) + bucketMin;
+  // force to 10 decimal places to deal with imprecise decimal/binary conversions
+  //    (for example 0.1 * 3 = 0.30000000000000004)
+  cpmTarget = Number(cpmTarget.toFixed(10));
+  return cpmTarget.toFixed(precision);
 }
 
 export { getPriceBucketString, isValidPriceConfig };

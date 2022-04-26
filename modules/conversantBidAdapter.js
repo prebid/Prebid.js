@@ -1,278 +1,461 @@
-'use strict';
-var VERSION = '2.1.0';
-var CONSTANTS = require('src/constants.json');
-var utils = require('src/utils.js');
-var bidfactory = require('src/bidfactory.js');
-var bidmanager = require('src/bidmanager.js');
-var adloader = require('src/adloader');
-var ajax = require('src/ajax').ajax;
-var adaptermanager = require('src/adaptermanager');
+import { logWarn, isStr, deepAccess, isArray, getBidIdParameter, deepSetValue, isEmpty, _each, convertTypes, parseUrl, mergeDeep, buildUrl, _map, logError, isFn, isPlainObject } from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {getStorageManager} from '../src/storageManager.js';
+import { config } from '../src/config.js';
 
-/**
- * Adapter for requesting bids from Conversant
- */
-var ConversantAdapter = function () {
-  var w = window;
-  var n = navigator;
+const GVLID = 24;
 
-  // production endpoint
-  var conversantUrl = '//media.msg.dotomi.com/s2s/header/24?callback=$$PREBID_GLOBAL$$.conversantResponse';
+const BIDDER_CODE = 'conversant';
+export const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
+const URL = 'https://web.hb.ad.cpe.dotomi.com/cvx/client/hb/ortb/25';
 
-  // SSAPI returns JSONP with window.pbjs.conversantResponse as the cb
-  var appendScript = function (code) {
-    var script = document.createElement('script');
-    script.type = 'text/javascript';
-    script.className = 'cnvr-response';
+export const spec = {
+  code: BIDDER_CODE,
+  gvlid: GVLID,
+  aliases: ['cnvr'], // short code
+  supportedMediaTypes: [BANNER, VIDEO],
 
-    try {
-      script.appendChild(document.createTextNode(code));
-      document.getElementsByTagName('head')[0].appendChild(script);
-    } catch (e) {
-      script.text = code;
-      document.getElementsByTagName('head')[0].appendChild(script);
+  /**
+   * Determines whether or not the given bid request is valid.
+   *
+   * @param {BidRequest} bid - The bid params to validate.
+   * @return {boolean} True if this is a valid bid, and false otherwise.
+   */
+  isBidRequestValid: function(bid) {
+    if (!bid || !bid.params) {
+      logWarn(BIDDER_CODE + ': Missing bid parameters');
+      return false;
     }
-  };
 
-  var getDNT = function () {
-    return n.doNotTrack === '1' || w.doNotTrack === '1' || n.msDoNotTrack === '1' || n.doNotTrack === 'yes';
-  };
+    if (!isStr(bid.params.site_id)) {
+      logWarn(BIDDER_CODE + ': site_id must be specified as a string');
+      return false;
+    }
 
-  var getDevice = function () {
-    const language = n.language ? 'language' : 'userLanguage';
-    return {
-      h: screen.height,
-      w: screen.width,
-      dnt: getDNT() ? 1 : 0,
-      language: n[language].split('-')[0],
-      make: n.vendor ? n.vendor : '',
-      ua: n.userAgent
-    };
-  };
-
-  var callBids = function (params) {
-    var conversantBids = params.bids || [];
-    requestBids(conversantBids);
-  };
-
-  var requestBids = function (bidReqs) {
-    // build bid request object
-    var page = location.pathname + location.search + location.hash;
-    var siteId = '';
-    var conversantImps = [];
-    var conversantBidReqs;
-    var secure = 0;
-
-    // build impression array for conversant
-    utils._each(bidReqs, function (bid) {
-      var bidfloor = utils.getBidIdParameter('bidfloor', bid.params);
-      var adW = 0;
-      var adH = 0;
-      var format;
-      var tagId;
-      var pos;
-      var imp;
-
-      secure = utils.getBidIdParameter('secure', bid.params) ? 1 : secure;
-      siteId = utils.getBidIdParameter('site_id', bid.params) + '';
-      tagId = utils.getBidIdParameter('tag_id', bid.params);
-      pos = utils.getBidIdParameter('position', bid.params);
-
-      // Allow sizes to be overridden per placement
-      var bidSizes = Array.isArray(bid.params.sizes) ? bid.params.sizes : bid.sizes;
-
-      if (bidSizes.length === 2 && typeof bidSizes[0] === 'number' && typeof bidSizes[1] === 'number') {
-        adW = bidSizes[0];
-        adH = bidSizes[1];
-      } else {
-        format = [];
-        utils._each(bidSizes, function (bidSize) {
-          format.push({
-            w: bidSize[0],
-            h: bidSize[1]
-          });
-        });
+    if (isVideoRequest(bid)) {
+      const mimes = bid.params.mimes || deepAccess(bid, 'mediaTypes.video.mimes');
+      if (!mimes) {
+        // Give a warning but let it pass
+        logWarn(BIDDER_CODE + ': mimes should be specified for videos');
+      } else if (!isArray(mimes) || !mimes.every(s => isStr(s))) {
+        logWarn(BIDDER_CODE + ': mimes must be an array of strings');
+        return false;
       }
+    }
 
-      imp = {
+    return true;
+  },
+
+  /**
+   * Make a server request from the list of BidRequests.
+   *
+   * @param {BidRequest[]} validBidRequests - an array of bids
+   * @param bidderRequest
+   * @return {ServerRequest} Info describing the request to the server.
+   */
+  buildRequests: function(validBidRequests, bidderRequest) {
+    const page = (bidderRequest && bidderRequest.refererInfo) ? bidderRequest.refererInfo.referer : '';
+    let siteId = '';
+    let requestId = '';
+    let pubcid = null;
+    let pubcidName = '_pubcid';
+    let bidurl = URL;
+
+    const conversantImps = validBidRequests.map(function(bid) {
+      const bidfloor = getBidFloor(bid);
+
+      siteId = getBidIdParameter('site_id', bid.params) || siteId;
+      pubcidName = getBidIdParameter('pubcid_name', bid.params) || pubcidName;
+
+      requestId = bid.auctionId;
+
+      const imp = {
         id: bid.bidId,
-        secure: secure,
+        secure: 1,
         bidfloor: bidfloor || 0,
         displaymanager: 'Prebid.js',
-        displaymanagerver: VERSION
+        displaymanagerver: '$prebid.version$'
       };
-
-      if (tagId !== '') {
-        imp.tagid = tagId;
+      if (bid.ortb2Imp) {
+        mergeDeep(imp, bid.ortb2Imp);
       }
 
-      if (bid.mediaType === 'video') {
-        var mimes = [];
-        var maxduration = 0;
-        var protocols = [];
-        var api = [];
+      copyOptProperty(bid.params.tag_id, imp, 'tagid');
 
-        var video = Array.isArray(format) ? {format: format} : {w: adW, h: adH};
+      if (isVideoRequest(bid)) {
+        const videoData = deepAccess(bid, 'mediaTypes.video') || {};
+        const format = convertSizes(videoData.playerSize || bid.sizes);
+        const video = {};
 
-        mimes = utils.getBidIdParameter('mimes', bid.params);
-        if (mimes !== '') {
-          video.mimes = mimes;
+        if (format && format[0]) {
+          copyOptProperty(format[0].w, video, 'w');
+          copyOptProperty(format[0].h, video, 'h');
         }
 
-        maxduration = utils.getBidIdParameter('maxduration', bid.params);
-        if (maxduration !== '') {
-          video.maxduration = maxduration;
-        }
-
-        protocols = utils.getBidIdParameter('protocols', bid.params);
-        if (protocols !== '') {
-          video.protocols = protocols;
-        }
-
-        api = utils.getBidIdParameter('api', bid.params);
-        if (api !== '') {
-          video.api = api;
-        }
-
-        if (pos !== '') {
-          video.pos = pos;
-        }
+        copyOptProperty(bid.params.position, video, 'pos');
+        copyOptProperty(bid.params.mimes || videoData.mimes, video, 'mimes');
+        copyOptProperty(bid.params.maxduration || videoData.maxduration, video, 'maxduration');
+        copyOptProperty(bid.params.protocols || videoData.protocols, video, 'protocols');
+        copyOptProperty(bid.params.api || videoData.api, video, 'api');
 
         imp.video = video;
       } else {
-        var banner = Array.isArray(format) ? {format: format} : {w: adW, h: adH};
+        const bannerData = deepAccess(bid, 'mediaTypes.banner') || {};
+        const format = convertSizes(bannerData.sizes || bid.sizes);
+        const banner = {format: format};
 
-        if (pos !== '') {
-          banner.pos = pos;
-        }
+        copyOptProperty(bid.params.position, banner, 'pos');
+
         imp.banner = banner;
       }
 
-      conversantImps.push(imp);
+      if (bid.userId && bid.userId.pubcid) {
+        pubcid = bid.userId.pubcid;
+      } else if (bid.crumbs && bid.crumbs.pubcid) {
+        pubcid = bid.crumbs.pubcid;
+      }
+      if (bid.params.white_label_url) {
+        bidurl = bid.params.white_label_url;
+      }
+
+      return imp;
     });
 
-    conversantBidReqs = {
-      'id': utils.getUniqueIdentifierStr(),
-      'imp': conversantImps,
-
-      'site': {
-        'id': siteId,
-        'mobile': document.querySelector('meta[name="viewport"][content*="width=device-width"]') !== null ? 1 : 0,
-        'page': page
+    const payload = {
+      id: requestId,
+      imp: conversantImps,
+      site: {
+        id: siteId,
+        mobile: document.querySelector('meta[name="viewport"][content*="width=device-width"]') !== null ? 1 : 0,
+        page: page
       },
-
-      'device': getDevice(),
-      'at': 1
+      device: getDevice(),
+      at: 1
     };
 
-    var url = secure ? 'https:' + conversantUrl : location.protocol + conversantUrl;
-    ajax(url, appendScript, JSON.stringify(conversantBidReqs), {
-      withCredentials: true
-    });
-  };
+    let userExt = {};
 
-  var addEmptyBidResponses = function (placementsWithBidsBack) {
-    var allConversantBidRequests = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === 'conversant');
-
-    if (allConversantBidRequests && allConversantBidRequests.bids) {
-      utils._each(allConversantBidRequests.bids, function (conversantBid) {
-        if (!utils.contains(placementsWithBidsBack, conversantBid.placementCode)) {
-          // Add a no-bid response for this placement.
-          var bid = bidfactory.createBid(2, conversantBid);
-          bid.bidderCode = 'conversant';
-          bidmanager.addBidResponse(conversantBid.placementCode, bid);
-        }
-      });
+    // pass schain object if it is present
+    const schain = deepAccess(validBidRequests, '0.schain');
+    if (schain) {
+      deepSetValue(payload, 'source.ext.schain', schain);
     }
-  };
 
-  var parseSeatbid = function (bidResponse) {
-    var placementsWithBidsBack = [];
-    utils._each(bidResponse.bid, function (conversantBid) {
-      var responseCPM;
-      var placementCode = '';
-      var id = conversantBid.impid;
-      var bid = {};
-      var responseAd;
-      var responseNurl;
-      var sizeArrayLength;
+    if (bidderRequest) {
+      // Add GDPR flag and consent string
+      if (bidderRequest.gdprConsent) {
+        userExt.consent = bidderRequest.gdprConsent.consentString;
 
-      // Bid request we sent Conversant
-      var bidRequested = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === 'conversant').bids.find(bid => bid.bidId === id);
-
-      if (bidRequested) {
-        placementCode = bidRequested.placementCode;
-        bidRequested.status = CONSTANTS.STATUS.GOOD;
-        responseCPM = parseFloat(conversantBid.price);
-
-        if (responseCPM !== 0.0) {
-          conversantBid.placementCode = placementCode;
-          placementsWithBidsBack.push(placementCode);
-          conversantBid.size = bidRequested.sizes;
-          responseAd = conversantBid.adm || '';
-          responseNurl = conversantBid.nurl || '';
-
-          // Our bid!
-          bid = bidfactory.createBid(1, bidRequested);
-          bid.creative_id = conversantBid.id || '';
-          bid.bidderCode = 'conversant';
-          bid.cpm = responseCPM;
-
-          if (bidRequested.mediaType === 'video') {
-            bid.vastUrl = responseAd;
-          } else {
-            // Track impression image onto returned html
-            bid.ad = responseAd + '<img src="' + responseNurl + '" />';
-          }
-
-          sizeArrayLength = bidRequested.sizes.length;
-          if (sizeArrayLength === 2 && typeof bidRequested.sizes[0] === 'number' && typeof bidRequested.sizes[1] === 'number') {
-            bid.width = bidRequested.sizes[0];
-            bid.height = bidRequested.sizes[1];
-          } else {
-            bid.width = bidRequested.sizes[0][0];
-            bid.height = bidRequested.sizes[0][1];
-          }
-
-          bidmanager.addBidResponse(placementCode, bid);
+        if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
+          deepSetValue(payload, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
         }
       }
-    });
-    addEmptyBidResponses(placementsWithBidsBack);
-  };
 
-  // Register our callback to the global object:
-  $$PREBID_GLOBAL$$.conversantResponse = function (conversantResponseObj, path) {
-    // valid object?
-    if (conversantResponseObj && conversantResponseObj.id) {
-      if (conversantResponseObj.seatbid && conversantResponseObj.seatbid.length > 0 && conversantResponseObj.seatbid[0].bid && conversantResponseObj.seatbid[0].bid.length > 0) {
-        utils._each(conversantResponseObj.seatbid, parseSeatbid);
-      } else {
-        // no response data for any placements
-        addEmptyBidResponses([]);
+      if (bidderRequest.uspConsent) {
+        deepSetValue(payload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
       }
-    } else {
-      // no response data for any placements
-      addEmptyBidResponses([]);
     }
-    // for debugging purposes
-    if (path) {
-      adloader.loadScript(path, function () {
-        var allConversantBidRequests = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === 'conversant');
 
-        if ($$PREBID_GLOBAL$$.conversantDebugResponse) {
-          $$PREBID_GLOBAL$$.conversantDebugResponse(allConversantBidRequests);
-        }
+    if (!pubcid) {
+      pubcid = readStoredValue(pubcidName);
+    }
+
+    // Add common id if available
+    if (pubcid) {
+      userExt.fpc = pubcid;
+    }
+
+    // Add Eids if available
+    const eids = collectEids(validBidRequests);
+    if (eids.length > 0) {
+      userExt.eids = eids;
+    }
+
+    // Only add the user object if it's not empty
+    if (!isEmpty(userExt)) {
+      payload.user = {ext: userExt};
+    }
+
+    const firstPartyData = config.getConfig('ortb2') || {};
+    mergeDeep(payload, firstPartyData);
+
+    return {
+      method: 'POST',
+      url: bidurl,
+      data: payload,
+    };
+  },
+  /**
+   * Unpack the response from the server into a list of bids.
+   *
+   * @param {*} serverResponse A successful response from the server.
+   * @param bidRequest
+   * @return {Bid[]} An array of bids which were nested inside the server.
+   */
+  interpretResponse: function(serverResponse, bidRequest) {
+    const bidResponses = [];
+    const requestMap = {};
+    serverResponse = serverResponse.body;
+
+    if (bidRequest && bidRequest.data && bidRequest.data.imp) {
+      _each(bidRequest.data.imp, imp => requestMap[imp.id] = imp);
+    }
+
+    if (serverResponse && isArray(serverResponse.seatbid)) {
+      _each(serverResponse.seatbid, function(bidList) {
+        _each(bidList.bid, function(conversantBid) {
+          const responseCPM = parseFloat(conversantBid.price);
+          if (responseCPM > 0.0 && conversantBid.impid) {
+            const responseAd = conversantBid.adm || '';
+            const responseNurl = conversantBid.nurl || '';
+            const request = requestMap[conversantBid.impid];
+
+            const bid = {
+              requestId: conversantBid.impid,
+              currency: serverResponse.cur || 'USD',
+              cpm: responseCPM,
+              creativeId: conversantBid.crid || '',
+              ttl: 300,
+              netRevenue: true
+            };
+            bid.meta = {};
+            if (conversantBid.adomain && conversantBid.adomain.length > 0) {
+              bid.meta.advertiserDomains = conversantBid.adomain;
+            }
+
+            if (request.video) {
+              if (responseAd.charAt(0) === '<') {
+                bid.vastXml = responseAd;
+              } else {
+                bid.vastUrl = responseAd;
+              }
+
+              bid.mediaType = 'video';
+              bid.width = request.video.w;
+              bid.height = request.video.h;
+            } else {
+              bid.ad = responseAd + '<img src="' + responseNurl + '" />';
+              bid.width = conversantBid.w;
+              bid.height = conversantBid.h;
+            }
+
+            bidResponses.push(bid);
+          }
+        })
       });
     }
-  }; // conversantResponse
 
-  return {
-    callBids: callBids
-  };
+    return bidResponses;
+  },
+
+  /**
+   * Covert bid param types for S2S
+   * @param {Object} params bid params
+   * @param {Boolean} isOpenRtb boolean to check openrtb2 protocol
+   * @return {Object} params bid params
+   */
+  transformBidParams: function(params, isOpenRtb) {
+    return convertTypes({
+      'site_id': 'string',
+      'secure': 'number',
+      'mobile': 'number'
+    }, params);
+  },
+
+  /**
+   * Register User Sync.
+   */
+  getUserSyncs: function(syncOptions, responses, gdprConsent, uspConsent) {
+    let params = {};
+    const syncs = [];
+
+    // Attaching GDPR Consent Params in UserSync url
+    if (gdprConsent) {
+      params.gdpr = (gdprConsent.gdprApplies) ? 1 : 0;
+      params.gdpr_consent = encodeURIComponent(gdprConsent.consentString || '');
+    }
+
+    // CCPA
+    if (uspConsent) {
+      params.us_privacy = encodeURIComponent(uspConsent);
+    }
+
+    if (responses && responses.ext) {
+      const pixels = [{urls: responses.ext.fsyncs, type: 'iframe'}, {urls: responses.ext.psyncs, type: 'image'}]
+        .filter((entry) => {
+          return entry.urls &&
+            ((entry.type === 'iframe' && syncOptions.iframeEnabled) ||
+            (entry.type === 'image' && syncOptions.pixelEnabled));
+        })
+        .map((entry) => {
+          return entry.urls.map((endpoint) => {
+            let urlInfo = parseUrl(endpoint);
+            mergeDeep(urlInfo.search, params);
+            if (Object.keys(urlInfo.search).length === 0) {
+              delete urlInfo.search; // empty search object causes buildUrl to add a trailing ? to the url
+            }
+            return {type: entry.type, url: buildUrl(urlInfo)};
+          })
+            .reduce((x, y) => x.concat(y), []);
+        })
+        .reduce((x, y) => x.concat(y), []);
+      syncs.push(...pixels);
+    }
+    return syncs;
+  }
 };
 
-adaptermanager.registerBidAdapter(new ConversantAdapter(), 'conversant', {
-  supportedMediaTypes: ['video']
-});
+/**
+ * Determine do-not-track state
+ *
+ * @returns {boolean}
+ */
+function getDNT() {
+  return navigator.doNotTrack === '1' || window.doNotTrack === '1' || navigator.msDoNoTrack === '1' || navigator.doNotTrack === 'yes';
+}
 
-module.exports = ConversantAdapter;
+/**
+ * Return openrtb device object that includes ua, width, and height.
+ *
+ * @returns {Device} Openrtb device object
+ */
+function getDevice() {
+  const language = navigator.language ? 'language' : 'userLanguage';
+  return {
+    h: screen.height,
+    w: screen.width,
+    dnt: getDNT() ? 1 : 0,
+    language: navigator[language].split('-')[0],
+    make: navigator.vendor ? navigator.vendor : '',
+    ua: navigator.userAgent
+  };
+}
+
+/**
+ * Convert arrays of widths and heights to an array of objects with w and h properties.
+ *
+ * [[300, 250], [300, 600]] => [{w: 300, h: 250}, {w: 300, h: 600}]
+ *
+ * @param {Array.<Array.<number>>} bidSizes - arrays of widths and heights
+ * @returns {object[]} Array of objects with w and h
+ */
+function convertSizes(bidSizes) {
+  let format;
+  if (Array.isArray(bidSizes)) {
+    if (bidSizes.length === 2 && typeof bidSizes[0] === 'number' && typeof bidSizes[1] === 'number') {
+      format = [{w: bidSizes[0], h: bidSizes[1]}];
+    } else {
+      format = _map(bidSizes, d => { return {w: d[0], h: d[1]}; });
+    }
+  }
+
+  return format;
+}
+
+/**
+ * Check if it's a video bid request
+ *
+ * @param {BidRequest} bid - Bid request generated from ad slots
+ * @returns {boolean} True if it's a video bid
+ */
+function isVideoRequest(bid) {
+  return bid.mediaType === 'video' || !!deepAccess(bid, 'mediaTypes.video');
+}
+
+/**
+ * Copy property if exists from src to dst
+ *
+ * @param {object} src - source object
+ * @param {object} dst - destination object
+ * @param {string} dstName - destination property name
+ */
+function copyOptProperty(src, dst, dstName) {
+  if (src) {
+    dst[dstName] = src;
+  }
+}
+
+/**
+ * Collect IDs from validBidRequests and store them as an extended id array
+ * @param bidRequests valid bid requests
+ */
+function collectEids(bidRequests) {
+  const request = bidRequests[0]; // bidRequests have the same userId object
+  const eids = [];
+  if (isArray(request.userIdAsEids) && request.userIdAsEids.length > 0) {
+    // later following white-list can be converted to block-list if needed
+    const requiredSourceValues = {
+      'epsilon.com': 1,
+      'adserver.org': 1,
+      'liveramp.com': 1,
+      'criteo.com': 1,
+      'id5-sync.com': 1,
+      'parrable.com': 1,
+      'liveintent.com': 1
+    };
+    request.userIdAsEids.forEach(function(eid) {
+      if (requiredSourceValues.hasOwnProperty(eid.source)) {
+        eids.push(eid);
+      }
+    });
+  }
+  return eids;
+}
+
+/**
+ * Look for a stored value from both cookie and local storage and return the first value found.
+ * @param key Key for the search
+ * @return {string} Stored value
+ */
+function readStoredValue(key) {
+  let storedValue;
+  try {
+    // check cookies first
+    storedValue = storage.getCookie(key);
+
+    if (!storedValue) {
+      // check expiration time before reading local storage
+      const storedValueExp = storage.getDataFromLocalStorage(`${key}_exp`);
+      if (storedValueExp === '' || (storedValueExp && (new Date(storedValueExp)).getTime() - Date.now() > 0)) {
+        storedValue = storage.getDataFromLocalStorage(key);
+        storedValue = storedValue ? decodeURIComponent(storedValue) : storedValue;
+      }
+    }
+
+    // deserialize JSON if needed
+    if (isStr(storedValue) && storedValue.charAt(0) === '{') {
+      storedValue = JSON.parse(storedValue);
+    }
+  } catch (e) {
+    logError(e);
+  }
+
+  return storedValue;
+}
+
+/**
+ * Get the floor price from bid.params for backward compatibility.
+ * If not found, then check floor module.
+ * @param bid A valid bid object
+ * @returns {*|number} floor price
+ */
+function getBidFloor(bid) {
+  let floor = getBidIdParameter('bidfloor', bid.params);
+
+  if (!floor && isFn(bid.getFloor)) {
+    const floorObj = bid.getFloor({
+      currency: 'USD',
+      mediaType: '*',
+      size: '*'
+    });
+
+    if (isPlainObject(floorObj) && !isNaN(floorObj.floor) && floorObj.currency === 'USD') {
+      floor = floorObj.floor;
+    }
+  }
+
+  return floor
+}
+
+registerBidder(spec);

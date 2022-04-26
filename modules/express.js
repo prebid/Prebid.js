@@ -1,5 +1,4 @@
-
-import * as utils from 'src/utils';
+import { logMessage, logWarn, logError, logInfo } from '../src/utils.js';
 
 const MODULE_NAME = 'express';
 
@@ -14,18 +13,20 @@ const MODULE_NAME = 'express';
  * @param {Object[]} [adUnits = pbjs.adUnits] - an array of adUnits for express to operate on.
  */
 $$PREBID_GLOBAL$$.express = function(adUnits = $$PREBID_GLOBAL$$.adUnits) {
-  utils.logMessage('loading ' + MODULE_NAME);
+  logMessage('loading ' + MODULE_NAME);
 
   if (adUnits.length === 0) {
-    utils.logWarn('no valid adUnits found, not loading ' + MODULE_NAME);
+    logWarn('no valid adUnits found, not loading ' + MODULE_NAME);
   }
 
+  // store gpt slots in a more performant hash lookup by elementId (adUnit code)
+  var gptSlotCache = {};
   // put adUnits in a more performant hash lookup by code.
   var adUnitsCache = adUnits.reduce(function (cache, adUnit) {
     if (adUnit.code && adUnit.bids) {
       cache[adUnit.code] = adUnit;
     } else {
-      utils.logError('misconfigured adUnit', null, adUnit);
+      logError('misconfigured adUnit', null, adUnit);
     }
     return cache;
   }, {});
@@ -37,10 +38,10 @@ $$PREBID_GLOBAL$$.express = function(adUnits = $$PREBID_GLOBAL$$.adUnits) {
     var gpt = window.googletag;
     var pads = gpt.pubads;
     if (!gpt.display || !gpt.enableServices || typeof pads !== 'function' || !pads().refresh || !pads().disableInitialLoad || !pads().getSlots || !pads().enableSingleRequest) {
-      utils.logError('could not bind to gpt googletag api');
+      logError('could not bind to gpt googletag api');
       return;
     }
-    utils.logMessage('running');
+    logMessage('running');
 
     // function to convert google tag slot sizes to [[w,h],...]
     function mapGptSlotSizes(aGPTSlotSizes) {
@@ -49,7 +50,7 @@ $$PREBID_GLOBAL$$.express = function(adUnits = $$PREBID_GLOBAL$$.adUnits) {
         try {
           aSlotSizes.push([aGPTSlotSizes[i].getWidth(), aGPTSlotSizes[i].getHeight()]);
         } catch (e) {
-          utils.logWarn('slot size ' + aGPTSlotSizes[i].toString() + ' not supported by' + MODULE_NAME);
+          logWarn('slot size ' + aGPTSlotSizes[i].toString() + ' not supported by' + MODULE_NAME);
         }
       }
       return aSlotSizes;
@@ -59,6 +60,7 @@ $$PREBID_GLOBAL$$.express = function(adUnits = $$PREBID_GLOBAL$$.adUnits) {
     function defaultSlots(slots) {
       return Array.isArray(slots)
         ? slots.slice()
+        // eslint-disable-next-line no-undef
         : googletag.pubads().getSlots().slice();
     }
 
@@ -72,7 +74,7 @@ $$PREBID_GLOBAL$$.express = function(adUnits = $$PREBID_GLOBAL$$.adUnits) {
         const adUnit = adUnitsCache[elemId];
 
         if (adUnit) {
-          adUnit._gptSlot = gptSlot;
+          gptSlotCache[elemId] = gptSlot; // store by elementId
           adUnit.sizes = adUnit.sizes || mapGptSlotSizes(gptSlot.getSizes());
           adUnits.push(adUnit);
           gptSlots.splice(i, 1);
@@ -107,13 +109,14 @@ $$PREBID_GLOBAL$$.express = function(adUnits = $$PREBID_GLOBAL$$.adUnits) {
     //  - else run an auction and call the real fGptRefresh() to
     //       initiate the DFP request
     gpt.display = function (sElementId) {
-      utils.logInfo('display:', sElementId);
+      logInfo('display:', sElementId);
       // call original gpt display() function
       fGptDisplay.apply(gpt, arguments);
 
       // if not SRA mode, get only the gpt slot corresponding to sEementId
       var aGptSlots;
       if (!bEnabledSRA) {
+        // eslint-disable-next-line no-undef
         aGptSlots = googletag.pubads().getSlots().filter(function (oGptSlot) {
           return oGptSlot.getSlotElementId() === sElementId;
         });
@@ -141,7 +144,7 @@ $$PREBID_GLOBAL$$.express = function(adUnits = $$PREBID_GLOBAL$$.adUnits) {
               $$PREBID_GLOBAL$$.setTargetingForGPTAsync();
               fGptRefresh.apply(pads(), [
                 adUnits.map(function (adUnit) {
-                  return adUnit._gptSlot;
+                  return gptSlotCache[adUnit.code];
                 })
               ]);
             }
@@ -153,11 +156,11 @@ $$PREBID_GLOBAL$$.express = function(adUnits = $$PREBID_GLOBAL$$.adUnits) {
     // override gpt refresh() function
     // - run auctions for provided gpt slots, then initiate ad-server call
     pads().refresh = function (aGptSlots, options) {
-      utils.logInfo('refresh:', aGptSlots);
+      logInfo('refresh:', aGptSlots);
       // get already displayed adUnits from aGptSlots if provided, else all defined gptSlots
       aGptSlots = defaultSlots(aGptSlots);
       var adUnits = pickAdUnits(/* mutated: */ aGptSlots).filter(function (adUnit) {
-        return adUnit._gptSlot._displayed;
+        return gptSlotCache[adUnit.code]._displayed;
       });
 
       if (aGptSlots.length) {
@@ -171,7 +174,7 @@ $$PREBID_GLOBAL$$.express = function(adUnits = $$PREBID_GLOBAL$$.adUnits) {
             $$PREBID_GLOBAL$$.setTargetingForGPTAsync();
             fGptRefresh.apply(pads(), [
               adUnits.map(function (adUnit) {
-                return adUnit._gptSlot
+                return gptSlotCache[adUnit.code];
               }),
               options
             ]);

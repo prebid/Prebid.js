@@ -1,310 +1,617 @@
-import bidmanager from 'src/bidmanager';
-import bidfactory from 'src/bidfactory';
-import * as utils from 'src/utils';
-import {ajax} from 'src/ajax';
-import Adapter from 'src/adapter';
-import adaptermanager from 'src/adaptermanager';
+import {
+  _each,
+  cleanObj,
+  contains,
+  createTrackPixelHtml,
+  deepAccess,
+  deepSetValue,
+  getAdUnitSizes,
+  getDNT,
+  inIframe,
+  isArray,
+  isArrayOfNums,
+  isEmpty,
+  isNumber,
+  isPlainObject,
+  isStr,
+  mergeDeep,
+  parseGPTSingleSizeArrayToRtbSize,
+  parseUrl
+} from '../src/utils.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {find, includes} from '../src/polyfill.js';
+import {config} from '../src/config.js';
+
+/*
+ * In case you're AdKernel whitelable platform's client who needs branded adapter to
+ * work with Adkernel platform - DO NOT COPY THIS ADAPTER UNDER NEW NAME
+ *
+ * Please contact prebid@adkernel.com and we'll add your adapter as an alias.
+ */
+
+const VIDEO_TARGETING = Object.freeze(['mimes', 'minduration', 'maxduration', 'protocols',
+  'startdelay', 'linearity', 'boxingallowed', 'playbackmethod', 'delivery',
+  'pos', 'api', 'ext']);
+const VERSION = '1.6';
+const SYNC_IFRAME = 1;
+const SYNC_IMAGE = 2;
+const SYNC_TYPES = Object.freeze({
+  1: 'iframe',
+  2: 'image'
+});
+const GVLID = 14;
+
+const NATIVE_MODEL = [
+  {name: 'title', assetType: 'title'},
+  {name: 'icon', assetType: 'img', type: 1},
+  {name: 'image', assetType: 'img', type: 3},
+  {name: 'body', assetType: 'data', type: 2},
+  {name: 'body2', assetType: 'data', type: 10},
+  {name: 'sponsoredBy', assetType: 'data', type: 1},
+  {name: 'phone', assetType: 'data', type: 8},
+  {name: 'address', assetType: 'data', type: 9},
+  {name: 'price', assetType: 'data', type: 6},
+  {name: 'salePrice', assetType: 'data', type: 7},
+  {name: 'cta', assetType: 'data', type: 12},
+  {name: 'rating', assetType: 'data', type: 3},
+  {name: 'downloads', assetType: 'data', type: 5},
+  {name: 'likes', assetType: 'data', type: 4},
+  {name: 'displayUrl', assetType: 'data', type: 11}
+];
+
+const NATIVE_INDEX = NATIVE_MODEL.reduce((acc, val, idx) => {
+  acc[val.name] = {id: idx, ...val};
+  return acc;
+}, {});
 
 /**
- * Adapter for requesting bids from AdKernel white-label platform
- * @class
+ * Adapter for requesting bids from AdKernel white-label display platform
  */
-const AdKernelAdapter = function AdKernelAdapter() {
-  const AJAX_REQ_PARAMS = {
-    contentType: 'text/plain',
-    withCredentials: true,
-    method: 'GET'
-  };
-  const EMPTY_BID_RESPONSE = {'seatbid': [{'bid': []}]};
-
-  const VIDEO_TARGETING = ['mimes', 'minduration', 'maxduration', 'protocols', 'startdelay', 'linearity', 'sequence',
-    'boxingallowed', 'playbackmethod', 'delivery', 'pos', 'api', 'ext'];
-
-  let baseAdapter = new Adapter('adkernel');
+export const spec = {
+  code: 'adkernel',
+  gvlid: GVLID,
+  aliases: [
+    {code: 'headbidding'},
+    {code: 'adsolut'},
+    {code: 'oftmediahb'},
+    {code: 'audiencemedia'},
+    {code: 'waardex_ak'},
+    {code: 'roqoon'},
+    {code: 'andbeyond'},
+    {code: 'adbite'},
+    {code: 'houseofpubs'},
+    {code: 'torchad'},
+    {code: 'stringads'},
+    {code: 'bcm'},
+    {code: 'engageadx'},
+    {code: 'converge', gvlid: 248},
+    {code: 'adomega'},
+    {code: 'denakop'},
+    {code: 'rtbanalytica'},
+    {code: 'unibots'},
+    {code: 'catapultx'},
+    {code: 'ergadx'},
+    {code: 'turktelekom'},
+    {code: 'felixads'},
+    {code: 'motionspots'}
+  ],
+  supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   /**
-   * Helper object to build multiple bid requests in case of multiple zones/ad-networks
-   * @constructor
+   * Validates bid request for adunit
+   * @param bidRequest {BidRequest}
+   * @returns {boolean}
    */
-  function RtbRequestDispatcher() {
-    const _dispatch = {};
-    const originalBids = {};
-    const syncedHostZones = {};
-    const site = createSite();
+  isBidRequestValid: function (bidRequest) {
+    return 'params' in bidRequest &&
+      typeof bidRequest.params.host !== 'undefined' &&
+      'zoneId' in bidRequest.params &&
+      !isNaN(Number(bidRequest.params.zoneId)) &&
+      bidRequest.params.zoneId > 0 &&
+      bidRequest.mediaTypes &&
+      (bidRequest.mediaTypes.banner || bidRequest.mediaTypes.video || (bidRequest.mediaTypes.native && validateNativeAdUnit(bidRequest.mediaTypes.native)));
+  },
 
-    // translate adunit info into rtb impression dispatched by host/zone
-    this.addImp = function (bid) {
-      let host = bid.params.host;
-      let zone = bid.params.zoneId;
-
-      if (!(host in _dispatch)) {
-        _dispatch[host] = {};
-      }
-      /* istanbul ignore else  */
-      if (!(zone in _dispatch[host])) {
-        _dispatch[host][zone] = [];
-      }
-      let imp = buildImp(bid);
-      // save rtb impression for specified ad-network host and zone
-      _dispatch[host][zone].push(imp);
-      originalBids[bid.bidId] = bid;
-      // perform user-sync
-      if (!(host in syncedHostZones)) {
-        syncedHostZones[host] = [];
-      }
-      if (syncedHostZones[host].indexOf(zone) === -1) {
-        syncedHostZones[host].push(zone);
-      }
-    };
-
-    function buildImp(bid) {
-      const size = getBidSize(bid);
-      const imp = {
-        'id': bid.bidId,
-        'tagid': bid.placementCode
-      };
-
-      if (bid.mediaType === 'video') {
-        imp.video = {w: size[0], h: size[1]};
-        if (bid.params.video) {
-          Object.keys(bid.params.video)
-            .filter(param => VIDEO_TARGETING.includes(param))
-            .forEach(param => imp.video[param] = bid.params.video[param]);
-        }
-      } else {
-        imp.banner = {w: size[0], h: size[1]};
-      }
-      if (utils.getTopWindowLocation().protocol === 'https:') {
-        imp.secure = 1;
-      }
-      return imp;
-    }
-
-    function getBidSize(bid) {
-      if (bid.mediaType === 'video') {
-        return bid.sizes;
-      }
-      return bid.sizes[0];
-    }
-
-    /**
-     *  Main function to get bid requests
-     */
-    this.dispatch = function (callback) {
-      utils._each(_dispatch, (zones, host) => {
-        utils.logMessage(`processing network ${host}`);
-        utils._each(zones, (impressions, zone) => {
-          utils.logMessage(`processing zone ${zone}`);
-          dispatchRtbRequest(host, zone, impressions, callback);
-        });
+  /**
+   * Builds http request for each unique combination of adkernel host/zone
+   * @param bidRequests {BidRequest[]}
+   * @param bidderRequest {BidderRequest}
+   * @returns {ServerRequest[]}
+   */
+  buildRequests: function (bidRequests, bidderRequest) {
+    let impGroups = groupImpressionsByHostZone(bidRequests, bidderRequest.refererInfo);
+    let requests = [];
+    let schain = bidRequests[0].schain;
+    _each(impGroups, impGroup => {
+      let {host, zoneId, imps} = impGroup;
+      const request = buildRtbRequest(imps, bidderRequest, schain);
+      requests.push({
+        method: 'POST',
+        url: `https://${host}/hb?zone=${zoneId}&v=${VERSION}`,
+        data: JSON.stringify(request)
       });
-    };
-    /**
-     *  Build flat user-sync queue from host->zones mapping
-     */
-    this.buildUserSyncQueue = function() {
-      return Object.keys(syncedHostZones)
-        .reduce((m, k) => {
-          syncedHostZones[k].forEach((v) => m.push([k, v]));
-          return m;
-        }, []);
-    };
+    });
+    return requests;
+  },
 
-    function dispatchRtbRequest(host, zone, impressions, callback) {
-      let url = buildEndpointUrl(host);
-      let rtbRequest = buildRtbRequest(impressions);
-      let params = buildRequestParams(zone, rtbRequest);
-      ajax(url, (bidResp) => {
-        bidResp = bidResp === '' ? EMPTY_BID_RESPONSE : JSON.parse(bidResp);
-        utils._each(rtbRequest.imp, (imp) => {
-          let bidFound = false;
-          utils._each(bidResp.seatbid[0].bid, (bid) => {
-            /* istanbul ignore else */
-            if (!bidFound && bid.impid === imp.id) {
-              bidFound = true;
-              callback(originalBids[imp.id], imp, bid);
-            }
-          });
-          if (!bidFound) {
-            callback(originalBids[imp.id], imp);
-          }
-        });
-      }, params, AJAX_REQ_PARAMS);
+  /**
+   * Parse response from adkernel backend
+   * @param serverResponse {ServerResponse}
+   * @param serverRequest {ServerRequest}
+   * @returns {Bid[]}
+   */
+  interpretResponse: function (serverResponse, serverRequest) {
+    let response = serverResponse.body;
+    if (!response.seatbid) {
+      return [];
     }
 
-    /**
-     * Builds complete rtb bid request
-     * @param imps collection of impressions
-     */
-    function buildRtbRequest(imps) {
-      return {
-        'id': utils.getUniqueIdentifierStr(),
-        'imp': imps,
-        'site': site,
-        'at': 1,
-        'device': {
-          'ip': 'caller',
-          'ua': 'caller'
+    let rtbRequest = JSON.parse(serverRequest.data);
+    let rtbBids = response.seatbid
+      .map(seatbid => seatbid.bid)
+      .reduce((a, b) => a.concat(b), []);
+
+    return rtbBids.map(rtbBid => {
+      let imp = find(rtbRequest.imp, imp => imp.id === rtbBid.impid);
+      let prBid = {
+        requestId: rtbBid.impid,
+        cpm: rtbBid.price,
+        creativeId: rtbBid.crid,
+        currency: response.cur || 'USD',
+        ttl: 360,
+        netRevenue: true
+      };
+      if ('banner' in imp) {
+        prBid.mediaType = BANNER;
+        prBid.width = rtbBid.w;
+        prBid.height = rtbBid.h;
+        prBid.ad = formatAdMarkup(rtbBid);
+      } else if ('video' in imp) {
+        prBid.mediaType = VIDEO;
+        prBid.vastUrl = rtbBid.nurl;
+        prBid.width = imp.video.w;
+        prBid.height = imp.video.h;
+      } else if ('native' in imp) {
+        prBid.mediaType = NATIVE;
+        prBid.native = buildNativeAd(JSON.parse(rtbBid.adm));
+      }
+      if (isStr(rtbBid.dealid)) {
+        prBid.dealId = rtbBid.dealid;
+      }
+      if (isArray(rtbBid.adomain)) {
+        deepSetValue(prBid, 'meta.advertiserDomains', rtbBid.adomain);
+      }
+      if (isArray(rtbBid.cat)) {
+        deepSetValue(prBid, 'meta.secondaryCatIds', rtbBid.cat);
+      }
+      if (isPlainObject(rtbBid.ext)) {
+        if (isNumber(rtbBid.ext.advertiser_id)) {
+          deepSetValue(prBid, 'meta.advertiserId', rtbBid.ext.advertiser_id);
         }
-      };
-    }
-
-    /**
-     * Build ad-network specific endpoint url
-     */
-    function buildEndpointUrl(host) {
-      return `${window.location.protocol}//${host}/rtbg`;
-    }
-
-    function buildRequestParams(zone, rtbReq) {
-      return {
-        'zone': encodeURIComponent(zone),
-        'ad_type': 'rtb',
-        'r': encodeURIComponent(JSON.stringify(rtbReq))
-      };
-    }
-  }
-
-  /**
-   *  Main module export function implementation
-   */
-  baseAdapter.callBids = function (params) {
-    var bids = params.bids || [];
-    processBids(bids);
-  };
-
-  /**
-   *  Process all bids grouped by network/zone
-   */
-  function processBids(bids) {
-    const dispatcher = new RtbRequestDispatcher();
-    // process individual bids
-    utils._each(bids, (bid) => {
-      if (!validateBidParams(bid.params)) {
-        utils.logError(`Incorrect configuration for adkernel bidder: ${bid.params}`);
-        bidmanager.addBidResponse(bid.placementCode, createEmptyBidObject(bid));
-      } else {
-        dispatcher.addImp(bid);
+        if (isStr(rtbBid.ext.advertiser_name)) {
+          deepSetValue(prBid, 'meta.advertiserName', rtbBid.ext.advertiser_name);
+        }
+        if (isStr(rtbBid.ext.agency_name)) {
+          deepSetValue(prBid, 'meta.agencyName', rtbBid.ext.agency_name);
+        }
       }
+
+      return prBid;
     });
-    // start async usersync
-    processUserSyncQueue(dispatcher.buildUserSyncQueue());
-
-    // process bids grouped into bid requests
-    dispatcher.dispatch((bid, imp, bidResp) => {
-      let adUnitId = bid.placementCode;
-      if (bidResp) {
-        utils.logMessage(`got response for ${adUnitId}`);
-        let dimensions = getCreativeSize(imp, bidResp);
-        bidmanager.addBidResponse(adUnitId, createBidObject(bidResp, bid, dimensions.w, dimensions.h));
-      } else {
-        utils.logMessage(`got empty response for ${adUnitId}`);
-        bidmanager.addBidResponse(adUnitId, createEmptyBidObject(bid));
-      }
-    });
-  }
+  },
 
   /**
-   * Evaluate creative size from response or from request
+   * Extracts user-syncs information from server response
+   * @param syncOptions {SyncOptions}
+   * @param serverResponses {ServerResponse[]}
+   * @returns {UserSync[]}
    */
-  function getCreativeSize(imp, bid) {
-    let dimensions = (bid.h && bid.w) ? bid : (imp.banner || imp.video);
-    return {
-      w: dimensions.w,
-      h: dimensions.h
-    };
-  }
-
-  /**
-   *  Create bid object for the bid manager
-   */
-  function createBidObject(resp, bid, width, height) {
-    let bidObj = Object.assign(bidfactory.createBid(1, bid), {
-      bidderCode: bid.bidder,
-      width: width,
-      height: height,
-      cpm: parseFloat(resp.price)
-    });
-    if (bid.mediaType === 'video') {
-      bidObj.vastUrl = resp.nurl;
-      bidObj.mediaType = 'video';
-    } else {
-      bidObj.ad = formatAdMarkup(resp);
+  getUserSyncs: function (syncOptions, serverResponses) {
+    if (!serverResponses || serverResponses.length === 0 || (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled)) {
+      return [];
     }
-    return bidObj;
+    return serverResponses.filter(rsp => rsp.body && rsp.body.ext && rsp.body.ext.adk_usersync)
+      .map(rsp => rsp.body.ext.adk_usersync)
+      .reduce((a, b) => a.concat(b), [])
+      .map(({url, type}) => ({type: SYNC_TYPES[type], url: url}));
   }
-
-  /**
-   * Create empty bid object for the bid manager
-   */
-  function createEmptyBidObject(bid) {
-    return Object.assign(bidfactory.createBid(2, bid), {
-      bidderCode: bid.bidder
-    });
-  }
-
-  /**
-   *  Format creative with optional nurl call
-   */
-  function formatAdMarkup(bid) {
-    var adm = bid.adm;
-    if ('nurl' in bid) {
-      adm += utils.createTrackPixelHtml(`${bid.nurl}&px=1`);
-    }
-    return adm;
-  }
-
-  function validateBidParams(params) {
-    return typeof params.host !== 'undefined' && typeof params.zoneId !== 'undefined';
-  }
-
-  /**
-   * Creates site description object
-   */
-  function createSite() {
-    var location = utils.getTopWindowLocation();
-    return {
-      'domain': location.hostname,
-      'page': location.href.split('?')[0]
-    };
-  }
-
-  /**
-   *  Recursively process user-sync queue
-   */
-  function processUserSyncQueue(queue) {
-    if (queue.length === 0) {
-      return;
-    }
-    let entry = queue.pop();
-    insertUserSync(entry[0], entry[1], () => processUserSyncQueue(queue));
-  }
-
-  /**
-   *  Insert single iframe user-sync
-   */
-  function insertUserSync(host, zone, callback) {
-    var iframe = utils.createInvisibleIframe();
-    iframe.src = `//sync.adkernel.com/user-sync?zone=${zone}&r=%2F%2F${host}%2Fuser-synced%3Fuid%3D%7BUID%7D`;
-    utils.addEventHandler(iframe, 'load', callback);
-    try {
-      document.body.appendChild(iframe);
-    } catch (error) {
-      /* istanbul ignore next */
-      utils.logError(error);
-    }
-  }
-
-  return Object.assign(this, {
-    callBids: baseAdapter.callBids,
-    setBidderCode: baseAdapter.setBidderCode,
-    getBidderCode: baseAdapter.getBidderCode
-  });
 };
 
-adaptermanager.registerBidAdapter(new AdKernelAdapter(), 'adkernel', {
-  supportedMediaTypes: ['video']
-});
-adaptermanager.aliasBidAdapter('adkernel', 'headbidding');
+registerBidder(spec);
 
-module.exports = AdKernelAdapter;
+/**
+ * Dispatch impressions by ad network host and zone
+ * @param bidRequests {BidRequest[]}
+ * @param refererInfo {refererInfo}
+ */
+function groupImpressionsByHostZone(bidRequests, refererInfo) {
+  let secure = (refererInfo && refererInfo.referer.indexOf('https:') === 0);
+  return Object.values(
+    bidRequests.map(bidRequest => buildImp(bidRequest, secure))
+      .reduce((acc, curr, index) => {
+        let bidRequest = bidRequests[index];
+        let {zoneId, host} = bidRequest.params;
+        let key = `${host}_${zoneId}`;
+        acc[key] = acc[key] || {host: host, zoneId: zoneId, imps: []};
+        acc[key].imps.push(curr);
+        return acc;
+      }, {})
+  );
+}
+
+function getBidFloor(bid, mediaType, sizes) {
+  var floor;
+  var size = sizes.length === 1 ? sizes[0] : '*';
+  if (typeof bid.getFloor === 'function') {
+    const floorInfo = bid.getFloor({currency: 'USD', mediaType, size});
+    if (typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
+      floor = parseFloat(floorInfo.floor);
+    }
+  }
+  return floor;
+}
+
+/**
+ *  Builds rtb imp object for single adunit
+ *  @param bidRequest {BidRequest}
+ *  @param secure {boolean}
+ */
+function buildImp(bidRequest, secure) {
+  const imp = {
+    'id': bidRequest.bidId,
+    'tagid': bidRequest.adUnitCode
+  };
+  var mediaType;
+  var sizes = [];
+
+  if (deepAccess(bidRequest, 'mediaTypes.banner')) {
+    sizes = getAdUnitSizes(bidRequest);
+    imp.banner = {
+      format: sizes.map(wh => parseGPTSingleSizeArrayToRtbSize(wh)),
+      topframe: 0
+    };
+    mediaType = BANNER;
+  } else if (deepAccess(bidRequest, 'mediaTypes.video')) {
+    let video = deepAccess(bidRequest, 'mediaTypes.video');
+    imp.video = {};
+    if (video.playerSize) {
+      sizes = video.playerSize[0];
+      imp.video = Object.assign(imp.video, parseGPTSingleSizeArrayToRtbSize(sizes) || {});
+    }
+    if (bidRequest.params.video) {
+      Object.keys(bidRequest.params.video)
+        .filter(key => includes(VIDEO_TARGETING, key))
+        .forEach(key => imp.video[key] = bidRequest.params.video[key]);
+    }
+    mediaType = VIDEO;
+  } else if (deepAccess(bidRequest, 'mediaTypes.native')) {
+    let nativeRequest = buildNativeRequest(bidRequest.mediaTypes.native);
+    imp.native = {
+      ver: '1.1',
+      request: JSON.stringify(nativeRequest)
+    };
+    mediaType = NATIVE;
+  } else {
+    throw new Error('Unsupported bid received');
+  }
+  let floor = getBidFloor(bidRequest, mediaType, sizes);
+  if (floor) {
+    imp.bidfloor = floor;
+  }
+  if (secure) {
+    imp.secure = 1;
+  }
+  return imp;
+}
+
+/**
+ * Builds native request from native adunit
+ */
+function buildNativeRequest(nativeReq) {
+  let request = {ver: '1.1', assets: []};
+  for (let k of Object.keys(nativeReq)) {
+    let v = nativeReq[k];
+    let desc = NATIVE_INDEX[k];
+    if (desc === undefined) {
+      continue;
+    }
+    let assetRoot = {
+      id: desc.id,
+      required: ~~v.required,
+    };
+    if (desc.assetType === 'img') {
+      assetRoot[desc.assetType] = buildImageAsset(desc, v);
+    } else if (desc.assetType === 'data') {
+      assetRoot.data = cleanObj({type: desc.type, len: v.len});
+    } else if (desc.assetType === 'title') {
+      assetRoot.title = {len: v.len || 90};
+    } else {
+      return;
+    }
+    request.assets.push(assetRoot);
+  }
+  return request;
+}
+
+/**
+ *  Builds image asset request
+ */
+function buildImageAsset(desc, val) {
+  let img = {
+    type: desc.type
+  };
+  if (val.sizes) {
+    [img.w, img.h] = val.sizes;
+  } else if (val.aspect_ratios) {
+    img.wmin = val.aspect_ratios[0].min_width;
+    img.hmin = val.aspect_ratios[0].min_height;
+  }
+  return cleanObj(img);
+}
+
+/**
+ * Checks if configuration allows specified sync method
+ * @param syncRule {Object}
+ * @param bidderCode {string}
+ * @returns {boolean}
+ */
+function isSyncMethodAllowed(syncRule, bidderCode) {
+  if (!syncRule) {
+    return false;
+  }
+  let bidders = isArray(syncRule.bidders) ? syncRule.bidders : [bidderCode];
+  let rule = syncRule.filter === 'include';
+  return contains(bidders, bidderCode) === rule;
+}
+
+/**
+ * Get preferred user-sync method based on publisher configuration
+ * @param bidderCode {string}
+ * @returns {number|undefined}
+ */
+function getAllowedSyncMethod(bidderCode) {
+  if (!config.getConfig('userSync.syncEnabled')) {
+    return;
+  }
+  let filterConfig = config.getConfig('userSync.filterSettings');
+  if (isSyncMethodAllowed(filterConfig.all, bidderCode) || isSyncMethodAllowed(filterConfig.iframe, bidderCode)) {
+    return SYNC_IFRAME;
+  } else if (isSyncMethodAllowed(filterConfig.image, bidderCode)) {
+    return SYNC_IMAGE;
+  }
+}
+
+/**
+ * Create device object from fpd and host-collected data
+ * @param fpd {Object}
+ * @returns {{device: Object}}
+ */
+function makeDevice(fpd) {
+  let device = mergeDeep({
+    'ip': 'caller',
+    'ipv6': 'caller',
+    'ua': 'caller',
+    'js': 1,
+    'language': getLanguage()
+  }, fpd.device || {});
+  if (getDNT()) {
+    device.dnt = 1;
+  }
+  return {device: device};
+}
+
+/**
+ * Create site or app description object
+ * @param bidderRequest {BidderRequest}
+ * @param fpd {Object}
+ * @returns {{site: Object}|{app: Object}}
+ */
+function makeSiteOrApp(bidderRequest, fpd) {
+  let {refererInfo} = bidderRequest;
+  let appConfig = config.getConfig('app');
+  if (isEmpty(appConfig)) {
+    return {site: createSite(refererInfo, fpd)}
+  } else {
+    return {app: appConfig};
+  }
+}
+
+/**
+ * Create user description object
+ * @param bidderRequest {BidderRequest}
+ * @param fpd {Object}
+ * @returns {{user: Object} | undefined}
+ */
+function makeUser(bidderRequest, fpd) {
+  let {gdprConsent} = bidderRequest;
+  let user = fpd.user || {};
+  if (gdprConsent && gdprConsent.consentString !== undefined) {
+    deepSetValue(user, 'ext.consent', gdprConsent.consentString);
+  }
+  let eids = getExtendedUserIds(bidderRequest);
+  if (eids) {
+    deepSetValue(user, 'ext.eids', eids);
+  }
+  if (!isEmpty(user)) { return {user: user}; }
+}
+
+/**
+ * Create privacy regulations object
+ * @param bidderRequest {BidderRequest}
+ * @returns {{regs: Object} | undefined}
+ */
+function makeRegulations(bidderRequest) {
+  let {gdprConsent, uspConsent} = bidderRequest;
+  let regs = {};
+  if (gdprConsent) {
+    if (gdprConsent.gdprApplies !== undefined) {
+      deepSetValue(regs, 'regs.ext.gdpr', ~~gdprConsent.gdprApplies);
+    }
+  }
+  if (uspConsent) {
+    deepSetValue(regs, 'regs.ext.us_privacy', uspConsent);
+  }
+  if (config.getConfig('coppa')) {
+    deepSetValue(regs, 'regs.coppa', 1);
+  }
+  if (!isEmpty(regs)) {
+    return regs;
+  }
+}
+
+/**
+ * Create top-level request object
+ * @param bidderRequest {BidderRequest}
+ * @param imps {Object} Impressions
+ * @param fpd {Object} First party data
+ * @returns
+ */
+function makeBaseRequest(bidderRequest, imps, fpd) {
+  let {auctionId, timeout} = bidderRequest;
+  let request = {
+    'id': auctionId,
+    'imp': imps,
+    'at': 1,
+    'tmax': parseInt(timeout)
+  };
+  if (!isEmpty(fpd.bcat)) {
+    request.bcat = fpd.bcat;
+  }
+  if (!isEmpty(fpd.badv)) {
+    request.badv = fpd.badv;
+  }
+  return request;
+}
+
+/**
+ * Initialize sync capabilities
+ * @param bidderRequest {BidderRequest}
+ */
+function makeSyncInfo(bidderRequest) {
+  let {bidderCode} = bidderRequest;
+  let syncMethod = getAllowedSyncMethod(bidderCode);
+  if (syncMethod) {
+    let res = {};
+    deepSetValue(res, 'ext.adk_usersync', syncMethod);
+    return res;
+  }
+}
+
+/**
+ * Builds complete rtb request
+ * @param imps {Object} Collection of rtb impressions
+ * @param bidderRequest {BidderRequest}
+ * @param schain {Object=} Supply chain config
+ * @return {Object} Complete rtb request
+ */
+function buildRtbRequest(imps, bidderRequest, schain) {
+  let fpd = config.getConfig('ortb2') || {};
+
+  let req = mergeDeep(
+    makeBaseRequest(bidderRequest, imps, fpd),
+    makeDevice(fpd),
+    makeSiteOrApp(bidderRequest, fpd),
+    makeUser(bidderRequest, fpd),
+    makeRegulations(bidderRequest),
+    makeSyncInfo(bidderRequest)
+  );
+  if (schain) {
+    deepSetValue(req, 'source.ext.schain', schain);
+  }
+  return req;
+}
+
+/**
+ * Get browser language
+ * @returns {String}
+ */
+function getLanguage() {
+  const language = navigator.language ? 'language' : 'userLanguage';
+  return navigator[language].split('-')[0];
+}
+
+/**
+ * Creates site description object
+ */
+function createSite(refInfo, fpd) {
+  let url = parseUrl(refInfo.referer);
+  let site = {
+    'domain': url.hostname,
+    'page': `${url.protocol}://${url.hostname}${url.pathname}`
+  };
+  mergeDeep(site, fpd.site);
+  if (!inIframe() && document.referrer) {
+    site.ref = document.referrer;
+  } else {
+    delete site.ref;
+  }
+  return site;
+}
+
+function getExtendedUserIds(bidderRequest) {
+  let eids = deepAccess(bidderRequest, 'bids.0.userIdAsEids');
+  if (isArray(eids)) {
+    return eids;
+  }
+}
+
+/**
+ *  Format creative with optional nurl call
+ *  @param bid rtb Bid object
+ */
+function formatAdMarkup(bid) {
+  let adm = bid.adm;
+  if ('nurl' in bid) {
+    adm += createTrackPixelHtml(`${bid.nurl}&px=1`);
+  }
+  return adm;
+}
+
+/**
+ * Basic validates to comply with platform requirements
+ */
+function validateNativeAdUnit(adUnit) {
+  return validateNativeImageSize(adUnit.image) && validateNativeImageSize(adUnit.icon) &&
+    !deepAccess(adUnit, 'privacyLink.required') && // not supported yet
+    !deepAccess(adUnit, 'privacyIcon.required'); // not supported yet
+}
+
+/**
+ * Validates image asset size definition
+ */
+function validateNativeImageSize(img) {
+  if (!img) {
+    return true;
+  }
+  if (img.sizes) {
+    return isArrayOfNums(img.sizes, 2);
+  }
+  if (isArray(img.aspect_ratios)) {
+    return img.aspect_ratios.length > 0 && img.aspect_ratios[0].min_height && img.aspect_ratios[0].min_width;
+  }
+  return true;
+}
+
+/**
+ * Creates native ad for native 1.1 response
+ */
+function buildNativeAd(nativeResp) {
+  const {assets, link, imptrackers, jstracker, privacy} = nativeResp.native;
+  let nativeAd = {
+    clickUrl: link.url,
+    impressionTrackers: imptrackers,
+    javascriptTrackers: jstracker ? [jstracker] : undefined,
+    privacyLink: privacy,
+  };
+  _each(assets, asset => {
+    let assetName = NATIVE_MODEL[asset.id].name;
+    let assetType = NATIVE_MODEL[asset.id].assetType;
+    nativeAd[assetName] = asset[assetType].text || asset[assetType].value || cleanObj({
+      url: asset[assetType].url,
+      width: asset[assetType].w,
+      height: asset[assetType].h
+    });
+  });
+  return cleanObj(nativeAd);
+}

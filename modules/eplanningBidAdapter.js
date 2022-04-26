@@ -1,310 +1,482 @@
-var bidfactory = require('src/bidfactory.js');
-var bidmanager = require('src/bidmanager.js');
-var adaptermanager = require('src/adaptermanager');
+import { isEmpty, getWindowSelf, parseSizesInput } from '../src/utils.js';
+import { getGlobal } from '../src/prebidGlobal.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getStorageManager } from '../src/storageManager.js';
 
-function EPlanningAdapter() {
-  (function() {
-    const win = window;
-    const doc = win.document;
-    const pbjsVar = win.$$PREBID_GLOBAL$$;
-    const _global = {};
-    const _default = { 'sv': 'ads.us.e-planning.net', 't': 0 };
-    var rnd;
-    const FILE = 'file';
-    const CALLBACK_FUNCTION = 'hbpb.rH';
-    const NULL_SIZE = '1x1';
-    const _csRequested = [];
-    const PROTO = location.protocol === 'https:' ? 'https:' : 'http:';
-    const ISV = 'aklc.img.e-planning.net';
-    function Hbpb() {
-      var slots = (function() {
-        var _data = [];
-        function Slot(slotId) {
-          var data = _data[slotId];
-          function hasAds() {
-            return _data[slotId].ads.length;
-          }
-          function getSizes() {
-            return data.sizes;
-          }
-          function getSizesString() {
-            const s = [];
-            var i;
-            const sizes = getSizes();
-            if (sizes && sizes.length) {
-              if (typeof sizes[0] === 'object') {
-                for (i = 0; i < sizes.length; i++) {
-                  s.push(sizes[i][0] + 'x' + sizes[i][1]);
-                }
-              } else {
-                s.push(sizes[0] + 'x' + sizes[1]);
-              }
-            } else {
-              return NULL_SIZE;
-            }
-            return s.join(',');
-          }
-          return {
-            getPlacementCode: function() {
-              return data.placementCode;
-            },
-            getString: function() {
-              return this.getPlacementCode() + ':' + getSizesString();
-            },
-            addAd: function(ad) {
-              _data[slotId].ads.push(ad);
-            },
-            getFormatedResponse: function() {
-              var ad;
-              const that = this;
-              if (hasAds()) {
-                ad = data.ads[0];
-                return {
-                  'placementCode': that.getPlacementCode(),
-                  'ad': {
-                    'ad': ad.adm,
-                    'cpm': ad.pr,
-                    'width': ad.size.w,
-                    'height': ad.size.h
-                  }
-                };
-              } else {
-                return { 'placementCode': that.getPlacementCode() };
-              }
-            }
-          };
-        }
-        function findAll() {
-          var i = 0;
-          const r = [];
-          for (i = 0; i < _data.length; i++) {
-            r.push(new Slot(i));
-          }
-          return r;
-        }
-        return {
-          add: function(slot) {
-            slot.ads = [];
-            _data.push(slot);
-          },
-          get: function(slotId) {
-            return new Slot(slotId);
-          },
-          getString: function() {
-            const _slots = [];
-            var i;
-            var slot;
-            for (i = 0; i < _data.length; i++) {
-              slot = this.get(i);
-              _slots.push(slot.getString());
-            }
-            return _slots.join('+');
-          },
-          findByPlacementCode: function(placementCode) {
-            var i;
-            const _slots = findAll();
-            for (i = 0; i < _slots.length; i++) {
-              if (_slots[i].getPlacementCode() === placementCode) {
-                return _slots[i];
-              }
-            }
-          },
-          getFormatedResponse: function() {
-            const _slots = findAll();
-            var i;
-            const r = [];
-            for (i = 0; i < _slots.length; i++) {
-              r.push(_slots[i].getFormatedResponse());
-            }
-            return {
-              'bids': r
-            };
-          }
-        };
-      })();
-      function call(params) {
-        var i;
-        const bids = params.bids;
-        for (i = 0; i < bids.length; i++) {
-          slots.add({
-            _raw: bids[i],
-            placementCode: bids[i].placementCode,
-            sizes: bids[i].sizes
-          });
-          setGlobalParam('sv', bids[i]);
-          setGlobalParam('ci', bids[i]);
-          setGlobalParam('t', bids[i]);
-        }
-        doRequest();
+const BIDDER_CODE = 'eplanning';
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+const rnd = Math.random();
+const DEFAULT_SV = 'pbjs.e-planning.net';
+const DEFAULT_ISV = 'i.e-planning.net';
+const PARAMS = ['ci', 'sv', 't', 'ml', 'sn'];
+const DOLLAR_CODE = 'USD';
+const NET_REVENUE = true;
+const TTL = 120;
+const NULL_SIZE = '1x1';
+const FILE = 'file';
+const STORAGE_RENDER_PREFIX = 'pbsr_';
+const STORAGE_VIEW_PREFIX = 'pbvi_';
+const mobileUserAgent = isMobileUserAgent();
+const PRIORITY_ORDER_FOR_MOBILE_SIZES_ASC = ['1x1', '300x50', '320x50', '300x250'];
+const PRIORITY_ORDER_FOR_DESKTOP_SIZES_ASC = ['1x1', '970x90', '970x250', '160x600', '300x600', '728x90', '300x250'];
+
+export const spec = {
+  code: BIDDER_CODE,
+
+  isBidRequestValid: function(bid) {
+    return Boolean(bid.params.ci) || Boolean(bid.params.t);
+  },
+
+  buildRequests: function(bidRequests, bidderRequest) {
+    const method = 'GET';
+    const dfpClientId = '1';
+    const sec = 'ROS';
+    let url;
+    let params;
+    const urlConfig = getUrlConfig(bidRequests);
+    const pcrs = getCharset();
+    const spaces = getSpaces(bidRequests, urlConfig.ml);
+    const pageUrl = bidderRequest.refererInfo.referer;
+    const getDomain = (url) => {
+      let anchor = document.createElement('a');
+      anchor.href = url;
+      return anchor.hostname;
+    }
+    if (urlConfig.t) {
+      url = 'https://' + urlConfig.isv + '/layers/t_pbjs_2.json';
+      params = {};
+    } else {
+      url = 'https://' + (urlConfig.sv || DEFAULT_SV) + '/pbjs/1/' + urlConfig.ci + '/' + dfpClientId + '/' + getDomain(pageUrl) + '/' + sec;
+      const referrerUrl = bidderRequest.refererInfo.referer.reachedTop ? window.top.document.referrer : bidderRequest.refererInfo.referer;
+
+      if (storage.hasLocalStorage()) {
+        registerViewabilityAllBids(bidRequests);
       }
-      function setGlobalParam(param, bid) {
-        if (!_global[param]) {
-          if (bid && bid.params && bid.params[param]) {
-            _global[param] = bid.params[param];
-          }
-        }
-      }
-      function getGlobalParam(param) {
-        return (_global[param] || _default[param]);
-      }
-      function getRandom() {
-        if (!rnd) {
-          rnd = Math.random();
-        }
-        return rnd;
-      }
-      function getDocURL() {
-        return escape(win.location.href || FILE);
-      }
-      function getReferrerURL() {
-        return doc.referrer;
-      }
-      function getCallbackFunction() {
-        return CALLBACK_FUNCTION;
-      }
-      function doRequest() {
-        const clienteId = getGlobalParam('ci');
-        var url;
-        const dfpClienteId = '1';
-        const sec = 'ROS';
-        const params = [];
-        const t = getGlobalParam('t');
-        if (clienteId && !t) {
-          url = PROTO + '//' + getGlobalParam('sv') + '/hb/1/' + clienteId + '/' + dfpClienteId + '/' + (win.location.hostname || FILE) + '/' + sec + '?';
-          params.push('rnd=' + getRandom());
-          params.push('e=' + slots.getString());
-          if (getDocURL()) {
-            params.push('ur=' + getDocURL());
-          }
-          if (getReferrerURL()) {
-            params.push('fr=' + getReferrerURL());
-          }
-          params.push('cb=' + getCallbackFunction());
-          params.push('r=pbjs');
-          url += params.join('&');
-          load(url);
-        } else if (t) {
-          url = PROTO + '//' + ISV + '/layers/t_pbjs_' + t + '.js';
-          load(url);
-        }
-      }
-      function load(url) {
-        var script = doc.createElement('script');
-        script.src = url;
-        doc.body.appendChild(script);
-      }
-      function callback(response) {
-        if (pbjsVar && pbjsVar.processEPlanningResponse && typeof pbjsVar.processEPlanningResponse === 'function') {
-          pbjsVar.processEPlanningResponse(response);
-        }
-      }
-      function syncUsers(cs) {
-        var i, e, d;
-        for (i = 0; i < cs.length; i++) {
-          if (typeof cs[i] === 'string' && _csRequested.indexOf(cs[i]) === -1) {
-            (new Image()).src = cs[i];
-            _csRequested.push(cs[i]);
-          } else if (typeof cs[i] === 'object' && _csRequested.indexOf(cs[i].u) === -1) {
-            if (cs[i].j) {
-              e = doc.createElement('script');
-              e.src = cs[i].u;
-            } else if (cs[i].ifr) {
-              e = doc.createElement('iframe');
-              e.src = cs[i].u;
-              e.style.width = e.style.height = '1px';
-              e.display = 'none';
-            }
-            if (cs[i].data) {
-              for (d in cs[i].data) {
-                if (cs[i].data.hasOwnProperty(d)) {
-                  e.setAttribute('data-' + d, cs[i].data[d]);
-                }
-              }
-            }
-            doc.body.appendChild(e);
-            _csRequested.push(cs[i].u);
-          }
-        }
-      }
-      function rH(response) {
-        var slot, i, o;
-        if (response && response.sp && response.sp.length) {
-          for (i = 0; i < response.sp.length; i++) {
-            if (response.sp[i].a) {
-              slot = slots.findByPlacementCode(response.sp[i].k);
-              if (slot) {
-                for (o = 0; o < response.sp[i].a.length; o++) {
-                  slot.addAd({
-                    'adm': response.sp[i].a[o].adm,
-                    'pr': response.sp[i].a[o].pr,
-                    'size': {
-                      'w': response.sp[i].a[o].w,
-                      'h': response.sp[i].a[o].h
-                    }
-                  });
-                }
-              }
-            }
-          }
-          callback(slots.getFormatedResponse());
-        }
-        if (response && response.cs && response.cs.length) {
-          syncUsers(response.cs);
-        }
-      }
-      return {
-        call: function(params) {
-          return call(params);
-        },
-        rH: function(response) {
-          return rH(response);
-        }
+
+      params = {
+        rnd: rnd,
+        e: spaces.str,
+        ur: pageUrl || FILE,
+        pbv: '$prebid.version$',
+        ncb: '1',
+        vs: spaces.vs
       };
-    }
-    win.hbpb = win.hbpb || new Hbpb();
-  })();
+      if (pcrs) {
+        params.crs = pcrs;
+      }
 
-  window.$$PREBID_GLOBAL$$ = window.$$PREBID_GLOBAL$$ || {};
-  window.$$PREBID_GLOBAL$$.processEPlanningResponse = function(response) {
-    var bids, bidObject, i;
-    if (response) {
-      bids = response.bids;
-      for (i = 0; i < bids.length; i++) {
-        if (bids[i].ad) {
-          bidObject = getBidObject(bids[i]);
-          bidmanager.addBidResponse(bids[i].placementCode, bidObject);
-        } else {
-          bidObject = bidfactory.createBid(2);
-          bidObject.bidderCode = 'eplanning';
-          bidmanager.addBidResponse(bids[i].placementCode, bidObject);
+      if (referrerUrl) {
+        params.fr = referrerUrl;
+      }
+
+      if (bidderRequest && bidderRequest.gdprConsent) {
+        if (typeof bidderRequest.gdprConsent.gdprApplies !== 'undefined') {
+          params.gdpr = bidderRequest.gdprConsent.gdprApplies ? '1' : '0';
+          if (typeof bidderRequest.gdprConsent.consentString !== 'undefined') {
+            params.gdprcs = bidderRequest.gdprConsent.consentString;
+          }
+        }
+      }
+
+      if (bidderRequest && bidderRequest.uspConsent) {
+        params.ccpa = bidderRequest.uspConsent;
+      }
+
+      if ((getGlobal()).getUserIds && typeof (getGlobal()).getUserIds === 'function') {
+        const userIds = (getGlobal()).getUserIds();
+        for (var id in userIds) {
+          params['e_' + id] = (typeof userIds[id] === 'object') ? encodeURIComponent(JSON.stringify(userIds[id])) : encodeURIComponent(userIds[id]);
         }
       }
     }
-  };
 
-  function getBidObject(bid) {
-    const bidObject = bidfactory.createBid(1);
-    var i;
-    bidObject.bidderCode = 'eplanning';
-    for (i in bid.ad) {
-      if (bid.ad.hasOwnProperty(i)) {
-        bidObject[i] = bid.ad[i];
+    return {
+      method: method,
+      url: url,
+      data: params,
+      adUnitToBidId: spaces.map,
+    };
+  },
+  interpretResponse: function(serverResponse, request) {
+    const response = serverResponse.body;
+    let bidResponses = [];
+
+    if (response && !isEmpty(response.sp)) {
+      response.sp.forEach(space => {
+        if (!isEmpty(space.a)) {
+          space.a.forEach(ad => {
+            const bidResponse = {
+              requestId: request.adUnitToBidId[space.k],
+              cpm: ad.pr,
+              width: ad.w,
+              height: ad.h,
+              ad: ad.adm,
+              ttl: TTL,
+              creativeId: ad.crid,
+              netRevenue: NET_REVENUE,
+              currency: DOLLAR_CODE,
+            };
+            if (ad.adom) {
+              bidResponse.meta = {
+                advertiserDomains: ad.adom
+              };
+            }
+            bidResponses.push(bidResponse);
+          });
+        }
+      });
+    }
+
+    return bidResponses;
+  },
+  getUserSyncs: function(syncOptions, serverResponses) {
+    const syncs = [];
+    const response = !isEmpty(serverResponses) && serverResponses[0].body;
+
+    if (response && !isEmpty(response.cs)) {
+      const responseSyncs = response.cs;
+      responseSyncs.forEach(sync => {
+        if (typeof sync === 'string' && syncOptions.pixelEnabled) {
+          syncs.push({
+            type: 'image',
+            url: sync,
+          });
+        } else if (typeof sync === 'object' && sync.ifr && syncOptions.iframeEnabled) {
+          syncs.push({
+            type: 'iframe',
+            url: sync.u,
+          })
+        }
+      });
+    }
+
+    return syncs;
+  },
+}
+
+function getUserAgent() {
+  return window.navigator.userAgent;
+}
+function getInnerWidth() {
+  return getWindowSelf().innerWidth;
+}
+function isMobileUserAgent() {
+  return getUserAgent().match(/(mobile)|(ip(hone|ad))|(android)|(blackberry)|(nokia)|(phone)|(opera\smini)/i);
+}
+function isMobileDevice() {
+  return (getInnerWidth() <= 1024) || window.orientation || mobileUserAgent;
+}
+function getUrlConfig(bidRequests) {
+  if (isTestRequest(bidRequests)) {
+    return getTestConfig(bidRequests.filter(br => br.params.t));
+  }
+
+  let config = {};
+  bidRequests.forEach(bid => {
+    PARAMS.forEach(param => {
+      if (bid.params[param] && !config[param]) {
+        config[param] = bid.params[param];
       }
-    }
-    return bidObject;
-  }
+    });
+  });
 
-  function _callBids(params) {
-    if (window.hbpb) {
-      window.hbpb.call(params);
+  return config;
+}
+function isTestRequest(bidRequests) {
+  for (let i = 0; i < bidRequests.length; i++) {
+    if (bidRequests[i].params.t) {
+      return true;
     }
   }
-
+  return false;
+}
+function getTestConfig(bidRequests) {
+  let isv;
+  bidRequests.forEach(br => isv = isv || br.params.isv);
   return {
-    callBids: _callBids
+    t: true,
+    isv: (isv || DEFAULT_ISV)
   };
 }
 
-adaptermanager.registerBidAdapter(new EPlanningAdapter(), 'eplanning');
+function compareSizesByPriority(size1, size2) {
+  var priorityOrderForSizesAsc = isMobileDevice() ? PRIORITY_ORDER_FOR_MOBILE_SIZES_ASC : PRIORITY_ORDER_FOR_DESKTOP_SIZES_ASC;
+  var index1 = priorityOrderForSizesAsc.indexOf(size1);
+  var index2 = priorityOrderForSizesAsc.indexOf(size2);
+  if (index1 > -1) {
+    if (index2 > -1) {
+      return (index1 < index2) ? 1 : -1;
+    } else {
+      return -1;
+    }
+  } else {
+    return (index2 > -1) ? 1 : 0;
+  }
+}
 
-module.exports = EPlanningAdapter;
+function getSizesSortedByPriority(sizes) {
+  return parseSizesInput(sizes).sort(compareSizesByPriority);
+}
+
+function getSize(bid, first) {
+  var arraySizes = bid.sizes && bid.sizes.length ? getSizesSortedByPriority(bid.sizes) : [];
+  if (arraySizes.length) {
+    return first ? arraySizes[0] : arraySizes.join(',');
+  } else {
+    return NULL_SIZE;
+  }
+}
+
+function getSpacesStruct(bids) {
+  let e = {};
+  bids.forEach(bid => {
+    let size = getSize(bid, true);
+    e[size] = e[size] ? e[size] : [];
+    e[size].push(bid);
+  });
+
+  return e;
+}
+
+function cleanName(name) {
+  return name.replace(/_|\.|-|\//g, '').replace(/\)\(|\(|\)|:/g, '_').replace(/^_+|_+$/g, '');
+}
+
+function getSpaces(bidRequests, ml) {
+  let spacesStruct = getSpacesStruct(bidRequests);
+  let es = {str: '', vs: '', map: {}};
+  es.str = Object.keys(spacesStruct).map(size => spacesStruct[size].map((bid, i) => {
+    es.vs += getVs(bid);
+
+    let name;
+    if (ml) {
+      name = cleanName(bid.adUnitCode);
+    } else {
+      name = (bid.params && bid.params.sn) || (getSize(bid, true) + '_' + i);
+    }
+
+    es.map[name] = bid.bidId;
+    return name + ':' + getSize(bid);
+  }).join('+')).join('+');
+  return es;
+}
+
+function getVs(bid) {
+  let s;
+  let vs = '';
+  if (storage.hasLocalStorage()) {
+    s = getViewabilityData(bid);
+    vs += s.render >= 4 ? s.ratio.toString(16) : 'F';
+  } else {
+    vs += 'F';
+  }
+  return vs;
+}
+
+function getViewabilityData(bid) {
+  let r = storage.getDataFromLocalStorage(STORAGE_RENDER_PREFIX + bid.adUnitCode) || 0;
+  let v = storage.getDataFromLocalStorage(STORAGE_VIEW_PREFIX + bid.adUnitCode) || 0;
+  let ratio = r > 0 ? (v / r) : 0;
+  return {
+    render: r,
+    ratio: window.parseInt(ratio * 10, 10)
+  };
+}
+
+function getCharset() {
+  try {
+    return window.top.document.charset || window.top.document.characterSet;
+  } catch (e) {
+    return document.charset || document.characterSet;
+  }
+}
+
+function waitForElementsPresent(elements) {
+  const observer = new MutationObserver(function (mutationList, observer) {
+    if (mutationList && Array.isArray(mutationList)) {
+      mutationList.forEach(mr => {
+        if (mr && mr.addedNodes && Array.isArray(mr.addedNodes)) {
+          mr.addedNodes.forEach(ad => {
+            let index = elements.indexOf(ad.id);
+            if (index >= 0) {
+              registerViewability(ad);
+              elements.splice(index, 1);
+              if (!elements.length) {
+                observer.disconnect();
+              }
+            }
+          });
+        }
+      });
+    }
+  });
+  document.addEventListener('DOMContentLoaded', function (event) {
+    var config = {
+      childList: true,
+      subtree: true,
+      characterData: true
+    };
+    observer.observe(document.body, config);
+  });
+}
+
+function registerViewability(div) {
+  visibilityHandler({
+    name: div.id,
+    div: div
+  });
+}
+
+function registerViewabilityAllBids(bids) {
+  let elementsNotPresent = [];
+  bids.forEach(bid => {
+    let div = document.getElementById(bid.adUnitCode);
+    if (div) {
+      registerViewability(div);
+    } else {
+      elementsNotPresent.push(bid.adUnitCode);
+    }
+  });
+  if (elementsNotPresent.length) {
+    waitForElementsPresent(elementsNotPresent);
+  }
+}
+
+function getViewabilityTracker() {
+  let TIME_PARTITIONS = 5;
+  let VIEWABILITY_TIME = 1000;
+  let VIEWABILITY_MIN_RATIO = 0.5;
+  let publicApi;
+  let context;
+
+  function segmentIsOutsideTheVisibleRange(visibleRangeEnd, p1, p2) {
+    return p1 > visibleRangeEnd || p2 < 0;
+  }
+
+  function segmentBeginsBeforeTheVisibleRange(p1) {
+    return p1 < 0;
+  }
+
+  function segmentEndsAfterTheVisibleRange(visibleRangeEnd, p2) {
+    return p2 < visibleRangeEnd;
+  }
+
+  function axialVisibilityRatio(visibleRangeEnd, p1, p2) {
+    let visibilityRatio = 0;
+    if (!segmentIsOutsideTheVisibleRange(visibleRangeEnd, p1, p2)) {
+      if (segmentBeginsBeforeTheVisibleRange(p1)) {
+        visibilityRatio = p2 / (p2 - p1);
+      } else {
+        visibilityRatio = segmentEndsAfterTheVisibleRange(visibleRangeEnd, p2) ? 1 : (visibleRangeEnd - p1) / (p2 - p1);
+      }
+    }
+    return visibilityRatio;
+  }
+
+  function isNotHiddenByNonFriendlyIframe() {
+    try { return (window === window.top) || window.frameElement; } catch (e) {}
+  }
+
+  function defineContext(e) {
+    try {
+      context = e && window.document.body.contains(e) ? window : (window.top.document.body.contains(e) ? top : undefined);
+    } catch (err) {}
+    return context;
+  }
+
+  function getContext(e) {
+    return context;
+  }
+
+  function verticalVisibilityRatio(position) {
+    return axialVisibilityRatio(getContext().innerHeight, position.top, position.bottom);
+  }
+
+  function horizontalVisibilityRatio(position) {
+    return axialVisibilityRatio(getContext().innerWidth, position.left, position.right);
+  }
+
+  function itIsNotHiddenByBannerAreaPosition(e) {
+    let position = e.getBoundingClientRect();
+    return (verticalVisibilityRatio(position) * horizontalVisibilityRatio(position)) > VIEWABILITY_MIN_RATIO;
+  }
+
+  function itIsNotHiddenByDisplayStyleCascade(e) {
+    return e.offsetHeight > 0 && e.offsetWidth > 0;
+  }
+
+  function itIsNotHiddenByOpacityStyleCascade(e) {
+    let s = e.style;
+    let p = e.parentNode;
+    return !(s && parseFloat(s.opacity) === 0) && (!p || itIsNotHiddenByOpacityStyleCascade(p));
+  }
+
+  function itIsNotHiddenByVisibilityStyleCascade(e) {
+    return getContext().getComputedStyle(e).visibility !== 'hidden';
+  }
+
+  function itIsNotHiddenByTabFocus() {
+    try { return getContext().top.document.hasFocus(); } catch (e) {}
+  }
+
+  function isDefined(e) {
+    return (e !== null) && (typeof e !== 'undefined');
+  }
+
+  function itIsNotHiddenByOrphanBranch() {
+    return isDefined(getContext());
+  }
+
+  function isContextInAnIframe() {
+    return isDefined(getContext().frameElement);
+  }
+
+  function processIntervalVisibilityStatus(elapsedVisibleIntervals, element, callback) {
+    let visibleIntervals = isVisible(element) ? (elapsedVisibleIntervals + 1) : 0;
+    if (visibleIntervals === TIME_PARTITIONS) {
+      callback();
+    } else {
+      setTimeout(processIntervalVisibilityStatus.bind(this, visibleIntervals, element, callback), VIEWABILITY_TIME / TIME_PARTITIONS);
+    }
+  }
+
+  function isVisible(element) {
+    defineContext(element);
+    return isNotHiddenByNonFriendlyIframe() &&
+      itIsNotHiddenByOrphanBranch() &&
+      itIsNotHiddenByTabFocus() &&
+      itIsNotHiddenByDisplayStyleCascade(element) &&
+      itIsNotHiddenByVisibilityStyleCascade(element) &&
+      itIsNotHiddenByOpacityStyleCascade(element) &&
+      itIsNotHiddenByBannerAreaPosition(element) &&
+      (!isContextInAnIframe() || isVisible(getContext().frameElement));
+  }
+
+  publicApi = {
+    isVisible: isVisible,
+    onView: processIntervalVisibilityStatus.bind(this, 0)
+  };
+
+  return publicApi;
+};
+
+function visibilityHandler(obj) {
+  if (obj.div) {
+    registerAuction(STORAGE_RENDER_PREFIX + obj.name);
+    getViewabilityTracker().onView(obj.div, registerAuction.bind(undefined, STORAGE_VIEW_PREFIX + obj.name));
+  }
+}
+
+function registerAuction(storageID) {
+  let value;
+  try {
+    value = storage.getDataFromLocalStorage(storageID);
+    value = value ? window.parseInt(value, 10) + 1 : 1;
+    storage.setDataInLocalStorage(storageID, value);
+  } catch (exc) {
+    return false;
+  }
+
+  return true;
+}
+registerBidder(spec);

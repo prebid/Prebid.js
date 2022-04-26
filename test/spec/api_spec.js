@@ -24,6 +24,10 @@ describe('Publisher API', function () {
     it('should have $$PREBID_GLOBAL$$.que.push function', function () {
       assert.isFunction($$PREBID_GLOBAL$$.que.push);
     });
+
+    it('should have global pointer for PBJS global', function () {
+      assert.isArray(window._pbjsGlobals);
+    });
   });
 
   describe('has function', function () {
@@ -39,16 +43,20 @@ describe('Publisher API', function () {
       assert.isFunction($$PREBID_GLOBAL$$.getBidResponses);
     });
 
+    it('should have function $$PREBID_GLOBAL$$.getNoBids', function () {
+      assert.isFunction($$PREBID_GLOBAL$$.getNoBids);
+    });
+
+    it('should have function $$PREBID_GLOBAL$$.getNoBidsForAdUnitCode', function () {
+      assert.isFunction($$PREBID_GLOBAL$$.getNoBidsForAdUnitCode);
+    });
+
     it('should have function $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode', function () {
       assert.isFunction($$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode);
     });
 
     it('should have function $$PREBID_GLOBAL$$.setTargetingForGPTAsync', function () {
       assert.isFunction($$PREBID_GLOBAL$$.setTargetingForGPTAsync);
-    });
-
-    it('should have function $$PREBID_GLOBAL$$.allBidsAvailable', function () {
-      assert.isFunction($$PREBID_GLOBAL$$.allBidsAvailable);
     });
 
     it('should have function $$PREBID_GLOBAL$$.renderAd', function () {
@@ -67,20 +75,16 @@ describe('Publisher API', function () {
       assert.isFunction($$PREBID_GLOBAL$$.addAdUnits);
     });
 
-    it('should have function $$PREBID_GLOBAL$$.addCallback', function () {
-      assert.isFunction($$PREBID_GLOBAL$$.addCallback);
-    });
-
-    it('should have function $$PREBID_GLOBAL$$.removeCallback', function () {
-      assert.isFunction($$PREBID_GLOBAL$$.removeCallback);
-    });
-
     it('should have function $$PREBID_GLOBAL$$.aliasBidder', function () {
       assert.isFunction($$PREBID_GLOBAL$$.aliasBidder);
     });
 
     it('should have function $$PREBID_GLOBAL$$.getAllWinningBids', function () {
       assert.isFunction($$PREBID_GLOBAL$$.getAllWinningBids);
+    });
+
+    it('should have function $$PREBID_GLOBAL$$.getHighestUnusedBidResponseForAdUnitCode', function () {
+      assert.isFunction($$PREBID_GLOBAL$$.getHighestUnusedBidResponseForAdUnitCode);
     });
   });
 });

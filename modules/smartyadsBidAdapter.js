@@ -1,180 +1,121 @@
-import Adapter from 'src/adapter';
-import bidfactory from 'src/bidfactory';
-import bidmanager from 'src/bidmanager';
-import * as utils from 'src/utils';
-import {ajax} from 'src/ajax';
-import {STATUS} from 'src/constants';
-import adaptermanager from 'src/adaptermanager';
+import { logMessage } from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
 
-const SMARTYADS_BIDDER_CODE = 'smartyads';
+const BIDDER_CODE = 'smartyads';
+const AD_URL = 'https://n1.smartyads.com/?c=o&m=prebid&secret_key=prebid_js';
+const URL_SYNC = 'https://as.ck-ie.com/prebidjs?p=7c47322e527cf8bdeb7facc1bb03387a';
 
-var sizeMap = {
-  1: '468x60',
-  2: '728x90',
-  8: '120x600',
-  9: '160x600',
-  10: '300x600',
-  15: '300x250',
-  16: '336x280',
-  19: '300x100',
-  43: '320x50',
-  44: '300x50',
-  48: '300x300',
-  54: '300x1050',
-  55: '970x90',
-  57: '970x250',
-  58: '1000x90',
-  59: '320x80',
-  61: '1000x1000',
-  65: '640x480',
-  67: '320x480',
-  68: '1800x1000',
-  72: '320x320',
-  73: '320x160',
-  83: '480x300',
-  94: '970x310',
-  96: '970x210',
-  101: '480x320',
-  102: '768x1024',
-  113: '1000x300',
-  117: '320x100',
-  125: '800x250',
-  126: '200x600'
-};
-
-utils._each(sizeMap, (item, key) => sizeMap[item] = key);
-
-function SmartyadsAdapter() {
-  function _callBids(bidderRequest) {
-    var bids = bidderRequest.bids || [];
-
-    bids.forEach((bid) => {
-      try {
-        ajax(buildOptimizedCall(bid), bidCallback, undefined, { withCredentials: true });
-      } catch (err) {
-        utils.logError('Error sending smartyads request for placement code ' + bid.placementCode, null, err);
-      }
-
-      function bidCallback(responseText) {
-        try {
-          utils.logMessage('XHR callback function called for ad ID: ' + bid.bidId);
-          handleRpCB(responseText, bid);
-        } catch (err) {
-          if (typeof err === 'string') {
-            utils.logWarn(`${err} when processing smartyads response for placement code ${bid.placementCode}`);
-          } else {
-            utils.logError('Error processing smartyads response for placement code ' + bid.placementCode, null, err);
-          }
-
-          // indicate that there is no bid for this placement
-          let badBid = bidfactory.createBid(STATUS.NO_BID, bid);
-          badBid.bidderCode = bid.bidder;
-          badBid.error = err;
-          bidmanager.addBidResponse(bid.placementCode, badBid);
-        }
-      }
-    });
+function isBidResponseValid(bid) {
+  if (!bid.requestId || !bid.cpm || !bid.creativeId ||
+    !bid.ttl || !bid.currency) {
+    return false;
   }
-
-  function buildOptimizedCall(bid) {
-    bid.startTime = new Date().getTime();
-
-    // use smartyads sizes if provided, otherwise adUnit.sizes
-    var parsedSizes = SmartyadsAdapter.masSizeOrdering(
-      Array.isArray(bid.params.sizes) ? bid.params.sizes.map(size => (sizeMap[size] || '').split('x')) : bid.sizes
-    );
-
-    if (parsedSizes.length < 1) {
-      throw 'no valid sizes';
-    }
-
-    var secure;
-    if (window.location.protocol !== 'http:') {
-      secure = 1;
-    } else {
-      secure = 0;
-    }
-
-    const host = window.location.host;
-    const page = window.location.pathname;
-    const language = navigator.language;
-    const deviceWidth = window.screen.width;
-    const deviceHeight = window.screen.height;
-
-    var queryString = [
-      'banner_id', bid.params.banner_id,
-      'size_ad', parsedSizes[0],
-      'alt_size_ad', parsedSizes.slice(1).join(',') || undefined,
-      'host', host,
-      'page', page,
-      'language', language,
-      'deviceWidth', deviceWidth,
-      'deviceHeight', deviceHeight,
-      'secure', secure,
-      'bidId', bid.bidId,
-      'checkOn', 'rf'
-    ];
-
-    return queryString.reduce(
-      (memo, curr, index) =>
-        index % 2 === 0 && queryString[index + 1] !== undefined
-          ? memo + curr + '=' + encodeURIComponent(queryString[index + 1]) + '&'
-          : memo,
-      '//ssp-nj.webtradehub.com/?'
-    ).slice(0, -1);
+  switch (bid['mediaType']) {
+    case BANNER:
+      return Boolean(bid.width && bid.height && bid.ad);
+    case VIDEO:
+      return Boolean(bid.vastUrl);
+    case NATIVE:
+      return Boolean(bid.native && bid.native.title && bid.native.image && bid.native.impressionTrackers);
+    default:
+      return false;
   }
-
-  function handleRpCB(responseText, bidRequest) {
-    let ad = JSON.parse(responseText); // can throw
-
-    var bid = bidfactory.createBid(STATUS.GOOD, bidRequest);
-    bid.creative_id = ad.ad_id;
-    bid.bidderCode = bidRequest.bidder;
-    bid.cpm = ad.cpm || 0;
-    bid.ad = ad.adm;
-    bid.width = ad.width;
-    bid.height = ad.height;
-    bid.dealId = ad.deal;
-
-    bidmanager.addBidResponse(bidRequest.placementCode, bid);
-  }
-
-  return Object.assign(new Adapter(SMARTYADS_BIDDER_CODE), { // SMARTYADS_BIDDER_CODE smartyads
-    callBids: _callBids
-  });
 }
 
-SmartyadsAdapter.masSizeOrdering = function (sizes) {
-  const MAS_SIZE_PRIORITY = [15, 2, 9];
+export const spec = {
+  code: BIDDER_CODE,
+  supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
-  return utils.parseSizesInput(sizes)
-  // map sizes while excluding non-matches
-    .reduce((result, size) => {
-      let mappedSize = parseInt(sizeMap[size], 10);
-      if (mappedSize) {
-        result.push(mappedSize);
+  isBidRequestValid: (bid) => {
+    return Boolean(bid.bidId && bid.params && !isNaN(bid.params.sourceid) && !isNaN(bid.params.accountid) && bid.params.host == 'prebid');
+  },
+
+  buildRequests: (validBidRequests = [], bidderRequest) => {
+    let winTop = window;
+    let location;
+    try {
+      location = new URL(bidderRequest.refererInfo.referer)
+      winTop = window.top;
+    } catch (e) {
+      location = winTop.location;
+      logMessage(e);
+    };
+    let placements = [];
+    let request = {
+      'deviceWidth': winTop.screen.width,
+      'deviceHeight': winTop.screen.height,
+      'language': (navigator && navigator.language) ? navigator.language : '',
+      'secure': 1,
+      'host': location.host,
+      'page': location.pathname,
+      'coppa': config.getConfig('coppa') === true ? 1 : 0,
+      'placements': placements
+    };
+    request.language.indexOf('-') != -1 && (request.language = request.language.split('-')[0])
+    if (bidderRequest) {
+      if (bidderRequest.uspConsent) {
+        request.ccpa = bidderRequest.uspConsent;
       }
-      return result;
-    }, [])
-    .sort((first, second) => {
-      // sort by MAS_SIZE_PRIORITY priority order
-      const firstPriority = MAS_SIZE_PRIORITY.indexOf(first);
-      const secondPriority = MAS_SIZE_PRIORITY.indexOf(second);
-
-      if (firstPriority > -1 || secondPriority > -1) {
-        if (firstPriority === -1) {
-          return 1;
-        }
-        if (secondPriority === -1) {
-          return -1;
-        }
-        return firstPriority - secondPriority;
+      if (bidderRequest.gdprConsent) {
+        request.gdpr = bidderRequest.gdprConsent
       }
+    }
+    const len = validBidRequests.length;
 
-      return first - second;
-    });
+    for (let i = 0; i < len; i++) {
+      let bid = validBidRequests[i];
+      let traff = bid.params.traffic || BANNER
+      placements.push({
+        placementId: bid.params.sourceid,
+        bidId: bid.bidId,
+        sizes: bid.mediaTypes && bid.mediaTypes[traff] && bid.mediaTypes[traff].sizes ? bid.mediaTypes[traff].sizes : [],
+        traffic: traff,
+        publisherId: bid.params.accountid
+      });
+      if (bid.schain) {
+        placements.schain = bid.schain;
+      }
+    }
+    return {
+      method: 'POST',
+      url: AD_URL,
+      data: request
+    };
+  },
+
+  interpretResponse: (serverResponse) => {
+    let response = [];
+    serverResponse = serverResponse.body;
+    for (let i = 0; i < serverResponse.length; i++) {
+      let resItem = serverResponse[i];
+      if (isBidResponseValid(resItem)) {
+        response.push(resItem);
+      }
+    }
+    return response;
+  },
+
+  getUserSyncs: (syncOptions, serverResponses = [], gdprConsent = {}, uspConsent = '') => {
+    let syncs = [];
+    let { gdprApplies, consentString = '' } = gdprConsent;
+
+    if (syncOptions.iframeEnabled) {
+      syncs.push({
+        type: 'iframe',
+        url: `${URL_SYNC}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}&type=iframe&us_privacy=${uspConsent}`
+      });
+    } else {
+      syncs.push({
+        type: 'image',
+        url: `${URL_SYNC}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}&type=image&us_privacy=${uspConsent}`
+      });
+    }
+
+    return syncs
+  }
+
 };
 
-adaptermanager.registerBidAdapter(new SmartyadsAdapter(), 'smartyads');
-
-module.exports = SmartyadsAdapter;
+registerBidder(spec);

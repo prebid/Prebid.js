@@ -1,10 +1,10 @@
 {
   "auctionStart": 1462918897459,
-  "bidderCode": "appnexusAst",
+  "bidderCode": "appnexus",
   "bidderRequestId": "2946b569352ef2",
   "bids": [
     {
-      "bidder": "appnexusAst",
+      "bidder": "appnexus",
       "params": {
         "placementId": "9333431",
         "video": {
@@ -16,11 +16,11 @@
       "sizes": [640,480],
       "bidId": "392b5a6b05d648",
       "bidderRequestId": "2946b569352ef2",
-      "requestId": "6172477f-987f-4523-a967-fa6d7a434ddf",
+      "auctionId": "6172477f-987f-4523-a967-fa6d7a434ddf",
       "startTime": 1462918897462
     }
   ],
-  "requestId": "6172477f-987f-4523-a967-fa6d7a434ddf",
+  "auctionId": "6172477f-987f-4523-a967-fa6d7a434ddf",
   "start": 1462918897460,
   "timeout": 5000
 }

@@ -1,0 +1,151 @@
+<html>
+  <head>
+    <script async src="../../build/dev/prebid.js"></script>
+    <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
+    <script>
+      (function(window, document) {
+          if (!window.__cmp) {
+              window.__cmp = (function() {
+                  var listen = window.attachEvent || window.addEventListener;
+                  listen('message', function(event) {
+                      window.__cmp.receiveMessage(event);
+                  }, false);
+
+                  function addLocatorFrame() {
+                      if (!window.frames['__cmpLocator']) {
+                          if (document.body) {
+                              var frame = document.createElement('iframe');
+                              frame.style.display = 'none';
+                              frame.name = '__cmpLocator';
+                              document.body.appendChild(frame);
+                          } else {
+                              setTimeout(addLocatorFrame, 5);
+                          }
+                      }
+                  }
+                  addLocatorFrame();
+
+                  var commandQueue = [];
+                  var cmp = function(command, parameter, callback) {
+                      if (command === 'ping') {
+                          if (callback) {
+                              callback({
+                                  gdprAppliesGlobally: !!(window.__cmp && window.__cmp.config && window.__cmp.config.storeConsentGlobally),
+                                  cmpLoaded: false
+                              });
+                          }
+                      } else {
+                          commandQueue.push({
+                              command: command,
+                              parameter: parameter,
+                              callback: callback
+                          });
+                      }
+                  }
+                  cmp.commandQueue = commandQueue;
+                  cmp.receiveMessage = function(event) {
+                      var data = event && event.data && event.data.__cmpCall;
+                      if (data) {
+                          commandQueue.push({
+                              callId: data.callId,
+                              command: data.command,
+                              parameter: data.parameter,
+                              event: event
+                          });
+                      }
+                  };
+                  cmp.config = {
+                      //
+                      // Modify config values here
+                      //
+                      // globalVendorListLocation: 'https://vendorlist.consensu.org/vendorlist.json',
+                      // customPurposeListLocation: './purposes.json',
+                      // globalConsentLocation: './portal.html',
+                      // storeConsentGlobally: false,
+                      // storePublisherData: false,
+                      logging: 'debug',
+                      // localization: {},
+                      // forceLocale: 'en-us'
+                  }
+                  return cmp;
+              }());
+              var t = document.createElement('script');
+              t.async = false;
+              t.src = 'http://acdn.adnxs.com/cmp/cmp.bundle.js';
+              var tag = document.getElementsByTagName('head')[0];
+              tag.appendChild(t);
+          }
+      })(window, document);
+      window.__cmp('showConsentTool');
+  </script>
+
+      <script>
+        var PREBID_TIMEOUT = 700;
+        var FAILSAFE_TIMEOUT = 2500;
+
+        var adUnits = [{
+          code: 'div-gpt-ad-1460505748561-0',
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250], [300,600]]
+            }
+          },
+
+          // Replace this object to test a new Adapter!
+          bids: [{
+            bidder: 'appnexus',
+            params: {
+              placementId: 13144370
+            }
+          }]
+
+        }];
+
+        var pbjs = pbjs || {};
+        pbjs.que = pbjs.que || [];
+
+      </script>
+
+      <script>
+        var googletag = googletag || {};
+        googletag.cmd = googletag.cmd || [];
+        googletag.cmd.push(function() {
+          googletag.pubads().disableInitialLoad();
+        });
+
+        window.__cmp('addEventListener', 'onSubmit', function(tcData, success) {
+          if (tcData.event === 'onSubmit') {
+              pbjs.que.push(function() {
+                  pbjs.addAdUnits(adUnits);
+                  pbjs.requestBids({
+                      timeout: PREBID_TIMEOUT,
+                      bidsBackHandler: function() {
+                          pbjs.setTargetingForGPTAsync();
+                          googletag.pubads().refresh();
+                      }
+                  });
+              });
+            }
+        });
+
+      </script>
+      <script>
+        googletag.cmd.push(function () {
+          googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
+
+          googletag.pubads().enableSingleRequest();
+          googletag.enableServices();
+        });
+      </script>
+  </head>
+
+  <body>
+  <h2>Prebid.js Test</h2>
+  <h5>Div-1</h5>
+  <div id='div-gpt-ad-1460505748561-0'>
+      <script type='text/javascript'>
+        googletag.cmd.push(function() { googletag.display('div-gpt-ad-1460505748561-0'); });
+      </script>
+  </div>
+  </body>
+  </html>

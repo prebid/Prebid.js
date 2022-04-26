@@ -1,244 +1,170 @@
-var chai = require('chai');
-var Adapter = require('modules/admixerBidAdapter')();
-var Ajax = require('src/ajax');
-var bidmanager = require('src/bidmanager.js');
-var CONSTANTS = require('src/constants.json');
+import {expect} from 'chai';
+import {spec} from 'modules/admixerBidAdapter.js';
+import {newBidder} from 'src/adapters/bidderFactory.js';
+import {config} from '../../../src/config.js';
 
-describe('Admixer adapter', function () {
-  var validData_1 = {
-    bids: [
-      {
-        bidder: 'admixer',
-        bidId: 'bid_id',
-        params: {zone: 'zone_id'},
-        placementCode: 'ad-unit-1',
-        sizes: [[300, 250], [300, 600]]
-      }
-    ]
-  };
-  var validData_2 = {
-    bids: [
-      {
-        bidder: 'admixer',
-        bidId: 'bid_id',
-        params: {zone: 'zone_id'},
-        placementCode: 'ad-unit-1',
-        sizes: [300, 250]
-      }
-    ]
-  };
-  var invalidData = {
-    bids: [
-      {
-        bidder: 'admixer',
-        bidId: 'bid_id',
-        params: {},
-        placementCode: 'ad-unit-1',
-        sizes: [[300, 250], [300, 600]]
-      }
-    ]
-  };
-  var validVideoData_1 = {
-    bids: [
-      {
-        mediaType: 'video',
-        bidder: 'admixer',
-        bidId: 'bid_id',
-        params: {zone: 'zone_id'},
-        placementCode: 'ad-unit-1',
-        sizes: [[300, 250], [300, 600]]
-      }
-    ]
-  };
-  var validVideoData_2 = {
-    bids: [
-      {
-        mediaType: 'video',
-        bidder: 'admixer',
-        bidId: 'bid_id',
-        params: {zone: 'zone_id'},
-        placementCode: 'ad-unit-1',
-        sizes: [300, 250]
-      }
-    ]
-  };
-  var validVideoData_3 = {
-    bids: [
-      {
-        mediaType: 'video',
-        bidder: 'admixer',
-        bidId: 'bid_id',
-        params: {zone: 'zone_id', video: {skippable: true}},
-        placementCode: 'ad-unit-1',
-        sizes: [300, 250]
-      }
-    ]
-  };
-  var invalidVideoData = {
-    bids: [
-      {
-        mediaType: 'video',
-        bidder: 'admixer',
-        bidId: 'bid_id',
-        params: {},
-        placementCode: 'ad-unit-1',
-        sizes: [[300, 250], [300, 600]]
-      }
-    ]
-  };
-  var responseWithAd = JSON.stringify({
-    'result': {
-      'cpm': 2.2,
-      'ad': '<div>response ad</div>',
-      'width': 300,
-      'height': 250
-    },
-    'callback_uid': 'ad-unit-1'
+const BIDDER_CODE = 'admixer';
+const ENDPOINT_URL = 'https://inv-nets.admixer.net/prebid.1.2.aspx';
+const ENDPOINT_URL_CUSTOM = 'https://custom.admixer.net/prebid.aspx';
+const ZONE_ID = '2eb6bd58-865c-47ce-af7f-a918108c3fd2';
+
+describe('AdmixerAdapter', function () {
+  const adapter = newBidder(spec);
+
+  describe('inherited functions', function () {
+    it('exists and is a function', function () {
+      expect(adapter.callBids).to.be.exist.and.to.be.a('function');
+    });
   });
-  var responseWithoutAd = JSON.stringify({
-    'result': {
-      'cpm': 0,
-      'ad': '',
-      'width': 0,
-      'height': 0
-    },
-    'callback_uid': 'ad-unit-1'
-  });
-  var responseWithVideoAd = JSON.stringify({
-    'result': {
-      'cpm': 2.2,
-      'vastUrl': 'http://inv-nets.admixer.net/vastxml.aspx?req=9d651544-daf4-48ed-ae0c-38a60a4e1920&vk=e914f026449e49aeb6eea07b9642a2ce',
-      'width': 300,
-      'height': 250
-    },
-    'callback_uid': 'ad-unit-1'
-  });
-  var responseWithoutVideoAd = JSON.stringify({
-    'result': {
-      'cpm': 0,
-      'vastUrl': '',
-      'width': 0,
-      'height': 0
-    },
-    'callback_uid': 'ad-unit-1'
-  });
-  var responseEmpty = '';
-  var invUrl = '//inv-nets.admixer.net/prebid.aspx';
-  var invVastUrl = '//inv-nets.admixer.net/videoprebid.aspx';
-  var validJsonParams = {
-    zone: 'zone_id',
-    callback_uid: 'ad-unit-1',
-    sizes: '300x250-300x600'
-  };
-  var validJsonVideoParams = {
-    zone: 'zone_id',
-    callback_uid: 'ad-unit-1',
-    sizes: '300x250-300x600',
-    skippable: true
-  };
-  describe('bid request with valid data', function () {
-    var stubAjax;
-    beforeEach(function () {
-      stubAjax = sinon.stub(Ajax, 'ajax');
+
+  describe('isBidRequestValid', function () {
+    let bid = {
+      'bidder': BIDDER_CODE,
+      'params': {
+        'zone': ZONE_ID
+      },
+      'adUnitCode': 'adunit-code',
+      'sizes': [[300, 250], [300, 600]],
+      'bidId': '30b31c1838de1e',
+      'bidderRequestId': '22edbae2733bf6',
+      'auctionId': '1d1a030790a475',
+    };
+
+    it('should return true when required params found', function () {
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    afterEach(function () {
-      stubAjax.restore();
-    });
-    it('display: bid request should be called. sizes style -> [[],[]]', function () {
-      Adapter.callBids(validData_1);
-      sinon.assert.calledOnce(stubAjax);
-    });
-    it('video: bid request should be called. sizes style -> [[],[]]', function () {
-      Adapter.callBids(validVideoData_1);
-      sinon.assert.calledOnce(stubAjax);
-    });
-    it('display: bid request should be called. sizes style -> []', function () {
-      Adapter.callBids(validData_2);
-      sinon.assert.calledOnce(stubAjax);
-    });
-    it('video: bid request should be called. sizes style -> []', function () {
-      Adapter.callBids(validVideoData_2);
-      sinon.assert.calledOnce(stubAjax);
-    });
-    it('display: ajax params should be matched', function () {
-      Adapter.callBids(validData_1);
-      sinon.assert.calledWith(stubAjax, sinon.match(invUrl, function () {
-      }, validJsonParams, {method: 'GET'}));
-    });
-    it('video: ajax params should be matched', function () {
-      Adapter.callBids(validVideoData_3);
-      sinon.assert.calledWith(stubAjax, sinon.match(invVastUrl, function () {
-      }, validJsonVideoParams, {method: 'GET'}));
+    it('should return false when required params are not passed', function () {
+      let bid = Object.assign({}, bid);
+      delete bid.params;
+      bid.params = {
+        'placementId': 0
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
-  describe('bid request with invalid data', function () {
-    var addBidResponse, stubAjax;
-    beforeEach(function () {
-      addBidResponse = sinon.stub(bidmanager, 'addBidResponse');
-      stubAjax = sinon.stub(Ajax, 'ajax');
+
+  describe('buildRequests', function () {
+    let validRequest = [
+      {
+        'bidder': BIDDER_CODE,
+        'params': {
+          'zone': ZONE_ID
+        },
+        'adUnitCode': 'adunit-code',
+        'sizes': [[300, 250], [300, 600]],
+        'bidId': '30b31c1838de1e',
+        'bidderRequestId': '22edbae2733bf6',
+        'auctionId': '1d1a030790a475',
+      }
+    ];
+    let bidderRequest = {
+      bidderCode: BIDDER_CODE,
+      refererInfo: {
+        referer: 'https://example.com'
+      }
+    };
+
+    it('should add referrer and imp to be equal bidRequest', function () {
+      const request = spec.buildRequests(validRequest, bidderRequest);
+      const payload = request.data;
+      expect(payload.referrer).to.not.be.undefined;
+      expect(payload.imps[0]).to.deep.equal(validRequest[0]);
     });
 
-    afterEach(function () {
-      addBidResponse.restore();
-      stubAjax.restore();
+    it('sends bid request to ENDPOINT via GET', function () {
+      const request = spec.buildRequests(validRequest, bidderRequest);
+      expect(request.url).to.equal(ENDPOINT_URL);
+      expect(request.method).to.equal('POST');
     });
-    it('display: ajax shouldn\'t be called', function () {
-      Adapter.callBids(invalidData);
-      sinon.assert.notCalled(stubAjax);
-    });
-    it('video: ajax shouldn\'t be called', function () {
-      Adapter.callBids(invalidVideoData);
-      sinon.assert.notCalled(stubAjax);
-    });
-    it('display: bidmanager.addBidResponse status code must to be equal "' + CONSTANTS.STATUS.NO_BID + '"', function () {
-      Adapter.callBids(invalidData);
-      expect(addBidResponse.firstCall.args[1].getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
-      expect(addBidResponse.firstCall.args[1].bidderCode).to.equal('admixer');
-    });
-    it('video: bidmanager.addBidResponse status code must to be equal "' + CONSTANTS.STATUS.NO_BID + '"', function () {
-      Adapter.callBids(invalidVideoData);
-      expect(addBidResponse.firstCall.args[1].getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
-      expect(addBidResponse.firstCall.args[1].bidderCode).to.equal('admixer');
+
+    it('sends bid request to CUSTOM_ENDPOINT via GET', function () {
+      config.setBidderConfig({
+        bidders: [BIDDER_CODE], // one or more bidders
+        config: {[BIDDER_CODE]: {endpoint_url: ENDPOINT_URL_CUSTOM}}
+      });
+      const request = config.runWithBidder(BIDDER_CODE, () => spec.buildRequests(validRequest, bidderRequest));
+      expect(request.url).to.equal(ENDPOINT_URL_CUSTOM);
+      expect(request.method).to.equal('POST');
     });
   });
-  describe('bid response', function () {
-    var addBidResponse;
-    beforeEach(function () {
-      addBidResponse = sinon.stub(bidmanager, 'addBidResponse');
+
+  describe('interpretResponse', function () {
+    let response = {
+      body: {
+        ads: [{
+          'currency': 'USD',
+          'cpm': 6.210000,
+          'ad': '<div>ad</div>',
+          'width': 300,
+          'height': 600,
+          'creativeId': 'ccca3e5e-0c54-4761-9667-771322fbdffc',
+          'ttl': 360,
+          'netRevenue': false,
+          'requestId': '5e4e763b6bc60b',
+          'dealId': 'asd123',
+          'meta': {'advertiserId': 123, 'networkId': 123, 'advertiserDomains': ['test.com']}
+        }]
+      }
+    };
+
+    it('should get correct bid response', function () {
+      const ads = response.body.ads;
+      let expectedResponse = [
+        {
+          'requestId': ads[0].requestId,
+          'cpm': ads[0].cpm,
+          'creativeId': ads[0].creativeId,
+          'width': ads[0].width,
+          'height': ads[0].height,
+          'ad': ads[0].ad,
+          'currency': ads[0].currency,
+          'netRevenue': ads[0].netRevenue,
+          'ttl': ads[0].ttl,
+          'dealId': ads[0].dealId,
+          'meta': {'advertiserId': 123, 'networkId': 123, 'advertiserDomains': ['test.com']}
+        }
+      ];
+
+      let result = spec.interpretResponse(response);
+      expect(result[0]).to.deep.equal(expectedResponse[0]);
     });
-    afterEach(function () {
-      addBidResponse.restore();
+
+    it('handles nobid responses', function () {
+      let response = [];
+
+      let result = spec.interpretResponse(response);
+      expect(result.length).to.equal(0);
     });
-    it('display: response with ad. bidmanager.addBidResponse status code must to be equal "' + CONSTANTS.STATUS.GOOD + '"', function () {
-      Adapter.responseCallback(responseWithAd);
-      var arg = addBidResponse.firstCall.args[1];
-      expect(arg.getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
-      expect(arg.bidderCode).to.equal('admixer');
-    });
-    it('video: response with ad. bidmanager.addBidResponse status code must to be equal "' + CONSTANTS.STATUS.GOOD + '"', function () {
-      Adapter.responseCallback(responseWithVideoAd);
-      var arg = addBidResponse.firstCall.args[1];
-      expect(arg.getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
-      expect(arg.bidderCode).to.equal('admixer');
-    });
-    it('display: response without ad. bidmanager.addBidResponse status code must to be equal "' + CONSTANTS.STATUS.NO_BID, function () {
-      Adapter.responseCallback(responseWithoutAd);
-      var arg = addBidResponse.firstCall.args[1];
-      expect(arg.getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
-      expect(arg.bidderCode).to.equal('admixer');
-    });
-    it('video: response without ad. bidmanager.addBidResponse status code must to be equal "' + CONSTANTS.STATUS.NO_BID, function () {
-      Adapter.responseCallback(responseWithoutVideoAd);
-      var arg = addBidResponse.firstCall.args[1];
-      expect(arg.getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
-      expect(arg.bidderCode).to.equal('admixer');
-    });
-    it('display/video: response empty. bidmanager.addBidResponse status code must to be equal "' + CONSTANTS.STATUS.NO_BID, function () {
-      Adapter.responseCallback(responseEmpty);
-      var arg = addBidResponse.firstCall.args[1];
-      expect(arg.getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
-      expect(arg.bidderCode).to.equal('admixer');
+  });
+
+  describe('getUserSyncs', function () {
+    let imgUrl = 'https://example.com/img1';
+    let frmUrl = 'https://example.com/frm2';
+    let responses = [{
+      body: {
+        cm: {
+          pixels: [
+            imgUrl
+          ],
+          iframes: [
+            frmUrl
+          ],
+        }
+      }
+    }];
+
+    it('Returns valid values', function () {
+      let userSyncAll = spec.getUserSyncs({pixelEnabled: true, iframeEnabled: true}, responses);
+      let userSyncImg = spec.getUserSyncs({pixelEnabled: true, iframeEnabled: false}, responses);
+      let userSyncFrm = spec.getUserSyncs({pixelEnabled: false, iframeEnabled: true}, responses);
+      expect(userSyncAll).to.be.an('array').with.lengthOf(2);
+      expect(userSyncImg).to.be.an('array').with.lengthOf(1);
+      expect(userSyncImg[0].url).to.be.equal(imgUrl);
+      expect(userSyncImg[0].type).to.be.equal('image');
+      expect(userSyncFrm).to.be.an('array').with.lengthOf(1);
+      expect(userSyncFrm[0].url).to.be.equal(frmUrl);
+      expect(userSyncFrm[0].type).to.be.equal('iframe');
     });
   });
 });

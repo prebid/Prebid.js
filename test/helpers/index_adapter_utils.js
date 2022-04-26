@@ -203,7 +203,7 @@ exports.matchBidsOnSID = function(lhs, rhs) {
   var compared = compareOnKeys(lstore, rstore);
   var matched = compared.intersection.map(function(pair) { return { configured: pair.left, sent: pair.right, name: pair.name } });
 
-  return { unmatched: { configured: compared.lhsOnly, sent: compared.rhsOnly }, matched: matched};
+  return { unmatched: { configured: compared.lhsOnly, sent: compared.rhsOnly }, matched: matched };
 }
 
 exports.matchBidsOnSize = function(lhs, rhs) {
@@ -220,12 +220,12 @@ exports.matchBidsOnSize = function(lhs, rhs) {
   }
 
   var lstore = createObjectFromArray(configured);
-  var rstore = createObjectFromArray(rhs.map(bid => [ bid.banner.w + 'x' + bid.banner.h, bid]));
+  var rstore = createObjectFromArray(rhs.map(bid => [ bid.banner.w + 'x' + bid.banner.h, bid ]));
 
   var compared = compareOnKeys(lstore, rstore);
   var matched = compared.intersection.map(function(pair) { return { configured: pair.left, sent: pair.right, name: pair.name } });
 
-  return { unmatched: { configured: compared.lhsOnly, sent: compared.rhsOnly }, matched: matched};
+  return { unmatched: { configured: compared.lhsOnly, sent: compared.rhsOnly }, matched: matched };
 }
 
 exports.getBidResponse = function(configuredBids, urlJSON, optionalPriceLevel, optionalResponseIdentifier, optionalPassOnBid, optionalResponseParam) {
