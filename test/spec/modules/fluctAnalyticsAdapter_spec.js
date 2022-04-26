@@ -32,14 +32,19 @@ const adUnits = [
         bidder: 'bidder1',
         dwid: 'dwid1'
       },
-      {
-        bidder: 'bidder2',
-        dwid: 'dwid2'
-      }
     ],
     ext: {
       device: 'SP'
-    }
+    },
+    bids: [
+      {
+        bidder: 'bidder1',
+        params: {
+          networkId: 11021
+        },
+        dwid: 'dwid1'
+      },
+    ],
   }
 ]
 
@@ -72,16 +77,20 @@ describe('複製枠のadUnitsをマッピングできる', () => {
       ...browsiAdUnit,
       code: 'div-gpt-ad-1587114265584-0',
       _code: browsiAdUnit.code,
-      bids: undefined,
+      bids: [
+        {
+          bidder: 'bidder1',
+          params: {
+            networkId: 11021
+          },
+          dwid: 'dwid1'
+        },
+      ],
       analytics: [
         {
           bidder: 'bidder1',
           dwid: 'dwid1',
-        },
-        {
-          bidder: 'bidder2',
-          dwid: 'dwid2',
-        },
+        }
       ],
     }
     expect(expected).to.deep.equal(actual)
@@ -103,9 +112,35 @@ const MOCK = {
     'adUnits': adUnits,
     'adUnitCodes': adUnits.map(adUnit => adUnit.code),
     'noBids': [],
+    'bidderRequests': [
+      {
+        'bidderCode': adUnits[0].bids[0].bidder,
+        'auctionId': 'eeca6754-525b-4c4c-a697-b06b1fc6c352',
+        'bidderRequestId': '9481bc7a501fb8',
+        'bids': [
+          {
+            'bidder': adUnits[0].bids[0].bidder,
+            'dwid': adUnits[0].bids[0].dwid,
+            'params': adUnits[0].bids[0].params,
+            'adUnitCode': adUnits[0].code,
+            // 'transactionId': 'transactionId',
+            'bidId': '22697ff3e5bf7ee',
+            'bidderRequestId': '9481bc7a501fb8',
+            'auctionId': 'eeca6754-525b-4c4c-a697-b06b1fc6c352',
+            'src': 'client',
+            'bidRequestsCount': 1,
+            'bidderRequestsCount': 1,
+            'bidderWinsCount': 0,
+          }
+        ],
+        'auctionStart': 1635837149209,
+      }
+    ],
     'bidsReceived': [
       {
-        'bidderCode': 'bidder1',
+        'dwid': adUnits[0].bids[0].dwid,
+        'bidder': adUnits[0].bids[0].bidder,
+        'bidderCode': adUnits[0].bids[0].bidder,
         'width': 320,
         'height': 100,
         'statusMessage': 'Bid available',
@@ -126,7 +161,6 @@ const MOCK = {
         'auctionId': 'eeca6754-525b-4c4c-a697-b06b1fc6c352',
         'responseTimestamp': 1635837149448,
         'requestTimestamp': 1635837149232,
-        'bidder': 'bidder1',
         'adUnitCode': 'div-gpt-ad-1587114265584-0',
         'timeToRespond': 216,
         'pbLg': '5.00',
@@ -211,6 +245,7 @@ describe('fluct analytics adapter', () => {
           source: "client",
           timeToRespond: 216,
           bid: {
+            dwid: "dwid1",
             bidderCode: "bidder1",
             width: 320,
             height: 100,

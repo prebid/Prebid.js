@@ -19,13 +19,14 @@ const find = _find;
 
 const url = 'https://an.adingo.jp';
 
-/** @typedef {{ad: string, adId: string, adUnitCode: string, adUrl: string, adserverTargeting: any, auctionId: string, bidder: string, bidderCode: string, cpm: number, creativeId: string, currency: string, dealId: string, height: number, mediaType: string, netRevenue: boolean, originalCpm: number, originalCurrency: string, params: any, pbAg: string, pbCg: string, pbDg: string, pbHg: string, pbLg: string, pbMg: string, pbLg: string, requestId: string, requestTimestamp: number, responseTimestamp: number, size: string, source: string, status: string, statusMessage: string, timeToRespond: string, ttl: string, width: number, bidId?: string}} BidResponse */
+/** @typedef {{ad: string, adId: string, adUnitCode: string, adUrl: string, adserverTargeting: any, auctionId: string, bidder: string, bidderCode: string, cpm: number, creativeId: string, currency: string, dealId: string, height: number, mediaType: string, netRevenue: boolean, originalCpm: number, originalCurrency: string, params: any, pbAg: string, pbCg: string, pbDg: string, pbHg: string, pbLg: string, pbMg: string, pbLg: string, requestId: string, requestTimestamp: number, responseTimestamp: number, size: string, source: string, status: string, statusMessage: string, timeToRespond: string, ttl: string, width: number, bidId?: string, params: any}} BidResponse */
 /** @typedef {{bidder: string, params: any}} Bid */
-/** @typedef {{code: string, _code?: string, path?: string, analytics?: {bidder: string, dwid: string}[], bids?: Bid[], mediaTypes: {banner: {name: string, sizes: number[][]}}, sizes: number[][], transactionId: string}} AdUnit */
+/** @typedef {{code: string, _code?: string, dwid: string, path?: string, analytics?: {bidder: string, dwid: string}[], bids?: Bid[], mediaTypes: {banner: {name: string, sizes: number[][]}}, sizes: number[][], transactionId: string}} AdUnit */
 /** @typedef {BidResponse & {noBid: boolean, prebidWon: boolean, bidWon: boolean, timeout: boolean}} ModBidResponse */
 /** @typedef {{adUnitCodes: string[], adUnits: AdUnit[], auctionEnd: number, auctionId: string, auctionStatus: string, bidderRequests: any[], bidsReceived: BidResponse[], labels?: string, noBids: BidResponse[], timeout: number, timestamp: number, winningBids: BidResponse[], bids: {[requestId: string]: ModBidResponse}}} PbAuction */
 /** @typedef {{registered: boolean}} Gpt */
 /** @typedef {{[divId: string]: string }} Slots `{divId: adUnitPath}` */
+
 /** @type {{auctions: {[auctionId: string]: PbAuction}, adUnits: {[adUnitCode: string]: AdUnit}, gpt: Gpt, timeouts: {[auctionId: string]: number}}} */
 const cache = {
   auctions: {},
@@ -64,8 +65,9 @@ export const convertReplicatedAdUnit = (_adUnit, adUnits = $$PREBID_GLOBAL$$.adU
        * browsi枠は`adUnit.path`を持たない
        * 共通のadUnitPathを持つ（複製元の）枠を探す
        */
-      const { analytics, code, mediaTypes: { banner: { name } } } = find(adUnits, adUnit => adUnitPath.match(new RegExp(`${adUnit.path}$`)));
+      const { analytics, bids, code, mediaTypes: { banner: { name } } } = find(adUnits, adUnit => adUnitPath.match(new RegExp(`${adUnit.path}$`)));
       adUnit.analytics = analytics;
+      adUnit.bids = bids;
       adUnit._code = adUnit.code; /** 変換前: `browsi_ad_..` */
       adUnit.code = code;
       adUnit.mediaTypes.banner.name = name;
@@ -77,7 +79,6 @@ export const convertReplicatedAdUnit = (_adUnit, adUnits = $$PREBID_GLOBAL$$.adU
       }));
     }
   }
-  adUnit.bids = undefined;
   return adUnit;
 };
 
@@ -125,7 +126,7 @@ let fluctAnalyticsAdapter = Object.assign(
         case EVENTS.AUCTION_END: {
           /** @type {PbAuction} */
           let auctionEndEvent = args;
-          let { adUnitCodes, auctionId, bidsReceived, noBids } = auctionEndEvent;
+          let { adUnitCodes, auctionId, bidderRequests, bidsReceived, noBids } = auctionEndEvent;
           Object.assign(cache.auctions[auctionId], auctionEndEvent, { aidSuffix: isBrowsiId(auctionId) ? generateUUID() : undefined });
 
           let prebidWonBidRequestIds = adUnitCodes.map(adUnitCode =>
@@ -136,6 +137,9 @@ let fluctAnalyticsAdapter = Object.assign(
               , {}).requestId
           );
 
+          const requestBids = []
+          bidderRequests.forEach(bidderRequest => bidderRequest.bids.forEach(bid => requestBids.push(bid)))
+
           const bidResults = [
             ...bidsReceived.map(bid => ({
               ...bid,
@@ -143,6 +147,7 @@ let fluctAnalyticsAdapter = Object.assign(
               prebidWon: prebidWonBidRequestIds.includes(bid.requestId),
               bidWon: false,
               timeout: false,
+              dwid: (find(requestBids, requestBid => requestBid.bidId === bid.requestId) || {}).dwid, /** module版browsiには存在しない */
             })),
             ...noBids.map(bid => ({
               ...bid,
@@ -155,25 +160,31 @@ let fluctAnalyticsAdapter = Object.assign(
           bidResults.forEach(bid => cache.auctions[auctionId].bids[bid.requestId || bid.bidId] = bid);
 
           /** browsi auction の場合 `browsiEventListener` から送信する */
-          if (!isBrowsiId(auctionId))
+          if (!isBrowsiId(auctionId)) {
             sendMessage(auctionId);
+          }
           break;
         }
-        case EVENTS.BID_WON: {
-          /** @type {Bid} */
-          let bidWonEvent = args;
-          let { auctionId, requestId } = bidWonEvent;
+        case EVENTS.AD_RENDER_SUCCEEDED: {
+          /** @type {{ adId: string, bid: Bid, doc: any }} */
+          let adRenderSucceededEvent = args;
+          let { bid: { auctionId, requestId } } = adRenderSucceededEvent;
           Object.assign(cache.auctions[auctionId].bids[requestId], bidWonEvent, {
             noBid: false,
             prebidWon: true,
             bidWon: true,
             timeout: false,
           });
-          /** 複数の `BID_WON` イベントをまとめて送信する */
-          clearTimeout(cache.timeouts[auctionId]);
-          cache.timeouts[auctionId] = setTimeout(() => {
+          /** オークション単位で `AD_RENDER_SUCCEEDED` イベントをまとめて送信する */
+          if (isBrowsiId(auctionId)) {
+            /** 原則1オークション:1枠 */
             sendMessage(auctionId);
-          }, Math.min(config.getConfig('timeoutBuffer') || 400, 400));
+          } else {
+            clearTimeout(cache.timeouts[auctionId]);
+            cache.timeouts[auctionId] = setTimeout(() => {
+              sendMessage(auctionId);
+            }, Math.min(config.getConfig('timeoutBuffer') || 400, 400));
+          }
           break;
         }
         default:
@@ -195,14 +206,15 @@ const sendMessage = (auctionId) => {
     auctionId: aidSuffix ? `${auctionId}_${aidSuffix}` : auctionId,
     adUnits,
     bids: Object.values(bids).map(bid => {
-      const { noBid, prebidWon, bidWon, timeout, adId, adUnitCode, adUrl, bidder, status, netRevenue, cpm, currency, originalCpm, originalCurrency, requestId, size, source, timeToRespond } = bid;
+      const { noBid, prebidWon, bidWon, timeout, dwid, adId, adUnitCode, adUrl, bidder, status, netRevenue, cpm, currency, originalCpm, originalCurrency, params, requestId, size, source, timeToRespond } = bid;
       const adUnit = find(adUnits, adUnit => [adUnit._code, adUnit.code].includes(adUnitCode));
+
       return {
         noBid,
         prebidWon,
         bidWon,
         timeout,
-        dwid: find(adUnit.analytics, param => param.bidder === bidder)?.dwid,
+        dwid: dwid || (find(adUnit.analytics, param => param.bidder === bidder) || {}).dwid,
         status,
         adId,
         adUrl,
@@ -217,6 +229,7 @@ const sendMessage = (auctionId) => {
         size,
         source,
         timeToRespond,
+        /** @deprecated */
         bid: {
           ...bid,
           ad: undefined
