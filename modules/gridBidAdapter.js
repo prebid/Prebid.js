@@ -157,6 +157,8 @@ export const spec = {
       }
     });
 
+    forceBidderName = config.getConfig('forceBidderName') || forceBidderName;
+
     if (forceBidderName && ALIAS_CONFIG[forceBidderName]) {
       endpoint = ALIAS_CONFIG[forceBidderName].endpoint;
       this.forceBidderName = forceBidderName;
