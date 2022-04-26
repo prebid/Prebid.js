@@ -12,7 +12,7 @@ const gdprStatus = {
   CMP_NOT_FOUND_OR_ERROR: 22
 };
 const FP_TEADS_ID_COOKIE_NAME = '_tfpvi';
-export const storage = getStorageManager(GVL_ID, BIDDER_CODE);
+export const storage = getStorageManager({gvlid: GVL_ID, bidderCode: BIDDER_CODE});
 
 export const spec = {
   code: BIDDER_CODE,
@@ -190,8 +190,7 @@ function buildRequestObject(bid) {
   const reqObj = {};
   let placementId = getValue(bid.params, 'placementId');
   let pageId = getValue(bid.params, 'pageId');
-  const impressionData = deepAccess(bid, 'ortb2Imp.ext.data');
-  const gpid = deepAccess(impressionData, 'pbadslot') || deepAccess(impressionData, 'adserver.adslot');
+  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
 
   reqObj.sizes = getSizes(bid);
   reqObj.bidId = getBidIdParameter('bidId', bid);

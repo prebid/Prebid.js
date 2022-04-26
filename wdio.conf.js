@@ -1,36 +1,34 @@
-const browsers = require('./browsers.json');
+const browsers = Object.fromEntries(
+  Object.entries(require('./browsers.json'))
+    .filter(([k, v]) => {
+      // run only on latest; exclude Safari
+      // (Webdriver's `browser.url(...)` times out on Safari if the page loads a video; does it wait for playback to complete?)
+      return v.browser_version === 'latest' && v.browser !== 'safari'
+    })
+);
 
 function getCapabilities() {
   function getPlatform(os) {
     const platformMap = {
       'Windows': 'WINDOWS',
-      'OS X': 'MAC',
+      'OS X': 'OS X',
     }
     return platformMap[os];
   }
 
-  // only Chrome 80 & Firefox 73 run as part of functional tests
-  // rest of the browsers are discarded.
-  delete browsers['bs_chrome_79_windows_10'];
-  delete browsers['bs_firefox_72_windows_10'];
-  delete browsers['bs_safari_11_mac_catalina'];
-  delete browsers['bs_safari_12_mac_mojave'];
-  // disable all edge browsers due to wdio bug for switchToFrame: https://github.com/webdriverio/webdriverio/issues/3880
-  delete browsers['bs_edge_18_windows_10'];
-  delete browsers['bs_edge_17_windows_10'];
-
   let capabilities = []
-  Object.keys(browsers).forEach(key => {
-    let browser = browsers[key];
+  Object.values(browsers).forEach(browser => {
     capabilities.push({
       browserName: browser.browser,
-      os: getPlatform(browser.os),
-      os_version: browser.os_version,
-      browser_version: browser.browser_version,
-      acceptSslCerts: true,
-      'browserstack.networkLogs': true,
-      'browserstack.console': 'verbose',
-      build: 'Prebidjs E2E ' + new Date().toLocaleString()
+      browserVersion: browser.browser_version,
+      'bstack:options': {
+        os: getPlatform(browser.os),
+        osVersion: browser.os_version,
+        networkLogs: true,
+        consoleLogs: 'verbose',
+        buildName: `Prebidjs E2E (${browser.browser} ${browser.browser_version}) ${new Date().toLocaleString()}`
+      },
+      acceptInsecureCerts: true,
     });
   });
   return capabilities;
@@ -38,7 +36,12 @@ function getCapabilities() {
 
 exports.config = {
   specs: [
-    './test/spec/e2e/**/*.spec.js'
+    './test/spec/e2e/**/*.spec.js',
+  ],
+  exclude: [
+    // TODO: decipher original intent for "longform" tests
+    // they all appear to be almost exact copies
+    './test/spec/e2e/longform/**/*'
   ],
   services: [
     ['browserstack', {
@@ -49,7 +52,7 @@ exports.config = {
   key: process.env.BROWSERSTACK_ACCESS_KEY,
   maxInstances: 5, // Do not increase this, since we have only 5 parallel tests in browserstack account
   capabilities: getCapabilities(),
-  logLevel: 'silent', // put option here: info | trace | debug | warn| error | silent
+  logLevel: 'info', // put option here: info | trace | debug | warn| error | silent
   bail: 0,
   waitforTimeout: 60000, // Default timeout for all waitFor* commands.
   connectionRetryTimeout: 60000, // Default timeout in milliseconds for request if Selenium Grid doesn't send response
@@ -61,5 +64,5 @@ exports.config = {
     compilers: ['js:babel-register'],
   },
   // if you see error, update this to spec reporter and logLevel above to get detailed report.
-  reporters: ['concise']
+  reporters: ['spec']
 }

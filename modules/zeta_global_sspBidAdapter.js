@@ -1,4 +1,4 @@
-import { logWarn, deepSetValue, deepAccess, isArray, isNumber, isBoolean, isStr } from '../src/utils.js';
+import {deepAccess, deepSetValue, isArray, isBoolean, isNumber, isStr, logWarn} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
@@ -10,6 +10,8 @@ const USER_SYNC_URL_IMAGE = 'https://ssp.disqus.com/sync?type=image';
 const DEFAULT_CUR = 'USD';
 const TTL = 200;
 const NET_REV = true;
+
+const VIDEO_REGEX = new RegExp(/VAST\s+version/);
 
 const DATA_TYPES = {
   'NUMBER': 'number',
@@ -106,8 +108,7 @@ export const spec = {
     payload.site.domain = config.getConfig('publisherDomain') || getDomainFromURL(payload.site.page);
 
     payload.device.ua = navigator.userAgent;
-    payload.device.devicetype = isMobile() ? 1 : isConnectedTV() ? 3 : 2;
-    payload.site.mobile = payload.device.devicetype === 1 ? 1 : 0;
+    payload.device.language = navigator.language;
 
     if (params.test) {
       payload.test = params.test;
@@ -161,6 +162,7 @@ export const spec = {
               advertiserDomains: zetaBid.adomain
             };
           }
+          provideMediaType(zetaBid, bid);
           bidResponses.push(bid);
         })
       })
@@ -276,12 +278,22 @@ function getDomainFromURL(url) {
   return hostname;
 }
 
-function isMobile() {
-  return /(ios|ipod|ipad|iphone|android)/i.test(navigator.userAgent);
-}
-
-function isConnectedTV() {
-  return /(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i.test(navigator.userAgent);
+function provideMediaType(zetaBid, bid) {
+  if (zetaBid.ext && zetaBid.ext.bidtype) {
+    if (zetaBid.ext.bidtype === VIDEO) {
+      bid.mediaType = VIDEO;
+      bid.vastXml = bid.ad;
+    } else {
+      bid.mediaType = BANNER;
+    }
+  } else {
+    if (VIDEO_REGEX.test(bid.ad)) {
+      bid.mediaType = VIDEO;
+      bid.vastXml = bid.ad;
+    } else {
+      bid.mediaType = BANNER;
+    }
+  }
 }
 
 registerBidder(spec);

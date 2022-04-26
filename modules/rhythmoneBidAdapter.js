@@ -8,6 +8,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 function RhythmOneBidAdapter() {
   this.code = 'rhythmone';
   this.supportedMediaTypes = [VIDEO, BANNER];
+  this.gvlid = 36;
 
   let SUPPORTED_VIDEO_PROTOCOLS = [2, 3, 5, 6];
   let SUPPORTED_VIDEO_MIMES = ['video/mp4'];

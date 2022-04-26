@@ -130,16 +130,22 @@ Once setup, run the following command to globally install the `gulp-cli` package
 
 ## Build for Development
 
-To build the project on your local machine, run:
+To build the project on your local machine we recommend, running:
 
-    $ gulp serve
+    $ gulp serve-and-test --file <spec_file.js>
 
-This runs some code quality checks, starts a web server at `http://localhost:9999` serving from the project root and generates the following files:
+This will run testing but not linting. A web server will start at `http://localhost:9999` serving from the project root and generates the following files:
 
 + `./build/dev/prebid.js` - Full source code for dev and debug
 + `./build/dev/prebid.js.map` - Source map for dev and debug
-+ `./build/dist/prebid.js` - Minified production code
-+ `./prebid.js_<version>.zip` - Distributable zip archive
++ `./build/dev/prebid-core.js`
++ `./build/dev/prebid-core.js.map`
+
+
+Development may be a bit slower but if you prefer linting and additional watch files you can also still run just:
+
+    $ gulp serve 
+
 
 ### Build Optimization
 
@@ -274,7 +280,7 @@ As you make code changes, the bundles will be rebuilt and the page reloaded auto
 
 ## Contribute
 
-Many SSPs, bidders, and publishers have contributed to this project. [Hundreds of bidders](https://github.com/prebid/Prebid.js/tree/master/src/adapters) are supported by Prebid.js.
+Many SSPs, bidders, and publishers have contributed to this project. [Hundreds of bidders](https://github.com/prebid/Prebid.js/tree/master/modules) are supported by Prebid.js.
 
 For guidelines, see [Contributing](./CONTRIBUTING.md).
 
