@@ -9,6 +9,8 @@ import {
   logInfo,
   logError,
   generateUUID,
+  deepClone,
+  isGptPubadsDefined,
 } from '../src/utils.js';
 import * as _find from 'core-js-pure/features/array/find.js';
 import $$PREBID_GLOBAL$$ from '../src/prebid.js';
@@ -17,9 +19,9 @@ const find = _find;
 
 const url = 'https://an.adingo.jp';
 
-/** @typedef {{ad: string, adId: string, adUnitCode: string, adUrl: string, adserverTargeting: any, auctionId: string, bidder: string, bidderCode: string, cpm: number, creativeId: string, currency: string, dealId: string, height: number, mediaType: string, netRevenue: boolean, originalCpm: number, originalCurrency: string, params: any, pbAg: string, pbCg: string, pbDg: string, pbHg: string, pbLg: string, pbMg: string, pbLg: string, requestId: string, requestTimestamp: number, responseTimestamp: number, size: string, source: string, status: string, statusMessage: string, timeToRespond: string, ttl: string, width: number, bidId?: string}} BidResponse */
+/** @typedef {{ad: string, adId: string, adUnitCode: string, adUrl: string, adserverTargeting: any, auctionId: string, bidder: string, bidderCode: string, cpm: number, creativeId: string, currency: string, dealId: string, height: number, mediaType: string, netRevenue: boolean, originalCpm: number, originalCurrency: string, params: any, pbAg: string, pbCg: string, pbDg: string, pbHg: string, pbLg: string, pbMg: string, pbLg: string, requestId: string, requestTimestamp: number, responseTimestamp: number, size: string, source: string, status: string, statusMessage: string, timeToRespond: string, ttl: string, width: number, bidId?: string, params: any}} BidResponse */
 /** @typedef {{bidder: string, params: any}} Bid */
-/** @typedef {{code: string, dwid: string, path?: string, bids?: Bid[], mediaTypes: {banner: {name: string, sizes: number[][]}}, sizes: number[][], transactionId: string}} AdUnit */
+/** @typedef {{code: string, _code?: string, dwid: string, path?: string, analytics?: {bidder: string, dwid: string}[], bids?: Bid[], mediaTypes: {banner: {name: string, sizes: number[][]}}, sizes: number[][], transactionId: string}} AdUnit */
 /** @typedef {BidResponse & {noBid: boolean, prebidWon: boolean, bidWon: boolean, timeout: boolean}} ModBidResponse */
 /** @typedef {{adUnitCodes: string[], adUnits: AdUnit[], auctionEnd: number, auctionId: string, auctionStatus: string, bidderRequests: any[], bidsReceived: BidResponse[], labels?: string, noBids: BidResponse[], timeout: number, timestamp: number, winningBids: BidResponse[], bids: {[requestId: string]: ModBidResponse}}} PbAuction */
 /** @typedef {{registered: boolean}} Gpt */
@@ -36,6 +38,61 @@ $$PREBID_GLOBAL$$.fluct = { cache: cache }; /** for debug */
 /** @type {(id: string) => boolean} */
 const isBrowsiId = (id) => Boolean(id.match(/^browsi_/g));
 
+/**
+ * 各adUnitCodeに対応したadUnitPathを取得する
+ * @type {() => Slots}
+ * @sample
+ * ```
+ * {
+ *   'div-gpt-ad-1629864618640-0': '/62532913/p_fluctmagazine_320x50_surface_15377',
+ *   'browsi_ad_0_ai_1_rc_0': '/62532913/p_fluctmagazine_320x50_surface_15377'
+ * }
+ * ```
+ */
+const getAdUnitMap = () => window.googletag.pubads().getSlots().reduce((prev, slot) => Object.assign(prev, { [slot.getSlotElementId()]: slot.getAdUnitPath() }), {});
+
+/** @type {(_adUnit: AdUnit, adUnits: AdUnit[], slots: Slots) => AdUnit} */
+export const convertReplicatedAdUnit = (_adUnit, adUnits = $$PREBID_GLOBAL$$.adUnits, slots = getAdUnitMap()) => {
+  /** @type {AdUnit} */
+  const adUnit = deepClone(_adUnit);
+
+  /** browsi枠: */
+  if (!adUnit.analytics) {
+    /** `adUnit.analytics`が存在しない場合、`adUnit.path`も存在しない */
+    const adUnitPath = slots[adUnit.code];
+    try {
+      /**
+       * browsi枠は`adUnit.path`を持たない
+       * 共通のadUnitPathを持つ（複製元の）枠を探す
+       */
+      const { analytics, bids, code, mediaTypes: { banner: { name } } } = find(adUnits, adUnit => adUnitPath.match(new RegExp(`${adUnit.path}$`)));
+      adUnit.analytics = analytics;
+      adUnit.bids = bids;
+      adUnit._code = adUnit.code; /** 変換前: `browsi_ad_..` */
+      adUnit.code = code;
+      adUnit.mediaTypes.banner.name = name;
+    } catch (_error) {
+      logError(JSON.stringify({
+        message: '対応するDWIDを持つ枠が見つかりませんでした。',
+        adUnitCode: adUnit.code,
+        adUnitPath,
+      }));
+    }
+  }
+  return adUnit;
+};
+
+/** @typedef {{slot: {getSlotElementId: () => string}}} GptEvent */
+/** @type {(event: GptEvent) => void} */
+const browsiEventListener = (event) => {
+  const divId = event.slot.getSlotElementId();
+  if (isBrowsiId(divId)) {
+    const auction = find(Object.values(cache.auctions), auction =>
+      auction.adUnitCodes.every(adUnitCode => adUnitCode === divId));
+    sendMessage(auction.auctionId);
+  }
+}
+
 let fluctAnalyticsAdapter = Object.assign(
   adapter({ url, analyticsType: 'endpoint' }), {
   track({ eventType, args }) {
@@ -46,6 +103,10 @@ let fluctAnalyticsAdapter = Object.assign(
           /** @type {PbAuction} */
           let auctionInitEvent = args;
           cache.auctions[auctionInitEvent.auctionId] = { ...auctionInitEvent, bids: {} };
+          if (!cache.gpt.registered && isGptPubadsDefined()) {
+            window.googletag.pubads().addEventListener('slotOnload', browsiEventListener)
+            cache.gpt.registered = true;
+          }
           break;
         }
         case EVENTS.BID_TIMEOUT: {
@@ -86,7 +147,7 @@ let fluctAnalyticsAdapter = Object.assign(
               prebidWon: prebidWonBidRequestIds.includes(bid.requestId),
               bidWon: false,
               timeout: false,
-              dwid: (find(requestBids, requestBid => requestBid.bidId === bid.requestId) || {}).dwid,
+              dwid: (find(requestBids, requestBid => requestBid.bidId === bid.requestId) || {}).dwid, /** module版browsiには存在しない */
             })),
             ...noBids.map(bid => ({
               ...bid,
@@ -97,7 +158,11 @@ let fluctAnalyticsAdapter = Object.assign(
             })),
           ];
           bidResults.forEach(bid => cache.auctions[auctionId].bids[bid.requestId || bid.bidId] = bid);
-          sendMessage(auctionId);
+
+          /** browsi auction の場合 `browsiEventListener` から送信する */
+          if (!isBrowsiId(auctionId)) {
+            sendMessage(auctionId);
+          }
           break;
         }
         case EVENTS.AD_RENDER_SUCCEEDED: {
@@ -135,21 +200,25 @@ let fluctAnalyticsAdapter = Object.assign(
 /** @type {(auctionId: string) => void} */
 const sendMessage = (auctionId) => {
   let { adUnits, auctionEnd, aidSuffix, auctionStatus, bids } = cache.auctions[auctionId];
+  adUnits = adUnits.map(adUnit => convertReplicatedAdUnit(adUnit, $$PREBID_GLOBAL$$.adUnits));
+
   const payload = {
     auctionId: aidSuffix ? `${auctionId}_${aidSuffix}` : auctionId,
     adUnits,
     bids: Object.values(bids).map(bid => {
-      const { noBid, prebidWon, bidWon, timeout, dwid, adId, adUnitCode, adUrl, bidder, status, netRevenue, cpm, currency, originalCpm, originalCurrency, requestId, size, source, timeToRespond } = bid;
+      const { noBid, prebidWon, bidWon, timeout, dwid, adId, adUnitCode, adUrl, bidder, status, netRevenue, cpm, currency, originalCpm, originalCurrency, params, requestId, size, source, timeToRespond } = bid;
+      const adUnit = find(adUnits, adUnit => [adUnit._code, adUnit.code].includes(adUnitCode));
+
       return {
         noBid,
         prebidWon,
         bidWon,
         timeout,
-        dwid,
+        dwid: dwid || (find(adUnit.analytics, param => param.bidder === bidder) || {}).dwid,
         status,
         adId,
         adUrl,
-        adUnitCode,
+        adUnitCode: adUnit.code,
         bidder,
         netRevenue,
         cpm,

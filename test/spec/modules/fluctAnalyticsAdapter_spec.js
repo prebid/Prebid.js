@@ -1,4 +1,6 @@
-import fluctAnalyticsAdapter from '../../../modules/fluctAnalyticsAdapter';
+import fluctAnalyticsAdapter, {
+  convertReplicatedAdUnit,
+} from '../../../modules/fluctAnalyticsAdapter';
 import { expect } from 'chai';
 import * as events from 'src/events.js';
 import { EVENTS } from 'src/constants.json';
@@ -25,6 +27,12 @@ const adUnits = [
         name: 'p_fluctmagazine_320x50_surface_15377'
       }
     },
+    analytics: [
+      {
+        bidder: 'bidder1',
+        dwid: 'dwid1'
+      },
+    ],
     ext: {
       device: 'SP'
     },
@@ -39,6 +47,55 @@ const adUnits = [
     ],
   }
 ]
+
+describe('複製枠のadUnitsをマッピングできる', () => {
+  const slots = {
+    'div-gpt-ad-1587114265584-0': '/62532913/p_fluctmagazine_320x50_surface_15377',
+    'browsi_ad_0_ai_1_rc_0': '/62532913/p_fluctmagazine_320x50_surface_15377'
+  }
+  it('adUnitsに複製元codeとdwidを付与できる', () => {
+    const browsiAdUnit = {
+      code: 'browsi_ad_0_ai_1_rc_0',
+      mediaTypes: {
+        banner: {
+          name: 'p_fluctmagazine_320x50_surface_15377',
+          sizes: [
+            [
+              300,
+              250,
+            ],
+            [
+              336,
+              280,
+            ]
+          ]
+        }
+      }
+    }
+    const actual = convertReplicatedAdUnit(browsiAdUnit, [browsiAdUnit, ...adUnits], slots)
+    const expected = {
+      ...browsiAdUnit,
+      code: 'div-gpt-ad-1587114265584-0',
+      _code: browsiAdUnit.code,
+      bids: [
+        {
+          bidder: 'bidder1',
+          params: {
+            networkId: 11021
+          },
+          dwid: 'dwid1'
+        },
+      ],
+      analytics: [
+        {
+          bidder: 'bidder1',
+          dwid: 'dwid1',
+        }
+      ],
+    }
+    expect(expected).to.deep.equal(actual)
+  })
+})
 
 const MOCK = {
   AUCTION_INIT: {
