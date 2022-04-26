@@ -88,7 +88,7 @@ const browsiEventListener = (event) => {
   const divId = event.slot.getSlotElementId();
   if (isBrowsiId(divId)) {
     const auction = find(Object.values(cache.auctions), auction =>
-      auction.adUnitCodes.every(adUnitCode => adUnitCode === divId));
+      auction.adUnitCodes.every(adUnitCode => adUnitCode === divId)) || {};
     sendMessage(auction.auctionId);
   }
 }
@@ -169,7 +169,7 @@ let fluctAnalyticsAdapter = Object.assign(
           /** @type {{ adId: string, bid: Bid, doc: any }} */
           let adRenderSucceededEvent = args;
           let { bid: { auctionId, requestId } } = adRenderSucceededEvent;
-          Object.assign(cache.auctions[auctionId].bids[requestId], bidWonEvent, {
+          Object.assign(cache.auctions[auctionId].bids[requestId], adRenderSucceededEvent, {
             noBid: false,
             prebidWon: true,
             bidWon: true,
