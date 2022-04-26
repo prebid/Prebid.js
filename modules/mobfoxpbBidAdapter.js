@@ -1,7 +1,6 @@
-import { isFn, deepAccess } from '../src/utils.js';
+import { isFn, deepAccess, getWindowTop } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'mobfoxpb';
 const AD_URL = 'https://bes.mobfox.com/pbjs';
@@ -49,7 +48,7 @@ export const spec = {
   },
 
   buildRequests: (validBidRequests = [], bidderRequest) => {
-    const winTop = utils.getWindowTop();
+    const winTop = getWindowTop();
     const location = winTop.location;
     const placements = [];
     const request = {
