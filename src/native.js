@@ -185,11 +185,12 @@ export function nativeBidIsValid(bid, {index = auctionManager.index} = {}) {
   const adUnit = index.getAdUnit(bid);
   if (!adUnit) { return false; }
   let ortbResponse, ortbRequest;
-  if (deepAccess(bid, 'native.ortb') && deepAccess(adUnit, 'nativeParams.ortb')) {
-    ortbResponse = bid.native.ortb;
-    ortbRequest = adUnit.nativeParams.ortb;
-  } else {
+  if (!deepAccess(adUnit, 'nativeParams.ortb')) {
     ortbRequest = toOrtbNativeRequest(adUnit.nativeParams);
+  }
+  if (deepAccess(bid, 'native.ortb')) {
+    ortbResponse = bid.native.ortb;
+  } else {
     ortbResponse = toOrtbNativeResponse(bid.native, ortbRequest);
   }
   return isNativeOpenRTBBidValid(ortbResponse, ortbRequest);
@@ -442,10 +443,13 @@ export function toOrtbNativeRequest(nativeAssets) {
       }
       // if min_width and min_height are defined in aspect_ratio, they are preferred
       if (asset.aspect_ratios) {
-        if (!isPlainObject(asset.aspect_ratios)) {
-          logError("image.aspect_ratios was passed, but it's not a plain object:", asset.aspect_ratios);
-        } else {
-          const {min_width: minWidth, min_height: minHeight} = asset.aspect_ratios;
+        if (!isArray(asset.aspect_ratios)) {
+          logError("image.aspect_ratios was passed, but it's not a an array:", asset.aspect_ratios);
+        } else if (asset.aspect_ratios.length != 1) {
+          logError("image.aspect_ratios was passed, but it's empty:", asset.aspect_ratios);
+        }
+        else {
+          const { min_width: minWidth, min_height: minHeight } = asset.aspect_ratios[0];
           if (!isInteger(minWidth) || !isInteger(minHeight)) {
             logError('image.aspect_ratios min_width or min_height are invalid: ', minWidth, minHeight);
           } else {
@@ -565,7 +569,7 @@ export function convertOrtbRequestToProprietaryNative(bidRequests) {
   return bidRequests;
 }
 
-function toOrtbNativeResponse(legacyResponse, ortbRequest) {
+export function toOrtbNativeResponse(legacyResponse, ortbRequest) {
   const ortbResponse = {
     link: {},
     assets: [],
@@ -584,7 +588,7 @@ function toOrtbNativeResponse(legacyResponse, ortbRequest) {
         break;
       case 'image':
       case 'icon':
-        const imageType = key === 'image' ? 3 : 1;
+        const imageType = key === 'image' ? IMAGE_TYPES.MAIN : IMAGE_TYPES.ICON;
         const imageAsset = ortbRequest.assets.find(asset => asset.img != null && asset.img.type == imageType);
         imageAsset.img = {
           url: value

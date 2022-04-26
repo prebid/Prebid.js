@@ -24,7 +24,7 @@ import {
   logWarn,
   mergeDeep,
   parseSizesInput,
-  pick, timestamp,
+  timestamp,
   triggerPixel,
   uniques
 } from '../../src/utils.js';
@@ -406,20 +406,14 @@ function addBidderFirstPartyDataToRequest(request, bidderFpd) {
 }
 
 // https://iabtechlab.com/wp-content/uploads/2016/07/OpenRTB-Native-Ads-Specification-Final-1.2.pdf#page=40
-let nativeDataIdMap = {
-  sponsoredBy: 1, // sponsored
-  body: 2, // desc
-  rating: 3,
-  likes: 4,
-  downloads: 5,
-  price: 6,
-  salePrice: 7,
-  phone: 8,
-  address: 9,
-  body2: 10, // desc2
-  cta: 12 // ctatext
-};
-let nativeDataNames = Object.keys(nativeDataIdMap);
+let nativeDataNames = Object.keys(CONSTANTS.PREBID_NATIVE_DATA_KEYS_TO_ORTB);
+
+// returns object with legacy asset name as key and asset id as value:
+// { "sponsoredBy": 1, ... }
+let nativeDataIdMap = nativeDataNames.reduce((prev, key) => {
+  prev[key] = CONSTANTS.ASSET_TYPES[CONSTANTS.PREBID_NATIVE_DATA_KEYS_TO_ORTB[key]];
+  return prev;
+}, {});
 
 let nativeImgIdMap = {
   icon: 1,
@@ -1046,19 +1040,19 @@ Object.assign(ORTB2.prototype, {
             if (!bidObject.vastUrl && bid.nurl) { bidObject.vastUrl = bid.nurl; }
           } else if (FEATURES.NATIVE && deepAccess(bid, 'ext.prebid.type') === NATIVE) {
             bidObject.mediaType = NATIVE;
-            let adm;
+            let ortb;
             if (typeof bid.adm === 'string') {
-              adm = bidObject.adm = JSON.parse(bid.adm);
+              ortb = bidObject.adm = JSON.parse(bid.adm);
             } else {
-              adm = bidObject.adm = bid.adm;
+              ortb = bidObject.adm = bid.adm;
             }
 
             let trackers = {
-              [nativeEventTrackerMethodMap.img]: adm.imptrackers || [],
-              [nativeEventTrackerMethodMap.js]: adm.jstracker ? [adm.jstracker] : []
+              [nativeEventTrackerMethodMap.img]: ortb.imptrackers || [],
+              [nativeEventTrackerMethodMap.js]: ortb.jstracker ? [ortb.jstracker] : []
             };
-            if (adm.eventtrackers) {
-              adm.eventtrackers.forEach(tracker => {
+            if (ortb.eventtrackers) {
+              ortb.eventtrackers.forEach(tracker => {
                 switch (tracker.method) {
                   case nativeEventTrackerMethodMap.img:
                     trackers[nativeEventTrackerMethodMap.img].push(tracker.url);
@@ -1070,36 +1064,9 @@ Object.assign(ORTB2.prototype, {
               });
             }
 
-            if (isPlainObject(adm) && Array.isArray(adm.assets)) {
-              if (deepAccess(bidRequest, 'mediaTypes.native.ortb')) {
-                bidObject.native = {
-                  ortb: adm,
-                }
-              } else {
-                let origAssets = nativeAssetCache[bid.impid];
-                bidObject.native = cleanObj(adm.assets.reduce((native, asset) => {
-                  let origAsset = origAssets[asset.id];
-                  if (isPlainObject(asset.img)) {
-                    native[origAsset.img.type ? nativeImgIdMap[origAsset.img.type] : 'image'] = pick(
-                      asset.img,
-                      ['url', 'w as width', 'h as height']
-                    );
-                  } else if (isPlainObject(asset.title)) {
-                    native['title'] = asset.title.text
-                  } else if (isPlainObject(asset.data)) {
-                    nativeDataNames.forEach(dataType => {
-                      if (nativeDataIdMap[dataType] === origAsset.data.type) {
-                        native[dataType] = asset.data.value;
-                      }
-                    });
-                  }
-                  return native;
-                }, cleanObj({
-                  clickUrl: adm.link,
-                  clickTrackers: deepAccess(adm, 'link.clicktrackers'),
-                  impressionTrackers: trackers[nativeEventTrackerMethodMap.img],
-                  javascriptTrackers: trackers[nativeEventTrackerMethodMap.js]
-                })));
+            if (isPlainObject(ortb) && Array.isArray(ortb.assets)) {
+              bidObject.native = {
+                ortb,
               }
             } else {
               logError('prebid server native response contained no assets');
