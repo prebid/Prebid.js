@@ -447,8 +447,7 @@ export function toOrtbNativeRequest(nativeAssets) {
           logError("image.aspect_ratios was passed, but it's not a an array:", asset.aspect_ratios);
         } else if (asset.aspect_ratios.length != 1) {
           logError("image.aspect_ratios was passed, but it's empty:", asset.aspect_ratios);
-        }
-        else {
+        } else {
           const { min_width: minWidth, min_height: minHeight } = asset.aspect_ratios[0];
           if (!isInteger(minWidth) || !isInteger(minHeight)) {
             logError('image.aspect_ratios min_width or min_height are invalid: ', minWidth, minHeight);

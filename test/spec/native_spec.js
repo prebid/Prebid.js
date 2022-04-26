@@ -603,17 +603,17 @@ describe('validate native', function () {
           image: {
             required: true,
             sizes: [150, 50],
-            aspect_ratios: {
+            aspect_ratios: [{
               min_width: 150,
               min_height: 50
-            }
+            }]
           },
           icon: {
             required: true,
-            aspect_ratios: {
+            aspect_ratios: [{
               min_width: 150,
               min_height: 50
-            }
+            }]
           },
           address: {},
         },
