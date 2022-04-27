@@ -5,7 +5,7 @@ import { VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'alkimi';
-export const ENDPOINT = 'https://exchange-dev.alkimi.asteriosoft.com/bid?prebid=true';
+export const ENDPOINT = 'https://exchange.alkimi-onboarding.com/bid?prebid=true';
 
 export const spec = {
   code: BIDDER_CODE,

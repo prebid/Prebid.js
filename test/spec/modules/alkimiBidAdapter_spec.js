@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { ENDPOINT, spec } from 'modules/alkimiAdapter.js'
+import { ENDPOINT, spec } from 'modules/alkimiBidAdapter.js'
 import { newBidder } from 'src/adapters/bidderFactory.js'
 
 const REQUEST = {
@@ -30,7 +30,7 @@ const BIDDER_BANNER_RESPONSE = {
     'creativeId': 1,
     'netRevenue': true,
     'winUrl': 'http://test.com',
-    'format': 'banner',
+    'mediaType': 'banner',
     'adomain': ['test.com']
   }]
 }
@@ -47,14 +47,14 @@ const BIDDER_VIDEO_RESPONSE = {
     'creativeId': 2,
     'netRevenue': true,
     'winUrl': 'http://test.com',
-    'format': 'video',
+    'mediaType': 'video',
     'adomain': ['test.com']
   }]
 }
 
 const BIDDER_NO_BID_RESPONSE = ''
 
-describe('alkimiAdapter', function () {
+describe('alkimiBidAdapter', function () {
   const adapter = newBidder(spec)
 
   describe('inherited functions', function () {
@@ -86,7 +86,7 @@ describe('alkimiAdapter', function () {
   describe('buildRequests', function () {
     let bidRequests = [REQUEST]
     const bidderRequest = spec.buildRequests(bidRequests, {
-      bidderRequestId: '123',
+      auctionId: '123',
       refererInfo: {
         referer: 'http://test.com/path.html'
       }
@@ -96,7 +96,10 @@ describe('alkimiAdapter', function () {
       expect(bidderRequest.method).to.equal('POST')
       expect(bidderRequest.data.requestId).to.equal('123')
       expect(bidderRequest.data.referer).to.equal('http://test.com/path.html')
-      expect(bidderRequest.data.bids).to.deep.contains({ bidId: '456', token: 'e64782a4-8e68-4c38-965b-80ccf115d46f', pos: 7, bidFloor: 0.1, width: 300, height: 250, impMediaType: 'Banner' })
+      expect(bidderRequest.data.signRequest.bids).to.deep.contains({ token: 'e64782a4-8e68-4c38-965b-80ccf115d46f', pos: 7, bidFloor: 0.1, width: 300, height: 250, impMediaType: 'Banner' })
+      expect(bidderRequest.data.signRequest.randomUUID).to.equal(undefined)
+      expect(bidderRequest.data.bidIds).to.deep.contains('456')
+      expect(bidderRequest.data.signature).to.equal(undefined)
       expect(bidderRequest.options.customHeaders).to.deep.equal({ 'Rtb-Direct': true })
       expect(bidderRequest.options.contentType).to.equal('application/json')
       expect(bidderRequest.url).to.equal(ENDPOINT)
@@ -117,7 +120,7 @@ describe('alkimiAdapter', function () {
       expect(result[0]).to.have.property('creativeId').equal(1)
       expect(result[0]).to.have.property('netRevenue').equal(true)
       expect(result[0]).to.have.property('winUrl').equal('http://test.com')
-      expect(result[0]).to.have.property('format').equal('banner')
+      expect(result[0]).to.have.property('mediaType').equal('banner')
       expect(result[0].meta).to.exist.property('advertiserDomains')
       expect(result[0].meta).to.have.property('advertiserDomains').lengthOf(1)
     })
@@ -135,7 +138,7 @@ describe('alkimiAdapter', function () {
       expect(result[0]).to.have.property('creativeId').equal(2)
       expect(result[0]).to.have.property('netRevenue').equal(true)
       expect(result[0]).to.have.property('winUrl').equal('http://test.com')
-      expect(result[0]).to.have.property('format').equal('video')
+      expect(result[0]).to.have.property('mediaType').equal('video')
       expect(result[0]).to.have.property('vastXml').equal('<xml>vast</xml>')
       expect(result[0].meta).to.exist.property('advertiserDomains')
       expect(result[0].meta).to.have.property('advertiserDomains').lengthOf(1)
