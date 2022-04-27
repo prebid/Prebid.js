@@ -185,6 +185,11 @@ export const spec = {
         eids = eids1;
       }
     }
+    // we want to send this blob of info to our backend:
+    let pg = config.getConfig('priceGranularity');
+    if (!pg) {
+      pg = {};
+    }
 
     let transformedParams = Object.assign({}, {
       auctionid: bidderRequest.auctionId,
@@ -197,6 +202,7 @@ export const spec = {
       mkeywords: miscDims.mkeywords,
       bids: bids,
       eids: eids,
+      pricegranularity: pg,
       cfg: jixieCfgBlob
     }, ids);
     return Object.assign({}, {
