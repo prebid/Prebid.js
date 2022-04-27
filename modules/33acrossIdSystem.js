@@ -1,7 +1,7 @@
 /**
- * This module adds Lexicon to the User ID module
+ * This module adds 33acrossId to the User ID module
  * The {@link module:modules/userId} module is required
- * @module modules/lexiconIdSystem
+ * @module modules/33acrossIdSystem
  * @requires module:modules/userId
  */
 
@@ -10,8 +10,8 @@ import { ajaxBuilder } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { uspDataHandler } from '../src/adapterManager.js';
 
-const MODULE_NAME = 'lexicon';
-const LEXICON_URL = 'https://api-lexicon.33across.com/v1/envelope';
+const MODULE_NAME = '33acrossId';
+const API_URL = 'https://lexicon.33across.com/v1/envelope';
 const AJAX_TIMEOUT = 10000;
 
 function getEnvelope(response) {
@@ -50,7 +50,7 @@ function calculateQueryStringParams(pid, gdprConsentData) {
 }
 
 /** @type {Submodule} */
-export const lexiconIdSubmodule = {
+export const thirthyThreeAcrossIdSubmodule = {
   /**
    * used to link submodule with config
    * @type {string}
@@ -63,7 +63,7 @@ export const lexiconIdSubmodule = {
    * decode the stored id value for passing to bid requests
    * @function
    * @param {string} id
-   * @returns {{lexicon:{ envelope: string}}}
+   * @returns {{'33acrossId':{ envelope: string}}}
    */
   decode(id) {
     return {
@@ -81,12 +81,12 @@ export const lexiconIdSubmodule = {
    */
   getId({ params = { } }, gdprConsentData) {
     if (typeof params.pid !== 'string') {
-      logError('Lexicon ID submodule requires a partner ID to be defined');
+      logError(`${MODULE_NAME}: Submodule requires a partner ID to be defined`);
 
       return;
     }
 
-    const { pid, apiUrl = LEXICON_URL } = params;
+    const { pid, apiUrl = API_URL } = params;
 
     return {
       callback(cb) {
@@ -112,4 +112,4 @@ export const lexiconIdSubmodule = {
   }
 };
 
-submodule('userId', lexiconIdSubmodule);
+submodule('userId', thirthyThreeAcrossIdSubmodule);

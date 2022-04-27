@@ -364,9 +364,9 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
-  it('lexicon', function() {
+  it('33acrossId', function() {
     const userId = {
-      lexicon: {
+      '33acrossId': {
         envelope: 'some-random-id-value'
       }
     };

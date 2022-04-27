@@ -1,21 +1,19 @@
-import { lexiconIdSubmodule } from 'modules/33acrossIdSystem.js';
+import { thirthyThreeAcrossIdSubmodule } from 'modules/33acrossIdSystem.js';
 import * as utils from 'src/utils.js';
 
 import { server } from 'test/mocks/xhr.js';
 import { uspDataHandler } from 'src/adapterManager.js';
 
-const name = lexiconIdSubmodule.name;
-
-describe('LexiconIdSystem', () => {
+describe('33acrossIdSystem', () => {
   describe('name', () => {
     it('should expose the name of the submodule', () => {
-      expect(lexiconIdSubmodule.name).to.equal('lexicon');
+      expect(thirthyThreeAcrossIdSubmodule.name).to.equal('33acrossId');
     });
   });
 
   describe('gvlid', () => {
     it('should expose the vendor id', () => {
-      expect(lexiconIdSubmodule.gvlid).to.equal(58);
+      expect(thirthyThreeAcrossIdSubmodule.gvlid).to.equal(58);
     });
   });
 
@@ -23,7 +21,7 @@ describe('LexiconIdSystem', () => {
     it('should call endpoint and handle valid response', () => {
       const completeCallback = sinon.spy();
 
-      const { callback } = lexiconIdSubmodule.getId({
+      const { callback } = thirthyThreeAcrossIdSubmodule.getId({
         params: {
           pid: '12345'
         }
@@ -52,7 +50,7 @@ describe('LexiconIdSystem', () => {
     context('when GDPR applies', () => {
       it('should call endpoint with \'gdpr=1\'', () => {
         const completeCallback = () => {};
-        const { callback } = lexiconIdSubmodule.getId({
+        const { callback } = thirthyThreeAcrossIdSubmodule.getId({
           params: {
             pid: '12345'
           }
@@ -75,7 +73,7 @@ describe('LexiconIdSystem', () => {
             { consentString: 'foo', expected: 'foo' }
           ].forEach(({ consentString, expected }, index) => {
             const completeCallback = () => {};
-            const { callback } = lexiconIdSubmodule.getId({
+            const { callback } = thirthyThreeAcrossIdSubmodule.getId({
               params: {
                 pid: '12345'
               }
@@ -95,7 +93,7 @@ describe('LexiconIdSystem', () => {
     context('when GDPR doesn\'t apply', () => {
       it('should call endpoint with \'gdpr=0\' and no GDPR consent string parameter', () => {
         const completeCallback = () => {};
-        const { callback } = lexiconIdSubmodule.getId({
+        const { callback } = thirthyThreeAcrossIdSubmodule.getId({
           params: {
             pid: '12345'
           }
@@ -116,7 +114,7 @@ describe('LexiconIdSystem', () => {
     context('when a valid US Privacy string is given', () => {
       it('should call endpoint with the US Privacy parameter', () => {
         const completeCallback = () => {};
-        const { callback } = lexiconIdSubmodule.getId({
+        const { callback } = thirthyThreeAcrossIdSubmodule.getId({
           params: {
             pid: '12345'
           }
@@ -137,7 +135,7 @@ describe('LexiconIdSystem', () => {
     context('when an invalid US Privacy is given', () => {
       it('should call endpoint without the US Privacy parameter', () => {
         const completeCallback = () => {};
-        const { callback } = lexiconIdSubmodule.getId({
+        const { callback } = thirthyThreeAcrossIdSubmodule.getId({
           params: {
             pid: '12345'
           }
@@ -160,11 +158,11 @@ describe('LexiconIdSystem', () => {
       it('should log an error', () => {
         const logErrorSpy = sinon.spy(utils, 'logError');
 
-        lexiconIdSubmodule.getId({
+        thirthyThreeAcrossIdSubmodule.getId({
           params: { /* No 'pid' param */ }
         });
 
-        expect(logErrorSpy.calledOnceWithExactly('Lexicon ID submodule requires a partner ID to be defined')).to.be.true;
+        expect(logErrorSpy.calledOnceWithExactly('33acrossId: Submodule requires a partner ID to be defined')).to.be.true;
 
         logErrorSpy.restore();
       });
@@ -174,13 +172,13 @@ describe('LexiconIdSystem', () => {
       it('should log an error', () => {
         const logErrorSpy = sinon.spy(utils, 'logError');
 
-        lexiconIdSubmodule.getId({
+        thirthyThreeAcrossIdSubmodule.getId({
           params: {
             pid: 123456 // PID must be a string
           }
         });
 
-        expect(logErrorSpy.calledOnceWithExactly('Lexicon ID submodule requires a partner ID to be defined')).to.be.true;
+        expect(logErrorSpy.calledOnceWithExactly('33acrossId: Submodule requires a partner ID to be defined')).to.be.true;
 
         logErrorSpy.restore();
       });
@@ -191,7 +189,7 @@ describe('LexiconIdSystem', () => {
         const logErrorSpy = sinon.spy(utils, 'logError');
         const completeCallback = () => {};
 
-        const { callback } = lexiconIdSubmodule.getId({
+        const { callback } = thirthyThreeAcrossIdSubmodule.getId({
           params: {
             pid: '12345'
           }
@@ -205,7 +203,7 @@ describe('LexiconIdSystem', () => {
           'Content-Type': 'application/json'
         }, 'invalid response');
 
-        expect(logErrorSpy.lastCall.args[0]).to.eq(`${lexiconIdSubmodule.name}: ID reading error:`);
+        expect(logErrorSpy.lastCall.args[0]).to.eq(`${thirthyThreeAcrossIdSubmodule.name}: ID reading error:`);
 
         logErrorSpy.restore();
       });
@@ -213,7 +211,7 @@ describe('LexiconIdSystem', () => {
       it('should execute complete callback with undefined value', () => {
         const completeCallback = sinon.spy();
 
-        const { callback } = lexiconIdSubmodule.getId({
+        const { callback } = thirthyThreeAcrossIdSubmodule.getId({
           params: {
             pid: '12345'
           }
@@ -234,7 +232,7 @@ describe('LexiconIdSystem', () => {
     context('when an endpoint override is given', () => {
       it('should call that endpoint', () => {
         const completeCallback = sinon.spy();
-        const { callback } = lexiconIdSubmodule.getId({
+        const { callback } = thirthyThreeAcrossIdSubmodule.getId({
           params: {
             pid: '12345',
             apiUrl: 'https://staging-api-lexicon.33across.com/v1/envelope'
@@ -264,7 +262,7 @@ describe('LexiconIdSystem', () => {
         const logErrorSpy = sinon.spy(utils, 'logError');
         const completeCallback = () => {};
 
-        const { callback } = lexiconIdSubmodule.getId({
+        const { callback } = thirthyThreeAcrossIdSubmodule.getId({
           params: {
             pid: '12345'
           }
@@ -281,7 +279,7 @@ describe('LexiconIdSystem', () => {
           error: 'foo'
         }));
 
-        expect(logErrorSpy.calledOnceWithExactly(`${lexiconIdSubmodule.name}: `, 'foo')).to.be.true;
+        expect(logErrorSpy.calledOnceWithExactly(`${thirthyThreeAcrossIdSubmodule.name}: Unsuccessful response`)).to.be.true;
 
         logErrorSpy.restore();
       });
@@ -289,7 +287,7 @@ describe('LexiconIdSystem', () => {
       it('should execute complete callback with undefined value', () => {
         const completeCallback = sinon.spy();
 
-        const { callback } = lexiconIdSubmodule.getId({
+        const { callback } = thirthyThreeAcrossIdSubmodule.getId({
           params: {
             pid: '12345'
           }
@@ -315,7 +313,7 @@ describe('LexiconIdSystem', () => {
         const logMessageSpy = sinon.spy(utils, 'logMessage');
         const completeCallback = () => {};
 
-        const { callback } = lexiconIdSubmodule.getId({
+        const { callback } = thirthyThreeAcrossIdSubmodule.getId({
           params: {
             pid: '12345'
           }
@@ -332,7 +330,7 @@ describe('LexiconIdSystem', () => {
           data: {}
         }));
 
-        expect(logMessageSpy.calledOnceWithExactly(`${lexiconIdSubmodule.name}: No envelope was received`)).to.be.true;
+        expect(logMessageSpy.calledOnceWithExactly(`${thirthyThreeAcrossIdSubmodule.name}: No envelope was received`)).to.be.true;
 
         logMessageSpy.restore();
       });
@@ -340,7 +338,7 @@ describe('LexiconIdSystem', () => {
       it('should execute complete callback with undefined value', () => {
         const completeCallback = sinon.spy();
 
-        const { callback } = lexiconIdSubmodule.getId({
+        const { callback } = thirthyThreeAcrossIdSubmodule.getId({
           params: {
             pid: '12345'
           }
@@ -366,7 +364,7 @@ describe('LexiconIdSystem', () => {
         const logErrorSpy = sinon.spy(utils, 'logError');
         const completeCallback = () => {};
 
-        const { callback } = lexiconIdSubmodule.getId({
+        const { callback } = thirthyThreeAcrossIdSubmodule.getId({
           params: {
             pid: '12345'
           }
@@ -378,7 +376,7 @@ describe('LexiconIdSystem', () => {
 
         request.respond(404);
 
-        expect(logErrorSpy.calledOnceWithExactly(`${lexiconIdSubmodule.name}: ID error response`, 'Not Found')).to.be.true;
+        expect(logErrorSpy.calledOnceWithExactly(`${thirthyThreeAcrossIdSubmodule.name}: ID error response`, 'Not Found')).to.be.true;
 
         logErrorSpy.restore();
       });
@@ -386,7 +384,7 @@ describe('LexiconIdSystem', () => {
       it('should execute complete callback without any value', () => {
         const completeCallback = sinon.spy();
 
-        const { callback } = lexiconIdSubmodule.getId({
+        const { callback } = thirthyThreeAcrossIdSubmodule.getId({
           params: {
             pid: '12345'
           }
@@ -405,8 +403,8 @@ describe('LexiconIdSystem', () => {
 
   describe('decode', () => {
     it('should wrap the given value inside an object literal', () => {
-      expect(lexiconIdSubmodule.decode('foo')).to.deep.equal({
-        [lexiconIdSubmodule.name]: {
+      expect(thirthyThreeAcrossIdSubmodule.decode('foo')).to.deep.equal({
+        [thirthyThreeAcrossIdSubmodule.name]: {
           envelope: 'foo'
         }
       });

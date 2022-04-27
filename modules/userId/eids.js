@@ -307,7 +307,7 @@ export const USER_IDS_CONFIG = {
   },
 
   // 33across ID
-  'lexicon': {
+  '33acrossId': {
     source: '33across.com',
     atype: 1,
     getValue: function(data) {
