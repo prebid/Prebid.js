@@ -243,13 +243,13 @@ describe('jixie Adapter', function () {
 
     it('it should popular the pricegranularity when info is available', function () {
       let content = {
-        "ranges": [{
-            "max": 12, 
-            "increment": 0.5 
+        'ranges': [{
+          'max': 12,
+          'increment': 0.5
         },
         {
-            "max": 5, 
-            "increment": 0.1 
+          'max': 5,
+          'increment': 0.1
         }],
         precision: 1
       };
