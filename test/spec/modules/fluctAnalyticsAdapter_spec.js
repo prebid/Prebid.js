@@ -104,6 +104,18 @@ const MOCK = {
     'auctionStatus': 'inProgress',
     'adUnits': adUnits
   },
+  BID_REQUESTED: {
+    'auctionId': 'eeca6754-525b-4c4c-a697-b06b1fc6c352',
+    'bidderRequestId': '9481bc7a501fb8',
+    'bids': [{
+      'bidder': adUnits[0].bids[0].bidder,
+      'dwid': adUnits[0].bids[0].dwid,
+      'params': adUnits[0].bids[0].params,
+      'adUnitCode': adUnits[0].code,
+      'bidId': '22697ff3e5bf7ee',
+      'bidderRequestId': '9481bc7a501fb8',
+    }]
+  },
   AUCTION_END: {
     'auctionId': 'eeca6754-525b-4c4c-a697-b06b1fc6c352',
     'timestamp': 1635837149209,
@@ -215,6 +227,7 @@ describe('fluct analytics adapter', () => {
   })
   it('EVENT: `AUCTION_END` 時に値を送信できる', () => {
     events.emit(EVENTS.AUCTION_INIT, MOCK.AUCTION_INIT)
+    events.emit(EVENTS.BID_REQUESTED, MOCK.BID_REQUESTED)
     events.emit(EVENTS.AUCTION_END, MOCK.AUCTION_END)
     expect(server.requests.length).to.equal(1)
 
