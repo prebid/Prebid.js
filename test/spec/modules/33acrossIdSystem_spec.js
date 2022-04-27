@@ -1,4 +1,4 @@
-import { lexiconIdSubmodule } from 'modules/lexiconIdSystem.js';
+import { lexiconIdSubmodule } from 'modules/33acrossIdSystem.js';
 import * as utils from 'src/utils.js';
 
 import { server } from 'test/mocks/xhr.js';
