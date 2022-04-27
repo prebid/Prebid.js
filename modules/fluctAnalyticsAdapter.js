@@ -20,18 +20,19 @@ const find = _find;
 const url = 'https://an.adingo.jp';
 
 /** @typedef {{ad: string, adId: string, adUnitCode: string, adUrl: string, adserverTargeting: any, auctionId: string, bidder: string, bidderCode: string, cpm: number, creativeId: string, currency: string, dealId: string, height: number, mediaType: string, netRevenue: boolean, originalCpm: number, originalCurrency: string, params: any, pbAg: string, pbCg: string, pbDg: string, pbHg: string, pbLg: string, pbMg: string, pbLg: string, requestId: string, requestTimestamp: number, responseTimestamp: number, size: string, source: string, status: string, statusMessage: string, timeToRespond: string, ttl: string, width: number, bidId?: string, params: any}} BidResponse */
-/** @typedef {{bidder: string, params: any}} Bid */
+/** @typedef {{adUnitCode: string, auctionId: string, bidId: string, bidder: string, bidderRequestId: number, dwid: string, mediaTypes: {banner: {name: string, sizes: number[][]}}} Bid */
 /** @typedef {{code: string, _code?: string, dwid: string, path?: string, analytics?: {bidder: string, dwid: string}[], bids?: Bid[], mediaTypes: {banner: {name: string, sizes: number[][]}}, sizes: number[][], transactionId: string}} AdUnit */
 /** @typedef {BidResponse & {noBid: boolean, prebidWon: boolean, bidWon: boolean, timeout: boolean}} ModBidResponse */
 /** @typedef {{adUnitCodes: string[], adUnits: AdUnit[], auctionEnd: number, auctionId: string, auctionStatus: string, bidderRequests: any[], bidsReceived: BidResponse[], labels?: string, noBids: BidResponse[], timeout: number, timestamp: number, winningBids: BidResponse[], bids: {[requestId: string]: ModBidResponse}}} PbAuction */
 /** @typedef {{registered: boolean}} Gpt */
 /** @typedef {{[divId: string]: string }} Slots `{divId: adUnitPath}` */
 
-/** @type {{auctions: {[auctionId: string]: PbAuction}, adUnits: {[adUnitCode: string]: AdUnit}, gpt: Gpt, timeouts: {[auctionId: string]: number}}} */
+/** @type {{auctions: {[auctionId: string]: PbAuction}, adUnits: {[adUnitCode: string]: AdUnit}, gpt: Gpt, timeouts: {[auctionId: string]: number}, bidRequests: {[bidId: string]: Bid} }} */
 const cache = {
   auctions: {},
   gpt: {},
   timeouts: {},
+  bidRequests: {},
 };
 $$PREBID_GLOBAL$$.fluct = { cache: cache }; /** for debug */
 
@@ -108,6 +109,12 @@ let fluctAnalyticsAdapter = Object.assign(
           }
           break;
         }
+        case EVENTS.BID_REQUESTED: {
+          /** @type {{ auctionId: string, auctionStart: number, bidderCode: string, bidderRequestId: string, bids: Bid[], refererInfo: {referer: string, reachedTop: boolean, isAmp: boolean, numIframes: number, stack: string[], start: number, timeout: number }}} */
+          let bidRequestedEvent = args;
+          bidRequestedEvent.bids.forEach(bid => { cache.bidRequests[bid.bidId] = bid });
+          break;
+        }
         case EVENTS.BID_TIMEOUT: {
           /** @type {BidResponse[]} */
           let timeoutEvent = args;
@@ -118,6 +125,7 @@ let fluctAnalyticsAdapter = Object.assign(
               prebidWon: false,
               bidWon: false,
               timeout: true,
+              dwid: (cache.bidRequests[bid.requestId] || {}).dwid,
             };
           });
           break;
@@ -125,7 +133,7 @@ let fluctAnalyticsAdapter = Object.assign(
         case EVENTS.AUCTION_END: {
           /** @type {PbAuction} */
           let auctionEndEvent = args;
-          let { adUnitCodes, auctionId, bidderRequests, bidsReceived, noBids } = auctionEndEvent;
+          let { adUnitCodes, auctionId, bidsReceived, noBids } = auctionEndEvent;
           Object.assign(cache.auctions[auctionId], auctionEndEvent, { aidSuffix: isBrowsiId(auctionId) ? generateUUID() : undefined });
 
           let prebidWonBidRequestIds = adUnitCodes.map(adUnitCode =>
@@ -136,9 +144,6 @@ let fluctAnalyticsAdapter = Object.assign(
               , {}).requestId
           );
 
-          const requestBids = []
-          bidderRequests.forEach(bidderRequest => bidderRequest.bids.forEach(bid => requestBids.push(bid)))
-
           const bidResults = [
             ...bidsReceived.map(bid => ({
               ...bid,
@@ -146,7 +151,7 @@ let fluctAnalyticsAdapter = Object.assign(
               prebidWon: prebidWonBidRequestIds.includes(bid.requestId),
               bidWon: false,
               timeout: false,
-              dwid: (find(requestBids, requestBid => requestBid.bidId === bid.requestId) || {}).dwid, /** module版browsiには存在しない */
+              dwid: (cache.bidRequests[bid.requestId] || {}).dwid,
             })),
             ...noBids.map(bid => ({
               ...bid,
@@ -205,7 +210,7 @@ const sendMessage = (auctionId) => {
     auctionId: aidSuffix ? `${auctionId}_${aidSuffix}` : auctionId,
     adUnits,
     bids: Object.values(bids).map(bid => {
-      const { noBid, prebidWon, bidWon, timeout, dwid, adId, adUnitCode, adUrl, bidder, status, netRevenue, cpm, currency, originalCpm, originalCurrency, params, requestId, size, source, timeToRespond } = bid;
+      const { noBid, prebidWon, bidWon, timeout, dwid, adId, adUnitCode, adUrl, bidder, status, netRevenue, cpm, currency, originalCpm, originalCurrency, requestId, size, source, timeToRespond } = bid;
       const adUnit = find(adUnits, adUnit => [adUnit._code, adUnit.code].includes(adUnitCode));
 
       return {
