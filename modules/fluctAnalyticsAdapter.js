@@ -131,7 +131,7 @@ let fluctAnalyticsAdapter = Object.assign(
               prebidWon: false,
               bidWon: false,
               timeout: true,
-              dwid: (cache.bidRequests[bid.requestId] || {}).dwid,
+              dwid: (cache.bidRequests[bid.bidId] || {}).dwid,
             };
           });
           break;
@@ -217,7 +217,7 @@ const sendMessage = (auctionId) => {
     auctionId: aidSuffix ? `${auctionId}_${aidSuffix}` : auctionId,
     adUnits,
     bids: Object.values(bids).map(bid => {
-      const { noBid, prebidWon, bidWon, timeout, dwid, adId, adUnitCode, adUrl, bidder, status, netRevenue, cpm, currency, originalCpm, originalCurrency, requestId, size, source, timeToRespond } = bid;
+      const { noBid, prebidWon, bidWon, timeout, dwid, adId, adUnitCode, adUrl, bidder, statusMessage, netRevenue, cpm, currency, originalCpm, originalCurrency, requestId, size, source, timeToRespond } = bid;
       const adUnit = find(adUnits, adUnit => [adUnit._code, adUnit.code].includes(adUnitCode));
 
       return {
@@ -226,7 +226,7 @@ const sendMessage = (auctionId) => {
         bidWon,
         timeout,
         dwid: dwid || (find(adUnit.analytics, param => param.bidder === bidder) || {}).dwid,
-        status,
+        status: statusMessage,
         adId,
         adUrl,
         adUnitCode: adUnit.code,
