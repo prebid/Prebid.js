@@ -3,6 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
+import { bidderSettings } from '../src/bidderSettings.js';
 
 const BIDDER_CODE = 'pubmatic';
 const LOG_WARN_PREFIX = 'PubMatic: ';
@@ -1147,6 +1148,10 @@ export const spec = {
     payload.ext.wrapper.wv = $$REPO_AND_VERSION$$;
     payload.ext.wrapper.transactionId = conf.transactionId;
     payload.ext.wrapper.wp = 'pbjs';
+    if (bidderRequest && bidderRequest.bidderCode) {
+      payload.ext.allowAlternateBidderCodes = bidderSettings.get(bidderRequest.bidderCode, 'allowAlternateBidderCodes');
+      payload.ext.allowedAlternateBidderCodes = bidderSettings.get(bidderRequest.bidderCode, 'allowedAlternateBidderCodes');
+    }
     payload.user.gender = (conf.gender ? conf.gender.trim() : UNDEFINED);
     payload.user.geo = {};
     payload.user.geo.lat = _parseSlotParam('lat', conf.lat);
