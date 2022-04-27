@@ -32,9 +32,9 @@ const url = 'https://an.adingo.jp';
 /** @typedef { BidRequest } NoBidEvent */
 /** @typedef {{ adUnitCodes: string[], adUnits: AdUnit[], auctionEnd: number, auctionId: string, auctionStatus: string, bidderRequests: BidRequestedEvent[], bidsReceived: BidResponse[], labels?: string, noBids: BidRequest[], timeout: number, timestamp: number, winningBids: BidResponse[] }} AuctionEvent */
 /** @typedef {(BidResponse & { params: Params, status: string })} BidWonEvent */
-/** @typedef {(BidResponse & { adId: string, bid: BidResponse })} AdRenderSucceededEvent */
+/** @typedef {(BidResponse & { adId: string, bid: BidResponse & { params: Params, status: string }})} AdRenderSucceededEvent */
 
-/** @type {{ auctions: { [auctionId: string]: AuctionEvent & { aidSuffix?: string, bids: { [requestId: string]: BidResponse & BidFlag }}}, gpt: { registered: boolean }, timeouts: { [auctionId: string]: number }, bidRequests: { [bidId: string]: BidRequest }}} */
+/** @type {{ auctions: { [auctionId: string]: AuctionEvent & { aidSuffix?: string, bids: { [requestId: string]: BidWonEvent & BidFlag }}}, gpt: { registered: boolean }, timeouts: { [auctionId: string]: number }, bidRequests: { [bidId: string]: BidRequest }}} */
 const cache = {
   auctions: {},
   gpt: {},
@@ -217,7 +217,7 @@ const sendMessage = (auctionId) => {
     auctionId: aidSuffix ? `${auctionId}_${aidSuffix}` : auctionId,
     adUnits,
     bids: Object.values(bids).map(bid => {
-      const { noBid, prebidWon, bidWon, timeout, dwid, adId, adUnitCode, adUrl, bidder, statusMessage, netRevenue, cpm, currency, originalCpm, originalCurrency, requestId, size, source, timeToRespond } = bid;
+      const { noBid, prebidWon, bidWon, timeout, dwid, adId, adUnitCode, adUrl, bidder, status, netRevenue, cpm, currency, originalCpm, originalCurrency, requestId, size, source, timeToRespond } = bid;
       const adUnit = find(adUnits, adUnit => [adUnit._code, adUnit.code].includes(adUnitCode));
 
       return {
@@ -226,7 +226,7 @@ const sendMessage = (auctionId) => {
         bidWon,
         timeout,
         dwid: dwid || (find(adUnit.analytics, param => param.bidder === bidder) || {}).dwid,
-        status: statusMessage,
+        status,
         adId,
         adUrl,
         adUnitCode: adUnit.code,
