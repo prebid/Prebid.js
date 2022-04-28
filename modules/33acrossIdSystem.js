@@ -16,7 +16,7 @@ const AJAX_TIMEOUT = 10000;
 
 function getEnvelope(response) {
   if (!response.succeeded) {
-    logError(`${MODULE_NAME}: `, response.error);
+    logError(`${MODULE_NAME}: Unsuccessful response`);
 
     return;
   }

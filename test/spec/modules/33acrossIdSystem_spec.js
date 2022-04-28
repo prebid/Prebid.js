@@ -43,7 +43,7 @@ describe('33acrossIdSystem', () => {
 
       expect(request.method).to.equal('GET');
       expect(request.withCredentials).to.be.true;
-      expect(request.url).to.contain('https://api-lexicon.33across.com/v1/envelope?pid=12345');
+      expect(request.url).to.contain('https://lexicon.33across.com/v1/envelope?pid=12345');
       expect(completeCallback.calledOnceWithExactly('foo')).to.be.true;
     });
 
@@ -235,7 +235,7 @@ describe('33acrossIdSystem', () => {
         const { callback } = thirthyThreeAcrossIdSubmodule.getId({
           params: {
             pid: '12345',
-            apiUrl: 'https://staging-api-lexicon.33across.com/v1/envelope'
+            apiUrl: 'https://staging-lexicon.33across.com/v1/envelope'
           }
         });
 
@@ -253,7 +253,7 @@ describe('33acrossIdSystem', () => {
           expires: 1645667805067
         }));
 
-        expect(request.url).to.contain('https://staging-api-lexicon.33across.com/v1/envelope?pid=12345');
+        expect(request.url).to.contain('https://staging-lexicon.33across.com/v1/envelope?pid=12345');
       });
     });
 
