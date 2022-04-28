@@ -164,6 +164,8 @@ const MOCK = {
     'bids': [
       {
         'bidder': 'pubmatic',
+        'adapterCode': 'pubmatic',
+        'bidderCode': 'pubmatic',
         'params': {
           'publisherId': '1001',
           'video': {
@@ -181,6 +183,8 @@ const MOCK = {
       },
       {
         'bidder': 'pubmatic',
+        'adapterCode': 'pubmatic',
+        'bidderCode': 'pubmatic',
         'params': {
           'publisherId': '1001',
           'kgpv': 'this-is-a-kgpv'
@@ -939,7 +943,7 @@ describe('pubmatic analytics adapter', function () {
     });
 
     it('Logger: best case + win tracker in case of Bidder Aliases', function() {
-      MOCK.BID_REQUESTED['bids'][0]['bidder'] = 'pubmatic_alias';
+      MOCK.BID_REQUESTED['bids'][0]['bidderCode'] = 'pubmatic_alias';
       adapterManager.aliasRegistry['pubmatic_alias'] = 'pubmatic';
 
       sandbox.stub($$PREBID_GLOBAL$$, 'getHighestCpmBids').callsFake((key) => {
