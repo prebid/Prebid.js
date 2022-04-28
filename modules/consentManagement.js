@@ -36,8 +36,8 @@ const cmpCallMap = {
  * This function reads the consent string from the config to obtain the consent information of the user.
  * @param {function({})} onSuccess acts as a success callback when the value is read from config; pass along consentObject from CMP
  */
-function lookupStaticConsentData({onSuccess}) {
-  onSuccess(staticConsentData);
+function lookupStaticConsentData({onSuccess, onError}) {
+  processCmpData(staticConsentData, {onSuccess, onError})
 }
 
 /**
@@ -335,8 +335,8 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
       let height = 1;
       if (Array.isArray(adUnits) && adUnits.length > 0) {
         let sizes = getAdUnitSizes(adUnits[0]);
-        width = sizes[0][0];
-        height = sizes[0][1];
+        width = sizes?.[0]?.[0] || 1;
+        height = sizes?.[0]?.[1] || 1;
       }
 
       return function (cb) {

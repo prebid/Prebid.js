@@ -41,6 +41,19 @@ function getBidFloor(bid) {
   }
 }
 
+function getUserId(eids, id, source, uidExt) {
+  if (id) {
+    var uid = { id };
+    if (uidExt) {
+      uid.ext = uidExt;
+    }
+    eids.push({
+      source,
+      uids: [ uid ]
+    });
+  }
+}
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
@@ -86,7 +99,12 @@ export const spec = {
       const placement = {
         placementId: bid.params.placementId,
         bidId: bid.bidId,
-        bidfloor: getBidFloor(bid)
+        bidfloor: getBidFloor(bid),
+        eids: []
+      }
+
+      if (bid.userId) {
+        getUserId(placement.eids, bid.userId.id5id, 'id5-sync.com');
       }
 
       if (bid.mediaTypes && bid.mediaTypes[BANNER] && bid.mediaTypes[BANNER].sizes) {
