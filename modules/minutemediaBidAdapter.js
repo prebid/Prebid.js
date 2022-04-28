@@ -286,7 +286,7 @@ function generateParameters(bid, bidderRequest) {
     requestParams.userIds = JSON.stringify(userIdsParam);
   }
 
-  const ortb2Metadata = config.getConfig('ortb2') || {};
+  const ortb2Metadata = bidderRequest.ortb2 || {};
   if (ortb2Metadata.site) {
     requestParams.site_metadata = JSON.stringify(ortb2Metadata.site);
   }

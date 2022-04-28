@@ -37,7 +37,7 @@ export const spec = {
   buildRequests: function(validBidRequests, bidderRequest) {
     const slots = validBidRequests.map(beOpRequestSlotsMaker);
     let pageUrl = deepAccess(window, 'location.href') || deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || config.getConfig('pageUrl');
-    let fpd = config.getLegacyFpd(config.getConfig('ortb2'));
+    let fpd = config.getLegacyFpd(bidderRequest.ortb2);
     let gdpr = bidderRequest.gdprConsent;
     let firstSlot = slots[0];
     let payloadObject = {

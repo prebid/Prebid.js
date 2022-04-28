@@ -3,7 +3,6 @@ import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { find } from '../src/polyfill.js'
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js'
 import { Renderer } from '../src/Renderer.js'
-import { config } from '../src/config.js'
 
 const ENDPOINT = 'https://ad.yieldlab.net'
 const BIDDER_CODE = 'yieldlab'
@@ -334,8 +333,8 @@ function getContentObject(bid) {
     return bid.params.iabContent
   }
 
-  const globalContent = config.getConfig('ortb2.site') ? config.getConfig('ortb2.site.content')
-    : config.getConfig('ortb2.app.content')
+  const globalContent = deepAccess(bid, 'ortb2.site') ? deepAccess(bid, 'ortb2.site.content')
+    : deepAccess(bid, 'ortb2.app.content')
   if (globalContent && isPlainObject(globalContent)) {
     return globalContent
   }

@@ -2,7 +2,6 @@ import { logWarn, isStr, deepAccess, isArray, getBidIdParameter, deepSetValue, i
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {getStorageManager} from '../src/storageManager.js';
-import { config } from '../src/config.js';
 
 const GVLID = 24;
 
@@ -177,7 +176,7 @@ export const spec = {
       payload.user = {ext: userExt};
     }
 
-    const firstPartyData = config.getConfig('ortb2') || {};
+    const firstPartyData = bidderRequest.ortb2 || {};
     mergeDeep(payload, firstPartyData);
 
     return {

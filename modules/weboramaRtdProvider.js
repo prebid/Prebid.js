@@ -46,28 +46,19 @@
  */
 
 import {
-  getGlobal
-} from '../src/prebidGlobal.js';
-import {
-  deepSetValue,
   deepAccess,
+  deepSetValue,
   isEmpty,
-  mergeDeep,
+  isFn,
   logError,
-  logWarn,
-  tryAppendQueryString,
   logMessage,
-  isFn
+  logWarn,
+  mergeDeep,
+  tryAppendQueryString
 } from '../src/utils.js';
-import {
-  submodule
-} from '../src/hook.js';
-import {
-  ajax
-} from '../src/ajax.js';
-import {
-  getStorageManager
-} from '../src/storageManager.js';
+import {submodule} from '../src/hook.js';
+import {ajax} from '../src/ajax.js';
+import {getStorageManager} from '../src/storageManager.js';
 
 const adapterManager = require('../src/adapterManager.js').default;
 
@@ -285,10 +276,8 @@ export function getBidRequestData(reqBidsConfigObj, onDone, moduleConfig) {
   const moduleParams = moduleConfig.params || {};
   const weboCtxConf = moduleParams.weboCtxConf || {};
 
-  const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
-
   if (!_weboCtxInitialized) {
-    handleBidRequestData(adUnits, moduleParams);
+    handleBidRequestData(reqBidsConfigObj, moduleParams);
 
     onDone();
 
@@ -300,19 +289,13 @@ export function getBidRequestData(reqBidsConfigObj, onDone, moduleConfig) {
 
     setWeboContextualProfile(data);
   }, () => {
-    handleBidRequestData(adUnits, moduleParams);
+    handleBidRequestData(reqBidsConfigObj, moduleParams);
 
     onDone();
   });
 }
 
-/** function that handles bid request data
- * @param {Object[]} adUnits
- * @param {ModuleParams} moduleParams
- * @returns {void}
- */
-
-function handleBidRequestData(adUnits, moduleParams) {
+function handleBidRequestData(reqBids, moduleParams) {
   const weboCtxConf = moduleParams.weboCtxConf || {};
   const weboUserDataConf = moduleParams.weboUserDataConf || {};
   const weboCtxConfTargeting = weboCtxConf.sendToBidders;
@@ -321,14 +304,14 @@ function handleBidRequestData(adUnits, moduleParams) {
   if (weboCtxConfTargeting) {
     const contextualProfile = getContextualProfile(weboCtxConf);
     if (!isEmpty(contextualProfile)) {
-      setBidRequestProfile(adUnits, contextualProfile, true);
+      setBidRequestProfile(reqBids, contextualProfile, true);
     }
   }
 
   if (weboUserDataConfTargeting) {
     const weboUserDataProfile = getWeboUserDataProfile(weboUserDataConf);
     if (!isEmpty(weboUserDataProfile)) {
-      setBidRequestProfile(adUnits, weboUserDataProfile, false);
+      setBidRequestProfile(reqBids, weboUserDataProfile, false);
     }
   }
 
@@ -363,18 +346,18 @@ function handleOnData(weboCtxConf, weboUserDataConf) {
 }
 
 /** function that set bid request data on each segment (site or user centric)
- * @param {Object[]} adUnits
+ * @param {Object} reqBids
  * @param {Object} profile
  * @param {Boolean} site true if site centric, else it is user centric
  * @returns {void}
  */
-function setBidRequestProfile(adUnits, profile, site) {
-  setGlobalOrtb2(profile, site);
+function setBidRequestProfile(reqBids, profile, site) {
+  setGlobalOrtb2(reqBids.ortb2Fragments?.global, profile, site);
 
-  adUnits.forEach(adUnit => {
+  reqBids.adUnits.forEach(adUnit => {
     if (adUnit.hasOwnProperty('bids')) {
       const adUnitCode = adUnit.code || 'no code';
-      adUnit.bids.forEach(bid => handleBid(adUnitCode, profile, site, bid));
+      adUnit.bids.forEach(bid => handleBid(adUnitCode, profile, site, bid, reqBids.ortb2Fragments?.bidder || {}));
     }
   });
 }
@@ -399,14 +382,16 @@ const bidderAliasRegistry = adapterManager.aliasRegistry || {};
  * @param {Object} profile
  * @param {Boolean} site true if site centric, else it is user centric
  * @param {Object} bid
+ * @param bidderOrtb2
  * @returns {void}
  */
-function handleBid(adUnitCode, profile, site, bid) {
+function handleBid(adUnitCode, profile, site, bid, bidderOrtb2) {
   const bidder = bidderAliasRegistry[bid.bidder] || bid.bidder;
 
   logMessage(`handling on adunit '${adUnitCode}', bidder '${bidder}' and bid`, bid);
 
   switch (bidder) {
+    // TODO: these special cases should not be necessary - all adapters should look into FPD, not just their params
     case APPNEXUS:
       handleAppnexusBid(profile, bid);
 
@@ -428,19 +413,20 @@ function handleBid(adUnitCode, profile, site, bid) {
     default:
       logMessage(`unsupported bidder '${bidder}', trying via bidder ortb2 fpd`);
       const section = ((site) ? 'site' : 'user');
-      const base = `ortb2.${section}.ext.data`;
+      const base = `${bid.bidder}.${section}.ext.data`;
 
-      assignProfileToObject(bid, base, profile);
+      assignProfileToObject(bidderOrtb2, base, profile);
   }
 }
 
 /**
  * set ortb2 global data
+ * @param ortb2 global ortb2 config to modify
  * @param {Object} profile
  * @param {Boolean} site
  * @returns {void}
  */
-function setGlobalOrtb2(profile, site) {
+function setGlobalOrtb2(ortb2, profile, site) {
   const section = ((site) ? 'site' : 'user');
   const base = `${section}.ext.data`;
   const addOrtb2 = {};
@@ -448,11 +434,7 @@ function setGlobalOrtb2(profile, site) {
   assignProfileToObject(addOrtb2, base, profile);
 
   if (!isEmpty(addOrtb2)) {
-    const testGlobal = getGlobal().getConfig('ortb2') || {};
-    const ortb2 = {
-      ortb2: mergeDeep({}, testGlobal, addOrtb2)
-    };
-    getGlobal().setConfig(ortb2);
+    mergeDeep(ortb2, addOrtb2)
   }
 }
 

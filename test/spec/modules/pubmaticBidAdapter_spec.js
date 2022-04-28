@@ -1632,43 +1632,29 @@ describe('PubMatic adapter', function () {
         let newRequest;
 
         it('ortb2.site should be merged in the request', function() {
-          let sandbox = sinon.sandbox.create();
-          sandbox.stub(config, 'getConfig').callsFake(key => {
-            const config = {
-              'ortb2': {
-                site: {
-                  domain: 'page.example.com',
-                  cat: ['IAB2'],
-                  sectioncat: ['IAB2-2']
-                }
-              }
-            };
-            return config[key];
-          });
-          const request = spec.buildRequests(bidRequests, {});
+          const ortb2 = {
+            site: {
+              domain: 'page.example.com',
+              cat: ['IAB2'],
+              sectioncat: ['IAB2-2']
+            }
+          };
+          const request = spec.buildRequests(bidRequests, {ortb2});
           let data = JSON.parse(request.data);
           expect(data.site.domain).to.equal('page.example.com');
           expect(data.site.cat).to.deep.equal(['IAB2']);
           expect(data.site.sectioncat).to.deep.equal(['IAB2-2']);
-          sandbox.restore();
         });
 
         it('ortb2.user should be merged in the request', function() {
-          let sandbox = sinon.sandbox.create();
-          sandbox.stub(config, 'getConfig').callsFake(key => {
-            const config = {
-              'ortb2': {
-                user: {
-                  yob: 1985
-                }
-              }
-            };
-            return config[key];
-          });
-          const request = spec.buildRequests(bidRequests, {});
+          const ortb2 = {
+            user: {
+              yob: 1985
+            }
+          };
+          const request = spec.buildRequests(bidRequests, {ortb2});
           let data = JSON.parse(request.data);
           expect(data.user.yob).to.equal(1985);
-          sandbox.restore();
         });
 
         describe('ortb2Imp', function() {
@@ -3212,30 +3198,24 @@ describe('PubMatic adapter', function () {
         expect(data.ext.acat).to.exist.and.to.deep.equal(['IAB1', 'IAB2', 'IAB3']);
       });
       it('ortb2.ext.prebid.bidderparams.pubmatic.acat should be passed in request payload', function() {
-        let sandbox = sinon.sandbox.create();
-        sandbox.stub(config, 'getConfig').callsFake(key => {
-          const config = {
-            'ortb2': {
-              ext: {
-                prebid: {
-                  bidderparams: {
-                    pubmatic: {
-                      acat: ['IAB1', 'IAB2', 'IAB1', 'IAB2', 'IAB1', 'IAB2']
-                    }
-                  }
+        const ortb2 = {
+          ext: {
+            prebid: {
+              bidderparams: {
+                pubmatic: {
+                  acat: ['IAB1', 'IAB2', 'IAB1', 'IAB2', 'IAB1', 'IAB2']
                 }
               }
             }
-          };
-          return config[key];
-        });
+          }
+        };
         const request = spec.buildRequests(bidRequests, {
           auctionId: 'new-auction-id',
-          bidderCode: 'pubmatic'
+          bidderCode: 'pubmatic',
+          ortb2
         });
         let data = JSON.parse(request.data);
         expect(data.ext.acat).to.deep.equal(['IAB1', 'IAB2']);
-        sandbox.restore();
       });
     });
 
@@ -3344,22 +3324,16 @@ describe('PubMatic adapter', function () {
 
 	  it('ortb2.bcat should merged with slot level bcat param', function() {
         multipleBidRequests[0].params.bcat = ['IAB-1', 'IAB-2'];
-        let sandbox = sinon.sandbox.create();
-        sandbox.stub(config, 'getConfig').callsFake(key => {
-          const config = {
-            'ortb2': {
-              bcat: ['IAB-3', 'IAB-4']
-            }
-          };
-          return config[key];
-        });
+        const ortb2 = {
+          bcat: ['IAB-3', 'IAB-4']
+        };
         const request = spec.buildRequests(multipleBidRequests, {
           auctionId: 'new-auction-id',
-          bidderCode: 'pubmatic'
+          bidderCode: 'pubmatic',
+          ortb2
         });
         let data = JSON.parse(request.data);
         expect(data.bcat).to.deep.equal(['IAB-1', 'IAB-2', 'IAB-3', 'IAB-4']);
-        sandbox.restore();
       });
     });
 

@@ -65,7 +65,7 @@ export const spec = {
   buildRequests: (bidRequests, bidderRequest) => {
     let url;
     let data;
-    let fpd = config.getLegacyFpd(config.getConfig('ortb2')) || {};
+    let fpd = config.getLegacyFpd(bidderRequest.ortb2) || {};
 
     Object.assign(bidderRequest, {
       publisherExt: fpd.context,

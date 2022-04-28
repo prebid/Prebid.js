@@ -1208,7 +1208,7 @@ export const spec = {
 
     _handleFlocId(payload, validBidRequests);
     // First Party Data
-    const commonFpd = config.getConfig('ortb2') || {};
+    const commonFpd = (bidderRequest && bidderRequest.ortb2) || {};
     if (commonFpd.site) {
       mergeDeep(payload, {site: commonFpd.site});
     }

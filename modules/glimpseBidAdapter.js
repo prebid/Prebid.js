@@ -49,7 +49,7 @@ export const spec = {
     const auth = getVaultJwt();
     const referer = getReferer(bidderRequest);
     const imp = validBidRequests.map(processBidRequest);
-    const fpd = getFirstPartyData();
+    const fpd = getFirstPartyData(bidderRequest.ortb2);
 
     const data = {
       auth,
@@ -160,8 +160,8 @@ function normalizeSizes(sizes) {
   return sizes;
 }
 
-function getFirstPartyData() {
-  let fpd = config.getConfig('ortb2') || {};
+function getFirstPartyData(ortb2) {
+  let fpd = ortb2 || {};
   optimizeObject(fpd);
   return fpd;
 }

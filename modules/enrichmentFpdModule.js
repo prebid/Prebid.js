@@ -151,17 +151,19 @@ function runEnrichments() {
 /**
  * Sets default values to ortb2 if exists and adds currency and ortb2 setConfig callbacks on init
  */
-export function initSubmodule(fpdConf, data) {
+export function processFpd(fpdConf, {global}) {
   resetOrtb2();
 
-  return (!fpdConf.skipEnrichments) ? mergeDeep(runEnrichments(), data) : data;
+  return {
+    global: (!fpdConf.skipEnrichments) ? mergeDeep(runEnrichments(), global) : global
+  };
 }
 
 /** @type {firstPartyDataSubmodule} */
 export const enrichmentsSubmodule = {
   name: 'enrichments',
   queue: 2,
-  init: initSubmodule
+  processFpd
 }
 
 submodule('firstPartyData', enrichmentsSubmodule)

@@ -55,7 +55,7 @@ export const spec = {
     const bidRequests = {};
     const requests = [];
     const request = [];
-    const ortb2 = config.getConfig('ortb2');
+    const ortb2 = bidderRequest.ortb2 || {};
     const bidderConfig = config.getConfig();
 
     const adnMeta = handleMeta()
