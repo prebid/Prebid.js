@@ -1,13 +1,8 @@
-import { config } from '../src/config.js';
-import { BANNER } from '../src/mediaTypes.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import {
-  deepAccess,
-  generateUUID,
-  logError,
-  isArray,
-} from '../src/utils.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {config} from '../src/config.js';
+import {BANNER} from '../src/mediaTypes.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {deepAccess, generateUUID, logError, isArray} from '../src/utils.js';
+import {getStorageManager} from '../src/storageManager.js';
 import find from 'core-js-pure/features/array/find.js';
 
 const BIDDER_CODE = 'insticator';
@@ -16,8 +11,6 @@ const USER_ID_KEY = 'hb_insticator_uid';
 const USER_ID_COOKIE_EXP = 2592000000; // 30 days
 const BID_TTL = 300; // 5 minutes
 const GVLID = 910;
-const CURRENCY = 'USD';
-const ASI_REGEX = /^insticator\.com$/;
 
 export const storage = getStorageManager(GVLID, BIDDER_CODE);
 
@@ -57,6 +50,12 @@ function setUserId(userId) {
 
 function buildImpression(bidRequest) {
   const format = [];
+  const ext = {
+    insticator: {
+      adUnitId: bidRequest.params.adUnitId,
+    },
+  }
+
   const sizes =
     deepAccess(bidRequest, 'mediaTypes.banner.sizes') || bidRequest.sizes;
 
@@ -67,18 +66,19 @@ function buildImpression(bidRequest) {
     });
   }
 
+  const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
+
+  if (gpid) {
+    ext.gpid = gpid;
+  }
+
   return {
     id: bidRequest.bidId,
     tagid: bidRequest.adUnitCode,
     banner: {
       format,
     },
-    bidfloor: getBidFloor(bidRequest, 'banner', sizes),
-    ext: {
-      insticator: {
-        adUnitId: bidRequest.params.adUnitId,
-      },
-    },
+    ext,
   };
 }
 
@@ -126,24 +126,20 @@ function buildUser() {
 }
 
 function extractSchain(bids, requestId) {
-  if (!bids) return;
+  if (!bids || bids.length === 0 || !bids[0].schain) return;
 
-  const bid = bids.find(bid =>
-    bid.schain &&
-    bid.schain.nodes &&
-    bid.schain.nodes.find(node => ASI_REGEX.test(node.asi))
-  );
-  const schain = bid ? bid.schain : bids[0].schain;
+  const schain = bids[0].schain;
   if (schain && schain.nodes && schain.nodes.length && schain.nodes[0]) {
     schain.nodes[0].rid = requestId;
   }
+
   return schain;
 }
 
 function extractEids(bids) {
   if (!bids) return;
 
-  const bid = bids.find(bid => isArray(bid.userIdAsEids) && bid.userIdAsEids.length > 0);
+  const bid = find(bids, bid => isArray(bid.userIdAsEids) && bid.userIdAsEids.length > 0);
   return bid ? bid.userIdAsEids : bids[0].userIdAsEids;
 }
 
@@ -185,13 +181,13 @@ function buildRequest(validBidRequests, bidderRequest) {
   const schain = extractSchain(validBidRequests, bidderRequest.bidderRequestId);
 
   if (schain) {
-    req.source.ext = { schain };
+    req.source.ext = {schain};
   }
 
-  const eids = extractEids(bidderRequest.bids);
+  const eids = extractEids(validBidRequests);
 
   if (eids) {
-    req.user.ext = { eids };
+    req.user.ext = {eids};
   }
 
   return req;
@@ -199,13 +195,21 @@ function buildRequest(validBidRequests, bidderRequest) {
 
 function buildBid(bid, bidderRequest) {
   const originalBid = find(bidderRequest.bids, (b) => b.bidId === bid.impid);
-  const meta = Object.assign({}, bid.ext.meta, { advertiserDomains: bid.adomain });
+  let meta = {};
+
+  if (bid.ext && bid.ext.meta) {
+    meta = bid.ext.meta;
+  }
+
+  if (bid.adomain) {
+    meta.advertiserDomains = bid.adomain;
+  }
 
   return {
     requestId: bid.impid,
     creativeId: bid.crid,
     cpm: bid.price,
-    currency: CURRENCY,
+    currency: 'USD',
     netRevenue: true,
     ttl: bid.exp || config.getConfig('insticator.bidTTL') || BID_TTL,
     width: bid.w,
@@ -213,7 +217,7 @@ function buildBid(bid, bidderRequest) {
     mediaType: 'banner',
     ad: bid.adm,
     adUnitCode: originalBid.adUnitCode,
-    meta: meta,
+    ...(Object.keys(meta).length > 0 ? {meta} : {})
   };
 }
 
@@ -236,22 +240,6 @@ function validateSizes(sizes) {
     sizes.length > 0 &&
     sizes.map(validateSize).reduce((a, b) => a && b, true)
   );
-}
-
-function getBidFloor(bidRequest, mediaType, sizes) {
-  var floor;
-  if (typeof bidRequest.getFloor === 'function') {
-    const size = sizes.length === 1 ? sizes[0] : '*';
-    const floorInfo = bidRequest.getFloor({
-      currency: CURRENCY,
-      mediaType,
-      size
-    });
-    if (typeof floorInfo === 'object' && floorInfo.currency === CURRENCY && !isNaN(parseFloat(floorInfo.floor))) {
-      floor = parseFloat(floorInfo.floor);
-    }
-  }
-  return floor;
 }
 
 export const spec = {
