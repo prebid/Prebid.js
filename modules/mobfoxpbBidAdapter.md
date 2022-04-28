@@ -24,7 +24,7 @@ Module that connects to mobfox demand sources
                         {
                             bidder: 'mobfoxpb',
                             params: {
-                                placementId: 'testBanner'
+                                placementId: 0
                             }
                         }
                     ]
@@ -41,7 +41,7 @@ Module that connects to mobfox demand sources
                         {
                             bidder: 'mobfoxpb',
                             params: {
-                                placementId: 'testVideo'
+                                placementId: 0
                             }
                         }
                     ]
@@ -63,7 +63,7 @@ Module that connects to mobfox demand sources
                         {
                             bidder: 'mobfoxpb',
                             params: {
-                                placementId: 'testNative'
+                                placementId: 0
                             }
                         }
                     ]
