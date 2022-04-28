@@ -281,9 +281,6 @@ describe('consentManagement', function () {
           definedInConfig: true
         });
         expect(gdprScope).to.be.equal(false);
-        const consent = gdprDataHandler.getConsentData();
-        expect(consent.consentString).to.eql(staticConfig.consentData.getTCData.tcString);
-        expect(consent.vendorData).to.eql(staticConfig.consentData.getTCData);
         expect(staticConsentData).to.be.equal(staticConfig.consentData);
       });
     });
@@ -301,14 +298,6 @@ describe('consentManagement', function () {
       timeout: 7500,
       allowAuctionWithoutConsent: true
     };
-
-    const staticConfig = {
-      cmpApi: 'static',
-      timeout: 7500,
-      consentData: {
-        getTCData: {}
-      }
-    }
 
     let didHookReturn;
 
@@ -368,17 +357,6 @@ describe('consentManagement', function () {
         expect(consent).to.be.null;
         expect(gdprDataHandler.ready).to.be.true;
       });
-
-      it('should not trip when adUnits have no size', () => {
-        setConsentConfig(staticConfig);
-        let ran = false;
-        requestBidsHook(() => {
-          ran = true;
-        }, {adUnits: [{code: 'test', mediaTypes: {video: {}}}]});
-        return gdprDataHandler.promise.then(() => {
-          expect(ran).to.be.true;
-        });
-      })
     });
 
     describe('already known consentData:', function () {

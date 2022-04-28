@@ -28,8 +28,8 @@ const uspCallMap = {
 /**
  * This function reads the consent string from the config to obtain the consent information of the user.
  */
-function lookupStaticConsentData({onSuccess, onError}) {
-  processUspData(staticConsentData, {onSuccess, onError});
+function lookupStaticConsentData({onSuccess}) {
+  onSuccess(staticConsentData);
 }
 
 /**

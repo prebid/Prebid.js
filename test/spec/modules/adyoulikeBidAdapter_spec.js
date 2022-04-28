@@ -462,15 +462,13 @@ describe('Adyoulike Adapter', function () {
     'Placement': 'placement_0',
     'Vast': 'PFZBU1Q+RW1wdHkgc2FtcGxlPC92YXN0Pg==',
     'Price': 0.5,
-    'Height': 300,
-    'Width': 530
+    'Height': 600,
   }];
 
   const videoResult = [{
     cpm: 0.5,
     creativeId: undefined,
     currency: 'USD',
-    height: 300,
     netRevenue: true,
     requestId: 'bid_id_0',
     ttl: 3600,
@@ -478,8 +476,7 @@ describe('Adyoulike Adapter', function () {
     meta: {
       advertiserDomains: []
     },
-    vastXml: '<VAST>Empty sample</vast>',
-    width: 530
+    vastXml: '<VAST>Empty sample</vast>'
   }];
 
   const responseWithMultiplePlacements = [

@@ -1,23 +1,21 @@
 import {
-  expDaysStr,
-  getFromLocalStorage,
-  getNbFromCache,
-  ID5_PRIVACY_STORAGE_NAME,
-  ID5_STORAGE_NAME,
   id5IdSubmodule,
-  nbCacheName,
+  ID5_STORAGE_NAME,
+  ID5_PRIVACY_STORAGE_NAME,
+  getFromLocalStorage,
   storeInLocalStorage,
+  expDaysStr,
+  nbCacheName,
+  getNbFromCache,
   storeNbInCache,
+  isInControlGroup
 } from 'modules/id5IdSystem.js';
-import {coreStorage, init, requestBidsHook, setSubmoduleRegistry} from 'modules/userId/index.js';
-import {config} from 'src/config.js';
-import {server} from 'test/mocks/xhr.js';
+import { init, requestBidsHook, setSubmoduleRegistry, coreStorage } from 'modules/userId/index.js';
+import { config } from 'src/config.js';
+import { server } from 'test/mocks/xhr.js';
 import * as events from 'src/events.js';
 import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils.js';
-import 'src/prebid.js';
-import {hook} from '../../../src/hook.js';
-import {mockGdprConsent} from '../../helpers/consentData.js';
 
 let expect = require('chai').expect;
 
@@ -90,10 +88,6 @@ describe('ID5 ID System', function() {
       bids: [{bidder: 'sampleBidder', params: {placementId: 'banner-only-bidder'}}]
     };
   }
-
-  before(() => {
-    hook.ready();
-  });
 
   describe('Check for valid publisher config', function() {
     it('should fail with invalid config', function() {
@@ -314,11 +308,8 @@ describe('ID5 ID System', function() {
 
   describe('Request Bids Hook', function() {
     let adUnits;
-    let sandbox;
 
     beforeEach(function() {
-      sandbox = sinon.sandbox.create();
-      mockGdprConsent(sandbox);
       sinon.stub(events, 'getEvents').returns([]);
       coreStorage.removeDataFromLocalStorage(ID5_STORAGE_NAME);
       coreStorage.removeDataFromLocalStorage(`${ID5_STORAGE_NAME}_last`);
@@ -330,14 +321,13 @@ describe('ID5 ID System', function() {
       coreStorage.removeDataFromLocalStorage(ID5_STORAGE_NAME);
       coreStorage.removeDataFromLocalStorage(`${ID5_STORAGE_NAME}_last`);
       coreStorage.removeDataFromLocalStorage(ID5_NB_STORAGE_NAME);
-      sandbox.restore();
     });
 
     it('should add stored ID from cache to bids', function (done) {
       storeInLocalStorage(ID5_STORAGE_NAME, JSON.stringify(ID5_STORED_OBJ), 1);
 
-      init(config);
       setSubmoduleRegistry([id5IdSubmodule]);
+      init(config);
       config.setConfig(getFetchLocalStorageConfig());
 
       requestBidsHook(function () {
@@ -362,8 +352,8 @@ describe('ID5 ID System', function() {
     });
 
     it('should add config value ID to bids', function (done) {
-      init(config);
       setSubmoduleRegistry([id5IdSubmodule]);
+      init(config);
       config.setConfig(getValueConfig(ID5_STORED_ID));
 
       requestBidsHook(function () {
@@ -381,32 +371,32 @@ describe('ID5 ID System', function() {
       }, { adUnits });
     });
 
-    it('should set nb=1 in cache when no stored nb value exists and cached ID', function (done) {
+    it('should set nb=1 in cache when no stored nb value exists and cached ID', function () {
       storeInLocalStorage(ID5_STORAGE_NAME, JSON.stringify(ID5_STORED_OBJ), 1);
       coreStorage.removeDataFromLocalStorage(ID5_NB_STORAGE_NAME);
 
-      init(config);
       setSubmoduleRegistry([id5IdSubmodule]);
+      init(config);
       config.setConfig(getFetchLocalStorageConfig());
 
-      requestBidsHook((adUnitConfig) => {
-        expect(getNbFromCache(ID5_TEST_PARTNER_ID)).to.be.eq(1);
-        done()
-      }, {adUnits});
+      let innerAdUnits;
+      requestBidsHook((adUnitConfig) => { innerAdUnits = adUnitConfig.adUnits }, {adUnits});
+
+      expect(getNbFromCache(ID5_TEST_PARTNER_ID)).to.be.eq(1);
     });
 
-    it('should increment nb in cache when stored nb value exists and cached ID', function (done) {
+    it('should increment nb in cache when stored nb value exists and cached ID', function () {
       storeInLocalStorage(ID5_STORAGE_NAME, JSON.stringify(ID5_STORED_OBJ), 1);
       storeNbInCache(ID5_TEST_PARTNER_ID, 1);
 
-      init(config);
       setSubmoduleRegistry([id5IdSubmodule]);
+      init(config);
       config.setConfig(getFetchLocalStorageConfig());
 
-      requestBidsHook(() => {
-        expect(getNbFromCache(ID5_TEST_PARTNER_ID)).to.be.eq(2);
-        done()
-      }, {adUnits});
+      let innerAdUnits;
+      requestBidsHook((adUnitConfig) => { innerAdUnits = adUnitConfig.adUnits }, {adUnits});
+
+      expect(getNbFromCache(ID5_TEST_PARTNER_ID)).to.be.eq(2);
     });
 
     it('should call ID5 servers with signature and incremented nb post auction if refresh needed', function () {
@@ -417,32 +407,29 @@ describe('ID5 ID System', function() {
       let id5Config = getFetchLocalStorageConfig();
       id5Config.userSync.userIds[0].storage.refreshInSeconds = 2;
 
-      init(config);
       setSubmoduleRegistry([id5IdSubmodule]);
+      init(config);
       config.setConfig(id5Config);
 
-      return new Promise((resolve) => {
-        requestBidsHook(() => {
-          resolve()
-        }, {adUnits});
-      }).then(() => {
-        expect(getNbFromCache(ID5_TEST_PARTNER_ID)).to.be.eq(2);
-        expect(server.requests).to.be.empty;
-        events.emit(CONSTANTS.EVENTS.AUCTION_END, {});
-        return new Promise((resolve) => setTimeout(resolve))
-      }).then(() => {
-        let request = server.requests[0];
-        let requestBody = JSON.parse(request.requestBody);
-        expect(request.url).to.contain(ID5_ENDPOINT);
-        expect(requestBody.s).to.eq(ID5_STORED_SIGNATURE);
-        expect(requestBody.nbPage).to.eq(2);
+      let innerAdUnits;
+      requestBidsHook((adUnitConfig) => { innerAdUnits = adUnitConfig.adUnits }, {adUnits});
 
-        const responseHeader = { 'Content-Type': 'application/json' };
-        request.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
+      expect(getNbFromCache(ID5_TEST_PARTNER_ID)).to.be.eq(2);
 
-        expect(decodeURIComponent(getFromLocalStorage(ID5_STORAGE_NAME))).to.be.eq(JSON.stringify(ID5_JSON_RESPONSE));
-        expect(getNbFromCache(ID5_TEST_PARTNER_ID)).to.be.eq(0);
-      })
+      expect(server.requests).to.be.empty;
+      events.emit(CONSTANTS.EVENTS.AUCTION_END, {});
+
+      let request = server.requests[0];
+      let requestBody = JSON.parse(request.requestBody);
+      expect(request.url).to.contain(ID5_ENDPOINT);
+      expect(requestBody.s).to.eq(ID5_STORED_SIGNATURE);
+      expect(requestBody.nbPage).to.eq(2);
+
+      const responseHeader = { 'Content-Type': 'application/json' };
+      request.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
+
+      expect(decodeURIComponent(getFromLocalStorage(ID5_STORAGE_NAME))).to.be.eq(JSON.stringify(ID5_JSON_RESPONSE));
+      expect(getNbFromCache(ID5_TEST_PARTNER_ID)).to.be.eq(0);
     });
   });
 

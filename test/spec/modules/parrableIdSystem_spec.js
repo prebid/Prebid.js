@@ -8,7 +8,6 @@ import { uspDataHandler } from 'src/adapterManager.js';
 import { init, requestBidsHook, setSubmoduleRegistry } from 'modules/userId/index.js';
 import { parrableIdSubmodule } from 'modules/parrableIdSystem.js';
 import { server } from 'test/mocks/xhr.js';
-import {mockGdprConsent} from '../../helpers/consentData.js';
 
 const storage = newStorageManager();
 
@@ -640,22 +639,18 @@ describe('Parrable ID System', function() {
 
   describe('userId requestBids hook', function() {
     let adUnits;
-    let sandbox;
 
     beforeEach(function() {
-      sandbox = sinon.sandbox.create();
-      mockGdprConsent(sandbox);
       adUnits = [getAdUnitMock()];
       writeParrableCookie({ eid: P_COOKIE_EID, ibaOptout: true });
-      init(config);
       setSubmoduleRegistry([parrableIdSubmodule]);
+      init(config);
       config.setConfig(getConfigMock());
     });
 
     afterEach(function() {
       removeParrableCookie();
       storage.setCookie(P_COOKIE_NAME, '', EXPIRED_COOKIE_DATE);
-      sandbox.restore();
     });
 
     it('when a stored Parrable ID exists it is added to bids', function(done) {

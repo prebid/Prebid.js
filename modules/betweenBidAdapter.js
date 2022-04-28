@@ -53,7 +53,7 @@ export const spec = {
         params.maxd = video.maxd;
         params.mind = video.mind;
         params.pos = 'atf';
-        params.jst = 'pvc';
+        ENDPOINT += '&jst=pvc';
         params.codeType = includes(CODE_TYPES, video.codeType) ? video.codeType : 'inpage';
       }
 

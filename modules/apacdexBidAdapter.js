@@ -2,9 +2,22 @@ import { deepAccess, isPlainObject, isArray, replaceAuctionPrice, isFn } from '.
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'apacdex';
-const ENDPOINT = 'https://useast.quantumdex.io/auction/pbjs'
-const USERSYNC = 'https://sync.quantumdex.io/usersync/pbjs'
+const CONFIG = {
+  'apacdex': {
+    'ENDPOINT': 'https://useast.quantumdex.io/auction/apacdex',
+    'USERSYNC': 'https://sync.quantumdex.io/usersync/apacdex'
+  },
+  'quantumdex': {
+    'ENDPOINT': 'https://useast.quantumdex.io/auction/quantumdex',
+    'USERSYNC': 'https://sync.quantumdex.io/usersync/quantumdex'
+  },
+  'valueimpression': {
+    'ENDPOINT': 'https://useast.quantumdex.io/auction/adapter',
+    'USERSYNC': 'https://sync.quantumdex.io/usersync/adapter'
+  }
+};
 
+var bidderConfig = CONFIG[BIDDER_CODE];
 var bySlotTargetKey = {};
 var bySlotSizesCount = {}
 
@@ -42,6 +55,8 @@ export const spec = {
     let geo;
     let test;
     let bids = [];
+
+    bidderConfig = CONFIG[validBidRequests[0].bidder];
 
     test = config.getConfig('debug');
 
@@ -141,14 +156,13 @@ export const spec = {
         transactionId: bid.transactionId,
         sizes: bid.sizes,
         bidId: bid.bidId,
-        adUnitCode: bid.adUnitCode,
         bidFloor: bid.bidFloor
       }
     });
 
     return {
       method: 'POST',
-      url: ENDPOINT,
+      url: bidderConfig.ENDPOINT,
       data: payload,
       withCredentials: true,
       bidderRequests: bids
@@ -195,47 +209,32 @@ export const spec = {
     });
     return bidResponses;
   },
-  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
+  getUserSyncs: function (syncOptions, serverResponses) {
     const syncs = [];
-    if (hasPurpose1Consent(gdprConsent)) {
-      let params = '';
-      if (gdprConsent && typeof gdprConsent.consentString === 'string') {
-        // add 'gdpr' only if 'gdprApplies' is defined
-        if (typeof gdprConsent.gdprApplies === 'boolean') {
-          params = `?gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
-        } else {
-          params = `?gdpr_consent=${gdprConsent.consentString}`;
-        }
+    try {
+      if (syncOptions.iframeEnabled) {
+        syncs.push({
+          type: 'iframe',
+          url: bidderConfig.USERSYNC
+        });
       }
-      if (uspConsent) {
-        params += `${params ? '&' : '?'}us_privacy=${encodeURIComponent(uspConsent)}`;
+      if (serverResponses.length > 0 && serverResponses[0].body && serverResponses[0].body.pixel) {
+        serverResponses[0].body.pixel.forEach(px => {
+          if (px.type === 'image' && syncOptions.pixelEnabled) {
+            syncs.push({
+              type: 'image',
+              url: px.url
+            });
+          }
+          if (px.type === 'iframe' && syncOptions.iframeEnabled) {
+            syncs.push({
+              type: 'iframe',
+              url: px.url
+            });
+          }
+        });
       }
-
-      try {
-        if (syncOptions.iframeEnabled) {
-          syncs.push({
-            type: 'iframe',
-            url: USERSYNC + params
-          });
-        }
-        if (serverResponses.length > 0 && serverResponses[0].body && serverResponses[0].body.pixel) {
-          serverResponses[0].body.pixel.forEach(px => {
-            if (px.type === 'image' && syncOptions.pixelEnabled) {
-              syncs.push({
-                type: 'image',
-                url: px.url + params
-              });
-            }
-            if (px.type === 'iframe' && syncOptions.iframeEnabled) {
-              syncs.push({
-                type: 'iframe',
-                url: px.url + params
-              });
-            }
-          });
-        }
-      } catch (e) { }
-    }
+    } catch (e) { }
     return syncs;
   }
 };
@@ -376,16 +375,6 @@ function getBidFloor(bid) {
     return floor.floor;
   }
   return null;
-}
-
-function hasPurpose1Consent(gdprConsent) {
-  let result = true;
-  if (gdprConsent) {
-    if (gdprConsent.gdprApplies && gdprConsent.apiVersion === 2) {
-      result = !!(deepAccess(gdprConsent, 'vendorData.purpose.consents.1') === true);
-    }
-  }
-  return result;
 }
 
 registerBidder(spec);

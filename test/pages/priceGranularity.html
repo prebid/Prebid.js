@@ -62,29 +62,35 @@
   <script>
     var googletag = googletag || {};
     googletag.cmd = googletag.cmd || [];
+    const customPriceGranularity = {
+      "buckets": [{
+        "precision": 2,  //default is 2 if omitted - means 2.1234 rounded to 2 decimal places = 2.12
+        "min": 0,
+        "max": 5,
+        "increment": 0.01  // from $0 to $5, 1-cent increments
+      },
+      {
+        "precision": 2,
+        "min": 5,
+        "max": 8,
+        "increment": 0.05  // from $5 to $8, round down to the previous 5-cent increment
+      },
+      {
+        "precision": 2,
+        "min": 8,
+        "max": 40,
+        "increment": 0.5   // from $8 to $40, round down to the previous 50-cent increment
+      }]
+    };
     googletag.cmd.push(function () {
       googletag.pubads().disableInitialLoad();
     });
 
     pbjs.que.push(function () {
       pbjs.addAdUnits(adUnits);
-      pbjs.bidderSettings = {
-        appnexus: {
-          adserverTargeting: [
-            {
-              key: "apn_pbMg",
-              val: function (bidResponse) {
-                return bidResponse.pbMg;
-              }
-            }, {
-              key: "apn_adId",
-              val: function (bidResponse) {
-                return bidResponse.adId;
-              }
-            }
-          ]
-        }
-      }
+      pbjs.setConfig({
+        priceGranularity: customPriceGranularity
+      });
       pbjs.requestBids({
         bidsBackHandler: sendAdserverRequest,
         timeout: PREBID_TIMEOUT

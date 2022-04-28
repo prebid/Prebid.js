@@ -1,6 +1,5 @@
 import {ajax} from '../src/ajax.js';
 import {config} from '../src/config.js';
-import { transformBidderParamKeywords } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 
@@ -9,11 +8,8 @@ const BIDDER_URL = 'https://fast.nexx360.io/prebid';
 const CACHE_URL = 'https://fast.nexx360.io/cache';
 const METRICS_TRACKER_URL = 'https://fast.nexx360.io/track-imp';
 
-const GVLID = 965;
-
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   aliases: ['revenuemaker'], // short code
   supportedMediaTypes: [BANNER, VIDEO],
   /**
@@ -23,9 +19,6 @@ export const spec = {
          * @return boolean True if this is a valid bid, and false otherwise.
          */
   isBidRequestValid: function(bid) {
-    if (!!bid.params.bidfloorCurrency && !['EUR', 'USD'].includes(bid.params.bidfloorCurrency)) return false;
-    if (!!bid.params.bidfloor && typeof bid.params.bidfloor !== 'number') return false;
-    if (!!bid.params.keywords && typeof bid.params.keywords !== 'object') return false;
     return !!(bid.params.account && bid.params.tagId);
   },
   /**
@@ -41,7 +34,7 @@ export const spec = {
     let userEids = null;
     Object.keys(validBidRequests).forEach(key => {
       adunitValue = validBidRequests[key];
-      const foo = {
+      adUnits.push({
         account: adunitValue.params.account,
         tagId: adunitValue.params.tagId,
         videoExt: adunitValue.params.videoExt,
@@ -49,12 +42,8 @@ export const spec = {
         bidId: adunitValue.bidId,
         auctionId: adunitValue.auctionId,
         transactionId: adunitValue.transactionId,
-        mediatypes: adunitValue.mediaTypes,
-        bidfloor: adunitValue.params.bidfloor || 0,
-        bidfloorCurrency: adunitValue.params.bidfloorCurrency || 'USD',
-        keywords: adunitValue.params.keywords ? transformBidderParamKeywords(adunitValue.params.keywords) : [],
-      }
-      adUnits.push(foo);
+        mediatypes: adunitValue.mediaTypes
+      });
       if (adunitValue.userIdAsEids) userEids = adunitValue.userIdAsEids;
     });
     const payload = {
@@ -89,6 +78,7 @@ export const spec = {
          */
   interpretResponse: function(serverResponse, bidRequest) {
     const serverBody = serverResponse.body;
+    // const headerValue = serverResponse.headers.get('some-response-header');
     const bidResponses = [];
     let bidResponse = null;
     let value = null;
