@@ -18,6 +18,7 @@ import { decorateAdUnitsWithNativeParams } from '../../../src/native.js';
 import { auctionManager } from '../../../src/auctionManager.js';
 import { stubAuctionIndex } from '../../helpers/indexStub.js';
 import { registerBidder } from 'src/adapters/bidderFactory.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 let CONFIG = {
   accountId: '1',
@@ -1037,6 +1038,205 @@ describe('S2S Adapter', function () {
             currency: 'JPY',
           })
         ).to.be.true;
+      });
+
+      it('should find the floor when not all bidderRequests contain it', () => {
+        config.setConfig({
+          s2sConfig: {
+            ...CONFIG,
+            bidders: ['b1', 'b2']
+          },
+        });
+        const bidderRequests = [
+          {
+            ...BID_REQUESTS[0],
+            bidderCode: 'b1',
+            bids: [{
+              bidder: 'b1',
+              bidId: 1,
+            }]
+          },
+          {
+            ...BID_REQUESTS[0],
+            bidderCode: 'b2',
+            bids: [{
+              bidder: 'b2',
+              bidId: 2,
+              getFloor: () => ({
+                currency: 'CUR',
+                floor: 123
+              })
+            }],
+          }
+        ];
+        const adUnits = [
+          {
+            code: 'au1',
+            transactionId: 't1',
+            mediaTypes: {
+              banner: {sizes: [1, 1]}
+            },
+            bids: [{bidder: 'b1', bid_id: 1}]
+          },
+          {
+            code: 'au2',
+            transactionId: 't2',
+            bids: [{bidder: 'b2', bid_id: 2}],
+            mediaTypes: {
+              banner: {sizes: [1, 1]}
+            }
+          }
+        ];
+        const s2sReq = {
+          ...REQUEST,
+          ad_units: adUnits
+        }
+
+        adapter.callBids(s2sReq, bidderRequests, addBidResponse, done, ajax);
+
+        const pbsReq = JSON.parse(server.requests[server.requests.length - 1].requestBody);
+        const [imp1, imp2] = pbsReq.imp;
+
+        expect(imp1.bidfloor).to.be.undefined;
+        expect(imp1.bidfloorcur).to.be.undefined;
+
+        expect(imp2.bidfloor).to.eql(123);
+        expect(imp2.bidfloorcur).to.eql('CUR');
+      });
+
+      describe('when different bids have different floors', () => {
+        let s2sReq;
+        beforeEach(() => {
+          config.setConfig({
+            s2sConfig: {
+              ...CONFIG,
+              bidders: ['b1', 'b2', 'b3']
+            },
+          });
+          BID_REQUESTS = [
+            {
+              ...BID_REQUESTS[0],
+              bidderCode: 'b2',
+              bids: [{
+                bidder: 'b2',
+                bidId: 2,
+                getFloor: () => ({
+                  currency: '1',
+                  floor: 2
+                })
+              }],
+            },
+            {
+              ...BID_REQUESTS[0],
+              bidderCode: 'b1',
+              bids: [{
+                bidder: 'b1',
+                bidId: 1,
+                getFloor: () => ({
+                  floor: 10,
+                  currency: '0.1'
+                })
+              }]
+            },
+            {
+              ...BID_REQUESTS[0],
+              bidderCode: 'b3',
+              bids: [{
+                bidder: 'b3',
+                bidId: 3,
+                getFloor: () => ({
+                  currency: '10',
+                  floor: 1
+                })
+              }],
+            }
+          ];
+          s2sReq = {
+            ...REQUEST,
+            ad_units: [
+              {
+                code: 'au1',
+                transactionId: 't1',
+                mediaTypes: {
+                  banner: {sizes: [1, 1]}
+                },
+                bids: [
+                  {bidder: 'b2', bid_id: 2},
+                  {bidder: 'b3', bid_id: 3},
+                  {bidder: 'b1', bid_id: 1},
+                ]
+              }
+            ]
+          };
+        });
+
+        Object.entries({
+          'cannot compute a floor': (bid) => { bid.getFloor = () => { throw new Error() } },
+          'does not set a floor': (bid) => { delete bid.getFloor; },
+        }).forEach(([t, updateBid]) => {
+          it(`should not set pricefloor if any one of them ${t}`, () => {
+            updateBid(BID_REQUESTS[1].bids[0]);
+            adapter.callBids(s2sReq, BID_REQUESTS, addBidResponse, done, ajax);
+            const pbsReq = JSON.parse(server.requests[server.requests.length - 1].requestBody);
+            expect(pbsReq.imp[0].bidfloor).to.be.undefined;
+            expect(pbsReq.imp[0].bidfloorcur).to.be.undefined;
+          });
+        })
+
+        Object.entries({
+          'is available': {
+            expectDesc: 'minimum after conversion',
+            expectedFloor: 10,
+            expectedCur: '0.1',
+            conversionFn: (amount, from, to) => {
+              from = parseFloat(from);
+              to = parseFloat(to);
+              return amount * from / to;
+            },
+          },
+          'is not available': {
+            expectDesc: 'absolute minimum',
+            expectedFloor: 1,
+            expectedCur: '10',
+            conversionFn: null
+          },
+          'is not working': {
+            expectDesc: 'first',
+            expectedFloor: 2,
+            expectedCur: '1',
+            conversionFn: () => {
+              throw new Error();
+            }
+          }
+        }).forEach(([t, {expectDesc, expectedFloor, expectedCur, conversionFn}]) => {
+          describe(`and currency conversion ${t}`, () => {
+            let mockConvertCurrency;
+            const origConvertCurrency = getGlobal().convertCurrency;
+            beforeEach(() => {
+              if (conversionFn) {
+                getGlobal().convertCurrency = mockConvertCurrency = sinon.stub().callsFake(conversionFn)
+              } else {
+                mockConvertCurrency = null;
+                delete getGlobal().convertCurrency;
+              }
+            });
+
+            afterEach(() => {
+              if (origConvertCurrency != null) {
+                getGlobal().convertCurrency = origConvertCurrency;
+              } else {
+                delete getGlobal().convertCurrency;
+              }
+            })
+
+            it(`should pick the ${expectDesc}`, () => {
+              adapter.callBids(s2sReq, BID_REQUESTS, addBidResponse, done, ajax);
+              const pbsReq = JSON.parse(server.requests[server.requests.length - 1].requestBody);
+              expect(pbsReq.imp[0].bidfloor).to.eql(expectedFloor);
+              expect(pbsReq.imp[0].bidfloorcur).to.eql(expectedCur);
+            });
+          });
+        });
       });
     });
 

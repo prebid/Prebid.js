@@ -488,6 +488,8 @@ function createBid(response, bidRequests) {
   // retreive video response if present
   const vast64 = response.Vast || getVideoAd(response);
   if (vast64) {
+    bid.width = response.Width;
+    bid.height = response.Height;
     bid.vastXml = window.atob(vast64);
     bid.mediaType = 'video';
   } else if (request.Native) {
