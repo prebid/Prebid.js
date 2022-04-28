@@ -49,41 +49,49 @@ const getNotificationPayload = bidData => {
   if (bidData) {
     const bids = isArray(bidData) ? bidData : [bidData];
     if (bids.length > 0) {
-      const result = {
+      let result = {
         requestId: undefined,
         siteId: [],
         slotId: [],
         tagid: [],
       }
       bids.forEach(bid => {
-        let params = isArray(bid.params) ? bid.params[0] : bid.params;
+        const { adUnitCode, auctionId, cpm, creativeId, meta, params: bidParams, requestId, timeout } = bid;
+        let params = isArray(bidParams) ? bidParams[0] : bidParams;
         params = params || {};
 
-        // check for stored detection
-        if (oneCodeDetection[bid.requestId]) {
-          params.siteId = oneCodeDetection[bid.requestId][0];
-          params.id = oneCodeDetection[bid.requestId][1];
+        // basic notification data
+        const bidBasicData = {
+          requestId: auctionId || result.requestId,
+          timeout: timeout || result.timeout,
+          pvid: pageView.id,
         }
+        result = { ...result, ...bidBasicData }
 
+        result.tagid.push(adUnitCode);
+
+        // check for stored detection
+        if (oneCodeDetection[requestId]) {
+          params.siteId = oneCodeDetection[requestId][0];
+          params.id = oneCodeDetection[requestId][1];
+        }
         if (params.siteId) {
           result.siteId.push(params.siteId);
         }
         if (params.id) {
           result.slotId.push(params.id);
         }
-        if (bid.cpm) {
-          const meta = bid.meta || {};
-          result.cpm = bid.cpm;
-          result.creativeId = bid.creativeId;
-          result.adomain = meta.advertiserDomains && meta.advertiserDomains[0];
-          result.networkName = meta.networkName;
+
+        if (cpm) {
+          // non-empty bid data
+          const bidNonEmptyData = {
+            cpm,
+            creativeId,
+            adomain: meta && meta.advertiserDomains && meta.advertiserDomains[0],
+            networkName: meta && meta.networkName,
+          }
+          result = { ...result, ...bidNonEmptyData }
         }
-        result.tagid.push(bid.adUnitCode);
-        result.requestId = bid.auctionId || result.requestId;
-        result.timeout = bid.timeout || result.timeout;
-        result.ext = {
-          pvid: pageView.id
-        };
       })
       return result;
     }
