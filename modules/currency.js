@@ -168,8 +168,6 @@ function initCurrency(url) {
         }
       }
     );
-  } else {
-    ready.done();
   }
 }
 

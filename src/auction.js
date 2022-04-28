@@ -848,7 +848,13 @@ function groupByPlacement(bidsByPlacement, bid) {
 function getTimedOutBids(bidderRequests, timelyBidders) {
   const timedOutBids = bidderRequests
     .map(bid => (bid.bids || []).filter(bid => !timelyBidders.has(bid.bidder)))
-    .reduce(flatten, []);
+    .reduce(flatten, [])
+    .map(bid => ({
+      bidId: bid.bidId,
+      bidder: bid.bidder,
+      adUnitCode: bid.adUnitCode,
+      auctionId: bid.auctionId,
+    }));
 
   return timedOutBids;
 }

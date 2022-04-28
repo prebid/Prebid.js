@@ -1,21 +1,10 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import {
-  logInfo,
-  logError,
-  getBidIdParameter,
-  _each,
-  getValue,
-  isFn,
-  isPlainObject,
-  isArray,
-  isStr,
-  isNumber,
-} from '../src/utils.js';
+import {logInfo, logError, getBidIdParameter, _each, getValue, isFn, isPlainObject} from '../src/utils.js';
 import { BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'otm';
 const OTM_BID_URL = 'https://ssp.otm-r.com/adjson';
-const DEFAULT_CURRENCY = 'RUB'
+const DEF_CUR = 'RUB'
 
 export const spec = {
 
@@ -30,7 +19,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return Boolean(bid.params.tid);
+    return !!bid.params.tid;
   },
 
   /**
@@ -44,41 +33,43 @@ export const spec = {
     logInfo('validBidRequests', validBidRequests);
 
     const bidRequests = [];
-    const tz = new Date().getTimezoneOffset()
-    const referrer = bidderRequest && bidderRequest.refererInfo ? bidderRequest.refererInfo.referer : '';
+    let tz = new Date().getTimezoneOffset()
+    let referrer = '';
+    if (bidderRequest && bidderRequest.refererInfo) {
+      referrer = bidderRequest.refererInfo.referer;
+    }
 
     _each(validBidRequests, (bid) => {
-      let topOrigin = ''
-      try {
-        if (isStr(referrer)) topOrigin = new URL(referrer).host
-      } catch (e) { /* do nothing */ }
-      const domain = isStr(bid.params.domain) ? bid.params.domain : topOrigin
-      const cur = getValue(bid.params, 'currency') || DEFAULT_CURRENCY
-      const bidid = getBidIdParameter('bidId', bid)
-      const transactionid = getBidIdParameter('transactionId', bid)
-      const auctionid = getBidIdParameter('auctionId', bid)
-      const bidfloor = _getBidFloor(bid)
+      let domain = getValue(bid.params, 'domain') || ''
+      let tid = getValue(bid.params, 'tid')
+      let cur = getValue(bid.params, 'currency') || DEF_CUR
+      let bidid = getBidIdParameter('bidId', bid)
+      let transactionid = getBidIdParameter('transactionId', bid)
+      let auctionid = getBidIdParameter('auctionId', bid)
+      let bidfloor = _getBidFloor(bid)
 
       _each(bid.sizes, size => {
-        const hasSizes = isArray(size) && isNumber(size[0]) && isNumber(size[1])
-        const width = hasSizes ? size[0] : 0;
-        const height = hasSizes ? size[1] : 0;
-
+        let width = 0;
+        let height = 0;
+        if (size.length && typeof size[0] === 'number' && typeof size[1] === 'number') {
+          width = size[0];
+          height = size[1];
+        }
         bidRequests.push({
           method: 'GET',
           url: OTM_BID_URL,
           data: {
-            tz,
+            tz: tz,
             w: width,
             h: height,
-            domain,
+            domain: domain,
             l: referrer,
-            s: bid.params.tid,
-            cur,
-            bidid,
-            transactionid,
-            auctionid,
-            bidfloor,
+            s: tid,
+            cur: cur,
+            bidid: bidid,
+            transactionid: transactionid,
+            auctionid: auctionid,
+            bidfloor: bidfloor,
           },
         })
       })
@@ -90,9 +81,10 @@ export const spec = {
    * Generate response.
    *
    * @param serverResponse
+   * @param request
    * @returns {[]|*[]}
    */
-  interpretResponse: function (serverResponse) {
+  interpretResponse: function (serverResponse, request) {
     logInfo('serverResponse', serverResponse.body);
 
     const responsesBody = serverResponse ? serverResponse.body : {};
@@ -110,7 +102,7 @@ export const spec = {
             width: bid.w,
             height: bid.h,
             creativeId: bid.creativeid,
-            currency: bid.currency || DEFAULT_CURRENCY,
+            currency: bid.currency || 'RUB',
             netRevenue: true,
             ad: bid.ad,
             ttl: bid.ttl,
@@ -140,12 +132,12 @@ function _getBidFloor(bid) {
     return bid.params.bidfloor ? bid.params.bidfloor : 0;
   }
 
-  const floor = bid.getFloor({
-    currency: DEFAULT_CURRENCY,
+  let floor = bid.getFloor({
+    currency: DEF_CUR,
     mediaType: '*',
     size: '*'
   });
-  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === DEFAULT_CURRENCY) {
+  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === DEF_CUR) {
     return floor.floor;
   }
   return 0;

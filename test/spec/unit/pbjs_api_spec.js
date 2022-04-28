@@ -197,7 +197,6 @@ describe('Unit: Prebid Module', function () {
 
   before(() => {
     hook.ready();
-    $$PREBID_GLOBAL$$.requestBids.getHooks().remove();
   });
 
   beforeEach(function () {

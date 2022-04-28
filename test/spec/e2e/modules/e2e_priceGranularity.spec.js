@@ -1,7 +1,7 @@
 const expect = require('chai').expect;
-const { host, protocol, waitForElement, switchFrame } = require('../../../helpers/testing-utils');
+const { host, protocol, switchFrame, waitForElement } = require('../../../helpers/testing-utils');
 
-const TEST_PAGE_URL = `${protocol}://${host}:9999/test/pages/bidderSettings.html?pbjs_debug=true`;
+const TEST_PAGE_URL = `${protocol}://${host}:9999/test/pages/priceGranularity.html?pbjs_debug=true`;
 const CREATIVE_IFRAME_CSS_SELECTOR = 'iframe[id="google_ads_iframe_/19968336/header-bid-tag-0_0"]';
 
 const EXPECTED_TARGETING_KEYS = {
@@ -23,7 +23,7 @@ const EXPECTED_TARGETING_KEYS = {
   hb_size_appnexus: '0x0'
 }
 
-describe('Prebid.js Bidder Settings Ad Unit Test', function () {
+describe('Prebid.js Price Granularity Ad Unit Test', function () {
   this.retries(3);
   before(function loadTestPage() {
     browser.url(TEST_PAGE_URL);

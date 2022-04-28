@@ -68,23 +68,40 @@
 
     pbjs.que.push(function () {
       pbjs.addAdUnits(adUnits);
-      pbjs.bidderSettings = {
-        appnexus: {
-          adserverTargeting: [
-            {
-              key: "apn_pbMg",
-              val: function (bidResponse) {
-                return bidResponse.pbMg;
-              }
-            }, {
-              key: "apn_adId",
-              val: function (bidResponse) {
-                return bidResponse.adId;
-              }
-            }
-          ]
-        }
-      }
+      pbjs.setConfig({
+        sizeConfig: [{
+          'mediaQuery': '(min-width: 1600px)',
+          'sizesSupported': [
+            [300, 600],
+            [970, 90],
+            [728, 90],
+            [300, 250]
+          ],
+          'labels': ['desktop-hd']
+        }, {
+          'mediaQuery': '(min-width: 1200px)',
+          'sizesSupported': [
+            [300, 600],
+            [728, 90],
+            [300, 250]
+          ],
+          'labels': ['desktop']
+        }, {
+          'mediaQuery': '(min-width: 768px) and (max-width: 1199px)',
+          'sizesSupported': [
+            [300, 600],
+            [300, 250]
+          ],
+          'labels': ['tablet']
+        }, {
+          'mediaQuery': '(min-width: 0px)',
+          'sizesSupported': [
+            [300, 250],
+            [300, 600]
+          ],
+          'labels': ['phone']
+        }]
+      });
       pbjs.requestBids({
         bidsBackHandler: sendAdserverRequest,
         timeout: PREBID_TIMEOUT

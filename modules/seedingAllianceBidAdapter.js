@@ -8,7 +8,7 @@ import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'seedingAlliance';
 const DEFAULT_CUR = 'EUR';
-const ENDPOINT_URL = 'https://b.nativendo.de/cds/rtb/bid?format=openrtb2.5&ssp=pb';
+const ENDPOINT_URL = 'https://b.nativendo.de/cds/rtb/bid?format=openrtb2.5&ssp=nativendo';
 
 const NATIVE_ASSET_IDS = {0: 'title', 1: 'body', 2: 'sponsoredBy', 3: 'image', 4: 'cta', 5: 'icon'};
 
@@ -124,8 +124,7 @@ export const spec = {
       user: {},
       regs: {
         ext: {
-          gdpr: 0,
-          pb_ver: '$prebid.version$'
+          gdpr: 0
         }
       }
     };
@@ -188,14 +187,11 @@ registerBidder(spec);
 function parseNative(bid) {
   const {assets, link, imptrackers} = bid.adm.native;
 
-  let clickUrl = link.url.replace(/\$\{AUCTION_PRICE\}/g, bid.price);
-
   if (link.clicktrackers) {
     link.clicktrackers.forEach(function (clicktracker, index) {
       link.clicktrackers[index] = clicktracker.replace(/\$\{AUCTION_PRICE\}/g, bid.price);
     });
   }
-
   if (imptrackers) {
     imptrackers.forEach(function (imptracker, index) {
       imptrackers[index] = imptracker.replace(/\$\{AUCTION_PRICE\}/g, bid.price);
@@ -203,8 +199,8 @@ function parseNative(bid) {
   }
 
   const result = {
-    url: clickUrl,
-    clickUrl: clickUrl,
+    url: link.url,
+    clickUrl: link.url,
     clickTrackers: link.clicktrackers || undefined,
     impressionTrackers: imptrackers || undefined
   };
