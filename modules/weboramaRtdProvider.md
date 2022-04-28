@@ -173,6 +173,7 @@ This callback will be executed with the adUnitCode, profile and a metadata with 
 | :------------ | :------------ | :------------ |:------------ |
 | user | Boolean | If true, it contains user-centric data |  |
 | source | String | Represent the source of data | can be `contextual`, `wam` or `lite`  |
+| isDefault | Boolean | If true, it contains the default profile defined in the configuration |  |
 
 It is possible customize the targeting based on the parameters:
 
@@ -222,6 +223,7 @@ This callback will be executed with the bid object (contains a field `bidder` wi
 | :------------ | :------------ | :------------ |:------------ |
 | user | Boolean | If true, it contains user-centric data |  |
 | source | String | Represent the source of data | can be `contextual`, `wam` or `lite`  |
+| isDefault | Boolean | If true, it contains the default profile defined in the configuration |  |
 
 It is possible customize the targeting based on the parameters:
 
@@ -288,6 +290,7 @@ This callback will be executed with the profile and a metadata with the followin
 | :------------ | :------------ | :------------ |:------------ |
 | user | Boolean | If true, it contains user-centric data |  |
 | source | String | Represent the source of data | can be `contextual`, `wam` or `lite`  |
+| isDefault | Boolean | If true, it contains the default profile defined in the configuration |  |
 
 The metadata maybe not useful if we define the callback on site-centric of user-centric configuration, but if defined in the global level:
 

@@ -11,6 +11,7 @@
  * @typedef dataCallbackMetadata
  * @property {Boolean} user if true it is user-centric data
  * @property {String} source describe the source of data, if "contextual" or "wam"
+ * @property {Boolean} isDefault if true it the default profile defined in the configuration
 */
 
 /** onData callback type
@@ -76,7 +77,7 @@
  * @property {?sendToBiddersCallback|?Boolean|?Object} sendToBidders if true, will send the contextual profile to all bidders, else expects a list of allowed bidders (default undefined)
  * @property {?object} defaultProfile to be used if the profile is not found
  * @property {?dataCallback} onData callback
- * @property {?string} localStorageProfileKey can be used to customize the local storage key (default is 'webo_lite')
+ * @property {?string} localStorageProfileKey can be used to customize the local storage key (default is '_lite')
  * @property {?Boolean} enabled if false, will ignore this configuration
  */
 import {
@@ -123,7 +124,7 @@ const LOCAL_STORAGE_USER_TARGETING_SECTION = 'targeting';
 /** @type {string} */
 export const DEFAULT_LOCAL_STORAGE_LITE_PROFILE_KEY = '_lite';
 /** @type {string} */
-const LOCAL_STORAGE_LITE_TARGETING_SECTION = 'webo_lite';
+const LOCAL_STORAGE_LITE_TARGETING_SECTION = 'webo';
 /** @type {number} */
 const GVLID = 284;
 /** @type {?Object} */
@@ -480,11 +481,15 @@ function buildProfileHandlers(moduleParams) {
 
   if (_weboCtxInitialized && moduleParams.weboCtxConf) {
     const weboCtxConf = moduleParams.weboCtxConf;
-    const data = getContextualProfile(weboCtxConf);
+    const [data, isDefault] = getContextualProfile(weboCtxConf);
     if (!isEmpty(data)) {
       profileHandlers.push({
         data: data,
-        metadata: { user: false, source: 'contextual' },
+        metadata: {
+          user: false,
+          source: 'contextual',
+          isDefault: !!isDefault,
+        },
         setTargeting: weboCtxConf.setPrebidTargeting,
         sendToBidders: weboCtxConf.sendToBidders,
         onData: weboCtxConf.onData,
@@ -496,11 +501,15 @@ function buildProfileHandlers(moduleParams) {
 
   if (_weboUserDataInitialized && moduleParams.weboUserDataConf) {
     const weboUserDataConf = moduleParams.weboUserDataConf;
-    const data = getWeboUserDataProfile(weboUserDataConf);
+    const [data, isDefault] = getWeboUserDataProfile(weboUserDataConf);
     if (!isEmpty(data)) {
       profileHandlers.push({
         data: data,
-        metadata: { user: true, source: 'wam' },
+        metadata: {
+          user: true,
+          source: 'wam',
+          isDefault: !!isDefault,
+        },
         setTargeting: weboUserDataConf.setPrebidTargeting,
         sendToBidders: weboUserDataConf.sendToBidders,
         onData: weboUserDataConf.onData,
@@ -512,11 +521,15 @@ function buildProfileHandlers(moduleParams) {
 
   if (_weboLiteDataInitialized && moduleParams.weboLiteDataConf) {
     const weboLiteDataConf = moduleParams.weboLiteDataConf;
-    const data = getWeboLiteDataProfile(weboLiteDataConf);
+    const [data, isDefault] = getWeboLiteDataProfile(weboLiteDataConf);
     if (!isEmpty(data)) {
       profileHandlers.push({
         data: data,
-        metadata: { user: false, source: 'lite' },
+        metadata: {
+          user: false,
+          source: 'lite',
+          isDefault: !!isDefault,
+        },
         setTargeting: weboLiteDataConf.setPrebidTargeting,
         sendToBidders: weboLiteDataConf.sendToBidders,
         onData: weboLiteDataConf.onData,
@@ -531,16 +544,21 @@ function buildProfileHandlers(moduleParams) {
 
 /** return contextual profile
  * @param {WeboCtxConf} weboCtxConf
- * @returns {Object} contextual profile
+ * @returns {Array} contextual profile + isDefault boolean flag
  */
 function getContextualProfile(weboCtxConf) {
+  if (_weboContextualProfile) {
+    return [_weboContextualProfile, false];
+  }
+
   const defaultContextualProfile = weboCtxConf.defaultProfile || {};
-  return _weboContextualProfile || defaultContextualProfile;
+
+  return [defaultContextualProfile, true];
 }
 
 /** return weboUserData profile
  * @param {WeboUserDataConf} weboUserDataConf
- * @returns {Object} weboUserData profile
+ * @returns {Array} weboUserData profile  + isDefault boolean flag
  */
 function getWeboUserDataProfile(weboUserDataConf) {
   return getDataFromLocalStorage(weboUserDataConf,
@@ -553,7 +571,7 @@ function getWeboUserDataProfile(weboUserDataConf) {
 
 /** return weboUserData profile
  * @param {WeboLiteDataConf} weboLiteDataConf
- * @returns {Object} weboLiteData profile
+ * @returns {Array} weboLiteData profile + isDefault boolean flag
  */
 function getWeboLiteDataProfile(weboLiteDataConf) {
   return getDataFromLocalStorage(weboLiteDataConf,
@@ -568,16 +586,16 @@ function getWeboLiteDataProfile(weboLiteDataConf) {
  * @param {WeboUserDataConf|WeboLiteDataConf} weboDataConf
  * @param {cacheGetCallback} cacheGet
  * @param {cacheSetCallback} cacheSet
- * @param {String} localStorageKey
+ * @param {String} defaultLocalStorageProfileKey
  * @param {String} targetingSection
  * @param {String} source
- * @returns {Object} webo (user|lite) data profile
+ * @returns {Array} webo (user|lite) data profile + isDefault boolean flag
  */
-function getDataFromLocalStorage(weboDataConf, cacheGet, cacheSet, localStorageKey, targetingSection, source) {
+function getDataFromLocalStorage(weboDataConf, cacheGet, cacheSet, defaultLocalStorageProfileKey, targetingSection, source) {
   const defaultProfile = weboDataConf.defaultProfile || {};
 
   if (storage.localStorageIsEnabled() && !cacheGet()) {
-    const localStorageProfileKey = weboDataConf.localStorageProfileKey || localStorageKey;
+    const localStorageProfileKey = weboDataConf.localStorageProfileKey || defaultLocalStorageProfileKey;
 
     const entry = storage.getDataFromLocalStorage(localStorageProfileKey);
     if (entry) {
@@ -596,7 +614,13 @@ function getDataFromLocalStorage(weboDataConf, cacheGet, cacheSet, localStorageK
     }
   }
 
-  return cacheGet() || defaultProfile;
+  const profile = cacheGet()
+
+  if (profile) {
+    return [profile, false];
+  }
+
+  return [ defaultProfile, true ];
 }
 
 /** function that will allow RTD sub-modules to modify the AdUnit object for each auction

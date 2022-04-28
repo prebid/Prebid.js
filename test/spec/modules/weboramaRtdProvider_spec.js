@@ -146,7 +146,7 @@ describe('weboramaRtdProvider', function () {
         });
         expect(onDataResponse).to.deep.equal({
           data: data,
-          meta: { user: false, source: 'contextual' },
+          meta: { user: false, source: 'contextual', isDefault: false, },
         });
       });
 
@@ -256,7 +256,7 @@ describe('weboramaRtdProvider', function () {
 
             expect(onDataResponse).to.deep.equal({
               data: data,
-              meta: { user: false, source: 'contextual' },
+              meta: { user: false, source: 'contextual', isDefault: false, },
             });
           });
         });
@@ -361,7 +361,7 @@ describe('weboramaRtdProvider', function () {
 
             expect(onDataResponse).to.deep.equal({
               data: data,
-              meta: { user: false, source: 'contextual' },
+              meta: { user: false, source: 'contextual', isDefault: false, },
             });
           });
         });
@@ -704,7 +704,7 @@ describe('weboramaRtdProvider', function () {
 
         expect(onDataResponse).to.deep.equal({
           data: data,
-          meta: { user: false, source: 'contextual' },
+          meta: { user: false, source: 'contextual', isDefault: false, },
         });
       });
 
@@ -882,7 +882,7 @@ describe('weboramaRtdProvider', function () {
         });
         expect(onDataResponse).to.deep.equal({
           data: defaultProfile,
-          meta: { user: false, source: 'contextual' },
+          meta: { user: false, source: 'contextual', isDefault: true, },
         });
       });
 
@@ -1002,7 +1002,7 @@ describe('weboramaRtdProvider', function () {
 
         expect(onDataResponse).to.deep.equal({
           data: data,
-          meta: { user: false, source: 'contextual' },
+          meta: { user: false, source: 'contextual', isDefault: false, },
         });
       });
     });
@@ -1083,7 +1083,7 @@ describe('weboramaRtdProvider', function () {
         });
         expect(onDataResponse).to.deep.equal({
           data: data,
-          meta: { user: true, source: 'wam' },
+          meta: { user: true, source: 'wam', isDefault: false, },
         });
       });
 
@@ -1192,7 +1192,7 @@ describe('weboramaRtdProvider', function () {
 
             expect(onDataResponse).to.deep.equal({
               data: data,
-              meta: { user: true, source: 'wam' },
+              meta: { user: true, source: 'wam', isDefault: false, },
             });
           });
         });
@@ -1296,7 +1296,7 @@ describe('weboramaRtdProvider', function () {
 
             expect(onDataResponse).to.deep.equal({
               data: data,
-              meta: { user: true, source: 'wam' },
+              meta: { user: true, source: 'wam', isDefault: false, },
             });
           });
         });
@@ -1640,7 +1640,7 @@ describe('weboramaRtdProvider', function () {
         expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('foo=bar');
         expect(onDataResponse).to.deep.equal({
           data: data,
-          meta: { user: true, source: 'wam' },
+          meta: { user: true, source: 'wam', isDefault: false, },
         });
       });
 
@@ -1874,7 +1874,7 @@ describe('weboramaRtdProvider', function () {
         });
         expect(onDataResponse).to.deep.equal({
           data: defaultProfile,
-          meta: { user: true, source: 'wam' },
+          meta: { user: true, source: 'wam', isDefault: true, },
         });
       });
 
@@ -1995,7 +1995,7 @@ describe('weboramaRtdProvider', function () {
 
         expect(onDataResponse).to.deep.equal({
           data: data,
-          meta: { user: true, source: 'wam' },
+          meta: { user: true, source: 'wam', isDefault: false, },
         });
       });
     });
@@ -2021,7 +2021,7 @@ describe('weboramaRtdProvider', function () {
         };
 
         const entry = {
-          webo_lite: data,
+          webo: data,
         };
 
         sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
@@ -2075,7 +2075,7 @@ describe('weboramaRtdProvider', function () {
         });
         expect(onDataResponse).to.deep.equal({
           data: data,
-          meta: { user: false, source: 'lite' },
+          meta: { user: false, source: 'lite', isDefault: false, },
         });
       });
 
@@ -2119,7 +2119,7 @@ describe('weboramaRtdProvider', function () {
             };
 
             const entry = {
-              webo_lite: data,
+              webo: data,
             };
 
             sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
@@ -2183,7 +2183,7 @@ describe('weboramaRtdProvider', function () {
 
             expect(onDataResponse).to.deep.equal({
               data: data,
-              meta: { user: false, source: 'lite' },
+              meta: { user: false, source: 'lite', isDefault: false, },
             });
           });
         });
@@ -2220,7 +2220,7 @@ describe('weboramaRtdProvider', function () {
             };
 
             const entry = {
-              webo_lite: data,
+              webo: data,
             };
 
             sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
@@ -2286,7 +2286,7 @@ describe('weboramaRtdProvider', function () {
 
             expect(onDataResponse).to.deep.equal({
               data: data,
-              meta: { user: false, source: 'lite' },
+              meta: { user: false, source: 'lite', isDefault: false, },
             });
           });
         });
@@ -2318,7 +2318,7 @@ describe('weboramaRtdProvider', function () {
             };
 
             const entry = {
-              webo_lite: data,
+              webo: data,
             };
 
             sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
@@ -2455,7 +2455,7 @@ describe('weboramaRtdProvider', function () {
             };
 
             const entry = {
-              webo_lite: data,
+              webo: data,
             };
 
             sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
@@ -2590,7 +2590,7 @@ describe('weboramaRtdProvider', function () {
         };
 
         const entry = {
-          webo_lite: data,
+          webo: data,
         };
 
         sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
@@ -2627,7 +2627,7 @@ describe('weboramaRtdProvider', function () {
         expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('foo=bar');
         expect(onDataResponse).to.deep.equal({
           data: data,
-          meta: { user: false, source: 'lite' },
+          meta: { user: false, source: 'lite', isDefault: false, },
         });
       });
 
@@ -2645,7 +2645,7 @@ describe('weboramaRtdProvider', function () {
         };
 
         const entry = {
-          webo_lite: data,
+          webo: data,
         };
 
         sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
@@ -2858,7 +2858,7 @@ describe('weboramaRtdProvider', function () {
         });
         expect(onDataResponse).to.deep.equal({
           data: defaultProfile,
-          meta: { user: false, source: 'lite' },
+          meta: { user: false, source: 'lite', isDefault: true, },
         });
       });
 
@@ -2895,7 +2895,7 @@ describe('weboramaRtdProvider', function () {
         };
 
         const entry = {
-          webo_lite: data,
+          webo: data,
         };
 
         sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
@@ -2978,7 +2978,7 @@ describe('weboramaRtdProvider', function () {
 
         expect(onDataResponse).to.deep.equal({
           data: data,
-          meta: { user: false, source: 'lite' },
+          meta: { user: false, source: 'lite', isDefault: false, },
         });
       });
     });
