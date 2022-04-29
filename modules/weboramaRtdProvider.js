@@ -85,7 +85,6 @@ import {
 } from '../src/prebidGlobal.js';
 import {
   deepSetValue,
-  deepAccess,
   isEmpty,
   mergeDeep,
   logError,
@@ -770,10 +769,11 @@ function handleAppnexusBid(bid, profile) {
 function handlePubmaticBid(bid, profile) {
   const sep = '|';
   const subsep = ',';
-  const bidKey = 'params.dctr';
   const target = [];
 
-  const data = deepAccess(bid, bidKey);
+  bid.params ||= {};
+
+  const data = bid.params.dctr;
   if (data) {
     data.split(sep).forEach(t => target.push(t));
   }
@@ -786,7 +786,7 @@ function handlePubmaticBid(bid, profile) {
     }
   });
 
-  deepSetValue(bid, bidKey, target.join(sep));
+  bid.params.dctr = target.join(sep);
 }
 
 /** handle smartadserver bid
@@ -796,10 +796,11 @@ function handlePubmaticBid(bid, profile) {
  */
 function handleSmartadserverBid(bid, profile) {
   const sep = ';';
-  const bidKey = 'params.target';
   const target = [];
 
-  const data = deepAccess(bid, bidKey);
+  bid.params ||= {};
+
+  const data = bid.params.target;
   if (data) {
     data.split(sep).forEach(t => target.push(t));
   }
@@ -812,7 +813,8 @@ function handleSmartadserverBid(bid, profile) {
       }
     });
   });
-  deepSetValue(bid, bidKey, target.join(sep));
+
+  bid.params.target = target.join(sep);
 }
 
 /** handle rubicon bid
