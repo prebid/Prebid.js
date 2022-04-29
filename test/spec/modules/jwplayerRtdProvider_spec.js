@@ -576,20 +576,20 @@ describe('jwplayerRtdProvider', function() {
           }
         }
       };
-      addOrtbSiteContent(bid);
-      expect(bid).to.have.nested.property('ortb2.site.content.id', 'randomId');
-      expect(bid).to.have.nested.property('ortb2.site.random.random_sub', 'randomSub');
-      expect(bid).to.have.nested.property('ortb2.app.content.id', 'appId');
+      const ortb = addOrtbSiteContent(bid.ortb2);
+      expect(ortb).to.have.nested.property('site.content.id', 'randomId');
+      expect(ortb).to.have.nested.property('site.random.random_sub', 'randomSub');
+      expect(ortb).to.have.nested.property('app.content.id', 'appId');
     });
 
     it('should create a structure compliant with the oRTB 2 spec', function() {
       const bid = {};
       const expectedId = 'expectedId';
       const expectedData = { datum: 'datum' };
-      addOrtbSiteContent(bid, expectedId, expectedData);
-      expect(bid).to.have.nested.property('ortb2.site.content.id', expectedId);
-      expect(bid).to.have.nested.property('ortb2.site.content.data');
-      expect(bid.ortb2.site.content.data[0]).to.be.deep.equal(expectedData);
+      const ortb = addOrtbSiteContent(bid.ortb2, expectedId, expectedData);
+      expect(ortb).to.have.nested.property('site.content.id', expectedId);
+      expect(ortb).to.have.nested.property('site.content.data');
+      expect(ortb.site.content.data[0]).to.be.deep.equal(expectedData);
     });
 
     it('should respect existing structure when adding adding fields', function () {
@@ -613,19 +613,19 @@ describe('jwplayerRtdProvider', function() {
 
       const expectedId = 'expectedId';
       const expectedData = { datum: 'datum' };
-      addOrtbSiteContent(bid, expectedId, expectedData);
-      expect(bid).to.have.nested.property('ortb2.site.random.random_sub', 'randomSub');
-      expect(bid).to.have.nested.property('ortb2.app.content.id', 'appId');
-      expect(bid).to.have.nested.property('ortb2.site.content.id', expectedId);
-      expect(bid).to.have.nested.property('ortb2.site.content.data');
-      expect(bid.ortb2.site.content.data[0]).to.be.deep.equal(expectedData);
+      const ortb = addOrtbSiteContent(bid.ortb2, expectedId, expectedData);
+      expect(ortb).to.have.nested.property('site.random.random_sub', 'randomSub');
+      expect(ortb).to.have.nested.property('app.content.id', 'appId');
+      expect(ortb).to.have.nested.property('site.content.id', expectedId);
+      expect(ortb).to.have.nested.property('site.content.data');
+      expect(ortb.site.content.data[0]).to.be.deep.equal(expectedData);
     });
 
     it('should set content id', function () {
       const bid = {};
       const expectedId = 'expectedId';
-      addOrtbSiteContent(bid, expectedId);
-      expect(bid).to.have.nested.property('ortb2.site.content.id', expectedId);
+      const ortb = addOrtbSiteContent(bid.ortb2, expectedId);
+      expect(ortb).to.have.nested.property('site.content.id', expectedId);
     });
 
     it('should override content id', function () {
@@ -640,8 +640,8 @@ describe('jwplayerRtdProvider', function() {
       };
 
       const expectedId = 'expectedId';
-      addOrtbSiteContent(bid, expectedId);
-      expect(bid).to.have.nested.property('ortb2.site.content.id', expectedId);
+      const ortb = addOrtbSiteContent(bid.ortb2, expectedId);
+      expect(ortb).to.have.nested.property('site.content.id', expectedId);
     });
 
     it('should keep previous content id when not set', function () {
@@ -657,17 +657,17 @@ describe('jwplayerRtdProvider', function() {
         }
       };
 
-      addOrtbSiteContent(bid, null, { datum: 'new_datum' });
-      expect(bid).to.have.nested.property('ortb2.site.content.id', previousId);
+      const ortb = addOrtbSiteContent(bid.ortb2, null, { datum: 'new_datum' });
+      expect(ortb).to.have.nested.property('site.content.id', previousId);
     });
 
     it('should set content data', function () {
       const bid = {};
       const expectedData = { datum: 'datum' };
-      addOrtbSiteContent(bid, null, expectedData);
-      expect(bid).to.have.nested.property('ortb2.site.content.data');
-      expect(bid.ortb2.site.content.data).to.have.length(1);
-      expect(bid.ortb2.site.content.data[0]).to.be.deep.equal(expectedData);
+      const ortb = addOrtbSiteContent(bid.ortb2, null, expectedData);
+      expect(ortb).to.have.nested.property('site.content.data');
+      expect(ortb.site.content.data).to.have.length(1);
+      expect(ortb.site.content.data[0]).to.be.deep.equal(expectedData);
     });
 
     it('should append content data', function () {
@@ -682,10 +682,10 @@ describe('jwplayerRtdProvider', function() {
       };
 
       const expectedData = { datum: 'datum' };
-      addOrtbSiteContent(bid, null, expectedData);
-      expect(bid).to.have.nested.property('ortb2.site.content.data');
-      expect(bid.ortb2.site.content.data).to.have.length(2);
-      expect(bid.ortb2.site.content.data.pop()).to.be.deep.equal(expectedData);
+      const ortb = addOrtbSiteContent(bid.ortb2, null, expectedData);
+      expect(ortb).to.have.nested.property('ortb2.site.content.data');
+      expect(ortb.site.content.data).to.have.length(2);
+      expect(ortb.site.content.data.pop()).to.be.deep.equal(expectedData);
     });
 
     it('should keep previous data when not set', function () {
@@ -701,11 +701,11 @@ describe('jwplayerRtdProvider', function() {
         }
       };
 
-      addOrtbSiteContent(bid, expectedId);
-      expect(bid).to.have.nested.property('ortb2.site.content.data');
-      expect(bid.ortb2.site.content.data).to.have.length(1);
-      expect(bid.ortb2.site.content.data[0]).to.be.deep.equal(expectedData);
-      expect(bid).to.have.nested.property('ortb2.site.content.id', expectedId);
+      const ortb = addOrtbSiteContent(bid, expectedId);
+      expect(ortb).to.have.nested.property('site.content.data');
+      expect(ortb.site.content.data).to.have.length(1);
+      expect(ortb.site.content.data[0]).to.be.deep.equal(expectedData);
+      expect(ortb).to.have.nested.property('site.content.id', expectedId);
     });
   });
 

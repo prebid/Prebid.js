@@ -12,7 +12,8 @@
 import {submodule} from '../src/hook.js';
 import {config} from '../src/config.js';
 import {ajaxBuilder} from '../src/ajax.js';
-import {logError} from '../src/utils.js';
+// import { deepSetValue, logError } from '../src/utils.js'
+import { logError } from '../src/utils.js'
 import {find} from '../src/polyfill.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 
@@ -161,6 +162,9 @@ export function enrichAdUnits(adUnits) {
       const contentData = getContentData(mediaId, contentSegments);
       const targeting = formatTargetingResponse(vat);
       enrichBids(adUnit.bids, targeting, contentId, contentData);
+      let ortb2 = config.getConfig('ortb2');
+      ortb2 = addOrtbSiteContent(ortb2, contentId, contentData);
+      config.setConfig({ ortb2 });
     };
     loadVat(jwTargeting, onVatResponse);
   });
@@ -303,12 +307,20 @@ export function getContentData(mediaId, segments) {
   return contentData;
 }
 
-export function addOrtbSiteContent(bid, contentId, contentData) {
-  if (!contentId && !contentData) {
-    return;
+export function addOrtbSiteContent(ortb2, contentId, contentData) {
+  if (!ortb2) {
+    ortb2 = {};
   }
 
-  let ortb2 = bid.ortb2 || {};
+  if (!contentId && !contentData) {
+    return ortb2;
+  }
+
+  // deepSetValue(ortb, 'site.content.id', contentId);
+  // deepSetValue(ortb, 'site.content.data', contentData);
+  //
+  // return ortb;
+
   let site = ortb2.site = ortb2.site || {};
   let content = site.content = site.content || {};
 
@@ -321,7 +333,7 @@ export function addOrtbSiteContent(bid, contentId, contentData) {
     data.push(contentData);
   }
 
-  bid.ortb2 = ortb2;
+  return ortb2;
 }
 
 function enrichBids(bids, targeting, contentId, contentData) {
@@ -331,7 +343,7 @@ function enrichBids(bids, targeting, contentId, contentData) {
 
   bids.forEach(bid => {
     addTargetingToBid(bid, targeting);
-    addOrtbSiteContent(bid, contentId, contentData);
+    bid.ortb2 = addOrtbSiteContent(bid.ortb2, contentId, contentData);
   });
 }
 
