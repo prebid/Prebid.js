@@ -222,7 +222,7 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
   return Object.keys(adUnit.bids).reduce(function(partnerBids, bidId) {
     adUnit.bids[bidId].forEach(function(bid) {
       partnerBids.push({
-        'pn': getAdapterNameForAlias(bid.adapterCode),
+        'pn': getAdapterNameForAlias(bid.adapterCode || bid.bidder),
         'bc': bid.bidderCode || bid.bidder,
         'bidid': bid.bidId,
         'db': bid.bidResponse ? 0 : 1,
@@ -308,15 +308,16 @@ function executeBidsLoggerCall(e, highestCpmBids) {
   );
 }
 
-function executeBidWonLoggerCall(auctionId, adUnitId, args) {
+function executeBidWonLoggerCall(auctionId, adUnitId) {
   const winningBidId = cache.auctions[auctionId].adUnitCodes[adUnitId].bidWon;
   const winningBids = cache.auctions[auctionId].adUnitCodes[adUnitId].bids[winningBidId];
   let winningBid = winningBids[0];
+
   if (winningBids.length > 1) {
-    winningBid = {...args};
-    winningBid.bidResponse = parseBidResponse(args)
+    winningBid = winningBids.filter(bid => bid.adId === cache.auctions[auctionId].adUnitCodes[adUnitId].bidWonAdId)[0];
   }
-  const adapterName = getAdapterNameForAlias(winningBid.adapterCode);
+
+  const adapterName = getAdapterNameForAlias(winningBid.adapterCode || winningBid.bidder);
   let pixelURL = END_POINT_WIN_BID_LOGGER;
   pixelURL += 'pubid=' + publisherId;
   pixelURL += '&purl=' + enc(config.getConfig('pageUrl') || cache.auctions[auctionId].referer || '');
@@ -376,7 +377,6 @@ function bidRequestedHandler(args) {
 
 function bidResponseHandler(args) {
   let bid = cache.auctions[args.auctionId].adUnitCodes[args.adUnitCode].bids[args.requestId][0];
-  let extrabid = false;
   if (!bid) {
     logError(LOG_PRE_FIX + 'Could not find associated bid request for bid response with requestId: ', args.requestId);
     return;
@@ -384,15 +384,13 @@ function bidResponseHandler(args) {
 
   if (bid.bidder && args.bidderCode && bid.bidder !== args.bidderCode) {
     bid = copyRequiredBidDetails(args);
-    extrabid = true;
+    cache.auctions[args.auctionId].adUnitCodes[args.adUnitCode].bids[args.requestId].push(bid)
   }
+  bid.adId = args.adId;
   bid.source = formatSource(bid.source || args.source);
   setBidStatus(bid, args);
   bid.clientLatencyTimeMs = Date.now() - cache.auctions[args.auctionId].timestamp;
   bid.bidResponse = parseBidResponse(args);
-  if (extrabid) {
-    cache.auctions[args.auctionId].adUnitCodes[args.adUnitCode].bids[args.requestId].push(bid)
-  }
 }
 
 function bidderDoneHandler(args) {
@@ -414,6 +412,7 @@ function bidderDoneHandler(args) {
 function bidWonHandler(args) {
   let auctionCache = cache.auctions[args.auctionId];
   auctionCache.adUnitCodes[args.adUnitCode].bidWon = args.requestId;
+  auctionCache.adUnitCodes[args.adUnitCode].bidWonAdId = args.adId;
   executeBidWonLoggerCall(args.auctionId, args.adUnitCode, args);
 }
 
