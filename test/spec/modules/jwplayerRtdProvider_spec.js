@@ -2,7 +2,7 @@ import { fetchTargetingForMediaId, getVatFromCache, extractPublisherParams,
   formatTargetingResponse, getVatFromPlayer, enrichAdUnits, addTargetingToBid,
   fetchTargetingInformation, jwplayerSubmodule, getContentId, getContentSegments, getContentData } from 'modules/jwplayerRtdProvider.js';
 import { server } from 'test/mocks/xhr.js';
-import {addOrtbSiteContent} from '../../../modules/jwplayerRtdProvider';
+import {getOrtbSiteContent} from '../../../modules/jwplayerRtdProvider';
 
 describe('jwplayerRtdProvider', function() {
   const testIdForSuccess = 'test_id_for_success';
@@ -558,7 +558,7 @@ describe('jwplayerRtdProvider', function() {
   });
 
   describe(' Add Ortb Site Content', function () {
-    it('should maintain object structure when id and data params are empty', function () {
+    it('should return undefined when id and data params are empty', function () {
       const bid = {
         ortb2: {
           site: {
@@ -576,17 +576,15 @@ describe('jwplayerRtdProvider', function() {
           }
         }
       };
-      const ortb = addOrtbSiteContent(bid.ortb2);
-      expect(ortb).to.have.nested.property('site.content.id', 'randomId');
-      expect(ortb).to.have.nested.property('site.random.random_sub', 'randomSub');
-      expect(ortb).to.have.nested.property('app.content.id', 'appId');
+      const ortb = getOrtbSiteContent(bid.ortb2);
+      expect(ortb).to.be.undefined;
     });
 
     it('should create a structure compliant with the oRTB 2 spec', function() {
       const bid = {};
       const expectedId = 'expectedId';
       const expectedData = { datum: 'datum' };
-      const ortb = addOrtbSiteContent(bid.ortb2, expectedId, expectedData);
+      const ortb = getOrtbSiteContent(bid.ortb2, expectedId, expectedData);
       expect(ortb).to.have.nested.property('site.content.id', expectedId);
       expect(ortb).to.have.nested.property('site.content.data');
       expect(ortb.site.content.data[0]).to.be.deep.equal(expectedData);
@@ -613,7 +611,7 @@ describe('jwplayerRtdProvider', function() {
 
       const expectedId = 'expectedId';
       const expectedData = { datum: 'datum' };
-      const ortb = addOrtbSiteContent(bid.ortb2, expectedId, expectedData);
+      const ortb = getOrtbSiteContent(bid.ortb2, expectedId, expectedData);
       expect(ortb).to.have.nested.property('site.random.random_sub', 'randomSub');
       expect(ortb).to.have.nested.property('app.content.id', 'appId');
       expect(ortb).to.have.nested.property('site.content.id', expectedId);
@@ -624,7 +622,7 @@ describe('jwplayerRtdProvider', function() {
     it('should set content id', function () {
       const bid = {};
       const expectedId = 'expectedId';
-      const ortb = addOrtbSiteContent(bid.ortb2, expectedId);
+      const ortb = getOrtbSiteContent(bid.ortb2, expectedId);
       expect(ortb).to.have.nested.property('site.content.id', expectedId);
     });
 
@@ -640,7 +638,7 @@ describe('jwplayerRtdProvider', function() {
       };
 
       const expectedId = 'expectedId';
-      const ortb = addOrtbSiteContent(bid.ortb2, expectedId);
+      const ortb = getOrtbSiteContent(bid.ortb2, expectedId);
       expect(ortb).to.have.nested.property('site.content.id', expectedId);
     });
 
@@ -657,14 +655,14 @@ describe('jwplayerRtdProvider', function() {
         }
       };
 
-      const ortb = addOrtbSiteContent(bid.ortb2, null, { datum: 'new_datum' });
+      const ortb = getOrtbSiteContent(bid.ortb2, null, { datum: 'new_datum' });
       expect(ortb).to.have.nested.property('site.content.id', previousId);
     });
 
     it('should set content data', function () {
       const bid = {};
       const expectedData = { datum: 'datum' };
-      const ortb = addOrtbSiteContent(bid.ortb2, null, expectedData);
+      const ortb = getOrtbSiteContent(bid.ortb2, null, expectedData);
       expect(ortb).to.have.nested.property('site.content.data');
       expect(ortb.site.content.data).to.have.length(1);
       expect(ortb.site.content.data[0]).to.be.deep.equal(expectedData);
@@ -682,8 +680,8 @@ describe('jwplayerRtdProvider', function() {
       };
 
       const expectedData = { datum: 'datum' };
-      const ortb = addOrtbSiteContent(bid.ortb2, null, expectedData);
-      expect(ortb).to.have.nested.property('ortb2.site.content.data');
+      const ortb = getOrtbSiteContent(bid.ortb2, null, expectedData);
+      expect(ortb).to.have.nested.property('site.content.data');
       expect(ortb.site.content.data).to.have.length(2);
       expect(ortb.site.content.data.pop()).to.be.deep.equal(expectedData);
     });
@@ -701,7 +699,7 @@ describe('jwplayerRtdProvider', function() {
         }
       };
 
-      const ortb = addOrtbSiteContent(bid, expectedId);
+      const ortb = getOrtbSiteContent(bid.ortb2, expectedId);
       expect(ortb).to.have.nested.property('site.content.data');
       expect(ortb.site.content.data).to.have.length(1);
       expect(ortb.site.content.data[0]).to.be.deep.equal(expectedData);
