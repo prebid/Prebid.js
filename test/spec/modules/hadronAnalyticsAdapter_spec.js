@@ -11,7 +11,10 @@ describe('Hadron analytics adapter', () => {
     hadronAnalyticsAdapter.enableAnalytics({
       options: {
         partnerId: 12349,
-        eventsToTrack: ['auctionEnd'],
+        eventsToTrack: ['auctionInit', 'auctionEnd', 'bidWon',
+          'bidderDone', 'requestBids', 'addAdUnits', 'setTargeting', 'adRenderFailed',
+          'bidResponse', 'bidTimeout', 'bidRequested', 'bidAdjustment', 'nonExistingEvent'
+        ],
       }
     });
   });
