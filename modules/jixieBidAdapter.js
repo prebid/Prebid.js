@@ -6,6 +6,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { ajax } from '../src/ajax.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { Renderer } from '../src/Renderer.js';
+import {createEidsArray} from './userId/eids.js';
 
 const BIDDER_CODE = 'jixie';
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
@@ -121,6 +122,17 @@ function getMiscDims_() {
   return ret;
 }
 
+/* function addUserId(eids, id, source, rti) {
+  if (id) {
+    if (rti) {
+      eids.push({ source, id, rti_partner: rti });
+    } else {
+      eids.push({ source, id });
+    }
+  }
+  return eids;
+} */
+
 // easier for replacement in the unit test
 export const internal = {
   getDevice: getDevice_,
@@ -163,7 +175,22 @@ export const spec = {
     }
 
     let ids = fetchIds_();
+    let eids = [];
     let miscDims = internal.getMiscDims();
+
+    // all available user ids are sent to our backend in the standard array layout:
+    if (validBidRequests[0].userId) {
+      let eids1 = createEidsArray(validBidRequests[0].userId);
+      if (eids1.length) {
+        eids = eids1;
+      }
+    }
+    // we want to send this blob of info to our backend:
+    let pg = config.getConfig('priceGranularity');
+    if (!pg) {
+      pg = {};
+    }
+
     let transformedParams = Object.assign({}, {
       auctionid: bidderRequest.auctionId,
       timeout: bidderRequest.timeout,
@@ -174,6 +201,8 @@ export const spec = {
       pageurl: miscDims.pageurl,
       mkeywords: miscDims.mkeywords,
       bids: bids,
+      eids: eids,
+      pricegranularity: pg,
       cfg: jixieCfgBlob
     }, ids);
     return Object.assign({}, {
