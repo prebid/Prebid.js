@@ -73,8 +73,6 @@ export const ftrackIdSubmodule = {
           CCampID: '148556'
         };
         window.D9r = {
-          DeviceID: true,
-          SingleDeviceID: true,
           callback: function(response) {
             if (response) {
               storage.setDataInLocalStorage(`${FTRACK_STORAGE_NAME}_exp`, (new Date(Date.now() + (1000 * 60 * 60 * 24 * LOCAL_STORAGE_EXP_DAYS))).toUTCString());
@@ -87,6 +85,22 @@ export const ftrackIdSubmodule = {
             return response;
           }
         };
+
+        // If config.params.ids does not exist, set defaults
+        if (!config.params.hasOwnProperty('ids')) {
+          window.D9r.DeviceID = true;
+          window.D9r.SingleDeviceID = true;
+        } else {
+          if (config.params.ids.hasOwnProperty('device id') && config.params.ids['device id'] === true) {
+            window.D9r.DeviceID = true;
+          }
+          if (config.params.ids.hasOwnProperty('single device id') && config.params.ids['single device id'] === true) {
+            window.D9r.SingleDeviceID = true;
+          }
+          if (config.params.ids.hasOwnProperty('household id') && config.params.ids['household id'] === true) {
+            window.D9r.HHID = true;
+          }
+        }
 
         if (config.params && config.params.url && config.params.url === FTRACK_URL) {
           var ftrackScript = document.createElement('script');

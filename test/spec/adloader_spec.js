@@ -38,5 +38,35 @@ describe('adLoader', function () {
       adLoader.loadExternalScript('someURL1', 'criteo', callback);
       expect(utilsinsertElementStub.called).to.be.true;
     });
+
+    it('requires a url to be included once per document', function () {
+      function getDocSpec() {
+        return {
+          createElement: function() {
+            return {
+
+            }
+          },
+          getElementsByTagName: function() {
+            return {
+              firstChild: {
+                insertBefore: function() {
+
+                }
+              }
+            }
+          }
+
+        }
+      }
+      const doc1 = getDocSpec();
+      const doc2 = getDocSpec();
+      adLoader.loadExternalScript('someURL', 'criteo', () => {}, doc1);
+      adLoader.loadExternalScript('someURL', 'criteo', () => {}, doc1);
+      adLoader.loadExternalScript('someURL', 'criteo', () => {}, doc1);
+      adLoader.loadExternalScript('someURL', 'criteo', () => {}, doc2);
+      adLoader.loadExternalScript('someURL', 'criteo', () => {}, doc2);
+      expect(utilsinsertElementStub.callCount).to.equal(2);
+    });
   });
 });
