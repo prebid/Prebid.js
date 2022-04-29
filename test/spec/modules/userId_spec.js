@@ -253,7 +253,6 @@ describe('User ID', function () {
           });
         });
 
-
         init(config);
         setSubmoduleRegistry([sharedIdSystemSubmodule]);
 
