@@ -449,12 +449,11 @@ function getTargetingData(adUnitsCodes, moduleConfig) {
     const td = adUnitsCodes.reduce((data, adUnitCode) => {
       data[adUnitCode] = profileHandlers.reduce((targeting, ph) => {
         // logMessage(`check if should set targeting for adunit '${adUnitCode}'`);
-        const data = deepClone(ph.data);
-        const meta = deepClone(ph.metadata);
-        if (ph.setTargeting(adUnitCode, data, meta)) {
+        const cph = copyProfileHandler(ph);
+        if (ph.setTargeting(adUnitCode, cph.data, cph.metadata)) {
           // logMessage(`set targeting for adunit '${adUnitCode}', source '${ph.metadata.source}'`);
 
-          mergeDeep(targeting, data);
+          mergeDeep(targeting, cph.data);
         }
         return targeting;
       }, {});
@@ -672,12 +671,11 @@ function handleBidRequestData(adUnits, moduleParams) {
         bid => profileHandlers.forEach(ph => {
           // logMessage(`check if bidder '${bid.bidder}' and adunit '${adUnit.code} are share ${ph.metadata.source} data`);
 
-          const data = deepClone(ph.data);
-          const meta = deepClone(ph.metadata);
-          if (ph.sendToBidders(bid, adUnit.code, data, meta)) {
+          const cph = copyProfileHandler(ph);
+          if (ph.sendToBidders(bid, adUnit.code, cph.data, cph.metadata)) {
             // logMessage(`handling bidder '${bid.bidder}' with ${ph.metadata.source} data`);
 
-            handleBid(bid, data, ph.metadata);
+            handleBid(bid, cph.data, ph.metadata);
           }
         })
       )
@@ -688,13 +686,22 @@ function handleBidRequestData(adUnits, moduleParams) {
 
   profileHandlers.forEach(ph => {
     try {
-      const data = deepClone(ph.data);
-      const meta = deepClone(ph.metadata);
-      ph.onData(data, meta);
+      const cph = copyProfileHandler(ph);
+      ph.onData(cph.data, cph.metadata);
     } catch (e) {
       logError(`error while executure onData callback with ${ph.metadata.source}-based data:`, e);
     }
   });
+}
+/** function that handles bid request data
+ * @param {Object} ph profile handler
+ *@returns {Object} of deeply copy data and metadata
+ */
+function copyProfileHandler(ph) {
+  return {
+    data: deepClone(ph.data),
+    metadata: deepClone(ph.metadata),
+  };
 }
 
 /** @type {string} */
