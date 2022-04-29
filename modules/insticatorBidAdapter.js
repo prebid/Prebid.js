@@ -1,8 +1,13 @@
-import {config} from '../src/config.js';
-import {BANNER} from '../src/mediaTypes.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {deepAccess, generateUUID, logError, isArray} from '../src/utils.js';
-import {getStorageManager} from '../src/storageManager.js';
+import { config } from '../src/config.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import {
+  deepAccess,
+  generateUUID,
+  logError,
+  isArray,
+} from '../src/utils.js';
+import { getStorageManager } from '../src/storageManager.js';
 import find from 'core-js-pure/features/array/find.js';
 
 const BIDDER_CODE = 'insticator';
@@ -72,11 +77,18 @@ function buildImpression(bidRequest) {
     ext.gpid = gpid;
   }
 
+  const instl = deepAccess(bidRequest, 'ortb2Imp.instl')
+  const secure = location.protocol === 'https:' ? 1 : 0;
+  const pos = deepAccess(bidRequest, 'mediaTypes.banner.pos');
+
   return {
     id: bidRequest.bidId,
     tagid: bidRequest.adUnitCode,
+    instl,
+    secure,
     banner: {
       format,
+      pos,
     },
     ext,
   };
@@ -115,13 +127,17 @@ function buildRegs(bidderRequest) {
   return {};
 }
 
-function buildUser() {
+function buildUser(bid) {
   const userId = getUserId() || generateUUID();
+  const yob = deepAccess(bid, 'params.user.yob')
+  const gender = deepAccess(bid, 'params.user.gender')
 
   setUserId(userId);
 
   return {
     id: userId,
+    yob,
+    gender,
   };
 }
 
@@ -139,7 +155,7 @@ function extractSchain(bids, requestId) {
 function extractEids(bids) {
   if (!bids) return;
 
-  const bid = find(bids, bid => isArray(bid.userIdAsEids) && bid.userIdAsEids.length > 0);
+  const bid = bids.find(bid => isArray(bid.userIdAsEids) && bid.userIdAsEids.length > 0);
   return bid ? bid.userIdAsEids : bids[0].userIdAsEids;
 }
 
@@ -158,7 +174,7 @@ function buildRequest(validBidRequests, bidderRequest) {
     },
     device: buildDevice(),
     regs: buildRegs(bidderRequest),
-    user: buildUser(),
+    user: buildUser(validBidRequests[0]),
     imp: validBidRequests.map((bidRequest) => buildImpression(bidRequest)),
     ext: {
       insticator: {
@@ -181,13 +197,13 @@ function buildRequest(validBidRequests, bidderRequest) {
   const schain = extractSchain(validBidRequests, bidderRequest.bidderRequestId);
 
   if (schain) {
-    req.source.ext = {schain};
+    req.source.ext = { schain };
   }
 
   const eids = extractEids(validBidRequests);
 
   if (eids) {
-    req.user.ext = {eids};
+    req.user.ext = { eids };
   }
 
   return req;
