@@ -1,9 +1,14 @@
-import {config} from '../src/config.js';
-import {BANNER} from '../src/mediaTypes.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {deepAccess, generateUUID, logError, isArray} from '../src/utils.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {find} from '../src/polyfill.js';
+import { config } from '../src/config.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import {
+  deepAccess,
+  generateUUID,
+  logError,
+  isArray,
+} from '../src/utils.js';
+import { getStorageManager } from '../src/storageManager.js';
+import find from 'core-js-pure/features/array/find.js';
 
 const BIDDER_CODE = 'insticator';
 const ENDPOINT = 'https://ex.ingage.tech/v1/openrtb'; // production endpoint
@@ -12,7 +17,7 @@ const USER_ID_COOKIE_EXP = 2592000000; // 30 days
 const BID_TTL = 300; // 5 minutes
 const GVLID = 910;
 
-export const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
+export const storage = getStorageManager(GVLID, BIDDER_CODE);
 
 config.setDefaults({
   insticator: {
@@ -72,11 +77,18 @@ function buildImpression(bidRequest) {
     ext.gpid = gpid;
   }
 
+  const instl = deepAccess(bidRequest, 'ortb2Imp.instl')
+  const secure = location.protocol === 'https:' ? 1 : 0;
+  const pos = deepAccess(bidRequest, 'mediaTypes.banner.pos');
+
   return {
     id: bidRequest.bidId,
     tagid: bidRequest.adUnitCode,
+    instl,
+    secure,
     banner: {
       format,
+      pos,
     },
     ext,
   };
@@ -115,13 +127,17 @@ function buildRegs(bidderRequest) {
   return {};
 }
 
-function buildUser() {
+function buildUser(bid) {
   const userId = getUserId() || generateUUID();
+  const yob = deepAccess(bid, 'params.user.yob')
+  const gender = deepAccess(bid, 'params.user.gender')
 
   setUserId(userId);
 
   return {
     id: userId,
+    yob,
+    gender,
   };
 }
 
@@ -158,7 +174,7 @@ function buildRequest(validBidRequests, bidderRequest) {
     },
     device: buildDevice(),
     regs: buildRegs(bidderRequest),
-    user: buildUser(),
+    user: buildUser(validBidRequests[0]),
     imp: validBidRequests.map((bidRequest) => buildImpression(bidRequest)),
     ext: {
       insticator: {
