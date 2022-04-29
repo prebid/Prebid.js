@@ -486,6 +486,9 @@ pbjs.que.push(function () {
                     onData: function(data, meta){ // optional
                         var userCentricData = meta.user;   // maybe undefined
                         var sourceOfData    = meta.source; // contextual, wam or lite
+
+                        var isDefault       = meta.isDefault; // true if uses default profile
+
                         console.log('onData', data, meta);
                     },
                     weboCtxConf: {

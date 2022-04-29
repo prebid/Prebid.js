@@ -658,11 +658,11 @@ export function getBidRequestData(reqBidsConfigObj, onDone, moduleConfig) {
 }
 
 /** function that handles bid request data
- * @param {Object} reqBidsConfigObj
+ * @param {Object} reqBids
  * @param {ModuleParams} moduleParams
  * @returns {void}
  */
-function handleBidRequestData(reqBidsConfigObj, moduleParams) {
+function handleBidRequestData(reqBids, moduleParams) {
   const profileHandlers = buildProfileHandlers(moduleParams);
 
   if (isEmpty(profileHandlers)) {
@@ -670,7 +670,7 @@ function handleBidRequestData(reqBidsConfigObj, moduleParams) {
     return;
   }
 
-  const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
+  const adUnits = reqBids.adUnits || getGlobal().adUnits;
 
   try {
     adUnits.filter(
