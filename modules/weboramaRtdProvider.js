@@ -626,10 +626,8 @@ function getDataFromLocalStorage(weboDataConf, cacheGet, cacheSet, defaultLocalS
 export function getBidRequestData(reqBidsConfigObj, onDone, moduleConfig) {
   const moduleParams = moduleConfig?.params || {};
 
-  const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
-
   if (!_weboCtxInitialized) {
-    handleBidRequestData(adUnits, moduleParams);
+    handleBidRequestData(reqBidsConfigObj, moduleParams);
 
     onDone();
 
@@ -643,24 +641,26 @@ export function getBidRequestData(reqBidsConfigObj, onDone, moduleConfig) {
 
     setWeboContextualProfile(data);
   }, () => {
-    handleBidRequestData(adUnits, moduleParams);
+    handleBidRequestData(reqBidsConfigObj, moduleParams);
 
     onDone();
   });
 }
 
 /** function that handles bid request data
- * @param {Object[]} adUnits
+ * @param {Object} reqBidsConfigObj
  * @param {ModuleParams} moduleParams
  * @returns {void}
  */
-function handleBidRequestData(adUnits, moduleParams) {
+function handleBidRequestData(reqBidsConfigObj, moduleParams) {
   const profileHandlers = buildProfileHandlers(moduleParams);
 
   if (isEmpty(profileHandlers)) {
     logMessage('no data to send to bidders');
     return;
   }
+
+  const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
 
   try {
     adUnits.filter(
