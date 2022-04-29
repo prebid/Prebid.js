@@ -8,7 +8,7 @@ import {
 } from 'modules/consentManagementUsp.js';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
-import {gdprDataHandler, uspDataHandler} from 'src/adapterManager.js';
+import {uspDataHandler} from 'src/adapterManager.js';
 import 'src/prebid.js';
 
 let expect = require('chai').expect;
@@ -77,6 +77,11 @@ describe('consentManagement', function () {
         sinon.assert.calledOnce(utils.logWarn);
         sinon.assert.notCalled(utils.logInfo);
       });
+
+      it('should immediately start looking up consent data', () => {
+        setConsentConfig({usp: {cmpApi: 'invalid'}});
+        expect(uspDataHandler.ready).to.be.true;
+      });
     });
 
     describe('valid setConsentConfig value', function () {
@@ -135,6 +140,7 @@ describe('consentManagement', function () {
         setConsentConfig(staticConfig);
         expect(consentAPI).to.be.equal('static');
         expect(consentTimeout).to.be.equal(0); // should always return without a timeout when config is used
+        expect(uspDataHandler.getConsentData()).to.eql(staticConfig.usp.consentData.getUSPData.uspString)
         expect(staticConsentData.usPrivacy).to.be.equal(staticConfig.usp.consentData.getUSPData.uspString);
       });
     });
