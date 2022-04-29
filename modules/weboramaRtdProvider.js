@@ -12,7 +12,7 @@
  * @property {Boolean} user if true it is user-centric data
  * @property {String} source describe the source of data, if "contextual" or "wam"
  * @property {Boolean} isDefault if true it the default profile defined in the configuration
-*/
+ */
 
 /** onData callback type
  * @callback dataCallback
@@ -127,7 +127,10 @@ const LOCAL_STORAGE_LITE_TARGETING_SECTION = 'webo';
 /** @type {number} */
 const GVLID = 284;
 /** @type {?Object} */
-export const storage = getStorageManager({gvlid: GVLID, moduleName: SUBMODULE_NAME});
+export const storage = getStorageManager({
+  gvlid: GVLID,
+  moduleName: SUBMODULE_NAME
+});
 
 /** @type {null|Object} */
 let _weboContextualProfile = null;
@@ -196,7 +199,7 @@ function initWeboCtx(moduleParams) {
 
 /** Initialize weboUserData sub module
  * @param {ModuleParams} moduleParams
-* @return {Boolean} true if sub module was initialized with success
+ * @return {Boolean} true if sub module was initialized with success
  */
 function initWeboUserData(moduleParams) {
   const weboUserDataConf = moduleParams.weboUserDataConf;
@@ -261,7 +264,8 @@ function initWeboLiteData(moduleParams) {
 const globalDefaults = {
   setPrebidTargeting: true,
   sendToBidders: true,
-  onData: () => { /* do nothing */ },
+  onData: () => {
+    /* do nothing */ },
 }
 
 /** normalize submodule configuration
@@ -308,7 +312,7 @@ function coerceSetPrebidTargeting(submoduleParams) {
 
   if (isBoolean(setPrebidTargeting)) {
     const shouldSetPrebidTargeting = setPrebidTargeting;
-    submoduleParams.setPrebidTargeting = function () {
+    submoduleParams.setPrebidTargeting = function() {
       return shouldSetPrebidTargeting;
     };
 
@@ -317,7 +321,7 @@ function coerceSetPrebidTargeting(submoduleParams) {
 
   if (isStr(setPrebidTargeting)) {
     const allowedAdUnitCode = setPrebidTargeting;
-    submoduleParams.setPrebidTargeting = function (adUnitCode) {
+    submoduleParams.setPrebidTargeting = function(adUnitCode) {
       return allowedAdUnitCode == adUnitCode;
     };
 
@@ -326,7 +330,7 @@ function coerceSetPrebidTargeting(submoduleParams) {
 
   if (isArray(setPrebidTargeting)) {
     const allowedAdUnitCodes = setPrebidTargeting;
-    submoduleParams.setPrebidTargeting = function (adUnitCode) {
+    submoduleParams.setPrebidTargeting = function(adUnitCode) {
       return allowedAdUnitCodes.includes(adUnitCode);
     };
 
@@ -350,7 +354,7 @@ function coerceSendToBidders(submoduleParams) {
   if (isBoolean(sendToBidders)) {
     const shouldSendToBidders = sendToBidders;
 
-    submoduleParams.sendToBidders = function () {
+    submoduleParams.sendToBidders = function() {
       return shouldSendToBidders;
     };
 
@@ -359,7 +363,7 @@ function coerceSendToBidders(submoduleParams) {
 
   if (isStr(sendToBidders)) {
     const allowedBidder = sendToBidders;
-    submoduleParams.sendToBidders = function (bid) {
+    submoduleParams.sendToBidders = function(bid) {
       return allowedBidder == bid.bidder;
     };
 
@@ -368,7 +372,7 @@ function coerceSendToBidders(submoduleParams) {
 
   if (isArray(sendToBidders)) {
     const allowedBidders = sendToBidders;
-    submoduleParams.sendToBidders = function (bid) {
+    submoduleParams.sendToBidders = function(bid) {
       return allowedBidders.includes(bid.bidder);
     };
 
@@ -377,7 +381,7 @@ function coerceSendToBidders(submoduleParams) {
 
   if (isPlainObject(sendToBidders)) {
     const sendToBiddersMap = sendToBidders;
-    submoduleParams.sendToBidders = function (bid, adUnitCode) {
+    submoduleParams.sendToBidders = function(bid, adUnitCode) {
       const bidder = bid.bidder;
       if (!sendToBiddersMap.hasOwnProperty(bidder)) {
         return false
@@ -385,11 +389,17 @@ function coerceSendToBidders(submoduleParams) {
 
       const value = sendToBiddersMap[bidder];
 
-      if (isBoolean(value)) { return value }
+      if (isBoolean(value)) {
+        return value
+      }
 
-      if (isStr(value)) { return value == adUnitCode }
+      if (isStr(value)) {
+        return value == adUnitCode
+      }
 
-      if (isArray(value)) { return value.includes(adUnitCode) }
+      if (isArray(value)) {
+        return value.includes(adUnitCode)
+      }
 
       throw `unexpected format for sendToBidders[${bidder}]: ${typeof value}`;
     };
@@ -614,7 +624,7 @@ function getDataFromLocalStorage(weboDataConf, cacheGet, cacheSet, defaultLocalS
     return [profile, false];
   }
 
-  return [ defaultProfile, true ];
+  return [defaultProfile, true];
 }
 
 /** function that will allow RTD sub-modules to modify the AdUnit object for each auction
@@ -904,7 +914,7 @@ function fetchContextualProfile(weboCtxConf, onSuccess, onDone) {
   const urlProfileAPI = `https://${baseURLProfileAPI}/api/profile?${queryString}`;
 
   ajax(urlProfileAPI, {
-    success: function (response, req) {
+    success: function(response, req) {
       if (req.status === 200) {
         try {
           const data = JSON.parse(response);
@@ -919,7 +929,7 @@ function fetchContextualProfile(weboCtxConf, onSuccess, onDone) {
         onDone();
       }
     },
-    error: function () {
+    error: function() {
       onDone();
       logError('unable to get weborama data');
     }
