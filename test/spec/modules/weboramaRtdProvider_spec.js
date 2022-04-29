@@ -9,12 +9,7 @@ import {
   DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY,
   DEFAULT_LOCAL_STORAGE_LITE_PROFILE_KEY
 } from '../../../modules/weboramaRtdProvider.js';
-import {
-  config
-} from 'src/config.js';
-import {
-  getGlobal
-} from 'src/prebidGlobal.js';
+
 import 'src/prebid.js';
 
 const responseHeader = {
