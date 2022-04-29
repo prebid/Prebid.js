@@ -153,27 +153,24 @@ let _weboLiteDataInitialized = false;
  * @return {Boolean} true if module was initialized with success
  */
 function init(moduleConfig) {
-  moduleConfig = moduleConfig || {};
-  const moduleParams = moduleConfig.params || {};
-  const weboCtxConf = moduleParams.weboCtxConf;
-  const weboUserDataConf = moduleParams.weboUserDataConf;
-  const weboLiteDataConf = moduleParams.weboLiteDataConf;
+  const moduleParams = moduleConfig?.params || {};
 
-  _weboCtxInitialized = initWeboCtx(moduleParams, weboCtxConf);
-  _weboUserDataInitialized = initWeboUserData(moduleParams, weboUserDataConf);
-  _weboLiteDataInitialized = initWeboLiteData(moduleParams, weboLiteDataConf);
+  _weboCtxInitialized = initWeboCtx(moduleParams);
+  _weboUserDataInitialized = initWeboUserData(moduleParams);
+  _weboLiteDataInitialized = initWeboLiteData(moduleParams);
 
   return _weboCtxInitialized || _weboUserDataInitialized || _weboLiteDataInitialized;
 }
 
 /** Initialize contextual sub module
  * @param {ModuleParams} moduleParams
- * @param {WeboCtxConf} weboCtxConf
  * @return {Boolean} true if sub module was initialized with success
  */
-function initWeboCtx(moduleParams, weboCtxConf) {
+function initWeboCtx(moduleParams) {
+  const weboCtxConf = moduleParams.weboCtxConf;
+
   if (!weboCtxConf || weboCtxConf.enabled === false) {
-    moduleParams.weboCtxConf = null;
+    delete moduleParams.weboCtxConf;
 
     return false
   }
@@ -200,12 +197,13 @@ function initWeboCtx(moduleParams, weboCtxConf) {
 
 /** Initialize weboUserData sub module
  * @param {ModuleParams} moduleParams
- * @param {WeboUserDataConf} weboUserDataConf
- * @return {Boolean} true if sub module was initialized with success
+* @return {Boolean} true if sub module was initialized with success
  */
-function initWeboUserData(moduleParams, weboUserDataConf) {
+function initWeboUserData(moduleParams) {
+  const weboUserDataConf = moduleParams.weboUserDataConf;
+
   if (!weboUserDataConf || weboUserDataConf.enabled === false) {
-    moduleParams.weboUserDataConf = null;
+    delete moduleParams.weboUserDataConf;
 
     return false;
   }
@@ -234,12 +232,13 @@ function initWeboUserData(moduleParams, weboUserDataConf) {
 
 /** Initialize weboLiteData sub module
  * @param {ModuleParams} moduleParams
- * @param {WeboLiteDataConf} weboLiteDataConf
  * @return {Boolean} true if sub module was initialized with success
  */
-function initWeboLiteData(moduleParams, weboLiteDataConf) {
+function initWeboLiteData(moduleParams) {
+  const weboLiteDataConf = moduleParams.weboLiteDataConf;
+
   if (!weboLiteDataConf || weboLiteDataConf.enabled === false) {
-    moduleParams.weboLiteDataConf = null;
+    delete moduleParams.weboLiteDataConf;
 
     return false;
   }
@@ -310,7 +309,6 @@ function coerceSetPrebidTargeting(submoduleParams) {
 
   if (isBoolean(setPrebidTargeting)) {
     const shouldSetPrebidTargeting = setPrebidTargeting;
-
     submoduleParams.setPrebidTargeting = function () {
       return shouldSetPrebidTargeting;
     };
@@ -438,9 +436,7 @@ function isValidProfile(profile) {
  * @returns {Object} target data
  */
 function getTargetingData(adUnitsCodes, moduleConfig) {
-  moduleConfig = moduleConfig || {};
-
-  const moduleParams = moduleConfig.params || {};
+  const moduleParams = moduleConfig?.params || {};
 
   const profileHandlers = buildProfileHandlers(moduleParams);
 
@@ -479,7 +475,7 @@ function getTargetingData(adUnitsCodes, moduleConfig) {
 function buildProfileHandlers(moduleParams) {
   const profileHandlers = [];
 
-  if (_weboCtxInitialized && moduleParams.weboCtxConf) {
+  if (_weboCtxInitialized && moduleParams?.weboCtxConf) {
     const weboCtxConf = moduleParams.weboCtxConf;
     const [data, isDefault] = getContextualProfile(weboCtxConf);
     if (!isEmpty(data)) {
@@ -499,7 +495,7 @@ function buildProfileHandlers(moduleParams) {
     }
   }
 
-  if (_weboUserDataInitialized && moduleParams.weboUserDataConf) {
+  if (_weboUserDataInitialized && moduleParams?.weboUserDataConf) {
     const weboUserDataConf = moduleParams.weboUserDataConf;
     const [data, isDefault] = getWeboUserDataProfile(weboUserDataConf);
     if (!isEmpty(data)) {
@@ -519,7 +515,7 @@ function buildProfileHandlers(moduleParams) {
     }
   }
 
-  if (_weboLiteDataInitialized && moduleParams.weboLiteDataConf) {
+  if (_weboLiteDataInitialized && moduleParams?.weboLiteDataConf) {
     const weboLiteDataConf = moduleParams.weboLiteDataConf;
     const [data, isDefault] = getWeboLiteDataProfile(weboLiteDataConf);
     if (!isEmpty(data)) {
@@ -630,9 +626,7 @@ function getDataFromLocalStorage(weboDataConf, cacheGet, cacheSet, defaultLocalS
  * @returns {void}
  */
 export function getBidRequestData(reqBidsConfigObj, onDone, moduleConfig) {
-  moduleConfig = moduleConfig || {};
-  const moduleParams = moduleConfig.params || {};
-  const weboCtxConf = moduleParams.weboCtxConf || {};
+  const moduleParams = moduleConfig?.params || {};
 
   const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
 
@@ -643,6 +637,8 @@ export function getBidRequestData(reqBidsConfigObj, onDone, moduleConfig) {
 
     return;
   }
+
+  const weboCtxConf = moduleParams.weboCtxConf || {};
 
   fetchContextualProfile(weboCtxConf, (data) => {
     logMessage('fetchContextualProfile on getBidRequestData is done');
