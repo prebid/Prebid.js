@@ -117,16 +117,20 @@ export const spec = {
         if (additionalConsent && additionalConsent.indexOf('~') !== -1) {
           // Google Ad Tech Provider IDs
           const atpIds = additionalConsent.substring(additionalConsent.indexOf('~') + 1);
-          deepSetValue(
-            request,
-            'user.ext.consented_providers_settings.consented_providers',
-            atpIds.split('.').map(id => parseInt(id, 10))
-          );
+          if (atpIds) {
+            deepSetValue(
+              request,
+              'user.ext.consented_providers_settings.consented_providers',
+              atpIds.split('.').map(id => parseInt(id, 10))
+            );
+          }
         }
       }
 
       // Timeout
-      deepSetValue(request, 'tmax', bidderRequest.timeout);
+      if (bidderRequest.timeout) {
+        request.tmax = parseInt(bidderRequest.timeout);
+      }
       // US Privacy
       if (typeof bidderRequest.uspConsent !== typeof undefined) {
         deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent);
