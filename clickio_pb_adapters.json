@@ -20,5 +20,6 @@
 	"sovrnBidAdapter",
 	"teadsBidAdapter",
 	"oguryBidAdapter",
-	"adriverBidAdapter"
+	"adriverBidAdapter",
+	"tripleliftBidAdapter"
 ]
