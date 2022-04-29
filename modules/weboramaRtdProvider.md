@@ -14,8 +14,6 @@ Weborama provides a Real-Time Data Submodule for `Prebid.js`, allowing to easy i
 
 * Weborama Audience Manager (WAM) is a DMP (Data Management Platform) used by over 60 companies in the world. This platform distinguishes itself particularly by a high level interconnexion with the adtech & martech ecosystem and a transparent access to the database intelligence.
 
-* LiTE by SFBX® (Local inApp Trust Engine) provides “Zero Party Data” given by users, stored and calculated only on the user’s device. Through a unique cohorting system, it enables better monetization in a consent/consentless and identity-less mode.
-
 Contact prebid-support@weborama.com for more information.
 
 ### Publisher Usage
@@ -49,7 +47,7 @@ pbjs.que.push(function () {
 });
 ```
 
-The module configuration has 3 independent sections (`weboCtxConf`, `weboUserDataConf` and `weboLiteDataConf`), each one mapped to a single product (`contextual`, `wam` and `lite`). No section is enabled by default, we must be explicit like in the minimal example below:
+The module configuration has 3 independent sections (`weboCtxConf` and `weboUserDataConf`), each one mapped to a single product (`contextual` and `wam`). No section is enabled by default, we must be explicit like in the minimal example below:
 
 ```javascript
 pbjs.setConfig({
@@ -65,9 +63,6 @@ pbjs.setConfig({
                 },
                 weboUserDataConf: { // wam user-centric configuration, *omit if not needed*
                     enabled: true,
-                },
-                weboLiteDataConf: { // webo-lite site-centric configuration, *omit if not needed*
-                    enabled: true, 
                 },
             }
         },
@@ -92,12 +87,11 @@ This is the main configuration section
 | name | String | Real time data module name | Mandatory. Always 'Weborama' |
 | waitForIt | Boolean | Mandatory. Required to ensure that the auction is delayed until prefetch is complete | Optional. Defaults to false but recommended to true |
 | params | Object | | Optional |
-| params.setPrebidTargeting | Boolean | If true, may use the profile to set the prebid (GPT/GAM or AST) targeting of all adunits managed by prebid.js | Optional. Affects the `weboCtxConf`, `weboUserDataConf` and `weboLiteDataConf` sections |
-| params.sendToBidders | Boolean or Array | If true, may send the profile to all bidders. If an array, will specify the bidders to send data | Optional. Affects the `weboCtxConf`, `weboUserDataConf` and `weboLiteDataConf` sections |
+| params.setPrebidTargeting | Boolean | If true, may use the profile to set the prebid (GPT/GAM or AST) targeting of all adunits managed by prebid.js | Optional. Affects the `weboCtxConf` and `weboUserDataConf` sections |
+| params.sendToBidders | Boolean or Array | If true, may send the profile to all bidders. If an array, will specify the bidders to send data | Optional. Affects the `weboCtxConf` and `weboUserDataConf` sections |
 | params.weboCtxConf | Object | Weborama Contextual Site-Centric Configuration | Optional |
 | params.weboUserDataConf | Object | Weborama WAM User-Centric Configuration | Optional |
-| params.weboLiteDataConf | Object | Weborama LiTE Site-Centric Configuration | Optional |
-| params.onData | Callback | If set, will receive the profile and metadata | Optional. Affects the `weboCtxConf`, `weboUserDataConf` and `weboLiteDataConf` sections |
+| params.onData | Callback | If set, will receive the profile and metadata | Optional. Affects the `weboCtxConf` and `weboUserDataConf` sections |
 
 #### Contextual Site-Centric Configuration
 
@@ -133,202 +127,11 @@ On this section we will explain the `params.weboUserDataConf` subconfiguration:
 | localStorageProfileKey| String | can be used to customize the local storage key | Optional |
 | enabled | Boolean| if false, will ignore this configuration| Default is `true` if this section is present|
 
-#### Webo LiTE Site-Centric Configuration
-
-To be possible use the integration between Weborama and LiTE you should also contact SFBX® to setup this product.
-
-On this section we will explain the `params.weboLiteDataConf` subconfiguration:
-
-| Name  |Type | Description   | Notes  |
-| :------------ | :------------ | :------------ |:------------ |
-| setPrebidTargeting|Various|If true, will use the user profile to set the prebid (GPT/GAM or AST) targeting of all adunits managed by prebid.js| Optional. Default is `params.setPrebidTargeting` (if any) or `true`.|
-| sendToBidders|Varios|If true, will send the user profile to all bidders| Optional. Default is `params.sendToBidders` (if any) or `true`.|
-| onData | Callback | If set, will receive the profile and site flag | Optional. Default is `params.onData` (if any) or log via prebid debug |
-| defaultProfile | Object | default value of the profile to be used when there are no response from contextual api (such as timeout)| Optional. Default is `{}` |
-| localStorageProfileKey| String | can be used to customize the local storage key | Optional |
-| enabled | Boolean| if false, will ignore this configuration| Default is `true` if this section is present|
-
-##### Property setPrebidTargeting supported types
-
-This property support the following types
-
-| Type  | Description | Example   | Notes  |
-| :------------ | :------------ | :------------ |:------------ |
-| Boolean|If true, set prebid targeting for all adunits, or not in case of false| `true` | default value |
-| String|Will set prebid targeting only for one adunit | `'adUnitCode1'` |  |
-| Array of Strings|Will set prebid targeting only for some adunits| `['adUnitCode1','adUnitCode2']` |  |
-| Callback |Will be executed for each adunit, expects return a true value to set prebid targeting or not| `function(adUnitCode){return adUnitCode == 'adUnitCode';}` |  |
-
-The complete callback function signature is:
-
-```javascript
-setPrebidTargeting: function(adUnitCode, data, metadata){
-    return true; // or false, depending on the logic
-}
-```
-
-This callback will be executed with the adUnitCode, profile and a metadata with the following fields
-
-| Name  |Type | Description   | Notes  |
-| :------------ | :------------ | :------------ |:------------ |
-| user | Boolean | If true, it contains user-centric data |  |
-| source | String | Represent the source of data | can be `contextual`, `wam` or `lite`  |
-| isDefault | Boolean | If true, it contains the default profile defined in the configuration |  |
-
-It is possible customize the targeting based on the parameters:
-
-```javascript
-setPrebidTargeting: function(adUnitCode, data, metadata){
-    // check metadata.source can be omitted if defined in params.weboUserDataConf
-    if (adUnitCode == 'adUnitCode1' && metadata.source == 'wam'){
-        data['foo']=['bar'];  // add this section only for adUnitCode1
-        delete data['other']; // remove this section
-    }
-    return true;
-}
-```
-
-##### Property sendToBidders supported types
-
-This property support the following types
-
-| Type  | Description | Example   | Notes  |
-| :------------ | :------------ | :------------ |:------------ |
-| Boolean|If true, send data to all bidders, or not in case of false| `true` | default value |
-| String|Will send data to only one bidder | `'appnexus'` |  |
-| Array of Strings|Will send data to only some bidders | `['appnexus','pubmatic']` |  |
-| Object |Will send data to only some bidders and some ad units | `{appnexus: true, pubmatic:['adUnitCode1']}` |  |
-| Callback |Will be executed for each adunit, expects return a true value to set prebid targeting or not| `function(bid, adUnitCode){return bid.bidder == 'appnexus' && adUnitCode == 'adUnitCode';}` |  |
-
-A better look on the `Object` type
-
-```javascript
-sendToBidders: {
-    appnexus: true,           // send profile to appnexus on all ad units
-    pubmatic: ['adUnitCode1'],// send profile to pubmatic on this ad units 
-}
-```
-
-The complete callback function signature is:
-
-```javascript
-sendToBidders: function(bid, adUnitCode, data, metadata){
-    return true; // or false, depending on the logic
-}
-```
-
-This callback will be executed with the bid object (contains a field `bidder` with name), adUnitCode, profile and a metadata with the following fields
-
-| Name  |Type | Description   | Notes  |
-| :------------ | :------------ | :------------ |:------------ |
-| user | Boolean | If true, it contains user-centric data |  |
-| source | String | Represent the source of data | can be `contextual`, `wam` or `lite`  |
-| isDefault | Boolean | If true, it contains the default profile defined in the configuration |  |
-
-It is possible customize the targeting based on the parameters:
-
-```javascript
-sendToBidders: function(bid, adUnitCode, data, metadata){
-    if (bid.bidder == 'appnexus' && adUnitCode == 'adUnitCode1'){
-        data['foo']=['bar']; // add this section only for appnexus + adUnitCode1
-        delete data['other']; // remove this section
-    }
-    return true;
-}
-```
-
-To be possible customize the way we send data to bidders via this callback:
-
-```javascript
-sendToBidders: function(bid, adUnitCode, data, metadata){
-    if (bid.bidder == 'other'){
-        /* use bid object to store data based on this specific logic, like in the example below */
-       
-        bid.params = bid.params || {};
-        bid.params['some_specific_key'] = data;
-
-        return false; // will prevent the module to follow the pre-defined logic per bidder
-    }
-    // others
-    return true;
-}
-```
-
-In case of using bid _aliases_, we should match the same string used in the adUnit configuration.
-
-```javascript
-pbjs.aliasBidder('appnexus', 'foo');
-pbjs.aliasBidder('criteo', 'bar');
-pbjs.aliasBidder('pubmatic', 'baz');
-pbjs.setConfig({
-    realTimeData: {
-        dataProviders: [{
-            name: "weborama",
-            waitForIt: true,
-            params: {
-                weboCtxConf: {
-                    token: "to-be-defined", // mandatory
-                    sendToBidders: ['foo','bar'], // will share site-centric data with bidders foo and bar
-                },
-                weboUserDataConf: {
-                    accountId: 12345,       // recommended,
-                    sendToBidders: ['baz'], // will share user-centric data with only bidder baz
-                }
-            }
-        }]
-    }
-});
-```
-
-##### Using onData callback
-
-We can specify a callback to handle the profile data from site-centric or user-centric data.
-
-This callback will be executed with the profile and a metadata with the following fields
-
-| Name  |Type | Description   | Notes  |
-| :------------ | :------------ | :------------ |:------------ |
-| user | Boolean | If true, it contains user-centric data |  |
-| source | String | Represent the source of data | can be `contextual`, `wam` or `lite`  |
-| isDefault | Boolean | If true, it contains the default profile defined in the configuration |  |
-
-The metadata maybe not useful if we define the callback on site-centric of user-centric configuration, but if defined in the global level:
-
-```javascript
-params: {
-    onData: function(data, metadata){
-        var hasUserCentricData = metadata.user;
-        var dataSource = metadata.source;
-        console.log('onData', data, hasUserCentricData, dataSource);
-    }
-}
-```
-
-an interesting example is to set GAM targeting in global level instead in slot level only for contextual data:
-
-```javascript
-params: {
-    weboCtxConf: {
-        token: 'to-be-defined',
-        setPrebidTargeting: false,
-        onData: function(data, metadata){
-            var googletag = googletag || {};
-            googletag.cmd = googletag.cmd || [];
-            googletag.cmd.push(function () {
-                for(var key in data){
-                    googletag.pubads().setTargeting(key, data[key]);
-                }
-            });
-        },
-    }
-}
-```
-
 ### More configuration examples
 
 A more complete example can be found below. We can define default profiles, for each section, to be used in case of no data are found.
 
-We can control if we will set prebid targeting or send data to bidders in a global level or on each section (`contextual`, `wam` or `lite`).
+We can control if we will set prebid targeting or send data to bidders in a global level or on each section (`contextual` or `wam`).
 
 By default we try to send the data to all destinations, always. To restrict we can have two choices:
 
@@ -368,14 +171,6 @@ pbjs.que.push(function () {
                         },
                         enabled: true,
                     },
-                    weboLiteDataConf: {
-                        setPrebidTargeting: true, // override param.setPrebidTargeting. default is true
-                        sendToBidders: true,      // override param.sendToBidders. default is true
-                        defaultProfile: {           // optional, used if nothing is found
-                            /* add specific lite segments here */
-                        },
-                        enabled: true,
-                    },
                 }
             }]
         }
@@ -385,10 +180,10 @@ pbjs.que.push(function () {
 
 Imagine we need to configure the following options using the previous example, we can write the configuration like the one below.
 
-||contextual|wam|lite|
-| :------------ | :------------ | :------------ |:------------ |
-|setPrebidTargeting|true|false|true|
-|sendToBidders|false|true|true|
+||contextual|wam|
+| :------------ | :------------ | :------------ |
+|setPrebidTargeting|true|false|
+|sendToBidders|false|true|
 
 ```javascript
 var pbjs = pbjs || {};
@@ -412,11 +207,6 @@ pbjs.que.push(function () {
                         enabled: true,
                     },
                     weboUserDataConf: {
-                        sendToBidders: true,      // override param.sendToBidders. default is true
-                        enabled: true,
-                    },
-                    weboLiteDataConf: {
-                        setPrebidTargeting: true, // override param.setPrebidTargeting. default is true
                         sendToBidders: true,      // override param.sendToBidders. default is true
                         enabled: true,
                     },
@@ -454,11 +244,6 @@ pbjs.que.push(function () {
                         sendToBidders: ['rubicon',...], // overide, send to only some bidders
                         enabled: true,
                     },
-                    weboLiteDataConf: {
-                        setPrebidTargeting: ['adUnitCode3',...], // set target only on certain adunits 
-                        sendToBidders: ['smartadserver',...], // overide, send to only some bidders
-                        enabled: true,
-                    }
                 }
             }]
         }
@@ -485,7 +270,9 @@ pbjs.que.push(function () {
                     sendToBidders: true,      // optional
                     onData: function(data, meta){ // optional
                         var userCentricData = meta.user;   // maybe undefined
-                        var sourceOfData    = meta.source; // contextual, wam or lite
+                        var sourceOfData    = meta.source; // contextual or wam
+                        var isDefault       = meta.isDefault; // true if using default profile
+
                         console.log('onData', data, meta);
                     },
                     weboCtxConf: {
@@ -516,21 +303,6 @@ pbjs.que.push(function () {
                         enabled: true,
                         //, onData: function (data, ...) { ...}
                     },
-                    weboLiteDataConf: {
-                        setPrebidTargeting: function(adUnitCode){ // specify set target via callback
-                            return adUnitCode == 'adUnitCode1';
-                        },
-                        sendToBidders: function(bid, adUnitCode){ // specify sendToBidders via callback
-                            return bid.bidder == 'appnexus' && adUnitCode == 'adUnitCode1';
-                        }
-                        defaultProfile: {           // optional
-                            lite_occupation: ['gérant', 'bénévole'],
-                            lite_hobbies: ['sport', 'cinéma'],
-                        },
-                        localStorageProfileKey: '_lite', // default
-                        enabled: true,
-                        //, onData: function (data, ...) { ...}
-                    }
                 }
             }]
         }
