@@ -157,105 +157,42 @@ let _weboLiteDataInitialized = false;
 function init(moduleConfig) {
   const moduleParams = moduleConfig?.params || {};
 
-  _weboCtxInitialized = initWeboCtx(moduleParams);
-  _weboUserDataInitialized = initWeboUserData(moduleParams);
-  _weboLiteDataInitialized = initWeboLiteData(moduleParams);
+  _weboContextualProfile = null;
+  _weboUserDataUserProfile = null;
+  _weboLiteDataProfile = null;
+
+  _weboCtxInitialized = initSection(moduleParams, 'weboCtxConf', (weboCtxConf) => {
+    if (!weboCtxConf.token) {
+      throw 'missing param "token" for weborama contextual sub module initialization';
+    }
+  });
+  _weboUserDataInitialized = initSection(moduleParams, 'weboUserDataConf');
+  _weboLiteDataInitialized = initSection(moduleParams, 'weboLiteDataConf');
 
   return _weboCtxInitialized || _weboUserDataInitialized || _weboLiteDataInitialized;
 }
 
-/** Initialize contextual sub module
- * @param {ModuleParams} moduleParams
- * @return {Boolean} true if sub module was initialized with success
- */
-function initWeboCtx(moduleParams) {
-  const weboCtxConf = moduleParams.weboCtxConf;
+function initSection(moduleParams, section, postCheck) {
+  const weboSectionConf = moduleParams[section] || {enabled: false};
 
-  if (!weboCtxConf || weboCtxConf.enabled === false) {
-    delete moduleParams.weboCtxConf;
-
-    return false
-  }
-
-  try {
-    normalizeConf(moduleParams, weboCtxConf);
-  } catch (e) {
-    logError(`unable to initialize: error on site-centric (contextual) configuration: ${e}`);
-    return false
-  }
-
-  _weboCtxInitialized = false;
-  _weboContextualProfile = null;
-
-  if (!weboCtxConf.token) {
-    logError('missing param "token" for weborama contextual sub module initialization');
-    return false;
-  }
-
-  logMessage('weborama contextual intialized with success');
-
-  return true;
-}
-
-/** Initialize weboUserData sub module
- * @param {ModuleParams} moduleParams
- * @return {Boolean} true if sub module was initialized with success
- */
-function initWeboUserData(moduleParams) {
-  const weboUserDataConf = moduleParams.weboUserDataConf;
-
-  if (!weboUserDataConf || weboUserDataConf.enabled === false) {
-    delete moduleParams.weboUserDataConf;
+  if (weboSectionConf.enabled === false) {
+    delete moduleParams[section];
 
     return false;
   }
 
+  postCheck ||= (weboSectionConf) => true;
+
   try {
-    normalizeConf(moduleParams, weboUserDataConf);
+    normalizeConf(moduleParams, weboSectionConf);
+
+    postCheck(weboSectionConf);
   } catch (e) {
-    logError(`unable to initialize: error on user-centric (wam) configuration: ${e}`);
+    logError(`unable to initialize: error on ${section} configuration: ${e}`);
     return false
   }
 
-  _weboUserDataInitialized = false;
-  _weboUserDataUserProfile = null;
-
-  let message = 'weborama user-centric intialized with success';
-  if (weboUserDataConf.hasOwnProperty('accountId')) {
-    message = `weborama user-centric intialized with success for account: ${weboUserDataConf.accountId}`;
-  } else {
-    logWarn('weborama wam account id not found on user-centric configuration');
-  }
-
-  logMessage(message);
-
-  return true;
-}
-
-/** Initialize weboLiteData sub module
- * @param {ModuleParams} moduleParams
- * @return {Boolean} true if sub module was initialized with success
- */
-function initWeboLiteData(moduleParams) {
-  const weboLiteDataConf = moduleParams.weboLiteDataConf;
-
-  if (!weboLiteDataConf || weboLiteDataConf.enabled === false) {
-    delete moduleParams.weboLiteDataConf;
-
-    return false;
-  }
-
-  try {
-    normalizeConf(moduleParams, weboLiteDataConf);
-  } catch (e) {
-    logError(`unable to initialize: error on webo lite configuration: ${e}`);
-    return false
-  }
-
-  _weboLiteDataInitialized = false;
-  _weboLiteDataProfile = null;
-
-  logMessage('weborama lite intialized with success');
+  logMessage(`weborama ${section} initialized with success`);
 
   return true;
 }
