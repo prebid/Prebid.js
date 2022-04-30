@@ -168,18 +168,20 @@ function init(moduleConfig) {
   _weboUserDataUserProfile = null;
   _weboLiteDataProfile = null;
 
-  _weboCtxInitialized = initSection(moduleParams, WEBO_CTX_CONF_SECTION, (weboCtxConf) => {
-    if (!weboCtxConf.token) {
-      throw 'missing param "token" for weborama contextual sub module initialization';
-    }
-  });
+  _weboCtxInitialized = initSection(moduleParams, WEBO_CTX_CONF_SECTION, 'token');
   _weboUserDataInitialized = initSection(moduleParams, WEBO_USER_DATA_CONF_SECTION);
   _weboLiteDataInitialized = initSection(moduleParams, WEBO_LITE_DATA_CONF_SECTION);
 
   return _weboCtxInitialized || _weboUserDataInitialized || _weboLiteDataInitialized;
 }
 
-function initSection(moduleParams, section, postCheck) {
+/** Initialize module
+ * @param {Object} moduleParams
+ * @param {string} section subsection name to initialize
+ * @param {[]string} requiredFields
+ * @return {Boolean} true if module subsection was initialized with success
+ */
+function initSection(moduleParams, section, ...requiredFields) {
   const weboSectionConf = moduleParams[section] || {enabled: false};
 
   if (weboSectionConf.enabled === false) {
@@ -188,12 +190,16 @@ function initSection(moduleParams, section, postCheck) {
     return false;
   }
 
-  postCheck ||= (weboSectionConf) => true;
+  requiredFields ||= [];
 
   try {
     normalizeConf(moduleParams, weboSectionConf);
 
-    postCheck(weboSectionConf);
+    requiredFields.forEach(field => {
+      if (!weboSectionConf[field]) {
+        throw `missing required field "{field}" on {section}`;
+      }
+    });
   } catch (e) {
     logError(`unable to initialize: error on ${section} configuration: ${e}`);
     return false
