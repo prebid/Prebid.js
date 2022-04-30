@@ -168,24 +168,24 @@ function init(moduleConfig) {
   _weboUserDataUserProfile = null;
   _weboLiteDataProfile = null;
 
-  _weboCtxInitialized = initSection(moduleParams, WEBO_CTX_CONF_SECTION, 'token');
-  _weboUserDataInitialized = initSection(moduleParams, WEBO_USER_DATA_CONF_SECTION);
-  _weboLiteDataInitialized = initSection(moduleParams, WEBO_LITE_DATA_CONF_SECTION);
+  _weboCtxInitialized = initSubSection(moduleParams, WEBO_CTX_CONF_SECTION, 'token');
+  _weboUserDataInitialized = initSubSection(moduleParams, WEBO_USER_DATA_CONF_SECTION);
+  _weboLiteDataInitialized = initSubSection(moduleParams, WEBO_LITE_DATA_CONF_SECTION);
 
   return _weboCtxInitialized || _weboUserDataInitialized || _weboLiteDataInitialized;
 }
 
-/** Initialize module
+/** Initialize subsection module
  * @param {Object} moduleParams
- * @param {string} section subsection name to initialize
+ * @param {string} subSection subsection name to initialize
  * @param {[]string} requiredFields
  * @return {Boolean} true if module subsection was initialized with success
  */
-function initSection(moduleParams, section, ...requiredFields) {
-  const weboSectionConf = moduleParams[section] || {enabled: false};
+function initSubSection(moduleParams, subSection, ...requiredFields) {
+  const weboSectionConf = moduleParams[subSection] || {enabled: false};
 
   if (weboSectionConf.enabled === false) {
-    delete moduleParams[section];
+    delete moduleParams[subSection];
 
     return false;
   }
@@ -201,11 +201,11 @@ function initSection(moduleParams, section, ...requiredFields) {
       }
     });
   } catch (e) {
-    logError(`unable to initialize: error on ${section} configuration: ${e}`);
+    logError(`unable to initialize: error on ${subSection} configuration: ${e}`);
     return false
   }
 
-  logMessage(`weborama ${section} initialized with success`);
+  logMessage(`weborama ${subSection} initialized with success`);
 
   return true;
 }
@@ -262,27 +262,24 @@ function coerceSetPrebidTargeting(submoduleParams) {
 
   if (isBoolean(setPrebidTargeting)) {
     const shouldSetPrebidTargeting = setPrebidTargeting;
-    submoduleParams.setPrebidTargeting = function() {
-      return shouldSetPrebidTargeting;
-    };
+
+    submoduleParams.setPrebidTargeting = () => shouldSetPrebidTargeting;
 
     return
   }
 
   if (isStr(setPrebidTargeting)) {
     const allowedAdUnitCode = setPrebidTargeting;
-    submoduleParams.setPrebidTargeting = function(adUnitCode) {
-      return allowedAdUnitCode == adUnitCode;
-    };
+
+    submoduleParams.setPrebidTargeting = (adUnitCode) => allowedAdUnitCode == adUnitCode;
 
     return
   }
 
   if (isArray(setPrebidTargeting)) {
     const allowedAdUnitCodes = setPrebidTargeting;
-    submoduleParams.setPrebidTargeting = function(adUnitCode) {
-      return allowedAdUnitCodes.includes(adUnitCode);
-    };
+
+    submoduleParams.setPrebidTargeting = (adUnitCode) => allowedAdUnitCodes.includes(adUnitCode);
 
     return
   }
@@ -304,34 +301,30 @@ function coerceSendToBidders(submoduleParams) {
   if (isBoolean(sendToBidders)) {
     const shouldSendToBidders = sendToBidders;
 
-    submoduleParams.sendToBidders = function() {
-      return shouldSendToBidders;
-    };
+    submoduleParams.sendToBidders = () => shouldSendToBidders;
 
     return
   }
 
   if (isStr(sendToBidders)) {
     const allowedBidder = sendToBidders;
-    submoduleParams.sendToBidders = function(bid) {
-      return allowedBidder == bid.bidder;
-    };
+
+    submoduleParams.sendToBidders = (bid) => allowedBidder == bid.bidder;
 
     return
   }
 
   if (isArray(sendToBidders)) {
     const allowedBidders = sendToBidders;
-    submoduleParams.sendToBidders = function(bid) {
-      return allowedBidders.includes(bid.bidder);
-    };
+
+    submoduleParams.sendToBidders = (bid) => allowedBidders.includes(bid.bidder);
 
     return
   }
 
   if (isPlainObject(sendToBidders)) {
     const sendToBiddersMap = sendToBidders;
-    submoduleParams.sendToBidders = function(bid, adUnitCode) {
+    submoduleParams.sendToBidders = (bid, adUnitCode) => {
       const bidder = bid.bidder;
       if (!sendToBiddersMap.hasOwnProperty(bidder)) {
         return false
@@ -864,7 +857,7 @@ function fetchContextualProfile(weboCtxConf, onSuccess, onDone) {
   const urlProfileAPI = `https://${baseURLProfileAPI}/api/profile?${queryString}`;
 
   ajax(urlProfileAPI, {
-    success: function(response, req) {
+    success: (response, req) => {
       if (req.status === 200) {
         try {
           const data = JSON.parse(response);
@@ -879,7 +872,7 @@ function fetchContextualProfile(weboCtxConf, onSuccess, onDone) {
         onDone();
       }
     },
-    error: function() {
+    error: () => {
       onDone();
       logError('unable to get weborama data');
     }
