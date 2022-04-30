@@ -124,6 +124,13 @@ const LOCAL_STORAGE_USER_TARGETING_SECTION = 'targeting';
 export const DEFAULT_LOCAL_STORAGE_LITE_PROFILE_KEY = '_lite';
 /** @type {string} */
 const LOCAL_STORAGE_LITE_TARGETING_SECTION = 'webo';
+/** @type {string} */
+const WEBO_CTX_CONF_SECTION = 'weboCtxConf';
+/** @type {string} */
+const WEBO_USER_DATA_CONF_SECTION = 'weboUserDataConf';
+/** @type {string} */
+const WEBO_LITE_DATA_CONF_SECTION = 'weboLiteDataConf';
+
 /** @type {number} */
 const GVLID = 284;
 /** @type {?Object} */
@@ -161,13 +168,13 @@ function init(moduleConfig) {
   _weboUserDataUserProfile = null;
   _weboLiteDataProfile = null;
 
-  _weboCtxInitialized = initSection(moduleParams, 'weboCtxConf', (weboCtxConf) => {
+  _weboCtxInitialized = initSection(moduleParams, WEBO_CTX_CONF_SECTION, (weboCtxConf) => {
     if (!weboCtxConf.token) {
       throw 'missing param "token" for weborama contextual sub module initialization';
     }
   });
-  _weboUserDataInitialized = initSection(moduleParams, 'weboUserDataConf');
-  _weboLiteDataInitialized = initSection(moduleParams, 'weboLiteDataConf');
+  _weboUserDataInitialized = initSection(moduleParams, WEBO_USER_DATA_CONF_SECTION);
+  _weboLiteDataInitialized = initSection(moduleParams, WEBO_LITE_DATA_CONF_SECTION);
 
   return _weboCtxInitialized || _weboUserDataInitialized || _weboLiteDataInitialized;
 }
