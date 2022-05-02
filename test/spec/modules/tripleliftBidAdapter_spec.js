@@ -11,8 +11,7 @@ const GDPR_CONSENT_STR = 'BOONm0NOONm0NABABAENAa-AAAARh7______b9_3__7_9uz_Kv_K7V
 
 describe('triplelift adapter', function () {
   const adapter = newBidder(tripleliftAdapterSpec);
-  let bid, instreamBid;
-  let sandbox;
+  let bid, instreamBid, sandbox, logErrorSpy;
 
   this.beforeEach(() => {
     bid = {
@@ -379,9 +378,11 @@ describe('triplelift adapter', function () {
         },
       };
       sandbox = sinon.sandbox.create();
+      logErrorSpy = sinon.spy(utils, 'logError');
     });
     afterEach(() => {
       sandbox.restore();
+      utils.logError.restore();
     });
 
     it('exists and is an object', function () {
@@ -786,6 +787,15 @@ describe('triplelift adapter', function () {
         mediaType: 'video',
         size: '*'
       })).to.be.true;
+    });
+    it('should catch error if getFloor throws error', function() {
+      bidRequests[0].getFloor = () => {
+        throw new Error('An exception!');
+      };
+
+      tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+
+      expect(logErrorSpy.calledOnce).to.equal(true);
     });
     it('should send global config fpd if kvps are available', function() {
       const sens = null;
