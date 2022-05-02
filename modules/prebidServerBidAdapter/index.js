@@ -1235,18 +1235,13 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
   let { gdprConsent } = getConsentData(bidRequests);
   const adUnits = deepClone(s2sBidRequest.ad_units);
 
-  // at this point ad units should have a size array either directly or mapped so filter for that
-  const validAdUnits = adUnits.filter(unit =>
-    unit.mediaTypes && (unit.mediaTypes.native || (unit.mediaTypes.banner && unit.mediaTypes.banner.sizes) || (unit.mediaTypes.video && unit.mediaTypes.video.playerSize))
-  );
-
   // in case config.bidders contains invalid bidders, we only process those we sent requests for
-  const requestedBidders = validAdUnits
+  const requestedBidders = adUnits
     .map(adUnit => adUnit.bids.map(bid => bid.bidder).filter(uniques))
-    .reduce(flatten)
+    .reduce(flatten, [])
     .filter(uniques);
 
-  const ortb2 = new ORTB2(s2sBidRequest, bidRequests, validAdUnits, requestedBidders);
+  const ortb2 = new ORTB2(s2sBidRequest, bidRequests, adUnits, requestedBidders);
   const request = ortb2.buildRequest();
   const requestJson = request && JSON.stringify(request);
   logInfo('BidRequest: ' + requestJson);
