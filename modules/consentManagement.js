@@ -264,7 +264,7 @@ function processCmpData(consentObject, {onSuccess, onError}) {
     consentObject = consentObject.getTCData;
   }
 
-  if (checkData(consentObject)) {
+  if (checkData()) {
     onError(`CMP returned unexpected value during lookup process.`, consentObject);
   } else {
     onSuccess(storeConsentData(consentObject));
