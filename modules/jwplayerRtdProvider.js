@@ -158,7 +158,7 @@ export function enrichAdUnits(adUnits, ortb2Fragments = {}) {
       const contentId = getContentId(vat.mediaID);
       const contentData = getContentData(vat.segments);
       const targeting = formatTargetingResponse(vat);
-      enrichBids(ortb2Fragments?.bidder || {}, adUnit.bids, targeting, contentId, contentData);
+      enrichBids(ortb2Fragments.bidder || {}, adUnit.bids, targeting, contentId, contentData);
     };
     loadVat(jwTargeting, onVatResponse);
   });
@@ -307,6 +307,7 @@ export function addOrtbSiteContent(bidderOrtb2, bid, contentId, contentData) {
 }
 
 function enrichBids(bidderOrtb2, bids, targeting, contentId, contentData) {
+  // TODO: this does not need to set bidder-level FPD, follow up when https://github.com/prebid/Prebid.js/pull/8354 gets through
   if (!bids) {
     return;
   }
