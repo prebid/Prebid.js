@@ -1,11 +1,11 @@
 /* eslint-disable no-tabs */
-import { expect } from 'chai';
-import { spec, storage } from 'modules/tpmnBidAdapter.js';
-import { generateUUID } from '../../../src/utils.js';
-import { newBidder } from '../../../src/adapters/bidderFactory';
+import {expect} from 'chai';
+import {spec, storage} from 'modules/tpmnBidAdapter.js';
+import {generateUUID} from '../../../src/utils.js';
+import {newBidder} from '../../../src/adapters/bidderFactory';
 import * as sinon from 'sinon';
 
-describe('tpmnAdapterTests', function() {
+describe('tpmnAdapterTests', function () {
   const adapter = newBidder(spec);
   const BIDDER_CODE = 'tpmn';
   let sandbox = sinon.sandbox.create();
@@ -33,7 +33,7 @@ describe('tpmnAdapterTests', function() {
     })
   });
 
-  describe('isBidRequestValid', function() {
+  describe('isBidRequestValid', function () {
     let bid = {
       adUnitCode: 'temp-unitcode',
       bidder: 'tpmn',
@@ -51,17 +51,17 @@ describe('tpmnAdapterTests', function() {
       }
     };
 
-    it('should return true if a bid is valid banner bid request', function() {
+    it('should return true if a bid is valid banner bid request', function () {
       expect(spec.isBidRequestValid(bid)).to.be.equal(true);
     });
 
-    it('should return false where requried param is missing', function() {
+    it('should return false where requried param is missing', function () {
       let bid = Object.assign({}, bid);
       bid.params = {};
       expect(spec.isBidRequestValid(bid)).to.be.equal(false);
     });
 
-    it('should return false when required param values have invalid type', function() {
+    it('should return false when required param values have invalid type', function () {
       let bid = Object.assign({}, bid);
       bid.params = {
         'inventoryId': null,
@@ -71,14 +71,14 @@ describe('tpmnAdapterTests', function() {
     });
   });
 
-  describe('buildRequests', function() {
-    it('should return an empty list  if there are no bid requests', function() {
+  describe('buildRequests', function () {
+    it('should return an empty list  if there are no bid requests', function () {
       const emptyBidRequests = [];
       const bidderRequest = {};
       const request = spec.buildRequests(emptyBidRequests, bidderRequest);
       expect(request).to.be.an('array').that.is.empty;
     });
-    it('should generate a POST server request with bidder API url, data', function() {
+    it('should generate a POST server request with bidder API url, data', function () {
       const bid = {
         adUnitCode: 'temp-unitcode',
         bidder: 'tpmn',
@@ -96,13 +96,15 @@ describe('tpmnAdapterTests', function() {
         }
       };
       const tempBidRequests = [bid];
-      const tempBidderRequest = {refererInfo: {
+      const tempBidderRequest = {
+        refererInfo: {
           referer: 'http://localhost/test',
           site: {
             domain: 'localhost',
             page: 'http://localhost/test'
           }
-        }};
+        }
+      };
       const builtRequest = spec.buildRequests(tempBidRequests, tempBidderRequest);
 
       expect(builtRequest).to.have.lengthOf(1);
@@ -127,7 +129,7 @@ describe('tpmnAdapterTests', function() {
     });
   });
 
-  describe('interpretResponse', function() {
+  describe('interpretResponse', function () {
     const bid = {
       adUnitCode: 'temp-unitcode',
       bidder: 'tpmn',
@@ -146,12 +148,12 @@ describe('tpmnAdapterTests', function() {
     };
     const tempBidRequests = [bid];
 
-    it('should return an empty aray to indicate no valid bids', function() {
+    it('should return an empty aray to indicate no valid bids', function () {
       const emptyServerResponse = {};
       const bidResponses = spec.interpretResponse(emptyServerResponse, tempBidRequests);
       expect(bidResponses).is.an('array').that.is.empty;
     });
-    it('should return an empty array to indicate no valid bids', function() {
+    it('should return an empty array to indicate no valid bids', function () {
       const mockBidResult = {
         requestId: '9cf19229-34f6-4d06-bc1d-0e44e8d616c8',
         cpm: 10.0,
@@ -173,7 +175,7 @@ describe('tpmnAdapterTests', function() {
     });
   });
 
-  describe('getUserSync', function() {
+  describe('getUserSync', function () {
     const KEY_ID = 'uuid';
     const TMP_UUID = generateUUID().replace(/-/g, '');
 
@@ -192,7 +194,7 @@ describe('tpmnAdapterTests', function() {
     it('case 1 -> allow iframe', () => {
       // eslint-disable-next-line no-console
       console.log('case 1');
-      const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true });
+      const syncs = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true});
       // eslint-disable-next-line no-console
       console.log(syncs);
       expect(syncs.length).to.equal(1);
@@ -202,7 +204,7 @@ describe('tpmnAdapterTests', function() {
     it('case 2 -> allow pixel with static sync', () => {
       // eslint-disable-next-line no-console
       console.log('case 2');
-      const syncs = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true });
+      const syncs = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true});
       // eslint-disable-next-line no-console
       console.log(syncs);
       expect(syncs.length).to.be.equal(7);
@@ -218,7 +220,7 @@ describe('tpmnAdapterTests', function() {
       getCookieStub.withArgs(KEY_ID).returns(TMP_UUID);
       const uuid = storage.getCookie(KEY_ID);
       expect(uuid).to.equal(TMP_UUID);
-      const syncs = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true });
+      const syncs = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true});
       // eslint-disable-next-line no-console
       console.log(syncs);
       expect(syncs.length).to.be.equal(7);
@@ -247,7 +249,7 @@ describe('tpmnAdapterTests', function() {
       expect(storage.getCookie('mezzomedia')).to.equal('123456789');
       expect(storage.getCookie('admixernet')).to.equal('123456789');
 
-      const syncs = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true });
+      const syncs = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true});
       // eslint-disable-next-line no-console
       console.log(syncs);
       expect(syncs.length).to.be.equal(0);
@@ -275,7 +277,7 @@ describe('tpmnAdapterTests', function() {
       expect(storage.getCookie('mezzomedia')).to.equal('123456789');
       expect(storage.getCookie('admixernet')).to.equal(undefined);
 
-      const syncs = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true });
+      const syncs = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true});
       // eslint-disable-next-line no-console
       console.log(syncs);
       expect(syncs.length).to.be.equal(3);
