@@ -363,6 +363,23 @@ describe('eids array generation for known sub-modules', function() {
       }]
     });
   });
+
+  it('33acrossId', function() {
+    const userId = {
+      '33acrossId': {
+        envelope: 'some-random-id-value'
+      }
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: '33across.com',
+      uids: [{
+        id: 'some-random-id-value',
+        atype: 1
+      }]
+    });
+  });
 });
 describe('Negative case', function() {
   it('eids array generation for UN-known sub-module', function() {
