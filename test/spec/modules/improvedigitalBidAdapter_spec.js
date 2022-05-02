@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/improvedigitalBidAdapter.js';
 import { config } from 'src/config.js';
-import * as utils from 'src/utils.js';
+import { deepClone } from 'src/utils.js';
 import {BANNER, VIDEO} from '../../../src/mediaTypes';
 
 describe('Improve Digital Adapter Tests', function () {
@@ -34,7 +34,7 @@ describe('Improve Digital Adapter Tests', function () {
     skipafter: 30
   }
 
-  const instreamBidRequest = utils.deepClone(simpleBidRequest);
+  const instreamBidRequest = deepClone(simpleBidRequest);
   instreamBidRequest.mediaTypes = {
     video: {
       context: 'instream',
@@ -42,7 +42,7 @@ describe('Improve Digital Adapter Tests', function () {
     }
   };
 
-  const outstreamBidRequest = utils.deepClone(simpleBidRequest);
+  const outstreamBidRequest = deepClone(simpleBidRequest);
   outstreamBidRequest.mediaTypes = {
     video: {
       context: 'outstream',
@@ -50,7 +50,7 @@ describe('Improve Digital Adapter Tests', function () {
     }
   };
 
-  const multiFormatBidRequest = utils.deepClone(simpleBidRequest);
+  const multiFormatBidRequest = deepClone(simpleBidRequest);
   multiFormatBidRequest.mediaTypes = {
     banner: {
       sizes: [[300, 250], [160, 600]]
@@ -294,6 +294,14 @@ describe('Improve Digital Adapter Tests', function () {
       expect(payload.user.ext.consented_providers_settings.consented_providers).to.exist.and.to.deep.equal([1, 35, 41, 101]);
     });
 
+    it('should not add consented providers when empty', function () {
+      const bidderRequestGdprEmptyAddtl = deepClone(bidderRequestGdpr);
+      bidderRequestGdprEmptyAddtl.gdprConsent.addtlConsent = '1~';
+      const bidRequest = Object.assign({}, simpleBidRequest);
+      const payload = JSON.parse(spec.buildRequests([bidRequest], bidderRequestGdprEmptyAddtl)[0].data);
+      expect(payload.user.ext.consented_providers_settings).to.not.exist;
+    });
+
     it('should add CCPA consent string', function () {
       const bidRequest = Object.assign({}, simpleBidRequest);
       const request = spec.buildRequests([bidRequest], {...bidderRequest, ...{ uspConsent: '1YYY' }});
@@ -306,6 +314,20 @@ describe('Improve Digital Adapter Tests', function () {
       const request = spec.buildRequests([bidRequest], bidderRequestReferrer)[0];
       const payload = JSON.parse(request.data);
       expect(payload.site.page).to.equal('https://blah.com/test.html');
+    });
+
+    it('should add timeout', function () {
+      const bidderRequestTimeout = deepClone(bidderRequest);
+      // Int
+      bidderRequestTimeout.timeout = 300;
+      const bidRequest = Object.assign({}, simpleBidRequest);
+      let request = spec.buildRequests([bidRequest], bidderRequestTimeout)[0];
+      expect(JSON.parse(request.data).tmax).to.equal(300);
+
+      // String
+      bidderRequestTimeout.timeout = '500';
+      request = spec.buildRequests([bidRequest], bidderRequestTimeout)[0];
+      expect(JSON.parse(request.data).tmax).to.equal(500);
     });
 
     it('should not add video params for banner', function () {
@@ -916,7 +938,7 @@ describe('Improve Digital Adapter Tests', function () {
       }
     ];
 
-    const expectedBidOutstreamVideo = utils.deepClone(expectedBidInstreamVideo);
+    const expectedBidOutstreamVideo = deepClone(expectedBidInstreamVideo);
     expectedBidOutstreamVideo[0].adResponse = {
       content: expectedBidOutstreamVideo[0].vastXml
     };
