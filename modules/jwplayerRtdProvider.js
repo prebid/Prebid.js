@@ -324,10 +324,15 @@ export function getOrtbSiteContent(ortb2, contentId, contentData) {
     content.id = contentId;
   }
 
+  const currentData = content.data = content.data || [];
+  // remove old jwplayer data
+  const data = currentData.filter(datum => datum.name !== 'jwplayer');
+
   if (contentData) {
-    const data = content.data = content.data || [];
     data.push(contentData);
   }
+
+  content.data = data;
 
   return ortb2;
 }
