@@ -14,6 +14,7 @@ import { ADPOD } from '../mediaTypes.js';
 import { getHook, hook } from '../hook.js';
 import { getCoreStorageManager } from '../storageManager.js';
 import {auctionManager} from '../auctionManager.js';
+import { bidderSettings } from '../bidderSettings.js';
 
 export const storage = getCoreStorageManager('bidderFactory');
 
@@ -235,6 +236,11 @@ export function newBidder(spec) {
         onBid: (bid) => {
           const bidRequest = bidRequestMap[bid.requestId];
           if (bidRequest) {
+            bid.adapterCode = bidRequest.bidder;
+            if (isInvalidAlternateBidder(bid.bidderCode, bidRequest.bidder)) {
+              logWarn(`${bid.bidderCode} is not a registered partner or known bidder of ${bidRequest.bidder}, hence continuing without bid. If you wish to support this bidder, please mark allowAlternateBidderCodes as true in bidderSettings.`);
+              return;
+            }
             // creating a copy of original values as cpm and currency are modified later
             bid.originalCpm = bid.cpm;
             bid.originalCurrency = bid.currency;
@@ -249,6 +255,17 @@ export function newBidder(spec) {
       });
     }
   });
+
+  function isInvalidAlternateBidder(responseBidder, requestBidder) {
+    let allowAlternateBidderCodes = bidderSettings.get(requestBidder, 'allowAlternateBidderCodes');
+    let alternateBiddersList = bidderSettings.get(requestBidder, 'allowedAlternateBidderCodes');
+    if (!!responseBidder && !!requestBidder && requestBidder !== responseBidder) {
+      if ((allowAlternateBidderCodes !== undefined && !allowAlternateBidderCodes) || (isArray(alternateBiddersList) && (alternateBiddersList[0] !== '*' && !alternateBiddersList.includes(responseBidder)))) {
+        return true;
+      }
+    }
+    return false;
+  }
 
   function registerSyncs(responses, gdprConsent, uspConsent) {
     registerSyncInner(spec, responses, gdprConsent, uspConsent);
