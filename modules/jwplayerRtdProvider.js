@@ -12,7 +12,7 @@
 import {submodule} from '../src/hook.js';
 import {config} from '../src/config.js';
 import {ajaxBuilder} from '../src/ajax.js';
-import { logError } from '../src/utils.js'
+import {logError} from '../src/utils.js';
 import {find} from '../src/polyfill.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 
