@@ -215,7 +215,7 @@ function _getGlobalFpd() {
         segment: [oneplusx]
       })
     } catch (err) {
-      logError('Triplelift: error adding 1PlusX segemnts: ', err);
+      logError('Triplelift: error adding 1PlusX segments: ', err);
     }
   }
 
@@ -237,7 +237,7 @@ function _testJSONParse(input) {
     const parsedJson = JSON.parse(input)
     return parsedJson
   } catch (err) {
-    logError('Triplelift: error parsing JSON', err)
+    logError('Triplelift: error parsing JSON: ', err)
   }
 }
 
