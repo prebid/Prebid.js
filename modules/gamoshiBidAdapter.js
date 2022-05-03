@@ -127,7 +127,7 @@ export const spec = {
 
       const imp = {
         id: transactionId,
-        instl: params.instl === 1 ? 1 : 0,
+        instl: deepAccess(bidRequest.ortb2Imp, 'instl') === 1 || params.instl === 1 ? 1 : 0,
         tagid: adUnitCode,
         bidfloor: helper.getBidFloor(bidRequest) || 0,
         bidfloorcur: 'USD',
