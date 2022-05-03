@@ -101,7 +101,6 @@ function buildDevice() {
     },
   };
 
-
   if (typeof deviceConfig === 'object') {
     Object.assign(device, deviceConfig);
   }
