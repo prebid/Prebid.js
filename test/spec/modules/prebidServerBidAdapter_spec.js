@@ -90,7 +90,21 @@ const REQUEST = {
 const NATIVE_ORTB_MTO = {
   ortb: {
     context: 3,
-    ver: '1.2',
+    plcmttype: 2,
+    eventtrackers: [
+      {
+        event: 1,
+        methods: [
+          1
+        ]
+      },
+      {
+        event: 2,
+        methods: [
+          2
+        ]
+      }
+    ],
     assets: [
       {
         id: 1,
@@ -140,27 +154,14 @@ const NATIVE_ORTB_MTO = {
           type: 12,
           len: 15
         }
-      }
-    ],
-    eventtrackers: [
-      {
-        event: 1,
-        methods: [
-          1
-        ]
       },
-      {
-        event: 2,
-        methods: [
-          2
-        ]
-      }
     ],
     ext: {
       custom_param: {
         key: 'custom_value'
       }
-    }
+    },
+    ver: '1.2'
   }
 }
 

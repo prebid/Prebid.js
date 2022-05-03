@@ -679,20 +679,21 @@ Object.assign(ORTB2.prototype, {
       }
 
       if (FEATURES.NATIVE && nativeAssets) {
+        const defaultRequest = {
+          // TODO: determine best way to pass these and if we allow defaults
+          context: 1,
+          plcmttype: 1,
+          eventtrackers: [
+            { event: 1, methods: [1] }
+          ],
+          // TODO: figure out how to support privacy field
+          // privacy: int
+          assets: nativeAssets
+        };
         const ortbRequest = deepAccess(nativeParams, 'ortb');
         try {
           mediaTypes['native'] = {
-            request: ortbRequest ? JSON.stringify(ortbRequest) : JSON.stringify({
-              // TODO: determine best way to pass these and if we allow defaults
-              context: 1,
-              plcmttype: 1,
-              eventtrackers: [
-                { event: 1, methods: [1] }
-              ],
-              // TODO: figure out how to support privacy field
-              // privacy: int
-              assets: nativeAssets
-            }),
+            request: ortbRequest ? JSON.stringify(Object.assign(defaultRequest, ortbRequest)) : JSON.stringify(defaultRequest),
             ver: '1.2'
           };
         } catch (e) {
