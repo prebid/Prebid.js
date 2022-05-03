@@ -251,7 +251,7 @@ export const spec = {
       d: '',
       m: createBidMap(bidRequests),
       cpp: config.getConfig('coppa') ? 1 : 0,
-      fpd2: config.getConfig('ortb2'),
+      fpd2: bidderRequest.ortb2,
       tmax: config.getConfig('bidderTimeout'),
       eids: values(bidRequests.reduce((all, bid) => {
         // we only want unique ones in here

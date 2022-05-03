@@ -5,9 +5,8 @@
  * @module modules/airgridRtdProvider
  * @requires module:modules/realTimeData
  */
-import {config} from '../src/config.js';
 import {submodule} from '../src/hook.js';
-import {mergeDeep, isPlainObject, deepSetValue, deepAccess} from '../src/utils.js';
+import {deepAccess, deepSetValue, mergeDeep} from '../src/utils.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {getStorageManager} from '../src/storageManager.js';
 
@@ -76,25 +75,15 @@ function setAudiencesToAppNexusAdUnits(adUnits, audiences) {
  * Pass audience data to configured bidders, using ORTB2
  * @param {Object} rtdConfig
  * @param {Array} audiences
- * @return {void}
+ * @return {{}} a map from bidder code to ORTB2 config
  */
-export function setAudiencesUsingBidderOrtb2(rtdConfig, audiences) {
+export function getAudiencesAsBidderOrtb2(rtdConfig, audiences) {
   const bidders = deepAccess(rtdConfig, 'params.bidders');
-  if (!bidders || bidders.length === 0) return;
-  const allBiddersConfig = config.getBidderConfig();
+  if (!bidders || bidders.length === 0) return {};
   const agOrtb2 = {}
   deepSetValue(agOrtb2, 'ortb2.user.ext.data.airgrid', audiences || []);
 
-  bidders.forEach((bidder) => {
-    let bidderConfig = {};
-    if (isPlainObject(allBiddersConfig[bidder])) {
-      bidderConfig = allBiddersConfig[bidder];
-    }
-    config.setBidderConfig({
-      bidders: [bidder],
-      config: mergeDeep(bidderConfig, agOrtb2)
-    });
-  });
+  return Object.fromEntries(bidders.map(bidder => [bidder, agOrtb2]));
 }
 
 /**
@@ -120,7 +109,7 @@ export function passAudiencesToBidders(bidConfig, onDone, rtdConfig, userConsent
   const adUnits = bidConfig.adUnits || getGlobal().adUnits;
   const audiences = getMatchedAudiencesFromStorage();
   if (audiences.length > 0) {
-    setAudiencesUsingBidderOrtb2(rtdConfig, audiences);
+    mergeDeep(bidConfig?.ortb2Fragments?.bidder, getAudiencesAsBidderOrtb2(rtdConfig, audiences));
     if (adUnits) {
       setAudiencesToAppNexusAdUnits(adUnits, audiences);
     }

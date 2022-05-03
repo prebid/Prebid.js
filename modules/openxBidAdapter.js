@@ -270,12 +270,12 @@ function buildCommonQueryParamsFromBids(bids, bidderRequest) {
     nocache: new Date().getTime()
   };
 
-  const userDataSegments = buildFpdQueryParams('ortb2.user.data');
+  const userDataSegments = buildFpdQueryParams('user.data', bidderRequest.ortb2);
   if (userDataSegments.length > 0) {
     defaultParams.sm = userDataSegments;
   }
 
-  const siteContentDataSegments = buildFpdQueryParams('ortb2.site.content.data');
+  const siteContentDataSegments = buildFpdQueryParams('site.content.data', bidderRequest.ortb2);
   if (siteContentDataSegments.length > 0) {
     defaultParams.scsm = siteContentDataSegments;
   }
@@ -318,8 +318,8 @@ function buildCommonQueryParamsFromBids(bids, bidderRequest) {
   return defaultParams;
 }
 
-function buildFpdQueryParams(fpdPath) {
-  const firstPartyData = config.getConfig(fpdPath);
+function buildFpdQueryParams(fpdPath, ortb2) {
+  const firstPartyData = deepAccess(ortb2, fpdPath);
   if (!Array.isArray(firstPartyData) || !firstPartyData.length) {
     return '';
   }

@@ -23,7 +23,7 @@ export const sharethroughAdapterSpec = {
 
   buildRequests: (bidRequests, bidderRequest) => {
     const timeout = config.getConfig('bidderTimeout');
-    const firstPartyData = config.getConfig('ortb2') || {};
+    const firstPartyData = bidderRequest.ortb2 || {};
 
     const nonHttp = sharethroughInternal.getProtocol().indexOf('http') < 0;
     const secure = nonHttp || (sharethroughInternal.getProtocol().indexOf('https') > -1);

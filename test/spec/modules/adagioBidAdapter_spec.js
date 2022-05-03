@@ -137,24 +137,24 @@ describe('Adagio bid adapter', () => {
   });
 
   describe('get and set params at adUnit level from global Prebid configuration', function() {
-    it('should set params get from ortb2 config or bidderSettings. Priority to bidderSetting', function() {
+    it('should set params get from bid.ortb2', function() {
       const bid = new BidRequestBuilder().build();
+      bid.ortb2 = {
+        site: {
+          ext: {
+            data: {
+              environment: 'desktop',
+              pagetype: 'abc'
+            }
+          }
+        }
+      };
 
       sandbox.stub(config, 'getConfig').callsFake(key => {
         const config = {
           adagio: {
             pagetype: 'article'
           },
-          ortb2: {
-            site: {
-              ext: {
-                data: {
-                  environment: 'desktop',
-                  pagetype: 'abc'
-                }
-              }
-            }
-          }
         };
         return utils.deepAccess(config, key);
       });

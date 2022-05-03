@@ -523,8 +523,8 @@ describe('jwplayerRtdProvider', function() {
 
   describe(' Add Ortb Site Content', function () {
     it('should maintain object structure when id and data params are empty', function () {
-      const bid = {
-        ortb2: {
+      const bidderOrtb2 = {
+        mockBidder: {
           site: {
             content: {
               id: 'randomId'
@@ -539,26 +539,27 @@ describe('jwplayerRtdProvider', function() {
             }
           }
         }
-      };
-      addOrtbSiteContent(bid);
-      expect(bid).to.have.nested.property('ortb2.site.content.id', 'randomId');
-      expect(bid).to.have.nested.property('ortb2.site.random.random_sub', 'randomSub');
-      expect(bid).to.have.nested.property('ortb2.app.content.id', 'appId');
+      }
+      addOrtbSiteContent(bidderOrtb2, {bidder: 'mockBidder'});
+      expect(bidderOrtb2.mockBidder).to.have.nested.property('site.content.id', 'randomId');
+      expect(bidderOrtb2.mockBidder).to.have.nested.property('site.random.random_sub', 'randomSub');
+      expect(bidderOrtb2.mockBidder).to.have.nested.property('app.content.id', 'appId');
     });
 
     it('should create a structure compliant with the oRTB 2 spec', function() {
-      const bid = {};
+      const bidderOrtb2 = {}
+      const bid = {bidder: 'mockBidder'};
       const expectedId = 'expectedId';
       const expectedData = { datum: 'datum' };
-      addOrtbSiteContent(bid, expectedId, expectedData);
-      expect(bid).to.have.nested.property('ortb2.site.content.id', expectedId);
-      expect(bid).to.have.nested.property('ortb2.site.content.data');
-      expect(bid.ortb2.site.content.data[0]).to.be.deep.equal(expectedData);
+      addOrtbSiteContent(bidderOrtb2, bid, expectedId, expectedData);
+      expect(bidderOrtb2.mockBidder).to.have.nested.property('site.content.id', expectedId);
+      expect(bidderOrtb2.mockBidder).to.have.nested.property('site.content.data');
+      expect(bidderOrtb2.mockBidder.site.content.data[0]).to.be.deep.equal(expectedData);
     });
 
     it('should respect existing structure when adding adding fields', function () {
-      const bid = {
-        ortb2: {
+      const bidderOrtb2 = {
+        mockBidder: {
           site: {
             content: {
               id: 'oldId'
@@ -577,24 +578,25 @@ describe('jwplayerRtdProvider', function() {
 
       const expectedId = 'expectedId';
       const expectedData = { datum: 'datum' };
-      addOrtbSiteContent(bid, expectedId, expectedData);
-      expect(bid).to.have.nested.property('ortb2.site.random.random_sub', 'randomSub');
-      expect(bid).to.have.nested.property('ortb2.app.content.id', 'appId');
-      expect(bid).to.have.nested.property('ortb2.site.content.id', expectedId);
-      expect(bid).to.have.nested.property('ortb2.site.content.data');
-      expect(bid.ortb2.site.content.data[0]).to.be.deep.equal(expectedData);
+      addOrtbSiteContent(bidderOrtb2, {bidder: 'mockBidder'}, expectedId, expectedData);
+      expect(bidderOrtb2.mockBidder).to.have.nested.property('site.random.random_sub', 'randomSub');
+      expect(bidderOrtb2.mockBidder).to.have.nested.property('app.content.id', 'appId');
+      expect(bidderOrtb2.mockBidder).to.have.nested.property('site.content.id', expectedId);
+      expect(bidderOrtb2.mockBidder).to.have.nested.property('site.content.data');
+      expect(bidderOrtb2.mockBidder.site.content.data[0]).to.be.deep.equal(expectedData);
     });
 
     it('should set content id', function () {
-      const bid = {};
+      const bidderOrtb2 = {};
+      const bid = {bidder: 'mockBidder'};
       const expectedId = 'expectedId';
-      addOrtbSiteContent(bid, expectedId);
-      expect(bid).to.have.nested.property('ortb2.site.content.id', expectedId);
+      addOrtbSiteContent(bidderOrtb2, bid, expectedId);
+      expect(bidderOrtb2.mockBidder).to.have.nested.property('site.content.id', expectedId);
     });
 
     it('should override content id', function () {
-      const bid = {
-        ortb2: {
+      const bidderOrtb2 = {
+        mockBidder: {
           site: {
             content: {
               id: 'oldId'
@@ -604,14 +606,14 @@ describe('jwplayerRtdProvider', function() {
       };
 
       const expectedId = 'expectedId';
-      addOrtbSiteContent(bid, expectedId);
-      expect(bid).to.have.nested.property('ortb2.site.content.id', expectedId);
+      addOrtbSiteContent(bidderOrtb2, {bidder: 'mockBidder'}, expectedId);
+      expect(bidderOrtb2.mockBidder).to.have.nested.property('site.content.id', expectedId);
     });
 
     it('should keep previous content id when not set', function () {
       const previousId = 'oldId';
-      const bid = {
-        ortb2: {
+      const bidderOrtb2 = {
+        mockBidder: {
           site: {
             content: {
               id: previousId,
@@ -621,22 +623,22 @@ describe('jwplayerRtdProvider', function() {
         }
       };
 
-      addOrtbSiteContent(bid, null, { datum: 'new_datum' });
-      expect(bid).to.have.nested.property('ortb2.site.content.id', previousId);
+      addOrtbSiteContent(bidderOrtb2, {bidder: 'mockBidder'}, null, { datum: 'new_datum' });
+      expect(bidderOrtb2.mockBidder).to.have.nested.property('site.content.id', previousId);
     });
 
     it('should set content data', function () {
-      const bid = {};
+      const bidderOrtb2 = {};
       const expectedData = { datum: 'datum' };
-      addOrtbSiteContent(bid, null, expectedData);
-      expect(bid).to.have.nested.property('ortb2.site.content.data');
-      expect(bid.ortb2.site.content.data).to.have.length(1);
-      expect(bid.ortb2.site.content.data[0]).to.be.deep.equal(expectedData);
+      addOrtbSiteContent(bidderOrtb2, {bidder: 'mockBidder'}, null, expectedData);
+      expect(bidderOrtb2.mockBidder).to.have.nested.property('site.content.data');
+      expect(bidderOrtb2.mockBidder.site.content.data).to.have.length(1);
+      expect(bidderOrtb2.mockBidder.site.content.data[0]).to.be.deep.equal(expectedData);
     });
 
     it('should append content data', function () {
-      const bid = {
-        ortb2: {
+      const bidderOrtb2 = {
+        mockBidder: {
           site: {
             content: {
               data: [{ datum: 'first_datum' }]
@@ -646,17 +648,17 @@ describe('jwplayerRtdProvider', function() {
       };
 
       const expectedData = { datum: 'datum' };
-      addOrtbSiteContent(bid, null, expectedData);
-      expect(bid).to.have.nested.property('ortb2.site.content.data');
-      expect(bid.ortb2.site.content.data).to.have.length(2);
-      expect(bid.ortb2.site.content.data.pop()).to.be.deep.equal(expectedData);
+      addOrtbSiteContent(bidderOrtb2, {bidder: 'mockBidder'}, null, expectedData);
+      expect(bidderOrtb2.mockBidder).to.have.nested.property('site.content.data');
+      expect(bidderOrtb2.mockBidder.site.content.data).to.have.length(2);
+      expect(bidderOrtb2.mockBidder.site.content.data.pop()).to.be.deep.equal(expectedData);
     });
 
     it('should keep previous data when not set', function () {
       const expectedId = 'expectedId';
       const expectedData = { datum: 'first_datum' };
-      const bid = {
-        ortb2: {
+      const bidderOrtb2 = {
+        mockBidder: {
           site: {
             content: {
               data: [expectedData]
@@ -665,11 +667,11 @@ describe('jwplayerRtdProvider', function() {
         }
       };
 
-      addOrtbSiteContent(bid, expectedId);
-      expect(bid).to.have.nested.property('ortb2.site.content.data');
-      expect(bid.ortb2.site.content.data).to.have.length(1);
-      expect(bid.ortb2.site.content.data[0]).to.be.deep.equal(expectedData);
-      expect(bid).to.have.nested.property('ortb2.site.content.id', expectedId);
+      addOrtbSiteContent(bidderOrtb2, {bidder: 'mockBidder'}, expectedId);
+      expect(bidderOrtb2.mockBidder).to.have.nested.property('site.content.data');
+      expect(bidderOrtb2.mockBidder.site.content.data).to.have.length(1);
+      expect(bidderOrtb2.mockBidder.site.content.data[0]).to.be.deep.equal(expectedData);
+      expect(bidderOrtb2.mockBidder).to.have.nested.property('site.content.id', expectedId);
     });
   });
 

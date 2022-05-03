@@ -284,7 +284,7 @@ function generateOpenRtbObject(bidderRequest, bid) {
       outBoundBidRequest.site.id = bid.params.dcn;
     };
 
-    if (config.getConfig('ortb2')) {
+    if (bidderRequest.ortb2) {
       outBoundBidRequest = appendFirstPartyData(outBoundBidRequest, bid);
     };
 
@@ -376,7 +376,7 @@ function appendImpObject(bid, openRtbObject) {
 };
 
 function appendFirstPartyData(outBoundBidRequest, bid) {
-  const ortb2Object = config.getConfig('ortb2');
+  const ortb2Object = bid.ortb2;
   const siteObject = deepAccess(ortb2Object, 'site') || undefined;
   const siteContentObject = deepAccess(siteObject, 'content') || undefined;
   const siteContentDataArray = deepAccess(siteObject, 'content.data') || undefined;

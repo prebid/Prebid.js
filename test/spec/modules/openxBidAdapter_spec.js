@@ -1709,21 +1709,10 @@ describe('OpenxAdapter', function () {
           context('in ortb2.user.data', function () {
             let bidRequests;
             beforeEach(function () {
-              let fpdConfig = t.config
-              sinon
-                .stub(config, 'getConfig')
-                .withArgs(sinon.match(/^ortb2\.user\.data$|^ortb2\.site\.content\.data$/))
-                .callsFake((key) => {
-                  return utils.deepAccess(fpdConfig, key);
-                });
               bidRequests = [{...bidRequest, ...t.request}];
             });
 
-            afterEach(function () {
-              config.getConfig.restore();
-            });
-
-            const mockBidderRequest = {refererInfo: {}};
+            const mockBidderRequest = {refererInfo: {}, ortb2: t.config.ortb2};
             it(`${t.name} for type ${name}`, function () {
               const request = spec.buildRequests(bidRequests, mockBidderRequest)
               expect(request.length).to.equal(1);

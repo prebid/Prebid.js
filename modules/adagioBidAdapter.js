@@ -639,7 +639,7 @@ export function setExtraParam(bid, paramName) {
   }
 
   const adgGlobalConf = config.getConfig('adagio') || {};
-  const ortb2Conf = config.getConfig('ortb2');
+  const ortb2Conf = bid.ortb2;
 
   const detected = adgGlobalConf[paramName] || deepAccess(ortb2Conf, `site.ext.data.${paramName}`, null);
   if (detected) {

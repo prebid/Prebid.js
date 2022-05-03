@@ -314,42 +314,52 @@ export function newConfig() {
     return Object.assign({}, config);
   }
 
-  /*
-   * Returns the configuration object if called without parameters,
-   * or single configuration property if given a string matching a configuration
-   * property name.  Allows deep access e.g. getConfig('currency.adServerCurrency')
-   *
-   * If called with callback parameter, or a string and a callback parameter,
-   * subscribes to configuration updates. See `subscribe` function for usage.
-   *
-   * The object returned is a deepClone of the `config` property.
-   */
-  function readConfig(...args) {
-    if (args.length <= 1 && typeof args[0] !== 'function') {
-      const option = args[0];
-      const configClone = deepClone(_getConfig());
-      return option ? deepAccess(configClone, option) : configClone;
-    }
-
-    return subscribe(...args);
+  function _getRestrictedConfig() {
+    // This causes reading 'ortb2' to throw an error; with prebid 7, that will almost
+    // always be the incorrect way to access FPD configuration (https://github.com/prebid/Prebid.js/issues/7651)
+    // code that needs the ortb2 config should explicitly use `getAnyConfig`
+    // TODO: this is meant as a temporary tripwire to catch inadvertent use of `getConfig('ortb')` as we transition.
+    // It should be removed once the risk of that happening is low enough.
+    const conf = _getConfig();
+    Object.defineProperty(conf, 'ortb2', {
+      get: function () {
+        throw new Error('invalid access to \'orbt2\' config - use request parameters instead');
+      }
+    });
+    return conf;
   }
 
-  /*
-   * Returns configuration object if called without parameters,
-   * or single configuration property if given a string matching a configuration
-   * property name.  Allows deep access e.g. getConfig('currency.adServerCurrency')
-   *
-   * If called with callback parameter, or a string and a callback parameter,
-   * subscribes to configuration updates. See `subscribe` function for usage.
-   */
-  function getConfig(...args) {
-    if (args.length <= 1 && typeof args[0] !== 'function') {
-      const option = args[0];
-      return option ? deepAccess(_getConfig(), option) : _getConfig();
-    }
+  const [getAnyConfig, getConfig] = [_getConfig, _getRestrictedConfig].map(accessor => {
+    /*
+     * Returns configuration object if called without parameters,
+     * or single configuration property if given a string matching a configuration
+     * property name.  Allows deep access e.g. getConfig('currency.adServerCurrency')
+     *
+     * If called with callback parameter, or a string and a callback parameter,
+     * subscribes to configuration updates. See `subscribe` function for usage.
+     */
+    return function getConfig(...args) {
+      if (args.length <= 1 && typeof args[0] !== 'function') {
+        const option = args[0];
+        return option ? deepAccess(accessor(), option) : _getConfig();
+      }
 
-    return subscribe(...args);
-  }
+      return subscribe(...args);
+    }
+  })
+
+  const [readConfig, readAnyConfig] = [getConfig, getAnyConfig].map(wrapee => {
+    /*
+     * Like getConfig, except that it returns a deepClone of the result.
+     */
+    return function readConfig(...args) {
+      let res = wrapee(...args);
+      if (res && typeof res === 'object') {
+        res = deepClone(res);
+      }
+      return res;
+    }
+  })
 
   /**
    * Internal API for modules (such as prebid-server) that might need access to all bidder config
@@ -670,7 +680,9 @@ export function newConfig() {
     getCurrentBidder,
     resetBidder,
     getConfig,
+    getAnyConfig,
     readConfig,
+    readAnyConfig,
     setConfig,
     mergeConfig,
     setDefaults,

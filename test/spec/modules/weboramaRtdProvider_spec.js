@@ -8,12 +8,6 @@ import {
   storage,
   DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY
 } from '../../../modules/weboramaRtdProvider.js';
-import {
-  config
-} from 'src/config.js';
-import {
-  getGlobal
-} from 'src/prebidGlobal.js';
 import 'src/prebid.js';
 
 const responseHeader = {
@@ -61,10 +55,6 @@ describe('weboramaRtdProvider', function () {
       sandbox = sinon.sandbox.create();
 
       storage.removeDataFromLocalStorage('webo_wam2gam_entry');
-
-      getGlobal().setConfig({
-        ortb2: undefined
-      });
     });
 
     afterEach(function () {
@@ -94,6 +84,10 @@ describe('weboramaRtdProvider', function () {
         };
         const adUnitsCodes = ['adunit1', 'adunit2'];
         const reqBidsConfigObj = {
+          ortb2Fragments: {
+            global: {},
+            bidder: {}
+          },
           adUnits: [{
             bids: [{
               bidder: 'smartadserver'
@@ -138,14 +132,14 @@ describe('weboramaRtdProvider', function () {
         expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
           inventory: data
         });
-        expect(reqBidsConfigObj.adUnits[0].bids[4].ortb2).to.deep.equal({
+        expect(reqBidsConfigObj.ortb2Fragments.bidder.other).to.deep.equal({
           site: {
             ext: {
               data: data
             },
           }
         });
-        expect(getGlobal().getConfig('ortb2')).to.deep.equal({
+        expect(reqBidsConfigObj.ortb2Fragments.global).to.deep.equal({
           site: {
             ext: {
               data: data
@@ -175,6 +169,10 @@ describe('weboramaRtdProvider', function () {
         };
         const adUnitsCodes = ['adunit1', 'adunit2'];
         const reqBidsConfigObj = {
+          ortb2Fragments: {
+            global: {},
+            bidder: {}
+          },
           adUnits: [{
             bids: [{
               bidder: 'smartadserver',
@@ -244,8 +242,8 @@ describe('weboramaRtdProvider', function () {
             baz: 'bam',
           }
         });
-        expect(reqBidsConfigObj.adUnits[0].bids[4].ortb2).to.be.undefined;
-        expect(getGlobal().getConfig('ortb2')).to.be.undefined;
+        expect(reqBidsConfigObj.ortb2Fragments.bidder.other).to.be.undefined;
+        expect(reqBidsConfigObj.ortb2Fragments.global).to.eql({});
       });
 
       it('should set gam targeting but not send to bidders with (submodule override) setPrebidTargeting=true/(global) sendToBidders=false', function () {
@@ -273,6 +271,9 @@ describe('weboramaRtdProvider', function () {
         };
         const adUnitsCodes = ['adunit1', 'adunit2'];
         const reqBidsConfigObj = {
+          ortb2Fragments: {
+            global: {}
+          },
           adUnits: [{
             bids: [{
               bidder: 'smartadserver',
@@ -305,7 +306,7 @@ describe('weboramaRtdProvider', function () {
         });
 
         expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(1);
-        expect(getGlobal().getConfig('ortb2')).to.be.undefined;
+        expect(reqBidsConfigObj.ortb2Fragments.global).to.eql({});
 
         expect(onDataResponse).to.deep.equal({
           data: data,
@@ -329,6 +330,10 @@ describe('weboramaRtdProvider', function () {
         };
         const adUnitsCodes = ['adunit1', 'adunit2'];
         const reqBidsConfigObj = {
+          ortb2Fragments: {
+            global: {},
+            bidder: {}
+          },
           adUnits: [{
             bids: [{
               bidder: 'smartadserver',
@@ -399,14 +404,14 @@ describe('weboramaRtdProvider', function () {
             baz: 'bam',
           }
         });
-        expect(reqBidsConfigObj.adUnits[0].bids[4].ortb2).to.deep.equal({
+        expect(reqBidsConfigObj.ortb2Fragments.bidder.other).to.eql({
           site: {
             ext: {
               data: data
             },
           }
         });
-        expect(getGlobal().getConfig('ortb2')).to.deep.equal({
+        expect(reqBidsConfigObj.ortb2Fragments.global).to.deep.equal({
           site: {
             ext: {
               data: data
@@ -439,6 +444,10 @@ describe('weboramaRtdProvider', function () {
 
         const adUnitsCodes = ['adunit1', 'adunit2'];
         const reqBidsConfigObj = {
+          ortb2Fragments: {
+            global: {},
+            bidder: {}
+          },
           adUnits: [{
             bids: [{
               bidder: 'smartadserver'
@@ -482,14 +491,14 @@ describe('weboramaRtdProvider', function () {
         expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
           inventory: defaultProfile
         });
-        expect(reqBidsConfigObj.adUnits[0].bids[4].ortb2).to.deep.equal({
+        expect(reqBidsConfigObj.ortb2Fragments.bidder.other).to.eql({
           site: {
             ext: {
               data: defaultProfile
             },
           }
         });
-        expect(getGlobal().getConfig('ortb2')).to.deep.equal({
+        expect(reqBidsConfigObj.ortb2Fragments.global).to.deep.equal({
           site: {
             ext: {
               data: defaultProfile
@@ -535,6 +544,10 @@ describe('weboramaRtdProvider', function () {
 
         const adUnitsCodes = ['adunit1', 'adunit2'];
         const reqBidsConfigObj = {
+          ortb2Fragments: {
+            global: {},
+            bidder: {}
+          },
           adUnits: [{
             bids: [{
               bidder: 'smartadserver'
@@ -570,14 +583,14 @@ describe('weboramaRtdProvider', function () {
         expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
           visitor: data
         });
-        expect(reqBidsConfigObj.adUnits[0].bids[4].ortb2).to.deep.equal({
+        expect(reqBidsConfigObj.ortb2Fragments.bidder.other).to.eql({
           user: {
             ext: {
               data: data
             },
           }
         });
-        expect(getGlobal().getConfig('ortb2')).to.deep.equal({
+        expect(reqBidsConfigObj.ortb2Fragments.global).to.deep.equal({
           user: {
             ext: {
               data: data
@@ -615,6 +628,10 @@ describe('weboramaRtdProvider', function () {
 
         const adUnitsCodes = ['adunit1', 'adunit2'];
         const reqBidsConfigObj = {
+          ortb2Fragments: {
+            global: {},
+            bidder: {}
+          },
           adUnits: [{
             bids: [{
               bidder: 'smartadserver',
@@ -676,8 +693,8 @@ describe('weboramaRtdProvider', function () {
             baz: 'bam'
           }
         });
-        expect(reqBidsConfigObj.adUnits[0].bids[4].ortb2).to.be.undefined;
-        expect(getGlobal().getConfig('ortb2')).to.be.undefined;
+        expect(reqBidsConfigObj.ortb2Fragments.bidder.other).to.be.undefined;
+        expect(reqBidsConfigObj.ortb2Fragments.global).to.eql({});
       });
 
       it('should set gam targeting but not send to bidders with (submodule override) setPrebidTargeting=true/(global) sendToBidders=false', function () {
@@ -713,6 +730,9 @@ describe('weboramaRtdProvider', function () {
 
         const adUnitsCodes = ['adunit1', 'adunit2'];
         const reqBidsConfigObj = {
+          ortb2Fragments: {
+            global: {},
+          },
           adUnits: [{
             bids: [{
               bidder: 'smartadserver',
@@ -738,7 +758,7 @@ describe('weboramaRtdProvider', function () {
 
         expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(1);
         expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('foo=bar');
-        expect(getGlobal().getConfig('ortb2')).to.be.undefined;
+        expect(reqBidsConfigObj.ortb2Fragments.global).to.eql({});
         expect(onDataResponse).to.deep.equal({
           data: data,
           site: false,
@@ -769,6 +789,10 @@ describe('weboramaRtdProvider', function () {
 
         const adUnitsCodes = ['adunit1', 'adunit2'];
         const reqBidsConfigObj = {
+          ortb2Fragments: {
+            global: {},
+            bidder: {}
+          },
           adUnits: [{
             bids: [{
               bidder: 'smartadserver',
@@ -831,14 +855,14 @@ describe('weboramaRtdProvider', function () {
             webo_audiences: ['baz'],
           }
         });
-        expect(reqBidsConfigObj.adUnits[0].bids[4].ortb2).to.deep.equal({
+        expect(reqBidsConfigObj.ortb2Fragments.bidder.other).to.deep.equal({
           user: {
             ext: {
               data: data
             },
           }
         });
-        expect(getGlobal().getConfig('ortb2')).to.deep.equal({
+        expect(reqBidsConfigObj.ortb2Fragments.global).to.deep.equal({
           user: {
             ext: {
               data: data
@@ -864,6 +888,10 @@ describe('weboramaRtdProvider', function () {
 
         const adUnitsCodes = ['adunit1', 'adunit2'];
         const reqBidsConfigObj = {
+          ortb2Fragments: {
+            global: {},
+            bidder: {}
+          },
           adUnits: [{
             bids: [{
               bidder: 'smartadserver'
@@ -899,14 +927,14 @@ describe('weboramaRtdProvider', function () {
         expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
           visitor: defaultProfile
         });
-        expect(reqBidsConfigObj.adUnits[0].bids[4].ortb2).to.deep.equal({
+        expect(reqBidsConfigObj.ortb2Fragments.bidder.other).to.deep.equal({
           user: {
             ext: {
               data: defaultProfile
             },
           }
         });
-        expect(getGlobal().getConfig('ortb2')).to.deep.equal({
+        expect(reqBidsConfigObj.ortb2Fragments.global).to.deep.equal({
           user: {
             ext: {
               data: defaultProfile
@@ -939,6 +967,10 @@ describe('weboramaRtdProvider', function () {
 
         const adUnitsCodes = ['adunit1', 'adunit2'];
         const reqBidsConfigObj = {
+          ortb2Fragments: {
+            global: {},
+            bidder: {}
+          },
           adUnits: [{
             bids: [{
               bidder: 'smartadserver'
@@ -974,14 +1006,14 @@ describe('weboramaRtdProvider', function () {
         expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
           visitor: defaultProfile
         });
-        expect(reqBidsConfigObj.adUnits[0].bids[4].ortb2).to.deep.equal({
+        expect(reqBidsConfigObj.ortb2Fragments.bidder.other).to.deep.equal({
           user: {
             ext: {
               data: defaultProfile
             },
           }
         });
-        expect(getGlobal().getConfig('ortb2')).to.deep.equal({
+        expect(reqBidsConfigObj.ortb2Fragments.global).to.deep.equal({
           user: {
             ext: {
               data: defaultProfile
