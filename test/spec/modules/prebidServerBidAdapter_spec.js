@@ -1279,12 +1279,14 @@ describe('S2S Adapter', function () {
           'assets': [
             {
               'required': 1,
+              'id': 0,
               'title': {
                 'len': 800
               }
             },
             {
               'required': 1,
+              'id': 1,
               'img': {
                 'type': 3,
                 'w': 989,
@@ -1293,6 +1295,7 @@ describe('S2S Adapter', function () {
             },
             {
               'required': 1,
+              'id': 2,
               'img': {
                 'type': 1,
                 'wmin': 10,
@@ -1304,6 +1307,7 @@ describe('S2S Adapter', function () {
             },
             {
               'required': 1,
+              'id': 3,
               'data': {
                 'type': 1
               }
