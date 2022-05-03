@@ -15,7 +15,7 @@ import {emitAdRenderFail, emitAdRenderSucceeded} from './adRendering.js';
 
 const BID_WON = constants.EVENTS.BID_WON;
 const STALE_RENDER = constants.EVENTS.STALE_RENDER;
-const WON_AD_IDS = new Set();
+const WON_AD_IDS = new WeakSet();
 
 const HANDLER_MAP = {
   'Prebid Request': handleRenderRequest,
@@ -115,8 +115,8 @@ function handleNativeRequest(reply, data, adObject) {
     return;
   }
 
-  if (!WON_AD_IDS.has(adObject.adId)) {
-    WON_AD_IDS.add(adObject.adId);
+  if (!WON_AD_IDS.has(adObject)) {
+    WON_AD_IDS.add(adObject);
     auctionManager.addWinningBid(adObject);
     events.emit(BID_WON, adObject);
   }
