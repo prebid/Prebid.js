@@ -36,7 +36,7 @@ aliases:
 
   - &run_endtoend_test
       name: BrowserStack End to end testing
-      command: echo "127.0.0.1 test.localhost" | sudo tee -a /etc/hosts && gulp e2e-test --host=test.localhost
+      command: gulp e2e-test
 
   # Download and run BrowserStack local
   - &setup_browserstack
@@ -82,16 +82,6 @@ workflows:
   commit:
     jobs:
       - build
-  nightly:
-    triggers:
-      - schedule:
-          cron: "0 0 * * *"
-          filters:
-            branches:
-              only:
-                - master
-    jobs:
-      - e2etest
 
 experimental:
   pipelines: true

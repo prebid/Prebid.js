@@ -40,7 +40,7 @@ export const spec = {
       uspConsent: bidderRequest.uspConsent,
       currencyCode: config.getConfig('currency.adServerCurrency'),
       coppa: config.getConfig('coppa'),
-      firstPartyData: config.getLegacyFpd(config.getConfig('ortb2')),
+      firstPartyData: config.getLegacyFpd(bidderRequest.ortb2),
       prebidVersion: '$prebid.version$'
     };
 

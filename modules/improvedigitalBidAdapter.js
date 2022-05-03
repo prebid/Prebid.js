@@ -117,16 +117,20 @@ export const spec = {
         if (additionalConsent && additionalConsent.indexOf('~') !== -1) {
           // Google Ad Tech Provider IDs
           const atpIds = additionalConsent.substring(additionalConsent.indexOf('~') + 1);
-          deepSetValue(
-            request,
-            'user.ext.consented_providers_settings.consented_providers',
-            atpIds.split('.').map(id => parseInt(id, 10))
-          );
+          if (atpIds) {
+            deepSetValue(
+              request,
+              'user.ext.consented_providers_settings.consented_providers',
+              atpIds.split('.').map(id => parseInt(id, 10))
+            );
+          }
         }
       }
 
       // Timeout
-      deepSetValue(request, 'tmax', bidderRequest.timeout);
+      if (bidderRequest.timeout) {
+        request.tmax = parseInt(bidderRequest.timeout);
+      }
       // US Privacy
       if (typeof bidderRequest.uspConsent !== typeof undefined) {
         deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent);
@@ -413,7 +417,7 @@ const ID_REQUEST = {
   buildSiteOrApp(request, bidderRequest) {
     const app = {};
     const configAppSettings = config.getConfig('app') || {};
-    const fpdAppSettings = config.getConfig('ortb2.app') || {};
+    const fpdAppSettings = bidderRequest.ortb2?.app || {};
     mergeDeep(app, configAppSettings, fpdAppSettings);
 
     if (Object.keys(app).length !== 0) {
@@ -426,7 +430,7 @@ const ID_REQUEST = {
         site.domain = parseUrl(url).hostname;
       }
       const configSiteSettings = config.getConfig('site') || {};
-      const fpdSiteSettings = config.getConfig('ortb2.site') || {};
+      const fpdSiteSettings = deepAccess(bidderRequest, 'ortb2.site') || {};
       mergeDeep(site, configSiteSettings, fpdSiteSettings);
       request.site = site;
     }

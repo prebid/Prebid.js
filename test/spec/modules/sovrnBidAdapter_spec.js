@@ -304,30 +304,17 @@ describe('sovrnBidAdapter', function() {
       expect(impression.bidfloor).to.equal(2.00)
     })
     describe('First Party Data', function () {
-      let sandbox
-
-      beforeEach(function() {
-        sandbox = sinon.sandbox.create()
-      })
-      afterEach(function() {
-        sandbox.restore()
-      })
       it('should provide first party data if provided', function() {
-        sandbox.stub(config, 'getConfig').callsFake(key => {
-          const cfg = {
-            ortb2: {
-              site: {
-                keywords: 'test keyword'
-              },
-              user: {
-                data: 'some user data'
-              }
-            }
+        const ortb2 = {
+          site: {
+            keywords: 'test keyword'
+          },
+          user: {
+            data: 'some user data'
           }
-          return utils.deepAccess(cfg, key)
-        })
+        };
 
-        const request = spec.buildRequests([baseBidRequest], baseBidderRequest)
+        const request = spec.buildRequests([baseBidRequest], {...baseBidderRequest, ortb2})
         const { user, site } = JSON.parse(request.data)
 
         expect(user.data).to.equal('some user data')

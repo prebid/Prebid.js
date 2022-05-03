@@ -135,7 +135,7 @@ export const spec = {
       payload.referrer_detection = refererinfo;
     }
 
-    let fpdcfg = config.getLegacyFpd(config.getConfig('ortb2'));
+    let fpdcfg = config.getLegacyFpd(bidderRequest.ortb2);
     if (fpdcfg && fpdcfg.context) {
       let fdata = {
         keywords: fpdcfg.context.keywords || '',

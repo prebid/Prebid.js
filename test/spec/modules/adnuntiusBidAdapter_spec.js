@@ -132,7 +132,7 @@ describe('adnuntiusBidAdapter', function () {
 
   describe('buildRequests', function () {
     it('Test requests', function () {
-      const request = spec.buildRequests(bidRequests);
+      const request = spec.buildRequests(bidRequests, {});
       expect(request.length).to.equal(1);
       expect(request[0]).to.have.property('bid');
       const bid = request[0].bid[0]
@@ -144,52 +144,42 @@ describe('adnuntiusBidAdapter', function () {
     });
 
     it('should pass segments if available in config', function () {
-      config.setBidderConfig({
-        bidders: ['adnuntius', 'other'],
-        config: {
-          ortb2: {
-            user: {
-              data: [{
-                name: 'adnuntius',
-                segment: [{ id: 'segment1' }, { id: 'segment2' }]
-              },
-              {
-                name: 'other',
-                segment: ['segment3']
-              }],
-            }
-          }
+      const ortb2 = {
+        user: {
+          data: [{
+            name: 'adnuntius',
+            segment: [{ id: 'segment1' }, { id: 'segment2' }]
+          },
+          {
+            name: 'other',
+            segment: ['segment3']
+          }],
         }
-      });
+      };
 
-      const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidRequests));
+      const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidRequests, {ortb2}));
       expect(request.length).to.equal(1);
       expect(request[0]).to.have.property('url')
       expect(request[0].url).to.equal(ENDPOINT_URL_SEGMENTS);
     });
 
     it('should skip segments in config if not either id or array of strings', function () {
-      config.setBidderConfig({
-        bidders: ['adnuntius', 'other'],
-        config: {
-          ortb2: {
-            user: {
-              data: [{
-                name: 'adnuntius',
-                segment: [{ id: 'segment1' }, { id: 'segment2' }, { id: 'segment3' }]
-              },
-              {
-                name: 'other',
-                segment: [{
-                  notright: 'segment4'
-                }]
-              }],
-            }
-          }
+      const ortb2 = {
+        user: {
+          data: [{
+            name: 'adnuntius',
+            segment: [{ id: 'segment1' }, { id: 'segment2' }, { id: 'segment3' }]
+          },
+          {
+            name: 'other',
+            segment: [{
+              notright: 'segment4'
+            }]
+          }],
         }
-      });
+      };
 
-      const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidRequests));
+      const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidRequests, {ortb2}));
       expect(request.length).to.equal(1);
       expect(request[0]).to.have.property('url')
       expect(request[0].url).to.equal(ENDPOINT_URL_SEGMENTS);
@@ -212,70 +202,55 @@ describe('adnuntiusBidAdapter', function () {
     });
 
     it('should pass segments if available in config', function () {
-      config.setBidderConfig({
-        bidders: ['adnuntius', 'other'],
-        config: {
-          ortb2: {
-            user: {
-              data: [{
-                name: 'adnuntius',
-                segment: [{ id: 'segment1' }, { id: 'segment2' }]
-              },
-              {
-                name: 'other',
-                segment: ['segment3']
-              }],
-            }
-          }
+      const ortb2 = {
+        user: {
+          data: [{
+            name: 'adnuntius',
+            segment: [{ id: 'segment1' }, { id: 'segment2' }]
+          },
+          {
+            name: 'other',
+            segment: ['segment3']
+          }],
         }
-      });
+      }
 
-      const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidRequests));
+      const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidRequests, {ortb2}));
       expect(request.length).to.equal(1);
       expect(request[0]).to.have.property('url')
       expect(request[0].url).to.equal(ENDPOINT_URL_SEGMENTS);
     });
 
     it('should skip segments in config if not either id or array of strings', function () {
-      config.setBidderConfig({
-        bidders: ['adnuntius', 'other'],
-        config: {
-          ortb2: {
-            user: {
-              data: [{
-                name: 'adnuntius',
-                segment: [{ id: 'segment1' }, { id: 'segment2' }, { id: 'segment3' }]
-              },
-              {
-                name: 'other',
-                segment: [{
-                  notright: 'segment4'
-                }]
-              }],
-            }
-          }
+      const ortb2 = {
+        user: {
+          data: [{
+            name: 'adnuntius',
+            segment: [{ id: 'segment1' }, { id: 'segment2' }, { id: 'segment3' }]
+          },
+          {
+            name: 'other',
+            segment: [{
+              notright: 'segment4'
+            }]
+          }],
         }
-      });
+      };
 
-      const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidRequests));
+      const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidRequests, {ortb2}));
       expect(request.length).to.equal(1);
       expect(request[0]).to.have.property('url')
       expect(request[0].url).to.equal(ENDPOINT_URL_SEGMENTS);
     });
 
     it('should user user ID if present in ortb2.user.id field', function () {
-      config.setBidderConfig({
-        bidders: ['adnuntius', 'other'],
-        config: {
-          ortb2: {
-            user: {
-              id: usi
-            }
-          }
+      const ortb2 = {
+        user: {
+          id: usi
         }
-      });
+      };
 
-      const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidRequests));
+      const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidRequests, {ortb2}));
       expect(request.length).to.equal(1);
       expect(request[0]).to.have.property('url')
       expect(request[0].url).to.equal(ENDPOINT_URL);
@@ -307,7 +282,7 @@ describe('adnuntiusBidAdapter', function () {
         }
       });
 
-      const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidRequests));
+      const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidRequests, {}));
       expect(request.length).to.equal(1);
       expect(request[0]).to.have.property('url')
       expect(request[0].url).to.equal(ENDPOINT_URL_NOCOOKIE);

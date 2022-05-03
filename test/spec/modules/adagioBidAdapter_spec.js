@@ -144,24 +144,24 @@ describe('Adagio bid adapter', () => {
   });
 
   describe('get and set params at adUnit level from global Prebid configuration', function() {
-    it('should set params get from ortb2 config or bidderSettings. Priority to bidderSetting', function() {
+    it('should set params get from bid.ortb2', function() {
       const bid = new BidRequestBuilder().build();
+      bid.ortb2 = {
+        site: {
+          ext: {
+            data: {
+              environment: 'desktop',
+              pagetype: 'abc'
+            }
+          }
+        }
+      };
 
       sandbox.stub(config, 'getConfig').callsFake(key => {
         const config = {
           adagio: {
             pagetype: 'article'
           },
-          ortb2: {
-            site: {
-              ext: {
-                data: {
-                  environment: 'desktop',
-                  pagetype: 'abc'
-                }
-              }
-            }
-          }
         };
         return utils.deepAccess(config, key);
       });
@@ -684,6 +684,11 @@ describe('Adagio bid adapter', () => {
         expect(requests[0].data.adUnits[0].floors[0]).to.deep.equal({f: 1, mt: 'banner', s: '300x250'});
         expect(requests[0].data.adUnits[0].floors[1]).to.deep.equal({f: 1, mt: 'banner', s: '300x600'});
         expect(requests[0].data.adUnits[0].floors[2]).to.deep.equal({f: 1, mt: 'video', s: '600x480'});
+
+        expect(requests[0].data.adUnits[0].mediaTypes.banner.sizes.length).to.equal(2);
+        expect(requests[0].data.adUnits[0].mediaTypes.banner.bannerSizes[0]).to.deep.equal({size: [300, 250], floor: 1});
+        expect(requests[0].data.adUnits[0].mediaTypes.banner.bannerSizes[1]).to.deep.equal({size: [300, 600], floor: 1});
+        expect(requests[0].data.adUnits[0].mediaTypes.video.floor).to.equal(1);
       });
 
       it('should get and set floor by mediatype if no size provided (ex native, video)', function() {
@@ -707,6 +712,9 @@ describe('Adagio bid adapter', () => {
         expect(requests[0].data.adUnits[0].floors.length).to.equal(2);
         expect(requests[0].data.adUnits[0].floors[0]).to.deep.equal({f: 1, mt: 'video'});
         expect(requests[0].data.adUnits[0].floors[1]).to.deep.equal({f: 1, mt: 'native'});
+
+        expect(requests[0].data.adUnits[0].mediaTypes.video.floor).to.equal(1);
+        expect(requests[0].data.adUnits[0].mediaTypes.native.floor).to.equal(1);
       });
 
       it('should get and set floor with default value if no floors found', function() {
@@ -720,12 +728,13 @@ describe('Adagio bid adapter', () => {
         }).withParams().build();
         const bidderRequest = new BidderRequestBuilder().build();
         bid01.getFloor = () => {
-          return { floor: NaN, currency: 'USD' }
+          return { floor: NaN, currency: 'USD', mt: 'video' }
         }
         const requests = spec.buildRequests([bid01], bidderRequest);
 
         expect(requests[0].data.adUnits[0].floors.length).to.equal(1);
-        expect(requests[0].data.adUnits[0].floors[0]).to.deep.equal({f: 0.1, mt: 'video'});
+        expect(requests[0].data.adUnits[0].floors[0]).to.deep.equal({mt: 'video'});
+        expect(requests[0].data.adUnits[0].mediaTypes.video.floor).to.be.undefined;
       });
     });
   });

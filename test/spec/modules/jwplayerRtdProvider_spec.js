@@ -1,6 +1,6 @@
 import { fetchTargetingForMediaId, getVatFromCache, extractPublisherParams,
   formatTargetingResponse, getVatFromPlayer, enrichAdUnits, addTargetingToBid,
-  fetchTargetingInformation, jwplayerSubmodule, getContentId, getContentData } from 'modules/jwplayerRtdProvider.js';
+  fetchTargetingInformation, jwplayerSubmodule, getContentId, getContentSegments, getContentData } from 'modules/jwplayerRtdProvider.js';
 import { server } from 'test/mocks/xhr.js';
 import {addOrtbSiteContent} from '../../../modules/jwplayerRtdProvider';
 
@@ -498,33 +498,69 @@ describe('jwplayerRtdProvider', function() {
     });
   });
 
-  describe('Get Content Data', function () {
+  describe('Get Content Segments', function () {
     it('returns undefined when segments are empty', function () {
-      let data = getContentData(null);
-      expect(data).to.be.undefined;
-      data = getContentData(undefined);
-      expect(data).to.be.undefined;
-      data = getContentData([]);
-      expect(data).to.be.undefined;
+      let contentSegments = getContentSegments(null);
+      expect(contentSegments).to.be.undefined;
+      contentSegments = getContentSegments(undefined);
+      expect(contentSegments).to.be.undefined;
+      contentSegments = getContentSegments([]);
+      expect(contentSegments).to.be.undefined;
     });
 
     it('returns proper format', function () {
       const segment1 = 'segment1';
       const segment2 = 'segment2';
       const segment3 = 'segment3';
-      const data = getContentData([segment1, segment2, segment3]);
-      expect(data).to.have.property('name', 'jwplayer');
-      expect(data.ext).to.have.property('segtax', 502);
-      expect(data.segment[0]).to.deep.equal({ id: segment1, value: segment1 });
-      expect(data.segment[1]).to.deep.equal({ id: segment2, value: segment2 });
-      expect(data.segment[2]).to.deep.equal({ id: segment3, value: segment3 });
+      const contentSegments = getContentSegments([segment1, segment2, segment3]);
+      expect(contentSegments[0]).to.deep.equal({ id: segment1, value: segment1 });
+      expect(contentSegments[1]).to.deep.equal({ id: segment2, value: segment2 });
+      expect(contentSegments[2]).to.deep.equal({ id: segment3, value: segment3 });
+    });
+  });
+
+  describe('Get Content Data', function () {
+    it('should return proper format', function () {
+      const testMediaId = 'test_media_id';
+      const testSegments = [{ id: 1 }, { id: 2 }];
+      const contentData = getContentData(testMediaId, testSegments);
+      expect(contentData).to.have.property('name', 'jwplayer.com');
+      expect(contentData.ext).to.have.property('segtax', 502);
+      expect(contentData.ext).to.have.property('cids');
+      expect(contentData.ext.cids).to.have.length(1);
+      expect(contentData.ext.cids[0]).to.equal(testMediaId);
+      expect(contentData.segment).to.deep.equal(testSegments);
+    });
+
+    it('should only set segtax and segment when segments are provided', function () {
+      const testMediaId = 'test_media_id';
+      const contentData = getContentData(testMediaId);
+      expect(contentData).to.have.property('name', 'jwplayer.com');
+      expect(contentData.ext.segtax).to.be.undefined;
+      expect(contentData.ext).to.have.property('cids');
+      expect(contentData.ext.cids).to.have.length(1);
+      expect(contentData.ext.cids[0]).to.equal(testMediaId);
+      expect(contentData.segment).to.be.undefined;
+    });
+
+    it('should only set cids when a media id is provided', function () {
+      const testSegments = [{ id: 1 }, { id: 2 }];
+      const contentData = getContentData(null, testSegments);
+      expect(contentData).to.have.property('name', 'jwplayer.com');
+      expect(contentData.ext).to.have.property('segtax', 502);
+      expect(contentData.ext).to.not.have.property('cids');
+      expect(contentData.segment).to.deep.equal(testSegments);
+    });
+
+    it('should return undefined when no params are provided', function () {
+      expect(getContentData()).to.be.undefined;
     });
   });
 
   describe(' Add Ortb Site Content', function () {
     it('should maintain object structure when id and data params are empty', function () {
-      const bid = {
-        ortb2: {
+      const bidderOrtb2 = {
+        mockBidder: {
           site: {
             content: {
               id: 'randomId'
@@ -539,26 +575,27 @@ describe('jwplayerRtdProvider', function() {
             }
           }
         }
-      };
-      addOrtbSiteContent(bid);
-      expect(bid).to.have.nested.property('ortb2.site.content.id', 'randomId');
-      expect(bid).to.have.nested.property('ortb2.site.random.random_sub', 'randomSub');
-      expect(bid).to.have.nested.property('ortb2.app.content.id', 'appId');
+      }
+      addOrtbSiteContent(bidderOrtb2, {bidder: 'mockBidder'});
+      expect(bidderOrtb2.mockBidder).to.have.nested.property('site.content.id', 'randomId');
+      expect(bidderOrtb2.mockBidder).to.have.nested.property('site.random.random_sub', 'randomSub');
+      expect(bidderOrtb2.mockBidder).to.have.nested.property('app.content.id', 'appId');
     });
 
     it('should create a structure compliant with the oRTB 2 spec', function() {
-      const bid = {};
+      const bidderOrtb2 = {}
+      const bid = {bidder: 'mockBidder'};
       const expectedId = 'expectedId';
       const expectedData = { datum: 'datum' };
-      addOrtbSiteContent(bid, expectedId, expectedData);
-      expect(bid).to.have.nested.property('ortb2.site.content.id', expectedId);
-      expect(bid).to.have.nested.property('ortb2.site.content.data');
-      expect(bid.ortb2.site.content.data[0]).to.be.deep.equal(expectedData);
+      addOrtbSiteContent(bidderOrtb2, bid, expectedId, expectedData);
+      expect(bidderOrtb2.mockBidder).to.have.nested.property('site.content.id', expectedId);
+      expect(bidderOrtb2.mockBidder).to.have.nested.property('site.content.data');
+      expect(bidderOrtb2.mockBidder.site.content.data[0]).to.be.deep.equal(expectedData);
     });
 
     it('should respect existing structure when adding adding fields', function () {
-      const bid = {
-        ortb2: {
+      const bidderOrtb2 = {
+        mockBidder: {
           site: {
             content: {
               id: 'oldId'
@@ -577,24 +614,25 @@ describe('jwplayerRtdProvider', function() {
 
       const expectedId = 'expectedId';
       const expectedData = { datum: 'datum' };
-      addOrtbSiteContent(bid, expectedId, expectedData);
-      expect(bid).to.have.nested.property('ortb2.site.random.random_sub', 'randomSub');
-      expect(bid).to.have.nested.property('ortb2.app.content.id', 'appId');
-      expect(bid).to.have.nested.property('ortb2.site.content.id', expectedId);
-      expect(bid).to.have.nested.property('ortb2.site.content.data');
-      expect(bid.ortb2.site.content.data[0]).to.be.deep.equal(expectedData);
+      addOrtbSiteContent(bidderOrtb2, {bidder: 'mockBidder'}, expectedId, expectedData);
+      expect(bidderOrtb2.mockBidder).to.have.nested.property('site.random.random_sub', 'randomSub');
+      expect(bidderOrtb2.mockBidder).to.have.nested.property('app.content.id', 'appId');
+      expect(bidderOrtb2.mockBidder).to.have.nested.property('site.content.id', expectedId);
+      expect(bidderOrtb2.mockBidder).to.have.nested.property('site.content.data');
+      expect(bidderOrtb2.mockBidder.site.content.data[0]).to.be.deep.equal(expectedData);
     });
 
     it('should set content id', function () {
-      const bid = {};
+      const bidderOrtb2 = {};
+      const bid = {bidder: 'mockBidder'};
       const expectedId = 'expectedId';
-      addOrtbSiteContent(bid, expectedId);
-      expect(bid).to.have.nested.property('ortb2.site.content.id', expectedId);
+      addOrtbSiteContent(bidderOrtb2, bid, expectedId);
+      expect(bidderOrtb2.mockBidder).to.have.nested.property('site.content.id', expectedId);
     });
 
     it('should override content id', function () {
-      const bid = {
-        ortb2: {
+      const bidderOrtb2 = {
+        mockBidder: {
           site: {
             content: {
               id: 'oldId'
@@ -604,14 +642,14 @@ describe('jwplayerRtdProvider', function() {
       };
 
       const expectedId = 'expectedId';
-      addOrtbSiteContent(bid, expectedId);
-      expect(bid).to.have.nested.property('ortb2.site.content.id', expectedId);
+      addOrtbSiteContent(bidderOrtb2, {bidder: 'mockBidder'}, expectedId);
+      expect(bidderOrtb2.mockBidder).to.have.nested.property('site.content.id', expectedId);
     });
 
     it('should keep previous content id when not set', function () {
       const previousId = 'oldId';
-      const bid = {
-        ortb2: {
+      const bidderOrtb2 = {
+        mockBidder: {
           site: {
             content: {
               id: previousId,
@@ -621,22 +659,22 @@ describe('jwplayerRtdProvider', function() {
         }
       };
 
-      addOrtbSiteContent(bid, null, { datum: 'new_datum' });
-      expect(bid).to.have.nested.property('ortb2.site.content.id', previousId);
+      addOrtbSiteContent(bidderOrtb2, {bidder: 'mockBidder'}, null, { datum: 'new_datum' });
+      expect(bidderOrtb2.mockBidder).to.have.nested.property('site.content.id', previousId);
     });
 
     it('should set content data', function () {
-      const bid = {};
+      const bidderOrtb2 = {};
       const expectedData = { datum: 'datum' };
-      addOrtbSiteContent(bid, null, expectedData);
-      expect(bid).to.have.nested.property('ortb2.site.content.data');
-      expect(bid.ortb2.site.content.data).to.have.length(1);
-      expect(bid.ortb2.site.content.data[0]).to.be.deep.equal(expectedData);
+      addOrtbSiteContent(bidderOrtb2, {bidder: 'mockBidder'}, null, expectedData);
+      expect(bidderOrtb2.mockBidder).to.have.nested.property('site.content.data');
+      expect(bidderOrtb2.mockBidder.site.content.data).to.have.length(1);
+      expect(bidderOrtb2.mockBidder.site.content.data[0]).to.be.deep.equal(expectedData);
     });
 
     it('should append content data', function () {
-      const bid = {
-        ortb2: {
+      const bidderOrtb2 = {
+        mockBidder: {
           site: {
             content: {
               data: [{ datum: 'first_datum' }]
@@ -646,17 +684,17 @@ describe('jwplayerRtdProvider', function() {
       };
 
       const expectedData = { datum: 'datum' };
-      addOrtbSiteContent(bid, null, expectedData);
-      expect(bid).to.have.nested.property('ortb2.site.content.data');
-      expect(bid.ortb2.site.content.data).to.have.length(2);
-      expect(bid.ortb2.site.content.data.pop()).to.be.deep.equal(expectedData);
+      addOrtbSiteContent(bidderOrtb2, {bidder: 'mockBidder'}, null, expectedData);
+      expect(bidderOrtb2.mockBidder).to.have.nested.property('site.content.data');
+      expect(bidderOrtb2.mockBidder.site.content.data).to.have.length(2);
+      expect(bidderOrtb2.mockBidder.site.content.data.pop()).to.be.deep.equal(expectedData);
     });
 
     it('should keep previous data when not set', function () {
       const expectedId = 'expectedId';
       const expectedData = { datum: 'first_datum' };
-      const bid = {
-        ortb2: {
+      const bidderOrtb2 = {
+        mockBidder: {
           site: {
             content: {
               data: [expectedData]
@@ -665,11 +703,11 @@ describe('jwplayerRtdProvider', function() {
         }
       };
 
-      addOrtbSiteContent(bid, expectedId);
-      expect(bid).to.have.nested.property('ortb2.site.content.data');
-      expect(bid.ortb2.site.content.data).to.have.length(1);
-      expect(bid.ortb2.site.content.data[0]).to.be.deep.equal(expectedData);
-      expect(bid).to.have.nested.property('ortb2.site.content.id', expectedId);
+      addOrtbSiteContent(bidderOrtb2, {bidder: 'mockBidder'}, expectedId);
+      expect(bidderOrtb2.mockBidder).to.have.nested.property('site.content.data');
+      expect(bidderOrtb2.mockBidder.site.content.data).to.have.length(1);
+      expect(bidderOrtb2.mockBidder.site.content.data[0]).to.be.deep.equal(expectedData);
+      expect(bidderOrtb2.mockBidder).to.have.nested.property('site.content.id', expectedId);
     });
   });
 

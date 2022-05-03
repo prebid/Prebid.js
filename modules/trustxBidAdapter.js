@@ -183,7 +183,7 @@ export const spec = {
       };
     }
 
-    const ortb2UserData = config.getConfig('ortb2.user.data');
+    const ortb2UserData = deepAccess(bidderRequest, 'ortb2.user.data');
     if (ortb2UserData && ortb2UserData.length) {
       if (!user) {
         user = { data: [] };
@@ -211,8 +211,8 @@ export const spec = {
       request.user = user;
     }
 
-    const userKeywords = deepAccess(config.getConfig('ortb2.user'), 'keywords') || null;
-    const siteKeywords = deepAccess(config.getConfig('ortb2.site'), 'keywords') || null;
+    const userKeywords = deepAccess(bidderRequest, 'ortb2.user.keywords') || null;
+    const siteKeywords = deepAccess(bidderRequest, 'ortb2.site.keywords') || null;
 
     if (userKeywords) {
       pageKeywords = pageKeywords || {};

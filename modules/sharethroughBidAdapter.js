@@ -23,7 +23,7 @@ export const sharethroughAdapterSpec = {
 
   buildRequests: (bidRequests, bidderRequest) => {
     const timeout = config.getConfig('bidderTimeout');
-    const firstPartyData = config.getConfig('ortb2') || {};
+    const firstPartyData = bidderRequest.ortb2 || {};
 
     const nonHttp = sharethroughInternal.getProtocol().indexOf('http') < 0;
     const secure = nonHttp || (sharethroughInternal.getProtocol().indexOf('https') > -1);
@@ -245,16 +245,6 @@ function getBidRequestFloor(bid) {
 
 function userIdAsEids(bidRequest) {
   const eids = createEidsArray(deepAccess(bidRequest, 'userId')) || [];
-
-  const flocData = deepAccess(bidRequest, 'userId.flocId');
-  const isFlocIdValid = flocData && flocData.id && flocData.version;
-  if (isFlocIdValid) {
-    eids.push({
-      source: 'chrome.com',
-      uids: [{ id: flocData.id, atype: 1, ext: { ver: flocData.version } }],
-    });
-  }
-
   return eids;
 }
 

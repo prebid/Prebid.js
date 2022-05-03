@@ -682,6 +682,46 @@ describe('auctionmanager.js', function () {
     });
   });
 
+  describe('createAuction', () => {
+    let adUnits, stubMakeBidRequests, stubCallAdapters
+
+    beforeEach(() => {
+      stubMakeBidRequests = sinon.stub(adapterManager, 'makeBidRequests').returns([{
+        bidderCode: BIDDER_CODE,
+        bids: [{
+          bidder: BIDDER_CODE
+        }]
+      }]);
+      stubCallAdapters = sinon.stub(adapterManager, 'callBids').callsFake((au, reqs, addBid, done) => {
+        reqs.forEach(r => done.apply(r));
+      });
+      adUnits = [{
+        code: ADUNIT_CODE,
+        transactionId: ADUNIT_CODE,
+        bids: [
+          {bidder: BIDDER_CODE},
+        ]
+      }];
+    });
+
+    afterEach(() => {
+      stubMakeBidRequests.restore();
+      stubCallAdapters.restore();
+    });
+
+    it('passes global and bidder ortb2 to the auction', () => {
+      const ortb2Fragments = {
+        global: {},
+        bidder: {}
+      }
+      const auction = auctionManager.createAuction({adUnits, ortb2Fragments});
+      auction.callBids();
+      const anyArgs = [...Array(7).keys()].map(() => sinon.match.any);
+      sinon.assert.calledWith(stubMakeBidRequests, ...anyArgs.slice(0, 5).concat([sinon.match.same(ortb2Fragments)]));
+      sinon.assert.calledWith(stubCallAdapters, ...anyArgs.slice(0, 7).concat([sinon.match.same(ortb2Fragments)]));
+    });
+  });
+
   describe('addBidResponse #1', function () {
     let createAuctionStub;
     let adUnits;
@@ -941,6 +981,8 @@ describe('auctionmanager.js', function () {
           const timedOutBids = bidTimeoutCall.args[1];
           assert.equal(timedOutBids.length, 1);
           assert.equal(timedOutBids[0].bidder, BIDDER_CODE1);
+          // Check that additional properties are available
+          assert.equal(timedOutBids[0].params.placementId, 'id');
 
           const auctionEndCall = eventsEmitSpy.withArgs(CONSTANTS.EVENTS.AUCTION_END).getCalls()[0];
           const auctionProps = auctionEndCall.args[1];

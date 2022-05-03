@@ -86,7 +86,7 @@ export const spec = {
 
     };
 
-    const fpd = config.getConfig('ortb2');
+    const fpd = bidderRequest.ortb2;
 
     if (fpd) {
       payload.fpd = JSON.stringify(fpd);

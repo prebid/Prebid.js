@@ -12,7 +12,7 @@
 import {submodule} from '../src/hook.js';
 import {config} from '../src/config.js';
 import {ajaxBuilder} from '../src/ajax.js';
-import {logError} from '../src/utils.js';
+import {deepAccess, logError} from '../src/utils.js';
 import {find} from '../src/polyfill.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 
@@ -129,7 +129,7 @@ function onRequestCompleted(mediaID, success) {
 function enrichBidRequest(bidReqConfig, onDone) {
   activeRequestCount = 0;
   const adUnits = bidReqConfig.adUnits || getGlobal().adUnits;
-  enrichAdUnits(adUnits);
+  enrichAdUnits(adUnits, bidReqConfig.ortb2Fragments);
   if (activeRequestCount <= 0) {
     onDone();
   } else {
@@ -141,10 +141,10 @@ function enrichBidRequest(bidReqConfig, onDone) {
  * get targeting data and write to bids
  * @function
  * @param {adUnit[]} adUnits
- * @param {function} onDone
+ * @param ortb2Fragments
  */
-export function enrichAdUnits(adUnits) {
-  const fpdFallback = config.getConfig('ortb2.site.ext.data.jwTargeting');
+export function enrichAdUnits(adUnits, ortb2Fragments = {}) {
+  const fpdFallback = deepAccess(ortb2Fragments.global, 'site.ext.data.jwTargeting');
   adUnits.forEach(adUnit => {
     const jwTargeting = extractPublisherParams(adUnit, fpdFallback);
     if (!jwTargeting || !Object.keys(jwTargeting).length) {
@@ -155,10 +155,12 @@ export function enrichAdUnits(adUnits) {
       if (!vat) {
         return;
       }
-      const contentId = getContentId(vat.mediaID);
-      const contentData = getContentData(vat.segments);
+      const mediaId = vat.mediaID;
+      const contentId = getContentId(mediaId);
+      const contentSegments = getContentSegments(vat.segments);
+      const contentData = getContentData(mediaId, contentSegments);
       const targeting = formatTargetingResponse(vat);
-      enrichBids(adUnit.bids, targeting, contentId, contentData);
+      enrichBids(ortb2Fragments.bidder || {}, adUnit.bids, targeting, contentId, contentData);
     };
     loadVat(jwTargeting, onVatResponse);
   });
@@ -263,7 +265,7 @@ export function getContentId(mediaID) {
   return 'jw_' + mediaID;
 }
 
-export function getContentData(segments) {
+export function getContentSegments(segments) {
   if (!segments || !segments.length) {
     return;
   }
@@ -276,21 +278,37 @@ export function getContentData(segments) {
     return convertedSegments;
   }, []);
 
-  return {
-    name: 'jwplayer',
-    ext: {
-      segtax: 502
-    },
-    segment: formattedSegments
-  };
+  return formattedSegments;
 }
 
-export function addOrtbSiteContent(bid, contentId, contentData) {
+export function getContentData(mediaId, segments) {
+  if (!mediaId && !segments) {
+    return;
+  }
+
+  const contentData = {
+    name: 'jwplayer.com',
+    ext: {}
+  };
+
+  if (mediaId) {
+    contentData.ext.cids = [mediaId];
+  }
+
+  if (segments) {
+    contentData.segment = segments;
+    contentData.ext.segtax = 502;
+  }
+
+  return contentData;
+}
+
+export function addOrtbSiteContent(bidderOrtb2, bid, contentId, contentData) {
   if (!contentId && !contentData) {
     return;
   }
 
-  let ortb2 = bid.ortb2 || {};
+  let ortb2 = bidderOrtb2[bid.bidder] || {};
   let site = ortb2.site = ortb2.site || {};
   let content = site.content = site.content || {};
 
@@ -303,17 +321,18 @@ export function addOrtbSiteContent(bid, contentId, contentData) {
     data.push(contentData);
   }
 
-  bid.ortb2 = ortb2;
+  bidderOrtb2[bid.bidder] = ortb2;
 }
 
-function enrichBids(bids, targeting, contentId, contentData) {
+function enrichBids(bidderOrtb2, bids, targeting, contentId, contentData) {
+  // TODO: this does not need to set bidder-level FPD, follow up when https://github.com/prebid/Prebid.js/pull/8354 gets through
   if (!bids) {
     return;
   }
 
   bids.forEach(bid => {
     addTargetingToBid(bid, targeting);
-    addOrtbSiteContent(bid, contentId, contentData);
+    addOrtbSiteContent(bidderOrtb2, bid, contentId, contentData);
   });
 }
 

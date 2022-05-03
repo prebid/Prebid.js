@@ -36,7 +36,7 @@ export const spec = {
     return !!bid.params.publisher && !!bid.params.adslot;
   },
 
-  buildRequests: function(validBidRequests) {
+  buildRequests: function(validBidRequests, bidderRequest) {
     return validBidRequests.map(bidRequest => {
       let endPoint = 'https://adscience-nocookie.nl/prebid/display';
       let consentString = '';
@@ -57,7 +57,7 @@ export const spec = {
           adSlot: bidRequest.params.adslot,
           cur: getCurrency(),
           url: getDomain(bidRequest),
-          ortb2: config.getConfig('ortb2'),
+          ortb2: bidderRequest.ortb2,
           consent: consentString,
           gdpr: gdpr
 

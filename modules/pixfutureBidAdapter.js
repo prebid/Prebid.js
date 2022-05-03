@@ -101,7 +101,6 @@ export const spec = {
       if (validBidRequests[0].userId) {
         let eids = [];
 
-        addUserId(eids, deepAccess(validBidRequests[0], `userId.flocId.id`), 'chrome.com', null);
         addUserId(eids, deepAccess(validBidRequests[0], `userId.criteoId`), 'criteo.com', null);
         addUserId(eids, deepAccess(validBidRequests[0], `userId.unifiedId`), 'thetradedesk.com', null);
         addUserId(eids, deepAccess(validBidRequests[0], `userId.id5Id`), 'id5.io', null);

@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/improvedigitalBidAdapter.js';
 import { config } from 'src/config.js';
-import * as utils from 'src/utils.js';
+import { deepClone } from 'src/utils.js';
 import {BANNER, VIDEO} from '../../../src/mediaTypes';
 
 describe('Improve Digital Adapter Tests', function () {
@@ -34,7 +34,7 @@ describe('Improve Digital Adapter Tests', function () {
     skipafter: 30
   }
 
-  const instreamBidRequest = utils.deepClone(simpleBidRequest);
+  const instreamBidRequest = deepClone(simpleBidRequest);
   instreamBidRequest.mediaTypes = {
     video: {
       context: 'instream',
@@ -42,7 +42,7 @@ describe('Improve Digital Adapter Tests', function () {
     }
   };
 
-  const outstreamBidRequest = utils.deepClone(simpleBidRequest);
+  const outstreamBidRequest = deepClone(simpleBidRequest);
   outstreamBidRequest.mediaTypes = {
     video: {
       context: 'outstream',
@@ -50,7 +50,7 @@ describe('Improve Digital Adapter Tests', function () {
     }
   };
 
-  const multiFormatBidRequest = utils.deepClone(simpleBidRequest);
+  const multiFormatBidRequest = deepClone(simpleBidRequest);
   multiFormatBidRequest.mediaTypes = {
     banner: {
       sizes: [[300, 250], [160, 600]]
@@ -294,6 +294,14 @@ describe('Improve Digital Adapter Tests', function () {
       expect(payload.user.ext.consented_providers_settings.consented_providers).to.exist.and.to.deep.equal([1, 35, 41, 101]);
     });
 
+    it('should not add consented providers when empty', function () {
+      const bidderRequestGdprEmptyAddtl = deepClone(bidderRequestGdpr);
+      bidderRequestGdprEmptyAddtl.gdprConsent.addtlConsent = '1~';
+      const bidRequest = Object.assign({}, simpleBidRequest);
+      const payload = JSON.parse(spec.buildRequests([bidRequest], bidderRequestGdprEmptyAddtl)[0].data);
+      expect(payload.user.ext.consented_providers_settings).to.not.exist;
+    });
+
     it('should add CCPA consent string', function () {
       const bidRequest = Object.assign({}, simpleBidRequest);
       const request = spec.buildRequests([bidRequest], {...bidderRequest, ...{ uspConsent: '1YYY' }});
@@ -306,6 +314,20 @@ describe('Improve Digital Adapter Tests', function () {
       const request = spec.buildRequests([bidRequest], bidderRequestReferrer)[0];
       const payload = JSON.parse(request.data);
       expect(payload.site.page).to.equal('https://blah.com/test.html');
+    });
+
+    it('should add timeout', function () {
+      const bidderRequestTimeout = deepClone(bidderRequest);
+      // Int
+      bidderRequestTimeout.timeout = 300;
+      const bidRequest = Object.assign({}, simpleBidRequest);
+      let request = spec.buildRequests([bidRequest], bidderRequestTimeout)[0];
+      expect(JSON.parse(request.data).tmax).to.equal(300);
+
+      // String
+      bidderRequestTimeout.timeout = '500';
+      request = spec.buildRequests([bidRequest], bidderRequestTimeout)[0];
+      expect(JSON.parse(request.data).tmax).to.equal(500);
     });
 
     it('should not add video params for banner', function () {
@@ -378,7 +400,7 @@ describe('Improve Digital Adapter Tests', function () {
         skipafter: 30
       }
       bidRequest.params.video = videoTest;
-      let request = spec.buildRequests([bidRequest])[0];
+      let request = spec.buildRequests([bidRequest], {})[0];
       let payload = JSON.parse(request.data);
       expect(payload.imp[0].video.skip).to.equal(1);
       expect(payload.imp[0].video.skipmin).to.equal(5);
@@ -387,7 +409,7 @@ describe('Improve Digital Adapter Tests', function () {
       // 0 - leave out skipmin and skipafter
       videoTest.skip = 0;
       bidRequest.params.video = videoTest;
-      request = spec.buildRequests([bidRequest])[0];
+      request = spec.buildRequests([bidRequest], {})[0];
       payload = JSON.parse(request.data);
       expect(payload.imp[0].video.skip).to.equal(0);
       expect(payload.imp[0].video.skipmin).to.not.exist;
@@ -396,7 +418,7 @@ describe('Improve Digital Adapter Tests', function () {
       // other
       videoTest.skip = 'blah';
       bidRequest.params.video = videoTest;
-      request = spec.buildRequests([bidRequest])[0];
+      request = spec.buildRequests([bidRequest], {})[0];
       payload = JSON.parse(request.data);
       expect(payload.imp[0].video.skip).to.not.exist;
       expect(payload.imp[0].video.skipmin).to.not.exist;
@@ -414,7 +436,7 @@ describe('Improve Digital Adapter Tests', function () {
       const videoTestInvParam = Object.assign({}, videoTest);
       videoTestInvParam.blah = 1;
       bidRequest.params.video = videoTestInvParam;
-      let request = spec.buildRequests([bidRequest])[0];
+      let request = spec.buildRequests([bidRequest], {})[0];
       let payload = JSON.parse(request.data);
       expect(payload.imp[0].video.blah).not.to.exist;
     });
@@ -422,7 +444,7 @@ describe('Improve Digital Adapter Tests', function () {
     it('should set video params for outstream', function() {
       const bidRequest = JSON.parse(JSON.stringify(outstreamBidRequest));
       bidRequest.params.video = videoParams;
-      const request = spec.buildRequests([bidRequest])[0];
+      const request = spec.buildRequests([bidRequest], {})[0];
       const payload = JSON.parse(request.data);
       expect(payload.imp[0].video).to.deep.equal({...{
         mimes: ['video/mp4'],
@@ -436,7 +458,7 @@ describe('Improve Digital Adapter Tests', function () {
     it('should set video params for multi-format', function() {
       const bidRequest = JSON.parse(JSON.stringify(multiFormatBidRequest));
       bidRequest.params.video = videoParams;
-      const request = spec.buildRequests([bidRequest])[0];
+      const request = spec.buildRequests([bidRequest], {})[0];
       const payload = JSON.parse(request.data);
       const testVideoParams = Object.assign({
         placement: OUTSTREAM_TYPE,
@@ -568,14 +590,12 @@ describe('Improve Digital Adapter Tests', function () {
     });
 
     it('should not set site when app is defined in FPD', function () {
-      const getConfigStub = sinon.stub(config, 'getConfig');
-      getConfigStub.withArgs('ortb2.app').returns({ content: 'XYZ' });
-      let request = spec.buildRequests([simpleBidRequest], bidderRequest)[0];
+      const ortb2 = {app: {content: 'XYZ'}};
+      let request = spec.buildRequests([simpleBidRequest], {...bidderRequest, ortb2})[0];
       let payload = JSON.parse(request.data);
       expect(payload.site).does.not.exist;
       expect(payload.app).does.exist;
       expect(payload.app.content).does.exist.and.equal('XYZ');
-      getConfigStub.restore();
     });
 
     it('should not set site when app is defined in CONFIG', function () {
@@ -609,10 +629,8 @@ describe('Improve Digital Adapter Tests', function () {
       expect(payload.site.page).does.exist.and.equal('https://blah.com/test.html');
       expect(payload.site.domain).does.exist.and.equal('blah.com');
 
-      getConfigStub.withArgs('ortb2.site').returns({
-        content: 'ZZZ',
-      });
-      request = spec.buildRequests([simpleBidRequest], bidderRequestReferrer)[0];
+      const ortb2 = {site: {content: 'ZZZ'}};
+      request = spec.buildRequests([simpleBidRequest], {...bidderRequestReferrer, ortb2})[0];
       payload = JSON.parse(request.data);
       expect(payload.site.content).does.exist.and.equal('ZZZ');
       expect(payload.site.page).does.exist.and.equal('https://blah.com/test.html');
@@ -916,7 +934,7 @@ describe('Improve Digital Adapter Tests', function () {
       }
     ];
 
-    const expectedBidOutstreamVideo = utils.deepClone(expectedBidInstreamVideo);
+    const expectedBidOutstreamVideo = deepClone(expectedBidInstreamVideo);
     expectedBidOutstreamVideo[0].adResponse = {
       content: expectedBidOutstreamVideo[0].vastXml
     };
