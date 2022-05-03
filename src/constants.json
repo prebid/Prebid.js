@@ -133,7 +133,7 @@
     "salePrice": "saleprice",
     "displayUrl": "displayurl"
   },  
-  "ASSET_TYPES": {
+  "NATIVE_ASSET_TYPES": {
     "sponsored": 1,
     "desc": 2,
     "rating": 3,
@@ -147,7 +147,7 @@
     "displayurl": 11,
     "ctatext": 12
   }, 
-  "IMAGE_TYPES": {
+  "NATIVE_IMAGE_TYPES": {
     "ICON": 1,
     "MAIN": 3
   }

@@ -411,7 +411,7 @@ let nativeDataNames = Object.keys(CONSTANTS.PREBID_NATIVE_DATA_KEYS_TO_ORTB);
 // returns object with legacy asset name as key and asset id as value:
 // { "sponsoredBy": 1, ... }
 let nativeDataIdMap = nativeDataNames.reduce((prev, key) => {
-  prev[key] = CONSTANTS.ASSET_TYPES[CONSTANTS.PREBID_NATIVE_DATA_KEYS_TO_ORTB[key]];
+  prev[key] = CONSTANTS.NATIVE_ASSET_TYPES[CONSTANTS.PREBID_NATIVE_DATA_KEYS_TO_ORTB[key]];
   return prev;
 }, {});
 
