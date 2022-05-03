@@ -149,7 +149,7 @@ function extractSchain(bids, requestId) {
 function extractEids(bids) {
   if (!bids) return;
 
-  const bid = bids.find(bid => isArray(bid.userIdAsEids) && bid.userIdAsEids.length > 0);
+  const bid = find(bids, bid => isArray(bid.userIdAsEids) && bid.userIdAsEids.length > 0);
   return bid ? bid.userIdAsEids : bids[0].userIdAsEids;
 }
 
