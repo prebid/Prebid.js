@@ -558,13 +558,16 @@ Object.assign(ORTB2.prototype, {
       const nativeParams = adUnit.nativeParams;
       let nativeAssets;
       if (nativeParams) {
+        let idCounter = -1;
         try {
           nativeAssets = nativeAssetCache[impressionId] = Object.keys(nativeParams).reduce((assets, type) => {
             let params = nativeParams[type];
 
             function newAsset(obj) {
+              idCounter++;
               return Object.assign({
-                required: params.required ? 1 : 0
+                required: params.required ? 1 : 0,
+                id: (isNumber(params.id)) ? idCounter = params.id : idCounter
               }, obj ? cleanObj(obj) : {});
             }
 

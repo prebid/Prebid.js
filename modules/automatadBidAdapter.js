@@ -18,7 +18,7 @@ export const spec = {
 
   isBidRequestValid: function (bid) {
     // will receive request bid. check if have necessary params for bidding
-    return (bid && bid.hasOwnProperty('params') && bid.params.hasOwnProperty('siteId') && bid.params.hasOwnProperty('placementId') && bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty('banner'))
+    return (bid && bid.hasOwnProperty('params') && bid.params.hasOwnProperty('siteId') && bid.params.siteId != null && bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty('banner') && typeof bid.mediaTypes.banner == 'object')
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
@@ -29,16 +29,29 @@ export const spec = {
     const siteId = validBidRequests[0].params.siteId
 
     const impressions = validBidRequests.map(bidRequest => {
-      return {
-        id: bidRequest.bidId,
-        adUnitCode: bidRequest.adUnitCode,
-        placement: bidRequest.params.placementId,
-        banner: {
-          format: bidRequest.sizes.map(sizeArr => ({
-            w: sizeArr[0],
-            h: sizeArr[1],
-          }))
-        },
+      if (bidRequest.params.hasOwnProperty('placementId')) {
+        return {
+          id: bidRequest.bidId,
+          adUnitCode: bidRequest.adUnitCode,
+          placement: bidRequest.params.placementId,
+          banner: {
+            format: bidRequest.sizes.map(sizeArr => ({
+              w: sizeArr[0],
+              h: sizeArr[1],
+            }))
+          },
+        }
+      } else {
+        return {
+          id: bidRequest.bidId,
+          adUnitCode: bidRequest.adUnitCode,
+          banner: {
+            format: bidRequest.sizes.map(sizeArr => ({
+              w: sizeArr[0],
+              h: sizeArr[1],
+            }))
+          },
+        }
       }
     })
 
