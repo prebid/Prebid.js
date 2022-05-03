@@ -211,7 +211,7 @@ function _getGlobalFpd() {
     //    publisher may accidentally make it an object
     try {
       fpdUser.data.push({
-        name: "1PlusX",
+        name: '1PlusX',
         segment: [oneplusx]
       })
     } catch (err) {
