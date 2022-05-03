@@ -204,12 +204,19 @@ function _getGlobalFpd() {
   const fpdContext = Object.assign({}, ortbData.site);
   const fpdUser = Object.assign({}, ortbData.user);
 
-  if (!isEmpty(oneplusx)) {
+  // NEEDS TEST: check that oneplusx is parseable
+  if (oneplusx && _testJSONParse(oneplusx)) {
     fpdUser.data = fpdUser.data || []
-    fpdUser.data.push({
-      name: '1PlusX',
-      segment: [JSON.parse(oneplusx)]
-    })
+    // NEEDS TEST: check that fpdUser.data is an array before pushing;
+    //    publisher may accidentally make it an object
+    try {
+      fpdUser.data.push({
+        name: "1PlusX",
+        segment: [oneplusx]
+      })
+    } catch (err) {
+      logError('Triplelift: error adding 1PlusX segemnts: ', err);
+    }
   }
 
   _addEntries(context, fpdContext);
@@ -222,6 +229,16 @@ function _getGlobalFpd() {
     fpd.user = user;
   }
   return fpd;
+}
+
+function _testJSONParse(input) {
+  if (input == null) return false
+  try {
+    const parsedJson = JSON.parse(input)
+    return parsedJson
+  } catch (err) {
+    logError('Triplelift: error parsing JSON', err)
+  }
 }
 
 function _getAdUnitFpd(adUnitFpd) {
