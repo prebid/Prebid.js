@@ -1093,7 +1093,6 @@ describe('OpenxAdapter', function () {
         tapadId: '111-tapadid',
         tdid: '1111-tdid',
         uid2: {id: '1111-uid2'},
-        flocId: {id: '12144', version: 'chrome.1.1'},
         novatiq: {snowflake: '1111-novatiqid'},
         admixerId: '1111-admixerid',
         deepintentId: '1111-deepintentid',
@@ -1146,9 +1145,6 @@ describe('OpenxAdapter', function () {
             switch (userIdProviderKey) {
               case 'merkleId':
                 userIdValue = EXAMPLE_DATA_BY_ATTR.merkleId.id;
-                break;
-              case 'flocId':
-                userIdValue = EXAMPLE_DATA_BY_ATTR.flocId.id;
                 break;
               case 'uid2':
                 userIdValue = EXAMPLE_DATA_BY_ATTR.uid2.id;

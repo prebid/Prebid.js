@@ -148,11 +148,6 @@ pbjs.setConfig({
                   expires: 30
               }
         },{
-              name: 'flocId',
-               params: {
-                    token: "Registered token or default sharedid.org token" // Default sharedid.org token: "A3dHTSoNUMjjERBLlrvJSelNnwWUCwVQhZ5tNQ+sll7y+LkPPVZXtB77u2y7CweRIxiYaGwGXNlW1/dFp8VMEgIAAAB+eyJvcmlnaW4iOiJodHRwczovL3NoYXJlZGlkLm9yZzo0NDMiLCJmZWF0dXJlIjoiSW50ZXJlc3RDb2hvcnRBUEkiLCJleHBpcnkiOjE2MjYyMjA3OTksImlzU3ViZG9tYWluIjp0cnVlLCJpc1RoaXJkUGFydHkiOnRydWV9"
-           }
-        },{
              name: "kpuid",
              params:{
                     accountid: 124 // example of account id
@@ -294,11 +289,6 @@ pbjs.setConfig({
                   expires: 30
               }
        },{
-              name: 'flocId',
-               params: {
-               token: "Registered token or default sharedid.org token" // Default sharedid.org token: "A3dHTSoNUMjjERBLlrvJSelNnwWUCwVQhZ5tNQ+sll7y+LkPPVZXtB77u2y7CweRIxiYaGwGXNlW1/dFp8VMEgIAAAB+eyJvcmlnaW4iOiJodHRwczovL3NoYXJlZGlkLm9yZzo0NDMiLCJmZWF0dXJlIjoiSW50ZXJlc3RDb2hvcnRBUEkiLCJleHBpcnkiOjE2MjYyMjA3OTksImlzU3ViZG9tYWluIjp0cnVlLCJpc1RoaXJkUGFydHkiOnRydWV9"
-        }
-        },{
             name: "deepintentId",
             storage: {
                 type: "html5",
