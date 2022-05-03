@@ -1,17 +1,21 @@
 import {ajax} from '../src/ajax.js';
 import {config} from '../src/config.js';
+import { transformBidderParamKeywords } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'nexx360';
-const BIDDER_URL = 'https://fast.nexx360.io/prebid'
-const CACHE_URL = 'https://fast.nexx360.io/cache'
-const METRICS_TRACKER_URL = 'https://fast.nexx360.io/track-imp'
+const BIDDER_URL = 'https://fast.nexx360.io/prebid';
+const CACHE_URL = 'https://fast.nexx360.io/cache';
+const METRICS_TRACKER_URL = 'https://fast.nexx360.io/track-imp';
+
+const GVLID = 965;
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   aliases: ['revenuemaker'], // short code
-  supportedMediaTypes: [BANNER],
+  supportedMediaTypes: [BANNER, VIDEO],
   /**
          * Determines whether or not the given bid request is valid.
          *
@@ -19,6 +23,9 @@ export const spec = {
          * @return boolean True if this is a valid bid, and false otherwise.
          */
   isBidRequestValid: function(bid) {
+    if (!!bid.params.bidfloorCurrency && !['EUR', 'USD'].includes(bid.params.bidfloorCurrency)) return false;
+    if (!!bid.params.bidfloor && typeof bid.params.bidfloor !== 'number') return false;
+    if (!!bid.params.keywords && typeof bid.params.keywords !== 'object') return false;
     return !!(bid.params.account && bid.params.tagId);
   },
   /**
@@ -34,15 +41,20 @@ export const spec = {
     let userEids = null;
     Object.keys(validBidRequests).forEach(key => {
       adunitValue = validBidRequests[key];
-      adUnits.push({
+      const foo = {
         account: adunitValue.params.account,
         tagId: adunitValue.params.tagId,
+        videoExt: adunitValue.params.videoExt,
         label: adunitValue.adUnitCode,
         bidId: adunitValue.bidId,
         auctionId: adunitValue.auctionId,
         transactionId: adunitValue.transactionId,
-        mediatypes: adunitValue.mediaTypes
-      });
+        mediatypes: adunitValue.mediaTypes,
+        bidfloor: adunitValue.params.bidfloor || 0,
+        bidfloorCurrency: adunitValue.params.bidfloorCurrency || 'USD',
+        keywords: adunitValue.params.keywords ? transformBidderParamKeywords(adunitValue.params.keywords) : [],
+      }
+      adUnits.push(foo);
       if (adunitValue.userIdAsEids) userEids = adunitValue.userIdAsEids;
     });
     const payload = {
@@ -77,20 +89,19 @@ export const spec = {
          */
   interpretResponse: function(serverResponse, bidRequest) {
     const serverBody = serverResponse.body;
-    // const headerValue = serverResponse.headers.get('some-response-header');
     const bidResponses = [];
     let bidResponse = null;
     let value = null;
     if (serverBody.hasOwnProperty('responses')) {
       Object.keys(serverBody['responses']).forEach(key => {
         value = serverBody['responses'][key];
+        const url = `${CACHE_URL}?uuid=${value['uuid']}`;
         bidResponse = {
           requestId: value['bidId'],
           cpm: value['cpm'],
           currency: value['currency'],
           width: value['width'],
           height: value['height'],
-          adUrl: `${CACHE_URL}?uuid=${value['uuid']}`,
           ttl: value['ttl'],
           creativeId: value['creativeId'],
           netRevenue: true,
@@ -105,6 +116,21 @@ export const spec = {
           }
           */
         };
+        if (value.type === 'banner') bidResponse.adUrl = url;
+        if (value.type === 'video') {
+          const params = {
+            type: 'prebid',
+            mediatype: 'video',
+            ssp: value.bidder,
+            tag_id: value.tagId,
+            consent: value.consent,
+            price: value.cpm,
+          };
+          bidResponse.cpm = value.cpm;
+          bidResponse.mediaType = 'video';
+          bidResponse.vastUrl = url;
+          bidResponse.vastImpUrl = `${METRICS_TRACKER_URL}?${new URLSearchParams(params).toString()}`;
+        }
         bidResponses.push(bidResponse);
       });
     }
@@ -133,7 +159,7 @@ export const spec = {
      */
   onBidWon: function(bid) {
     // fires a pixel to confirm a winning bid
-    const params = { type: 'prebid' };
+    const params = { type: 'prebid', mediatype: 'banner' };
     if (bid.hasOwnProperty('nexx360')) {
       if (bid.nexx360.hasOwnProperty('ssp')) params.ssp = bid.nexx360.ssp;
       if (bid.nexx360.hasOwnProperty('tagId')) params.tag_id = bid.nexx360.tagId;
