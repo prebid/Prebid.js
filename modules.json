@@ -1,6 +1,4 @@
 [
-  "prebidServerBidAdapter",
-  "s2sTesting",
   "adlooxAnalyticsAdapter",
   "adlooxRtdProvider",
   "sirdataRtdProvider",
@@ -30,5 +28,7 @@
   "spotxBidAdapter",
   "telariaBidAdapter",
   "tripleliftBidAdapter",
-  "yahoosspBidAdapter"
+  "yahoosspBidAdapter",
+  "userId",
+  "id5IdSystem"
 ]
