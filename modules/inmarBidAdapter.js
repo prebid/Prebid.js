@@ -2,6 +2,7 @@ import { logError } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import {getLegacyFpd} from '../src/utils/legacyFPD.js';
 
 const BIDDER_CODE = 'inmar';
 
@@ -40,7 +41,7 @@ export const spec = {
       uspConsent: bidderRequest.uspConsent,
       currencyCode: config.getConfig('currency.adServerCurrency'),
       coppa: config.getConfig('coppa'),
-      firstPartyData: config.getLegacyFpd(bidderRequest.ortb2),
+      firstPartyData: getLegacyFpd(bidderRequest.ortb2),
       prebidVersion: '$prebid.version$'
     };
 

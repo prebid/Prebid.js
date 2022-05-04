@@ -130,7 +130,6 @@ describe('config API', function () {
     expect(getConfig('foo')).to.eql({baz: 'qux'});
   });
 
-
   it('sets debugging', function () {
     setConfig({ debug: true });
     expect(getConfig('debug')).to.be.true;
