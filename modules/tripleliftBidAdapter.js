@@ -199,23 +199,23 @@ function _getGlobalFpd() {
   const context = {}
   const user = {};
   const ortbData = config.getConfig('ortb2') || {};
-  const oneplusx = storage.getDataFromLocalStorage('1plusx')
+  const [oneplusx, isValid] = _testJSONParse();
 
   const fpdContext = Object.assign({}, ortbData.site);
   const fpdUser = Object.assign({}, ortbData.user);
 
   // NEEDS TEST: check that oneplusx is parseable
-  if (oneplusx && _testJSONParse(oneplusx)) {
+  if (oneplusx && isValid) {
     fpdUser.data = fpdUser.data || []
     // NEEDS TEST: check that fpdUser.data is an array before pushing;
     //    publisher may accidentally make it an object
     try {
       fpdUser.data.push({
-        name: '1PlusX',
+        name: '1plusX',
         segment: [oneplusx]
       })
     } catch (err) {
-      logError('Triplelift: error adding 1PlusX segments: ', err);
+      logError('Triplelift: error adding 1plusX segments: ', err);
     }
   }
 
@@ -231,13 +231,14 @@ function _getGlobalFpd() {
   return fpd;
 }
 
-function _testJSONParse(input) {
-  if (input == null) return false
+function _testJSONParse() {
+  const oneplusx = storage.getDataFromLocalStorage('1plusx');
+  if (oneplusx == null) return [{}, false];
   try {
-    const parsedJson = JSON.parse(input)
-    return parsedJson
+    const parsedJson = JSON.parse(oneplusx);
+    return [parsedJson, true];
   } catch (err) {
-    logError('Triplelift: error parsing JSON: ', err)
+    logError('Triplelift: error parsing JSON: ', err);
   }
 }
 
