@@ -495,14 +495,13 @@ export function newConfig() {
     let topicalConfig = {};
 
     topics.forEach(topic => {
-      let prop = (topic === 'fpd') ? 'ortb2' : topic;
-      let option = (topic === 'fpd') ? convertFpd(options[topic]) : options[topic];
+      let option = options[topic];
 
-      if (isPlainObject(defaults[prop]) && isPlainObject(option)) {
-        option = Object.assign({}, defaults[prop], option);
+      if (isPlainObject(defaults[topic]) && isPlainObject(option)) {
+        option = Object.assign({}, defaults[topic], option);
       }
 
-      topicalConfig[prop] = config[prop] = option;
+      topicalConfig[topic] = config[topic] = option;
     });
 
     callSubscribers(topicalConfig);
@@ -595,14 +594,13 @@ export function newConfig() {
           bidderConfig[bidder] = {};
         }
         Object.keys(config.config).forEach(topic => {
-          let prop = (topic === 'fpd') ? 'ortb2' : topic;
-          let option = (topic === 'fpd') ? convertFpd(config.config[topic]) : config.config[topic];
+          let option = config.config[topic];
 
           if (isPlainObject(option)) {
             const func = mergeFlag ? mergeDeep : Object.assign;
-            bidderConfig[bidder][prop] = func({}, bidderConfig[bidder][prop] || {}, option);
+            bidderConfig[bidder][topic] = func({}, bidderConfig[bidder][topic] || {}, option);
           } else {
-            bidderConfig[bidder][prop] = option;
+            bidderConfig[bidder][topic] = option;
           }
         });
       });
@@ -692,7 +690,6 @@ export function newConfig() {
     setBidderConfig,
     getBidderConfig,
     mergeBidderConfig,
-    convertAdUnitFpd,
     getLegacyFpd,
     getLegacyImpFpd
   };
