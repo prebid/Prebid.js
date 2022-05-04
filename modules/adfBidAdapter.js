@@ -206,6 +206,11 @@ export const spec = {
       request.is_debug = !!test;
       request.test = 1;
     }
+
+    if (config.getConfig('coppa') !== undefined) {
+      deepSetValue(request, 'regs.coppa', config.getConfig('coppa') === true ? 1 : 0);
+    }
+
     if (deepAccess(bidderRequest, 'gdprConsent.gdprApplies') !== undefined) {
       deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
       deepSetValue(request, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies & 1);
