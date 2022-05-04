@@ -3,6 +3,7 @@ import {spec, storage} from 'modules/conversantBidAdapter.js';
 import * as utils from 'src/utils.js';
 import {createEidsArray} from 'modules/userId/eids.js';
 import { config } from '../../../src/config.js';
+import {deepAccess} from 'src/utils';
 
 describe('Conversant adapter tests', function() {
   const siteId = '108060';
@@ -371,6 +372,20 @@ describe('Conversant adapter tests', function() {
     expect(payload.site.content).to.have.property('episode');
     expect(payload.site.content).to.have.property('title');
     config.resetConfig();
+  });
+
+  it('Verify supply chain data', () => {
+    const bidderRequest = {refererInfo: {referer: 'http://test.com?a=b&c=123'}};
+    const schain = {complete: 1, ver: '1.0', nodes: [{asi: 'bidderA.com', sid: '00001', hp: 1}]};
+    const bidsWithSchain = bidRequests.map((bid) => {
+      return Object.assign({
+        schain: schain
+      }, bid);
+    });
+    const request = spec.buildRequests(bidsWithSchain, bidderRequest);
+    const payload = request.data;
+    expect(deepAccess(payload, 'source.ext.schain.nodes')).to.exist;
+    expect(payload.source.ext.schain.nodes[0].asi).equals(schain.nodes[0].asi);
   });
 
   it('Verify override url', function() {

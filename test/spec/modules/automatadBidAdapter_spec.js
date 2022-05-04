@@ -5,7 +5,25 @@ import { newBidder } from 'src/adapters/bidderFactory.js'
 describe('automatadBidAdapter', function () {
   const adapter = newBidder(spec)
 
-  let bidRequest = {
+  let bidRequestRequiredParams = {
+    bidder: 'automatad',
+    params: {siteId: '123ad'},
+    mediaTypes: {
+      banner: {
+        sizes: [[300, 600]],
+      }
+    },
+    adUnitCode: 'some-ad-unit-code',
+    transactionId: '1465569e-52cc-4c36-88a1-7174cfef4b44',
+    sizes: [[300, 600]],
+    bidId: '123abc',
+    bidderRequestId: '3213887463c059',
+    auctionId: 'abc-123',
+    src: 'client',
+    bidRequestsCount: 1
+  }
+
+  let bidRequestAllParams = {
     bidder: 'automatad',
     params: {siteId: '123ad', placementId: '123abc345'},
     mediaTypes: {
@@ -59,10 +77,14 @@ describe('automatadBidAdapter', function () {
   })
 
   describe('isBidRequestValid', function () {
-    let inValidBid = Object.assign({}, bidRequest)
+    let inValidBid = Object.assign({}, bidRequestRequiredParams)
     delete inValidBid.params
     it('should return true if all params present', function () {
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(true)
+      expect(spec.isBidRequestValid(bidRequestAllParams)).to.equal(true)
+    })
+
+    it('should return true if only required params present', function() {
+      expect(spec.isBidRequestValid(bidRequestRequiredParams)).to.equal(true)
     })
 
     it('should return false if any parameter missing', function () {
@@ -71,7 +93,7 @@ describe('automatadBidAdapter', function () {
   })
 
   describe('buildRequests', function () {
-    let req = spec.buildRequests([ bidRequest ], { refererInfo: { } })
+    let req = spec.buildRequests([ bidRequestRequiredParams ], { refererInfo: { } })
     let rdata
 
     it('should return request object', function () {
@@ -87,19 +109,14 @@ describe('automatadBidAdapter', function () {
       expect(rdata.imp.length).to.equal(1)
     })
 
-    it('should include placement', function () {
+    it('should include siteId', function () {
       let r = rdata.imp[0]
-      expect(r.placement !== null).to.be.true
+      expect(r.siteId !== null).to.be.true
     })
 
     it('should include media types', function () {
       let r = rdata.imp[0]
       expect(r.media_types !== null).to.be.true
-    })
-
-    it('should include all publisher params', function () {
-      let r = rdata.imp[0]
-      expect(r.siteID !== null && r.placementID !== null).to.be.true
     })
 
     it('should include adunit code', function () {

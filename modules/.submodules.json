@@ -1,5 +1,6 @@
 {
   "userId": [
+    "33acrossIdSystem",
     "admixerIdSystem",
     "adtelligentIdSystem",
     "akamaiDAPIdSystem",
@@ -15,6 +16,7 @@
     "hadronIdSystem",
     "haloIdSystem",
     "id5IdSystem",
+    "ftrackIdSystem",
     "identityLinkIdSystem",
     "idxIdSystem",
     "imuIdSystem",

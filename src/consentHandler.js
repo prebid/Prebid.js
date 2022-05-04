@@ -55,6 +55,9 @@ export class ConsentHandler {
    * @returns a promise than resolves to the consent data, or null if no consent data is available
    */
   get promise() {
+    if (this.#ready) {
+      return Promise.resolve(this.#data);
+    }
     if (!this.#enabled) {
       this.#resolve(null);
     }
