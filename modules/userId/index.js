@@ -520,6 +520,8 @@ function delayFor(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+const INIT_CANCELED = {};
+
 function idSystemInitializer({delay = delayFor} = {}) {
   /**
    * @returns a {promise, resolve, reject} trio where `promise` is resolved by calling `resolve` or `reject`.
@@ -562,7 +564,7 @@ function idSystemInitializer({delay = delayFor} = {}) {
 
   function cancelAndTry(promise) {
     if (cancel != null) {
-      cancel.reject();
+      cancel.reject(INIT_CANCELED);
     }
     cancel = breakpoint();
     return Promise.race([promise, cancel.promise]);
@@ -803,8 +805,9 @@ function refreshUserIds({submoduleNames} = {}, callback) {
  * });
  * ```
  */
+
 function getUserIdsAsync() {
-  return initIdSystem().then(() => getUserIds(), () => getUserIdsAsync());
+  return initIdSystem().then(() => getUserIds(), (e) => e === INIT_CANCELED ? getUserIdsAsync() : Promise.reject(e));
 }
 
 /**
