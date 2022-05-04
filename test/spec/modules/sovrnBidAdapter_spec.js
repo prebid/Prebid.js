@@ -51,6 +51,18 @@ describe('sovrnBidAdapter', function() {
 
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
     });
+
+    it('should return false when require video params are not passed', function () {
+      const bidRequest = {
+        ...baseBidRequest,
+        'mediaTypes': {
+          'video': {
+          }
+        }
+      }
+
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
+    });
   });
 
   describe('buildRequests', function () {

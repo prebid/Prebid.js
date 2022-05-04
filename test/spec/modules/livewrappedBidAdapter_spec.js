@@ -908,6 +908,7 @@ describe('Livewrapped adapter tests', function () {
     var expected = {user: {ext: {prop: 'value', eids: testbidRequest.bids[0].userIdAsEids}}}
 
     expect(data.rtbData).to.deep.equal(expected);
+    expect(ortb2).to.deep.equal({user: {ext: {prop: 'value'}}});
   });
 
   it('should send schain object if available', function() {
