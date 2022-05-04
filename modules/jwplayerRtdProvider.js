@@ -17,6 +17,7 @@ import {find} from '../src/polyfill.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 
 const SUBMODULE_NAME = 'jwplayer';
+const JWPLAYER_DOMAIN = SUBMODULE_NAME + '.com';
 const segCache = {};
 const pendingRequests = {};
 let activeRequestCount = 0;
@@ -69,7 +70,7 @@ export function fetchTargetingForMediaId(mediaId) {
   const ajax = ajaxBuilder();
   // TODO: Avoid checking undefined vs null by setting a callback to pendingRequests.
   pendingRequests[mediaId] = null;
-  ajax(`https://cdn.jwplayer.com/v2/media/${mediaId}`, {
+  ajax(`https://cdn.${JWPLAYER_DOMAIN}/v2/media/${mediaId}`, {
     success: function (response) {
       const segment = parseSegment(response);
       cacheSegments(segment, mediaId);
@@ -292,7 +293,7 @@ export function getContentData(mediaId, segments) {
   }
 
   const contentData = {
-    name: 'jwplayer.com',
+    name: JWPLAYER_DOMAIN,
     ext: {}
   };
 
@@ -326,7 +327,7 @@ export function getOrtbSiteContent(ortb2, contentId, contentData) {
 
   const currentData = content.data = content.data || [];
   // remove old jwplayer data
-  const data = currentData.filter(datum => datum.name !== 'jwplayer');
+  const data = currentData.filter(datum => datum.name !== JWPLAYER_DOMAIN);
 
   if (contentData) {
     data.push(contentData);
@@ -368,7 +369,7 @@ export function addTargetingToBid(bid, targeting) {
 function getPlayer(playerID) {
   const jwplayer = window.jwplayer;
   if (!jwplayer) {
-    logError('jwplayer.js was not found on page');
+    logError(SUBMODULE_NAME + '.js was not found on page');
     return;
   }
 

@@ -468,7 +468,7 @@ describe('jwplayerRtdProvider', function() {
       const data = updatedConfig.ortb2.site.content.data;
       expect(data).to.have.length(1);
       const datum = data[0];
-      expect(datum).to.have.property('name', 'jwplayer');
+      expect(datum).to.have.property('name', 'jwplayer.com');
       expect(datum).to.have.property('ext');
       expect(datum.ext).to.have.property('segtax', 502);
       expect(datum.segment).to.have.length(2);
@@ -517,7 +517,7 @@ describe('jwplayerRtdProvider', function() {
                 name: 'random',
                 segment: [{id: 'random'}]
               }, {
-                name: 'jwplayer',
+                name: 'jwplayer.com',
                 segment: [{id: 'randomJwPlayer'}]
               }, {
                 name: 'random2',
@@ -559,7 +559,7 @@ describe('jwplayerRtdProvider', function() {
       expect(randomDatum2.segment).to.deep.equal([{id: 'random2'}]);
 
       const jwplayerDatum = data[2];
-      expect(jwplayerDatum).to.have.property('name', 'jwplayer');
+      expect(jwplayerDatum).to.have.property('name', 'jwplayer.com');
       expect(jwplayerDatum).to.have.property('ext');
       expect(jwplayerDatum.ext).to.have.property('segtax', 502);
       expect(jwplayerDatum.segment).to.have.length(2);
