@@ -86,6 +86,7 @@ const getNotificationPayload = bidData => {
           // non-empty bid data
           const bidNonEmptyData = {
             cpm,
+            cpmpl: meta && meta.pricepl,
             creativeId,
             adomain: meta && meta.advertiserDomains && meta.advertiserDomains[0],
             networkName: meta && meta.networkName,
@@ -652,6 +653,7 @@ const spec = {
               meta: {
                 advertiserDomains: adomain,
                 networkName: seat,
+                pricepl: ext && ext.pricepl,
               },
               netRevenue: true,
             };
