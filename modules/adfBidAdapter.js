@@ -207,8 +207,8 @@ export const spec = {
       request.test = 1;
     }
 
-    if (config.getConfig('coppa') !== undefined) {
-      deepSetValue(request, 'regs.coppa', config.getConfig('coppa') === true ? 1 : 0);
+    if (config.getConfig('coppa')) {
+      deepSetValue(request, 'regs.coppa', 1);
     }
 
     if (deepAccess(bidderRequest, 'gdprConsent.gdprApplies') !== undefined) {
