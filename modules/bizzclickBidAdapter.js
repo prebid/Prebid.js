@@ -95,6 +95,7 @@ export const spec = {
         },
         regs: {
           coppa: config.getConfig('coppa') === true ? 1 : 0,
+          ext: {}
         },
         user: {
           ext: {}
@@ -106,25 +107,15 @@ export const spec = {
         imp: [impObject],
       };
 
-      if (bidderRequest && bidderRequest.uspConsent) {
-        data.regs.ext.us_privacy = bidderRequest.uspConsent;
-      }
-
-      if (bidderRequest && bidderRequest.gdprConsent) {
-        let { gdprApplies, consentString } = bidderRequest.gdprConsent;
-        data.regs.ext.gdpr = gdprApplies ? 1 : 0;
-        data.user.ext.consent = consentString;
-      }
-
-      if (bidRequest.schain) {
-        deepSetValue(data, 'source.ext.schain', bidRequest.schain);
-      }
-
       let connection = navigator.connection || navigator.webkitConnection;
       if (connection && connection.effectiveType) {
         data.device.connectiontype = connection.effectiveType;
       }
       if (bidRequest) {
+        if (bidRequest.schain) {
+          deepSetValue(data, 'source.ext.schain', bidRequest.schain);
+        }
+
         if (bidRequest.gdprConsent && bidRequest.gdprConsent.gdprApplies) {
           deepSetValue(data, 'regs.ext.gdpr', bidRequest.gdprConsent.gdprApplies ? 1 : 0);
           deepSetValue(data, 'user.ext.consent', bidRequest.gdprConsent.consentString);
