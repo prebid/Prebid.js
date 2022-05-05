@@ -2,6 +2,7 @@
 import {expect} from 'chai';
 import {spec} from 'modules/pulsepointBidAdapter.js';
 import {deepClone} from 'src/utils.js';
+import { config } from 'src/config.js';
 
 describe('PulsePoint Adapter Tests', function () {
   const slotConfigs = [{
@@ -615,19 +616,21 @@ describe('PulsePoint Adapter Tests', function () {
   });
   it('Verify common id parameters', function () {
     const bidRequests = deepClone(slotConfigs);
-    bidRequests[0].userId = {
-      pubcid: 'userid_pubcid',
-      tdid: 'userid_ttd',
-      digitrustid: {
-        data: {
-          id: 'userid_digitrust',
-          keyv: 4,
-          privacy: {optout: false},
-          producer: 'ABC',
-          version: 2
+    bidRequests[0].userIdAsEids = [{
+      source: 'pubcid.org',
+      uids: [{
+        id: 'userid_pubcid'
+      }]
+    }, {
+      source: 'adserver.org',
+      uids: [{
+        id: 'userid_ttd',
+        ext: {
+          rtiPartner: 'TDID'
         }
-      }
-    };
+      }]
+    }
+    ];
     const request = spec.buildRequests(bidRequests, bidderRequest);
     expect(request).to.be.not.null;
     const ortbRequest = request.data;
@@ -636,70 +639,7 @@ describe('PulsePoint Adapter Tests', function () {
     expect(ortbRequest.user).to.not.be.undefined;
     expect(ortbRequest.user.ext).to.not.be.undefined;
     expect(ortbRequest.user.ext.eids).to.not.be.undefined;
-    expect(ortbRequest.user.ext.eids).to.have.lengthOf(2);
-    expect(ortbRequest.user.ext.eids[0].source).to.equal('pubcid.org');
-    expect(ortbRequest.user.ext.eids[0].uids).to.have.lengthOf(1);
-    expect(ortbRequest.user.ext.eids[0].uids[0].id).to.equal('userid_pubcid');
-    expect(ortbRequest.user.ext.eids[1].source).to.equal('adserver.org');
-    expect(ortbRequest.user.ext.eids[1].uids).to.have.lengthOf(1);
-    expect(ortbRequest.user.ext.eids[1].uids[0].id).to.equal('userid_ttd');
-    expect(ortbRequest.user.ext.eids[1].uids[0].ext).to.not.be.null;
-    expect(ortbRequest.user.ext.eids[1].uids[0].ext.rtiPartner).to.equal('TDID');
-    expect(ortbRequest.user.ext.digitrust).to.not.be.null;
-    expect(ortbRequest.user.ext.digitrust.id).to.equal('userid_digitrust');
-    expect(ortbRequest.user.ext.digitrust.keyv).to.equal(4);
-  });
-  it('Verify new external user id partners', function () {
-    const bidRequests = deepClone(slotConfigs);
-    bidRequests[0].userId = {
-      britepoolid: 'britepool_id123',
-      criteoId: 'criteo_id234',
-      idl_env: 'idl_id123',
-      id5id: { uid: 'id5id_234' },
-      parrableId: { eid: 'parrable_id234' },
-      lipb: {
-        lipbid: 'liveintent_id123'
-      },
-      haloId: {
-        haloId: 'halo_user1'
-      },
-      lotamePanoramaId: 'lotame_user2',
-      merkleId: 'merkle_user3',
-      fabrickId: 'fabrick_user4',
-      connectid: 'connect_user5',
-      uid2: {
-        id: 'uid2_user6'
-      }
-    };
-    const userVerify = function(obj, source, id) {
-      expect(obj).to.deep.equal({
-        source,
-        uids: [{
-          id
-        }]
-      });
-    };
-    const request = spec.buildRequests(bidRequests, bidderRequest);
-    expect(request).to.be.not.null;
-    const ortbRequest = request.data;
-    expect(request.data).to.be.not.null;
-    // user object
-    expect(ortbRequest.user).to.not.be.undefined;
-    expect(ortbRequest.user.ext).to.not.be.undefined;
-    expect(ortbRequest.user.ext.eids).to.not.be.undefined;
-    expect(ortbRequest.user.ext.eids).to.have.lengthOf(12);
-    userVerify(ortbRequest.user.ext.eids[0], 'britepool.com', 'britepool_id123');
-    userVerify(ortbRequest.user.ext.eids[1], 'criteo.com', 'criteo_id234');
-    userVerify(ortbRequest.user.ext.eids[2], 'liveramp.com', 'idl_id123');
-    userVerify(ortbRequest.user.ext.eids[3], 'id5-sync.com', 'id5id_234');
-    userVerify(ortbRequest.user.ext.eids[4], 'parrable.com', 'parrable_id234');
-    userVerify(ortbRequest.user.ext.eids[5], 'neustar.biz', 'fabrick_user4');
-    userVerify(ortbRequest.user.ext.eids[6], 'audigent.com', 'halo_user1');
-    userVerify(ortbRequest.user.ext.eids[7], 'merkleinc.com', 'merkle_user3');
-    userVerify(ortbRequest.user.ext.eids[8], 'crwdcntrl.net', 'lotame_user2');
-    userVerify(ortbRequest.user.ext.eids[9], 'verizonmedia.com', 'connect_user5');
-    userVerify(ortbRequest.user.ext.eids[10], 'uidapi.com', 'uid2_user6');
-    userVerify(ortbRequest.user.ext.eids[11], 'liveintent.com', 'liveintent_id123');
+    expect(ortbRequest.user.ext.eids).to.deep.equal(bidRequests[0].userIdAsEids);
   });
   it('Verify multiple adsizes', function () {
     const bidRequests = deepClone(slotConfigs);

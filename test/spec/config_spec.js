@@ -16,8 +16,10 @@ let setDefaults;
 describe('config API', function () {
   let logErrorSpy;
   let logWarnSpy;
+  let config;
+
   beforeEach(function () {
-    const config = newConfig();
+    config = newConfig();
     getConfig = config.getConfig;
     setConfig = config.setConfig;
     readConfig = config.readConfig;
@@ -623,5 +625,26 @@ describe('config API', function () {
     expect(ortb2Config.site.content.data).to.deep.include.members([siteObj1]);
     expect(ortb2Config.user.data).to.have.lengthOf(2);
     expect(ortb2Config.site.content.data).to.have.lengthOf(1);
+  });
+
+  it('should not corrupt global configuration with bidder configuration', () => {
+    // https://github.com/prebid/Prebid.js/issues/7956
+    config.setConfig({
+      outer: {
+        inner: ['global']
+      }
+    });
+    config.setBidderConfig({
+      bidders: ['bidder'],
+      config: {
+        outer: {
+          inner: ['bidder']
+        }
+      }
+    });
+    config.runWithBidder('bidder', () => config.getConfig())
+    expect(config.getConfig('outer')).to.eql({
+      inner: ['global']
+    });
   });
 });

@@ -1,7 +1,7 @@
-import { isArray, deepAccess, getOrigin, logError } from '../src/utils.js';
-import { BANNER, NATIVE } from '../src/mediaTypes.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import {deepAccess, getOrigin, isArray, logError} from '../src/utils.js';
+import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {includes} from '../src/polyfill.js';
 
 const BIDDER_CODE = 'rtbhouse';
 const REGIONS = ['prebid-eu', 'prebid-us', 'prebid-asia'];
@@ -9,6 +9,7 @@ const ENDPOINT_URL = 'creativecdn.com/bidder/prebid/bids';
 const DEFAULT_CURRENCY_ARR = ['USD']; // NOTE - USD is the only supported currency right now; Hardcoded for bids
 const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE];
 const TTL = 55;
+const GVLID = 16;
 
 // Codes defined by OpenRTB Native Ads 1.1 specification
 export const OPENRTB = {
@@ -36,6 +37,7 @@ export const OPENRTB = {
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
+  gvlid: GVLID,
 
   isBidRequestValid: function (bid) {
     return !!(includes(REGIONS, bid.params.region) && bid.params.publisherId);

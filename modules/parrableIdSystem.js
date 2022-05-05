@@ -7,13 +7,13 @@
 
 // ci trigger: 1
 
-import { timestamp, logError, logWarn, isEmpty, contains, inIframe, deepClone, isPlainObject } from '../src/utils.js';
-import find from 'core-js-pure/features/array/find.js';
-import { ajax } from '../src/ajax.js';
-import { submodule } from '../src/hook.js';
-import { getRefererInfo } from '../src/refererDetection.js';
-import { uspDataHandler } from '../src/adapterManager.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {contains, deepClone, inIframe, isEmpty, isPlainObject, logError, logWarn, timestamp} from '../src/utils.js';
+import {find} from '../src/polyfill.js';
+import {ajax} from '../src/ajax.js';
+import {submodule} from '../src/hook.js';
+import {getRefererInfo} from '../src/refererDetection.js';
+import {uspDataHandler} from '../src/adapterManager.js';
+import {getStorageManager} from '../src/storageManager.js';
 
 const PARRABLE_URL = 'https://h.parrable.com/prebid';
 const PARRABLE_COOKIE_NAME = '_parrable_id';
@@ -23,7 +23,7 @@ const LEGACY_OPTOUT_COOKIE_NAME = '_parrable_optout';
 const ONE_YEAR_MS = 364 * 24 * 60 * 60 * 1000;
 const EXPIRE_COOKIE_DATE = 'Thu, 01 Jan 1970 00:00:00 GMT';
 
-const storage = getStorageManager(PARRABLE_GVLID);
+const storage = getStorageManager({gvlid: PARRABLE_GVLID});
 
 function getExpirationDate() {
   const oneYearFromNow = new Date(timestamp() + ONE_YEAR_MS);

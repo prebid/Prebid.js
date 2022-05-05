@@ -39,7 +39,7 @@ module.exports = function(api, options) {
         const modName = getModuleName(state.filename);
         if (modName != null) {
           // append "registration" of module file to $$PREBID_GLOBAL$$.installedModules
-          path.node.body.push(...api.parse(`window.${pbGlobal}.installedModules.push('${modName}');`).program.body);
+          path.node.body.push(...api.parse(`window.${pbGlobal}.installedModules.push('${modName}');`, {filename: state.filename}).program.body);
         }
       },
       StringLiteral(path) {

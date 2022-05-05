@@ -100,6 +100,13 @@ describe('Zeta Ssp Bid Adapter', function () {
     expect(payload.user.ext.eids).to.eql(eids);
   });
 
+  it('Test contains ua and language', function () {
+    const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
+    const payload = JSON.parse(request.data);
+    expect(payload.device.ua).to.not.be.empty;
+    expect(payload.device.language).to.not.be.empty;
+  });
+
   it('Test page and domain in site', function () {
     const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
     const payload = JSON.parse(request.data);

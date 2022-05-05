@@ -1,14 +1,13 @@
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { _each, deepAccess, logError, logWarn, parseSizesInput } from '../src/utils.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {_each, deepAccess, logError, logWarn, parseSizesInput} from '../src/utils.js';
 
-import { config } from '../src/config.js'
-import { getStorageManager } from '../src/storageManager.js';
-import includes from 'core-js-pure/features/array/includes';
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-
-const storage = getStorageManager();
+import {config} from '../src/config.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {includes} from '../src/polyfill.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'gumgum'
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 const ALIAS_BIDDER_CODE = ['gg']
 const BID_ENDPOINT = `https://g2.gumgum.com/hbid/imp`
 const JCSI = { t: 0, rq: 8, pbv: '$prebid.version$' }
@@ -309,9 +308,9 @@ function buildRequests(validBidRequests, bidderRequest) {
     } = bidRequest;
     const { currency, floor } = _getFloor(mediaTypes, params.bidfloor, bidRequest);
     const eids = getEids(userId);
+    const gpid = deepAccess(ortb2Imp, 'ext.data.pbadslot') || deepAccess(ortb2Imp, 'ext.data.adserver.adslot');
     let sizes = [1, 1];
     let data = {};
-    let gpid;
 
     const date = new Date();
     const lt = date.getTime();
@@ -327,12 +326,8 @@ function buildRequests(validBidRequests, bidderRequest) {
     // ADTS-134 Retrieve ID envelopes
     for (const eid in eids) data[eid] = eids[eid];
 
-    // ADJS-1024 & ADSS-1297
-    if (gpid = deepAccess(ortb2Imp, 'ext.data.pbadslot')) {
-      data.gpid = gpid;
-    } else if (gpid = deepAccess(ortb2Imp, 'ext.data.adserver.adslot')) {
-      data.gpid = gpid;
-    }
+    // ADJS-1024 & ADSS-1297 & ADTS-175
+    gpid && (data.gpid = gpid);
 
     if (mediaTypes.banner) {
       sizes = mediaTypes.banner.sizes;

@@ -2,8 +2,10 @@ import { expect } from 'chai';
 import { spec, storage } from 'modules/eplanningBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
-import { init } from 'modules/userId/index.js';
+import {init, getIds} from 'modules/userId/index.js';
 import * as utils from 'src/utils.js';
+import {hook} from '../../../src/hook.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 describe('E-Planning Adapter', function () {
   const adapter = newBidder('spec');
@@ -304,6 +306,10 @@ describe('E-Planning Adapter', function () {
     },
     uspConsent: 'consentCcpa'
   };
+
+  before(() => {
+    hook.ready();
+  });
 
   describe('inherited functions', function () {
     it('exists and is a function', function () {
@@ -954,17 +960,22 @@ describe('E-Planning Adapter', function () {
     });
   });
   describe('Send eids', function() {
+    let sandbox;
+    beforeEach(() => {
+      sandbox = sinon.sandbox.create();
+      // TODO: bid adapters should look at request data, not call getGlobal().getUserIds
+      sandbox.stub(getGlobal(), 'getUserIds').callsFake(() => ({
+        pubcid: 'c29cb2ae-769d-42f6-891a-f53cadee823d',
+        tdid: 'D6885E90-2A7A-4E0F-87CB-7734ED1B99A3',
+        id5id: { uid: 'ID5-ZHMOL_IfFSt7_lVYX8rBZc6GH3XMWyPQOBUfr4bm0g!', ext: { linkType: 1 } }
+      }))
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    })
+
     it('should add eids to the request', function() {
-      init(config);
-      config.setConfig({
-        userSync: {
-          userIds: [
-            { name: 'id5Id', value: { 'id5id': { uid: 'ID5-ZHMOL_IfFSt7_lVYX8rBZc6GH3XMWyPQOBUfr4bm0g!', ext: { linkType: 1 } } } },
-            { name: 'pubCommonId', value: {'pubcid': 'c29cb2ae-769d-42f6-891a-f53cadee823d'} },
-            { name: 'unifiedId', value: {'tdid': 'D6885E90-2A7A-4E0F-87CB-7734ED1B99A3'} }
-          ]
-        }
-      });
       let bidRequests = [validBidView];
       const expected_id5id = encodeURIComponent(JSON.stringify({ uid: 'ID5-ZHMOL_IfFSt7_lVYX8rBZc6GH3XMWyPQOBUfr4bm0g!', ext: { linkType: 1 } }));
       const request = spec.buildRequests(bidRequests, bidderRequest);
