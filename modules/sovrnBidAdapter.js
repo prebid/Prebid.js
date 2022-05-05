@@ -30,6 +30,14 @@ const ORTB_VIDEO_PARAMS = {
   'api': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 6)
 }
 
+const REQUIRED_VIDEO_PARAMS = {
+  context: (value) => value !== ADPOD,
+  mimes: ORTB_VIDEO_PARAMS.mimes,
+  minduration: ORTB_VIDEO_PARAMS.minduration,
+  maxduration: ORTB_VIDEO_PARAMS.maxduration,
+  protocols: ORTB_VIDEO_PARAMS.protocols
+}
+
 export const spec = {
   code: 'sovrn',
   supportedMediaTypes: [BANNER, VIDEO],
@@ -40,12 +48,17 @@ export const spec = {
    * @param {object} bid the Sovrn bid to validate
    * @return boolean for whether or not a bid is valid
    */
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
+    const video = bid?.mediaTypes?.video
     return !!(
       bid.params.tagid &&
       !isNaN(parseFloat(bid.params.tagid)) &&
-      isFinite(bid.params.tagid) &&
-      deepAccess(bid, 'mediaTypes.video.context') !== ADPOD
+      isFinite(bid.params.tagid) && (
+        !video || (
+          Object.keys(REQUIRED_VIDEO_PARAMS)
+            .every(key => REQUIRED_VIDEO_PARAMS[key](video[key]))
+        )
+      )
     )
   },
 

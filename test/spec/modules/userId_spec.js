@@ -497,6 +497,14 @@ describe('User ID', function () {
           mockIdCallback.callArg(0, {id: {MOCKID: '1111'}});
         })
       });
+
+      it('should not get stuck when init fails', () => {
+        const err = new Error();
+        mockIdCallback.callsFake(() => { throw err; });
+        return getGlobal().getUserIdsAsync().catch((e) =>
+          expect(e).to.equal(err)
+        );
+      });
     });
 
     it('pbjs.refreshUserIds updates submodules', function(done) {
