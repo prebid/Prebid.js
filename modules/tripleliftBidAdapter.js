@@ -211,8 +211,8 @@ function _getGlobalFpd() {
     //    publisher may accidentally make it an object
     try {
       fpdUser.data.push({
-        name: '1plusX',
-        segment: [onePlusXStorage]
+        name: 'www.1plusx.com',
+        ext: [onePlusXStorage]
       })
     } catch (err) {
       logError('Triplelift: error adding 1plusX segments: ', err);
