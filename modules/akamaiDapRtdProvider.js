@@ -4,12 +4,11 @@
  * The module will fetch real-time data from DAP
  * @module modules/akamaiDapRtdProvider
  * @requires module:modules/realTimeData
-*/
+ */
 import {ajax} from '../src/ajax.js';
 import {config} from '../src/config.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {submodule} from '../src/hook.js';
-import sha256 from 'crypto-js/sha256';
 import {isPlainObject, mergeDeep, logMessage, logInfo, logError} from '../src/utils.js';
 
 const MODULE_NAME = 'realTimeData';
@@ -22,10 +21,6 @@ export const DAP_SS_ID = 'dap_ss_id';
 export const DAP_DEFAULT_TOKEN_TTL = 3600; // in seconds
 export const DAP_MAX_RETRY_TOKENIZE = 1;
 export const DAP_CLIENT_ENTROPY = 'dap_client_entropy'
-export const DAP_AUDIO_FP = 'dap_e17'
-export const DAP_FONTS_FP = 'dap_e2'
-export const DAP_WEBGL_FP = 'dap_e3'
-export const ENTROPY_EXPIRY = 3600; // in seconds
 
 export const storage = getStorageManager({gvlid: null, moduleName: SUBMODULE_NAME});
 let dapRetryTokenize = 0;
@@ -34,7 +29,7 @@ let dapRetryTokenize = 0;
  * Lazy merge objects.
  * @param {String} target
  * @param {String} source
-*/
+ */
 function mergeLazy(target, source) {
   if (!isPlainObject(target)) {
     target = {};
@@ -71,11 +66,38 @@ export function addRealTimeData(rtd) {
  */
 export function getRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
   let entropyDict = JSON.parse(localStorage.getItem(DAP_CLIENT_ENTROPY));
-  if (entropyDict && entropyDict.expires_at > Math.round(Date.now() / 1000.0)) {
-    logMessage('Using cached entropy');
-  } else {
-    dapUtils.dapCalculateEntropy();
-  }
+  let loadScriptPromise = new Promise((resolve, reject) => {
+    if (rtdConfig && rtdConfig.params && rtdConfig.params.dapFpTimeout && Number.isInteger(rtdConfig.params.dapFpTimeout)) {
+      setTimeout(reject, rtdConfig.params.dapFpTimeout, Error('DapFP script could not be loaded'));
+    }
+    if (entropyDict && entropyDict.expires_at > Math.round(Date.now() / 1000.0)) {
+      logMessage('Using cached entropy');
+      resolve();
+    } else {
+      if (typeof window.dapCalculateEntropy === 'function') {
+        window.dapCalculateEntropy(resolve, reject);
+      } else {
+        if (rtdConfig && rtdConfig.params && rtdConfig.params.dapFpUrl) {
+          let fpScript = document.createElement('script');
+          fpScript.setAttribute('src', rtdConfig.params.dapFpUrl);
+          fpScript.onload = () => dapUtils.dapGetEntropy(resolve, reject);
+          window.document.body.appendChild(fpScript);
+        } else {
+          reject(Error('Please check if dapFpUrl is specified under config.params'));
+        }
+      }
+    }
+  });
+  loadScriptPromise
+    .catch((error) => {
+      logError('Entropy could not be calculated due to: ', error.message);
+    })
+    .finally(() => {
+      generateRealTimeData(bidConfig, onDone, rtdConfig, userConsent);
+    });
+}
+
+export function generateRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
   logInfo('DEBUG(getRealTimeData) - ENTER');
   logMessage('  - apiHostname: ' + rtdConfig.params.apiHostname);
   logMessage('  - apiVersion:  ' + rtdConfig.params.apiVersion);
@@ -136,7 +158,7 @@ function callDapAPIs(bidConfig, onDone, rtdConfig, userConsent) {
  * @param {Object} provider
  * @param {Object} userConsent
  * @return {boolean}
-*/
+ */
 function init(provider, userConsent) {
   return true;
 }
@@ -149,237 +171,12 @@ export const akamaiDapRtdSubmodule = {
 };
 
 submodule(MODULE_NAME, akamaiDapRtdSubmodule);
-
 export const dapUtils = {
-
-  dapCalculateEntropy: function() {
-    dapUtils.dapGetAudioFp();
-    // fonts fp and webgl fp
-    setTimeout(dapUtils.dapGetFontsAndWebglFp, 0);
-    let entropyDict = {}
-    let entropy = {}
-    // canvas fp
-    entropy.e1 = dapUtils.dapGetCanvasFp();
-    // misc fp
-    entropy.e4 = window.screen.colorDepth ? JSON.stringify(window.screen.colorDepth) : 'NA';
-    entropy.e5 = navigator.deviceMemory ? JSON.stringify(navigator.deviceMemory) : 'NA';
-    entropy.e6 = navigator.cpuClass ? navigator.cpuClass : 'NA'
-    entropy.e7 = navigator.language ? navigator.language : 'NA';
-    entropy.e8 = navigator.cookieEnabled ? JSON.stringify(navigator.cookieEnabled) : 'NA';
-    entropy.e9 = navigator.userAgent ? navigator.userAgent : 'NA';
-    entropy.e10 = navigator.geoLocation ? navigator.geoLocation : 'NA';
-    entropy.e11 = navigator.hardwareConcurrency ? JSON.stringify(navigator.hardwareConcurrency) : 'NA';
-    entropy.e12 = window.indexedDB ? JSON.stringify(window.indexedDB) : 'NA';
-    entropy.e13 = window.openDatabase ? JSON.stringify(window.openDatabase.length) : 'NA';
-    entropy.e14 = navigator.ipAddress ? navigator.ipAddress : 'NA';
-    entropy.e15 = navigator.platform ? navigator.platform : 'NA';
-    var len = navigator.plugins.length;
-    var plugins = []
-    for (var i = 0; i < len; i++) {
-      plugins.push(navigator.plugins[i].name);
-    }
-    entropy.e16 = sha256(JSON.stringify(plugins, Object.keys(plugins).sort())).toString() || 'NA';
-    var pluginsSorted = plugins.sort()
-    entropy.e18 = sha256(JSON.stringify(pluginsSorted, Object.keys(pluginsSorted).sort())).toString() || 'NA';
-
-    // Add entropy values along with the expiry to entropyDict and store in localstorage.
-    entropyDict.entropy = entropy
-    entropyDict.expires_at = Math.round(Date.now() / 1000.0) + ENTROPY_EXPIRY;
-    localStorage.setItem(DAP_CLIENT_ENTROPY, JSON.stringify(entropyDict));
-  },
-
-  dapGetCanvasFp: function() {
-    var strOnError, canvas, strCText, strText, strOut;
-
-    strOnError = 'Error_canvas';
-    canvas = null;
-    strCText = null;
-    strText = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ`~1!2@3#4$5%6^7&8*9(0)-_=+[{]}|;:',<.>/?";
-    strOut = null;
-
-    try {
-      canvas = document.createElement('canvas');
-      strCText = canvas.getContext('2d');
-      strCText.textBaseline = 'top';
-      strCText.font = "14px 'Arial'";
-      strCText.textBaseline = 'alphabetic';
-      strCText.fillStyle = '#f60';
-      strCText.fillRect(125, 1, 62, 20);
-      strCText.fillStyle = '#069';
-      strCText.fillText(strText, 2, 15);
-      strCText.fillStyle = 'rgba(102, 204, 0, 0.7)';
-      strCText.fillText(strText, 4, 17);
-      strOut = canvas.toDataURL();
-      const hashCanvas = sha256(strOut);
-
-      return hashCanvas.toString();
-    } catch (err) {
-      logMessage('Error while calculating dapGetCanvasFp() ', strOnError);
-    }
-  },
-
-  dapGetFontsFp: function() {
-    var strOnError, style, fonts, count, template, fragment, divs, i, font, div, body, result, e;
-
-    strOnError = 'Error_fonts';
-    style = null;
-    fonts = null;
-    font = null;
-    count = 0;
-    template = null;
-    divs = null;
-    e = null;
-    div = null;
-    body = null;
-    i = 0;
-
-    try {
-      style = 'position: absolute; visibility: hidden; display: block !important';
-      fonts = ['Abadi MT Condensed Light', 'Adobe Fangsong Std', 'Adobe Hebrew', 'Adobe Ming Std', 'Agency FB', 'Aharoni', 'Andalus', 'Angsana New', 'AngsanaUPC', 'Aparajita', 'Arab', 'Arabic Transparent', 'Arabic Typesetting', 'Arial Baltic', 'Arial Black', 'Arial CE', 'Arial CYR', 'Arial Greek', 'Arial TUR', 'Arial', 'Batang', 'BatangChe', 'Bauhaus 93', 'Bell MT', 'Bitstream Vera Serif', 'Bodoni MT', 'Bookman Old Style', 'Braggadocio', 'Broadway', 'Browallia New', 'BrowalliaUPC', 'Calibri Light', 'Calibri', 'Californian FB', 'Cambria Math', 'Cambria', 'Candara', 'Castellar', 'Casual', 'Centaur', 'Century Gothic', 'Chalkduster', 'Colonna MT', 'Comic Sans MS', 'Consolas', 'Constantia', 'Copperplate Gothic Light', 'Corbel', 'Cordia New', 'CordiaUPC', 'Courier New Baltic', 'Courier New CE', 'Courier New CYR', 'Courier New Greek', 'Courier New TUR', 'Courier New', 'DFKai-SB', 'DaunPenh', 'David', 'DejaVu LGC Sans Mono', 'Desdemona', 'DilleniaUPC', 'DokChampa', 'Dotum', 'DotumChe', 'Ebrima', 'Engravers MT', 'Eras Bold ITC', 'Estrangelo Edessa', 'EucrosiaUPC', 'Euphemia', 'Eurostile', 'FangSong', 'Forte', 'FrankRuehl', 'Franklin Gothic Heavy', 'Franklin Gothic Medium', 'FreesiaUPC', 'French Script MT', 'Gabriola', 'Gautami', 'Georgia', 'Gigi', 'Gisha', 'Goudy Old Style', 'Gulim', 'GulimChe', 'GungSeo', 'Gungsuh', 'GungsuhChe', 'Haettenschweiler', 'Harrington', 'Hei S', 'HeiT', 'Heisei Kaku Gothic', 'Hiragino Sans GB', 'Impact', 'Informal Roman', 'IrisUPC', 'Iskoola Pota', 'JasmineUPC', 'KacstOne', 'KaiTi', 'Kalinga', 'Kartika', 'Khmer UI', 'Kino MT', 'KodchiangUPC', 'Kokila', 'Kozuka Gothic Pr6N', 'Lao UI', 'Latha', 'Leelawadee', 'Levenim MT', 'LilyUPC', 'Lohit Gujarati', 'Loma', 'Lucida Bright', 'Lucida Console', 'Lucida Fax', 'Lucida Sans Unicode', 'MS Gothic', 'MS Mincho', 'MS PGothic', 'MS PMincho', 'MS Reference Sans Serif', 'MS UI Gothic', 'MV Boli', 'Magneto', 'Malgun Gothic', 'Mangal', 'Marlett', 'Matura MT Script Capitals', 'Meiryo UI', 'Meiryo', 'Menlo', 'Microsoft Himalaya', 'Microsoft JhengHei', 'Microsoft New Tai Lue', 'Microsoft PhagsPa', 'Microsoft Sans Serif', 'Microsoft Tai Le', 'Microsoft Uighur', 'Microsoft YaHei', 'Microsoft Yi Baiti', 'MingLiU', 'MingLiU-ExtB', 'MingLiU_HKSCS', 'MingLiU_HKSCS-ExtB', 'Miriam Fixed', 'Miriam', 'Mongolian Baiti', 'MoolBoran', 'NSimSun', 'Narkisim', 'News Gothic MT', 'Niagara Solid', 'Nyala', 'PMingLiU', 'PMingLiU-ExtB', 'Palace Script MT', 'Palatino Linotype', 'Papyrus', 'Perpetua', 'Plantagenet Cherokee', 'Playbill', 'Prelude Bold', 'Prelude Condensed Bold', 'Prelude Condensed Medium', 'Prelude Medium', 'PreludeCompressedWGL Black', 'PreludeCompressedWGL Bold', 'PreludeCompressedWGL Light', 'PreludeCompressedWGL Medium', 'PreludeCondensedWGL Black', 'PreludeCondensedWGL Bold', 'PreludeCondensedWGL Light', 'PreludeCondensedWGL Medium', 'PreludeWGL Black', 'PreludeWGL Bold', 'PreludeWGL Light', 'PreludeWGL Medium', 'Raavi', 'Rachana', 'Rockwell', 'Rod', 'Sakkal Majalla', 'Sawasdee', 'Script MT Bold', 'Segoe Print', 'Segoe Script', 'Segoe UI Light', 'Segoe UI Semibold', 'Segoe UI Symbol', 'Segoe UI', 'Shonar Bangla', 'Showcard Gothic', 'Shruti', 'SimHei', 'SimSun', 'SimSun-ExtB', 'Simplified Arabic Fixed', 'Simplified Arabic', 'Snap ITC', 'Sylfaen', 'Symbol', 'Tahoma', 'Times New Roman Baltic', 'Times New Roman CE', 'Times New Roman CYR', 'Times New Roman Greek', 'Times New Roman TUR', 'Times New Roman', 'TlwgMono', 'Traditional Arabic', 'Trebuchet MS', 'Tunga', 'Tw Cen MT Condensed Extra Bold', 'Ubuntu', 'Umpush', 'Univers', 'Utopia', 'Utsaah', 'Vani', 'Verdana', 'Vijaya', 'Vladimir Script', 'Vrinda', 'Webdings', 'Wide Latin', 'Wingdings'];
-      count = fonts.length;
-      template = '<b style="display:inline !important; width:auto !important; font:normal 10px/1 \'X\',sans-serif !important">ww</b>' + '<b style="display:inline !important; width:auto !important; font:normal 10px/1 \'X\',monospace !important">ww</b>';
-      fragment = document.createDocumentFragment();
-      divs = [];
-      for (i = 0; i < count; i = i + 1) {
-        font = fonts[i];
-        div = document.createElement('div');
-        font = font.replace(/['"<>]/g, '');
-        div.innerHTML = template.replace(/X/g, font);
-        div.style.cssText = style;
-        fragment.appendChild(div);
-        divs.push(div);
-      }
-      body = document.body;
-      body.insertBefore(fragment, body.firstChild);
-      result = [];
-      for (i = 0; i < count; i = i + 1) {
-        e = divs[i].getElementsByTagName('b');
-        if (e[0].offsetWidth === e[1].offsetWidth) {
-          result.push(fonts[i]);
-        }
-      }
-      // do not combine these two loops, remove child will cause reflow
-      // and induce severe performance hit
-      for (i = 0; i < count; i = i + 1) {
-        body.removeChild(divs[i]);
-      }
-      const hashFonts = sha256(result.join('|'));
-      return hashFonts.toString();
-    } catch (err) {
-      logMessage('Error while calcualting dapGetFontsFp() ' + strOnError);
-      return 'NC';
-    }
-  },
-
-  dapGetWebglFp: function() {
-    var canvas, webglContext;
-    var width = 48;
-    var height = 27;
-    var webglString = '';
-    try {
-      canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-      webglContext = canvas.getContext('webgl2') || canvas.getContext('experimental-webgl2') || canvas.getContext('webgl') || canvas.getContext('experimental-webgl') || canvas.getContext('moz-webgl');
-    } catch (e) {
-      logMessage('Exeception occured: ', e);
-      return 'NC';
-    }
-
-    try {
-      if (webglContext) {
-        var webglBuffer = webglContext.createBuffer();
-        webglContext.bindBuffer(webglContext.ARRAY_BUFFER, webglBuffer);
-
-        var size = new Float32Array([-0.2, -0.9, 0, 0.4, -0.26, 0, 0, 0.7321, 0]);
-        webglContext.bufferData(webglContext.ARRAY_BUFFER, size, webglContext.STATIC_DRAW);
-        webglBuffer.itemSize = 3;
-        webglBuffer.numItems = 3;
-        var webglProgram = webglContext.createProgram();
-        var vertexShader = webglContext.createShader(webglContext.VERTEX_SHADER);
-        var vertexShaderSource = 'attribute vec2 attrVertex;varying vec2 varyinTexCoordinate;uniform vec2 uniformOffset;void main(){varyinTexCoordinate=attrVertex+uniformOffset;gl_Position=vec4(attrVertex,0,1);}';
-        webglContext.shaderSource(vertexShader, vertexShaderSource);
-        webglContext.compileShader(vertexShader);
-
-        var fragmentShader = webglContext.createShader(webglContext.FRAGMENT_SHADER);
-        var fragmentShaderSource = 'precision mediump float;varying vec2 varyinTexCoordinate;void main() {gl_FragColor=vec4(varyinTexCoordinate,0,1);}';
-        webglContext.shaderSource(fragmentShader, fragmentShaderSource);
-        webglContext.compileShader(fragmentShader);
-        webglContext.attachShader(webglProgram, vertexShader);
-        webglContext.attachShader(webglProgram, fragmentShader);
-        webglContext.linkProgram(webglProgram);
-        webglContext.useProgram(webglProgram);
-        webglProgram.vertexPosAttrib = webglContext.getAttribLocation(webglProgram, 'attrVertex');
-        webglProgram.offsetUniform = webglContext.getUniformLocation(webglProgram, 'uniformOffset');
-        webglContext.enableVertexAttribArray(webglProgram.vertexPosArray);
-        webglContext.vertexAttribPointer(webglProgram.vertexPosAttrib, webglBuffer.itemSize, webglContext.FLOAT, !1, 0, 0);
-        webglContext.uniform2f(webglProgram.offsetUniform, 1, 1);
-        webglContext.drawArrays(webglContext.TRIANGLE_STRIP, 0, webglBuffer.numItems);
-        var pixels = new Uint8Array(width * height * 4);
-        webglContext.readPixels(0, 0, width, height, webglContext.RGBA, webglContext.UNSIGNED_BYTE, pixels);
-        webglString = JSON.stringify(pixels).replace(/,?"[0-9]+":/g, '');
-        logMessage('webgl fp', webglString);
-        const hashWebgl = sha256(webglString);
-        return hashWebgl.toString();
-      }
-    } catch (e) {
-      logMessage('Exeception occured: ', e);
-      return 'NC';
-    }
-  },
-
-  dapGetFontsAndWebglFp: function() {
-    let fontsFp = dapUtils.dapGetFontsFp();
-    localStorage.setItem(DAP_FONTS_FP, JSON.stringify(fontsFp));
-    let webGlFp = dapUtils.dapGetWebglFp();
-    localStorage.setItem(DAP_WEBGL_FP, JSON.stringify(webGlFp));
-  },
-
-  dapGetAudioFp: function(entropy) {
-    var context = null;
-    var currentTime = null;
-    var oscillator = null;
-    var compressor = null;
-
-    try {
-      var AudioContext = window.OfflineAudioContext || window.webkitOfflineAudioContext;
-      context = new AudioContext(1, 44100, 44100);
-      currentTime = context.currentTime;
-      oscillator = context.createOscillator();
-      oscillator.type = 'triangle';
-      oscillator.frequency.setValueAtTime(10000, currentTime);
-
-      compressor = context.createDynamicsCompressor()
-      compressor.threshold.value = -50
-      compressor.knee.value = 40
-      compressor.ratio.value = 12
-      compressor.attack.value = 0
-      compressor.release.value = 0.25
-
-      oscillator.connect(compressor);
-      compressor.connect(context.destination);
-
-      oscillator.start(0);
-      context.startRendering();
-
-      context.oncomplete = dapUtils.dapOnCompleteCallback;
-    } catch (e) {
-      logMessage('error', e);
-    }
-  },
-
-  dapOnCompleteCallback: function(event) {
-    var output = null;
-    for (var i = 4500; i < 5e3; i++) {
-      var channelData = event.renderedBuffer.getChannelData(0)[i];
-      output += Math.abs(channelData);
-    }
-
-    let fingerprint = output.toString();
-    if (fingerprint) {
-      localStorage.setItem(DAP_AUDIO_FP, JSON.stringify(fingerprint));
+  dapGetEntropy: function(resolve, reject) {
+    if (typeof window.dapCalculateEntropy === 'function') {
+      window.dapCalculateEntropy(resolve, reject);
     } else {
-      localStorage.setItem(DAP_AUDIO_FP, 'NC');
+      reject(Error('window.dapCalculateEntropy function is not defined'))
     }
   },
 
@@ -757,19 +554,8 @@ export const dapUtils = {
     }
 
     let entropyDict = JSON.parse(localStorage.getItem(DAP_CLIENT_ENTROPY));
-    if (entropyDict.entropy) {
-      let audioFp = JSON.parse(localStorage.getItem(DAP_AUDIO_FP));
-      audioFp = audioFp || 'NA';
-      entropyDict.entropy.e17 = audioFp;
-      let fontsFp = JSON.parse(localStorage.getItem(DAP_FONTS_FP));
-      fontsFp = fontsFp || 'NA';
-      entropyDict.entropy.e2 = fontsFp;
-      let webGlFp = JSON.parse(localStorage.getItem(DAP_WEBGL_FP));
-      webGlFp = webGlFp || 'NA';
-      entropyDict.entropy.e3 = webGlFp;
+    if (entropyDict && entropyDict.entropy) {
       apiParams.entropy = entropyDict.entropy;
-    } else {
-      logMessage('Entropy not added to Tokenize apiParams.');
     }
 
     let method;
@@ -878,9 +664,9 @@ export const dapUtils = {
       return;
     }
     let path = '/data-activation/' +
-               config.api_version +
-               '/token/' + token +
-               '/membership';
+      config.api_version +
+      '/token/' + token +
+      '/membership';
 
     let url = 'https://' + config.api_hostname + path;
 
@@ -961,9 +747,9 @@ export const dapUtils = {
       return;
     }
     let path = '/data-activation/' +
-                  config.api_version +
-                  '/token/' + token +
-                  '/membership/encrypt';
+      config.api_version +
+      '/token/' + token +
+      '/membership/encrypt';
 
     let url = 'https://' + config.api_hostname + path;
 

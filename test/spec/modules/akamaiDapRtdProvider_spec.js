@@ -2,6 +2,7 @@ import {config} from 'src/config.js';
 import {
   dapUtils,
   getRealTimeData,
+  generateRealTimeData,
   akamaiDapRtdSubmodule,
   storage, DAP_MAX_RETRY_TOKENIZE, DAP_SS_ID, DAP_TOKEN, DAP_MEMBERSHIP, DAP_ENCRYPTED_MEMBERSHIP,
 } from 'modules/akamaiDapRtdProvider.js';
@@ -132,7 +133,7 @@ describe('akamaiDapRtdProvider', function() {
 
   describe('akamaiDapRtdSubmodule', function() {
     it('successfully instantiates', function () {
-  	  expect(akamaiDapRtdSubmodule.init()).to.equal(true);
+      expect(akamaiDapRtdSubmodule.init()).to.equal(true);
     });
   });
 
@@ -146,9 +147,9 @@ describe('akamaiDapRtdProvider', function() {
       let dapGetEncryptedRtdObjStub = sinon.stub(dapUtils, 'dapGetEncryptedRtdObj').returns(cachedEncRtd)
 
       expect(config.getConfig().ortb2).to.be.undefined;
-      getRealTimeData(bidConfig, () => {}, emoduleConfig, {});
+      generateRealTimeData(bidConfig, () => {}, emoduleConfig, {});
       expect(config.getConfig().ortb2.user.data).to.deep.include.members([encRtdUserObj]);
-      getRealTimeData(bidConfig, () => {}, cmoduleConfig, {});
+      generateRealTimeData(bidConfig, () => {}, cmoduleConfig, {});
       expect(config.getConfig().ortb2.user.data).to.deep.include.members([rtdUserObj]);
       dapGetRtdObjStub.restore()
       dapGetMembershipFromLocalStorageStub.restore()
@@ -293,7 +294,7 @@ describe('akamaiDapRtdProvider', function() {
       };
 
       let getDapMembershipStub = sinon.stub(dapUtils, 'dapGetMembershipFromLocalStorage').returns(membership);
-      getRealTimeData(testReqBidsConfigObj, onDone, cmoduleConfig);
+      generateRealTimeData(testReqBidsConfigObj, onDone, cmoduleConfig);
       expect(getDapMembershipStub.calledOnce).to.be.equal(true);
       getDapMembershipStub.restore();
     });
@@ -306,7 +307,7 @@ describe('akamaiDapRtdProvider', function() {
       };
 
       let getDapEncMembershipStub = sinon.stub(dapUtils, 'dapGetEncryptedMembershipFromLocalStorage').returns(encMembership);
-      getRealTimeData(testReqBidsConfigObj, onDone, emoduleConfig);
+      generateRealTimeData(testReqBidsConfigObj, onDone, emoduleConfig);
       expect(getDapEncMembershipStub.calledOnce).to.be.equal(true);
       getDapEncMembershipStub.restore();
     });
@@ -449,7 +450,7 @@ describe('akamaiDapRtdProvider', function() {
     });
 
     it('test dapRefreshEncryptedMembership 403 error response', function () {
-      getRealTimeData({}, () => {}, emoduleConfig, {});
+      generateRealTimeData({}, () => {}, emoduleConfig, {});
       dapUtils.dapRefreshEncryptedMembership(esampleConfig, sampleCachedToken.token, onDone)
       let request = server.requests[0];
       request.respond(403, responseHeader, 'error');
