@@ -38,8 +38,7 @@ describe('tpmnAdapterTests', function () {
       adUnitCode: 'temp-unitcode',
       bidder: 'tpmn',
       params: {
-        inventoryId: '1',
-        publisherId: 'TPMN'
+        inventoryId: '1', publisherId: 'TPMN'
       },
       bidId: '29092404798c9',
       bidderRequestId: 'a01',
@@ -64,8 +63,7 @@ describe('tpmnAdapterTests', function () {
     it('should return false when required param values have invalid type', function () {
       let bid = Object.assign({}, bid);
       bid.params = {
-        'inventoryId': null,
-        'publisherId': null
+        'inventoryId': null, 'publisherId': null
       };
       expect(spec.isBidRequestValid(bid)).to.be.equal(false);
     });
@@ -83,8 +81,7 @@ describe('tpmnAdapterTests', function () {
         adUnitCode: 'temp-unitcode',
         bidder: 'tpmn',
         params: {
-          inventoryId: '1',
-          publisherId: 'TPMN'
+          inventoryId: '1', publisherId: 'TPMN'
         },
         bidId: '29092404798c9',
         bidderRequestId: 'a01',
@@ -98,10 +95,8 @@ describe('tpmnAdapterTests', function () {
       const tempBidRequests = [bid];
       const tempBidderRequest = {
         refererInfo: {
-          referer: 'http://localhost/test',
-          site: {
-            domain: 'localhost',
-            page: 'http://localhost/test'
+          referer: 'http://localhost/test', site: {
+            domain: 'localhost', page: 'http://localhost/test'
           }
         }
       };
@@ -112,8 +107,7 @@ describe('tpmnAdapterTests', function () {
       expect(builtRequest[0].url).to.match(/ad.tpmn.co.kr\/prebidhb.tpmn/);
       const apiRequest = builtRequest[0].data;
       expect(apiRequest.site).to.deep.equal({
-        domain: 'localhost',
-        page: 'http://localhost/test'
+        domain: 'localhost', page: 'http://localhost/test'
       });
       expect(apiRequest.bids).to.have.lengthOf('1');
       expect(apiRequest.bids[0].inventoryId).to.equal('1');
@@ -123,8 +117,7 @@ describe('tpmnAdapterTests', function () {
       expect(apiRequest.bids[0].auctionId).to.equal('da1d7a33-0260-4e83-a621-14674116f3f9');
       expect(apiRequest.bids[0].sizes).to.have.lengthOf('1');
       expect(apiRequest.bids[0].sizes[0]).to.deep.equal({
-        width: 300,
-        height: 250
+        width: 300, height: 250
       });
     });
   });
@@ -134,8 +127,7 @@ describe('tpmnAdapterTests', function () {
       adUnitCode: 'temp-unitcode',
       bidder: 'tpmn',
       params: {
-        inventoryId: '1',
-        publisherId: 'TPMN'
+        inventoryId: '1', publisherId: 'TPMN'
       },
       bidId: '29092404798c9',
       bidderRequestId: 'a01',
@@ -167,8 +159,7 @@ describe('tpmnAdapterTests', function () {
         adType: 'banner'
       };
       const testServerResponse = {
-        headers: [],
-        body: [mockBidResult]
+        headers: [], body: [mockBidResult]
       };
       const bidResponses = spec.interpretResponse(testServerResponse, tempBidRequests);
       expect(bidResponses).deep.equal([mockBidResult]);
