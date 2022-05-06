@@ -4,7 +4,7 @@
  * and make it available for any GDPR supported adapters to read/pass this information to
  * their system.
  */
-import {isFn, isNumber, isPlainObject, isStr, logError, logInfo, logWarn} from '../src/utils.js';
+import {isNumber, isPlainObject, isStr, logError, logInfo, logWarn} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {gdprDataHandler} from '../src/adapterManager.js';
 import {includes} from '../src/polyfill.js';
@@ -73,7 +73,7 @@ function lookupIabConsent({onSuccess, onError}) {
     };
   }
 
-  function v2CmpResponseCallback(tcfData, success) {
+  function cmpResponseCallback(tcfData, success) {
     logInfo('Received a response from CMP', tcfData);
     if (success) {
       if (tcfData.gdprApplies === false || tcfData.eventStatus === 'tcloaded' || tcfData.eventStatus === 'useractioncomplete') {
@@ -92,7 +92,7 @@ function lookupIabConsent({onSuccess, onError}) {
   }
   // to collect the consent information from the user, we perform two calls to the CMP in parallel:
   // first to collect the user's consent choices represented in an encoded string (via getConsentData)
-  // second to collect the user's full unparsed consent information (via getVendorConsents)
+  // second to collect the usefr's full unparsed consent information (via getVendorConsents)
 
   // the following code also determines where the CMP is located and uses the proper workflow to communicate with it:
   // check to see if CMP is found on the same window level as prebid and call it directly if so
@@ -100,12 +100,12 @@ function lookupIabConsent({onSuccess, onError}) {
   // else assume prebid may be inside an iframe and use the IAB CMP locator code to see if CMP's located in a higher parent window. this works in cross domain iframes
   // if the CMP is not found, the iframe function will call the cmpError exit callback to abort the rest of the CMP workflow
 
-  if (isFn(cmpFunction)) {
+  if (typeof cmpFunction === 'function') {
     logInfo('Detected CMP API is directly accessible, calling it now...');
-    cmpFunction('addEventListener', CMP_VERSION, v2CmpResponseCallback);
+    cmpFunction('addEventListener', CMP_VERSION, cmpResponseCallback);
   } else {
     logInfo('Detected CMP is outside the current iframe where Prebid.js is located, calling it now...');
-    callCmpWhileInIframe('addEventListener', cmpFrame, v2CmpResponseCallback);
+    callCmpWhileInIframe('addEventListener', cmpFrame, cmpResponseCallback);
   }
 
   function callCmpWhileInIframe(commandName, cmpFrame, moduleCallback) {
@@ -166,7 +166,7 @@ function loadConsentData(cb) {
     }
     isDone = true;
     gdprDataHandler.setConsentData(consentData);
-    if (cb != null) {
+    if (typeof cb === 'function') {
       cb(shouldCancelAuction, errMsg, ...extraArgs);
     }
   }
