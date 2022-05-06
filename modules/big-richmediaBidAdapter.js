@@ -8,7 +8,7 @@ const BIDDER_CODE = 'big-richmedia';
 const metadataByRequestId = {};
 
 export const spec = {
-  version: '1.4.0',
+  version: '1.5.0',
   code: BIDDER_CODE,
   gvlid: baseAdapter.GVLID, // use base adapter gvlid
   supportedMediaTypes: [ BANNER, VIDEO ],
@@ -78,6 +78,14 @@ export const spec = {
         customSelector,
         isReplayable
       };
+
+      // This is a workaround needed for the rendering step (so that the adserver iframe does not get resized to 1800x1000
+      // when there is skin demand
+      if (format === 'skin') {
+        renderParams.width = 1
+        renderParams.height = 1
+      }
+
       const encoded = window.btoa(JSON.stringify(renderParams));
       bid.ad = `<script src="//cdn.hubvisor.io/wrapper/${publisherId}/richmedia-renderer.js" async="true"></script>
       <script>var hbvrm = hbvrm || {}; hbvrm.cmd = hbvrm.cmd || []; hbvrm.cmd.push(function() { hbvrm.render('${encoded}'); });</script>`;
