@@ -84,8 +84,8 @@ function lookupIabConsent({onSuccess, onError}) {
     }
   }
 
-  let cmpCallbacks = {};
-  let { cmpFrame, cmpFunction } = findCMP();
+  const cmpCallbacks = {};
+  const { cmpFrame, cmpFunction } = findCMP();
 
   if (!cmpFrame) {
     return onError('CMP not found.');
@@ -116,8 +116,8 @@ function lookupIabConsent({onSuccess, onError}) {
     /* Setup up a __cmp function to do the postMessage and stash the callback.
     This function behaves (from the caller's perspective identicially to the in-frame __cmp call */
     window[apiName] = function (cmd, cmpVersion, callback, arg) {
-      let callId = Math.random() + '';
-      let msg = {
+      const callId = Math.random() + '';
+      const msg = {
         [callName]: {
           command: cmd,
           version: cmpVersion,
@@ -137,10 +137,10 @@ function lookupIabConsent({onSuccess, onError}) {
     window[apiName](commandName, CMP_VERSION, moduleCallback);
 
     function readPostMessageResponse(event) {
-      let cmpDataPkgName = `${apiName}Return`;
-      let json = (typeof event.data === 'string' && includes(event.data, cmpDataPkgName)) ? JSON.parse(event.data) : event.data;
+      const cmpDataPkgName = `${apiName}Return`;
+      const json = (typeof event.data === 'string' && includes(event.data, cmpDataPkgName)) ? JSON.parse(event.data) : event.data;
       if (json[cmpDataPkgName] && json[cmpDataPkgName].callId) {
-        let payload = json[cmpDataPkgName];
+        const payload = json[cmpDataPkgName];
         // TODO - clean up this logic (move listeners?); we have duplicate messages responses because 2 eventlisteners are active from the 2 cmp requests running in parallel
         if (typeof cmpCallbacks[payload.callId] !== 'undefined') {
           cmpCallbacks[payload.callId](payload.returnValue, payload.success);
@@ -179,9 +179,7 @@ function loadConsentData(cb) {
   const callbacks = {
     onSuccess: (data) => done(data, false),
     onError: function (msg, ...extraArgs) {
-      let consentData = null;
-      let shouldCancelAuction = true;
-      done(consentData, shouldCancelAuction, msg, ...extraArgs);
+      done(null, true, msg, ...extraArgs);
     }
   }
   cmpCallMap[userCMP](callbacks);
@@ -251,8 +249,8 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
 function processCmpData(consentObject, {onSuccess, onError}) {
   function checkData() {
     // if CMP does not respond with a gdprApplies boolean, use defaultGdprScope (gdprScope)
-    let gdprApplies = consentObject && typeof consentObject.gdprApplies === 'boolean' ? consentObject.gdprApplies : gdprScope;
-    let tcString = consentObject && consentObject.tcString;
+    const gdprApplies = consentObject && typeof consentObject.gdprApplies === 'boolean' ? consentObject.gdprApplies : gdprScope;
+    const tcString = consentObject && consentObject.tcString;
     return !!(
       (typeof gdprApplies !== 'boolean') ||
       (gdprApplies === true && !isStr(tcString))
