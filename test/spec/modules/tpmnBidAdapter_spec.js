@@ -95,8 +95,10 @@ describe('tpmnAdapterTests', function () {
       const tempBidRequests = [bid];
       const tempBidderRequest = {
         refererInfo: {
-          referer: 'http://localhost/test', site: {
-            domain: 'localhost', page: 'http://localhost/test'
+          referer: 'http://localhost/test',
+          site: {
+            domain: 'localhost',
+            page: 'http://localhost/test'
           }
         }
       };
@@ -107,7 +109,8 @@ describe('tpmnAdapterTests', function () {
       expect(builtRequest[0].url).to.match(/ad.tpmn.co.kr\/prebidhb.tpmn/);
       const apiRequest = builtRequest[0].data;
       expect(apiRequest.site).to.deep.equal({
-        domain: 'localhost', page: 'http://localhost/test'
+        domain: 'localhost',
+        page: 'http://localhost/test'
       });
       expect(apiRequest.bids).to.have.lengthOf('1');
       expect(apiRequest.bids[0].inventoryId).to.equal('1');
@@ -127,7 +130,8 @@ describe('tpmnAdapterTests', function () {
       adUnitCode: 'temp-unitcode',
       bidder: 'tpmn',
       params: {
-        inventoryId: '1', publisherId: 'TPMN'
+        inventoryId: '1',
+        publisherId: 'TPMN'
       },
       bidId: '29092404798c9',
       bidderRequestId: 'a01',
