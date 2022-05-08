@@ -138,8 +138,8 @@ export const intentIqIdSubmodule = {
     url += configParams.pai ? '&pai=' + encodeURIComponent(configParams.pai) : '';
     url += firstPartyData.pcid ? '&iiqidtype=2&iiqpcid=' + encodeURIComponent(firstPartyData.pcid) : '';
     url += firstPartyData.pid ? '&pid=' + encodeURIComponent(firstPartyData.pid) : '';
-    url += (partnerData && partnerData.cttl) ? '&cttl=' + encodeURIComponent(partnerData.cttl) : '';
-    url += (partnerData && partnerData.rrtt) ? '&rrtt=' + encodeURIComponent(partnerData.rrtt) : '';
+    url += (partnerData.cttl) ? '&cttl=' + encodeURIComponent(partnerData.cttl) : '';
+    url += (partnerData.rrtt) ? '&rrtt=' + encodeURIComponent(partnerData.rrtt) : '';
 
     const resp = function (callback) {
       const callbacks = {
