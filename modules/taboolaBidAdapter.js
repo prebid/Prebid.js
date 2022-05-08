@@ -210,11 +210,11 @@ function getSizes(sizes) {
 }
 
 function getBidResponses({body}) {
-  if (!body || (body && !body.bidResponse)) {
+  if (!body) {
     return [];
   }
 
-  const {seatbid, cur} = body.bidResponse;
+  const {seatbid, cur} = body;
 
   if (!seatbid.length || !seatbid[0].bid) {
     return [];
