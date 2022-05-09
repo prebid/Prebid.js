@@ -299,9 +299,9 @@ const mapNative = slot => {
   return assets ? { request: JSON.stringify({ native: { assets } }) } : undefined;
 }
 
-var mapVideo = slot => {
-  var video = deepAccess(slot, 'mediaTypes.video');
-  var videoParamsUsed = ['api', 'context', 'linearity', 'maxduration', 'mimes', 'protocols'];
+var mapVideo = (slot, videoFromBid = {}) => {
+  var video = Object.assign(deepAccess(slot, 'mediaTypes.video'), videoFromBid);
+  var videoParamsUsed = ['api', 'context', 'linearity', 'maxduration', 'mimes', 'protocols', 'playbackmethod'];
   var videoAssets;
 
   if (video) {
@@ -331,7 +331,7 @@ var mapVideo = slot => {
 
 const mapImpression = slot => {
   const { adUnitCode, bidId, params = {}, ortb2Imp = {} } = slot;
-  const { id, siteId } = params;
+  const { id, siteId, video } = params;
   const { ext = {} } = ortb2Imp;
 
   /*
@@ -352,7 +352,7 @@ const mapImpression = slot => {
     id: id && siteId ? id.padStart(3, '0') : 'bidid-' + bidId,
     banner: mapBanner(slot),
     native: mapNative(slot),
-    video: mapVideo(slot),
+    video: mapVideo(slot, video),
     tagid: adUnitCode,
     ext,
   };
