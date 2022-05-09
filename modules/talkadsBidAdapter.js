@@ -11,7 +11,6 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
   supportedMediaTypes: [ NATIVE, BANNER ],
-  params: null,
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -33,7 +32,7 @@ export const spec = {
       utils.logError('VALIDATION FAILED : the parameter "bidder_url" must be defined');
       return false;
     }
-    this.params = poBid.params;
+
     return !!(poBid.nativeParams || poBid.sizes);
   }, // isBidRequestValid
 
@@ -56,7 +55,7 @@ export const spec = {
       }
       return loOne;
     });
-    let laParams = this.params ? this.params : paValidBidRequests[0].params;
+    let laParams = paValidBidRequests[0].params;
     const loServerRequest = {
       cur: CURRENCY,
       timeout: poBidderRequest.timeout,
@@ -123,7 +122,7 @@ export const spec = {
    */
   onBidWon: function (poBid) {
     utils.logInfo('onBidWon : ', poBid);
-    let laParams = this.params ? this.params : poBid.params[0];
+    let laParams = poBid.params[0];
     if (poBid.pbid) {
       ajax(laParams.bidder_url + 'won/' + poBid.pbid);
     }
