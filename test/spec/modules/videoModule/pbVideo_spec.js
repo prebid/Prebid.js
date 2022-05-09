@@ -208,10 +208,16 @@ describe('Prebid Video', function () {
       videoCoreMock.setAdTagUrl.resetHistory();
     });
 
+    let beforeBidRequestCallback;
+    const requestBids = {
+      before: callback_ => beforeBidRequestCallback = callback_
+    };
+
     it('should request ad tag url from adServer when configured to use adServer', function () {
       const expectedVastUrl = 'expectedVastUrl';
       const expectedVastXml = 'expectedVastXml';
       const pbGlobal = Object.assign({}, pbGlobalMock, {
+        requestBids,
         getHighestCpmBids: () => [{
           vastUrl: expectedVastUrl,
           vastXml: expectedVastXml
@@ -219,6 +225,7 @@ describe('Prebid Video', function () {
       });
       pbVideoFactory(null, getConfig, pbGlobal, pbEvents);
 
+      beforeBidRequestCallback(() => {}, {});
       auctionEndCallback(auctionResults);
       expect(gamSubmoduleMock.getAdTagUrl.calledOnce).to.be.true;
       expect(gamSubmoduleMock.getAdTagUrl.getCall(0).args[0]).is.equal(expectedAdUnit);
@@ -233,12 +240,14 @@ describe('Prebid Video', function () {
       const expectedVastUrl = 'expectedVastUrl';
       const expectedVastXml = 'expectedVastXml';
       const pbGlobal = Object.assign({}, pbGlobalMock, {
+        requestBids,
         getHighestCpmBids: () => [{
           vastUrl: expectedVastUrl,
           vastXml: expectedVastXml
         }, {}, {}, {}]
       });
       pbVideoFactory(null, getConfig, pbGlobal, pbEvents, null, gamSubmoduleFactory);
+      beforeBidRequestCallback(() => {}, {});
       auctionEndCallback(auctionResults);
       expect(videoCoreMock.setAdTagUrl.calledOnce).to.be.true;
       expect(videoCoreMock.setAdTagUrl.args[0][0]).to.be.equal(expectedAdTag);
@@ -250,6 +259,7 @@ describe('Prebid Video', function () {
       const expectedVastUrl = 'expectedVastUrl';
       const expectedVastXml = 'expectedVastXml';
       const pbGlobal = Object.assign({}, pbGlobalMock, {
+        requestBids,
         getHighestCpmBids: () => [{
           vastUrl: expectedVastUrl,
           vastXml: expectedVastXml
@@ -262,6 +272,7 @@ describe('Prebid Video', function () {
       const auctionResults = { adUnits: [ expectedAdUnit, {} ] };
 
       pbVideoFactory(null, null, pbGlobal, pbEvents);
+      beforeBidRequestCallback(() => {}, {});
       auctionEndCallback(auctionResults);
       expect(videoCoreMock.setAdTagUrl.calledOnce).to.be.true;
       expect(videoCoreMock.setAdTagUrl.args[0][0]).to.be.equal(expectedVastUrl);
