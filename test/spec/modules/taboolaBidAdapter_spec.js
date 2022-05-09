@@ -6,13 +6,21 @@ import * as utils from '../../../src/utils'
 describe('Taboola Adapter', function () {
   let hasLocalStorage, cookiesAreEnabled, getDataFromLocalStorage, localStorageIsEnabled, getCookie;
 
-  before(() => {
+  beforeEach(() => {
     hasLocalStorage = sinon.stub(userData.storageManager, 'hasLocalStorage');
     cookiesAreEnabled = sinon.stub(userData.storageManager, 'cookiesAreEnabled');
     getCookie = sinon.stub(userData.storageManager, 'getCookie');
     getDataFromLocalStorage = sinon.stub(userData.storageManager, 'getDataFromLocalStorage');
     localStorageIsEnabled = sinon.stub(userData.storageManager, 'localStorageIsEnabled');
   });
+
+  afterEach(() => {
+    hasLocalStorage.restore();
+    cookiesAreEnabled.restore();
+    getCookie.restore();
+    getDataFromLocalStorage.restore();
+    localStorageIsEnabled.restore();
+  })
 
   const commonBidRequest = {
     bidder: 'taboola',
@@ -114,7 +122,7 @@ describe('Taboola Adapter', function () {
           'page': commonBidderRequest.refererInfo.canonicalUrl,
           'ref': commonBidderRequest.refererInfo.referer,
           'publisher': {'id': commonBidRequest.params.publisherId},
-          'content': {'language': 'en-US'}
+          'content': {'language': navigator.language}
         },
         'device': {'ua': navigator.userAgent},
         'source': {'fd': 1},
@@ -127,10 +135,10 @@ describe('Taboola Adapter', function () {
         'regs': {'coppa': 0, 'ext': {}}
       };
 
-      const res = spec.buildRequests([defaultBidRequest], commonBidderRequest)
+      const res = spec.buildRequests([defaultBidRequest], commonBidderRequest);
 
-      expect(res.url).to.equal(`${END_POINT_URL}/${commonBidRequest.params.publisherId}`)
-      expect(res.data).to.deep.equal(JSON.stringify(expectedData))
+      expect(res.url).to.equal(`${END_POINT_URL}/${commonBidRequest.params.publisherId}`);
+      expect(res.data).to.deep.equal(JSON.stringify(expectedData));
     })
 
     it('should pass optional parameters in request', function () {
@@ -217,10 +225,6 @@ describe('Taboola Adapter', function () {
         const res = spec.buildRequests([defaultBidRequest], bidderRequest);
         const resData = JSON.parse(res.data);
         expect(resData.user.buyeruid).to.equal(51525152);
-
-        getDataFromLocalStorage.restore();
-        hasLocalStorage.restore();
-        localStorageIsEnabled.restore();
       });
 
       it('should get user id from cookie if local storage isn`t defined', function () {
@@ -237,16 +241,12 @@ describe('Taboola Adapter', function () {
         const resData = JSON.parse(res.data);
 
         expect(resData.user.buyeruid).to.equal('12121212');
-
-        getDataFromLocalStorage.restore();
-        hasLocalStorage.restore();
-        cookiesAreEnabled.restore();
-        getCookie.restore();
       });
 
       it('should get user id from TRC if local storage and cookie isn`t defined', function () {
         hasLocalStorage.returns(false);
         cookiesAreEnabled.returns(false);
+        localStorageIsEnabled.returns(false);
 
         window.TRC = {
           user_id: 31313131
@@ -259,8 +259,6 @@ describe('Taboola Adapter', function () {
         const resData = JSON.parse(res.data);
         expect(resData.user.buyeruid).to.equal(31313131);
 
-        hasLocalStorage.restore();
-        cookiesAreEnabled.restore();
         delete window.TRC;
       });
 
@@ -274,9 +272,6 @@ describe('Taboola Adapter', function () {
         const res = spec.buildRequests([defaultBidRequest], bidderRequest);
         const resData = JSON.parse(res.data);
         expect(resData.user.buyeruid).to.equal(0);
-
-        hasLocalStorage.restore();
-        cookiesAreEnabled.restore();
       });
 
       it('should set buyeruid to be 0 if it`s a new user', function () {
