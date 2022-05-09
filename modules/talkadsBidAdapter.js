@@ -19,7 +19,7 @@ export const spec = {
    * @param poBid  The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid: (poBid) => {
+  isBidRequestValid: function (poBid) {
     utils.logInfo('isBidRequestValid : ', poBid);
     if (poBid.params === undefined) {
       utils.logError('VALIDATION FAILED : the parameters must be defined');
@@ -44,7 +44,7 @@ export const spec = {
    * @param poBidderRequest
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: (paValidBidRequests, poBidderRequest) => {
+  buildRequests: function (paValidBidRequests, poBidderRequest) {
     utils.logInfo('buildRequests : ', paValidBidRequests, poBidderRequest);
     const laBids = paValidBidRequests.map((poBid, piId) => {
       const loOne = { id: piId, ad_unit: poBid.adUnitCode, bid_id: poBid.bidId, type: '', size: [] };
@@ -89,7 +89,7 @@ export const spec = {
    * @param poPidRequest Request original server request
    * @return An array of bids which were nested inside the server.
    */
-  interpretResponse: (poServerResponse, poPidRequest) => {
+  interpretResponse: function (poServerResponse, poPidRequest) {
     utils.logInfo('interpretResponse : ', poServerResponse);
     if (!poServerResponse.body) {
       return [];
@@ -121,7 +121,7 @@ export const spec = {
    *
    * @param poBid The bid that won the auction
    */
-  onBidWon: (poBid) => {
+  onBidWon: function (poBid) {
     utils.logInfo('onBidWon : ', poBid);
     let laParams = this.params ? this.params : poBid.params[0];
     if (poBid.pbid) {
