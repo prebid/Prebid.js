@@ -20,7 +20,7 @@ import { executeRenderer, isRendererRequired } from './Renderer.js';
 import { createBid } from './bidfactory.js';
 import { storageCallbacks } from './storageManager.js';
 import { emitAdRenderSucceeded, emitAdRenderFail } from './adRendering.js';
-import { gdprDataHandler, uspDataHandler, default as adapterManager } from './adapterManager.js'
+import {gdprDataHandler, getS2SBidderSet, uspDataHandler, default as adapterManager} from './adapterManager.js';
 import CONSTANTS from './constants.json';
 import * as events from './events.js'
 
@@ -577,17 +577,7 @@ $$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeo
 
   logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', arguments);
 
-  let _s2sConfigs = [];
-  const s2sBidders = [];
-  config.getConfig('s2sConfig', config => {
-    if (config && config.s2sConfig) {
-      _s2sConfigs = Array.isArray(config.s2sConfig) ? config.s2sConfig : [config.s2sConfig];
-    }
-  });
-
-  _s2sConfigs.forEach(s2sConfig => {
-    s2sBidders.push(...s2sConfig.bidders);
-  });
+  const s2sBidders = getS2SBidderSet(config.getConfig('s2sConfig') || []);
 
   adUnits = checkAdUnitSetup(adUnits);
 
@@ -613,7 +603,7 @@ $$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeo
     const allBidders = adUnit.bids.map(bid => bid.bidder);
     const bidderRegistry = adapterManager.bidderRegistry;
 
-    const bidders = (s2sBidders) ? allBidders.filter(bidder => !includes(s2sBidders, bidder)) : allBidders;
+    const bidders = allBidders.filter(bidder => !s2sBidders.has(bidder));
 
     adUnit.transactionId = generateUUID();
 
