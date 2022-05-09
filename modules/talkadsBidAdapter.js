@@ -5,9 +5,11 @@ import {ajax} from '../src/ajax.js';
 
 const CURRENCY = 'EUR';
 const BIDDER_CODE = 'talkads';
+const GVLID = 1074;
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [ NATIVE, BANNER ],
   params: null,
 
@@ -17,7 +19,7 @@ export const spec = {
    * @param poBid  The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid: function (poBid) {
+  isBidRequestValid: (poBid) => {
     utils.logInfo('isBidRequestValid : ', poBid);
     if (poBid.params === undefined) {
       utils.logError('VALIDATION FAILED : the parameters must be defined');
@@ -42,7 +44,7 @@ export const spec = {
    * @param poBidderRequest
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function (paValidBidRequests, poBidderRequest) {
+  buildRequests: (paValidBidRequests, poBidderRequest) => {
     utils.logInfo('buildRequests : ', paValidBidRequests, poBidderRequest);
     const laBids = paValidBidRequests.map((poBid, piId) => {
       const loOne = { id: piId, ad_unit: poBid.adUnitCode, bid_id: poBid.bidId, type: '', size: [] };
@@ -54,6 +56,7 @@ export const spec = {
       }
       return loOne;
     });
+    let laParams = this.params ? this.params : paValidBidRequests[0].params;
     const loServerRequest = {
       cur: CURRENCY,
       timeout: poBidderRequest.timeout,
@@ -71,7 +74,7 @@ export const spec = {
         loServerRequest.gdpr.consent = poBidderRequest.gdprConsent.consentString;
       }
     }
-    const lsUrl = this.params.bidder_url + '/' + this.params.tag_id;
+    const lsUrl = laParams.bidder_url + '/' + laParams.tag_id;
     return {
       method: 'POST',
       url: lsUrl,
@@ -118,10 +121,11 @@ export const spec = {
    *
    * @param poBid The bid that won the auction
    */
-  onBidWon: function (poBid) {
+  onBidWon: (poBid) => {
     utils.logInfo('onBidWon : ', poBid);
+    let laParams = this.params ? this.params : poBid.params[0];
     if (poBid.pbid) {
-      ajax(this.params.bidder_url + 'won/' + poBid.pbid);
+      ajax(laParams.bidder_url + 'won/' + poBid.pbid);
     }
   }, // onBidWon
 };
