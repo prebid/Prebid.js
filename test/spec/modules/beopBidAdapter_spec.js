@@ -9,7 +9,8 @@ const ENDPOINT = 'https://hb.beop.io/bid';
 let validBid = {
   'bidder': 'beop',
   'params': {
-    'accountId': '5a8af500c9e77c00017e4cad'
+    'accountId': '5a8af500c9e77c00017e4cad',
+    'permutive' : ['12345','4567']
   },
   'adUnitCode': 'bellow-article',
   'mediaTypes': {
@@ -99,6 +100,8 @@ describe('BeOp Bid Adapter tests', () => {
       expect(url).to.equal(ENDPOINT);
       expect(payload.pid).to.exist;
       expect(payload.pid).to.equal('5a8af500c9e77c00017e4cad');
+      expect(payload.sgs).to.exist;
+      expect(payload.sgs).to.equal(['12345','4567'])
       expect(payload.slts[0].name).to.exist;
       expect(payload.slts[0].name).to.equal('bellow-article');
       expect(payload.slts[0].flr).to.equal(10);
