@@ -1,4 +1,4 @@
-import { tryAppendQueryString, logMessage, isEmpty, isStr, isPlainObject, isArray, logWarn } from '../src/utils.js';
+import { tryAppendQueryString, logMessage, logError, isEmpty, isStr, isPlainObject, isArray, logWarn } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
@@ -197,14 +197,18 @@ function _getORTBVideo(bidRequest) {
 function _getFloor (bid) {
   let floor = null;
   if (typeof bid.getFloor === 'function') {
-    const floorInfo = bid.getFloor({
-      currency: 'USD',
-      mediaType: _isVideoBidRequest(bid) ? 'video' : 'banner',
-      size: '*'
-    });
-    if (typeof floorInfo === 'object' &&
-    floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
-      floor = parseFloat(floorInfo.floor);
+    try {
+      const floorInfo = bid.getFloor({
+        currency: 'USD',
+        mediaType: _isVideoBidRequest(bid) ? 'video' : 'banner',
+        size: '*'
+      });
+      if (typeof floorInfo === 'object' &&
+      floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
+        floor = parseFloat(floorInfo.floor);
+      }
+    } catch (err) {
+      logError('Triplelift: getFloor threw an error: ', err);
     }
   }
   return floor !== null ? floor : bid.params.floor;
@@ -214,9 +218,9 @@ function _getGlobalFpd() {
   const fpd = {};
   const context = {}
   const user = {};
-  const ortbData = config.getLegacyFpd(config.getConfig('ortb2')) || {};
+  const ortbData = config.getConfig('ortb2') || {};
 
-  const fpdContext = Object.assign({}, ortbData.context);
+  const fpdContext = Object.assign({}, ortbData.site);
   const fpdUser = Object.assign({}, ortbData.user);
 
   _addEntries(context, fpdContext);

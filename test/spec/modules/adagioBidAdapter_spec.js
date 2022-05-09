@@ -244,16 +244,6 @@ describe('Adagio bid adapter', () => {
       expect(spec.isBidRequestValid(bid03)).to.equal(false);
       expect(spec.isBidRequestValid(bid04)).to.equal(false);
     });
-
-    it('should return false when refererInfo.reachedTop is false', function() {
-      sandbox.spy(utils, 'logWarn');
-      sandbox.stub(adagio, 'getRefererInfo').returns({ reachedTop: false });
-      const bid = new BidRequestBuilder().withParams().build();
-
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-      sinon.assert.callCount(utils.logWarn, 1);
-      sinon.assert.calledWith(utils.logWarn, 'Adagio: the main page url is unreachabled.');
-    });
   });
 
   describe('buildRequests()', function() {
@@ -687,6 +677,11 @@ describe('Adagio bid adapter', () => {
         expect(requests[0].data.adUnits[0].floors[0]).to.deep.equal({f: 1, mt: 'banner', s: '300x250'});
         expect(requests[0].data.adUnits[0].floors[1]).to.deep.equal({f: 1, mt: 'banner', s: '300x600'});
         expect(requests[0].data.adUnits[0].floors[2]).to.deep.equal({f: 1, mt: 'video', s: '600x480'});
+
+        expect(requests[0].data.adUnits[0].mediaTypes.banner.sizes.length).to.equal(2);
+        expect(requests[0].data.adUnits[0].mediaTypes.banner.bannerSizes[0]).to.deep.equal({size: [300, 250], floor: 1});
+        expect(requests[0].data.adUnits[0].mediaTypes.banner.bannerSizes[1]).to.deep.equal({size: [300, 600], floor: 1});
+        expect(requests[0].data.adUnits[0].mediaTypes.video.floor).to.equal(1);
       });
 
       it('should get and set floor by mediatype if no size provided (ex native, video)', function() {
@@ -710,6 +705,9 @@ describe('Adagio bid adapter', () => {
         expect(requests[0].data.adUnits[0].floors.length).to.equal(2);
         expect(requests[0].data.adUnits[0].floors[0]).to.deep.equal({f: 1, mt: 'video'});
         expect(requests[0].data.adUnits[0].floors[1]).to.deep.equal({f: 1, mt: 'native'});
+
+        expect(requests[0].data.adUnits[0].mediaTypes.video.floor).to.equal(1);
+        expect(requests[0].data.adUnits[0].mediaTypes.native.floor).to.equal(1);
       });
 
       it('should get and set floor with default value if no floors found', function() {
@@ -723,12 +721,13 @@ describe('Adagio bid adapter', () => {
         }).withParams().build();
         const bidderRequest = new BidderRequestBuilder().build();
         bid01.getFloor = () => {
-          return { floor: NaN, currency: 'USD' }
+          return { floor: NaN, currency: 'USD', mt: 'video' }
         }
         const requests = spec.buildRequests([bid01], bidderRequest);
 
         expect(requests[0].data.adUnits[0].floors.length).to.equal(1);
-        expect(requests[0].data.adUnits[0].floors[0]).to.deep.equal({f: 0.1, mt: 'video'});
+        expect(requests[0].data.adUnits[0].floors[0]).to.deep.equal({mt: 'video'});
+        expect(requests[0].data.adUnits[0].mediaTypes.video.floor).to.be.undefined;
       });
     });
   });

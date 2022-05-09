@@ -2,9 +2,9 @@
  * This module adds MASS support to Prebid.js.
  */
 
-import { config } from '../src/config.js';
-import { getHook } from '../src/hook.js';
-import find from 'core-js-pure/features/array/find.js';
+import {config} from '../src/config.js';
+import {getHook} from '../src/hook.js';
+import {auctionManager} from '../src/auctionManager.js';
 
 const defaultCfg = {
   dealIdPattern: /^MASS/i
@@ -78,7 +78,7 @@ export function updateRenderers() {
 /**
  * Before hook for 'addBidResponse'.
  */
-export function addBidResponseHook(next, adUnitCode, bid) {
+export function addBidResponseHook(next, adUnitCode, bid, {index = auctionManager.index} = {}) {
   let renderer;
   for (let i = 0; i < renderers.length; i++) {
     if (renderers[i].match(bid)) {
@@ -88,9 +88,7 @@ export function addBidResponseHook(next, adUnitCode, bid) {
   }
 
   if (renderer) {
-    const bidRequest = find(this.bidderRequest.bids, bidRequest =>
-      bidRequest.bidId === bid.requestId
-    );
+    const bidRequest = index.getBidRequest(bid);
 
     matchedBids[bid.requestId] = {
       renderer,

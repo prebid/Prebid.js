@@ -36,6 +36,7 @@
  * @param {string[]} adUnitsCodes
  * @param {SubmoduleConfig} config
  * @param {UserConsentData} userConsent
+ * @param {auction} auction
  */
 
 /**
@@ -152,11 +153,11 @@
 
 import {config} from '../../src/config.js';
 import {module} from '../../src/hook.js';
-import {logError, logWarn} from '../../src/utils.js';
-import events from '../../src/events.js';
+import {logError, logInfo, logWarn} from '../../src/utils.js';
+import * as events from '../../src/events.js';
 import CONSTANTS from '../../src/constants.json';
 import {gdprDataHandler, uspDataHandler} from '../../src/adapterManager.js';
-import find from 'core-js-pure/features/array/find.js';
+import {find} from '../../src/polyfill.js';
 import {getGlobal} from '../../src/prebidGlobal.js';
 
 /** @type {string} */
@@ -256,6 +257,7 @@ function initSubModules() {
     }
   });
   subModules = subModulesByOrder;
+  logInfo(`Real time data module enabled, using submodules: ${subModules.map((m) => m.name).join(', ')}`);
 }
 
 /**
@@ -290,17 +292,11 @@ export function setBidRequestsData(fn, reqBidsConfigObj) {
     return exitHook();
   }
 
-  if (shouldDelayAuction) {
-    waitTimeout = setTimeout(exitHook, _moduleConfig.auctionDelay);
-  }
+  waitTimeout = setTimeout(exitHook, shouldDelayAuction ? _moduleConfig.auctionDelay : 0);
 
   relevantSubModules.forEach(sm => {
     sm.getBidRequestData(reqBidsConfigObj, onGetBidRequestDataCallback.bind(sm), sm.config, _userConsent)
   });
-
-  if (!shouldDelayAuction) {
-    return exitHook();
-  }
 
   function onGetBidRequestDataCallback() {
     if (isDone) {
@@ -309,12 +305,15 @@ export function setBidRequestsData(fn, reqBidsConfigObj) {
     if (this.config && this.config.waitForIt) {
       callbacksExpected--;
     }
-    if (callbacksExpected <= 0) {
-      return exitHook();
+    if (callbacksExpected === 0) {
+      setTimeout(exitHook, 0);
     }
   }
 
   function exitHook() {
+    if (isDone) {
+      return;
+    }
     isDone = true;
     clearTimeout(waitTimeout);
     fn.call(this, reqBidsConfigObj);
@@ -341,7 +340,7 @@ export function getAdUnitTargeting(auction) {
   }
   let targeting = [];
   for (let i = relevantSubModules.length - 1; i >= 0; i--) {
-    const smTargeting = relevantSubModules[i].getTargetingData(adUnitCodes, relevantSubModules[i].config, _userConsent);
+    const smTargeting = relevantSubModules[i].getTargetingData(adUnitCodes, relevantSubModules[i].config, _userConsent, auction);
     if (smTargeting && typeof smTargeting === 'object') {
       targeting.push(smTargeting);
     } else {
@@ -355,6 +354,7 @@ export function getAdUnitTargeting(auction) {
     if (!kv) {
       return
     }
+    logInfo('RTD set ad unit targeting of', kv, 'for', adUnit);
     adUnit[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING] = Object.assign(adUnit[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING] || {}, kv);
   });
   return auction.adUnits;
