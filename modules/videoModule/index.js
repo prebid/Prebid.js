@@ -52,15 +52,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
       });
     });
 
-    requestBids.before(enrichAdUnits, 40);
-
-    pbEvents.on(CONSTANTS.EVENTS.AUCTION_END, function(auctionResult) {
-      auctionResult.adUnits.forEach(adUnit => {
-        if (adUnit.video) {
-          renderWinningBid(adUnit);
-        }
-      });
-    });
+    requestBids.before(beforeBidsRequested, 40);
 
     pbEvents.on(CONSTANTS.EVENTS.BID_ADJUSTMENT, function (bid) {
       videoImpressionVerifier.trackBid(bid);
@@ -77,11 +69,17 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
 
   return { init };
 
-  function enrichAdUnits(nextFn, bidRequest) {
+  function beforeBidsRequested(nextFn, bidRequest) {
     const adUnits = bidRequest.adUnits || pbGlobal.adUnits || [];
     adUnits.forEach(adUnit => {
       enrichAdUnit(adUnit);
     });
+
+    const bidsBackHandler = bidRequest.bidsBackHandler;
+    if (!bidsBackHandler || typeof bidsBackHandler !== 'function') {
+      pbEvents.on(CONSTANTS.EVENTS.AUCTION_END, auctionEnd);
+    }
+
     return nextFn.call(this, bidRequest);
   }
 
@@ -100,6 +98,14 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     adUnit.mediaTypes.video = Object.assign({}, videoMediaType, oRtbParams.video);
     let ortb2 = { ortb2: mergeDeep({}, getConfig('ortb2'), { site: oRtbParams.content }) };
     pbGlobal.setConfig(ortb2);
+  }
+
+  function auctionEnd(auctionResult) {
+    auctionResult.adUnits.forEach(adUnit => {
+      if (adUnit.video) {
+        renderWinningBid(adUnit);
+      }
+    });
   }
 
   function renderWinningBid(adUnit) {
