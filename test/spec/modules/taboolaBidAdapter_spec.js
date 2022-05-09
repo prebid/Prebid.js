@@ -257,7 +257,7 @@ describe('Taboola Adapter', function () {
         }
         const res = spec.buildRequests([defaultBidRequest], bidderRequest);
         const resData = JSON.parse(res.data);
-        expect(resData.user.buyeruid).to.equal(31313131);
+        expect(resData.user.buyeruid).to.equal(window.TRC.user_id);
 
         delete window.TRC;
       });
