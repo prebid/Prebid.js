@@ -36,11 +36,16 @@ export const spec = {
     */
   buildRequests: function(validBidRequests, bidderRequest) {
     const slots = validBidRequests.map(beOpRequestSlotsMaker);
-    let pageUrl = deepAccess(window, 'location.href') || deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || config.getConfig('pageUrl');
-    let fpd = config.getLegacyFpd(config.getConfig('ortb2'));
-    let gdpr = bidderRequest.gdprConsent;
-    let firstSlot = slots[0];
-    let payloadObject = {
+    let pageUrl = deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || config.getConfig('pageUrl') || deepAccess(window, 'top.location.href') || deepAccess(window, 'location.href');
+    // Ensure the protocol is present (looks like sometimes canonicalUrl misses it)
+    if (pageUrl != null) {
+      const defaultProtocol = deepAccess(window, 'top.location.protocol') || deepAccess(window, 'location.protocol');
+      pageUrl = ensureProtocolInUrl(pageUrl, defaultProtocol);
+    }
+    const fpd = config.getLegacyFpd(config.getConfig('ortb2'));
+    const gdpr = bidderRequest.gdprConsent;
+    const firstSlot = slots[0];
+    const payloadObject = {
       at: new Date().toString(),
       nid: firstSlot.nid,
       nptnid: firstSlot.nptnid,
@@ -139,6 +144,25 @@ function beOpRequestSlotsMaker(bid) {
     bdrc: getBidIdParameter('bidderRequestCount', bid),
     bwc: getBidIdParameter('bidderWinsCount', bid),
   }
+}
+
+const protocolRelativeRegExp = /^\/\//
+function isProtocolRelativeUrl(url) {
+  return url && url.match(protocolRelativeRegExp) != null;
+}
+
+const withProtocolRegExp = /[a-z]{1,}:\/\//
+function isNoProtocolUrl(url) {
+  return url && url.match(withProtocolRegExp) == null;
+}
+
+function ensureProtocolInUrl(url, defaultProtocol) {
+  if (isProtocolRelativeUrl(url)) {
+    return `${defaultProtocol}${url}`;
+  } else if (isNoProtocolUrl(url)) {
+    return `${defaultProtocol}//${url}`;
+  }
+  return url;
 }
 
 registerBidder(spec);
