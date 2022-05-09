@@ -41,8 +41,8 @@ pbjs.enableAnalytics({
 });
 ```
 
-| Parameter | Scope | Type | Description                                                        | Example |
-| --- | --- | --- |--------------------------------------------------------------------| --- |
-| provider | Required | String | The name of this module: `hadronAnalytics`                         | `hadronAnalytics` |
-| options.partnerId | Required | Number | This is the ID5 Partner Number obtained from registering with ID5. | `1234` |
-| options.eventsToTrack | Optional | Array of strings | Overrides the set of tracked events                                | `['auctionEnd','bidWon']` |
+| Parameter | Scope | Type | Description                                             | Example |
+| --- | --- | --- |---------------------------------------------------------| --- |
+| provider | Required | String | The name of this module: `hadronAnalytics`              | `hadronAnalytics` |
+| options.partnerId | Required | Number | This is the Audigent Partner ID obtained from Audigent. | `1234` |
+| options.eventsToTrack | Optional | Array of strings | Overrides the set of tracked events                     | `['auctionEnd','bidWon']` |
