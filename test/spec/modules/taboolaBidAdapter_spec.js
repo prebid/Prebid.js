@@ -249,7 +249,7 @@ describe('Taboola Adapter', function () {
         localStorageIsEnabled.returns(false);
 
         window.TRC = {
-          user_id: 31313131
+          user_id: 31313132
         };
 
         const bidderRequest = {
