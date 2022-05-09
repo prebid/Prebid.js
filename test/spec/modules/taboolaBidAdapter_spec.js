@@ -4,6 +4,16 @@ import {config} from '../../../src/config'
 import * as utils from '../../../src/utils'
 
 describe('Taboola Adapter', function () {
+  let hasLocalStorage, cookiesAreEnabled, getDataFromLocalStorage, localStorageIsEnabled, getCookie;
+
+  before(() => {
+    hasLocalStorage = sinon.stub(userData.storageManager, 'hasLocalStorage');
+    cookiesAreEnabled = sinon.stub(userData.storageManager, 'cookiesAreEnabled');
+    getCookie = sinon.stub(userData.storageManager, 'getCookie');
+    getDataFromLocalStorage = sinon.stub(userData.storageManager, 'getDataFromLocalStorage');
+    localStorageIsEnabled = sinon.stub(userData.storageManager, 'localStorageIsEnabled');
+  });
+
   const commonBidRequest = {
     bidder: 'taboola',
     params: {
@@ -196,8 +206,9 @@ describe('Taboola Adapter', function () {
 
     describe('handle userid ', function () {
       it('should get user id from local storage', function () {
-        const getDataFromLocalStorage = sinon.stub(userData.storageManager, 'getDataFromLocalStorage');
         getDataFromLocalStorage.returns(51525152);
+        hasLocalStorage.returns(true);
+        localStorageIsEnabled.returns(true);
 
         const bidderRequest = {
           ...commonBidderRequest,
@@ -206,16 +217,17 @@ describe('Taboola Adapter', function () {
         const res = spec.buildRequests([defaultBidRequest], bidderRequest);
         const resData = JSON.parse(res.data);
         expect(resData.user.buyeruid).to.equal(51525152);
+
         getDataFromLocalStorage.restore();
+        hasLocalStorage.restore();
+        localStorageIsEnabled.restore();
       });
 
       it('should get user id from cookie if local storage isn`t defined', function () {
-        const hasLocalStorage = sinon.stub(userData.storageManager, 'hasLocalStorage');
-        const getDataFromLocalStorage = sinon.stub(userData.storageManager, 'getDataFromLocalStorage');
-        const getCookie = sinon.stub(userData.storageManager, 'getCookie');
-
         getDataFromLocalStorage.returns(51525152);
         hasLocalStorage.returns(false);
+        localStorageIsEnabled.returns(false);
+        cookiesAreEnabled.returns(true);
         getCookie.returns('taboola%20global%3Auser-id=12121212');
 
         const bidderRequest = {
@@ -223,17 +235,16 @@ describe('Taboola Adapter', function () {
         };
         const res = spec.buildRequests([defaultBidRequest], bidderRequest);
         const resData = JSON.parse(res.data);
+
         expect(resData.user.buyeruid).to.equal('12121212');
 
         getDataFromLocalStorage.restore();
         hasLocalStorage.restore();
+        cookiesAreEnabled.restore();
         getCookie.restore();
       });
 
       it('should get user id from TRC if local storage and cookie isn`t defined', function () {
-        const hasLocalStorage = sinon.stub(userData.storageManager, 'hasLocalStorage');
-        const cookiesAreEnabled = sinon.stub(userData.storageManager, 'cookiesAreEnabled');
-
         hasLocalStorage.returns(false);
         cookiesAreEnabled.returns(false);
 
@@ -254,9 +265,6 @@ describe('Taboola Adapter', function () {
       });
 
       it('should get user id to be 0 if cookie, local storage, TRC isn`t defined', function () {
-        const hasLocalStorage = sinon.stub(userData.storageManager, 'hasLocalStorage');
-        const cookiesAreEnabled = sinon.stub(userData.storageManager, 'cookiesAreEnabled');
-
         hasLocalStorage.returns(false);
         cookiesAreEnabled.returns(false);
 
