@@ -1,4 +1,5 @@
 import { deepAccess, isArray, logWarn, triggerPixel, buildUrl, logInfo, getValue, getBidIdParameter } from '../src/utils.js';
+import { getRefererInfo } from '../src/refererDetection.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 const BIDDER_CODE = 'beop';
@@ -36,12 +37,7 @@ export const spec = {
     */
   buildRequests: function(validBidRequests, bidderRequest) {
     const slots = validBidRequests.map(beOpRequestSlotsMaker);
-    let pageUrl = deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || config.getConfig('pageUrl') || deepAccess(window, 'top.location.href') || deepAccess(window, 'location.href');
-    // Ensure the protocol is present (looks like sometimes canonicalUrl misses it)
-    if (pageUrl != null) {
-      const defaultProtocol = deepAccess(window, 'top.location.protocol') || deepAccess(window, 'location.protocol');
-      pageUrl = ensureProtocolInUrl(pageUrl, defaultProtocol);
-    }
+    const pageUrl = getPageUrl(bidderRequest.refererInfo, window);
     const fpd = config.getLegacyFpd(config.getConfig('ortb2'));
     const gdpr = bidderRequest.gdprConsent;
     const firstSlot = slots[0];
@@ -105,6 +101,7 @@ export const spec = {
 
 function buildTrackingParams(data, info, value) {
   const accountId = data.params.accountId;
+  const pageUrl = getPageUrl(null, window);
   return {
     pid: accountId === undefined ? data.ad.match(/account: \“([a-f\d]{24})\“/)[1] : accountId,
     nid: data.params.networkId,
@@ -115,7 +112,7 @@ function buildTrackingParams(data, info, value) {
     se_ca: 'bid',
     se_ac: info,
     se_va: value,
-    url: window.location.href
+    url: pageUrl
   };
 }
 
@@ -163,6 +160,17 @@ function ensureProtocolInUrl(url, defaultProtocol) {
     return `${defaultProtocol}//${url}`;
   }
   return url;
+}
+
+function getPageUrl(refererInfo, window) {
+  refererInfo = refererInfo || getRefererInfo();
+  let pageUrl = refererInfo.canonicalUrl || refererInfo.referer || deepAccess(window, 'top.location.href') || deepAccess(window, 'location.href');
+  // Ensure the protocol is present (looks like sometimes canonicalUrl misses it)
+  if (pageUrl != null) {
+    const defaultProtocol = deepAccess(window, 'top.location.protocol') || deepAccess(window, 'location.protocol');
+    pageUrl = ensureProtocolInUrl(pageUrl, defaultProtocol);
+  }
+  return pageUrl;
 }
 
 registerBidder(spec);
