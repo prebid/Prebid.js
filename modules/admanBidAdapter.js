@@ -110,6 +110,7 @@ export const spec = {
       if (bid.userId) {
         getUserId(placement.eids, bid.userId.uid2 && bid.userId.uid2.id, 'uidapi.com');
         getUserId(placement.eids, bid.userId.lotamePanoramaId, 'lotame.com');
+        getUserId(placement.eids, bid.userId.idx, 'idx.lat');
       }
       if (traff === VIDEO) {
         placement.playerSize = bid.mediaTypes[VIDEO].playerSize;

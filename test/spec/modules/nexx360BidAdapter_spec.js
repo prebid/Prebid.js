@@ -146,6 +146,37 @@ describe('Nexx360 bid adapter tests', function () {
       }]
     },
   };
+
+  it('We verify isBidRequestValid with uncorrect bidfloorCurrency', function() {
+    const bid = { params: {
+      'account': '1067',
+      'tagId': 'luvxjvgn',
+      'bidfloorCurrency': 'AAA',
+    }};
+    expect(spec.isBidRequestValid(bid)).to.be.equal(false);
+  });
+
+  it('We verify isBidRequestValid with uncorrect bidfloor', function() {
+    const bid = { params: {
+      'account': '1067',
+      'tagId': 'luvxjvgn',
+      'bidfloorCurrency': 'EUR',
+      'bidfloor': 'EUR',
+    }};
+    expect(spec.isBidRequestValid(bid)).to.be.equal(false);
+  });
+
+  it('We verify isBidRequestValid with uncorrect keywords', function() {
+    const bid = { params: {
+      'account': '1067',
+      'tagId': 'luvxjvgn',
+      'bidfloorCurrency': 'EUR',
+      'bidfloor': 0.8,
+      'keywords': 'test',
+    }};
+    expect(spec.isBidRequestValid(bid)).to.be.equal(false);
+  });
+
   it('Verify banner build request', function () {
     const request = spec.buildRequests(DISPLAY_BID_REQUEST, DEFAULT_OPTIONS);
     expect(request).to.have.property('url').and.to.equal('https://fast.nexx360.io/prebid');
@@ -162,6 +193,24 @@ describe('Nexx360 bid adapter tests', function () {
     expect(requestContent.adUnits[0]).to.have.property('auctionId').and.to.equal('05e0a3a1-9f57-41f6-bbcb-2ba9c9e3d2d5');
     expect(requestContent.adUnits[0]).to.have.property('mediatypes').exist;
     expect(requestContent.adUnits[0].mediatypes).to.have.property('banner').exist;
+    expect(requestContent.adUnits[0]).to.have.property('bidfloor').and.to.equal(0);
+    expect(requestContent.adUnits[0]).to.have.property('bidfloorCurrency').and.to.equal('USD');
+    expect(requestContent.adUnits[0]).to.have.property('keywords');
+    expect(requestContent.adUnits[0].keywords.length).to.be.eql(0);
+  });
+
+  it('We add bidfloor and keywords', function() {
+    const DISPLAY_BID_REQUEST_2 = [ ...DISPLAY_BID_REQUEST ];
+    DISPLAY_BID_REQUEST_2[0].params.keywords = { interest: 'cars' };
+    DISPLAY_BID_REQUEST_2[0].params.bidfloor = 2.1;
+    const request = spec.buildRequests(DISPLAY_BID_REQUEST, DEFAULT_OPTIONS);
+    const requestContent = JSON.parse(request.data);
+    expect(requestContent.adUnits[0]).to.have.property('bidfloor').and.to.equal(2.1);
+    expect(requestContent.adUnits[0]).to.have.property('bidfloorCurrency').and.to.equal('USD');
+    expect(requestContent.adUnits[0]).to.have.property('keywords');
+    expect(requestContent.adUnits[0].keywords.length).to.be.eql(1);
+    expect(requestContent.adUnits[0].keywords[0].key).to.be.eql('interest');
+    expect(requestContent.adUnits[0].keywords[0].value[0]).to.be.eql('cars');
   });
 
   it('Verify banner parse response', function () {
