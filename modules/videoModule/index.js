@@ -67,7 +67,14 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     });
   }
 
-  return { init };
+  function renderBid(divId, bid, options = {}) {
+    const adUrl = bid.vastUrl;
+    options.adXml = bid.vastXml;
+    options.winner = bid.bidder;
+    loadAdTag(adUrl, divId, options);
+  }
+
+  return { init, renderBid };
 
   function beforeBidsRequested(nextFn, bidRequest) {
     const adUnits = bidRequest.adUnits || pbGlobal.adUnits || [];
@@ -136,10 +143,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
       return;
     }
 
-    adUrl = highestBid.vastUrl;
-    options.adXml = highestBid.vastXml;
-    options.winner = highestBid.bidder;
-    loadAdTag(adUrl, divId, options);
+    renderBid(divId, highestBid, options);
   }
 
   // options: adXml, winner, adUnitCode,
@@ -172,8 +176,10 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
 
 export function pbVideoFactory() {
   const videoCore = videoCoreFactory();
-  const pbVideo = PbVideo(videoCore, config.getConfig, getGlobal(), events, allVideoEvents, gamSubmoduleFactory, videoImpressionVerifierFactory);
+  const pbGlobal = getGlobal();
+  const pbVideo = PbVideo(videoCore, config.getConfig, pbGlobal, events, allVideoEvents, gamSubmoduleFactory, videoImpressionVerifierFactory);
   pbVideo.init();
+  pbGlobal.videoModule = pbVideo;
   return pbVideo;
 }
 
