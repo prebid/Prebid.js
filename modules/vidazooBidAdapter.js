@@ -1,6 +1,6 @@
 import { _each, deepAccess, parseSizesInput } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const GVLID = 744;
@@ -24,7 +24,7 @@ export const SUPPORTED_ID_SYSTEMS = {
   'pubcid': 1,
   'tdid': 1,
 };
-const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
+const storage = getStorageManager({ gvlid: GVLID, bidderCode: BIDDER_CODE });
 
 export function createDomain(subDomain = DEFAULT_SUB_DOMAIN) {
   return `https://${subDomain}.cootlogix.com`;
@@ -272,7 +272,7 @@ export const spec = {
   code: BIDDER_CODE,
   version: BIDDER_VERSION,
   gvlid: GVLID,
-  supportedMediaTypes: [BANNER],
+  supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid,
   buildRequests,
   interpretResponse,
