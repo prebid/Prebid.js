@@ -14,7 +14,7 @@ import { createBid } from 'src/bidfactory.js';
 import { config } from 'src/config.js';
 import * as store from 'src/videoCache.js';
 import * as ajaxLib from 'src/ajax.js';
-import find from 'core-js-pure/features/array/find.js';
+import {find} from 'src/polyfill.js';
 import { server } from 'test/mocks/xhr.js';
 import {hook} from '../../src/hook.js';
 import {auctionManager} from '../../src/auctionManager.js';
@@ -941,6 +941,8 @@ describe('auctionmanager.js', function () {
           const timedOutBids = bidTimeoutCall.args[1];
           assert.equal(timedOutBids.length, 1);
           assert.equal(timedOutBids[0].bidder, BIDDER_CODE1);
+          // Check that additional properties are available
+          assert.equal(timedOutBids[0].params.placementId, 'id');
 
           const auctionEndCall = eventsEmitSpy.withArgs(CONSTANTS.EVENTS.AUCTION_END).getCalls()[0];
           const auctionProps = auctionEndCall.args[1];

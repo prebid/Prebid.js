@@ -1,15 +1,30 @@
-import { parseUrl, deepAccess, parseGPTSingleSizeArray, getGptSlotInfoForAdUnitCode, deepSetValue, logWarn, deepClone, getParameterByName, generateUUID, logError, logInfo, isNumber, pick, debugTurnedOn } from '../src/utils.js';
-import { getGlobal } from '../src/prebidGlobal.js';
-import { config } from '../src/config.js';
-import { ajaxBuilder } from '../src/ajax.js';
-import events from '../src/events.js';
+import {
+  debugTurnedOn,
+  deepAccess,
+  deepClone,
+  deepSetValue,
+  generateUUID,
+  getGptSlotInfoForAdUnitCode,
+  getParameterByName,
+  isNumber,
+  logError,
+  logInfo,
+  logWarn,
+  parseGPTSingleSizeArray,
+  parseUrl,
+  pick
+} from '../src/utils.js';
+import {getGlobal} from '../src/prebidGlobal.js';
+import {config} from '../src/config.js';
+import {ajaxBuilder} from '../src/ajax.js';
+import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
-import { getHook } from '../src/hook.js';
-import { createBid } from '../src/bidfactory.js';
-import find from 'core-js-pure/features/array/find.js';
-import { getRefererInfo } from '../src/refererDetection.js';
-import {auctionManager} from '../src/auctionManager.js';
+import {getHook} from '../src/hook.js';
+import {createBid} from '../src/bidfactory.js';
+import {find} from '../src/polyfill.js';
+import {getRefererInfo} from '../src/refererDetection.js';
 import {bidderSettings} from '../src/bidderSettings.js';
+import {auctionManager} from '../src/auctionManager.js';
 
 /**
  * @summary This Module is intended to provide users with the ability to dynamically set and enforce price floors on a per auction basis.
@@ -123,7 +138,7 @@ export function getFirstMatchingFloor(floorData, bidObject, responseObject = {})
 
   let matchingData = {
     floorMin: floorData.floorMin || 0,
-    floorRuleValue: floorData.values[matchingRule] || floorData.default,
+    floorRuleValue: isNaN(floorData.values[matchingRule]) ? floorData.default : floorData.values[matchingRule],
     matchingData: allPossibleMatches[0], // the first possible match is an "exact" so contains all data relevant for anlaytics adapters
     matchingRule
   };

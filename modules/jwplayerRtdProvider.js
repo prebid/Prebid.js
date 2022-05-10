@@ -9,12 +9,12 @@
  * @requires module:modules/realTimeData
  */
 
-import { submodule } from '../src/hook.js';
-import { config } from '../src/config.js';
-import { ajaxBuilder } from '../src/ajax.js';
-import { logError } from '../src/utils.js';
-import find from 'core-js-pure/features/array/find.js';
-import { getGlobal } from '../src/prebidGlobal.js';
+import {submodule} from '../src/hook.js';
+import {config} from '../src/config.js';
+import {ajaxBuilder} from '../src/ajax.js';
+import {logError} from '../src/utils.js';
+import {find} from '../src/polyfill.js';
+import {getGlobal} from '../src/prebidGlobal.js';
 
 const SUBMODULE_NAME = 'jwplayer';
 const segCache = {};
@@ -155,8 +155,10 @@ export function enrichAdUnits(adUnits) {
       if (!vat) {
         return;
       }
-      const contentId = getContentId(vat.mediaID);
-      const contentData = getContentData(vat.segments);
+      const mediaId = vat.mediaID;
+      const contentId = getContentId(mediaId);
+      const contentSegments = getContentSegments(vat.segments);
+      const contentData = getContentData(mediaId, contentSegments);
       const targeting = formatTargetingResponse(vat);
       enrichBids(adUnit.bids, targeting, contentId, contentData);
     };
@@ -263,7 +265,7 @@ export function getContentId(mediaID) {
   return 'jw_' + mediaID;
 }
 
-export function getContentData(segments) {
+export function getContentSegments(segments) {
   if (!segments || !segments.length) {
     return;
   }
@@ -276,13 +278,29 @@ export function getContentData(segments) {
     return convertedSegments;
   }, []);
 
-  return {
-    name: 'jwplayer',
-    ext: {
-      segtax: 502
-    },
-    segment: formattedSegments
+  return formattedSegments;
+}
+
+export function getContentData(mediaId, segments) {
+  if (!mediaId && !segments) {
+    return;
+  }
+
+  const contentData = {
+    name: 'jwplayer.com',
+    ext: {}
   };
+
+  if (mediaId) {
+    contentData.ext.cids = [mediaId];
+  }
+
+  if (segments) {
+    contentData.segment = segments;
+    contentData.ext.segtax = 502;
+  }
+
+  return contentData;
 }
 
 export function addOrtbSiteContent(bid, contentId, contentData) {

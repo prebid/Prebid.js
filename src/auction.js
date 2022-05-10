@@ -68,8 +68,7 @@ import { Renderer } from './Renderer.js';
 import { config } from './config.js';
 import { userSync } from './userSync.js';
 import { hook } from './hook.js';
-import find from 'core-js-pure/features/array/find.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import {find, includes} from './polyfill.js';
 import { OUTSTREAM } from './video.js';
 import { VIDEO } from './mediaTypes.js';
 import {auctionManager} from './auctionManager.js';
@@ -573,7 +572,8 @@ function getPreparedBidForAuction({adUnitCode, bid, auctionId}, {index = auction
   }
 
   if (renderer) {
-    bidObject.renderer = Renderer.install({ url: renderer.url });
+    // be aware, an adapter could already have installed the bidder, in which case this overwrite's the existing adapter
+    bidObject.renderer = Renderer.install({ url: renderer.url, config: renderer.options });// rename options to config, to make it consistent?
     bidObject.renderer.setRender(renderer.render);
   }
 
@@ -848,13 +848,7 @@ function groupByPlacement(bidsByPlacement, bid) {
 function getTimedOutBids(bidderRequests, timelyBidders) {
   const timedOutBids = bidderRequests
     .map(bid => (bid.bids || []).filter(bid => !timelyBidders.has(bid.bidder)))
-    .reduce(flatten, [])
-    .map(bid => ({
-      bidId: bid.bidId,
-      bidder: bid.bidder,
-      adUnitCode: bid.adUnitCode,
-      auctionId: bid.auctionId,
-    }));
+    .reduce(flatten, []);
 
   return timedOutBids;
 }

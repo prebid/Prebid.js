@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import find from 'core-js-pure/features/array/find.js';
+import {find} from 'src/polyfill.js';
 import { spec } from 'modules/mediakeysBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as utils from 'src/utils.js';

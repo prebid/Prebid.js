@@ -5,7 +5,7 @@ import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'amx';
-const storage = getStorageManager(737, BIDDER_CODE);
+const storage = getStorageManager({gvlid: 737, bidderCode: BIDDER_CODE});
 const SIMPLE_TLD_TEST = /\.com?\.\w{2,4}$/;
 const DEFAULT_ENDPOINT = 'https://prebid.a-mo.net/a/c';
 const VERSION = 'pba1.3.1';

@@ -1,12 +1,22 @@
-import { convertCamelToUnderscore, isArray, isNumber, isPlainObject, deepAccess, logError, convertTypes, getParameterByName, getBidRequest, isEmpty, transformBidderParamKeywords, isFn } from '../src/utils.js';
-import { config } from '../src/config.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
-import find from 'core-js-pure/features/array/find.js';
-import includes from 'core-js-pure/features/array/includes.js';
-import { getStorageManager } from '../src/storageManager.js';
-
-export const storage = getStorageManager();
+import {
+  convertCamelToUnderscore,
+  convertTypes,
+  deepAccess,
+  getBidRequest,
+  getParameterByName,
+  isArray,
+  isEmpty,
+  isFn,
+  isNumber,
+  isPlainObject,
+  logError,
+  transformBidderParamKeywords
+} from '../src/utils.js';
+import {config} from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER} from '../src/mediaTypes.js';
+import {find, includes} from '../src/polyfill.js';
+import {getStorageManager} from '../src/storageManager.js';
 
 const BIDDER_CODE = 'winr';
 const URL = 'https://ib.adnxs.com/ut/v3/prebid';
@@ -16,6 +26,8 @@ const APP_DEVICE_PARAMS = ['geo', 'device_id']; // appid is collected separately
 const SOURCE = 'pbjs';
 const DEFAULT_CURRENCY = 'USD';
 const GATE_COOKIE_NAME = 'wnr_gate';
+
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 function buildBid(bidData) {
   const bid = bidData;
@@ -39,9 +51,9 @@ function wrapAd(bid, position) {
         <title></title>
         <style>html, body {width: 100%; height: 100%; margin: 0;}</style>
     </head>
-    <body>   
+    <body>
       <script>
-        function winrPbRendererLoad(cb) {     
+        function winrPbRendererLoad(cb) {
           var w = parent.document.createElement("script");
           w.innerHTML = \`
             var WINR = {
@@ -58,13 +70,13 @@ function wrapAd(bid, position) {
                 tg: ${position.domParent},
                 rf: ${position.child}
               },
-            }; 
+            };
           \`;
           var s = parent.document.head.getElementsByTagName("script")[0];
-          s.parentNode.insertBefore(w, s);              
+          s.parentNode.insertBefore(w, s);
           var n = parent.document.createElement("script");
           n.src = 'https://helpers.winr.com.au/dist/prebidRenderer.js';
-          n.onload = function () {            
+          n.onload = function () {
             var WinrLib = window.parent.WinrPbRenderer.default;
             window.parent.winrLib = new WinrLib();
             if (!window.parent.winrLib) {
