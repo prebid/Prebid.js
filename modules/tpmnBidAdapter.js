@@ -1,6 +1,6 @@
 /* eslint-disable no-tabs */
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { parseUrl, deepAccess, logWarn, generateUUID } from '../src/utils.js';
+import { parseUrl, deepAccess } from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
@@ -21,7 +21,7 @@ export const spec = {
    * @param {object} bid The bid to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return 'params' in bid &&
       'inventoryId' in bid.params &&
       'publisherId' in bid.params &&
@@ -160,13 +160,4 @@ function bidToRequest(bid) {
   bidObj.auctionId = bid.auctionId;
 
   return bidObj;
-}
-
-function getUuid() {
-  const UUID_KEY = 'uuid';
-  const id = storage.getCookie(UUID_KEY);
-  if (id) return id;
-  let newId = generateUUID().replace(/-/g, '');
-  storage.setCookie(UUID_KEY, newId);
-  return newId;
 }
