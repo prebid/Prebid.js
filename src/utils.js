@@ -1364,3 +1364,14 @@ export function cyrb53Hash(str, seed = 0) {
 export function getWindowFromDocument(doc) {
   return (doc) ? doc.defaultView : null;
 }
+
+/**
+ * returns the result of `JSON.parse(data)`, or undefined if that throws an error.
+ * @param data
+ * @returns {any}
+ */
+export function safeJSONParse(data) {
+  try {
+    return JSON.parse(data);
+  } catch (e) {}
+}

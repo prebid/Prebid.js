@@ -36,7 +36,6 @@ export const spec = {
     const serverRequestObjects = [];
     const UTC_OFFSET = new Date().getTimezoneOffset();
     const UA = navigator.userAgent;
-    const IP = navigator.ip ? navigator.ip : 'prebid.js';
     const USP = BIDDER_REQUEST.uspConsent || null;
     const REFERER = BIDDER_REQUEST.refererInfo ? new URL(BIDDER_REQUEST.refererInfo.referer).hostname : window.location.hostname;
     const BIDDER_GDPR = BIDDER_REQUEST.gdprConsent && BIDDER_REQUEST.gdprConsent.gdprApplies ? 1 : null;
@@ -60,8 +59,7 @@ export const spec = {
           ua: UA,
           geo: {
             utcoffset: UTC_OFFSET
-          },
-          ip: IP
+          }
         },
         user: {
           ext: {}
