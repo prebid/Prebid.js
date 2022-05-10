@@ -112,11 +112,7 @@ pbjs.setConfig({
                  expires: 1
               }
         }, {
-            name: "cpexId",
-            storage: {
-                type: "cookie",
-                name: "caid"
-            }
+            name: "cpexId"
         }, {
             name: 'mwOpenLinkId',
             params: {
