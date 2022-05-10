@@ -450,8 +450,8 @@ $$PREBID_GLOBAL$$.renderAd = hook('async', function (doc, id, options) {
   logInfo('Invoking $$PREBID_GLOBAL$$.renderAd', arguments);
   logMessage('Calling renderAd with adId :' + id);
 
-  if (!doc || !id) {
-    const message = `Error trying to write ad Id :${id} to the page. Missing document or adId`;
+  if (!id) {
+    const message = `Error trying to write ad Id :${id} to the page. Missing adId`;
     emitAdRenderFail({ reason: MISSING_DOC_OR_ADID, message, id });
     return;
   }
@@ -490,6 +490,21 @@ $$PREBID_GLOBAL$$.renderAd = hook('async', function (doc, id, options) {
     events.emit(BID_WON, bid);
 
     const {height, width, ad, mediaType, adUrl, renderer} = bid;
+
+    // video module
+    const adUnitCode = bid.adUnitCode;
+    const adUnit = $$PREBID_GLOBAL$$.adUnits.filter(adUnit => adUnit.code === adUnitCode);
+    const videoModule = $$PREBID_GLOBAL$$.videoModule;
+    if (adUnit.video && videoModule) {
+      videoModule.renderBid(adUnit.video.divId, bid);
+      return;
+    }
+
+    if (!doc) {
+      const message = `Error trying to write ad Id :${id} to the page. Missing document`;
+      emitAdRenderFail({ reason: MISSING_DOC_OR_ADID, message, id });
+      return;
+    }
 
     const creativeComment = document.createComment(`Creative ${bid.creativeId} served by ${bid.bidder} Prebid.js Header Bidding`);
     insertElement(creativeComment, doc, 'html');
