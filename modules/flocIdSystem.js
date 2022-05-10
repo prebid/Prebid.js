@@ -28,7 +28,7 @@ function enableOriginTrial(token) {
  * @param errorCallback
  */
 function getFlocData(successCallback, errorCallback) {
-  errorCallback(error);
+  errorCallback('The Floc has flown');
 }
 
 /**
