@@ -423,7 +423,7 @@ function processSubmoduleCallbacks(submodules, cb) {
     }, submodules.length);
   }
   submodules.forEach(function (submodule) {
-    submodule.callback(function callbackCompleted(idObj) {
+    function callbackCompleted(idObj) {
       // if valid, id data should be saved to cookie/html storage
       if (idObj) {
         if (submodule.config.storage) {
@@ -435,8 +435,13 @@ function processSubmoduleCallbacks(submodules, cb) {
         logInfo(`${MODULE_NAME}: ${submodule.submodule.name} - request id responded with an empty value`);
       }
       done();
-    });
-
+    }
+    try {
+      submodule.callback(callbackCompleted);
+    } catch (e) {
+      logError(`Error in userID module '${submodule.submodule.name}':`, e);
+      done();
+    }
     // clear callback, this prop is used to test if all submodule callbacks are complete below
     submodule.callback = undefined;
   });
@@ -881,8 +886,12 @@ function initSubmodules(dest, submodules, consentData, forceRefresh = false) {
   setStoredConsentData(consentData);
 
   const initialized = userIdModules.reduce((carry, submodule) => {
-    populateSubmoduleId(submodule, consentData, storedConsentData, forceRefresh);
-    carry.push(submodule);
+    try {
+      populateSubmoduleId(submodule, consentData, storedConsentData, forceRefresh);
+      carry.push(submodule);
+    } catch (e) {
+      logError(`Error in userID module '${submodule.submodule.name}':`, e);
+    }
     return carry;
   }, []);
   if (initialized.length) {
