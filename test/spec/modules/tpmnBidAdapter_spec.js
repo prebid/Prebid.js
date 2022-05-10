@@ -198,20 +198,12 @@ describe('tpmnAdapterTests', function () {
     });
 
     it('case 2 -> allow pixel with static sync', () => {
+      const syncs = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true });
       expect(syncs.length).to.be.equal(4);
       expect(syncs[0].type).to.be.equal('image');
       expect(syncs[1].type).to.be.equal('image');
       expect(syncs[2].type).to.be.equal('image');
       expect(syncs[3].type).to.be.equal('image');
-    });
-
-    it('case 3 -> allow pixel with uuid static sync', () => {
-      getCookieStub.withArgs(KEY_ID).returns(TMP_UUID);
-      const uuid = storage.getCookie(KEY_ID);
-      expect(uuid).to.equal(TMP_UUID);
-      const syncs = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true});
-      expect(syncs.length).to.be.equal(4);
-      expect(syncs[0].type).to.be.equal('image');
     });
   });
 });
