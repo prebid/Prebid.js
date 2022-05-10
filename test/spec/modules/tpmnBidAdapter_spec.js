@@ -194,58 +194,11 @@ describe('tpmnAdapterTests', function () {
 
     it('case 2 -> allow pixel with static sync', () => {
       const syncs = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true});
-      expect(syncs.length).to.be.equal(7);
+      expect(syncs.length).to.be.equal(4);
       expect(syncs[0].type).to.be.equal('image');
       expect(syncs[1].type).to.be.equal('image');
       expect(syncs[2].type).to.be.equal('image');
       expect(syncs[3].type).to.be.equal('image');
-    });
-
-    it('case 3 -> allow pixel with uuid static sync', () => {
-      getCookieStub.withArgs(KEY_ID).returns(TMP_UUID);
-      const uuid = storage.getCookie(KEY_ID);
-      expect(uuid).to.equal(TMP_UUID);
-      const syncs = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true});
-      expect(syncs.length).to.be.equal(7);
-      expect(syncs[0].type).to.be.equal('image');
-    });
-
-    it('case 4 -> allow pixel with uuid static sync', () => {
-      getCookieStub.withArgs(KEY_ID).returns(TMP_UUID);
-      getCookieStub.withArgs('bidswitch').returns('123456789');
-      getCookieStub.withArgs('appier').returns('123456789');
-      getCookieStub.withArgs('adb_guid').returns('123456789');
-      getCookieStub.withArgs('ucfunnel').returns('123456789');
-      getCookieStub.withArgs('nasmedia').returns('123456789');
-      getCookieStub.withArgs('mezzomedia').returns('123456789');
-      getCookieStub.withArgs('admixernet').returns('123456789');
-
-      expect(storage.getCookie(KEY_ID)).to.equal(TMP_UUID);
-      expect(storage.getCookie('bidswitch')).to.equal('123456789');
-      expect(storage.getCookie('appier')).to.equal('123456789');
-      expect(storage.getCookie('adb_guid')).to.equal('123456789');
-      expect(storage.getCookie('ucfunnel')).to.equal('123456789');
-      expect(storage.getCookie('nasmedia')).to.equal('123456789');
-      expect(storage.getCookie('mezzomedia')).to.equal('123456789');
-      expect(storage.getCookie('admixernet')).to.equal('123456789');
-
-      const syncs = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true});
-      expect(syncs.length).to.be.equal(4);
-    });
-
-    it('case 5 -> allow pixel with Only partners who are not sync yet proceed.', () => {
-      getCookieStub.withArgs(KEY_ID).returns(TMP_UUID);
-      // getCookieStub.withArgs('nasmedia').returns('123456789');
-      getCookieStub.withArgs('mezzomedia').returns('123456789');
-      // getCookieStub.withArgs('admixernet').returns('123456789');
-
-      expect(storage.getCookie(KEY_ID)).to.equal(TMP_UUID);
-      expect(storage.getCookie('nasmedia')).to.equal(undefined);
-      expect(storage.getCookie('mezzomedia')).to.equal('123456789');
-      expect(storage.getCookie('admixernet')).to.equal(undefined);
-
-      const syncs = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true});
-      expect(syncs.length).to.be.equal(6);
     });
   });
 });

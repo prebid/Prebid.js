@@ -105,33 +105,6 @@ export const spec = {
         type: 'image',
         url: 'https://sync.aralego.com/idSync?redirect=https%3A%2F%2Fad.tpmn.co.kr%2FpixelCt.tpmn%3Ftpmn_nid%3Dde91e8b3b9d3f1af3fc1d657f090b815%26tpmn_buid%3DSspCookieUserId'
       });
-
-      const uuid = getUuid();
-      if (uuid) {
-        const nasmediaId = storage.getCookie('nasmedia');
-        if (!nasmediaId) {
-          syncArr.push({
-            type: 'image',
-            url: `https://idsync.admixer.co.kr:4450/idsync?pid=105&uid=${uuid}`
-          });
-        }
-        const mezzomediaId = storage.getCookie('mezzomedia');
-        if (!mezzomediaId) {
-          syncArr.push({
-            type: 'image',
-            url: `https://cm.meba.kr/cm.mezzo/?buyerid=${uuid}&partnerkey=tpmn`
-          });
-        }
-        const admixernetId = storage.getCookie('admixernet');
-        if (!admixernetId) {
-          syncArr.push({
-            type: 'image',
-            url: `https://inv-nets.admixer.net/adxcm.aspx?ssp=51DC18E4-86E3-42DE-9A82-341B2CB39C2E&id=${uuid}&rurl=https%3A%2F%2Fad.tpmn.co.kr%2FpixelCt.tpmn%3Ftpmn_nid%3Dbf91e8b3b9d3f1af3fc1d657f090b4ec%26tpmn_buid%3D%24%24visitor_cookie%24%24`
-          });
-        }
-      } else {
-        logWarn('Pixel Cookie-Sync Fail. check plz.')
-      }
     }
     return syncArr;
   },
