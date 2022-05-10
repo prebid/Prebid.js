@@ -89,36 +89,25 @@ export const spec = {
         url: IFRAMESYNC + policyParam
       })
     } else {
+      syncArr.push({
+        type: 'image',
+        url: 'https://x.bidswitch.net/sync?ssp=tpmn'
+      });
+      syncArr.push({
+        type: 'image',
+        url: 'https://gocm.c.appier.net/tpmn'
+      });
+      syncArr.push({
+        type: 'image',
+        url: 'https://info.mmnneo.com/getGuidRedirect.info?url=https%3A%2F%2Fad.tpmn.co.kr%2Fcookiesync.tpmn%3Ftpmn_nid%3Dbf91e8b3b9d3f1af3fc1d657f090b4fb%26tpmn_buid%3D'
+      });
+      syncArr.push({
+        type: 'image',
+        url: 'https://sync.aralego.com/idSync?redirect=https%3A%2F%2Fad.tpmn.co.kr%2FpixelCt.tpmn%3Ftpmn_nid%3Dde91e8b3b9d3f1af3fc1d657f090b815%26tpmn_buid%3DSspCookieUserId'
+      });
+
       const uuid = getUuid();
       if (uuid) {
-        const bidswitchId = storage.getCookie('bidswitch');
-        if (!bidswitchId) {
-          syncArr.push({
-            type: 'image',
-            url: 'https://x.bidswitch.net/sync?ssp=tpmn'
-          });
-        }
-        const appierId = storage.getCookie('appier');
-        if (!appierId) {
-          syncArr.push({
-            type: 'image',
-            url: 'https://gocm.c.appier.net/tpmn'
-          });
-        }
-        const adbguId = storage.getCookie('adb_guid');
-        if (!adbguId) {
-          syncArr.push({
-            type: 'image',
-            url: 'https://info.mmnneo.com/getGuidRedirect.info?url=https%3A%2F%2Fad.tpmn.co.kr%2Fcookiesync.tpmn%3Ftpmn_nid%3Dbf91e8b3b9d3f1af3fc1d657f090b4fb%26tpmn_buid%3D'
-          });
-        }
-        const ucfunnelId = storage.getCookie('ucfunnel');
-        if (!ucfunnelId) {
-          syncArr.push({
-            type: 'image',
-            url: 'https://sync.aralego.com/idSync?redirect=https%3A%2F%2Fad.tpmn.co.kr%2FpixelCt.tpmn%3Ftpmn_nid%3Dde91e8b3b9d3f1af3fc1d657f090b815%26tpmn_buid%3DSspCookieUserId'
-          });
-        }
         const nasmediaId = storage.getCookie('nasmedia');
         if (!nasmediaId) {
           syncArr.push({
