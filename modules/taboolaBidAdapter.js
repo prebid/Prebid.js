@@ -145,7 +145,10 @@ export const spec = {
       url,
       method: 'POST',
       data: JSON.stringify(request),
-      bids: validBidRequests
+      bids: validBidRequests,
+      options: {
+        withCredentials: false
+      },
     };
   },
   interpretResponse: (serverResponse, {bids}) => {
@@ -202,8 +205,8 @@ function getSizes(sizes) {
   return {
     format: sizes.map(size => {
       return {
-        h: size[0],
-        w: size[1]
+        w: size[0],
+        h: size[1]
       }
     })
   }

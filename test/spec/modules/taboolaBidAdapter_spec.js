@@ -102,12 +102,12 @@ describe('Taboola Adapter', function () {
           'id': 1,
           'banner': {
             format: [{
-              h: displayBidRequestParams.sizes[0][0],
-              w: displayBidRequestParams.sizes[0][1]
+              w: displayBidRequestParams.sizes[0][0],
+              h: displayBidRequestParams.sizes[0][1]
             },
             {
-              h: displayBidRequestParams.sizes[1][0],
-              w: displayBidRequestParams.sizes[1][1]
+              w: displayBidRequestParams.sizes[1][0],
+              h: displayBidRequestParams.sizes[1][1]
             }
             ]
           },
