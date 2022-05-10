@@ -92,7 +92,7 @@ function lookupIabConsent({onSuccess, onError}) {
   }
   // to collect the consent information from the user, we perform two calls to the CMP in parallel:
   // first to collect the user's consent choices represented in an encoded string (via getConsentData)
-  // second to collect the usefr's full unparsed consent information (via getVendorConsents)
+  // second to collect the user's full unparsed consent information (via getVendorConsents)
 
   // the following code also determines where the CMP is located and uses the proper workflow to communicate with it:
   // check to see if CMP is found on the same window level as prebid and call it directly if so
@@ -186,7 +186,7 @@ function loadConsentData(cb) {
 
   if (!isDone) {
     if (consentTimeout === 0) {
-      processCmpData(undefined, callbacks);
+      done(storeConsentData(undefined), false)
     } else {
       timer = setTimeout(function () {
         // on timeout, allow the auction to continue

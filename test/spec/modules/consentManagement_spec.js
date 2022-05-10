@@ -302,6 +302,25 @@ describe('consentManagement', function () {
         return gdprDataHandler.promise.then(() => {
           expect(ran).to.be.true;
         });
+      });
+
+      it('should continue the auction immediately, without consent data, if timeout is 0', (done) => {
+        setConsentConfig({
+          cmpApi: 'iab',
+          timeout: 0,
+          defaultGdprScope: true
+        });
+        window.__tcfapi = function () {};
+        try {
+          requestBidsHook(() => {
+            const consent = gdprDataHandler.getConsentData();
+            expect(consent.gdprApplies).to.be.true;
+            expect(consent.consentString).to.be.undefined;
+            done();
+          }, {})
+        } finally {
+          delete window.__tcfapi;
+        }
       })
     });
 
