@@ -50,6 +50,7 @@
     "dfpAdServerVideo"
   ],
   "rtdModule": [
+    "airgridRtdProvider",
     "browsiRtdProvider",
     "dgkeywordRtdProvider",
     "geoedgeRtdProvider",
