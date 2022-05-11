@@ -269,32 +269,14 @@ function getDevice() {
 };
 
 function getSite(bidderRequest) {
-  let domain = '';
-  let page = '';
-  let referrer = '';
-
   const { refererInfo } = bidderRequest;
-
-  if (canAccessTopWindow()) {
-    const wt = getWindowTop();
-    domain = wt.location.hostname;
-    page = wt.location.href;
-    referrer = wt.document.referrer || '';
-  } else if (refererInfo.reachedTop) {
-    const url = parseUrl(refererInfo.referer);
-    domain = url.hostname;
-    page = refererInfo.referer;
-  } else if (refererInfo.stack && refererInfo.stack.length && refererInfo.stack[0]) {
-    // important note check if refererInfo.stack[0] is 'thruly' because a `null` value
-    // will be considered as "localhost" by the parseUrl function.
-    const url = parseUrl(refererInfo.stack[0]);
-    domain = url.hostname;
-  }
+  const url = parseUrl(refererInfo.referer);
 
   return {
-    domain,
-    page,
-    referrer
+    domain: url.hostname || '',
+    page: refererInfo.referer || '',
+    referrer: canAccessTopWindow() ? getWindowTop().document.referrer || '' : getWindowSelf().document.referrer || '',
+    top: refererInfo.reachedTop
   };
 };
 
