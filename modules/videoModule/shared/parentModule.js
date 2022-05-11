@@ -53,8 +53,9 @@ export function ParentModule(submoduleBuilder_) {
  * @returns {SubmoduleBuilder}
  * @constructor
  */
-export function SubmoduleBuilder(submoduleDirectory_) {
+export function SubmoduleBuilder(submoduleDirectory_, sharedUtils_) {
   const submoduleDirectory = submoduleDirectory_;
+  const sharedUtils = sharedUtils_;
 
   /**
    * @function SubmoduleBuilder#build
@@ -69,7 +70,7 @@ export function SubmoduleBuilder(submoduleDirectory_) {
       throw new Error('Unrecognized submodule vendor code: ' + vendorCode);
     }
 
-    const submodule = submoduleFactory(config);
+    const submodule = submoduleFactory(config, sharedUtils);
     submodule && submodule.init && submodule.init();
     return submodule;
   }

@@ -1,12 +1,7 @@
 import {
   PROTOCOLS, API_FRAMEWORKS, VIDEO_MIME_TYPE, PLAYBACK_METHODS, PLACEMENT, VPAID_MIME_TYPE
 } from './videoModule/constants/ortb.js';
-import {
-  SETUP_COMPLETE, SETUP_FAILED, DESTROYED, AD_REQUEST, AD_BREAK_START, AD_LOADED, AD_STARTED, AD_IMPRESSION, AD_PLAY,
-  AD_TIME, AD_PAUSE, AD_CLICK, AD_SKIPPED, AD_ERROR, AD_COMPLETE, AD_BREAK_END, PLAYLIST, PLAYBACK_REQUEST,
-  AUTOSTART_BLOCKED, PLAY_ATTEMPT_FAILED, CONTENT_LOADED, PLAY, PAUSE, BUFFER, TIME, SEEK_START, SEEK_END, MUTE, VOLUME,
-  RENDITION_UPDATE, ERROR, COMPLETE, PLAYLIST_COMPLETE, FULLSCREEN, PLAYER_RESIZE, VIEWABLE, CAST, PLAYBACK_MODE
-} from './videoModule/constants/events.js';
+import { PLAYBACK_MODE } from './videoModule/constants/enums.js';
 import stateFactory from './videoModule/shared/state.js';
 import { JWPLAYER_VENDOR } from './videoModule/constants/vendorCodes.js';
 import { submodule } from '../src/hook.js';
@@ -21,7 +16,7 @@ import { submodule } from '../src/hook.js';
  * @param {Object} utils
  * @returns {VideoProvider}
  */
-export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callbackStorage_, utils) {
+export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callbackStorage_, utils, sharedUtils) {
   const jwplayer = jwplayer_;
   let player = null;
   let playerVersion = null;
@@ -35,6 +30,13 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
   let minimumSupportedPlayerVersion = '8.20.1';
   let setupCompleteCallback = null;
   let setupFailedCallback = null;
+  const prebidVideoEvents = sharedUtils.videoEvents;
+  const {
+    SETUP_COMPLETE, SETUP_FAILED, DESTROYED, AD_REQUEST, AD_BREAK_START, AD_LOADED, AD_STARTED, AD_IMPRESSION, AD_PLAY,
+    AD_TIME, AD_PAUSE, AD_CLICK, AD_SKIPPED, AD_ERROR, AD_COMPLETE, AD_BREAK_END, PLAYLIST, PLAYBACK_REQUEST,
+    AUTOSTART_BLOCKED, PLAY_ATTEMPT_FAILED, CONTENT_LOADED, PLAY, PAUSE, BUFFER, TIME, SEEK_START, SEEK_END, MUTE, VOLUME,
+    RENDITION_UPDATE, ERROR, COMPLETE, PLAYLIST_COMPLETE, FULLSCREEN, PLAYER_RESIZE, VIEWABLE, CAST
+  } = prebidVideoEvents;
   const MEDIA_TYPES = [
     VIDEO_MIME_TYPE.MP4,
     VIDEO_MIME_TYPE.OGG,
@@ -181,7 +183,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
 
   function offEvents(events, callback) {
     events.forEach(event => {
-      const jwEvent = utils.getJwEvent(event);
+      const jwEvent = utils.getJwEvent(event, prebidVideoEvents);
       if (!callback) {
         player.off(jwEvent);
         return;
@@ -653,13 +655,14 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
 
 /**
  * @param {videoProviderConfig} config
+ * @param {sharedUtils} sharedUtils
  * @returns {VideoProvider}
  */
-const jwplayerSubmoduleFactory = function (config) {
+const jwplayerSubmoduleFactory = function (config, sharedUtils) {
   const adState = adStateFactory();
   const timeState = timeStateFactory();
   const callbackStorage = callbackStorageFactory();
-  return JWPlayerProvider(config, window.jwplayer, adState, timeState, callbackStorage, utils);
+  return JWPlayerProvider(config, window.jwplayer, adState, timeState, callbackStorage, utils, sharedUtils);
 }
 
 jwplayerSubmoduleFactory.vendorCode = JWPLAYER_VENDOR;
@@ -706,42 +709,42 @@ export const utils = {
     return jwConfig;
   },
 
-  getJwEvent: function(eventName) {
+  getJwEvent: function(eventName, prebidVideoEvents) {
     switch (eventName) {
-      case SETUP_COMPLETE:
+      case prebidVideoEvents.SETUP_COMPLETE:
         return 'ready';
 
-      case SETUP_FAILED:
+      case prebidVideoEvents.SETUP_FAILED:
         return 'setupError';
 
-      case DESTROYED:
+      case prebidVideoEvents.DESTROYED:
         return 'remove';
 
-      case AD_STARTED:
-        return AD_IMPRESSION;
+      case prebidVideoEvents.AD_STARTED:
+        return prebidVideoEvents.AD_IMPRESSION;
 
-      case AD_IMPRESSION:
+      case prebidVideoEvents.AD_IMPRESSION:
         return 'adViewableImpression';
 
-      case PLAYBACK_REQUEST:
+      case prebidVideoEvents.PLAYBACK_REQUEST:
         return 'playAttempt';
 
-      case AUTOSTART_BLOCKED:
+      case prebidVideoEvents.AUTOSTART_BLOCKED:
         return 'autostartNotAllowed';
 
-      case CONTENT_LOADED:
+      case prebidVideoEvents.CONTENT_LOADED:
         return 'playlistItem';
 
-      case SEEK_START:
+      case prebidVideoEvents.SEEK_START:
         return 'seek';
 
-      case SEEK_END:
+      case prebidVideoEvents.SEEK_END:
         return 'seeked';
 
-      case RENDITION_UPDATE:
+      case prebidVideoEvents.RENDITION_UPDATE:
         return 'visualQuality';
 
-      case PLAYER_RESIZE:
+      case prebidVideoEvents.PLAYER_RESIZE:
         return 'resize';
 
       default:

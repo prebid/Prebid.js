@@ -11,8 +11,10 @@ import {
 } from 'modules/videoModule/constants/ortb.js';
 
 import {
-  PLAYBACK_MODE, SETUP_COMPLETE, SETUP_FAILED, PLAY, AD_IMPRESSION
-} from 'modules/videoModule/constants/events.js'
+  SETUP_COMPLETE, SETUP_FAILED, PLAY, AD_IMPRESSION, videoEvents
+} from 'modules/videoModule/constants/events.js';
+
+import { PLAYBACK_MODE } from 'modules/videoModule/constants/enums.js';
 
 function getPlayerMock() {
   return makePlayerFactoryMock({
@@ -60,6 +62,8 @@ function getUtilsMock() {
   };
 }
 
+const sharedUtils = { videoEvents };
+
 describe('JWPlayerProvider', function () {
   describe('init', function () {
     let config;
@@ -77,7 +81,7 @@ describe('JWPlayerProvider', function () {
     });
 
     it('should trigger failure when jwplayer is missing', function () {
-      const provider = JWPlayerProvider(config, null, adState, timeState, callbackStorage, utilsMock);
+      const provider = JWPlayerProvider(config, null, adState, timeState, callbackStorage, utilsMock, sharedUtils);
       const setupFailed = sinon.spy();
       provider.onEvents([SETUP_FAILED], setupFailed);
       provider.init();
@@ -89,7 +93,7 @@ describe('JWPlayerProvider', function () {
     it('should trigger failure when jwplayer version is under min supported version', function () {
       let jwplayerMock = () => {};
       jwplayerMock.version = '8.20.0';
-      const provider = JWPlayerProvider(config, jwplayerMock, adState, timeState, callbackStorage, utilsMock);
+      const provider = JWPlayerProvider(config, jwplayerMock, adState, timeState, callbackStorage, utilsMock, sharedUtils);
       const setupFailed = sinon.spy();
       provider.onEvents([SETUP_FAILED], setupFailed);
       provider.init();
@@ -102,7 +106,7 @@ describe('JWPlayerProvider', function () {
       const player = getPlayerMock();
       config.playerConfig = {};
       const setupSpy = player.setup = sinon.spy();
-      const provider = JWPlayerProvider(config, makePlayerFactoryMock(player), adState, timeState, callbackStorage, utilsMock);
+      const provider = JWPlayerProvider(config, makePlayerFactoryMock(player), adState, timeState, callbackStorage, utilsMock, sharedUtils);
       provider.init();
       expect(setupSpy.calledOnce).to.be.true;
     });
@@ -110,7 +114,7 @@ describe('JWPlayerProvider', function () {
     it('should trigger setup complete when player is already instantied', function () {
       const player = getPlayerMock();
       player.getState = () => 'idle';
-      const provider = JWPlayerProvider(config, makePlayerFactoryMock(player), adState, timeState, callbackStorage, utilsMock);
+      const provider = JWPlayerProvider(config, makePlayerFactoryMock(player), adState, timeState, callbackStorage, utilsMock, sharedUtils);
       const setupComplete = sinon.spy();
       provider.onEvents([SETUP_COMPLETE], setupComplete);
       provider.init();
@@ -121,7 +125,7 @@ describe('JWPlayerProvider', function () {
       const player = getPlayerMock();
       player.getState = () => 'idle';
       const setupSpy = player.setup = sinon.spy();
-      const provider = JWPlayerProvider(config, makePlayerFactoryMock(player), adState, timeState, callbackStorage, utilsMock);
+      const provider = JWPlayerProvider(config, makePlayerFactoryMock(player), adState, timeState, callbackStorage, utilsMock, sharedUtils);
       provider.init();
       expect(setupSpy.called).to.be.false;
     });
@@ -129,7 +133,7 @@ describe('JWPlayerProvider', function () {
 
   describe('getId', function () {
     it('should return configured div id', function () {
-      const provider = JWPlayerProvider({ divId: 'test_id' });
+      const provider = JWPlayerProvider({ divId: 'test_id' }, undefined, undefined, undefined, undefined, undefined, sharedUtils);
       expect(provider.getId()).to.be.equal('test_id');
     });
   });
@@ -182,7 +186,7 @@ describe('JWPlayerProvider', function () {
         })
       }
 
-      const provider = JWPlayerProvider(config, makePlayerFactoryMock(player), adStateFactory(), timeState, {}, utils);
+      const provider = JWPlayerProvider(config, makePlayerFactoryMock(player), adStateFactory(), timeState, {}, utils, sharedUtils);
       provider.init();
       let oRTB = provider.getOrtbParams();
 
@@ -246,7 +250,7 @@ describe('JWPlayerProvider', function () {
     it('should call playAd', function () {
       const player = getPlayerMock();
       const playAdSpy = player.playAd = sinon.spy();
-      const provider = JWPlayerProvider({}, makePlayerFactoryMock(player), {}, {}, {}, {});
+      const provider = JWPlayerProvider({}, makePlayerFactoryMock(player), {}, {}, {}, {}, sharedUtils);
       provider.init();
       provider.setAdTagUrl('tag');
       expect(playAdSpy.called).to.be.true;
@@ -259,7 +263,7 @@ describe('JWPlayerProvider', function () {
     it('should register event listener on player', function () {
       const player = getPlayerMock();
       const onSpy = player.on = sinon.spy();
-      const provider = JWPlayerProvider({}, makePlayerFactoryMock(player), adStateFactory(), timeStateFactory(), callbackStorageFactory(), getUtilsMock());
+      const provider = JWPlayerProvider({}, makePlayerFactoryMock(player), adStateFactory(), timeStateFactory(), callbackStorageFactory(), getUtilsMock(), sharedUtils);
       provider.init();
       const callback = () => {};
       provider.onEvents([PLAY], callback);
@@ -271,7 +275,7 @@ describe('JWPlayerProvider', function () {
     it('should remove event listener on player', function () {
       const player = getPlayerMock();
       const offSpy = player.off = sinon.spy();
-      const provider = JWPlayerProvider({}, makePlayerFactoryMock(player), adStateFactory(), timeStateFactory(), callbackStorageFactory(), utils);
+      const provider = JWPlayerProvider({}, makePlayerFactoryMock(player), adStateFactory(), timeStateFactory(), callbackStorageFactory(), utils, sharedUtils);
       provider.init();
       const callback = () => {};
       provider.onEvents([AD_IMPRESSION], callback);
@@ -287,7 +291,7 @@ describe('JWPlayerProvider', function () {
       const player = getPlayerMock();
       const removeSpy = player.remove = sinon.spy();
       player.remove = removeSpy;
-      const provider = JWPlayerProvider({}, makePlayerFactoryMock(player), adStateFactory(), timeStateFactory(), callbackStorageFactory(), getUtilsMock());
+      const provider = JWPlayerProvider({}, makePlayerFactoryMock(player), adStateFactory(), timeStateFactory(), callbackStorageFactory(), getUtilsMock(), sharedUtils);
       provider.init();
       provider.destroy();
       provider.destroy();
