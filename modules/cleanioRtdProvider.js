@@ -8,6 +8,8 @@
 
 import { submodule } from '../src/hook.js';
 import { logError, generateUUID, insertElement } from '../src/utils.js';
+import * as events from '../src/events.js';
+import CONSTANTS from '../src/constants.json';
 
 // ============================ MODULE STATE ===============================
 
@@ -147,6 +149,22 @@ function readConfig(config) {
   }
 }
 
+function startBillableEvents() {
+  // Upon clean.io submodule initialization, every winner bid is considered to be protected
+  // and therefore, subjected to billing
+  events.on(CONSTANTS.EVENTS.BID_WON, winnerBidResponse => {
+    events.emit(CONSTANTS.EVENTS.BILLABLE_EVENT, {
+      vendor: 'clean.io',
+      billingId: generateUUID(),
+      type: 'impression',
+      // TODO: if absolutely crucial, winnerBidResponse may be used
+      // to track down auctionId and transactionId
+      // However, those seem to be of importance for Demand Managers,
+      // while these billable events are for publishers
+    });
+  });
+}
+
 // ============================ MODULE REGISTRATION ===============================
 
 /**
@@ -159,6 +177,7 @@ function beforeInit() {
     init: (config, userConsent) => {
       try {
         readConfig(config);
+        startBillableEvents();
         onModuleInit();
         return true;
       } catch (err) {
