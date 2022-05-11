@@ -5,7 +5,7 @@ import { mergeDeep } from '../../src/utils.js';
 import { getGlobal } from '../../src/prebidGlobal.js';
 import CONSTANTS from '../../src/constants.json';
 import {
-  allVideoEvents, AUCTION_AD_LOAD_ATTEMPT, allVideoAuctionEvents,
+  videoEvents, AUCTION_AD_LOAD_ATTEMPT, allVideoAuctionEvents,
   AD_IMPRESSION, AD_ERROR, BID_IMPRESSION, BID_ERROR, allVideoBidEvents, AUCTION_AD_LOAD_ABORT
 } from './constants/events.js'
 import { videoCoreFactory } from './coreVideo.js';
@@ -17,6 +17,7 @@ import { videoImpressionVerifierFactory } from './videoImpressionVerifier.js';
  * @module modules/videoModule
  */
 
+const allVideoEvents = Object.keys(videoEvents).map(eventKey => videoEvents[eventKey]);
 events.addEvents(allVideoEvents);
 events.addEvents(allVideoAuctionEvents);
 events.addEvents(allVideoBidEvents);
