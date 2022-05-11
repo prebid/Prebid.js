@@ -48,7 +48,7 @@ function isBidRequestValid(bid) {
 }
 
 function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
-  const { params, bidId, userId, adUnitCode, schain } = bid;
+  const { params, bidId, userId, adUnitCode, schain, mediaTypes } = bid;
   const { bidFloor, ext } = params;
   const hashUrl = hashCode(topWindowUrl);
   const dealId = getNextDealId(hashUrl);
@@ -72,7 +72,8 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
     bidderVersion: BIDDER_VERSION,
     prebidVersion: '$prebid.version$',
     res: `${screen.width}x${screen.height}`,
-    schain: schain
+    schain: schain,
+    mediaTypes: mediaTypes
   };
 
   appendUserIdsToRequestPayload(data, userId);
