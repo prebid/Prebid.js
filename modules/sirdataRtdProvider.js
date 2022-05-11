@@ -32,18 +32,18 @@ export function getSegmentsAndCategories(reqBidsConfigObj, onDone, moduleConfig,
   var sendWithCredentials;
 
   if (userConsent.coppa || (userConsent.usp && (userConsent.usp[0] == '1' && (userConsent.usp[1] == 'N' || userConsent.usp[2] == 'Y')))) {
-    // if children or "Do not Sell" management in California, no segments, page categories only whatever TCF signal
+// if children or "Do not Sell" management in California, no segments, page categories only whatever TCF signal
     sirdataDomain = 'cookieless-data.com';
     sendWithCredentials = false;
     gdprApplies = null;
     tcString = '';
   } else if (getGlobal().getConfig('consentManagement.gdpr')) {
-    // Default endpoint is cookieless if gdpr management is set. Needed because the cookie-based endpoint will fail and return error if user is located in Europe and no consent has been given
+// Default endpoint is cookieless if gdpr management is set. Needed because the cookie-based endpoint will fail and return error if user is located in Europe and no consent has been given
     sirdataDomain = 'cookieless-data.com';
     sendWithCredentials = false;
   }
 
-  // default global endpoint is cookie-based if no rules falls into cookieless or consent has been given or GDPR doesn't apply
+// default global endpoint is cookie-based if no rules falls into cookieless or consent has been given or GDPR doesn't apply
 
   if (!sirdataDomain || !gdprApplies || (deepAccess(userConsent, 'gdpr.vendorData.vendor.consents') && userConsent.gdpr.vendorData.vendor.consents[53] && userConsent.gdpr.vendorData.purpose.consents[1] && userConsent.gdpr.vendorData.purpose.consents[4])) {
     sirdataDomain = 'sddan.com';
@@ -54,7 +54,8 @@ export function getSegmentsAndCategories(reqBidsConfigObj, onDone, moduleConfig,
 
   const url = 'https://kvt.' + sirdataDomain + '/api/v1/public/p/' + moduleConfig.params.partnerId + '/d/' + moduleConfig.params.key + '/s?callback=&gdpr=' + gdprApplies + '&gdpr_consent=' + tcString + (actualUrl ? '&url=' + encodeURIComponent(actualUrl) : '');
 
-  ajax(url, {
+  ajax(url,
+    {
       success: function (response, req) {
         if (req.status === 200) {
           try {
@@ -184,15 +185,15 @@ export function addSegmentData(adUnits, data, moduleConfig, onDone) {
   var curationId = '1';
   const biddersParamsExist = (!!(moduleConfig.params && moduleConfig.params.bidders));
 
-  // Global ortb2
+// Global ortb2
   if (!biddersParamsExist) {
     setGlobalOrtb2(sirdataData.segments, sirdataData.categories);
   }
 
-  // Google targeting
+// Google targeting
   if (typeof window.googletag !== 'undefined' && (moduleConfig.params.setGptKeyValues || !moduleConfig.params.hasOwnProperty('setGptKeyValues'))) {
     try {
-      // For curation Google is pid 27449
+// For curation Google is pid 27449
       curationId = (moduleConfig.params.gptCurationId ? moduleConfig.params.gptCurationId : '27449');
       if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
         curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], globalMinScore);
@@ -208,7 +209,7 @@ export function addSegmentData(adUnits, data, moduleConfig, onDone) {
     }
   }
 
-  // Bid targeting level for FPD non-generic biders
+// Bid targeting level for FPD non-generic biders
   var bidderIndex = '';
   var indexFound = false;
 
@@ -246,7 +247,7 @@ export function addSegmentData(adUnits, data, moduleConfig, onDone) {
             case 'msq_classic':
             case 'msq_max':
             case '366_apx':
-              // For curation Xandr is pid 27446
+// For curation Xandr is pid 27446
               curationId = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('curationId') ? moduleConfig.params.bidders[bidderIndex].curationId : '27446');
               if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
                 curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore);
@@ -267,7 +268,7 @@ export function addSegmentData(adUnits, data, moduleConfig, onDone) {
               if (bid.hasOwnProperty('params') && bid.params.hasOwnProperty('target')) {
                 target.push(bid.params.target);
               }
-              // For curation Smart is pid 27440
+// For curation Smart is pid 27440
               curationId = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('curationId') ? moduleConfig.params.bidders[bidderIndex].curationId : '27440');
               if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
                 curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore);
@@ -288,7 +289,7 @@ export function addSegmentData(adUnits, data, moduleConfig, onDone) {
               break;
 
             case 'rubicon':
-              // For curation Magnite is pid 27518
+// For curation Magnite is pid 27518
               curationId = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('curationId') ? moduleConfig.params.bidders[bidderIndex].curationId : '27452');
               if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
                 curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore);
@@ -306,7 +307,7 @@ export function addSegmentData(adUnits, data, moduleConfig, onDone) {
             case 'ix':
               var ixConfig = getGlobal().getConfig('ix.firstPartyData.sd_rtd');
               if (!ixConfig) {
-                // For curation index is pid 27248
+// For curation index is pid 27248
                 curationId = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('curationId') ? moduleConfig.params.bidders[bidderIndex].curationId : '27248');
                 if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
                   curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore);
@@ -319,7 +320,7 @@ export function addSegmentData(adUnits, data, moduleConfig, onDone) {
                     var cappIxCategories = [];
                     var ixLength = 0;
                     var ixLimit = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('sizeLimit') ? moduleConfig.params.bidders[bidderIndex].sizeLimit : 1000);
-                    // Push ids For publisher use and for curation if exists but limit size because the bidder uses GET parameters
+// Push ids For publisher use and for curation if exists but limit size because the bidder uses GET parameters
                     sirdataMergedList.forEach(function (entry) {
                       if (ixLength < ixLimit) {
                         cappIxCategories.push(entry);
@@ -333,7 +334,7 @@ export function addSegmentData(adUnits, data, moduleConfig, onDone) {
               break;
 
             case 'proxistore':
-              // For curation Proxistore is pid 27484
+// For curation Proxistore is pid 27484
               curationId = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('curationId') ? moduleConfig.params.bidders[bidderIndex].curationId : '27484');
               if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
                 curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore);
@@ -354,7 +355,7 @@ export function addSegmentData(adUnits, data, moduleConfig, onDone) {
               break;
 
             case 'criteo':
-              // For curation Smart is pid 27443
+// For curation Smart is pid 27443
               curationId = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('curationId') ? moduleConfig.params.bidders[bidderIndex].curationId : '27443');
               if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
                 curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore);
@@ -370,7 +371,7 @@ export function addSegmentData(adUnits, data, moduleConfig, onDone) {
               break;
 
             case 'triplelift':
-              // For curation Triplelift is pid 27518
+// For curation Triplelift is pid 27518
               curationId = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('curationId') ? moduleConfig.params.bidders[bidderIndex].curationId : '27518');
               if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
                 curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore);
@@ -387,7 +388,7 @@ export function addSegmentData(adUnits, data, moduleConfig, onDone) {
 
             case 'avct':
             case 'avocet':
-              // For curation Avocet is pid 27522
+// For curation Avocet is pid 27522
               curationId = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('curationId') ? moduleConfig.params.bidders[bidderIndex].curationId : '27522');
               if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
                 curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore);
@@ -403,7 +404,7 @@ export function addSegmentData(adUnits, data, moduleConfig, onDone) {
               break;
 
             case 'smaato':
-              // For curation Smaato is pid 27520
+// For curation Smaato is pid 27520
               curationId = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('curationId') ? moduleConfig.params.bidders[bidderIndex].curationId : '27520');
               if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
                 curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore);
@@ -419,7 +420,7 @@ export function addSegmentData(adUnits, data, moduleConfig, onDone) {
               break;
 
             case 'yahoossp':
-              // For curation Yahoo is pid 30339
+// For curation Yahoo is pid 30339
               curationId = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('curationId') ? moduleConfig.params.bidders[bidderIndex].curationId : '30339');
               if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
                 curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore);
@@ -435,7 +436,7 @@ export function addSegmentData(adUnits, data, moduleConfig, onDone) {
               break;
 
             case 'openx':
-              // For curation OpenX is pid 30342
+// For curation OpenX is pid 30342
               curationId = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('curationId') ? moduleConfig.params.bidders[bidderIndex].curationId : '30342');
               if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
                 curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore);
@@ -451,7 +452,7 @@ export function addSegmentData(adUnits, data, moduleConfig, onDone) {
               break;
 
             case 'pubmatic':
-              // For curation Pubmatic is pid 30345
+// For curation Pubmatic is pid 30345
               curationId = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('curationId') ? moduleConfig.params.bidders[bidderIndex].curationId : '30345');
               if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
                 curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore);
