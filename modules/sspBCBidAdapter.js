@@ -299,12 +299,13 @@ const mapNative = slot => {
   return assets ? { request: JSON.stringify({ native: { assets } }) } : undefined;
 }
 
-var mapVideo = (slot, videoFromBid = {}) => {
-  var video = Object.assign(deepAccess(slot, 'mediaTypes.video'), videoFromBid);
+var mapVideo = (slot, videoFromBid) => {
+  var videoFromSlot = deepAccess(slot, 'mediaTypes.video');
   var videoParamsUsed = ['api', 'context', 'linearity', 'maxduration', 'mimes', 'protocols', 'playbackmethod'];
   var videoAssets;
 
-  if (video) {
+  if (videoFromSlot) {
+    const video = videoFromBid ? Object.assign(videoFromSlot, videoFromBid) : videoFromSlot;
     var videoParams = Object.keys(video);
     var playerSize = video.playerSize;
     videoAssets = {}; // player width / height
