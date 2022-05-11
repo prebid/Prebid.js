@@ -151,6 +151,7 @@ import {
   timestamp,
   isEmpty
 } from '../../src/utils.js';
+import {promiseControls} from '../../src/utils/promise.js';
 
 const MODULE_NAME = 'User ID';
 const COOKIE = 'cookie';
@@ -528,42 +529,9 @@ function delayFor(ms) {
 const INIT_CANCELED = {};
 
 function idSystemInitializer({delay = delayFor} = {}) {
-  /**
-   * @returns a {promise, resolve, reject} trio where `promise` is resolved by calling `resolve` or `reject`.
-   */
-  function breakpoint() {
-    const [SUCCESS, FAIL, RESULT] = [0, 1, 2];
-    const status = {};
 
-    function finisher(slot) {
-      return function (val) {
-        if (status[slot] != null) {
-          status[slot](val);
-        } else {
-          status[slot] = true;
-          status[RESULT] = val;
-        }
-      }
-    }
-
-    return {
-      promise: new Promise((resolve, reject) => {
-        if (status[SUCCESS] != null) {
-          resolve(status[RESULT]);
-        } else if (status[FAIL] != null) {
-          reject(status[RESULT]);
-        } else {
-          status[SUCCESS] = resolve;
-          status[FAIL] = reject;
-        }
-      }),
-      resolve: finisher(SUCCESS),
-      reject: finisher(FAIL)
-    }
-  }
-
-  const startInit = breakpoint();
-  const startCallbacks = breakpoint();
+  const startInit = promiseControls();
+  const startCallbacks = promiseControls();
   let cancel;
   let initialized = false;
 
@@ -571,7 +539,7 @@ function idSystemInitializer({delay = delayFor} = {}) {
     if (cancel != null) {
       cancel.reject(INIT_CANCELED);
     }
-    cancel = breakpoint();
+    cancel = promiseControls();
     return Promise.race([promise, cancel.promise]);
   }
 
