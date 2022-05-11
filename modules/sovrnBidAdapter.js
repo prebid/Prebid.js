@@ -30,6 +30,14 @@ const ORTB_VIDEO_PARAMS = {
   'api': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 6)
 }
 
+const REQUIRED_VIDEO_PARAMS = {
+  context: (value) => value !== ADPOD,
+  mimes: ORTB_VIDEO_PARAMS.mimes,
+  minduration: ORTB_VIDEO_PARAMS.minduration,
+  maxduration: ORTB_VIDEO_PARAMS.maxduration,
+  protocols: ORTB_VIDEO_PARAMS.protocols
+}
+
 export const spec = {
   code: 'sovrn',
   supportedMediaTypes: [BANNER, VIDEO],
@@ -40,19 +48,25 @@ export const spec = {
    * @param {object} bid the Sovrn bid to validate
    * @return boolean for whether or not a bid is valid
    */
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
+    const video = bid?.mediaTypes?.video
     return !!(
       bid.params.tagid &&
       !isNaN(parseFloat(bid.params.tagid)) &&
-      isFinite(bid.params.tagid) &&
-      deepAccess(bid, 'mediaTypes.video.context') !== ADPOD
+      isFinite(bid.params.tagid) && (
+        !video || (
+          Object.keys(REQUIRED_VIDEO_PARAMS)
+            .every(key => REQUIRED_VIDEO_PARAMS[key](video[key]))
+        )
+      )
     )
   },
 
   /**
    * Format the bid request object for our endpoint
-   * @param {BidRequest[]} bidRequests Array of Sovrn bidders
    * @return object of parameters for Prebid AJAX request
+   * @param bidReqs
+   * @param bidderRequest
    */
   buildRequests: function(bidReqs, bidderRequest) {
     try {
@@ -179,14 +193,12 @@ export const spec = {
    * @return {Bid[]} An array of formatted bids.
   */
   interpretResponse: function({ body: {id, seatbid} }) {
+    if (!id || !seatbid || !Array.isArray(seatbid)) return []
+
     try {
-      let sovrnBidResponses = [];
-      if (id &&
-        seatbid &&
-        seatbid.length > 0 &&
-        seatbid[0].bid &&
-        seatbid[0].bid.length > 0) {
-        seatbid[0].bid.map(sovrnBid => {
+      return seatbid
+        .filter(seat => seat)
+        .map(seat => seat.bid.map(sovrnBid => {
           const bid = {
             requestId: sovrnBid.impid,
             cpm: parseFloat(sovrnBid.price),
@@ -196,23 +208,23 @@ export const spec = {
             dealId: sovrnBid.dealid || null,
             currency: 'USD',
             netRevenue: true,
-            ttl: sovrnBid.ext ? (sovrnBid.ext.ttl || 90) : 90,
+            mediaType: sovrnBid.nurl ? BANNER : VIDEO,
+            ttl: sovrnBid.ext?.ttl || 90,
             meta: { advertiserDomains: sovrnBid && sovrnBid.adomain ? sovrnBid.adomain : [] }
           }
 
-          if (!sovrnBid.nurl) {
-            bid.mediaType = VIDEO
-            bid.vastXml = decodeURIComponent(sovrnBid.adm)
-          } else {
-            bid.mediaType = BANNER
+          if (sovrnBid.nurl) {
             bid.ad = decodeURIComponent(`${sovrnBid.adm}<img src="${sovrnBid.nurl}">`)
+          } else {
+            bid.vastXml = decodeURIComponent(sovrnBid.adm)
           }
-          sovrnBidResponses.push(bid);
-        });
-      }
-      return sovrnBidResponses
+
+          return bid
+        }))
+        .flat()
     } catch (e) {
-      logError('Could not intrepret bidresponse, error deatils:', e);
+      logError('Could not interpret bidresponse, error details:', e)
+      return e
     }
   },
 
