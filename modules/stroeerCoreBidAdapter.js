@@ -25,7 +25,7 @@ function getTopWindowReferrer() {
   try {
     return utils.getWindowTop().document.referrer;
   } catch (e) {
-    return utils.getWindowSelf().referrer;
+    return '';
   }
 }
 
@@ -197,6 +197,8 @@ export const spec = {
 
     setupGlobalNamespace(anyBid);
 
+    const refererInfo = bidderRequest.refererInfo;
+
     const commonPayload = {
       id: bidderRequest.auctionId,
       ref: getTopWindowReferrer(),
@@ -204,7 +206,8 @@ export const spec = {
       mpa: isMainPageAccessible(),
       timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart),
       ab: win['yieldlove_ab'],
-      kvg: getGlobalKeyValues()
+      kvg: getGlobalKeyValues(),
+      url: refererInfo && refererInfo.referer,
     };
 
     const userIds = anyBid.userId;

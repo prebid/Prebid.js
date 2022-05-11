@@ -90,6 +90,9 @@ describe('stroeerCore bid adapter', function () {
     bidderCode: 'stroeerCore',
     timeout: 5000,
     auctionStart: 10000,
+    refererInfo: {
+      referer: 'https://www.example.com/index.html'
+    },
     bids: [{
       bidId: 'bid1',
       bidder: 'stroeerCore',
@@ -569,6 +572,7 @@ describe('stroeerCore bid adapter', function () {
           'mpa': true,
           'ssl': false,
           'yl2': false,
+          'url': 'https://www.example.com/index.html',
           'bids': [{
             'sid': 'NDA=',
             'bid': 'bid1',
