@@ -1,4 +1,5 @@
 import {expect} from 'chai';
+import { config } from 'src/config.js';
 import {spec, resetInvibes, stubDomainOptions, readGdprConsent} from 'modules/invibesBidAdapter.js';
 
 describe('invibesBidAdapter:', function () {
@@ -93,6 +94,17 @@ describe('invibesBidAdapter:', function () {
     }
   };
 
+  let SetBidderAccess = function() {
+    config.setConfig({
+      deviceAccess: true
+    });
+    $$PREBID_GLOBAL$$.bidderSettings = {
+      invibes: {
+        storageAllowed: true
+      }
+    };
+  }
+
   beforeEach(function () {
     resetInvibes();
     document.cookie = '';
@@ -100,6 +112,7 @@ describe('invibesBidAdapter:', function () {
   });
 
   afterEach(function () {
+    $$PREBID_GLOBAL$$.bidderSettings = {};
     this.cStub1.restore();
   });
 
@@ -296,7 +309,10 @@ describe('invibesBidAdapter:', function () {
       top.window.invibes.optIn = 1;
       top.window.invibes.purposes = [true, false, false, false, false, false, false, false, false, false];
       localStorage.ivvcap = '{"9731":[1,1768600800000]}';
+      SetBidderAccess();
+
       const request = spec.buildRequests(bidRequests, {auctionStart: Date.now()});
+
       expect(request.data.capCounts).to.equal('9731=1');
     });
 
@@ -393,6 +409,8 @@ describe('invibesBidAdapter:', function () {
       top.window.invibes.purposes = [true, false, false, false, false, false, false, false, false, false];
       global.document.cookie = 'ivbsdid={"id":"dvdjkams6nkq","cr":' + Date.now() + ',"hc":0}';
       let bidderRequest = {gdprConsent: {vendorData: {vendorConsents: {436: true}}}};
+      SetBidderAccess();
+
       let request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.lId).to.exist;
     });
@@ -1194,6 +1212,8 @@ describe('invibesBidAdapter:', function () {
     it('returns an iframe with params including if enabled', function () {
       top.window.invibes.optIn = 1;
       global.document.cookie = 'ivbsdid={"id":"dvdjkams6nkq","cr":' + Date.now() + ',"hc":0}';
+      SetBidderAccess();
+
       let response = spec.getUserSyncs({iframeEnabled: true});
       expect(response.type).to.equal('iframe');
       expect(response.url).to.include(SYNC_ENDPOINT);
@@ -1204,6 +1224,8 @@ describe('invibesBidAdapter:', function () {
     it('returns an iframe with params including if enabled read from LocalStorage', function () {
       top.window.invibes.optIn = 1;
       localStorage.ivbsdid = 'dvdjkams6nkq';
+      SetBidderAccess();
+
       let response = spec.getUserSyncs({iframeEnabled: true});
       expect(response.type).to.equal('iframe');
       expect(response.url).to.include(SYNC_ENDPOINT);
