@@ -1,6 +1,6 @@
 import { fetchTargetingForMediaId, getVatFromCache, extractPublisherParams,
   formatTargetingResponse, getVatFromPlayer, enrichAdUnits, addTargetingToBid,
-  fetchTargetingInformation, jwplayerSubmodule, getContentId, getContentData } from 'modules/jwplayerRtdProvider.js';
+  fetchTargetingInformation, jwplayerSubmodule, getContentId, getContentSegments, getContentData } from 'modules/jwplayerRtdProvider.js';
 import { server } from 'test/mocks/xhr.js';
 import {addOrtbSiteContent} from '../../../modules/jwplayerRtdProvider';
 
@@ -498,26 +498,62 @@ describe('jwplayerRtdProvider', function() {
     });
   });
 
-  describe('Get Content Data', function () {
+  describe('Get Content Segments', function () {
     it('returns undefined when segments are empty', function () {
-      let data = getContentData(null);
-      expect(data).to.be.undefined;
-      data = getContentData(undefined);
-      expect(data).to.be.undefined;
-      data = getContentData([]);
-      expect(data).to.be.undefined;
+      let contentSegments = getContentSegments(null);
+      expect(contentSegments).to.be.undefined;
+      contentSegments = getContentSegments(undefined);
+      expect(contentSegments).to.be.undefined;
+      contentSegments = getContentSegments([]);
+      expect(contentSegments).to.be.undefined;
     });
 
     it('returns proper format', function () {
       const segment1 = 'segment1';
       const segment2 = 'segment2';
       const segment3 = 'segment3';
-      const data = getContentData([segment1, segment2, segment3]);
-      expect(data).to.have.property('name', 'jwplayer');
-      expect(data.ext).to.have.property('segtax', 502);
-      expect(data.segment[0]).to.deep.equal({ id: segment1, value: segment1 });
-      expect(data.segment[1]).to.deep.equal({ id: segment2, value: segment2 });
-      expect(data.segment[2]).to.deep.equal({ id: segment3, value: segment3 });
+      const contentSegments = getContentSegments([segment1, segment2, segment3]);
+      expect(contentSegments[0]).to.deep.equal({ id: segment1, value: segment1 });
+      expect(contentSegments[1]).to.deep.equal({ id: segment2, value: segment2 });
+      expect(contentSegments[2]).to.deep.equal({ id: segment3, value: segment3 });
+    });
+  });
+
+  describe('Get Content Data', function () {
+    it('should return proper format', function () {
+      const testMediaId = 'test_media_id';
+      const testSegments = [{ id: 1 }, { id: 2 }];
+      const contentData = getContentData(testMediaId, testSegments);
+      expect(contentData).to.have.property('name', 'jwplayer.com');
+      expect(contentData.ext).to.have.property('segtax', 502);
+      expect(contentData.ext).to.have.property('cids');
+      expect(contentData.ext.cids).to.have.length(1);
+      expect(contentData.ext.cids[0]).to.equal(testMediaId);
+      expect(contentData.segment).to.deep.equal(testSegments);
+    });
+
+    it('should only set segtax and segment when segments are provided', function () {
+      const testMediaId = 'test_media_id';
+      const contentData = getContentData(testMediaId);
+      expect(contentData).to.have.property('name', 'jwplayer.com');
+      expect(contentData.ext.segtax).to.be.undefined;
+      expect(contentData.ext).to.have.property('cids');
+      expect(contentData.ext.cids).to.have.length(1);
+      expect(contentData.ext.cids[0]).to.equal(testMediaId);
+      expect(contentData.segment).to.be.undefined;
+    });
+
+    it('should only set cids when a media id is provided', function () {
+      const testSegments = [{ id: 1 }, { id: 2 }];
+      const contentData = getContentData(null, testSegments);
+      expect(contentData).to.have.property('name', 'jwplayer.com');
+      expect(contentData.ext).to.have.property('segtax', 502);
+      expect(contentData.ext).to.not.have.property('cids');
+      expect(contentData.segment).to.deep.equal(testSegments);
+    });
+
+    it('should return undefined when no params are provided', function () {
+      expect(getContentData()).to.be.undefined;
     });
   });
 
