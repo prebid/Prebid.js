@@ -58,7 +58,9 @@ function getUtilsMock() {
     isOmidSupported: function () {},
     getSkipParams: function () {},
     getJwEvent: function () {},
-    getIsoLanguageCode: function () {}
+    getIsoLanguageCode: function () {},
+    getSegments: function () {},
+    getContentDatum: function () {}
   };
 }
 
@@ -217,7 +219,7 @@ describe('JWPlayerProvider', function () {
       expect(video.skip).to.equal(test_skip);
       expect(video.pos).to.equal(7); //
 
-      expect(content.id).to.be.equal(test_item.mediaid);
+      expect(content.id).to.be.equal('jw_' + test_item.mediaid);
       expect(content.url).to.be.equal(test_item.file);
       expect(content.title).to.be.equal(test_item.title);
       expect(content.cat).to.be.equal(test_item.iabCategories);

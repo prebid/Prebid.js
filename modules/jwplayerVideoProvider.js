@@ -131,7 +131,6 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
     }
 
     const content = {
-      id: item.mediaid,
       url: item.file,
       title: item.title,
       cat: item.iabCategories,
@@ -140,6 +139,18 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
       livestream: Math.min(playbackMode, 1),
       embeddable: 1
     };
+
+    const mediaId = item.mediaid;
+    if (mediaId) {
+      content.id = 'jw_' + mediaId;
+    }
+
+    const jwpseg = item.jwpseg;
+    const dataSegment = utils.getSegments(jwpseg);
+    const contentDatum = utils.getContentDatum(mediaId, dataSegment);
+    if (contentDatum) {
+      content.data = [contentDatum];
+    }
 
     const isoLanguageCode = utils.getIsoLanguageCode(player);
     if (isoLanguageCode) {
@@ -843,6 +854,55 @@ export const utils = {
     const currentTrackIndex = Math.max(player.getCurrentAudioTrack() || 0, 0); // returns -1 when there are no alternative tracks.
     const audioTrack = audioTracks[currentTrackIndex];
     return audioTrack && audioTrack.language;
+  },
+
+  /**
+   * Converts an array of jwpsegs into an array of data segments compliant with the oRTB content.data[index].segment
+   * @param {[String]} jwpsegs - jwplayer contextual targeting segments
+   * @return {[Object]|undefined} list of data segments compliant with the oRTB content.data[index].segment spec
+   */
+  getSegments: function (jwpsegs) {
+    if (!jwpsegs || !jwpsegs.length) {
+      return;
+    }
+
+    const formattedSegments = jwpsegs.reduce((convertedSegments, rawSegment) => {
+      convertedSegments.push({
+        id: rawSegment,
+        value: rawSegment
+      });
+      return convertedSegments;
+    }, []);
+
+    return formattedSegments;
+  },
+
+  /**
+   * Creates an object compliant with the oRTB content.data[index] spec.
+   * @param {String} mediaId - content identifier
+   * @param {[Object]} segments - list of data segments compliant with the oRTB content.data[index].segment spec
+   * @return {Object} - Object compliant with the oRTB content.data[index] spec.
+   */
+  getContentDatum: function (mediaId, segments) {
+    if (!mediaId && !segments) {
+      return;
+    }
+
+    const contentData = {
+      name: 'jwplayer.com',
+      ext: {}
+    };
+
+    if (mediaId) {
+      contentData.ext.cids = [mediaId];
+    }
+
+    if (segments) {
+      contentData.segment = segments;
+      contentData.ext.segtax = 502;
+    }
+
+    return contentData;
   }
 }
 
