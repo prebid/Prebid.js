@@ -5,14 +5,14 @@ const RESULT = 2;
 /**
  * @returns a {promise, resolve, reject} trio where `promise` is resolved by calling `resolve` or `reject`.
  */
-export function promiseControls() {
+export function promiseControls({promiseFactory = (resolver) => new Promise(resolver)} = {}) {
   const status = {};
 
   function finisher(slot) {
     return function (val) {
-      if (status[slot] != null) {
+      if (typeof status[slot] === 'function') {
         status[slot](val);
-      } else {
+      } else if (!status[slot]) {
         status[slot] = true;
         status[RESULT] = val;
       }
@@ -20,7 +20,7 @@ export function promiseControls() {
   }
 
   return {
-    promise: new Promise((resolve, reject) => {
+    promise: promiseFactory((resolve, reject) => {
       if (status[SUCCESS] != null) {
         resolve(status[RESULT]);
       } else if (status[FAIL] != null) {

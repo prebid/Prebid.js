@@ -131,7 +131,7 @@ import * as events from '../../src/events.js';
 import {getGlobal} from '../../src/prebidGlobal.js';
 import {gdprDataHandler} from '../../src/adapterManager.js';
 import CONSTANTS from '../../src/constants.json';
-import {hook, module} from '../../src/hook.js';
+import {hook, module, ready as hooksReady} from '../../src/hook.js';
 import {buildEidPermissions, createEidsArray, USER_IDS_CONFIG} from './eids.js';
 import {getCoreStorageManager} from '../../src/storageManager.js';
 import {
@@ -529,7 +529,6 @@ function delayFor(ms) {
 const INIT_CANCELED = {};
 
 function idSystemInitializer({delay = delayFor} = {}) {
-
   const startInit = promiseControls();
   const startCallbacks = promiseControls();
   let cancel;
@@ -559,7 +558,7 @@ function idSystemInitializer({delay = delayFor} = {}) {
   }
 
   let done = cancelAndTry(
-    startInit.promise
+    Promise.all([hooksReady, startInit.promise])
       .then(() => gdprDataHandler.promise)
       .then(checkRefs((consentData) => {
         initSubmodules(initModules, allModules, consentData);
