@@ -54,7 +54,8 @@ export function getSegmentsAndCategories(reqBidsConfigObj, onDone, moduleConfig,
 
   const url = 'https://kvt.' + sirdataDomain + '/api/v1/public/p/' + moduleConfig.params.partnerId + '/d/' + moduleConfig.params.key + '/s?callback=&gdpr=' + gdprApplies + '&gdpr_consent=' + tcString + (actualUrl ? '&url=' + encodeURIComponent(actualUrl) : '');
 
-  ajax(url, {
+  ajax(url,
+    {
       success: function (response, req) {
         if (req.status === 200) {
           try {
