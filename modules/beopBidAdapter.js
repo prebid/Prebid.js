@@ -162,10 +162,23 @@ function ensureProtocolInUrl(url, defaultProtocol) {
   return url;
 }
 
+/**
+ * sometimes trying to access a field (protected?) triggers an exception
+ * Ex deepAccess(window, 'top.location.href') might throw if it crosses origins
+ * so here is a lenient version
+ */
+function safeDeepAccess(obj, path) {
+  try {
+    return deepAccess(obj, path)
+  } catch (_e) {
+    return null;
+  }
+}
+
 function getPageUrl(refererInfo, window) {
   refererInfo = refererInfo || getRefererInfo();
-  let pageUrl = refererInfo.canonicalUrl || refererInfo.referer || deepAccess(window, 'top.location.href') || deepAccess(window, 'location.href');
-  // Ensure the protocol is present (looks like sometimes canonicalUrl misses it)
+  let pageUrl = refererInfo.canonicalUrl || safeDeepAccess(window, 'top.location.href') || deepAccess(window, 'location.href');
+  // Ensure the protocol is present (looks like sometimes the extracted pageUrl misses it)
   if (pageUrl != null) {
     const defaultProtocol = deepAccess(window, 'top.location.protocol') || deepAccess(window, 'location.protocol');
     pageUrl = ensureProtocolInUrl(pageUrl, defaultProtocol);
