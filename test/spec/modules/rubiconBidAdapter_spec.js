@@ -1714,6 +1714,22 @@ describe('the rubicon adapter', function () {
           expect(request.data.imp[0].ext).to.not.haveOwnProperty('rubicon');
         });
 
+        it('should add floors flag correctly to PBS Request', function () {
+          createVideoBidderRequest();
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+
+          // should not pass if undefined
+          expect(request.data.ext.prebid.floors).to.be.undefined;
+
+          // should pass it as false
+          bidderRequest.bids[0].floorData = {
+            skipped: false,
+            location: 'fetch',
+          }
+          let [newRequest] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(newRequest.data.ext.prebid.floors).to.deep.equal({ enabled: false });
+        });
+
         it('should add multibid configuration to PBS Request', function () {
           createVideoBidderRequest();
 

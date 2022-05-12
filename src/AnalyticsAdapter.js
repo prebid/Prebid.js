@@ -1,8 +1,7 @@
 import CONSTANTS from './constants.json';
 import { ajax } from './ajax.js';
 import { logMessage, _each } from './utils.js';
-
-const events = require('./events.js');
+import * as events from './events.js'
 
 const {
   EVENTS: {

@@ -305,6 +305,15 @@ export const USER_IDS_CONFIG = {
     source: 'impact-ad.jp',
     atype: 1
   },
+
+  // 33across ID
+  '33acrossId': {
+    source: '33across.com',
+    atype: 1,
+    getValue: function(data) {
+      return data.envelope;
+    }
+  },
 };
 
 // this function will create an eid object for the given UserId sub-module

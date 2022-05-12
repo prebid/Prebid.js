@@ -178,6 +178,33 @@ describe('Adf adapter', function () {
       assert.equal(request.source.fd, 1);
     });
 
+    it('should not set coppa when coppa is not provided or is set to false', function () {
+      config.setConfig({
+      });
+      let validBidRequests = [{ bidId: 'bidId', params: { test: 1 } }];
+      let bidderRequest = { gdprConsent: { gdprApplies: true, consentString: 'consentDataString' }, refererInfo: { referer: 'page' } };
+      let request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
+
+      assert.equal(request.regs.coppa, undefined);
+
+      config.setConfig({
+        coppa: false
+      });
+      request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
+
+      assert.equal(request.regs.coppa, undefined);
+    });
+
+    it('should set coppa to 1 when coppa is provided with value true', function () {
+      config.setConfig({
+        coppa: true
+      });
+      let validBidRequests = [{ bidId: 'bidId', params: { test: 1 } }];
+      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data);
+
+      assert.equal(request.regs.coppa, 1);
+    });
+
     it('should send info about device', function () {
       config.setConfig({
         device: { w: 100, h: 100 }
