@@ -72,8 +72,8 @@ object are detailed here.
 | video | Optional | Hash | The video object will serve as the properties of the video ad. You can create any field under the video object that is mentioned in the `OpenRTB Spec v2.5`. Some fields like `mimes, protocols, minduration, maxduration` are required. Properties not defined at this level, will be pulled from the Adunit level.
 |video.w| Required | Integer | The video player size width in pixels that will be passed to demand partners.
 |video.h| Required | Integer | The video player size height in pixels that will be passed to demand partners.
-|video.playerSize| Optional* | Integer | The video player size that will be passed to demand partners. * In the absence of `video.w` and `video.h`, this field is required.
-| video.mimes | Required | String[] | Array list of content MIME types supported. Popular MIME types include, but are not limited to, `"video/x-ms- wmv"` for Windows Media and `"video/x-flv"` for Flash Video.
+|video.playerSize| Optional* | Array[Integer,Integer] | The video player size that will be passed to demand partners. *In the absence of `video.w` and `video.h`, this field is required.
+| video.mimes | Required | String[] | Array list of content MIME types supported. Popular MIME types include, but are not limited to, `"video/mp4"` and `"video/webm"`.
 |video.minduration| Required | Integer | Minimum video ad duration in seconds.
 |video.maxduration| Required | Integer | Maximum video ad duration in seconds.
 |video.protocol / video.protocols| Required | Integer / Integer[] | Either a single protocol provided as an integer, or protocols provided as a list of integers. `2` - VAST 2.0, `3` - VAST 3.0, `5` - VAST 2.0 Wrapper, `6` - VAST 3.0 Wrapper
@@ -111,9 +111,7 @@ Both video and banner params will be read from the `adUnits[].mediaTypes.video` 
 The examples in this guide assume the following starting configuration (you may remove banner or video, if either does not apply).
 
 
-In regards to video, `context` can either be `'instream'` or `'outstream'`. Note that `outstream` requires additional configuration on the adUnit.
-
-
+In regards to video, `context` can either be `'instream'` or `'outstream'`.
 
 ```javascript
 var adUnits = [{
@@ -195,9 +193,9 @@ var adUnits = [{
             context: 'instream',
             playerSize: [300, 250],
             mimes: [
-                    'video/mp4',
-                    'video/webm'
-                ],
+                'video/mp4',
+                'video/webm'
+            ],
             minduration: 0,
             maxduration: 60,
             protocols: [6]
@@ -224,8 +222,8 @@ Please note that you can re-use the existing `siteId` within the same flex
 position.
 
 **Video (Outstream):**
-Note that currently, outstream video rendering must be configured by the publisher. In the adUnit, a `renderer` object must be defined, which includes a `url` pointing to the video rendering script, and a `render` function for creating the video player. See http://prebid.org/dev-docs/show-outstream-video-ads.html for more information.
 
+Note that Index provides a renderer, but this can be overridden. See http://prebid.org/dev-docs/show-outstream-video-ads.html for more info.
 ```javascript
 var adUnits = [{
     code: 'video-div-a',
@@ -234,18 +232,12 @@ var adUnits = [{
             context: 'outstream',
             playerSize: [300, 250],
             mimes: [
-                    'video/mp4',
-                    'video/webm'
-                ],
+                'video/mp4',
+                'video/webm'
+            ],
             minduration: 0,
             maxduration: 60,
             protocols: [6]
-        }
-    },
-    renderer: {
-        url: 'https://test.com/my-video-player.js',
-        render: function (bid) {
-            ...
         }
     },
     bids: [{
@@ -262,7 +254,7 @@ var adUnits = [{
 
 #### Video Caching
 
-Note that the IX adapter expects a client-side Prebid Cache to be enabled for video bidding.
+Note that the IX adapter expects a client-side Prebid Cache to be enabled for instream video bidding.
 
 ```
 pbjs.setConfig({
@@ -293,21 +285,21 @@ pbjs.setConfig({
 By default, the IX bidding adapter bids on all banner sizes available in the ad unit when configured to at least one banner size. If you want the IX bidding adapter to only bid on the banner size it’s configured to, switch off this feature using `detectMissingSizes`.
 ```
 pbjs.setConfig({
-                ix: {
-                    detectMissingSizes: false
-                }
-            });
+    ix: {
+        detectMissingSizes: false
+    }
+});
 ```
 OR
 ```
 pbjs.setBidderConfig({
-                bidders: ["ix"],
-                config: {
-                    ix: {
-                        detectMissingSizes: false
-                    }
-                }
-            });
+    bidders: ["ix"],
+    config: {
+        ix: {
+            detectMissingSizes: false
+        }
+    }
+});
 ```
 
 ### 2. Include `ixBidAdapter` in your build process
