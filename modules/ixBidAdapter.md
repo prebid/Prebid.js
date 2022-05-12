@@ -70,10 +70,10 @@ object are detailed here.
 | siteId | Required | String | An IX-specific identifier that is associated with this ad unit. It will be associated to the single size, if the size is provided. This is similar to a placement ID or an ad unit ID that some other modules have. Examples: `'3723'`, `'6482'`, `'3639'`
 | size | Optional (Deprecated)| Number[] | The single size associated with the site ID. It should be one of the sizes listed in the ad unit under `adUnits[].sizes` or `adUnits[].mediaTypes.video.playerSize`. Examples: `[300, 250]`, `[300, 600]`
 | video | Optional | Hash | The video object will serve as the properties of the video ad. You can create any field under the video object that is mentioned in the `OpenRTB Spec v2.5`. Some fields like `mimes, protocols, minduration, maxduration` are required. Properties not defined at this level, will be pulled from the Adunit level.
-|video.w| Required | Integer | The video player size width in pixels that will be passed to demand partners.
-|video.h| Required | Integer | The video player size height in pixels that will be passed to demand partners.
-|video.playerSize| Optional* | Array[Integer,Integer] | The video player size that will be passed to demand partners. *In the absence of `video.w` and `video.h`, this field is required.
-| video.mimes | Required | String[] | Array list of content MIME types supported. Popular MIME types include, but are not limited to, `"video/mp4"` and `"video/webm"`.
+|video.w| Required | Integer | The width of the video player in pixels that will be passed to demand partners.<br /> *If you are using Index’s outstream player and have placed the `video` object at the `bidder` level, this is a required field. You must define the size of the video player using the `video.w` and `video.h` parameters, with a minimum video player size of 300 x 250.
+|video.h| Required | Integer | The height of the video player in pixels that will be passed to demand partners. <br />*If you are using Index’s outstream player and have placed the `video` object at the `bidder` level, this is a required field. You must define the size of the video player using the `video.w` and `video.h` parameters, with a minimum video player size of 300 x 250.
+|video.playerSize| Optional* | Array[Integer,Integer] | The video player size that will be passed to demand partners.</br /> *If you are using Index’s outstream player and have placed the `video` object at the `adUnit` level, this is a required field. You must define the size of the video player using this parameter, with a minimum video player size of 300 x 250.
+| video.mimes | Required | String[] | If you are using Index’s outstream video player and want to learn more about what is supported, see [List of supported OpenRTB bid request fields for Sellers](https://kb.indexexchange.com/publishers/openrtb_integration/list_of_supported_openrtb_bid_request_fields_for_sellers.htm#Video).
 |video.minduration| Required | Integer | Minimum video ad duration in seconds.
 |video.maxduration| Required | Integer | Maximum video ad duration in seconds.
 |video.protocol / video.protocols| Required | Integer / Integer[] | Either a single protocol provided as an integer, or protocols provided as a list of integers. `2` - VAST 2.0, `3` - VAST 3.0, `5` - VAST 2.0 Wrapper, `6` - VAST 3.0 Wrapper
@@ -223,34 +223,42 @@ position.
 
 **Video (Outstream):**
 
-Note that Index provides a renderer, but this can be overridden. See http://prebid.org/dev-docs/show-outstream-video-ads.html for more info.
+Publishers have two options to receive outstream video demand from Index:
+* Using Index’s outstream video player
+* In an outstream video configuration set up by the publisher. For more information, see [Prebid’s documentation on how to show video ads.](https://docs.prebid.org/dev-docs/show-outstream-video-ads.html)
+
+**Index’s outstream video player**
+Publishers who are using Index as a bidding adapter in Prebid.js can show outstream video ads on their site from us by using Index’s outstream video player. This allows a video ad to display inside of a video player and can be placed anywhere on a publisher’s site, such as in-article, in-feed, and more.
+
+Define a new `video` object for our outstream video player at either the adUnit level or the `bidder` level. If you are setting it at the bidder level, define the size of the video player using the parameters `video.h` and `video.w`. If you are setting it at the `adUnit` level, define the size using video.playerSize.
+
+For more information on how to structure the `video` object, refer to the following code example:
+
+
 ```javascript
 var adUnits = [{
-    code: 'video-div-a',
+    code: 'div-gpt-ad-1571167646410-1',
     mediaTypes: {
         video: {
+            playerSize: [640, 360],
             context: 'outstream',
-            playerSize: [300, 250],
-            mimes: [
-                'video/mp4',
-                'video/webm'
-            ],
-            minduration: 0,
-            maxduration: 60,
-            protocols: [6]
+            api: [2],
+            protocols: [2, 3, 5, 6],
+            minduration: 5,
+            maxduration: 30,
+            mimes: ['video/mp4', 'application/javascript'],
+            placement: 3
         }
     },
     bids: [{
         bidder: 'ix',
         params: {
-            siteId: '12345',
-            video: {
-                // If required, use this to override mediaTypes.video.XX properties   
-            }
+            siteId: '715964'
         }
     }]
 }];
 ```
+<em>Please note that your use of the outstream video player will be governed by and subject to the terms and conditions of i) any master services or license agreement entered into by you and Index Exchange; ii) the information provided on our knowledge base linked [here](https://kb.indexexchange.com/publishers/prebid_integration/outstream_video_prebidjs.htm) and [here](https://kb.indexexchange.com/publishers/guidelines/standard_contractual_clauses.htm), and iii) our [Privacy Policy](https://www.indexexchange.com/privacy/). Your use of Index’s outstream video player constitutes your acknowledgement and acceptance of the foregoing. </em>
 
 #### Video Caching
 
