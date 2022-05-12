@@ -569,6 +569,28 @@ describe('TheMediaGrid Adapter', function () {
       getConfigStub.restore();
     });
 
+    it('should have site.content.data filled from config ortb2.site.content.data', function () {
+      const contentData = [
+        {
+          'name': 'someName',
+          'ext': {
+            'segtax': 7
+          },
+          'segments': [
+            { 'id': 'segId1' },
+            { 'id': 'segId2' }
+          ]
+        }
+      ];
+
+      const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
+        arg => arg === 'ortb2.site' ? { content: { data: contentData } } : null);
+      const request = spec.buildRequests([bidRequests[0]], bidderRequest);
+      const payload = parseRequest(request.data);
+      expect(payload.site.content.data).to.deep.equal(contentData);
+      getConfigStub.restore();
+    });
+
     it('should have right value in user.data when jwpsegments are present', function () {
       const userData = [
         {
