@@ -268,6 +268,56 @@ describe('the price floors module', function () {
         matchingRule: undefined
       });
     });
+    it('correctly applies floorMin if on adunit', function () {
+      let inputFloorData = {
+        floorMin: 2.6,
+        currency: 'USD',
+        schema: {
+          delimiter: '|',
+          fields: ['adUnitCode']
+        },
+        values: {
+          'test_div_1': 1.0,
+          'test_div_2': 2.0
+        },
+        default: 0.5
+      };
+
+      let myBidRequest = { ...basicBidRequest };
+
+      // should take adunit floormin first even if lower
+      utils.deepSetValue(myBidRequest, 'ortb2Imp.ext.prebid.floorMin', 2.2);
+      expect(getFirstMatchingFloor(inputFloorData, myBidRequest, { mediaType: 'banner', size: '*' })).to.deep.equal({
+        floorMin: 2.2,
+        floorRuleValue: 1.0,
+        matchingFloor: 2.2,
+        matchingData: 'test_div_1',
+        matchingRule: 'test_div_1'
+      });
+      delete inputFloorData.matchingInputs;
+
+      // should take adunit floormin if higher
+      utils.deepSetValue(myBidRequest, 'ortb2Imp.ext.prebid.floorMin', 3.0);
+      expect(getFirstMatchingFloor(inputFloorData, myBidRequest, { mediaType: 'banner', size: '*' })).to.deep.equal({
+        floorMin: 3.0,
+        floorRuleValue: 1.0,
+        matchingFloor: 3.0,
+        matchingData: 'test_div_1',
+        matchingRule: 'test_div_1'
+      });
+      delete inputFloorData.matchingInputs;
+
+      // should take top floormin if no adunit floor min
+      delete myBidRequest.ortb2Imp;
+      expect(getFirstMatchingFloor(inputFloorData, myBidRequest, { mediaType: 'banner', size: '*' })).to.deep.equal({
+        floorMin: 2.6,
+        floorRuleValue: 1.0,
+        matchingFloor: 2.6,
+        matchingData: 'test_div_1',
+        matchingRule: 'test_div_1'
+      });
+      delete inputFloorData.matchingInputs;
+    });
     it('selects the right floor for different mediaTypes', function () {
       // banner with * size (not in rule file so does not do anything)
       expect(getFirstMatchingFloor({...basicFloorData}, basicBidRequest, {mediaType: 'banner', size: '*'})).to.deep.equal({

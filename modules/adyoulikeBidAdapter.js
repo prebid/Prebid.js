@@ -350,14 +350,6 @@ function getTrackers(eventsArray, jsTrackers) {
   return result;
 }
 
-function getVideoAd(response) {
-  var adJson = {};
-  if (typeof response.Ad === 'string' && response.Ad.indexOf('\/\*PREBID\*\/') > 0) {
-    adJson = JSON.parse(response.Ad.match(/\/\*PREBID\*\/(.*)\/\*PREBID\*\//)[1]);
-    return deepAccess(adJson, 'Content.MainVideo.Vast');
-  }
-}
-
 function getNativeAssets(response, nativeConfig) {
   if (typeof response.Native === 'object') {
     return response.Native;
@@ -486,8 +478,10 @@ function createBid(response, bidRequests) {
   };
 
   // retreive video response if present
-  const vast64 = response.Vast || getVideoAd(response);
+  const vast64 = response.Vast;
   if (vast64) {
+    bid.width = response.Width;
+    bid.height = response.Height;
     bid.vastXml = window.atob(vast64);
     bid.mediaType = 'video';
   } else if (request.Native) {

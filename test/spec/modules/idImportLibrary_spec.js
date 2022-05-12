@@ -1,6 +1,9 @@
+import {init} from 'modules/userId/index.js';
 import * as utils from 'src/utils.js';
 import * as idImportlibrary from 'modules/idImportLibrary.js';
-
+import {getGlobal} from '../../../src/prebidGlobal.js';
+import {config} from 'src/config.js';
+import {hook} from '../../../src/hook.js';
 var expect = require('chai').expect;
 
 const mockMutationObserver = {
@@ -14,6 +17,11 @@ describe('IdImportLibrary Tests', function () {
   let sandbox;
   let clock;
   let fn = sinon.spy();
+
+  before(() => {
+    hook.ready();
+    init(config);
+  });
 
   beforeEach(function () {
     fakeServer = sinon.fakeServer.create();
@@ -85,10 +93,10 @@ describe('IdImportLibrary Tests', function () {
     let refreshUserIdSpy;
     beforeEach(function() {
       let sandbox = sinon.createSandbox();
-      refreshUserIdSpy = sinon.spy(window.$$PREBID_GLOBAL$$, 'refreshUserIds');
+      refreshUserIdSpy = sinon.stub(getGlobal(), 'refreshUserIds');
       clock = sinon.useFakeTimers(1046952000000); // 2003-03-06T12:00:00Z
       mutationObserverStub = sinon.stub(window, 'MutationObserver').returns(mockMutationObserver);
-      userId = sandbox.stub(window.$$PREBID_GLOBAL$$, 'getUserIds').returns({id: {'MOCKID': '1111'}});
+      userId = sandbox.stub(getGlobal(), 'getUserIds').returns({id: {'MOCKID': '1111'}});
       fakeServer.respondWith('POST', 'URL', [200,
         {
           'Content-Type': 'application/json',
@@ -230,14 +238,14 @@ describe('IdImportLibrary Tests', function () {
       jsonSpy.restore();
       mutationObserverStub.restore();
     });
-    it('results with config inputscan without listner with no user ids ', function () {
+    it('results with config inputscan without listner with no user ids #1', function () {
       let config = { 'url': 'testUrl', 'inputscan': true, 'debounce': 0 }
       document.body.innerHTML = '<body><input  id="userid" value="test@test.com"></body>';
       idImportlibrary.setConfig(config);
       expect(config.inputscan).to.be.equal(true);
       expect(jsonSpy.calledOnce).to.equal(false);
     });
-    it('results with config inputscan without listner with no user ids ', function () {
+    it('results with config inputscan without listner with no user ids #2', function () {
       let config = { 'url': 'testUrl', 'inputscan': true, 'debounce': 0 }
       document.body.innerHTML = '<body><input  id="userid"></body>';
       idImportlibrary.setConfig(config);
