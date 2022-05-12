@@ -312,12 +312,7 @@ function newOrtbBidRequest(bidRequest, bidderRequest, currentImps) {
     deepSetValue(data, 'source.ext.schain', bidRequest.schain);
   }
 
-  setSiteAndUserData(bidRequest, bidderRequest, data);
-
-  const pbAdSlot = deepAccess(bidRequest, 'fpd.context.pbAdSlot');
-  if (typeof pbAdSlot === 'string' && pbAdSlot) {
-    deepSetValue(data.imp[0].ext, 'context.data.adslot', pbAdSlot);
-  }
+  setSiteAndUserData(bidRequest, BANNER, data);
 
   return data;
 }
@@ -360,29 +355,6 @@ function setUserId(bidRequest, data) {
   }
 }
 
-function setSiteAndUserData(bidRequest, bidderRequest, data) {
-  const siteData = Object.assign({}, bidRequest.params.inventory, config.getConfig('fpd.context'));
-  const userData = Object.assign({}, bidRequest.params.visitor, config.getConfig('fpd.user'));
-
-  if (!isEmpty(siteData) || !isEmpty(userData)) {
-    const bidderData = {
-      bidders: [ bidderRequest.bidderCode ],
-      config: {
-        fpd: {}
-      }
-    };
-
-    if (!isEmpty(siteData)) {
-      bidderData.config.fpd.site = siteData;
-    }
-
-    if (!isEmpty(userData)) {
-      bidderData.config.fpd.user = userData;
-    }
-
-    deepSetValue(data, 'ext.prebid.bidderconfig.0', bidderData);
-  }
-}
 
 function setAdserverOrg(bidRequest, data) {
   if (bidRequest.userId.tdid) {
@@ -534,6 +506,90 @@ function parseSizes(bid, mediaType) {
   }
 
   return masSizeOrdering(sizes);
+}
+
+function setSiteAndUserData(bidRequest, mediaType, data) {
+  const BID_FPD = {
+    user: {ext: {data: {...bidRequest.params.visitor}}},
+    site: {ext: {data: {...bidRequest.params.inventory}}}
+  };
+
+  if (bidRequest.params.keywords) BID_FPD.site.keywords = (isArray(bidRequest.params.keywords)) ? bidRequest.params.keywords.join(',') : bidRequest.params.keywords;
+
+  let fpd = mergeDeep({}, config.getConfig('ortb2') || {}, BID_FPD);
+  let impData = deepAccess(bidRequest.ortb2Imp, 'ext.data') || {};
+
+  const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
+  const SEGTAX = {user: [4], site: [1, 2, 5, 6]};
+  const MAP = {user: 'tg_v.', site: 'tg_i.', adserver: 'tg_i.dfp_ad_unit_code', pbadslot: 'tg_i.pbadslot', keywords: 'kw'};
+  const validate = function(prop, key, parentName) {
+    if (key === 'data' && Array.isArray(prop)) {
+      return prop.filter(name => name.segment && deepAccess(name, 'ext.segtax') && SEGTAX[parentName] &&
+        SEGTAX[parentName].indexOf(deepAccess(name, 'ext.segtax')) !== -1).map(value => {
+        let segments = value.segment.filter(obj => obj.id).reduce((result, obj) => {
+          result.push(obj.id);
+          return result;
+        }, []);
+        if (segments.length > 0) return segments.toString();
+      }).toString();
+    } else if (typeof prop === 'object' && !Array.isArray(prop)) {
+      logWarn('LuponMedia: Filtered FPD key: ', key, ': Expected value to be string, integer, or an array of strings/ints');
+    } else if (typeof prop !== 'undefined') {
+      return (Array.isArray(prop)) ? prop.filter(value => {
+        if (typeof value !== 'object' && typeof value !== 'undefined') return value.toString();
+
+        logWarn('LuponMedia: Filtered value: ', value, 'for key', key, ': Expected value to be string, integer, or an array of strings/ints');
+      }).toString() : prop.toString();
+    }
+  };
+  const addBannerData = function(obj, name, key, isParent = true) {
+    let val = validate(obj, key, name);
+    let loc = (MAP[key] && isParent) ? `${MAP[key]}` : (key === 'data') ? `${MAP[name]}iab` : `${MAP[name]}${key}`;
+    data[loc] = (data[loc]) ? data[loc].concat(',', val) : val;
+  }
+
+  if (mediaType === BANNER) {
+    ['site', 'user'].forEach(name => {
+      Object.keys(fpd[name]).forEach((key) => {
+        if (name === 'site' && key === 'content' && fpd[name][key].data) {
+          addBannerData(fpd[name][key].data, name, 'data');
+        } else if (key !== 'ext') {
+          addBannerData(fpd[name][key], name, key);
+        } else if (fpd[name][key].data) {
+          Object.keys(fpd[name].ext.data).forEach((key) => {
+            addBannerData(fpd[name].ext.data[key], name, key, false);
+          });
+        }
+      });
+    });
+    Object.keys(impData).forEach((key) => {
+      if (key !== 'adserver') {
+        addBannerData(impData[key], 'site', key);
+      } else if (impData[key].name === 'gam') {
+        addBannerData(impData[key].adslot, name, key)
+      }
+    });
+
+    // add in gpid
+    if (gpid) {
+      data['p_gpid'] = gpid;
+    }
+
+    // only send one of pbadslot or dfp adunit code (prefer pbadslot)
+    if (data['tg_i.pbadslot']) {
+      delete data['tg_i.dfp_ad_unit_code'];
+    }
+  } else {
+    if (Object.keys(impData).length) {
+      mergeDeep(data.imp[0].ext, {data: impData});
+    }
+    // add in gpid
+    if (gpid) {
+      data.imp[0].ext.gpid = gpid;
+    }
+
+    mergeDeep(data, fpd);
+  }
 }
 
 registerBidder(spec);
