@@ -45,12 +45,19 @@ module.exports = {
     'no-throw-literal': 'off',
     'no-undef': 2,
     'no-useless-escape': 'off',
-    'no-console': 'error'
+    'no-console': 'error',
   },
   overrides: Object.keys(allowedModules).map((key) => ({
     files: key + '/**/*.js',
     rules: {
-      'prebid/validate-imports': ['error', allowedModules[key]]
+      'prebid/validate-imports': ['error', allowedModules[key]],
+      'no-restricted-globals': [
+        'error',
+        {
+          name: 'require',
+          message: 'use import instead'
+        }
+      ]
     }
   })).concat([{
     // code in other packages (such as plugins/eslint) is not "seen" by babel and its parser will complain.

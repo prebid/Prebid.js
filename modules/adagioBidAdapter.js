@@ -31,6 +31,7 @@ import {createEidsArray} from './userId/eids.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
 import {OUTSTREAM} from '../src/video.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 
 const BIDDER_CODE = 'adagio';
 const LOG_PREFIX = 'Adagio:';
@@ -46,7 +47,6 @@ const MAX_SESS_DURATION = 30 * 60 * 1000;
 const ADAGIO_PUBKEY = 'AL16XT44Sfp+8SHVF1UdC7hydPSMVLMhsYknKDdwqq+0ToDSJrP0+Qh0ki9JJI2uYm/6VEYo8TJED9WfMkiJ4vf02CW3RvSWwc35bif2SK1L8Nn/GfFYr/2/GG/Rm0vUsv+vBHky6nuuYls20Og0HDhMgaOlXoQ/cxMuiy5QSktp';
 const ADAGIO_PUBKEY_E = 65537;
 const CURRENCY = 'USD';
-const DEFAULT_FLOOR = 0.1;
 
 // This provide a whitelist and a basic validation
 // of OpenRTB 2.5 options used by the Adagio SSP.
@@ -269,32 +269,14 @@ function getDevice() {
 };
 
 function getSite(bidderRequest) {
-  let domain = '';
-  let page = '';
-  let referrer = '';
-
   const { refererInfo } = bidderRequest;
-
-  if (canAccessTopWindow()) {
-    const wt = getWindowTop();
-    domain = wt.location.hostname;
-    page = wt.location.href;
-    referrer = wt.document.referrer || '';
-  } else if (refererInfo.reachedTop) {
-    const url = parseUrl(refererInfo.referer);
-    domain = url.hostname;
-    page = refererInfo.referer;
-  } else if (refererInfo.stack && refererInfo.stack.length && refererInfo.stack[0]) {
-    // important note check if refererInfo.stack[0] is 'thruly' because a `null` value
-    // will be considered as "localhost" by the parseUrl function.
-    const url = parseUrl(refererInfo.stack[0]);
-    domain = url.hostname;
-  }
+  const url = parseUrl(refererInfo.referer);
 
   return {
-    domain,
-    page,
-    referrer
+    domain: url.hostname || '',
+    page: refererInfo.referer || '',
+    referrer: canAccessTopWindow() ? getWindowTop().document.referrer || '' : getWindowSelf().document.referrer || '',
+    top: refererInfo.reachedTop
   };
 };
 
@@ -589,13 +571,13 @@ function _getFloors(bidRequest) {
     const info = bidRequest.getFloor({
       currency: CURRENCY,
       mediaType,
-      size: []
+      size
     });
 
     floors.push(cleanObj({
       mt: mediaType,
       s: isArray(size) ? `${size[0]}x${size[1]}` : undefined,
-      f: (!isNaN(info.floor) && info.currency === CURRENCY) ? info.floor : DEFAULT_FLOOR
+      f: (!isNaN(info.floor) && info.currency === CURRENCY) ? info.floor : undefined
     }));
   }
 
@@ -869,7 +851,9 @@ function storeRequestInAdagioNS(bidRequest) {
     }],
     auctionId: bidRequest.auctionId,
     pageviewId: internal.getPageviewId(),
-    printNumber
+    printNumber,
+    localPbjs: '$$PREBID_GLOBAL$$',
+    localPbjsRef: getGlobal()
   });
 
   // (legacy) Store internal adUnit information
@@ -937,7 +921,45 @@ export const spec = {
       });
 
       // Handle priceFloors module
-      bidRequest.floors = _getFloors(bidRequest);
+      const computedFloors = _getFloors(bidRequest);
+      if (isArray(computedFloors) && computedFloors.length) {
+        bidRequest.floors = computedFloors
+
+        if (deepAccess(bidRequest, 'mediaTypes.banner')) {
+          const bannerObj = bidRequest.mediaTypes.banner
+
+          const computeNewSizeArray = (sizeArr = []) => {
+            const size = { size: sizeArr, floor: null }
+            const bannerFloors = bidRequest.floors.filter(floor => floor.mt === BANNER)
+            const BannerSizeFloor = bannerFloors.find(floor => floor.s === sizeArr.join('x'))
+            size.floor = (bannerFloors) ? (BannerSizeFloor) ? BannerSizeFloor.f : bannerFloors[0].f : null
+            return size
+          }
+
+          // `bannerSizes`, internal property name
+          bidRequest.mediaTypes.banner.bannerSizes = (isArray(bannerObj.sizes[0]))
+            ? bannerObj.sizes.map(sizeArr => {
+              return computeNewSizeArray(sizeArr)
+            })
+            : computeNewSizeArray(bannerObj.sizes)
+        }
+
+        if (deepAccess(bidRequest, 'mediaTypes.video')) {
+          const videoObj = bidRequest.mediaTypes.video
+          const videoFloors = bidRequest.floors.filter(floor => floor.mt === VIDEO);
+          const playerSize = (videoObj.playerSize && isArray(videoObj.playerSize[0])) ? videoObj.playerSize[0] : videoObj.playerSize
+          const videoSizeFloor = (playerSize) ? videoFloors.find(floor => floor.s === playerSize.join('x')) : undefined
+
+          bidRequest.mediaTypes.video.floor = (videoFloors) ? videoSizeFloor ? videoSizeFloor.f : videoFloors[0].f : null
+        }
+
+        if (deepAccess(bidRequest, 'mediaTypes.native')) {
+          const nativeFloors = bidRequest.floors.filter(floor => floor.mt === NATIVE);
+          if (nativeFloors.length) {
+            bidRequest.mediaTypes.native.floor = nativeFloors[0].f
+          }
+        }
+      }
 
       if (deepAccess(bidRequest, 'mediaTypes.video')) {
         _buildVideoBidRequest(bidRequest);

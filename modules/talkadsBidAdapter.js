@@ -5,11 +5,12 @@ import {ajax} from '../src/ajax.js';
 
 const CURRENCY = 'EUR';
 const BIDDER_CODE = 'talkads';
+const GVLID = 1074;
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [ NATIVE, BANNER ],
-  params: null,
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -31,7 +32,7 @@ export const spec = {
       utils.logError('VALIDATION FAILED : the parameter "bidder_url" must be defined');
       return false;
     }
-    this.params = poBid.params;
+
     return !!(poBid.nativeParams || poBid.sizes);
   }, // isBidRequestValid
 
@@ -54,6 +55,7 @@ export const spec = {
       }
       return loOne;
     });
+    let laParams = paValidBidRequests[0].params;
     const loServerRequest = {
       cur: CURRENCY,
       timeout: poBidderRequest.timeout,
@@ -71,7 +73,7 @@ export const spec = {
         loServerRequest.gdpr.consent = poBidderRequest.gdprConsent.consentString;
       }
     }
-    const lsUrl = this.params.bidder_url + '/' + this.params.tag_id;
+    const lsUrl = laParams.bidder_url + '/' + laParams.tag_id;
     return {
       method: 'POST',
       url: lsUrl,
@@ -86,7 +88,7 @@ export const spec = {
    * @param poPidRequest Request original server request
    * @return An array of bids which were nested inside the server.
    */
-  interpretResponse: (poServerResponse, poPidRequest) => {
+  interpretResponse: function (poServerResponse, poPidRequest) {
     utils.logInfo('interpretResponse : ', poServerResponse);
     if (!poServerResponse.body) {
       return [];
@@ -120,8 +122,9 @@ export const spec = {
    */
   onBidWon: function (poBid) {
     utils.logInfo('onBidWon : ', poBid);
+    let laParams = poBid.params[0];
     if (poBid.pbid) {
-      ajax(this.params.bidder_url + 'won/' + poBid.pbid);
+      ajax(laParams.bidder_url + 'won/' + poBid.pbid);
     }
   }, // onBidWon
 };

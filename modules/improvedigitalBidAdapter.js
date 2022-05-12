@@ -117,16 +117,20 @@ export const spec = {
         if (additionalConsent && additionalConsent.indexOf('~') !== -1) {
           // Google Ad Tech Provider IDs
           const atpIds = additionalConsent.substring(additionalConsent.indexOf('~') + 1);
-          deepSetValue(
-            request,
-            'user.ext.consented_providers_settings.consented_providers',
-            atpIds.split('.').map(id => parseInt(id, 10))
-          );
+          if (atpIds) {
+            deepSetValue(
+              request,
+              'user.ext.consented_providers_settings.consented_providers',
+              atpIds.split('.').map(id => parseInt(id, 10))
+            );
+          }
         }
       }
 
       // Timeout
-      deepSetValue(request, 'tmax', bidderRequest.timeout);
+      if (bidderRequest.timeout) {
+        request.tmax = parseInt(bidderRequest.timeout);
+      }
       // US Privacy
       if (typeof bidderRequest.uspConsent !== typeof undefined) {
         deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent);
@@ -300,7 +304,10 @@ const ID_REQUEST = {
     }
 
     if (deepAccess(bidRequest, 'mediaTypes.native')) {
-      imp.native = this.buildNativeRequest(bidRequest);
+      const nativeImp = this.buildNativeRequest(bidRequest);
+      if (nativeImp) {
+        imp.native = nativeImp;
+      }
     }
 
     return imp;
@@ -354,7 +361,10 @@ const ID_REQUEST = {
   },
 
   buildNativeRequest(bidRequest) {
-    const nativeParams = bidRequest.mediaTypes.native;
+    const nativeParams = bidRequest.nativeParams;
+    if (!nativeParams) {
+      return null;
+    }
     const request = {
       assets: [],
     }
@@ -387,6 +397,10 @@ const ID_REQUEST = {
         }
         request.assets.push(asset);
       }
+    }
+    if (!request.assets.length) {
+      logWarn('No native assets recognized. Ignoring native ad request');
+      return null;
     }
     return { ver: NATIVE_DATA.VERSION, request: JSON.stringify(request) };
   },

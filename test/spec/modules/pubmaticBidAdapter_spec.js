@@ -4031,7 +4031,7 @@ describe('PubMatic adapter', function () {
     });
   });
 
-  describe('GroupM params', function() {
+  describe('Marketplace params', function() {
     let sandbox, utilsMock, newBidRequests, newBidResponses;
     beforeEach(() => {
       utilsMock = sinon.mock(utils);
@@ -4048,22 +4048,13 @@ describe('PubMatic adapter', function () {
       sandbox.restore();
     })
 
-    it('Should log info when bidder is groupm  and return', function () {
-      let request = spec.buildRequests(newBidRequests, {bidderCode: 'groupm',
-        auctionId: 'new-auction-id'
-      });
-      sinon.assert.calledOnce(utils.logInfo);
-      expect(request).to.equal(undefined);
-    });
-
-    it('Should add bidder code & bidder as groupm for marketplace groupm response', function () {
+    it('Should add bidder code as groupm for marketplace groupm response', function () {
       let request = spec.buildRequests(newBidRequests, {
         auctionId: 'new-auction-id'
       });
       let response = spec.interpretResponse(newBidResponses, request);
       expect(response).to.be.an('array').with.length.above(0);
       expect(response[0].bidderCode).to.equal('groupm');
-      expect(response[0].bidder).to.equal('groupm');
     });
   });
 });

@@ -17,6 +17,7 @@ import {find} from '../src/polyfill.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 
 const SUBMODULE_NAME = 'jwplayer';
+const JWPLAYER_DOMAIN = SUBMODULE_NAME + '.com';
 const segCache = {};
 const pendingRequests = {};
 let activeRequestCount = 0;
@@ -69,7 +70,7 @@ export function fetchTargetingForMediaId(mediaId) {
   const ajax = ajaxBuilder();
   // TODO: Avoid checking undefined vs null by setting a callback to pendingRequests.
   pendingRequests[mediaId] = null;
-  ajax(`https://cdn.jwplayer.com/v2/media/${mediaId}`, {
+  ajax(`https://cdn.${JWPLAYER_DOMAIN}/v2/media/${mediaId}`, {
     success: function (response) {
       const segment = parseSegment(response);
       cacheSegments(segment, mediaId);
@@ -155,10 +156,17 @@ export function enrichAdUnits(adUnits) {
       if (!vat) {
         return;
       }
-      const contentId = getContentId(vat.mediaID);
-      const contentData = getContentData(vat.segments);
+      const mediaId = vat.mediaID;
+      const contentId = getContentId(mediaId);
+      const contentSegments = getContentSegments(vat.segments);
+      const contentData = getContentData(mediaId, contentSegments);
       const targeting = formatTargetingResponse(vat);
       enrichBids(adUnit.bids, targeting, contentId, contentData);
+      let ortb2 = config.getConfig('ortb2');
+      ortb2 = getOrtbSiteContent(ortb2, contentId, contentData);
+      if (ortb2) {
+        config.setConfig({ ortb2 });
+      }
     };
     loadVat(jwTargeting, onVatResponse);
   });
@@ -263,7 +271,7 @@ export function getContentId(mediaID) {
   return 'jw_' + mediaID;
 }
 
-export function getContentData(segments) {
+export function getContentSegments(segments) {
   if (!segments || !segments.length) {
     return;
   }
@@ -276,21 +284,40 @@ export function getContentData(segments) {
     return convertedSegments;
   }, []);
 
-  return {
-    name: 'jwplayer',
-    ext: {
-      segtax: 502
-    },
-    segment: formattedSegments
-  };
+  return formattedSegments;
 }
 
-export function addOrtbSiteContent(bid, contentId, contentData) {
+export function getContentData(mediaId, segments) {
+  if (!mediaId && !segments) {
+    return;
+  }
+
+  const contentData = {
+    name: JWPLAYER_DOMAIN,
+    ext: {}
+  };
+
+  if (mediaId) {
+    contentData.ext.cids = [mediaId];
+  }
+
+  if (segments) {
+    contentData.segment = segments;
+    contentData.ext.segtax = 502;
+  }
+
+  return contentData;
+}
+
+export function getOrtbSiteContent(ortb2, contentId, contentData) {
   if (!contentId && !contentData) {
     return;
   }
 
-  let ortb2 = bid.ortb2 || {};
+  if (!ortb2) {
+    ortb2 = {};
+  }
+
   let site = ortb2.site = ortb2.site || {};
   let content = site.content = site.content || {};
 
@@ -298,12 +325,17 @@ export function addOrtbSiteContent(bid, contentId, contentData) {
     content.id = contentId;
   }
 
+  const currentData = content.data = content.data || [];
+  // remove old jwplayer data
+  const data = currentData.filter(datum => datum.name !== JWPLAYER_DOMAIN);
+
   if (contentData) {
-    const data = content.data = content.data || [];
     data.push(contentData);
   }
 
-  bid.ortb2 = ortb2;
+  content.data = data;
+
+  return ortb2;
 }
 
 function enrichBids(bids, targeting, contentId, contentData) {
@@ -313,7 +345,10 @@ function enrichBids(bids, targeting, contentId, contentData) {
 
   bids.forEach(bid => {
     addTargetingToBid(bid, targeting);
-    addOrtbSiteContent(bid, contentId, contentData);
+    const ortb2 = getOrtbSiteContent(bid.ortb2, contentId, contentData);
+    if (ortb2) {
+      bid.ortb2 = ortb2;
+    }
   });
 }
 
@@ -334,7 +369,7 @@ export function addTargetingToBid(bid, targeting) {
 function getPlayer(playerID) {
   const jwplayer = window.jwplayer;
   if (!jwplayer) {
-    logError('jwplayer.js was not found on page');
+    logError(SUBMODULE_NAME + '.js was not found on page');
     return;
   }
 
