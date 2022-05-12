@@ -151,6 +151,7 @@ import {
   timestamp,
   isEmpty
 } from '../../src/utils.js';
+import {getPPID as coreGetPPID} from '../../src/adserver.js';
 
 const MODULE_NAME = 'User ID';
 const COOKIE = 'cookie';
@@ -650,6 +651,19 @@ function idSystemInitializer({delay = delayFor} = {}) {
 
 let initIdSystem;
 
+function getPPID() {
+  // userSync.ppid should be one of the 'source' values in getUserIdsAsEids() eg pubcid.org or id5-sync.com
+  const matchingUserId = ppidSource && (getUserIdsAsEids() || []).find(userID => userID.source === ppidSource);
+  if (matchingUserId && typeof deepAccess(matchingUserId, 'uids.0.id') === 'string') {
+    const ppidValue = matchingUserId.uids[0].id.replace(/[\W_]/g, '');
+    if (ppidValue.length >= 32 && ppidValue.length <= 150) {
+      return ppidValue;
+    } else {
+      logWarn(`User ID - Googletag Publisher Provided ID for ${ppidSource} is not between 32 and 150 characters - ${ppidValue}`);
+    }
+  }
+}
+
 /**
  * Hook is executed before adapters, but after consentManagement. Consent data is requied because
  * this module requires GDPR consent with Purpose #1 to save data locally.
@@ -666,23 +680,16 @@ export function requestBidsHook(fn, reqBidsConfigObj, {delay = delayFor} = {}) {
   ]).then(() => {
     // pass available user id data to bid adapters
     addIdDataToAdUnitBids(reqBidsConfigObj.adUnits || getGlobal().adUnits, initializedSubmodules);
-
-    // userSync.ppid should be one of the 'source' values in getUserIdsAsEids() eg pubcid.org or id5-sync.com
-    const matchingUserId = ppidSource && (getUserIdsAsEids() || []).find(userID => userID.source === ppidSource);
-    if (matchingUserId && typeof deepAccess(matchingUserId, 'uids.0.id') === 'string') {
-      const ppidValue = matchingUserId.uids[0].id.replace(/[\W_]/g, '');
-      if (ppidValue.length >= 32 && ppidValue.length <= 150) {
-        if (isGptPubadsDefined()) {
-          window.googletag.pubads().setPublisherProvidedId(ppidValue);
-        } else {
-          window.googletag = window.googletag || {};
-          window.googletag.cmd = window.googletag.cmd || [];
-          window.googletag.cmd.push(function() {
-            window.googletag.pubads().setPublisherProvidedId(ppidValue);
-          });
-        }
+    const ppid = getPPID();
+    if (ppid) {
+      if (isGptPubadsDefined()) {
+        window.googletag.pubads().setPublisherProvidedId(ppid);
       } else {
-        logWarn(`User ID - Googletag Publisher Provided ID for ${ppidSource} is not between 32 and 150 characters - ${ppidValue}`);
+        window.googletag = window.googletag || {};
+        window.googletag.cmd = window.googletag.cmd || [];
+        window.googletag.cmd.push(function() {
+          window.googletag.pubads().setPublisherProvidedId(ppid);
+        });
       }
     }
 
@@ -980,6 +987,7 @@ function updateSubmodules() {
   if (!addedUserIdHook && submodules.length) {
     // priority value 40 will load after consentManagement with a priority of 50
     getGlobal().requestBids.before(requestBidsHook, 40);
+    coreGetPPID.after((next) => next(getPPID()));
     logInfo(`${MODULE_NAME} - usersync config updated for ${submodules.length} submodules: `, submodules.map(a => a.submodule.name));
     addedUserIdHook = true;
   }
