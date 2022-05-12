@@ -3,7 +3,7 @@
 ```
 Module Name: Alkimi Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: abogdanov@asteriosoft.com
+Maintainer: kalidas@alkimiexchange.com
 ```
 
 # Description

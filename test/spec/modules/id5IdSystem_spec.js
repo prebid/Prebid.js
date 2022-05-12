@@ -5,7 +5,7 @@ import {
   ID5_PRIVACY_STORAGE_NAME,
   ID5_STORAGE_NAME,
   id5IdSubmodule,
-  nbCacheName,
+  nbCacheName, storage,
   storeInLocalStorage,
   storeNbInCache,
 } from 'modules/id5IdSystem.js';
@@ -310,6 +310,21 @@ describe('ID5 ID System', function() {
       request.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
       expect(getFromLocalStorage(ID5_PRIVACY_STORAGE_NAME)).to.be.null;
     });
+
+    describe('when legacy cookies are set', () => {
+      let sandbox;
+      beforeEach(() => {
+        sandbox = sinon.sandbox.create();
+        sandbox.stub(storage, 'getCookie');
+      });
+      afterEach(() => {
+        sandbox.restore();
+      });
+      it('should not throw if malformed JSON is forced into cookies', () => {
+        storage.getCookie.callsFake(() => ' Not JSON ');
+        id5IdSubmodule.getId(getId5FetchConfig());
+      });
+    })
   });
 
   describe('Request Bids Hook', function() {
