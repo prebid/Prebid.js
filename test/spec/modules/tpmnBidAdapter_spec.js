@@ -1,9 +1,39 @@
 /* eslint-disable no-tabs */
-import { expect } from 'chai';
-import { spec } from 'modules/tpmnBidAdapter.js';
+import {expect} from 'chai';
+import {spec, storage} from 'modules/tpmnBidAdapter.js';
+import {generateUUID} from '../../../src/utils.js';
+import {newBidder} from '../../../src/adapters/bidderFactory';
+import * as sinon from 'sinon';
 
-describe('tpmnAdapterTests', function() {
-  describe('isBidRequestValid', function() {
+describe('tpmnAdapterTests', function () {
+  const adapter = newBidder(spec);
+  const BIDDER_CODE = 'tpmn';
+  let sandbox = sinon.sandbox.create();
+  let getCookieStub;
+
+  beforeEach(function () {
+    $$PREBID_GLOBAL$$.bidderSettings = {
+      tpmn: {
+        storageAllowed: true
+      }
+    };
+    sandbox = sinon.sandbox.create();
+    getCookieStub = sinon.stub(storage, 'getCookie');
+  });
+
+  afterEach(function () {
+    sandbox.restore();
+    getCookieStub.restore();
+    $$PREBID_GLOBAL$$.bidderSettings = {};
+  });
+
+  describe('inherited functions', function () {
+    it('exists and is a function', function () {
+      expect(adapter.callBids).to.exist.and.to.be.a('function')
+    })
+  });
+
+  describe('isBidRequestValid', function () {
     let bid = {
       adUnitCode: 'temp-unitcode',
       bidder: 'tpmn',
@@ -20,17 +50,18 @@ describe('tpmnAdapterTests', function() {
         }
       }
     };
-    it('should return true if a bid is valid banner bid request', function() {
+
+    it('should return true if a bid is valid banner bid request', function () {
       expect(spec.isBidRequestValid(bid)).to.be.equal(true);
     });
 
-    it('should return false where requried param is missing', function() {
+    it('should return false where requried param is missing', function () {
       let bid = Object.assign({}, bid);
       bid.params = {};
       expect(spec.isBidRequestValid(bid)).to.be.equal(false);
     });
 
-    it('should return false when required param values have invalid type', function() {
+    it('should return false when required param values have invalid type', function () {
       let bid = Object.assign({}, bid);
       bid.params = {
         'inventoryId': null,
@@ -40,14 +71,14 @@ describe('tpmnAdapterTests', function() {
     });
   });
 
-  describe('buildRequests', function() {
-    it('should return an empty list  if there are no bid requests', function() {
+  describe('buildRequests', function () {
+    it('should return an empty list  if there are no bid requests', function () {
       const emptyBidRequests = [];
       const bidderRequest = {};
       const request = spec.buildRequests(emptyBidRequests, bidderRequest);
       expect(request).to.be.an('array').that.is.empty;
     });
-    it('should generate a POST server request with bidder API url, data', function() {
+    it('should generate a POST server request with bidder API url, data', function () {
       const bid = {
         adUnitCode: 'temp-unitcode',
         bidder: 'tpmn',
@@ -65,13 +96,15 @@ describe('tpmnAdapterTests', function() {
         }
       };
       const tempBidRequests = [bid];
-      const tempBidderRequest = {refererInfo: {
-        referer: 'http://localhost/test',
-        site: {
-          domain: 'localhost',
-          page: 'http://localhost/test'
+      const tempBidderRequest = {
+        refererInfo: {
+          referer: 'http://localhost/test',
+          site: {
+            domain: 'localhost',
+            page: 'http://localhost/test'
+          }
         }
-      }};
+      };
       const builtRequest = spec.buildRequests(tempBidRequests, tempBidderRequest);
 
       expect(builtRequest).to.have.lengthOf(1);
@@ -96,7 +129,7 @@ describe('tpmnAdapterTests', function() {
     });
   });
 
-  describe('interpretResponse', function() {
+  describe('interpretResponse', function () {
     const bid = {
       adUnitCode: 'temp-unitcode',
       bidder: 'tpmn',
@@ -115,12 +148,12 @@ describe('tpmnAdapterTests', function() {
     };
     const tempBidRequests = [bid];
 
-    it('should return an empty aray to indicate no valid bids', function() {
+    it('should return an empty aray to indicate no valid bids', function () {
       const emptyServerResponse = {};
       const bidResponses = spec.interpretResponse(emptyServerResponse, tempBidRequests);
       expect(bidResponses).is.an('array').that.is.empty;
     });
-    it('should return an empty array to indicate no valid bids', function() {
+    it('should return an empty array to indicate no valid bids', function () {
       const mockBidResult = {
         requestId: '9cf19229-34f6-4d06-bc1d-0e44e8d616c8',
         cpm: 10.0,
@@ -139,6 +172,38 @@ describe('tpmnAdapterTests', function() {
       };
       const bidResponses = spec.interpretResponse(testServerResponse, tempBidRequests);
       expect(bidResponses).deep.equal([mockBidResult]);
+    });
+  });
+
+  describe('getUserSync', function () {
+    const KEY_ID = 'uuid';
+    const TMP_UUID = generateUUID().replace(/-/g, '');
+
+    it('getCookie mock Test', () => {
+      const uuid = storage.getCookie(KEY_ID);
+      expect(uuid).to.equal(undefined);
+    });
+
+    it('getCookie mock Test', () => {
+      expect(TMP_UUID.length).to.equal(32);
+      getCookieStub.withArgs(KEY_ID).returns(TMP_UUID);
+      const uuid = storage.getCookie(KEY_ID);
+      expect(uuid).to.equal(TMP_UUID);
+    });
+
+    it('case 1 -> allow iframe', () => {
+      const syncs = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true});
+      expect(syncs.length).to.equal(1);
+      expect(syncs[0].type).to.equal('iframe');
+    });
+
+    it('case 2 -> allow pixel with static sync', () => {
+      const syncs = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true });
+      expect(syncs.length).to.be.equal(4);
+      expect(syncs[0].type).to.be.equal('image');
+      expect(syncs[1].type).to.be.equal('image');
+      expect(syncs[2].type).to.be.equal('image');
+      expect(syncs[3].type).to.be.equal('image');
     });
   });
 });

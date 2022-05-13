@@ -112,7 +112,6 @@ export const spec = {
         placementId: bid.params.placement_id,
         groupId: bid.params.group_id,
         bidId: bid.bidId,
-        sizes: bid.mediaTypes[traff].sizes,
         traffic: traff,
         eids: [],
         floor: {}
@@ -146,7 +145,12 @@ export const spec = {
           rtiPartner: 'TDID'
         });
       }
+      if (traff === BANNER) {
+        placement.sizes = bid.mediaTypes[BANNER].sizes
+      }
+
       if (traff === VIDEO) {
+        placement.sizes = bid.mediaTypes[VIDEO].playerSize;
         placement.playerSize = bid.mediaTypes[VIDEO].playerSize;
         placement.minduration = bid.mediaTypes[VIDEO].minduration;
         placement.maxduration = bid.mediaTypes[VIDEO].maxduration;
