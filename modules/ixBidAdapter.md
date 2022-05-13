@@ -423,4 +423,4 @@ The `size` parameter is no longer a required field, the `siteId` will now be ass
 In your browser of choice, create a new tab and open the developer tools. In
 developer tools, select the network tab. Then, navigate to a page where IX is
 setup to bid. Now, in the network tab, search for requests to
-`casalemedia.com/cygnus`. These are the bid requests.
+`casalemedia.com/openrtb/pbjs`. These are the bid requests.
