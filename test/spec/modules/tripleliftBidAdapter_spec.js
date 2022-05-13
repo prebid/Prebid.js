@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { tripleliftAdapterSpec } from 'modules/tripleliftBidAdapter.js';
+import { tripleliftAdapterSpec, storage } from 'modules/tripleliftBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { deepClone } from 'src/utils.js';
 import { config } from 'src/config.js';
@@ -832,6 +832,56 @@ describe('triplelift adapter', function () {
       expect(request.data.imp[0].fpd.context.data).to.haveOwnProperty('pbAdSlot');
       expect(request.data.imp[0].fpd.context.data).to.haveOwnProperty('adUnitSpecificAttribute');
       expect(request.data.imp[1].fpd).to.not.exist;
+    });
+    it('should send 1PlusX data as fpd if localStorage is available and no other fpd is defined', function() {
+      sandbox.stub(storage, 'getDataFromLocalStorage').callsFake(() => '{"kid":1,"s":"ySRdArquXuBolr/cVv0UNqrJhTO4QZsbNH/t+2kR3gXjbA==","t":"/yVtBrquXuBolr/cVv0UNtx1mssdLYeKFhWFI3Dq1dJnug=="}');
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.ext.fpd).to.deep.equal({
+        'user': {
+          'data': [
+            {
+              'name': 'www.1plusx.com',
+              'ext': {
+                'kid': 1,
+                's': 'ySRdArquXuBolr/cVv0UNqrJhTO4QZsbNH/t+2kR3gXjbA==',
+                't': '/yVtBrquXuBolr/cVv0UNtx1mssdLYeKFhWFI3Dq1dJnug=='
+              }
+            }
+          ]
+        }
+      })
+    });
+    it('should append 1PlusX data to existing user.data entries if localStorage is available', function() {
+      const ortb2 = {
+        user: {
+          data: [
+            { name: 'dataprovider.com', ext: { segtax: 4 }, segment: [{ id: '1' }] }
+          ]
+        }
+      };
+      sandbox.stub(config, 'getConfig').callsFake(key => {
+        const config = {
+          ortb2
+        };
+        return utils.deepAccess(config, key);
+      });
+      sandbox.stub(storage, 'getDataFromLocalStorage').callsFake(() => '{"kid":1,"s":"ySRdArquXuBolr/cVv0UNqrJhTO4QZsbNH/t+2kR3gXjbA==","t":"/yVtBrquXuBolr/cVv0UNtx1mssdLYeKFhWFI3Dq1dJnug=="}');
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.ext.fpd).to.deep.equal({
+        'user': {
+          'data': [
+            { 'name': 'dataprovider.com', 'ext': { 'segtax': 4 }, 'segment': [{ 'id': '1' }] },
+            {
+              'name': 'www.1plusx.com',
+              'ext': {
+                'kid': 1,
+                's': 'ySRdArquXuBolr/cVv0UNqrJhTO4QZsbNH/t+2kR3gXjbA==',
+                't': '/yVtBrquXuBolr/cVv0UNtx1mssdLYeKFhWFI3Dq1dJnug=='
+              }
+            }
+          ]
+        }
+      })
     });
   });
 

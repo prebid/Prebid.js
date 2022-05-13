@@ -11,7 +11,7 @@ const BANNER_TIME_TO_LIVE = 300;
 const INSTREAM_TIME_TO_LIVE = 3600;
 let gdprApplies = true;
 let consentString = null;
-const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
 
 export const tripleliftAdapterSpec = {
   gvlid: GVLID,
