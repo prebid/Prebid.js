@@ -10,7 +10,7 @@ const loadTNCScript = function (tncInstance, providerId) {
       autostart: true,
       tcf: true,
       getFiles: {
-        cacheid: false, // true
+        cacheid: true, // true
         options: false, // true
         callback: false, // true
         prepare: false, // false
