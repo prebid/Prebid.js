@@ -5,25 +5,21 @@ import { mergeDeep } from '../../src/utils.js';
 import { getGlobal } from '../../src/prebidGlobal.js';
 import CONSTANTS from '../../src/constants.json';
 import {
-  videoEvents, AUCTION_AD_LOAD_ATTEMPT, allVideoAuctionEvents,
-  AD_IMPRESSION, AD_ERROR, BID_IMPRESSION, BID_ERROR, allVideoBidEvents, AUCTION_AD_LOAD_ABORT
+  videoEvents, AUCTION_AD_LOAD_ATTEMPT, AD_IMPRESSION, AD_ERROR, BID_IMPRESSION, BID_ERROR, AUCTION_AD_LOAD_ABORT
 } from './constants/events.js'
 import { videoCoreFactory } from './coreVideo.js';
 import { gamSubmoduleFactory } from './gamAdServerSubmodule.js';
 import { videoImpressionVerifierFactory } from './videoImpressionVerifier.js';
 
+const videoPrefix = 'video_';
+
+const allVideoEvents = Object.keys(videoEvents).map(eventKey => videoEvents[eventKey]);
+events.addEvents(allVideoEvents.concat([AUCTION_AD_LOAD_ATTEMPT, AUCTION_AD_LOAD_ABORT, BID_IMPRESSION, BID_ERROR]).map(eventName => videoPrefix + eventName));
+
 /**
  * This module adds User Video support to prebid.js
  * @module modules/videoModule
  */
-
-const allVideoEvents = Object.keys(videoEvents).map(eventKey => videoEvents[eventKey]);
-events.addEvents(allVideoEvents);
-events.addEvents(allVideoAuctionEvents);
-events.addEvents(allVideoBidEvents);
-
-const videoPrefix = 'video_';
-
 export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvents_, gamAdServerFactory_, videoImpressionVerifierFactory_) {
   const videoCore = videoCore_;
   const getConfig = getConfig_;
@@ -59,11 +55,11 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
       videoImpressionVerifier.trackBid(bid);
     });
 
-    pbEvents.on(AD_IMPRESSION, function (payload) {
+    pbEvents.on(videoPrefix + AD_IMPRESSION, function (payload) {
       triggerVideoBidEvent(BID_IMPRESSION, payload);
     });
 
-    pbEvents.on(AD_ERROR, function (payload) {
+    pbEvents.on(videoPrefix + AD_ERROR, function (payload) {
       triggerVideoBidEvent(BID_ERROR, payload);
     });
   }

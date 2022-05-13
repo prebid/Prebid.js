@@ -81,31 +81,31 @@
           }
         });
 
-        pbjs.onEvent('setupComplete', () => {
+        pbjs.onEvent('video_setupComplete', () => {
           console.log('player setup complete');
         });
 
-        pbjs.onEvent('setupFailed', () => {
+        pbjs.onEvent('video_setupFailed', () => {
           console.log('player setup failed!');
         });
 
-        pbjs.onEvent('auctionAdLoadAttempt', event => {
+        pbjs.onEvent('video_auctionAdLoadAttempt', event => {
           console.log('The Video Module is attempting to load an ad into the player! \n', event);
         });
 
-        pbjs.onEvent('adImpression', event => {
+        pbjs.onEvent('video_adImpression', event => {
           console.log('An ad impression has occurred!: \n', event);
         });
 
-        pbjs.onEvent('bidVideoImpression', event => {
+        pbjs.onEvent('video_bidImpression', event => {
           console.log('The ad impression resulted from a bid! \n', event);
         });
 
-        pbjs.onEvent('adError', event => {
+        pbjs.onEvent('video_adError', event => {
           console.log('An ad error has occurred!: ', event);
         });
 
-        pbjs.onEvent('bidVideoError', event => {
+        pbjs.onEvent('video_bidError', event => {
           console.log('The ad error resulted from a bid! \n', event);
         });
 
