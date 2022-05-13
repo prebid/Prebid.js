@@ -943,6 +943,7 @@ describe('pubmatic analytics adapter', function () {
     });
 
     it('Logger: best case + win tracker in case of Bidder Aliases', function() {
+      MOCK.BID_REQUESTED['bids'][0]['bidder'] = 'pubmatic_alias';
       MOCK.BID_REQUESTED['bids'][0]['bidderCode'] = 'pubmatic_alias';
       adapterManager.aliasRegistry['pubmatic_alias'] = 'pubmatic';
 
