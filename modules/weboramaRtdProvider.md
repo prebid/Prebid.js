@@ -96,7 +96,7 @@ This is the main configuration section
 | params.sendToBidders | Boolean or Array | If true, may send the profile to all bidders. If an array, will specify the bidders to send data | Optional. Affects the `weboCtxConf`, `weboUserDataConf` and `sfbxLiteDataConf` sections |
 | params.weboCtxConf | Object | Weborama Contextual Site-Centric Configuration | Optional |
 | params.weboUserDataConf | Object | Weborama WAM User-Centric Configuration | Optional |
-| params.sfbxLiteDataConf | Object | Weborama LiTE Site-Centric Configuration | Optional |
+| params.sfbxLiteDataConf | Object | Sfbx LiTE Site-Centric Configuration | Optional |
 | params.onData | Callback | If set, will receive the profile and metadata | Optional. Affects the `weboCtxConf`, `weboUserDataConf` and `sfbxLiteDataConf` sections |
 
 #### Contextual Site-Centric Configuration
@@ -133,9 +133,9 @@ On this section we will explain the `params.weboUserDataConf` subconfiguration:
 | localStorageProfileKey| String | can be used to customize the local storage key | Optional |
 | enabled | Boolean| if false, will ignore this configuration| Default is `true` if this section is present|
 
-#### Webo LiTE Site-Centric Configuration
+#### Sfbx LiTE Site-Centric Configuration
 
-To be possible use the integration between Weborama and LiTE you should also contact SFBX® to setup this product.
+To be possible use the integration between Weborama and Sfbx LiTE you should also contact SFBX® to setup this product.
 
 On this section we will explain the `params.sfbxLiteDataConf` subconfiguration:
 
