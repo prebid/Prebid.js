@@ -99,7 +99,17 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
       return;
     }
 
-    adUnit.mediaTypes.video = Object.assign({}, videoMediaType, oRtbParams.video);
+    const ortbVideo = oRtbParams.video;
+    adUnit.mediaTypes.video = Object.assign({}, videoMediaType, ortbVideo);
+
+    adUnit.mediaTypes.video.context = ortbVideo.placement === 1 ? 'instream' : 'outstream';
+
+    const width = ortbVideo.w;
+    const height = ortbVideo.h;
+    if (width && height) {
+      adUnit.mediaTypes.video.playerSize = [width, height];
+    }
+
     let ortb2 = { ortb2: mergeDeep({}, getConfig('ortb2'), { site: oRtbParams.content }) };
     pbGlobal.setConfig(ortb2);
   }
