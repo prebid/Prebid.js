@@ -56,12 +56,6 @@ export const AUCTION_AD_LOAD_ABORT = 'auctionAdLoadAbort';
 export const BID_IMPRESSION = 'bidImpression';
 export const BID_ERROR = 'bidError';
 
-export const allVideoAuctionEvents = [
-  AUCTION_AD_LOAD_ATTEMPT, AUCTION_AD_LOAD_ABORT
-];
-
-export const allVideoBidEvents = [BID_IMPRESSION, BID_ERROR];
-
 export const videoEvents = {
   SETUP_COMPLETE,
   SETUP_FAILED,

@@ -293,9 +293,9 @@ describe('Prebid Video', function () {
       on: (event, callback) => {
         if (event === CONSTANTS.EVENTS.BID_ADJUSTMENT) {
           bidAdjustmentCb = callback;
-        } else if (event === AD_IMPRESSION) {
+        } else if (event === 'video_' + AD_IMPRESSION) {
           adImpressionCb = callback;
-        } else if (event === AD_ERROR) {
+        } else if (event === 'video_' + AD_ERROR) {
           adErrorCb = callback;
         }
       },
