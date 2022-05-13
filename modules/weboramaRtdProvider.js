@@ -45,7 +45,7 @@
  * @property {?dataCallback} onData callback
  * @property {?WeboCtxConf} weboCtxConf site-centric contextual configuration
  * @property {?WeboUserDataConf} weboUserDataConf user-centric wam configuration
- * @property {?WeboLiteDataConf} weboLiteDataConf site-centric lite configuration
+ * @property {?SfbxLiteDataConf} sfbxLiteDataConf site-centric lite configuration
  */
 
 /**
@@ -72,7 +72,7 @@
  */
 
 /**
- * @typedef {Object} WeboLiteDataConf
+ * @typedef {Object} SfbxLiteDataConf
  * @property {?setPrebidTargetingCallback|?Boolean|?Object} setPrebidTargeting if true, will set the GAM targeting (default undefined)
  * @property {?sendToBiddersCallback|?Boolean|?Object} sendToBidders if true, will send the contextual profile to all bidders, else expects a list of allowed bidders (default undefined)
  * @property {?object} defaultProfile to be used if the profile is not found
@@ -129,7 +129,7 @@ const WEBO_CTX_CONF_SECTION = 'weboCtxConf';
 /** @type {string} */
 const WEBO_USER_DATA_CONF_SECTION = 'weboUserDataConf';
 /** @type {string} */
-const WEBO_LITE_DATA_CONF_SECTION = 'weboLiteDataConf';
+const SFBX_LITE_DATA_CONF_SECTION = 'sfbxLiteDataConf';
 
 /** @type {number} */
 const GVLID = 284;
@@ -152,10 +152,10 @@ let _weboUserDataUserProfile = null;
 let _weboUserDataInitialized = false;
 
 /** @type {?Object} */
-let _weboLiteDataProfile = null;
+let _sfbxLiteDataProfile = null;
 
 /** @type {Boolean} */
-let _weboLiteDataInitialized = false;
+let _sfbxLiteDataInitialized = false;
 
 /** Initialize module
  * @param {object} moduleConfig
@@ -166,13 +166,13 @@ function init(moduleConfig) {
 
   _weboContextualProfile = null;
   _weboUserDataUserProfile = null;
-  _weboLiteDataProfile = null;
+  _sfbxLiteDataProfile = null;
 
   _weboCtxInitialized = initSubSection(moduleParams, WEBO_CTX_CONF_SECTION, 'token');
   _weboUserDataInitialized = initSubSection(moduleParams, WEBO_USER_DATA_CONF_SECTION);
-  _weboLiteDataInitialized = initSubSection(moduleParams, WEBO_LITE_DATA_CONF_SECTION);
+  _sfbxLiteDataInitialized = initSubSection(moduleParams, SFBX_LITE_DATA_CONF_SECTION);
 
-  return _weboCtxInitialized || _weboUserDataInitialized || _weboLiteDataInitialized;
+  return _weboCtxInitialized || _weboUserDataInitialized || _sfbxLiteDataInitialized;
 }
 
 /** Initialize subsection module
@@ -220,7 +220,7 @@ const globalDefaults = {
 
 /** normalize submodule configuration
  * @param {ModuleParams} moduleParams
- * @param {WeboCtxConf|WeboUserDataConf|WeboLiteDataConf} submoduleParams
+ * @param {WeboCtxConf|WeboUserDataConf|SfbxLiteDataConf} submoduleParams
  * @return {void}
  */
 function normalizeConf(moduleParams, submoduleParams) {
@@ -250,7 +250,7 @@ function normalizeConf(moduleParams, submoduleParams) {
 }
 
 /** coerce set prebid targeting to function
- * @param {WeboCtxConf|WeboUserDataConf|WeboLiteDataConf} submoduleParams
+ * @param {WeboCtxConf|WeboUserDataConf|SfbxLiteDataConf} submoduleParams
  * @return {void}
  */
 function coerceSetPrebidTargeting(submoduleParams) {
@@ -288,7 +288,7 @@ function coerceSetPrebidTargeting(submoduleParams) {
 }
 
 /** coerce send to bidders to function
- * @param {WeboCtxConf|WeboUserDataConf|WeboLiteDataConf} submoduleParams
+ * @param {WeboCtxConf|WeboUserDataConf|SfbxLiteDataConf} submoduleParams
  * @return {void}
  */
 function coerceSendToBidders(submoduleParams) {
@@ -466,9 +466,9 @@ function buildProfileHandlers(moduleParams) {
     }
   }
 
-  if (_weboLiteDataInitialized && moduleParams?.weboLiteDataConf) {
-    const weboLiteDataConf = moduleParams.weboLiteDataConf;
-    const [data, isDefault] = getWeboLiteDataProfile(weboLiteDataConf);
+  if (_sfbxLiteDataInitialized && moduleParams?.sfbxLiteDataConf) {
+    const sfbxLiteDataConf = moduleParams.sfbxLiteDataConf;
+    const [data, isDefault] = getSfbxLiteDataProfile(sfbxLiteDataConf);
     if (!isEmpty(data)) {
       profileHandlers.push({
         data: data,
@@ -477,12 +477,12 @@ function buildProfileHandlers(moduleParams) {
           source: 'lite',
           isDefault: !!isDefault,
         },
-        setTargeting: weboLiteDataConf.setPrebidTargeting,
-        sendToBidders: weboLiteDataConf.sendToBidders,
-        onData: weboLiteDataConf.onData,
+        setTargeting: sfbxLiteDataConf.setPrebidTargeting,
+        sendToBidders: sfbxLiteDataConf.sendToBidders,
+        onData: sfbxLiteDataConf.onData,
       })
     } else {
-      logMessage('skip webo lite profile: no data');
+      logMessage('skip sfbx lite profile: no data');
     }
   }
 
@@ -517,20 +517,20 @@ function getWeboUserDataProfile(weboUserDataConf) {
 }
 
 /** return weboUserData profile
- * @param {WeboLiteDataConf} weboLiteDataConf
- * @returns {Array} weboLiteData profile + isDefault boolean flag
+ * @param {SfbxLiteDataConf} sfbxLiteDataConf
+ * @returns {Array} sfbxLiteData profile + isDefault boolean flag
  */
-function getWeboLiteDataProfile(weboLiteDataConf) {
-  return getDataFromLocalStorage(weboLiteDataConf,
-    () => _weboLiteDataProfile,
-    (data) => _weboLiteDataProfile = data,
+function getSfbxLiteDataProfile(sfbxLiteDataConf) {
+  return getDataFromLocalStorage(sfbxLiteDataConf,
+    () => _sfbxLiteDataProfile,
+    (data) => _sfbxLiteDataProfile = data,
     DEFAULT_LOCAL_STORAGE_LITE_PROFILE_KEY,
     LOCAL_STORAGE_LITE_TARGETING_SECTION,
     'lite');
 }
 
 /** return generic webo data profile
- * @param {WeboUserDataConf|WeboLiteDataConf} weboDataConf
+ * @param {WeboUserDataConf|SfbxLiteDataConf} weboDataConf
  * @param {cacheGetCallback} cacheGet
  * @param {cacheSetCallback} cacheSet
  * @param {String} defaultLocalStorageProfileKey

@@ -2051,12 +2051,12 @@ describe('weboramaRtdProvider', function() {
       });
     });
 
-    describe('Add support to webo lite', function() {
+    describe('Add support to sfbx lite', function() {
       it('should set gam targeting from local storage and send to bidders by default', function() {
         let onDataResponse = {};
         const moduleConfig = {
           params: {
-            weboLiteDataConf: {
+            sfbxLiteDataConf: {
               onData: (data, meta) => {
                 onDataResponse = {
                   data: data,
@@ -2159,7 +2159,7 @@ describe('weboramaRtdProvider', function() {
             let onDataResponse = {};
             const moduleConfig = {
               params: {
-                weboLiteDataConf: {
+                sfbxLiteDataConf: {
                   sendToBidders: sendToBidders,
                   onData: (data, meta) => {
                     onDataResponse = {
@@ -2266,7 +2266,7 @@ describe('weboramaRtdProvider', function() {
             let onDataResponse = {};
             const moduleConfig = {
               params: {
-                weboLiteDataConf: {
+                sfbxLiteDataConf: {
                   sendToBidders: sendToBidders,
                   onData: (data, meta) => {
                     onDataResponse = {
@@ -2373,7 +2373,7 @@ describe('weboramaRtdProvider', function() {
           it(`check setPrebidTargeting as ${label}`, function() {
             const moduleConfig = {
               params: {
-                weboLiteDataConf: {
+                sfbxLiteDataConf: {
                   setPrebidTargeting: setPrebidTargeting,
                   sendToBidders: false
                 }
@@ -2510,7 +2510,7 @@ describe('weboramaRtdProvider', function() {
           it(`check setPrebidTargeting as ${label}`, function() {
             const moduleConfig = {
               params: {
-                weboLiteDataConf: {
+                sfbxLiteDataConf: {
                   setPrebidTargeting: setPrebidTargeting,
                   sendToBidders: false
                 }
@@ -2646,7 +2646,7 @@ describe('weboramaRtdProvider', function() {
                 meta: meta,
               };
             },
-            weboLiteDataConf: {
+            sfbxLiteDataConf: {
               setPrebidTargeting: true, // submodule parameter will override module parameter
             }
           }
@@ -2705,7 +2705,7 @@ describe('weboramaRtdProvider', function() {
       it('should not set gam targeting with setPrebidTargeting=false but send to bidders', function() {
         const moduleConfig = {
           params: {
-            weboLiteDataConf: {
+            sfbxLiteDataConf: {
               setPrebidTargeting: false,
             }
           }
@@ -2806,7 +2806,7 @@ describe('weboramaRtdProvider', function() {
         };
         const moduleConfig = {
           params: {
-            weboLiteDataConf: {
+            sfbxLiteDataConf: {
               setPrebidTargeting: true,
               defaultProfile: defaultProfile,
             }
@@ -2868,7 +2868,7 @@ describe('weboramaRtdProvider', function() {
         let onDataResponse = {};
         const moduleConfig = {
           params: {
-            weboLiteDataConf: {
+            sfbxLiteDataConf: {
               setPrebidTargeting: true,
               defaultProfile: defaultProfile,
               onData: (data, meta) => {
@@ -2941,7 +2941,7 @@ describe('weboramaRtdProvider', function() {
         let onDataResponse = {};
         const moduleConfig = {
           params: {
-            weboLiteDataConf: {
+            sfbxLiteDataConf: {
               targetURL: 'https://prebid.org',
               setPrebidTargeting: (adUnitCode, data, meta) => {
                 if (adUnitCode == 'adunit1') {
