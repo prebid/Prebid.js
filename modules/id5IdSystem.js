@@ -5,7 +5,16 @@
  * @requires module:modules/userId
  */
 
-import { deepAccess, logInfo, deepSetValue, logError, isEmpty, isEmptyStr, logWarn } from '../src/utils.js';
+import {
+  deepAccess,
+  logInfo,
+  deepSetValue,
+  logError,
+  isEmpty,
+  isEmptyStr,
+  logWarn,
+  safeJSONParse
+} from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getRefererInfo } from '../src/refererDetection.js';
@@ -24,7 +33,7 @@ const LOG_PREFIX = 'User ID - ID5 submodule: ';
 // cookie in the array is the most preferred to use
 const LEGACY_COOKIE_NAMES = [ 'pbjs-id5id', 'id5id.1st', 'id5id' ];
 
-const storage = getStorageManager({gvlid: GVLID, moduleName: MODULE_NAME});
+export const storage = getStorageManager({gvlid: GVLID, moduleName: MODULE_NAME});
 
 /** @type {Submodule} */
 export const id5IdSubmodule = {
@@ -253,7 +262,7 @@ function getLegacyCookieSignature() {
   let legacyStoredValue;
   LEGACY_COOKIE_NAMES.forEach(function(cookie) {
     if (storage.getCookie(cookie)) {
-      legacyStoredValue = JSON.parse(storage.getCookie(cookie)) || legacyStoredValue;
+      legacyStoredValue = safeJSONParse(storage.getCookie(cookie)) || legacyStoredValue;
     }
   });
   return (legacyStoredValue && legacyStoredValue.signature) || '';

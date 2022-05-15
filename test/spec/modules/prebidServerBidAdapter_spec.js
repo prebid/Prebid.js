@@ -1279,12 +1279,14 @@ describe('S2S Adapter', function () {
           'assets': [
             {
               'required': 1,
+              'id': 0,
               'title': {
                 'len': 800
               }
             },
             {
               'required': 1,
+              'id': 1,
               'img': {
                 'type': 3,
                 'w': 989,
@@ -1293,6 +1295,7 @@ describe('S2S Adapter', function () {
             },
             {
               'required': 1,
+              'id': 2,
               'img': {
                 'type': 1,
                 'wmin': 10,
@@ -1304,6 +1307,7 @@ describe('S2S Adapter', function () {
             },
             {
               'required': 1,
+              'id': 3,
               'data': {
                 'type': 1
               }
@@ -3185,6 +3189,27 @@ describe('S2S Adapter', function () {
       let requestBid = JSON.parse(server.requests[0].requestBody);
 
       expect(requestBid.ext.prebid.debug).is.equal(true);
+    });
+
+    it('should correctly add floors flag', function () {
+      let bidRequest = utils.deepClone(BID_REQUESTS);
+
+      // should not pass if floorData is undefined
+      adapter.callBids(REQUEST, bidRequest, addBidResponse, done, ajax);
+      let requestBid = JSON.parse(server.requests[0].requestBody);
+
+      expect(requestBid.ext.prebid.floors).to.be.undefined;
+
+      // should pass of floorData is object
+      bidRequest[0].bids[0].floorData = {
+        skipped: false,
+        location: 'fetch',
+      }
+
+      adapter.callBids(REQUEST, bidRequest, addBidResponse, done, ajax);
+      requestBid = JSON.parse(server.requests[1].requestBody);
+
+      expect(requestBid.ext.prebid.floors).to.deep.equal({ enabled: false });
     });
   });
 });
