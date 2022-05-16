@@ -18,7 +18,6 @@ This adapter currently only supports Banner Ads.
 | zip | Optional | String | Zip code of the user or the medium. When multiple ad units are submitted together, it is enough to set this parameter on the first one. | `'102 22'` |
 | test | Optional | Boolean | Whether the request is for testing only. When multiple ad units are submitted together, it is enough to set this parameter on the first one. Defaults to false. | `true` |
 | floorPrice | Optional | Float | Floor price in CPM and USD. Can be used as an alternative to the [Floors module](https://docs.prebid.org/dev-docs/modules/floors.html), which is also supported by this adapter. Defaults to 0. | `5.0` |
-| position | Optional | Integer | The position of the ad unit. Can be used to differentiate between ad units if the same placement ID is used across multiple ad units. The first ad unit should have a `position` of 0, the second one should have a `position` of 1 and so on. Defaults to 0. | `1` |
 | dealIds | Optional | Array of Strings | Array of deal IDs. | `['abc328745', 'mxw243253']` |
 
 # Test Parameters
@@ -59,7 +58,6 @@ In order to see a sample bid from Kobler (without a proper setup), you have to a
         zip: '102 22',
         test: true,
         floorPrice: 5.0,
-        position: 1,
         dealIds: ['abc328745', 'mxw243253']
       }
     }]

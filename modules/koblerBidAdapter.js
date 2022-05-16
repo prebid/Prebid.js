@@ -128,12 +128,7 @@ function buildOpenRtbImpObject(validBidRequest) {
     banner: {
       format: buildFormatArray(sizes),
       w: mainSize[0],
-      h: mainSize[1],
-      ext: {
-        kobler: {
-          pos: getPosition(validBidRequest)
-        }
-      }
+      h: mainSize[1]
     },
     tagid: validBidRequest.params.placementId,
     bidfloor: floorInfo.floor,
@@ -186,10 +181,6 @@ function buildFormatArray(sizes) {
       h: size[1]
     };
   });
-}
-
-function getPosition(validBidRequest) {
-  return parseInt(validBidRequest.params.position) || 0;
 }
 
 function getFloorInfo(validBidRequest, mainSize) {

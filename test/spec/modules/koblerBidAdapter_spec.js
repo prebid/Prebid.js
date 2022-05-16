@@ -163,17 +163,6 @@ describe('KoblerAdapter', function () {
       expect(openRtbRequest.imp[0].banner.format[0].h).to.be.equal(0);
     });
 
-    it('should use 0 as default position', function () {
-      const validBidRequests = [createValidBidRequest()];
-      const bidderRequest = createBidderRequest();
-
-      const result = spec.buildRequests(validBidRequests, bidderRequest);
-      const openRtbRequest = JSON.parse(result.data);
-
-      expect(openRtbRequest.imp.length).to.be.equal(1);
-      expect(openRtbRequest.imp[0].banner.ext.kobler.pos).to.be.equal(0);
-    });
-
     it('should read zip from valid bid requests', function () {
       const zip = '700 02';
       const validBidRequests = [
@@ -226,42 +215,6 @@ describe('KoblerAdapter', function () {
 
       expect(openRtbRequest.imp.length).to.be.equal(1);
       expect(openRtbRequest.imp[0].bidfloor).to.be.equal(floorPrice);
-    });
-
-    it('should read position from valid bid requests', function () {
-      const placementId = 'yzksf234592';
-      const validBidRequests = [
-        createValidBidRequest(
-          {
-            placementId: placementId,
-            position: 1
-          }
-        ),
-        createValidBidRequest(
-          {
-            placementId: placementId,
-            position: 2
-          }
-        ),
-        createValidBidRequest(
-          {
-            placementId: placementId,
-            position: 3
-          }
-        )
-      ];
-      const bidderRequest = createBidderRequest();
-
-      const result = spec.buildRequests(validBidRequests, bidderRequest);
-      const openRtbRequest = JSON.parse(result.data);
-
-      expect(openRtbRequest.imp.length).to.be.equal(3);
-      expect(openRtbRequest.imp[0].banner.ext.kobler.pos).to.be.equal(1);
-      expect(openRtbRequest.imp[0].tagid).to.be.equal(placementId);
-      expect(openRtbRequest.imp[1].banner.ext.kobler.pos).to.be.equal(2);
-      expect(openRtbRequest.imp[1].tagid).to.be.equal(placementId);
-      expect(openRtbRequest.imp[2].banner.ext.kobler.pos).to.be.equal(3);
-      expect(openRtbRequest.imp[2].tagid).to.be.equal(placementId);
     });
 
     it('should read dealIds from valid bid requests', function () {
@@ -356,7 +309,6 @@ describe('KoblerAdapter', function () {
             placementId: 'pcha322364',
             zip: '0015',
             floorPrice: 5.6234,
-            position: 1,
             dealIds: ['623472534328234']
           },
           '953ee65d-d18a-484f-a840-d3056185a060',
@@ -366,7 +318,6 @@ describe('KoblerAdapter', function () {
           {
             placementId: 'sdfgoi32y4',
             floorPrice: 3.2543,
-            position: 2,
             dealIds: ['92368234753283', '263845832942']
           },
           '8320bf79-9d90-4a17-87c6-5d505706a921',
@@ -375,7 +326,6 @@ describe('KoblerAdapter', function () {
         createValidBidRequest(
           {
             placementId: 'gwms2738647',
-            position: 3
           },
           'd0de713b-32e3-4191-a2df-a007f08ffe72',
           [[800, 900]]
@@ -406,12 +356,7 @@ describe('KoblerAdapter', function () {
                 }
               ],
               w: 400,
-              h: 600,
-              ext: {
-                kobler: {
-                  pos: 1
-                }
-              }
+              h: 600
             },
             tagid: 'pcha322364',
             bidfloor: 5.6234,
@@ -442,12 +387,7 @@ describe('KoblerAdapter', function () {
                 }
               ],
               w: 400,
-              h: 500,
-              ext: {
-                kobler: {
-                  pos: 2
-                }
-              }
+              h: 500
             },
             tagid: 'sdfgoi32y4',
             bidfloor: 3.2543,
@@ -473,12 +413,7 @@ describe('KoblerAdapter', function () {
                 }
               ],
               w: 800,
-              h: 900,
-              ext: {
-                kobler: {
-                  pos: 3
-                }
-              }
+              h: 900
             },
             tagid: 'gwms2738647',
             bidfloor: 0,
