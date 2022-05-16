@@ -16,7 +16,7 @@ function createBidderRequest(auctionId, timeout, pageUrl) {
 }
 
 function createValidBidRequest(params, bidId, sizes) {
-  return {
+  const validBidRequest = {
     adUnitCode: 'adunit-code',
     bidId: bidId || '22c4871113f461',
     bidder: 'kobler',
@@ -28,9 +28,12 @@ function createValidBidRequest(params, bidId, sizes) {
         sizes: sizes || [[300, 250], [320, 100]]
       }
     },
-    params: params || {},
     transactionTd: '04314114-15bd-4638-8664-bdb8bdc60bff'
   };
+  if (params) {
+    validBidRequest.params = params;
+  }
+  return validBidRequest;
 }
 
 describe('KoblerAdapter', function () {

@@ -154,7 +154,7 @@ function getDevice() {
 }
 
 function getTest(validBidRequest) {
-  return validBidRequest.params.test ? 1 : 0;
+  return validBidRequest.params && validBidRequest.params.test ? 1 : 0;
 }
 
 function getSizes(validBidRequest) {
@@ -192,11 +192,11 @@ function getFloorInfo(validBidRequest, mainSize) {
 }
 
 function getFloorPrice(validBidRequest) {
-  return parseFloat(validBidRequest.params.floorPrice) || 0.0;
+  return parseFloat(deepAccess(validBidRequest, 'params.floorPrice', 0.0));
 }
 
 function buildPmpObject(validBidRequest) {
-  if (validBidRequest.params.dealIds) {
+  if (validBidRequest.params && validBidRequest.params.dealIds && isArray(validBidRequest.params.dealIds)) {
     return {
       deals: validBidRequest.params.dealIds.map(dealId => {
         return {
