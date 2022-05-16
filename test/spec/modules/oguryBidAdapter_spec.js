@@ -226,6 +226,16 @@ describe('OguryBidAdapter', function () {
   });
 
   describe('buildRequests', function () {
+    const stubbedWidth = 200
+    const stubbedHeight = 600
+    sinon.stub(window.top.document.documentElement, 'clientWidth').get(function() {
+      return stubbedWidth;
+    });
+
+    sinon.stub(window.top.document.documentElement, 'clientHeight').get(function() {
+      return stubbedHeight;
+    });
+
     const defaultTimeout = 1000;
     const expectedRequestObject = {
       id: bidRequests[0].auctionId,
@@ -270,7 +280,11 @@ describe('OguryBidAdapter', function () {
       },
       ext: {
         prebidversion: '$prebid.version$',
-        adapterversion: '1.2.11'
+        adapterversion: '1.2.12'
+      },
+      device: {
+        w: stubbedWidth,
+        h: stubbedHeight
       }
     };
 
@@ -288,6 +302,156 @@ describe('OguryBidAdapter', function () {
       const request = spec.buildRequests(validBidRequests, bidderRequest);
       expect(request.data).to.deep.equal(expectedRequestObject);
       expect(request.data.regs.ext.gdpr).to.be.a('number');
+    });
+
+    describe('getClientWidth', () => {
+      function testGetClientWidth(testGetClientSizeParams) {
+        sinon.stub(window.top.document.documentElement, 'clientWidth').get(function() {
+          return testGetClientSizeParams.docClientSize
+        })
+
+        sinon.stub(window.top, 'innerWidth').get(function() {
+          return testGetClientSizeParams.innerSize
+        })
+
+        sinon.stub(window.top, 'outerWidth').get(function() {
+          return testGetClientSizeParams.outerSize
+        })
+
+        sinon.stub(window.top.screen, 'width').get(function() {
+          return testGetClientSizeParams.screenSize
+        })
+
+        const validBidRequests = utils.deepClone(bidRequests)
+
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        expect(request.data.device.w).to.equal(testGetClientSizeParams.expectedSize);
+      }
+
+      it('should get documentElementClientWidth by default', () => {
+        testGetClientWidth({
+          docClientSize: 22,
+          innerSize: 50,
+          outerSize: 45,
+          screenSize: 10,
+          expectedSize: 22,
+        })
+      })
+
+      it('should get innerWidth as first fallback', () => {
+        testGetClientWidth({
+          docClientSize: undefined,
+          innerSize: 700,
+          outerSize: 650,
+          screenSize: 10,
+          expectedSize: 700,
+        })
+      })
+
+      it('should get outerWidth as second fallback', () => {
+        testGetClientWidth({
+          docClientSize: undefined,
+          innerSize: undefined,
+          outerSize: 650,
+          screenSize: 10,
+          expectedSize: 650,
+        })
+      })
+
+      it('should get screenWidth as last fallback', () => {
+        testGetClientWidth({
+          docClientSize: undefined,
+          innerSize: undefined,
+          outerSize: undefined,
+          screenSize: 10,
+          expectedSize: 10,
+        });
+      });
+
+      it('should return 0 if all window width values are undefined', () => {
+        testGetClientWidth({
+          docClientSize: undefined,
+          innerSize: undefined,
+          outerSize: undefined,
+          screenSize: undefined,
+          expectedSize: 0,
+        });
+      });
+    });
+
+    describe('getClientHeight', () => {
+      function testGetClientHeight(testGetClientSizeParams) {
+        sinon.stub(window.top.document.documentElement, 'clientHeight').get(function() {
+          return testGetClientSizeParams.docClientSize
+        })
+
+        sinon.stub(window.top, 'innerHeight').get(function() {
+          return testGetClientSizeParams.innerSize
+        })
+
+        sinon.stub(window.top, 'outerHeight').get(function() {
+          return testGetClientSizeParams.outerSize
+        })
+
+        sinon.stub(window.top.screen, 'height').get(function() {
+          return testGetClientSizeParams.screenSize
+        })
+
+        const validBidRequests = utils.deepClone(bidRequests)
+
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        expect(request.data.device.h).to.equal(testGetClientSizeParams.expectedSize);
+      }
+
+      it('should get documentElementClientHeight by default', () => {
+        testGetClientHeight({
+          docClientSize: 420,
+          innerSize: 500,
+          outerSize: 480,
+          screenSize: 230,
+          expectedSize: 420,
+        });
+      });
+
+      it('should get innerHeight as first fallback', () => {
+        testGetClientHeight({
+          docClientSize: undefined,
+          innerSize: 500,
+          outerSize: 480,
+          screenSize: 230,
+          expectedSize: 500,
+        });
+      });
+
+      it('should get outerHeight as second fallback', () => {
+        testGetClientHeight({
+          docClientSize: undefined,
+          innerSize: undefined,
+          outerSize: 480,
+          screenSize: 230,
+          expectedSize: 480,
+        });
+      });
+
+      it('should get screenHeight as last fallback', () => {
+        testGetClientHeight({
+          docClientSize: undefined,
+          innerSize: undefined,
+          outerSize: undefined,
+          screenSize: 230,
+          expectedSize: 230,
+        });
+      });
+
+      it('should return 0 if all window height values are undefined', () => {
+        testGetClientHeight({
+          docClientSize: undefined,
+          innerSize: undefined,
+          outerSize: undefined,
+          screenSize: undefined,
+          expectedSize: 0,
+        });
+      });
     });
 
     it('should not add gdpr infos if not present', () => {
@@ -481,7 +645,7 @@ describe('OguryBidAdapter', function () {
           advertiserDomains: openRtbBidResponse.body.seatbid[0].bid[0].adomain
         },
         nurl: openRtbBidResponse.body.seatbid[0].bid[0].nurl,
-        adapterVersion: '1.2.11',
+        adapterVersion: '1.2.12',
         prebidVersion: '$prebid.version$'
       }, {
         requestId: openRtbBidResponse.body.seatbid[0].bid[1].impid,
@@ -498,7 +662,7 @@ describe('OguryBidAdapter', function () {
           advertiserDomains: openRtbBidResponse.body.seatbid[0].bid[1].adomain
         },
         nurl: openRtbBidResponse.body.seatbid[0].bid[1].nurl,
-        adapterVersion: '1.2.11',
+        adapterVersion: '1.2.12',
         prebidVersion: '$prebid.version$'
       }]
 
