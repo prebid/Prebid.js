@@ -2259,6 +2259,7 @@ describe('IndexexchangeAdapter', function () {
         expect(diagObj.mfu).to.equal(2);
         expect(diagObj.allu).to.equal(2);
         expect(diagObj.version).to.equal('$prebid.version$');
+        expect(diagObj.url).to.equal('http://localhost:9876/context.html')
       });
     });
   });

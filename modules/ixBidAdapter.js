@@ -834,7 +834,8 @@ function buildIXDiag(validBidRequests) {
     allu: 0,
     ren: false,
     version: '$prebid.version$',
-    userIds: _getUserIds(validBidRequests[0])
+    userIds: _getUserIds(validBidRequests[0]),
+    url: window.location.href.split('?')[0]
   };
 
   // create ad unit map and collect the required diag properties
