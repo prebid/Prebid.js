@@ -8,7 +8,7 @@ Maintainer: ecdrsvc@
 
 # Description
 
-Module that connects to ecdrsvc demand sources
+Module that connects to MediaAisle demand sources
 
 # Test Parameters
 ```
