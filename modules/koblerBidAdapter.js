@@ -32,14 +32,11 @@ export const buildRequests = function (validBidRequests, bidderRequest) {
 };
 
 export const interpretResponse = function (serverResponse) {
-  const adServerPriceCurrency = config.getConfig('currency.adServerCurrency') || SUPPORTED_CURRENCY;
   const res = serverResponse.body;
   const bids = []
   if (res) {
     res.seatbid.forEach(sb => {
       sb.bid.forEach(b => {
-        const adWithCorrectCurrency = b.adm
-          .replace(/\${AUCTION_PRICE_CURRENCY}/g, adServerPriceCurrency);
         bids.push({
           requestId: b.impid,
           cpm: b.price,
@@ -50,7 +47,7 @@ export const interpretResponse = function (serverResponse) {
           dealId: b.dealid,
           netRevenue: true,
           ttl: TIME_TO_LIVE_IN_SECONDS,
-          ad: adWithCorrectCurrency,
+          ad: b.adm,
           nurl: b.nurl,
           meta: {
             advertiserDomains: b.adomain
@@ -63,13 +60,15 @@ export const interpretResponse = function (serverResponse) {
 };
 
 export const onBidWon = function (bid) {
-  const cpm = bid.cpm || 0;
-  const cpmCurrency = bid.currency || SUPPORTED_CURRENCY;
+  // We intentionally use the price set by the publisher to replace the ${AUCTION_PRICE} macro
+  // instead of the `originalCpm` here. This notification is not used for billing, only for extra logging.
+  const publisherPrice = bid.cpm || 0;
+  const publisherCurrency = bid.currency || SUPPORTED_CURRENCY;
   const adServerPrice = deepAccess(bid, 'adserverTargeting.hb_pb', 0);
   const adServerPriceCurrency = config.getConfig('currency.adServerCurrency') || SUPPORTED_CURRENCY;
   if (isStr(bid.nurl) && bid.nurl !== '') {
-    const winNotificationUrl = replaceAuctionPrice(bid.nurl, bid.originalCpm || cpm)
-      .replace(/\${AUCTION_PRICE_CURRENCY}/g, cpmCurrency)
+    const winNotificationUrl = replaceAuctionPrice(bid.nurl, publisherPrice)
+      .replace(/\${AUCTION_PRICE_CURRENCY}/g, publisherCurrency)
       .replace(/\${AD_SERVER_PRICE}/g, adServerPrice)
       .replace(/\${AD_SERVER_PRICE_CURRENCY}/g, adServerPriceCurrency);
     triggerPixel(winNotificationUrl);
