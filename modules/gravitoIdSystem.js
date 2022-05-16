@@ -7,7 +7,7 @@
 
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
- 
+
 export const storage = getStorageManager();
 
 export const cookieKey = 'gravitompId';
