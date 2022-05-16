@@ -14,10 +14,13 @@ This adapter currently only supports Banner Ads.
 
 | Parameter (in `params`) | Scope | Type | Description | Example |
 | --- | --- | --- | --- | --- |
-| placementId | Required | String | The identifier of the placement, it has to be issued by Kobler. | `'xjer0ch8'` |
 | test | Optional | Boolean | Whether the request is for testing only. When multiple ad units are submitted together, it is enough to set this parameter on the first one. Defaults to false. | `true` |
 | floorPrice | Optional | Float | Floor price in CPM and USD. Can be used as an alternative to the [Floors module](https://docs.prebid.org/dev-docs/modules/floors.html), which is also supported by this adapter. Defaults to 0. | `5.0` |
 | dealIds | Optional | Array of Strings | Array of deal IDs. | `['abc328745', 'mxw243253']` |
+
+## Implicit parameters
+
+Kobler identifies the placement using the combination of the page URL and the allowed sizes. As a result, it's important that the correct sizes are provided in `banner.sizes` in order for Kobler to correctly identify the placement. The main, desired format should be the first element of this array.
 
 # Test Parameters
 ```javascript
@@ -29,10 +32,7 @@ This adapter currently only supports Banner Ads.
         }
     },
     bids: [{
-      bidder: 'kobler',
-      params: {
-        placementId: 'k5H7et3R0'
-      }
+      bidder: 'kobler'
     }]
   }];
 ```
@@ -53,7 +53,6 @@ In order to see a sample bid from Kobler (without a proper setup), you have to a
     bids: [{
       bidder: 'kobler',
       params: {
-        placementId: 'k5H7et3R0',
         test: true,
         floorPrice: 5.0,
         dealIds: ['abc328745', 'mxw243253']

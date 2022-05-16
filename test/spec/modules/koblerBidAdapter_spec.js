@@ -28,9 +28,7 @@ function createValidBidRequest(params, bidId, sizes) {
         sizes: sizes || [[300, 250], [320, 100]]
       }
     },
-    params: params || {
-      placementId: 'tpw58278'
-    },
+    params: params || {},
     transactionTd: '04314114-15bd-4638-8664-bdb8bdc60bff'
   };
 }
@@ -56,7 +54,7 @@ describe('KoblerAdapter', function () {
       expect(result).to.be.false;
     });
 
-    it('should not accept a request without params as valid', function () {
+    it('should not accept a request without mediaTypes and sizes as valid', function () {
       const bid = {
         bidId: 'e11768e8-3b71-4453-8698-0a2feb866589'
       };
@@ -66,11 +64,56 @@ describe('KoblerAdapter', function () {
       expect(result).to.be.false;
     });
 
-    it('should not accept a request without placementId as valid', function () {
+    it('should not accept a request without mediaTypes and string sizes as valid', function () {
       const bid = {
         bidId: 'e11768e8-3b71-4453-8698-0a2feb866589',
-        params: {
-          someParam: 'abc'
+        sizes: "string"
+      };
+
+      const result = spec.isBidRequestValid(bid);
+
+      expect(result).to.be.false;
+    });
+
+    it('should not accept a request without mediaTypes and empty sizes as valid', function () {
+      const bid = {
+        bidId: 'e11768e8-3b71-4453-8698-0a2feb866589',
+        sizes: []
+      };
+
+      const result = spec.isBidRequestValid(bid);
+
+      expect(result).to.be.false;
+    });
+
+    it('should not accept a request without mediaTypes.banner and sizes as valid', function () {
+      const bid = {
+        bidId: 'e11768e8-3b71-4453-8698-0a2feb866589',
+        mediaTypes: {}
+      };
+
+      const result = spec.isBidRequestValid(bid);
+
+      expect(result).to.be.false;
+    });
+
+    it('should not accept a request without mediaTypes.banner and empty sizes as valid', function () {
+      const bid = {
+        bidId: 'e11768e8-3b71-4453-8698-0a2feb866589',
+        sizes: [],
+        mediaTypes: {}
+      };
+
+      const result = spec.isBidRequestValid(bid);
+
+      expect(result).to.be.false;
+    });
+
+    it('should not accept a request without sizes and string mediaTypes.banner as valid', function () {
+      const bid = {
+        bidId: 'e11768e8-3b71-4453-8698-0a2feb866589',
+        mediaTypes: {
+          banner: "string"
         }
       };
 
@@ -79,12 +122,67 @@ describe('KoblerAdapter', function () {
       expect(result).to.be.false;
     });
 
-    it('should accept a request with bidId and placementId as valid', function () {
+    it('should not accept a request without sizes and mediaTypes.banner.sizes as valid', function () {
       const bid = {
         bidId: 'e11768e8-3b71-4453-8698-0a2feb866589',
-        params: {
-          someParam: 'abc',
-          placementId: '8bde0923-1409-4253-9594-495b58d931ba'
+        mediaTypes: {
+          banner: {}
+        }
+      };
+
+      const result = spec.isBidRequestValid(bid);
+
+      expect(result).to.be.false;
+    });
+
+    it('should not accept a request without sizes and string mediaTypes.banner.sizes as valid', function () {
+      const bid = {
+        bidId: 'e11768e8-3b71-4453-8698-0a2feb866589',
+        mediaTypes: {
+          banner: {
+            sizes: "string"
+          }
+        }
+      };
+
+      const result = spec.isBidRequestValid(bid);
+
+      expect(result).to.be.false;
+    });
+
+    it('should not accept a request without sizes and empty mediaTypes.banner.sizes as valid', function () {
+      const bid = {
+        bidId: 'e11768e8-3b71-4453-8698-0a2feb866589',
+        mediaTypes: {
+          banner: {
+            sizes: []
+          }
+        }
+      };
+
+      const result = spec.isBidRequestValid(bid);
+
+      expect(result).to.be.false;
+    });
+
+    it('should accept a request with bidId and sizes as valid', function () {
+      const bid = {
+        bidId: 'e11768e8-3b71-4453-8698-0a2feb866589',
+        sizes: [[5, 5]]
+      };
+
+      const result = spec.isBidRequestValid(bid);
+
+      expect(result).to.be.true;
+    });
+
+    it('should accept a request with bidId and mediaTypes.banner.sizes as valid', function () {
+      const bid = {
+        bidId: 'e11768e8-3b71-4453-8698-0a2feb866589',
+        mediaTypes: {
+          banner: {
+            sizes: [[0, 0]]
+          }
         }
       };
 
@@ -114,13 +212,10 @@ describe('KoblerAdapter', function () {
       const firstSize = [400, 800];
       const secondSize = [450, 950];
       const sizes = [firstSize, secondSize];
-      const placementId = 'tsjs86325';
       const bidId = '3a56a019-4835-4f75-811c-76fac6853a2c';
       const validBidRequests = [
         createValidBidRequest(
-          {
-            placementId: placementId
-          },
+          undefined,
           bidId,
           sizes
         )
@@ -132,7 +227,6 @@ describe('KoblerAdapter', function () {
 
       expect(openRtbRequest.imp.length).to.be.equal(1);
       expect(openRtbRequest.imp[0].id).to.be.equal(bidId);
-      expect(openRtbRequest.imp[0].tagid).to.be.equal(placementId);
       expect(openRtbRequest.imp[0].banner.w).to.be.equal(firstSize[0]);
       expect(openRtbRequest.imp[0].banner.h).to.be.equal(firstSize[1]);
       expect(openRtbRequest.imp[0].banner.format.length).to.be.equal(2);
@@ -167,7 +261,6 @@ describe('KoblerAdapter', function () {
       const validBidRequests = [
         createValidBidRequest(
           {
-            placementId: 'zwop842799',
             test: true
           }
         )
@@ -185,7 +278,6 @@ describe('KoblerAdapter', function () {
       const validBidRequests = [
         createValidBidRequest(
           {
-            placementId: 'oqr3224234',
             floorPrice: floorPrice
           }
         )
@@ -205,13 +297,11 @@ describe('KoblerAdapter', function () {
       const validBidRequests = [
         createValidBidRequest(
           {
-            placementId: 'rsl1239823',
             dealIds: dealIds1
           }
         ),
         createValidBidRequest(
           {
-            placementId: 'pqw234232',
             dealIds: dealIds2
           }
         )
@@ -288,7 +378,6 @@ describe('KoblerAdapter', function () {
       const validBidRequests = [
         createValidBidRequest(
           {
-            placementId: 'pcha322364',
             floorPrice: 5.6234,
             dealIds: ['623472534328234']
           },
@@ -297,7 +386,6 @@ describe('KoblerAdapter', function () {
         ),
         createValidBidRequest(
           {
-            placementId: 'sdfgoi32y4',
             floorPrice: 3.2543,
             dealIds: ['92368234753283', '263845832942']
           },
@@ -305,9 +393,7 @@ describe('KoblerAdapter', function () {
           [[400, 500], [200, 250], [300, 350]]
         ),
         createValidBidRequest(
-          {
-            placementId: 'gwms2738647',
-          },
+          undefined,
           'd0de713b-32e3-4191-a2df-a007f08ffe72',
           [[800, 900]]
         )
@@ -339,7 +425,6 @@ describe('KoblerAdapter', function () {
               w: 400,
               h: 600
             },
-            tagid: 'pcha322364',
             bidfloor: 5.6234,
             bidfloorcur: 'USD',
             pmp: {
@@ -370,7 +455,6 @@ describe('KoblerAdapter', function () {
               w: 400,
               h: 500
             },
-            tagid: 'sdfgoi32y4',
             bidfloor: 3.2543,
             bidfloorcur: 'USD',
             pmp: {
@@ -396,7 +480,6 @@ describe('KoblerAdapter', function () {
               w: 800,
               h: 900
             },
-            tagid: 'gwms2738647',
             bidfloor: 0,
             bidfloorcur: 'USD',
             pmp: {}
@@ -583,22 +666,14 @@ describe('KoblerAdapter', function () {
           auctionId: 'a1fba829-dd41-409f-acfb-b7b0ac5f30c6',
           bidId: 'ef236c6c-e934-406b-a877-d7be8e8a839a',
           timeout: 100,
-          params: [
-            {
-              placementId: 'xrwg62731',
-            }
-          ],
+          params: [],
         },
         {
           adUnitCode: 'adunit-code-2',
           auctionId: 'a1fba829-dd41-409f-acfb-b7b0ac5f30c6',
           bidId: 'ca4121c8-9a4a-46ba-a624-e9b64af206f2',
           timeout: 100,
-          params: [
-            {
-              placementId: 'bc482234',
-            }
-          ],
+          params: [],
         }
       ]);
 
@@ -606,12 +681,12 @@ describe('KoblerAdapter', function () {
       expect(utils.triggerPixel.getCall(0).args[0]).to.be.equal(
         'https://bid.essrtb.com/notify/prebid_timeout?ad_unit_code=adunit-code&' +
         'auction_id=a1fba829-dd41-409f-acfb-b7b0ac5f30c6&bid_id=ef236c6c-e934-406b-a877-d7be8e8a839a&timeout=100&' +
-        'placement_id=xrwg62731&page_url=' + encodeURIComponent(getRefererInfo().referer)
+        'page_url=' + encodeURIComponent(getRefererInfo().referer)
       );
       expect(utils.triggerPixel.getCall(1).args[0]).to.be.equal(
         'https://bid.essrtb.com/notify/prebid_timeout?ad_unit_code=adunit-code-2&' +
         'auction_id=a1fba829-dd41-409f-acfb-b7b0ac5f30c6&bid_id=ca4121c8-9a4a-46ba-a624-e9b64af206f2&timeout=100&' +
-        'placement_id=bc482234&page_url=' + encodeURIComponent(getRefererInfo().referer)
+        'page_url=' + encodeURIComponent(getRefererInfo().referer)
       );
     });
   });

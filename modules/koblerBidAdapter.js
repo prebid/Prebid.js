@@ -12,7 +12,12 @@ const DEFAULT_TIMEOUT = 1000;
 const TIME_TO_LIVE_IN_SECONDS = 10 * 60;
 
 export const isBidRequestValid = function (bid) {
-  return !!(bid && bid.bidId && bid.params && bid.params.placementId);
+  if (!bid || !bid.bidId) {
+    return false;
+  }
+
+  const sizes = deepAccess(bid, 'mediaTypes.banner.sizes', bid.sizes);
+  return isArray(sizes) && sizes.length > 0;
 };
 
 export const buildRequests = function (validBidRequests, bidderRequest) {
@@ -83,7 +88,6 @@ export const onTimeout = function (timeoutDataArray) {
         auction_id: timeoutData.auctionId,
         bid_id: timeoutData.bidId,
         timeout: timeoutData.timeout,
-        placement_id: deepAccess(timeoutData, 'params.0.placementId'),
         page_url: pageUrl,
       });
       const timeoutNotificationUrl = `${TIMEOUT_NOTIFICATION_ENDPOINT}?${query}`;
@@ -129,7 +133,6 @@ function buildOpenRtbImpObject(validBidRequest) {
       w: mainSize[0],
       h: mainSize[1]
     },
-    tagid: validBidRequest.params.placementId,
     bidfloor: floorInfo.floor,
     bidfloorcur: floorInfo.currency,
     pmp: buildPmpObject(validBidRequest)
