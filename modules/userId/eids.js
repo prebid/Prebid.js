@@ -315,8 +315,8 @@ export const USER_IDS_CONFIG = {
     }
   },
 
-   // Gravito MP ID
-   'gravitompId': {
+  // Gravito MP ID
+  'gravitompId': {
     source: 'gravito.net',
     atype: 1
   },
