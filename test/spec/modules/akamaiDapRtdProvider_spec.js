@@ -122,10 +122,10 @@ describe('akamaiDapRtdProvider', function() {
 
   beforeEach(function() {
     config.resetConfig();
-    localStorage.removeItem(DAP_TOKEN);
-    localStorage.removeItem(DAP_MEMBERSHIP);
-    localStorage.removeItem(DAP_ENCRYPTED_MEMBERSHIP);
-    localStorage.removeItem(DAP_SS_ID);
+    storage.removeDataFromLocalStorage(DAP_TOKEN);
+    storage.removeDataFromLocalStorage(DAP_MEMBERSHIP);
+    storage.removeDataFromLocalStorage(DAP_ENCRYPTED_MEMBERSHIP);
+    storage.removeDataFromLocalStorage(DAP_SS_ID);
   });
 
   afterEach(function () {
@@ -140,7 +140,7 @@ describe('akamaiDapRtdProvider', function() {
   describe('Get Real-Time Data', function() {
     it('gets rtd from local storage cache', function() {
       const bidConfig = {};
-      localStorage.setItem(DAP_TOKEN, JSON.stringify(sampleCachedToken));
+      storage.setDataInLocalStorage(DAP_TOKEN, JSON.stringify(sampleCachedToken));
       let dapGetMembershipFromLocalStorageStub = sinon.stub(dapUtils, 'dapGetMembershipFromLocalStorage').returns(membership)
       let dapGetRtdObjStub = sinon.stub(dapUtils, 'dapGetRtdObj').returns(cachedRtd)
       let dapGetEncryptedMembershipFromLocalStorageStub = sinon.stub(dapUtils, 'dapGetEncryptedMembershipFromLocalStorage').returns(encMembership)
@@ -214,17 +214,17 @@ describe('akamaiDapRtdProvider', function() {
 
   describe('Getting dapTokenize, dapMembership and dapEncryptedMembership from localstorage', function () {
     it('dapGetTokenFromLocalStorage success', function () {
-      localStorage.setItem(DAP_TOKEN, JSON.stringify(sampleCachedToken));
+      storage.setDataInLocalStorage(DAP_TOKEN, JSON.stringify(sampleCachedToken));
       expect(dapUtils.dapGetTokenFromLocalStorage(60)).to.be.equal(sampleCachedToken.token);
     });
 
     it('dapGetMembershipFromLocalStorage success', function () {
-      localStorage.setItem(DAP_MEMBERSHIP, JSON.stringify(cachedMembership));
+      storage.setDataInLocalStorage(DAP_MEMBERSHIP, JSON.stringify(cachedMembership));
       expect(JSON.stringify(dapUtils.dapGetMembershipFromLocalStorage())).to.be.equal(JSON.stringify(membership));
     });
 
     it('dapGetEncryptedMembershipFromLocalStorage success', function () {
-      localStorage.setItem(DAP_ENCRYPTED_MEMBERSHIP, JSON.stringify(cachedEncryptedMembership));
+      storage.setDataInLocalStorage(DAP_ENCRYPTED_MEMBERSHIP, JSON.stringify(cachedEncryptedMembership));
       expect(JSON.stringify(dapUtils.dapGetEncryptedMembershipFromLocalStorage())).to.be.equal(JSON.stringify(encMembership));
     });
   });
@@ -352,7 +352,7 @@ describe('akamaiDapRtdProvider', function() {
       let request = server.requests[0];
       responseHeader['Akamai-DAP-Token'] = sampleCachedToken.token;
       request.respond(200, responseHeader, JSON.stringify(sampleCachedToken.token));
-      expect(JSON.parse(localStorage.getItem(DAP_TOKEN)).token).to.be.equal(sampleCachedToken.token);
+      expect(JSON.parse(storage.getDataFromLocalStorage(DAP_TOKEN)).token).to.be.equal(sampleCachedToken.token);
     });
 
     it('test dapRefreshToken success response with deviceid 100', function () {
@@ -360,7 +360,7 @@ describe('akamaiDapRtdProvider', function() {
       let request = server.requests[0];
       responseHeader['Akamai-DAP-100'] = sampleCachedToken.token;
       request.respond(200, responseHeader, '');
-      expect(localStorage.getItem('dap_deviceId100')).to.be.equal(sampleCachedToken.token);
+      expect(storage.getDataFromLocalStorage('dap_deviceId100')).to.be.equal(sampleCachedToken.token);
     });
 
     it('test dapRefreshToken success response with exp claim', function () {
@@ -369,15 +369,15 @@ describe('akamaiDapRtdProvider', function() {
       let tokenWithExpiry = 'eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2Iiwia2lkIjoicGFzc3dvcmQxIiwiZXhwIjoxNjQzODMwMzY5fQ..hTbcSQgmmO0HUJJrQ5fRHw.7zjrQXNNVkb-GD0ZhIVhEPcWbyaDBilHTWv-bp1lFZ9mdkSC0QbcAvUbYteiTD7ya23GUwcL2WOW8WgRSHaWHOJe0B5NDqfdUGTzElWfu7fFodRxRgGmwG8Rq5xxteFKLLGHLf1mFYRJKDtjtgajGNUKIDfn9AEt-c5Qz4KU8VolG_KzrLROx-f6Z7MnoPTcwRCj0WjXD6j2D6RAZ80-mKTNIsMIELdj6xiabHcjDJ1WzwtwCZSE2y2nMs451pSYp8W-bFPfZmDDwrkjN4s9ASLlIXcXgxK-H0GsiEbckQOZ49zsIKyFtasBvZW8339rrXi1js-aBh99M7aS5w9DmXPpUDmppSPpwkeTfKiqF0cQiAUq8tpeEQrGDJuw3Qt2.XI8h9Xw-VZj_NOmKtV19wLM63S4snos7rzkoHf9FXCw'
       responseHeader['Akamai-DAP-Token'] = tokenWithExpiry;
       request.respond(200, responseHeader, JSON.stringify(tokenWithExpiry));
-      expect(JSON.parse(localStorage.getItem(DAP_TOKEN)).expires_at).to.be.equal(1643830359);
+      expect(JSON.parse(storage.getDataFromLocalStorage(DAP_TOKEN)).expires_at).to.be.equal(1643830359);
     });
 
     it('test dapRefreshToken error response', function () {
-      localStorage.setItem(DAP_TOKEN, JSON.stringify(sampleCachedToken));
+      storage.setDataInLocalStorage(DAP_TOKEN, JSON.stringify(sampleCachedToken));
       dapUtils.dapRefreshToken(sampleConfig, false, onDone)
       let request = server.requests[0];
       request.respond(400, responseHeader, 'error');
-      expect(JSON.parse(localStorage.getItem(DAP_TOKEN)).expires_at).to.be.equal(cacheExpiry);// Since the expiry is same, the token is not updated in the cache
+      expect(JSON.parse(storage.getDataFromLocalStorage(DAP_TOKEN)).expires_at).to.be.equal(cacheExpiry);// Since the expiry is same, the token is not updated in the cache
     });
   });
 
@@ -398,7 +398,7 @@ describe('akamaiDapRtdProvider', function() {
       request.respond(200, responseHeader, JSON.stringify(membership));
       let rtdObj = dapUtils.dapGetRtdObj(membership, 503)
       expect(config.getConfig().ortb2.user.data).to.deep.include.members(rtdObj.rtd.ortb2.user.data);
-      expect(JSON.parse(localStorage.getItem(DAP_MEMBERSHIP)).expires_at).to.be.equal(1647971548);
+      expect(JSON.parse(storage.getDataFromLocalStorage(DAP_MEMBERSHIP)).expires_at).to.be.equal(1647971548);
     });
 
     it('test dapRefreshMembership 400 error response', function () {
@@ -428,7 +428,7 @@ describe('akamaiDapRtdProvider', function() {
       request.respond(200, responseHeader, encMembership);
       let rtdObj = dapUtils.dapGetEncryptedRtdObj({'encryptedSegments': encMembership}, 504)
       expect(config.getConfig().ortb2.user.data).to.deep.include.members(rtdObj.rtd.ortb2.user.data);
-      expect(JSON.parse(localStorage.getItem(DAP_ENCRYPTED_MEMBERSHIP)).expires_at).to.equal(expiry);
+      expect(JSON.parse(storage.getDataFromLocalStorage(DAP_ENCRYPTED_MEMBERSHIP)).expires_at).to.equal(expiry);
     });
 
     it('test dapRefreshEncryptedMembership success response with exp claim', function () {
@@ -439,7 +439,7 @@ describe('akamaiDapRtdProvider', function() {
       request.respond(200, responseHeader, encMembership);
       let rtdObj = dapUtils.dapGetEncryptedRtdObj({'encryptedSegments': encMembership}, 504)
       expect(config.getConfig().ortb2.user.data).to.deep.include.members(rtdObj.rtd.ortb2.user.data);
-      expect(JSON.parse(localStorage.getItem(DAP_ENCRYPTED_MEMBERSHIP)).expires_at).to.equal(1643830630);
+      expect(JSON.parse(storage.getDataFromLocalStorage(DAP_ENCRYPTED_MEMBERSHIP)).expires_at).to.equal(1643830630);
     });
 
     it('test dapRefreshEncryptedMembership error response', function () {
@@ -462,14 +462,14 @@ describe('akamaiDapRtdProvider', function() {
 
   describe('dapGetEncryptedMembershipFromLocalStorage test', function () {
     it('test dapGetEncryptedMembershipFromLocalStorage function with valid cache', function () {
-      localStorage.setItem(DAP_ENCRYPTED_MEMBERSHIP, JSON.stringify(cachedEncryptedMembership))
+      storage.setDataInLocalStorage(DAP_ENCRYPTED_MEMBERSHIP, JSON.stringify(cachedEncryptedMembership))
       expect(JSON.stringify(dapUtils.dapGetEncryptedMembershipFromLocalStorage())).to.equal(JSON.stringify(encMembership));
     });
 
     it('test dapGetEncryptedMembershipFromLocalStorage function with invalid cache', function () {
       let expiry = Math.round(Date.now() / 1000.0) - 100; // in seconds
       let encMembership = {'expiry': expiry, 'encryptedSegments': cachedEncryptedMembership.encryptedSegments}
-      localStorage.setItem(DAP_ENCRYPTED_MEMBERSHIP, JSON.stringify(encMembership))
+      storage.setDataInLocalStorage(DAP_ENCRYPTED_MEMBERSHIP, JSON.stringify(encMembership))
       expect(dapUtils.dapGetEncryptedMembershipFromLocalStorage()).to.equal(null);
     });
   });
@@ -483,12 +483,12 @@ describe('akamaiDapRtdProvider', function() {
       responseHeader['Akamai-DAP-Token'] = sampleCachedToken.token;
       responseHeader['Akamai-DAP-SS-ID'] = sampleSSID;
       request.respond(200, responseHeader, '');
-      expect(localStorage.getItem(DAP_SS_ID)).to.be.equal(JSON.stringify(sampleSSID));
+      expect(storage.getDataFromLocalStorage(DAP_SS_ID)).to.be.equal(JSON.stringify(sampleSSID));
     });
 
     it('Test if Akamai-DAP-SS-ID is present in request header', function () {
       let expiry = Math.round(Date.now() / 1000.0) + 100; // in seconds
-      localStorage.setItem(DAP_SS_ID, JSON.stringify('Test_SSID_Spec'))
+      storage.setDataInLocalStorage(DAP_SS_ID, JSON.stringify('Test_SSID_Spec'))
       dapUtils.dapRefreshToken(sampleConfig, false, onDone)
       let request = server.requests[0];
       let ssidHeader = request.requestHeaders['Akamai-DAP-SS-ID'];

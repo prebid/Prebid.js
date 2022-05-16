@@ -65,7 +65,7 @@ export function addRealTimeData(rtd) {
  * @param {Object} userConsent
  */
 export function getRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
-  let entropyDict = JSON.parse(localStorage.getItem(DAP_CLIENT_ENTROPY));
+  let entropyDict = JSON.parse(storage.getDataFromLocalStorage(DAP_CLIENT_ENTROPY));
   let loadScriptPromise = new Promise((resolve, reject) => {
     if (rtdConfig && rtdConfig.params && rtdConfig.params.dapFpTimeout && Number.isInteger(rtdConfig.params.dapFpTimeout)) {
       setTimeout(reject, rtdConfig.params.dapFpTimeout, Error('DapFP script could not be loaded'));
@@ -183,7 +183,7 @@ export const dapUtils = {
   dapGetTokenFromLocalStorage: function(ttl) {
     let now = Math.round(Date.now() / 1000.0); // in seconds
     let token = null;
-    let item = JSON.parse(localStorage.getItem(DAP_TOKEN));
+    let item = JSON.parse(storage.getDataFromLocalStorage(DAP_TOKEN));
     if (item) {
       if (now < item.expires_at) {
         token = item.token;
@@ -206,15 +206,15 @@ export const dapUtils = {
           item.expires_at = exp - 10;
         }
         item.token = token;
-        localStorage.setItem(DAP_TOKEN, JSON.stringify(item));
+        storage.setDataInLocalStorage(DAP_TOKEN, JSON.stringify(item));
         dapUtils.dapLog('Successfully updated and stored token; expires at ' + item.expires_at);
         let dapSSID = xhr.getResponseHeader('Akamai-DAP-SS-ID');
         if (dapSSID) {
-          localStorage.setItem(DAP_SS_ID, JSON.stringify(dapSSID));
+          storage.setDataInLocalStorage(DAP_SS_ID, JSON.stringify(dapSSID));
         }
         let deviceId100 = xhr.getResponseHeader('Akamai-DAP-100');
         if (deviceId100 != null) {
-          localStorage.setItem('dap_deviceId100', deviceId100);
+          storage.setDataInLocalStorage('dap_deviceId100', deviceId100);
           dapUtils.dapLog('Successfully stored DAP 100 Device ID: ' + deviceId100);
         }
         if (refreshMembership) {
@@ -235,7 +235,7 @@ export const dapUtils = {
   dapGetMembershipFromLocalStorage: function() {
     let now = Math.round(Date.now() / 1000.0); // in seconds
     let membership = null;
-    let item = JSON.parse(localStorage.getItem(DAP_MEMBERSHIP));
+    let item = JSON.parse(storage.getDataFromLocalStorage(DAP_MEMBERSHIP));
     if (item) {
       if (now < item.expires_at) {
         membership = {
@@ -261,7 +261,7 @@ export const dapUtils = {
         }
         item.said = membership.said;
         item.cohorts = membership.cohorts;
-        localStorage.setItem(DAP_MEMBERSHIP, JSON.stringify(item));
+        storage.setDataInLocalStorage(DAP_MEMBERSHIP, JSON.stringify(item));
         dapUtils.dapLog('Successfully updated and stored membership:');
         dapUtils.dapLog(item);
 
@@ -284,7 +284,7 @@ export const dapUtils = {
   dapGetEncryptedMembershipFromLocalStorage: function() {
     let now = Math.round(Date.now() / 1000.0); // in seconds
     let encMembership = null;
-    let item = JSON.parse(localStorage.getItem(DAP_ENCRYPTED_MEMBERSHIP));
+    let item = JSON.parse(storage.getDataFromLocalStorage(DAP_ENCRYPTED_MEMBERSHIP));
     if (item) {
       if (now < item.expires_at) {
         encMembership = {
@@ -307,7 +307,7 @@ export const dapUtils = {
           item.expires_at = exp - 10;
         }
         item.encryptedSegments = encToken;
-        localStorage.setItem(DAP_ENCRYPTED_MEMBERSHIP, JSON.stringify(item));
+        storage.setDataInLocalStorage(DAP_ENCRYPTED_MEMBERSHIP, JSON.stringify(item));
         dapUtils.dapLog('Successfully updated and stored encrypted membership:');
         dapUtils.dapLog(item);
 
@@ -553,7 +553,7 @@ export const dapUtils = {
       apiParams.attributes = identity.attributes;
     }
 
-    let entropyDict = JSON.parse(localStorage.getItem(DAP_CLIENT_ENTROPY));
+    let entropyDict = JSON.parse(storage.getDataFromLocalStorage(DAP_CLIENT_ENTROPY));
     if (entropyDict && entropyDict.entropy) {
       apiParams.entropy = entropyDict.entropy;
     }
@@ -574,7 +574,7 @@ export const dapUtils = {
     }
 
     let customHeaders = {'Content-Type': 'application/json'};
-    let dapSSID = JSON.parse(localStorage.getItem(DAP_SS_ID));
+    let dapSSID = JSON.parse(storage.getDataFromLocalStorage(DAP_SS_ID));
     if (dapSSID) {
       customHeaders['Akamai-DAP-SS-ID'] = dapSSID;
     }
