@@ -50,6 +50,7 @@ import * as mockGpt from '../integration/faker/googletag.js';
 import 'src/prebid.js';
 import {hook} from '../../../src/hook.js';
 import {mockGdprConsent} from '../../helpers/consentData.js';
+import {getPPID} from '../../../src/adserver.js';
 
 let assert = require('chai').assert;
 let expect = require('chai').expect;
@@ -441,6 +442,23 @@ describe('User ID', function () {
         // a warning should have been emmited
         expect(utils.logWarn.args[0][0]).to.exist.and.to.contain('User ID - Googletag Publisher Provided ID for pubcid.org is not between 32 and 150 characters - pubcommonIdValue');
       });
+    });
+
+    it('should make PPID available to core', () => {
+      init(config);
+      setSubmoduleRegistry([sharedIdSystemSubmodule]);
+      const id = 'thishastobelongerthan32characters';
+      config.setConfig({
+        userSync: {
+          ppid: 'pubcid.org',
+          userIds: [
+            { name: 'pubCommonId', value: {'pubcid': id} },
+          ]
+        }
+      });
+      return getGlobal().refreshUserIds().then(() => {
+        expect(getPPID()).to.eql(id);
+      })
     });
 
     describe('refreshing before init is complete', () => {

@@ -31,14 +31,13 @@ import {includes, find} from './polyfill.js';
 import { adunitCounter } from './adUnits.js';
 import { getRefererInfo } from './refererDetection.js';
 import {GdprConsentHandler, UspConsentHandler} from './consentHandler.js';
+import * as events from './events.js';
+import CONSTANTS from './constants.json';
 
 export const PARTITIONS = {
   CLIENT: 'client',
   SERVER: 'server'
 }
-
-var CONSTANTS = require('./constants.json');
-var events = require('./events.js');
 
 let adapterManager = {};
 

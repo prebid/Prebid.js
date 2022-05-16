@@ -17,6 +17,7 @@ import {find} from '../src/polyfill.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 
 const SUBMODULE_NAME = 'jwplayer';
+const JWPLAYER_DOMAIN = SUBMODULE_NAME + '.com';
 const segCache = {};
 const pendingRequests = {};
 let activeRequestCount = 0;
@@ -69,7 +70,7 @@ export function fetchTargetingForMediaId(mediaId) {
   const ajax = ajaxBuilder();
   // TODO: Avoid checking undefined vs null by setting a callback to pendingRequests.
   pendingRequests[mediaId] = null;
-  ajax(`https://cdn.jwplayer.com/v2/media/${mediaId}`, {
+  ajax(`https://cdn.${JWPLAYER_DOMAIN}/v2/media/${mediaId}`, {
     success: function (response) {
       const segment = parseSegment(response);
       cacheSegments(segment, mediaId);
@@ -160,7 +161,8 @@ export function enrichAdUnits(adUnits, ortb2Fragments = {}) {
       const contentSegments = getContentSegments(vat.segments);
       const contentData = getContentData(mediaId, contentSegments);
       const targeting = formatTargetingResponse(vat);
-      enrichBids(ortb2Fragments.bidder || {}, adUnit.bids, targeting, contentId, contentData);
+      enrichBids(adUnit.bids, targeting, contentId, contentData);
+      addOrtbSiteContent(ortb2Fragments.global, contentId, contentData);
     };
     loadVat(jwTargeting, onVatResponse);
   });
@@ -287,7 +289,7 @@ export function getContentData(mediaId, segments) {
   }
 
   const contentData = {
-    name: 'jwplayer.com',
+    name: JWPLAYER_DOMAIN,
     ext: {}
   };
 
@@ -303,12 +305,15 @@ export function getContentData(mediaId, segments) {
   return contentData;
 }
 
-export function addOrtbSiteContent(bidderOrtb2, bid, contentId, contentData) {
+export function addOrtbSiteContent(ortb2, contentId, contentData) {
   if (!contentId && !contentData) {
     return;
   }
 
-  let ortb2 = bidderOrtb2[bid.bidder] || {};
+  if (ortb2 == null) {
+    ortb2 = {};
+  }
+
   let site = ortb2.site = ortb2.site || {};
   let content = site.content = site.content || {};
 
@@ -316,23 +321,26 @@ export function addOrtbSiteContent(bidderOrtb2, bid, contentId, contentData) {
     content.id = contentId;
   }
 
+  const currentData = content.data = content.data || [];
+  // remove old jwplayer data
+  const data = currentData.filter(datum => datum.name !== JWPLAYER_DOMAIN);
+
   if (contentData) {
-    const data = content.data = content.data || [];
     data.push(contentData);
   }
 
-  bidderOrtb2[bid.bidder] = ortb2;
+  content.data = data;
+
+  return ortb2;
 }
 
-function enrichBids(bidderOrtb2, bids, targeting, contentId, contentData) {
-  // TODO: this does not need to set bidder-level FPD, follow up when https://github.com/prebid/Prebid.js/pull/8354 gets through
+function enrichBids(bids, targeting, contentId, contentData) {
   if (!bids) {
     return;
   }
 
   bids.forEach(bid => {
     addTargetingToBid(bid, targeting);
-    addOrtbSiteContent(bidderOrtb2, bid, contentId, contentData);
   });
 }
 
@@ -353,7 +361,7 @@ export function addTargetingToBid(bid, targeting) {
 function getPlayer(playerID) {
   const jwplayer = window.jwplayer;
   if (!jwplayer) {
-    logError('jwplayer.js was not found on page');
+    logError(SUBMODULE_NAME + '.js was not found on page');
     return;
   }
 

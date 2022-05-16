@@ -20,12 +20,11 @@ import { executeRenderer, isRendererRequired } from './Renderer.js';
 import { createBid } from './bidfactory.js';
 import { storageCallbacks } from './storageManager.js';
 import { emitAdRenderSucceeded, emitAdRenderFail } from './adRendering.js';
-import {gdprDataHandler, getS2SBidderSet, uspDataHandler} from './adapterManager.js';
+import {gdprDataHandler, getS2SBidderSet, uspDataHandler, default as adapterManager} from './adapterManager.js';
+import CONSTANTS from './constants.json';
+import * as events from './events.js'
 
 const $$PREBID_GLOBAL$$ = getGlobal();
-const CONSTANTS = require('./constants.json');
-const adapterManager = require('./adapterManager.js').default;
-const events = require('./events.js');
 const { triggerUserSyncs } = userSync;
 
 /* private variables */

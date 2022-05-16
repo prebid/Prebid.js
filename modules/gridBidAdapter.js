@@ -284,6 +284,11 @@ export const spec = {
       if (genre && typeof genre === 'string') {
         request.site.content = {...request.site.content, genre};
       }
+      const data = deepAccess(site, 'content.data');
+      if (data && data.length) {
+        const siteContent = request.site.content || {};
+        request.site.content = mergeDeep(siteContent, { data });
+      }
     }
 
     return {
