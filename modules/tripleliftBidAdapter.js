@@ -232,7 +232,7 @@ function _getGlobalFpd() {
 }
 
 function _fetchOnePlusX() {
-  const oneplusx = storage.getDataFromLocalStorage('1plusx');
+  const oneplusx = storage.getDataFromLocalStorage('opecloud_ctx');
   if (oneplusx == null) return null;
   try {
     const parsedJson = JSON.parse(oneplusx);
