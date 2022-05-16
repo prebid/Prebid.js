@@ -163,24 +163,6 @@ describe('KoblerAdapter', function () {
       expect(openRtbRequest.imp[0].banner.format[0].h).to.be.equal(0);
     });
 
-    it('should read zip from valid bid requests', function () {
-      const zip = '700 02';
-      const validBidRequests = [
-        createValidBidRequest(
-          {
-            placementId: 'nmah8324234',
-            zip: zip
-          }
-        )
-      ];
-      const bidderRequest = createBidderRequest();
-
-      const result = spec.buildRequests(validBidRequests, bidderRequest);
-      const openRtbRequest = JSON.parse(result.data);
-
-      expect(openRtbRequest.device.geo.zip).to.be.equal(zip);
-    });
-
     it('should read test from valid bid requests', function () {
       const validBidRequests = [
         createValidBidRequest(
@@ -307,7 +289,6 @@ describe('KoblerAdapter', function () {
         createValidBidRequest(
           {
             placementId: 'pcha322364',
-            zip: '0015',
             floorPrice: 5.6234,
             dealIds: ['623472534328234']
           },
@@ -422,10 +403,7 @@ describe('KoblerAdapter', function () {
           }
         ],
         device: {
-          devicetype: 2,
-          geo: {
-            zip: '0015'
-          }
+          devicetype: 2
         },
         site: {
           page: 'bid.kobler.no'

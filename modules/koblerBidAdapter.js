@@ -106,8 +106,7 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
     cur: [SUPPORTED_CURRENCY],
     imp: imps,
     device: {
-      devicetype: getDevice(),
-      geo: getGeo(validBidRequests[0])
+      devicetype: getDevice()
     },
     site: {
       page: pageUrl,
@@ -150,15 +149,6 @@ function getDevice() {
     return 4; // phone
   }
   return 2; // personal computers
-}
-
-function getGeo(validBidRequest) {
-  if (validBidRequest.params.zip) {
-    return {
-      zip: validBidRequest.params.zip
-    };
-  }
-  return {};
 }
 
 function getTest(validBidRequest) {
