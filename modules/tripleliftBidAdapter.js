@@ -199,20 +199,20 @@ function _getGlobalFpd() {
   const context = {}
   const user = {};
   const ortbData = config.getConfig('ortb2') || {};
-  const onePlusXStorage = _fetchOnePlusX();
+  const opeCloudStorage = _fetchOpeCloud();
 
   const fpdContext = Object.assign({}, ortbData.site);
   const fpdUser = Object.assign({}, ortbData.user);
 
-  // NEEDS TEST: check that onePlusXStorage is parseable
-  if (onePlusXStorage) {
+  // NEEDS TEST: check that opeCloudStorage is parseable
+  if (opeCloudStorage) {
     fpdUser.data = fpdUser.data || []
     // NEEDS TEST: check that fpdUser.data is an array before pushing;
     //    publisher may accidentally make it an object
     try {
       fpdUser.data.push({
         name: 'www.1plusx.com',
-        ext: onePlusXStorage
+        ext: opeCloudStorage
       })
     } catch (err) {
       logError('Triplelift: error adding 1plusX segments: ', err);
@@ -231,11 +231,11 @@ function _getGlobalFpd() {
   return fpd;
 }
 
-function _fetchOnePlusX() {
-  const oneplusx = storage.getDataFromLocalStorage('opecloud_ctx');
-  if (oneplusx == null) return null;
+function _fetchOpeCloud() {
+  const opeCloud = storage.getDataFromLocalStorage('opecloud_ctx');
+  if (opeCloud == null) return null;
   try {
-    const parsedJson = JSON.parse(oneplusx);
+    const parsedJson = JSON.parse(opeCloud);
     return parsedJson
   } catch (err) {
     logError('Triplelift: error parsing JSON: ', err);
