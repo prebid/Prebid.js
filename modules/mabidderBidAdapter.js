@@ -1,8 +1,6 @@
-import * as utils from '../src/utils.js';
 import { registerBidder } from 'src/adapters/bidderFactory';
 import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
-import { response } from 'express';
 const BIDDER_CODE = 'mabidder';
 const baseUrl =  'https://prometheus-ix.ecdrsvc.com/prometheus/bid';
 export const spec = {
