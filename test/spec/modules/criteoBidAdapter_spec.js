@@ -1347,6 +1347,79 @@ describe('The Criteo bidding adapter', function () {
       const prebidBids = bids.map(bid => Object.assign(createBid(CONSTANTS.STATUS.GOOD, request.bidRequests[0]), bid));
       expect(prebidBids[0].adId).to.not.equal(prebidBids[1].adId);
     });
+
+    [{
+      hasBidResponseLevelPafData: true,
+      hasBidResponseBidLevelPafData: true,
+      shouldContainsBidMetaPafData: true
+    },
+    {
+      hasBidResponseLevelPafData: false,
+      hasBidResponseBidLevelPafData: true,
+      shouldContainsBidMetaPafData: false
+    },
+    {
+      hasBidResponseLevelPafData: true,
+      hasBidResponseBidLevelPafData: false,
+      shouldContainsBidMetaPafData: false
+    },
+    {
+      hasBidResponseLevelPafData: false,
+      hasBidResponseBidLevelPafData: false,
+      shouldContainsBidMetaPafData: false
+    }].forEach(testCase => {
+      const bidPafContentId = 'abcdef';
+      const pafTransmission = {
+        version: '12'
+      };
+      const response = {
+        slots: [
+          {
+            width: 300,
+            height: 250,
+            cpm: 10,
+            impid: 'adUnitId',
+            ext: (testCase.hasBidResponseBidLevelPafData ? {
+              paf: {
+                content_id: bidPafContentId
+              }
+            } : undefined)
+          }
+        ],
+        ext: (testCase.hasBidResponseLevelPafData ? {
+          paf: {
+            transmission: pafTransmission
+          }
+        } : undefined)
+      };
+
+      const request = {
+        bidRequests: [{
+          adUnitCode: 'adUnitId',
+          sizes: [[300, 250]],
+          params: {
+            networkId: 456,
+          }
+        }]
+      };
+
+      const bids = spec.interpretResponse(response, request);
+
+      expect(bids).to.have.lengthOf(1);
+
+      const theoreticalBidMetaPafData = {
+        paf: {
+          content_id: bidPafContentId,
+          transmission: pafTransmission
+        }
+      };
+
+      if (testCase.shouldContainsBidMetaPafData) {
+        expect(bids[0].meta).to.deep.equal(theoreticalBidMetaPafData);
+      } else {
+        expect(bids[0].meta).not.to.deep.equal(theoreticalBidMetaPafData);
+      }
+    });
   });
 
   describe('canFastBid', function () {

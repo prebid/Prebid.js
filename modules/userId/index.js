@@ -151,6 +151,7 @@ import {
   timestamp,
   isEmpty
 } from '../../src/utils.js';
+import {getPPID as coreGetPPID} from '../../src/adserver.js';
 
 const MODULE_NAME = 'User ID';
 const COOKIE = 'cookie';
@@ -423,7 +424,7 @@ function processSubmoduleCallbacks(submodules, cb) {
     }, submodules.length);
   }
   submodules.forEach(function (submodule) {
-    submodule.callback(function callbackCompleted(idObj) {
+    function callbackCompleted(idObj) {
       // if valid, id data should be saved to cookie/html storage
       if (idObj) {
         if (submodule.config.storage) {
@@ -435,8 +436,13 @@ function processSubmoduleCallbacks(submodules, cb) {
         logInfo(`${MODULE_NAME}: ${submodule.submodule.name} - request id responded with an empty value`);
       }
       done();
-    });
-
+    }
+    try {
+      submodule.callback(callbackCompleted);
+    } catch (e) {
+      logError(`Error in userID module '${submodule.submodule.name}':`, e);
+      done();
+    }
     // clear callback, this prop is used to test if all submodule callbacks are complete below
     submodule.callback = undefined;
   });
@@ -520,6 +526,8 @@ function delayFor(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+const INIT_CANCELED = {};
+
 function idSystemInitializer({delay = delayFor} = {}) {
   /**
    * @returns a {promise, resolve, reject} trio where `promise` is resolved by calling `resolve` or `reject`.
@@ -562,7 +570,7 @@ function idSystemInitializer({delay = delayFor} = {}) {
 
   function cancelAndTry(promise) {
     if (cancel != null) {
-      cancel.reject();
+      cancel.reject(INIT_CANCELED);
     }
     cancel = breakpoint();
     return Promise.race([promise, cancel.promise]);
@@ -643,6 +651,19 @@ function idSystemInitializer({delay = delayFor} = {}) {
 
 let initIdSystem;
 
+function getPPID() {
+  // userSync.ppid should be one of the 'source' values in getUserIdsAsEids() eg pubcid.org or id5-sync.com
+  const matchingUserId = ppidSource && (getUserIdsAsEids() || []).find(userID => userID.source === ppidSource);
+  if (matchingUserId && typeof deepAccess(matchingUserId, 'uids.0.id') === 'string') {
+    const ppidValue = matchingUserId.uids[0].id.replace(/[\W_]/g, '');
+    if (ppidValue.length >= 32 && ppidValue.length <= 150) {
+      return ppidValue;
+    } else {
+      logWarn(`User ID - Googletag Publisher Provided ID for ${ppidSource} is not between 32 and 150 characters - ${ppidValue}`);
+    }
+  }
+}
+
 /**
  * Hook is executed before adapters, but after consentManagement. Consent data is requied because
  * this module requires GDPR consent with Purpose #1 to save data locally.
@@ -659,23 +680,16 @@ export function requestBidsHook(fn, reqBidsConfigObj, {delay = delayFor} = {}) {
   ]).then(() => {
     // pass available user id data to bid adapters
     addIdDataToAdUnitBids(reqBidsConfigObj.adUnits || getGlobal().adUnits, initializedSubmodules);
-
-    // userSync.ppid should be one of the 'source' values in getUserIdsAsEids() eg pubcid.org or id5-sync.com
-    const matchingUserId = ppidSource && (getUserIdsAsEids() || []).find(userID => userID.source === ppidSource);
-    if (matchingUserId && typeof deepAccess(matchingUserId, 'uids.0.id') === 'string') {
-      const ppidValue = matchingUserId.uids[0].id.replace(/[\W_]/g, '');
-      if (ppidValue.length >= 32 && ppidValue.length <= 150) {
-        if (isGptPubadsDefined()) {
-          window.googletag.pubads().setPublisherProvidedId(ppidValue);
-        } else {
-          window.googletag = window.googletag || {};
-          window.googletag.cmd = window.googletag.cmd || [];
-          window.googletag.cmd.push(function() {
-            window.googletag.pubads().setPublisherProvidedId(ppidValue);
-          });
-        }
+    const ppid = getPPID();
+    if (ppid) {
+      if (isGptPubadsDefined()) {
+        window.googletag.pubads().setPublisherProvidedId(ppid);
       } else {
-        logWarn(`User ID - Googletag Publisher Provided ID for ${ppidSource} is not between 32 and 150 characters - ${ppidValue}`);
+        window.googletag = window.googletag || {};
+        window.googletag.cmd = window.googletag.cmd || [];
+        window.googletag.cmd.push(function() {
+          window.googletag.pubads().setPublisherProvidedId(ppid);
+        });
       }
     }
 
@@ -803,8 +817,9 @@ function refreshUserIds({submoduleNames} = {}, callback) {
  * });
  * ```
  */
+
 function getUserIdsAsync() {
-  return initIdSystem().then(() => getUserIds(), () => getUserIdsAsync());
+  return initIdSystem().then(() => getUserIds(), (e) => e === INIT_CANCELED ? getUserIdsAsync() : Promise.reject(e));
 }
 
 /**
@@ -878,8 +893,12 @@ function initSubmodules(dest, submodules, consentData, forceRefresh = false) {
   setStoredConsentData(consentData);
 
   const initialized = userIdModules.reduce((carry, submodule) => {
-    populateSubmoduleId(submodule, consentData, storedConsentData, forceRefresh);
-    carry.push(submodule);
+    try {
+      populateSubmoduleId(submodule, consentData, storedConsentData, forceRefresh);
+      carry.push(submodule);
+    } catch (e) {
+      logError(`Error in userID module '${submodule.submodule.name}':`, e);
+    }
     return carry;
   }, []);
   if (initialized.length) {
@@ -968,6 +987,7 @@ function updateSubmodules() {
   if (!addedUserIdHook && submodules.length) {
     // priority value 40 will load after consentManagement with a priority of 50
     getGlobal().requestBids.before(requestBidsHook, 40);
+    coreGetPPID.after((next) => next(getPPID()));
     logInfo(`${MODULE_NAME} - usersync config updated for ${submodules.length} submodules: `, submodules.map(a => a.submodule.name));
     addedUserIdHook = true;
   }
