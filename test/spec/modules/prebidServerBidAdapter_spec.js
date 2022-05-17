@@ -3190,5 +3190,26 @@ describe('S2S Adapter', function () {
 
       expect(requestBid.ext.prebid.debug).is.equal(true);
     });
+
+    it('should correctly add floors flag', function () {
+      let bidRequest = utils.deepClone(BID_REQUESTS);
+
+      // should not pass if floorData is undefined
+      adapter.callBids(REQUEST, bidRequest, addBidResponse, done, ajax);
+      let requestBid = JSON.parse(server.requests[0].requestBody);
+
+      expect(requestBid.ext.prebid.floors).to.be.undefined;
+
+      // should pass of floorData is object
+      bidRequest[0].bids[0].floorData = {
+        skipped: false,
+        location: 'fetch',
+      }
+
+      adapter.callBids(REQUEST, bidRequest, addBidResponse, done, ajax);
+      requestBid = JSON.parse(server.requests[1].requestBody);
+
+      expect(requestBid.ext.prebid.floors).to.deep.equal({ enabled: false });
+    });
   });
 });

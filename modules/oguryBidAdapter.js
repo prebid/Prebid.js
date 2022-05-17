@@ -10,7 +10,7 @@ const DEFAULT_TIMEOUT = 1000;
 const BID_HOST = 'https://mweb-hb.presage.io/api/header-bidding-request';
 const TIMEOUT_MONITORING_HOST = 'https://ms-ads-monitoring-events.presage.io';
 const MS_COOKIE_SYNC_DOMAIN = 'https://ms-cookie-sync.presage.io';
-const ADAPTER_VERSION = '1.2.10';
+const ADAPTER_VERSION = '1.2.11';
 
 function isBidRequestValid(bid) {
   const adUnitSizes = getAdUnitSizes(bid);
@@ -74,11 +74,12 @@ function buildRequests(validBidRequests, bidderRequest) {
     if (bidRequest.mediaTypes &&
       bidRequest.mediaTypes.hasOwnProperty('banner')) {
       openRtbBidRequestBanner.site.id = bidRequest.params.assetKey;
+      const floor = getFloor(bidRequest);
 
       openRtbBidRequestBanner.imp.push({
         id: bidRequest.bidId,
         tagid: bidRequest.params.adUnitId,
-        bidfloor: getFloor(bidRequest),
+        ...(floor && {bidfloor: floor}),
         banner: {
           format: sizes
         },

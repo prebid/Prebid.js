@@ -112,6 +112,8 @@ pbjs.setConfig({
                  expires: 1
               }
         }, {
+            name: "cpexId"
+        }, {
             name: 'mwOpenLinkId',
             params: {
                 accountId: 0000,
@@ -187,17 +189,6 @@ pbjs.setConfig({
             },
             params: {
                 pid: "0010b00002GYU4eBAH" // Example ID
-            }
-        }, {
-            name: 'trustpid',
-            params: {
-              maxDelayTime: 2500
-            },
-            bidders: ['adform'],
-            storage: {
-              type: 'html5',
-              name: 'trustpid',
-              expires: 60
             }
         }, {
             name: "unifiedId",
