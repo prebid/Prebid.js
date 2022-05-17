@@ -49,6 +49,7 @@
     "dfpAdServerVideo"
   ],
   "rtdModule": [
+    "blueconicRtdProvider",
     "browsiRtdProvider",
     "dgkeywordRtdProvider",
     "geoedgeRtdProvider",
