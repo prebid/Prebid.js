@@ -109,7 +109,7 @@ describe('storage manager', function() {
 
   describe('when bidderSettings.allowStorage is defined', () => {
     const ALLOWED_BIDDER = 'allowed-bidder';
-    const DENY_KEY = 'storageAllowed';
+    const ALLOW_KEY = 'storageAllowed';
 
     const COOKIE = 'test-cookie';
     const LS_KEY = 'test-localstorage';
@@ -117,7 +117,7 @@ describe('storage manager', function() {
     function mockBidderSettings() {
       return {
         get(bidder, key) {
-          if (bidder === ALLOWED_BIDDER && key === DENY_KEY) {
+          if (bidder === ALLOWED_BIDDER && key === ALLOW_KEY) {
             return true;
           } else {
             return undefined;
