@@ -9,7 +9,6 @@ import { config } from '../src/config.js';
 import { submodule } from '../src/hook.js';
 import {
   mergeDeep,
-  isPlainObject,
   deepSetValue,
   deepAccess,
 } from '../src/utils.js';

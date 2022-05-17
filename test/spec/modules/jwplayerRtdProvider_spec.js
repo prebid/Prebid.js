@@ -472,7 +472,6 @@ describe('jwplayerRtdProvider', function() {
       const segment2 = datum.segment[1];
       expect(segment1).to.have.property('id', 'test_seg_1');
       expect(segment2).to.have.property('id', 'test_seg_2');
-
     });
 
     it('should remove obsolete jwplayer data', function () {

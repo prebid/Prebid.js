@@ -3155,7 +3155,6 @@ describe('weboramaRtdProvider', function() {
           },
         });
 
-
         expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal({
           lite_occupation: ['gérant', 'bénévole'],
           lite_hobbies: ['sport', 'cinéma'],

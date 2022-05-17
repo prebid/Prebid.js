@@ -94,7 +94,7 @@ import {
   isBoolean,
   isPlainObject,
   deepClone,
-  tryAppendQueryString, mergeDeep
+  tryAppendQueryString, mergeDeep, logWarn
 } from '../src/utils.js';
 import {
   submodule
