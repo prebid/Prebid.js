@@ -3,9 +3,9 @@
  */
 
 import { _each, logMessage } from '../src/utils.js';
-var events = require('../src/events.js');
-var CONSTANTS = require('../src/constants.json');
-var adapterManager = require('../src/adapterManager.js').default;
+import * as events from '../src/events.js';
+import CONSTANTS from '../src/constants.json';
+import adapterManager from '../src/adapterManager.js';
 
 var BID_REQUESTED = CONSTANTS.EVENTS.BID_REQUESTED;
 var BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;

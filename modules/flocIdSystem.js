@@ -28,12 +28,7 @@ function enableOriginTrial(token) {
  * @param errorCallback
  */
 function getFlocData(successCallback, errorCallback) {
-  document.interestCohort()
-    .then((data) => {
-      successCallback(data);
-    }).catch((error) => {
-      errorCallback(error);
-    });
+  errorCallback('The Floc has flown');
 }
 
 /**
@@ -82,7 +77,7 @@ export const flocIdSubmodule = {
       return;
     }
     // Validate feature is enabled
-    const isFlocEnabled = !!window.chrome && (!!window.chrome.webstore || !!window.chrome.runtime) && !!document.featurePolicy && !!document.featurePolicy.features() && document.featurePolicy.features().includes('interest-cohort');
+    const isFlocEnabled = false;
 
     if (isFlocEnabled) {
       const configParams = (config && config.params) || {};
