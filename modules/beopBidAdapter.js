@@ -180,7 +180,7 @@ function getPageUrl(refererInfo, window) {
   let pageUrl = refererInfo.canonicalUrl || safeDeepAccess(window, 'top.location.href') || deepAccess(window, 'location.href');
   // Ensure the protocol is present (looks like sometimes the extracted pageUrl misses it)
   if (pageUrl != null) {
-    const defaultProtocol = deepAccess(window, 'top.location.protocol') || deepAccess(window, 'location.protocol');
+    const defaultProtocol = safeDeepAccess(window, 'top.location.protocol') || deepAccess(window, 'location.protocol');
     pageUrl = ensureProtocolInUrl(pageUrl, defaultProtocol);
   }
   return pageUrl;
