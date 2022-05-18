@@ -50,6 +50,12 @@ describe('loglyliftBidAdapter', function () {
         },
         sponsoredBy: {
           required: true
+        },
+        cta: {
+          required: true
+        },
+        privacyLink: {
+          required: true
         }
       }
     }
@@ -114,6 +120,8 @@ describe('loglyliftBidAdapter', function () {
           ],
           sponsoredBy: 'logly',
           title: 'Native Title',
+          privacyLink: 'https://www.logly.co.jp/optout.html',
+          cta: '詳細はこちら',
         }
       }],
     }

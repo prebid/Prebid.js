@@ -7,6 +7,7 @@
     "amxIdSystem",
     "britepoolIdSystem",
     "connectIdSystem",
+    "cpexIdSystem",
     "criteoIdSystem",
     "dacIdSystem",
     "deepintentDpesIdSystem",
@@ -49,6 +50,7 @@
     "dfpAdServerVideo"
   ],
   "rtdModule": [
+    "airgridRtdProvider",
     "browsiRtdProvider",
     "dgkeywordRtdProvider",
     "geoedgeRtdProvider",

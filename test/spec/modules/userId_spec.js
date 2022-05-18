@@ -52,6 +52,7 @@ import * as mockGpt from '../integration/faker/googletag.js';
 import 'src/prebid.js';
 import {hook} from '../../../src/hook.js';
 import {mockGdprConsent} from '../../helpers/consentData.js';
+import {getPPID} from '../../../src/adserver.js';
 
 let assert = require('chai').assert;
 let expect = require('chai').expect;
@@ -445,6 +446,23 @@ describe('User ID', function () {
       });
     });
 
+    it('should make PPID available to core', () => {
+      init(config);
+      setSubmoduleRegistry([sharedIdSystemSubmodule]);
+      const id = 'thishastobelongerthan32characters';
+      config.setConfig({
+        userSync: {
+          ppid: 'pubcid.org',
+          userIds: [
+            { name: 'pubCommonId', value: {'pubcid': id} },
+          ]
+        }
+      });
+      return getGlobal().refreshUserIds().then(() => {
+        expect(getPPID()).to.eql(id);
+      })
+    });
+
     describe('refreshing before init is complete', () => {
       const MOCK_ID = {'MOCKID': '1111'};
       let mockIdCallback;
@@ -507,6 +525,57 @@ describe('User ID', function () {
       });
     });
 
+    describe('when ID systems throw errors', () => {
+      function mockIdSystem(name) {
+        return {
+          name,
+          decode: function(value) {
+            return {
+              [name]: value
+            };
+          },
+          getId: sinon.stub().callsFake(() => ({id: name}))
+        };
+      }
+      let id1, id2;
+      beforeEach(() => {
+        id1 = mockIdSystem('mock1');
+        id2 = mockIdSystem('mock2');
+        init(config);
+        setSubmoduleRegistry([id1, id2]);
+        config.setConfig({
+          userSync: {
+            auctionDelay: 10,
+            userIds: [{
+              name: 'mock1',
+              storage: {name: 'mock1', type: 'cookie'}
+            }, {
+              name: 'mock2',
+              storage: {name: 'mock2', type: 'cookie'}
+            }]
+          }
+        })
+      });
+      afterEach(() => {
+        config.resetConfig();
+      })
+      Object.entries({
+        'in init': () => id1.getId.callsFake(() => { throw new Error() }),
+        'in callback': () => {
+          const mockCallback = sinon.stub().callsFake(() => { throw new Error() });
+          id1.getId.callsFake(() => ({callback: mockCallback}))
+        }
+      }).forEach(([t, setup]) => {
+        describe(`${t}`, () => {
+          beforeEach(setup);
+          it('should still retrieve IDs that do not throw', () => {
+            return getGlobal().getUserIdsAsync().then((uid) => {
+              expect(uid.mock2).to.not.be.undefined;
+            })
+          });
+        })
+      })
+    });
     it('pbjs.refreshUserIds updates submodules', function(done) {
       let sandbox = sinon.createSandbox();
       let mockIdCallback = sandbox.stub().returns({id: {'MOCKID': '1111'}});
