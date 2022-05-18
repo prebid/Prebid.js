@@ -330,11 +330,11 @@ describe('OguryBidAdapter', function () {
 
       it('should get documentElementClientWidth by default', () => {
         testGetClientWidth({
-          docClientSize: 22,
+          docClientSize: 23,
           innerSize: 50,
           outerSize: 45,
           screenSize: 10,
-          expectedSize: 22,
+          expectedSize: 23,
         })
       })
 
