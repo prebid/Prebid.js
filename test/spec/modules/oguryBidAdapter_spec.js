@@ -66,10 +66,6 @@ describe('OguryBidAdapter', function () {
     gdprConsent: {consentString: 'myConsentString', vendorData: {}, gdprApplies: true},
   };
 
-  afterAll(() => {
-    sinon.restore();
-  })
-
   describe('isBidRequestValid', function () {
     it('should validate correct bid', () => {
       let validBid = utils.deepClone(bidRequests[0]);
@@ -232,11 +228,10 @@ describe('OguryBidAdapter', function () {
   describe('buildRequests', function () {
     const stubbedWidth = 200
     const stubbedHeight = 600
-    sinon.stub(window.top.document.documentElement, 'clientWidth').get(function() {
+    const stubbedWidthMethod = sinon.stub(window.top.document.documentElement, 'clientWidth').get(function() {
       return stubbedWidth;
     });
-
-    sinon.stub(window.top.document.documentElement, 'clientHeight').get(function() {
+    const stubbedHeightMethod = sinon.stub(window.top.document.documentElement, 'clientHeight').get(function() {
       return stubbedHeight;
     });
 
@@ -292,6 +287,11 @@ describe('OguryBidAdapter', function () {
       }
     };
 
+    after(function() {
+      stubbedWidthMethod.restore();
+      stubbedHeightMethod.restore();
+    });
+
     it('sends bid request to ENDPOINT via POST', function () {
       const validBidRequests = utils.deepClone(bidRequests)
 
@@ -310,19 +310,19 @@ describe('OguryBidAdapter', function () {
 
     describe('getClientWidth', () => {
       function testGetClientWidth(testGetClientSizeParams) {
-        sinon.stub(window.top.document.documentElement, 'clientWidth').get(function() {
+        const stubbedClientWidth = sinon.stub(window.top.document.documentElement, 'clientWidth').get(function() {
           return testGetClientSizeParams.docClientSize
         })
 
-        sinon.stub(window.top, 'innerWidth').get(function() {
+        const stubbedInnerWidth = sinon.stub(window.top, 'innerWidth').get(function() {
           return testGetClientSizeParams.innerSize
         })
 
-        sinon.stub(window.top, 'outerWidth').get(function() {
+        const stubbedOuterWidth = sinon.stub(window.top, 'outerWidth').get(function() {
           return testGetClientSizeParams.outerSize
         })
 
-        sinon.stub(window.top.screen, 'width').get(function() {
+        const stubbedWidth = sinon.stub(window.top.screen, 'width').get(function() {
           return testGetClientSizeParams.screenSize
         })
 
@@ -330,6 +330,11 @@ describe('OguryBidAdapter', function () {
 
         const request = spec.buildRequests(validBidRequests, bidderRequest);
         expect(request.data.device.w).to.equal(testGetClientSizeParams.expectedSize);
+
+        stubbedClientWidth.restore();
+        stubbedInnerWidth.restore();
+        stubbedOuterWidth.restore();
+        stubbedWidth.restore();
       }
 
       it('should get documentElementClientWidth by default', () => {
@@ -385,19 +390,19 @@ describe('OguryBidAdapter', function () {
 
     describe('getClientHeight', () => {
       function testGetClientHeight(testGetClientSizeParams) {
-        sinon.stub(window.top.document.documentElement, 'clientHeight').get(function() {
+        const stubbedClientHeight = sinon.stub(window.top.document.documentElement, 'clientHeight').get(function() {
           return testGetClientSizeParams.docClientSize
         })
 
-        sinon.stub(window.top, 'innerHeight').get(function() {
+        const stubbedInnerHeight = sinon.stub(window.top, 'innerHeight').get(function() {
           return testGetClientSizeParams.innerSize
         })
 
-        sinon.stub(window.top, 'outerHeight').get(function() {
+        const stubbedOuterHeight = sinon.stub(window.top, 'outerHeight').get(function() {
           return testGetClientSizeParams.outerSize
         })
 
-        sinon.stub(window.top.screen, 'height').get(function() {
+        const stubbedHeight = sinon.stub(window.top.screen, 'height').get(function() {
           return testGetClientSizeParams.screenSize
         })
 
@@ -405,6 +410,11 @@ describe('OguryBidAdapter', function () {
 
         const request = spec.buildRequests(validBidRequests, bidderRequest);
         expect(request.data.device.h).to.equal(testGetClientSizeParams.expectedSize);
+
+        stubbedClientHeight.restore();
+        stubbedInnerHeight.restore();
+        stubbedOuterHeight.restore();
+        stubbedHeight.restore();
       }
 
       it('should get documentElementClientHeight by default', () => {
