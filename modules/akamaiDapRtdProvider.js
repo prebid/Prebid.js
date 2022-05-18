@@ -10,9 +10,11 @@ import {config} from '../src/config.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {submodule} from '../src/hook.js';
 import {isPlainObject, mergeDeep, logMessage, logInfo, logError} from '../src/utils.js';
+import { loadExternalScript } from '../src/adloader.js';
 
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'dap';
+const MODULE_CODE = 'akamaidap';
 
 export const DAP_TOKEN = 'async_dap_token';
 export const DAP_MEMBERSHIP = 'async_dap_membership';
@@ -77,13 +79,10 @@ export function getRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
       if (typeof window.dapCalculateEntropy === 'function') {
         window.dapCalculateEntropy(resolve, reject);
       } else {
-        if (rtdConfig && rtdConfig.params && rtdConfig.params.dapFpUrl) {
-          let fpScript = document.createElement('script');
-          fpScript.setAttribute('src', rtdConfig.params.dapFpUrl);
-          fpScript.onload = () => dapUtils.dapGetEntropy(resolve, reject);
-          window.document.body.appendChild(fpScript);
+        if (rtdConfig && rtdConfig.params && dapUtils.isValidHttpsUrl(rtdConfig.params.dapFpUrl)) {
+          loadExternalScript(rtdConfig.params.dapFpUrl, MODULE_CODE, () => { dapUtils.dapGetEntropy(resolve, reject) });
         } else {
-          reject(Error('Please check if dapFpUrl is specified under config.params'));
+          reject(Error('Please check if dapFpUrl is specified and is valid under config.params'));
         }
       }
     }
@@ -451,6 +450,16 @@ export const dapUtils = {
     css += 'border-radius: 3px';
 
     logInfo('%cDAP Client', css, args);
+  },
+
+  isValidHttpsUrl: function(urlString) {
+    let url;
+    try {
+      url = new URL(urlString);
+    } catch (_) {
+      return false;
+    }
+    return url.protocol === 'https:';
   },
 
   /*******************************************************************************
