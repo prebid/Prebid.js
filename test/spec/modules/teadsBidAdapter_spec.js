@@ -470,56 +470,6 @@ describe('teadsBidAdapter', () => {
         'deviceWidth': 1680
       };
 
-      describe('FLoC ID', function () {
-        it('should not add cohortId and cohortVersion params to payload if FLoC ID system is not enabled', function () {
-          const bidRequest = {
-            ...baseBidRequest,
-            userId: {} // no "flocId" property -> assumption that the FLoC ID system is disabled
-          };
-
-          const request = spec.buildRequests([bidRequest], bidderResquestDefault);
-          const payload = JSON.parse(request.data);
-
-          expect(payload).not.to.have.property('cohortId');
-          expect(payload).not.to.have.property('cohortVersion');
-        });
-
-        it('should add cohortId param to payload if FLoC ID system is enabled and ID available, but not version', function () {
-          const bidRequest = {
-            ...baseBidRequest,
-            userId: {
-              flocId: {
-                id: 'my-floc-id'
-              }
-            }
-          };
-
-          const request = spec.buildRequests([bidRequest], bidderResquestDefault);
-          const payload = JSON.parse(request.data);
-
-          expect(payload.cohortId).to.equal('my-floc-id');
-          expect(payload).not.to.have.property('cohortVersion');
-        });
-
-        it('should add cohortId and cohortVersion params to payload if FLoC ID system is enabled', function () {
-          const bidRequest = {
-            ...baseBidRequest,
-            userId: {
-              flocId: {
-                id: 'my-floc-id',
-                version: 'chrome.1.1'
-              }
-            }
-          };
-
-          const request = spec.buildRequests([bidRequest], bidderResquestDefault);
-          const payload = JSON.parse(request.data);
-
-          expect(payload.cohortId).to.equal('my-floc-id');
-          expect(payload.cohortVersion).to.equal('chrome.1.1');
-        });
-      });
-
       describe('Unified ID v2', function () {
         it('should not add unifiedId2 param to payload if uid2 system is not enabled', function () {
           const bidRequest = {

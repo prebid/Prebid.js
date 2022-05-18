@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {spec, storage} from 'modules/livewrappedBidAdapter.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
-import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes.js';
+import { NATIVE, VIDEO } from 'src/mediaTypes.js';
 
 describe('Livewrapped adapter tests', function () {
   let sandbox,
@@ -889,16 +889,9 @@ describe('Livewrapped adapter tests', function () {
     sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
     sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
 
-    let origGetConfig = config.getConfig;
-    let orgOrtb2 = {user: {ext: {prop: 'value'}}};
-    sandbox.stub(config, 'getConfig').callsFake(function (key) {
-      if (key === 'ortb2') {
-        return orgOrtb2;
-      }
-      return origGetConfig.apply(config, arguments);
-    });
+    const ortb2 = {user: {ext: {prop: 'value'}}};
 
-    let testbidRequest = clone(bidderRequest);
+    let testbidRequest = {...clone(bidderRequest), ortb2};
     delete testbidRequest.bids[0].params.userId;
     testbidRequest.bids[0].userIdAsEids = [
       {
@@ -915,7 +908,7 @@ describe('Livewrapped adapter tests', function () {
     var expected = {user: {ext: {prop: 'value', eids: testbidRequest.bids[0].userIdAsEids}}}
 
     expect(data.rtbData).to.deep.equal(expected);
-    expect(orgOrtb2).to.deep.equal({user: {ext: {prop: 'value'}}});
+    expect(ortb2).to.deep.equal({user: {ext: {prop: 'value'}}});
   });
 
   it('should send schain object if available', function() {

@@ -202,7 +202,7 @@ export const spec = {
       };
     }
 
-    const ortb2UserData = config.getConfig('ortb2.user.data');
+    const ortb2UserData = deepAccess(bidderRequest, 'ortb2.user.data');
     if (ortb2UserData && ortb2UserData.length) {
       if (!user) {
         user = { data: [] };
@@ -216,7 +216,7 @@ export const spec = {
       userExt = {consent: gdprConsent.consentString};
     }
 
-    const ortb2UserExtDevice = config.getConfig('ortb2.user.ext.device');
+    const ortb2UserExtDevice = deepAccess(bidderRequest, 'ortb2.user.ext.device');
     if (ortb2UserExtDevice) {
       userExt = userExt || {};
       userExt.device = { ...ortb2UserExtDevice };
@@ -243,8 +243,8 @@ export const spec = {
       request.user = user;
     }
 
-    const userKeywords = deepAccess(config.getConfig('ortb2.user'), 'keywords') || null;
-    const siteKeywords = deepAccess(config.getConfig('ortb2.site'), 'keywords') || null;
+    const userKeywords = deepAccess(bidderRequest, 'ortb2.user.keywords') || null;
+    const siteKeywords = deepAccess(bidderRequest, 'ortb2.site.keywords') || null;
 
     if (userKeywords) {
       pageKeywords = pageKeywords || {};
@@ -298,7 +298,7 @@ export const spec = {
       request.regs.coppa = 1;
     }
 
-    const site = config.getConfig('ortb2.site');
+    const site = deepAccess(bidderRequest, 'ortb2.site');
     if (site) {
       const pageCategory = [...(site.cat || []), ...(site.pagecat || [])].filter((category) => {
         return category && typeof category === 'string'

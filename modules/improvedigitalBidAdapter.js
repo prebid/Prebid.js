@@ -427,7 +427,7 @@ const ID_REQUEST = {
   buildSiteOrApp(request, bidderRequest) {
     const app = {};
     const configAppSettings = config.getConfig('app') || {};
-    const fpdAppSettings = config.getConfig('ortb2.app') || {};
+    const fpdAppSettings = bidderRequest.ortb2?.app || {};
     mergeDeep(app, configAppSettings, fpdAppSettings);
 
     if (Object.keys(app).length !== 0) {
@@ -440,7 +440,7 @@ const ID_REQUEST = {
         site.domain = parseUrl(url).hostname;
       }
       const configSiteSettings = config.getConfig('site') || {};
-      const fpdSiteSettings = config.getConfig('ortb2.site') || {};
+      const fpdSiteSettings = deepAccess(bidderRequest, 'ortb2.site') || {};
       mergeDeep(site, configSiteSettings, fpdSiteSettings);
       request.site = site;
     }

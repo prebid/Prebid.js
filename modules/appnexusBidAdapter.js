@@ -292,7 +292,6 @@ export const spec = {
     if (bidRequests[0].userId) {
       let eids = [];
 
-      addUserId(eids, deepAccess(bidRequests[0], `userId.flocId.id`), 'chrome.com', null);
       addUserId(eids, deepAccess(bidRequests[0], `userId.criteoId`), 'criteo.com', null);
       addUserId(eids, deepAccess(bidRequests[0], `userId.netId`), 'netid.de', null);
       addUserId(eids, deepAccess(bidRequests[0], `userId.idl_env`), 'liveramp.com', null);
@@ -394,11 +393,22 @@ export const spec = {
     }
   },
 
-  transformBidParams: function (params, isOpenRtb) {
+  transformBidParams: function (params, isOpenRtb, adUnit, bidRequests) {
     let conversionFn = transformBidderParamKeywords;
     if (isOpenRtb === true) {
+      let s2sEndpointUrl = null;
       let s2sConfig = config.getConfig('s2sConfig');
-      let s2sEndpointUrl = deepAccess(s2sConfig, 'endpoint.p1Consent');
+
+      if (isPlainObject(s2sConfig)) {
+        s2sEndpointUrl = deepAccess(s2sConfig, 'endpoint.p1Consent');
+      } else if (isArray(s2sConfig)) {
+        s2sConfig.forEach(s2sCfg => {
+          if (includes(s2sCfg.bidders, adUnit.bids[0].bidder)) {
+            s2sEndpointUrl = deepAccess(s2sCfg, 'endpoint.p1Consent');
+          }
+        })
+      }
+
       if (s2sEndpointUrl && s2sEndpointUrl.match('/openrtb2/prebid')) {
         conversionFn = convertKeywordsToString;
       }

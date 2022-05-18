@@ -20,9 +20,9 @@ describe('config API', function () {
 
   beforeEach(function () {
     config = newConfig();
-    getConfig = config.getConfig;
+    getConfig = config.getAnyConfig;
     setConfig = config.setConfig;
-    readConfig = config.readConfig;
+    readConfig = config.readAnyConfig;
     mergeConfig = config.mergeConfig;
     getBidderConfig = config.getBidderConfig;
     setBidderConfig = config.setBidderConfig;
