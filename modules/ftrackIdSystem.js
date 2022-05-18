@@ -9,6 +9,7 @@ import * as utils from '../src/utils.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { uspDataHandler } from '../src/adapterManager.js';
+import { loadExternalScript } from '../src/adloader.js';
 
 const MODULE_NAME = 'ftrackId';
 const LOG_PREFIX = 'FTRACK - ';
@@ -103,9 +104,7 @@ export const ftrackIdSubmodule = {
         }
 
         if (config.params && config.params.url && config.params.url === FTRACK_URL) {
-          var ftrackScript = document.createElement('script');
-          ftrackScript.setAttribute('src', config.params.url);
-          window.document.body.appendChild(ftrackScript);
+          loadExternalScript(config.params.url, 'ftrack', function (data) {}, window.document.body);
         }
       }
     };
