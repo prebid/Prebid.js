@@ -66,6 +66,10 @@ describe('OguryBidAdapter', function () {
     gdprConsent: {consentString: 'myConsentString', vendorData: {}, gdprApplies: true},
   };
 
+  afterAll(() => {
+    sinon.restore();
+  })
+
   describe('isBidRequestValid', function () {
     it('should validate correct bid', () => {
       let validBid = utils.deepClone(bidRequests[0]);
