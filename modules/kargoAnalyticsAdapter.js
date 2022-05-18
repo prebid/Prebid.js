@@ -2,10 +2,10 @@ import { _each, logError } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
+import CONSTANTS from '../src/constants.json';
 
 const EVENT_URL = 'https://krk.kargo.com/api/v1/event';
 const KARGO_BIDDER_CODE = 'kargo';
-const CONSTANTS = require('../src/constants.json');
 
 const analyticsType = 'endpoint';
 
