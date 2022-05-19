@@ -1,10 +1,12 @@
+
 import { submodule } from '../src/hook.js';
 import { logInfo } from '../src/utils.js'
 
 const MODULE_NAME = 'TNCID';
-const FALLBACK_TNC_INSTANCE = '__tncPbjs';
 const FALLBACK_TNC_PROVIDERID = 'c8549079-f149-4529-a34b-3fa91ef257d1';
-const loadTNCScript = function (tncInstance, providerId) {
+const FALLBACK_TNC_INSTANCE = '__tncPbjs';
+
+const loadRemoteTNCScript = (providerId) => {
   try {
     let tncOptions = {
       autostart: true,
@@ -19,7 +21,7 @@ const loadTNCScript = function (tncInstance, providerId) {
     };
     let t = window;
     let n = t.document;
-    let c = tncInstance;
+    let c = FALLBACK_TNC_INSTANCE;
     let i = providerId;
     let d = tncOptions;
 
@@ -30,43 +32,30 @@ const loadTNCScript = function (tncInstance, providerId) {
     }; var s = n.createElement('script'); s.setAttribute('global', c); s.async = !0;
     s.defer = !0; s.id = 'tnc_route'; s.src = 'https://js.tncid.app/route.js';
     n.querySelector('head,body').appendChild(s);
+  } catch (error) { }
+}
 
-    return new Promise((resolve, reject) => {
-      try {
-        t[c].ready(() => {
-          t[c].on('data-sent', () => resolve(t[c]));
-        });
-      } catch (err) {
-        reject(err);
-      }
+const waitTNCScript = (tncNS) => {
+  return new Promise((resolve, reject) => {
+    var tnc = window[tncNS];
+    if (!tnc) reject(new Error('No TNC Object'));
+    if (tnc.tncid) resolve(tnc.tncid);
+    tnc.ready(() => {
+      tnc = window[tncNS];
+      if (tnc.tncid) resolve(tnc.tncid);
+      else tnc.on('data-sent', () => resolve(tnc.tncid));
     });
-  } catch (err) {
-    return Promise.reject(err);
+  });
+}
+
+const tncCallback = function (providerId, cb) {
+  let tncNS = '__tnc';
+  if (!window[tncNS]) {
+    tncNS = FALLBACK_TNC_INSTANCE;
+    loadRemoteTNCScript(providerId);
   }
 
-}
-const tncCallback = function (providerId, cb) {
-  let promise = window.__tnc || window[FALLBACK_TNC_INSTANCE]
-    ? Promise.resolve(window.__tnc || window[FALLBACK_TNC_INSTANCE])
-    : loadTNCScript(FALLBACK_TNC_INSTANCE, providerId);
-
-  promise
-    .then(tnc => {
-      if (tnc) {
-        tnc.ready(function () {
-          if (tnc.tncid) {
-            cb(tnc.tncid);
-          } else {
-            tnc.on('data-sent', () => {
-              cb(tnc.tncid);
-            });
-          }
-        });
-      } else {
-        cb();
-      }
-    })
-    .catch(() => cb());
+  return waitTNCScript(tncNS).then(cb).catch(() => cb());
 }
 
 export const tncidSubModule = {
@@ -77,11 +66,11 @@ export const tncidSubModule = {
     };
   },
   gvlid: 750,
-  getId(config = {}, consentData) {
+  getId(config, consentData) {
     const gdpr = (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) ? 1 : 0;
     const consentString = gdpr ? consentData.consentString : '';
-    const { params } = config;
-    const providerId = (params || {}).providerId || FALLBACK_TNC_PROVIDERID;
+    let providerId = FALLBACK_TNC_PROVIDERID;
+    if (config && config.params && config.params.providerId)providerId = config.params.providerId;
 
     if (gdpr && !consentString) {
       logInfo('Consent string is required for TNCID module');
