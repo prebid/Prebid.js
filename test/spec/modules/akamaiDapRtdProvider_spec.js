@@ -412,9 +412,12 @@ describe('akamaiDapRtdProvider', function() {
       dapUtils.dapRefreshMembership(sampleConfig, sampleCachedToken.token, onDone)
       let request = server.requests[0];
       request.respond(403, responseHeader, 'error');
-      let requestTokenize = server.requests[1]
-      requestTokenize.respond(403, responseHeader, 'error');
-      expect(server.requests.length).to.be.equal(DAP_MAX_RETRY_TOKENIZE + 1);
+      let requestTokenize = server.requests[1];
+      responseHeader['Akamai-DAP-Token'] = sampleCachedToken.token;
+      requestTokenize.respond(200, responseHeader, '');
+      let requestMembership = server.requests[2];
+      requestMembership.respond(403, responseHeader, 'error');
+      expect(server.requests.length).to.be.equal(DAP_MAX_RETRY_TOKENIZE + 2);
     });
   });
 
@@ -454,9 +457,12 @@ describe('akamaiDapRtdProvider', function() {
       dapUtils.dapRefreshEncryptedMembership(esampleConfig, sampleCachedToken.token, onDone)
       let request = server.requests[0];
       request.respond(403, responseHeader, 'error');
-      let requestTokenize = server.requests[1]
-      requestTokenize.respond(403, responseHeader, 'error');
-      expect(server.requests.length).to.be.equal(DAP_MAX_RETRY_TOKENIZE + 1);
+      let requestTokenize = server.requests[1];
+      responseHeader['Akamai-DAP-Token'] = sampleCachedToken.token;
+      requestTokenize.respond(200, responseHeader, '');
+      let requestMembership = server.requests[2];
+      requestMembership.respond(403, responseHeader, 'error');
+      expect(server.requests.length).to.be.equal(DAP_MAX_RETRY_TOKENIZE + 2);
     });
   });
 
