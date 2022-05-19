@@ -184,15 +184,10 @@ export const hasNonNativeBidder = adUnit =>
 export function nativeBidIsValid(bid, {index = auctionManager.index} = {}) {
   const adUnit = index.getAdUnit(bid);
   if (!adUnit) { return false; }
-  let ortbResponse, ortbRequest;
-  if (!deepAccess(adUnit, 'nativeParams.ortb')) {
-    ortbRequest = toOrtbNativeRequest(adUnit.nativeParams);
-  }
-  if (deepAccess(bid, 'native.ortb')) {
-    ortbResponse = bid.native.ortb;
-  } else {
-    ortbResponse = toOrtbNativeResponse(bid.native, ortbRequest);
-  }
+  let ortbRequest =
+  adUnit?.nativeParams?.ortb || toOrtbNativeRequest(adUnit.nativeParams);
+  let ortbResponse =
+  bid.native?.ortb || toOrtbNativeResponse(bid.native, ortbRequest);
   return isNativeOpenRTBBidValid(ortbResponse, ortbRequest);
 }
 
