@@ -128,7 +128,7 @@ function buildRequestImpression(bidRequest, bidderRequest) {
   impressionObject.bidfloor = bidFloorData.floor;
   impressionObject.bidfloorcur = bidFloorData.currency;
   
-  impressionObject.ext = buildImpressionExtension(); // TODO: Complete
+  impressionObject.ext = buildImpressionExtension(bidRequest);
 
   impressions.push(impressionObject);
 
@@ -164,6 +164,16 @@ function buildImpressionVideo(bidRequest) {
     video.startdelay = video.startdelay || 0;
     video.placement = 1;
   }
+
+  return video;
+}
+
+function buildImpressionExtension(bidRequest) {
+  return {
+    appnexus: {
+      placement_id: bidRequest.params.placementId
+    }
+  };
 }
 
 function buildBidFloorData(bidRequest) {
@@ -192,9 +202,10 @@ function buildRequestSite(bidRequest) {
     ref: bidRequest.refererInfo ? bidRequest.refererInfo.referer || null : null
   };
 
+  const videoParams = deepAccess(bidRequest, 'mediaTypes.video', {});
+
   // Site Content
-  /*
-  if (videoAdUnit.content && isPlainObject(videoAdUnit.content)) {
+  if (videoParams.content && isPlainObject(videoParams.content)) {
     openrtbRequest.site.content = {};
     const contentStringKeys = ['id', 'title', 'series', 'season', 'genre', 'contentrating', 'language', 'url'];
     const contentNumberkeys = ['episode', 'prodq', 'context', 'livestream', 'len'];
@@ -202,19 +213,17 @@ function buildRequestSite(bidRequest) {
     const contentObjectKeys = ['ext'];
     for (const contentKey in videoBidderParams.content) {
       if (
-        (contentStringKeys.indexOf(contentKey) > -1 && isStr(videoAdUnit.content[contentKey])) ||
-        (contentNumberkeys.indexOf(contentKey) > -1 && isNumber(videoAdUnit.content[contentKey])) ||
-        (contentObjectKeys.indexOf(contentKey) > -1 && isPlainObject(videoAdUnit.content[contentKey])) ||
-        (contentArrayKeys.indexOf(contentKey) > -1 && isArray(videoAdUnit.content[contentKey]) &&
-          videoAdUnit.content[contentKey].every(catStr => isStr(catStr)))) {
-        site.content[contentKey] = videoAdUnit.content[contentKey];
+        (contentStringKeys.indexOf(contentKey) > -1 && isStr(videoParams.content[contentKey])) ||
+        (contentNumberkeys.indexOf(contentKey) > -1 && isNumber(videoParams.content[contentKey])) ||
+        (contentObjectKeys.indexOf(contentKey) > -1 && isPlainObject(videoParams.content[contentKey])) ||
+        (contentArrayKeys.indexOf(contentKey) > -1 && isArray(videoParams.content[contentKey]) &&
+        videoParams.content[contentKey].every(catStr => isStr(catStr)))) {
+        site.content[contentKey] = videoParams.content[contentKey];
       } else {
         logMessage('JWPlayer bid adapter validation error: ', contentKey, ' is either not supported is OpenRTB V2.5 or value is undefined');
       }
     }
   }
-  */
-
   return site;
 }
 
