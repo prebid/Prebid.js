@@ -1038,9 +1038,6 @@ describe('OneVideoBidAdapter', function () {
         expect(pixel[0].url).to.equal('https://pixel.advertising.com/ups/57304/sync?gdpr=&gdpr_consent=&_origin=0&redir=true')
       });
 
-      it('should be TTD sync pixel', function () {
-        expect(pixel[2].url).to.equal('https://match.adsrvr.org/track/cmf/generic?ttd_pid=adaptv&ttd_tpi=1')
-      });
     })
   });
 });

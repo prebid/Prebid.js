@@ -8,7 +8,6 @@ export const spec = {
   ENDPOINT: 'https://ads.adaptv.advertising.com/rtb/openrtb?ext_id=',
   E2ETESTENDPOINT: 'https://ads-wc.v.ssp.yahoo.com/rtb/openrtb?ext_id=',
   SYNC_ENDPOINT1: 'https://pixel.advertising.com/ups/57304/sync?gdpr=&gdpr_consent=&_origin=0&redir=true',
-  SYNC_ENDPOINT2: 'https://match.adsrvr.org/track/cmf/generic?ttd_pid=adaptv&ttd_tpi=1',
   supportedMediaTypes: ['video', 'banner'],
   gvlid: 25,
   /**
@@ -163,10 +162,6 @@ export const spec = {
       {
         type: 'image',
         url: `https://sync-tm.everesttech.net/upi/pid/m7y5t93k?gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}&redir=https%3A%2F%2Fpixel.advertising.com%2Fups%2F55986%2Fsync%3Fuid%3D%24%7BUSER_ID%7D%26_origin%3D0` + encodeURI(`&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}`)
-      },
-      {
-        type: 'image',
-        url: spec.SYNC_ENDPOINT2
       }];
     }
   }
