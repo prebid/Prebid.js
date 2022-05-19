@@ -253,12 +253,38 @@ describe('emx_digital Adapter', function () {
       expect(queryParams[1]).to.match(new RegExp('^ts=\d*', 'g'));
     });
 
-    it('builds with bid floor', function () {
-      const bidRequestWithBidFloor = utils.deepClone(bidderRequest.bids);
-      bidRequestWithBidFloor[0].params.bidfloor = 1;
-      const requestWithFloor = spec.buildRequests(bidRequestWithBidFloor, bidderRequest);
+    it('builds bidfloor value from bid param when getFloor function does not exist', function () {
+      const bidRequestWithFloor = utils.deepClone(bidderRequest.bids);
+      bidRequestWithFloor[0].params.bidfloor = 1;
+      const requestWithFloor = spec.buildRequests(bidRequestWithFloor, bidderRequest);
       const data = JSON.parse(requestWithFloor.data);
-      expect(data.imp[0].bidfloor).to.equal(bidRequestWithBidFloor[0].params.bidfloor);
+      expect(data.imp[0].bidfloor).to.equal(bidRequestWithFloor[0].params.bidfloor);
+    });
+
+    it('builds bidfloor value from getFloor function when it exists', function () {
+      const floorResponse = { currency: 'USD', floor: 3 };
+      const bidRequestWithGetFloor = utils.deepClone(bidderRequest.bids);
+      bidRequestWithGetFloor[0].getFloor = () => floorResponse;
+      const requestWithGetFloor = spec.buildRequests(bidRequestWithGetFloor, bidderRequest);
+      const data = JSON.parse(requestWithGetFloor.data);
+      expect(data.imp[0].bidfloor).to.equal(3);
+    });
+
+    it('builds bidfloor value from getFloor when both floor and getFloor function exists', function () {
+      const floorResponse = { currency: 'USD', floor: 3 };
+      const bidRequestWithBothFloors = utils.deepClone(bidderRequest.bids);
+      bidRequestWithBothFloors[0].params.bidfloor = 1;
+      bidRequestWithBothFloors[0].getFloor = () => floorResponse;
+      const requestWithBothFloors = spec.buildRequests(bidRequestWithBothFloors, bidderRequest);
+      const data = JSON.parse(requestWithBothFloors.data);
+      expect(data.imp[0].bidfloor).to.equal(3);
+    });
+
+    it('empty bidfloor value when floor and getFloor is not defined', function () {
+      const bidRequestWithoutFloor = utils.deepClone(bidderRequest.bids);
+      const requestWithoutFloor = spec.buildRequests(bidRequestWithoutFloor, bidderRequest);
+      const data = JSON.parse(requestWithoutFloor.data);
+      expect(data.imp[0].bidfloor).to.not.exist;
     });
 
     it('builds request properly', function () {
@@ -367,6 +393,71 @@ describe('emx_digital Adapter', function () {
       expect(request.us_privacy).to.exist;
       expect(request.us_privacy).to.exist.and.to.equal(consentString);
     });
+
+    it('should add schain object to request', function() {
+      const schainBidderRequest = utils.deepClone(bidderRequest);
+      schainBidderRequest.bids[0].schain = {
+        'complete': 1,
+        'ver': '1.0',
+        'nodes': [
+          {
+            'asi': 'testing.com',
+            'sid': 'abc',
+            'hp': 1
+          }
+        ]
+      };
+      let request = spec.buildRequests(schainBidderRequest.bids, schainBidderRequest);
+      request = JSON.parse(request.data);
+      expect(request.source.ext.schain).to.exist;
+      expect(request.source.ext.schain).to.have.property('complete', 1);
+      expect(request.source.ext.schain).to.have.property('ver', '1.0');
+      expect(request.source.ext.schain.nodes[0].asi).to.equal(schainBidderRequest.bids[0].schain.nodes[0].asi);
+    });
+
+    it('should add liveramp identitylink id to request', () => {
+      const idl_env = '123';
+      const bidRequestWithID = utils.deepClone(bidderRequest);
+      bidRequestWithID.userId = { idl_env };
+      let requestWithID = spec.buildRequests(bidRequestWithID.bids, bidRequestWithID);
+      requestWithID = JSON.parse(requestWithID.data);
+      expect(requestWithID.user.ext.eids[0]).to.deep.equal({
+        source: 'liveramp.com',
+        uids: [{
+          id: idl_env,
+          ext: {
+            rtiPartner: 'idl'
+          }
+        }]
+      });
+    });
+
+    it('should add gpid to request if present', () => {
+      const gpid = '/12345/my-gpt-tag-0';
+      let bid = utils.deepClone(bidderRequest.bids[0]);
+      bid.ortb2Imp = { ext: { data: { adserver: { adslot: gpid } } } };
+      bid.ortb2Imp = { ext: { data: { pbadslot: gpid } } };
+      let requestWithGPID = spec.buildRequests([bid], bidderRequest);
+      requestWithGPID = JSON.parse(requestWithGPID.data);
+      expect(requestWithGPID.imp[0].ext.gpid).to.exist.and.equal(gpid);
+    });
+
+    it('should add UID 2.0 to request', () => {
+      const uid2 = { id: '456' };
+      const bidRequestWithUID = utils.deepClone(bidderRequest);
+      bidRequestWithUID.userId = { uid2 };
+      let requestWithUID = spec.buildRequests(bidRequestWithUID.bids, bidRequestWithUID);
+      requestWithUID = JSON.parse(requestWithUID.data);
+      expect(requestWithUID.user.ext.eids[0]).to.deep.equal({
+        source: 'uidapi.com',
+        uids: [{
+          id: uid2.id,
+          ext: {
+            rtiPartner: 'UID2'
+          }
+        }]
+      });
+    });
   });
 
   describe('interpretResponse', function () {
@@ -449,7 +540,8 @@ describe('emx_digital Adapter', function () {
           'id': '987654321cba',
           'price': 0.5,
           'ttl': 300,
-          'w': 300
+          'w': 300,
+          'adomain': ['example.com']
         }],
         'seat': '1356'
       }, {
@@ -477,7 +569,10 @@ describe('emx_digital Adapter', function () {
       'netRevneue': true,
       'mediaType': 'banner',
       'ad': '<!-- Creative -->',
-      'ttl': 300
+      'ttl': 300,
+      'meta': {
+        'advertiserDomains': ['example.com']
+      }
     }, {
       'requestId': '12819a18-56e1-4256-b836-b69a10202668',
       'cpm': 0.7,
@@ -609,15 +704,34 @@ describe('emx_digital Adapter', function () {
         body: badAdmServerResponse
       }));
     });
+
+    it('returns valid advertiser domain', function () {
+      const bidResponse = utils.deepClone(serverResponse);
+      let result = spec.interpretResponse({body: bidResponse});
+      expect(result[0].meta.advertiserDomains).to.deep.equal(expectedResponse[0].meta.advertiserDomains);
+      // case where adomains are not in request
+      expect(result[1].meta).to.not.exist;
+    });
   });
 
   describe('getUserSyncs', function () {
-    let syncOptionsIframe = { iframeEnabled: true };
-    let syncOptionsPixel = { pixelEnabled: true };
-    it('Should push the correct sync type depending on the config', function () {
-      let iframeSync = spec.getUserSyncs(syncOptionsIframe);
-      expect(iframeSync.length).to.equal(1);
-      expect(iframeSync[0].type).to.equal('iframe');
+    it('should register the iframe sync url', function () {
+      let syncs = spec.getUserSyncs({
+        iframeEnabled: true
+      });
+      expect(syncs).to.not.be.an('undefined');
+      expect(syncs).to.have.lengthOf(1);
+      expect(syncs[0].type).to.equal('iframe');
+    });
+
+    it('should pass gdpr params', function () {
+      let syncs = spec.getUserSyncs({ iframeEnabled: true }, {}, {
+        gdprApplies: false, consentString: 'test'
+      });
+      expect(syncs).to.not.be.an('undefined');
+      expect(syncs).to.have.lengthOf(1);
+      expect(syncs[0].type).to.equal('iframe');
+      expect(syncs[0].url).to.contains('gdpr=0');
     });
   });
 });

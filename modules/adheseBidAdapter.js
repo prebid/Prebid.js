@@ -2,12 +2,15 @@
 
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'adhese';
+const GVLID = 553;
 const USER_SYNC_BASE_URL = 'https://user-sync.adhese.com/iframe/user_sync.html';
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO],
 
   isBidRequestValid: function(bid) {
@@ -18,23 +21,43 @@ export const spec = {
     if (validBidRequests.length === 0) {
       return null;
     }
+
     const { gdprConsent, refererInfo } = bidderRequest;
 
+    const adheseConfig = config.getConfig('adhese');
+    const gdprParams = (gdprConsent && gdprConsent.consentString) ? { xt: [gdprConsent.consentString] } : {};
+    const refererParams = (refererInfo && refererInfo.referer) ? { xf: [base64urlEncode(refererInfo.referer)] } : {};
+    const globalCustomParams = (adheseConfig && adheseConfig.globalTargets) ? cleanTargets(adheseConfig.globalTargets) : {};
+    const commonParams = { ...globalCustomParams, ...gdprParams, ...refererParams };
+    const vastContentAsUrl = !(adheseConfig && adheseConfig.vastContentAsUrl == false);
+
+    const slots = validBidRequests.map(bid => ({
+      slotname: bidToSlotName(bid),
+      parameters: cleanTargets(bid.params.data)
+    }));
+
+    const payload = {
+      slots: slots,
+      parameters: commonParams,
+      vastContentAsUrl: vastContentAsUrl,
+      user: {
+        ext: {
+          eids: getEids(validBidRequests),
+        }
+      }
+    };
+
     const account = getAccount(validBidRequests);
-    const targets = validBidRequests.map(bid => bid.params.data).reduce(mergeTargets, {});
-    const gdprParams = (gdprConsent && gdprConsent.consentString) ? [`xt${gdprConsent.consentString}`] : [];
-    const refererParams = (refererInfo && refererInfo.referer) ? [`xf${base64urlEncode(refererInfo.referer)}`] : [];
-    const id5Params = (getId5Id(validBidRequests)) ? [`x5${getId5Id(validBidRequests)}`] : [];
-    const targetsParams = Object.keys(targets).map(targetCode => targetCode + targets[targetCode].join(';'));
-    const slotsParams = validBidRequests.map(bid => 'sl' + bidToSlotName(bid));
-    const params = [...slotsParams, ...targetsParams, ...gdprParams, ...refererParams, ...id5Params].map(s => `/${s}`).join('');
-    const cacheBuster = '?t=' + new Date().getTime();
-    const uri = 'https://ads-' + account + '.adhese.com/json' + params + cacheBuster;
+    const uri = 'https://ads-' + account + '.adhese.com/json';
 
     return {
-      method: 'GET',
+      method: 'POST',
       url: uri,
-      bids: validBidRequests
+      data: JSON.stringify(payload),
+      bids: validBidRequests,
+      options: {
+        contentType: 'application/json'
+      }
     };
   },
 
@@ -78,7 +101,7 @@ function adResponse(bid, ad) {
 
   const bidResponse = getbaseAdResponse({
     requestId: bid.bidId,
-    mediaType: getMediaType(markup),
+    mediaType: ad.extension.mediaType,
     cpm: Number(price.amount),
     currency: price.currency,
     width: Number(ad.width),
@@ -89,11 +112,18 @@ function adResponse(bid, ad) {
       originData: adDetails.originData,
       origin: adDetails.origin,
       originInstance: adDetails.originInstance
+    },
+    meta: {
+      advertiserDomains: ad.adomain || []
     }
   });
 
   if (bidResponse.mediaType === VIDEO) {
-    bidResponse.vastXml = markup;
+    if (ad.cachedBodyUrl) {
+      bidResponse.vastUrl = ad.cachedBodyUrl
+    } else {
+      bidResponse.vastXml = markup;
+    }
   } else {
     const counter = ad.impressionCounter ? "<img src='" + ad.impressionCounter + "' style='height:1px; width:1px; margin: -1px -1px; display:none;'/>" : '';
     bidResponse.ad = markup + counter;
@@ -101,16 +131,20 @@ function adResponse(bid, ad) {
   return bidResponse;
 }
 
-function mergeTargets(targets, target) {
+function cleanTargets(target) {
+  const targets = {};
   if (target) {
     Object.keys(target).forEach(function (key) {
       const val = target[key];
-      const values = Array.isArray(val) ? val : [val];
-      if (targets[key]) {
-        const distinctValues = values.filter(v => targets[key].indexOf(v) < 0);
-        targets[key].push.apply(targets[key], distinctValues);
-      } else {
-        targets[key] = values;
+      const dirtyValues = Array.isArray(val) ? val : [val];
+      const values = dirtyValues.filter(v => v === 0 || v);
+      if (values.length > 0) {
+        if (targets[key]) {
+          const distinctValues = values.filter(v => targets[key].indexOf(v) < 0);
+          targets[key].push.apply(targets[key], distinctValues);
+        } else {
+          targets[key] = values;
+        }
       }
     });
   }
@@ -137,9 +171,9 @@ function getAccount(validBidRequests) {
   return validBidRequests[0].params.account;
 }
 
-function getId5Id(validBidRequests) {
-  if (validBidRequests[0] && validBidRequests[0].userId && validBidRequests[0].userId.id5id) {
-    return validBidRequests[0].userId.id5id;
+function getEids(validBidRequests) {
+  if (validBidRequests[0] && validBidRequests[0].userIdAsEids) {
+    return validBidRequests[0].userIdAsEids;
   }
 }
 
@@ -148,12 +182,7 @@ function getbaseAdResponse(response) {
 }
 
 function isAdheseAd(ad) {
-  return !ad.origin || ad.origin === 'JERLICIA' || ad.origin === 'DALE';
-}
-
-function getMediaType(markup) {
-  const isVideo = markup.trim().toLowerCase().match(/<\?xml|<vast/);
-  return isVideo ? VIDEO : BANNER;
+  return !ad.origin || ad.origin === 'JERLICIA';
 }
 
 function getAdMarkup(ad) {

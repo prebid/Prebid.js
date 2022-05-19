@@ -102,11 +102,13 @@ Configuration options are a follows:
 
 | Property | Type | Required? | Description | Example |
 |:---|:---|:---|:---|:---|
-| `publisherPlatformId` | `string` | Yes | Used to determine ownership of data. | `a3aece0c-9e80-4316-8deb-faf804779bd1` |
-| `publisherAccountId` | `number` | Yes | Used to determine ownership of data. | `1537143056` |
+| `orgId` | `string` | Yes | Used to determine ownership of data. | `aa1bb2cc-3dd4-4316-8deb-faf804779bd1` |
+| `publisherPlatformId` | `string` | No <br> **__Deprecated.  Please use orgId__** | Used to determine ownership of data. | `a3aece0c-9e80-4316-8deb-faf804779bd1` |
+| `publisherAccountId` | `number` | No <br> **__Deprecated.  Please use orgId__** | Used to determine ownership of data. | `1537143056` |
 | `sampling` | `number` | Yes | Sampling rate | Undefined or `1.00` - No sampling. Analytics is sent all the time.<br>0.5 - 50% of users will send analytics data. |
 | `testCode` | `string` | No | Used to label analytics data for the purposes of tests.<br>This label is treated as a dimension and can be compared against other labels. | `timeout_config_1`<br>`timeout_config_2`<br>`timeout_default` |
-
+| `campaign` | `Object` | No | Object with 5 parameters: <ul><li>content</li><li>medium</li><li>name</li><li>source</li><li>term</li></ul> Each parameter is a free-form string. Refer to metrics doc on when to use these fields.  By setting a value to one of these properties, you override the associated url utm query parameter. | |
+| `payloadWaitTime` | `number` | No | Delay after all slots of an auction renders before the payload is sent. <br> Defaults to 100ms | 1000 |
 ---
 
 # Viewing Data
@@ -114,7 +116,7 @@ The Prebid Report available in the Reporting in the Cloud tool, allows you to vi
 
 **To view your data:**
 
-1. Log in to Reporting in the Cloud.
+1. Log in to [OpenX Reporting](https://openx.sigmoid.io/app).
 
 2. In the top right, click on the **View** list and then select **Prebidreport**.
 

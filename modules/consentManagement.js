@@ -4,19 +4,21 @@
  * and make it available for any GDPR supported adapters to read/pass this information to
  * their system.
  */
-import * as utils from '../src/utils.js';
-import { config } from '../src/config.js';
-import { gdprDataHandler } from '../src/adapterManager.js';
-import includes from 'core-js-pure/features/array/includes.js';
-import strIncludes from 'core-js-pure/features/string/includes.js';
+import {getAdUnitSizes, isFn, isNumber, isPlainObject, isStr, logError, logInfo, logWarn} from '../src/utils.js';
+import {config} from '../src/config.js';
+import {gdprDataHandler} from '../src/adapterManager.js';
+import {includes} from '../src/polyfill.js';
 
 const DEFAULT_CMP = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 10000;
 const DEFAULT_ALLOW_AUCTION_WO_CONSENT = true;
 
+export const allowAuction = {
+  value: DEFAULT_ALLOW_AUCTION_WO_CONSENT,
+  definedInConfig: false
+}
 export let userCMP;
 export let consentTimeout;
-export let allowAuction;
 export let gdprScope;
 export let staticConsentData;
 
@@ -32,23 +34,22 @@ const cmpCallMap = {
 
 /**
  * This function reads the consent string from the config to obtain the consent information of the user.
- * @param {function(string)} cmpSuccess acts as a success callback when the value is read from config; pass along consentObject (string) from CMP
- * @param {function(string)} cmpError acts as an error callback while interacting with the config string; pass along an error message (string)
- * @param {object} hookConfig contains module related variables (see comment in requestBidsHook function)
+ * @param {function({})} onSuccess acts as a success callback when the value is read from config; pass along consentObject from CMP
  */
-function lookupStaticConsentData(cmpSuccess, cmpError, hookConfig) {
-  cmpSuccess(staticConsentData, hookConfig);
+function lookupStaticConsentData({onSuccess, onError}) {
+  processCmpData(staticConsentData, {onSuccess, onError})
 }
 
 /**
  * This function handles interacting with an IAB compliant CMP to obtain the consent information of the user.
  * Given the async nature of the CMP's API, we pass in acting success/error callback functions to exit this function
  * based on the appropriate result.
- * @param {function(string)} cmpSuccess acts as a success callback when CMP returns a value; pass along consentObject (string) from CMP
- * @param {function(string)} cmpError acts as an error callback while interacting with CMP; pass along an error message (string)
- * @param {object} hookConfig contains module related variables (see comment in requestBidsHook function)
+ * @param {function({})} onSuccess acts as a success callback when CMP returns a value; pass along consentObjectfrom CMP
+ * @param {function(string, ...{}?)} cmpError acts as an error callback while interacting with CMP; pass along an error message (string) and any extra error arguments (purely for logging)
+ * @param width
+ * @param height size info passed to the SafeFrame API (used only for TCFv1 when Prebid is running within a safeframe)
  */
-function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
+function lookupIabConsent({onSuccess, onError, width, height}) {
   function findCMP() {
     let f = window;
     let cmpFrame;
@@ -95,15 +96,13 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
   }
 
   function v2CmpResponseCallback(tcfData, success) {
-    utils.logInfo('Received a response from CMP', tcfData);
+    logInfo('Received a response from CMP', tcfData);
     if (success) {
-      if (tcfData.eventStatus === 'tcloaded' || tcfData.eventStatus === 'useractioncomplete') {
-        cmpSuccess(tcfData, hookConfig);
-      } else if (tcfData.eventStatus === 'cmpuishown' && tcfData.tcString && tcfData.purposeOneTreatment === true) {
-        cmpSuccess(tcfData, hookConfig);
+      if (tcfData.gdprApplies === false || tcfData.eventStatus === 'tcloaded' || tcfData.eventStatus === 'useractioncomplete') {
+        processCmpData(tcfData, {onSuccess, onError});
       }
     } else {
-      cmpError('CMP unable to register callback function.  Please check CMP setup.', hookConfig);
+      onError('CMP unable to register callback function.  Please check CMP setup.');
     }
   }
 
@@ -112,8 +111,8 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
 
     function afterEach() {
       if (cmpResponse.getConsentData && cmpResponse.getVendorConsents) {
-        utils.logInfo('Received all requested responses from CMP', cmpResponse);
-        cmpSuccess(cmpResponse, hookConfig);
+        logInfo('Received all requested responses from CMP', cmpResponse);
+        processCmpData(cmpResponse, {onSuccess, onError});
       }
     }
 
@@ -134,7 +133,7 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
   let { cmpFrame, cmpFunction } = findCMP();
 
   if (!cmpFrame) {
-    return cmpError('CMP not found.', hookConfig);
+    return onError('CMP not found.');
   }
   // to collect the consent information from the user, we perform two calls to the CMP in parallel:
   // first to collect the user's consent choices represented in an encoded string (via getConsentData)
@@ -146,8 +145,8 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
   // else assume prebid may be inside an iframe and use the IAB CMP locator code to see if CMP's located in a higher parent window. this works in cross domain iframes
   // if the CMP is not found, the iframe function will call the cmpError exit callback to abort the rest of the CMP workflow
 
-  if (utils.isFn(cmpFunction)) {
-    utils.logInfo('Detected CMP API is directly accessible, calling it now...');
+  if (isFn(cmpFunction)) {
+    logInfo('Detected CMP API is directly accessible, calling it now...');
     if (cmpVersion === 1) {
       cmpFunction('getConsentData', null, v1CallbackHandler.consentDataCallback);
       cmpFunction('getVendorConsents', null, v1CallbackHandler.vendorConsentsCallback);
@@ -156,11 +155,11 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
     }
   } else if (cmpVersion === 1 && inASafeFrame() && typeof window.$sf.ext.cmp === 'function') {
     // this safeframe workflow is only supported with TCF v1 spec; the v2 recommends to use the iframe postMessage route instead (even if you are in a safeframe).
-    utils.logInfo('Detected Prebid.js is encased in a SafeFrame and CMP is registered, calling it now...');
+    logInfo('Detected Prebid.js is encased in a SafeFrame and CMP is registered, calling it now...');
     callCmpWhileInSafeFrame('getConsentData', v1CallbackHandler.consentDataCallback);
     callCmpWhileInSafeFrame('getVendorConsents', v1CallbackHandler.vendorConsentsCallback);
   } else {
-    utils.logInfo('Detected CMP is outside the current iframe where Prebid.js is located, calling it now...');
+    logInfo('Detected CMP is outside the current iframe where Prebid.js is located, calling it now...');
     if (cmpVersion === 1) {
       callCmpWhileInIframe('getConsentData', cmpFrame, v1CallbackHandler.consentDataCallback);
       callCmpWhileInIframe('getVendorConsents', cmpFrame, v1CallbackHandler.vendorConsentsCallback);
@@ -181,16 +180,6 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
       }
     }
 
-    // find sizes from adUnits object
-    let adUnits = hookConfig.adUnits;
-    let width = 1;
-    let height = 1;
-    if (Array.isArray(adUnits) && adUnits.length > 0) {
-      let sizes = utils.getAdUnitSizes(adUnits[0]);
-      width = sizes[0][0];
-      height = sizes[0][1];
-    }
-
     window.$sf.ext.register(width, height, sfCallback);
     window.$sf.ext.cmp(commandName);
   }
@@ -198,33 +187,56 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
   function callCmpWhileInIframe(commandName, cmpFrame, moduleCallback) {
     let apiName = (cmpVersion === 2) ? '__tcfapi' : '__cmp';
 
+    let callName = `${apiName}Call`;
+
     /* Setup up a __cmp function to do the postMessage and stash the callback.
-      This function behaves (from the caller's perspective identicially to the in-frame __cmp call */
-    window[apiName] = function (cmd, arg, callback) {
-      let callId = Math.random() + '';
-      let callName = `${apiName}Call`;
-      let msg = {
-        [callName]: {
-          command: cmd,
-          parameter: arg,
-          callId: callId
-        }
-      };
-      if (cmpVersion !== 1) msg[callName].version = cmpVersion;
+    This function behaves (from the caller's perspective identicially to the in-frame __cmp call */
+    if (cmpVersion === 2) {
+      window[apiName] = function (cmd, cmpVersion, callback, arg) {
+        let callId = Math.random() + '';
+        let msg = {
+          [callName]: {
+            command: cmd,
+            version: cmpVersion,
+            parameter: arg,
+            callId: callId
+          }
+        };
 
-      cmpCallbacks[callId] = callback;
-      cmpFrame.postMessage(msg, '*');
+        cmpCallbacks[callId] = callback;
+        cmpFrame.postMessage(msg, '*');
+      }
+
+      /** when we get the return message, call the stashed callback */
+      window.addEventListener('message', readPostMessageResponse, false);
+
+      // call CMP
+      window[apiName](commandName, cmpVersion, moduleCallback);
+    } else {
+      window[apiName] = function (cmd, arg, callback) {
+        let callId = Math.random() + '';
+        let msg = {
+          [callName]: {
+            command: cmd,
+            parameter: arg,
+            callId: callId
+          }
+        };
+
+        cmpCallbacks[callId] = callback;
+        cmpFrame.postMessage(msg, '*');
+      }
+
+      /** when we get the return message, call the stashed callback */
+      window.addEventListener('message', readPostMessageResponse, false);
+
+      // call CMP
+      window[apiName](commandName, undefined, moduleCallback);
     }
-
-    /** when we get the return message, call the stashed callback */
-    window.addEventListener('message', readPostMessageResponse, false);
-
-    // call CMP
-    window[apiName](commandName, null, moduleCallback);
 
     function readPostMessageResponse(event) {
       let cmpDataPkgName = `${apiName}Return`;
-      let json = (typeof event.data === 'string' && strIncludes(event.data, cmpDataPkgName)) ? JSON.parse(event.data) : event.data;
+      let json = (typeof event.data === 'string' && includes(event.data, cmpDataPkgName)) ? JSON.parse(event.data) : event.data;
       if (json[cmpDataPkgName] && json[cmpDataPkgName].callId) {
         let payload = json[cmpDataPkgName];
         // TODO - clean up this logic (move listeners?); we have duplicate messages responses because 2 eventlisteners are active from the 2 cmp requests running in parallel
@@ -232,6 +244,70 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
           cmpCallbacks[payload.callId](payload.returnValue, payload.success);
         }
       }
+    }
+  }
+}
+
+/**
+ * Look up consent data and store it in the `consentData` global as well as `adapterManager.js`' gdprDataHandler.
+ *
+ * @param cb A callback that takes: a boolean that is true if the auction should be canceled; an error message and extra
+ * error arguments that will be undefined if there's no error.
+ * @param width if we are running in an iframe, the TCFv1 spec requires us to use the SafeFrame API to find the CMP - which
+ * in turn requires width and height.
+ * @param height see width above
+ */
+function loadConsentData(cb, width = 1, height = 1) {
+  let isDone = false;
+  let timer = null;
+
+  function done(consentData, shouldCancelAuction, errMsg, ...extraArgs) {
+    if (timer != null) {
+      clearTimeout(timer);
+    }
+    isDone = true;
+    gdprDataHandler.setConsentData(consentData);
+    if (cb != null) {
+      cb(shouldCancelAuction, errMsg, ...extraArgs);
+    }
+  }
+
+  if (!includes(Object.keys(cmpCallMap), userCMP)) {
+    done(null, false, `CMP framework (${userCMP}) is not a supported framework.  Aborting consentManagement module and resuming auction.`);
+    return;
+  }
+
+  const callbacks = {
+    onSuccess: (data) => done(data, false),
+    onError: function (msg, ...extraArgs) {
+      let consentData = null;
+      let shouldCancelAuction = true;
+      if (allowAuction.value && cmpVersion === 1) {
+        // still set the consentData to undefined when there is a problem as per config options
+        consentData = storeConsentData(undefined);
+        shouldCancelAuction = false;
+      }
+      done(consentData, shouldCancelAuction, msg, ...extraArgs);
+    }
+  }
+  cmpCallMap[userCMP]({
+    width,
+    height,
+    ...callbacks
+  });
+
+  if (!isDone) {
+    if (consentTimeout === 0) {
+      processCmpData(undefined, callbacks);
+    } else {
+      timer = setTimeout(function () {
+        if (cmpVersion === 2) {
+          // for TCFv2, we allow the auction to continue on timeout
+          done(storeConsentData(undefined), false, `No response from CMP, continuing auction...`)
+        } else {
+          callbacks.onError('CMP workflow exceeded timeout threshold.');
+        }
+      }, consentTimeout);
     }
   }
 }
@@ -245,55 +321,67 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
  * @param {function} fn required; The next function in the chain, used by hook.js
  */
 export function requestBidsHook(fn, reqBidsConfigObj) {
-  // preserves all module related variables for the current auction instance (used primiarily for concurrent auctions)
-  const hookConfig = {
-    context: this,
-    args: [reqBidsConfigObj],
-    nextFn: fn,
-    adUnits: reqBidsConfigObj.adUnits || $$PREBID_GLOBAL$$.adUnits,
-    bidsBackHandler: reqBidsConfigObj.bidsBackHandler,
-    haveExited: false,
-    timer: null
-  };
-
-  // in case we already have consent (eg during bid refresh)
-  if (consentData) {
-    utils.logInfo('User consent information already known.  Pulling internally stored information...');
-    return exitModule(null, hookConfig);
-  }
-
-  if (!includes(Object.keys(cmpCallMap), userCMP)) {
-    utils.logWarn(`CMP framework (${userCMP}) is not a supported framework.  Aborting consentManagement module and resuming auction.`);
-    return hookConfig.nextFn.apply(hookConfig.context, hookConfig.args);
-  }
-
-  cmpCallMap[userCMP].call(this, processCmpData, cmpFailed, hookConfig);
-
-  // only let this code run if module is still active (ie if the callbacks used by CMPs haven't already finished)
-  if (!hookConfig.haveExited) {
-    if (consentTimeout === 0) {
-      processCmpData(undefined, hookConfig);
+  const load = (() => {
+    if (consentData) {
+      logInfo('User consent information already known.  Pulling internally stored information...');
+      return function (cb) {
+        // eslint-disable-next-line standard/no-callback-literal
+        cb(false);
+      }
     } else {
-      hookConfig.timer = setTimeout(cmpTimedOut.bind(null, hookConfig), consentTimeout);
+      // find sizes from adUnits object
+      let adUnits = reqBidsConfigObj.adUnits || $$PREBID_GLOBAL$$.adUnits;
+      let width = 1;
+      let height = 1;
+      if (Array.isArray(adUnits) && adUnits.length > 0) {
+        let sizes = getAdUnitSizes(adUnits[0]);
+        width = sizes?.[0]?.[0] || 1;
+        height = sizes?.[0]?.[1] || 1;
+      }
+
+      return function (cb) {
+        loadConsentData(cb, width, height);
+      }
     }
-  }
+  })();
+
+  load(function (shouldCancelAuction, errMsg, ...extraArgs) {
+    if (errMsg) {
+      let log = logWarn;
+      if (cmpVersion === 1 && !shouldCancelAuction) {
+        errMsg = `${errMsg} 'allowAuctionWithoutConsent' activated.`;
+      } else if (shouldCancelAuction) {
+        log = logError;
+        errMsg = `${errMsg} Canceling auction as per consentManagement config.`;
+      }
+      log(errMsg, ...extraArgs);
+    }
+
+    if (shouldCancelAuction) {
+      if (typeof reqBidsConfigObj.bidsBackHandler === 'function') {
+        reqBidsConfigObj.bidsBackHandler();
+      } else {
+        logError('Error executing bidsBackHandler');
+      }
+    } else {
+      fn.call(this, reqBidsConfigObj);
+    }
+  });
 }
 
 /**
  * This function checks the consent data provided by CMP to ensure it's in an expected state.
- * If it's bad, we exit the module depending on config settings.
- * If it's good, then we store the value and exits the module.
- * @param {object} consentObject required; object returned by CMP that contains user's consent choices
- * @param {object} hookConfig contains module related variables (see comment in requestBidsHook function)
+ * If it's bad, we call `onError`
+ * If it's good, then we store the value and call `onSuccess`
  */
-function processCmpData(consentObject, hookConfig) {
+function processCmpData(consentObject, {onSuccess, onError}) {
   function checkV1Data(consentObject) {
     let gdprApplies = consentObject && consentObject.getConsentData && consentObject.getConsentData.gdprApplies;
     return !!(
       (typeof gdprApplies !== 'boolean') ||
       (gdprApplies === true &&
-        !(utils.isStr(consentObject.getConsentData.consentData) &&
-          utils.isPlainObject(consentObject.getVendorConsents) &&
+        !(isStr(consentObject.getConsentData.consentData) &&
+          isPlainObject(consentObject.getVendorConsents) &&
           Object.keys(consentObject.getVendorConsents).length > 1
         )
       )
@@ -306,7 +394,7 @@ function processCmpData(consentObject, hookConfig) {
     let tcString = consentObject && consentObject.tcString;
     return !!(
       (typeof gdprApplies !== 'boolean') ||
-      (gdprApplies === true && !utils.isStr(tcString))
+      (gdprApplies === true && !isStr(tcString))
     );
   }
 
@@ -322,44 +410,19 @@ function processCmpData(consentObject, hookConfig) {
   // determine which set of checks to run based on cmpVersion
   let checkFn = (cmpVersion === 1) ? checkV1Data : (cmpVersion === 2) ? checkV2Data : null;
 
-  if (utils.isFn(checkFn)) {
+  if (isFn(checkFn)) {
     if (checkFn(consentObject)) {
-      cmpFailed(`CMP returned unexpected value during lookup process.`, hookConfig, consentObject);
+      onError(`CMP returned unexpected value during lookup process.`, consentObject);
     } else {
-      clearTimeout(hookConfig.timer);
-      storeConsentData(consentObject);
-      exitModule(null, hookConfig);
+      onSuccess(storeConsentData(consentObject));
     }
   } else {
-    cmpFailed('Unable to derive CMP version to process data.  Consent object does not conform to TCF v1 or v2 specs.', hookConfig, consentObject);
+    onError('Unable to derive CMP version to process data.  Consent object does not conform to TCF v1 or v2 specs.', consentObject);
   }
 }
 
 /**
- * General timeout callback when interacting with CMP takes too long.
- */
-function cmpTimedOut(hookConfig) {
-  cmpFailed('CMP workflow exceeded timeout threshold.', hookConfig);
-}
-
-/**
- * This function contains the controlled steps to perform when there's a problem with CMP.
- * @param {string} errMsg required; should be a short descriptive message for why the failure/issue happened.
- * @param {object} hookConfig contains module related variables (see comment in requestBidsHook function)
- * @param {object} extraArgs contains additional data that's passed along in the error/warning messages for easier debugging
-*/
-function cmpFailed(errMsg, hookConfig, extraArgs) {
-  clearTimeout(hookConfig.timer);
-
-  // still set the consentData to undefined when there is a problem as per config options
-  if (allowAuction) {
-    storeConsentData(undefined);
-  }
-  exitModule(errMsg, hookConfig, extraArgs);
-}
-
-/**
- * Stores CMP data locally in module and then invokes gdprDataHandler.setConsentData() to make information available in adaptermanger.js for later in the auction
+ * Stores CMP data locally in module to make information available in adaptermanager.js for later in the auction
  * @param {object} cmpConsentObject required; an object representing user's consent choices (can be undefined in certain use-cases for this function only)
  */
 function storeConsentData(cmpConsentObject) {
@@ -375,52 +438,12 @@ function storeConsentData(cmpConsentObject) {
       vendorData: (cmpConsentObject) || undefined,
       gdprApplies: cmpConsentObject && typeof cmpConsentObject.gdprApplies === 'boolean' ? cmpConsentObject.gdprApplies : gdprScope
     };
+    if (cmpConsentObject && cmpConsentObject.addtlConsent && isStr(cmpConsentObject.addtlConsent)) {
+      consentData.addtlConsent = cmpConsentObject.addtlConsent;
+    };
   }
   consentData.apiVersion = cmpVersion;
-  gdprDataHandler.setConsentData(consentData);
-}
-
-/**
- * This function handles the exit logic for the module.
- * While there are several paths in the module's logic to call this function, we only allow 1 of the 3 potential exits to happen before suppressing others.
- *
- * We prevent multiple exits to avoid conflicting messages in the console depending on certain scenarios.
- * One scenario could be auction was canceled due to timeout with CMP being reached.
- * While the timeout is the accepted exit and runs first, the CMP's callback still tries to process the user's data (which normally leads to a good exit).
- * In this case, the good exit will be suppressed since we already decided to cancel the auction.
- *
- * Three exit paths are:
- * 1. good exit where auction runs (CMP data is processed normally).
- * 2. bad exit but auction still continues (warning message is logged, CMP data is undefined and still passed along).
- * 3. bad exit with auction canceled (error message is logged).
- * @param {string} errMsg optional; only to be used when there was a 'bad' exit.  String is a descriptive message for the failure/issue encountered.
- * @param {object} hookConfig contains module related variables (see comment in requestBidsHook function)
- * @param {object} extraArgs contains additional data that's passed along in the error/warning messages for easier debugging
- */
-function exitModule(errMsg, hookConfig, extraArgs) {
-  if (hookConfig.haveExited === false) {
-    hookConfig.haveExited = true;
-
-    let context = hookConfig.context;
-    let args = hookConfig.args;
-    let nextFn = hookConfig.nextFn;
-
-    if (errMsg) {
-      if (allowAuction) {
-        utils.logWarn(errMsg + ' Resuming auction without consent data as per consentManagement config.', extraArgs);
-        nextFn.apply(context, args);
-      } else {
-        utils.logError(errMsg + ' Canceling auction as per consentManagement config.', extraArgs);
-        if (typeof hookConfig.bidsBackHandler === 'function') {
-          hookConfig.bidsBackHandler();
-        } else {
-          utils.logError('Error executing bidsBackHandler');
-        }
-      }
-    } else {
-      nextFn.apply(context, args);
-    }
-  }
+  return consentData;
 }
 
 /**
@@ -430,7 +453,7 @@ export function resetConsentData() {
   consentData = undefined;
   userCMP = undefined;
   cmpVersion = 0;
-  gdprDataHandler.setConsentData(null);
+  gdprDataHandler.reset();
 }
 
 /**
@@ -440,48 +463,55 @@ export function resetConsentData() {
 export function setConsentConfig(config) {
   // if `config.gdpr` or `config.usp` exist, assume new config format.
   // else for backward compatability, just use `config`
-  config = config.gdpr || config.usp ? config.gdpr : config;
+  config = config && (config.gdpr || config.usp ? config.gdpr : config);
   if (!config || typeof config !== 'object') {
-    utils.logWarn('consentManagement config not defined, exiting consent manager');
+    logWarn('consentManagement config not defined, exiting consent manager');
     return;
   }
-  if (utils.isStr(config.cmpApi)) {
+  if (isStr(config.cmpApi)) {
     userCMP = config.cmpApi;
   } else {
     userCMP = DEFAULT_CMP;
-    utils.logInfo(`consentManagement config did not specify cmp.  Using system default setting (${DEFAULT_CMP}).`);
+    logInfo(`consentManagement config did not specify cmp.  Using system default setting (${DEFAULT_CMP}).`);
   }
 
-  if (utils.isNumber(config.timeout)) {
+  if (isNumber(config.timeout)) {
     consentTimeout = config.timeout;
   } else {
     consentTimeout = DEFAULT_CONSENT_TIMEOUT;
-    utils.logInfo(`consentManagement config did not specify timeout.  Using system default setting (${DEFAULT_CONSENT_TIMEOUT}).`);
+    logInfo(`consentManagement config did not specify timeout.  Using system default setting (${DEFAULT_CONSENT_TIMEOUT}).`);
   }
 
   if (typeof config.allowAuctionWithoutConsent === 'boolean') {
-    allowAuction = config.allowAuctionWithoutConsent;
-  } else {
-    allowAuction = DEFAULT_ALLOW_AUCTION_WO_CONSENT;
-    utils.logInfo(`consentManagement config did not specify allowAuctionWithoutConsent.  Using system default setting (${DEFAULT_ALLOW_AUCTION_WO_CONSENT}).`);
+    allowAuction.value = config.allowAuctionWithoutConsent;
+    allowAuction.definedInConfig = true;
   }
 
   // if true, then gdprApplies should be set to true
   gdprScope = config.defaultGdprScope === true;
 
-  utils.logInfo('consentManagement module has been activated...');
+  logInfo('consentManagement module has been activated...');
 
   if (userCMP === 'static') {
-    if (utils.isPlainObject(config.consentData)) {
+    if (isPlainObject(config.consentData)) {
       staticConsentData = config.consentData;
       consentTimeout = 0;
     } else {
-      utils.logError(`consentManagement config with cmpApi: 'static' did not specify consentData. No consents will be available to adapters.`);
+      logError(`consentManagement config with cmpApi: 'static' did not specify consentData. No consents will be available to adapters.`);
     }
   }
   if (!addedConsentHook) {
     $$PREBID_GLOBAL$$.requestBids.before(requestBidsHook, 50);
   }
   addedConsentHook = true;
+  gdprDataHandler.enable();
+  loadConsentData(); // immediately look up consent data to make it available without requiring an auction
+
+  // Raise deprecation warning if 'allowAuctionWithoutConsent' is used with TCF 2.
+  if (allowAuction.definedInConfig && cmpVersion === 2) {
+    logWarn(`'allowAuctionWithoutConsent' ignored for TCF 2`);
+  } else if (!allowAuction.definedInConfig && cmpVersion === 1) {
+    logInfo(`'allowAuctionWithoutConsent' using system default: (${DEFAULT_ALLOW_AUCTION_WO_CONSENT}).`);
+  }
 }
 config.getConfig('consentManagement', config => setConsentConfig(config.consentManagement));

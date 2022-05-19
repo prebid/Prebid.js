@@ -1,9 +1,19 @@
-import * as utils from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { Renderer } from '../src/Renderer.js';
-import includes from 'core-js-pure/features/array/includes.js';
-import find from 'core-js-pure/features/array/find.js';
+import {
+  _each,
+  deepAccess,
+  getBidIdParameter,
+  isArray,
+  isFn,
+  isPlainObject,
+  isStr,
+  logError,
+  logWarn,
+  parseUrl
+} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {Renderer} from '../src/Renderer.js';
+import {find, includes} from '../src/polyfill.js';
 
 const BIDDER_CODE = 'emx_digital';
 const ENDPOINT = 'hb.emxdgt.com';
@@ -11,13 +21,18 @@ const RENDERER_URL = 'https://js.brealtime.com/outstream/1.30.0/bundle.js';
 const ADAPTER_VERSION = '1.5.1';
 const DEFAULT_CUR = 'USD';
 
+const EIDS_SUPPORTED = [
+  { key: 'idl_env', source: 'liveramp.com', rtiPartner: 'idl', queryParam: 'idl' },
+  { key: 'uid2.id', source: 'uidapi.com', rtiPartner: 'UID2', queryParam: 'uid2' }
+];
+
 export const emxAdapter = {
   validateSizes: (sizes) => {
-    if (!utils.isArray(sizes) || typeof sizes[0] === 'undefined') {
-      utils.logWarn(BIDDER_CODE + ': Sizes should be an array');
+    if (!isArray(sizes) || typeof sizes[0] === 'undefined') {
+      logWarn(BIDDER_CODE + ': Sizes should be an array');
       return false;
     }
-    return sizes.every(size => utils.isArray(size) && size.length === 2);
+    return sizes.every(size => isArray(size) && size.length === 2);
   },
   checkVideoContext: (bid) => {
     return ((bid && bid.mediaTypes && bid.mediaTypes.video && bid.mediaTypes.video.context) && ((bid.mediaTypes.video.context === 'instream') || (bid.mediaTypes.video.context === 'outstream')));
@@ -26,7 +41,7 @@ export const emxAdapter = {
     let sizes = [];
     bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes ? sizes = bid.mediaTypes.banner.sizes : sizes = bid.sizes;
     if (!emxAdapter.validateSizes(sizes)) {
-      utils.logWarn(BIDDER_CODE + ': could not detect mediaType banner sizes. Assigning to bid sizes instead');
+      logWarn(BIDDER_CODE + ': could not detect mediaType banner sizes. Assigning to bid sizes instead');
       sizes = bid.sizes
     }
     return {
@@ -73,7 +88,7 @@ export const emxAdapter = {
   cleanProtocols: (video) => {
     if (video.protocols && includes(video.protocols, 7)) {
       // not supporting VAST protocol 7 (VAST 4.0);
-      utils.logWarn(BIDDER_CODE + ': VAST 4.0 is currently not supported. This protocol has been filtered out of the request.');
+      logWarn(BIDDER_CODE + ': VAST 4.0 is currently not supported. This protocol has been filtered out of the request.');
       video.protocols = video.protocols.filter(protocol => protocol !== 7);
     }
     return video;
@@ -101,7 +116,7 @@ export const emxAdapter = {
     try {
       renderer.setRender(emxAdapter.outstreamRender);
     } catch (err) {
-      utils.logWarn('Prebid Error calling setRender on renderer', err);
+      logWarn('Prebid Error calling setRender on renderer', err);
     }
 
     return renderer;
@@ -109,7 +124,7 @@ export const emxAdapter = {
   buildVideo: (bid) => {
     let videoObj = Object.assign(bid.mediaTypes.video, bid.params.video);
 
-    if (utils.isArray(bid.mediaTypes.video.playerSize[0])) {
+    if (isArray(bid.mediaTypes.video.playerSize[0])) {
       videoObj['w'] = bid.mediaTypes.video.playerSize[0][0];
       videoObj['h'] = bid.mediaTypes.video.playerSize[0][1];
     } else {
@@ -122,7 +137,7 @@ export const emxAdapter = {
     try {
       return decodeURIComponent(bidResponseAdm.replace(/%(?![0-9][0-9a-fA-F]+)/g, '%25'));
     } catch (err) {
-      utils.logError('emx_digitalBidAdapter', 'error', err);
+      logError('emx_digitalBidAdapter', 'error', err);
     }
   },
   getReferrer: () => {
@@ -133,7 +148,7 @@ export const emxAdapter = {
     }
   },
   getSite: (refInfo) => {
-    let url = utils.parseUrl(refInfo.referer);
+    let url = parseUrl(refInfo.referer);
     return {
       domain: url.hostname,
       page: refInfo.referer,
@@ -157,25 +172,58 @@ export const emxAdapter = {
     }
 
     return emxData;
+  },
+  getSupplyChain: (bidderRequest, emxData) => {
+    if (bidderRequest.bids[0] && bidderRequest.bids[0].schain) {
+      emxData.source = {
+        ext: {
+          schain: bidderRequest.bids[0].schain
+        }
+      };
+    }
+
+    return emxData;
+  },
+  // supporting eids
+  getEids(bidRequests) {
+    return EIDS_SUPPORTED
+      .map(emxAdapter.getUserId(bidRequests))
+      .filter(x => x);
+  },
+  getUserId(bidRequests) {
+    return ({ key, source, rtiPartner }) => {
+      let id = deepAccess(bidRequests, `userId.${key}`);
+      return id ? emxAdapter.formatEid(id, source, rtiPartner) : null;
+    };
+  },
+  formatEid(id, source, rtiPartner) {
+    return {
+      source,
+      uids: [{
+        id,
+        ext: { rtiPartner }
+      }]
+    };
   }
 };
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 183,
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function (bid) {
     if (!bid || !bid.params) {
-      utils.logWarn(BIDDER_CODE + ': Missing bid or bid params.');
+      logWarn(BIDDER_CODE + ': Missing bid or bid params.');
       return false;
     }
 
     if (bid.bidder !== BIDDER_CODE) {
-      utils.logWarn(BIDDER_CODE + ': Must use "emx_digital" as bidder code.');
+      logWarn(BIDDER_CODE + ': Must use "emx_digital" as bidder code.');
       return false;
     }
 
-    if (!bid.params.tagid || !utils.isStr(bid.params.tagid)) {
-      utils.logWarn(BIDDER_CODE + ': Missing tagid param or tagid present and not type String.');
+    if (!bid.params.tagid || !isStr(bid.params.tagid)) {
+      logWarn(BIDDER_CODE + ': Missing tagid param or tagid present and not type String.');
       return false;
     }
 
@@ -183,17 +231,17 @@ export const spec = {
       let sizes;
       bid.mediaTypes.banner.sizes ? sizes = bid.mediaTypes.banner.sizes : sizes = bid.sizes;
       if (!emxAdapter.validateSizes(sizes)) {
-        utils.logWarn(BIDDER_CODE + ': Missing sizes in bid');
+        logWarn(BIDDER_CODE + ': Missing sizes in bid');
         return false;
       }
     } else if (bid.mediaTypes && bid.mediaTypes.video) {
       if (!emxAdapter.checkVideoContext(bid)) {
-        utils.logWarn(BIDDER_CODE + ': Missing video context: instream or outstream');
+        logWarn(BIDDER_CODE + ': Missing video context: instream or outstream');
         return false;
       }
 
       if (!bid.mediaTypes.video.playerSize) {
-        utils.logWarn(BIDDER_CODE + ': Missing video playerSize');
+        logWarn(BIDDER_CODE + ': Missing video playerSize');
         return false;
       }
     }
@@ -209,9 +257,9 @@ export const spec = {
     const device = emxAdapter.getDevice();
     const site = emxAdapter.getSite(bidderRequest.refererInfo);
 
-    utils._each(validBidRequests, function (bid) {
-      let tagid = utils.getBidIdParameter('tagid', bid.params);
-      let bidfloor = parseFloat(utils.getBidIdParameter('bidfloor', bid.params)) || 0;
+    _each(validBidRequests, function (bid) {
+      let tagid = getBidIdParameter('tagid', bid.params);
+      let bidfloor = parseFloat(getBidFloor(bid)) || 0;
       let isVideo = !!bid.mediaTypes.video;
       let data = {
         id: bid.bidId,
@@ -219,10 +267,18 @@ export const spec = {
         tagid,
         secure
       };
+
+      // adding gpid support
+      let gpid = deepAccess(bid, 'ortb2Imp.ext.data.adserver.adslot');
+      if (!gpid) {
+        gpid = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+      }
+      if (gpid) {
+        data.ext = {gpid: gpid.toString()};
+      }
       let typeSpecifics = isVideo ? { video: emxAdapter.buildVideo(bid) } : { banner: emxAdapter.buildBanner(bid) };
       let bidfloorObj = bidfloor > 0 ? { bidfloor, bidfloorcur: DEFAULT_CUR } : {};
       let emxBid = Object.assign(data, typeSpecifics, bidfloorObj);
-
       emxImps.push(emxBid);
     });
 
@@ -236,9 +292,25 @@ export const spec = {
     };
 
     emxData = emxAdapter.getGdpr(bidderRequest, Object.assign({}, emxData));
+    emxData = emxAdapter.getSupplyChain(bidderRequest, Object.assign({}, emxData));
     if (bidderRequest && bidderRequest.uspConsent) {
       emxData.us_privacy = bidderRequest.uspConsent
     }
+
+    // adding eid support
+    if (bidderRequest.userId) {
+      let eids = emxAdapter.getEids(bidderRequest);
+      if (eids.length > 0) {
+        if (emxData.user && emxData.user.ext) {
+          emxData.user.ext.eids = eids;
+        } else {
+          emxData.user = {
+            ext: {eids}
+          };
+        }
+      }
+    }
+
     return {
       method: 'POST',
       url,
@@ -274,20 +346,55 @@ export const spec = {
           bidResponse = emxAdapter.formatVideoResponse(bidResponse, Object.assign({}, emxBid), bidRequest);
         }
         bidResponse.mediaType = (isVideo ? VIDEO : BANNER);
+
+        // support for adomain in prebid 5.0
+        if (emxBid.adomain && emxBid.adomain.length) {
+          bidResponse.meta = {
+            advertiserDomains: emxBid.adomain
+          };
+        }
+
         emxBidResponses.push(bidResponse);
       });
     }
     return emxBidResponses;
   },
-  getUserSyncs: function (syncOptions) {
+  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
     const syncs = [];
     if (syncOptions.iframeEnabled) {
+      let url = 'https://biddr.brealtime.com/check.html';
+      if (gdprConsent && typeof gdprConsent.consentString === 'string') {
+        // add 'gdpr' only if 'gdprApplies' is defined
+        if (typeof gdprConsent.gdprApplies === 'boolean') {
+          url += `?gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+        } else {
+          url += `?gdpr_consent=${gdprConsent.consentString}`;
+        }
+      }
       syncs.push({
         type: 'iframe',
-        url: 'https://biddr.brealtime.com/check.html'
+        url: url
       });
     }
     return syncs;
   }
 };
+
+// support floors module in prebid 5.0
+function getBidFloor(bid) {
+  if (!isFn(bid.getFloor)) {
+    return parseFloat(getBidIdParameter('bidfloor', bid.params));
+  }
+
+  let floor = bid.getFloor({
+    currency: DEFAULT_CUR,
+    mediaType: '*',
+    size: '*'
+  });
+  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
+    return floor.floor;
+  }
+  return null;
+}
+
 registerBidder(spec);

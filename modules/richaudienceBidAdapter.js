@@ -1,7 +1,7 @@
+import {isEmpty, deepAccess, isStr} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import * as utils from '../src/utils.js';
 import { Renderer } from '../src/Renderer.js';
 
 const BIDDER_CODE = 'richaudience';
@@ -9,28 +9,29 @@ let REFERER = '';
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 108,
   aliases: ['ra'],
   supportedMediaTypes: [BANNER, VIDEO],
 
   /***
-     * Determines whether or not the given bid request is valid
-     *
-     * @param {bidRequest} bid The bid params to validate.
-     * @returns {boolean} True if this is a valid bid, and false otherwise
-     */
+   * Determines whether or not the given bid request is valid
+   *
+   * @param {bidRequest} bid The bid params to validate.
+   * @returns {boolean} True if this is a valid bid, and false otherwise
+   */
   isBidRequestValid: function (bid) {
     return !!(bid.params && bid.params.pid && bid.params.supplyType);
   },
   /***
-     * Build a server request from the list of valid BidRequests
-     * @param {validBidRequests} is an array of the valid bids
-     * @param {bidderRequest} bidder request object
-     * @returns {ServerRequest} Info describing the request to the server
-     */
+   * Build a server request from the list of valid BidRequests
+   * @param {validBidRequests} is an array of the valid bids
+   * @param {bidderRequest} bidder request object
+   * @returns {ServerRequest} Info describing the request to the server
+   */
   buildRequests: function (validBidRequests, bidderRequest) {
     return validBidRequests.map(bid => {
       var payload = {
-        bidfloor: bid.params.bidfloor,
+        bidfloor: raiGetFloor(bid, config),
         ifa: bid.params.ifa,
         pid: bid.params.pid,
         supplyType: bid.params.supplyType,
@@ -48,17 +49,25 @@ export const spec = {
         timeout: config.getConfig('bidderTimeout'),
         user: raiSetEids(bid),
         demand: raiGetDemandType(bid),
-        videoData: raiGetVideoInfo(bid)
+        videoData: raiGetVideoInfo(bid),
+        scr_rsl: raiGetResolution(),
+        cpuc: (typeof window.navigator != 'undefined' ? window.navigator.hardwareConcurrency : null),
+        kws: (!isEmpty(bid.params.keywords) ? bid.params.keywords : null),
+        schain: bid.schain
       };
 
       REFERER = (typeof bidderRequest.refererInfo.referer != 'undefined' ? encodeURIComponent(bidderRequest.refererInfo.referer) : null)
 
       payload.gdpr_consent = '';
-      payload.gdpr = null;
+      payload.gdpr = false;
 
       if (bidderRequest && bidderRequest.gdprConsent) {
-        payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
-        payload.gdpr = bidderRequest.gdprConsent.gdprApplies;
+        if (typeof bidderRequest.gdprConsent.gdprApplies != 'undefined') {
+          payload.gdpr = bidderRequest.gdprConsent.gdprApplies;
+        }
+        if (typeof bidderRequest.gdprConsent.consentString != 'undefined') {
+          payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
+        }
       }
 
       var payloadString = JSON.stringify(payload);
@@ -73,11 +82,11 @@ export const spec = {
     });
   },
   /***
-     * Read the response from the server and build a list of bids
-     * @param {serverResponse} Response from the server.
-     * @param {bidRequest} Bid request object
-     * @returns {bidResponses} Array of bids which were nested inside the server
-     */
+   * Read the response from the server and build a list of bids
+   * @param {serverResponse} Response from the server.
+   * @param {bidRequest} Bid request object
+   * @returns {bidResponses} Array of bids which were nested inside the server
+   */
   interpretResponse: function (serverResponse, bidRequest) {
     const bidResponses = [];
     // try catch
@@ -93,16 +102,23 @@ export const spec = {
         netRevenue: response.netRevenue,
         currency: response.currency,
         ttl: response.ttl,
-        dealId: response.dealId,
+        meta: response.adomain,
+        dealId: response.dealId
       };
 
       if (response.media_type === 'video') {
         bidResponse.vastXml = response.vastXML;
         try {
-          if (JSON.parse(bidRequest.data).videoData.format == 'outstream') {
-            bidResponse.renderer = Renderer.install({
-              url: 'https://cdn3.richaudience.com/prebidVideo/player.js'
-            });
+          if (bidResponse.vastXml != null) {
+            if (JSON.parse(bidRequest.data).videoData.format == 'outstream' || JSON.parse(bidRequest.data).videoData.format == 'banner') {
+              bidResponse.renderer = Renderer.install({
+                id: bidRequest.bidId,
+                adunitcode: bidRequest.tagId,
+                loaded: false,
+                config: response.media_type,
+                url: 'https://cdn3.richaudience.com/prebidVideo/player.js'
+              });
+            }
             bidResponse.renderer.setRender(renderer);
           }
         } catch (e) {
@@ -117,13 +133,13 @@ export const spec = {
     return bidResponses
   },
   /***
-     * User Syncs
-     *
-     * @param {syncOptions} Publisher prebid configuration
-     * @param {serverResponses} Response from the server
-     * @param {gdprConsent} GPDR consent object
-     * @returns {Array}
-     */
+   * User Syncs
+   *
+   * @param {syncOptions} Publisher prebid configuration
+   * @param {serverResponses} Response from the server
+   * @param {gdprConsent} GPDR consent object
+   * @returns {Array}
+   */
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent) {
     const syncs = [];
 
@@ -131,11 +147,15 @@ export const spec = {
     var syncUrl = '';
     var consent = '';
 
+    var raiSync = {};
+
+    raiSync = raiGetSyncInclude(config);
+
     if (gdprConsent && typeof gdprConsent.consentString === 'string' && typeof gdprConsent.consentString != 'undefined') {
-      consent = `consentString=’${gdprConsent.consentString}`
+      consent = `consentString=${gdprConsent.consentString}`
     }
 
-    if (syncOptions.iframeEnabled) {
+    if (syncOptions.iframeEnabled && raiSync.raiIframe != 'exclude') {
       syncUrl = 'https://sync.richaudience.com/dcf3528a0b8aa83634892d50e91c306e/?ord=' + rand
       if (consent != '') {
         syncUrl += `&${consent}`
@@ -146,7 +166,7 @@ export const spec = {
       });
     }
 
-    if (syncOptions.pixelEnabled && REFERER != null && syncs.length == 0) {
+    if (syncOptions.pixelEnabled && REFERER != null && syncs.length == 0 && raiSync.raiImage != 'exclude') {
       syncUrl = `https://sync.richaudience.com/bf7c142f4339da0278e83698a02b0854/?referrer=${REFERER}`;
       if (consent != '') {
         syncUrl += `&${consent}`
@@ -177,6 +197,13 @@ function raiGetSizes(bid) {
 
 function raiGetDemandType(bid) {
   let raiFormat = 'display';
+  if (typeof bid.sizes != 'undefined') {
+    bid.sizes.forEach(function (sz) {
+      if ((sz[0] == '1800' && sz[1] == '1000') || (sz[0] == '1' && sz[1] == '1')) {
+        raiFormat = 'skin'
+      }
+    })
+  }
   if (bid.mediaTypes != undefined) {
     if (bid.mediaTypes.video != undefined) {
       raiFormat = 'video';
@@ -193,6 +220,10 @@ function raiGetVideoInfo(bid) {
       playerSize: bid.mediaTypes.video.playerSize,
       mimes: bid.mediaTypes.video.mimes
     };
+  } else {
+    videoData = {
+      format: 'banner'
+    }
   }
   return videoData;
 }
@@ -201,19 +232,19 @@ function raiSetEids(bid) {
   let eids = [];
 
   if (bid && bid.userId) {
-    raiSetUserId(bid, eids, 'id5-sync.com', utils.deepAccess(bid, `userId.id5id`));
-    raiSetUserId(bid, eids, 'pubcommon', utils.deepAccess(bid, `userId.pubcid`));
-    raiSetUserId(bid, eids, 'criteo.com', utils.deepAccess(bid, `userId.criteoId`));
-    raiSetUserId(bid, eids, 'liveramp.com', utils.deepAccess(bid, `userId.idl_env`));
-    raiSetUserId(bid, eids, 'liveintent.com', utils.deepAccess(bid, `userId.lipb.lipbid`));
-    raiSetUserId(bid, eids, 'adserver.org', utils.deepAccess(bid, `userId.tdid`));
+    raiSetUserId(bid, eids, 'id5-sync.com', deepAccess(bid, `userId.id5id.uid`));
+    raiSetUserId(bid, eids, 'pubcommon', deepAccess(bid, `userId.pubcid`));
+    raiSetUserId(bid, eids, 'criteo.com', deepAccess(bid, `userId.criteoId`));
+    raiSetUserId(bid, eids, 'liveramp.com', deepAccess(bid, `userId.idl_env`));
+    raiSetUserId(bid, eids, 'liveintent.com', deepAccess(bid, `userId.lipb.lipbid`));
+    raiSetUserId(bid, eids, 'adserver.org', deepAccess(bid, `userId.tdid`));
   }
 
   return eids;
 }
 
 function raiSetUserId(bid, eids, source, value) {
-  if (utils.isStr(value)) {
+  if (isStr(value)) {
     eids.push({
       userId: value,
       source: source
@@ -240,4 +271,51 @@ function renderAd(bid) {
   };
 
   window.raParams(raPlayerHB, raOutstreamHBPassback, true);
+}
+
+function raiGetResolution() {
+  let resolution = '';
+  if (typeof window.screen != 'undefined') {
+    resolution = window.screen.width + 'x' + window.screen.height;
+  }
+  return resolution;
+}
+
+function raiGetSyncInclude(config) {
+  try {
+    let raConfig = null;
+    let raiSync = {};
+    if (config.getConfig('userSync').filterSettings != null && typeof config.getConfig('userSync').filterSettings != 'undefined') {
+      raConfig = config.getConfig('userSync').filterSettings
+      if (raConfig.iframe != null && typeof raConfig.iframe != 'undefined') {
+        raiSync.raiIframe = raConfig.iframe.bidders == 'richaudience' || raConfig.iframe.bidders == '*' ? raConfig.iframe.filter : 'exclude';
+      }
+      if (raConfig.image != null && typeof raConfig.image != 'undefined') {
+        raiSync.raiImage = raConfig.image.bidders == 'richaudience' || raConfig.image.bidders == '*' ? raConfig.image.filter : 'exclude';
+      }
+    }
+    return raiSync;
+  } catch (e) {
+    return null;
+  }
+}
+
+function raiGetFloor(bid, config) {
+  try {
+    let raiFloor;
+    if (bid.params.bidfloor != null) {
+      raiFloor = bid.params.bidfloor;
+    } else if (typeof bid.getFloor == 'function') {
+      let floorSpec = bid.getFloor({
+        currency: config.getConfig('floors.data.currency') != null ? config.getConfig('floors.data.currency') : 'USD',
+        mediaType: typeof bid.mediaTypes['banner'] == 'object' ? 'banner' : 'video',
+        size: '*'
+      })
+
+      raiFloor = floorSpec.floor;
+    }
+    return raiFloor
+  } catch (e) {
+    return 0
+  }
 }

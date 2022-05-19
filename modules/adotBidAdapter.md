@@ -6,7 +6,7 @@ Adot Bidder Adapter is a module that enables the communication between the Prebi
 
 - Module name: Adot Bidder Adapter
 - Module type: Bidder Adapter
-- Maintainer: `maxime.lequain@we-are-adot.com`
+- Maintainer: `alexandre.lorin@adotmob.com`
 - Supported media types: `banner`, `video`, `native`
 
 ## Example ad units
@@ -34,9 +34,9 @@ const adUnit = {
 
 ### Video ad unit
 
-#### Outstream video ad unit
+#### Video ad unit
 
-Adot Bidder Adapter accepts outstream video ad units using the following ad unit format:
+Adot Bidder Adapter accepts video ad units using the following ad unit format:
 
 ```javascript
 const adUnit = {
@@ -47,61 +47,21 @@ const adUnit = {
             context: 'outstream',
             // Video dimensions supported by the video ad unit.
             // Each ad unit size is formatted as follows: [width, height].
-            playerSize: [[300, 250]]
+            playerSize: [[300, 250]],
+            // Content MIME types supported by the ad unit.
+            mimes: ['video/mp4'],
+            // Minimum accepted video ad duration (in seconds).
+            minduration: 5,
+            // Maximum accepted video ad duration (in seconds).
+            maxduration: 35,
+            // Video protocols supported by the ad unit (see the OpenRTB 2.5 specifications,
+            // section 5.8).
+            protocols: [2, 3]
         }
     },
     bids: [{
         bidder: 'adot',
-        params: {
-            video: {
-                // Content MIME types supported by the ad unit.
-                mimes: ['video/mp4'],
-                // Minimum accepted video ad duration (in seconds).
-                minDuration: 5,
-                // Maximum accepted video ad duration (in seconds).
-                maxDuration: 35,
-                // Video protocols supported by the ad unit (see the OpenRTB 2.5 specifications,
-                // section 5.8).
-                protocols: [2, 3]
-            }
-        }
-    }]
-}
-```
-
-#### Instream video ad unit
-
-Adot Bidder Adapter accepts instream video ad units using the following ad unit format:
-
-```javascript
-const adUnit = {
-    code: 'test-div',
-    mediaTypes: {
-        video: {
-            // Video context. Must be 'instream'.
-            context: 'instream',
-            // Video dimensions supported by the video ad unit.
-            // Each ad unit size is formatted as follows: [width, height].
-            playerSize: [[300, 250]]
-        }
-    },
-    bids: [{
-        bidder: 'adot',
-        params: {
-            video: {
-                // Content MIME types supported by the ad unit.
-                mimes: ['video/mp4'],
-                // Minimum accepted video ad duration (in seconds).
-                minDuration: 5,
-                // Maximum accepted video ad duration (in seconds).
-                maxDuration: 35,
-                // Video protocols supported by the ad unit (see the OpenRTB 2.5 specifications,
-                // section 5.8).
-                protocols: [2, 3],
-                // Instream video context. Must be either 'pre-roll', 'mid-roll' or 'post-roll'.
-                instreamContext: 'pre-roll'
-            }
-        }
+        params: {}
     }]
 }
 ```
@@ -114,39 +74,37 @@ const adUnit = {
     code: 'test-div',
     mediaTypes: {
         native: {
-            native: {
-                image: {
-                    // Field required status
-                    required: false,
-                    // Image dimensions supported by the native ad unit.
-                    // Each ad unit size is formatted as follows: [width, height].
-                    sizes: [100, 50]
-                },
-                title: {
-                    // Field required status
-                    required: false,
-                    // Maximum length of the title
-                    len: 140
-                },
-                sponsoredBy: {
-                    // Field required status
-                    required: false
-                },
-                clickUrl: {
-                    // Field required status
-                    required: false
-                },
-                body: {
-                    // Field required status
-                    required: false
-                },
-                icon: {
-                    // Field required status
-                    required: false,
-                    // Icon dimensions supported by the native ad unit.
-                    // Each ad unit size is formatted as follows: [width, height].
-                    sizes: [50, 50]
-                }
+            image: {
+                // Field required status
+                required: false,
+                // Image dimensions supported by the native ad unit.
+                // Each ad unit size is formatted as follows: [width, height].
+                sizes: [100, 50]
+            },
+            title: {
+                // Field required status
+                required: false,
+                // Maximum length of the title
+                len: 140
+            },
+            sponsoredBy: {
+                // Field required status
+                required: false
+            },
+            clickUrl: {
+                // Field required status
+                required: false
+            },
+            body: {
+                // Field required status
+                required: false
+            },
+            icon: {
+                // Field required status
+                required: false,
+                // Icon dimensions supported by the native ad unit.
+                // Each ad unit size is formatted as follows: [width, height].
+                sizes: [50, 50]
             }
         }
     },
@@ -215,4 +173,39 @@ const adUnit = {
         }
     }]
 }
+```
+
+### PublisherId
+
+You can set a publisherId using `pbjs.setBidderConfig` for the bidder `adot`
+
+#### Example
+
+```javascript
+pbjs.setBidderConfig({
+    bidders: ['adot'],
+    config: {
+        adot: {
+            publisherId: '__MY_PUBLISHER_ID__'
+        }
+    }
+});
+```
+
+### Specific publisher path
+
+You can set a specific publisher path using `pbjs.setBidderConfig` for the bidder `adot`
+The bidrequest will add this path to the bidder endpoint
+
+#### Example
+
+```javascript
+pbjs.setBidderConfig({
+    bidders: ['adot'],
+    config: {
+        adot: {
+            publisherPath: '__MY_PUBLISHER_PATH__'
+        }
+    }
+});
 ```

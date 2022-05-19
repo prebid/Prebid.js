@@ -14,7 +14,8 @@ describe('ConnectAd Adapter', function () {
         bidder: 'conntectad',
         params: {
           siteId: 123456,
-          networkId: 123456
+          networkId: 123456,
+          bidfloor: 0.50
         },
         adUnitCode: '/19968336/header-bid-tag-1',
         mediaTypes: {
@@ -46,8 +47,7 @@ describe('ConnectAd Adapter', function () {
       bidderRequestId: '1c56ad30b9b8ca8',
       transactionId: 'e76cbb58-f3e1-4ad9-9f4c-718c1919d0df',
       userId: {
-        tdid: '123456',
-        digitrustid: {data: {id: 'DTID', keyv: 4, privacy: {optout: false}, producer: 'ABC', version: 2}}
+        tdid: '123456'
       }
     }];
 
@@ -84,7 +84,6 @@ describe('ConnectAd Adapter', function () {
           }
         };
         const isValid = spec.isBidRequestValid(validBid);
-
         expect(isValid).to.equal(true);
       });
 
@@ -152,6 +151,29 @@ describe('ConnectAd Adapter', function () {
         const requestparse = JSON.parse(request.data);
         expect(requestparse.placements[0].siteId).to.equal(123456);
         expect(requestparse.placements[0].networkId).to.equal(123456);
+      });
+
+      it('should process floors module if available', function() {
+        const floorInfo = {
+          currency: 'USD',
+          floor: 5.20
+        };
+        bidRequests[0].getFloor = () => floorInfo;
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        const requestparse = JSON.parse(request.data);
+        expect(requestparse.placements[0].bidfloor).to.equal(5.20);
+      });
+
+      it('should be bidfloor if no floormodule is available', function() {
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        const requestparse = JSON.parse(request.data);
+        expect(requestparse.placements[0].bidfloor).to.equal(0.50);
+      });
+
+      it('should have 0 bidfloor value', function() {
+        const request = spec.buildRequests(bidRequestsUserIds, bidderRequest);
+        const requestparse = JSON.parse(request.data);
+        expect(requestparse.placements[0].bidfloor).to.equal(0);
       });
 
       it('should contain gdpr info', function () {
@@ -227,7 +249,6 @@ describe('ConnectAd Adapter', function () {
         const requestparse = JSON.parse(request.data);
         expect(requestparse.user.ext.eids).to.be.an('array');
         expect(requestparse.user.ext.eids[0].uids[0].id).to.equal('123456');
-        expect(requestparse.user.ext.digitrust.id).to.equal('DTID');
       });
 
       it('should add referer info', function () {
@@ -282,7 +303,43 @@ describe('ConnectAd Adapter', function () {
     });
 
     describe('bid responses', function () {
-      it('should return complete bid response', function () {
+      it('should return complete bid response with adomain', function () {
+        const ADOMAINS = ['connectad.io'];
+
+        let serverResponse = {
+          body: {
+            decisions: {
+              '2f95c00074b931': {
+                adId: '0',
+                adomain: ['connectad.io'],
+                contents: [
+                  {
+                    body: '<<<---- Creative --->>>'
+                  }
+                ],
+                height: '250',
+                width: '300',
+                pricing: {
+                  clearPrice: 11.899999999999999
+                }
+              }
+            }
+          }
+        };
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        const bids = spec.interpretResponse(serverResponse, request);
+
+        expect(bids).to.be.lengthOf(1);
+        expect(bids[0].cpm).to.equal(11.899999999999999);
+        expect(bids[0].width).to.equal('300');
+        expect(bids[0].height).to.equal('250');
+        expect(bids[0].ad).to.have.length.above(1);
+        expect(bids[0].meta.advertiserDomains).to.deep.equal(ADOMAINS);
+      });
+
+      it('should return complete bid response with empty adomain', function () {
+        const ADOMAINS = [];
+
         let serverResponse = {
           body: {
             decisions: {
@@ -310,6 +367,7 @@ describe('ConnectAd Adapter', function () {
         expect(bids[0].width).to.equal('300');
         expect(bids[0].height).to.equal('250');
         expect(bids[0].ad).to.have.length.above(1);
+        expect(bids[0].meta.advertiserDomains).to.deep.equal(ADOMAINS);
       });
 
       it('should return empty bid response', function () {

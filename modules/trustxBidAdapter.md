@@ -14,36 +14,55 @@ TrustX Bid Adapter supports Banner and Video (instream and outstream).
     var adUnits = [
            {
                code: 'test-div',
-               sizes: [[300, 250]],
+               mediaTypes: {
+                   banner: {
+                       sizes: [[300, 250]],
+                   }    
+               },
                bids: [
                    {
                        bidder: "trustx",
                        params: {
-                           uid: '44',
-                           priceType: 'gross' // by default is 'net'
+                           uid: '58851',
                        }
                    }
                ]
            },{
                code: 'test-div',
-               sizes: [[728, 90]],
+               mediaTypes: {
+                   banner: {
+                       sizes: [[728, 90],[300, 250]],
+                   }    
+               },
                bids: [
                    {
                        bidder: "trustx",
                        params: {
-                           uid: 45,
-                           priceType: 'gross',
+                           uid: 58851,
                            keywords: {
-                               brandsafety: ['disaster'],
-                               topic: ['stress', 'fear']
+                               site: {
+                                   publisher: {
+                                       name: 'someKeywordsName',
+                                       brandsafety: ['disaster'],
+                                       topic: ['stress', 'fear'] 
+                                   }
+                               }
                            }
                        }
                    }
                ]
            },{
                code: 'test-div',
-               sizes: [[640, 360]],
-               mediaTypes: { video: {} },
+               mediaTypes: { 
+                   video: {
+                       context: 'instream',
+                       playerSize: [640, 360],
+                       mimes: ['video/mp4'],
+                       protocols: [1, 2, 3, 4, 5, 6, 7, 8],
+                       playbackmethod: [2],
+                       skip: 1
+                   }
+               },
                bids: [
                    {
                        bidder: "trustx",

@@ -35,7 +35,7 @@ describe('GmosspAdapter', function () {
   });
 
   describe('buildRequests', function () {
-    const bidRequests = [
+    let bidRequests = [
       {
         bidder: 'gmossp',
         params: {
@@ -50,21 +50,40 @@ describe('GmosspAdapter', function () {
         bidId: '2b84475b5b636e',
         bidderRequestId: '1f4001782ac16c',
         auctionId: 'aba03555-4802-4c45-9f15-05ffa8594cff',
-        transactionId: '791e9d84-af92-4903-94da-24c7426d9d0c'
+        transactionId: '791e9d84-af92-4903-94da-24c7426d9d0c',
+        userId: {
+          imuid: 'h.0a4749e7ffe09fa6',
+          pubcid: '1111',
+          idl_env: '1111',
+        }
       }
     ];
 
-    const bidderRequest = {
-      refererInfo: {
-        referer: 'https://hoge.com'
-      }
-    };
-
     it('sends bid request to ENDPOINT via GET', function () {
+      const bidderRequest = {
+        refererInfo: {
+          referer: 'https://hoge.com'
+        }
+      };
       const requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(requests[0].url).to.equal(ENDPOINT);
       expect(requests[0].method).to.equal('GET');
-      expect(requests[0].data).to.equal('tid=791e9d84-af92-4903-94da-24c7426d9d0c&bid=2b84475b5b636e&ver=$prebid.version$&sid=123456&url=https%3A%2F%2Fhoge.com&cur=JPY&dnt=0&');
+      expect(requests[0].data).to.equal('tid=791e9d84-af92-4903-94da-24c7426d9d0c&bid=2b84475b5b636e&ver=$prebid.version$&sid=123456&im_uid=h.0a4749e7ffe09fa6&shared_id=1111&idl_env=1111&url=https%3A%2F%2Fhoge.com' + '&ref=' + encodeURIComponent(document.referrer) + '&cur=JPY&dnt=0&');
+    });
+
+    it('should use fallback if refererInfo.referer in bid request is empty and im_uid ,shared_id, idl_env cookie is empty', function () {
+      const bidderRequest = {
+        refererInfo: {
+          referer: ''
+        },
+      };
+      bidRequests[0].userId.imuid = '';
+      bidRequests[0].userId.pubcid = '';
+      bidRequests[0].userId.idl_env = '';
+
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      const result = 'tid=791e9d84-af92-4903-94da-24c7426d9d0c&bid=2b84475b5b636e&ver=$prebid.version$&sid=123456&ref=' + encodeURIComponent(document.referrer) + '&cur=JPY&dnt=0&';
+      expect(requests[0].data).to.equal(result);
     });
   });
 
@@ -88,12 +107,15 @@ describe('GmosspAdapter', function () {
       }
     ];
 
-    it('should get correct banner bid response', function() {
+    it('should get correct banner bid response', function () {
       const response = {
         bid: '2b84475b5b636e',
         price: 20,
         w: 300,
         h: 250,
+        adomains: [
+          'test.com'
+        ],
         ad: '<div class="gmossp"></div>',
         creativeId: '985ec572b32be309.76973017',
         cur: 'JPY',
@@ -114,6 +136,11 @@ describe('GmosspAdapter', function () {
           currency: 'JPY',
           width: 300,
           height: 250,
+          meta: {
+            advertiserDomains: [
+              'test.com'
+            ]
+          },
           ad: '<div class="gmossp"></div>',
           creativeId: '985ec572b32be309.76973017',
           netRevenue: true,

@@ -1,333 +1,203 @@
 /**
- * This module adds Shared ID support to the User ID module
- * The {@link module:modules/userId} module is required.
+ * This module adds SharedId to the User ID module
+ * The {@link module:modules/userId} module is required
  * @module modules/sharedIdSystem
  * @requires module:modules/userId
  */
 
-import * as utils from '../src/utils.js'
-import {ajax} from '../src/ajax.js';
+import { parseUrl, buildUrl, triggerPixel, logInfo, hasDeviceAccess, generateUUID } from '../src/utils.js';
 import {submodule} from '../src/hook.js';
+import { coppaDataHandler } from '../src/adapterManager.js';
+import {getStorageManager} from '../src/storageManager.js';
 
-const MODULE_NAME = 'sharedId';
-const ID_SVC = 'https://id.sharedid.org/id';
-const DEFAULT_24_HOURS = 86400;
-const OPT_OUT_VALUE = '00000000000000000000000000';
-// These values should NEVER change. If
-// they do, we're no longer making ulids!
-const ENCODING = '0123456789ABCDEFGHJKMNPQRSTVWXYZ'; // Crockford's Base32
-const ENCODING_LEN = ENCODING.length;
-const TIME_MAX = Math.pow(2, 48) - 1;
-const TIME_LEN = 10;
-const RANDOM_LEN = 16;
-const id = factory();
-/**
- * Constructs cookie value
- * @param value
- * @param needsSync
- * @returns {string}
- */
-function constructCookieValue(value, needsSync) {
-  const cookieValue = {};
-  cookieValue.id = value;
-  cookieValue.ts = utils.timestamp();
-  if (needsSync) {
-    cookieValue.ns = true;
-  }
-  utils.logInfo('SharedId: cookie Value: ' + JSON.stringify(cookieValue));
-  return cookieValue;
-}
+const GVLID = 887;
+export const storage = getStorageManager({gvlid: GVLID, moduleName: 'pubCommonId'});
+const COOKIE = 'cookie';
+const LOCAL_STORAGE = 'html5';
+const OPTOUT_NAME = '_pubcid_optout';
+const PUB_COMMON_ID = 'PublisherCommonId';
 
 /**
- * Checks if id needs to be synced
- * @param configParams
- * @param storedId
- * @returns {boolean}
+ * Read a value either from cookie or local storage
+ * @param {string} name Name of the item
+ * @param {string} type storage type override
+ * @returns {string|null} a string if item exists
  */
-function isIdSynced(configParams, storedId) {
-  const needSync = storedId.ns;
-  if (needSync) {
-    return true;
-  }
-  if (!configParams || typeof configParams.syncTime !== 'number') {
-    utils.logInfo('SharedId: Sync time is not configured or is not a number');
-  }
-  let syncTime = (!configParams || typeof configParams.syncTime !== 'number') ? DEFAULT_24_HOURS : configParams.syncTime;
-  if (syncTime > DEFAULT_24_HOURS) {
-    syncTime = DEFAULT_24_HOURS;
-  }
-  const cookieTimestamp = storedId.ts;
-  if (cookieTimestamp) {
-    var secondBetweenTwoDate = timeDifferenceInSeconds(utils.timestamp(), cookieTimestamp);
-    return secondBetweenTwoDate >= syncTime;
-  }
-  return false;
-}
-
-/**
- * Gets time difference in secounds
- * @param date1
- * @param date2
- * @returns {number}
- */
-function timeDifferenceInSeconds(date1, date2) {
-  const diff = (date1 - date2) / 1000;
-  return Math.abs(Math.round(diff));
-}
-
-/**
- * id generation call back
- * @param result
- * @param callback
- * @returns {{success: success, error: error}}
- */
-function idGenerationCallback(callback) {
-  return {
-    success: function (responseBody) {
-      let value = {};
-      if (responseBody) {
-        try {
-          let responseObj = JSON.parse(responseBody);
-          utils.logInfo('SharedId: Generated SharedId: ' + responseObj.sharedId);
-          value = constructCookieValue(responseObj.sharedId, false);
-        } catch (error) {
-          utils.logError(error);
-        }
+function readValue(name, type) {
+  if (type === COOKIE) {
+    return storage.getCookie(name);
+  } else if (type === LOCAL_STORAGE) {
+    if (storage.hasLocalStorage()) {
+      const expValue = storage.getDataFromLocalStorage(`${name}_exp`);
+      if (!expValue) {
+        return storage.getDataFromLocalStorage(name);
+      } else if ((new Date(expValue)).getTime() - Date.now() > 0) {
+        return storage.getDataFromLocalStorage(name)
       }
-      callback(value);
-    },
-    error: function (statusText, responseBody) {
-      const value = constructCookieValue(id(), true);
-      utils.logInfo('SharedId: Ulid Generated SharedId: ' + value.id);
-      callback(value);
     }
   }
 }
 
-/**
- * existing id generation call back
- * @param result
- * @param callback
- * @returns {{success: success, error: error}}
- */
-function existingIdCallback(storedId, callback) {
-  return {
-    success: function (responseBody) {
-      utils.logInfo('SharedId: id to be synced: ' + storedId.id);
-      if (responseBody) {
-        try {
-          let responseObj = JSON.parse(responseBody);
-          storedId = constructCookieValue(responseObj.sharedId, false);
-          utils.logInfo('SharedId: Older SharedId: ' + storedId.id);
-        } catch (error) {
-          utils.logError(error);
-        }
-      }
-      callback(storedId);
-    },
-    error: function () {
-      utils.logInfo('SharedId: Sync error for id : ' + storedId.id);
-      callback(storedId);
+function getIdCallback(pubcid, pixelCallback) {
+  return function (callback) {
+    if (typeof pixelCallback === 'function') {
+      pixelCallback();
     }
+    callback(pubcid);
   }
 }
 
-/**
- * Encode the id
- * @param value
- * @returns {string|*}
- */
-function encodeId(value) {
-  const result = {};
-  const sharedId = (value && typeof value['id'] === 'string') ? value['id'] : undefined;
-  if (sharedId == OPT_OUT_VALUE) {
-    return undefined;
+function queuePixelCallback(pixelUrl, id = '', callback) {
+  if (!pixelUrl) {
+    return;
   }
-  if (sharedId) {
-    const bidIds = {
-      id: sharedId,
-    }
-    const ns = (value && typeof value['ns'] === 'boolean') ? value['ns'] : undefined;
-    if (ns == undefined) {
-      bidIds.third = sharedId;
-    }
-    result.sharedid = bidIds;
-    utils.logInfo('SharedId: Decoded value ' + JSON.stringify(result));
-    return result;
-  }
-  return sharedId;
-}
 
-/**
- * the factory to generate unique identifier based on time and current pseudorandom number
- * @param {string} the current pseudorandom number generator
- * @returns {function(*=): *}
- */
-function factory(currPrng) {
-  if (!currPrng) {
-    currPrng = detectPrng();
-  }
-  return function ulid(seedTime) {
-    if (isNaN(seedTime)) {
-      seedTime = Date.now();
-    }
-    return encodeTime(seedTime, TIME_LEN) + encodeRandom(RANDOM_LEN, currPrng);
+  // Use pubcid as a cache buster
+  const urlInfo = parseUrl(pixelUrl);
+  urlInfo.search.id = encodeURIComponent('pubcid:' + id);
+  const targetUrl = buildUrl(urlInfo);
+
+  return function () {
+    triggerPixel(targetUrl);
   };
 }
 
-/**
- * creates and logs the error message
- * @function
- * @param {string} error message
- * @returns {Error}
- */
-function createError(message) {
-  utils.logError(message);
-  const err = new Error(message);
-  err.source = 'sharedId';
-  return err;
+function hasOptedOut() {
+  return !!((storage.cookiesAreEnabled() && readValue(OPTOUT_NAME, COOKIE)) ||
+    (storage.hasLocalStorage() && readValue(OPTOUT_NAME, LOCAL_STORAGE)));
 }
 
-/**
- * gets a a random charcter from generated pseudorandom number
- * @param {string} the generated pseudorandom number
- * @returns {string}
- */
-function randomChar(prng) {
-  let rand = Math.floor(prng() * ENCODING_LEN);
-  if (rand === ENCODING_LEN) {
-    rand = ENCODING_LEN - 1;
-  }
-  return ENCODING.charAt(rand);
-}
-
-/**
- * encodes the time based on the length
- * @param now
- * @param len
- * @returns {string} encoded time.
- */
-function encodeTime (now, len) {
-  if (isNaN(now)) {
-    throw new Error(now + ' must be a number');
-  }
-
-  if (Number.isInteger(now) === false) {
-    throw createError('time must be an integer');
-  }
-
-  if (now > TIME_MAX) {
-    throw createError('cannot encode time greater than ' + TIME_MAX);
-  }
-  if (now < 0) {
-    throw createError('time must be positive');
-  }
-
-  if (Number.isInteger(len) === false) {
-    throw createError('length must be an integer');
-  }
-  if (len < 0) {
-    throw createError('length must be positive');
-  }
-
-  let mod;
-  let str = '';
-  for (; len > 0; len--) {
-    mod = now % ENCODING_LEN;
-    str = ENCODING.charAt(mod) + str;
-    now = (now - mod) / ENCODING_LEN;
-  }
-  return str;
-}
-
-/**
- * encodes random character
- * @param len
- * @param prng
- * @returns {string}
- */
-function encodeRandom (len, prng) {
-  let str = '';
-  for (; len > 0; len--) {
-    str = randomChar(prng) + str;
-  }
-  return str;
-}
-
-/**
- * detects the pseudorandom number generator and generates the random number
- * @function
- * @param {string} error message
- * @returns {string} a random number
- */
-function detectPrng(root) {
-  if (!root) {
-    root = typeof window !== 'undefined' ? window : null;
-  }
-  const browserCrypto = root && (root.crypto || root.msCrypto);
-  if (browserCrypto) {
-    return () => {
-      const buffer = new Uint8Array(1);
-      browserCrypto.getRandomValues(buffer);
-      return buffer[0] / 0xff;
-    };
-  }
-  return () => Math.random();
-}
-
-/** @type {Submodule} */
-export const sharedIdSubmodule = {
+export const sharedIdSystemSubmodule = {
   /**
    * used to link submodule with config
    * @type {string}
    */
-  name: MODULE_NAME,
+  name: 'sharedId',
+  aliasName: 'pubCommonId',
+  /**
+   * Vendor id of prebid
+   * @type {Number}
+   */
+  gvlid: GVLID,
 
   /**
    * decode the stored id value for passing to bid requests
    * @function
    * @param {string} value
-   * @returns {{sharedid:{ id: string, third:string}} or undefined if value doesn't exists
+   * @param {SubmoduleConfig} config
+   * @returns {{pubcid:string}}
    */
-  decode(value) {
-    return (value) ? encodeId(value) : undefined;
+  decode(value, config) {
+    if (hasOptedOut()) {
+      logInfo('PubCommonId decode: Has opted-out');
+      return undefined;
+    }
+    logInfo(' Decoded value PubCommonId ' + value);
+    const idObj = {'pubcid': value};
+    return idObj;
   },
-
   /**
-   * performs action to obtain id and return a value.
+   * performs action to obtain id
    * @function
-   * @param {SubmoduleParams} [configParams]
-   * @returns {sharedId}
+   * @param {SubmoduleConfig} [config] Config object with params and storage properties
+   * @param {Object} consentData
+   * @param {string} storedId Existing pubcommon id
+   * @returns {IdResponse}
    */
-  getId(configParams) {
-    const resp = function (callback) {
-      utils.logInfo('SharedId: Sharedid doesnt exists, new cookie creation');
-      ajax(ID_SVC, idGenerationCallback(callback), undefined, {method: 'GET', withCredentials: true});
-    };
-    return {callback: resp};
+  getId: function (config = {}, consentData, storedId) {
+    if (hasOptedOut()) {
+      logInfo('PubCommonId: Has opted-out');
+      return;
+    }
+    const coppa = coppaDataHandler.getCoppa();
+
+    if (coppa) {
+      logInfo('PubCommonId: IDs not provided for coppa requests, exiting PubCommonId');
+      return;
+    }
+    const {params: {create = true, pixelUrl} = {}} = config;
+    let newId = storedId;
+    if (!newId) {
+      try {
+        if (typeof window[PUB_COMMON_ID] === 'object') {
+          // If the page includes its own pubcid module, then save a copy of id.
+          newId = window[PUB_COMMON_ID].getId();
+        }
+      } catch (e) {
+      }
+
+      if (!newId) newId = (create && hasDeviceAccess()) ? generateUUID() : undefined;
+    }
+
+    const pixelCallback = queuePixelCallback(pixelUrl, newId);
+    return {id: newId, callback: getIdCallback(newId, pixelCallback)};
+  },
+  /**
+   * performs action to extend an id.  There are generally two ways to extend the expiration time
+   * of stored id: using pixelUrl or return the id and let main user id module write it again with
+   * the new expiration time.
+   *
+   * PixelUrl, if defined, should point back to a first party domain endpoint.  On the server
+   * side, there is either a plugin, or customized logic to read and write back the pubcid cookie.
+   * The extendId function itself should return only the callback, and not the id itself to avoid
+   * having the script-side overwriting server-side.  This applies to both pubcid and sharedid.
+   *
+   * On the other hand, if there is no pixelUrl, then the extendId should return storedId so that
+   * its expiration time is updated.
+   *
+   * @function
+   * @param {SubmoduleParams} [config]
+   * @param {ConsentData|undefined} consentData
+   * @param {Object} storedId existing id
+   * @returns {IdResponse|undefined}
+   */
+  extendId: function(config = {}, consentData, storedId) {
+    if (hasOptedOut()) {
+      logInfo('PubCommonId: Has opted-out');
+      return {id: undefined};
+    }
+    const coppa = coppaDataHandler.getCoppa();
+    if (coppa) {
+      logInfo('PubCommonId: IDs not provided for coppa requests, exiting PubCommonId');
+      return;
+    }
+    const {params: {extend = false, pixelUrl} = {}} = config;
+
+    if (extend) {
+      if (pixelUrl) {
+        const callback = queuePixelCallback(pixelUrl, storedId);
+        return {callback: callback};
+      } else {
+        return {id: storedId};
+      }
+    }
   },
 
-  /**
-   * performs actions even if the id exists and returns a value
-   * @param configParams
-   * @param storedId
-   * @returns {{callback: *}}
-   */
-  extendId(configParams, storedId) {
-    utils.logInfo('SharedId: Existing shared id ' + storedId.id);
-    const resp = function (callback) {
-      const needSync = isIdSynced(configParams, storedId);
-      if (needSync) {
-        utils.logInfo('SharedId: Existing shared id ' + storedId + ' is not synced');
-        const sharedIdPayload = {};
-        sharedIdPayload.sharedId = storedId.id;
-        const payloadString = JSON.stringify(sharedIdPayload);
-        ajax(ID_SVC, existingIdCallback(storedId, callback), payloadString, {method: 'POST', withCredentials: true});
+  domainOverride: function () {
+    const domainElements = document.domain.split('.');
+    const cookieName = `_gd${Date.now()}`;
+    for (let i = 0, topDomain, testCookie; i < domainElements.length; i++) {
+      const nextDomain = domainElements.slice(i).join('.');
+
+      // write test cookie
+      storage.setCookie(cookieName, '1', undefined, undefined, nextDomain);
+
+      // read test cookie to verify domain was valid
+      testCookie = storage.getCookie(cookieName);
+
+      // delete test cookie
+      storage.setCookie(cookieName, '', 'Thu, 01 Jan 1970 00:00:01 GMT', undefined, nextDomain);
+
+      if (testCookie === '1') {
+        // cookie was written successfully using test domain so the topDomain is updated
+        topDomain = nextDomain;
+      } else {
+        // cookie failed to write using test domain so exit by returning the topDomain
+        return topDomain;
       }
-    };
-    return {callback: resp};
+    }
   }
+
 };
 
-// Register submodule for userId
-submodule('userId', sharedIdSubmodule);
+submodule('userId', sharedIdSystemSubmodule);

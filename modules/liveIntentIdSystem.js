@@ -4,15 +4,33 @@
  * @module modules/liveIntentIdSystem
  * @requires module:modules/userId
  */
-import * as utils from '../src/utils.js';
-import { ajax } from '../src/ajax.js';
+import { triggerPixel, logError } from '../src/utils.js';
+import { ajaxBuilder } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
-import { LiveConnect } from 'live-connect-js/cjs/live-connect.js';
-import { uspDataHandler } from '../src/adapterManager.js';
+import { LiveConnect } from 'live-connect-js/esm/initializer.js';
+import { gdprDataHandler, uspDataHandler } from '../src/adapterManager.js';
 import { getStorageManager } from '../src/storageManager.js';
+import { MinimalLiveConnect } from 'live-connect-js/esm/minimal-live-connect.js';
 
 const MODULE_NAME = 'liveIntentId';
-export const storage = getStorageManager(null, MODULE_NAME);
+export const storage = getStorageManager({gvlid: null, moduleName: MODULE_NAME});
+const calls = {
+  ajaxGet: (url, onSuccess, onError, timeout) => {
+    ajaxBuilder(timeout)(
+      url,
+      {
+        success: onSuccess,
+        error: onError
+      },
+      undefined,
+      {
+        method: 'GET',
+        withCredentials: true
+      }
+    )
+  },
+  pixelGet: (url, onload) => triggerPixel(url, onload)
+}
 
 let eventFired = false;
 let liveConnect = null;
@@ -24,26 +42,18 @@ export function reset() {
   if (window && window.liQ) {
     window.liQ = [];
   }
+  liveIntentIdSubmodule.setModuleMode(null)
   eventFired = false;
   liveConnect = null;
 }
 
 function parseLiveIntentCollectorConfig(collectConfig) {
   const config = {};
-  if (collectConfig) {
-    if (collectConfig.appId) {
-      config.appId = collectConfig.appId;
-    }
-    if (collectConfig.fpiStorageStrategy) {
-      config.storageStrategy = collectConfig.fpiStorageStrategy;
-    }
-    if (collectConfig.fpiExpirationDays) {
-      config.expirationDays = collectConfig.fpiExpirationDays;
-    }
-    if (collectConfig.collectorUrl) {
-      config.collectorUrl = collectConfig.collectorUrl;
-    }
-  }
+  collectConfig = collectConfig || {}
+  collectConfig.appId && (config.appId = collectConfig.appId);
+  collectConfig.fpiStorageStrategy && (config.storageStrategy = collectConfig.fpiStorageStrategy);
+  collectConfig.fpiExpirationDays && (config.expirationDays = collectConfig.fpiExpirationDays);
+  collectConfig.collectorUrl && (config.collectorUrl = collectConfig.collectorUrl);
   return config;
 }
 
@@ -64,6 +74,9 @@ function initializeLiveConnect(configParams) {
   if (configParams.partner) {
     identityResolutionConfig.source = configParams.partner
   }
+  if (configParams.ajaxTimeout) {
+    identityResolutionConfig.ajaxTimeout = configParams.ajaxTimeout;
+  }
 
   const liveConnectConfig = parseLiveIntentCollectorConfig(configParams.liCollectConfig);
   liveConnectConfig.wrapperName = 'prebid';
@@ -73,9 +86,18 @@ function initializeLiveConnect(configParams) {
   if (usPrivacyString) {
     liveConnectConfig.usPrivacyString = usPrivacyString;
   }
+  const gdprConsent = gdprDataHandler.getConsentData()
+  if (gdprConsent) {
+    liveConnectConfig.gdprApplies = gdprConsent.gdprApplies;
+    liveConnectConfig.gdprConsent = gdprConsent.consentString;
+  }
 
-  // The second param is the storage object, which means that all LS & Cookie manipulation will go through PBJS utils.
-  liveConnect = LiveConnect(liveConnectConfig, storage);
+  // The second param is the storage object, LS & Cookie manipulation uses PBJS
+  // The third param is the ajax and pixel object, the ajax and pixel use PBJS
+  liveConnect = liveIntentIdSubmodule.getInitializer()(liveConnectConfig, storage, calls);
+  if (configParams.emailHash) {
+    liveConnect.push({ hash: configParams.emailHash })
+  }
   return liveConnect;
 }
 
@@ -88,11 +110,19 @@ function tryFireEvent() {
 
 /** @type {Submodule} */
 export const liveIntentIdSubmodule = {
+  moduleMode: process.env.LiveConnectMode,
   /**
    * used to link submodule with config
    * @type {string}
    */
   name: MODULE_NAME,
+
+  setModuleMode(mode) {
+    this.moduleMode = mode
+  },
+  getInitializer() {
+    return this.moduleMode === 'minimal' ? MinimalLiveConnect : LiveConnect
+  },
 
   /**
    * decode the stored id value for passing to bid requests. Note that lipb object is a wrapper for everything, and
@@ -100,12 +130,13 @@ export const liveIntentIdSubmodule = {
    * `publisherId` params.
    * @function
    * @param {{unifiedId:string}} value
-   * @param {SubmoduleParams|undefined} [configParams]
+   * @param {SubmoduleConfig|undefined} config
    * @returns {{lipb:Object}}
    */
-  decode(value, configParams) {
+  decode(value, config) {
+    const configParams = (config && config.params) || {};
     function composeIdObject(value) {
-      const base = { 'lipbid': value['unifiedId'] };
+      const base = { 'lipbid': value.unifiedId };
       delete value.unifiedId;
       return { 'lipb': { ...base, ...value } };
     }
@@ -121,38 +152,29 @@ export const liveIntentIdSubmodule = {
   /**
    * performs action to obtain id and return a value in the callback's response argument
    * @function
-   * @param {SubmoduleParams} [configParams]
+   * @param {SubmoduleConfig} [config]
    * @returns {IdResponse|undefined}
    */
-  getId(configParams) {
+  getId(config) {
+    const configParams = (config && config.params) || {};
     const liveConnect = initializeLiveConnect(configParams);
     if (!liveConnect) {
       return;
     }
     tryFireEvent();
-    // Don't do the internal ajax call, but use the composed url and fire it via PBJS ajax module
-    const url = liveConnect.resolutionCallUrl();
-    const result = function (callback) {
-      const callbacks = {
-        success: response => {
-          let responseObj = {};
-          if (response) {
-            try {
-              responseObj = JSON.parse(response);
-            } catch (error) {
-              utils.logError(error);
-            }
-          }
-          callback(responseObj);
+    const result = function(callback) {
+      liveConnect.resolve(
+        response => {
+          callback(response);
         },
-        error: error => {
-          utils.logError(`${MODULE_NAME}: ID fetch encountered an error: `, error);
+        error => {
+          logError(`${MODULE_NAME}: ID fetch encountered an error: `, error);
           callback();
         }
-      };
-      ajax(url, callbacks, undefined, { method: 'GET', withCredentials: true });
-    };
-    return {callback: result};
+      )
+    }
+
+    return { callback: result };
   }
 };
 

@@ -1,5 +1,4 @@
-
-import * as utils from '../src/utils.js';
+import { deepAccess, getBidIdParameter, logWarn, logError } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
@@ -13,6 +12,12 @@ const ENDPOINT_PRODUCTION = 'https://server.cpmstar.com/view.aspx';
 const DEFAULT_TTL = 300;
 const DEFAULT_CURRENCY = 'USD';
 
+function fixedEncodeURIComponent(str) {
+  return encodeURIComponent(str).replace(/[!'()*]/g, function(c) {
+    return '%' + c.charCodeAt(0).toString(16);
+  });
+}
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
@@ -20,11 +25,11 @@ export const spec = {
 
   getMediaType: function (bidRequest) {
     if (bidRequest == null) return BANNER;
-    return !utils.deepAccess(bidRequest, 'mediaTypes.video') ? BANNER : VIDEO;
+    return !deepAccess(bidRequest, 'mediaTypes.video') ? BANNER : VIDEO;
   },
 
   getPlayerSize: function (bidRequest) {
-    var playerSize = utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize');
+    var playerSize = deepAccess(bidRequest, 'mediaTypes.video.playerSize');
     if (playerSize == null) return [640, 440];
     if (playerSize[0] != null) playerSize = playerSize[0];
     if (playerSize == null || playerSize[0] == null || playerSize[1] == null) return [640, 440];
@@ -42,17 +47,33 @@ export const spec = {
     for (var i = 0; i < validBidRequests.length; i++) {
       var bidRequest = validBidRequests[i];
       var referer = encodeURIComponent(bidderRequest.refererInfo.referer);
-      var e = utils.getBidIdParameter('endpoint', bidRequest.params);
+      var e = getBidIdParameter('endpoint', bidRequest.params);
       var ENDPOINT = e == 'dev' ? ENDPOINT_DEV : e == 'staging' ? ENDPOINT_STAGING : ENDPOINT_PRODUCTION;
       var mediaType = spec.getMediaType(bidRequest);
       var playerSize = spec.getPlayerSize(bidRequest);
       var videoArgs = '&fv=0' + (playerSize ? ('&w=' + playerSize[0] + '&h=' + playerSize[1]) : '');
-
       var url = ENDPOINT + '?media=' + mediaType + (mediaType == VIDEO ? videoArgs : '') +
-        '&json=c_b&mv=1&poolid=' + utils.getBidIdParameter('placementId', bidRequest.params) +
+        '&json=c_b&mv=1&poolid=' + getBidIdParameter('placementId', bidRequest.params) +
         '&reachedTop=' + encodeURIComponent(bidderRequest.refererInfo.reachedTop) +
         '&requestid=' + bidRequest.bidId +
         '&referer=' + encodeURIComponent(referer);
+
+      if (bidRequest.schain && bidRequest.schain.nodes) {
+        var schain = bidRequest.schain;
+        var schainString = '';
+        schainString += schain.ver + ',' + schain.complete;
+        for (var i2 = 0; i2 < schain.nodes.length; i2++) {
+          var node = schain.nodes[i2];
+          schainString += '!' +
+            fixedEncodeURIComponent(node.asi || '') + ',' +
+            fixedEncodeURIComponent(node.sid || '') + ',' +
+            fixedEncodeURIComponent(node.hp || '') + ',' +
+            fixedEncodeURIComponent(node.rid || '') + ',' +
+            fixedEncodeURIComponent(node.name || '') + ',' +
+            fixedEncodeURIComponent(node.domain || '');
+        }
+        url += '&schain=' + schainString
+      }
 
       if (bidderRequest.gdprConsent) {
         if (bidderRequest.gdprConsent.consentString != null) {
@@ -95,13 +116,13 @@ export const spec = {
       var raw = serverResponse.body[i];
       var rawBid = raw.creatives[0];
       if (!rawBid) {
-        utils.logWarn('cpmstarBidAdapter: server response failed check');
+        logWarn('cpmstarBidAdapter: server response failed check');
         return;
       }
       var cpm = (parseFloat(rawBid.cpm) || 0);
 
       if (!cpm) {
-        utils.logWarn('cpmstarBidAdapter: server response failed check. Missing cpm')
+        logWarn('cpmstarBidAdapter: server response failed check. Missing cpm')
         return;
       }
 
@@ -114,6 +135,9 @@ export const spec = {
         netRevenue: rawBid.netRevenue ? rawBid.netRevenue : true,
         ttl: rawBid.ttl ? rawBid.ttl : DEFAULT_TTL,
         creativeId: rawBid.creativeid || 0,
+        meta: {
+          advertiserDomains: rawBid.adomain ? rawBid.adomain : []
+        }
       };
 
       if (rawBid.hasOwnProperty('dealId')) {
@@ -131,13 +155,28 @@ export const spec = {
         bidResponse.mediaType = VIDEO;
         bidResponse.vastXml = rawBid.creativemacros.HTML5VID_VASTSTRING;
       } else {
-        return utils.logError('bad response', rawBid);
+        return logError('bad response', rawBid);
       }
 
       bidResponses.push(bidResponse);
     }
 
     return bidResponses;
+  },
+
+  getUserSyncs: function (syncOptions, serverResponses) {
+    const syncs = [];
+    if (serverResponses.length == 0 || !serverResponses[0].body) return syncs;
+    var usersyncs = serverResponses[0].body[0].syncs;
+    if (!usersyncs || usersyncs.length < 0) return syncs;
+    for (var i = 0; i < usersyncs.length; i++) {
+      var us = usersyncs[i];
+      if ((us.type === 'image' && syncOptions.pixelEnabled) || (us.type == 'iframe' && syncOptions.iframeEnabled)) {
+        syncs.push(us);
+      }
+    }
+    return syncs;
   }
+
 };
 registerBidder(spec);

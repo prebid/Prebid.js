@@ -45,23 +45,21 @@ Please use ```pulsepoint``` as the bidder code.
       mediaTypes: {
         video: {
             playerSize: [640, 480],
-            context: 'outstream'
+            context: 'outstream',
+            h: 300,
+            w: 400,
+            minduration: 1,
+            maxduration: 210,
+            linearity: 1,
+            mimes: ["video/mp4", "video/ogg", "video/webm"],
+            pos: 3
         }
       },
       bids: [{
           bidder: 'pulsepoint',
           params: { 
               cp: 512379,
-              ct: 505642,
-              video: {
-                  h: 300,
-                  w: 400,
-                  minduration: 1,
-                  maxduration: 210,
-                  linearity: 1,
-                  mimes: ["video/mp4", "video/ogg", "video/webm"],
-                  pos: 3
-              }
+              ct: 505642
           }
       }],
       renderer: {
@@ -74,7 +72,12 @@ Please use ```pulsepoint``` as the bidder code.
         mediaTypes: {
             video: {
                 playerSize: [640, 480],
-                context: 'instream'
+                context: 'instream',
+                h: 300,
+                w: 400,
+                minduration: 1,
+                maxduration: 210,
+                protocols: [2,3,5]
             }
         },
         bids: [{
@@ -82,14 +85,6 @@ Please use ```pulsepoint``` as the bidder code.
             params: {
                 cp: 512379,
                 ct: 694973, 
-                video: {
-                    battr: [1,3],
-                    h: 300,
-                    w: 400,
-                    minduration: 1,
-                    maxduration: 210,
-                    protocols: [2,3,5]
-                }
             }
         }]
     }];

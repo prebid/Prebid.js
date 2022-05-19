@@ -3,12 +3,12 @@
 # Check https://circleci.com/docs/2.0/language-javascript/ for more details
 #
 
-aliases: 
+aliases:
   - &environment
       docker:
         # specify the version you desire here
-        - image: circleci/node:12.16.1
-        
+        - image: circleci/node:12.16.1-browsers
+      resource_class: xlarge
         # Specify service dependencies here if necessary
         # CircleCI maintains a library of pre-built images
         # documented at https://circleci.com/docs/2.0/circleci-images/
@@ -36,7 +36,7 @@ aliases:
 
   - &run_endtoend_test
       name: BrowserStack End to end testing
-      command: echo "127.0.0.1 test.localhost" | sudo tee -a /etc/hosts && gulp e2e-test --host=test.localhost
+      command: gulp e2e-test
 
   # Download and run BrowserStack local
   - &setup_browserstack
@@ -52,7 +52,7 @@ aliases:
   - &unit_test_steps
     - checkout
     - restore_cache: *restore_dep_cache
-    - run: npm install
+    - run: npm ci
     - save_cache: *save_dep_cache
     - run: *install
     - run: *setup_browserstack
@@ -72,7 +72,7 @@ jobs:
   build:
     <<: *environment
     steps: *unit_test_steps
-      
+
   e2etest:
     <<: *environment
     steps: *endtoend_test_steps
@@ -82,16 +82,6 @@ workflows:
   commit:
     jobs:
       - build
-  nightly:
-    triggers:
-      - schedule:
-          cron: "0 0 * * *"
-          filters:
-            branches:
-              only:
-                - master
-    jobs:
-      - e2etest
 
 experimental:
   pipelines: true

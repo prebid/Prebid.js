@@ -1,14 +1,14 @@
-import * as utils from '../src/utils.js';
+import { getAdUnitSizes } from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
 
-const BIDDER_CODE = 'vdo.ai';
+const BIDDER_CODE = 'vdoai';
 const ENDPOINT_URL = 'https://prebid.vdo.ai/auction';
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [BANNER],
+  supportedMediaTypes: [BANNER, VIDEO],
   /**
    * Determines whether or not the given bid request is valid.
    *
@@ -30,17 +30,16 @@ export const spec = {
     if (validBidRequests.length === 0) {
       return [];
     }
+
     return validBidRequests.map(bidRequest => {
-      const sizes = utils.parseSizesInput(bidRequest.params.size || bidRequest.sizes)[0];
-      const width = sizes.split('x')[0];
-      const height = sizes.split('x')[1];
+      const sizes = getAdUnitSizes(bidRequest);
       const payload = {
         placementId: bidRequest.params.placementId,
-        width: width,
-        height: height,
+        sizes: sizes,
         bidId: bidRequest.bidId,
         referer: bidderRequest.refererInfo.referer,
-        id: bidRequest.auctionId
+        id: bidRequest.auctionId,
+        mediaType: bidRequest.mediaTypes.video ? 'video' : 'banner'
       };
       bidRequest.params.bidFloor && (payload['bidFloor'] = bidRequest.params.bidFloor);
       return {
@@ -63,9 +62,9 @@ export const spec = {
     const response = serverResponse.body;
     const creativeId = response.adid || 0;
     // const width = response.w || 0;
-    const width = bidRequest.data.width;
+    const width = response.width;
     // const height = response.h || 0;
-    const height = bidRequest.data.height;
+    const height = response.height;
     const cpm = response.price || 0;
 
     response.rWidth = width;
@@ -90,10 +89,23 @@ export const spec = {
         ttl: config.getConfig('_bidderTimeout'),
         // referrer: referrer,
         // ad: response.adm
-        ad: adCreative
+        // ad: adCreative,
+        mediaType: response.mediaType
       };
+
+      if (response.mediaType == 'video') {
+        bidResponse.vastXml = adCreative;
+      } else {
+        bidResponse.ad = adCreative;
+      }
+      if (response.adDomain) {
+        bidResponse.meta = {
+          advertiserDomains: response.adDomain
+        }
+      }
       bidResponses.push(bidResponse);
     }
+
     return bidResponses;
   },
 

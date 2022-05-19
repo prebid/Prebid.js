@@ -20,13 +20,14 @@ The `districtmDmxAdapter` module allows publishers to include DMX Exchange deman
  ## Media Types
  
 * Banner
-
+* Video
 ## Bidder Parameters
 
 | Key | Scope | Type | Description
 | --- | --- | --- | ---
 | `dmxid` | Mandatory | Integer | Unique identifier of the placement, dmxid can be obtained in the district m Boost platform.
 | `memberid` | Mandatory | Integer | Unique identifier for your account, memberid can be obtained in the district m Boost platform.
+| `floor` | Optional | float | Most placement can have floor set in our platform, but this can now be set on the request too.
 
 # Ad Unit Configuration Example
 
@@ -46,6 +47,35 @@ The `districtmDmxAdapter` module allows publishers to include DMX Exchange deman
             }
         }]
     }];
+```
+
+# Ad Unit Configuration Example for video request
+
+```javascript
+        var videoAdUnit = {
+            code: 'video1',
+            sizes: [640,480],
+            mediaTypes: { video: {context: 'instream', //or 'outstream'
+                    playerSize: [[640, 480]],
+                    skipppable: true,
+                    minduration: 5,
+                    maxduration: 45,
+                    playback_method: ['auto_play_sound_off', 'viewport_sound_off'],
+                    mimes: ["application/javascript",
+                        "video/mp4"],
+
+                } },
+            bids: [
+                {
+                    bidder: 'districtmDMX',
+                    params: {
+                        dmxid: '100001',
+                        memberid: '100003',
+                    }
+                }
+         
+            ]
+        };
 ```
 
 
@@ -115,6 +145,35 @@ Our demand and adapter supports multiple sizes per placement, as such a single d
             }
         }]
     }];
+```
+
+Our bidder only supports instream context at the moment and we strongly like to put the media types and setting in the ad unit settings.
+If no value is set the default value will be applied.
+
+```javascript
+        var videoAdUnit = {
+            code: 'video1',
+            sizes: [640,480],
+            mediaTypes: { video: {context: 'instream', //or 'outstream'
+                    playerSize: [[640, 480]],
+                    skipppable: true,
+                    minduration: 5,
+                    maxduration: 45,
+                    playback_method: ['auto_play_sound_off', 'viewport_sound_off'],
+                    mimes: ["application/javascript",
+                        "video/mp4"],
+
+                } },
+            bids: [
+                {
+                    bidder: 'districtmDMX',
+                    params: {
+                        dmxid: '250258',
+                        memberid: '100600',
+                    }
+                }
+            ]
+        };
 ```
 
 ###### 4. Implementation Checking

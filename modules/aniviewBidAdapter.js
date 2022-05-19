@@ -1,8 +1,10 @@
-import { VIDEO } from '../src/mediaTypes.js';
+import { VIDEO, BANNER } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
+import { logError } from '../src/utils.js';
 
 const BIDDER_CODE = 'aniview';
+const GVLID = 780;
 const TTL = 600;
 
 function avRenderer(bid) {
@@ -24,10 +26,28 @@ function avRenderer(bid) {
 }
 
 function newRenderer(bidRequest) {
-  let playerDomain = bidRequest && bidRequest.bidRequest && bidRequest.bidRequest.params && bidRequest.bidRequest.params.playerDomain ? bidRequest.bidRequest.params.playerDomain : 'player.aniview.com';
+  let playerDomain = 'player.aniview.com';
+  const config = {};
+
+  if (bidRequest && bidRequest.bidRequest && bidRequest.bidRequest.params) {
+    const params = bidRequest.bidRequest.params
+
+    if (params.playerDomain) {
+      playerDomain = params.playerDomain;
+    }
+
+    if (params.AV_PUBLISHERID) {
+      config.AV_PUBLISHERID = params.AV_PUBLISHERID;
+    }
+
+    if (params.AV_CHANNELID) {
+      config.AV_CHANNELID = params.AV_CHANNELID;
+    }
+  }
+
   const renderer = Renderer.install({
     url: 'https://' + playerDomain + '/script/6.1/prebidRenderer.js',
-    config: {},
+    config: config,
     loaded: false,
   });
 
@@ -153,6 +173,22 @@ function getCpmData(xml) {
   }
   return ret;
 }
+function buildBanner(xmlStr, bidRequest, bidResponse) {
+  var rendererData = JSON.stringify({
+    id: bidRequest.adUnitCode,
+    debug: window.location.href.indexOf('pbjsDebug') >= 0,
+    placement: bidRequest.bidRequest.adUnitCode,
+    width: bidResponse.width,
+    height: bidResponse.height,
+    vastXml: xmlStr,
+    bid: bidResponse,
+    config: bidRequest.bidRequest.params.rendererConfig
+  });
+  var playerDomain = bidRequest.bidRequest.params.playerDomain || 'player.aniview.com';
+  var ad = '<script src="https://' + playerDomain + '/script/6.1/prebidRenderer.js"></script>';
+  ad += '<script> window.aniviewRenderer.renderAd(' + rendererData + ') </script>'
+  return ad;
+}
 function interpretResponse(serverResponse, bidRequest) {
   let bidResponses = [];
   if (serverResponse && serverResponse.body) {
@@ -162,6 +198,10 @@ function interpretResponse(serverResponse, bidRequest) {
       try {
         let bidResponse = {};
         if (bidRequest && bidRequest.data && bidRequest.data.bidId && bidRequest.data.bidId !== '') {
+          let mediaType = VIDEO;
+          if (bidRequest.bidRequest && bidRequest.bidRequest.mediaTypes && !bidRequest.bidRequest.mediaTypes[VIDEO]) {
+            mediaType = BANNER;
+          }
           let xmlStr = serverResponse.body;
           let xml = new window.DOMParser().parseFromString(xmlStr, 'text/xml');
           if (xml && xml.getElementsByTagName('parsererror').length == 0) {
@@ -176,13 +216,26 @@ function interpretResponse(serverResponse, bidRequest) {
               bidResponse.creativeId = xml.getElementsByTagName('Ad') && xml.getElementsByTagName('Ad')[0] && xml.getElementsByTagName('Ad')[0].getAttribute('id') ? xml.getElementsByTagName('Ad')[0].getAttribute('id') : 'creativeId';
               bidResponse.currency = cpmData.currency;
               bidResponse.netRevenue = true;
-              var blob = new Blob([xmlStr], {
-                type: 'application/xml'
-              });
-              bidResponse.vastUrl = window.URL.createObjectURL(blob);
-              bidResponse.vastXml = xmlStr;
-              bidResponse.mediaType = VIDEO;
-              if (bidRequest.bidRequest && bidRequest.bidRequest.mediaTypes && bidRequest.bidRequest.mediaTypes.video && bidRequest.bidRequest.mediaTypes.video.context === 'outstream') { bidResponse.renderer = newRenderer(bidRequest); }
+              bidResponse.mediaType = mediaType;
+              if (mediaType === VIDEO) {
+                try {
+                  var blob = new Blob([xmlStr], {
+                    type: 'application/xml'
+                  });
+                  bidResponse.vastUrl = window.URL.createObjectURL(blob);
+                } catch (ex) {
+                  logError('Aniview Debug create vastXml error:\n\n' + ex);
+                }
+                bidResponse.vastXml = xmlStr;
+                if (bidRequest.bidRequest && bidRequest.bidRequest.mediaTypes && bidRequest.bidRequest.mediaTypes.video && bidRequest.bidRequest.mediaTypes.video.context === 'outstream') {
+                  bidResponse.renderer = newRenderer(bidRequest);
+                }
+              } else {
+                bidResponse.ad = buildBanner(xmlStr, bidRequest, bidResponse);
+              }
+              bidResponse.meta = {
+                advertiserDomains: []
+              };
 
               bidResponses.push(bidResponse);
             }
@@ -211,7 +264,10 @@ function getSyncData(xml, options) {
                 if (data && data.trackers && data.trackers.length) {
                   data = data.trackers;
                   for (var j = 0; j < data.length; j++) {
-                    if (typeof data[j] === 'object' && typeof data[j].url === 'string' && data[j].e === 'inventory') {
+                    if (typeof data[j] === 'object' &&
+                      typeof data[j].url === 'string' &&
+                      (data[j].e === 'inventory' || data[j].e === 'sync')
+                    ) {
                       if (data[j].t == 1 && options.pixelEnabled) {
                         ret.push({url: data[j].url, type: 'image'});
                       } else {
@@ -252,8 +308,9 @@ function getUserSyncs(syncOptions, serverResponses) {
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['selectmediavideo'],
-  supportedMediaTypes: [VIDEO],
+  gvlid: GVLID,
+  aliases: ['avantisvideo', 'selectmediavideo', 'vidcrunch', 'openwebvideo', 'didnavideo', 'ottadvisors'],
+  supportedMediaTypes: [VIDEO, BANNER],
   isBidRequestValid,
   buildRequests,
   interpretResponse,

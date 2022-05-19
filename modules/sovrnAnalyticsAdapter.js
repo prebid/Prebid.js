@@ -1,11 +1,10 @@
-import adapter from '../src/AnalyticsAdapter.js'
-import adaptermanager from '../src/adapterManager.js'
-import CONSTANTS from '../src/constants.json'
-import {ajaxBuilder} from '../src/ajax.js'
-import * as utils from '../src/utils.js'
-import {config} from '../src/config.js'
-import find from 'core-js-pure/features/array/find.js'
-import includes from 'core-js-pure/features/array/includes.js'
+import {logError, timestamp} from '../src/utils.js';
+import adapter from '../src/AnalyticsAdapter.js';
+import adaptermanager from '../src/adapterManager.js';
+import CONSTANTS from '../src/constants.json';
+import {ajaxBuilder} from '../src/ajax.js';
+import {config} from '../src/config.js';
+import {find, includes} from '../src/polyfill.js';
 
 const ajax = ajaxBuilder(0)
 
@@ -112,7 +111,7 @@ sovrnAnalyticsAdapter.enableAnalytics = function (config) {
   if (config && config.options && (config.options.sovrnId || config.options.affiliateId)) {
     sovrnId = config.options.sovrnId || config.options.affiliateId;
   } else {
-    utils.logError('Need Sovrn Id to log auction results. Please contact a Sovrn representative if you do not know your Sovrn Id.')
+    logError('Need Sovrn Id to log auction results. Please contact a Sovrn representative if you do not know your Sovrn Id.')
     return
   }
   sovrnAnalyticsAdapter.sovrnId = sovrnId;
@@ -149,7 +148,7 @@ class BidWinner {
    * Sends the auction to the the ingest server
    */
   send() {
-    this.body.ts = utils.timestamp()
+    this.body.ts = timestamp()
     ajax(
       pbaUrl,
       null,
@@ -269,7 +268,7 @@ class AuctionData {
     Object.keys(maxBids).forEach(unit => {
       maxBids[unit].isAuctionWinner = true
     })
-    this.auction.ts = utils.timestamp()
+    this.auction.ts = timestamp()
     ajax(
       pbaUrl,
       () => {
@@ -311,7 +310,7 @@ class LogError {
     if (ErrorEvent.data && this.error.data.ad) {
       delete this.error.data.ad
     }
-    this.error.ts = utils.timestamp()
+    this.error.ts = timestamp()
     ajax(
       pbaUrl,
       null,

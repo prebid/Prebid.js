@@ -1,11 +1,11 @@
-import * as utils from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE } from '../src/mediaTypes.js';
-import find from 'core-js-pure/features/array/find.js';
+import {_each, deepSetValue, inIframe} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import {find} from '../src/polyfill.js';
 
 const BIDDER_CODE = 'bridgewell';
-const REQUEST_ENDPOINT = 'https://prebid.scupio.com/recweb/prebid.aspx?cb=' + Math.random();
-const BIDDER_VERSION = '0.0.2';
+const REQUEST_ENDPOINT = 'https://prebid.scupio.com/recweb/prebid.aspx?cb=';
+const BIDDER_VERSION = '1.1.0';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -19,11 +19,13 @@ export const spec = {
    */
   isBidRequestValid: function (bid) {
     let valid = false;
-
-    if (bid && bid.params && bid.params.ChannelID) {
-      valid = true;
+    if (bid && bid.params) {
+      if ((bid.params.cid) && (typeof bid.params.cid === 'number')) {
+        valid = true;
+      } else if (bid.params.ChannelID) {
+        valid = true;
+      }
     }
-
     return valid;
   },
 
@@ -35,16 +37,37 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     const adUnits = [];
-    utils._each(validBidRequests, function (bid) {
-      adUnits.push({
-        ChannelID: bid.params.ChannelID,
-        adUnitCode: bid.adUnitCode,
-        mediaTypes: bid.mediaTypes || {
-          banner: {
-            sizes: bid.sizes
-          }
-        }
-      });
+    var bidderUrl = REQUEST_ENDPOINT + Math.random();
+    var userIds;
+
+    _each(validBidRequests, function (bid) {
+      userIds = bid.userId;
+
+      if (bid.params.cid) {
+        adUnits.push({
+          cid: bid.params.cid,
+          adUnitCode: bid.adUnitCode,
+          requestId: bid.bidId,
+          mediaTypes: bid.mediaTypes || {
+            banner: {
+              sizes: bid.sizes
+            }
+          },
+          userIds: userIds || {}
+        });
+      } else {
+        adUnits.push({
+          ChannelID: bid.params.ChannelID,
+          adUnitCode: bid.adUnitCode,
+          requestId: bid.bidId,
+          mediaTypes: bid.mediaTypes || {
+            banner: {
+              sizes: bid.sizes
+            }
+          },
+          userIds: userIds || {}
+        });
+      }
     });
 
     let topUrl = '';
@@ -54,16 +77,17 @@ export const spec = {
 
     return {
       method: 'POST',
-      url: REQUEST_ENDPOINT,
+      url: bidderUrl,
       data: {
         version: {
           prebid: '$prebid.version$',
           bridgewell: BIDDER_VERSION
         },
-        inIframe: utils.inIframe(),
+        inIframe: inIframe(),
         url: topUrl,
         referrer: getTopWindowReferrer(),
-        adUnits: adUnits
+        adUnits: adUnits,
+        refererInfo: bidderRequest.refererInfo,
       },
       validBidRequests: validBidRequests
     };
@@ -80,7 +104,7 @@ export const spec = {
     const bidResponses = [];
 
     // map responses to requests
-    utils._each(bidRequest.validBidRequests, function (req) {
+    _each(bidRequest.validBidRequests, function (req) {
       const bidResponse = {};
 
       if (!serverResponse.body) {
@@ -142,6 +166,10 @@ export const spec = {
         bidResponse.netRevenue = matchedResponse.netRevenue;
         bidResponse.currency = matchedResponse.currency;
         bidResponse.mediaType = matchedResponse.mediaType;
+
+        if (matchedResponse.adomain) {
+          deepSetValue(bidResponse, 'meta.advertiserDomains', Array.isArray(matchedResponse.adomain) ? matchedResponse.adomain : [matchedResponse.adomain]);
+        }
 
         // check required parameters by matchedResponse.mediaType
         switch (matchedResponse.mediaType) {

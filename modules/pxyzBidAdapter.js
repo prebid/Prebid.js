@@ -1,6 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
-import * as utils from '../src/utils.js';
+import { logInfo, logError, isArray } from '../src/utils.js';
 
 const BIDDER_CODE = 'pxyz';
 const URL = 'https://ads.playground.xyz/host-config/prebid?v=2';
@@ -61,15 +61,15 @@ export const spec = {
     if (bidderRequest && bidderRequest.gdprConsent) {
       const gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
       const consentString = bidderRequest.gdprConsent.consentString;
-      utils.logInfo(`PXYZ: GDPR applies ${gdpr}`);
-      utils.logInfo(`PXYZ: GDPR consent string ${consentString}`);
+      logInfo(`PXYZ: GDPR applies ${gdpr}`);
+      logInfo(`PXYZ: GDPR consent string ${consentString}`);
       payload.Regs.ext.gdpr = gdpr;
       payload.User = { ext: { consent: consentString } };
     }
 
     // CCPA
     if (bidderRequest && bidderRequest.uspConsent) {
-      utils.logInfo(`PXYZ: USP Consent ${bidderRequest.uspConsent}`);
+      logInfo(`PXYZ: USP Consent ${bidderRequest.uspConsent}`);
       payload.Regs.ext['us_privacy'] = bidderRequest.uspConsent;
     }
 
@@ -95,14 +95,14 @@ export const spec = {
       let errorMessage = `in response for ${bidderRequest.bidderCode} adapter`;
       if (serverResponse && serverResponse.error) {
         errorMessage += `: ${serverResponse.error}`;
-        utils.logError(errorMessage);
+        logError(errorMessage);
       }
       return bids;
     }
 
-    if (!utils.isArray(serverResponse.seatbid)) {
+    if (!isArray(serverResponse.seatbid)) {
       let errorMessage = `in response for ${bidderRequest.bidderCode} adapter `;
-      utils.logError(errorMessage += 'Malformed seatbid response');
+      logError(errorMessage += 'Malformed seatbid response');
       return bids;
     }
 
@@ -133,6 +133,7 @@ export const spec = {
 }
 
 function newBid(bid, currency) {
+  const { adomain } = bid;
   return {
     requestId: bid.impid,
     mediaType: BANNER,
@@ -144,6 +145,9 @@ function newBid(bid, currency) {
     ttl: 300,
     netRevenue: true,
     currency: currency,
+    meta: {
+      ...(adomain && adomain.length > 0 ? { advertiserDomains: adomain } : {})
+    }
   };
 }
 

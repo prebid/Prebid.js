@@ -1,27 +1,27 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
-import { BANNER } from '../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {
   deepAccess,
   deepSetValue,
   inIframe,
   isArrayOfNums,
+  isFn,
   isInteger,
-  isNumber,
   isStr,
   logError,
   parseQueryStringParameters,
+  pick,
 } from '../src/utils.js';
 
-const BIDDER_VERSION = '1.0.0';
-const BASE_URL = 'https://ortb.adpearl.io';
-const AUCTION_URL = BASE_URL + '/prebid/auction';
+const BIDDER_VERSION = '1.1.0';
+const BASE_URL = 'https://auction.adpearl.io';
 
 export const spec = {
   code: 'pubgenius',
 
-  supportedMediaTypes: [ BANNER ],
+  supportedMediaTypes: [ BANNER, VIDEO ],
 
   isBidRequestValid(bid) {
     const adUnitId = bid.params.adUnitId;
@@ -30,15 +30,20 @@ export const spec = {
       return false;
     }
 
-    const sizes = deepAccess(bid, 'mediaTypes.banner.sizes');
-    return Boolean(sizes && sizes.length) && sizes.every(size => isArrayOfNums(size, 2));
+    const { mediaTypes } = bid;
+
+    if (mediaTypes.banner) {
+      return isValidBanner(mediaTypes.banner);
+    }
+
+    return isValidVideo(mediaTypes.video, bid.params.video);
   },
 
   buildRequests: function (bidRequests, bidderRequest) {
     const data = {
       id: bidderRequest.auctionId,
       imp: bidRequests.map(buildImp),
-      tmax: config.getConfig('bidderTimeout'),
+      tmax: bidderRequest.timeout,
       ext: {
         pbadapter: {
           version: BIDDER_VERSION,
@@ -66,7 +71,7 @@ export const spec = {
       deepSetValue(data, 'regs.ext.us_privacy', usp);
     }
 
-    const schain = bidderRequest.schain;
+    const schain = bidRequests[0].schain;
     if (schain) {
       deepSetValue(data, 'source.ext.schain', schain);
     }
@@ -85,7 +90,7 @@ export const spec = {
 
     return {
       method: 'POST',
-      url: AUCTION_URL,
+      url: `${getBaseUrl()}/prebid/auction`,
       data,
     };
   },
@@ -128,7 +133,7 @@ export const spec = {
       const qs = parseQueryStringParameters(params);
       syncs.push({
         type: 'iframe',
-        url: `${BASE_URL}/usersync/pixels.html?${qs}`,
+        url: `${getBaseUrl()}/usersync/pixels.html?${qs}`,
       });
     }
 
@@ -136,25 +141,75 @@ export const spec = {
   },
 
   onTimeout(data) {
-    ajax(`${BASE_URL}/prebid/events?type=timeout`, null, JSON.stringify(data), {
+    ajax(`${getBaseUrl()}/prebid/events?type=timeout`, null, JSON.stringify(data), {
       method: 'POST',
     });
   },
 };
 
+function buildVideoParams(videoMediaType, videoParams) {
+  videoMediaType = videoMediaType || {};
+  const params = pick(videoMediaType, [
+    'mimes',
+    'minduration',
+    'maxduration',
+    'protocols',
+    'startdelay',
+    'placement',
+    'skip',
+    'skipafter',
+    'minbitrate',
+    'maxbitrate',
+    'delivery',
+    'playbackmethod',
+    'api',
+    'linearity',
+  ]);
+
+  switch (videoMediaType.context) {
+    case 'instream':
+      params.placement = 1;
+      break;
+    case 'outstream':
+      params.placement = 2;
+      break;
+    default:
+      break;
+  }
+
+  if (videoMediaType.playerSize) {
+    params.w = videoMediaType.playerSize[0][0];
+    params.h = videoMediaType.playerSize[0][1];
+  }
+
+  return Object.assign(params, videoParams);
+}
+
 function buildImp(bid) {
   const imp = {
     id: bid.bidId,
-    banner: {
-      format: deepAccess(bid, 'mediaTypes.banner.sizes').map(size => ({ w: size[0], h: size[1] })),
-      topframe: numericBoolean(!inIframe()),
-    },
     tagid: String(bid.params.adUnitId),
   };
 
-  const bidFloor = bid.params.bidFloor;
-  if (isNumber(bidFloor)) {
-    imp.bidfloor = bidFloor;
+  if (bid.mediaTypes.banner) {
+    imp.banner = {
+      format: bid.mediaTypes.banner.sizes.map(size => ({ w: size[0], h: size[1] })),
+      topframe: numericBoolean(!inIframe()),
+    };
+  } else {
+    imp.video = buildVideoParams(bid.mediaTypes.video, bid.params.video);
+  }
+
+  if (isFn(bid.getFloor)) {
+    const { floor } = bid.getFloor({
+      mediaType: bid.mediaTypes.banner ? 'banner' : 'video',
+      size: '*',
+      currency: 'USD',
+    });
+
+    if (floor) {
+      imp.bidfloor = floor;
+    }
   }
 
   const pos = bid.params.position;
@@ -170,14 +225,26 @@ function buildImp(bid) {
 }
 
 function buildSite(bidderRequest) {
-  const pageUrl = config.getConfig('pageUrl') || bidderRequest.refererInfo.referer;
+  let site = null;
+  const { refererInfo } = bidderRequest;
+
+  const pageUrl = config.getConfig('pageUrl') || refererInfo.canonicalUrl || refererInfo.referer;
   if (pageUrl) {
-    return {
-      page: pageUrl,
-    };
+    site = site || {};
+    site.page = pageUrl;
   }
 
-  return null;
+  if (refererInfo.reachedTop) {
+    try {
+      const pageRef = window.top.document.referrer;
+      if (pageRef) {
+        site = site || {};
+        site.ref = pageRef;
+      }
+    } catch (e) {}
+  }
+
+  return site;
 }
 
 function interpretBid(bid) {
@@ -186,7 +253,6 @@ function interpretBid(bid) {
     cpm: bid.price,
     width: bid.w,
     height: bid.h,
-    ad: bid.adm,
     ttl: bid.exp,
     creativeId: bid.crid,
     netRevenue: true,
@@ -198,11 +264,52 @@ function interpretBid(bid) {
     };
   }
 
+  const pbadapter = deepAccess(bid, 'ext.pbadapter') || {};
+  switch (pbadapter.mediaType) {
+    case 'video':
+      if (bid.nurl) {
+        bidResponse.vastUrl = bid.nurl;
+      }
+
+      if (bid.adm) {
+        bidResponse.vastXml = bid.adm;
+      }
+
+      bidResponse.mediaType = VIDEO;
+      break;
+    default: // banner by default
+      bidResponse.ad = bid.adm;
+      break;
+  }
+
   return bidResponse;
 }
 
 function numericBoolean(value) {
   return value ? 1 : 0;
+}
+
+function getBaseUrl() {
+  const pubg = config.getConfig('pubgenius');
+  return (pubg && pubg.endpoint) || BASE_URL;
+}
+
+function isValidSize(size) {
+  return isArrayOfNums(size, 2) && size[0] > 0 && size[1] > 0;
+}
+
+function isValidBanner(banner) {
+  const sizes = banner.sizes;
+  return !!(sizes && sizes.length) && sizes.every(isValidSize);
+}
+
+function isValidVideo(videoMediaType, videoParams) {
+  const params = buildVideoParams(videoMediaType, videoParams);
+
+  return !!(params.placement &&
+    isValidSize([params.w, params.h]) &&
+    params.mimes && params.mimes.length &&
+    isArrayOfNums(params.protocols) && params.protocols.length);
 }
 
 registerBidder(spec);

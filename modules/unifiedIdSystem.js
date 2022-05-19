@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import * as utils from '../src/utils.js'
+import { logError } from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js'
 
@@ -19,6 +19,10 @@ export const unifiedIdSubmodule = {
    */
   name: MODULE_NAME,
   /**
+   * required for the gdpr enforcement module
+   */
+  gvlid: 21,
+  /**
    * decode the stored id value for passing to bid requests
    * @function
    * @param {{TDID:string}} value
@@ -30,12 +34,13 @@ export const unifiedIdSubmodule = {
   /**
    * performs action to obtain id and return a value in the callback's response argument
    * @function
-   * @param {SubmoduleParams} [configParams]
+   * @param {SubmoduleConfig} [config]
    * @returns {IdResponse|undefined}
    */
-  getId(configParams) {
+  getId(config) {
+    const configParams = (config && config.params) || {};
     if (!configParams || (typeof configParams.partner !== 'string' && typeof configParams.url !== 'string')) {
-      utils.logError('User ID - unifiedId submodule requires either partner or url to be defined');
+      logError('User ID - unifiedId submodule requires either partner or url to be defined');
       return;
     }
     // use protocol relative urls for http or https
@@ -49,13 +54,13 @@ export const unifiedIdSubmodule = {
             try {
               responseObj = JSON.parse(response);
             } catch (error) {
-              utils.logError(error);
+              logError(error);
             }
           }
           callback(responseObj);
         },
         error: error => {
-          utils.logError(`${MODULE_NAME}: ID fetch encountered an error`, error);
+          logError(`${MODULE_NAME}: ID fetch encountered an error`, error);
           callback();
         }
       };

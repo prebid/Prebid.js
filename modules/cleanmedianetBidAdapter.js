@@ -1,8 +1,9 @@
-import * as utils from '../src/utils.js';
+import {deepAccess, getDNT, inIframe, isArray, isNumber, logError, logWarn} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {Renderer} from '../src/Renderer.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {includes} from '../src/polyfill.js';
 
 export const helper = {
   getTopWindowDomain: function (url) {
@@ -75,7 +76,7 @@ export const spec = {
         },
         device: {
           ua: navigator.userAgent,
-          dnt: utils.getDNT() ? 1 : 0,
+          dnt: getDNT() ? 1 : 0,
           h: screen.height,
           w: screen.width,
           language: navigator.language
@@ -112,14 +113,14 @@ export const spec = {
         id: transactionId,
         instl: params.instl === 1 ? 1 : 0,
         tagid: adUnitCode,
-        bidfloor: params.bidfloor || 0,
+        bidfloor: 0,
         bidfloorcur: 'USD',
         secure: 1
       };
 
       const hasFavoredMediaType =
         params.favoredMediaType &&
-        this.supportedMediaTypes.includes(params.favoredMediaType);
+        includes(this.supportedMediaTypes, params.favoredMediaType);
 
       if (!mediaTypes || mediaTypes.banner) {
         if (!hasFavoredMediaType || params.favoredMediaType === BANNER) {
@@ -128,7 +129,7 @@ export const spec = {
               w: sizes.length ? sizes[0][0] : 300,
               h: sizes.length ? sizes[0][1] : 250,
               pos: params.pos || 0,
-              topframe: utils.inIframe() ? 0 : 1
+              topframe: inIframe() ? 0 : 1
             }
           });
           rtbBidRequest.imp.push(bannerImp);
@@ -146,10 +147,10 @@ export const spec = {
           };
 
           let playerSize = mediaTypes.video.playerSize || sizes;
-          if (utils.isArray(playerSize[0])) {
+          if (isArray(playerSize[0])) {
             videoImp.video.w = playerSize[0][0];
             videoImp.video.h = playerSize[0][1];
-          } else if (utils.isNumber(playerSize[0])) {
+          } else if (isNumber(playerSize[0])) {
             videoImp.video.w = playerSize[0];
             videoImp.video.h = playerSize[1];
           } else {
@@ -178,7 +179,7 @@ export const spec = {
   interpretResponse: function (serverResponse, bidRequest) {
     const response = serverResponse && serverResponse.body;
     if (!response) {
-      utils.logError('empty response');
+      logError('empty response');
       return [];
     }
 
@@ -202,7 +203,7 @@ export const spec = {
       };
 
       if (
-        utils.deepAccess(
+        deepAccess(
           bidRequest.bidRequest,
           'mediaTypes.' + outBid.mediaType
         )
@@ -210,7 +211,7 @@ export const spec = {
         if (outBid.mediaType === BANNER) {
           outBids.push(Object.assign({}, outBid, {ad: bid.adm}));
         } else if (outBid.mediaType === VIDEO) {
-          const context = utils.deepAccess(
+          const context = deepAccess(
             bidRequest.bidRequest,
             'mediaTypes.video.context'
           );
@@ -286,7 +287,7 @@ function newRenderer(bidRequest, bid, rendererOptions = {}) {
   try {
     renderer.setRender(renderOutstream);
   } catch (err) {
-    utils.logWarn('Prebid Error calling setRender on renderer', err);
+    logWarn('Prebid Error calling setRender on renderer', err);
   }
   return renderer;
 }

@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { logWarn, isArray } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
@@ -72,7 +72,7 @@ function getPricing(xmlNode) {
       price: priceNode.textContent || priceNode.innerText
     };
   } else {
-    utils.logWarn('PREBID - ' + BIDDER_CODE + ': Can\'t get pricing data. Is price awareness enabled?');
+    logWarn('PREBID - ' + BIDDER_CODE + ': No bid received or missing pricing extension.');
   }
 
   return princingData;
@@ -102,22 +102,49 @@ function getCreativeId(xmlNode) {
   return creaId;
 }
 
-function getDealId(xmlNode) {
-  var dealId = '';
+function getValueFromKeyInImpressionNode(xmlNode, key) {
+  var value = '';
   var impNodes = xmlNode.querySelectorAll('Impression'); // Nodelist.forEach is not supported in IE and Edge
-  // Workaround given here https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/10638731/
-
+  var isRootViewKeyPresent = false;
+  var isAdsDisplayStartedPresent = false;
   Array.prototype.forEach.call(impNodes, function (el) {
-    var queries = el.textContent.substring(el.textContent.indexOf('?') + 1).split('&');
+    if (isRootViewKeyPresent && isAdsDisplayStartedPresent) {
+      return value;
+    }
+    isRootViewKeyPresent = false;
+    isAdsDisplayStartedPresent = false;
+    var text = el.textContent;
+    var queries = text.substring(el.textContent.indexOf('?') + 1).split('&');
+    var tempValue = '';
     Array.prototype.forEach.call(queries, function (item) {
       var split = item.split('=');
-      if (split[0] == 'dealId') {
-        dealId = split[1];
+      if (split[0] == key) {
+        tempValue = split[1];
+      }
+      if (split[0] == 'reqType' && split[1] == 'AdsDisplayStarted') {
+        isAdsDisplayStartedPresent = true;
+      }
+      if (split[0] == 'rootViewKey') {
+        isRootViewKeyPresent = true;
       }
     });
+    if (isAdsDisplayStartedPresent) {
+      value = tempValue;
+    }
   });
+  return value;
+}
 
-  return dealId;
+function getDealId(xmlNode) {
+  return getValueFromKeyInImpressionNode(xmlNode, 'dealId');
+}
+
+function getBannerId(xmlNode) {
+  return getValueFromKeyInImpressionNode(xmlNode, 'adId');
+}
+
+function getCampaignId(xmlNode) {
+  return getValueFromKeyInImpressionNode(xmlNode, 'campaignId');
 }
 
 /**
@@ -285,6 +312,12 @@ export const spec = {
         requestParams._fw_us_privacy = bidderRequest.uspConsent;
       }
 
+      // Add schain object
+      var schain = currentBidRequest.schain;
+      if (schain) {
+        requestParams.schain = schain;
+      }
+
       var vastParams = currentBidRequest.params.vastUrlParams;
       if (typeof vastParams === 'object') {
         for (var key in vastParams) {
@@ -302,7 +335,7 @@ export const spec = {
       var playerSize = [];
       if (currentBidRequest.mediaTypes.video && currentBidRequest.mediaTypes.video.playerSize) {
         // If mediaTypes is video, get size from mediaTypes.video.playerSize per http://prebid.org/blog/pbjs-3
-        if (utils.isArray(currentBidRequest.mediaTypes.video.playerSize[0])) {
+        if (isArray(currentBidRequest.mediaTypes.video.playerSize[0])) {
           playerSize = currentBidRequest.mediaTypes.video.playerSize[0];
         } else {
           playerSize = currentBidRequest.mediaTypes.video.playerSize;
@@ -344,7 +377,7 @@ export const spec = {
     var playerSize = [];
     if (bidrequest.mediaTypes.video && bidrequest.mediaTypes.video.playerSize) {
       // If mediaTypes is video, get size from mediaTypes.video.playerSize per http://prebid.org/blog/pbjs-3
-      if (utils.isArray(bidrequest.mediaTypes.video.playerSize[0])) {
+      if (isArray(bidrequest.mediaTypes.video.playerSize[0])) {
         playerSize = bidrequest.mediaTypes.video.playerSize[0];
       } else {
         playerSize = bidrequest.mediaTypes.video.playerSize;
@@ -366,14 +399,15 @@ export const spec = {
       var parser = new DOMParser();
       xmlDoc = parser.parseFromString(serverResponse, 'application/xml');
     } catch (err) {
-      utils.logWarn('Prebid.js - ' + BIDDER_CODE + ' : ' + err);
+      logWarn('Prebid.js - ' + BIDDER_CODE + ' : ' + err);
       return;
     }
 
     const princingData = getPricing(xmlDoc);
     const creativeId = getCreativeId(xmlDoc);
     const dealId = getDealId(xmlDoc);
-
+    const campaignId = getCampaignId(xmlDoc);
+    const bannerId = getBannerId(xmlDoc);
     const topWin = getTopMostWindow();
     if (!topWin.freewheelssp_cache) {
       topWin.freewheelssp_cache = {};
@@ -392,7 +426,10 @@ export const spec = {
         currency: princingData.currency,
         netRevenue: true,
         ttl: 360,
-        dealId: dealId
+        meta: { advertiserDomains: princingData.adomain && isArray(princingData.adomain) ? princingData.adomain : [] },
+        dealId: dealId,
+        campaignId: campaignId,
+        bannerId: bannerId
       };
 
       if (bidrequest.mediaTypes.video) {
@@ -407,16 +444,25 @@ export const spec = {
     return bidResponses;
   },
 
-  getUserSyncs: function(syncOptions) {
+  getUserSyncs: function(syncOptions, responses, gdprConsent, usPrivacy) {
+    var gdprParams = '';
+    if (gdprConsent) {
+      if (typeof gdprConsent.gdprApplies === 'boolean') {
+        gdprParams = `?gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+      } else {
+        gdprParams = `?gdpr_consent=${gdprConsent.consentString}`;
+      }
+    }
+
     if (syncOptions && syncOptions.pixelEnabled) {
       return [{
         type: 'image',
-        url: USER_SYNC_URL
+        url: USER_SYNC_URL + gdprParams
       }];
     } else {
       return [];
     }
   },
+};
 
-}
 registerBidder(spec);

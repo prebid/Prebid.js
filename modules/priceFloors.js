@@ -1,13 +1,30 @@
-import { getGlobal } from '../src/prebidGlobal.js';
-import { config } from '../src/config.js';
-import * as utils from '../src/utils.js';
-import { ajaxBuilder } from '../src/ajax.js';
-import events from '../src/events.js';
+import {
+  debugTurnedOn,
+  deepAccess,
+  deepClone,
+  deepSetValue,
+  generateUUID,
+  getGptSlotInfoForAdUnitCode,
+  getParameterByName,
+  isNumber,
+  logError,
+  logInfo,
+  logWarn,
+  parseGPTSingleSizeArray,
+  parseUrl,
+  pick
+} from '../src/utils.js';
+import {getGlobal} from '../src/prebidGlobal.js';
+import {config} from '../src/config.js';
+import {ajaxBuilder} from '../src/ajax.js';
+import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
-import { getHook } from '../src/hook.js';
-import { createBid } from '../src/bidfactory.js';
-import find from 'core-js-pure/features/array/find.js';
-import { getRefererInfo } from '../src/refererDetection.js';
+import {getHook} from '../src/hook.js';
+import {createBid} from '../src/bidfactory.js';
+import {find} from '../src/polyfill.js';
+import {getRefererInfo} from '../src/refererDetection.js';
+import {bidderSettings} from '../src/bidderSettings.js';
+import {auctionManager} from '../src/auctionManager.js';
 
 /**
  * @summary This Module is intended to provide users with the ability to dynamically set and enforce price floors on a per auction basis.
@@ -55,24 +72,35 @@ export let _floorDataForAuction = {};
  * @summary Simple function to round up to a certain decimal degree
  */
 function roundUp(number, precision) {
-  return Math.ceil(parseFloat(number) * Math.pow(10, precision)) / Math.pow(10, precision);
+  return Math.ceil((parseFloat(number) * Math.pow(10, precision)).toFixed(1)) / Math.pow(10, precision);
 }
 
 let referrerHostname;
 function getHostNameFromReferer(referer) {
-  referrerHostname = utils.parseUrl(referer, {noDecodeWholeURL: true}).hostname;
+  referrerHostname = parseUrl(referer, {noDecodeWholeURL: true}).hostname;
   return referrerHostname;
+}
+
+// First look into bidRequest!
+function getGptSlotFromAdUnit(transactionId, {index = auctionManager.index} = {}) {
+  const adUnit = index.getAdUnit({transactionId});
+  const isGam = deepAccess(adUnit, 'ortb2Imp.ext.data.adserver.name') === 'gam';
+  return isGam && adUnit.ortb2Imp.ext.data.adserver.adslot;
+}
+
+function getAdUnitCode(request, response, {index = auctionManager.index} = {}) {
+  return request?.adUnitCode || index.getAdUnit(response).code;
 }
 
 /**
  * @summary floor field types with their matching functions to resolve the actual matched value
  */
 export let fieldMatchingFunctions = {
-  'size': (bidRequest, bidResponse) => utils.parseGPTSingleSizeArray(bidResponse.size) || '*',
+  'size': (bidRequest, bidResponse) => parseGPTSingleSizeArray(bidResponse.size) || '*',
   'mediaType': (bidRequest, bidResponse) => bidResponse.mediaType || 'banner',
-  'gptSlot': (bidRequest, bidResponse) => utils.getGptSlotInfoForAdUnitCode(bidRequest.adUnitCode).gptSlot,
+  'gptSlot': (bidRequest, bidResponse) => getGptSlotFromAdUnit((bidRequest || bidResponse).transactionId) || getGptSlotInfoForAdUnitCode(getAdUnitCode(bidRequest, bidResponse)).gptSlot,
   'domain': (bidRequest, bidResponse) => referrerHostname || getHostNameFromReferer(getRefererInfo().referer),
-  'adUnitCode': (bidRequest, bidResponse) => bidRequest.adUnitCode
+  'adUnitCode': (bidRequest, bidResponse) => getAdUnitCode(bidRequest, bidResponse)
 }
 
 /**
@@ -95,26 +123,32 @@ function enumeratePossibleFieldValues(floorFields, bidObject, responseObject) {
  * Generates all possible rule matches and picks the first matching one.
  */
 export function getFirstMatchingFloor(floorData, bidObject, responseObject = {}) {
-  let fieldValues = enumeratePossibleFieldValues(utils.deepAccess(floorData, 'schema.fields') || [], bidObject, responseObject);
+  let fieldValues = enumeratePossibleFieldValues(deepAccess(floorData, 'schema.fields') || [], bidObject, responseObject);
   if (!fieldValues.length) return { matchingFloor: floorData.default };
 
-  // look to see iof a request for this context was made already
+  // look to see if a request for this context was made already
   let matchingInput = fieldValues.map(field => field[0]).join('-');
   // if we already have gotten the matching rule from this matching input then use it! No need to look again
-  let previousMatch = utils.deepAccess(floorData, `matchingInputs.${matchingInput}`);
+  let previousMatch = deepAccess(floorData, `matchingInputs.${matchingInput}`);
   if (previousMatch) {
-    return previousMatch;
+    return {...previousMatch};
   }
-  let allPossibleMatches = generatePossibleEnumerations(fieldValues, utils.deepAccess(floorData, 'schema.delimiter') || '|');
+  let allPossibleMatches = generatePossibleEnumerations(fieldValues, deepAccess(floorData, 'schema.delimiter') || '|');
   let matchingRule = find(allPossibleMatches, hashValue => floorData.values.hasOwnProperty(hashValue));
 
   let matchingData = {
-    matchingFloor: floorData.values[matchingRule] || floorData.default,
+    floorMin: floorData.floorMin || 0,
+    floorRuleValue: isNaN(floorData.values[matchingRule]) ? floorData.default : floorData.values[matchingRule],
     matchingData: allPossibleMatches[0], // the first possible match is an "exact" so contains all data relevant for anlaytics adapters
     matchingRule
   };
+  // use adUnit floorMin as priority!
+  if (typeof deepAccess(bidObject, 'ortb2Imp.ext.prebid.floorMin') === 'number') {
+    matchingData.floorMin = bidObject.ortb2Imp.ext.prebid.floorMin;
+  }
+  matchingData.matchingFloor = Math.max(matchingData.floorMin, matchingData.floorRuleValue);
   // save for later lookup if needed
-  utils.deepSetValue(floorData, `matchingInputs.${matchingInput}`, {...matchingData});
+  deepSetValue(floorData, `matchingInputs.${matchingInput}`, {...matchingData});
   return matchingData;
 }
 
@@ -138,10 +172,10 @@ function generatePossibleEnumerations(arrayOfFields, delimiter) {
 /**
  * @summary If a the input bidder has a registered cpmadjustment it returns the input CPM after being adjusted
  */
-export function getBiddersCpmAdjustment(bidderName, inputCpm) {
-  const adjustmentFunction = utils.deepAccess(getGlobal(), `bidderSettings.${bidderName}.bidCpmAdjustment`);
+export function getBiddersCpmAdjustment(bidderName, inputCpm, bid = {}) {
+  const adjustmentFunction = bidderSettings.get(bidderName, 'bidCpmAdjustment');
   if (adjustmentFunction) {
-    return parseFloat(adjustmentFunction(inputCpm));
+    return parseFloat(adjustmentFunction(inputCpm, {...bid, cpm: inputCpm}));
   }
   return parseFloat(inputCpm);
 }
@@ -159,9 +193,9 @@ export function calculateAdjustedFloor(oldFloor, newFloor) {
  * @summary gets the prebid set sizes depending on the input mediaType
  */
 const getMediaTypesSizes = {
-  banner: (bid) => utils.deepAccess(bid, 'mediaTypes.banner.sizes') || [],
-  video: (bid) => utils.deepAccess(bid, 'mediaTypes.video.playerSize') || [],
-  native: (bid) => utils.deepAccess(bid, 'mediaTypes.native.image.sizes') ? [utils.deepAccess(bid, 'mediaTypes.native.image.sizes')] : []
+  banner: (bid) => deepAccess(bid, 'mediaTypes.banner.sizes') || [],
+  video: (bid) => deepAccess(bid, 'mediaTypes.video.playerSize') || [],
+  native: (bid) => deepAccess(bid, 'mediaTypes.native.image.sizes') ? [deepAccess(bid, 'mediaTypes.native.image.sizes')] : []
 }
 
 /**
@@ -200,7 +234,7 @@ export function getFloor(requestParams = {currency: 'USD', mediaType: '*', size:
     try {
       floorInfo.matchingFloor = getGlobal().convertCurrency(floorInfo.matchingFloor, floorData.data.currency, currency);
     } catch (err) {
-      utils.logWarn(`${MODULE_NAME}: Unable to get currency conversion for getFloor for bidder ${bidRequest.bidder}. You must have currency module enabled with defaultRates in your currency config`);
+      logWarn(`${MODULE_NAME}: Unable to get currency conversion for getFloor for bidder ${bidRequest.bidder}. You must have currency module enabled with defaultRates in your currency config`);
       // since we were unable to convert to the bidders requested currency, we send back just the actual floors currency to them
       currency = floorData.data.currency;
     }
@@ -225,7 +259,7 @@ export function getFloor(requestParams = {currency: 'USD', mediaType: '*', size:
  * @summary Takes a floorsData object and converts it into a hash map with appropriate keys
  */
 export function getFloorsDataForAuction(floorData, adUnitCode) {
-  let auctionFloorData = utils.deepClone(floorData);
+  let auctionFloorData = deepClone(floorData);
   auctionFloorData.schema.delimiter = floorData.schema.delimiter || '|';
   auctionFloorData.values = normalizeRulesForAuction(auctionFloorData, adUnitCode);
   // default the currency to USD if not passed in
@@ -286,11 +320,15 @@ export function updateAdUnitsForAuction(adUnits, floorData, auctionId) {
       bid.auctionId = auctionId;
       bid.floorData = {
         skipped: floorData.skipped,
-        modelVersion: utils.deepAccess(floorData, 'data.modelVersion'),
-        location: utils.deepAccess(floorData, 'data.location'),
         skipRate: floorData.skipRate,
+        floorMin: floorData.floorMin,
+        modelVersion: deepAccess(floorData, 'data.modelVersion'),
+        modelWeight: deepAccess(floorData, 'data.modelWeight'),
+        modelTimestamp: deepAccess(floorData, 'data.modelTimestamp'),
+        location: deepAccess(floorData, 'data.location', 'noData'),
+        floorProvider: floorData.floorProvider,
         fetchStatus: _floorsConfig.fetchStatus
-      }
+      };
     });
   });
 }
@@ -311,30 +349,32 @@ export function pickRandomModel(modelGroups, weightSum) {
  * @summary Updates the adUnits accordingly and returns the necessary floorsData for the current auction
  */
 export function createFloorsDataForAuction(adUnits, auctionId) {
-  let resolvedFloorsData = utils.deepClone(_floorsConfig);
+  let resolvedFloorsData = deepClone(_floorsConfig);
   // if using schema 2 pick a model here:
-  if (utils.deepAccess(resolvedFloorsData, 'data.floorsSchemaVersion') === 2) {
+  if (deepAccess(resolvedFloorsData, 'data.floorsSchemaVersion') === 2) {
     // merge the models specific stuff into the top level data settings (now it looks like floorsSchemaVersion 1!)
     let { modelGroups, ...rest } = resolvedFloorsData.data;
     resolvedFloorsData.data = Object.assign(rest, pickRandomModel(modelGroups, rest.modelWeightSum));
   }
 
   // if we do not have a floors data set, we will try to use data set on adUnits
-  let useAdUnitData = Object.keys(utils.deepAccess(resolvedFloorsData, 'data.values') || {}).length === 0;
+  let useAdUnitData = Object.keys(deepAccess(resolvedFloorsData, 'data.values') || {}).length === 0;
   if (useAdUnitData) {
     resolvedFloorsData.data = getFloorDataFromAdUnits(adUnits);
   } else {
     resolvedFloorsData.data = getFloorsDataForAuction(resolvedFloorsData.data);
   }
   // if we still do not have a valid floor data then floors is not on for this auction, so skip
-  if (Object.keys(utils.deepAccess(resolvedFloorsData, 'data.values') || {}).length === 0) {
+  if (Object.keys(deepAccess(resolvedFloorsData, 'data.values') || {}).length === 0) {
     resolvedFloorsData.skipped = true;
   } else {
     // determine the skip rate now
-    const auctionSkipRate = utils.getParameterByName('pbjs_skipRate') || resolvedFloorsData.skipRate;
+    const auctionSkipRate = getParameterByName('pbjs_skipRate') || resolvedFloorsData.skipRate;
     const isSkipped = Math.random() * 100 < parseFloat(auctionSkipRate);
     resolvedFloorsData.skipped = isSkipped;
   }
+  // copy FloorMin to floorData.data
+  if (resolvedFloorsData.hasOwnProperty('floorMin')) resolvedFloorsData.data.floorMin = resolvedFloorsData.floorMin;
   // add floorData to bids
   updateAdUnitsForAuction(adUnits, resolvedFloorsData, auctionId);
   return resolvedFloorsData;
@@ -350,7 +390,7 @@ export function continueAuction(hookConfig) {
     _delayedAuctions = _delayedAuctions.filter(auctionConfig => auctionConfig.timer !== hookConfig.timer);
 
     // We need to know the auctionId at this time. So we will use the passed in one or generate and set it ourselves
-    hookConfig.reqBidsConfigObj.auctionId = hookConfig.reqBidsConfigObj.auctionId || utils.generateUUID();
+    hookConfig.reqBidsConfigObj.auctionId = hookConfig.reqBidsConfigObj.auctionId || generateUUID();
 
     // now we do what we need to with adUnits and save the data object to be used for getFloor and enforcement calls
     _floorDataForAuction[hookConfig.reqBidsConfigObj.auctionId] = createFloorsDataForAuction(hookConfig.reqBidsConfigObj.adUnits || getGlobal().adUnits, hookConfig.reqBidsConfigObj.auctionId);
@@ -364,7 +404,7 @@ function validateSchemaFields(fields) {
   if (Array.isArray(fields) && fields.length > 0 && fields.every(field => allowedFields.indexOf(field) !== -1)) {
     return true;
   }
-  utils.logError(`${MODULE_NAME}: Fields recieved do not match allowed fields`);
+  logError(`${MODULE_NAME}: Fields recieved do not match allowed fields`);
   return false;
 }
 
@@ -392,7 +432,7 @@ function validateRules(floorsData, numFields, delimiter) {
 
 function modelIsValid(model) {
   // schema.fields has only allowed attributes
-  if (!validateSchemaFields(utils.deepAccess(model, 'schema.fields'))) {
+  if (!validateSchemaFields(deepAccess(model, 'schema.fields'))) {
     return false;
   }
   return validateRules(model, model.schema.fields.length, model.schema.delimiter || '|')
@@ -432,7 +472,7 @@ export function isFloorsDataValid(floorsData) {
   }
   floorsData.floorsSchemaVersion = floorsData.floorsSchemaVersion || 1;
   if (typeof floorsSchemaValidation[floorsData.floorsSchemaVersion] !== 'function') {
-    utils.logError(`${MODULE_NAME}: Unknown floorsSchemaVersion: `, floorsData.floorsSchemaVersion);
+    logError(`${MODULE_NAME}: Unknown floorsSchemaVersion: `, floorsData.floorsSchemaVersion);
     return false;
   }
   return floorsSchemaValidation[floorsData.floorsSchemaVersion](floorsData);
@@ -443,13 +483,13 @@ export function isFloorsDataValid(floorsData) {
  */
 export function parseFloorData(floorsData, location) {
   if (floorsData && typeof floorsData === 'object' && isFloorsDataValid(floorsData)) {
-    utils.logInfo(`${MODULE_NAME}: A ${location} set the auction floor data set to `, floorsData);
+    logInfo(`${MODULE_NAME}: A ${location} set the auction floor data set to `, floorsData);
     return {
       ...floorsData,
       location
     };
   }
-  utils.logError(`${MODULE_NAME}: The floors data did not contain correct values`, floorsData);
+  logError(`${MODULE_NAME}: The floors data did not contain correct values`, floorsData);
 }
 
 /**
@@ -470,7 +510,7 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
   // If auction delay > 0 AND we are fetching -> Then wait until it finishes
   if (_floorsConfig.auctionDelay > 0 && fetching) {
     hookConfig.timer = setTimeout(() => {
-      utils.logWarn(`${MODULE_NAME}: Fetch attempt did not return in time for auction`);
+      logWarn(`${MODULE_NAME}: Fetch attempt did not return in time for auction`);
       _floorsConfig.fetchStatus = 'timeout';
       continueAuction(hookConfig);
     }, _floorsConfig.auctionDelay);
@@ -512,7 +552,8 @@ export function handleFetchResponse(fetchResponse) {
     // set .data to it
     _floorsConfig.data = fetchData;
     // set skipRate override if necessary
-    _floorsConfig.skipRate = utils.isNumber(fetchData.skipRate) ? fetchData.skipRate : _floorsConfig.skipRate;
+    _floorsConfig.skipRate = isNumber(fetchData.skipRate) ? fetchData.skipRate : _floorsConfig.skipRate;
+    _floorsConfig.floorProvider = fetchData.floorProvider || _floorsConfig.floorProvider;
   }
 
   // if any auctions are waiting for fetch to finish, we need to continue them!
@@ -522,7 +563,7 @@ export function handleFetchResponse(fetchResponse) {
 function handleFetchError(status) {
   fetching = false;
   _floorsConfig.fetchStatus = 'error';
-  utils.logError(`${MODULE_NAME}: Fetch errored with: `, status);
+  logError(`${MODULE_NAME}: Fetch errored with: `, status);
 
   // if any auctions are waiting for fetch to finish, we need to continue them!
   resumeDelayedAuctions();
@@ -538,13 +579,13 @@ export function generateAndHandleFetch(floorEndpoint) {
     // default to GET and we only support GET for now
     let requestMethod = floorEndpoint.method || 'GET';
     if (requestMethod !== 'GET') {
-      utils.logError(`${MODULE_NAME}: 'GET' is the only request method supported at this time!`);
+      logError(`${MODULE_NAME}: 'GET' is the only request method supported at this time!`);
     } else {
       ajax(floorEndpoint.url, { success: handleFetchResponse, error: handleFetchError }, null, { method: 'GET' });
       fetching = true;
     }
   } else if (fetching) {
-    utils.logWarn(`${MODULE_NAME}: A fetch is already occuring. Skipping.`);
+    logWarn(`${MODULE_NAME}: A fetch is already occuring. Skipping.`);
   }
 }
 
@@ -565,12 +606,14 @@ function addFieldOverrides(overrides) {
  * @summary This is the function which controls what happens during a pbjs.setConfig({...floors: {}}) is called
  */
 export function handleSetFloorsConfig(config) {
-  _floorsConfig = utils.pick(config, [
+  _floorsConfig = pick(config, [
+    'floorMin',
     'enabled', enabled => enabled !== false, // defaults to true
     'auctionDelay', auctionDelay => auctionDelay || 0,
+    'floorProvider', floorProvider => deepAccess(config, 'data.floorProvider', floorProvider),
     'endpoint', endpoint => endpoint || {},
-    'skipRate', () => !isNaN(utils.deepAccess(config, 'data.skipRate')) ? config.data.skipRate : config.skipRate || 0,
-    'enforcement', enforcement => utils.pick(enforcement || {}, [
+    'skipRate', () => !isNaN(deepAccess(config, 'data.skipRate')) ? config.data.skipRate : config.skipRate || 0,
+    'enforcement', enforcement => pick(enforcement || {}, [
       'enforceJS', enforceJS => enforceJS !== false, // defaults to true
       'enforcePBS', enforcePBS => enforcePBS === true, // defaults to false
       'floorDeals', floorDeals => floorDeals === true, // defaults to false
@@ -596,11 +639,11 @@ export function handleSetFloorsConfig(config) {
       getGlobal().requestBids.before(requestBidsHook, 50);
       // if user has debug on then we want to allow the debugging module to run before this, assuming they are testing priceFloors
       // debugging is currently set at 5 priority
-      getHook('addBidResponse').before(addBidResponseHook, utils.debugTurnedOn() ? 4 : 50);
+      getHook('addBidResponse').before(addBidResponseHook, debugTurnedOn() ? 4 : 50);
       addedFloorsHook = true;
     }
   } else {
-    utils.logInfo(`${MODULE_NAME}: Turning off module`);
+    logInfo(`${MODULE_NAME}: Turning off module`);
 
     _floorsConfig = {};
     _floorDataForAuction = {};
@@ -620,6 +663,7 @@ function addFloorDataToBid(floorData, floorInfo, bid, adjustedCpm) {
   bid.floorData = {
     floorValue: floorInfo.matchingFloor,
     floorRule: floorInfo.matchingRule,
+    floorRuleValue: floorInfo.floorRuleValue,
     floorCurrency: floorData.data.currency,
     cpmAfterAdjustments: adjustedCpm,
     enforcements: {...floorData.enforcement},
@@ -635,8 +679,8 @@ function addFloorDataToBid(floorData, floorInfo, bid, adjustedCpm) {
  * @summary takes the enforcement flags and the bid itself and determines if it should be floored
  */
 function shouldFloorBid(floorData, floorInfo, bid) {
-  let enforceJS = utils.deepAccess(floorData, 'enforcement.enforceJS') !== false;
-  let shouldFloorDeal = utils.deepAccess(floorData, 'enforcement.floorDeals') === true || !bid.dealId;
+  let enforceJS = deepAccess(floorData, 'enforcement.enforceJS') !== false;
+  let shouldFloorDeal = deepAccess(floorData, 'enforcement.floorDeals') === true || !bid.dealId;
   let bidBelowFloor = bid.floorData.cpmAfterAdjustments < floorInfo.matchingFloor;
   return enforceJS && (bidBelowFloor && shouldFloorDeal);
 }
@@ -646,18 +690,19 @@ function shouldFloorBid(floorData, floorInfo, bid) {
  * And if the rule we find determines a bid should be floored we will do so.
  */
 export function addBidResponseHook(fn, adUnitCode, bid) {
-  let floorData = _floorDataForAuction[this.bidderRequest.auctionId];
-  // if no floor data or associated bidRequest then bail
-  const matchingBidRequest = find(this.bidderRequest.bids, bidRequest => bidRequest.bidId && bidRequest.bidId === bid.requestId);
-  if (!floorData || !bid || floorData.skipped || !matchingBidRequest) {
+  let floorData = _floorDataForAuction[bid.auctionId];
+  // if no floor data then bail
+  if (!floorData || !bid || floorData.skipped) {
     return fn.call(this, adUnitCode, bid);
   }
 
+  const matchingBidRequest = auctionManager.index.getBidRequest(bid)
+
   // get the matching rule
-  let floorInfo = getFirstMatchingFloor(floorData.data, {...matchingBidRequest}, {...bid, size: [bid.width, bid.height]});
+  let floorInfo = getFirstMatchingFloor(floorData.data, matchingBidRequest, {...bid, size: [bid.width, bid.height]});
 
   if (!floorInfo.matchingFloor) {
-    utils.logWarn(`${MODULE_NAME}: unable to determine a matching price floor for bidResponse`, bid);
+    logWarn(`${MODULE_NAME}: unable to determine a matching price floor for bidResponse`, bid);
     return fn.call(this, adUnitCode, bid);
   }
 
@@ -673,13 +718,13 @@ export function addBidResponseHook(fn, adUnitCode, bid) {
     try {
       adjustedCpm = getGlobal().convertCurrency(bid.cpm, bidResponseCurrency.toUpperCase(), floorCurrency);
     } catch (err) {
-      utils.logError(`${MODULE_NAME}: Unable do get currency conversion for bidResponse to Floor Currency. Do you have Currency module enabled? ${bid}`);
+      logError(`${MODULE_NAME}: Unable do get currency conversion for bidResponse to Floor Currency. Do you have Currency module enabled? ${bid}`);
       return fn.call(this, adUnitCode, bid);
     }
   }
 
   // ok we got the bid response cpm in our desired currency. Now we need to run the bidders CPMAdjustment function if it exists
-  adjustedCpm = getBiddersCpmAdjustment(bid.bidderCode, adjustedCpm);
+  adjustedCpm = getBiddersCpmAdjustment(bid.bidderCode, adjustedCpm, bid);
 
   // add necessary data information for analytics adapters / floor providers would possibly need
   addFloorDataToBid(floorData, floorInfo, bid, adjustedCpm);
@@ -688,8 +733,8 @@ export function addBidResponseHook(fn, adUnitCode, bid) {
   if (shouldFloorBid(floorData, floorInfo, bid)) {
     // bid fails floor -> throw it out
     // create basic bid no-bid with necessary data fro analytics adapters
-    let flooredBid = createBid(CONSTANTS.STATUS.NO_BID, matchingBidRequest);
-    Object.assign(flooredBid, utils.pick(bid, [
+    let flooredBid = createBid(CONSTANTS.STATUS.NO_BID, bid.getIdentifiers());
+    Object.assign(flooredBid, pick(bid, [
       'floorData',
       'width',
       'height',
@@ -702,7 +747,7 @@ export function addBidResponseHook(fn, adUnitCode, bid) {
     flooredBid.status = CONSTANTS.BID_STATUS.BID_REJECTED;
     // if floor not met update bid with 0 cpm so it is not included downstream and marked as no-bid
     flooredBid.cpm = 0;
-    utils.logWarn(`${MODULE_NAME}: ${flooredBid.bidderCode}'s Bid Response for ${adUnitCode} was rejected due to floor not met`, bid);
+    logWarn(`${MODULE_NAME}: ${flooredBid.bidderCode}'s Bid Response for ${adUnitCode} was rejected due to floor not met`, bid);
     return fn.call(this, adUnitCode, flooredBid);
   }
   return fn.call(this, adUnitCode, bid);

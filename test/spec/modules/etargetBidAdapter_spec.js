@@ -1,6 +1,7 @@
 import {assert, expect} from 'chai';
 import {spec} from 'modules/etargetBidAdapter.js';
 import { BANNER, VIDEO } from 'src/mediaTypes.js';
+import { deepClone } from 'src/utils.js';
 
 describe('etarget adapter', function () {
   let serverResponse, bidRequest, bidResponses;
@@ -26,6 +27,11 @@ describe('etarget adapter', function () {
       assert.lengthOf(parsedUrl.items, 7);
     });
 
+    it('should be an object', function () {
+      let request = spec.buildRequests(bids);
+      assert.isNotNull(request.metaData);
+    });
+
     it('should handle global request parameters', function () {
       let parsedUrl = parseUrl(spec.buildRequests([bids[0]]).url);
       assert.equal(parsedUrl.path, 'https://sk.search.etargetnet.com/hb');
@@ -34,6 +40,16 @@ describe('etarget adapter', function () {
     it('should set correct request method', function () {
       let request = spec.buildRequests([bids[0]]);
       assert.equal(request.method, 'POST');
+    });
+
+    it('should attach floor param when either bid param or getFloor function exists', function () {
+      // let getFloorResponse = { currency: 'EUR', floor: 5 };
+      let request = null;
+      let bidRequest = deepClone(bids[0]);
+
+      // floor param has to be NULL
+      request = spec.buildRequests([bidRequest]);
+      assert.equal(typeof request.floors, 'undefined');
     });
 
     it('should correctly form bid items', function () {
@@ -154,6 +170,7 @@ describe('etarget adapter', function () {
       assert.equal(result.height, 250);
       assert.equal(result.currency, 'EUR');
       assert.equal(result.netRevenue, true);
+      assert.isNotNull(result.reason);
       assert.equal(result.ttl, 360);
       assert.equal(result.ad, '<tag1>');
       assert.equal(result.transactionId, '5f33781f-9552-4ca1');

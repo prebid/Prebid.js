@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import {deepAccess, isEmpty, isStr, logWarn, parseSizesInput} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
@@ -8,7 +8,10 @@ const BIDDER_CODE = 'yieldone';
 const ENDPOINT_URL = 'https://y.one.impact-ad.jp/h_bid';
 const USER_SYNC_URL = 'https://y.one.impact-ad.jp/push_sync';
 const VIDEO_PLAYER_URL = 'https://img.ak.impact-ad.jp/ic/pone/ivt/firstview/js/dac-video-prebid.min.js';
+const CMER_PLAYER_URL = 'https://an.cmertv.com/hb/renderer/cmertv-video-yone-prebid.min.js';
 const VIEWABLE_PERCENTAGE_URL = 'https://img.ak.impact-ad.jp/ic/pone/ivt/firstview/js/prebid-adformat-config.js';
+
+const DEFAULT_VIDEO_SIZE = {w: 640, h: 360};
 
 export const spec = {
   code: BIDDER_CODE,
@@ -39,16 +42,30 @@ export const spec = {
         t: 'i'
       };
 
-      const videoMediaType = utils.deepAccess(bidRequest, 'mediaTypes.video');
-      if ((utils.isEmpty(bidRequest.mediaType) && utils.isEmpty(bidRequest.mediaTypes)) ||
-      (bidRequest.mediaType === BANNER || (bidRequest.mediaTypes && bidRequest.mediaTypes[BANNER]))) {
-        const sizes = utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes') || bidRequest.sizes;
-        payload.sz = utils.parseSizesInput(sizes).join(',');
-      } else if (bidRequest.mediaType === VIDEO || videoMediaType) {
-        const sizes = utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize') || bidRequest.sizes;
-        const size = utils.parseSizesInput(sizes)[0];
-        payload.w = size.split('x')[0];
-        payload.h = size.split('x')[1];
+      const mediaType = getMediaType(bidRequest);
+      switch (mediaType) {
+        case BANNER:
+          payload.sz = getBannerSizes(bidRequest);
+          break;
+        case VIDEO:
+          const videoSize = getVideoSize(bidRequest);
+          payload.w = videoSize.w;
+          payload.h = videoSize.h;
+          break;
+        default:
+          break;
+      }
+
+      // LiveRampID
+      const idlEnv = deepAccess(bidRequest, 'userId.idl_env');
+      if (isStr(idlEnv) && !isEmpty(idlEnv)) {
+        payload.lr_env = idlEnv;
+      }
+
+      // IMID
+      const imuid = deepAccess(bidRequest, 'userId.imuid');
+      if (isStr(imuid) && !isEmpty(imuid)) {
+        payload.imuid = imuid;
       }
 
       return {
@@ -81,7 +98,10 @@ export const spec = {
         currency: currency,
         netRevenue: netRevenue,
         ttl: config.getConfig('_bidderTimeout'),
-        referrer: referrer
+        referrer: referrer,
+        meta: {
+          advertiserDomains: response.adomain ? response.adomain : []
+        },
       };
 
       if (response.adTag && renderId === 'ViewableRendering') {
@@ -136,7 +156,11 @@ export const spec = {
       } else if (response.adm) {
         bidResponse.mediaType = VIDEO;
         bidResponse.vastXml = response.adm;
-        bidResponse.renderer = newRenderer(response);
+        if (renderId === 'cmer') {
+          bidResponse.renderer = newCmerRenderer(response);
+        } else {
+          bidResponse.renderer = newRenderer(response);
+        }
       }
 
       bidResponses.push(bidResponse);
@@ -153,6 +177,106 @@ export const spec = {
   },
 }
 
+/**
+ * NOTE: server side does not yet support multiple formats.
+ * @param  {Object} bidRequest -
+ * @param  {boolean} [enabledOldFormat = true] - default: `true`.
+ * @return {string|null} - `"banner"` or `"video"` or `null`.
+ */
+function getMediaType(bidRequest, enabledOldFormat = true) {
+  let hasBannerType = Boolean(deepAccess(bidRequest, 'mediaTypes.banner'));
+  let hasVideoType = Boolean(deepAccess(bidRequest, 'mediaTypes.video'));
+
+  if (enabledOldFormat) {
+    hasBannerType = hasBannerType || bidRequest.mediaType === BANNER ||
+      (isEmpty(bidRequest.mediaTypes) && isEmpty(bidRequest.mediaType));
+    hasVideoType = hasVideoType || bidRequest.mediaType === VIDEO;
+  }
+
+  if (hasBannerType && hasVideoType) {
+    const playerParams = deepAccess(bidRequest, 'params.playerParams')
+    if (playerParams) {
+      return VIDEO;
+    } else {
+      return BANNER;
+    }
+  } else if (hasBannerType) {
+    return BANNER;
+  } else if (hasVideoType) {
+    return VIDEO;
+  }
+
+  return null;
+}
+
+/**
+ * NOTE:
+ *   If `mediaTypes.banner` exists, then `mediaTypes.banner.sizes` must also exist.
+ *   The reason for this is that Prebid.js will perform the verification and
+ *   if `mediaTypes.banner.sizes` is inappropriate, it will delete the entire `mediaTypes.banner`.
+ * @param  {Object} bidRequest -
+ * @param  {Object} bidRequest.banner -
+ * @param  {Array<string>} bidRequest.banner.sizes -
+ * @param  {boolean} [enabledOldFormat = true] - default: `true`.
+ * @return {string} - strings like `"300x250"` or `"300x250,728x90"`.
+ */
+function getBannerSizes(bidRequest, enabledOldFormat = true) {
+  let sizes = deepAccess(bidRequest, 'mediaTypes.banner.sizes');
+
+  if (enabledOldFormat) {
+    sizes = sizes || bidRequest.sizes;
+  }
+
+  return parseSizesInput(sizes).join(',');
+}
+
+/**
+ * @param  {Object} bidRequest -
+ * @param  {boolean} [enabledOldFormat = true] - default: `true`.
+ * @param  {boolean} [enabledFlux = true] - default: `true`.
+ * @return {{w: number, h: number}} -
+ */
+function getVideoSize(bidRequest, enabledOldFormat = true, enabledFlux = true) {
+  /**
+   * @param  {Array<number, number> | Array<Array<number, number>>} sizes -
+   * @return {{w: number, h: number} | null} -
+   */
+  const _getPlayerSize = (sizes) => {
+    let result = null;
+
+    const size = parseSizesInput(sizes)[0];
+    if (isEmpty(size)) {
+      return result;
+    }
+
+    const splited = size.split('x');
+    const sizeObj = {w: parseInt(splited[0], 10), h: parseInt(splited[1], 10)};
+    const _isValidPlayerSize = !(isEmpty(sizeObj)) && (isFinite(sizeObj.w) && isFinite(sizeObj.h));
+    if (!_isValidPlayerSize) {
+      return result;
+    }
+
+    result = sizeObj;
+    return result;
+  }
+
+  let playerSize = _getPlayerSize(deepAccess(bidRequest, 'mediaTypes.video.playerSize'));
+
+  if (enabledOldFormat) {
+    playerSize = playerSize || _getPlayerSize(bidRequest.sizes);
+  }
+
+  if (enabledFlux) {
+    // NOTE: `video.playerSize` in Flux is always [1,1].
+    if (playerSize && (playerSize.w === 1 && playerSize.h === 1)) {
+      // NOTE: `params.playerSize` is a specific object to support `FLUX`.
+      playerSize = _getPlayerSize(deepAccess(bidRequest, 'params.playerSize'));
+    }
+  }
+
+  return playerSize || DEFAULT_VIDEO_SIZE;
+}
+
 function newRenderer(response) {
   const renderer = Renderer.install({
     id: response.uid,
@@ -163,7 +287,7 @@ function newRenderer(response) {
   try {
     renderer.setRender(outstreamRender);
   } catch (err) {
-    utils.logWarn('Prebid Error calling setRender on newRenderer', err);
+    logWarn('Prebid Error calling setRender on newRenderer', err);
   }
 
   return renderer;
@@ -172,6 +296,28 @@ function newRenderer(response) {
 function outstreamRender(bid) {
   bid.renderer.push(() => {
     window.DACIVTPREBID.renderPrebid(bid);
+  });
+}
+
+function newCmerRenderer(response) {
+  const renderer = Renderer.install({
+    id: response.uid,
+    url: CMER_PLAYER_URL,
+    loaded: false,
+  });
+
+  try {
+    renderer.setRender(cmerRender);
+  } catch (err) {
+    logWarn('Prebid Error calling setRender on newRenderer', err);
+  }
+
+  return renderer;
+}
+
+function cmerRender(bid) {
+  bid.renderer.push(() => {
+    window.CMERYONEPREBID.renderPrebid(bid);
   });
 }
 

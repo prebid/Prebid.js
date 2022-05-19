@@ -40,6 +40,13 @@ describe('BlueBillywigAdapter', () => {
       expect(spec.isBidRequestValid(baseValidBid)).to.equal(true);
     });
 
+    it('should return false when params missing', () => {
+      const bid = deepClone(baseValidBid);
+      delete bid.params;
+
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
     it('should return false when publicationName is missing', () => {
       const bid = deepClone(baseValidBid);
       delete bid.params.publicationName;
@@ -182,6 +189,44 @@ describe('BlueBillywigAdapter', () => {
       const bid = deepClone(baseValidBid);
 
       bid.mediaTypes[VIDEO].context = 'instream';
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('should fail if video is specified but is not an object', () => {
+      const bid = deepClone(baseValidBid);
+
+      bid.params.video = null;
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+
+      bid.params.video = 'string';
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+
+      bid.params.video = 123;
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+
+      bid.params.video = false;
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+
+      bid.params.video = void (0);
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('should fail if rendererSettings is specified but is not an object', () => {
+      const bid = deepClone(baseValidBid);
+
+      bid.params.rendererSettings = null;
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+
+      bid.params.rendererSettings = 'string';
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+
+      bid.params.rendererSettings = 123;
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+
+      bid.params.rendererSettings = false;
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+
+      bid.params.rendererSettings = void (0);
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
@@ -510,30 +555,64 @@ describe('BlueBillywigAdapter', () => {
       expect(deepAccess(payload, 'user.ext.eids')).to.be.undefined;
     });
 
-    it('should set digitrust when present on bid', () => {
-      const digiTrust = {data: {id: 'DTID', keyv: 4, privacy: {optout: false}, producer: 'ABC', version: 2}};
-
+    it('should set imp.0.video.[w|h|placement] by default', () => {
       const newBaseValidBidRequests = deepClone(baseValidBidRequests);
-	    newBaseValidBidRequests[0].userId = { digitrustid: digiTrust };
 
       const request = spec.buildRequests(newBaseValidBidRequests, validBidderRequest);
       const payload = JSON.parse(request.data);
 
-      expect(payload).to.have.nested.property('user.ext.digitrust');
-      expect(payload.user.ext.digitrust.id).to.equal(digiTrust.data.id);
-      expect(payload.user.ext.digitrust.keyv).to.equal(digiTrust.data.keyv);
+      expect(deepAccess(payload, 'imp.0.video.w')).to.equal(768);
+      expect(deepAccess(payload, 'imp.0.video.h')).to.equal(432);
+      expect(deepAccess(payload, 'imp.0.video.placement')).to.equal(3);
     });
 
-    it('should not set digitrust when opted out', () => {
-      const digiTrust = {data: {id: 'DTID', keyv: 4, privacy: {optout: true}, producer: 'ABC', version: 2}};
-
+    it('should update imp0.video.[w|h] when present in config', () => {
       const newBaseValidBidRequests = deepClone(baseValidBidRequests);
-	    newBaseValidBidRequests[0].userId = { digitrustid: digiTrust };
+      newBaseValidBidRequests[0].mediaTypes.video.playerSize = [1, 1];
 
       const request = spec.buildRequests(newBaseValidBidRequests, validBidderRequest);
       const payload = JSON.parse(request.data);
 
-      expect(deepAccess(payload, 'user.ext.digitrust')).to.be.undefined;
+      expect(deepAccess(payload, 'imp.0.video.w')).to.equal(1);
+      expect(deepAccess(payload, 'imp.0.video.h')).to.equal(1);
+    });
+
+    it('should allow overriding any imp0.video key through params.video', () => {
+      const newBaseValidBidRequests = deepClone(baseValidBidRequests);
+      newBaseValidBidRequests[0].params.video = {
+        w: 2,
+        h: 2,
+        placement: 1,
+        minduration: 15,
+        maxduration: 30
+      };
+
+      const request = spec.buildRequests(newBaseValidBidRequests, validBidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(deepAccess(payload, 'imp.0.video.w')).to.equal(2);
+      expect(deepAccess(payload, 'imp.0.video.h')).to.equal(2);
+      expect(deepAccess(payload, 'imp.0.video.placement')).to.equal(1);
+      expect(deepAccess(payload, 'imp.0.video.minduration')).to.equal(15);
+      expect(deepAccess(payload, 'imp.0.video.maxduration')).to.equal(30);
+    });
+
+    it('should not allow placing any non-OpenRTB 2.5 keys on imp.0.video through params.video', () => {
+      const newBaseValidBidRequests = deepClone(baseValidBidRequests);
+      newBaseValidBidRequests[0].params.video = {
+        'true': true,
+        'testing': 'some',
+        123: {},
+        '': 'values'
+      };
+
+      const request = spec.buildRequests(newBaseValidBidRequests, validBidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(deepAccess(request, 'imp.0.video.true')).to.be.undefined;
+      expect(deepAccess(payload, 'imp.0.video.testing')).to.be.undefined;
+      expect(deepAccess(payload, 'imp.0.video.123')).to.be.undefined;
+      expect(deepAccess(payload, 'imp.0.video.')).to.be.undefined;
     });
   });
   describe('interpretResponse', () => {
@@ -571,7 +650,7 @@ describe('BlueBillywigAdapter', () => {
         bidder: BB_CONSTANTS.BIDDER_CODE,
         bidderRequestId: '1a2345b67c8d9e0',
         params: baseValidBid.params,
-        sizes: [[768, 432], [640, 480], [630, 360]],
+        sizes: [[640, 480], [630, 360]],
         transactionId: '2b34c5de-f67a-8901-bcd2-34567efabc89'
       }],
       start: 11585918458869,
@@ -681,6 +760,10 @@ describe('BlueBillywigAdapter', () => {
       expect(bid.currency).to.equal(serverResponse.body.cur);
       expect(bid.ttl).to.equal(BB_CONSTANTS.DEFAULT_TTL);
 
+      expect(bid).to.have.property('meta');
+      expect(bid.meta).to.have.property('advertiserDomains');
+      expect(bid.meta.advertiserDomains[0]).to.equal('bluebillywig.com');
+
       expect(bid.publicationName).to.equal(validBidderRequest.bids[0].params.publicationName);
       expect(bid.rendererCode).to.equal(validBidderRequest.bids[0].params.rendererCode);
       expect(bid.accountId).to.equal(validBidderRequest.bids[0].params.accountId);
@@ -758,6 +841,101 @@ describe('BlueBillywigAdapter', () => {
 
         expect(result.length).to.equal(0);
       }
+    });
+
+    it('should take default width and height when w/h not present', () => {
+      const bidSizesMissing = deepClone(serverResponse);
+
+      delete bidSizesMissing.body.seatbid[0].bid[0].w;
+      delete bidSizesMissing.body.seatbid[0].bid[0].h;
+
+      const response = bidSizesMissing;
+      const request = spec.buildRequests(baseValidBidRequests, validBidderRequest);
+      const result = spec.interpretResponse(response, request);
+
+      expect(deepAccess(result, '0.width')).to.equal(768);
+      expect(deepAccess(result, '0.height')).to.equal(432);
+    });
+
+    it('should take nurl value when adm not present', () => {
+      const bidAdmMissing = deepClone(serverResponse);
+
+      delete bidAdmMissing.body.seatbid[0].bid[0].adm;
+      bidAdmMissing.body.seatbid[0].bid[0].nurl = 'https://bluebillywig.com';
+
+      const response = bidAdmMissing;
+      const request = spec.buildRequests(baseValidBidRequests, validBidderRequest);
+      const result = spec.interpretResponse(response, request);
+
+      expect(deepAccess(result, '0.vastXml')).to.be.undefined;
+      expect(deepAccess(result, '0.vastUrl')).to.equal('https://bluebillywig.com');
+    });
+
+    it('should not take nurl value when adm present', () => {
+      const bidAdmNurlPresent = deepClone(serverResponse);
+
+      bidAdmNurlPresent.body.seatbid[0].bid[0].nurl = 'https://bluebillywig.com';
+
+      const response = bidAdmNurlPresent;
+      const request = spec.buildRequests(baseValidBidRequests, validBidderRequest);
+      const result = spec.interpretResponse(response, request);
+
+      expect(deepAccess(result, '0.vastXml')).to.equal(bidAdmNurlPresent.body.seatbid[0].bid[0].adm);
+      expect(deepAccess(result, '0.vastUrl')).to.be.undefined;
+    });
+
+    it('should take ext.prebid.cache data when present, ignore ext.prebid.targeting and nurl', () => {
+      const bidExtPrebidCache = deepClone(serverResponse);
+
+      delete bidExtPrebidCache.body.seatbid[0].bid[0].adm;
+      bidExtPrebidCache.body.seatbid[0].bid[0].nurl = 'https://notnurl.com';
+
+      bidExtPrebidCache.body.seatbid[0].bid[0].ext = {
+        prebid: {
+          cache: {
+            vastXml: {
+              url: 'https://bluebillywig.com',
+              cacheId: '12345'
+            }
+          },
+          targeting: {
+            hb_uuid: '23456',
+            hb_cache_host: 'bluebillywig.com',
+            hb_cache_path: '/cache'
+          }
+        }
+      };
+
+      const response = bidExtPrebidCache;
+      const request = spec.buildRequests(baseValidBidRequests, validBidderRequest);
+      const result = spec.interpretResponse(response, request);
+
+      expect(deepAccess(result, '0.vastUrl')).to.equal('https://bluebillywig.com');
+      expect(deepAccess(result, '0.videoCacheKey')).to.equal('12345');
+    });
+
+    it('should take ext.prebid.targeting data when ext.prebid.cache not present, and ignore nurl', () => {
+      const bidExtPrebidTargeting = deepClone(serverResponse);
+
+      delete bidExtPrebidTargeting.body.seatbid[0].bid[0].adm;
+      bidExtPrebidTargeting.body.seatbid[0].bid[0].nurl = 'https://notnurl.com';
+
+      bidExtPrebidTargeting.body.seatbid[0].bid[0].ext = {
+        prebid: {
+          targeting: {
+            hb_uuid: '34567',
+            hb_cache_host: 'bluebillywig.com',
+            hb_cache_path: '/cache'
+          }
+        }
+      };
+
+      const response = bidExtPrebidTargeting;
+      const request = spec.buildRequests(baseValidBidRequests, validBidderRequest);
+      const result = spec.interpretResponse(response, request);
+
+      expect(deepAccess(result, '0.vastUrl')).to.equal('https://bluebillywig.com/cache?uuid=34567');
+      expect(deepAccess(result, '0.videoCacheKey')).to.equal('34567');
     });
   });
   describe('getUserSyncs', () => {

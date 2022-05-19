@@ -180,7 +180,8 @@ describe('LockerDomeAdapter', function () {
             currency: 'USD',
             netRevenue: true,
             ad: '<!-- AD 1 CREATIVE -->',
-            ttl: 300
+            ttl: 300,
+            adomain: ['example.com']
           },
           {
             requestId: '4510f2834773ce',
@@ -191,7 +192,8 @@ describe('LockerDomeAdapter', function () {
             currency: 'USD',
             netRevenue: true,
             ad: '<!-- AD 2 CREATIVE -->',
-            ttl: 300
+            ttl: 300,
+            adomain: ['example.com']
           }]
         }
       };
@@ -217,6 +219,9 @@ describe('LockerDomeAdapter', function () {
       expect(interpretedResponse[0].netRevenue).to.equal(serverResponse.body.bids[0].netRevenue);
       expect(interpretedResponse[0].ad).to.equal(serverResponse.body.bids[0].ad);
       expect(interpretedResponse[0].ttl).to.equal(serverResponse.body.bids[0].ttl);
+      expect(interpretedResponse[0]).to.have.property('meta');
+      expect(interpretedResponse[0].meta).to.have.property('advertiserDomains');
+      expect(interpretedResponse[0].meta.advertiserDomains).to.deep.equal(serverResponse.body.bids[0].adomain);
 
       expect(interpretedResponse[1].requestId).to.equal(serverResponse.body.bids[1].requestId);
       expect(interpretedResponse[1].cpm).to.equal(serverResponse.body.bids[1].cpm);
@@ -227,6 +232,9 @@ describe('LockerDomeAdapter', function () {
       expect(interpretedResponse[1].netRevenue).to.equal(serverResponse.body.bids[1].netRevenue);
       expect(interpretedResponse[1].ad).to.equal(serverResponse.body.bids[1].ad);
       expect(interpretedResponse[1].ttl).to.equal(serverResponse.body.bids[1].ttl);
+      expect(interpretedResponse[1]).to.have.property('meta');
+      expect(interpretedResponse[1].meta).to.have.property('advertiserDomains');
+      expect(interpretedResponse[1].meta.advertiserDomains).to.deep.equal(serverResponse.body.bids[1].adomain);
     });
   });
 });

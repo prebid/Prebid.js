@@ -43,18 +43,63 @@ export function makeSlot() {
   return slot;
 }
 
-window.googletag = {
-  _slots: [],
-  pubads: function () {
-    var self = this;
-    return {
-      getSlots: function () {
-        return self._slots;
-      },
+export function emitEvent(eventName, params) {
+  (window.googletag._callbackMap[eventName] || []).forEach(eventCb => eventCb({...params, eventName}));
+}
 
-      setSlots: function (slots) {
-        self._slots = slots;
-      }
-    };
-  }
-};
+export function enable() {
+  window.googletag = {
+    _slots: [],
+    _callbackMap: {},
+    _ppid: undefined,
+    cmd: [],
+    pubads: function () {
+      var self = this;
+      return {
+        setPublisherProvidedId: function (ppid) {
+          self._ppid = ppid;
+        },
+
+        getSlots: function () {
+          return self._slots;
+        },
+
+        setSlots: function (slots) {
+          self._slots = slots;
+        },
+
+        setTargeting: function(key, arrayOfValues) {
+          self._targeting[key] = Array.isArray(arrayOfValues) ? arrayOfValues : [arrayOfValues];
+        },
+
+        getTargeting: function(key) {
+          return self._targeting[key] || [];
+        },
+
+        getTargetingKeys: function() {
+          return Object.getOwnPropertyNames(self._targeting);
+        },
+
+        clearTargeting: function() {
+          self._targeting = {};
+        },
+
+        addEventListener: function (eventName, cb) {
+          self._callbackMap[eventName] = self._callbackMap[eventName] || [];
+          self._callbackMap[eventName].push(cb);
+        }
+      };
+    }
+  };
+}
+
+export function disable() {
+  window.googletag = undefined;
+}
+
+export function reset() {
+  disable();
+  enable();
+}
+
+enable();

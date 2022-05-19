@@ -1,14 +1,12 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { parseSizesInput, logError, generateUUID, isEmpty, deepAccess, logWarn, logMessage } from '../src/utils.js';
+import { parseSizesInput, logError, generateUUID, isEmpty, deepAccess, logWarn, logMessage, deepClone, getGptSlotInfoForAdUnitCode, isFn, isPlainObject } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { userSync } from '../src/userSync.js';
-
 const BIDDER_CODE = 'sonobi';
 const STR_ENDPOINT = 'https://apex.go.sonobi.com/trinity.json';
 const PAGEVIEW_ID = generateUUID();
-const SONOBI_DIGITRUST_KEY = 'fhnS5drwmH';
 const OUTSTREAM_REDNERER_URL = 'https://mtrx.go.sonobi.com/sbi_outstream_renderer.js';
 
 export const spec = {
@@ -62,11 +60,11 @@ export const spec = {
       if (/^[\/]?[\d]+[[\/].+[\/]?]?$/.test(slotIdentifier)) {
         slotIdentifier = slotIdentifier.charAt(0) === '/' ? slotIdentifier : '/' + slotIdentifier;
         return {
-          [`${slotIdentifier}|${bid.bidId}`]: `${_validateSize(bid)}${_validateFloor(bid)}`
+          [`${slotIdentifier}|${bid.bidId}`]: `${_validateSize(bid)}${_validateFloor(bid)}${_validateGPID(bid)}`
         }
       } else if (/^[0-9a-fA-F]{20}$/.test(slotIdentifier) && slotIdentifier.length === 20) {
         return {
-          [bid.bidId]: `${slotIdentifier}|${_validateSize(bid)}${_validateFloor(bid)}`
+          [bid.bidId]: `${slotIdentifier}|${_validateSize(bid)}${_validateFloor(bid)}${_validateGPID(bid)}`
         }
       } else {
         logError(`The ad unit code or Sonobi Placement id for slot ${bid.bidId} is invalid`);
@@ -85,7 +83,14 @@ export const spec = {
       'lib_name': 'prebid',
       'lib_v': '$prebid.version$',
       'us': 0,
+
     };
+
+    const fpd = config.getConfig('ortb2');
+
+    if (fpd) {
+      payload.fpd = JSON.stringify(fpd);
+    }
 
     if (config.getConfig('userSync') && config.getConfig('userSync').syncsPerBidder) {
       payload.us = config.getConfig('userSync').syncsPerBidder;
@@ -114,18 +119,22 @@ export const spec = {
       }
     }
 
-    const digitrust = _getDigiTrustObject(SONOBI_DIGITRUST_KEY);
-
-    if (digitrust) {
-      payload.digid = digitrust.id;
-      payload.digkeyv = digitrust.keyv;
-    }
-
     if (validBidRequests[0].schain) {
       payload.schain = JSON.stringify(validBidRequests[0].schain)
     }
     if (deepAccess(validBidRequests[0], 'userId') && Object.keys(validBidRequests[0].userId).length > 0) {
-      payload.userid = JSON.stringify(validBidRequests[0].userId);
+      const userIds = deepClone(validBidRequests[0].userId);
+
+      if (userIds.id5id) {
+        userIds.id5id = deepAccess(userIds, 'id5id.uid');
+      }
+
+      payload.userid = JSON.stringify(userIds);
+    }
+
+    const eids = deepAccess(validBidRequests[0], 'userIdAsEids');
+    if (Array.isArray(eids) && eids.length > 0) {
+      payload.eids = JSON.stringify(eids);
     }
 
     let keywords = validBidRequests[0].params.keywords; // a CSV of keywords
@@ -136,6 +145,12 @@ export const spec = {
 
     if (bidderRequest && bidderRequest.uspConsent) {
       payload.us_privacy = bidderRequest.uspConsent;
+    }
+
+    if (config.getConfig('coppa') === true) {
+      payload.coppa = 1;
+    } else {
+      payload.coppa = 0;
     }
 
     // If there is no key_maker data, then don't make the request.
@@ -191,6 +206,10 @@ export const spec = {
           width = 1,
           height = 1
         ] = bid.sbi_size.split('x');
+        let aDomains = [];
+        if (bid.sbi_adomain) {
+          aDomains = [bid.sbi_adomain]
+        }
         const bids = {
           requestId: bidId,
           cpm: Number(bid.sbi_mouse),
@@ -201,7 +220,10 @@ export const spec = {
           creativeId: bid.sbi_crid || bid.sbi_aid,
           aid: bid.sbi_aid,
           netRevenue: true,
-          currency: 'USD'
+          currency: 'USD',
+          meta: {
+            advertiserDomains: aDomains
+          }
         };
 
         if (bid.sbi_dozer) {
@@ -215,6 +237,7 @@ export const spec = {
           delete bids.width;
           delete bids.height;
         } else if (mediaType === 'outstream' && bidRequest) {
+          delete bids.ad; // Some pubs expect bids.ad to be a vast xml structure, we have a vatUrl so lets delete this.
           bids.mediaType = 'video';
           bids.vastUrl = createCreative(bidResponse.sbi_dc, bid.sbi_aid);
           bids.renderer = newRenderer(bidRequest.adUnitCode, bids, deepAccess(
@@ -288,10 +311,21 @@ function _validateSlot (bid) {
 }
 
 function _validateFloor (bid) {
-  if (bid.params.floor) {
-    return `|f=${bid.params.floor}`;
+  const floor = getBidFloor(bid);
+
+  if (floor) {
+    return `|f=${floor}`;
   }
   return '';
+}
+
+function _validateGPID(bid) {
+  const gpid = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot') || deepAccess(getGptSlotInfoForAdUnitCode(bid.adUnitCode), 'gptSlot') || bid.params.ad_unit;
+
+  if (gpid) {
+    return `|gpid=${gpid}`
+  }
+  return ''
 }
 
 const _creative = (mediaType, referer) => (sbiDc, sbiAid) => {
@@ -334,20 +368,6 @@ export function _getPlatform(context = window) {
     return 'tablet'
   }
   return 'desktop';
-}
-
-// https://github.com/digi-trust/dt-cdn/wiki/Integration-Guide
-function _getDigiTrustObject(key) {
-  function getDigiTrustId() {
-    let digiTrustUser = window.DigiTrust && (config.getConfig('digiTrustId') || window.DigiTrust.getUser({member: key}));
-    return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || null;
-  }
-  let digiTrustId = getDigiTrustId();
-  // Verify there is an ID and this user has not opted out
-  if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
-    return null;
-  }
-  return digiTrustId;
 }
 
 function newRenderer(adUnitCode, bid, rendererOptions = {}) {
@@ -395,6 +415,23 @@ function outstreamRender(bid) {
 
 function _iframeAllowed() {
   return userSync.canBidderRegisterSync('iframe', BIDDER_CODE);
+}
+
+function getBidFloor(bid) {
+  if (!isFn(bid.getFloor)) {
+    return (bid.params.floor) ? bid.params.floor : null;
+  }
+
+  let floor = bid.getFloor({
+    currency: 'USD',
+    mediaType: '*',
+    size: '*'
+  });
+
+  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
+    return floor.floor;
+  }
+  return '';
 }
 
 registerBidder(spec);

@@ -1,540 +1,449 @@
 import {Renderer} from '../src/Renderer.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {isStr, isArray, isNumber, isPlainObject, isBoolean, logError} from '../src/utils.js';
-import find from 'core-js-pure/features/array/find.js';
+import {isArray, isBoolean, isFn, isPlainObject, isStr, logError, replaceAuctionPrice} from '../src/utils.js';
+import {find} from '../src/polyfill.js';
+import {config} from '../src/config.js';
+import { OUTSTREAM } from '../src/video.js';
 
-const ADAPTER_VERSION = 'v1.0.0';
+const BIDDER_CODE = 'adot';
+const ADAPTER_VERSION = 'v2.0.0';
 const BID_METHOD = 'POST';
-const BIDDER_URL = 'https://dsp.adotmob.com/headerbidding/bidrequest';
-const SUPPORTED_VIDEO_CONTEXTS = ['instream', 'outstream'];
-const SUPPORTED_INSTREAM_CONTEXTS = ['pre-roll', 'mid-roll', 'post-roll'];
-const NATIVE_PLACEMENTS = {
-  title: {id: 1, name: 'title'},
-  icon: {id: 2, type: 1, name: 'img'},
-  image: {id: 3, type: 3, name: 'img'},
-  sponsoredBy: {id: 4, name: 'data', type: 1},
-  body: {id: 5, name: 'data', type: 2},
-  cta: {id: 6, type: 12, name: 'data'}
-};
-const NATIVE_ID_MAPPING = {1: 'title', 2: 'icon', 3: 'image', 4: 'sponsoredBy', 5: 'body', 6: 'cta'};
-const SUPPORTED_VIDEO_MIMES = ['video/mp4'];
+const BIDDER_URL = 'https://dsp.adotmob.com/headerbidding{PUBLISHER_PATH}/bidrequest';
+const REQUIRED_VIDEO_PARAMS = ['mimes', 'protocols'];
 const DOMAIN_REGEX = new RegExp('//([^/]*)');
 const FIRST_PRICE = 1;
-const BID_SUPPORTED_MEDIA_TYPES = ['banner', 'video', 'native'];
-const TTL = 10;
-const NET_REVENUE = true;
-// eslint-disable-next-line no-template-curly-in-string
-const AUCTION_PRICE = '${AUCTION_PRICE}';
+const IMP_BUILDER = { banner: buildBanner, video: buildVideo, native: buildNative };
+const NATIVE_PLACEMENTS = {
+  title: { id: 1, name: 'title' },
+  icon: { id: 2, type: 1, name: 'img' },
+  image: { id: 3, type: 3, name: 'img' },
+  sponsoredBy: { id: 4, name: 'data', type: 1 },
+  body: { id: 5, name: 'data', type: 2 },
+  cta: { id: 6, type: 12, name: 'data' }
+};
+const NATIVE_ID_MAPPING = { 1: 'title', 2: 'icon', 3: 'image', 4: 'sponsoredBy', 5: 'body', 6: 'cta' };
 const OUTSTREAM_VIDEO_PLAYER_URL = 'https://adserver.adotmob.com/video/player.min.js';
+const BID_RESPONSE_NET_REVENUE = true;
+const BID_RESPONSE_TTL = 10;
+const DEFAULT_CURRENCY = 'USD';
 
-function isNone(value) {
-  return (value === null) || (value === undefined);
-}
-
-function groupBy(values, key) {
-  const groups = values.reduce((acc, value) => {
-    const groupId = value[key];
-
-    if (!acc[groupId]) acc[groupId] = [];
-    acc[groupId].push(value);
-
-    return acc;
-  }, {});
-
-  return Object
-    .keys(groups)
-    .map(id => ({id, key, values: groups[id]}));
-}
-
-function validateMediaTypes(mediaTypes, allowedMediaTypes) {
-  if (!isPlainObject(mediaTypes)) return false;
-  if (!allowedMediaTypes.some(mediaType => mediaType in mediaTypes)) return false;
-
-  if (isBanner(mediaTypes)) {
-    if (!validateBanner(mediaTypes.banner)) return false;
-  }
-
-  if (isVideo(mediaTypes)) {
-    if (!validateVideo(mediaTypes.video)) return false;
-  }
-
-  return true;
-}
-
-function isBanner(mediaTypes) {
-  return isPlainObject(mediaTypes) && isPlainObject(mediaTypes.banner);
-}
-
-function isVideo(mediaTypes) {
-  return isPlainObject(mediaTypes) && isPlainObject(mediaTypes.video);
-}
-
-function validateBanner(banner) {
-  return isPlainObject(banner) &&
-    isArray(banner.sizes) &&
-    (banner.sizes.length > 0) &&
-    banner.sizes.every(validateMediaSizes);
-}
-
-function validateVideo(video) {
-  if (!isPlainObject(video)) return false;
-  if (!isStr(video.context)) return false;
-  if (SUPPORTED_VIDEO_CONTEXTS.indexOf(video.context) === -1) return false;
-
-  if (!video.playerSize) return true;
-  if (!isArray(video.playerSize)) return false;
-
-  return video.playerSize.every(validateMediaSizes);
-}
-
-function validateMediaSizes(mediaSize) {
-  return isArray(mediaSize) &&
-    (mediaSize.length === 2) &&
-    mediaSize.every(size => (isNumber(size) && size >= 0));
-}
-
-function validateParameters(parameters, adUnit) {
-  if (isVideo(adUnit.mediaTypes)) {
-    if (!isPlainObject(parameters)) return false;
-    if (!validateVideoParameters(parameters.video, adUnit)) return false;
-  }
-
-  return true;
-}
-
-function validateVideoParameters(video, adUnit) {
-  if (!video) return false;
-
-  if (!isArray(video.mimes)) return false;
-  if (video.mimes.length === 0) return false;
-  if (!video.mimes.every(isStr)) return false;
-
-  if (video.minDuration && !isNumber(video.minDuration)) return false;
-  if (video.maxDuration && !isNumber(video.maxDuration)) return false;
-
-  if (!isArray(video.protocols)) return false;
-  if (video.protocols.length === 0) return false;
-  if (!video.protocols.every(isNumber)) return false;
-
-  if (isInstream(adUnit.mediaTypes.video)) {
-    if (!video.instreamContext) return false;
-    if (SUPPORTED_INSTREAM_CONTEXTS.indexOf(video.instreamContext) === -1) return false;
-  }
-
-  return true;
-}
-
-function validateServerRequest(serverRequest) {
-  return isPlainObject(serverRequest) &&
-    isPlainObject(serverRequest.data) &&
-    isArray(serverRequest.data.imp) &&
-    isPlainObject(serverRequest._adot_internal) &&
-    isArray(serverRequest._adot_internal.impressions)
-}
-
-function createServerRequestFromAdUnits(adUnits, bidRequestId, adUnitContext) {
-  return {
-    method: BID_METHOD,
-    url: BIDDER_URL,
-    data: generateBidRequestsFromAdUnits(adUnits, bidRequestId, adUnitContext),
-    _adot_internal: generateAdotInternal(adUnits)
+/**
+ * Parse string in plain object
+ *
+ * @param {string} data
+ * @returns {object|null} Parsed object or null
+ */
+function tryParse(data) {
+  try {
+    return JSON.parse(data);
+  } catch (err) {
+    logError(err);
+    return null;
   }
 }
 
-function generateAdotInternal(adUnits) {
-  const impressions = adUnits.reduce((acc, adUnit) => {
-    const {bidId, mediaTypes, adUnitCode, params} = adUnit;
-    const base = {bidId, adUnitCode, container: params.video && params.video.container};
-
-    const imps = Object
-      .keys(mediaTypes)
-      .reduce((acc, mediaType, index) => {
-        const data = mediaTypes[mediaType];
-        const impressionId = `${bidId}_${index}`;
-
-        if (mediaType !== 'banner') return acc.concat({...base, impressionId});
-
-        const bannerImps = data.sizes.map((item, i) => ({...base, impressionId: `${impressionId}_${i}`}));
-
-        return acc.concat(bannerImps);
-      }, []);
-
-    return acc.concat(imps);
-  }, []);
-
-  return {impressions};
-}
-
-function generateBidRequestsFromAdUnits(adUnits, bidRequestId, adUnitContext) {
-  return {
-    id: bidRequestId,
-    imp: adUnits.reduce(generateImpressionsFromAdUnit, []),
-    site: generateSiteFromAdUnitContext(adUnitContext),
-    device: getDeviceInfo(),
-    user: getUserInfoFromAdUnitContext(adUnitContext),
-    regs: getRegulationFromAdUnitContext(adUnitContext),
-    at: FIRST_PRICE,
-    ext: generateBidRequestExtension()
-  };
-}
-
-function generateImpressionsFromAdUnit(acc, adUnit) {
-  const {bidId, mediaTypes, params} = adUnit;
-  const {placementId} = params;
-  const pmp = {};
-
-  if (placementId) pmp.deals = [{id: placementId}]
-
-  const imps = Object
-    .keys(mediaTypes)
-    .reduce((acc, mediaType, index) => {
-      const data = mediaTypes[mediaType];
-      const impId = `${bidId}_${index}`;
-
-      if (mediaType === 'banner') return acc.concat(generateBannerFromAdUnit(impId, data, params));
-      if (mediaType === 'video') return acc.concat({id: impId, video: generateVideoFromAdUnit(data, params), pmp});
-      if (mediaType === 'native') return acc.concat({id: impId, native: generateNativeFromAdUnit(data, params), pmp});
-    }, []);
-
-  return acc.concat(imps);
-}
-
-function isImpressionAVideo(impression) {
-  return isPlainObject(impression) && isPlainObject(impression.video);
-}
-
-function generateBannerFromAdUnit(impId, data, params) {
-  const {position, placementId} = params;
-  const pos = position || 0;
-  const pmp = {};
-
-  if (placementId) pmp.deals = [{id: placementId}]
-
-  return data.sizes.map(([w, h], index) => ({id: `${impId}_${index}`, banner: {format: [{w, h}], w, h, pos}, pmp}));
-}
-
-function generateVideoFromAdUnit(data, params) {
-  const {playerSize} = data;
-  const hasPlayerSize = isArray(playerSize) && playerSize.length > 0;
-  const {position, video = {}} = params;
-  const {minDuration, maxDuration, protocols} = video;
-
-  const size = {width: hasPlayerSize ? playerSize[0][0] : null, height: hasPlayerSize ? playerSize[0][1] : null};
-  const duration = {min: isNumber(minDuration) ? minDuration : null, max: isNumber(maxDuration) ? maxDuration : null};
-
-  return {
-    mimes: SUPPORTED_VIDEO_MIMES,
-    w: size.width,
-    h: size.height,
-    startdelay: computeStartDelay(data, params),
-    minduration: duration.min,
-    maxduration: duration.max,
-    protocols,
-    pos: position || 0
-  };
-}
-
-function isInstream(video) {
-  return isPlainObject(video) && (video.context === 'instream');
-}
-
-function isOutstream(video) {
-  return isPlainObject(video) && (video.startdelay === null)
-}
-
-function computeStartDelay(data, params) {
-  if (isInstream(data)) {
-    if (params.video.instreamContext === 'pre-roll') return 0;
-    if (params.video.instreamContext === 'mid-roll') return -1;
-    if (params.video.instreamContext === 'post-roll') return -2;
-  }
-
+/**
+ * Extract domain from given url
+ *
+ * @param {string} url
+ * @returns {string|null} Extracted domain
+ */
+function extractDomainFromURL(url) {
+  if (!url || !isStr(url)) return null;
+  const domain = url.match(DOMAIN_REGEX);
+  if (isArray(domain) && domain.length === 2) return domain[1];
   return null;
 }
 
-function generateNativeFromAdUnit(data, params) {
-  const placements = NATIVE_PLACEMENTS;
-  const assets = Object
-    .keys(data)
-    .reduce((acc, placement) => {
-      const placementData = data[placement];
-      const assetInfo = placements[placement];
+/**
+ * Create and return site OpenRtb object from given bidderRequest
+ *
+ * @param {BidderRequest} bidderRequest
+ * @returns {Site|null} Formatted Site OpenRtb object or null
+ */
+function getOpenRTBSiteObject(bidderRequest) {
+  if (!bidderRequest || !bidderRequest.refererInfo) return null;
 
-      if (!assetInfo) return acc;
-
-      const {id, name, type} = assetInfo;
-      const {required, len, sizes} = placementData;
-      const wmin = sizes && sizes[0];
-      const hmin = sizes && sizes[1];
-      const content = {};
-
-      if (type) content.type = type;
-      if (len) content.len = len;
-      if (wmin) content.wmin = wmin;
-      if (hmin) content.hmin = hmin;
-
-      acc.push({id, required, [name]: content});
-
-      return acc;
-    }, []);
-
-  return {
-    request: JSON.stringify({assets})
-  };
-}
-
-function generateSiteFromAdUnitContext(adUnitContext) {
-  if (!adUnitContext || !adUnitContext.refererInfo) return null;
-
-  const domain = extractSiteDomainFromURL(adUnitContext.refererInfo.referer);
+  const domain = extractDomainFromURL(bidderRequest.refererInfo.referer);
+  const publisherId = config.getConfig('adot.publisherId');
 
   if (!domain) return null;
 
   return {
-    page: adUnitContext.refererInfo.referer,
+    page: bidderRequest.refererInfo.referer,
     domain: domain,
-    name: domain
-  };
-}
-
-function extractSiteDomainFromURL(url) {
-  if (!url || !isStr(url)) return null;
-
-  const domain = url.match(DOMAIN_REGEX);
-
-  if (isArray(domain) && domain.length === 2) return domain[1];
-
-  return null;
-}
-
-function getDeviceInfo() {
-  return {ua: navigator.userAgent, language: navigator.language};
-}
-
-function getUserInfoFromAdUnitContext(adUnitContext) {
-  if (!adUnitContext || !adUnitContext.gdprConsent) return null;
-  if (!isStr(adUnitContext.gdprConsent.consentString)) return null;
-
-  return {
-    ext: {
-      consent: adUnitContext.gdprConsent.consentString
+    name: domain,
+    publisher: {
+      id: publisherId
     }
   };
 }
 
-function getRegulationFromAdUnitContext(adUnitContext) {
-  if (!adUnitContext || !adUnitContext.gdprConsent) return null;
-  if (!isBoolean(adUnitContext.gdprConsent.gdprApplies)) return null;
-
-  return {
-    ext: {
-      gdpr: adUnitContext.gdprConsent.gdprApplies
-    }
-  };
+/**
+ * Create and return Device OpenRtb object
+ *
+ * @returns {Device} Formatted Device OpenRtb object or null
+ */
+function getOpenRTBDeviceObject() {
+  return { ua: navigator.userAgent, language: navigator.language };
 }
 
-function generateBidRequestExtension() {
+/**
+ * Create and return User OpenRtb object
+ *
+ * @param {BidderRequest} bidderRequest
+ * @returns {User|null} Formatted User OpenRtb object or null
+ */
+function getOpenRTBUserObject(bidderRequest) {
+  if (!bidderRequest || !bidderRequest.gdprConsent || !isStr(bidderRequest.gdprConsent.consentString)) return null;
+  return { ext: { consent: bidderRequest.gdprConsent.consentString } };
+}
+
+/**
+ * Create and return Regs OpenRtb object
+ *
+ * @param {BidderRequest} bidderRequest
+ * @returns {Regs|null} Formatted Regs OpenRtb object or null
+ */
+function getOpenRTBRegsObject(bidderRequest) {
+  if (!bidderRequest || !bidderRequest.gdprConsent || !isBoolean(bidderRequest.gdprConsent.gdprApplies)) return null;
+  return { ext: { gdpr: bidderRequest.gdprConsent.gdprApplies } };
+}
+
+/**
+ * Create and return Ext OpenRtb object
+ *
+ * @param {BidderRequest} bidderRequest
+ * @returns {Ext|null} Formatted Ext OpenRtb object or null
+ */
+function getOpenRTBExtObject() {
   return {
-    adot: {adapter_version: ADAPTER_VERSION},
+    adot: { adapter_version: ADAPTER_VERSION },
     should_use_gzip: true
   };
 }
 
-function validateServerResponse(serverResponse) {
-  return isPlainObject(serverResponse) &&
-    isPlainObject(serverResponse.body) &&
-    isStr(serverResponse.body.cur) &&
-    isArray(serverResponse.body.seatbid);
+/**
+ * Return MediaType from MediaTypes object
+ *
+ * @param {MediaType} mediaTypes Prebid MediaTypes
+ * @returns {string|null} Mediatype or null if not found
+ */
+function getMediaType(mediaTypes) {
+  if (mediaTypes.banner) return 'banner';
+  if (mediaTypes.video) return 'video';
+  if (mediaTypes.native) return 'native';
+  return null;
 }
 
-function seatBidsToAds(seatBid, bidResponse, serverRequest) {
-  return seatBid.bid
-    .filter(bid => validateBids(bid, serverRequest))
-    .map(bid => generateAdFromBid(bid, bidResponse, serverRequest));
+/**
+ * Build OpenRtb imp banner from given bidderRequest and media
+ *
+ * @param {Banner} banner MediaType Banner Object
+ * @param {BidderRequest} bidderRequest
+ * @returns {OpenRtbBanner} OpenRtb banner object
+ */
+function buildBanner(banner, bidderRequest) {
+  const pos = bidderRequest.position || 0;
+  const format = (banner.sizes || []).map(([w, h]) => ({ w, h }));
+  return { format, pos };
 }
 
-function validateBids(bid, serverRequest) {
-  if (!isPlainObject(bid)) return false;
-  if (!isStr(bid.impid)) return false;
-  if (!isStr(bid.crid)) return false;
-  if (!isNumber(bid.price)) return false;
+/**
+ * Build object with w and h value depending on given video media
+ *
+ * @param {Video} video MediaType Video Object
+ * @returns {Object} Size as { w: number; h: number }
+ */
+function getVideoSize(video) {
+  const sizes = video.playerSize || [];
+  const format = sizes.length > 0 ? sizes[0] : [];
 
-  if (!isPlainObject(bid.ext)) return false;
-  if (!isPlainObject(bid.ext.adot)) return false;
-  if (!isStr(bid.ext.adot.media_type)) return false;
-  if (BID_SUPPORTED_MEDIA_TYPES.indexOf(bid.ext.adot.media_type) === -1) return false;
+  return {
+    w: format[0] || null,
+    h: format[1] || null
+  };
+}
 
-  if (!bid.adm && !bid.nurl) return false;
-  if (bid.adm) {
-    if (!isStr(bid.adm)) return false;
-    if (bid.adm.indexOf(AUCTION_PRICE) === -1) return false;
-  }
-  if (bid.nurl) {
-    if (!isStr(bid.nurl)) return false;
-    if (bid.nurl.indexOf(AUCTION_PRICE) === -1) return false;
-  }
+/**
+ * Build OpenRtb imp video from given bidderRequest and media
+ *
+ * @param {Video} video MediaType Video Object
+ * @returns {OpenRtbVideo} OpenRtb video object
+ */
+function buildVideo(video) {
+  const { w, h } = getVideoSize(video);
 
-  if (isBidABanner(bid)) {
-    if (!isNumber(bid.h)) return false;
-    if (!isNumber(bid.w)) return false;
-  }
-  if (isBidAVideo(bid)) {
-    if (!(isNone(bid.h) || isNumber(bid.h))) return false;
-    if (!(isNone(bid.w) || isNumber(bid.w))) return false;
-  }
+  return {
+    api: video.api,
+    w,
+    h,
+    linearity: video.linearity || null,
+    mimes: video.mimes,
+    minduration: video.minduration,
+    maxduration: video.maxduration,
+    placement: video.placement,
+    playbackmethod: video.playbackmethod,
+    pos: video.position || 0,
+    protocols: video.protocols,
+    skip: video.skip || 0,
+    startdelay: video.startdelay
+  };
+}
 
-  const impression = getImpressionData(serverRequest, bid.impid);
+/**
+ * Check if given Native Media is an asset of type Image.
+ *
+ * Return default native assets if given media is an asset
+ * Return given native assets if given media is not an asset
+ *
+ * @param {NativeMedia} native Native Mediatype
+ * @returns {OpenRtbNativeAssets}
+ */
+function cleanNativeMedia(native) {
+  if (native.type !== 'image') return native;
 
-  if (!isPlainObject(impression.openRTB)) return false;
-  if (!isPlainObject(impression.internal)) return false;
-  if (!isStr(impression.internal.adUnitCode)) return false;
+  return {
+    image: { required: true, sizes: native.sizes },
+    title: { required: true },
+    sponsoredBy: { required: true },
+    body: { required: false },
+    cta: { required: false },
+    icon: { required: false }
+  };
+}
 
-  if (isBidABanner(bid)) {
-    if (!isPlainObject(impression.openRTB.banner)) return false;
-  }
-  if (isBidAVideo(bid)) {
-    if (!isPlainObject(impression.openRTB.video)) return false;
-  }
-  if (isBidANative(bid)) {
-    if (!isPlainObject(impression.openRTB.native) || !tryParse(bid.adm)) return false;
-  }
+/**
+ * Build Native OpenRtb Imp from Native Mediatype
+ *
+ * @param {NativeMedia} native Native Mediatype
+ * @returns {OpenRtbNative}
+ */
+function buildNative(native) {
+  native = cleanNativeMedia(native);
 
+  const assets = Object.keys(native)
+    .reduce((nativeAssets, assetKey) => {
+      const asset = native[assetKey];
+      const assetInfo = NATIVE_PLACEMENTS[assetKey];
+
+      if (!assetInfo) return nativeAssets;
+
+      const { id, name, type } = assetInfo;
+      const { required, len, sizes = [] } = asset;
+
+      let wmin;
+      let hmin;
+
+      if (isArray(sizes[0])) {
+        wmin = sizes[0][0];
+        hmin = sizes[0][1];
+      } else {
+        wmin = sizes[0];
+        hmin = sizes[1];
+      }
+
+      const newAsset = {};
+
+      if (type) newAsset.type = type;
+      if (len) newAsset.len = len;
+      if (wmin) newAsset.wmin = wmin;
+      if (hmin) newAsset.hmin = hmin;
+
+      nativeAssets.push({ id, required, [name]: newAsset });
+
+      return nativeAssets;
+    }, []);
+
+  return { request: JSON.stringify({ assets }) };
+}
+
+/**
+ * Build OpenRtb Imp object from given Adunit and Context
+ *
+ * @param {AdUnit} adUnit PrebidJS Adunit
+ * @param {BidderRequest} bidderRequest PrebidJS Bidder Request
+ * @returns {Imp} OpenRtb Impression
+ */
+function buildImpFromAdUnit(adUnit, bidderRequest) {
+  const { bidId, mediaTypes, params, adUnitCode } = adUnit;
+  const mediaType = getMediaType(mediaTypes);
+
+  if (!mediaType) return null;
+
+  const media = IMP_BUILDER[mediaType](mediaTypes[mediaType], bidderRequest, adUnit)
+  const currency = config.getConfig('currency.adServerCurrency') || DEFAULT_CURRENCY;
+  const bidfloor = getMainFloor(adUnit, media.format, mediaType, currency);
+
+  return {
+    id: bidId,
+    ext: {
+      placementId: params.placementId,
+      adUnitCode,
+      container: params.video && params.video.container
+    },
+    [mediaType]: media,
+    bidfloorcur: currency,
+    bidfloor
+  };
+}
+
+/**
+ * Return if given video is Valid.
+ * A video is defined as valid if it contains all required fields
+ *
+ * @param {VideoMedia} video
+ * @returns {boolean}
+ */
+function isValidVideo(video) {
+  if (REQUIRED_VIDEO_PARAMS.some((param) => video[param] === undefined)) return false;
   return true;
 }
 
-function isBidABanner(bid) {
-  return isPlainObject(bid) &&
-    isPlainObject(bid.ext) &&
-    isPlainObject(bid.ext.adot) &&
-    bid.ext.adot.media_type === 'banner';
+/**
+ * Return if given bid is Valid.
+ * A bid is defined as valid if it media is a valid video or other media
+ *
+ * @param {Bid} bid
+ * @returns {boolean}
+ */
+function isBidRequestValid(bid) {
+  const video = bid.mediaTypes.video;
+  return !video || isValidVideo(video);
 }
 
-function isBidAVideo(bid) {
-  return isPlainObject(bid) &&
-    isPlainObject(bid.ext) &&
-    isPlainObject(bid.ext.adot) &&
-    bid.ext.adot.media_type === 'video';
+/**
+ * Build OpenRtb request from Prebid AdUnits and Bidder request
+ *
+ * @param {Array<AdUnit>} adUnits Array of PrebidJS Adunit
+ * @param {BidderRequest} bidderRequest PrebidJS BidderRequest
+ * @param {string} requestId Request ID
+ *
+ * @returns {OpenRTBBidRequest} OpenRTB bid request
+ */
+function buildBidRequest(adUnits, bidderRequest, requestId) {
+  const data = {
+    id: requestId,
+    imp: adUnits.map((adUnit) => buildImpFromAdUnit(adUnit, bidderRequest)).filter((item) => !!item),
+    site: getOpenRTBSiteObject(bidderRequest),
+    device: getOpenRTBDeviceObject(),
+    user: getOpenRTBUserObject(bidderRequest),
+    regs: getOpenRTBRegsObject(bidderRequest),
+    ext: getOpenRTBExtObject(),
+    at: FIRST_PRICE
+  };
+  return data;
 }
 
-function isBidANative(bid) {
-  return isPlainObject(bid) &&
-    isPlainObject(bid.ext) &&
-    isPlainObject(bid.ext.adot) &&
-    bid.ext.adot.media_type === 'native';
-}
-
-function getImpressionData(serverRequest, impressionId) {
-  const openRTBImpression = find(serverRequest.data.imp, imp => imp.id === impressionId);
-  const internalImpression = find(serverRequest._adot_internal.impressions, imp => imp.impressionId === impressionId);
-
+/**
+ * Build PrebidJS Ajax request
+ *
+ * @param {Array<AdUnit>} adUnits Array of PrebidJS Adunit
+ * @param {BidderRequest} bidderRequest PrebidJS BidderRequest
+ * @param {string} bidderUrl Adot Bidder URL
+ * @param {string} requestId Request ID
+ * @returns
+ */
+function buildAjaxRequest(adUnits, bidderRequest, bidderUrl, requestId) {
   return {
-    id: impressionId,
-    openRTB: openRTBImpression || null,
-    internal: internalImpression || null
+    method: BID_METHOD,
+    url: bidderUrl,
+    data: buildBidRequest(adUnits, bidderRequest, requestId)
   };
 }
 
-function generateAdFromBid(bid, bidResponse, serverRequest) {
-  const impressionData = getImpressionData(serverRequest, bid.impid);
-  const isVideo = isBidAVideo(bid);
-  const base = {
-    requestId: impressionData.internal.bidId,
-    cpm: bid.price,
-    currency: bidResponse.cur,
-    ttl: TTL,
-    creativeId: bid.crid,
-    netRevenue: NET_REVENUE,
-    mediaType: bid.ext.adot.media_type,
-  };
-
-  if (isBidANative(bid)) return {...base, native: formatNativeData(bid.adm)};
-
-  const size = getSizeFromBid(bid, impressionData);
-  const creative = getCreativeFromBid(bid, impressionData);
-
-  return {
-    ...base,
-    height: size.height,
-    width: size.width,
-    ad: creative.markup,
-    adUrl: creative.markupUrl,
-    vastXml: isVideo && !isStr(creative.markupUrl) ? creative.markup : null,
-    vastUrl: isVideo && isStr(creative.markupUrl) ? creative.markupUrl : null,
-    renderer: creative.renderer
-  };
+/**
+ * Split given PrebidJS Request in Dictionnary
+ *
+ * @param {Array<PrebidBidRequest>} validBidRequests
+ * @returns {Dictionnary<PrebidBidRequest>}
+ */
+function splitAdUnits(validBidRequests) {
+  return validBidRequests.reduce((adUnits, adUnit) => {
+    const bidderRequestId = adUnit.bidderRequestId;
+    if (!adUnits[bidderRequestId]) {
+      adUnits[bidderRequestId] = [];
+    }
+    adUnits[bidderRequestId].push(adUnit);
+    return adUnits;
+  }, {});
 }
 
-function formatNativeData(adm) {
+/**
+ * Build Ajax request Array
+ *
+ * @param {Array<PrebidBidRequest>} validBidRequests
+ * @param {BidderRequest} bidderRequest
+ * @returns {Array<AjaxRequest>}
+ */
+function buildRequests(validBidRequests, bidderRequest) {
+  const adUnits = splitAdUnits(validBidRequests);
+  const publisherPathConfig = config.getConfig('adot.publisherPath');
+  const publisherPath = publisherPathConfig === undefined ? '' : '/' + publisherPathConfig;
+  const bidderUrl = BIDDER_URL.replace('{PUBLISHER_PATH}', publisherPath);
+
+  return Object.keys(adUnits).map((requestId) => buildAjaxRequest(adUnits[requestId], bidderRequest, bidderUrl, requestId));
+}
+
+/**
+ * Build Native PrebidJS Response grom OpenRtb Response
+ *
+ * @param {OpenRtbBid} bid
+ *
+ * @returns {NativeAssets} Native PrebidJS
+ */
+function buildNativeBidData(bid) {
+  const { adm, price } = bid;
   const parsedAdm = tryParse(adm);
-  const {assets, link: {url, clicktrackers}, imptrackers, jstracker} = parsedAdm.native;
-  const placements = NATIVE_PLACEMENTS;
-  const placementIds = NATIVE_ID_MAPPING;
+  const { assets, link: { url, clicktrackers }, imptrackers, jstracker } = parsedAdm.native;
 
   return assets.reduce((acc, asset) => {
-    const placementName = placementIds[asset.id];
-    const content = placementName && asset[placements[placementName].name];
+    const placementName = NATIVE_ID_MAPPING[asset.id];
+    const content = placementName && asset[NATIVE_PLACEMENTS[placementName].name];
     if (!content) return acc;
-    acc[placementName] = content.text || content.value || {url: content.url, width: content.w, height: content.h};
+    acc[placementName] = content.text || content.value || { url: content.url, width: content.w, height: content.h };
     return acc;
   }, {
     clickUrl: url,
     clickTrackers: clicktrackers,
-    impressionTrackers: imptrackers,
+    impressionTrackers: imptrackers && imptrackers.map(impTracker => replaceAuctionPrice(impTracker, price)),
     javascriptTrackers: jstracker && [jstracker]
   });
 }
 
-function getSizeFromBid(bid, impressionData) {
-  if (isNumber(bid.w) && isNumber(bid.h)) {
-    return { width: bid.w, height: bid.h };
-  }
+/**
+ * Return Adot Renderer if given Bid is a video one
+ *
+ * @param {OpenRtbBid} bid
+ * @param {string} mediaType
+ * @returns {any|null}
+ */
+function buildRenderer(bid, mediaType) {
+  if (!(mediaType === VIDEO &&
+    bid.ext &&
+    bid.ext.adot &&
+    bid.ext.adot.container &&
+    bid.ext.adot.adUnitCode &&
+    bid.ext.adot.video &&
+    bid.ext.adot.video.type === OUTSTREAM)) return null;
 
-  if (isImpressionAVideo(impressionData.openRTB)) {
-    const { video } = impressionData.openRTB;
+  const container = bid.ext.adot.container
+  const adUnitCode = bid.ext.adot.adUnitCode
 
-    if (isNumber(video.w) && isNumber(video.h)) {
-      return { width: video.w, height: video.h };
-    }
-  }
-
-  return { width: null, height: null };
-}
-
-function getCreativeFromBid(bid, impressionData) {
-  const shouldUseAdMarkup = !!bid.adm;
-
-  return {
-    markup: shouldUseAdMarkup ? bid.adm : null,
-    markupUrl: !shouldUseAdMarkup ? bid.nurl : null,
-    renderer: getRendererFromBid(bid, impressionData)
-  };
-}
-
-function getRendererFromBid(bid, impressionData) {
-  const isOutstreamImpression = isBidAVideo(bid) &&
-    isImpressionAVideo(impressionData.openRTB) &&
-    isOutstream(impressionData.openRTB.video);
-
-  return isOutstreamImpression
-    ? buildOutstreamRenderer(impressionData)
-    : null;
-}
-
-function buildOutstreamRenderer(impressionData) {
   const renderer = Renderer.install({
     url: OUTSTREAM_VIDEO_PLAYER_URL,
     loaded: false,
-    adUnitCode: impressionData.internal.adUnitCode
+    adUnitCode: adUnitCode
   });
 
   renderer.setRender((ad) => {
     ad.renderer.push(() => {
-      const container = impressionData.internal.container
-        ? document.querySelector(impressionData.internal.container)
-        : document.getElementById(impressionData.internal.adUnitCode);
+      const domContainer = container
+        ? document.querySelector(container)
+        : document.getElementById(adUnitCode);
 
-      const player = new window.VASTPlayer(container);
+      const player = new window.VASTPlayer(domContainer);
 
       player.on('ready', () => {
         player.adVolume = 0;
@@ -554,54 +463,181 @@ function buildOutstreamRenderer(impressionData) {
   return renderer;
 }
 
-function tryParse(data) {
-  try {
-    return JSON.parse(data);
-  } catch (err) {
-    logError(err);
-    return null;
-  }
+/**
+ * Build PrebidJS response from OpenRtbBid
+ *
+ * @param {OpenRtbBid} bid
+ * @param {string} mediaType
+ * @returns {Object}
+ */
+function buildCreativeBidData(bid, mediaType) {
+  const adm = bid.adm ? replaceAuctionPrice(bid.adm, bid.price) : null;
+  const nurl = (!bid.adm && bid.nurl) ? replaceAuctionPrice(bid.nurl, bid.price) : null;
+
+  return {
+    width: bid.ext.adot.size && bid.ext.adot.size.w,
+    height: bid.ext.adot.size && bid.ext.adot.size.h,
+    ad: adm,
+    adUrl: nurl,
+    vastXml: mediaType === VIDEO && !isStr(nurl) ? adm : null,
+    vastUrl: mediaType === VIDEO && isStr(nurl) ? nurl : null,
+    renderer: buildRenderer(bid, mediaType)
+  };
 }
 
-const adotBidderSpec = {
-  code: 'adot',
-  supportedMediaTypes: [BANNER, VIDEO, NATIVE],
-  isBidRequestValid(adUnit) {
-    const allowedBidderCodes = [this.code];
+/**
+ * Return if given bid and imp are valid
+ *
+ * @param {OpenRtbBid} bid OpenRtb Bid
+ * @param {Imp} imp OpenRtb Imp
+ * @returns {boolean}
+ */
+function isBidImpInvalid(bid, imp) {
+  return !bid || !imp;
+}
 
-    return isPlainObject(adUnit) &&
-      allowedBidderCodes.indexOf(adUnit.bidder) !== -1 &&
-      isStr(adUnit.adUnitCode) &&
-      isStr(adUnit.bidderRequestId) &&
-      isStr(adUnit.bidId) &&
-      validateMediaTypes(adUnit.mediaTypes, this.supportedMediaTypes) &&
-      validateParameters(adUnit.params, adUnit);
-  },
-  buildRequests(adUnits, adUnitContext) {
-    if (!adUnits) return null;
+/**
+ * Build PrebidJS Bid Response from given OpenRTB Bid
+ *
+ * @param {OpenRtbBid} bid
+ * @param {OpenRtbBidResponse} bidResponse
+ * @param {OpenRtbBid} imp
+ * @returns {PrebidJSResponse}
+ */
+function buildBidResponse(bid, bidResponse, imp) {
+  if (isBidImpInvalid(bid, imp)) return null;
+  const mediaType = bid.ext.adot.media_type;
+  const baseBid = {
+    requestId: bid.impid,
+    cpm: bid.price,
+    currency: bidResponse.cur,
+    ttl: BID_RESPONSE_TTL,
+    creativeId: bid.crid,
+    netRevenue: BID_RESPONSE_NET_REVENUE,
+    mediaType
+  };
 
-    return groupBy(adUnits, 'bidderRequestId').map(group => {
-      const bidRequestId = group.id;
-      const adUnits = groupBy(group.values, 'bidId').map((group) => {
-        const length = group.values.length;
-        return length > 0 && group.values[length - 1]
-      });
+  if (bid.dealid) baseBid.dealId = bid.dealid;
+  if (bid.adomain) baseBid.meta = { advertiserDomains: bid.adomain };
 
-      return createServerRequestFromAdUnits(adUnits, bidRequestId, adUnitContext)
+  if (mediaType === NATIVE) return { ...baseBid, native: buildNativeBidData(bid) };
+  return { ...baseBid, ...buildCreativeBidData(bid, mediaType) };
+}
+
+/**
+ * Find OpenRtb Imp from request with same id that given bid
+ *
+ * @param {OpenRtbBid} bid
+ * @param {OpenRtbRequest} bidRequest
+ * @returns {Imp} OpenRtb Imp
+ */
+function getImpfromBid(bid, bidRequest) {
+  if (!bidRequest || !bidRequest.imp) return null;
+  const imps = bidRequest.imp;
+  return find(imps, (imp) => imp.id === bid.impid);
+}
+
+/**
+ * Return if given response is valid
+ *
+ * @param {OpenRtbBidResponse} response
+ * @returns {boolean}
+ */
+function isValidResponse(response) {
+  return isPlainObject(response) &&
+    isPlainObject(response.body) &&
+    isStr(response.body.cur) &&
+    isArray(response.body.seatbid);
+}
+
+/**
+ * Return if given request is valid
+ *
+ * @param {OpenRtbRequest} request
+ * @returns {boolean}
+ */
+function isValidRequest(request) {
+  return isPlainObject(request) &&
+    isPlainObject(request.data) &&
+    isArray(request.data.imp);
+}
+
+/**
+ * Interpret given OpenRtb Response to build PrebidJS Response
+ *
+ * @param {OpenRtbBidResponse} serverResponse
+ * @param {OpenRtbRequest} request
+ * @returns {PrebidJSResponse}
+ */
+function interpretResponse(serverResponse, request) {
+  if (!isValidResponse(serverResponse) || !isValidRequest(request)) return [];
+
+  const bidsResponse = serverResponse.body;
+  const bidRequest = request.data;
+
+  return bidsResponse.seatbid.reduce((pbsResponse, seatbid) => {
+    if (!seatbid || !isArray(seatbid.bid)) return pbsResponse;
+    seatbid.bid.forEach((bid) => {
+      const imp = getImpfromBid(bid, bidRequest);
+      const bidResponse = buildBidResponse(bid, bidsResponse, imp);
+      if (bidResponse) pbsResponse.push(bidResponse);
     });
-  },
-  interpretResponse(serverResponse, serverRequest) {
-    if (!validateServerRequest(serverRequest)) return [];
-    if (!validateServerResponse(serverResponse)) return [];
+    return pbsResponse;
+  }, []);
+}
 
-    const bidResponse = serverResponse.body;
+/**
+ * Call Adunit getFloor function with given argument to get specific floor.
+ * Return 0 by default
+ *
+ * @param {AdUnit} adUnit
+ * @param {Array<number>|string} size Adunit size or *
+ * @param {string} mediaType
+ * @param {string} currency USD by default
+ *
+ * @returns {number} Floor price
+ */
+function getFloor(adUnit, size, mediaType, currency) {
+  if (!isFn(adUnit.getFloor)) return 0;
 
-    return bidResponse.seatbid
-      .filter(seatBid => isPlainObject(seatBid) && isArray(seatBid.bid))
-      .reduce((acc, seatBid) => acc.concat(seatBidsToAds(seatBid, bidResponse, serverRequest)), []);
-  }
+  const floorResult = adUnit.getFloor({ currency, mediaType, size });
+
+  return floorResult.currency === currency ? floorResult.floor : 0;
+}
+
+/**
+ * Call getFloor for each format and return the lower floor
+ * Return 0 by default
+ *
+ * interface Format { w: number; h: number }
+ *
+ * @param {AdUnit} adUnit
+ * @param {Array<Format>} formats Media formats
+ * @param {string} mediaType
+ * @param {string} currency USD by default
+ *
+ * @returns {number} Lower floor.
+ */
+function getMainFloor(adUnit, formats, mediaType, currency) {
+  if (!formats) return getFloor(adUnit, '*', mediaType, currency);
+
+  return formats.reduce((bidFloor, format) => {
+    const floor = getFloor(adUnit, [format.w, format.h], mediaType, currency)
+    const maxFloor = bidFloor || Number.MAX_SAFE_INTEGER;
+    return floor !== 0 && floor < maxFloor ? floor : bidFloor;
+  }, null) || 0;
+}
+
+/**
+ * Adot PrebidJS Adapter
+ */
+export const spec = {
+  code: BIDDER_CODE,
+  supportedMediaTypes: [BANNER, NATIVE, VIDEO],
+  isBidRequestValid,
+  buildRequests,
+  interpretResponse,
+  getFloor
 };
 
-registerBidder(adotBidderSpec);
-
-export {adotBidderSpec as spec};
+registerBidder(spec);

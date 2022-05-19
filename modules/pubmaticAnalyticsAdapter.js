@@ -1,9 +1,9 @@
+import { _each, pick, logWarn, isStr, isArray, logError } from '../src/utils.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
-import * as utils from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 
 /// /////////// CONSTANTS //////////////
@@ -69,7 +69,7 @@ function setMediaTypes(types, bid) {
   if (typeof types === 'object') {
     if (!bid.sizes) {
       bid.dimensions = [];
-      utils._each(types, (type) =>
+      _each(types, (type) =>
         bid.dimensions = bid.dimensions.concat(
           type.sizes.map(sizeToDimensions)
         )
@@ -81,13 +81,13 @@ function setMediaTypes(types, bid) {
 }
 
 function copyRequiredBidDetails(bid) {
-  return utils.pick(bid, [
-    'bidder', bidder => bidder.toLowerCase(),
+  return pick(bid, [
+    'bidder',
     'bidId',
     'status', () => NO_BID, // default a bid to NO_BID until response is recieved or bid is timed out
     'finalSource as source',
     'params',
-    'adUnit', () => utils.pick(bid, [
+    'adUnit', () => pick(bid, [
       'adUnitCode',
       'transactionId',
       'sizes as dimensions', sizes => sizes.map(sizeToDimensions),
@@ -115,7 +115,7 @@ function setBidStatus(bid, args) {
 }
 
 function parseBidResponse(bid) {
-  return utils.pick(bid, [
+  return pick(bid, [
     'bidPriceUSD', () => {
       // todo: check whether currency cases are handled here
       if (typeof bid.currency === 'string' && bid.currency.toUpperCase() === CURRENCY_USD) {
@@ -125,7 +125,7 @@ function parseBidResponse(bid) {
       if (typeof bid.getCpmInNewCurrency === 'function') {
         return window.parseFloat(Number(bid.getCpmInNewCurrency(CURRENCY_USD)).toFixed(BID_PRECISION));
       }
-      utils.logWarn(LOG_PRE_FIX + 'Could not determine the Net cpm in USD for the bid thus using bid.cpm', bid);
+      logWarn(LOG_PRE_FIX + 'Could not determine the Net cpm in USD for the bid thus using bid.cpm', bid);
       return bid.cpm
     },
     'bidGrossCpmUSD', () => {
@@ -136,7 +136,7 @@ function parseBidResponse(bid) {
       if (typeof getGlobal().convertCurrency === 'function') {
         return window.parseFloat(Number(getGlobal().convertCurrency(bid.originalCpm, bid.originalCurrency, CURRENCY_USD)).toFixed(BID_PRECISION));
       }
-      utils.logWarn(LOG_PRE_FIX + 'Could not determine the Gross cpm in USD for the bid, thus using bid.originalCpm', bid);
+      logWarn(LOG_PRE_FIX + 'Could not determine the Gross cpm in USD for the bid, thus using bid.originalCpm', bid);
       return bid.originalCpm
     },
     'dealId',
@@ -152,7 +152,9 @@ function parseBidResponse(bid) {
     'mediaType',
     'params',
     'mi',
-    'dimensions', () => utils.pick(bid, [
+    'regexPattern', () => bid.regexPattern || undefined,
+    'partnerImpId', // partner impression ID
+    'dimensions', () => pick(bid, [
       'width',
       'height'
     ])
@@ -165,15 +167,64 @@ function getDomainFromUrl(url) {
   return a.hostname;
 }
 
+function getDevicePlatform() {
+  var deviceType = 3;
+  try {
+    var ua = navigator.userAgent;
+    if (ua && isStr(ua) && ua.trim() != '') {
+      ua = ua.toLowerCase().trim();
+      var isMobileRegExp = new RegExp('(mobi|tablet|ios).*');
+      if (ua.match(isMobileRegExp)) {
+        deviceType = 2;
+      } else {
+        deviceType = 1;
+      }
+    }
+  } catch (ex) {}
+  return deviceType;
+}
+
+function getValueForKgpv(bid, adUnitId) {
+  if (bid.params.regexPattern) {
+    return bid.params.regexPattern;
+  } else if (bid.bidResponse && bid.bidResponse.regexPattern) {
+    return bid.bidResponse.regexPattern;
+  } else if (bid.params.kgpv) {
+    return bid.params.kgpv;
+  } else {
+    return adUnitId;
+  }
+}
+
+function getAdapterNameForAlias(aliasName) {
+  return adapterManager.aliasRegistry[aliasName] || aliasName;
+}
+
+function getAdDomain(bidResponse) {
+  if (bidResponse.meta && bidResponse.meta.advertiserDomains) {
+    let adomain = bidResponse.meta.advertiserDomains[0]
+    if (adomain) {
+      try {
+        let hostname = (new URL(adomain));
+        return hostname.hostname.replace('www.', '');
+      } catch (e) {
+        logWarn(LOG_PRE_FIX + 'Adomain URL (Not a proper URL):', adomain);
+        return adomain.replace('www.', '');
+      }
+    }
+  }
+}
+
 function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
   highestBid = (highestBid && highestBid.length > 0) ? highestBid[0] : null;
   return Object.keys(adUnit.bids).reduce(function(partnerBids, bidId) {
     let bid = adUnit.bids[bidId];
     partnerBids.push({
-      'pn': bid.bidder,
+      'pn': getAdapterNameForAlias(bid.bidder),
+      'bc': bid.bidder,
       'bidid': bid.bidId,
       'db': bid.bidResponse ? 0 : 1,
-      'kgpv': bid.params.kgpv ? bid.params.kgpv : adUnitId,
+      'kgpv': getValueForKgpv(bid, adUnitId),
       'kgpsv': bid.params.kgpv ? bid.params.kgpv : adUnitId,
       'psz': bid.bidResponse ? (bid.bidResponse.dimensions.width + 'x' + bid.bidResponse.dimensions.height) : '0x0',
       'eg': bid.bidResponse ? bid.bidResponse.bidGrossCpmUSD : 0,
@@ -182,13 +233,15 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
       'dc': bid.bidResponse ? (bid.bidResponse.dealChannel || EMPTY_STRING) : EMPTY_STRING,
       'l1': bid.bidResponse ? bid.clientLatencyTimeMs : 0,
       'l2': 0,
+      'adv': bid.bidResponse ? getAdDomain(bid.bidResponse) || undefined : undefined,
       'ss': (s2sBidders.indexOf(bid.bidder) > -1) ? 1 : 0,
       't': (bid.status == ERROR && bid.error.code == TIMEOUT_ERROR) ? 1 : 0,
       'wb': (highestBid && highestBid.requestId === bid.bidId ? 1 : 0),
       'mi': bid.bidResponse ? (bid.bidResponse.mi || undefined) : undefined,
       'af': bid.bidResponse ? (bid.bidResponse.mediaType || undefined) : undefined,
       'ocpm': bid.bidResponse ? (bid.bidResponse.originalCpm || 0) : 0,
-      'ocry': bid.bidResponse ? (bid.bidResponse.originalCurrency || CURRENCY_USD) : CURRENCY_USD
+      'ocry': bid.bidResponse ? (bid.bidResponse.originalCurrency || CURRENCY_USD) : CURRENCY_USD,
+      'piid': bid.bidResponse ? (bid.bidResponse.partnerImpId || EMPTY_STRING) : EMPTY_STRING
     });
     return partnerBids;
   }, [])
@@ -218,13 +271,14 @@ function executeBidsLoggerCall(e, highestCpmBids) {
   outputObj['tst'] = Math.round((new window.Date()).getTime() / 1000);
   outputObj['pid'] = '' + profileId;
   outputObj['pdvid'] = '' + profileVersionId;
-
-  // GDPR support
-  if (auctionCache.gdprConsent) {
-    outputObj['cns'] = auctionCache.gdprConsent.consentString || '';
-    outputObj['gdpr'] = auctionCache.gdprConsent.gdprApplies === true ? 1 : 0;
-    pixelURL += '&gdEn=1';
-  }
+  outputObj['dvc'] = {'plt': getDevicePlatform()};
+  outputObj['tgid'] = (function() {
+    var testGroupId = parseInt(config.getConfig('testGroupId') || 0);
+    if (testGroupId <= 15 && testGroupId >= 0) {
+      return testGroupId;
+    }
+    return 0;
+  })();
 
   outputObj.s = Object.keys(auctionCache.adUnitCodes).reduce(function(slotsArray, adUnitId) {
     let adUnit = auctionCache.adUnitCodes[adUnitId];
@@ -254,6 +308,7 @@ function executeBidsLoggerCall(e, highestCpmBids) {
 function executeBidWonLoggerCall(auctionId, adUnitId) {
   const winningBidId = cache.auctions[auctionId].adUnitCodes[adUnitId].bidWon;
   const winningBid = cache.auctions[auctionId].adUnitCodes[adUnitId].bids[winningBidId];
+  const adapterName = getAdapterNameForAlias(winningBid.bidder);
   let pixelURL = END_POINT_WIN_BID_LOGGER;
   pixelURL += 'pubid=' + publisherId;
   pixelURL += '&purl=' + enc(config.getConfig('pageUrl') || cache.auctions[auctionId].referer || '');
@@ -263,10 +318,12 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   pixelURL += '&pid=' + enc(profileId);
   pixelURL += '&pdvid=' + enc(profileVersionId);
   pixelURL += '&slot=' + enc(adUnitId);
-  pixelURL += '&pn=' + enc(winningBid.bidder);
+  pixelURL += '&pn=' + enc(adapterName);
+  pixelURL += '&bc=' + enc(winningBid.bidder);
   pixelURL += '&en=' + enc(winningBid.bidResponse.bidPriceUSD);
   pixelURL += '&eg=' + enc(winningBid.bidResponse.bidGrossCpmUSD);
-  pixelURL += '&kgpv=' + enc(winningBid.params.kgpv || adUnitId);
+  pixelURL += '&kgpv=' + enc(getValueForKgpv(winningBid, adUnitId));
+  pixelURL += '&piid=' + enc(winningBid.bidResponse.partnerImpId || EMPTY_STRING);
   ajax(
     pixelURL,
     null,
@@ -284,9 +341,9 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
 function auctionInitHandler(args) {
   s2sBidders = (function() {
     let s2sConf = config.getConfig('s2sConfig');
-    return (s2sConf && utils.isArray(s2sConf.bidders)) ? s2sConf.bidders : [];
+    return (s2sConf && isArray(s2sConf.bidders)) ? s2sConf.bidders : [];
   }());
-  let cacheEntry = utils.pick(args, [
+  let cacheEntry = pick(args, [
     'timestamp',
     'timeout',
     'bidderDonePendingCount', () => args.bidderRequests.length,
@@ -297,7 +354,6 @@ function auctionInitHandler(args) {
 }
 
 function bidRequestedHandler(args) {
-  cache.auctions[args.auctionId].gdprConsent = args.gdprConsent || undefined;
   args.bids.forEach(function(bid) {
     if (!cache.auctions[args.auctionId].adUnitCodes.hasOwnProperty(bid.adUnitCode)) {
       cache.auctions[args.auctionId].adUnitCodes[bid.adUnitCode] = {
@@ -313,7 +369,7 @@ function bidRequestedHandler(args) {
 function bidResponseHandler(args) {
   let bid = cache.auctions[args.auctionId].adUnitCodes[args.adUnitCode].bids[args.requestId];
   if (!bid) {
-    utils.logError(LOG_PRE_FIX + 'Could not find associated bid request for bid response with requestId: ', args.requestId);
+    logError(LOG_PRE_FIX + 'Could not find associated bid request for bid response with requestId: ', args.requestId);
     return;
   }
   bid.source = formatSource(bid.source || args.source);
@@ -364,7 +420,7 @@ function bidTimeoutHandler(args) {
         code: TIMEOUT_ERROR
       };
     } else {
-      utils.logWarn(LOG_PRE_FIX + 'bid not found');
+      logWarn(LOG_PRE_FIX + 'bid not found');
     }
   });
 }
@@ -384,17 +440,17 @@ let pubmaticAdapter = Object.assign({}, baseAdapter, {
       profileId = Number(conf.options.profileId) || DEFAULT_PROFILE_ID;
       profileVersionId = Number(conf.options.profileVersionId) || DEFAULT_PROFILE_VERSION_ID;
     } else {
-      utils.logError(LOG_PRE_FIX + 'Config not found.');
+      logError(LOG_PRE_FIX + 'Config not found.');
       error = true;
     }
 
     if (!publisherId) {
-      utils.logError(LOG_PRE_FIX + 'Missing publisherId(Number).');
+      logError(LOG_PRE_FIX + 'Missing publisherId(Number).');
       error = true;
     }
 
     if (error) {
-      utils.logError(LOG_PRE_FIX + 'Not collecting data due to error(s).');
+      logError(LOG_PRE_FIX + 'Not collecting data due to error(s).');
     } else {
       baseAdapter.enableAnalytics.call(this, conf);
     }

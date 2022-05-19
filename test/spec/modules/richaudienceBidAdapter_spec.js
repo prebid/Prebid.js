@@ -4,7 +4,6 @@ import {
   spec
 } from 'modules/richaudienceBidAdapter.js';
 import {config} from 'src/config.js';
-import * as utils from 'src/utils.js';
 
 describe('Richaudience adapter tests', function () {
   var DEFAULT_PARAMS_NEW_SIZES = [{
@@ -20,7 +19,8 @@ describe('Richaudience adapter tests', function () {
     params: {
       bidfloor: 0.5,
       pid: 'ADb1f40rmi',
-      supplyType: 'site'
+      supplyType: 'site',
+      keywords: 'key1=value1;key2=value2'
     },
     auctionId: '0cb3144c-d084-4686-b0d6-f5dbe917c563',
     bidRequestsCount: 1,
@@ -75,26 +75,19 @@ describe('Richaudience adapter tests', function () {
     user: {}
   }];
 
-  var DEFAULT_PARAMS_VIDEO_OUT_PARAMS = [{
+  var DEFAULT_PARAMS_BANNER_OUTSTREAM = [{
     adUnitCode: 'test-div',
     bidId: '2c7c8e9c900244',
     mediaTypes: {
-      video: {
-        context: 'outstream',
-        playerSize: [640, 480],
-        mimes: ['video/mp4']
+      banner: {
+        sizes: [[300, 250], [600, 300]]
       }
     },
     bidder: 'richaudience',
     params: {
       bidfloor: 0.5,
       pid: 'ADb1f40rmi',
-      supplyType: 'site',
-      player: {
-        init: 'close',
-        end: 'close',
-        skin: 'dark'
-      }
+      supplyType: 'site'
     },
     auctionId: '0cb3144c-d084-4686-b0d6-f5dbe917c563',
     bidRequestsCount: 1,
@@ -156,8 +149,8 @@ describe('Richaudience adapter tests', function () {
       netRevenue: true,
       currency: 'USD',
       ttl: 300,
-      dealId: 'dealId'
-
+      dealId: 'dealId',
+      adomain: 'richaudience.com'
     }
   };
 
@@ -172,7 +165,8 @@ describe('Richaudience adapter tests', function () {
       currency: 'USD',
       ttl: 300,
       vastXML: '<VAST></VAST>',
-      dealId: 'dealId'
+      dealId: 'dealId',
+      adomain: 'richaudience.com'
     }
   };
 
@@ -240,6 +234,9 @@ describe('Richaudience adapter tests', function () {
     expect(requestContent).to.have.property('transactionId').and.to.equal('29df2112-348b-4961-8863-1b33684d95e6');
     expect(requestContent).to.have.property('timeout').and.to.equal(3000);
     expect(requestContent).to.have.property('numIframes').and.to.equal(0);
+    expect(typeof requestContent.scr_rsl === 'string')
+    expect(typeof requestContent.cpuc === 'number')
+    expect(requestContent).to.have.property('kws').and.to.equal('key1=value1;key2=value2');
   })
 
   it('Verify build request to prebid video inestream', function() {
@@ -259,8 +256,6 @@ describe('Richaudience adapter tests', function () {
 
     expect(requestContent).to.have.property('demand').and.to.equal('video');
     expect(requestContent.videoData).to.have.property('format').and.to.equal('instream');
-    // expect(requestContent.videoData.playerSize[0][0]).to.equal('640');
-    // expect(requestContent.videoData.playerSize[0][0]).to.equal('480');
   })
 
   it('Verify build request to prebid video outstream', function() {
@@ -278,6 +273,7 @@ describe('Richaudience adapter tests', function () {
     expect(request[0]).to.have.property('method').and.to.equal('POST');
     const requestContent = JSON.parse(request[0].data);
 
+    expect(requestContent).to.have.property('demand').and.to.equal('video');
     expect(requestContent.videoData).to.have.property('format').and.to.equal('outstream');
   })
 
@@ -348,34 +344,49 @@ describe('Richaudience adapter tests', function () {
   });
 
   describe('UID test', function () {
-    pbjs.setConfig({
+    config.setConfig({
       consentManagement: {
         cmpApi: 'iab',
         timeout: 5000,
         allowAuctionWithoutConsent: true
+      },
+      userSync: {
+        userIds: [{
+          name: 'id5Id',
+          params: {
+            partner: 173, // change to the Partner Number you received from ID5
+            pd: 'MT1iNTBjY...' // optional, see table below for a link to how to generate this
+          },
+          storage: {
+            type: 'html5', // "html5" is the required storage type
+            name: 'id5id', // "id5id" is the required storage name
+            expires: 90, // storage lasts for 90 days
+            refreshInSeconds: 8 * 3600 // refresh ID every 8 hours to ensure it's fresh
+          }
+        }],
+        auctionDelay: 50 // 50ms maximum auction delay, applies to all userId modules
       }
     });
     it('Verify build id5', function () {
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId = {};
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.id5id = 'id5-user-id';
-
-      var request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
-      var requestContent = JSON.parse(request[0].data);
-
-      expect(requestContent.user).to.deep.equal([{
-        'userId': 'id5-user-id',
-        'source': 'id5-sync.com'
-      }]);
-
       var request;
       DEFAULT_PARAMS_WO_OPTIONAL[0].userId = {};
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.id5id = 1;
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.id5id = { uid: 1 };
       request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
       var requestContent = JSON.parse(request[0].data);
 
       expect(requestContent.user.eids).to.equal(undefined);
 
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.id5id = [];
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.id5id = { uid: [] };
+      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
+      requestContent = JSON.parse(request[0].data);
+      expect(requestContent.user.eids).to.equal(undefined);
+
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.id5id = { uid: null };
+      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
+      requestContent = JSON.parse(request[0].data);
+      expect(requestContent.user.eids).to.equal(undefined);
+
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.id5id = { uid: {} };
       request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
       requestContent = JSON.parse(request[0].data);
       expect(requestContent.user.eids).to.equal(undefined);
@@ -590,6 +601,7 @@ describe('Richaudience adapter tests', function () {
     expect(bid.currency).to.equal('USD');
     expect(bid.ttl).to.equal(300);
     expect(bid.dealId).to.equal('dealId');
+    expect(bid.meta).to.equal('richaudience.com');
   });
 
   it('no banner media response inestream', function () {
@@ -605,13 +617,53 @@ describe('Richaudience adapter tests', function () {
     });
 
     const bids = spec.interpretResponse(BID_RESPONSE_VIDEO, request[0]);
+    expect(bids).to.have.lengthOf(1);
     const bid = bids[0];
+    expect(bid.cpm).to.equal(1.50);
     expect(bid.mediaType).to.equal('video');
     expect(bid.vastXml).to.equal('<VAST></VAST>');
+    expect(bid.cpm).to.equal(1.50);
+    expect(bid.width).to.equal(1);
+    expect(bid.height).to.equal(1);
+    expect(bid.creativeId).to.equal('189198063');
+    expect(bid.netRevenue).to.equal(true);
+    expect(bid.currency).to.equal('USD');
+    expect(bid.ttl).to.equal(300);
+    expect(bid.dealId).to.equal('dealId');
+    expect(bid.meta).to.equal('richaudience.com');
   });
 
   it('no banner media response outstream', function () {
     const request = spec.buildRequests(DEFAULT_PARAMS_VIDEO_OUT, {
+      gdprConsent: {
+        consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+        gdprApplies: true
+      },
+      refererInfo: {
+        referer: 'https://domain.com',
+        numIframes: 0
+      }
+    });
+
+    const bids = spec.interpretResponse(BID_RESPONSE_VIDEO, request[0]);
+    expect(bids).to.have.lengthOf(1);
+    const bid = bids[0];
+    expect(bid.cpm).to.equal(1.50);
+    expect(bid.mediaType).to.equal('video');
+    expect(bid.vastXml).to.equal('<VAST></VAST>');
+    expect(bid.renderer.url).to.equal('https://cdn3.richaudience.com/prebidVideo/player.js');
+    expect(bid.cpm).to.equal(1.50);
+    expect(bid.width).to.equal(1);
+    expect(bid.height).to.equal(1);
+    expect(bid.creativeId).to.equal('189198063');
+    expect(bid.netRevenue).to.equal(true);
+    expect(bid.currency).to.equal('USD');
+    expect(bid.ttl).to.equal(300);
+    expect(bid.dealId).to.equal('dealId');
+  });
+
+  it('banner media and response VAST', function () {
+    const request = spec.buildRequests(DEFAULT_PARAMS_BANNER_OUTSTREAM, {
       gdprConsent: {
         consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
         gdprApplies: true
@@ -636,6 +688,16 @@ describe('Richaudience adapter tests', function () {
   it('Verifies bidder aliases', function () {
     expect(spec.aliases).to.have.lengthOf(1);
     expect(spec.aliases[0]).to.equal('ra');
+  });
+
+  it('Verifies bidder gvlid', function () {
+    expect(spec.gvlid).to.equal(108);
+  });
+
+  it('Verifies bidder supportedMediaTypes', function () {
+    expect(spec.supportedMediaTypes).to.have.lengthOf(2);
+    expect(spec.supportedMediaTypes[0]).to.equal('banner');
+    expect(spec.supportedMediaTypes[1]).to.equal('video');
   });
 
   it('Verifies if bid request is valid', function () {
@@ -699,78 +761,413 @@ describe('Richaudience adapter tests', function () {
         bidfloor: 0.50,
       }
     })).to.equal(true);
-  });
-
-  it('Verifies user syncs iframe', function () {
-    var syncs = spec.getUserSyncs({
-      iframeEnabled: true
-    }, [BID_RESPONSE], {
-      consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
-      gdprApplies: true
-    });
-
-    expect(syncs).to.have.lengthOf(1);
-    expect(syncs[0].type).to.equal('iframe');
-    syncs = spec.getUserSyncs({
-      iframeEnabled: false
-    }, [BID_RESPONSE], {
-      consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
-      gdprApplies: true
-    });
-    expect(syncs).to.have.lengthOf(0);
-
-    syncs = spec.getUserSyncs({
-      iframeEnabled: true
-    }, [], {consentString: '', gdprApplies: false});
-    expect(syncs).to.have.lengthOf(1);
-
-    syncs = spec.getUserSyncs({
-      iframeEnabled: false
-    }, [], {consentString: '', gdprApplies: true});
-    expect(syncs).to.have.lengthOf(0);
-
-    pbjs.setConfig({
-      consentManagement: {
-        cmpApi: 'iab',
-        timeout: 5000,
-        allowAuctionWithoutConsent: true,
-        pixelEnabled: true
+    expect(spec.isBidRequestValid({
+      params: {
+        pid: ['1gCB5ZC4XL', '1a40xk8qSV'],
+        bidfloor: 0.50,
       }
+    })).to.equal(false);
+    expect(spec.isBidRequestValid({
+      params: {
+        pid: ['1gCB5ZC4XL', '1a40xk8qSV'],
+        supplyType: 'site',
+        bidfloor: 0.50,
+      }
+    })).to.equal(true);
+    expect(spec.isBidRequestValid({
+      params: {
+        supplyType: 'site',
+        bidfloor: 0.50,
+        ifa: 'AAAAAAAAA-BBBB-CCCC-1111-222222220000',
+      }
+    })).to.equal(false);
+    expect(spec.isBidRequestValid({
+      params: {
+        pid: ['1gCB5ZC4XL', '1a40xk8qSV'],
+        supplyType: 'site',
+        bidfloor: 0.50,
+        ifa: 'AAAAAAAAA-BBBB-CCCC-1111-222222220000',
+      }
+    })).to.equal(true);
+  });
+
+  it('should pass schain', function() {
+    let schain = {
+      'ver': '1.0',
+      'complete': 1,
+      'nodes': [{
+        'asi': 'richaudience.com',
+        'sid': '00001',
+        'hp': 1
+      }, {
+        'asi': 'richaudience-2.com',
+        'sid': '00002',
+        'hp': 1
+      }]
+    }
+
+    DEFAULT_PARAMS_NEW_SIZES[0].schain = {
+      'ver': '1.0',
+      'complete': 1,
+      'nodes': [{
+        'asi': 'richaudience.com',
+        'sid': '00001',
+        'hp': 1
+      }, {
+        'asi': 'richaudience-2.com',
+        'sid': '00002',
+        'hp': 1
+      }]
+    }
+
+    const request = spec.buildRequests(DEFAULT_PARAMS_NEW_SIZES, {
+      gdprConsent: {
+        consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+        gdprApplies: true
+      },
+      refererInfo: {}
+    })
+    const requestContent = JSON.parse(request[0].data);
+    expect(requestContent).to.have.property('schain').to.deep.equal(schain);
+  })
+
+  describe('userSync', function () {
+    it('Verifies user syncs iframe include', function () {
+      config.setConfig({
+        'userSync': {filterSettings: {iframe: {bidders: '*', filter: 'include'}}}
+      })
+
+      var syncs = spec.getUserSyncs({
+        iframeEnabled: true
+      }, [BID_RESPONSE], {
+        consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+        gdprApplies: true},
+      );
+      expect(syncs).to.have.lengthOf(1);
+      expect(syncs[0].type).to.equal('iframe');
+
+      syncs = spec.getUserSyncs({
+        iframeEnabled: false,
+      }, [BID_RESPONSE], {
+        consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+        gdprApplies: true,
+      });
+      expect(syncs).to.have.lengthOf(0);
+
+      syncs = spec.getUserSyncs({
+        iframeEnabled: false,
+      }, [BID_RESPONSE], {
+        consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+        gdprApplies: true
+      });
+      expect(syncs).to.have.lengthOf(0);
+
+      syncs = spec.getUserSyncs({
+        iframeEnabled: true,
+      }, [], {consentString: '', gdprApplies: false});
+      expect(syncs).to.have.lengthOf(1);
+
+      syncs = spec.getUserSyncs({
+        iframeEnabled: false,
+      }, [], {consentString: '', gdprApplies: true});
+      expect(syncs).to.have.lengthOf(0);
     });
-  });
+    it('Verifies user syncs iframe exclude', function () {
+      config.setConfig({
+        'userSync': {filterSettings: {iframe: {bidders: '*', filter: 'exclude'}}}
+      })
 
-  it('Verifies user syncs image', function () {
-    var syncs = spec.getUserSyncs({
-      iframeEnabled: false,
-      pixelEnabled: true
-    }, [BID_RESPONSE], {
-      consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
-      referer: 'http://domain.com',
-      gdprApplies: true
-    })
-    expect(syncs).to.have.lengthOf(1);
-    expect(syncs[0].type).to.equal('image');
+      var syncs = spec.getUserSyncs({
+        iframeEnabled: true
+      }, [BID_RESPONSE], {
+        consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+        gdprApplies: true},
+      );
+      expect(syncs).to.have.lengthOf(0);
 
-    syncs = spec.getUserSyncs({
-      iframeEnabled: false,
-      pixelEnabled: true
-    }, [BID_RESPONSE], {
-      consentString: '',
-      referer: 'http://domain.com',
-      gdprApplies: true
-    })
-    expect(syncs).to.have.lengthOf(1);
-    expect(syncs[0].type).to.equal('image');
+      syncs = spec.getUserSyncs({
+        iframeEnabled: false,
+      }, [BID_RESPONSE], {
+        consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+        gdprApplies: true,
+      });
+      expect(syncs).to.have.lengthOf(0);
 
-    syncs = spec.getUserSyncs({
-      iframeEnabled: false,
-      pixelEnabled: true
-    }, [], {
-      consentString: null,
-      referer: 'http://domain.com',
-      gdprApplies: true
-    })
-    expect(syncs).to.have.lengthOf(1);
-    expect(syncs[0].type).to.equal('image');
-  });
+      syncs = spec.getUserSyncs({
+        iframeEnabled: false,
+      }, [BID_RESPONSE], {
+        consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+        gdprApplies: true
+      });
+      expect(syncs).to.have.lengthOf(0);
+
+      syncs = spec.getUserSyncs({
+        iframeEnabled: true,
+      }, [], {consentString: '', gdprApplies: false});
+      expect(syncs).to.have.lengthOf(0);
+
+      syncs = spec.getUserSyncs({
+        iframeEnabled: false,
+      }, [], {consentString: '', gdprApplies: true});
+      expect(syncs).to.have.lengthOf(0);
+    });
+
+    it('Verifies user syncs image include', function () {
+      config.setConfig({
+        'userSync': {filterSettings: {image: {bidders: '*', filter: 'include'}}}
+      })
+
+      var syncs = spec.getUserSyncs({
+        iframeEnabled: false,
+        pixelEnabled: true
+      }, [BID_RESPONSE], {
+        consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+        referer: 'http://domain.com',
+        gdprApplies: true
+      })
+      expect(syncs).to.have.lengthOf(1);
+      expect(syncs[0].type).to.equal('image');
+
+      syncs = spec.getUserSyncs({
+        iframeEnabled: false,
+        pixelEnabled: true
+      }, [BID_RESPONSE], {
+        consentString: '',
+        referer: 'http://domain.com',
+        gdprApplies: true
+      })
+      expect(syncs).to.have.lengthOf(1);
+      expect(syncs[0].type).to.equal('image');
+
+      syncs = spec.getUserSyncs({
+        iframeEnabled: false,
+        pixelEnabled: true
+      }, [], {
+        consentString: null,
+        referer: 'http://domain.com',
+        gdprApplies: false
+      })
+      expect(syncs).to.have.lengthOf(1);
+      expect(syncs[0].type).to.equal('image');
+    });
+
+    it('Verifies user syncs image exclude', function () {
+      config.setConfig({
+        'userSync': {filterSettings: {image: {bidders: '*', filter: 'exclude'}}}
+      })
+
+      var syncs = spec.getUserSyncs({
+        iframeEnabled: false,
+        pixelEnabled: true
+      }, [BID_RESPONSE], {
+        consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+        referer: 'http://domain.com',
+        gdprApplies: true
+      })
+      expect(syncs).to.have.lengthOf(0);
+
+      syncs = spec.getUserSyncs({
+        iframeEnabled: false,
+        pixelEnabled: true
+      }, [BID_RESPONSE], {
+        consentString: '',
+        referer: 'http://domain.com',
+        gdprApplies: true
+      })
+      expect(syncs).to.have.lengthOf(0);
+
+      syncs = spec.getUserSyncs({
+        iframeEnabled: false,
+        pixelEnabled: true
+      }, [], {
+        consentString: null,
+        referer: 'http://domain.com',
+        gdprApplies: false
+      })
+      expect(syncs).to.have.lengthOf(0);
+    });
+
+    it('Verifies user syncs iframe/image include', function () {
+      config.setConfig({
+        'userSync': {filterSettings: {iframe: {bidders: '*', filter: 'include'}, image: {bidders: '*', filter: 'include'}}}
+      })
+
+      var syncs = spec.getUserSyncs({
+        iframeEnabled: true,
+        pixelEnabled: true
+      }, [BID_RESPONSE], {
+        consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+        gdprApplies: true},
+      );
+      expect(syncs).to.have.lengthOf(1);
+      expect(syncs[0].type).to.equal('iframe');
+
+      syncs = spec.getUserSyncs({
+        iframeEnabled: false,
+        pixelEnabled: false
+      }, [BID_RESPONSE], {
+        consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+        gdprApplies: true,
+      });
+      expect(syncs).to.have.lengthOf(0);
+
+      syncs = spec.getUserSyncs({
+        iframeEnabled: false,
+        pixelEnabled: false
+      }, [BID_RESPONSE], {
+        consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+        gdprApplies: true
+      });
+      expect(syncs).to.have.lengthOf(0);
+
+      syncs = spec.getUserSyncs({
+        iframeEnabled: true,
+        pixelEnabled: true
+      }, [], {consentString: '', gdprApplies: false});
+      expect(syncs).to.have.lengthOf(1);
+
+      syncs = spec.getUserSyncs({
+        iframeEnabled: false,
+        pixelEnabled: false
+      }, [], {consentString: '', gdprApplies: true});
+      expect(syncs).to.have.lengthOf(0);
+    });
+
+    it('Verifies user syncs iframe/image exclude', function () {
+      config.setConfig({
+        'userSync': {filterSettings: {iframe: {bidders: '*', filter: 'exclude'}, image: {bidders: '*', filter: 'exclude'}}}
+      })
+
+      var syncs = spec.getUserSyncs({
+        iframeEnabled: true,
+        pixelEnabled: true
+      }, [BID_RESPONSE], {
+        consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+        gdprApplies: true},
+      );
+      expect(syncs).to.have.lengthOf(0);
+
+      syncs = spec.getUserSyncs({
+        iframeEnabled: false,
+        pixelEnabled: false
+      }, [BID_RESPONSE], {
+        consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+        gdprApplies: true,
+      });
+      expect(syncs).to.have.lengthOf(0);
+
+      syncs = spec.getUserSyncs({
+        iframeEnabled: false,
+        pixelEnabled: false
+      }, [BID_RESPONSE], {
+        consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+        gdprApplies: true
+      });
+      expect(syncs).to.have.lengthOf(0);
+
+      syncs = spec.getUserSyncs({
+        iframeEnabled: true,
+        pixelEnabled: true
+      }, [], {consentString: '', gdprApplies: false});
+      expect(syncs).to.have.lengthOf(0);
+
+      syncs = spec.getUserSyncs({
+        iframeEnabled: false,
+        pixelEnabled: false
+      }, [], {consentString: '', gdprApplies: true});
+      expect(syncs).to.have.lengthOf(0);
+    });
+
+    it('Verifies user syncs iframe exclude / image include', function () {
+      config.setConfig({
+        'userSync': {filterSettings: {iframe: {bidders: '*', filter: 'exclude'}, image: {bidders: '*', filter: 'include'}}}
+      })
+
+      var syncs = spec.getUserSyncs({
+        iframeEnabled: true,
+        pixelEnabled: true
+      }, [BID_RESPONSE], {
+        consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+        gdprApplies: true},
+      );
+      expect(syncs).to.have.lengthOf(1);
+      expect(syncs[0].type).to.equal('image');
+
+      syncs = spec.getUserSyncs({
+        iframeEnabled: false,
+        pixelEnabled: false
+      }, [BID_RESPONSE], {
+        consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+        gdprApplies: true,
+      });
+      expect(syncs).to.have.lengthOf(0);
+
+      syncs = spec.getUserSyncs({
+        iframeEnabled: false,
+        pixelEnabled: false
+      }, [BID_RESPONSE], {
+        consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+        gdprApplies: true
+      });
+      expect(syncs).to.have.lengthOf(0);
+
+      syncs = spec.getUserSyncs({
+        iframeEnabled: true,
+        pixelEnabled: true
+      }, [], {consentString: '', gdprApplies: false});
+      expect(syncs).to.have.lengthOf(1);
+
+      syncs = spec.getUserSyncs({
+        iframeEnabled: false,
+        pixelEnabled: false
+      }, [], {consentString: '', gdprApplies: true});
+      expect(syncs).to.have.lengthOf(0);
+    });
+
+    it('Verifies user syncs iframe include / image exclude', function () {
+      config.setConfig({
+        'userSync': {filterSettings: {iframe: {bidders: '*', filter: 'include'}, image: {bidders: '*', filter: 'exclude'}}}
+      })
+
+      var syncs = spec.getUserSyncs({
+        iframeEnabled: true,
+        pixelEnabled: true
+      }, [BID_RESPONSE], {
+        consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+        gdprApplies: true},
+      );
+      expect(syncs).to.have.lengthOf(1);
+      expect(syncs[0].type).to.equal('iframe');
+
+      syncs = spec.getUserSyncs({
+        iframeEnabled: false,
+        pixelEnabled: false
+      }, [BID_RESPONSE], {
+        consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+        gdprApplies: true,
+      });
+      expect(syncs).to.have.lengthOf(0);
+
+      syncs = spec.getUserSyncs({
+        iframeEnabled: false,
+        pixelEnabled: false
+      }, [BID_RESPONSE], {
+        consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+        gdprApplies: true
+      });
+      expect(syncs).to.have.lengthOf(0);
+
+      syncs = spec.getUserSyncs({
+        iframeEnabled: true,
+        pixelEnabled: true
+      }, [], {consentString: '', gdprApplies: false});
+      expect(syncs).to.have.lengthOf(1);
+
+      syncs = spec.getUserSyncs({
+        iframeEnabled: false,
+        pixelEnabled: false
+      }, [], {consentString: '', gdprApplies: true});
+      expect(syncs).to.have.lengthOf(0);
+    });
+  })
 });

@@ -7,8 +7,12 @@ import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import { targeting } from 'src/targeting.js';
 import { auctionManager } from 'src/auctionManager.js';
+import { gdprDataHandler, uspDataHandler } from 'src/adapterManager.js';
 import * as adpod from 'modules/adpod.js';
 import { server } from 'test/mocks/xhr.js';
+import * as adServer from 'src/adserver.js';
+import {deepClone} from 'src/utils.js';
+import {hook} from '../../../src/hook.js';
 
 const bid = {
   videoCacheKey: 'abc',
@@ -19,6 +23,10 @@ const bid = {
 };
 
 describe('The DFP video support module', function () {
+  before(() => {
+    hook.ready();
+  });
+
   it('should make a legal request URL when given the required params', function () {
     const url = parse(buildDfpVideoUrl({
       adUnit: adUnit,
@@ -38,7 +46,7 @@ describe('The DFP video support module', function () {
     expect(queryParams).to.have.property('env', 'vp');
     expect(queryParams).to.have.property('gdfp_req', '1');
     expect(queryParams).to.have.property('iu', 'my/adUnit');
-    expect(queryParams).to.have.property('output', 'xml_vast3');
+    expect(queryParams).to.have.property('output', 'vast');
     expect(queryParams).to.have.property('sz', '640x480');
     expect(queryParams).to.have.property('unviewed_position_start', '1');
     expect(queryParams).to.have.property('url');
@@ -114,6 +122,154 @@ describe('The DFP video support module', function () {
     expect(customParams).to.have.property('hb_uuid', bid.videoCacheKey);
     expect(customParams).to.have.property('hb_cache_id', bid.videoCacheKey);
   });
+
+  it('should include the us_privacy key when USP Consent is available', function () {
+    let uspDataHandlerStub = sinon.stub(uspDataHandler, 'getConsentData');
+    uspDataHandlerStub.returns('1YYY');
+
+    const bidCopy = utils.deepClone(bid);
+    bidCopy.adserverTargeting = Object.assign(bidCopy.adserverTargeting, {
+      hb_adid: 'ad_id',
+    });
+
+    const url = parse(buildDfpVideoUrl({
+      adUnit: adUnit,
+      bid: bidCopy,
+      params: {
+        'iu': 'my/adUnit'
+      }
+    }));
+    const queryObject = utils.parseQS(url.query);
+    expect(queryObject.us_privacy).to.equal('1YYY');
+    uspDataHandlerStub.restore();
+  });
+
+  it('should not include the us_privacy key when USP Consent is not available', function () {
+    const bidCopy = utils.deepClone(bid);
+    bidCopy.adserverTargeting = Object.assign(bidCopy.adserverTargeting, {
+      hb_adid: 'ad_id',
+    });
+
+    const url = parse(buildDfpVideoUrl({
+      adUnit: adUnit,
+      bid: bidCopy,
+      params: {
+        'iu': 'my/adUnit'
+      }
+    }));
+    const queryObject = utils.parseQS(url.query);
+    expect(queryObject.us_privacy).to.equal(undefined);
+  });
+
+  it('should include the GDPR keys when GDPR Consent is available', function () {
+    let gdprDataHandlerStub = sinon.stub(gdprDataHandler, 'getConsentData');
+    gdprDataHandlerStub.returns({
+      gdprApplies: true,
+      consentString: 'consent',
+      addtlConsent: 'moreConsent'
+    });
+
+    const bidCopy = utils.deepClone(bid);
+    bidCopy.adserverTargeting = Object.assign(bidCopy.adserverTargeting, {
+      hb_adid: 'ad_id',
+    });
+
+    const url = parse(buildDfpVideoUrl({
+      adUnit: adUnit,
+      bid: bidCopy,
+      params: {
+        'iu': 'my/adUnit'
+      }
+    }));
+    const queryObject = utils.parseQS(url.query);
+    expect(queryObject.gdpr).to.equal('1');
+    expect(queryObject.gdpr_consent).to.equal('consent');
+    expect(queryObject.addtl_consent).to.equal('moreConsent');
+    gdprDataHandlerStub.restore();
+  });
+
+  it('should not include the GDPR keys when GDPR Consent is not available', function () {
+    const bidCopy = utils.deepClone(bid);
+    bidCopy.adserverTargeting = Object.assign(bidCopy.adserverTargeting, {
+      hb_adid: 'ad_id',
+    });
+
+    const url = parse(buildDfpVideoUrl({
+      adUnit: adUnit,
+      bid: bidCopy,
+      params: {
+        'iu': 'my/adUnit'
+      }
+    }));
+    const queryObject = utils.parseQS(url.query);
+    expect(queryObject.gdpr).to.equal(undefined);
+    expect(queryObject.gdpr_consent).to.equal(undefined);
+    expect(queryObject.addtl_consent).to.equal(undefined);
+  });
+
+  it('should only include the GDPR keys for GDPR Consent fields with values', function () {
+    let gdprDataHandlerStub = sinon.stub(gdprDataHandler, 'getConsentData');
+    gdprDataHandlerStub.returns({
+      gdprApplies: true,
+      consentString: 'consent',
+    });
+
+    const bidCopy = utils.deepClone(bid);
+    bidCopy.adserverTargeting = Object.assign(bidCopy.adserverTargeting, {
+      hb_adid: 'ad_id',
+    });
+
+    const url = parse(buildDfpVideoUrl({
+      adUnit: adUnit,
+      bid: bidCopy,
+      params: {
+        'iu': 'my/adUnit'
+      }
+    }));
+    const queryObject = utils.parseQS(url.query);
+    expect(queryObject.gdpr).to.equal('1');
+    expect(queryObject.gdpr_consent).to.equal('consent');
+    expect(queryObject.addtl_consent).to.equal(undefined);
+    gdprDataHandlerStub.restore();
+  });
+
+  describe('GAM PPID', () => {
+    let ppid;
+    let getPPIDStub;
+    beforeEach(() => {
+      getPPIDStub = sinon.stub(adServer, 'getPPID').callsFake(() => ppid);
+    });
+    afterEach(() => {
+      getPPIDStub.restore();
+    });
+
+    Object.entries({
+      'params': {params: {'iu': 'mock/unit'}},
+      'url': {url: 'https://video.adserver.mock/', params: {'iu': 'mock/unit'}}
+    }).forEach(([t, opts]) => {
+      describe(`when using ${t}`, () => {
+        function buildUrlAndGetParams() {
+          const url = parse(buildDfpVideoUrl(Object.assign({
+            adUnit: adUnit,
+            bid: deepClone(bid),
+          }, opts)));
+          return utils.parseQS(url.query);
+        }
+
+        it('should be included if available', () => {
+          ppid = 'mockPPID';
+          const q = buildUrlAndGetParams();
+          expect(q.ppid).to.equal('mockPPID');
+        });
+
+        it('should not be included if not available', () => {
+          ppid = undefined;
+          const q = buildUrlAndGetParams();
+          expect(q.hasOwnProperty('ppid')).to.be.false;
+        })
+      })
+    })
+  })
 
   describe('special targeting unit test', function () {
     const allTargetingData = {
@@ -299,6 +455,59 @@ describe('The DFP video support module', function () {
     expect(customParams).to.have.property('hb_cache_id', 'def');
   });
 
+  it('should keep the url protocol, host, and pathname when using url and params', function () {
+    const url = parse(buildDfpVideoUrl({
+      adUnit: adUnit,
+      bid: bid,
+      url: 'http://video.adserver.example/ads?sz=640x480&iu=/123/aduniturl&impl=s',
+      params: {
+        cust_params: {
+          hb_rand: 'random'
+        }
+      }
+    }));
+
+    expect(url.protocol).to.equal('http:');
+    expect(url.host).to.equal('video.adserver.example');
+    expect(url.pathname).to.equal('/ads');
+  });
+
+  it('should append to the url size param', () => {
+    const url = parse(buildDfpVideoUrl({
+      adUnit: adUnit,
+      bid: bid,
+      url: 'http://video.adserver.example/ads?sz=360x240&iu=/123/aduniturl&impl=s',
+      params: {
+        cust_params: {
+          hb_rand: 'random'
+        }
+      }
+    }));
+
+    const queryObject = utils.parseQS(url.query);
+    expect(queryObject.sz).to.equal('360x240|640x480');
+  });
+
+  it('should append to the existing url cust params', () => {
+    const url = parse(buildDfpVideoUrl({
+      adUnit: adUnit,
+      bid: bid,
+      url: 'http://video.adserver.example/ads?sz=360x240&iu=/123/aduniturl&impl=s&cust_params=existing_key%3Dexisting_value%26other_key%3Dother_value',
+      params: {
+        cust_params: {
+          hb_rand: 'random'
+        }
+      }
+    }));
+
+    const queryObject = utils.parseQS(url.query);
+    const customParams = utils.parseQS('?' + decodeURIComponent(queryObject.cust_params));
+
+    expect(customParams).to.have.property('existing_key', 'existing_value');
+    expect(customParams).to.have.property('other_key', 'other_value');
+    expect(customParams).to.have.property('hb_rand', 'random');
+  });
+
   describe('adpod unit tests', function () {
     let amStub;
     let amGetAdUnitsStub;
@@ -350,6 +559,14 @@ describe('The DFP video support module', function () {
 
     it('should return masterTag url', function() {
       amStub.returns(getBidsReceived());
+      let uspDataHandlerStub = sinon.stub(uspDataHandler, 'getConsentData');
+      uspDataHandlerStub.returns('1YYY');
+      let gdprDataHandlerStub = sinon.stub(gdprDataHandler, 'getConsentData');
+      gdprDataHandlerStub.returns({
+        gdprApplies: true,
+        consentString: 'consent',
+        addtlConsent: 'moreConsent'
+      });
       let url;
       parse(buildAdpodVideoUrl({
         code: 'adUnitCode-1',
@@ -375,15 +592,21 @@ describe('The DFP video support module', function () {
         expect(queryParams).to.have.property('env', 'vp');
         expect(queryParams).to.have.property('gdfp_req', '1');
         expect(queryParams).to.have.property('iu', 'my/adUnit');
-        expect(queryParams).to.have.property('output', 'xml_vast3');
+        expect(queryParams).to.have.property('output', 'vast');
         expect(queryParams).to.have.property('sz', '640x480');
         expect(queryParams).to.have.property('unviewed_position_start', '1');
         expect(queryParams).to.have.property('url');
         expect(queryParams).to.have.property('cust_params');
+        expect(queryParams).to.have.property('us_privacy', '1YYY');
+        expect(queryParams).to.have.property('gdpr', '1');
+        expect(queryParams).to.have.property('gdpr_consent', 'consent');
+        expect(queryParams).to.have.property('addtl_consent', 'moreConsent');
 
         const custParams = utils.parseQS(decodeURIComponent(queryParams.cust_params));
         expect(custParams).to.have.property('hb_cache_id', '123');
         expect(custParams).to.have.property('hb_pb_cat_dur', '15.00_395_15s,15.00_406_30s,10.00_395_15s');
+        uspDataHandlerStub.restore();
+        gdprDataHandlerStub.restore();
       }
     });
 

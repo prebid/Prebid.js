@@ -2,11 +2,13 @@ import rubiconAnalyticsAdapter, {
   SEND_TIMEOUT,
   parseBidResponse,
   getHostNameFromReferer,
+  storage,
+  rubiConf,
 } from 'modules/rubiconAnalyticsAdapter.js';
 import CONSTANTS from 'src/constants.json';
 import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr.js';
-
+import * as mockGpt from '../integration/faker/googletag.js';
 import {
   setConfig,
   addBidResponseHook,
@@ -25,7 +27,6 @@ function validate(message) {
   expect(validator.errors).to.deep.equal(null);
 }
 
-// using es6 "import * as events from 'src/events.js'" causes the events.getEvents stub not to work...
 let events = require('src/events.js');
 let utils = require('src/utils.js');
 
@@ -38,7 +39,8 @@ const {
     BIDDER_DONE,
     BID_WON,
     BID_TIMEOUT,
-    SET_TARGETING
+    SET_TARGETING,
+    BILLABLE_EVENT
   }
 } = CONSTANTS;
 
@@ -110,33 +112,108 @@ const BID2 = Object.assign({}, BID, {
   }
 });
 
+const BID3 = Object.assign({}, BID, {
+  adUnitCode: '/19968336/siderail-tag1',
+  bidId: '5fg6hyy4r879f0',
+  adId: 'fake_ad_id',
+  requestId: '5fg6hyy4r879f0',
+  width: 300,
+  height: 250,
+  mediaType: 'banner',
+  cpm: 2.01,
+  source: 'server',
+  seatBidId: 'aaaa-bbbb-cccc-dddd',
+  rubiconTargeting: {
+    'rpfl_elemid': '/19968336/siderail-tag1',
+    'rpfl_14062': '15_tier0200'
+  },
+  adserverTargeting: {
+    'hb_bidder': 'rubicon',
+    'hb_adid': '5fg6hyy4r879f0',
+    'hb_pb': '2.00',
+    'hb_size': '300x250',
+    'hb_source': 'server'
+  }
+});
+
+const BID4 = Object.assign({}, BID, {
+  adUnitCode: '/19968336/header-bid-tag1',
+  bidId: '3bd4ebb1c900e2',
+  adId: 'fake_ad_id',
+  requestId: '3bd4ebb1c900e2',
+  width: 728,
+  height: 90,
+  mediaType: 'banner',
+  cpm: 1.52,
+  source: 'server',
+  pbsBidId: 'zzzz-yyyy-xxxx-wwww',
+  seatBidId: 'aaaa-bbbb-cccc-dddd',
+  rubiconTargeting: {
+    'rpfl_elemid': '/19968336/header-bid-tag1',
+    'rpfl_14062': '2_tier0100'
+  },
+  adserverTargeting: {
+    'hb_bidder': 'rubicon',
+    'hb_adid': '3bd4ebb1c900e2',
+    'hb_pb': '1.500',
+    'hb_size': '728x90',
+    'hb_source': 'server'
+  }
+});
+
+const floorMinRequest = {
+  'bidder': 'rubicon',
+  'params': {
+    'accountId': '14062',
+    'siteId': '70608',
+    'zoneId': '335918',
+    'userId': '12346',
+    'keywords': ['a', 'b', 'c'],
+    'inventory': { 'rating': '4-star', 'prodtype': 'tech' },
+    'visitor': { 'ucat': 'new', 'lastsearch': 'iphone' },
+    'position': 'atf'
+  },
+  'mediaTypes': {
+    'banner': {
+      'sizes': [[300, 250]]
+    }
+  },
+  'adUnitCode': '/19968336/siderail-tag1',
+  'transactionId': 'c435626g-9e3f-401a-bee1-d56aec29a1d4',
+  'sizes': [[300, 250]],
+  'bidId': '5fg6hyy4r879f0',
+  'bidderRequestId': '1be65d7958826a',
+  'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa'
+};
+
 const MOCK = {
   SET_TARGETING: {
     [BID.adUnitCode]: BID.adserverTargeting,
-    [BID2.adUnitCode]: BID2.adserverTargeting
+    [BID2.adUnitCode]: BID2.adserverTargeting,
+    [BID3.adUnitCode]: BID3.adserverTargeting
   },
   AUCTION_INIT: {
     'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
     'timestamp': 1519767010567,
     'auctionStatus': 'inProgress',
-    'adUnits': [ {
+    'adUnits': [{
       'code': '/19968336/header-bid-tag1',
       'sizes': [[640, 480]],
-      'bids': [ {
+      'bids': [{
         'bidder': 'rubicon',
         'params': {
           'accountId': 1001, 'siteId': 113932, 'zoneId': 535512
         }
-      } ],
+      }],
       'transactionId': 'ca4af27a-6d02-4f90-949d-d5541fa12014'
     }
     ],
     'adUnitCodes': ['/19968336/header-bid-tag1'],
-    'bidderRequests': [ {
+    'bidderRequests': [{
       'bidderCode': 'rubicon',
       'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
       'bidderRequestId': '1be65d7958826a',
-      'bids': [ {
+      'bids': [{
         'bidder': 'rubicon',
         'params': {
           'accountId': 1001, 'siteId': 113932, 'zoneId': 535512
@@ -170,7 +247,7 @@ const MOCK = {
     }
   },
   BID_REQUESTED: {
-    'bidder': 'rubicon',
+    'bidderCode': 'rubicon',
     'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
     'bidderRequestId': '1be65d7958826a',
     'bids': [
@@ -183,7 +260,7 @@ const MOCK = {
           'userId': '12346',
           'keywords': ['a', 'b', 'c'],
           'inventory': 'test',
-          'visitor': {'ucat': 'new', 'lastsearch': 'iphone'},
+          'visitor': { 'ucat': 'new', 'lastsearch': 'iphone' },
           'position': 'btf',
           'video': {
             'language': 'en',
@@ -198,13 +275,19 @@ const MOCK = {
             }
           }
         },
-        'mediaType': 'video',
+        'mediaTypes': {
+          'video': {
+            'context': 'instream',
+            'playerSize': [640, 480]
+          }
+        },
         'adUnitCode': '/19968336/header-bid-tag-0',
         'transactionId': 'ca4af27a-6d02-4f90-949d-d5541fa12014',
         'sizes': [[640, 480]],
         'bidId': '2ecff0db240757',
         'bidderRequestId': '1be65d7958826a',
-        'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa'
+        'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
+        'src': 'client'
       },
       {
         'bidder': 'rubicon',
@@ -214,8 +297,8 @@ const MOCK = {
           'zoneId': '335918',
           'userId': '12346',
           'keywords': ['a', 'b', 'c'],
-          'inventory': {'rating': '4-star', 'prodtype': 'tech'},
-          'visitor': {'ucat': 'new', 'lastsearch': 'iphone'},
+          'inventory': { 'rating': '4-star', 'prodtype': 'tech' },
+          'visitor': { 'ucat': 'new', 'lastsearch': 'iphone' },
           'position': 'atf'
         },
         'mediaTypes': {
@@ -228,7 +311,8 @@ const MOCK = {
         'sizes': [[1000, 300], [970, 250], [728, 90]],
         'bidId': '3bd4ebb1c900e2',
         'bidderRequestId': '1be65d7958826a',
-        'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa'
+        'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
+        'src': 's2s'
       }
     ],
     'auctionStart': 1519149536560,
@@ -240,7 +324,8 @@ const MOCK = {
   },
   BID_RESPONSE: [
     BID,
-    BID2
+    BID2,
+    BID3
   ],
   AUCTION_END: {
     'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa'
@@ -251,14 +336,21 @@ const MOCK = {
     }),
     Object.assign({}, BID2, {
       'status': 'rendered'
+    }),
+    Object.assign({}, BID3, {
+      'status': 'rendered'
     })
   ],
   BIDDER_DONE: {
     'bidderCode': 'rubicon',
+    'serverResponseTimeMs': 42,
     'bids': [
       BID,
       Object.assign({}, BID2, {
         'serverResponseTimeMs': 42,
+      }),
+      Object.assign({}, BID3, {
+        'serverResponseTimeMs': 55,
       })
     ]
   },
@@ -272,14 +364,32 @@ const MOCK = {
   ]
 };
 
+const STUBBED_UUID = '12345678-1234-1234-1234-123456789abc';
+
 const ANALYTICS_MESSAGE = {
-  'eventTimeMillis': 1519767013781,
+  'channel': 'web',
   'integration': 'pbjs',
   'version': '$prebid.version$',
   'referrerUri': 'http://www.test.com/page.html',
+  'session': {
+    'expires': 1519788613781,
+    'id': STUBBED_UUID,
+    'start': 1519767013781
+  },
+  'timestamps': {
+    'auctionEnded': 1519767013781,
+    'eventTime': 1519767013781,
+    'prebidLoaded': rubiconAnalyticsAdapter.MODULE_INITIALIZED_TIME
+  },
+  'trigger': 'allBidWons',
   'referrerHostname': 'www.test.com',
   'auctions': [
     {
+
+      'auctionEnd': 1519767013781,
+      'auctionStart': 1519767010567,
+      'bidderOrder': ['rubicon'],
+      'requestId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
       'clientTimeoutMillis': 3000,
       'serverTimeoutMillis': 1000,
       'accountId': 1001,
@@ -463,29 +573,44 @@ const ANALYTICS_MESSAGE = {
       'bidwonStatus': 'success'
     }
   ],
-  'wrapperName': '10000_fakewrapper_test'
+  'wrapper': {
+    'name': '10000_fakewrapper_test'
+  }
 };
 
-function performStandardAuction() {
-  events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
-  events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
-  events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
-  events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[1]);
-  events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
-  events.emit(AUCTION_END, MOCK.AUCTION_END);
-  events.emit(SET_TARGETING, MOCK.SET_TARGETING);
-  events.emit(BID_WON, MOCK.BID_WON[0]);
-  events.emit(BID_WON, MOCK.BID_WON[1]);
+function performStandardAuction(gptEvents, auctionId = MOCK.AUCTION_INIT.auctionId) {
+  events.emit(AUCTION_INIT, { ...MOCK.AUCTION_INIT, auctionId });
+  events.emit(BID_REQUESTED, { ...MOCK.BID_REQUESTED, auctionId });
+  events.emit(BID_RESPONSE, { ...MOCK.BID_RESPONSE[0], auctionId });
+  events.emit(BID_RESPONSE, { ...MOCK.BID_RESPONSE[1], auctionId });
+  events.emit(BIDDER_DONE, { ...MOCK.BIDDER_DONE, auctionId });
+  events.emit(AUCTION_END, { ...MOCK.AUCTION_END, auctionId });
+
+  if (gptEvents && gptEvents.length) {
+    gptEvents.forEach(gptEvent => mockGpt.emitEvent(gptEvent.eventName, gptEvent.params));
+  }
+
+  events.emit(SET_TARGETING, { ...MOCK.SET_TARGETING, auctionId });
+  events.emit(BID_WON, { ...MOCK.BID_WON[0], auctionId });
+  events.emit(BID_WON, { ...MOCK.BID_WON[1], auctionId });
 }
 
 describe('rubicon analytics adapter', function () {
   let sandbox;
   let clock;
-
+  let getDataFromLocalStorageStub, setDataInLocalStorageStub, localStorageIsEnabledStub;
   beforeEach(function () {
+    getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
+    setDataInLocalStorageStub = sinon.stub(storage, 'setDataInLocalStorage');
+    localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled');
+    mockGpt.disable();
     sandbox = sinon.sandbox.create();
 
+    localStorageIsEnabledStub.returns(true);
+
     sandbox.stub(events, 'getEvents').returns([]);
+
+    sandbox.stub(utils, 'generateUUID').returns(STUBBED_UUID);
 
     clock = sandbox.useFakeTimers(1519767013781);
 
@@ -505,6 +630,10 @@ describe('rubicon analytics adapter', function () {
   afterEach(function () {
     sandbox.restore();
     config.resetConfig();
+    mockGpt.enable();
+    getDataFromLocalStorageStub.restore();
+    setDataInLocalStorageStub.restore();
+    localStorageIsEnabledStub.restore();
   });
 
   it('should require accountId', function () {
@@ -529,6 +658,91 @@ describe('rubicon analytics adapter', function () {
     });
 
     expect(utils.logError.called).to.equal(true);
+  });
+
+  describe('config subscribe', function () {
+    it('should update the pvid if user asks', function () {
+      expect(utils.generateUUID.called).to.equal(false);
+      config.setConfig({ rubicon: { updatePageView: true } });
+      expect(utils.generateUUID.called).to.equal(true);
+    });
+    it('should merge in and preserve older set configs', function () {
+      config.setConfig({
+        rubicon: {
+          wrapperName: '1001_general',
+          int_type: 'dmpbjs',
+          fpkvs: {
+            source: 'fb'
+          }
+        }
+      });
+      expect(rubiConf).to.deep.equal({
+        analyticsEventDelay: 0,
+        dmBilling: {
+          enabled: false,
+          vendors: [],
+          waitForAuction: true
+        },
+        pvid: '12345678',
+        wrapperName: '1001_general',
+        int_type: 'dmpbjs',
+        fpkvs: {
+          source: 'fb'
+        },
+        updatePageView: true
+      });
+
+      // update it with stuff
+      config.setConfig({
+        rubicon: {
+          fpkvs: {
+            link: 'email'
+          }
+        }
+      });
+      expect(rubiConf).to.deep.equal({
+        analyticsEventDelay: 0,
+        dmBilling: {
+          enabled: false,
+          vendors: [],
+          waitForAuction: true
+        },
+        pvid: '12345678',
+        wrapperName: '1001_general',
+        int_type: 'dmpbjs',
+        fpkvs: {
+          source: 'fb',
+          link: 'email'
+        },
+        updatePageView: true
+      });
+
+      // overwriting specific edge keys should update them
+      config.setConfig({
+        rubicon: {
+          fpkvs: {
+            link: 'iMessage',
+            source: 'twitter'
+          }
+        }
+      });
+      expect(rubiConf).to.deep.equal({
+        analyticsEventDelay: 0,
+        dmBilling: {
+          enabled: false,
+          vendors: [],
+          waitForAuction: true
+        },
+        pvid: '12345678',
+        wrapperName: '1001_general',
+        int_type: 'dmpbjs',
+        fpkvs: {
+          link: 'iMessage',
+          source: 'twitter'
+        },
+        updatePageView: true
+      });
+    });
   });
 
   describe('sampling', function () {
@@ -659,14 +873,229 @@ describe('rubicon analytics adapter', function () {
       expect(message).to.deep.equal(ANALYTICS_MESSAGE);
     });
 
-    it('should capture price floor information correctly', function () {
+    it('should pass along bidderOrder correctly', function () {
+      const appnexusBid = utils.deepClone(MOCK.BID_REQUESTED);
+      appnexusBid.bidderCode = 'appnexus';
+      const pubmaticBid = utils.deepClone(MOCK.BID_REQUESTED);
+      pubmaticBid.bidderCode = 'pubmatic';
+      const indexBid = utils.deepClone(MOCK.BID_REQUESTED);
+      indexBid.bidderCode = 'ix';
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, pubmaticBid);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+      events.emit(BID_REQUESTED, indexBid);
+      events.emit(BID_REQUESTED, appnexusBid);
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      events.emit(SET_TARGETING, MOCK.SET_TARGETING);
+      clock.tick(SEND_TIMEOUT + 1000);
+
+      let message = JSON.parse(server.requests[0].requestBody);
+      expect(message.auctions[0].bidderOrder).to.deep.equal([
+        'pubmatic',
+        'rubicon',
+        'ix',
+        'appnexus'
+      ]);
+    });
+
+    it('should pass along user ids', function () {
+      let auctionInit = utils.deepClone(MOCK.AUCTION_INIT);
+      auctionInit.bidderRequests[0].bids[0].userId = {
+        criteoId: 'sadfe4334',
+        lotamePanoramaId: 'asdf3gf4eg',
+        pubcid: 'dsfa4545-svgdfs5',
+        sharedId: { id1: 'asdf', id2: 'sadf4344' }
+      };
+
+      events.emit(AUCTION_INIT, auctionInit);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[1]);
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+
+      events.emit(SET_TARGETING, MOCK.SET_TARGETING);
+      events.emit(BID_WON, MOCK.BID_WON[0]);
+      events.emit(BID_WON, MOCK.BID_WON[1]);
+
+      expect(server.requests.length).to.equal(1);
+      let request = server.requests[0];
+
+      let message = JSON.parse(request.requestBody);
+      validate(message);
+
+      expect(message.auctions[0].user).to.deep.equal({
+        ids: [
+          { provider: 'criteoId', 'hasId': true },
+          { provider: 'lotamePanoramaId', 'hasId': true },
+          { provider: 'pubcid', 'hasId': true },
+          { provider: 'sharedId', 'hasId': true },
+        ]
+      });
+    });
+
+    it('should handle bidResponse dimensions correctly', function () {
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+
+      // mock bid response with playerWidth and playerHeight (NO width and height)
+      let bidResponse1 = utils.deepClone(MOCK.BID_RESPONSE[0]);
+      delete bidResponse1.width;
+      delete bidResponse1.height;
+      bidResponse1.playerWidth = 640;
+      bidResponse1.playerHeight = 480;
+
+      // mock bid response with no width height or playerwidth playerheight
+      let bidResponse2 = utils.deepClone(MOCK.BID_RESPONSE[1]);
+      delete bidResponse2.width;
+      delete bidResponse2.height;
+      delete bidResponse2.playerWidth;
+      delete bidResponse2.playerHeight;
+
+      events.emit(BID_RESPONSE, bidResponse1);
+      events.emit(BID_RESPONSE, bidResponse2);
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      events.emit(SET_TARGETING, MOCK.SET_TARGETING);
+      events.emit(BID_WON, MOCK.BID_WON[0]);
+      events.emit(BID_WON, MOCK.BID_WON[1]);
+
+      let message = JSON.parse(server.requests[0].requestBody);
+      validate(message);
+      expect(message.auctions[0].adUnits[0].bids[0].bidResponse.dimensions).to.deep.equal({
+        width: 640,
+        height: 480
+      });
+      expect(message.auctions[0].adUnits[1].bids[0].bidResponse.dimensions).to.equal(undefined);
+    });
+
+    it('should pass along adomians correctly', function () {
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+
+      // 1 adomains
+      let bidResponse1 = utils.deepClone(MOCK.BID_RESPONSE[0]);
+      bidResponse1.meta = {
+        advertiserDomains: ['magnite.com']
+      }
+
+      // two adomains
+      let bidResponse2 = utils.deepClone(MOCK.BID_RESPONSE[1]);
+      bidResponse2.meta = {
+        advertiserDomains: ['prebid.org', 'magnite.com']
+      }
+
+      // make sure we only pass max 10 adomains
+      bidResponse2.meta.advertiserDomains = [...bidResponse2.meta.advertiserDomains, ...bidResponse2.meta.advertiserDomains, ...bidResponse2.meta.advertiserDomains, ...bidResponse2.meta.advertiserDomains, ...bidResponse2.meta.advertiserDomains, ...bidResponse2.meta.advertiserDomains, ...bidResponse2.meta.advertiserDomains]
+
+      events.emit(BID_RESPONSE, bidResponse1);
+      events.emit(BID_RESPONSE, bidResponse2);
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      events.emit(SET_TARGETING, MOCK.SET_TARGETING);
+      events.emit(BID_WON, MOCK.BID_WON[0]);
+      events.emit(BID_WON, MOCK.BID_WON[1]);
+
+      let message = JSON.parse(server.requests[0].requestBody);
+      validate(message);
+      expect(message.auctions[0].adUnits[0].bids[0].bidResponse.adomains).to.deep.equal(['magnite.com']);
+      expect(message.auctions[0].adUnits[1].bids[0].bidResponse.adomains).to.deep.equal(['prebid.org', 'magnite.com', 'prebid.org', 'magnite.com', 'prebid.org', 'magnite.com', 'prebid.org', 'magnite.com', 'prebid.org', 'magnite.com']);
+    });
+
+    it('should NOT pass along adomians correctly when edge cases', function () {
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+
+      // empty => nothing
+      let bidResponse1 = utils.deepClone(MOCK.BID_RESPONSE[0]);
+      bidResponse1.meta = {
+        advertiserDomains: []
+      }
+
+      // not array => nothing
+      let bidResponse2 = utils.deepClone(MOCK.BID_RESPONSE[1]);
+      bidResponse2.meta = {
+        advertiserDomains: 'prebid.org'
+      }
+
+      events.emit(BID_RESPONSE, bidResponse1);
+      events.emit(BID_RESPONSE, bidResponse2);
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      events.emit(SET_TARGETING, MOCK.SET_TARGETING);
+      events.emit(BID_WON, MOCK.BID_WON[0]);
+      events.emit(BID_WON, MOCK.BID_WON[1]);
+
+      let message = JSON.parse(server.requests[0].requestBody);
+      validate(message);
+      expect(message.auctions[0].adUnits[0].bids[0].bidResponse.adomains).to.be.undefined;
+      expect(message.auctions[0].adUnits[1].bids[0].bidResponse.adomains).to.be.undefined;
+    });
+
+    it('should NOT pass along adomians with other edge cases', function () {
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+
+      // should filter out non string values and pass valid ones
+      let bidResponse1 = utils.deepClone(MOCK.BID_RESPONSE[0]);
+      bidResponse1.meta = {
+        advertiserDomains: [123, 'prebid.org', false, true, [], 'magnite.com', {}]
+      }
+
+      // array of arrays (as seen when passed by kargo bid adapter)
+      let bidResponse2 = utils.deepClone(MOCK.BID_RESPONSE[1]);
+      bidResponse2.meta = {
+        advertiserDomains: [['prebid.org']]
+      }
+
+      events.emit(BID_RESPONSE, bidResponse1);
+      events.emit(BID_RESPONSE, bidResponse2);
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      events.emit(SET_TARGETING, MOCK.SET_TARGETING);
+      events.emit(BID_WON, MOCK.BID_WON[0]);
+      events.emit(BID_WON, MOCK.BID_WON[1]);
+
+      let message = JSON.parse(server.requests[0].requestBody);
+      validate(message);
+      expect(message.auctions[0].adUnits[0].bids[0].bidResponse.adomains).to.deep.equal(['prebid.org', 'magnite.com']);
+      expect(message.auctions[0].adUnits[1].bids[0].bidResponse.adomains).to.be.undefined;
+    });
+
+    it('should not pass empty adServerTargeting values', function () {
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[1]);
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+
+      const mockTargeting = utils.deepClone(MOCK.SET_TARGETING);
+      mockTargeting['/19968336/header-bid-tag-0'].hb_test = '';
+      mockTargeting['/19968336/header-bid-tag1'].hb_test = 'NOT_EMPTY';
+      events.emit(SET_TARGETING, mockTargeting);
+
+      events.emit(BID_WON, MOCK.BID_WON[0]);
+      events.emit(BID_WON, MOCK.BID_WON[1]);
+
+      let message = JSON.parse(server.requests[0].requestBody);
+      validate(message);
+      expect(message.auctions[0].adUnits[0].adserverTargeting.hb_test).to.be.undefined;
+      expect(message.auctions[0].adUnits[1].adserverTargeting.hb_test).to.equal('NOT_EMPTY');
+    });
+
+    function performFloorAuction(provider) {
       let auctionInit = utils.deepClone(MOCK.AUCTION_INIT);
       auctionInit.bidderRequests[0].bids[0].floorData = {
         skipped: false,
         modelVersion: 'someModelName',
+        modelWeight: 10,
+        modelTimestamp: 1606772895,
         location: 'setConfig',
         skipRate: 15,
-        fetchStatus: 'error'
+        fetchStatus: 'error',
+        floorProvider: provider
       };
       let flooredResponse = {
         ...BID,
@@ -713,50 +1142,772 @@ describe('rubicon analytics adapter', function () {
         }
       };
 
+      let floorMinResponse = {
+        ...BID3,
+        floorData: {
+          floorValue: 1.5,
+          floorRuleValue: 1,
+          floorRule: '12345/entertainment|banner',
+          floorCurrency: 'USD',
+          cpmAfterAdjustments: 2.00,
+          enforcements: {
+            enforceJS: true,
+            enforcePBS: false,
+            floorDeals: false,
+            bidAdjustment: true
+          },
+          matchedFields: {
+            gptSlot: '12345/entertainment',
+            mediaType: 'banner'
+          }
+        }
+      };
+
+      let bidRequest = utils.deepClone(MOCK.BID_REQUESTED);
+      bidRequest.bids.push(floorMinRequest)
+
       // spoof the auction with just our duplicates
       events.emit(AUCTION_INIT, auctionInit);
-      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+      events.emit(BID_REQUESTED, bidRequest);
       events.emit(BID_RESPONSE, flooredResponse);
       events.emit(BID_RESPONSE, notFlooredResponse);
+      events.emit(BID_RESPONSE, floorMinResponse);
       events.emit(AUCTION_END, MOCK.AUCTION_END);
       events.emit(SET_TARGETING, MOCK.SET_TARGETING);
       events.emit(BID_WON, MOCK.BID_WON[1]);
+      events.emit(BID_WON, MOCK.BID_WON[2]);
       clock.tick(SEND_TIMEOUT + 1000);
 
       expect(server.requests.length).to.equal(1);
 
       let message = JSON.parse(server.requests[0].requestBody);
       validate(message);
+      return message;
+    }
+
+    it('should capture price floor information correctly', function () {
+      let message = performFloorAuction('rubicon');
 
       // verify our floor stuff is passed
       // top level floor info
       expect(message.auctions[0].floors).to.deep.equal({
         location: 'setConfig',
         modelName: 'someModelName',
+        modelWeight: 10,
+        modelTimestamp: 1606772895,
         skipped: false,
         enforcement: true,
         dealsEnforced: false,
         skipRate: 15,
-        fetchStatus: 'error'
+        fetchStatus: 'error',
+        provider: 'rubicon'
       });
       // first adUnit's adSlot
-      expect(message.auctions[0].adUnits[0].adSlot).to.equal('12345/sports');
+      expect(message.auctions[0].adUnits[0].gam.adSlot).to.equal('12345/sports');
       // since no other bids, we set adUnit status to no-bid
       expect(message.auctions[0].adUnits[0].status).to.equal('no-bid');
       // first adUnits bid is rejected
-      expect(message.auctions[0].adUnits[0].bids[0].status).to.equal('rejected');
+      expect(message.auctions[0].adUnits[0].bids[0].status).to.equal('rejected-ipf');
       expect(message.auctions[0].adUnits[0].bids[0].bidResponse.floorValue).to.equal(4);
       // if bid rejected should take cpmAfterAdjustments val
       expect(message.auctions[0].adUnits[0].bids[0].bidResponse.bidPriceUSD).to.equal(2.1);
 
       // second adUnit's adSlot
-      expect(message.auctions[0].adUnits[1].adSlot).to.equal('12345/news');
+      expect(message.auctions[0].adUnits[1].gam.adSlot).to.equal('12345/news');
       // top level adUnit status is success
       expect(message.auctions[0].adUnits[1].status).to.equal('success');
       // second adUnits bid is success
       expect(message.auctions[0].adUnits[1].bids[0].status).to.equal('success');
       expect(message.auctions[0].adUnits[1].bids[0].bidResponse.floorValue).to.equal(1);
       expect(message.auctions[0].adUnits[1].bids[0].bidResponse.bidPriceUSD).to.equal(1.52);
+
+      // second adUnit's adSlot
+      expect(message.auctions[0].adUnits[2].gam.adSlot).to.equal('12345/entertainment');
+      // top level adUnit status is success
+      expect(message.auctions[0].adUnits[2].status).to.equal('success');
+      // second adUnits bid is success
+      expect(message.auctions[0].adUnits[2].bids[0].status).to.equal('success');
+      expect(message.auctions[0].adUnits[2].bids[0].bidResponse.floorValue).to.equal(1.5);
+      expect(message.auctions[0].adUnits[2].bids[0].bidResponse.floorRuleValue).to.equal(1);
+      expect(message.auctions[0].adUnits[2].bids[0].bidResponse.bidPriceUSD).to.equal(2.01);
+    });
+
+    it('should still send floor info if provider is not rubicon', function () {
+      let message = performFloorAuction('randomProvider');
+
+      // verify our floor stuff is passed
+      // top level floor info
+      expect(message.auctions[0].floors).to.deep.equal({
+        location: 'setConfig',
+        modelName: 'someModelName',
+        modelWeight: 10,
+        modelTimestamp: 1606772895,
+        skipped: false,
+        enforcement: true,
+        dealsEnforced: false,
+        skipRate: 15,
+        fetchStatus: 'error',
+        provider: 'randomProvider'
+      });
+      // first adUnit's adSlot
+      expect(message.auctions[0].adUnits[0].gam.adSlot).to.equal('12345/sports');
+      // since no other bids, we set adUnit status to no-bid
+      expect(message.auctions[0].adUnits[0].status).to.equal('no-bid');
+      // first adUnits bid is rejected
+      expect(message.auctions[0].adUnits[0].bids[0].status).to.equal('rejected-ipf');
+      expect(message.auctions[0].adUnits[0].bids[0].bidResponse.floorValue).to.equal(4);
+      // if bid rejected should take cpmAfterAdjustments val
+      expect(message.auctions[0].adUnits[0].bids[0].bidResponse.bidPriceUSD).to.equal(2.1);
+
+      // second adUnit's adSlot
+      expect(message.auctions[0].adUnits[1].gam.adSlot).to.equal('12345/news');
+      // top level adUnit status is success
+      expect(message.auctions[0].adUnits[1].status).to.equal('success');
+      // second adUnits bid is success
+      expect(message.auctions[0].adUnits[1].bids[0].status).to.equal('success');
+      expect(message.auctions[0].adUnits[1].bids[0].bidResponse.floorValue).to.equal(1);
+      expect(message.auctions[0].adUnits[1].bids[0].bidResponse.bidPriceUSD).to.equal(1.52);
+
+      // second adUnit's adSlot
+      expect(message.auctions[0].adUnits[2].gam.adSlot).to.equal('12345/entertainment');
+      // top level adUnit status is success
+      expect(message.auctions[0].adUnits[2].status).to.equal('success');
+      // second adUnits bid is success
+      expect(message.auctions[0].adUnits[2].bids[0].status).to.equal('success');
+      expect(message.auctions[0].adUnits[2].bids[0].bidResponse.floorValue).to.equal(1.5);
+      expect(message.auctions[0].adUnits[2].bids[0].bidResponse.floorRuleValue).to.equal(1);
+      expect(message.auctions[0].adUnits[2].bids[0].bidResponse.bidPriceUSD).to.equal(2.01);
+    });
+
+    describe('with session handling', function () {
+      const expectedPvid = STUBBED_UUID.slice(0, 8);
+      beforeEach(function () {
+        config.setConfig({ rubicon: { updatePageView: true } });
+      });
+
+      it('should not log any session data if local storage is not enabled', function () {
+        localStorageIsEnabledStub.returns(false);
+
+        let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
+        delete expectedMessage.session;
+        delete expectedMessage.fpkvs;
+
+        performStandardAuction();
+
+        expect(server.requests.length).to.equal(1);
+        let request = server.requests[0];
+
+        expect(request.url).to.equal('//localhost:9999/event');
+
+        let message = JSON.parse(request.requestBody);
+        validate(message);
+
+        expect(message).to.deep.equal(expectedMessage);
+      });
+
+      it('should should pass along custom rubicon kv and pvid when defined', function () {
+        config.setConfig({
+          rubicon: {
+            fpkvs: {
+              source: 'fb',
+              link: 'email'
+            }
+          }
+        });
+        performStandardAuction();
+        expect(server.requests.length).to.equal(1);
+        let request = server.requests[0];
+        let message = JSON.parse(request.requestBody);
+        validate(message);
+
+        let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
+        expectedMessage.session.pvid = STUBBED_UUID.slice(0, 8);
+        expectedMessage.fpkvs = [
+          { key: 'source', value: 'fb' },
+          { key: 'link', value: 'email' }
+        ]
+        expect(message).to.deep.equal(expectedMessage);
+      });
+
+      it('should convert kvs to strings before sending', function () {
+        config.setConfig({
+          rubicon: {
+            fpkvs: {
+              number: 24,
+              boolean: false,
+              string: 'hello',
+              array: ['one', 2, 'three'],
+              object: { one: 'two' }
+            }
+          }
+        });
+        performStandardAuction();
+        expect(server.requests.length).to.equal(1);
+        let request = server.requests[0];
+        let message = JSON.parse(request.requestBody);
+        validate(message);
+
+        let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
+        expectedMessage.session.pvid = STUBBED_UUID.slice(0, 8);
+        expectedMessage.fpkvs = [
+          { key: 'number', value: '24' },
+          { key: 'boolean', value: 'false' },
+          { key: 'string', value: 'hello' },
+          { key: 'array', value: 'one,2,three' },
+          { key: 'object', value: '[object Object]' }
+        ]
+        expect(message).to.deep.equal(expectedMessage);
+      });
+
+      it('should use the query utm param rubicon kv value and pass updated kv and pvid when defined', function () {
+        sandbox.stub(utils, 'getWindowLocation').returns({ 'search': '?utm_source=other', 'pbjs_debug': 'true' });
+
+        config.setConfig({
+          rubicon: {
+            fpkvs: {
+              source: 'fb',
+              link: 'email'
+            }
+          }
+        });
+        performStandardAuction();
+        expect(server.requests.length).to.equal(1);
+        let request = server.requests[0];
+        let message = JSON.parse(request.requestBody);
+        validate(message);
+
+        let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
+        expectedMessage.session.pvid = STUBBED_UUID.slice(0, 8);
+        expectedMessage.fpkvs = [
+          { key: 'source', value: 'other' },
+          { key: 'link', value: 'email' }
+        ]
+
+        message.fpkvs.sort((left, right) => left.key < right.key);
+        expectedMessage.fpkvs.sort((left, right) => left.key < right.key);
+
+        expect(message).to.deep.equal(expectedMessage);
+      });
+
+      it('should pick up existing localStorage and use its values', function () {
+        // set some localStorage
+        let inputlocalStorage = {
+          id: '987654',
+          start: 1519766113781, // 15 mins before "now"
+          expires: 1519787713781, // six hours later
+          lastSeen: 1519766113781,
+          fpkvs: { source: 'tw' }
+        };
+        getDataFromLocalStorageStub.withArgs('rpaSession').returns(btoa(JSON.stringify(inputlocalStorage)));
+
+        config.setConfig({
+          rubicon: {
+            fpkvs: {
+              link: 'email' // should merge this with what is in the localStorage!
+            }
+          }
+        });
+        performStandardAuction();
+        expect(server.requests.length).to.equal(1);
+        let request = server.requests[0];
+        let message = JSON.parse(request.requestBody);
+        validate(message);
+
+        let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
+        expectedMessage.session = {
+          id: '987654',
+          start: 1519766113781,
+          expires: 1519787713781,
+          pvid: expectedPvid
+        }
+        expectedMessage.fpkvs = [
+          { key: 'source', value: 'tw' },
+          { key: 'link', value: 'email' }
+        ]
+        expect(message).to.deep.equal(expectedMessage);
+
+        let calledWith;
+        try {
+          calledWith = JSON.parse(atob(setDataInLocalStorageStub.getCall(0).args[1]));
+        } catch (e) {
+          calledWith = {};
+        }
+
+        expect(calledWith).to.deep.equal({
+          id: '987654', // should have stayed same
+          start: 1519766113781, // should have stayed same
+          expires: 1519787713781, // should have stayed same
+          lastSeen: 1519767013781, // lastSeen updated to our "now"
+          fpkvs: { source: 'tw', link: 'email' }, // link merged in
+          pvid: expectedPvid // new pvid stored
+        });
+      });
+
+      it('should overwrite matching localstorge value and use its remaining values', function () {
+        sandbox.stub(utils, 'getWindowLocation').returns({ 'search': '?utm_source=fb&utm_click=dog' });
+
+        // set some localStorage
+        let inputlocalStorage = {
+          id: '987654',
+          start: 1519766113781, // 15 mins before "now"
+          expires: 1519787713781, // six hours later
+          lastSeen: 1519766113781,
+          fpkvs: { source: 'tw', link: 'email' }
+        };
+        getDataFromLocalStorageStub.withArgs('rpaSession').returns(btoa(JSON.stringify(inputlocalStorage)));
+
+        config.setConfig({
+          rubicon: {
+            fpkvs: {
+              link: 'email' // should merge this with what is in the localStorage!
+            }
+          }
+        });
+        performStandardAuction();
+        expect(server.requests.length).to.equal(1);
+        let request = server.requests[0];
+        let message = JSON.parse(request.requestBody);
+        validate(message);
+
+        let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
+        expectedMessage.session = {
+          id: '987654',
+          start: 1519766113781,
+          expires: 1519787713781,
+          pvid: expectedPvid
+        }
+        expectedMessage.fpkvs = [
+          { key: 'source', value: 'fb' },
+          { key: 'link', value: 'email' },
+          { key: 'click', value: 'dog' }
+        ]
+
+        message.fpkvs.sort((left, right) => left.key < right.key);
+        expectedMessage.fpkvs.sort((left, right) => left.key < right.key);
+
+        expect(message).to.deep.equal(expectedMessage);
+
+        let calledWith;
+        try {
+          calledWith = JSON.parse(atob(setDataInLocalStorageStub.getCall(0).args[1]));
+        } catch (e) {
+          calledWith = {};
+        }
+
+        expect(calledWith).to.deep.equal({
+          id: '987654', // should have stayed same
+          start: 1519766113781, // should have stayed same
+          expires: 1519787713781, // should have stayed same
+          lastSeen: 1519767013781, // lastSeen updated to our "now"
+          fpkvs: { source: 'fb', link: 'email', click: 'dog' }, // link merged in
+          pvid: expectedPvid // new pvid stored
+        });
+      });
+
+      it('should throw out session if lastSeen > 30 mins ago and create new one', function () {
+        // set some localStorage
+        let inputlocalStorage = {
+          id: '987654',
+          start: 1519764313781, // 45 mins before "now"
+          expires: 1519785913781, // six hours later
+          lastSeen: 1519764313781, // 45 mins before "now"
+          fpkvs: { source: 'tw' }
+        };
+        getDataFromLocalStorageStub.withArgs('rpaSession').returns(btoa(JSON.stringify(inputlocalStorage)));
+
+        config.setConfig({
+          rubicon: {
+            fpkvs: {
+              link: 'email' // should merge this with what is in the localStorage!
+            }
+          }
+        });
+
+        performStandardAuction();
+        expect(server.requests.length).to.equal(1);
+        let request = server.requests[0];
+        let message = JSON.parse(request.requestBody);
+        validate(message);
+
+        let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
+        // session should match what is already in ANALYTICS_MESSAGE, just need to add pvid
+        expectedMessage.session.pvid = expectedPvid;
+
+        // the saved fpkvs should have been thrown out since session expired
+        expectedMessage.fpkvs = [
+          { key: 'link', value: 'email' }
+        ]
+        expect(message).to.deep.equal(expectedMessage);
+
+        let calledWith;
+        try {
+          calledWith = JSON.parse(atob(setDataInLocalStorageStub.getCall(0).args[1]));
+        } catch (e) {
+          calledWith = {};
+        }
+
+        expect(calledWith).to.deep.equal({
+          id: STUBBED_UUID, // should have stayed same
+          start: 1519767013781, // should have stayed same
+          expires: 1519788613781, // should have stayed same
+          lastSeen: 1519767013781, // lastSeen updated to our "now"
+          fpkvs: { link: 'email' }, // link merged in
+          pvid: expectedPvid // new pvid stored
+        });
+      });
+
+      it('should throw out session if past expires time and create new one', function () {
+        // set some localStorage
+        let inputlocalStorage = {
+          id: '987654',
+          start: 1519745353781, // 6 hours before "expires"
+          expires: 1519766953781, // little more than six hours ago
+          lastSeen: 1519767008781, // 5 seconds ago
+          fpkvs: { source: 'tw' }
+        };
+        getDataFromLocalStorageStub.withArgs('rpaSession').returns(btoa(JSON.stringify(inputlocalStorage)));
+
+        config.setConfig({
+          rubicon: {
+            fpkvs: {
+              link: 'email' // should merge this with what is in the localStorage!
+            }
+          }
+        });
+
+        performStandardAuction();
+        expect(server.requests.length).to.equal(1);
+        let request = server.requests[0];
+        let message = JSON.parse(request.requestBody);
+        validate(message);
+
+        let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
+        // session should match what is already in ANALYTICS_MESSAGE, just need to add pvid
+        expectedMessage.session.pvid = expectedPvid;
+
+        // the saved fpkvs should have been thrown out since session expired
+        expectedMessage.fpkvs = [
+          { key: 'link', value: 'email' }
+        ]
+        expect(message).to.deep.equal(expectedMessage);
+
+        let calledWith;
+        try {
+          calledWith = JSON.parse(atob(setDataInLocalStorageStub.getCall(0).args[1]));
+        } catch (e) {
+          calledWith = {};
+        }
+
+        expect(calledWith).to.deep.equal({
+          id: STUBBED_UUID, // should have stayed same
+          start: 1519767013781, // should have stayed same
+          expires: 1519788613781, // should have stayed same
+          lastSeen: 1519767013781, // lastSeen updated to our "now"
+          fpkvs: { link: 'email' }, // link merged in
+          pvid: expectedPvid // new pvid stored
+        });
+      });
+    });
+    describe('with googletag enabled', function () {
+      let gptSlot0, gptSlot1;
+      let gptSlotRenderEnded0, gptSlotRenderEnded1;
+      beforeEach(function () {
+        mockGpt.enable();
+        gptSlot0 = mockGpt.makeSlot({ code: '/19968336/header-bid-tag-0' });
+        gptSlotRenderEnded0 = {
+          eventName: 'slotRenderEnded',
+          params: {
+            slot: gptSlot0,
+            isEmpty: false,
+            advertiserId: 1111,
+            sourceAgnosticCreativeId: 2222,
+            sourceAgnosticLineItemId: 3333
+          }
+        };
+
+        gptSlot1 = mockGpt.makeSlot({ code: '/19968336/header-bid-tag1' });
+        gptSlotRenderEnded1 = {
+          eventName: 'slotRenderEnded',
+          params: {
+            slot: gptSlot1,
+            isEmpty: false,
+            advertiserId: 4444,
+            sourceAgnosticCreativeId: 5555,
+            sourceAgnosticLineItemId: 6666
+          }
+        };
+      });
+
+      afterEach(function () {
+        mockGpt.disable();
+      });
+
+      it('should add necessary gam information if gpt is enabled and slotRender event emmited', function () {
+        performStandardAuction([gptSlotRenderEnded0, gptSlotRenderEnded1]);
+        expect(server.requests.length).to.equal(1);
+        let request = server.requests[0];
+        let message = JSON.parse(request.requestBody);
+        validate(message);
+
+        let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
+        expectedMessage.auctions[0].adUnits[0].gam = {
+          advertiserId: 1111,
+          creativeId: 2222,
+          lineItemId: 3333,
+          adSlot: '/19968336/header-bid-tag-0'
+        };
+        expectedMessage.auctions[0].adUnits[1].gam = {
+          advertiserId: 4444,
+          creativeId: 5555,
+          lineItemId: 6666,
+          adSlot: '/19968336/header-bid-tag1'
+        };
+        expect(message).to.deep.equal(expectedMessage);
+      });
+
+      it('should handle empty gam renders', function () {
+        performStandardAuction([gptSlotRenderEnded0, {
+          eventName: 'slotRenderEnded',
+          params: {
+            slot: gptSlot1,
+            isEmpty: true
+          }
+        }]);
+        expect(server.requests.length).to.equal(1);
+        let request = server.requests[0];
+        let message = JSON.parse(request.requestBody);
+        validate(message);
+
+        let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
+        expectedMessage.auctions[0].adUnits[0].gam = {
+          advertiserId: 1111,
+          creativeId: 2222,
+          lineItemId: 3333,
+          adSlot: '/19968336/header-bid-tag-0'
+        };
+        expectedMessage.auctions[0].adUnits[1].gam = {
+          isSlotEmpty: true,
+          adSlot: '/19968336/header-bid-tag1'
+        };
+        expect(message).to.deep.equal(expectedMessage);
+      });
+
+      it('should still add gam ids if falsy', function () {
+        performStandardAuction([gptSlotRenderEnded0, {
+          eventName: 'slotRenderEnded',
+          params: {
+            slot: gptSlot1,
+            isEmpty: false,
+            advertiserId: 0,
+            sourceAgnosticCreativeId: 0,
+            sourceAgnosticLineItemId: 0
+          }
+        }]);
+        expect(server.requests.length).to.equal(1);
+        let request = server.requests[0];
+        let message = JSON.parse(request.requestBody);
+        validate(message);
+
+        let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
+        expectedMessage.auctions[0].adUnits[0].gam = {
+          advertiserId: 1111,
+          creativeId: 2222,
+          lineItemId: 3333,
+          adSlot: '/19968336/header-bid-tag-0'
+        };
+        expectedMessage.auctions[0].adUnits[1].gam = {
+          advertiserId: 0,
+          creativeId: 0,
+          lineItemId: 0,
+          adSlot: '/19968336/header-bid-tag1'
+        };
+        expect(message).to.deep.equal(expectedMessage);
+      });
+
+      it('should pick backup Ids if no sourceAgnostic available first', function () {
+        performStandardAuction([gptSlotRenderEnded0, {
+          eventName: 'slotRenderEnded',
+          params: {
+            slot: gptSlot1,
+            isEmpty: false,
+            advertiserId: 0,
+            lineItemId: 1234,
+            creativeId: 5678
+          }
+        }]);
+        expect(server.requests.length).to.equal(1);
+        let request = server.requests[0];
+        let message = JSON.parse(request.requestBody);
+        validate(message);
+
+        let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
+        expectedMessage.auctions[0].adUnits[0].gam = {
+          advertiserId: 1111,
+          creativeId: 2222,
+          lineItemId: 3333,
+          adSlot: '/19968336/header-bid-tag-0'
+        };
+        expectedMessage.auctions[0].adUnits[1].gam = {
+          advertiserId: 0,
+          creativeId: 5678,
+          lineItemId: 1234,
+          adSlot: '/19968336/header-bid-tag1'
+        };
+        expect(message).to.deep.equal(expectedMessage);
+      });
+
+      it('should correctly set adUnit for associated slots', function () {
+        performStandardAuction([gptSlotRenderEnded0, gptSlotRenderEnded1]);
+        expect(server.requests.length).to.equal(1);
+        let request = server.requests[0];
+        let message = JSON.parse(request.requestBody);
+        validate(message);
+
+        let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
+        expectedMessage.auctions[0].adUnits[0].gam = {
+          advertiserId: 1111,
+          creativeId: 2222,
+          lineItemId: 3333,
+          adSlot: '/19968336/header-bid-tag-0'
+        };
+        expectedMessage.auctions[0].adUnits[1].gam = {
+          advertiserId: 4444,
+          creativeId: 5555,
+          lineItemId: 6666,
+          adSlot: '/19968336/header-bid-tag1'
+        };
+        expect(message).to.deep.equal(expectedMessage);
+      });
+
+      it('should only mark the first gam data not all matches', function () {
+        config.setConfig({
+          rubicon: {
+            waitForGamSlots: true
+          }
+        });
+        performStandardAuction();
+        performStandardAuction([gptSlotRenderEnded0, gptSlotRenderEnded1], '32d332de-123a-32dg-2345-cefef3423324');
+
+        // tick the clock and both should fire
+        clock.tick(3000);
+
+        expect(server.requests.length).to.equal(2);
+
+        // first one should have GAM data
+        let request = server.requests[0];
+        let message = JSON.parse(request.requestBody);
+
+        // trigger should be gam since all adunits had associated gam render
+        expect(message.trigger).to.be.equal('gam');
+        expect(message.auctions[0].adUnits[0].gam).to.deep.equal({
+          advertiserId: 1111,
+          creativeId: 2222,
+          lineItemId: 3333,
+          adSlot: '/19968336/header-bid-tag-0'
+        });
+        expect(message.auctions[0].adUnits[1].gam).to.deep.equal({
+          advertiserId: 4444,
+          creativeId: 5555,
+          lineItemId: 6666,
+          adSlot: '/19968336/header-bid-tag1'
+        });
+
+        // second one should NOT have gam data
+        request = server.requests[1];
+        message = JSON.parse(request.requestBody);
+        validate(message);
+
+        // trigger should be auctionEnd
+        expect(message.trigger).to.be.equal('auctionEnd');
+        expect(message.auctions[0].adUnits[0].gam).to.be.undefined;
+        expect(message.auctions[0].adUnits[1].gam).to.be.undefined;
+      });
+
+      it('should send request when waitForGamSlots is present but no bidWons are sent', function () {
+        config.setConfig({
+          rubicon: {
+            waitForGamSlots: true,
+          }
+        });
+        events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+        events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+        events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
+        events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[1]);
+        events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+        events.emit(AUCTION_END, MOCK.AUCTION_END);
+        events.emit(SET_TARGETING, MOCK.SET_TARGETING);
+
+        // should send if just slotRenderEnded is emmitted for both
+        mockGpt.emitEvent(gptSlotRenderEnded0.eventName, gptSlotRenderEnded0.params);
+        mockGpt.emitEvent(gptSlotRenderEnded1.eventName, gptSlotRenderEnded1.params);
+
+        expect(server.requests.length).to.equal(1);
+        let request = server.requests[0];
+        let message = JSON.parse(request.requestBody);
+        validate(message);
+
+        let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
+        delete expectedMessage.bidsWon; // should not be any of these
+        expectedMessage.auctions[0].adUnits[0].gam = {
+          advertiserId: 1111,
+          creativeId: 2222,
+          lineItemId: 3333,
+          adSlot: '/19968336/header-bid-tag-0'
+        };
+        expectedMessage.auctions[0].adUnits[1].gam = {
+          advertiserId: 4444,
+          creativeId: 5555,
+          lineItemId: 6666,
+          adSlot: '/19968336/header-bid-tag1'
+        };
+        expectedMessage.trigger = 'gam';
+        expect(message).to.deep.equal(expectedMessage);
+      });
+
+      it('should delay the event call depending on analyticsEventDelay config', function () {
+        config.setConfig({
+          rubicon: {
+            waitForGamSlots: true,
+            analyticsEventDelay: 2000
+          }
+        });
+        events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+        events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+        events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
+        events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[1]);
+        events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+        events.emit(AUCTION_END, MOCK.AUCTION_END);
+        events.emit(SET_TARGETING, MOCK.SET_TARGETING);
+
+        // should send if just slotRenderEnded is emmitted for both
+        mockGpt.emitEvent(gptSlotRenderEnded0.eventName, gptSlotRenderEnded0.params);
+        mockGpt.emitEvent(gptSlotRenderEnded1.eventName, gptSlotRenderEnded1.params);
+
+        // Should not be sent until delay
+        expect(server.requests.length).to.equal(0);
+
+        // tick the clock and it should fire
+        clock.tick(2000);
+
+        expect(server.requests.length).to.equal(1);
+        let request = server.requests[0];
+        let message = JSON.parse(request.requestBody);
+        validate(message);
+        let expectedGam0 = {
+          advertiserId: 1111,
+          creativeId: 2222,
+          lineItemId: 3333,
+          adSlot: '/19968336/header-bid-tag-0'
+        };
+        let expectedGam1 = {
+          advertiserId: 4444,
+          creativeId: 5555,
+          lineItemId: 6666,
+          adSlot: '/19968336/header-bid-tag1'
+        };
+        expect(expectedGam0).to.deep.equal(message.auctions[0].adUnits[0].gam);
+        expect(expectedGam1).to.deep.equal(message.auctions[0].adUnits[1].gam);
+      });
     });
 
     it('should correctly overwrite bidId if seatBidId is on the bidResponse', function () {
@@ -791,6 +1942,73 @@ describe('rubicon analytics adapter', function () {
       validate(message);
       expect(message.auctions[0].adUnits[0].bids[0].bidId).to.equal('abc-123-do-re-me');
       expect(message.bidsWon[0].bidId).to.equal('abc-123-do-re-me');
+    });
+
+    it('should correctly overwrite bidId if pbsBidId is on the bidResponse', function () {
+      // Only want one bid request in our mock auction
+      let bidRequested = utils.deepClone(MOCK.BID_REQUESTED);
+      bidRequested.bids.shift();
+      let auctionInit = utils.deepClone(MOCK.AUCTION_INIT);
+      auctionInit.adUnits.shift();
+
+      // clone the mock bidResponse and duplicate
+      let seatBidResponse = utils.deepClone(BID4);
+
+      const setTargeting = {
+        [seatBidResponse.adUnitCode]: seatBidResponse.adserverTargeting
+      };
+
+      const bidWon = Object.assign({}, seatBidResponse, {
+        'status': 'rendered'
+      });
+
+      // spoof the auction with just our duplicates
+      events.emit(AUCTION_INIT, auctionInit);
+      events.emit(BID_REQUESTED, bidRequested);
+      events.emit(BID_RESPONSE, seatBidResponse);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      events.emit(SET_TARGETING, setTargeting);
+      events.emit(BID_WON, bidWon);
+
+      let message = JSON.parse(server.requests[0].requestBody);
+
+      validate(message);
+      expect(message.auctions[0].adUnits[0].bids[0].bidId).to.equal('zzzz-yyyy-xxxx-wwww');
+      expect(message.bidsWon[0].bidId).to.equal('zzzz-yyyy-xxxx-wwww');
+    });
+
+    it('should correctly generate new bidId if it is 0', function () {
+      // Only want one bid request in our mock auction
+      let bidRequested = utils.deepClone(MOCK.BID_REQUESTED);
+      bidRequested.bids.shift();
+      let auctionInit = utils.deepClone(MOCK.AUCTION_INIT);
+      auctionInit.adUnits.shift();
+
+      // clone the mock bidResponse and duplicate
+      let seatBidResponse = utils.deepClone(BID4);
+      seatBidResponse.pbsBidId = '0';
+
+      const setTargeting = {
+        [seatBidResponse.adUnitCode]: seatBidResponse.adserverTargeting
+      };
+
+      const bidWon = Object.assign({}, seatBidResponse, {
+        'status': 'rendered'
+      });
+
+      // spoof the auction with just our duplicates
+      events.emit(AUCTION_INIT, auctionInit);
+      events.emit(BID_REQUESTED, bidRequested);
+      events.emit(BID_RESPONSE, seatBidResponse);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      events.emit(SET_TARGETING, setTargeting);
+      events.emit(BID_WON, bidWon);
+
+      let message = JSON.parse(server.requests[0].requestBody);
+
+      validate(message);
+      expect(message.auctions[0].adUnits[0].bids[0].bidId).to.equal(STUBBED_UUID);
+      expect(message.bidsWon[0].bidId).to.equal(STUBBED_UUID);
     });
 
     it('should pick the highest cpm bid if more than one bid per bidRequestId', function () {
@@ -887,7 +2105,96 @@ describe('rubicon analytics adapter', function () {
       let timedOutBid = message.auctions[0].adUnits[0].bids[0];
       expect(timedOutBid.status).to.equal('error');
       expect(timedOutBid.error.code).to.equal('timeout-error');
+      expect(timedOutBid.error.description).to.equal('prebid.js timeout');
       expect(timedOutBid).to.not.have.property('bidResponse');
+    });
+
+    it('should pass aupName as pattern', function () {
+      let bidRequest = utils.deepClone(MOCK.BID_REQUESTED);
+      bidRequest.bids[0].ortb2Imp = {
+        ext: {
+          data: {
+            aupname: '1234/mycoolsite/*&gpt_leaderboard&deviceType=mobile'
+          }
+        }
+      };
+      bidRequest.bids[1].ortb2Imp = {
+        ext: {
+          data: {
+            aupname: '1234/mycoolsite/*&gpt_skyscraper&deviceType=mobile'
+          }
+        }
+      };
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, bidRequest);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      events.emit(SET_TARGETING, MOCK.SET_TARGETING);
+
+      clock.tick(SEND_TIMEOUT + 1000);
+
+      expect(server.requests.length).to.equal(1);
+
+      let message = JSON.parse(server.requests[0].requestBody);
+      validate(message);
+      expect(message.auctions[0].adUnits[0].pattern).to.equal('1234/mycoolsite/*&gpt_leaderboard&deviceType=mobile');
+      expect(message.auctions[0].adUnits[1].pattern).to.equal('1234/mycoolsite/*&gpt_skyscraper&deviceType=mobile');
+    });
+
+    it('should pass gpid if defined', function () {
+      let bidRequest = utils.deepClone(MOCK.BID_REQUESTED);
+      bidRequest.bids[0].ortb2Imp = {
+        ext: {
+          gpid: '1234/mycoolsite/lowerbox'
+        }
+      };
+      bidRequest.bids[1].ortb2Imp = {
+        ext: {
+          gpid: '1234/mycoolsite/leaderboard'
+        }
+      };
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, bidRequest);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      events.emit(SET_TARGETING, MOCK.SET_TARGETING);
+
+      clock.tick(SEND_TIMEOUT + 1000);
+
+      expect(server.requests.length).to.equal(1);
+
+      let message = JSON.parse(server.requests[0].requestBody);
+      validate(message);
+      expect(message.auctions[0].adUnits[0].gpid).to.equal('1234/mycoolsite/lowerbox');
+      expect(message.auctions[0].adUnits[1].gpid).to.equal('1234/mycoolsite/leaderboard');
+    });
+
+    it('should pass bidderDetail for multibid auctions', function () {
+      let bidResponse = utils.deepClone(MOCK.BID_RESPONSE[1]);
+      bidResponse.targetingBidder = 'rubi2';
+      bidResponse.originalRequestId = bidResponse.requestId;
+      bidResponse.requestId = '1a2b3c4d5e6f7g8h9';
+
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
+      events.emit(BID_RESPONSE, bidResponse);
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      events.emit(SET_TARGETING, MOCK.SET_TARGETING);
+      events.emit(BID_WON, MOCK.BID_WON[0]);
+
+      clock.tick(SEND_TIMEOUT + 1000);
+
+      expect(server.requests.length).to.equal(1);
+
+      let message = JSON.parse(server.requests[0].requestBody);
+      validate(message);
+
+      expect(message.auctions[0].adUnits[1].bids[1].bidder).to.equal('rubicon');
+      expect(message.auctions[0].adUnits[1].bids[1].bidderDetail).to.equal('rubi2');
     });
 
     it('should successfully convert bid price to USD in parseBidResponse', function () {
@@ -908,7 +2215,7 @@ describe('rubicon analytics adapter', function () {
 
       // Now add the bidResponse hook which hooks on the currenct conversion function onto the bid response
       let innerBid;
-      addBidResponseHook(function(adCodeId, bid) {
+      addBidResponseHook(function (adCodeId, bid) {
         innerBid = bid;
       }, 'elementId', bidCopy);
 
@@ -921,12 +2228,11 @@ describe('rubicon analytics adapter', function () {
 
   describe('config with integration type', () => {
     it('should use the integration type provided in the config instead of the default', () => {
-      sandbox.stub(config, 'getConfig').callsFake(function (key) {
-        const config = {
-          'rubicon.int_type': 'testType'
-        };
-        return config[key];
-      });
+      config.setConfig({
+        rubicon: {
+          int_type: 'testType'
+        }
+      })
 
       rubiconAnalyticsAdapter.enableAnalytics({
         options: {
@@ -941,6 +2247,278 @@ describe('rubicon analytics adapter', function () {
       const request = server.requests[0];
       const message = JSON.parse(request.requestBody);
       expect(message.integration).to.equal('testType');
+
+      rubiconAnalyticsAdapter.disableAnalytics();
+    });
+  });
+
+  describe('billing events integration', () => {
+    beforeEach(function () {
+      rubiconAnalyticsAdapter.enableAnalytics({
+        options: {
+          endpoint: '//localhost:9999/event',
+          accountId: 1001
+        }
+      });
+      // default dmBilling
+      config.setConfig({
+        rubicon: {
+          dmBilling: {
+            enabled: false,
+            vendors: [],
+            waitForAuction: true
+          }
+        }
+      })
+    });
+    afterEach(function () {
+      rubiconAnalyticsAdapter.disableAnalytics();
+    });
+    const basicBillingAuction = (billingEvents = []) => {
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+
+      // emit billing events
+      billingEvents.forEach(ev => events.emit(BILLABLE_EVENT, ev));
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[1]);
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      events.emit(SET_TARGETING, MOCK.SET_TARGETING);
+      events.emit(BID_WON, MOCK.BID_WON[0]);
+      events.emit(BID_WON, MOCK.BID_WON[1]);
+    }
+    it('should ignore billing events when not enabled', () => {
+      basicBillingAuction([{
+        vendor: 'vendorName',
+        type: 'auction',
+        billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965'
+      }]);
+      expect(server.requests.length).to.equal(1);
+      const request = server.requests[0];
+      const message = JSON.parse(request.requestBody);
+      expect(message.billableEvents).to.be.undefined;
+    });
+    it('should ignore billing events when enabled but vendor is not whitelisted', () => {
+      // off by default
+      config.setConfig({
+        rubicon: {
+          dmBilling: {
+            enabled: true
+          }
+        }
+      });
+      basicBillingAuction([{
+        vendor: 'vendorName',
+        type: 'auction',
+        billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965'
+      }]);
+      expect(server.requests.length).to.equal(1);
+      const request = server.requests[0];
+      const message = JSON.parse(request.requestBody);
+      expect(message.billableEvents).to.be.undefined;
+    });
+    it('should ignore billing events if billingId is not defined or billingId is not a string', () => {
+      // off by default
+      config.setConfig({
+        rubicon: {
+          dmBilling: {
+            enabled: true,
+            vendors: ['vendorName']
+          }
+        }
+      });
+      basicBillingAuction([
+        {
+          vendor: 'vendorName',
+          type: 'auction',
+        },
+        {
+          vendor: 'vendorName',
+          type: 'auction',
+          billingId: true
+        },
+        {
+          vendor: 'vendorName',
+          type: 'auction',
+          billingId: 1233434
+        },
+        {
+          vendor: 'vendorName',
+          type: 'auction',
+          billingId: null
+        }
+      ]);
+      expect(server.requests.length).to.equal(1);
+      const request = server.requests[0];
+      const message = JSON.parse(request.requestBody);
+      expect(message.billableEvents).to.be.undefined;
+    });
+    it('should pass along billing event in same payload', () => {
+      // off by default
+      config.setConfig({
+        rubicon: {
+          dmBilling: {
+            enabled: true,
+            vendors: ['vendorName']
+          }
+        }
+      });
+      basicBillingAuction([{
+        vendor: 'vendorName',
+        type: 'auction',
+        billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965'
+      }]);
+      expect(server.requests.length).to.equal(1);
+      const request = server.requests[0];
+      const message = JSON.parse(request.requestBody);
+      expect(message).to.haveOwnProperty('auctions');
+      expect(message.billableEvents).to.deep.equal([{
+        accountId: 1001,
+        vendor: 'vendorName',
+        type: 'general', // mapping all events to endpoint as 'general' for now
+        billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965'
+      }]);
+    });
+    it('should pass along multiple billing events but filter out duplicates', () => {
+      // off by default
+      config.setConfig({
+        rubicon: {
+          dmBilling: {
+            enabled: true,
+            vendors: ['vendorName']
+          }
+        }
+      });
+      basicBillingAuction([
+        {
+          vendor: 'vendorName',
+          type: 'auction',
+          billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965'
+        },
+        {
+          vendor: 'vendorName',
+          type: 'auction',
+          billingId: '743db6e3-21f2-44d4-917f-cb3488c6076f'
+        },
+        {
+          vendor: 'vendorName',
+          type: 'auction',
+          billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965'
+        }
+      ]);
+      expect(server.requests.length).to.equal(1);
+      const request = server.requests[0];
+      const message = JSON.parse(request.requestBody);
+      expect(message).to.haveOwnProperty('auctions');
+      expect(message.billableEvents).to.deep.equal([
+        {
+          accountId: 1001,
+          vendor: 'vendorName',
+          type: 'general',
+          billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965'
+        },
+        {
+          accountId: 1001,
+          vendor: 'vendorName',
+          type: 'general',
+          billingId: '743db6e3-21f2-44d4-917f-cb3488c6076f'
+        }
+      ]);
+    });
+    it('should pass along event right away if no pending auction', () => {
+      // off by default
+      config.setConfig({
+        rubicon: {
+          dmBilling: {
+            enabled: true,
+            vendors: ['vendorName']
+          }
+        }
+      });
+
+      events.emit(BILLABLE_EVENT, {
+        vendor: 'vendorName',
+        type: 'auction',
+        billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965'
+      });
+      expect(server.requests.length).to.equal(1);
+      const request = server.requests[0];
+      const message = JSON.parse(request.requestBody);
+      expect(message).to.not.haveOwnProperty('auctions');
+      expect(message.billableEvents).to.deep.equal([
+        {
+          accountId: 1001,
+          vendor: 'vendorName',
+          type: 'general',
+          billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965'
+        }
+      ]);
+    });
+    it('should pass along event right away if pending auction but not waiting', () => {
+      // off by default
+      config.setConfig({
+        rubicon: {
+          dmBilling: {
+            enabled: true,
+            vendors: ['vendorName'],
+            waitForAuction: false
+          }
+        }
+      });
+      // should fire right away, and then auction later
+      basicBillingAuction([{
+        vendor: 'vendorName',
+        type: 'auction',
+        billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965'
+      }]);
+      expect(server.requests.length).to.equal(2);
+      const billingRequest = server.requests[0];
+      const billingMessage = JSON.parse(billingRequest.requestBody);
+      expect(billingMessage).to.not.haveOwnProperty('auctions');
+      expect(billingMessage.billableEvents).to.deep.equal([
+        {
+          accountId: 1001,
+          vendor: 'vendorName',
+          type: 'general',
+          billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965'
+        }
+      ]);
+      // auction event after
+      const auctionRequest = server.requests[1];
+      const auctionMessage = JSON.parse(auctionRequest.requestBody);
+      // should not double pass events!
+      expect(auctionMessage).to.not.haveOwnProperty('billableEvents');
+    });
+  });
+
+  describe('wrapper details passed in', () => {
+    it('should correctly pass in the wrapper details if provided', () => {
+      config.setConfig({
+        rubicon: {
+          wrapperName: '1001_wrapperName_exp.4',
+          wrapperFamily: '1001_wrapperName',
+          rule_name: 'na-mobile'
+        }
+      });
+
+      rubiconAnalyticsAdapter.enableAnalytics({
+        options: {
+          endpoint: '//localhost:9999/event',
+          accountId: 1001
+        }
+      });
+
+      performStandardAuction();
+
+      expect(server.requests.length).to.equal(1);
+      const request = server.requests[0];
+      const message = JSON.parse(request.requestBody);
+      expect(message.wrapper).to.deep.equal({
+        name: '1001_wrapperName_exp.4',
+        family: '1001_wrapperName',
+        rule: 'na-mobile'
+      });
 
       rubiconAnalyticsAdapter.disableAnalytics();
     });

@@ -13,30 +13,30 @@
  * @property {string} pubKey
  * @property {string} url
  * @property {?string} keyName
- * @property {?number} auctionDelay
- * @property {?number} timeout
  */
 
-import {config} from '../src/config.js';
-import * as utils from '../src/utils.js';
+import {deepClone, deepSetValue, isFn, isGptPubadsDefined, isNumber, logError, logInfo, generateUUID} from '../src/utils.js';
 import {submodule} from '../src/hook.js';
 import {ajaxBuilder} from '../src/ajax.js';
 import {loadExternalScript} from '../src/adloader.js';
-import { getStorageManager } from '../src/storageManager.js';
-import find from 'core-js-pure/features/array/find.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {find, includes} from '../src/polyfill.js';
+import {getGlobal} from '../src/prebidGlobal.js';
+import * as events from '../src/events.js';
+import CONSTANTS from '../src/constants.json';
 
 const storage = getStorageManager();
 
-/** @type {string} */
-const MODULE_NAME = 'realTimeData';
-/** @type {number} */
-const DEF_TIMEOUT = 1000;
 /** @type {ModuleParams} */
 let _moduleParams = {};
 /** @type {null|Object} */
-let _data = null;
+let _browsiData = null;
+/** @type {string} */
+const DEF_KEYNAME = 'browsiViewability';
 /** @type {null | function} */
 let _dataReadyCallback = null;
+/** @type {null|Object} */
+let _ic = {};
 
 /**
  * add browsi script to page
@@ -50,7 +50,7 @@ export function addBrowsiTag(data) {
   script.setAttribute('prebidbpt', 'true');
   script.setAttribute('id', 'browsi-tag');
   script.setAttribute('src', data.u);
-  script.prebidData = utils.deepClone(data);
+  script.prebidData = deepClone(data);
   if (_moduleParams.keyName) {
     script.prebidData.kn = _moduleParams.keyName;
   }
@@ -61,14 +61,14 @@ export function addBrowsiTag(data) {
  * collect required data from page
  * send data to browsi server to get predictions
  */
-function collectData() {
+export function collectData() {
   const win = window.top;
   const doc = win.document;
   let browsiData = null;
   try {
     browsiData = storage.getDataFromLocalStorage('__brtd');
   } catch (e) {
-    utils.logError('unable to parse __brtd');
+    logError('unable to parse __brtd');
   }
 
   let predictorData = {
@@ -85,63 +85,81 @@ function collectData() {
   getPredictionsFromServer(`//${_moduleParams.url}/prebid?${toUrlParams(predictorData)}`);
 }
 
-export function setData(data) {
-  _data = data;
-
-  if (typeof _dataReadyCallback === 'function') {
-    _dataReadyCallback(_data);
-    _dataReadyCallback = null;
-  }
-}
-
 /**
  * wait for data from server
  * call callback when data is ready
  * @param {function} callback
  */
 function waitForData(callback) {
-  if (_data) {
+  if (_browsiData) {
     _dataReadyCallback = null;
-    callback(_data);
+    callback(_browsiData);
   } else {
     _dataReadyCallback = callback;
   }
 }
 
-/**
- * filter server data according to adUnits received
- * call callback (onDone) when data is ready
- * @param {adUnit[]} adUnits
- * @param {function} onDone callback function
- */
-function sendDataToModule(adUnits, onDone) {
-  try {
-    waitForData(_predictionsData => {
-      const _predictions = _predictionsData.p;
-      if (!_predictions || !Object.keys(_predictions).length) {
-        return onDone({});
-      }
-      let dataToReturn = adUnits.reduce((rp, cau) => {
-        const adUnitCode = cau && cau.code;
-        if (!adUnitCode) { return rp }
-        const adSlot = getSlotByCode(adUnitCode);
-        const identifier = adSlot ? getMacroId(_predictionsData.pmd, adSlot) : adUnitCode;
-        const predictionData = _predictions[identifier];
-        if (!predictionData) { return rp }
-
-        if (predictionData.p) {
-          if (!isIdMatchingAdUnit(adSlot, predictionData.w)) {
-            return rp;
-          }
-          rp[adUnitCode] = getKVObject(predictionData.p, _predictionsData.kn);
-        }
-        return rp;
-      }, {});
-      return onDone(dataToReturn);
-    });
-  } catch (e) {
-    onDone({});
+export function setData(data) {
+  _browsiData = data;
+  if (isFn(_dataReadyCallback)) {
+    _dataReadyCallback(_browsiData);
+    _dataReadyCallback = null;
   }
+}
+
+function getRTD(auc) {
+  logInfo(`Browsi RTD provider is fetching data for ${auc}`);
+  try {
+    const _bp = (_browsiData && _browsiData.p) || {};
+    return auc.reduce((rp, uc) => {
+      _ic[uc] = _ic[uc] || 0;
+      const _c = _ic[uc];
+      if (!uc) {
+        return rp
+      }
+      const adSlot = getSlotByCode(uc);
+      const identifier = adSlot ? getMacroId(_browsiData['pmd'], adSlot) : uc;
+      const _pd = _bp[identifier];
+      rp[uc] = getKVObject(-1);
+      if (!_pd) {
+        return rp
+      }
+      if (_pd.ps) {
+        if (!isIdMatchingAdUnit(adSlot, _pd.w)) {
+          return rp;
+        }
+        rp[uc] = getKVObject(getCurrentData(_pd.ps, _c));
+      }
+      return rp;
+    }, {});
+  } catch (e) {
+    return {};
+  }
+}
+
+/**
+ * get prediction
+ * return -1 if prediction not found
+ * @param {object} predictionObject
+ * @param {number} _c
+ * @return {number}
+ */
+export function getCurrentData(predictionObject, _c) {
+  if (!predictionObject || !isNumber(_c)) {
+    return -1;
+  }
+  if (isNumber(predictionObject[_c])) {
+    return predictionObject[_c];
+  }
+  if (Object.keys(predictionObject).length > 1) {
+    while (_c > 0) {
+      _c--;
+      if (isNumber(predictionObject[_c])) {
+        return predictionObject[_c];
+      }
+    }
+  }
+  return -1;
 }
 
 /**
@@ -149,7 +167,7 @@ function sendDataToModule(adUnits, onDone) {
  * @return {Object[]} slot GoogleTag slots
  */
 function getAllSlots() {
-  return utils.isGptPubadsDefined() && window.googletag.pubads().getSlots();
+  return isGptPubadsDefined() && window.googletag.pubads().getSlots();
 }
 /**
  * get prediction and return valid object for key value set
@@ -157,11 +175,15 @@ function getAllSlots() {
  * @param {string?} keyName
  * @return {Object} key:value
  */
-function getKVObject(p, keyName) {
+function getKVObject(p) {
   const prValue = p < 0 ? 'NA' : (Math.floor(p * 10) / 10).toFixed(2);
   let prObject = {};
-  prObject[((_moduleParams['keyName'] || keyName).toString())] = prValue.toString();
+  prObject[getKey()] = prValue.toString();
   return prObject;
+}
+
+function getKey() {
+  return ((_moduleParams['keyName'] || (_browsiData && _browsiData['kn']) || DEF_KEYNAME).toString())
 }
 /**
  * check if placement id matches one of given ad units
@@ -204,7 +226,7 @@ export function getMacroId(macro, slot) {
       });
       return macroResult;
     } catch (e) {
-      utils.logError(`failed to evaluate: ${macro}`);
+      logError(`failed to evaluate: ${macro}`);
     }
   }
   return slot.getSlotElementId();
@@ -231,7 +253,7 @@ function evaluate(macro, divId, adUnit, replacer) {
  * @param {string} url server url with query params
  */
 function getPredictionsFromServer(url) {
-  let ajax = ajaxBuilder(_moduleParams.auctionDelay || _moduleParams.timeout || DEF_TIMEOUT);
+  let ajax = ajaxBuilder();
 
   ajax(url,
     {
@@ -246,7 +268,7 @@ function getPredictionsFromServer(url) {
             }
             addBrowsiTag(data);
           } catch (err) {
-            utils.logError('unable to parse data');
+            logError('unable to parse data');
             setData({})
           }
         } else if (req.status === 204) {
@@ -256,7 +278,7 @@ function getPredictionsFromServer(url) {
       },
       error: function () {
         setData({});
-        utils.logError('unable to get prediction data');
+        logError('unable to get prediction data');
       }
     }
   );
@@ -273,6 +295,28 @@ function toUrlParams(data) {
     .join('&');
 }
 
+function setBidRequestsData(bidObj, callback) {
+  let adUnitCodes = bidObj.adUnitCodes;
+  let adUnits = bidObj.adUnits || getGlobal().adUnits || [];
+  if (adUnitCodes) {
+    adUnits = adUnits.filter(au => includes(adUnitCodes, au.code));
+  } else {
+    adUnitCodes = adUnits.map(au => au.code);
+  }
+  waitForData(() => {
+    const data = getRTD(adUnitCodes);
+    if (data) {
+      adUnits.forEach(adUnit => {
+        const adUnitCode = adUnit.code;
+        if (data[adUnitCode]) {
+          deepSetValue(adUnit, 'ortb2Imp.ext.data.browsi', {[getKey()]: data[adUnitCode][getKey()]});
+        }
+      });
+    }
+    callback();
+  })
+}
+
 /** @type {RtdSubmodule} */
 export const browsiSubmodule = {
   /**
@@ -283,30 +327,44 @@ export const browsiSubmodule = {
   /**
    * get data and send back to realTimeData module
    * @function
-   * @param {adUnit[]} adUnits
-   * @param {function} onDone
+   * @param {string[]} adUnitsCodes
    */
-  getData: sendDataToModule
+  getTargetingData: getTargetingData,
+  init: init,
+  getBidRequestData: setBidRequestsData
 };
 
-export function init(config) {
-  const confListener = config.getConfig(MODULE_NAME, ({realTimeData}) => {
-    try {
-      _moduleParams = realTimeData.dataProviders && realTimeData.dataProviders.filter(
-        pr => pr.name && pr.name.toLowerCase() === 'browsi')[0].params;
-      _moduleParams.auctionDelay = realTimeData.auctionDelay;
-      _moduleParams.timeout = realTimeData.timeout;
-    } catch (e) {
-      _moduleParams = {};
+function getTargetingData(uc, c, us, a) {
+  const targetingData = getRTD(uc);
+  const auctionId = a.auctionId
+  uc.forEach(auc => {
+    if (isNumber(_ic[auc])) {
+      _ic[auc] = _ic[auc] + 1;
     }
-    if (_moduleParams.siteKey && _moduleParams.pubKey && _moduleParams.url) {
-      confListener();
-      collectData();
-    } else {
-      utils.logError('missing params for Browsi provider');
-    }
+    const transactionId = a.adUnits.find(adUnit => adUnit.code === auc).transactionId;
+    events.emit(CONSTANTS.EVENTS.BILLABLE_EVENT, {
+      vendor: 'browsi',
+      type: 'adRequest',
+      billingId: generateUUID(),
+      transactionId: transactionId,
+      auctionId: auctionId
+    })
   });
+  logInfo('Browsi RTD provider returned targeting data', targetingData, 'for', uc)
+  return targetingData;
 }
 
-submodule('realTimeData', browsiSubmodule);
-init(config);
+function init(moduleConfig) {
+  _moduleParams = moduleConfig.params;
+  if (_moduleParams && _moduleParams.siteKey && _moduleParams.pubKey && _moduleParams.url) {
+    collectData();
+  } else {
+    logError('missing params for Browsi provider');
+  }
+  return true;
+}
+
+function registerSubModule() {
+  submodule('realTimeData', browsiSubmodule);
+}
+registerSubModule();

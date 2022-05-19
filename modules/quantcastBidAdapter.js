@@ -1,8 +1,9 @@
-import * as utils from '../src/utils.js';
-import { ajax } from '../src/ajax.js';
-import { config } from '../src/config.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import find from 'core-js-pure/features/array/find.js';
+import {deepAccess, isArray, isEmpty, logError, logInfo} from '../src/utils.js';
+import {ajax} from '../src/ajax.js';
+import {config} from '../src/config.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {find} from '../src/polyfill.js';
 
 const BIDDER_CODE = 'quantcast';
 const DEFAULT_BID_FLOOR = 0.0000000001;
@@ -18,35 +19,38 @@ export const QUANTCAST_TEST_PUBLISHER = 'test-publisher';
 export const QUANTCAST_TTL = 4;
 export const QUANTCAST_PROTOCOL = 'https';
 export const QUANTCAST_PORT = '8443';
+export const QUANTCAST_FPA = '__qca';
+
+export const storage = getStorageManager({gvlid: QUANTCAST_VENDOR_ID, bidderCode: BIDDER_CODE});
 
 function makeVideoImp(bid) {
-  const video = {};
-  if (bid.params.video) {
-    video['mimes'] = bid.params.video.mimes;
-    video['minduration'] = bid.params.video.minduration;
-    video['maxduration'] = bid.params.video.maxduration;
-    video['protocols'] = bid.params.video.protocols;
-    video['startdelay'] = bid.params.video.startdelay;
-    video['linearity'] = bid.params.video.linearity;
-    video['battr'] = bid.params.video.battr;
-    video['maxbitrate'] = bid.params.video.maxbitrate;
-    video['playbackmethod'] = bid.params.video.playbackmethod;
-    video['delivery'] = bid.params.video.delivery;
-    video['placement'] = bid.params.video.placement;
-    video['api'] = bid.params.video.api;
+  const videoInMediaType = deepAccess(bid, 'mediaTypes.video') || {};
+  const videoInParams = deepAccess(bid, 'params.video') || {};
+  const video = Object.assign({}, videoInParams, videoInMediaType);
+
+  if (video.playerSize) {
+    video.w = video.playerSize[0];
+    video.h = video.playerSize[1];
   }
-  if (bid.mediaTypes.video.mimes) {
-    video['mimes'] = bid.mediaTypes.video.mimes;
+  const videoCopy = {
+    mimes: video.mimes,
+    minduration: video.minduration,
+    maxduration: video.maxduration,
+    protocols: video.protocols,
+    startdelay: video.startdelay,
+    linearity: video.linearity,
+    battr: video.battr,
+    maxbitrate: video.maxbitrate,
+    playbackmethod: video.playbackmethod,
+    delivery: video.delivery,
+    placement: video.placement,
+    api: video.api,
+    w: video.w,
+    h: video.h
   }
-  if (utils.isArray(bid.mediaTypes.video.playerSize[0])) {
-    video['w'] = bid.mediaTypes.video.playerSize[0][0];
-    video['h'] = bid.mediaTypes.video.playerSize[0][1];
-  } else {
-    video['w'] = bid.mediaTypes.video.playerSize[0];
-    video['h'] = bid.mediaTypes.video.playerSize[1];
-  }
+
   return {
-    video: video,
+    video: videoCopy,
     placementCode: bid.placementCode,
     bidFloor: bid.params.bidFloor || DEFAULT_BID_FLOOR
   };
@@ -85,11 +89,6 @@ function checkTCFv1(vendorData) {
 }
 
 function checkTCFv2(tcData) {
-  if (tcData.purposeOneTreatment && tcData.publisherCC === 'DE') {
-    // special purpose 1 treatment for Germany
-    return true;
-  }
-
   let restrictions = tcData.publisher ? tcData.publisher.restrictions : {};
   let qcRestriction = restrictions && restrictions[PURPOSE_DATA_COLLECT]
     ? restrictions[PURPOSE_DATA_COLLECT][QUANTCAST_VENDOR_ID]
@@ -106,15 +105,21 @@ function checkTCFv2(tcData) {
   return !!(vendorConsent && purposeConsent);
 }
 
+function getQuantcastFPA() {
+  let fpa = storage.getCookie(QUANTCAST_FPA)
+  return fpa || ''
+}
+
+let hasUserSynced = false;
+
 /**
  * The documentation for Prebid.js Adapter 1.0 can be found at link below,
  * http://prebid.org/dev-docs/bidder-adapter-1.html
  */
 export const spec = {
   code: BIDDER_CODE,
-  GVLID: 11,
+  GVLID: QUANTCAST_VENDOR_ID,
   supportedMediaTypes: ['banner', 'video'],
-  hasUserSynced: false,
 
   /**
    * Verify the `AdUnits.bids` response with `true` for valid request and `false`
@@ -137,10 +142,10 @@ export const spec = {
    */
   buildRequests(bidRequests, bidderRequest) {
     const bids = bidRequests || [];
-    const gdprConsent = utils.deepAccess(bidderRequest, 'gdprConsent') || {};
-    const uspConsent = utils.deepAccess(bidderRequest, 'uspConsent');
-    const referrer = utils.deepAccess(bidderRequest, 'refererInfo.referer');
-    const page = utils.deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || config.getConfig('pageUrl') || utils.deepAccess(window, 'location.href');
+    const gdprConsent = deepAccess(bidderRequest, 'gdprConsent') || {};
+    const uspConsent = deepAccess(bidderRequest, 'uspConsent');
+    const referrer = deepAccess(bidderRequest, 'refererInfo.referer');
+    const page = deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || config.getConfig('pageUrl') || deepAccess(window, 'location.href');
     const domain = getDomain(page);
 
     // Check for GDPR consent for purpose 1, and drop request if consent has not been given
@@ -148,11 +153,11 @@ export const spec = {
     if (gdprConsent.gdprApplies) {
       if (gdprConsent.vendorData) {
         if (gdprConsent.apiVersion === 1 && !checkTCFv1(gdprConsent.vendorData)) {
-          utils.logInfo(`${BIDDER_CODE}: No purpose 1 consent for TCF v1`);
+          logInfo(`${BIDDER_CODE}: No purpose 1 consent for TCF v1`);
           return;
         }
         if (gdprConsent.apiVersion === 2 && !checkTCFv2(gdprConsent.vendorData)) {
-          utils.logInfo(`${BIDDER_CODE}: No purpose 1 consent for TCF v2`);
+          logInfo(`${BIDDER_CODE}: No purpose 1 consent for TCF v2`);
           return;
         }
       }
@@ -169,7 +174,7 @@ export const spec = {
           imp = makeBannerImp(bid);
         } else {
           // Unsupported mediaType
-          utils.logInfo(`${BIDDER_CODE}: No supported mediaTypes found in ${JSON.stringify(bid.mediaTypes)}`);
+          logInfo(`${BIDDER_CODE}: No supported mediaTypes found in ${JSON.stringify(bid.mediaTypes)}`);
           return;
         }
       } else {
@@ -193,7 +198,8 @@ export const spec = {
         uspSignal: uspConsent ? 1 : 0,
         uspConsent,
         coppa: config.getConfig('coppa') === true ? 1 : 0,
-        prebidJsVersion: '$prebid.version$'
+        prebidJsVersion: '$prebid.version$',
+        fpa: getQuantcastFPA()
       };
 
       const data = JSON.stringify(requestData);
@@ -225,24 +231,24 @@ export const spec = {
    */
   interpretResponse(serverResponse) {
     if (serverResponse === undefined) {
-      utils.logError('Server Response is undefined');
+      logError('Server Response is undefined');
       return [];
     }
 
     const response = serverResponse['body'];
 
     if (response === undefined || !response.hasOwnProperty('bids')) {
-      utils.logError('Sub-optimal JSON received from Quantcast server');
+      logError('Sub-optimal JSON received from Quantcast server');
       return [];
     }
 
-    if (utils.isEmpty(response.bids)) {
+    if (isEmpty(response.bids)) {
       // Shortcut response handling if no bids are present
       return [];
     }
 
     const bidResponsesList = response.bids.map(bid => {
-      const { ad, cpm, width, height, creativeId, currency, videoUrl, dealId } = bid;
+      const { ad, cpm, width, height, creativeId, currency, videoUrl, dealId, meta } = bid;
 
       const result = {
         requestId: response.requestId,
@@ -265,6 +271,11 @@ export const spec = {
         result['dealId'] = dealId;
       }
 
+      if (meta !== undefined && meta.advertiserDomains && isArray(meta.advertiserDomains)) {
+        result.meta = {};
+        result.meta.advertiserDomains = meta.advertiserDomains;
+      }
+
       return result;
     });
 
@@ -276,24 +287,24 @@ export const spec = {
   },
   getUserSyncs(syncOptions, serverResponses) {
     const syncs = []
-    if (!this.hasUserSynced && syncOptions.pixelEnabled) {
+    if (!hasUserSynced && syncOptions.pixelEnabled) {
       const responseWithUrl = find(serverResponses, serverResponse =>
-        utils.deepAccess(serverResponse.body, 'userSync.url')
+        deepAccess(serverResponse.body, 'userSync.url')
       );
 
       if (responseWithUrl) {
-        const url = utils.deepAccess(responseWithUrl.body, 'userSync.url')
+        const url = deepAccess(responseWithUrl.body, 'userSync.url')
         syncs.push({
           type: 'image',
           url: url
         });
       }
-      this.hasUserSynced = true;
+      hasUserSynced = true;
     }
     return syncs;
   },
   resetUserSync() {
-    this.hasUserSynced = false;
+    hasUserSynced = false;
   }
 };
 

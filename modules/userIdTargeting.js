@@ -1,7 +1,7 @@
 import {config} from '../src/config.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import CONSTANTS from '../src/constants.json';
-import events from '../src/events.js';
+import * as events from '../src/events.js';
 import { isStr, isPlainObject, isBoolean, isFn, hasOwn, logInfo } from '../src/utils.js';
 
 const MODULE_NAME = 'userIdTargeting';
@@ -20,14 +20,16 @@ export function userIdTargeting(userIds, config) {
 
   if (!SHARE_WITH_GAM) {
     logInfo(MODULE_NAME + ': Not enabled for ' + GAM);
-  }
-
-  if (window.googletag && isFn(window.googletag.pubads) && hasOwn(window.googletag.pubads(), 'setTargeting') && isFn(window.googletag.pubads().setTargeting)) {
+  } else if (window.googletag && isFn(window.googletag.pubads) && hasOwn(window.googletag.pubads(), 'setTargeting') && isFn(window.googletag.pubads().setTargeting)) {
     GAM_API = window.googletag.pubads().setTargeting;
   } else {
-    SHARE_WITH_GAM = false;
-    logInfo(MODULE_NAME + ': Could not find googletag.pubads().setTargeting API. Not adding User Ids in targeting.')
-    return;
+    window.googletag = window.googletag || {};
+    window.googletag.cmd = window.googletag.cmd || [];
+    GAM_API = function (key, value) {
+      window.googletag.cmd.push(function () {
+        window.googletag.pubads().setTargeting(key, value);
+      });
+    };
   }
 
   Object.keys(userIds).forEach(function(key) {

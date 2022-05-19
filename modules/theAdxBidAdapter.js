@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { logInfo, isEmpty, deepAccess, parseUrl, getDNT, parseSizesInput, _map } from '../src/utils.js';
 import {
   BANNER,
   NATIVE,
@@ -125,7 +125,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    utils.logInfo('theadx.isBidRequestValid', bid);
+    logInfo('theadx.isBidRequestValid', bid);
     let res = false;
     if (bid && bid.params) {
       res = !!(bid.params.pid && bid.params.tagId);
@@ -141,10 +141,10 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    utils.logInfo('theadx.buildRequests', 'validBidRequests', validBidRequests, 'bidderRequest', bidderRequest);
+    logInfo('theadx.buildRequests', 'validBidRequests', validBidRequests, 'bidderRequest', bidderRequest);
     let results = [];
     const requestType = 'POST';
-    if (!utils.isEmpty(validBidRequests)) {
+    if (!isEmpty(validBidRequests)) {
       results = validBidRequests.map(
         bidRequest => {
           return {
@@ -176,7 +176,7 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: (serverResponse, request) => {
-    utils.logInfo('theadx.interpretResponse', 'serverResponse', serverResponse, ' request', request);
+    logInfo('theadx.interpretResponse', 'serverResponse', serverResponse, ' request', request);
 
     let responses = [];
 
@@ -185,8 +185,8 @@ export const spec = {
 
       let seatBids = responseBody.seatbid;
 
-      if (!(utils.isEmpty(seatBids) ||
-          utils.isEmpty(seatBids[0].bid))) {
+      if (!(isEmpty(seatBids) ||
+          isEmpty(seatBids[0].bid))) {
         let seatBid = seatBids[0];
         let bid = seatBid.bid[0];
 
@@ -280,7 +280,7 @@ export const spec = {
    * @return {UserSync[]} The user syncs which should be dropped.
    */
   getUserSyncs: function (syncOptions, serverResponses) {
-    utils.logInfo('theadx.getUserSyncs', 'syncOptions', syncOptions, 'serverResponses', serverResponses)
+    logInfo('theadx.getUserSyncs', 'syncOptions', syncOptions, 'serverResponses', serverResponses)
     const syncs = [];
 
     if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) {
@@ -288,8 +288,8 @@ export const spec = {
     }
 
     serverResponses.forEach(resp => {
-      const syncIframeUrls = utils.deepAccess(resp, 'body.ext.sync.iframe');
-      const syncImageUrls = utils.deepAccess(resp, 'body.ext.sync.image');
+      const syncIframeUrls = deepAccess(resp, 'body.ext.sync.iframe');
+      const syncImageUrls = deepAccess(resp, 'body.ext.sync.image');
       if (syncOptions.iframeEnabled && syncIframeUrls) {
         syncIframeUrls.forEach(syncIframeUrl => {
           syncs.push({
@@ -314,7 +314,7 @@ export const spec = {
 }
 
 let buildSiteComponent = (bidRequest, bidderRequest) => {
-  let loc = utils.parseUrl(bidderRequest.refererInfo.referer, {
+  let loc = parseUrl(bidderRequest.refererInfo.referer, {
     decodeSearchAsString: true
   });
 
@@ -353,7 +353,7 @@ let buildDeviceComponent = (bidRequest, bidderRequest) => {
     language: ('language' in navigator) ? navigator.language : null,
     ua: ('userAgent' in navigator) ? navigator.userAgent : null,
     devicetype: isMobile() ? 1 : isConnectedTV() ? 3 : 2,
-    dnt: utils.getDNT() ? 1 : 0,
+    dnt: getDNT() ? 1 : 0,
   };
   // Include connection info if available
   const CONNECTION = navigator.connection || navigator.webkitConnection;
@@ -383,14 +383,14 @@ let extractValidSize = (bidRequest, bidderRequest) => {
     } else {
       requestedSizes = mediaTypes.video.sizes;
     }
-  } else if (!utils.isEmpty(bidRequest.sizes)) {
+  } else if (!isEmpty(bidRequest.sizes)) {
     requestedSizes = bidRequest.sizes
   }
 
   // Ensure the size array is normalized
-  let conformingSize = utils.parseSizesInput(requestedSizes);
+  let conformingSize = parseSizesInput(requestedSizes);
 
-  if (!utils.isEmpty(conformingSize) && conformingSize[0] != null) {
+  if (!isEmpty(conformingSize) && conformingSize[0] != null) {
     // Currently only the first size is utilized
     let splitSizes = conformingSize[0].split('x');
 
@@ -423,7 +423,7 @@ let generateBannerComponent = (bidRequest, bidderRequest) => {
 }
 
 let generateNativeComponent = (bidRequest, bidderRequest) => {
-  const assets = utils._map(bidRequest.mediaTypes.native, (bidParams, key) => {
+  const assets = _map(bidRequest.mediaTypes.native, (bidParams, key) => {
     const props = NATIVEPROBS[key];
     const asset = {
       required: bidParams.required & 1,

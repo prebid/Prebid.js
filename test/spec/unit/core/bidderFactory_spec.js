@@ -6,6 +6,12 @@ import { userSync } from 'src/userSync.js'
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr.js';
+import CONSTANTS from 'src/constants.json';
+import * as events from 'src/events.js';
+import {hook} from '../../../../src/hook.js';
+import {auctionManager} from '../../../../src/auctionManager.js';
+import {stubAuctionIndex} from '../../../helpers/indexStub.js';
+import { bidderSettings } from '../../../../src/bidderSettings.js';
 
 const CODE = 'sampleBidder';
 const MOCK_BIDS_REQUEST = {
@@ -41,6 +47,10 @@ describe('bidders created by newBidder', function () {
   let addBidResponseStub;
   let doneStub;
 
+  before(() => {
+    hook.ready();
+  });
+
   beforeEach(function () {
     spec = {
       code: CODE,
@@ -57,17 +67,22 @@ describe('bidders created by newBidder', function () {
   describe('when the ajax response is irrelevant', function () {
     let ajaxStub;
     let getConfigSpy;
+    let aliasRegistryStub, aliasRegistry;
 
     beforeEach(function () {
       ajaxStub = sinon.stub(ajax, 'ajax');
       addBidResponseStub.reset();
       getConfigSpy = sinon.spy(config, 'getConfig');
       doneStub.reset();
+      aliasRegistry = {};
+      aliasRegistryStub = sinon.stub(adapterManager, 'aliasRegistry');
+      aliasRegistryStub.get(() => aliasRegistry);
     });
 
     afterEach(function () {
       ajaxStub.restore();
       getConfigSpy.restore();
+      aliasRegistryStub.restore();
     });
 
     it('should let registerSyncs run with invalid alias and aliasSync enabled', function () {
@@ -114,6 +129,7 @@ describe('bidders created by newBidder', function () {
       });
       spec.code = 'aliasBidder';
       const bidder = newBidder(spec);
+      aliasRegistry = {[spec.code]: CODE};
       bidder.callBids({ bids: [] }, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
       expect(getConfigSpy.withArgs('userSync.filterSettings').calledOnce).to.equal(false);
     });
@@ -314,6 +330,28 @@ describe('bidders created by newBidder', function () {
 
       expect(addBidResponseStub.callCount).to.equal(0);
     });
+
+    it('should emit BEFORE_BIDDER_HTTP events before network requests', function () {
+      const bidder = newBidder(spec);
+      const req = {
+        method: 'POST',
+        url: 'test.url.com',
+        data: { arg: 2 }
+      };
+
+      spec.isBidRequestValid.returns(true);
+      spec.buildRequests.returns([req, req]);
+
+      const eventEmitterSpy = sinon.spy(events, 'emit');
+      bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+
+      expect(ajaxStub.calledTwice).to.equal(true);
+      expect(eventEmitterSpy.getCalls()
+        .filter(call => call.args[0] === CONSTANTS.EVENTS.BEFORE_BIDDER_HTTP)
+      ).to.length(2);
+
+      eventEmitterSpy.restore();
+    });
   });
 
   describe('when the ajax call succeeds', function () {
@@ -401,8 +439,12 @@ describe('bidders created by newBidder', function () {
         adUnitCode: 'mock/placement',
         currency: 'USD',
         netRevenue: true,
-        ttl: 300
+        ttl: 300,
+        bidderCode: 'sampleBidder',
+        sampleBidder: {advertiserId: '12345', networkId: '111222'}
       };
+      const bidderRequest = Object.assign({}, MOCK_BIDS_REQUEST);
+      bidderRequest.bids[0].bidder = 'sampleBidder';
       spec.isBidRequestValid.returns(true);
       spec.buildRequests.returns({
         method: 'POST',
@@ -413,7 +455,7 @@ describe('bidders created by newBidder', function () {
 
       spec.interpretResponse.returns(bid);
 
-      bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+      bidder.callBids(bidderRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
       expect(addBidResponseStub.calledOnce).to.equal(true);
       expect(addBidResponseStub.firstCall.args[0]).to.equal('mock/placement');
@@ -423,6 +465,8 @@ describe('bidders created by newBidder', function () {
       expect(bidObject.originalCurrency).to.equal(bid.currency);
       expect(doneStub.calledOnce).to.equal(true);
       expect(logErrorSpy.callCount).to.equal(0);
+      expect(bidObject.meta).to.exist;
+      expect(bidObject.meta).to.deep.equal({advertiserId: '12345', networkId: '111222'});
     });
 
     it('should call spec.getUserSyncs() with the response', function () {
@@ -518,21 +562,55 @@ describe('bidders created by newBidder', function () {
 
       expect(logErrorSpy.calledOnce).to.equal(true);
     });
+
+    it('should require requestId from interpretResponse', () => {
+      const bidder = newBidder(spec);
+      const bid = {
+        'ad': 'creative',
+        'cpm': '1.99',
+        'creativeId': 'some-id',
+        'currency': 'USD',
+        'netRevenue': true,
+        'ttl': 360
+      };
+      spec.isBidRequestValid.returns(true);
+      spec.buildRequests.returns({
+        method: 'POST',
+        url: 'test.url.com',
+        data: {}
+      });
+      spec.getUserSyncs.returns([]);
+      spec.interpretResponse.returns(bid);
+
+      bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+
+      expect(addBidResponseStub.called).to.be.false;
+    });
   });
 
   describe('when the ajax call fails', function () {
     let ajaxStub;
+    let callBidderErrorStub;
+    let eventEmitterStub;
+    let xhrErrorMock = {
+      status: 500,
+      statusText: 'Internal Server Error'
+    };
 
     beforeEach(function () {
       ajaxStub = sinon.stub(ajax, 'ajax').callsFake(function(url, callbacks) {
-        callbacks.error('ajax call failed.');
+        callbacks.error('ajax call failed.', xhrErrorMock);
       });
+      callBidderErrorStub = sinon.stub(adapterManager, 'callBidderError');
+      eventEmitterStub = sinon.stub(events, 'emit');
       addBidResponseStub.reset();
       doneStub.reset();
     });
 
     afterEach(function () {
       ajaxStub.restore();
+      callBidderErrorStub.restore();
+      eventEmitterStub.restore();
     });
 
     it('should not spec.interpretResponse()', function () {
@@ -550,6 +628,14 @@ describe('bidders created by newBidder', function () {
 
       expect(spec.interpretResponse.called).to.equal(false);
       expect(doneStub.calledOnce).to.equal(true);
+      expect(callBidderErrorStub.calledOnce).to.equal(true);
+      expect(callBidderErrorStub.firstCall.args[0]).to.equal(CODE);
+      expect(callBidderErrorStub.firstCall.args[1]).to.equal(xhrErrorMock);
+      expect(callBidderErrorStub.firstCall.args[2]).to.equal(MOCK_BIDS_REQUEST);
+      sinon.assert.calledWith(eventEmitterStub, CONSTANTS.EVENTS.BIDDER_ERROR, {
+        error: xhrErrorMock,
+        bidderRequest: MOCK_BIDS_REQUEST
+      });
     });
 
     it('should not add bids for each adunit code into the auction', function () {
@@ -568,6 +654,14 @@ describe('bidders created by newBidder', function () {
 
       expect(addBidResponseStub.callCount).to.equal(0);
       expect(doneStub.calledOnce).to.equal(true);
+      expect(callBidderErrorStub.calledOnce).to.equal(true);
+      expect(callBidderErrorStub.firstCall.args[0]).to.equal(CODE);
+      expect(callBidderErrorStub.firstCall.args[1]).to.equal(xhrErrorMock);
+      expect(callBidderErrorStub.firstCall.args[2]).to.equal(MOCK_BIDS_REQUEST);
+      sinon.assert.calledWith(eventEmitterStub, CONSTANTS.EVENTS.BIDDER_ERROR, {
+        error: xhrErrorMock,
+        bidderRequest: MOCK_BIDS_REQUEST
+      });
     });
 
     it('should call spec.getUserSyncs() with no responses', function () {
@@ -586,6 +680,40 @@ describe('bidders created by newBidder', function () {
       expect(spec.getUserSyncs.calledOnce).to.equal(true);
       expect(spec.getUserSyncs.firstCall.args[1]).to.deep.equal([]);
       expect(doneStub.calledOnce).to.equal(true);
+      expect(callBidderErrorStub.calledOnce).to.equal(true);
+      expect(callBidderErrorStub.firstCall.args[0]).to.equal(CODE);
+      expect(callBidderErrorStub.firstCall.args[1]).to.equal(xhrErrorMock);
+      expect(callBidderErrorStub.firstCall.args[2]).to.equal(MOCK_BIDS_REQUEST);
+      sinon.assert.calledWith(eventEmitterStub, CONSTANTS.EVENTS.BIDDER_ERROR, {
+        error: xhrErrorMock,
+        bidderRequest: MOCK_BIDS_REQUEST
+      });
+    });
+
+    it('should call spec.getUserSyncs() with no responses', function () {
+      const bidder = newBidder(spec);
+
+      spec.isBidRequestValid.returns(true);
+      spec.buildRequests.returns({
+        method: 'POST',
+        url: 'test.url.com',
+        data: {}
+      });
+      spec.getUserSyncs.returns([]);
+
+      bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+
+      expect(spec.getUserSyncs.calledOnce).to.equal(true);
+      expect(spec.getUserSyncs.firstCall.args[1]).to.deep.equal([]);
+      expect(doneStub.calledOnce).to.equal(true);
+      expect(callBidderErrorStub.calledOnce).to.equal(true);
+      expect(callBidderErrorStub.firstCall.args[0]).to.equal(CODE);
+      expect(callBidderErrorStub.firstCall.args[1]).to.equal(xhrErrorMock);
+      expect(callBidderErrorStub.firstCall.args[2]).to.equal(MOCK_BIDS_REQUEST);
+      sinon.assert.calledWith(eventEmitterStub, CONSTANTS.EVENTS.BIDDER_ERROR, {
+        error: xhrErrorMock,
+        bidderRequest: MOCK_BIDS_REQUEST
+      });
     });
   });
 });
@@ -645,11 +773,55 @@ describe('registerBidder', function () {
     expect(registerBidAdapterStub.secondCall.args[1]).to.equal('foo')
     expect(registerBidAdapterStub.thirdCall.args[1]).to.equal('bar')
   });
+
+  it('should register alias with their gvlid', function() {
+    const aliases = [
+      {
+        code: 'foo',
+        gvlid: 1
+      },
+      {
+        code: 'bar',
+        gvlid: 2
+      },
+      {
+        code: 'baz'
+      }
+    ]
+    const thisSpec = Object.assign(newEmptySpec(), { aliases: aliases });
+    registerBidder(thisSpec);
+
+    expect(registerBidAdapterStub.getCall(1).args[0].getSpec().gvlid).to.equal(1);
+    expect(registerBidAdapterStub.getCall(2).args[0].getSpec().gvlid).to.equal(2);
+    expect(registerBidAdapterStub.getCall(3).args[0].getSpec().gvlid).to.equal(undefined);
+  })
+
+  it('should register alias with skipPbsAliasing', function() {
+    const aliases = [
+      {
+        code: 'foo',
+        skipPbsAliasing: true
+      },
+      {
+        code: 'bar',
+        skipPbsAliasing: false
+      },
+      {
+        code: 'baz'
+      }
+    ]
+    const thisSpec = Object.assign(newEmptySpec(), { aliases: aliases });
+    registerBidder(thisSpec);
+
+    expect(registerBidAdapterStub.getCall(1).args[0].getSpec().skipPbsAliasing).to.equal(true);
+    expect(registerBidAdapterStub.getCall(2).args[0].getSpec().skipPbsAliasing).to.equal(false);
+    expect(registerBidAdapterStub.getCall(3).args[0].getSpec().skipPbsAliasing).to.equal(undefined);
+  })
 })
 
 describe('validate bid response: ', function () {
   let spec;
-  let bidder;
+  let indexStub, adUnits, bidderRequests;
   let addBidResponseStub;
   let doneStub;
   let ajaxStub;
@@ -690,24 +862,33 @@ describe('validate bid response: ', function () {
       callbacks.success('response body', { getResponseHeader: fakeResponse });
     });
     logErrorSpy = sinon.spy(utils, 'logError');
+    indexStub = sinon.stub(auctionManager, 'index');
+    adUnits = [];
+    bidderRequests = [];
+    indexStub.get(() => stubAuctionIndex({adUnits: adUnits, bidderRequests: bidderRequests}))
   });
 
   afterEach(function () {
     ajaxStub.restore();
     logErrorSpy.restore();
+    indexStub.restore;
   });
 
   it('should add native bids that do have required assets', function () {
+    adUnits = [{
+      transactionId: 'au',
+      nativeParams: {
+        title: {'required': true},
+      }
+    }]
     let bidRequest = {
       bids: [{
         bidId: '1',
         auctionId: 'first-bid-id',
         adUnitCode: 'mock/placement',
+        transactionId: 'au',
         params: {
           param: 5
-        },
-        nativeParams: {
-          title: {'required': true},
         },
         mediaType: 'native',
       }]
@@ -735,21 +916,24 @@ describe('validate bid response: ', function () {
   });
 
   it('should not add native bids that do not have required assets', function () {
+    adUnits = [{
+      transactionId: 'au',
+      nativeParams: {
+        title: {'required': true},
+      },
+    }];
     let bidRequest = {
       bids: [{
         bidId: '1',
         auctionId: 'first-bid-id',
         adUnitCode: 'mock/placement',
+        transactionId: 'au',
         params: {
           param: 5
-        },
-        nativeParams: {
-          title: {'required': true},
         },
         mediaType: 'native',
       }]
     };
-
     let bids1 = Object.assign({},
       bids[0],
       {
@@ -771,17 +955,21 @@ describe('validate bid response: ', function () {
   });
 
   it('should add bid when renderer is present on outstream bids', function () {
+    adUnits = [{
+      transactionId: 'au',
+      mediaTypes: {
+        video: {context: 'outstream'}
+      }
+    }]
     let bidRequest = {
       bids: [{
         bidId: '1',
         auctionId: 'first-bid-id',
+        transactionId: 'au',
         adUnitCode: 'mock/placement',
         params: {
           param: 5
         },
-        mediaTypes: {
-          video: {context: 'outstream'}
-        }
       }]
     };
 
@@ -817,7 +1005,7 @@ describe('validate bid response: ', function () {
         sizes: [[300, 250]],
       }]
     };
-
+    bidderRequests = [bidRequest];
     let bids1 = Object.assign({},
       bids[0],
       {
@@ -835,6 +1023,142 @@ describe('validate bid response: ', function () {
     expect(addBidResponseStub.firstCall.args[0]).to.equal('mock/placement');
     expect(logErrorSpy.callCount).to.equal(0);
   });
+
+  describe(' Check for alternateBiddersList ', function() {
+    let bidRequest;
+    let bids1;
+    let logWarnSpy;
+    let bidderSettingStub, aliasRegistryStub;
+    let aliasRegistry;
+
+    beforeEach(function () {
+      bidRequest = {
+        bids: [{
+          bidId: '1',
+          bidder: CODE,
+          auctionId: 'first-bid-id',
+          adUnitCode: 'mock/placement',
+          transactionId: 'au',
+        }]
+      };
+
+      bids1 = Object.assign({},
+        bids[0],
+        {
+          bidderCode: 'validAlternateBidder',
+          adapterCode: 'knownAdapter1'
+        }
+      );
+      logWarnSpy = sinon.spy(utils, 'logWarn');
+      bidderSettingStub = sinon.stub(bidderSettings, 'get');
+      aliasRegistry = {};
+      aliasRegistryStub = sinon.stub(adapterManager, 'aliasRegistry');
+      aliasRegistryStub.get(() => aliasRegistry);
+    });
+
+    afterEach(function () {
+      logWarnSpy.restore();
+      bidderSettingStub.restore();
+      aliasRegistryStub.restore();
+    });
+
+    it('should log warning when bidder is unknown and allowAlternateBidderCodes flag is false', function () {
+      bidderSettingStub.returns(false);
+
+      const bidder = newBidder(spec);
+      spec.interpretResponse.returns(bids1);
+      bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+
+      expect(addBidResponseStub.calledOnce).to.equal(false);
+      expect(logWarnSpy.callCount).to.equal(1);
+    });
+
+    it('should accept the bid, when allowAlternateBidderCodes flag is undefined (default should be true)', function () {
+      bidderSettingStub.returns(undefined);
+
+      const bidder = newBidder(spec);
+      spec.interpretResponse.returns(bids1);
+      bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+
+      expect(addBidResponseStub.calledOnce).to.equal(true);
+      expect(logWarnSpy.callCount).to.equal(0);
+      expect(logErrorSpy.callCount).to.equal(0);
+    });
+
+    it('should log warning when the particular bidder is not specified in allowedAlternateBidderCodes and allowAlternateBidderCodes flag is true', function () {
+      bidderSettingStub.withArgs(CODE, 'allowAlternateBidderCodes').returns(true);
+      bidderSettingStub.withArgs(CODE, 'allowedAlternateBidderCodes').returns(['invalidAlternateBidder02']);
+
+      const bidder = newBidder(spec);
+      spec.interpretResponse.returns(bids1);
+      bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+
+      expect(addBidResponseStub.calledOnce).to.equal(false);
+      expect(logWarnSpy.callCount).to.equal(1);
+    });
+
+    it('should accept the bid, when allowedAlternateBidderCodes is empty and allowAlternateBidderCodes flag is true', function () {
+      bidderSettingStub.withArgs(CODE, 'allowAlternateBidderCodes').returns(true);
+      bidderSettingStub.withArgs(CODE, 'allowedAlternateBidderCodes').returns();
+
+      const bidder = newBidder(spec);
+      spec.interpretResponse.returns(bids1);
+      bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+
+      expect(addBidResponseStub.calledOnce).to.equal(true);
+      expect(logWarnSpy.callCount).to.equal(0);
+      expect(logErrorSpy.callCount).to.equal(0);
+    });
+
+    it('should accept the bid, when allowedAlternateBidderCodes is marked as * and allowAlternateBidderCodes flag is true', function () {
+      bidderSettingStub.withArgs(CODE, 'allowAlternateBidderCodes').returns(true);
+      bidderSettingStub.withArgs(CODE, 'allowedAlternateBidderCodes').returns(['*']);
+
+      const bidder = newBidder(spec);
+      spec.interpretResponse.returns(bids1);
+      bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+
+      expect(addBidResponseStub.calledOnce).to.equal(true);
+      expect(logWarnSpy.callCount).to.equal(0);
+      expect(logErrorSpy.callCount).to.equal(0);
+    });
+
+    it('should accept the bid, when allowedAlternateBidderCodes contains bidder name and allowAlternateBidderCodes flag is true', function () {
+      bidderSettingStub.withArgs(CODE, 'allowAlternateBidderCodes').returns(true);
+      bidderSettingStub.withArgs(CODE, 'allowedAlternateBidderCodes').returns(['validAlternateBidder']);
+
+      const bidder = newBidder(spec);
+      spec.interpretResponse.returns(bids1);
+      bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+
+      expect(addBidResponseStub.calledOnce).to.equal(true);
+      expect(logWarnSpy.callCount).to.equal(0);
+      expect(logErrorSpy.callCount).to.equal(0);
+    });
+
+    it('should not accept the bid, when bidder is an alias but bidderSetting is missing for the bidder. It should fallback to standard setting and reject the bid', function () {
+      bidderSettingStub.withArgs(CODE, 'allowAlternateBidderCodes').returns(false);
+      aliasRegistry = {'validAlternateBidder': CODE};
+
+      const bidder = newBidder(spec);
+      spec.interpretResponse.returns(bids1);
+      bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+
+      expect(addBidResponseStub.calledOnce).to.equal(false);
+      expect(logWarnSpy.callCount).to.equal(1);
+    });
+
+    it('should not accept the bid, when bidderSetting is missing for the bidder. It should fallback to standard setting and reject the bid', function () {
+      bidderSettingStub.withArgs(CODE, 'allowAlternateBidderCodes').returns(false);
+
+      const bidder = newBidder(spec);
+      spec.interpretResponse.returns(bids1);
+      bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+
+      expect(addBidResponseStub.calledOnce).to.equal(false);
+      expect(logWarnSpy.callCount).to.equal(1);
+    });
+  })
 });
 
 describe('preload mapping url hook', function() {

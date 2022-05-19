@@ -8,7 +8,7 @@ describe('vdoaiBidAdapter', function () {
   const adapter = newBidder(spec);
   describe('isBidRequestValid', function () {
     let bid = {
-      'bidder': 'vdo.ai',
+      'bidder': 'vdoai',
       'params': {
         placementId: 'testPlacementId'
       },
@@ -27,7 +27,7 @@ describe('vdoaiBidAdapter', function () {
   describe('buildRequests', function () {
     let bidRequests = [
       {
-        'bidder': 'vdo.ai',
+        'bidder': 'vdoai',
         'params': {
           placementId: 'testPlacementId'
         },
@@ -37,6 +37,7 @@ describe('vdoaiBidAdapter', function () {
         'bidId': '23beaa6af6cdde',
         'bidderRequestId': '19c0c1efdf37e7',
         'auctionId': '61466567-d482-4a16-96f0-fe5f25ffbdf1',
+        'mediaTypes': 'banner'
       }
     ];
 
@@ -83,7 +84,8 @@ describe('vdoaiBidAdapter', function () {
         'requestId': 'bidId123',
         'width': 300,
         'height': 250,
-        'netRevenue': true
+        'netRevenue': true,
+        'adDomain': ['text.abc']
       }
     };
     it('should get the correct bid response', function () {
@@ -96,10 +98,49 @@ describe('vdoaiBidAdapter', function () {
         'currency': 'EUR',
         'netRevenue': true,
         'ttl': 3000,
-        'ad': '<html><h3>I am an ad</h3></html>'
+        'ad': '<html><h3>I am an ad</h3></html>',
+        'meta': {
+          'advertiserDomains': ['text.abc']
+        }
       }];
       let result = spec.interpretResponse(serverResponse, bidRequest[0]);
       expect(Object.keys(result)).to.deep.equal(Object.keys(expectedResponse));
+      expect(result[0].meta.advertiserDomains).to.deep.equal(expectedResponse[0].meta.advertiserDomains);
+    });
+
+    it('handles instream video responses', function () {
+      let serverResponse = {
+        body: {
+          'vdoCreative': '<!-- VAST Creative -->',
+          'price': 4.2,
+          'adid': '12345asdfg',
+          'currency': 'EUR',
+          'statusMessage': 'Bid available',
+          'requestId': 'bidId123',
+          'width': 300,
+          'height': 250,
+          'netRevenue': true,
+          'mediaType': 'video'
+        }
+      };
+      let bidRequest = [
+        {
+          'method': 'POST',
+          'url': ENDPOINT_URL,
+          'data': {
+            'placementId': 'testPlacementId',
+            'width': '300',
+            'height': '200',
+            'bidId': 'bidId123',
+            'referer': 'www.example.com',
+            'mediaType': 'video'
+          }
+        }
+      ];
+
+      let result = spec.interpretResponse(serverResponse, bidRequest[0]);
+      expect(result[0]).to.have.property('vastXml');
+      expect(result[0]).to.have.property('mediaType', 'video');
     });
   });
 });

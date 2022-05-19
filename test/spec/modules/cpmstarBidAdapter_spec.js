@@ -3,6 +3,41 @@ import { spec } from 'modules/cpmstarBidAdapter.js';
 import { deepClone } from 'src/utils.js';
 import { config } from 'src/config.js';
 
+const valid_bid_requests = [{
+  'bidder': 'cpmstar',
+  'params': {
+    'placementId': '57'
+  },
+  'sizes': [[300, 250]],
+  'bidId': 'bidId'
+}];
+
+const bidderRequest = {
+  refererInfo: {
+    referer: 'referer',
+    reachedTop: false,
+  }
+};
+
+const serverResponse = {
+  body: [{
+    creatives: [{
+      cpm: 1,
+      width: 0,
+      height: 0,
+      currency: 'USD',
+      netRevenue: true,
+      ttl: 1,
+      creativeid: '1234',
+      requestid: '11123',
+      code: 'no idea',
+      media: 'banner',
+    }
+    ],
+    syncs: [{ type: 'image', url: 'https://server.cpmstar.com/pixel.aspx' }]
+  }]
+};
+
 describe('Cpmstar Bid Adapter', function () {
   describe('isBidRequestValid', function () {
     it('should return true since the bid is valid',
@@ -42,23 +77,6 @@ describe('Cpmstar Bid Adapter', function () {
   });
 
   describe('buildRequests', function () {
-    const valid_bid_requests = [{
-      'bidder': 'cpmstar',
-      'params': {
-        'placementId': '57'
-      },
-      'sizes': [[300, 250]],
-      'bidId': 'bidId'
-    }];
-
-    const bidderRequest = {
-      refererInfo: {
-        referer: 'referer',
-        reachedTop: false,
-      }
-
-    };
-
     it('should produce a valid production request', function () {
       var requests = spec.buildRequests(valid_bid_requests, bidderRequest);
       expect(requests[0]).to.have.property('method');
@@ -109,30 +127,36 @@ describe('Cpmstar Bid Adapter', function () {
       expect(requests[0]).to.have.property('url');
       expect(requests[0].url).to.include('tfcd=1');
     });
-  })
+  });
+
+  it('should produce a request with support for OpenRTB SupplyChain', function () {
+    var reqs = deepClone(valid_bid_requests);
+    reqs[0].schain = {
+      'ver': '1.0',
+      'complete': 1,
+      'nodes': [
+        {
+          'asi': 'exchange1.com',
+          'sid': '1234',
+          'hp': 1
+        },
+        {
+          'asi': 'exchange2.com',
+          'sid': 'abcd',
+          'hp': 1
+        }
+      ]
+    };
+    var requests = spec.buildRequests(reqs, bidderRequest);
+    expect(requests[0]).to.have.property('url');
+    expect(requests[0].url).to.include('&schain=1.0,1!exchange1.com,1234,1,,,!exchange2.com,abcd,1,,,');
+  });
 
   describe('interpretResponse', function () {
     const request = {
       bidRequest: {
         mediaType: 'BANNER'
       }
-    };
-    const serverResponse = {
-      body: [{
-        creatives: [{
-          cpm: 1,
-          width: 0,
-          height: 0,
-          currency: 'USD',
-          netRevenue: true,
-          ttl: 1,
-          creativeid: '1234',
-          requestid: '11123',
-          code: 'no idea',
-          media: 'banner',
-        }
-        ],
-      }]
     };
 
     it('should return a valid bidresponse array', function () {
@@ -183,6 +207,25 @@ describe('Cpmstar Bid Adapter', function () {
       var dealServer = deepClone(serverResponse);
       dealServer.body[0].creatives[0].dealId = 'deal';
       expect(spec.interpretResponse(dealServer, request)[0].dealId).to.equal('deal');
+    });
+  });
+
+  describe('getUserSyncs', function () {
+    var sres = [deepClone(serverResponse)];
+
+    it('should return a valid pixel sync', function () {
+      var syncs = spec.getUserSyncs({ pixelEnabled: true }, sres);
+      expect(syncs.length).equal(1);
+      expect(syncs[0].type).equal('image');
+      expect(syncs[0].url).equal('https://server.cpmstar.com/pixel.aspx');
+    });
+
+    it('should return a valid iframe sync', function () {
+      sres[0].body[0].syncs[0].type = 'iframe';
+      var syncs = spec.getUserSyncs({ iframeEnabled: true }, sres);
+      expect(syncs.length).equal(1);
+      expect(syncs[0].type).equal('iframe');
+      expect(syncs[0].url).equal('https://server.cpmstar.com/pixel.aspx');
     });
   });
 });

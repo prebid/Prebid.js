@@ -1,14 +1,8 @@
 import { criteoIdSubmodule, storage } from 'modules/criteoIdSystem.js';
 import * as utils from 'src/utils.js';
-import * as ajaxLib from 'src/ajax.js';
+import {server} from '../../mocks/xhr';
 
 const pastDateString = new Date(0).toString()
-
-function mockResponse(responseText, fakeResponse = (url, callback) => callback(responseText)) {
-  return function() {
-    return fakeResponse;
-  }
-}
 
 describe('CriteoId module', function () {
   const cookiesMaxAge = 13 * 30 * 24 * 60 * 60 * 1000;
@@ -22,7 +16,6 @@ describe('CriteoId module', function () {
   let removeFromLocalStorageStub;
   let timeStampStub;
   let parseUrlStub;
-  let ajaxBuilderStub;
   let triggerPixelStub;
 
   beforeEach(function (done) {
@@ -32,7 +25,6 @@ describe('CriteoId module', function () {
     setLocalStorageStub = sinon.stub(storage, 'setDataInLocalStorage');
     removeFromLocalStorageStub = sinon.stub(storage, 'removeDataFromLocalStorage');
     timeStampStub = sinon.stub(utils, 'timestamp').returns(nowTimestamp);
-    ajaxBuilderStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(mockResponse('{}'));
     parseUrlStub = sinon.stub(utils, 'parseUrl').returns({protocol: 'https', hostname: 'testdev.com'})
     triggerPixelStub = sinon.stub(utils, 'triggerPixel');
     done();
@@ -45,7 +37,6 @@ describe('CriteoId module', function () {
     setLocalStorageStub.restore();
     removeFromLocalStorageStub.restore();
     timeStampStub.restore();
-    ajaxBuilderStub.restore();
     triggerPixelStub.restore();
     parseUrlStub.restore();
   });
@@ -61,8 +52,9 @@ describe('CriteoId module', function () {
     getCookieStub.withArgs('cto_bidid').returns(testCase.cookie);
     getLocalStorageStub.withArgs('cto_bidid').returns(testCase.localStorage);
 
-    const id = criteoIdSubmodule.getId();
-    expect(id).to.be.deep.equal({id: testCase.expected ? { criteoId: testCase.expected } : undefined});
+    const result = criteoIdSubmodule.getId();
+    expect(result.id).to.be.deep.equal(testCase.expected ? { criteoId: testCase.expected } : undefined);
+    expect(result.callback).to.be.a('function');
   }))
 
   it('decode() should return the bidId when it exists in local storages', function () {
@@ -71,20 +63,24 @@ describe('CriteoId module', function () {
   });
 
   it('should call user sync url with the right params', function () {
-    getCookieStub.withArgs('cto_test_cookie').returns('1');
     getCookieStub.withArgs('cto_bundle').returns('bundle');
     window.criteo_pubtag = {}
 
-    const emptyObj = '{}';
-    let ajaxStub = sinon.stub().callsFake((url, callback) => callback(emptyObj));
-    ajaxBuilderStub.callsFake(mockResponse(undefined, ajaxStub))
+    let callBackSpy = sinon.spy();
+    let result = criteoIdSubmodule.getId();
+    result.callback(callBackSpy);
 
-    criteoIdSubmodule.getId();
-    const expectedUrl = `https://gum.criteo.com/sid/json?origin=prebid&topUrl=https%3A%2F%2Ftestdev.com%2F&domain=testdev.com&bundle=bundle&cw=1&pbt=1`;
+    const expectedUrl = `https://gum.criteo.com/sid/json?origin=prebid&topUrl=https%3A%2F%2Ftestdev.com%2F&domain=testdev.com&bundle=bundle&cw=1&pbt=1&lsw=1`;
 
-    expect(ajaxStub.calledWith(expectedUrl)).to.be.true;
+    let request = server.requests[0];
+    expect(request.url).to.be.eq(expectedUrl);
 
-    window.criteo_pubtag = undefined;
+    request.respond(
+      200,
+      {'Content-Type': 'application/json'},
+      JSON.stringify({})
+    );
+    expect(callBackSpy.calledOnce).to.be.true;
   });
 
   const responses = [
@@ -102,31 +98,37 @@ describe('CriteoId module', function () {
   responses.forEach(response => describe('test user sync response behavior', function () {
     const expirationTs = new Date(nowTimestamp + cookiesMaxAge).toString();
 
-    beforeEach(function (done) {
-      const fakeResponse = (url, callback) => {
-        callback(JSON.stringify(response));
-        setTimeout(done, 0);
-      }
-      ajaxBuilderStub.callsFake(mockResponse(undefined, fakeResponse));
-      criteoIdSubmodule.getId();
-    })
-
     it('should save bidId if it exists', function () {
+      const result = criteoIdSubmodule.getId();
+      result.callback((id) => {
+        expect(id).to.be.deep.equal(response.bidId ? { criteoId: response.bidId } : undefined);
+      });
+
+      let request = server.requests[0];
+      request.respond(
+        200,
+        {'Content-Type': 'application/json'},
+        JSON.stringify(response)
+      );
+
       if (response.acwsUrl) {
         expect(triggerPixelStub.called).to.be.true;
         expect(setCookieStub.calledWith('cto_bundle')).to.be.false;
         expect(setLocalStorageStub.calledWith('cto_bundle')).to.be.false;
       } else if (response.bundle) {
-        expect(setCookieStub.calledWith('cto_bundle', response.bundle, expirationTs)).to.be.true;
+        expect(setCookieStub.calledWith('cto_bundle', response.bundle, expirationTs, null, '.com')).to.be.true;
+        expect(setCookieStub.calledWith('cto_bundle', response.bundle, expirationTs, null, '.testdev.com')).to.be.true;
         expect(setLocalStorageStub.calledWith('cto_bundle', response.bundle)).to.be.true;
         expect(triggerPixelStub.called).to.be.false;
       }
 
       if (response.bidId) {
-        expect(setCookieStub.calledWith('cto_bidid', response.bidId, expirationTs)).to.be.true;
+        expect(setCookieStub.calledWith('cto_bidid', response.bidId, expirationTs, null, '.com')).to.be.true;
+        expect(setCookieStub.calledWith('cto_bidid', response.bidId, expirationTs, null, '.testdev.com')).to.be.true;
         expect(setLocalStorageStub.calledWith('cto_bidid', response.bidId)).to.be.true;
       } else {
-        expect(setCookieStub.calledWith('cto_bidid', '', pastDateString)).to.be.true;
+        expect(setCookieStub.calledWith('cto_bidid', '', pastDateString, null, '.com')).to.be.true;
+        expect(setCookieStub.calledWith('cto_bidid', '', pastDateString, null, '.testdev.com')).to.be.true;
         expect(removeFromLocalStorageStub.calledWith('cto_bidid')).to.be.true;
       }
     });
@@ -141,16 +143,23 @@ describe('CriteoId module', function () {
   ];
 
   gdprConsentTestCases.forEach(testCase => it('should call user sync url with the gdprConsent', function () {
-    const emptyObj = '{}';
-    let ajaxStub = sinon.stub().callsFake((url, callback) => callback(emptyObj));
-    ajaxBuilderStub.callsFake(mockResponse(undefined, ajaxStub))
+    let callBackSpy = sinon.spy();
+    let result = criteoIdSubmodule.getId(undefined, testCase.consentData);
+    result.callback(callBackSpy);
 
-    criteoIdSubmodule.getId(undefined, testCase.consentData);
-
+    let request = server.requests[0];
     if (testCase.expected) {
-      expect(ajaxStub.calledWithMatch(`gdprString=${testCase.expected}`)).to.be.true;
+      expect(request.url).to.have.string(`gdprString=${testCase.expected}`);
     } else {
-      expect(ajaxStub.calledWithMatch('gdprString')).not.to.be.true;
+      expect(request.url).to.not.have.string('gdprString');
     }
+
+    request.respond(
+      200,
+      {'Content-Type': 'application/json'},
+      JSON.stringify({})
+    );
+
+    expect(callBackSpy.calledOnce).to.be.true;
   }));
 });

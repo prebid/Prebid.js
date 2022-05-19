@@ -1,13 +1,14 @@
-import * as utils from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { VIDEO } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
-import { Renderer } from '../src/Renderer.js';
-import { createEidsArray } from './userId/eids.js';
+import {deepAccess, deepClone, deepSetValue, logError, logWarn} from '../src/utils.js';
+import {find} from '../src/polyfill.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {VIDEO} from '../src/mediaTypes.js';
+import {config} from '../src/config.js';
+import {Renderer} from '../src/Renderer.js';
+import {createEidsArray} from './userId/eids.js';
 
 const DEV_MODE = window.location.search.match(/bbpbs_debug=true/);
 
-// Blue Billywig Constants
+// Blue Billywig  Constants
 const BB_CONSTANTS = {
   BIDDER_CODE: 'bluebillywig',
   AUCTION_URL: '$$URL_STARTpbs.bluebillywig.com/openrtb2/auction?pub=$$PUBLICATION',
@@ -17,17 +18,18 @@ const BB_CONSTANTS = {
   DEFAULT_TTL: 300,
   DEFAULT_WIDTH: 768,
   DEFAULT_HEIGHT: 432,
-  DEFAULT_NET_REVENUE: true
+  DEFAULT_NET_REVENUE: true,
+  VIDEO_PARAMS: ['mimes', 'minduration', 'maxduration', 'protocols', 'w', 'h', 'startdelay', 'placement', 'linearity', 'skip', 'skipmin',
+    'skipafter', 'sequence', 'battr', 'maxextended', 'minbitrate', 'maxbitrate', 'boxingallowed', 'playbackmethod', 'playbackend', 'delivery', 'pos', 'companionad',
+    'api', 'companiontype', 'ext']
 };
 
 // Aliasing
 const getConfig = config.getConfig;
 
 // Helper Functions
-export const BB_HELPERS = {
+const BB_HELPERS = {
   addSiteAppDevice: function(request, pageUrl) {
-    if (!request) return;
-
     if (typeof getConfig('app') === 'object') request.app = getConfig('app');
     else {
       request.site = {};
@@ -41,31 +43,21 @@ export const BB_HELPERS = {
     if (!request.device.h) request.device.h = window.innerHeight;
   },
   addSchain: function(request, validBidRequests) {
-    if (!request) return;
-
-    const schain = utils.deepAccess(validBidRequests, '0.schain');
+    const schain = deepAccess(validBidRequests, '0.schain');
     if (schain) request.source.ext = { schain: schain };
   },
   addCurrency: function(request) {
-    if (!request) return;
-
     const adServerCur = getConfig('currency.adServerCurrency');
     if (adServerCur && typeof adServerCur === 'string') request.cur = [adServerCur];
     else if (Array.isArray(adServerCur) && adServerCur.length) request.cur = [adServerCur[0]];
   },
   addUserIds: function(request, validBidRequests) {
-    if (!request) return;
-
-    const bidUserId = utils.deepAccess(validBidRequests, '0.userId');
+    const bidUserId = deepAccess(validBidRequests, '0.userId');
     const eids = createEidsArray(bidUserId);
 
     if (eids.length) {
-      utils.deepSetValue(request, 'user.ext.eids', eids);
+      deepSetValue(request, 'user.ext.eids', eids);
     }
-  },
-  addDigiTrust: function(request, bidRequests) {
-    const digiTrust = BB_HELPERS.getDigiTrustParams(bidRequests && bidRequests[0]);
-    if (digiTrust) utils.deepSetValue(request, 'user.ext.digitrust', digiTrust);
   },
   substituteUrl: function (url, publication, renderer) {
     return url.replace('$$URL_START', (DEV_MODE) ? 'https://dev.' : 'https://').replace('$$PUBLICATION', publication).replace('$$RENDERER', renderer);
@@ -79,41 +71,60 @@ export const BB_HELPERS = {
   getRendererUrl: function(publication, renderer) {
     return BB_HELPERS.substituteUrl(BB_CONSTANTS.RENDERER_URL, publication, renderer);
   },
-  getDigiTrustParams: function(bidRequest) {
-    const digiTrustId = BB_HELPERS.getDigiTrustId(bidRequest);
+  transformVideoParams: function(videoParams, videoParamsExt) {
+    videoParams = deepClone(videoParams);
 
-    if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) return null;
-    return {
-      id: digiTrustId.id,
-      keyv: digiTrustId.keyv
-    }
-  },
-  getDigiTrustId: function(bidRequest) {
-    const bidRequestDigiTrust = utils.deepAccess(bidRequest, 'userId.digitrustid.data');
-    if (bidRequestDigiTrust) return bidRequestDigiTrust;
+    let playerSize = videoParams.playerSize || [BB_CONSTANTS.DEFAULT_WIDTH, BB_CONSTANTS.DEFAULT_HEIGHT];
+    if (Array.isArray(playerSize[0])) playerSize = playerSize[0];
 
-    const digiTrustUser = getConfig('digiTrustId');
-    return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || null;
+    videoParams.w = playerSize[0];
+    videoParams.h = playerSize[1];
+    videoParams.placement = 3;
+
+    if (videoParamsExt) videoParams = Object.assign(videoParams, videoParamsExt);
+
+    const videoParamsProperties = Object.keys(videoParams);
+
+    videoParamsProperties.forEach(property => {
+      if (BB_CONSTANTS.VIDEO_PARAMS.indexOf(property) === -1) delete videoParams[property];
+    });
+
+    return videoParams;
   },
   transformRTBToPrebidProps: function(bid, serverResponse) {
-    bid.cpm = bid.price; delete bid.price;
-    bid.bidId = bid.impid;
-    bid.requestId = bid.impid; delete bid.impid;
-    bid.width = bid.w || BB_CONSTANTS.DEFAULT_WIDTH;
-    bid.height = bid.h || BB_CONSTANTS.DEFAULT_HEIGHT;
+    const bidObject = {
+      cpm: bid.price,
+      currency: serverResponse.cur,
+      netRevenue: BB_CONSTANTS.DEFAULT_NET_REVENUE,
+      bidId: bid.impid,
+      requestId: bid.impid,
+      creativeId: bid.crid,
+      mediaType: VIDEO,
+      width: bid.w || BB_CONSTANTS.DEFAULT_WIDTH,
+      height: bid.h || BB_CONSTANTS.DEFAULT_HEIGHT,
+      ttl: BB_CONSTANTS.DEFAULT_TTL
+    };
+
+    const extPrebidTargeting = deepAccess(bid, 'ext.prebid.targeting');
+    const extPrebidCache = deepAccess(bid, 'ext.prebid.cache');
+
+    if (extPrebidCache && typeof extPrebidCache.vastXml === 'object' && extPrebidCache.vastXml.cacheId && extPrebidCache.vastXml.url) {
+      bidObject.videoCacheKey = extPrebidCache.vastXml.cacheId;
+      bidObject.vastUrl = extPrebidCache.vastXml.url;
+    } else if (extPrebidTargeting && extPrebidTargeting.hb_uuid && extPrebidTargeting.hb_cache_host && extPrebidTargeting.hb_cache_path) {
+      bidObject.videoCacheKey = extPrebidTargeting.hb_uuid;
+      bidObject.vastUrl = `https://${extPrebidTargeting.hb_cache_host}${extPrebidTargeting.hb_cache_path}?uuid=${extPrebidTargeting.hb_uuid}`;
+    }
     if (bid.adm) {
-      bid.ad = bid.adm;
-      bid.vastXml = bid.adm;
-      delete bid.adm;
+      bidObject.ad = bid.adm;
+      bidObject.vastXml = bid.adm;
     }
-    if (bid.nurl && !bid.adm) { // ad markup is on win notice url, and adm is ommited according to OpenRTB 2.5
-      bid.vastUrl = bid.nurl;
-      delete bid.nurl;
+    if (!bidObject.vastUrl && bid.nurl && !bid.adm) { // ad markup is on win notice url, and adm is ommited according to OpenRTB 2.5
+      bidObject.vastUrl = bid.nurl;
     }
-    bid.netRevenue = BB_CONSTANTS.DEFAULT_NET_REVENUE;
-    bid.creativeId = bid.crid; delete bid.crid;
-    bid.currency = serverResponse.cur;
-    bid.ttl = BB_CONSTANTS.DEFAULT_TTL;
+    bidObject.meta = bid.meta || {};
+    if (bid.adomain) { bidObject.meta.advertiserDomains = bid.adomain; }
+    return bidObject;
   },
 };
 
@@ -128,25 +139,21 @@ const BB_RENDERER = {
     else if (bid.vastUrl) config.vastUrl = bid.vastUrl;
 
     if (!bid.vastXml && !bid.vastUrl) {
-      utils.logWarn(`${BB_CONSTANTS.BIDDER_CODE}: No vastXml or vastUrl on bid, bailing...`);
+      logWarn(`${BB_CONSTANTS.BIDDER_CODE}: No vastXml or vastUrl on bid, bailing...`);
+      return;
+    }
+
+    if (!(window.bluebillywig && window.bluebillywig.renderers)) {
+      logWarn(`${BB_CONSTANTS.BIDDER_CODE}: renderer code failed to initialize...`);
       return;
     }
 
     const rendererId = BB_RENDERER.getRendererId(bid.publicationName, bid.rendererCode);
-
     const ele = document.getElementById(bid.adUnitCode); // NB convention
+    const renderer = find(window.bluebillywig.renderers, r => r._id === rendererId);
 
-    let renderer;
-
-    for (let rendererIndex = 0; rendererIndex < window.bluebillywig.renderers.length; rendererIndex++) {
-      if (window.bluebillywig.renderers[rendererIndex]._id === rendererId) {
-        renderer = window.bluebillywig.renderers[rendererIndex];
-        break;
-      }
-    }
-
-    if (renderer) renderer.bootstrap(config, ele);
-    else utils.logWarn(`${BB_CONSTANTS.BIDDER_CODE}: Couldn't find a renderer with ${rendererId}`);
+    if (renderer) renderer.bootstrap(config, ele, bid.rendererSettings || {});
+    else logWarn(`${BB_CONSTANTS.BIDDER_CODE}: Couldn't find a renderer with ${rendererId}`);
   },
   newRenderer: function(rendererUrl, adUnitCode) {
     const renderer = Renderer.install({
@@ -158,7 +165,7 @@ const BB_RENDERER = {
     try {
       renderer.setRender(BB_RENDERER.outstreamRender);
     } catch (err) {
-      utils.logWarn(`${BB_CONSTANTS.BIDDER_CODE}: Error tying to setRender on renderer`, err);
+      logWarn(`${BB_CONSTANTS.BIDDER_CODE}: Error tying to setRender on renderer`, err);
     }
 
     return renderer;
@@ -182,61 +189,70 @@ export const spec = {
     const rendererRegex = /^[\w+_]+$/;
 
     if (!bid.params) {
-      utils.logError(`${BB_CONSTANTS.BIDDER_CODE}: no params set on bid. Rejecting bid: `, bid);
+      logError(`${BB_CONSTANTS.BIDDER_CODE}: no params set on bid. Rejecting bid: `, bid);
       return false;
     }
 
     if (!bid.params.hasOwnProperty('publicationName') || typeof bid.params.publicationName !== 'string') {
-      utils.logError(`${BB_CONSTANTS.BIDDER_CODE}: no publicationName specified in bid params, or it's not a string. Rejecting bid: `, bid);
+      logError(`${BB_CONSTANTS.BIDDER_CODE}: no publicationName specified in bid params, or it's not a string. Rejecting bid: `, bid);
       return false;
     } else if (!publicationNameRegex.test(bid.params.publicationName)) {
-      utils.logError(`${BB_CONSTANTS.BIDDER_CODE}: publicationName must be in format 'publication' or 'publication.environment'. Rejecting bid: `, bid);
+      logError(`${BB_CONSTANTS.BIDDER_CODE}: publicationName must be in format 'publication' or 'publication.environment'. Rejecting bid: `, bid);
       return false;
     }
 
     if ((!bid.params.hasOwnProperty('rendererCode') || typeof bid.params.rendererCode !== 'string')) {
-      utils.logError(`${BB_CONSTANTS.BIDDER_CODE}: no rendererCode was specified in bid params. Rejecting bid: `, bid);
+      logError(`${BB_CONSTANTS.BIDDER_CODE}: no rendererCode was specified in bid params. Rejecting bid: `, bid);
       return false;
     } else if (!rendererRegex.test(bid.params.rendererCode)) {
-      utils.logError(`${BB_CONSTANTS.BIDDER_CODE}: rendererCode must be alphanumeric, including underscores. Rejecting bid: `, bid);
+      logError(`${BB_CONSTANTS.BIDDER_CODE}: rendererCode must be alphanumeric, including underscores. Rejecting bid: `, bid);
       return false;
     }
 
     if (!bid.params.accountId) {
-      utils.logError(`${BB_CONSTANTS.BIDDER_CODE}: no accountId specified in bid params. Rejecting bid: `, bid);
+      logError(`${BB_CONSTANTS.BIDDER_CODE}: no accountId specified in bid params. Rejecting bid: `, bid);
       return false;
     }
 
     if (bid.params.hasOwnProperty('connections')) {
       if (!Array.isArray(bid.params.connections)) {
-        utils.logError(`${BB_CONSTANTS.BIDDER_CODE}: connections is not of type array. Rejecting bid: `, bid);
+        logError(`${BB_CONSTANTS.BIDDER_CODE}: connections is not of type array. Rejecting bid: `, bid);
         return false;
       } else {
-        for (let connectionIndex = 0; connectionIndex < bid.params.connections.length; connectionIndex++) {
-          const connection = bid.params.connections[connectionIndex];
-          if (!bid.params.hasOwnProperty(connection)) {
-            utils.logError(`${BB_CONSTANTS.BIDDER_CODE}: connection specified in params.connections, but not configured in params. Rejecting bid: `, bid);
+        for (let i = 0; i < bid.params.connections.length; i++) {
+          if (!bid.params.hasOwnProperty(bid.params.connections[i])) {
+            logError(`${BB_CONSTANTS.BIDDER_CODE}: connection specified in params.connections, but not configured in params. Rejecting bid: `, bid);
             return false;
           }
         }
       }
     } else {
-      utils.logError(`${BB_CONSTANTS.BIDDER_CODE}: no connections specified in bid. Rejecting bid: `, bid);
+      logError(`${BB_CONSTANTS.BIDDER_CODE}: no connections specified in bid. Rejecting bid: `, bid);
+      return false;
+    }
+
+    if (bid.params.hasOwnProperty('video') && (bid.params.video === null || typeof bid.params.video !== 'object')) {
+      logError(`${BB_CONSTANTS.BIDDER_CODE}: params.video must be of type object. Rejecting bid: `, bid);
+      return false;
+    }
+
+    if (bid.params.hasOwnProperty('rendererSettings') && (bid.params.rendererSettings === null || typeof bid.params.rendererSettings !== 'object')) {
+      logError(`${BB_CONSTANTS.BIDDER_CODE}: params.rendererSettings must be of type object. Rejecting bid: `, bid);
       return false;
     }
 
     if (bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty(VIDEO)) {
       if (!bid.mediaTypes[VIDEO].hasOwnProperty('context')) {
-        utils.logError(`${BB_CONSTANTS.BIDDER_CODE}: no context specified in bid. Rejecting bid: `, bid);
+        logError(`${BB_CONSTANTS.BIDDER_CODE}: no context specified in bid. Rejecting bid: `, bid);
         return false;
       }
 
       if (bid.mediaTypes[VIDEO].context !== 'outstream') {
-        utils.logError(`${BB_CONSTANTS.BIDDER_CODE}: video.context is invalid, must be "outstream". Rejecting bid: `, bid);
+        logError(`${BB_CONSTANTS.BIDDER_CODE}: video.context is invalid, must be "outstream". Rejecting bid: `, bid);
         return false;
       }
     } else {
-      utils.logError(`${BB_CONSTANTS.BIDDER_CODE}: mediaTypes or mediaTypes.video is not specified. Rejecting bid: `, bid);
+      logError(`${BB_CONSTANTS.BIDDER_CODE}: mediaTypes or mediaTypes.video is not specified. Rejecting bid: `, bid);
       return false;
     }
 
@@ -245,20 +261,21 @@ export const spec = {
   buildRequests(validBidRequests, bidderRequest) {
     const imps = [];
 
-    for (let validBidRequestIndex = 0; validBidRequestIndex < validBidRequests.length; validBidRequestIndex++) {
-      const validBidRequest = validBidRequests[validBidRequestIndex];
-      const _this = this;
+    validBidRequests.forEach(validBidRequest => {
+      if (!this.syncStore.publicationName) this.syncStore.publicationName = validBidRequest.params.publicationName;
+      if (!this.syncStore.accountId) this.syncStore.accountId = validBidRequest.params.accountId;
 
-      const ext = validBidRequest.params.connections.reduce(function(extBuilder, connection) {
+      const ext = validBidRequest.params.connections.reduce((extBuilder, connection) => {
         extBuilder[connection] = validBidRequest.params[connection];
 
-        if (_this.syncStore.bidders.indexOf(connection) === -1) _this.syncStore.bidders.push(connection);
+        if (this.syncStore.bidders.indexOf(connection) === -1) this.syncStore.bidders.push(connection);
 
         return extBuilder;
       }, {});
 
-      imps.push({ id: validBidRequest.bidId, ext, secure: window.location.protocol === 'https' ? 1 : 0, video: utils.deepAccess(validBidRequest, 'mediaTypes.video') });
-    }
+      const videoParams = BB_HELPERS.transformVideoParams(deepAccess(validBidRequest, 'mediaTypes.video'), deepAccess(validBidRequest, 'params.video'));
+      imps.push({ id: validBidRequest.bidId, ext, secure: window.location.protocol === 'https' ? 1 : 0, video: videoParams });
+    });
 
     const request = {
       id: bidderRequest.auctionId,
@@ -277,23 +294,22 @@ export const spec = {
     if (bidderRequest.gdprConsent) {
       let gdprApplies = 0;
       if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') gdprApplies = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
-      utils.deepSetValue(request, 'regs.ext.gdpr', gdprApplies);
-      utils.deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
+      deepSetValue(request, 'regs.ext.gdpr', gdprApplies);
+      deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
     }
 
     if (bidderRequest.uspConsent) {
-      utils.deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+      deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent);
       this.syncStore.uspConsent = bidderRequest.uspConsent;
     }
 
-    if (getConfig('coppa') == true) utils.deepSetValue(request, 'regs.coppa', 1);
+    if (getConfig('coppa') == true) deepSetValue(request, 'regs.coppa', 1);
 
     // Enrich the request with any external data we may have
     BB_HELPERS.addSiteAppDevice(request, bidderRequest.refererInfo && bidderRequest.refererInfo.referer);
     BB_HELPERS.addSchain(request, validBidRequests);
     BB_HELPERS.addCurrency(request);
     BB_HELPERS.addUserIds(request, validBidRequests);
-    BB_HELPERS.addDigiTrust(request, validBidRequests);
 
     return {
       method: 'POST',
@@ -311,74 +327,44 @@ export const spec = {
 
     const bids = [];
 
-    for (let seatbidIndex = 0; seatbidIndex < serverResponse.seatbid.length; seatbidIndex++) {
-      const seatbid = serverResponse.seatbid[seatbidIndex];
-      if (!seatbid.bid || !Array.isArray(seatbid.bid)) continue;
-      for (let bidIndex = 0; bidIndex < seatbid.bid.length; bidIndex++) {
-        const bid = seatbid.bid[bidIndex];
-        BB_HELPERS.transformRTBToPrebidProps(bid, serverResponse);
+    serverResponse.seatbid.forEach(seatbid => {
+      if (!seatbid.bid || !Array.isArray(seatbid.bid)) return;
+      seatbid.bid.forEach(bid => {
+        bid = BB_HELPERS.transformRTBToPrebidProps(bid, serverResponse);
 
-        let bidParams;
-        for (let bidderRequestBidsIndex = 0; bidderRequestBidsIndex < request.bidderRequest.bids.length; bidderRequestBidsIndex++) {
-          if (request.bidderRequest.bids[bidderRequestBidsIndex].bidId === bid.bidId) {
-            bidParams = request.bidderRequest.bids[bidderRequestBidsIndex].params;
-          }
-        }
-
-        if (bidParams) {
-          bid.publicationName = bidParams.publicationName;
-          bid.rendererCode = bidParams.rendererCode;
-          bid.accountId = bidParams.accountId;
-        }
+        const bidParams = find(request.bidderRequest.bids, bidderRequestBid => bidderRequestBid.bidId === bid.bidId).params;
+        bid.publicationName = bidParams.publicationName;
+        bid.rendererCode = bidParams.rendererCode;
+        bid.accountId = bidParams.accountId;
+        bid.rendererSettings = bidParams.rendererSettings;
 
         const rendererUrl = BB_HELPERS.getRendererUrl(bid.publicationName, bid.rendererCode);
-
         bid.renderer = BB_RENDERER.newRenderer(rendererUrl, bid.adUnitCode);
 
         bids.push(bid);
-      }
-    }
+      });
+    });
 
     return bids;
   },
   getUserSyncs(syncOptions, serverResponses, gdpr) {
-    if (!serverResponses || !serverResponses.length) return [];
     if (!syncOptions.iframeEnabled) return [];
 
     const queryString = [];
-    let accountId;
-    let publication;
-
-    const serverResponse = serverResponses[0];
-    if (!serverResponse.body || !serverResponse.body.seatbid) return [];
-
-    for (let seatbidIndex = 0; seatbidIndex < serverResponse.body.seatbid.length; seatbidIndex++) {
-      const seatbid = serverResponse.body.seatbid[seatbidIndex];
-      for (let bidIndex = 0; bidIndex < seatbid.bid.length; bidIndex++) {
-        const bid = seatbid.bid[bidIndex];
-        accountId = bid.accountId || null;
-        publication = bid.publicationName || null;
-
-        if (publication && accountId) break;
-      }
-      if (publication && accountId) break;
-    }
-
-    if (!publication || !accountId) return [];
 
     if (gdpr.gdprApplies) queryString.push(`gdpr=${gdpr.gdprApplies ? 1 : 0}`);
     if (gdpr.gdprApplies && gdpr.consentString) queryString.push(`gdpr_consent=${gdpr.consentString}`);
 
     if (this.syncStore.uspConsent) queryString.push(`usp_consent=${this.syncStore.uspConsent}`);
 
-    queryString.push(`accountId=${accountId}`);
+    queryString.push(`accountId=${this.syncStore.accountId}`);
     queryString.push(`bidders=${btoa(JSON.stringify(this.syncStore.bidders))}`);
     queryString.push(`cb=${Date.now()}-${Math.random().toString().replace('.', '')}`);
 
     if (DEV_MODE) queryString.push('bbpbs_debug=true');
 
     // NB syncUrl by default starts with ?pub=$$PUBLICATION
-    const syncUrl = `${BB_HELPERS.getSyncUrl(publication)}&${queryString.join('&')}`;
+    const syncUrl = `${BB_HELPERS.getSyncUrl(this.syncStore.publicationName)}&${queryString.join('&')}`;
 
     return [{
       type: 'iframe',

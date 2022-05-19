@@ -1,12 +1,7 @@
-/* eslint-disable no-console */
 import { config } from './config.js';
 import clone from 'just-clone';
-import deepequal from 'deep-equal';
-import find from 'core-js-pure/features/array/find.js';
-import includes from 'core-js-pure/features/array/includes.js';
-
-const CONSTANTS = require('./constants.json');
-
+import {find, includes} from './polyfill.js';
+import CONSTANTS from './constants.json';
 export { default as deepAccess } from 'dlv/index.js';
 export { default as deepSetValue } from 'dset';
 
@@ -22,6 +17,19 @@ let consoleLogExists = Boolean(consoleExists && window.console.log);
 let consoleInfoExists = Boolean(consoleExists && window.console.info);
 let consoleWarnExists = Boolean(consoleExists && window.console.warn);
 let consoleErrorExists = Boolean(consoleExists && window.console.error);
+
+let eventEmitter;
+
+export function _setEventEmitter(emitFn) {
+  // called from events.js - this hoop is to avoid circular imports
+  eventEmitter = emitFn;
+}
+
+function emitEvent(...args) {
+  if (eventEmitter != null) {
+    eventEmitter(...args);
+  }
+}
 
 // this allows stubbing of utility functions that are used internally by other utility functions
 export const internal = {
@@ -42,6 +50,14 @@ export const internal = {
   formatQS,
   deepEqual
 };
+
+let prebidInternal = {}
+/**
+ * Returns object that is used as internal prebid namespace
+ */
+export function getPrebidInternal() {
+  return prebidInternal;
+}
 
 var uniqueRef = {};
 export let bind = function(a, b) { return b; }.bind(null, 1, uniqueRef)() === uniqueRef
@@ -242,34 +258,63 @@ export function getWindowLocation() {
  */
 export function logMessage() {
   if (debugTurnedOn() && consoleLogExists) {
+    // eslint-disable-next-line no-console
     console.log.apply(console, decorateLog(arguments, 'MESSAGE:'));
   }
 }
 
 export function logInfo() {
   if (debugTurnedOn() && consoleInfoExists) {
+    // eslint-disable-next-line no-console
     console.info.apply(console, decorateLog(arguments, 'INFO:'));
   }
 }
 
 export function logWarn() {
   if (debugTurnedOn() && consoleWarnExists) {
+    // eslint-disable-next-line no-console
     console.warn.apply(console, decorateLog(arguments, 'WARNING:'));
   }
+  emitEvent(CONSTANTS.EVENTS.AUCTION_DEBUG, {type: 'WARNING', arguments: arguments});
 }
 
 export function logError() {
   if (debugTurnedOn() && consoleErrorExists) {
+    // eslint-disable-next-line no-console
     console.error.apply(console, decorateLog(arguments, 'ERROR:'));
+  }
+  emitEvent(CONSTANTS.EVENTS.AUCTION_DEBUG, {type: 'ERROR', arguments: arguments});
+}
+
+export function prefixLog(prefix) {
+  function decorate(fn) {
+    return function (...args) {
+      fn(prefix, ...args);
+    }
+  }
+  return {
+    logError: decorate(logError),
+    logWarn: decorate(logWarn),
+    logMessage: decorate(logMessage),
+    logInfo: decorate(logInfo),
   }
 }
 
 function decorateLog(args, prefix) {
   args = [].slice.call(args);
+  let bidder = config.getCurrentBidder();
+
   prefix && args.unshift(prefix);
-  args.unshift('display: inline-block; color: #fff; background: #3b88c3; padding: 1px 4px; border-radius: 3px;');
-  args.unshift('%cPrebid');
+  if (bidder) {
+    args.unshift(label('#aaa'));
+  }
+  args.unshift(label('#3b88c3'));
+  args.unshift('%cPrebid' + (bidder ? `%c${bidder}` : ''));
   return args;
+
+  function label(color) {
+    return `display: inline-block; color: #fff; background: ${color}; padding: 1px 4px; border-radius: 3px;`
+  }
 }
 
 export function hasConsoleLogger() {
@@ -463,15 +508,42 @@ export function insertElement(elm, doc, target, asLastChildChild) {
 }
 
 /**
+ * Returns a promise that completes when the given element triggers a 'load' or 'error' DOM event, or when
+ * `timeout` milliseconds have elapsed.
+ *
+ * @param {HTMLElement} element
+ * @param {Number} [timeout]
+ * @returns {Promise}
+ */
+export function waitForElementToLoad(element, timeout) {
+  let timer = null;
+  return new Promise((resolve) => {
+    const onLoad = function() {
+      element.removeEventListener('load', onLoad);
+      element.removeEventListener('error', onLoad);
+      if (timer != null) {
+        window.clearTimeout(timer);
+      }
+      resolve();
+    };
+    element.addEventListener('load', onLoad);
+    element.addEventListener('error', onLoad);
+    if (timeout != null) {
+      timer = window.setTimeout(onLoad, timeout);
+    }
+  });
+}
+
+/**
  * Inserts an image pixel with the specified `url` for cookie sync
  * @param {string} url URL string of the image pixel to load
  * @param  {function} [done] an optional exit callback, used when this usersync pixel is added during an async process
+ * @param  {Number} [timeout] an optional timeout in milliseconds for the image to load before calling `done`
  */
-export function triggerPixel(url, done) {
+export function triggerPixel(url, done, timeout) {
   const img = new Image();
   if (done && internal.isFn(done)) {
-    img.addEventListener('load', done);
-    img.addEventListener('error', done);
+    waitForElementToLoad(img, timeout).then(done);
   }
   img.src = url;
 }
@@ -519,18 +591,18 @@ export function insertHtmlIntoIframe(htmlCode) {
  * @param  {string} url URL to be requested
  * @param  {string} encodeUri boolean if URL should be encoded before inserted. Defaults to true
  * @param  {function} [done] an optional exit callback, used when this usersync pixel is added during an async process
+ * @param  {Number} [timeout] an optional timeout in milliseconds for the iframe to load before calling `done`
  */
-export function insertUserSyncIframe(url, done) {
+export function insertUserSyncIframe(url, done, timeout) {
   let iframeHtml = internal.createTrackPixelIframeHtml(url, false, 'allow-scripts allow-same-origin');
   let div = document.createElement('div');
   div.innerHTML = iframeHtml;
   let iframe = div.firstChild;
   if (done && internal.isFn(done)) {
-    iframe.addEventListener('load', done);
-    iframe.addEventListener('error', done);
+    waitForElementToLoad(iframe, timeout).then(done);
   }
   internal.insertElement(iframe, document, 'html', true);
-};
+}
 
 /**
  * Creates a snippet of HTML that retrieves the specified `url`
@@ -637,11 +709,17 @@ export function getKeyByValue(obj, value) {
 export function getBidderCodes(adUnits = $$PREBID_GLOBAL$$.adUnits) {
   // this could memoize adUnits
   return adUnits.map(unit => unit.bids.map(bid => bid.bidder)
-    .reduce(flatten, [])).reduce(flatten).filter(uniques);
+    .reduce(flatten, [])).reduce(flatten, []).filter(uniques);
 }
 
 export function isGptPubadsDefined() {
   if (window.googletag && isFn(window.googletag.pubads) && isFn(window.googletag.pubads().getSlots)) {
+    return true;
+  }
+}
+
+export function isApnGetTagDefined() {
+  if (window.apntag && isFn(window.apntag.getTag)) {
     return true;
   }
 }
@@ -717,8 +795,21 @@ export function replaceAuctionPrice(str, cpm) {
   return str.replace(/\$\{AUCTION_PRICE\}/g, cpm);
 }
 
+export function replaceClickThrough(str, clicktag) {
+  if (!str || !clicktag || typeof clicktag !== 'string') return;
+  return str.replace(/\${CLICKTHROUGH}/g, clicktag);
+}
+
 export function timestamp() {
   return new Date().getTime();
+}
+
+/**
+ * The returned value represents the time elapsed since the time origin. @see https://developer.mozilla.org/en-US/docs/Web/API/Performance/now
+ * @returns {number}
+ */
+export function getPerformanceNow() {
+  return (window.performance && window.performance.now && window.performance.now()) || 0;
 }
 
 /**
@@ -819,12 +910,6 @@ export function isValidMediaTypes(mediaTypes) {
   return true;
 }
 
-export function getBidderRequest(bidRequests, bidder, adUnitCode) {
-  return find(bidRequests, request => {
-    return request.bids
-      .filter(bid => bid.bidder === bidder && bid.adUnitCode === adUnitCode).length > 0;
-  }) || { start: null, auctionId: null };
-}
 /**
  * Returns user configured bidder params from adunit
  * @param {Object} adUnits
@@ -1169,13 +1254,34 @@ export function buildUrl(obj) {
 }
 
 /**
- * This function compares two objects for checking their equivalence.
+ * This function deeply compares two objects checking for their equivalence.
  * @param {Object} obj1
  * @param {Object} obj2
+ * @param checkTypes {boolean} if set, two objects with identical properties but different constructors will *not*
+ * be considered equivalent.
  * @returns {boolean}
  */
-export function deepEqual(obj1, obj2) {
-  return deepequal(obj1, obj2);
+export function deepEqual(obj1, obj2, {checkTypes = false} = {}) {
+  if (obj1 === obj2) return true;
+  else if (
+    (typeof obj1 === 'object' && obj1 !== null) &&
+    (typeof obj2 === 'object' && obj2 !== null) &&
+    (!checkTypes || (obj1.constructor === obj2.constructor))
+  ) {
+    if (Object.keys(obj1).length !== Object.keys(obj2).length) return false;
+    for (let prop in obj1) {
+      if (obj2.hasOwnProperty(prop)) {
+        if (!deepEqual(obj1[prop], obj2[prop], {checkTypes})) {
+          return false;
+        }
+      } else {
+        return false;
+      }
+    }
+    return true;
+  } else {
+    return false;
+  }
 }
 
 export function mergeDeep(target, ...sources) {
@@ -1189,9 +1295,20 @@ export function mergeDeep(target, ...sources) {
         mergeDeep(target[key], source[key]);
       } else if (isArray(source[key])) {
         if (!target[key]) {
-          Object.assign(target, { [key]: source[key] });
+          Object.assign(target, { [key]: [...source[key]] });
         } else if (isArray(target[key])) {
-          target[key] = target[key].concat(source[key]);
+          source[key].forEach(obj => {
+            let addItFlag = 1;
+            for (let i = 0; i < target[key].length; i++) {
+              if (deepEqual(target[key][i], obj)) {
+                addItFlag = 0;
+                break;
+              }
+            }
+            if (addItFlag) {
+              target[key].push(obj);
+            }
+          });
         }
       } else {
         Object.assign(target, { [key]: source[key] });
@@ -1200,4 +1317,64 @@ export function mergeDeep(target, ...sources) {
   }
 
   return mergeDeep(target, ...sources);
+}
+
+/**
+ * returns a hash of a string using a fast algorithm
+ * source: https://stackoverflow.com/a/52171480/845390
+ * @param str
+ * @param seed (optional)
+ * @returns {string}
+ */
+export function cyrb53Hash(str, seed = 0) {
+  // IE doesn't support imul
+  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/imul#Polyfill
+  let imul = function(opA, opB) {
+    if (isFn(Math.imul)) {
+      return Math.imul(opA, opB);
+    } else {
+      opB |= 0; // ensure that opB is an integer. opA will automatically be coerced.
+      // floating points give us 53 bits of precision to work with plus 1 sign bit
+      // automatically handled for our convienence:
+      // 1. 0x003fffff /*opA & 0x000fffff*/ * 0x7fffffff /*opB*/ = 0x1fffff7fc00001
+      //    0x1fffff7fc00001 < Number.MAX_SAFE_INTEGER /*0x1fffffffffffff*/
+      var result = (opA & 0x003fffff) * opB;
+      // 2. We can remove an integer coersion from the statement above because:
+      //    0x1fffff7fc00001 + 0xffc00000 = 0x1fffffff800001
+      //    0x1fffffff800001 < Number.MAX_SAFE_INTEGER /*0x1fffffffffffff*/
+      if (opA & 0xffc00000) result += (opA & 0xffc00000) * opB | 0;
+      return result | 0;
+    }
+  };
+
+  let h1 = 0xdeadbeef ^ seed;
+  let h2 = 0x41c6ce57 ^ seed;
+  for (let i = 0, ch; i < str.length; i++) {
+    ch = str.charCodeAt(i);
+    h1 = imul(h1 ^ ch, 2654435761);
+    h2 = imul(h2 ^ ch, 1597334677);
+  }
+  h1 = imul(h1 ^ (h1 >>> 16), 2246822507) ^ imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = imul(h2 ^ (h2 >>> 16), 2246822507) ^ imul(h1 ^ (h1 >>> 13), 3266489909);
+  return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString();
+}
+
+/**
+ * returns a window object, which holds the provided document or null
+ * @param {Document} doc
+ * @returns {Window}
+ */
+export function getWindowFromDocument(doc) {
+  return (doc) ? doc.defaultView : null;
+}
+
+/**
+ * returns the result of `JSON.parse(data)`, or undefined if that throws an error.
+ * @param data
+ * @returns {any}
+ */
+export function safeJSONParse(data) {
+  try {
+    return JSON.parse(data);
+  } catch (e) {}
 }
