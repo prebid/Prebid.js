@@ -18,6 +18,7 @@
   "freewheel-sspBidAdapter",
   "improvedigitalBidAdapter",
   "ixBidAdapter",
+  "nexx360BidAdapter",
   "oneVideoBidAdapter",
   "openxBidAdapter",
   "pubmaticBidAdapter",
