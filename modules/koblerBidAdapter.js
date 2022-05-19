@@ -63,7 +63,7 @@ export const onBidWon = function (bid) {
   // We intentionally use the price set by the publisher to replace the ${AUCTION_PRICE} macro
   // instead of the `originalCpm` here. This notification is not used for billing, only for extra logging.
   const publisherPrice = bid.cpm || 0;
-  const publisherCurrency = bid.currency || SUPPORTED_CURRENCY;
+  const publisherCurrency = bid.currency || config.getConfig('currency.adServerCurrency') || SUPPORTED_CURRENCY;
   const adServerPrice = deepAccess(bid, 'adserverTargeting.hb_pb', 0);
   const adServerPriceCurrency = config.getConfig('currency.adServerCurrency') || SUPPORTED_CURRENCY;
   if (isStr(bid.nurl) && bid.nurl !== '') {
