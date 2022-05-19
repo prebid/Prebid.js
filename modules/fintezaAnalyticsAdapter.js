@@ -3,9 +3,9 @@ import { ajax } from '../src/ajax.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { getStorageManager } from '../src/storageManager.js';
+import CONSTANTS from '../src/constants.json';
 
 const storage = getStorageManager();
-const CONSTANTS = require('../src/constants.json');
 
 const ANALYTICS_TYPE = 'endpoint';
 const FINTEZA_HOST = 'https://content.mql5.com/tr';

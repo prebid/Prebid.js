@@ -569,6 +569,28 @@ describe('TheMediaGrid Adapter', function () {
       getConfigStub.restore();
     });
 
+    it('should have site.content.data filled from config ortb2.site.content.data', function () {
+      const contentData = [
+        {
+          'name': 'someName',
+          'ext': {
+            'segtax': 7
+          },
+          'segments': [
+            { 'id': 'segId1' },
+            { 'id': 'segId2' }
+          ]
+        }
+      ];
+
+      const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
+        arg => arg === 'ortb2.site' ? { content: { data: contentData } } : null);
+      const request = spec.buildRequests([bidRequests[0]], bidderRequest);
+      const payload = parseRequest(request.data);
+      expect(payload.site.content.data).to.deep.equal(contentData);
+      getConfigStub.restore();
+    });
+
     it('should have right value in user.data when jwpsegments are present', function () {
       const userData = [
         {
@@ -608,32 +630,6 @@ describe('TheMediaGrid Adapter', function () {
         ]
       }, ...userData]);
       getConfigStub.restore();
-    });
-
-    it('should have right value in site.content when jwpsegments are present in bid.ortb2', function () {
-      const data = [
-        {
-          name: 'jwplayer',
-          ext: {
-            segtax: 502
-          },
-          segment: [{ id: 'test_seg_1', value: 'test_seg_1' }, { id: 'test_seg_2', value: 'test_seg_2' }]
-        }
-      ];
-      const siteContent = {
-        id: 'jw_content_id',
-        data: data
-      };
-      const bidRequestsWithJwData = Object.assign({}, bidRequests[0], {
-        ortb2: {
-          site: {
-            content: siteContent
-          }
-        }
-      });
-      const request = spec.buildRequests([bidRequestsWithJwData], bidderRequest);
-      const payload = parseRequest(request.data);
-      expect(payload.site.content).to.deep.equal(siteContent);
     });
 
     it('should be right tmax when timeout in config is less then timeout in bidderRequest', function() {
