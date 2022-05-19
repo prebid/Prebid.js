@@ -10,13 +10,15 @@ const URL = 'https://ib.adnxs.com/openrtb2/prebid';
 const GVLID = 1046;
 const SUPPORTED_AD_TYPES = [VIDEO];
 
+// Video Parameters 
+// https://docs.prebid.org/dev-docs/bidder-adaptor.html#step-2-accept-video-parameters-and-pass-them-to-your-server
 const VIDEO_ORTB_PARAMS = [
   'mimes',
   'minduration',
   'maxduration',
-  'placement',
   'protocols',
   'startdelay',
+  'placement',
   'skip',
   'skipafter',
   'minbitrate',
@@ -136,34 +138,16 @@ function buildRequestImpression(bidRequest, bidderRequest) {
 }
 
 function buildImpressionVideo(bidRequest) {
-  const videoAdUnit = deepAccess(bidRequest, 'mediaTypes.video', {});
+  const videoParams = deepAccess(bidRequest, 'mediaTypes.video', {});
 
-  const playerSize = videoAdUnit.playerSize;
-
-  const contentWidth = playerSize[0][0];
-  const contentHeight = playerSize[0][1];
-
-  const video = {
-    w: parseInt(contentWidth, 10),
-    h: parseInt(contentHeight, 10)
-  }
+  const video = {};
 
   // Obtain all ORTB params related video from Ad Unit
   VIDEO_ORTB_PARAMS.forEach((param) => {
-    if (videoAdUnit.hasOwnProperty(param)) {
-      video[param] = videoAdUnit[param];
+    if (videoParams.hasOwnProperty(param)) {
+      video[param] = videoParams[param];
     }
   });
-
-  // Placement Inference Rules:
-  // - If no placement is defined then default to 1 (In Stream)
-  video.placement = video.placement || 2;
-
-  // - If product is instream (for instream context) then override placement to 1
-  if (params.context === 'instream') {
-    video.startdelay = video.startdelay || 0;
-    video.placement = 1;
-  }
 
   return video;
 }
