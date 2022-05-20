@@ -8,8 +8,6 @@
 import { submodule } from '../src/hook.js'
 import { getStorageManager } from '../src/storageManager.js'
 
-window.top.cpexIdVersion = '0.0.3'
-
 // Returns StorageManager
 export const storage = getStorageManager({ gvlid: 570, moduleName: 'cpexId' })
 
@@ -18,6 +16,7 @@ const getId = () => { return storage.getCookie('caid') || storage.getDataFromLoc
 
 /** @type {Submodule} */
 export const cpexIdSubmodule = {
+  version: 0.0.4,
   /**
    * used to link submodule with config
    * @type {string}
