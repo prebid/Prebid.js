@@ -2,7 +2,7 @@
 import { submodule } from '../src/hook.js';
 import { logInfo } from '../src/utils.js'
 
-const MODULE_NAME = 'TNCID';
+const MODULE_NAME = 'tncId';
 const FALLBACK_TNC_PROVIDERID = 'c8549079-f149-4529-a34b-3fa91ef257d1';
 const FALLBACK_TNC_INSTANCE = '__tncPbjs';
 
@@ -62,7 +62,7 @@ export const tncidSubModule = {
   name: MODULE_NAME,
   decode(id) {
     return {
-      TNCID: id
+      tncid: id
     };
   },
   gvlid: 750,

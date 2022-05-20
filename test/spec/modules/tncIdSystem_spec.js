@@ -1,4 +1,4 @@
-import { tncidSubModule } from 'modules/TNCIDIdSystem';
+import { tncidSubModule } from 'modules/tncIdSystem';
 
 const consentData = {
   gdprApplies: true,
@@ -8,7 +8,7 @@ const consentData = {
 describe('TNCID tests', function () {
   describe('name', () => {
     it('should expose the name of the submodule', () => {
-      expect(tncidSubModule.name).to.equal('TNCID');
+      expect(tncidSubModule.name).to.equal('tncId');
     });
   });
 
@@ -21,7 +21,7 @@ describe('TNCID tests', function () {
   describe('decode', () => {
     it('should wrap the given value inside an object literal', () => {
       expect(tncidSubModule.decode('TNCID_TEST_ID')).to.deep.equal({
-        TNCID: 'TNCID_TEST_ID'
+        tncid: 'TNCID_TEST_ID'
       });
     });
   });
@@ -51,7 +51,8 @@ describe('TNCID tests', function () {
         value: {
           ready: (readyFunc) => { readyFunc() },
           on: (name, cb) => { cb() },
-          tncid: 'TNCID_TEST_ID_1'
+          tncid: 'TNCID_TEST_ID_1',
+          providerId: 'TEST_PROVIDER_ID_1',
         },
         configurable: true
       });
@@ -68,7 +69,8 @@ describe('TNCID tests', function () {
       Object.defineProperty(window, '__tnc', {
         value: {
           ready: (readyFunc) => { readyFunc() },
-          on: (name, cb) => { cb() }
+          on: (name, cb) => { cb() },
+          providerId: 'TEST_PROVIDER_ID_1',
         },
         configurable: true
       });

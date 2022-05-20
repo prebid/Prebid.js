@@ -44,7 +44,7 @@
     "verizonMediaIdSystem",
     "zeotapIdPlusIdSystem",
     "adqueryIdSystem",
-    "TNCIDIdSystem"
+    "tncIdSystem"
   ],
   "adpod": [
     "freeWheelAdserverVideo",
