@@ -286,21 +286,21 @@ describe('jixie Adapter', function () {
     });
 
     it('schain info should be accessible when available', function () {
-        const schain = {
-            ver: '1.0',
-            complete: 1,
-            nodes: [{
-                asi: 'ssp.test',
-                sid: '00001',
-                hp: 1
-            }]
-        };
-        const oneSpecialBidReq = Object.assign({}, bidRequests_[0], { schain: schain });
-        const request = spec.buildRequests([oneSpecialBidReq], bidderRequest_);
-        const payload = JSON.parse(request.data);
-        expect(payload.schain).to.deep.equal(schain);
-        expect(payload.schain).to.deep.include(schain);
-    });// schain
+      const schain = {
+        ver: '1.0',
+        complete: 1,
+        nodes: [{
+          asi: 'ssp.test',
+          sid: '00001',
+          hp: 1
+        }]
+      };
+      const oneSpecialBidReq = Object.assign({}, bidRequests_[0], { schain: schain });
+      const request = spec.buildRequests([oneSpecialBidReq], bidderRequest_);
+      const payload = JSON.parse(request.data);
+      expect(payload.schain).to.deep.equal(schain);
+      expect(payload.schain).to.deep.include(schain);
+    });
 
     it('should populate eids when supported userIds are available', function () {
       const oneSpecialBidReq = Object.assign({}, bidRequests_[0], {
