@@ -109,7 +109,11 @@ function getPageUrlFromRefererInfo() {
     : window.location.href;
 }
 
-function getPageUrlFromBidderRequest(bidderRequest) {
+function getPageUrlFromRequest(validBidRequest, bidderRequest) {
+  if (isTest(validBidRequest) && config.getConfig('pageUrl')) {
+    return config.getConfig('pageUrl');
+  }
+
   return (bidderRequest.refererInfo && bidderRequest.refererInfo.referer)
     ? bidderRequest.refererInfo.referer
     : window.location.href;
@@ -118,7 +122,7 @@ function getPageUrlFromBidderRequest(bidderRequest) {
 function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
   const imps = validBidRequests.map(buildOpenRtbImpObject);
   const timeout = bidderRequest.timeout || config.getConfig('bidderTimeout') || DEFAULT_TIMEOUT;
-  const pageUrl = getPageUrlFromBidderRequest(bidderRequest)
+  const pageUrl = getPageUrlFromRequest(validBidRequests[0], bidderRequest)
   const request = {
     id: bidderRequest.auctionId,
     at: 1,
