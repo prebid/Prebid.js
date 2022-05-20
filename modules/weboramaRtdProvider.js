@@ -68,8 +68,7 @@ import {
 import {
   getStorageManager
 } from '../src/storageManager.js';
-
-const adapterManager = require('../src/adapterManager.js').default;
+import adapterManager from '../src/adapterManager.js';
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';

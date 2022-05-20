@@ -18,8 +18,7 @@ import {
   mergeDeep, deepClone, getParameterByName, isPlainObject, logMessage, logWarn, logError,
   isArray, isStr, isBoolean, deepAccess, bind
 } from './utils.js';
-
-const CONSTANTS = require('./constants.json');
+import CONSTANTS from './constants.json';
 
 const DEFAULT_DEBUG = getParameterByName(CONSTANTS.DEBUG_MODE).toUpperCase() === 'TRUE';
 const DEFAULT_BIDDER_TIMEOUT = 3000;
