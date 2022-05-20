@@ -1,4 +1,12 @@
-import { deepAccess, isStr, replaceAuctionPrice, triggerPixel, isArray, parseQueryStringParameters, getWindowSelf } from '../src/utils.js';
+import {
+  deepAccess,
+  getWindowSelf,
+  isArray,
+  isStr,
+  parseQueryStringParameters,
+  replaceAuctionPrice,
+  triggerPixel
+} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
@@ -6,6 +14,7 @@ import {getRefererInfo} from '../src/refererDetection.js';
 
 const BIDDER_CODE = 'kobler';
 const BIDDER_ENDPOINT = 'https://bid.essrtb.com/bid/prebid_rtb_call';
+const DEV_BIDDER_ENDPOINT = 'https://bid-service.dev.essrtb.com/bid/prebid_rtb_call';
 const TIMEOUT_NOTIFICATION_ENDPOINT = 'https://bid.essrtb.com/notify/prebid_timeout';
 const SUPPORTED_CURRENCY = 'USD';
 const DEFAULT_TIMEOUT = 1000;
@@ -21,9 +30,10 @@ export const isBidRequestValid = function (bid) {
 };
 
 export const buildRequests = function (validBidRequests, bidderRequest) {
+  const bidderEndpoint = isTest(validBidRequests[0]) ? DEV_BIDDER_ENDPOINT : BIDDER_ENDPOINT;
   return {
     method: 'POST',
-    url: BIDDER_ENDPOINT,
+    url: bidderEndpoint,
     data: buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest),
     options: {
       contentType: 'application/json'
@@ -77,10 +87,7 @@ export const onBidWon = function (bid) {
 
 export const onTimeout = function (timeoutDataArray) {
   if (isArray(timeoutDataArray)) {
-    const refererInfo = getRefererInfo();
-    const pageUrl = (refererInfo && refererInfo.referer)
-      ? refererInfo.referer
-      : window.location.href;
+    const pageUrl = getPageUrlFromRefererInfo();
     timeoutDataArray.forEach(timeoutData => {
       const query = parseQueryStringParameters({
         ad_unit_code: timeoutData.adUnitCode,
@@ -95,13 +102,23 @@ export const onTimeout = function (timeoutDataArray) {
   }
 };
 
+function getPageUrlFromRefererInfo() {
+  const refererInfo = getRefererInfo();
+  return (refererInfo && refererInfo.referer)
+    ? refererInfo.referer
+    : window.location.href;
+}
+
+function getPageUrlFromBidderRequest(bidderRequest) {
+  return (bidderRequest.refererInfo && bidderRequest.refererInfo.referer)
+    ? bidderRequest.refererInfo.referer
+    : window.location.href;
+}
+
 function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
   const imps = validBidRequests.map(buildOpenRtbImpObject);
   const timeout = bidderRequest.timeout || config.getConfig('bidderTimeout') || DEFAULT_TIMEOUT;
-  const pageUrl = (bidderRequest.refererInfo && bidderRequest.refererInfo.referer)
-    ? bidderRequest.refererInfo.referer
-    : window.location.href;
-
+  const pageUrl = getPageUrlFromBidderRequest(bidderRequest)
   const request = {
     id: bidderRequest.auctionId,
     at: 1,
@@ -114,7 +131,7 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
     site: {
       page: pageUrl,
     },
-    test: getTest(validBidRequests[0])
+    test: getTestAsNumber(validBidRequests[0])
   };
 
   return JSON.stringify(request);
@@ -153,8 +170,12 @@ function getDevice() {
   return 2; // personal computers
 }
 
-function getTest(validBidRequest) {
-  return validBidRequest.params && validBidRequest.params.test ? 1 : 0;
+function getTestAsNumber(validBidRequest) {
+  return isTest(validBidRequest) ? 1 : 0;
+}
+
+function isTest(validBidRequest) {
+  return validBidRequest.params && validBidRequest.params.test === true;
 }
 
 function getSizes(validBidRequest) {

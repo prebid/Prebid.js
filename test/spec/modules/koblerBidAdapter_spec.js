@@ -271,6 +271,8 @@ describe('KoblerAdapter', function () {
       const bidderRequest = createBidderRequest();
 
       const result = spec.buildRequests(validBidRequests, bidderRequest);
+      expect(result.url).to.be.equal("https://bid-service.dev.essrtb.com/bid/prebid_rtb_call");
+
       const openRtbRequest = JSON.parse(result.data);
 
       expect(openRtbRequest.test).to.be.equal(1);
