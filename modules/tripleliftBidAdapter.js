@@ -8,6 +8,19 @@ const BIDDER_CODE = 'triplelift';
 const STR_ENDPOINT = 'https://tlx.3lift.com/header/auction?';
 const BANNER_TIME_TO_LIVE = 300;
 const INSTREAM_TIME_TO_LIVE = 3600;
+const FRAME_TYPE_IDS = {
+  noFrame: 0,
+  friendlyFrame: 1, // same-origin, we escape to top by default
+  unfriendlyFrame: 2, // cross-origin so we can't escape, render inside the frame
+  webview: 3,
+  amp: 4,
+  safeFrame: 5,
+  mraid: 6,
+  friendlyFrameRender: 7, // same-origin but we still render inside the frame
+};
+const MRAID_API_NAME = 'mraid';
+const SAFE_FRAME_API_NAME = '$sf';
+const FRAME_DEPTH_LIMIT = 5;
 let gdprApplies = true;
 let consentString = null;
 
@@ -25,6 +38,7 @@ export const tripleliftAdapterSpec = {
 
     tlCall = tryAppendQueryString(tlCall, 'lib', 'prebid');
     tlCall = tryAppendQueryString(tlCall, 'v', '$prebid.version$');
+    tlCall = tryAppendQueryString(tlCall, 'ft', _determineFrameType());
 
     if (bidderRequest && bidderRequest.refererInfo) {
       let referrer = bidderRequest.refererInfo.referer;
@@ -362,6 +376,90 @@ function _buildResponseObject(bidderRequest, bid) {
     }
   };
   return bidResponse;
+}
+
+function getSafeFrameApi() {
+  const safeFrameApi = _getApi(SAFE_FRAME_API_NAME);
+  if (safeFrameApi && safeFrameApi.ext) {
+    // we only want the safeframe api when we are inside
+    // a safe frame. there could a safeframe api on the
+    // publisher's top frame which is useless to us.
+    return safeFrameApi;
+  }
+  return null;
+}
+
+function isAmp() {
+  return typeof window.context === 'object' && (window.context.tagName === 'AMP-AD' || window.context.tagName === 'AMP-EMBED');
+}
+
+function getMraidApi() {
+  return _getApi(MRAID_API_NAME);
+}
+
+/**
+ * Check for the existence of a #tl-app element that signifies we're running in a mobile webview.
+ * @return {boolean}
+ */
+function isInApp() {
+  const tlAppEl = document.getElementById('tl-app');
+  return !!tlAppEl;
+}
+
+// Recursively check windows until api is found or
+// depth limit is reached.
+function _findApi(apiName, win, depth = 0) {
+  if (depth >= FRAME_DEPTH_LIMIT) {
+    return null;
+  }
+
+  try {
+    if (win[apiName]) {
+      return win[apiName];
+    }
+  } catch (e) {
+    // can't read property of undefined
+    // can't access property of cross-origin frame
+    return null;
+  }
+
+  return _findApi(apiName, win.parent, depth + 1);
+}
+
+function _getApi(apiName) {
+  return _findApi(apiName, window);
+}
+
+function canAccessTopWindow() {
+  try {
+    if (window.top.location.href) {
+      return true;
+    }
+  } catch (error) {
+    return false;
+  }
+}
+
+function _determineFrameType() {
+  if (isAmp()) {
+    return FRAME_TYPE_IDS.amp;
+  }
+  if (getMraidApi()) {
+    return FRAME_TYPE_IDS.mraid;
+  }
+  if (getSafeFrameApi()) {
+    return FRAME_TYPE_IDS.safeFrame;
+  }
+  if (isInApp()) {
+    return FRAME_TYPE_IDS.webview;
+  }
+  if (!canAccessTopWindow()) {
+    return FRAME_TYPE_IDS.unfriendlyFrame;
+  }
+  /* if (this.docInfo.document === this.docInfo.topWindow.document) {
+    return FRAME_TYPE_IDS.noFrame;
+  } */
+  return FRAME_TYPE_IDS.friendlyFrame;
 }
 
 registerBidder(tripleliftAdapterSpec);
