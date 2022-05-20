@@ -8,7 +8,15 @@ describe('ConcertAdapter', function () {
   let bidRequest;
   let bidResponse;
 
+  afterEach(function () {
+    $$PREBID_GLOBAL$$.bidderSettings = {};
+  });
   beforeEach(function () {
+    $$PREBID_GLOBAL$$.bidderSettings = {
+      concert: {
+        storageAllowed: true
+      }
+    };
     bidRequests = [
       {
         bidder: 'concert',
