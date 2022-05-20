@@ -572,7 +572,15 @@ describe('Conversant adapter tests', function() {
       return (new Date(Date.now() + timeout * 60 * 60 * 24 * 1000)).toUTCString();
     }
 
+    beforeEach(() => {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        conversant: {
+          storageAllowed: true
+        }
+      };
+    });
     afterEach(() => {
+      $$PREBID_GLOBAL$$.bidderSettings = {};
       cleanUp(ID_NAME);
       cleanUp(CUSTOM_ID_NAME);
     });
