@@ -12,7 +12,12 @@ const DEFAULT_TIMEOUT = 1000;
 const TIME_TO_LIVE_IN_SECONDS = 10 * 60;
 
 export const isBidRequestValid = function (bid) {
-  return !!(bid && bid.bidId && bid.params && bid.params.placementId);
+  if (!bid || !bid.bidId) {
+    return false;
+  }
+
+  const sizes = deepAccess(bid, 'mediaTypes.banner.sizes', bid.sizes);
+  return isArray(sizes) && sizes.length > 0;
 };
 
 export const buildRequests = function (validBidRequests, bidderRequest) {
@@ -27,14 +32,11 @@ export const buildRequests = function (validBidRequests, bidderRequest) {
 };
 
 export const interpretResponse = function (serverResponse) {
-  const adServerPriceCurrency = config.getConfig('currency.adServerCurrency') || SUPPORTED_CURRENCY;
   const res = serverResponse.body;
   const bids = []
   if (res) {
     res.seatbid.forEach(sb => {
       sb.bid.forEach(b => {
-        const adWithCorrectCurrency = b.adm
-          .replace(/\${AUCTION_PRICE_CURRENCY}/g, adServerPriceCurrency);
         bids.push({
           requestId: b.impid,
           cpm: b.price,
@@ -45,7 +47,7 @@ export const interpretResponse = function (serverResponse) {
           dealId: b.dealid,
           netRevenue: true,
           ttl: TIME_TO_LIVE_IN_SECONDS,
-          ad: adWithCorrectCurrency,
+          ad: b.adm,
           nurl: b.nurl,
           meta: {
             advertiserDomains: b.adomain
@@ -58,13 +60,15 @@ export const interpretResponse = function (serverResponse) {
 };
 
 export const onBidWon = function (bid) {
-  const cpm = bid.cpm || 0;
-  const cpmCurrency = bid.currency || SUPPORTED_CURRENCY;
+  // We intentionally use the price set by the publisher to replace the ${AUCTION_PRICE} macro
+  // instead of the `originalCpm` here. This notification is not used for billing, only for extra logging.
+  const publisherPrice = bid.cpm || 0;
+  const publisherCurrency = bid.currency || config.getConfig('currency.adServerCurrency') || SUPPORTED_CURRENCY;
   const adServerPrice = deepAccess(bid, 'adserverTargeting.hb_pb', 0);
   const adServerPriceCurrency = config.getConfig('currency.adServerCurrency') || SUPPORTED_CURRENCY;
   if (isStr(bid.nurl) && bid.nurl !== '') {
-    const winNotificationUrl = replaceAuctionPrice(bid.nurl, bid.originalCpm || cpm)
-      .replace(/\${AUCTION_PRICE_CURRENCY}/g, cpmCurrency)
+    const winNotificationUrl = replaceAuctionPrice(bid.nurl, publisherPrice)
+      .replace(/\${AUCTION_PRICE_CURRENCY}/g, publisherCurrency)
       .replace(/\${AD_SERVER_PRICE}/g, adServerPrice)
       .replace(/\${AD_SERVER_PRICE_CURRENCY}/g, adServerPriceCurrency);
     triggerPixel(winNotificationUrl);
@@ -83,7 +87,6 @@ export const onTimeout = function (timeoutDataArray) {
         auction_id: timeoutData.auctionId,
         bid_id: timeoutData.bidId,
         timeout: timeoutData.timeout,
-        placement_id: deepAccess(timeoutData, 'params.0.placementId'),
         page_url: pageUrl,
       });
       const timeoutNotificationUrl = `${TIMEOUT_NOTIFICATION_ENDPOINT}?${query}`;
@@ -106,8 +109,7 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
     cur: [SUPPORTED_CURRENCY],
     imp: imps,
     device: {
-      devicetype: getDevice(),
-      geo: getGeo(validBidRequests[0])
+      devicetype: getDevice()
     },
     site: {
       page: pageUrl,
@@ -128,14 +130,8 @@ function buildOpenRtbImpObject(validBidRequest) {
     banner: {
       format: buildFormatArray(sizes),
       w: mainSize[0],
-      h: mainSize[1],
-      ext: {
-        kobler: {
-          pos: getPosition(validBidRequest)
-        }
-      }
+      h: mainSize[1]
     },
-    tagid: validBidRequest.params.placementId,
     bidfloor: floorInfo.floor,
     bidfloorcur: floorInfo.currency,
     pmp: buildPmpObject(validBidRequest)
@@ -157,17 +153,8 @@ function getDevice() {
   return 2; // personal computers
 }
 
-function getGeo(validBidRequest) {
-  if (validBidRequest.params.zip) {
-    return {
-      zip: validBidRequest.params.zip
-    };
-  }
-  return {};
-}
-
 function getTest(validBidRequest) {
-  return validBidRequest.params.test ? 1 : 0;
+  return validBidRequest.params && validBidRequest.params.test ? 1 : 0;
 }
 
 function getSizes(validBidRequest) {
@@ -188,10 +175,6 @@ function buildFormatArray(sizes) {
   });
 }
 
-function getPosition(validBidRequest) {
-  return parseInt(validBidRequest.params.position) || 0;
-}
-
 function getFloorInfo(validBidRequest, mainSize) {
   if (typeof validBidRequest.getFloor === 'function') {
     const sizeParam = mainSize[0] === 0 && mainSize[1] === 0 ? '*' : mainSize;
@@ -209,11 +192,11 @@ function getFloorInfo(validBidRequest, mainSize) {
 }
 
 function getFloorPrice(validBidRequest) {
-  return parseFloat(validBidRequest.params.floorPrice) || 0.0;
+  return parseFloat(deepAccess(validBidRequest, 'params.floorPrice', 0.0));
 }
 
 function buildPmpObject(validBidRequest) {
-  if (validBidRequest.params.dealIds) {
+  if (validBidRequest.params && validBidRequest.params.dealIds && isArray(validBidRequest.params.dealIds)) {
     return {
       deals: validBidRequest.params.dealIds.map(dealId => {
         return {
