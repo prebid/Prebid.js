@@ -16,7 +16,7 @@ const getId = () => { return storage.getCookie('caid') || storage.getDataFromLoc
 
 /** @type {Submodule} */
 export const cpexIdSubmodule = {
-  version: 0.0.4,
+  version: '0.0.4',
   /**
    * used to link submodule with config
    * @type {string}
