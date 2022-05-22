@@ -147,11 +147,6 @@ describe('Taboola Adapter', function () {
         bidfloorcur: 'EUR'
       };
 
-      config.setConfig({ortb2: {
-        badv: ['adadadbcd.com'],
-        bcat: ['IAB25', 'IAB7-39']
-      }});
-
       const bidRequest = {
         ...defaultBidRequest,
         params: {...commonBidRequest.params, ...optionalParams}
@@ -159,8 +154,6 @@ describe('Taboola Adapter', function () {
 
       const res = spec.buildRequests([bidRequest], commonBidderRequest);
       const resData = JSON.parse(res.data);
-      expect(resData.bcat).to.deep.equal(['IAB25', 'IAB7-39']);
-      expect(resData.badv).to.deep.equal(['adadadbcd.com']);
       expect(resData.imp[0].bidfloor).to.deep.equal(0.25);
       expect(resData.imp[0].bidfloorcur).to.deep.equal('EUR');
     });
