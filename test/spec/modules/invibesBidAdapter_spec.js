@@ -1,4 +1,5 @@
 import {expect} from 'chai';
+import { config } from 'src/config.js';
 import {spec, resetInvibes, stubDomainOptions, readGdprConsent} from 'modules/invibesBidAdapter.js';
 
 describe('invibesBidAdapter:', function () {
@@ -93,6 +94,17 @@ describe('invibesBidAdapter:', function () {
     }
   };
 
+  let SetBidderAccess = function() {
+    config.setConfig({
+      deviceAccess: true
+    });
+    $$PREBID_GLOBAL$$.bidderSettings = {
+      invibes: {
+        storageAllowed: true
+      }
+    };
+  }
+
   beforeEach(function () {
     resetInvibes();
     document.cookie = '';
@@ -100,6 +112,7 @@ describe('invibesBidAdapter:', function () {
   });
 
   afterEach(function () {
+    $$PREBID_GLOBAL$$.bidderSettings = {};
     this.cStub1.restore();
   });
 
@@ -296,13 +309,40 @@ describe('invibesBidAdapter:', function () {
       top.window.invibes.optIn = 1;
       top.window.invibes.purposes = [true, false, false, false, false, false, false, false, false, false];
       localStorage.ivvcap = '{"9731":[1,1768600800000]}';
+      SetBidderAccess();
+
       const request = spec.buildRequests(bidRequests, {auctionStart: Date.now()});
+
       expect(request.data.capCounts).to.equal('9731=1');
     });
 
     it('does not have capped ids if local storage variable is correctly formatted but no opt in', function () {
+      let bidderRequest = {
+        auctionStart: Date.now(),
+        gdprConsent: {
+          vendorData: {
+            gdprApplies: true,
+            hasGlobalConsent: false,
+            purpose: {
+              consents: {
+                1: false,
+                2: false,
+                3: false,
+                4: false,
+                5: false,
+                6: false,
+                7: false,
+                8: false,
+                9: false,
+                10: false
+              }
+            }
+          }
+        }
+      };
+
       localStorage.ivvcap = '{"9731":[1,1768600800000]}';
-      const request = spec.buildRequests(bidRequests, {auctionStart: Date.now()});
+      const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.capCounts).to.equal('');
     });
 
@@ -369,6 +409,8 @@ describe('invibesBidAdapter:', function () {
       top.window.invibes.purposes = [true, false, false, false, false, false, false, false, false, false];
       global.document.cookie = 'ivbsdid={"id":"dvdjkams6nkq","cr":' + Date.now() + ',"hc":0}';
       let bidderRequest = {gdprConsent: {vendorData: {vendorConsents: {436: true}}}};
+      SetBidderAccess();
+
       let request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.lId).to.exist;
     });
@@ -496,7 +538,7 @@ describe('invibesBidAdapter:', function () {
       let request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.li.split(',')[1] && request.data.li.split(',')[6]).to.equal('true');
     });
-    it('should send oi = 0 when vendorData is null', function () {
+    it('should send oi = 1 when vendorData is null (calculation will be performed by ADWEB)', function () {
       let bidderRequest = {
         gdprConsent: {
           vendorData: null
@@ -962,7 +1004,29 @@ describe('invibesBidAdapter:', function () {
 	  UseAdUnitCode: true
     };
 
-    var buildResponse = function(placementId, cid, blcids, creativeId) {
+    var buildResponse = function(placementId, cid, blcids, creativeId, ShouldSetLId) {
+      if (ShouldSetLId) {
+        return {
+          MultipositionEnabled: true,
+          AdPlacements: [{
+            Ads: [{
+              BidPrice: 0.5,
+              VideoExposedId: creativeId,
+              Cid: cid,
+              Blcids: blcids
+            }],
+            BidModel: {
+              BidVersion: 1,
+              PlacementId: placementId,
+              AuctionStartTime: Date.now(),
+              CreativeHtml: '<!-- Creative -->'
+            }
+          }],
+          ShouldSetLId: true,
+          LId: 'dvdjkams6nkq'
+        }
+      }
+
       return {
         MultipositionEnabled: true,
         AdPlacements: [{
@@ -1066,6 +1130,22 @@ describe('invibesBidAdapter:', function () {
       });
     });
 
+    context('AdWeb generates LIDs', function() {
+      it('works when no LID is not sent from AdWeb', function() {
+        var firstResponse = buildResponse('12345', 1, [], 123);
+
+        var firstResult = spec.interpretResponse({body: firstResponse}, {bidRequests});
+        expect(firstResult[0].creativeId).to.equal(123);
+      });
+
+      it('sets lid when AdWeb sends it', function() {
+        var firstResponse = buildResponse('12345', 1, [], 123, true);
+
+        spec.interpretResponse({body: firstResponse}, {bidRequests});
+        expect(global.document.cookie.indexOf('ivbsdid')).to.greaterThanOrEqual(0);
+      });
+    });
+
     context('in multiposition context, with conflicting ads', function() {
       it('registers the second ad when no conflict', function() {
         var firstResponse = buildResponse('12345', 1, [1], 123);
@@ -1123,22 +1203,33 @@ describe('invibesBidAdapter:', function () {
 
     it('returns an iframe with params if enabled', function () {
       top.window.invibes.optIn = 1;
-      global.document.cookie = 'ivvbks=17639.0,1,2';
       let response = spec.getUserSyncs({iframeEnabled: true});
       expect(response.type).to.equal('iframe');
       expect(response.url).to.include(SYNC_ENDPOINT);
       expect(response.url).to.include('optIn');
-      expect(response.url).to.include('ivvbks');
     });
 
     it('returns an iframe with params including if enabled', function () {
       top.window.invibes.optIn = 1;
-      global.document.cookie = 'ivvbks=17639.0,1,2;ivbsdid={"id":"dvdjkams6nkq","cr":' + Date.now() + ',"hc":0}';
+      global.document.cookie = 'ivbsdid={"id":"dvdjkams6nkq","cr":' + Date.now() + ',"hc":0}';
+      SetBidderAccess();
+
       let response = spec.getUserSyncs({iframeEnabled: true});
       expect(response.type).to.equal('iframe');
       expect(response.url).to.include(SYNC_ENDPOINT);
       expect(response.url).to.include('optIn');
-      expect(response.url).to.include('ivvbks');
+      expect(response.url).to.include('ivbsdid');
+    });
+
+    it('returns an iframe with params including if enabled read from LocalStorage', function () {
+      top.window.invibes.optIn = 1;
+      localStorage.ivbsdid = 'dvdjkams6nkq';
+      SetBidderAccess();
+
+      let response = spec.getUserSyncs({iframeEnabled: true});
+      expect(response.type).to.equal('iframe');
+      expect(response.url).to.include(SYNC_ENDPOINT);
+      expect(response.url).to.include('optIn');
       expect(response.url).to.include('ivbsdid');
     });
 
