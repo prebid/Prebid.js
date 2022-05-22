@@ -26,8 +26,8 @@ The Taboola Bidding adapter requires setup before beginning. Please contact us o
   bids: [{
     bidder: 'taboola',
     params: {
-      tagId: 'Placement Name',
-      publisherId: 'your-publisher-id',
+      tagId: 'tester-placement', // Placement Name
+      publisherId: 'tester-pub', // your-publisher-id
       bidfloor: 0.25, // Optional - default is null
       bcat: ['IAB1-1'], // Optional - default is []
       badv: ['example.com']  // Optional - default is []
