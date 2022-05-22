@@ -143,11 +143,16 @@ describe('Taboola Adapter', function () {
 
     it('should pass optional parameters in request', function () {
       const optionalParams = {
-        badv: ['adadadbcd.com'],
-        bcat: ['IAB25', 'IAB7-39'],
+
         bidfloor: 0.25,
         bidfloorcur: 'EUR'
       }
+
+      config.setConfig({ortb2: {
+        badv: ['adadadbcd.com'],
+        bcat: ['IAB25', 'IAB7-39']
+      }});
+
       const bidRequest = {
         ...defaultBidRequest,
         params: {...commonBidRequest.params, ...optionalParams}
