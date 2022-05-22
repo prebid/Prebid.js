@@ -100,7 +100,7 @@ export const spec = {
   buildRequests: (validBidRequests, bidderRequest) => {
     const [bidRequest] = validBidRequests;
     const {refererInfo, gdprConsent = {}, uspConsent} = bidderRequest;
-    const {bcat = [], badv = [], publisherId} = bidRequest.params;
+    const {publisherId} = bidRequest.params;
     const site = getSiteProperties(bidRequest.params, refererInfo);
     const device = {ua: navigator.userAgent};
     const imps = getImps(validBidRequests);
@@ -126,6 +126,11 @@ export const spec = {
       regs.coppa = 1
     }
 
+    const ortb2 = config.getConfig('ortb2') || {
+      badv: [],
+      bcat: []
+    };
+
     const request = {
       id: bidderRequest.auctionId,
       imp: imps,
@@ -133,8 +138,8 @@ export const spec = {
       device,
       source: {fd: 1},
       tmax: bidderRequest.timeout,
-      bcat,
-      badv,
+      bcat: ortb2.bcat,
+      badv: ortb2.badv,
       user,
       regs
     };
