@@ -143,7 +143,6 @@ describe('Taboola Adapter', function () {
 
     it('should pass optional parameters in request', function () {
       const optionalParams = {
-
         bidfloor: 0.25,
         bidfloorcur: 'EUR'
       }
