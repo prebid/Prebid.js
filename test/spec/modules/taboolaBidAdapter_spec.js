@@ -145,7 +145,7 @@ describe('Taboola Adapter', function () {
       const optionalParams = {
         bidfloor: 0.25,
         bidfloorcur: 'EUR'
-      }
+      };
 
       config.setConfig({ortb2: {
         badv: ['adadadbcd.com'],
@@ -155,14 +155,14 @@ describe('Taboola Adapter', function () {
       const bidRequest = {
         ...defaultBidRequest,
         params: {...commonBidRequest.params, ...optionalParams}
-      }
+      };
 
-      const res = spec.buildRequests([bidRequest], commonBidderRequest)
-      const resData = JSON.parse(res.data)
-      expect(resData.bcat).to.deep.equal(['IAB25', 'IAB7-39'])
-      expect(resData.badv).to.deep.equal(['adadadbcd.com'])
-      expect(resData.imp[0].bidfloor).to.deep.equal(0.25)
-      expect(resData.imp[0].bidfloorcur).to.deep.equal('EUR')
+      const res = spec.buildRequests([bidRequest], commonBidderRequest);
+      const resData = JSON.parse(res.data);
+      expect(resData.bcat).to.deep.equal(['IAB25', 'IAB7-39']);
+      expect(resData.badv).to.deep.equal(['adadadbcd.com']);
+      expect(resData.imp[0].bidfloor).to.deep.equal(0.25);
+      expect(resData.imp[0].bidfloorcur).to.deep.equal('EUR');
     });
 
     it('should pass bidder timeout', function () {
