@@ -193,9 +193,9 @@ describe('Taboola Adapter', function () {
           },
           uspConsent: 'consentString'
         }
-        const res = spec.buildRequests([defaultBidRequest], bidderRequest)
-        const resData = JSON.parse(res.data)
-        expect(resData.regs.ext.us_privacy).to.equal('consentString')
+        const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+        const resData = JSON.parse(res.data);
+        expect(resData.regs.ext.us_privacy).to.equal('consentString');
       });
 
       it('should pass coppa consent', function () {
