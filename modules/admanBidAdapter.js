@@ -5,7 +5,7 @@ import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'adman';
 const AD_URL = 'https://pub.admanmedia.com/?c=o&m=multi';
-const URL_SYNC = 'https://pub.admanmedia.com';
+const URL_SYNC = 'https://sync.admanmedia.com';
 
 function isBidResponseValid(bid) {
   if (!bid.requestId || !bid.cpm || !bid.creativeId ||
@@ -110,6 +110,7 @@ export const spec = {
       if (bid.userId) {
         getUserId(placement.eids, bid.userId.uid2 && bid.userId.uid2.id, 'uidapi.com');
         getUserId(placement.eids, bid.userId.lotamePanoramaId, 'lotame.com');
+        getUserId(placement.eids, bid.userId.idx, 'idx.lat');
       }
       if (traff === VIDEO) {
         placement.playerSize = bid.mediaTypes[VIDEO].playerSize;

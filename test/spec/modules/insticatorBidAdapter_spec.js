@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import { spec, storage } from '../../../modules/insticatorBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js'
-import { userSync } from '../../../src/userSync.js';
 
 const USER_ID_KEY = 'hb_insticator_uid';
 const USER_ID_DUMMY_VALUE = '74f78609-a92d-4cf1-869f-1b244bbfb5d2';
@@ -12,23 +11,58 @@ let utils = require('src/utils.js');
 describe('InsticatorBidAdapter', function () {
   const adapter = newBidder(spec);
 
+  const bidderRequestId = '22edbae2733bf6';
   let bidRequest = {
     bidder: 'insticator',
     adUnitCode: 'adunit-code',
     params: {
-      adUnitId: '1a2b3c4d5e6f1a2b3c4d'
+      adUnitId: '1a2b3c4d5e6f1a2b3c4d',
+      user: {
+        yob: 1984,
+        gender: 'M'
+      },
     },
     sizes: [[300, 250], [300, 600]],
     mediaTypes: {
       banner: {
-        sizes: [[300, 250], [300, 600]]
+        sizes: [[300, 250], [300, 600]],
+        pos: 4,
       }
     },
     bidId: '30b31c1838de1e',
+    ortb2Imp: {
+      instl: 1,
+      ext: {
+        gpid: '1111/homepage'
+      }
+    },
+    schain: {
+      ver: '1.0',
+      complete: 1,
+      nodes: [
+        {
+          asi: 'insticator.com',
+          sid: '00001',
+          hp: 1,
+          rid: bidderRequestId
+        }
+      ]
+    },
+    userIdAsEids: [
+      {
+        source: 'criteo.com',
+        uids: [
+          {
+            id: '123',
+            atype: 1
+          }
+        ]
+      }
+    ],
   };
 
   let bidderRequest = {
-    bidderRequestId: '22edbae2733bf6',
+    bidderRequestId,
     auctionId: '74f78609-a92d-4cf1-869f-1b244bbfb5d2',
     timeout: 300,
     gdprConsent: {
@@ -62,16 +96,16 @@ describe('InsticatorBidAdapter', function () {
     });
 
     it('should return false if there is no adUnitId param', () => {
-      expect(spec.isBidRequestValid({...bidRequest, ...{params: {}}})).to.be.false;
+      expect(spec.isBidRequestValid({ ...bidRequest, ...{ params: {} } })).to.be.false;
     });
 
     it('should return false if there is no mediaTypes', () => {
-      expect(spec.isBidRequestValid({...bidRequest, ...{mediaTypes: {}}})).to.be.false;
+      expect(spec.isBidRequestValid({ ...bidRequest, ...{ mediaTypes: {} } })).to.be.false;
     });
 
     it('should return false if there are no banner sizes and no sizes', () => {
       bidRequest.mediaTypes.banner = {};
-      expect(spec.isBidRequestValid({...bidRequest, ...{sizes: {}}})).to.be.false;
+      expect(spec.isBidRequestValid({ ...bidRequest, ...{ sizes: {} } })).to.be.false;
     });
 
     it('should return true if there is sizes and no banner sizes', () => {
@@ -80,7 +114,7 @@ describe('InsticatorBidAdapter', function () {
 
     it('should return true if there is banner sizes and no sizes', () => {
       bidRequest.mediaTypes.banner.sizes = [[300, 250], [300, 600]];
-      expect(spec.isBidRequestValid({...bidRequest, ...{sizes: {}}})).to.be.true;
+      expect(spec.isBidRequestValid({ ...bidRequest, ...{ sizes: {} } })).to.be.true;
     });
   });
 
@@ -144,12 +178,23 @@ describe('InsticatorBidAdapter', function () {
       const data = JSON.parse(requests[0].data);
 
       expect(data).to.be.an('object');
-      expect(data).to.have.all.keys('id', 'tmax', 'source', 'site', 'device', 'regs', 'user', 'imp');
+      expect(data).to.have.all.keys('id', 'tmax', 'source', 'site', 'device', 'regs', 'user', 'imp', 'ext');
       expect(data.id).to.equal(bidderRequest.bidderRequestId);
       expect(data.tmax).to.equal(bidderRequest.timeout);
-      expect(data.source).to.eql({
-        fd: 1,
-        tid: bidderRequest.auctionId,
+      expect(data.source).to.have.all.keys('fd', 'tid', 'ext');
+      expect(data.source.fd).to.equal(1);
+      expect(data.source.tid).to.equal(bidderRequest.auctionId);
+      expect(data.source.ext).to.have.property('schain').to.deep.equal({
+        ver: '1.0',
+        complete: 1,
+        nodes: [
+          {
+            asi: 'insticator.com',
+            sid: '00001',
+            hp: 1,
+            rid: bidderRequest.bidderRequestId
+          }
+        ]
       });
       expect(data.site).to.be.an('object');
       expect(data.site.domain).not.to.be.empty;
@@ -167,22 +212,49 @@ describe('InsticatorBidAdapter', function () {
       expect(data.regs.ext.gdprConsentString).to.equal(bidderRequest.gdprConsent.consentString);
       expect(data.user).to.be.an('object');
       expect(data.user.id).to.equal(USER_ID_DUMMY_VALUE);
+      expect(data.user).to.have.property('yob');
+      expect(data.user.yob).to.equal(1984);
+      expect(data.user).to.have.property('gender');
+      expect(data.user.gender).to.equal('M');
+      expect(data.user.ext).to.have.property('eids');
+      expect(data.user.ext.eids).to.deep.equal([
+        {
+          source: 'criteo.com',
+          uids: [
+            {
+              id: '123',
+              atype: 1
+            }
+          ]
+        }
+      ]);
       expect(data.imp).to.be.an('array').that.have.lengthOf(1);
       expect(data.imp).to.deep.equal([{
         id: bidRequest.bidId,
         tagid: bidRequest.adUnitCode,
+        instl: 1,
+        secure: 0,
         banner: {
           format: [
-            {w: 300, h: 250},
-            {w: 300, h: 600},
+            { w: 300, h: 250 },
+            { w: 300, h: 600 },
           ]
         },
         ext: {
+          gpid: bidRequest.ortb2Imp.ext.gpid,
           insticator: {
             adUnitId: bidRequest.params.adUnitId,
           },
         }
       }]);
+      expect(data.ext).to.be.an('object');
+      expect(data.ext.insticator).to.be.an('object')
+      expect(data.ext.insticator).to.deep.equal({
+        adapter: {
+          vendor: 'prebid',
+          prebid: '$prebid.version$'
+        }
+      });
     });
 
     it('should generate new userId if not valid user is stored', function () {
@@ -195,7 +267,7 @@ describe('InsticatorBidAdapter', function () {
       expect(data.user.id).to.equal(USER_ID_STUBBED);
     });
     it('should return empty regs object if no gdprConsent is passed', function () {
-      const requests = spec.buildRequests([bidRequest], {...bidderRequest, ...{gdprConsent: false}});
+      const requests = spec.buildRequests([bidRequest], { ...bidderRequest, ...{ gdprConsent: false } });
       const data = JSON.parse(requests[0].data);
       expect(data.regs).to.be.an('object').that.is.empty;
     });
@@ -281,7 +353,12 @@ describe('InsticatorBidAdapter', function () {
                 h: 200,
                 adm: 'adm1',
                 exp: 60,
-                bidADomain: ['test1.com'],
+                adomain: ['test1.com'],
+                ext: {
+                  meta: {
+                    test: 1
+                  }
+                }
               },
               {
                 impid: 'bid2',
@@ -290,7 +367,7 @@ describe('InsticatorBidAdapter', function () {
                 w: 600,
                 h: 200,
                 adm: 'adm2',
-                bidADomain: ['test2.com'],
+                adomain: ['test2.com'],
               },
               {
                 impid: 'bid3',
@@ -299,7 +376,7 @@ describe('InsticatorBidAdapter', function () {
                 w: 300,
                 h: 200,
                 adm: 'adm3',
-                bidADomain: ['test3.com'],
+                adomain: ['test3.com'],
               }
             ],
           },
@@ -318,13 +395,12 @@ describe('InsticatorBidAdapter', function () {
         width: 300,
         height: 200,
         mediaType: 'banner',
-        meta: {
-          advertiserDomains: [
-            'test1.com'
-          ]
-        },
         ad: 'adm1',
         adUnitCode: 'adunit-code-1',
+        meta: {
+          advertiserDomains: ['test1.com'],
+          test: 1
+        }
       },
       {
         requestId: 'bid2',

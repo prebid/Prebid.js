@@ -67,7 +67,7 @@ export const spec = {
     var adRequests = bidRequests.map(bidToAdRequest);
 
     if (eids) {
-      ortb2 = mergeDeep(ortb2 || {}, eids);
+      ortb2 = mergeDeep(mergeDeep({}, ortb2 || {}), eids);
     }
 
     const payload = {

@@ -13,6 +13,28 @@ const FRAUD_FIELD_NAME = 'fr';
 const SLOTS_OBJECT_FIELD_NAME = 'slots';
 const CUSTOM_FIELD_NAME = 'custom';
 const IAS_KW = 'ias-kw';
+const IAS_KEY_MAPPINGS = {
+  adt: 'adt',
+  alc: 'alc',
+  dlm: 'dlm',
+  hat: 'hat',
+  off: 'off',
+  vio: 'vio',
+  drg: 'drg',
+  'ias-kw': 'ias-kw',
+  fr: 'fr',
+  vw: 'vw',
+  grm: 'grm',
+  pub: 'pub',
+  vw05: 'vw05',
+  vw10: 'vw10',
+  vw15: 'vw15',
+  vw30: 'vw30',
+  vw_vv: 'vw_vv',
+  grm_vv: 'grm_vv',
+  pub_vv: 'pub_vv',
+  id: 'id'
+};
 
 /**
  * Module init
@@ -25,6 +47,14 @@ export function init(config, userConsent) {
   if (!params || !params.pubId) {
     utils.logError('missing pubId param for IAS provider');
     return false;
+  }
+  if (params.hasOwnProperty('keyMappings')) {
+    const keyMappings = params.keyMappings;
+    for (let prop in keyMappings) {
+      if (IAS_KEY_MAPPINGS.hasOwnProperty(prop)) {
+        IAS_KEY_MAPPINGS[prop] = keyMappings[prop]
+      }
+    }
   }
   return true;
 }
@@ -62,6 +92,16 @@ function stringifyScreenSize() {
   return [(window.screen && window.screen.width) || -1, (window.screen && window.screen.height) || -1].join('.');
 }
 
+function renameKeyValues(source) {
+  let result = {};
+  for (let prop in IAS_KEY_MAPPINGS) {
+    if (source.hasOwnProperty(prop)) {
+      result[IAS_KEY_MAPPINGS[prop]] = source[prop];
+    }
+  }
+  return result;
+}
+
 function formatTargetingData(adUnit) {
   let result = {};
   if (iasTargeting[BRAND_SAFETY_OBJECT_FIELD_NAME]) {
@@ -76,7 +116,7 @@ function formatTargetingData(adUnit) {
   if (iasTargeting[SLOTS_OBJECT_FIELD_NAME] && adUnit in iasTargeting[SLOTS_OBJECT_FIELD_NAME]) {
     utils.mergeDeep(result, iasTargeting[SLOTS_OBJECT_FIELD_NAME][adUnit]);
   }
-  return result;
+  return renameKeyValues(result);
 }
 
 function constructQueryString(anId, adUnits) {
@@ -147,6 +187,7 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
     undefined,
     { method: 'GET' }
   );
+  callback()
 }
 
 /** @type {RtdSubmodule} */

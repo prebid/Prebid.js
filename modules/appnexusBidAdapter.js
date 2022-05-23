@@ -21,7 +21,8 @@ import {
   logInfo,
   logMessage,
   logWarn,
-  transformBidderParamKeywords
+  transformBidderParamKeywords,
+  getWindowFromDocument
 } from '../src/utils.js';
 import {Renderer} from '../src/Renderer.js';
 import {config} from '../src/config.js';
@@ -271,6 +272,10 @@ export const spec = {
         rd_ifs: bidderRequest.refererInfo.numIframes,
         rd_stk: bidderRequest.refererInfo.stack.map((url) => encodeURIComponent(url)).join(',')
       }
+      let pubPageUrl = config.getConfig('pageUrl');
+      if (isStr(pubPageUrl) && pubPageUrl !== '') {
+        refererinfo.rd_can = pubPageUrl;
+      }
       payload.referrer_detection = refererinfo;
     }
 
@@ -389,11 +394,22 @@ export const spec = {
     }
   },
 
-  transformBidParams: function (params, isOpenRtb) {
+  transformBidParams: function (params, isOpenRtb, adUnit, bidRequests) {
     let conversionFn = transformBidderParamKeywords;
     if (isOpenRtb === true) {
+      let s2sEndpointUrl = null;
       let s2sConfig = config.getConfig('s2sConfig');
-      let s2sEndpointUrl = deepAccess(s2sConfig, 'endpoint.p1Consent');
+
+      if (isPlainObject(s2sConfig)) {
+        s2sEndpointUrl = deepAccess(s2sConfig, 'endpoint.p1Consent');
+      } else if (isArray(s2sConfig)) {
+        s2sConfig.forEach(s2sCfg => {
+          if (includes(s2sCfg.bidders, adUnit.bids[0].bidder)) {
+            s2sEndpointUrl = deepAccess(s2sCfg, 'endpoint.p1Consent');
+          }
+        })
+      }
+
       if (s2sEndpointUrl && s2sEndpointUrl.match('/openrtb2/prebid')) {
         conversionFn = convertKeywordsToString;
       }
@@ -699,7 +715,10 @@ function newBid(serverBid, rtbBid, bidderRequest) {
 
         if (rtbBid.renderer_url) {
           const videoBid = find(bidderRequest.bids, bid => bid.bidId === serverBid.uuid);
-          const rendererOptions = deepAccess(videoBid, 'renderer.options');
+          let rendererOptions = deepAccess(videoBid, 'mediaTypes.video.renderer.options'); // mediaType definition has preference (shouldn't options be .config?)
+          if (!rendererOptions) {
+            rendererOptions = deepAccess(videoBid, 'renderer.options'); // second the adUnit definition has preference (shouldn't options be .config?)
+          }
           bid.renderer = newRenderer(bid.adUnitCode, rtbBid, rendererOptions);
         }
         break;
@@ -802,6 +821,13 @@ function bidToTag(bid) {
   }
   if (bid.params.position) {
     tag.position = { 'above': 1, 'below': 2 }[bid.params.position] || 0;
+  } else {
+    let mediaTypePos = deepAccess(bid, `mediaTypes.banner.pos`) || deepAccess(bid, `mediaTypes.video.pos`);
+    // only support unknown, atf, and btf values for position at this time
+    if (mediaTypePos === 0 || mediaTypePos === 1 || mediaTypePos === 3) {
+      // ortb spec treats btf === 3, but our system interprets btf === 2; so converting the ortb value here for consistency
+      tag.position = (mediaTypePos === 3) ? 2 : mediaTypePos;
+    }
   }
   if (bid.params.trafficSourceCode) {
     tag.traffic_source_code = bid.params.trafficSourceCode;
@@ -1120,9 +1146,13 @@ function buildNativeRequest(params) {
  * @param {string} elementId element id
  */
 function hidedfpContainer(elementId) {
-  var el = document.getElementById(elementId).querySelectorAll("div[id^='google_ads']");
-  if (el[0]) {
-    el[0].style.setProperty('display', 'none');
+  try {
+    const el = document.getElementById(elementId).querySelectorAll("div[id^='google_ads']");
+    if (el[0]) {
+      el[0].style.setProperty('display', 'none');
+    }
+  } catch (e) {
+    // element not found!
   }
 }
 
@@ -1138,12 +1168,13 @@ function hideSASIframe(elementId) {
   }
 }
 
-function outstreamRender(bid) {
+function outstreamRender(bid, doc) {
   hidedfpContainer(bid.adUnitCode);
   hideSASIframe(bid.adUnitCode);
   // push to render queue because ANOutstreamVideo may not be loaded yet
   bid.renderer.push(() => {
-    window.ANOutstreamVideo.renderAd({
+    const win = getWindowFromDocument(doc) || window;
+    win.ANOutstreamVideo.renderAd({
       tagId: bid.adResponse.tag_id,
       sizes: [bid.getSize().split('x')],
       targetId: bid.adUnitCode, // target div id to render video
