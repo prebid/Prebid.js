@@ -110,6 +110,7 @@ function getPageUrlFromRefererInfo() {
 }
 
 function getPageUrlFromRequest(validBidRequest, bidderRequest) {
+  // pageUrl is considered only when testing to ensure that non-test requests always contain the correct URL
   if (isTest(validBidRequest) && config.getConfig('pageUrl')) {
     return config.getConfig('pageUrl');
   }
