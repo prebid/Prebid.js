@@ -194,7 +194,13 @@ export const spec = {
 
       if (getBidIdParameter('position', bid.params) != '') {
         spotxReq.video.ext.pos = getBidIdParameter('position', bid.params);
+      } else {
+        if (deepAccess(bid, 'mediaTypes.video.pos')) {
+          spotxReq.video.ext.pos = deepAccess(bid, 'mediaTypes.video.pos');
+        }
       }
+      
+      const playerSize = deepAccess(bid, 'mediaTypes.video.playerSize');
 
       if (bid.crumbs && bid.crumbs.pubcid) {
         pubcid = bid.crumbs.pubcid;
