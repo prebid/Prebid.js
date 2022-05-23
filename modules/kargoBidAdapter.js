@@ -1,4 +1,4 @@
-import { _each } from '../src/utils.js';
+import { _each, buildUrl, triggerPixel } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -133,6 +133,27 @@ export const spec = {
     return syncs;
   },
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
+  onTimeout: function(timeoutData) {
+    if (timeoutData == null) {
+      return;
+    }
+
+    timeoutData.forEach((bid) => {
+      let params = {
+        aid: bid.auctionId,
+        ato: bid.timeout,
+      };
+
+      let timeoutRequestUrl = buildUrl({
+        protocol: 'https',
+        hostname: 'krk.kargo.com',
+        pathname: '/api/v1/event/timeout',
+        search: params
+      });
+
+      triggerPixel(timeoutRequestUrl);
+    });
+  },
 
   // PRIVATE
   _readCookie(name) {

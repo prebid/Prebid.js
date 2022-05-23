@@ -1,6 +1,7 @@
 import {expect, assert} from 'chai';
 import {spec} from 'modules/kargoBidAdapter.js';
 import {config} from 'src/config.js';
+const utils = require('src/utils');
 
 describe('kargo adapter tests', function () {
   var sandbox, clock, frozenNow = new Date();
@@ -681,6 +682,28 @@ describe('kargo adapter tests', function () {
     it('no user syncs when no iframe syncing allowed', function() {
       turnOnClientId();
       safelyRun(() => expect(getUserSyncsWhenForbidden()).to.be.an('array').that.is.empty);
+    });
+  });
+
+  describe('timeout pixel trigger', function () {
+    let triggerPixelStub;
+
+    beforeEach(function () {
+      triggerPixelStub = sinon.stub(utils, 'triggerPixel');
+    });
+
+    afterEach(function () {
+      utils.triggerPixel.restore();
+    });
+
+    it('should call triggerPixel utils function when timed out is filled', function () {
+      spec.onTimeout();
+      expect(triggerPixelStub.getCall(0)).to.be.null;
+      spec.onTimeout([{ auctionId: '1234', timeout: 2000 }]);
+      expect(triggerPixelStub.getCall(0)).to.not.be.null;
+      expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.include('https://krk.kargo.com/api/v1/event/timeout');
+      expect(triggerPixelStub.getCall(0).args[0]).to.include('aid=1234');
+      expect(triggerPixelStub.getCall(0).args[0]).to.include('ato=2000');
     });
   });
 });
