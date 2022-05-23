@@ -204,11 +204,8 @@ function _getGlobalFpd() {
   const fpdContext = Object.assign({}, ortbData.site);
   const fpdUser = Object.assign({}, ortbData.user);
 
-  // NEEDS TEST: check that opeCloudStorage is parseable
   if (opeCloudStorage) {
     fpdUser.data = fpdUser.data || []
-    // NEEDS TEST: check that fpdUser.data is an array before pushing;
-    //    publisher may accidentally make it an object
     try {
       fpdUser.data.push({
         name: 'www.1plusx.com',
