@@ -1371,7 +1371,7 @@ describe('S2S Adapter', function () {
       config.setConfig({ s2sConfig: CONFIG });
 
       const aliasBidder = {
-        bidder: 'brealtime',
+        bidder: 'beintoo',
         params: { placementId: '123456' }
       };
 
@@ -1384,7 +1384,7 @@ describe('S2S Adapter', function () {
       expect(requestBid.ext).to.haveOwnProperty('prebid');
       expect(requestBid.ext.prebid).to.deep.include({
         aliases: {
-          brealtime: 'appnexus'
+          beintoo: 'appnexus'
         },
         auctiontimestamp: 1510852447530,
         targeting: {

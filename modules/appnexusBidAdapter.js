@@ -92,7 +92,6 @@ export const spec = {
   gvlid: GVLID,
   aliases: [
     { code: 'appnexusAst', gvlid: 32 },
-    { code: 'brealtime' },
     { code: 'emxdigital', gvlid: 183 },
     { code: 'pagescience' },
     { code: 'defymedia' },
@@ -100,7 +99,6 @@ export const spec = {
     { code: 'matomy' },
     { code: 'featureforward' },
     { code: 'oftmedia' },
-    { code: 'districtm', gvlid: 144 },
     { code: 'adasta' },
     { code: 'beintoo', gvlid: 618 },
   ],
