@@ -1,6 +1,5 @@
-
 import { submodule } from '../src/hook.js';
-import { logInfo } from '../src/utils.js'
+import { logInfo } from '../src/utils.js';
 
 const MODULE_NAME = 'tncId';
 const FALLBACK_TNC_PROVIDERID = 'c8549079-f149-4529-a34b-3fa91ef257d1';
