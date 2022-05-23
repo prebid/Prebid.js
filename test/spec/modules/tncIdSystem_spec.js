@@ -92,7 +92,7 @@ describe('TNCID tests', function () {
           options: {},
           tncid: 'TNCID_TEST_ID_2'
         },
-        configurable: true,
+        configurable: true, 
         writable: true
       });
 
