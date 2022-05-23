@@ -70,7 +70,7 @@ describe('KoblerAdapter', function () {
     it('should not accept a request without mediaTypes and string sizes as valid', function () {
       const bid = {
         bidId: 'e11768e8-3b71-4453-8698-0a2feb866589',
-        sizes: "string"
+        sizes: 'string'
       };
 
       const result = spec.isBidRequestValid(bid);
@@ -116,7 +116,7 @@ describe('KoblerAdapter', function () {
       const bid = {
         bidId: 'e11768e8-3b71-4453-8698-0a2feb866589',
         mediaTypes: {
-          banner: "string"
+          banner: 'string'
         }
       };
 
@@ -143,7 +143,7 @@ describe('KoblerAdapter', function () {
         bidId: 'e11768e8-3b71-4453-8698-0a2feb866589',
         mediaTypes: {
           banner: {
-            sizes: "string"
+            sizes: 'string'
           }
         }
       };
@@ -271,7 +271,7 @@ describe('KoblerAdapter', function () {
       const bidderRequest = createBidderRequest();
 
       const result = spec.buildRequests(validBidRequests, bidderRequest);
-      expect(result.url).to.be.equal("https://bid-service.dev.essrtb.com/bid/prebid_rtb_call");
+      expect(result.url).to.be.equal('https://bid-service.dev.essrtb.com/bid/prebid_rtb_call');
 
       const openRtbRequest = JSON.parse(result.data);
       expect(openRtbRequest.site.page).to.be.equal('example.com');
@@ -292,7 +292,7 @@ describe('KoblerAdapter', function () {
       const bidderRequest = createBidderRequest();
 
       const result = spec.buildRequests(validBidRequests, bidderRequest);
-      expect(result.url).to.be.equal("https://bid-service.dev.essrtb.com/bid/prebid_rtb_call");
+      expect(result.url).to.be.equal('https://bid-service.dev.essrtb.com/bid/prebid_rtb_call');
 
       const openRtbRequest = JSON.parse(result.data);
       expect(openRtbRequest.site.page).to.be.equal('https://testing-url.com');
@@ -313,7 +313,7 @@ describe('KoblerAdapter', function () {
       );
 
       const result = spec.buildRequests(validBidRequests, bidderRequest);
-      expect(result.url).to.be.equal("https://bid.essrtb.com/bid/prebid_rtb_call");
+      expect(result.url).to.be.equal('https://bid.essrtb.com/bid/prebid_rtb_call');
 
       const openRtbRequest = JSON.parse(result.data);
       expect(openRtbRequest.site.page).to.be.equal('https://non-testing-url.net');
