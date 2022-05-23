@@ -271,9 +271,53 @@ describe('KoblerAdapter', function () {
       const bidderRequest = createBidderRequest();
 
       const result = spec.buildRequests(validBidRequests, bidderRequest);
-      const openRtbRequest = JSON.parse(result.data);
+      expect(result.url).to.be.equal("https://bid-service.dev.essrtb.com/bid/prebid_rtb_call");
 
+      const openRtbRequest = JSON.parse(result.data);
+      expect(openRtbRequest.site.page).to.be.equal('example.com');
       expect(openRtbRequest.test).to.be.equal(1);
+    });
+
+    it('should read pageUrl from config when testing', function () {
+      config.setConfig({
+        pageUrl: 'https://testing-url.com'
+      });
+      const validBidRequests = [
+        createValidBidRequest(
+          {
+            test: true
+          }
+        )
+      ];
+      const bidderRequest = createBidderRequest();
+
+      const result = spec.buildRequests(validBidRequests, bidderRequest);
+      expect(result.url).to.be.equal("https://bid-service.dev.essrtb.com/bid/prebid_rtb_call");
+
+      const openRtbRequest = JSON.parse(result.data);
+      expect(openRtbRequest.site.page).to.be.equal('https://testing-url.com');
+      expect(openRtbRequest.test).to.be.equal(1);
+    });
+
+    it('should not read pageUrl from config when not testing', function () {
+      config.setConfig({
+        pageUrl: 'https://testing-url.com'
+      });
+      const validBidRequests = [
+        createValidBidRequest()
+      ];
+      const bidderRequest = createBidderRequest(
+        'f85d61cc-ed11-4b6c-aefb-87943263cedb',
+        2000,
+        'https://non-testing-url.net'
+      );
+
+      const result = spec.buildRequests(validBidRequests, bidderRequest);
+      expect(result.url).to.be.equal("https://bid.essrtb.com/bid/prebid_rtb_call");
+
+      const openRtbRequest = JSON.parse(result.data);
+      expect(openRtbRequest.site.page).to.be.equal('https://non-testing-url.net');
+      expect(openRtbRequest.test).to.be.equal(0);
     });
 
     it('should read floorPrice from valid bid requests', function () {
