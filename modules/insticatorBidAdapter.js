@@ -162,9 +162,10 @@ function buildRequest(validBidRequests, bidderRequest) {
       tid: bidderRequest.auctionId,
     },
     site: {
-      domain: location.hostname,
-      page: location.href,
-      ref: bidderRequest.refererInfo.referer,
+      // TODO: are these the right refererInfo values?
+      domain: bidderRequest.refererInfo.domain,
+      page: bidderRequest.refererInfo.page,
+      ref: bidderRequest.refererInfo.ref,
     },
     device: buildDevice(),
     regs: buildRegs(bidderRequest),

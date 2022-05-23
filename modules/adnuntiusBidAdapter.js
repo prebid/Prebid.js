@@ -81,7 +81,7 @@ export const spec = {
 
       networks[network] = networks[network] || {};
       networks[network].adUnits = networks[network].adUnits || [];
-      if (bidderRequest && bidderRequest.refererInfo) networks[network].context = bidderRequest.refererInfo.referer;
+      if (bidderRequest && bidderRequest.refererInfo) networks[network].context = bidderRequest.refererInfo.page;
       if (adnMeta) networks[network].metaData = adnMeta;
       networks[network].adUnits.push({ ...targeting, auId: bid.params.auId, targetId: bid.bidId });
     }

@@ -35,6 +35,7 @@ var pageView = {
   timezoneOffset: new Date().getTimezoneOffset(),
   language: window.navigator.language,
   vendor: window.navigator.vendor,
+  // TODO: this will throw when cross-origin; should probably look at refererInfo instead
   pageUrl: window.top.location.href,
   screenWidth: x,
   screenHeight: y

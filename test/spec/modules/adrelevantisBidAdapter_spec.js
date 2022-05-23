@@ -445,7 +445,7 @@ describe('AdrelevantisAdapter', function () {
       const bidRequest = Object.assign({}, bidRequests[0])
       const bidderRequest = {
         refererInfo: {
-          referer: 'http://example.com/page.html',
+          topmostLocation: 'http://example.com/page.html',
           reachedTop: true,
           numIframes: 2,
           stack: [

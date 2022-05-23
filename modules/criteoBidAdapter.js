@@ -224,9 +224,9 @@ function publisherTagAvailable() {
 function buildContext(bidRequests, bidderRequest) {
   let referrer = '';
   if (bidderRequest && bidderRequest.refererInfo) {
-    referrer = bidderRequest.refererInfo.referer;
+    referrer = bidderRequest.refererInfo.page;
   }
-  const queryString = parseUrl(referrer).search;
+  const queryString = parseUrl(bidderRequest?.refererInfo?.topmostLocation).search;
 
   const context = {
     url: referrer,

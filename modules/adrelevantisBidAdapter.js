@@ -127,7 +127,8 @@ export const spec = {
 
     if (bidderRequest && bidderRequest.refererInfo) {
       let refererinfo = {
-        rd_ref: encodeURIComponent(bidderRequest.refererInfo.referer),
+        // TODO: this sends everything it finds to the backend, except for canonicalUrl
+        rd_ref: encodeURIComponent(bidderRequest.refererInfo.topmostLocation),
         rd_top: bidderRequest.refererInfo.reachedTop,
         rd_ifs: bidderRequest.refererInfo.numIframes,
         rd_stk: bidderRequest.refererInfo.stack.map((url) => encodeURIComponent(url)).join(',')

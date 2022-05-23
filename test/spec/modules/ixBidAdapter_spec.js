@@ -444,7 +444,7 @@ describe('IndexexchangeAdapter', function () {
       vendorData: {}
     },
     refererInfo: {
-      referer: 'https://www.prebid.org',
+      page: 'https://www.prebid.org',
       canonicalUrl: 'https://www.prebid.org/the/link/to/the/page'
     }
   };
@@ -1422,20 +1422,12 @@ describe('IndexexchangeAdapter', function () {
       const payload = JSON.parse(query.r);
       expect(payload.id).to.equal(DEFAULT_BANNER_VALID_BID[0].bidderRequestId);
       expect(payload.id).to.be.a('string');
-      expect(payload.site.page).to.equal(DEFAULT_OPTION.refererInfo.referer);
+      expect(payload.site.page).to.equal(DEFAULT_OPTION.refererInfo.page);
       expect(payload.site.ref).to.equal(document.referrer);
       expect(payload.ext.source).to.equal('prebid');
       expect(payload.source.ext.schain).to.deep.equal(SAMPLE_SCHAIN);
       expect(payload.imp).to.be.an('array');
       expect(payload.imp).to.have.lengthOf(1);
-    });
-
-    it('payload should set site.page to pageUrl when it exists in config object', function () {
-      const url = 'https://example.com/index.html';
-      config.setConfig({ pageUrl: url });
-      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION)[0].data;
-      const payload = JSON.parse(request.r);
-      expect(payload.site.page).to.contains(url);
     });
 
     it('payload should have correct format and value for r.id when bidderRequestId is a number ', function () {
@@ -1665,7 +1657,7 @@ describe('IndexexchangeAdapter', function () {
 
         const requestWithFirstPartyData = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION)[0];
         const pageUrl = JSON.parse(requestWithFirstPartyData.data.r).site.page;
-        const expectedPageUrl = DEFAULT_OPTION.refererInfo.referer + '?ab=123&cd=123%23ab&e%2Ff=456&h%3Fg=456%23cd';
+        const expectedPageUrl = DEFAULT_OPTION.refererInfo.page + '?ab=123&cd=123%23ab&e%2Ff=456&h%3Fg=456%23cd';
         expect(pageUrl).to.equal(expectedPageUrl);
       });
 
@@ -1679,7 +1671,7 @@ describe('IndexexchangeAdapter', function () {
         const requestFirstPartyDataNumber = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION)[0];
         const pageUrl = JSON.parse(requestFirstPartyDataNumber.data.r).site.page;
 
-        expect(pageUrl).to.equal(DEFAULT_OPTION.refererInfo.referer);
+        expect(pageUrl).to.equal(DEFAULT_OPTION.refererInfo.page);
       });
 
       it('should not set first party or timeout if it is not present', function () {
@@ -1690,7 +1682,7 @@ describe('IndexexchangeAdapter', function () {
         const requestWithoutConfig = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION)[0];
         const pageUrl = JSON.parse(requestWithoutConfig.data.r).site.page;
 
-        expect(pageUrl).to.equal(DEFAULT_OPTION.refererInfo.referer);
+        expect(pageUrl).to.equal(DEFAULT_OPTION.refererInfo.page);
         expect(requestWithoutConfig.data.t).to.be.undefined;
       });
 
@@ -1698,7 +1690,7 @@ describe('IndexexchangeAdapter', function () {
         const requestWithoutConfig = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION)[0];
         const pageUrl = JSON.parse(requestWithoutConfig.data.r).site.page;
 
-        expect(pageUrl).to.equal(DEFAULT_OPTION.refererInfo.referer);
+        expect(pageUrl).to.equal(DEFAULT_OPTION.refererInfo.page);
         expect(requestWithoutConfig.data.t).to.be.undefined;
       });
 
@@ -2521,7 +2513,7 @@ describe('IndexexchangeAdapter', function () {
       const validBidWithoutreferInfo = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
       const requestWithoutreferInfo = JSON.parse(validBidWithoutreferInfo[0].data.r);
 
-      expect(requestWithoutreferInfo.site.page).to.equal(options.refererInfo.referer);
+      expect(requestWithoutreferInfo.site.page).to.equal(options.refererInfo.page);
       expect(validBidWithoutreferInfo[0].url).to.equal(IX_SECURE_ENDPOINT);
     });
 

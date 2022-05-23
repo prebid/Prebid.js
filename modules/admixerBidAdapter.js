@@ -39,8 +39,9 @@ export const spec = {
     if (bidderRequest) {
       const {bidderCode} = bidderRequest;
       endpointUrl = config.getConfig(`${bidderCode}.endpoint_url`);
-      if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
-        payload.referrer = encodeURIComponent(bidderRequest.refererInfo.referer);
+      // TODO: is 'page' the right value here?
+      if (bidderRequest.refererInfo?.page) {
+        payload.referrer = encodeURIComponent(bidderRequest.refererInfo.page);
       }
       if (bidderRequest.gdprConsent) {
         payload.gdprConsent = {

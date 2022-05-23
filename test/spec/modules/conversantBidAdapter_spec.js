@@ -234,7 +234,7 @@ describe('Conversant adapter tests', function() {
     const page = 'http://test.com?a=b&c=123';
     const bidderRequest = {
       refererInfo: {
-        referer: page
+        page: page
       }
     };
     const request = spec.buildRequests(bidRequests, bidderRequest);
@@ -362,7 +362,7 @@ describe('Conversant adapter tests', function() {
 
   it('Verify first party data', () => {
     const bidderRequest = {
-      refererInfo: {referer: 'http://test.com?a=b&c=123'},
+      refererInfo: {page: 'http://test.com?a=b&c=123'},
       ortb2: {site: {content: {series: 'MySeries', season: 'MySeason', episode: 3, title: 'MyTitle'}}}
     };
     const request = spec.buildRequests(bidRequests, bidderRequest);
@@ -375,7 +375,7 @@ describe('Conversant adapter tests', function() {
   });
 
   it('Verify supply chain data', () => {
-    const bidderRequest = {refererInfo: {referer: 'http://test.com?a=b&c=123'}};
+    const bidderRequest = {refererInfo: {page: 'http://test.com?a=b&c=123'}};
     const schain = {complete: 1, ver: '1.0', nodes: [{asi: 'bidderA.com', sid: '00001', hp: 1}]};
     const bidsWithSchain = bidRequests.map((bid) => {
       return Object.assign({

@@ -42,7 +42,7 @@ describe('otmBidAdapter', function () {
       sizes: [[240, 400]]
     }];
 
-    const bidderRequest = {refererInfo: {referer: `https://github.com:3000/`}}
+    const bidderRequest = {refererInfo: {page: `https://github.com:3000/`, domain: 'github.com:3000'}}
 
     const request = spec.buildRequests(bidRequestData, bidderRequest);
     const req_data = request[0].data;

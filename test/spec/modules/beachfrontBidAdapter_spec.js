@@ -155,7 +155,7 @@ describe('BeachfrontAdapter', function () {
         const topLocation = parseUrl('http://www.example.com?foo=bar', { decodeSearchAsString: true });
         const bidderRequest = {
           refererInfo: {
-            referer: topLocation.href
+            page: topLocation.href
           }
         };
         const requests = spec.buildRequests([ bidRequest ], bidderRequest);
@@ -398,7 +398,7 @@ describe('BeachfrontAdapter', function () {
         const topLocation = parseUrl('http://www.example.com?foo=bar', { decodeSearchAsString: true });
         const bidderRequest = {
           refererInfo: {
-            referer: topLocation.href
+            page: topLocation.href
           }
         };
         const requests = spec.buildRequests([ bidRequest ], bidderRequest);
@@ -572,7 +572,7 @@ describe('BeachfrontAdapter', function () {
         bidRequest.mediaTypes = { video: {} };
         const bidderRequest = {
           refererInfo: {
-            referer: 'http://example.com/page.html'
+            page: 'http://example.com/page.html'
           },
           ortb2
         };

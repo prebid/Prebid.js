@@ -34,7 +34,8 @@ export const spec = {
       bidRequests: validBidRequests,
       auctionStart: bidderRequest.auctionStart,
       timeout: bidderRequest.timeout,
-      refererInfo: bidderRequest.refererInfo,
+      // TODO: please do not send internal data structures over the network
+      refererInfo: bidderRequest.refererInfo.legacy,
       start: bidderRequest.start,
       gdprConsent: bidderRequest.gdprConsent,
       uspConsent: bidderRequest.uspConsent,

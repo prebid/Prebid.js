@@ -12,7 +12,6 @@ import {
   logWarn
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
 import {Renderer} from '../src/Renderer.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {includes} from '../src/polyfill.js';
@@ -34,11 +33,6 @@ export const helper = {
   startsWith: function (str, search) {
     return str.substr(0, search.length) === search;
   },
-  getTopWindowDomain: function (url) {
-    const domainStart = url.indexOf('://') + '://'.length;
-    return url.substring(domainStart, url.indexOf('/', domainStart) < 0 ? url.length : url.indexOf('/', domainStart));
-  },
-
   getMediaType: function (bid) {
     if (bid.ext) {
       if (bid.ext.media_type) {
@@ -89,14 +83,12 @@ export const spec = {
       const {adUnitCode, auctionId, mediaTypes, params, sizes, transactionId} = bidRequest;
       const baseEndpoint = params['rtbEndpoint'] || ENDPOINTS['gamoshi'];
       const rtbEndpoint = `${baseEndpoint}/r/${params.supplyPartnerId}/bidr?rformat=open_rtb&reqformat=rtb_json&bidder=prebid` + (params.query ? '&' + params.query : '');
-      let url = config.getConfig('pageUrl') || bidderRequest.refererInfo.referer;
-
       const rtbBidRequest = {
         id: auctionId,
         site: {
-          domain: helper.getTopWindowDomain(url),
-          page: url,
-          ref: bidderRequest.refererInfo.referer
+          domain: bidderRequest.refererInfo.domain,
+          page: bidderRequest.refererInfo.page,
+          ref: bidderRequest.refererInfo.ref
         },
         device: {
           ua: navigator.userAgent,

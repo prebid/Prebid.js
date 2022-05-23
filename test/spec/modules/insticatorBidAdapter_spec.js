@@ -73,7 +73,9 @@ describe('InsticatorBidAdapter', function () {
     refererInfo: {
       numIframes: 0,
       reachedTop: true,
-      referer: 'https://example.com',
+      page: 'https://example.com',
+      domain: 'example.com',
+      ref: 'https://referrer.com',
       stack: ['https://example.com']
     },
   };
@@ -199,7 +201,7 @@ describe('InsticatorBidAdapter', function () {
       expect(data.site).to.be.an('object');
       expect(data.site.domain).not.to.be.empty;
       expect(data.site.page).not.to.be.empty;
-      expect(data.site.ref).to.equal(bidderRequest.refererInfo.referer);
+      expect(data.site.ref).to.equal(bidderRequest.refererInfo.ref);
       expect(data.device).to.be.an('object');
       expect(data.device.w).to.equal(window.innerWidth);
       expect(data.device.h).to.equal(window.innerHeight);

@@ -9,7 +9,6 @@ import {
   parseSizesInput,
   parseUrl
 } from '../src/utils.js';
-import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {Renderer} from '../src/Renderer.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
@@ -305,16 +304,7 @@ function isBannerBidValid(bid) {
 }
 
 function getTopWindowLocation(bidderRequest) {
-  let url = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
-  return parseUrl(config.getConfig('pageUrl') || url, { decodeSearchAsString: true });
-}
-
-function getTopWindowReferrer() {
-  try {
-    return window.top.document.referrer;
-  } catch (e) {
-    return '';
-  }
+  return parseUrl(bidderRequest?.refererInfo?.page, { decodeSearchAsString: true });
 }
 
 function getEids(bid) {
@@ -433,7 +423,7 @@ function createVideoRequestData(bid, bidderRequest) {
 
 function createBannerRequestData(bids, bidderRequest) {
   let topLocation = getTopWindowLocation(bidderRequest);
-  let topReferrer = getTopWindowReferrer();
+  let topReferrer = bidderRequest.refererInfo?.ref;
   let slots = bids.map(bid => {
     return {
       slot: bid.adUnitCode,

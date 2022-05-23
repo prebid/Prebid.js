@@ -510,7 +510,7 @@ describe('S2S Adapter', function () {
         'src': 's2s',
         'doneCbCallCount': 0,
         'refererInfo': {
-          'referer': 'http://mytestpage.com'
+          'page': 'http://mytestpage.com'
         }
       }
     ];

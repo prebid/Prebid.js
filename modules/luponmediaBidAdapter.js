@@ -494,11 +494,12 @@ function _getDigiTrustQueryParams(bidRequest = {}, endpointName) {
 }
 
 function _getPageUrl(bidRequest, bidderRequest) {
-  let pageUrl = config.getConfig('pageUrl');
+  // TODO: do the fallbacks make sense here?
+  let pageUrl = bidderRequest.refererInfo.page;
   if (bidRequest.params.referrer) {
     pageUrl = bidRequest.params.referrer;
   } else if (!pageUrl) {
-    pageUrl = bidderRequest.refererInfo.referer;
+    pageUrl = bidderRequest.refererInfo.topmostLocation;
   }
   return bidRequest.params.secure ? pageUrl.replace(/^http:/i, 'https:') : pageUrl;
 }

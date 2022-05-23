@@ -306,7 +306,7 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
     [ 'imp', config.params.imps ],
     [ 'fc_ip', config.params.freqcap_ip ],
     [ 'fc_ipua', config.params.freqcap_ipua ],
-    [ 'pn', (refererInfo.canonicalUrl || refererInfo.referer || '').substr(0, 300).split(/[?#]/)[0] ]
+    [ 'pn', (refererInfo.page || '').substr(0, 300).split(/[?#]/)[0] ]
   ];
 
   if (!adUnits.length) {

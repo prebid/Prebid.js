@@ -74,9 +74,8 @@ export const onBidWon = function (bid) {
 export const onTimeout = function (timeoutDataArray) {
   if (isArray(timeoutDataArray)) {
     const refererInfo = getRefererInfo();
-    const pageUrl = (refererInfo && refererInfo.referer)
-      ? refererInfo.referer
-      : window.location.href;
+    // TODO: does it make sense to fall back to window.location.href?
+    const pageUrl = refererInfo?.page || window.location.href;
     timeoutDataArray.forEach(timeoutData => {
       const query = parseQueryStringParameters({
         ad_unit_code: timeoutData.adUnitCode,
@@ -95,9 +94,8 @@ export const onTimeout = function (timeoutDataArray) {
 function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
   const imps = validBidRequests.map(buildOpenRtbImpObject);
   const timeout = bidderRequest.timeout || config.getConfig('bidderTimeout') || DEFAULT_TIMEOUT;
-  const pageUrl = (bidderRequest.refererInfo && bidderRequest.refererInfo.referer)
-    ? bidderRequest.refererInfo.referer
-    : window.location.href;
+  // TODO: does the fallback make sense here?
+  const pageUrl = bidderRequest.refererInfo?.page || window.location.href
 
   const request = {
     id: bidderRequest.auctionId,

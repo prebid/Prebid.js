@@ -874,7 +874,7 @@ Object.assign(ORTB2.prototype, {
       request.cur = [adServerCur[0]];
     }
 
-    _appendSiteAppDevice(request, bidRequests[0].refererInfo.referer, s2sConfig.accountId);
+    _appendSiteAppDevice(request, bidRequests[0].refererInfo.page, s2sConfig.accountId);
 
     // pass schain object if it is present
     const schain = deepAccess(bidRequests, '0.bids.0.schain');

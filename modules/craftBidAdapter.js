@@ -51,7 +51,8 @@ export const spec = {
     }
     if (bidderRequest && bidderRequest.refererInfo) {
       let refererinfo = {
-        rd_ref: bidderRequest.refererInfo.referer,
+        // TODO: this collects everything it finds, except for the canonical URL
+        rd_ref: bidderRequest.refererInfo.topmostLocation,
         rd_top: bidderRequest.refererInfo.reachedTop,
         rd_ifs: bidderRequest.refererInfo.numIframes,
       };

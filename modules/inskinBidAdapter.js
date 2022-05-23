@@ -49,7 +49,7 @@ export const spec = {
       placements: [],
       time: Date.now(),
       user: {},
-      url: bidderRequest.refererInfo.referer,
+      url: bidderRequest.refererInfo.page,
       enableBotFiltering: true,
       includePricingData: true,
       parallel: true

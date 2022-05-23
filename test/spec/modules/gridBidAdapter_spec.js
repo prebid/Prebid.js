@@ -44,12 +44,12 @@ describe('TheMediaGrid Adapter', function () {
       return JSON.parse(data);
     }
     const bidderRequest = {
-      refererInfo: {referer: 'https://example.com'},
+      refererInfo: {page: 'https://example.com'},
       bidderRequestId: '22edbae2733bf6',
       auctionId: '9e2dfbfe-00c7-4f5e-9850-4044df3229c7',
       timeout: 3000
     };
-    const referrer = encodeURIComponent(bidderRequest.refererInfo.referer);
+    const referrer = encodeURIComponent(bidderRequest.refererInfo.page);
     let bidRequests = [
       {
         'bidder': 'grid',
@@ -736,12 +736,12 @@ describe('TheMediaGrid Adapter', function () {
         'auctionId': 654645,
       };
       const bidderRequestWithNumId = {
-        refererInfo: {referer: 'https://example.com'},
+        refererInfo: {page: 'https://example.com'},
         bidderRequestId: 345345345,
         auctionId: 654645,
         timeout: 3000
       };
-      const parsedReferrer = encodeURIComponent(bidderRequestWithNumId.refererInfo.referer);
+      const parsedReferrer = encodeURIComponent(bidderRequestWithNumId.refererInfo.page);
       const request = spec.buildRequests([bidRequestWithNumId], bidderRequestWithNumId);
       expect(request.data).to.be.an('string');
       const payload = parseRequest(request.data);

@@ -258,7 +258,7 @@ function buildCommonQueryParamsFromBids(bids, bidderRequest) {
   let defaultParams;
 
   defaultParams = {
-    ju: config.getConfig('pageUrl') || bidderRequest.refererInfo.referer,
+    ju: bidderRequest.refererInfo.page,
     ch: document.charSet || document.characterSet,
     res: `${screen.width}x${screen.height}x${screen.colorDepth}`,
     ifr: isInIframe,
