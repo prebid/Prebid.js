@@ -161,6 +161,9 @@ pbjs.setConfig({
                   },
         {
              name: "dacId"
+        }, 
+        {
+            name: "gravitompId"
         }
         ],
         syncDelay: 5000,
