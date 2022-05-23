@@ -163,9 +163,9 @@ describe('Taboola Adapter', function () {
         ...commonBidderRequest,
         timeout: 500
       }
-      const res = spec.buildRequests([defaultBidRequest], bidderRequest)
-      const resData = JSON.parse(res.data)
-      expect(resData.tmax).to.equal(500)
+      const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+      const resData = JSON.parse(res.data);
+      expect(resData.tmax).to.equal(500);
     });
 
     describe('handle privacy segments when building request', function () {
