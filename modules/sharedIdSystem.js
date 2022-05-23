@@ -11,7 +11,8 @@ import { coppaDataHandler } from '../src/adapterManager.js';
 import {getStorageManager} from '../src/storageManager.js';
 
 const GVLID = 887;
-export const storage = getStorageManager({gvlid: GVLID, moduleName: 'pubCommonId'});
+const MODULE_TYPE = 'fpid-module';
+export const storage = getStorageManager({gvlid: GVLID, moduleName: 'pubCommonId', moduleType: MODULE_TYPE});
 const COOKIE = 'cookie';
 const LOCAL_STORAGE = 'html5';
 const OPTOUT_NAME = '_pubcid_optout';

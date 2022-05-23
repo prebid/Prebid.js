@@ -199,6 +199,27 @@ describe('gdpr enforcement', function () {
       expect(logWarnSpy.callCount).to.equal(1);
     });
 
+    it('should not check consent for vendors when first party id module', function () {
+      adapterManagerStub.withArgs('pubCommonId').returns(getBidderSpec(1));
+      setEnforcementConfig({
+        gdpr: {
+          rules: [{
+            purpose: 'storage',
+            enforcePurpose: true,
+            enforceVendor: true,
+          }]
+        }
+      });
+      let consentData = {}
+      consentData.vendorData = staticConfig.consentData.getTCData;
+      consentData.gdprApplies = true;
+      consentData.apiVersion = 2;
+      gdprDataHandlerStub.returns(consentData);
+
+      deviceAccessHook(nextFnSpy, 1, 'pubCommonId', 'fpid-module');
+      expect(logWarnSpy.callCount).to.equal(0);
+    });
+
     it('should allow device access when gdprApplies is false and hasDeviceAccess flag is true', function () {
       adapterManagerStub.withArgs('appnexus').returns(getBidderSpec(1));
       setEnforcementConfig({
