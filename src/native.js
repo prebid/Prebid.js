@@ -397,7 +397,7 @@ function getNativeKeys(adUnit) {
   }
 }
 
-const { NATIVE_ASSET_TYPES, NATIVE_IMAGE_TYPES, PREBID_NATIVE_DATA_KEYS_TO_ORTB } = CONSTANTS;
+const { NATIVE_ASSET_TYPES, NATIVE_IMAGE_TYPES, PREBID_NATIVE_DATA_KEYS_TO_ORTB, NATIVE_KEYS_THAT_ARE_NOT_ASSETS } = CONSTANTS;
 
 /**
  * converts Prebid legacy native assets request to OpenRTB format
@@ -553,7 +553,16 @@ export function convertOrtbRequestToProprietaryNative(bidRequests) {
   // convert Native ORTB definition to old-style prebid native definition
   for (const bidRequest of bidRequests) {
     if (bidRequest.mediaTypes && bidRequest.mediaTypes[NATIVE] && bidRequest.mediaTypes[NATIVE].ortb) {
-      bidRequest.mediaTypes[NATIVE] = fromOrtbNativeRequest(bidRequest.mediaTypes[NATIVE].ortb);
+      bidRequest.mediaTypes[NATIVE] = {
+        // to keep other keywords like sendTargetingKeys, rendererUrl...
+        ...Object.keys(bidRequest.mediaTypes[NATIVE])
+          .filter(key => NATIVE_KEYS_THAT_ARE_NOT_ASSETS.includes(key))
+          .reduce((obj, key) => ({
+            ...obj,
+            [key]: bidRequest.mediaTypes[NATIVE][key]
+          }), {}),
+        ...fromOrtbNativeRequest(bidRequest.mediaTypes[NATIVE].ortb)
+      }
       bidRequest.nativeParams = bidRequest.mediaTypes[NATIVE];
       if (bidRequest.nativeParams) {
         processNativeAdUnitParams(bidRequest.nativeParams);

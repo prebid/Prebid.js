@@ -150,5 +150,10 @@
   "NATIVE_IMAGE_TYPES": {
     "ICON": 1,
     "MAIN": 3
-  }
+  },
+  "NATIVE_KEYS_THAT_ARE_NOT_ASSETS": [
+    "sendTargetingKeys",
+    "adTemplate",
+    "rendererUrl"
+  ]
 }
