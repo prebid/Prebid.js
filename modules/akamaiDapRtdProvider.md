@@ -17,7 +17,6 @@
 ```
  pbjs.setConfig({
    realTimeData: {
-     auctionDelay: 2000,
      dataProviders: [
        {
          name: "dap",
@@ -26,10 +25,9 @@
            apiHostname: '<see your Akamai account rep>',
            apiVersion: "x1",
            domain: 'your-domain.com',
-           identityType: 'email' | 'mobile' | ... | 'dap-signature:1.3.0',
-           segtax: 504,
-           dapFpUrl: 'https://dap-dist.akamaized.net/dapfingerprinting.js',
-           dapFpTimeout: 1500       // Maximum time for dapFP to run
+           identityType: 'email' | 'mobile' | ... | 'dap-signature:1.0.0',
+           segtax: <Akamai_taxonomy_name>,
+           tokenTtl: 5,
          }
        }
      ]
