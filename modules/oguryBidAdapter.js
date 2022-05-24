@@ -10,7 +10,29 @@ const DEFAULT_TIMEOUT = 1000;
 const BID_HOST = 'https://mweb-hb.presage.io/api/header-bidding-request';
 const TIMEOUT_MONITORING_HOST = 'https://ms-ads-monitoring-events.presage.io';
 const MS_COOKIE_SYNC_DOMAIN = 'https://ms-cookie-sync.presage.io';
-const ADAPTER_VERSION = '1.2.11';
+const ADAPTER_VERSION = '1.2.12';
+
+function getClientWidth() {
+  const documentElementClientWidth = window.top.document.documentElement.clientWidth
+    ? window.top.document.documentElement.clientWidth
+    : 0
+  const innerWidth = window.top.innerWidth ? window.top.innerWidth : 0
+  const outerWidth = window.top.outerWidth ? window.top.outerWidth : 0
+  const screenWidth = window.top.screen.width ? window.top.screen.width : 0
+
+  return documentElementClientWidth || innerWidth || outerWidth || screenWidth
+}
+
+function getClientHeight() {
+  const documentElementClientHeight = window.top.document.documentElement.clientHeight
+    ? window.top.document.documentElement.clientHeight
+    : 0
+  const innerHeight = window.top.innerHeight ? window.top.innerHeight : 0
+  const outerHeight = window.top.outerHeight ? window.top.outerHeight : 0
+  const screenHeight = window.top.screen.height ? window.top.screen.height : 0
+
+  return documentElementClientHeight || innerHeight || outerHeight || screenHeight
+}
 
 function isBidRequestValid(bid) {
   const adUnitSizes = getAdUnitSizes(bid);
@@ -60,6 +82,10 @@ function buildRequests(validBidRequests, bidderRequest) {
     ext: {
       adapterversion: ADAPTER_VERSION,
       prebidversion: '$prebid.version$'
+    },
+    device: {
+      w: getClientWidth(),
+      h: getClientHeight()
     }
   };
 

@@ -70,27 +70,42 @@ export const spec = {
     const bidResponses = [];
     for (let bidId in bids) {
       let adUnit = bids[bidId];
-      let meta;
+      let meta = {
+        mediaType: BANNER
+      };
+
       if (adUnit.metadata && adUnit.metadata.landingPageDomain) {
-        meta = {
-          clickUrl: adUnit.metadata.landingPageDomain[0],
-          advertiserDomains: adUnit.metadata.landingPageDomain
-        };
+        meta.clickUrl = adUnit.metadata.landingPageDomain[0];
+        meta.advertiserDomains = adUnit.metadata.landingPageDomain;
       }
-      bidResponses.push({
+
+      if (adUnit.mediaType && SUPPORTED_MEDIA_TYPES.includes(adUnit.mediaType)) {
+        meta.mediaType = adUnit.mediaType;
+      }
+
+      const bidResponse = {
         requestId: bidId,
         cpm: Number(adUnit.cpm),
         width: adUnit.width,
         height: adUnit.height,
-        ad: adUnit.adm,
         ttl: 300,
         creativeId: adUnit.id,
         dealId: adUnit.targetingCustom,
         netRevenue: true,
         currency: adUnit.currency || bidRequest.currency,
+        mediaType: meta.mediaType,
         meta: meta
-      });
+      };
+
+      if (meta.mediaType == VIDEO) {
+        bidResponse.vastXml = adUnit.adm;
+      } else {
+        bidResponse.ad = adUnit.adm;
+      }
+
+      bidResponses.push(bidResponse);
     }
+
     return bidResponses;
   },
   getUserSyncs: function(syncOptions, responses, gdprConsent, usPrivacy) {
