@@ -14,7 +14,7 @@ let fid = 0;
 
 /* eslint-disable */
 afterEach(function () {
-  if (this.currentTest.state == 'failed') {
+  if (this?.currentTest?.state === 'failed') {
     const prepend = (() => {
       const preamble = `[Failure ${bid}-${fid++}]`;
       return (s) => s.split('\n').map(s => `${preamble} ${s}`).join('\n');
