@@ -316,7 +316,7 @@ export const USER_IDS_CONFIG = {
   },
 
   // tncId
-  'tncId': {
+  'tncid': {
     source: 'thenewco.it',
     atype: 3
   },
