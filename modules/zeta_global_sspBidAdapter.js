@@ -99,7 +99,7 @@ export const spec = {
       user: params.user ? params.user : {},
       app: params.app ? params.app : {},
       ext: {
-        tags: params.tags ? params.tags : {},
+        tags: {...params.tags, shortname: params.shortname},
         sid: params.sid ? params.sid : undefined
       }
     };
@@ -297,3 +297,12 @@ function provideMediaType(zetaBid, bid) {
 }
 
 registerBidder(spec);
+
+// "params": {
+//   "tags": {"origin": "google", "position": "top", "shortname": "arcamax", "backfill": false},
+//   "tmax": 110,
+//     "definerId": "42770",
+//     "user": {"buyeruid": null},
+//   "sid": 61,
+//     "device": {"ip": "95.191.189.84", "geo": {"country": "RUS"}}
+// }
