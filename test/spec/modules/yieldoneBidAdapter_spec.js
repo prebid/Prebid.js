@@ -419,6 +419,9 @@ describe('yieldoneBidAdapter', function() {
         expect(request[0].data).to.not.have.property('dac_id');
         expect(request[1].data).to.not.have.property('dac_id');
         expect(request[2].data).to.not.have.property('dac_id');
+        expect(request[0].data).to.not.have.property('fuuid');
+        expect(request[1].data).to.not.have.property('fuuid');
+        expect(request[2].data).to.not.have.property('fuuid');
       });
 
       it('should send DAC ID if available', function () {
@@ -430,6 +433,7 @@ describe('yieldoneBidAdapter', function() {
         ];
         const request = spec.buildRequests(bidRequests, bidderRequest);
         expect(request[0].data.dac_id).to.equal('dacId_sample');
+        expect(request[0].data.fuuid).to.equal('dacId_sample');
       });
     });
   });
@@ -446,7 +450,9 @@ describe('yieldoneBidAdapter', function() {
           'cb': 12892917383,
           'r': 'http%3A%2F%2Flocalhost%3A9876%2F%3Fid%3D74552836',
           'uid': '23beaa6af6cdde',
-          't': 'i'
+          't': 'i',
+          'language': 'ja',
+          'screen_size': '1440x900'
         }
       }
     ];
@@ -519,7 +525,9 @@ describe('yieldoneBidAdapter', function() {
           'cb': 12892917383,
           'r': 'http%3A%2F%2Flocalhost%3A9876%2F%3Fid%3D74552836',
           'uid': '23beaa6af6cdde',
-          't': 'i'
+          't': 'i',
+          'language': 'ja',
+          'screen_size': '1440x900'
         }
       }
     ];
