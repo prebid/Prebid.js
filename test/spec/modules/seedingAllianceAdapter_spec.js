@@ -1,6 +1,5 @@
 // jshint esversion: 6, es3: false, node: true
 import {assert, expect} from 'chai';
-import * as url from 'src/url.js';
 import {spec} from 'modules/seedingAllianceBidAdapter.js';
 import { NATIVE } from 'src/mediaTypes.js';
 import { config } from 'src/config.js';
@@ -39,7 +38,7 @@ describe('SeedingAlliance adapter', function () {
     });
 
     it('should have default request structure', function () {
-      let keys = 'site,device,cur,imp,user'.split(',');
+      let keys = 'site,device,cur,imp,user,regs'.split(',');
       let validBidRequests = [{
         bidId: 'bidId',
         params: {}

@@ -1,10 +1,12 @@
+import { logInfo, logError, parseUrl, _each } from '../src/utils.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
 import { getRefererInfo } from '../src/refererDetection.js';
-import { parse } from '../src/url.js';
-import * as utils from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
+import { getStorageManager } from '../src/storageManager.js';
+
+const storageObj = getStorageManager();
 
 const ANALYTICS_VERSION = '1.0.0';
 const DEFAULT_QUEUE_TIMEOUT = 4000;
@@ -92,14 +94,14 @@ analyticsAdapter.context = {};
 analyticsAdapter.originEnableAnalytics = analyticsAdapter.enableAnalytics;
 
 analyticsAdapter.enableAnalytics = (config) => {
-  utils.logInfo('Enabling STAQ Adapter');
+  logInfo('Enabling STAQ Adapter');
   staqAdapterRefWin = getRefererInfo(window);
   if (!config.options.connId) {
-    utils.logError('ConnId is not defined. STAQ Analytics won\'t work');
+    logError('ConnId is not defined. STAQ Analytics won\'t work');
     return;
   }
   if (!config.options.url) {
-    utils.logError('URL is not defined. STAQ Analytics won\'t work');
+    logError('URL is not defined. STAQ Analytics won\'t work');
     return;
   }
   analyticsAdapter.context = {
@@ -131,7 +133,7 @@ function sendAll() {
 }
 
 analyticsAdapter.ajaxCall = function ajaxCall(data) {
-  utils.logInfo('SENDING DATA: ' + data);
+  logInfo('SENDING DATA: ' + data);
   ajax(`https://${analyticsAdapter.context.url}/prebid/${analyticsAdapter.context.connectionId}`, () => {}, data, { contentType: 'text/plain' });
 };
 
@@ -212,10 +214,10 @@ const ORGANIC = '(organic)';
 
 export let storage = {
   getItem: (name) => {
-    return localStorage.getItem(name);
+    return storageObj.getDataFromLocalStorage(name);
   },
   setItem: (name, value) => {
-    localStorage.setItem(name, value);
+    storageObj.setDataInLocalStorage(name, value);
   }
 };
 
@@ -246,7 +248,7 @@ export function getUmtSource(pageUrl, referrer) {
       if (se) {
         return asUtm(se, ORGANIC, ORGANIC);
       }
-      let parsedUrl = parse(pageUrl);
+      let parsedUrl = parseUrl(pageUrl);
       let [refHost, refPath] = getReferrer(referrer);
       if (refHost && refHost !== parsedUrl.hostname) {
         return asUtm(refHost, REFERRAL, REFERRAL, '', refPath);
@@ -273,17 +275,17 @@ export function getUmtSource(pageUrl, referrer) {
   }
 
   function getReferrer(referrer) {
-    let ref = parse(referrer);
+    let ref = parseUrl(referrer);
     return [ref.hostname, ref.pathname];
   }
 
   function getUTM(pageUrl) {
-    let urlParameters = parse(pageUrl).search;
+    let urlParameters = parseUrl(pageUrl).search;
     if (!urlParameters['utm_campaign'] || !urlParameters['utm_source']) {
       return;
     }
     let utmArgs = [];
-    utils._each(UTM_TAGS, (utmTagName) => {
+    _each(UTM_TAGS, (utmTagName) => {
       let utmValue = urlParameters[utmTagName] || '';
       utmArgs.push(utmValue);
     });

@@ -10,7 +10,8 @@
  */
 
 import { ajax } from './ajax.js';
-import { config } from '../src/config.js';
+import { config } from './config.js';
+import {auctionManager} from './auctionManager.js';
 
 /**
  * @typedef {object} CacheableUrlBid
@@ -57,9 +58,11 @@ function wrapURI(uri, impUrl) {
  * the bid can't be converted cleanly.
  *
  * @param {CacheableBid} bid
+ * @param index
  */
-function toStorageRequest(bid) {
+function toStorageRequest(bid, {index = auctionManager.index} = {}) {
   const vastValue = bid.vastXml ? bid.vastXml : wrapURI(bid.vastUrl, bid.vastImpUrl);
+  const auction = index.getAuction(bid);
 
   let payload = {
     type: 'xml',
@@ -70,6 +73,11 @@ function toStorageRequest(bid) {
   if (config.getConfig('cache.vasttrack')) {
     payload.bidder = bid.bidder;
     payload.bidid = bid.requestId;
+    payload.aid = bid.auctionId;
+  }
+
+  if (auction != null) {
+    payload.timestamp = auction.getAuctionStart();
   }
 
   if (typeof bid.customCacheKey === 'string' && bid.customCacheKey !== '') {

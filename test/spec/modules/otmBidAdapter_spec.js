@@ -1,8 +1,8 @@
 import {expect} from 'chai';
-import {spec} from 'modules/otmBidAdapter.js';
+import {spec} from 'modules/otmBidAdapter';
 
-describe('otmBidAdapterTests', function () {
-  it('validate_pub_params', function () {
+describe('otmBidAdapter', function () {
+  it('pub_params', function () {
     expect(spec.isBidRequestValid({
       bidder: 'otm',
       params: {
@@ -12,8 +12,27 @@ describe('otmBidAdapterTests', function () {
     })).to.equal(true);
   });
 
-  it('validate_generated_params', function () {
-    let bidRequestData = [{
+  it('generated_params common case', function () {
+    const bidRequestData = [{
+      bidId: 'bid1234',
+      bidder: 'otm',
+      params: {
+        tid: '123',
+        bidfloor: 20,
+        domain: 'github.com'
+      },
+      sizes: [[240, 400]]
+    }];
+
+    const request = spec.buildRequests(bidRequestData);
+    const req_data = request[0].data;
+
+    expect(req_data.bidid).to.equal('bid1234');
+    expect(req_data.domain).to.equal('github.com');
+  });
+
+  it('generated_params should return top level origin as domain if not defined', function () {
+    const bidRequestData = [{
       bidId: 'bid1234',
       bidder: 'otm',
       params: {
@@ -23,58 +42,22 @@ describe('otmBidAdapterTests', function () {
       sizes: [[240, 400]]
     }];
 
-    let request = spec.buildRequests(bidRequestData);
-    let req_data = request[0].data;
+    const bidderRequest = {refererInfo: {referer: `https://github.com:3000/`}}
 
-    expect(req_data.bidid).to.equal('bid1234');
+    const request = spec.buildRequests(bidRequestData, bidderRequest);
+    const req_data = request[0].data;
+
+    expect(req_data.domain).to.equal(`github.com:3000`);
   });
 
-  it('validate_best_size_select', function () {
-    // when:
-    let bidRequestData = [{
-      bidId: 'bid1234',
-      bidder: 'otm',
-      params: {
-        tid: '123',
-        bidfloor: 20
-      },
-      sizes: [[300, 500], [300, 600], [240, 400], [300, 50]]
-    }];
-
-    let request = spec.buildRequests(bidRequestData);
-    let req_data = request[0].data;
-
-    // then:
-    expect(req_data.w).to.equal(240);
-    expect(req_data.h).to.equal(400);
-
-    // when:
-    bidRequestData = [{
-      bidId: 'bid1234',
-      bidder: 'otm',
-      params: {
-        tid: '123',
-        bidfloor: 20
-      },
-      sizes: [[200, 240], [400, 440]]
-    }];
-
-    request = spec.buildRequests(bidRequestData);
-    req_data = request[0].data;
-
-    // then:
-    expect(req_data.w).to.equal(200);
-    expect(req_data.h).to.equal(240);
-  });
-
-  it('validate_response_params', function () {
-    let bidRequestData = {
+  it('response_params common case', function () {
+    const bidRequestData = {
       data: {
         bidId: 'bid1234'
       }
     };
 
-    let serverResponse = {
+    const serverResponse = {
       body: [
         {
           'auctionid': '3c6f8e22-541b-485c-9214-e974d9fb1b6f',
@@ -91,9 +74,9 @@ describe('otmBidAdapterTests', function () {
       ]
     };
 
-    let bids = spec.interpretResponse(serverResponse, bidRequestData);
+    const bids = spec.interpretResponse(serverResponse, bidRequestData);
     expect(bids).to.have.lengthOf(1);
-    let bid = bids[0];
+    const bid = bids[0];
     expect(bid.cpm).to.equal(847.097);
     expect(bid.currency).to.equal('RUB');
     expect(bid.width).to.equal(240);

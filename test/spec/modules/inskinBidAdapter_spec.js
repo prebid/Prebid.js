@@ -12,7 +12,8 @@ const REQUEST = {
     'bidder': 'inskin',
     'params': {
       'networkId': 9874,
-      'siteId': 730181
+      'siteId': 730181,
+      'publisherId': 123456
     },
     'placementCode': 'div-gpt-ad-1487778092495-0',
     'sizes': [
@@ -215,6 +216,91 @@ describe('InSkin BidAdapter', function () {
       expect(payload.consent.gdprConsentString).to.exist.and.to.equal(consentString);
       expect(payload.consent.gdprConsentRequired).to.exist.and.to.be.true;
     });
+
+    it('should not add keywords if TCF v2 purposes are granted', function () {
+      const bidderRequest2 = Object.assign({}, bidderRequest, {
+        gdprConsent: {
+          gdprApplies: true,
+          consentString: 'consentString',
+          vendorData: {
+            vendor: {
+              consents: {
+                150: true
+              }
+            },
+            purpose: {
+              consents: {
+                1: true,
+                2: true,
+                3: true,
+                4: true,
+                5: true,
+                6: true,
+                7: true,
+                8: true,
+                9: true,
+                10: true
+              }
+            }
+          },
+          apiVersion: 2
+        }
+      });
+
+      const request = spec.buildRequests(bidRequests, bidderRequest2);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.keywords).to.be.an('array').that.is.empty;
+      expect(payload.placements[0].properties.restrictions).to.be.undefined;
+    });
+
+    it('should add keywords if TCF v2 purposes are not granted', function () {
+      const bidderRequest2 = Object.assign({}, bidderRequest, {
+        gdprConsent: {
+          gdprApplies: true,
+          consentString: 'consentString',
+          vendorData: {
+            vendor: {
+              consents: {
+                150: false
+              }
+            },
+            purpose: {
+              consents: {
+                1: true,
+                2: true,
+                3: true,
+                4: true,
+                5: true,
+                6: true,
+                7: true,
+                8: true,
+                9: true,
+                10: true
+              }
+            }
+          },
+          apiVersion: 2
+        }
+      });
+
+      const request = spec.buildRequests(bidRequests, bidderRequest2);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.keywords).to.be.an('array').that.includes('cst-nocookies');
+      expect(payload.keywords).to.be.an('array').that.includes('cst-nocontext');
+      expect(payload.keywords).to.be.an('array').that.includes('cst-nodmp');
+      expect(payload.keywords).to.be.an('array').that.includes('cst-nodata');
+      expect(payload.keywords).to.be.an('array').that.includes('cst-noclicks');
+      expect(payload.keywords).to.be.an('array').that.includes('cst-noresearch');
+
+      expect(payload.placements[0].properties.restrictions).to.be.an('array').that.includes('nocookies');
+      expect(payload.placements[0].properties.restrictions).to.be.an('array').that.includes('nocontext');
+      expect(payload.placements[0].properties.restrictions).to.be.an('array').that.includes('nodmp');
+      expect(payload.placements[0].properties.restrictions).to.be.an('array').that.includes('nodata');
+      expect(payload.placements[0].properties.restrictions).to.be.an('array').that.includes('noclicks');
+      expect(payload.placements[0].properties.restrictions).to.be.an('array').that.includes('noresearch');
+    });
   });
   describe('interpretResponse validation', function () {
     it('response should have valid bidderCode', function () {
@@ -243,6 +329,7 @@ describe('InSkin BidAdapter', function () {
         expect(b).to.have.property('currency', 'USD');
         expect(b).to.have.property('creativeId');
         expect(b).to.have.property('ttl', 360);
+        expect(b.meta).to.have.property('advertiserDomains');
         expect(b).to.have.property('netRevenue', true);
       });
     });
@@ -286,6 +373,14 @@ describe('InSkin BidAdapter', function () {
       let opts = spec.getUserSyncs(syncOptions);
 
       expect(opts.length).to.equal(3);
+    });
+  });
+  describe('supply chain id', function () {
+    it('should use publisherId as sid', function () {
+      const request = spec.buildRequests(REQUEST.bidRequest, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.rtb.schain.ext.sid).to.equal('123456');
     });
   });
 });

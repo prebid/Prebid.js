@@ -234,9 +234,7 @@ describe('TelariaAdapter', () => {
     }];
 
     it('should get correct bid response', () => {
-      let expectedResponseKeys = ['bidderCode', 'width', 'height', 'statusMessage', 'adId', 'mediaType', 'source',
-        'getStatusCode', 'getSize', 'requestId', 'cpm', 'creativeId', 'vastXml',
-        'vastUrl', 'currency', 'netRevenue', 'ttl', 'ad'];
+      let expectedResponseKeys = ['requestId', 'cpm', 'creativeId', 'vastXml', 'vastUrl', 'mediaType', 'width', 'height', 'currency', 'netRevenue', 'ttl', 'ad', 'meta'];
 
       let bidRequest = spec.buildRequests(stub, BIDDER_REQUEST)[0];
       bidRequest.bidId = '1234';

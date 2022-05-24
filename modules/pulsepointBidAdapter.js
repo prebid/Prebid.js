@@ -1,5 +1,5 @@
 /* eslint dot-notation:0, quote-props:0 */
-import * as utils from '../src/utils.js';
+import { convertTypes, deepAccess, isArray, logError, isFn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
 
@@ -27,6 +27,8 @@ const KNOWN_PARAMS = ['cp', 'ct', 'cf', 'video', 'battr', 'bcat', 'badv', 'bidfl
 export const spec = {
 
   code: 'pulsepoint',
+
+  gvlid: 81,
 
   aliases: ['pulseLite', 'pulsepointLite'],
 
@@ -75,7 +77,7 @@ export const spec = {
     }
   },
   transformBidParams: function(params, isOpenRtb) {
-    return utils.convertTypes({
+    return convertTypes({
       'cf': 'string',
       'cp': 'number',
       'ct': 'number'
@@ -117,24 +119,25 @@ function bidResponseAvailable(request, response) {
         adId: id,
         ttl: idToBidMap[id].exp || DEFAULT_BID_TTL,
         netRevenue: DEFAULT_NET_REVENUE,
-        currency: bidResponse.cur || DEFAULT_CURRENCY
+        currency: bidResponse.cur || DEFAULT_CURRENCY,
+        meta: { advertiserDomains: idToBidMap[id].adomain || [] }
       };
-      if (idToImpMap[id]['native']) {
-        bid['native'] = nativeResponse(idToImpMap[id], idToBidMap[id]);
-        bid.mediaType = 'native';
-      } else if (idToImpMap[id].video) {
+      if (idToImpMap[id].video) {
         // for outstream, a renderer is specified
-        if (idToSlotConfig[id] && utils.deepAccess(idToSlotConfig[id], 'mediaTypes.video.context') === 'outstream') {
-          bid.renderer = outstreamRenderer(utils.deepAccess(idToSlotConfig[id], 'renderer.options'), utils.deepAccess(idToBidMap[id], 'ext.outstream'));
+        if (idToSlotConfig[id] && deepAccess(idToSlotConfig[id], 'mediaTypes.video.context') === 'outstream') {
+          bid.renderer = outstreamRenderer(deepAccess(idToSlotConfig[id], 'renderer.options'), deepAccess(idToBidMap[id], 'ext.outstream'));
         }
         bid.vastXml = idToBidMap[id].adm;
         bid.mediaType = 'video';
         bid.width = idToBidMap[id].w;
         bid.height = idToBidMap[id].h;
-      } else {
+      } else if (idToImpMap[id].banner) {
         bid.ad = idToBidMap[id].adm;
-        bid.width = idToImpMap[id].banner.w;
-        bid.height = idToImpMap[id].banner.h;
+        bid.width = idToBidMap[id].w || idToImpMap[id].banner.w;
+        bid.height = idToBidMap[id].h || idToImpMap[id].banner.h;
+      } else if (idToImpMap[id]['native']) {
+        bid['native'] = nativeResponse(idToImpMap[id], idToBidMap[id]);
+        bid.mediaType = 'native';
       }
       bids.push(bid);
     }
@@ -152,7 +155,7 @@ function impression(slot) {
     'native': nativeImpression(slot),
     tagid: slot.params.ct.toString(),
     video: video(slot),
-    bidfloor: slot.params.bidfloor,
+    bidfloor: bidFloor(slot),
     ext: ext(slot),
   };
 }
@@ -161,12 +164,28 @@ function impression(slot) {
  * Produces an OpenRTB Banner object for the slot given.
  */
 function banner(slot) {
-  const size = adSize(slot);
-  return (slot.nativeParams || slot.params.video) ? null : {
+  const sizes = parseSizes(slot);
+  const size = adSize(slot, sizes);
+  return (slot.mediaTypes && slot.mediaTypes.banner) ? {
     w: size[0],
     h: size[1],
     battr: slot.params.battr,
-  };
+    format: sizes
+  } : null;
+}
+
+/**
+ * Produce openrtb format objects based on the sizes configured for the slot.
+ */
+function parseSizes(slot) {
+  const sizes = deepAccess(slot, 'mediaTypes.banner.sizes');
+  if (sizes && isArray(sizes)) {
+    return sizes.filter(sz => isArray(sz) && sz.length === 2).map(sz => ({
+      w: sz[0],
+      h: sz[1]
+    }));
+  }
+  return null;
 }
 
 /**
@@ -174,7 +193,11 @@ function banner(slot) {
  */
 function video(slot) {
   if (slot.params.video) {
-    return Object.assign({}, slot.params.video, {battr: slot.params.battr});
+    return Object.assign({},
+      slot.params.video, // previously supported as bidder param
+      slot.mediaTypes && slot.mediaTypes.video ? slot.mediaTypes.video : {}, // params on mediaTypes.video
+      {battr: slot.params.battr}
+    );
   }
   return null;
 }
@@ -364,7 +387,7 @@ function parse(rawResponse) {
       return JSON.parse(rawResponse);
     }
   } catch (ex) {
-    utils.logError('pulsepointLite.safeParse', 'ERROR', ex);
+    logError('pulsepointLite.safeParse', 'ERROR', ex);
   }
   return null;
 }
@@ -372,12 +395,14 @@ function parse(rawResponse) {
 /**
  * Determines the AdSize for the slot.
  */
-function adSize(slot) {
+function adSize(slot, sizes) {
   if (slot.params.cf) {
     const size = slot.params.cf.toUpperCase().split('X');
     const width = parseInt(slot.params.cw || size[0], 10);
     const height = parseInt(slot.params.ch || size[1], 10);
     return [width, height];
+  } else if (sizes && sizes.length > 0) {
+    return [sizes[0].w, sizes[0].h];
   }
   return [1, 1];
 }
@@ -394,53 +419,12 @@ function user(bidRequest, bidderRequest) {
     }
   }
   if (bidRequest) {
-    if (bidRequest.userId) {
-      ext.eids = [];
-      addExternalUserId(ext.eids, bidRequest.userId.pubcid, 'pubcommon');
-      addExternalUserId(ext.eids, bidRequest.userId.britepoolid, 'britepool.com');
-      addExternalUserId(ext.eids, bidRequest.userId.criteoId, 'criteo');
-      addExternalUserId(ext.eids, bidRequest.userId.idl_env, 'identityLink');
-      addExternalUserId(ext.eids, bidRequest.userId.id5id, 'id5-sync.com');
-      addExternalUserId(ext.eids, bidRequest.userId.parrableid, 'parrable.com');
-      // liveintent
-      if (bidRequest.userId.lipb && bidRequest.userId.lipb.lipbid) {
-        addExternalUserId(ext.eids, bidRequest.userId.lipb.lipbid, 'liveintent.com');
-      }
-      // TTD
-      addExternalUserId(ext.eids, bidRequest.userId.tdid, 'adserver.org', {
-        rtiPartner: 'TDID'
-      });
-      // digitrust
-      const digitrustResponse = bidRequest.userId.digitrustid;
-      if (digitrustResponse && digitrustResponse.data) {
-        var digitrust = {};
-        if (digitrustResponse.data.id) {
-          digitrust.id = digitrustResponse.data.id;
-        }
-        if (digitrustResponse.data.keyv) {
-          digitrust.keyv = digitrustResponse.data.keyv;
-        }
-        ext.digitrust = digitrust;
-      }
+    let eids = bidRequest.userIdAsEids;
+    if (eids) {
+      ext.eids = eids;
     }
   }
   return { ext };
-}
-
-/**
- * Produces external userid object in ortb 3.0 model.
- */
-function addExternalUserId(eids, id, source, uidExt) {
-  if (id) {
-    var uid = { id };
-    if (uidExt) {
-      uid.ext = uidExt;
-    }
-    eids.push({
-      source,
-      uids: [ uid ]
-    });
-  }
 }
 
 /**
@@ -497,6 +481,21 @@ function nativeResponse(imp, bid) {
     }
   }
   return null;
+}
+
+function bidFloor(slot) {
+  let floor = slot.params.bidfloor;
+  if (isFn(slot.getFloor)) {
+    const floorData = slot.getFloor({
+      mediaType: slot.mediaTypes.banner ? 'banner' : slot.mediaTypes.video ? 'video' : 'Native',
+      size: '*',
+      currency: DEFAULT_CURRENCY,
+    });
+    if (floorData && floorData.floor) {
+      floor = floorData.floor;
+    }
+  }
+  return floor;
 }
 
 registerBidder(spec);

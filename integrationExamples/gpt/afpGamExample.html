@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Prebid.js Banner Example</title>
+  <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
+  <script src="../../../build/dev/prebid.js"></script>
+  <script>
+    var adUnits = [{
+      code: 'div-gpt-ad-1574864639578-0',
+      mediaTypes: {
+        banner: {
+          sizes: [0, 0],
+        }
+      },
+      bids: [{
+        bidder: "afp",
+        params: {
+          placeType: "In-image",
+          placeId: "613221112871613d1517d181",
+          placeContainer: '#iib-container',
+          imageUrl: "https://rtbinsight.ru/content/images/size/w1000/2021/05/ximage-30.png.pagespeed.ic.IfuX4zAEPP.png",
+          imageWidth: 600,
+          imageHeight: 400,
+        }
+      }]
+    },
+    {
+      code: 'div-gpt-ad-1574864639578-1',
+      mediaTypes: {
+        video: {
+          playerSize: [640, 480]
+        }
+      },
+      bids: [{
+        bidder: "afp",
+        params: {
+          placeType: "In-content Video",
+          placeId: "60e5684718047b3fae304617",
+          placeContainer: '#icv-container',
+        }
+      }]
+    },
+    {
+      code: 'div-gpt-ad-1574864639578-2',
+      mediaTypes: {
+        banner: {
+          sizes: [500, 500],
+        }
+      },
+      bids: [{
+        bidder: "afp",
+        params: {
+          placeType: "Action Scroller",
+          placeId: "60f15a8515770d5ab7c7f885",
+          placeContainer: '#as-container',
+        }
+      }]
+    }];
+
+    var pbjs = pbjs || {};
+    pbjs.que = pbjs.que || [];
+
+    var googletag = googletag || {};
+    googletag.cmd = googletag.cmd || [];
+
+    googletag.cmd.push(() => {
+      googletag.pubads().disableInitialLoad();
+    });
+
+    pbjs.que.push(() => {
+      pbjs.addAdUnits(adUnits);
+      pbjs.requestBids({ bidsBackHandler: sendAdServerRequest });
+    });
+
+    function sendAdServerRequest() {
+      googletag.cmd.push(() => {
+        pbjs.que.push(() => {
+          pbjs.setTargetingForGPTAsync('div-gpt-ad-1574864639578-0');
+          pbjs.setTargetingForGPTAsync('div-gpt-ad-1574864639578-1');
+          pbjs.setTargetingForGPTAsync('div-gpt-ad-1574864639578-2');
+          googletag.pubads().refresh();
+        });
+      });
+    }
+
+    googletag.cmd.push(() => {
+      googletag
+        .defineSlot('/19968336/header-bid-tag-0', [300, 250], 'div-gpt-ad-1574864639578-0')
+        .addService(googletag.pubads());
+      googletag.pubads().enableSingleRequest();
+      googletag.enableServices();
+    });
+
+    googletag.cmd.push(() => {
+      googletag
+        .defineSlot('/19968336/header-bid-tag-0', [300, 250], 'div-gpt-ad-1574864639578-1')
+        .addService(googletag.pubads());
+      googletag.pubads().enableSingleRequest();
+      googletag.enableServices();
+    });
+
+    googletag.cmd.push(() => {
+      googletag
+        .defineSlot('/19968336/header-bid-tag-0', [300, 250], 'div-gpt-ad-1574864639578-2')
+        .addService(googletag.pubads());
+      googletag.pubads().enableSingleRequest();
+      googletag.enableServices();
+    });
+
+  </script>
+</head>
+<body id="ocv-container">
+  <h2>In-image</h2>
+  <div class="container-wrapper">
+    <div id="iib-container" style="width: 600px;">
+      <img src="https://creative.astraone.io/files/default_image-1-600x400.jpg" width="100%" />
+    </div>
+    <div id="div-gpt-ad-1574864639578-0">
+      <script type="text/javascript">
+        googletag.cmd.push(function() {
+          googletag.display('div-gpt-ad-1574864639578-0');
+        });
+      </script>
+    </div>
+  </div>
+  
+  <h2>In-content Video</h2>
+  <div class="container-wrapper">
+    <div id="icv-container"></div>
+    <div id="div-gpt-ad-1574864639578-1">
+      <script type="text/javascript">
+        googletag.cmd.push(function() {
+          googletag.display('div-gpt-ad-1574864639578-1');
+        });
+      </script>
+    </div>
+  </div>
+  
+  <h2>Action Scroller</h2>
+  <div class="container-wrapper">
+    <div id="as-container"></div>
+    <div id="div-gpt-ad-1574864639578-2">
+      <script type="text/javascript">
+        googletag.cmd.push(function() {
+          googletag.display('div-gpt-ad-1574864639578-2');
+        });
+      </script>
+    </div>
+  </div>
+</body>
+</html>

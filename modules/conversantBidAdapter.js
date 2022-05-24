@@ -1,12 +1,17 @@
-import * as utils from '../src/utils.js';
+import { logWarn, isStr, deepAccess, isArray, getBidIdParameter, deepSetValue, isEmpty, _each, convertTypes, parseUrl, mergeDeep, buildUrl, _map, logError, isFn, isPlainObject } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {getStorageManager} from '../src/storageManager.js';
+
+const GVLID = 24;
 
 const BIDDER_CODE = 'conversant';
-const URL = 'https://web.hb.ad.cpe.dotomi.com/s2s/header/24';
+export const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
+const URL = 'https://web.hb.ad.cpe.dotomi.com/cvx/client/hb/ortb/25';
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   aliases: ['cnvr'], // short code
   supportedMediaTypes: [BANNER, VIDEO],
 
@@ -18,21 +23,22 @@ export const spec = {
    */
   isBidRequestValid: function(bid) {
     if (!bid || !bid.params) {
-      utils.logWarn(BIDDER_CODE + ': Missing bid parameters');
+      logWarn(BIDDER_CODE + ': Missing bid parameters');
       return false;
     }
 
-    if (!utils.isStr(bid.params.site_id)) {
-      utils.logWarn(BIDDER_CODE + ': site_id must be specified as a string');
+    if (!isStr(bid.params.site_id)) {
+      logWarn(BIDDER_CODE + ': site_id must be specified as a string');
       return false;
     }
 
     if (isVideoRequest(bid)) {
-      if (!bid.params.mimes) {
+      const mimes = bid.params.mimes || deepAccess(bid, 'mediaTypes.video.mimes');
+      if (!mimes) {
         // Give a warning but let it pass
-        utils.logWarn(BIDDER_CODE + ': mimes should be specified for videos');
-      } else if (!utils.isArray(bid.params.mimes) || !bid.params.mimes.every(s => utils.isStr(s))) {
-        utils.logWarn(BIDDER_CODE + ': mimes must be an array of strings');
+        logWarn(BIDDER_CODE + ': mimes should be specified for videos');
+      } else if (!isArray(mimes) || !mimes.every(s => isStr(s))) {
+        logWarn(BIDDER_CODE + ': mimes must be an array of strings');
         return false;
       }
     }
@@ -53,12 +59,13 @@ export const spec = {
     let requestId = '';
     let pubcid = null;
     let pubcidName = '_pubcid';
+    let bidurl = URL;
 
     const conversantImps = validBidRequests.map(function(bid) {
-      const bidfloor = utils.getBidIdParameter('bidfloor', bid.params);
+      const bidfloor = getBidFloor(bid);
 
-      siteId = utils.getBidIdParameter('site_id', bid.params) || siteId;
-      pubcidName = utils.getBidIdParameter('pubcid_name', bid.params) || pubcidName;
+      siteId = getBidIdParameter('site_id', bid.params) || siteId;
+      pubcidName = getBidIdParameter('pubcid_name', bid.params) || pubcidName;
 
       requestId = bid.auctionId;
 
@@ -69,11 +76,14 @@ export const spec = {
         displaymanager: 'Prebid.js',
         displaymanagerver: '$prebid.version$'
       };
+      if (bid.ortb2Imp) {
+        mergeDeep(imp, bid.ortb2Imp);
+      }
 
       copyOptProperty(bid.params.tag_id, imp, 'tagid');
 
       if (isVideoRequest(bid)) {
-        const videoData = utils.deepAccess(bid, 'mediaTypes.video') || {};
+        const videoData = deepAccess(bid, 'mediaTypes.video') || {};
         const format = convertSizes(videoData.playerSize || bid.sizes);
         const video = {};
 
@@ -84,13 +94,13 @@ export const spec = {
 
         copyOptProperty(bid.params.position, video, 'pos');
         copyOptProperty(bid.params.mimes || videoData.mimes, video, 'mimes');
-        copyOptProperty(bid.params.maxduration, video, 'maxduration');
+        copyOptProperty(bid.params.maxduration || videoData.maxduration, video, 'maxduration');
         copyOptProperty(bid.params.protocols || videoData.protocols, video, 'protocols');
         copyOptProperty(bid.params.api || videoData.api, video, 'api');
 
         imp.video = video;
       } else {
-        const bannerData = utils.deepAccess(bid, 'mediaTypes.banner') || {};
+        const bannerData = deepAccess(bid, 'mediaTypes.banner') || {};
         const format = convertSizes(bannerData.sizes || bid.sizes);
         const banner = {format: format};
 
@@ -103,6 +113,9 @@ export const spec = {
         pubcid = bid.userId.pubcid;
       } else if (bid.crumbs && bid.crumbs.pubcid) {
         pubcid = bid.crumbs.pubcid;
+      }
+      if (bid.params.white_label_url) {
+        bidurl = bid.params.white_label_url;
       }
 
       return imp;
@@ -122,18 +135,24 @@ export const spec = {
 
     let userExt = {};
 
+    // pass schain object if it is present
+    const schain = deepAccess(validBidRequests, '0.schain');
+    if (schain) {
+      deepSetValue(payload, 'source.ext.schain', schain);
+    }
+
     if (bidderRequest) {
       // Add GDPR flag and consent string
       if (bidderRequest.gdprConsent) {
         userExt.consent = bidderRequest.gdprConsent.consentString;
 
         if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
-          utils.deepSetValue(payload, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
+          deepSetValue(payload, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
         }
       }
 
       if (bidderRequest.uspConsent) {
-        utils.deepSetValue(payload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+        deepSetValue(payload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
       }
     }
 
@@ -153,13 +172,16 @@ export const spec = {
     }
 
     // Only add the user object if it's not empty
-    if (!utils.isEmpty(userExt)) {
+    if (!isEmpty(userExt)) {
       payload.user = {ext: userExt};
     }
 
+    const firstPartyData = bidderRequest.ortb2 || {};
+    mergeDeep(payload, firstPartyData);
+
     return {
       method: 'POST',
-      url: URL,
+      url: bidurl,
       data: payload,
     };
   },
@@ -176,12 +198,12 @@ export const spec = {
     serverResponse = serverResponse.body;
 
     if (bidRequest && bidRequest.data && bidRequest.data.imp) {
-      utils._each(bidRequest.data.imp, imp => requestMap[imp.id] = imp);
+      _each(bidRequest.data.imp, imp => requestMap[imp.id] = imp);
     }
 
-    if (serverResponse && utils.isArray(serverResponse.seatbid)) {
-      utils._each(serverResponse.seatbid, function(bidList) {
-        utils._each(bidList.bid, function(conversantBid) {
+    if (serverResponse && isArray(serverResponse.seatbid)) {
+      _each(serverResponse.seatbid, function(bidList) {
+        _each(bidList.bid, function(conversantBid) {
           const responseCPM = parseFloat(conversantBid.price);
           if (responseCPM > 0.0 && conversantBid.impid) {
             const responseAd = conversantBid.adm || '';
@@ -196,6 +218,10 @@ export const spec = {
               ttl: 300,
               netRevenue: true
             };
+            bid.meta = {};
+            if (conversantBid.adomain && conversantBid.adomain.length > 0) {
+              bid.meta.advertiserDomains = conversantBid.adomain;
+            }
 
             if (request.video) {
               if (responseAd.charAt(0) === '<') {
@@ -229,11 +255,53 @@ export const spec = {
    * @return {Object} params bid params
    */
   transformBidParams: function(params, isOpenRtb) {
-    return utils.convertTypes({
+    return convertTypes({
       'site_id': 'string',
       'secure': 'number',
       'mobile': 'number'
     }, params);
+  },
+
+  /**
+   * Register User Sync.
+   */
+  getUserSyncs: function(syncOptions, responses, gdprConsent, uspConsent) {
+    let params = {};
+    const syncs = [];
+
+    // Attaching GDPR Consent Params in UserSync url
+    if (gdprConsent) {
+      params.gdpr = (gdprConsent.gdprApplies) ? 1 : 0;
+      params.gdpr_consent = encodeURIComponent(gdprConsent.consentString || '');
+    }
+
+    // CCPA
+    if (uspConsent) {
+      params.us_privacy = encodeURIComponent(uspConsent);
+    }
+
+    if (responses && responses.ext) {
+      const pixels = [{urls: responses.ext.fsyncs, type: 'iframe'}, {urls: responses.ext.psyncs, type: 'image'}]
+        .filter((entry) => {
+          return entry.urls &&
+            ((entry.type === 'iframe' && syncOptions.iframeEnabled) ||
+            (entry.type === 'image' && syncOptions.pixelEnabled));
+        })
+        .map((entry) => {
+          return entry.urls.map((endpoint) => {
+            let urlInfo = parseUrl(endpoint);
+            mergeDeep(urlInfo.search, params);
+            if (Object.keys(urlInfo.search).length === 0) {
+              delete urlInfo.search; // empty search object causes buildUrl to add a trailing ? to the url
+            }
+            return {type: entry.type, url: buildUrl(urlInfo)};
+          })
+            .reduce((x, y) => x.concat(y), []);
+        })
+        .reduce((x, y) => x.concat(y), []);
+      syncs.push(...pixels);
+    }
+    return syncs;
   }
 };
 
@@ -277,7 +345,7 @@ function convertSizes(bidSizes) {
     if (bidSizes.length === 2 && typeof bidSizes[0] === 'number' && typeof bidSizes[1] === 'number') {
       format = [{w: bidSizes[0], h: bidSizes[1]}];
     } else {
-      format = utils._map(bidSizes, d => { return {w: d[0], h: d[1]}; });
+      format = _map(bidSizes, d => { return {w: d[0], h: d[1]}; });
     }
   }
 
@@ -291,7 +359,7 @@ function convertSizes(bidSizes) {
  * @returns {boolean} True if it's a video bid
  */
 function isVideoRequest(bid) {
-  return bid.mediaType === 'video' || !!utils.deepAccess(bid, 'mediaTypes.video');
+  return bid.mediaType === 'video' || !!deepAccess(bid, 'mediaTypes.video');
 }
 
 /**
@@ -314,36 +382,24 @@ function copyOptProperty(src, dst, dstName) {
 function collectEids(bidRequests) {
   const request = bidRequests[0]; // bidRequests have the same userId object
   const eids = [];
-
-  addEid(eids, request, 'userId.tdid', 'adserver.org');
-  addEid(eids, request, 'userId.idl_env', 'liveramp.com');
-  addEid(eids, request, 'userId.criteoId', 'criteo.com');
-  addEid(eids, request, 'userId.id5id', 'id5-sync.com');
-  addEid(eids, request, 'userId.parrableid', 'parrable.com');
-  addEid(eids, request, 'userId.digitrustid.data.id', 'digitru.st');
-  addEid(eids, request, 'userId.lipb.lipbid', 'liveintent.com');
-
-  return eids;
-}
-
-/**
- * Extract and push a single extended id into eids array
- * @param eids Array of extended IDs
- * @param idObj Object containing IDs
- * @param keyPath Nested properties expressed as a path
- * @param source Source for the ID
- */
-function addEid(eids, idObj, keyPath, source) {
-  const id = utils.deepAccess(idObj, keyPath);
-  if (id) {
-    eids.push({
-      source: source,
-      uids: [{
-        id: id,
-        atype: 1
-      }]
+  if (isArray(request.userIdAsEids) && request.userIdAsEids.length > 0) {
+    // later following white-list can be converted to block-list if needed
+    const requiredSourceValues = {
+      'epsilon.com': 1,
+      'adserver.org': 1,
+      'liveramp.com': 1,
+      'criteo.com': 1,
+      'id5-sync.com': 1,
+      'parrable.com': 1,
+      'liveintent.com': 1
+    };
+    request.userIdAsEids.forEach(function(eid) {
+      if (requiredSourceValues.hasOwnProperty(eid.source)) {
+        eids.push(eid);
+      }
     });
   }
+  return eids;
 }
 
 /**
@@ -355,26 +411,50 @@ function readStoredValue(key) {
   let storedValue;
   try {
     // check cookies first
-    storedValue = utils.getCookie(key);
+    storedValue = storage.getCookie(key);
 
     if (!storedValue) {
       // check expiration time before reading local storage
-      const storedValueExp = utils.getDataFromLocalStorage(`${key}_exp`);
+      const storedValueExp = storage.getDataFromLocalStorage(`${key}_exp`);
       if (storedValueExp === '' || (storedValueExp && (new Date(storedValueExp)).getTime() - Date.now() > 0)) {
-        storedValue = utils.getDataFromLocalStorage(key);
+        storedValue = storage.getDataFromLocalStorage(key);
         storedValue = storedValue ? decodeURIComponent(storedValue) : storedValue;
       }
     }
 
     // deserialize JSON if needed
-    if (utils.isStr(storedValue) && storedValue.charAt(0) === '{') {
+    if (isStr(storedValue) && storedValue.charAt(0) === '{') {
       storedValue = JSON.parse(storedValue);
     }
   } catch (e) {
-    utils.logError(e);
+    logError(e);
   }
 
   return storedValue;
+}
+
+/**
+ * Get the floor price from bid.params for backward compatibility.
+ * If not found, then check floor module.
+ * @param bid A valid bid object
+ * @returns {*|number} floor price
+ */
+function getBidFloor(bid) {
+  let floor = getBidIdParameter('bidfloor', bid.params);
+
+  if (!floor && isFn(bid.getFloor)) {
+    const floorObj = bid.getFloor({
+      currency: 'USD',
+      mediaType: '*',
+      size: '*'
+    });
+
+    if (isPlainObject(floorObj) && !isNaN(floorObj.floor) && floorObj.currency === 'USD') {
+      floor = floorObj.floor;
+    }
+  }
+
+  return floor
 }
 
 registerBidder(spec);

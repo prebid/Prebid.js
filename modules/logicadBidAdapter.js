@@ -1,12 +1,12 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
+import {BANNER, NATIVE} from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'logicad';
 const ENDPOINT_URL = 'https://pb.ladsp.com/adrequest/prebid';
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [BANNER],
+  supportedMediaTypes: [BANNER, NATIVE],
   isBidRequestValid: function (bid) {
     return !!(bid.params && bid.params.tid);
   },
@@ -62,6 +62,7 @@ function newBidRequest(bid, bidderRequest) {
     prebidJsVersion: '$prebid.version$',
     referrer: bidderRequest.refererInfo.referer,
     auctionStartTime: bidderRequest.auctionStart,
+    eids: bid.userIdAsEids,
   };
 }
 

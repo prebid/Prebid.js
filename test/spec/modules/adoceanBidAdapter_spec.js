@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/adoceanBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import { deepClone } from 'src/utils.js';
 
 describe('AdoceanAdapter', function () {
   const adapter = newBidder(spec);
@@ -20,7 +21,11 @@ describe('AdoceanAdapter', function () {
         'emiter': 'myao.adocean.pl'
       },
       'adUnitCode': 'adunit-code',
-      'sizes': [[300, 250]],
+      'mediaTypes': {
+        'banner': {
+          'sizes': [[300, 250]]
+        }
+      },
       'bidId': '30b31c1838de1e',
       'bidderRequestId': '22edbae2733bf6',
       'auctionId': '1d1a030790a475',
@@ -51,7 +56,11 @@ describe('AdoceanAdapter', function () {
           'emiter': 'myao.adocean.pl'
         },
         'adUnitCode': 'adunit-code',
-        'sizes': [[300, 250]],
+        'mediaTypes': {
+          'banner': {
+            'sizes': [[300, 250], [300, 600]]
+          }
+        },
         'bidId': '30b31c1838de1e',
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '1d1a030790a475',
@@ -64,7 +73,11 @@ describe('AdoceanAdapter', function () {
           'emiter': 'myao.adocean.pl'
         },
         'adUnitCode': 'adunit-code',
-        'sizes': [[300, 250]],
+        'mediaTypes': {
+          'banner': {
+            'sizes': [[300, 200], [600, 250]]
+          }
+        },
         'bidId': '30b31c1838de1f',
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '1d1a030790a475',
@@ -78,12 +91,12 @@ describe('AdoceanAdapter', function () {
       }
     };
 
-    it('should send two requests if slave is duplicated', () => {
+    it('should send two requests if slave is duplicated', function () {
       const nrOfRequests = spec.buildRequests(bidRequests, bidderRequest).length;
       expect(nrOfRequests).to.equal(2);
     });
 
-    it('should add bidIdMap with correct slaveId => bidId mapping', () => {
+    it('should add bidIdMap with correct slaveId => bidId mapping', function () {
       const requests = spec.buildRequests(bidRequests, bidderRequest);
       for (let i = 0; i < bidRequests.length; i++) {
         expect(requests[i]).to.exist;
@@ -108,6 +121,19 @@ describe('AdoceanAdapter', function () {
       expect(request.url).to.include('gdpr=1');
       expect(request.url).to.include('gdpr_consent=' + bidderRequest.gdprConsent.consentString);
     });
+
+    it('should attach sizes information to url', function () {
+      let requests = spec.buildRequests(bidRequests, bidderRequest);
+      expect(requests[0].url).to.include('aosspsizes=myaozpniqismex~300x250_300x600');
+      expect(requests[1].url).to.include('aosspsizes=myaozpniqismex~300x200_600x250');
+
+      const differentSlavesBids = deepClone(bidRequests);
+      differentSlavesBids[1].params.slaveId = 'adoceanmyaowafpdwlrks';
+      requests = spec.buildRequests(differentSlavesBids, bidderRequest);
+      expect(requests.length).to.equal(1);
+      expect(requests[0].url).to.include('aosspsizes=myaozpniqismex~300x250_300x600-myaowafpdwlrks~300x200_600x250');
+      expect((requests[0].url.match(/aosspsizes=/g) || []).length).to.equal(1);
+    });
   })
 
   describe('interpretResponse', function () {
@@ -124,7 +150,8 @@ describe('AdoceanAdapter', function () {
           'width': '300',
           'height': '250',
           'crid': '0af345b42983cc4bc0',
-          'ttl': '300'
+          'ttl': '300',
+          'adomain': ['adocean.pl']
         }
       ],
       'headers': {
@@ -160,7 +187,10 @@ describe('AdoceanAdapter', function () {
           'ad': '<!-- Creative -->',
           'creativeId': '0af345b42983cc4bc0',
           'ttl': 300,
-          'netRevenue': false
+          'netRevenue': false,
+          'meta': {
+            'advertiserDomains': ['adocean.pl']
+          }
         }
       ];
 
@@ -171,6 +201,8 @@ describe('AdoceanAdapter', function () {
       resultKeys.forEach(function(k) {
         if (k === 'ad') {
           expect(result[0][k]).to.match(/<!-- Creative -->$/);
+        } else if (k === 'meta') {
+          expect(result[0][k]).to.deep.equal(expectedResponse[0][k]);
         } else {
           expect(result[0][k]).to.equal(expectedResponse[0][k]);
         }

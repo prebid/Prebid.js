@@ -1,10 +1,11 @@
+import { parseUrl, logError } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-import * as utils from '../src/utils.js';
-import { parse as parseURL } from '../src/url.js';
+import { getStorageManager } from '../src/storageManager.js';
+import CONSTANTS from '../src/constants.json';
 
-const CONSTANTS = require('../src/constants.json');
+const storage = getStorageManager();
 
 const ANALYTICS_TYPE = 'endpoint';
 const FINTEZA_HOST = 'https://content.mql5.com/tr';
@@ -27,7 +28,7 @@ function getPageInfo() {
   }
 
   if (document.referrer) {
-    pageInfo.referrerDomain = parseURL(document.referrer).hostname;
+    pageInfo.referrerDomain = parseUrl(document.referrer).hostname;
   }
 
   return pageInfo;
@@ -46,8 +47,8 @@ function getUniqId() {
   let uniq = cookies[ UNIQ_ID_KEY ];
   if (!uniq) {
     try {
-      if (window.localStorage) {
-        uniq = window.localStorage.getItem(UNIQ_ID_KEY) || '';
+      if (storage.hasLocalStorage()) {
+        uniq = storage.getDataFromLocalStorage(UNIQ_ID_KEY) || '';
         isUniqFromLS = true;
       }
     } catch (b) {}
@@ -62,7 +63,7 @@ function getUniqId() {
     expires.setFullYear(expires.getFullYear() + 10);
 
     try {
-      document.cookie = UNIQ_ID_KEY + '=' + uniq + '; path=/; expires=' + expires.toUTCString();
+      storage.setCookie(UNIQ_ID_KEY, uniq, expires.toUTCString());
     } catch (e) {}
   }
 
@@ -90,7 +91,7 @@ function initFirstVisit() {
     now.setFullYear(now.getFullYear() + 20);
 
     try {
-      document.cookie = FIRST_VISIT_DATE + '=' + visitDate + '; path=/; expires=' + now.toUTCString();
+      storage.setCookie(FIRST_VISIT_DATE, visitDate, now.toUTCString());
     } catch (e) {}
   }
 
@@ -110,7 +111,7 @@ function parseCookies(cookie) {
   let param, value;
   let i, j;
 
-  if (!cookie) {
+  if (!cookie || !storage.cookiesAreEnabled()) {
     return {};
   }
 
@@ -203,7 +204,7 @@ function initSession() {
   }
 
   try {
-    document.cookie = SESSION_ID + '=' + sessionId + '; path=/; expires=' + expires.toUTCString();
+    storage.setCookie(SESSION_ID, sessionId, expires.toUTCString());
   } catch (e) {}
 
   return {
@@ -249,10 +250,10 @@ function saveTrackRequestTime() {
   const expires = new Date(now + SESSION_DURATION);
 
   try {
-    if (window.localStorage) {
-      window.localStorage.setItem(TRACK_TIME_KEY, now.toString());
+    if (storage.hasLocalStorage()) {
+      storage.setDataInLocalStorage(TRACK_TIME_KEY, now.toString());
     } else {
-      document.cookie = TRACK_TIME_KEY + '=' + now + '; path=/; expires=' + expires.toUTCString();
+      storage.setCookie(TRACK_TIME_KEY, now.toString(), expires.toUTCString());
     }
   } catch (a) {}
 }
@@ -261,9 +262,9 @@ function getTrackRequestLastTime() {
   let cookie;
 
   try {
-    if (window.localStorage) {
+    if (storage.hasLocalStorage()) {
       return parseInt(
-        window.localStorage.getItem(TRACK_TIME_KEY) || 0,
+        storage.getDataFromLocalStorage(TRACK_TIME_KEY) || 0,
         10,
       );
     }
@@ -398,7 +399,7 @@ function sendTrackRequest(trackData) {
     );
     saveTrackRequestTime();
   } catch (err) {
-    utils.logError('Error on send data: ', err);
+    logError('Error on send data: ', err);
   }
 }
 
@@ -423,7 +424,7 @@ fntzAnalyticsAdapter.originEnableAnalytics = fntzAnalyticsAdapter.enableAnalytic
 
 fntzAnalyticsAdapter.enableAnalytics = function (config) {
   if (!config.options.id) {
-    utils.logError('Client ID (id) option is not defined. Analytics won\'t work');
+    logError('Client ID (id) option is not defined. Analytics won\'t work');
     return;
   }
 

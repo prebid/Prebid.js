@@ -177,6 +177,69 @@ const AD_SERVER_RESPONSE = {
   }
 };
 
+const AD_SERVER_RESPONSE_2 = {
+  'headers': null,
+  'body': {
+    'user': { 'key': 'ue1-2d33e91b71e74929b4aeecc23f4376f1' },
+    'pixels': [{ 'type': 'image', 'url': '//sync.serverbid.com/ss/' }],
+    'bdr': 'notcx',
+    'decisions': {
+      '2b0f82502298c9': {
+        'adId': 2364764,
+        'creativeId': 1950991,
+        'flightId': 2788300,
+        'campaignId': 542982,
+        'clickUrl': 'https://e.serverbid.com/r',
+        'impressionUrl': 'https://e.serverbid.com/i.gif',
+        'contents': [{
+          'type': 'html',
+          'body': '<html></html>',
+          'data': {
+            'height': 90,
+            'width': 728,
+            'imageUrl': 'https://static.adzerk.net/Advertisers/b0ab77db8a7848c8b78931aed022a5ef.gif',
+            'fileName': 'b0ab77db8a7848c8b78931aed022a5ef.gif'
+          },
+          'template': 'image'
+        }],
+        'height': 90,
+        'width': 728,
+        'events': [],
+        'pricing': {'price': 0.5, 'clearPrice': 0.5, 'revenue': 0.0005, 'rateType': 2, 'eCPM': 0.5},
+        'mediaType': 'banner',
+        'cats': ['IAB1', 'IAB2', 'IAB3'],
+        'networkId': 1234567,
+      },
+      '123': {
+        'adId': 2364764,
+        'creativeId': 1950991,
+        'flightId': 2788300,
+        'campaignId': 542982,
+        'clickUrl': 'https://e.serverbid.com/r',
+        'impressionUrl': 'https://e.serverbid.com/i.gif',
+        'contents': [{
+          'type': 'html',
+          'body': '<html></html>',
+          'data': {
+            'height': 90,
+            'width': 728,
+            'imageUrl': 'https://static.adzerk.net/Advertisers/b0ab77db8a7848c8b78931aed022a5ef.gif',
+            'fileName': 'b0ab77db8a7848c8b78931aed022a5ef.gif'
+          },
+          'template': 'image'
+        }],
+        'height': 90,
+        'width': 728,
+        'events': [],
+        'pricing': {'price': 0.5, 'clearPrice': 0.5, 'revenue': 0.0005, 'rateType': 2, 'eCPM': 0.5},
+        'mediaType': 'banner',
+        'cats': ['IAB1', 'IAB2'],
+        'networkId': 2345678,
+      }
+    }
+  }
+};
+
 const BUILD_REQUESTS_OUTPUT = {
   method: 'POST',
   url: 'https://e.serverbid.com/api/v2',
@@ -285,7 +348,7 @@ describe('Consumable BidAdapter', function () {
     });
 
     it('registers bids', function () {
-      let bids = spec.interpretResponse(AD_SERVER_RESPONSE, BUILD_REQUESTS_OUTPUT);
+      let bids = spec.interpretResponse(AD_SERVER_RESPONSE_2, BUILD_REQUESTS_OUTPUT);
       bids.forEach(b => {
         expect(b).to.have.property('cpm');
         expect(b.cpm).to.be.above(0);
@@ -301,6 +364,11 @@ describe('Consumable BidAdapter', function () {
         expect(b).to.have.property('ttl', 30);
         expect(b).to.have.property('netRevenue', true);
         expect(b).to.have.property('referrer');
+        expect(b.meta).to.have.property('advertiserDomains');
+        expect(b.meta).to.have.property('primaryCatId');
+        expect(b.meta).to.have.property('secondaryCatIds');
+        expect(b.meta).to.have.property('networkId');
+        expect(b.meta).to.have.property('mediaType');
       });
     });
 
@@ -328,6 +396,24 @@ describe('Consumable BidAdapter', function () {
 
     it('should return a sync url if iframe syncs are enabled', function () {
       let opts = spec.getUserSyncs(syncOptions);
+
+      expect(opts.length).to.equal(1);
+    });
+
+    it('should return a sync url if iframe syncs are enabled and server response is empty', function () {
+      let opts = spec.getUserSyncs(syncOptions, []);
+
+      expect(opts.length).to.equal(1);
+    });
+
+    it('should return a sync url if iframe syncs are enabled and server response does not contain a bdr attribute', function () {
+      let opts = spec.getUserSyncs(syncOptions, [AD_SERVER_RESPONSE]);
+
+      expect(opts.length).to.equal(1);
+    });
+
+    it('should return a sync url if iframe syncs are enabled and server response contains a bdr attribute that is not cx', function () {
+      let opts = spec.getUserSyncs(syncOptions, [AD_SERVER_RESPONSE_2]);
 
       expect(opts.length).to.equal(1);
     });

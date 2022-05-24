@@ -141,6 +141,31 @@ describe('brightcomBidAdapter', function() {
       expect(payload.site.publisher.id).to.equal(1234567);
     });
 
+    it('sends gdpr info if exists', function () {
+      const consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+      const bidderRequest = {
+        'bidderCode': 'brightcom',
+        'auctionId': '1d1a030790a437',
+        'bidderRequestId': '22edbae2744bf5',
+        'timeout': 3000,
+        gdprConsent: {
+          consentString: consentString,
+          gdprApplies: true
+        },
+        refererInfo: {
+          referer: 'http://example.com/page.html',
+        }
+      };
+      bidderRequest.bids = bidRequests;
+
+      const data = JSON.parse(spec.buildRequests(bidRequests, bidderRequest).data);
+
+      expect(data.regs.ext.gdpr).to.exist.and.to.be.a('number');
+      expect(data.regs.ext.gdpr).to.equal(1);
+      expect(data.user.ext.consent).to.exist.and.to.be.a('string');
+      expect(data.user.ext.consent).to.equal(consentString);
+    });
+
     context('when element is fully in view', function() {
       it('returns 100', function() {
         Object.assign(element, { width: 600, height: 400 });
@@ -222,7 +247,8 @@ describe('brightcomBidAdapter', function() {
               'nurl': '<!-- NURL -->',
               'adm': '<!-- Creative -->',
               'w': 300,
-              'h': 250
+              'h': 250,
+              'adomain': ['example.com']
             }]
           }]
         }
@@ -240,7 +266,10 @@ describe('brightcomBidAdapter', function() {
         'netRevenue': true,
         'mediaType': 'banner',
         'ad': `<!-- Creative --><div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="${encodeURI('<!-- NURL -->')}"></div>`,
-        'ttl': 60
+        'ttl': 60,
+        'meta': {
+          'advertiserDomains': ['example.com']
+        }
       }];
 
       let result = spec.interpretResponse(response);
@@ -258,7 +287,10 @@ describe('brightcomBidAdapter', function() {
         'netRevenue': true,
         'mediaType': 'banner',
         'ad': `<!-- Creative --><div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="${encodeURI('<!-- NURL -->')}"></div>`,
-        'ttl': 60
+        'ttl': 60,
+        'meta': {
+          'advertiserDomains': ['example.com']
+        }
       }];
 
       let result = spec.interpretResponse(response);

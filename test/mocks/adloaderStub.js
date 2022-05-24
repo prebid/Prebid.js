@@ -4,7 +4,7 @@ import * as adloader from 'src/adloader.js';
 // this export is for adloader's tests against actual implementation
 export let loadExternalScript = adloader.loadExternalScript;
 
-let stub = createStub();
+export let loadExternalScriptStub = createStub();
 
 function createStub() {
   return sinon.stub(adloader, 'loadExternalScript').callsFake((...args) => {
@@ -18,6 +18,6 @@ function createStub() {
 }
 
 beforeEach(function() {
-  stub.restore();
-  stub = createStub();
+  loadExternalScriptStub.restore();
+  loadExternalScriptStub = createStub();
 });

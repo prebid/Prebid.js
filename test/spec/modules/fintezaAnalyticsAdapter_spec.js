@@ -1,7 +1,7 @@
 import fntzAnalyticsAdapter from 'modules/fintezaAnalyticsAdapter.js';
-import includes from 'core-js/library/fn/array/includes.js';
+import {includes} from 'src/polyfill.js';
 import { expect } from 'chai';
-import { parse as parseURL } from 'src/url.js';
+import { parseUrl } from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
 
 let adapterManager = require('src/adapterManager').default;
@@ -12,7 +12,7 @@ function setCookie(name, value, expires) {
   document.cookie = name + '=' + value +
     '; path=/' +
     (expires ? ('; expires=' + expires.toUTCString()) : '') +
-    '; SameSite=None';
+    '; SameSite=Lax';
 }
 
 describe('finteza analytics adapter', function () {
@@ -81,7 +81,7 @@ describe('finteza analytics adapter', function () {
         expect(server.requests[0].method).to.equal('GET');
         expect(server.requests[0].withCredentials).to.equal(true);
 
-        const url = parseURL(server.requests[0].url);
+        const url = parseUrl(server.requests[0].url);
 
         expect(url.protocol).to.equal('https');
         expect(url.hostname).to.equal('content.mql5.com');
@@ -119,12 +119,12 @@ describe('finteza analytics adapter', function () {
         // Emit the events with the "real" arguments
         events.emit(constants.EVENTS.BID_RESPONSE, bidResponse);
 
-        expect(server.requests.length).to.equal(2);
-
         expect(server.requests[0].method).to.equal('GET');
         expect(server.requests[0].withCredentials).to.equal(true);
 
-        let url = parseURL(server.requests[0].url);
+        expect(server.requests.length).to.equal(2);
+
+        let url = parseUrl(server.requests[0].url);
 
         expect(url.protocol).to.equal('https');
         expect(url.hostname).to.equal('content.mql5.com');
@@ -138,7 +138,7 @@ describe('finteza analytics adapter', function () {
         expect(server.requests[1].method).to.equal('GET');
         expect(server.requests[1].withCredentials).to.equal(true);
 
-        url = parseURL(server.requests[1].url);
+        url = parseUrl(server.requests[1].url);
 
         expect(url.protocol).to.equal('https');
         expect(url.hostname).to.equal('content.mql5.com');
@@ -173,12 +173,12 @@ describe('finteza analytics adapter', function () {
         // Emit the events with the "real" arguments
         events.emit(constants.EVENTS.BID_WON, bidWon);
 
-        expect(server.requests.length).to.equal(1);
-
         expect(server.requests[0].method).to.equal('GET');
         expect(server.requests[0].withCredentials).to.equal(true);
 
-        const url = parseURL(server.requests[0].url);
+        expect(server.requests.length).to.equal(1);
+
+        const url = parseUrl(server.requests[0].url);
 
         expect(url.protocol).to.equal('https');
         expect(url.hostname).to.equal('content.mql5.com');
@@ -212,12 +212,12 @@ describe('finteza analytics adapter', function () {
         // Emit the events with the "real" arguments
         events.emit(constants.EVENTS.BID_TIMEOUT, bidTimeout);
 
-        expect(server.requests.length).to.equal(1);
-
         expect(server.requests[0].method).to.equal('GET');
         expect(server.requests[0].withCredentials).to.equal(true);
 
-        const url = parseURL(server.requests[0].url);
+        expect(server.requests.length).to.equal(1);
+
+        const url = parseUrl(server.requests[0].url);
 
         expect(url.protocol).to.equal('https');
         expect(url.hostname).to.equal('content.mql5.com');

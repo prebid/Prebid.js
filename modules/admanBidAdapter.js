@@ -1,10 +1,11 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import * as utils from '../src/utils.js';
+import { isFn, deepAccess, logMessage } from '../src/utils.js';
+import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'adman';
 const AD_URL = 'https://pub.admanmedia.com/?c=o&m=multi';
-const URL_SYNC = 'https://pub.admanmedia.com/?c=o&m=sync';
+const URL_SYNC = 'https://sync.admanmedia.com';
 
 function isBidResponseValid(bid) {
   if (!bid.requestId || !bid.cpm || !bid.creativeId ||
@@ -20,6 +21,36 @@ function isBidResponseValid(bid) {
       return Boolean(bid.native && bid.native.title && bid.native.image && bid.native.impressionTrackers);
     default:
       return false;
+  }
+}
+
+function getBidFloor(bid) {
+  if (!isFn(bid.getFloor)) {
+    return deepAccess(bid, 'params.bidfloor', 0);
+  }
+
+  try {
+    const bidFloor = bid.getFloor({
+      currency: 'USD',
+      mediaType: '*',
+      size: '*',
+    });
+    return bidFloor.floor;
+  } catch (_) {
+    return 0
+  }
+}
+
+function getUserId(eids, id, source, uidExt) {
+  if (id) {
+    var uid = { id };
+    if (uidExt) {
+      uid.ext = uidExt;
+    }
+    eids.push({
+      source,
+      uids: [ uid ]
+    });
   }
 }
 
@@ -39,7 +70,7 @@ export const spec = {
       winTop = window.top;
     } catch (e) {
       location = winTop.location;
-      utils.logMessage(e);
+      logMessage(e);
     };
     let placements = [];
     let request = {
@@ -65,16 +96,40 @@ export const spec = {
     for (let i = 0; i < len; i++) {
       let bid = validBidRequests[i];
       let traff = bid.params.traffic || BANNER
-
-      placements.push({
+      const placement = {
         placementId: bid.params.placementId,
         bidId: bid.bidId,
         sizes: bid.mediaTypes && bid.mediaTypes[traff] && bid.mediaTypes[traff].sizes ? bid.mediaTypes[traff].sizes : [],
-        traffic: traff
-      });
-      if (bid.schain) {
-        placements.schain = bid.schain;
+        traffic: traff,
+        eids: [],
+        bidFloor: getBidFloor(bid)
       }
+      if (bid.schain) {
+        placement.schain = bid.schain;
+      }
+      if (bid.userId) {
+        getUserId(placement.eids, bid.userId.uid2 && bid.userId.uid2.id, 'uidapi.com');
+        getUserId(placement.eids, bid.userId.lotamePanoramaId, 'lotame.com');
+        getUserId(placement.eids, bid.userId.idx, 'idx.lat');
+      }
+      if (traff === VIDEO) {
+        placement.playerSize = bid.mediaTypes[VIDEO].playerSize;
+        placement.minduration = bid.mediaTypes[VIDEO].minduration;
+        placement.maxduration = bid.mediaTypes[VIDEO].maxduration;
+        placement.mimes = bid.mediaTypes[VIDEO].mimes;
+        placement.protocols = bid.mediaTypes[VIDEO].protocols;
+        placement.startdelay = bid.mediaTypes[VIDEO].startdelay;
+        placement.placement = bid.mediaTypes[VIDEO].placement;
+        placement.skip = bid.mediaTypes[VIDEO].skip;
+        placement.skipafter = bid.mediaTypes[VIDEO].skipafter;
+        placement.minbitrate = bid.mediaTypes[VIDEO].minbitrate;
+        placement.maxbitrate = bid.mediaTypes[VIDEO].maxbitrate;
+        placement.delivery = bid.mediaTypes[VIDEO].delivery;
+        placement.playbackmethod = bid.mediaTypes[VIDEO].playbackmethod;
+        placement.api = bid.mediaTypes[VIDEO].api;
+        placement.linearity = bid.mediaTypes[VIDEO].linearity;
+      }
+      placements.push(placement);
     }
     return {
       method: 'POST',
@@ -89,16 +144,35 @@ export const spec = {
     for (let i = 0; i < serverResponse.length; i++) {
       let resItem = serverResponse[i];
       if (isBidResponseValid(resItem)) {
+        const advertiserDomains = resItem.adomain && resItem.adomain.length ? resItem.adomain : [];
+        resItem.meta = { ...resItem.meta, advertiserDomains };
+
         response.push(resItem);
       }
     }
     return response;
   },
 
-  getUserSyncs: (syncOptions, serverResponses) => {
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
+    let syncType = syncOptions.iframeEnabled ? 'iframe' : 'image';
+    let syncUrl = URL_SYNC + `/${syncType}?pbjs=1`;
+    if (gdprConsent && gdprConsent.consentString) {
+      if (typeof gdprConsent.gdprApplies === 'boolean') {
+        syncUrl += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+      } else {
+        syncUrl += `&gdpr=0&gdpr_consent=${gdprConsent.consentString}`;
+      }
+    }
+    if (uspConsent && uspConsent.consentString) {
+      syncUrl += `&ccpa_consent=${uspConsent.consentString}`;
+    }
+
+    const coppa = config.getConfig('coppa') ? 1 : 0;
+    syncUrl += `&coppa=${coppa}`;
+
     return [{
-      type: 'image',
-      url: URL_SYNC
+      type: syncType,
+      url: syncUrl
     }];
   }
 
