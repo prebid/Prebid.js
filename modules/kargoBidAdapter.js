@@ -107,7 +107,7 @@ export const spec = {
     }
 
     // If we got a bid, send response time data
-    if (bidResponses.length === 0) {
+    if (bidResponses.length > 0) {
       const responseTime = Date.now() - bidRequest.start;
       this._sendResponseTimeData(bidRequest.auctionId, bidRequest.timeout, responseTime, 0);
     }
