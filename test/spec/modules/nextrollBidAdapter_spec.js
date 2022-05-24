@@ -11,7 +11,7 @@ describe('nextrollBidAdapter', function() {
 
   afterEach(function() {
     global.NextRoll = undefined;
-    utilsMock.restore();
+    utilsMock?.restore();
   });
 
   let validBid = {
