@@ -142,6 +142,7 @@ export const spec = {
       let params = {
         aid: bid.auctionId,
         ato: bid.timeout,
+        rt: bid.timeout,
       };
 
       let timeoutRequestUrl = buildUrl({
