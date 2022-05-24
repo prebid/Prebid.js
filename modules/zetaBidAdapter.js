@@ -1,4 +1,4 @@
-import { logWarn , deepAccess } from '../src/utils.js';
+import { logWarn, deepAccess } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 const BIDDER_CODE = 'zeta_global';
