@@ -314,12 +314,19 @@ export const USER_IDS_CONFIG = {
       return data.envelope;
     }
   },
-
+  
   // tncId
   'tncId': {
     source: 'thenewco.it',
     atype: 3
   },
+  
+  // Gravito MP ID
+  'gravitompId': {
+    source: 'gravito.net',
+    atype: 1
+  },
+  
 };
 
 // this function will create an eid object for the given UserId sub-module
