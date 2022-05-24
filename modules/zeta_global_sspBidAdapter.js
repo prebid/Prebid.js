@@ -297,12 +297,3 @@ function provideMediaType(zetaBid, bid) {
 }
 
 registerBidder(spec);
-
-// "params": {
-//   "tags": {"origin": "google", "position": "top", "shortname": "arcamax", "backfill": false},
-//   "tmax": 110,
-//     "definerId": "42770",
-//     "user": {"buyeruid": null},
-//   "sid": 61,
-//     "device": {"ip": "95.191.189.84", "geo": {"country": "RUS"}}
-// }
