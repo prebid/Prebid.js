@@ -435,6 +435,7 @@ describe('sovrnBidAdapter', function() {
       const expectedResponse = {
         ...baseResponse,
         ttl: 60000,
+        ad: decodeURIComponent(`<!-- Creative --><img src=<!-- NURL -->>`),
       }
       const result = spec.interpretResponse(response)
 
