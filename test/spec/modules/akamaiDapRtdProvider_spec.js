@@ -1,7 +1,6 @@
 import {config} from 'src/config.js';
 import {
   dapUtils,
-  getRealTimeData,
   generateRealTimeData,
   akamaiDapRtdSubmodule,
   storage, DAP_MAX_RETRY_TOKENIZE, DAP_SS_ID, DAP_TOKEN, DAP_MEMBERSHIP, DAP_ENCRYPTED_MEMBERSHIP,
@@ -19,6 +18,18 @@ describe('akamaiDapRtdProvider', function() {
   };
 
   const onDone = function() { return true };
+
+  const sampleGdprConsentConfig = {
+    'gdpr': {
+      'consentString': null,
+      'vendorData': {},
+      'gdprApplies': true
+    }
+  };
+
+  const sampleUspConsentConfig = {
+    'usp': '1YYY'
+  };
 
   const sampleIdentity = {
     type: 'dap-signature:1.0.0'
@@ -501,6 +512,29 @@ describe('akamaiDapRtdProvider', function() {
       responseHeader['Akamai-DAP-Token'] = sampleCachedToken.token;
       request.respond(200, responseHeader, '');
       expect(ssidHeader).to.be.equal('Test_SSID_Spec');
+    });
+  });
+
+  describe('Test gdpr and usp consent handling', function () {
+    it('Gdpr applies and gdpr consent string not present', function () {
+      expect(akamaiDapRtdSubmodule.init(null, sampleGdprConsentConfig)).to.equal(false);
+    });
+
+    it('Gdpr applies and gdpr consent string is present', function () {
+      sampleGdprConsentConfig.gdpr.consentString = 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==';
+      expect(akamaiDapRtdSubmodule.init(null, sampleGdprConsentConfig)).to.equal(true);
+    });
+
+    it('USP consent present and user have opted out', function () {
+      expect(akamaiDapRtdSubmodule.init(null, sampleUspConsentConfig)).to.equal(false);
+    });
+
+    it('USP consent present and user have not been provided with option to opt out', function () {
+      expect(akamaiDapRtdSubmodule.init(null, {'usp': '1NYY'})).to.equal(false);
+    });
+
+    it('USP consent present and user have not opted out', function () {
+      expect(akamaiDapRtdSubmodule.init(null, {'usp': '1YNY'})).to.equal(true);
     });
   });
 });

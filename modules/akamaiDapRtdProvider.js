@@ -97,7 +97,7 @@ export function getRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
 }
 
 export function generateRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
-  logInfo('DEBUG(getRealTimeData) - ENTER');
+  logInfo('DEBUG(generateRealTimeData) - ENTER');
   logMessage('  - apiHostname: ' + rtdConfig.params.apiHostname);
   logMessage('  - apiVersion:  ' + rtdConfig.params.apiVersion);
   dapRetryTokenize = 0;
@@ -119,7 +119,7 @@ export function generateRealTimeData(bidConfig, onDone, rtdConfig, userConsent) 
     if (jsonData.rtd) {
       addRealTimeData(jsonData.rtd);
       onDone();
-      logInfo('DEBUG(getRealTimeData) - 1');
+      logInfo('DEBUG(generateRealTimeData) - 1');
       // Don't return - ensure the data is always fresh.
     }
   }
@@ -159,6 +159,9 @@ function callDapAPIs(bidConfig, onDone, rtdConfig, userConsent) {
  * @return {boolean}
  */
 function init(provider, userConsent) {
+  if (dapUtils.checkConsent(userConsent) === false) {
+    return false;
+  }
   return true;
 }
 
@@ -421,7 +424,7 @@ export const dapUtils = {
       } else {
         addRealTimeData(data.rtd);
       }
-      logInfo('DEBUG(getRealTimeData) - 1');
+      logInfo('DEBUG(checkAndAddRealtimeData) - 1');
     }
   },
 
@@ -460,6 +463,25 @@ export const dapUtils = {
       return false;
     }
     return url.protocol === 'https:';
+  },
+
+  checkConsent: function(userConsent) {
+    let consent = true;
+
+    if (userConsent && userConsent.gdpr && userConsent.gdpr.gdprApplies) {
+      const gdpr = userConsent.gdpr;
+      const hasGdpr = (gdpr && typeof gdpr.gdprApplies === 'boolean' && gdpr.gdprApplies) ? 1 : 0;
+      const gdprConsentString = hasGdpr ? gdpr.consentString : '';
+      if (hasGdpr && (!gdprConsentString || gdprConsentString === '')) {
+        logError('akamaiDapRtd submodule requires consent string to call API');
+        consent = false;
+      }
+    } else if (userConsent && userConsent.usp) {
+      const usp = userConsent.usp;
+      consent = usp[1] !== 'N' && usp[2] !== 'Y';
+    }
+
+    return consent;
   },
 
   /*******************************************************************************
