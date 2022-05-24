@@ -106,6 +106,12 @@ export const spec = {
       bidResponses.push(bidResponse);
     }
 
+    // If we got a bid, send response time data
+    if (bidResponses.length === 0) {
+      const responseTime = Date.now() - bidRequest.start;
+      this._sendResponseTimeData(bidRequest.auctionId, bidRequest.timeout, responseTime, 0);
+    }
+
     return bidResponses;
   },
   getUserSyncs: function(syncOptions, responses, gdprConsent, usPrivacy) {
@@ -139,20 +145,7 @@ export const spec = {
     }
 
     timeoutData.forEach((bid) => {
-      let params = {
-        aid: bid.auctionId,
-        ato: bid.timeout,
-        rt: bid.timeout,
-      };
-
-      let timeoutRequestUrl = buildUrl({
-        protocol: 'https',
-        hostname: 'krk.kargo.com',
-        pathname: '/api/v1/event/timeout',
-        search: params
-      });
-
-      triggerPixel(timeoutRequestUrl);
+      this._sendResponseTimeData(bid.auctionId, bid.timeout, bid.timeout, 1)
     });
   },
 
@@ -285,6 +278,26 @@ export const spec = {
     } catch (e) {
       return '';
     }
+  },
+
+  _sendResponseTimeData(auctionId, auctionTimeout, responseTime, isTimeout = 0) {
+    let params = {
+      aid: auctionId,
+      ato: auctionTimeout,
+      rt: responseTime,
+      it: isTimeout,
+    };
+
+    try {
+      let timeoutRequestUrl = buildUrl({
+        protocol: 'https',
+        hostname: 'krk.kargo.com',
+        pathname: '/api/v1/event/timeout',
+        search: params
+      });
+
+      triggerPixel(timeoutRequestUrl);
+    } catch (e) {}
   }
 };
 registerBidder(spec);
