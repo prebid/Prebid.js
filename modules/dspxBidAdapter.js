@@ -70,7 +70,7 @@ export const spec = {
       }
 
       if (params.bcat !== undefined) {
-        payload.bcat = params.bcat;
+        payload.bcat = deepAccess(bidderRequest.ortb2Imp, 'bcat') || params.bcat;
       }
       if (params.dvt !== undefined) {
         payload.dvt = params.dvt;
