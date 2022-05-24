@@ -176,8 +176,25 @@ export const spec = {
     return bids;
   },
 
-  getUserSyncs: function () {
-    return [];
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent = {}, uspConsent = '') {
+    const syncs = [];
+    const gdprFlag = `&gdpr=${gdprConsent.gdprApplies ? 1 : 0}`;
+    const gdprString = `&gdpr_consent=${encodeURIComponent(gdprConsent.consentString)}`;
+    const usPrivacy = `us_privacy=${encodeURIComponent(uspConsent)}`;
+    const pbCookieSyncAssistUrl = `https://ads.yieldmo.com/pbcsa?${usPrivacy}${gdprFlag}${gdprString}`;
+
+    if (syncOptions.iframeEnabled) {
+      syncs.push({
+        type: 'iframe',
+        url: pbCookieSyncAssistUrl + '&type=iframe'
+      });
+    } else if (syncOptions.pixelEnabled) {
+      syncs.push({
+        type: 'image',
+        url: pbCookieSyncAssistUrl + '&type=image'
+      });
+    }
+    return syncs;
   }
 };
 registerBidder(spec);
