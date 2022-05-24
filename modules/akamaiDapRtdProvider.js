@@ -159,6 +159,9 @@ function callDapAPIs(bidConfig, onDone, rtdConfig, userConsent) {
  * @return {boolean}
  */
 function init(provider, userConsent) {
+  if (dapUtils.checkConsent(userConsent) === false) {
+    return false;
+  }
   return true;
 }
 
@@ -460,6 +463,25 @@ export const dapUtils = {
       return false;
     }
     return url.protocol === 'https:';
+  },
+
+  checkConsent: function(userConsent) {
+    let consent = true;
+
+    if (userConsent && userConsent.gdpr && userConsent.gdpr.gdprApplies) {
+      const gdpr = userConsent.gdpr;
+      const hasGdpr = (gdpr && typeof gdpr.gdprApplies === 'boolean' && gdpr.gdprApplies) ? 1 : 0;
+      const gdprConsentString = hasGdpr ? gdpr.consentString : '';
+      if (hasGdpr && (!gdprConsentString || gdprConsentString === '')) {
+        logError('akamaiDapRtd submodule requires consent string to call API');
+        consent = false;
+      }
+    } else if (userConsent && userConsent.usp) {
+      const usp = userConsent.usp;
+      consent = usp[1] !== 'N' && usp[2] !== 'Y';
+    }
+
+    return consent;
   },
 
   /*******************************************************************************
