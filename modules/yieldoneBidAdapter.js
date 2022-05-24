@@ -30,6 +30,8 @@ export const spec = {
       const transactionId = bidRequest.transactionId;
       const unitCode = bidRequest.adUnitCode;
       const timeout = config.getConfig('bidderTimeout');
+      const language = window.navigator.language;
+      const screenSize = window.screen.width + 'x' + window.screen.height;
       const payload = {
         v: 'hb1',
         p: placementId,
@@ -39,7 +41,9 @@ export const spec = {
         tid: transactionId,
         uc: unitCode,
         tmax: timeout,
-        t: 'i'
+        t: 'i',
+        language: language,
+        screen_size: screenSize
       };
 
       const mediaType = getMediaType(bidRequest);
@@ -72,6 +76,7 @@ export const spec = {
       const dacId = deepAccess(bidRequest, 'userId.dacId.id');
       if (isStr(dacId) && !isEmpty(dacId)) {
         payload.dac_id = dacId;
+        payload.fuuid = dacId;
       }
 
       return {
