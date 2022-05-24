@@ -183,9 +183,10 @@ function prepareExtraParams(params, payload, bidderRequest, bidRequest) {
     }
   }
 
-  if (params.bcat !== undefined) {
-    payload.bcat = params.bcat;
+  if (bidderRequest && bidderRequest.ortb2Imp) {
+    payload.bcat = deepAccess(bidderRequest.ortb2Imp, 'bcat');
   }
+
   if (params.dvt !== undefined) {
     payload.dvt = params.dvt;
   }
