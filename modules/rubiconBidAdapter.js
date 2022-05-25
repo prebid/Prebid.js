@@ -839,7 +839,7 @@ function _getPageUrl(bidRequest, bidderRequest) {
   let pageUrl;
   if (bidRequest.params.referrer) {
     pageUrl = bidRequest.params.referrer;
-  } else if (!pageUrl) {
+  } else {
     // TODO: is 'page' the right value here?
     pageUrl = bidderRequest.refererInfo.page;
   }
