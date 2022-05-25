@@ -41,7 +41,7 @@ export const spec = {
         It is unclear what this parameter means.
         If it means the same as pos in openRTB,
         It should read from openRTB object
-        or from mediaTypes.bannner.pos */
+        or from mediaTypes.banner.pos */
         positionType: bid.params.positionType || '',
         prebidVersion: '$prebid.version$'
       };
