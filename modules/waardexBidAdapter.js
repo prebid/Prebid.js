@@ -113,7 +113,7 @@ const getBidRequestToSend = validBidRequest => {
 
 const createBannerObject = banner => {
   return {
-    sizes: transformSizes(banner.sizes)
+    sizes: transformSizes(banner.sizes),
   };
 };
 
