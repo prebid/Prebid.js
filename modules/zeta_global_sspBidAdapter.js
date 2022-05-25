@@ -99,7 +99,7 @@ export const spec = {
       user: params.user ? params.user : {},
       app: params.app ? params.app : {},
       ext: {
-        tags: params.tags ? params.tags : {},
+        tags: {...params.tags, shortname: params.shortname},
         sid: params.sid ? params.sid : undefined
       }
     };

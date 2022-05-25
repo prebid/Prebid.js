@@ -131,7 +131,7 @@ import * as events from '../../src/events.js';
 import {getGlobal} from '../../src/prebidGlobal.js';
 import {gdprDataHandler} from '../../src/adapterManager.js';
 import CONSTANTS from '../../src/constants.json';
-import {hook, module} from '../../src/hook.js';
+import {hook, module, ready as hooksReady} from '../../src/hook.js';
 import {buildEidPermissions, createEidsArray, USER_IDS_CONFIG} from './eids.js';
 import {getCoreStorageManager} from '../../src/storageManager.js';
 import {
@@ -152,6 +152,7 @@ import {
   isEmpty
 } from '../../src/utils.js';
 import {getPPID as coreGetPPID} from '../../src/adserver.js';
+import {promiseControls} from '../../src/utils/promise.js';
 
 const MODULE_NAME = 'User ID';
 const COOKIE = 'cookie';
@@ -529,42 +530,8 @@ function delayFor(ms) {
 const INIT_CANCELED = {};
 
 function idSystemInitializer({delay = delayFor} = {}) {
-  /**
-   * @returns a {promise, resolve, reject} trio where `promise` is resolved by calling `resolve` or `reject`.
-   */
-  function breakpoint() {
-    const [SUCCESS, FAIL, RESULT] = [0, 1, 2];
-    const status = {};
-
-    function finisher(slot) {
-      return function (val) {
-        if (status[slot] != null) {
-          status[slot](val);
-        } else {
-          status[slot] = true;
-          status[RESULT] = val;
-        }
-      }
-    }
-
-    return {
-      promise: new Promise((resolve, reject) => {
-        if (status[SUCCESS] != null) {
-          resolve(status[RESULT]);
-        } else if (status[FAIL] != null) {
-          reject(status[RESULT]);
-        } else {
-          status[SUCCESS] = resolve;
-          status[FAIL] = reject;
-        }
-      }),
-      resolve: finisher(SUCCESS),
-      reject: finisher(FAIL)
-    }
-  }
-
-  const startInit = breakpoint();
-  const startCallbacks = breakpoint();
+  const startInit = promiseControls();
+  const startCallbacks = promiseControls();
   let cancel;
   let initialized = false;
 
@@ -572,7 +539,7 @@ function idSystemInitializer({delay = delayFor} = {}) {
     if (cancel != null) {
       cancel.reject(INIT_CANCELED);
     }
-    cancel = breakpoint();
+    cancel = promiseControls();
     return Promise.race([promise, cancel.promise]);
   }
 
@@ -592,7 +559,7 @@ function idSystemInitializer({delay = delayFor} = {}) {
   }
 
   let done = cancelAndTry(
-    startInit.promise
+    Promise.all([hooksReady, startInit.promise])
       .then(() => gdprDataHandler.promise)
       .then(checkRefs((consentData) => {
         initSubmodules(initModules, allModules, consentData);
