@@ -88,17 +88,11 @@ export const spec = {
 };
 
 function buildRequest(bidRequest, bidderRequest) {
-  // bidRequest.mediaTypes.video
-  // bidRequest.params (bid parameters)
-
-  // bidderRequest.gdprConsent
-  // bidderRequest.uspConsent
-  
   // Open RTB Request Object
   const openrtbRequest = {
-    id: params.bidId,
+    id: bidRequest.params.bidId,
     imp: buildRequestImpression(bidRequest, bidderRequest),
-    site: buildRequestSite(),
+    site: buildRequestSite(bidRequest),
     device: buildRequestDevice()
   };
 
@@ -116,7 +110,7 @@ function buildRequest(bidRequest, bidderRequest) {
   return JSON.stringify(openrtbRequest);;
 }
 
-function buildRequestImpression(bidRequest, bidderRequest) {
+function buildRequestImpression(bidRequest) {
   const impressions = [];
 
   const impressionObject = {
