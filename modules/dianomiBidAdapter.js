@@ -171,9 +171,7 @@ export const spec = {
 
       if (assets.length) {
         imp.native = {
-          request: {
-            assets,
-          },
+            assets
         };
       }
 
