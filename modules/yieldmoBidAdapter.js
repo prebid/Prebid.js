@@ -179,7 +179,7 @@ export const spec = {
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent = {}, uspConsent = '') {
     const syncs = [];
     const gdprFlag = `&gdpr=${gdprConsent.gdprApplies ? 1 : 0}`;
-    const gdprString = `&gdpr_consent=${encodeURIComponent(gdprConsent.consentString)}`;
+    const gdprString = `&gdpr_consent=${encodeURIComponent((gdprConsent.consentString || ''))}`;
     const usPrivacy = `us_privacy=${encodeURIComponent(uspConsent)}`;
     const pbCookieSyncAssistUrl = `https://ads.yieldmo.com/pbcsa?${usPrivacy}${gdprFlag}${gdprString}`;
 
