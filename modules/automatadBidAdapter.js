@@ -141,6 +141,9 @@ export const spec = {
   },
 
   ajaxCall: function(endpoint, callback, data, options = {}) {
+    if (data) {
+      options.contentType = 'application/json'
+    }
     ajax(endpoint, callback, data, options)
   },
 
