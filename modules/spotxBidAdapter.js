@@ -200,8 +200,6 @@ export const spec = {
         }
       }
       
-      const playerSize = deepAccess(bid, 'mediaTypes.video.playerSize');
-
       if (bid.crumbs && bid.crumbs.pubcid) {
         pubcid = bid.crumbs.pubcid;
       }
