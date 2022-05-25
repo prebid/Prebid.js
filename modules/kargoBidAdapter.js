@@ -106,8 +106,8 @@ export const spec = {
       bidResponses.push(bidResponse);
     }
 
-    // If we got a bid, send response time data
-    if (bidResponses.length > 0) {
+    // If we got a bid and it's enabled, send response time data
+    if (bidResponses.length > 0 && bids[Object.keys(bids)[0]].logResponseTime) {
       const responseTime = Date.now() - bidRequest.start;
       this._sendResponseTimeData(bidRequest.auctionId, bidRequest.timeout, responseTime, 0);
     }
