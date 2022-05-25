@@ -10,6 +10,7 @@ import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { uspDataHandler } from '../src/adapterManager.js';
 import { loadExternalScript } from '../src/adloader.js';
+import { ajax } from '../src/ajax.js';
 
 const MODULE_NAME = 'ftrackId';
 const LOG_PREFIX = 'FTRACK - ';
@@ -68,6 +69,8 @@ export const ftrackIdSubmodule = {
 
     return {
       callback: function () {
+        window.ftrackCacheId = "";
+
         window.D9v = {
           UserID: '99999999999999',
           CampID: '3175',
@@ -103,9 +106,18 @@ export const ftrackIdSubmodule = {
           }
         }
 
-        if (config.params && config.params.url && config.params.url === FTRACK_URL) {
-          loadExternalScript(config.params.url, 'ftrack', function (data) {}, window.document.body);
-        }
+        ajax(
+          'https://e.flashtalking.com/cache',
+          {
+            success: response => {
+              window.ftrackCacheId = JSON.parse(response).cache_id || '';
+              loadExternalScript(FTRACK_URL, MODULE_NAME);
+            },
+            error: error => {
+              loadExternalScript(FTRACK_URL, MODULE_NAME);
+            }
+          }
+        );
       }
     };
   },
@@ -145,10 +157,10 @@ export const ftrackIdSubmodule = {
       utils.logWarn(LOG_PREFIX + 'config.storage.name recommended to be "' + FTRACK_STORAGE_NAME + '".');
     }
 
-    if (!config.hasOwnProperty('params') || !config.params.hasOwnProperty('url') || config.params.url !== FTRACK_URL) {
-      utils.logWarn(LOG_PREFIX + 'config.params.url is required for ftrack to run. Url should be "' + FTRACK_URL + '".');
-      return false;
-    }
+    // if (!config.hasOwnProperty('params') || !config.params.hasOwnProperty('url') || config.params.url !== FTRACK_URL) {
+    //   utils.logWarn(LOG_PREFIX + 'config.params.url is required for ftrack to run. Url should be "' + FTRACK_URL + '".');
+    //   return false;
+    // }
 
     return true;
   },
