@@ -5,9 +5,9 @@
  * @requires module:modules/userId
  */
 
-import { parseUrl, buildUrl, triggerPixel, logInfo, hasDeviceAccess, generateUUID } from '../src/utils.js';
+import {buildUrl, generateUUID, hasDeviceAccess, logInfo, parseUrl, triggerPixel} from '../src/utils.js';
 import {submodule} from '../src/hook.js';
-import { coppaDataHandler } from '../src/adapterManager.js';
+import {coppaDataHandler} from '../src/adapterManager.js';
 import {getStorageManager} from '../src/storageManager.js';
 
 const MODULE_TYPE = 'fpid-module';
@@ -74,11 +74,6 @@ export const sharedIdSystemSubmodule = {
    */
   name: 'sharedId',
   aliasName: 'pubCommonId',
-  /**
-   * Vendor id of prebid
-   * @type {Number}
-   */
-  gvlid: GVLID,
 
   /**
    * decode the stored id value for passing to bid requests
@@ -93,8 +88,7 @@ export const sharedIdSystemSubmodule = {
       return undefined;
     }
     logInfo(' Decoded value PubCommonId ' + value);
-    const idObj = {'pubcid': value};
-    return idObj;
+    return {'pubcid': value};
   },
   /**
    * performs action to obtain id
