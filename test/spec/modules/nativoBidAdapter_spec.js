@@ -1,14 +1,10 @@
 import { expect } from 'chai'
 import { spec } from 'modules/nativoBidAdapter.js'
-// import { newBidder } from 'src/adapters/bidderFactory.js'
-// import * as bidderFactory from 'src/adapters/bidderFactory.js'
-// import { deepClone } from 'src/utils.js'
-// import { config } from 'src/config.js'
 
 describe('nativoBidAdapterTests', function () {
   describe('isBidRequestValid', function () {
     let bid = {
-      bidder: 'nativo'
+      bidder: 'nativo',
     }
 
     it('should return true if no params found', function () {
@@ -273,9 +269,7 @@ describe('getAdUnitData', () => {
     }
 
     const data = spec.getAdUnitData(9876543, { impid: 12345 })
-    expect(Object.keys(data)).to.have.deep.members(
-      Object.keys(adUnitData)
-    )
+    expect(Object.keys(data)).to.have.deep.members(Object.keys(adUnitData))
   })
 
   it('Falls back to ad unit code value', () => {
@@ -290,9 +284,158 @@ describe('getAdUnitData', () => {
       },
     }
 
-    const data = spec.getAdUnitData(9876543, { impid: 12345, ext: { ad_unit_code: '#test-code' } })
-    expect(Object.keys(data)).to.have.deep.members(
-      Object.keys(adUnitData)
-    )
+    const data = spec.getAdUnitData(9876543, {
+      impid: 12345,
+      ext: { ad_unit_code: '#test-code' },
+    })
+    expect(Object.keys(data)).to.have.deep.members(Object.keys(adUnitData))
+  })
+})
+
+describe('Response to Request Filter Flow', () => {
+  let bidRequests = [
+    {
+      bidder: 'nativo',
+      params: {
+        placementId: '10433394',
+      },
+      adUnitCode: 'adunit-code',
+      sizes: [
+        [300, 250],
+        [300, 600],
+      ],
+      bidId: '27b02036ccfa6e',
+      bidderRequestId: '1372cd8bd8d6a8',
+      auctionId: 'cfc467e4-2707-48da-becb-bcaab0b2c114',
+      transactionId: '3b36e7e0-0c3e-4006-a279-a741239154ff',
+    },
+  ]
+
+  let response
+
+  beforeEach(() => {
+    response = {
+      id: '126456',
+      seatbid: [
+        {
+          seat: 'seat_0',
+          bid: [
+            {
+              id: 'f70362ac-f3cf-4225-82a5-948b690927a6',
+              impid: '1',
+              price: 3.569,
+              adm: '<creative>',
+              h: 300,
+              w: 250,
+              cat: [],
+              adomain: ['test.com'],
+              crid: '1060_72_6760217',
+            },
+          ],
+        },
+      ],
+      cur: 'USD',
+    }
+  })
+
+  let bidderRequest = {
+    id: 123456,
+    bids: [
+      {
+        params: {
+          placementId: 1,
+        },
+      },
+    ],
+  }
+
+  // mock
+  spec.getAdUnitData = () => {
+    return {
+      bidId: 123456,
+      size: [300, 250],
+    }
+  }
+
+  it('Appends NO filter based on previous response', () => {
+    // Getting the mock response
+    let result = spec.interpretResponse({ body: response }, { bidderRequest })
+
+    // Winning the bid
+    spec.onBidWon(result[0])
+
+    // Making another request
+    const request = spec.buildRequests(bidRequests, {
+      bidderRequestId: 123456,
+      refererInfo: {
+        referer: 'https://www.test.com',
+      },
+    })
+    expect(request.url).to.not.include('ntv_aft')
+    expect(request.url).to.not.include('ntv_avtf')
+    expect(request.url).to.not.include('ntv_ctf')
+  })
+
+  it('Appends Ads filter based on previous response', () => {
+    response.seatbid[0].bid[0].ext = { adsToFilter: ['12345'] }
+
+    // Getting the mock response
+    let result = spec.interpretResponse({ body: response }, { bidderRequest })
+
+    // Winning the bid
+    spec.onBidWon(result[0])
+
+    // Making another request
+    const request = spec.buildRequests(bidRequests, {
+      bidderRequestId: 123456,
+      refererInfo: {
+        referer: 'https://www.test.com',
+      },
+    })
+    expect(request.url).to.include(`ntv_atf=12345`)
+    expect(request.url).to.not.include('ntv_avtf')
+    expect(request.url).to.not.include('ntv_ctf')
+  })
+
+  it('Appends Advertiser filter based on previous response', () => {
+    response.seatbid[0].bid[0].ext = { advertisersToFilter: ['1'] }
+
+    // Getting the mock response
+    let result = spec.interpretResponse({ body: response }, { bidderRequest })
+
+    // Winning the bid
+    spec.onBidWon(result[0])
+
+    // Making another request
+    const request = spec.buildRequests(bidRequests, {
+      bidderRequestId: 123456,
+      refererInfo: {
+        referer: 'https://www.test.com',
+      },
+    })
+    expect(request.url).to.include(`ntv_atf=12345`)
+    expect(request.url).to.include('ntv_avtf=1')
+    expect(request.url).to.not.include('ntv_ctf')
+  })
+
+  it('Appends Campaign filter based on previous response', () => {
+    response.seatbid[0].bid[0].ext = { campaignsToFilter: ['234'] }
+
+    // Getting the mock response
+    let result = spec.interpretResponse({ body: response }, { bidderRequest })
+
+    // Winning the bid
+    spec.onBidWon(result[0])
+
+    // Making another request
+    const request = spec.buildRequests(bidRequests, {
+      bidderRequestId: 123456,
+      refererInfo: {
+        referer: 'https://www.test.com',
+      },
+    })
+    expect(request.url).to.include(`ntv_atf=12345`)
+    expect(request.url).to.include('ntv_avtf=1')
+    expect(request.url).to.include('ntv_ctf=234')
   })
 })

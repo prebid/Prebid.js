@@ -677,6 +677,11 @@ describe('Adagio bid adapter', () => {
         expect(requests[0].data.adUnits[0].floors[0]).to.deep.equal({f: 1, mt: 'banner', s: '300x250'});
         expect(requests[0].data.adUnits[0].floors[1]).to.deep.equal({f: 1, mt: 'banner', s: '300x600'});
         expect(requests[0].data.adUnits[0].floors[2]).to.deep.equal({f: 1, mt: 'video', s: '600x480'});
+
+        expect(requests[0].data.adUnits[0].mediaTypes.banner.sizes.length).to.equal(2);
+        expect(requests[0].data.adUnits[0].mediaTypes.banner.bannerSizes[0]).to.deep.equal({size: [300, 250], floor: 1});
+        expect(requests[0].data.adUnits[0].mediaTypes.banner.bannerSizes[1]).to.deep.equal({size: [300, 600], floor: 1});
+        expect(requests[0].data.adUnits[0].mediaTypes.video.floor).to.equal(1);
       });
 
       it('should get and set floor by mediatype if no size provided (ex native, video)', function() {
@@ -700,6 +705,9 @@ describe('Adagio bid adapter', () => {
         expect(requests[0].data.adUnits[0].floors.length).to.equal(2);
         expect(requests[0].data.adUnits[0].floors[0]).to.deep.equal({f: 1, mt: 'video'});
         expect(requests[0].data.adUnits[0].floors[1]).to.deep.equal({f: 1, mt: 'native'});
+
+        expect(requests[0].data.adUnits[0].mediaTypes.video.floor).to.equal(1);
+        expect(requests[0].data.adUnits[0].mediaTypes.native.floor).to.equal(1);
       });
 
       it('should get and set floor with default value if no floors found', function() {
@@ -713,12 +721,13 @@ describe('Adagio bid adapter', () => {
         }).withParams().build();
         const bidderRequest = new BidderRequestBuilder().build();
         bid01.getFloor = () => {
-          return { floor: NaN, currency: 'USD' }
+          return { floor: NaN, currency: 'USD', mt: 'video' }
         }
         const requests = spec.buildRequests([bid01], bidderRequest);
 
         expect(requests[0].data.adUnits[0].floors.length).to.equal(1);
-        expect(requests[0].data.adUnits[0].floors[0]).to.deep.equal({f: 0.1, mt: 'video'});
+        expect(requests[0].data.adUnits[0].floors[0]).to.deep.equal({mt: 'video'});
+        expect(requests[0].data.adUnits[0].mediaTypes.video.floor).to.be.undefined;
       });
     });
   });
@@ -1386,19 +1395,25 @@ describe('Adagio bid adapter', () => {
         refererInfo: {
           numIframes: 0,
           reachedTop: true,
-          referer: 'http://test.io/index.html?pbjs_debug=true'
+          referer: 'https://test.io/article/a.html'
         }
       }).build();
 
       expect(adagio.getSite(bidderRequest)).to.deep.equal({
         domain: 'test.io',
         page: 'https://test.io/article/a.html',
-        referrer: 'https://google.com'
+        referrer: 'https://google.com',
+        top: true
       });
     });
 
     it('should returns domain and page in a cross-domain w/ top domain reached context', function() {
       sandbox.stub(utils, 'getWindowTop').throws();
+      sandbox.stub(utils, 'getWindowSelf').returns({
+        document: {
+          referrer: 'https://google.com'
+        }
+      });
 
       const info = {
         numIframes: 0,
@@ -1419,11 +1434,12 @@ describe('Adagio bid adapter', () => {
       expect(adagio.getSite(bidderRequest)).to.deep.equal({
         domain: 'level.io',
         page: 'http://level.io/',
-        referrer: ''
+        referrer: 'https://google.com',
+        top: true
       });
     });
 
-    it('should not return anything in a cross-domain w/o top domain reached and w/o ancestor context', function() {
+    it('should return info in a cross-domain w/o top domain reached and w/o ancestor context', function() {
       sandbox.stub(utils, 'getWindowTop').throws();
 
       const info = {
@@ -1442,37 +1458,11 @@ describe('Adagio bid adapter', () => {
         refererInfo: info
       }).build();
 
-      expect(adagio.getSite(bidderRequest)).to.deep.equal({
-        domain: '',
-        page: '',
-        referrer: ''
-      });
-    });
-
-    it('should return domain only in a cross-domain w/o top domain reached and w/ ancestors context', function() {
-      sandbox.stub(utils, 'getWindowTop').throws();
-
-      const info = {
-        numIframes: 2,
-        reachedTop: false,
-        referer: 'http://example.com/iframe1.html',
-        stack: [
-          'http://mytest.com/',
-          'http://example.com/iframe1.html',
-          'http://example.com/iframe2.html'
-        ],
-        canonicalUrl: ''
-      };
-
-      const bidderRequest = new BidderRequestBuilder({
-        refererInfo: info
-      }).build();
-
-      expect(adagio.getSite(bidderRequest)).to.deep.equal({
-        domain: 'mytest.com',
-        page: '',
-        referrer: ''
-      });
+      const s = adagio.getSite(bidderRequest)
+      expect(s.domain).equal('example.com')
+      expect(s.page).equal('http://example.com/iframe1.html')
+      expect(s.referrer).match(/^https?:\/\/.+/);
+      expect(s.top).equal(false)
     });
   });
 

@@ -111,17 +111,11 @@ export const spec = {
         source: {ext: {}},
         regs: {ext: {}}
       };
-      const gdprConsent = bidderRequest.gdprConsent;
 
-      if (gdprConsent && gdprConsent.consentString && gdprConsent.gdprApplies) {
-        rtbBidRequest.ext.gdpr_consent = {
-          consent_string: gdprConsent.consentString,
-          consent_required: gdprConsent.gdprApplies
-        };
-
-        deepSetValue(rtbBidRequest, 'regs.ext.gdpr', gdprConsent.gdprApplies === true ? 1 : 0);
-        deepSetValue(rtbBidRequest, 'user.ext.consent', gdprConsent.consentString);
-      }
+      const gdprConsent = getGdprConsent(bidderRequest);
+      rtbBidRequest.ext.gdpr_consent = gdprConsent;
+      deepSetValue(rtbBidRequest, 'regs.ext.gdpr', gdprConsent.consent_required === true ? 1 : 0);
+      deepSetValue(rtbBidRequest, 'user.ext.consent', gdprConsent.consent_string);
 
       if (validBidRequests[0].schain) {
         deepSetValue(rtbBidRequest, 'source.ext.schain', validBidRequests[0].schain);
@@ -197,6 +191,7 @@ export const spec = {
       if (bidRequest && bidRequest.userId) {
         addExternalUserId(eids, deepAccess(bidRequest, `userId.id5id.uid`), 'id5-sync.com', 'ID5ID');
         addExternalUserId(eids, deepAccess(bidRequest, `userId.tdid`), 'adserver.org', 'TDID');
+        addExternalUserId(eids, deepAccess(bidRequest, `userId.idl_env`), 'liveramp.com', 'idl');
       }
       if (eids.length > 0) {
         rtbBidRequest.user.ext.eids = eids;
@@ -371,6 +366,22 @@ function replaceMacros(url, macros) {
     .replace('[GDPR]', macros.gdpr)
     .replace('[CONSENT]', macros.consent)
     .replace('[US_PRIVACY]', macros.uspConsent);
+}
+
+function getGdprConsent(bidderRequest) {
+  const gdprConsent = bidderRequest.gdprConsent;
+
+  if (gdprConsent && gdprConsent.consentString && gdprConsent.gdprApplies) {
+    return {
+      consent_string: gdprConsent.consentString,
+      consent_required: gdprConsent.gdprApplies
+    };
+  }
+
+  return {
+    consent_required: false,
+    consent_string: '',
+  };
 }
 
 registerBidder(spec);

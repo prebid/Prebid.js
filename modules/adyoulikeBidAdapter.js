@@ -61,6 +61,7 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (bidRequests, bidderRequest) {
+    let hasVideo = false;
     const payload = {
       Version: VERSION,
       Bids: bidRequests.reduce((accumulator, bidReq) => {
@@ -88,6 +89,7 @@ export const spec = {
           accumulator[bidReq.bidId].Native = nativeReq;
         }
         if (mediatype === VIDEO) {
+          hasVideo = true;
           accumulator[bidReq.bidId].Video = bidReq.mediaTypes.video;
 
           const size = bidReq.mediaTypes.video.playerSize;
@@ -122,7 +124,7 @@ export const spec = {
 
     return {
       method: 'POST',
-      url: createEndpoint(bidRequests, bidderRequest),
+      url: createEndpoint(bidRequests, bidderRequest, hasVideo),
       data,
       options
     };
@@ -217,12 +219,13 @@ function getPageRefreshed() {
 }
 
 /* Create endpoint url */
-function createEndpoint(bidRequests, bidderRequest) {
+function createEndpoint(bidRequests, bidderRequest, hasVideo) {
   let host = getHostname(bidRequests);
+  const endpoint = hasVideo ? '/hb-api/prebid-video/v1' : '/hb-api/prebid/v1';
   return buildUrl({
     protocol: 'https',
     host: `${DEFAULT_DC}${host}.omnitagjs.com`,
-    pathname: '/hb-api/prebid/v1',
+    pathname: endpoint,
     search: createEndpointQS(bidderRequest)
   });
 }
@@ -345,14 +348,6 @@ function getTrackers(eventsArray, jsTrackers) {
     }
   });
   return result;
-}
-
-function getVideoAd(response) {
-  var adJson = {};
-  if (typeof response.Ad === 'string' && response.Ad.indexOf('\/\*PREBID\*\/') > 0) {
-    adJson = JSON.parse(response.Ad.match(/\/\*PREBID\*\/(.*)\/\*PREBID\*\//)[1]);
-    return deepAccess(adJson, 'Content.MainVideo.Vast');
-  }
 }
 
 function getNativeAssets(response, nativeConfig) {
@@ -483,8 +478,10 @@ function createBid(response, bidRequests) {
   };
 
   // retreive video response if present
-  const vast64 = response.Vast || getVideoAd(response);
+  const vast64 = response.Vast;
   if (vast64) {
+    bid.width = response.Width;
+    bid.height = response.Height;
     bid.vastXml = window.atob(vast64);
     bid.mediaType = 'video';
   } else if (request.Native) {

@@ -10,8 +10,7 @@ import { ADPOD } from './mediaTypes.js';
 import { hook } from './hook.js';
 import { bidderSettings } from './bidderSettings.js';
 import {includes, find} from './polyfill.js';
-
-var CONSTANTS = require('./constants.json');
+import CONSTANTS from './constants.json';
 
 var pbTargetingKeys = [];
 

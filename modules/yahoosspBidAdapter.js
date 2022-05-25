@@ -482,7 +482,6 @@ function generateServerRequest({payload, requestOptions, bidderRequest}) {
       });
     }
   };
-  logWarn('yahoossp adapter endpoint override enabled. Pointing requests to: ', sspEndpoint);
 
   return {
     url: sspEndpoint,

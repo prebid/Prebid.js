@@ -197,6 +197,7 @@ describe('Unit: Prebid Module', function () {
 
   before(() => {
     hook.ready();
+    $$PREBID_GLOBAL$$.requestBids.getHooks().remove();
   });
 
   beforeEach(function () {
@@ -1626,6 +1627,7 @@ describe('Unit: Prebid Module', function () {
       let auctionArgs;
 
       beforeEach(function () {
+        auctionArgs = null;
         adUnitsBackup = auction.getAdUnits
         auctionManagerStub = sinon.stub(auctionManager, 'createAuction').callsFake(function() {
           auctionArgs = arguments[0];
@@ -1898,6 +1900,22 @@ describe('Unit: Prebid Module', function () {
             expect(auctionArgs.adUnits[0].mediaTypes.banner.pos).to.equal(2);
             expect(auctionArgs.adUnits[1].mediaTypes.banner.pos).to.equal(0);
           });
+
+          it(`should allow no bids if 'ortb2Imp' is specified`, () => {
+            const adUnit = {
+              code: 'test',
+              mediaTypes: {
+                banner: {
+                  sizes: [[300, 250]]
+                }
+              },
+              ortb2Imp: {}
+            };
+            $$PREBID_GLOBAL$$.requestBids({
+              adUnits: [adUnit]
+            });
+            sinon.assert.match(auctionArgs.adUnits[0], adUnit);
+          });
         });
 
         describe('negative tests for validating adUnits', function() {
@@ -2033,7 +2051,7 @@ describe('Unit: Prebid Module', function () {
             });
             expect(auctionArgs.adUnits.length).to.equal(1);
             expect(auctionArgs.adUnits[1]).to.not.exist;
-            assert.ok(logErrorSpy.calledWith("Detected adUnit.code 'bad-ad-unit-2' did not have 'adUnit.bids' defined or 'adUnit.bids' is not an array. Removing adUnit from auction."));
+            assert.ok(logErrorSpy.calledWith("adUnit.code 'bad-ad-unit-2' has no 'adUnit.bids' and no 'adUnit.ortb2Imp'. Removing adUnit from auction"));
           });
         });
       });
