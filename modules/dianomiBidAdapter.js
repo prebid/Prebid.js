@@ -98,7 +98,7 @@ export const spec = {
     device.ua = device.ua || navigator.userAgent;
 
     const endpoint =
-      setOnAny(validBidRequests, 'params.endpoint') || 'dev-prebid.dianomi.net';
+      setOnAny(validBidRequests, 'params.endpoint') || 'www-prebid.dianomi.net';
 
     const pt =
       setOnAny(validBidRequests, 'params.pt') ||
@@ -129,7 +129,7 @@ export const spec = {
         bidfloorcur,
         ext: {
           bidder: {
-            smartadId,
+            smartadId: smartadId,
           },
         },
       };
@@ -242,9 +242,6 @@ export const spec = {
       method: 'POST',
       url: 'https://' + endpoint + '/cgi-bin/smartads_prebid.pl',
       data: JSON.stringify(request),
-      //     options: {
-      //       contentType: 'application/json'
-      //     },
       bids: validBidRequests,
     };
   },
