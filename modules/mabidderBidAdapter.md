@@ -1,7 +1,7 @@
 #Overview
 
 ```
-Module Name: ecdrsvc Bid Adapter
+Module Name: mabidder Bid Adapter
 Module Type: Bidder Adapter
 Maintainer: ecdrsvc@
 ```
