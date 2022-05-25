@@ -113,8 +113,7 @@ const getBidRequestToSend = validBidRequest => {
 
 const createBannerObject = banner => {
   return {
-    sizes: transformSizes(banner.sizes),
-    pos: banner.pos
+    sizes: transformSizes(banner.sizes)
   };
 };
 
@@ -155,8 +154,7 @@ const createVideoObject = (videoMediaTypes, videoParams) => {
     delivery: getBidIdParameter('delivery', videoParams) || [2],
     playbackmethod: getBidIdParameter('playbackmethod', videoParams) || [1, 2, 3, 4],
     api: getBidIdParameter('api', videoParams) || [2],
-    linearity: getBidIdParameter('linearity', videoParams) || 1,
-    pos: videoMediaTypes.pos
+    linearity: getBidIdParameter('linearity', videoParams) || 1
   };
 };
 
