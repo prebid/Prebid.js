@@ -369,7 +369,7 @@ function createVideoRequestData(bid, bidderRequest) {
   let tagid = getVideoBidParam(bid, 'tagid');
   let topLocation = getTopWindowLocation(bidderRequest);
   let eids = getEids(bid);
-  let ortb2 = deepClone(config.getConfig('ortb2'));
+  let ortb2 = deepClone(bidderRequest.ortb2);
   let payload = {
     isPrebid: true,
     appId: appId,
@@ -443,7 +443,7 @@ function createBannerRequestData(bids, bidderRequest) {
       sizes: getBannerSizes(bid)
     };
   });
-  let ortb2 = deepClone(config.getConfig('ortb2'));
+  let ortb2 = deepClone(bidderRequest.ortb2);
   let payload = {
     slots: slots,
     ortb2: ortb2,

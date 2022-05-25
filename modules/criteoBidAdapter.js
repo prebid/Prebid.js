@@ -65,7 +65,7 @@ export const spec = {
   buildRequests: (bidRequests, bidderRequest) => {
     let url;
     let data;
-    let fpd = config.getConfig('ortb2') || {};
+    let fpd = bidderRequest.ortb2 || {};
 
     Object.assign(bidderRequest, {
       publisherExt: fpd.site?.ext,
@@ -139,6 +139,13 @@ export const spec = {
           height: slot.height,
           dealId: slot.dealCode,
         };
+        if (body.ext?.paf?.transmission && slot.ext?.paf?.content_id) {
+          const pafResponseMeta = {
+            content_id: slot.ext.paf.content_id,
+            transmission: response.ext.paf.transmission
+          };
+          bid.meta = Object.assign({}, bid.meta, { paf: pafResponseMeta });
+        }
         if (slot.adomain) {
           bid.meta = Object.assign({}, bid.meta, { advertiserDomains: slot.adomain });
         }

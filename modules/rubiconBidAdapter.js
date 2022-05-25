@@ -253,6 +253,12 @@ export const spec = {
       if (!isNaN(bidFloor)) {
         data.imp[0].bidfloor = bidFloor;
       }
+
+      // If the price floors module is active, then we need to signal to PBS! If floorData obj is present is best way to check
+      if (typeof bidRequest.floorData === 'object') {
+        data.ext.prebid.floors = { enabled: false };
+      }
+
       // if value is set, will overwrite with same value
       data.imp[0].ext[bidRequest.bidder].video.size_id = determineRubiconVideoSizeId(bidRequest)
 
@@ -1008,7 +1014,7 @@ function applyFPD(bidRequest, mediaType, data) {
 
   if (bidRequest.params.keywords) BID_FPD.site.keywords = (isArray(bidRequest.params.keywords)) ? bidRequest.params.keywords.join(',') : bidRequest.params.keywords;
 
-  let fpd = mergeDeep({}, config.getConfig('ortb2') || {}, BID_FPD);
+  let fpd = mergeDeep({}, bidRequest.ortb2 || {}, BID_FPD);
   let impData = deepAccess(bidRequest.ortb2Imp, 'ext.data') || {};
 
   const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');

@@ -89,7 +89,7 @@ export const spec = {
     if (!impData.banner && !impData.video) {
       impData.banner = buildBanner(request);
     }
-    const fpd = config.getLegacyFpd(config.getConfig('ortb2')) || {};
+    const fpd = config.getLegacyFpd(bidderRequest.ortb2) || {};
     let payload = {
       id: bidderRequest.auctionId,
       cur: [DEFAULT_CUR],
@@ -99,7 +99,7 @@ export const spec = {
       user: params.user ? params.user : {},
       app: params.app ? params.app : {},
       ext: {
-        tags: params.tags ? params.tags : {},
+        tags: {...params.tags, shortname: params.shortname},
         sid: params.sid ? params.sid : undefined
       }
     };

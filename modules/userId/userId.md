@@ -112,6 +112,8 @@ pbjs.setConfig({
                  expires: 1
               }
         }, {
+            name: "cpexId"
+        }, {
             name: 'mwOpenLinkId',
             params: {
                 accountId: 0000,
@@ -148,11 +150,6 @@ pbjs.setConfig({
                   expires: 30
               }
         },{
-              name: 'flocId',
-               params: {
-                    token: "Registered token or default sharedid.org token" // Default sharedid.org token: "A3dHTSoNUMjjERBLlrvJSelNnwWUCwVQhZ5tNQ+sll7y+LkPPVZXtB77u2y7CweRIxiYaGwGXNlW1/dFp8VMEgIAAAB+eyJvcmlnaW4iOiJodHRwczovL3NoYXJlZGlkLm9yZzo0NDMiLCJmZWF0dXJlIjoiSW50ZXJlc3RDb2hvcnRBUEkiLCJleHBpcnkiOjE2MjYyMjA3OTksImlzU3ViZG9tYWluIjp0cnVlLCJpc1RoaXJkUGFydHkiOnRydWV9"
-           }
-        },{
              name: "kpuid",
              params:{
                     accountid: 124 // example of account id
@@ -164,6 +161,9 @@ pbjs.setConfig({
                   },
         {
              name: "dacId"
+        }, 
+        {
+            name: "gravitompId"
         }
         ],
         syncDelay: 5000,
@@ -187,17 +187,6 @@ pbjs.setConfig({
             },
             params: {
                 pid: "0010b00002GYU4eBAH" // Example ID
-            }
-        }, {
-            name: 'trustpid',
-            params: {
-              maxDelayTime: 2500
-            },
-            bidders: ['adform'],
-            storage: {
-              type: 'html5',
-              name: 'trustpid',
-              expires: 60
             }
         }, {
             name: "unifiedId",
@@ -294,11 +283,6 @@ pbjs.setConfig({
                   expires: 30
               }
        },{
-              name: 'flocId',
-               params: {
-               token: "Registered token or default sharedid.org token" // Default sharedid.org token: "A3dHTSoNUMjjERBLlrvJSelNnwWUCwVQhZ5tNQ+sll7y+LkPPVZXtB77u2y7CweRIxiYaGwGXNlW1/dFp8VMEgIAAAB+eyJvcmlnaW4iOiJodHRwczovL3NoYXJlZGlkLm9yZzo0NDMiLCJmZWF0dXJlIjoiSW50ZXJlc3RDb2hvcnRBUEkiLCJleHBpcnkiOjE2MjYyMjA3OTksImlzU3ViZG9tYWluIjp0cnVlLCJpc1RoaXJkUGFydHkiOnRydWV9"
-        }
-        },{
             name: "deepintentId",
             storage: {
                 type: "html5",

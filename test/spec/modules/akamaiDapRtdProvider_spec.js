@@ -1,7 +1,13 @@
 import {config} from 'src/config.js';
-import {SEGMENTS_STORAGE_KEY, TOKEN_STORAGE_KEY, dapUtils, addRealTimeData, getRealTimeData, akamaiDapRtdSubmodule, storage} from 'modules/akamaiDapRtdProvider.js';
+import {
+  akamaiDapRtdSubmodule,
+  dapUtils,
+  getRealTimeData,
+  SEGMENTS_STORAGE_KEY,
+  storage
+} from 'modules/akamaiDapRtdProvider.js';
 import {server} from 'test/mocks/xhr.js';
-import logMessage from 'src/utils.js'
+
 const responseHeader = {'Content-Type': 'application/json'};
 
 describe('akamaiDapRtdProvider', function() {
@@ -66,7 +72,7 @@ describe('akamaiDapRtdProvider', function() {
         }
       };
 
-      const bidConfig = {};
+      const bidConfig = {ortb2Fragments: {global: {}}};
 
       const rtdUserObj1 = {
         name: 'www.dataprovider3.com',
@@ -95,9 +101,8 @@ describe('akamaiDapRtdProvider', function() {
 
       getDataFromLocalStorageStub.withArgs(SEGMENTS_STORAGE_KEY).returns(JSON.stringify(cachedRtd));
 
-      expect(config.getConfig().ortb2).to.be.undefined;
       getRealTimeData(bidConfig, () => {}, rtdConfig, {});
-      expect(config.getConfig().ortb2.user.data).to.deep.include.members([rtdUserObj1]);
+      expect(bidConfig.ortb2Fragments.global.user.data).to.deep.include.members([rtdUserObj1]);
     });
 
     it('should initalise and return with config', function () {

@@ -66,7 +66,7 @@ export const spec = {
   buildRequests: (validBidRequests, bidderRequest) => {
     let app, site;
 
-    const commonFpd = getConfig('ortb2') || {};
+    const commonFpd = bidderRequest.ortb2 || {};
     let { user } = commonFpd;
 
     if (typeof getConfig('app') === 'object') {
@@ -206,6 +206,11 @@ export const spec = {
       request.is_debug = !!test;
       request.test = 1;
     }
+
+    if (config.getConfig('coppa')) {
+      deepSetValue(request, 'regs.coppa', 1);
+    }
+
     if (deepAccess(bidderRequest, 'gdprConsent.gdprApplies') !== undefined) {
       deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
       deepSetValue(request, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies & 1);

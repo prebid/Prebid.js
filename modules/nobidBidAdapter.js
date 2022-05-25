@@ -152,7 +152,7 @@ function nobidBuildRequests(bids, bidderRequest) {
     if (cop) state['coppa'] = cop;
     const eids = getEIDs(deepAccess(bids, '0.userIdAsEids'));
     if (eids && eids.length > 0) state['eids'] = eids;
-    if (config && config.getConfig('ortb2')) state['ortb2'] = config.getConfig('ortb2');
+    if (bidderRequest && bidderRequest.ortb2) state['ortb2'] = bidderRequest.ortb2;
     return state;
   }
   function newAdunit(adunitObject, adunits) {

@@ -14,11 +14,17 @@ describe('craftAdapter', function () {
 
   describe('isBidRequestValid', function () {
     before(function() {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        craft: {
+          storageAllowed: true
+        }
+      };
       this.windowContext = window.context;
       window.context = null;
     });
 
     after(function() {
+      $$PREBID_GLOBAL$$.bidderSettings = {};
       window.context = this.windowContext;
     });
     let bid = {
@@ -60,6 +66,16 @@ describe('craftAdapter', function () {
   });
 
   describe('buildRequests', function () {
+    before(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        craft: {
+          storageAllowed: true
+        }
+      };
+    });
+    after(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {};
+    });
     let bidRequests = [{
       bidder: 'craft',
       params: {

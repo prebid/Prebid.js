@@ -664,7 +664,7 @@ export const spec = {
     }
 
     // Handle First Party Data (need publisher fpd setup)
-    const fpd = config.getConfig('ortb2') || {};
+    const fpd = bidderRequest.ortb2 || {};
     if (fpd.site) {
       mergeDeep(payload, { site: fpd.site });
     }

@@ -6,10 +6,9 @@
  * @requires module:modules/realTimeData
  */
 import {ajax} from '../src/ajax.js';
-import {config} from '../src/config.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {submodule} from '../src/hook.js';
-import {isPlainObject, mergeDeep, logMessage, logInfo, logError} from '../src/utils.js';
+import {isPlainObject, logError, logInfo, logMessage, mergeDeep} from '../src/utils.js';
 
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'dap';
@@ -38,13 +37,12 @@ function mergeLazy(target, source) {
  * @param {Object} rtd
  * @param {Object} rtdConfig
  */
-export function addRealTimeData(rtd) {
+export function addRealTimeData(ortb2, rtd) {
   logInfo('DEBUG(addRealTimeData) - ENTER');
   if (isPlainObject(rtd.ortb2)) {
-    let ortb2 = config.getConfig('ortb2') || {};
     logMessage('DEBUG(addRealTimeData): merging original: ', ortb2);
     logMessage('DEBUG(addRealTimeData): merging in: ', rtd.ortb2);
-    config.setConfig({ortb2: mergeLazy(ortb2, rtd.ortb2)});
+    mergeLazy(ortb2, rtd.ortb2);
   }
   logInfo('DEBUG(addRealTimeData) - EXIT');
 }
@@ -64,7 +62,7 @@ export function getRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
   if (jsonData) {
     let data = JSON.parse(jsonData);
     if (data.rtd) {
-      addRealTimeData(data.rtd);
+      addRealTimeData(bidConfig.ortb2Fragments?.global, data.rtd);
       onDone();
       logInfo('DEBUG(getRealTimeData) - 1');
       // Don't return - ensure the data is always fresh.

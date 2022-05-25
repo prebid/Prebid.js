@@ -51,6 +51,18 @@ describe('sovrnBidAdapter', function() {
 
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
     });
+
+    it('should return false when require video params are not passed', function () {
+      const bidRequest = {
+        ...baseBidRequest,
+        'mediaTypes': {
+          'video': {
+          }
+        }
+      }
+
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
+    });
   });
 
   describe('buildRequests', function () {
@@ -304,30 +316,17 @@ describe('sovrnBidAdapter', function() {
       expect(impression.bidfloor).to.equal(2.00)
     })
     describe('First Party Data', function () {
-      let sandbox
-
-      beforeEach(function() {
-        sandbox = sinon.sandbox.create()
-      })
-      afterEach(function() {
-        sandbox.restore()
-      })
       it('should provide first party data if provided', function() {
-        sandbox.stub(config, 'getConfig').callsFake(key => {
-          const cfg = {
-            ortb2: {
-              site: {
-                keywords: 'test keyword'
-              },
-              user: {
-                data: 'some user data'
-              }
-            }
+        const ortb2 = {
+          site: {
+            keywords: 'test keyword'
+          },
+          user: {
+            data: 'some user data'
           }
-          return utils.deepAccess(cfg, key)
-        })
+        };
 
-        const request = spec.buildRequests([baseBidRequest], baseBidderRequest)
+        const request = spec.buildRequests([baseBidRequest], {...baseBidderRequest, ortb2})
         const { user, site } = JSON.parse(request.data)
 
         expect(user.data).to.equal('some user data')
@@ -392,9 +391,29 @@ describe('sovrnBidAdapter', function() {
       'currency': 'USD',
       'netRevenue': true,
       'mediaType': 'banner',
-      'ad': decodeURIComponent(`<!-- Creative --><img src="<!-- NURL -->">`),
       'ttl': 90,
-      'meta': { advertiserDomains: [] }
+      'meta': { advertiserDomains: [] },
+      'ad': decodeURIComponent(`<!-- Creative --><img src="<!-- NURL -->">`),
+    }
+    const videoBid = {
+      'id': 'a_403370_332fdb9b064040ddbec05891bd13ab28',
+      'crid': 'creativelycreatedcreativecreative',
+      'impid': '263c448586f5a1',
+      'price': 0.45882675,
+      'nurl': '',
+      'adm': '<VAST version="4.2" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://www.iab.com/VAST">key%3Dvalue</VAST>',
+      'h': 480,
+      'w': 640
+    }
+    const bannerBid = {
+      'id': 'a_403370_332fdb9b064040ddbec05891bd13ab28',
+      'crid': 'creativelycreatedcreativecreative',
+      'impid': '263c448586f5a1',
+      'price': 0.45882675,
+      'nurl': '<!-- NURL -->',
+      'adm': '<!-- Creative -->',
+      'h': 90,
+      'w': 728
     }
     beforeEach(function () {
       response = {
@@ -402,14 +421,7 @@ describe('sovrnBidAdapter', function() {
           'id': '37386aade21a71',
           'seatbid': [{
             'bid': [{
-              'id': 'a_403370_332fdb9b064040ddbec05891bd13ab28',
-              'crid': 'creativelycreatedcreativecreative',
-              'impid': '263c448586f5a1',
-              'price': 0.45882675,
-              'nurl': '<!-- NURL -->',
-              'adm': '<!-- Creative -->',
-              'h': 90,
-              'w': 728
+              ...bannerBid
             }]
           }]
         }
@@ -419,7 +431,6 @@ describe('sovrnBidAdapter', function() {
     it('should get the correct bid response', function () {
       const expectedResponse = {
         ...baseResponse,
-        'ad': decodeURIComponent(`<!-- Creative --><img src=<!-- NURL -->>`),
         'ttl': 60000,
       };
 
@@ -479,6 +490,36 @@ describe('sovrnBidAdapter', function() {
 
       expect(result.length).to.equal(0);
     });
+
+    it('should get the correct bid response with 2 different bids', function () {
+      const expectedVideoResponse = {
+        ...baseResponse,
+        'vastXml': decodeURIComponent(videoBid.adm)
+      }
+      delete expectedVideoResponse.ad
+
+      const expectedBannerResponse = {
+        ...baseResponse
+      }
+
+      response.body.seatbid = [{ bid: [bannerBid] }, { bid: [videoBid] }]
+      const result = spec.interpretResponse(response)
+
+      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedBannerResponse))
+      expect(Object.keys(result[1])).to.deep.equal(Object.keys(expectedVideoResponse))
+    })
+
+    it('should get the correct bid response with 2 seatbid items', function () {
+      const expectedResponse = {
+        ...baseResponse
+      }
+      response.body.seatbid = [response.body.seatbid[0], response.body.seatbid[0]]
+
+      const result = spec.interpretResponse(response)
+
+      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse))
+      expect(Object.keys(result[1])).to.deep.equal(Object.keys(expectedResponse))
+    })
   });
 
   describe('interpretResponse video', function () {

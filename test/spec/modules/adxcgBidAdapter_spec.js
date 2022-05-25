@@ -190,13 +190,14 @@ describe('Adxcg adapter', function () {
     it('should send app info', function () {
       config.setConfig({
         app: {id: 'appid'},
-        ortb2: {app: {name: 'appname'}}
       });
+      const ortb2 = {app: {name: 'appname'}}
       let validBidRequests = [{
         bidId: 'bidId',
-        params: {adzoneid: '1000'}
+        params: {adzoneid: '1000'},
+        ortb2
       }];
-      let request = JSON.parse(spec.buildRequests(validBidRequests, {refererInfo: {referer: 'page'}}).data);
+      let request = JSON.parse(spec.buildRequests(validBidRequests, {refererInfo: {referer: 'page'}, ortb2}).data);
 
       assert.equal(request.app.id, 'appid');
       assert.equal(request.app.name, 'appname');
@@ -211,21 +212,23 @@ describe('Adxcg adapter', function () {
             domain: 'publisher.domain.com'
           }
         },
-        ortb2: {
-          site: {
-            publisher: {
-              id: 4441,
-              name: 'publisher\'s name'
-            }
+      });
+      const ortb2 = {
+        site: {
+          publisher: {
+            id: 4441,
+            name: 'publisher\'s name'
           }
         }
-      });
+      };
+
       let validBidRequests = [{
         bidId: 'bidId',
-        params: {adzoneid: '1000'}
+        params: {adzoneid: '1000'},
+        ortb2
       }];
       let refererInfo = {referer: 'page'};
-      let request = JSON.parse(spec.buildRequests(validBidRequests, {refererInfo}).data);
+      let request = JSON.parse(spec.buildRequests(validBidRequests, {refererInfo, ortb2}).data);
 
       assert.deepEqual(request.site, {
         domain: 'localhost',

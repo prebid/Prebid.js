@@ -927,15 +927,10 @@ describe('the rubicon adapter', function () {
               }
             };
 
-            sandbox.stub(config, 'getConfig').callsFake(key => {
-              const config = {
-                ortb2: {
-                  site,
-                  user
-                }
-              };
-              return utils.deepAccess(config, key);
-            });
+            const ortb2 = {
+              site,
+              user
+            }
 
             const expectedQuery = {
               'kw': 'a,b,c,d',
@@ -953,7 +948,7 @@ describe('the rubicon adapter', function () {
             };
 
             // get the built request
-            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            let [request] = spec.buildRequests(bidderRequest.bids.map((b) => ({...b, ortb2})), bidderRequest);
             let data = parseQuery(request.data);
 
             // make sure that tg_v, tg_i, and kw values are correct
@@ -1714,6 +1709,22 @@ describe('the rubicon adapter', function () {
           expect(request.data.imp[0].ext).to.not.haveOwnProperty('rubicon');
         });
 
+        it('should add floors flag correctly to PBS Request', function () {
+          createVideoBidderRequest();
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+
+          // should not pass if undefined
+          expect(request.data.ext.prebid.floors).to.be.undefined;
+
+          // should pass it as false
+          bidderRequest.bids[0].floorData = {
+            skipped: false,
+            location: 'fetch',
+          }
+          let [newRequest] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(newRequest.data.ext.prebid.floors).to.deep.equal({ enabled: false });
+        });
+
         it('should add multibid configuration to PBS Request', function () {
           createVideoBidderRequest();
 
@@ -2056,17 +2067,12 @@ describe('the rubicon adapter', function () {
             data: [{foo: 'bar'}]
           };
 
-          sandbox.stub(config, 'getConfig').callsFake(key => {
-            const config = {
-              ortb2: {
-                site,
-                user
-              }
-            };
-            return utils.deepAccess(config, key);
-          });
+          const ortb2 = {
+            site,
+            user
+          };
 
-          const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          const [request] = spec.buildRequests(bidderRequest.bids.map((b) => ({...b, ortb2})), bidderRequest);
 
           const expected = {
             site: Object.assign({}, site, {keywords: bidderRequest.bids[0].params.keywords.join(',')}),
