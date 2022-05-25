@@ -199,7 +199,7 @@ export const spec = {
           spotxReq.video.ext.pos = deepAccess(bid, 'mediaTypes.video.pos');
         }
       }
-      
+
       if (bid.crumbs && bid.crumbs.pubcid) {
         pubcid = bid.crumbs.pubcid;
       }
