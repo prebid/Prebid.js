@@ -5,7 +5,7 @@
  */
 import { timestamp, mergeDeep } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
-import { getRefererInfo } from '../src/refererDetection.js';
+import {getRefererInfo, parseDomain} from '../src/refererDetection.js';
 import { getCoreStorageManager } from '../src/storageManager.js';
 
 let ortb2 = {};
@@ -84,7 +84,7 @@ function setPage() {
  * Checks for canonical url and if exists retrieves domain and merges into ortb2 global data
  */
 function setDomain() {
-  const domain = getRefererInfo().domain;
+  const domain = parseDomain(getRefererInfo().page, {noLeadingWww: true});
   if (domain) {
     mergeDeep(ortb2, { site: { domain: domain } });
     mergeDeep(ortb2, { site: { publisher: { domain: findRootDomain(domain) } } });

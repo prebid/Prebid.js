@@ -71,7 +71,7 @@ describe('the first party data enrichment module', function() {
 
     expect(validated.site.ref).to.equal(getRefererInfo().ref || undefined);
     expect(validated.site.page).to.equal('https://www.subdomain.domain.co.uk/path?query=12345');
-    expect(validated.site.domain).to.equal('www.subdomain.domain.co.uk');
+    expect(validated.site.domain).to.equal('subdomain.domain.co.uk');
     expect(validated.site.publisher.domain).to.equal('domain.co.uk');
     expect(validated.device).to.deep.equal({ w: 800, h: 500 });
     expect(validated.site.keywords).to.be.undefined;

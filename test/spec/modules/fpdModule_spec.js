@@ -87,9 +87,9 @@ describe('the first party data module', function () {
       height = 750;
 
       ({global: validated} = processFpd({global}));
-      expect(validated.site.ref).to.equal(getRefererInfo().referer);
+      expect(validated.site.ref).to.equal(getRefererInfo().ref || undefined);
       expect(validated.site.page).to.equal('https://www.domain.com/path?query=12345');
-      expect(validated.site.domain).to.equal('www.domain.com');
+      expect(validated.site.domain).to.equal('domain.com');
       expect(validated.site.content.data).to.deep.equal([{segment: [{id: 'test'}], name: 'bar'}]);
       expect(validated.user.data).to.be.undefined;
       expect(validated.device).to.deep.to.equal({w: 1, h: 1});
