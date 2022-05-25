@@ -143,7 +143,7 @@ export const spec = {
             banner: {
               w: sizes.length ? sizes[0][0] : 300,
               h: sizes.length ? sizes[0][1] : 250,
-              pos: deepAccess(bidRequest, 'mediaTypes.banner.pos') || params.pos || 0,
+              pos: deepAccess(bidderRequest, 'mediaTypes.banner.pos') || params.pos || 0,
               topframe: inIframe() ? 0 : 1
             }
           });
