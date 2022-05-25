@@ -40,7 +40,8 @@ export const spec = {
         /** positionType is undocumented
         It is unclear what this parameter means.
         If it means the same as pos in openRTB,
-        It should read from openRTB object */
+        It should read from openRTB object
+        or from mediaTypes.bannner.pos */
         positionType: bid.params.positionType || '',
         prebidVersion: '$prebid.version$'
       };
