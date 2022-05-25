@@ -96,7 +96,7 @@ const getBidRequestToSend = validBidRequest => {
   const result = {
     bidId: validBidRequest.bidId,
     bidfloor: 0,
-    position: deepAccess(validBidRequest.ortb2Imp, 'pos') || parseInt(validBidRequest.params.position) || 0,
+    position: parseInt(validBidRequest.params.position) || 0,
     instl: deepAccess(validBidRequest.ortb2Imp, 'instl') === 1 || parseInt(validBidRequest.params.instl) === 1 ? 1 : 0,
   };
 
@@ -114,6 +114,7 @@ const getBidRequestToSend = validBidRequest => {
 const createBannerObject = banner => {
   return {
     sizes: transformSizes(banner.sizes),
+    pos: banner.pos
   };
 };
 
@@ -154,7 +155,8 @@ const createVideoObject = (videoMediaTypes, videoParams) => {
     delivery: getBidIdParameter('delivery', videoParams) || [2],
     playbackmethod: getBidIdParameter('playbackmethod', videoParams) || [1, 2, 3, 4],
     api: getBidIdParameter('api', videoParams) || [2],
-    linearity: getBidIdParameter('linearity', videoParams) || 1
+    linearity: getBidIdParameter('linearity', videoParams) || 1,
+    pos: videoMediaTypes.pos
   };
 };
 
