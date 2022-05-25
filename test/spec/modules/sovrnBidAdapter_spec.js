@@ -433,9 +433,18 @@ describe('sovrnBidAdapter', function() {
 
     it('should get the correct bid response', function () {
       const expectedResponse = {
-        ...baseResponse,
+        requestId: '263c448586f5a1',
+        cpm: 0.45882675,
+        width: 728,
+        height: 90,
+        creativeId: 'creativelycreatedcreativecreative',
+        dealId: null,
+        currency: 'USD',
+        netRevenue: true,
+        mediaType: 'banner',
         ttl: 60000,
-        ad: decodeURIComponent(`<!-- Creative --><img src=<!-- NURL -->>`),
+        meta: { advertiserDomains: [] },
+        ad: decodeURIComponent(`<!-- Creative --><img src=<!-- NURL -->>`)
       }
       const result = spec.interpretResponse(response)
 
