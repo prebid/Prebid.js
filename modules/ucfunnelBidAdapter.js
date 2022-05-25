@@ -264,13 +264,13 @@ function getRequestData(bid, bidderRequest) {
   }
 
   addUserId(bidData, bid.userId);
+  // TODO: is 'page' the right value here? does the fallback make sense?
+  bidData.u = bidderRequest?.refererInfo?.page || bidderRequest?.refererInfo?.topmostLocation;
   try {
     bidData.host = window.top.location.hostname;
-    bidData.u = config.getConfig('publisherDomain') || window.top.location.href;
     bidData.xr = 0;
   } catch (e) {
     bidData.host = window.location.hostname;
-    bidData.u = config.getConfig('publisherDomain') || bidderRequest.refererInfo.referrer || document.referrer || window.location.href;
     bidData.xr = 1;
   }
 

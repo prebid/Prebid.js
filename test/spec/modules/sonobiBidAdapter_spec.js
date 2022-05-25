@@ -330,7 +330,7 @@ describe('SonobiBidAdapter', function () {
       'refererInfo': {
         'numIframes': 0,
         'reachedTop': true,
-        'referer': 'https://example.com',
+        'page': 'https://example.com',
         'stack': ['https://example.com']
       },
       uspConsent: 'someCCPAString'
@@ -420,7 +420,7 @@ describe('SonobiBidAdapter', function () {
         'refererInfo': {
           'numIframes': 0,
           'reachedTop': true,
-          'referer': 'https://example.com',
+          'page': 'https://example.com',
           'stack': ['https://example.com']
         }
       };
@@ -440,7 +440,7 @@ describe('SonobiBidAdapter', function () {
         'refererInfo': {
           'numIframes': 0,
           'reachedTop': true,
-          'referer': 'https://example.com',
+          'page': 'https://example.com',
           'stack': ['https://example.com']
         }
       };

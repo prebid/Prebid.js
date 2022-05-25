@@ -66,7 +66,8 @@ export const spec = {
       let serverRequest = {
         pbav: '$prebid.version$',
         p: [],
-        page_url: bidderRequest.refererInfo.referer,
+        // TODO: is 'page' the right value here?
+        page_url: bidderRequest.refererInfo.page,
         bust: new Date().getTime().toString(),
         dnt: getDNT(),
         description: getPageDescription(),
@@ -445,13 +446,13 @@ function extractPlayerSize(bidRequest) {
 function openRtbSite(bidRequest, bidderRequest) {
   let result = {};
 
-  const loc = parseUrl(deepAccess(bidderRequest, 'refererInfo.referer'));
+  const loc = parseUrl(deepAccess(bidderRequest, 'refererInfo.page'));
   if (!isEmpty(loc)) {
     result.page = `${loc.protocol}://${loc.hostname}${loc.pathname}`;
   }
 
-  if (self === top && document.referrer) {
-    result.ref = document.referrer;
+  if (bidderRequest.refererInfo?.ref) {
+    result.ref = bidderRequest.refererInfo.ref;
   }
 
   const keywords = document.getElementsByTagName('meta')['keywords'];

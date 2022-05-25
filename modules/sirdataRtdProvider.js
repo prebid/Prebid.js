@@ -47,8 +47,8 @@ export function getSegmentsAndCategories(reqBidsConfigObj, onDone, moduleConfig,
     sirdataDomain = 'sddan.com';
     sendWithCredentials = true;
   }
-
-  var actualUrl = moduleConfig.params.actualUrl || getRefererInfo().referer;
+  // TODO: is 'page' the right value here?
+  var actualUrl = moduleConfig.params.actualUrl || getRefererInfo().page;
 
   const url = 'https://kvt.' + sirdataDomain + '/api/v1/public/p/' + moduleConfig.params.partnerId + '/d/' + moduleConfig.params.key + '/s?callback=&gdpr=' + gdprApplies + '&gdpr_consent=' + tcString + (actualUrl ? '&url=' + encodeURIComponent(actualUrl) : '');
 

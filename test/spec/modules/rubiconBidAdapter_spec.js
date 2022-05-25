@@ -666,7 +666,7 @@ describe('the rubicon adapter', function () {
 
         it('should add referer info to request data', function () {
           let refererInfo = {
-            referer: 'https://www.prebid.org',
+            page: 'https://www.prebid.org',
             reachedTop: true,
             numIframes: 1,
             stack: [
@@ -683,29 +683,20 @@ describe('the rubicon adapter', function () {
           expect(parseQuery(request.data).rf).to.equal('https://www.prebid.org');
         });
 
-        it('page_url should use params.referrer, config.getConfig("pageUrl"), bidderRequest.refererInfo in that order', function () {
+        it('page_url should use params.referrer, bidderRequest.refererInfo in that order', function () {
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           expect(parseQuery(request.data).rf).to.equal('localhost');
 
           delete bidderRequest.bids[0].params.referrer;
-          let refererInfo = {referer: 'https://www.prebid.org'};
+          let refererInfo = {page: 'https://www.prebid.org'};
           bidderRequest = Object.assign({refererInfo}, bidderRequest);
           [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           expect(parseQuery(request.data).rf).to.equal('https://www.prebid.org');
 
-          let origGetConfig = config.getConfig;
-          sandbox.stub(config, 'getConfig').callsFake(function (key) {
-            if (key === 'pageUrl') {
-              return 'https://www.rubiconproject.com';
-            }
-            return origGetConfig.apply(config, arguments);
-          });
-          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          expect(parseQuery(request.data).rf).to.equal('https://www.rubiconproject.com');
-
+          bidderRequest.refererInfo.page = 'http://www.prebid.org';
           bidderRequest.bids[0].params.secure = true;
           [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          expect(parseQuery(request.data).rf).to.equal('https://www.rubiconproject.com');
+          expect(parseQuery(request.data).rf).to.equal('https://www.prebid.org');
         });
 
         it('should use rubicon sizes if present (including non-mappable sizes)', function () {

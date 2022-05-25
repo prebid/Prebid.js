@@ -126,8 +126,9 @@ export const spec = {
 
 function getReferrerInfo(bidderRequest) {
   let ref = '';
-  if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
-    ref = bidderRequest.refererInfo.referer;
+  if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page) {
+    // TODO: is 'page' the right value here?
+    ref = bidderRequest.refererInfo.page;
   }
   return ref;
 }

@@ -51,7 +51,7 @@ export const spec = {
       }
 
       if (bidderRequest && bidderRequest.refererInfo) {
-        payload.pageDomain = bidderRequest.refererInfo.referer || '';
+        payload.pageDomain = bidderRequest.refererInfo.page || '';
       }
 
       if (bidderRequest && bidderRequest.gdprConsent) {

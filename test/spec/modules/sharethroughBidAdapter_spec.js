@@ -166,7 +166,7 @@ describe('sharethrough adapter spec', function () {
 
       bidderRequest = {
         refererInfo: {
-          referer: 'https://referer.com',
+          ref: 'https://referer.com',
         },
       };
     });

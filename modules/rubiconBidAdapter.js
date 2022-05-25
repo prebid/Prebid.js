@@ -836,11 +836,12 @@ function _getScreenResolution() {
  * @returns {string}
  */
 function _getPageUrl(bidRequest, bidderRequest) {
-  let pageUrl = config.getConfig('pageUrl');
+  let pageUrl;
   if (bidRequest.params.referrer) {
     pageUrl = bidRequest.params.referrer;
   } else if (!pageUrl) {
-    pageUrl = bidderRequest.refererInfo.referer;
+    // TODO: is 'page' the right value here?
+    pageUrl = bidderRequest.refererInfo.page;
   }
   return bidRequest.params.secure ? pageUrl.replace(/^http:/i, 'https:') : pageUrl;
 }
