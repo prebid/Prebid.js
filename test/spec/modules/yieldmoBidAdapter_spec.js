@@ -609,14 +609,14 @@ describe('YieldmoAdapter', function () {
     const gdprFlag = `&gdpr=0`;
     const usPrivacy = `us_privacy=`;
     const gdprString = `&gdpr_consent=`;
-    const pbCookieSyncAssistUrl = `https://ads.yieldmo.com/pbcsa?${usPrivacy}${gdprFlag}${gdprString}`;
+    const pbCookieAssistSyncUrl = `https://ads.yieldmo.com/pbcas?${usPrivacy}${gdprFlag}${gdprString}`;
     it('should use type iframe when iframeEnabled', function() {
       const syncs = spec.getUserSyncs({iframeEnabled: true});
-      expect(syncs).to.deep.equal([{type: 'iframe', url: pbCookieSyncAssistUrl + '&type=iframe'}])
+      expect(syncs).to.deep.equal([{type: 'iframe', url: pbCookieAssistSyncUrl + '&type=iframe'}])
     });
     it('should use type image when pixelEnabled', function() {
       const syncs = spec.getUserSyncs({pixelEnabled: true});
-      expect(syncs).to.deep.equal([{type: 'image', url: pbCookieSyncAssistUrl + '&type=image'}])
+      expect(syncs).to.deep.equal([{type: 'image', url: pbCookieAssistSyncUrl + '&type=image'}])
     });
     it('should register no syncs', function () {
       expect(spec.getUserSyncs({})).to.deep.equal([]);

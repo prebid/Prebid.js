@@ -25,6 +25,7 @@ const TIME_TO_LIVE = 300;
 const NET_REVENUE = true;
 const BANNER_SERVER_ENDPOINT = 'https://ads.yieldmo.com/exchange/prebid';
 const VIDEO_SERVER_ENDPOINT = 'https://ads.yieldmo.com/exchange/prebidvideo';
+const PB_COOKIE_ASSIST_SYNC_ENDPOINT = `https://ads.yieldmo.com/pbcas`;
 const OUTSTREAM_VIDEO_PLAYER_URL = 'https://prebid-outstream.yieldmo.com/bundle.js';
 const OPENRTB_VIDEO_BIDPARAMS = ['mimes', 'startdelay', 'placement', 'startdelay', 'skipafter', 'protocols', 'api',
   'playbackmethod', 'maxduration', 'minduration', 'pos', 'skip', 'skippable'];
@@ -181,17 +182,17 @@ export const spec = {
     const gdprFlag = `&gdpr=${gdprConsent.gdprApplies ? 1 : 0}`;
     const gdprString = `&gdpr_consent=${encodeURIComponent((gdprConsent.consentString || ''))}`;
     const usPrivacy = `us_privacy=${encodeURIComponent(uspConsent)}`;
-    const pbCookieSyncAssistUrl = `https://ads.yieldmo.com/pbcsa?${usPrivacy}${gdprFlag}${gdprString}`;
+    const pbCookieAssistSyncUrl = `${PB_COOKIE_ASSIST_SYNC_ENDPOINT}?${usPrivacy}${gdprFlag}${gdprString}`;
 
     if (syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
-        url: pbCookieSyncAssistUrl + '&type=iframe'
+        url: pbCookieAssistSyncUrl + '&type=iframe'
       });
     } else if (syncOptions.pixelEnabled) {
       syncs.push({
         type: 'image',
-        url: pbCookieSyncAssistUrl + '&type=image'
+        url: pbCookieAssistSyncUrl + '&type=image'
       });
     }
     return syncs;
