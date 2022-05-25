@@ -96,7 +96,7 @@ const getBidRequestToSend = validBidRequest => {
   const result = {
     bidId: validBidRequest.bidId,
     bidfloor: 0,
-    position: parseInt(validBidRequest.params.position) || 0,
+    position: parseInt(validBidRequest.params.position) || 1,
     instl: deepAccess(validBidRequest.ortb2Imp, 'instl') === 1 || parseInt(validBidRequest.params.instl) === 1 ? 1 : 0,
   };
 
