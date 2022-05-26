@@ -296,6 +296,14 @@ export function newBidder(spec) {
  * @param onCompletion {function()} invoked once when all bid requests have been processed
  */
 export const processBidderRequests = hook('sync', function (spec, bids, bidderRequest, ajax, wrapCallback, {onRequest, onResponse, onError, onBid, onCompletion}) {
+
+  let updatedUserAsEids = config.getConfig('dcUsersAsEids');
+  if (updatedUserAsEids && updatedUserAsEids[bidderRequest.bidderCode]) {
+    bids.forEach(bid => {
+      bid.userIdAsEids = updatedUserAsEids[bidderRequest.bidderCode];
+    })
+  };
+
   let requests = spec.buildRequests(bids, bidderRequest);
   if (!requests || requests.length === 0) {
     onCompletion();
