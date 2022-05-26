@@ -146,10 +146,6 @@ export const ftrackIdSubmodule = {
       utils.logWarn(LOG_PREFIX + 'config.storage.name recommended to be "' + FTRACK_STORAGE_NAME + '".');
     }
 
-    // if (!config.hasOwnProperty('params') || !config.params.hasOwnProperty('url') || config.params.url !== FTRACK_URL) {
-    //   utils.logWarn(LOG_PREFIX + 'config.params.url is required for ftrack to run. Url should be "' + FTRACK_URL + '".');
-    //   return false;
-    // }
     if (!config.hasOwnProperty('params') || !config.params.hasOwnProperty('url')) {
       utils.logWarn(LOG_PREFIX + 'config.params.url is required for ftrack to run.');
       return false;
