@@ -12,6 +12,12 @@ describe('Taboola Adapter', function () {
     getCookie = sinon.stub(userData.storageManager, 'getCookie');
     getDataFromLocalStorage = sinon.stub(userData.storageManager, 'getDataFromLocalStorage');
     localStorageIsEnabled = sinon.stub(userData.storageManager, 'localStorageIsEnabled');
+
+    $$PREBID_GLOBAL$$.bidderSettings = {
+      taboola: {
+        storageAllowed: true
+      }
+    };
   });
 
   afterEach(() => {
