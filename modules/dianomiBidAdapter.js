@@ -58,7 +58,7 @@ const NATIVE_PARAMS = {
   },
 };
 const OUTSTREAM_RENDERER_URL =
-  'https://s2.adform.net/banners/scripts/video/outstream/render.js';
+  'https://www.dianomi.com/js/prebid/outstream/renderer.js';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -98,7 +98,7 @@ export const spec = {
     device.ua = device.ua || navigator.userAgent;
 
     const endpoint =
-      setOnAny(validBidRequests, 'params.endpoint') || 'www-prebid.dianomi.net';
+      setOnAny(validBidRequests, 'params.endpoint') || 'www-prebid.dianomi.com';
 
     const pt =
       setOnAny(validBidRequests, 'params.pt') ||

@@ -8,38 +8,63 @@ Maintainer: prebid-maintainer@dianomi.com
 
 # Description
 
-Module that connects to Dianomi's demand sources
+Module that connects to Dianomi's demand sources. Both Native and Banner formats supported. Using oRTB standard.
 
 # Test Parameters
-```
+
+```js
     var adUnits = [
         {
-            code: 'test-div',
+            code: 'test-div-1',
             mediaTypes: {
-                banner: {
-                    sizes: [[300, 250]],  // a display size
+                native: {
+                    rendererUrl: "https://dev.dianomi.com/chris/prebid/dianomiRenderer.js",
+                    image: {
+                        required: true,
+                        sizes: [360, 360]
+                    },
+                    title: {
+                        required: true,
+                        len: 800
+                    },
+                    sponsoredBy: {
+                        required: true
+                    },
+                    clickUrl: {
+                        required: true
+                    },
+                    privacyLink: {
+                        required: false
+                    },
+                    body: {
+                        required: false
+                    },
+                    icon: {
+                        required: false,
+                        sizes: [75, 75]
+                    },
                 }
             },
             bids: [
                 {
-                    bidder: "example",
+                    bidder: "dianomi",
                     params: {
-                        placement: '12345'
+                        smartadId: 12345   // required, provided by Account Manager
                     }
                 }
             ]
         },{
-            code: 'test-div',
+            code: 'test-div-2',
             mediaTypes: {
                 banner: {
-                    sizes: [[320, 50]],   // a mobile size
+                    sizes: [750, 650],   // a below-article size
                 }
             },
             bids: [
                 {
-                    bidder: "example",
+                    bidder: "dianomi",
                     params: {
-                        placement: 67890
+                        smartadId: 23456,  // required provided by Account Manager
                     }
                 }
             ]
