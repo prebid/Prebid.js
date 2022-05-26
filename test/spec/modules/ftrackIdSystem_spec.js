@@ -96,15 +96,7 @@ describe('FTRACK ID System', () => {
       delete configMock1.params.url;
 
       ftrackIdSubmodule.isConfigOk(configMock1);
-      expect(logWarnStub.args[0][0]).to.equal(`FTRACK - config.params.url is required for ftrack to run. Url should be "https://d9.flashtalking.com/d9core".`);
-    });
-
-    it(`should be rejected if 'storage.param.url' does not exist or is not 'https://d9.flashtalking.com/d9core'`, () => {
-      let configMock1 = JSON.parse(JSON.stringify(configMock));
-      configMock1.params.url = 'https://d9.NOT.flashtalking.com/d9core';
-
-      ftrackIdSubmodule.isConfigOk(configMock1);
-      expect(logWarnStub.args[0][0]).to.equal(`FTRACK - config.params.url is required for ftrack to run. Url should be "https://d9.flashtalking.com/d9core".`);
+      expect(logWarnStub.args[0][0]).to.equal(`FTRACK - config.params.url is required for ftrack to run.`);
     });
   });
 
@@ -154,7 +146,7 @@ describe('FTRACK ID System', () => {
       expect((/cookie/gi).test(JSON.stringify(ftrackIdSubmodule))).to.not.be.ok;
     });
 
-    it.only(`should be the only method that gets a new ID aka hits the D9 endpoint`, () => {
+    it(`should be the only method that gets a new ID aka hits the D9 endpoint`, () => {
       ftrackIdSubmodule.getId(configMock, null, null).callback();
       expect(loadExternalScript.called).to.be.ok;
       expect(loadExternalScript.args[0][0]).to.deep.equal('https://d9.flashtalking.com/d9core');

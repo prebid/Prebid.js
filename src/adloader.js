@@ -11,6 +11,7 @@ const _approvedLoadExternalJSList = [
   'browsi',
   'brandmetrics',
   'justtag',
+  'akamaidap',
   'ftrackId'
 ]
 

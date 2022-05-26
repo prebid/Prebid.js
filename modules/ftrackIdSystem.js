@@ -10,7 +10,6 @@ import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { uspDataHandler } from '../src/adapterManager.js';
 import { loadExternalScript } from '../src/adloader.js';
-import { ajax } from '../src/ajax.js';
 
 const MODULE_NAME = 'ftrackId';
 const LOG_PREFIX = 'FTRACK - ';
@@ -19,7 +18,6 @@ const VENDOR_ID = null;
 const LOCAL_STORAGE = 'html5';
 const FTRACK_STORAGE_NAME = 'ftrackId';
 const FTRACK_PRIVACY_STORAGE_NAME = `${FTRACK_STORAGE_NAME}_privacy`;
-const FTRACK_URL = 'https://d9.flashtalking.com/d9core';
 const storage = getStorageManager({gvlid: VENDOR_ID, moduleName: MODULE_NAME});
 
 let consentInfo = {
@@ -69,8 +67,6 @@ export const ftrackIdSubmodule = {
 
     return {
       callback: function () {
-        window.ftrackCacheId = "";
-
         window.D9v = {
           UserID: '99999999999999',
           CampID: '3175',
@@ -106,18 +102,11 @@ export const ftrackIdSubmodule = {
           }
         }
 
-        ajax(
-          'https://e.flashtalking.com/cache',
-          {
-            success: response => {
-              window.ftrackCacheId = JSON.parse(response).cache_id || '';
-              loadExternalScript(FTRACK_URL, MODULE_NAME);
-            },
-            error: error => {
-              loadExternalScript(FTRACK_URL, MODULE_NAME);
-            }
-          }
-        );
+        if (config.params && config.params.url) {
+          var ftrackOnload = function (evt) {}
+          // Creates an async script element and appends it to the document
+          loadExternalScript(config.params.url, MODULE_NAME, ftrackOnload, window.document);
+        }
       }
     };
   },
@@ -161,6 +150,10 @@ export const ftrackIdSubmodule = {
     //   utils.logWarn(LOG_PREFIX + 'config.params.url is required for ftrack to run. Url should be "' + FTRACK_URL + '".');
     //   return false;
     // }
+    if (!config.hasOwnProperty('params') || !config.params.hasOwnProperty('url')) {
+      utils.logWarn(LOG_PREFIX + 'config.params.url is required for ftrack to run.');
+      return false;
+    }
 
     return true;
   },
