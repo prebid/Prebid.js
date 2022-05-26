@@ -102,11 +102,8 @@ export const ftrackIdSubmodule = {
           }
         }
 
-        if (config.params && config.params.url) {
-          var ftrackOnload = function (evt) {}
-          // Creates an async script element and appends it to the document
-          loadExternalScript(config.params.url, MODULE_NAME, ftrackOnload, window.document);
-        }
+        // Creates an async script element and appends it to the document
+        loadExternalScript(config.params.url, MODULE_NAME);
       }
     };
   },
