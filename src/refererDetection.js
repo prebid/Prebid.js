@@ -240,7 +240,7 @@ export function detectReferer(win) {
       domain: parseDomain(page) || null,
       ref: ref || null,
       // TODO: the "legacy" refererInfo object is provided here, for now, to accomodate
-      // adapters that decided to just sent it verbatim to their backend.
+      // adapters that decided to just send it verbatim to their backend.
       legacy: {
         reachedTop,
         isAmp: valuesFromAmp,
