@@ -26,6 +26,9 @@ describe('Taboola Adapter', function () {
     getCookie.restore();
     getDataFromLocalStorage.restore();
     localStorageIsEnabled.restore();
+
+    $$PREBID_GLOBAL$$.bidderSettings = {
+    };
   })
 
   const commonBidRequest = {
