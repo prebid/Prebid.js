@@ -282,7 +282,7 @@ function loadConsentData(cb, width = 1, height = 1) {
     onError: function (msg, ...extraArgs) {
       let consentData = null;
       let shouldCancelAuction = true;
-      if (allowAuction.value && cmpVersion === 1) {
+      if (allowAuction.value) {
         // still set the consentData to undefined when there is a problem as per config options
         consentData = storeConsentData(undefined);
         shouldCancelAuction = false;
@@ -348,7 +348,7 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
   load(function (shouldCancelAuction, errMsg, ...extraArgs) {
     if (errMsg) {
       let log = logWarn;
-      if (cmpVersion === 1 && !shouldCancelAuction) {
+      if (!shouldCancelAuction) {
         errMsg = `${errMsg} 'allowAuctionWithoutConsent' activated.`;
       } else if (shouldCancelAuction) {
         log = logError;

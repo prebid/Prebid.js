@@ -158,14 +158,20 @@ export const spec = {
         return false
       }
     }
-    let bidFormat = bidType(bid, true);
-    // bidType is undefined? Return false
-    if (!bidFormat) {
+    let bidFormats = bidTypes(bid, true);
+    // bidTypes is undefined? Return false
+    if (!bidFormats || !bidFormats.length) {
       return false;
-    } else if (bidFormat === 'video') { // bidType is video, make sure it has required params
-      return hasValidVideoParams(bid);
     }
-    // bidType is banner? return true
+
+    // bidTypes contains video, make sure it has required params
+    if (bidFormats.indexOf('video') !== -1 && !hasValidVideoParams(bid)) {
+      return false;
+    }
+
+    // banner is required
+    if (bidFormats.indexOf('banner') === -1) return false;
+
     return true;
   },
   /**
@@ -176,7 +182,12 @@ export const spec = {
   buildRequests: function (bidRequests, bidderRequest) {
     // separate video bids because the requests are structured differently
     let requests = [];
-    const videoRequests = bidRequests.filter(bidRequest => bidType(bidRequest) === 'video').map(bidRequest => {
+    const videoRequests = bidRequests
+      .filter(bidRequest => {
+        const bidTypesFound = bidTypes(bidRequest);
+        return bidTypesFound && bidTypesFound.indexOf('video') !== -1;
+      })
+      .map(bidRequest => {
       bidRequest.startTime = new Date().getTime();
 
       const data = {
@@ -329,7 +340,13 @@ export const spec = {
 
     if (rubiConf.singleRequest !== true) {
       // bids are not grouped if single request mode is not enabled
-      requests = videoRequests.concat(bidRequests.filter(bidRequest => bidType(bidRequest) === 'banner').map(bidRequest => {
+      requests = videoRequests.concat(
+        bidRequests
+          .filter(bidRequest => {
+            const bidTypesFound = bidTypes(bidRequest);
+            return bidTypesFound && bidTypesFound.indexOf('banner') !== -1;
+          })
+          .map(bidRequest => {
         const bidParams = spec.createSlotParams(bidRequest, bidderRequest);
         return {
           method: 'GET',
@@ -344,7 +361,10 @@ export const spec = {
     } else {
       // single request requires bids to be grouped by site id into a single request
       // note: groupBy wasn't used because deep property access was needed
-      const nonVideoRequests = bidRequests.filter(bidRequest => bidType(bidRequest) === 'banner');
+      const nonVideoRequests = bidRequests.filter(bidRequest => {
+        const bidTypesFound = bidTypes(bidRequest);
+        return bidTypesFound && bidTypesFound.indexOf('banner') !== -1;
+      });
       const groupedBidRequests = nonVideoRequests.reduce((groupedBids, bid) => {
         (groupedBids[bid.params['siteId']] = groupedBids[bid.params['siteId']] || []).push(bid);
         return groupedBids;
@@ -706,7 +726,11 @@ export const spec = {
     let multibid = 0;
 
     // video ads array is wrapped in an object
-    if (typeof bidRequest === 'object' && !Array.isArray(bidRequest) && bidType(bidRequest) === 'video' && typeof ads === 'object') {
+    function isVideoRequest(bidRequest) {
+      const bidFormats = bidTypes(bidRequest);
+      return bidFormats && bidFormats.indexOf('video') !== -1;
+    }
+    if (typeof bidRequest === 'object' && !Array.isArray(bidRequest) && isVideoRequest(bidRequest) && typeof ads === 'object') {
       ads = ads[bidRequest.adUnitCode];
     }
 
@@ -1119,7 +1143,8 @@ export function hasVideoMediaType(bidRequest) {
  * @param log whether we should log errors/warnings for invalid bids
  * @returns {string|undefined} Returns 'video' or 'banner' if resolves to a type, or undefined otherwise (invalid).
  */
-function bidType(bid, log = false) {
+function bidTypes(bid, log = false) {
+  function isValidVideoMediaType() {
   // Is it considered video ad unit by rubicon
   if (hasVideoMediaType(bid)) {
     // Removed legacy mediaType support. new way using mediaTypes.video object is now required
@@ -1142,8 +1167,11 @@ function bidType(bid, log = false) {
     if (log) {
       logMessage('Rubicon: making video request for adUnit', bid.adUnitCode);
     }
-    return 'video';
-  } else {
+     return true;
+    }
+  }
+
+  function isValidBannerMediaType() {
     // we require banner sizes to come from one of params.sizes or mediaTypes.banner.sizes or adUnit.sizes, in that order
     // if we cannot determine them, we reject it!
     if (parseSizes(bid, 'banner').length === 0) {
@@ -1157,8 +1185,13 @@ function bidType(bid, log = false) {
     if (log) {
       logMessage('Rubicon: making banner request for adUnit', bid.adUnitCode);
     }
-    return 'banner';
+    return true;
   }
+  const bidTypesFound = [];
+	if (isValidVideoMediaType()) bidTypesFound.push('video');
+	if (isValidBannerMediaType()) bidTypesFound.push('banner');
+
+	return bidTypesFound.length ? bidTypesFound : undefined;
 }
 
 export const resetRubiConf = () => rubiConf = {};
