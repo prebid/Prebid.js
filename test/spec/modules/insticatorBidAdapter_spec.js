@@ -29,6 +29,10 @@ describe('InsticatorBidAdapter', function () {
         pos: 4,
       },
       video: {
+        mimes: [
+          'video/mp4',
+          'video/mpeg',
+        ],
         w: 250,
         h: 300,
       },
@@ -127,6 +131,10 @@ describe('InsticatorBidAdapter', function () {
         ...{
           mediaTypes: {
             video: {
+              mimes: [
+                'video/mp4',
+                'video/mpeg',
+              ],
               w: 250,
               h: 300,
             },
@@ -270,6 +278,10 @@ describe('InsticatorBidAdapter', function () {
           ]
         },
         video: {
+          mimes: [
+            'video/mp4',
+            'video/mpeg',
+          ],
           h: 300,
           w: 250,
         },

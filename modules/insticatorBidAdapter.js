@@ -70,8 +70,10 @@ function buildBanner(bidRequest) {
 function buildVideo(bidRequest) {
   const w = deepAccess(bidRequest, 'mediaTypes.video.w');
   const h = deepAccess(bidRequest, 'mediaTypes.video.h');
+  const mimes = deepAccess(bidRequest, 'mediaTypes.video.mimes');
 
   return {
+    mimes,
     w,
     h,
   }
