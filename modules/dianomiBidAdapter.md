@@ -15,7 +15,7 @@ Module that connects to Dianomi's demand sources. Both Native and Banner formats
 ```js
     var adUnits = [
         {
-            code: '/19968336/prebid_native_example_1',
+            code: 'test-div-1',
             mediaTypes: {
                 native: {
                     rendererUrl: "https://dev.dianomi.com/chris/prebid/dianomiRenderer.js",
@@ -49,12 +49,12 @@ Module that connects to Dianomi's demand sources. Both Native and Banner formats
                 {
                     bidder: "dianomi",
                     params: {
-                        smartadId: 9607   // required
+                        smartadId: 12345   // required, provided by Account Manager
                     }
                 }
             ]
         },{
-            code: '/19968336/prebid_banner_example_1',
+            code: 'test-div-2',
             mediaTypes: {
                 banner: {
                     sizes: [750, 650],   // a below-article size
@@ -64,7 +64,7 @@ Module that connects to Dianomi's demand sources. Both Native and Banner formats
                 {
                     bidder: "dianomi",
                     params: {
-                        smartadId: 9528,  // required
+                        smartadId: 23456,  // required provided by Account Manager
                     }
                 }
             ]
