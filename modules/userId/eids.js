@@ -181,12 +181,6 @@ export const USER_IDS_CONFIG = {
     atype: 1
   },
 
-  // haloId (deprecated in 7.0, use hadronId)
-  'haloId': {
-    source: 'audigent.com',
-    atype: 1
-  },
-
   // quantcastId
   'quantcastId': {
     source: 'quantcast.com',
