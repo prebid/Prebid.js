@@ -82,10 +82,6 @@ export function detectReferer(win) {
    * @returns {string|null}
    */
   function getCanonicalUrl(doc) {
-    let pageURL = config.getConfig('pageUrl');
-
-    if (pageURL) return pageURL;
-
     try {
       const element = doc.querySelector("link[rel='canonical']");
 
@@ -229,7 +225,8 @@ export function detectReferer(win) {
     } catch (e) {}
 
     const location = reachedTop || hasTopLocation ? bestLocation : null;
-    const page = ensureProtocol(bestCanonicalUrl, win) || location;
+    const canonicalUrl = config.getConfig('pageUrl') || bestCanonicalUrl || null;
+    const page = ensureProtocol(canonicalUrl, win) || location;
 
     return {
       reachedTop,
@@ -238,7 +235,7 @@ export function detectReferer(win) {
       stack,
       topmostLocation: bestLocation || null,
       location,
-      canonicalUrl: bestCanonicalUrl || null,
+      canonicalUrl,
       page,
       domain: parseDomain(page) || null,
       ref: ref || null,
@@ -250,7 +247,7 @@ export function detectReferer(win) {
         numIframes: level - 1,
         stack,
         referer: bestLocation || null,
-        canonicalUrl: bestCanonicalUrl || null,
+        canonicalUrl
       }
     };
   }

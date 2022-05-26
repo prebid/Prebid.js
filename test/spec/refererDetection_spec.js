@@ -92,12 +92,12 @@ function buildWindowTree(urls, topReferrer = null, canonicalUrl = null, ancestor
 }
 
 describe('Referer detection', () => {
+  afterEach(function () {
+    config.resetConfig();
+  });
+
   describe('Non cross-origin scenarios', () => {
     describe('No iframes', () => {
-      afterEach(function () {
-        config.resetConfig();
-      });
-
       it('Should return the current window location and no canonical URL', () => {
         const testWindow = buildWindowTree(['https://example.com/some/page'], 'https://othersite.com/'),
           result = detectReferer(testWindow)();
