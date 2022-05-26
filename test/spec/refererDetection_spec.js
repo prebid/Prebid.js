@@ -350,6 +350,17 @@ describe('Referer detection', () => {
       });
     });
 
+    it('should respect pageUrl as the primary source of canonicalUrl', () => {
+      config.setConfig({
+        pageUrl: 'pub-defined'
+      });
+      const w = buildWindowTree(['https://example.com', 'https://amp.com']);
+      w.context = {
+        canonicalUrl: 'should-be-overridden'
+      };
+      expect(detectReferer(w)().canonicalUrl).to.equal('pub-defined');
+    });
+
     describe('Cached AMP page in iframed search result', () => {
       it('Should return the AMP source and canonical URLs but with a null top-level stack location Without ancesorOrigins', () => {
         const testWindow = buildWindowTree(['https://google.com/amp/example-com/some/page/amp/', 'https://example-com.amp-cache.example.com/some/page/amp/', 'https://ad-iframe.ampproject.org/ad']);
