@@ -95,15 +95,7 @@ describe('FTRACK ID System', () => {
       delete configMock1.params.url;
 
       ftrackIdSubmodule.isConfigOk(configMock1);
-      expect(logWarnStub.args[0][0]).to.equal(`FTRACK - config.params.url is required for ftrack to run. Url should be "https://d9.flashtalking.com/d9core".`);
-    });
-
-    it(`should be rejected if 'storage.param.url' does not exist or is not 'https://d9.flashtalking.com/d9core'`, () => {
-      let configMock1 = JSON.parse(JSON.stringify(configMock));
-      configMock1.params.url = 'https://d9.NOT.flashtalking.com/d9core';
-
-      ftrackIdSubmodule.isConfigOk(configMock1);
-      expect(logWarnStub.args[0][0]).to.equal(`FTRACK - config.params.url is required for ftrack to run. Url should be "https://d9.flashtalking.com/d9core".`);
+      expect(logWarnStub.args[0][0]).to.equal(`FTRACK - config.params.url is required for ftrack to run.`);
     });
   });
 

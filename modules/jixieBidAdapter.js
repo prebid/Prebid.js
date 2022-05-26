@@ -184,6 +184,7 @@ export const spec = {
     let ids = fetchIds_();
     let eids = [];
     let miscDims = internal.getMiscDims();
+    let schain = deepAccess(validBidRequests[0], 'schain');
 
     // all available user ids are sent to our backend in the standard array layout:
     if (validBidRequests[0].userId) {
@@ -209,6 +210,7 @@ export const spec = {
       mkeywords: miscDims.mkeywords,
       bids: bids,
       eids: eids,
+      schain: schain,
       pricegranularity: pg,
       cfg: jixieCfgBlob
     }, ids);

@@ -395,6 +395,7 @@ describe('SSPBC adapter', function () {
             'ext': {
               'siteid': '8816',
               'slotid': '150',
+              'cache': 'https://video.tag.cache'
             },
           }],
           'seat': 'dsp1',
@@ -631,6 +632,7 @@ describe('SSPBC adapter', function () {
       expect(adcode).to.contain('window.mcad');
       expect(adcode).to.contain('window.gdpr');
       expect(adcode).to.contain('window.page');
+      expect(adcode).to.contain('window.requestPVID');
     });
 
     it('should create a correct video bid', function () {
@@ -639,11 +641,12 @@ describe('SSPBC adapter', function () {
       expect(resultVideo.length).to.equal(1);
 
       let videoBid = resultVideo[0];
-      expect(videoBid).to.have.keys('adType', 'bidderCode', 'cpm', 'creativeId', 'currency', 'width', 'height', 'meta', 'mediaType', 'netRevenue', 'requestId', 'ttl', 'vastContent', 'vastXml');
+      expect(videoBid).to.have.keys('adType', 'bidderCode', 'cpm', 'creativeId', 'currency', 'width', 'height', 'meta', 'mediaType', 'netRevenue', 'requestId', 'ttl', 'vastContent', 'vastXml', 'vastUrl');
       expect(videoBid.adType).to.equal('instream');
       expect(videoBid.mediaType).to.equal('video');
       expect(videoBid.vastXml).to.match(/^<\?xml.*<\/VAST>$/);
       expect(videoBid.vastContent).to.match(/^<\?xml.*<\/VAST>$/);
+      expect(videoBid.vastUrl).to.equal('https://video.tag.cache');
     });
 
     it('should create a correct native bid', function () {
