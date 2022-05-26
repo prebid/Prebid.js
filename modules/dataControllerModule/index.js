@@ -56,8 +56,8 @@ export function filterData(submodule, bidRequest) {
     return;
   }
   if (dataControllerConfig.filterEIDwhenSDA) {
-    let filterEIDs = submodule.filterEIDs(bidRequest)
-    if(filterEIDs) {
+    let filterEIDs = submodule.filterEIDs(bidRequest);
+    if (filterEIDs) {
       config.setConfig({'dcUsersAsEids': filterEIDs});
     }
   } else if (dataControllerConfig.filterSADwhenEID) {

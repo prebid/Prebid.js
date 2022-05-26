@@ -92,7 +92,6 @@ function filterSDA(bidRequests) {
   dataControllerConfig = config.getConfig(MODULE_NAME);
   if (dataControllerConfig.filterSADwhenEID) {
     let eidSources = getEIDsSource(bidRequests);
-
     let resetSDA = containsConfiguredEIDS(eidSources);
     const bidderConfig = config.getBidderConfig();
     if (resetSDA) {
@@ -107,9 +106,7 @@ function filterSDA(bidRequests) {
 export const dcSubmodule = {
   filterSDA: filterSDA,
   filterEIDs: filterEIDs
-
 };
-
 
 describe('data controller', function () {
   let bidderRequests = [{
@@ -285,15 +282,12 @@ describe('data controller', function () {
       expect(config.getConfig('dcUsersAsEids').magnite).to.not.equal(null);
     });
 
-
-
     it('filterEIDwhenSDA for permutive.com:4:777777 ', function () {
       let dataControllerConfiguration = {
         dataController: {
           filterEIDwhenSDA: ['permutive.com:4:777777'],
         }
       }
-
       config.setBidderConfig(magniteBidderConfig);
       config.setConfig(dataControllerConfiguration);
 
@@ -303,7 +297,6 @@ describe('data controller', function () {
       expect(config.getConfig('dcUsersAsEids').magnite).to.not.equal(null);
       expect(config.getConfig('dcUsersAsEids').magnite).to.be.instanceof(Array);
       expect(config.getConfig('dcUsersAsEids').magnite).that.is.empty;
-
     });
 
     it('filterEIDwhenSDA for unavaible SAD test.com:4:9999 ', function () {
@@ -321,7 +314,7 @@ describe('data controller', function () {
       expect(config.getConfig('dcUsersAsEids')).to.not.equal(undefined);
       expect(config.getConfig('dcUsersAsEids').magnite).to.not.equal(undefined);
       expect(config.getConfig('dcUsersAsEids').magnite).to.be.instanceof(Array);
-      expect(config.getConfig('dcUsersAsEids').magnite).that.is.empty;;
+      expect(config.getConfig('dcUsersAsEids').magnite).that.is.empty; ;
     });
     it('filterSADwhenEID for id5-sync.com EID ', function () {
       let dataControllerConfiguration = {
@@ -350,7 +343,7 @@ describe('data controller', function () {
       expect(updatedBidderConfig.magnite).to.not.equal(undefined);
 
       expect(updatedBidderConfig.magnite.ortb2.user.data).to.be.instanceof(Array);
-      expect(updatedBidderConfig.magnite.ortb2.user.data).that.is.empty;;
+      expect(updatedBidderConfig.magnite.ortb2.user.data).that.is.empty; ;
     });
 
     it('filterSADwhenEID for All EID ', function () {
