@@ -746,7 +746,7 @@ describe('triplelift adapter', function () {
       const url = request.url;
       expect(url).to.match(/(\?|&)ft=4/);
     });
-    it('should add the correct frame type param unfriendly frame', function () {
+    it('should add the correct frame type param safeframe', function () {
       window.$sf = $sf
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       const url = request.url;

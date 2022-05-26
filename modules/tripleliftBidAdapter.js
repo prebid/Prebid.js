@@ -10,13 +10,12 @@ const BANNER_TIME_TO_LIVE = 300;
 const INSTREAM_TIME_TO_LIVE = 3600;
 const FRAME_TYPE_IDS = {
   noFrame: 0,
-  friendlyFrame: 1, // same-origin, we escape to top by default
-  unfriendlyFrame: 2, // cross-origin so we can't escape, render inside the frame
+  friendlyFrame: 1,
+  unfriendlyFrame: 2,
   webview: 3,
   amp: 4,
   safeFrame: 5,
   mraid: 6,
-  friendlyFrameRender: 7, // same-origin but we still render inside the frame
 };
 const MRAID_API_NAME = 'mraid';
 const SAFE_FRAME_API_NAME = '$sf';
@@ -381,9 +380,6 @@ function _buildResponseObject(bidderRequest, bid) {
 function getSafeFrameApi() {
   const safeFrameApi = _getApi(SAFE_FRAME_API_NAME);
   if (safeFrameApi && safeFrameApi.ext) {
-    // we only want the safeframe api when we are inside
-    // a safe frame. there could a safeframe api on the
-    // publisher's top frame which is useless to us.
     return safeFrameApi;
   }
   return null;
@@ -397,10 +393,14 @@ function getMraidApi() {
   return _getApi(MRAID_API_NAME);
 }
 
-/**
- * Check for the existence of a #tl-app element that signifies we're running in a mobile webview.
- * @return {boolean}
- */
+function isInFrame() {
+  try {
+    return window.self !== window.top;
+  } catch (e) {
+    return true;
+  }
+}
+
 function isInApp() {
   const tlAppEl = document.getElementById('tl-app');
   return !!tlAppEl;
@@ -456,9 +456,9 @@ function _determineFrameType() {
   if (!canAccessTopWindow()) {
     return FRAME_TYPE_IDS.unfriendlyFrame;
   }
-  /* if (this.docInfo.document === this.docInfo.topWindow.document) {
+  if (!isInFrame()) {
     return FRAME_TYPE_IDS.noFrame;
-  } */
+  }
   return FRAME_TYPE_IDS.friendlyFrame;
 }
 
