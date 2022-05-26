@@ -171,7 +171,7 @@ export const spec = {
 
       if (assets.length) {
         imp.native = {
-            assets
+          assets,
         };
       }
 
