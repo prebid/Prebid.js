@@ -9,6 +9,7 @@ import {
   deepAccess,
   parseSizesInput,
   deepSetValue,
+  formatQS
 } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
@@ -57,8 +58,10 @@ const NATIVE_PARAMS = {
     name: 'data',
   },
 };
-const OUTSTREAM_RENDERER_URL =
-  'https://www.dianomi.com/js/prebid/outstream/renderer.js';
+let endpoint = 'www-prebid.dianomi.com';
+
+const OUTSTREAM_RENDERER_URL = (hostname) =>
+  `https://${hostname}/prebid/outstream/renderer.js`;
 
 export const spec = {
   code: BIDDER_CODE,
@@ -97,8 +100,11 @@ export const spec = {
     device.h = device.h || window.innerHeight;
     device.ua = device.ua || navigator.userAgent;
 
-    const endpoint =
-      setOnAny(validBidRequests, 'params.endpoint') || 'www-prebid.dianomi.com';
+    const paramsEndpoint = setOnAny(validBidRequests, 'params.endpoint');
+
+    if (paramsEndpoint) {
+      endpoint = paramsEndpoint
+    }
 
     const pt =
       setOnAny(validBidRequests, 'params.pt') ||
@@ -292,7 +298,7 @@ export const spec = {
           ) {
             result.renderer = Renderer.install({
               id: bid.bidId,
-              url: OUTSTREAM_RENDERER_URL,
+              url: OUTSTREAM_RENDERER_URL(endpoint),
               adUnitCode: bid.adUnitCode,
             });
             result.renderer.setRender(renderer);
@@ -302,6 +308,30 @@ export const spec = {
         }
       })
       .filter(Boolean);
+  },
+  getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent) => {
+    if (syncOptions.iframeEnabled) {
+      // data is only assigned if params are available to pass to syncEndpoint
+      const params = {};
+
+      if (gdprConsent) {
+        if (typeof gdprConsent.gdprApplies === 'boolean') {
+          params['gdpr'] = Number(gdprConsent.gdprApplies);
+        }
+        if (typeof gdprConsent.consentString === 'string') {
+          params['gdpr_consent'] = gdprConsent.consentString;
+        }
+      }
+
+      if (uspConsent) {
+        params['us_privacy'] = encodeURIComponent(uspConsent);
+      }
+
+      return {
+        type: 'iframe',
+        url: `https://${endpoint}/prebid/usersync/index.html?${formatQS(params)}`
+      };
+    }
   },
 };
 
@@ -346,6 +376,6 @@ function flatten(arr) {
 
 function renderer(bid) {
   bid.renderer.push(() => {
-    window.Adform.renderOutstream(bid);
+    window.Dianomi.renderOutstream(bid);
   });
 }
