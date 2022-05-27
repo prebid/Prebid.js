@@ -1,6 +1,6 @@
 <!-- gu-mod-start -->
 ## Guardian optimised build
-Modifications are listed [here](https://github.com/guardian/Prebid.js/blob/master/modifications.md).
+Modifications are listed [here](./GUARDIAN_modifications.md).
 
 ---
 
