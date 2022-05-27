@@ -69,8 +69,8 @@ export function addRealTimeData(rtd) {
 export function getRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
   let entropyDict = JSON.parse(storage.getDataFromLocalStorage(DAP_CLIENT_ENTROPY));
   let loadScriptPromise = new Promise((resolve, reject) => {
-    if (rtdConfig && rtdConfig.params && rtdConfig.params.dapFpTimeout && Number.isInteger(rtdConfig.params.dapFpTimeout)) {
-      setTimeout(reject, rtdConfig.params.dapFpTimeout, Error('DapFP script could not be loaded'));
+    if (rtdConfig && rtdConfig.params && rtdConfig.params.dapEntropyTimeout && Number.isInteger(rtdConfig.params.dapEntropyTimeout)) {
+      setTimeout(reject, rtdConfig.params.dapEntropyTimeout, Error('DapEntropy script could not be loaded'));
     }
     if (entropyDict && entropyDict.expires_at > Math.round(Date.now() / 1000.0)) {
       logMessage('Using cached entropy');
@@ -79,10 +79,10 @@ export function getRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
       if (typeof window.dapCalculateEntropy === 'function') {
         window.dapCalculateEntropy(resolve, reject);
       } else {
-        if (rtdConfig && rtdConfig.params && dapUtils.isValidHttpsUrl(rtdConfig.params.dapFpUrl)) {
-          loadExternalScript(rtdConfig.params.dapFpUrl, MODULE_CODE, () => { dapUtils.dapGetEntropy(resolve, reject) });
+        if (rtdConfig && rtdConfig.params && dapUtils.isValidHttpsUrl(rtdConfig.params.dapEntropyUrl)) {
+          loadExternalScript(rtdConfig.params.dapEntropyUrl, MODULE_CODE, () => { dapUtils.dapGetEntropy(resolve, reject) });
         } else {
-          reject(Error('Please check if dapFpUrl is specified and is valid under config.params'));
+          reject(Error('Please check if dapEntropyUrl is specified and is valid under config.params'));
         }
       }
     }
@@ -124,32 +124,7 @@ export function generateRealTimeData(bidConfig, onDone, rtdConfig, userConsent) 
     }
   }
   // Calling setTimeout to release the main thread so that the bid request could be sent.
-  setTimeout(callDapAPIs, 0, bidConfig, onDone, rtdConfig, userConsent);
-}
-
-function callDapAPIs(bidConfig, onDone, rtdConfig, userConsent) {
-  if (rtdConfig && isPlainObject(rtdConfig.params)) {
-    let config = {
-      api_hostname: rtdConfig.params.apiHostname,
-      api_version: rtdConfig.params.apiVersion,
-      domain: rtdConfig.params.domain,
-      segtax: rtdConfig.params.segtax,
-      identity: {type: rtdConfig.params.identityType}
-    };
-    let refreshMembership = true;
-    let token = dapUtils.dapGetTokenFromLocalStorage();
-    logMessage('token is: ', token);
-    if (token !== null) { // If token is not null then check the membership in storage and add the RTD object
-      if (config.segtax == 504) { // Follow the encrypted membership path
-        dapUtils.dapRefreshEncryptedMembership(config, token, onDone) // Get the encrypted membership from server
-        refreshMembership = false;
-      } else {
-        dapUtils.dapRefreshMembership(config, token, onDone) // Get the membership from server
-        refreshMembership = false;
-      }
-    }
-    dapUtils.dapRefreshToken(config, refreshMembership, onDone) // Refresh Token and membership in all the cases
-  }
+  setTimeout(dapUtils.callDapAPIs, 0, bidConfig, onDone, rtdConfig, userConsent);
 }
 
 /**
@@ -174,6 +149,31 @@ export const akamaiDapRtdSubmodule = {
 
 submodule(MODULE_NAME, akamaiDapRtdSubmodule);
 export const dapUtils = {
+
+  callDapAPIs: function(bidConfig, onDone, rtdConfig, userConsent) {
+    if (rtdConfig && isPlainObject(rtdConfig.params)) {
+      let config = {
+        api_hostname: rtdConfig.params.apiHostname,
+        api_version: rtdConfig.params.apiVersion,
+        domain: rtdConfig.params.domain,
+        segtax: rtdConfig.params.segtax,
+        identity: {type: rtdConfig.params.identityType}
+      };
+      let refreshMembership = true;
+      let token = dapUtils.dapGetTokenFromLocalStorage();
+      logMessage('token is: ', token);
+      if (token !== null) { // If token is not null then check the membership in storage and add the RTD object
+        if (config.segtax == 504) { // Follow the encrypted membership path
+          dapUtils.dapRefreshEncryptedMembership(config, token, onDone) // Get the encrypted membership from server
+          refreshMembership = false;
+        } else {
+          dapUtils.dapRefreshMembership(config, token, onDone) // Get the membership from server
+          refreshMembership = false;
+        }
+      }
+      dapUtils.dapRefreshToken(config, refreshMembership, onDone) // Refresh Token and membership in all the cases
+    }
+  },
   dapGetEntropy: function(resolve, reject) {
     if (typeof window.dapCalculateEntropy === 'function') {
       window.dapCalculateEntropy(resolve, reject);
