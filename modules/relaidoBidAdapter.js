@@ -6,11 +6,11 @@ import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'relaido';
 const BIDDER_DOMAIN = 'api.relaido.jp';
-const ADAPTER_VERSION = '1.0.6';
+const ADAPTER_VERSION = '1.0.7';
 const DEFAULT_TTL = 300;
 const UUID_KEY = 'relaido_uuid';
 
-const storage = getStorageManager();
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 function isBidRequestValid(bid) {
   if (!deepAccess(bid, 'params.placementId')) {
@@ -31,14 +31,14 @@ function isBidRequestValid(bid) {
 }
 
 function buildRequests(validBidRequests, bidderRequest) {
-  let bidRequests = [];
+  const bids = [];
+  let imuid = null;
+  let bidDomain = null;
+  let bidder = null;
+  let count = null;
 
   for (let i = 0; i < validBidRequests.length; i++) {
     const bidRequest = validBidRequests[i];
-    const placementId = getBidIdParameter('placementId', bidRequest.params);
-    const bidDomain = bidRequest.params.domain || BIDDER_DOMAIN;
-    const bidUrl = `https://${bidDomain}/bid/v1/prebid/${placementId}`;
-    const uuid = getUuid();
     let mediaType = '';
     let width = 0;
     let height = 0;
@@ -55,46 +55,63 @@ function buildRequests(validBidRequests, bidderRequest) {
       mediaType = BANNER;
     }
 
-    let payload = {
-      version: ADAPTER_VERSION,
-      timeout_ms: bidderRequest.timeout,
-      ad_unit_code: bidRequest.adUnitCode,
-      auction_id: bidRequest.auctionId,
-      bidder: bidRequest.bidder,
-      bidder_request_id: bidRequest.bidderRequestId,
-      bid_requests_count: bidRequest.bidRequestsCount,
-      bid_id: bidRequest.bidId,
-      transaction_id: bidRequest.transactionId,
-      media_type: mediaType,
-      uuid: uuid,
-      width: width,
-      height: height,
-      pv: '$prebid.version$'
-    };
-
-    const imuid = deepAccess(bidRequest, 'userId.imuid');
-    if (imuid) {
-      payload.imuid = imuid;
+    if (!imuid) {
+      const pickImuid = deepAccess(bidRequest, 'userId.imuid');
+      if (pickImuid) {
+        imuid = pickImuid;
+      }
     }
 
-    // It may not be encoded, so add it at the end of the payload
-    payload.ref = bidderRequest.refererInfo.referer;
+    if (!bidDomain) {
+      bidDomain = bidRequest.params.domain;
+    }
 
-    bidRequests.push({
-      method: 'GET',
-      url: bidUrl,
-      data: payload,
-      options: {
-        withCredentials: true
-      },
-      bidId: bidRequest.bidId,
+    if (!bidder) {
+      bidder = bidRequest.bidder
+    }
+
+    if (!bidder) {
+      bidder = bidRequest.bidder
+    }
+
+    if (!count) {
+      count = bidRequest.bidRequestsCount;
+    }
+
+    bids.push({
+      bid_id: bidRequest.bidId,
+      placement_id: getBidIdParameter('placementId', bidRequest.params),
+      transaction_id: bidRequest.transactionId,
+      bidder_request_id: bidRequest.bidderRequestId,
+      ad_unit_code: bidRequest.adUnitCode,
+      auction_id: bidRequest.auctionId,
       player: bidRequest.params.player,
-      width: payload.width,
-      height: payload.height,
-      mediaType: payload.media_type
+      width: width,
+      height: height,
+      media_type: mediaType
     });
   }
-  return bidRequests;
+
+  const data = JSON.stringify({
+    version: ADAPTER_VERSION,
+    bids: bids,
+    timeout_ms: bidderRequest.timeout,
+    bidder: bidder,
+    bid_requests_count: count,
+    uuid: getUuid(),
+    pv: '$prebid.version$',
+    imuid: imuid,
+    ref: bidderRequest.refererInfo.referer
+  })
+
+  return {
+    method: 'POST',
+    url: `https://${bidDomain || BIDDER_DOMAIN}/bid/v1/sprebid`,
+    options: {
+      withCredentials: true
+    },
+    data: data
+  };
 }
 
 function interpretResponse(serverResponse, bidRequest) {
@@ -104,35 +121,39 @@ function interpretResponse(serverResponse, bidRequest) {
     return [];
   }
 
-  const playerUrl = bidRequest.player || body.playerUrl;
-  const mediaType = bidRequest.mediaType || VIDEO;
+  for (const res of body.ads) {
+    const playerUrl = res.playerUrl || bidRequest.player || body.playerUrl;
+    let bidResponse = {
+      requestId: res.bidId,
+      width: res.width,
+      height: res.height,
+      cpm: res.price,
+      currency: res.currency,
+      creativeId: res.creativeId,
+      playerUrl: playerUrl,
+      dealId: body.dealId || '',
+      ttl: body.ttl || DEFAULT_TTL,
+      netRevenue: true,
+      mediaType: res.mediaType || VIDEO,
+      meta: {
+        advertiserDomains: res.adomain || [],
+        mediaType: VIDEO
+      }
+    };
 
-  let bidResponse = {
-    requestId: bidRequest.bidId,
-    width: bidRequest.width,
-    height: bidRequest.height,
-    cpm: body.price,
-    currency: body.currency,
-    creativeId: body.creativeId,
-    dealId: body.dealId || '',
-    ttl: body.ttl || DEFAULT_TTL,
-    netRevenue: true,
-    mediaType: mediaType,
-    meta: {
-      advertiserDomains: body.adomain || [],
-      mediaType: VIDEO
+    if (bidResponse.mediaType === VIDEO) {
+      bidResponse.vastXml = res.vast;
+      bidResponse.renderer = newRenderer(res.bidId, playerUrl);
+    } else {
+      const playerTag = createPlayerTag(playerUrl);
+      const renderTag = createRenderTag(res.width, res.height, res.vast);
+      bidResponse.ad = `<div id="rop-prebid">${playerTag}${renderTag}</div>`;
     }
-  };
-  if (mediaType === VIDEO) {
-    bidResponse.vastXml = body.vast;
-    bidResponse.renderer = newRenderer(bidRequest.bidId, playerUrl);
-  } else {
-    const playerTag = createPlayerTag(playerUrl);
-    const renderTag = createRenderTag(bidRequest.width, bidRequest.height, body.vast);
-    bidResponse.ad = `<div id="rop-prebid">${playerTag}${renderTag}</div>`;
+    bidResponses.push(bidResponse);
   }
-  bidResponses.push(bidResponse);
 
+  // eslint-disable-next-line no-console
+  console.log(JSON.stringify(bidResponses));
   return bidResponses;
 }
 

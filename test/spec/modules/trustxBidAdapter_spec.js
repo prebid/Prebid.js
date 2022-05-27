@@ -401,30 +401,68 @@ describe('TrustXAdapter', function () {
       expect(payload.site.content).to.deep.equal(jsContent);
     });
 
-    it('if segment is present in permutive targeting, payload must have right params', function () {
-      const permSegments = [{id: 'test_perm_1'}, {id: 'test_perm_2'}];
-      const bidRequestsWithPermutiveTargeting = bidRequests.map((bid) => {
-        return Object.assign({
-          rtd: {
-            p_standard: {
-              targeting: {
-                segments: permSegments
-              }
+    it('should have user.data filled from config ortb2.user.data', function () {
+      const userData = [
+        {
+          name: 'someName',
+          segment: [1, 2, { anyKey: 'anyVal' }, 'segVal', { id: 'segId' }, { value: 'segValue' }, { id: 'segId2', name: 'segName' }]
+        },
+        {
+          name: 'permutive.com',
+          segment: [1, 2, 'segVal', { id: 'segId' }, { anyKey: 'anyVal' }, { value: 'segValue' }, { id: 'segId2', name: 'segName' }]
+        },
+        {
+          someKey: 'another data'
+        }
+      ];
+
+      const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
+        arg => arg === 'ortb2.user.data' ? userData : null);
+      const request = spec.buildRequests([bidRequests[0]], bidderRequest);
+      const payload = parseRequest(request.data);
+      expect(payload.user.data).to.deep.equal(userData);
+      getConfigStub.restore();
+    });
+
+    it('should have right value in user.data when jwpsegments are present', function () {
+      const userData = [
+        {
+          name: 'someName',
+          segment: [1, 2, { anyKey: 'anyVal' }, 'segVal', { id: 'segId' }, { value: 'segValue' }, { id: 'segId2', name: 'segName' }]
+        },
+        {
+          name: 'permutive.com',
+          segment: [1, 2, 'segVal', { id: 'segId' }, { anyKey: 'anyVal' }, { value: 'segValue' }, { id: 'segId2', name: 'segName' }]
+        },
+        {
+          someKey: 'another data'
+        }
+      ];
+      const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
+        arg => arg === 'ortb2.user.data' ? userData : null);
+
+      const jsContent = {id: 'test_jw_content_id'};
+      const jsSegments = ['test_seg_1', 'test_seg_2'];
+      const bidRequestsWithJwTargeting = Object.assign({}, bidRequests[0], {
+        rtd: {
+          jwplayer: {
+            targeting: {
+              segments: jsSegments,
+              content: jsContent
             }
           }
-        }, bid);
+        }
       });
-      const request = spec.buildRequests(bidRequestsWithPermutiveTargeting, bidderRequest);
-      expect(request.data).to.be.an('string');
+      const request = spec.buildRequests([bidRequestsWithJwTargeting], bidderRequest);
       const payload = parseRequest(request.data);
-      expect(payload).to.have.property('user');
       expect(payload.user.data).to.deep.equal([{
-        name: 'permutive',
+        name: 'iow_labs_pub_data',
         segment: [
-          {name: 'p_standard', value: permSegments[0].id},
-          {name: 'p_standard', value: permSegments[1].id}
+          {name: 'jwpseg', value: jsSegments[0]},
+          {name: 'jwpseg', value: jsSegments[1]}
         ]
-      }]);
+      }, ...userData]);
+      getConfigStub.restore();
     });
 
     it('should contain the keyword values if it present in ortb2.(site/user)', function () {
@@ -501,7 +539,7 @@ describe('TrustXAdapter', function () {
       getConfigStub.restore();
     });
 
-    it('shold be right tmax when timeout in config is less then timeout in bidderRequest', function() {
+    it('should be right tmax when timeout in config is less then timeout in bidderRequest', function() {
       const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
         arg => arg === 'bidderTimeout' ? 2000 : null);
       const request = spec.buildRequests([bidRequests[0]], bidderRequest);
@@ -510,7 +548,7 @@ describe('TrustXAdapter', function () {
       expect(payload.tmax).to.equal(2000);
       getConfigStub.restore();
     });
-    it('shold be right tmax when timeout in bidderRequest is less then timeout in config', function() {
+    it('should be right tmax when timeout in bidderRequest is less then timeout in config', function() {
       const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
         arg => arg === 'bidderTimeout' ? 5000 : null);
       const request = spec.buildRequests([bidRequests[0]], bidderRequest);
@@ -518,6 +556,81 @@ describe('TrustXAdapter', function () {
       const payload = parseRequest(request.data);
       expect(payload.tmax).to.equal(3000);
       getConfigStub.restore();
+    });
+    it('should contain imp[].ext.data.adserver if available', function() {
+      const ortb2Imp = [{
+        ext: {
+          data: {
+            adserver: {
+              name: 'ad_server_name',
+              adslot: '/111111/slot'
+            },
+            pbadslot: '/111111/slot'
+          }
+        }
+      }, {
+        ext: {
+          data: {
+            adserver: {
+              name: 'ad_server_name',
+              adslot: '/222222/slot'
+            },
+            pbadslot: '/222222/slot'
+          }
+        }
+      }];
+      const bidRequestsWithOrtb2Imp = bidRequests.slice(0, 3).map((bid, ind) => {
+        return Object.assign(ortb2Imp[ind] ? { ortb2Imp: ortb2Imp[ind] } : {}, bid);
+      });
+      const request = spec.buildRequests(bidRequestsWithOrtb2Imp, bidderRequest);
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
+      expect(payload.imp[0].ext).to.deep.equal({
+        divid: bidRequests[0].adUnitCode,
+        data: ortb2Imp[0].ext.data,
+        gpid: ortb2Imp[0].ext.data.adserver.adslot
+      });
+      expect(payload.imp[1].ext).to.deep.equal({
+        divid: bidRequests[1].adUnitCode,
+        data: ortb2Imp[1].ext.data,
+        gpid: ortb2Imp[1].ext.data.adserver.adslot
+      });
+      expect(payload.imp[2].ext).to.deep.equal({
+        divid: bidRequests[2].adUnitCode
+      });
+    });
+    it('should contain imp[].instl if available', function() {
+      const ortb2Imp = [{
+        instl: 1
+      }, {
+        instl: 2,
+        ext: {
+          data: {
+            adserver: {
+              name: 'ad_server_name',
+              adslot: '/222222/slot'
+            },
+            pbadslot: '/222222/slot'
+          }
+        }
+      }];
+      const bidRequestsWithOrtb2Imp = bidRequests.slice(0, 3).map((bid, ind) => {
+        return Object.assign(ortb2Imp[ind] ? { ortb2Imp: ortb2Imp[ind] } : {}, bid);
+      });
+      const request = spec.buildRequests(bidRequestsWithOrtb2Imp, bidderRequest);
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
+      expect(payload.imp[0].instl).to.equal(1);
+      expect(payload.imp[1].ext).to.deep.equal({
+        divid: bidRequests[1].adUnitCode,
+        data: ortb2Imp[1].ext.data,
+        gpid: ortb2Imp[1].ext.data.adserver.adslot
+      });
+      expect(payload.imp[1].instl).to.equal(2);
+      expect(payload.imp[2].ext).to.deep.equal({
+        divid: bidRequests[2].adUnitCode
+      });
+      expect(payload.imp[2].instl).to.be.undefined;
     });
     it('all id like request fields must be a string', function () {
       const bidderRequestWithNumId = Object.assign({}, bidderRequest, { bidderRequestId: 123123, auctionId: 345345543 });

@@ -1,15 +1,24 @@
-import { logError, convertTypes, convertCamelToUnderscore, isArray, deepAccess, getBidRequest, isEmpty, transformBidderParamKeywords } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { auctionManager } from '../src/auctionManager.js';
-import find from 'core-js-pure/features/array/find.js';
-import includes from 'core-js-pure/features/array/includes.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {
+  convertCamelToUnderscore,
+  convertTypes,
+  deepAccess,
+  getBidRequest,
+  isArray,
+  isEmpty,
+  logError,
+  transformBidderParamKeywords
+} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {auctionManager} from '../src/auctionManager.js';
+import {find, includes} from '../src/polyfill.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {ajax} from '../src/ajax.js';
 
 const BIDDER_CODE = 'craft';
 const URL_BASE = 'https://gacraft.jp/prebid-v3';
 const TTL = 360;
-const storage = getStorageManager();
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 export const spec = {
   code: BIDDER_CODE,
@@ -110,9 +119,10 @@ export const spec = {
   },
 
   onBidWon: function(bid) {
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', bid._prebidWon);
-    xhr.send();
+    ajax(bid._prebidWon, null, null, {
+      method: 'POST',
+      contentType: 'application/json'
+    });
   }
 };
 

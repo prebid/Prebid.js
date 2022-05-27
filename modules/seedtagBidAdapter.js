@@ -13,6 +13,11 @@ const ALLOWED_PLACEMENTS = {
   banner: true,
   video: true
 }
+
+// Global Vendor List Id
+// https://iabeurope.eu/vendor-list-tcf-v2-0/
+const GVLID = 157;
+
 const mediaTypesMap = {
   [BANNER]: 'display',
   [VIDEO]: 'video'
@@ -149,15 +154,19 @@ export function getTimeoutUrl (data) {
     isArray(data[0].params) && data[0].params[0]
   ) {
     const params = data[0].params[0];
+    const timeout = data[0].timeout
+
     queryParams =
       '?publisherToken=' + params.publisherId +
-      '&adUnitId=' + params.adUnitId;
+      '&adUnitId=' + params.adUnitId +
+      '&timeout=' + timeout;
   }
   return SEEDTAG_SSP_ONTIMEOUT_ENDPOINT + queryParams;
 }
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   aliases: [SEEDTAG_ALIAS],
   supportedMediaTypes: [BANNER, VIDEO],
   /**

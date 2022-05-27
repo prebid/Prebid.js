@@ -1,8 +1,7 @@
 import CONSTANTS from './constants.json';
 import { ajax } from './ajax.js';
 import { logMessage, _each } from './utils.js';
-
-const events = require('./events.js');
+import * as events from './events.js'
 
 const {
   EVENTS: {
@@ -20,7 +19,8 @@ const {
     AD_RENDER_FAILED,
     AD_RENDER_SUCCEEDED,
     AUCTION_DEBUG,
-    ADD_AD_UNITS
+    ADD_AD_UNITS,
+    BILLABLE_EVENT
   }
 } = CONSTANTS;
 
@@ -117,6 +117,7 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
         [AD_RENDER_SUCCEEDED]: args => this.enqueue({ eventType: AD_RENDER_SUCCEEDED, args }),
         [AUCTION_DEBUG]: args => this.enqueue({ eventType: AUCTION_DEBUG, args }),
         [ADD_AD_UNITS]: args => this.enqueue({ eventType: ADD_AD_UNITS, args }),
+        [BILLABLE_EVENT]: args => this.enqueue({ eventType: BILLABLE_EVENT, args }),
         [AUCTION_INIT]: args => {
           args.config = typeof config === 'object' ? config.options || {} : {}; // enableAnaltyics configuration object
           this.enqueue({ eventType: AUCTION_INIT, args });

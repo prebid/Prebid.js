@@ -2,15 +2,14 @@
  * This module gives publishers extra set of features to enforce individual purposes of TCF v2
  */
 
-import { deepAccess, logWarn, isArray, hasDeviceAccess } from '../src/utils.js';
-import { config } from '../src/config.js';
-import adapterManager, { gdprDataHandler } from '../src/adapterManager.js';
-import find from 'core-js-pure/features/array/find.js';
-import includes from 'core-js-pure/features/array/includes.js';
-import { registerSyncInner } from '../src/adapters/bidderFactory.js';
-import { getHook } from '../src/hook.js';
-import { validateStorageEnforcement } from '../src/storageManager.js';
-import events from '../src/events.js';
+import {deepAccess, hasDeviceAccess, isArray, logWarn} from '../src/utils.js';
+import {config} from '../src/config.js';
+import adapterManager, {gdprDataHandler} from '../src/adapterManager.js';
+import {find, includes} from '../src/polyfill.js';
+import {registerSyncInner} from '../src/adapters/bidderFactory.js';
+import {getHook} from '../src/hook.js';
+import {validateStorageEnforcement} from '../src/storageManager.js';
+import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
 
 const TCF2 = {

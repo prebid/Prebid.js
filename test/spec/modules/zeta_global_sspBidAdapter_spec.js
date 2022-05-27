@@ -1,4 +1,5 @@
 import {spec} from '../../../modules/zeta_global_sspBidAdapter.js'
+import {BANNER, VIDEO} from '../../../src/mediaTypes';
 
 describe('Zeta Ssp Bid Adapter', function () {
   const eids = [
@@ -24,6 +25,25 @@ describe('Zeta Ssp Bid Adapter', function () {
     }
   ];
 
+  const params = {
+    user: {
+      uid: 222,
+      buyeruid: 333
+    },
+    tags: {
+      someTag: 444,
+    },
+    sid: 'publisherId',
+    shortname: 'test_shortname',
+    site: {
+      page: 'testPage'
+    },
+    app: {
+      bundle: 'testBundle'
+    },
+    test: 1
+  };
+
   const bannerRequest = [{
     bidId: 12345,
     auctionId: 67890,
@@ -40,18 +60,7 @@ describe('Zeta Ssp Bid Adapter', function () {
       consentString: 'consentString'
     },
     uspConsent: 'someCCPAString',
-    params: {
-      placement: 111,
-      user: {
-        uid: 222,
-        buyeruid: 333
-      },
-      tags: {
-        someTag: 444,
-        sid: 'publisherId'
-      },
-      test: 1
-    },
+    params: params,
     userIdAsEids: eids
   }];
 
@@ -71,18 +80,7 @@ describe('Zeta Ssp Bid Adapter', function () {
     refererInfo: {
       referer: 'http://www.zetaglobal.com/page?param=video'
     },
-    params: {
-      placement: 111,
-      user: {
-        uid: 222,
-        buyeruid: 333
-      },
-      tags: {
-        someTag: 444,
-        sid: 'publisherId'
-      },
-      test: 1
-    },
+    params: params
   }];
 
   it('Test the bid validation function', function () {
@@ -97,6 +95,13 @@ describe('Zeta Ssp Bid Adapter', function () {
     const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
     const payload = JSON.parse(request.data);
     expect(payload.user.ext.eids).to.eql(eids);
+  });
+
+  it('Test contains ua and language', function () {
+    const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
+    const payload = JSON.parse(request.data);
+    expect(payload.device.ua).to.not.be.empty;
+    expect(payload.device.language).to.not.be.empty;
   });
 
   it('Test page and domain in site', function () {
@@ -143,7 +148,22 @@ describe('Zeta Ssp Bid Adapter', function () {
                   'https://example2.com'
                 ],
                 h: 150,
-                w: 200
+                w: 200,
+                ext: {
+                  bidtype: 'video'
+                }
+              },
+              {
+                id: 'auctionId3',
+                impid: 'impId3',
+                price: 0.2,
+                adm: '<?xml version=\\"1.0\\"?><VAST version=\\"4.0\\">',
+                crid: 'creativeId3',
+                adomain: [
+                  'https://example3.com'
+                ],
+                h: 400,
+                w: 300
               }
             ]
           }
@@ -159,6 +179,8 @@ describe('Zeta Ssp Bid Adapter', function () {
     const receivedBid1 = response.body.seatbid[0].bid[0];
     expect(bid1).to.not.be.empty;
     expect(bid1.ad).to.equal(receivedBid1.adm);
+    expect(bid1.vastXml).to.be.undefined;
+    expect(bid1.mediaType).to.equal(BANNER);
     expect(bid1.cpm).to.equal(receivedBid1.price);
     expect(bid1.height).to.equal(receivedBid1.h);
     expect(bid1.width).to.equal(receivedBid1.w);
@@ -169,11 +191,25 @@ describe('Zeta Ssp Bid Adapter', function () {
     const receivedBid2 = response.body.seatbid[0].bid[1];
     expect(bid2).to.not.be.empty;
     expect(bid2.ad).to.equal(receivedBid2.adm);
+    expect(bid2.vastXml).to.equal(receivedBid2.adm);
+    expect(bid2.mediaType).to.equal(VIDEO);
     expect(bid2.cpm).to.equal(receivedBid2.price);
     expect(bid2.height).to.equal(receivedBid2.h);
     expect(bid2.width).to.equal(receivedBid2.w);
     expect(bid2.requestId).to.equal(receivedBid2.impid);
     expect(bid2.meta.advertiserDomains).to.equal(receivedBid2.adomain);
+
+    const bid3 = bidResponse[2];
+    const receivedBid3 = response.body.seatbid[0].bid[2];
+    expect(bid3).to.not.be.empty;
+    expect(bid3.ad).to.equal(receivedBid3.adm);
+    expect(bid3.vastXml).to.equal(receivedBid3.adm);
+    expect(bid3.mediaType).to.equal(VIDEO);
+    expect(bid3.cpm).to.equal(receivedBid3.price);
+    expect(bid3.height).to.equal(receivedBid3.h);
+    expect(bid3.width).to.equal(receivedBid3.w);
+    expect(bid3.requestId).to.equal(receivedBid3.impid);
+    expect(bid3.meta.advertiserDomains).to.equal(receivedBid3.adomain);
   });
 
   it('Different cases for user syncs', function () {
@@ -229,5 +265,21 @@ describe('Zeta Ssp Bid Adapter', function () {
     expect(payload.imp[0].video.h).to.eql(340);
 
     expect(payload.imp[0].banner).to.be.undefined;
+  });
+
+  it('Test required params in banner request', function () {
+    const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
+    const payload = JSON.parse(request.data);
+    expect(payload.ext.sid).to.eql('publisherId');
+    expect(payload.ext.tags.someTag).to.eql(444);
+    expect(payload.ext.tags.shortname).to.eql('test_shortname');
+  });
+
+  it('Test required params in video request', function () {
+    const request = spec.buildRequests(videoRequest, videoRequest[0]);
+    const payload = JSON.parse(request.data);
+    expect(payload.ext.sid).to.eql('publisherId');
+    expect(payload.ext.tags.someTag).to.eql(444);
+    expect(payload.ext.tags.shortname).to.eql('test_shortname');
   });
 });

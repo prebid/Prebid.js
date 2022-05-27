@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import sortableAnalyticsAdapter, {TIMEOUT_FOR_REGISTRY, DEFAULT_PBID_TIMEOUT} from 'modules/sortableAnalyticsAdapter.js';
-import events from 'src/events.js';
+import * as events from 'src/events.js';
 import CONSTANTS from 'src/constants.json';
 import * as prebidGlobal from 'src/prebidGlobal.js';
 import {server} from 'test/mocks/xhr.js';
@@ -148,7 +148,6 @@ describe('Sortable Analytics Adapter', function() {
         }
       }
     });
-
     sortableAnalyticsAdapter.enableAnalytics(initialConfig);
   });
 
@@ -203,11 +202,11 @@ describe('Sortable Analytics Adapter', function() {
         brc: 1,
         brid: ['10141593b1d84a', '37a8760be6db23'],
         rs: ['300x250', '728x90'],
-        btcp: [0.70, 0.50],
+        btcp: [0.70, 0.50].map(n => n * 0.95),
         btcc: 'USD',
         btin: true,
         btsrc: 'sortable',
-        c: [0.70, 0.50],
+        c: [0.70, 0.50].map(n => n * 0.95),
         cc: 'USD',
         did: null,
         inr: true,

@@ -1,9 +1,13 @@
-import { _each, parseSizesInput, isEmpty } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { _each, isEmpty, parseSizesInput } from '../src/utils.js';
 import { BANNER } from '../src/mediaTypes.js';
+import { getStorageManager } from '../src/storageManager.js';
+import {ajax} from '../src/ajax.js';
+
+const storage = getStorageManager();
 
 const BIDDER_CODE = 'gnet';
-const ENDPOINT = 'https://adserver.gnetproject.com/prebid.php';
+const ENDPOINT = 'https://service.gnetrtb.com/api';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -16,7 +20,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return !!(bid.params.websiteId);
+    return !!(bid.params.websiteId && bid.params.adunitId);
   },
 
   /**
@@ -36,6 +40,7 @@ export const spec = {
       data.adUnitCode = request.adUnitCode;
       data.bidId = request.bidId;
       data.transactionId = request.transactionId;
+      data.gftuid = _getCookie();
 
       data.sizes = parseSizesInput(request.sizes);
 
@@ -45,8 +50,7 @@ export const spec = {
 
       bidRequests.push({
         method: 'POST',
-        url: ENDPOINT,
-        mode: 'no-cors',
+        url: ENDPOINT + '/adrequest',
         options: {
           withCredentials: false,
         },
@@ -99,6 +103,18 @@ export const spec = {
 
     return [];
   },
+
+  onBidWon: function (bid) {
+    ajax(ENDPOINT + '/bid-won', null, JSON.stringify(bid), {
+      method: 'POST',
+    });
+
+    return true;
+  },
 };
+
+function _getCookie() {
+  return storage.cookiesAreEnabled() ? storage.getCookie('gftuid') : null;
+}
 
 registerBidder(spec);

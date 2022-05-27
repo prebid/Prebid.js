@@ -1,4 +1,4 @@
-import { triggerPixel, parseSizesInput, deepAccess, logError } from '../src/utils.js';
+import { triggerPixel, parseSizesInput, deepAccess, logError, getGptSlotInfoForAdUnitCode } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
@@ -42,7 +42,7 @@ export const spec = {
         }
       }
     }
-    return !!bid.params.uid;
+    return !!bid.params.uid && !isNaN(parseInt(bid.params.uid));
   },
   buildRequests: function(validBidRequests, bidderRequest) {
     const auids = [];
@@ -203,7 +203,16 @@ export const spec = {
   },
   onTimeout: function(timeoutData) {
     // Call '/track/bid_timeout' with timeout data
-    triggerPixel(buildUrl(TRACK_TIMEOUT_PATH) + '?data=' + JSON.stringify(timeoutData));
+    timeoutData.forEach(({ params }) => {
+      if (params) {
+        params.forEach((item) => {
+          if (item && item.uid) {
+            item.uid = parseInt(item.uid);
+          }
+        });
+      }
+    });
+    triggerPixel(buildUrl(TRACK_TIMEOUT_PATH) + '//' + JSON.stringify(timeoutData));
   }
 };
 
@@ -241,7 +250,7 @@ function makeVideo(videoParams = {}) {
 }
 
 function buildImpObject(bid) {
-  const { params: { uid }, bidId, mediaTypes, sizes } = bid;
+  const { params: { uid }, bidId, mediaTypes, sizes, adUnitCode } = bid;
   const video = mediaTypes && _isVideoBid(bid) && _isValidVideoBid(bid) && makeVideo(mediaTypes.video);
   const banner = makeBanner((mediaTypes && mediaTypes.banner) || (!video && { sizes }));
   const impObject = {
@@ -249,9 +258,13 @@ function buildImpObject(bid) {
     ...(banner && { banner }),
     ...(video && { video }),
     ext: {
-      bidder: { uid: Number(uid) },
+      bidder: { uid: parseInt(uid) },
     }
   };
+
+  if (impObject.banner) {
+    impObject.ext.bidder.adslotExists = _isAdSlotExists(adUnitCode);
+  }
 
   if (impObject.ext.bidder.uid && (impObject.banner || impObject.video)) {
     return impObject;
@@ -353,6 +366,19 @@ function _isValidVideoBid(bid, logErrors = false) {
     result = false;
   }
   return result;
+}
+
+function _isAdSlotExists(adUnitCode) {
+  if (document.getElementById(adUnitCode)) {
+    return true;
+  }
+
+  const gptAdSlot = getGptSlotInfoForAdUnitCode(adUnitCode);
+  if (gptAdSlot && gptAdSlot.divId && document.getElementById(gptAdSlot.divId)) {
+    return true;
+  }
+
+  return false;
 }
 
 registerBidder(spec);

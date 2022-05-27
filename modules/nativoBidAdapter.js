@@ -12,10 +12,83 @@ const TIME_TO_LIVE = 360
 
 const SUPPORTED_AD_TYPES = [BANNER]
 
+/**
+ * Keep track of bid data by keys
+ * @returns {Object} - Map of bid data that can be referenced by multiple keys
+ */
+const BidDataMap = () => {
+  const referenceMap = {}
+  const bids = []
+
+  /**
+   * Add a refence to the index by key value
+   * @param {String} key - The key to store the index reference
+   * @param {Integer} index - The index value of the bidData
+   */
+  function adKeyReference(key, index) {
+    if (!referenceMap.hasOwnProperty(key)) {
+      referenceMap[key] = index
+    }
+  }
+
+  /**
+   * Adds a bid to the map
+   * @param {Object} bid - Bid data
+   * @param {Array/String} keys - Keys to reference the index value
+   */
+  function addBidData(bid, keys) {
+    const index = bids.length
+    bids.push(bid)
+
+    if (Array.isArray(keys)) {
+      keys.forEach((key) => {
+        adKeyReference(String(key), index)
+      })
+      return
+    }
+
+    adKeyReference(String(keys), index)
+  }
+
+  /**
+   * Get's the bid data refrerenced by the key
+   * @param {String} key - The key value to find the bid data by
+   * @returns {Object} - The bid data
+   */
+  function getBidData(key) {
+    const stringKey = String(key)
+    if (referenceMap.hasOwnProperty(stringKey)) {
+      return bids[referenceMap[stringKey]]
+    }
+  }
+
+  // Return API
+  return {
+    addBidData,
+    getBidData,
+  }
+}
+
 const bidRequestMap = {}
 const adUnitsRequested = {}
+const extData = {}
+
+// Filtering
+const adsToFilter = new Set()
+const advertisersToFilter = new Set()
+const campaignsToFilter = new Set()
 
 // Prebid adapter referrence doc: https://docs.prebid.org/dev-docs/bidder-adaptor.html
+
+// Validity checks for optionsl paramters
+const validParameter = {
+  url: (value) => typeof value === 'string',
+  placementId: (value) => {
+    const isString = typeof value === 'string'
+    const isNumber = typeof value === 'number'
+    return isString || isNumber
+  },
+}
 
 export const spec = {
   code: BIDDER_CODE,
@@ -30,7 +103,23 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return true
+    // We don't need any specific parameters to make a bid request
+    // If not parameters are supplied just verify it's the correct bidder code
+    if (!bid.params) return bid.bidder === BIDDER_CODE
+
+    // Check if any supplied parameters are invalid
+    const hasInvalidParameters = Object.keys(bid.params).some((key) => {
+      const value = bid.params[key]
+      const validityCheck = validParameter[key]
+
+      // We don't have a test for this so it's not a paramter we care about
+      if (!validityCheck) return false
+
+      // Return if the check is not passed
+      return !validityCheck(value)
+    })
+
+    return !hasInvalidParameters
   },
 
   /**
@@ -43,8 +132,8 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     const placementIds = new Set()
-    const placmentBidIdMap = {}
     let placementId, pageUrl
+    const bidDataMap = BidDataMap()
     validBidRequests.forEach((request) => {
       pageUrl = deepAccess(
         request,
@@ -57,13 +146,13 @@ export const spec = {
         placementIds.add(placementId)
       }
 
-      var key = placementId || request.adUnitCode
-      placmentBidIdMap[key] = {
+      const bidData = {
         bidId: request.bidId,
         size: getLargestSize(request.sizes),
       }
+      bidDataMap.addBidData(bidData, [placementId, request.adUnitCode])
     })
-    bidRequestMap[bidderRequest.bidderRequestId] = placmentBidIdMap
+    bidRequestMap[bidderRequest.bidderRequestId] = bidDataMap
 
     // Build adUnit data
     const adUnitData = {
@@ -97,6 +186,20 @@ export const spec = {
       },
     ]
 
+    // Add filtering
+    if (adsToFilter.size > 0) {
+      params.unshift({ key: 'ntv_atf', value: Array.from(adsToFilter).join(',') })
+    }
+
+    if (advertisersToFilter.size > 0) {
+      params.unshift({ key: 'ntv_avtf', value: Array.from(advertisersToFilter).join(',') })
+    }
+
+    if (campaignsToFilter.size > 0) {
+      params.unshift({ key: 'ntv_ctf', value: Array.from(campaignsToFilter).join(',') })
+    }
+
+    // Add placement IDs
     if (placementIds.size > 0) {
       // Convert Set to Array (IE 11 Safe)
       const placements = []
@@ -105,6 +208,7 @@ export const spec = {
       params.unshift({ key: 'ntv_ptd', value: placements.join(',') })
     }
 
+    // Add GDPR params
     if (bidderRequest.gdprConsent) {
       // Put on the beginning of the qs param array
       params.unshift({
@@ -113,6 +217,7 @@ export const spec = {
       })
     }
 
+    // Add USP params
     if (bidderRequest.uspConsent) {
       // Put on the beginning of the qs param array
       params.unshift({ key: 'us_privacy', value: bidderRequest.uspConsent })
@@ -168,6 +273,8 @@ export const spec = {
               advertiserDomains: bid.adomain,
             },
           }
+
+          if (bid.ext) extData[bid.id] = bid.ext
 
           bidResponses.push(bidResponse)
         })
@@ -274,7 +381,15 @@ export const spec = {
    * Will be called when a bid from the adapter won the auction.
    * @param {Object} bid - The bid that won the auction
    */
-  onBidWon: function (bid) {},
+  onBidWon: function (bid) {
+    const ext = extData[bid.dealId]
+
+    if (!ext) return
+
+    appendFilterData(adsToFilter, ext.adsToFilter)
+    appendFilterData(advertisersToFilter, ext.advertisersToFilter)
+    appendFilterData(campaignsToFilter, ext.campaignsToFilter)
+  },
 
   /**
    * Will be called when the adserver targeting has been set for a bid from the adapter.
@@ -289,12 +404,14 @@ export const spec = {
    * @returns {String} - The bidId value associated with the corresponding placementId
    */
   getAdUnitData: function (bidderRequestId, bid) {
-    var data = deepAccess(bidRequestMap, `${bidderRequestId}.${bid.impid}`)
+    const bidDataMap = bidRequestMap[bidderRequestId]
 
-    if (data) return data
+    const placementId = bid.impid
+    const adUnitCode = deepAccess(bid, 'ext.ad_unit_id')
 
-    var unitCode = deepAccess(bid, 'ext.ad_unit_id')
-    return deepAccess(bidRequestMap, `${bidderRequestId}.${unitCode}`)
+    return (
+      bidDataMap.getBidData(adUnitCode) || bidDataMap.getBidData(placementId)
+    )
   },
 }
 registerBidder(spec)
@@ -349,3 +466,14 @@ function getLargestSize(sizes, method = area) {
  * @returns The calculated area
  */
 const area = (size) => size[0] * size[1]
+
+/**
+ * Save any filter data from winning bid requests for subsequent requests
+ * @param {Array} filter - The filter data bucket currently stored
+ * @param {Array} filterData - The filter data to add
+ */
+function appendFilterData(filter, filterData) {
+  if (filterData && Array.isArray(filterData) && filterData.length) {
+    filterData.forEach((ad) => filter.add(ad))
+  }
+}

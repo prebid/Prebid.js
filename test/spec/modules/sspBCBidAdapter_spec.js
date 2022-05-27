@@ -395,6 +395,7 @@ describe('SSPBC adapter', function () {
             'ext': {
               'siteid': '8816',
               'slotid': '150',
+              'cache': 'https://video.tag.cache'
             },
           }],
           'seat': 'dsp1',
@@ -514,8 +515,35 @@ describe('SSPBC adapter', function () {
     });
 
     it('should send gdpr data', function () {
-      expect(payload.regs).to.be.an('object').and.to.have.property('[ortb_extensions.gdpr]', 1);
-      expect(payload.user).to.be.an('object').and.to.have.property('[ortb_extensions.consent]', bidRequest.gdprConsent.consentString);
+      expect(payload.regs).to.be.an('object').and.to.have.property('gdpr', 1);
+      expect(payload.user).to.be.an('object').and.to.have.property('consent', bidRequest.gdprConsent.consentString);
+    });
+
+    it('should send net info and pvid', function () {
+      expect(payload.user).to.be.an('object').and.to.have.property('data').that.is.an('array');
+
+      const userData = payload.user.data;
+      expect(userData.length).to.equal(2);
+
+      const netInfo = userData[0];
+      expect(netInfo.id).to.equal('12');
+      expect(netInfo.name).to.equal('NetInfo');
+      expect(netInfo).to.have.property('segment').that.is.an('array');
+
+      const pvid = userData[1];
+      expect(pvid.id).to.equal('7');
+      expect(pvid.name).to.equal('pvid');
+      expect(pvid).to.have.property('segment').that.is.an('array');
+      expect(pvid.segment[0]).to.have.property('value');
+    });
+
+    it('pvid should be constant on a single page view', function () {
+      const userData1 = payload.user.data;
+      const userData2 = payloadNative.user.data;
+      const pvid1 = userData1[1];
+      const pvid2 = userData2[1];
+
+      expect(pvid1.segment[0].value).to.equal(pvid2.segment[0].value);
     });
 
     it('should build correct native payload', function () {
@@ -543,13 +571,16 @@ describe('SSPBC adapter', function () {
       expect(videoAssets).to.have.property('api').that.is.an('array');
     });
 
-    it('should create auxilary placement identifier (size_numUsed)', function () {
+    it('should create auxilary placement identifier (size_numUsed), that is constant for a given adUnit', function () {
       const extAssets1 = payload.imp && payload.imp[0].ext.data;
       const extAssets2 = payloadSingle.imp && payloadSingle.imp[0].ext.data;
 
-      // note that payload comes from first, and payloadSingle from second auction in the test run
+      /*
+        note that payload comes from first, and payloadSingle from second auction in the test run
+        also, since both have same adUnitName, value of pbsize property should be the same
+      */
       expect(extAssets1).to.have.property('pbsize').that.equals('750x200_1')
-      expect(extAssets2).to.have.property('pbsize').that.equals('750x200_2')
+      expect(extAssets2).to.have.property('pbsize').that.equals('750x200_1')
     });
   });
 
@@ -601,6 +632,7 @@ describe('SSPBC adapter', function () {
       expect(adcode).to.contain('window.mcad');
       expect(adcode).to.contain('window.gdpr');
       expect(adcode).to.contain('window.page');
+      expect(adcode).to.contain('window.requestPVID');
     });
 
     it('should create a correct video bid', function () {
@@ -609,11 +641,12 @@ describe('SSPBC adapter', function () {
       expect(resultVideo.length).to.equal(1);
 
       let videoBid = resultVideo[0];
-      expect(videoBid).to.have.keys('adType', 'bidderCode', 'cpm', 'creativeId', 'currency', 'width', 'height', 'meta', 'mediaType', 'netRevenue', 'requestId', 'ttl', 'vastContent', 'vastXml');
+      expect(videoBid).to.have.keys('adType', 'bidderCode', 'cpm', 'creativeId', 'currency', 'width', 'height', 'meta', 'mediaType', 'netRevenue', 'requestId', 'ttl', 'vastContent', 'vastXml', 'vastUrl');
       expect(videoBid.adType).to.equal('instream');
       expect(videoBid.mediaType).to.equal('video');
       expect(videoBid.vastXml).to.match(/^<\?xml.*<\/VAST>$/);
       expect(videoBid.vastContent).to.match(/^<\?xml.*<\/VAST>$/);
+      expect(videoBid.vastUrl).to.equal('https://video.tag.cache');
     });
 
     it('should create a correct native bid', function () {
@@ -623,7 +656,7 @@ describe('SSPBC adapter', function () {
 
       let nativeBid = resultNative[0];
       expect(nativeBid).to.have.keys('bidderCode', 'cpm', 'creativeId', 'currency', 'width', 'height', 'meta', 'mediaType', 'netRevenue', 'requestId', 'ttl', 'native');
-      expect(nativeBid.native).to.have.keys('image', 'icon', 'title', 'sponsoredBy', 'body', 'clickUrl', 'impressionTrackers');
+      expect(nativeBid.native).to.have.keys('image', 'icon', 'title', 'sponsoredBy', 'body', 'clickUrl', 'impressionTrackers', 'javascriptTrackers');
     });
   });
 
@@ -638,8 +671,8 @@ describe('SSPBC adapter', function () {
     });
 
     it('should send no syncs, if frame sync is not allowed', function () {
-      expect(syncResultImage).to.be.undefined;
-      expect(syncResultNone).to.be.undefined;
+      expect(syncResultImage).to.have.length(0); ;
+      expect(syncResultNone).to.have.length(0); ;
     });
   });
 
@@ -656,7 +689,7 @@ describe('SSPBC adapter', function () {
       let notificationPayload = spec.onBidWon(bid);
       expect(notificationPayload).to.have.property('event').that.equals('bidWon');
       expect(notificationPayload).to.have.property('requestId').that.equals(bid.auctionId);
-      expect(notificationPayload).to.have.property('adUnit').that.deep.equals([bid.adUnitCode]);
+      expect(notificationPayload).to.have.property('tagid').that.deep.equals([bid.adUnitCode]);
       expect(notificationPayload).to.have.property('siteId').that.is.an('array');
       expect(notificationPayload).to.have.property('slotId').that.is.an('array');
     });
@@ -677,7 +710,7 @@ describe('SSPBC adapter', function () {
 
       expect(notificationPayload).to.have.property('event').that.equals('timeout');
       expect(notificationPayload).to.have.property('requestId').that.equals(bids_timeouted[0].auctionId);
-      expect(notificationPayload).to.have.property('adUnit').that.deep.equals([bids_timeouted[0].adUnitCode, bids_timeouted[1].adUnitCode]);
+      expect(notificationPayload).to.have.property('tagid').that.deep.equals([bids_timeouted[0].adUnitCode, bids_timeouted[1].adUnitCode]);
     });
   });
 });

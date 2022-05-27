@@ -1,10 +1,22 @@
 ## User ID Example Configuration
 
 Example showing `cookie` storage for user id data for each of the submodules
+
 ```
 pbjs.setConfig({
     userSync: {
         userIds: [{
+            name: "33acrossId",
+            storage: {
+                type: "cookie",
+                name: "33acrossId",
+                expires: 90,
+                refreshInSeconds: 8*3600
+            },
+            params: {
+                pid: "0010b00002GYU4eBAH" // Example ID
+            }
+        }, {
             name: "pubCommonId",
             storage: {
                 type: "cookie",
@@ -44,6 +56,17 @@ pbjs.setConfig({
                 expires: 90,          // Expiration in days
                 refreshInSeconds: 8*3600 // User Id cache lifetime in seconds, defaulting to 'expires'
             },
+        }, {
+            name: "ftrackId",
+            storage: {
+                type: "html5",
+                name: "ftrackId",
+                expires: 90,
+                refreshInSeconds: 8*3600
+            },
+            params: {
+                url: 'https://d9.flashtalking.com/d9core', // required, if not populated ftrack will not run
+            }
         }, {
             name: 'parrableId',
             params: {
@@ -88,6 +111,8 @@ pbjs.setConfig({
                  name: '_criteoId',
                  expires: 1
               }
+        }, {
+            name: "cpexId"
         }, {
             name: 'mwOpenLinkId',
             params: {
@@ -139,6 +164,12 @@ pbjs.setConfig({
                  name: "knssoId",
                  expires: 30
                   },
+        {
+             name: "dacId"
+        }, 
+        {
+            name: "gravitompId"
+        }
         ],
         syncDelay: 5000,
         auctionDelay: 1000
@@ -147,10 +178,22 @@ pbjs.setConfig({
 ```
 
 Example showing `localStorage` for user id data for some submodules
+
 ```
 pbjs.setConfig({
     userSync: {
         userIds: [{
+            name: "33acrossId",
+            storage: {
+                type: "html5",
+                name: "33acrossId",
+                expires: 90,
+                refreshInSeconds: 8*3600
+            },
+            params: {
+                pid: "0010b00002GYU4eBAH" // Example ID
+            }
+        }, {
             name: "unifiedId",
             params: {
                 partner: "prebid",
@@ -278,7 +321,7 @@ pbjs.setConfig({
                  name: "knssoId",
                  expires: 30
                   },
-        }   
+        }
         },
         {
             name: 'imuid',
@@ -297,6 +340,14 @@ pbjs.setConfig({
               type: 'html5',
               expires: 15
             }
+        }
+        {
+            name: "qid",
+            storage: {
+                type: "html5",
+                name: "qid",
+                expires: 365
+            }
         }],
         syncDelay: 5000
     }
@@ -304,6 +355,7 @@ pbjs.setConfig({
 ```
 
 Example showing how to configure a `value` object to pass directly to bid adapters
+
 ```
 pbjs.setConfig({
     userSync: {

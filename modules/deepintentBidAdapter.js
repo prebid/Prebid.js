@@ -162,7 +162,7 @@ function buildImpression(bid) {
   impression = {
     id: bid.bidId,
     tagid: bid.params.tagId || '',
-    secure: window.location.protocol === 'https' ? 1 : 0,
+    secure: window.location.protocol === 'https:' ? 1 : 0,
     displaymanager: 'di_prebid',
     displaymanagerver: DI_M_V,
     ext: buildCustomParams(bid)

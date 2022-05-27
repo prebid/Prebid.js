@@ -9,7 +9,7 @@ const SIZE_SEPARATOR = ';';
 const BISKO_ID = 'biskoId';
 const STORAGE_ID = 'bisko-sid';
 const SEGMENTS = 'biskoSegments';
-const storage = getStorageManager();
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 export const spec = {
   code: BIDDER_CODE,
@@ -41,7 +41,8 @@ export const spec = {
     let contents = [];
     let data = {};
     let auctionId = bidderRequest ? bidderRequest.auctionId : '';
-
+    let gdrpApplies = true;
+    let gdprConsent = '';
     let placements = validBidRequests.map(bidRequest => {
       if (!propertyId) { propertyId = bidRequest.params.propertyId; }
       if (!pageViewGuid && bidRequest.params) { pageViewGuid = bidRequest.params.pageViewGuid || ''; }
@@ -49,7 +50,8 @@ export const spec = {
       if (!url && bidderRequest) { url = bidderRequest.refererInfo.referer; }
       if (!contents.length && bidRequest.params.contents && bidRequest.params.contents.length) { contents = bidRequest.params.contents; }
       if (Object.keys(data).length === 0 && bidRequest.params.data && Object.keys(bidRequest.params.data).length !== 0) { data = bidRequest.params.data; }
-
+      if (bidderRequest && bidRequest.gdprConsent) { gdrpApplies = bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies ? bidderRequest.gdprConsent.gdprApplies : true; }
+      if (bidderRequest && bidRequest.gdprConsent) { gdprConsent = bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString ? bidderRequest.gdprConsent.consentString : ''; }
       let adUnitId = bidRequest.adUnitCode;
       let placementId = bidRequest.params.placementId;
       let sizes = generateSizeParam(bidRequest.sizes);
@@ -75,7 +77,9 @@ export const spec = {
       requestid: bidderRequestId,
       placements: placements,
       contents: contents,
-      data: data
+      data: data,
+      gdpr_applies: gdrpApplies,
+      gdpr_consent: gdprConsent,
     }
 
     return [{

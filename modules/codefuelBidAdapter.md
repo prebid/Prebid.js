@@ -21,7 +21,7 @@ You will receive the URLs when contacting us.
 ```
 pbjs.setConfig({
     codefuel: {
-      bidderUrl: 'https://ai-i-codefuel-ds-rtb-us-east-1-k8s-internal.seccint.com/prebid',
+      bidderUrl: 'https://ai-p-codefuel-ds-rtb-us-east-1-k8s.seccint.com/prebid',
       usersyncUrl: 'https://usersync-url.com'
     }
 });
@@ -74,7 +74,7 @@ pbjs.setConfig({
 
     pbjs.setConfig({
         codefuel: {
-          bidderUrl: 'https://prebidtest.zemanta.com/api/bidder/prebidtest/bid/'
+          bidderUrl: 'https://ai-p-codefuel-ds-rtb-us-east-1-k8s.seccint.com/prebid'
         }
     });
 ```
@@ -105,7 +105,7 @@ pbjs.setConfig({
 
     pbjs.setConfig({
         codefuel: {
-          bidderUrl: 'https://prebidtest.zemanta.com/api/bidder/prebidtest/bid/'
+          bidderUrl: 'https://ai-p-codefuel-ds-rtb-us-east-1-k8s.seccint.com/prebid'
         }
     });
 ```
