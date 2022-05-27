@@ -52,8 +52,8 @@ module.exports = {
         // Transform @guardian packages as per the recommendations https://git.io/J3Pk4
         test: /\.m?(j|t)sx?$/,
         exclude: {
-          test: /node_modules/,
-          exclude: /@guardian\//,
+          and: [/node_modules/],
+          not: [/@guardian\//],
         },
         use: [
           {
