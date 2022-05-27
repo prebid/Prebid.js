@@ -250,6 +250,10 @@ describe('kargo adapter tests', function () {
           2: [[320, 50], [300, 250], [300, 600]],
           3: [[320, 50], [300, 250], [300, 600]]
         },
+        device: {
+          height: 900,
+          width: 1440,
+        },
         userIDs: {
           kargoID: '5f108831-302d-11e7-bf6b-4595acd3bf6c',
           clientID: '2410d8f2-c111-4811-88a5-7b5e190e475f',

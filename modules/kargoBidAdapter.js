@@ -55,6 +55,10 @@ export const spec = {
       },
       bidIDs,
       bidSizes,
+      device: {
+        width: window.screen.width,
+        height: window.screen.height
+      },
       prebidRawBidRequests: validBidRequests
     }, spec._getAllMetadata(tdid, bidderRequest.uspConsent, bidderRequest.gdprConsent));
     const encodedParams = encodeURIComponent(JSON.stringify(transformedParams));
