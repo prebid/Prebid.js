@@ -273,7 +273,7 @@ describe('Zeta Ssp Bid Adapter', function () {
     expect(request.url).to.eql('https://ssp.disqus.com/bid?shortname=test_shortname');
     expect(payload.ext.sid).to.eql('publisherId');
     expect(payload.ext.tags.someTag).to.eql(444);
-    expect(payload.ext.tags.shortname).to.be.empty;
+    expect(payload.ext.tags.shortname).to.be.undefined;
   });
 
   it('Test required params in video request', function () {
@@ -282,6 +282,6 @@ describe('Zeta Ssp Bid Adapter', function () {
     expect(request.url).to.eql('https://ssp.disqus.com/bid?shortname=test_shortname');
     expect(payload.ext.sid).to.eql('publisherId');
     expect(payload.ext.tags.someTag).to.eql(444);
-    expect(payload.ext.tags.shortname).to.be.empty;
+    expect(payload.ext.tags.shortname).to.be.undefined;
   });
 });
