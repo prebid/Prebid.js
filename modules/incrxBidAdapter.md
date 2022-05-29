@@ -1,16 +1,16 @@
 # Overview
 
 ```
-Module Name:  Vertoz Bidder Adapter
+Module Name:  IncrementX Bidder Adapter
 Module Type:  Bidder Adapter
 Maintainer: prebid-team@vertoz.com
 ```
 
 # Description
 
-Connects to Vertoz exchange for bids.
-Vertoz Bidder adapter supports Banner ads.
-Use bidder code ```vertoz``` for all Vertoz traffic.
+Connects to IncrementX exchange for bids.
+IncrementX Bidder adapter supports Banner ads.
+Use bidder code ```incrementx``` for all IncrementX traffic.
 
 # Test Parameters
 ```
@@ -20,9 +20,9 @@ var adUnits = [
        code: 'banner-div',
        sizes: [[300, 250], [300,600]],   // a display size(s)
        bids: [{
-         bidder: 'vertoz',
+         bidder: 'incrementx',
          params: {
-           placementId: 'VZ-HB-B784382V6C6G3C'
+           placementId: 'PNX-HB-F796830VCF3C4B'
          }
        }]
    },
