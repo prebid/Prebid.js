@@ -224,7 +224,7 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
       partnerBids.push({
         'pn': getAdapterNameForAlias(bid.adapterCode || bid.bidder),
         'bc': bid.bidderCode || bid.bidder,
-        'bidid': bid.bidId,
+        'bidid': bid.bidId || bidId,
         'db': bid.bidResponse ? 0 : 1,
         'kgpv': getValueForKgpv(bid, adUnitId),
         'kgpsv': bid.params && bid.params.kgpv ? bid.params.kgpv : adUnitId,
@@ -238,7 +238,7 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
         'adv': bid.bidResponse ? getAdDomain(bid.bidResponse) || undefined : undefined,
         'ss': (s2sBidders.indexOf(bid.bidder) > -1) ? 1 : 0,
         't': (bid.status == ERROR && bid.error.code == TIMEOUT_ERROR) ? 1 : 0,
-        'wb': (highestBid && highestBid.requestId === bid.bidId ? 1 : 0),
+        'wb': (highestBid && highestBid.adId === bid.adId ? 1 : 0),
         'mi': bid.bidResponse ? (bid.bidResponse.mi || undefined) : undefined,
         'af': bid.bidResponse ? (bid.bidResponse.mediaType || undefined) : undefined,
         'ocpm': bid.bidResponse ? (bid.bidResponse.originalCpm || 0) : 0,
