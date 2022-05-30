@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { formatQS, logInfo } from '../src/utils.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
@@ -43,15 +43,10 @@ export const spec = {
         payload.consent_string = bidderRequest.gdprConsent.consentString;
         payload.consent_required = bidderRequest.gdprConsent.gdprApplies;
       }
-
+      const baseUrl = bidRequest.params.baseUrl || ENDPOINT_URL;
       return {
         method: 'POST',
-        url:
-          ENDPOINT_URL +
-          '?' +
-          utils.formatQS({
-            t: bidRequest.params.apiKey,
-          }),
+        url: baseUrl + '?' + formatQS({ t: bidRequest.params.apiKey }),
         data: JSON.stringify(payload),
       };
     });
@@ -79,7 +74,7 @@ export const spec = {
    * @param {data} Containing timeout specific data
    */
   onTimeout: function onTimeout(timeoutData) {
-    utils.logInfo('Missena - Timeout from adapter', timeoutData);
+    logInfo('Missena - Timeout from adapter', timeoutData);
   },
 
   /**
@@ -87,7 +82,7 @@ export const spec = {
    * @param {Bid} The bid that won the auction
    */
   onBidWon: function (bid) {
-    utils.logInfo('Missena - Bid won', bid);
+    logInfo('Missena - Bid won', bid);
   },
 };
 

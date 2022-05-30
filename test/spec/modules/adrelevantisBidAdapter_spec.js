@@ -229,9 +229,7 @@ describe('AdrelevantisAdapter', function () {
           site: {
             keywords: 'US Open',
             ext: {
-              data: {
-                category: 'sports/tennis'
-              }
+			  data: {category: 'sports/tennis'}
             }
           }
         });

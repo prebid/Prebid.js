@@ -444,7 +444,7 @@ describe('rhythmone adapter tests', function () {
       expect(openrtbRequest.device.dnt).to.equal(1);
     });
 
-    it('sets floor', function () {
+    it('sets floor to zero', function () {
       var bidRequestList = [
         {
           'bidder': 'rhythmone',
@@ -469,7 +469,7 @@ describe('rhythmone adapter tests', function () {
       var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
 
       const openrtbRequest = JSON.parse(bidRequest.data);
-      expect(openrtbRequest.imp[0].bidfloor).to.equal(100.0);
+      expect(openrtbRequest.imp[0].bidfloor).to.equal(0);
     });
 
     it('supports string video sizes', function () {

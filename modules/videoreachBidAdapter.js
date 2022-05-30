@@ -1,10 +1,12 @@
+import { getValue, getBidIdParameter } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-const utils = require('../src/utils.js');
 const BIDDER_CODE = 'videoreach';
 const ENDPOINT_URL = 'https://a.videoreach.com/hb/';
+const GVLID = 547;
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: ['banner'],
 
   isBidRequestValid: function(bid) {
@@ -15,12 +17,12 @@ export const spec = {
     let data = {
       data: validBidRequests.map(function(bid) {
         return {
-          TagId: utils.getValue(bid.params, 'TagId'),
-          adUnitCode: utils.getBidIdParameter('adUnitCode', bid),
-          bidId: utils.getBidIdParameter('bidId', bid),
-          bidderRequestId: utils.getBidIdParameter('bidderRequestId', bid),
-          auctionId: utils.getBidIdParameter('auctionId', bid),
-          transactionId: utils.getBidIdParameter('transactionId', bid)
+          TagId: getValue(bid.params, 'TagId'),
+          adUnitCode: getBidIdParameter('adUnitCode', bid),
+          bidId: getBidIdParameter('bidId', bid),
+          bidderRequestId: getBidIdParameter('bidderRequestId', bid),
+          auctionId: getBidIdParameter('auctionId', bid),
+          transactionId: getBidIdParameter('transactionId', bid)
         }
       })
     };
@@ -58,7 +60,10 @@ export const spec = {
           ttl: bid.ttl,
           ad: bid.ad,
           requestId: bid.bidId,
-          creativeId: bid.creativeId
+          creativeId: bid.creativeId,
+          meta: {
+            advertiserDomains: bid && bid.adomain ? bid.adomain : []
+          }
         };
         bidResponses.push(bidResponse);
       });

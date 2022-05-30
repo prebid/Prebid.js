@@ -1,11 +1,11 @@
-import * as utils from '../src/utils.js';
+import { _each, parseSizesInput, isStr, isArray } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'adocean';
 
 function buildEndpointUrl(emiter, payloadMap) {
   const payload = [];
-  utils._each(payloadMap, function(v, k) {
+  _each(payloadMap, function(v, k) {
     payload.push(k + '=' + encodeURIComponent(v));
   });
 
@@ -26,12 +26,12 @@ function buildRequest(masterBidRequests, masterId, gdprConsent) {
 
   const bidIdMap = {};
 
-  utils._each(masterBidRequests, function(bid, slaveId) {
+  _each(masterBidRequests, function(bid, slaveId) {
     if (!emiter) {
       emiter = bid.params.emiter;
     }
 
-    const slaveSizes = utils.parseSizesInput(bid.mediaTypes.banner.sizes).join('_');
+    const slaveSizes = parseSizesInput(bid.mediaTypes.banner.sizes).join('_');
     const rawSlaveId = bid.params.slaveId.replace('adocean', '');
     payload.aosspsizes.push(rawSlaveId + '~' + slaveSizes);
 
@@ -95,7 +95,7 @@ export const spec = {
 
   isBidRequestValid: function(bid) {
     const requiredParams = ['slaveId', 'masterId', 'emiter'];
-    if (requiredParams.some(name => !utils.isStr(bid.params[name]) || !bid.params[name].length)) {
+    if (requiredParams.some(name => !isStr(bid.params[name]) || !bid.params[name].length)) {
       return false;
     }
 
@@ -106,12 +106,12 @@ export const spec = {
     const bidRequestsByMaster = {};
     let requests = [];
 
-    utils._each(validBidRequests, function(bidRequest) {
+    _each(validBidRequests, function(bidRequest) {
       assignToMaster(bidRequest, bidRequestsByMaster);
     });
 
-    utils._each(bidRequestsByMaster, function(masterRequests, masterId) {
-      utils._each(masterRequests, function(instanceRequests) {
+    _each(bidRequestsByMaster, function(masterRequests, masterId) {
+      _each(masterRequests, function(instanceRequests) {
         requests.push(buildRequest(instanceRequests, masterId, bidderRequest.gdprConsent));
       });
     });
@@ -122,8 +122,8 @@ export const spec = {
   interpretResponse: function(serverResponse, bidRequest) {
     let bids = [];
 
-    if (utils.isArray(serverResponse.body)) {
-      utils._each(serverResponse.body, function(placementResponse) {
+    if (isArray(serverResponse.body)) {
+      _each(serverResponse.body, function(placementResponse) {
         interpretResponse(placementResponse, bidRequest, bids);
       });
     }

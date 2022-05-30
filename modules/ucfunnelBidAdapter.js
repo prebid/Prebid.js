@@ -1,9 +1,9 @@
+import { generateUUID, _each } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { config } from '../src/config.js';
-import * as utils from '../src/utils.js';
-const storage = getStorageManager();
+
 const COOKIE_NAME = 'ucf_uid';
 const VER = 'ADGENT_PREBID-2018011501';
 const BIDDER_CODE = 'ucfunnel';
@@ -13,6 +13,7 @@ const VIDEO_CONTEXT = {
   INSTREAM: 0,
   OUSTREAM: 2
 }
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 export const spec = {
   code: BIDDER_CODE,
@@ -283,7 +284,7 @@ function getRequestData(bid, bidderRequest) {
       ucfUid = storage.getCookie(COOKIE_NAME);
       bidData.ucfUid = ucfUid;
     } else {
-      ucfUid = utils.generateUUID();
+      ucfUid = generateUUID();
       bidData.ucfUid = ucfUid;
       storage.setCookie(COOKIE_NAME, ucfUid);
     }
@@ -335,16 +336,8 @@ function getRequestData(bid, bidderRequest) {
 
 function addUserId(bidData, userId) {
   bidData['eids'] = '';
-  utils._each(userId, (userIdObjectOrValue, userIdProviderKey) => {
+  _each(userId, (userIdObjectOrValue, userIdProviderKey) => {
     switch (userIdProviderKey) {
-      case 'sharedid':
-        if (userIdObjectOrValue.id) {
-          bidData[userIdProviderKey + '_id'] = userIdObjectOrValue.id;
-        }
-        if (userIdObjectOrValue.third) {
-          bidData[userIdProviderKey + '_third'] = userIdObjectOrValue.third;
-        }
-        break;
       case 'haloId':
         if (userIdObjectOrValue.haloId) {
           bidData[userIdProviderKey + 'haloId'] = userIdObjectOrValue.haloId;

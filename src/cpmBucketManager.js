@@ -1,5 +1,5 @@
-import find from 'core-js-pure/features/array/find.js';
-const utils = require('./utils.js');
+import {find} from './polyfill.js';
+import { isEmpty } from './utils.js';
 
 const _defaultPrecision = 2;
 const _lgPriceConfig = {
@@ -102,7 +102,7 @@ function getCpmStringValue(cpm, config, granularityMultiplier) {
 }
 
 function isValidPriceConfig(config) {
-  if (utils.isEmpty(config) || !config.buckets || !Array.isArray(config.buckets)) {
+  if (isEmpty(config) || !config.buckets || !Array.isArray(config.buckets)) {
     return false;
   }
   let isValid = true;

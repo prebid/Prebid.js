@@ -74,6 +74,10 @@ export const spec = {
         netRevenue: response.hb.netRevenue,
         ttl: 600,
         ad: response.template.html,
+        mediaType: 'banner',
+        meta: {
+          advertiserDomains: response.hb.adomains || [],
+        },
         width,
         height,
       };

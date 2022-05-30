@@ -1,9 +1,9 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 import * as mediaTypes from '../src/mediaTypes.js';
-import * as utils from '../src/utils.js';
-import { ajax } from '../src/ajax.js';
-import find from 'core-js-pure/features/array/find.js';
-import { OUTSTREAM, INSTREAM } from '../src/video.js';
+import {_map, deepAccess, isEmpty} from '../src/utils.js';
+import {ajax} from '../src/ajax.js';
+import {find} from '../src/polyfill.js';
+import {INSTREAM, OUTSTREAM} from '../src/video.js';
 
 const BIDDER_CODE = 'dailyhunt';
 const BIDDER_ALIAS = 'dh';
@@ -80,7 +80,7 @@ const _encodeURIComponent = function (a) {
 // Extract key from collections.
 const extractKeyInfo = (collection, key) => {
   for (let i = 0, result; i < collection.length; i++) {
-    result = utils.deepAccess(collection[i].params, key);
+    result = deepAccess(collection[i].params, key);
     if (result) {
       return result;
     }
@@ -117,7 +117,7 @@ const createOrtbUserObj = (validBidRequests) => ({ ...extractKeyInfo(validBidReq
 const createOrtbSiteObj = (validBidRequests, page) => {
   let site = { ...extractKeyInfo(validBidRequests, `site`), page };
   let publisher = createOrtbPublisherObj(validBidRequests);
-  if (publisher) {
+  if (!site.publisher) {
     site.publisher = publisher
   }
   return site
@@ -125,18 +125,23 @@ const createOrtbSiteObj = (validBidRequests, page) => {
 
 const createOrtbPublisherObj = (validBidRequests) => ({ ...extractKeyInfo(validBidRequests, `publisher`) })
 
+// get bidFloor Function for different creatives
+function getBidFloor(bid, creative) {
+  let floorInfo = typeof (bid.getFloor) == 'function' ? bid.getFloor({ currency: 'USD', mediaType: creative, size: '*' }) : {};
+  return Math.floor(floorInfo.floor || (bid.params.bidfloor ? bid.params.bidfloor : 0.0));
+}
+
 const createOrtbImpObj = (bid) => {
   let params = bid.params
   let testMode = !!bid.params.test_mode
 
   // Validate Banner Request.
-  let bannerObj = utils.deepAccess(bid.mediaTypes, `banner`);
-  let nativeObj = utils.deepAccess(bid.mediaTypes, `native`);
-  let videoObj = utils.deepAccess(bid.mediaTypes, `video`);
+  let bannerObj = deepAccess(bid.mediaTypes, `banner`);
+  let nativeObj = deepAccess(bid.mediaTypes, `native`);
+  let videoObj = deepAccess(bid.mediaTypes, `video`);
 
   let imp = {
     id: bid.bidId,
-    bidfloor: params.bidfloor ? params.bidfloor : 0,
     ext: {
       dailyhunt: {
         placement_id: params.placement_id,
@@ -155,14 +160,17 @@ const createOrtbImpObj = (bid) => {
     imp.banner = {
       ...createOrtbImpBannerObj(bid, bannerObj)
     }
+    imp.bidfloor = getBidFloor(bid, 'banner');
   } else if (nativeObj) {
     imp.native = {
       ...createOrtbImpNativeObj(bid, nativeObj)
     }
+    imp.bidfloor = getBidFloor(bid, 'native');
   } else if (videoObj) {
     imp.video = {
       ...createOrtbImpVideoObj(bid, videoObj)
     }
+    imp.bidfloor = getBidFloor(bid, 'video');
   }
   return imp;
 }
@@ -178,7 +186,7 @@ const createOrtbImpBannerObj = (bid, bannerObj) => {
 }
 
 const createOrtbImpNativeObj = (bid, nativeObj) => {
-  const assets = utils._map(bid.nativeParams, (bidParams, key) => {
+  const assets = _map(bid.nativeParams, (bidParams, key) => {
     const props = ORTB_NATIVE_PARAMS[key];
     const asset = {
       required: bidParams.required & 1,
@@ -215,10 +223,18 @@ const createOrtbImpNativeObj = (bid, nativeObj) => {
 const createOrtbImpVideoObj = (bid, videoObj) => {
   let obj = {};
   let params = bid.params
-  if (!utils.isEmpty(bid.params.video)) {
+  if (!isEmpty(bid.params.video)) {
     obj = {
-      ...params.video,
-    }
+      topframe: 1,
+      skip: params.video.skippable || 0,
+      linearity: params.video.linearity || 1,
+      minduration: params.video.minduration || 5,
+      maxduration: params.video.maxduration || 60,
+      mimes: params.video.mimes || ['video/mp4'],
+      protocols: getProtocols(params.video),
+      w: params.video.playerSize[0][0],
+      h: params.video.playerSize[0][1],
+    };
   } else {
     obj = {
       mimes: ['video/mp4'],
@@ -228,6 +244,27 @@ const createOrtbImpVideoObj = (bid, videoObj) => {
     ...videoObj,
   }
   return obj;
+}
+
+export function getProtocols({protocols}) {
+  let defaultValue = [2, 3, 5, 6, 7, 8];
+  let listProtocols = [
+    {key: 'VAST_1_0', value: 1},
+    {key: 'VAST_2_0', value: 2},
+    {key: 'VAST_3_0', value: 3},
+    {key: 'VAST_1_0_WRAPPER', value: 4},
+    {key: 'VAST_2_0_WRAPPER', value: 5},
+    {key: 'VAST_3_0_WRAPPER', value: 6},
+    {key: 'VAST_4_0', value: 7},
+    {key: 'VAST_4_0_WRAPPER', value: 8}
+  ];
+  if (protocols) {
+    return listProtocols.filter(p => {
+      return protocols.indexOf(p.key) !== -1
+    }).map(p => p.value);
+  } else {
+    return defaultValue;
+  }
 }
 
 const createServerRequest = (ortbRequest, validBidRequests, isTestMode = 'false') => ({
@@ -252,7 +289,8 @@ const createPrebidBannerBid = (bid, bidResponse) => ({
   currency: 'USD',
   ad: bidResponse.adm,
   mediaType: 'banner',
-  winUrl: bidResponse.nurl
+  winUrl: bidResponse.nurl,
+  adomain: bidResponse.adomain
 })
 
 const createPrebidNativeBid = (bid, bidResponse) => ({
@@ -267,6 +305,7 @@ const createPrebidNativeBid = (bid, bidResponse) => ({
   winUrl: bidResponse.nurl,
   width: bidResponse.w,
   height: bidResponse.h,
+  adomain: bidResponse.adomain
 })
 
 const parseNative = (bid) => {
@@ -279,15 +318,15 @@ const parseNative = (bid) => {
     javascriptTrackers: jstracker ? [ jstracker ] : []
   };
   assets.forEach(asset => {
-    if (!utils.isEmpty(asset.title)) {
+    if (!isEmpty(asset.title)) {
       result.title = asset.title.text
-    } else if (!utils.isEmpty(asset.img)) {
+    } else if (!isEmpty(asset.img)) {
       result[ORTB_NATIVE_TYPE_MAPPING.img[asset.img.type]] = {
         url: asset.img.url,
         height: asset.img.h,
         width: asset.img.w
       }
-    } else if (!utils.isEmpty(asset.data)) {
+    } else if (!isEmpty(asset.data)) {
       result[ORTB_NATIVE_TYPE_MAPPING.data[asset.data.type]] = asset.data.value
     }
   });
@@ -307,6 +346,7 @@ const createPrebidVideoBid = (bid, bidResponse) => {
     currency: 'USD',
     mediaType: 'video',
     winUrl: bidResponse.nurl,
+    adomain: bidResponse.adomain
   };
 
   let videoContext = bid.mediaTypes.video.context;

@@ -38,5 +38,20 @@ describe('HaloIdSystem', function () {
       callback(callbackSpy);
       expect(callbackSpy.lastCall.lastArg).to.deep.equal({haloId: 'tstCachedHaloId1'});
     });
+
+    it('allows configurable id url', function() {
+      const config = {
+        params: {
+          url: 'https://haloid.publync.com'
+        }
+      };
+      const callbackSpy = sinon.spy();
+      const callback = haloIdSubmodule.getId(config).callback;
+      callback(callbackSpy);
+      const request = server.requests[0];
+      expect(request.url).to.eq('https://haloid.publync.com');
+      request.respond(200, { 'Content-Type': 'application/json' }, JSON.stringify({ haloId: 'testHaloId1' }));
+      expect(callbackSpy.lastCall.lastArg).to.deep.equal({haloId: 'testHaloId1'});
+    });
   });
 });

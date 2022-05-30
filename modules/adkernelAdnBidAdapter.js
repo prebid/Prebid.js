@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { deepAccess, parseSizesInput, isArray, deepSetValue, parseUrl, isStr, isNumber, logInfo } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
@@ -19,12 +19,12 @@ function buildImp(bidRequest) {
     tagid: bidRequest.adUnitCode
   };
   let mediaType;
-  let bannerReq = utils.deepAccess(bidRequest, `mediaTypes.banner`);
-  let videoReq = utils.deepAccess(bidRequest, `mediaTypes.video`);
+  let bannerReq = deepAccess(bidRequest, `mediaTypes.banner`);
+  let videoReq = deepAccess(bidRequest, `mediaTypes.video`);
   if (bannerReq) {
     let sizes = canonicalizeSizesArray(bannerReq.sizes);
     imp.banner = {
-      format: utils.parseSizesInput(sizes)
+      format: parseSizesInput(sizes)
     };
     mediaType = BANNER;
   } else if (videoReq) {
@@ -51,7 +51,7 @@ function buildImp(bidRequest) {
  * @return Array[Array[Number]]
  */
 function canonicalizeSizesArray(sizes) {
-  if (sizes.length === 2 && !utils.isArray(sizes[0])) {
+  if (sizes.length === 2 && !isArray(sizes[0])) {
     return [sizes];
   }
   return sizes;
@@ -67,23 +67,23 @@ function buildRequestParams(tags, bidderRequest) {
   };
   if (gdprConsent) {
     if (gdprConsent.gdprApplies !== undefined) {
-      utils.deepSetValue(req, 'user.gdpr', ~~gdprConsent.gdprApplies);
+      deepSetValue(req, 'user.gdpr', ~~gdprConsent.gdprApplies);
     }
     if (gdprConsent.consentString !== undefined) {
-      utils.deepSetValue(req, 'user.consent', gdprConsent.consentString);
+      deepSetValue(req, 'user.consent', gdprConsent.consentString);
     }
   }
   if (uspConsent) {
-    utils.deepSetValue(req, 'user.us_privacy', uspConsent);
+    deepSetValue(req, 'user.us_privacy', uspConsent);
   }
   if (config.getConfig('coppa')) {
-    utils.deepSetValue(req, 'user.coppa', 1);
+    deepSetValue(req, 'user.coppa', 1);
   }
   return req;
 }
 
 function buildSite(refInfo) {
-  let loc = utils.parseUrl(refInfo.referer);
+  let loc = parseUrl(refInfo.referer);
   let result = {
     page: `${loc.protocol}://${loc.hostname}${loc.pathname}`,
     secure: ~~(loc.protocol === 'https')
@@ -126,23 +126,23 @@ function buildBid(tag) {
 }
 
 function fillBidMeta(bid, tag) {
-  if (utils.isStr(tag.agencyName)) {
-    utils.deepSetValue(bid, 'meta.agencyName', tag.agencyName);
+  if (isStr(tag.agencyName)) {
+    deepSetValue(bid, 'meta.agencyName', tag.agencyName);
   }
-  if (utils.isNumber(tag.advertiserId)) {
-    utils.deepSetValue(bid, 'meta.advertiserId', tag.advertiserId);
+  if (isNumber(tag.advertiserId)) {
+    deepSetValue(bid, 'meta.advertiserId', tag.advertiserId);
   }
-  if (utils.isStr(tag.advertiserName)) {
-    utils.deepSetValue(bid, 'meta.advertiserName', tag.advertiserName);
+  if (isStr(tag.advertiserName)) {
+    deepSetValue(bid, 'meta.advertiserName', tag.advertiserName);
   }
-  if (utils.isArray(tag.advertiserDomains)) {
-    utils.deepSetValue(bid, 'meta.advertiserDomains', tag.advertiserDomains);
+  if (isArray(tag.advertiserDomains)) {
+    deepSetValue(bid, 'meta.advertiserDomains', tag.advertiserDomains);
   }
-  if (utils.isStr(tag.primaryCatId)) {
-    utils.deepSetValue(bid, 'meta.primaryCatId', tag.primaryCatId);
+  if (isStr(tag.primaryCatId)) {
+    deepSetValue(bid, 'meta.primaryCatId', tag.primaryCatId);
   }
-  if (utils.isArray(tag.secondaryCatIds)) {
-    utils.deepSetValue(bid, 'meta.secondaryCatIds', tag.secondaryCatIds);
+  if (isArray(tag.secondaryCatIds)) {
+    deepSetValue(bid, 'meta.secondaryCatIds', tag.secondaryCatIds);
   }
 }
 
@@ -204,7 +204,7 @@ export const spec = {
       return [];
     }
     if (response.debug) {
-      utils.logInfo(`ADKERNEL DEBUG:\n${response.debug}`);
+      logInfo(`ADKERNEL DEBUG:\n${response.debug}`);
     }
     return response.tags.map(buildBid);
   },

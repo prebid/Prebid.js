@@ -160,7 +160,12 @@ describe('ebdrBidAdapter', function () {
           currency: 'USD',
           netRevenue: true,
           ttl: 3600,
-          vastUrl: serverResponse.seatbid[0].bid[0].nurl
+          vastUrl: serverResponse.seatbid[0].bid[0].nurl,
+          meta: {
+            advertiserDomains: [
+              'advertiserdomain.com'
+            ]
+          }
         });
       });
     });
@@ -201,7 +206,12 @@ describe('ebdrBidAdapter', function () {
           height: serverResponse.seatbid[0].bid[0].h,
           currency: 'USD',
           netRevenue: true,
-          ttl: 3600
+          ttl: 3600,
+          meta: {
+            advertiserDomains: [
+              'advertiserdomain.com'
+            ]
+          },
         });
       });
     });

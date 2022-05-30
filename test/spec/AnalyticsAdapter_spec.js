@@ -1,7 +1,8 @@
 import { expect } from 'chai';
-import events from 'src/events.js';
+import * as events from 'src/events.js';
 import CONSTANTS from 'src/constants.json';
 import { server } from 'test/mocks/xhr.js';
+import {disableAjaxForAnalytics, enableAjaxForAnalytics} from '../mocks/analyticsStub.js';
 
 const REQUEST_BIDS = CONSTANTS.EVENTS.REQUEST_BIDS;
 const BID_REQUESTED = CONSTANTS.EVENTS.BID_REQUESTED;
@@ -9,6 +10,7 @@ const BID_RESPONSE = CONSTANTS.EVENTS.BID_RESPONSE;
 const BID_WON = CONSTANTS.EVENTS.BID_WON;
 const BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
 const AD_RENDER_FAILED = CONSTANTS.EVENTS.AD_RENDER_FAILED;
+const AD_RENDER_SUCCEEDED = CONSTANTS.EVENTS.AD_RENDER_SUCCEEDED;
 const AUCTION_DEBUG = CONSTANTS.EVENTS.AUCTION_DEBUG;
 const ADD_AD_UNITS = CONSTANTS.EVENTS.ADD_AD_UNITS;
 
@@ -23,6 +25,9 @@ FEATURE: Analytics Adapters API
   SCENARIO: A publisher enables analytics
     AND an  \`example\` instance of \`AnalyticsAdapter\`\n`, () => {
   let adapter;
+
+  before(enableAjaxForAnalytics);
+  after(disableAjaxForAnalytics);
 
   beforeEach(function () {
     adapter = new AnalyticsAdapter(config);
@@ -84,6 +89,17 @@ FEATURE: Analytics Adapters API
 
       let result = JSON.parse(server.requests[0].requestBody);
       expect(result).to.deep.equal({args: {call: 'adRenderFailed'}, eventType: 'adRenderFailed'});
+    });
+
+    it('SHOULD call global when a adRenderSucceeded event occurs', function () {
+      const eventType = AD_RENDER_SUCCEEDED;
+      const args = { call: 'adRenderSucceeded' };
+
+      adapter.enableAnalytics();
+      events.emit(eventType, args);
+
+      let result = JSON.parse(server.requests[0].requestBody);
+      expect(result).to.deep.equal({args: {call: 'adRenderSucceeded'}, eventType: 'adRenderSucceeded'});
     });
 
     it('SHOULD call global when an auction debug event occurs', function () {

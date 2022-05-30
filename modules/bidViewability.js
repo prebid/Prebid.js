@@ -2,13 +2,13 @@
 // GPT API is used to find when a bid is viewable, https://developers.google.com/publisher-tag/reference#googletag.events.impressionviewableevent
 // Does not work with other than GPT integration
 
-import { config } from '../src/config.js';
+import {config} from '../src/config.js';
 import * as events from '../src/events.js';
-import { EVENTS } from '../src/constants.json';
-import { logWarn, isFn, triggerPixel } from '../src/utils.js';
-import { getGlobal } from '../src/prebidGlobal.js';
-import adapterManager, { gdprDataHandler, uspDataHandler } from '../src/adapterManager.js';
-import find from 'core-js-pure/features/array/find.js';
+import CONSTANTS from '../src/constants.json';
+import {isFn, logWarn, triggerPixel} from '../src/utils.js';
+import {getGlobal} from '../src/prebidGlobal.js';
+import adapterManager, {gdprDataHandler, uspDataHandler} from '../src/adapterManager.js';
+import {find} from '../src/polyfill.js';
 
 const MODULE_NAME = 'bidViewability';
 const CONFIG_ENABLED = 'enabled';
@@ -70,12 +70,12 @@ export let impressionViewableHandler = (globalModuleConfig, slot, event) => {
     // trigger respective bidder's onBidViewable handler
     adapterManager.callBidViewableBidder(respectiveBid.bidder, respectiveBid);
     // emit the BID_VIEWABLE event with bid details, this event can be consumed by bidders and analytics pixels
-    events.emit(EVENTS.BID_VIEWABLE, respectiveBid);
+    events.emit(CONSTANTS.EVENTS.BID_VIEWABLE, respectiveBid);
   }
 };
 
 export let init = () => {
-  events.on(EVENTS.AUCTION_INIT, () => {
+  events.on(CONSTANTS.EVENTS.AUCTION_INIT, () => {
     // read the config for the module
     const globalModuleConfig = config.getConfig(MODULE_NAME) || {};
     // do nothing if module-config.enabled is not set to true
