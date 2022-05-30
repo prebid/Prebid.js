@@ -1049,21 +1049,22 @@ Object.assign(ORTB2.prototype, {
               ortb = bidObject.adm = bid.adm;
             }
 
-            let trackers = {
-              [nativeEventTrackerMethodMap.img]: ortb.imptrackers || [],
-              [nativeEventTrackerMethodMap.js]: ortb.jstracker ? [ortb.jstracker] : []
-            };
-            if (ortb.eventtrackers) {
-              ortb.eventtrackers.forEach(tracker => {
-                switch (tracker.method) {
-                  case nativeEventTrackerMethodMap.img:
-                    trackers[nativeEventTrackerMethodMap.img].push(tracker.url);
-                    break;
-                  case nativeEventTrackerMethodMap.js:
-                    trackers[nativeEventTrackerMethodMap.js].push(tracker.url);
-                    break;
-                }
-              });
+            // ortb.imptrackers and ortb.jstracker are going to be deprecated. So, when we find
+            // those properties, we're creating the equivalent eventtrackers and let prebid universal
+            //  creative deal with it
+            for (const imptracker of ortb.imptrackers || []) {
+              ortb.eventtrackers.push({
+                event: nativeEventTrackerEventMap.impression,
+                method: nativeEventTrackerMethodMap.img,
+                url: imptracker
+              })
+            }
+            if (ortb.jstracker) {
+              ortb.eventtrackers.push({
+                event: nativeEventTrackerEventMap.impression,
+                method: nativeEventTrackerMethodMap.js,
+                url: ortb.jstracker
+              })
             }
 
             if (isPlainObject(ortb) && Array.isArray(ortb.assets)) {
