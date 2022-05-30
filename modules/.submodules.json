@@ -38,12 +38,12 @@
     "quantcastIdSystem",
     "sharedIdSystem",
     "tapadIdSystem",
+    "tncIdSystem",
     "trustpidSystem",
     "uid2IdSystem",
     "unifiedIdSystem",
     "verizonMediaIdSystem",
     "zeotapIdPlusIdSystem",
-    "tncIdSystem",
     "adqueryIdSystem",
     "gravitoIdSystem"
   ],

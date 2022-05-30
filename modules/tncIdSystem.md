@@ -2,7 +2,7 @@
 
 ### Prebid Configuration
 
-First, make sure to add the TNCID submodule to your Prebid.js package with:
+First, make sure to add the TNCID submodule to your Prebid.js package with: 
 
 ```
 gulp build --modules=tncIdSystem,userId
@@ -14,16 +14,15 @@ You can configure this submodule in your `userSync.userIds[]` configuration:
 
 ```javascript
 pbjs.setConfig({
-  userSync: {
-    userIds: [
-      {
-        name: 'tncId',
-        params: {
-					providerId: "c8549079-f149-4529-a34b-3fa91ef257d1" // Optional
-				}
-      }
-    ]
-  }
+    userSync: {
+        userIds: [{
+            name: 'tncId',
+            params: {
+              providerId: "c8549079-f149-4529-a34b-3fa91ef257d1" // Optional
+            }
+        }],
+        syncDelay: 5000
+    }
 });
 ```
 #### Configuration Params
