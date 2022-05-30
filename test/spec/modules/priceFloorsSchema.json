@@ -1,0 +1,86 @@
+{
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "description": "A Price Floors object which is parsed and used to enforce dynamic floors depending on the properties of the json",
+  "type": "object",
+  "title": "Price Floors Enforcement",
+  "required": [
+    "schema",
+    "values"
+  ],
+  "properties": {
+    "schema": {
+      "type": "object",
+      "description": "Defines the schema of the rules",
+      "required": [
+        "fields"
+      ],
+      "properties": {
+        "fields": {
+          "type": "array",
+          "description": "The list of fields to be used for matching criteria of a bid response with a price floor",
+          "minItems": 1,
+          "uniqueItems": true,
+          "additionalItems": false,
+          "items": {
+            "type": "string"
+          }
+        },
+        "delimiter": {
+          "type": "string",
+          "description": "The character used to differentiate the fields inside a single rule",
+          "examples": [
+            "|",
+            "^",
+            "~"
+          ]
+        }
+      }
+    },
+    "values": {
+      "type": "object",
+      "description": "A object with key : value pairs which constitutes a rule and floor",
+      "additionalProperties": {
+        "type": "number"
+      },
+      "minProperties": 1,
+      "examples": [
+        {
+          "123456/someSlot|300x250|www.prebid.org": 1.5,
+          "123456/someSlot|300x600|www.prebid.org": 2.5,
+          "123456/someSlot|300x600|*": 1.2,
+          "123456/someSlot|*|*": 0.8
+        }
+      ]
+    },
+    "currency": {
+      "type": "string",
+      "description": "The three digit Currency Code which the floors are provided in",
+      "examples": [
+        "USD",
+        "EUR",
+        "JPY"
+      ],
+      "pattern": "^[a-zA-Z]{3}$"
+    },
+    "modelVersion": {
+      "type": "string",
+      "description": "The floor modeling name to be used for tracking",
+      "examples": [
+        "Prebid-Floor-Model-1.2"
+      ]
+    },
+    "skipRate": {
+      "type": "integer",
+      "description": "The skip rate as to which flooring will be 'turned off' for a given auction",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "default": {
+      "type": "number",
+      "description": "The default floor to use if no entry in the value matches a bid response",
+      "examples": [
+        0.75
+      ]
+    }
+  }
+}

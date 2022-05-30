@@ -1,0 +1,12 @@
+{
+  "adUnitElementIDs": [
+    "div-test-ad-0",
+    "div-test-ad-1",
+    "div-test-ad-2"
+  ],
+  "adUnitCodes": [
+    "/19968336/header-bid-tag-0",
+    "/123456/header-bid-tag-1",
+    "/123456/header-bid-tag-2"
+  ]
+}
