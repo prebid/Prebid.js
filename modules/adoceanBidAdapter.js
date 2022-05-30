@@ -6,22 +6,25 @@ const BIDDER_CODE = 'adocean';
 function buildEndpointUrl(emiter, payloadMap) {
   const payload = [];
   _each(payloadMap, function(v, k) {
-    payload.push(k + '=' + encodeURIComponent(v));
+    payload.push(k + '=' + (k === 'schain' ? v : encodeURIComponent(v)));
   });
 
   const randomizedPart = Math.random().toString().slice(2);
   return 'https://' + emiter + '/_' + randomizedPart + '/ad.json?' + payload.join('&');
 }
 
-function buildRequest(masterBidRequests, masterId, gdprConsent) {
+function buildRequest(masterBidRequests, masterId, bidderRequest) {
   let emiter;
   const payload = {
     id: masterId,
     aosspsizes: []
   };
-  if (gdprConsent) {
-    payload.gdpr_consent = gdprConsent.consentString || undefined;
-    payload.gdpr = gdprConsent.gdprApplies ? 1 : 0;
+  if (bidderRequest.gdprConsent) {
+    payload.gdpr_consent = bidderRequest.gdprConsent.consentString || undefined;
+    payload.gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
+  }
+  if (bidderRequest.schain) {
+    payload.schain = serializeSupplyChain(bidderRequest.schain);
   }
 
   const bidIdMap = {};
@@ -46,6 +49,29 @@ function buildRequest(masterBidRequests, masterId, gdprConsent) {
     data: '',
     bidIdMap: bidIdMap
   };
+}
+
+const SCHAIN_FIELDS = ['asi', 'sid', 'hp', 'rid', 'name', 'domain', 'ext'];
+function serializeSupplyChain(schain) {
+  const header = `${schain.ver},${schain.complete}!`;
+
+  const serializedEntries = [];
+  for (const node of schain.nodes) {
+    serializedEntries.push(SCHAIN_FIELDS
+      .map(fieldName => {
+        if (fieldName === 'ext') {
+          // do not serialize ext data, just mark if it was available
+          return ('ext' in schain.nodes ? '1' : '0');
+        }
+        if (node[fieldName]) {
+          return encodeURIComponent(node[fieldName]).replaceAll('!', '%21');
+        }
+        return '';
+      })
+      .join(','));
+  }
+
+  return header + serializedEntries.join('!');
 }
 
 function assignToMaster(bidRequest, bidRequestsByMaster) {
@@ -112,7 +138,7 @@ export const spec = {
 
     _each(bidRequestsByMaster, function(masterRequests, masterId) {
       _each(masterRequests, function(instanceRequests) {
-        requests.push(buildRequest(instanceRequests, masterId, bidderRequest.gdprConsent));
+        requests.push(buildRequest(instanceRequests, masterId, bidderRequest));
       });
     });
 
