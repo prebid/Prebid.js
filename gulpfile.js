@@ -144,9 +144,7 @@ function makeWebpackPkg() {
     delete cloned.devtool;
   }
 
-  /* gu-mod-start */
-  var externalModules = helpers.getModulesToInclude();
-  /* gu-mod-end */
+  var externalModules = helpers.getArgModules();
 
   const analyticsSources = helpers.getAnalyticsSources();
   const moduleSources = helpers.getModulePaths(externalModules);

@@ -70,35 +70,6 @@ module.exports = {
 
     return modules;
   },
-
-  /* gu-mod-start */
-  // Ensure only the ones in modules.json are built
-  getModulesToInclude() {
-    let modules;
-    const moduleFile = 'modules.json';
-    try {
-      modules = JSON.parse(fs.readFileSync(moduleFile, 'utf8'));
-    } catch (e) {
-      throw new gutil.PluginError({
-        plugin: 'modules',
-        message: 'failed reading: ' + moduleFile
-      });
-    }
-
-    // we need to forcefully include the parentModule if the subModule is present
-    Object.keys(submodules).forEach(parentModule => {
-      if (
-        !modules.includes(parentModule) &&
-        modules.some(module => submodules[parentModule].includes(module))
-      ) {
-        modules.unshift(parentModule);
-      }
-    });
-
-    return modules;
-  },
-  /* gu-mod-end */
-
   getModules: _.memoize(function(externalModules) {
     externalModules = externalModules || [];
     var internalModules;
