@@ -12,7 +12,8 @@ const _approvedLoadExternalJSList = [
   'brandmetrics',
   'justtag',
   'akamaidap',
-  'ftrackId'
+  'ftrackId',
+  'inskin'
 ]
 
 /**
