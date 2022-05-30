@@ -49,7 +49,8 @@ module.exports = {
     rules: [
       /* gu-mod-start */
       {
-        // Transform @guardian packages as per the recommendations https://git.io/J3Pk4
+        // Transform @guardian packages as per the recommendations:
+        // https://github.com/guardian/recommendations/blob/main/npm-packages.md#using-guardian-npm-packages
         test: /\.m?(j|t)sx?$/,
         exclude: {
           and: [/node_modules/],
