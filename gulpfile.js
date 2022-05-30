@@ -128,6 +128,12 @@ function makeDevpackPkg() {
   return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
     .pipe(helpers.nameModules(externalModules))
     .pipe(webpackStream(cloned, webpack))
+    /* gu-mod-start */
+    // Surface exceptions from webpack
+    .on('error', (err) => {
+      console.error(err);
+    })
+    /* gu-mod-end */
     .pipe(gulp.dest('build/dev'))
     .pipe(connect.reload());
 }
@@ -148,6 +154,12 @@ function makeWebpackPkg() {
   return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
     .pipe(helpers.nameModules(externalModules))
     .pipe(webpackStream(cloned, webpack))
+    /* gu-mod-start */
+    // Surface exceptions from webpack
+    .on('error', (err) => {
+      console.error(err);
+    })
+    /* gu-mod-end */
     .pipe(gulp.dest('build/dist'));
 }
 
