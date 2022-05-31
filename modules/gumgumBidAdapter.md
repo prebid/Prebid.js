@@ -63,7 +63,7 @@ var adUnits = [
         bidder: 'gumgum',
         params: {
           zone: 'dc9d6be1', // GumGum Zone ID given to the client
-          skin: true
+          product: 'skin',
           bidfloor: 0.03 // CPM bid floor
         }
       }
