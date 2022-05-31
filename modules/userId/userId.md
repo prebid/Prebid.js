@@ -74,16 +74,6 @@ pbjs.setConfig({
                 partner: "30182847-e426-4ff9-b2b5-9ca1324ea09b"
             }
         },{
-            name: 'akamaiDAPId',
-            params: {
-              apiHostname: '<see your Akamai account rep>',
-              domain: 'your-domain.com',
-              type: 'email' | 'mobile' | ... | 'dap-signature:1.0.0',
-              identity: ‘your@email.com’ | ‘6175551234' | ...,
-              apiVersion: 'v1' | 'x1',
-              attributes: '{ "cohorts": [ "3:14400", "5:14400", "7:0" ],"first_name": "...","last_name": "..." }'
-            }
-        },{
             name: 'identityLink',
             params: {
                 pid: '999', // Set your real identityLink placement ID here
@@ -286,13 +276,6 @@ pbjs.setConfig({
             name: "deepintentId",
             storage: {
                 type: "html5",
-                name: "_dpes_id",
-                expires: 90
-            }
-        },{
-            name: "deepintentId",
-            storage: {
-                type: "cookie",
                 name: "_dpes_id",
                 expires: 90
             }

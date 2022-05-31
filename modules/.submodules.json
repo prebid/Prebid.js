@@ -3,7 +3,6 @@
     "33acrossIdSystem",
     "admixerIdSystem",
     "adtelligentIdSystem",
-    "akamaiDAPIdSystem",
     "amxIdSystem",
     "britepoolIdSystem",
     "connectIdSystem",
@@ -14,7 +13,6 @@
     "dmdIdSystem",
     "fabrickIdSystem",
     "hadronIdSystem",
-    "haloIdSystem",
     "id5IdSystem",
     "ftrackIdSystem",
     "identityLinkIdSystem",
@@ -50,6 +48,7 @@
   ],
   "rtdModule": [
     "airgridRtdProvider",
+    "akamaiDapRtdProvider",
     "browsiRtdProvider",
     "dgkeywordRtdProvider",
     "geoedgeRtdProvider",

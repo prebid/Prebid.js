@@ -619,6 +619,14 @@ describe('TheMediaGrid Adapter', function () {
       }, ...userData]);
     });
 
+    it('should have site.content.id filled from config ortb2.site.content.id', function () {
+      const contentId = 'jw_abc';
+      const ortb2 = {site: {content: {id: contentId}}};
+      const request = spec.buildRequests([bidRequests[0]], {...bidderRequest, ortb2});
+      const payload = parseRequest(request.data);
+      expect(payload.site.content.id).to.equal(contentId);
+    });
+
     it('should be right tmax when timeout in config is less then timeout in bidderRequest', function() {
       const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
         arg => arg === 'bidderTimeout' ? 2000 : null);
