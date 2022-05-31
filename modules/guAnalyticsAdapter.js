@@ -117,11 +117,23 @@ function isValid(events) {
   return events.length > 0 && (events[0].ev === 'init' || events[0].ev === 'bidwon');
 }
 
+function logEvents(events) {
+  const isBid = events[0]?.ev === 'init';
+  const isBidWon = events[0]?.ev === 'bidwon';
+  let logMsg = '';
+  if (isBid) {
+    const slotId = events?.find(e => e.sid)?.sid;
+    logMsg = `bids for ${slotId}`;
+  } else if (isBidWon) {
+    const bidId = events[0]?.bid;
+    logMsg = `bid won ${bidId}`;
+  }
+  log('commercial', `Prebid.js events ${logMsg}`, events);
+}
+
 analyticsAdapter.ajaxCall = function ajaxCall(data) {
   const url = `${analyticsAdapter.context.ajaxUrl}/commercial/api/hb`;
-  const callback = (data) => {
-    log('commercial', 'Prebid.js events', JSON.parse(data).hb_ev)
-  };
+  const callback = (data) => logEvents(JSON.parse(data).hb_ev);
   const options = {
     method: 'POST',
     contentType: 'text/plain; charset=utf-8'
