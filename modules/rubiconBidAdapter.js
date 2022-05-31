@@ -1004,7 +1004,8 @@ function applyFPD(bidRequest, mediaType, data) {
   if (bidRequest.params.keywords) BID_FPD.site.keywords = (isArray(bidRequest.params.keywords)) ? bidRequest.params.keywords.join(',') : bidRequest.params.keywords;
 
   let fpd = mergeDeep({}, config.getConfig('ortb2') || {}, BID_FPD);
-  let impData = deepAccess(bidRequest.ortb2Imp, 'ext.data') || {};
+  let impExt = deepAccess(bidRequest.ortb2Imp, 'ext') || {};
+  let impExtData = deepAccess(bidRequest.ortb2Imp, 'ext.data') || {};
 
   const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
   const SEGTAX = {user: [4], site: [1, 2, 5, 6]};
@@ -1049,11 +1050,11 @@ function applyFPD(bidRequest, mediaType, data) {
         }
       });
     });
-    Object.keys(impData).forEach((key) => {
+    Object.keys(impExtData).forEach((key) => {
       if (key !== 'adserver') {
-        addBannerData(impData[key], 'site', key);
-      } else if (impData[key].name === 'gam') {
-        addBannerData(impData[key].adslot, name, key)
+        addBannerData(impExtData[key], 'site', key);
+      } else if (impExtData[key].name === 'gam') {
+        addBannerData(impExtData[key].adslot, name, key)
       }
     });
 
@@ -1067,8 +1068,8 @@ function applyFPD(bidRequest, mediaType, data) {
       delete data['tg_i.dfp_ad_unit_code'];
     }
   } else {
-    if (Object.keys(impData).length) {
-      mergeDeep(data.imp[0].ext, {data: impData});
+    if (Object.keys(impExt).length) {
+      mergeDeep(data.imp[0].ext, impExt);
     }
     // add in gpid
     if (gpid) {

@@ -1629,6 +1629,47 @@ describe('the rubicon adapter', function () {
           expect(post.ext.prebid.bidders.rubicon.integration).to.equal(PBS_INTEGRATION);
         });
 
+        describe('ortb2imp sent to video bids', function () {
+          beforeEach(function () {
+            // initialize
+            if (bidderRequest.bids[0].hasOwnProperty('ortb2Imp')) {
+              delete bidderRequest.bids[0].ortb2Imp;
+            }
+          });
+
+          it('should add ortb values to video requests', function () {
+            createVideoBidderRequest();
+
+            sandbox.stub(Date, 'now').callsFake(() =>
+              bidderRequest.auctionStart + 100
+            );
+
+            bidderRequest.bids[0].ortb2Imp = {
+              ext: {
+                gpid: '/test/gpid',
+                data: {
+                  pbadslot: '/test/pbadslot'
+                },
+                prebid: {
+                  storedauctionresponse: {
+                    id: 'sample_video_response'
+                  }
+                }
+              }
+            }
+
+            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            let post = request.data;
+
+            expect(post).to.have.property('imp');
+            // .with.length.of(1);
+            let imp = post.imp[0];
+            expect(imp.ext.gpid).to.equal('/test/gpid');
+            expect(imp.ext.data.pbadslot).to.equal('/test/pbadslot');
+            expect(imp.ext.prebid.storedauctionresponse.id).to.equal('sample_video_response');
+          });
+        });
+
         it('should correctly set bidfloor on imp when getfloor in scope', function () {
           createVideoBidderRequest();
           // default getFloor response is empty object so should not break and not send hard_floor
