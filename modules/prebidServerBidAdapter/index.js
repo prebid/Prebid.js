@@ -39,6 +39,7 @@ import { S2S_VENDORS } from './config.js';
 import { ajax } from '../../src/ajax.js';
 import {hook} from '../../src/hook.js';
 import {getGlobal} from '../../src/prebidGlobal.js';
+import {hasPurpose1Consent} from '../../src/utils/gpdr.js';
 
 const getConfig = config.getConfig;
 
@@ -1152,16 +1153,6 @@ function bidWonHandler(bid) {
     // remove from wurl cache, since the wurl url was called
     removeWurl(bid.auctionId, bid.adId);
   }
-}
-
-function hasPurpose1Consent(gdprConsent) {
-  let result = true;
-  if (gdprConsent) {
-    if (gdprConsent.gdprApplies && gdprConsent.apiVersion === 2) {
-      result = !!(deepAccess(gdprConsent, 'vendorData.purpose.consents.1') === true);
-    }
-  }
-  return result;
 }
 
 function getMatchingConsentUrl(urlProp, gdprConsent) {

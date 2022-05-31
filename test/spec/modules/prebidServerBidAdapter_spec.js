@@ -645,6 +645,14 @@ describe('S2S Adapter', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
 
+    function mockConsent({applies = true, hasP1Consent = true} = {}) {
+      return {
+        consentString: 'mockConsent',
+        gdprApplies: applies,
+        vendorData: {purpose: {consents: {1: hasP1Consent}}},
+      }
+    }
+
     describe('gdpr tests', function () {
       afterEach(function () {
         $$PREBID_GLOBAL$$.requestBids.removeAll();
@@ -655,16 +663,13 @@ describe('S2S Adapter', function () {
         config.setConfig(consentConfig);
 
         let gdprBidRequest = utils.deepClone(BID_REQUESTS);
-        gdprBidRequest[0].gdprConsent = {
-          consentString: 'abc123',
-          gdprApplies: true
-        };
+        gdprBidRequest[0].gdprConsent = mockConsent();
 
         adapter.callBids(REQUEST, gdprBidRequest, addBidResponse, done, ajax);
         let requestBid = JSON.parse(server.requests[0].requestBody);
 
         expect(requestBid.regs.ext.gdpr).is.equal(1);
-        expect(requestBid.user.ext.consent).is.equal('abc123');
+        expect(requestBid.user.ext.consent).is.equal('mockConsent');
 
         config.resetConfig();
         config.setConfig({ s2sConfig: CONFIG });
@@ -681,17 +686,15 @@ describe('S2S Adapter', function () {
         config.setConfig(consentConfig);
 
         let gdprBidRequest = utils.deepClone(BID_REQUESTS);
-        gdprBidRequest[0].gdprConsent = {
-          consentString: 'abc123',
+        gdprBidRequest[0].gdprConsent = Object.assign(mockConsent(), {
           addtlConsent: 'superduperconsent',
-          gdprApplies: true
-        };
+        });
 
         adapter.callBids(REQUEST, gdprBidRequest, addBidResponse, done, ajax);
         let requestBid = JSON.parse(server.requests[0].requestBody);
 
         expect(requestBid.regs.ext.gdpr).is.equal(1);
-        expect(requestBid.user.ext.consent).is.equal('abc123');
+        expect(requestBid.user.ext.consent).is.equal('mockConsent');
         expect(requestBid.user.ext.ConsentedProvidersSettings.consented_providers).is.equal('superduperconsent');
 
         config.resetConfig();
@@ -713,10 +716,7 @@ describe('S2S Adapter', function () {
 
         let gdprBidRequest = utils.deepClone(BID_REQUESTS);
 
-        gdprBidRequest[0].gdprConsent = {
-          consentString: 'abc123def',
-          gdprApplies: true
-        };
+        gdprBidRequest[0].gdprConsent = mockConsent();
 
         const s2sBidRequest = utils.deepClone(REQUEST);
         s2sBidRequest.s2sConfig = cookieSyncConfig;
@@ -725,7 +725,7 @@ describe('S2S Adapter', function () {
         let requestBid = JSON.parse(server.requests[0].requestBody);
 
         expect(requestBid.gdpr).is.equal(1);
-        expect(requestBid.gdpr_consent).is.equal('abc123def');
+        expect(requestBid.gdpr_consent).is.equal('mockConsent');
         expect(requestBid.bidders).to.contain('appnexus').and.to.have.lengthOf(1);
         expect(requestBid.account).is.equal('1');
       });
@@ -741,10 +741,7 @@ describe('S2S Adapter', function () {
         s2sBidRequest.s2sConfig = cookieSyncConfig;
 
         let gdprBidRequest = utils.deepClone(BID_REQUESTS);
-        gdprBidRequest[0].gdprConsent = {
-          consentString: 'xyz789abcc',
-          gdprApplies: false
-        };
+        gdprBidRequest[0].gdprConsent = mockConsent({applies: false});
 
         adapter.callBids(s2sBidRequest, gdprBidRequest, addBidResponse, done, ajax);
         let requestBid = JSON.parse(server.requests[0].requestBody);
@@ -761,10 +758,7 @@ describe('S2S Adapter', function () {
         config.setConfig(consentConfig);
 
         let gdprBidRequest = utils.deepClone(BID_REQUESTS);
-        gdprBidRequest[0].gdprConsent = {
-          consentString: undefined,
-          gdprApplies: false
-        };
+        gdprBidRequest[0].gdprConsent = mockConsent({applies: false});
 
         const s2sBidRequest = utils.deepClone(REQUEST);
         s2sBidRequest.s2sConfig = cookieSyncConfig;
@@ -832,17 +826,14 @@ describe('S2S Adapter', function () {
 
         let consentBidRequest = utils.deepClone(BID_REQUESTS);
         consentBidRequest[0].uspConsent = '1NYN';
-        consentBidRequest[0].gdprConsent = {
-          consentString: 'abc123',
-          gdprApplies: true
-        };
+        consentBidRequest[0].gdprConsent = mockConsent();
 
         adapter.callBids(REQUEST, consentBidRequest, addBidResponse, done, ajax);
         let requestBid = JSON.parse(server.requests[0].requestBody);
 
         expect(requestBid.regs.ext.us_privacy).is.equal('1NYN');
         expect(requestBid.regs.ext.gdpr).is.equal(1);
-        expect(requestBid.user.ext.consent).is.equal('abc123');
+        expect(requestBid.user.ext.consent).is.equal('mockConsent');
 
         config.resetConfig();
         config.setConfig({ s2sConfig: CONFIG });
@@ -861,10 +852,7 @@ describe('S2S Adapter', function () {
 
         let consentBidRequest = utils.deepClone(BID_REQUESTS);
         consentBidRequest[0].uspConsent = '1YNN';
-        consentBidRequest[0].gdprConsent = {
-          consentString: 'abc123def',
-          gdprApplies: true
-        };
+        consentBidRequest[0].gdprConsent = mockConsent();
 
         const s2sBidRequest = utils.deepClone(REQUEST);
         s2sBidRequest.s2sConfig = cookieSyncConfig
@@ -874,7 +862,7 @@ describe('S2S Adapter', function () {
 
         expect(requestBid.us_privacy).is.equal('1YNN');
         expect(requestBid.gdpr).is.equal(1);
-        expect(requestBid.gdpr_consent).is.equal('abc123def');
+        expect(requestBid.gdpr_consent).is.equal('mockConsent');
         expect(requestBid.bidders).to.contain('appnexus').and.to.have.lengthOf(1);
         expect(requestBid.account).is.equal('1');
       });
