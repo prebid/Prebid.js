@@ -10,8 +10,7 @@ import {config} from '../src/config.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {submodule} from '../src/hook.js';
-import * as utils from '../src/utils.js'
-import {isFn, isStr, isArray, deepEqual, isPlainObject, logError} from '../src/utils.js';
+import {isFn, isStr, isArray, deepEqual, isPlainObject, logError, logInfo} from '../src/utils.js';
 import {loadExternalScript} from '../src/adloader.js';
 
 const LOG_PREFIX = 'User ID - HadronRtdProvider submodule: ';
@@ -181,7 +180,7 @@ export function getRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
     const hadronIdUrl = rtdConfig.params && rtdConfig.params.hadronIdUrl;
     const scriptUrl = paramOrDefault(hadronIdUrl, HADRON_ID_DEFAULT_URL, userIds);
     loadExternalScript(scriptUrl, 'hadron', () => {
-      utils.logInfo(LOG_PREFIX, 'hadronIdTag loaded', scriptUrl);
+      logInfo(LOG_PREFIX, 'hadronIdTag loaded', scriptUrl);
     })
   }
 }
