@@ -809,6 +809,7 @@ describe('YahooSSP Bid Adapter:', () => {
   describe('Request Headers validation:', () => {
     it('should return request objects with the relevant custom headers and content type declaration', () => {
       const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      bidderRequest.gdprConsent.gdprApplies = false;
       const options = spec.buildRequests(validBidRequests, bidderRequest).options;
       expect(options).to.deep.equal(
         {

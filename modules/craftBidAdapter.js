@@ -1,7 +1,6 @@
 import {
   convertCamelToUnderscore,
   convertTypes,
-  deepAccess,
   getBidRequest,
   isArray,
   isEmpty,
