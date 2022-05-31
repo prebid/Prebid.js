@@ -496,6 +496,16 @@ describe('unicornBidAdapterTest', () => {
   });
 
   describe('buildBidRequest', () => {
+    before(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        unicorn: {
+          storageAllowed: true
+        }
+      };
+    });
+    after(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {};
+    });
     it('buildBidRequest', () => {
       const req = spec.buildRequests(validBidRequests, bidderRequest);
       const removeUntestableAttrs = data => {

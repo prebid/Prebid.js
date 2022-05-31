@@ -18,6 +18,11 @@ export const novatiqIdSubmodule = {
  * @type {string}
  */
   name: 'novatiq',
+  /**
+   * used to specify vendor id
+   * @type {number}
+   */
+  gvlid: 1119,
 
   /**
  * decode the stored id value for passing to bid requests
@@ -202,7 +207,7 @@ export const novatiqIdSubmodule = {
     let sharedId = null;
     if (this.useSharedId(configParams)) {
       let cookieOrStorageID = this.getCookieOrStorageID(configParams);
-      const storage = getStorageManager({moduleName: 'pubCommonId'});
+      const storage = getStorageManager({gvlid: this.gvlid, moduleName: 'pubCommonId'});
 
       // first check local storage
       if (storage.hasLocalStorage()) {

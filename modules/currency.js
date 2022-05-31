@@ -5,6 +5,7 @@ import CONSTANTS from '../src/constants.json';
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 import { getHook } from '../src/hook.js';
+import {promiseControls} from '../src/utils/promise.js';
 
 const DEFAULT_CURRENCY_RATE_URL = 'https://cdn.jsdelivr.net/gh/prebid/currency-file@1/latest.json?date=$$TODAY$$';
 const CURRENCY_RATE_PRECISION = 4;
@@ -21,22 +22,12 @@ var bidderCurrencyDefault = {};
 var defaultRates;
 
 export const ready = (() => {
-  let isDone, resolver, promise;
+  let ctl;
   function reset() {
-    isDone = false;
-    resolver = null;
-    promise = new Promise((resolve) => {
-      resolver = resolve;
-      if (isDone) resolve();
-    })
-  }
-  function done() {
-    isDone = true;
-    if (resolver != null) { resolver() }
+    ctl = promiseControls();
   }
   reset();
-
-  return {done, reset, promise: () => promise}
+  return {done: () => ctl.resolve(), reset, promise: () => ctl.promise}
 })();
 
 /**

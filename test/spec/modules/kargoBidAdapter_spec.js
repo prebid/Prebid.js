@@ -37,6 +37,11 @@ describe('kargo adapter tests', function () {
     var bids, undefinedCurrency, noAdServerCurrency, cookies = [], localStorageItems = [], sessionIds = [], requestCount = 0;
 
     beforeEach(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        kargo: {
+          storageAllowed: true
+        }
+      };
       undefinedCurrency = false;
       noAdServerCurrency = false;
       sandbox.stub(config, 'getConfig').callsFake(function(key) {
@@ -95,6 +100,7 @@ describe('kargo adapter tests', function () {
 
       cookies.length = 0;
       localStorageItems.length = 0;
+      $$PREBID_GLOBAL$$.bidderSettings = {};
     });
 
     function setCookie(cname, cvalue, exdays = 1) {
@@ -451,6 +457,17 @@ describe('kargo adapter tests', function () {
           adm: '<div id="4"></div>',
           width: 300,
           height: 250,
+          mediaType: 'banner',
+          metadata: {},
+          currency: 'EUR'
+        },
+        5: {
+          id: 'bar',
+          cpm: 2.5,
+          adm: '<VAST></VAST>',
+          width: 300,
+          height: 250,
+          mediaType: 'video',
           metadata: {},
           currency: 'EUR'
         }
@@ -476,6 +493,11 @@ describe('kargo adapter tests', function () {
           params: {
             placementId: 'bar'
           }
+        }, {
+          bidId: 5,
+          params: {
+            placementId: 'bar'
+          }
         }]
       });
       var expectation = [{
@@ -489,7 +511,10 @@ describe('kargo adapter tests', function () {
         dealId: undefined,
         netRevenue: true,
         currency: 'USD',
-        meta: undefined
+        mediaType: 'banner',
+        meta: {
+          mediaType: 'banner'
+        }
       }, {
         requestId: '2',
         cpm: 2.5,
@@ -501,7 +526,9 @@ describe('kargo adapter tests', function () {
         dealId: 'dmpmptest1234',
         netRevenue: true,
         currency: 'USD',
+        mediaType: 'banner',
         meta: {
+          mediaType: 'banner',
           clickUrl: 'https://foobar.com',
           advertiserDomains: ['https://foobar.com']
         }
@@ -516,7 +543,10 @@ describe('kargo adapter tests', function () {
         dealId: undefined,
         netRevenue: true,
         currency: 'USD',
-        meta: undefined
+        mediaType: 'banner',
+        meta: {
+          mediaType: 'banner'
+        }
       }, {
         requestId: '4',
         cpm: 2.5,
@@ -528,7 +558,25 @@ describe('kargo adapter tests', function () {
         dealId: undefined,
         netRevenue: true,
         currency: 'EUR',
-        meta: undefined
+        mediaType: 'banner',
+        meta: {
+          mediaType: 'banner'
+        }
+      }, {
+        requestId: '5',
+        cpm: 2.5,
+        width: 300,
+        height: 250,
+        vastXml: '<VAST></VAST>',
+        ttl: 300,
+        creativeId: 'bar',
+        dealId: undefined,
+        netRevenue: true,
+        currency: 'EUR',
+        mediaType: 'video',
+        meta: {
+          mediaType: 'video'
+        }
       }];
       expect(resp).to.deep.equal(expectation);
     });

@@ -11,6 +11,7 @@ import { auctionManager } from '../src/auctionManager.js';
 import { gdprDataHandler, uspDataHandler } from '../src/adapterManager.js';
 import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
+import {getPPID} from '../src/adserver.js';
 
 /**
  * @typedef {Object} DfpVideoParams
@@ -117,6 +118,13 @@ export function buildDfpVideoUrl(options) {
 
   const uspConsent = uspDataHandler.getConsentData();
   if (uspConsent) { queryParams.us_privacy = uspConsent; }
+
+  if (!queryParams.ppid) {
+    const ppid = getPPID();
+    if (ppid != null) {
+      queryParams.ppid = ppid;
+    }
+  }
 
   return buildUrl(Object.assign({
     protocol: 'https',

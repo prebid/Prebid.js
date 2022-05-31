@@ -1371,7 +1371,7 @@ describe('S2S Adapter', function () {
       config.setConfig({ s2sConfig: CONFIG });
 
       const aliasBidder = {
-        bidder: 'brealtime',
+        bidder: 'beintoo',
         params: { placementId: '123456' }
       };
 
@@ -1384,7 +1384,7 @@ describe('S2S Adapter', function () {
       expect(requestBid.ext).to.haveOwnProperty('prebid');
       expect(requestBid.ext.prebid).to.deep.include({
         aliases: {
-          brealtime: 'appnexus'
+          beintoo: 'appnexus'
         },
         auctiontimestamp: 1510852447530,
         targeting: {
@@ -3196,6 +3196,27 @@ describe('S2S Adapter', function () {
       let requestBid = JSON.parse(server.requests[0].requestBody);
 
       expect(requestBid.ext.prebid.debug).is.equal(true);
+    });
+
+    it('should correctly add floors flag', function () {
+      let bidRequest = utils.deepClone(BID_REQUESTS);
+
+      // should not pass if floorData is undefined
+      adapter.callBids(REQUEST, bidRequest, addBidResponse, done, ajax);
+      let requestBid = JSON.parse(server.requests[0].requestBody);
+
+      expect(requestBid.ext.prebid.floors).to.be.undefined;
+
+      // should pass of floorData is object
+      bidRequest[0].bids[0].floorData = {
+        skipped: false,
+        location: 'fetch',
+      }
+
+      adapter.callBids(REQUEST, bidRequest, addBidResponse, done, ajax);
+      requestBid = JSON.parse(server.requests[1].requestBody);
+
+      expect(requestBid.ext.prebid.floors).to.deep.equal({ enabled: false });
     });
   });
 });

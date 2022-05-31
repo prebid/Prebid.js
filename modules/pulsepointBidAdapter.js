@@ -45,7 +45,7 @@ export const spec = {
       site: site(bidRequests, bidderRequest),
       app: app(bidRequests),
       device: device(),
-      bcat: bidRequests[0].params.bcat,
+      bcat: deepAccess(bidderRequest.ortb2Imp, 'bcat') || bidRequests[0].params.bcat,
       badv: bidRequests[0].params.badv,
       user: user(bidRequests[0], bidderRequest),
       regs: regs(bidderRequest),

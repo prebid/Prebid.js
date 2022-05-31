@@ -337,12 +337,18 @@ describe('E-Planning Adapter', function () {
     let getWindowSelfStub;
     let innerWidth;
     beforeEach(() => {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        eplanning: {
+          storageAllowed: true
+        }
+      };
       sandbox = sinon.sandbox.create();
       getWindowSelfStub = sandbox.stub(utils, 'getWindowSelf');
       getWindowSelfStub.returns(createWindow(800));
     });
 
     afterEach(() => {
+      $$PREBID_GLOBAL$$.bidderSettings = {};
       sandbox.restore();
     });
 
@@ -721,6 +727,11 @@ describe('E-Planning Adapter', function () {
       });
     }
     beforeEach(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        eplanning: {
+          storageAllowed: true
+        }
+      };
       getLocalStorageSpy = sandbox.spy(storage, 'getDataFromLocalStorage');
       setDataInLocalStorageSpy = sandbox.spy(storage, 'setDataInLocalStorage');
 
@@ -733,6 +744,7 @@ describe('E-Planning Adapter', function () {
       focusStub.returns(true);
     });
     afterEach(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {};
       sandbox.restore();
       if (document.getElementById(ADUNIT_CODE_VIEW)) {
         document.body.removeChild(element);

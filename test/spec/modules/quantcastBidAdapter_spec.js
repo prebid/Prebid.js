@@ -19,7 +19,15 @@ describe('Quantcast adapter', function () {
   let bidRequest;
   let bidderRequest;
 
+  afterEach(function () {
+    $$PREBID_GLOBAL$$.bidderSettings = {};
+  });
   beforeEach(function () {
+    $$PREBID_GLOBAL$$.bidderSettings = {
+      quantcast: {
+        storageAllowed: true
+      }
+    };
     bidRequest = {
       bidder: 'quantcast',
       bidId: '2f7b179d443f14',
