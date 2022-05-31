@@ -180,7 +180,7 @@ export function getRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
     }
     const hadronIdUrl = rtdConfig.params && rtdConfig.params.hadronIdUrl;
     const scriptUrl = paramOrDefault(hadronIdUrl, HADRON_ID_DEFAULT_URL, userIds);
-    loadExternalScript(scriptUrl, 'hadronIdTag', () => {
+    loadExternalScript(scriptUrl, 'hadron', () => {
       utils.logInfo(LOG_PREFIX, 'hadronIdTag loaded', scriptUrl);
     })
   }
