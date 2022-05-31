@@ -9,10 +9,10 @@ const EVENTS_ENDPOINT = `events.${DOMAIN}/diag`;
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: 102,
+  gvlid: 202,
   aliases: [
-    { code: 'tremor', gvlid: 102 },
-    { code: 'tremorvideo', gvlid: 102 }
+    { code: 'tremor', gvlid: 202 },
+    { code: 'tremorvideo', gvlid: 202 }
   ],
   supportedMediaTypes: [VIDEO],
   /**
