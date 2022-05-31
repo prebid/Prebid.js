@@ -56,7 +56,7 @@ function serializeSupplyChain(schain) {
   const header = `${schain.ver},${schain.complete}!`;
 
   const serializedEntries = [];
-  for (const node of schain.nodes) {
+  _each(schain.nodes, function(node) {
     serializedEntries.push(SCHAIN_FIELDS
       .map(fieldName => {
         if (fieldName === 'ext') {
@@ -64,12 +64,12 @@ function serializeSupplyChain(schain) {
           return ('ext' in schain.nodes ? '1' : '0');
         }
         if (node[fieldName]) {
-          return encodeURIComponent(node[fieldName]).replaceAll('!', '%21');
+          return encodeURIComponent(node[fieldName]).replace(/!/g, '%21');
         }
         return '';
       })
       .join(','));
-  }
+  });
 
   return header + serializedEntries.join('!');
 }

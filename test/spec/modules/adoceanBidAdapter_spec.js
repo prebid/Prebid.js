@@ -90,7 +90,7 @@ describe('AdoceanAdapter', function () {
         nodes: [
           {
             asi: 'directseller.com',
-            sid: '00001',
+            sid: '00001!,2',
             rid: 'BidRequest1',
             hp: 1
           }
@@ -154,7 +154,7 @@ describe('AdoceanAdapter', function () {
       expect(requests.some(e => e.url.includes('schain='))).to.be.false;
 
       requests = spec.buildRequests(bidRequests, {...bidRequests, ...schainExample});
-      expect(requests.every(e => e.url.includes('schain=1.0,1!directseller.com,00001,1,BidRequest1')),
+      expect(requests.every(e => e.url.includes('schain=1.0,1!directseller.com,00001%21%2C2,1,BidRequest1')),
         `One of urls does not contain valid schain param: ${requests.map(e => e.url).join('\n')}`).to.be.true;
     });
   });
