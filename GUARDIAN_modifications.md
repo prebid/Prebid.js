@@ -30,3 +30,27 @@ gulp build
 * We have built two analytics adapters:
     * an [adapter](/modules/guAnalyticsAdapter.js) to send analytics to the data lake
     * a simple console-logging [adapter](/modules/consoleLoggingAnalyticsAdapter.js)
+
+## How to Upgrade
+
+1. Make sure you have the latest commits to `guardian/Prebid.js`:
+    > git pull
+
+2. Check your remotes to see if you have upstream:
+   > git remote -v
+3. If not add upstream to your remotes:
+    > git remote add upstream git@github.com:prebid/Prebid.js.git
+4. Fetch all from upstream:
+    > git fetch --all
+5. Checkout a new branch e.g.:
+    > git checkout -b upgrade-v6.26.0
+5. You should now have all the release tags and you can merge a tag e.g.:
+    > git merge 6.26.0 
+6. Resolve any conflicts
+7. If you get a large `package-lock.json` conflict it is probably easier to regenerate it
+    > delete package-lock.json
+rm -rf ./node_modules
+npm ci
+8. Create new build
+    > npm run build
+9. Check in the new `build/dist` output
