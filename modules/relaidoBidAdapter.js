@@ -151,9 +151,6 @@ function interpretResponse(serverResponse, bidRequest) {
     }
     bidResponses.push(bidResponse);
   }
-
-  // eslint-disable-next-line no-console
-  console.log(JSON.stringify(bidResponses));
   return bidResponses;
 }
 
