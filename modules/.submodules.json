@@ -43,7 +43,8 @@
     "unifiedIdSystem",
     "verizonMediaIdSystem",
     "zeotapIdPlusIdSystem",
-    "adqueryIdSystem"
+    "adqueryIdSystem", 
+    "gravitoIdSystem"
   ],
   "adpod": [
     "freeWheelAdserverVideo",
@@ -51,6 +52,7 @@
   ],
   "rtdModule": [
     "airgridRtdProvider",
+    "akamaiDapRtdProvider",
     "browsiRtdProvider",
     "dgkeywordRtdProvider",
     "geoedgeRtdProvider",

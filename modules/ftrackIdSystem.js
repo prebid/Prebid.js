@@ -9,6 +9,7 @@ import * as utils from '../src/utils.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { uspDataHandler } from '../src/adapterManager.js';
+import { loadExternalScript } from '../src/adloader.js';
 
 const MODULE_NAME = 'ftrackId';
 const LOG_PREFIX = 'FTRACK - ';
@@ -17,7 +18,6 @@ const VENDOR_ID = null;
 const LOCAL_STORAGE = 'html5';
 const FTRACK_STORAGE_NAME = 'ftrackId';
 const FTRACK_PRIVACY_STORAGE_NAME = `${FTRACK_STORAGE_NAME}_privacy`;
-const FTRACK_URL = 'https://d9.flashtalking.com/d9core';
 const storage = getStorageManager({gvlid: VENDOR_ID, moduleName: MODULE_NAME});
 
 let consentInfo = {
@@ -102,11 +102,8 @@ export const ftrackIdSubmodule = {
           }
         }
 
-        if (config.params && config.params.url && config.params.url === FTRACK_URL) {
-          var ftrackScript = document.createElement('script');
-          ftrackScript.setAttribute('src', config.params.url);
-          window.document.body.appendChild(ftrackScript);
-        }
+        // Creates an async script element and appends it to the document
+        loadExternalScript(config.params.url, MODULE_NAME);
       }
     };
   },
@@ -146,8 +143,8 @@ export const ftrackIdSubmodule = {
       utils.logWarn(LOG_PREFIX + 'config.storage.name recommended to be "' + FTRACK_STORAGE_NAME + '".');
     }
 
-    if (!config.hasOwnProperty('params') || !config.params.hasOwnProperty('url') || config.params.url !== FTRACK_URL) {
-      utils.logWarn(LOG_PREFIX + 'config.params.url is required for ftrack to run. Url should be "' + FTRACK_URL + '".');
+    if (!config.hasOwnProperty('params') || !config.params.hasOwnProperty('url')) {
+      utils.logWarn(LOG_PREFIX + 'config.params.url is required for ftrack to run.');
       return false;
     }
 
