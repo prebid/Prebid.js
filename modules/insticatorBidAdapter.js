@@ -322,6 +322,13 @@ function validateVideo(bid) {
     return false;
   }
 
+  const mimes = deepAccess(bid, 'mediaTypes.video.mimes');
+
+  if (!Array.isArray(mimes) || mimes.length === 0) {
+    logError('insticator: mimes not specified');
+    return false;
+  }
+
   return true;
 }
 
