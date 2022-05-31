@@ -59,7 +59,7 @@ export const sharethroughAdapterSpec = {
           schain: bidRequests[0].schain,
         },
       },
-      bcat: bidRequests[0].params.bcat || [],
+      bcat: deepAccess(bidderRequest.ortb2Imp, 'bcat') || bidRequests[0].params.bcat || [],
       badv: bidRequests[0].params.badv || [],
       test: 0,
     };

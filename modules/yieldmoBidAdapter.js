@@ -353,7 +353,7 @@ function openRtbRequest(bidRequests, bidderRequest) {
     site: openRtbSite(bidRequests[0], bidderRequest),
     device: openRtbDevice(bidRequests[0]),
     badv: bidRequests[0].params.badv || [],
-    bcat: bidRequests[0].params.bcat || [],
+    bcat: deepAccess(bidderRequest, 'bcat') || bidRequests[0].params.bcat || [],
     ext: {
       prebid: '$prebid.version$',
     },

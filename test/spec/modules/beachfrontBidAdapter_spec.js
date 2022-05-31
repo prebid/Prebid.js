@@ -322,7 +322,7 @@ describe('BeachfrontAdapter', function () {
           tdid: '54017816',
           idl_env: '13024996',
           uid2: { id: '45843401' },
-          haloId: { haloId: '60314917', auSeg: ['segment1', 'segment2'] }
+          hadronId: { hadronId: '60314917', auSeg: ['segment1', 'segment2'] }
         };
         const bidRequest = bidRequests[0];
         bidRequest.mediaTypes = { video: {} };
@@ -360,7 +360,7 @@ describe('BeachfrontAdapter', function () {
           {
             source: 'audigent.com',
             uids: [{
-              id: userId.haloId,
+              id: userId.hadronId,
               atype: 1,
             }]
           }
@@ -543,7 +543,7 @@ describe('BeachfrontAdapter', function () {
           tdid: '54017816',
           idl_env: '13024996',
           uid2: { id: '45843401' },
-          haloId: { haloId: '60314917', auSeg: ['segment1', 'segment2'] }
+          hadronId: { hadronId: '60314917', auSeg: ['segment1', 'segment2'] }
         };
         const bidRequest = bidRequests[0];
         bidRequest.mediaTypes = { banner: {} };
@@ -553,7 +553,7 @@ describe('BeachfrontAdapter', function () {
         expect(data.tdid).to.equal(userId.tdid);
         expect(data.idl).to.equal(userId.idl_env);
         expect(data.uid2).to.equal(userId.uid2.id);
-        expect(data.haloid).to.equal(userId.haloId);
+        expect(data.hadronid).to.equal(userId.hadronId);
       });
     });
 

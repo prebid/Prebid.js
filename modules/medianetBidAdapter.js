@@ -44,7 +44,7 @@ mnData.urlData = {
   domain: refererInfo.domain,
   page: refererInfo.page,
   isTop: refererInfo.reachedTop
-}
+};
 
 $$PREBID_GLOBAL$$.medianetGlobals = $$PREBID_GLOBAL$$.medianetGlobals || {};
 

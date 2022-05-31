@@ -37,6 +37,11 @@ export const spec = {
         transactionId: bid.transactionId,
         timeout: config.getConfig('bidderTimeout'),
         bidId: bid.bidId,
+        /** positionType is undocumented
+        It is unclear what this parameter means.
+        If it means the same as pos in openRTB,
+        It should read from openRTB object
+        or from mediaTypes.banner.pos */
         positionType: bid.params.positionType || '',
         prebidVersion: '$prebid.version$'
       };
