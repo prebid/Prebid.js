@@ -35,7 +35,7 @@ describe('IncrementX', function () {
   describe('buildRequests', function () {
     let bidderRequest = {
       refererInfo: {
-        referer: 'https://www.test.com',
+        page: 'https://www.test.com',
         reachedTop: true,
         isAmp: false,
         numIframes: 0,
