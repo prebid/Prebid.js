@@ -27,7 +27,15 @@ describe('InsticatorBidAdapter', function () {
       banner: {
         sizes: [[300, 250], [300, 600]],
         pos: 4,
-      }
+      },
+      video: {
+        mimes: [
+          'video/mp4',
+          'video/mpeg',
+        ],
+        w: 250,
+        h: 300,
+      },
     },
     bidId: '30b31c1838de1e',
     ortb2Imp: {
@@ -115,6 +123,35 @@ describe('InsticatorBidAdapter', function () {
     it('should return true if there is banner sizes and no sizes', () => {
       bidRequest.mediaTypes.banner.sizes = [[300, 250], [300, 600]];
       expect(spec.isBidRequestValid({ ...bidRequest, ...{ sizes: {} } })).to.be.true;
+    });
+
+    it('should return true if there is video and video sizes', () => {
+      expect(spec.isBidRequestValid({
+        ...bidRequest,
+        ...{
+          mediaTypes: {
+            video: {
+              mimes: [
+                'video/mp4',
+                'video/mpeg',
+              ],
+              w: 250,
+              h: 300,
+            },
+          }
+        }
+      })).to.be.true;
+    });
+
+    it('should return false if there is no video sizes', () => {
+      expect(spec.isBidRequestValid({
+        ...bidRequest,
+        ...{
+          mediaTypes: {
+            video: {},
+          }
+        }
+      })).to.be.false;
     });
   });
 
@@ -239,6 +276,14 @@ describe('InsticatorBidAdapter', function () {
             { w: 300, h: 250 },
             { w: 300, h: 600 },
           ]
+        },
+        video: {
+          mimes: [
+            'video/mp4',
+            'video/mpeg',
+          ],
+          h: 300,
+          w: 250,
         },
         ext: {
           gpid: bidRequest.ortb2Imp.ext.gpid,
