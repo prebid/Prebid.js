@@ -46,7 +46,7 @@ describe('LiveIntentId', function() {
     let submoduleCallback = liveIntentIdSubmodule.getId(defaultConfigParams).callback;
     submoduleCallback(callBackSpy);
     let request = server.requests[1];
-    expect(request.url).to.match(/.*us_privacy=1YNY.*&gdpr=1&gdpr_consent=consentDataString.*/);
+    expect(request.url).to.match(/.*us_privacy=1YNY.*&gdpr=1&n3pc=1&gdpr_consent=consentDataString.*/);
     const response = {
       unifiedId: 'a_unified_id',
       segments: [123, 234]
@@ -66,7 +66,7 @@ describe('LiveIntentId', function() {
       consentString: 'consentDataString'
     })
     liveIntentIdSubmodule.getId(defaultConfigParams);
-    expect(server.requests[0].url).to.match(/https:\/\/rp.liadm.com\/j\?.*&us_privacy=1YNY.*&wpn=prebid.*&gdpr=1&gdpr_consent=consentDataString.*/);
+    expect(server.requests[0].url).to.match(/https:\/\/rp.liadm.com\/j\?.*&us_privacy=1YNY.*&wpn=prebid.*&gdpr=1&n3pc=1&n3pct=1&nb=1&gdpr_consent=consentDataString.*/);
   });
 
   it('should fire an event when getId and a hash is provided', function() {

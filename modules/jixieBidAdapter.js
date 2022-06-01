@@ -1,4 +1,4 @@
-import { logWarn, parseUrl, deepAccess, isArray } from '../src/utils.js';
+import { logWarn, parseUrl, deepAccess, isArray, getDNT } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -60,9 +60,16 @@ function fetchIds_() {
   return ret;
 }
 
+// device in the payload had been a simple string ('desktop', 'mobile')
+// Now changed to an object. yes the backend is able to handle it.
 function getDevice_() {
-  return ((/(ios|ipod|ipad|iphone|android|blackberry|iemobile|opera mini|webos)/i).test(navigator.userAgent)
-    ? 'mobile' : 'desktop');
+  const device = config.getConfig('device') || {};
+  device.w = device.w || window.innerWidth;
+  device.h = device.h || window.innerHeight;
+  device.ua = device.ua || navigator.userAgent;
+  device.dnt = getDNT() ? 1 : 0;
+  device.language = (navigator && navigator.language) ? navigator.language.split('-')[0] : '';
+  return device;
 }
 
 function pingTracking_(endpointOverride, qpobj) {
@@ -177,6 +184,7 @@ export const spec = {
     let ids = fetchIds_();
     let eids = [];
     let miscDims = internal.getMiscDims();
+    let schain = deepAccess(validBidRequests[0], 'schain');
 
     // all available user ids are sent to our backend in the standard array layout:
     if (validBidRequests[0].userId) {
@@ -202,6 +210,7 @@ export const spec = {
       mkeywords: miscDims.mkeywords,
       bids: bids,
       eids: eids,
+      schain: schain,
       pricegranularity: pg,
       cfg: jixieCfgBlob
     }, ids);
