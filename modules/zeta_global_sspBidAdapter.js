@@ -126,9 +126,10 @@ export const spec = {
     }
 
     provideEids(request, payload);
+    const url = params.shortname ? ENDPOINT_URL.concat('?shortname=', params.shortname) : ENDPOINT_URL;
     return {
       method: 'POST',
-      url: ENDPOINT_URL,
+      url: url,
       data: JSON.stringify(payload),
     };
   },
