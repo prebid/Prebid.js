@@ -549,14 +549,16 @@ function getPreparedBidForAuction({adUnitCode, bid, auctionId}, {index = auction
   events.emit(CONSTANTS.EVENTS.BID_ADJUSTMENT, bidObject);
 
   // a publisher-defined renderer can be used to render bids
-  const adUnitObject = index.getAdUnit(bidObject);
 
+  //// const adUnitObject = index.getAdUnit(bidObject);
+  //// bidObject.__sds_id__ = adUnitObject.__sds_id__;
+
+  const bidReq = bidderRequest && bidderRequest.bids && find(bidderRequest.bids, bid => bid.adUnitCode == adUnitCode && bid.bidId == bidObject.requestId);
   // bidObject.bidId = bidReq.bidId;
-  // bidObject.__sds_id__ = bidReq.__sds_id__;
-  bidObject.__sds_id__ = adUnitObject.__sds_id__;
+  bidObject.__sds_id__ = bidReq.__sds_id__;
 
-  // const adUnitRenderer = index.getAdUnit(bidObject).renderer;
-  const adUnitRenderer = adUnitObject.renderer;
+  //// const adUnitRenderer = adUnitObject.renderer;
+  const adUnitRenderer = index.getAdUnit(bidObject).renderer;
 
   // a publisher can also define a renderer for a mediaType
   const bidObjectMediaType = bidObject.mediaType;
