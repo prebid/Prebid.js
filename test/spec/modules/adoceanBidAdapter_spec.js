@@ -153,8 +153,9 @@ describe('AdoceanAdapter', function () {
       let requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(requests.some(e => e.url.includes('schain='))).to.be.false;
 
-      requests = spec.buildRequests(bidRequests, {...bidRequests, ...schainExample});
-      expect(requests.every(e => e.url.includes('schain=1.0,1!directseller.com,00001%21%2C2,1,BidRequest1')),
+      const bidsWithSchain = deepClone(bidRequests).map(e => ({...e, ...schainExample}));
+      requests = spec.buildRequests(bidsWithSchain, bidderRequest);
+      expect(requests.every(e => e.url.includes('schain=1.0,1!directseller.com,00001%21%2C2,1,BidRequest1,,,0')),
         `One of urls does not contain valid schain param: ${requests.map(e => e.url).join('\n')}`).to.be.true;
     });
   });

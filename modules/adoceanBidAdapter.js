@@ -13,18 +13,19 @@ function buildEndpointUrl(emiter, payloadMap) {
   return 'https://' + emiter + '/_' + randomizedPart + '/ad.json?' + payload.join('&');
 }
 
-function buildRequest(masterBidRequests, masterId, bidderRequest) {
+function buildRequest(masterBidRequests, masterId, gdprConsent) {
   let emiter;
   const payload = {
     id: masterId,
     aosspsizes: []
   };
-  if (bidderRequest.gdprConsent) {
-    payload.gdpr_consent = bidderRequest.gdprConsent.consentString || undefined;
-    payload.gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
+  if (gdprConsent) {
+    payload.gdpr_consent = gdprConsent.consentString || undefined;
+    payload.gdpr = gdprConsent.gdprApplies ? 1 : 0;
   }
-  if (bidderRequest.schain) {
-    payload.schain = serializeSupplyChain(bidderRequest.schain);
+  const anyKey = Object.keys(masterBidRequests)[0];
+  if (masterBidRequests[anyKey].schain) {
+    payload.schain = serializeSupplyChain(masterBidRequests[anyKey].schain);
   }
 
   const bidIdMap = {};
@@ -55,23 +56,24 @@ const SCHAIN_FIELDS = ['asi', 'sid', 'hp', 'rid', 'name', 'domain', 'ext'];
 function serializeSupplyChain(schain) {
   const header = `${schain.ver},${schain.complete}!`;
 
-  const serializedEntries = [];
+  const serializedNodes = [];
   _each(schain.nodes, function(node) {
-    serializedEntries.push(SCHAIN_FIELDS
+    const serializedNode = SCHAIN_FIELDS
       .map(fieldName => {
         if (fieldName === 'ext') {
           // do not serialize ext data, just mark if it was available
-          return ('ext' in schain.nodes ? '1' : '0');
+          return ('ext' in node ? '1' : '0');
         }
-        if (node[fieldName]) {
+        if (fieldName in node) {
           return encodeURIComponent(node[fieldName]).replace(/!/g, '%21');
         }
         return '';
       })
-      .join(','));
+      .join(',');
+    serializedNodes.push(serializedNode);
   });
 
-  return header + serializedEntries.join('!');
+  return header + serializedNodes.join('!');
 }
 
 function assignToMaster(bidRequest, bidRequestsByMaster) {
@@ -138,7 +140,7 @@ export const spec = {
 
     _each(bidRequestsByMaster, function(masterRequests, masterId) {
       _each(masterRequests, function(instanceRequests) {
-        requests.push(buildRequest(instanceRequests, masterId, bidderRequest));
+        requests.push(buildRequest(instanceRequests, masterId, bidderRequest.gdprConsent));
       });
     });
 
