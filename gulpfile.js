@@ -30,7 +30,7 @@ const execa = require('execa');
 
 var prebid = require('./package.json');
 var dateString = 'Updated : ' + (new Date()).toISOString().substring(0, 10);
-var banner = '/* <%= prebid.name %> v<%= prebid.version %>\n' + dateString + '*/\n';
+var banner = '/* <%= prebid.name %> v<%= prebid.version %>\n' + dateString + '\nModules: <%= modules %> */\n';
 var port = 9999;
 const INTEG_SERVER_HOST = argv.host ? argv.host : 'localhost';
 const INTEG_SERVER_PORT = 4444;
@@ -154,7 +154,7 @@ function addBanner() {
 
   return gulp.src(['build/dist/prebid-core.js'])
     .pipe(gulpif(sm, sourcemaps.init({loadMaps: true})))
-    .pipe(header(banner, {prebid}))
+    .pipe(header(banner, {prebid, modules: getModulesListToAddInBanner(helpers.getArgModules())}))
     .pipe(gulpif(sm, sourcemaps.write('.')))
     .pipe(gulp.dest('build/dist'))
 }
@@ -210,11 +210,7 @@ function bundle(dev, moduleArr) {
   gutil.log('Appending ' + prebid.globalVarName + '.processQueue();');
   gutil.log('Generating bundle:', outputFileName);
 
-  return gulp.src(
-    entries
-  )
-    // Need to uodate the "Modules: ..." section in comment with the current modules list
-    .pipe(replace(/(Modules: )(.*?)(\*\/)/, ('$1' + getModulesListToAddInBanner(helpers.getArgModules()) + ' $3')))
+  return gulp.src(entries)
     .pipe(gulpif(sm, sourcemaps.init({ loadMaps: true })))
     .pipe(concat(outputFileName))
     .pipe(gulpif(!argv.manualEnable, footer('\n<%= global %>.processQueue();', {
@@ -405,6 +401,7 @@ gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
 
 gulp.task('serve', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, test)));
 gulp.task('serve-fast', gulp.series(clean, gulp.parallel('build-bundle-dev', watchFast)));
+gulp.task('serve-prod', gulp.series(clean, gulp.parallel('build-bundle-prod', startLocalServer)));
 gulp.task('serve-and-test', gulp.series(clean, gulp.parallel('build-bundle-dev', watchFast, testTaskMaker({watch: true}))));
 gulp.task('serve-e2e', gulp.series(clean, 'build-bundle-prod', gulp.parallel(() => startIntegServer(), startLocalServer)))
 gulp.task('serve-e2e-dev', gulp.series(clean, 'build-bundle-dev', gulp.parallel(() => startIntegServer(true), startLocalServer)))
