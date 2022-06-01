@@ -24,11 +24,11 @@ function filterEIDs(requestObject) {
 
 function containsConfiguredEIDS(eidSources) {
   dataControllerConfig = config.getConfig(MODULE_NAME);
-  if (dataControllerConfig.filterSADwhenEID.includes(ALL)) {
+  if (dataControllerConfig.filterSDAwhenEID.includes(ALL)) {
     return true;
   }
   let containsSource = false;
-  dataControllerConfig.filterSADwhenEID.forEach(source => {
+  dataControllerConfig.filterSDAwhenEID.forEach(source => {
     if (eidSources.has(source)) {
       containsSource = true;
     }
@@ -90,7 +90,7 @@ function getEIDsSource(requestObject) {
 
 function filterSDA(bidRequests) {
   dataControllerConfig = config.getConfig(MODULE_NAME);
-  if (dataControllerConfig.filterSADwhenEID) {
+  if (dataControllerConfig.filterSDAwhenEID) {
     let eidSources = getEIDsSource(bidRequests);
     let resetSDA = containsConfiguredEIDS(eidSources);
     const bidderConfig = config.getBidderConfig();
@@ -258,7 +258,7 @@ describe('data controller', function () {
       let dataControllerConfiguration = {
         dataController: {
           filterEIDwhenSDA: ['permutive.com:4:777777'],
-          filterSADwhenEID: ['id5-sync.com']
+          filterSDAwhenEID: ['id5-sync.com']
         }
       }
       config.setConfig(dataControllerConfiguration);
@@ -316,10 +316,10 @@ describe('data controller', function () {
       expect(config.getConfig('dcUsersAsEids').magnite).to.be.instanceof(Array);
       expect(config.getConfig('dcUsersAsEids').magnite).that.is.empty; ;
     });
-    it('filterSADwhenEID for id5-sync.com EID ', function () {
+    it('filterSDAwhenEID for id5-sync.com EID ', function () {
       let dataControllerConfiguration = {
         dataController: {
-          filterSADwhenEID: ['id5-sync.com'],
+          filterSDAwhenEID: ['id5-sync.com'],
         }
       }
       config.setBidderConfig(magniteBidderConfig);
@@ -346,10 +346,10 @@ describe('data controller', function () {
       expect(updatedBidderConfig.magnite.ortb2.user.data).that.is.empty; ;
     });
 
-    it('filterSADwhenEID for All EID ', function () {
+    it('filterSDAwhenEID for All EID ', function () {
       let dataControllerConfiguration = {
         dataController: {
-          filterSADwhenEID: ['*'],
+          filterSDAwhenEID: ['*'],
         }
       }
       config.setBidderConfig(magniteBidderConfig);

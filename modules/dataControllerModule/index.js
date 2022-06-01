@@ -51,7 +51,7 @@ export function filterData(submodule, bidRequest) {
     return;
   }
 
-  if (dataControllerConfig.filterEIDwhenSDA && dataControllerConfig.filterSADwhenEID) {
+  if (dataControllerConfig.filterEIDwhenSDA && dataControllerConfig.filterSDAwhenEID) {
     processBidderRequests.getHooks({hook: processBidderRequestHook}).remove();
     return;
   }
@@ -60,7 +60,7 @@ export function filterData(submodule, bidRequest) {
     if (filterEIDs) {
       config.setConfig({'dcUsersAsEids': filterEIDs});
     }
-  } else if (dataControllerConfig.filterSADwhenEID) {
+  } else if (dataControllerConfig.filterSDAwhenEID) {
     let bidderConfig = submodule.filterSDA(bidRequest);
     if (bidderConfig) {
       config.setBidderConfig(bidderConfig);
