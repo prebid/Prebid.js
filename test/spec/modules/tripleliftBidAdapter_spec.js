@@ -908,6 +908,30 @@ describe('triplelift adapter', function () {
         }
       })
     });
+    it('should not append anything if getDataFromLocalStorage returns null', function() {
+      const ortb2 = {
+        user: {
+          data: [
+            { name: 'dataprovider.com', ext: { segtax: 4 }, segment: [{ id: '1' }] }
+          ]
+        }
+      };
+      sandbox.stub(config, 'getConfig').callsFake(key => {
+        const config = {
+          ortb2
+        };
+        return utils.deepAccess(config, key);
+      });
+      sandbox.stub(storage, 'getDataFromLocalStorage').callsFake(() => null);
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.ext.fpd).to.deep.equal({
+        'user': {
+          'data': [
+            { 'name': 'dataprovider.com', 'ext': { 'segtax': 4 }, 'segment': [{ 'id': '1' }] },
+          ]
+        }
+      })
+    });
   });
 
   describe('interpretResponse', function () {

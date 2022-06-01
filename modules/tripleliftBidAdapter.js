@@ -243,7 +243,7 @@ function _getGlobalFpd() {
 
 function _fetchOpeCloud() {
   const opeCloud = storage.getDataFromLocalStorage('opecloud_ctx');
-  if (opeCloud == null) return null;
+  if (!opeCloud) return null;
   try {
     const parsedJson = JSON.parse(opeCloud);
     return parsedJson
