@@ -15,8 +15,6 @@ var opens = require('opn');
 var webpackConfig = require('./webpack.conf.js');
 var helpers = require('./gulpHelpers.js');
 var concat = require('gulp-concat');
-var header = require('gulp-header');
-var footer = require('gulp-footer');
 var replace = require('gulp-replace');
 var shell = require('gulp-shell');
 var eslint = require('gulp-eslint');
@@ -27,10 +25,10 @@ var fs = require('fs');
 var jsEscape = require('gulp-js-escape');
 const path = require('path');
 const execa = require('execa');
+const {minify} = require('terser');
+const tmp = require('tmp');
 
 var prebid = require('./package.json');
-var dateString = 'Updated : ' + (new Date()).toISOString().substring(0, 10);
-var banner = '/* <%= prebid.name %> v<%= prebid.version %>\n' + dateString + '\nModules: <%= modules %> */\n';
 var port = 9999;
 const INTEG_SERVER_HOST = argv.host ? argv.host : 'localhost';
 const INTEG_SERVER_PORT = 4444;
@@ -149,18 +147,12 @@ function makeWebpackPkg() {
     .pipe(gulp.dest('build/dist'));
 }
 
-function addBanner() {
-  const sm = argv.sourceMaps;
-
-  return gulp.src(['build/dist/prebid-core.js'])
-    .pipe(gulpif(sm, sourcemaps.init({loadMaps: true})))
-    .pipe(header(banner, {prebid, modules: getModulesListToAddInBanner(helpers.getArgModules())}))
-    .pipe(gulpif(sm, sourcemaps.write('.')))
-    .pipe(gulp.dest('build/dist'))
-}
-
 function getModulesListToAddInBanner(modules) {
-  return (modules.length > 0) ? modules.join(', ') : 'All available modules in current version.';
+  if (!modules || modules.length === helpers.getModuleNames().length) {
+    return 'All available modules for this version.'
+  } else {
+    return modules.join(', ')
+  }
 }
 
 function gulpBundle(dev) {
@@ -180,6 +172,39 @@ function nodeBundle(modules, dev = false) {
   });
 }
 
+function generateHeaderAndFooter(dev, modules) {
+  // NOTE: gulp-header, gulp-footer & gulp-wrap do not play nice with source maps.
+  // gulp-concat does; for that reason we are generating temporary files to pass to it.
+  const placeholder = '$$PREBID_SOURCE$$';
+  const tpl = _.template(fs.readFileSync('./bundle-template.txt'))({
+    prebid,
+    modules: getModulesListToAddInBanner(modules),
+    enable: !argv.manualEnable
+  });
+  return (dev ? Promise.resolve(tpl) : minify(tpl, {format: {comments: true}}).then((res) => res.code))
+    .then((tpl) => {
+      // wrap source placeholder in a closure to make it an expression (so that it works with minify output)
+      const parts = tpl.replace(placeholder, `(function(){$$${placeholder}$$})()`).split(placeholder);
+      if (parts.length !== 2) {
+        throw new Error(`Cannot parse bundle template; it must contain exactly one instance of '${placeholder}'`);
+      }
+      const [header, footer] = parts;
+      const base = tmp.dirSync().name;
+      const [headerFn, footerFn] = [path.resolve(base, 'prebid-header.js'), path.resolve(base, 'prebid-footer.js')];
+      fs.writeFileSync(headerFn, header);
+      fs.writeFileSync(footerFn, footer);
+      return {
+        header: headerFn,
+        footer: footerFn,
+        cleanup: function () {
+          fs.unlinkSync(headerFn);
+          fs.unlinkSync(footerFn);
+          fs.rmdirSync(base);
+        }
+      };
+    });
+}
+
 function bundle(dev, moduleArr) {
   var modules = moduleArr || helpers.getArgModules();
   var allModules = helpers.getModuleNames(modules);
@@ -196,28 +221,35 @@ function bundle(dev, moduleArr) {
       });
     }
   }
+  const stream = through.obj();
+  generateHeaderAndFooter(dev, modules).then(({header, footer, cleanup}) => {
+    try {
+      var entries = [header, helpers.getBuiltPrebidCoreFile(dev)].concat(helpers.getBuiltModules(dev, modules)).concat([footer]);
 
-  var entries = [helpers.getBuiltPrebidCoreFile(dev)].concat(helpers.getBuiltModules(dev, modules));
+      var outputFileName = argv.bundleName ? argv.bundleName : 'prebid.js';
 
-  var outputFileName = argv.bundleName ? argv.bundleName : 'prebid.js';
+      // change output filename if argument --tag given
+      if (argv.tag && argv.tag.length) {
+        outputFileName = outputFileName.replace(/\.js$/, `.${argv.tag}.js`);
+      }
 
-  // change output filename if argument --tag given
-  if (argv.tag && argv.tag.length) {
-    outputFileName = outputFileName.replace(/\.js$/, `.${argv.tag}.js`);
-  }
+      gutil.log('Concatenating files:\n', entries);
+      gutil.log('Appending ' + prebid.globalVarName + '.processQueue();');
+      gutil.log('Generating bundle:', outputFileName);
 
-  gutil.log('Concatenating files:\n', entries);
-  gutil.log('Appending ' + prebid.globalVarName + '.processQueue();');
-  gutil.log('Generating bundle:', outputFileName);
-
-  return gulp.src(entries)
-    .pipe(gulpif(sm, sourcemaps.init({ loadMaps: true })))
-    .pipe(concat(outputFileName))
-    .pipe(gulpif(!argv.manualEnable, footer('\n<%= global %>.processQueue();', {
-      global: prebid.globalVarName
+      gulp.src(entries)
+        .pipe(gulpif(sm, sourcemaps.init({ loadMaps: true })))
+        .pipe(concat(outputFileName))
+        .pipe(gulpif(sm, sourcemaps.write('.')))
+        .pipe(stream)
+        .on('error', cleanup)
+        .on('end', cleanup);
+    } catch (e) {
+      cleanup();
+      throw e;
     }
-    )))
-    .pipe(gulpif(sm, sourcemaps.write('.')));
+  });
+  return stream;
 }
 
 // Run the unit tests.
@@ -385,7 +417,7 @@ gulp.task(clean);
 gulp.task(escapePostbidConfig);
 
 gulp.task('build-bundle-dev', gulp.series(makeDevpackPkg, gulpBundle.bind(null, true)));
-gulp.task('build-bundle-prod', gulp.series(makeWebpackPkg, addBanner, gulpBundle.bind(null, false)));
+gulp.task('build-bundle-prod', gulp.series(makeWebpackPkg, gulpBundle.bind(null, false)));
 
 // public tasks (dependencies are needed for each task since they can be ran on their own)
 gulp.task('test-only', test);
