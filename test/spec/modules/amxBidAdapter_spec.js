@@ -31,15 +31,6 @@ const sampleFPD = {
   }
 };
 
-const stubConfig = (withStub) => {
-  const stub = sinon.stub(config, 'getConfig').callsFake(
-    (arg) => arg === 'ortb2' ? sampleFPD : null
-  )
-
-  withStub();
-  stub.restore();
-};
-
 const sampleBidderRequest = {
   gdprConsent: {
     gdprApplies: true,
@@ -51,7 +42,8 @@ const sampleBidderRequest = {
   refererInfo: {
     referer: 'https://www.prebid.org',
     canonicalUrl: 'https://www.prebid.org/the/link/to/the/page'
-  }
+  },
+  ortb2: sampleFPD
 };
 
 const sampleBidRequestBase = {
@@ -293,10 +285,8 @@ describe('AmxBidAdapter', () => {
       expect(data.trc).to.equal(0)
     });
     it('will forward first-party data', () => {
-      stubConfig(() => {
-        const { data } = spec.buildRequests([sampleBidRequestBase], sampleBidderRequest);
-        expect(data.fpd2).to.deep.equal(sampleFPD)
-      });
+      const { data } = spec.buildRequests([sampleBidRequestBase], sampleBidderRequest);
+      expect(data.fpd2).to.deep.equal(sampleFPD)
     });
 
     it('will collect & forward RTI user IDs', () => {

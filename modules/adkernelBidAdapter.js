@@ -506,7 +506,7 @@ function makeSyncInfo(bidderRequest) {
  * @return {Object} Complete rtb request
  */
 function buildRtbRequest(imps, bidderRequest, schain) {
-  let fpd = config.getConfig('ortb2') || {};
+  let fpd = bidderRequest.ortb2 || {};
 
   let req = mergeDeep(
     makeBaseRequest(bidderRequest, imps, fpd),

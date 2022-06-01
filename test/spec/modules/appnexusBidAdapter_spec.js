@@ -1023,10 +1023,6 @@ describe('AppNexusAdapter', function () {
           criteoId: 'sample-criteo-userid',
           netId: 'sample-netId-userid',
           idl_env: 'sample-idl-userid',
-          flocId: {
-            id: 'sample-flocid-value',
-            version: 'chrome.1.0'
-          },
           pubProvidedId: [{
             source: 'puburl.com',
             uids: [{
@@ -1056,11 +1052,6 @@ describe('AppNexusAdapter', function () {
       expect(payload.eids).to.deep.include({
         source: 'criteo.com',
         id: 'sample-criteo-userid',
-      });
-
-      expect(payload.eids).to.deep.include({
-        source: 'chrome.com',
-        id: 'sample-flocid-value'
       });
 
       expect(payload.eids).to.deep.include({
@@ -1549,14 +1540,24 @@ describe('AppNexusAdapter', function () {
   });
 
   describe('transformBidParams', function () {
-    it('convert keywords param differently for psp endpoint', function () {
-      sinon.stub(config, 'getConfig')
-        .withArgs('s2sConfig')
-        .returns({
-          endpoint: {
-            p1Consent: 'https://ib.adnxs.com/openrtb2/prebid'
-          }
-        });
+    let gcStub;
+    let adUnit = { bids: [{ bidder: 'appnexus' }] }; ;
+
+    before(function() {
+      gcStub = sinon.stub(config, 'getConfig');
+    });
+
+    after(function() {
+      gcStub.restore();
+    });
+
+    it('convert keywords param differently for psp endpoint with single s2sConfig', function () {
+      gcStub.withArgs('s2sConfig').returns({
+        bidders: ['appnexus'],
+        endpoint: {
+          p1Consent: 'https://ib.adnxs.com/openrtb2/prebid'
+        }
+      });
 
       const oldParams = {
         keywords: {
@@ -1565,10 +1566,27 @@ describe('AppNexusAdapter', function () {
         }
       };
 
-      const newParams = spec.transformBidParams(oldParams, true);
+      const newParams = spec.transformBidParams(oldParams, true, adUnit);
       expect(newParams.keywords).to.equal('genre=rock,genre=pop,pets=dog');
+    });
 
-      config.getConfig.restore();
+    it('convert keywords param differently for psp endpoint with array s2sConfig', function () {
+      gcStub.withArgs('s2sConfig').returns([{
+        bidders: ['appnexus'],
+        endpoint: {
+          p1Consent: 'https://ib.adnxs.com/openrtb2/prebid'
+        }
+      }]);
+
+      const oldParams = {
+        keywords: {
+          genre: ['rock', 'pop'],
+          pets: 'dog'
+        }
+      };
+
+      const newParams = spec.transformBidParams(oldParams, true, adUnit);
+      expect(newParams.keywords).to.equal('genre=rock,genre=pop,pets=dog');
     });
   });
 });

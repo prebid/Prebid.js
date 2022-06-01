@@ -15,7 +15,6 @@ const SESSION_ID_KEY = 'vidSid';
 export const SUPPORTED_ID_SYSTEMS = {
   'britepoolid': 1,
   'criteoId': 1,
-  'digitrustid': 1,
   'id5id': 1,
   'idl_env': 1,
   'lipb': 1,

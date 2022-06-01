@@ -197,7 +197,7 @@ export const spec = {
     }
 
     // First Party Data
-    const commonFpd = config.getConfig('ortb2') || {};
+    const commonFpd = bidderRequest.ortb2 || {};
     if (commonFpd.site) {
       mergeDeep(payload, {site: commonFpd.site});
     }

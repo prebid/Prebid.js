@@ -229,10 +229,8 @@ describe('yieldlabBidAdapter', function () {
           'supplyId': '2222'
         }
       }
-      config.setConfig(siteConfig);
-      const request = spec.buildRequests([requestWithoutIabContent])
+      const request = spec.buildRequests([{...requestWithoutIabContent, ...siteConfig}])
       expect(request.url).to.include('iab_content=id%3Aid_from_config')
-      config.resetConfig();
     })
 
     const refererRequest = spec.buildRequests(bidRequests, {

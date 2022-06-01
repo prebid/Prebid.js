@@ -127,7 +127,7 @@ export const spec = {
 
       const imp = {
         id: transactionId,
-        instl: params.instl === 1 ? 1 : 0,
+        instl: deepAccess(bidderRequest.ortb2Imp, 'instl') === 1 || params.instl === 1 ? 1 : 0,
         tagid: adUnitCode,
         bidfloor: helper.getBidFloor(bidRequest) || 0,
         bidfloorcur: 'USD',
@@ -143,7 +143,7 @@ export const spec = {
             banner: {
               w: sizes.length ? sizes[0][0] : 300,
               h: sizes.length ? sizes[0][1] : 250,
-              pos: params.pos || 0,
+              pos: deepAccess(bidderRequest, 'mediaTypes.banner.pos') || params.pos || 0,
               topframe: inIframe() ? 0 : 1
             }
           });
@@ -157,7 +157,7 @@ export const spec = {
           const videoImp = Object.assign({}, imp, {
             video: {
               protocols: bidRequest.mediaTypes.video.protocols || params.protocols || [1, 2, 3, 4, 5, 6],
-              pos: params.pos || 0,
+              pos: deepAccess(bidRequest, 'mediaTypes.video.pos') || params.pos || 0,
               ext: {
                 context: mediaTypes.video.context
               },

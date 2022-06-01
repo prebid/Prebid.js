@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { getRefererInfo } from 'src/refererDetection.js';
-import { initSubmodule, coreStorage } from 'modules/enrichmentFpdModule.js';
+import { processFpd, coreStorage } from 'modules/enrichmentFpdModule.js';
 
 describe('the first party data enrichment module', function() {
   let width;
@@ -52,7 +52,7 @@ describe('the first party data enrichment module', function() {
     width = 800;
     height = 500;
 
-    let validated = initSubmodule({}, {});
+    let validated = processFpd({}, {}).global;
 
     expect(validated.site.ref).to.equal(getRefererInfo().referer);
     expect(validated.site.page).to.be.undefined;
@@ -66,7 +66,7 @@ describe('the first party data enrichment module', function() {
     height = 500;
     canonical.href = 'https://www.subdomain.domain.co.uk/path?query=12345';
 
-    let validated = initSubmodule({}, {});
+    let validated = processFpd({}, {}).global;
 
     expect(validated.site.ref).to.equal(getRefererInfo().referer);
     expect(validated.site.page).to.equal('https://www.subdomain.domain.co.uk/path?query=12345');
@@ -81,7 +81,7 @@ describe('the first party data enrichment module', function() {
     height = 500;
     keywords.content = 'value1,value2,value3';
 
-    let validated = initSubmodule({}, {});
+    let validated = processFpd({}, {}).global;
 
     expect(validated.site.ref).to.equal(getRefererInfo().referer);
     expect(validated.site.page).to.be.undefined;
@@ -94,7 +94,7 @@ describe('the first party data enrichment module', function() {
     width = 800;
     height = 500;
 
-    let validated = initSubmodule({}, {device: {w: 1200, h: 700}, site: {ref: 'https://someUrl.com', page: 'test.com'}});
+    let validated = processFpd({}, {global: {device: {w: 1200, h: 700}, site: {ref: 'https://someUrl.com', page: 'test.com'}}}).global;
 
     expect(validated.site.ref).to.equal('https://someUrl.com');
     expect(validated.site.page).to.equal('test.com');

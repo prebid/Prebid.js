@@ -1260,12 +1260,14 @@ describe('S2S Adapter', function () {
           'assets': [
             {
               'required': 1,
+              'id': 0,
               'title': {
                 'len': 800
               }
             },
             {
               'required': 1,
+              'id': 1,
               'img': {
                 'type': 3,
                 'w': 989,
@@ -1274,6 +1276,7 @@ describe('S2S Adapter', function () {
             },
             {
               'required': 1,
+              'id': 2,
               'img': {
                 'type': 1,
                 'wmin': 10,
@@ -1285,6 +1288,7 @@ describe('S2S Adapter', function () {
             },
             {
               'required': 1,
+              'id': 3,
               'data': {
                 'type': 1
               }
@@ -1348,7 +1352,7 @@ describe('S2S Adapter', function () {
       config.setConfig({ s2sConfig: CONFIG });
 
       const aliasBidder = {
-        bidder: 'brealtime',
+        bidder: 'beintoo',
         params: { placementId: '123456' }
       };
 
@@ -1361,7 +1365,7 @@ describe('S2S Adapter', function () {
       expect(requestBid.ext).to.haveOwnProperty('prebid');
       expect(requestBid.ext.prebid).to.deep.include({
         aliases: {
-          brealtime: 'appnexus'
+          beintoo: 'appnexus'
         },
         auctiontimestamp: 1510852447530,
         targeting: {
@@ -1960,7 +1964,7 @@ describe('S2S Adapter', function () {
       const s2sBidRequest = utils.deepClone(REQUEST);
       const bidRequests = utils.deepClone(BID_REQUESTS);
 
-      const commonContext = {
+      const commonSite = {
         keywords: ['power tools'],
         search: 'drill'
       };
@@ -1969,19 +1973,23 @@ describe('S2S Adapter', function () {
         gender: 'M'
       };
 
-      const context = {
-        content: { userrating: 4 },
-        data: {
-          pageType: 'article',
-          category: 'tools'
+      const site = {
+        content: {userrating: 4},
+        ext: {
+          data: {
+            pageType: 'article',
+            category: 'tools'
+          }
         }
       };
       const user = {
         yob: '1984',
         geo: { country: 'ca' },
-        data: {
-          registered: true,
-          interests: ['cars']
+        ext: {
+          data: {
+            registered: true,
+            interests: ['cars']
+          }
         }
       };
       const bcat = ['IAB25', 'IAB7-39'];
@@ -2019,11 +2027,14 @@ describe('S2S Adapter', function () {
       const commonContextExpected = utils.mergeDeep({
         'page': 'http://mytestpage.com',
         'publisher': { 'id': '1' }
-      }, commonContext);
+      }, commonSite);
 
-      config.setConfig({ fpd: { context: commonContext, user: commonUser, badv, bcat } });
-      config.setBidderConfig({ bidders: allowedBidders, config: { fpd: { context, user, bcat, badv } } });
-      adapter.callBids(s2sBidRequest, bidRequests, addBidResponse, done, ajax);
+      const ortb2Fragments = {
+        global: {site: commonSite, user: commonUser, badv, bcat},
+        bidder: Object.fromEntries(allowedBidders.map(bidder => [bidder, {site, user, bcat, badv}]))
+      };
+
+      adapter.callBids({...s2sBidRequest, ortb2Fragments}, bidRequests, addBidResponse, done, ajax);
       const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
       expect(parsedRequestBody.ext.prebid.bidderconfig).to.deep.equal(expected);
       expect(parsedRequestBody.site).to.deep.equal(commonContextExpected);
@@ -3166,6 +3177,27 @@ describe('S2S Adapter', function () {
       let requestBid = JSON.parse(server.requests[0].requestBody);
 
       expect(requestBid.ext.prebid.debug).is.equal(true);
+    });
+
+    it('should correctly add floors flag', function () {
+      let bidRequest = utils.deepClone(BID_REQUESTS);
+
+      // should not pass if floorData is undefined
+      adapter.callBids(REQUEST, bidRequest, addBidResponse, done, ajax);
+      let requestBid = JSON.parse(server.requests[0].requestBody);
+
+      expect(requestBid.ext.prebid.floors).to.be.undefined;
+
+      // should pass of floorData is object
+      bidRequest[0].bids[0].floorData = {
+        skipped: false,
+        location: 'fetch',
+      }
+
+      adapter.callBids(REQUEST, bidRequest, addBidResponse, done, ajax);
+      requestBid = JSON.parse(server.requests[1].requestBody);
+
+      expect(requestBid.ext.prebid.floors).to.deep.equal({ enabled: false });
     });
   });
 });
