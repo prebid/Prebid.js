@@ -10,12 +10,15 @@ import {config} from '../src/config.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {submodule} from '../src/hook.js';
-import {isFn, isStr, isArray, deepEqual, isPlainObject, logError} from '../src/utils.js';
+import {isFn, isStr, isArray, deepEqual, isPlainObject, logError, logInfo} from '../src/utils.js';
+import {loadExternalScript} from '../src/adloader.js';
 
+const LOG_PREFIX = 'User ID - HadronRtdProvider submodule: ';
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'hadron';
 const AU_GVLID = 561;
-
+const HADRON_ID_DEFAULT_URL = 'https://id.hadron.ad.gt/api/v1/hadronid?_it=prebid';
+const HADRON_SEGMENT_URL = 'https://seg.hadron.ad.gt/api/v1/rtd';
 export const HALOID_LOCAL_NAME = 'auHadronId';
 export const RTD_LOCAL_NAME = 'auHadronRtd';
 export const storage = getStorageManager({gvlid: AU_GVLID, moduleName: SUBMODULE_NAME});
@@ -92,8 +95,9 @@ function mergeLazy(target, source) {
 
 /**
  * Param or default.
- * @param {String} param
+ * @param {String|Function} param
  * @param {String} defaultVal
+ * @param {Object} arg
  */
 function paramOrDefault(param, defaultVal, arg) {
   if (isFn(param)) {
@@ -141,7 +145,7 @@ export function addRealTimeData(bidConfig, rtd, rtdConfig) {
 
 /**
  * Real-time data retrieval from Audigent
- * @param {Object} reqBidsConfigObj
+ * @param {Object} bidConfig
  * @param {function} onDone
  * @param {Object} rtdConfig
  * @param {Object} userConsent
@@ -169,22 +173,21 @@ export function getRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
     userIds.hadronId = hadronId;
     getRealTimeDataAsync(bidConfig, onDone, rtdConfig, userConsent, userIds);
   } else {
-    var script = document.createElement('script');
-    script.type = 'text/javascript';
-
     window.pubHadronCb = (hadronId) => {
       userIds.hadronId = hadronId;
       getRealTimeDataAsync(bidConfig, onDone, rtdConfig, userConsent, userIds);
     }
-
     const hadronIdUrl = rtdConfig.params && rtdConfig.params.hadronIdUrl;
-    script.src = paramOrDefault(hadronIdUrl, 'https://id.hadron.ad.gt/api/v1/hadronid', userIds);
-    document.getElementsByTagName('head')[0].appendChild(script);
+    const scriptUrl = paramOrDefault(hadronIdUrl, HADRON_ID_DEFAULT_URL, userIds);
+    loadExternalScript(scriptUrl, 'hadron', () => {
+      logInfo(LOG_PREFIX, 'hadronIdTag loaded', scriptUrl);
+    })
   }
 }
 
 /**
  * Async rtd retrieval from Audigent
+ * @param {Object} bidConfig
  * @param {function} onDone
  * @param {Object} rtdConfig
  * @param {Object} userConsent
@@ -202,8 +205,7 @@ export function getRealTimeDataAsync(bidConfig, onDone, rtdConfig, userConsent, 
     reqParams.pubHadronPm = window.pubHadronPm;
   }
 
-  const url = `https://seg.hadron.ad.gt/api/v1/rtd`;
-  ajax(url, {
+  ajax(HADRON_SEGMENT_URL, {
     success: function (response, req) {
       if (req.status === 200) {
         try {
@@ -237,7 +239,7 @@ export function getRealTimeDataAsync(bidConfig, onDone, rtdConfig, userConsent, 
 /**
  * Module init
  * @param {Object} provider
- * @param {Objkect} userConsent
+ * @param {Object} userConsent
  * @return {boolean}
  */
 function init(provider, userConsent) {
