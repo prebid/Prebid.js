@@ -14,7 +14,8 @@ const _approvedLoadExternalJSList = [
   'akamaidap',
   'ftrackId',
   'inskin',
-  'hadron'
+  'hadron',
+  'medianet'
 ]
 
 /**
