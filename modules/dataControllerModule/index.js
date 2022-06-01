@@ -9,14 +9,14 @@
 
 /**
  * @function?
- * @summary return real time data
+ * @summary return filtered EIDs
  * @name dataControllerModule#filterEIDs
  * @param {Object} bidRequest
  */
 
 /**
  * @function?
- * @summary return real time data
+ * @summary return filtered SDA
  * @name dataControllerModule#filterSDA
  * @param {Object} bidRequest
  */
@@ -24,6 +24,7 @@
 import {config} from '../../src/config.js';
 import {module, getHook} from '../../src/hook.js';
 import {processBidderRequests} from '../../src/adapters/bidderFactory.js';
+import {logError} from '../../src/utils.js';
 
 let submodules = [];
 const MODULE_NAME = 'dataController';
@@ -82,7 +83,14 @@ function processBidderRequestHook(fn, specDetails, bidRequest) {
  * Sets bidderRequests hook
  */
 function setupHook() {
-  getHook('processBidderRequests').before(processBidderRequestHook);
+  const confListener = config.getConfig(MODULE_NAME, ({dataController}) => {
+    if (dataController && !dataController.filterEIDwhenSDA && !dataController.filterSDAwhenEID) {
+      logError('missing parameters for data controller module');
+      return;
+    }
+    confListener(); // unsubscribe config listener
+    getHook('processBidderRequests').before(processBidderRequestHook);
+  });
 }
 
 setupHook();

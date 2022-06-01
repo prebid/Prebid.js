@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {config} from 'src/config.js';
-import {filterData} from '../../../modules/dataControllerModule/index.js';
+import {filterData} from 'modules/dataControllerModule/index.js';
 import * as utils from 'src/utils.js';
 
 const MODULE_NAME = 'dataController';
