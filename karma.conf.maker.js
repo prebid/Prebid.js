@@ -2,6 +2,7 @@
 //
 // For more information, see http://karma-runner.github.io/1.0/config/configuration-file.html
 
+const babelConfig = require('./babelConfig.js');
 var _ = require('lodash');
 var webpackConf = require('./webpack.conf.js');
 var karmaConstants = require('karma').constants;
@@ -10,10 +11,19 @@ function newWebpackConfig(codeCoverage) {
   // Make a clone here because we plan on mutating this object, and don't want parallel tasks to trample each other.
   var webpackConfig = _.cloneDeep(webpackConf);
 
-  // remove optimize plugin for tests
-  webpackConfig.plugins.pop()
+  Object.assign(webpackConfig, {
+    mode: 'development',
+    devtool: 'inline-source-map',
+  });
 
-  webpackConfig.devtool = 'inline-source-map';
+  delete webpackConfig.entry;
+
+  webpackConfig.module.rules
+    .flatMap((r) => r.use)
+    .filter((use) => use.loader === 'babel-loader')
+    .forEach((use) => {
+      use.options = babelConfig(true);
+    });
 
   if (codeCoverage) {
     webpackConfig.module.rules.push({
@@ -111,7 +121,7 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
   var webpackConfig = newWebpackConfig(codeCoverage);
   var plugins = newPluginsArray(browserstack);
 
-  var files = file ? ['test/helpers/prebidGlobal.js', file] : ['test/test_index.js'];
+  var files = file ? ['test/test_deps.js', file] : ['test/test_index.js'];
   // This file opens the /debug.html tab automatically.
   // It has no real value unless you're running --watch, and intend to do some debugging in the browser.
   if (watchMode) {
@@ -166,7 +176,7 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
     browserNoActivityTimeout: 3e5, // default 10000
     captureTimeout: 3e5, // default 60000,
     browserDisconnectTolerance: 3,
-    concurrency: 5,
+    concurrency: 6,
 
     plugins: plugins
   }

@@ -1,12 +1,21 @@
-import { logWarn, deepAccess, isArray, parseSizesInput, isFn, parseUrl, getUniqueIdentifierStr } from '../src/utils.js';
-import { config } from '../src/config.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { Renderer } from '../src/Renderer.js';
-import { VIDEO, BANNER } from '../src/mediaTypes.js';
-import find from 'core-js-pure/features/array/find.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import {
+  deepAccess,
+  deepClone,
+  deepSetValue,
+  getUniqueIdentifierStr,
+  isArray,
+  isFn,
+  logWarn,
+  parseSizesInput,
+  parseUrl
+} from '../src/utils.js';
+import {config} from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {Renderer} from '../src/Renderer.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {find, includes} from '../src/polyfill.js';
 
-const ADAPTER_VERSION = '1.18';
+const ADAPTER_VERSION = '1.19';
 const ADAPTER_NAME = 'BFIO_PREBID';
 const OUTSTREAM = 'outstream';
 const CURRENCY = 'USD';
@@ -360,6 +369,7 @@ function createVideoRequestData(bid, bidderRequest) {
   let tagid = getVideoBidParam(bid, 'tagid');
   let topLocation = getTopWindowLocation(bidderRequest);
   let eids = getEids(bid);
+  let ortb2 = deepClone(config.getConfig('ortb2'));
   let payload = {
     isPrebid: true,
     appId: appId,
@@ -378,6 +388,7 @@ function createVideoRequestData(bid, bidderRequest) {
       displaymanagerver: ADAPTER_VERSION
     }],
     site: {
+      ...deepAccess(ortb2, 'site', {}),
       page: topLocation.href,
       domain: topLocation.hostname
     },
@@ -389,39 +400,32 @@ function createVideoRequestData(bid, bidderRequest) {
       js: 1,
       geo: {}
     },
-    regs: {
-      ext: {}
-    },
-    source: {
-      ext: {}
-    },
-    user: {
-      ext: {}
-    },
+    app: deepAccess(ortb2, 'app'),
+    user: deepAccess(ortb2, 'user'),
     cur: [CURRENCY]
   };
 
   if (bidderRequest && bidderRequest.uspConsent) {
-    payload.regs.ext.us_privacy = bidderRequest.uspConsent;
+    deepSetValue(payload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
   }
 
   if (bidderRequest && bidderRequest.gdprConsent) {
     let { gdprApplies, consentString } = bidderRequest.gdprConsent;
-    payload.regs.ext.gdpr = gdprApplies ? 1 : 0;
-    payload.user.ext.consent = consentString;
+    deepSetValue(payload, 'regs.ext.gdpr', gdprApplies ? 1 : 0);
+    deepSetValue(payload, 'user.ext.consent', consentString);
   }
 
   if (bid.schain) {
-    payload.source.ext.schain = bid.schain;
+    deepSetValue(payload, 'source.ext.schain', bid.schain);
   }
 
   if (eids.length > 0) {
-    payload.user.ext.eids = eids;
+    deepSetValue(payload, 'user.ext.eids', eids);
   }
 
   let connection = navigator.connection || navigator.webkitConnection;
   if (connection && connection.effectiveType) {
-    payload.device.connectiontype = connection.effectiveType;
+    deepSetValue(payload, 'device.connectiontype', connection.effectiveType);
   }
 
   return payload;
@@ -439,8 +443,10 @@ function createBannerRequestData(bids, bidderRequest) {
       sizes: getBannerSizes(bid)
     };
   });
+  let ortb2 = deepClone(config.getConfig('ortb2'));
   let payload = {
     slots: slots,
+    ortb2: ortb2,
     page: topLocation.href,
     domain: topLocation.hostname,
     search: topLocation.search,

@@ -134,12 +134,6 @@ describe('Tappx bid adapter', function () {
       assert.isTrue(spec.isBidRequestValid(c_BIDREQUEST.bids[0]), JSON.stringify(c_BIDREQUEST));
     });
 
-    it('should return false when params are missing', function () {
-      let badBidRequestParam = JSON.parse(JSON.stringify(c_BIDREQUEST));
-      delete badBidRequestParam.bids[0].params;
-      assert.isFalse(spec.isBidRequestValid(badBidRequestParam.bids[0]));
-    });
-
     it('should return false when tappxkey is missing', function () {
       let badBidRequestTpxkey = JSON.parse(JSON.stringify(c_BIDREQUEST)); ;
       delete badBidRequestTpxkey.bids[0].params.tappxkey;
@@ -165,21 +159,11 @@ describe('Tappx bid adapter', function () {
       assert.isTrue(spec.isBidRequestValid(badBidRequestNwEp.bids[0]));
     });
 
-    it('should return false mimes param is missing', function () {
-      let badBidRequest_mimes = c_BIDDERREQUEST_V;
-      delete badBidRequest_mimes.bids.mediaTypes.video;
-      badBidRequest_mimes.bids.mediaTypes.video = {};
-      badBidRequest_mimes.bids.mediaTypes.video.context = 'instream';
-      badBidRequest_mimes.bids.mediaTypes.video.playerSize = [320, 250];
-      assert.isFalse(spec.isBidRequestValid(badBidRequest_mimes.bids), badBidRequest_mimes);
-    });
-
     it('should return false for not instream/outstream requests', function () {
       let badBidRequest_v = c_BIDDERREQUEST_V;
       delete badBidRequest_v.bids.mediaTypes.banner;
       badBidRequest_v.bids.mediaTypes.video = {};
       badBidRequest_v.bids.mediaTypes.video.context = '';
-      badBidRequest_v.bids.mediaTypes.video.mimes = [ 'video/mp4', 'application/javascript' ];
       badBidRequest_v.bids.mediaTypes.video.playerSize = [320, 250];
       assert.isFalse(spec.isBidRequestValid(badBidRequest_v.bids));
     });
@@ -232,7 +216,6 @@ describe('Tappx bid adapter', function () {
       validBidRequests_V[0].mediaTypes.video = {};
       validBidRequests_V[0].mediaTypes.video.playerSize = [640, 480];
       validBidRequests_V[0].mediaTypes.video.context = 'instream';
-      validBidRequests_V[0].mediaTypes.video.mimes = [ 'video/mp4', 'application/javascript' ];
 
       bidderRequest_V.bids.mediaTypes.context = 'instream';
 
@@ -252,7 +235,6 @@ describe('Tappx bid adapter', function () {
       validBidRequests_Voutstream[0].mediaTypes.video = {};
       validBidRequests_Voutstream[0].mediaTypes.video.playerSize = [640, 480];
       validBidRequests_Voutstream[0].mediaTypes.video.context = 'outstream';
-      validBidRequests_Voutstream[0].mediaTypes.video.mimes = [ 'video/mp4', 'application/javascript' ];
 
       bidderRequest_VOutstream.bids.mediaTypes.context = 'outstream';
 
@@ -273,7 +255,6 @@ describe('Tappx bid adapter', function () {
       validBidRequests_Voutstream[0].mediaTypes.video.rewarded = 1;
       validBidRequests_Voutstream[0].mediaTypes.video.playerSize = [640, 480];
       validBidRequests_Voutstream[0].mediaTypes.video.context = 'outstream';
-      validBidRequests_Voutstream[0].mediaTypes.video.mimes = [ 'video/mp4', 'application/javascript' ];
 
       bidderRequest_VOutstream.bids.mediaTypes.context = 'outstream';
 

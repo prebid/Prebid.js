@@ -1,20 +1,20 @@
 'use strict';
 
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { INSTREAM, OUTSTREAM } from '../src/video.js';
-import { Renderer } from '../src/Renderer.js';
-import find from 'core-js-pure/features/array/find.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { createEidsArray } from './userId/eids.js';
-import { deepClone } from '../src/utils.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {INSTREAM, OUTSTREAM} from '../src/video.js';
+import {Renderer} from '../src/Renderer.js';
+import {find} from '../src/polyfill.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {createEidsArray} from './userId/eids.js';
+import {deepClone} from '../src/utils.js';
 
 const ENDPOINT = 'https://onetag-sys.com/prebid-request';
 const USER_SYNC_ENDPOINT = 'https://onetag-sys.com/usync/';
 const BIDDER_CODE = 'onetag';
 const GVLID = 241;
 
-const storage = getStorageManager(GVLID);
+const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
 
 /**
  * Determines whether or not the given bid request is valid.
@@ -347,10 +347,12 @@ function getSizes(sizes) {
 function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
   let syncs = [];
   let params = '';
-  if (gdprConsent && typeof gdprConsent.consentString === 'string') {
-    params += '&gdpr_consent=' + gdprConsent.consentString;
+  if (gdprConsent) {
     if (typeof gdprConsent.gdprApplies === 'boolean') {
       params += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
+    }
+    if (typeof gdprConsent.consentString === 'string') {
+      params += '&gdpr_consent=' + gdprConsent.consentString;
     }
   }
   if (uspConsent && typeof uspConsent === 'string') {
