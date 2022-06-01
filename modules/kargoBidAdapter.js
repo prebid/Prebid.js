@@ -143,7 +143,7 @@ export const spec = {
     }
 
     timeoutData.forEach((bid) => {
-      this._sendResponseTimeData(bid.auctionId, bid.timeout, bid.timeout, 1)
+      this._sendTimeoutData(bid.auctionId, bid.timeout);
     });
   },
 
@@ -278,12 +278,10 @@ export const spec = {
     }
   },
 
-  _sendResponseTimeData(auctionId, auctionTimeout, responseTime, isTimeout = 0) {
+  _sendTimeoutData(auctionId, auctionTimeout) {
     let params = {
       aid: auctionId,
       ato: auctionTimeout,
-      rt: responseTime,
-      it: isTimeout,
     };
 
     try {
