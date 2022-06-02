@@ -149,7 +149,7 @@ describe('gdpr enforcement', function () {
         hasEnforcementHook: true,
         valid: false
       }
-      sinon.assert.calledWith(nextFnSpy, undefined, undefined, result);
+      sinon.assert.calledWith(nextFnSpy, undefined, undefined, undefined, result);
     });
 
     it('should only check for consent for vendor exceptions when enforcePurpose and enforceVendor are false', function () {
@@ -270,7 +270,7 @@ describe('gdpr enforcement', function () {
         hasEnforcementHook: true,
         valid: true
       }
-      sinon.assert.calledWith(nextFnSpy, 1, 'appnexus', result);
+      sinon.assert.calledWith(nextFnSpy, 1, 'appnexus', undefined, result);
     });
 
     it('should use gvlMapping set by publisher', function () {
@@ -301,7 +301,7 @@ describe('gdpr enforcement', function () {
         hasEnforcementHook: true,
         valid: true
       }
-      sinon.assert.calledWith(nextFnSpy, 4, 'appnexus', result);
+      sinon.assert.calledWith(nextFnSpy, 4, 'appnexus', undefined, result);
       config.resetConfig();
     });
 
@@ -336,7 +336,7 @@ describe('gdpr enforcement', function () {
         hasEnforcementHook: true,
         valid: true
       }
-      sinon.assert.calledWith(nextFnSpy, 4, 'appnexus', result);
+      sinon.assert.calledWith(nextFnSpy, 4, 'appnexus', undefined, result);
       config.resetConfig();
       curBidderStub.restore();
     });

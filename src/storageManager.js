@@ -48,7 +48,7 @@ export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = 
       let hookDetails = {
         hasEnforcementHook: false
       }
-      validateStorageEnforcement(gvlid, bidderCode || moduleName, hookDetails, function(result) {
+      validateStorageEnforcement(gvlid, bidderCode || moduleName, moduleType, hookDetails, function(result) {
         if (result && result.hasEnforcementHook) {
           value = cb(result);
         } else {

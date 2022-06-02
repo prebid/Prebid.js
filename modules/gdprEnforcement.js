@@ -176,7 +176,7 @@ export function deviceAccessHook(fn, gvlid, moduleName, moduleType, result) {
   if (!hasDeviceAccess()) {
     logWarn('Device access is disabled by Publisher');
     result.valid = false;
-    fn.call(this, gvlid, moduleName, result);
+    fn.call(this, gvlid, moduleName, moduleType, result);
   } else {
     const consentData = gdprDataHandler.getConsentData();
     if (consentData && consentData.gdprApplies) {
@@ -192,21 +192,21 @@ export function deviceAccessHook(fn, gvlid, moduleName, moduleType, result) {
         let isAllowed = validateRules(purpose1Rule, consentData, curModule, gvlid, moduleType);
         if (isAllowed) {
           result.valid = true;
-          fn.call(this, gvlid, moduleName, result);
+          fn.call(this, gvlid, moduleName, moduleType, result);
         } else {
           curModule && logWarn(`TCF2 denied device access for ${curModule}`);
           result.valid = false;
           storageBlocked.push(curModule);
-          fn.call(this, gvlid, moduleName, result);
+          fn.call(this, gvlid, moduleName, moduleType, result);
         }
       } else {
         // The module doesn't enforce TCF1.1 strings
         result.valid = true;
-        fn.call(this, gvlid, moduleName, result);
+        fn.call(this, gvlid, moduleName, moduleType, result);
       }
     } else {
       result.valid = true;
-      fn.call(this, gvlid, moduleName, result);
+      fn.call(this, gvlid, moduleName, moduleType, result);
     }
   }
 }
