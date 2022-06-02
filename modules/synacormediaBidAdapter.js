@@ -1,6 +1,6 @@
 'use strict';
 
-import {deepSetValue, getAdUnitSizes, isFn, isPlainObject, logWarn} from '../src/utils.js';
+import {deepAccess, deepSetValue, getAdUnitSizes, isFn, isPlainObject, logWarn} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {includes} from '../src/polyfill.js';
@@ -79,7 +79,16 @@ export const spec = {
         imps = this.buildVideoImpressions(adSizes, bid, tagIdOrPlacementId, pos, videoOrBannerKey);
       }
       if (imps.length > 0) {
-        imps.forEach(i => openRtbBidRequest.imp.push(i));
+        imps.forEach(i => {
+          // Deeply add ext section to all imp[] for GPID, prebid slot id, and anything else down the line
+          const extSection = deepAccess(bid, 'ortb2Imp.ext');
+          if (extSection) {
+            deepSetValue(i, 'ext', extSection);
+          }
+
+          // Add imp[] to request object
+          openRtbBidRequest.imp.push(i);
+        });
       }
     });
 

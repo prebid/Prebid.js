@@ -1,5 +1,6 @@
 import { formatQS } from './utils.js';
 import { targeting } from './targeting.js';
+import {hook} from './hook.js';
 
 // Adserver parent class
 const AdServer = function(attr) {
@@ -11,6 +12,7 @@ const AdServer = function(attr) {
 };
 
 // DFP ad server
+// TODO: this seems to be unused?
 export function dfpAdserver(options, urlComponents) {
   var adserver = new AdServer(options);
   adserver.urlComponents = urlComponents;
@@ -53,3 +55,8 @@ export function dfpAdserver(options, urlComponents) {
 
   return adserver;
 };
+
+/**
+ * return the GAM PPID, if available (eid for the userID configured with `userSync.ppidSource`)
+ */
+export const getPPID = hook('sync', () => undefined);

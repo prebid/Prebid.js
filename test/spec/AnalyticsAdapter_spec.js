@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import * as events from 'src/events.js';
 import CONSTANTS from 'src/constants.json';
 import { server } from 'test/mocks/xhr.js';
+import {disableAjaxForAnalytics, enableAjaxForAnalytics} from '../mocks/analyticsStub.js';
 
 const REQUEST_BIDS = CONSTANTS.EVENTS.REQUEST_BIDS;
 const BID_REQUESTED = CONSTANTS.EVENTS.BID_REQUESTED;
@@ -24,6 +25,9 @@ FEATURE: Analytics Adapters API
   SCENARIO: A publisher enables analytics
     AND an  \`example\` instance of \`AnalyticsAdapter\`\n`, () => {
   let adapter;
+
+  before(enableAjaxForAnalytics);
+  after(disableAjaxForAnalytics);
 
   beforeEach(function () {
     adapter = new AnalyticsAdapter(config);

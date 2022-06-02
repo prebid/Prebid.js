@@ -22,10 +22,22 @@ describe('trustpid System', () => {
   });
 
   describe('trustpid getId()', () => {
+    before(() => {
+      window.FC_CONF = {
+        TELCO_ACRONYM: {
+          'domain.with.acronym': 'acronymValue',
+        }
+      };
+    });
+
     afterEach(() => {
       storage.removeDataFromLocalStorage(connectDataKey);
       storage.removeDataFromLocalStorage(connectDomainKey);
     });
+
+    after(() => {
+      window.FC_CONF = {};
+    })
 
     it('it should return object with key callback', () => {
       expect(trustpidSubmodule.getId()).to.have.property('callback');
@@ -58,20 +70,20 @@ describe('trustpid System', () => {
 
     it('returns {id: {trustpid: data.trustpid}} if we have the right data stored in the localstorage ', () => {
       const idGraph = {
-        'domain': 'uat.mno.link',
+        'domain': 'domain.with.acronym',
         'umid': 'umidValue',
       };
-      storage.setDataInLocalStorage(connectDomainKey, JSON.stringify('uat.mno.link'));
+      storage.setDataInLocalStorage(connectDomainKey, JSON.stringify('domain.with.acronym'));
       storage.setDataInLocalStorage(connectDataKey, JSON.stringify(getStorageData(idGraph)));
       const response = trustpidSubmodule.getId();
       expect(response).to.have.property('id');
       expect(response.id).to.have.property('trustpid');
-      expect(response.id.trustpid).to.be.equal('umidValue-xxxx');
+      expect(response.id.trustpid).to.be.equal('umidValue-acronymValue');
     });
 
     it('returns {trustpid: data.trustpid} if we have the right data stored in the localstorage right after the callback is called', (done) => {
       const idGraph = {
-        'domain': 'uat.mno.link',
+        'domain': 'domain.with.acronym',
         'umid': 'umidValue',
       };
       const response = trustpidSubmodule.getId();
@@ -79,12 +91,12 @@ describe('trustpid System', () => {
       expect(response.callback.toString()).contain('result(callback)');
 
       if (typeof response.callback === 'function') {
-        storage.setDataInLocalStorage(connectDomainKey, JSON.stringify('uat.mno.link'));
+        storage.setDataInLocalStorage(connectDomainKey, JSON.stringify('domain.with.acronym'));
         storage.setDataInLocalStorage(connectDataKey, JSON.stringify(getStorageData(idGraph)));
         response.callback(function (result) {
           expect(result).to.not.be.null;
           expect(result).to.have.property('trustpid');
-          expect(result.trustpid).to.be.equal('umidValue-xxxx');
+          expect(result.trustpid).to.be.equal('umidValue-acronymValue');
           done()
         })
       }
@@ -92,7 +104,7 @@ describe('trustpid System', () => {
 
     it('returns null if domains don\'t match', (done) => {
       const idGraph = {
-        'domain': 'uat.mno.link',
+        'domain': 'domain.with.acronym',
         'umid': 'umidValue',
       };
       storage.setDataInLocalStorage(connectDomainKey, JSON.stringify('differentDomainValue'));
@@ -115,7 +127,7 @@ describe('trustpid System', () => {
 
     it('returns {trustpid: data.trustpid} if we have the right data stored in the localstorage right after 500ms delay', (done) => {
       const idGraph = {
-        'domain': 'uat.mno.link',
+        'domain': 'domain.with.acronym',
         'umid': 'umidValue',
       };
 
@@ -125,13 +137,13 @@ describe('trustpid System', () => {
 
       if (typeof response.callback === 'function') {
         setTimeout(() => {
-          storage.setDataInLocalStorage(connectDomainKey, JSON.stringify('uat.mno.link'));
+          storage.setDataInLocalStorage(connectDomainKey, JSON.stringify('domain.with.acronym'));
           storage.setDataInLocalStorage(connectDataKey, JSON.stringify(getStorageData(idGraph)));
         }, 500);
         response.callback(function (result) {
           expect(result).to.not.be.null;
           expect(result).to.have.property('trustpid');
-          expect(result.trustpid).to.be.equal('umidValue-xxxx');
+          expect(result.trustpid).to.be.equal('umidValue-acronymValue');
           done()
         })
       }
@@ -139,7 +151,7 @@ describe('trustpid System', () => {
 
     it('returns null if we have the data stored in the localstorage after 500ms delay and the max (waiting) delay is only 200ms ', (done) => {
       const idGraph = {
-        'domain': 'uat.mno.link',
+        'domain': 'domain.with.acronym',
         'umid': 'umidValue',
       };
 
@@ -149,7 +161,7 @@ describe('trustpid System', () => {
 
       if (typeof response.callback === 'function') {
         setTimeout(() => {
-          storage.setDataInLocalStorage(connectDomainKey, JSON.stringify('uat.mno.link'));
+          storage.setDataInLocalStorage(connectDomainKey, JSON.stringify('domain.with.acronym'));
           storage.setDataInLocalStorage(connectDataKey, JSON.stringify(getStorageData(idGraph)));
         }, 500);
         response.callback(function (result) {
@@ -191,22 +203,33 @@ describe('trustpid System', () => {
   });
 
   describe('trustpid messageHandler for acronyms', () => {
+    before(() => {
+      window.FC_CONF = {
+        TELCO_ACRONYM: {
+          'domain1': 'abcd',
+          'domain2': 'efgh',
+          'domain3': 'ijkl',
+        }
+      };
+    });
+
     afterEach(() => {
       storage.removeDataFromLocalStorage(connectDataKey);
       storage.removeDataFromLocalStorage(connectDomainKey);
     });
 
+    after(() => {
+      window.FC_CONF = {};
+    })
+
     const domains = [
-      {domain: 'tmi.mno.link', acronym: 'ndye'},
-      {domain: 'tmi.vodafone.de', acronym: 'pqnx'},
-      {domain: 'tmi.telekom.de', acronym: 'avgw'},
-      {domain: 'tmi.tmid.es', acronym: 'kjws'},
-      {domain: 'uat.mno.link', acronym: 'xxxx'},
-      {domain: 'es.tmiservice.orange.com', acronym: 'aplw'},
+      {domain: 'domain1', acronym: 'abcd'},
+      {domain: 'domain2', acronym: 'efgh'},
+      {domain: 'domain3', acronym: 'ijkl'},
     ];
 
     domains.forEach(({domain, acronym}) => {
-      it(`correctly sets trustpid value and acronym to ${acronym} for ${domain} domain`, (done) => {
+      it(`correctly sets trustpid value and acronym to ${acronym} for ${domain}`, (done) => {
         const idGraph = {
           'domain': domain,
           'umid': 'umidValue',
