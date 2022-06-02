@@ -713,7 +713,7 @@ Object.assign(ORTB2.prototype, {
         }
         acc[bid.bidder] = (s2sConfig.adapterOptions && s2sConfig.adapterOptions[bid.bidder]) ? Object.assign({}, bid.params, s2sConfig.adapterOptions[bid.bidder]) : bid.params;
         return acc;
-      }, {...deepAccess(adUnit, 'ortb2Imp.ext')});
+      }, {...deepAccess(adUnit, 'ortb2Imp.ext.prebid.bidder')});
 
       const imp = { ...adUnit.ortb2Imp, id: impressionId, ext, secure: s2sConfig.secure };
 
