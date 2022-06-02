@@ -366,119 +366,6 @@ export function newConfig() {
     return bidderConfig;
   }
 
-  /**
-   * Returns backwards compatible FPD data for modules
-   */
-  function getLegacyFpd(obj) {
-    if (typeof obj !== 'object') return;
-
-    let duplicate = {};
-
-    Object.keys(obj).forEach((type) => {
-      let prop = (type === 'site') ? 'context' : type;
-      duplicate[prop] = (prop === 'context' || prop === 'user') ? Object.keys(obj[type]).filter(key => key !== 'data').reduce((result, key) => {
-        if (key === 'ext') {
-          mergeDeep(result, obj[type][key]);
-        } else {
-          mergeDeep(result, {[key]: obj[type][key]});
-        }
-
-        return result;
-      }, {}) : obj[type];
-    });
-
-    return duplicate;
-  }
-
-  /**
-   * Returns backwards compatible FPD data for modules
-   */
-  function getLegacyImpFpd(obj) {
-    if (typeof obj !== 'object') return;
-
-    let duplicate = {};
-
-    if (deepAccess(obj, 'ext.data')) {
-      Object.keys(obj.ext.data).forEach((key) => {
-        if (key === 'pbadslot') {
-          mergeDeep(duplicate, {context: {pbAdSlot: obj.ext.data[key]}});
-        } else if (key === 'adserver') {
-          mergeDeep(duplicate, {context: {adServer: obj.ext.data[key]}});
-        } else {
-          mergeDeep(duplicate, {context: {data: {[key]: obj.ext.data[key]}}});
-        }
-      });
-    }
-
-    return duplicate;
-  }
-
-  /**
-   * Copy FPD over to OpenRTB standard format in config
-   */
-  function convertFpd(opt) {
-    let duplicate = {};
-
-    Object.keys(opt).forEach((type) => {
-      let prop = (type === 'context') ? 'site' : type;
-      duplicate[prop] = (prop === 'site' || prop === 'user') ? Object.keys(opt[type]).reduce((result, key) => {
-        if (key === 'data') {
-          mergeDeep(result, {ext: {data: opt[type][key]}});
-        } else {
-          mergeDeep(result, {[key]: opt[type][key]});
-        }
-
-        return result;
-      }, {}) : opt[type];
-    });
-
-    return duplicate;
-  }
-
-  /**
-   * Copy Impression FPD over to OpenRTB standard format in config
-   * Only accepts bid level context.data values with pbAdSlot and adServer exceptions
-   */
-  function convertImpFpd(opt) {
-    let duplicate = {};
-
-    Object.keys(opt).filter(prop => prop === 'context').forEach((type) => {
-      Object.keys(opt[type]).forEach((key) => {
-        if (key === 'data') {
-          mergeDeep(duplicate, {ext: {data: opt[type][key]}});
-        } else {
-          if (typeof opt[type][key] === 'object' && !Array.isArray(opt[type][key])) {
-            Object.keys(opt[type][key]).forEach(data => {
-              mergeDeep(duplicate, {ext: {data: {[key.toLowerCase()]: {[data.toLowerCase()]: opt[type][key][data]}}}});
-            });
-          } else {
-            mergeDeep(duplicate, {ext: {data: {[key.toLowerCase()]: opt[type][key]}}});
-          }
-        }
-      });
-    });
-
-    return duplicate;
-  }
-
-  /**
-   * Copy FPD over to OpenRTB standard format in each adunit
-   */
-  function convertAdUnitFpd(arr) {
-    let convert = [];
-
-    arr.forEach((adunit) => {
-      if (adunit.fpd) {
-        (adunit['ortb2Imp']) ? mergeDeep(adunit['ortb2Imp'], convertImpFpd(adunit.fpd)) : adunit['ortb2Imp'] = convertImpFpd(adunit.fpd);
-        convert.push((({ fpd, ...duplicate }) => duplicate)(adunit));
-      } else {
-        convert.push(adunit);
-      }
-    });
-
-    return convert;
-  }
-
   /*
    * Sets configuration given an object containing key-value pairs and calls
    * listeners that were added by the `subscribe` function
@@ -493,14 +380,13 @@ export function newConfig() {
     let topicalConfig = {};
 
     topics.forEach(topic => {
-      let prop = (topic === 'fpd') ? 'ortb2' : topic;
-      let option = (topic === 'fpd') ? convertFpd(options[topic]) : options[topic];
+      let option = options[topic];
 
-      if (isPlainObject(defaults[prop]) && isPlainObject(option)) {
-        option = Object.assign({}, defaults[prop], option);
+      if (isPlainObject(defaults[topic]) && isPlainObject(option)) {
+        option = Object.assign({}, defaults[topic], option);
       }
 
-      topicalConfig[prop] = config[prop] = option;
+      topicalConfig[topic] = config[topic] = option;
     });
 
     callSubscribers(topicalConfig);
@@ -593,14 +479,13 @@ export function newConfig() {
           bidderConfig[bidder] = {};
         }
         Object.keys(config.config).forEach(topic => {
-          let prop = (topic === 'fpd') ? 'ortb2' : topic;
-          let option = (topic === 'fpd') ? convertFpd(config.config[topic]) : config.config[topic];
+          let option = config.config[topic];
 
           if (isPlainObject(option)) {
             const func = mergeFlag ? mergeDeep : Object.assign;
-            bidderConfig[bidder][prop] = func({}, bidderConfig[bidder][prop] || {}, option);
+            bidderConfig[bidder][topic] = func({}, bidderConfig[bidder][topic] || {}, option);
           } else {
-            bidderConfig[bidder][prop] = option;
+            bidderConfig[bidder][topic] = option;
           }
         });
       });
@@ -690,9 +575,6 @@ export function newConfig() {
     setBidderConfig,
     getBidderConfig,
     mergeBidderConfig,
-    convertAdUnitFpd,
-    getLegacyFpd,
-    getLegacyImpFpd
   };
 }
 

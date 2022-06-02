@@ -9,8 +9,8 @@ const BIDDER_CODE = 'slimcut';
 const ENDPOINT_URL = 'https://sb.freeskreen.com/pbr';
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: 52,
-  aliases: [{ code: 'scm', gvlid: 52 }],
+  gvlid: 102,
+  aliases: [{ code: 'scm', gvlid: 102 }],
   supportedMediaTypes: ['video', 'banner'],
   /**
      * Determines whether or not the given bid request is valid.

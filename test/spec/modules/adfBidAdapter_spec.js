@@ -75,7 +75,7 @@ describe('Adf adapter', function () {
 
       assert.equal(request.method, 'POST');
       assert.equal(request.url, 'https://10.8.57.207/adx/openrtb');
-      assert.deepEqual(request.options, {contentType: 'application/json'});
+      assert.equal(request.options, undefined);
       assert.ok(request.data);
     });
 

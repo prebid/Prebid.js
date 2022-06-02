@@ -748,12 +748,6 @@ Object.assign(ORTB2.prototype, {
 
       mergeDeep(imp, mediaTypes);
 
-      // if storedAuctionResponse has been set, pass SRID
-      const storedAuctionResponseBid = find(firstBidRequest.bids, bid => (bid.adUnitCode === adUnit.code && bid.storedAuctionResponse));
-      if (storedAuctionResponseBid) {
-        deepSetValue(imp, 'ext.prebid.storedauctionresponse.id', storedAuctionResponseBid.storedAuctionResponse.toString());
-      }
-
       const floor = (() => {
         // we have to pick a floor for the imp - here we attempt to find the minimum floor
         // across all bids for this adUnit

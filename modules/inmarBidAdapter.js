@@ -1,4 +1,4 @@
-import { logError } from '../src/utils.js';
+import {logError, mergeDeep} from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
@@ -41,7 +41,7 @@ export const spec = {
       uspConsent: bidderRequest.uspConsent,
       currencyCode: config.getConfig('currency.adServerCurrency'),
       coppa: config.getConfig('coppa'),
-      firstPartyData: config.getLegacyFpd(bidderRequest.ortb2),
+      firstPartyData: getLegacyFpd(bidderRequest.ortb2),
       prebidVersion: '$prebid.version$'
     };
 
@@ -107,5 +107,26 @@ export const spec = {
     return syncs;
   }
 };
+
+function getLegacyFpd(ortb2) {
+  if (typeof ortb2 !== 'object') return;
+
+  let duplicate = {};
+
+  Object.keys(ortb2).forEach((type) => {
+    let prop = (type === 'site') ? 'context' : type;
+    duplicate[prop] = (prop === 'context' || prop === 'user') ? Object.keys(ortb2[type]).filter(key => key !== 'data').reduce((result, key) => {
+      if (key === 'ext') {
+        mergeDeep(result, ortb2[type][key]);
+      } else {
+        mergeDeep(result, {[key]: ortb2[type][key]});
+      }
+
+      return result;
+    }, {}) : ortb2[type];
+  });
+
+  return duplicate;
+}
 
 registerBidder(spec);

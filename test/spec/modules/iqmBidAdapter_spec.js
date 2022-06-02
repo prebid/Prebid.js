@@ -101,7 +101,7 @@ describe('iqmAdapter', function () {
           bidfloor: 0.5},
         crumbs: {
           pubcid: 'a0f51f64-6d86-41d0-abaf-7ece71404d94'},
-        fpd: {'context': {'pbAdSlot': '/19968336/header-bid-tag-0'}},
+        ortb2Imp: {ext: {data: {'pbadslot': '/19968336/header-bid-tag-0'}}},
         mediaTypes: {
           banner: {
             sizes: [[300, 250]]}},
@@ -124,7 +124,7 @@ describe('iqmAdapter', function () {
         bidder: 'iqm',
         params: {publisherId: 'df5fd732-c5f3-11e7-abc4-cec278b6b50a', placementId: 23451, bidfloor: 0.5},
         crumbs: {pubcid: 'a0f51f64-6d86-41d0-abaf-7ece71404d94'},
-        fpd: {context: {pbAdSlot: '/19968336/header-bid-tag-0'}},
+        ortb2Imp: {ext: {data: {'pbadslot': '/19968336/header-bid-tag-0'}}},
         mediaTypes: {banner: {sizes: [[300, 250]]}},
         adUnitCode: '/19968336/header-bid-tag-0',
         transactionId: '56fe8d92-ff6e-4c34-90ad-2f743cd0eae8',
@@ -175,7 +175,34 @@ describe('iqmAdapter', function () {
       expect(request[0].method).to.equal('POST');
     });
     it('should attach valid video params to the tag', function () {
-      let validBidRequests_video = [{bidder: 'iqm', params: {publisherId: 'df5fd732-c5f3-11e7-abc4-cec278b6b50a', placementId: 23451, bidfloor: 0.5, video: {placement: 2, mimes: ['video/mp4'], protocols: [2, 5], skipppable: true, playback_method: ['auto_play_sound_off']}}, crumbs: {pubcid: '09b8f065-9d1b-4a36-bd0c-ea22e2dad807'}, fpd: {context: {pbAdSlot: 'video1'}}, mediaTypes: {video: {playerSize: [[640, 480]], context: 'instream'}}, adUnitCode: 'video1', transactionId: '86795c66-acf9-4dd5-998f-6d5362aaa541', sizes: [[640, 480]], bidId: '28bfb7e2d12897', bidderRequestId: '16e1ce8481bc6d', auctionId: '3140a2ec-d567-4db0-9bbb-eb6fa20ccb71', src: 'client', bidRequestsCount: 1, bidderRequestsCount: 1, bidderWinsCount: 0}];
+      let validBidRequests_video = [{
+        bidder: 'iqm',
+        params: {
+          publisherId: 'df5fd732-c5f3-11e7-abc4-cec278b6b50a',
+          placementId: 23451,
+          bidfloor: 0.5,
+          video: {
+            placement: 2,
+            mimes: ['video/mp4'],
+            protocols: [2, 5],
+            skipppable: true,
+            playback_method: ['auto_play_sound_off']
+          }
+        },
+        crumbs: {pubcid: '09b8f065-9d1b-4a36-bd0c-ea22e2dad807'},
+        ortb2Imp: {ext: {data: {'pbadslot': 'video1'}}},
+        mediaTypes: {video: {playerSize: [[640, 480]], context: 'instream'}},
+        adUnitCode: 'video1',
+        transactionId: '86795c66-acf9-4dd5-998f-6d5362aaa541',
+        sizes: [[640, 480]],
+        bidId: '28bfb7e2d12897',
+        bidderRequestId: '16e1ce8481bc6d',
+        auctionId: '3140a2ec-d567-4db0-9bbb-eb6fa20ccb71',
+        src: 'client',
+        bidRequestsCount: 1,
+        bidderRequestsCount: 1,
+        bidderWinsCount: 0
+      }];
       let bidderRequest_video = {
         bidderCode: 'iqm',
         auctionId: '3140a2ec-d567-4db0-9bbb-eb6fa20ccb71',
@@ -260,7 +287,7 @@ describe('iqmAdapter', function () {
           bidfloor: 0.5},
         crumbs: {
           pubcid: 'a0f51f64-6d86-41d0-abaf-7ece71404d94'},
-        fpd: {'context': {'pbAdSlot': '/19968336/header-bid-tag-0'}},
+        ortb2Imp: {ext: {data: {'pbadslot': '/19968336/header-bid-tag-0'}}},
         mediaTypes: {
           banner: {
             sizes: [[300, 250]]}},
@@ -282,7 +309,7 @@ describe('iqmAdapter', function () {
         bidder: 'iqm',
         params: {publisherId: 'df5fd732-c5f3-11e7-abc4-cec278b6b50a', placementId: 23451, bidfloor: 0.5},
         crumbs: {pubcid: 'a0f51f64-6d86-41d0-abaf-7ece71404d94'},
-        fpd: {context: {pbAdSlot: '/19968336/header-bid-tag-0'}},
+        ortb2Imp: {ext: {data: {'pbadslot': '/19968336/header-bid-tag-0'}}},
         mediaTypes: {banner: {sizes: [[300, 250]]}},
         adUnitCode: '/19968336/header-bid-tag-0',
         transactionId: '56fe8d92-ff6e-4c34-90ad-2f743cd0eae8',
@@ -347,7 +374,7 @@ describe('iqmAdapter', function () {
           }
         },
         crumbs: {pubcid: '09b8f065-9d1b-4a36-bd0c-ea22e2dad807'},
-        fpd: {context: {pbAdSlot: 'video1'}},
+        ortb2Imp: {ext: {data: {'pbadslot': 'video1'}}},
         mediaTypes: {video: {playerSize: [[640, 480]], context: 'instream'}},
         adUnitCode: 'video1',
         transactionId: '86795c66-acf9-4dd5-998f-6d5362aaa541',

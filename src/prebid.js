@@ -573,7 +573,8 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
 $$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels, auctionId, ortb2 } = {}) {
   events.emit(REQUEST_BIDS);
   const cbTimeout = timeout || config.getConfig('bidderTimeout');
-  adUnits = (adUnits && config.convertAdUnitFpd(isArray(adUnits) ? adUnits : [adUnits])) || $$PREBID_GLOBAL$$.adUnits;
+  adUnits = adUnits || $$PREBID_GLOBAL$$.adUnits;
+  adUnits = (isArray(adUnits) ? adUnits : [adUnits]);
   logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', arguments);
   const ortb2Fragments = {
     global: mergeDeep({}, config.getAnyConfig('ortb2') || {}, ortb2 || {}),
@@ -687,7 +688,7 @@ $$PREBID_GLOBAL$$.requestBids.before(executeCallbacks, 49);
  */
 $$PREBID_GLOBAL$$.addAdUnits = function (adUnitArr) {
   logInfo('Invoking $$PREBID_GLOBAL$$.addAdUnits', arguments);
-  $$PREBID_GLOBAL$$.adUnits.push.apply($$PREBID_GLOBAL$$.adUnits, config.convertAdUnitFpd(isArray(adUnitArr) ? adUnitArr : [adUnitArr]));
+  $$PREBID_GLOBAL$$.adUnits.push.apply($$PREBID_GLOBAL$$.adUnits, isArray(adUnitArr) ? adUnitArr : [adUnitArr]);
   // emit event
   events.emit(ADD_AD_UNITS);
 };
