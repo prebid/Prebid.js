@@ -100,7 +100,8 @@ describe('blueconicRtdProvider', function() {
       const rtdConfig = {
         params: {
           requestParams: {
-            publisherId: 'Publisher1'
+            publisherId: 'Publisher1',
+            coppa: true
           }}
       };
 

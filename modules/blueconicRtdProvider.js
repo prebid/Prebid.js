@@ -13,11 +13,10 @@ import {mergeDeep, isPlainObject, logMessage, logError} from '../src/utils.js';
 
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'blueconic';
-const GVLID = 1073;
 
 export const RTD_LOCAL_NAME = 'bcPrebidData';
 
-export const storage = getStorageManager({gvlid: GVLID, moduleName: SUBMODULE_NAME});
+export const storage = getStorageManager({ moduleName: SUBMODULE_NAME});
 
 /**
  * Lazy merge objects.

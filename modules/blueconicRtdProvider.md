@@ -1,5 +1,7 @@
 # Overview
 
+coppa_supported: true  (COPPA support)
+
 Module Name: BlueConic Rtd Provider
 Module Type: Rtd Provider
 Maintainer: connectors@blueconic.com
@@ -39,7 +41,8 @@ pbjs.setConfig(
                 waitForIt: true,
                 params: {
                     requestParams: {
-                        publisherId: 1234
+                        publisherId: 1234,
+                        coppa: true
                     }
                 }
             }
@@ -56,11 +59,19 @@ pbjs.setConfig(
 | name | String | Real time data module name | Always 'blueconic' |
 | waitForIt | Boolean | Required to ensure that the auction is delayed until prefetch is complete | Optional. Defaults to false |
 | params | Object | | |
-| params.requestParams | Object | Publisher partner specific configuration options, such as optional publisher id and other segment query related metadata | Optional |
+| params.requestParams | Object | Publisher partner specific configuration options, such as optional publisher id, coppa config and other segment query related metadata  | Optional |
 
 
 Please see the examples available in the blueconicRtdProvider_spec.js
 tests and work with your Blueconic Prebid integration team (connectors@blueconic.com).
+
+#### COPPA support
+
+COPPA support can be enabled for all the visitors by changing the config value:
+
+```js
+config.setConfig({ coppa: true });
+```
 
 ### Testing 
 
