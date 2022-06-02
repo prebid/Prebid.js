@@ -17,14 +17,16 @@ const c_BIDREQUEST = {
       crumbs: {
         pubcid: 'df2144f7-673f-4440-83f5-cd4a73642d99'
       },
-      fpd: {
-        context: {
-          adServer: {
-            name: 'gam',
-            adSlot: '/19968336/header-bid-tag-0'
-          },
-          pbAdSlot: '/19968336/header-bid-tag-0',
-        },
+      ortb2Imp: {
+        ext: {
+          data: {
+            adserver: {
+              name: 'gam',
+              adslot: '/19968336/header-bid-tag-0'
+            },
+            pbadslot: '/19968336/header-bid-tag-0',
+          }
+        }
       },
       mediaTypes: {
         banner: {

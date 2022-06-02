@@ -285,12 +285,12 @@ describe('ttdBidAdapter', function () {
     it('sets keywords properly if sent', function () {
       let clonedBannerRequests = deepClone(baseBannerBidRequests);
 
-      config.setConfig({ortb2: {
+      const ortb2 = {
         site: {
           keywords: 'highViewability, clothing, holiday shopping'
         }
-      }});
-      const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
+      };
+      const requestBody = testBuildRequests(clonedBannerRequests, {...baseBidderRequest, ortb2}).data;
       config.resetConfig();
       expect(requestBody.ext.ttdprebid.keywords).to.deep.equal(['highViewability', 'clothing', 'holiday shopping']);
     });
@@ -404,9 +404,7 @@ describe('ttdBidAdapter', function () {
     });
 
     it('adds first party site data to the request', function () {
-      let clonedBidderRequest = deepClone(baseBidderRequest);
-
-      config.setConfig({ortb2: {
+      const ortb2 = {
         site: {
           name: 'example',
           domain: 'page.example.com',
@@ -417,9 +415,9 @@ describe('ttdBidAdapter', function () {
           ref: 'https://ref.example.com',
           keywords: 'power tools, drills'
         }
-      }});
+      };
+      let clonedBidderRequest = {...deepClone(baseBidderRequest), ortb2};
       const requestBody = testBuildRequests(baseBannerBidRequests, clonedBidderRequest).data;
-      config.resetConfig();
       expect(requestBody.site.name).to.equal('example');
       expect(requestBody.site.domain).to.equal('page.example.com');
       expect(requestBody.site.cat[0]).to.equal('IAB2');

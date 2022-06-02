@@ -54,7 +54,6 @@ export const spec = {
       data: bids,
       deviceWidth: screen.width,
       hb_version: '$prebid.version$',
-      ...getFLoCParameters(deepAccess(validBidRequests, '0.userId.flocId')),
       ...getUnifiedId2Parameter(deepAccess(validBidRequests, '0.userId.uid2')),
       ...getFirstPartyTeadsIdParameter()
     };
@@ -235,20 +234,6 @@ function concatSizes(bid) {
 
 function _validateId(id) {
   return (parseInt(id) > 0);
-}
-
-/**
- * Get FLoC parameters to be sent in the bid request.
- * @param `{id: string, version: string} | undefined` optionalFlocId FLoC user ID object available if "flocIdSystem" module is enabled.
- * @returns `{} | {cohortId: string} | {cohortVersion: string} | {cohortId: string, cohortVersion: string}`
- */
-function getFLoCParameters(optionalFlocId) {
-  if (!optionalFlocId) {
-    return {};
-  }
-  const cohortId = optionalFlocId.id ? { cohortId: optionalFlocId.id } : {};
-  const cohortVersion = optionalFlocId.version ? { cohortVersion: optionalFlocId.version } : {};
-  return { ...cohortId, ...cohortVersion };
 }
 
 /**

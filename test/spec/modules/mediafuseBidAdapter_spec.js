@@ -939,11 +939,7 @@ describe('MediaFuseAdapter', function () {
           uid2: { id: 'sample-uid2-value' },
           criteoId: 'sample-criteo-userid',
           netId: 'sample-netId-userid',
-          idl_env: 'sample-idl-userid',
-          flocId: {
-            id: 'sample-flocid-value',
-            version: 'chrome.1.0'
-          }
+          idl_env: 'sample-idl-userid'
         }
       });
 
@@ -958,11 +954,6 @@ describe('MediaFuseAdapter', function () {
       expect(payload.eids).to.deep.include({
         source: 'criteo.com',
         id: 'sample-criteo-userid',
-      });
-
-      expect(payload.eids).to.deep.include({
-        source: 'chrome.com',
-        id: 'sample-flocid-value'
       });
 
       expect(payload.eids).to.deep.include({

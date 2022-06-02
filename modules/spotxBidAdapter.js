@@ -11,7 +11,7 @@ export const GOOGLE_CONSENT = { consented_providers: ['3', '7', '11', '12', '15'
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: 52,
+  gvlid: 165,
   supportedMediaTypes: [VIDEO],
 
   /**
@@ -194,6 +194,10 @@ export const spec = {
 
       if (getBidIdParameter('position', bid.params) != '') {
         spotxReq.video.ext.pos = getBidIdParameter('position', bid.params);
+      } else {
+        if (deepAccess(bid, 'mediaTypes.video.pos')) {
+          spotxReq.video.ext.pos = deepAccess(bid, 'mediaTypes.video.pos');
+        }
       }
 
       if (bid.crumbs && bid.crumbs.pubcid) {

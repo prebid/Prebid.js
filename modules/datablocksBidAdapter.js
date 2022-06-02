@@ -383,7 +383,7 @@ export const spec = {
         gdpr: bidderRequest.gdprConsent || {},
         usp: bidderRequest.uspConsent || {},
         client_info: this.get_client_info(),
-        ortb2: config.getConfig('ortb2') || {}
+        ortb2: bidderRequest.ortb2 || {}
       }
     };
 

@@ -44,7 +44,7 @@ const buildOpenRtbBidRequest = (bidRequest, bidderRequest) => {
     }
   };
 
-  let ortb2 = config.getConfig('ortb2') || {};
+  let ortb2 = bidderRequest.ortb2 || {};
   Object.assign(requestTemplate.user, ortb2.user);
   Object.assign(requestTemplate.site, ortb2.site);
 

@@ -373,7 +373,7 @@ export const spec = {
    * @return {ServerRequest} Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    const firstPartyData = config.getConfig('ortb2') || {};
+    const firstPartyData = bidderRequest.ortb2 || {};
     let topLevel = {
       id: bidderRequest.auctionId,
       imp: validBidRequests.map(bidRequest => getImpression(bidRequest)),

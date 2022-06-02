@@ -75,7 +75,7 @@ describe('Adf adapter', function () {
 
       assert.equal(request.method, 'POST');
       assert.equal(request.url, 'https://10.8.57.207/adx/openrtb');
-      assert.deepEqual(request.options, {contentType: 'application/json'});
+      assert.equal(request.options, undefined);
       assert.ok(request.data);
     });
 
@@ -178,6 +178,33 @@ describe('Adf adapter', function () {
       assert.equal(request.source.fd, 1);
     });
 
+    it('should not set coppa when coppa is not provided or is set to false', function () {
+      config.setConfig({
+      });
+      let validBidRequests = [{ bidId: 'bidId', params: { test: 1 } }];
+      let bidderRequest = { gdprConsent: { gdprApplies: true, consentString: 'consentDataString' }, refererInfo: { referer: 'page' } };
+      let request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
+
+      assert.equal(request.regs.coppa, undefined);
+
+      config.setConfig({
+        coppa: false
+      });
+      request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
+
+      assert.equal(request.regs.coppa, undefined);
+    });
+
+    it('should set coppa to 1 when coppa is provided with value true', function () {
+      config.setConfig({
+        coppa: true
+      });
+      let validBidRequests = [{ bidId: 'bidId', params: { test: 1 } }];
+      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data);
+
+      assert.equal(request.regs.coppa, 1);
+    });
+
     it('should send info about device', function () {
       config.setConfig({
         device: { w: 100, h: 100 }
@@ -196,13 +223,14 @@ describe('Adf adapter', function () {
     it('should send app info', function () {
       config.setConfig({
         app: { id: 'appid' },
-        ortb2: { app: { name: 'appname' } }
       });
+      const ortb2 = { app: { name: 'appname' } };
       let validBidRequests = [{
         bidId: 'bidId',
-        params: { mid: '1000' }
+        params: { mid: '1000' },
+        ortb2
       }];
-      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data);
+      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' }, ortb2 }).data);
 
       assert.equal(request.app.id, 'appid');
       assert.equal(request.app.name, 'appname');
@@ -217,20 +245,21 @@ describe('Adf adapter', function () {
             domain: 'publisher.domain.com'
           }
         },
-        ortb2: {
-          site: {
-            publisher: {
-              name: 'publisher\'s name'
-            }
+      });
+      const ortb2 = {
+        site: {
+          publisher: {
+            name: 'publisher\'s name'
           }
         }
-      });
+      };
       let validBidRequests = [{
         bidId: 'bidId',
-        params: { mid: '1000' }
+        params: { mid: '1000' },
+        ortb2
       }];
       let refererInfo = { referer: 'page' };
-      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo }).data);
+      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo, ortb2 }).data);
 
       assert.deepEqual(request.site, {
         page: refererInfo.referer,

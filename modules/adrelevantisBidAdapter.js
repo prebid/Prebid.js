@@ -135,13 +135,12 @@ export const spec = {
       payload.referrer_detection = refererinfo;
     }
 
-    let fpdcfg = config.getLegacyFpd(config.getConfig('ortb2'));
-    if (fpdcfg && fpdcfg.context) {
-      let fdata = {
-        keywords: fpdcfg.context.keywords || '',
-        category: fpdcfg.context.data.category || ''
+    const ortb2Site = bidderRequest.ortb2?.site;
+    if (ortb2Site) {
+      payload.fpd = {
+        keywords: ortb2Site.keywords || '',
+        category: deepAccess(ortb2Site, 'ext.data.category') || ''
       }
-      payload.fpd = fdata;
     }
 
     const request = formatRequest(payload, bidderRequest);
@@ -445,6 +444,13 @@ function bidToTag(bid) {
   tag.disable_psa = true;
   if (bid.params.position) {
     tag.position = {'above': 1, 'below': 2}[bid.params.position] || 0;
+  } else {
+    let mediaTypePos = deepAccess(bid, `mediaTypes.banner.pos`) || deepAccess(bid, `mediaTypes.video.pos`);
+    // only support unknown, atf, and btf values for position at this time
+    if (mediaTypePos === 0 || mediaTypePos === 1 || mediaTypePos === 3) {
+      // ortb spec treats btf === 3, but our system interprets btf === 2; so converting the ortb value here for consistency
+      tag.position = (mediaTypePos === 3) ? 2 : mediaTypePos;
+    }
   }
   if (bid.params.trafficSourceCode) {
     tag.traffic_source_code = bid.params.trafficSourceCode;

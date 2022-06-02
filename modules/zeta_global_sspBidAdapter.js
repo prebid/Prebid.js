@@ -89,13 +89,12 @@ export const spec = {
     if (!impData.banner && !impData.video) {
       impData.banner = buildBanner(request);
     }
-    const fpd = config.getLegacyFpd(config.getConfig('ortb2')) || {};
     let payload = {
       id: bidderRequest.auctionId,
       cur: [DEFAULT_CUR],
       imp: [impData],
       site: params.site ? params.site : {},
-      device: {...fpd.device, ...params.device},
+      device: {...(bidderRequest.ortb2?.device || {}), ...params.device},
       user: params.user ? params.user : {},
       app: params.app ? params.app : {},
       ext: {
@@ -126,9 +125,10 @@ export const spec = {
     }
 
     provideEids(request, payload);
+    const url = params.shortname ? ENDPOINT_URL.concat('?shortname=', params.shortname) : ENDPOINT_URL;
     return {
       method: 'POST',
-      url: ENDPOINT_URL,
+      url: url,
       data: JSON.stringify(payload),
     };
   },

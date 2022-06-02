@@ -36,10 +36,11 @@ function readnavIDFromCookie() {
 
 function readnvgnavFromLocalStorage() {
   var i;
-  const query = '^nvg|^nav';
+  const query = /[nvga]{3}\d+/;
   for (i in window.localStorage) {
     if (i.match(query) || (!query && typeof i === 'string')) {
-      return storage.getDataFromLocalStorage(i.match(query).input);
+      const naveggId = storage.getDataFromLocalStorage(i.match(query).input).split('|')[0]
+      return naveggId.split('_')[0];
     }
   }
 }

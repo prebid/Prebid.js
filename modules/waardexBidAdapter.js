@@ -97,7 +97,7 @@ const getBidRequestToSend = validBidRequest => {
     bidId: validBidRequest.bidId,
     bidfloor: 0,
     position: parseInt(validBidRequest.params.position) || 1,
-    instl: parseInt(validBidRequest.params.instl) || 0,
+    instl: deepAccess(validBidRequest.ortb2Imp, 'instl') === 1 || parseInt(validBidRequest.params.instl) === 1 ? 1 : 0,
   };
 
   if (validBidRequest.mediaTypes[BANNER]) {

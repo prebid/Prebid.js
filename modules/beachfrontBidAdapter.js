@@ -31,7 +31,7 @@ export const SUPPORTED_USER_IDS = [
   { key: 'tdid', source: 'adserver.org', rtiPartner: 'TDID', queryParam: 'tdid' },
   { key: 'idl_env', source: 'liveramp.com', rtiPartner: 'idl', queryParam: 'idl' },
   { key: 'uid2.id', source: 'uidapi.com', rtiPartner: 'UID2', queryParam: 'uid2' },
-  { key: 'haloId', source: 'audigent.com', atype: 1, queryParam: 'haloid' }
+  { key: 'hadronId', source: 'audigent.com', atype: 1, queryParam: 'hadronid' }
 ];
 
 let appId = '';
@@ -369,7 +369,7 @@ function createVideoRequestData(bid, bidderRequest) {
   let tagid = getVideoBidParam(bid, 'tagid');
   let topLocation = getTopWindowLocation(bidderRequest);
   let eids = getEids(bid);
-  let ortb2 = deepClone(config.getConfig('ortb2'));
+  let ortb2 = deepClone(bidderRequest.ortb2);
   let payload = {
     isPrebid: true,
     appId: appId,
@@ -443,7 +443,7 @@ function createBannerRequestData(bids, bidderRequest) {
       sizes: getBannerSizes(bid)
     };
   });
-  let ortb2 = deepClone(config.getConfig('ortb2'));
+  let ortb2 = deepClone(bidderRequest.ortb2);
   let payload = {
     slots: slots,
     ortb2: ortb2,

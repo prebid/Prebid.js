@@ -1,4 +1,4 @@
-import { logWarn } from '../src/utils.js';
+import { logWarn, deepAccess } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 const BIDDER_CODE = 'zeta_global';
@@ -84,7 +84,7 @@ export const spec = {
       allimps: params.allimps,
       cur: [DEFAULT_CUR],
       wlang: params.wlang,
-      bcat: params.bcat,
+      bcat: deepAccess(bidderRequest.ortb2Imp, 'bcat') || params.bcat,
       badv: params.badv,
       bapp: params.bapp,
       source: params.source ? params.source : {},

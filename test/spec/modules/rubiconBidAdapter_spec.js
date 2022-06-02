@@ -248,7 +248,6 @@ describe('the rubicon adapter', function () {
       criteoId: '1111',
     };
     bid.userIdAsEids = createEidsArray(bid.userId);
-    bid.storedAuctionResponse = 11111;
   }
 
   function createVideoBidderRequestNoVideo() {
@@ -927,15 +926,10 @@ describe('the rubicon adapter', function () {
               }
             };
 
-            sandbox.stub(config, 'getConfig').callsFake(key => {
-              const config = {
-                ortb2: {
-                  site,
-                  user
-                }
-              };
-              return utils.deepAccess(config, key);
-            });
+            const ortb2 = {
+              site,
+              user
+            }
 
             const expectedQuery = {
               'kw': 'a,b,c,d',
@@ -953,7 +947,7 @@ describe('the rubicon adapter', function () {
             };
 
             // get the built request
-            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            let [request] = spec.buildRequests(bidderRequest.bids.map((b) => ({...b, ortb2})), bidderRequest);
             let data = parseQuery(request.data);
 
             // make sure that tg_v, tg_i, and kw values are correct
@@ -1630,6 +1624,47 @@ describe('the rubicon adapter', function () {
           expect(post.ext.prebid.bidders.rubicon.integration).to.equal(PBS_INTEGRATION);
         });
 
+        describe('ortb2imp sent to video bids', function () {
+          beforeEach(function () {
+            // initialize
+            if (bidderRequest.bids[0].hasOwnProperty('ortb2Imp')) {
+              delete bidderRequest.bids[0].ortb2Imp;
+            }
+          });
+
+          it('should add ortb values to video requests', function () {
+            createVideoBidderRequest();
+
+            sandbox.stub(Date, 'now').callsFake(() =>
+              bidderRequest.auctionStart + 100
+            );
+
+            bidderRequest.bids[0].ortb2Imp = {
+              ext: {
+                gpid: '/test/gpid',
+                data: {
+                  pbadslot: '/test/pbadslot'
+                },
+                prebid: {
+                  storedauctionresponse: {
+                    id: 'sample_video_response'
+                  }
+                }
+              }
+            }
+
+            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            let post = request.data;
+
+            expect(post).to.have.property('imp');
+            // .with.length.of(1);
+            let imp = post.imp[0];
+            expect(imp.ext.gpid).to.equal('/test/gpid');
+            expect(imp.ext.data.pbadslot).to.equal('/test/pbadslot');
+            expect(imp.ext.prebid.storedauctionresponse.id).to.equal('sample_video_response');
+          });
+        });
+
         it('should correctly set bidfloor on imp when getfloor in scope', function () {
           createVideoBidderRequest();
           // default getFloor response is empty object so should not break and not send hard_floor
@@ -1712,6 +1747,22 @@ describe('the rubicon adapter', function () {
           // should have the imp ext bidder params be under the alias name not rubicon superRubicon
           expect(request.data.imp[0].ext).to.have.property('superRubicon').that.is.an('object');
           expect(request.data.imp[0].ext).to.not.haveOwnProperty('rubicon');
+        });
+
+        it('should add floors flag correctly to PBS Request', function () {
+          createVideoBidderRequest();
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+
+          // should not pass if undefined
+          expect(request.data.ext.prebid.floors).to.be.undefined;
+
+          // should pass it as false
+          bidderRequest.bids[0].floorData = {
+            skipped: false,
+            location: 'fetch',
+          }
+          let [newRequest] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(newRequest.data.ext.prebid.floors).to.deep.equal({ enabled: false });
         });
 
         it('should add multibid configuration to PBS Request', function () {
@@ -2056,17 +2107,12 @@ describe('the rubicon adapter', function () {
             data: [{foo: 'bar'}]
           };
 
-          sandbox.stub(config, 'getConfig').callsFake(key => {
-            const config = {
-              ortb2: {
-                site,
-                user
-              }
-            };
-            return utils.deepAccess(config, key);
-          });
+          const ortb2 = {
+            site,
+            user
+          };
 
-          const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          const [request] = spec.buildRequests(bidderRequest.bids.map((b) => ({...b, ortb2})), bidderRequest);
 
           const expected = {
             site: Object.assign({}, site, {keywords: bidderRequest.bids[0].params.keywords.join(',')}),
@@ -2082,22 +2128,6 @@ describe('the rubicon adapter', function () {
           expect(request.data.user.keywords).to.deep.equal('d');
           expect(request.data.site.ext.data).to.deep.equal(expected.siteData);
           expect(request.data.user.ext.data).to.deep.equal(expected.userData);
-        });
-
-        it('should include storedAuctionResponse in video bid request', function () {
-          createVideoBidderRequest();
-
-          sandbox.stub(Date, 'now').callsFake(() =>
-            bidderRequest.auctionStart + 100
-          );
-
-          const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          expect(request.data.imp).to.exist.and.to.be.a('array');
-          expect(request.data.imp).to.have.lengthOf(1);
-          expect(request.data.imp[0].ext).to.exist.and.to.be.a('object');
-          expect(request.data.imp[0].ext.prebid).to.exist.and.to.be.a('object');
-          expect(request.data.imp[0].ext.prebid.storedauctionresponse).to.exist.and.to.be.a('object');
-          expect(request.data.imp[0].ext.prebid.storedauctionresponse.id).to.equal('11111');
         });
 
         it('should include pbadslot in bid request', function () {

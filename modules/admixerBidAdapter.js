@@ -32,7 +32,7 @@ export const spec = {
     } while (w !== window.top);
     const payload = {
       imps: [],
-      ortb2: config.getConfig('ortb2'),
+      ortb2: bidderRequest.ortb2,
       docReferrer: docRef,
     };
     let endpointUrl;

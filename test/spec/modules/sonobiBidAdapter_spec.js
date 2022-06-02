@@ -355,14 +355,7 @@ describe('SonobiBidAdapter', function () {
           }
         }
       };
-
-      sandbox.stub(config, 'getConfig').callsFake(key => {
-        const config = {
-          ortb2: ortb2
-        };
-        return utils.deepAccess(config, key);
-      });
-      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
+      const bidRequests = spec.buildRequests(bidRequest, {...bidderRequests, ortb2});
       expect(bidRequests.data.fpd).to.equal(JSON.stringify(ortb2));
     });
 
