@@ -7,13 +7,14 @@
 import { isFn, logInfo, logWarn, isStr, isNumber, isPlainObject, logError } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { uspDataHandler } from '../src/adapterManager.js';
+import {getGlobal} from '../src/prebidGlobal.js';
 
 const DEFAULT_CONSENT_API = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 50;
 const USPAPI_VERSION = 1;
 
-export let consentAPI;
-export let consentTimeout;
+export let consentAPI = DEFAULT_CONSENT_API;
+export let consentTimeout = DEFAULT_CONSENT_TIMEOUT;
 export let staticConsentData;
 
 let consentData;
@@ -256,6 +257,8 @@ export function resetConsentData() {
   consentAPI = undefined;
   consentTimeout = undefined;
   uspDataHandler.reset();
+  getGlobal().requestBids.getHooks({hook: requestBidsHook}).remove();
+  addedConsentHook = false;
 }
 
 /**
@@ -264,10 +267,6 @@ export function resetConsentData() {
  */
 export function setConsentConfig(config) {
   config = config && config.usp;
-  if (config && config.disable === true) {
-    logWarn('consentManagement.usp installed but disabled, exiting module');
-    return;
-  }
   if (!config || typeof config !== 'object') {
     logWarn('consentManagement.usp config not defined, using defaults');
   }
@@ -284,9 +283,6 @@ export function setConsentConfig(config) {
     consentTimeout = DEFAULT_CONSENT_TIMEOUT;
     logInfo(`consentManagement.usp config did not specify timeout. Using system default setting (${DEFAULT_CONSENT_TIMEOUT}).`);
   }
-
-  logInfo('USPAPI consentManagement module has been activated...');
-
   if (consentAPI === 'static') {
     if (isPlainObject(config.consentData) && isPlainObject(config.consentData.getUSPData)) {
       if (config.consentData.getUSPData.uspString) staticConsentData = { usPrivacy: config.consentData.getUSPData.uspString };
@@ -295,11 +291,17 @@ export function setConsentConfig(config) {
       logError(`consentManagement config with cmpApi: 'static' did not specify consentData. No consents will be available to adapters.`);
     }
   }
+  enableConsentManagement(true);
+}
+
+function enableConsentManagement(configFromUser = false) {
   if (!addedConsentHook) {
-    $$PREBID_GLOBAL$$.requestBids.before(requestBidsHook, 50);
+    logInfo(`USPAPI consentManagement module has been activated${configFromUser ? '' : ` using default values (api: '${consentAPI}', timeout: ${consentTimeout}ms)`}`);
+    getGlobal().requestBids.before(requestBidsHook, 50);
   }
   addedConsentHook = true;
   uspDataHandler.enable();
   loadConsentData(); // immediately look up consent data to make it available without requiring an auction
 }
 config.getConfig('consentManagement', config => setConsentConfig(config.consentManagement));
+setTimeout(() => !addedConsentHook && enableConsentManagement())

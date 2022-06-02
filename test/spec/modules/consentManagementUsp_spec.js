@@ -23,8 +23,14 @@ function createIFrameMarker() {
 }
 
 describe('consentManagement', function () {
+  it('should be enabled by default', () => {
+    expect(uspDataHandler.enabled).to.be.true;
+  });
+
   describe('setConsentConfig tests:', function () {
     describe('empty setConsentConfig value', function () {
+      before(resetConsentData);
+
       beforeEach(function () {
         sinon.stub(utils, 'logInfo');
         sinon.stub(utils, 'logWarn');
@@ -42,13 +48,6 @@ describe('consentManagement', function () {
         expect(consentAPI).to.be.equal('iab');
         expect(consentTimeout).to.be.equal(50);
         sinon.assert.callCount(utils.logInfo, 3);
-      });
-
-      it('should not run if disable is true', function () {
-        setConsentConfig({usp: {disable: true}});
-        expect(consentAPI).to.be.undefined;
-        expect(consentTimeout).to.be.undefined;
-        sinon.assert.callCount(utils.logWarn, 1);
       });
 
       it('should use system default values', function () {
