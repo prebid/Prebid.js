@@ -26,6 +26,19 @@ describe('consentManagement', function () {
   it('should be enabled by default', () => {
     expect(uspDataHandler.enabled).to.be.true;
   });
+  it('should respect configuration set after activation', () => {
+    setConsentConfig({
+      usp: {
+        cmpApi: 'static',
+        consentData: {
+          getUSPData: {
+            uspString: '1YYY'
+          }
+        }
+      }
+    });
+    expect(uspDataHandler.getConsentData()).to.equal('1YYY');
+  })
 
   describe('setConsentConfig tests:', function () {
     describe('empty setConsentConfig value', function () {
