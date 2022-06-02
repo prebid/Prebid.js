@@ -2,7 +2,14 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 // import { config } from 'src/config';
 import { VIDEO } from '../src/mediaTypes.js';
-import { deepSetValue, isFn } from '../src/utils.js';
+import { isStr,
+  isPlainObject,
+  isNumber,
+  isArray,
+  isFn,
+  deepAccess,
+  deepSetValue,
+  logMessage } from '../src/utils.js';
 
 const BIDDER_CODE = 'jwplayer';
 const URL = 'https://ib.adnxs.com/openrtb2/prebid';
@@ -10,7 +17,7 @@ const URL = 'https://ib.adnxs.com/openrtb2/prebid';
 const GVLID = 1046;
 const SUPPORTED_AD_TYPES = [VIDEO];
 
-// Video Parameters 
+// Video Parameters
 // https://docs.prebid.org/dev-docs/bidder-adaptor.html#step-2-accept-video-parameters-and-pass-them-to-your-server
 const VIDEO_ORTB_PARAMS = [
   'mimes',
@@ -90,7 +97,7 @@ export const spec = {
 function buildRequest(bidRequest, bidderRequest) {
   // Open RTB Request Object
   const openrtbRequest = {
-    id: bidRequest.params.bidId,
+    id: bidRequest.bidId,
     imp: buildRequestImpression(bidRequest, bidderRequest),
     site: buildRequestSite(bidRequest),
     device: buildRequestDevice()
@@ -107,7 +114,7 @@ function buildRequest(bidRequest, bidderRequest) {
     deepSetValue(openrtbRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent);
   }
 
-  return JSON.stringify(openrtbRequest);;
+  return JSON.stringify(openrtbRequest);
 }
 
 function buildRequestImpression(bidRequest) {
@@ -115,15 +122,16 @@ function buildRequestImpression(bidRequest) {
 
   const impressionObject = {
     id: bidRequest.adUnitCode,
-    secure: isSecure() ? 1 : 0
   };
 
   impressionObject.video = buildImpressionVideo(bidRequest);
 
   const bidFloorData = buildBidFloorData(bidRequest);
-  impressionObject.bidfloor = bidFloorData.floor;
-  impressionObject.bidfloorcur = bidFloorData.currency;
-  
+  if (bidFloorData) {
+    impressionObject.bidfloor = bidFloorData.floor;
+    impressionObject.bidfloorcur = bidFloorData.currency;
+  }
+
   impressionObject.ext = buildImpressionExtension(bidRequest);
 
   impressions.push(impressionObject);
@@ -156,18 +164,19 @@ function buildImpressionExtension(bidRequest) {
 
 function buildBidFloorData(bidRequest) {
   const {params} = bidRequest;
-  // Bid Floor
-  const bidFloorRequest = {
-    currency: params.currency || 'USD',
-    mediaType: 'video',
-    size: '*'
-  };
+  const currency = params.currency || 'USD';
 
   let floorData;
   if (isFn(bidRequest.getFloor)) {
+    // Bid Floor
+    const bidFloorRequest = {
+      currency: currency,
+      mediaType: 'video',
+      size: '*'
+    };
     floorData = bidRequest.getFloor(bidFloorRequest);
   } else if (params.bidfloor) {
-    floorData = {floor: params.bidfloor, currency: params.currency || 'USD'};
+    floorData = {floor: params.bidfloor, currency: currency};
   }
 
   return floorData;
@@ -184,22 +193,9 @@ function buildRequestSite(bidRequest) {
 
   // Site Content
   if (videoParams.content && isPlainObject(videoParams.content)) {
-    openrtbRequest.site.content = {};
-    const contentStringKeys = ['id', 'title', 'series', 'season', 'genre', 'contentrating', 'language', 'url'];
-    const contentNumberkeys = ['episode', 'prodq', 'context', 'livestream', 'len'];
-    const contentArrayKeys = ['cat'];
-    const contentObjectKeys = ['ext'];
-    for (const contentKey in videoBidderParams.content) {
-      if (
-        (contentStringKeys.indexOf(contentKey) > -1 && isStr(videoParams.content[contentKey])) ||
-        (contentNumberkeys.indexOf(contentKey) > -1 && isNumber(videoParams.content[contentKey])) ||
-        (contentObjectKeys.indexOf(contentKey) > -1 && isPlainObject(videoParams.content[contentKey])) ||
-        (contentArrayKeys.indexOf(contentKey) > -1 && isArray(videoParams.content[contentKey]) &&
-        videoParams.content[contentKey].every(catStr => isStr(catStr)))) {
-        site.content[contentKey] = videoParams.content[contentKey];
-      } else {
-        logMessage('JWPlayer bid adapter validation error: ', contentKey, ' is either not supported is OpenRTB V2.5 or value is undefined');
-      }
+    site.content = {};
+    for (const contentKey in videoParams.content) {
+      site.content[contentKey] = videoParams.content[contentKey];
     }
   }
   return site;
@@ -207,8 +203,7 @@ function buildRequestSite(bidRequest) {
 
 function buildRequestDevice() {
   return {
-    ua: navigator.userAgent,
-    ip: ''
+    ua: navigator.userAgent
   };
 }
 
