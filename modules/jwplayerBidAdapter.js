@@ -118,8 +118,6 @@ function buildRequest(bidRequest, bidderRequest) {
 }
 
 function buildRequestImpression(bidRequest) {
-  const impressions = [];
-
   const impressionObject = {
     id: bidRequest.adUnitCode,
   };
@@ -134,9 +132,7 @@ function buildRequestImpression(bidRequest) {
 
   impressionObject.ext = buildImpressionExtension(bidRequest);
 
-  impressions.push(impressionObject);
-
-  return impressions;
+  return [impressionObject];
 }
 
 function buildImpressionVideo(bidRequest) {
