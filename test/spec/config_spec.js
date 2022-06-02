@@ -130,17 +130,6 @@ describe('config API', function () {
     expect(getConfig('foo')).to.eql({baz: 'qux'});
   });
 
-  it('moves fpd config into ortb2 properties', function () {
-    setConfig({fpd: {context: {keywords: 'foo,bar', data: {inventory: [1]}}}});
-    expect(getConfig('ortb2')).to.eql({site: {keywords: 'foo,bar', ext: {data: {inventory: [1]}}}});
-    expect(getConfig('fpd')).to.eql(undefined);
-  });
-
-  it('moves fpd bidderconfig into ortb2 properties', function () {
-    setBidderConfig({bidders: ['bidderA'], config: {fpd: {context: {keywords: 'foo,bar', data: {inventory: [1]}}}}});
-    expect(getBidderConfig()).to.eql({'bidderA': {ortb2: {site: {keywords: 'foo,bar', ext: {data: {inventory: [1]}}}}}});
-  });
-
   it('sets debugging', function () {
     setConfig({ debug: true });
     expect(getConfig('debug')).to.be.true;
