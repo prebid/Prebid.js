@@ -717,7 +717,7 @@ Object.assign(ORTB2.prototype, {
 
       const imp = { ...adUnit.ortb2Imp, id: impressionId, ext, secure: s2sConfig.secure };
 
-      const ortb2 = {...deepAccess(adUnit, 'ortb2Imp.ext.data')};
+      const ortb2 = {...deepAccess(adUnit, 'ortb2Imp.ext.prebid.bidder.data')};
       Object.keys(ortb2).forEach(prop => {
         /**
           * Prebid AdSlot
@@ -725,7 +725,7 @@ Object.assign(ORTB2.prototype, {
         */
         if (prop === 'pbadslot') {
           if (typeof ortb2[prop] === 'string' && ortb2[prop]) {
-            deepSetValue(imp, 'ext.data.pbadslot', ortb2[prop]);
+            deepSetValue(imp, 'ext.prebid.bidder.data.pbadslot', ortb2[prop]);
           } else {
             // remove pbadslot property if it doesn't meet the spec
             delete imp.ext.data.pbadslot;
@@ -738,11 +738,11 @@ Object.assign(ORTB2.prototype, {
             /** @type {(string|undefined)} */
             const value = deepAccess(ortb2, `adserver.${name}`);
             if (typeof value === 'string' && value) {
-              deepSetValue(imp, `ext.data.adserver.${name.toLowerCase()}`, value);
+              deepSetValue(imp, `ext.prebid.bidder.data.adserver.${name.toLowerCase()}`, value);
             }
           });
         } else {
-          deepSetValue(imp, `ext.data.${prop}`, ortb2[prop]);
+          deepSetValue(imp, `ext.prebid.bidder.data.${prop}`, ortb2[prop]);
         }
       });
 
