@@ -16,7 +16,7 @@ const SUBMODULE_NAME = 'blueconic';
 
 export const RTD_LOCAL_NAME = 'bcPrebidData';
 
-export const storage = getStorageManager({ moduleName: SUBMODULE_NAME});
+export const storage = getStorageManager({moduleName: SUBMODULE_NAME});
 
 /**
  * Lazy merge objects.
