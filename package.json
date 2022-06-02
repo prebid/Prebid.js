@@ -1,6 +1,6 @@
 {
   "name": "prebid.js",
-  "version": "6.25.0-pre",
+  "version": "6.29.0-pre",
   "description": "Header Bidding Management Library",
   "main": "src/prebid.js",
   "scripts": {
@@ -126,7 +126,7 @@
     "express": "^4.15.4",
     "fun-hooks": "^0.9.9",
     "just-clone": "^1.0.2",
-    "live-connect-js": "2.3.1"
+    "live-connect-js": "2.3.3"
   },
   "optionalDependencies": {
     "fsevents": "^2.3.2"

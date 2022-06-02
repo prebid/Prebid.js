@@ -289,6 +289,10 @@ export const spec = {
         const siteContent = request.site.content || {};
         request.site.content = mergeDeep(siteContent, { data });
       }
+      const id = deepAccess(site, 'content.id');
+      if (id) {
+        request.site.content = {...request.site.content, id};
+      }
     }
 
     return {

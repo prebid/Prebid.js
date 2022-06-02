@@ -194,17 +194,6 @@ pbjs.setConfig({
                 pid: "0010b00002GYU4eBAH" // Example ID
             }
         }, {
-            name: 'trustpid',
-            params: {
-              maxDelayTime: 2500
-            },
-            bidders: ['adform'],
-            storage: {
-              type: 'html5',
-              name: 'trustpid',
-              expires: 60
-            }
-        }, {
             name: "unifiedId",
             params: {
                 partner: "prebid",
