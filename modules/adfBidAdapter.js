@@ -232,9 +232,6 @@ export const spec = {
       method: 'POST',
       url: 'https://' + adxDomain + '/adx/openrtb',
       data: JSON.stringify(request),
-      options: {
-        contentType: 'application/json'
-      },
       bids: validBidRequests
     };
   },
