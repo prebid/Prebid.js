@@ -1362,4 +1362,78 @@ describe('synacormediaBidAdapter ', function () {
       expect(videoRequest.data.imp[0].bidfloor).to.equal(priceModuleFloor);
     });
   });
+
+  describe('Bid Requests with gpid or anything in bid.ext should use if available', function () {
+    let validVideoBidRequest = {
+      bidder: 'synacormedia',
+      params: {
+        seatId: 'prebid',
+        placementId: 'demo1',
+        pos: 1,
+        video: {}
+      },
+      renderer: {
+        url: '../syncOutstreamPlayer.js'
+      },
+      ortb2Imp: {
+        ext: {
+          gpid: '/1111/homepage-video',
+	          data: {
+            pbadslot: '/1111/homepage-video'
+          }
+        }
+      },
+      mediaTypes: {
+        video: {
+          playerSize: [[300, 250]],
+          context: 'outstream'
+        }
+      },
+      adUnitCode: 'div-1',
+      transactionId: '0869f34e-090b-4b20-84ee-46ff41405a39',
+      sizes: [[300, 250]],
+      bidId: '22b3a2268d9f0e',
+      bidderRequestId: '1d195910597e13',
+      auctionId: '3375d336-2aea-4ee7-804c-6d26b621ad20',
+      src: 'client',
+      bidRequestsCount: 1,
+      bidderRequestsCount: 1,
+      bidderWinsCount: 0
+    };
+
+    let validBannerBidRequest = {
+      bidId: '9876abcd',
+      sizes: [[300, 250]],
+      params: {
+        seatId: 'prebid',
+        placementId: '1234',
+      },
+      ortb2Imp: {
+        ext: {
+          gpid: '/1111/homepage-banner',
+	          data: {
+            pbadslot: '/1111/homepage-banner'
+          }
+        }
+      }
+    };
+
+    let bidderRequest = {
+      refererInfo: {
+        referer: 'http://localhost:9999/'
+      },
+      bidderCode: 'synacormedia',
+      auctionId: 'f8a75621-d672-4cbb-9275-3db7d74fb110'
+    };
+
+    it('should return valid gpid and pbadslot', function () {
+      let videoRequest = spec.buildRequests([validVideoBidRequest], bidderRequest);
+      let bannerRequest = spec.buildRequests([validBannerBidRequest], bidderRequest);
+
+      expect(videoRequest.data.imp[0].ext.gpid).to.equal('/1111/homepage-video');
+      expect(videoRequest.data.imp[0].ext.data.pbadslot).to.equal('/1111/homepage-video');
+      expect(bannerRequest.data.imp[0].ext.gpid).to.equal('/1111/homepage-banner');
+      expect(bannerRequest.data.imp[0].ext.data.pbadslot).to.equal('/1111/homepage-banner');
+    });
+  });
 });
