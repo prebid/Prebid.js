@@ -3,7 +3,7 @@ import { spec, ENDPOINT } from 'modules/readpeakBidAdapter.js';
 import { config } from 'src/config.js';
 import { parseUrl } from 'src/utils.js';
 
-describe.only('ReadPeakAdapter', function() {
+describe('ReadPeakAdapter', function() {
   let baseBidRequest;
   let bannerBidRequest;
   let nativeBidRequest;
