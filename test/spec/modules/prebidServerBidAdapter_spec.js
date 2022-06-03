@@ -1586,6 +1586,7 @@ describe('S2S Adapter', function () {
 
       config.setConfig(_config);
       adapter.callBids(s2sBidRequest, BID_REQUESTS, addBidResponse, done, ajax);
+      const requestBid = JSON.parse(server.requests[0].requestBody);
       const requestParams = requestBid.imp[0].ext.prebid.bidder;
       expect(requestParams.appnexus).to.haveOwnProperty('key');
       expect(requestParams.appnexus.key).to.be.equal('value')
