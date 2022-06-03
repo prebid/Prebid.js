@@ -597,7 +597,7 @@ describe('the rubicon adapter', function () {
           sandbox.stub(Math, 'random').callsFake(() => 0.1);
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
 
-          const referenceOrdering = ['account_id', 'site_id', 'zone_id', 'size_id', 'alt_size_ids', 'p_pos', 'rf', 'p_geo.latitude', 'p_geo.longitude', 'kw', 'tg_v.ucat', 'tg_v.lastsearch', 'tg_v.likes', 'tg_i.rating', 'tg_i.prodtype', 'tk_flint', 'x_source.tid', 'x_source.pchain', 'p_screen_res', 'rp_secure', 'tk_user_key', 'tg_fl.eid', 'rp_maxbids', 'slots', 'rand'];
+          const referenceOrdering = ['account_id', 'site_id', 'zone_id', 'size_id', 'alt_size_ids', 'p_pos', 'rf', 'p_geo.latitude', 'p_geo.longitude', 'kw', 'tg_v.ucat', 'tg_v.lastsearch', 'tg_v.likes', 'tg_i.rating', 'tg_i.prodtype', 'tk_flint', 'x_source.tid', 'l_pb_bid_id', 'x_source.pchain', 'p_screen_res', 'rp_secure', 'tk_user_key', 'tg_fl.eid', 'rp_maxbids', 'slots', 'rand'];
 
           request.data.split('&').forEach((item, i) => {
             expect(item.split('=')[0]).to.equal(referenceOrdering[i]);
@@ -1712,6 +1712,22 @@ describe('the rubicon adapter', function () {
           // should have the imp ext bidder params be under the alias name not rubicon superRubicon
           expect(request.data.imp[0].ext).to.have.property('superRubicon').that.is.an('object');
           expect(request.data.imp[0].ext).to.not.haveOwnProperty('rubicon');
+        });
+
+        it('should add floors flag correctly to PBS Request', function () {
+          createVideoBidderRequest();
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+
+          // should not pass if undefined
+          expect(request.data.ext.prebid.floors).to.be.undefined;
+
+          // should pass it as false
+          bidderRequest.bids[0].floorData = {
+            skipped: false,
+            location: 'fetch',
+          }
+          let [newRequest] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(newRequest.data.ext.prebid.floors).to.deep.equal({ enabled: false });
         });
 
         it('should add multibid configuration to PBS Request', function () {

@@ -253,6 +253,12 @@ export const spec = {
       if (!isNaN(bidFloor)) {
         data.imp[0].bidfloor = bidFloor;
       }
+
+      // If the price floors module is active, then we need to signal to PBS! If floorData obj is present is best way to check
+      if (typeof bidRequest.floorData === 'object') {
+        data.ext.prebid.floors = { enabled: false };
+      }
+
       // if value is set, will overwrite with same value
       data.imp[0].ext[bidRequest.bidder].video.size_id = determineRubiconVideoSizeId(bidRequest)
 
@@ -407,6 +413,7 @@ export const spec = {
       .concat([
         'tk_flint',
         'x_source.tid',
+        'l_pb_bid_id',
         'x_source.pchain',
         'p_screen_res',
         'rp_floor',
@@ -480,6 +487,7 @@ export const spec = {
       'rp_secure': '1',
       'tk_flint': `${rubiConf.int_type || DEFAULT_INTEGRATION}_v$prebid.version$`,
       'x_source.tid': bidRequest.transactionId,
+      'l_pb_bid_id': bidRequest.bidId,
       'x_source.pchain': params.pchain,
       'p_screen_res': _getScreenResolution(),
       'tk_user_key': params.userId,
