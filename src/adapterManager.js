@@ -68,8 +68,7 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, src}) {
           'nativeParams',
           'ortb2Imp',
           'mediaType',
-          'renderer',
-          'storedAuctionResponse'
+          'renderer'
         ]));
 
         const mediaTypes = bid.mediaTypes == null ? adUnit.mediaTypes : bid.mediaTypes

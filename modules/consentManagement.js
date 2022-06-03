@@ -292,6 +292,7 @@ function storeConsentData(cmpConsentObject) {
 export function resetConsentData() {
   consentData = undefined;
   userCMP = undefined;
+  consentTimeout = undefined;
   gdprDataHandler.reset();
 }
 

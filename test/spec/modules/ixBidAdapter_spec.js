@@ -2700,7 +2700,7 @@ describe('IndexexchangeAdapter', function () {
       sandbox.restore();
 
       config.setConfig({
-        fpd: {},
+        ortb2: {},
         ix: {},
       })
     });

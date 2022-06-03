@@ -29,8 +29,7 @@ function getMockBid(bidder, auctionId, bidderRequestId) {
     'sizes': [300, 250],
     'bidId': '123',
     'bidderRequestId': bidderRequestId,
-    'auctionId': auctionId,
-    'storedAuctionResponse': 11111
+    'auctionId': auctionId
   };
 }
 

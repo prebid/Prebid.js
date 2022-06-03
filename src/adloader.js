@@ -13,7 +13,9 @@ const _approvedLoadExternalJSList = [
   'justtag',
   'akamaidap',
   'ftrackId',
-  'inskin'
+  'inskin',
+  'hadron',
+  'medianet'
 ]
 
 /**
