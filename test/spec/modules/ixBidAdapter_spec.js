@@ -1341,6 +1341,27 @@ describe('IndexexchangeAdapter', function () {
       expect(r.ext.ixdiag.fpd).to.exist;
     });
 
+    it('should set ixdiag.tmax value if it exists using tmax', function () {
+      config.setConfig({
+        bidderTimeout: 250
+      });
+
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID)[0];
+      const r = JSON.parse(request.data.r);
+
+      expect(r.ext.ixdiag.tmax).to.equal(250);
+    });
+
+    it('should not set ixdiag.tmax value if bidderTimeout is undefined', function () {
+      config.setConfig({
+        bidderTimeout: null
+      })
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID)[0];
+      const r = JSON.parse(request.data.r);
+
+      expect(r.ext.ixdiag.tmax).to.be.undefined
+    });
+
     it('should set ixdiag.fpd value if it exists using ortb2', function () {
       config.setConfig({
         ortb2: {

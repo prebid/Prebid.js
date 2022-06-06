@@ -532,6 +532,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   }
 
   const r = {};
+  const tmax = config.getConfig('bidderTimeout');
 
   // Since bidderRequestId are the same for different bid request, just use the first one.
   r.id = validBidRequests[0].bidderRequestId.toString();
@@ -550,6 +551,9 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
     r.ext.ixdiag[key] = ixdiag[key];
   }
 
+  if (tmax) {
+    r.ext.ixdiag.tmax = tmax
+  }
   // Get cached errors stored in LocalStorage
   const cachedErrors = getCachedErrors();
 
