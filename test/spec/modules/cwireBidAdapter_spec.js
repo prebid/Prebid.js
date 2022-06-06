@@ -120,6 +120,19 @@ describe('C-WIRE bid adapter', () => {
       bid01.params.pageId = '3320';
       expect(spec.isBidRequestValid(bid01)).to.equal(false);
     });
+
+    it('should fail if cwcreative of type number', function () {
+      const bid01 = new BidRequestBuilder().withParams().build();
+      delete bid01.params.cwcreative;
+      bid01.params.cwcreative = 3320;
+      expect(spec.isBidRequestValid(bid01)).to.equal(false);
+    });
+
+    it('should pass with valid cwcreative of type string', function () {
+      const bid01 = new BidRequestBuilder().withParams().build();
+      bid01.params.cwcreative = 'i-am-a-string';
+      expect(spec.isBidRequestValid(bid01)).to.equal(true);
+    });
   });
 
   describe('C-WIRE - buildRequests()', function () {
