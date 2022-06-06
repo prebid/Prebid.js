@@ -10,8 +10,8 @@ const TTL = 360;
 const CURRENCY = 'USD';
 const SELLER_ENDPOINT = 'https://hb.sweetgum.io/';
 const MODES = {
-  PRODUCTION: 'hb-multi',
-  TEST: 'hb-multi-test'
+  PRODUCTION: 'hb-sz-multi',
+  TEST: 'hb-multi-sz-test'
 }
 const SUPPORTED_SYNC_METHODS = {
   IFRAME: 'iframe',
