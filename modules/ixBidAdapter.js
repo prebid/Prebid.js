@@ -41,7 +41,7 @@ const VIDEO_TIME_TO_LIVE = 3600; // 1hr
 const NET_REVENUE = true;
 const MAX_REQUEST_SIZE = 8000;
 const MAX_REQUEST_LIMIT = 4;
-const OUTSTREAM_MINIMUM_PLAYER_SIZE = [300, 250];
+const OUTSTREAM_MINIMUM_PLAYER_SIZE = [144, 144];
 const PRICE_TO_DOLLAR_FACTOR = {
   JPY: 1
 };
@@ -178,7 +178,11 @@ function bidToVideoImp(bid) {
     if (context === INSTREAM) {
       imp.video.placement = 1;
     } else if (context === OUTSTREAM) {
-      imp.video.placement = 4;
+      if (deepAccess(videoParamRef, 'playerConfig.floatOnScroll')) {
+        imp.video.placement = 5;
+      } else {
+        imp.video.placement = 4;
+      }
     } else {
       logWarn(`IX Bid Adapter: Video context '${context}' is not supported`);
     }

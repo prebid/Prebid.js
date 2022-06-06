@@ -596,10 +596,10 @@ describe('IndexexchangeAdapter', function () {
   });
 
   describe('isBidRequestValid', function () {
-    it('should return false if outstream player size is less than 300x250 and IX renderer is preferred', function () {
+    it('should return false if outstream player size is less than 144x144 and IX renderer is preferred', function () {
       const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
       bid.mediaTypes.video.context = 'outstream';
-      bid.mediaTypes.video.playerSize = [[300, 249]];
+      bid.mediaTypes.video.playerSize = [[300, 143]];
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
@@ -2220,6 +2220,19 @@ describe('IndexexchangeAdapter', function () {
       expect(videoImpression.video.w).to.equal(DEFAULT_VIDEO_VALID_BID_NO_VIDEO_PARAMS[0].mediaTypes.video.playerSize[0][0]);
       expect(videoImpression.video.h).to.equal(DEFAULT_VIDEO_VALID_BID_NO_VIDEO_PARAMS[0].mediaTypes.video.playerSize[0][1]);
     });
+
+    it('should set different placement for floating ad units', () => {
+      const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
+      bid.mediaTypes.video.context = 'outstream';
+      bid.params.video.playerConfig = {
+        floatOnScroll: true
+      };
+
+      const request = spec.buildRequests([bid]);
+      const videoImpression = JSON.parse(request[0].data.r).imp[0];
+
+      expect(videoImpression.video.placement).to.eq(5);
+    })
   });
 
   describe('buildRequestMultiFormat', function () {
