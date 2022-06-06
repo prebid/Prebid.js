@@ -178,8 +178,8 @@ export const spec = {
 
     let refgroups = [];
 
-    const cwCreativeId = parseInt(getQueryVariable(CW_CREATIVE_QUERY), 10) || null;
-    const cwCreativeIdFromConfig = this.getFirstValueOrNull(slots, 'cwcreative');
+    const cwCreative = parseInt(getQueryVariable(CW_CREATIVE_QUERY), 10) || null;
+    const cwCreativeFromConfig = this.getFirstValueOrNull(slots, 'cwcreative');
     const refGroupsFromConfig = this.getFirstValueOrNull(slots, 'refgroups');
     const cwApiKeyFromConfig = this.getFirstValueOrNull(slots, 'cwapikey');
     const rgQuery = getQueryVariable(CW_GROUPS_QUERY);
@@ -199,7 +199,7 @@ export const spec = {
     const payload = {
       cwid: localStorageCWID,
       refgroups,
-      cwcreative: cwCreativeId || cwCreativeIdFromConfig,
+      cwcreative: cwCreative || cwCreativeFromConfig,
       slots: slots,
       cwapikey: cwApiKeyFromConfig,
       httpRef: referer || '',
