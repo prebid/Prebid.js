@@ -16,7 +16,7 @@ const SUPPORTED_AD_TYPES = [BANNER]
  * Keep track of bid data by keys
  * @returns {Object} - Map of bid data that can be referenced by multiple keys
  */
-const BidDataMap = () => {
+export const BidDataMap = () => {
   const referenceMap = {}
   const bids = []
 
@@ -25,7 +25,7 @@ const BidDataMap = () => {
    * @param {String} key - The key to store the index reference
    * @param {Integer} index - The index value of the bidData
    */
-  function adKeyReference(key, index) {
+  function addKeyReference(key, index) {
     if (!referenceMap.hasOwnProperty(key)) {
       referenceMap[key] = index
     }
@@ -42,12 +42,12 @@ const BidDataMap = () => {
 
     if (Array.isArray(keys)) {
       keys.forEach((key) => {
-        adKeyReference(String(key), index)
+        addKeyReference(String(key), index)
       })
       return
     }
 
-    adKeyReference(String(keys), index)
+    addKeyReference(String(keys), index)
   }
 
   /**
