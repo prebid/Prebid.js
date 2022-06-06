@@ -9,7 +9,7 @@ import {getStorageManager} from '../src/storageManager.js';
 const BIDDER_CODE = 'taboola';
 const GVLID = 42;
 const CURRENCY = 'USD';
-export const END_POINT_URL = 'http://hb.bidder.taboola.com/TaboolaHBOpenRTBRequestHandlerServlet';
+export const END_POINT_URL = 'https://hb.bidder.taboola.com/TaboolaHBOpenRTBRequestHandlerServlet';
 const USER_ID = 'user-id';
 const STORAGE_KEY = `taboola global:${USER_ID}`;
 const COOKIE_KEY = 'trc_cookie_storage';
