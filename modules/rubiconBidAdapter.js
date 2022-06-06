@@ -835,7 +835,6 @@ function _getPageUrl(bidRequest, bidderRequest) {
   if (bidRequest.params.referrer) {
     pageUrl = bidRequest.params.referrer;
   } else {
-    // TODO: is 'page' the right value here?
     pageUrl = bidderRequest.refererInfo.page;
   }
   return bidRequest.params.secure ? pageUrl.replace(/^http:/i, 'https:') : pageUrl;
