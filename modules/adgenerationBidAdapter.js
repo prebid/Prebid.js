@@ -1,7 +1,8 @@
-import * as utils from 'src/utils';
-// import {config} from 'src/config';
-import {registerBidder} from 'src/adapters/bidderFactory';
-import {BANNER, NATIVE} from 'src/mediaTypes';
+import {tryAppendQueryString, getBidIdParameter} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import {config} from '../src/config.js';
+
 const ADG_BIDDER_CODE = 'adgeneration';
 
 export const spec = {
@@ -23,27 +24,38 @@ export const spec = {
    * @param {validBidRequests[]} - an array of bids
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function (validBidRequests) {
+  buildRequests: function (validBidRequests, bidderRequest) {
+    const ADGENE_PREBID_VERSION = '1.3.0';
     let serverRequests = [];
     for (let i = 0, len = validBidRequests.length; i < len; i++) {
       const validReq = validBidRequests[i];
-      const DEBUG_URL = 'http://api-test.scaleout.jp/adsv/v1';
+      const DEBUG_URL = 'https://api-test.scaleout.jp/adsv/v1';
       const URL = 'https://d.socdm.com/adsv/v1';
       const url = validReq.params.debug ? DEBUG_URL : URL;
       let data = ``;
-      data = utils.tryAppendQueryString(data, 'posall', 'SSPLOC');
-      const id = utils.getBidIdParameter('id', validReq.params);
-      data = utils.tryAppendQueryString(data, 'id', id);
-      data = utils.tryAppendQueryString(data, 'sdktype', '0');
-      data = utils.tryAppendQueryString(data, 'hb', 'true');
-      data = utils.tryAppendQueryString(data, 't', 'json3');
-      data = utils.tryAppendQueryString(data, 'transactionid', validReq.transactionId);
-
+      data = tryAppendQueryString(data, 'posall', 'SSPLOC');
+      const id = getBidIdParameter('id', validReq.params);
+      data = tryAppendQueryString(data, 'id', id);
+      data = tryAppendQueryString(data, 'sdktype', '0');
+      data = tryAppendQueryString(data, 'hb', 'true');
+      data = tryAppendQueryString(data, 't', 'json3');
+      data = tryAppendQueryString(data, 'transactionid', validReq.transactionId);
+      data = tryAppendQueryString(data, 'sizes', getSizes(validReq));
+      data = tryAppendQueryString(data, 'currency', getCurrencyType());
+      data = tryAppendQueryString(data, 'pbver', '$prebid.version$');
+      data = tryAppendQueryString(data, 'sdkname', 'prebidjs');
+      data = tryAppendQueryString(data, 'adapterver', ADGENE_PREBID_VERSION);
       // native以外にvideo等の対応が入った場合は要修正
       if (!validReq.mediaTypes || !validReq.mediaTypes.native) {
-        data = utils.tryAppendQueryString(data, 'imark', '1');
+        data = tryAppendQueryString(data, 'imark', '1');
       }
-
+      data = tryAppendQueryString(data, 'tp', bidderRequest.refererInfo.referer);
+      if (isIos()) {
+        const hyperId = getHyperId(validReq);
+        if (hyperId != null) {
+          data = tryAppendQueryString(data, 'hyper_id', hyperId);
+        }
+      }
       // remove the trailing "&"
       if (data.lastIndexOf('&') === data.length - 1) {
         data = data.substring(0, data.length - 1);
@@ -70,11 +82,6 @@ export const spec = {
       return [];
     }
     const bidRequest = bidRequests.bidRequest;
-    if (!bidRequest.mediaTypes || bidRequest.mediaTypes.banner) {
-      if (!body.w || !body.h) {
-        return [];
-      }
-    }
     const bidResponse = {
       requestId: bidRequest.bidId,
       cpm: body.cpm || 0,
@@ -82,12 +89,16 @@ export const spec = {
       height: body.h ? body.h : 1,
       creativeId: body.creativeid || '',
       dealId: body.dealid || '',
-      currency: 'JPY',
+      currency: getCurrencyType(),
       netRevenue: true,
       ttl: body.ttl || 10,
-      referrer: utils.getTopWindowUrl(),
     };
-    if (bidRequest.mediaTypes && bidRequest.mediaTypes.native) {
+    if (body.adomain && Array.isArray(body.adomain) && body.adomain.length) {
+      bidResponse.meta = {
+        advertiserDomains: body.adomain
+      }
+    }
+    if (isNative(body)) {
       bidResponse.native = createNativeAd(body);
       bidResponse.mediaType = NATIVE;
     } else {
@@ -113,11 +124,28 @@ export const spec = {
 function createAd(body, bidRequest) {
   let ad = body.ad;
   if (body.vastxml && body.vastxml.length > 0) {
-    ad = `<body><div id="apvad-${bidRequest.bidId}"></div>${createAPVTag()}${insertVASTMethod(bidRequest.bidId, body.vastxml)}</body>`;
+    if (isUpperBillboard(body)) {
+      const marginTop = bidRequest.params.marginTop ? bidRequest.params.marginTop : '0';
+      ad = `<body>${createADGBrowserMTag()}${insertVASTMethodForADGBrowserM(body.vastxml, marginTop)}</body>`;
+    } else {
+      ad = `<body><div id="apvad-${bidRequest.bidId}"></div>${createAPVTag()}${insertVASTMethodForAPV(bidRequest.bidId, body.vastxml)}</body>`;
+    }
   }
   ad = appendChildToBody(ad, body.beacon);
   if (removeWrapper(ad)) return removeWrapper(ad);
   return ad;
+}
+
+function isUpperBillboard(body) {
+  if (body.location_params && body.location_params.option && body.location_params.option.ad_type) {
+    return body.location_params.option.ad_type === 'upper_billboard';
+  }
+  return false;
+}
+
+function isNative(body) {
+  if (!body) return false;
+  return body.native_ad && body.native_ad.assets.length > 0;
 }
 
 function createNativeAd(body) {
@@ -152,6 +180,9 @@ function createNativeAd(body) {
         case 6:
           native.cta = assets[i].data.value;
           break;
+        case 502:
+          native.privacyLink = encodeURIComponent(assets[i].data.value);
+          break;
       }
     }
     native.clickUrl = body.native_ad.link.url;
@@ -177,13 +208,25 @@ function createAPVTag() {
   return apvScript.outerHTML;
 }
 
-function insertVASTMethod(targetId, vastXml) {
+function createADGBrowserMTag() {
+  const ADGBrowserMURL = 'https://i.socdm.com/sdk/js/adg-browser-m.js';
+  return `<script type="text/javascript" src="${ADGBrowserMURL}"></script>`;
+}
+
+function insertVASTMethodForAPV(targetId, vastXml) {
   let apvVideoAdParam = {
     s: targetId
   };
   let script = document.createElement(`script`);
   script.type = 'text/javascript';
   script.innerHTML = `(function(){ new APV.VideoAd(${JSON.stringify(apvVideoAdParam)}).load('${vastXml.replace(/\r?\n/g, '')}'); })();`;
+  return script.outerHTML;
+}
+
+function insertVASTMethodForADGBrowserM(vastXml, marginTop) {
+  const script = document.createElement(`script`);
+  script.type = 'text/javascript';
+  script.innerHTML = `window.ADGBrowserM.init({vastXml: '${vastXml.replace(/\r?\n/g, '')}', marginTop: '${marginTop}'});`;
   return script.outerHTML;
 }
 
@@ -196,6 +239,50 @@ function removeWrapper(ad) {
   const lastBodyIndex = ad.lastIndexOf('</body>');
   if (bodyIndex === -1 || lastBodyIndex === -1) return false;
   return ad.substr(bodyIndex, lastBodyIndex).replace('<body>', '').replace('</body>', '');
+}
+
+/**
+ * request
+ * @param validReq request
+ * @returns {?string} 300x250,320x50...
+ */
+function getSizes(validReq) {
+  const sizes = validReq.sizes;
+  if (!sizes || sizes.length < 1) return null;
+  let sizesStr = '';
+  for (const i in sizes) {
+    const size = sizes[i];
+    if (size.length !== 2) return null;
+    sizesStr += `${size[0]}x${size[1]},`;
+  }
+  if (sizesStr || sizesStr.lastIndexOf(',') === sizesStr.length - 1) {
+    sizesStr = sizesStr.substring(0, sizesStr.length - 1);
+  }
+  return sizesStr;
+}
+
+/**
+ * @return {?string} USD or JPY
+ */
+function getCurrencyType() {
+  if (config.getConfig('currency.adServerCurrency') && config.getConfig('currency.adServerCurrency').toUpperCase() === 'USD') return 'USD';
+  return 'JPY';
+}
+
+/**
+ *
+ * @param validReq request
+ * @return {null|string}
+ */
+function getHyperId(validReq) {
+  if (validReq.userId && validReq.userId.novatiq && validReq.userId.novatiq.snowflake.syncResponse === 1) {
+    return validReq.userId.novatiq.snowflake.id;
+  }
+  return null;
+}
+
+function isIos() {
+  return (/(ios|ipod|ipad|iphone)/i).test(window.navigator.userAgent);
 }
 
 registerBidder(spec);

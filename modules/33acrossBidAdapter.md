@@ -3,93 +3,152 @@
 ```
 Module Name:  33Across Bid Adapter
 Module Type:  Bidder Adapter
-Maintainer: aparna.hegde@33across.com
+Maintainer: headerbidding@33across.com
 ```
 
 # Description
 
 Connects to 33Across's exchange for bids.
 
-33Across bid adapter supports only Banner at present and follows MRA
+33Across bid adapter supports Banner and Video at present and follows MRA
 
 # Sample Ad Unit: For Publishers
+## Sample Banner only Ad Unit
 ```
 var adUnits = [
 {
-    code: '33across-hb-ad-123456-1',    
-    sizes: [
-        [300, 250], 
-        [728, 90]
-    ],     
-    bids: [{
-        bidder: '33across',
-        params: {
-            siteId: 'pub1234',     
-            productId: 'infeed'     
-        }
-    }]
+  code: '33across-hb-ad-123456-1', // ad slot HTML element ID  
+  mediaTypes: {
+    banner: {  
+      sizes: [
+          [300, 250], 
+          [728, 90]
+      ]
+    }   
+  } 
+  bids: [{
+    bidder: '33across',
+    params: {
+        siteId: 'sample33xGUID123456789',     
+        productId: 'siab'     
+    }
+  }]
 }
 ```
 
-# Ad Unit and Setup: For Testing
-In order to receive bids please map localhost to (any) test domain.
-
+## Sample Video only Ad Unit: Outstream
 ```
-<--! Prebid Config section >
-<script> 
-    var PREBID_TIMEOUT = 3000;
-    var adUnits = [
-    {
-        code: '33across-hb-ad-123456-1',
-        sizes: [
-            [300, 250], 
-            [728, 90]
-        ],     
-        bids: [{
-            bidder: '33across',
-            params: {
-            site: {
-                id: 'aRlI5W_9yr5jkxacwqm_6r',
-                page: "http://thinkbabynames.com/baby-mcbabyface",
-                ext: {
-                    ttx: {
-                        ssp_configs: [
-                            {
-                            "name": "index",
-                            "enabled": false
-                            },
-                            {
-                            "name": "rubicon",
-                            "enabled": true
-                            },
-                            {
-                            "name": "33xchange",
-                            "enabled": false
-                            }
-                        ]
-                    }
+var adUnits = [
+{
+  code: '33across-hb-ad-123456-1', // ad slot HTML element ID  
+  mediaTypes: {
+    video: {  
+      playerSize: [300, 250],
+      context: 'outstream',
+      placement: 2
+      ... // Aditional ORTB video params
+    }   
+  },
+  renderer: {
+    url: 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js',
+    render: function (bid) {
+        adResponse = {
+            ad: {
+                video: {
+                    content: bid.vastXml,
+                    player_height: bid.playerHeight,
+                    player_width: bid.playerWidth
                 }
-            },
-            productId: 'infeed'
+            }
         }
-        }]
+        // push to render queue because ANOutstreamVideo may not be loaded yet.
+        bid.renderer.push(() => {
+            ANOutstreamVideo.renderAd({
+                targetId: bid.adUnitCode, // target div id to render video.
+                adResponse: adResponse
+            });
+        });
     }
-    ];
-    
-    var pbjs = pbjs || {};
-    pbjs.que = pbjs.que || [];
+  }, 
+  bids: [{
+    bidder: '33across',
+    params: {
+        siteId: 'sample33xGUID123456789',     
+        productId: 'siab'     
+    }
+  }]
+}
+```
 
-    // Adjust bid CPM to ensure it wins the auction (USED ONLY FOR TESTING). Need to do this since test bids have too low a CPM
-    pbjs.bidderSettings = {
-      '33across': {
-        bidCpmAdjustment : function(bidCpm, bid){
-          // adjust the bid in real time before the auction takes place, only do so for valid bids ignore no bids
-          if (bid.w !== 0 && bid.h !== 0 && bidCpm !== 0) {
-            return bidCpm + 0.50;
-          }
+## Sample Multi-Format Ad Unit: Outstream
+```
+var adUnits = [
+{
+  code: '33across-hb-ad-123456-1', // ad slot HTML element ID  
+  mediaTypes: {
+    banner: {  
+      sizes: [
+          [300, 250], 
+          [728, 90]
+      ]
+    },
+    video: {  
+      playerSize: [300, 250],
+      context: 'outstream',
+      placement: 2
+      ... // Aditional ORTB video params
+    }   
+  },
+  renderer: {
+    url: 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js',
+    render: function (bid) {
+        adResponse = {
+            ad: {
+                video: {
+                    content: bid.vastXml,
+                    player_height: bid.playerHeight,
+                    player_width: bid.playerWidth
+                }
+            }
         }
-      }
-    };
-  </script>
-  <!-- End Prebid Config section>
-  ```
+        // push to render queue because ANOutstreamVideo may not be loaded yet.
+        bid.renderer.push(() => {
+            ANOutstreamVideo.renderAd({
+                targetId: bid.adUnitCode, // target div id to render video.
+                adResponse: adResponse
+            });
+        });
+    }
+  },
+  bids: [{
+    bidder: '33across',
+    params: {
+        siteId: 'sample33xGUID123456789',     
+        productId: 'siab'     
+    }
+  }]
+}
+```
+
+## Sample Video only Ad Unit: Instream
+```
+var adUnits = [
+{
+  code: '33across-hb-ad-123456-1', // ad slot HTML element ID  
+  mediaTypes: {
+    video: {  
+      playerSize: [300, 250],
+      context: 'intstream',
+      placement: 1
+      ... // Aditional ORTB video params
+    }   
+  } 
+  bids: [{
+    bidder: '33across',
+    params: {
+        siteId: 'sample33xGUID123456789',     
+        productId: 'instream'     
+    }
+  }]
+}
+```

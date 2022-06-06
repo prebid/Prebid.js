@@ -1,7 +1,11 @@
 {
   "code": "video1",
-  "sizes": [640,480],
-  "mediaType": "video",
+  "mediaTypes": {
+    "video": {
+      "context": "instream",
+      "playerSize": [640, 480]
+    }
+  },
   "bids": [
     {
       "bidder": "appnexus",

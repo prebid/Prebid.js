@@ -1,8 +1,9 @@
 /**
  * events.js
  */
-var utils = require('./utils');
-var CONSTANTS = require('./constants');
+import * as utils from './utils.js'
+import CONSTANTS from './constants.json';
+
 var slice = Array.prototype.slice;
 var push = Array.prototype.push;
 
@@ -16,8 +17,7 @@ var idPaths = CONSTANTS.EVENT_ID_PATHS;
 
 // keep a record of all events fired
 var eventsFired = [];
-
-module.exports = (function () {
+const _public = (function () {
   var _handlers = {};
   var _public = {};
 
@@ -44,7 +44,8 @@ module.exports = (function () {
     eventsFired.push({
       eventType: eventString,
       args: eventPayload,
-      id: key
+      id: key,
+      elapsedTime: utils.getPerformanceNow(),
     });
 
     /** Push each specific callback to the `callbacks` array.
@@ -113,14 +114,14 @@ module.exports = (function () {
       utils._each(event[id].que, function (_handler) {
         var que = event[id].que;
         if (_handler === handler) {
-          que.splice(utils.indexOf.call(que, _handler), 1);
+          que.splice(que.indexOf(_handler), 1);
         }
       });
     } else {
       utils._each(event.que, function (_handler) {
         var que = event.que;
         if (_handler === handler) {
-          que.splice(utils.indexOf.call(que, _handler), 1);
+          que.splice(que.indexOf(_handler), 1);
         }
       });
     }
@@ -148,3 +149,7 @@ module.exports = (function () {
 
   return _public;
 }());
+
+utils._setEventEmitter(_public.emit.bind(_public));
+
+export const {on, off, get, getEvents, emit} = _public;

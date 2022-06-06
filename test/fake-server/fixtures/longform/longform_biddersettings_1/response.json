@@ -1,0 +1,114 @@
+{
+  "httpResponse": {
+    "body": {
+      "version": "3.0.0",
+      "tags": [
+        {
+          "uuid": "2d4806af582cf6",
+          "tag_id": 15394006,
+          "auction_id": "2678252910506723691",
+          "nobid": true,
+          "ad_profile_id": 1182765
+        },
+        {
+          "uuid": "2d4806af582cf6",
+          "tag_id": 15394006,
+          "auction_id": "3548675574061430850",
+          "nobid": true,
+          "ad_profile_id": 1182765
+        },
+        {
+          "uuid": "2d4806af582cf6",
+          "tag_id": 15394006,
+          "auction_id": "8693167356543642173",
+          "nobid": true,
+          "ad_profile_id": 1182765
+        },
+        {
+          "uuid": "2d4806af582cf6",
+          "tag_id": 15394006,
+          "auction_id": "7686428711280367086",
+          "nobid": true,
+          "ad_profile_id": 1182765
+        },
+        {
+          "uuid": "2d4806af582cf6",
+          "tag_id": 15394006,
+          "auction_id": "3784359541475413084",
+          "nobid": true,
+          "ad_profile_id": 1182765
+        },
+        {
+          "uuid": "2d4806af582cf6",
+          "tag_id": 15394006,
+          "auction_id": "7233136875958651734",
+          "nobid": true,
+          "ad_profile_id": 1182765
+        },
+        {
+          "uuid": "2d4806af582cf6",
+          "tag_id": 15394006,
+          "auction_id": "159775901183771330",
+          "nobid": true,
+          "ad_profile_id": 1182765
+        },
+        {
+          "uuid": "2d4806af582cf6",
+          "tag_id": 15394006,
+          "auction_id": "6558726890185052779",
+          "nobid": true,
+          "ad_profile_id": 1182765
+        },
+        {
+          "uuid": "2d4806af582cf6",
+          "tag_id": 15394006,
+          "auction_id": "6624810255570939818",
+          "nobid": true,
+          "ad_profile_id": 1182765
+        },
+        {
+          "uuid": "2d4806af582cf6",
+          "tag_id": 15394006,
+          "auction_id": "528384387675374412",
+          "nobid": true,
+          "ad_profile_id": 1182765
+        },
+        {
+          "uuid": "2d4806af582cf6",
+          "tag_id": 15394006,
+          "auction_id": "2535665225687089273",
+          "nobid": true,
+          "ad_profile_id": 1182765
+        },
+        {
+          "uuid": "2d4806af582cf6",
+          "tag_id": 15394006,
+          "auction_id": "2166694611986638079",
+          "nobid": true,
+          "ad_profile_id": 1182765
+        },
+        {
+          "uuid": "2d4806af582cf6",
+          "tag_id": 15394006,
+          "auction_id": "9137369006412413609",
+          "nobid": true,
+          "ad_profile_id": 1182765
+        },
+        {
+          "uuid": "2d4806af582cf6",
+          "tag_id": 15394006,
+          "auction_id": "3524702228053475248",
+          "nobid": true,
+          "ad_profile_id": 1182765
+        },
+        {
+          "uuid": "2d4806af582cf6",
+          "tag_id": 15394006,
+          "auction_id": "57990683038266307",
+          "nobid": true,
+          "ad_profile_id": 1182765
+        }
+      ]
+    }
+  }
+}

@@ -1,8 +1,8 @@
 # Overview
 
-Module Name: Bridgewell Bidder Adapter
-Module Type: Bidder Adapter
-Maintainer: kuchunchou@bridgewell.com
+Module Name: Bridgewell Bidder Adapter  
+Module Type: Bidder Adapter  
+Maintainer: scupio@bridgewell.com
 
 # Description
 
@@ -12,34 +12,15 @@ Module that connects to Bridgewell demand source to fetch bids.
 ```
     var adUnits = [{
         code: 'test-div',
-        sizes: [
-            [300, 250]
-        ],
-        bids: [{
-            bidder: 'bridgewell',
-            params: {
-                ChannelID: 'CgUxMjMzOBIBNiIFcGVubnkqCQisAhD6ARoBOQ'
+        mediaTypes: {
+            banner: {
+                sizes: [300, 250]
             }
-        }]
-    }, {
-        code: 'test-div',
-        sizes: [
-            [728, 90]
-        ],
+        },
         bids: [{
             bidder: 'bridgewell',
             params: {
-                ChannelID: 'CgUxMjMzOBIBNiIGcGVubnkzKggI2AUQWhoBOQ',
-                cpmWeight: 1.5
-            }
-        }]
-    }, {
-        code: 'test-div',
-        sizes: [728, 90],
-        bids: [{
-            bidder: 'bridgewell',
-            params: {
-                ChannelID: 'CgUxMjMzOBIBNiIGcGVubnkzKggI2AUQWhoBOQ'
+                cid: 12345
             }
         }]
     }, {
@@ -52,7 +33,7 @@ Module that connects to Bridgewell demand source to fetch bids.
         bids: [{
             bidder: 'bridgewell',
             params: {
-                ChannelID: 'CgUxMjMzOBIBNiIGcGVubnkzKggI2AUQWhoBOQ'
+                cid: 56789
             }
         }]
     }, {
@@ -89,7 +70,7 @@ Module that connects to Bridgewell demand source to fetch bids.
         bids: [{
             bidder: 'bridgewell',
             params: {
-                ChannelID: 'CgUxMjMzOBIBNiIGcGVubnkzKggI2AUQWhoBOQ'
+                cid: 2394
             }
         }]
     }];

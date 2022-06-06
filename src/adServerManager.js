@@ -1,5 +1,5 @@
-import { getGlobal } from './prebidGlobal';
-import { logWarn } from './utils';
+import { getGlobal } from './prebidGlobal.js';
+import { logWarn } from './utils.js';
 
 const prebid = getGlobal();
 
@@ -46,9 +46,11 @@ const prebid = getGlobal();
 export function registerVideoSupport(name, videoSupport) {
   prebid.adServers = prebid.adServers || { };
   prebid.adServers[name] = prebid.adServers[name] || { };
-  if (prebid.adServers[name].buildVideoUrl) {
-    logWarn(`Multiple calls to registerVideoSupport for AdServer ${name}. Expect surprising behavior.`);
-    return;
-  }
-  prebid.adServers[name].buildVideoUrl = videoSupport.buildVideoUrl;
+  Object.keys(videoSupport).forEach((key) => {
+    if (prebid.adServers[name][key]) {
+      logWarn(`Attempting to add an already registered function property ${key} for AdServer ${name}.`);
+      return;
+    }
+    prebid.adServers[name][key] = videoSupport[key];
+  });
 }

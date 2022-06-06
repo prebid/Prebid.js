@@ -7,7 +7,7 @@
 # Description
 
 Connects to PulsePoint demand source to fetch bids.  
-Banner, Outstream and Native formats are supported.  
+Banner, Video and Native formats are supported.  
 Please use ```pulsepoint``` as the bidder code.
 ```pulseLite``` and ```pulsepointLite``` aliases also supported as well.
 
@@ -40,5 +40,52 @@ Please use ```pulsepoint``` as the bidder code.
               ct: 505642
           }
       }]
+    },{
+      code: 'outstream-div',
+      mediaTypes: {
+        video: {
+            playerSize: [640, 480],
+            context: 'outstream',
+            h: 300,
+            w: 400,
+            minduration: 1,
+            maxduration: 210,
+            linearity: 1,
+            mimes: ["video/mp4", "video/ogg", "video/webm"],
+            pos: 3
+        }
+      },
+      bids: [{
+          bidder: 'pulsepoint',
+          params: { 
+              cp: 512379,
+              ct: 505642
+          }
+      }],
+      renderer: {
+        options: {
+            text: "PulsePoint Outstream"
+        }
+      }
+    },{
+        code: 'instream',
+        mediaTypes: {
+            video: {
+                playerSize: [640, 480],
+                context: 'instream',
+                h: 300,
+                w: 400,
+                minduration: 1,
+                maxduration: 210,
+                protocols: [2,3,5]
+            }
+        },
+        bids: [{
+            bidder: 'pulsepoint',
+            params: {
+                cp: 512379,
+                ct: 694973, 
+            }
+        }]
     }];
 ```

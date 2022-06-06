@@ -1,16 +1,22 @@
 var prebid = require('./package.json');
-var StringReplacePlugin = require('string-replace-webpack-plugin');
 var path = require('path');
 var webpack = require('webpack');
-var helpers = require('./gulpHelpers');
-var RequireEnsureWithoutJsonp = require('./plugins/RequireEnsureWithoutJsonp.js');
+var helpers = require('./gulpHelpers.js');
+var { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
+var argv = require('yargs').argv;
 
-// list of module names to never include in the common bundle chunk
-var neverBundle = [
-  'AnalyticsAdapter.js'
+var plugins = [
+  new webpack.EnvironmentPlugin({'LiveConnectMode': null})
 ];
 
+if (argv.analyze) {
+  plugins.push(
+    new BundleAnalyzerPlugin()
+  )
+}
+
 module.exports = {
+  mode: 'production',
   devtool: 'source-map',
   resolve: {
     modules: [
@@ -18,8 +24,26 @@ module.exports = {
       'node_modules'
     ],
   },
+  entry: (() => {
+    const entry = {
+      'prebid-core': {
+        import: './src/prebid.js'
+      }
+    };
+    const selectedModules = new Set(helpers.getArgModules());
+    Object.entries(helpers.getModules()).forEach(([fn, mod]) => {
+      if (selectedModules.size === 0 || selectedModules.has(mod)) {
+        entry[mod] = {
+          import: fn,
+          dependOn: 'prebid-core'
+        }
+      }
+    });
+    return entry;
+  })(),
   output: {
-    jsonpFunction: prebid.globalVarName+"Chunk"
+    chunkLoadingGlobal: prebid.globalVarName + 'Chunk',
+    chunkLoading: 'jsonp',
   },
   module: {
     rules: [
@@ -29,6 +53,7 @@ module.exports = {
         use: [
           {
             loader: 'babel-loader',
+            options: helpers.getAnalyticsOptions(),
           }
         ]
       },
@@ -40,56 +65,12 @@ module.exports = {
             loader: 'babel-loader',
           }
         ],
-      },
-      {
-        test: /\.json$/,
-        loader: 'json-loader'
-      },
-      {
-        test: /\.md$/,
-        loader: 'ignore-loader'
-      },
-      {
-        test: /constants.json$/,
-        include: /(src)/,
-        loader: StringReplacePlugin.replace({
-          replacements: [
-            {
-              pattern: /%%REPO_AND_VERSION%%/g,
-              replacement: function (match, p1, offset, string) {
-                return `${prebid.repository.url.split('/')[3]}_prebid_${prebid.version}`;
-              }
-            }
-          ]
-        })
-      },
-      {
-        test: /\.js$/,
-        include: /(src|test|modules|integrationExamples)/,
-        loader: StringReplacePlugin.replace({
-          replacements: [
-            {
-              pattern: /\$\$PREBID_GLOBAL\$\$/g,
-              replacement: function (match, p1, offset, string) {
-                return prebid.globalVarName;
-              }
-            }
-          ]
-        })
       }
     ]
   },
-  plugins: [
-    new StringReplacePlugin(),
-    new RequireEnsureWithoutJsonp(),
-
-    // this plugin must be last so it can be easily removed for karma unit tests
-    new webpack.optimize.CommonsChunkPlugin({
-      name: 'prebid',
-      filename: 'prebid-core.js',
-      minChunks: function(module, count) {
-        return !(count < 2 || neverBundle.includes(path.basename(module.resource)))
-      }
-    })
-  ]
+  optimization: {
+    usedExports: true,
+    sideEffects: true,
+  },
+  plugins
 };

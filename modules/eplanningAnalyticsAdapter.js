@@ -1,9 +1,8 @@
-import {ajax} from 'src/ajax';
-import adapter from 'src/AnalyticsAdapter';
-import adaptermanager from 'src/adaptermanager';
-import * as utils from 'src/utils';
-
-const CONSTANTS = require('src/constants.json');
+import { logError } from '../src/utils.js';
+import {ajax} from '../src/ajax.js';
+import adapter from '../src/AnalyticsAdapter.js';
+import adapterManager from '../src/adapterManager.js';
+import CONSTANTS from '../src/constants.json';
 
 const analyticsType = 'endpoint';
 const EPL_HOST = 'https://ads.us.e-planning.net/hba/1/';
@@ -110,7 +109,7 @@ eplAnalyticsAdapter.originEnableAnalytics = eplAnalyticsAdapter.enableAnalytics;
 
 eplAnalyticsAdapter.enableAnalytics = function (config) {
   if (!config.options.ci) {
-    utils.logError('Client ID (ci) option is not defined. Analytics won\'t work');
+    logError('Client ID (ci) option is not defined. Analytics won\'t work');
     return;
   }
 
@@ -123,7 +122,7 @@ eplAnalyticsAdapter.enableAnalytics = function (config) {
   eplAnalyticsAdapter.originEnableAnalytics(config);
 };
 
-adaptermanager.registerAnalyticsAdapter({
+adapterManager.registerAnalyticsAdapter({
   adapter: eplAnalyticsAdapter,
   code: 'eplanning'
 });

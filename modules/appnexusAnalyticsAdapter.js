@@ -2,8 +2,8 @@
  * appnexus.js - AppNexus Prebid Analytics Adapter
  */
 
-import adapter from 'src/AnalyticsAdapter';
-import adaptermanager from 'src/adaptermanager';
+import adapter from '../src/AnalyticsAdapter.js';
+import adapterManager from '../src/adapterManager.js';
 
 var appnexusAdapter = adapter({
   global: 'AppNexusPrebidAnalytics',
@@ -11,9 +11,10 @@ var appnexusAdapter = adapter({
   analyticsType: 'bundle'
 });
 
-adaptermanager.registerAnalyticsAdapter({
+adapterManager.registerAnalyticsAdapter({
   adapter: appnexusAdapter,
-  code: 'appnexus'
+  code: 'appnexus',
+  gvlid: 32
 });
 
 export default appnexusAdapter;

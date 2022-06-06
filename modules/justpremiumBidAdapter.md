@@ -2,7 +2,6 @@
 
 **Module Name**: Justpremium Bidder Adapter
 **Module Type**: Bidder Adapter
-**Maintainer**: headerbidding-dev@justpremium.com
 
 # Description
 
@@ -12,7 +11,11 @@ To get more information or your unique zone id please contact Justpremium.
 ```
    var adUnits = [
        {
-           sizes: [[1, 1]],
+           mediaTypes: {
+                banner: {
+                    sizes: [[1, 1]]
+                }
+           },
            code: 'div-gpt-ad-1471513102552-0',
            bids: [
                {
@@ -25,7 +28,11 @@ To get more information or your unique zone id please contact Justpremium.
            ]
        },
        {
-           sizes: [[300, 600]],
+           mediaTypes: {
+                banner: {
+                    sizes: [[300, 600]]
+                }
+           },
            code: 'div-gpt-ad-1471513102552-1',
            bids: [
                {

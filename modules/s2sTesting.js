@@ -1,41 +1,38 @@
-import { config } from 'src/config';
-import { setS2STestingModule } from 'src/adaptermanager';
+import {PARTITIONS, partitionBidders, filterBidsForAdUnit, getS2SBidderSet} from '../src/adapterManager.js';
+import {find} from '../src/polyfill.js';
+import {getBidderCodes, logWarn} from '../src/utils.js';
 
-export const SERVER = 'server';
-export const CLIENT = 'client';
+const {CLIENT, SERVER} = PARTITIONS;
+export const s2sTesting = {
+  ...PARTITIONS,
+  clientTestBidders: new Set()
+};
 
-var testing = false; // whether testing is turned on
-var bidSource = {}; // store bidder sources determined from s2sConfing bidderControl
+s2sTesting.bidSource = {}; // store bidder sources determined from s2sConfig bidderControl
+s2sTesting.globalRand = Math.random(); // if 10% of bidderA and 10% of bidderB should be server-side, make it the same 10%
 
-// load s2sConfig
-config.getConfig('s2sConfig', config => {
-  testing = config.s2sConfig && config.s2sConfig.testing;
-  calculateBidSources(config.s2sConfig);
-});
-
-export function getSourceBidderMap(adUnits = []) {
+s2sTesting.getSourceBidderMap = function(adUnits = [], allS2SBidders = []) {
   var sourceBidders = {[SERVER]: {}, [CLIENT]: {}};
-
-  // bail if testing is not turned on
-  if (!testing) {
-    return {[SERVER]: [], [CLIENT]: []};
-  }
 
   adUnits.forEach((adUnit) => {
     // if any adUnit bidders specify a bidSource, include them
     (adUnit.bids || []).forEach((bid) => {
+      // When a s2sConfig does not have testing=true and did not calc bid sources
+      if (allS2SBidders.indexOf(bid.bidder) > -1 && !s2sTesting.bidSource[bid.bidder]) {
+        s2sTesting.bidSource[bid.bidder] = SERVER;
+      }
       // calculate the source once and store on bid object
-      bid.calcSource = bid.calcSource || getSource(bid.bidSource);
+      bid.calcSource = bid.calcSource || s2sTesting.getSource(bid.bidSource);
       // if no bidSource at bid level, default to bidSource from bidder
-      bid.finalSource = bid.calcSource || bidSource[bid.bidder] || CLIENT; // default to client
+      bid.finalSource = bid.calcSource || s2sTesting.bidSource[bid.bidder] || CLIENT; // default to client
       // add bidder to sourceBidders data structure
       sourceBidders[bid.finalSource][bid.bidder] = true;
     });
   });
 
   // make sure all bidders in bidSource are in sourceBidders
-  Object.keys(bidSource).forEach((bidder) => {
-    sourceBidders[bidSource[bidder]][bidder] = true;
+  Object.keys(s2sTesting.bidSource).forEach((bidder) => {
+    sourceBidders[s2sTesting.bidSource[bidder]][bidder] = true;
   });
 
   // return map of source => array of bidders
@@ -47,18 +44,14 @@ export function getSourceBidderMap(adUnits = []) {
 
 /**
  * @function calculateBidSources determines the source for each s2s bidder based on bidderControl weightings.  these can be overridden at the adUnit level
- * @param s2sConfig server-to-server configuration
+ * @param s2sConfigs server-to-server configuration
  */
-function calculateBidSources(s2sConfig = {}) {
-  // bail if testing is not turned on
-  if (!testing) {
-    return;
-  }
-  bidSource = {}; // reset bid sources
+s2sTesting.calculateBidSources = function(s2sConfig = {}) {
   // calculate bid source (server/client) for each s2s bidder
+
   var bidderControl = s2sConfig.bidderControl || {};
   (s2sConfig.bidders || []).forEach((bidder) => {
-    bidSource[bidder] = getSource(bidderControl[bidder] && bidderControl[bidder].bidSource) || SERVER; // default to server
+    s2sTesting.bidSource[bidder] = s2sTesting.getSource(bidderControl[bidder] && bidderControl[bidder].bidSource) || SERVER; // default to server
   });
 }
 
@@ -68,7 +61,7 @@ function calculateBidSources(s2sConfig = {}) {
  * @param bidSources list of possible bid sources: "server", "client".  In theory could get the sources from the sourceWeights keys, but this is publisher config defined, so bidSources let's us constrain that.
  * @return the chosen source ("server" or "client"), or undefined if none chosen
  */
-export function getSource(sourceWeights = {}, bidSources = [SERVER, CLIENT]) {
+s2sTesting.getSource = function(sourceWeights = {}, bidSources = [SERVER, CLIENT]) {
   var srcIncWeight = {}; // store incremental weights of each source
   var totWeight = 0;
   bidSources.forEach((source) => {
@@ -77,7 +70,7 @@ export function getSource(sourceWeights = {}, bidSources = [SERVER, CLIENT]) {
   });
   if (!totWeight) return; // bail if no source weights
   // choose a source randomly based on weights
-  var rndWeight = Math.random() * totWeight;
+  var rndWeight = s2sTesting.globalRand * totWeight;
   for (var i = 0; i < bidSources.length; i++) {
     let source = bidSources[i];
     // choose the first source with an incremental weight > random weight
@@ -85,6 +78,57 @@ export function getSource(sourceWeights = {}, bidSources = [SERVER, CLIENT]) {
   }
 }
 
-// inject the s2sTesting module into the adaptermanager rather than importing it
-// importing it causes the packager to include it even when it's not explicitly included in the build
-setS2STestingModule(exports);
+function doingS2STesting(s2sConfig) {
+  return s2sConfig && s2sConfig.enabled && s2sConfig.testing;
+}
+
+function isTestingServerOnly(s2sConfig) {
+  return Boolean(doingS2STesting(s2sConfig) && s2sConfig.testServerOnly);
+}
+
+const adUnitsContainServerRequests = (adUnits, s2sConfig) => Boolean(
+  find(adUnits, adUnit => find(adUnit.bids, bid => (
+    bid.bidSource ||
+    (s2sConfig.bidderControl && s2sConfig.bidderControl[bid.bidder])
+  ) && bid.finalSource === SERVER))
+);
+
+partitionBidders.before(function (next, adUnits, s2sConfigs) {
+  const serverBidders = getS2SBidderSet(s2sConfigs);
+  let serverOnly = false;
+
+  s2sConfigs.forEach((s2sConfig) => {
+    if (doingS2STesting(s2sConfig)) {
+      s2sTesting.calculateBidSources(s2sConfig);
+      const bidderMap = s2sTesting.getSourceBidderMap(adUnits, [...serverBidders]);
+      // get all adapters doing client testing
+      bidderMap[CLIENT].forEach((bidder) => s2sTesting.clientTestBidders.add(bidder))
+    }
+    if (isTestingServerOnly(s2sConfig) && adUnitsContainServerRequests(adUnits, s2sConfig)) {
+      logWarn('testServerOnly: True.  All client requests will be suppressed.');
+      serverOnly = true;
+    }
+  });
+
+  next.bail(getBidderCodes(adUnits).reduce((memo, bidder) => {
+    if (serverBidders.has(bidder)) {
+      memo[SERVER].push(bidder);
+    }
+    if (!serverOnly && (!serverBidders.has(bidder) || s2sTesting.clientTestBidders.has(bidder))) {
+      memo[CLIENT].push(bidder);
+    }
+    return memo;
+  }, {[CLIENT]: [], [SERVER]: []}));
+});
+
+filterBidsForAdUnit.before(function(next, bids, s2sConfig) {
+  if (s2sConfig == null) {
+    next.bail(bids.filter((bid) => !s2sTesting.clientTestBidders.size || bid.finalSource !== SERVER));
+  } else {
+    const serverBidders = getS2SBidderSet(s2sConfig);
+    next.bail(bids.filter((bid) => serverBidders.has(bid.bidder) &&
+      (!doingS2STesting(s2sConfig) || bid.finalSource !== CLIENT)));
+  }
+});
+
+export default s2sTesting;
