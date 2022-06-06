@@ -77,6 +77,9 @@ export const spec = {
         if (typeof bidReq.getFloor === 'function') {
           accumulator[bidReq.bidId].Pricing = getFloor(bidReq, size, mediatype);
         }
+        if (bidReq.schain) {
+          accumulator[bidReq.bidId].SChain = bidReq.schain;
+        }
         if (mediatype === NATIVE) {
           let nativeReq = bidReq.mediaTypes.native;
           if (nativeReq.type === 'image') {
