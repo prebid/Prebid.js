@@ -797,25 +797,90 @@ describe('consentManagement', function () {
           expect(gdprDataHandler.ready).to.be.true;
         });
 
-        it('allows the auction when CMP is unresponsive', (done) => {
-          setConsentConfig({
-            cmpApi: 'iab',
-            timeout: 10,
-            defaultGdprScope: true
+        describe('when proper consent is not available', () => {
+          let tcfStub;
+
+          function runAuction() {
+            setConsentConfig({
+              cmpApi: 'iab',
+              timeout: 10,
+              defaultGdprScope: true
+            });
+            return new Promise((resolve, reject) => {
+              requestBidsHook(() => {
+                didHookReturn = true;
+              }, {});
+              setTimeout(() => didHookReturn ? resolve() : reject(new Error('Auction did not run')), 20);
+            })
+          }
+
+          function mockTcfEvent(tcdata) {
+            tcfStub.callsFake((api, version, cb) => {
+              if (api === 'addEventListener' && version === 2) {
+                // eslint-disable-next-line standard/no-callback-literal
+                cb(tcdata, true)
+              }
+            });
+          }
+
+          beforeEach(() => {
+            tcfStub = sinon.stub(window, '__tcfapi');
           });
 
-          requestBidsHook(() => {
-            didHookReturn = true;
-          }, {});
+          afterEach(() => {
+            tcfStub.restore();
+          })
 
-          setTimeout(() => {
-            expect(didHookReturn).to.be.true;
-            const consent = gdprDataHandler.getConsentData();
-            expect(consent.gdprApplies).to.be.true;
-            expect(consent.consentString).to.be.undefined;
-            expect(gdprDataHandler.ready).to.be.true;
-            done();
-          }, 20);
+          Object.entries({
+            'CMP is not available': () => { tcfStub.restore(); delete window.__tcfapi; },
+            'CMP is unresponsive': () => { tcfStub.callsFake(() => null) }
+          }).forEach(([t, setup]) => {
+            it(`because ${t} - should continue auction with null consent`, () => {
+              setup();
+              return runAuction().then(() => {
+                const consent = gdprDataHandler.getConsentData();
+                expect(consent.gdprApplies).to.be.true;
+                expect(consent.consentString).to.be.undefined;
+                expect(gdprDataHandler.ready).to.be.true;
+              })
+            })
+          })
+
+          it('should use consent provided by events other than tcloaded', () => {
+            mockTcfEvent({
+              eventStatus: 'cmpuishown',
+              tcString: 'mock-consent-string',
+              vendorData: {}
+            });
+            return runAuction().then(() => {
+              const consent = gdprDataHandler.getConsentData();
+              expect(consent.gdprApplies).to.be.true;
+              expect(consent.consentString).to.equal('mock-consent-string');
+              expect(consent.vendorData.vendorData).to.eql({});
+              expect(gdprDataHandler.ready).to.be.true;
+            });
+          });
+
+          Object.entries({
+            'null': null,
+            'empty': '',
+            'undefined': undefined
+          }).forEach(([t, cs]) => {
+            // some CMPs appear to reply with an empty consent string in 'cmpuishown' - make sure we don't use that
+            it(`should NOT use "default" consent if string is ${t}`, () => {
+              mockTcfEvent({
+                eventStatus: 'cmpuishown',
+                tcString: cs,
+                vendorData: {random: 'junk'}
+              });
+              return runAuction().then(() => {
+                const consent = gdprDataHandler.getConsentData();
+                expect(consent.gdprApplies).to.be.true;
+                expect(consent.consentString).to.be.undefined;
+                expect(consent.vendorData).to.be.undefined;
+              });
+            })
+          });
         });
 
         it('It still considers it a valid cmp response if gdprApplies is not a boolean', function () {
