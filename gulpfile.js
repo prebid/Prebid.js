@@ -73,6 +73,7 @@ function lint(done) {
   return gulp.src([
     'src/**/*.js',
     'modules/**/*.js',
+    'libraries/**/*.js',
     'test/**/*.js',
     'plugins/**/*.js',
     '!plugins/**/node_modules/**',

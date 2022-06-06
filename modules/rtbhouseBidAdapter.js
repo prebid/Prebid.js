@@ -1,5 +1,5 @@
 import {deepAccess, isArray, logError} from '../src/utils.js';
-import { getOrigin } from '../libraries/extraUtils/utils.js';
+import { getOrigin } from '../libraries/extraUtils/index.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {includes} from '../src/polyfill.js';

@@ -1,6 +1,6 @@
 
 import { timestamp, deepAccess } from '../src/utils.js';
-import { getOrigin } from '../libraries/extraUtils/utils.js';
+import { getOrigin } from '../libraries/extraUtils/index.js';
 import { config } from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'resetdigital';

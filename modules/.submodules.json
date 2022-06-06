@@ -75,7 +75,7 @@
   "libraries": {
     "extraUtils": {
       "files": [
-        "./utils.js"
+        "./index.js"
       ],
       "dependants": [
         "ooloAnalyticsAdapter",
