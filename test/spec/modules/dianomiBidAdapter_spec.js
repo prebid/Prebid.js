@@ -17,7 +17,6 @@ describe('Dianomi adapter', () => {
 
     it('should return true when required params found', () => {
       assert(spec.isBidRequestValid(bid));
-      assert(spec.isBidRequestValid(bid));
       bid.params = {
         smartadId: 4332,
       };
@@ -43,9 +42,7 @@ describe('Dianomi adapter', () => {
       let validBidRequests = [
         {
           bidId: 'bidId',
-          params: {
-            adxDomain: '10.8.57.207',
-          },
+          params: { smartadId: 1234 },
         },
       ];
       let request = spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } });
@@ -82,7 +79,7 @@ describe('Dianomi adapter', () => {
       });
 
       it('should send CCPA Consent data to dianomi', () => {
-        let validBidRequests = [{ bidId: 'bidId', params: { test: 1 } }];
+        let validBidRequests = [{ bidId: 'bidId', params: { smartadId: 1234 } }];
         let bidderRequest = { uspConsent: '1YA-', refererInfo: { referer: 'page' } };
         let request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
 
@@ -104,7 +101,7 @@ describe('Dianomi adapter', () => {
         let validBidRequests = [
           {
             bidId: 'bidId',
-            params: { siteId: 'siteId' },
+            params: { smartadId: 1234 },
           },
         ];
         let bidderRequest = {
@@ -129,7 +126,7 @@ describe('Dianomi adapter', () => {
         let validBidRequests = [
           {
             bidId: 'bidId',
-            params: { siteId: 'siteId' },
+            params: { smartadId: 1234 },
           },
         ];
         let request = JSON.parse(
@@ -146,7 +143,7 @@ describe('Dianomi adapter', () => {
       let validBidRequests = [
         {
           bidId: 'bidId',
-          params: { siteId: 'siteId' },
+          params: { smartadId: 1234 },
         },
       ];
       let request = JSON.parse(
@@ -161,7 +158,7 @@ describe('Dianomi adapter', () => {
       let validBidRequests = [
         {
           bidId: 'bidId',
-          params: { siteId: 'siteId' },
+          params: { smartadId: 1234 },
           transactionId: 'transactionId',
         },
       ];
@@ -172,37 +169,6 @@ describe('Dianomi adapter', () => {
       assert.equal(request.source.tid, validBidRequests[0].transactionId);
       assert.equal(request.source.fd, 1);
     });
-
-    // it('should not set coppa when coppa is not provided or is set to false', () => {
-    //   config.setConfig({});
-    //   let validBidRequests = [{ bidId: 'bidId', params: { test: 1 } }];
-    //   let bidderRequest = {
-    //     gdprConsent: { gdprApplies: true, consentString: 'consentDataString' },
-    //     refererInfo: { referer: 'page' },
-    //   };
-    //   let request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
-
-    //   assert.equal(request.regs.coppa, undefined);
-
-    //   config.setConfig({
-    //     coppa: false,
-    //   });
-    //   request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
-
-    //   assert.equal(request.regs.coppa, undefined);
-    // });
-
-    // it('should set coppa to 1 when coppa is provided with value true', () => {
-    //   config.setConfig({
-    //     coppa: true,
-    //   });
-    //   let validBidRequests = [{ bidId: 'bidId', params: { smaradId: 1 } }];
-    //   let request = JSON.parse(
-    //     spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data
-    //   );
-
-    //   assert.equal(request.regs.coppa, 1);
-    // });
 
     it('should send info about device', () => {
       config.setConfig({
@@ -341,7 +307,7 @@ describe('Dianomi adapter', () => {
         let validBidRequests = [
           {
             bidId: 'bidId',
-            params: { siteId: 'siteId' },
+            params: { smartadId: 1234 },
           },
         ];
         let request = JSON.parse(
@@ -354,7 +320,7 @@ describe('Dianomi adapter', () => {
         let validBidRequests = [
           {
             bidId: 'bidId',
-            params: { priceType: 'net' },
+            params: { smartadId: 1234 },
           },
         ];
         let request = JSON.parse(
@@ -370,11 +336,11 @@ describe('Dianomi adapter', () => {
         let validBidRequests = [
           {
             bidId: 'bidId',
-            params: { siteId: 'siteId' },
+            params: { smartadId: 1234 },
           },
           {
             bidId: 'bidId2',
-            params: { siteId: 'siteId' },
+            params: { smartadId: 1234 }
           },
         ];
         let request = JSON.parse(
@@ -387,17 +353,17 @@ describe('Dianomi adapter', () => {
         let validBidRequests = [
           {
             bidId: 'bidId',
-            params: { mid: '1000' },
+            params: { smartadId: 1234 },
             mediaTypes: { video: {} },
           },
           {
             bidId: 'bidId2',
-            params: { mid: '1000' },
+            params: { smartadId: 1234 },
             mediaTypes: { video: {} },
           },
           {
             bidId: 'bidId3',
-            params: { mid: '1000' },
+            params: { smartadId: 1234 },
             mediaTypes: { video: {} },
           },
         ];
@@ -413,7 +379,7 @@ describe('Dianomi adapter', () => {
       describe('price floors', () => {
         it('should not add if floors module not configured', () => {
           const validBidRequests = [
-            { bidId: 'bidId', params: { mid: 1000 }, mediaTypes: { video: {} } },
+            { bidId: 'bidId', params: { smartadId: 1234 }, mediaTypes: { video: {} } },
           ];
           let imp = getRequestImps(validBidRequests)[0];
 
@@ -430,12 +396,12 @@ describe('Dianomi adapter', () => {
         });
 
         it('should request floor price in adserver currency', () => {
-          config.setConfig({ currency: { adServerCurrency: 'DKK' } });
+          config.setConfig({ currency: { adServerCurrency: 'GBP' } });
           const validBidRequests = [getBidWithFloor()];
           let imp = getRequestImps(validBidRequests)[0];
 
           assert.equal(imp.bidfloor, undefined);
-          assert.equal(imp.bidfloorcur, 'DKK');
+          assert.equal(imp.bidfloorcur, 'GBP');
         });
 
         it('should add correct floor values', () => {
@@ -451,7 +417,7 @@ describe('Dianomi adapter', () => {
 
         function getBidWithFloor(floor) {
           return {
-            params: { mid: 1 },
+            params: { smartadId: 1234 },
             mediaTypes: { video: {} },
             getFloor: ({ currency }) => {
               return {
@@ -468,7 +434,7 @@ describe('Dianomi adapter', () => {
           let validBidRequests = [
             {
               bidId: 'bidId',
-              params: { mid: 1000 },
+              params: { smartadId: 1234 },
               mediaTypes: {
                 banner: {
                   sizes: [
@@ -481,7 +447,7 @@ describe('Dianomi adapter', () => {
             },
             {
               bidId: 'bidId1',
-              params: { mid: 1000 },
+              params: { smartadId: 1234 },
               mediaTypes: {
                 video: {},
                 native: {},
@@ -489,7 +455,7 @@ describe('Dianomi adapter', () => {
             },
             {
               bidId: 'bidId2',
-              params: { mid: 1000 },
+              params: { smartadId: 1234 },
               nativeParams: {
                 title: { required: true, len: 140 },
               },
@@ -528,7 +494,7 @@ describe('Dianomi adapter', () => {
           let validBidRequests = [
             {
               bidId: 'bidId',
-              params: { mid: 1000 },
+              params: { smartadId: 1234 },
               mediaTypes: {
                 banner: {
                   sizes: [
@@ -556,7 +522,7 @@ describe('Dianomi adapter', () => {
           let validBidRequests = [
             {
               bidId: 'bidId',
-              params: { mid: 1000 },
+              params: { smartadId: 1234 },
               mediaTypes: {
                 video: {
                   playerSize: [640, 480],
@@ -583,7 +549,7 @@ describe('Dianomi adapter', () => {
             let validBidRequests = [
               {
                 bidId: 'bidId',
-                params: { mid: 1000 },
+                params: { smartadId: 1234 },
                 nativeParams: {
                   title: { required: true, len: 140 },
                   image: {
@@ -610,7 +576,7 @@ describe('Dianomi adapter', () => {
             let validBidRequests = [
               {
                 bidId: 'bidId',
-                params: { mid: 1000 },
+                params: { smartadId: 1234 },
                 nativeParams: {
                   title: { required: true, len: 140 },
                   image: {
@@ -641,7 +607,7 @@ describe('Dianomi adapter', () => {
             let validBidRequests = [
               {
                 bidId: 'bidId',
-                params: { mid: 1000 },
+                params: { smartadId: 1234 },
                 nativeParams: {
                   title: { required: true, len: 140 },
                   image: { required: true, sizes: [150, 50] },
@@ -672,7 +638,7 @@ describe('Dianomi adapter', () => {
               const validBidRequests = [
                 {
                   bidId: 'bidId',
-                  params: { mid: 1000 },
+                  params: { smartadId: 1234 },
                   nativeParams: {
                     image: {
                       sizes: [
@@ -697,7 +663,7 @@ describe('Dianomi adapter', () => {
             const validBidRequests = [
               {
                 bidId: 'bidId',
-                params: { mid: 1000 },
+                params: { smartadId: 1234 },
                 nativeParams: {
                   image: {
                     aspect_ratios: [
@@ -737,7 +703,7 @@ describe('Dianomi adapter', () => {
             const validBidRequests = [
               {
                 bidId: 'bidId',
-                params: { mid: 1000 },
+                params: { smartadId: 1234 },
                 nativeParams: {
                   image: {
                     aspect_ratios: [],
@@ -807,7 +773,7 @@ describe('Dianomi adapter', () => {
         bids: [
           {
             bidId: 'bidId1',
-            params: { mid: 1000 },
+            params: { smartadId: 1234 },
             nativeParams: {
               title: { required: true, len: 140 },
               image: {
@@ -823,7 +789,7 @@ describe('Dianomi adapter', () => {
           },
           {
             bidId: 'bidId2',
-            params: { mid: 1000 },
+            params: { smartadId: 1234 },
             nativeParams: {
               title: { required: true, len: 140 },
               image: {
@@ -888,7 +854,7 @@ describe('Dianomi adapter', () => {
         bids: [
           {
             bidId: 'bidId1',
-            params: { mid: 1000 },
+            params: { smartadId: 1234 },
             nativeParams: {
               title: { required: true, len: 140 },
               image: {
@@ -904,7 +870,7 @@ describe('Dianomi adapter', () => {
           },
           {
             bidId: 'bidId2',
-            params: { mid: 1000 },
+            params: { smartadId: 1234 },
             nativeParams: {
               title: { required: true, len: 140 },
               image: {
@@ -920,7 +886,7 @@ describe('Dianomi adapter', () => {
           },
           {
             bidId: 'bidId3',
-            params: { mid: 1000 },
+            params: { smartadId: 1234 },
             nativeParams: {
               title: { required: true, len: 140 },
               image: {
@@ -936,7 +902,7 @@ describe('Dianomi adapter', () => {
           },
           {
             bidId: 'bidId4',
-            params: { mid: 1000 },
+            params: { smartadId: 1234 },
             nativeParams: {
               title: { required: true, len: 140 },
               image: {
@@ -997,7 +963,7 @@ describe('Dianomi adapter', () => {
               ],
             },
           ],
-          cur: 'NOK',
+          cur: 'USD',
         },
       };
       let bidRequest = {
@@ -1005,7 +971,7 @@ describe('Dianomi adapter', () => {
         bids: [
           {
             bidId: 'bidId1',
-            params: { mid: 1000 },
+            params: { smartadId: 1234 },
             nativeParams: {
               title: { required: true, len: 140 },
               image: {
@@ -1108,7 +1074,7 @@ describe('Dianomi adapter', () => {
           id: null,
           bidid: null,
           seatbid: [{ bid }],
-          cur: 'NOK',
+          cur: 'USD',
         },
       };
       let bidRequest = {
@@ -1141,7 +1107,7 @@ describe('Dianomi adapter', () => {
           id: null,
           bidid: null,
           seatbid: [{ bid: [] }],
-          cur: 'NOK',
+          cur: 'USD',
         },
       };
       let bidRequest = {
@@ -1168,7 +1134,7 @@ describe('Dianomi adapter', () => {
           bids: [
             {
               bidId: 'bidId1',
-              params: { mid: 1000 },
+              params: { smartadId: 1234 },
             },
           ],
         };
@@ -1197,7 +1163,7 @@ describe('Dianomi adapter', () => {
           bids: [
             {
               bidId: 'bidId1',
-              params: { mid: 1000 },
+              params: { smartadId: 1234 },
             },
           ],
         };
@@ -1227,7 +1193,7 @@ describe('Dianomi adapter', () => {
           bids: [
             {
               bidId: 'bidId1',
-              params: { mid: 1000 },
+              params: { smartadId: 1234 },
               mediaTypes: {
                 video: {
                   context: 'outstream',
@@ -1236,7 +1202,7 @@ describe('Dianomi adapter', () => {
             },
             {
               bidId: 'bidId2',
-              params: { mid: 1000 },
+              params: { smartadId: 1234 },
               mediaTypes: {
                 video: {
                   constext: 'instream',
