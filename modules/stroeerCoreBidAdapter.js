@@ -128,7 +128,7 @@ export const spec = {
       ssl: isSecureWindow(),
       mpa: isMainPageAccessible(),
       timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart),
-      url: refererInfo && refererInfo.referer
+      url: refererInfo && (refererInfo.canonicalUrl || refererInfo.referer)
     };
 
     const userIds = anyBid.userId;
