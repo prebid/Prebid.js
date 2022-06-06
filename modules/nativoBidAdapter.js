@@ -132,8 +132,9 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     const placementIds = new Set()
-    let placementId, pageUrl
     const bidDataMap = BidDataMap()
+    const placementSizes = { length: 0 }
+    let placementId, pageUrl
     validBidRequests.forEach((request) => {
       pageUrl = deepAccess(
         request,
@@ -142,15 +143,21 @@ export const spec = {
       )
       placementId = deepAccess(request, 'params.placementId')
 
-      if (placementId) {
+      const bidDataKeys = [request.adUnitCode]
+
+      if (placementId && !placementIds.has(placementId)) {
         placementIds.add(placementId)
+        bidDataKeys.push(placementId)
+
+        placementSizes[placementId] = request.sizes
+        placementSizes.length++
       }
 
       const bidData = {
         bidId: request.bidId,
         size: getLargestSize(request.sizes),
       }
-      bidDataMap.addBidData(bidData, [placementId, request.adUnitCode])
+      bidDataMap.addBidData(bidData, bidDataKeys)
     })
     bidRequestMap[bidderRequest.bidderRequestId] = bidDataMap
 
@@ -197,6 +204,11 @@ export const spec = {
 
     if (campaignsToFilter.size > 0) {
       params.unshift({ key: 'ntv_ctf', value: Array.from(campaignsToFilter).join(',') })
+    }
+
+    // Placement Sizes
+    if (placementSizes.length) {
+      params.unshift({ key: 'ntv_pas', value: btoa(JSON.stringify(placementSizes)) })
     }
 
     // Add placement IDs
