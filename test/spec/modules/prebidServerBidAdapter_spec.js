@@ -1502,11 +1502,12 @@ describe('S2S Adapter', function () {
       adapter.callBids(myRequest, BID_REQUESTS, addBidResponse, done, ajax);
       const requestBid = JSON.parse(server.requests[0].requestBody);
 
-      expect(requestBid.imp[0].ext.appnexus).to.exist;
-      expect(requestBid.imp[0].ext.appnexus.placement_id).to.exist.and.to.equal(10433394);
-      expect(requestBid.imp[0].ext.appnexus.use_pmt_rule).to.exist.and.to.be.true;
-      expect(requestBid.imp[0].ext.appnexus.member).to.exist;
-      expect(requestBid.imp[0].ext.appnexus.keywords).to.exist.and.to.deep.equal([{
+      const requestParams = requestBid.imp[0].ext.prebid.bidder;
+      expect(requestParams.appnexus).to.exist;
+      expect(requestParams.appnexus.placement_id).to.exist.and.to.equal(10433394);
+      expect(requestParams.appnexus.use_pmt_rule).to.exist.and.to.be.true;
+      expect(requestParams.appnexus.member).to.exist;
+      expect(requestParams.appnexus.keywords).to.exist.and.to.deep.equal([{
         key: 'foo',
         value: ['bar', 'baz']
       }, {
@@ -1586,8 +1587,9 @@ describe('S2S Adapter', function () {
       config.setConfig(_config);
       adapter.callBids(s2sBidRequest, BID_REQUESTS, addBidResponse, done, ajax);
       const requestBid = JSON.parse(server.requests[0].requestBody);
-      expect(requestBid.imp[0].ext.appnexus).to.haveOwnProperty('key');
-      expect(requestBid.imp[0].ext.appnexus.key).to.be.equal('value')
+      const requestParams = requestBid.imp[0].ext.prebid.bidder;
+      expect(requestParams.appnexus).to.haveOwnProperty('key');
+      expect(requestParams.appnexus.key).to.be.equal('value')
     });
 
     describe('config site value is added to the oRTB request', function () {
