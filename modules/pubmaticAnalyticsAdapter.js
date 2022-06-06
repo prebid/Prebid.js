@@ -413,7 +413,7 @@ function bidWonHandler(args) {
   let auctionCache = cache.auctions[args.auctionId];
   auctionCache.adUnitCodes[args.adUnitCode].bidWon = args.requestId;
   auctionCache.adUnitCodes[args.adUnitCode].bidWonAdId = args.adId;
-  executeBidWonLoggerCall(args.auctionId, args.adUnitCode, args);
+  executeBidWonLoggerCall(args.auctionId, args.adUnitCode);
 }
 
 function auctionEndHandler(args) {
