@@ -73,7 +73,7 @@
     ]
   },
   "libraries": {
-    "extraUtils": {
+    "getOrigin": {
       "files": [
         "./index.js"
       ],
