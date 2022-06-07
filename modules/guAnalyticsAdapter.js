@@ -128,7 +128,7 @@ function logEvents(events) {
     const bidId = events[0]?.bid;
     logMsg = `bid won ${bidId}`;
   }
-  log('commercial', `Prebid.js events ${logMsg}`, events);
+  log('commercial', `Prebid.js events: ${logMsg}`, events);
 }
 
 analyticsAdapter.ajaxCall = function ajaxCall(data) {
