@@ -40,7 +40,8 @@ const sampleBidderRequest = {
   auctionId: utils.getUniqueIdentifierStr(),
   uspConsent: '1YYY',
   refererInfo: {
-    referer: 'https://www.prebid.org',
+    location: 'https://www.prebid.org',
+    topmostLocation: 'https://www.prebid.org',
     canonicalUrl: 'https://www.prebid.org/the/link/to/the/page'
   },
   ortb2: sampleFPD
@@ -227,35 +228,22 @@ describe('AmxBidAdapter', () => {
       const { data } = spec.buildRequests([sampleBidRequestBase], {
         ...sampleBidderRequest,
         refererInfo: {
-          numIframes: 1,
-          referer: 'http://search-traffic-source.com',
-          stack: []
+          location: null,
+          topmostLocation: null,
+          ref: 'http://search-traffic-source.com',
         }
       });
       expect(data.do).to.equal('localhost')
       expect(data.re).to.equal('http://search-traffic-source.com');
     });
 
-    it('if we are in AMP, make sure we use the canonical URL or the referrer (which is sourceUrl)', () => {
-      const { data } = spec.buildRequests([sampleBidRequestBase], {
-        ...sampleBidderRequest,
-        refererInfo: {
-          isAmp: true,
-          referer: 'http://real-publisher-site.com/content',
-          stack: []
-        }
-      });
-      expect(data.do).to.equal('real-publisher-site.com')
-      expect(data.re).to.equal('http://real-publisher-site.com/content');
-    })
-
     it('if prebid is in an iframe, will use the topmost url as domain', () => {
       const { data } = spec.buildRequests([sampleBidRequestBase], {
         ...sampleBidderRequest,
         refererInfo: {
-          numIframes: 1,
-          referer: 'http://search-traffic-source.com',
-          stack: ['http://top-site.com', 'http://iframe.com']
+          location: null,
+          topmostLocation: 'http://top-site.com',
+          ref: 'http://search-traffic-source.com',
         }
       });
       expect(data.do).to.equal('top-site.com');

@@ -33,7 +33,7 @@ describe('ConcertAdapter', function () {
 
     bidRequest = {
       refererInfo: {
-        referer: 'https://www.google.com'
+        page: 'https://www.google.com'
       },
       uspConsent: '1YYY',
       gdprConsent: {}

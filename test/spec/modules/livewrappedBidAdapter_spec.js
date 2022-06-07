@@ -758,9 +758,9 @@ describe('Livewrapped adapter tests', function () {
       expect(data).to.deep.equal(expectedQuery);
     });
 
-    it('should use params.url, then config pageUrl, then bidderRequest.refererInfo.referer', function() {
+    it('should use params.url, then bidderRequest.refererInfo.page', function() {
       let testRequest = clone(bidderRequest);
-      testRequest.refererInfo = {referer: 'https://www.topurl.com'};
+      testRequest.refererInfo = {page: 'https://www.topurl.com'};
 
       let result = spec.buildRequests(testRequest.bids, testRequest);
       let data = JSON.parse(result.data);
@@ -773,19 +773,6 @@ describe('Livewrapped adapter tests', function () {
       data = JSON.parse(result.data);
 
       expect(data.url).to.equal('https://www.topurl.com');
-
-      let origGetConfig = config.getConfig;
-      sandbox.stub(config, 'getConfig').callsFake(function (key) {
-        if (key === 'pageUrl') {
-          return 'https://www.configurl.com';
-        }
-        return origGetConfig.apply(config, arguments);
-      });
-
-      result = spec.buildRequests(testRequest.bids, testRequest);
-      data = JSON.parse(result.data);
-
-      expect(data.url).to.equal('https://www.configurl.com');
     });
 
     it('should make use of pubcid if available', function() {

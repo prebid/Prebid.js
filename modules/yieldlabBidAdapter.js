@@ -60,8 +60,9 @@ export const spec = {
     })
 
     if (bidderRequest) {
-      if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
-        query.pubref = bidderRequest.refererInfo.referer
+      if (bidderRequest.refererInfo && bidderRequest.refererInfo.page) {
+        // TODO: is 'page' the right value here?
+        query.pubref = bidderRequest.refererInfo.page
       }
 
       if (bidderRequest.gdprConsent) {

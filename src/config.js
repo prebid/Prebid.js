@@ -22,7 +22,6 @@ import CONSTANTS from './constants.json';
 
 const DEFAULT_DEBUG = getParameterByName(CONSTANTS.DEBUG_MODE).toUpperCase() === 'TRUE';
 const DEFAULT_BIDDER_TIMEOUT = 3000;
-const DEFAULT_PUBLISHER_DOMAIN = window.location.origin;
 const DEFAULT_ENABLE_SEND_ALL_BIDS = true;
 const DEFAULT_DISABLE_AJAX_TIMEOUT = false;
 const DEFAULT_BID_CACHE = false;
@@ -86,12 +85,12 @@ export function newConfig() {
         this._bidderTimeout = val;
       },
 
-      // domain where prebid is running for cross domain iframe communication
-      _publisherDomain: DEFAULT_PUBLISHER_DOMAIN,
+      _publisherDomain: null,
       get publisherDomain() {
         return this._publisherDomain;
       },
       set publisherDomain(val) {
+        logWarn('publisherDomain is deprecated and has no effect since v7 - use pageUrl instead')
         this._publisherDomain = val;
       },
 

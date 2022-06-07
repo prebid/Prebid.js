@@ -94,7 +94,7 @@ export const spec = {
 
     payload.device.ua = navigator.userAgent;
     payload.device.ip = navigator.ip;
-    payload.site.page = bidderRequest.refererInfo.referer;
+    payload.site.page = bidderRequest.refererInfo.page;
     payload.site.mobile = /(ios|ipod|ipad|iphone|android)/i.test(navigator.userAgent) ? 1 : 0;
     payload.ext.definerId = params.definerId;
 

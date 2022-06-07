@@ -141,7 +141,10 @@ describe('bridgewellBidAdapter', function () {
     it('should attach valid params to the tag', function () {
       const bidderRequest = {
         refererInfo: {
-          referer: 'https://www.bridgewell.com/'
+          page: 'https://www.bridgewell.com/',
+          legacy: {
+            referer: 'https://www.bridgewell.com/',
+          }
         }
       }
       const request = spec.buildRequests(bidRequests, bidderRequest);
@@ -164,7 +167,10 @@ describe('bridgewellBidAdapter', function () {
     it('should attach valid params to the tag, part2', function() {
       const bidderRequest = {
         refererInfo: {
-          referer: 'https://www.bridgewell.com/'
+          page: 'https://www.bridgewell.com/',
+          legacy: {
+            referer: 'https://www.bridgewell.com/'
+          }
         }
       }
       const bidRequests2 = [
@@ -206,7 +212,10 @@ describe('bridgewellBidAdapter', function () {
     it('should attach validBidRequests to the tag', function () {
       const bidderRequest = {
         refererInfo: {
-          referer: 'https://www.bridgewell.com/'
+          page: 'https://www.bridgewell.com/',
+          legacy: {
+            referer: 'https://www.bridgewell.com/',
+          }
         }
       }
 

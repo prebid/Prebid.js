@@ -166,7 +166,7 @@ describe('teadsBidAdapter', () => {
       const bidRequest = Object.assign({}, bidRequests[0])
       const bidderRequest = {
         refererInfo: {
-          referer: 'https://example.com/page.html',
+          page: 'https://example.com/page.html',
           reachedTop: true,
           numIframes: 2
         }

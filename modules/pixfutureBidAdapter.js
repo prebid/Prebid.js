@@ -43,7 +43,7 @@ export const spec = {
     return validBidRequests.map((bidRequest) => {
       let referer = '';
       if (bidderRequest && bidderRequest.refererInfo) {
-        referer = bidderRequest.refererInfo.referer || '';
+        referer = bidderRequest.refererInfo.page || '';
       }
 
       const userObjBid = find(validBidRequests, hasUserInfo);
@@ -91,7 +91,8 @@ export const spec = {
 
       if (bidderRequest && bidderRequest.refererInfo) {
         let refererinfo = {
-          rd_ref: encodeURIComponent(bidderRequest.refererInfo.referer),
+          // TODO: this collects everything it finds, except for canonicalUrl
+          rd_ref: encodeURIComponent(bidderRequest.refererInfo.topmostLocation),
           rd_top: bidderRequest.refererInfo.reachedTop,
           rd_ifs: bidderRequest.refererInfo.numIframes,
           rd_stk: bidderRequest.refererInfo.stack.map((url) => encodeURIComponent(url)).join(',')

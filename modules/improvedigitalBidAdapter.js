@@ -1,6 +1,16 @@
 import {
-  cleanObj, deepAccess, deepClone, deepSetValue, getBidIdParameter, getBidRequest, getDNT,
-  getUniqueIdentifierStr, isFn, isPlainObject, logWarn, mergeDeep, parseUrl
+  cleanObj,
+  deepAccess,
+  deepClone,
+  deepSetValue,
+  getBidIdParameter,
+  getBidRequest,
+  getDNT,
+  getUniqueIdentifierStr,
+  isFn,
+  isPlainObject,
+  logWarn,
+  mergeDeep
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
@@ -488,10 +498,10 @@ const ID_REQUEST = {
       request.app = app;
     } else {
       const site = {};
-      const url = config.getConfig('pageUrl') || deepAccess(bidderRequest, 'refererInfo.referer');
+      const url = deepAccess(bidderRequest, 'refererInfo.page');
       if (url) {
         site.page = url;
-        site.domain = parseUrl(url).hostname;
+        site.domain = bidderRequest.refererInfo.domain
       }
       const configSiteSettings = config.getConfig('site') || {};
       const fpdSiteSettings = deepAccess(bidderRequest, 'ortb2.site') || {};

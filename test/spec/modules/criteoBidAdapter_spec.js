@@ -410,7 +410,8 @@ describe('The Criteo bidding adapter', function () {
     const refererUrl = 'https://criteo.com?pbt_debug=1&pbt_nolog=1';
     const bidderRequest = {
       refererInfo: {
-        referer: refererUrl
+        page: refererUrl,
+        topmostLocation: refererUrl
       },
       timeout: 3000,
       gdprConsent: {
@@ -559,7 +560,8 @@ describe('The Criteo bidding adapter', function () {
     it('should properly build a networkId request', function () {
       const bidderRequest = {
         refererInfo: {
-          referer: refererUrl
+          page: refererUrl,
+          topmostLocation: refererUrl,
         },
         timeout: 3000,
         gdprConsent: {
@@ -606,7 +608,8 @@ describe('The Criteo bidding adapter', function () {
     it('should properly build a mixed request', function () {
       const bidderRequest = {
         refererInfo: {
-          referer: refererUrl
+          page: refererUrl,
+          topmostLocation: refererUrl,
         },
         timeout: 3000
       };

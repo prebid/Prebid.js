@@ -67,8 +67,9 @@ export const spec = {
         data.coppa = 1
       }
 
-      if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
-        data.referer = bidderRequest.refererInfo.referer
+      if (bidderRequest?.refererInfo?.page) {
+        // TODO: is 'page' the right value here?
+        data.referer = bidderRequest.refererInfo.page
       }
 
       if (bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString) {

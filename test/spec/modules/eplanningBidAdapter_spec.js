@@ -293,7 +293,9 @@ describe('E-Planning Adapter', function () {
   const refererUrl = 'https://localhost';
   const bidderRequest = {
     refererInfo: {
-      referer: refererUrl
+      page: refererUrl,
+      domain: 'localhost',
+      ref: refererUrl,
     },
     gdprConsent: {
       gdprApplies: 1,
@@ -473,7 +475,7 @@ describe('E-Planning Adapter', function () {
 
     it('should return ur parameter with current window url', function () {
       const ur = spec.buildRequests(bidRequests, bidderRequest).data.ur;
-      expect(ur).to.equal(bidderRequest.refererInfo.referer);
+      expect(ur).to.equal(bidderRequest.refererInfo.page);
     });
 
     it('should return fr parameter when there is a referrer', function () {

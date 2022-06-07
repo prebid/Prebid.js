@@ -128,7 +128,8 @@ function appendUserIdsToRequestPayload(payloadRef, userIds) {
 }
 
 function buildRequests(validBidRequests, bidderRequest) {
-  const topWindowUrl = bidderRequest.refererInfo.referer;
+  // TODO: does the fallback make sense here?
+  const topWindowUrl = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
   const requests = [];
   validBidRequests.forEach(validBidRequest => {
     const sizes = parseSizesInput(validBidRequest.sizes);

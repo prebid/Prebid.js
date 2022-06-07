@@ -423,8 +423,10 @@ function generateGeneralParams(generalObject, bidderRequest) {
   }
 
   if (bidderRequest && bidderRequest.refererInfo) {
-    generalParams.referrer = deepAccess(bidderRequest, 'refererInfo.referer');
-    generalParams.page_url = config.getConfig('pageUrl') || deepAccess(window, 'location.href');
+    // TODO: is 'ref' the right value here?
+    generalParams.referrer = deepAccess(bidderRequest, 'refererInfo.ref');
+    // TODO: does the fallback make sense here?
+    generalParams.page_url = deepAccess(bidderRequest, 'refererInfo.page') || deepAccess(window, 'location.href');
   }
 
   return generalParams

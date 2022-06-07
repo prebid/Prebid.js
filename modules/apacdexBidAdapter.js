@@ -2,6 +2,7 @@ import { deepAccess, isPlainObject, isArray, replaceAuctionPrice, isFn } from '.
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import {hasPurpose1Consent} from '../src/utils/gpdr.js';
+import {parseDomain} from '../src/refererDetection.js';
 const BIDDER_CODE = 'apacdex';
 const ENDPOINT = 'https://useast.quantumdex.io/auction/pbjs'
 const USERSYNC = 'https://sync.quantumdex.io/usersync/pbjs'
@@ -104,7 +105,8 @@ export const spec = {
     payload.site = {};
     payload.site.page = pageUrl
     payload.site.referrer = _extractTopWindowReferrerFromBidderRequest(bidderRequest);
-    payload.site.hostname = getDomain(pageUrl);
+    // TODO: does it make sense to fall back to window.location for the domain?
+    payload.site.hostname = bidderRequest.refererInfo?.domain || parseDomain(pageUrl);
 
     // Apply GDPR parameters to request.
     if (bidderRequest && bidderRequest.gdprConsent) {
@@ -284,18 +286,8 @@ function _getDoNotTrack() {
  * @returns {string}
  */
 function _extractTopWindowUrlFromBidderRequest(bidderRequest) {
-  if (config.getConfig('pageUrl')) {
-    return config.getConfig('pageUrl');
-  }
-  if (deepAccess(bidderRequest, 'refererInfo.referer')) {
-    return bidderRequest.refererInfo.referer;
-  }
-
-  try {
-    return window.top.location.href;
-  } catch (e) {
-    return window.location.href;
-  }
+  // TODO: does it make sense to fall back to window.location?
+  return bidderRequest?.refererInfo?.page || window.location.href;
 }
 
 /**
@@ -305,34 +297,8 @@ function _extractTopWindowUrlFromBidderRequest(bidderRequest) {
  * @returns {string}
  */
 function _extractTopWindowReferrerFromBidderRequest(bidderRequest) {
-  if (bidderRequest && deepAccess(bidderRequest, 'refererInfo.referer')) {
-    return bidderRequest.refererInfo.referer;
-  }
-
-  try {
-    return window.top.document.referrer;
-  } catch (e) {
-    return window.document.referrer;
-  }
-}
-
-/**
- * Extracts the domain from given page url
- *
- * @param {string} url
- * @returns {string}
- */
-export function getDomain(pageUrl) {
-  if (config.getConfig('publisherDomain')) {
-    var publisherDomain = config.getConfig('publisherDomain');
-    return publisherDomain.replace('http://', '').replace('https://', '').replace('www.', '').split(/[/?#:]/)[0];
-  }
-
-  if (!pageUrl) {
-    return pageUrl;
-  }
-
-  return pageUrl.replace('http://', '').replace('https://', '').replace('www.', '').split(/[/?#:]/)[0];
+  // TODO: does it make sense to fall back to window.document.referrer?
+  return bidderRequest?.refererInfo?.ref || window.document.referrer;
 }
 
 /**

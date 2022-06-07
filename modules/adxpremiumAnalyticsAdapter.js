@@ -95,7 +95,8 @@ function auctionInit(args) {
 
   completeObject.auction_id = args.auctionId;
   completeObject.publisher_id = adxpremiumAnalyticsAdapter.initOptions.pubId;
-  try { completeObject.referer = encodeURI(args.bidderRequests[0].refererInfo.referer.split('?')[0]); } catch (e) { logError('AdxPremium Analytics - ' + e.message); }
+  // TODO: is 'page' the right value here?
+  try { completeObject.referer = encodeURI(args.bidderRequests[0].refererInfo.page.split('?')[0]); } catch (e) { logError('AdxPremium Analytics - ' + e.message); }
   if (args.adUnitCodes && args.adUnitCodes.length > 0) {
     elementIds = args.adUnitCodes;
   }

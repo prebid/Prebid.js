@@ -95,7 +95,8 @@ describe('vidoomyBidAdapter', function() {
       refererInfo: {
         numIframes: 0,
         reachedTop: true,
-        referer: 'http://example.com',
+        domain: 'example.com',
+        page: 'http://example.com',
         stack: ['http://example.com']
       }
     };

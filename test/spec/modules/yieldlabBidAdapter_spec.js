@@ -238,7 +238,7 @@ describe('yieldlabBidAdapter', function () {
         canonicalUrl: undefined,
         numIframes: 0,
         reachedTop: true,
-        referer: 'https://www.yieldlab.de/test?with=querystring',
+        page: 'https://www.yieldlab.de/test?with=querystring',
         stack: ['https://www.yieldlab.de/test?with=querystring']
       }
     })

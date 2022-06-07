@@ -76,7 +76,8 @@ export const spec = {
 
     const payload = {
       'key_maker': JSON.stringify(data),
-      'ref': bidderRequest.refererInfo.referer,
+      // TODO: is 'page' the right value here?
+      'ref': bidderRequest.refererInfo.page,
       's': generateUUID(),
       'pv': PAGEVIEW_ID,
       'vp': _getPlatform(),

@@ -22,7 +22,7 @@ export const spec = {
 
       const placementId = params.placement;
       const rnd = Math.floor(Math.random() * 99999999999);
-      const referrer = bidderRequest.refererInfo.referer;
+      const referrer = bidderRequest.refererInfo.page;
       const bidId = bidRequest.bidId;
       const isDev = params.devMode || false;
       const pbcode = bidRequest.adUnitCode || false; // div id

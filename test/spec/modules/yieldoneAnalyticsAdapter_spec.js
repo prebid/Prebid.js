@@ -46,7 +46,7 @@ describe('Yieldone Prebid Analytic', function () {
         {
           bidderCode: 'biddertest_1',
           auctionId: auctionId,
-          refererInfo: {referer: testReferrer},
+          refererInfo: {page: testReferrer},
           bids: [
             {
               adUnitCode: '0000',
@@ -71,7 +71,7 @@ describe('Yieldone Prebid Analytic', function () {
         {
           bidderCode: 'biddertest_2',
           auctionId: auctionId,
-          refererInfo: {referer: testReferrer},
+          refererInfo: {page: testReferrer},
           bids: [
             {
               adUnitCode: '0000',
@@ -87,7 +87,7 @@ describe('Yieldone Prebid Analytic', function () {
         {
           bidderCode: 'biddertest_3',
           auctionId: auctionId,
-          refererInfo: {referer: testReferrer},
+          refererInfo: {page: testReferrer},
           bids: [
             {
               adUnitCode: '0000',

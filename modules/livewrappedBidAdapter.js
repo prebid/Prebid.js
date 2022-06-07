@@ -276,8 +276,7 @@ function handleEids(bidRequests) {
 }
 
 function getTopWindowLocation(bidderRequest) {
-  let url = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
-  return config.getConfig('pageUrl') || url;
+  return bidderRequest?.refererInfo?.page;
 }
 
 function getAppBundle() {

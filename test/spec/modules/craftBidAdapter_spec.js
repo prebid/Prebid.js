@@ -91,7 +91,7 @@ describe('craftAdapter', function () {
     }];
     let bidderRequest = {
       refererInfo: {
-        referer: 'https://www.gacraft.jp/publish/craft-prebid-example.html'
+        topmostLocation: 'https://www.gacraft.jp/publish/craft-prebid-example.html'
       }
     };
     it('sends bid request to ENDPOINT via POST', function () {
