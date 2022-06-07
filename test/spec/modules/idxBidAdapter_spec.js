@@ -65,8 +65,8 @@ describe('idxBidAdapter', function () {
           {
             bid: [
               {
-                id: 'b4f290d7-d4ab-4778-ab94-2baf06420b22',
-                impid: 'imp123',
+                id: '123',
+                impid: 'b4f290d7-d4ab-4778-ab94-2baf06420b22',
                 price: DEFAULT_PRICE,
                 adm: '<b>hi</b>',
                 cid: 'test_cid',

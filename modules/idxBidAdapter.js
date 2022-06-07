@@ -27,7 +27,7 @@ export const spec = {
         if (request.mediaTypes.banner) {
           item.banner = {
             format: (request.mediaTypes.banner.sizes || sizes).map(size => {
-              return { w: size[0], h: size[0] }
+              return { w: size[0], h: size[1] }
             }),
           }
         }
@@ -44,7 +44,8 @@ export const spec = {
       data: payloadString,
       bidderRequest,
       options: {
-        withCredentials: false
+        withCredentials: false,
+        contentType: 'application/json'
       }
     }
   },
@@ -56,7 +57,7 @@ export const spec = {
     response.seatbid.forEach(seat => {
       seat.bid.forEach(bid => {
         bids.push({
-          requestId: bid.id,
+          requestId: bid.impid,
           cpm: bid.price,
           width: bid.w,
           height: bid.h,
