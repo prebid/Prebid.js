@@ -51,63 +51,6 @@ describe('the first party data module', function () {
       keywords.name = 'keywords';
     });
 
-    it('sets default referer and dimension values to ortb2 data', function () {
-      registerSubmodules(enrichments);
-      registerSubmodules(validations);
-
-      let validated;
-
-      width = 1120;
-      height = 750;
-
-      ({global: validated} = processFpd());
-
-      expect(validated.site.ref).to.equal(getRefererInfo().referer);
-      expect(validated.site.page).to.be.undefined;
-      expect(validated.site.domain).to.be.undefined;
-      expect(validated.device).to.deep.equal({w: 1120, h: 750});
-      expect(validated.site.keywords).to.be.undefined;
-    });
-
-    it('sets page and domain values to ortb2 data if canonical link exists', function () {
-      let validated;
-
-      canonical.href = 'https://www.domain.com/path?query=12345';
-
-      ({global: validated} = processFpd());
-      expect(validated.site.ref).to.equal(getRefererInfo().referer);
-      expect(validated.site.page).to.equal('https://www.domain.com/path?query=12345');
-      expect(validated.site.domain).to.equal('domain.com');
-      expect(validated.device).to.deep.to.equal({w: 1120, h: 750});
-      expect(validated.site.keywords).to.be.undefined;
-    });
-
-    it('sets keyword values to ortb2 data if keywords meta exists', function () {
-      let validated;
-
-      keywords.content = 'value1,value2,value3';
-
-      ({global: validated} = processFpd());
-      expect(validated.site.ref).to.equal(getRefererInfo().referer);
-      expect(validated.site.page).to.be.undefined;
-      expect(validated.site.domain).to.be.undefined;
-      expect(validated.device).to.deep.to.equal({w: 1120, h: 750});
-      expect(validated.site.keywords).to.equal('value1,value2,value3');
-    });
-
-    it('only sets values that do not exist in ortb2 config', function () {
-      let validated;
-
-      const global = {site: {ref: 'https://testpage.com', domain: 'newDomain.com'}};
-
-      ({global: validated} = processFpd({global}));
-      expect(validated.site.ref).to.equal('https://testpage.com');
-      expect(validated.site.page).to.be.undefined;
-      expect(validated.site.domain).to.equal('newDomain.com');
-      expect(validated.device).to.deep.to.equal({w: 1120, h: 750});
-      expect(validated.site.keywords).to.be.undefined;
-    });
-
     it('filters ortb2 data that is set', function () {
       let validated;
       const global = {
@@ -144,7 +87,7 @@ describe('the first party data module', function () {
       height = 750;
 
       ({global: validated} = processFpd({global}));
-      expect(validated.site.ref).to.equal(getRefererInfo().referer);
+      expect(validated.site.ref).to.equal(getRefererInfo().ref || undefined);
       expect(validated.site.page).to.equal('https://www.domain.com/path?query=12345');
       expect(validated.site.domain).to.equal('domain.com');
       expect(validated.site.content.data).to.deep.equal([{segment: [{id: 'test'}], name: 'bar'}]);

@@ -88,9 +88,10 @@ function nobidBuildRequests(bids, bidderRequest) {
     }
     var topLocation = function(bidderRequest) {
       var ret = '';
-      if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
-        ret = bidderRequest.refererInfo.referer;
+      if (bidderRequest?.refererInfo?.page) {
+        ret = bidderRequest.refererInfo.page;
       } else {
+        // TODO: does this fallback make sense here?
         ret = (window.context && window.context.location && window.context.location.href) ? window.context.location.href : document.location.href;
       }
       return encodeURIComponent(ret.replace(/\%/g, ''));

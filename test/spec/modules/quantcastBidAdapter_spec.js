@@ -47,8 +47,9 @@ describe('Quantcast adapter', function () {
 
     bidderRequest = {
       refererInfo: {
-        referer: 'http://example.com/hello.html',
-        canonicalUrl: 'http://example.com/hello.html'
+        page: 'http://example.com/hello.html',
+        ref: 'http://example.com/hello.html',
+        domain: 'example.com'
       }
     };
 

@@ -54,9 +54,10 @@ describe('the first party data enrichment module', function() {
 
     let validated = processFpd({}, {}).global;
 
-    expect(validated.site.ref).to.equal(getRefererInfo().referer);
-    expect(validated.site.page).to.be.undefined;
-    expect(validated.site.domain).to.be.undefined;
+    const {ref, page, domain} = getRefererInfo();
+    expect(validated.site.ref).to.equal(ref || undefined);
+    expect(validated.site.page).to.equal(page || undefined)
+    expect(validated.site.domain).to.equal(domain || undefined)
     expect(validated.device).to.deep.equal({ w: 800, h: 500 });
     expect(validated.site.keywords).to.be.undefined;
   });
@@ -68,7 +69,7 @@ describe('the first party data enrichment module', function() {
 
     let validated = processFpd({}, {}).global;
 
-    expect(validated.site.ref).to.equal(getRefererInfo().referer);
+    expect(validated.site.ref).to.equal(getRefererInfo().ref || undefined);
     expect(validated.site.page).to.equal('https://www.subdomain.domain.co.uk/path?query=12345');
     expect(validated.site.domain).to.equal('subdomain.domain.co.uk');
     expect(validated.site.publisher.domain).to.equal('domain.co.uk');
@@ -83,10 +84,6 @@ describe('the first party data enrichment module', function() {
 
     let validated = processFpd({}, {}).global;
 
-    expect(validated.site.ref).to.equal(getRefererInfo().referer);
-    expect(validated.site.page).to.be.undefined;
-    expect(validated.site.domain).to.be.undefined;
-    expect(validated.device).to.deep.equal({ w: 800, h: 500 });
     expect(validated.site.keywords).to.equal('value1,value2,value3');
   });
 
@@ -98,7 +95,6 @@ describe('the first party data enrichment module', function() {
 
     expect(validated.site.ref).to.equal('https://someUrl.com');
     expect(validated.site.page).to.equal('test.com');
-    expect(validated.site.domain).to.be.undefined;
     expect(validated.device).to.deep.equal({ w: 1200, h: 700 });
     expect(validated.site.keywords).to.be.undefined;
   });

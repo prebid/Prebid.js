@@ -39,7 +39,8 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    let topLocation = parseUrl(deepAccess(bidderRequest, 'refererInfo.referer'));
+    // TODO: is 'page' the right value here?
+    let topLocation = parseUrl(deepAccess(bidderRequest, 'refererInfo.page'));
 
     return validBidRequests.map((bidRequest) => {
       return {

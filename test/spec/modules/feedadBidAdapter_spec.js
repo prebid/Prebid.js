@@ -108,7 +108,7 @@ describe('FeedAdAdapter', function () {
   describe('buildRequests', function () {
     const bidderRequest = {
       refererInfo: {
-        referer: 'the referer'
+        page: 'the referer'
       },
       some: 'thing'
     };
@@ -332,7 +332,7 @@ describe('FeedAdAdapter', function () {
     const referer = 'the referer';
     const bidderRequest = {
       refererInfo: {
-        referer: referer
+        page: referer
       },
       some: 'thing'
     };

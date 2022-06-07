@@ -95,7 +95,8 @@ function getVaultJwt() {
 }
 
 function getReferer(bidderRequest) {
-  return bidderRequest?.refererInfo?.referer || '';
+  // TODO: is 'page' the right value here?
+  return bidderRequest?.refererInfo?.page || '';
 }
 
 function buildQuery(bidderRequest) {

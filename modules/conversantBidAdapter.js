@@ -54,7 +54,7 @@ export const spec = {
    * @return {ServerRequest} Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
-    const page = (bidderRequest && bidderRequest.refererInfo) ? bidderRequest.refererInfo.referer : '';
+    const page = (bidderRequest && bidderRequest.refererInfo) ? bidderRequest.refererInfo.page : '';
     let siteId = '';
     let requestId = '';
     let pubcid = null;

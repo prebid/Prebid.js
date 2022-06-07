@@ -13,19 +13,9 @@ const VAST_RXP = /^\s*<\??(?:vast|xml)/i;
 const TRACKING_ENDPOINT = 'https://1x1.a-mo.net/hbx/';
 const AMUID_KEY = '__amuidpb';
 
-function getLocation (request) {
-  const refInfo = request.refererInfo;
-  if (refInfo == null) {
-    return parseUrl(location.href);
-  }
-
-  if (refInfo.isAmp && refInfo.referer != null) {
-    return parseUrl(refInfo.referer)
-  }
-
-  const topUrl = refInfo.numIframes > 0 && refInfo.stack[0] != null
-    ? refInfo.stack[0] : location.href;
-  return parseUrl(topUrl);
+function getLocation(request) {
+  // TODO: does it make sense to fall back to window.location?
+  return parseUrl(request.refererInfo?.topmostLocation || window.location.href)
 };
 
 const largestSize = (sizes, mediaTypes) => {
@@ -243,8 +233,9 @@ export const spec = {
       gs: deepAccess(bidderRequest, 'gdprConsent.gdprApplies', ''),
       gc: deepAccess(bidderRequest, 'gdprConsent.consentString', ''),
       u: deepAccess(bidderRequest, 'refererInfo.canonicalUrl', loc.href),
+      // TODO: are these referer values correct?
       do: loc.hostname,
-      re: deepAccess(bidderRequest, 'refererInfo.referer'),
+      re: deepAccess(bidderRequest, 'refererInfo.ref'),
       am: getUIDSafe(),
       usp: bidderRequest.uspConsent || '1---',
       smt: 1,

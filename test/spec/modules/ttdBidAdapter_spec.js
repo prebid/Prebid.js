@@ -212,7 +212,7 @@ describe('ttdBidAdapter', function () {
       'auctionStart': 1540945362095,
       'timeout': 3000,
       'refererInfo': {
-        'referer': 'https://www.example.com/test',
+        'page': 'https://www.example.com/test',
         'reachedTop': true,
         'numIframes': 0,
         'stack': [

@@ -370,7 +370,7 @@ describe('triplelift adapter', function () {
           }
         ],
         refererInfo: {
-          referer: 'https://examplereferer.com'
+          page: 'https://examplereferer.com'
         },
         gdprConsent: {
           consentString: GDPR_CONSENT_STR,

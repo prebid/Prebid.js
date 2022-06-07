@@ -239,7 +239,7 @@ function generateOpenRtbObject(bidderRequest, bid) {
       cur: [getFloorModuleData(bidderRequest).currency || deepAccess(bid, 'params.bidOverride.cur') || DEFAULT_CURRENCY],
       imp: [],
       site: {
-        page: deepAccess(bidderRequest, 'refererInfo.referer'),
+        page: deepAccess(bidderRequest, 'refererInfo.page'),
       },
       device: {
         dnt: 0,

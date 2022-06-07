@@ -81,7 +81,7 @@ let generateBidderRequest = (bidRequestArray, adUnitCode, ortb2 = {}) => {
     bidderRequestId: '112f1c7c5d399a',
     bids: bidRequestArray,
     refererInfo: {
-      referer: 'https://publisher-test.com',
+      page: 'https://publisher-test.com',
       reachedTop: true,
       isAmp: false,
       numIframes: 0,
@@ -827,7 +827,7 @@ describe('YahooSSP Bid Adapter:', () => {
       const data = spec.buildRequests(validBidRequests, bidderRequest).data;
       expect(data.site).to.deep.equal({
         id: bidderRequest.bids[0].params.dcn,
-        page: bidderRequest.refererInfo.referer
+        page: bidderRequest.refererInfo.page
       });
 
       expect(data.device).to.deep.equal({

@@ -69,7 +69,8 @@ const getCommonBidsData = bidderRequest => {
   };
 
   if (bidderRequest && bidderRequest.refererInfo) {
-    payload.referer = encodeURIComponent(bidderRequest.refererInfo.referer);
+    // TODO: is 'page' the right value here?
+    payload.referer = encodeURIComponent(bidderRequest.refererInfo.page || '');
   }
 
   if (bidderRequest && bidderRequest.uspConsent) {

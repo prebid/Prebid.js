@@ -68,7 +68,8 @@ export const spec = {
    * @return {ServerRequest} Info describing the request to the server.
    */
   buildRequests: function(bidRequests, bidderRequest) {
-    const referer = bidderRequest.refererInfo.referer;
+    // TODO: does the fallback make sense here?
+    const referer = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
     const isPageSecure = !!referer.match(/^https:/);
 
     const siteId = '';
@@ -76,8 +77,6 @@ export const spec = {
       let page;
       if (getBidIdParameter('page', bid.params)) {
         page = getBidIdParameter('page', bid.params);
-      } else if (config.getConfig('pageUrl')) {
-        page = config.getConfig('pageUrl');
       } else {
         page = referer;
       }

@@ -36,7 +36,7 @@ const mock = {
     refererInfo: {
       numIframes: 0,
       reachedTop: true,
-      referer: 'https://demo.glimpseprotocol.io/prebid/desktop',
+      page: 'https://demo.glimpseprotocol.io/prebid/desktop',
       stack: ['https://demo.glimpseprotocol.io/prebid/desktop'],
     },
   },
@@ -167,7 +167,7 @@ describe('GlimpseProtocolAdapter', () => {
     it('Has referer information', () => {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = JSON.parse(request.data);
-      const expected = mock.bidderRequest.refererInfo.referer;
+      const expected = mock.bidderRequest.refererInfo.page;
 
       expect(payload.data.referer).to.equal(expected);
     });

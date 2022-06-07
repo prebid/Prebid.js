@@ -70,7 +70,7 @@ describe('Nobid Adapter', function () {
     ];
 
     let bidderRequest = {
-      refererInfo: {referer: REFERER}, bidderCode: BIDDER_CODE
+      refererInfo: {page: REFERER}, bidderCode: BIDDER_CODE
     }
 
     const siteName = 'example';
@@ -132,7 +132,7 @@ describe('Nobid Adapter', function () {
     ];
 
     let bidderRequest = {
-      refererInfo: {referer: REFERER}, bidderCode: BIDDER_CODE
+      refererInfo: {page: REFERER}, bidderCode: BIDDER_CODE
     }
 
     it('should add source and version to the tag', function () {
@@ -306,7 +306,7 @@ describe('Nobid Adapter', function () {
     ];
 
     let bidderRequest = {
-      refererInfo: {referer: REFERER}
+      refererInfo: {page: REFERER}
     }
 
     it('should add source and version to the tag', function () {
@@ -395,7 +395,7 @@ describe('Nobid Adapter', function () {
     ];
 
     let bidderRequest = {
-      refererInfo: {referer: REFERER}
+      refererInfo: {page: REFERER}
     }
 
     it('should add source and version to the tag', function () {
@@ -481,7 +481,7 @@ describe('Nobid Adapter', function () {
     ];
 
     let bidderRequest = {
-      refererInfo: {referer: REFERER}
+      refererInfo: {page: REFERER}
     }
 
     it('should criteo eid', function () {
@@ -515,7 +515,7 @@ describe('Nobid Adapter', function () {
     ];
 
     let bidderRequest = {
-      refererInfo: {referer: REFERER}
+      refererInfo: {page: REFERER}
     }
 
     it('should add source and version to the tag', function () {
@@ -649,7 +649,7 @@ describe('Nobid Adapter', function () {
     ];
 
     let bidderRequest = {
-      refererInfo: {referer: REFERER}
+      refererInfo: {page: REFERER}
     }
 
     it('should refreshCount = 4', function () {

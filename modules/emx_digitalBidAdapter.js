@@ -7,13 +7,13 @@ import {
   isPlainObject,
   isStr,
   logError,
-  logWarn,
-  parseUrl
+  logWarn
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
 import {find, includes} from '../src/polyfill.js';
+import {parseDomain} from '../src/refererDetection.js';
 
 const BIDDER_CODE = 'emx_digital';
 const ENDPOINT = 'hb.emxdgt.com';
@@ -140,19 +140,12 @@ export const emxAdapter = {
       logError('emx_digitalBidAdapter', 'error', err);
     }
   },
-  getReferrer: () => {
-    try {
-      return window.top.document.referrer;
-    } catch (err) {
-      return document.referrer;
-    }
-  },
   getSite: (refInfo) => {
-    let url = parseUrl(refInfo.referer);
+    // TODO: do the fallbacks make sense?
     return {
-      domain: url.hostname,
-      page: refInfo.referer,
-      ref: emxAdapter.getReferrer()
+      domain: refInfo.domain || parseDomain(refInfo.topmostLocation),
+      page: refInfo.page || refInfo.topmostLocation,
+      ref: refInfo.ref || window.document.referrer
     }
   },
   getGdpr: (bidRequests, emxData) => {

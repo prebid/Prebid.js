@@ -18,7 +18,7 @@ const defaultBidderRequest = {
   },
   uspConsent: 'uspConsentString',
   refererInfo: {
-    referer: REFERRER,
+    ref: REFERRER,
   },
   timeout: 1200,
   auctionId: AUCTION_ID
@@ -123,7 +123,7 @@ describe('smaatoBidAdapterTest', () => {
     describe('common', () => {
       const MINIMAL_BIDDER_REQUEST = {
         refererInfo: {
-          referer: REFERRER,
+          ref: REFERRER,
         }
       };
 

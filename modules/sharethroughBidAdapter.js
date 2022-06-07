@@ -34,9 +34,10 @@ export const sharethroughAdapterSpec = {
       cur: ['USD'],
       tmax: timeout,
       site: {
-        domain: window.location.hostname,
-        page: window.location.href,
-        ref: deepAccess(bidderRequest, 'refererInfo.referer'),
+        // TODO: do the fallbacks make sense here?
+        domain: deepAccess(bidderRequest, 'refererInfo.domain') || window.location.hostname,
+        page: deepAccess(bidderRequest, 'refererInfo.page') || window.location.href,
+        ref: deepAccess(bidderRequest, 'refererInfo.ref'),
         ...firstPartyData.site,
       },
       device: {

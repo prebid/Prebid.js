@@ -141,7 +141,8 @@ describe('Improve Digital Adapter Tests', function () {
   const bidderRequestReferrer = {
     bids: [simpleBidRequest],
     refererInfo: {
-      referer: 'https://blah.com/test.html',
+      page: 'https://blah.com/test.html',
+      domain: 'blah.com'
     },
   };
 
@@ -738,22 +739,6 @@ describe('Improve Digital Adapter Tests', function () {
       request = spec.buildRequests([simpleBidRequest], {...bidderRequestReferrer, ortb2})[0];
       payload = JSON.parse(request.data);
       expect(payload.site.content).does.exist.and.equal('ZZZ');
-      expect(payload.site.page).does.exist.and.equal('https://blah.com/test.html');
-      expect(payload.site.domain).does.exist.and.equal('blah.com');
-    });
-
-    it('should set pageUrl as site param', function () {
-      getConfigStub = sinon.stub(config, 'getConfig');
-      getConfigStub.withArgs('pageUrl').returns('https://improvidigital.com/test-page');
-      let request = spec.buildRequests([simpleBidRequest], bidderRequestReferrer)[0];
-      let payload = JSON.parse(request.data);
-      expect(payload.site.page).does.exist.and.equal('https://improvidigital.com/test-page');
-      expect(payload.site.domain).does.exist.and.equal('improvidigital.com');
-      getConfigStub.reset();
-
-      getConfigStub.withArgs('pageUrl').returns(undefined);
-      request = spec.buildRequests([simpleBidRequest], bidderRequestReferrer)[0];
-      payload = JSON.parse(request.data);
       expect(payload.site.page).does.exist.and.equal('https://blah.com/test.html');
       expect(payload.site.domain).does.exist.and.equal('blah.com');
     });
