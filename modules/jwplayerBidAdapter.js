@@ -95,7 +95,6 @@ export const spec = {
 };
 
 function buildRequest(bidRequest, bidderRequest) {
-  // Open RTB Request Object
   const openrtbRequest = {
     id: bidRequest.bidId,
     imp: buildRequestImpression(bidRequest, bidderRequest),
@@ -140,7 +139,6 @@ function buildImpressionVideo(bidRequest) {
 
   const video = {};
 
-  // Obtain all ORTB params related video from Ad Unit
   VIDEO_ORTB_PARAMS.forEach((param) => {
     if (videoParams.hasOwnProperty(param)) {
       video[param] = videoParams[param];
@@ -164,10 +162,9 @@ function buildBidFloorData(bidRequest) {
 
   let floorData;
   if (isFn(bidRequest.getFloor)) {
-    // Bid Floor
     const bidFloorRequest = {
       currency: currency,
-      mediaType: 'video',
+      mediaType: VIDEO,
       size: '*'
     };
     floorData = bidRequest.getFloor(bidFloorRequest);
