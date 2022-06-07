@@ -13,17 +13,18 @@ import { getStorageManager } from '../src/storageManager.js';
 
 const gvlid = 91;
 const bidderCode = 'criteo';
-export const storage = getStorageManager({gvlid: gvlid, moduleName: bidderCode});
+export const storage = getStorageManager({ gvlid: gvlid, moduleName: bidderCode });
 
 const bididStorageKey = 'cto_bidid';
 const bundleStorageKey = 'cto_bundle';
+const dnaBundleStorageKey = 'cto_dna_bundle';
 const cookiesMaxAge = 13 * 30 * 24 * 60 * 60 * 1000;
 
 const pastDateString = new Date(0).toString();
 const expirationString = new Date(timestamp() + cookiesMaxAge).toString();
 
-function extractProtocolHost (url, returnOnlyHost = false) {
-  const parsedUrl = parseUrl(url, {noDecodeWholeURL: true})
+function extractProtocolHost(url, returnOnlyHost = false) {
+  const parsedUrl = parseUrl(url, { noDecodeWholeURL: true })
   return returnOnlyHost
     ? `${parsedUrl.hostname}`
     : `${parsedUrl.protocol}://${parsedUrl.hostname}${parsedUrl.port ? ':' + parsedUrl.port : ''}/`;
@@ -70,15 +71,17 @@ function deleteFromAllStorages(key, hostname) {
 function getCriteoDataFromAllStorages() {
   return {
     bundle: getFromAllStorages(bundleStorageKey),
+    dnaBundle: getFromAllStorages(dnaBundleStorageKey),
     bidId: getFromAllStorages(bididStorageKey),
   }
 }
 
-function buildCriteoUsersyncUrl(topUrl, domain, bundle, areCookiesWriteable, isLocalStorageWritable, isPublishertagPresent, gdprString) {
+function buildCriteoUsersyncUrl(topUrl, domain, bundle, dnaBundle, areCookiesWriteable, isLocalStorageWritable, isPublishertagPresent, gdprString) {
   const url = 'https://gum.criteo.com/sid/json?origin=prebid' +
     `${topUrl ? '&topUrl=' + encodeURIComponent(topUrl) : ''}` +
     `${domain ? '&domain=' + encodeURIComponent(domain) : ''}` +
     `${bundle ? '&bundle=' + encodeURIComponent(bundle) : ''}` +
+    `${dnaBundle ? '&info=' + encodeURIComponent(dnaBundle) : ''}` +
     `${gdprString ? '&gdprString=' + encodeURIComponent(gdprString) : ''}` +
     `${areCookiesWriteable ? '&cw=1' : ''}` +
     `${isPublishertagPresent ? '&pbt=1' : ''}` +
@@ -98,6 +101,7 @@ function callCriteoUserSync(parsedCriteoData, gdprString, callback) {
     topUrl,
     domain,
     parsedCriteoData.bundle,
+    parsedCriteoData.dnaBundle,
     cw,
     lsw,
     isPublishertagPresent,
