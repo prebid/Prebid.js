@@ -77,9 +77,53 @@ export const spec = {
    * Unpack the response from the server into a list of bids.
    *
    * @param {*} serverResponse A successful response from the server.
+   * @param bidderRequest
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse, request) {},
+  interpretResponse: function(serverResponse, bidderRequest) {
+    const bidResponses = [];
+    const serverResponseBody = serverResponse.body;
+    // const serverResponseHead = serverResponse.headers.get();
+
+    if (serverResponseBody && isArray(serverResponseBody.seatbid)) {
+      serverResponseBody.seatbid.forEach(seatBids => {
+        seatBids.bid.forEach(bid => {
+          const bidResponse = {
+            requestId: serverResponseBody.requestId,
+            cpm: serverResponseBody.cpm,
+            currency: serverResponseBody.currency,
+            width: serverResponseBody.width,
+            height: serverResponseBody.height,
+            creativeId: serverResponseBody.creativeId,
+            netRevenue: true,
+            ttl: TIME_TO_LIVE,
+            ad: CREATIVE_BODY,
+            mediaType: VIDEO,
+            meta: {
+                advertiserDomains: [ARRAY_OF_ADVERTISER_DOMAINS],        
+                advertiserId: ADVERTISER_ID,
+                advertiserName: ADVERTISER_NAME,
+                agencyId: AGENCY_ID,
+                agencyName: AGENCY_NAME,
+                brandId: BRAND_ID,
+                brandName: BRAND_NAME,
+                dchain: DEMAND_CHAIN_OBJECT,
+                demandSource: DEMAND_SOURCE,
+                mediaType: MEDIA_TYPE,
+                networkId: NETWORK_ID,
+                networkName: NETWORK_NAME,
+                primaryCatId: IAB_CATEGORY,
+                secondaryCatIds: [ARRAY_OF_IAB_CATEGORIES]
+            }
+          };
+          bidResponses.push(bidResponse);
+        });
+      });
+      
+    };
+    return bidResponses;
+  },
+
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {},
 
   // Optional?
