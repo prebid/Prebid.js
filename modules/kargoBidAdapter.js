@@ -1,4 +1,4 @@
-import { _each } from '../src/utils.js';
+import { _each, buildUrl, triggerPixel } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -55,6 +55,10 @@ export const spec = {
       },
       bidIDs,
       bidSizes,
+      device: {
+        width: window.screen.width,
+        height: window.screen.height
+      },
       prebidRawBidRequests: validBidRequests
     }, spec._getAllMetadata(tdid, bidderRequest.uspConsent, bidderRequest.gdprConsent));
     const encodedParams = encodeURIComponent(JSON.stringify(transformedParams));
@@ -133,6 +137,15 @@ export const spec = {
     return syncs;
   },
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
+  onTimeout: function(timeoutData) {
+    if (timeoutData == null) {
+      return;
+    }
+
+    timeoutData.forEach((bid) => {
+      this._sendTimeoutData(bid.auctionId, bid.timeout);
+    });
+  },
 
   // PRIVATE
   _readCookie(name) {
@@ -263,6 +276,24 @@ export const spec = {
     } catch (e) {
       return '';
     }
+  },
+
+  _sendTimeoutData(auctionId, auctionTimeout) {
+    let params = {
+      aid: auctionId,
+      ato: auctionTimeout,
+    };
+
+    try {
+      let timeoutRequestUrl = buildUrl({
+        protocol: 'https',
+        hostname: 'krk.kargo.com',
+        pathname: '/api/v1/event/timeout',
+        search: params
+      });
+
+      triggerPixel(timeoutRequestUrl);
+    } catch (e) {}
   }
 };
 registerBidder(spec);

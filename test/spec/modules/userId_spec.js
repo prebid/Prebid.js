@@ -1821,7 +1821,7 @@ describe('User ID', function () {
         }, {adUnits});
       });
 
-      it('test hook from merkleId cookies', function (done) {
+      it('test hook from merkleId cookies - legacy', function (done) {
         // simulate existing browser local storage values
         coreStorage.setCookie('merkleId', JSON.stringify({'pam_id': {'id': 'testmerkleId', 'keyID': 1}}), (new Date(Date.now() + 5000).toUTCString()));
 
@@ -1838,6 +1838,32 @@ describe('User ID', function () {
                 source: 'merkleinc.com',
                 uids: [{id: 'testmerkleId', atype: 3, ext: {keyID: 1}}]
               });
+            });
+          });
+          coreStorage.setCookie('merkleId', '', EXPIRED_COOKIE_DATE);
+          done();
+        }, {adUnits});
+      });
+
+      it('test hook from merkleId cookies', function (done) {
+        // simulate existing browser local storage values
+        coreStorage.setCookie('merkleId', JSON.stringify({
+          'merkleId': [{id: 'testmerkleId', ext: { keyID: 1, ssp: 'ssp1' }}, {id: 'another-random-id-value', ext: { ssp: 'ssp2' }}],
+          '_svsid': 'svs-id-1'
+        }), (new Date(Date.now() + 5000).toUTCString()));
+
+        init(config);
+        setSubmoduleRegistry([merkleIdSubmodule]);
+        config.setConfig(getConfigMock(['merkleId', 'merkleId', 'cookie']));
+
+        requestBidsHook(function () {
+          adUnits.forEach(unit => {
+            unit.bids.forEach(bid => {
+              expect(bid).to.have.deep.nested.property('userId.merkleId');
+              expect(bid.userId.merkleId.length).to.equal(2);
+              expect(bid.userIdAsEids.length).to.equal(2);
+              expect(bid.userIdAsEids[0]).to.deep.equal({ source: 'ssp1.merkleinc.com', uids: [{id: 'testmerkleId', atype: 3, ext: { keyID: 1, ssp: 'ssp1' }}] });
+              expect(bid.userIdAsEids[1]).to.deep.equal({ source: 'ssp2.merkleinc.com', uids: [{id: 'another-random-id-value', atype: 3, ext: { ssp: 'ssp2' }}] });
             });
           });
           coreStorage.setCookie('merkleId', '', EXPIRED_COOKIE_DATE);
