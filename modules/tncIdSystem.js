@@ -21,7 +21,7 @@ const waitTNCScript = (tncNS) => {
 
 const loadRemoteScript = (providerId) => {
   return new Promise((resolve) => {
-    loadExternalScript('https://js.tncid.app/remote.js?ns=' + FALLBACK_TNC_INSTANCE + '&providerId=' + providerId, 'tncid',  resolve);
+    loadExternalScript('https://js.tncid.app/remote.js?ns=' + FALLBACK_TNC_INSTANCE + '&providerId=' + providerId, 'tncid', resolve);
   })
 }
 
@@ -33,7 +33,7 @@ const tncCallback = function (providerId, cb) {
     promiseArray.push(loadRemoteScript(providerId));
   }
 
-  return Promise.all(promiseArray).then(()=>waitTNCScript(tncNS)).then(cb).catch(() => cb());
+  return Promise.all(promiseArray).then(() => waitTNCScript(tncNS)).then(cb).catch(() => cb());
 }
 
 export const tncidSubModule = {

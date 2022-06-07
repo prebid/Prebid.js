@@ -103,6 +103,5 @@ describe('TNCID tests', function () {
         expect(completeCallback.calledOnceWithExactly('TNCID_TEST_ID_2')).to.be.true;
       })
     });
-    
   });
 });
