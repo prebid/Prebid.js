@@ -13,13 +13,6 @@ describe('triplelift adapter', function () {
   const adapter = newBidder(tripleliftAdapterSpec);
   let bid, instreamBid, sandbox, logErrorSpy;
 
-  // safeFrame implementation
-  const $sf = {
-    ext: {
-      geom: function() {}
-    }
-  };
-
   this.beforeEach(() => {
     bid = {
       bidder: 'triplelift',
@@ -733,24 +726,6 @@ describe('triplelift adapter', function () {
       config.getConfig.restore();
       const url = request.url;
       expect(url).not.to.match(/(\?|&)coppa=/);
-    });
-    it('should add the correct frame type param friendly frame', function () {
-      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
-      const url = request.url;
-      expect(url).to.match(/(\?|&)ft=1/);
-    });
-    it('should add the correct frame type param amp frame', function () {
-      window.context = { tagName: 'AMP-AD' };
-      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
-      window.context = {};
-      const url = request.url;
-      expect(url).to.match(/(\?|&)ft=4/);
-    });
-    it('should add the correct frame type param safeframe', function () {
-      window.$sf = $sf
-      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
-      const url = request.url;
-      expect(url).to.match(/(\?|&)ft=5/);
     });
     it('should return schain when present', function() {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
