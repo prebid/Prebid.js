@@ -6,7 +6,7 @@ const BIDDER_CODE = 'adocean';
 function buildEndpointUrl(emiter, payloadMap) {
   const payload = [];
   _each(payloadMap, function(v, k) {
-    payload.push(k + '=' + encodeURIComponent(v));
+    payload.push(k + '=' + (k === 'schain' ? v : encodeURIComponent(v)));
   });
 
   const randomizedPart = Math.random().toString().slice(2);
@@ -22,6 +22,10 @@ function buildRequest(masterBidRequests, masterId, gdprConsent) {
   if (gdprConsent) {
     payload.gdpr_consent = gdprConsent.consentString || undefined;
     payload.gdpr = gdprConsent.gdprApplies ? 1 : 0;
+  }
+  const anyKey = Object.keys(masterBidRequests)[0];
+  if (masterBidRequests[anyKey].schain) {
+    payload.schain = serializeSupplyChain(masterBidRequests[anyKey].schain);
   }
 
   const bidIdMap = {};
@@ -46,6 +50,30 @@ function buildRequest(masterBidRequests, masterId, gdprConsent) {
     data: '',
     bidIdMap: bidIdMap
   };
+}
+
+const SCHAIN_FIELDS = ['asi', 'sid', 'hp', 'rid', 'name', 'domain', 'ext'];
+function serializeSupplyChain(schain) {
+  const header = `${schain.ver},${schain.complete}!`;
+
+  const serializedNodes = [];
+  _each(schain.nodes, function(node) {
+    const serializedNode = SCHAIN_FIELDS
+      .map(fieldName => {
+        if (fieldName === 'ext') {
+          // do not serialize ext data, just mark if it was available
+          return ('ext' in node ? '1' : '0');
+        }
+        if (fieldName in node) {
+          return encodeURIComponent(node[fieldName]).replace(/!/g, '%21');
+        }
+        return '';
+      })
+      .join(',');
+    serializedNodes.push(serializedNode);
+  });
+
+  return header + serializedNodes.join('!');
 }
 
 function assignToMaster(bidRequest, bidRequestsByMaster) {

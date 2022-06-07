@@ -53,6 +53,7 @@
   ],
   "rtdModule": [
     "airgridRtdProvider",
+    "akamaiDapRtdProvider",
     "browsiRtdProvider",
     "dgkeywordRtdProvider",
     "geoedgeRtdProvider",

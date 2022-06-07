@@ -1,6 +1,7 @@
 import { ftrackIdSubmodule } from 'modules/ftrackIdSystem.js';
 import * as utils from 'src/utils.js';
 import { uspDataHandler } from 'src/adapterManager.js';
+import { loadExternalScript } from 'src/adloader.js';
 let expect = require('chai').expect;
 
 let server;
@@ -95,15 +96,7 @@ describe('FTRACK ID System', () => {
       delete configMock1.params.url;
 
       ftrackIdSubmodule.isConfigOk(configMock1);
-      expect(logWarnStub.args[0][0]).to.equal(`FTRACK - config.params.url is required for ftrack to run. Url should be "https://d9.flashtalking.com/d9core".`);
-    });
-
-    it(`should be rejected if 'storage.param.url' does not exist or is not 'https://d9.flashtalking.com/d9core'`, () => {
-      let configMock1 = JSON.parse(JSON.stringify(configMock));
-      configMock1.params.url = 'https://d9.NOT.flashtalking.com/d9core';
-
-      ftrackIdSubmodule.isConfigOk(configMock1);
-      expect(logWarnStub.args[0][0]).to.equal(`FTRACK - config.params.url is required for ftrack to run. Url should be "https://d9.flashtalking.com/d9core".`);
+      expect(logWarnStub.args[0][0]).to.equal(`FTRACK - config.params.url is required for ftrack to run.`);
     });
   });
 
@@ -154,25 +147,21 @@ describe('FTRACK ID System', () => {
     });
 
     it(`should be the only method that gets a new ID aka hits the D9 endpoint`, () => {
-      let appendChildStub = sinon.stub(window.document.body, 'appendChild');
-
       ftrackIdSubmodule.getId(configMock, null, null).callback();
-      expect(window.document.body.appendChild.called).to.be.ok;
-      let actualScriptTag = window.document.body.appendChild.args[0][0];
-      expect(actualScriptTag.tagName.toLowerCase()).to.equal('script');
-      expect(actualScriptTag.getAttribute('src')).to.equal('https://d9.flashtalking.com/d9core');
-      appendChildStub.resetHistory();
+      expect(loadExternalScript.called).to.be.ok;
+      expect(loadExternalScript.args[0][0]).to.deep.equal('https://d9.flashtalking.com/d9core');
+      loadExternalScript.resetHistory();
 
       ftrackIdSubmodule.decode('value', configMock);
-      expect(window.document.body.appendChild.called).to.not.be.ok;
-      expect(window.document.body.appendChild.args).to.deep.equal([]);
-      appendChildStub.resetHistory();
+      expect(loadExternalScript.called).to.not.be.ok;
+      expect(loadExternalScript.args).to.deep.equal([]);
+      loadExternalScript.resetHistory();
 
       ftrackIdSubmodule.extendId(configMock, null, {cache: {id: ''}});
-      expect(window.document.body.appendChild.called).to.not.be.ok;
-      expect(window.document.body.appendChild.args).to.deep.equal([]);
+      expect(loadExternalScript.called).to.not.be.ok;
+      expect(loadExternalScript.args).to.deep.equal([]);
 
-      appendChildStub.restore();
+      loadExternalScript.restore();
     });
 
     describe(`should use the "ids" setting in the config:`, () => {
