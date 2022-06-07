@@ -357,11 +357,25 @@ describe('VidazooBidAdapter', function () {
     });
     const key = 'myKey';
     let uniqueDealId;
-    uniqueDealId = getUniqueDealId(key);
+    beforeEach(() => {
+      uniqueDealId = getUniqueDealId(key, 0);
+    })
 
-    it('should get new unique deal id on expiration', function () {
-      const current = getUniqueDealId(key, 100);
-      expect(current).to.not.be.equal(uniqueDealId);
+    it('should get current unique deal id', function (done) {
+      // waiting some time so `now` will become past
+      setTimeout(() => {
+        const current = getUniqueDealId(key);
+        expect(current).to.be.equal(uniqueDealId);
+        done();
+      }, 200);
+    });
+
+    it('should get new unique deal id on expiration', function (done) {
+      setTimeout(() => {
+        const current = getUniqueDealId(key, 100);
+        expect(current).to.not.be.equal(uniqueDealId);
+        done();
+      }, 200)
     });
   });
 
