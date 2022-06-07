@@ -4,6 +4,7 @@ import adapterManager from '../src/adapterManager.js';
 import * as utils from '../src/utils.js';
 import CONSTANTS from '../src/constants.json';
 import { getStorageManager } from '../src/storageManager.js';
+import {getRefererInfo} from '../src/refererDetection.js';
 
 /**
  * hadronAnalyticsAdapter.js - Audigent Hadron Analytics Adapter
@@ -35,7 +36,10 @@ var pageView = {
   timezoneOffset: new Date().getTimezoneOffset(),
   language: window.navigator.language,
   vendor: window.navigator.vendor,
-  pageUrl: window.top.location.href,
+  pageUrl: (() => {
+    const ri = getRefererInfo();
+    return ri.canonicalUrl || ri.referer;
+  })(),
   screenWidth: x,
   screenHeight: y
 };

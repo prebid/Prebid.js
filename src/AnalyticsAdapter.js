@@ -3,6 +3,10 @@ import { ajax } from './ajax.js';
 import { logMessage, _each } from './utils.js';
 import * as events from './events.js'
 
+export const _internal = {
+  ajax
+};
+
 const {
   EVENTS: {
     AUCTION_INIT,
@@ -61,7 +65,7 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
   }
 
   function _callEndpoint({ eventType, args, callback }) {
-    ajax(url, callback, JSON.stringify({ eventType, args }));
+    _internal.ajax(url, callback, JSON.stringify({ eventType, args }));
   }
 
   function _enqueue({ eventType, args }) {

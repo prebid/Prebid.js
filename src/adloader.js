@@ -11,7 +11,12 @@ const _approvedLoadExternalJSList = [
   'browsi',
   'brandmetrics',
   'justtag',
-  'tncid'
+  'tncid',
+  'akamaidap',
+  'ftrackId',
+  'inskin',
+  'hadron',
+  'medianet'
 ]
 
 /**

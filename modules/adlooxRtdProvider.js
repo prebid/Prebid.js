@@ -216,13 +216,11 @@ function init(config, userConsent) {
 function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
   // gptPreAuction runs *after* RTD so pbadslot may not be populated... (╯°□°)╯ ┻━┻
   const adUnits = (reqBidsConfigObj.adUnits || getGlobal().adUnits).map(adUnit => {
-    let path = deepAccess(adUnit, 'ortb2Imp.ext.data.pbadslot');
-    if (!path) path = getGptSlotInfoForAdUnitCode(adUnit.code).gptSlot;
     return {
-      path: path,
+      gpid: deepAccess(adUnit, 'ortb2Imp.ext.gpid') || deepAccess(adUnit, 'ortb2Imp.ext.data.pbadslot') || getGptSlotInfoForAdUnitCode(adUnit.code).gptSlot || adUnit.code,
       unit: adUnit
     };
-  }).filter(adUnit => !!adUnit.path);
+  }).filter(adUnit => !!adUnit.gpid);
 
   let response = {};
   function setSegments() {
@@ -315,7 +313,7 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
   }
   const atfQueue = [];
   adUnits.map((adUnit, i) => {
-    const ref = [ adUnit.path ];
+    const ref = [ adUnit.gpid ];
     if (!config.params.slotinpath) ref.push(adUnit.unit.code);
     args.push(['s', ref.join('\t')]);
 
