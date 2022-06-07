@@ -2,7 +2,7 @@ import { tryAppendQueryString, logMessage, logError, isEmpty, isStr, isPlainObje
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
-import {getStorageManager} from '../src/storageManager.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 const GVLID = 28;
 const BIDDER_CODE = 'triplelift';
