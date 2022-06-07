@@ -421,12 +421,9 @@ export const spec = {
   }
 }
 
-function createOutstreamScript(bid) {
+function createOutstreamScript(bid, script) {
   const slot = getBidIdParameter('slot', bid.renderer.config.outstream_options);
   logMessage('[SPOTX][renderer] Handle SpotX outstream renderer');
-  const script = window.document.createElement('script');
-  script.type = 'text/javascript';
-  script.src = 'https://js.spotx.tv/easi/v1/' + bid.channel_id + '.js';
   let dataSpotXParams = {};
   dataSpotXParams['data-spotx_channel_id'] = '' + bid.channel_id;
   dataSpotXParams['data-spotx_vast_url'] = '' + bid.vastUrl;
@@ -485,12 +482,10 @@ function createOutstreamScript(bid) {
       script.setAttribute(key, dataSpotXParams[key]);
     }
   }
-
-  return script;
 }
 
 function outstreamRender(bid) {
-  const script = createOutstreamScript(bid);
+  let script;
   if (bid.renderer.config.outstream_function != null && typeof bid.renderer.config.outstream_function === 'function') {
     bid.renderer.config.outstream_function(bid, script);
   } else {
@@ -502,10 +497,11 @@ function outstreamRender(bid) {
         if (!framedoc && rawframe.contentWindow) {
           framedoc = rawframe.contentWindow.document;
         }
-        loadExternalScript(script, BIDDER_CODE, undefined, framedoc);
+        script = loadExternalScript(`https://js.spotx.tv/easi/v1/${bid.channel_id}.js`, BIDDER_CODE, undefined, framedoc);
       } else {
-        loadExternalScript(script, BIDDER_CODE);
+        script = loadExternalScript(`https://js.spotx.tv/easi/v1/${bid.channel_id}.js`, BIDDER_CODE);
       }
+      createOutstreamScript(bid, script);
     } catch (err) {
       logError('[SPOTX][renderer] Error:' + err.message)
     }
