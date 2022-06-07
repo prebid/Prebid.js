@@ -101,8 +101,8 @@ describe('TNCID tests', function () {
 
       return callback(completeCallback).then(() => {
         expect(completeCallback.calledOnceWithExactly('TNCID_TEST_ID_2')).to.be.true;
-        expect(window.__tncPbjs.providerId).to.be.eq('TEST_PROVIDER_ID_2');
       })
     });
+    
   });
 });
