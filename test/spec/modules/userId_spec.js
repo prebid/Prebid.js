@@ -50,6 +50,7 @@ import 'src/prebid.js';
 import {hook} from '../../../src/hook.js';
 import {mockGdprConsent} from '../../helpers/consentData.js';
 import {getPPID} from '../../../src/adserver.js';
+import {uninstall as uninstallGdprEnforcement} from 'modules/gdprEnforcement.js';
 
 let assert = require('chai').assert;
 let expect = require('chai').expect;
@@ -142,6 +143,7 @@ describe('User ID', function () {
 
   before(function () {
     hook.ready();
+    uninstallGdprEnforcement();
     localStorage.removeItem(PBJS_USER_ID_OPTOUT_NAME);
   });
 

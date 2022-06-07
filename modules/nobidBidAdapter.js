@@ -3,6 +3,7 @@ import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
+import {hasPurpose1Consent} from '../src/utils/gpdr.js';
 
 const GVLID = 816;
 const BIDDER_CODE = 'nobid';
@@ -24,15 +25,6 @@ function nobidSetCookie(cname, cvalue, hours) {
 }
 function nobidGetCookie(cname) {
   return storage.getCookie(cname);
-}
-function nobidHasPurpose1Consent(bidderRequest) {
-  let result = true;
-  if (bidderRequest && bidderRequest.gdprConsent) {
-    if (bidderRequest.gdprConsent.gdprApplies && bidderRequest.gdprConsent.apiVersion === 2) {
-      result = !!(deepAccess(bidderRequest.gdprConsent, 'vendorData.purpose.consents.1') === true);
-    }
-  }
-  return result;
 }
 function nobidBuildRequests(bids, bidderRequest) {
   var serializeState = function(divIds, siteId, adunits) {
@@ -387,7 +379,7 @@ export const spec = {
     const endpoint = buildEndpoint();
 
     let options = {};
-    if (!nobidHasPurpose1Consent(bidderRequest)) {
+    if (!hasPurpose1Consent(bidderRequest?.gdprConsent)) {
       options = { withCredentials: false };
     }
 

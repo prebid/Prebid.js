@@ -75,14 +75,7 @@ function makeBannerImp(bid) {
   };
 }
 
-function checkTCFv1(vendorData) {
-  let vendorConsent = vendorData.vendorConsents && vendorData.vendorConsents[QUANTCAST_VENDOR_ID];
-  let purposeConsent = vendorData.purposeConsents && vendorData.purposeConsents[PURPOSE_DATA_COLLECT];
-
-  return !!(vendorConsent && purposeConsent);
-}
-
-function checkTCFv2(tcData) {
+function checkTCF(tcData) {
   let restrictions = tcData.publisher ? tcData.publisher.restrictions : {};
   let qcRestriction = restrictions && restrictions[PURPOSE_DATA_COLLECT]
     ? restrictions[PURPOSE_DATA_COLLECT][QUANTCAST_VENDOR_ID]
@@ -146,11 +139,7 @@ export const spec = {
     // Remaining consent checks are performed server-side.
     if (gdprConsent.gdprApplies) {
       if (gdprConsent.vendorData) {
-        if (gdprConsent.apiVersion === 1 && !checkTCFv1(gdprConsent.vendorData)) {
-          logInfo(`${BIDDER_CODE}: No purpose 1 consent for TCF v1`);
-          return;
-        }
-        if (gdprConsent.apiVersion === 2 && !checkTCFv2(gdprConsent.vendorData)) {
+        if (!checkTCF(gdprConsent.vendorData)) {
           logInfo(`${BIDDER_CODE}: No purpose 1 consent for TCF v2`);
           return;
         }

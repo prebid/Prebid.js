@@ -17,6 +17,7 @@ import {config} from '../src/config.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
 import {createEidsArray} from './userId/eids.js';
+import {hasPurpose1Consent} from '../src/utils/gpdr.js';
 
 const BIDDER_CODE = 'improvedigital';
 const CREATIVE_TTL = 300;
@@ -227,7 +228,7 @@ export const spec = {
    * @return {UserSync[]} The user syncs which should be dropped.
    */
   getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
-    if (config.getConfig('coppa') === true || !ID_UTIL.hasPurpose1Consent(gdprConsent)) {
+    if (config.getConfig('coppa') === true || !hasPurpose1Consent(gdprConsent)) {
       return [];
     }
 
@@ -664,14 +665,5 @@ const ID_RAZR = {
     const razr = window.razr = window.razr || {};
     razr.queue = razr.queue || [];
     razr.queue.push(payload);
-  }
-};
-
-const ID_UTIL = {
-  hasPurpose1Consent(gdprConsent) {
-    if (gdprConsent && gdprConsent.gdprApplies && gdprConsent.apiVersion === 2) {
-      return (deepAccess(gdprConsent, 'vendorData.purpose.consents.1') === true);
-    }
-    return true;
   }
 };

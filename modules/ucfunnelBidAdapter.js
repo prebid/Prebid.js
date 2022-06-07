@@ -314,17 +314,10 @@ function getRequestData(bid, bidderRequest) {
   }
 
   if (bidderRequest && bidderRequest.gdprConsent) {
-    if (bidderRequest.gdprConsent.apiVersion == 1) {
-      Object.assign(bidData, {
-        gdpr: bidderRequest.gdprConsent.gdprApplies ? 1 : 0,
-        euconsent: bidderRequest.gdprConsent.consentString
-      });
-    } else if (bidderRequest.gdprConsent.apiVersion == 2) {
-      Object.assign(bidData, {
-        gdpr: bidderRequest.gdprConsent.gdprApplies ? 1 : 0,
-        'euconsent-v2': bidderRequest.gdprConsent.consentString
-      });
-    }
+    Object.assign(bidData, {
+      gdpr: bidderRequest.gdprConsent.gdprApplies ? 1 : 0,
+      'euconsent-v2': bidderRequest.gdprConsent.consentString
+    });
   }
 
   if (config.getConfig('coppa')) {

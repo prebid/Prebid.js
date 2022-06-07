@@ -152,15 +152,7 @@ function encodeQueryData(data) {
 function kubientGetConsentGiven(gdprConsent) {
   let consentGiven = 0;
   if (typeof gdprConsent !== 'undefined') {
-    let apiVersion = deepAccess(gdprConsent, `apiVersion`);
-    switch (apiVersion) {
-      case 1:
-        consentGiven = deepAccess(gdprConsent, `vendorData.vendorConsents.${VENDOR_ID}`) ? 1 : 0;
-        break;
-      case 2:
-        consentGiven = deepAccess(gdprConsent, `vendorData.vendor.consents.${VENDOR_ID}`) ? 1 : 0;
-        break;
-    }
+    consentGiven = deepAccess(gdprConsent, `vendorData.vendor.consents.${VENDOR_ID}`) ? 1 : 0;
   }
   return consentGiven;
 }

@@ -14,6 +14,7 @@ import {
   transformBidderParamKeywords
 } from '../src/utils.js';
 import {auctionManager} from '../src/auctionManager.js';
+import {hasPurpose1Consent} from '../src/utils/gpdr.js';
 
 const SOURCE = 'pbjs';
 const storageManager = getStorageManager({bidderCode: 'pixfuture'});
@@ -164,7 +165,7 @@ export const spec = {
   getUserSyncs: function (syncOptions, bid, gdprConsent) {
     var pixid = '';
     if (typeof bid[0] === 'undefined' || bid[0] === null) { pixid = '0'; } else { pixid = bid[0].body.pix_id; }
-    if (syncOptions.iframeEnabled && hasPurpose1Consent({gdprConsent})) {
+    if (syncOptions.iframeEnabled && hasPurpose1Consent(gdprConsent)) {
       return [{
         type: 'iframe',
         url: 'https://gosrv.pixfuture.com/cookiesync?adsync=' + gdprConsent.consentString + '&pixid=' + pixid + '&gdprconcent=' + gdprConsent.gdprApplies
@@ -195,16 +196,6 @@ function newBid(serverBid, rtbBid, placementId, uuid) {
   });
 
   return bid;
-}
-
-function hasPurpose1Consent(bidderRequest) {
-  let result = true;
-  if (bidderRequest && bidderRequest.gdprConsent) {
-    if (bidderRequest.gdprConsent.gdprApplies && bidderRequest.gdprConsent.apiVersion === 2) {
-      result = !!(deepAccess(bidderRequest.gdprConsent, 'vendorData.purpose.consents.1') === true);
-    }
-  }
-  return result;
 }
 
 // Functions related optional parameters

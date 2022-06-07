@@ -8,6 +8,7 @@ import {find, includes} from '../src/polyfill.js';
 import { OUTSTREAM, INSTREAM } from '../src/video.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { bidderSettings } from '../src/bidderSettings.js';
+import {hasPurpose1Consent} from '../src/utils/gpdr.js';
 
 const BIDDER_CODE = 'mediafuse';
 const URL = 'https://ib.adnxs.com/ut/v3/prebid';
@@ -479,16 +480,6 @@ function getViewabilityScriptUrlFromPayload(viewJsPayload) {
   return jsTrackerSrc;
 }
 
-function hasPurpose1Consent(bidderRequest) {
-  let result = true;
-  if (bidderRequest && bidderRequest.gdprConsent) {
-    if (bidderRequest.gdprConsent.gdprApplies && bidderRequest.gdprConsent.apiVersion === 2) {
-      result = !!(deepAccess(bidderRequest.gdprConsent, 'vendorData.purpose.consents.1') === true);
-    }
-  }
-  return result;
-}
-
 function formatRequest(payload, bidderRequest) {
   let request = [];
   let options = {
@@ -497,7 +488,7 @@ function formatRequest(payload, bidderRequest) {
 
   let endpointUrl = URL;
 
-  if (!hasPurpose1Consent(bidderRequest)) {
+  if (!hasPurpose1Consent(bidderRequest?.gdprConsent)) {
     endpointUrl = URL_SIMPLE;
   }
 

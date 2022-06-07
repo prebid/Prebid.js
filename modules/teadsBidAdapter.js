@@ -67,7 +67,7 @@ export const spec = {
       let isCmp = typeof gdpr.gdprApplies === 'boolean';
       let isConsentString = typeof gdpr.consentString === 'string';
       let status = isCmp
-        ? findGdprStatus(gdpr.gdprApplies, gdpr.vendorData, gdpr.apiVersion)
+        ? findGdprStatus(gdpr.gdprApplies, gdpr.vendorData)
         : gdprStatus.CMP_NOT_FOUND_OR_ERROR;
       payload.gdpr_iab = {
         consent: isConsentString ? gdpr.consentString : '',
@@ -165,24 +165,16 @@ function getTimeToFirstByte(win) {
   return ttfbWithTimingV1 ? ttfbWithTimingV1.toString() : '';
 }
 
-function findGdprStatus(gdprApplies, gdprData, apiVersion) {
+function findGdprStatus(gdprApplies, gdprData) {
   let status = gdprStatus.GDPR_APPLIES_PUBLISHER;
   if (gdprApplies) {
-    if (isGlobalConsent(gdprData, apiVersion)) {
+    if (gdprData && !gdprData.isServiceSpecific) {
       status = gdprStatus.GDPR_APPLIES_GLOBAL;
     }
   } else {
     status = gdprStatus.GDPR_DOESNT_APPLY;
   }
   return status;
-}
-
-function isGlobalConsent(gdprData, apiVersion) {
-  return gdprData && apiVersion === 1
-    ? (gdprData.hasGlobalScope || gdprData.hasGlobalConsent)
-    : gdprData && apiVersion === 2
-      ? !gdprData.isServiceSpecific
-      : false;
 }
 
 function buildRequestObject(bid) {

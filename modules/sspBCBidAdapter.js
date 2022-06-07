@@ -712,6 +712,7 @@ const spec = {
   },
   getUserSyncs(syncOptions, serverResponses, gdprConsent) {
     let mySyncs = [];
+    // TODO: the check on CMP api version does not seem to make sense here. It means "always run the usersync unless an old (v1) CMP was detected". No attention is paid to the consent choices.
     if (syncOptions.iframeEnabled && consentApiVersion != 1) {
       mySyncs.push({
         type: 'iframe',

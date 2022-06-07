@@ -1,6 +1,7 @@
 import { deepAccess } from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {hasPurpose1Consent} from '../src/utils/gpdr.js';
 
 const BIDDER_CODE = 'optout';
 
@@ -19,16 +20,6 @@ function getCurrency() {
   return cur;
 }
 
-function hasPurpose1Consent(bidderRequest) {
-  let result = false;
-  if (bidderRequest && bidderRequest.gdprConsent) {
-    if (bidderRequest.gdprConsent.apiVersion === 2) {
-      result = !!(deepAccess(bidderRequest.gdprConsent, 'vendorData.purpose.consents.1') === true);
-    }
-  }
-  return result;
-}
-
 export const spec = {
   code: BIDDER_CODE,
 
@@ -44,7 +35,7 @@ export const spec = {
       if (bidRequest.gdprConsent) {
         gdpr = (typeof bidRequest.gdprConsent.gdprApplies === 'boolean') ? Number(bidRequest.gdprConsent.gdprApplies) : 0;
         consentString = bidRequest.gdprConsent.consentString;
-        if (!gdpr || hasPurpose1Consent(bidRequest)) {
+        if (!gdpr || hasPurpose1Consent(bidRequest.gdprConsent)) {
           endPoint = 'https://prebid.adscience.nl/prebid/display';
         }
       }
@@ -73,7 +64,7 @@ export const spec = {
   getUserSyncs: function (syncOptions, responses, gdprConsent) {
     if (gdprConsent) {
       let gdpr = (typeof gdprConsent.gdprApplies === 'boolean') ? Number(gdprConsent.gdprApplies) : 0;
-      if (syncOptions.iframeEnabled && (!gdprConsent.gdprApplies || hasPurpose1Consent({gdprConsent}))) {
+      if (syncOptions.iframeEnabled && (!gdprConsent.gdprApplies || hasPurpose1Consent(gdprConsent))) {
         return [{
           type: 'iframe',
           url: 'https://umframe.adscience.nl/matching/iframe?gdpr=' + gdpr + '&gdpr_consent=' + gdprConsent.consentString
