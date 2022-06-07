@@ -90,6 +90,28 @@ function buildCriteoUsersyncUrl(topUrl, domain, bundle, dnaBundle, areCookiesWri
   return url;
 }
 
+function callSyncPixel(domain, pixel) {
+  if (pixel.writeBundleInStorage && pixel.bundlePropertyName && pixel.storageKeyName) {
+    ajax(
+      pixel.pixelUrl,
+      {
+        success: response => {
+          if (response) {
+            const jsonResponse = JSON.parse(response);
+            if (jsonResponse && jsonResponse[pixel.bundlePropertyName]) {
+              saveOnAllStorages(pixel.storageKeyName, jsonResponse[pixel.bundlePropertyName], domain);
+            }
+          }
+        }
+      },
+      undefined,
+      { method: 'GET', withCredentials: true }
+    );
+  } else {
+    triggerPixel(pixel.pixelUrl);
+  }
+}
+
 function callCriteoUserSync(parsedCriteoData, gdprString, callback) {
   const cw = storage.cookiesAreEnabled();
   const lsw = storage.localStorageIsEnabled();
@@ -111,6 +133,11 @@ function callCriteoUserSync(parsedCriteoData, gdprString, callback) {
   const callbacks = {
     success: response => {
       const jsonResponse = JSON.parse(response);
+
+      if (jsonResponse.pixels) {
+        jsonResponse.pixels.forEach(pixel => callSyncPixel(domain, pixel));
+      }
+
       if (jsonResponse.acwsUrl) {
         const urlsToCall = typeof jsonResponse.acwsUrl === 'string' ? [jsonResponse.acwsUrl] : jsonResponse.acwsUrl;
         urlsToCall.forEach(url => triggerPixel(url));
