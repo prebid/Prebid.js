@@ -75,13 +75,6 @@ function makeBannerImp(bid) {
   };
 }
 
-function getDomain(url) {
-  if (!url) {
-    return url;
-  }
-  return url.replace('http://', '').replace('https://', '').replace('www.', '').split(/[/?#]/)[0];
-}
-
 function checkTCF(tcData) {
   let restrictions = tcData.publisher ? tcData.publisher.restrictions : {};
   let qcRestriction = restrictions && restrictions[PURPOSE_DATA_COLLECT]
