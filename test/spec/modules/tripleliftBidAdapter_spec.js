@@ -389,6 +389,7 @@ describe('triplelift adapter', function () {
     afterEach(() => {
       sandbox.restore();
       utils.logError.restore();
+      $$PREBID_GLOBAL$$.bidderSettings = {};
     });
 
     it('exists and is an object', function () {
