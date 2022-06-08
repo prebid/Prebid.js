@@ -50,7 +50,7 @@ describe('TrafficGateAdapter', () => {
     })
 
     it('Returns valid URL', () => {
-      strictEqual('//example.bc-plugin.com/?c=o&m=multi', serverRequest.url)
+      strictEqual('https://example.bc-plugin.com/?c=o&m=multi', serverRequest.url)
     })
 
     it('Returns valid data if array of bids is valid', () => {
