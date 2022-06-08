@@ -497,9 +497,9 @@ function outstreamRender(bid) {
         if (!framedoc && rawframe.contentWindow) {
           framedoc = rawframe.contentWindow.document;
         }
-        script = loadExternalScript(`https://js.spotx.tv/easi/v1/${bid.channel_id}.js`, BIDDER_CODE, undefined, framedoc);
+        script = loadExternalScript(`https://js.spotx.tv/easi/v1/${bid.channel_id}.js`, 'outstream', undefined, framedoc);
       } else {
-        script = loadExternalScript(`https://js.spotx.tv/easi/v1/${bid.channel_id}.js`, BIDDER_CODE);
+        script = loadExternalScript(`https://js.spotx.tv/easi/v1/${bid.channel_id}.js`, 'outstream');
       }
       createOutstreamScript(bid, script);
     } catch (err) {
