@@ -2,23 +2,21 @@ import {
   deepAccess,
   deepClone,
   deepSetValue,
-  getWindowTop,
+  getBidIdParameter,
   inIframe,
   isArray,
   isEmpty,
   isFn,
   isNumber,
   isStr,
-  logWarn,
   logError,
   logMessage,
-  parseUrl,
-  getBidIdParameter,
+  logWarn,
   triggerPixel,
 } from '../src/utils.js';
 
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER} from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'mediasniper';
 const DEFAULT_BID_TTL = 360;
@@ -76,19 +74,18 @@ export const spec = {
 
     // Assign payload.site from refererinfo
     if (bidderRequest.refererInfo) {
+      // TODO: reachedTop is probably not the right check - it may be false when page is available or vice-versa
       if (bidderRequest.refererInfo.reachedTop) {
-        const sitePage = bidderRequest.refererInfo.referer;
+        const sitePage = bidderRequest.refererInfo.page;
         deepSetValue(payload, 'site.page', sitePage);
         deepSetValue(
           payload,
           'site.domain',
-          parseUrl(sitePage, {
-            noDecodeWholeURL: true,
-          }).hostname
+          bidderRequest.refererInfo.domain
         );
 
-        if (canAccessTopWindow()) {
-          deepSetValue(payload, 'site.ref', getWindowTop().document.referrer);
+        if (bidderRequest.refererInfo?.ref) {
+          deepSetValue(payload, 'site.ref', bidderRequest.refererInfo.ref);
         }
       }
     }
@@ -164,19 +161,6 @@ export const spec = {
   },
 };
 registerBidder(spec);
-
-/**
- * Detects the capability to reach window.top.
- *
- * @returns {boolean}
- */
-function canAccessTopWindow() {
-  try {
-    return !!getWindowTop().location.href;
-  } catch (error) {
-    return false;
-  }
-}
 
 /**
  * Returns an openRTB 2.5 object.

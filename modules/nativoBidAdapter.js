@@ -138,7 +138,7 @@ export const spec = {
       pageUrl = deepAccess(
         request,
         'params.url',
-        bidderRequest.refererInfo.referer
+        bidderRequest.refererInfo.page
       )
       placementId = deepAccess(request, 'params.placementId')
 

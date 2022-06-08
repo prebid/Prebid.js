@@ -1,5 +1,4 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {getRefererInfo} from '../src/refererDetection.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {OUTSTREAM} from '../src/video.js';
@@ -170,7 +169,7 @@ export const spec = {
     let slots = [];
     let referer;
     try {
-      referer = getRefererInfo().referer;
+      referer = bidderRequest?.refererInfo?.page;
       slots = mapSlotsData(validBidRequests);
     } catch (e) {
       logWarn(e);

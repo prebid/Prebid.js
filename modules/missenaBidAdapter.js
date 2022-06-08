@@ -35,7 +35,8 @@ export const spec = {
       };
 
       if (bidderRequest && bidderRequest.refererInfo) {
-        payload.referer = bidderRequest.refererInfo.referer;
+        // TODO: is 'topmostLocation' the right value here?
+        payload.referer = bidderRequest.refererInfo.topmostLocation;
         payload.referer_canonical = bidderRequest.refererInfo.canonicalUrl;
       }
 

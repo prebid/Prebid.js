@@ -170,7 +170,7 @@ export const buildRequests = (_, bidderRequest) => {
   if (!bidderRequest) return null
 
   let data = {
-    pageUrl: bidderRequest.refererInfo.referer,
+    pageUrl: bidderRequest.refererInfo.page,
     pageDescription: getMetaValue(META_DESCRIPTION),
     keywords: getKeywords().join(','),
     gdpr: false,
@@ -184,7 +184,8 @@ export const buildRequests = (_, bidderRequest) => {
     bidderRequestId: bidderRequest.bidderRequestId,
     bidderCode: bidderRequest.bidderCode,
     bids: bidderRequest.bids,
-    refererInfo: bidderRequest.refererInfo,
+    // TODO: please do not send internal data structures over the network
+    refererInfo: bidderRequest.refererInfo.legacy,
   }
 
   if (bidderRequest.gdprConsent) {

@@ -5,6 +5,7 @@ import CONSTANTS from '../src/constants.json';
 import {ajaxBuilder} from '../src/ajax.js';
 import {config} from '../src/config.js';
 import {find, includes} from '../src/polyfill.js';
+import {getRefererInfo} from '../src/refererDetection.js';
 
 const ajax = ajaxBuilder(0)
 
@@ -22,49 +23,11 @@ let pbaUrl = 'https://pba.aws.lijit.com/analytics'
 let currentAuctions = {};
 const analyticsType = 'endpoint'
 
-const getClosestTop = () => {
-  let topFrame = window;
-  let err = false;
-  try {
-    while (topFrame.parent.document !== topFrame.document) {
-      if (topFrame.parent.document) {
-        topFrame = topFrame.parent;
-      } else {
-        throw new Error();
-      }
-    }
-  } catch (e) {
-    // bException = true;
-  }
-
-  return {
-    topFrame,
-    err
-  };
-};
-
-const getBestPageUrl = ({err: crossDomainError, topFrame}) => {
-  let sBestPageUrl = '';
-
-  if (!crossDomainError) {
-    // easy case- we can get top frame location
-    sBestPageUrl = topFrame.location.href;
-  } else {
-    try {
-      try {
-        sBestPageUrl = window.top.location.href;
-      } catch (e) {
-        let aOrigins = window.location.ancestorOrigins;
-        sBestPageUrl = aOrigins[aOrigins.length - 1];
-      }
-    } catch (e) {
-      sBestPageUrl = topFrame.document.referrer;
-    }
-  }
-
-  return sBestPageUrl;
-};
-const rootURL = getBestPageUrl(getClosestTop())
+const rootURL = (() => {
+  const ref = getRefererInfo();
+  // TODO: does the fallback make sense here?
+  return ref.page || ref.topmostLocation;
+})();
 
 let sovrnAnalyticsAdapter = Object.assign(adapter({url: pbaUrl, analyticsType}), {
   track({ eventType, args }) {

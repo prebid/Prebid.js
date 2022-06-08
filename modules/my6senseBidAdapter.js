@@ -11,6 +11,7 @@ function isBidRequestValid(bid) {
 }
 
 function getUrl(url) {
+  // TODO: this should probably look at refererInfo
   if (!url) {
     url = window.location.href;// "clean" url of current web page
   }

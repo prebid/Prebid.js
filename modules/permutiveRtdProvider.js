@@ -9,7 +9,6 @@ import {getGlobal} from '../src/prebidGlobal.js';
 import {submodule} from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {deepAccess, deepSetValue, isFn, logError, mergeDeep} from '../src/utils.js';
-import {config} from '../src/config.js';
 import {includes} from '../src/polyfill.js';
 
 const MODULE_NAME = 'permutive'
@@ -62,11 +61,10 @@ function getModuleConfig (customModuleConfig) {
 
 /**
  * Sets ortb2 config for ac bidders
- * @param {Object} auctionDetails
+ * @param {Object} bidderOrtb2
  * @param {Object} customModuleConfig - Publisher config for module
  */
-export function setBidderRtb (auctionDetails, customModuleConfig) {
-  const bidderConfig = config.getBidderConfig()
+export function setBidderRtb (bidderOrtb2, customModuleConfig) {
   const moduleConfig = getModuleConfig(customModuleConfig)
   const acBidders = deepAccess(moduleConfig, 'params.acBidders')
   const maxSegs = deepAccess(moduleConfig, 'params.maxSegs')
@@ -74,13 +72,9 @@ export function setBidderRtb (auctionDetails, customModuleConfig) {
   const segmentData = getSegments(maxSegs)
 
   acBidders.forEach(function (bidder) {
-    const currConfig = bidderConfig[bidder] || {}
+    const currConfig = { ortb2: bidderOrtb2[bidder] || {} }
     const nextConfig = updateOrtbConfig(currConfig, segmentData.ac, transformationConfigs) // ORTB2 uses the `ac` segment IDs
-
-    config.setBidderConfig({
-      bidders: [bidder],
-      config: nextConfig
-    })
+    bidderOrtb2[bidder] = nextConfig.ortb2;
   })
 }
 
@@ -306,12 +300,10 @@ export const permutiveSubmodule = {
     makeSafe(function () {
       // Legacy route with custom parameters
       initSegments(reqBidsConfigObj, callback, customModuleConfig)
-    })
-  },
-  onAuctionInitEvent: function (auctionDetails, customModuleConfig) {
+    });
     makeSafe(function () {
       // Route for bidders supporting ORTB2
-      setBidderRtb(auctionDetails, customModuleConfig)
+      setBidderRtb(reqBidsConfigObj.ortb2Fragments?.bidder, customModuleConfig)
     })
   },
   init: init
