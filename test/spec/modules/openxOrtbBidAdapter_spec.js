@@ -718,6 +718,8 @@ describe('OpenxRtbAdapter', function () {
 
           const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
           expect(request[0].data.regs.coppa).to.equal(1);
+
+          config.getConfig.restore();
         });
       });
 
