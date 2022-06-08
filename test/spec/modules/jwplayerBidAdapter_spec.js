@@ -74,7 +74,7 @@ describe('jwplayer adapter tests', function() {
         expect(serverRequest.method).to.equal('POST');
 
         const openrtbRequest = JSON.parse(serverRequest.data);
-        console.log(openrtbRequest);
+
         expect(openrtbRequest.id).to.not.equal(null);
         expect(openrtbRequest.id).to.have.string('testBidId');
 

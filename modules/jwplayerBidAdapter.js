@@ -1,15 +1,11 @@
-// import * as utils from 'src/utils';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-// import { config } from 'src/config';
 import { VIDEO } from '../src/mediaTypes.js';
-import { isStr,
+import {
   isPlainObject,
-  isNumber,
-  isArray,
   isFn,
   deepAccess,
-  deepSetValue,
-  logMessage } from '../src/utils.js';
+  deepSetValue } from '../src/utils.js';
+import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'jwplayer';
 const URL = 'https://ib.adnxs.com/openrtb2/prebid';
@@ -176,19 +172,19 @@ function buildBidFloorData(bidRequest) {
 }
 
 function buildRequestSite(bidRequest) {
+  const configSite = config.getConfig('ortb2.site');
+
   const site = {
-    domain: window.location.hostname,
-    page: window.location.href,
+    domain: (configSite && configSite.domain) ? configSite.domain : window.location.hostname,
+    page: (configSite && configSite.page) ? configSite.page : window.location.href,
     ref: bidRequest.refererInfo ? bidRequest.refererInfo.referer || null : null
   };
 
-  const videoParams = deepAccess(bidRequest, 'mediaTypes.video', {});
-
   // Site Content
-  if (videoParams.content && isPlainObject(videoParams.content)) {
+  if (configSite && configSite.content && isPlainObject(configSite.content)) {
     site.content = {};
-    for (const contentKey in videoParams.content) {
-      site.content[contentKey] = videoParams.content[contentKey];
+    for (const contentKey in configSite.content) {
+      site.content[contentKey] = configSite.content[contentKey];
     }
   }
   return site;
