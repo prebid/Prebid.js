@@ -2,6 +2,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { ajax } from '../src/ajax.js';
+import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'lasso';
 const ENDPOINT_URL = 'https://trc.lhmos.com/prebid';
@@ -46,7 +47,9 @@ export const spec = {
         params: JSON.stringify(bidRequest.params),
         crumbs: JSON.stringify(bidRequest.crumbs),
         prebidVersion: '$prebid.version$',
-        version: 1
+        version: 1,
+        coppa: config.getConfig('coppa') == true ? 1 : 0,
+        ccpa: bidderRequest.uspConsent || undefined
       }
 
       return {
