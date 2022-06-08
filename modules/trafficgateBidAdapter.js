@@ -3,7 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'trafficgate';
-const URL = '//[HOST].bc-plugin.com/?c=o&m=multi';
+const URL = 'https://[HOST].bc-plugin.com/?c=o&m=multi'
 
 export const spec = {
   code: BIDDER_CODE,
