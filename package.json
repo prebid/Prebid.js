@@ -68,8 +68,6 @@
     "gulp-concat": "^2.6.0",
     "gulp-connect": "^5.7.0",
     "gulp-eslint": "^4.0.0",
-    "gulp-footer": "^2.0.2",
-    "gulp-header": "^2.0.9",
     "gulp-if": "^3.0.0",
     "gulp-js-escape": "^1.0.1",
     "gulp-replace": "^1.0.0",
