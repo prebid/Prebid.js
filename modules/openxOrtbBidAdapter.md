@@ -1,7 +1,7 @@
 # Overview
 
 ```
-Module Name: OpenX Bidder Adapter
+Module Name: OpenX OpenRTB Bidder Adapter
 Module Type: Bidder Adapter
 Maintainer: team-openx@openx.com
 ```
@@ -9,8 +9,7 @@ Maintainer: team-openx@openx.com
 # Description
 
 This is an updated version of the OpenX bid adapter which calls our new serving architecture.
-Publishers are welcome to test this adapter and give feedback. Please note you should only include
-either openxBidAdapter or openxNewBidAdapter in your build.
+Publishers are welcome to test this adapter and give feedback. Please note you should only include either openxBidAdapter or openxOrtbBidAdapter in your build.
 
 # Bid Parameters
 ## Banner

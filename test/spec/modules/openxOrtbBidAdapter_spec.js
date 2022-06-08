@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec, REQUEST_URL, SYNC_URL, DEFAULT_PH} from 'modules/openxNewBidAdapter.js';
+import {spec, REQUEST_URL, SYNC_URL, DEFAULT_PH} from 'modules/openxOrtbBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from 'src/mediaTypes.js';
 import {config} from 'src/config.js';
@@ -1014,8 +1014,8 @@ describe('OpenxRtbAdapter', function () {
               adm: 'test-ad-markup',
               adomain: ['brand.com'],
               ext: {
-                dsp_id: '123', 
-                buyer_id: '456', 
+                dsp_id: '123',
+                buyer_id: '456',
                 brand_id: '789',
                 paf: {
                   content_id: 'paf_content_id'

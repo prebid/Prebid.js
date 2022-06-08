@@ -2,13 +2,13 @@ import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import * as utils from '../src/utils.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import includes from 'core-js-pure/features/array/includes.js'
+import {includes} from '../src/polyfill.js';
 
 const bidderConfig = 'hb_pb_ortb';
 const bidderVersion = '1.0';
-const VIDEO_TARGETING = ['startdelay', 'mimes', 'minduration', 'maxduration',
-  'startdelay', 'skippable', 'playbackmethod', 'api', 'protocols', 'boxingallowed',
-  'linearity', 'delivery', 'protocol', 'placement', 'minbitrate', 'maxbitrate', 'ext'];
+const VIDEO_TARGETING = ['startdelay', 'mimes', 'minduration', 'maxduration', 'delivery',
+  'startdelay', 'skip', 'playbackmethod', 'api', 'protocol', 'boxingallowed', 'maxextended',
+  'linearity', 'delivery', 'protocols', 'placement', 'minbitrate', 'maxbitrate', 'battr', 'ext'];
 export const REQUEST_URL = 'https://rtb.openx.net/openrtbb/prebidjs';
 export const SYNC_URL = 'https://u.openx.net/w/1.0/pd';
 export const DEFAULT_PH = '2d1251ae-7f3a-47cf-bd2a-2f288854a0ba';
