@@ -846,19 +846,13 @@ describe('triplelift adapter', function () {
       })
     });
     it('should append 1PlusX data to existing user.data entries if localStorage is available', function() {
-      const ortb2 = {
+      bidderRequest.ortb2 = {
         user: {
           data: [
             { name: 'dataprovider.com', ext: { segtax: 4 }, segment: [{ id: '1' }] }
           ]
         }
-      };
-      sandbox.stub(config, 'getConfig').callsFake(key => {
-        const config = {
-          ortb2
-        };
-        return utils.deepAccess(config, key);
-      });
+      }
       sandbox.stub(storage, 'getDataFromLocalStorage').callsFake(() => '{"kid":1,"s":"ySRdArquXuBolr/cVv0UNqrJhTO4QZsbNH/t+2kR3gXjbA==","t":"/yVtBrquXuBolr/cVv0UNtx1mssdLYeKFhWFI3Dq1dJnug=="}');
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.ext.fpd).to.deep.equal({
@@ -878,19 +872,13 @@ describe('triplelift adapter', function () {
       })
     });
     it('should not append anything if getDataFromLocalStorage returns null', function() {
-      const ortb2 = {
+      bidderRequest.ortb2 = {
         user: {
           data: [
             { name: 'dataprovider.com', ext: { segtax: 4 }, segment: [{ id: '1' }] }
           ]
         }
-      };
-      sandbox.stub(config, 'getConfig').callsFake(key => {
-        const config = {
-          ortb2
-        };
-        return utils.deepAccess(config, key);
-      });
+      }
       sandbox.stub(storage, 'getDataFromLocalStorage').callsFake(() => null);
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.ext.fpd).to.deep.equal({
