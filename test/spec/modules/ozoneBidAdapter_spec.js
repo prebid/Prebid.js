@@ -2294,7 +2294,7 @@ describe('ozone Adapter', function () {
       expect(payload.ext.ozone.oz_kvp_rw).to.equal(0);
     });
     it('should handle ortb2 site data', function () {
-      config.setConfig({'ortb2': {
+      const ortb2 = {
         'site': {
           'name': 'example_ortb2_name',
           'domain': 'page.example.com',
@@ -2306,15 +2306,15 @@ describe('ozone Adapter', function () {
           'keywords': 'power tools, drills',
           'search': 'drill'
         }
-      }});
-      const request = spec.buildRequests(validBidRequests, validBidderRequest.bidderRequest);
+      };
+      const request = spec.buildRequests(validBidRequests, {...validBidderRequest.bidderRequest, ortb2});
       const payload = JSON.parse(request.data);
       expect(payload.imp[0].ext.ozone.customData[0].targeting.name).to.equal('example_ortb2_name');
       expect(payload.user.ext).to.not.have.property('gender');
       config.resetConfig();
     });
     it('should add ortb2 site data when there is no customData already created', function () {
-      config.setConfig({'ortb2': {
+      const ortb2 = {
         'site': {
           'name': 'example_ortb2_name',
           'domain': 'page.example.com',
@@ -2326,34 +2326,34 @@ describe('ozone Adapter', function () {
           'keywords': 'power tools, drills',
           'search': 'drill'
         }
-      }});
-      const request = spec.buildRequests(validBidRequestsNoCustomData, validBidderRequest.bidderRequest);
+      };
+      const request = spec.buildRequests(validBidRequestsNoCustomData, {...validBidderRequest.bidderRequest, ortb2});
       const payload = JSON.parse(request.data);
       expect(payload.imp[0].ext.ozone.customData[0].targeting.name).to.equal('example_ortb2_name');
       expect(payload.imp[0].ext.ozone.customData[0].targeting).to.not.have.property('gender')
       config.resetConfig();
     });
     it('should add ortb2 user data to the user object', function () {
-      config.setConfig({'ortb2': {
+      const ortb2 = {
         'user': {
           'gender': 'who knows these days'
         }
-      }});
-      const request = spec.buildRequests(validBidRequests, validBidderRequest.bidderRequest);
+      };
+      const request = spec.buildRequests(validBidRequests, {...validBidderRequest.bidderRequest, ortb2});
       const payload = JSON.parse(request.data);
       expect(payload.user.gender).to.equal('who knows these days');
       config.resetConfig();
     });
     it('should not override the user.ext.consent string even if this is set in config ortb2', function () {
-      config.setConfig({'ortb2': {
+      const ortb2 = {
         'user': {
           'ext': {
             'consent': 'this is the consent override that shouldnt work',
             'consent2': 'this should be set'
           }
         }
-      }});
-      const request = spec.buildRequests(validBidRequests, bidderRequestWithFullGdpr.bidderRequest);
+      };
+      const request = spec.buildRequests(validBidRequests, {...bidderRequestWithFullGdpr.bidderRequest, ortb2});
       const payload = JSON.parse(request.data);
       expect(payload.user.ext.consent2).to.equal('this should be set');
       expect(payload.user.ext.consent).to.equal('BOh7mtYOh7mtYAcABBENCU-AAAAncgPIXJiiAoao0PxBFkgCAC8ACIAAQAQQAAIAAAIAAAhBGAAAQAQAEQgAAAAAAABAAAAAAAAAAAAAAACAAAAAAAACgAAAAABAAAAQAAAAAAA');

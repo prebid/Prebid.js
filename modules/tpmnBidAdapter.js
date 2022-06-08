@@ -116,13 +116,13 @@ registerBidder(spec);
  * Creates site description object
  */
 function createSite(refInfo) {
-  let url = parseUrl(refInfo.referer);
+  let url = parseUrl(refInfo.page || '');
   let site = {
     'domain': url.hostname,
     'page': url.protocol + '://' + url.hostname + url.pathname
   };
-  if (self === top && document.referrer) {
-    site.ref = document.referrer;
+  if (refInfo.ref) {
+    site.ref = refInfo.ref
   }
   let keywords = document.getElementsByTagName('meta')['keywords'];
   if (keywords && keywords.content) {

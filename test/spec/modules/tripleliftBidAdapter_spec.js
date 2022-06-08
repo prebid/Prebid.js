@@ -370,7 +370,7 @@ describe('triplelift adapter', function () {
           }
         ],
         refererInfo: {
-          referer: 'https://examplereferer.com'
+          page: 'https://examplereferer.com'
         },
         gdprConsent: {
           consentString: GDPR_CONSENT_STR,
@@ -814,13 +814,7 @@ describe('triplelift adapter', function () {
           sens: sens,
         }
       }
-      sandbox.stub(config, 'getConfig').callsFake(key => {
-        const config = {
-          ortb2
-        };
-        return utils.deepAccess(config, key);
-      });
-      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, {...bidderRequest, ortb2});
       const { data: payload } = request;
       expect(payload.ext.fpd.user).to.not.exist;
       expect(payload.ext.fpd.context.ext.data).to.haveOwnProperty('category');

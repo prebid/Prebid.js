@@ -110,18 +110,12 @@ describe('airgrid RTD Submodule', function () {
         .withArgs(agRTD.AG_AUDIENCE_IDS_KEY)
         .returns(JSON.stringify(MATCHED_AUDIENCES));
       const audiences = agRTD.getMatchedAudiencesFromStorage();
-      agRTD.setAudiencesUsingBidderOrtb2(
-        RTD_CONFIG.dataProviders[0],
-        audiences
-      );
+      const bidderOrtb2 = agRTD.getAudiencesAsBidderOrtb2(RTD_CONFIG.dataProviders[0], audiences);
 
-      const allBiddersConfig = config.getBidderConfig();
       const bidders = RTD_CONFIG.dataProviders[0].params.bidders;
-      Object.keys(allBiddersConfig).forEach((bidder) => {
+      Object.keys(bidderOrtb2).forEach((bidder) => {
         if (bidders.indexOf(bidder) === -1) return;
-        expect(
-          deepAccess(allBiddersConfig[bidder], 'ortb2.user.ext.data.airgrid')
-        ).to.eql(MATCHED_AUDIENCES);
+        expect(deepAccess(bidderOrtb2[bidder], 'ortb2.user.ext.data.airgrid')).to.eql(MATCHED_AUDIENCES);
       });
     });
 

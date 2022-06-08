@@ -198,7 +198,8 @@ export const spec = {
    */
   buildRequests(validBidRequests, bidderRequest) {
     const payload = {
-      url: bidderRequest.refererInfo.referer,
+      // TODO: is 'page' the right value here?
+      url: bidderRequest.refererInfo.page,
       cmp: !!bidderRequest.gdprConsent,
       bidRequests: buildBidRequests(validBidRequests)
     };
