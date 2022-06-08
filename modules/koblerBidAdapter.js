@@ -102,21 +102,23 @@ export const onTimeout = function (timeoutDataArray) {
   }
 };
 
-function getPageUrlFromRefererInfo() {
-  const refererInfo = getRefererInfo();
-  return (refererInfo && refererInfo.referer)
-    ? refererInfo.referer
-    : window.location.href;
-}
-
 function getPageUrlFromRequest(validBidRequest, bidderRequest) {
   // pageUrl is considered only when testing to ensure that non-test requests always contain the correct URL
   if (isTest(validBidRequest) && config.getConfig('pageUrl')) {
+    // TODO: it's not clear what the intent is here - but all adapters should always respect pageUrl.
+    // With prebid 7, using `refererInfo.page` will do that automatically.
     return config.getConfig('pageUrl');
   }
 
-  return (bidderRequest.refererInfo && bidderRequest.refererInfo.referer)
-    ? bidderRequest.refererInfo.referer
+  return (bidderRequest.refererInfo && bidderRequest.refererInfo.page)
+    ? bidderRequest.refererInfo.page
+    : window.location.href;
+}
+
+function getPageUrlFromRefererInfo() {
+  const refererInfo = getRefererInfo();
+  return (refererInfo && refererInfo.page)
+    ? refererInfo.page
     : window.location.href;
 }
 

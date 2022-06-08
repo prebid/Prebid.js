@@ -195,7 +195,7 @@ function _buildRequestParams(bidRequests, bidderRequest) {
 
   const uspConsent = bidderRequest && bidderRequest.uspConsent;
 
-  const pageUrl = (bidderRequest && bidderRequest.refererInfo) ? (bidderRequest.refererInfo.referer) : (undefined);
+  const pageUrl = bidderRequest?.refererInfo?.page
 
   adapterState.uniqueSiteIds = bidRequests.map(req => req.params.siteId).filter(uniques);
 

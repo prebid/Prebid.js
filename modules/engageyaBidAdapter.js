@@ -13,9 +13,10 @@ function getPageUrl(bidRequest, bidderRequest) {
   if (bidRequest.params.pageUrl && bidRequest.params.pageUrl != '[PAGE_URL]') {
     return bidRequest.params.pageUrl;
   }
-  if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
-    return bidderRequest.refererInfo.referer;
+  if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page) {
+    return bidderRequest.refererInfo.page;
   }
+  // TODO: does this fallback make sense?
   const pageUrl = (isInIframe() && document.referrer)
     ? document.referrer
     : window.location.href;

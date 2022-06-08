@@ -39,7 +39,8 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    let topLocation = parseUrl(deepAccess(bidderRequest, 'refererInfo.referer'));
+    // TODO: is 'page' the right value here?
+    let topLocation = parseUrl(deepAccess(bidderRequest, 'refererInfo.page'));
 
     return validBidRequests.map((bidRequest) => {
       return {
@@ -65,7 +66,6 @@ export const spec = {
             }
           },
 
-          user: _getUser(validBidRequests),
           site: _getSite(bidRequest, topLocation),
           seller: _getSeller(bidRequest),
           device: _getDevice(bidRequest),
@@ -184,22 +184,6 @@ function _getNativeAssets(mediaTypeNative) {
   return NATIVE_ASSET_MAP
     .map(assetMap => _getAsset(mediaTypeNative, assetMap))
     .filter(asset => asset !== undefined);
-}
-
-function _getUser(requests) {
-  const id = deepAccess(requests, '0.userId.nextrollId');
-  if (id === undefined) {
-    return;
-  }
-
-  return {
-    ext: {
-      eid: [{
-        'source': 'nextroll',
-        id
-      }]
-    }
-  };
 }
 
 function _getFloor(bidRequest) {

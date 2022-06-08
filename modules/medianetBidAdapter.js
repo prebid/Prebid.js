@@ -1,9 +1,21 @@
-import { parseUrl, getWindowTop, isArray, getGptSlotInfoForAdUnitCode, isStr, deepAccess, isEmpty, logError, triggerPixel, buildUrl, isEmptyStr, logInfo } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { getRefererInfo } from '../src/refererDetection.js';
-import { Renderer } from '../src/Renderer.js';
+import {
+  buildUrl,
+  deepAccess,
+  getGptSlotInfoForAdUnitCode,
+  getWindowTop,
+  isArray,
+  isEmpty,
+  isEmptyStr,
+  isStr,
+  logError,
+  logInfo,
+  triggerPixel
+} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {getRefererInfo} from '../src/refererDetection.js';
+import {Renderer} from '../src/Renderer.js';
 
 const BIDDER_CODE = 'medianet';
 const BID_URL = 'https://prebid.media.net/rtb/prebid';
@@ -19,6 +31,8 @@ const EVENTS = {
 };
 const EVENT_PIXEL_URL = 'qsearch-a.akamaihd.net/log';
 const OUTSTREAM = 'outstream';
+
+// TODO: this should be picked from bidderRequest
 let refererInfo = getRefererInfo();
 
 let mnData = {};
@@ -27,8 +41,8 @@ window.mnet = window.mnet || {};
 window.mnet.queue = window.mnet.queue || [];
 
 mnData.urlData = {
-  domain: parseUrl(refererInfo.referer, {noDecodeWholeURL: true}).hostname,
-  page: refererInfo.referer,
+  domain: refererInfo.domain,
+  page: refererInfo.page,
   isTop: refererInfo.reachedTop
 };
 
