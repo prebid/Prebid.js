@@ -213,7 +213,7 @@ function getBaseRequest(bid, bidderRequest) {
   if (bid.userIdAsEids) {
     utils.deepSetValue(req, 'user.ext.eids', bid.userIdAsEids);
   }
-  const commonFpd = config.getConfig('ortb2') || {};
+  const commonFpd = bidderRequest.ortb2 || {};
   if (commonFpd.site) {
     utils.mergeDeep(req, {site: commonFpd.site});
   }
