@@ -1,7 +1,7 @@
-import { isEmpty, getWindowSelf, parseSizesInput } from '../src/utils.js';
-import { getGlobal } from '../src/prebidGlobal.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {getWindowSelf, isEmpty, parseSizesInput} from '../src/utils.js';
+import {getGlobal} from '../src/prebidGlobal.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {getStorageManager} from '../src/storageManager.js';
 
 const BIDDER_CODE = 'eplanning';
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
@@ -36,18 +36,16 @@ export const spec = {
     const urlConfig = getUrlConfig(bidRequests);
     const pcrs = getCharset();
     const spaces = getSpaces(bidRequests, urlConfig.ml);
-    const pageUrl = bidderRequest.refererInfo.referer;
-    const getDomain = (url) => {
-      let anchor = document.createElement('a');
-      anchor.href = url;
-      return anchor.hostname;
-    }
+    // TODO: do the fallbacks make sense here?
+    const pageUrl = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
+    const domain = bidderRequest.refererInfo.domain || window.location.host
     if (urlConfig.t) {
       url = 'https://' + urlConfig.isv + '/layers/t_pbjs_2.json';
       params = {};
     } else {
-      url = 'https://' + (urlConfig.sv || DEFAULT_SV) + '/pbjs/1/' + urlConfig.ci + '/' + dfpClientId + '/' + getDomain(pageUrl) + '/' + sec;
-      const referrerUrl = bidderRequest.refererInfo.referer.reachedTop ? window.top.document.referrer : bidderRequest.refererInfo.referer;
+      url = 'https://' + (urlConfig.sv || DEFAULT_SV) + '/pbjs/1/' + urlConfig.ci + '/' + dfpClientId + '/' + domain + '/' + sec;
+      // TODO: does the fallback make sense here?
+      const referrerUrl = bidderRequest.refererInfo.ref || bidderRequest.refererInfo.topmostLocation
 
       if (storage.hasLocalStorage()) {
         registerViewabilityAllBids(bidRequests);

@@ -27,7 +27,7 @@ export const spec = {
    */
   buildRequests: function(bidRequests, bidderRequest) {
     const serverRequests = [];
-    const bidderRequestReferer = (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) || '';
+    const bidderRequestReferer = bidderRequest?.refererInfo?.page || '';
     for (var i = 0, len = bidRequests.length; i < len; i++) {
       const gaxObjParams = bidRequests[i];
       serverRequests.push({

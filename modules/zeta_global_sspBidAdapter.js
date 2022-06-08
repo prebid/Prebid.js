@@ -2,6 +2,7 @@ import {deepAccess, deepSetValue, isArray, isBoolean, isNumber, isStr, logWarn} 
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
+import {parseDomain} from '../src/refererDetection.js';
 
 const BIDDER_CODE = 'zeta_global_ssp';
 const ENDPOINT_URL = 'https://ssp.disqus.com/bid';
@@ -89,13 +90,12 @@ export const spec = {
     if (!impData.banner && !impData.video) {
       impData.banner = buildBanner(request);
     }
-    const fpd = config.getLegacyFpd(config.getConfig('ortb2')) || {};
     let payload = {
       id: bidderRequest.auctionId,
       cur: [DEFAULT_CUR],
       imp: [impData],
       site: params.site ? params.site : {},
-      device: {...fpd.device, ...params.device},
+      device: {...(bidderRequest.ortb2?.device || {}), ...params.device},
       user: params.user ? params.user : {},
       app: params.app ? params.app : {},
       ext: {
@@ -104,8 +104,9 @@ export const spec = {
       }
     };
     const rInfo = bidderRequest.refererInfo;
-    payload.site.page = config.getConfig('pageUrl') || ((rInfo && rInfo.referer) ? rInfo.referer.trim() : window.location.href);
-    payload.site.domain = config.getConfig('publisherDomain') || getDomainFromURL(payload.site.page);
+    // TODO: do the fallbacks make sense here?
+    payload.site.page = rInfo.page || rInfo.topmostLocation;
+    payload.site.domain = parseDomain(payload.site.page, {noLeadingWww: true});
 
     payload.device.ua = navigator.userAgent;
     payload.device.language = navigator.language;
@@ -267,16 +268,6 @@ function provideEids(request, payload) {
   if (Array.isArray(request.userIdAsEids) && request.userIdAsEids.length > 0) {
     deepSetValue(payload, 'user.ext.eids', request.userIdAsEids);
   }
-}
-
-function getDomainFromURL(url) {
-  let anchor = document.createElement('a');
-  anchor.href = url;
-  let hostname = anchor.hostname;
-  if (hostname.indexOf('www.') === 0) {
-    return hostname.substring(4);
-  }
-  return hostname;
 }
 
 function provideMediaType(zetaBid, bid) {

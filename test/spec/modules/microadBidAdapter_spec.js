@@ -61,8 +61,8 @@ describe('microadBidAdapter', () => {
   describe('buildRequests', () => {
     const bidderRequest = {
       refererInfo: {
-        canonicalUrl: 'https://example.com/to',
-        referer: 'https://example.com/from'
+        page: 'https://example.com/to',
+        ref: 'https://example.com/from'
       }
     };
     const expectedResultTemplate = {
@@ -124,10 +124,10 @@ describe('microadBidAdapter', () => {
       ]);
     });
 
-    it('should use window.location.href if there is no canonicalUrl', () => {
+    it('should use window.location.href if there is no page', () => {
       const bidderRequestWithoutCanonicalUrl = {
         refererInfo: {
-          referer: 'https://example.com/from'
+          ref: 'https://example.com/from'
         }
       };
       const requests = spec.buildRequests([bidRequestTemplate], bidderRequestWithoutCanonicalUrl);
