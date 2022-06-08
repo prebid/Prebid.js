@@ -379,6 +379,12 @@ describe('triplelift adapter', function () {
       };
       sandbox = sinon.sandbox.create();
       logErrorSpy = sinon.spy(utils, 'logError');
+
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        triplelift: {
+          storageAllowed: true
+        }
+      };
     });
     afterEach(() => {
       sandbox.restore();
