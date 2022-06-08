@@ -831,20 +831,14 @@ describe('consentManagement', function () {
             tcfStub.restore();
           })
 
-          Object.entries({
-            'CMP is not available': () => { tcfStub.restore(); delete window.__tcfapi; },
-            'CMP is unresponsive': () => { tcfStub.callsFake(() => null) }
-          }).forEach(([t, setup]) => {
-            it(`because ${t} - should continue auction with null consent`, () => {
-              setup();
-              return runAuction().then(() => {
-                const consent = gdprDataHandler.getConsentData();
-                expect(consent.gdprApplies).to.be.true;
-                expect(consent.consentString).to.be.undefined;
-                expect(gdprDataHandler.ready).to.be.true;
-              })
-            })
-          })
+          it('should continue auction with null consent when CMP is unresponsive', () => {
+            return runAuction().then(() => {
+              const consent = gdprDataHandler.getConsentData();
+              expect(consent.gdprApplies).to.be.true;
+              expect(consent.consentString).to.be.undefined;
+              expect(gdprDataHandler.ready).to.be.true;
+            });
+          });
 
           it('should use consent provided by events other than tcloaded', () => {
             mockTcfEvent({
