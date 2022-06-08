@@ -22,12 +22,12 @@ describe('blueconicRtdProvider', function() {
     it('merges data', function() {
       const setConfigUserObj1 = {
         name: 'www.dataprovider1.com',
-        segment: ['189', '12']
+        blueconic_segment: ['189', '12']
       };
 
       const setConfigUserObj2 = {
         name: 'www.dataprovider2.com',
-        segment: ['152']
+        blueconic_segment: ['152']
       };
 
       config.setConfig({
@@ -40,7 +40,7 @@ describe('blueconicRtdProvider', function() {
 
       const rtdUserObj1 = {
         name: 'www.dataprovider4.com',
-        segment: ['188']
+        blueconic_segment: ['188']
       };
       const rtd = {
         ortb2: {
@@ -60,13 +60,13 @@ describe('blueconicRtdProvider', function() {
     it('merges data without duplication', function() {
       const userObj1 = {
         name: 'www.dataprovider1.com',
-        segment: ['1776'
+        blueconic_segment: ['1776'
         ]
       };
 
       const userObj2 = {
         name: 'www.dataprovider2.com',
-        segment: ['1914'
+        blueconic_segment: ['1914'
         ]
       };
 
@@ -109,11 +109,11 @@ describe('blueconicRtdProvider', function() {
 
       const rtdUserObj1 = {
         name: 'blueconic',
-        segment: ['bf23d802-931d-4619-8266-ce9a6328aa2a'],
+        blueconic_segment: ['bf23d802-931d-4619-8266-ce9a6328aa2a'],
         bidId: '1234'
       };
 
-      const cachedRtd = {'segment': ['bf23d802-931d-4619-8266-ce9a6328aa2a'], 'bidId': '1234'}
+      const cachedRtd = {'blueconic_segment': ['bf23d802-931d-4619-8266-ce9a6328aa2a'], 'bidId': '1234'}
       getDataFromLocalStorageStub.withArgs(RTD_LOCAL_NAME).returns(JSON.stringify(cachedRtd));
 
       expect(config.getConfig().ortb2).to.be.undefined;
