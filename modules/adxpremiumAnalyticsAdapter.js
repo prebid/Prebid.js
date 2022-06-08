@@ -233,6 +233,7 @@ function sendEventFallback() {
 }
 
 function sendEvent(completeObject) {
+  if (!adxpremiumAnalyticsAdapter.enabled) return;
   requestDelivered = true;
   try {
     let responseEvents = btoa(JSON.stringify(completeObject));
