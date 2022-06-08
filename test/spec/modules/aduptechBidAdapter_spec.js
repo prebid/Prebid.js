@@ -77,59 +77,41 @@ describe('AduptechBidAdapter', () => {
       });
 
       it('should handle empty or missing data', () => {
-        expect(internal.extractPageUrl(null)).to.equal(utils.getWindowTop().location.href);
-        expect(internal.extractPageUrl({})).to.equal(utils.getWindowTop().location.href);
-        expect(internal.extractPageUrl({ refererInfo: {} })).to.equal(utils.getWindowTop().location.href);
-        expect(internal.extractPageUrl({ refererInfo: { canonicalUrl: null } })).to.equal(utils.getWindowTop().location.href);
-        expect(internal.extractPageUrl({ refererInfo: { canonicalUrl: '' } })).to.equal(utils.getWindowTop().location.href);
+        expect(internal.extractPageUrl(null)).to.equal(utils.getWindowSelf().location.href);
+        expect(internal.extractPageUrl({})).to.equal(utils.getWindowSelf().location.href);
+        expect(internal.extractPageUrl({ refererInfo: {} })).to.equal(utils.getWindowSelf().location.href);
+        expect(internal.extractPageUrl({ refererInfo: { canonicalUrl: null } })).to.equal(utils.getWindowSelf().location.href);
+        expect(internal.extractPageUrl({ refererInfo: { canonicalUrl: '' } })).to.equal(utils.getWindowSelf().location.href);
       });
 
-      it('should use "pageUrl" from config', () => {
-        config.setConfig({ pageUrl: 'http://page.url' });
-
-        expect(internal.extractPageUrl({})).to.equal(config.getConfig('pageUrl'));
-      });
-
-      it('should use bidderRequest.refererInfo.canonicalUrl', () => {
+      it('should use bidderRequest.refererInfo.page', () => {
         const bidderRequest = {
           refererInfo: {
-            canonicalUrl: 'http://canonical.url'
+            page: 'http://canonical.url'
           }
         };
 
-        expect(internal.extractPageUrl(bidderRequest)).to.equal(bidderRequest.refererInfo.canonicalUrl);
-      });
-
-      it('should prefer bidderRequest.refererInfo.canonicalUrl over "pageUrl" from config', () => {
-        const bidderRequest = {
-          refererInfo: {
-            canonicalUrl: 'http://canonical.url'
-          }
-        };
-
-        config.setConfig({ pageUrl: 'http://page.url' });
-
-        expect(internal.extractPageUrl(bidderRequest)).to.equal(bidderRequest.refererInfo.canonicalUrl);
+        expect(internal.extractPageUrl(bidderRequest)).to.equal(bidderRequest.refererInfo.page);
       });
     });
 
     describe('extractReferrer', () => {
       it('should handle empty or missing data', () => {
-        expect(internal.extractReferrer(null)).to.equal(utils.getWindowTop().document.referrer);
-        expect(internal.extractReferrer({})).to.equal(utils.getWindowTop().document.referrer);
-        expect(internal.extractReferrer({ refererInfo: {} })).to.equal(utils.getWindowTop().document.referrer);
-        expect(internal.extractReferrer({ refererInfo: { referer: null } })).to.equal(utils.getWindowTop().document.referrer);
-        expect(internal.extractReferrer({ refererInfo: { referer: '' } })).to.equal(utils.getWindowTop().document.referrer);
+        expect(internal.extractReferrer(null)).to.equal(utils.getWindowSelf().document.referrer);
+        expect(internal.extractReferrer({})).to.equal(utils.getWindowSelf().document.referrer);
+        expect(internal.extractReferrer({ refererInfo: {} })).to.equal(utils.getWindowSelf().document.referrer);
+        expect(internal.extractReferrer({ refererInfo: { referer: null } })).to.equal(utils.getWindowSelf().document.referrer);
+        expect(internal.extractReferrer({ refererInfo: { referer: '' } })).to.equal(utils.getWindowSelf().document.referrer);
       });
 
-      it('hould use bidderRequest.refererInfo.referer', () => {
+      it('hould use bidderRequest.refererInfo.ref', () => {
         const bidderRequest = {
           refererInfo: {
-            referer: 'foobar'
+            ref: 'foobar'
           }
         };
 
-        expect(internal.extractReferrer(bidderRequest)).to.equal(bidderRequest.refererInfo.referer);
+        expect(internal.extractReferrer(bidderRequest)).to.equal(bidderRequest.refererInfo.ref);
       });
     });
 
@@ -426,8 +408,8 @@ describe('AduptechBidAdapter', () => {
         const bidderRequest = {
           auctionId: 'auctionId123',
           refererInfo: {
-            canonicalUrl: 'http://crazy.canonical.url',
-            referer: 'http://crazy.referer.url'
+            page: 'http://crazy.canonical.url',
+            ref: 'http://crazy.referer.url'
           },
           gdprConsent: {
             consentString: 'consentString123',
@@ -497,8 +479,8 @@ describe('AduptechBidAdapter', () => {
             method: ENDPOINT_METHOD,
             data: {
               auctionId: bidderRequest.auctionId,
-              pageUrl: bidderRequest.refererInfo.canonicalUrl,
-              referrer: bidderRequest.refererInfo.referer,
+              pageUrl: bidderRequest.refererInfo.page,
+              referrer: bidderRequest.refererInfo.ref,
               gdpr: {
                 consentString: bidderRequest.gdprConsent.consentString,
                 consentRequired: bidderRequest.gdprConsent.gdprApplies
@@ -526,8 +508,8 @@ describe('AduptechBidAdapter', () => {
             method: ENDPOINT_METHOD,
             data: {
               auctionId: bidderRequest.auctionId,
-              pageUrl: bidderRequest.refererInfo.canonicalUrl,
-              referrer: bidderRequest.refererInfo.referer,
+              pageUrl: bidderRequest.refererInfo.page,
+              referrer: bidderRequest.refererInfo.ref,
               gdpr: {
                 consentString: bidderRequest.gdprConsent.consentString,
                 consentRequired: bidderRequest.gdprConsent.gdprApplies

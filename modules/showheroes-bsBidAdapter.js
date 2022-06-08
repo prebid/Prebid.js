@@ -30,7 +30,7 @@ export const spec = {
   },
   buildRequests: function(validBidRequests, bidderRequest) {
     let adUnits = [];
-    const pageURL = validBidRequests[0].params.contentPageUrl || bidderRequest.refererInfo.referer;
+    const pageURL = validBidRequests[0].params.contentPageUrl || bidderRequest.refererInfo.page;
     const isStage = !!validBidRequests[0].params.stage;
     const isOutstream = deepAccess(validBidRequests[0], 'mediaTypes.video.context') === 'outstream';
     const isCustomRender = deepAccess(validBidRequests[0], 'params.outstreamOptions.customRender');

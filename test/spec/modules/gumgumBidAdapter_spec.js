@@ -546,7 +546,7 @@ describe('gumgumAdapter', function () {
     });
 
     it('should handle no gg params', function () {
-      const bidRequest = spec.buildRequests(bidRequests, { refererInfo: { referer: 'https://www.prebid.org/?param1=foo&param2=bar&param3=baz' } })[0];
+      const bidRequest = spec.buildRequests(bidRequests, { refererInfo: { page: 'https://www.prebid.org/?param1=foo&param2=bar&param3=baz' } })[0];
 
       // no params are in object
       expect(bidRequest.data.hasOwnProperty('eAdBuyId')).to.be.false;
@@ -555,7 +555,7 @@ describe('gumgumAdapter', function () {
     });
 
     it('should handle encrypted ad buy id', function () {
-      const bidRequest = spec.buildRequests(bidRequests, { refererInfo: { referer: 'https://www.prebid.org/?param1=foo&ggad=bar&param3=baz' } })[0];
+      const bidRequest = spec.buildRequests(bidRequests, { refererInfo: { page: 'https://www.prebid.org/?param1=foo&ggad=bar&param3=baz' } })[0];
 
       // correct params are in object
       expect(bidRequest.data.hasOwnProperty('eAdBuyId')).to.be.true;
@@ -567,7 +567,7 @@ describe('gumgumAdapter', function () {
     });
 
     it('should handle unencrypted ad buy id', function () {
-      const bidRequest = spec.buildRequests(bidRequests, { refererInfo: { referer: 'https://www.prebid.org/?param1=foo&ggad=123&param3=baz' } })[0];
+      const bidRequest = spec.buildRequests(bidRequests, { refererInfo: { page: 'https://www.prebid.org/?param1=foo&ggad=123&param3=baz' } })[0];
 
       // correct params are in object
       expect(bidRequest.data.hasOwnProperty('eAdBuyId')).to.be.false;
@@ -579,7 +579,7 @@ describe('gumgumAdapter', function () {
     });
 
     it('should handle multiple gg params', function () {
-      const bidRequest = spec.buildRequests(bidRequests, { refererInfo: { referer: 'https://www.prebid.org/?ggdeal=foo&ggad=bar&param3=baz' } })[0];
+      const bidRequest = spec.buildRequests(bidRequests, { refererInfo: { page: 'https://www.prebid.org/?ggdeal=foo&ggad=bar&param3=baz' } })[0];
 
       // correct params are in object
       expect(bidRequest.data.hasOwnProperty('eAdBuyId')).to.be.true;
