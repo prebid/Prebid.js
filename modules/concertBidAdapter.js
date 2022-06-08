@@ -36,7 +36,7 @@ export const spec = {
     let payload = {
       meta: {
         prebidVersion: '$prebid.version$',
-        pageUrl: bidderRequest.refererInfo.referer,
+        pageUrl: bidderRequest.refererInfo.page,
         screen: [window.screen.width, window.screen.height].join('x'),
         debug: debugTurnedOn(),
         uid: getUid(bidderRequest),
@@ -57,7 +57,7 @@ export const spec = {
         slotType: bidRequest.params.slotType,
         adSlot: bidRequest.params.slot || bidRequest.adUnitCode,
         placementId: bidRequest.params.placementId || '',
-        site: bidRequest.params.site || bidderRequest.refererInfo.referer
+        site: bidRequest.params.site || bidderRequest.refererInfo.page
       }
 
       return slot;

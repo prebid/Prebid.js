@@ -7,7 +7,7 @@ import {
   sessionLoader,
 } from '../../../modules/debugging/debugging.js';
 import '../../../modules/debugging/index.js';
-import {pbsBidInterceptor} from '../../../modules/debugging/pbsInterceptor.js';
+import {makePbsInterceptor} from '../../../modules/debugging/pbsInterceptor.js';
 import {config} from '../../../src/config.js';
 import {hook} from '../../../src/hook.js';
 import {
@@ -19,6 +19,7 @@ import {
 
 import {addBidderRequests, addBidResponse} from '../../../src/auction.js';
 import {prefixLog} from '../../../src/utils.js';
+import {createBid} from '../../../src/bidfactory.js';
 
 describe('bid interceptor', () => {
   let interceptor, mockSetTimeout;
@@ -367,6 +368,7 @@ describe('pbsBidInterceptor', () => {
     interceptResults = [EMPTY_INT_RES, EMPTY_INT_RES];
   });
 
+  const pbsBidInterceptor = makePbsInterceptor({createBid});
   function callInterceptor() {
     return pbsBidInterceptor(next, interceptBids, s2sBidRequest, bidRequests, ajax, {onResponse, onError, onBid});
   }

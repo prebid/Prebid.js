@@ -1,6 +1,7 @@
 import {install} from './debugging.js';
-import { DEBUG_KEY } from '../../src/constants.json';
 
-window[DEBUG_KEY] = function (options) {
-  install(options);
-}
+window._pbjsGlobals.forEach((name) => {
+  if (window[name] && window[name]._installDebugging === true) {
+    window[name]._installDebugging = install;
+  }
+})

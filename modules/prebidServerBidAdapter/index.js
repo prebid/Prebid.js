@@ -33,11 +33,13 @@ import adapterManager from '../../src/adapterManager.js';
 import { config } from '../../src/config.js';
 import { VIDEO, NATIVE } from '../../src/mediaTypes.js';
 import { isValid } from '../../src/adapters/bidderFactory.js';
-import events from '../../src/events.js';
+import * as events from '../../src/events.js';
 import {find, includes} from '../../src/polyfill.js';
 import { S2S_VENDORS } from './config.js';
 import { ajax } from '../../src/ajax.js';
 import {hook} from '../../src/hook.js';
+import {getGlobal} from '../../src/prebidGlobal.js';
+import {hasPurpose1Consent} from '../../src/utils/gpdr.js';
 
 const getConfig = config.getConfig;
 
@@ -99,6 +101,7 @@ let eidPermissions;
  * @type {S2SDefaultConfig}
  */
 const s2sDefaultConfig = {
+  bidders: Object.freeze([]),
   timeout: 1000,
   syncTimeout: 1000,
   maxBids: 1,
@@ -143,7 +146,7 @@ function updateConfigDefaultVendor(option) {
  */
 function validateConfigRequiredProps(option) {
   const keys = Object.keys(option);
-  if (['accountId', 'bidders', 'endpoint'].filter(key => {
+  if (['accountId', 'endpoint'].filter(key => {
     if (!includes(keys, key)) {
       logError(key + ' missing in server to server config');
       return true;
@@ -387,18 +390,13 @@ function _appendSiteAppDevice(request, pageUrl, accountId) {
   }
 }
 
-function addBidderFirstPartyDataToRequest(request) {
-  const bidderConfig = config.getBidderConfig();
-  const fpdConfigs = Object.keys(bidderConfig).reduce((acc, bidder) => {
-    const currBidderConfig = bidderConfig[bidder];
-    if (currBidderConfig.ortb2) {
-      const ortb2 = mergeDeep({}, currBidderConfig.ortb2);
-
-      acc.push({
-        bidders: [ bidder ],
-        config: { ortb2 }
-      });
-    }
+function addBidderFirstPartyDataToRequest(request, bidderFpd) {
+  const fpdConfigs = Object.entries(bidderFpd).reduce((acc, [bidder, bidderOrtb2]) => {
+    const ortb2 = mergeDeep({}, bidderOrtb2);
+    acc.push({
+      bidders: [ bidder ],
+      config: { ortb2 }
+    });
     return acc;
   }, []);
 
@@ -561,13 +559,16 @@ Object.assign(ORTB2.prototype, {
       const nativeParams = adUnit.nativeParams;
       let nativeAssets;
       if (nativeParams) {
+        let idCounter = -1;
         try {
           nativeAssets = nativeAssetCache[impressionId] = Object.keys(nativeParams).reduce((assets, type) => {
             let params = nativeParams[type];
 
             function newAsset(obj) {
+              idCounter++;
               return Object.assign({
-                required: params.required ? 1 : 0
+                required: params.required ? 1 : 0,
+                id: (isNumber(params.id)) ? idCounter = params.id : idCounter
               }, obj ? cleanObj(obj) : {});
             }
 
@@ -706,15 +707,19 @@ Object.assign(ORTB2.prototype, {
       // get bidder params in form { <bidder code>: {...params} }
       // initialize reduce function with the user defined `ext` properties on the ad unit
       const ext = adUnit.bids.reduce((acc, bid) => {
+        if (bid.bidder == null) return acc;
         const adapter = adapterManager.bidderRegistry[bid.bidder];
         if (adapter && adapter.getSpec().transformBidParams) {
           bid.params = adapter.getSpec().transformBidParams(bid.params, true, adUnit, bidRequests);
         }
-        acc[bid.bidder] = (s2sConfig.adapterOptions && s2sConfig.adapterOptions[bid.bidder]) ? Object.assign({}, bid.params, s2sConfig.adapterOptions[bid.bidder]) : bid.params;
+        deepSetValue(acc,
+          `prebid.bidder.${bid.bidder}`,
+          (s2sConfig.adapterOptions && s2sConfig.adapterOptions[bid.bidder]) ? Object.assign({}, bid.params, s2sConfig.adapterOptions[bid.bidder]) : bid.params
+        );
         return acc;
       }, {...deepAccess(adUnit, 'ortb2Imp.ext')});
 
-      const imp = { id: impressionId, ext, secure: s2sConfig.secure };
+      const imp = { ...adUnit.ortb2Imp, id: impressionId, ext, secure: s2sConfig.secure };
 
       const ortb2 = {...deepAccess(adUnit, 'ortb2Imp.ext.data')};
       Object.keys(ortb2).forEach(prop => {
@@ -745,29 +750,66 @@ Object.assign(ORTB2.prototype, {
         }
       });
 
-      Object.assign(imp, mediaTypes);
+      mergeDeep(imp, mediaTypes);
 
-      // if storedAuctionResponse has been set, pass SRID
-      const storedAuctionResponseBid = find(firstBidRequest.bids, bid => (bid.adUnitCode === adUnit.code && bid.storedAuctionResponse));
-      if (storedAuctionResponseBid) {
-        deepSetValue(imp, 'ext.prebid.storedauctionresponse.id', storedAuctionResponseBid.storedAuctionResponse.toString());
-      }
+      const floor = (() => {
+        // we have to pick a floor for the imp - here we attempt to find the minimum floor
+        // across all bids for this adUnit
 
-      const getFloorBid = find(firstBidRequest.bids, bid => bid.adUnitCode === adUnit.code && typeof bid.getFloor === 'function');
+        const convertCurrency = typeof getGlobal().convertCurrency !== 'function'
+          ? (amount) => amount
+          : (amount, from, to) => {
+            if (from === to) return amount;
+            let result = null;
+            try {
+              result = getGlobal().convertCurrency(amount, from, to);
+            } catch (e) {
+            }
+            return result;
+          }
+        const s2sCurrency = config.getConfig('currency.adServerCurrency') || DEFAULT_S2S_CURRENCY;
 
-      if (getFloorBid) {
-        let floorInfo;
-        try {
-          floorInfo = getFloorBid.getFloor({
-            currency: config.getConfig('currency.adServerCurrency') || DEFAULT_S2S_CURRENCY,
-          });
-        } catch (e) {
-          logError('PBS: getFloor threw an error: ', e);
-        }
-        if (floorInfo && floorInfo.currency && !isNaN(parseFloat(floorInfo.floor))) {
-          imp.bidfloor = parseFloat(floorInfo.floor);
-          imp.bidfloorcur = floorInfo.currency
-        }
+        return adUnit.bids
+          .map((bid) => this.getBidRequest(imp.id, bid.bidder))
+          .map((bid) => {
+            if (!bid || typeof bid.getFloor !== 'function') return;
+            try {
+              const {currency, floor} = bid.getFloor({
+                currency: s2sCurrency
+              });
+              return {
+                currency,
+                floor: parseFloat(floor)
+              }
+            } catch (e) {
+              logError('PBS: getFloor threw an error: ', e);
+            }
+          })
+          .reduce((min, floor) => {
+            // if any bid does not have a valid floor, do not attempt to send any to PBS
+            if (floor == null || floor.currency == null || floor.floor == null || isNaN(floor.floor)) {
+              min.min = null;
+            }
+            if (min.min === null) {
+              return min;
+            }
+            // otherwise, pick the minimum one (or, in some strange confluence of circumstances, the one in the best currency)
+            if (min.ref == null) {
+              min.ref = min.min = floor;
+            } else {
+              const value = convertCurrency(floor.floor, floor.currency, min.ref.currency);
+              if (value != null && value < min.ref.floor) {
+                min.ref.floor = value;
+                min.min = floor;
+              }
+            }
+            return min;
+          }, {}).min
+      })();
+
+      if (floor) {
+        imp.bidfloor = floor.floor;
+        imp.bidfloorcur = floor.currency
       }
 
       if (imp.banner || imp.video || imp.native) {
@@ -800,6 +842,11 @@ Object.assign(ORTB2.prototype, {
       }
     };
 
+    // If the price floors module is active, then we need to signal to PBS! If floorData obj is present is best way to check
+    if (typeof deepAccess(firstBidRequest, 'bids.0.floorData') === 'object') {
+      request.ext.prebid.floors = { enabled: false };
+    }
+
     // This is no longer overwritten unless name and version explicitly overwritten by extPrebid (mergeDeep)
     request.ext.prebid = Object.assign(request.ext.prebid, {channel: {name: 'pbjs', version: $$PREBID_GLOBAL$$.version}})
 
@@ -825,7 +872,7 @@ Object.assign(ORTB2.prototype, {
       request.cur = [adServerCur[0]];
     }
 
-    _appendSiteAppDevice(request, bidRequests[0].refererInfo.referer, s2sConfig.accountId);
+    _appendSiteAppDevice(request, bidRequests[0].refererInfo.page, s2sConfig.accountId);
 
     // pass schain object if it is present
     const schain = deepAccess(bidRequests, '0.bids.0.schain');
@@ -894,10 +941,10 @@ Object.assign(ORTB2.prototype, {
       deepSetValue(request, 'regs.coppa', 1);
     }
 
-    const commonFpd = getConfig('ortb2') || {};
+    const commonFpd = s2sBidRequest.ortb2Fragments?.global || {};
     mergeDeep(request, commonFpd);
 
-    addBidderFirstPartyDataToRequest(request);
+    addBidderFirstPartyDataToRequest(request, s2sBidRequest.ortb2Fragments?.bidder || {});
 
     request.imp.forEach((imp) => this.impRequested[imp.id] = imp);
     return request;
@@ -914,10 +961,15 @@ Object.assign(ORTB2.prototype, {
       // a seatbid object contains a `bid` array and a `seat` string
       response.seatbid.forEach(seatbid => {
         (seatbid.bid || []).forEach(bid => {
-          const bidRequest = this.getBidRequest(bid.impid, seatbid.seat);
-          if (bidRequest == null && !s2sConfig.allowUnknownBidderCodes) {
-            logWarn(`PBS adapter received bid from unknown bidder (${seatbid.seat}), but 's2sConfig.allowUnknownBidderCodes' is not set. Ignoring bid.`);
-            return;
+          let bidRequest = this.getBidRequest(bid.impid, seatbid.seat);
+          if (bidRequest == null) {
+            if (!s2sConfig.allowUnknownBidderCodes) {
+              logWarn(`PBS adapter received bid from unknown bidder (${seatbid.seat}), but 's2sConfig.allowUnknownBidderCodes' is not set. Ignoring bid.`);
+              return;
+            }
+            // for stored impression, a request was made with bidder code `null`. Pick it up here so that NO_BID, BID_WON, etc events
+            // can work as expected (otherwise, the original request will always result in NO_BID).
+            bidRequest = this.getBidRequest(bid.impid, null);
           }
 
           const cpm = bid.price;
@@ -1100,16 +1152,6 @@ function bidWonHandler(bid) {
   }
 }
 
-function hasPurpose1Consent(gdprConsent) {
-  let result = true;
-  if (gdprConsent) {
-    if (gdprConsent.gdprApplies && gdprConsent.apiVersion === 2) {
-      result = !!(deepAccess(gdprConsent, 'vendorData.purpose.consents.1') === true);
-    }
-  }
-  return result;
-}
-
 function getMatchingConsentUrl(urlProp, gdprConsent) {
   return hasPurpose1Consent(gdprConsent) ? urlProp.p1Consent : urlProp.noP1Consent;
 }
@@ -1184,18 +1226,13 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
   let { gdprConsent } = getConsentData(bidRequests);
   const adUnits = deepClone(s2sBidRequest.ad_units);
 
-  // at this point ad units should have a size array either directly or mapped so filter for that
-  const validAdUnits = adUnits.filter(unit =>
-    unit.mediaTypes && (unit.mediaTypes.native || (unit.mediaTypes.banner && unit.mediaTypes.banner.sizes) || (unit.mediaTypes.video && unit.mediaTypes.video.playerSize))
-  );
-
   // in case config.bidders contains invalid bidders, we only process those we sent requests for
-  const requestedBidders = validAdUnits
+  const requestedBidders = adUnits
     .map(adUnit => adUnit.bids.map(bid => bid.bidder).filter(uniques))
-    .reduce(flatten)
+    .reduce(flatten, [])
     .filter(uniques);
 
-  const ortb2 = new ORTB2(s2sBidRequest, bidRequests, validAdUnits, requestedBidders);
+  const ortb2 = new ORTB2(s2sBidRequest, bidRequests, adUnits, requestedBidders);
   const request = ortb2.buildRequest();
   const requestJson = request && JSON.stringify(request);
   logInfo('BidRequest: ' + requestJson);

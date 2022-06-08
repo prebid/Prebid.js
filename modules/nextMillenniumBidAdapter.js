@@ -1,9 +1,10 @@
-import { isStr, _each, getBidIdParameter } from '../src/utils.js';
+import { isStr, _each, parseUrl, getWindowTop, getBidIdParameter } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'nextMillennium';
 const ENDPOINT = 'https://pbs.nextmillmedia.com/openrtb2/auction';
+const TEST_ENDPOINT = 'https://test.pbs.nextmillmedia.com/openrtb2/auction';
 const SYNC_ENDPOINT = 'https://statics.nextmillmedia.com/load-cookie.html?v=4';
 const TIME_TO_LIVE = 360;
 
@@ -13,7 +14,7 @@ export const spec = {
 
   isBidRequestValid: function(bid) {
     return !!(
-      bid.params.placement_id && isStr(bid.params.placement_id)
+      (bid.params.placement_id && isStr(bid.params.placement_id)) || (bid.params.group_id && isStr(bid.params.group_id))
     );
   },
 
@@ -28,9 +29,10 @@ export const spec = {
         'ext': {
           'prebid': {
             'storedrequest': {
-              'id': getBidIdParameter('placement_id', bid.params)
+              'id': getPlacementId(bid)
             }
           },
+
           'nextMillennium': {
             'refresh_count': window.nmmRefreshCounts[bid.adUnitCode]++,
           }
@@ -46,10 +48,12 @@ export const spec = {
         if (uspConsent) {
           postBody.regs.ext.us_privacy = uspConsent;
         }
+
         if (gdprConsent) {
           if (typeof gdprConsent.gdprApplies !== 'undefined') {
             postBody.regs.ext.gdpr = gdprConsent.gdprApplies ? 1 : 0;
           }
+
           if (typeof gdprConsent.consentString !== 'undefined') {
             postBody.user = {
               ext: { consent: gdprConsent.consentString }
@@ -58,9 +62,12 @@ export const spec = {
         }
       }
 
+      const urlParameters = parseUrl(getWindowTop().location.href).search;
+      const isTest = urlParameters['pbs'] && urlParameters['pbs'] === 'test';
+
       requests.push({
         method: 'POST',
-        url: ENDPOINT,
+        url: isTest ? TEST_ENDPOINT : ENDPOINT,
         data: JSON.stringify(postBody),
         options: {
           contentType: 'application/json',
@@ -91,6 +98,7 @@ export const spec = {
           meta: {
             advertiserDomains: bid.adomain || []
           },
+
           ad: bid.adm
         });
       });
@@ -124,5 +132,35 @@ export const spec = {
     }];
   },
 };
+
+function getPlacementId(bid) {
+  const groupId = getBidIdParameter('group_id', bid.params)
+  const placementId = getBidIdParameter('placement_id', bid.params)
+  if (!groupId) return placementId
+
+  let windowTop = getTopWindow(window)
+  let size = []
+  if (bid.mediaTypes) {
+    if (bid.mediaTypes.banner) size = bid.mediaTypes.banner.sizes && bid.mediaTypes.banner.sizes[0]
+    if (bid.mediaTypes.video) size = bid.mediaTypes.video.playerSize
+  }
+
+  const host = (windowTop && windowTop.location && windowTop.location.host) || ''
+  return `g${groupId};${size.join('x')};${host}`
+}
+
+function getTopWindow(curWindow, nesting = 0) {
+  if (nesting > 10) {
+    return curWindow
+  }
+
+  try {
+    if (curWindow.parent.document) {
+      return getTopWindow(curWindow.parent.window, ++nesting)
+    }
+  } catch (err) {
+    return curWindow
+  }
+}
 
 registerBidder(spec);

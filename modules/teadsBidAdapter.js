@@ -54,7 +54,6 @@ export const spec = {
       data: bids,
       deviceWidth: screen.width,
       hb_version: '$prebid.version$',
-      ...getFLoCParameters(deepAccess(validBidRequests, '0.userId.flocId')),
       ...getUnifiedId2Parameter(deepAccess(validBidRequests, '0.userId.uid2')),
       ...getFirstPartyTeadsIdParameter()
     };
@@ -68,7 +67,7 @@ export const spec = {
       let isCmp = typeof gdpr.gdprApplies === 'boolean';
       let isConsentString = typeof gdpr.consentString === 'string';
       let status = isCmp
-        ? findGdprStatus(gdpr.gdprApplies, gdpr.vendorData, gdpr.apiVersion)
+        ? findGdprStatus(gdpr.gdprApplies, gdpr.vendorData)
         : gdprStatus.CMP_NOT_FOUND_OR_ERROR;
       payload.gdpr_iab = {
         consent: isConsentString ? gdpr.consentString : '',
@@ -127,8 +126,8 @@ export const spec = {
 
 function getReferrerInfo(bidderRequest) {
   let ref = '';
-  if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
-    ref = bidderRequest.refererInfo.referer;
+  if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page) {
+    ref = bidderRequest.refererInfo.page;
   }
   return ref;
 }
@@ -166,24 +165,16 @@ function getTimeToFirstByte(win) {
   return ttfbWithTimingV1 ? ttfbWithTimingV1.toString() : '';
 }
 
-function findGdprStatus(gdprApplies, gdprData, apiVersion) {
+function findGdprStatus(gdprApplies, gdprData) {
   let status = gdprStatus.GDPR_APPLIES_PUBLISHER;
   if (gdprApplies) {
-    if (isGlobalConsent(gdprData, apiVersion)) {
+    if (gdprData && !gdprData.isServiceSpecific) {
       status = gdprStatus.GDPR_APPLIES_GLOBAL;
     }
   } else {
     status = gdprStatus.GDPR_DOESNT_APPLY;
   }
   return status;
-}
-
-function isGlobalConsent(gdprData, apiVersion) {
-  return gdprData && apiVersion === 1
-    ? (gdprData.hasGlobalScope || gdprData.hasGlobalConsent)
-    : gdprData && apiVersion === 2
-      ? !gdprData.isServiceSpecific
-      : false;
 }
 
 function buildRequestObject(bid) {
@@ -235,20 +226,6 @@ function concatSizes(bid) {
 
 function _validateId(id) {
   return (parseInt(id) > 0);
-}
-
-/**
- * Get FLoC parameters to be sent in the bid request.
- * @param `{id: string, version: string} | undefined` optionalFlocId FLoC user ID object available if "flocIdSystem" module is enabled.
- * @returns `{} | {cohortId: string} | {cohortVersion: string} | {cohortId: string, cohortVersion: string}`
- */
-function getFLoCParameters(optionalFlocId) {
-  if (!optionalFlocId) {
-    return {};
-  }
-  const cohortId = optionalFlocId.id ? { cohortId: optionalFlocId.id } : {};
-  const cohortVersion = optionalFlocId.version ? { cohortVersion: optionalFlocId.version } : {};
-  return { ...cohortId, ...cohortVersion };
 }
 
 /**

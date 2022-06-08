@@ -1,5 +1,5 @@
 import {ready, loadSession, getConfig, reset, debuggingModuleLoader} from '../../src/debugging.js';
-import {DEBUG_KEY} from '../../src/constants.json';
+import {getGlobal} from '../../src/prebidGlobal.js';
 
 describe('Debugging', () => {
   beforeEach(() => {
@@ -39,16 +39,18 @@ describe('Debugging', () => {
   });
 
   describe('module loader', () => {
-    let script, alreadyInstalled, loader;
+    let script, scriptResult, alreadyInstalled, loader;
     beforeEach(() => {
-      script = sinon.stub();
+      script = sinon.stub().callsFake(() => {
+        getGlobal()._installDebugging = sinon.stub();
+        return scriptResult;
+      });
       alreadyInstalled = sinon.stub();
       loader = debuggingModuleLoader({alreadyInstalled, script});
-      window[DEBUG_KEY] = sinon.stub();
     });
 
     afterEach(() => {
-      delete window[DEBUG_KEY];
+      delete getGlobal()._installDebugging;
     })
 
     it('should not attempt to load if debugging module is already installed', () => {
@@ -60,29 +62,29 @@ describe('Debugging', () => {
 
     it('should not attempt to load twice', () => {
       alreadyInstalled.returns(false);
-      script.returns(Promise.resolve());
+      scriptResult = Promise.resolve();
       return Promise.all([loader(), loader()]).then(() => {
         expect(script.callCount).to.equal(1);
       });
     });
 
-    it('should call window[DEBUG_KEY] after loading', () => {
+    it('should call _installDebugging after loading', () => {
       alreadyInstalled.returns(false);
-      script.returns(Promise.resolve());
+      scriptResult = Promise.resolve();
       return loader().then(() => {
-        expect(window[DEBUG_KEY].called).to.be.true;
+        expect(getGlobal()._installDebugging.called).to.be.true;
       });
     });
 
-    it('should not call window[DEBUG_KEY] if load fails', () => {
+    it('should not call _intallDebugging if load fails', () => {
       const error = new Error();
       alreadyInstalled.returns(false);
-      script.returns(Promise.reject(error));
+      scriptResult = Promise.reject(error)
       return loader().then(() => {
         throw new Error('loader should not resolve');
       }).catch((err) => {
         expect(err).to.equal(error);
-        expect(window[DEBUG_KEY].called).to.be.false;
+        expect(getGlobal()._installDebugging.called).to.be.false;
       });
     });
   });

@@ -49,7 +49,7 @@ describe('Missena Adapter', function () {
         gdprApplies: true,
       },
       refererInfo: {
-        referer: 'https://referer',
+        topmostLocation: 'https://referer',
         canonicalUrl: 'https://canonical',
       },
     };

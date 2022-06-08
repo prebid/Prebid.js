@@ -34,7 +34,8 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     const payload = {
       bids: validBidRequests,
-      referer: bidderRequest.refererInfo,
+      // TODO: please do not send internal data structures over the network
+      referer: bidderRequest.refererInfo.legacy,
       version: VERSION
     };
     const payloadString = JSON.stringify(payload);

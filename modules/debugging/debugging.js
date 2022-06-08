@@ -1,8 +1,7 @@
 import {deepClone, delayExecution} from '../../src/utils.js';
 import {BidInterceptor} from './bidInterceptor.js';
-import {pbsBidInterceptor} from './pbsInterceptor.js';
+import {makePbsInterceptor} from './pbsInterceptor.js';
 import {addHooks, removeHooks} from './legacy.js';
-import { DEBUG_KEY } from '../../src/constants.json';
 
 const interceptorHooks = [];
 let bidInterceptor;
@@ -32,7 +31,7 @@ export function disableDebugging({hook, logger}) {
   }
 }
 
-function saveDebuggingConfig(debugConfig, {sessionStorage = window.sessionStorage} = {}) {
+function saveDebuggingConfig(debugConfig, {sessionStorage = window.sessionStorage, DEBUG_KEY} = {}) {
   if (!debugConfig.enabled) {
     try {
       sessionStorage.removeItem(DEBUG_KEY);
@@ -50,9 +49,9 @@ function saveDebuggingConfig(debugConfig, {sessionStorage = window.sessionStorag
   }
 }
 
-export function getConfig(debugging, {sessionStorage = window.sessionStorage, config, hook, logger} = {}) {
+export function getConfig(debugging, {sessionStorage = window.sessionStorage, DEBUG_KEY, config, hook, logger} = {}) {
   if (debugging == null) return;
-  saveDebuggingConfig(debugging, {sessionStorage});
+  saveDebuggingConfig(debugging, {sessionStorage, DEBUG_KEY});
   if (!debugging.enabled) {
     disableDebugging({hook, logger});
   } else {
@@ -60,7 +59,7 @@ export function getConfig(debugging, {sessionStorage = window.sessionStorage, co
   }
 }
 
-export function sessionLoader({storage, config, hook, logger}) {
+export function sessionLoader({DEBUG_KEY, storage, config, hook, logger}) {
   let overrides;
   try {
     storage = storage || window.sessionStorage;
@@ -100,10 +99,11 @@ export function bidderBidInterceptor(next, interceptBids, spec, bids, bidRequest
   }
 }
 
-export function install({config, hook, logger}) {
+export function install({DEBUG_KEY, config, hook, createBid, logger}) {
   bidInterceptor = new BidInterceptor({logger});
+  const pbsBidInterceptor = makePbsInterceptor({createBid});
   registerBidInterceptor(() => hook.get('processBidderRequests'), bidderBidInterceptor);
   registerBidInterceptor(() => hook.get('processPBSRequest'), pbsBidInterceptor);
-  sessionLoader({config, hook, logger});
-  config.getConfig('debugging', ({debugging}) => getConfig(debugging, {config, hook, logger}), {init: true});
+  sessionLoader({DEBUG_KEY, config, hook, logger});
+  config.getConfig('debugging', ({debugging}) => getConfig(debugging, {DEBUG_KEY, config, hook, logger}), {init: true});
 }

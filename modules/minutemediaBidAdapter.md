@@ -13,7 +13,7 @@ Module that connects to MinuteMedia's demand sources.
 
 The MinuteMedia adapter requires setup and approval from the MinuteMedia. Please reach out to hb@minutemedia.com to create an MinuteMedia account.
 
-The adapter supports Video(instream).
+The adapter supports Video(instream) & Banner.
 
 # Bid Parameters
 ## Video
@@ -27,25 +27,50 @@ The adapter supports Video(instream).
 
 # Test Parameters
 ```javascript
-var adUnits = [
-       {
+var adUnits = [{
         code: 'dfp-video-div',
-        sizes: [[640, 480]],
+        sizes: [
+            [640, 480]
+        ],
         mediaTypes: {
-          video: {
-            playerSize: [[640, 480]],
-            context: 'instream'
-          }
+            video: {
+                playerSize: [
+                    [640, 480]
+                ],
+                context: 'instream'
+            }
         },
         bids: [{
-          bidder: 'minutemedia',
-          params: {
-            org: '56f91cd4d3e3660002000033', // Required
-            floorPrice: 2.00, // Optional
-            placementId: '12345678', // Optional
-            testMode: false // Optional
-          }
+            bidder: 'minutemedia',
+            params: {
+                org: '56f91cd4d3e3660002000033', // Required
+                floorPrice: 2.00, // Optional
+                placementId: 'video-test', // Optional
+                testMode: false // Optional
+            }
         }]
-      }
-   ];
+    },
+    {
+        code: 'dfp-banner-div',
+        sizes: [
+            [640, 480]
+        ],
+        mediaTypes: {
+            banner: {
+                sizes: [
+                    [640, 480]
+                ]
+            }
+        },
+        bids: [{
+            bidder: 'minutemedia',
+            params: {
+                org: '56f91cd4d3e3660002000033', // Required
+                floorPrice: 2.00, // Optional
+                placementId: 'banner-test', // Optional
+                testMode: false // Optional
+            }
+        }]
+    }
+];
 ```

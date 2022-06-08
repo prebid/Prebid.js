@@ -36,54 +36,97 @@ describe('permutiveRtdProvider', function () {
 
     it('should add ortb2 config', function () {
       const moduleConfig = getConfig()
-      const bidderConfig = config.getBidderConfig()
+      const bidderConfig = {};
       const acBidders = moduleConfig.params.acBidders
       const expectedTargetingData = transformedTargeting().ac.map(seg => {
         return { id: seg }
       })
 
-      setBidderRtb({}, moduleConfig)
+      setBidderRtb(bidderConfig, moduleConfig)
 
       acBidders.forEach(bidder => {
-        expect(bidderConfig[bidder].ortb2.user.data).to.deep.include.members([{
+        expect(bidderConfig[bidder].user.data).to.deep.include.members([{
           name: 'permutive.com',
           segment: expectedTargetingData
         }])
       })
     })
+    it('should include ortb2 user data transformation for IAB audience taxonomy', function() {
+      const moduleConfig = getConfig()
+      const bidderConfig = {}
+      const acBidders = moduleConfig.params.acBidders
+      const expectedTargetingData = transformedTargeting().ac.map(seg => {
+        return { id: seg }
+      })
+
+      Object.assign(
+        moduleConfig.params,
+        {
+          transformations: [{
+            id: 'iab',
+            config: {
+              segtax: 4,
+              iabIds: {
+                1000001: '9000009',
+                1000002: '9000008'
+              }
+            }
+          }]
+        }
+      )
+
+      setBidderRtb(bidderConfig, moduleConfig)
+
+      acBidders.forEach(bidder => {
+        expect(bidderConfig[bidder].user.data).to.deep.include.members([
+          {
+            name: 'permutive.com',
+            segment: expectedTargetingData
+          },
+          {
+            name: 'permutive.com',
+            ext: { segtax: 4 },
+            segment: [{ id: '9000009' }, { id: '9000008' }]
+          }
+        ])
+      })
+    })
     it('should not overwrite ortb2 config', function () {
       const moduleConfig = getConfig()
-      const bidderConfig = config.getBidderConfig()
       const acBidders = moduleConfig.params.acBidders
       const sampleOrtbConfig = {
-        ortb2: {
-          site: {
-            name: 'example'
-          },
-          user: {
-            keywords: 'a,b',
-            data: [
-              {
-                name: 'www.dataprovider1.com',
-                ext: { taxonomyname: 'iab_audience_taxonomy' },
-                segment: [{ id: '687' }, { id: '123' }]
-              }
-            ]
-          }
+        site: {
+          name: 'example'
+        },
+        user: {
+          keywords: 'a,b',
+          data: [
+            {
+              name: 'www.dataprovider1.com',
+              ext: { taxonomyname: 'iab_audience_taxonomy' },
+              segment: [{ id: '687' }, { id: '123' }]
+            }
+          ]
         }
       }
 
-      config.setBidderConfig({
-        bidders: acBidders,
-        config: sampleOrtbConfig
+      const bidderConfig = Object.fromEntries(acBidders.map(bidder => [bidder, sampleOrtbConfig]))
+
+      const transformedUserData = {
+        name: 'transformation',
+        ext: { test: true },
+        segment: [1, 2, 3]
+      }
+
+      setBidderRtb(bidderConfig, moduleConfig, {
+        // TODO: this argument is unused, is the test still valid / needed?
+        testTransformation: userData => transformedUserData
       })
 
-      setBidderRtb({}, moduleConfig)
-
       acBidders.forEach(bidder => {
-        expect(bidderConfig[bidder].ortb2.site.name).to.equal(sampleOrtbConfig.ortb2.site.name)
-        expect(bidderConfig[bidder].ortb2.user.keywords).to.equal(sampleOrtbConfig.ortb2.user.keywords)
-        expect(bidderConfig[bidder].ortb2.user.data).to.deep.include.members([sampleOrtbConfig.ortb2.user.data[0]])
+        expect(bidderConfig[bidder].site.name).to.equal(sampleOrtbConfig.site.name)
+        expect(bidderConfig[bidder].user.keywords).to.equal(sampleOrtbConfig.user.keywords)
+        expect(bidderConfig[bidder].user.data).to.deep.include.members([sampleOrtbConfig.user.data[0]])
       })
     })
   })
@@ -293,6 +336,10 @@ describe('permutiveRtdProvider', function () {
       expect(isAcEnabled({ params: { acBidders: ['ozone'] } }, 'ozone')).to.equal(true)
       expect(isAcEnabled({ params: { acBidders: ['kjdvb'] } }, 'ozone')).to.equal(false)
     })
+    it('checks if AC is enabled for Index', function () {
+      expect(isAcEnabled({ params: { acBidders: ['ix'] } }, 'ix')).to.equal(true)
+      expect(isAcEnabled({ params: { acBidders: ['kjdvb'] } }, 'ix')).to.equal(false)
+    })
   })
 })
 
@@ -313,7 +360,7 @@ function getConfig () {
     name: 'permutive',
     waitForIt: true,
     params: {
-      acBidders: ['appnexus', 'rubicon', 'ozone', 'trustx'],
+      acBidders: ['appnexus', 'rubicon', 'ozone', 'trustx', 'ix'],
       maxSegs: 500
     }
   }
@@ -326,7 +373,7 @@ function transformedTargeting () {
     ac: [...data._pcrprs, ...data._ppam, ...data._psegs.filter(seg => seg >= 1000000)],
     appnexus: data._papns,
     rubicon: data._prubicons,
-    gam: data._pdfps
+    gam: data._pdfps,
   }
 }
 

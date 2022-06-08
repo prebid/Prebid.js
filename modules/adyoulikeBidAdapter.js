@@ -1,6 +1,5 @@
 import {buildUrl, deepAccess, parseSizesInput} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
 import {createEidsArray} from './userId/eids.js';
 import {find} from '../src/polyfill.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
@@ -61,6 +60,7 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (bidRequests, bidderRequest) {
+    let hasVideo = false;
     const payload = {
       Version: VERSION,
       Bids: bidRequests.reduce((accumulator, bidReq) => {
@@ -76,6 +76,9 @@ export const spec = {
         if (typeof bidReq.getFloor === 'function') {
           accumulator[bidReq.bidId].Pricing = getFloor(bidReq, size, mediatype);
         }
+        if (bidReq.schain) {
+          accumulator[bidReq.bidId].SChain = bidReq.schain;
+        }
         if (mediatype === NATIVE) {
           let nativeReq = bidReq.mediaTypes.native;
           if (nativeReq.type === 'image') {
@@ -88,6 +91,7 @@ export const spec = {
           accumulator[bidReq.bidId].Native = nativeReq;
         }
         if (mediatype === VIDEO) {
+          hasVideo = true;
           accumulator[bidReq.bidId].Video = bidReq.mediaTypes.video;
 
           const size = bidReq.mediaTypes.video.playerSize;
@@ -122,7 +126,7 @@ export const spec = {
 
     return {
       method: 'POST',
-      url: createEndpoint(bidRequests, bidderRequest),
+      url: createEndpoint(bidRequests, bidderRequest, hasVideo),
       data,
       options
     };
@@ -159,23 +163,6 @@ function getHostname(bidderRequest) {
   let dcHostname = find(bidderRequest, bid => bid.params.DC);
   if (dcHostname) {
     return ('-' + dcHostname.params.DC);
-  }
-  return '';
-}
-
-/* Get current page canonical url */
-function getCanonicalUrl() {
-  let link;
-  if (window.self !== window.top) {
-    try {
-      link = window.top.document.head.querySelector('link[rel="canonical"][href]');
-    } catch (e) { }
-  } else {
-    link = document.head.querySelector('link[rel="canonical"][href]');
-  }
-
-  if (link) {
-    return link.href;
   }
   return '';
 }
@@ -217,12 +204,13 @@ function getPageRefreshed() {
 }
 
 /* Create endpoint url */
-function createEndpoint(bidRequests, bidderRequest) {
+function createEndpoint(bidRequests, bidderRequest, hasVideo) {
   let host = getHostname(bidRequests);
+  const endpoint = hasVideo ? '/hb-api/prebid-video/v1' : '/hb-api/prebid/v1';
   return buildUrl({
     protocol: 'https',
     host: `${DEFAULT_DC}${host}.omnitagjs.com`,
-    pathname: '/hb-api/prebid/v1',
+    pathname: endpoint,
     search: createEndpointQS(bidderRequest)
   });
 }
@@ -233,20 +221,21 @@ function createEndpointQS(bidderRequest) {
 
   if (bidderRequest) {
     const ref = bidderRequest.refererInfo;
-    if (ref) {
-      qs.RefererUrl = encodeURIComponent(ref.referer);
+    if (ref?.location) {
+      // TODO: is 'location' the right value here?
+      qs.RefererUrl = encodeURIComponent(ref.location);
       if (ref.numIframes > 0) {
         qs.SafeFrame = true;
       }
     }
   }
 
-  const can = getCanonicalUrl();
+  const can = bidderRequest?.refererInfo?.canonicalUrl;
   if (can) {
     qs.CanonicalUrl = encodeURIComponent(can);
   }
 
-  const domain = config.getConfig('publisherDomain');
+  const domain = bidderRequest?.refererInfo?.domain;
   if (domain) {
     qs.PublisherDomain = encodeURIComponent(domain);
   }
@@ -345,14 +334,6 @@ function getTrackers(eventsArray, jsTrackers) {
     }
   });
   return result;
-}
-
-function getVideoAd(response) {
-  var adJson = {};
-  if (typeof response.Ad === 'string' && response.Ad.indexOf('\/\*PREBID\*\/') > 0) {
-    adJson = JSON.parse(response.Ad.match(/\/\*PREBID\*\/(.*)\/\*PREBID\*\//)[1]);
-    return deepAccess(adJson, 'Content.MainVideo.Vast');
-  }
 }
 
 function getNativeAssets(response, nativeConfig) {
@@ -483,8 +464,10 @@ function createBid(response, bidRequests) {
   };
 
   // retreive video response if present
-  const vast64 = response.Vast || getVideoAd(response);
+  const vast64 = response.Vast;
   if (vast64) {
+    bid.width = response.Width;
+    bid.height = response.Height;
     bid.vastXml = window.atob(vast64);
     bid.mediaType = 'video';
   } else if (request.Native) {

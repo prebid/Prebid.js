@@ -100,6 +100,55 @@ describe('AppNexusAdapter', function () {
       expect(payload.tags[0].private_sizes).to.deep.equal([{width: 300, height: 250}]);
     });
 
+    it('should add position in request', function() {
+      // set from bid.params
+      let bidRequest = deepClone(bidRequests[0]);
+      bidRequest.params.position = 'above';
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.tags[0].position).to.exist;
+      expect(payload.tags[0].position).to.deep.equal(1);
+
+      // set from mediaTypes.banner.pos = 1
+      bidRequest = deepClone(bidRequests[0]);
+      bidRequest.mediaTypes = {
+        banner: { pos: 1 }
+      };
+
+      const request2 = spec.buildRequests([bidRequest]);
+      const payload2 = JSON.parse(request2.data);
+
+      expect(payload2.tags[0].position).to.exist;
+      expect(payload2.tags[0].position).to.deep.equal(1);
+
+      // set from mediaTypes.video.pos = 3
+      bidRequest = deepClone(bidRequests[0]);
+      bidRequest.mediaTypes = {
+        video: { pos: 3 }
+      };
+
+      const request3 = spec.buildRequests([bidRequest]);
+      const payload3 = JSON.parse(request3.data);
+
+      expect(payload3.tags[0].position).to.exist;
+      expect(payload3.tags[0].position).to.deep.equal(2);
+
+      // bid.params trumps mediatypes
+      bidRequest = deepClone(bidRequests[0]);
+      bidRequest.params.position = 'above';
+      bidRequest.mediaTypes = {
+        banner: { pos: 3 }
+      };
+
+      const request4 = spec.buildRequests([bidRequest]);
+      const payload4 = JSON.parse(request4.data);
+
+      expect(payload4.tags[0].position).to.exist;
+      expect(payload4.tags[0].position).to.deep.equal(1);
+    });
+
     it('should add publisher_id in request', function() {
       let bidRequest = Object.assign({},
         bidRequests[0],
@@ -116,7 +165,7 @@ describe('AppNexusAdapter', function () {
       expect(payload.tags[0].publisher_id).to.deep.equal(1231234);
       expect(payload.publisher_id).to.exist;
       expect(payload.publisher_id).to.deep.equal(1231234);
-    })
+    });
 
     it('should add source and verison to the tag', function () {
       const request = spec.buildRequests(bidRequests);
@@ -819,10 +868,10 @@ describe('AppNexusAdapter', function () {
     });
 
     it('should add referer info to payload', function () {
-      const bidRequest = Object.assign({}, bidRequests[0])
+      const bidRequest = Object.assign({}, bidRequests[0]);
       const bidderRequest = {
         refererInfo: {
-          referer: 'https://example.com/page.html',
+          topmostLocation: 'https://example.com/page.html',
           reachedTop: true,
           numIframes: 2,
           stack: [
@@ -841,6 +890,35 @@ describe('AppNexusAdapter', function () {
         rd_top: true,
         rd_ifs: 2,
         rd_stk: bidderRequest.refererInfo.stack.map((url) => encodeURIComponent(url)).join(',')
+      });
+    });
+
+    it('if defined, should include publisher pageUrl to normal referer info in payload', function () {
+      const bidRequest = Object.assign({}, bidRequests[0]);
+
+      const bidderRequest = {
+        refererInfo: {
+          canonicalUrl: 'https://mypub.override.com/test/page.html',
+          topmostLocation: 'https://example.com/page.html',
+          reachedTop: true,
+          numIframes: 2,
+          stack: [
+            'https://example.com/page.html',
+            'https://example.com/iframe1.html',
+            'https://example.com/iframe2.html'
+          ]
+        }
+      }
+      const request = spec.buildRequests([bidRequest], bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.referrer_detection).to.exist;
+      expect(payload.referrer_detection).to.deep.equal({
+        rd_ref: 'https%3A%2F%2Fexample.com%2Fpage.html',
+        rd_top: true,
+        rd_ifs: 2,
+        rd_stk: bidderRequest.refererInfo.stack.map((url) => encodeURIComponent(url)).join(','),
+        rd_can: 'https://mypub.override.com/test/page.html'
       });
     });
 
@@ -940,10 +1018,6 @@ describe('AppNexusAdapter', function () {
           criteoId: 'sample-criteo-userid',
           netId: 'sample-netId-userid',
           idl_env: 'sample-idl-userid',
-          flocId: {
-            id: 'sample-flocid-value',
-            version: 'chrome.1.0'
-          },
           pubProvidedId: [{
             source: 'puburl.com',
             uids: [{
@@ -973,11 +1047,6 @@ describe('AppNexusAdapter', function () {
       expect(payload.eids).to.deep.include({
         source: 'criteo.com',
         id: 'sample-criteo-userid',
-      });
-
-      expect(payload.eids).to.deep.include({
-        source: 'chrome.com',
-        id: 'sample-flocid-value'
       });
 
       expect(payload.eids).to.deep.include({
@@ -1466,14 +1535,24 @@ describe('AppNexusAdapter', function () {
   });
 
   describe('transformBidParams', function () {
-    it('convert keywords param differently for psp endpoint', function () {
-      sinon.stub(config, 'getConfig')
-        .withArgs('s2sConfig')
-        .returns({
-          endpoint: {
-            p1Consent: 'https://ib.adnxs.com/openrtb2/prebid'
-          }
-        });
+    let gcStub;
+    let adUnit = { bids: [{ bidder: 'appnexus' }] }; ;
+
+    before(function() {
+      gcStub = sinon.stub(config, 'getConfig');
+    });
+
+    after(function() {
+      gcStub.restore();
+    });
+
+    it('convert keywords param differently for psp endpoint with single s2sConfig', function () {
+      gcStub.withArgs('s2sConfig').returns({
+        bidders: ['appnexus'],
+        endpoint: {
+          p1Consent: 'https://ib.adnxs.com/openrtb2/prebid'
+        }
+      });
 
       const oldParams = {
         keywords: {
@@ -1482,10 +1561,27 @@ describe('AppNexusAdapter', function () {
         }
       };
 
-      const newParams = spec.transformBidParams(oldParams, true);
+      const newParams = spec.transformBidParams(oldParams, true, adUnit);
       expect(newParams.keywords).to.equal('genre=rock,genre=pop,pets=dog');
+    });
 
-      config.getConfig.restore();
+    it('convert keywords param differently for psp endpoint with array s2sConfig', function () {
+      gcStub.withArgs('s2sConfig').returns([{
+        bidders: ['appnexus'],
+        endpoint: {
+          p1Consent: 'https://ib.adnxs.com/openrtb2/prebid'
+        }
+      }]);
+
+      const oldParams = {
+        keywords: {
+          genre: ['rock', 'pop'],
+          pets: 'dog'
+        }
+      };
+
+      const newParams = spec.transformBidParams(oldParams, true, adUnit);
+      expect(newParams.keywords).to.equal('genre=rock,genre=pop,pets=dog');
     });
   });
 });

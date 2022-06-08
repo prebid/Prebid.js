@@ -326,8 +326,8 @@ export const spec = {
           }
         }
       }
-
-      var location = (bidderRequest && bidderRequest.refererInfo) ? bidderRequest.refererInfo.referer : getTopMostWindow().location.href;
+      // TODO: is 'page' the right value here?
+      var location = bidderRequest?.refererInfo?.page;
       if (isValidUrl(location)) {
         requestParams.loc = location;
       }

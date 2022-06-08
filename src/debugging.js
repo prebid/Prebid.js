@@ -2,7 +2,9 @@ import {config} from './config.js';
 import {hook} from './hook.js';
 import {getGlobal} from './prebidGlobal.js';
 import {logError, logMessage, prefixLog} from './utils.js';
-import {DEBUG_KEY} from './constants.json';
+import {createBid} from './bidfactory.js';
+
+export const DEBUG_KEY = '__$$PREBID_GLOBAL$$_debugging__';
 
 let promise = null;
 
@@ -37,8 +39,9 @@ export function debuggingModuleLoader({alreadyInstalled = () => getGlobal().inst
           } else {
             const url = '$$PREBID_DIST_URL_BASE$$debugging-standalone.js';
             logMessage(`Debugging module not installed, loading it from "${url}"...`);
+            getGlobal()._installDebugging = true;
             script(url).then(() => {
-              window[DEBUG_KEY]({hook, config, logger: prefixLog('DEBUG:')});
+              getGlobal()._installDebugging({DEBUG_KEY, hook, config, createBid, logger: prefixLog('DEBUG:')})
             }).catch((err) => {
               logError('Could not load debugging module: ', err);
               return Promise.reject(err);
