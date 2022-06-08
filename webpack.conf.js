@@ -1,3 +1,4 @@
+const TerserPlugin = require('terser-webpack-plugin');
 var prebid = require('./package.json');
 var path = require('path');
 var webpack = require('webpack');
@@ -71,6 +72,14 @@ module.exports = {
   optimization: {
     usedExports: true,
     sideEffects: true,
+    minimizer: [
+      new TerserPlugin({
+        extractComments: false, // do not generate unhelpful LICENSE comment
+        terserOptions: {
+          module: true, // do not prepend every module with 'use strict'; allow mangling of top-level locals
+        }
+      })
+    ]
   },
   plugins
 };

@@ -164,6 +164,12 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
 
     reporters: ['mocha'],
 
+    client: {
+      mocha: {
+        timeout: 3000
+      }
+    },
+
     mochaReporter: {
       showDiff: true,
       output: 'minimal'
