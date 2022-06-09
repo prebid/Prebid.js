@@ -733,7 +733,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
 
     currentRequestSize += currentImpressionSize;
 
-    const fpd = bidderRequest.ortb2 || {};
+    const fpd = deepAccess(bidderRequest, 'ortb2') || {};
 
     if (!isEmpty(fpd) && !isFpdAdded) {
       r.ext.ixdiag.fpd = true;
