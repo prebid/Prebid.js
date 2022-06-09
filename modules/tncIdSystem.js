@@ -3,8 +3,11 @@ import { logInfo } from '../src/utils.js';
 import { loadExternalScript } from '../src/adloader.js';
 
 const MODULE_NAME = 'tncId';
+
 const FALLBACK_TNC_PROVIDERID = 'c8549079-f149-4529-a34b-3fa91ef257d1';
 const FALLBACK_TNC_INSTANCE = '__tncPbjs';
+
+let disableFallbackScript = false;
 
 const waitTNCScript = (tncNS) => {
   return new Promise((resolve, reject) => {
@@ -28,12 +31,12 @@ const loadRemoteScript = (providerId) => {
 const tncCallback = function (providerId, cb) {
   let tncNS = '__tnc';
   let promiseArray = [];
-  if (!window[tncNS]) {
+  if (!window[tncNS] && !disableFallbackScript) {
     tncNS = FALLBACK_TNC_INSTANCE;
     promiseArray.push(loadRemoteScript(providerId));
   }
 
-  return Promise.all(promiseArray).then(() => waitTNCScript(tncNS)).then(cb).catch(() => cb());
+  return Promise.all(promiseArray).then(() => waitTNCScript(tncNS)).then(cb).catch(() => cb(null));
 }
 
 export const tncidSubModule = {
@@ -48,7 +51,9 @@ export const tncidSubModule = {
     const gdpr = (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) ? 1 : 0;
     const consentString = gdpr ? consentData.consentString : '';
     let providerId = FALLBACK_TNC_PROVIDERID;
+
     if (config && config.params && config.params.providerId)providerId = config.params.providerId;
+    disableFallbackScript = (config && config.params && config.params.disableFallbackScript);
 
     if (gdpr && !consentString) {
       logInfo('Consent string is required for TNCID module');

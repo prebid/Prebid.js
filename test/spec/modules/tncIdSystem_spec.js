@@ -103,5 +103,25 @@ describe('TNCID tests', function () {
         expect(completeCallback.calledOnceWithExactly('TNCID_TEST_ID_2')).to.be.true;
       })
     });
+
+    it('If there is no TNC script on page and disableFallbackScript is set to "true", no TNCID is returned', function () {
+      Object.defineProperty(window, '__tncPbjs', {
+        value: {
+          ready: (readyFunc) => { readyFunc() },
+          on: (name, cb) => { cb() },
+          providerId: 'TEST_PROVIDER_ID_1',
+          options: {},
+          tncid: 'TNCID_TEST_ID_2'
+        },
+        configurable: true,
+        writable: true
+      });
+      const completeCallback = sinon.spy();
+      const {callback} = tncidSubModule.getId({params: {disableFallbackScript: true}}, consentData);
+
+      return callback(completeCallback).then(() => {
+        expect(completeCallback.calledOnceWithExactly(null)).to.be.true;
+      })
+    });
   });
 });

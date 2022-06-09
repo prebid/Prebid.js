@@ -31,3 +31,4 @@ pbjs.setConfig({
 | --- | --- | --- | --- |
 | name | Required | String | ID value for the TNCID module: `"tncId"` |
 | params.providerId | Optional | String | Provide TNC providerId if possible |
+| params.disableFallbackScript | Optional | Boolean | Never load fallback script |
