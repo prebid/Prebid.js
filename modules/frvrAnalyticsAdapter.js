@@ -12,9 +12,7 @@ const MODULE = 'frvr';
  * @param args
  */
 function handleAuctionInit(args) {
-  if (window.XS && window.XS.track && window.XS.track.event) {
-    XS.track.event("hb_auction_init", undefined, args);
-  }
+  handleEvent("hb_auction_init", args);
 }
 
 /**
@@ -22,9 +20,7 @@ function handleAuctionInit(args) {
  * @param args
  */
 function handleBidRequested(args) {
-  if (window.XS && window.XS.track && window.XS.track.event) {
-    XS.track.event("hb_bid_request", undefined, args);
-  }
+  handleEvent("hb_bid_request", args);
 }
 
 /**
@@ -36,10 +32,7 @@ function handleBidResponse(args) {
   if (o && o.ad) {
     delete o["ad"];
   }
-
-  if (window.XS && window.XS.track && window.XS.track.event) {
-    XS.track.event("hb_bid_response", undefined, o);
-  }
+  handleEvent("hb_bid_response", o);
 }
 
 /**
@@ -51,10 +44,7 @@ function handleBidAdjustment(args) {
   if (o && o.ad) {
     delete o.ad;
   }
-
-  if (window.XS && window.XS.track && window.XS.track.event) {
-    XS.track.event("hb_bid_adjustment", undefined, o);
-  }
+  handleEvent("hb_bid_adjustment", o);
 }
 
 /**
@@ -62,9 +52,7 @@ function handleBidAdjustment(args) {
  * @param args
  */
 function handleBidderDone(args) {
-  if (window.XS && window.XS.track && window.XS.track.event) {
-    XS.track.event("hb_bidder_done", undefined, args);
-  }
+  handleEvent("hb_bidder_done", args);
 }
 
 /**
@@ -79,10 +67,7 @@ function handleAuctionEnd(args) {
       delete o.bidsReceived[i]["ad"];
     }
   }
-
-  if (window.XS && window.XS.track && window.XS.track.event) {
-    XS.track.event("hb_auction_end", undefined, o);
-  }
+  handleEvent("hb_auction_end", o);
 }
 
 /**
@@ -95,10 +80,7 @@ function handleBidWon(args) {
   if (o && o["ad"]) {
     delete o["ad"];
   }
-
-  if (window.XS && window.XS.track && window.XS.track.event) {
-    XS.track.event("hb_bid_won", undefined, o);
-  }
+  handleEvent("hb_bid_won", o);
 }
 
 /**
@@ -108,6 +90,17 @@ function handleBidWon(args) {
  */
 function handleOtherEvents(eventType, args) {
   //
+}
+
+function handleEvent(name, data) {
+  if (window.XS && window.XS.track && window.XS.track.event) {
+    XS.track.event(name, undefined, data);
+    return;
+  }
+
+  if (window.FRVR && FRVR.tracker && FRVR.tracker.logEvent) {
+    window.FRVR.tracker.logEvent(name, data);
+  }
 }
 
 let frvrAdapter = Object.assign(adapter({analyticsType}), {
