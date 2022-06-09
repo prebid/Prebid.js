@@ -1,6 +1,6 @@
 {
   "name": "prebid.js",
-  "version": "6.23.0-pre",
+  "version": "7.1.0-pre",
   "description": "Header Bidding Management Library",
   "main": "src/prebid.js",
   "scripts": {
@@ -34,9 +34,7 @@
     "node": ">=8.9.0"
   },
   "devDependencies": {
-    "@babel/core": "^7.16.7",
     "@babel/eslint-parser": "^7.16.5",
-    "@babel/preset-env": "^7.16.8",
     "@jsdevtools/coverage-istanbul-loader": "^3.0.3",
     "@wdio/browserstack-service": "^7.16.0",
     "@wdio/cli": "^7.5.2",
@@ -70,8 +68,6 @@
     "gulp-concat": "^2.6.0",
     "gulp-connect": "^5.7.0",
     "gulp-eslint": "^4.0.0",
-    "gulp-footer": "^2.0.2",
-    "gulp-header": "^2.0.9",
     "gulp-if": "^3.0.0",
     "gulp-js-escape": "^1.0.1",
     "gulp-replace": "^1.0.0",
@@ -116,6 +112,8 @@
     "yargs": "^1.3.1"
   },
   "dependencies": {
+    "@babel/core": "^7.16.7",
+    "@babel/preset-env": "^7.16.8",
     "babel-plugin-transform-object-assign": "^6.22.0",
     "core-js": "^3.13.0",
     "core-js-pure": "^3.13.0",
@@ -126,7 +124,7 @@
     "express": "^4.15.4",
     "fun-hooks": "^0.9.9",
     "just-clone": "^1.0.2",
-    "live-connect-js": "2.3.1"
+    "live-connect-js": "2.3.3"
   },
   "optionalDependencies": {
     "fsevents": "^2.3.2"

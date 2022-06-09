@@ -1,8 +1,17 @@
-import { _each, getBidIdParameter, isArray, deepClone, parseUrl, getUniqueIdentifierStr, deepSetValue, logError, deepAccess, isInteger, logWarn } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { ADPOD, BANNER, VIDEO } from '../src/mediaTypes.js'
-import { createEidsArray } from './userId/eids.js'
-import {config} from '../src/config.js'
+import {
+  _each,
+  deepAccess,
+  deepSetValue,
+  getBidIdParameter,
+  getUniqueIdentifierStr,
+  isArray,
+  isInteger,
+  logError,
+  logWarn
+} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {ADPOD, BANNER, VIDEO} from '../src/mediaTypes.js';
+import {createEidsArray} from './userId/eids.js';
 
 const ORTB_VIDEO_PARAMS = {
   'mimes': (value) => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string'),
@@ -64,8 +73,9 @@ export const spec = {
 
   /**
    * Format the bid request object for our endpoint
-   * @param {BidRequest[]} bidRequests Array of Sovrn bidders
    * @return object of parameters for Prebid AJAX request
+   * @param bidReqs
+   * @param bidderRequest
    */
   buildRequests: function(bidReqs, bidderRequest) {
     try {
@@ -134,12 +144,11 @@ export const spec = {
         sovrnImps.push(imp)
       })
 
-      const fpd = deepClone(config.getConfig('ortb2'))
+      const fpd = bidderRequest.ortb2 || {};
 
       const site = fpd.site || {}
-      site.page = bidderRequest.refererInfo.referer
-      // clever trick to get the domain
-      site.domain = parseUrl(site.page).hostname
+      site.page = bidderRequest.refererInfo.page
+      site.domain = bidderRequest.refererInfo.domain
 
       const sovrnBidReq = {
         id: getUniqueIdentifierStr(),
@@ -192,14 +201,12 @@ export const spec = {
    * @return {Bid[]} An array of formatted bids.
   */
   interpretResponse: function({ body: {id, seatbid} }) {
+    if (!id || !seatbid || !Array.isArray(seatbid)) return []
+
     try {
-      let sovrnBidResponses = [];
-      if (id &&
-        seatbid &&
-        seatbid.length > 0 &&
-        seatbid[0].bid &&
-        seatbid[0].bid.length > 0) {
-        seatbid[0].bid.map(sovrnBid => {
+      return seatbid
+        .filter(seat => seat)
+        .map(seat => seat.bid.map(sovrnBid => {
           const bid = {
             requestId: sovrnBid.impid,
             cpm: parseFloat(sovrnBid.price),
@@ -209,23 +216,23 @@ export const spec = {
             dealId: sovrnBid.dealid || null,
             currency: 'USD',
             netRevenue: true,
-            ttl: sovrnBid.ext ? (sovrnBid.ext.ttl || 90) : 90,
+            mediaType: sovrnBid.nurl ? BANNER : VIDEO,
+            ttl: sovrnBid.ext?.ttl || 90,
             meta: { advertiserDomains: sovrnBid && sovrnBid.adomain ? sovrnBid.adomain : [] }
           }
 
-          if (!sovrnBid.nurl) {
-            bid.mediaType = VIDEO
-            bid.vastXml = decodeURIComponent(sovrnBid.adm)
-          } else {
-            bid.mediaType = BANNER
+          if (sovrnBid.nurl) {
             bid.ad = decodeURIComponent(`${sovrnBid.adm}<img src="${sovrnBid.nurl}">`)
+          } else {
+            bid.vastXml = decodeURIComponent(sovrnBid.adm)
           }
-          sovrnBidResponses.push(bid);
-        });
-      }
-      return sovrnBidResponses
+
+          return bid
+        }))
+        .flat()
     } catch (e) {
-      logError('Could not intrepret bidresponse, error deatils:', e);
+      logError('Could not interpret bidresponse, error details:', e)
+      return e
     }
   },
 

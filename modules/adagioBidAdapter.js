@@ -19,14 +19,13 @@ import {
   logInfo,
   logWarn,
   mergeDeep,
-  parseUrl
 } from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {loadExternalScript} from '../src/adloader.js';
 import {verify} from 'criteo-direct-rsa-validate/build/verify.js';
 import {getStorageManager} from '../src/storageManager.js';
-import {getRefererInfo} from '../src/refererDetection.js';
+import {getRefererInfo, parseDomain} from '../src/refererDetection.js';
 import {createEidsArray} from './userId/eids.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
@@ -269,32 +268,13 @@ function getDevice() {
 };
 
 function getSite(bidderRequest) {
-  let domain = '';
-  let page = '';
-  let referrer = '';
-
   const { refererInfo } = bidderRequest;
-
-  if (canAccessTopWindow()) {
-    const wt = getWindowTop();
-    domain = wt.location.hostname;
-    page = wt.location.href;
-    referrer = wt.document.referrer || '';
-  } else if (refererInfo.reachedTop) {
-    const url = parseUrl(refererInfo.referer);
-    domain = url.hostname;
-    page = refererInfo.referer;
-  } else if (refererInfo.stack && refererInfo.stack.length && refererInfo.stack[0]) {
-    // important note check if refererInfo.stack[0] is 'thruly' because a `null` value
-    // will be considered as "localhost" by the parseUrl function.
-    const url = parseUrl(refererInfo.stack[0]);
-    domain = url.hostname;
-  }
-
   return {
-    domain,
-    page,
-    referrer
+    // TODO: do these fallbacks make sense?
+    domain: refererInfo.domain || parseDomain(refererInfo.topmostLocation) || '',
+    page: refererInfo.page || refererInfo.topmostLocation || '',
+    referrer: refererInfo.ref || getWindowSelf().document.referrer || '',
+    top: refererInfo.reachedTop
   };
 };
 
@@ -639,7 +619,7 @@ export function setExtraParam(bid, paramName) {
   }
 
   const adgGlobalConf = config.getConfig('adagio') || {};
-  const ortb2Conf = config.getConfig('ortb2');
+  const ortb2Conf = bid.ortb2;
 
   const detected = adgGlobalConf[paramName] || deepAccess(ortb2Conf, `site.ext.data.${paramName}`, null);
   if (detected) {
@@ -996,6 +976,8 @@ export const spec = {
       // remove useless props
       delete adUnitCopy.floorData;
       delete adUnitCopy.params.siteId;
+      delete adUnitCopy.userId
+      delete adUnitCopy.userIdAsEids
 
       groupedAdUnits[adUnitCopy.params.organizationId] = groupedAdUnits[adUnitCopy.params.organizationId] || [];
       groupedAdUnits[adUnitCopy.params.organizationId].push(adUnitCopy);

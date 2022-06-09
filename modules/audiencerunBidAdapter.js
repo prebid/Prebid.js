@@ -71,12 +71,7 @@ function getPageReferer() {
  * @return {string}
  */
 function getPageUrl(bidderRequest) {
-  return (
-    config.getConfig('pageUrl') ||
-    deepAccess(bidderRequest, 'refererInfo.referer') ||
-    getPageReferer() ||
-    null
-  );
+  return bidderRequest?.refererInfo?.page
 }
 
 export const spec = {
@@ -127,10 +122,12 @@ export const spec = {
 
     const payload = {
       libVersion: this.version,
-      pageUrl: config.getConfig('pageUrl'),
+      pageUrl: bidderRequest?.refererInfo?.page,
+      // TODO: does it make sense to find a half-way referer? what should these parameters pick
       pageReferer: getPageReferer(),
-      referer: deepAccess(bidderRequest, 'refererInfo.referer'),
-      refererInfo: deepAccess(bidderRequest, 'refererInfo'),
+      referer: deepAccess(bidderRequest, 'refererInfo.topmostLocation'),
+      // TODO: please do not send internal data structures over the network
+      refererInfo: deepAccess(bidderRequest, 'refererInfo.legacy'),
       currencyCode: config.getConfig('currency.adServerCurrency'),
       timeout: config.getConfig('bidderTimeout'),
       bids,

@@ -24,7 +24,7 @@ const LOG_PREFIX = 'Criteo: ';
   Unminified source code can be found in the privately shared repo: https://github.com/Prebid-org/prebid-js-external-js-criteo/blob/master/dist/prod.js
 */
 const FAST_BID_VERSION_PLACEHOLDER = '%FAST_BID_VERSION%';
-export const FAST_BID_VERSION_CURRENT = 117;
+export const FAST_BID_VERSION_CURRENT = 123;
 const FAST_BID_VERSION_LATEST = 'latest';
 const FAST_BID_VERSION_NONE = 'none';
 const PUBLISHER_TAG_URL_TEMPLATE = 'https://static.criteo.net/js/ld/publishertag.prebid' + FAST_BID_VERSION_PLACEHOLDER + '.js';
@@ -65,7 +65,7 @@ export const spec = {
   buildRequests: (bidRequests, bidderRequest) => {
     let url;
     let data;
-    let fpd = config.getConfig('ortb2') || {};
+    let fpd = bidderRequest.ortb2 || {};
 
     Object.assign(bidderRequest, {
       publisherExt: fpd.site?.ext,
@@ -139,6 +139,13 @@ export const spec = {
           height: slot.height,
           dealId: slot.dealCode,
         };
+        if (body.ext?.paf?.transmission && slot.ext?.paf?.content_id) {
+          const pafResponseMeta = {
+            content_id: slot.ext.paf.content_id,
+            transmission: response.ext.paf.transmission
+          };
+          bid.meta = Object.assign({}, bid.meta, { paf: pafResponseMeta });
+        }
         if (slot.adomain) {
           bid.meta = Object.assign({}, bid.meta, { advertiserDomains: slot.adomain });
         }
@@ -217,9 +224,9 @@ function publisherTagAvailable() {
 function buildContext(bidRequests, bidderRequest) {
   let referrer = '';
   if (bidderRequest && bidderRequest.refererInfo) {
-    referrer = bidderRequest.refererInfo.referer;
+    referrer = bidderRequest.refererInfo.page;
   }
-  const queryString = parseUrl(referrer).search;
+  const queryString = parseUrl(bidderRequest?.refererInfo?.topmostLocation).search;
 
   const context = {
     url: referrer,

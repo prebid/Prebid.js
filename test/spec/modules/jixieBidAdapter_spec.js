@@ -268,6 +268,40 @@ describe('jixie Adapter', function () {
       expect(payload.pricegranularity).to.deep.include(content);
     });
 
+    it('it should popular the device info when it is available', function () {
+      let getConfigStub = sinon.stub(config, 'getConfig');
+      let content = {w: 500, h: 400};
+      getConfigStub.callsFake(function fakeFn(prop) {
+        if (prop == 'device') {
+          return content;
+        }
+        return null;
+      });
+      const oneSpecialBidReq = Object.assign({}, bidRequests_[0]);
+      const request = spec.buildRequests([oneSpecialBidReq], bidderRequest_);
+      const payload = JSON.parse(request.data);
+      getConfigStub.restore();
+      expect(payload.device).to.have.property('ua', navigator.userAgent);
+      expect(payload.device).to.deep.include(content);
+    });
+
+    it('schain info should be accessible when available', function () {
+      const schain = {
+        ver: '1.0',
+        complete: 1,
+        nodes: [{
+          asi: 'ssp.test',
+          sid: '00001',
+          hp: 1
+        }]
+      };
+      const oneSpecialBidReq = Object.assign({}, bidRequests_[0], { schain: schain });
+      const request = spec.buildRequests([oneSpecialBidReq], bidderRequest_);
+      const payload = JSON.parse(request.data);
+      expect(payload.schain).to.deep.equal(schain);
+      expect(payload.schain).to.deep.include(schain);
+    });
+
     it('should populate eids when supported userIds are available', function () {
       const oneSpecialBidReq = Object.assign({}, bidRequests_[0], {
         userId: {

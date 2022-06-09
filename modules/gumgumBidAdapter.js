@@ -294,7 +294,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
   const uspConsent = bidderRequest && bidderRequest.uspConsent;
   const timeout = config.getConfig('bidderTimeout');
-  const topWindowUrl = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
+  const topWindowUrl = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page;
   _each(validBidRequests, bidRequest => {
     const {
       bidId,

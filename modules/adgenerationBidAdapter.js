@@ -49,7 +49,8 @@ export const spec = {
       if (!validReq.mediaTypes || !validReq.mediaTypes.native) {
         data = tryAppendQueryString(data, 'imark', '1');
       }
-      data = tryAppendQueryString(data, 'tp', bidderRequest.refererInfo.referer);
+      // TODO: is 'page' the right value here?
+      data = tryAppendQueryString(data, 'tp', bidderRequest.refererInfo.page);
       if (isIos()) {
         const hyperId = getHyperId(validReq);
         if (hyperId != null) {

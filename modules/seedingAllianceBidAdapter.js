@@ -62,7 +62,7 @@ export const spec = {
     const pt = setOnAny(validBidRequests, 'params.pt') || setOnAny(validBidRequests, 'params.priceType') || 'net';
     const tid = validBidRequests[0].transactionId;
     const cur = [config.getConfig('currency.adServerCurrency') || DEFAULT_CUR];
-    let url = bidderRequest.refererInfo.referer;
+    let url = bidderRequest.refererInfo.page;
 
     const imp = validBidRequests.map((bid, id) => {
       const assets = _map(bid.nativeParams, (bidParams, key) => {

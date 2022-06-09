@@ -39,6 +39,7 @@ import { S2S_VENDORS } from './config.js';
 import { ajax } from '../../src/ajax.js';
 import {hook} from '../../src/hook.js';
 import {getGlobal} from '../../src/prebidGlobal.js';
+import {hasPurpose1Consent} from '../../src/utils/gpdr.js';
 
 const getConfig = config.getConfig;
 
@@ -389,18 +390,13 @@ function _appendSiteAppDevice(request, pageUrl, accountId) {
   }
 }
 
-function addBidderFirstPartyDataToRequest(request) {
-  const bidderConfig = config.getBidderConfig();
-  const fpdConfigs = Object.keys(bidderConfig).reduce((acc, bidder) => {
-    const currBidderConfig = bidderConfig[bidder];
-    if (currBidderConfig.ortb2) {
-      const ortb2 = mergeDeep({}, currBidderConfig.ortb2);
-
-      acc.push({
-        bidders: [ bidder ],
-        config: { ortb2 }
-      });
-    }
+function addBidderFirstPartyDataToRequest(request, bidderFpd) {
+  const fpdConfigs = Object.entries(bidderFpd).reduce((acc, [bidder, bidderOrtb2]) => {
+    const ortb2 = mergeDeep({}, bidderOrtb2);
+    acc.push({
+      bidders: [ bidder ],
+      config: { ortb2 }
+    });
     return acc;
   }, []);
 
@@ -716,7 +712,10 @@ Object.assign(ORTB2.prototype, {
         if (adapter && adapter.getSpec().transformBidParams) {
           bid.params = adapter.getSpec().transformBidParams(bid.params, true, adUnit, bidRequests);
         }
-        acc[bid.bidder] = (s2sConfig.adapterOptions && s2sConfig.adapterOptions[bid.bidder]) ? Object.assign({}, bid.params, s2sConfig.adapterOptions[bid.bidder]) : bid.params;
+        deepSetValue(acc,
+          `prebid.bidder.${bid.bidder}`,
+          (s2sConfig.adapterOptions && s2sConfig.adapterOptions[bid.bidder]) ? Object.assign({}, bid.params, s2sConfig.adapterOptions[bid.bidder]) : bid.params
+        );
         return acc;
       }, {...deepAccess(adUnit, 'ortb2Imp.ext')});
 
@@ -752,12 +751,6 @@ Object.assign(ORTB2.prototype, {
       });
 
       mergeDeep(imp, mediaTypes);
-
-      // if storedAuctionResponse has been set, pass SRID
-      const storedAuctionResponseBid = find(firstBidRequest.bids, bid => (bid.adUnitCode === adUnit.code && bid.storedAuctionResponse));
-      if (storedAuctionResponseBid) {
-        deepSetValue(imp, 'ext.prebid.storedauctionresponse.id', storedAuctionResponseBid.storedAuctionResponse.toString());
-      }
 
       const floor = (() => {
         // we have to pick a floor for the imp - here we attempt to find the minimum floor
@@ -849,6 +842,11 @@ Object.assign(ORTB2.prototype, {
       }
     };
 
+    // If the price floors module is active, then we need to signal to PBS! If floorData obj is present is best way to check
+    if (typeof deepAccess(firstBidRequest, 'bids.0.floorData') === 'object') {
+      request.ext.prebid.floors = { enabled: false };
+    }
+
     // This is no longer overwritten unless name and version explicitly overwritten by extPrebid (mergeDeep)
     request.ext.prebid = Object.assign(request.ext.prebid, {channel: {name: 'pbjs', version: $$PREBID_GLOBAL$$.version}})
 
@@ -874,7 +872,7 @@ Object.assign(ORTB2.prototype, {
       request.cur = [adServerCur[0]];
     }
 
-    _appendSiteAppDevice(request, bidRequests[0].refererInfo.referer, s2sConfig.accountId);
+    _appendSiteAppDevice(request, bidRequests[0].refererInfo.page, s2sConfig.accountId);
 
     // pass schain object if it is present
     const schain = deepAccess(bidRequests, '0.bids.0.schain');
@@ -943,10 +941,10 @@ Object.assign(ORTB2.prototype, {
       deepSetValue(request, 'regs.coppa', 1);
     }
 
-    const commonFpd = getConfig('ortb2') || {};
+    const commonFpd = s2sBidRequest.ortb2Fragments?.global || {};
     mergeDeep(request, commonFpd);
 
-    addBidderFirstPartyDataToRequest(request);
+    addBidderFirstPartyDataToRequest(request, s2sBidRequest.ortb2Fragments?.bidder || {});
 
     request.imp.forEach((imp) => this.impRequested[imp.id] = imp);
     return request;
@@ -1154,16 +1152,6 @@ function bidWonHandler(bid) {
   }
 }
 
-function hasPurpose1Consent(gdprConsent) {
-  let result = true;
-  if (gdprConsent) {
-    if (gdprConsent.gdprApplies && gdprConsent.apiVersion === 2) {
-      result = !!(deepAccess(gdprConsent, 'vendorData.purpose.consents.1') === true);
-    }
-  }
-  return result;
-}
-
 function getMatchingConsentUrl(urlProp, gdprConsent) {
   return hasPurpose1Consent(gdprConsent) ? urlProp.p1Consent : urlProp.noP1Consent;
 }
@@ -1238,18 +1226,13 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
   let { gdprConsent } = getConsentData(bidRequests);
   const adUnits = deepClone(s2sBidRequest.ad_units);
 
-  // at this point ad units should have a size array either directly or mapped so filter for that
-  const validAdUnits = adUnits.filter(unit =>
-    unit.mediaTypes && (unit.mediaTypes.native || (unit.mediaTypes.banner && unit.mediaTypes.banner.sizes) || (unit.mediaTypes.video && unit.mediaTypes.video.playerSize))
-  );
-
   // in case config.bidders contains invalid bidders, we only process those we sent requests for
-  const requestedBidders = validAdUnits
+  const requestedBidders = adUnits
     .map(adUnit => adUnit.bids.map(bid => bid.bidder).filter(uniques))
-    .reduce(flatten)
+    .reduce(flatten, [])
     .filter(uniques);
 
-  const ortb2 = new ORTB2(s2sBidRequest, bidRequests, validAdUnits, requestedBidders);
+  const ortb2 = new ORTB2(s2sBidRequest, bidRequests, adUnits, requestedBidders);
   const request = ortb2.buildRequest();
   const requestJson = request && JSON.stringify(request);
   logInfo('BidRequest: ' + requestJson);
