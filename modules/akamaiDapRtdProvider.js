@@ -6,7 +6,6 @@
  * @requires module:modules/realTimeData
  */
 import {ajax} from '../src/ajax.js';
-import {config} from '../src/config.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {submodule} from '../src/hook.js';
 import {isPlainObject, mergeDeep, logMessage, logInfo, logError} from '../src/utils.js';
@@ -44,17 +43,16 @@ function mergeLazy(target, source) {
 
 /**
  * Add real-time data & merge segments.
- * @param {Object} bidConfig
+ * @param {Object} ortb2 destionation object to merge RTD into
  * @param {Object} rtd
  * @param {Object} rtdConfig
  */
-export function addRealTimeData(rtd) {
+export function addRealTimeData(ortb2, rtd) {
   logInfo('DEBUG(addRealTimeData) - ENTER');
   if (isPlainObject(rtd.ortb2)) {
-    let ortb2 = config.getConfig('ortb2') || {};
     logMessage('DEBUG(addRealTimeData): merging original: ', ortb2);
     logMessage('DEBUG(addRealTimeData): merging in: ', rtd.ortb2);
-    config.setConfig({ortb2: mergeLazy(ortb2, rtd.ortb2)});
+    mergeLazy(ortb2, rtd.ortb2);
   }
   logInfo('DEBUG(addRealTimeData) - EXIT');
 }
@@ -117,7 +115,7 @@ export function generateRealTimeData(bidConfig, onDone, rtdConfig, userConsent) 
   }
   if (jsonData) {
     if (jsonData.rtd) {
-      addRealTimeData(jsonData.rtd);
+      addRealTimeData(bidConfig.ortb2Fragments?.global, jsonData.rtd);
       onDone();
       logInfo('DEBUG(generateRealTimeData) - 1');
       // Don't return - ensure the data is always fresh.
@@ -161,17 +159,18 @@ export const dapUtils = {
       };
       let refreshMembership = true;
       let token = dapUtils.dapGetTokenFromLocalStorage();
+      const ortb2 = bidConfig.ortb2Fragments.global;
       logMessage('token is: ', token);
       if (token !== null) { // If token is not null then check the membership in storage and add the RTD object
         if (config.segtax == 504) { // Follow the encrypted membership path
-          dapUtils.dapRefreshEncryptedMembership(config, token, onDone) // Get the encrypted membership from server
+          dapUtils.dapRefreshEncryptedMembership(ortb2, config, token, onDone) // Get the encrypted membership from server
           refreshMembership = false;
         } else {
-          dapUtils.dapRefreshMembership(config, token, onDone) // Get the membership from server
+          dapUtils.dapRefreshMembership(ortb2, config, token, onDone) // Get the membership from server
           refreshMembership = false;
         }
       }
-      dapUtils.dapRefreshToken(config, refreshMembership, onDone) // Refresh Token and membership in all the cases
+      dapUtils.dapRefreshToken(ortb2, config, refreshMembership, onDone) // Refresh Token and membership in all the cases
     }
   },
   dapGetEntropy: function(resolve, reject) {
@@ -194,7 +193,7 @@ export const dapUtils = {
     return token;
   },
 
-  dapRefreshToken: function(config, refreshMembership, onDone) {
+  dapRefreshToken: function(ortb2, config, refreshMembership, onDone) {
     dapUtils.dapLog('Token missing or expired, fetching a new one...');
     // Trigger a refresh
     let now = Math.round(Date.now() / 1000.0); // in seconds
@@ -221,9 +220,9 @@ export const dapUtils = {
         }
         if (refreshMembership) {
           if (config.segtax == 504) {
-            dapUtils.dapRefreshEncryptedMembership(config, token, onDone);
+            dapUtils.dapRefreshEncryptedMembership(ortb2, config, token, onDone);
           } else {
-            dapUtils.dapRefreshMembership(config, token, onDone);
+            dapUtils.dapRefreshMembership(ortb2, config, token, onDone);
           }
         }
       },
@@ -250,7 +249,7 @@ export const dapUtils = {
     return membership;
   },
 
-  dapRefreshMembership: function(config, token, onDone) {
+  dapRefreshMembership: function(ortb2, config, token, onDone) {
     let now = Math.round(Date.now() / 1000.0); // in seconds
     let item = {}
     let configAsync = {...config};
@@ -268,14 +267,14 @@ export const dapUtils = {
         dapUtils.dapLog(item);
 
         let data = dapUtils.dapGetRtdObj(item, config.segtax)
-        dapUtils.checkAndAddRealtimeData(data, config.segtax);
+        dapUtils.checkAndAddRealtimeData(ortb2, data, config.segtax);
         onDone();
       },
       function(xhr, status, error, onDone) {
         logError('ERROR(' + error + '): failed to retrieve membership! ' + status);
         if (status == 403 && dapRetryTokenize < DAP_MAX_RETRY_TOKENIZE) {
           dapRetryTokenize++;
-          dapUtils.dapRefreshToken(config, true, onDone);
+          dapUtils.dapRefreshToken(ortb2, config, true, onDone);
         } else {
           onDone();
         }
@@ -297,7 +296,7 @@ export const dapUtils = {
     return encMembership;
   },
 
-  dapRefreshEncryptedMembership: function(config, token, onDone) {
+  dapRefreshEncryptedMembership: function(ortb2, config, token, onDone) {
     let now = Math.round(Date.now() / 1000.0); // in seconds
     let item = {};
     let configAsync = {...config};
@@ -314,14 +313,14 @@ export const dapUtils = {
         dapUtils.dapLog(item);
 
         let encData = dapUtils.dapGetEncryptedRtdObj(item, config.segtax);
-        dapUtils.checkAndAddRealtimeData(encData, config.segtax);
+        dapUtils.checkAndAddRealtimeData(ortb2, encData, config.segtax);
         onDone();
       },
       function(xhr, status, error, onDone) {
         logError('ERROR(' + error + '): failed to retrieve encrypted membership! ' + status);
         if (status == 403 && dapRetryTokenize < DAP_MAX_RETRY_TOKENIZE) {
           dapRetryTokenize++;
-          dapUtils.dapRefreshToken(config, true, onDone);
+          dapUtils.dapRefreshToken(ortb2, config, true, onDone);
         } else {
           onDone();
         }
@@ -417,20 +416,19 @@ export const dapUtils = {
     return encData;
   },
 
-  checkAndAddRealtimeData: function(data, segtax) {
+  checkAndAddRealtimeData: function(ortb2, data, segtax) {
     if (data.rtd) {
-      if (segtax == 504 && dapUtils.checkIfSegmentsAlreadyExist(data.rtd, 504)) {
+      if (segtax == 504 && dapUtils.checkIfSegmentsAlreadyExist(ortb2, data.rtd, 504)) {
         logMessage('DEBUG(handleInit): rtb Object already added');
       } else {
-        addRealTimeData(data.rtd);
+        addRealTimeData(ortb2, data.rtd);
       }
       logInfo('DEBUG(checkAndAddRealtimeData) - 1');
     }
   },
 
-  checkIfSegmentsAlreadyExist: function(rtd, segtax) {
+  checkIfSegmentsAlreadyExist: function(ortb2, rtd, segtax) {
     let segmentsExist = false
-    let ortb2 = config.getConfig('ortb2') || {};
     if (ortb2.user && ortb2.user.data && ortb2.user.data.length > 0) {
       for (let i = 0; i < ortb2.user.data.length; i++) {
         let element = ortb2.user.data[i]

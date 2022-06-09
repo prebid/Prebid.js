@@ -28,7 +28,8 @@ describe('Ventes Adapter', function () {
 
     adUnitContext: {
       refererInfo: {
-        referer: 'https://ventesavenues.in',
+        page: 'https://ventesavenues.in',
+        domain: 'ventesavenues.in',
       }
     },
 
@@ -373,7 +374,7 @@ describe('Ventes Adapter', function () {
         expect(serverRequests[0].data).to.exist.and.to.be.an('object');
         expect(serverRequests[0].data.id).to.exist.and.to.be.an('string').and.to.equal(adUnits[0].bidderRequestId);
         expect(serverRequests[0].data.site).to.exist.and.to.be.an('object');
-        expect(serverRequests[0].data.site.page).to.exist.and.to.be.an('string').and.to.equal(adUnitContext.refererInfo.referer);
+        expect(serverRequests[0].data.site.page).to.exist.and.to.be.an('string').and.to.equal(adUnitContext.refererInfo.page);
         expect(serverRequests[0].data.site.domain).to.exist.and.to.be.an('string').and.to.equal('ventesavenues.in');
         expect(serverRequests[0].data.site.name).to.exist.and.to.be.an('string').and.to.equal('ventesavenues.in');
       });

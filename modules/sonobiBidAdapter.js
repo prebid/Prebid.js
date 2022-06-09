@@ -76,7 +76,8 @@ export const spec = {
 
     const payload = {
       'key_maker': JSON.stringify(data),
-      'ref': bidderRequest.refererInfo.referer,
+      // TODO: is 'page' the right value here?
+      'ref': bidderRequest.refererInfo.page,
       's': generateUUID(),
       'pv': PAGEVIEW_ID,
       'vp': _getPlatform(),
@@ -86,7 +87,7 @@ export const spec = {
 
     };
 
-    const fpd = config.getConfig('ortb2');
+    const fpd = bidderRequest.ortb2;
 
     if (fpd) {
       payload.fpd = JSON.stringify(fpd);

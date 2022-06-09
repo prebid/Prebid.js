@@ -88,6 +88,10 @@ describe('weboramaRtdProvider', function() {
         };
         const adUnitCode = 'adunit1';
         const reqBidsConfigObj = {
+          ortb2Fragments: {
+            global: {},
+            bidder: {}
+          },
           adUnits: [{
             code: adUnitCode,
             bids: [{
@@ -132,7 +136,7 @@ describe('weboramaRtdProvider', function() {
         expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
           inventory: data
         });
-        expect(reqBidsConfigObj.adUnits[0].bids[4].ortb2).to.deep.equal({
+        expect(reqBidsConfigObj.ortb2Fragments.bidder.other).to.deep.equal({
           site: {
             ext: {
               data: data
@@ -195,6 +199,10 @@ describe('weboramaRtdProvider', function() {
             const adUnitCode2 = 'adunit2';
 
             const reqBidsConfigObj = {
+              ortb2Fragments: {
+                global: {},
+                bidder: {},
+              },
               adUnits: [{
                 code: adUnitCode1,
                 bids: [{
@@ -252,7 +260,7 @@ describe('weboramaRtdProvider', function() {
               expect(adUnit.bids[1].params).to.be.undefined;
               expect(adUnit.bids[2].params.keywords).to.deep.equal(data);
               expect(adUnit.bids[3].params).to.be.undefined;
-              expect(adUnit.bids[4].ortb2).to.be.undefined;
+              expect(reqBidsConfigObj.ortb2Fragments.bidder.other).to.be.undefined;
             });
 
             expect(onDataResponse).to.deep.equal({
@@ -304,6 +312,10 @@ describe('weboramaRtdProvider', function() {
             const adUnitCode2 = 'adunit2';
 
             const reqBidsConfigObj = {
+              ortb2Fragments: {
+                global: {},
+                bidder: {},
+              },
               adUnits: [{
                 code: adUnitCode1,
                 bids: [{
@@ -407,6 +419,10 @@ describe('weboramaRtdProvider', function() {
             const adUnitCode1 = 'adunit1';
             const adUnitCode2 = 'adunit2';
             const reqBidsConfigObj = {
+              ortb2Fragments: {
+                global: {},
+                bidder: {},
+              },
               adUnits: [{
                 code: adUnitCode1,
                 bids: [{
@@ -511,7 +527,7 @@ describe('weboramaRtdProvider', function() {
                 }
               });
 
-              expect(adUnit.bids[4].ortb2).to.be.undefined;
+              expect(reqBidsConfigObj.ortb2Fragments.bidder.other).to.be.undefined;
             });
           });
         });
@@ -545,6 +561,10 @@ describe('weboramaRtdProvider', function() {
             const adUnitCode1 = 'adunit1';
             const adUnitCode2 = 'adunit2';
             const reqBidsConfigObj = {
+              ortb2Fragments: {
+                global: {},
+                bidder: {},
+              },
               adUnits: [{
                 code: adUnitCode1,
                 bids: [{
@@ -649,7 +669,7 @@ describe('weboramaRtdProvider', function() {
                 }
               });
 
-              expect(adUnit.bids[4].ortb2).to.be.undefined;
+              expect(reqBidsConfigObj.ortb2Fragments.bidder.other).to.be.undefined;
             });
           });
         });
@@ -680,6 +700,9 @@ describe('weboramaRtdProvider', function() {
         };
         const adUnitCode = 'adunit1';
         const reqBidsConfigObj = {
+          ortb2Fragments: {
+            global: {}
+          },
           adUnits: [{
             code: adUnitCode,
             bids: [{
@@ -739,6 +762,10 @@ describe('weboramaRtdProvider', function() {
         };
         const adUnitCode = 'adunit1';
         const reqBidsConfigObj = {
+          ortb2Fragments: {
+            global: {},
+            bidder: {}
+          },
           adUnits: [{
             code: adUnitCode,
             bids: [{
@@ -812,7 +839,7 @@ describe('weboramaRtdProvider', function() {
             baz: 'bam',
           }
         });
-        expect(reqBidsConfigObj.adUnits[0].bids[4].ortb2).to.deep.equal({
+        expect(reqBidsConfigObj.ortb2Fragments.bidder.other).to.deep.equal({
           site: {
             ext: {
               data: data
@@ -845,6 +872,10 @@ describe('weboramaRtdProvider', function() {
 
         const adUnitCode = 'adunit1';
         const reqBidsConfigObj = {
+          ortb2Fragments: {
+            global: {},
+            bidder: {}
+          },
           adUnits: [{
             code: adUnitCode,
             bids: [{
@@ -888,7 +919,7 @@ describe('weboramaRtdProvider', function() {
         expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
           inventory: defaultProfile
         });
-        expect(reqBidsConfigObj.adUnits[0].bids[4].ortb2).to.deep.equal({
+        expect(reqBidsConfigObj.ortb2Fragments.bidder.other).to.deep.equal({
           site: {
             ext: {
               data: defaultProfile
@@ -941,6 +972,10 @@ describe('weboramaRtdProvider', function() {
         const adUnitCode1 = 'adunit1';
         const adUnitCode2 = 'adunit2';
         const reqBidsConfigObj = {
+          ortb2Fragments: {
+            global: {},
+            bidder: {},
+          },
           adUnits: [{
             code: adUnitCode1,
             bids: [{
@@ -1003,7 +1038,7 @@ describe('weboramaRtdProvider', function() {
           expect(adUnit.bids[3].params).to.deep.equal({
             inventory: data
           });
-          expect(adUnit.bids[4].ortb2).to.deep.equal({
+          expect(reqBidsConfigObj.ortb2Fragments.bidder.other).to.deep.equal({
             site: {
               ext: {
                 data: data
@@ -1062,6 +1097,10 @@ describe('weboramaRtdProvider', function() {
 
         const adUnitCode = 'adunit1';
         const reqBidsConfigObj = {
+          ortb2Fragments: {
+            global: {},
+            bidder: {},
+          },
           adUnits: [{
             code: adUnitCode,
             bids: [{
@@ -1097,7 +1136,7 @@ describe('weboramaRtdProvider', function() {
         expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
           visitor: data
         });
-        expect(reqBidsConfigObj.adUnits[0].bids[4].ortb2).to.deep.equal({
+        expect(reqBidsConfigObj.ortb2Fragments.bidder.other).to.deep.equal({
           user: {
             ext: {
               data: data
@@ -1168,6 +1207,10 @@ describe('weboramaRtdProvider', function() {
             const adUnitCode1 = 'adunit1';
             const adUnitCode2 = 'adunit2';
             const reqBidsConfigObj = {
+              ortb2Fragments: {
+                global: {},
+                bidder: {},
+              },
               adUnits: [{
                 code: adUnitCode1,
                 bids: [{
@@ -1216,8 +1259,8 @@ describe('weboramaRtdProvider', function() {
               expect(adUnit.bids[1].params).to.be.undefined;
               expect(adUnit.bids[2].params.keywords).to.deep.equal(data);
               expect(adUnit.bids[3].params).to.be.undefined;
-              expect(adUnit.bids[4].ortb2).to.be.undefined;
             });
+            expect(reqBidsConfigObj.ortb2Fragments.bidder.other).to.be.undefined;
 
             expect(onDataResponse).to.deep.equal({
               data: data,
@@ -1276,6 +1319,10 @@ describe('weboramaRtdProvider', function() {
             const adUnitCode1 = 'adunit1';
             const adUnitCode2 = 'adunit2';
             const reqBidsConfigObj = {
+              ortb2Fragments: {
+                global: {},
+                bidder: {},
+              },
               adUnits: [{
                 code: adUnitCode1,
                 bids: [{
@@ -1323,8 +1370,8 @@ describe('weboramaRtdProvider', function() {
               expect(adUnit.bids[0].params).to.be.undefined;
               expect(adUnit.bids[1].params).to.be.undefined;
               expect(adUnit.bids[3].params).to.be.undefined;
-              expect(adUnit.bids[4].ortb2).to.be.undefined;
             });
+            expect(reqBidsConfigObj.ortb2Fragments.bidder.other).to.be.undefined;
 
             expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal(data);
             expect(reqBidsConfigObj.adUnits[1].bids[2].params).to.be.undefined;
@@ -1379,6 +1426,10 @@ describe('weboramaRtdProvider', function() {
             const adUnitCode1 = 'adunit1';
             const adUnitCode2 = 'adunit2';
             const reqBidsConfigObj = {
+              ortb2Fragments: {
+                global: {},
+                bidder: {},
+              },
               adUnits: [{
                 code: adUnitCode1,
                 bids: [{
@@ -1474,8 +1525,8 @@ describe('weboramaRtdProvider', function() {
                   baz: 'bam'
                 }
               });
-              expect(adUnit.bids[4].ortb2).to.be.undefined;
             });
+            expect(reqBidsConfigObj.ortb2Fragments.bidder.other).to.be.undefined;
           });
         });
       });
@@ -1517,6 +1568,10 @@ describe('weboramaRtdProvider', function() {
             const adUnitCode1 = 'adunit1';
             const adUnitCode2 = 'adunit2';
             const reqBidsConfigObj = {
+              ortb2Fragments: {
+                global: {},
+                bidder: {},
+              },
               adUnits: [{
                 code: adUnitCode1,
                 bids: [{
@@ -1612,8 +1667,8 @@ describe('weboramaRtdProvider', function() {
                   baz: 'bam'
                 }
               });
-              expect(adUnit.bids[4].ortb2).to.be.undefined;
             });
+            expect(reqBidsConfigObj.ortb2Fragments.bidder.other).to.be.undefined;
           });
         });
       });
@@ -1712,6 +1767,10 @@ describe('weboramaRtdProvider', function() {
 
         const adUnitCode = 'adunit1';
         const reqBidsConfigObj = {
+          ortb2Fragments: {
+            global: {},
+            bidder: {}
+          },
           adUnits: [{
             code: adUnitCode,
             bids: [{
@@ -1777,7 +1836,7 @@ describe('weboramaRtdProvider', function() {
             webo_audiences: ['baz'],
           }
         });
-        expect(reqBidsConfigObj.adUnits[0].bids[4].ortb2).to.deep.equal({
+        expect(reqBidsConfigObj.ortb2Fragments.bidder.other).to.deep.equal({
           user: {
             ext: {
               data: data
@@ -1804,6 +1863,10 @@ describe('weboramaRtdProvider', function() {
 
         const adUnitCode = 'adunit1';
         const reqBidsConfigObj = {
+          ortb2Fragments: {
+            global: {},
+            bidder: {}
+          },
           adUnits: [{
             code: adUnitCode,
             bids: [{
@@ -1839,7 +1902,7 @@ describe('weboramaRtdProvider', function() {
         expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
           visitor: defaultProfile
         });
-        expect(reqBidsConfigObj.adUnits[0].bids[4].ortb2).to.deep.equal({
+        expect(reqBidsConfigObj.ortb2Fragments.bidder.other).to.deep.equal({
           user: {
             ext: {
               data: defaultProfile
@@ -1873,6 +1936,10 @@ describe('weboramaRtdProvider', function() {
 
         const adUnitCode = 'adunit1';
         const reqBidsConfigObj = {
+          ortb2Fragments: {
+            global: {},
+            bidder: {}
+          },
           adUnits: [{
             code: adUnitCode,
             bids: [{
@@ -1908,7 +1975,7 @@ describe('weboramaRtdProvider', function() {
         expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
           visitor: defaultProfile
         });
-        expect(reqBidsConfigObj.adUnits[0].bids[4].ortb2).to.deep.equal({
+        expect(reqBidsConfigObj.ortb2Fragments.bidder.other).to.deep.equal({
           user: {
             ext: {
               data: defaultProfile
@@ -1970,6 +2037,10 @@ describe('weboramaRtdProvider', function() {
         const adUnitCode1 = 'adunit1';
         const adUnitCode2 = 'adunit2';
         const reqBidsConfigObj = {
+          ortb2Fragments: {
+            global: {},
+            bidder: {},
+          },
           adUnits: [{
             code: adUnitCode1,
             bids: [{
@@ -2024,7 +2095,7 @@ describe('weboramaRtdProvider', function() {
           expect(adUnit.bids[3].params).to.deep.equal({
             visitor: data
           });
-          expect(adUnit.bids[4].ortb2).to.deep.equal({
+          expect(reqBidsConfigObj.ortb2Fragments.bidder.other).to.deep.equal({
             user: {
               ext: {
                 data: data
@@ -2082,6 +2153,10 @@ describe('weboramaRtdProvider', function() {
 
         const adUnitCode = 'adunit1';
         const reqBidsConfigObj = {
+          ortb2Fragments: {
+            global: {},
+            bidder: {},
+          },
           adUnits: [{
             code: adUnitCode,
             bids: [{
@@ -2117,7 +2192,7 @@ describe('weboramaRtdProvider', function() {
         expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
           inventory: data,
         });
-        expect(reqBidsConfigObj.adUnits[0].bids[4].ortb2).to.deep.equal({
+        expect(reqBidsConfigObj.ortb2Fragments.bidder.other).to.deep.equal({
           site: {
             ext: {
               data: data,
@@ -2187,6 +2262,10 @@ describe('weboramaRtdProvider', function() {
             const adUnitCode1 = 'adunit1';
             const adUnitCode2 = 'adunit2';
             const reqBidsConfigObj = {
+              ortb2Fragments: {
+                global: {},
+                bidder: {},
+              },
               adUnits: [{
                 code: adUnitCode1,
                 bids: [{
@@ -2235,8 +2314,8 @@ describe('weboramaRtdProvider', function() {
               expect(adUnit.bids[1].params).to.be.undefined;
               expect(adUnit.bids[2].params.keywords).to.deep.equal(data);
               expect(adUnit.bids[3].params).to.be.undefined;
-              expect(adUnit.bids[4].ortb2).to.be.undefined;
             });
+            expect(reqBidsConfigObj.ortb2Fragments.bidder.other).to.be.undefined;
 
             expect(onDataResponse).to.deep.equal({
               data: data,
@@ -2294,6 +2373,10 @@ describe('weboramaRtdProvider', function() {
             const adUnitCode1 = 'adunit1';
             const adUnitCode2 = 'adunit2';
             const reqBidsConfigObj = {
+              ortb2Fragments: {
+                global: {},
+                bidder: {},
+              },
               adUnits: [{
                 code: adUnitCode1,
                 bids: [{
@@ -2341,8 +2424,8 @@ describe('weboramaRtdProvider', function() {
               expect(adUnit.bids[0].params).to.be.undefined;
               expect(adUnit.bids[1].params).to.be.undefined;
               expect(adUnit.bids[3].params).to.be.undefined;
-              expect(adUnit.bids[4].ortb2).to.be.undefined;
             });
+            expect(reqBidsConfigObj.ortb2Fragments.bidder.other).to.be.undefined;
 
             expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal(data);
             expect(reqBidsConfigObj.adUnits[1].bids[2].params).to.be.undefined;
@@ -2396,6 +2479,10 @@ describe('weboramaRtdProvider', function() {
             const adUnitCode1 = 'adunit1';
             const adUnitCode2 = 'adunit2';
             const reqBidsConfigObj = {
+              ortb2Fragments: {
+                global: {},
+                bidder: {},
+              },
               adUnits: [{
                 code: adUnitCode1,
                 bids: [{
@@ -2491,8 +2578,8 @@ describe('weboramaRtdProvider', function() {
                   baz: 'bam'
                 }
               });
-              expect(adUnit.bids[4].ortb2).to.be.undefined;
             });
+            expect(reqBidsConfigObj.ortb2Fragments.bidder.other).to.be.undefined;
           });
         });
       });
@@ -2533,6 +2620,10 @@ describe('weboramaRtdProvider', function() {
             const adUnitCode1 = 'adunit1';
             const adUnitCode2 = 'adunit2';
             const reqBidsConfigObj = {
+              ortb2Fragments: {
+                global: {},
+                bidder: {},
+              },
               adUnits: [{
                 code: adUnitCode1,
                 bids: [{
@@ -2628,8 +2719,8 @@ describe('weboramaRtdProvider', function() {
                   baz: 'bam'
                 }
               });
-              expect(adUnit.bids[4].ortb2).to.be.undefined;
             });
+            expect(reqBidsConfigObj.ortb2Fragments.bidder.other).to.be.undefined;
           });
         });
       });
@@ -2667,6 +2758,10 @@ describe('weboramaRtdProvider', function() {
 
         const adUnitCode = 'adunit1';
         const reqBidsConfigObj = {
+          ortb2Fragments: {
+            global: {},
+            bidder: {},
+          },
           adUnits: [{
             code: adUnitCode,
             bids: [{
@@ -2726,6 +2821,10 @@ describe('weboramaRtdProvider', function() {
 
         const adUnitCode = 'adunit1';
         const reqBidsConfigObj = {
+          ortb2Fragments: {
+            global: {},
+            bidder: {},
+          },
           adUnits: [{
             code: adUnitCode,
             bids: [{
@@ -2791,7 +2890,7 @@ describe('weboramaRtdProvider', function() {
             baz: 'bam',
           }
         });
-        expect(reqBidsConfigObj.adUnits[0].bids[4].ortb2).to.deep.equal({
+        expect(reqBidsConfigObj.ortb2Fragments.bidder.other).to.deep.equal({
           site: {
             ext: {
               data: data,
@@ -2817,6 +2916,10 @@ describe('weboramaRtdProvider', function() {
 
         const adUnitCode = 'adunit1';
         const reqBidsConfigObj = {
+          ortb2Fragments: {
+            global: {},
+            bidder: {},
+          },
           adUnits: [{
             code: adUnitCode,
             bids: [{
@@ -2852,7 +2955,7 @@ describe('weboramaRtdProvider', function() {
         expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
           inventory: defaultProfile,
         });
-        expect(reqBidsConfigObj.adUnits[0].bids[4].ortb2).to.deep.equal({
+        expect(reqBidsConfigObj.ortb2Fragments.bidder.other).to.deep.equal({
           site: {
             ext: {
               data: defaultProfile,
@@ -2885,6 +2988,10 @@ describe('weboramaRtdProvider', function() {
 
         const adUnitCode = 'adunit1';
         const reqBidsConfigObj = {
+          ortb2Fragments: {
+            global: {},
+            bidder: {},
+          },
           adUnits: [{
             code: adUnitCode,
             bids: [{
@@ -2920,7 +3027,7 @@ describe('weboramaRtdProvider', function() {
         expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
           inventory: defaultProfile,
         });
-        expect(reqBidsConfigObj.adUnits[0].bids[4].ortb2).to.deep.equal({
+        expect(reqBidsConfigObj.ortb2Fragments.bidder.other).to.deep.equal({
           site: {
             ext: {
               data: defaultProfile,
@@ -2981,6 +3088,10 @@ describe('weboramaRtdProvider', function() {
         const adUnitCode1 = 'adunit1';
         const adUnitCode2 = 'adunit2';
         const reqBidsConfigObj = {
+          ortb2Fragments: {
+            global: {},
+            bidder: {},
+          },
           adUnits: [{
             code: adUnitCode1,
             bids: [{
@@ -3035,13 +3146,13 @@ describe('weboramaRtdProvider', function() {
           expect(adUnit.bids[3].params).to.deep.equal({
             inventory: data,
           });
-          expect(adUnit.bids[4].ortb2).to.deep.equal({
-            site: {
-              ext: {
-                data: data,
-              },
+        });
+        expect(reqBidsConfigObj.ortb2Fragments.bidder.other).to.deep.equal({
+          site: {
+            ext: {
+              data: data,
             },
-          });
+          },
         });
 
         expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal({
