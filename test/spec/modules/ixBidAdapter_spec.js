@@ -1241,7 +1241,7 @@ describe('IndexexchangeAdapter', function () {
         }
       };
 
-      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID)[0];
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, {ortb2})[0];
       const r = JSON.parse(request.data.r);
 
       expect(r.ext.ixdiag.fpd).to.exist;
@@ -1266,25 +1266,6 @@ describe('IndexexchangeAdapter', function () {
       const r = JSON.parse(request.data.r);
 
       expect(r.ext.ixdiag.tmax).to.be.undefined
-    });
-
-    it('should set ixdiag.fpd value if it exists using ortb2', function () {
-      config.setConfig({
-        ortb2: {
-          site: {
-            ext: {
-              data: {
-                pageType: 'article'
-              }
-            }
-          }
-        }
-      });
-
-      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, {ortb2})[0];
-      const r = JSON.parse(request.data.r);
-
-      expect(r.ext.ixdiag.fpd).to.exist;
     });
 
     it('should not send information that is not part of openRTB spec v2.5 using ortb2', function () {
