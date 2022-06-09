@@ -1,7 +1,6 @@
-import { deepAccess, getWindowTop, getWindowSelf, getAdUnitSizes } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import { BANNER, NATIVE } from '../src/mediaTypes.js'
+import {deepAccess, getAdUnitSizes} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE} from '../src/mediaTypes.js';
 
 export const BIDDER_CODE = 'aduptech';
 export const ENDPOINT_URL_PUBLISHER_PLACEHOLDER = '{PUBLISHER}';
@@ -37,19 +36,8 @@ export const internal = {
    * @returns {string}
    */
   extractPageUrl: (bidderRequest) => {
-    if (bidderRequest && deepAccess(bidderRequest, 'refererInfo.canonicalUrl')) {
-      return bidderRequest.refererInfo.canonicalUrl;
-    }
-
-    if (config && config.getConfig('pageUrl')) {
-      return config.getConfig('pageUrl');
-    }
-
-    try {
-      return getWindowTop().location.href;
-    } catch (e) {
-      return getWindowSelf().location.href;
-    }
+    // TODO: does it make sense to fall back here?
+    return bidderRequest?.refererInfo?.page || window.location.href;
   },
 
   /**
@@ -59,15 +47,8 @@ export const internal = {
    * @returns {string}
    */
   extractReferrer: (bidderRequest) => {
-    if (bidderRequest && deepAccess(bidderRequest, 'refererInfo.referer')) {
-      return bidderRequest.refererInfo.referer;
-    }
-
-    try {
-      return getWindowTop().document.referrer;
-    } catch (e) {
-      return getWindowSelf().document.referrer;
-    }
+    // TODO: does it make sense to fall back here?
+    return bidderRequest?.refererInfo?.ref || window.document.referrer;
   },
 
   /**
@@ -111,6 +92,30 @@ export const internal = {
     }
 
     return null;
+  },
+
+  /**
+   * Extracts the floor price params from given bidRequest
+   *
+   * @param {BidRequest} bidRequest
+   * @returns {undefined|float}
+   */
+  extractFloorPrice: (bidRequest) => {
+    let floorPrice;
+    if (bidRequest && bidRequest.params && bidRequest.params.floor) {
+      // if there is a manual floorPrice set
+      floorPrice = !isNaN(parseInt(bidRequest.params.floor)) ? bidRequest.params.floor : undefined;
+    }
+    if (typeof bidRequest.getFloor === 'function') {
+      // use prebid floor module
+      let floorInfo;
+      try {
+        floorInfo = bidRequest.getFloor();
+      } catch (e) {}
+      floorPrice = typeof floorInfo === 'object' && !isNaN(parseInt(floorInfo.floor)) ? floorInfo.floor : floorPrice;
+    }
+
+    return floorPrice;
   },
 
   /**
@@ -246,6 +251,12 @@ export const spec = {
         const nativeConfig = internal.extractNativeConfig(bidRequest);
         if (nativeConfig) {
           bid.native = nativeConfig;
+        }
+
+        // add floor price
+        const floorPrice = internal.extractFloorPrice(bidRequest);
+        if (floorPrice) {
+          bid.floorPrice = floorPrice;
         }
 
         request.data.imp.push(bid);

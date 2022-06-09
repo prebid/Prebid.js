@@ -152,13 +152,12 @@
  */
 
 import {config} from '../../src/config.js';
-import {module} from '../../src/hook.js';
+import {getHook, module} from '../../src/hook.js';
 import {logError, logInfo, logWarn} from '../../src/utils.js';
 import * as events from '../../src/events.js';
 import CONSTANTS from '../../src/constants.json';
 import {gdprDataHandler, uspDataHandler} from '../../src/adapterManager.js';
 import {find} from '../../src/polyfill.js';
-import {getGlobal} from '../../src/prebidGlobal.js';
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
@@ -229,7 +228,7 @@ export function init(config) {
     _moduleConfig = realTimeData;
     _dataProviders = realTimeData.dataProviders;
     setEventsListeners();
-    getGlobal().requestBids.before(setBidRequestsData, 40);
+    getHook('startAuction').before(setBidRequestsData, 20); // RTD should run before FPD
     initSubModules();
   });
 }

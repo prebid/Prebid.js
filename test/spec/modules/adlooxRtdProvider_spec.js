@@ -171,6 +171,7 @@ describe('Adloox RTD Provider', function () {
     });
 
     it('should fetch segments', function (done) {
+      const req = {};
       const adUnitWithSegments = utils.deepClone(adUnit);
       const getGlobalStub = sinon.stub(prebidGlobal, 'getGlobal').returns({
         adUnits: [ adUnitWithSegments ]
@@ -180,10 +181,11 @@ describe('Adloox RTD Provider', function () {
       expect(ret).is.true;
 
       const callback = function () {
-        expect(__config.ortb2.site.ext.data.adloox_rtd.ok).is.true;
-        expect(__config.ortb2.site.ext.data.adloox_rtd.nope).is.undefined;
-        expect(__config.ortb2.user.ext.data.adloox_rtd.unused).is.false;
-        expect(__config.ortb2.user.ext.data.adloox_rtd.nope).is.undefined;
+        const ortb2 = req.ortb2Fragments.global;
+        expect(ortb2.site.ext.data.adloox_rtd.ok).is.true;
+        expect(ortb2.site.ext.data.adloox_rtd.nope).is.undefined;
+        expect(ortb2.user.ext.data.adloox_rtd.unused).is.false;
+        expect(ortb2.user.ext.data.adloox_rtd.nope).is.undefined;
         expect(adUnitWithSegments.ortb2Imp.ext.data.adloox_rtd.dis.length).is.equal(3);
         expect(adUnitWithSegments.ortb2Imp.ext.data.adloox_rtd.nope).is.undefined;
 
@@ -191,7 +193,7 @@ describe('Adloox RTD Provider', function () {
 
         done();
       };
-      rtdProvider.getBidRequestData({}, callback, CONFIG, null);
+      rtdProvider.getBidRequestData(req, callback, CONFIG, null);
 
       const request = server.requests[0];
       const response = { unused: false, _: [ { d: 77 } ] };
@@ -207,7 +209,11 @@ describe('Adloox RTD Provider', function () {
         adUnits: [ adUnitWithSegments ]
       });
 
-      const targetingData = rtdProvider.getTargetingData([ adUnitWithSegments.code ], CONFIG);
+      const targetingData = rtdProvider.getTargetingData([ adUnitWithSegments.code ], CONFIG, null, {
+        getFPD: () => ({
+          global: __config.ortb2
+        })
+      });
       expect(Object.keys(targetingData).length).is.equal(1);
       expect(Object.keys(targetingData[adUnit.code]).length).is.equal(2);
       expect(targetingData[adUnit.code].adl_ok).is.equal(1);

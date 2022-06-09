@@ -228,20 +228,15 @@ function buildSite(bidderRequest) {
   let site = null;
   const { refererInfo } = bidderRequest;
 
-  const pageUrl = config.getConfig('pageUrl') || refererInfo.canonicalUrl || refererInfo.referer;
+  const pageUrl = refererInfo.page;
   if (pageUrl) {
     site = site || {};
     site.page = pageUrl;
   }
 
-  if (refererInfo.reachedTop) {
-    try {
-      const pageRef = window.top.document.referrer;
-      if (pageRef) {
-        site = site || {};
-        site.ref = pageRef;
-      }
-    } catch (e) {}
+  if (refererInfo.ref) {
+    site = site || {};
+    site.ref = refererInfo.ref;
   }
 
   return site;

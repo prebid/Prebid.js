@@ -196,7 +196,7 @@ describe('Seedtag Adapter', function () {
 
   describe('buildRequests method', function () {
     const bidderRequest = {
-      refererInfo: { referer: 'referer' },
+      refererInfo: { page: 'referer' },
       timeout: 1000,
     };
     const mandatoryParams = {

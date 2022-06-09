@@ -24,9 +24,10 @@ const STAQ_EVENTS = {
 }
 
 function buildRequestTemplate(connId) {
-  const url = staqAdapterRefWin.referer;
-  const ref = staqAdapterRefWin.referer;
-  const topLocation = staqAdapterRefWin.referer;
+  // TODO: what should these pick from refererInfo?
+  const url = staqAdapterRefWin.topmostLocation;
+  const ref = staqAdapterRefWin.topmostLocation;
+  const topLocation = staqAdapterRefWin.topmostLocation;
 
   return {
     ver: ANALYTICS_VERSION,
