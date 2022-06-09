@@ -532,8 +532,8 @@ describe('AduptechBidAdapter', () => {
         const bidderRequest = {
           auctionId: 'auctionId123',
           refererInfo: {
-            canonicalUrl: 'http://crazy.canonical.url',
-            referer: 'http://crazy.referer.url'
+            page: 'http://crazy.canonical.url',
+            ref: 'http://crazy.referer.url'
           },
           gdprConsent: {
             consentString: 'consentString123',
@@ -572,8 +572,8 @@ describe('AduptechBidAdapter', () => {
             method: ENDPOINT_METHOD,
             data: {
               auctionId: bidderRequest.auctionId,
-              pageUrl: bidderRequest.refererInfo.canonicalUrl,
-              referrer: bidderRequest.refererInfo.referer,
+              pageUrl: bidderRequest.refererInfo.page,
+              referrer: bidderRequest.refererInfo.ref,
               gdpr: {
                 consentString: bidderRequest.gdprConsent.consentString,
                 consentRequired: bidderRequest.gdprConsent.gdprApplies
