@@ -45,8 +45,8 @@ export const spec = {
         payload.consent_required = bidderRequest.gdprConsent.gdprApplies;
       }
       const baseUrl = bidRequest.params.baseUrl || ENDPOINT_URL;
-      if (bidRequest.params.testmode) {
-        payload.testmode = bidRequest.params.testmode;
+      if (bidRequest.params.test) {
+        payload.test = bidRequest.params.test;
       }
       return {
         method: 'POST',
