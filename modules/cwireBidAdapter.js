@@ -10,6 +10,7 @@ import {
   getValue,
   isArray,
   isNumber,
+  isStr,
   logError,
   logWarn,
   parseSizesInput,
@@ -129,6 +130,11 @@ export const spec = {
   isBidRequestValid: function(bid) {
     bid.params = bid.params || {};
 
+    if (bid.params.cwcreative && !isStr(bid.params.cwcreative)) {
+      logError('cwcreative must be of type string!');
+      return false;
+    }
+
     if (!bid.params.placementId || !isNumber(bid.params.placementId)) {
       logError('placementId not provided or invalid');
       return false;
@@ -177,7 +183,7 @@ export const spec = {
 
     let refgroups = [];
 
-    const cwCreativeId = parseInt(getQueryVariable(CW_CREATIVE_QUERY), 10) || null;
+    const cwCreative = getQueryVariable(CW_CREATIVE_QUERY) || null;
     const cwCreativeIdFromConfig = this.getFirstValueOrNull(slots, 'cwcreative');
     const refGroupsFromConfig = this.getFirstValueOrNull(slots, 'refgroups');
     const cwApiKeyFromConfig = this.getFirstValueOrNull(slots, 'cwapikey');
@@ -198,7 +204,7 @@ export const spec = {
     const payload = {
       cwid: localStorageCWID,
       refgroups,
-      cwcreative: cwCreativeId || cwCreativeIdFromConfig,
+      cwcreative: cwCreative || cwCreativeIdFromConfig,
       slots: slots,
       cwapikey: cwApiKeyFromConfig,
       httpRef: referer || '',

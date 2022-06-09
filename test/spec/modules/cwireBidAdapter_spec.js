@@ -120,6 +120,19 @@ describe('C-WIRE bid adapter', () => {
       bid01.params.pageId = '3320';
       expect(spec.isBidRequestValid(bid01)).to.equal(false);
     });
+
+    it('should fail if cwcreative of type number', function () {
+      const bid01 = new BidRequestBuilder().withParams().build();
+      delete bid01.params.cwcreative;
+      bid01.params.cwcreative = 3320;
+      expect(spec.isBidRequestValid(bid01)).to.equal(false);
+    });
+
+    it('should pass with valid cwcreative of type string', function () {
+      const bid01 = new BidRequestBuilder().withParams().build();
+      bid01.params.cwcreative = 'i-am-a-string';
+      expect(spec.isBidRequestValid(bid01)).to.equal(true);
+    });
   });
 
   describe('C-WIRE - buildRequests()', function () {
@@ -131,7 +144,7 @@ describe('C-WIRE bid adapter', () => {
           }
         }
       }).withParams({
-        cwcreative: 54321,
+        cwcreative: '54321',
         cwapikey: 'xxx-xxx-yyy-zzz-uuid',
         refgroups: 'group_1',
       }).build();
@@ -144,7 +157,7 @@ describe('C-WIRE bid adapter', () => {
       expect(requests.data.cwid).to.be.null;
       expect(requests.data.cwid).to.be.null;
       expect(requests.data.slots[0].sizes[0]).to.equal('1x1');
-      expect(requests.data.cwcreative).to.equal(54321);
+      expect(requests.data.cwcreative).to.equal('54321');
       expect(requests.data.cwapikey).to.equal('xxx-xxx-yyy-zzz-uuid');
       expect(requests.data.refgroups[0]).to.equal('group_1');
     });
@@ -159,7 +172,7 @@ describe('C-WIRE bid adapter', () => {
           }
         }
       }).withParams({
-        cwcreative: 1234,
+        cwcreative: '1234',
         cwapikey: 'api_key_5',
         refgroups: 'group_5',
       }).build();
@@ -171,7 +184,7 @@ describe('C-WIRE bid adapter', () => {
       expect(requests.data.slots.length).to.equal(2);
       expect(requests.data.cwid).to.be.null;
       expect(requests.data.cwid).to.be.null;
-      expect(requests.data.cwcreative).to.equal(1234);
+      expect(requests.data.cwcreative).to.equal('1234');
       expect(requests.data.cwapikey).to.equal('api_key_5');
       expect(requests.data.refgroups[0]).to.equal('group_5');
     });
@@ -179,14 +192,14 @@ describe('C-WIRE bid adapter', () => {
     it('creates a valid request - read debug params from first bid, ignore second', function () {
       const bid01 = new BidRequestBuilder()
         .withParams({
-          cwcreative: 33,
+          cwcreative: '33',
           cwapikey: 'api_key_33',
           refgroups: 'group_33',
         }).build();
 
       const bid02 = new BidRequestBuilder()
         .withParams({
-          cwcreative: 1234,
+          cwcreative: '1234',
           cwapikey: 'api_key_5',
           refgroups: 'group_5',
         }).build();
@@ -198,7 +211,7 @@ describe('C-WIRE bid adapter', () => {
       expect(requests.data.slots.length).to.equal(2);
       expect(requests.data.cwid).to.be.null;
       expect(requests.data.cwid).to.be.null;
-      expect(requests.data.cwcreative).to.equal(33);
+      expect(requests.data.cwcreative).to.equal('33');
       expect(requests.data.cwapikey).to.equal('api_key_33');
       expect(requests.data.refgroups[0]).to.equal('group_33');
     });
@@ -206,7 +219,7 @@ describe('C-WIRE bid adapter', () => {
     it('creates a valid request - read debug params from 3 different slots', function () {
       const bid01 = new BidRequestBuilder()
         .withParams({
-          cwcreative: 33,
+          cwcreative: '33',
         }).build();
 
       const bid02 = new BidRequestBuilder()
@@ -225,7 +238,7 @@ describe('C-WIRE bid adapter', () => {
       expect(requests.data.slots.length).to.equal(3);
       expect(requests.data.cwid).to.be.null;
       expect(requests.data.cwid).to.be.null;
-      expect(requests.data.cwcreative).to.equal(33);
+      expect(requests.data.cwcreative).to.equal('33');
       expect(requests.data.cwapikey).to.equal('api_key_5');
       expect(requests.data.refgroups[0]).to.equal('group_5');
     });
@@ -244,7 +257,7 @@ describe('C-WIRE bid adapter', () => {
           }
         }
       }).withParams({
-        cwcreative: 54321,
+        cwcreative: '54321',
         cwapikey: 'xxx-xxx-yyy-zzz',
         refgroups: 'group_1',
       }).build();
@@ -257,7 +270,7 @@ describe('C-WIRE bid adapter', () => {
       expect(requests.data.cwid).to.be.null;
       expect(requests.data.cwid).to.be.null;
       expect(requests.data.slots[0].sizes[0]).to.equal('1x1');
-      expect(requests.data.cwcreative).to.equal(654321);
+      expect(requests.data.cwcreative).to.equal('654321');
       expect(requests.data.cwapikey).to.equal('xxx-xxx-yyy-zzz');
       expect(requests.data.refgroups[0]).to.equal('group_2');
     });
