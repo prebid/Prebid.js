@@ -244,7 +244,7 @@ function fetchId(configParams, gdprConsentData) {
   const data = {
     eid,
     trackers,
-    url: refererInfo.referer,
+    url: refererInfo.page,
     prebidVersion: '$prebid.version$',
     isIframe: inIframe(),
     tpcSupport

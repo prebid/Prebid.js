@@ -3,6 +3,7 @@ import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
+import {hasPurpose1Consent} from '../src/utils/gpdr.js';
 
 const GVLID = 816;
 const BIDDER_CODE = 'nobid';
@@ -24,15 +25,6 @@ function nobidSetCookie(cname, cvalue, hours) {
 }
 function nobidGetCookie(cname) {
   return storage.getCookie(cname);
-}
-function nobidHasPurpose1Consent(bidderRequest) {
-  let result = true;
-  if (bidderRequest && bidderRequest.gdprConsent) {
-    if (bidderRequest.gdprConsent.gdprApplies && bidderRequest.gdprConsent.apiVersion === 2) {
-      result = !!(deepAccess(bidderRequest.gdprConsent, 'vendorData.purpose.consents.1') === true);
-    }
-  }
-  return result;
 }
 function nobidBuildRequests(bids, bidderRequest) {
   var serializeState = function(divIds, siteId, adunits) {
@@ -88,9 +80,10 @@ function nobidBuildRequests(bids, bidderRequest) {
     }
     var topLocation = function(bidderRequest) {
       var ret = '';
-      if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
-        ret = bidderRequest.refererInfo.referer;
+      if (bidderRequest?.refererInfo?.page) {
+        ret = bidderRequest.refererInfo.page;
       } else {
+        // TODO: does this fallback make sense here?
         ret = (window.context && window.context.location && window.context.location.href) ? window.context.location.href : document.location.href;
       }
       return encodeURIComponent(ret.replace(/\%/g, ''));
@@ -152,7 +145,7 @@ function nobidBuildRequests(bids, bidderRequest) {
     if (cop) state['coppa'] = cop;
     const eids = getEIDs(deepAccess(bids, '0.userIdAsEids'));
     if (eids && eids.length > 0) state['eids'] = eids;
-    if (config && config.getConfig('ortb2')) state['ortb2'] = config.getConfig('ortb2');
+    if (bidderRequest && bidderRequest.ortb2) state['ortb2'] = bidderRequest.ortb2;
     return state;
   }
   function newAdunit(adunitObject, adunits) {
@@ -386,7 +379,7 @@ export const spec = {
     const endpoint = buildEndpoint();
 
     let options = {};
-    if (!nobidHasPurpose1Consent(bidderRequest)) {
+    if (!hasPurpose1Consent(bidderRequest?.gdprConsent)) {
       options = { withCredentials: false };
     }
 

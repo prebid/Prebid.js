@@ -96,6 +96,10 @@ describe('automatadBidAdapter', function () {
     let req = spec.buildRequests([ bidRequestRequiredParams ], { refererInfo: { } })
     let rdata
 
+    it('should have withCredentials option as true', function() {
+      expect(req.options.withCredentials).to.equal(true)
+    })
+
     it('should return request object', function () {
       expect(req).to.not.be.null
     })

@@ -36,10 +36,7 @@ var pageView = {
   timezoneOffset: new Date().getTimezoneOffset(),
   language: window.navigator.language,
   vendor: window.navigator.vendor,
-  pageUrl: (() => {
-    const ri = getRefererInfo();
-    return ri.canonicalUrl || ri.referer;
-  })(),
+  pageUrl: getRefererInfo().page,
   screenWidth: x,
   screenHeight: y
 };

@@ -17,6 +17,7 @@
 ```
  pbjs.setConfig({
    realTimeData: {
+     auctionDelay: 2000,
      dataProviders: [
        {
          name: "dap",
@@ -25,9 +26,10 @@
            apiHostname: '<see your Akamai account rep>',
            apiVersion: "x1",
            domain: 'your-domain.com',
-           identityType: 'email' | 'mobile' | ... | 'dap-signature:1.0.0',
-           segtax: <Akamai_taxonomy_name>,
-           tokenTtl: 5,
+           identityType: 'email' | 'mobile' | ... | 'dap-signature:1.3.0',
+           segtax: 504,
+           dapEntropyUrl: 'https://dap-dist.akamaized.net/dapentropy.js',
+           dapEntropyTimeout: 1500       // Maximum time for dapentropy to run
          }
        }
      ]

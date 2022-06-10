@@ -1,7 +1,6 @@
-import { logWarn, isNumber } from '../src/utils.js';
+import {isNumber, logWarn} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'interactiveOffers';
 const ENDPOINT = 'https://prebid.ioadx.com/bidRequest/?partnerId=';
@@ -77,13 +76,15 @@ function parseRequestPrebidjsToOpenRTB(prebidRequest) {
     payload: {},
     partnerId: null
   };
+  // TODO: these should probably look at refererInfo
   let pageURL = window.location.href;
   let domain = window.location.hostname;
   let secure = (window.location.protocol == 'https:' ? 1 : 0);
   let openRTBRequest = JSON.parse(JSON.stringify(DEFAULT['OpenRTBBidRequest']));
   openRTBRequest.id = prebidRequest.auctionId;
   openRTBRequest.ext = {
-    refererInfo: prebidRequest.refererInfo,
+    // TODO: please do not send internal data structures over the network
+    refererInfo: prebidRequest.refererInfo.legacy,
     auctionId: prebidRequest.auctionId
   };
 
@@ -92,11 +93,11 @@ function parseRequestPrebidjsToOpenRTB(prebidRequest) {
   openRTBRequest.site.name = domain;
   openRTBRequest.site.domain = domain;
   openRTBRequest.site.page = pageURL;
-  openRTBRequest.site.ref = prebidRequest.refererInfo.referer;
+  openRTBRequest.site.ref = prebidRequest.refererInfo.ref;
 
   openRTBRequest.site.publisher = JSON.parse(JSON.stringify(DEFAULT['OpenRTBBidRequestSitePublisher']));
   openRTBRequest.site.publisher.id = 0;
-  openRTBRequest.site.publisher.name = config.getConfig('publisherDomain');
+  openRTBRequest.site.publisher.name = prebidRequest.refererInfo.domain;
   openRTBRequest.site.publisher.domain = domain;
   openRTBRequest.site.publisher.domain = domain;
 
