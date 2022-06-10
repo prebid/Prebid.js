@@ -9,31 +9,38 @@ export const spec = {
     if (typeof bid.params === 'undefined') {
       return false;
     }
-    return !!(bid.params.accountId && bid.params.placementId && bid.sizes)
+    return !!(bid.params.accountId && bid.params.placementId && bid.params.ppid && bid.sizes && Array.isArray(bid.sizes) && Array.isArray(bid.sizes[0]))
   },
   buildRequests: function(validBidRequests, bidderRequest) {
     const referer = bidderRequest.refererInfo.referer || '';
     const fpd = config.getConfig('ortb2');
-    return validBidRequests.map((bidRequest) => {
-      let req = {
+    const bids = [];
+
+    validBidRequests.forEach(bidRequest => {
+      bids.push({
+        bidId: bidRequest.bidId,
+        width: bidRequest.sizez[0][0],
+        height: bidRequest.sizes[0][1],
+        accountId: bidRequest.params.accountId,
+        placementId: bidRequest.params.placementId,
+        ppid: bidRequest.params.ppid,
+        mediaTypes: bidRequest.mediaTypes,
+        transactionId: bidRequest.transactionId,
+      })
+    });
+
+    const req = {
         url: baseUrl,
         method: 'POST',
         data: {
           v: $$PREBID_GLOBAL$$.version,
           referer: referer,
-          bidId: bidRequest.bidId,
-          auctionId: bidRequest.auctionId,
-          transactionId: bidRequest.transactionId,
-          adUnitCode: bidRequest.adUnitCode,
-          bidRequestCount: bidRequest.bidRequestCount,
-          params: bidRequest.params,
-          sizes: bidRequest.sizes,
-          mediaTypes: bidRequest.mediaTypes,
+          bids: bids,
           fpd: fpd ? JSON.stringify(fpd) : JSON.stringify({})
         }
-      };
-      return req;
-    });
+    };
+
+    return req;
   },
   interpretResponse: function(serverResponse, request) {
     const bidResponses = [];
