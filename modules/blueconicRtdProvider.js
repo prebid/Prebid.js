@@ -6,7 +6,6 @@
  * @requires module:modules/realTimeData
  */
 
-import {config} from '../src/config.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {submodule} from '../src/hook.js';
 import {mergeDeep, isPlainObject, logMessage, logError} from '../src/utils.js';
@@ -17,23 +16,6 @@ const SUBMODULE_NAME = 'blueconic';
 export const RTD_LOCAL_NAME = 'bcPrebidData';
 
 export const storage = getStorageManager({moduleName: SUBMODULE_NAME});
-
-/**
- * Lazy merge objects.
- * @param {Object} target
- * @param {Object} source
- */
-function mergeLazy(target, source) {
-  if (!isPlainObject(target)) {
-    target = {};
-  }
-
-  if (!isPlainObject(source)) {
-    source = {};
-  }
-
-  return mergeDeep(target, source);
-}
 
 /**
 * Try parsing stringified array of data.
@@ -54,10 +36,9 @@ function parseJson(data) {
  * @param {Object} rtd
  * @param {Object} rtdConfig
  */
-export function addRealTimeData(rtd) {
+export function addRealTimeData(ortb2, rtd) {
   if (isPlainObject(rtd.ortb2)) {
-    let ortb2 = config.getConfig('ortb2') || {};
-    config.setConfig({ortb2: mergeLazy(ortb2, rtd.ortb2)});
+    mergeDeep(ortb2, rtd.ortb2);
   }
 }
 
@@ -68,7 +49,7 @@ export function addRealTimeData(rtd) {
  * @param {Object} rtdConfig
  * @param {Object} userConsent
  */
-export function getRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
+export function getRealTimeData(reqBidsConfigObj, onDone, rtdConfig, userConsent) {
   if (rtdConfig && isPlainObject(rtdConfig.params)) {
     const jsonData = storage.getDataFromLocalStorage(RTD_LOCAL_NAME);
     if (jsonData) {
@@ -87,7 +68,7 @@ export function getRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
           }
         }
       }
-      addRealTimeData(data);
+      addRealTimeData(reqBidsConfigObj.ortb2Fragments?.global, data);
       onDone();
     }
   }
