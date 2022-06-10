@@ -181,7 +181,7 @@ function buildRequestSite(bidRequest) {
 
   const referer = bidRequest.refererInfo && bidRequest.refererInfo.referer;
   if (referer) {
-      site.ref = referer;
+    site.ref = referer;
   }
 
   // Site Content

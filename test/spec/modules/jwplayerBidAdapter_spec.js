@@ -79,6 +79,7 @@ describe('jwplayer adapter tests', function() {
         expect(openrtbRequest.id).to.have.string('testBidId');
 
         expect(openrtbRequest.site).to.not.equal(null);
+        expect(openrtbRequest.site).to.be.an('object');
         expect(openrtbRequest.device).to.not.equal(null);
         expect(openrtbRequest.device.ua).to.equal(navigator.userAgent);
 
