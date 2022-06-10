@@ -128,7 +128,7 @@ describe('Parrable ID System', function() {
         expect(data).to.deep.equal({
           eid: P_COOKIE_EID,
           trackers: P_CONFIG_MOCK.params.partners.split(','),
-          url: getRefererInfo().referer,
+          url: getRefererInfo().page,
           prebidVersion: '$prebid.version$',
           isIframe: true
         });

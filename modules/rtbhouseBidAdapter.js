@@ -180,7 +180,7 @@ function mapSite(slot, bidderRequest) {
     publisher: {
       id: pubId.toString(),
     },
-    page: bidderRequest.refererInfo.referer,
+    page: bidderRequest.refererInfo.page,
     name: getOrigin()
   };
   if (channel) {
