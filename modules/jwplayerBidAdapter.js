@@ -177,12 +177,15 @@ function buildRequestSite(bidRequest) {
   const site = {
     domain: config.publisherDomain || configSite.domain || window.location.hostname,
     page: config.pageUrl || configSite.page || window.location.href,
-    ref: bidRequest.refererInfo ? bidRequest.refererInfo.referer || null : null
   };
+
+  const referer = bidRequest.refererInfo && bidRequest.refererInfo.referer;
+  if (referer) {
+      site.ref = referer;
+  }
 
   // Site Content
   if (configSite && configSite.content && isPlainObject(configSite.content)) {
-    site.content = {};
     site.content = configSite.content;
   }
   return site;
