@@ -13,6 +13,7 @@ import { config } from './config.js';
 import { auctionManager } from './auctionManager.js';
 import { filters, targeting } from './targeting.js';
 import { hook } from './hook.js';
+import { loadSession } from './debugging.js';
 import {includes} from './polyfill.js';
 import { adunitCounter } from './adUnits.js';
 import { executeRenderer, isRendererRequired } from './Renderer.js';
@@ -22,7 +23,6 @@ import { emitAdRenderSucceeded, emitAdRenderFail } from './adRendering.js';
 import {gdprDataHandler, getS2SBidderSet, uspDataHandler, default as adapterManager} from './adapterManager.js';
 import CONSTANTS from './constants.json';
 import * as events from './events.js'
-import {ready} from './debugging.js';
 
 const $$PREBID_GLOBAL$$ = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -34,6 +34,9 @@ const { PREVENT_WRITING_ON_MAIN_DOCUMENT, NO_AD, EXCEPTION, CANNOT_FIND_AD, MISS
 const eventValidators = {
   bidWon: checkDefinedPlacement
 };
+
+// initialize existing debugging sessions if present
+loadSession();
 
 /* Public vars */
 $$PREBID_GLOBAL$$.bidderSettings = $$PREBID_GLOBAL$$.bidderSettings || {};
@@ -568,19 +571,17 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
  * @alias module:pbjs.requestBids
  */
 $$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels, auctionId, ortb2 } = {}) {
-  ready().then(() => {
-    events.emit(REQUEST_BIDS);
-    const cbTimeout = timeout || config.getConfig('bidderTimeout');
-    adUnits = adUnits || $$PREBID_GLOBAL$$.adUnits;
-    adUnits = (isArray(adUnits) ? adUnits : [adUnits]);
-    logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', arguments);
-    const ortb2Fragments = {
-      global: mergeDeep({}, config.getAnyConfig('ortb2') || {}, ortb2 || {}),
-      bidder: Object.fromEntries(Object.entries(config.getBidderConfig()).map(([bidder, cfg]) => [bidder, cfg.ortb2]).filter(([_, ortb2]) => ortb2 != null))
-    }
-    return startAuction({bidsBackHandler, timeout: cbTimeout, adUnits, adUnitCodes, labels, auctionId, ortb2Fragments});
-  })
-});
+  events.emit(REQUEST_BIDS);
+  const cbTimeout = timeout || config.getConfig('bidderTimeout');
+  adUnits = adUnits || $$PREBID_GLOBAL$$.adUnits;
+  adUnits = (isArray(adUnits) ? adUnits : [adUnits]);
+  logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', arguments);
+  const ortb2Fragments = {
+    global: mergeDeep({}, config.getAnyConfig('ortb2') || {}, ortb2 || {}),
+    bidder: Object.fromEntries(Object.entries(config.getBidderConfig()).map(([bidder, cfg]) => [bidder, cfg.ortb2]).filter(([_, ortb2]) => ortb2 != null))
+  }
+  return startAuction({bidsBackHandler, timeout: cbTimeout, adUnits, adUnitCodes, labels, auctionId, ortb2Fragments});
+}, 'requestBids');
 
 export const startAuction = hook('async', function ({ bidsBackHandler, timeout: cbTimeout, adUnits, adUnitCodes, labels, auctionId, ortb2Fragments } = {}) {
   const s2sBidders = getS2SBidderSet(config.getConfig('s2sConfig') || []);

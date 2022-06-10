@@ -1,34 +1,23 @@
 import {config} from './config.js';
-import {hook} from './hook.js';
+import {getHook, hook} from './hook.js';
 import {getGlobal} from './prebidGlobal.js';
-import {logError, logMessage, prefixLog} from './utils.js';
+import {logMessage, prefixLog} from './utils.js';
 import {createBid} from './bidfactory.js';
+import {loadExternalScript} from './adloader.js';
 
 export const DEBUG_KEY = '__$$PREBID_GLOBAL$$_debugging__';
 
-let promise = null;
-
-export function reset() {
-  promise = null;
-}
-
-export function ready() {
-  return promise ? promise.catch(() => null) : Promise.resolve();
+function isDebuggingInstalled() {
+  return getGlobal().installedModules.includes('debugging');
 }
 
 function loadScript(url) {
-  return new Promise((resolve, reject) => {
-    const script = document.createElement('script');
-    script.onload = resolve;
-    script.onerror = reject;
-    script.type = 'text/javascript';
-    script.src = url;
-    script.async = true;
-    document.head.appendChild(script);
+  return new Promise((resolve) => {
+    loadExternalScript(url, 'debugging', resolve);
   });
 }
 
-export function debuggingModuleLoader({alreadyInstalled = () => getGlobal().installedModules.includes('debugging'), script = loadScript} = {}) {
+export function debuggingModuleLoader({alreadyInstalled = isDebuggingInstalled, script = loadScript} = {}) {
   let loading = null;
   return function () {
     if (loading == null) {
@@ -41,10 +30,7 @@ export function debuggingModuleLoader({alreadyInstalled = () => getGlobal().inst
             logMessage(`Debugging module not installed, loading it from "${url}"...`);
             getGlobal()._installDebugging = true;
             script(url).then(() => {
-              getGlobal()._installDebugging({DEBUG_KEY, hook, config, createBid, logger: prefixLog('DEBUG:')})
-            }).catch((err) => {
-              logError('Could not load debugging module: ', err);
-              return Promise.reject(err);
+              getGlobal()._installDebugging({DEBUG_KEY, hook, config, createBid, logger: prefixLog('DEBUG:')});
             }).then(resolve, reject);
           }
         });
@@ -54,23 +40,45 @@ export function debuggingModuleLoader({alreadyInstalled = () => getGlobal().inst
   }
 }
 
-const loadDebugging = debuggingModuleLoader();
+export function debuggingControls({load = debuggingModuleLoader(), hook = getHook('requestBids')} = {}) {
+  let promise = null;
+  let enabled = false;
+  function waitForDebugging(next, ...args) {
+    return (promise || Promise.resolve()).then(() => next.apply(this, args))
+  }
+  function enable() {
+    if (!enabled) {
+      promise = load();
+      // set debugging to high priority so that it has the opportunity to mess with most things
+      hook.before(waitForDebugging, 99);
+      enabled = true;
+    }
+  }
+  function disable() {
+    hook.getHooks({hook: waitForDebugging}).remove();
+    enabled = false;
+  }
+  function reset() {
+    promise = null;
+    disable();
+  }
+  return {enable, disable, reset};
+}
 
-export function loadSession({storage = window.sessionStorage, load = loadDebugging} = {}) {
+const ctl = debuggingControls();
+export const reset = ctl.reset;
+
+export function loadSession({storage = window.sessionStorage, debugging = ctl} = {}) {
   let config = null;
   try {
     config = storage.getItem(DEBUG_KEY);
   } catch (e) {}
   if (config != null) {
-    promise = load();
+    // just make sure the module runs; it will take care of parsing the config (and disabling itself if necessary)
+    debugging.enable();
   }
 }
 
-export function getConfig({debugging}, {load = loadDebugging} = {}) {
-  if (debugging.enabled) {
-    promise = load();
-  }
-}
-
-config.getConfig('debugging', getConfig);
-loadSession();
+config.getConfig('debugging', function ({debugging}) {
+  debugging?.enabled ? ctl.enable() : ctl.disable();
+});
