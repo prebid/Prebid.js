@@ -239,7 +239,7 @@ function generateOpenRtbObject(bidderRequest, bid) {
       cur: [getFloorModuleData(bidderRequest).currency || deepAccess(bid, 'params.bidOverride.cur') || DEFAULT_CURRENCY],
       imp: [],
       site: {
-        page: deepAccess(bidderRequest, 'refererInfo.referer'),
+        page: deepAccess(bidderRequest, 'refererInfo.page'),
       },
       device: {
         dnt: 0,
@@ -309,7 +309,7 @@ function appendImpObject(bid, openRtbObject) {
 
     if (bid.mediaTypes.banner && (typeof mediaTypeMode === 'undefined' || mediaTypeMode === BANNER || mediaTypeMode === '*')) {
       impObject.banner = {
-        mimes: bid.mediaTypes.banner.mimes || ['text/html', 'text/javascript', 'application/javascript', 'image/jpg'],
+        mimes: bid.mediaTypes.banner.mimes || ['text/html', 'text/javascript', 'application/javascript', 'image/jpg', 'image/gif'],
         format: transformSizes(bid.sizes)
       };
       if (bid.mediaTypes.banner.pos) {

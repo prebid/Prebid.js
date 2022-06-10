@@ -80,7 +80,8 @@ let generateBidderRequest = (bidRequestArray, adUnitCode) => {
     bidderRequestId: '112f1c7c5d399a',
     bids: bidRequestArray,
     refererInfo: {
-      referer: 'https://publisher-test.com',
+      referer: 'https://serach-engine.com',
+      page: 'https://publisher-test.com',
       reachedTop: true,
       isAmp: false,
       numIframes: 0,
@@ -841,7 +842,7 @@ describe('YahooSSP Bid Adapter:', () => {
       const data = spec.buildRequests(validBidRequests, bidderRequest).data;
       expect(data.site).to.deep.equal({
         id: bidderRequest.bids[0].params.dcn,
-        page: bidderRequest.refererInfo.referer
+        page: bidderRequest.refererInfo.page
       });
 
       expect(data.device).to.deep.equal({
@@ -915,7 +916,7 @@ describe('YahooSSP Bid Adapter:', () => {
       const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
       expect(data.imp[0].video).to.not.exist;
       expect(data.imp[0].banner).to.deep.equal({
-        mimes: ['text/html', 'text/javascript', 'application/javascript', 'image/jpg'],
+        mimes: ['text/html', 'text/javascript', 'application/javascript', 'image/jpg', 'image/gif'],
         format: [{w: 300, h: 250}, {w: 300, h: 600}]
       });
     });
@@ -929,7 +930,7 @@ describe('YahooSSP Bid Adapter:', () => {
       const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
       expect(data.imp[0].video).to.not.exist;
       expect(data.imp[0].banner).to.deep.equal({
-        mimes: ['text/html', 'text/javascript', 'application/javascript', 'image/jpg'],
+        mimes: ['text/html', 'text/javascript', 'application/javascript', 'image/jpg', 'image/gif'],
         format: [{w: 300, h: 250}, {w: 300, h: 600}]
       });
     });
@@ -969,7 +970,7 @@ describe('YahooSSP Bid Adapter:', () => {
       const { validBidRequests, bidderRequest } = generateBuildRequestMock({adUnitType: 'multi-format'});
       const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
       expect(data.imp[0].banner).to.deep.equal({
-        mimes: ['text/html', 'text/javascript', 'application/javascript', 'image/jpg'],
+        mimes: ['text/html', 'text/javascript', 'application/javascript', 'image/jpg', 'image/gif'],
         format: [{w: 300, h: 250}, {w: 300, h: 600}]
       });
       expect(data.imp[0].video).to.deep.equal({
@@ -1042,7 +1043,7 @@ describe('YahooSSP Bid Adapter:', () => {
       response.forEach((obj) => {
         expect(obj.data.imp[0].video).to.not.exist
         expect(obj.data.imp[0].banner).to.deep.equal({
-          mimes: ['text/html', 'text/javascript', 'application/javascript', 'image/jpg'],
+          mimes: ['text/html', 'text/javascript', 'application/javascript', 'image/jpg', 'image/gif'],
           format: [{w: 300, h: 250}, {w: 300, h: 600}]
         });
       });
@@ -1118,7 +1119,7 @@ describe('YahooSSP Bid Adapter:', () => {
       const data1 = response[0].data;
       expect(data1.imp[0].video).to.not.exist;
       expect(data1.imp[0].banner).to.deep.equal({
-        mimes: ['text/html', 'text/javascript', 'application/javascript', 'image/jpg'],
+        mimes: ['text/html', 'text/javascript', 'application/javascript', 'image/jpg', 'image/gif'],
         format: [{w: 300, h: 250}, {w: 300, h: 600}]
       });
 
