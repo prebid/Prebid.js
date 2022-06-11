@@ -1,6 +1,7 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {logInfo, logError} from '../src/utils.js';
 import { userSync } from '../src/userSync.js';
+import { bidderSettings } from '../src/bidderSettings.js';
 
 const BIDDER_CODE = 'c1x';
 const URL = 'https://hb-stg.c1exchange.com/ht';
@@ -48,6 +49,7 @@ export const c1xAdapter = {
     let payload = {};
     let tagObj = {};
     let pixelUrl = '';
+    let bidReuest = [];
     const adunits = validBidRequests.length;
     const rnd = new Date().getTime();
     const c1xTags = validBidRequests.map(bidToTag);
@@ -55,8 +57,10 @@ export const c1xAdapter = {
 
     // flattened tags in a tag object
     tagObj = c1xTags.reduce((current, next) => Object.assign(current, next));
-    const pixelId = tagObj.pixelId;
+    const _bidderSettings = bidderSettings.getSettings();
+    const pixelId = _bidderSettings.c1x.pixelId || '';
     const useSSL = document.location.protocol;
+    const endpoint = _bidderSettings.c1x.endpoint;
 
     payload = {
       adunits: adunits.toString(),
@@ -81,16 +85,18 @@ export const c1xAdapter = {
       userSync.registerSync('image', BIDDER_CODE, pixelUrl);
     }
 
-    Object.assign(payload, tagObj);
+    tagObj['site'] = _bidderSettings.c1x.siteId | '';
 
+    Object.assign(payload, tagObj);
     let payloadString = stringifyPayload(payload);
     // ServerRequest object
-    return {
+    bidReuest.push({
       method: 'GET',
-      url: URL,
+      url: endpoint || URL,
       data: payloadString,
       bids: bidIdTags
-    };
+    })
+    return bidReuest;
   },
 
   interpretResponse: function(serverResponse, requests) {
@@ -111,6 +117,7 @@ export const c1xAdapter = {
             netRevenue = !netRevenue;
           }
           const curBid = {
+            requestId: bid.bidId,
             width: bid.width,
             height: bid.height,
             cpm: bid.cpm,
@@ -126,7 +133,7 @@ export const c1xAdapter = {
               curBid.requestId = requests[i].bidId;
             }
           }
-          logInfo(LOG_MSG.bidWin + bid.adId + ' size: ' + curBid.width + 'x' + curBid.height);
+          logInfo(LOG_MSG.noBid + bid.adId);
           bidResponses.push(curBid);
         } else {
           // no bid
@@ -148,12 +155,6 @@ function bidToTag(bid, index) {
 
   const sizesArr = bid.sizes;
   const floorPriceMap = bid.params.floorPriceMap || '';
-  tag['site'] = bid.params.siteId || '';
-
-  // prevent pixelId becoming undefined when publishers don't fill this param in ad units they have on the same page
-  if (bid.params.pixelId) {
-    tag['pixelId'] = bid.params.pixelId || '';
-  }
 
   tag[adIndex] = bid.adUnitCode;
   tag[sizeKey] = sizesArr.reduce((prev, current) => prev + (prev === '' ? '' : ',') + current.join('x'), '');
@@ -182,13 +183,13 @@ function bidToShortTag(bid) {
 }
 
 function stringifyPayload(payload) {
-  let payloadString = '';
-  payloadString = JSON.stringify(payload).replace(/":"|","|{"|"}/g, (foundChar) => {
-    if (foundChar == '":"') return '=';
-    else if (foundChar == '","') return '&';
-    else return '';
-  });
-  return payloadString;
+  let payloadString = [];
+  for (var key in payload) {
+    if (payload.hasOwnProperty(key)) {
+      payloadString.push(key + '=' + payload[key]);
+    }
+  }
+  return payloadString.join('&');
 }
 
 registerBidder(c1xAdapter);
