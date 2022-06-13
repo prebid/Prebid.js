@@ -1260,7 +1260,7 @@ export const spec = {
 
     const videoImp = bidToVideoImp(bid).video;
     if (deepAccess(bid, 'mediaTypes.video.context') === OUTSTREAM && isIndexRendererPreferred(bid) && videoImp) {
-      const outstreamPlayerSize = deepAccess(videoImp, 'playerSize')[0];
+      const outstreamPlayerSize = deepAccess(videoImp, 'playerSize');
       const isValidSize = outstreamPlayerSize[0] >= OUTSTREAM_MINIMUM_PLAYER_SIZE[0] && outstreamPlayerSize[1] >= OUTSTREAM_MINIMUM_PLAYER_SIZE[1];
       if (!isValidSize) {
         logError(`IX Bid Adapter: ${mediaTypeVideoPlayerSize} is an invalid size for IX outstream renderer`);
