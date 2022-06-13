@@ -95,26 +95,11 @@ export const spec = {
             width: serverResponseBody.width,
             height: serverResponseBody.height,
             creativeId: serverResponseBody.creativeId,
-            netRevenue: true,
-            ttl: TIME_TO_LIVE,
-            ad: CREATIVE_BODY,
-            mediaType: VIDEO,
-            meta: {
-                advertiserDomains: [ARRAY_OF_ADVERTISER_DOMAINS],        
-                advertiserId: ADVERTISER_ID,
-                advertiserName: ADVERTISER_NAME,
-                agencyId: AGENCY_ID,
-                agencyName: AGENCY_NAME,
-                brandId: BRAND_ID,
-                brandName: BRAND_NAME,
-                dchain: DEMAND_CHAIN_OBJECT,
-                demandSource: DEMAND_SOURCE,
-                mediaType: MEDIA_TYPE,
-                networkId: NETWORK_ID,
-                networkName: NETWORK_NAME,
-                primaryCatId: IAB_CATEGORY,
-                secondaryCatIds: [ARRAY_OF_IAB_CATEGORIES]
-            }
+            vastXml: serverResponseBody.vastXml,
+            netRevenue: serverResponseBody.netRevenue,
+            ttl: serverResponseBody.ttl,
+            ad: serverResponseBody.ad,
+            mediaType: serverResponseBody.mediaType,
           };
           bidResponses.push(bidResponse);
         });
