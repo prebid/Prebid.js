@@ -15,7 +15,7 @@ describe('1plusXRtdProvider', () => {
 
   beforeEach(() => {
     fakeServer = sinon.createFakeServer();
-    fakeServer.respondWith("GET", "*", [200, {}, '']);
+    fakeServer.respondWith('GET', '*', [200, {}, '']);
     fakeServer.respondImmediately = true;
     fakeServer.autoRespond = true;
   })
@@ -27,7 +27,6 @@ describe('1plusXRtdProvider', () => {
     })
 
     it('callback is called after getBidRequestData', () => {
-
       // Nice case; everything runs as expected
       {
         const callbackSpy = sinon.spy();
@@ -35,7 +34,6 @@ describe('1plusXRtdProvider', () => {
         onePlusXSubmodule.getBidRequestData(reqBidsConfigObj, callbackSpy, config);
         setTimeout(() => {
           expect(callbackSpy.calledOnce).to.be.true
-
         }, 100)
       }
       // No customer id in config => error but still callback called
@@ -45,7 +43,6 @@ describe('1plusXRtdProvider', () => {
         onePlusXSubmodule.getBidRequestData(reqBidsConfigObj, callbackSpy, config);
         setTimeout(() => {
           expect(callbackSpy.calledOnce).to.be.true
-
         }, 100);
       }
     })

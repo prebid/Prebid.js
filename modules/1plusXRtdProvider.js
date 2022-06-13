@@ -31,17 +31,23 @@ const getPapiUrl = ({ customerId }) => {
 
 const getTargetingDataFromPapi = (papiUrl) => {
   return new Promise((resolve, reject) => {
-    ajax(papiUrl, {
+    const requestOptions = {
+      customHeaders: {
+        'Accept': 'application/json'
+      }
+    }
+    const callbacks = {
       success(responseText, response) {
-        logMessage(responseText);
-        resolve(response.response);
+        logMessage("Say it has been successful");
+        resolve(JSON.parse(response.response));
       },
       error(errorText, error) {
-        console.log(errorText)
-        console.log(JSON.stringify(error, null, 2))
+        logMessage(errorText)
+        logMessage(JSON.stringify(error, null, 2))
         reject(error);
       }
-    })
+    };
+    ajax(papiUrl, callbacks, null, requestOptions)
   })
 }
 
@@ -63,14 +69,13 @@ const getBidRequestData = (reqBidsConfigObj, callback, config, userConsent) => {
         // -- Then :
         // ---- extract relevant data
         // ---- set the data to the bid
-        console.log('REQUEST TO PAPI SUCCESS');
+        logMessage('REQUEST TO PAPI SUCCESS');
+        const { s: segments, t: targeting } = response;
         callback();
       })
       .catch((error) => {
         // -- Catch : print err & do nothing
-        console.log('REQUEST TO PAPI ERROR');
-        // logError(error);
-        callback();
+        throw error;
       })
   } catch (error) {
     logError(error);
@@ -86,4 +91,4 @@ export const onePlusXSubmodule = {
 }
 
 // Register the onePlusXSubmodule as submodule of realTimeData
-submodule(REAL_TIME_MODULE, MODULE_NAME);
+submodule(REAL_TIME_MODULE, onePlusXSubmodule);
