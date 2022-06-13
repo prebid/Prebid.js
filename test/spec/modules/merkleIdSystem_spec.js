@@ -192,6 +192,24 @@ describe('Merkle System', function () {
 
       expect(id.id).to.exist.and.to.equal(storedId);
     });
+    it('extendId() should warn on missing endpoint', function () {
+      let config = {
+        params: {
+          ...CONFIG_PARAMS,
+          endpoint: undefined
+        },
+        storage: STORAGE_PARAMS
+      };
+
+      let yesterday = new Date(Date.now() - 86400000).toUTCString();
+      let storedId = {value: 'Merkle_Stored_ID', date: yesterday};
+
+      let submoduleCallback = merkleIdSubmodule.extendId(config, undefined,
+        storedId).callback;
+      submoduleCallback(callbackSpy);
+      expect(callbackSpy.calledOnce).to.be.true;
+      expect(utils.logWarn.args[0][0]).to.exist.and.to.equal('User ID - merkleId submodule endpoint string is not defined');
+    });
 
     it('extendId() callback on configured storageParam.refreshInSeconds', function () {
       let config = {

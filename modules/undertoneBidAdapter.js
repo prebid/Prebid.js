@@ -12,6 +12,20 @@ const FRAME_USER_SYNC = 'https://cdn.undertone.com/js/usersync.html';
 const PIXEL_USER_SYNC_1 = 'https://usr.undertone.com/userPixel/syncOne?id=1&of=2';
 const PIXEL_USER_SYNC_2 = 'https://usr.undertone.com/userPixel/syncOne?id=2&of=2';
 
+function getBidFloor(bidRequest, mediaType) {
+  if (typeof bidRequest.getFloor !== 'function') {
+    return 0;
+  }
+
+  const floor = bidRequest.getFloor({
+    currency: 'USD',
+    mediaType: mediaType,
+    size: '*'
+  });
+
+  return (floor && floor.currency === 'USD' && floor.floor) || 0;
+}
+
 function getCanonicalUrl() {
   try {
     let doc = window.top.document;
@@ -98,9 +112,16 @@ export const spec = {
       'commons': commons
     };
     const referer = bidderRequest.refererInfo.referer;
+    const canonicalUrl = getCanonicalUrl();
+    if (referer) {
+      commons.referrer = referer;
+    }
+    if (canonicalUrl) {
+      commons.canonicalUrl = canonicalUrl;
+    }
     const hostname = parseUrl(referer).hostname;
     let domain = extractDomainFromHost(hostname);
-    const pageUrl = getCanonicalUrl() || referer;
+    const pageUrl = canonicalUrl || referer;
 
     const pubid = validBidRequests[0].params.publisherId;
     let reqUrl = `${URL}?pid=${pubid}&domain=${domain}`;
@@ -127,6 +148,9 @@ export const spec = {
         params: bidReq.params
       };
       const videoMediaType = deepAccess(bidReq, 'mediaTypes.video');
+      const mediaType = videoMediaType ? VIDEO : BANNER;
+      bid.mediaType = mediaType;
+      bid.bidfloor = getBidFloor(bidReq, mediaType);
       if (videoMediaType) {
         bid.video = {
           playerSize: deepAccess(bidReq, 'mediaTypes.video.playerSize') || null,
@@ -135,7 +159,6 @@ export const spec = {
           maxDuration: deepAccess(bidReq, 'params.video.maxDuration') || null,
           skippable: deepAccess(bidReq, 'params.video.skippable') || null
         };
-        bid.mediaType = 'video';
       }
       payload['x-ut-hb-params'].push(bid);
     });

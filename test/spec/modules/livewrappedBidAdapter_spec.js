@@ -885,6 +885,39 @@ describe('Livewrapped adapter tests', function () {
     expect(data.rtbData.user.ext.eids).to.deep.equal(testbidRequest.bids[0].userIdAsEids);
   });
 
+  it('should merge user ids with existing ortb2', function() {
+    sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
+    sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
+
+    let origGetConfig = config.getConfig;
+    let orgOrtb2 = {user: {ext: {prop: 'value'}}};
+    sandbox.stub(config, 'getConfig').callsFake(function (key) {
+      if (key === 'ortb2') {
+        return orgOrtb2;
+      }
+      return origGetConfig.apply(config, arguments);
+    });
+
+    let testbidRequest = clone(bidderRequest);
+    delete testbidRequest.bids[0].params.userId;
+    testbidRequest.bids[0].userIdAsEids = [
+      {
+        'source': 'pubcid.org',
+        'uids': [{
+          'id': 'publisher-common-id',
+          'atype': 1
+        }]
+      }
+    ];
+
+    let result = spec.buildRequests(testbidRequest.bids, testbidRequest);
+    let data = JSON.parse(result.data);
+    var expected = {user: {ext: {prop: 'value', eids: testbidRequest.bids[0].userIdAsEids}}}
+
+    expect(data.rtbData).to.deep.equal(expected);
+    expect(orgOrtb2).to.deep.equal({user: {ext: {prop: 'value'}}});
+  });
+
   it('should send schain object if available', function() {
     sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
     sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);

@@ -1,6 +1,7 @@
 import {
   imRtdSubmodule,
   storage,
+  getBidderFunction,
   getCustomBidderFunction,
   setRealTimeData,
   getRealTimeData,
@@ -45,6 +46,59 @@ describe('imRtdProvider', function () {
     it('should initalise and return true', function () {
       expect(imRtdSubmodule.init()).to.equal(true)
     })
+  })
+
+  describe('getBidderFunction', function () {
+    const assumedBidder = [
+      'ix',
+      'pubmatic',
+      'fluct'
+    ];
+    assumedBidder.forEach(bidderName => {
+      it(`should return bidderFunction with assumed bidder: ${bidderName}`, function () {
+        expect(getBidderFunction(bidderName)).to.exist.and.to.be.a('function');
+      });
+
+      it(`should return bid with correct key data: ${bidderName}`, function () {
+        const bid = {bidder: bidderName};
+        expect(getBidderFunction(bidderName)(bid, {'im_segments': ['12345', '67890']})).to.equal(bid);
+      });
+      it(`should return bid without data: ${bidderName}`, function () {
+        const bid = {bidder: bidderName};
+        expect(getBidderFunction(bidderName)(bid, '')).to.equal(bid);
+      });
+    });
+    it(`should return null with unexpected bidder`, function () {
+      expect(getBidderFunction('test')).to.equal(null);
+    });
+    describe('fluct bidder function', function () {
+      it('should return a bid w/o im_segments if not any exists', function () {
+        const bid = {bidder: 'fluct'};
+        expect(getBidderFunction('fluct')(bid, '')).to.eql(bid);
+      });
+      it('should return a bid w/ im_segments if any exists', function () {
+        const bid = {
+          bidder: 'fluct',
+          params: {
+            kv: {
+              foo: ['foo1']
+            }
+          }
+        };
+        expect(getBidderFunction('fluct')(bid, {im_segments: ['12345', '67890']}))
+          .to.eql(
+            {
+              bidder: 'fluct',
+              params: {
+                kv: {
+                  foo: ['foo1'],
+                  imsids: ['12345', '67890']
+                }
+              }
+            }
+          );
+      });
+    });
   })
 
   describe('getCustomBidderFunction', function () {

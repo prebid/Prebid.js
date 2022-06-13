@@ -1,11 +1,26 @@
 import {
-  isStr, isArray, isPlainObject, deepSetValue, isNumber, deepAccess, getAdUnitSizes, parseGPTSingleSizeArrayToRtbSize,
-  cleanObj, contains, getDNT, parseUrl, createTrackPixelHtml, _each, isArrayOfNums
+  _each,
+  cleanObj,
+  contains,
+  createTrackPixelHtml,
+  deepAccess,
+  deepSetValue,
+  getAdUnitSizes,
+  getDNT,
+  inIframe,
+  isArray,
+  isArrayOfNums,
+  isEmpty,
+  isNumber,
+  isPlainObject,
+  isStr,
+  mergeDeep,
+  parseGPTSingleSizeArrayToRtbSize,
+  parseUrl
 } from '../src/utils.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import find from 'core-js-pure/features/array/find.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import {find, includes} from '../src/polyfill.js';
 import {config} from '../src/config.js';
 
 /*
@@ -75,8 +90,11 @@ export const spec = {
     {code: 'denakop'},
     {code: 'rtbanalytica'},
     {code: 'unibots'},
+    {code: 'catapultx'},
     {code: 'ergadx'},
-    {code: 'turktelekom'}
+    {code: 'turktelekom'},
+    {code: 'felixads'},
+    {code: 'motionspots'}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
@@ -102,17 +120,16 @@ export const spec = {
    * @returns {ServerRequest[]}
    */
   buildRequests: function (bidRequests, bidderRequest) {
-    let impDispatch = dispatchImps(bidRequests, bidderRequest.refererInfo);
+    let impGroups = groupImpressionsByHostZone(bidRequests, bidderRequest.refererInfo);
     let requests = [];
     let schain = bidRequests[0].schain;
-    Object.keys(impDispatch).forEach(host => {
-      Object.keys(impDispatch[host]).forEach(zoneId => {
-        const request = buildRtbRequest(impDispatch[host][zoneId], bidderRequest, schain);
-        requests.push({
-          method: 'POST',
-          url: `https://${host}/hb?zone=${zoneId}&v=${VERSION}`,
-          data: JSON.stringify(request)
-        });
+    _each(impGroups, impGroup => {
+      let {host, zoneId, imps} = impGroup;
+      const request = buildRtbRequest(imps, bidderRequest, schain);
+      requests.push({
+        method: 'POST',
+        url: `https://${host}/hb?zone=${zoneId}&v=${VERSION}`,
+        data: JSON.stringify(request)
       });
     });
     return requests;
@@ -208,17 +225,19 @@ registerBidder(spec);
  * @param bidRequests {BidRequest[]}
  * @param refererInfo {refererInfo}
  */
-function dispatchImps(bidRequests, refererInfo) {
+function groupImpressionsByHostZone(bidRequests, refererInfo) {
   let secure = (refererInfo && refererInfo.referer.indexOf('https:') === 0);
-  return bidRequests.map(bidRequest => buildImp(bidRequest, secure))
-    .reduce((acc, curr, index) => {
-      let bidRequest = bidRequests[index];
-      let {zoneId, host} = bidRequest.params;
-      acc[host] = acc[host] || {};
-      acc[host][zoneId] = acc[host][zoneId] || [];
-      acc[host][zoneId].push(curr);
-      return acc;
-    }, {});
+  return Object.values(
+    bidRequests.map(bidRequest => buildImp(bidRequest, secure))
+      .reduce((acc, curr, index) => {
+        let bidRequest = bidRequests[index];
+        let {zoneId, host} = bidRequest.params;
+        let key = `${host}_${zoneId}`;
+        acc[key] = acc[key] || {host: host, zoneId: zoneId, imps: []};
+        acc[key].imps.push(curr);
+        return acc;
+      }, {})
+  );
 }
 
 function getBidFloor(bid, mediaType, sizes) {
@@ -364,6 +383,122 @@ function getAllowedSyncMethod(bidderCode) {
 }
 
 /**
+ * Create device object from fpd and host-collected data
+ * @param fpd {Object}
+ * @returns {{device: Object}}
+ */
+function makeDevice(fpd) {
+  let device = mergeDeep({
+    'ip': 'caller',
+    'ipv6': 'caller',
+    'ua': 'caller',
+    'js': 1,
+    'language': getLanguage()
+  }, fpd.device || {});
+  if (getDNT()) {
+    device.dnt = 1;
+  }
+  return {device: device};
+}
+
+/**
+ * Create site or app description object
+ * @param bidderRequest {BidderRequest}
+ * @param fpd {Object}
+ * @returns {{site: Object}|{app: Object}}
+ */
+function makeSiteOrApp(bidderRequest, fpd) {
+  let {refererInfo} = bidderRequest;
+  let appConfig = config.getConfig('app');
+  if (isEmpty(appConfig)) {
+    return {site: createSite(refererInfo, fpd)}
+  } else {
+    return {app: appConfig};
+  }
+}
+
+/**
+ * Create user description object
+ * @param bidderRequest {BidderRequest}
+ * @param fpd {Object}
+ * @returns {{user: Object} | undefined}
+ */
+function makeUser(bidderRequest, fpd) {
+  let {gdprConsent} = bidderRequest;
+  let user = fpd.user || {};
+  if (gdprConsent && gdprConsent.consentString !== undefined) {
+    deepSetValue(user, 'ext.consent', gdprConsent.consentString);
+  }
+  let eids = getExtendedUserIds(bidderRequest);
+  if (eids) {
+    deepSetValue(user, 'ext.eids', eids);
+  }
+  if (!isEmpty(user)) { return {user: user}; }
+}
+
+/**
+ * Create privacy regulations object
+ * @param bidderRequest {BidderRequest}
+ * @returns {{regs: Object} | undefined}
+ */
+function makeRegulations(bidderRequest) {
+  let {gdprConsent, uspConsent} = bidderRequest;
+  let regs = {};
+  if (gdprConsent) {
+    if (gdprConsent.gdprApplies !== undefined) {
+      deepSetValue(regs, 'regs.ext.gdpr', ~~gdprConsent.gdprApplies);
+    }
+  }
+  if (uspConsent) {
+    deepSetValue(regs, 'regs.ext.us_privacy', uspConsent);
+  }
+  if (config.getConfig('coppa')) {
+    deepSetValue(regs, 'regs.coppa', 1);
+  }
+  if (!isEmpty(regs)) {
+    return regs;
+  }
+}
+
+/**
+ * Create top-level request object
+ * @param bidderRequest {BidderRequest}
+ * @param imps {Object} Impressions
+ * @param fpd {Object} First party data
+ * @returns
+ */
+function makeBaseRequest(bidderRequest, imps, fpd) {
+  let {auctionId, timeout} = bidderRequest;
+  let request = {
+    'id': auctionId,
+    'imp': imps,
+    'at': 1,
+    'tmax': parseInt(timeout)
+  };
+  if (!isEmpty(fpd.bcat)) {
+    request.bcat = fpd.bcat;
+  }
+  if (!isEmpty(fpd.badv)) {
+    request.badv = fpd.badv;
+  }
+  return request;
+}
+
+/**
+ * Initialize sync capabilities
+ * @param bidderRequest {BidderRequest}
+ */
+function makeSyncInfo(bidderRequest) {
+  let {bidderCode} = bidderRequest;
+  let syncMethod = getAllowedSyncMethod(bidderCode);
+  if (syncMethod) {
+    let res = {};
+    deepSetValue(res, 'ext.adk_usersync', syncMethod);
+    return res;
+  }
+}
+
+/**
  * Builds complete rtb request
  * @param imps {Object} Collection of rtb impressions
  * @param bidderRequest {BidderRequest}
@@ -371,49 +506,18 @@ function getAllowedSyncMethod(bidderCode) {
  * @return {Object} Complete rtb request
  */
 function buildRtbRequest(imps, bidderRequest, schain) {
-  let {bidderCode, gdprConsent, auctionId, refererInfo, timeout, uspConsent} = bidderRequest;
-  let coppa = config.getConfig('coppa');
-  let req = {
-    'id': auctionId,
-    'imp': imps,
-    'site': createSite(refererInfo),
-    'at': 1,
-    'device': {
-      'ip': 'caller',
-      'ipv6': 'caller',
-      'ua': 'caller',
-      'js': 1,
-      'language': getLanguage()
-    },
-    'tmax': parseInt(timeout)
-  };
-  if (getDNT()) {
-    req.device.dnt = 1;
-  }
-  if (gdprConsent) {
-    if (gdprConsent.gdprApplies !== undefined) {
-      deepSetValue(req, 'regs.ext.gdpr', ~~gdprConsent.gdprApplies);
-    }
-    if (gdprConsent.consentString !== undefined) {
-      deepSetValue(req, 'user.ext.consent', gdprConsent.consentString);
-    }
-  }
-  if (uspConsent) {
-    deepSetValue(req, 'regs.ext.us_privacy', uspConsent);
-  }
-  if (coppa) {
-    deepSetValue(req, 'regs.coppa', 1);
-  }
-  let syncMethod = getAllowedSyncMethod(bidderCode);
-  if (syncMethod) {
-    deepSetValue(req, 'ext.adk_usersync', syncMethod);
-  }
+  let fpd = config.getConfig('ortb2') || {};
+
+  let req = mergeDeep(
+    makeBaseRequest(bidderRequest, imps, fpd),
+    makeDevice(fpd),
+    makeSiteOrApp(bidderRequest, fpd),
+    makeUser(bidderRequest, fpd),
+    makeRegulations(bidderRequest),
+    makeSyncInfo(bidderRequest)
+  );
   if (schain) {
     deepSetValue(req, 'source.ext.schain', schain);
-  }
-  let eids = getExtendedUserIds(bidderRequest);
-  if (eids) {
-    deepSetValue(req, 'user.ext.eids', eids);
   }
   return req;
 }
@@ -430,18 +534,17 @@ function getLanguage() {
 /**
  * Creates site description object
  */
-function createSite(refInfo) {
+function createSite(refInfo, fpd) {
   let url = parseUrl(refInfo.referer);
   let site = {
     'domain': url.hostname,
     'page': `${url.protocol}://${url.hostname}${url.pathname}`
   };
-  if (self === top && document.referrer) {
+  mergeDeep(site, fpd.site);
+  if (!inIframe() && document.referrer) {
     site.ref = document.referrer;
-  }
-  let keywords = document.getElementsByTagName('meta')['keywords'];
-  if (keywords && keywords.content) {
-    site.keywords = keywords.content;
+  } else {
+    delete site.ref;
   }
   return site;
 }

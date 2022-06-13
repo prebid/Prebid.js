@@ -2,7 +2,7 @@
 
 # Files we own outright
 build/dist/prebid.js                @guardian/commercial-dev
-modifications.md                    @guardian/commercial-dev
+GUARDIAN_modifications.md           @guardian/commercial-dev
 modules.json                        @guardian/commercial-dev
 modules/guAnalyticsAdapter.js       @guardian/commercial-dev
 modules/consoleLoggingAnalyticsAdapter.js   @guardian/commercial-dev

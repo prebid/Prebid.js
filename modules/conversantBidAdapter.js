@@ -2,11 +2,12 @@ import { logWarn, isStr, deepAccess, isArray, getBidIdParameter, deepSetValue, i
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {getStorageManager} from '../src/storageManager.js';
+import { config } from '../src/config.js';
 
 const GVLID = 24;
-export const storage = getStorageManager(GVLID);
 
 const BIDDER_CODE = 'conversant';
+export const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
 const URL = 'https://web.hb.ad.cpe.dotomi.com/cvx/client/hb/ortb/25';
 
 export const spec = {
@@ -76,6 +77,9 @@ export const spec = {
         displaymanager: 'Prebid.js',
         displaymanagerver: '$prebid.version$'
       };
+      if (bid.ortb2Imp) {
+        mergeDeep(imp, bid.ortb2Imp);
+      }
 
       copyOptProperty(bid.params.tag_id, imp, 'tagid');
 
@@ -132,6 +136,12 @@ export const spec = {
 
     let userExt = {};
 
+    // pass schain object if it is present
+    const schain = deepAccess(validBidRequests, '0.schain');
+    if (schain) {
+      deepSetValue(payload, 'source.ext.schain', schain);
+    }
+
     if (bidderRequest) {
       // Add GDPR flag and consent string
       if (bidderRequest.gdprConsent) {
@@ -166,6 +176,9 @@ export const spec = {
     if (!isEmpty(userExt)) {
       payload.user = {ext: userExt};
     }
+
+    const firstPartyData = config.getConfig('ortb2') || {};
+    mergeDeep(payload, firstPartyData);
 
     return {
       method: 'POST',

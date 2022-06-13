@@ -1,9 +1,9 @@
-import { _each, isPlainObject, isArray, deepAccess } from '../src/utils.js';
+import { _each, deepAccess, isArray, isPlainObject, timestamp } from '../src/utils.js'
 import { registerBidder } from '../src/adapters/bidderFactory.js'
-import find from 'core-js-pure/features/array/find.js'
-import { VIDEO, BANNER } from '../src/mediaTypes.js'
+import { find } from '../src/polyfill.js'
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js'
 import { Renderer } from '../src/Renderer.js'
-import { config } from '../src/config.js';
+import { config } from '../src/config.js'
 
 const ENDPOINT = 'https://ad.yieldlab.net'
 const BIDDER_CODE = 'yieldlab'
@@ -15,7 +15,7 @@ const GVLID = 70
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  supportedMediaTypes: [VIDEO, BANNER],
+  supportedMediaTypes: [VIDEO, BANNER, NATIVE],
 
   isBidRequestValid: function (bid) {
     if (bid && bid.params && bid.params.adslotId && bid.params.supplyId) {
@@ -149,10 +149,62 @@ export const spec = {
           }
         }
 
+        if (isNative(bidRequest, adType)) {
+          const url = `${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/?ts=${timestamp}${extId}${gdprApplies}${gdprConsent}${pvId}`
+          bidResponse.adUrl = url
+          bidResponse.mediaType = NATIVE
+          const nativeImageAssetObj = find(matchedBid.native.assets, e => e.id === 2)
+          const nativeImageAsset = nativeImageAssetObj ? nativeImageAssetObj.img : {url: '', w: 0, h: 0};
+          const nativeTitleAsset = find(matchedBid.native.assets, e => e.id === 1)
+          const nativeBodyAsset = find(matchedBid.native.assets, e => e.id === 3)
+          bidResponse.native = {
+            title: nativeTitleAsset ? nativeTitleAsset.title.text : '',
+            body: nativeBodyAsset ? nativeBodyAsset.data.value : '',
+            image: {
+              url: nativeImageAsset.url,
+              width: nativeImageAsset.w,
+              height: nativeImageAsset.h,
+            },
+            clickUrl: matchedBid.native.link.url,
+            impressionTrackers: matchedBid.native.imptrackers,
+          };
+        }
+
         bidResponses.push(bidResponse)
       }
     })
     return bidResponses
+  },
+
+  /**
+   * Register the user sync pixels which should be dropped after the auction.
+   *
+   * @param {SyncOptions} syncOptions Which user syncs are allowed?
+   * @param {ServerResponse[]} serverResponses List of server's responses.
+   * @param {Object} gdprConsent Is the GDPR Consent object wrapping gdprApplies {boolean} and consentString {string} attributes.
+   * @param {string} uspConsent Is the US Privacy Consent string.
+   * @return {UserSync[]} The user syncs which should be dropped.
+   */
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
+    const syncs = [];
+
+    if (syncOptions.iframeEnabled) {
+      let params = [];
+      params.push(`ts=${timestamp()}`);
+      params.push(`type=h`)
+      if (gdprConsent && (typeof gdprConsent.gdprApplies === 'boolean')) {
+        params.push(`gdpr=${Number(gdprConsent.gdprApplies)}`);
+      }
+      if (gdprConsent && (typeof gdprConsent.consentString === 'string')) {
+        params.push(`gdpr_consent=${gdprConsent.consentString}`);
+      }
+      syncs.push({
+        type: 'iframe',
+        url: `${ENDPOINT}/d/6846326/766/2x2?${params.join('&')}`
+      });
+    }
+
+    return syncs;
   }
 };
 
@@ -162,8 +214,18 @@ export const spec = {
  * @param {String} adtype
  * @returns {Boolean}
  */
-function isVideo (format, adtype) {
+function isVideo(format, adtype) {
   return deepAccess(format, 'mediaTypes.video') && adtype.toLowerCase() === 'video'
+}
+
+/**
+ * Is this a native format?
+ * @param {Object} format
+ * @param {String} adtype
+ * @returns {Boolean}
+ */
+function isNative(format, adtype) {
+  return deepAccess(format, 'mediaTypes.native') && adtype.toLowerCase() === 'native'
 }
 
 /**
@@ -171,7 +233,7 @@ function isVideo (format, adtype) {
  * @param {Object} format
  * @returns {Boolean}
  */
-function isOutstream (format) {
+function isOutstream(format) {
   let context = deepAccess(format, 'mediaTypes.video.context')
   return (context === 'outstream')
 }
@@ -181,7 +243,7 @@ function isOutstream (format) {
  * @param {Object} format
  * @returns {Array}
  */
-function getPlayerSize (format) {
+function getPlayerSize(format) {
   let playerSize = deepAccess(format, 'mediaTypes.video.playerSize')
   return (playerSize && isArray(playerSize[0])) ? playerSize[0] : playerSize
 }
@@ -191,7 +253,7 @@ function getPlayerSize (format) {
  * @param {String} size
  * @returns {Array}
  */
-function parseSize (size) {
+function parseSize(size) {
   return size.split('x').map(Number)
 }
 
@@ -200,7 +262,7 @@ function parseSize (size) {
  * @param {Array} eids
  * @returns {String}
  */
-function createUserIdString (eids) {
+function createUserIdString(eids) {
   let str = []
   for (let i = 0; i < eids.length; i++) {
     str.push(eids[i].source + ':' + eids[i].uids[0].id)
@@ -213,7 +275,7 @@ function createUserIdString (eids) {
  * @param {Object} obj
  * @returns {String}
  */
-function createQueryString (obj) {
+function createQueryString(obj) {
   let str = []
   for (var p in obj) {
     if (obj.hasOwnProperty(p)) {
@@ -233,7 +295,7 @@ function createQueryString (obj) {
  * @param {Object} obj
  * @returns {String}
  */
-function createTargetingString (obj) {
+function createTargetingString(obj) {
   let str = []
   for (var p in obj) {
     if (obj.hasOwnProperty(p)) {
@@ -250,7 +312,7 @@ function createTargetingString (obj) {
  * @param {Object} schain
  * @returns {String}
  */
-function createSchainString (schain) {
+function createSchainString(schain) {
   const ver = schain.ver || ''
   const complete = (schain.complete === 1 || schain.complete === 0) ? schain.complete : ''
   const keys = ['asi', 'sid', 'hp', 'rid', 'name', 'domain', 'ext']
