@@ -1,4 +1,4 @@
-import { logError, replaceAuctionPrice, parseUrl, triggerPixel, isStr } from '../src/utils.js';
+import { logError, replaceAuctionPrice, triggerPixel, isStr } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { NATIVE, BANNER } from '../src/mediaTypes.js';
