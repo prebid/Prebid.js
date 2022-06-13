@@ -239,7 +239,7 @@ function generateOpenRtbObject(bidderRequest, bid) {
       cur: [getFloorModuleData(bidderRequest).currency || deepAccess(bid, 'params.bidOverride.cur') || DEFAULT_CURRENCY],
       imp: [],
       site: {
-        page: deepAccess(bidderRequest, 'refererInfo.page'),
+        page: deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || deepAccess(bidderRequest, 'refererInfo.referer')
       },
       device: {
         dnt: 0,
@@ -541,7 +541,7 @@ export const spec = {
     };
 
     const requestOptions = {
-      contentType: 'application/json',
+      contentType: 'text/plain',
       customHeaders: {
         'x-openrtb-version': '2.5'
       }

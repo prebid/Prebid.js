@@ -80,7 +80,8 @@ let generateBidderRequest = (bidRequestArray, adUnitCode) => {
     bidderRequestId: '112f1c7c5d399a',
     bids: bidRequestArray,
     refererInfo: {
-      referer: 'https://serach-engine.com',
+      canonicalUrl: 'https://publisher-test.com',
+      referer: 'https://search-engine.com',
       page: 'https://publisher-test.com',
       reachedTop: true,
       isAmp: false,
@@ -827,7 +828,7 @@ describe('YahooSSP Bid Adapter:', () => {
       const options = spec.buildRequests(validBidRequests, bidderRequest).options;
       expect(options).to.deep.equal(
         {
-          contentType: 'application/json',
+          contentType: 'text/plain',
           customHeaders: {
             'x-openrtb-version': '2.5'
           },
