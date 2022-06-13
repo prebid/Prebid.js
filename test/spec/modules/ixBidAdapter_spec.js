@@ -585,7 +585,21 @@ describe('IndexexchangeAdapter', function () {
     it('should return false if outstream player size is less than 144x144 and IX renderer is preferred', function () {
       const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
       bid.mediaTypes.video.context = 'outstream';
-      bid.mediaTypes.video.playerSize = [[300, 143]];
+      bid.mediaTypes.video.w = [[300, 143]];
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      bid.mediaTypes.video.w = [[143, 300]];
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('should return false if outstream video w & h  is less than 144x144 and IX renderer is preferred', function () {
+      const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
+      bid.mediaTypes.video.context = 'outstream';
+      bid.mediaTypes.video.playerSize = [[300, 250]];
+      bid.mediaTypes.video.w = 300;
+      bid.mediaTypes.video.h = 142;
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      bid.mediaTypes.video.h = 300;
+      bid.mediaTypes.video.w = 142;
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
