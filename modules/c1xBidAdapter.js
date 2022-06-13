@@ -1,11 +1,11 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {logInfo, logError} from '../src/utils.js';
-import { userSync } from '../src/userSync.js';
+// import { userSync } from '../src/userSync.js';
 import { bidderSettings } from '../src/bidderSettings.js';
 
 const BIDDER_CODE = 'c1x';
 const URL = 'https://hb-stg.c1exchange.com/ht';
-const PIXEL_ENDPOINT = '//px.c1exchange.com/pubpixel/';
+// const PIXEL_ENDPOINT = '//px.c1exchange.com/pubpixel/';
 const LOG_MSG = {
   invalidBid: 'C1X: [ERROR] bidder returns an invalid bid',
   noSite: 'C1X: [ERROR] no site id supplied',
@@ -29,7 +29,6 @@ export const c1xAdapter = {
   */
   // check the bids sent to c1x bidder
   isBidRequestValid: function (bid) {
-    logInfo('c1x isBidRequestValid() - INPUT bid:', bid);
     if (bid.bidder !== BIDDER_CODE || typeof bid.params === 'undefined') {
       return false;
     }
@@ -48,7 +47,7 @@ export const c1xAdapter = {
   buildRequests: function(validBidRequests, bidderRequest) {
     let payload = {};
     let tagObj = {};
-    let pixelUrl = '';
+    // let pixelUrl = '';
     let bidReuest = [];
     const adunits = validBidRequests.length;
     const rnd = new Date().getTime();
@@ -58,8 +57,8 @@ export const c1xAdapter = {
     // flattened tags in a tag object
     tagObj = c1xTags.reduce((current, next) => Object.assign(current, next));
     const _bidderSettings = bidderSettings.getSettings();
-    const pixelId = _bidderSettings.c1x.pixelId || '';
-    const useSSL = document.location.protocol;
+    // const pixelId = _bidderSettings.c1x.pixelId || '';
+    // const useSSL = document.location.protocol;
     const endpoint = _bidderSettings.c1x.endpoint;
 
     payload = {
@@ -76,14 +75,14 @@ export const c1xAdapter = {
       ;
     }
 
-    if (pixelId) {
-      pixelUrl = (useSSL ? 'https:' : 'http:') + PIXEL_ENDPOINT + pixelId;
-      if (payload.consent_required) {
-        pixelUrl += '&gdpr=' + (bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
-        pixelUrl += '&consent=' + encodeURIComponent(bidderRequest.gdprConsent.consentString || '');
-      }
-      userSync.registerSync('image', BIDDER_CODE, pixelUrl);
-    }
+    // if (pixelId) {
+    //   pixelUrl = (useSSL ? 'https:' : 'http:') + PIXEL_ENDPOINT + pixelId;
+    //   if (payload.consent_required) {
+    //     pixelUrl += '&gdpr=' + (bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
+    //     pixelUrl += '&consent=' + encodeURIComponent(bidderRequest.gdprConsent.consentString || '');
+    //   }
+    //   userSync.registerSync('image', BIDDER_CODE, pixelUrl);
+    // }
 
     tagObj['site'] = _bidderSettings.c1x.siteId | '';
 
@@ -112,6 +111,8 @@ export const c1xAdapter = {
       return bidResponses;
     } else {
       serverResponse.forEach(bid => {
+        logInfo('bid')
+        logInfo(bid)
         if (bid.bid) {
           if (bid.bidType === 'NET_BID') {
             netRevenue = !netRevenue;
@@ -127,6 +128,10 @@ export const c1xAdapter = {
             ttl: 300,
             netRevenue: netRevenue
           };
+
+          if (bid.dealId) {
+            curBid['dealId'] = bid.dealId
+          }
 
           for (let i = 0; i < requests.length; i++) {
             if (bid.adId === requests[i].adUnitCode) {
@@ -151,14 +156,20 @@ function bidToTag(bid, index) {
   const adIndex = 'a' + (index + 1).toString(); // ad unit id for c1x
   const sizeKey = adIndex + 's';
   const priceKey = adIndex + 'p';
+  const dealKey = adIndex + 'd';
   // TODO: Multiple Floor Prices
 
   const sizesArr = bid.sizes;
   const floorPriceMap = bid.params.floorPriceMap || '';
 
+  const dealId = bid.params.dealId || '';
+
+  if (dealId) {
+    tag[dealKey] = dealId;
+  }
+
   tag[adIndex] = bid.adUnitCode;
   tag[sizeKey] = sizesArr.reduce((prev, current) => prev + (prev === '' ? '' : ',') + current.join('x'), '');
-
   const newSizeArr = tag[sizeKey].split(',');
   if (floorPriceMap) {
     newSizeArr.forEach(size => {
@@ -178,7 +189,6 @@ function bidToShortTag(bid) {
   const tag = {};
   tag.adUnitCode = bid.adUnitCode;
   tag.bidId = bid.bidId;
-
   return tag;
 }
 
