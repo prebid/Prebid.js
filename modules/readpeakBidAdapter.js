@@ -247,12 +247,6 @@ function bannerImpression(slot) {
 }
 
 function site(bidRequests, bidderRequest) {
-  const url =
-    config.getConfig('pageUrl') ||
-    (bidderRequest &&
-      bidderRequest.refererInfo &&
-      bidderRequest.refererInfo.referer);
-
   const pubId =
     bidRequests && bidRequests.length > 0
       ? bidRequests[0].params.publisherId
@@ -264,12 +258,11 @@ function site(bidRequests, bidderRequest) {
     return {
       publisher: {
         id: pubId.toString(),
-        domain: config.getConfig('publisherDomain')
+        domain: bidderRequest?.refererInfo?.domain,
       },
       id: siteId ? siteId.toString() : pubId.toString(),
-      page: url,
-      domain:
-        (url && parseUrl(url).hostname) || config.getConfig('publisherDomain')
+      page: bidderRequest?.refererInfo?.page,
+      domain: bidderRequest?.refererInfo?.domain
     };
   }
   return undefined;
