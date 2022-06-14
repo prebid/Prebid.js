@@ -41,7 +41,7 @@ const VIDEO_TIME_TO_LIVE = 3600; // 1hr
 const NET_REVENUE = true;
 const MAX_REQUEST_SIZE = 8000;
 const MAX_REQUEST_LIMIT = 4;
-const OUTSTREAM_MINIMUM_PLAYER_SIZE = [300, 250];
+const OUTSTREAM_MINIMUM_PLAYER_SIZE = [144, 144];
 const PRICE_TO_DOLLAR_FACTOR = {
   JPY: 1
 };
@@ -177,7 +177,11 @@ function bidToVideoImp(bid) {
     if (context === INSTREAM) {
       imp.video.placement = 1;
     } else if (context === OUTSTREAM) {
-      imp.video.placement = 4;
+      if (deepAccess(videoParamRef, 'playerConfig.floatOnScroll')) {
+        imp.video.placement = 5;
+      } else {
+        imp.video.placement = 4;
+      }
     } else {
       logWarn(`IX Bid Adapter: Video context '${context}' is not supported`);
     }
@@ -516,6 +520,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   }
 
   const r = {};
+  const tmax = config.getConfig('bidderTimeout');
 
   // Since bidderRequestId are the same for different bid request, just use the first one.
   r.id = validBidRequests[0].bidderRequestId.toString();
@@ -534,6 +539,9 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
     r.ext.ixdiag[key] = ixdiag[key];
   }
 
+  if (tmax) {
+    r.ext.ixdiag.tmax = tmax
+  }
   // Get cached errors stored in LocalStorage
   const cachedErrors = getCachedErrors();
 
@@ -725,7 +733,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
 
     currentRequestSize += currentImpressionSize;
 
-    const fpd = bidderRequest.ortb2 || {};
+    const fpd = deepAccess(bidderRequest, 'ortb2') || {};
 
     if (!isEmpty(fpd) && !isFpdAdded) {
       r.ext.ixdiag.fpd = true;
@@ -1252,10 +1260,10 @@ export const spec = {
 
     const videoImp = bidToVideoImp(bid).video;
     if (deepAccess(bid, 'mediaTypes.video.context') === OUTSTREAM && isIndexRendererPreferred(bid) && videoImp) {
-      const outstreamPlayerSize = deepAccess(videoImp, 'playerSize')[0];
+      const outstreamPlayerSize = [deepAccess(videoImp, 'w'), deepAccess(videoImp, 'h')];
       const isValidSize = outstreamPlayerSize[0] >= OUTSTREAM_MINIMUM_PLAYER_SIZE[0] && outstreamPlayerSize[1] >= OUTSTREAM_MINIMUM_PLAYER_SIZE[1];
       if (!isValidSize) {
-        logError(`IX Bid Adapter: ${mediaTypeVideoPlayerSize} is an invalid size for IX outstream renderer`);
+        logError(`IX Bid Adapter: ${outstreamPlayerSize} is an invalid size for IX outstream renderer`);
         return false;
       }
     }
