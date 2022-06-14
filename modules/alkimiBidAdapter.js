@@ -38,7 +38,8 @@ export const spec = {
       requestId: bidderRequest.auctionId,
       signRequest: { bids, randomUUID: alkimiConfig && alkimiConfig.randomUUID },
       bidIds,
-      referer: bidderRequest.refererInfo.referer,
+      // TODO: is 'page' the right value here?
+      referer: bidderRequest.refererInfo.page,
       signature: alkimiConfig && alkimiConfig.signature
     }
 

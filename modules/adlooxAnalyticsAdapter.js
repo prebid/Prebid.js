@@ -61,7 +61,7 @@ MACRO['creatype'] = function(b, c) {
 };
 MACRO['pageurl'] = function(b, c) {
   const refererInfo = getRefererInfo();
-  return (refererInfo.canonicalUrl || refererInfo.referer || '').substr(0, 300).split(/[?#]/)[0];
+  return (refererInfo.page || '').substr(0, 300).split(/[?#]/)[0];
 };
 MACRO['gpid'] = function(b, c) {
   const adUnit = find(auctionManager.getAdUnits(), a => b.adUnitCode === a.code);

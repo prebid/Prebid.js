@@ -99,7 +99,7 @@ export const spec = {
    */
   buildRequests(validBidRequests, bidderRequest) {
     const payload = {
-      url: bidderRequest.refererInfo.referer,
+      url: bidderRequest.refererInfo.page,
       cmp: !!bidderRequest.gdprConsent,
       bidRequests: buildBidRequests(validBidRequests)
     };

@@ -129,7 +129,8 @@ export const spec = {
   },
 
   buildRequests: (validBidRequests, bidderRequest) => {
-    var pageUrl = (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) || window.location.href;
+    // TODO: does the fallback to window.location make sense?
+    var pageUrl = bidderRequest?.refererInfo?.page || window.location.href;
 
     var payload = {
       id: '' + (new Date()).getTime(),
@@ -197,7 +198,7 @@ export const spec = {
     }
 
     // First Party Data
-    const commonFpd = config.getConfig('ortb2') || {};
+    const commonFpd = bidderRequest.ortb2 || {};
     if (commonFpd.site) {
       mergeDeep(payload, {site: commonFpd.site});
     }

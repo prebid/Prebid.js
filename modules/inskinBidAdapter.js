@@ -50,7 +50,7 @@ export const spec = {
       placements: [],
       time: Date.now(),
       user: {},
-      url: bidderRequest.refererInfo.referer,
+      url: bidderRequest.refererInfo.page,
       enableBotFiltering: true,
       includePricingData: true,
       parallel: true
@@ -83,31 +83,29 @@ export const spec = {
         gdprConsentRequired: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true
       };
 
-      if (bidderRequest.gdprConsent.apiVersion === 2) {
-        const purposes = [
-          {id: 1, kw: 'nocookies'},
-          {id: 2, kw: 'nocontext'},
-          {id: 3, kw: 'nodmp'},
-          {id: 4, kw: 'nodata'},
-          {id: 7, kw: 'noclicks'},
-          {id: 9, kw: 'noresearch'}
-        ];
+      const purposes = [
+        {id: 1, kw: 'nocookies'},
+        {id: 2, kw: 'nocontext'},
+        {id: 3, kw: 'nodmp'},
+        {id: 4, kw: 'nodata'},
+        {id: 7, kw: 'noclicks'},
+        {id: 9, kw: 'noresearch'}
+      ];
 
-        const d = bidderRequest.gdprConsent.vendorData;
+      const d = bidderRequest.gdprConsent.vendorData;
 
-        if (d) {
-          if (d.purposeOneTreatment) {
-            data.keywords.push('cst-nodisclosure');
-            restrictions.push('nodisclosure');
-          }
-
-          purposes.map(p => {
-            if (!checkConsent(p.id, d)) {
-              data.keywords.push('cst-' + p.kw);
-              restrictions.push(p.kw);
-            }
-          });
+      if (d) {
+        if (d.purposeOneTreatment) {
+          data.keywords.push('cst-nodisclosure');
+          restrictions.push('nodisclosure');
         }
+
+        purposes.map(p => {
+          if (!checkConsent(p.id, d)) {
+            data.keywords.push('cst-' + p.kw);
+            restrictions.push(p.kw);
+          }
+        });
       }
     }
 

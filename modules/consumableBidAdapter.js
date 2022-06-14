@@ -47,8 +47,8 @@ export const spec = {
     const data = Object.assign({
       placements: [],
       time: Date.now(),
-      url: bidderRequest.refererInfo.referer,
-      referrer: document.referrer,
+      url: bidderRequest.refererInfo.page,
+      referrer: bidderRequest.refererInfo.ref,
       source: [{
         'name': 'prebidjs',
         'version': '$prebid.version$'
@@ -123,7 +123,7 @@ export const spec = {
           bid.creativeId = decision.adId;
           bid.ttl = 30;
           bid.netRevenue = true;
-          bid.referrer = bidRequest.bidderRequest.refererInfo.referer;
+          bid.referrer = bidRequest.bidderRequest.refererInfo.page;
 
           bid.meta = {
             advertiserDomains: decision.adomain || []

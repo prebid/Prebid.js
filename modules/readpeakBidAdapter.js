@@ -1,7 +1,7 @@
-import { logError, replaceAuctionPrice, parseUrl } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import { NATIVE, BANNER } from '../src/mediaTypes.js';
+import {logError, replaceAuctionPrice} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
+import {BANNER, NATIVE} from '../src/mediaTypes.js';
 
 export const ENDPOINT = 'https://app.readpeak.com/header/prebid';
 
@@ -238,12 +238,6 @@ function bannerImpression(slot) {
 }
 
 function site(bidRequests, bidderRequest) {
-  const url =
-    config.getConfig('pageUrl') ||
-    (bidderRequest &&
-      bidderRequest.refererInfo &&
-      bidderRequest.refererInfo.referer);
-
   const pubId =
     bidRequests && bidRequests.length > 0
       ? bidRequests[0].params.publisherId
@@ -255,12 +249,11 @@ function site(bidRequests, bidderRequest) {
     return {
       publisher: {
         id: pubId.toString(),
-        domain: config.getConfig('publisherDomain')
+        domain: bidderRequest?.refererInfo?.domain,
       },
       id: siteId ? siteId.toString() : pubId.toString(),
-      page: url,
-      domain:
-        (url && parseUrl(url).hostname) || config.getConfig('publisherDomain')
+      page: bidderRequest?.refererInfo?.page,
+      domain: bidderRequest?.refererInfo?.domain
     };
   }
   return undefined;

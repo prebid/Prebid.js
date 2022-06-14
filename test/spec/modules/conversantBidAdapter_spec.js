@@ -254,7 +254,7 @@ describe('Conversant adapter tests', function() {
     const page = 'http://test.com?a=b&c=123';
     const bidderRequest = {
       refererInfo: {
-        referer: page
+        page: page
       }
     };
     const request = spec.buildRequests(bidRequests, bidderRequest);
@@ -392,9 +392,10 @@ describe('Conversant adapter tests', function() {
   });
 
   it('Verify first party data', () => {
-    const bidderRequest = {refererInfo: {referer: 'http://test.com?a=b&c=123'}};
-    const cfg = {ortb2: {site: {content: {series: 'MySeries', season: 'MySeason', episode: 3, title: 'MyTitle'}}}};
-    config.setConfig(cfg);
+    const bidderRequest = {
+      refererInfo: {page: 'http://test.com?a=b&c=123'},
+      ortb2: {site: {content: {series: 'MySeries', season: 'MySeason', episode: 3, title: 'MyTitle'}}}
+    };
     const request = spec.buildRequests(bidRequests, bidderRequest);
     const payload = request.data;
     expect(payload.site).to.have.property('content');
@@ -402,11 +403,10 @@ describe('Conversant adapter tests', function() {
     expect(payload.site.content).to.have.property('season');
     expect(payload.site.content).to.have.property('episode');
     expect(payload.site.content).to.have.property('title');
-    config.resetConfig();
   });
 
   it('Verify supply chain data', () => {
-    const bidderRequest = {refererInfo: {referer: 'http://test.com?a=b&c=123'}};
+    const bidderRequest = {refererInfo: {page: 'http://test.com?a=b&c=123'}};
     const schain = {complete: 1, ver: '1.0', nodes: [{asi: 'bidderA.com', sid: '00001', hp: 1}]};
     const bidsWithSchain = bidRequests.map((bid) => {
       return Object.assign({
@@ -421,12 +421,12 @@ describe('Conversant adapter tests', function() {
 
   it('Verify override url', function() {
     const testUrl = 'https://someurl?name=value';
-    const request = spec.buildRequests([{params: {white_label_url: testUrl}}]);
+    const request = spec.buildRequests([{params: {white_label_url: testUrl}}], {});
     expect(request.url).to.equal(testUrl);
   });
 
   it('Verify interpretResponse', function() {
-    const request = spec.buildRequests(bidRequests);
+    const request = spec.buildRequests(bidRequests, {});
     const response = spec.interpretResponse(bidResponses, request);
     expect(response).to.be.an('array').with.lengthOf(4);
 
@@ -489,7 +489,7 @@ describe('Conversant adapter tests', function() {
       Object.assign(unit, {crumbs: {pubcid: 12345}});
     });
     //  construct http post payload
-    const payload = spec.buildRequests(requests).data;
+    const payload = spec.buildRequests(requests, {}).data;
     expect(payload).to.have.deep.nested.property('user.ext.fpc', 12345);
     expect(payload).to.not.have.nested.property('user.ext.eids');
   });
@@ -504,7 +504,7 @@ describe('Conversant adapter tests', function() {
       Object.assign(unit, {userIdAsEids: createEidsArray(unit.userId)});
     });
     //  construct http post payload
-    const payload = spec.buildRequests(requests).data;
+    const payload = spec.buildRequests(requests, {}).data;
     expect(payload).to.have.deep.nested.property('user.ext.fpc', 67890);
     expect(payload).to.not.have.nested.property('user.ext.eids');
   });
@@ -579,7 +579,7 @@ describe('Conversant adapter tests', function() {
         Object.assign(unit, {userIdAsEids: createEidsArray(unit.userId)});
       });
       //  construct http post payload
-      const payload = spec.buildRequests(requests).data;
+      const payload = spec.buildRequests(requests, {}).data;
       expect(payload).to.have.deep.nested.property('user.ext.eids', [
         {source: 'adserver.org', uids: [{id: '223344', atype: 1, ext: {rtiPartner: 'TDID'}}]},
         {source: 'liveramp.com', uids: [{id: '334455', atype: 3}]}
@@ -603,7 +603,15 @@ describe('Conversant adapter tests', function() {
       return (new Date(Date.now() + timeout * 60 * 60 * 24 * 1000)).toUTCString();
     }
 
+    beforeEach(() => {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        conversant: {
+          storageAllowed: true
+        }
+      };
+    });
     afterEach(() => {
+      $$PREBID_GLOBAL$$.bidderSettings = {};
       cleanUp(ID_NAME);
       cleanUp(CUSTOM_ID_NAME);
     });
@@ -616,7 +624,7 @@ describe('Conversant adapter tests', function() {
       storage.setCookie(ID_NAME, '12345', expStr(TIMEOUT));
 
       //  construct http post payload
-      const payload = spec.buildRequests(requests).data;
+      const payload = spec.buildRequests(requests, {}).data;
       expect(payload).to.have.deep.nested.property('user.ext.fpc', '12345');
     });
 
@@ -629,7 +637,7 @@ describe('Conversant adapter tests', function() {
       storage.setCookie(CUSTOM_ID_NAME, '12345', expStr(TIMEOUT));
 
       //  construct http post payload
-      const payload = spec.buildRequests(requests).data;
+      const payload = spec.buildRequests(requests, {}).data;
       expect(payload).to.have.deep.nested.property('user.ext.fpc', '12345');
     });
 
@@ -642,7 +650,7 @@ describe('Conversant adapter tests', function() {
       storage.setDataInLocalStorage(ID_NAME, 'abcde');
 
       //  construct http post payload
-      const payload = spec.buildRequests(requests).data;
+      const payload = spec.buildRequests(requests, {}).data;
       expect(payload).to.have.deep.nested.property('user.ext.fpc', 'abcde');
     });
 
@@ -655,7 +663,7 @@ describe('Conversant adapter tests', function() {
       storage.setDataInLocalStorage(ID_NAME, 'fghijk');
 
       //  construct http post payload
-      const payload = spec.buildRequests(requests).data;
+      const payload = spec.buildRequests(requests, {}).data;
       expect(payload).to.have.deep.nested.property('user.ext.fpc', 'fghijk');
     });
 
@@ -668,7 +676,7 @@ describe('Conversant adapter tests', function() {
       storage.setDataInLocalStorage(ID_NAME, 'lmnopq');
 
       //  construct http post payload
-      const payload = spec.buildRequests(requests).data;
+      const payload = spec.buildRequests(requests, {}).data;
       expect(payload).to.not.have.deep.nested.property('user.ext.fpc');
     });
 
@@ -682,7 +690,7 @@ describe('Conversant adapter tests', function() {
       storage.setDataInLocalStorage(CUSTOM_ID_NAME, 'fghijk');
 
       //  construct http post payload
-      const payload = spec.buildRequests(requests).data;
+      const payload = spec.buildRequests(requests, {}).data;
       expect(payload).to.have.deep.nested.property('user.ext.fpc', 'fghijk');
     });
   });
@@ -702,7 +710,7 @@ describe('Conversant adapter tests', function() {
         };
       };
 
-      const payload = spec.buildRequests(bidRequest).data;
+      const payload = spec.buildRequests(bidRequest, {}).data;
       expect(payload.imp[0]).to.have.property('bidfloor', 3.21);
     });
 
@@ -715,7 +723,7 @@ describe('Conversant adapter tests', function() {
       };
       bidRequest[0].params.bidfloor = 0.6;
 
-      const payload = spec.buildRequests(bidRequest).data;
+      const payload = spec.buildRequests(bidRequest, {}).data;
       expect(payload.imp[0]).to.have.property('bidfloor', 0.6);
     });
 
@@ -727,7 +735,7 @@ describe('Conversant adapter tests', function() {
         };
       };
 
-      const payload = spec.buildRequests(bidRequest).data;
+      const payload = spec.buildRequests(bidRequest, {}).data;
       expect(payload.imp[0]).to.have.property('bidfloor', 0);
     });
 
@@ -739,7 +747,7 @@ describe('Conversant adapter tests', function() {
         };
       };
 
-      const payload = spec.buildRequests(bidRequest).data;
+      const payload = spec.buildRequests(bidRequest, {}).data;
       expect(payload.imp[0]).to.have.property('bidfloor', 0);
     });
 
@@ -748,14 +756,14 @@ describe('Conversant adapter tests', function() {
         return {};
       };
 
-      const payload = spec.buildRequests(bidRequest).data;
+      const payload = spec.buildRequests(bidRequest, {}).data;
       expect(payload.imp[0]).to.have.property('bidfloor', 0);
     });
 
     it('undefined floor result', function() {
       bidRequest[0].getFloor = () => {};
 
-      const payload = spec.buildRequests(bidRequest).data;
+      const payload = spec.buildRequests(bidRequest, {}).data;
       expect(payload.imp[0]).to.have.property('bidfloor', 0);
     });
   });
