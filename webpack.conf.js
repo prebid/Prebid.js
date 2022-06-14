@@ -29,6 +29,9 @@ module.exports = {
     const entry = {
       'prebid-core': {
         import: './src/prebid.js'
+      },
+      'debugging-standalone': {
+        import: './modules/debugging/standalone.js'
       }
     };
     const selectedModules = new Set(helpers.getArgModules());

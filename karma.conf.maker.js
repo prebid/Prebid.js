@@ -22,7 +22,7 @@ function newWebpackConfig(codeCoverage) {
     .flatMap((r) => r.use)
     .filter((use) => use.loader === 'babel-loader')
     .forEach((use) => {
-      use.options = babelConfig(true);
+      use.options = babelConfig({test: true});
     });
 
   if (codeCoverage) {
