@@ -9,7 +9,7 @@ describe('Finative adapter', function () {
   let bid = {
     'bidder': 'finative',
     'params': {
-      'adUnitId': '1hq8'
+      'adUnitId': '1uyo'
     }
   };
 

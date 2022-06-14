@@ -36,8 +36,8 @@ var adUnits = [{
     bids: [{
         bidder: 'finative',
         params: {
-	    	url  : "https://example.org/native.html",
-	    	adUnitId: "2sq2o"
+	    	url  : "https://mockup.finative.cloud",
+	    	adUnitId: "1uyo"
         }
     }]
 }];
