@@ -49,6 +49,13 @@ export const spec = {
       imp: []
     };
 
+    const callbackTimeout = bidderRequest.timeout;
+    const globalTimeout = config.getConfig('bidderTimeout');
+    const tmax = globalTimeout ? Math.min(globalTimeout, callbackTimeout) : callbackTimeout;
+    if (tmax) {
+      openRtbBidRequest.tmax = tmax;
+    }
+
     const schain = validBidReqs[0].schain;
     if (schain) {
       openRtbBidRequest.source = { ext: { schain } };

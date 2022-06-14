@@ -95,6 +95,30 @@ export const internal = {
   },
 
   /**
+   * Extracts the floor price params from given bidRequest
+   *
+   * @param {BidRequest} bidRequest
+   * @returns {undefined|float}
+   */
+  extractFloorPrice: (bidRequest) => {
+    let floorPrice;
+    if (bidRequest && bidRequest.params && bidRequest.params.floor) {
+      // if there is a manual floorPrice set
+      floorPrice = !isNaN(parseInt(bidRequest.params.floor)) ? bidRequest.params.floor : undefined;
+    }
+    if (typeof bidRequest.getFloor === 'function') {
+      // use prebid floor module
+      let floorInfo;
+      try {
+        floorInfo = bidRequest.getFloor();
+      } catch (e) {}
+      floorPrice = typeof floorInfo === 'object' && !isNaN(parseInt(floorInfo.floor)) ? floorInfo.floor : floorPrice;
+    }
+
+    return floorPrice;
+  },
+
+  /**
    * Group given array of bidRequests by params.publisher
    *
    * @param {BidRequest[]} bidRequests
@@ -227,6 +251,12 @@ export const spec = {
         const nativeConfig = internal.extractNativeConfig(bidRequest);
         if (nativeConfig) {
           bid.native = nativeConfig;
+        }
+
+        // add floor price
+        const floorPrice = internal.extractFloorPrice(bidRequest);
+        if (floorPrice) {
+          bid.floorPrice = floorPrice;
         }
 
         request.data.imp.push(bid);
