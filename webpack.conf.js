@@ -32,12 +32,25 @@ module.exports = {
       }
     };
     const selectedModules = new Set(helpers.getArgModules());
+
     Object.entries(helpers.getModules()).forEach(([fn, mod]) => {
       if (selectedModules.size === 0 || selectedModules.has(mod)) {
-        entry[mod] = {
+        const moduleEntry = {
           import: fn,
           dependOn: 'prebid-core'
+        };
+
+        if (helpers.isLibrary(mod)) {
+          const libraryFiles = helpers.getLibraryFiles(mod);
+          moduleEntry.import = libraryFiles || moduleEntry.import;
         }
+
+        const libraries = helpers.getParentLibraries(mod);
+        if (libraries.length) {
+          moduleEntry.dependOn = ['prebid-core'].concat(libraries);
+        }
+
+        entry[mod] = moduleEntry;
       }
     });
     return entry;
