@@ -96,6 +96,12 @@ function decodeBase64UrlSafe(encBase64) {
 }
 
 describe('Parrable ID System', function() {
+  after(() => {
+    // reset ID system to avoid delayed callbacks in other tests
+    config.resetConfig();
+    init(config);
+  });
+
   describe('parrableIdSystem.getId()', function() {
     describe('response callback function', function() {
       let logErrorStub;
