@@ -16,13 +16,13 @@ describe('cpexId module', function () {
 
   describe('getId()', function () {
     it('should return the uid when it exists in cookie', function () {
-      getCookieStub.withArgs('caid').returns('cpexIdTest');
+      getCookieStub.withArgs('czaid').returns('cpexIdTest');
       const id = cpexIdSubmodule.getId();
       expect(id).to.be.deep.equal({ id: 'cpexIdTest' });
     });
 
     cookieTestCasesForEmpty.forEach(testCase => it('should not return the uid when it doesnt exist in cookie', function () {
-      getCookieStub.withArgs('caid').returns(testCase);
+      getCookieStub.withArgs('czaid').returns(testCase);
       const id = cpexIdSubmodule.getId();
       expect(id).to.be.undefined;
     }));
@@ -30,7 +30,7 @@ describe('cpexId module', function () {
 
   describe('decode()', function () {
     it('should return the uid when it exists in cookie', function () {
-      getCookieStub.withArgs('caid').returns('cpexIdTest');
+      getCookieStub.withArgs('czaid').returns('cpexIdTest');
       const decoded = cpexIdSubmodule.decode();
       expect(decoded).to.be.deep.equal({ cpexId: 'cpexIdTest' });
     });
