@@ -50,6 +50,7 @@
     "rtdModule": [
       "airgridRtdProvider",
       "akamaiDapRtdProvider",
+      "blueconicRtdProvider",
       "browsiRtdProvider",
       "dgkeywordRtdProvider",
       "geoedgeRtdProvider",
