@@ -3,12 +3,21 @@ let t = require('@babel/core').types;
 let prebid = require('../package.json');
 const path = require('path');
 
+function getNpmVersion(version) {
+  try {
+    return /^(.*?)(-pre)?$/.exec(version)[1];
+  } catch (e) {
+    return 'latest';
+  }
+}
+
 module.exports = function(api, options) {
   const pbGlobal = options.globalVarName || prebid.globalVarName;
   let replace = {
     '$prebid.version$': prebid.version,
     '$$PREBID_GLOBAL$$': pbGlobal,
-    '$$REPO_AND_VERSION$$': `${prebid.repository.url.split('/')[3]}_prebid_${prebid.version}`
+    '$$REPO_AND_VERSION$$': `${prebid.repository.url.split('/')[3]}_prebid_${prebid.version}`,
+    '$$PREBID_DIST_URL_BASE$$': options.prebidDistUrlBase || `https://cdn.jsdelivr.net/npm/prebid.js@${getNpmVersion(prebid.version)}/dist/`
   };
 
   let identifierToStringLiteral = [

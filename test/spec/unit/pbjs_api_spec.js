@@ -19,6 +19,7 @@ import {find} from 'src/polyfill.js';
 import {synchronizePromise} from '../../helpers/syncPromise.js';
 import * as pbjsModule from 'src/prebid.js';
 import {hook} from '../../../src/hook.js';
+import {reset as resetDebugging} from '../../../src/debugging.js';
 import $$PREBID_GLOBAL$$ from 'src/prebid.js';
 
 var assert = require('chai').assert;
@@ -198,6 +199,7 @@ describe('Unit: Prebid Module', function () {
   before(() => {
     hook.ready();
     $$PREBID_GLOBAL$$.requestBids.getHooks().remove();
+    resetDebugging();
   });
 
   beforeEach(function () {

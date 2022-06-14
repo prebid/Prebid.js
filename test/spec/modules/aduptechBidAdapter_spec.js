@@ -527,6 +527,71 @@ describe('AduptechBidAdapter', () => {
           }
         ]);
       });
+
+      it('should build a request with floorPrices', () => {
+        const bidderRequest = {
+          auctionId: 'auctionId123',
+          refererInfo: {
+            page: 'http://crazy.canonical.url',
+            ref: 'http://crazy.referer.url'
+          },
+          gdprConsent: {
+            consentString: 'consentString123',
+            gdprApplies: true
+          }
+        };
+
+        const getFloorResponse = {
+          currency: 'USD',
+          floor: '1.23'
+        };
+
+        const validBidRequests = [
+          {
+            bidId: 'bidId1',
+            adUnitCode: 'adUnitCode1',
+            transactionId: 'transactionId1',
+            mediaTypes: {
+              banner: {
+                sizes: [[100, 200], [300, 400]]
+              }
+            },
+            params: {
+              publisher: 'publisher1',
+              placement: 'placement1'
+            },
+            getFloor: () => {
+              return getFloorResponse
+            }
+          }
+        ];
+
+        expect(spec.buildRequests(validBidRequests, bidderRequest)).to.deep.equal([
+          {
+            url: internal.buildEndpointUrl(validBidRequests[0].params.publisher),
+            method: ENDPOINT_METHOD,
+            data: {
+              auctionId: bidderRequest.auctionId,
+              pageUrl: bidderRequest.refererInfo.page,
+              referrer: bidderRequest.refererInfo.ref,
+              gdpr: {
+                consentString: bidderRequest.gdprConsent.consentString,
+                consentRequired: bidderRequest.gdprConsent.gdprApplies
+              },
+              imp: [
+                {
+                  bidId: validBidRequests[0].bidId,
+                  transactionId: validBidRequests[0].transactionId,
+                  adUnitCode: validBidRequests[0].adUnitCode,
+                  params: validBidRequests[0].params,
+                  banner: validBidRequests[0].mediaTypes.banner,
+                  floorPrice: getFloorResponse.floor
+                }
+              ]
+            }
+          }
+        ]);
+      });
     });
 
     describe('interpretResponse', () => {

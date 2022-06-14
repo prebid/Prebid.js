@@ -71,6 +71,7 @@ function lint(done) {
   return gulp.src([
     'src/**/*.js',
     'modules/**/*.js',
+    'libraries/**/*.js',
     'test/**/*.js',
     'plugins/**/*.js',
     '!plugins/**/node_modules/**',
@@ -118,6 +119,15 @@ function makeDevpackPkg() {
     devtool: 'source-map',
     mode: 'development'
   })
+
+  const babelConfig = require('./babelConfig.js')({prebidDistUrlBase: '/build/dev/'});
+
+  // update babel config to set local dist url
+  cloned.module.rules
+    .flatMap((rule) => rule.use)
+    .filter((use) => use.loader === 'babel-loader')
+    .forEach((use) => use.options = Object.assign({}, use.options, babelConfig));
+
   var externalModules = helpers.getArgModules();
 
   const analyticsSources = helpers.getAnalyticsSources();

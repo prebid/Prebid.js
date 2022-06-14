@@ -13,7 +13,7 @@ import { config } from './config.js';
 import { auctionManager } from './auctionManager.js';
 import { filters, targeting } from './targeting.js';
 import { hook } from './hook.js';
-import { sessionLoader } from './debugging.js';
+import { loadSession } from './debugging.js';
 import {includes} from './polyfill.js';
 import { adunitCounter } from './adUnits.js';
 import { executeRenderer, isRendererRequired } from './Renderer.js';
@@ -36,7 +36,7 @@ const eventValidators = {
 };
 
 // initialize existing debugging sessions if present
-sessionLoader();
+loadSession();
 
 /* Public vars */
 $$PREBID_GLOBAL$$.bidderSettings = $$PREBID_GLOBAL$$.bidderSettings || {};
@@ -581,7 +581,7 @@ $$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeo
     bidder: Object.fromEntries(Object.entries(config.getBidderConfig()).map(([bidder, cfg]) => [bidder, cfg.ortb2]).filter(([_, ortb2]) => ortb2 != null))
   }
   return startAuction({bidsBackHandler, timeout: cbTimeout, adUnits, adUnitCodes, labels, auctionId, ortb2Fragments});
-});
+}, 'requestBids');
 
 export const startAuction = hook('async', function ({ bidsBackHandler, timeout: cbTimeout, adUnits, adUnitCodes, labels, auctionId, ortb2Fragments } = {}) {
   const s2sBidders = getS2SBidderSet(config.getConfig('s2sConfig') || []);
