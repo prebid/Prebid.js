@@ -21,7 +21,7 @@ The IDX bidder need one mediaTypes parameter: banner
           }
       },
       bids: [{
-          bidder: 'idx-bidder-code',
+          bidder: 'idx_bidder_code',
           params: {}
       }]
     }]

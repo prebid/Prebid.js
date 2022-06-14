@@ -2,7 +2,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { BANNER } from '../src/mediaTypes.js'
 import { isArray, isNumber } from '../src/utils.js'
 
-const BIDDER_CODE = 'idx-bidder-code'
+const BIDDER_CODE = 'idx_bidder_code'
 const ENDPOINT_URL = 'https://dev-event.dxmdp.com/rest/api/v1/bid'
 const SUPPORTED_MEDIA_TYPES = [ BANNER ]
 

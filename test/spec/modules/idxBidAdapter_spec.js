@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import { spec } from 'modules/idxBidAdapter.js'
 
-const BIDDER_CODE = 'idx-bidder-code'
+const BIDDER_CODE = 'idx_bidder_code'
 const ENDPOINT_URL = 'https://dev-event.dxmdp.com/rest/api/v1/bid'
 const DEFAULT_PRICE = 1
 const DEFAULT_CURRENCY = 'USD'
