@@ -193,7 +193,7 @@ function resizeRemoteCreative({ adId, adUnitCode, width, height }) {
     let element = getElementByAdUnit(elmType + ':not([style*="display: none"])');
     if (element) {
       let elementStyle = element.style;
-      elementStyle.width = width + 'px';
+      elementStyle.width = width ? width + 'px' : '100%';
       elementStyle.height = height + 'px';
     } else {
       logWarn(`Unable to locate matching page element for adUnitCode ${adUnitCode}.  Can't resize it to ad's dimensions.  Please review setup.`);
