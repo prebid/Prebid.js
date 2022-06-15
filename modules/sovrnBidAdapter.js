@@ -159,14 +159,24 @@ export const spec = {
         }
       }
 
-      let url = `https://ap.lijit.com/rtb/bid?src=$$REPO_AND_VERSION$$`;
-      if (iv) url += `&iv=${iv}`;
+      const urlParams = new URLSearchParams(window.location.search)
+      const uuid = urlParams.get('testUuid')
+
+      let url = `https://localhost:8090/rtb/prebidResponse1/bid/openrtb25`
+      if (iv) url += `&iv=${iv}`
 
       return {
         method: 'POST',
         url: url,
         data: JSON.stringify(sovrnBidReq),
-        options: {contentType: 'text/plain'}
+        options: {
+          contentType: 'text/plain',
+          withCredentials: false,
+          customHeaders: {
+            'testUuid': uuid,
+            'replaceIdsFromRequest': true
+          }
+        }
       }
     } catch (e) {
       logError('Could not build bidrequest, error deatils:', e);
