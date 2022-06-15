@@ -1,7 +1,7 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {logInfo, logError} from '../src/utils.js';
 // import { userSync } from '../src/userSync.js';
-import { bidderSettings } from '../src/bidderSettings.js';
+// import { bidderSettings } from '../src/bidderSettings.js';
 
 const BIDDER_CODE = 'c1x';
 const URL = 'https://hb-stg.c1exchange.com/ht';
