@@ -64,16 +64,16 @@ describe('C1XAdapter', () => {
     };
     it('sends bid request to ENDPOINT via GET', () => {
       const request = c1xAdapter.buildRequests(bidRequests);
-      expect(request.url).to.contain(ENDPOINT);
-      expect(request.method).to.equal('GET');
+      expect(request[0].url).to.contain(ENDPOINT);
+      expect(request[0].method).to.equal('GET');
     });
     it('should generate correct bid Id tag', () => {
-      const request = c1xAdapter.buildRequests(bidRequests);
+      const request = c1xAdapter.buildRequests(bidRequests)[0];
       expect(request.bids[0].adUnitCode).to.equal('adunit-code');
       expect(request.bids[0].bidId).to.equal('30b31c1838de1e');
     });
     it('should convert params to proper form and attach to request', () => {
-      const request = c1xAdapter.buildRequests(bidRequests);
+      const request = c1xAdapter.buildRequests(bidRequests)[0];
       const originalPayload = parseRequest(request.data);
       const payloadObj = JSON.parse(originalPayload);
       expect(payloadObj.adunits).to.equal('1');
@@ -93,7 +93,7 @@ describe('C1XAdapter', () => {
             }
           }
         });
-      const request = c1xAdapter.buildRequests([bidRequest]);
+      const request = c1xAdapter.buildRequests([bidRequest])[0];
       const originalPayload = parseRequest(request.data);
       const payloadObj = JSON.parse(originalPayload);
       expect(payloadObj.a1p).to.equal('4.35');
@@ -113,7 +113,7 @@ describe('C1XAdapter', () => {
         'bidderCode': 'c1x'
       }
       bidderRequest.bids = bidRequests;
-      const request = c1xAdapter.buildRequests([bidRequest], bidderRequest);
+      const request = c1xAdapter.buildRequests([bidRequest], bidderRequest)[0];
       const originalPayload = parseRequest(request.data);
       const payloadObj = JSON.parse(originalPayload);
       expect(payloadObj.pageurl).to.equal('http://c1exchange.com/');
@@ -130,7 +130,7 @@ describe('C1XAdapter', () => {
       }
       bidderRequest.bids = bidRequests;
 
-      const request = c1xAdapter.buildRequests(bidRequests, bidderRequest);
+      const request = c1xAdapter.buildRequests(bidRequests, bidderRequest)[0];
       const originalPayload = parseRequest(request.data);
       const payloadObj = JSON.parse(originalPayload);
       expect(payloadObj['consent_string']).to.equal('BOP2gFWOQIFovABABAENBGAAAAAAMw');
