@@ -74,22 +74,9 @@ export const spec = {
       let iv;
       let schain;
       let eids;
-      let tpid = []
       let criteoId;
 
       _each(bidReqs, function (bid) {
-        if (!eids && bid.userId) {
-          eids = createEidsArray(bid.userId)
-          eids.forEach(function (id) {
-            if (id.uids && id.uids[0]) {
-              if (id.source === 'criteo.com') {
-                criteoId = id.uids[0].id
-              }
-              tpid.push({source: id.source, uid: id.uids[0].id})
-            }
-          })
-        }
-
         if (bid.schain) {
           schain = schain || bid.schain
         }
@@ -167,7 +154,6 @@ export const spec = {
 
       if (eids) {
         deepSetValue(sovrnBidReq, 'user.ext.eids', eids)
-        deepSetValue(sovrnBidReq, 'user.ext.tpid', tpid)
         if (criteoId) {
           deepSetValue(sovrnBidReq, 'user.ext.prebid_criteoid', criteoId)
         }
@@ -268,11 +254,16 @@ export const spec = {
 
 function _buildVideoRequestObj(bid) {
   const videoObj = {}
+  const bidSizes = deepAccess(bid, 'sizes')
   const videoAdUnitParams = deepAccess(bid, 'mediaTypes.video', {})
   const videoBidderParams = deepAccess(bid, 'params.video', {})
   const computedParams = {}
-
-  if (Array.isArray(videoAdUnitParams.playerSize)) {
+  
+  if (bidSizes) {
+    const sizes = (Array.isArray(bidSizes[0])) ? bidSizes[0] : bidSizes
+    computedParams.w = sizes[0]
+    computedParams.h = sizes[1]
+  }else if (Array.isArray(videoAdUnitParams.playerSize)) {
     const sizes = (Array.isArray(videoAdUnitParams.playerSize[0])) ? videoAdUnitParams.playerSize[0] : videoAdUnitParams.playerSize
     computedParams.w = sizes[0]
     computedParams.h = sizes[1]
