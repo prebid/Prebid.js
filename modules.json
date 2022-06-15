@@ -28,6 +28,7 @@
     "criteoBidAdapter",
     "tripleliftBidAdapter",
     "pulsepointBidAdapter",
+    "adtelligentBidAdapter",
     "adpod",
     "consentManagement",
     "gdprEnforcement",
