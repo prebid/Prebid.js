@@ -48,7 +48,7 @@ export const c1xAdapter = {
     let payload = {};
     let tagObj = {};
     // let pixelUrl = '';
-    let bidReuest = [];
+    let bidRequest = [];
     const adunits = validBidRequests.length;
     const rnd = new Date().getTime();
     const c1xTags = validBidRequests.map(bidToTag);
@@ -56,10 +56,10 @@ export const c1xAdapter = {
 
     // flattened tags in a tag object
     tagObj = c1xTags.reduce((current, next) => Object.assign(current, next));
-    const _bidderSettings = bidderSettings.getSettings();
+    // const _bidderSettings = bidderSettings.getSettings();
     // const pixelId = _bidderSettings.c1x.pixelId || '';
     // const useSSL = document.location.protocol;
-    const endpoint = _bidderSettings.c1x.endpoint;
+    // const endpoint = _bidderSettings.c1x.endpoint;
 
     payload = {
       adunits: adunits.toString(),
@@ -84,18 +84,18 @@ export const c1xAdapter = {
     //   userSync.registerSync('image', BIDDER_CODE, pixelUrl);
     // }
 
-    tagObj['site'] = _bidderSettings.c1x.siteId | '';
+    // tagObj['site'] = _bidderSettings.c1x.siteId | '';
 
     Object.assign(payload, tagObj);
     let payloadString = stringifyPayload(payload);
     // ServerRequest object
-    bidReuest.push({
+    bidRequest.push({
       method: 'GET',
-      url: endpoint || URL,
+      url: URL,
       data: payloadString,
       bids: bidIdTags
     })
-    return bidReuest;
+    return bidRequest;
   },
 
   interpretResponse: function(serverResponse, requests) {
@@ -148,7 +148,26 @@ export const c1xAdapter = {
     }
 
     return bidResponses;
-  }
+  },
+
+  getUserSyncs: function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
+    const syncs = []
+    // const useSSL = document.location.protocol;
+    // const url = 'http:' + PIXEL_ENDPOINT + '12345';
+    // if (gdprConsent) {
+    //  url += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
+    //  url += '&consentString=' + encodeURIComponent(gdprConsent.consentString || '');
+    // }
+
+    // if (syncOptions.pixelEnabled) {
+    //  syncs.push({
+    //    type: 'image',
+    //    url: url
+    //  });
+    // }
+    return syncs;
+  },
+
 }
 
 function bidToTag(bid, index) {
