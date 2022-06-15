@@ -45,8 +45,6 @@ export const c1xAdapter = {
     * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
-    logInfo('validBidRequests', validBidRequests);
-    logInfo('bidderRequest', bidderRequest);
     let payload = {};
     let tagObj = {};
     // let pixelUrl = '';
@@ -101,8 +99,6 @@ export const c1xAdapter = {
   },
 
   interpretResponse: function(serverResponse, requests) {
-    logInfo('serverResponse', serverResponse);
-    logInfo('requests', requests);
     serverResponse = serverResponse.body;
     requests = requests.bids || [];
     const currency = 'USD';
@@ -152,25 +148,7 @@ export const c1xAdapter = {
     }
 
     return bidResponses;
-  },
-
-  getUserSyncs: function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
-    const syncs = []
-    // const useSSL = document.location.protocol;
-    // const url = 'http:' + PIXEL_ENDPOINT + '12345';
-    // if (gdprConsent) {
-    //  url += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
-    //  url += '&consentString=' + encodeURIComponent(gdprConsent.consentString || '');
-    // }
-
-    // if (syncOptions.pixelEnabled) {
-    //  syncs.push({
-    //    type: 'image',
-    //    url: url
-    //  });
-    // }
-    return syncs;
-  },
+  }
 
 }
 
