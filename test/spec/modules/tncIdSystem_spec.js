@@ -33,13 +33,13 @@ describe('TNCID tests', function () {
     });
 
     it('Should NOT give TNCID if GDPR applies but consent string is missing', function () {
-      const res = tncidSubModule.getId(null, { gdprApplies: true });
+      const res = tncidSubModule.getId({}, { gdprApplies: true });
       expect(res).to.be.undefined;
     });
 
     it('GDPR is OK and page has no TNC script on page, script goes in error, no TNCID is returned', function () {
       const completeCallback = sinon.spy();
-      const {callback} = tncidSubModule.getId(null, consentData);
+      const {callback} = tncidSubModule.getId({}, consentData);
 
       return callback(completeCallback).then(() => {
         expect(completeCallback.calledOnce).to.be.true;
@@ -58,7 +58,7 @@ describe('TNCID tests', function () {
       });
 
       const completeCallback = sinon.spy();
-      const {callback} = tncidSubModule.getId(null, { gdprApplies: false });
+      const {callback} = tncidSubModule.getId({}, { gdprApplies: false });
 
       return callback(completeCallback).then(() => {
         expect(completeCallback.calledOnceWithExactly('TNCID_TEST_ID_1')).to.be.true;
@@ -76,10 +76,10 @@ describe('TNCID tests', function () {
       });
 
       const completeCallback = sinon.spy();
-      const {callback} = tncidSubModule.getId(null, { gdprApplies: false });
+      const {callback} = tncidSubModule.getId({}, { gdprApplies: false });
 
       return callback(completeCallback).then(() => {
-        expect(completeCallback.calledOnce).to.be.true;
+        expect(completeCallback.calledOnceWithExactly(undefined)).to.be.true;
       })
     });
 
@@ -87,40 +87,22 @@ describe('TNCID tests', function () {
       Object.defineProperty(window, '__tncPbjs', {
         value: {
           ready: (readyFunc) => { readyFunc() },
-          on: (name, cb) => { cb() },
+          on: (name, cb) => {
+            window.__tncPbjs.tncid = 'TNCID_TEST_ID_2';
+            cb();
+          },
           providerId: 'TEST_PROVIDER_ID_1',
           options: {},
-          tncid: 'TNCID_TEST_ID_2'
         },
         configurable: true,
         writable: true
       });
 
       const completeCallback = sinon.spy();
-      const {callback} = tncidSubModule.getId({params: {providerId: 'TEST_PROVIDER_ID_2'}}, consentData);
+      const {callback} = tncidSubModule.getId({params: {url: 'TEST_URL'}}, consentData);
 
       return callback(completeCallback).then(() => {
         expect(completeCallback.calledOnceWithExactly('TNCID_TEST_ID_2')).to.be.true;
-      })
-    });
-
-    it('If there is no TNC script on page and disableFallbackScript is set to "true", no TNCID is returned', function () {
-      Object.defineProperty(window, '__tncPbjs', {
-        value: {
-          ready: (readyFunc) => { readyFunc() },
-          on: (name, cb) => { cb() },
-          providerId: 'TEST_PROVIDER_ID_1',
-          options: {},
-          tncid: 'TNCID_TEST_ID_2'
-        },
-        configurable: true,
-        writable: true
-      });
-      const completeCallback = sinon.spy();
-      const {callback} = tncidSubModule.getId({params: {disableFallbackScript: true}}, consentData);
-
-      return callback(completeCallback).then(() => {
-        expect(completeCallback.calledOnceWithExactly(null)).to.be.true;
       })
     });
   });

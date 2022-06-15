@@ -18,7 +18,7 @@ pbjs.setConfig({
         userIds: [{
             name: 'tncId',
             params: {
-              providerId: "c8549079-f149-4529-a34b-3fa91ef257d1" // Optional
+              url: 'https://js.tncid.app/remote.min.js' //Optional
             }
         }],
         syncDelay: 5000
@@ -30,5 +30,4 @@ pbjs.setConfig({
 | Param Name | Required | Type | Description |
 | --- | --- | --- | --- |
 | name | Required | String | ID value for the TNCID module: `"tncId"` |
-| params.providerId | Optional | String | Provide TNC providerId if possible |
-| params.disableFallbackScript | Optional | Boolean | Never load fallback script |
+| params.url | Optional | String | Provide TNC fallback script URL, this script is loaded if there is no TNC script on page |

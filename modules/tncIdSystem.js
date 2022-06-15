@@ -3,11 +3,7 @@ import { logInfo } from '../src/utils.js';
 import { loadExternalScript } from '../src/adloader.js';
 
 const MODULE_NAME = 'tncId';
-
-const FALLBACK_TNC_PROVIDERID = 'c8549079-f149-4529-a34b-3fa91ef257d1';
-const FALLBACK_TNC_INSTANCE = '__tncPbjs';
-
-let disableFallbackScript = false;
+let url = null;
 
 const waitTNCScript = (tncNS) => {
   return new Promise((resolve, reject) => {
@@ -22,21 +18,21 @@ const waitTNCScript = (tncNS) => {
   });
 }
 
-const loadRemoteScript = (providerId) => {
+const loadRemoteScript = () => {
   return new Promise((resolve) => {
-    loadExternalScript('https://js.tncid.app/remote.js?ns=' + FALLBACK_TNC_INSTANCE + '&providerId=' + providerId, MODULE_NAME, resolve);
+    loadExternalScript(url, MODULE_NAME, resolve);
   })
 }
 
-const tncCallback = function (providerId, cb) {
+const tncCallback = function (cb) {
   let tncNS = '__tnc';
   let promiseArray = [];
-  if (!window[tncNS] && !disableFallbackScript) {
-    tncNS = FALLBACK_TNC_INSTANCE;
-    promiseArray.push(loadRemoteScript(providerId));
+  if (!window[tncNS]) {
+    tncNS = '__tncPbjs';
+    promiseArray.push(loadRemoteScript());
   }
 
-  return Promise.all(promiseArray).then(() => waitTNCScript(tncNS)).then(cb).catch(() => cb(null));
+  return Promise.all(promiseArray).then(() => waitTNCScript(tncNS)).then(cb).catch(() => cb());
 }
 
 export const tncidSubModule = {
@@ -50,18 +46,16 @@ export const tncidSubModule = {
   getId(config, consentData) {
     const gdpr = (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) ? 1 : 0;
     const consentString = gdpr ? consentData.consentString : '';
-    let providerId = FALLBACK_TNC_PROVIDERID;
-
-    if (config && config.params && config.params.providerId)providerId = config.params.providerId;
-    disableFallbackScript = (config && config.params && config.params.disableFallbackScript);
 
     if (gdpr && !consentString) {
       logInfo('Consent string is required for TNCID module');
       return;
     }
 
+    if (config.params && config.params.url) { url = config.params.url; }
+
     return {
-      callback: function (cb) { return tncCallback(providerId, cb); }
+      callback: function (cb) { return tncCallback(cb); }
     }
   }
 }
