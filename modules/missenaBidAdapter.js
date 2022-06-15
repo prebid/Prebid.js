@@ -72,11 +72,11 @@ export const spec = {
 
     return bidResponses;
   },
-  getUserSyncs: function(syncOptions, serverResponses) {
-    if (!syncOptions.iframeEnabled || !serverResponses.length || serverResponses[0].body === '' || !serverResponses[0].body.userSync) {
+  getUserSyncs: function (syncOptions, serverResponses) {
+    if (!syncOptions.iframeEnabled) {
       return [];
     }
-    return serverResponses[0].body.userSync;
+    return [{ type: 'iframe', url: 'https://sync.missena.io/iframe' }];
   },
   /**
    * Register bidder specific code, which will execute if bidder timed out after an auction

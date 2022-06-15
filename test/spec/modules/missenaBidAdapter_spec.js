@@ -133,31 +133,17 @@ describe('Missena Adapter', function () {
   });
 
   describe('getUserSyncs', function () {
-    const userSync = [
+    const expectedUserSyncs = [
       { type: 'iframe', url: 'https://sync.missena.io/iframe' },
     ];
-    const bidResponse = {
-      requestId: bidId,
-      cpm: 0.5,
-      currency: 'USD',
-      ad: '<!-- -->',
-      meta: {
-        advertiserDomains: ['missena.com'],
-      },
-      userSync,
-    };
-    const serverResponses = [
-      {
-        body: bidResponse,
-      },
-    ];
+    const serverResponses = [];
 
     it('should return userSync when iframeEnabled', function () {
       const syncOptions = {
         iframeEnabled: true,
       };
       const userSyncs = spec.getUserSyncs(syncOptions, serverResponses);
-      expect(userSyncs).to.deep.equal(userSync);
+      expect(userSyncs).to.deep.equal(expectedUserSyncs);
     });
 
     it('should return empty array when iframeEnabled is false', function () {
