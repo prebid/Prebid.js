@@ -37,7 +37,7 @@ describe('Kargo Analytics Adapter', function () {
       events.emit(constants.EVENTS.BID_RESPONSE, bidResponse);
 
       expect(server.requests.length).to.equal(1);
-      expect(server.requests[0].url).to.equal('https://krk.kargo.com/api/v1/event/timeout?aid=66529d4c-8998-47c2-ab3e-5b953490b98f&ato=1000&rt=192&it=0');
+      expect(server.requests[0].url).to.equal('https://krk.kargo.com/api/v1/event/auction-data?aid=66529d4c-8998-47c2-ab3e-5b953490b98f&ato=1000&rt=192&it=0');
     });
   });
 });

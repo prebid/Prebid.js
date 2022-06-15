@@ -55,7 +55,7 @@ function sendBidResponseData (data) {
     }
 
     ajax(
-      `${EVENT_URL}/timeout`,
+      `${EVENT_URL}/auction-data`,
       null,
       {
         aid: data.auctionId,
@@ -68,7 +68,7 @@ function sendBidResponseData (data) {
       }
     );
   } catch (err) {
-    logError('Error sending timeout data: ', err);
+    logError('Error sending auction data: ', err);
   }
 }
 
