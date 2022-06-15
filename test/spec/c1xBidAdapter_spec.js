@@ -64,8 +64,8 @@ describe('C1XAdapter', () => {
     };
     it('sends bid request to ENDPOINT via GET', () => {
       const request = c1xAdapter.buildRequests(bidRequests);
-      expect(request[0].url).to.contain(ENDPOINT);
-      expect(request[0].method).to.equal('GET');
+      expect(request.url).to.contain(ENDPOINT);
+      expect(request.method).to.equal('GET');
     });
     it('should generate correct bid Id tag', () => {
       const request = c1xAdapter.buildRequests(bidRequests);
