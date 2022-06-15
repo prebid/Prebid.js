@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { c1xAdapter } from 'modules/c1xBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
+import { c1xAdapter } from '../../modules/c1xBidAdapter';
 
 const ENDPOINT = 'https://hb-stg.c1exchange.com/ht';
 const BIDDER_CODE = 'c1x';
@@ -38,7 +38,15 @@ describe('C1XAdapter', () => {
       {
         'bidder': BIDDER_CODE,
         'params': {
-          'placementId': 'div-gpt-ad-1654594619717-0'
+          'placementId': 'div-gpt-ad-1654594619717-0',
+          'dealId': '1233'
+        },
+        'mediaTypes': {
+          'banner': {
+            'sizes': [
+              [300, 250], [300, 600]
+            ]
+          }
         },
         'adUnitCode': 'adunit-code',
         'sizes': [[300, 250], [300, 600]],
@@ -56,8 +64,8 @@ describe('C1XAdapter', () => {
     };
     it('sends bid request to ENDPOINT via GET', () => {
       const request = c1xAdapter.buildRequests(bidRequests);
-      expect(request.url).to.equal(ENDPOINT);
-      expect(request.method).to.equal('GET');
+      expect(request[0].url).to.contain(ENDPOINT);
+      expect(request[0].method).to.equal('GET');
     });
     it('should generate correct bid Id tag', () => {
       const request = c1xAdapter.buildRequests(bidRequests);
@@ -71,14 +79,15 @@ describe('C1XAdapter', () => {
       expect(payloadObj.adunits).to.equal('1');
       expect(payloadObj.a1s).to.equal('300x250,300x600');
       expect(payloadObj.a1).to.equal('adunit-code');
-      expect(payloadObj.site).to.equal('9999');
+      expect(payloadObj.a1d).to.equal('1233');
     });
     it('should convert floor price to proper form and attach to request', () => {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
           'params': {
-            'siteId': '9999',
+            'placementId': 'div-gpt-ad-1654594619717-0',
+            'dealId': '1233',
             'floorPriceMap': {
               '300x250': 4.35
             }
@@ -94,11 +103,17 @@ describe('C1XAdapter', () => {
         bidRequests[0],
         {
           'params': {
-            'siteId': '9999',
+            'placementId': 'div-gpt-ad-1654594619717-0',
+            'dealId': '1233',
             'pageurl': 'http://c1exchange.com/'
           }
         });
-      const request = c1xAdapter.buildRequests([bidRequest]);
+
+      let bidderRequest = {
+        'bidderCode': 'c1x'
+      }
+      bidderRequest.bids = bidRequests;
+      const request = c1xAdapter.buildRequests([bidRequest], bidderRequest);
       const originalPayload = parseRequest(request.data);
       const payloadObj = JSON.parse(originalPayload);
       expect(payloadObj.pageurl).to.equal('http://c1exchange.com/');
@@ -150,8 +165,10 @@ describe('C1XAdapter', () => {
       ];
       let bidderRequest = {};
       bidderRequest.bids = [
-        { adUnitCode: 'c1x-test',
-          bidId: 'yyyy' }
+        {
+          adUnitCode: 'c1x-test',
+          bidId: 'yyyy'
+        }
       ];
       let result = c1xAdapter.interpretResponse({ body: [response] }, bidderRequest);
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));

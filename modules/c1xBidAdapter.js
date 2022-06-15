@@ -45,6 +45,8 @@ export const c1xAdapter = {
     * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
+    logInfo('validBidRequests', validBidRequests);
+    logInfo('bidderRequest', bidderRequest);
     let payload = {};
     let tagObj = {};
     // let pixelUrl = '';
@@ -99,6 +101,8 @@ export const c1xAdapter = {
   },
 
   interpretResponse: function(serverResponse, requests) {
+    logInfo('serverResponse', serverResponse);
+    logInfo('requests', requests);
     serverResponse = serverResponse.body;
     requests = requests.bids || [];
     const currency = 'USD';
