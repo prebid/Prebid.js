@@ -2,7 +2,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { BANNER } from '../src/mediaTypes.js'
 import { isArray, isNumber } from '../src/utils.js'
 
-const BIDDER_CODE = 'idx_bidder_code'
+const BIDDER_CODE = 'idx'
 const ENDPOINT_URL = 'https://dev-event.dxmdp.com/rest/api/v1/bid'
 const SUPPORTED_MEDIA_TYPES = [ BANNER ]
 
@@ -10,7 +10,7 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
   isBidRequestValid: function (bid) {
-    return isArray(bid.mediaTypes?.banner?.sizes) && !!bid.mediaTypes.banner.sizes.every(size => {
+    return isArray(bid.mediaTypes?.banner?.sizes) && bid.mediaTypes.banner.sizes.every(size => {
       return isArray(size) && size.length === 2 && isNumber(size[0]) && isNumber(size[1])
     })
   },
