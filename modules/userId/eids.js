@@ -191,21 +191,9 @@ export const USER_IDS_CONFIG = {
     atype: 1
   },
 
-  // haloId (deprecated in 7.0, use hadronId)
-  'haloId': {
-    source: 'audigent.com',
-    atype: 1
-  },
-
   // quantcastId
   'quantcastId': {
     source: 'quantcast.com',
-    atype: 1
-  },
-
-  // nextroll
-  'nextrollId': {
-    source: 'nextroll.com',
     atype: 1
   },
 
@@ -253,12 +241,6 @@ export const USER_IDS_CONFIG = {
     getValue: function(data) {
       return data.id;
     }
-  },
-
-  // Akamai Data Activation Platform (DAP)
-  'dapId': {
-    source: 'akamai.com',
-    atype: 1
   },
 
   'deepintentId': {

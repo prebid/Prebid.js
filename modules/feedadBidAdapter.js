@@ -206,7 +206,8 @@ function buildRequests(validBidRequests, bidderRequest) {
     })
   });
   data.bids.forEach(bid => BID_METADATA[bid.bidId] = {
-    referer: data.refererInfo.referer,
+    // TODO: is 'page' the right value here?
+    referer: data.refererInfo.page,
     transactionId: bid.transactionId
   });
   if (bidderRequest.gdprConsent) {

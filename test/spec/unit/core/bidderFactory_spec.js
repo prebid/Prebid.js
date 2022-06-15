@@ -1073,16 +1073,14 @@ describe('validate bid response: ', function () {
       expect(logWarnSpy.callCount).to.equal(1);
     });
 
-    it('should accept the bid, when allowAlternateBidderCodes flag is undefined (default should be true)', function () {
+    it('should reject the bid, when allowAlternateBidderCodes flag is undefined (default should be false)', function () {
       bidderSettingStub.returns(undefined);
 
       const bidder = newBidder(spec);
       spec.interpretResponse.returns(bids1);
       bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
-      expect(addBidResponseStub.calledOnce).to.equal(true);
-      expect(logWarnSpy.callCount).to.equal(0);
-      expect(logErrorSpy.callCount).to.equal(0);
+      expect(addBidResponseStub.calledOnce).to.equal(false);
     });
 
     it('should log warning when the particular bidder is not specified in allowedAlternateBidderCodes and allowAlternateBidderCodes flag is true', function () {

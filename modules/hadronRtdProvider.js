@@ -118,27 +118,13 @@ export function addRealTimeData(bidConfig, rtd, rtdConfig) {
   if (rtdConfig.params && rtdConfig.params.handleRtd) {
     rtdConfig.params.handleRtd(bidConfig, rtd, rtdConfig, config);
   } else {
+    // TODO: this and haloRtdProvider are a copy-paste of each other
     if (isPlainObject(rtd.ortb2)) {
-      let ortb2 = config.getConfig('ortb2') || {};
-      config.setConfig({ortb2: mergeLazy(ortb2, rtd.ortb2)});
+      mergeLazy(bidConfig.ortb2Fragments?.global, rtd.ortb2);
     }
 
     if (isPlainObject(rtd.ortb2b)) {
-      let bidderConfig = config.getBidderConfig();
-
-      Object.keys(rtd.ortb2b).forEach(bidder => {
-        let rtdOptions = rtd.ortb2b[bidder] || {};
-
-        let bidderOptions = {};
-        if (isPlainObject(bidderConfig[bidder])) {
-          bidderOptions = bidderConfig[bidder];
-        }
-
-        config.setBidderConfig({
-          bidders: [bidder],
-          config: mergeLazy(bidderOptions, rtdOptions)
-        });
-      });
+      mergeLazy(bidConfig.ortb2Fragments?.bidder, Object.fromEntries(Object.entries(rtd.ortb2b).map(([_, cfg]) => [_, cfg.ortb2])));
     }
   }
 }
@@ -165,11 +151,13 @@ export function getRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
     }
   }
 
-  const userIds = (getGlobal()).getUserIds();
+  const userIds = typeof getGlobal().getUserIds === 'function' ? (getGlobal()).getUserIds() : {};
 
   let hadronId = storage.getDataFromLocalStorage(HALOID_LOCAL_NAME);
   if (isStr(hadronId)) {
-    (getGlobal()).refreshUserIds({submoduleNames: 'hadronId'});
+    if (typeof getGlobal().refreshUserIds === 'function') {
+      (getGlobal()).refreshUserIds({submoduleNames: 'hadronId'});
+    }
     userIds.hadronId = hadronId;
     getRealTimeDataAsync(bidConfig, onDone, rtdConfig, userConsent, userIds);
   } else {
@@ -197,7 +185,7 @@ export function getRealTimeDataAsync(bidConfig, onDone, rtdConfig, userConsent, 
   let reqParams = {};
 
   if (isPlainObject(rtdConfig)) {
-    set(rtdConfig, 'params.requestParams.ortb2', config.getConfig('ortb2'));
+    set(rtdConfig, 'params.requestParams.ortb2', bidConfig.ortb2Fragments.global);
     reqParams = rtdConfig.params.requestParams;
   }
 

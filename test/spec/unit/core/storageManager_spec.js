@@ -108,8 +108,8 @@ describe('storage manager', function() {
   });
 
   describe('when bidderSettings.allowStorage is defined', () => {
-    const DENIED_BIDDER = 'denied-bidder';
-    const DENY_KEY = 'storageAllowed';
+    const ALLOWED_BIDDER = 'allowed-bidder';
+    const ALLOW_KEY = 'storageAllowed';
 
     const COOKIE = 'test-cookie';
     const LS_KEY = 'test-localstorage';
@@ -117,8 +117,8 @@ describe('storage manager', function() {
     function mockBidderSettings() {
       return {
         get(bidder, key) {
-          if (bidder === DENIED_BIDDER && key === DENY_KEY) {
-            return false;
+          if (bidder === ALLOWED_BIDDER && key === ALLOW_KEY) {
+            return true;
           } else {
             return undefined;
           }
@@ -127,8 +127,8 @@ describe('storage manager', function() {
     }
 
     Object.entries({
-      disallowed: [DENIED_BIDDER, false],
-      allowed: ['allowed-bidder', true]
+      disallowed: ['denied_bidder', false],
+      allowed: [ALLOWED_BIDDER, true]
     }).forEach(([test, [bidderCode, shouldWork]]) => {
       describe(`for ${test} bidders`, () => {
         let mgr;

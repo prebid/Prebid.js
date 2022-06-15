@@ -48,7 +48,7 @@ const BIDDER_REQUEST = {
   },
   'uspConsent': 'consent_string',
   'refererInfo': {
-    'referer': 'https://www.greatsite.com'
+    'page': 'https://www.greatsite.com'
   }
 };
 
@@ -137,12 +137,17 @@ describe('VidazooBidAdapter', function () {
   describe('build requests', function () {
     let sandbox;
     before(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        vidazoo: {
+          storageAllowed: true
+        }
+      };
       sandbox = sinon.sandbox.create();
       sandbox.stub(Date, 'now').returns(1000);
     });
 
     it('should build request for each size', function () {
-      const hashUrl = hashCode(BIDDER_REQUEST.refererInfo.referer);
+      const hashUrl = hashCode(BIDDER_REQUEST.refererInfo.page);
       const requests = adapter.buildRequests([BID], BIDDER_REQUEST);
       expect(requests).to.have.length(1);
       expect(requests[0]).to.deep.equal({
@@ -173,6 +178,7 @@ describe('VidazooBidAdapter', function () {
     });
 
     after(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {};
       sandbox.restore();
     });
   });
@@ -247,7 +253,6 @@ describe('VidazooBidAdapter', function () {
 
       const userId = (function () {
         switch (idSystemProvider) {
-          case 'digitrustid': return { data: { id: id } };
           case 'lipb': return { lipbid: id };
           case 'parrableId': return { eid: id };
           case 'id5id': return { uid: id };
@@ -287,6 +292,16 @@ describe('VidazooBidAdapter', function () {
   });
 
   describe('vidazoo session id', function () {
+    before(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        vidazoo: {
+          storageAllowed: true
+        }
+      };
+    });
+    after(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {};
+    });
     it('should get undefined vidazoo session id', function () {
       const sessionId = getVidazooSessionId();
       expect(sessionId).to.be.empty;
@@ -301,6 +316,16 @@ describe('VidazooBidAdapter', function () {
   });
 
   describe('deal id', function () {
+    before(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        vidazoo: {
+          storageAllowed: true
+        }
+      };
+    });
+    after(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {};
+    });
     const key = 'myDealKey';
 
     it('should get the next deal id', function () {
@@ -320,6 +345,16 @@ describe('VidazooBidAdapter', function () {
   });
 
   describe('unique deal id', function () {
+    before(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        vidazoo: {
+          storageAllowed: true
+        }
+      };
+    });
+    after(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {};
+    });
     const key = 'myKey';
     let uniqueDealId;
     beforeEach(() => {
@@ -345,6 +380,16 @@ describe('VidazooBidAdapter', function () {
   });
 
   describe('storage utils', function () {
+    before(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        vidazoo: {
+          storageAllowed: true
+        }
+      };
+    });
+    after(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {};
+    });
     it('should get value from storage with create param', function () {
       const now = Date.now();
       const clock = useFakeTimers({

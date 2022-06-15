@@ -5,7 +5,6 @@
  * @module modules/idWardRtdProvider
  * @requires module:modules/realTimeData
  */
-import {config} from '../src/config.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {submodule} from '../src/hook.js';
 import {isPlainObject, mergeDeep, logMessage, logError} from '../src/utils.js';
@@ -15,15 +14,15 @@ const SUBMODULE_NAME = 'idWard';
 
 export const storage = getStorageManager({moduleName: SUBMODULE_NAME});
 /**
-  * Add real-time data & merge segments.
-  * @param {Object} rtd
-  */
-function addRealTimeData(rtd) {
+ * Add real-time data & merge segments.
+ * @param ortb2 object to merge into
+ * @param {Object} rtd
+ */
+function addRealTimeData(ortb2, rtd) {
   if (isPlainObject(rtd.ortb2)) {
-    const ortb2 = config.getConfig('ortb2') || {};
     logMessage('idWardRtdProvider: merging original: ', ortb2);
     logMessage('idWardRtdProvider: merging in: ', rtd.ortb2);
-    config.setConfig({ortb2: mergeDeep(ortb2, rtd.ortb2)});
+    mergeDeep(ortb2, rtd.ortb2);
   }
 }
 
@@ -78,7 +77,7 @@ export function getRealTimeData(reqBidsConfigObj, onDone, rtdConfig, userConsent
           }
         }
       };
-      addRealTimeData(data.rtd);
+      addRealTimeData(reqBidsConfigObj.ortb2Fragments?.global, data.rtd);
       onDone();
     }
   }

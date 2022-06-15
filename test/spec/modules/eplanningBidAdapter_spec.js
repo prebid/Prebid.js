@@ -293,7 +293,9 @@ describe('E-Planning Adapter', function () {
   const refererUrl = 'https://localhost';
   const bidderRequest = {
     refererInfo: {
-      referer: refererUrl
+      page: refererUrl,
+      domain: 'localhost',
+      ref: refererUrl,
     },
     gdprConsent: {
       gdprApplies: 1,
@@ -337,12 +339,18 @@ describe('E-Planning Adapter', function () {
     let getWindowSelfStub;
     let innerWidth;
     beforeEach(() => {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        eplanning: {
+          storageAllowed: true
+        }
+      };
       sandbox = sinon.sandbox.create();
       getWindowSelfStub = sandbox.stub(utils, 'getWindowSelf');
       getWindowSelfStub.returns(createWindow(800));
     });
 
     afterEach(() => {
+      $$PREBID_GLOBAL$$.bidderSettings = {};
       sandbox.restore();
     });
 
@@ -467,7 +475,7 @@ describe('E-Planning Adapter', function () {
 
     it('should return ur parameter with current window url', function () {
       const ur = spec.buildRequests(bidRequests, bidderRequest).data.ur;
-      expect(ur).to.equal(bidderRequest.refererInfo.referer);
+      expect(ur).to.equal(bidderRequest.refererInfo.page);
     });
 
     it('should return fr parameter when there is a referrer', function () {
@@ -721,6 +729,11 @@ describe('E-Planning Adapter', function () {
       });
     }
     beforeEach(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        eplanning: {
+          storageAllowed: true
+        }
+      };
       getLocalStorageSpy = sandbox.spy(storage, 'getDataFromLocalStorage');
       setDataInLocalStorageSpy = sandbox.spy(storage, 'setDataInLocalStorage');
 
@@ -733,6 +746,7 @@ describe('E-Planning Adapter', function () {
       focusStub.returns(true);
     });
     afterEach(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {};
       sandbox.restore();
       if (document.getElementById(ADUNIT_CODE_VIEW)) {
         document.body.removeChild(element);

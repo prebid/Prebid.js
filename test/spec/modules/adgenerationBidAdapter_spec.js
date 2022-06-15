@@ -105,7 +105,7 @@ describe('AdgenerationAdapter', function () {
     ];
     const bidderRequest = {
       refererInfo: {
-        referer: 'https://example.com'
+        page: 'https://example.com'
       }
     };
     const data = {
