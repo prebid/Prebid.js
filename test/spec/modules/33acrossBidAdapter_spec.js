@@ -426,7 +426,6 @@ describe('33acrossBidAdapter:', function () {
         });
       });
 
-
       it('returns true for valid guid values', function() {
         // NOTE: We ignore whitespace at the start and end since
         // in our experience these are common typos
