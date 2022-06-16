@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import { spec, defaultSize } from 'modules/newspassBidAdapter.js';
+import { spec, defaultSize } from 'modules/newspassidBidAdapter.js';
 import { config } from 'src/config.js';
-import {getGranularityKeyName, getGranularityObject} from '../../../modules/newspassBidAdapter.js';
+import {getGranularityKeyName, getGranularityObject} from '../../../modules/newspassidBidAdapter.js';
 import * as utils from '../../../src/utils.js';
 const NEWSPASSURI = 'https://bidder.newspassid.com/openrtb2/auction';
 const BIDDER_CODE = 'newspassid';
@@ -167,10 +167,10 @@ var validBidRequestsWithBannerMediaType = [
     transactionId: '2e63c0ed-b10c-4008-aed5-84582cecfe87'
   }
 ];
-var validBidRequests_1_2020 = [
+var validBidRequestsIsThisCamelCaseEnough = [
   {
     'bidder': 'newspassid',
-    'testname': 'validBidRequests_1_2020',
+    'testname': 'validBidRequestsIsThisCamelCaseEnough',
     'params': {
       'publisherId': 'newspassRUP0001',
       'placementId': '8000000009',
@@ -1126,25 +1126,9 @@ describe('newspassid Adapter', function () {
     it('should not validate bad siteId', function () {
       expect(spec.isBidRequestValid(xBadSite)).to.equal(false);
     });
-    var xBadSiteTooLong = {
-      bidder: BIDDER_CODE,
-      params: {
-        placementId: '1234567890',
-        publisherId: '9876abcd12-3',
-        siteId: '12345678901'
-      }
-    };
     it('should not validate siteId too long', function () {
       expect(spec.isBidRequestValid(xBadSite)).to.equal(false);
     });
-    var xBadSiteTooShort = {
-      bidder: BIDDER_CODE,
-      params: {
-        placementId: '1234567890',
-        publisherId: '9876abcd12-3',
-        siteId: '123456789'
-      }
-    };
     it('should not validate siteId too short', function () {
       expect(spec.isBidRequestValid(xBadSite)).to.equal(false);
     });
@@ -1182,7 +1166,7 @@ describe('newspassid Adapter', function () {
     it('should not validate customData not being an array', function () {
       expect(spec.isBidRequestValid(xBadCustomData)).to.equal(false);
     });
-    var xBadCustomData_OLD_CUSTOMDATA_VALUE = {
+    var xBadCustomDataOldCustomdataValue = {
       bidder: BIDDER_CODE,
       params: {
         'placementId': '1234567890',
@@ -1192,9 +1176,9 @@ describe('newspassid Adapter', function () {
       }
     };
     it('should not validate customData being an object, not an array', function () {
-      expect(spec.isBidRequestValid(xBadCustomData_OLD_CUSTOMDATA_VALUE)).to.equal(false);
+      expect(spec.isBidRequestValid(xBadCustomDataOldCustomdataValue)).to.equal(false);
     });
-    var xBadCustomData_zerocd = {
+    var xBadCustomDataZerocd = {
       bidder: BIDDER_CODE,
       params: {
         'placementId': '1111111110',
@@ -1204,9 +1188,9 @@ describe('newspassid Adapter', function () {
       }
     };
     it('should not validate customData array having no elements', function () {
-      expect(spec.isBidRequestValid(xBadCustomData_zerocd)).to.equal(false);
+      expect(spec.isBidRequestValid(xBadCustomDataZerocd)).to.equal(false);
     });
-    var xBadCustomData_notargeting = {
+    var xBadCustomDataNotargeting = {
       bidder: BIDDER_CODE,
       params: {
         'placementId': '1234567890',
@@ -1216,9 +1200,9 @@ describe('newspassid Adapter', function () {
       }
     };
     it('should not validate customData[] having no "targeting"', function () {
-      expect(spec.isBidRequestValid(xBadCustomData_notargeting)).to.equal(false);
+      expect(spec.isBidRequestValid(xBadCustomDataNotargeting)).to.equal(false);
     });
-    var xBadCustomData_tgt_not_obj = {
+    var xBadCustomDataTgtNotObj = {
       bidder: BIDDER_CODE,
       params: {
         'placementId': '1234567890',
@@ -1228,7 +1212,7 @@ describe('newspassid Adapter', function () {
       }
     };
     it('should not validate customData[0].targeting not being an object', function () {
-      expect(spec.isBidRequestValid(xBadCustomData_tgt_not_obj)).to.equal(false);
+      expect(spec.isBidRequestValid(xBadCustomDataTgtNotObj)).to.equal(false);
     });
     var xBadCustomParams = {
       bidder: BIDDER_CODE,
@@ -1500,7 +1484,7 @@ describe('newspassid Adapter', function () {
       let request = spec.buildRequests(validBidRequests, validBidderRequest);
       let payload = JSON.parse(request.data);
       expect(utils.deepAccess(payload, 'ext.newspassid.pv')).to.be.a('string');
-      request = spec.buildRequests(validBidRequests_1_2020, validBidderRequest);
+      request = spec.buildRequests(validBidRequestsIsThisCamelCaseEnough, validBidderRequest);
       let payload2 = JSON.parse(request.data);
       expect(utils.deepAccess(payload2, 'ext.newspassid.pv')).to.be.a('string');
       expect(utils.deepAccess(payload2, 'ext.newspassid.pv')).to.equal(utils.deepAccess(payload, 'ext.newspassid.pv'));
