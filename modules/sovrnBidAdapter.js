@@ -1,7 +1,7 @@
 import { _each, getBidIdParameter, isArray, deepClone, parseUrl, getUniqueIdentifierStr, deepSetValue, logError, deepAccess, isInteger, logWarn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { ADPOD, BANNER, VIDEO } from '../src/mediaTypes.js'
-import { createEidsArray } from './userId/eids.js'
+import {createEidsArray} from './userId/eids.js';
 import {config} from '../src/config.js'
 
 const ORTB_VIDEO_PARAMS = {
@@ -77,6 +77,17 @@ export const spec = {
       let criteoId;
 
       _each(bidReqs, function (bid) {
+        if (!eids && bid.userId) {
+          eids = createEidsArray(bid.userId)
+          eids.forEach(function (id) {
+            if (id.uids && id.uids[0]) {
+              if (id.source === 'criteo.com') {
+                criteoId = id.uids[0].id
+              }
+            }
+          })
+        }
+
         if (bid.schain) {
           schain = schain || bid.schain
         }
@@ -159,24 +170,14 @@ export const spec = {
         }
       }
 
-      const urlParams = new URLSearchParams(window.location.search)
-      const uuid = urlParams.get('testUuid')
-
-      let url = `https://localhost:8090/rtb/prebidResponse1/bid/openrtb25`
-      if (iv) url += `&iv=${iv}`
+      let url = `https://ap.lijit.com/rtb/bid?src=$$REPO_AND_VERSION$$`;
+      if (iv) url += `&iv=${iv}`;
 
       return {
         method: 'POST',
         url: url,
         data: JSON.stringify(sovrnBidReq),
-        options: {
-          contentType: 'text/plain',
-          withCredentials: false,
-          customHeaders: {
-            'testUuid': uuid,
-            'replaceIdsFromRequest': true
-          }
-        }
+        options: {contentType: 'text/plain'}
       }
     } catch (e) {
       logError('Could not build bidrequest, error deatils:', e);
@@ -268,12 +269,12 @@ function _buildVideoRequestObj(bid) {
   const videoAdUnitParams = deepAccess(bid, 'mediaTypes.video', {})
   const videoBidderParams = deepAccess(bid, 'params.video', {})
   const computedParams = {}
-  
+
   if (bidSizes) {
     const sizes = (Array.isArray(bidSizes[0])) ? bidSizes[0] : bidSizes
     computedParams.w = sizes[0]
     computedParams.h = sizes[1]
-  }else if (Array.isArray(videoAdUnitParams.playerSize)) {
+  } else if (Array.isArray(videoAdUnitParams.playerSize)) {
     const sizes = (Array.isArray(videoAdUnitParams.playerSize[0])) ? videoAdUnitParams.playerSize[0] : videoAdUnitParams.playerSize
     computedParams.w = sizes[0]
     computedParams.h = sizes[1]
