@@ -21,15 +21,18 @@ describe('C1XAdapter', () => {
         'placementId': 'div-gpt-ad-1654594619717-0'
       }
     };
-    it('should return true when required params are passed', () => {
+    it('should return true when required params found', function () {
       expect(c1xAdapter.isBidRequestValid(bid)).to.equal(true);
     });
-    it('should return false when required params are not found', () => {
+
+    it('should return false when publisherId not passed correctly', function () {
+      bid.params.placementId = undefined;
+      expect(c1xAdapter.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('should return false when require params are not passed', function () {
       let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
-        'placementId': null
-      };
+      bid.params = {};
       expect(c1xAdapter.isBidRequestValid(bid)).to.equal(false);
     });
   });
