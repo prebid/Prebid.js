@@ -59,7 +59,8 @@ export const spec = {
     });
     const payload = {
       adUnits,
-      href: encodeURIComponent(bidderRequest.refererInfo.referer)
+      // TODO: does the fallback make sense here?
+      href: encodeURIComponent(bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation)
     };
     if (bidderRequest) { // modules informations (gdpr, ccpa, schain, userId)
       if (bidderRequest.gdprConsent) {

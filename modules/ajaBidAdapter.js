@@ -36,7 +36,7 @@ export const spec = {
    */
   buildRequests: function(validBidRequests, bidderRequest) {
     const bidRequests = [];
-    const pageUrl = (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) || undefined;
+    const pageUrl = bidderRequest?.refererInfo?.page || undefined;
 
     for (let i = 0, len = validBidRequests.length; i < len; i++) {
       const bidRequest = validBidRequests[i];

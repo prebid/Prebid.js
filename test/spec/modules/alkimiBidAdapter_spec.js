@@ -110,7 +110,7 @@ describe('alkimiBidAdapter', function () {
     const bidderRequest = spec.buildRequests(bidRequests, {
       auctionId: '123',
       refererInfo: {
-        referer: 'http://test.com/path.html'
+        page: 'http://test.com/path.html'
       },
       gdprConsent: {
         consentString: 'test-consent',

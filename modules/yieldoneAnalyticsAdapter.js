@@ -99,7 +99,8 @@ const yieldoneAnalytics = Object.assign(adapter({analyticsType}), {
       if (currentAuctionId) {
         const eventsStorage = yieldoneAnalytics.eventsStorage;
         if (!eventsStorage[currentAuctionId]) eventsStorage[currentAuctionId] = {events: []};
-        const referrer = args.refererInfo && args.refererInfo.referer;
+        // TODO: is 'page' the right value here?
+        const referrer = args.refererInfo && args.refererInfo.page;
         if (referrer && referrers[currentAuctionId] !== referrer) {
           referrers[currentAuctionId] = referrer;
         }

@@ -88,9 +88,10 @@ export const spec = {
           keywords: params.keywords ? params.keywords.split(',').map(k => k.trim()) : [],
           lang_content: document.documentElement.lang,
           lang: window.navigator.language,
-          domain: window.location.hostname,
-          page: window.location.href,
-          ref: refererInfo.referer,
+          // TODO: are these the correct refererInfo values?
+          domain: refererInfo.domain,
+          page: refererInfo.page,
+          ref: refererInfo.ref,
           userids: _getUserIDs(),
           geo: '',
         },

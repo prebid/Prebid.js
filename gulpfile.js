@@ -15,8 +15,6 @@ var opens = require('opn');
 var webpackConfig = require('./webpack.conf.js');
 var helpers = require('./gulpHelpers.js');
 var concat = require('gulp-concat');
-var header = require('gulp-header');
-var footer = require('gulp-footer');
 var replace = require('gulp-replace');
 var shell = require('gulp-shell');
 var eslint = require('gulp-eslint');
@@ -27,10 +25,10 @@ var fs = require('fs');
 var jsEscape = require('gulp-js-escape');
 const path = require('path');
 const execa = require('execa');
+const {minify} = require('terser');
+const Vinyl = require('vinyl');
 
 var prebid = require('./package.json');
-var dateString = 'Updated : ' + (new Date()).toISOString().substring(0, 10);
-var banner = '/* <%= prebid.name %> v<%= prebid.version %>\n' + dateString + '*/\n';
 var port = 9999;
 const INTEG_SERVER_HOST = argv.host ? argv.host : 'localhost';
 const INTEG_SERVER_PORT = 4444;
@@ -73,6 +71,7 @@ function lint(done) {
   return gulp.src([
     'src/**/*.js',
     'modules/**/*.js',
+    'libraries/**/*.js',
     'test/**/*.js',
     'plugins/**/*.js',
     '!plugins/**/node_modules/**',
@@ -120,6 +119,15 @@ function makeDevpackPkg() {
     devtool: 'source-map',
     mode: 'development'
   })
+
+  const babelConfig = require('./babelConfig.js')({prebidDistUrlBase: '/build/dev/'});
+
+  // update babel config to set local dist url
+  cloned.module.rules
+    .flatMap((rule) => rule.use)
+    .filter((use) => use.loader === 'babel-loader')
+    .forEach((use) => use.options = Object.assign({}, use.options, babelConfig));
+
   var externalModules = helpers.getArgModules();
 
   const analyticsSources = helpers.getAnalyticsSources();
@@ -149,18 +157,12 @@ function makeWebpackPkg() {
     .pipe(gulp.dest('build/dist'));
 }
 
-function addBanner() {
-  const sm = argv.sourceMaps;
-
-  return gulp.src(['build/dist/prebid-core.js'])
-    .pipe(gulpif(sm, sourcemaps.init({loadMaps: true})))
-    .pipe(header(banner, {prebid}))
-    .pipe(gulpif(sm, sourcemaps.write('.')))
-    .pipe(gulp.dest('build/dist'))
-}
-
 function getModulesListToAddInBanner(modules) {
-  return (modules.length > 0) ? modules.join(', ') : 'All available modules in current version.';
+  if (!modules || modules.length === helpers.getModuleNames().length) {
+    return 'All available modules for this version.'
+  } else {
+    return modules.join(', ')
+  }
 }
 
 function gulpBundle(dev) {
@@ -178,6 +180,47 @@ function nodeBundle(modules, dev = false) {
         done();
       }));
   });
+}
+
+function wrapWithHeaderAndFooter(dev, modules) {
+  // NOTE: gulp-header, gulp-footer & gulp-wrap do not play nice with source maps.
+  // gulp-concat does; for that reason we are prepending and appending the source stream with "fake" header & footer files.
+  function memoryVinyl(name, contents) {
+    return new Vinyl({
+      cwd: '',
+      base: 'generated',
+      path: name,
+      contents: Buffer.from(contents, 'utf-8')
+    });
+  }
+  return function wrap(stream) {
+    const wrapped = through.obj();
+    const placeholder = '$$PREBID_SOURCE$$';
+    const tpl = _.template(fs.readFileSync('./bundle-template.txt'))({
+      prebid,
+      modules: getModulesListToAddInBanner(modules),
+      enable: !argv.manualEnable
+    });
+    (dev ? Promise.resolve(tpl) : minify(tpl, {format: {comments: true}}).then((res) => res.code))
+      .then((tpl) => {
+        // wrap source placeholder in an IIFE to make it an expression (so that it works with minify output)
+        const parts = tpl.replace(placeholder, `(function(){$$${placeholder}$$})()`).split(placeholder);
+        if (parts.length !== 2) {
+          throw new Error(`Cannot parse bundle template; it must contain exactly one instance of '${placeholder}'`);
+        }
+        const [header, footer] = parts;
+        wrapped.push(memoryVinyl('prebid-header.js', header));
+        stream.pipe(wrapped, {end: false});
+        stream.on('end', () => {
+          wrapped.push(memoryVinyl('prebid-footer.js', footer));
+          wrapped.push(null);
+        });
+      })
+      .catch((err) => {
+        wrapped.destroy(err);
+      });
+    return wrapped;
+  }
 }
 
 function bundle(dev, moduleArr) {
@@ -210,17 +253,10 @@ function bundle(dev, moduleArr) {
   gutil.log('Appending ' + prebid.globalVarName + '.processQueue();');
   gutil.log('Generating bundle:', outputFileName);
 
-  return gulp.src(
-    entries
-  )
-    // Need to uodate the "Modules: ..." section in comment with the current modules list
-    .pipe(replace(/(Modules: )(.*?)(\*\/)/, ('$1' + getModulesListToAddInBanner(helpers.getArgModules()) + ' $3')))
+  const wrap = wrapWithHeaderAndFooter(dev, modules);
+  return wrap(gulp.src(entries))
     .pipe(gulpif(sm, sourcemaps.init({ loadMaps: true })))
     .pipe(concat(outputFileName))
-    .pipe(gulpif(!argv.manualEnable, footer('\n<%= global %>.processQueue();', {
-      global: prebid.globalVarName
-    }
-    )))
     .pipe(gulpif(sm, sourcemaps.write('.')));
 }
 
@@ -389,7 +425,7 @@ gulp.task(clean);
 gulp.task(escapePostbidConfig);
 
 gulp.task('build-bundle-dev', gulp.series(makeDevpackPkg, gulpBundle.bind(null, true)));
-gulp.task('build-bundle-prod', gulp.series(makeWebpackPkg, addBanner, gulpBundle.bind(null, false)));
+gulp.task('build-bundle-prod', gulp.series(makeWebpackPkg, gulpBundle.bind(null, false)));
 
 // public tasks (dependencies are needed for each task since they can be ran on their own)
 gulp.task('test-only', test);
@@ -405,6 +441,7 @@ gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
 
 gulp.task('serve', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, test)));
 gulp.task('serve-fast', gulp.series(clean, gulp.parallel('build-bundle-dev', watchFast)));
+gulp.task('serve-prod', gulp.series(clean, gulp.parallel('build-bundle-prod', startLocalServer)));
 gulp.task('serve-and-test', gulp.series(clean, gulp.parallel('build-bundle-dev', watchFast, testTaskMaker({watch: true}))));
 gulp.task('serve-e2e', gulp.series(clean, 'build-bundle-prod', gulp.parallel(() => startIntegServer(), startLocalServer)))
 gulp.task('serve-e2e-dev', gulp.series(clean, 'build-bundle-dev', gulp.parallel(() => startIntegServer(true), startLocalServer)))

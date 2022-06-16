@@ -4,6 +4,7 @@ import { logError, logWarn, insertElement } from './utils.js';
 const _requestCache = new WeakMap();
 // The below list contains modules or vendors whom Prebid allows to load external JS.
 const _approvedLoadExternalJSList = [
+  'debugging',
   'adloox',
   'criteo',
   'outstream',
@@ -13,7 +14,9 @@ const _approvedLoadExternalJSList = [
   'justtag',
   'akamaidap',
   'ftrackId',
-  'inskin'
+  'inskin',
+  'hadron',
+  'medianet'
 ]
 
 /**

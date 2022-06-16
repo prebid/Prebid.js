@@ -103,10 +103,11 @@ const queuedCalls = [];
   * @param {number} requestConfig.cbTimeout
   * @param {Array.<string>} requestConfig.labels
   * @param {string} requestConfig.auctionId
-  *
+  * @param {{global: {}, bidder: {}}} ortb2Fragments first party data, separated into global
+  *    (from getConfig('ortb2') + requestBids({ortb2})) and bidder (a map from bidderCode to ortb2)
   * @returns {Auction} auction instance
   */
-export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, auctionId}) {
+export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, auctionId, ortb2Fragments}) {
   let _adUnits = adUnits;
   let _labels = labels;
   let _adUnitCodes = adUnitCodes;
@@ -215,7 +216,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
     _auctionStatus = AUCTION_STARTED;
     _auctionStart = Date.now();
 
-    let bidRequests = adapterManager.makeBidRequests(_adUnits, _auctionStart, _auctionId, _timeout, _labels);
+    let bidRequests = adapterManager.makeBidRequests(_adUnits, _auctionStart, _auctionId, _timeout, _labels, ortb2Fragments);
     logInfo(`Bids Requested for Auction with id: ${_auctionId}`, bidRequests);
 
     if (bidRequests.length < 1) {
@@ -272,7 +273,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
               }
             }
           }
-        }, _timeout, onTimelyResponse);
+        }, _timeout, onTimelyResponse, ortb2Fragments);
       }
     };
 
@@ -324,11 +325,11 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
 
   function addWinningBid(winningBid) {
     _winningBids = _winningBids.concat(winningBid);
-    adapterManager.callBidWonBidder(winningBid.bidder, winningBid, adUnits);
+    adapterManager.callBidWonBidder(winningBid.adapterCode || winningBid.bidder, winningBid, adUnits);
   }
 
   function setBidTargeting(bid) {
-    adapterManager.callSetTargetingBidder(bid.bidder, bid);
+    adapterManager.callSetTargetingBidder(bid.adapterCode || bid.bidder, bid);
   }
 
   return {
@@ -348,7 +349,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
     getBidRequests: () => _bidderRequests,
     getBidsReceived: () => _bidsReceived,
     getNoBids: () => _noBids,
-
+    getFPD: () => ortb2Fragments
   }
 }
 

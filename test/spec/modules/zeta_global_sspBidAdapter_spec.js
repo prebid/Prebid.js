@@ -53,7 +53,8 @@ describe('Zeta Ssp Bid Adapter', function () {
       }
     },
     refererInfo: {
-      referer: 'http://www.zetaglobal.com/page?param=value'
+      page: 'http://www.zetaglobal.com/page?param=value',
+      domain: 'www.zetaglobal.com',
     },
     gdprConsent: {
       gdprApplies: 1,
@@ -108,7 +109,7 @@ describe('Zeta Ssp Bid Adapter', function () {
     const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
     const payload = JSON.parse(request.data);
     expect(payload.site.page).to.eql('http://www.zetaglobal.com/page?param=value');
-    expect(payload.site.domain).to.eql(window.location.origin); // config.js -> DEFAULT_PUBLISHER_DOMAIN
+    expect(payload.site.domain).to.eql('zetaglobal.com');
   });
 
   it('Test the request processing function', function () {

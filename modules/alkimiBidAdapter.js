@@ -42,7 +42,7 @@ export const spec = {
       requestId: bidderRequest.auctionId,
       signRequest: { bids, randomUUID: alkimiConfig && alkimiConfig.randomUUID },
       bidIds,
-      referer: bidderRequest.refererInfo.referer,
+      referer: bidderRequest.refererInfo.page,
       signature: alkimiConfig && alkimiConfig.signature,
       schain: validBidRequests[0].schain,
       cpp: config.getConfig('coppa') ? 1 : 0

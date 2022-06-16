@@ -22,7 +22,7 @@ function newWebpackConfig(codeCoverage) {
     .flatMap((r) => r.use)
     .filter((use) => use.loader === 'babel-loader')
     .forEach((use) => {
-      use.options = babelConfig(true);
+      use.options = babelConfig({test: true});
     });
 
   if (codeCoverage) {
@@ -163,6 +163,12 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
     autoWatch: true,
 
     reporters: ['mocha'],
+
+    client: {
+      mocha: {
+        timeout: 3000
+      }
+    },
 
     mochaReporter: {
       showDiff: true,
