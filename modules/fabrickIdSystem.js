@@ -73,7 +73,7 @@ export const fabrickIdSubmodule = {
         url = url.slice(0, -1)
         const referer = _getRefererInfo(configParams);
         const refs = new Map();
-        _setReferrer(refs, referer.referer);
+        _setReferrer(refs, referer.topmostLocation);
         if (referer.stack && referer.stack[0]) {
           _setReferrer(refs, referer.stack[0]);
         }

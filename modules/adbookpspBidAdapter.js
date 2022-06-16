@@ -123,9 +123,9 @@ function buildRequest(validBidRequests, bidderRequest) {
     id: bidderRequest.bidderRequestId,
     tmax: bidderRequest.timeout,
     site: {
-      domain: window.location.hostname,
-      page: window.location.href,
-      ref: bidderRequest.refererInfo.referer,
+      domain: bidderRequest.refererInfo.domain,
+      page: bidderRequest.refererInfo.page,
+      ref: bidderRequest.refererInfo.ref,
     },
     source: buildSource(validBidRequests, bidderRequest),
     device: buildDevice(),

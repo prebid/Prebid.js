@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import { spec, storage } from '../../../modules/insticatorBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js'
-import { userSync } from '../../../src/userSync.js';
 
 const USER_ID_KEY = 'hb_insticator_uid';
 const USER_ID_DUMMY_VALUE = '74f78609-a92d-4cf1-869f-1b244bbfb5d2';
@@ -18,15 +17,29 @@ describe('InsticatorBidAdapter', function () {
     adUnitCode: 'adunit-code',
     params: {
       adUnitId: '1a2b3c4d5e6f1a2b3c4d',
+      user: {
+        yob: 1984,
+        gender: 'M'
+      },
     },
     sizes: [[300, 250], [300, 600]],
     mediaTypes: {
       banner: {
-        sizes: [[300, 250], [300, 600]]
-      }
+        sizes: [[300, 250], [300, 600]],
+        pos: 4,
+      },
+      video: {
+        mimes: [
+          'video/mp4',
+          'video/mpeg',
+        ],
+        w: 250,
+        h: 300,
+      },
     },
     bidId: '30b31c1838de1e',
     ortb2Imp: {
+      instl: 1,
       ext: {
         gpid: '1111/homepage'
       }
@@ -68,7 +81,9 @@ describe('InsticatorBidAdapter', function () {
     refererInfo: {
       numIframes: 0,
       reachedTop: true,
-      referer: 'https://example.com',
+      page: 'https://example.com',
+      domain: 'example.com',
+      ref: 'https://referrer.com',
       stack: ['https://example.com']
     },
   };
@@ -91,16 +106,16 @@ describe('InsticatorBidAdapter', function () {
     });
 
     it('should return false if there is no adUnitId param', () => {
-      expect(spec.isBidRequestValid({...bidRequest, ...{params: {}}})).to.be.false;
+      expect(spec.isBidRequestValid({ ...bidRequest, ...{ params: {} } })).to.be.false;
     });
 
     it('should return false if there is no mediaTypes', () => {
-      expect(spec.isBidRequestValid({...bidRequest, ...{mediaTypes: {}}})).to.be.false;
+      expect(spec.isBidRequestValid({ ...bidRequest, ...{ mediaTypes: {} } })).to.be.false;
     });
 
     it('should return false if there are no banner sizes and no sizes', () => {
       bidRequest.mediaTypes.banner = {};
-      expect(spec.isBidRequestValid({...bidRequest, ...{sizes: {}}})).to.be.false;
+      expect(spec.isBidRequestValid({ ...bidRequest, ...{ sizes: {} } })).to.be.false;
     });
 
     it('should return true if there is sizes and no banner sizes', () => {
@@ -109,7 +124,36 @@ describe('InsticatorBidAdapter', function () {
 
     it('should return true if there is banner sizes and no sizes', () => {
       bidRequest.mediaTypes.banner.sizes = [[300, 250], [300, 600]];
-      expect(spec.isBidRequestValid({...bidRequest, ...{sizes: {}}})).to.be.true;
+      expect(spec.isBidRequestValid({ ...bidRequest, ...{ sizes: {} } })).to.be.true;
+    });
+
+    it('should return true if there is video and video sizes', () => {
+      expect(spec.isBidRequestValid({
+        ...bidRequest,
+        ...{
+          mediaTypes: {
+            video: {
+              mimes: [
+                'video/mp4',
+                'video/mpeg',
+              ],
+              w: 250,
+              h: 300,
+            },
+          }
+        }
+      })).to.be.true;
+    });
+
+    it('should return false if there is no video sizes', () => {
+      expect(spec.isBidRequestValid({
+        ...bidRequest,
+        ...{
+          mediaTypes: {
+            video: {},
+          }
+        }
+      })).to.be.false;
     });
   });
 
@@ -194,7 +238,7 @@ describe('InsticatorBidAdapter', function () {
       expect(data.site).to.be.an('object');
       expect(data.site.domain).not.to.be.empty;
       expect(data.site.page).not.to.be.empty;
-      expect(data.site.ref).to.equal(bidderRequest.refererInfo.referer);
+      expect(data.site.ref).to.equal(bidderRequest.refererInfo.ref);
       expect(data.device).to.be.an('object');
       expect(data.device.w).to.equal(window.innerWidth);
       expect(data.device.h).to.equal(window.innerHeight);
@@ -207,6 +251,10 @@ describe('InsticatorBidAdapter', function () {
       expect(data.regs.ext.gdprConsentString).to.equal(bidderRequest.gdprConsent.consentString);
       expect(data.user).to.be.an('object');
       expect(data.user.id).to.equal(USER_ID_DUMMY_VALUE);
+      expect(data.user).to.have.property('yob');
+      expect(data.user.yob).to.equal(1984);
+      expect(data.user).to.have.property('gender');
+      expect(data.user.gender).to.equal('M');
       expect(data.user.ext).to.have.property('eids');
       expect(data.user.ext.eids).to.deep.equal([
         {
@@ -223,11 +271,21 @@ describe('InsticatorBidAdapter', function () {
       expect(data.imp).to.deep.equal([{
         id: bidRequest.bidId,
         tagid: bidRequest.adUnitCode,
+        instl: 1,
+        secure: 0,
         banner: {
           format: [
-            {w: 300, h: 250},
-            {w: 300, h: 600},
+            { w: 300, h: 250 },
+            { w: 300, h: 600 },
           ]
+        },
+        video: {
+          mimes: [
+            'video/mp4',
+            'video/mpeg',
+          ],
+          h: 300,
+          w: 250,
         },
         ext: {
           gpid: bidRequest.ortb2Imp.ext.gpid,
@@ -256,7 +314,7 @@ describe('InsticatorBidAdapter', function () {
       expect(data.user.id).to.equal(USER_ID_STUBBED);
     });
     it('should return empty regs object if no gdprConsent is passed', function () {
-      const requests = spec.buildRequests([bidRequest], {...bidderRequest, ...{gdprConsent: false}});
+      const requests = spec.buildRequests([bidRequest], { ...bidderRequest, ...{ gdprConsent: false } });
       const data = JSON.parse(requests[0].data);
       expect(data.regs).to.be.an('object').that.is.empty;
     });
@@ -384,14 +442,12 @@ describe('InsticatorBidAdapter', function () {
         width: 300,
         height: 200,
         mediaType: 'banner',
-        meta: {
-          advertiserDomains: [
-            'test1.com'
-          ],
-          test: 1
-        },
         ad: 'adm1',
         adUnitCode: 'adunit-code-1',
+        meta: {
+          advertiserDomains: ['test1.com'],
+          test: 1
+        }
       },
       {
         requestId: 'bid2',

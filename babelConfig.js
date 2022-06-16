@@ -10,7 +10,6 @@ function useLocal(module) {
 }
 
 module.exports = function (options = {}) {
-  const {globalVarName, disableFeatures} = options;
   return {
     'presets': [
       [
@@ -24,10 +23,7 @@ module.exports = function (options = {}) {
       ]
     ],
     'plugins': [
-      [
-        path.resolve(__dirname, './plugins/pbjsGlobals.js'),
-        {globalVarName, disableFeatures}
-      ],
+      [path.resolve(__dirname, './plugins/pbjsGlobals.js'), options],
       useLocal('babel-plugin-transform-object-assign'),
     ],
   }

@@ -41,6 +41,19 @@ function getBidFloor(bid) {
   }
 }
 
+function getUserId(eids, id, source, uidExt) {
+  if (id) {
+    var uid = { id };
+    if (uidExt) {
+      uid.ext = uidExt;
+    }
+    eids.push({
+      source,
+      uids: [ uid ]
+    });
+  }
+}
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
@@ -53,8 +66,9 @@ export const spec = {
   buildRequests: (validBidRequests = [], bidderRequest) => {
     let winTop = window;
     let location;
+    // TODO: this odd try-catch block was copied in several adapters; it doesn't seem to be correct for cross-origin
     try {
-      location = new URL(bidderRequest.refererInfo.referer)
+      location = new URL(bidderRequest.refererInfo.page)
       winTop = window.top;
     } catch (e) {
       location = winTop.location;
@@ -86,7 +100,12 @@ export const spec = {
       const placement = {
         placementId: bid.params.placementId,
         bidId: bid.bidId,
-        bidfloor: getBidFloor(bid)
+        bidfloor: getBidFloor(bid),
+        eids: []
+      }
+
+      if (bid.userId) {
+        getUserId(placement.eids, bid.userId.id5id, 'id5-sync.com');
       }
 
       if (bid.mediaTypes && bid.mediaTypes[BANNER] && bid.mediaTypes[BANNER].sizes) {

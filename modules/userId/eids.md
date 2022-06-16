@@ -3,6 +3,13 @@
 ```
 userIdAsEids = [
     {
+        source: '33across.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
+        }]
+    },
+    {
         source: 'trustpid.com',
         uids: [{
             id: 'some-random-id-value',
@@ -148,14 +155,6 @@ userIdAsEids = [
     },
 
     {
-        source: 'nextroll.com',
-        uids: [{
-            id: 'some-random-id-value',
-            atype: 1
-        }]
-    },
-
-    {
         source: 'audigent.com',
         uids: [{
             id: 'some-random-id-value',
@@ -204,13 +203,6 @@ userIdAsEids = [
         uids: [{
             id: 'some-random-id-value',
              atype: 3
-        }]
-    },
-    {
-    source: 'akamai.com',
-        uids: [{
-            id: 'some-random-id-value',
-            atype: 1
         }]
     },
     {

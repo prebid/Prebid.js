@@ -72,7 +72,7 @@ export const spec = {
 
     let topUrl = '';
     if (bidderRequest && bidderRequest.refererInfo) {
-      topUrl = bidderRequest.refererInfo.referer;
+      topUrl = bidderRequest.refererInfo.page;
     }
 
     return {
@@ -85,9 +85,10 @@ export const spec = {
         },
         inIframe: inIframe(),
         url: topUrl,
-        referrer: getTopWindowReferrer(),
+        referrer: bidderRequest.refererInfo.ref,
         adUnits: adUnits,
-        refererInfo: bidderRequest.refererInfo,
+        // TODO: please do not send internal data structures over the network
+        refererInfo: bidderRequest.refererInfo.legacy,
       },
       validBidRequests: validBidRequests
     };
@@ -288,13 +289,5 @@ export const spec = {
     return bidResponses;
   }
 };
-
-function getTopWindowReferrer() {
-  try {
-    return window.top.document.referrer;
-  } catch (e) {
-    return '';
-  }
-}
 
 registerBidder(spec);

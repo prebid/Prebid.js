@@ -2,7 +2,6 @@ import { logWarn, isStr, deepAccess, isArray, getBidIdParameter, deepSetValue, i
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {getStorageManager} from '../src/storageManager.js';
-import { config } from '../src/config.js';
 
 const GVLID = 24;
 
@@ -55,7 +54,7 @@ export const spec = {
    * @return {ServerRequest} Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
-    const page = (bidderRequest && bidderRequest.refererInfo) ? bidderRequest.refererInfo.referer : '';
+    const page = (bidderRequest && bidderRequest.refererInfo) ? bidderRequest.refererInfo.page : '';
     let siteId = '';
     let requestId = '';
     let pubcid = null;
@@ -93,7 +92,7 @@ export const spec = {
           copyOptProperty(format[0].h, video, 'h');
         }
 
-        copyOptProperty(bid.params.position, video, 'pos');
+        copyOptProperty(bid.params.position || videoData.pos, video, 'pos');
         copyOptProperty(bid.params.mimes || videoData.mimes, video, 'mimes');
         copyOptProperty(bid.params.maxduration || videoData.maxduration, video, 'maxduration');
         copyOptProperty(bid.params.protocols || videoData.protocols, video, 'protocols');
@@ -105,7 +104,7 @@ export const spec = {
         const format = convertSizes(bannerData.sizes || bid.sizes);
         const banner = {format: format};
 
-        copyOptProperty(bid.params.position, banner, 'pos');
+        copyOptProperty(bid.params.position || bannerData.pos, banner, 'pos');
 
         imp.banner = banner;
       }
@@ -177,7 +176,7 @@ export const spec = {
       payload.user = {ext: userExt};
     }
 
-    const firstPartyData = config.getConfig('ortb2') || {};
+    const firstPartyData = bidderRequest.ortb2 || {};
     mergeDeep(payload, firstPartyData);
 
     return {
