@@ -71,7 +71,9 @@ function isBidRequestValid(bid) {
 }
 
 function _validateBasic(bid) {
-  if ((bid.bidder !== BIDDER_CODE && BIDDER_ALIASES.includes(bid.bidder) === false) || !bid.params) {
+  const invalidBidderName = bid.bidder !== BIDDER_CODE && !BIDDER_ALIASES.includes(bid.bidder);
+
+  if (invalidBidderName || !bid.params) {
     return false;
   }
 
