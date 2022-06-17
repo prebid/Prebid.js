@@ -1,6 +1,6 @@
 import { logWarn, logMessage, debugTurnedOn, generateUUID } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { getStorageManager } from '../src/storageManager.js'
+import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'concert';
 const CONCERT_ENDPOINT = 'https://bids.concert.io';
@@ -45,7 +45,7 @@ export const spec = {
         uspConsent: bidderRequest.uspConsent,
         gdprConsent: bidderRequest.gdprConsent
       }
-    }
+    };
 
     payload.slots = validBidRequests.map(bidRequest => {
       let slot = {
@@ -57,8 +57,9 @@ export const spec = {
         slotType: bidRequest.params.slotType,
         adSlot: bidRequest.params.slot || bidRequest.adUnitCode,
         placementId: bidRequest.params.placementId || '',
-        site: bidRequest.params.site || bidderRequest.refererInfo.page
-      }
+        site: bidRequest.params.site || bidderRequest.refererInfo.page,
+        ref: bidderRequest.refererInfo.ref || window.document.referrer
+      };
 
       return slot;
     });
@@ -69,7 +70,7 @@ export const spec = {
       method: 'POST',
       url: `${CONCERT_ENDPOINT}/bids/prebid`,
       data: JSON.stringify(payload)
-    }
+    };
   },
   /**
    * Unpack the response from the server into a list of bids.
@@ -101,7 +102,7 @@ export const spec = {
         creativeId: bid.creativeId,
         netRevenue: bid.netRevenue,
         currency: bid.currency
-      }
+      };
     });
 
     if (debugTurnedOn() && serverBody.debug) {
@@ -122,7 +123,7 @@ export const spec = {
    * @return {UserSync[]} The user syncs which should be dropped.
    */
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
-    const syncs = []
+    const syncs = [];
     if (syncOptions.iframeEnabled && !hasOptedOutOfPersonalization()) {
       let params = [];
 
@@ -161,8 +162,7 @@ export const spec = {
     logMessage('concert bidder won bid');
     logMessage(bid);
   }
-
-}
+};
 
 registerBidder(spec);
 
@@ -207,5 +207,5 @@ function consentAllowsPpid(bidderRequest) {
    * `consent-string` npm module; so will have to rely on that
    * happening on the bid-server. */
   return !(bidderRequest.uspConsent === 'string' &&
-           bidderRequest.uspConsent.toUpperCase().substring(0, 2) === '1YY')
+           bidderRequest.uspConsent.toUpperCase().substring(0, 2) === '1YY');
 }
