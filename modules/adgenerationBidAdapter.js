@@ -25,7 +25,7 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    const ADGENE_PREBID_VERSION = '1.3.0';
+    const ADGENE_PREBID_VERSION = '1.4.0';
     let serverRequests = [];
     for (let i = 0, len = validBidRequests.length; i < len; i++) {
       const validReq = validBidRequests[i];
@@ -49,12 +49,21 @@ export const spec = {
       if (!validReq.mediaTypes || !validReq.mediaTypes.native) {
         data = tryAppendQueryString(data, 'imark', '1');
       }
-      // TODO: is 'page' the right value here?
-      data = tryAppendQueryString(data, 'tp', bidderRequest.refererInfo.page);
+      data = tryAppendQueryString(data, 'tp', bidderRequest.refererInfo.referer);
       if (isIos()) {
         const hyperId = getHyperId(validReq);
+        const criteoId = getcriteoId(validReq);
+        const id5id = getid5id(validReq);
         if (hyperId != null) {
           data = tryAppendQueryString(data, 'hyper_id', hyperId);
+        }
+
+        if (criteoId != null) {
+          data = tryAppendQueryString(data, 'adgext_criteo_id', criteoId);
+        }
+
+        if (id5id != null) {
+          data = tryAppendQueryString(data, 'adgext_id5_id', id5id);
         }
       }
       // remove the trailing "&"
@@ -280,6 +289,14 @@ function getHyperId(validReq) {
     return validReq.userId.novatiq.snowflake.id;
   }
   return null;
+}
+
+function getcriteoId(validReq) {
+  return (validReq.userId && validReq.userId.criteoId) ? validReq.userId.criteoId : null
+}
+
+function getid5id(validReq) {
+  return (validReq.userId && validReq.userId.id5id && validReq.userId.id5id.uid) ? validReq.userId.id5id.uid : null
 }
 
 function isIos() {

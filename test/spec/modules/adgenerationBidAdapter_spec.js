@@ -85,7 +85,7 @@ describe('AdgenerationAdapter', function () {
         auctionId: '4aae9f05-18c6-4fcd-80cf-282708cd584a',
         transactionTd: 'f76f6dfd-d64f-4645-a29f-682bac7f431a'
       },
-      { // bannerWithHyperId
+      { // bannerWithUserIdObject
         bidder: 'adg',
         params: {
           id: '58278', // banner
@@ -99,20 +99,27 @@ describe('AdgenerationAdapter', function () {
         userId: {
           novatiq: {
             snowflake: {'id': 'novatiqId', syncResponse: 1}
+          },
+          criteoId: '1111',
+          id5id: {
+            uid: '1111',
+            ext: {
+              linkType: 2
+            }
           }
         }
       }
     ];
     const bidderRequest = {
       refererInfo: {
-        page: 'https://example.com'
+        referer: 'https://example.com'
       }
     };
     const data = {
       banner: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=300x250%2C320x100&currency=JPY&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.3.0&imark=1&tp=https%3A%2F%2Fexample.com`,
       bannerUSD: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=300x250%2C320x100&currency=USD&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.3.0&imark=1&tp=https%3A%2F%2Fexample.com`,
       native: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=1x1&currency=JPY&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.3.0&tp=https%3A%2F%2Fexample.com`,
-      bannerWithHyperId: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=320x100&currency=JPY&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.3.0&imark=1&tp=https%3A%2F%2Fexample.com&hyper_id=novatiqId`,
+      bannerWithUserIdObject: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=320x100&currency=JPY&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.3.0&imark=1&tp=https%3A%2F%2Fexample.com&hyper_id=novatiqId&adgext_criteo_id=1111&adgext_id5_id=1111`,
     };
     it('sends bid request to ENDPOINT via GET', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
@@ -137,7 +144,7 @@ describe('AdgenerationAdapter', function () {
       expect(request.data).to.equal(data.native);
     });
 
-    it('should attache params to the bannerWithHyperId request', function () {
+    it('should attache params to the bannerWithUserIdObject request', function () {
       const defaultUA = window.navigator.userAgent;
       window.navigator.__defineGetter__('userAgent', function() {
         return 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1';
@@ -147,7 +154,7 @@ describe('AdgenerationAdapter', function () {
       window.navigator.__defineGetter__('userAgent', function() {
         return defaultUA;
       });
-      expect(request.data).to.equal(data.bannerWithHyperId);
+      expect(request.data).to.equal(data.bannerWithUserIdObject);
     });
     it('allows setConfig to set bidder currency for JPY', function () {
       config.setConfig({
