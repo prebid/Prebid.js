@@ -36,7 +36,8 @@ export const spec = {
         _vzPlacementId: bidRequest.params.placementId,
         sizes: sizes,
         _slotBidId: bidRequest.bidId,
-        _rqsrc: bidderRequest.refererInfo.referer,
+        // TODO: is 'page' the right value here?
+        _rqsrc: bidderRequest.refererInfo.page,
       };
 
       const payload = {

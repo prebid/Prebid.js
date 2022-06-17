@@ -8,7 +8,7 @@ const GDPR_CONSENT = 'XYZ-CONSENT';
 
 const BIDDER_REQUEST = {
   refererInfo: {
-    referer: 'https://example.com'
+    page: 'https://example.com',
   }
 };
 

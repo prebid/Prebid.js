@@ -73,9 +73,8 @@ const buildRequests = (validBidRequests, bidderRequest) => {
     }
     const [w, h] = (parseSizesInput(sizes)[0] || '0x0').split('x');
 
-    const aElement = document.createElement('a');
-    aElement.href = (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) || top.location.href;
-    const hostname = aElement.hostname
+    // TODO: is 'domain' the right value here?
+    const hostname = bidderRequest.refererInfo.domain || window.location.hostname;
 
     const videoContext = deepAccess(bid, 'mediaTypes.video.context');
     const bidfloor = deepAccess(bid, `params.bidfloor`, 0);
@@ -95,7 +94,8 @@ const buildRequests = (validBidRequests, bidderRequest) => {
       schain: bid.schain || '',
       bidfloor,
       d: getDomainWithoutSubdomain(hostname), // 'vidoomy.com',
-      sp: encodeURIComponent(aElement.href),
+      // TODO: does the fallback make sense here?
+      sp: encodeURIComponent(bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation),
       usp: bidderRequest.uspConsent || '',
       coppa: !!config.getConfig('coppa'),
       videoContext: videoContext || ''

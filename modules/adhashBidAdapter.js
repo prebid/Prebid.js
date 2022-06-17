@@ -103,7 +103,8 @@ export const spec = {
     const bidRequests = [];
     let referrer = '';
     if (bidderRequest && bidderRequest.refererInfo) {
-      referrer = bidderRequest.refererInfo.referer;
+      // TODO: is 'page' the right value here?
+      referrer = bidderRequest.refererInfo.page;
     }
     for (var i = 0; i < validBidRequests.length; i++) {
       var index = Math.floor(Math.random() * validBidRequests[i].sizes.length);

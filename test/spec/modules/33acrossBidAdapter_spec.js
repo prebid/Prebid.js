@@ -919,7 +919,7 @@ describe('33acrossBidAdapter:', function () {
       it('returns corresponding server requests with site.page set', function() {
         const bidderRequest = {
           refererInfo: {
-            referer: 'http://foo.com/bar'
+            page: 'http://foo.com/bar'
           }
         };
 
