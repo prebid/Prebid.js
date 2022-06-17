@@ -25,11 +25,21 @@ const LOG_ERROR_MESS = {
   hasNoArrayOfBids: 'Seatbid from response has no array of bid objects - '
 };
 
+const ALIAS_CONFIG = {
+  'trustx': {
+    endpoint: 'https://grid.bidswitch.net/hbjson?sp=trustx',
+    syncurl: 'https://x.bidswitch.net/sync?ssp=themediagrid',
+    bidResponseExternal: {
+      netRevenue: false
+    }
+  }
+};
+
 let hasSynced = false;
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['playwire', 'adlivetech'],
+  aliases: ['playwire', 'adlivetech', 'trustx'],
   supportedMediaTypes: [ BANNER, VIDEO ],
   /**
    * Determines whether or not the given bid request is valid.
@@ -58,9 +68,12 @@ export const spec = {
     let userIdAsEids = null;
     let user = null;
     let userExt = null;
+    let endpoint = null;
+    let forceBidderName = false;
     let {bidderRequestId, auctionId, gdprConsent, uspConsent, timeout, refererInfo} = bidderRequest || {};
 
-    const referer = refererInfo ? encodeURIComponent(refererInfo.referer) : '';
+    // TODO: is 'page' the right value here?
+    const referer = refererInfo ? encodeURIComponent(refererInfo.page) : '';
     const imp = [];
     const bidsMap = {};
 
@@ -77,7 +90,10 @@ export const spec = {
       if (!userIdAsEids) {
         userIdAsEids = bid.userIdAsEids;
       }
-      const {params: {uid, keywords}, mediaTypes, bidId, adUnitCode, rtd, ortb2Imp} = bid;
+      if (!endpoint) {
+        endpoint = ALIAS_CONFIG[bid.bidder] && ALIAS_CONFIG[bid.bidder].endpoint;
+      }
+      const { params: { uid, keywords, forceBidder }, mediaTypes, bidId, adUnitCode, rtd, ortb2Imp } = bid;
       bidsMap[bidId] = bid;
       const bidFloor = _getFloor(mediaTypes || {}, bid);
       const jwTargeting = rtd && rtd.jwplayer && rtd.jwplayer.targeting;
@@ -136,7 +152,18 @@ export const spec = {
       if (impObj.banner || impObj.video) {
         imp.push(impObj);
       }
+
+      if (!forceBidderName && forceBidder && ALIAS_CONFIG[forceBidder]) {
+        forceBidderName = forceBidder;
+      }
     });
+
+    forceBidderName = config.getConfig('forceBidderName') || forceBidderName;
+
+    if (forceBidderName && ALIAS_CONFIG[forceBidderName]) {
+      endpoint = ALIAS_CONFIG[forceBidderName].endpoint;
+      this.forceBidderName = forceBidderName;
+    }
 
     const source = {
       tid: auctionId && auctionId.toString(),
@@ -176,7 +203,7 @@ export const spec = {
       };
     }
 
-    const ortb2UserData = config.getConfig('ortb2.user.data');
+    const ortb2UserData = deepAccess(bidderRequest, 'ortb2.user.data');
     if (ortb2UserData && ortb2UserData.length) {
       if (!user) {
         user = { data: [] };
@@ -190,7 +217,7 @@ export const spec = {
       userExt = {consent: gdprConsent.consentString};
     }
 
-    const ortb2UserExtDevice = config.getConfig('ortb2.user.ext.device');
+    const ortb2UserExtDevice = deepAccess(bidderRequest, 'ortb2.user.ext.device');
     if (ortb2UserExtDevice) {
       userExt = userExt || {};
       userExt.device = { ...ortb2UserExtDevice };
@@ -217,8 +244,8 @@ export const spec = {
       request.user = user;
     }
 
-    const userKeywords = deepAccess(config.getConfig('ortb2.user'), 'keywords') || null;
-    const siteKeywords = deepAccess(config.getConfig('ortb2.site'), 'keywords') || null;
+    const userKeywords = deepAccess(bidderRequest, 'ortb2.user.keywords') || null;
+    const siteKeywords = deepAccess(bidderRequest, 'ortb2.site.keywords') || null;
 
     if (userKeywords) {
       pageKeywords = pageKeywords || {};
@@ -272,7 +299,7 @@ export const spec = {
       request.regs.coppa = 1;
     }
 
-    const site = config.getConfig('ortb2.site');
+    const site = deepAccess(bidderRequest, 'ortb2.site');
     if (site) {
       const pageCategory = [...(site.cat || []), ...(site.pagecat || [])].filter((category) => {
         return category && typeof category === 'string'
@@ -297,9 +324,8 @@ export const spec = {
 
     return {
       method: 'POST',
-      url: ENDPOINT_URL,
+      url: endpoint || ENDPOINT_URL,
       data: JSON.stringify(request),
-      newFormat: true,
       bidsMap
     };
   },
@@ -308,9 +334,10 @@ export const spec = {
    *
    * @param {*} serverResponse A successful response from the server.
    * @param {*} bidRequest
+   * @param {*} RendererConst
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse, bidRequest) {
+  interpretResponse: function(serverResponse, bidRequest, RendererConst = Renderer) {
     serverResponse = serverResponse && serverResponse.body;
     const bidResponses = [];
 
@@ -321,15 +348,18 @@ export const spec = {
       errorMessage = LOG_ERROR_MESS.hasEmptySeatbidArray;
     }
 
+    const bidderCode = this.forceBidderName || this.code;
+
     if (!errorMessage && serverResponse.seatbid) {
       serverResponse.seatbid.forEach(respItem => {
-        _addBidResponse(_getBidFromResponse(respItem), bidRequest, bidResponses);
+        _addBidResponse(_getBidFromResponse(respItem), bidRequest, bidResponses, RendererConst, bidderCode);
       });
     }
     if (errorMessage) logError(errorMessage);
     return bidResponses;
   },
-  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
+  getUserSyncs: function (...args) {
+    const [syncOptions,, gdprConsent, uspConsent] = args;
     if (!hasSynced && syncOptions.pixelEnabled) {
       let params = '';
 
@@ -345,10 +375,13 @@ export const spec = {
         params += `&us_privacy=${uspConsent}`;
       }
 
+      const bidderCode = this.forceBidderName || this.code;
+      const syncUrl = (ALIAS_CONFIG[bidderCode] && ALIAS_CONFIG[bidderCode].syncurl) || SYNC_URL;
+
       hasSynced = true;
       return {
         type: 'image',
-        url: SYNC_URL + params
+        url: syncUrl + params
       };
     }
   }
@@ -392,7 +425,7 @@ function _getBidFromResponse(respItem) {
   return respItem && respItem.bid && respItem.bid[0];
 }
 
-function _addBidResponse(serverBid, bidRequest, bidResponses) {
+function _addBidResponse(serverBid, bidRequest, bidResponses, RendererConst, bidderCode) {
   if (!serverBid) return;
   let errorMessage;
   if (!serverBid.auid) errorMessage = LOG_ERROR_MESS.noAuid + JSON.stringify(serverBid);
@@ -434,13 +467,14 @@ function _addBidResponse(serverBid, bidRequest, bidResponses) {
           bidResponse.renderer = createRenderer(bidResponse, {
             id: bid.bidId,
             url: RENDERER_URL
-          });
+          }, RendererConst);
         }
       } else {
         bidResponse.ad = serverBid.adm;
         bidResponse.mediaType = BANNER;
       }
-      bidResponses.push(bidResponse);
+      const bidResponseExternal = (ALIAS_CONFIG[bidderCode] && ALIAS_CONFIG[bidderCode].bidResponseExternal) || {};
+      bidResponses.push(mergeDeep(bidResponse, bidResponseExternal));
     }
   }
   if (errorMessage) {
@@ -568,8 +602,8 @@ function outstreamRender (bid) {
   });
 }
 
-function createRenderer (bid, rendererParams) {
-  const renderer = Renderer.install({
+function createRenderer (bid, rendererParams, RendererConst) {
+  const renderer = RendererConst.install({
     id: rendererParams.id,
     url: rendererParams.url,
     loaded: false

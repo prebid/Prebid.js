@@ -1,6 +1,22 @@
-import { _each, getBidIdParameter, isArray, deepClone, parseUrl, getUniqueIdentifierStr, deepSetValue, logError, deepAccess, isInteger, logWarn } from '../src/utils.js';
+import { 
+  _each, 
+  getBidIdParameter, 
+  isArray, 
+  deepClone, 
+  parseUrl, 
+  getUniqueIdentifierStr, 
+  deepSetValue, 
+  logError, 
+  deepAccess, 
+  isInteger, 
+  logWarn
+} from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { ADPOD, BANNER, VIDEO } from '../src/mediaTypes.js'
+import { 
+  ADPOD, 
+  BANNER, 
+  VIDEO
+} from '../src/mediaTypes.js'
 import {createEidsArray} from './userId/eids.js';
 import {config} from '../src/config.js'
 
@@ -133,12 +149,11 @@ export const spec = {
         sovrnImps.push(imp)
       })
 
-      const fpd = deepClone(config.getConfig('ortb2'))
+      const fpd = bidderRequest.ortb2 || {};
 
       const site = fpd.site || {}
-      site.page = bidderRequest.refererInfo.referer
-      // clever trick to get the domain
-      site.domain = parseUrl(site.page).hostname
+      site.page = bidderRequest.refererInfo.page
+      site.domain = bidderRequest.refererInfo.domain
 
       const sovrnBidReq = {
         id: getUniqueIdentifierStr(),

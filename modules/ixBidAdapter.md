@@ -77,6 +77,9 @@ object are detailed here.
 |video.minduration| Required | Integer | Minimum video ad duration in seconds.
 |video.maxduration| Required | Integer | Maximum video ad duration in seconds.
 |video.protocol / video.protocols| Required | Integer / Integer[] | Either a single protocol provided as an integer, or protocols provided as a list of integers. `2` - VAST 2.0, `3` - VAST 3.0, `5` - VAST 2.0 Wrapper, `6` - VAST 3.0 Wrapper
+| video.playerConfig | Optional | Hash | The Index specific outstream player configurations.
+| video.playerConfig.floatOnScroll | Optional | Boolean | A boolean specifying whether you want to use the player’s floating capabilities, where: <br /> - `true`: Allow the player to float.<br /> <b>Note</b>: If you set floatOnScroll to true, Index updates the placement value to `5`. <br />- `false`: Do not allow the player to float (default).
+| video.playerConfig.floatSize | Optional | Integer[] | The height and width of the floating player in pixels. If you do not specify a float size, the player adjusts to the aspect ratio of the player size that is defined when it is not floating. Index recommends that you review and test the float size to your user experience preference.
 
 ## Deprecation warning
 
@@ -247,13 +250,19 @@ var adUnits = [{
             minduration: 5,
             maxduration: 30,
             mimes: ['video/mp4', 'application/javascript'],
-            placement: 3
+            placement: 5
         }
     },
     bids: [{
         bidder: 'ix',
         params: {
             siteId: '715964'
+            video: {
+                playerConfig: {
+                    floatOnScroll: true,
+                    floatSize: [300,250]
+                }
+            }
         }
     }]
 }];
@@ -423,4 +432,4 @@ The `size` parameter is no longer a required field, the `siteId` will now be ass
 In your browser of choice, create a new tab and open the developer tools. In
 developer tools, select the network tab. Then, navigate to a page where IX is
 setup to bid. Now, in the network tab, search for requests to
-`casalemedia.com/cygnus`. These are the bid requests.
+`casalemedia.com/openrtb/pbjs`. These are the bid requests.

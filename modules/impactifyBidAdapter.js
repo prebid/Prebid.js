@@ -65,7 +65,7 @@ const createOpenRtbRequest = (validBidRequests, bidderRequest) => {
     dnt: (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0,
     language: ((navigator.language || navigator.userLanguage || '').split('-'))[0] || 'en',
   };
-  request.site = {page: bidderRequest.refererInfo.referer};
+  request.site = {page: bidderRequest.refererInfo.page};
 
   // Handle privacy settings for GDPR/CCPA/COPPA
   let gdprApplies = 0;

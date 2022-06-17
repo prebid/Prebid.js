@@ -34,16 +34,17 @@ const BUNDLE = 'bundle';
 var _sampled = true;
 
 export default function AnalyticsAdapter({ url, analyticsType, global, handler }) {
-  var _queue = [];
-  var _eventCount = 0;
-  var _enableCheck = true;
-  var _handlers;
+  const _queue = [];
+  let _eventCount = 0;
+  let _enableCheck = true;
+  let _handlers;
+  let _enabled = false;
 
   if (analyticsType === ENDPOINT || BUNDLE) {
     _emptyQueue();
   }
 
-  return {
+  return Object.defineProperties({
     track: _track,
     enqueue: _enqueue,
     enableAnalytics: _enable,
@@ -52,7 +53,11 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
     getGlobal: () => global,
     getHandler: () => handler,
     getUrl: () => url
-  };
+  }, {
+    enabled: {
+      get: () => _enabled
+    }
+  });
 
   function _track({ eventType, args }) {
     if (this.getAdapterType() === BUNDLE) {
@@ -140,6 +145,7 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
     this.enableAnalytics = function _enable() {
       return logMessage(`Analytics adapter for "${global}" already enabled, unnecessary call to \`enableAnalytics\`.`);
     };
+    _enabled = true;
   }
 
   function _disable() {
@@ -147,6 +153,7 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
       events.off(event, handler);
     });
     this.enableAnalytics = this._oldEnable ? this._oldEnable : _enable;
+    _enabled = false;
   }
 
   function _emptyQueue() {

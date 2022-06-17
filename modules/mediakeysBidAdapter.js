@@ -5,7 +5,6 @@ import {
   deepClone,
   deepSetValue,
   getDNT,
-  getWindowTop,
   inIframe,
   isArray,
   isEmpty,
@@ -16,7 +15,6 @@ import {
   logError,
   logWarn,
   mergeDeep,
-  parseUrl,
   triggerPixel
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
@@ -84,19 +82,6 @@ const ORTB_VIDEO_PARAMS = {
   pos: value => [0, 1, 2, 3, 4, 5, 6, 7].indexOf(value) !== -1,
   api: value => Array.isArray(value) && value.every(v => [1, 2, 3, 4, 5, 6].indexOf(v) !== -1),
 };
-
-/**
- * Detects the capability to reach window.top.
- *
- * @returns {boolean}
- */
-function canAccessTopWindow() {
-  try {
-    return !!getWindowTop().location.href;
-  } catch (error) {
-    return false;
-  }
-}
 
 /**
  * Returns the OpenRtb deviceType id detected from User Agent
@@ -650,21 +635,18 @@ export const spec = {
 
     // Assign payload.site from refererinfo
     if (bidderRequest.refererInfo) {
+      // TODO: reachedTop is probably not the right check here - it may be false when page is available or vice-versa
       if (bidderRequest.refererInfo.reachedTop) {
-        const sitePage = bidderRequest.refererInfo.referer;
-        deepSetValue(payload, 'site.page', sitePage);
-        deepSetValue(payload, 'site.domain', parseUrl(sitePage, {
-          noDecodeWholeURL: true
-        }).hostname);
-
-        if (canAccessTopWindow()) {
-          deepSetValue(payload, 'site.ref', getWindowTop().document.referrer);
+        deepSetValue(payload, 'site.page', bidderRequest.refererInfo.page);
+        deepSetValue(payload, 'site.domain', bidderRequest.refererInfo.domain)
+        if (bidderRequest.refererInfo.ref) {
+          deepSetValue(payload, 'site.ref', bidderRequest.refererInfo.ref);
         }
       }
     }
 
     // Handle First Party Data (need publisher fpd setup)
-    const fpd = config.getConfig('ortb2') || {};
+    const fpd = bidderRequest.ortb2 || {};
     if (fpd.site) {
       mergeDeep(payload, { site: fpd.site });
     }

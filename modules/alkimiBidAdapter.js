@@ -18,9 +18,13 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     let bids = [];
     let bidIds = [];
+    let eids;
     validBidRequests.forEach(bidRequest => {
       let sizes = prepareSizes(bidRequest.sizes)
 
+      if (bidRequest.userIdAsEids) {
+        eids = eids || bidRequest.userIdAsEids
+      }
       bids.push({
         token: bidRequest.params.token,
         pos: bidRequest.params.pos,
@@ -38,8 +42,25 @@ export const spec = {
       requestId: bidderRequest.auctionId,
       signRequest: { bids, randomUUID: alkimiConfig && alkimiConfig.randomUUID },
       bidIds,
-      referer: bidderRequest.refererInfo.referer,
-      signature: alkimiConfig && alkimiConfig.signature
+      referer: bidderRequest.refererInfo.page,
+      signature: alkimiConfig && alkimiConfig.signature,
+      schain: validBidRequests[0].schain,
+      cpp: config.getConfig('coppa') ? 1 : 0
+    }
+
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      payload.gdprConsent = {
+        consentRequired: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : false,
+        consentString: bidderRequest.gdprConsent.consentString
+      }
+    }
+
+    if (bidderRequest.uspConsent) {
+      payload.uspConsent = bidderRequest.uspConsent;
+    }
+
+    if (eids) {
+      payload.eids = eids
     }
 
     const options = {
