@@ -25,7 +25,7 @@ describe('C1XAdapter', () => {
       expect(c1xAdapter.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return false when publisherId not passed correctly', function () {
+    it('should return false when placementId not passed correctly', function () {
       bid.params.placementId = undefined;
       expect(c1xAdapter.isBidRequestValid(bid)).to.equal(false);
     });
