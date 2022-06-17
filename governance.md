@@ -13,3 +13,5 @@ This document describes the governance model for the Prebid project. The Prebid 
 - **Core & Review Team Member:** An individual contributor who has been appointed by the Tech Lead on the project to maintain it and further it’s stated goals.
 - **Identity Team Member:** An individual contributor who has been appointed by the Identity PMC to review and maintain the identity modules and further the PMC stated goals.
 - **Tech Lead:** The Tech Lead is responsible for overall technical direction of the project. The Tech Lead will work closely with Core Team members to facilitate development and further the project goals.
+
+The Core team is currently visible at https://github.com/orgs/prebid/teams/core/members to project members. 
