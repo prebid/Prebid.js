@@ -96,7 +96,7 @@ const flatten = (arr) => {
 const createOrtbRequest = (validBidRequests, bidderRequest) => {
   let device = createOrtbDeviceObj(validBidRequests);
   let user = createOrtbUserObj(validBidRequests)
-  let site = createOrtbSiteObj(validBidRequests, bidderRequest.refererInfo.referer)
+  let site = createOrtbSiteObj(validBidRequests, bidderRequest.refererInfo.page)
   return {
     id: bidderRequest.auctionId,
     imp: [],

@@ -17,8 +17,10 @@ import { registerBidder } from 'src/adapters/bidderFactory.js';
 import { _sendAdToCreative } from 'src/secureCreatives.js';
 import {find} from 'src/polyfill.js';
 import {synchronizePromise} from '../../helpers/syncPromise.js';
-import 'src/prebid.js';
+import * as pbjsModule from 'src/prebid.js';
 import {hook} from '../../../src/hook.js';
+import {reset as resetDebugging} from '../../../src/debugging.js';
+import $$PREBID_GLOBAL$$ from 'src/prebid.js';
 
 var assert = require('chai').assert;
 var expect = require('chai').expect;
@@ -33,7 +35,6 @@ require('modules/appnexusBidAdapter');
 
 var config = require('test/fixtures/config.json');
 
-$$PREBID_GLOBAL$$ = $$PREBID_GLOBAL$$ || {};
 var adUnits = getAdUnits();
 var adUnitCodes = getAdUnits().map(unit => unit.code);
 var bidsBackHandler = function() {};
@@ -198,6 +199,7 @@ describe('Unit: Prebid Module', function () {
   before(() => {
     hook.ready();
     $$PREBID_GLOBAL$$.requestBids.getHooks().remove();
+    resetDebugging();
   });
 
   beforeEach(function () {
@@ -1605,7 +1607,123 @@ describe('Unit: Prebid Module', function () {
         assert.ok(spyExecuteCallback.calledOnce, 'callback executed when bidRequests is empty');
       });
     });
+
+    describe('starts auction', () => {
+      let startAuctionStub;
+      function saHook(fn, ...args) {
+        return startAuctionStub(...args);
+      }
+      beforeEach(() => {
+        startAuctionStub = sinon.stub();
+        pbjsModule.startAuction.before(saHook);
+        configObj.resetConfig();
+      });
+      afterEach(() => {
+        pbjsModule.startAuction.getHooks({hook: saHook}).remove();
+      })
+      after(() => {
+        configObj.resetConfig();
+      });
+
+      it('passing global and auction-level FPD as ortb2Fragments.global', () => {
+        configObj.setConfig({
+          ortb2: {
+            'k1': 'v1',
+            'k2': {
+              'k3': 'v3',
+              'k4': 'v4'
+            }
+          }
+        });
+        $$PREBID_GLOBAL$$.requestBids({
+          ortb2: {
+            'k5': 'v5',
+            'k2': {
+              'k3': 'override',
+              'k7': 'v7'
+            }
+          }
+        });
+        sinon.assert.calledWith(startAuctionStub, sinon.match({
+          ortb2Fragments: {
+            global: {
+              'k1': 'v1',
+              'k5': 'v5',
+              'k2': {
+                'k3': 'override',
+                'k4': 'v4',
+                'k7': 'v7'
+              }
+            }
+          }
+        }))
+      });
+      it('passing bidder-specific FPD as ortb2Fragments.bidder', () => {
+        configObj.setBidderConfig({
+          bidders: ['bidderA', 'bidderC'],
+          config: {
+            ortb2: {
+              k1: 'v1'
+            }
+          }
+        });
+        configObj.setBidderConfig({
+          bidders: ['bidderB'],
+          config: {
+            ortb2: {
+              k2: 'v2'
+            }
+          }
+        });
+        $$PREBID_GLOBAL$$.requestBids({});
+        sinon.assert.calledWith(startAuctionStub, sinon.match({
+          ortb2Fragments: {
+            bidder: {
+              bidderA: {
+                k1: 'v1'
+              },
+              bidderB: {
+                k2: 'v2'
+              },
+              bidderC: {
+                k1: 'v1'
+              }
+            }
+          }
+        }));
+      });
+    });
   });
+
+  describe('startAuction', () => {
+    let sandbox, newAuctionStub;
+    beforeEach(() => {
+      sandbox = sinon.createSandbox();
+      newAuctionStub = sandbox.stub(auctionManager, 'createAuction').callsFake(() => ({
+        getAuctionId: () => 'mockAuctionId',
+        callBids: sinon.stub()
+      }));
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    it('passes ortb2 fragments to createAuction', () => {
+      const ortb2Fragments = {};
+      pbjsModule.startAuction({
+        adUnits: [{
+          code: 'au',
+          mediaTypes: {banner: {sizes: [[300, 250]]}},
+          bids: [{bidder: 'bd'}]
+        }],
+        ortb2Fragments
+      });
+      sinon.assert.calledWith(newAuctionStub, sinon.match({
+        ortb2Fragments: sinon.match.same(ortb2Fragments)
+      }));
+    });
+  })
 
   describe('requestBids', function () {
     var adUnitsBackup;

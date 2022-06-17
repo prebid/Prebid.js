@@ -184,9 +184,9 @@ describe('TheMediaGridNM Adapter', function () {
       bidderRequestId: '22edbae2733bf6',
       auctionId: '1d1a030790a475',
       timeout: 3000,
-      refererInfo: { referer: 'https://example.com' }
+      refererInfo: { page: 'https://example.com' }
     };
-    const referrer = encodeURIComponent(bidderRequest.refererInfo.referer);
+    const referrer = encodeURIComponent(bidderRequest.refererInfo.page);
     let bidRequests = [
       {
         'bidder': 'gridNM',

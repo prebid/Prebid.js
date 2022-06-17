@@ -257,10 +257,10 @@ export function newBidder(spec) {
   });
 
   function isInvalidAlternateBidder(responseBidder, requestBidder) {
-    let allowAlternateBidderCodes = bidderSettings.get(requestBidder, 'allowAlternateBidderCodes');
+    let allowAlternateBidderCodes = bidderSettings.get(requestBidder, 'allowAlternateBidderCodes') || false;
     let alternateBiddersList = bidderSettings.get(requestBidder, 'allowedAlternateBidderCodes');
     if (!!responseBidder && !!requestBidder && requestBidder !== responseBidder) {
-      if ((allowAlternateBidderCodes !== undefined && !allowAlternateBidderCodes) || (isArray(alternateBiddersList) && (alternateBiddersList[0] !== '*' && !alternateBiddersList.includes(responseBidder)))) {
+      if (!allowAlternateBidderCodes || (isArray(alternateBiddersList) && (alternateBiddersList[0] !== '*' && !alternateBiddersList.includes(responseBidder)))) {
         return true;
       }
     }

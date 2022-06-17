@@ -59,7 +59,7 @@ export const spec = {
     const bundle = find(bidRequests, hasBundleParam);
     const tid = find(bidRequests, hasTidParam);
     const schain = bidRequests[0].schain;
-    let ortb2 = config.getConfig('ortb2');
+    let ortb2 = bidderRequest.ortb2;
     const eids = handleEids(bidRequests);
     bidUrl = bidUrl ? bidUrl.params.bidUrl : URL;
     url = url ? url.params.url : (getAppDomain() || getTopWindowLocation(bidderRequest));
@@ -276,8 +276,7 @@ function handleEids(bidRequests) {
 }
 
 function getTopWindowLocation(bidderRequest) {
-  let url = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
-  return config.getConfig('pageUrl') || url;
+  return bidderRequest?.refererInfo?.page;
 }
 
 function getAppBundle() {

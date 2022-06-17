@@ -147,9 +147,9 @@ describe('teadsBidAdapter', () => {
           'consentString': consentString,
           'gdprApplies': true,
           'vendorData': {
-            'hasGlobalConsent': false
+            'isServiceSpecific': true
           },
-          'apiVersion': 1
+          'apiVersion': 2
         }
       };
 
@@ -159,14 +159,14 @@ describe('teadsBidAdapter', () => {
       expect(payload.gdpr_iab).to.exist;
       expect(payload.gdpr_iab.consent).to.equal(consentString);
       expect(payload.gdpr_iab.status).to.equal(12);
-      expect(payload.gdpr_iab.apiVersion).to.equal(1);
+      expect(payload.gdpr_iab.apiVersion).to.equal(2);
     });
 
     it('should add referer info to payload', function () {
       const bidRequest = Object.assign({}, bidRequests[0])
       const bidderRequest = {
         refererInfo: {
-          referer: 'https://example.com/page.html',
+          page: 'https://example.com/page.html',
           reachedTop: true,
           numIframes: 2
         }
@@ -245,9 +245,9 @@ describe('teadsBidAdapter', () => {
           'consentString': consentString,
           'gdprApplies': true,
           'vendorData': {
-            'hasGlobalScope': true
+            'isServiceSpecific': false,
           },
-          'apiVersion': 1
+          'apiVersion': 2
         }
       };
 
@@ -257,7 +257,7 @@ describe('teadsBidAdapter', () => {
       expect(payload.gdpr_iab).to.exist;
       expect(payload.gdpr_iab.consent).to.equal(consentString);
       expect(payload.gdpr_iab.status).to.equal(11);
-      expect(payload.gdpr_iab.apiVersion).to.equal(1);
+      expect(payload.gdpr_iab.apiVersion).to.equal(2);
     });
 
     it('should send GDPR TCF2 to endpoint with 12 status', function() {
@@ -294,7 +294,7 @@ describe('teadsBidAdapter', () => {
           'consentString': undefined,
           'gdprApplies': undefined,
           'vendorData': undefined,
-          'apiVersion': 1
+          'apiVersion': 2
         }
       };
 
@@ -304,7 +304,7 @@ describe('teadsBidAdapter', () => {
       expect(payload.gdpr_iab).to.exist;
       expect(payload.gdpr_iab.consent).to.equal('');
       expect(payload.gdpr_iab.status).to.equal(22);
-      expect(payload.gdpr_iab.apiVersion).to.equal(1);
+      expect(payload.gdpr_iab.apiVersion).to.equal(2);
     });
 
     it('should send GDPR to endpoint with 0 status', function() {
@@ -319,7 +319,7 @@ describe('teadsBidAdapter', () => {
           'vendorData': {
             'hasGlobalScope': false
           },
-          'apiVersion': 1
+          'apiVersion': 2
         }
       };
 
@@ -329,7 +329,7 @@ describe('teadsBidAdapter', () => {
       expect(payload.gdpr_iab).to.exist;
       expect(payload.gdpr_iab.consent).to.equal(consentString);
       expect(payload.gdpr_iab.status).to.equal(0);
-      expect(payload.gdpr_iab.apiVersion).to.equal(1);
+      expect(payload.gdpr_iab.apiVersion).to.equal(2);
     });
 
     it('should send GDPR to endpoint with 0 status when gdprApplies = false (vendorData = undefined)', function() {
@@ -341,7 +341,7 @@ describe('teadsBidAdapter', () => {
           'consentString': undefined,
           'gdprApplies': false,
           'vendorData': undefined,
-          'apiVersion': 1
+          'apiVersion': 2
         }
       };
 
@@ -351,7 +351,7 @@ describe('teadsBidAdapter', () => {
       expect(payload.gdpr_iab).to.exist;
       expect(payload.gdpr_iab.consent).to.equal('');
       expect(payload.gdpr_iab.status).to.equal(0);
-      expect(payload.gdpr_iab.apiVersion).to.equal(1);
+      expect(payload.gdpr_iab.apiVersion).to.equal(2);
     });
 
     it('should send GDPR to endpoint with 12 status when apiVersion = 0', function() {
@@ -364,7 +364,7 @@ describe('teadsBidAdapter', () => {
           'consentString': consentString,
           'gdprApplies': true,
           'vendorData': {
-            'hasGlobalScope': false
+            'isServiceSpecific': true
           },
           'apiVersion': 0
         }
@@ -469,56 +469,6 @@ describe('teadsBidAdapter', () => {
         'creativeId': 'er2ee',
         'deviceWidth': 1680
       };
-
-      describe('FLoC ID', function () {
-        it('should not add cohortId and cohortVersion params to payload if FLoC ID system is not enabled', function () {
-          const bidRequest = {
-            ...baseBidRequest,
-            userId: {} // no "flocId" property -> assumption that the FLoC ID system is disabled
-          };
-
-          const request = spec.buildRequests([bidRequest], bidderResquestDefault);
-          const payload = JSON.parse(request.data);
-
-          expect(payload).not.to.have.property('cohortId');
-          expect(payload).not.to.have.property('cohortVersion');
-        });
-
-        it('should add cohortId param to payload if FLoC ID system is enabled and ID available, but not version', function () {
-          const bidRequest = {
-            ...baseBidRequest,
-            userId: {
-              flocId: {
-                id: 'my-floc-id'
-              }
-            }
-          };
-
-          const request = spec.buildRequests([bidRequest], bidderResquestDefault);
-          const payload = JSON.parse(request.data);
-
-          expect(payload.cohortId).to.equal('my-floc-id');
-          expect(payload).not.to.have.property('cohortVersion');
-        });
-
-        it('should add cohortId and cohortVersion params to payload if FLoC ID system is enabled', function () {
-          const bidRequest = {
-            ...baseBidRequest,
-            userId: {
-              flocId: {
-                id: 'my-floc-id',
-                version: 'chrome.1.1'
-              }
-            }
-          };
-
-          const request = spec.buildRequests([bidRequest], bidderResquestDefault);
-          const payload = JSON.parse(request.data);
-
-          expect(payload.cohortId).to.equal('my-floc-id');
-          expect(payload.cohortVersion).to.equal('chrome.1.1');
-        });
-      });
 
       describe('Unified ID v2', function () {
         it('should not add unifiedId2 param to payload if uid2 system is not enabled', function () {

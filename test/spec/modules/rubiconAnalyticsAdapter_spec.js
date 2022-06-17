@@ -235,7 +235,7 @@ const MOCK = {
       ],
       'timeout': 3000,
       'refererInfo': {
-        'referer': 'http://www.test.com/page.html', 'reachedTop': true, 'numIframes': 0, 'stack': ['http://www.test.com/page.html']
+        'page': 'http://www.test.com/page.html', 'reachedTop': true, 'numIframes': 0, 'stack': ['http://www.test.com/page.html']
       }
     }
     ],
@@ -319,7 +319,7 @@ const MOCK = {
     'timeout': 5000,
     'start': 1519149562216,
     'refererInfo': {
-      'referer': 'http://www.test.com/page.html', 'reachedTop': true, 'numIframes': 0, 'stack': ['http://www.test.com/page.html']
+      'page': 'http://www.test.com/page.html', 'reachedTop': true, 'numIframes': 0, 'stack': ['http://www.test.com/page.html']
     }
   },
   BID_RESPONSE: [

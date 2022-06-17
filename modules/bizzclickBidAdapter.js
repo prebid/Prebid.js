@@ -63,7 +63,7 @@ export const spec = {
     let winTop = window;
     let location;
     try {
-      location = new URL(bidderRequest.refererInfo.referer)
+      location = new URL(bidderRequest.refererInfo.page)
       winTop = window.top;
     } catch (e) {
       location = winTop.location;

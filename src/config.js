@@ -22,7 +22,6 @@ import CONSTANTS from './constants.json';
 
 const DEFAULT_DEBUG = getParameterByName(CONSTANTS.DEBUG_MODE).toUpperCase() === 'TRUE';
 const DEFAULT_BIDDER_TIMEOUT = 3000;
-const DEFAULT_PUBLISHER_DOMAIN = window.location.origin;
 const DEFAULT_ENABLE_SEND_ALL_BIDS = true;
 const DEFAULT_DISABLE_AJAX_TIMEOUT = false;
 const DEFAULT_BID_CACHE = false;
@@ -86,12 +85,12 @@ export function newConfig() {
         this._bidderTimeout = val;
       },
 
-      // domain where prebid is running for cross domain iframe communication
-      _publisherDomain: DEFAULT_PUBLISHER_DOMAIN,
+      _publisherDomain: null,
       get publisherDomain() {
         return this._publisherDomain;
       },
       set publisherDomain(val) {
+        logWarn('publisherDomain is deprecated and has no effect since v7 - use pageUrl instead')
         this._publisherDomain = val;
       },
 
@@ -313,161 +312,58 @@ export function newConfig() {
     return Object.assign({}, config);
   }
 
-  /*
-   * Returns the configuration object if called without parameters,
-   * or single configuration property if given a string matching a configuration
-   * property name.  Allows deep access e.g. getConfig('currency.adServerCurrency')
-   *
-   * If called with callback parameter, or a string and a callback parameter,
-   * subscribes to configuration updates. See `subscribe` function for usage.
-   *
-   * The object returned is a deepClone of the `config` property.
-   */
-  function readConfig(...args) {
-    if (args.length <= 1 && typeof args[0] !== 'function') {
-      const option = args[0];
-      const configClone = deepClone(_getConfig());
-      return option ? deepAccess(configClone, option) : configClone;
-    }
-
-    return subscribe(...args);
+  function _getRestrictedConfig() {
+    // This causes reading 'ortb2' to throw an error; with prebid 7, that will almost
+    // always be the incorrect way to access FPD configuration (https://github.com/prebid/Prebid.js/issues/7651)
+    // code that needs the ortb2 config should explicitly use `getAnyConfig`
+    // TODO: this is meant as a temporary tripwire to catch inadvertent use of `getConfig('ortb')` as we transition.
+    // It should be removed once the risk of that happening is low enough.
+    const conf = _getConfig();
+    Object.defineProperty(conf, 'ortb2', {
+      get: function () {
+        throw new Error('invalid access to \'orbt2\' config - use request parameters instead');
+      }
+    });
+    return conf;
   }
 
-  /*
-   * Returns configuration object if called without parameters,
-   * or single configuration property if given a string matching a configuration
-   * property name.  Allows deep access e.g. getConfig('currency.adServerCurrency')
-   *
-   * If called with callback parameter, or a string and a callback parameter,
-   * subscribes to configuration updates. See `subscribe` function for usage.
-   */
-  function getConfig(...args) {
-    if (args.length <= 1 && typeof args[0] !== 'function') {
-      const option = args[0];
-      return option ? deepAccess(_getConfig(), option) : _getConfig();
-    }
+  const [getAnyConfig, getConfig] = [_getConfig, _getRestrictedConfig].map(accessor => {
+    /*
+     * Returns configuration object if called without parameters,
+     * or single configuration property if given a string matching a configuration
+     * property name.  Allows deep access e.g. getConfig('currency.adServerCurrency')
+     *
+     * If called with callback parameter, or a string and a callback parameter,
+     * subscribes to configuration updates. See `subscribe` function for usage.
+     */
+    return function getConfig(...args) {
+      if (args.length <= 1 && typeof args[0] !== 'function') {
+        const option = args[0];
+        return option ? deepAccess(accessor(), option) : _getConfig();
+      }
 
-    return subscribe(...args);
-  }
+      return subscribe(...args);
+    }
+  })
+
+  const [readConfig, readAnyConfig] = [getConfig, getAnyConfig].map(wrapee => {
+    /*
+     * Like getConfig, except that it returns a deepClone of the result.
+     */
+    return function readConfig(...args) {
+      let res = wrapee(...args);
+      if (res && typeof res === 'object') {
+        res = deepClone(res);
+      }
+      return res;
+    }
+  })
 
   /**
    * Internal API for modules (such as prebid-server) that might need access to all bidder config
    */
   function getBidderConfig() {
     return bidderConfig;
-  }
-
-  /**
-   * Returns backwards compatible FPD data for modules
-   */
-  function getLegacyFpd(obj) {
-    if (typeof obj !== 'object') return;
-
-    let duplicate = {};
-
-    Object.keys(obj).forEach((type) => {
-      let prop = (type === 'site') ? 'context' : type;
-      duplicate[prop] = (prop === 'context' || prop === 'user') ? Object.keys(obj[type]).filter(key => key !== 'data').reduce((result, key) => {
-        if (key === 'ext') {
-          mergeDeep(result, obj[type][key]);
-        } else {
-          mergeDeep(result, {[key]: obj[type][key]});
-        }
-
-        return result;
-      }, {}) : obj[type];
-    });
-
-    return duplicate;
-  }
-
-  /**
-   * Returns backwards compatible FPD data for modules
-   */
-  function getLegacyImpFpd(obj) {
-    if (typeof obj !== 'object') return;
-
-    let duplicate = {};
-
-    if (deepAccess(obj, 'ext.data')) {
-      Object.keys(obj.ext.data).forEach((key) => {
-        if (key === 'pbadslot') {
-          mergeDeep(duplicate, {context: {pbAdSlot: obj.ext.data[key]}});
-        } else if (key === 'adserver') {
-          mergeDeep(duplicate, {context: {adServer: obj.ext.data[key]}});
-        } else {
-          mergeDeep(duplicate, {context: {data: {[key]: obj.ext.data[key]}}});
-        }
-      });
-    }
-
-    return duplicate;
-  }
-
-  /**
-   * Copy FPD over to OpenRTB standard format in config
-   */
-  function convertFpd(opt) {
-    let duplicate = {};
-
-    Object.keys(opt).forEach((type) => {
-      let prop = (type === 'context') ? 'site' : type;
-      duplicate[prop] = (prop === 'site' || prop === 'user') ? Object.keys(opt[type]).reduce((result, key) => {
-        if (key === 'data') {
-          mergeDeep(result, {ext: {data: opt[type][key]}});
-        } else {
-          mergeDeep(result, {[key]: opt[type][key]});
-        }
-
-        return result;
-      }, {}) : opt[type];
-    });
-
-    return duplicate;
-  }
-
-  /**
-   * Copy Impression FPD over to OpenRTB standard format in config
-   * Only accepts bid level context.data values with pbAdSlot and adServer exceptions
-   */
-  function convertImpFpd(opt) {
-    let duplicate = {};
-
-    Object.keys(opt).filter(prop => prop === 'context').forEach((type) => {
-      Object.keys(opt[type]).forEach((key) => {
-        if (key === 'data') {
-          mergeDeep(duplicate, {ext: {data: opt[type][key]}});
-        } else {
-          if (typeof opt[type][key] === 'object' && !Array.isArray(opt[type][key])) {
-            Object.keys(opt[type][key]).forEach(data => {
-              mergeDeep(duplicate, {ext: {data: {[key.toLowerCase()]: {[data.toLowerCase()]: opt[type][key][data]}}}});
-            });
-          } else {
-            mergeDeep(duplicate, {ext: {data: {[key.toLowerCase()]: opt[type][key]}}});
-          }
-        }
-      });
-    });
-
-    return duplicate;
-  }
-
-  /**
-   * Copy FPD over to OpenRTB standard format in each adunit
-   */
-  function convertAdUnitFpd(arr) {
-    let convert = [];
-
-    arr.forEach((adunit) => {
-      if (adunit.fpd) {
-        (adunit['ortb2Imp']) ? mergeDeep(adunit['ortb2Imp'], convertImpFpd(adunit.fpd)) : adunit['ortb2Imp'] = convertImpFpd(adunit.fpd);
-        convert.push((({ fpd, ...duplicate }) => duplicate)(adunit));
-      } else {
-        convert.push(adunit);
-      }
-    });
-
-    return convert;
   }
 
   /*
@@ -484,14 +380,13 @@ export function newConfig() {
     let topicalConfig = {};
 
     topics.forEach(topic => {
-      let prop = (topic === 'fpd') ? 'ortb2' : topic;
-      let option = (topic === 'fpd') ? convertFpd(options[topic]) : options[topic];
+      let option = options[topic];
 
-      if (isPlainObject(defaults[prop]) && isPlainObject(option)) {
-        option = Object.assign({}, defaults[prop], option);
+      if (isPlainObject(defaults[topic]) && isPlainObject(option)) {
+        option = Object.assign({}, defaults[topic], option);
       }
 
-      topicalConfig[prop] = config[prop] = option;
+      topicalConfig[topic] = config[topic] = option;
     });
 
     callSubscribers(topicalConfig);
@@ -519,6 +414,8 @@ export function newConfig() {
    * updates when specific properties are updated by passing a topic string as
    * the first parameter.
    *
+   * If `options.init` is true, the listener will be immediately called with the current options.
+   *
    * Returns an `unsubscribe` function for removing the subscriber from the
    * set of listeners
    *
@@ -532,8 +429,9 @@ export function newConfig() {
    * // unsubscribe
    * const unsubscribe = subscribe(...);
    * unsubscribe(); // no longer listening
+   *
    */
-  function subscribe(topic, listener) {
+  function subscribe(topic, listener, options = {}) {
     let callback = listener;
 
     if (typeof topic !== 'string') {
@@ -541,6 +439,7 @@ export function newConfig() {
       // meaning it gets called for any config change
       callback = topic;
       topic = ALL_TOPICS;
+      options = listener || {};
     }
 
     if (typeof callback !== 'function') {
@@ -550,6 +449,15 @@ export function newConfig() {
 
     const nl = { topic, callback };
     listeners.push(nl);
+
+    if (options.init) {
+      if (topic === ALL_TOPICS) {
+        callback(getConfig())
+      } else {
+        // eslint-disable-next-line standard/no-callback-literal
+        callback({[topic]: getConfig(topic)});
+      }
+    }
 
     // save and call this function to remove the listener
     return function unsubscribe() {
@@ -584,14 +492,13 @@ export function newConfig() {
           bidderConfig[bidder] = {};
         }
         Object.keys(config.config).forEach(topic => {
-          let prop = (topic === 'fpd') ? 'ortb2' : topic;
-          let option = (topic === 'fpd') ? convertFpd(config.config[topic]) : config.config[topic];
+          let option = config.config[topic];
 
           if (isPlainObject(option)) {
             const func = mergeFlag ? mergeDeep : Object.assign;
-            bidderConfig[bidder][prop] = func({}, bidderConfig[bidder][prop] || {}, option);
+            bidderConfig[bidder][topic] = func({}, bidderConfig[bidder][topic] || {}, option);
           } else {
-            bidderConfig[bidder][prop] = option;
+            bidderConfig[bidder][topic] = option;
           }
         });
       });
@@ -669,7 +576,9 @@ export function newConfig() {
     getCurrentBidder,
     resetBidder,
     getConfig,
+    getAnyConfig,
     readConfig,
+    readAnyConfig,
     setConfig,
     mergeConfig,
     setDefaults,
@@ -679,9 +588,6 @@ export function newConfig() {
     setBidderConfig,
     getBidderConfig,
     mergeBidderConfig,
-    convertAdUnitFpd,
-    getLegacyFpd,
-    getLegacyImpFpd
   };
 }
 

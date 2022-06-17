@@ -69,7 +69,7 @@ describe('AdrelevantisAdapter', function () {
         }
       );
 
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest], {});
       const payload = JSON.parse(request.data);
 
       expect(payload.tags[0].private_sizes).to.exist;
@@ -77,7 +77,7 @@ describe('AdrelevantisAdapter', function () {
     });
 
     it('should add source and verison to the tag', function () {
-      const request = spec.buildRequests(bidRequests);
+      const request = spec.buildRequests(bidRequests, {});
       const payload = JSON.parse(request.data);
       expect(payload.sdk).to.exist;
       expect(payload.sdk).to.deep.equal({
@@ -92,7 +92,7 @@ describe('AdrelevantisAdapter', function () {
         bidRequest.mediaTypes = {};
         bidRequest.mediaTypes[type] = {};
 
-        const request = spec.buildRequests([bidRequest]);
+        const request = spec.buildRequests([bidRequest], {});
         const payload = JSON.parse(request.data);
 
         expect(payload.tags[0].ad_types).to.deep.equal([type]);
@@ -104,14 +104,14 @@ describe('AdrelevantisAdapter', function () {
       bidRequest.mediaTypes = {};
       bidRequest.mediaTypes.video = {context: 'outstream'};
 
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest], {});
       const payload = JSON.parse(request.data);
 
       expect(payload.tags[0].ad_types).to.deep.equal(['video']);
     });
 
     it('sends bid request to ENDPOINT via POST', function () {
-      const request = spec.buildRequests(bidRequests);
+      const request = spec.buildRequests(bidRequests, {});
       expect(request.url).to.equal(ENDPOINT);
       expect(request.method).to.equal('POST');
     });
@@ -131,7 +131,7 @@ describe('AdrelevantisAdapter', function () {
         }
       );
 
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest], {});
       const payload = JSON.parse(request.data);
       expect(payload.tags[0].video).to.deep.equal({
         id: 123,
@@ -168,7 +168,7 @@ describe('AdrelevantisAdapter', function () {
       bidRequest2.adUnitCode = 'adUnit_code_2';
       bidRequest2 = Object.assign({}, bidRequest2, videoData);
 
-      const request = spec.buildRequests([bidRequest1, bidRequest2]);
+      const request = spec.buildRequests([bidRequest1, bidRequest2], {});
       const payload = JSON.parse(request.data);
       expect(payload.tags[0].video).to.deep.equal({
         skippable: true,
@@ -195,7 +195,7 @@ describe('AdrelevantisAdapter', function () {
         }
       );
 
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest], {});
       const payload = JSON.parse(request.data);
 
       expect(payload.user).to.exist;
@@ -215,32 +215,27 @@ describe('AdrelevantisAdapter', function () {
           }
         }
       );
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest], {});
       const payload = JSON.parse(request.data);
       expect(payload.tags[0].hb_source).to.deep.equal(1);
     });
 
     it('adds context data (category and keywords) to request when set', function() {
       let bidRequest = Object.assign({}, bidRequests[0]);
-      sinon
-        .stub(config, 'getConfig')
-        .withArgs('ortb2')
-        .returns({
-          site: {
-            keywords: 'US Open',
-            ext: {
-			  data: {category: 'sports/tennis'}
-            }
+      const ortb2 = {
+        site: {
+          keywords: 'US Open',
+          ext: {
+            data: {category: 'sports/tennis'}
           }
-        });
+        }
+      };
 
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest], {ortb2});
       const payload = JSON.parse(request.data);
 
       expect(payload.fpd.keywords).to.equal('US Open');
       expect(payload.fpd.category).to.equal('sports/tennis');
-
-      config.getConfig.restore();
     });
 
     it('should attach native params to the request', function () {
@@ -269,7 +264,7 @@ describe('AdrelevantisAdapter', function () {
         }
       );
 
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest], {});
       const payload = JSON.parse(request.data);
 
       expect(payload.tags[0].native.layouts[0]).to.deep.equal({
@@ -306,13 +301,13 @@ describe('AdrelevantisAdapter', function () {
       );
       bidRequest.sizes = [[150, 100], [300, 250]];
 
-      let request = spec.buildRequests([bidRequest]);
+      let request = spec.buildRequests([bidRequest], {});
       let payload = JSON.parse(request.data);
       expect(payload.tags[0].sizes).to.deep.equal([{width: 150, height: 100}, {width: 300, height: 250}]);
 
       delete bidRequest.sizes;
 
-      request = spec.buildRequests([bidRequest]);
+      request = spec.buildRequests([bidRequest], {});
       payload = JSON.parse(request.data);
 
       expect(payload.tags[0].sizes).to.deep.equal([{width: 1, height: 1}]);
@@ -338,7 +333,7 @@ describe('AdrelevantisAdapter', function () {
         }
       );
 
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest], {});
       const payload = JSON.parse(request.data);
 
       expect(payload.tags[0].keywords).to.deep.equal([{
@@ -374,7 +369,7 @@ describe('AdrelevantisAdapter', function () {
         }
       );
 
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest], {});
       const payload = JSON.parse(request.data);
 
       expect(payload.tags[0].use_pmt_rule).to.equal(true);
@@ -425,7 +420,7 @@ describe('AdrelevantisAdapter', function () {
           }
         }
       );
-      const request = spec.buildRequests([appRequest]);
+      const request = spec.buildRequests([appRequest], {});
       const payload = JSON.parse(request.data);
       expect(payload.app).to.exist;
       expect(payload.app).to.deep.equal({
@@ -450,7 +445,7 @@ describe('AdrelevantisAdapter', function () {
       const bidRequest = Object.assign({}, bidRequests[0])
       const bidderRequest = {
         refererInfo: {
-          referer: 'http://example.com/page.html',
+          topmostLocation: 'http://example.com/page.html',
           reachedTop: true,
           numIframes: 2,
           stack: [
@@ -478,7 +473,7 @@ describe('AdrelevantisAdapter', function () {
         .withArgs('coppa')
         .returns(true);
 
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest], {});
       const payload = JSON.parse(request.data);
 
       expect(payload.user.coppa).to.equal(true);
