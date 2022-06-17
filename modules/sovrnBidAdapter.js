@@ -1,24 +1,21 @@
-import { 
-  _each, 
-  getBidIdParameter, 
-  isArray, 
-  deepClone, 
-  parseUrl, 
-  getUniqueIdentifierStr, 
-  deepSetValue, 
-  logError, 
-  deepAccess, 
-  isInteger, 
+import {
+  _each,
+  getBidIdParameter,
+  isArray,
+  getUniqueIdentifierStr,
+  deepSetValue,
+  logError,
+  deepAccess,
+  isInteger,
   logWarn
 } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { 
-  ADPOD, 
-  BANNER, 
+import {
+  ADPOD,
+  BANNER,
   VIDEO
 } from '../src/mediaTypes.js'
 import {createEidsArray} from './userId/eids.js';
-import {config} from '../src/config.js'
 
 const ORTB_VIDEO_PARAMS = {
   'mimes': (value) => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string'),
