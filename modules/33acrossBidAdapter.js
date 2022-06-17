@@ -254,6 +254,7 @@ function _createServerRequest({ bidRequests, gdprConsent = {}, uspConsent, pageU
   });
 
   ttxRequest.site = { id: siteId };
+  ttxRequest.device = _buildDeviceORTB();
 
   if (pageUrl) {
     ttxRequest.site.page = pageUrl;
@@ -732,6 +733,73 @@ function _createSync({ siteId = 'zzz000000000003zzz', gdprConsent = {}, uspConse
   }
 
   return sync;
+}
+
+// BUILD REQUESTS: DEVICE
+function _buildDeviceORTB() {
+  const win = getWindowSelf();
+
+  return setExtensions({
+    ...getScreenDimensions(),
+    pxratio: win.devicePixelRatio
+  }, {
+    ttx: {
+      viewport: getViewportDimensions(),
+      availheight: getWindowSelf().screen.availHeight,
+      maxtouchpoints: win.navigator.maxTouchPoints
+    }
+  });
+}
+
+function getTopMostAccessibleWindow() {
+  let mostAccessibleWindow = getWindowSelf();
+
+  try {
+    while (mostAccessibleWindow.parent !== mostAccessibleWindow &&
+      mostAccessibleWindow.parent.document) {
+      mostAccessibleWindow = mostAccessibleWindow.parent;
+    }
+  } catch (err) {
+    // Do not throw an exception if we can't access the topmost frame.
+  }
+
+  return mostAccessibleWindow;
+}
+
+function getViewportDimensions() {
+  const topWin = getTopMostAccessibleWindow();
+  const documentElement = topWin.document.documentElement;
+
+  return {
+    w: documentElement.clientWidth,
+    h: documentElement.clientHeight,
+  };
+}
+
+function getScreenDimensions() {
+  const {
+    innerWidth: windowWidth,
+    innerHeight: windowHeight,
+    screen
+  } = getWindowSelf();
+
+  const [biggerDimension, smallerDimension] = [
+    Math.max(screen.width, screen.height),
+    Math.min(screen.width, screen.height),
+  ];
+
+  if (windowHeight > windowWidth) { // Portrait mode
+    return {
+      w: smallerDimension,
+      h: biggerDimension,
+    };
+  }
+
+  // Landscape mode
+  return {
+    w: biggerDimension,
+    h: smallerDimension,
+  };
 }
 
 export const spec = {
