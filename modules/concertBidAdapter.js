@@ -203,7 +203,7 @@ function hasOptedOutOfPersonalization() {
  * @param {BidderRequest} bidderRequest Object which contains any data consent signals
  */
 function consentAllowsPpid(bidderRequest) {
-  /* NOTE: We cannot easily test GDPR consent, without the
+  /* NOTE: We can't easily test GDPR consent, without the
    * `consent-string` npm module; so will have to rely on that
    * happening on the bid-server. */
   return !(bidderRequest.uspConsent === 'string' &&
