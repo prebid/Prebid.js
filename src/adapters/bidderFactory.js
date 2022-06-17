@@ -542,7 +542,7 @@ export function isValid(adUnitCode, bid, {index = auctionManager.index} = {}) {
     return false;
   }
 
-  if (bid.mediaType === 'native' && !nativeBidIsValid(bid, {index})) {
+  if (FEATURES.NATIVE && bid.mediaType === 'native' && !nativeBidIsValid(bid, {index})) {
     logError(errorMessage('Native bid missing some required properties.'));
     return false;
   }
