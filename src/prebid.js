@@ -616,6 +616,27 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
 
     adUnit.transactionId = generateUUID();
 
+    // Populate ortb2Imp.ext.tid with transactionId. Specifying a transaction ID per item in the ortb impression array, lets multiple transaction IDs be transmitted in a single bid request.
+    if (adUnit.hasOwnProperty('ortb2Imp')) {
+      if (adUnit.ortb2Imp.hasOwnProperty('ext')) {
+        adUnit.ortb2Imp.ext.tid = adUnit.transactionId;
+      }
+    } else if ((adUnit.hasOwnProperty('ortb2Imp')) && !(adUnit.ortb2Imp.hasOwnProperty('ext'))) {
+      Object.assign(adUnit.ortb2Imp, {
+        ext: {
+          tid: adUnit.transactionId
+        }
+      })
+    } else if (!adUnit.hasOwnProperty('ortb2Imp')) {
+      Object.assign(adUnit, {
+        ortb2Imp: {
+          ext: {
+            tid: adUnit.transactionId
+          }
+        }
+      })
+    }
+
     bidders.forEach(bidder => {
       const adapter = bidderRegistry[bidder];
       const spec = adapter && adapter.getSpec && adapter.getSpec();
