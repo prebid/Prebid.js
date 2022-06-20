@@ -188,9 +188,12 @@ export const adUnitSetupChecks = {
   validateAdUnit,
   validateBannerMediaType,
   validateVideoMediaType,
-  validateNativeMediaType,
   validateSizes
 };
+
+if (FEATURES.NATIVE) {
+  Object.assign(adUnitSetupChecks, {validateNativeMediaType});
+}
 
 export const checkAdUnitSetup = hook('sync', function (adUnits) {
   const validatedAdUnits = [];
@@ -212,7 +215,7 @@ export const checkAdUnitSetup = hook('sync', function (adUnits) {
       if (mediaTypes.video.hasOwnProperty('pos')) validatedVideo = validateAdUnitPos(validatedVideo, 'video');
     }
 
-    if (mediaTypes.native) {
+    if (FEATURES.NATIVE && mediaTypes.native) {
       validatedNative = validatedVideo ? validateNativeMediaType(validatedVideo) : validatedBanner ? validateNativeMediaType(validatedBanner) : validateNativeMediaType(adUnit);
     }
 

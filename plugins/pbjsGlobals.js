@@ -2,6 +2,20 @@
 let t = require('@babel/core').types;
 let prebid = require('../package.json');
 const path = require('path');
+const allFeatures = new Set(require('../features.json'));
+
+const FEATURES_GLOBAL = 'FEATURES';
+
+function featureMap(disable = []) {
+  disable = disable.map((s) => s.toUpperCase());
+  disable.forEach((f) => {
+    if (!allFeatures.has(f)) {
+      throw new Error(`Unrecognized feature: ${f}`)
+    }
+  });
+  disable = new Set(disable);
+  return Object.fromEntries([...allFeatures.keys()].map((f) => [f, !disable.has(f)]));
+}
 
 function getNpmVersion(version) {
   try {
@@ -13,6 +27,7 @@ function getNpmVersion(version) {
 
 module.exports = function(api, options) {
   const pbGlobal = options.globalVarName || prebid.globalVarName;
+  const features = featureMap(options.disableFeatures);
   let replace = {
     '$prebid.version$': prebid.version,
     '$$PREBID_GLOBAL$$': pbGlobal,
@@ -91,6 +106,17 @@ module.exports = function(api, options) {
             }
           }
         });
+      },
+      MemberExpression(path) {
+        if (
+          t.isIdentifier(path.node.object) &&
+          path.node.object.name === FEATURES_GLOBAL &&
+          !path.scope.hasBinding(FEATURES_GLOBAL) &&
+          t.isIdentifier(path.node.property) &&
+          features.hasOwnProperty(path.node.property.name)
+        ) {
+          path.replaceWith(t.booleanLiteral(features[path.node.property.name]));
+        }
       }
     }
   };
