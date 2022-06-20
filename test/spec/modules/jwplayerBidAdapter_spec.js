@@ -113,7 +113,28 @@ describe('jwplayer adapter tests', function() {
     });
   });
 
-  describe('interpretResponse for video', function() {});
+  describe('interpretResponse for video', function() {
+    
+    const bidResponse = {
+      id: 'testId',
+      impid: '274395c06a24e5',
+      price: 1,
+      w: 300,
+      h: 250,
+    }
+    
+    const serverResponse = {
+      body: {
+        id: 'testId',
+        seatbid: [
+          {
+            bid: [ bidResponse ],
+            seat: 1000
+          }
+        ]
+      }
+    }
+  });
 
   describe('user sync handler', function() {});
 });
