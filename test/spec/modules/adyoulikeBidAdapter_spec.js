@@ -91,6 +91,20 @@ describe('Adyoulike Adapter', function () {
           }
           },
         },
+      'schain': {
+        validation: 'strict',
+        config: {
+          ver: '1.0',
+          complete: 1,
+          nodes: [
+            {
+              asi: 'indirectseller.com',
+              sid: '00001',
+              hp: 1
+            }
+          ]
+        }
+      },
       'transactionId': 'bid_id_0_transaction_id'
     }
   ];
@@ -614,7 +628,7 @@ describe('Adyoulike Adapter', function () {
       expect(request.url).to.contain(getEndpoint());
     });
 
-    it('should add gdpr/usp consent information to the request', function () {
+    it('should add gdpr/usp consent information and SChain to the request', function () {
       let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
       let uspConsentData = '1YCC';
       let bidderRequest = {
@@ -637,6 +651,7 @@ describe('Adyoulike Adapter', function () {
       expect(payload.gdprConsent.consentString).to.exist.and.to.equal(consentString);
       expect(payload.gdprConsent.consentRequired).to.exist.and.to.be.true;
       expect(payload.uspConsent).to.exist.and.to.equal(uspConsentData);
+      expect(payload.Bids.bid_id_0.SChain).to.exist.and.to.deep.equal(bidRequestWithSinglePlacement[0].schain);
     });
 
     it('should not set a default value for gdpr consentRequired', function () {

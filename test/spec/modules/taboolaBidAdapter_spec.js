@@ -12,6 +12,12 @@ describe('Taboola Adapter', function () {
     getCookie = sinon.stub(userData.storageManager, 'getCookie');
     getDataFromLocalStorage = sinon.stub(userData.storageManager, 'getDataFromLocalStorage');
     localStorageIsEnabled = sinon.stub(userData.storageManager, 'localStorageIsEnabled');
+
+    $$PREBID_GLOBAL$$.bidderSettings = {
+      taboola: {
+        storageAllowed: true
+      }
+    };
   });
 
   afterEach(() => {
@@ -20,6 +26,8 @@ describe('Taboola Adapter', function () {
     getCookie.restore();
     getDataFromLocalStorage.restore();
     localStorageIsEnabled.restore();
+
+    $$PREBID_GLOBAL$$.bidderSettings = {};
   })
 
   const commonBidRequest = {
@@ -147,11 +155,6 @@ describe('Taboola Adapter', function () {
         bidfloorcur: 'EUR'
       };
 
-      config.setConfig({ortb2: {
-        badv: ['adadadbcd.com'],
-        bcat: ['IAB25', 'IAB7-39']
-      }});
-
       const bidRequest = {
         ...defaultBidRequest,
         params: {...commonBidRequest.params, ...optionalParams}
@@ -159,8 +162,6 @@ describe('Taboola Adapter', function () {
 
       const res = spec.buildRequests([bidRequest], commonBidderRequest);
       const resData = JSON.parse(res.data);
-      expect(resData.bcat).to.deep.equal(['IAB25', 'IAB7-39']);
-      expect(resData.badv).to.deep.equal(['adadadbcd.com']);
       expect(resData.imp[0].bidfloor).to.deep.equal(0.25);
       expect(resData.imp[0].bidfloorcur).to.deep.equal('EUR');
     });
@@ -170,9 +171,9 @@ describe('Taboola Adapter', function () {
         ...commonBidderRequest,
         timeout: 500
       }
-      const res = spec.buildRequests([defaultBidRequest], bidderRequest)
-      const resData = JSON.parse(res.data)
-      expect(resData.tmax).to.equal(500)
+      const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+      const resData = JSON.parse(res.data);
+      expect(resData.tmax).to.equal(500);
     });
 
     describe('handle privacy segments when building request', function () {
@@ -200,9 +201,9 @@ describe('Taboola Adapter', function () {
           },
           uspConsent: 'consentString'
         }
-        const res = spec.buildRequests([defaultBidRequest], bidderRequest)
-        const resData = JSON.parse(res.data)
-        expect(resData.regs.ext.us_privacy).to.equal('consentString')
+        const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+        const resData = JSON.parse(res.data);
+        expect(resData.regs.ext.us_privacy).to.equal('consentString');
       });
 
       it('should pass coppa consent', function () {

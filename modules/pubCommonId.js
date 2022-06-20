@@ -9,7 +9,8 @@ import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
 import { getStorageManager } from '../src/storageManager.js';
 
-const storage = getStorageManager();
+const MODULE_TYPE = 'fpid-module';
+const storage = getStorageManager({moduleType: MODULE_TYPE});
 
 const ID_NAME = '_pubcid';
 const OPTOUT_NAME = '_pubcid_optout';
