@@ -9,7 +9,6 @@ let enrichments = {...enrichmentModule};
 let validations = {...validationModule};
 
 describe('the first party data module', function () {
-
   afterEach(function () {
     config.resetConfig();
   });
