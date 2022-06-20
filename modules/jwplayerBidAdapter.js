@@ -172,22 +172,16 @@ function buildBidFloorData(bidRequest) {
 }
 
 function buildRequestSite(bidRequest) {
-  const configSite = config.getConfig('ortb2.site') || {};
+  const site = config.getConfig('ortb2.site') || {};
 
-  const site = {
-    domain: config.publisherDomain || configSite.domain || window.location.hostname,
-    page: config.pageUrl || configSite.page || window.location.href,
-  };
+  site.domain = site.domain || config.publisherDomain || window.location.hostname;
+  site.page = site.page || config.pageUrl || window.location.href;
 
   const referer = bidRequest.refererInfo && bidRequest.refererInfo.referer;
-  if (referer) {
+  if (!site.ref && referer) {
     site.ref = referer;
   }
 
-  // Site Content
-  if (configSite && configSite.content && isPlainObject(configSite.content)) {
-    site.content = configSite.content;
-  }
   return site;
 }
 
