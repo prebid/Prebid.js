@@ -193,6 +193,18 @@ Most likely your custom `prebid.js` will only change when there's:
 
 Having said that, you are probably safe to check your custom bundle into your project.  You can also generate it in your build process.
 
+**Build once, bundle multiple times**
+
+If you need to generate multiple distinct bundles from the same Prebid version, you can reuse a single build with:
+
+```
+gulp build
+gulp bundle --tag one --modules=one.json
+gulp bundle --tag two --modules=two.json
+```
+
+This generates slightly larger files, but has the advantage of being much faster to run (after the initial `gulp build`). It's also the method used by [the Prebid.org download page](https://docs.prebid.org/download.html).  
+
 <a name="Run"></a>
 
 ## Test locally
