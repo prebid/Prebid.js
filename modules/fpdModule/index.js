@@ -7,11 +7,12 @@ import { module, getHook } from '../../src/hook.js';
 
 let submodules = [];
 
-/**
- * enable submodule in User ID
- */
 export function registerSubmodules(submodule) {
   submodules.push(submodule);
+}
+
+export function reset() {
+  submodules.length = 0;
 }
 
 export function processFpd({global = {}, bidder = {}} = {}) {
@@ -26,8 +27,8 @@ export function processFpd({global = {}, bidder = {}} = {}) {
   return {global, bidder};
 }
 
-function startAuctionHook(fn, req) {
-  Object.assign(req, processFpd({global: req.ortb2, bidder: req.bidderOrtb2}));
+export function startAuctionHook(fn, req) {
+  Object.assign(req.ortb2Fragments, processFpd(req.ortb2Fragments));
   fn.call(this, req);
 }
 
