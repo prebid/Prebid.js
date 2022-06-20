@@ -55,7 +55,8 @@ export const spec = {
     });
     const payload = {
       codes: codes,
-      referer: encodeURIComponent(bidderRequest.refererInfo.referer),
+      // TODO: is 'page' the right value here?
+      referer: encodeURIComponent(bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation),
       pbjs: '$prebid.version$'
     };
     if (bidderRequest) { // modules informations (gdpr, ccpa, schain, userId)

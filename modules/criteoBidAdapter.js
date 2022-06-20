@@ -65,7 +65,7 @@ export const spec = {
   buildRequests: (bidRequests, bidderRequest) => {
     let url;
     let data;
-    let fpd = config.getConfig('ortb2') || {};
+    let fpd = bidderRequest.ortb2 || {};
 
     Object.assign(bidderRequest, {
       publisherExt: fpd.site?.ext,
@@ -224,9 +224,9 @@ function publisherTagAvailable() {
 function buildContext(bidRequests, bidderRequest) {
   let referrer = '';
   if (bidderRequest && bidderRequest.refererInfo) {
-    referrer = bidderRequest.refererInfo.referer;
+    referrer = bidderRequest.refererInfo.page;
   }
-  const queryString = parseUrl(referrer).search;
+  const queryString = parseUrl(bidderRequest?.refererInfo?.topmostLocation).search;
 
   const context = {
     url: referrer,

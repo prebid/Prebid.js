@@ -6,6 +6,7 @@ import {
   storage, DAP_MAX_RETRY_TOKENIZE, DAP_SS_ID, DAP_TOKEN, DAP_MEMBERSHIP, DAP_ENCRYPTED_MEMBERSHIP
 } from 'modules/akamaiDapRtdProvider.js';
 import {server} from 'test/mocks/xhr.js';
+import {hook} from '../../../src/hook.js';
 const responseHeader = {'Content-Type': 'application/json'};
 
 describe('akamaiDapRtdProvider', function() {
@@ -131,7 +132,15 @@ describe('akamaiDapRtdProvider', function() {
     }
   };
 
+  before(() => {
+    hook.ready();
+  });
+
+  let ortb2, bidConfig;
+
   beforeEach(function() {
+    bidConfig = {ortb2Fragments: {}};
+    ortb2 = bidConfig.ortb2Fragments.global = {};
     config.resetConfig();
     storage.removeDataFromLocalStorage(DAP_TOKEN);
     storage.removeDataFromLocalStorage(DAP_MEMBERSHIP);
@@ -156,14 +165,13 @@ describe('akamaiDapRtdProvider', function() {
       let dapGetEncryptedRtdObjStub = sinon.stub(dapUtils, 'dapGetEncryptedRtdObj').returns(cachedEncRtd)
       let callDapApisStub = sinon.stub(dapUtils, 'callDapAPIs')
       try {
-        const bidConfig = {};
         storage.setDataInLocalStorage(DAP_TOKEN, JSON.stringify(sampleCachedToken));
-        expect(config.getConfig().ortb2).to.be.undefined;
+        expect(ortb2).to.eql({});
         generateRealTimeData(bidConfig, () => {}, emoduleConfig, {});
 
-        expect(config.getConfig().ortb2.user.data).to.deep.include.members([encRtdUserObj]);
+        expect(ortb2.user.data).to.deep.include.members([encRtdUserObj]);
         generateRealTimeData(bidConfig, () => {}, cmoduleConfig, {});
-        expect(config.getConfig().ortb2.user.data).to.deep.include.members([rtdUserObj]);
+        expect(ortb2.user.data).to.deep.include.members([rtdUserObj]);
       } finally {
         dapGetRtdObjStub.restore()
         dapGetMembershipFromLocalStorageStub.restore()
@@ -176,11 +184,10 @@ describe('akamaiDapRtdProvider', function() {
 
   describe('calling DAP APIs', function() {
     it('Calls callDapAPIs for unencrypted segments flow', function() {
-      const bidConfig = {};
       storage.setDataInLocalStorage(DAP_TOKEN, JSON.stringify(sampleCachedToken));
       let dapExtractExpiryFromTokenStub = sinon.stub(dapUtils, 'dapExtractExpiryFromToken').returns(cacheExpiry)
       try {
-        expect(config.getConfig().ortb2).to.be.undefined;
+        expect(ortb2).to.eql({});
         dapUtils.callDapAPIs(bidConfig, () => {}, cmoduleConfig, {});
         let membership = {'cohorts': ['9', '11', '13'], 'said': 'sample-said'}
         let membershipRequest = server.requests[0];
@@ -190,18 +197,17 @@ describe('akamaiDapRtdProvider', function() {
         responseHeader['Akamai-DAP-Token'] = tokenWithExpiry;
         tokenizeRequest.respond(200, responseHeader, JSON.stringify(tokenWithExpiry));
         let data = dapUtils.dapGetRtdObj(membership, cmoduleConfig.params.segtax);
-        expect(config.getConfig().ortb2.user.data).to.deep.include.members(data.rtd.ortb2.user.data);
+        expect(ortb2.user.data).to.deep.include.members(data.rtd.ortb2.user.data);
       } finally {
         dapExtractExpiryFromTokenStub.restore();
       }
     });
 
     it('Calls callDapAPIs for encrypted segments flow', function() {
-      const bidConfig = {};
       storage.setDataInLocalStorage(DAP_TOKEN, JSON.stringify(sampleCachedToken));
       let dapExtractExpiryFromTokenStub = sinon.stub(dapUtils, 'dapExtractExpiryFromToken').returns(cacheExpiry)
       try {
-        expect(config.getConfig().ortb2).to.be.undefined;
+        expect(ortb2).to.eql({});
         dapUtils.callDapAPIs(bidConfig, () => {}, emoduleConfig, {});
         let encMembership = 'Sample-enc-token';
         let membershipRequest = server.requests[0];
@@ -212,7 +218,7 @@ describe('akamaiDapRtdProvider', function() {
         responseHeader['Akamai-DAP-Token'] = tokenWithExpiry;
         tokenizeRequest.respond(200, responseHeader, JSON.stringify(tokenWithExpiry));
         let data = dapUtils.dapGetEncryptedRtdObj({'encryptedSegments': encMembership}, emoduleConfig.params.segtax);
-        expect(config.getConfig().ortb2.user.data).to.deep.include.members(data.rtd.ortb2.user.data);
+        expect(ortb2.user.data).to.deep.include.members(data.rtd.ortb2.user.data);
       } finally {
         dapExtractExpiryFromTokenStub.restore();
       }
@@ -392,7 +398,7 @@ describe('akamaiDapRtdProvider', function() {
         domain: 'prebid.org',
         segtax: 503
       };
-      expect(dapUtils.dapRefreshMembership(config, 'token', onDone)).to.equal(undefined)
+      expect(dapUtils.dapRefreshMembership(ortb2, config, 'token', onDone)).to.equal(undefined)
       const membership = {cohorts: ['1', '5', '7']}
       expect(dapUtils.dapGetRtdObj(membership, config.segtax)).to.not.equal(undefined);
     });
@@ -400,11 +406,11 @@ describe('akamaiDapRtdProvider', function() {
 
   describe('checkAndAddRealtimeData test', function () {
     it('add realtime data for segtax 503 and 504', function () {
-      dapUtils.checkAndAddRealtimeData(cachedEncRtd, 504);
-      dapUtils.checkAndAddRealtimeData(cachedEncRtd, 504);
-      expect(config.getConfig().ortb2.user.data).to.deep.include.members([encRtdUserObj]);
-      dapUtils.checkAndAddRealtimeData(cachedRtd, 503);
-      expect(config.getConfig().ortb2.user.data).to.deep.include.members([rtdUserObj]);
+      dapUtils.checkAndAddRealtimeData(ortb2, cachedEncRtd, 504);
+      dapUtils.checkAndAddRealtimeData(ortb2, cachedEncRtd, 504);
+      expect(ortb2.user.data).to.deep.include.members([encRtdUserObj]);
+      dapUtils.checkAndAddRealtimeData(ortb2, cachedRtd, 503);
+      expect(ortb2.user.data).to.deep.include.members([rtdUserObj]);
     });
   });
 
@@ -419,7 +425,7 @@ describe('akamaiDapRtdProvider', function() {
 
   describe('dapRefreshToken test', function () {
     it('test dapRefreshToken success response', function () {
-      dapUtils.dapRefreshToken(sampleConfig, true, onDone)
+      dapUtils.dapRefreshToken(ortb2, sampleConfig, true, onDone)
       let request = server.requests[0];
       responseHeader['Akamai-DAP-Token'] = sampleCachedToken.token;
       request.respond(200, responseHeader, JSON.stringify(sampleCachedToken.token));
@@ -427,7 +433,7 @@ describe('akamaiDapRtdProvider', function() {
     });
 
     it('test dapRefreshToken success response with deviceid 100', function () {
-      dapUtils.dapRefreshToken(esampleConfig, true, onDone)
+      dapUtils.dapRefreshToken(ortb2, esampleConfig, true, onDone)
       let request = server.requests[0];
       responseHeader['Akamai-DAP-100'] = sampleCachedToken.token;
       request.respond(200, responseHeader, '');
@@ -435,7 +441,7 @@ describe('akamaiDapRtdProvider', function() {
     });
 
     it('test dapRefreshToken success response with exp claim', function () {
-      dapUtils.dapRefreshToken(sampleConfig, true, onDone)
+      dapUtils.dapRefreshToken(ortb2, sampleConfig, true, onDone)
       let request = server.requests[0];
       let tokenWithExpiry = 'eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2Iiwia2lkIjoicGFzc3dvcmQxIiwiZXhwIjoxNjQzODMwMzY5fQ..hTbcSQgmmO0HUJJrQ5fRHw.7zjrQXNNVkb-GD0ZhIVhEPcWbyaDBilHTWv-bp1lFZ9mdkSC0QbcAvUbYteiTD7ya23GUwcL2WOW8WgRSHaWHOJe0B5NDqfdUGTzElWfu7fFodRxRgGmwG8Rq5xxteFKLLGHLf1mFYRJKDtjtgajGNUKIDfn9AEt-c5Qz4KU8VolG_KzrLROx-f6Z7MnoPTcwRCj0WjXD6j2D6RAZ80-mKTNIsMIELdj6xiabHcjDJ1WzwtwCZSE2y2nMs451pSYp8W-bFPfZmDDwrkjN4s9ASLlIXcXgxK-H0GsiEbckQOZ49zsIKyFtasBvZW8339rrXi1js-aBh99M7aS5w9DmXPpUDmppSPpwkeTfKiqF0cQiAUq8tpeEQrGDJuw3Qt2.XI8h9Xw-VZj_NOmKtV19wLM63S4snos7rzkoHf9FXCw'
       responseHeader['Akamai-DAP-Token'] = tokenWithExpiry;
@@ -445,7 +451,7 @@ describe('akamaiDapRtdProvider', function() {
 
     it('test dapRefreshToken error response', function () {
       storage.setDataInLocalStorage(DAP_TOKEN, JSON.stringify(sampleCachedToken));
-      dapUtils.dapRefreshToken(sampleConfig, false, onDone)
+      dapUtils.dapRefreshToken(ortb2, sampleConfig, false, onDone)
       let request = server.requests[0];
       request.respond(400, responseHeader, 'error');
       expect(JSON.parse(storage.getDataFromLocalStorage(DAP_TOKEN)).expires_at).to.be.equal(cacheExpiry);// Since the expiry is same, the token is not updated in the cache
@@ -456,35 +462,35 @@ describe('akamaiDapRtdProvider', function() {
     it('test dapRefreshEncryptedMembership success response', function () {
       let expiry = Math.round(Date.now() / 1000.0) + 3600; // in seconds
       let encMembership = 'eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2Iiwia2lkIjoic29tZXNlY3JldGludmF1bHQifQ..f8_At4OqeQXyQcSwThOJ_w.69ImVQ3bEZ6QP7ROCRpAJjNcKY49SEPYR6qTp_8l7L8kQdPbpi4wmuOzt78j7iBrX64k2wltzmQFjDmVKSxDhrEguxpgx6t-L1tT8ZA0UosMWpVsgmKEZxOn2e9ES3jw8RNCS4WSWocSPQX33xSb51evXjm9E1s0tGoLnwXl0GsUvzRsSU86wQG6RZnAQTi7s-r-M2TKibdDjUqgIt62vJ-aBZ7RWw91MINgOdmDNs1bFfbBX5Cy1kd4-kjvRDz_aJ6zHX4sK_7EmQhGEY3tW-A3_l2I88mw-RSJaPkb_IWg0QpVwXDaE2F2g8NpY1PzCRvG_NIE8r28eK5q44OMVitykHmKmBXGDj7z2JVgoXkfo5u0I-dypZARn4GP_7niK932avB-9JD7Mz3TrlU4GZ7IpYfJ91PMsRhrs5xNPQwLZbpuhF76A7Dp7iss71UjkGCiPTU6udfRb4foyf_7xEF66m1eQVcVaMdxEbMuu9GBfdr-d04TbtJhPfUV8JfxTenvRYoi13n0j5kH0M5OgaSQD9kQ3Mrd9u-Cms-BGtT0vf-N8AaFZY_wn0Y4rkpv5HEaH7z3iT4RCHINWrXb_D0WtjLTKQi2YmF8zMlzUOewNJGwZRwbRwxc7JoDIKEc5RZkJYevfJXOEEOPGXZ7AGZxOEsJawPqFqd_nOUosCZS4akHhcDPcVowoecVAV0hhhoS6JEY66PhPp1snbt6yqA-fQhch7z8Y-DZT3Scibvffww3Scg_KFANWp0KeEvHG0vyv9R2F4o66viSS8y21MDnM7Yjk8C-j7aNMldUQbjN_7Yq1nkfe0jiBX_hsINBRPgJHUY4zCaXuyXs-JZZfU92nwG0RT3A_3RP2rpY8-fXp9d3C2QJjEpnmHvTMsuAZCQSBe5DVrJwN_UKedxcJEoOt0wLz6MaCMyYZPd8tnQeqYK1cd3RgQDXtzKC0HDw1En489DqJXEst4eSSkaaW1lImLeaF8XCOaIqPqoyGk4_6KVLw5Q7OnpczuXqYKMd9UTMovGeuTuo1k0ddfEqTq9QwxkwZL51AiDRnwTCAeYBU1krV8FCJQx-mH_WPB5ftZj-o_3pbvANeRk27QBVmjcS-tgDllJkWBxX-4axRXzLw8pUUUZUT_NOL0OiqUCWVm0qMBEpgRQ57Se42-hkLMTzLhhGJOnVcaXU1j4ep-N7faNvbgREBjf_LgzvaWS90a2NJ9bB_J9FyXelhCN_AMLfdOS3fHkeWlZ0u0PMbn5DxXRMe0l9jB-2VJZhcPQRlWoYyoCO3l4F5ZmuQP5Xh9CU4tvSWih6jlwMDgdVWuTpdfPD5bx8ccog3JDq87enx-QtPzLU3gMgouNARJGgNwKS_GJSE1uPrt2oiqgZ3Z0u_I5MKvPdQPV3o-4rsaE730eB4OwAOF-mkGWpzy8Pbl-Qe5PR9mHBhuyJgZ-WDSCHl5yvet2kfO9mPXZlqBQ26fzTcUYH94MULAZn36og6w.3iKGv-Le-AvRmi26W1v6ibRLGbwKbCR92vs-a9t55hw';
-      dapUtils.dapRefreshEncryptedMembership(esampleConfig, sampleCachedToken.token, onDone)
+      dapUtils.dapRefreshEncryptedMembership(ortb2, esampleConfig, sampleCachedToken.token, onDone)
       let request = server.requests[0];
       responseHeader['Akamai-DAP-Token'] = encMembership;
       request.respond(200, responseHeader, encMembership);
       let rtdObj = dapUtils.dapGetEncryptedRtdObj({'encryptedSegments': encMembership}, 504)
-      expect(config.getConfig().ortb2.user.data).to.deep.include.members(rtdObj.rtd.ortb2.user.data);
+      expect(ortb2.user.data).to.deep.include.members(rtdObj.rtd.ortb2.user.data);
       expect(JSON.parse(storage.getDataFromLocalStorage(DAP_ENCRYPTED_MEMBERSHIP)).expires_at).to.equal(expiry);
     });
 
     it('test dapRefreshEncryptedMembership success response with exp claim', function () {
       let encMembership = 'eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2Iiwia2lkIjoic29tZXNlY3JldGludmF1bHQiLCJleHAiOjE2NDM4MzA2NDB9..inYoxwht_aqTIWqGhEm_Gw.wDcCUOCwtqgnNUouaD723gKfm7X7bgkHgtiX4mr07P3tWk25PUQunmwTLhWBB5CYzzGIfIvveG_u4glNRLi_eRSQV4ihKKk1AN-BSSJ3d0CLAdY9I1WG5vX1VmopXyKnV90bl9SLNqnhg4Vxe6YU4ogTYxsKHuIN1EeIH4hpl-HbCQWQ1DQt4mB-MQF8V9AWTfU0D7sFMSK8f9qj6NGmf1__oHdHUlws0t5V2UAn_dhJexsuREK_gh65pczCuly5eEcziZ82LeP-nOhKWSRHB_tS_mKXrRU6_At_EVDgtfA3PSBJ6eQylCii6bTL42vZzz4jZhJv_3eLfRdKqpVT5CWNBzcDoQ2VcQgKgIBtPJ45KFfAYTQ6kdl21QMSjqtu8GTsv1lEZtrqHY6zRiG8_Mu28-PmjEw4LDdZmBDOeroue_MJD6wuE_jlE7J2iVdo8CkVnoRgzFwNbKBo7CK4z0WahV9rhuOm0LKAN5H0jF_gj696U-3fVTDTIb8ndNKNI2_xAhvWs00BFGtUtWgr8QGDGRTDCNGsDgnb_Vva9xCqVOyAE9O3Fq1QYl-tMA-KkBt3zzvmFFpOxpOyH-lUubKLKlsrxKc3GSyVEQ9DDLhrXXJgR5H5BSE4tjlK7p3ODF5qz0FHtIj7oDcgLazFO7z2MuFy2LjJmd3hKl6ujcfYEDiQ4D3pMIo7oiU33aFBD1YpzI4-WzNfJlUt1FoK0-DAXpbbV95s8p08GOD4q81rPw5hRADKJEr0QzrbDwplTWCzT2fKXMg_dIIc5AGqGKnVRUS6UyF1DnHpudNIJWxyWZjWIEw_QNjU0cDFmyPSyKxNrnfq9w8WE2bfbS5KTicxei5QHnC-cnL7Nh7IXp7WOW6R1YHbNPT7Ad4OhnlV-jjrXwkSv4wMAbfwAWoSCchGh7uvENNAeJymuponlJbOgw_GcYM73hMs8Z8W9qxRfbyF4WX5fDKXg61mMlaieHkc0EnoC5q7uKyXuZUehHZ76JLDFmewslLkQq5SkVCttzJePBnY1ouPEHw5ZTzUnG5f01QQOVcjIN-AqXNDbG5IOwq0heyS6vVfq7lZKJdLDVQ21qRjazGPaqYwLzugkWkzCOzPTgyFdbXzgjfmJwylHSOM5Jpnul84GzxEQF-1mHP2A8wtIT-M7_iX24It2wwWvc8qLA6GEqruWCtNyoug8CXo44mKdSSCGeEZHtfMbzXdLIBHCy2jSHz5i8S7DU_R7rE_5Ssrb81CqIYbgsAQBHtOYoyvzduTOruWcci4De0QcULloqImIEHUuIe2lnYO889_LIx5p7nE3UlSvLBo0sPexavFUtHqI6jdG6ye9tdseUEoNBDXW0aWD4D-KXX1JLtAgToPVUtEaXCJI7QavwO9ZG6UZM6jbfuJ5co0fvUXp6qYrFxPQo2dYHkar0nT6s1Zg5l2g8yWlLUJrHdHAzAw_NScUp71OpM4TmNsLnYaPVPcOxMvtJXTanbNWr0VKc8gy9q3k_1XxAnQwiduNs7f5bA-6qCVpayHv5dE7mUhFEwyh1_w95jEaURsQF_hnnd2OqRkADfiok4ZiPU2b38kFW1LXjpI39XXES3JU0e08Rq2uuelyLbCLWuJWq_axuKSZbZvpYeqWtIAde8FjCiO7RPlEc0nyzWBst8RBxQ-Bekg9UXPhxBRcm0HwA.Q2cBSFOQAC-QKDwmjrQXnVQd3jNOppMl9oZfd2yuKeY';
-      dapUtils.dapRefreshEncryptedMembership(esampleConfig, sampleCachedToken.token, onDone)
+      dapUtils.dapRefreshEncryptedMembership(ortb2, esampleConfig, sampleCachedToken.token, onDone)
       let request = server.requests[0];
       responseHeader['Akamai-DAP-Token'] = encMembership;
       request.respond(200, responseHeader, encMembership);
       let rtdObj = dapUtils.dapGetEncryptedRtdObj({'encryptedSegments': encMembership}, 504)
-      expect(config.getConfig().ortb2.user.data).to.deep.include.members(rtdObj.rtd.ortb2.user.data);
+      expect(ortb2.user.data).to.deep.include.members(rtdObj.rtd.ortb2.user.data);
       expect(JSON.parse(storage.getDataFromLocalStorage(DAP_ENCRYPTED_MEMBERSHIP)).expires_at).to.equal(1643830630);
     });
 
     it('test dapRefreshEncryptedMembership error response', function () {
-      dapUtils.dapRefreshEncryptedMembership(esampleConfig, sampleCachedToken.token, onDone)
+      dapUtils.dapRefreshEncryptedMembership(ortb2, esampleConfig, sampleCachedToken.token, onDone)
       let request = server.requests[0];
       request.respond(400, responseHeader, 'error');
-      expect(config.getConfig().ortb2).to.be.equal(undefined);
+      expect(ortb2).to.eql({});
     });
 
     it('test dapRefreshEncryptedMembership 403 error response', function () {
-      dapUtils.dapRefreshEncryptedMembership(esampleConfig, sampleCachedToken.token, onDone)
+      dapUtils.dapRefreshEncryptedMembership(ortb2, esampleConfig, sampleCachedToken.token, onDone)
       let request = server.requests[0];
       request.respond(403, responseHeader, 'error');
       let requestTokenize = server.requests[1];
@@ -499,32 +505,32 @@ describe('akamaiDapRtdProvider', function() {
   describe('dapRefreshMembership test', function () {
     it('test dapRefreshMembership success response', function () {
       let membership = {'cohorts': ['9', '11', '13'], 'said': 'eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2Iiwia2lkIjoicGFzc3dvcmQxIn0..17wnrhz6FbWx0Cf6LXpm1A.m9PKVCradk3CZokNKzVHzE06TOqiXYeijgxTQUiQy5Syx-yicnO8DyYX6zQ6rgPcNgUNRt4R4XE5MXuK0laUVQJr9yc9g3vUfQfw69OMYGW_vRlLMPzoNOhF2c4gSyfkRrLr7C0qgALmZO1D11sPflaCTNmO7pmZtRaCOB5buHoWcQhp1bUSJ09DNDb31dX3llimPwjNGSrUhyq_EZl4HopnnjxbM4qVNMY2G_43C_idlVOvbFoTxcDRATd-6MplJoIOIHQLDZEetpIOVcbEYN9gQ_ndBISITwuu5YEgs5C_WPHA25nm6e4BT5R-tawSA8yPyQAupqE8gk4ZWq_2-T0cqyTstIHrMQnZ_vysYN7h6bkzE-KeZRk7GMtySN87_fiu904hLD9QentGegamX6UAbVqQh7Htj7SnMHXkEenjxXAM5mRqQvNCTlw8k-9-VPXs-vTcKLYP8VFf8gMOmuYykgWac1gX-svyAg-24mo8cUbqcsj9relx4Qj5HiXUVyDMBZxK-mHZi-Xz6uv9GlggcsjE13DSszar-j2OetigpdibnJIxRZ-4ew3-vlvZ0Dul3j0LjeWURVBWYWfMjuZ193G7lwR3ohh_NzlNfwOPBK_SYurdAnLh7jJgTW-lVLjH2Dipmi9JwX9s03IQq9opexAn7hlM9oBI6x5asByH8JF8WwZ5GhzDjpDwpSmHPQNGFRSyrx_Sh2CPWNK6C1NJmLkyqAtJ5iw0_al7vPDQyZrKXaLTjBCUnbpJhUZ8dUKtWLzGPjzFXp10muoDIutd1NfyKxk1aWGhx5aerYuLdywv6cT_M8RZTi8924NGj5VA30V5OvEwLLyX93eDhntXZSCbkPHpAfiRZNGXrPY.GhCbWGQz11mIRD4uPKmoAuFXDH7hGnils54zg7N7-TU'}
-      dapUtils.dapRefreshMembership(sampleConfig, sampleCachedToken.token, onDone);
+      dapUtils.dapRefreshMembership(ortb2, sampleConfig, sampleCachedToken.token, onDone);
       let request = server.requests[0];
       request.respond(200, responseHeader, JSON.stringify(membership));
       let rtdObj = dapUtils.dapGetRtdObj(membership, 503);
-      expect(config.getConfig().ortb2.user.data).to.deep.include.members(rtdObj.rtd.ortb2.user.data);
+      expect(ortb2.user.data).to.deep.include.members(rtdObj.rtd.ortb2.user.data);
     });
 
     it('test dapRefreshMembership success response with exp claim', function () {
       let membership = {'cohorts': ['9', '11', '13'], 'said': 'eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2Iiwia2lkIjoicGFzc3dvcmQxIiwiZXhwIjoxNjQ3OTcxNTU4fQ..ptdM5WO-62ypXlKxFXD4FQ.waEo9MHS2NYQCi-zh_p6HgT9BdqGyQbBq4GfGLfsay4nRBgICsTS-VkV6e7xx5U1T8BgpKkRJIZBwTOY5Pkxk9FpK5nnffDSEljRrp1LXLCkNP4qwrlqHInFbZsonNWW4_mW-7aUPlTwIsTbfjTuyHdXHeQa1ALrwFFFWE7QUmPNd2RsHjDwUsxlJPEb5TnHn5W0Mgo_PQZaxvhJInMbxPgtJLoqnJvOqCBEoQY7au7ALZL_nWK8XIwPMF19J7Z3cBg9vQInhr_E3rMdQcAFHEzYfgoNcIYCCR0t1UOqUE3HNtX-E64kZAYKWdlsBb9eW5Gj9hHYyPNL_4Hntjg5eLXGpsocMg0An-qQKGC6hkrxKzeM-GrjpvSaQLNs4iqDpHUtzA02LW_vkLkMNRUiyXVJ3FUZwfyq6uHSRKWZ6UFdAfL0rfJ8q8x8Ll-qJO2Jfyvidlsi9FIs7x1WJrvDCKepfAQM1UXRTonrQljFBAk83PcL2bmWuJDgJZ0lWS4VnZbIf6A7fDourmkDxdVRptvQq5nSjtzCA6whRw0-wGz8ehNJsaJw9H_nG9k4lRKs7A5Lqsyy7TVFrAPjnA_Q1a2H6xF2ULxrtIqoNqdX7k9RjowEZSQlZgZUOAmI4wzjckdcSyC_pUlYBMcBwmlld34mmOJe9EBHAxjdci7Q_9lvj1HTcwGDcQITXnkW9Ux5Jkt9Naw-IGGrnEIADaT2guUAto8W_Gb05TmwHSd6DCmh4zepQCbqeVe6AvPILtVkTgsTTo27Q-NvS7h-XtthJy8425j5kqwxxpZFJ0l0ytc6DUyNCLJXuxi0JFU6-LoSXcROEMVrHa_Achufr9vHIELwacSAIHuwseEvg_OOu1c1WYEwZH8ynBLSjqzy8AnDj24hYgA0YanPAvDqacrYrTUFqURbHmvcQqLBTcYa_gs7uDx4a1EjtP_NvHRlvCgGAaASrjGMhTX8oJxlTqahhQ.pXm-7KqnNK8sbyyczwkVYhcjgiwkpO8LjBBVw4lcyZE'};
-      dapUtils.dapRefreshMembership(sampleConfig, sampleCachedToken.token, onDone);
+      dapUtils.dapRefreshMembership(ortb2, sampleConfig, sampleCachedToken.token, onDone);
       let request = server.requests[0];
       request.respond(200, responseHeader, JSON.stringify(membership));
       let rtdObj = dapUtils.dapGetRtdObj(membership, 503)
-      expect(config.getConfig().ortb2.user.data).to.deep.include.members(rtdObj.rtd.ortb2.user.data);
+      expect(ortb2.user.data).to.deep.include.members(rtdObj.rtd.ortb2.user.data);
       expect(JSON.parse(storage.getDataFromLocalStorage(DAP_MEMBERSHIP)).expires_at).to.be.equal(1647971548);
     });
 
     it('test dapRefreshMembership 400 error response', function () {
-      dapUtils.dapRefreshMembership(sampleConfig, sampleCachedToken.token, onDone)
+      dapUtils.dapRefreshMembership(ortb2, sampleConfig, sampleCachedToken.token, onDone)
       let request = server.requests[0];
       request.respond(400, responseHeader, 'error');
-      expect(config.getConfig().ortb2).to.be.equal(undefined);
+      expect(ortb2).to.eql({});
     });
 
     it('test dapRefreshMembership 403 error response', function () {
-      dapUtils.dapRefreshMembership(sampleConfig, sampleCachedToken.token, onDone)
+      dapUtils.dapRefreshMembership(ortb2, sampleConfig, sampleCachedToken.token, onDone)
       let request = server.requests[0];
       request.respond(403, responseHeader, 'error');
       expect(server.requests.length).to.be.equal(DAP_MAX_RETRY_TOKENIZE);
@@ -548,7 +554,7 @@ describe('akamaiDapRtdProvider', function() {
   describe('Akamai-DAP-SS-ID test', function () {
     it('Akamai-DAP-SS-ID present in response header', function () {
       let expiry = Math.round(Date.now() / 1000.0) + 300; // in seconds
-      dapUtils.dapRefreshToken(sampleConfig, false, onDone)
+      dapUtils.dapRefreshToken(ortb2, sampleConfig, false, onDone)
       let request = server.requests[0];
       let sampleSSID = 'Test_SSID_Spec';
       responseHeader['Akamai-DAP-Token'] = sampleCachedToken.token;
@@ -560,7 +566,7 @@ describe('akamaiDapRtdProvider', function() {
     it('Test if Akamai-DAP-SS-ID is present in request header', function () {
       let expiry = Math.round(Date.now() / 1000.0) + 100; // in seconds
       storage.setDataInLocalStorage(DAP_SS_ID, JSON.stringify('Test_SSID_Spec'))
-      dapUtils.dapRefreshToken(sampleConfig, false, onDone)
+      dapUtils.dapRefreshToken(ortb2, sampleConfig, false, onDone)
       let request = server.requests[0];
       let ssidHeader = request.requestHeaders['Akamai-DAP-SS-ID'];
       responseHeader['Akamai-DAP-Token'] = sampleCachedToken.token;

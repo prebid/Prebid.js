@@ -287,6 +287,7 @@ function generateBidParameters(bid, bidderRequest) {
     floorPrice: Math.max(getFloor(bid, mediaType), params.floorPrice),
     bidId: getBidIdParameter('bidId', bid),
     bidderRequestId: getBidIdParameter('bidderRequestId', bid),
+    loop: getBidIdParameter('bidderRequestsCount', bid),
     transactionId: getBidIdParameter('transactionId', bid),
   };
 
@@ -390,7 +391,7 @@ function generateGeneralParams(generalObject, bidderRequest) {
     generalParams.userIds = JSON.stringify(userIdsParam);
   }
 
-  const ortb2Metadata = config.getConfig('ortb2') || {};
+  const ortb2Metadata = bidderRequest.ortb2 || {};
   if (ortb2Metadata.site) {
     generalParams.site_metadata = JSON.stringify(ortb2Metadata.site);
   }
@@ -423,8 +424,10 @@ function generateGeneralParams(generalObject, bidderRequest) {
   }
 
   if (bidderRequest && bidderRequest.refererInfo) {
-    generalParams.referrer = deepAccess(bidderRequest, 'refererInfo.referer');
-    generalParams.page_url = config.getConfig('pageUrl') || deepAccess(window, 'location.href');
+    // TODO: is 'ref' the right value here?
+    generalParams.referrer = deepAccess(bidderRequest, 'refererInfo.ref');
+    // TODO: does the fallback make sense here?
+    generalParams.page_url = deepAccess(bidderRequest, 'refererInfo.page') || deepAccess(window, 'location.href');
   }
 
   return generalParams

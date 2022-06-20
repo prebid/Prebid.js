@@ -153,6 +153,7 @@ import {
 } from '../../src/utils.js';
 import {getPPID as coreGetPPID} from '../../src/adserver.js';
 import {promiseControls} from '../../src/utils/promise.js';
+import {hasPurpose1Consent} from '../../src/utils/gpdr.js';
 
 const MODULE_NAME = 'User ID';
 const COOKIE = 'cookie';
@@ -336,26 +337,6 @@ function storedConsentDataMatchesConsentData(storedConsentData, consentData) {
     storedConsentData !== null &&
     storedConsentData === makeStoredConsentDataHash(consentData)
   );
-}
-
-/**
- * test if consent module is present, applies, and is valid for local storage or cookies (purpose 1)
- * @param {ConsentData} consentData
- * @returns {boolean}
- */
-function hasGDPRConsent(consentData) {
-  if (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) {
-    if (!consentData.consentString) {
-      return false;
-    }
-    if (consentData.apiVersion === 1 && deepAccess(consentData, 'vendorData.purposeConsents.1') === false) {
-      return false;
-    }
-    if (consentData.apiVersion === 2 && deepAccess(consentData, 'vendorData.purpose.consents.1') === false) {
-      return false;
-    }
-  }
-  return true;
 }
 
 /**
@@ -850,7 +831,7 @@ function populateSubmoduleId(submodule, consentData, storedConsentData, forceRef
 function initSubmodules(dest, submodules, consentData, forceRefresh = false) {
   // gdpr consent with purpose one is required, otherwise exit immediately
   let { userIdModules, hasValidated } = validateGdprEnforcement(submodules, consentData);
-  if (!hasValidated && !hasGDPRConsent(consentData)) {
+  if (!hasValidated && !hasPurpose1Consent(consentData)) {
     logWarn(`${MODULE_NAME} - gdpr permission not valid for local storage or cookies, exit module`);
     return [];
   }

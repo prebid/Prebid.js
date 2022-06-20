@@ -209,7 +209,8 @@ describe('SSPBC adapter', function () {
       gdprConsent,
       refererInfo: {
         reachedTop: true,
-        referer: 'https://test.site.pl/',
+        page: 'https://test.site.pl/',
+        domain: 'test.site.pl',
         stack: ['https://test.site.pl/'],
       }
     };
@@ -221,7 +222,8 @@ describe('SSPBC adapter', function () {
       gdprConsent,
       refererInfo: {
         reachedTop: true,
-        referer: 'https://test.site.pl/',
+        page: 'https://test.site.pl/',
+        domain: 'test.site.pl',
         stack: ['https://test.site.pl/'],
       }
     };
@@ -233,7 +235,8 @@ describe('SSPBC adapter', function () {
       gdprConsent,
       refererInfo: {
         reachedTop: true,
-        referer: 'https://test.site.pl/',
+        page: 'https://test.site.pl/',
+        domain: 'test.site.pl',
         stack: ['https://test.site.pl/'],
       }
     };
@@ -245,7 +248,8 @@ describe('SSPBC adapter', function () {
       gdprConsent,
       refererInfo: {
         reachedTop: true,
-        referer: 'https://test.site.pl/',
+        page: 'https://test.site.pl/',
+        domain: 'test.site.pl',
         stack: ['https://test.site.pl/'],
       }
     };
@@ -257,7 +261,8 @@ describe('SSPBC adapter', function () {
       gdprConsent,
       refererInfo: {
         reachedTop: true,
-        referer: 'https://test.site.pl/',
+        page: 'https://test.site.pl/',
+        domain: 'test.site.pl',
         stack: ['https://test.site.pl/'],
       }
     };
@@ -269,7 +274,8 @@ describe('SSPBC adapter', function () {
       gdprConsent,
       refererInfo: {
         reachedTop: true,
-        referer: 'https://test.site.pl/',
+        page: 'https://test.site.pl/',
+        domain: 'test.site.pl',
         stack: ['https://test.site.pl/'],
       }
     };
@@ -280,7 +286,8 @@ describe('SSPBC adapter', function () {
       bids: bids_test,
       refererInfo: {
         reachedTop: true,
-        referer: 'https://test.site.pl/',
+        page: 'https://test.site.pl/',
+        domain: 'test.site.pl',
         stack: ['https://test.site.pl/'],
       }
     };
@@ -511,7 +518,7 @@ describe('SSPBC adapter', function () {
     });
 
     it('should send page url from refererInfo', function () {
-      expect(payload.site.page).to.equal(bidRequest.refererInfo.referer);
+      expect(payload.site.page).to.equal(bidRequest.refererInfo.page);
     });
 
     it('should send gdpr data', function () {

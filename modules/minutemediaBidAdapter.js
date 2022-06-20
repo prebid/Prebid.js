@@ -390,7 +390,7 @@ function generateGeneralParams(generalObject, bidderRequest) {
     generalParams.userIds = JSON.stringify(userIdsParam);
   }
 
-  const ortb2Metadata = config.getConfig('ortb2') || {};
+  const ortb2Metadata = bidderRequest.ortb2 || {};
   if (ortb2Metadata.site) {
     generalParams.site_metadata = JSON.stringify(ortb2Metadata.site);
   }
@@ -423,8 +423,8 @@ function generateGeneralParams(generalObject, bidderRequest) {
   }
 
   if (bidderRequest && bidderRequest.refererInfo) {
-    generalParams.referrer = deepAccess(bidderRequest, 'refererInfo.referer');
-    generalParams.page_url = config.getConfig('pageUrl') || deepAccess(window, 'location.href');
+    generalParams.referrer = deepAccess(bidderRequest, 'refererInfo.ref');
+    generalParams.page_url = deepAccess(bidderRequest, 'refererInfo.page') || window.location.href
   }
 
   return generalParams

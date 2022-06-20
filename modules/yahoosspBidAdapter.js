@@ -3,6 +3,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { deepAccess, isFn, isStr, isNumber, isArray, isEmpty, isPlainObject, generateUUID, logInfo, logWarn } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
+import {hasPurpose1Consent} from '../src/utils/gpdr.js';
 
 const INTEGRATION_METHOD = 'prebid.js';
 const BIDDER_CODE = 'yahoossp';
@@ -54,14 +55,6 @@ const SUPPORTED_USER_ID_SOURCES = [
 ];
 
 /* Utility functions */
-function hasPurpose1Consent(bidderRequest) {
-  if (bidderRequest && bidderRequest.gdprConsent) {
-    if (bidderRequest.gdprConsent.gdprApplies && bidderRequest.gdprConsent.apiVersion === 2) {
-      return deepAccess(bidderRequest.gdprConsent, 'vendorData.purpose.consents.1') === true;
-    }
-  }
-  return true;
-}
 
 function getSize(size) {
   return {
@@ -239,7 +232,7 @@ function generateOpenRtbObject(bidderRequest, bid) {
       cur: [getFloorModuleData(bidderRequest).currency || deepAccess(bid, 'params.bidOverride.cur') || DEFAULT_CURRENCY],
       imp: [],
       site: {
-        page: deepAccess(bidderRequest, 'refererInfo.referer'),
+        page: deepAccess(bidderRequest, 'refererInfo.page'),
       },
       device: {
         dnt: 0,
@@ -284,7 +277,7 @@ function generateOpenRtbObject(bidderRequest, bid) {
       outBoundBidRequest.site.id = bid.params.dcn;
     };
 
-    if (config.getConfig('ortb2')) {
+    if (bidderRequest.ortb2) {
       outBoundBidRequest = appendFirstPartyData(outBoundBidRequest, bid);
     };
 
@@ -376,7 +369,7 @@ function appendImpObject(bid, openRtbObject) {
 };
 
 function appendFirstPartyData(outBoundBidRequest, bid) {
-  const ortb2Object = config.getConfig('ortb2');
+  const ortb2Object = bid.ortb2;
   const siteObject = deepAccess(ortb2Object, 'site') || undefined;
   const siteContentObject = deepAccess(siteObject, 'content') || undefined;
   const siteContentDataArray = deepAccess(siteObject, 'content.data') || undefined;
@@ -547,7 +540,7 @@ export const spec = {
       }
     };
 
-    requestOptions.withCredentials = hasPurpose1Consent(bidderRequest);
+    requestOptions.withCredentials = hasPurpose1Consent(bidderRequest.gdprConsent);
 
     const filteredBidRequests = filterBidRequestByMode(validBidRequests);
 

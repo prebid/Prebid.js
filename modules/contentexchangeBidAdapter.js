@@ -127,7 +127,7 @@ export const spec = {
       winLocation = window.location;
     }
 
-    const refferUrl = bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
+    const refferUrl = bidderRequest.refererInfo && bidderRequest.refererInfo.page;
     let refferLocation;
     try {
       refferLocation = refferUrl && new URL(refferUrl);
@@ -135,6 +135,7 @@ export const spec = {
       logMessage(e);
     }
 
+    // TODO: does the fallback to 'window.location' make sense?
     let location = refferLocation || winLocation;
     const language = (navigator && navigator.language) ? navigator.language.split('-')[0] : '';
     const host = location.host;

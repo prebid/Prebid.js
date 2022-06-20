@@ -262,19 +262,11 @@ function buildBanner(bid) {
 
 function buildSite(bidderRequest) {
   let site = {};
-  if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
-    site.page = bidderRequest.refererInfo.referer;
-    site.domain = getDomain(bidderRequest.refererInfo.referer);
+  if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page) {
+    site.page = bidderRequest.refererInfo.page;
+    site.domain = bidderRequest.refererInfo.domain;
   }
   return site;
-}
-
-function getDomain(referer) {
-  if (referer) {
-    let domainA = document.createElement('a');
-    domainA.href = referer;
-    return domainA.hostname;
-  }
 }
 
 function buildDevice() {
