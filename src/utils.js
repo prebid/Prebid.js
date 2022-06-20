@@ -2,6 +2,7 @@ import { config } from './config.js';
 import clone from 'just-clone';
 import {find, includes} from './polyfill.js';
 import CONSTANTS from './constants.json';
+import {replaceHTML} from './utils/writeHTML.js';
 export { default as deepAccess } from 'dlv/index.js';
 export { default as deepSetValue } from 'dset';
 
@@ -581,9 +582,7 @@ export function insertHtmlIntoIframe(htmlCode) {
 
   internal.insertElement(iframe, document, 'body');
 
-  iframe.contentWindow.document.open();
-  iframe.contentWindow.document.write(htmlCode);
-  iframe.contentWindow.document.close();
+  replaceHTML(iframe.contentDocument.body, htmlCode);
 }
 
 /**
