@@ -3,24 +3,17 @@ import { spec } from 'modules/jwplayerBidAdapter.js';
 import { config } from 'src/config.js';
 
 describe('jwplayer adapter tests', function() {
-  var sandbox, clock, frozenNow = new Date();
-
   beforeEach(function() {
     this.defaultBidderRequest = {
       'gdprConsent': {
         'consentString': '',
         'gdprApplies': true
       },
-      'uspConsent': true
+      'uspConsent': true,
+      'refererInfo': {
+        'referer': 'https://example.com'
+      }
     }
-
-    sandbox = sinon.sandbox.create();
-    clock = sinon.useFakeTimers(frozenNow.getTime());
-  });
-
-  afterEach(function() {
-    sandbox.restore();
-    clock.restore();
   });
 
   describe('isBidRequestValid', function() {
@@ -65,6 +58,19 @@ describe('jwplayer adapter tests', function() {
         }
       ]
 
+      let sandbox = sinon.sandbox.create();
+      sandbox.stub(config, 'getConfig').callsFake((key) => {
+        const config = {
+          'ortb2': {
+            site: {
+              domain: 'page.example.com',
+              page: 'https://examplepage.com'
+            }
+          }
+        };
+        return config[key];
+      })
+
       const serverRequests = spec.buildRequests(bidRequests, this.defaultBidderRequest);
 
       /* eslint-disable no-console */
@@ -80,6 +86,13 @@ describe('jwplayer adapter tests', function() {
 
         expect(openrtbRequest.site).to.not.equal(null);
         expect(openrtbRequest.site).to.be.an('object');
+        expect(openrtbRequest.site.domain).to.be.a('string');
+        expect(openrtbRequest.site.domain).to.equal('page.example.com');
+        expect(openrtbRequest.site.page).to.be.a('string');
+        expect(openrtbRequest.site.page).to.equal('https://examplepage.com');
+        expect(openrtbRequest.site.ref).to.be.a('string');
+        expect(openrtbRequest.site.ref).to.equal('https://example.com');
+
         expect(openrtbRequest.device).to.not.equal(null);
         expect(openrtbRequest.device.ua).to.equal(navigator.userAgent);
 

@@ -1,7 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO } from '../src/mediaTypes.js';
 import {
-  isPlainObject,
   isFn,
   deepAccess,
   deepSetValue } from '../src/utils.js';
@@ -172,7 +171,9 @@ function buildBidFloorData(bidRequest) {
 }
 
 function buildRequestSite(bidRequest) {
+  /* eslint-disable no-console */
   const site = config.getConfig('ortb2.site') || {};
+  console.log(site);
 
   site.domain = site.domain || config.publisherDomain || window.location.hostname;
   site.page = site.page || config.pageUrl || window.location.href;
