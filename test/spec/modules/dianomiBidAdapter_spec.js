@@ -54,7 +54,7 @@ describe('Dianomi adapter', () => {
 
     describe('user privacy', () => {
       it('should send GDPR Consent data to Dianomi if gdprApplies', () => {
-        let validBidRequests = [{ bidId: 'bidId', params: { test: 1 } }];
+        let validBidRequests = [{ bidId: 'bidId', params: { smartadId: 1234 } }];
         let bidderRequest = {
           gdprConsent: { gdprApplies: true, consentString: 'consentDataString' },
           refererInfo: { referer: 'page' },
@@ -67,7 +67,7 @@ describe('Dianomi adapter', () => {
       });
 
       it('should send gdpr as number', () => {
-        let validBidRequests = [{ bidId: 'bidId', params: { test: 1 } }];
+        let validBidRequests = [{ bidId: 'bidId', params: { smartadId: 1234 } }];
         let bidderRequest = {
           gdprConsent: { gdprApplies: true, consentString: 'consentDataString' },
           refererInfo: { referer: 'page' },
