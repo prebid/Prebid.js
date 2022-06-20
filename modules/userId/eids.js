@@ -307,6 +307,12 @@ export const USER_IDS_CONFIG = {
     }
   },
 
+  // tncId
+  'tncid': {
+    source: 'thenewco.it',
+    atype: 3
+  },
+
   // Gravito MP ID
   'gravitompId': {
     source: 'gravito.net',

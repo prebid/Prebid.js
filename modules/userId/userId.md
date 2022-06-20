@@ -356,3 +356,20 @@ pbjs.setConfig({
     }
 });
 ```
+```
+
+Example showing how to configure a `params` object to pass directly to bid adapters
+
+```
+pbjs.setConfig({
+    userSync: {
+        userIds: [{
+            name: 'tncId',
+            params: {
+              providerId: "c8549079-f149-4529-a34b-3fa91ef257d1"
+            }
+        }],
+        syncDelay: 5000
+    }
+});
+```

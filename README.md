@@ -91,7 +91,7 @@ Or for Babel 6:
             }
 ```
 
-Then you can use Prebid.js as any other npm depedendency
+Then you can use Prebid.js as any other npm dependency
 
 ```javascript
 import pbjs from 'prebid.js';
