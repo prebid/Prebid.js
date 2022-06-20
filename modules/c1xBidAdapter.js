@@ -1,5 +1,6 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {logInfo, logError} from '../src/utils.js';
+import { BANNER } from '../src/mediaTypes.js';
 // import { userSync } from '../src/userSync.js';
 // import { bidderSettings } from '../src/bidderSettings.js';
 
@@ -20,6 +21,7 @@ const LOG_MSG = {
 
 export const c1xAdapter = {
   code: BIDDER_CODE,
+  supportedMediaTypes: [BANNER],
 
   /**
    * Determines whether or not the given bid request is valid.
