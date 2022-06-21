@@ -64,9 +64,9 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
       publisher: {
         id: String(deepAccess(validBidRequests[0], 'params.publisherId') || 0)
       },
-      domain: window.location.hostname,
-      page: window.location.href,
-      ref: bidderRequest.refererInfo.referer
+      domain: bidderRequest.refererInfo.domain,
+      page: bidderRequest.refererInfo.page,
+      ref: bidderRequest.refererInfo.ref
     },
     device: {
       language: navigator.language,

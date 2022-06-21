@@ -10,8 +10,7 @@ import { ADPOD } from './mediaTypes.js';
 import { hook } from './hook.js';
 import { bidderSettings } from './bidderSettings.js';
 import {includes, find} from './polyfill.js';
-
-var CONSTANTS = require('./constants.json');
+import CONSTANTS from './constants.json';
 
 var pbTargetingKeys = [];
 
@@ -177,7 +176,7 @@ export function newTargeting(auctionManager) {
    */
   function getDealBids(adUnitCodes, bidsReceived) {
     if (config.getConfig('targetingControls.alwaysIncludeDeals') === true) {
-      const standardKeys = TARGETING_KEYS.concat(NATIVE_TARGETING_KEYS);
+      const standardKeys = FEATURES.NATIVE ? TARGETING_KEYS.concat(NATIVE_TARGETING_KEYS) : TARGETING_KEYS.slice();
 
       // we only want the top bid from bidders who have multiple entries per ad unit code
       const bids = getHighestCpmBidsFromBidPool(bidsReceived, getHighestCpm);
@@ -584,7 +583,10 @@ export function newTargeting(auctionManager) {
   }
 
   function getCustomKeys() {
-    let standardKeys = getStandardKeys().concat(NATIVE_TARGETING_KEYS);
+    let standardKeys = getStandardKeys();
+    if (FEATURES.NATIVE) {
+      standardKeys = standardKeys.concat(NATIVE_TARGETING_KEYS);
+    }
     return function(key) {
       return standardKeys.indexOf(key) === -1;
     }
@@ -624,7 +626,7 @@ export function newTargeting(auctionManager) {
    * @return {targetingArray}   all non-winning bids targeting
    */
   function getBidLandscapeTargeting(adUnitCodes, bidsReceived) {
-    const standardKeys = TARGETING_KEYS.concat(NATIVE_TARGETING_KEYS);
+    const standardKeys = FEATURES.NATIVE ? TARGETING_KEYS.concat(NATIVE_TARGETING_KEYS) : TARGETING_KEYS.slice();
     const adUnitBidLimit = config.getConfig('sendBidsControl.bidLimit');
     const bids = getHighestCpmBidsFromBidPool(bidsReceived, getHighestCpm, adUnitBidLimit);
     const allowSendAllBidsTargetingKeys = config.getConfig('targetingControls.allowSendAllBidsTargetingKeys');

@@ -31,7 +31,8 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     const bidRequests = [];
-    const referer = bidderRequest.refererInfo.referer;
+    // TODO: is 'page' the right value?
+    const referer = bidderRequest.refererInfo.page;
 
     _each(validBidRequests, (request) => {
       const data = {};
