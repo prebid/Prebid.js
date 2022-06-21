@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import Adapter from '../../src/adapter.js';
 import {createBid} from '../../src/bidfactory.js';
 import {
