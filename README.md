@@ -207,6 +207,29 @@ This generates slightly larger files, but has the advantage of being much faster
 
 <a name="Run"></a>
 
+### Excluding particular features from the build
+
+Since version 7.2.0, you may instruct the build to exclude code for some features - for example, if you don't need support for native ads:
+
+```
+gulp build --disable NATIVE --modules=openxBidAdapter,rubiconBidAdapter,sovrnBidAdapter # substitute your module list
+```
+
+Or, if you are consuming Prebid through npm, with the `disableFeatures` option in your Prebid rule:
+
+```javascript
+  {
+    test: /.js$/,
+    include: new RegExp(`\\${path.sep}prebid\\.js`),
+    use: {
+      loader: 'babel-loader',
+      options: require('prebid.js/babelConfig.js')({disableFeatures: ['NATIVE']})
+    }
+  }
+```
+
+**Note**: this is still a work in progress - at the moment, `NATIVE` is the only feature that can be disabled this way, resulting in a minimal decrease in size (but you can expect that to improve over time).
+
 ## Test locally
 
 To lint the code:
