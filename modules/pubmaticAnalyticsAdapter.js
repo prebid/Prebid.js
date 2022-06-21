@@ -358,7 +358,7 @@ function auctionInitHandler(args) {
     'bidderDonePendingCount', () => args.bidderRequests.length,
   ]);
   cacheEntry.adUnitCodes = {};
-  cacheEntry.referer = args.bidderRequests[0].refererInfo.referer;
+  cacheEntry.referer = args.bidderRequests[0].refererInfo.topmostLocation;
   cache.auctions[args.auctionId] = cacheEntry;
 }
 

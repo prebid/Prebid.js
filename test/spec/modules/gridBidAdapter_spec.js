@@ -44,12 +44,12 @@ describe('TheMediaGrid Adapter', function () {
       return JSON.parse(data);
     }
     const bidderRequest = {
-      refererInfo: {referer: 'https://example.com'},
+      refererInfo: {page: 'https://example.com'},
       bidderRequestId: '22edbae2733bf6',
       auctionId: '9e2dfbfe-00c7-4f5e-9850-4044df3229c7',
       timeout: 3000
     };
-    const referrer = encodeURIComponent(bidderRequest.refererInfo.referer);
+    const referrer = encodeURIComponent(bidderRequest.refererInfo.page);
     let bidRequests = [
       {
         'bidder': 'grid',
@@ -126,14 +126,10 @@ describe('TheMediaGrid Adapter', function () {
           genre: 'Adventure'
         }
       };
-
-      const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
-        arg => arg === 'ortb2.site' ? site : null);
-      const request = spec.buildRequests([bidRequests[0]], bidderRequest);
+      const request = spec.buildRequests([bidRequests[0]], {...bidderRequest, ortb2: {site}});
       const payload = parseRequest(request.data);
       expect(payload.site.cat).to.deep.equal([...site.cat, ...site.pagecat]);
       expect(payload.site.content.genre).to.deep.equal(site.content.genre);
-      getConfigStub.restore();
     });
 
     it('should attach valid params to the tag', function () {
@@ -405,16 +401,14 @@ describe('TheMediaGrid Adapter', function () {
         screenHeight: 800,
         language: 'ru'
       };
-      const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
-        arg => arg === 'ortb2.user.ext.device' ? ortb2UserExtDevice : null);
+      const ortb2 = {user: {ext: {device: ortb2UserExtDevice}}};
 
-      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const request = spec.buildRequests(bidRequests, {...bidderRequest, ortb2});
       expect(request.data).to.be.an('string');
       const payload = parseRequest(request.data);
       expect(payload).to.have.property('user');
       expect(payload.user).to.have.property('ext');
       expect(payload.user.ext.device).to.deep.equal(ortb2UserExtDevice);
-      getConfigStub.restore();
     });
 
     it('if schain is present payload must have source.ext.schain param', function () {
@@ -473,8 +467,10 @@ describe('TheMediaGrid Adapter', function () {
     });
 
     it('should contain the keyword values if it present in ortb2.(site/user)', function () {
-      const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
-        arg => arg === 'ortb2.user' ? {'keywords': 'foo,any'} : (arg === 'ortb2.site' ? {'keywords': 'bar'} : null));
+      const ortb2 = {
+        user: {'keywords': 'foo,any'},
+        site: {'keywords': 'bar'}
+      };
       const keywords = {
         'site': {
           'somePublisher': [
@@ -498,7 +494,7 @@ describe('TheMediaGrid Adapter', function () {
         }
       };
       const bidRequestWithKW = { ...bidRequests[0], params: { ...bidRequests[0].params, keywords } }
-      const request = spec.buildRequests([bidRequestWithKW], bidderRequest);
+      const request = spec.buildRequests([bidRequestWithKW], {...bidderRequest, ortb2});
       expect(request.data).to.be.an('string');
       const payload = parseRequest(request.data);
       expect(payload.ext.keywords).to.deep.equal({
@@ -543,7 +539,6 @@ describe('TheMediaGrid Adapter', function () {
           ]
         }
       });
-      getConfigStub.restore();
     });
 
     it('should have user.data filled from config ortb2.user.data', function () {
@@ -560,13 +555,10 @@ describe('TheMediaGrid Adapter', function () {
           someKey: 'another data'
         }
       ];
-
-      const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
-        arg => arg === 'ortb2.user.data' ? userData : null);
-      const request = spec.buildRequests([bidRequests[0]], bidderRequest);
+      const ortb2 = {user: {data: userData}};
+      const request = spec.buildRequests([bidRequests[0]], {...bidderRequest, ortb2});
       const payload = parseRequest(request.data);
       expect(payload.user.data).to.deep.equal(userData);
-      getConfigStub.restore();
     });
 
     it('should have site.content.data filled from config ortb2.site.content.data', function () {
@@ -582,13 +574,10 @@ describe('TheMediaGrid Adapter', function () {
           ]
         }
       ];
-
-      const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
-        arg => arg === 'ortb2.site' ? { content: { data: contentData } } : null);
-      const request = spec.buildRequests([bidRequests[0]], bidderRequest);
+      const ortb2 = {site: { content: { data: contentData } }};
+      const request = spec.buildRequests([bidRequests[0]], {...bidderRequest, ortb2});
       const payload = parseRequest(request.data);
       expect(payload.site.content.data).to.deep.equal(contentData);
-      getConfigStub.restore();
     });
 
     it('should have right value in user.data when jwpsegments are present', function () {
@@ -605,8 +594,7 @@ describe('TheMediaGrid Adapter', function () {
           someKey: 'another data'
         }
       ];
-      const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
-        arg => arg === 'ortb2.user.data' ? userData : null);
+      const ortb2 = {user: {data: userData}};
 
       const jsContent = {id: 'test_jw_content_id'};
       const jsSegments = ['test_seg_1', 'test_seg_2'];
@@ -620,7 +608,7 @@ describe('TheMediaGrid Adapter', function () {
           }
         }
       });
-      const request = spec.buildRequests([bidRequestsWithJwTargeting], bidderRequest);
+      const request = spec.buildRequests([bidRequestsWithJwTargeting], {...bidderRequest, ortb2});
       const payload = parseRequest(request.data);
       expect(payload.user.data).to.deep.equal([{
         name: 'iow_labs_pub_data',
@@ -629,18 +617,14 @@ describe('TheMediaGrid Adapter', function () {
           {name: 'jwpseg', value: jsSegments[1]}
         ]
       }, ...userData]);
-      getConfigStub.restore();
     });
 
     it('should have site.content.id filled from config ortb2.site.content.id', function () {
       const contentId = 'jw_abc';
-
-      const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
-        arg => arg === 'ortb2.site' ? { content: { id: contentId } } : null);
-      const request = spec.buildRequests([bidRequests[0]], bidderRequest);
+      const ortb2 = {site: {content: {id: contentId}}};
+      const request = spec.buildRequests([bidRequests[0]], {...bidderRequest, ortb2});
       const payload = parseRequest(request.data);
       expect(payload.site.content.id).to.equal(contentId);
-      getConfigStub.restore();
     });
 
     it('should be right tmax when timeout in config is less then timeout in bidderRequest', function() {
@@ -760,12 +744,12 @@ describe('TheMediaGrid Adapter', function () {
         'auctionId': 654645,
       };
       const bidderRequestWithNumId = {
-        refererInfo: {referer: 'https://example.com'},
+        refererInfo: {page: 'https://example.com'},
         bidderRequestId: 345345345,
         auctionId: 654645,
         timeout: 3000
       };
-      const parsedReferrer = encodeURIComponent(bidderRequestWithNumId.refererInfo.referer);
+      const parsedReferrer = encodeURIComponent(bidderRequestWithNumId.refererInfo.page);
       const request = spec.buildRequests([bidRequestWithNumId], bidderRequestWithNumId);
       expect(request.data).to.be.an('string');
       const payload = parseRequest(request.data);

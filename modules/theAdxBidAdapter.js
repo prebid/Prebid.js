@@ -155,7 +155,8 @@ export const spec = {
               withCredentials: true,
             },
             bidder: 'theadx',
-            referrer: encodeURIComponent(bidderRequest.refererInfo.referer),
+            // TODO: is 'page' the right value here?
+            referrer: encodeURIComponent(bidderRequest.refererInfo.page || ''),
             data: generatePayload(bidRequest, bidderRequest),
             mediaTypes: bidRequest['mediaTypes'],
             requestId: bidderRequest.bidderRequestId,
@@ -314,7 +315,7 @@ export const spec = {
 }
 
 let buildSiteComponent = (bidRequest, bidderRequest) => {
-  let loc = parseUrl(bidderRequest.refererInfo.referer, {
+  let loc = parseUrl(bidderRequest.refererInfo.page || '', {
     decodeSearchAsString: true
   });
 

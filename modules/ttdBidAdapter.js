@@ -125,14 +125,14 @@ function getUser(bidderRequest) {
 function getSite(bidderRequest, firstPartyData) {
   var site = {
     id: utils.deepAccess(bidderRequest, 'bids.0.params.siteId'),
-    page: utils.deepAccess(bidderRequest, 'refererInfo.referer'),
+    page: utils.deepAccess(bidderRequest, 'refererInfo.page'),
     publisher: {
       id: utils.deepAccess(bidderRequest, 'bids.0.params.publisherId'),
     },
     ...firstPartyData.site
   };
 
-  var publisherDomain = config.getConfig('publisherDomain');
+  var publisherDomain = bidderRequest.refererInfo.domain;
   if (publisherDomain) {
     utils.deepSetValue(site, 'publisher.domain', publisherDomain);
   }
@@ -373,7 +373,7 @@ export const spec = {
    * @return {ServerRequest} Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    const firstPartyData = config.getConfig('ortb2') || {};
+    const firstPartyData = bidderRequest.ortb2 || {};
     let topLevel = {
       id: bidderRequest.auctionId,
       imp: validBidRequests.map(bidRequest => getImpression(bidRequest)),

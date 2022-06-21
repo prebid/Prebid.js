@@ -13,12 +13,12 @@ Connects to C-WIRE demand source to fetch bids.
 
 Below, the list of C-WIRE params and where they can be set.
 
-| Param name | Global config | AdUnit config | Type | Required |
-| ---------- | ------------- | ------------- | ---- | ---------|
+| Param name | Global config | AdUnit config | Type   | Required |
+| ---------- | ------------- | ------------- |--------| ---------|
 | pageId |  | x | number | YES |
 | placementId |  | x | number | YES |
 | refgroups | | x | string | NO |
-| cwcreative |  | x | integer | NO |
+| cwcreative |  | x | string | NO |
 | cwapikey | | x | string | NO |
 
 
