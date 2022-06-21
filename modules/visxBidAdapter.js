@@ -94,8 +94,9 @@ export const spec = {
 
     if (bidderRequest) {
       timeout = bidderRequest.timeout;
-      if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
-        payload.u = bidderRequest.refererInfo.referer;
+      if (bidderRequest.refererInfo && bidderRequest.refererInfo.page) {
+        // TODO: is 'page' the right value here?
+        payload.u = bidderRequest.refererInfo.page;
       }
       if (bidderRequest.gdprConsent) {
         if (bidderRequest.gdprConsent.consentString) {

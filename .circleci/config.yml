@@ -82,7 +82,6 @@ workflows:
   commit:
     jobs:
       - build
-      - e2etest
 
 experimental:
   pipelines: true

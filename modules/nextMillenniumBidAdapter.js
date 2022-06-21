@@ -1,9 +1,10 @@
-import { isStr, _each, getBidIdParameter } from '../src/utils.js';
+import { isStr, _each, parseUrl, getWindowTop, getBidIdParameter } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'nextMillennium';
 const ENDPOINT = 'https://pbs.nextmillmedia.com/openrtb2/auction';
+const TEST_ENDPOINT = 'https://test.pbs.nextmillmedia.com/openrtb2/auction';
 const SYNC_ENDPOINT = 'https://statics.nextmillmedia.com/load-cookie.html?v=4';
 const TIME_TO_LIVE = 360;
 
@@ -61,9 +62,12 @@ export const spec = {
         }
       }
 
+      const urlParameters = parseUrl(getWindowTop().location.href).search;
+      const isTest = urlParameters['pbs'] && urlParameters['pbs'] === 'test';
+
       requests.push({
         method: 'POST',
-        url: ENDPOINT,
+        url: isTest ? TEST_ENDPOINT : ENDPOINT,
         data: JSON.stringify(postBody),
         options: {
           contentType: 'application/json',

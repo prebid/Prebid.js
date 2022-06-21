@@ -74,13 +74,7 @@ export function hasGDPRConsent(gdprConsent) {
     if (!gdprConsent.vendorData) {
       return false;
     }
-    if (gdprConsent.apiVersion === 1) {
-      // We are not supporting TCF v1
-      return false;
-    }
-    if (gdprConsent.apiVersion === 2) {
-      return checkTCFv2(gdprConsent.vendorData);
-    }
+    return checkTCFv2(gdprConsent.vendorData);
   }
   return true;
 }

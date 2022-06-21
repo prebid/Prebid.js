@@ -122,7 +122,8 @@ export const spec = {
       return;
     }
     const info = pageInfo();
-    const page = info.location || deepAccess(bidderRequest, 'refererInfo.referer') || deepAccess(bidderRequest, 'refererInfo.canonicalUrl');
+    // TODO: the fallback seems to never be used here, and probably in the wrong order
+    const page = info.location || deepAccess(bidderRequest, 'refererInfo.page')
     const hostname = parseUrl(page).hostname;
     let domain = extractDomainFromHost(hostname) || hostname;
     const accountId = setOnAny(validBidRequests, 'params.accountId');
