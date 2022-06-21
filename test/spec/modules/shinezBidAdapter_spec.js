@@ -5,8 +5,8 @@ import { config } from 'src/config.js';
 import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
 import * as utils from 'src/utils.js';
 
-const ENDPOINT = 'https://hb.sweetgum.io/hb-multi';
-const TEST_ENDPOINT = 'https://hb.sweetgum.io/hb-multi-test';
+const ENDPOINT = 'https://hb.sweetgum.io/hb-sz-multi';
+const TEST_ENDPOINT = 'https://hb.sweetgum.io/hb-multi-sz-test';
 const TTL = 360;
 /* eslint no-console: ["error", { allow: ["log", "warn", "error"] }] */
 

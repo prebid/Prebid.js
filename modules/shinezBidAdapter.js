@@ -389,7 +389,7 @@ function generateGeneralParams(generalObject, bidderRequest) {
     generalParams.userIds = JSON.stringify(userIdsParam);
   }
 
-  const ortb2Metadata = config.getConfig('ortb2') || {};
+  const ortb2Metadata = bidderRequest.ortb2 || {};
   if (ortb2Metadata.site) {
     generalParams.site_metadata = JSON.stringify(ortb2Metadata.site);
   }
