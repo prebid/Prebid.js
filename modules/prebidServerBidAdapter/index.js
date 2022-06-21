@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import Adapter from '../../src/adapter.js';
 import {createBid} from '../../src/bidfactory.js';
 import {
@@ -859,6 +860,54 @@ Object.assign(ORTB2.prototype, {
     // s2sConfig video.ext.prebid is passed through openrtb to PBS
     if (s2sConfig.extPrebid && typeof s2sConfig.extPrebid === 'object') {
       request.ext.prebid = mergeDeep(request.ext.prebid, s2sConfig.extPrebid);
+    }
+
+    // get reference to pbs config schain bidder names (if any exist)
+    let pbsSchainBidderNamesArr = [];
+    if (request.ext.prebid.schains) {
+      for (let i = 0; i < request.ext.prebid.schains.length; i++) {
+        pbsSchainBidderNamesArr = pbsSchainBidderNamesArr.concat(request.ext.prebid.schains[i].bidders);
+      }
+    }
+
+    // get reference to pbjs bidder specific schain values (if any exist)
+    let pbjsSchainValuesArr = [];
+
+    // iterate over pbjs bidder specific schains (if any exist)
+    for (let i = 0; i < bidRequests.length; i++) {
+      if (bidRequests[i].bids[0].schain) {
+        if (pbsSchainBidderNamesArr.indexOf(bidRequests[i].bids[0].bidder) === -1) {
+          // pbjs bidder schain not in pbs schain config.. need to add it
+          if (s2sConfig.extPrebid && typeof s2sConfig.extPrebid === 'object') {
+            if (pbjsSchainValuesArr.indexOf(JSON.stringify(bidRequests[i].bids[0].schain)) !== -1) {
+              s2sConfig.extPrebid.schains[pbjsSchainValuesArr.indexOf(JSON.stringify(bidRequests[i].bids[0].schain))].bidders.push(bidRequests[i].bids[0].bidder);
+            } else {
+              s2sConfig.extPrebid.schains.push({
+                bidders: [bidRequests[i].bids[0].bidder],
+                schain: bidRequests[i].bids[0].schain
+              });
+            }
+
+            pbjsSchainValuesArr.push(JSON.stringify(bidRequests[i].bids[0].schain));
+          } else {
+            // if the extPrebid object does not exist, add it along with the schain array
+            s2sConfig.extPrebid = {
+              schains: [{
+                bidders: [bidRequests[i].bids[0].bidder],
+                schain: bidRequests[i].bids[0].schain
+              }]
+            };
+
+            pbjsSchainValuesArr.push(JSON.stringify(bidRequests[i].bids[0].schain));
+          }
+        } else {
+          logInfo(`bidder-specific schain for ${bidRequests[i].bids[0].bidder} skipped due to existing entry`);
+        }
+      }
+
+      if (i === bidRequests.length - 1 && pbjsSchainValuesArr.length > 0) {
+        request.ext.prebid = mergeDeep(request.ext.prebid, s2sConfig.extPrebid);
+      }
     }
 
     /**
