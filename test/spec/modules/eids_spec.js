@@ -330,6 +330,20 @@ describe('eids array generation for known sub-modules', function() {
       }]
     });
   });
+  it('tncid', function() {
+    const userId = {
+      tncid: 'TEST_TNCID'
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'thenewco.it',
+      uids: [{
+        id: 'TEST_TNCID',
+        atype: 3
+      }]
+    });
+  });
   it('pubProvidedId', function() {
     const userId = {
       pubProvidedId: [{

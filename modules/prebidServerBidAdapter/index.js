@@ -438,18 +438,19 @@ let nativeEventTrackerMethodMap = {
   js: 2
 };
 
-// enable reverse lookup
-[
-  nativeDataIdMap,
-  nativeImgIdMap,
-  nativeEventTrackerEventMap,
-  nativeEventTrackerMethodMap
-].forEach(map => {
-  Object.keys(map).forEach(key => {
-    map[map[key]] = key;
+if (FEATURES.NATIVE) {
+  // enable reverse lookup
+  [
+    nativeDataIdMap,
+    nativeImgIdMap,
+    nativeEventTrackerEventMap,
+    nativeEventTrackerMethodMap
+  ].forEach(map => {
+    Object.keys(map).forEach(key => {
+      map[map[key]] = key;
+    });
   });
-});
-
+}
 /*
  * Protocol spec for OpenRTB endpoint
  * e.g., https://<prebid-server-url>/v1/openrtb2/auction
@@ -558,7 +559,7 @@ Object.assign(ORTB2.prototype, {
 
       const nativeParams = adUnit.nativeParams;
       let nativeAssets;
-      if (nativeParams) {
+      if (FEATURES.NATIVE && nativeParams) {
         let idCounter = -1;
         try {
           nativeAssets = nativeAssetCache[impressionId] = Object.keys(nativeParams).reduce((assets, type) => {
@@ -683,7 +684,7 @@ Object.assign(ORTB2.prototype, {
         }
       }
 
-      if (nativeAssets) {
+      if (FEATURES.NATIVE && nativeAssets) {
         try {
           mediaTypes['native'] = {
             request: JSON.stringify({
@@ -1036,7 +1037,7 @@ Object.assign(ORTB2.prototype, {
 
             if (bid.adm) { bidObject.vastXml = bid.adm; }
             if (!bidObject.vastUrl && bid.nurl) { bidObject.vastUrl = bid.nurl; }
-          } else if (deepAccess(bid, 'ext.prebid.type') === NATIVE) {
+          } else if (FEATURES.NATIVE && deepAccess(bid, 'ext.prebid.type') === NATIVE) {
             bidObject.mediaType = NATIVE;
             let adm;
             if (typeof bid.adm === 'string') {

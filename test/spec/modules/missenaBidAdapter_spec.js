@@ -88,7 +88,7 @@ describe('Missena Adapter', function () {
       currency: 'USD',
       ad: '<!-- -->',
       meta: {
-        advertiserDomains: ['missena.com']
+        advertiserDomains: ['missena.com'],
       },
     };
 
@@ -129,6 +129,29 @@ describe('Missena Adapter', function () {
         bid
       );
       expect(result).to.deep.equal([]);
+    });
+  });
+
+  describe('getUserSyncs', function () {
+    const expectedUserSyncs = [
+      { type: 'iframe', url: 'https://sync.missena.io/iframe' },
+    ];
+    const serverResponses = [];
+
+    it('should return userSync when iframeEnabled', function () {
+      const syncOptions = {
+        iframeEnabled: true,
+      };
+      const userSyncs = spec.getUserSyncs(syncOptions, serverResponses);
+      expect(userSyncs).to.deep.equal(expectedUserSyncs);
+    });
+
+    it('should return empty array when iframeEnabled is false', function () {
+      const syncOptions = {
+        iframeEnabled: false,
+      };
+      const userSyncs = spec.getUserSyncs(syncOptions, serverResponses);
+      expect(userSyncs).to.deep.equal([]);
     });
   });
 });

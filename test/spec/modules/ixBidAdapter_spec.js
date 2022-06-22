@@ -582,10 +582,24 @@ describe('IndexexchangeAdapter', function () {
   });
 
   describe('isBidRequestValid', function () {
-    it('should return false if outstream player size is less than 300x250 and IX renderer is preferred', function () {
+    it('should return false if outstream player size is less than 144x144 and IX renderer is preferred', function () {
       const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
       bid.mediaTypes.video.context = 'outstream';
-      bid.mediaTypes.video.playerSize = [[300, 249]];
+      bid.mediaTypes.video.w = [[300, 143]];
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      bid.mediaTypes.video.w = [[143, 300]];
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('should return false if outstream video w & h  is less than 144x144 and IX renderer is preferred', function () {
+      const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
+      bid.mediaTypes.video.context = 'outstream';
+      bid.mediaTypes.video.playerSize = [[300, 250]];
+      bid.mediaTypes.video.w = 300;
+      bid.mediaTypes.video.h = 142;
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      bid.mediaTypes.video.h = 300;
+      bid.mediaTypes.video.w = 142;
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
@@ -1245,6 +1259,27 @@ describe('IndexexchangeAdapter', function () {
       const r = JSON.parse(request.data.r);
 
       expect(r.ext.ixdiag.fpd).to.exist;
+    });
+
+    it('should set ixdiag.tmax value if it exists using tmax', function () {
+      config.setConfig({
+        bidderTimeout: 250
+      });
+
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID)[0];
+      const r = JSON.parse(request.data.r);
+
+      expect(r.ext.ixdiag.tmax).to.equal(250);
+    });
+
+    it('should not set ixdiag.tmax value if bidderTimeout is undefined', function () {
+      config.setConfig({
+        bidderTimeout: null
+      })
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID)[0];
+      const r = JSON.parse(request.data.r);
+
+      expect(r.ext.ixdiag.tmax).to.be.undefined
     });
 
     it('should not send information that is not part of openRTB spec v2.5 using ortb2', function () {
@@ -2070,6 +2105,19 @@ describe('IndexexchangeAdapter', function () {
       expect(videoImpression.video.w).to.equal(DEFAULT_VIDEO_VALID_BID_NO_VIDEO_PARAMS[0].mediaTypes.video.playerSize[0][0]);
       expect(videoImpression.video.h).to.equal(DEFAULT_VIDEO_VALID_BID_NO_VIDEO_PARAMS[0].mediaTypes.video.playerSize[0][1]);
     });
+
+    it('should set different placement for floating ad units', () => {
+      const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
+      bid.mediaTypes.video.context = 'outstream';
+      bid.params.video.playerConfig = {
+        floatOnScroll: true
+      };
+
+      const request = spec.buildRequests([bid]);
+      const videoImpression = JSON.parse(request[0].data.r).imp[0];
+
+      expect(videoImpression.video.placement).to.eq(5);
+    })
   });
 
   describe('buildRequestMultiFormat', function () {
