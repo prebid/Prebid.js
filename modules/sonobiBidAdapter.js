@@ -57,11 +57,11 @@ export const spec = {
   buildRequests: (validBidRequests, bidderRequest) => {
     const bids = validBidRequests.map(bid => {
       let mediaType;
-      if (deepAccess(bid, 'mediaTypes.banner')) {
-        mediaType = 'display';
-      }
+
       if (deepAccess(bid, 'mediaTypes.video')) {
         mediaType = 'video';
+      } else if (deepAccess(bid, 'mediaTypes.banner')) {
+        mediaType = 'display';
       }
 
       let slotIdentifier = _validateSlot(bid);
@@ -337,15 +337,14 @@ function _validateGPID(bid) {
 }
 
 function _validateMediaType(mediaType) {
+  let mediaTypeValidation = '';
   if (mediaType === 'video') {
-    return 'c=v,';
+    mediaTypeValidation = 'c=v,';
+  } else if (mediaType === 'display') {
+    mediaTypeValidation = 'c=d,';
   }
 
-  if (mediaType === 'display') {
-    return 'c=d,';
-  }
-
-  return '';
+  return mediaTypeValidation;
 }
 
 const _creative = (mediaType, referer) => (sbiDc, sbiAid) => {
