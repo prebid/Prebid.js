@@ -427,8 +427,19 @@ describe('eids array generation for known sub-modules', function() {
       }]
     });
   });
+
+  it('cpexId', () => {
+    const id = 'some-random-id-value'
+    const userId = { cpexId: id };
+    const [eid] = createEidsArray(userId);
+    expect(eid).to.deep.equal({
+      source: 'czechadid.cz',
+      uids: [{ id: 'some-random-id-value', atype: 1 }]
+    });
+  });
 });
-describe('Negative case', function() {
+
+describe('Negative case', function () {
   it('eids array generation for UN-known sub-module', function() {
     // UnknownCommonId
     const userId = {
