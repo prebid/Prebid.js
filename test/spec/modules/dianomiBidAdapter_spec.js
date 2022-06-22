@@ -45,7 +45,7 @@ describe('Dianomi adapter', () => {
           params: { smartadId: 1234 },
         },
       ];
-      let request = spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } });
+      let request = spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } });
 
       assert.equal(request.method, 'POST');
       assert.equal(request.url, 'https://www-prebid.dianomi.com/cgi-bin/smartads_prebid.pl');
@@ -57,7 +57,7 @@ describe('Dianomi adapter', () => {
         let validBidRequests = [{ bidId: 'bidId', params: { smartadId: 1234 } }];
         let bidderRequest = {
           gdprConsent: { gdprApplies: true, consentString: 'consentDataString' },
-          refererInfo: { referer: 'page' },
+          refererInfo: { page: 'page' },
         };
         let request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
 
@@ -70,7 +70,7 @@ describe('Dianomi adapter', () => {
         let validBidRequests = [{ bidId: 'bidId', params: { smartadId: 1234 } }];
         let bidderRequest = {
           gdprConsent: { gdprApplies: true, consentString: 'consentDataString' },
-          refererInfo: { referer: 'page' },
+          refererInfo: { page: 'page' },
         };
         let request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
 
@@ -80,7 +80,7 @@ describe('Dianomi adapter', () => {
 
       it('should send CCPA Consent data to dianomi', () => {
         let validBidRequests = [{ bidId: 'bidId', params: { smartadId: 1234 } }];
-        let bidderRequest = { uspConsent: '1YA-', refererInfo: { referer: 'page' } };
+        let bidderRequest = { uspConsent: '1YA-', refererInfo: { page: 'page' } };
         let request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
 
         assert.equal(request.regs.ext.us_privacy, '1YA-');
@@ -88,7 +88,7 @@ describe('Dianomi adapter', () => {
         bidderRequest = {
           uspConsent: '1YA-',
           gdprConsent: { gdprApplies: true, consentString: 'consentDataString' },
-          refererInfo: { referer: 'page' },
+          refererInfo: { page: 'page' },
         };
         request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
 
@@ -106,7 +106,7 @@ describe('Dianomi adapter', () => {
         ];
         let bidderRequest = {
           gdprConsent: { gdprApplies: false, consentString: 'consentDataString' },
-          refererInfo: { referer: 'page' },
+          refererInfo: { page: 'page' },
         };
         let request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
 
@@ -115,7 +115,7 @@ describe('Dianomi adapter', () => {
 
         bidderRequest = {
           gdprConsent: { consentString: 'consentDataString' },
-          refererInfo: { referer: 'page' },
+          refererInfo: { page: 'page' },
         };
         request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
 
@@ -130,7 +130,7 @@ describe('Dianomi adapter', () => {
           },
         ];
         let request = JSON.parse(
-          spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data
+          spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
         );
 
         assert.equal(request.user, undefined);
@@ -147,7 +147,7 @@ describe('Dianomi adapter', () => {
         },
       ];
       let request = JSON.parse(
-        spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data
+        spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
       );
       let data = Object.keys(request);
 
@@ -163,7 +163,7 @@ describe('Dianomi adapter', () => {
         },
       ];
       let request = JSON.parse(
-        spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data
+        spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
       );
 
       assert.equal(request.source.tid, validBidRequests[0].transactionId);
@@ -181,7 +181,7 @@ describe('Dianomi adapter', () => {
         },
       ];
       let request = JSON.parse(
-        spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data
+        spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
       );
 
       assert.equal(request.device.ua, navigator.userAgent);
@@ -192,16 +192,17 @@ describe('Dianomi adapter', () => {
     it('should send app info', () => {
       config.setConfig({
         app: { id: 'appid' },
-        ortb2: { app: { name: 'appname' } },
       });
+      const ortb2 = { app: { name: 'appname' } };
       let validBidRequests = [
         {
           bidId: 'bidId',
           params: { smartadId: 1234 },
+          ortb2
         },
       ];
       let request = JSON.parse(
-        spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data
+        spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' }, ortb2 }).data
       );
 
       assert.equal(request.app.id, 'appid');
@@ -217,25 +218,26 @@ describe('Dianomi adapter', () => {
             domain: 'publisher.domain.com',
           },
         },
-        ortb2: {
-          site: {
-            publisher: {
-              name: "publisher's name",
-            },
+      });
+      const ortb2 = {
+        site: {
+          publisher: {
+            name: "publisher's name",
           },
         },
-      });
+      }
       let validBidRequests = [
         {
           bidId: 'bidId',
           params: { smartadId: 1234 },
+          ortb2
         },
       ];
-      let refererInfo = { referer: 'page' };
-      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo }).data);
+      let refererInfo = { page: 'page' };
+      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo, ortb2 }).data);
 
       assert.deepEqual(request.site, {
-        page: refererInfo.referer,
+        page: refererInfo.page,
         publisher: {
           domain: 'publisher.domain.com',
           name: "publisher's name",
@@ -257,7 +259,7 @@ describe('Dianomi adapter', () => {
       ];
 
       let request = JSON.parse(
-        spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data
+        spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
       );
       assert.deepEqual(request.user.ext.eids, [
         {
@@ -271,7 +273,7 @@ describe('Dianomi adapter', () => {
     it('should send currency if defined', () => {
       config.setConfig({ currency: { adServerCurrency: 'EUR' } });
       let validBidRequests = [{ params: { smartadId: 1234 } }];
-      let refererInfo = { referer: 'page' };
+      let refererInfo = { page: 'page' };
       let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo }).data);
 
       assert.deepEqual(request.cur, ['EUR']);
@@ -292,7 +294,7 @@ describe('Dianomi adapter', () => {
       ];
 
       let request = JSON.parse(
-        spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data
+        spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
       );
       assert.deepEqual(request.source.ext.schain, {
         validation: 'strict',
@@ -311,7 +313,7 @@ describe('Dianomi adapter', () => {
           },
         ];
         let request = JSON.parse(
-          spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data
+          spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
         );
 
         assert.equal(request.ext.pt, 'net');
@@ -324,7 +326,7 @@ describe('Dianomi adapter', () => {
           },
         ];
         let request = JSON.parse(
-          spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data
+          spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
         );
 
         assert.equal(request.ext.pt, 'net');
@@ -344,7 +346,7 @@ describe('Dianomi adapter', () => {
           },
         ];
         let request = JSON.parse(
-          spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data
+          spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
         );
 
         assert.equal(request.imp.length, 2);
@@ -368,7 +370,7 @@ describe('Dianomi adapter', () => {
           },
         ];
         let imps = JSON.parse(
-          spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data
+          spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
         ).imp;
 
         for (let i = 0; i < 3; i++) {
@@ -472,7 +474,7 @@ describe('Dianomi adapter', () => {
             },
           ];
           let [first, second, third] = JSON.parse(
-            spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data
+            spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
           ).imp;
 
           assert.ok(first.banner);
@@ -506,7 +508,7 @@ describe('Dianomi adapter', () => {
             },
           ];
           let { banner } = JSON.parse(
-            spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data
+            spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
           ).imp[0];
           assert.deepEqual(banner, {
             format: [
@@ -533,7 +535,7 @@ describe('Dianomi adapter', () => {
             },
           ];
           let { video } = JSON.parse(
-            spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data
+            spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
           ).imp[0];
           assert.deepEqual(video, {
             playerSize: [640, 480],
@@ -565,7 +567,7 @@ describe('Dianomi adapter', () => {
               },
             ];
             let assets = JSON.parse(
-              spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data
+              spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
             ).imp[0].native.assets;
 
             assert.equal(assets[0].id, 0);
@@ -594,7 +596,7 @@ describe('Dianomi adapter', () => {
             ];
 
             let assets = JSON.parse(
-              spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data
+              spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
             ).imp[0].native.assets;
 
             assert.equal(assets[0].required, 1);
@@ -621,7 +623,7 @@ describe('Dianomi adapter', () => {
             ];
 
             let assets = JSON.parse(
-              spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data
+              spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
             ).imp[0].native.assets;
             assert.ok(assets[0].title);
             assert.equal(assets[0].title.len, 140);
@@ -651,7 +653,7 @@ describe('Dianomi adapter', () => {
               ];
 
               let assets = JSON.parse(
-                spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data
+                spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
               ).imp[0].native.assets;
               assert.ok(assets[0].img);
               assert.equal(assets[0].img.w, 200);
@@ -688,7 +690,7 @@ describe('Dianomi adapter', () => {
             ];
 
             let assets = JSON.parse(
-              spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data
+              spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
             ).imp[0].native.assets;
             assert.ok(assets[0].img);
             assert.equal(assets[0].img.wmin, 100);
@@ -716,7 +718,7 @@ describe('Dianomi adapter', () => {
             ];
 
             assert.doesNotThrow(() =>
-              spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } })
+              spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } })
             );
           });
         });
@@ -725,7 +727,7 @@ describe('Dianomi adapter', () => {
 
     function getRequestImps(validBidRequests) {
       return JSON.parse(
-        spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data
+        spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
       ).imp;
     }
   });
