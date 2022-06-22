@@ -1800,6 +1800,29 @@ describe('Unit: Prebid Module', function () {
           .and.to.match(/[a-f0-9\-]{36}/i);
       });
 
+      it('should always set ortb2.ext.tid same as transactionId in adUnits', function () {
+        $$PREBID_GLOBAL$$.requestBids({
+          adUnits: [
+            {
+              code: 'test1',
+              mediaTypes: { banner: { sizes: [] } },
+              bids: []
+            }, {
+              code: 'test2',
+              mediaTypes: { banner: { sizes: [] } },
+              bids: []
+            }
+          ]
+        });
+
+        expect(auctionArgs.adUnits[0]).to.have.property('transactionId');
+        expect(auctionArgs.adUnits[0]).to.have.property('ortb2Imp');
+        expect(auctionArgs.adUnits[0].transactionId).to.equal(auctionArgs.adUnits[0].ortb2Imp.ext.tid);
+        expect(auctionArgs.adUnits[1]).to.have.property('transactionId');
+        expect(auctionArgs.adUnits[1]).to.have.property('ortb2Imp');
+        expect(auctionArgs.adUnits[1].transactionId).to.equal(auctionArgs.adUnits[1].ortb2Imp.ext.tid);
+      });
+
       it('should notify targeting of the latest auction for each adUnit', function () {
         let latestStub = sinon.stub(targeting, 'setLatestAuctionForAdUnit');
         let getAuctionStub = sinon.stub(auction, 'getAuctionId').returns(2);
