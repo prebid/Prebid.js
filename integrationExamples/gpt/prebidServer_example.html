@@ -60,44 +60,6 @@
             bidders : ['appnexus'],
             timeout : 1000, //default value is 1000
             adapter : 'prebidServer', //if we have any other s2s adapter, default value is s2s
-            // extPrebid : {
-            //   schains: [
-            //     {
-            //       "bidders": ["appnexus"],
-            //       "schain": {
-            //         "ver":"1.0",
-            //         "complete": 1,
-            //         "nodes": [
-            //           {
-            //             "asi":"example.com",
-            //             "sid":"11111",
-            //             "hp":1
-            //           }
-            //         ]
-            //       }
-            //     }
-            //   ]
-            // }
-          }
-        });
-
-        pbjs.setBidderConfig({
-          "bidders": ['appnexus'],
-          "config": {
-            "schain": {
-              "validation": "relaxed",
-              "config": {
-                "ver":"1.0",
-                "complete": 1,
-                "nodes": [
-                  {
-                    "asi":"example.com",
-                    "sid":"11111",
-                    "hp":1
-                  }
-                ]
-              }
-            }
           }
         });
 
