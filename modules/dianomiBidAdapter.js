@@ -9,7 +9,7 @@ import {
   deepAccess,
   parseSizesInput,
   deepSetValue,
-  formatQS
+  formatQS,
 } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
@@ -60,8 +60,7 @@ const NATIVE_PARAMS = {
 };
 let endpoint = 'www-prebid.dianomi.com';
 
-const OUTSTREAM_RENDERER_URL = (hostname) =>
-  `https://${hostname}/prebid/outstream/renderer.js`;
+const OUTSTREAM_RENDERER_URL = (hostname) => `https://${hostname}/prebid/outstream/renderer.js`;
 
 export const spec = {
   code: BIDDER_CODE,
@@ -76,7 +75,7 @@ export const spec = {
   buildRequests: (validBidRequests, bidderRequest) => {
     let app, site;
 
-    const commonFpd = getConfig('ortb2') || {};
+    const commonFpd = bidderRequest.ortb2 || {};
     let { user } = commonFpd;
 
     if (typeof getConfig('app') === 'object') {
@@ -91,7 +90,7 @@ export const spec = {
       }
 
       if (!site.page) {
-        site.page = bidderRequest.refererInfo.referer;
+        site.page = bidderRequest.refererInfo.page;
       }
     }
 
@@ -103,7 +102,7 @@ export const spec = {
     const paramsEndpoint = setOnAny(validBidRequests, 'params.endpoint');
 
     if (paramsEndpoint) {
-      endpoint = paramsEndpoint
+      endpoint = paramsEndpoint;
     }
 
     const pt =
@@ -218,16 +217,8 @@ export const spec = {
     };
 
     if (deepAccess(bidderRequest, 'gdprConsent.gdprApplies') !== undefined) {
-      deepSetValue(
-        request,
-        'user.ext.consent',
-        bidderRequest.gdprConsent.consentString
-      );
-      deepSetValue(
-        request,
-        'regs.ext.gdpr',
-        bidderRequest.gdprConsent.gdprApplies & 1
-      );
+      deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
+      deepSetValue(request, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies & 1);
     }
 
     if (bidderRequest.uspConsent) {
@@ -250,18 +241,15 @@ export const spec = {
     };
   },
   interpretResponse: function (serverResponse, { bids }) {
-    if (!serverResponse.body) {
+    if (!serverResponse.body || serverResponse?.body?.nbr) {
       return;
     }
     const { seatbid, cur } = serverResponse.body;
 
-    const bidResponses = flatten(seatbid.map((seat) => seat.bid)).reduce(
-      (result, bid) => {
-        result[bid.impid - 1] = bid;
-        return result;
-      },
-      []
-    );
+    const bidResponses = flatten(seatbid.map((seat) => seat.bid)).reduce((result, bid) => {
+      result[bid.impid - 1] = bid;
+      return result;
+    }, []);
 
     return bids
       .map((bid, id) => {
@@ -329,7 +317,7 @@ export const spec = {
 
       return {
         type: 'iframe',
-        url: `https://${endpoint}/prebid/usersync/index.html?${formatQS(params)}`
+        url: `https://${endpoint}/prebid/usersync/index.html?${formatQS(params)}`,
       };
     }
   },
