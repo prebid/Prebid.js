@@ -861,6 +861,9 @@ Object.assign(ORTB2.prototype, {
       request.ext.prebid = mergeDeep(request.ext.prebid, s2sConfig.extPrebid);
     }
 
+    // eslint-disable-next-line no-console
+    console.log(this);
+
     // get reference to pbs config schain bidder names (if any exist)
     let pbsSchainBidderNamesArr = [];
     if (request.ext.prebid.schains) {

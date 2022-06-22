@@ -1875,6 +1875,90 @@ describe('S2S Adapter', function () {
       });
     });
 
+    it('should have extPrebid.schains present on req object if bidder specific schains were configured with pbjs', function () {
+      let bidRequest = utils.deepClone(BID_REQUESTS);
+      bidRequest[0].bids[0].schain = {
+        complete: 1,
+        nodes: [{
+          asi: 'test.com',
+          hp: 1,
+          sid: '11111'
+        }],
+        ver: '1.0'
+      };
+
+      adapter.callBids(REQUEST, bidRequest, addBidResponse, done, ajax);
+      let requestBid = JSON.parse(server.requests[0].requestBody);
+
+      expect(requestBid.ext.prebid.schains).to.deep.equal([
+        {
+          bidders: ['appnexus'],
+          schain: {
+            complete: 1,
+            nodes: [
+              {
+                asi: 'test.com',
+                hp: 1,
+                sid: '11111'
+              }
+            ],
+            ver: '1.0'
+          }
+        }
+      ]);
+    });
+
+    it('should skip over adding any bid specific schain entries that already exist on extPrebid.schains', function () {
+      let bidRequest = utils.deepClone(BID_REQUESTS);
+      bidRequest[0].bids[0].schain = {
+        complete: 1,
+        nodes: [{
+          asi: 'pbjs.com',
+          hp: 1,
+          sid: '22222'
+        }],
+        ver: '1.0'
+      };
+
+      let request = utils.deepClone(REQUEST);
+      request.s2sConfig.extPrebid.schains = [
+        {
+          bidders: ['appnexus'],
+          schain: {
+            complete: 1,
+            nodes: [
+              {
+                asi: 'pbs.com',
+                hp: 1,
+                sid: '11111'
+              }
+            ],
+            ver: '1.0'
+          }
+        }
+      ];
+
+      adapter.callBids(request, bidRequest, addBidResponse, done, ajax);
+      let requestBid = JSON.parse(server.requests[0].requestBody);
+
+      expect(requestBid.ext.prebid.schains).to.deep.equal([
+        {
+          bidders: ['appnexus'],
+          schain: {
+            complete: 1,
+            nodes: [
+              {
+                asi: 'pbs.com',
+                hp: 1,
+                sid: '11111'
+              }
+            ],
+            ver: '1.0'
+          }
+        }
+      ]);
+    });
+
     it('passes schain object in request', function () {
       const bidRequests = utils.deepClone(BID_REQUESTS);
       const schainObject = {
