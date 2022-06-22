@@ -15,10 +15,16 @@ const _approvedLoadExternalJSList = [
   'justtag',
   'tncId',
   'akamaidap',
+  'brandmetrics',
+  'browsi',
+  'criteo',
   'ftrackId',
-  'inskin',
   'hadron',
-  'medianet'
+  'inskin',
+  'justtag',
+  'medianet',
+  'outstream',
+  'spotx'
 ]
 
 /**
