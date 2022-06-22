@@ -25,13 +25,15 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    const ADGENE_PREBID_VERSION = '1.3.0';
+    const ADGENE_PREBID_VERSION = '1.4.0';
     let serverRequests = [];
     for (let i = 0, len = validBidRequests.length; i < len; i++) {
       const validReq = validBidRequests[i];
       const DEBUG_URL = 'https://api-test.scaleout.jp/adsv/v1';
       const URL = 'https://d.socdm.com/adsv/v1';
       const url = validReq.params.debug ? DEBUG_URL : URL;
+      const criteoId = getcriteoId(validReq);
+      const id5id = getid5id(validReq);
       let data = ``;
       data = tryAppendQueryString(data, 'posall', 'SSPLOC');
       const id = getBidIdParameter('id', validReq.params);
@@ -48,6 +50,14 @@ export const spec = {
       // native以外にvideo等の対応が入った場合は要修正
       if (!validReq.mediaTypes || !validReq.mediaTypes.native) {
         data = tryAppendQueryString(data, 'imark', '1');
+      }
+
+      if (criteoId != null) {
+        data = tryAppendQueryString(data, 'adgext_criteo_id', criteoId);
+      }
+
+      if (id5id != null) {
+        data = tryAppendQueryString(data, 'adgext_id5_id', id5id);
       }
       // TODO: is 'page' the right value here?
       data = tryAppendQueryString(data, 'tp', bidderRequest.refererInfo.page);
@@ -275,6 +285,13 @@ function getCurrencyType() {
  * @param validReq request
  * @return {null|string}
  */
+function getcriteoId(validReq) {
+  return (validReq.userId && validReq.userId.criteoId) ? validReq.userId.criteoId : null
+}
+
+function getid5id(validReq) {
+  return (validReq.userId && validReq.userId.id5id && validReq.userId.id5id.uid) ? validReq.userId.id5id.uid : null
+}
 function getHyperId(validReq) {
   if (validReq.userId && validReq.userId.novatiq && validReq.userId.novatiq.snowflake.syncResponse === 1) {
     return validReq.userId.novatiq.snowflake.id;
