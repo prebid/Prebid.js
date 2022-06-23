@@ -1,4 +1,4 @@
-import includes from 'core-js-pure/features/array/includes.js'
+import {includes} from 'src/polyfill.js'
 import cloneDeep from 'lodash/cloneDeep'
 import unset from 'lodash/unset'
 import { expect } from 'chai'

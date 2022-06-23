@@ -5,6 +5,7 @@ import * as utils from 'src/utils.js';
 describe('YieldmoAdapter', function () {
   const BANNER_ENDPOINT = 'https://ads.yieldmo.com/exchange/prebid';
   const VIDEO_ENDPOINT = 'https://ads.yieldmo.com/exchange/prebidvideo';
+  const PB_COOKIE_ASSIST_SYNC_ENDPOINT = `https://ads.yieldmo.com/pbcas`;
 
   const mockBannerBid = (rootParams = {}, params = {}) => ({
     bidder: 'yieldmo',
@@ -511,6 +512,7 @@ describe('YieldmoAdapter', function () {
       body: [{
         callback_id: '21989fdbef550a',
         cpm: 3.45455,
+        publisherDealId: 'YMO_123',
         width: 300,
         height: 250,
         ad: '<html><head></head><body><script>//GEX ad object</script>' +
@@ -525,6 +527,7 @@ describe('YieldmoAdapter', function () {
       const newResponse = spec.interpretResponse(mockServerResponse());
       expect(newResponse.length).to.be.equal(1);
       expect(newResponse[0]).to.deep.equal({
+        dealId: 'YMO_123',
         requestId: '21989fdbef550a',
         cpm: 3.45455,
         width: 300,
@@ -552,6 +555,7 @@ describe('YieldmoAdapter', function () {
             crid: 'dd65c0a7536aff',
             impid: '91ea8bba1',
             price: 1.5,
+            dealid: 'YMO_456'
           },
         },
       ];
@@ -574,6 +578,7 @@ describe('YieldmoAdapter', function () {
       const newResponse = spec.interpretResponse(response, bidRequest);
       expect(newResponse.length).to.be.equal(2);
       expect(newResponse[1]).to.deep.equal({
+        dealId: 'YMO_456',
         cpm: 1.5,
         creativeId: 'dd65c0a7536aff',
         currency: 'USD',
@@ -602,8 +607,20 @@ describe('YieldmoAdapter', function () {
   });
 
   describe('getUserSync', function () {
-    it('should return a tracker with type and url as parameters', function () {
-      expect(spec.getUserSyncs()).to.deep.equal([]);
+    const gdprFlag = `&gdpr=0`;
+    const usPrivacy = `us_privacy=`;
+    const gdprString = `&gdpr_consent=`;
+    const pbCookieAssistSyncUrl = `${PB_COOKIE_ASSIST_SYNC_ENDPOINT}?${usPrivacy}${gdprFlag}${gdprString}`;
+    it('should use type iframe when iframeEnabled', function() {
+      const syncs = spec.getUserSyncs({iframeEnabled: true});
+      expect(syncs).to.deep.equal([{type: 'iframe', url: pbCookieAssistSyncUrl + '&type=iframe'}])
+    });
+    it('should use type image when pixelEnabled', function() {
+      const syncs = spec.getUserSyncs({pixelEnabled: true});
+      expect(syncs).to.deep.equal([{type: 'image', url: pbCookieAssistSyncUrl + '&type=image'}])
+    });
+    it('should register no syncs', function () {
+      expect(spec.getUserSyncs({})).to.deep.equal([]);
     });
   });
 });

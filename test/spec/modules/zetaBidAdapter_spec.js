@@ -10,7 +10,7 @@ describe('Zeta Bid Adapter', function() {
       }
     },
     refererInfo: {
-      referer: 'testprebid.com'
+      page: 'testprebid.com'
     },
     params: {
       placement: 12345,

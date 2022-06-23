@@ -172,6 +172,14 @@ describe('MediaSquare bid adapter tests', function () {
     expect(bid.mediasquare.match).to.exist;
     expect(bid.mediasquare.match).to.equal(true);
   });
+  it('Verifies hasConsent', function () {
+    const request = spec.buildRequests(DEFAULT_PARAMS, DEFAULT_OPTIONS);
+    BID_RESPONSE.body.responses[0].hasConsent = true;
+    const response = spec.interpretResponse(BID_RESPONSE, request);
+    const bid = response[0];
+    expect(bid.mediasquare.hasConsent).to.exist;
+    expect(bid.mediasquare.hasConsent).to.equal(true);
+  });
   it('Verifies bidder code', function () {
     expect(spec.code).to.equal('mediasquare');
   });
@@ -185,6 +193,8 @@ describe('MediaSquare bid adapter tests', function () {
   });
   it('Verifies bid won', function () {
     const request = spec.buildRequests(DEFAULT_PARAMS, DEFAULT_OPTIONS);
+    BID_RESPONSE.body.responses[0].match = true
+    BID_RESPONSE.body.responses[0].hasConsent = true;
     const response = spec.interpretResponse(BID_RESPONSE, request);
     const won = spec.onBidWon(response[0]);
     expect(won).to.equal(true);

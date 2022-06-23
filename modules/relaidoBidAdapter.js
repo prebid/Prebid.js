@@ -101,7 +101,8 @@ function buildRequests(validBidRequests, bidderRequest) {
     uuid: getUuid(),
     pv: '$prebid.version$',
     imuid: imuid,
-    ref: bidderRequest.refererInfo.referer
+    // TODO: is 'page' the right value here?
+    ref: bidderRequest.refererInfo.page
   })
 
   return {
@@ -151,9 +152,6 @@ function interpretResponse(serverResponse, bidRequest) {
     }
     bidResponses.push(bidResponse);
   }
-
-  // eslint-disable-next-line no-console
-  console.log(JSON.stringify(bidResponses));
   return bidResponses;
 }
 
