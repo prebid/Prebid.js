@@ -288,6 +288,17 @@ describe('Seedtag Adapter', function () {
         it('should expose gvlid', function () {
           expect(spec.gvlid).to.equal(157);
         });
+        it('should shandle uspConsent', function () {
+          const uspConsent = '1---';
+
+          bidderRequest['uspConsent'] = uspConsent;
+
+          const request = spec.buildRequests(validBidRequests, bidderRequest);
+          const payload = JSON.parse(request.data);
+
+          expect(payload.uspConsent).to.exist;
+          expect(payload.uspConsent).to.equal(uspConsent);
+        });
       });
     });
 
