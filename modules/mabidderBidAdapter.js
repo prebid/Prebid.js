@@ -12,15 +12,20 @@ export const spec = {
     return !!(bid.params.accountId && bid.params.placementId && bid.params.ppid && bid.sizes && Array.isArray(bid.sizes) && Array.isArray(bid.sizes[0]))
   },
   buildRequests: function(validBidRequests, bidderRequest) {
-    const referer = bidderRequest.refererInfo.referer || '';
     const fpd = config.getConfig('ortb2');
     const bids = [];
 
     validBidRequests.forEach(bidRequest => {
+      const sizes = [];
+      bidRequest.sizes.forEach(size => {
+        sizes.push({
+          width: size[0],
+          height: size[1]
+        });
+      });
       bids.push({
         bidId: bidRequest.bidId,
-        width: bidRequest.sizez[0][0],
-        height: bidRequest.sizes[0][1],
+        sizes: sizes,
         accountId: bidRequest.params.accountId,
         placementId: bidRequest.params.placementId,
         ppid: bidRequest.params.ppid,
@@ -28,14 +33,14 @@ export const spec = {
         transactionId: bidRequest.transactionId,
       })
     });
-
     const req = {
         url: baseUrl,
         method: 'POST',
         data: {
           v: $$PREBID_GLOBAL$$.version,
-          referer: referer,
           bids: bids,
+          url: bidderRequest.refererInfo.canonicalUrl || '',
+          referer: bidderRequest.refererInfo.referer || '',
           fpd: fpd ? JSON.stringify(fpd) : JSON.stringify({})
         }
     };
