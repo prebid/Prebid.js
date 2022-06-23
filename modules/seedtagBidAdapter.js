@@ -204,6 +204,10 @@ export const spec = {
       payload['cd'] = bidderRequest.gdprConsent.consentString;
     }
 
+    if (bidderRequest.uspConsent) {
+      payload['uspContent'] = bidderRequest.uspConsent
+    }
+
     const payloadString = JSON.stringify(payload)
     return {
       method: 'POST',
