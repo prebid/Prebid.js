@@ -1,114 +1,14 @@
 import {expect} from 'chai';
 import {config} from 'src/config.js';
-import {filterData} from 'modules/dataControllerModule/index.js';
-import * as utils from 'src/utils.js';
+import {filterBidData} from 'modules/dataControllerModule/index.js';
 
 const MODULE_NAME = 'dataController';
 let dataControllerConfig;
 const ALL = '*';
 
-function filterEIDs(requestObject) {
-  dataControllerConfig = config.getConfig(MODULE_NAME);
-  if (dataControllerConfig && dataControllerConfig.filterEIDwhenSDA) {
-    let bidderConfig = config.getBidderConfig();
-    let userEids = {};
-    Object.entries(bidderConfig).forEach(([key, value]) => {
-      let resetEID = containsConfiguredSDA(value);
-      if (resetEID) {
-        userEids[key] = [];
-      }
-    });
-    return userEids;
-  }
-}
-
-function containsConfiguredEIDS(eidSources) {
-  dataControllerConfig = config.getConfig(MODULE_NAME);
-  if (dataControllerConfig.filterSDAwhenEID.includes(ALL)) {
-    return true;
-  }
-  let containsSource = false;
-  dataControllerConfig.filterSDAwhenEID.forEach(source => {
-    if (eidSources.has(source)) {
-      containsSource = true;
-    }
-  })
-  return containsSource;
-}
-
-function containsConfiguredSDA(bidderConfig) {
-  if (dataControllerConfig.filterEIDwhenSDA.includes(ALL)) {
-    return true;
-  }
-  let segementSet = getSegmentConfig(bidderConfig);
-
-  let containsSegment = false;
-  dataControllerConfig.filterEIDwhenSDA.forEach(segment => {
-    if (segementSet.has(segment)) {
-      containsSegment = true;
-    }
-  })
-  return containsSegment;
-}
-
-function getSegmentConfig(bidderConfig) {
-  let segementSet = new Set();
-  let userData = utils.deepAccess(bidderConfig, 'ortb2.user.data') || [];
-  if (userData) {
-    for (let i = 0; i < userData.length; i++) {
-      let segments = userData[i].segment;
-      let segmentPrefix = '';
-      if (userData[i].name) {
-        segmentPrefix = userData[i].name + ':';
-      }
-
-      if (userData[i].ext && userData[i].ext.segtax) {
-        segmentPrefix += userData[i].ext.segtax + ':';
-      }
-      for (let j = 0; j < segments.length; j++) {
-        segementSet.add(segmentPrefix + segments[j].id);
-      }
-    }
-  }
-  return segementSet;
-}
-
-function getEIDsSource(requestObject) {
-  let source = new Set();
-
-  requestObject.forEach(eids => {
-    if ('userIdAsEids' in eids) {
-      eids.userIdAsEids.forEach((value) => {
-        if ('source' in value) {
-          source.add(value['source']);
-        }
-      });
-    }
-  });
-  return source;
-}
-
-function filterSDA(bidRequests) {
-  dataControllerConfig = config.getConfig(MODULE_NAME);
-  if (dataControllerConfig.filterSDAwhenEID) {
-    let eidSources = getEIDsSource(bidRequests);
-    let resetSDA = containsConfiguredEIDS(eidSources);
-    const bidderConfig = config.getBidderConfig();
-    if (resetSDA) {
-      for (const [key, value] of Object.entries(bidderConfig)) {
-        value.ortb2.user.data = [];
-      }
-      return bidderConfig;
-    }
-  }
-}
-
-export const dcSubmodule = {
-  filterSDA: filterSDA,
-  filterEIDs: filterEIDs
-};
-
 describe('data controller', function () {
+  let spyFn;
+
   let bidderRequests = [{
     'bidder': 'magnite',
     'params': {
@@ -230,28 +130,34 @@ describe('data controller', function () {
       }
     }
   };
+
+  beforeEach(function () {
+    spyFn = sinon.spy();
+  });
+
   afterEach(function () {
     config.resetConfig();
   });
 
   describe('data controller', function () {
     let result;
+    let specDetails = {};
     let callbackFn = function (bidderRequests) {
       result = bidderRequests;
     };
 
     beforeEach(function () {
       result = null;
+      callbackFn = sinon.spy();
     });
 
     afterEach(function () {
       config.resetConfig();
     });
     it('data controller not configured ', function () {
-      let bidRequests = [{...bidderRequests[0]}];
-
-      filterData(dcSubmodule, bidRequests)
-      expect(config.getConfig('dcUsersAsEids')).to.equal(undefined);
+      let bids = [{...bidderRequests[0]}];
+      filterBidData(callbackFn, specDetails, bids, bidderRequests);
+      expect(callbackFn.called).to.equal(true);
     });
 
     it('data controller incorrect ', function () {
@@ -260,11 +166,11 @@ describe('data controller', function () {
           filterEIDwhenSDA: ['permutive.com:4:777777'],
           filterSDAwhenEID: ['id5-sync.com']
         }
-      }
+      };
       config.setConfig(dataControllerConfiguration);
-      let bidRequests = [{...bidderRequests[0]}];
-      filterData(dcSubmodule, bidRequests)
-      expect(config.getConfig('dcUsersAsEids')).to.equal(undefined);
+      let bids = [{...bidderRequests[0]}];
+      filterBidData(callbackFn, specDetails, bids, bidderRequests);
+      expect(callbackFn.called).to.equal(true);
     });
 
     it('filterEIDwhenSDA for All SDA ', function () {
@@ -272,78 +178,72 @@ describe('data controller', function () {
         dataController: {
           filterEIDwhenSDA: ['*'],
         }
-      }
+      };
       config.setBidderConfig(magniteBidderConfig);
       config.setConfig(dataControllerConfiguration);
 
-      let bidRequests = [{...bidderRequests[0]}];
-      filterData(dcSubmodule, bidRequests)
-      expect(config.getConfig('dcUsersAsEids')).to.not.equal(undefined);
-      expect(config.getConfig('dcUsersAsEids').magnite).to.not.equal(null);
+      let bids = [{...bidderRequests[0]}];
+      let magniteBidderRequest = {
+        bidderCode: 'magnite'
+      };
+      filterBidData(callbackFn, specDetails, bids, magniteBidderRequest);
+      expect(callbackFn.called).to.equal(true);
+      expect(bids[0].userIdAsEids).that.is.empty;
     });
 
-    it('filterEIDwhenSDA for permutive.com:4:777777 ', function () {
+    it('filterEIDwhenSDA for available SAD permutive.com:4:9999 ', function () {
       let dataControllerConfiguration = {
         dataController: {
           filterEIDwhenSDA: ['permutive.com:4:777777'],
         }
-      }
+      };
       config.setBidderConfig(magniteBidderConfig);
       config.setConfig(dataControllerConfiguration);
-
-      let bidRequests = [{...bidderRequests[0]}];
-      filterData(dcSubmodule, bidRequests)
-      expect(config.getConfig('dcUsersAsEids')).to.not.equal(undefined);
-      expect(config.getConfig('dcUsersAsEids').magnite).to.not.equal(null);
-      expect(config.getConfig('dcUsersAsEids').magnite).to.be.instanceof(Array);
-      expect(config.getConfig('dcUsersAsEids').magnite).that.is.empty;
+      let bids = [{...bidderRequests[0]}];
+      let magniteBidderRequest = {
+        bidderCode: 'magnite'
+      };
+      filterBidData(callbackFn, specDetails, bids, magniteBidderRequest);
+      expect(callbackFn.called).to.equal(true);
+      expect(bids[0].userIdAsEids).that.is.empty;
     });
 
-    it('filterEIDwhenSDA for unavaible SAD test.com:4:9999 ', function () {
+    it('filterEIDwhenSDA for unavailable SAD test.com:4:9999 ', function () {
       let dataControllerConfiguration = {
         dataController: {
-          filterEIDwhenSDA: ['permutive.com:4:777777'],
+          filterEIDwhenSDA: ['test.com:4:777777'],
         }
-      }
+      };
       config.setBidderConfig(magniteBidderConfig);
       config.setConfig(dataControllerConfiguration);
-      let bidRequests = [{...bidderRequests[0]}];
-
-      filterData(dcSubmodule, bidRequests)
-
-      expect(config.getConfig('dcUsersAsEids')).to.not.equal(undefined);
-      expect(config.getConfig('dcUsersAsEids').magnite).to.not.equal(undefined);
-      expect(config.getConfig('dcUsersAsEids').magnite).to.be.instanceof(Array);
-      expect(config.getConfig('dcUsersAsEids').magnite).that.is.empty; ;
+      let bids = [{...bidderRequests[0]}];
+      let magniteBidderRequest = {
+        bidderCode: 'magnite'
+      };
+      filterBidData(callbackFn, specDetails, bids, magniteBidderRequest);
+      expect(callbackFn.called).to.equal(true);
+      expect(bids[0].userIdAsEids).that.is.not.empty;
     });
+
     it('filterSDAwhenEID for id5-sync.com EID ', function () {
       let dataControllerConfiguration = {
         dataController: {
           filterSDAwhenEID: ['id5-sync.com'],
         }
-      }
+      };
       config.setBidderConfig(magniteBidderConfig);
       config.setConfig(dataControllerConfiguration);
+      let bids = [{...bidderRequests[0]}];
 
-      let source = new Set();
-
-      let bidRequests = [{...bidderRequests[0]}];
-
-      bidRequests.forEach(eids => {
-        if ('userIdAsEids' in eids) {
-          eids.userIdAsEids.forEach((value) => {
-            if ('source' in value) {
-              source.add(value['source']);
-            }
-          });
-        }
-      });
-      filterData(dcSubmodule, bidRequests)
+      let magniteBidderRequest = {
+        bidderCode: 'magnite'
+      };
+      filterBidData(callbackFn, specDetails, bids, magniteBidderRequest);
       let updatedBidderConfig = config.getBidderConfig();
       expect(updatedBidderConfig.magnite).to.not.equal(undefined);
 
       expect(updatedBidderConfig.magnite.ortb2.user.data).to.be.instanceof(Array);
-      expect(updatedBidderConfig.magnite.ortb2.user.data).that.is.empty; ;
+      expect(updatedBidderConfig.magnite.ortb2.user.data).that.is.empty;
     });
 
     it('filterSDAwhenEID for All EID ', function () {
@@ -351,24 +251,14 @@ describe('data controller', function () {
         dataController: {
           filterSDAwhenEID: ['*'],
         }
-      }
+      };
       config.setBidderConfig(magniteBidderConfig);
       config.setConfig(dataControllerConfiguration);
-
-      let source = new Set();
-
-      let bidRequests = [{...bidderRequests[0]}];
-
-      bidRequests.forEach(eids => {
-        if ('userIdAsEids' in eids) {
-          eids.userIdAsEids.forEach((value) => {
-            if ('source' in value) {
-              source.add(value['source']);
-            }
-          });
-        }
-      });
-      filterData(dcSubmodule, bidRequests)
+      let bids = [{...bidderRequests[0]}];
+      let magniteBidderRequest = {
+        bidderCode: 'magnite'
+      };
+      filterBidData(callbackFn, specDetails, bids, magniteBidderRequest);
       let updatedBidderConfig = config.getBidderConfig();
       expect(updatedBidderConfig.magnite).to.not.equal(undefined);
       expect(updatedBidderConfig.magnite.ortb2.user.data).to.be.instanceof(Array);
