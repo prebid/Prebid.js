@@ -220,6 +220,9 @@ function bidToImp(bid) {
   imp.ext = {};
   imp.ext.siteID = bid.params.siteId.toString();
 
+  // set imp transactionId
+  imp.ext.tid = bid.ortb2Imp.ext.tid;
+
   if (bid.params.hasOwnProperty('id') &&
     (typeof bid.params.id === 'string' || typeof bid.params.id === 'number')) {
     imp.ext.sid = String(bid.params.id);

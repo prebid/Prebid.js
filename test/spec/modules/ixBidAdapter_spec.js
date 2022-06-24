@@ -120,6 +120,11 @@ describe('IndexexchangeAdapter', function () {
           playerSize: [[400, 100]]
         }
       },
+      ortb2Imp: {
+        ext: {
+          tid: '173f49a8-7549-4218-a23c-e7ba59b47230'
+        }
+      },
       adUnitCode: 'div-gpt-ad-1460505748562-0',
       transactionId: '173f49a8-7549-4218-a23c-e7ba59b47230',
       bidId: '1a2b3c4e',
@@ -140,6 +145,11 @@ describe('IndexexchangeAdapter', function () {
       mediaTypes: {
         banner: {
           sizes: [[300, 250]]
+        }
+      },
+      ortb2Imp: {
+        ext: {
+          tid: '173f49a8-7549-4218-a23c-e7ba59b47229'
         }
       },
       adUnitCode: 'div-gpt-ad-1460505748561-0',
@@ -164,6 +174,11 @@ describe('IndexexchangeAdapter', function () {
           sizes: [[300, 250], [300, 600]]
         }
       },
+      ortb2Imp: {
+        ext: {
+          tid: '173f49a8-7549-4218-a23c-e7ba59b47229'
+        }
+      },
       adUnitCode: 'div-gpt-ad-1460505748561-0',
       transactionId: '173f49a8-7549-4218-a23c-e7ba59b47229',
       bidId: '1a2b3c4d',
@@ -182,6 +197,11 @@ describe('IndexexchangeAdapter', function () {
       mediaTypes: {
         banner: {
           sizes: [[300, 250], [300, 600]]
+        }
+      },
+      ortb2Imp: {
+        ext: {
+          tid: '173f49a8-7549-4218-a23c-e7ba59b47229'
         }
       },
       adUnitCode: 'div-gpt-ad-1460505748561-0',
@@ -211,6 +231,11 @@ describe('IndexexchangeAdapter', function () {
           minduration: 0,
           maxduration: 60,
           protocols: [2]
+        }
+      },
+      ortb2Imp: {
+        ext: {
+          tid: '173f49a8-7549-4218-a23c-e7ba59b47230'
         }
       },
       adUnitCode: 'div-gpt-ad-1460505748562-0',
@@ -246,6 +271,11 @@ describe('IndexexchangeAdapter', function () {
           playerSize: [[400, 100], [200, 400]]
         }
       },
+      ortb2Imp: {
+        ext: {
+          tid: '173f49a8-7549-4218-a23c-e7ba59b47230'
+        }
+      },
       adUnitCode: 'div-gpt-ad-1460505748562-0',
       transactionId: '173f49a8-7549-4218-a23c-e7ba59b47230',
       bidId: '1a2b3c4e',
@@ -269,6 +299,11 @@ describe('IndexexchangeAdapter', function () {
         },
         banner: {
           sizes: [[300, 250], [300, 600], [400, 500]]
+        }
+      },
+      ortb2Imp: {
+        ext: {
+          tid: '173f49a8-7549-4218-a23c-e7ba59b47230'
         }
       },
       adUnitCode: 'div-gpt-ad-1460505748562-0',
@@ -304,6 +339,11 @@ describe('IndexexchangeAdapter', function () {
         },
         banner: {
           sizes: [[300, 250], [300, 600]]
+        }
+      },
+      ortb2Imp: {
+        ext: {
+          tid: '173f49a8-7549-4218-a23c-e7ba59b47230'
         }
       },
       adUnitCode: 'div-gpt-ad-1460505748562-0',
@@ -1509,6 +1549,7 @@ describe('IndexexchangeAdapter', function () {
         expect(h).to.equal(size[1]);
         expect(ext.siteID).to.equal(DEFAULT_BANNER_VALID_BID[0].params.siteId);
         expect(ext.sid).to.equal(sidValue);
+        expect(ext.tid).to.equal(DEFAULT_BANNER_VALID_BID[0].transactionId);
       });
     });
 
