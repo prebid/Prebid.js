@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {config} from 'src/config.js';
 import {getRefererInfo} from 'src/refererDetection.js';
-import {processFpd, registerSubmodules} from 'modules/fpdModule/index.js';
+import {processFpd, registerSubmodules, startAuctionHook, reset} from 'modules/fpdModule/index.js';
 import * as enrichmentModule from 'modules/enrichmentFpdModule.js';
 import * as validationModule from 'modules/validationFpdModule/index.js';
 
@@ -11,6 +11,29 @@ let validations = {...validationModule};
 describe('the first party data module', function () {
   afterEach(function () {
     config.resetConfig();
+  });
+
+  describe('startAuctionHook', () => {
+    const mockFpd = {
+      global: {key: 'value'},
+      bidder: {A: {bkey: 'bvalue'}}
+    }
+    before(() => {
+      reset();
+      registerSubmodules({
+        name: 'test',
+        queue: 2,
+        processFpd: function () {
+          return mockFpd;
+        }
+      });
+    })
+
+    it('should run ortb2Fragments through fpd submodules', () => {
+      const req = {ortb2Fragments: {}};
+      startAuctionHook(() => null, req);
+      expect(req.ortb2Fragments).to.eql(mockFpd);
+    });
   });
 
   describe('first party data intitializing', function () {
@@ -23,6 +46,10 @@ describe('the first party data module', function () {
     let keywords;
 
     before(function() {
+      reset();
+      registerSubmodules(enrichmentModule);
+      registerSubmodules(validationModule);
+
       canonical = document.createElement('link');
       canonical.rel = 'canonical';
       keywords = document.createElement('meta');
