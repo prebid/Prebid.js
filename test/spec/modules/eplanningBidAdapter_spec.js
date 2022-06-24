@@ -6,6 +6,7 @@ import {init, getIds} from 'modules/userId/index.js';
 import * as utils from 'src/utils.js';
 import {hook} from '../../../src/hook.js';
 import {getGlobal} from '../../../src/prebidGlobal.js';
+import { makeSlot } from '../integration/faker/googletag.js';
 
 describe('E-Planning Adapter', function () {
   const adapter = newBidder('spec');
@@ -310,7 +311,6 @@ describe('E-Planning Adapter', function () {
   before(() => {
     hook.ready();
   });
-
   describe('inherited functions', function () {
     it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
@@ -642,6 +642,25 @@ describe('E-Planning Adapter', function () {
     let getBoundingClientRectStub;
     let sandbox = sinon.sandbox.create();
     let focusStub;
+    let intersectionObserverStub;
+    let intersectionCallback;
+    let visibilityStateStub;
+
+    function setIntersectionObserverMock(params) {
+      let fakeIntersectionObserver = (stateChange, options) => {
+        intersectionCallback = stateChange;
+        return {
+          unobserve: (element) => {
+            return element;
+          },
+          observe: (element) => {
+            intersectionCallback([{'target': {'id': element.id}, 'isIntersecting': params[element.id].isIntersecting, 'intersectionRatio': params[element.id].ratio, 'boundingClientRect': {'width': params[element.id].width, 'height': params[element.id].height}}]);
+          },
+        };
+      };
+
+      intersectionObserverStub = sandbox.stub(window, 'IntersectionObserver').callsFake(fakeIntersectionObserver);
+    }
     function createElement(id) {
       element = document.createElement('div');
       element.id = id || ADUNIT_CODE_VIEW;
@@ -728,9 +747,6 @@ describe('E-Planning Adapter', function () {
       hasLocalStorageStub.returns(true);
 
       clock = sandbox.useFakeTimers();
-
-      focusStub = sandbox.stub(window.top.document, 'hasFocus');
-      focusStub.returns(true);
     });
     afterEach(function () {
       sandbox.restore();
@@ -740,7 +756,6 @@ describe('E-Planning Adapter', function () {
       window.top.localStorage.removeItem(storageIdRender);
       window.top.localStorage.removeItem(storageIdView);
     });
-
     it('should create the url correctly without LocalStorage', function() {
       createElementVisible();
       hasLocalStorageStub.returns(false);
@@ -772,6 +787,7 @@ describe('E-Planning Adapter', function () {
       let respuesta;
       beforeEach(function () {
         createElementVisible();
+        setIntersectionObserverMock({[ADUNIT_CODE_VIEW]: {'ratio': 1, 'isIntersecting': true, 'width': 200, 'height': 200}});
       });
       it('when you have a render', function() {
         respuesta = spec.buildRequests(bidRequests, bidderRequest);
@@ -809,6 +825,7 @@ describe('E-Planning Adapter', function () {
       let respuesta;
       beforeEach(function () {
         createElementOutOfView();
+        setIntersectionObserverMock({[ADUNIT_CODE_VIEW]: {'ratio': 0, 'isIntersecting': false, 'width': 200, 'height': 200}});
       });
 
       it('when you have a render', function() {
@@ -834,6 +851,7 @@ describe('E-Planning Adapter', function () {
       let respuesta;
       it('should register visibility with more than 50%', function() {
         createPartiallyVisibleElement();
+        setIntersectionObserverMock({[ADUNIT_CODE_VIEW]: {'ratio': 0.6, 'isIntersecting': true, 'width': 200, 'height': 200}});
         respuesta = spec.buildRequests(bidRequests, bidderRequest);
         clock.tick(1005);
 
@@ -842,6 +860,7 @@ describe('E-Planning Adapter', function () {
       });
       it('you should not register visibility with less than 50%', function() {
         createPartiallyInvisibleElement();
+        setIntersectionObserverMock({[ADUNIT_CODE_VIEW]: {'ratio': 0.4, 'isIntersecting': true, 'width': 200, 'height': 200}});
         respuesta = spec.buildRequests(bidRequests, bidderRequest);
         clock.tick(1005);
 
@@ -849,12 +868,29 @@ describe('E-Planning Adapter', function () {
         expect(storage.getDataFromLocalStorage(storageIdView)).to.equal(null);
       });
     });
+    context('when element id is not equal to adunitcode', function() {
+      let respuesta;
+      it('should register visibility with more than 50%', function() {
+        const code = ADUNIT_CODE_VIEW;
+        const divId = 'div-gpt-ad-123';
+        createPartiallyVisibleElement(divId);
+        window.googletag.pubads().setSlots([makeSlot({ code, divId })]);
+        setIntersectionObserverMock({[divId]: {'ratio': 0.6, 'isIntersecting': true, 'width': 200, 'height': 200}});
+
+        respuesta = spec.buildRequests(bidRequests, bidderRequest);
+        clock.tick(1005);
+
+        expect(storage.getDataFromLocalStorage(storageIdRender)).to.equal('1');
+        expect(storage.getDataFromLocalStorage(storageIdView)).to.equal('1');
+      });
+    });
     context('when width or height of the element is zero', function() {
       beforeEach(function () {
         createElementVisible();
       });
-      it('if the width is zero but the height is within the range', function() {
+      it('when you have a render', function() {
         element.style.width = '0px';
+        setIntersectionObserverMock({[ADUNIT_CODE_VIEW]: {'ratio': 0.4, 'isIntersecting': true, 'width': 200, 'height': 200}});
         spec.buildRequests(bidRequests, bidderRequest)
         clock.tick(1005);
 
@@ -863,6 +899,7 @@ describe('E-Planning Adapter', function () {
       });
       it('if the height is zero but the width is within the range', function() {
         element.style.height = '0px';
+        setIntersectionObserverMock({[ADUNIT_CODE_VIEW]: {'ratio': 1, 'isIntersecting': true, 'width': 500, 'height': 0}});
         spec.buildRequests(bidRequests, bidderRequest)
         clock.tick(1005);
 
@@ -872,19 +909,10 @@ describe('E-Planning Adapter', function () {
       it('if both are zero', function() {
         element.style.height = '0px';
         element.style.width = '0px';
+        setIntersectionObserverMock({[ADUNIT_CODE_VIEW]: {'ratio': 1, 'isIntersecting': true, 'width': 0, 'height': 0}});
         spec.buildRequests(bidRequests, bidderRequest)
         clock.tick(1005);
 
-        expect(storage.getDataFromLocalStorage(storageIdRender)).to.equal('1');
-        expect(storage.getDataFromLocalStorage(storageIdView)).to.equal(null);
-      });
-    });
-    context('when tab is inactive', function() {
-      it('I should not register if it is not in focus', function() {
-        createElementVisible();
-        focusStub.returns(false);
-        spec.buildRequests(bidRequests, bidderRequest);
-        clock.tick(1005);
         expect(storage.getDataFromLocalStorage(storageIdRender)).to.equal('1');
         expect(storage.getDataFromLocalStorage(storageIdView)).to.equal(null);
       });
@@ -919,7 +947,11 @@ describe('E-Planning Adapter', function () {
         createElementVisible(ADUNIT_CODE_VIEW);
         createElementVisible(ADUNIT_CODE_VIEW2);
         createElementVisible(ADUNIT_CODE_VIEW3);
-
+        setIntersectionObserverMock({
+          [ADUNIT_CODE_VIEW]: {'ratio': 1, 'isIntersecting': true, 'width': 200, 'height': 200},
+          [ADUNIT_CODE_VIEW2]: {'ratio': 1, 'isIntersecting': true, 'width': 200, 'height': 200},
+          [ADUNIT_CODE_VIEW3]: {'ratio': 1, 'isIntersecting': true, 'width': 200, 'height': 200}
+        });
         respuesta = spec.buildRequests(bidRequestMultiple, bidderRequest);
         clock.tick(1005);
         [ADUNIT_CODE_VIEW, ADUNIT_CODE_VIEW2, ADUNIT_CODE_VIEW3].forEach(ac => {
@@ -932,7 +964,11 @@ describe('E-Planning Adapter', function () {
         createElementOutOfView(ADUNIT_CODE_VIEW);
         createElementOutOfView(ADUNIT_CODE_VIEW2);
         createElementOutOfView(ADUNIT_CODE_VIEW3);
-
+        setIntersectionObserverMock({
+          [ADUNIT_CODE_VIEW]: {'ratio': 0, 'isIntersecting': false, 'width': 200, 'height': 200},
+          [ADUNIT_CODE_VIEW2]: {'ratio': 0, 'isIntersecting': false, 'width': 200, 'height': 200},
+          [ADUNIT_CODE_VIEW3]: {'ratio': 0, 'isIntersecting': false, 'width': 200, 'height': 200}
+        });
         respuesta = spec.buildRequests(bidRequestMultiple, bidderRequest);
         clock.tick(1005);
         [ADUNIT_CODE_VIEW, ADUNIT_CODE_VIEW2, ADUNIT_CODE_VIEW3].forEach(ac => {
@@ -946,7 +982,11 @@ describe('E-Planning Adapter', function () {
         createElementVisible(ADUNIT_CODE_VIEW);
         createElementOutOfView(ADUNIT_CODE_VIEW2);
         createElementOutOfView(ADUNIT_CODE_VIEW3);
-
+        setIntersectionObserverMock({
+          [ADUNIT_CODE_VIEW]: {'ratio': 1, 'isIntersecting': true, 'width': 200, 'height': 200},
+          [ADUNIT_CODE_VIEW2]: {'ratio': 0.3, 'isIntersecting': true, 'width': 200, 'height': 200},
+          [ADUNIT_CODE_VIEW3]: {'ratio': 0, 'isIntersecting': false, 'width': 200, 'height': 200}
+        });
         respuesta = spec.buildRequests(bidRequestMultiple, bidderRequest);
         clock.tick(1005);
         expect(storage.getDataFromLocalStorage('pbsr_' + ADUNIT_CODE_VIEW)).to.equal('6');
