@@ -3,7 +3,7 @@ import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO } from '../src/mediaTypes.js';
-import { loadExternalScript } from "../src/adloader";
+import { loadExternalScript } from '../src/adloader.js';
 
 const BIDDER_CODE = 'spotx';
 const URL = 'https://search.spotxchange.com/openrtb/2.3/dados/';
@@ -448,7 +448,6 @@ function outstreamRender(bid) {
         if (!framedoc && rawframe.contentWindow) {
           framedoc = rawframe.contentWindow.document;
         }
-        framedoc
         loadExternalScript(easiUrl, BIDDER_CODE, undefined, framedoc, attributes);
       } else {
         loadExternalScript(easiUrl, BIDDER_CODE, undefined, undefined, attributes);
