@@ -3,32 +3,37 @@ import { BANNER } from '../src/mediaTypes.js';
 import { isEmpty, getAdUnitSizes, parseSizesInput, deepAccess } from '../src/utils.js';
 
 const BIDDER_CODE = 'ras';
-const GET_ENDPOINT = (network) => `https://csr.onet.pl/${encodeURIComponent(network)}/csr-006/csr.json?`;
 const VERSION = '1.0';
 
-function parseParams(params) {
+const getEndpoint = (network) => `https://csr.onet.pl/${encodeURIComponent(network)}/csr-006/csr.json?`;
+
+function parseParams(params, bidderRequest) {
   const newParams = {};
   const pageContext = params.pageContext;
   if (!pageContext) {
     return {};
   }
+  const du = pageContext.du || deepAccess(bidderRequest, 'refererInfo.referer');
+  if (du) {
+    newParams.du = du;
+  }
   if (pageContext.dr) {
-    newParams.dr = pageContext.dr
+    newParams.dr = pageContext.dr;
   }
   if (pageContext.dv) {
-    newParams.DV = pageContext.dv
+    newParams.DV = pageContext.dv;
   }
   if (pageContext.keyWords && Array.isArray(pageContext.keyWords)) {
-    newParams.kwrd = pageContext.keyWords.join('+')
+    newParams.kwrd = pageContext.keyWords.join('+');
   }
   if (pageContext.capping) {
     newParams.local_capping = pageContext.capping;
   }
   if (pageContext.keyValues && typeof pageContext.keyValues === 'object') {
     for (const param in pageContext.keyValues) {
-      if (pageContext.keyValues.hasOwnProperty(param)) {
+      if (pageContext.keyValues.hasOwnProperty(param) && param !== 'pos') {
         const kvName = 'kv' + param;
-        newParams[kvName] = pageContext.keyValues[param]
+        newParams[kvName] = pageContext.keyValues[param];
       }
     }
   }
@@ -56,11 +61,10 @@ const buildBid = (ad) => {
   };
 };
 
-const getContextParams = (bidRequests) => {
+const getContextParams = (bidRequests, bidderRequest) => {
   const bid = bidRequests[0];
   const { params } = bid;
   const requestParams = {
-    nid: encodeURIComponent(params.network),
     site: params.site,
     area: params.area,
     cre_format: 'html',
@@ -68,7 +72,7 @@ const getContextParams = (bidRequests) => {
     kvprver: VERSION,
     ems_url: 1,
     bid_rate: 1,
-    ...parseParams(params)
+    ...parseParams(params, bidderRequest)
   };
   return Object.keys(requestParams).map((key) => encodeURIComponent(key) + '=' + encodeURIComponent(requestParams[key])).join('&');
 };
@@ -78,10 +82,16 @@ const getSlots = (bidRequests) => {
   const batchSize = bidRequests.length;
   for (let i = 0; i < batchSize; i++) {
     const adunit = bidRequests[i];
-    const { slot } = adunit.params;
+    const { params } = adunit;
     const sizes = parseSizesInput(getAdUnitSizes(adunit)).join(',');
-    queryString += `&slot${i}=${encodeURIComponent(slot)}&id${i}=${encodeURIComponent(adunit.bidId)}&composition${i}=CHILD`;
-    queryString += sizes.length ? `&iusizes${i}=${encodeURIComponent(sizes)}` : ''
+    const pos = parseInt(deepAccess(params, 'pageContext.keyValues.pos') || deepAccess(adunit, 'mediaTypes.banner.pos'), 10);
+    queryString += `&slot${i}=${encodeURIComponent(params.slot)}&id${i}=${encodeURIComponent(adunit.bidId)}&composition${i}=CHILD`;
+    if (sizes.length) {
+      queryString += `&iusizes${i}=${encodeURIComponent(sizes)}`;
+    }
+    if (pos) {
+      queryString += `&pos${i}=${pos}`;
+    }
   }
   return queryString;
 };
@@ -113,13 +123,13 @@ export const spec = {
 
   buildRequests: function (bidRequests, bidderRequest) {
     const slotsQuery = getSlots(bidRequests);
-    const contextQuery = getContextParams(bidRequests);
+    const contextQuery = getContextParams(bidRequests, bidderRequest);
     const gdprQuery = getGdprParams(bidderRequest);
     const bidIds = bidRequests.map((bid) => ({ slot: bid.params.slot, bidId: bid.bidId }));
     const network = bidRequests[0].params.network;
     return [{
       method: 'GET',
-      url: GET_ENDPOINT(network) + contextQuery + slotsQuery + gdprQuery,
+      url: getEndpoint(network) + contextQuery + slotsQuery + gdprQuery,
       bidIds: bidIds
     }];
   },
