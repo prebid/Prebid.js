@@ -421,9 +421,14 @@ function generateGeneralParams(generalObject, bidderRequest) {
     generalParams.schain = getSupplyChain(generalObject.schain);
   }
 
+  if (bidderRequest.ortb2 && bidderRequest.ortb2.site) {
+    generalParams.referrer = bidderRequest.ortb2.site.ref;
+    generalParams.page_url = bidderRequest.ortb2.site.page;
+  }
+
   if (bidderRequest && bidderRequest.refererInfo) {
-    generalParams.referrer = deepAccess(bidderRequest, 'refererInfo.referer');
-    generalParams.page_url = config.getConfig('pageUrl') || deepAccess(window, 'location.href');
+    generalParams.referrer = generalParams.referrer || deepAccess(bidderRequest, 'refererInfo.referer');
+    generalParams.page_url = generalParams.page_url || config.getConfig('pageUrl') || deepAccess(window, 'location.href');
   }
 
   return generalParams
