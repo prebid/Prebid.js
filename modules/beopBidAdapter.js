@@ -38,7 +38,6 @@ export const spec = {
   buildRequests: function(validBidRequests, bidderRequest) {
     const slots = validBidRequests.map(beOpRequestSlotsMaker);
     const pageUrl = getPageUrl(bidderRequest.refererInfo, window);
-    const fpd = config.getLegacyFpd(config.getConfig('ortb2'));
     const gdpr = bidderRequest.gdprConsent;
     const firstSlot = slots[0];
     const payloadObject = {
@@ -48,7 +47,7 @@ export const spec = {
       pid: firstSlot.pid,
       url: pageUrl,
       lang: (window.navigator.language || window.navigator.languages[0]),
-      kwds: (fpd && fpd.site && fpd.site.keywords) || [],
+      kwds: bidderRequest.ortb2?.site?.keywords || [],
       dbg: false,
       slts: slots,
       is_amp: deepAccess(bidderRequest, 'referrerInfo.isAmp'),

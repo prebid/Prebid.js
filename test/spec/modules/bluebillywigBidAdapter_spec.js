@@ -439,7 +439,7 @@ describe('BlueBillywigAdapter', () => {
     it('should add referrerInfo as site when no app is set', () => {
       const newValidBidderRequest = deepClone(validBidderRequest);
 
-      newValidBidderRequest.refererInfo = { referer: 'https://www.bluebillywig.com' };
+      newValidBidderRequest.refererInfo = { page: 'https://www.bluebillywig.com' };
 
       const request = spec.buildRequests(baseValidBidRequests, newValidBidderRequest);
       const payload = JSON.parse(request.data);

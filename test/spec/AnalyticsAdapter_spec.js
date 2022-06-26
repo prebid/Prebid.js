@@ -37,6 +37,14 @@ FEATURE: Analytics Adapters API
     adapter.disableAnalytics();
   });
 
+  it('should track enable status in `enabled`', () => {
+    expect(adapter.enabled).to.equal(false);
+    adapter.enableAnalytics();
+    expect(adapter.enabled).to.equal(true);
+    adapter.disableAnalytics();
+    expect(adapter.enabled).to.equal(false);
+  })
+
   it(`SHOULD call the endpoint WHEN an event occurs that is to be tracked`, function () {
     const eventType = BID_REQUESTED;
     const args = { some: 'data' };

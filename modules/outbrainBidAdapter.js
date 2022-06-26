@@ -53,7 +53,7 @@ export const spec = {
     );
   },
   buildRequests: (validBidRequests, bidderRequest) => {
-    const page = bidderRequest.refererInfo.referer;
+    const page = bidderRequest.refererInfo.page;
     const ua = navigator.userAgent;
     const test = setOnAny(validBidRequests, 'params.test');
     const publisher = setOnAny(validBidRequests, 'params.publisher');
