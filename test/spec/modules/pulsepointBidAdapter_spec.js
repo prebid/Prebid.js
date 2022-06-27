@@ -195,7 +195,8 @@ describe('PulsePoint Adapter Tests', function () {
 
   const bidderRequest = {
     refererInfo: {
-      referer: 'https://publisher.com/home'
+      page: 'https://publisher.com/home',
+      ref: 'https://referrer'
     }
   };
 
@@ -208,7 +209,7 @@ describe('PulsePoint Adapter Tests', function () {
     expect(ortbRequest.site).to.not.equal(null);
     expect(ortbRequest.site.publisher).to.not.equal(null);
     expect(ortbRequest.site.publisher.id).to.equal('p10000');
-    expect(ortbRequest.site.ref).to.equal(window.top.document.referrer);
+    expect(ortbRequest.site.ref).to.equal(bidderRequest.refererInfo.ref);
     expect(ortbRequest.site.page).to.equal('https://publisher.com/home');
     expect(ortbRequest.imp).to.have.lengthOf(2);
     // device object

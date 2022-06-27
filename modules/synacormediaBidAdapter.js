@@ -1,6 +1,6 @@
 'use strict';
 
-import {deepSetValue, getAdUnitSizes, isFn, isPlainObject, logWarn} from '../src/utils.js';
+import {deepAccess, deepSetValue, getAdUnitSizes, isFn, isPlainObject, logWarn} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {includes} from '../src/polyfill.js';
@@ -38,15 +38,23 @@ export const spec = {
     const openRtbBidRequest = {
       id: bidderRequest.auctionId,
       site: {
-        domain: config.getConfig('publisherDomain') || location.hostname,
-        page: refererInfo.referer,
-        ref: document.referrer
+        // TODO: does the fallback make sense here?
+        domain: refererInfo.domain || location.hostname,
+        page: refererInfo.page,
+        ref: refererInfo.ref
       },
       device: {
         ua: navigator.userAgent
       },
       imp: []
     };
+
+    const callbackTimeout = bidderRequest.timeout;
+    const globalTimeout = config.getConfig('bidderTimeout');
+    const tmax = globalTimeout ? Math.min(globalTimeout, callbackTimeout) : callbackTimeout;
+    if (tmax) {
+      openRtbBidRequest.tmax = tmax;
+    }
 
     const schain = validBidReqs[0].schain;
     if (schain) {
@@ -79,7 +87,16 @@ export const spec = {
         imps = this.buildVideoImpressions(adSizes, bid, tagIdOrPlacementId, pos, videoOrBannerKey);
       }
       if (imps.length > 0) {
-        imps.forEach(i => openRtbBidRequest.imp.push(i));
+        imps.forEach(i => {
+          // Deeply add ext section to all imp[] for GPID, prebid slot id, and anything else down the line
+          const extSection = deepAccess(bid, 'ortb2Imp.ext');
+          if (extSection) {
+            deepSetValue(i, 'ext', extSection);
+          }
+
+          // Add imp[] to request object
+          openRtbBidRequest.imp.push(i);
+        });
       }
     });
 

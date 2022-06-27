@@ -122,7 +122,7 @@ describe('AdxPremium analytics adapter', function () {
           'auctionStart': 1589707613899,
           'timeout': 2000,
           'refererInfo': {
-            'referer': 'https://test.com/article/176067',
+            'page': 'https://test.com/article/176067',
             'reachedTop': true,
             'numIframes': 0,
             'stack': [
@@ -222,7 +222,7 @@ describe('AdxPremium analytics adapter', function () {
       'auctionStart': 1589707613899,
       'timeout': 2000,
       'refererInfo': {
-        'referer': 'https://test.com/article/176067',
+        'page': 'https://test.com/article/176067',
         'reachedTop': true,
         'numIframes': 0,
         'stack': [

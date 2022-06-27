@@ -12,6 +12,12 @@ describe('Taboola Adapter', function () {
     getCookie = sinon.stub(userData.storageManager, 'getCookie');
     getDataFromLocalStorage = sinon.stub(userData.storageManager, 'getDataFromLocalStorage');
     localStorageIsEnabled = sinon.stub(userData.storageManager, 'localStorageIsEnabled');
+
+    $$PREBID_GLOBAL$$.bidderSettings = {
+      taboola: {
+        storageAllowed: true
+      }
+    };
   });
 
   afterEach(() => {
@@ -20,6 +26,8 @@ describe('Taboola Adapter', function () {
     getCookie.restore();
     getDataFromLocalStorage.restore();
     localStorageIsEnabled.restore();
+
+    $$PREBID_GLOBAL$$.bidderSettings = {};
   })
 
   const commonBidRequest = {
@@ -91,8 +99,9 @@ describe('Taboola Adapter', function () {
 
     const commonBidderRequest = {
       refererInfo: {
-        referer: 'https://example.com/ref',
-        canonicalUrl: 'https://example.com/'
+        page: 'https://example.com/ref',
+        ref: 'https://ref',
+        domain: 'example.com',
       }
     }
 
@@ -118,9 +127,9 @@ describe('Taboola Adapter', function () {
         'site': {
           'id': commonBidRequest.params.publisherId,
           'name': commonBidRequest.params.publisherId,
-          'domain': window.location.host,
-          'page': commonBidderRequest.refererInfo.canonicalUrl,
-          'ref': commonBidderRequest.refererInfo.referer,
+          'domain': commonBidderRequest.refererInfo.domain,
+          'page': commonBidderRequest.refererInfo.page,
+          'ref': commonBidderRequest.refererInfo.ref,
           'publisher': {'id': commonBidRequest.params.publisherId},
           'content': {'language': navigator.language}
         },
@@ -147,11 +156,6 @@ describe('Taboola Adapter', function () {
         bidfloorcur: 'EUR'
       };
 
-      config.setConfig({ortb2: {
-        badv: ['adadadbcd.com'],
-        bcat: ['IAB25', 'IAB7-39']
-      }});
-
       const bidRequest = {
         ...defaultBidRequest,
         params: {...commonBidRequest.params, ...optionalParams}
@@ -159,8 +163,6 @@ describe('Taboola Adapter', function () {
 
       const res = spec.buildRequests([bidRequest], commonBidderRequest);
       const resData = JSON.parse(res.data);
-      expect(resData.bcat).to.deep.equal(['IAB25', 'IAB7-39']);
-      expect(resData.badv).to.deep.equal(['adadadbcd.com']);
       expect(resData.imp[0].bidfloor).to.deep.equal(0.25);
       expect(resData.imp[0].bidfloorcur).to.deep.equal('EUR');
     });
@@ -170,9 +172,9 @@ describe('Taboola Adapter', function () {
         ...commonBidderRequest,
         timeout: 500
       }
-      const res = spec.buildRequests([defaultBidRequest], bidderRequest)
-      const resData = JSON.parse(res.data)
-      expect(resData.tmax).to.equal(500)
+      const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+      const resData = JSON.parse(res.data);
+      expect(resData.tmax).to.equal(500);
     });
 
     describe('handle privacy segments when building request', function () {
@@ -200,9 +202,9 @@ describe('Taboola Adapter', function () {
           },
           uspConsent: 'consentString'
         }
-        const res = spec.buildRequests([defaultBidRequest], bidderRequest)
-        const resData = JSON.parse(res.data)
-        expect(resData.regs.ext.us_privacy).to.equal('consentString')
+        const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+        const resData = JSON.parse(res.data);
+        expect(resData.regs.ext.us_privacy).to.equal('consentString');
       });
 
       it('should pass coppa consent', function () {
@@ -392,62 +394,36 @@ describe('Taboola Adapter', function () {
 
   describe('internal functions', function () {
     describe('getPageUrl', function () {
-      let origPageUrl;
       const bidderRequest = {
         refererInfo: {
-          canonicalUrl: 'http://canonical.url'
+          page: 'http://canonical.url'
         }
       };
 
-      beforeEach(function () {
-        // remember original pageUrl in config
-        origPageUrl = config.getConfig('pageUrl');
-
-        // unset pageUrl in config
-        config.setConfig({pageUrl: null});
-      });
-
-      afterEach(function () {
-        // set original pageUrl to config
-        config.setConfig({pageUrl: origPageUrl});
-      });
-
       it('should handle empty or missing data', function () {
-        expect(internal.getPageUrl(undefined)).to.equal(utils.getWindowTop().location.href);
-        expect(internal.getPageUrl('')).to.equal(utils.getWindowTop().location.href);
+        expect(internal.getPageUrl(undefined)).to.equal(utils.getWindowSelf().location.href);
+        expect(internal.getPageUrl('')).to.equal(utils.getWindowSelf().location.href);
       });
 
-      it('should use "pageUrl" from config', function () {
-        config.setConfig({pageUrl: 'http://page.url'});
-
-        expect(internal.getPageUrl(undefined)).to.equal(config.getConfig('pageUrl'));
-      });
-
-      it('should use bidderRequest.refererInfo.canonicalUrl', function () {
-        expect(internal.getPageUrl(bidderRequest.refererInfo)).to.equal(bidderRequest.refererInfo.canonicalUrl);
-      });
-
-      it('should prefer bidderRequest.refererInfo.canonicalUrl over "pageUrl" from config', () => {
-        config.setConfig({pageUrl: 'https://page.url'});
-
-        expect(internal.getPageUrl(bidderRequest.refererInfo)).to.equal(bidderRequest.refererInfo.canonicalUrl);
+      it('should use bidderRequest.refererInfo.page', function () {
+        expect(internal.getPageUrl(bidderRequest.refererInfo)).to.equal(bidderRequest.refererInfo.page);
       });
     });
 
     describe('getReferrer', function () {
       it('should handle empty or missing data', function () {
-        expect(internal.getReferrer(undefined)).to.equal(utils.getWindowTop().document.referrer);
-        expect(internal.getReferrer('')).to.equal(utils.getWindowTop().document.referrer);
+        expect(internal.getReferrer(undefined)).to.equal(utils.getWindowSelf().document.referrer);
+        expect(internal.getReferrer('')).to.equal(utils.getWindowSelf().document.referrer);
       });
 
-      it('should use bidderRequest.refererInfo.referer', () => {
+      it('should use bidderRequest.refererInfo.ref', () => {
         const bidderRequest = {
           refererInfo: {
-            referer: 'foobar'
+            ref: 'foobar'
           }
         };
 
-        expect(internal.getReferrer(bidderRequest.refererInfo)).to.equal(bidderRequest.refererInfo.referer);
+        expect(internal.getReferrer(bidderRequest.refererInfo)).to.equal(bidderRequest.refererInfo.ref);
       });
     });
   })
