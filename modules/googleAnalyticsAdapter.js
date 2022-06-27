@@ -3,9 +3,9 @@
  */
 
 import { _each, logMessage } from '../src/utils.js';
-var events = require('../src/events.js');
-var CONSTANTS = require('../src/constants.json');
-var adapterManager = require('../src/adapterManager.js').default;
+import * as events from '../src/events.js';
+import CONSTANTS from '../src/constants.json';
+import adapterManager from '../src/adapterManager.js';
 
 var BID_REQUESTED = CONSTANTS.EVENTS.BID_REQUESTED;
 var BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
@@ -208,8 +208,13 @@ function sendBidRequestToGa(bid) {
     _analyticsQueue.push(function () {
       _eventCount++;
       if (_sendFloors) {
-        var floor = (bid.floorMin) ? bid.floorMin : 'No Floor';
-        window[_gaGlobal](_trackerSend, 'event', _category, 'Requests by Floor=' + floor, 'Ad Unit=' + bid.adUnitCode + ',' + bid.bidderCode, 1, _disableInteraction);
+        var floor = 'No Floor';
+        if (bid.floorData) {
+          floor = bid.floorData.floorValue;
+        } else if (bid.bids.length) {
+          floor = bid.bids[0].getFloor().floor;
+        }
+        window[_gaGlobal](_trackerSend, 'event', _category, 'Requests by Floor=' + floor, bid.bidderCode, 1, _disableInteraction);
       } else {
         window[_gaGlobal](_trackerSend, 'event', _category, 'Requests', bid.bidderCode, 1, _disableInteraction);
       }
@@ -239,8 +244,8 @@ function sendBidResponseToGa(bid) {
           window[_gaGlobal](_trackerSend, 'event', 'Prebid.js CPM Distribution', cpmDis, bidder, 1, _disableInteraction);
         }
         if (_sendFloors) {
-          var floor = (bid.floorMin) ? bid.floorMin : 'No Floor';
-          window[_gaGlobal](_trackerSend, 'event', _category, 'Bids by Floor=' + floor, 'Ad Unit=' + bid.adUnitCode + ',' + bidder, cpmCents, _disableInteraction);
+          var floor = (bid.floorData) ? bid.floorData.floorValue : 'No Floor';
+          window[_gaGlobal](_trackerSend, 'event', _category, 'Bids by Floor=' + floor, 'Size=' + bid.size + ',' + bidder, cpmCents, _disableInteraction);
         } else {
           window[_gaGlobal](_trackerSend, 'event', _category, 'Bids', bidder, cpmCents, _disableInteraction);
         }
@@ -270,8 +275,8 @@ function sendBidWonToGa(bid) {
   _analyticsQueue.push(function () {
     _eventCount++;
     if (_sendFloors) {
-      var floor = (bid.floorMin) ? bid.floorMin : 'No Floor';
-      window[_gaGlobal](_trackerSend, 'event', _category, 'Wins by Floor=' + floor, 'Ad Unit=' + bid.adUnitCode + ',' + bid.bidderCode, cpmCents, _disableInteraction);
+      var floor = (bid.floorData) ? bid.floorData.floorValue : 'No Floor';
+      window[_gaGlobal](_trackerSend, 'event', _category, 'Wins by Floor=' + floor, 'Size=' + bid.size + ',' + bid.bidderCode, cpmCents, _disableInteraction);
     } else {
       window[_gaGlobal](_trackerSend, 'event', _category, 'Wins', bid.bidderCode, cpmCents, _disableInteraction);
     }

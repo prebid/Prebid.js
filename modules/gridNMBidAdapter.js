@@ -67,7 +67,7 @@ export const spec = {
     const requests = [];
     let { bidderRequestId, auctionId, gdprConsent, uspConsent, timeout, refererInfo } = bidderRequest || {};
 
-    const referer = refererInfo ? encodeURIComponent(refererInfo.referer) : '';
+    const referer = refererInfo ? encodeURIComponent(refererInfo.page) : '';
 
     bids.forEach(bid => {
       let user;

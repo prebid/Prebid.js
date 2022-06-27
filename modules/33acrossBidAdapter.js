@@ -16,10 +16,12 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 // **************************** UTILS *************************** //
 const BIDDER_CODE = '33across';
+const BIDDER_ALIASES = ['33across_mgni'];
 const END_POINT = 'https://ssc.33across.com/api/v1/hb';
 const SYNC_ENDPOINT = 'https://ssc-cms.33across.com/ps/?m=xch&rt=html&ru=deb';
 
 const CURRENCY = 'USD';
+const GVLID = 58;
 const GUID_PATTERN = /^[a-zA-Z0-9_-]{22}$/;
 
 const PRODUCT = {
@@ -69,7 +71,9 @@ function isBidRequestValid(bid) {
 }
 
 function _validateBasic(bid) {
-  if (bid.bidder !== BIDDER_CODE || typeof bid.params === 'undefined') {
+  const invalidBidderName = bid.bidder !== BIDDER_CODE && !BIDDER_ALIASES.includes(bid.bidder);
+
+  if (invalidBidderName || !bid.params) {
     return false;
   }
 
@@ -194,7 +198,7 @@ function _buildRequestParams(bidRequests, bidderRequest) {
 
   const uspConsent = bidderRequest && bidderRequest.uspConsent;
 
-  const pageUrl = (bidderRequest && bidderRequest.refererInfo) ? (bidderRequest.refererInfo.referer) : (undefined);
+  const pageUrl = bidderRequest?.refererInfo?.page
 
   adapterState.uniqueSiteIds = bidRequests.map(req => req.params.siteId).filter(uniques);
 
@@ -734,7 +738,9 @@ export const spec = {
   NON_MEASURABLE,
 
   code: BIDDER_CODE,
+  aliases: BIDDER_ALIASES,
   supportedMediaTypes: [ BANNER, VIDEO ],
+  gvlid: GVLID,
   isBidRequestValid,
   buildRequests,
   interpretResponse,

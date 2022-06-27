@@ -1,6 +1,5 @@
 import { _each, isEmpty } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import URLSearchParams from 'core-js-pure/web/url-search-params'
 
 const BIDDER_CODE = 'fluct';
 const END_POINT = 'https://hb.adingo.jp/prebid';
@@ -40,7 +39,8 @@ export const spec = {
    */
   buildRequests: (validBidRequests, bidderRequest) => {
     const serverRequests = [];
-    const referer = bidderRequest.refererInfo.referer;
+    // TODO: is 'page' the right value here?
+    const referer = bidderRequest.refererInfo.page;
 
     _each(validBidRequests, (request) => {
       const data = Object();
