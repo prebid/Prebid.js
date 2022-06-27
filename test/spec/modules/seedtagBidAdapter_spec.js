@@ -288,7 +288,7 @@ describe('Seedtag Adapter', function () {
         it('should expose gvlid', function () {
           expect(spec.gvlid).to.equal(157);
         });
-        it('should shandle uspConsent', function () {
+        it('should handle uspConsent', function () {
           const uspConsent = '1---';
 
           bidderRequest['uspConsent'] = uspConsent;
