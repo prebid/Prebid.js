@@ -17,7 +17,7 @@ let _logBidResponseData = {
   responseTime: 0,
 };
 
-let _bidResponseDataSent = false;
+let _bidResponseDataLogged = [];
 
 var kargoAnalyticsAdapter = Object.assign(
   adapter({ analyticsType }), {
@@ -31,30 +31,28 @@ var kargoAnalyticsAdapter = Object.assign(
           handleBidResponseData(args);
           break;
         }
-        case CONSTANTS.EVENTS.AUCTION_END: {
-          // Reset bool for whether or not to send bid response data
-          _bidResponseDataSent = false;
-          break;
-        }
       }
     }
   }
 );
 
+// handleBidResponseData: Get auction data for Kargo bids and send to server
 function handleBidResponseData (bidResponse) {
-  if (bidResponse.bidder !== KARGO_BIDDER_CODE || _bidResponseDataSent) {
+  // Verify this is Kargo and we haven't seen this auction data yet
+  if (bidResponse.bidder !== KARGO_BIDDER_CODE || _bidResponseDataLogged.includes(bidResponse.auctionId) !== false) {
     return
   }
 
   _logBidResponseData.auctionId = bidResponse.auctionId;
   _logBidResponseData.responseTime = bidResponse.responseTimestamp - bidResponse.requestTimestamp;
-  sendBidResponseData(_logBidResponseData);
-
-  _bidResponseDataSent = true;
+  sendAuctionData(_logBidResponseData);
 }
 
-function sendBidResponseData (data) {
+// sendAuctionData: Send auction data to the server
+function sendAuctionData (data) {
   try {
+    _bidResponseDataLogged.push(data.auctionId);
+
     if (!shouldFireEventRequest()) {
       return;
     }
