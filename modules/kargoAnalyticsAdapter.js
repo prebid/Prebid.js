@@ -31,6 +31,11 @@ var kargoAnalyticsAdapter = Object.assign(
           handleBidResponseData(args);
           break;
         }
+        case CONSTANTS.EVENTS.AUCTION_END: {
+          // Reset bool for whether or not to send bid response data
+          _bidResponseDataSent = false;
+          break;
+        }
       }
     }
   }
