@@ -1,8 +1,11 @@
 import CONSTANTS from './constants.json';
 import { ajax } from './ajax.js';
 import { logMessage, _each } from './utils.js';
+import * as events from './events.js'
 
-const events = require('./events.js');
+export const _internal = {
+  ajax
+};
 
 const {
   EVENTS: {
@@ -20,7 +23,8 @@ const {
     AD_RENDER_FAILED,
     AD_RENDER_SUCCEEDED,
     AUCTION_DEBUG,
-    ADD_AD_UNITS
+    ADD_AD_UNITS,
+    BILLABLE_EVENT
   }
 } = CONSTANTS;
 
@@ -30,16 +34,17 @@ const BUNDLE = 'bundle';
 var _sampled = true;
 
 export default function AnalyticsAdapter({ url, analyticsType, global, handler }) {
-  var _queue = [];
-  var _eventCount = 0;
-  var _enableCheck = true;
-  var _handlers;
+  const _queue = [];
+  let _eventCount = 0;
+  let _enableCheck = true;
+  let _handlers;
+  let _enabled = false;
 
   if (analyticsType === ENDPOINT || BUNDLE) {
     _emptyQueue();
   }
 
-  return {
+  return Object.defineProperties({
     track: _track,
     enqueue: _enqueue,
     enableAnalytics: _enable,
@@ -48,7 +53,11 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
     getGlobal: () => global,
     getHandler: () => handler,
     getUrl: () => url
-  };
+  }, {
+    enabled: {
+      get: () => _enabled
+    }
+  });
 
   function _track({ eventType, args }) {
     if (this.getAdapterType() === BUNDLE) {
@@ -61,7 +70,7 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
   }
 
   function _callEndpoint({ eventType, args, callback }) {
-    ajax(url, callback, JSON.stringify({ eventType, args }));
+    _internal.ajax(url, callback, JSON.stringify({ eventType, args }));
   }
 
   function _enqueue({ eventType, args }) {
@@ -117,6 +126,7 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
         [AD_RENDER_SUCCEEDED]: args => this.enqueue({ eventType: AD_RENDER_SUCCEEDED, args }),
         [AUCTION_DEBUG]: args => this.enqueue({ eventType: AUCTION_DEBUG, args }),
         [ADD_AD_UNITS]: args => this.enqueue({ eventType: ADD_AD_UNITS, args }),
+        [BILLABLE_EVENT]: args => this.enqueue({ eventType: BILLABLE_EVENT, args }),
         [AUCTION_INIT]: args => {
           args.config = typeof config === 'object' ? config.options || {} : {}; // enableAnaltyics configuration object
           this.enqueue({ eventType: AUCTION_INIT, args });
@@ -135,6 +145,7 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
     this.enableAnalytics = function _enable() {
       return logMessage(`Analytics adapter for "${global}" already enabled, unnecessary call to \`enableAnalytics\`.`);
     };
+    _enabled = true;
   }
 
   function _disable() {
@@ -142,6 +153,7 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
       events.off(event, handler);
     });
     this.enableAnalytics = this._oldEnable ? this._oldEnable : _enable;
+    _enabled = false;
   }
 
   function _emptyQueue() {

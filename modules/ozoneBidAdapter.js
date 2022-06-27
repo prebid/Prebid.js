@@ -191,7 +191,7 @@ export const spec = {
     let ozoneRequest = {}; // we only want to set specific properties on this, not validBidRequests[0].params
     delete ozoneRequest.test; // don't allow test to be set in the config - ONLY use $_GET['pbjs_debug']
 
-    let fpd = config.getConfig('ortb2');
+    let fpd = bidderRequest.ortb2;
     if (fpd && deepAccess(fpd, 'user')) {
       logInfo('added FPD user object');
       ozoneRequest.user = fpd.user;

@@ -32,15 +32,16 @@ export const spec = {
     } while (w !== window.top);
     const payload = {
       imps: [],
-      ortb2: config.getConfig('ortb2'),
+      ortb2: bidderRequest.ortb2,
       docReferrer: docRef,
     };
     let endpointUrl;
     if (bidderRequest) {
       const {bidderCode} = bidderRequest;
       endpointUrl = config.getConfig(`${bidderCode}.endpoint_url`);
-      if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
-        payload.referrer = encodeURIComponent(bidderRequest.refererInfo.referer);
+      // TODO: is 'page' the right value here?
+      if (bidderRequest.refererInfo?.page) {
+        payload.referrer = encodeURIComponent(bidderRequest.refererInfo.page);
       }
       if (bidderRequest.gdprConsent) {
         payload.gdprConsent = {

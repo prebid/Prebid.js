@@ -154,9 +154,12 @@ export function getTimeoutUrl (data) {
     isArray(data[0].params) && data[0].params[0]
   ) {
     const params = data[0].params[0];
+    const timeout = data[0].timeout
+
     queryParams =
       '?publisherToken=' + params.publisherId +
-      '&adUnitId=' + params.adUnitId;
+      '&adUnitId=' + params.adUnitId +
+      '&timeout=' + timeout;
   }
   return SEEDTAG_SSP_ONTIMEOUT_ENDPOINT + queryParams;
 }
@@ -186,7 +189,7 @@ export const spec = {
    */
   buildRequests(validBidRequests, bidderRequest) {
     const payload = {
-      url: bidderRequest.refererInfo.referer,
+      url: bidderRequest.refererInfo.page,
       publisherToken: validBidRequests[0].params.publisherId,
       cmp: !!bidderRequest.gdprConsent,
       timeout: bidderRequest.timeout,

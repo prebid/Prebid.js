@@ -77,6 +77,7 @@
                   "301": true,    // zeotapIdPlus
                   "91": true,     // criteo
                   "737": true,    // amxId
+                  "58": true,     // 33acrossId
                 }
               }
             }
@@ -126,6 +127,17 @@
                 "type": "html5",
                 "name": "unifiedid",
                 "expires": 30
+              }
+            },
+            {
+              "name": "33acrossId",
+              "params": {
+                "pid": '0'
+              },
+              "storage": {
+                "type": 'html5',
+                "name": '33acrossId',
+                "expires": 90
               }
             },
             {
@@ -215,10 +227,10 @@
               "name": "zeotapIdPlus"
             },
             {
-              "name": "haloId",
+              "name": "hadronId",
               "storage": {
                 "type": "cookie",
-                "name": "haloId",
+                "name": "hadronId",
                 "expires": 28
               }
             },
@@ -239,19 +251,18 @@
             {
               "name": "uid2"
             }
-            ,{
-                name: "flocId",
-                params: {
-                  // Default sharedid.org token : "A3dHTSoNUMjjERBLlrvJSelNnwWUCwVQhZ5tNQ+sll7y+LkPPVZXtB77u2y7CweRIxiYaGwGXNlW1/dFp8VMEgIAAAB+eyJvcmlnaW4iOiJodHRwczovL3NoYXJlZGlkLm9yZzo0NDMiLCJmZWF0dXJlIjoiSW50ZXJlc3RDb2hvcnRBUEkiLCJleHBpcnkiOjE2MjYyMjA3OTksImlzU3ViZG9tYWluIjp0cnVlLCJpc1RoaXJkUGFydHkiOnRydWV9"
-                  // To get new token, register https://developer.chrome.com/origintrials/#/trials/active for Federated Learning of Cohorts
-                  token: "A3dHTSoNUMjjERBLlrvJSelNnwWUCwVQhZ5tNQ+sll7y+LkPPVZXtB77u2y7CweRIxiYaGwGXNlW1/dFp8VMEgIAAAB+eyJvcmlnaW4iOiJodHRwczovL3NoYXJlZGlkLm9yZzo0NDMiLCJmZWF0dXJlIjoiSW50ZXJlc3RDb2hvcnRBUEkiLCJleHBpcnkiOjE2MjYyMjA3OTksImlzU3ViZG9tYWluIjp0cnVlLCJpc1RoaXJkUGFydHkiOnRydWV9"
-                }
-              },
+            ,
             {
               "name": "imuid",
               "params": {
                 "cid": 5126 // Set your Intimate Merger Customer ID here for production
               }
+            },
+            {
+              "name": "dacId"
+            },
+            {
+              "name": "gravitompId"
             }
           ],
           "syncDelay": 5000,

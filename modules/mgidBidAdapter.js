@@ -7,7 +7,7 @@ import { getStorageManager } from '../src/storageManager.js';
 const GVLID = 358;
 const DEFAULT_CUR = 'USD';
 const BIDDER_CODE = 'mgid';
-export const storage = getStorageManager(GVLID, BIDDER_CODE);
+export const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
 const ENDPOINT_URL = 'https://prebid.mgid.com/prebid/';
 const LOG_WARN_PREFIX = '[MGID warn]: ';
 const LOG_INFO_PREFIX = '[MGID info]: ';
@@ -122,7 +122,8 @@ export const spec = {
       return;
     }
     const info = pageInfo();
-    const page = info.location || deepAccess(bidderRequest, 'refererInfo.referer') || deepAccess(bidderRequest, 'refererInfo.canonicalUrl');
+    // TODO: the fallback seems to never be used here, and probably in the wrong order
+    const page = info.location || deepAccess(bidderRequest, 'refererInfo.page')
     const hostname = parseUrl(page).hostname;
     let domain = extractDomainFromHost(hostname) || hostname;
     const accountId = setOnAny(validBidRequests, 'params.accountId');
