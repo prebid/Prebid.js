@@ -98,6 +98,23 @@ describe('RelaidoAdapter', function () {
       expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
     });
 
+    it('should return true when not existed mediaTypes.video.playerSize and existed valid params.video.playerSize by video', function () {
+      bidRequest.mediaTypes = {
+        video: {
+          context: 'outstream'
+        }
+      };
+      bidRequest.params = {
+        placementId: '100000',
+        video: {
+          playerSize: [
+            [640, 360]
+          ]
+        }
+      };
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+    });
+
     it('should return true when the required params are passed by banner', function () {
       setUAMobile();
       bidRequest.mediaTypes = {

@@ -6,7 +6,7 @@ import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'relaido';
 const BIDDER_DOMAIN = 'api.relaido.jp';
-const ADAPTER_VERSION = '1.0.7';
+const ADAPTER_VERSION = '1.0.8';
 const DEFAULT_TTL = 300;
 const UUID_KEY = 'relaido_uuid';
 
@@ -44,7 +44,10 @@ function buildRequests(validBidRequests, bidderRequest) {
     let height = 0;
 
     if (hasVideoMediaType(bidRequest) && isVideoValid(bidRequest)) {
-      const playerSize = getValidSizes(deepAccess(bidRequest, 'mediaTypes.video.playerSize'));
+      let playerSize = getValidSizes(deepAccess(bidRequest, 'mediaTypes.video.playerSize'));
+      if (playerSize.length === 0) {
+        playerSize = getValidSizes(deepAccess(bidRequest, 'params.video.playerSize'));
+      }
       width = playerSize[0][0];
       height = playerSize[0][1];
       mediaType = VIDEO;
@@ -253,7 +256,10 @@ function isBannerValid(bid) {
 }
 
 function isVideoValid(bid) {
-  const playerSize = getValidSizes(deepAccess(bid, 'mediaTypes.video.playerSize'));
+  let playerSize = getValidSizes(deepAccess(bid, 'mediaTypes.video.playerSize'));
+  if (playerSize.length === 0) {
+    playerSize = getValidSizes(deepAccess(bid, 'params.video.playerSize'));
+  }
   if (playerSize.length > 0) {
     const context = deepAccess(bid, 'mediaTypes.video.context');
     if (context && context === 'outstream') {
