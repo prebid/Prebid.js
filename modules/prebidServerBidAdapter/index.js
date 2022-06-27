@@ -40,6 +40,7 @@ import { ajax } from '../../src/ajax.js';
 import {hook} from '../../src/hook.js';
 import {getGlobal} from '../../src/prebidGlobal.js';
 import {hasPurpose1Consent} from '../../src/utils/gpdr.js';
+import { nativeMapper } from '../../src/native.js';
 
 const getConfig = config.getConfig;
 
@@ -692,10 +693,14 @@ Object.assign(ORTB2.prototype, {
         };
         const ortbRequest = deepAccess(nativeParams, 'ortb');
         try {
-          mediaTypes['native'] = {
-            request: ortbRequest ? JSON.stringify(Object.assign(defaultRequest, ortbRequest)) : JSON.stringify(defaultRequest),
+          const request = ortbRequest ? Object.assign(defaultRequest, ortbRequest) : defaultRequest;
+          mediaTypes[NATIVE] = {
+            request: JSON.stringify(request),
             ver: '1.2'
           };
+          // saving the converted ortb native request into the native mapper, so the Universal Creative
+          // can render the native ad directly.
+          bidRequests.forEach(bidRequest => bidRequest.bids.forEach(bid => nativeMapper.set(bid.bidId, request)));
         } catch (e) {
           logError('error creating native request: ' + String(e));
         }

@@ -46,7 +46,7 @@
     "STALE_RENDER": "staleRender",
     "BILLABLE_EVENT": "billableEvent"
   },
-  "AD_RENDER_FAILED_REASON" : {
+  "AD_RENDER_FAILED_REASON": {
     "PREVENT_WRITING_ON_MAIN_DOCUMENT": "preventWritingOnMainDocument",
     "NO_AD": "noAd",
     "EXCEPTION": "exception",
@@ -75,7 +75,7 @@
     "UUID": "hb_uuid",
     "CACHE_ID": "hb_cache_id",
     "CACHE_HOST": "hb_cache_host",
-    "ADOMAIN" : "hb_adomain"
+    "ADOMAIN": "hb_adomain"
   },
   "DEFAULT_TARGETING_KEYS": {
     "BIDDER": "hb_bidder",
@@ -109,12 +109,12 @@
     "rendererUrl": "hb_renderer_url",
     "adTemplate": "hb_adTemplate"
   },
-  "S2S" : {
-    "SRC" : "s2s",
-    "DEFAULT_ENDPOINT" : "https://prebid.adnxs.com/pbs/v1/openrtb2/auction",
+  "S2S": {
+    "SRC": "s2s",
+    "DEFAULT_ENDPOINT": "https://prebid.adnxs.com/pbs/v1/openrtb2/auction",
     "SYNCED_BIDDERS_KEY": "pbjsSyncs"
   },
-  "BID_STATUS" : {
+  "BID_STATUS": {
     "BID_TARGETING_SET": "targetingSet",
     "RENDERED": "rendered",
     "BID_REJECTED": "bidRejected"
@@ -132,7 +132,7 @@
     "price": "price",
     "salePrice": "saleprice",
     "displayUrl": "displayurl"
-  },  
+  },
   "NATIVE_ASSET_TYPES": {
     "sponsored": 1,
     "desc": 2,
@@ -146,7 +146,7 @@
     "desc2": 10,
     "displayurl": 11,
     "ctatext": 12
-  }, 
+  },
   "NATIVE_IMAGE_TYPES": {
     "ICON": 1,
     "MAIN": 3
@@ -154,6 +154,7 @@
   "NATIVE_KEYS_THAT_ARE_NOT_ASSETS": [
     "sendTargetingKeys",
     "adTemplate",
-    "rendererUrl"
+    "rendererUrl",
+    "type"
   ]
 }

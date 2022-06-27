@@ -67,6 +67,32 @@ const SUPPORTED_TYPES = {
   image: IMAGE
 };
 
+const { NATIVE_KEYS, NATIVE_ASSET_TYPES, NATIVE_IMAGE_TYPES, PREBID_NATIVE_DATA_KEYS_TO_ORTB, NATIVE_KEYS_THAT_ARE_NOT_ASSETS } = CONSTANTS;
+
+// Asset type mapping as per Native IAB spec 1.2
+// https://www.iab.com/wp-content/uploads/2017/04/OpenRTB-Native-Ads-Specification-Draft_1.2_2017-04.pdf#page=40
+const assetTypeMapping = {
+  'image': {
+    1: 'icon',
+    3: 'image'
+  },
+  'data': {
+    1: 'sponsoredBy',
+    2: 'body',
+    3: 'rating',
+    4: 'likes',
+    5: 'downloads',
+    6: 'price',
+    7: 'salePrice',
+    8: 'phone',
+    9: 'address',
+    10: 'body2',
+    11: 'displayUrl',
+    12: 'cta',
+  }
+}
+
+export const nativeMapper = new Map();
 /**
  * Recieves nativeParams from an adUnit. If the params were not of type 'type',
  * passes them on directly. If they were of type 'type', translate
@@ -340,6 +366,21 @@ export function getAllAssetsMessage(data, adObject) {
     adId: data.adId,
   };
 
+  // Provide a mapping from legacy asset to openRTB id, so legacy creatives can still display ads
+  const nativeAssetToOrtbId = {};
+  const ortbRequest = nativeMapper.get(adObject.requestId);
+  const ortbAssets = ortbRequest?.assets || [];
+  for (const asset of ortbAssets) {
+    if (asset.title) {
+      nativeAssetToOrtbId['hb_native_title'] = asset.id;
+    } else if (asset.img) {
+      nativeAssetToOrtbId['hb_native_' + assetTypeMapping.image[asset.img.type]] = asset.id;
+    } else if (asset.data) {
+      nativeAssetToOrtbId[NATIVE_KEYS[assetTypeMapping.data[asset.data.type]]] = asset.id;
+    }
+  }
+  adObject.native.nativeAssetToOrtbId = nativeAssetToOrtbId;
+
   if (adObject.native.ortb) {
     Object.keys(adObject.native).forEach(key => {
       message[key] = adObject.native[key];
@@ -397,24 +438,25 @@ function getNativeKeys(adUnit) {
   }
 }
 
-const { NATIVE_ASSET_TYPES, NATIVE_IMAGE_TYPES, PREBID_NATIVE_DATA_KEYS_TO_ORTB, NATIVE_KEYS_THAT_ARE_NOT_ASSETS } = CONSTANTS;
-
 /**
  * converts Prebid legacy native assets request to OpenRTB format
- * @param {object} nativeAssets an object that describes a native bid request in Prebid proprietary format
+ * @param {object} legacyNativeAssets an object that describes a native bid request in Prebid proprietary format
  * @returns an OpenRTB format of the same bid request
  */
-export function toOrtbNativeRequest(nativeAssets) {
-  if (!nativeAssets && !isPlainObject(nativeAssets)) {
-    logError('Native assets object is empty or not an object: ', nativeAssets);
+export function toOrtbNativeRequest(legacyNativeAssets) {
+  if (!legacyNativeAssets && !isPlainObject(legacyNativeAssets)) {
+    logError('Native assets object is empty or not an object: ', legacyNativeAssets);
     return;
   }
   const ortb = {
     ver: '1.2',
     assets: []
   };
-  for (let key in nativeAssets) {
-    const asset = nativeAssets[key];
+  for (let key in legacyNativeAssets) {
+    // skip conversion for non-asset keys
+    if (!(key in NATIVE_KEYS) || (key in NATIVE_KEYS_THAT_ARE_NOT_ASSETS)) continue;
+
+    const asset = legacyNativeAssets[key];
     let required = 0;
     if (asset.required && isBoolean(asset.required)) {
       required = Number(asset.required);
@@ -624,4 +666,36 @@ export function toOrtbNativeResponse(legacyResponse, ortbRequest) {
     }
   });
   return ortbResponse;
+}
+
+/**
+ * Converts an OpenRTB request to a proprietary Prebid.js format.
+ * The proprietary Prebid format has many limitations and will be dropped in
+ * the future; adapters are encouraged to stop using it in favour of OpenRTB format.
+ * @param {BidRequest[]} bidRequests an array of valid bid requests
+ * @returns an array of valid bid requests where the openRTB bids are converted to proprietary format.
+ */
+export function convertLegacyNativeRequestToOrtb(bidRequests) {
+  if (!bidRequests || !isArray(bidRequests)) return bidRequests;
+  // convert Native ORTB definition to old-style prebid native definition
+  for (const bidRequest of bidRequests) {
+    if (bidRequest.mediaTypes && bidRequest.mediaTypes[NATIVE]) {
+      if (bidRequest.mediaTypes[NATIVE].ortb) continue;
+      // legacy case
+      const ortbRequest = toOrtbNativeRequest(bidRequest.mediaTypes[NATIVE]);
+      bidRequest.mediaTypes[NATIVE] = {
+        ...Object.entries(bidRequest.mediaTypes['native'])
+          .filter(([key, value]) => NATIVE_KEYS_THAT_ARE_NOT_ASSETS.includes(key))
+          .reduce((acc, curr) => { acc[curr[0]] = curr[1]; return acc }, {}),
+        ortb: ortbRequest
+      }
+      nativeMapper.set(bidRequest.bidId, ortbRequest);
+      // to keep other keywords like sendTargetingKeys, rendererUrl...
+      bidRequest.nativeParams = bidRequest.mediaTypes[NATIVE];
+      if (bidRequest.nativeParams) {
+        processNativeAdUnitParams(bidRequest.nativeParams);
+      }
+    }
+  }
+  return bidRequests;
 }
