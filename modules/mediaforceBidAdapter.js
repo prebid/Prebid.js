@@ -113,7 +113,8 @@ export const spec = {
       return;
     }
 
-    const referer = bidderRequest && bidderRequest.refererInfo ? encodeURIComponent(bidderRequest.refererInfo.referer) : '';
+    // TODO: is 'ref' the right value here?
+    const referer = bidderRequest && bidderRequest.refererInfo ? encodeURIComponent(bidderRequest.refererInfo.ref) : '';
     const auctionId = bidderRequest && bidderRequest.auctionId;
     const timeout = bidderRequest && bidderRequest.timeout;
     const dnt = getDNT() ? 1 : 0;
@@ -156,6 +157,7 @@ export const spec = {
         request = {
           id: Math.round(Math.random() * 1e16).toString(16),
           site: {
+            // TODO: this should probably look at refererInfo
             page: window.location.href,
             ref: referer,
             id: bid.params.publisher_id,
@@ -262,7 +264,7 @@ export const spec = {
   onBidWon: function(bid) {
     const cpm = deepAccess(bid, 'adserverTargeting.hb_pb') || '';
     if (isStr(bid.burl) && bid.burl !== '') {
-      bid.burl = replaceAuctionPrice(bid.burl, cpm);
+      bid.burl = replaceAuctionPrice(bid.burl, bid.originalCpm || cpm);
       triggerPixel(bid.burl);
     }
   },

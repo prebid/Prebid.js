@@ -50,10 +50,10 @@ describe('SharedId System', function () {
       expect(callbackSpy.calledOnce).to.be.true;
       expect(callbackSpy.lastCall.lastArg).to.equal(UUID);
     });
-    it('should log message if coppa is set', function () {
+    it('should abort if coppa is set', function () {
       coppaDataHandlerDataStub.returns('true');
-      sharedIdSystemSubmodule.getId({});
-      expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('PubCommonId: IDs not provided for coppa requests, exiting PubCommonId');
+      const result = sharedIdSystemSubmodule.getId({});
+      expect(result).to.be.undefined;
     });
   });
   describe('SharedId System extendId()', function () {
@@ -85,10 +85,56 @@ describe('SharedId System', function () {
       let pubcommId = sharedIdSystemSubmodule.extendId(config, undefined, 'TestId').id;
       expect(pubcommId).to.equal('TestId');
     });
-    it('should log message if coppa is set', function () {
+    it('should abort if coppa is set', function () {
       coppaDataHandlerDataStub.returns('true');
-      sharedIdSystemSubmodule.extendId({}, undefined, 'TestId');
-      expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('PubCommonId: IDs not provided for coppa requests, exiting PubCommonId');
+      const result = sharedIdSystemSubmodule.extendId({params: {extend: true}}, undefined, 'TestId');
+      expect(result).to.be.undefined;
+    });
+  });
+
+  describe('SharedID System domainOverride', () => {
+    let sandbox, domain, cookies, rejectCookiesFor;
+
+    beforeEach(() => {
+      sandbox = sinon.createSandbox();
+      sandbox.stub(document, 'domain').get(() => domain);
+      cookies = {};
+      sandbox.stub(storage, 'getCookie').callsFake((key) => cookies[key]);
+      rejectCookiesFor = null;
+      sandbox.stub(storage, 'setCookie').callsFake((key, value, expires, sameSite, domain) => {
+        if (domain !== rejectCookiesFor) {
+          if (expires != null) {
+            expires = new Date(expires);
+          }
+          if (expires == null || expires > Date.now()) {
+            cookies[key] = value;
+          } else {
+            delete cookies[key];
+          }
+        }
+      });
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    it('should return TLD if cookies can be set there', () => {
+      domain = 'sub.domain.com';
+      rejectCookiesFor = 'com';
+      expect(sharedIdSystemSubmodule.domainOverride()).to.equal('domain.com');
+    });
+
+    it('should return undefined when cookies cannot be set', () => {
+      domain = 'sub.domain.com';
+      rejectCookiesFor = 'sub.domain.com';
+      expect(sharedIdSystemSubmodule.domainOverride()).to.be.undefined;
+    });
+
+    it('should return half-way domain if parent domain rejects cookies', () => {
+      domain = 'inner.outer.domain.com';
+      rejectCookiesFor = 'domain.com';
+      expect(sharedIdSystemSubmodule.domainOverride()).to.equal('outer.domain.com');
     });
   });
 });

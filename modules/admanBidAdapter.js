@@ -1,10 +1,11 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { isFn, deepAccess, logMessage } from '../src/utils.js';
+import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'adman';
 const AD_URL = 'https://pub.admanmedia.com/?c=o&m=multi';
-const URL_SYNC = 'https://pub.admanmedia.com/?c=o&m=sync';
+const URL_SYNC = 'https://sync.admanmedia.com';
 
 function isBidResponseValid(bid) {
   if (!bid.requestId || !bid.cpm || !bid.creativeId ||
@@ -64,8 +65,9 @@ export const spec = {
   buildRequests: (validBidRequests = [], bidderRequest) => {
     let winTop = window;
     let location;
+    // TODO: this odd try-catch block was copied in several adapters; it doesn't seem to be correct for cross-origin
     try {
-      location = new URL(bidderRequest.refererInfo.referer)
+      location = new URL(bidderRequest.refererInfo.page)
       winTop = window.top;
     } catch (e) {
       location = winTop.location;
@@ -108,6 +110,8 @@ export const spec = {
       }
       if (bid.userId) {
         getUserId(placement.eids, bid.userId.uid2 && bid.userId.uid2.id, 'uidapi.com');
+        getUserId(placement.eids, bid.userId.lotamePanoramaId, 'lotame.com');
+        getUserId(placement.eids, bid.userId.idx, 'idx.lat');
       }
       if (traff === VIDEO) {
         placement.playerSize = bid.mediaTypes[VIDEO].playerSize;
@@ -151,19 +155,24 @@ export const spec = {
   },
 
   getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
-    let syncUrl = URL_SYNC
+    let syncType = syncOptions.iframeEnabled ? 'iframe' : 'image';
+    let syncUrl = URL_SYNC + `/${syncType}?pbjs=1`;
     if (gdprConsent && gdprConsent.consentString) {
       if (typeof gdprConsent.gdprApplies === 'boolean') {
         syncUrl += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
       } else {
-        syncUrl += `&gdpr==0&gdpr_consent=${gdprConsent.consentString}`;
+        syncUrl += `&gdpr=0&gdpr_consent=${gdprConsent.consentString}`;
       }
     }
     if (uspConsent && uspConsent.consentString) {
       syncUrl += `&ccpa_consent=${uspConsent.consentString}`;
     }
+
+    const coppa = config.getConfig('coppa') ? 1 : 0;
+    syncUrl += `&coppa=${coppa}`;
+
     return [{
-      type: 'image',
+      type: syncType,
       url: syncUrl
     }];
   }

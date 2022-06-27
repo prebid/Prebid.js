@@ -27,7 +27,7 @@ const getSegmentsFromOrtb = function (ortb2) {
 }
 
 const handleMeta = function () {
-  const storage = getStorageManager(GVLID, 'adnuntius')
+  const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE})
   let adnMeta = null
   if (storage.localStorageIsEnabled()) {
     adnMeta = JSON.parse(storage.getDataFromLocalStorage('adn.metaData'))
@@ -37,7 +37,8 @@ const handleMeta = function () {
 }
 
 const getUsi = function (meta, ortb2, bidderRequest) {
-  const usi = (meta !== null) ? meta.usi : false;
+  let usi = (meta !== null && meta.usi) ? meta.usi : false;
+  if (ortb2 && ortb2.user && ortb2.user.id) { usi = ortb2.user.id }
   return usi
 }
 
@@ -54,7 +55,9 @@ export const spec = {
     const bidRequests = {};
     const requests = [];
     const request = [];
-    const ortb2 = config.getConfig('ortb2');
+    const ortb2 = bidderRequest.ortb2 || {};
+    const bidderConfig = config.getConfig();
+
     const adnMeta = handleMeta()
     const usi = getUsi(adnMeta, ortb2, bidderRequest)
     const segments = getSegmentsFromOrtb(ortb2);
@@ -67,7 +70,7 @@ export const spec = {
     if (gdprApplies !== undefined) request.push('consentString=' + consentString);
     if (segments.length > 0) request.push('segments=' + segments.join(','));
     if (usi) request.push('userId=' + usi);
-
+    if (bidderConfig.useCookie === false) request.push('noCookies=true')
     for (var i = 0; i < validBidRequests.length; i++) {
       const bid = validBidRequests[i]
       const network = bid.params.network || 'network';
@@ -78,7 +81,7 @@ export const spec = {
 
       networks[network] = networks[network] || {};
       networks[network].adUnits = networks[network].adUnits || [];
-      if (bidderRequest && bidderRequest.refererInfo) networks[network].context = bidderRequest.refererInfo.referer;
+      if (bidderRequest && bidderRequest.refererInfo) networks[network].context = bidderRequest.refererInfo.page;
       if (adnMeta) networks[network].metaData = adnMeta;
       networks[network].adUnits.push({ ...targeting, auId: bid.params.auId, targetId: bid.bidId });
     }

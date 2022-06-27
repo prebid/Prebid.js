@@ -5,11 +5,13 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
+import {parseDomain} from '../src/refererDetection.js';
 
 const BIDDER_CODE = 'tappx';
+const GVLID_CODE = 628;
 const TTL = 360;
 const CUR = 'USD';
-const TAPPX_BIDDER_VERSION = '0.1.1004';
+const TAPPX_BIDDER_VERSION = '0.1.1005';
 const TYPE_CNN = 'prebidjs';
 const LOG_PREFIX = '[TAPPX]: ';
 const VIDEO_SUPPORT = ['instream', 'outstream'];
@@ -42,6 +44,7 @@ var hostDomain;
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
 
   /**
@@ -51,7 +54,14 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
   */
   isBidRequestValid: function(bid) {
-    return validBasic(bid) && validMediaType(bid)
+    // bid.params.host
+    if ((new RegExp(`^(vz.*|zz.*)\\.*$`, 'i')).test(bid.params.host)) { // New endpoint
+      if ((new RegExp(`^(zz.*)\\.*$`, 'i')).test(bid.params.host)) return validBasic(bid)
+      else return validBasic(bid) && validMediaType(bid)
+    } else { // This is backward compatible feature. It will be remove in the future
+      if ((new RegExp(`^(ZZ.*)\\.*$`, 'i')).test(bid.params.endpoint)) return validBasic(bid)
+      else return validBasic(bid) && validMediaType(bid)
+    }
   },
 
   /**
@@ -165,10 +175,6 @@ function validMediaType(bid) {
   if (typeof video !== 'undefined') {
     if (VIDEO_SUPPORT.indexOf(video.context) === -1) {
       logWarn(LOG_PREFIX, 'Please review the mandatory Tappx parameters for Video. Video context not supported.');
-      return false;
-    }
-    if (typeof video.mimes == 'undefined') {
-      logWarn(LOG_PREFIX, 'Please review the mandatory Tappx parameters for Video. Mimes param is mandatory.');
       return false;
     }
   }
@@ -550,19 +556,9 @@ export function _checkParamDataType(key, value, datatype) {
 }
 
 export function _extractPageUrl(validBidRequests, bidderRequest) {
-  let referrer = deepAccess(bidderRequest, 'refererInfo.referer');
-  let page = deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || deepAccess(window, 'location.href');
-  let paramUrl = deepAccess(validBidRequests, 'params.domainUrl') || config.getConfig('pageUrl');
-
-  let domainUrl = referrer || page || paramUrl;
-
-  try {
-    domainUrl = domainUrl.match(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n?]+)/img)[0].replace(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?/img, '');
-  } catch (error) {
-    domainUrl = undefined;
-  }
-
-  return domainUrl;
+  // TODO: does the fallback make sense?
+  let url = bidderRequest?.refererInfo?.page || bidderRequest.refererInfo?.topmostLocation;
+  return parseDomain(url, {noLeadingWww: true});
 }
 
 registerBidder(spec);

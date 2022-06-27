@@ -1,9 +1,10 @@
-import { deepAccess, isFn, generateUUID, parseUrl, isEmpty, parseSizesInput } from '../src/utils.js';
-import { config } from '../src/config.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { VIDEO, BANNER } from '../src/mediaTypes.js';
-import find from 'core-js-pure/features/array/find.js';
-import includes from 'core-js-pure/features/array/includes.js';
+// TODO: this adapter appears to have no tests
+
+import {deepAccess, generateUUID, isEmpty, isFn, parseSizesInput, parseUrl} from '../src/utils.js';
+import {config} from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {find, includes} from '../src/polyfill.js';
 
 const ADAPTER_VERSION = '1.0';
 const BIDDER_CODE = 'saambaa';
@@ -322,8 +323,7 @@ function createVideoRequestData(bid, bidderRequest) {
 }
 
 function getTopWindowLocation(bidderRequest) {
-  let url = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
-  return parseUrl(config.getConfig('pageUrl') || url, { decodeSearchAsString: true });
+  return parseUrl(bidderRequest?.refererInfo?.page || '', { decodeSearchAsString: true });
 }
 
 function createBannerRequestData(bid, bidderRequest) {
