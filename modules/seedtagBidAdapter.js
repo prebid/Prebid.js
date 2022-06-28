@@ -154,22 +154,27 @@ function buildBidResponse(seedtagBid) {
  *      https://developer.mozilla.org/en-US/docs/Web/API/Navigation_timing_API
  */
 function ttfb() {
-  // Timing API V2
-  try {
-    const entry = window.performance.getEntriesByType('navigation')[0];
-    return Math.round(entry.responseStart - entry.startTime)
-  }
-  // Timing API V1
-  catch (e) {
+  const ttfb = (() => {
+    // Timing API V2
     try {
-      const entry = performance.timing;
-      return Math.round(entry.responseStart - entry.requestStart);
+      const entry = performance.getEntriesByType("navigation")[0];
+      return Math.round(entry.responseStart - entry.startTime);
+    } catch (e) {
+      // Timing API V1
+      try {
+        const entry = performance.timing;
+        return Math.round(entry.responseStart - entry.requestStart);
+      } catch (e) {
+        // Timing API not available
+        return 0;
+      }
     }
-    // Timing API not available
-    catch (e) {
-      return 0
-    }
-  }
+  })();
+
+  // prevent negative or excessive value
+  // @see https://github.com/googleChrome/web-vitals/issues/162
+  //      https://github.com/googleChrome/web-vitals/issues/137
+  return ttfb >= 0 && ttfb <= performance.now() ? ttfb : 0;
 }
 
 export function getTimeoutUrl (data) {
