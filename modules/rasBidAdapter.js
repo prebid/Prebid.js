@@ -9,13 +9,16 @@ const getEndpoint = (network) => `https://csr.onet.pl/${encodeURIComponent(netwo
 
 function parseParams(params, bidderRequest) {
   const newParams = {};
-  const pageContext = params.pageContext;
-  if (!pageContext) {
-    return {};
-  }
-  const du = pageContext.du || deepAccess(bidderRequest, 'refererInfo.referer');
+  const du = deepAccess(bidderRequest, 'refererInfo.referer');
   if (du) {
     newParams.du = du;
+  }
+  const pageContext = params.pageContext;
+  if (!pageContext) {
+    return newParams;
+  }
+  if (pageContext.du) {
+    newParams.du = pageContext.du;
   }
   if (pageContext.dr) {
     newParams.dr = pageContext.dr;
@@ -31,7 +34,7 @@ function parseParams(params, bidderRequest) {
   }
   if (pageContext.keyValues && typeof pageContext.keyValues === 'object') {
     for (const param in pageContext.keyValues) {
-      if (pageContext.keyValues.hasOwnProperty(param) && param !== 'pos') {
+      if (pageContext.keyValues.hasOwnProperty(param)) {
         const kvName = 'kv' + param;
         newParams[kvName] = pageContext.keyValues[param];
       }
@@ -82,15 +85,10 @@ const getSlots = (bidRequests) => {
   const batchSize = bidRequests.length;
   for (let i = 0; i < batchSize; i++) {
     const adunit = bidRequests[i];
-    const { params } = adunit;
     const sizes = parseSizesInput(getAdUnitSizes(adunit)).join(',');
-    const pos = parseInt(deepAccess(params, 'pageContext.keyValues.pos') || deepAccess(adunit, 'mediaTypes.banner.pos'), 10);
-    queryString += `&slot${i}=${encodeURIComponent(params.slot)}&id${i}=${encodeURIComponent(adunit.bidId)}&composition${i}=CHILD`;
+    queryString += `&slot${i}=${encodeURIComponent(adunit.params.slot)}&id${i}=${encodeURIComponent(adunit.bidId)}&composition${i}=CHILD`;
     if (sizes.length) {
       queryString += `&iusizes${i}=${encodeURIComponent(sizes)}`;
-    }
-    if (pos) {
-      queryString += `&pos${i}=${pos}`;
     }
   }
   return queryString;

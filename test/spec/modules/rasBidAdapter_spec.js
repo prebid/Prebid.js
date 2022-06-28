@@ -78,6 +78,9 @@ describe('rasBidAdapter', function () {
         'gdprConsent': {
           'gdprApplies': true,
           'consentString': 'some-consent-string'
+        },
+        'refererInfo': {
+          'referer': 'https://example.com/'
         }
       });
       expect(requests[0].url).to.have.string(CSR_ENDPOINT);
@@ -91,6 +94,7 @@ describe('rasBidAdapter', function () {
       expect(requests[0].url).to.have.string('bid_rate=1');
       expect(requests[0].url).to.have.string('gdpr_applies=true');
       expect(requests[0].url).to.have.string('euconsent=some-consent-string');
+      expect(requests[0].url).to.have.string('du=https%3A%2F%2Fexample.com%2F');
     });
 
     it('should return empty consent string when undefined', function () {
@@ -111,8 +115,7 @@ describe('rasBidAdapter', function () {
           dr: 'https://example.org/',
           keyWords: ['val1', 'val2'],
           keyValues: {
-            seg_ab: 10,
-            pos: 1
+            adunit: 'test/areatest'
           }
         }
       };
@@ -121,7 +124,6 @@ describe('rasBidAdapter', function () {
       expect(requests[0].url).to.have.string('slot0=test');
       expect(requests[0].url).to.have.string('id0=1');
       expect(requests[0].url).to.have.string('iusizes0=300x250%2C300x600');
-      expect(requests[0].url).to.have.string('pos0=1');
       expect(requests[0].url).to.have.string('slot1=test2');
       expect(requests[0].url).to.have.string('id1=2');
       expect(requests[0].url).to.have.string('iusizes1=750x300');
@@ -135,6 +137,7 @@ describe('rasBidAdapter', function () {
       expect(requests[0].url).to.have.string('dr=https%3A%2F%2Fexample.org%2F');
       expect(requests[0].url).to.have.string('DV=test%2Fareatest');
       expect(requests[0].url).to.have.string('kwrd=val1%2Bval2');
+      expect(requests[0].url).to.have.string('kvadunit=test%2Fareatest');
     });
   });
 
