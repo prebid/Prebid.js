@@ -294,7 +294,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
   const uspConsent = bidderRequest && bidderRequest.uspConsent;
   const timeout = config.getConfig('bidderTimeout');
-  const topWindowUrl = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
+  const topWindowUrl = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page;
   _each(validBidRequests, bidRequest => {
     const {
       bidId,
@@ -370,6 +370,8 @@ function buildRequests(validBidRequests, bidderRequest) {
         data.pi = 5;
       } else if (mediaTypes.video) {
         data.pi = mediaTypes.video.linearity === 2 ? 6 : 7; // invideo : video
+      } else if (params.product && params.product.toLowerCase() === 'skin') {
+        data.pi = 8;
       }
     } else { // legacy params
       data = { ...data, ...handleLegacyParams(params, sizes) }

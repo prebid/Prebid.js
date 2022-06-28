@@ -26,10 +26,11 @@ export const spec = {
       data: {
         auctionId: bidderRequest.auctionId,
         refererInfo: {
+          // TODO: this collects everything it finds, except for canonicalUrl
           isAmp: refererInfo.isAmp,
           numIframes: refererInfo.numIframes,
           reachedTop: refererInfo.reachedTop,
-          referer: refererInfo.referer
+          referer: refererInfo.topmostLocation,
         },
         gdprConsent: {
           consentString: gdprConsent.consentString,

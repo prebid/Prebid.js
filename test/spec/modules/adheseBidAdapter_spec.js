@@ -67,7 +67,7 @@ describe('AdheseAdapter', function () {
         consentString: 'CONSENT_STRING'
       },
       refererInfo: {
-        referer: 'http://prebid.org/dev-docs/subjects?_d=1'
+        page: 'http://prebid.org/dev-docs/subjects?_d=1'
       }
     };
 

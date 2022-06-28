@@ -12,11 +12,11 @@ import { getStorageManager } from '../src/storageManager.js'
 export const storage = getStorageManager({ gvlid: 570, moduleName: 'cpexId' })
 
 // Returns the id string from either cookie or localstorage
-const getId = () => { return storage.getCookie('caid') || storage.getDataFromLocalStorage('caid') }
+const readId = () => { return storage.getCookie('czaid') || storage.getDataFromLocalStorage('czaid') }
 
 /** @type {Submodule} */
 export const cpexIdSubmodule = {
-  version: '0.0.4',
+  version: '0.0.5',
   /**
    * used to link submodule with config
    * @type {string}
@@ -30,19 +30,18 @@ export const cpexIdSubmodule = {
   /**
    * decode the stored id value for passing to bid requests
    * @function decode
-   * @param {(Object|string)} value
    * @returns {(Object|undefined)}
    */
-  decode (value) { return { cpexId: getId() } },
+  decode () { return { cpexId: readId() } },
   /**
    * performs action to obtain id and return a value in the callback's response argument
    * @function
-   * @param {SubmoduleConfig} [config]
-   * @param {ConsentData} [consentData]
-   * @param {(Object|undefined)} cacheIdObj
    * @returns {IdResponse|undefined}
    */
-  getId (config, consentData) { return { cpexId: getId() } }
+  getId () {
+    const id = readId()
+    return id ? { id: id } : undefined
+  }
 }
 
 submodule('userId', cpexIdSubmodule)

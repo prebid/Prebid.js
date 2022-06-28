@@ -23,8 +23,27 @@ function createIFrameMarker() {
 }
 
 describe('consentManagement', function () {
+  it('should be enabled by default', () => {
+    expect(uspDataHandler.enabled).to.be.true;
+  });
+  it('should respect configuration set after activation', () => {
+    setConsentConfig({
+      usp: {
+        cmpApi: 'static',
+        consentData: {
+          getUSPData: {
+            uspString: '1YYY'
+          }
+        }
+      }
+    });
+    expect(uspDataHandler.getConsentData()).to.equal('1YYY');
+  })
+
   describe('setConsentConfig tests:', function () {
     describe('empty setConsentConfig value', function () {
+      before(resetConsentData);
+
       beforeEach(function () {
         sinon.stub(utils, 'logInfo');
         sinon.stub(utils, 'logWarn');
@@ -37,11 +56,11 @@ describe('consentManagement', function () {
         resetConsentData();
       });
 
-      it('should not run if no config', function () {
+      it('should run with defaults if no config', function () {
         setConsentConfig({});
-        expect(consentAPI).to.be.undefined;
-        expect(consentTimeout).to.be.undefined;
-        sinon.assert.callCount(utils.logWarn, 1);
+        expect(consentAPI).to.be.equal('iab');
+        expect(consentTimeout).to.be.equal(50);
+        sinon.assert.callCount(utils.logInfo, 3);
       });
 
       it('should use system default values', function () {
@@ -51,11 +70,11 @@ describe('consentManagement', function () {
         sinon.assert.callCount(utils.logInfo, 3);
       });
 
-      it('should exit the consent manager if config.usp is not an object', function() {
+      it('should not exit the consent manager if config.usp is not an object', function() {
         setConsentConfig({});
-        expect(consentAPI).to.be.undefined;
-        sinon.assert.calledOnce(utils.logWarn);
-        sinon.assert.notCalled(utils.logInfo);
+        expect(consentAPI).to.be.equal('iab');
+        expect(consentTimeout).to.be.equal(50);
+        sinon.assert.callCount(utils.logInfo, 3);
       });
 
       it('should not produce any USP metadata', function() {
@@ -66,16 +85,16 @@ describe('consentManagement', function () {
 
       it('should exit the consent manager if only config.gdpr is an object', function() {
         setConsentConfig({ gdpr: { cmpApi: 'iab' } });
-        expect(consentAPI).to.be.undefined;
-        sinon.assert.calledOnce(utils.logWarn);
-        sinon.assert.notCalled(utils.logInfo);
+        expect(consentAPI).to.be.equal('iab');
+        expect(consentTimeout).to.be.equal(50);
+        sinon.assert.callCount(utils.logInfo, 3);
       });
 
       it('should exit consentManagementUsp module if config is "undefined"', function() {
         setConsentConfig(undefined);
-        expect(consentAPI).to.be.undefined;
-        sinon.assert.calledOnce(utils.logWarn);
-        sinon.assert.notCalled(utils.logInfo);
+        expect(consentAPI).to.be.equal('iab');
+        expect(consentTimeout).to.be.equal(50);
+        sinon.assert.callCount(utils.logInfo, 3);
       });
 
       it('should immediately start looking up consent data', () => {
