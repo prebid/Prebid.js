@@ -1,10 +1,12 @@
 // eslint-disable-next-line prebid/validate-imports
 // eslint-disable-next-line prebid/validate-imports
-import {registerBidder} from '../src/adapters/bidderFactory.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { config } from '../src/config.js'
+import { _each, deepAccess, cleanObj } from '../src/utils.js'
 export const BIDDER_CODE = 'bliink'
-export const BLIINK_ENDPOINT_ENGINE = 'https://engine.bliink.io/delivery'
-export const BLIINK_ENDPOINT_ENGINE_VAST = 'https://engine.bliink.io/vast'
-export const BLIINK_ENDPOINT_COOKIE_SYNC = 'https://cookiesync.api.bliink.io'
+export const BLIINK_ENDPOINT_ENGINE = 'https://task-manager-app5.herokuapp.com/prebids'
+export const BLIINK_ENDPOINT = 'https://task-manager-app5.herokuapp.com/prebids'; // 'https://engine-stg.bliink.io/prebid'
+export const BLIINK_ENDPOINT_COOKIE_SYNC_IFRAME = 'https://storage.googleapis.com/bliink-creatives-web-app/bliink/cookie_sync/index.html'
 export const META_KEYWORDS = 'keywords'
 export const META_DESCRIPTION = 'description'
 
@@ -14,8 +16,16 @@ const BANNER = 'banner'
 const supportedMediaTypes = [BANNER, VIDEO]
 const aliasBidderCode = ['bk']
 
+/**
+ * @description get coppa value from config
+ */
+
+function getCoppa() {
+  return config.getConfig('coppa') === true ? 1 : 0;
+}
+
 export function getMetaList(name) {
-  if (!name || name.length === 0) return []
+  if (!name || name.length === 0) return [];
 
   return [
     {
@@ -52,7 +62,7 @@ export function getOneMetaValue(query) {
     return metaEl.content
   }
 
-  return null
+  return null;
 }
 
 export function getMetaValue(name) {
@@ -75,13 +85,11 @@ export function getKeywords() {
     ]
 
     if (keywords && keywords.length > 0) {
-      return keywords
-        .filter((value) => value)
-        .map((value) => value.trim())
+      return keywords.filter((value) => value).map((value) => value.trim());
     }
   }
 
-  return []
+  return [];
 }
 
 export const parseXML = (content) => {
@@ -94,14 +102,16 @@ export const parseXML = (content) => {
     xml = parser.parseFromString(content, 'text/xml')
   } catch (e) {}
 
-  if (xml &&
+  if (
+    xml &&
     xml.getElementsByTagName('VAST')[0] &&
-    xml.getElementsByTagName('VAST')[0].tagName === 'VAST') {
-    return xml
+    xml.getElementsByTagName('VAST')[0].tagName === 'VAST'
+  ) {
+    return xml;
   }
 
-  return null
-}
+  return null;
+};
 
 /**
  * @param bidRequest
@@ -109,45 +119,20 @@ export const parseXML = (content) => {
  * @return {{cpm, netRevenue: boolean, requestId, width: (*|number), currency, ttl: number, creativeId, height: (*|number)} & {mediaType: string, vastXml}}
  */
 export const buildBid = (bidRequest, bliinkCreative) => {
-  if (!bidRequest && !bliinkCreative) return null
+  if (!bidRequest || !bliinkCreative || !bidRequest.creative || !bidRequest.creative[bliinkCreative.mediaType]) return null;
 
-  const body = {
-    requestId: bidRequest.bidId,
-    currency: bliinkCreative.currency,
-    cpm: bliinkCreative.price,
-    creativeId: bliinkCreative.creativeId,
-    width: (bidRequest.sizes && bidRequest.sizes[0][0]) || 1,
-    height: (bidRequest.sizes && bidRequest.sizes[0][1]) || 1,
-    netRevenue: false,
+  const bidResponse = Object.assign(bliinkCreative, {
+    cpm: bidRequest.price,
+    currency: bidRequest.currency,
+    creativeId: bidRequest.creative.creativeId,
+    requestId: bidRequest.creative.requestId,
+    width: bidRequest.creative[bliinkCreative.mediaType].width || 1,
+    height: bidRequest.creative[bliinkCreative.mediaType].height || 1,
     ttl: 3600,
-  }
-
-  // eslint-disable-next-line no-mixed-operators
-  if ((bliinkCreative) && bidRequest &&
-    // eslint-disable-next-line no-mixed-operators
-    !bidRequest.bidId ||
-    !bidRequest.sizes ||
-    !bidRequest.params ||
-    !(bidRequest.params.placement)
-  ) return null
-
-  delete bidRequest['bids']
-
-  switch (bliinkCreative.media_type) {
-    case VIDEO:
-      return Object.assign(body, {
-        mediaType: VIDEO,
-        vastXml: bliinkCreative.content,
-      })
-    case BANNER:
-      return Object.assign(body, {
-        mediaType: BANNER,
-        ad: (bliinkCreative && bliinkCreative.content && bliinkCreative.content.creative && bliinkCreative.content.creative.adm) || '',
-      })
-    default:
-      break;
-  }
-}
+    netRevenue: true,
+  });
+  return bidResponse;
+};
 
 /**
  * @description Verify the the AdUnits.bids, respond with true (valid) or false (invalid).
@@ -156,8 +141,8 @@ export const buildBid = (bidRequest, bliinkCreative) => {
  * @return boolean
  */
 export const isBidRequestValid = (bid) => {
-  return !(!bid || !bid.params || !bid.params.placement || !bid.params.tagId)
-}
+  return !(!bid || !bid.params || !bid.params.placement || !bid.params.tagId);
+};
 
 /**
  * @description Takes an array of valid bid requests, all of which are guaranteed to have passed the isBidRequestValid() test.
@@ -169,47 +154,37 @@ export const isBidRequestValid = (bid) => {
 export const buildRequests = (_, bidderRequest) => {
   if (!bidderRequest) return null
 
-  let data = {
+  const tags = bidderRequest.bids.map((bid) => {
+    return {
+      sizes: bid.sizes.map((size) => ({ w: size[0], h: size[1] })),
+      id: bid.params.tagId,
+      bidId: bid.bidId,
+      mediaTypes: Object.keys(bid.mediaTypes),
+      imageUrl: '',
+    };
+  });
+
+  const data = {
+    pageTitle: document.title,
     pageUrl: bidderRequest.refererInfo.referer,
     pageDescription: getMetaValue(META_DESCRIPTION),
     keywords: getKeywords().join(','),
     gdpr: false,
     gdpr_consent: '',
-    pageTitle: document.title,
-  }
+    tags: tags,
+  };
+  const gdprConsentData = _getGdprConsent(bidderRequest) || {};
+  const postData = Object.assign(data, gdprConsentData);
 
-  const endPoint = bidderRequest.bids[0].params.placement === VIDEO ? BLIINK_ENDPOINT_ENGINE_VAST : BLIINK_ENDPOINT_ENGINE
-
-  const params = {
-    bidderRequestId: bidderRequest.bidderRequestId,
-    bidderCode: bidderRequest.bidderCode,
-    bids: bidderRequest.bids,
-    refererInfo: bidderRequest.refererInfo,
-  }
-
-  if (bidderRequest.gdprConsent) {
-    data = Object.assign(data, {
-      gdpr: bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies,
-      gdpr_consent: bidderRequest.gdprConsent.consentString
-    })
-  }
-
-  if (bidderRequest.bids && bidderRequest.bids.length > 0 && bidderRequest.bids[0].sizes && bidderRequest.bids[0].sizes[0]) {
-    data = Object.assign(data, {
-      width: bidderRequest.bids[0].sizes[0][0],
-      height: bidderRequest.bids[0].sizes[0][1]
-    })
-
-    return {
-      method: 'GET',
-      url: `${endPoint}/${bidderRequest.bids[0].params.tagId}`,
-      data: data,
-      params: params,
-    }
-  }
-
-  return null
-}
+  return {
+    method: 'POST',
+    url: BLIINK_ENDPOINT_ENGINE,
+    data: postData,
+    options: {
+      contentType: 'application/json',
+    },
+  };
+};
 
 /**
  * @description Parse the response (from buildRequests) and generate one or more bid objects.
@@ -219,50 +194,43 @@ export const buildRequests = (_, bidderRequest) => {
  * @return
  */
 const interpretResponse = (serverResponse, request) => {
-  if ((serverResponse && serverResponse.mode === 'no-ad')) {
-    return []
+  if (serverResponse && serverResponse.mode === 'no-ad') {
+    return [];
   }
-
-  const body = serverResponse.body
-  const serverBody = request.params
-
-  const xml = parseXML(body)
-
-  let creative;
-
-  switch (serverBody.bids[0].params.placement) {
-    case xml && VIDEO:
-      const price = xml.getElementsByTagName('Price') && xml.getElementsByTagName('Price')[0]
-      const currency = xml.getElementsByTagName('Currency') && xml.getElementsByTagName('Currency')[0]
-      const creativeId = xml.getElementsByTagName('CreativeId') && xml.getElementsByTagName('CreativeId')[0]
-
-      creative = {
-        content: body,
-        price: (price && price.textContent) || 0,
-        currency: (currency && currency.textContent) || 'EUR',
-        creativeId: creativeId || 0,
-        media_type: 'video',
-      }
-
-      return buildBid(serverBody.bids[0], creative)
-    case BANNER:
-      if (body) {
+  const bodyResponse = serverResponse.body.bids
+  const bidResponses = [];
+  _each(bodyResponse, function (response) {
+    let xml;
+    if (response.creative.video && response.creative.video.content) {
+      xml = parseXML(response.creative.video.content);
+    }
+    let creative;
+    switch (response.creative.media_type) {
+      case xml && VIDEO:
+        const vastXml = response.creative.video.content
         creative = {
-          content: body,
-          price: body.price,
-          currency: body.currency,
-          creativeId: 0,
-          media_type: 'banner',
+          mediaType: 'video',
+          vastXml,
+          vastUrl: 'data:text/xml;charset=utf-8;base64,' + btoa(vastXml.replace(/\\"/g, '"'))
+        };
+
+        return bidResponses.push(buildBid(response, creative));
+      case BANNER:
+        if (response.creative) {
+          creative = {
+            ad: response.creative.banner.adm,
+            mediaType: 'banner',
+          };
+          return bidResponses.push(buildBid(response, creative));
         }
 
-        return buildBid(serverBody.bids[0], creative)
-      }
-
-      break
-    default:
-      break
-  }
-}
+        break;
+      default:
+        break;
+    }
+  });
+  return bidResponses;
+};
 
 /**
  * @description  If the publisher allows user-sync activity, the platform will call this function and the adapter may register pixels and/or iframe user syncs. For more information, see Registering User Syncs below
@@ -272,52 +240,46 @@ const interpretResponse = (serverResponse, request) => {
  * @return {[{type: string, url: string}]|*[]}
  */
 const getUserSyncs = (syncOptions, serverResponses, gdprConsent) => {
-  let syncs = []
-
+  let syncs = [];
   if (syncOptions.pixelEnabled && serverResponses.length > 0) {
     if (gdprConsent) {
-      const gdprParams = `consentString=${gdprConsent.consentString}`
-      const smartCallbackURL = encodeURIComponent(`${BLIINK_ENDPOINT_COOKIE_SYNC}/cookiesync?partner=smart&uid=[sas_uid]`)
-      const azerionCallbackURL = encodeURIComponent(`${BLIINK_ENDPOINT_COOKIE_SYNC}/cookiesync?partner=azerion&uid={PUB_USER_ID}`)
-      const appnexusCallbackURL = encodeURIComponent(`${BLIINK_ENDPOINT_COOKIE_SYNC}/cookiesync?partner=azerion&uid=$UID`)
-      return [
-        {
-          type: 'script',
-          url: 'https://prg.smartadserver.com/ac?out=js&nwid=3392&siteid=305791&pgname=rg&fmtid=81127&tgt=[sas_target]&visit=m&tmstp=[timestamp]&clcturl=[countgo]'
-        },
-        {
-          type: 'image',
-          url: `https://sync.smartadserver.com/getuid?nwid=3392&${gdprParams}&url=${smartCallbackURL}`,
-        },
-        {
-          type: 'image',
-          url: `https://ad.360yield.com/server_match?partner_id=1531&${gdprParams}&r=${azerionCallbackURL}`,
-        },
-        {
-          type: 'image',
-          url: `https://ads.stickyadstv.com/auto-user-sync?${gdprParams}`,
-        },
-        {
-          type: 'image',
-          url: `https://cookiesync.api.bliink.io/getuid?url=https%3A%2F%2Fvisitor.omnitagjs.com%2Fvisitor%2Fsync%3Fuid%3D1625272249969090bb9d544bd6d8d645%26name%3DBLIINK%26visitor%3D%24UID%26external%3Dtrue&${gdprParams}`,
-        },
-        {
-          type: 'image',
-          url: `https://cookiesync.api.bliink.io/getuid?url=https://pixel.advertising.com/ups/58444/sync?&gdpr=1&gdpr_consent=${gdprConsent.consentString}&redir=true&uid=$UID`,
-        },
-        {
-          type: 'image',
-          url: `https://ups.analytics.yahoo.com/ups/58499/occ?gdpr=1&gdpr_consent=${gdprConsent.consentString}`,
-        },
-        {
-          type: 'image',
-          url: `https://secure.adnxs.com/getuid?${appnexusCallbackURL}`,
-        },
-      ]
+      const gdprParams = `consentString=${gdprConsent.consentString}`;
+      const apiVersion = `apiVersion=${gdprConsent.apiVersion}`;
+      let sync;
+      if (syncOptions.iframeEnabled) {
+        sync = [
+          {
+            type: 'iframe',
+            url: `${BLIINK_ENDPOINT_COOKIE_SYNC_IFRAME}?gdpr=${Number(
+              gdprConsent.gdprApplies
+            )}&coppa=${getCoppa()}&${gdprParams}&${apiVersion}`,
+          },
+        ];
+      } else {
+        sync = serverResponses[0].body.userSyncs || [];
+      }
+
+      return sync;
     }
   }
 
   return syncs;
+};
+
+function _getGdprConsent(bidderRequest) {
+  if (!deepAccess(bidderRequest, 'gdprConsent')) {
+    return false;
+  }
+
+  const {
+    gdprApplies,
+    consentString,
+  } = bidderRequest.gdprConsent;
+
+  return cleanObj({
+    gdpr_consent: consentString,
+    gdpr: gdprApplies,
+  });
 }
 
 /**
@@ -331,6 +293,6 @@ export const spec = {
   buildRequests,
   interpretResponse,
   getUserSyncs,
-}
+};
 
-registerBidder(spec)
+registerBidder(spec);
