@@ -93,7 +93,7 @@ function buildRequest(bidRequest, bidderRequest) {
   const openrtbRequest = {
     id: bidRequest.bidId,
     imp: buildRequestImpression(bidRequest, bidderRequest),
-    site: buildRequestSite(bidRequest),
+    site: buildRequestSite(bidderRequest),
     device: buildRequestDevice()
   };
 
@@ -170,15 +170,13 @@ function buildBidFloorData(bidRequest) {
   return floorData;
 }
 
-function buildRequestSite(bidRequest) {
-  /* eslint-disable no-console */
+function buildRequestSite(bidderRequest) {
   const site = config.getConfig('ortb2.site') || {};
-  console.log(site);
 
   site.domain = site.domain || config.publisherDomain || window.location.hostname;
   site.page = site.page || config.pageUrl || window.location.href;
 
-  const referer = bidRequest.refererInfo && bidRequest.refererInfo.referer;
+  const referer = bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
   if (!site.ref && referer) {
     site.ref = referer;
   }
