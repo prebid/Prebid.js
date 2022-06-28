@@ -296,7 +296,7 @@ describe('InsticatorBidAdapter', function () {
         banner: {
           format: [
             { w: 300, h: 250 },
-            { w: 300, h: 600 },
+            { w: 300, h: 600 }
           ]
         },
         video: {
