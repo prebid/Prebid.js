@@ -81,8 +81,8 @@ describe('RelaidoAdapter', function () {
       data: {
         bids: [{
           bidId: bidRequest.bidId,
-          width: bidRequest.mediaTypes.video.playerSize[0][0],
-          height: bidRequest.mediaTypes.video.playerSize[0][1],
+          width: bidRequest.mediaTypes.video.playerSize[0][0] || bidRequest.mediaTypes.video.playerSize[0],
+          height: bidRequest.mediaTypes.video.playerSize[0][1] || bidRequest.mediaTypes.video.playerSize[1],
           mediaType: 'video'}]
       }
     };
@@ -110,6 +110,16 @@ describe('RelaidoAdapter', function () {
           playerSize: [
             [640, 360]
           ]
+        }
+      };
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+    });
+
+    it('should return even true when the playerSize is Array[Number, Number] by video', function () {
+      bidRequest.mediaTypes = {
+        video: {
+          context: 'outstream',
+          playerSize: [640, 360]
         }
       };
       expect(spec.isBidRequestValid(bidRequest)).to.equal(true);

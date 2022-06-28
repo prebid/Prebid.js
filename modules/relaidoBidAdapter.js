@@ -1,4 +1,4 @@
-import { deepAccess, logWarn, getBidIdParameter, parseQueryStringParameters, triggerPixel, generateUUID, isArray } from '../src/utils.js';
+import { deepAccess, logWarn, getBidIdParameter, parseQueryStringParameters, triggerPixel, generateUUID, isArray, isNumber } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
@@ -305,6 +305,15 @@ function getValidSizes(sizes) {
         }
         if ((width >= 300 && height >= 250)) {
           result.push([width, height]);
+        }
+      } else if (isNumber(sizes[i])) {
+        const width = sizes[0];
+        const height = sizes[1];
+        if (width == 1 && height == 1) {
+          return [[1, 1]];
+        }
+        if ((width >= 300 && height >= 250)) {
+          return [[width, height]];
         }
       }
     }
