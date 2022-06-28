@@ -4,8 +4,8 @@ import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { config } from '../src/config.js'
 import { _each, deepAccess, cleanObj } from '../src/utils.js'
 export const BIDDER_CODE = 'bliink'
-export const BLIINK_ENDPOINT_ENGINE = 'https://task-manager-app5.herokuapp.com/prebids'
-export const BLIINK_ENDPOINT = 'https://task-manager-app5.herokuapp.com/prebids'; // 'https://engine-stg.bliink.io/prebid'
+export const BLIINK_ENDPOINT_ENGINE = 'https://engine-stg.bliink.io/prebid'
+
 export const BLIINK_ENDPOINT_COOKIE_SYNC_IFRAME = 'https://storage.googleapis.com/bliink-creatives-web-app/bliink/cookie_sync/index.html'
 export const META_KEYWORDS = 'keywords'
 export const META_DESCRIPTION = 'description'
@@ -25,7 +25,7 @@ function getCoppa() {
 }
 
 export function getMetaList(name) {
-  if (!name || name.length === 0) return [];
+  if (!name || name.length === 0) return []
 
   return [
     {
@@ -180,9 +180,6 @@ export const buildRequests = (_, bidderRequest) => {
     method: 'POST',
     url: BLIINK_ENDPOINT_ENGINE,
     data: postData,
-    options: {
-      contentType: 'application/json',
-    },
   };
 };
 
@@ -216,15 +213,12 @@ const interpretResponse = (serverResponse, request) => {
 
         return bidResponses.push(buildBid(response, creative));
       case BANNER:
-        if (response.creative) {
-          creative = {
-            ad: response.creative.banner.adm,
-            mediaType: 'banner',
-          };
-          return bidResponses.push(buildBid(response, creative));
-        }
+        creative = {
+          ad: response.creative.banner.adm,
+          mediaType: 'banner',
+        };
+        return bidResponses.push(buildBid(response, creative));
 
-        break;
       default:
         break;
     }
@@ -256,7 +250,7 @@ const getUserSyncs = (syncOptions, serverResponses, gdprConsent) => {
           },
         ];
       } else {
-        sync = serverResponses[0].body.userSyncs || [];
+        sync = serverResponses[0].body.userSyncs;
       }
 
       return sync;
