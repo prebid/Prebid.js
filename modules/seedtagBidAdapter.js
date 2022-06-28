@@ -147,6 +147,31 @@ function buildBidResponse(seedtagBid) {
   return bid;
 }
 
+/**
+ *
+ * @returns Measure time to first byte implementation
+ * @see https://web.dev/ttfb/
+ *      https://developer.mozilla.org/en-US/docs/Web/API/Navigation_timing_API
+ */
+function ttfb() {
+  // Timing API V2
+  try {
+    const entry = window.performance.getEntriesByType('navigation')[0];
+    return Math.round(entry.responseStart - entry.startTime)
+  }
+  // Timing API V1
+  catch (e) {
+    try {
+      const entry = performance.timing;
+      return Math.round(entry.responseStart - entry.requestStart);
+    }
+    // Timing API not available
+    catch (e) {
+      return 0
+    }
+  }
+}
+
 export function getTimeoutUrl (data) {
   let queryParams = '';
   if (
@@ -195,7 +220,9 @@ export const spec = {
       timeout: bidderRequest.timeout,
       version: '$prebid.version$',
       connectionType: getConnectionType(),
-      bidRequests: _map(validBidRequests, buildBidRequest)
+      auctionStart: bidderRequest.auctionStart,
+      ttfb: ttfb(),
+      bidRequests: _map(validBidRequests, buildBidRequest),
     };
 
     if (payload.cmp) {
