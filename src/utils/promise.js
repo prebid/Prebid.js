@@ -60,6 +60,18 @@ export class GreedyPromise extends Promise {
       result.length ? continuation() : super.then(continuation, continuation)
     })
   }
+  finally(onFinally) {
+    // on Safari 13, Promise.prototype.finally does not invoke our overridden .then as
+    // expected - so we override this as well
+    function handler(transform) {
+      return value =>
+        GreedyPromise.resolve(onFinally()).then(() => transform(value))
+    }
+    return this.then(
+      handler((v) => v),
+      handler((v) => GreedyPromise.reject(v))
+    );
+  }
 }
 
 /**
