@@ -2,7 +2,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {includes} from '../src/polyfill.js';
 import {BANNER} from '../src/mediaTypes.js';
 
-const VERSION = '1.0';
+const VERSION = '3.0';
 const BAD_WORD_STEP = 0.1;
 const BAD_WORD_MIN = 0.2;
 
@@ -62,26 +62,45 @@ function brandSafety(badWords, maxScore) {
     let score = 0;
     const content = window.top.document.body.innerText.toLowerCase();
     const words = content.trim().split(/\s+/).length;
+    // Cyrillic unicode block range - 0400-04FF
+    const cyrillicWords = content.match(/[\u0400-\u04FF]+/gi);
     for (const [word, rule, points] of badWords) {
-      var decodedWord = rot13(word);
-      if (rule === 'full' && new RegExp('\\b' + decodedWord + '\\b', 'i').test(content)) {
-        const occurances = content.match(new RegExp('\\b' + decodedWord + '\\b', 'g')).length;
+      const decodedWord = rot13(word);
+      if (
+        (rule === 'full' && new RegExp('\\b' + decodedWord + '\\b', 'i').test(content)) ||
+        (rule === 'full' && cyrillicWords && cyrillicWords.includes(decodedWord))
+      ) {
+        const occurances = cyrillicWords && cyrillicWords.includes(decodedWord)
+          ? cyrillicWords.filter(word => word === decodedWord).length
+          : content.match(new RegExp('\\b' + decodedWord + '\\b', 'g')).length;
         score += scoreCalculator(points, occurances);
       } else if (rule === 'partial' && content.indexOf(rot13(word.toLowerCase())) > -1) {
         const occurances = content.match(new RegExp(decodedWord, 'g')).length;
         score += scoreCalculator(points, occurances);
-      } else if (rule === 'starts' && new RegExp('\\b' + decodedWord, 'i').test(content)) {
-        const occurances = content.match(new RegExp('\\b' + decodedWord, 'g')).length;
+      } else if (
+        (rule === 'starts' && new RegExp('\\b' + decodedWord, 'i').test(content)) ||
+        (rule === 'starts' && cyrillicWords && cyrillicWords.some(word => word.startsWith(decodedWord)))
+      ) {
+        const occurances =
+          cyrillicWords && cyrillicWords.some(word => word.startsWith(decodedWord))
+            ? cyrillicWords.find(word => word.startsWith(decodedWord)).length
+            : content.match(new RegExp('\\b' + decodedWord, 'g')).length;
         score += scoreCalculator(points, occurances);
-      } else if (rule === 'ends' && new RegExp(decodedWord + '\\b', 'i').test(content)) {
-        const occurances = content.match(new RegExp(decodedWord + '\\b', 'g')).length;
+      } else if (
+        (rule === 'ends' && new RegExp(decodedWord + '\\b', 'i').test(content)) ||
+        (rule === 'ends' && cyrillicWords && cyrillicWords.some(word => word.endsWith(decodedWord)))
+      ) {
+        const occurances =
+          cyrillicWords && cyrillicWords.some(word => word.endsWith(decodedWord))
+            ? cyrillicWords.find(word => word.endsWith(decodedWord)).length
+            : content.match(new RegExp(decodedWord + '\\b', 'g')).length;
         score += scoreCalculator(points, occurances);
       } else if (rule === 'regexp' && new RegExp(decodedWord, 'i').test(content)) {
         const occurances = content.match(new RegExp(decodedWord, 'g')).length;
         score += scoreCalculator(points, occurances);
       }
     }
-    return score < maxScore * words / 500;
+    return score < maxScore * words / 1000;
   } catch (e) {
     return true;
   }
@@ -89,7 +108,6 @@ function brandSafety(badWords, maxScore) {
 
 export const spec = {
   code: 'adhash',
-  url: 'https://bidder.adhash.com/rtb?version=' + VERSION + '&prebid=true',
   supportedMediaTypes: [ BANNER ],
 
   isBidRequestValid: (bid) => {
@@ -109,15 +127,16 @@ export const spec = {
 
   buildRequests: (validBidRequests, bidderRequest) => {
     const { gdprConsent } = bidderRequest;
-    const { url } = spec;
     const bidRequests = [];
     let referrer = '';
     if (bidderRequest && bidderRequest.refererInfo) {
       referrer = bidderRequest.refererInfo.referer;
     }
     for (var i = 0; i < validBidRequests.length; i++) {
-      var index = Math.floor(Math.random() * validBidRequests[i].sizes.length);
-      var size = validBidRequests[i].sizes[index].join('x');
+      const bidderURL = validBidRequests[i].params.bidderURL || 'https://bidder.adhash.com';
+      const url = `${bidderURL}/rtb?version=${VERSION}&prebid=true`;
+      const index = Math.floor(Math.random() * validBidRequests[i].sizes.length);
+      const size = validBidRequests[i].sizes[index].join('x');
       bidRequests.push({
         method: 'POST',
         url: url + '&publisher=' + validBidRequests[i].params.publisherId,
@@ -166,6 +185,7 @@ export const spec = {
     }
 
     const publisherURL = JSON.stringify(request.bidRequest.params.platformURL);
+    const bidderURL = request.bidRequest.params.bidderURL || 'https://bidder.adhash.com';
     const oneTimeId = request.bidRequest.adUnitCode + Math.random().toFixed(16).replace('0.', '.');
     const bidderResponse = JSON.stringify({ responseText: JSON.stringify(responseBody) });
     const requestData = JSON.stringify(request.data);
@@ -175,7 +195,7 @@ export const spec = {
       cpm: responseBody.creatives[0].costEUR,
       ad:
         `<div id="${oneTimeId}"></div>
-        <script src="https://bidder.adhash.com/static/scripts/creative.min.js"></script>
+        <script src="${bidderURL}/static/scripts/creative.min.js"></script>
         <script>callAdvertiser(${bidderResponse},['${oneTimeId}'],${requestData},${publisherURL})</script>`,
       width: request.bidRequest.sizes[0][0],
       height: request.bidRequest.sizes[0][1],
