@@ -1,6 +1,4 @@
 import { config } from 'src/config';
-import { logMessage } from 'src/utils';
-import { server } from 'test/mocks/xhr.js';
 import {
   onePlusXSubmodule,
   buildOrtb2Updates,
@@ -145,7 +143,6 @@ describe('1plusXRtdProvider', () => {
       }
     }
 
-
     it("doesn't write in config of unsupported bidder", () => {
       const unsupportedBidder = Math.random().toString(36).replace(/[^a-z]+/g, '').substring(0, 5);
       // Set initial config for this bidder
@@ -229,7 +226,6 @@ describe('1plusXRtdProvider', () => {
       expect(newBidderConfig.ortb2.user.data).to.deep.include(ortb2Updates.userData);
       expect(newBidderConfig.ortb2.user.data).to.deep.include(previousUserData);
     })
-
   })
 
   describe('setTargetingDataToConfig', () => {

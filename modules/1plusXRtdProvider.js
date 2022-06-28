@@ -11,20 +11,20 @@ import {
 const REAL_TIME_MODULE = 'realTimeData';
 const MODULE_NAME = '1plusX';
 const PAPI_VERSION = 'v1.0';
-const SUPPORTED_BIDDERS = ['appnexus', 'rubicon']
-
+const SUPPORTED_BIDDERS = ['appnexus', 'rubicon'];
+const LOG_PREFIX = '[1plusX RTD Module]: ';
 // Functions
 /**
  * Extracts the parameters for 1plusX RTD module from the config object passed at instanciation
  * @param {Object} moduleConfig Config object passed to the module
  * @param {Object} reqBidsConfigObj Config object for the bidders; each adapter has its own entry
- * @returns
+ * @returns {Object} Extracted configuration parameters for the module
  */
 const extractConfig = (moduleConfig, reqBidsConfigObj) => {
   // CustomerId
   const customerId = deepAccess(moduleConfig, 'params.customerId');
   if (!customerId) {
-    throw new Error('REQUIRED CUSTOMER ID');
+    throw new Error('Missing parameter customerId in moduleConfig');
   }
   // Timeout
   const tempTimeout = deepAccess(moduleConfig, 'params.timeout');
@@ -33,14 +33,14 @@ const extractConfig = (moduleConfig, reqBidsConfigObj) => {
   // Bidders
   const biddersTemp = deepAccess(moduleConfig, 'params.bidders');
   if (!isArray(biddersTemp) || !biddersTemp.length) {
-    throw new Error('REQUIRED BIDDERS IN SUBMODULE CONFIG');
+    throw new Error('Missing parameter bidders in moduleConfig');
   }
 
   const adUnitBidders = reqBidsConfigObj.adUnits
     .flatMap(({ bids }) => bids.map(({ bidder }) => bidder))
     .filter((e, i, a) => a.indexOf(e) === i);
   if (!isArray(adUnitBidders) || !adUnitBidders.length) {
-    throw new Error('REQUIRED BIDDERS IN BID REQUEST CONFIG');
+    throw new Error('Missing parameter bidders in bidRequestConfig');
   }
 
   const bidders = biddersTemp.filter(
@@ -48,19 +48,19 @@ const extractConfig = (moduleConfig, reqBidsConfigObj) => {
       SUPPORTED_BIDDERS.includes(bidder) && adUnitBidders.includes(bidder)
   );
   if (!bidders.length) {
-    throw new Error('NO SUPPORTED BIDDER FOUND IN SUBMODULE/ BID REQUEST CONFIG');
+    throw new Error('No supported bidder found in config parameter bidders');
   }
 
   return { customerId, timeout, bidders };
 }
 
 /**
- * Gets the URL of Profile Api from which targeting data will be fetched 
- * @param {*} param0
- * @returns
+ * Gets the URL of Profile Api from which targeting data will be fetched
+ * @param {Object} config
+ * @param {string} config.customerId
+ * @returns {string} URL to access 1plusX Profile API
  */
 const getPapiUrl = ({ customerId }) => {
-  logMessage('GET PAPI URL');
   // https://[yourClientId].profiles.tagger.opecloud.com/[VERSION]/targeting?url=
   const currentUrl = encodeURIComponent(window.location.href);
   const papiUrl = `https://${customerId}.profiles.tagger.opecloud.com/${PAPI_VERSION}/targeting?url=${currentUrl}`;
@@ -70,7 +70,7 @@ const getPapiUrl = ({ customerId }) => {
 /**
  * Fetches targeting data. It contains the audience segments & the contextual topics
  * @param {string} papiUrl URL of profile API
- * @returns
+ * @returns {Promise} Promise object resolving with data fetched from Profile API
  */
 const getTargetingDataFromPapi = (papiUrl) => {
   return new Promise((resolve, reject) => {
@@ -81,12 +81,9 @@ const getTargetingDataFromPapi = (papiUrl) => {
     }
     const callbacks = {
       success(responseText, response) {
-        logMessage('Say it has been successful');
         resolve(JSON.parse(response.response));
       },
-      error(errorText, error) {
-        logMessage(errorText)
-        logMessage(JSON.stringify(error, null, 2))
+      error(error) {
         reject(error);
       }
     };
@@ -96,8 +93,10 @@ const getTargetingDataFromPapi = (papiUrl) => {
 
 /**
  * Prepares the update for the ORTB2 object
- * @param {*} param0
- * @returns
+ * @param {Object} targetingData Targeting data fetched from Profile API
+ * @param {string[]} segments Represents the audience segments of the user
+ * @param {string[]} topics Represents the topics of the page
+ * @returns {Object} Object describing the updates to make on bidder configs
  */
 export const buildOrtb2Updates = ({ segments = [], topics = [] }) => {
   const userData = {
@@ -113,9 +112,9 @@ export const buildOrtb2Updates = ({ segments = [], topics = [] }) => {
 /**
  * Merges the targeting data with the existing config for bidder and updates
  * @param {string} bidder Bidder for which to set config
- * @param {Object} ortb2
- * @param {Object} bidderConfigs
- * @returns
+ * @param {Object} ortb2Updates Updates to be applied to bidder config
+ * @param {Object} bidderConfigs All current bidder configs
+ * @returns {Object} Updated bidder config
  */
 export const updateBidderConfig = (bidder, ortb2Updates, bidderConfigs) => {
   if (!SUPPORTED_BIDDERS.includes(bidder)) {
@@ -136,13 +135,14 @@ export const updateBidderConfig = (bidder, ortb2Updates, bidderConfigs) => {
   deepSetValue(bidderConfigCopy, 'ortb2.site', updatedSite);
   deepSetValue(bidderConfigCopy, 'ortb2.user.data', updatedUserData);
 
-  return bidderConfigCopy
+  return bidderConfigCopy;
 };
 
 /**
  * Updates bidder configs with the targeting data retreived from Profile API
- * @param {*} papiResponse
- * @param {*} param1
+ * @param {Object} papiResponse Response from Profile API
+ * @param {Object} config Module configuration
+ * @param {string[]} config.bidders Bidders specified in module's configuration
  */
 export const setTargetingDataToConfig = (papiResponse, { bidders }) => {
   const bidderConfigs = config.getBidderConfig();
@@ -163,21 +163,20 @@ export const setTargetingDataToConfig = (papiResponse, { bidders }) => {
 // Functions exported in submodule object
 /**
  * Init
- * @param {*} config
- * @param {*} userConsent
- * @returns
+ * @param {Object} config Module configuration
+ * @param {boolean} userConsent
+ * @returns true
  */
 const init = (config, userConsent) => {
-  // We prolly get the config again in getBidRequestData
   return true;
 }
 
 /**
  *
- * @param {*} reqBidsConfigObj
- * @param {*} callback
- * @param {*} moduleConfig
- * @param {*} userConsent
+ * @param {Object} reqBidsConfigObj Bid request configuration object
+ * @param {Function} callback Called on completion
+ * @param {Object} moduleConfig Configuration for 1plusX RTD module
+ * @param {boolean} userConsent
  */
 const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, userConsent) => {
   try {
@@ -188,16 +187,15 @@ const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, userConsent
     // Call PAPI
     getTargetingDataFromPapi(papiUrl)
       .then((papiResponse) => {
-        logMessage('REQUEST TO PAPI SUCCESS');
+        logMessage(LOG_PREFIX, 'Get targeting data request successful');
         setTargetingDataToConfig(papiResponse, { bidders });
         callback();
       })
       .catch((error) => {
-        // -- Catch : print err & do nothing
         throw error;
       })
   } catch (error) {
-    logError(error);
+    logError(LOG_PREFIX, error);
     callback();
   }
 }
