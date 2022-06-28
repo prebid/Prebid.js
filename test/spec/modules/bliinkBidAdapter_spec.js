@@ -66,8 +66,8 @@ const getConfigBannerBid = () => {
       },
       media_type: 'banner',
       creativeId: 125,
-      requestId: '2def0c5b2a7f6e',
     },
+    transactionId: '2def0c5b2a7f6e',
     price: 1,
     id: '810',
     token: 'token',
@@ -89,8 +89,8 @@ const getConfigVideoBid = () => {
       },
       media_type: 'video',
       creativeId: 0,
-      requestId: '2def0c5b2a7f6e',
     },
+    transactionId: '2def0c5b2a7f6e',
     price: 1,
     id: '8121',
     token: 'token',
@@ -128,7 +128,6 @@ const getConfigCreative = () => {
     cpm: 4,
     currency: 'EUR',
     creativeId: 125,
-    requestId: '2def0c5b2a7f6e',
     width: 300,
     height: 250,
     ttl: 3600,
@@ -198,6 +197,7 @@ const getConfigInterpretResponse = (noAd = false) => {
     body: {
       ...getConfigCreative(),
       mode: 'ad',
+      transactionId: '2def0c5b2a7f6e',
       token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2MjgxNzA4MzEsImlhdCI6MTYyNzU2NjAzMSwiaXNzIjoiYmxpaW5rIiwiZGF0YSI6eyJ0eXBlIjoiYWQtc2VydmVyIiwidHJhbnNhY3Rpb25JZCI6IjM1YmU1NDNjLTNkZTQtNGQ1Yy04N2NjLWIzYzEyOGZiYzU0MCIsIm5ldHdvcmtJZCI6MjEsInNpdGVJZCI6NTksInRhZ0lkIjo1OSwiY29va2llSWQiOiJjNGU4MWVhOS1jMjhmLTQwZDItODY1ZC1hNjQzZjE1OTcyZjUiLCJldmVudElkIjozLCJ0YXJnZXRpbmciOnsicGxhdGZvcm0iOiJXZWJzaXRlIiwiaXAiOiI3OC4xMjIuNzUuNzIiLCJ0aW1lIjoxNjI3NTY2MDMxLCJsb2NhdGlvbiI6eyJsYXRpdHVkZSI6NDguOTczOSwibG9uZ2l0dWRlIjozLjMxMTMsInJlZ2lvbiI6IkhERiIsImNvdW50cnkiOiJGUiIsImNpdHkiOiJTYXVsY2hlcnkiLCJ6aXBDb2RlIjoiMDIzMTAiLCJkZXBhcnRtZW50IjoiMDIifSwiY2l0eSI6IlNhdWxjaGVyeSIsImNvdW50cnkiOiJGUiIsImRldmljZU9zIjoibWFjT1MiLCJkZXZpY2VQbGF0Zm9ybSI6IldlYnNpdGUiLCJyYXdVc2VyQWdlbnQiOiJNb3ppbGxhLzUuMCAoTWFjaW50b3NoOyBJbnRlbCBNYWMgT1MgWCAxMF8xNV83KSBBcHBsZVdlYktpdC81MzcuMzYgKEtIVE1MLCBsaWtlIEdlY2tvKSBDaHJvbWUvOTEuMC40NDcyLjEyNCBTYWZhcmkvNTM3LjM2In0sImdkcHIiOnsiaGFzQ29uc2VudCI6dHJ1ZX0sIndpbiI6ZmFsc2UsImFkSWQiOjU2NDgsImFkdmVydGlzZXJJZCI6MSwiY2FtcGFpZ25JZCI6MSwiY3JlYXRpdmVJZCI6MjgyNSwiZXJyb3IiOmZhbHNlfX0.-UefQH4G0k-RJGemBYffs-KL7EEwma2Wuwgk2xnpij8'
     },
     headers: {},
@@ -249,8 +249,8 @@ const getConfigInterpretResponseRTB = (noAd = false, isInvalidVast = false) => {
           },
           'media_type': 'video',
           'creativeId': 0,
-          'requestId': '2def0c5b2a7f6e'
         },
+        'transactionId': '2def0c5b2a7f6e',
         'price': 0,
         'id': '8121',
         'token': 'token',
@@ -626,7 +626,7 @@ const testsBuildRequests = [
         pageUrl: 'http://localhost:9999/integrationExamples/gpt/bliink-adapter.html?pbjs_debug=true',
         tags: [
           {
-            bidId: '2def0c5b2a7f6e',
+            transactionId: '2def0c5b2a7f6e',
             id: '14f30eca-85d2-11e8-9eed-0242ac120007',
             imageUrl: '',
             mediaTypes: ['banner'],
@@ -663,7 +663,7 @@ const testsBuildRequests = [
         pageUrl: 'http://localhost:9999/integrationExamples/gpt/bliink-adapter.html?pbjs_debug=true',
         tags: [
           {
-            bidId: '2def0c5b2a7f6e',
+            transactionId: '2def0c5b2a7f6e',
             id: '14f30eca-85d2-11e8-9eed-0242ac120007',
             imageUrl: '',
             mediaTypes: ['banner'],

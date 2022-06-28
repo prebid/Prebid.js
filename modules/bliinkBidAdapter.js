@@ -125,7 +125,7 @@ export const buildBid = (bidRequest, bliinkCreative) => {
     cpm: bidRequest.price,
     currency: bidRequest.currency,
     creativeId: bidRequest.creative.creativeId,
-    requestId: bidRequest.creative.requestId,
+    requestId: bidRequest.transactionId,
     width: bidRequest.creative[bliinkCreative.mediaType].width || 1,
     height: bidRequest.creative[bliinkCreative.mediaType].height || 1,
     ttl: 3600,
@@ -158,7 +158,7 @@ export const buildRequests = (_, bidderRequest) => {
     return {
       sizes: bid.sizes.map((size) => ({ w: size[0], h: size[1] })),
       id: bid.params.tagId,
-      bidId: bid.bidId,
+      transactionId: bid.bidId,
       mediaTypes: Object.keys(bid.mediaTypes),
       imageUrl: '',
     };
