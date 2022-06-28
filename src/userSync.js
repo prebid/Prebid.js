@@ -89,7 +89,7 @@ export function newUserSync(userSyncDependencies) {
    * @private
    */
   function fireSyncs() {
-    if (!usConfig.syncEnabled || !userSyncDependencies.browserSupportsCookies) {
+    if (!usConfig.syncEnabled || !userSyncDependencies.browserSupportsCookies()) {
       return;
     }
 
@@ -315,7 +315,9 @@ export function newUserSync(userSyncDependencies) {
   return publicApi;
 }
 
-const browserSupportsCookies = !isSafariBrowser() && storage.cookiesAreEnabled();
+const browserSupportsCookies = function() {
+  return !isSafariBrowser() && storage.cookiesAreEnabled();
+}
 
 export const userSync = newUserSync({
   config: config.getConfig('userSync'),
@@ -326,7 +328,7 @@ export const userSync = newUserSync({
  * @typedef {Object} UserSyncDependencies
  *
  * @property {UserSyncConfig} config
- * @property {boolean} browserSupportsCookies True if the current browser supports cookies, and false otherwise.
+ * @property {function} browserSupportsCookies returns True if the current browser supports cookies, and false otherwise.
  */
 
 /**

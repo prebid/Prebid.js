@@ -2,6 +2,8 @@ import {hook} from './hook.js';
 import {hasDeviceAccess, checkCookieSupport, logError, logInfo, isPlainObject} from './utils.js';
 import {includes} from './polyfill.js';
 import {bidderSettings as defaultBidderSettings} from './bidderSettings.js';
+import {gdprDataHandler} from './adapterManager.js';
+import {hasPurpose1Consent} from '../src/utils/gpdr.js';
 
 const moduleTypeWhiteList = ['core', 'prebid-module'];
 
@@ -119,6 +121,10 @@ export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = 
    * @returns {boolean}
    */
   const localStorageIsEnabled = function (done) {
+    const consentData = gdprDataHandler.getConsentData();
+    if (!consentData || !hasPurpose1Consent(consentData)) {
+      return false;
+    }
     let cb = function (result) {
       if (result && result.valid) {
         try {
@@ -147,6 +153,10 @@ export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = 
    * @returns {boolean}
    */
   const cookiesAreEnabled = function (done) {
+    let consentData = gdprDataHandler.getConsentData();
+    if (!consentData || !hasPurpose1Consent(consentData)) {
+      return false;
+    }
     let cb = function (result) {
       if (result && result.valid) {
         if (checkCookieSupport()) {
@@ -173,7 +183,7 @@ export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = 
    */
   const setDataInLocalStorage = function (key, value, done) {
     let cb = function (result) {
-      if (result && result.valid && hasLocalStorage()) {
+      if (result && result.valid && localStorageIsEnabled()) {
         window.localStorage.setItem(key, value);
       }
     }
@@ -193,7 +203,7 @@ export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = 
    */
   const getDataFromLocalStorage = function (key, done) {
     let cb = function (result) {
-      if (result && result.valid && hasLocalStorage()) {
+      if (result && result.valid && localStorageIsEnabled()) {
         return window.localStorage.getItem(key);
       }
       return null;
@@ -213,7 +223,7 @@ export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = 
    */
   const removeDataFromLocalStorage = function (key, done) {
     let cb = function (result) {
-      if (result && result.valid && hasLocalStorage()) {
+      if (result && result.valid && localStorageIsEnabled()) {
         window.localStorage.removeItem(key);
       }
     }

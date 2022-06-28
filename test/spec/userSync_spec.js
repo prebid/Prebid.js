@@ -21,7 +21,9 @@ describe('user sync', function () {
     const thisConfig = Object.assign({}, defaultUserSyncConfig, configOverrides);
     return newUserSync({
       config: thisConfig,
-      browserSupportsCookies: !disableBrowserCookies,
+      browserSupportsCookies: function() {
+        return !disableBrowserCookies
+      },
     })
   }
   let clock;
@@ -379,7 +381,9 @@ describe('user sync', function () {
   it('should still allow default image syncs if setConfig only defined iframe', function () {
     const userSync = newUserSync({
       config: config.getConfig('userSync'),
-      browserSupportsCookies: true
+      browserSupportsCookies: function() {
+        return true
+      }
     });
 
     config.setConfig({
@@ -404,7 +408,9 @@ describe('user sync', function () {
   it('should not fire image pixel for a bidder if iframe pixel is fired for same bidder', function() {
     const userSync = newUserSync({
       config: config.getConfig('userSync'),
-      browserSupportsCookies: true
+      browserSupportsCookies: function() {
+        return true
+      }
     });
 
     config.setConfig({
@@ -431,7 +437,9 @@ describe('user sync', function () {
   it('should override default image syncs if setConfig used image filter', function () {
     const userSync = newUserSync({
       config: config.getConfig('userSync'),
-      browserSupportsCookies: true
+      browserSupportsCookies: function() {
+        return true
+      }
     });
 
     config.setConfig({
@@ -456,7 +464,9 @@ describe('user sync', function () {
   it('should override default image syncs if setConfig used all filter', function() {
     const userSync = newUserSync({
       config: config.getConfig('userSync'),
-      browserSupportsCookies: true
+      browserSupportsCookies: function() {
+        return true
+      }
     });
 
     config.setConfig({
