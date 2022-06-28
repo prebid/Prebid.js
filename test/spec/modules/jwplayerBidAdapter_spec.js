@@ -114,26 +114,47 @@ describe('jwplayer adapter tests', function() {
   });
 
   describe('interpretResponse for video', function() {
-    
     const bidResponse = {
       id: 'testId',
-      impid: '274395c06a24e5',
-      price: 1,
-      w: 300,
-      h: 250,
+      impid: 'test-imp-id',
+      price: 1.000000,
+      adid: '97517771',
+      adm: 'some-test-ad',
+      adomain: ['prebid.com'],
+      w: 1,
+      h: 1,
     }
-    
+
     const serverResponse = {
       body: {
-        id: 'testId',
+        id: 'test-request-id',
         seatbid: [
           {
             bid: [ bidResponse ],
             seat: 1000
           }
         ]
-      }
+      },
+      bidid: '123456789',
+      cur: 'USD'
     }
+
+    const bidResponses = spec.interpretResponse(serverResponse);
+
+    expect(bidResponses[0]).to.not.equal(null);
+    expect(bidResponses[0].requestId).to.equal('123456789');
+    expect(bidResponses[0].cpm).to.equal(1);
+    expect(bidResponses[0].currency).to.equal('USD');
+    expect(bidResponses[0].width).to.equal(1);
+    expect(bidResponses[0].height).to.equal(1);
+    expect(bidResponses[0].creativeId).to.equal('97517771');
+    expect(bidResponses[0].vastXml).to.equal('some-test-ad');
+    expect(bidResponses[0].netRevenue).to.equal(true);
+    expect(bidResponses[0].ttl).to.equal(500);
+    expect(bidResponses[0].ad).to.equal('some-test-ad');
+    expect(bidResponses[0].meta).to.not.equal(null);
+    expect(bidResponses[0].meta.advertiserDomains).to.not.equal(null);
+    expect(bidResponses[0].meta.advertiserDomains[0]).to.equal('prebid.com');
   });
 
   describe('user sync handler', function() {});

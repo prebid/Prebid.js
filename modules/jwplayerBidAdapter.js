@@ -1,11 +1,11 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO } from '../src/mediaTypes.js';
 import {
+  isArray,
   isFn,
   deepAccess,
   deepSetValue } from '../src/utils.js';
 import { config } from '../src/config.js';
-
 const BIDDER_CODE = 'jwplayer';
 const URL = 'https://ib.adnxs.com/openrtb2/prebid';
 
@@ -80,31 +80,34 @@ export const spec = {
    * @param bidderRequest
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse, bidderRequest) {
+  interpretResponse: function(serverResponse) {
     const bidResponses = [];
     const serverResponseBody = serverResponse.body;
-    // const serverResponseHead = serverResponse.headers.get();
+
+    const bidId = serverResponse.bidid;
+    const cur = serverResponse.cur;
 
     if (serverResponseBody && isArray(serverResponseBody.seatbid)) {
       serverResponseBody.seatbid.forEach(seatBids => {
         seatBids.bid.forEach(bid => {
           const bidResponse = {
-            requestId: serverResponseBody.requestId,
-            cpm: serverResponseBody.cpm,
-            currency: serverResponseBody.currency,
-            width: serverResponseBody.width,
-            height: serverResponseBody.height,
-            creativeId: serverResponseBody.creativeId,
-            vastXml: serverResponseBody.vastXml,
-            netRevenue: serverResponseBody.netRevenue,
-            ttl: serverResponseBody.ttl,
-            ad: serverResponseBody.ad,
-            mediaType: serverResponseBody.mediaType,
+            requestId: bidId,
+            cpm: bid.price,
+            currency: cur,
+            width: bid.w,
+            height: bid.h,
+            creativeId: bid.adid,
+            vastXml: bid.adm,
+            netRevenue: true,
+            ttl: 500,
+            ad: bid.adm,
+            meta: {
+              advertiserDomains: bid.adomain
+            }
           };
           bidResponses.push(bidResponse);
         });
       });
-      
     };
     return bidResponses;
   },
