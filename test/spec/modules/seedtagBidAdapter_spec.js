@@ -299,6 +299,20 @@ describe('Seedtag Adapter', function () {
           expect(payload.uspConsent).to.exist;
           expect(payload.uspConsent).to.equal(uspConsent);
         });
+
+        it("shouldn't send uspConsent when not available", function () {
+          const uspConsent = undefined;
+
+          bidderRequest['uspConsent'] = uspConsent;
+
+          const request = spec.buildRequests(
+            validBidRequests,
+            bidderRequest
+          );
+          const payload = JSON.parse(request.data);
+
+          expect(payload.uspConsent).to.not.exist;
+        });
       });
     });
 
