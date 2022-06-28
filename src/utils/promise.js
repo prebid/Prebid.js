@@ -1,156 +1,65 @@
 const SUCCESS = 0;
 const FAIL = 1;
 const RESULT = 2;
-const NONE = {}
-const GREEDY = new WeakSet();
 
-/**
- * @returns {Promise}
- */
-export function greedyPromise(resolver) {
-  let result = NONE;
-  let isError = false;
-  const callbacks = [];
+export class GreedyPromise extends Promise {
+  #result;
 
-  function runCallbacks() {
-    while (callbacks.length > 0) {
-      callbacks.pop()()
-    }
+  static timeout(ms = 0) {
+    return new GreedyPromise((resolve) => {
+      ms === 0 ? resolve() : setTimeout(resolve, ms);
+    });
   }
 
-  try {
-    resolver(
-      (value) => {
-        if (result === NONE) {
-          result = value;
-          runCallbacks();
-        }
-      },
-      (error) => {
-        if (result === NONE) {
-          result = error;
-          isError = true;
-          runCallbacks();
+  constructor(resolver) {
+    const result = [];
+    function handler(type, resolveFn) {
+      return function (value) {
+        if (!result.length) {
+          result.push(type, value);
+          resolveFn(value);
         }
       }
-    )
-  } catch (e) {
-    result = e;
-    isError = true;
+    }
+    super((resolve, reject) => {
+      const onError = handler(FAIL, reject);
+      try {
+        resolver(handler(SUCCESS, resolve), onError);
+      } catch (e) {
+        onError(e);
+      }
+    });
+    this.#result = result;
   }
-
-  function then(onSuccess, onError) {
-    return greedyPromise((resolve, reject) => {
-      function continuation() {
-        let value = result;
-        let fn = isError ? reject : resolve;
-        try {
-          if (isError && typeof onError === 'function') {
-            value = onError(value);
-            fn = resolve;
-          } else if (!isError && typeof onSuccess === 'function') {
-            value = onSuccess(value);
+  then(onSuccess, onError) {
+    const result = this.#result;
+    return new GreedyPromise((resolve, reject) => {
+      const continuation = () => {
+        let chain = false;
+        let value = result[1];
+        let handler, resolveFn;
+        if (result[0] === SUCCESS) {
+          handler = onSuccess;
+          resolveFn = resolve;
+        } else {
+          handler = onError;
+          resolveFn = reject;
+        }
+        if (typeof handler === 'function') {
+          try {
+            value = handler(value);
+          } catch (e) {
+            reject(e);
+            return;
           }
-        } catch (e) {
-          reject(e);
-          return;
+          chain = typeof value?.then === 'function';
+          resolveFn = resolve;
         }
-        greedyPromise.resolve(value).then(fn, reject);
+        chain ? value.then(resolveFn, reject) : resolveFn(value);
       }
-
-      result === NONE ? callbacks.push(continuation) : continuation();
+      result.length ? continuation() : super.then(continuation, continuation)
     })
   }
-
-  const promise = {
-    then,
-    catch(onError) {
-      return then(null, onError)
-    },
-    finally(onFinally) {
-      function runFn(transform = (v) => v) {
-        return value => greedyPromise.resolve(onFinally()).then(() => transform(value))
-      }
-      return then(runFn(), runFn(greedyPromise.reject));
-    }
-  };
-  GREEDY.add(promise);
-  return promise;
-}
-
-Object.assign(greedyPromise, {
-  resolve(value) {
-    if (GREEDY.has(value)) return value;
-    return greedyPromise(
-      typeof value?.then === 'function'
-        ? (resolve, reject) => value.then(resolve, reject)
-        : (resolve) => resolve(value)
-    );
-  },
-  reject(value) {
-    return greedyPromise((_, reject) => reject(value));
-  },
-  allSettled(promises) {
-    return greedyPromise((resolve) => {
-      const result = new Array(promises.length);
-      collect(
-        promises,
-        (value, i) => { result[i] = {status: 'fulfilled', value} },
-        (reason, i) => { result[i] = {status: 'rejected', reason} },
-        () => resolve(result)
-      );
-    })
-  },
-  all(promises) {
-    return greedyPromise((resolve, reject) => {
-      const result = new Array(promises.length);
-      collect(
-        promises,
-        (value, i) => result[i] = value,
-        (error, i, stop) => { stop(); reject(error) },
-        () => resolve(result)
-      );
-    })
-  },
-  race(promises) {
-    return greedyPromise((resolve, reject) => {
-      collect(
-        promises,
-        (value, i, stop) => { stop(); resolve(value) },
-        (error, i, stop) => { stop(); reject(error) }
-      )
-    })
-  },
-  delay(ms = 0) {
-    return greedyPromise((resolve) => {
-      if (ms === 0) {
-        resolve()
-      } else {
-        setTimeout(() => resolve(), ms)
-      }
-    })
-  }
-})
-
-function collect(promises, onSuccess, onError, done) {
-  let pending = promises.length;
-  let active = true;
-  function handler(i, cb) {
-    return function (value) {
-      if (active) {
-        cb(value, i, () => { active = false });
-        pending--;
-        if (active && pending === 0) {
-          done();
-        }
-      }
-    }
-  }
-  promises.forEach((promise, i) => {
-    if (active) {
-      greedyPromise.resolve(promise).then(handler(i, onSuccess), handler(i, onError));
-    }
-  })
 }
 
 /**

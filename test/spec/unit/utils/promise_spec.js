@@ -1,25 +1,25 @@
-import {greedyPromise, promiseControls} from '../../../../src/utils/promise.js';
+import {GreedyPromise, promiseControls} from '../../../../src/utils/promise.js';
 
-describe('greedyPromise', () => {
-  describe('idioms', () => {
-    let pendingSuccess, pendingFailure, syncZeroTimeout = false;
-
-    function makePromise(ctor = Promise, value = undefined, fail = false, delay = 0) {
-      // eslint-disable-next-line new-cap
-      return new ctor((resolve, reject) => {
-        const run = () => fail ? reject(value) : resolve(value)
-        if (syncZeroTimeout && delay === 0) {
-          run()
-        } else {
-          setTimeout(run, delay);
-        }
-      })
-    }
-
-    beforeEach(() => {
-      pendingSuccess = makePromise(Promise, 'pending result');
-      pendingFailure = makePromise(Promise, 'pending failure', true);
+describe('GreedyPromise', () => {
+  describe('.timeout', () => {
+    it('should resolve immediately when ms is 0', () => {
+      let cbRan = false;
+      GreedyPromise.timeout(0.0).then(() => { cbRan = true });
+      expect(cbRan).to.be.true;
     });
+    it('should schedule timeout on ms > 0', (done) => {
+      let cbRan = false;
+      GreedyPromise.timeout(5).then(() => { cbRan = true });
+      expect(cbRan).to.be.false;
+      setTimeout(() => {
+        expect(cbRan).to.be.true;
+        done();
+      }, 10)
+    });
+  });
+
+  describe('idioms', () => {
+    let makePromise, pendingFailure, pendingSuccess;
 
     Object.entries({
       // eslint-disable-next-line no-throw-literal
@@ -39,8 +39,9 @@ describe('greedyPromise', () => {
       '.then that rejects': (P) => makePromise(P, 'value').then((v) => P.reject(v)),
       '.then that rejects in error handler': (P) => makePromise(P, 'err', true).then(null, (err) => P.reject(err)),
       '.then with no error handler on a rejection': (P) => makePromise(P, 'err', true).then((v) => `resolved ${v}`),
+      '.then with no success handler on a resolution': (P) => makePromise(P, 'value').then(null, (e) => `caught ${e}`),
       'simple .catch': (P) => makePromise(P, 'err', true).catch((err) => `caught ${err}`),
-      'null .catch': (P) => makePromise(P, 'err', true).catch((err) => err).then((v) => v),
+      'identity .catch': (P) => makePromise(P, 'err', true).catch((err) => err).then((v) => v),
       '.catch that throws': (P) => makePromise(P, 'err', true).catch((err) => { throw err }),
       'chained .catch': (P) => makePromise(P, 'err', true).catch((err) => makePromise(P, err)),
       'chained .catch that rejects': (P) => makePromise(P, 'err', true).catch((err) => P.reject(`reject with ${err}`)),
@@ -87,34 +88,58 @@ describe('greedyPromise', () => {
       'Promise.race that fails': (P) => P.race([makePromise(P, 'success', false, 10), makePromise(P, 'error', true)]),
       'Promise.race with scalars': (P) => P.race(['scalar', makePromise(P, 'success')]),
     }).forEach(([t, op]) => {
-      describe(`on ${t}`, () => {
-        it(`behaves like vanilla Promise`, () => {
-          const vanilla = op(Promise);
-          const greedy = op(greedyPromise);
-          return Promise.allSettled([vanilla, greedy]).then(([expected, actual]) => {
-            expect(actual).to.eql(expected);
-          })
-        });
+      describe(t, () => {
+        describe('when mixed with deferrals', () => {
+          beforeEach(() => {
+            makePromise = function(ctor, value, fail = false, delay = 0) {
+              // eslint-disable-next-line new-cap
+              return new ctor((resolve, reject) => {
+                setTimeout(() => fail ? reject(value) : resolve(value), delay)
+              })
+            };
+            pendingSuccess = makePromise(Promise, 'pending result');
+            pendingFailure = makePromise(Promise, 'pending failure', true);
+          });
 
-        it(`once resolved, runs callbacks immediately`, () => {
-          const promise = op(greedyPromise).catch(() => null);
-          return promise.then(() => {
-            let cbRan = false;
-            promise.then(() => { cbRan = true });
-            expect(cbRan).to.be.true;
+          it(`behaves like vanilla promises`, () => {
+            const vanilla = op(Promise);
+            const greedy = op(GreedyPromise);
+            return Promise.allSettled([vanilla, greedy]).then(([expected, actual]) => {
+              expect(actual).to.eql(expected);
+            })
+          });
+
+          it(`once resolved, runs callbacks immediately`, () => {
+            const promise = op(GreedyPromise).catch(() => null);
+            return promise.then(() => {
+              let cbRan = false;
+              promise.then(() => { cbRan = true });
+              expect(cbRan).to.be.true;
+            });
           });
         });
 
-        it('resolves immediately if all promises involved are greedy', () => {
-          pendingSuccess = makePromise(greedyPromise, 'success');
-          pendingFailure = makePromise(greedyPromise, 'error', true);
-          syncZeroTimeout = true;
-          let cbRan = false;
-          op(greedyPromise).catch(() => null).then(() => { cbRan = true });
-          expect(cbRan).to.be.true;
+        describe('when all promises involved are greedy', () => {
+          beforeEach(() => {
+            makePromise = function(ctor, value, fail = false, delay = 0) {
+              // eslint-disable-next-line new-cap
+              return new ctor((resolve, reject) => {
+                const run = () => fail ? reject(value) : resolve(value);
+                delay === 0 ? run() : setTimeout(run, delay);
+              })
+            };
+            pendingSuccess = makePromise(GreedyPromise, 'pending result');
+            pendingFailure = makePromise(GreedyPromise, 'pending failure', true);
+          });
+
+          it('resolves immediately', () => {
+            let cbRan = false;
+            op(GreedyPromise).catch(() => null).then(() => { cbRan = true });
+            expect(cbRan).to.be.true;
+          });
         });
-      })
-    })
+      });
+    });
   })
 });
 
