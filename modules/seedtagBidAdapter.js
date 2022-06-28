@@ -163,7 +163,7 @@ function ttfb() {
       // Timing API V1
       try {
         const entry = performance.timing;
-        return Math.round(entry.responseStart - entry.requestStart);
+        return Math.round(entry.responseStart - entry.fetchStart);
       } catch (e) {
         // Timing API not available
         return 0;
