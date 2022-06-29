@@ -767,7 +767,19 @@ const testsGetUserSyncs = [
     want: [
       {
         type: 'iframe',
-        url: `${BLIINK_ENDPOINT_COOKIE_SYNC_IFRAME}?gdpr=${getGdprConsent().gdprApplies}&coppa=0&consentString=${getGdprConsent().consentString}&apiVersion=${getGdprConsent().apiVersion}`
+        url: `${BLIINK_ENDPOINT_COOKIE_SYNC_IFRAME}?gdpr=${getGdprConsent().gdprApplies}&coppa=0&gdprConsent=${getGdprConsent().consentString}&apiVersion=${getGdprConsent().apiVersion}`
+      },
+    ]
+  },
+  {
+    title: 'ccpa',
+    args: {
+      fn: spec.getUserSyncs(getSyncOptions(true, true), getServerResponses(), getGdprConsent(), 'ccpa-consent')
+    },
+    want: [
+      {
+        type: 'iframe',
+        url: `${BLIINK_ENDPOINT_COOKIE_SYNC_IFRAME}?gdpr=${getGdprConsent().gdprApplies}&coppa=0&uspConsent=ccpa-consent&gdprConsent=${getGdprConsent().consentString}&apiVersion=${getGdprConsent().apiVersion}`
       },
     ]
   },
