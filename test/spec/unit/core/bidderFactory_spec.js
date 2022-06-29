@@ -874,85 +874,87 @@ describe('validate bid response: ', function () {
     indexStub.restore;
   });
 
-  it('should add native bids that do have required assets', function () {
-    adUnits = [{
-      transactionId: 'au',
-      nativeParams: {
-        title: {'required': true},
-      }
-    }]
-    let bidRequest = {
-      bids: [{
-        bidId: '1',
-        auctionId: 'first-bid-id',
-        adUnitCode: 'mock/placement',
+  if (FEATURES.NATIVE) {
+    it('should add native bids that do have required assets', function () {
+      adUnits = [{
         transactionId: 'au',
-        params: {
-          param: 5
-        },
-        mediaType: 'native',
-      }]
-    };
-
-    let bids1 = Object.assign({},
-      bids[0],
-      {
-        'mediaType': 'native',
-        'native': {
-          'title': 'Native Creative',
-          'clickUrl': 'https://www.link.example',
+        nativeParams: {
+          title: {'required': true},
         }
-      }
-    );
+      }]
+      let bidRequest = {
+        bids: [{
+          bidId: '1',
+          auctionId: 'first-bid-id',
+          adUnitCode: 'mock/placement',
+          transactionId: 'au',
+          params: {
+            param: 5
+          },
+          mediaType: 'native',
+        }]
+      };
 
-    const bidder = newBidder(spec);
+      let bids1 = Object.assign({},
+        bids[0],
+        {
+          'mediaType': 'native',
+          'native': {
+            'title': 'Native Creative',
+            'clickUrl': 'https://www.link.example',
+          }
+        }
+      );
 
-    spec.interpretResponse.returns(bids1);
-    bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+      const bidder = newBidder(spec);
 
-    expect(addBidResponseStub.calledOnce).to.equal(true);
-    expect(addBidResponseStub.firstCall.args[0]).to.equal('mock/placement');
-    expect(logErrorSpy.callCount).to.equal(0);
-  });
+      spec.interpretResponse.returns(bids1);
+      bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
-  it('should not add native bids that do not have required assets', function () {
-    adUnits = [{
-      transactionId: 'au',
-      nativeParams: {
-        title: {'required': true},
-      },
-    }];
-    let bidRequest = {
-      bids: [{
-        bidId: '1',
-        auctionId: 'first-bid-id',
-        adUnitCode: 'mock/placement',
+      expect(addBidResponseStub.calledOnce).to.equal(true);
+      expect(addBidResponseStub.firstCall.args[0]).to.equal('mock/placement');
+      expect(logErrorSpy.callCount).to.equal(0);
+    });
+
+    it('should not add native bids that do not have required assets', function () {
+      adUnits = [{
         transactionId: 'au',
-        params: {
-          param: 5
+        nativeParams: {
+          title: {'required': true},
         },
-        mediaType: 'native',
-      }]
-    };
-    let bids1 = Object.assign({},
-      bids[0],
-      {
-        bidderCode: CODE,
-        mediaType: 'native',
-        native: {
-          title: undefined,
-          clickUrl: 'https://www.link.example',
+      }];
+      let bidRequest = {
+        bids: [{
+          bidId: '1',
+          auctionId: 'first-bid-id',
+          adUnitCode: 'mock/placement',
+          transactionId: 'au',
+          params: {
+            param: 5
+          },
+          mediaType: 'native',
+        }]
+      };
+      let bids1 = Object.assign({},
+        bids[0],
+        {
+          bidderCode: CODE,
+          mediaType: 'native',
+          native: {
+            title: undefined,
+            clickUrl: 'https://www.link.example',
+          }
         }
-      }
-    );
+      );
 
-    const bidder = newBidder(spec);
-    spec.interpretResponse.returns(bids1);
-    bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+      const bidder = newBidder(spec);
+      spec.interpretResponse.returns(bids1);
+      bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
-    expect(addBidResponseStub.calledOnce).to.equal(false);
-    expect(logErrorSpy.callCount).to.equal(1);
-  });
+      expect(addBidResponseStub.calledOnce).to.equal(false);
+      expect(logErrorSpy.callCount).to.equal(1);
+    });
+  }
 
   it('should add bid when renderer is present on outstream bids', function () {
     adUnits = [{

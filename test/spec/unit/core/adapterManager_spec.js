@@ -1671,25 +1671,29 @@ describe('adapterManager tests', function () {
       })
     });
 
-    it('should add nativeParams to adUnits after BEFORE_REQUEST_BIDS', () => {
-      function beforeReqBids(adUnits) {
-        adUnits.forEach(adUnit => {
-          adUnit.mediaTypes.native = {
-            type: 'image',
-          }
-        })
-      }
-      events.on(CONSTANTS.EVENTS.BEFORE_REQUEST_BIDS, beforeReqBids);
-      adapterManager.makeBidRequests(
-        adUnits,
-        Date.now(),
-        utils.getUniqueIdentifierStr(),
-        function callback() {},
-        []
-      );
-      events.off(CONSTANTS.EVENTS.BEFORE_REQUEST_BIDS, beforeReqBids);
-      expect(adUnits.map((u) => u.nativeParams).some(i => i == null)).to.be.false;
-    });
+    if (FEATURES.NATIVE) {
+      it('should add nativeParams to adUnits after BEFORE_REQUEST_BIDS', () => {
+        function beforeReqBids(adUnits) {
+          adUnits.forEach(adUnit => {
+            adUnit.mediaTypes.native = {
+              type: 'image',
+            }
+          })
+        }
+
+        events.on(CONSTANTS.EVENTS.BEFORE_REQUEST_BIDS, beforeReqBids);
+        adapterManager.makeBidRequests(
+          adUnits,
+          Date.now(),
+          utils.getUniqueIdentifierStr(),
+          function callback() {
+          },
+          []
+        );
+        events.off(CONSTANTS.EVENTS.BEFORE_REQUEST_BIDS, beforeReqBids);
+        expect(adUnits.map((u) => u.nativeParams).some(i => i == null)).to.be.false;
+      });
+    }
 
     it('should make separate bidder request objects for each bidder', () => {
       adUnits = [utils.deepClone(getAdUnits()[0])];

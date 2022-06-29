@@ -92,7 +92,8 @@ export const spec = {
     {code: 'ergadx'},
     {code: 'turktelekom'},
     {code: 'felixads'},
-    {code: 'motionspots'}
+    {code: 'motionspots'},
+    {code: 'sonic_twist'}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 

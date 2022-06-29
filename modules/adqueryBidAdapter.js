@@ -178,11 +178,15 @@ export const spec = {
 
 };
 function buildRequest(validBidRequests, bidderRequest) {
-  let qid = Math.random().toString(36).substring(2) + Date.now().toString(36);
+  let gnerateQid = (Math.random().toString(36).substring(2)) + ((new Date().getTime()).toString(36));
   let bid = validBidRequests;
+  let qid = gnerateQid;
 
   if (storage.getDataFromLocalStorage('qid')) {
     qid = storage.getDataFromLocalStorage('qid');
+    if (qid && qid.includes('%7B%22')) {
+      qid = gnerateQid;
+    }
   } else {
     storage.setDataInLocalStorage('qid', qid);
   }

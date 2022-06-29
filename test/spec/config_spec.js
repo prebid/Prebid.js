@@ -106,6 +106,20 @@ describe('config API', function () {
     sinon.assert.calledOnce(wildcard);
   });
 
+  it('getConfig subscribers are called immediately if passed {init: true}', () => {
+    const listener = sinon.spy();
+    setConfig({foo: 'bar'});
+    getConfig('foo', listener, {init: true});
+    sinon.assert.calledWith(listener, {foo: 'bar'});
+  });
+
+  it('getConfig subscribers with no topic are called immediately if passed {init: true}', () => {
+    const listener = sinon.spy();
+    setConfig({foo: 'bar'});
+    getConfig(listener, {init: true});
+    sinon.assert.calledWith(listener, sinon.match({foo: 'bar'}));
+  });
+
   it('sets and gets arbitrary configuration properties', function () {
     setConfig({ baz: 'qux' });
     expect(getConfig('baz')).to.equal('qux');

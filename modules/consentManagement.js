@@ -20,6 +20,7 @@ export let staticConsentData;
 
 let consentData;
 let addedConsentHook = false;
+let provisionalConsent;
 
 // add new CMPs here, with their dedicated lookup function
 const cmpCallMap = {
@@ -78,6 +79,8 @@ function lookupIabConsent({onSuccess, onError}) {
     if (success) {
       if (tcfData.gdprApplies === false || tcfData.eventStatus === 'tcloaded' || tcfData.eventStatus === 'useractioncomplete') {
         processCmpData(tcfData, {onSuccess, onError});
+      } else {
+        provisionalConsent = tcfData;
       }
     } else {
       onError('CMP unable to register callback function.  Please check CMP setup.');
@@ -185,13 +188,19 @@ function loadConsentData(cb) {
   cmpCallMap[userCMP](callbacks);
 
   if (!isDone) {
+    const onTimeout = () => {
+      const continueToAuction = (data) => {
+        done(data, false, 'CMP did not load, continuing auction...');
+      }
+      processCmpData(provisionalConsent, {
+        onSuccess: continueToAuction,
+        onError: () => continueToAuction(storeConsentData(undefined))
+      })
+    }
     if (consentTimeout === 0) {
-      done(storeConsentData(undefined), false)
+      onTimeout();
     } else {
-      timer = setTimeout(function () {
-        // on timeout, allow the auction to continue
-        done(storeConsentData(undefined), false, `No response from CMP, continuing auction...`)
-      }, consentTimeout);
+      timer = setTimeout(onTimeout, consentTimeout);
     }
   }
 }
@@ -253,7 +262,7 @@ function processCmpData(consentObject, {onSuccess, onError}) {
     const tcString = consentObject && consentObject.tcString;
     return !!(
       (typeof gdprApplies !== 'boolean') ||
-      (gdprApplies === true && !isStr(tcString))
+      (gdprApplies === true && (!tcString || !isStr(tcString)))
     );
   }
 
