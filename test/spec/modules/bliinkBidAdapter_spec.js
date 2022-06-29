@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { spec, buildBid, BLIINK_ENDPOINT_ENGINE, parseXML, getMetaList, BLIINK_ENDPOINT_COOKIE_SYNC_IFRAME } from 'modules/bliinkBidAdapter.js'
+import { spec, buildBid, BLIINK_ENDPOINT_ENGINE, getMetaList, BLIINK_ENDPOINT_COOKIE_SYNC_IFRAME } from 'modules/bliinkBidAdapter.js'
 
 /**
  * @description Mockup bidRequest
@@ -67,13 +67,13 @@ const getConfigBannerBid = () => {
       media_type: 'banner',
       creativeId: 125,
     },
-    transactionId: '2def0c5b2a7f6e',
     price: 1,
     id: '810',
     token: 'token',
     mode: 'rtb',
     extras: {
-      buyer_id: 'buyerid',
+      deal_id: '34567erty',
+      transaction_id: '2def0c5b2a7f6e',
     },
     currency: 'EUR',
   }
@@ -90,13 +90,13 @@ const getConfigVideoBid = () => {
       media_type: 'video',
       creativeId: 0,
     },
-    transactionId: '2def0c5b2a7f6e',
     price: 1,
     id: '8121',
     token: 'token',
     mode: 'rtb',
     extras: {
-      buyer_id: 'buyerid',
+      deal_id: '34567ertyRTY',
+      transaction_id: '2def0c5b2a7f6e',
     },
     currency: 'EUR',
   }
@@ -127,7 +127,7 @@ const getConfigCreative = () => {
     mediaType: 'banner',
     cpm: 4,
     currency: 'EUR',
-    creativeId: 125,
+    creativeId: '34567erty',
     width: 300,
     height: 250,
     ttl: 3600,
@@ -141,7 +141,7 @@ const getConfigCreativeVideo = (isNoVast) => {
     vastXml: isNoVast ? '' : '<VAST></VAST>',
     cpm: 0,
     currency: 'EUR',
-    creativeId: 0,
+    creativeId: '34567ertyaza',
     requestId: '6a204ce130280d',
     width: 300,
     height: 250,
@@ -164,7 +164,7 @@ const getConfigBuildRequest = (placement) => {
       isAmp: false,
       numIframes: 0,
       reachedTop: true,
-      referer: 'http://localhost:9999/integrationExamples/gpt/bliink-adapter.html?pbjs_debug=true',
+      page: 'http://localhost:9999/integrationExamples/gpt/bliink-adapter.html?pbjs_debug=true',
     },
   }
 
@@ -250,13 +250,13 @@ const getConfigInterpretResponseRTB = (noAd = false, isInvalidVast = false) => {
           'media_type': 'video',
           'creativeId': 0,
         },
-        'transactionId': '2def0c5b2a7f6e',
         'price': 0,
         'id': '8121',
         'token': 'token',
         'mode': 'rtb',
         'extras': {
-          'buyer_id': 'buyerid'
+          'deal_id': '34567ertyaza',
+          'transaction_id': '2def0c5b2a7f6e'
         },
         'currency': 'EUR'
       }
@@ -330,31 +330,6 @@ describe('BLIINK Adapter getMetaList', function() {
  * @description Array of tests used in describe function below
  * @type {[{args: {fn: (string|Document)}, want: string, title: string}, {args: {fn: (string|Document)}, want: string, title: string}]}
  */
-const testsParseXML = [
-  {
-    title: 'Should return null, if content length equal to 0',
-    args: {
-      fn: parseXML('')
-    },
-    want: null,
-  },
-  {
-    title: 'Should return null, if content isnt string',
-    args: {
-      fn: parseXML({})
-    },
-    want: null,
-  },
-]
-
-describe('BLIINK Adapter parseXML', function() {
-  for (const test of testsParseXML) {
-    it(test.title, () => {
-      const res = test.args.fn
-      expect(res).to.eql(test.want)
-    })
-  }
-})
 
 /**
  *
@@ -409,14 +384,14 @@ const testsInterpretResponse = [
   {
     title: 'Should construct bid for video instream',
     args: {
-      fn: spec.interpretResponse(getConfigInterpretResponseRTB(false), getConfigBuildRequest('video'))
+      fn: spec.interpretResponse(getConfigInterpretResponseRTB(false))
     },
     want: [{
       cpm: 0,
       currency: 'EUR',
       height: 250,
       width: 300,
-      creativeId: 0,
+      creativeId: '34567ertyaza',
       mediaType: 'video',
       netRevenue: true,
       requestId: '2def0c5b2a7f6e',
@@ -426,16 +401,9 @@ const testsInterpretResponse = [
     }]
   },
   {
-    title: 'Should not construct bid for video instream',
-    args: {
-      fn: spec.interpretResponse(getConfigInterpretResponseRTB(false, true), getConfigBuildRequest('video'))
-    },
-    want: []
-  },
-  {
     title: 'ServerResponse with message: invalid tag, return empty array',
     args: {
-      fn: spec.interpretResponse(getConfigInterpretResponse(true), getConfigBuildRequest('banner'))
+      fn: spec.interpretResponse(getConfigInterpretResponse(true))
     },
     want: []
   },
@@ -447,7 +415,7 @@ const testsInterpretResponse = [
     want: [{
       ad: '',
       cpm: 1,
-      creativeId: 125,
+      creativeId: '34567erty',
       currency: 'EUR',
       height: 250,
       mediaType: 'banner',
@@ -533,9 +501,10 @@ const testsBuildBid = [
       mediaType: 'video',
       width: 300,
       height: 250,
-      creativeId: getConfigCreativeVideo().creativeId,
+      creativeId: getConfigVideoBid().extras.deal_id,
       netRevenue: true,
       vastXml: getConfigCreativeVideo().vastXml,
+      vastUrl: 'data:text/xml;charset=utf-8;base64,' + btoa(getConfigCreativeVideo().vastXml.replace(/\\"/g, '"')),
       ttl: 3600,
     }
   },
@@ -551,7 +520,7 @@ const testsBuildBid = [
             width: null,
           },
           media_type: 'video',
-          creativeId: 0,
+          creativeId: getConfigVideoBid().extras.deal_id,
           requestId: '2def0c5b2a7f6e',
         }}, getConfigCreativeVideo())
     },
@@ -562,16 +531,17 @@ const testsBuildBid = [
       mediaType: 'video',
       width: 1,
       height: 1,
-      creativeId: getConfigCreativeVideo().creativeId,
+      creativeId: getConfigVideoBid().extras.deal_id,
       netRevenue: true,
       vastXml: getConfigCreativeVideo().vastXml,
+      vastUrl: 'data:text/xml;charset=utf-8;base64,' + btoa(getConfigCreativeVideo().vastXml.replace(/\\"/g, '"')),
       ttl: 3600,
     }
   },
   {
     title: 'input data respect the output model for banner',
     args: {
-      fn: buildBid(getConfigBannerBid('banner'), getConfigCreative())
+      fn: buildBid(getConfigBannerBid())
     },
     want: {
       requestId: getConfigBid('banner').bidId,
@@ -581,7 +551,7 @@ const testsBuildBid = [
       width: 300,
       height: 250,
       creativeId: getConfigCreative().creativeId,
-      ad: getConfigCreative().ad,
+      ad: getConfigBannerBid().creative.banner.adm,
       ttl: 3600,
       netRevenue: true,
     }
@@ -618,13 +588,10 @@ const testsBuildRequests = [
       method: 'POST',
       url: BLIINK_ENDPOINT_ENGINE,
       data: {
-        gdpr: false,
-        gdpr_consent: '',
         keywords: '',
         pageDescription: '',
         pageTitle: '',
         pageUrl: 'http://localhost:9999/integrationExamples/gpt/bliink-adapter.html?pbjs_debug=true',
-        schain: {},
         tags: [
           {
             transactionId: '2def0c5b2a7f6e',
@@ -657,12 +624,11 @@ const testsBuildRequests = [
       url: BLIINK_ENDPOINT_ENGINE,
       data: {
         gdpr: true,
-        gdpr_consent: 'XXXX',
+        gdprConsent: 'XXXX',
         pageDescription: '',
         pageTitle: '',
         keywords: '',
         pageUrl: 'http://localhost:9999/integrationExamples/gpt/bliink-adapter.html?pbjs_debug=true',
-        schain: {},
         tags: [
           {
             transactionId: '2def0c5b2a7f6e',
@@ -703,7 +669,7 @@ const testsBuildRequests = [
       url: BLIINK_ENDPOINT_ENGINE,
       data: {
         gdpr: true,
-        gdpr_consent: 'XXXX',
+        gdprConsent: 'XXXX',
         pageDescription: '',
         pageTitle: '',
         keywords: '',
@@ -806,11 +772,11 @@ const testsGetUserSyncs = [
     ]
   },
   {
-    title: 'Should not have gdpr consent',
+    title: 'Should output sync if no gdprConsent',
     args: {
       fn: spec.getUserSyncs(getSyncOptions(), getServerResponses())
     },
-    want: []
+    want: getServerResponses()[0].body.userSyncs
   }
 ]
 

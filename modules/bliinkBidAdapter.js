@@ -120,9 +120,9 @@ export const buildBid = (bidRequest) => {
 
   return Object.assign(bid, {
     cpm: bidRequest.price,
-    currency: bidRequest.currency,
-    creativeId: bidRequest.creative.creativeId,
-    requestId: bidRequest.transactionId,
+    currency: bidRequest.currency || 'EUR',
+    creativeId: bidRequest.extras.deal_id,
+    requestId: bidRequest.extras.transaction_id,
     width: bidRequest.creative[bid.mediaType].width || 1,
     height: bidRequest.creative[bid.mediaType].height || 1,
     ttl: 3600,
@@ -137,7 +137,7 @@ export const buildBid = (bidRequest) => {
  * @return boolean
  */
 export const isBidRequestValid = (bid) => {
-  return bid.params && !!bid.params.tagId;
+  return !!(bid && bid.params && !!bid.params.tagId);
 };
 
 /**
@@ -156,14 +156,14 @@ export const buildRequests = (validBidRequests, bidderRequest) => {
       id: bid.params.tagId,
       transactionId: bid.bidId,
       mediaTypes: Object.keys(bid.mediaTypes),
-      imageUrl: bid.params.imageUrl,
+      imageUrl: bid.params.imageUrl || '',
     };
   });
 
   let request = {
     tags,
     pageTitle: document.title,
-    pageUrl: bidderRequest.refererInfo.referer,
+    pageUrl: bidderRequest.refererInfo.page,
     pageDescription: getMetaValue(META_DESCRIPTION),
     keywords: getKeywords().join(','),
   };
@@ -173,7 +173,7 @@ export const buildRequests = (validBidRequests, bidderRequest) => {
   }
   const gdprConsent = deepAccess(bidderRequest, 'gdprConsent');
   if (!!gdprConsent && gdprConsent.gdprApplies) {
-    deepSetValue(request, 'gdpr', 1);
+    deepSetValue(request, 'gdpr', true);
     deepSetValue(request, 'gdprConsent', gdprConsent.consentString);
   }
   if (config.getConfig('coppa')) {
@@ -197,13 +197,14 @@ export const buildRequests = (validBidRequests, bidderRequest) => {
  * @param request
  * @return
  */
-const interpretResponse = (serverResponse, request) => {
+const interpretResponse = (serverResponse) => {
+  if (!serverResponse.body || !serverResponse.body.bids) return []
   const bodyResponse = serverResponse.body.bids
   const bidResponses = [];
   _each(bodyResponse, function (response) {
     return bidResponses.push(buildBid(response));
   });
-  return bidResponses;
+  return bidResponses.filter(bid => !!bid)
 };
 
 /**
@@ -216,25 +217,28 @@ const interpretResponse = (serverResponse, request) => {
 const getUserSyncs = (syncOptions, serverResponses, gdprConsent) => {
   let syncs = [];
   if (syncOptions.pixelEnabled && serverResponses.length > 0) {
+    let gdprParams = ''
+    let apiVersion
+    let gdpr = false
     if (gdprConsent) {
-      const gdprParams = `consentString=${gdprConsent.consentString}`;
-      const apiVersion = `apiVersion=${gdprConsent.apiVersion}`;
-      let sync;
-      if (syncOptions.iframeEnabled) {
-        sync = [
-          {
-            type: 'iframe',
-            url: `${BLIINK_ENDPOINT_COOKIE_SYNC_IFRAME}?gdpr=${Number(
-              gdprConsent.gdprApplies
-            )}&coppa=${getCoppa()}&${gdprParams}&${apiVersion}`,
-          },
-        ];
-      } else {
-        sync = serverResponses[0].body.userSyncs;
-      }
-
-      return sync;
+      gdprParams = `consentString=${gdprConsent.consentString}`;
+      apiVersion = `apiVersion=${gdprConsent.apiVersion}`
+      gdpr = Number(
+        gdprConsent.gdprApplies)
     }
+    let sync;
+    if (syncOptions.iframeEnabled) {
+      sync = [
+        {
+          type: 'iframe',
+          url: `${BLIINK_ENDPOINT_COOKIE_SYNC_IFRAME}?gdpr=${gdpr}&coppa=${getCoppa()}&${gdprParams}&${apiVersion}`,
+        },
+      ];
+    } else {
+      sync = serverResponses[0].body.userSyncs;
+    }
+
+    return sync;
   }
 
   return syncs;
