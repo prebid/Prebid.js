@@ -9,8 +9,6 @@ var connect = require('gulp-connect');
 var webpack = require('webpack');
 var webpackStream = require('webpack-stream');
 var gulpClean = require('gulp-clean');
-var KarmaServer = require('karma').Server;
-var karmaConfMaker = require('./karma.conf.maker.js');
 var opens = require('opn');
 var webpackConfig = require('./webpack.conf.js');
 var helpers = require('./gulpHelpers.js');
@@ -32,7 +30,8 @@ var prebid = require('./package.json');
 var port = 9999;
 const INTEG_SERVER_HOST = argv.host ? argv.host : 'localhost';
 const INTEG_SERVER_PORT = 4444;
-const { spawn } = require('child_process');
+const { spawn, fork } = require('child_process');
+const TerserPlugin = require('terser-webpack-plugin');
 
 // these modules must be explicitly listed in --modules to be included in the build, won't be part of "all" modules
 var explicitModules = [
@@ -71,6 +70,7 @@ function lint(done) {
   return gulp.src([
     'src/**/*.js',
     'modules/**/*.js',
+    'libraries/**/*.js',
     'test/**/*.js',
     'plugins/**/*.js',
     '!plugins/**/node_modules/**',
@@ -118,6 +118,15 @@ function makeDevpackPkg() {
     devtool: 'source-map',
     mode: 'development'
   })
+
+  const babelConfig = require('./babelConfig.js')({prebidDistUrlBase: '/build/dev/'});
+
+  // update babel config to set local dist url
+  cloned.module.rules
+    .flatMap((rule) => rule.use)
+    .filter((use) => use.loader === 'babel-loader')
+    .forEach((use) => use.options = Object.assign({}, use.options, babelConfig));
+
   var externalModules = helpers.getArgModules();
 
   const analyticsSources = helpers.getAnalyticsSources();
@@ -130,21 +139,23 @@ function makeDevpackPkg() {
     .pipe(connect.reload());
 }
 
-function makeWebpackPkg() {
-  var cloned = _.cloneDeep(webpackConfig);
+function makeWebpackPkg(extraConfig = {}) {
+  var cloned = _.merge(_.cloneDeep(webpackConfig), extraConfig);
   if (!argv.sourceMaps) {
     delete cloned.devtool;
   }
 
-  var externalModules = helpers.getArgModules();
+  return function buildBundle() {
+    var externalModules = helpers.getArgModules();
 
-  const analyticsSources = helpers.getAnalyticsSources();
-  const moduleSources = helpers.getModulePaths(externalModules);
+    const analyticsSources = helpers.getAnalyticsSources();
+    const moduleSources = helpers.getModulePaths(externalModules);
 
-  return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
-    .pipe(helpers.nameModules(externalModules))
-    .pipe(webpackStream(cloned, webpack))
-    .pipe(gulp.dest('build/dist'));
+    return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
+      .pipe(helpers.nameModules(externalModules))
+      .pipe(webpackStream(cloned, webpack))
+      .pipe(gulp.dest('build/dist'));
+  }
 }
 
 function getModulesListToAddInBanner(modules) {
@@ -262,8 +273,10 @@ function bundle(dev, moduleArr) {
 
 function testTaskMaker(options = {}) {
   ['watch', 'e2e', 'file', 'browserstack', 'notest'].forEach(opt => {
-    options[opt] = options[opt] || argv[opt];
+    options[opt] = options.hasOwnProperty(opt) ? options[opt] : argv[opt];
   })
+
+  options.disableFeatures = options.disableFeatures || helpers.getDisabledFeatures();
 
   return function test(done) {
     if (options.notest) {
@@ -285,14 +298,7 @@ function testTaskMaker(options = {}) {
           process.exit(1);
         });
     } else {
-      var karmaConf = karmaConfMaker(false, options.browserstack, options.watch, options.file);
-
-      var browserOverride = helpers.parseBrowserArgs(argv);
-      if (browserOverride.length > 0) {
-        karmaConf.browsers = browserOverride;
-      }
-
-      new KarmaServer(karmaConf, newKarmaCallback(done)).start();
+      runKarma(options, done)
     }
   }
 }
@@ -319,25 +325,24 @@ function runWebdriver({file}) {
   return execa(wdioCmd, wdioOpts, { stdio: 'inherit' });
 }
 
-function newKarmaCallback(done) {
-  return function (exitCode) {
+function runKarma(options, done) {
+  // the karma server appears to leak memory; starting it multiple times in a row will run out of heap
+  // here we run it in a separate process to bypass the problem
+  options = Object.assign({browsers: helpers.parseBrowserArgs(argv)}, options)
+  const child = fork('./karmaRunner.js');
+  child.on('exit', (exitCode) => {
     if (exitCode) {
       done(new Error('Karma tests failed with exit code ' + exitCode));
-      if (argv.browserstack) {
-        process.exit(exitCode);
-      }
     } else {
       done();
-      if (argv.browserstack) {
-        process.exit(exitCode);
-      }
     }
-  }
+  })
+  child.send(options);
 }
 
 // If --file "<path-to-test-file>" is given, the task will only run tests in the specified file.
 function testCoverage(done) {
-  new KarmaServer(karmaConfMaker(true, false, false, argv.file), newKarmaCallback(done)).start();
+  runKarma({coverage: true, browserstack: false, watch: false, file: argv.file}, done);
 }
 
 function coveralls() { // 2nd arg is a dependency: 'test' must be finished
@@ -415,11 +420,30 @@ gulp.task(clean);
 gulp.task(escapePostbidConfig);
 
 gulp.task('build-bundle-dev', gulp.series(makeDevpackPkg, gulpBundle.bind(null, true)));
-gulp.task('build-bundle-prod', gulp.series(makeWebpackPkg, gulpBundle.bind(null, false)));
+gulp.task('build-bundle-prod', gulp.series(makeWebpackPkg(), gulpBundle.bind(null, false)));
+// build-bundle-verbose - prod bundle except names and comments are preserved. Use this to see the effects
+// of dead code elimination.
+gulp.task('build-bundle-verbose', gulp.series(makeWebpackPkg({
+  optimization: {
+    minimizer: [
+      new TerserPlugin({
+        parallel: true,
+        terserOptions: {
+          mangle: false,
+          format: {
+            comments: 'all'
+          }
+        },
+        extractComments: false,
+      }),
+    ],
+  }
+}), gulpBundle.bind(null, false)));
 
 // public tasks (dependencies are needed for each task since they can be ran on their own)
 gulp.task('test-only', test);
-gulp.task('test', gulp.series(clean, lint, 'test-only'));
+gulp.task('test-all-features-disabled', testTaskMaker({disableFeatures: require('./features.json'), oneBrowser: 'chrome', watch: false}))
+gulp.task('test', gulp.series(clean, lint, gulp.series('test-all-features-disabled', 'test-only')));
 
 gulp.task('test-coverage', gulp.series(clean, testCoverage));
 gulp.task(viewCoverage);

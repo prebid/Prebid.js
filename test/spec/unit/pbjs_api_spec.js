@@ -19,7 +19,9 @@ import {find} from 'src/polyfill.js';
 import {synchronizePromise} from '../../helpers/syncPromise.js';
 import * as pbjsModule from 'src/prebid.js';
 import {hook} from '../../../src/hook.js';
+import {reset as resetDebugging} from '../../../src/debugging.js';
 import $$PREBID_GLOBAL$$ from 'src/prebid.js';
+import {resetAuctionState} from 'src/auction.js';
 
 var assert = require('chai').assert;
 var expect = require('chai').expect;
@@ -198,6 +200,7 @@ describe('Unit: Prebid Module', function () {
   before(() => {
     hook.ready();
     $$PREBID_GLOBAL$$.requestBids.getHooks().remove();
+    resetDebugging();
   });
 
   beforeEach(function () {
@@ -205,6 +208,7 @@ describe('Unit: Prebid Module', function () {
     synchronizePromise(promiseSandbox);
     bidExpiryStub = sinon.stub(filters, 'isBidNotExpired').callsFake(() => true);
     configObj.setConfig({ useBidCache: true });
+    resetAuctionState();
   });
 
   afterEach(function() {
@@ -1796,6 +1800,29 @@ describe('Unit: Prebid Module', function () {
           .and.to.match(/[a-f0-9\-]{36}/i);
       });
 
+      it('should always set ortb2.ext.tid same as transactionId in adUnits', function () {
+        $$PREBID_GLOBAL$$.requestBids({
+          adUnits: [
+            {
+              code: 'test1',
+              mediaTypes: { banner: { sizes: [] } },
+              bids: []
+            }, {
+              code: 'test2',
+              mediaTypes: { banner: { sizes: [] } },
+              bids: []
+            }
+          ]
+        });
+
+        expect(auctionArgs.adUnits[0]).to.have.property('transactionId');
+        expect(auctionArgs.adUnits[0]).to.have.property('ortb2Imp');
+        expect(auctionArgs.adUnits[0].transactionId).to.equal(auctionArgs.adUnits[0].ortb2Imp.ext.tid);
+        expect(auctionArgs.adUnits[1]).to.have.property('transactionId');
+        expect(auctionArgs.adUnits[1]).to.have.property('ortb2Imp');
+        expect(auctionArgs.adUnits[1].transactionId).to.equal(auctionArgs.adUnits[1].ortb2Imp.ext.tid);
+      });
+
       it('should notify targeting of the latest auction for each adUnit', function () {
         let latestStub = sinon.stub(targeting, 'setLatestAuctionForAdUnit');
         let getAuctionStub = sinon.stub(auction, 'getAuctionId').returns(2);
@@ -2089,59 +2116,61 @@ describe('Unit: Prebid Module', function () {
             expect(auctionArgs.adUnits[0].mediaTypes.video).to.exist;
             assert.ok(logErrorSpy.calledWith('Detected incorrect configuration of mediaTypes.video.playerSize.  Please specify only one set of dimensions in a format like: [[640, 480]]. Removing invalid mediaTypes.video.playerSize property from request.'));
 
-            let badNativeImgSize = [{
-              code: 'testb4',
-              bids: [],
-              mediaTypes: {
-                native: {
-                  image: {
-                    sizes: '300x250'
+            if (FEATURES.NATIVE) {
+              let badNativeImgSize = [{
+                code: 'testb4',
+                bids: [],
+                mediaTypes: {
+                  native: {
+                    image: {
+                      sizes: '300x250'
+                    }
                   }
                 }
-              }
-            }];
-            $$PREBID_GLOBAL$$.requestBids({
-              adUnits: badNativeImgSize
-            });
-            expect(auctionArgs.adUnits[0].mediaTypes.native.image.sizes).to.be.undefined;
-            expect(auctionArgs.adUnits[0].mediaTypes.native.image).to.exist;
-            assert.ok(logErrorSpy.calledWith('Please use an array of sizes for native.image.sizes field.  Removing invalid mediaTypes.native.image.sizes property from request.'));
+              }];
+              $$PREBID_GLOBAL$$.requestBids({
+                adUnits: badNativeImgSize
+              });
+              expect(auctionArgs.adUnits[0].mediaTypes.native.image.sizes).to.be.undefined;
+              expect(auctionArgs.adUnits[0].mediaTypes.native.image).to.exist;
+              assert.ok(logErrorSpy.calledWith('Please use an array of sizes for native.image.sizes field.  Removing invalid mediaTypes.native.image.sizes property from request.'));
 
-            let badNativeImgAspRat = [{
-              code: 'testb5',
-              bids: [],
-              mediaTypes: {
-                native: {
-                  image: {
-                    aspect_ratios: '300x250'
+              let badNativeImgAspRat = [{
+                code: 'testb5',
+                bids: [],
+                mediaTypes: {
+                  native: {
+                    image: {
+                      aspect_ratios: '300x250'
+                    }
                   }
                 }
-              }
-            }];
-            $$PREBID_GLOBAL$$.requestBids({
-              adUnits: badNativeImgAspRat
-            });
-            expect(auctionArgs.adUnits[0].mediaTypes.native.image.aspect_ratios).to.be.undefined;
-            expect(auctionArgs.adUnits[0].mediaTypes.native.image).to.exist;
-            assert.ok(logErrorSpy.calledWith('Please use an array of sizes for native.image.aspect_ratios field.  Removing invalid mediaTypes.native.image.aspect_ratios property from request.'));
+              }];
+              $$PREBID_GLOBAL$$.requestBids({
+                adUnits: badNativeImgAspRat
+              });
+              expect(auctionArgs.adUnits[0].mediaTypes.native.image.aspect_ratios).to.be.undefined;
+              expect(auctionArgs.adUnits[0].mediaTypes.native.image).to.exist;
+              assert.ok(logErrorSpy.calledWith('Please use an array of sizes for native.image.aspect_ratios field.  Removing invalid mediaTypes.native.image.aspect_ratios property from request.'));
 
-            let badNativeIcon = [{
-              code: 'testb6',
-              bids: [],
-              mediaTypes: {
-                native: {
-                  icon: {
-                    sizes: '300x250'
+              let badNativeIcon = [{
+                code: 'testb6',
+                bids: [],
+                mediaTypes: {
+                  native: {
+                    icon: {
+                      sizes: '300x250'
+                    }
                   }
                 }
-              }
-            }];
-            $$PREBID_GLOBAL$$.requestBids({
-              adUnits: badNativeIcon
-            });
-            expect(auctionArgs.adUnits[0].mediaTypes.native.icon.sizes).to.be.undefined;
-            expect(auctionArgs.adUnits[0].mediaTypes.native.icon).to.exist;
-            assert.ok(logErrorSpy.calledWith('Please use an array of sizes for native.icon.sizes field.  Removing invalid mediaTypes.native.icon.sizes property from request.'));
+              }];
+              $$PREBID_GLOBAL$$.requestBids({
+                adUnits: badNativeIcon
+              });
+              expect(auctionArgs.adUnits[0].mediaTypes.native.icon.sizes).to.be.undefined;
+              expect(auctionArgs.adUnits[0].mediaTypes.native.icon).to.exist;
+              assert.ok(logErrorSpy.calledWith('Please use an array of sizes for native.icon.sizes field.  Removing invalid mediaTypes.native.icon.sizes property from request.'));
+            }
           });
 
           it('should throw error message and remove adUnit if adUnit.bids is not defined correctly', function () {
@@ -2174,6 +2203,9 @@ describe('Unit: Prebid Module', function () {
     });
 
     describe('multiformat requests', function () {
+      if (!FEATURES.NATIVE) {
+        return;
+      }
       let adUnits;
 
       beforeEach(function () {
@@ -2225,6 +2257,9 @@ describe('Unit: Prebid Module', function () {
     });
 
     describe('part 2', function () {
+      if (!FEATURES.NATIVE) {
+        return;
+      }
       let spyCallBids;
       let createAuctionStub;
       let adUnits;
@@ -2292,7 +2327,7 @@ describe('Unit: Prebid Module', function () {
       it('splits native type to individual native assets', function () {
         let adUnits = [{
           code: 'adUnit-code',
-          mediaTypes: { native: { type: 'image' } },
+          mediaTypes: {native: {type: 'image'}},
           bids: [
             {bidder: 'appnexus', params: {placementId: 'id'}}
           ]
