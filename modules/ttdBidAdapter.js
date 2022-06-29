@@ -326,6 +326,7 @@ export const spec = {
 
     const gpid = utils.deepAccess(bid, 'ortb2Imp.ext.gpid');
     if (!bid.params.placementId && !gpid) {
+      utils.logWarn(BIDDER_CODE + ': one of params.placementId or gpid (via the GPT module https://docs.prebid.org/dev-docs/modules/gpt-pre-auction.html) must be passed');
       return false;
     }
 
