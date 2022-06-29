@@ -4,12 +4,13 @@ import { expect } from 'chai';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { spec, storage, ERROR_CODES } from '../../../modules/ixBidAdapter.js';
 import { createEidsArray } from 'modules/userId/eids.js';
-import { deepAccess } from '../../../src/utils.js';
+import { deepAccess, deepClone } from '../../../src/utils.js';
 
 describe('IndexexchangeAdapter', function () {
   const IX_SECURE_ENDPOINT = 'https://htlb.casalemedia.com/openrtb/pbjs';
   const VIDEO_ENDPOINT_VERSION = 8.1;
   const BANNER_ENDPOINT_VERSION = 7.2;
+  const NATIVE_ENDPOINT_VERSION = undefined;
 
   const SAMPLE_SCHAIN = {
     'ver': '1.0',
@@ -315,6 +316,88 @@ describe('IndexexchangeAdapter', function () {
     }
   ];
 
+  const DEFAULT_NATIVE_VALID_BID = [
+    {
+      bidder: 'ix',
+      params: {
+        siteId: '123',
+        size: [300, 250]
+      },
+      sizes: [[300, 250], [300, 600]],
+      mediaTypes: {
+        native: {
+          icon: {
+            required: false
+          },
+          title: {
+            required: true
+          },
+          body: {
+            required: true
+          },
+          image: {
+            required: true
+          },
+          video: {
+            required: false
+          },
+          sponsoredBy: {
+            required: true
+          }
+        }
+      },
+      adUnitCode: 'div-gpt-ad-1460505748563-0',
+      transactionId: '173f49a8-7549-4218-a23c-e7ba59b47231',
+      bidId: '1a2b3c4f',
+      bidderRequestId: '11a22b33c44f',
+      auctionId: '1aa2bb3cc4df',
+      schain: SAMPLE_SCHAIN
+    }
+  ];
+
+  const DEFAULT_MULTIFORMAT_NATIVE_VALID_BID = [
+    {
+      bidder: 'ix',
+      params: {
+        siteId: '123',
+        size: [300, 250],
+      },
+      mediaTypes: {
+        banner: {
+          sizes: [[300, 250], [300, 600], [400, 500]]
+        },
+        native: {
+          title: {
+            required: true
+          },
+          body: {
+            required: true
+          },
+          image: {
+            required: true
+          },
+          sponsoredBy: {
+            required: true
+          },
+          icon: {
+            required: false
+          }
+        }
+      },
+      adUnitCode: 'div-gpt-ad-1460505748562-0',
+      transactionId: '173f49a8-7549-4218-a23c-e7ba59b47230',
+      bidId: '1a2b3c4e',
+      bidderRequestId: '11a22b33c44e',
+      auctionId: '1aa2bb3cc4de',
+      schain: SAMPLE_SCHAIN
+    }
+  ];
+
+  const DEFAULT_NATIVE_IMP = {
+    request: '{"assets":[{"required":0,"img":{"type":1},"id":201},{"required":1,"title":{"len":25},"id":100},{"required":1,"data":{"type":2},"id":402},{"required":1,"img":{"type":3},"id":203},{"required":0,"video":{"mimes":["video/mp4","video/webm"],"minduration":0,"maxduration":120,"protocols":[2,3,5,6]},"id":300},{"required":1,"data":{"type":1},"id":401}],"ver":"1.2","eventtrackers":[{"event":1,"methods":[1,2]}],"privacy":1}',
+    ver: '1.2'
+  }
+
   const DEFAULT_BANNER_BID_RESPONSE = {
     cur: 'USD',
     id: '11a22b33c44d',
@@ -433,6 +516,34 @@ describe('IndexexchangeAdapter', function () {
           }
         ],
         seat: '3971'
+      }
+    ]
+  };
+
+  const DEFAULT_NATIVE_BID_RESPONSE = {
+    cur: 'USD',
+    id: '11a22b33c44d',
+    seatbid: [
+      {
+        bid: [
+          {
+            crid: '12345',
+            adomain: ['www.abc.com'],
+            adid: '14851455',
+            impid: '1a2b3c4d',
+            cid: '3051266',
+            price: 100,
+            id: '1',
+            ext: {
+              dspid: 50,
+              pricelevel: '_100',
+              advbrandid: 303325,
+              advbrand: 'OECTA'
+            },
+            adm: '{"native":{"ver":"1.2","assets":[{"id":201,"img":{"url":"https://cdn.liftoff.io/customers/1209/creatives/2501-icon-250x250.png","w":250,"h":250}},{"id":203,"img":{"url":"https://cdn.liftoff.io/customers/5a9cab9cc6/image/lambda_png/a0355879b06c09b09232.png","w":1200,"h":627}},{"id":401,"data":{"value":"autodoc.co.uk"}},{"id":402,"data":{"value":"Les pièces automobiles dont vous avez besoin, toujours sous la main."}},{"id":100,"title":{"text":"Autodoc"}},{"id":300,"video":{"vasttag":"<VAST>blah</VAST>"}}],"link":{"url":"https://play.google.com/store/apps/details?id=de.autodoc.gmbh","clicktrackers":["https://click.liftoff.io/v1/campaign_click/blah"]},"eventtrackers":[{"event":1,"method":1,"url":"https://impression-europe.liftoff.io/index/impression"},{"event":1,"method":1,"url":"https://a701.casalemedia.com/impression/v1"}],"privacy":"https://privacy.link.com"}}'
+          }
+        ],
+        seat: '3970'
       }
     ]
   };
@@ -582,10 +693,24 @@ describe('IndexexchangeAdapter', function () {
   });
 
   describe('isBidRequestValid', function () {
-    it('should return false if outstream player size is less than 300x250 and IX renderer is preferred', function () {
+    it('should return false if outstream player size is less than 144x144 and IX renderer is preferred', function () {
       const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
       bid.mediaTypes.video.context = 'outstream';
-      bid.mediaTypes.video.playerSize = [[300, 249]];
+      bid.mediaTypes.video.w = [[300, 143]];
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      bid.mediaTypes.video.w = [[143, 300]];
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('should return false if outstream video w & h  is less than 144x144 and IX renderer is preferred', function () {
+      const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
+      bid.mediaTypes.video.context = 'outstream';
+      bid.mediaTypes.video.playerSize = [[300, 250]];
+      bid.mediaTypes.video.w = 300;
+      bid.mediaTypes.video.h = 142;
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      bid.mediaTypes.video.h = 300;
+      bid.mediaTypes.video.w = 142;
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
@@ -603,6 +728,7 @@ describe('IndexexchangeAdapter', function () {
     it('should return true when required params found for a banner or video ad', function () {
       expect(spec.isBidRequestValid(DEFAULT_BANNER_VALID_BID[0])).to.equal(true);
       expect(spec.isBidRequestValid(DEFAULT_VIDEO_VALID_BID[0])).to.equal(true);
+      expect(spec.isBidRequestValid(DEFAULT_NATIVE_VALID_BID[0])).to.equal(true);
     });
 
     it('should return true when optional bidFloor params found for an ad', function () {
@@ -691,11 +817,11 @@ describe('IndexexchangeAdapter', function () {
     });
 
     it('should return false when mediaType is native', function () {
-      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      const bid = utils.deepClone(DEFAULT_NATIVE_VALID_BID[0]);
       delete bid.params.mediaTypes;
       bid.mediaType = 'native';
       bid.sizes = [[300, 250]];
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
     it('should return true when mediaType is missing and has sizes', function () {
@@ -729,6 +855,11 @@ describe('IndexexchangeAdapter', function () {
     it('should return true for video bid when there are multiple mediaTypes (banner, outstream)', function () {
       const bid = utils.deepClone(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0]);
       expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
+    it('shoult return true for native bid when there are multiple mediaTypes (banner, native)', function () {
+      const bid = utils.deepClone(DEFAULT_MULTIFORMAT_NATIVE_VALID_BID[0]);
+      expect(spec.isBidRequestValid(bid)).to.be.true;
     });
 
     it('should return false when there is only bidFloor', function () {
@@ -792,6 +923,18 @@ describe('IndexexchangeAdapter', function () {
       const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
       delete bid.params.video.protocols;
       expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('should fail when native contains unrecongized properties', function () {
+      let bid = utils.deepClone(DEFAULT_NATIVE_VALID_BID[0]);
+      bid.mediaTypes.native.test = {}
+      expect(spec.isBidRequestValid(bid)).to.be.false;
+    });
+
+    it('should fail if native mediaTypes should contains no valid assets', function () {
+      let bid = utils.deepClone(DEFAULT_NATIVE_VALID_BID[0]);
+      bid.mediaTypes.native = {}
+      expect(spec.isBidRequestValid(bid)).to.be.false;
     });
   });
 
@@ -1245,6 +1388,27 @@ describe('IndexexchangeAdapter', function () {
       const r = JSON.parse(request.data.r);
 
       expect(r.ext.ixdiag.fpd).to.exist;
+    });
+
+    it('should set ixdiag.tmax value if it exists using tmax', function () {
+      config.setConfig({
+        bidderTimeout: 250
+      });
+
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID)[0];
+      const r = JSON.parse(request.data.r);
+
+      expect(r.ext.ixdiag.tmax).to.equal(250);
+    });
+
+    it('should not set ixdiag.tmax value if bidderTimeout is undefined', function () {
+      config.setConfig({
+        bidderTimeout: null
+      })
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID)[0];
+      const r = JSON.parse(request.data.r);
+
+      expect(r.ext.ixdiag.tmax).to.be.undefined
     });
 
     it('should not send information that is not part of openRTB spec v2.5 using ortb2', function () {
@@ -1750,6 +1914,39 @@ describe('IndexexchangeAdapter', function () {
       });
     });
 
+    describe('request should contain both banner and native requests', function () {
+      const request = spec.buildRequests([DEFAULT_BANNER_VALID_BID[0], DEFAULT_NATIVE_VALID_BID[0]]);
+
+      it('should have banner request', () => {
+        const bannerImpression = JSON.parse(request[0].data.r).imp[0];
+
+        expect(JSON.parse(request[0].data.r).imp).to.have.lengthOf(1);
+        expect(JSON.parse(request[0].data.v)).to.equal(BANNER_ENDPOINT_VERSION);
+        expect(bannerImpression.id).to.equal(DEFAULT_BANNER_VALID_BID[0].bidId);
+
+        expect(bannerImpression.banner.format).to.be.length(2);
+        expect(bannerImpression.banner.topframe).to.be.oneOf([0, 1]);
+
+        bannerImpression.banner.format.map(({ w, h, ext }, index) => {
+          const size = DEFAULT_BANNER_VALID_BID[0].mediaTypes.banner.sizes[index];
+          const sidValue = utils.parseGPTSingleSizeArray(size);
+
+          expect(w).to.equal(size[0]);
+          expect(h).to.equal(size[1]);
+          expect(ext.siteID).to.equal(DEFAULT_BANNER_VALID_BID[0].params.siteId);
+          expect(ext.sid).to.equal(sidValue);
+        });
+      });
+
+      it('should have native request', () => {
+        const nativeImpression = JSON.parse(request[1].data.r).imp[0];
+
+        expect(request[1].data.v).to.equal(NATIVE_ENDPOINT_VERSION);
+        expect(nativeImpression.id).to.equal(DEFAULT_NATIVE_VALID_BID[0].bidId);
+        expect(nativeImpression.native).to.deep.equal(DEFAULT_NATIVE_IMP);
+      });
+    });
+
     it('single request under 8k size limit for large ad unit', function () {
       const options = {};
       const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
@@ -2070,6 +2267,138 @@ describe('IndexexchangeAdapter', function () {
       expect(videoImpression.video.w).to.equal(DEFAULT_VIDEO_VALID_BID_NO_VIDEO_PARAMS[0].mediaTypes.video.playerSize[0][0]);
       expect(videoImpression.video.h).to.equal(DEFAULT_VIDEO_VALID_BID_NO_VIDEO_PARAMS[0].mediaTypes.video.playerSize[0][1]);
     });
+
+    it('should set different placement for floating ad units', () => {
+      const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
+      bid.mediaTypes.video.context = 'outstream';
+      bid.params.video.playerConfig = {
+        floatOnScroll: true
+      };
+
+      const request = spec.buildRequests([bid]);
+      const videoImpression = JSON.parse(request[0].data.r).imp[0];
+
+      expect(videoImpression.video.placement).to.eq(5);
+    })
+  });
+
+  describe('buildRequestNative', function () {
+    it('should build request with expected params', function() {
+      const request = spec.buildRequests(DEFAULT_NATIVE_VALID_BID, DEFAULT_OPTION);
+      const query = request[0].data;
+
+      expect(query.v).to.equal(NATIVE_ENDPOINT_VERSION);
+      expect(query.s).to.equal(DEFAULT_NATIVE_VALID_BID[0].params.siteId);
+      expect(query.r).to.exist;
+      expect(query.ac).to.equal('j');
+      expect(query.sd).to.equal(1);
+      expect(JSON.parse(query.r).at).to.equal(1);
+    });
+
+    it('should send gpid in request if ortb2Imp.ext.gpid exists', function () {
+      const GPID = '/19968336/some-adunit-path';
+      const bids = utils.deepClone(DEFAULT_NATIVE_VALID_BID);
+      bids[0].ortb2Imp = {
+        ext: {
+          gpid: GPID
+        }
+      };
+      const requests = spec.buildRequests(bids, DEFAULT_OPTION);
+      const { ext: { gpid } } = JSON.parse(requests[0].data.r).imp[0];
+      expect(gpid).to.equal(GPID);
+    });
+
+    it('should build request with required asset properties with default values', function() {
+      const request = spec.buildRequests(DEFAULT_NATIVE_VALID_BID, DEFAULT_OPTION);
+      const nativeImpression = JSON.parse(request[0].data.r).imp[0];
+
+      expect(request[0].data.v).to.equal(NATIVE_ENDPOINT_VERSION);
+      expect(nativeImpression.id).to.equal(DEFAULT_NATIVE_VALID_BID[0].bidId);
+      expect(nativeImpression.native).to.deep.equal(DEFAULT_NATIVE_IMP);
+    });
+
+    it('should build request with given asset properties', function() {
+      let bid = utils.deepClone(DEFAULT_NATIVE_VALID_BID)
+      bid[0].mediaTypes.native = {
+        title: {
+          len: 200
+        },
+        video: {
+          mimes: [
+            'javascript'
+          ],
+          minduration: 10,
+          maxduration: 60,
+          protocols: [1]
+        }
+      }
+      const request = spec.buildRequests(bid, DEFAULT_OPTION);
+      const nativeImpression = JSON.parse(request[0].data.r).imp[0];
+      expect(nativeImpression.native).to.deep.equal({request: '{"assets":[{"required":0,"title":{"len":200},"id":100},{"required":0,"video":{"mimes":["javascript"],"minduration":10,"maxduration":60,"protocols":[1]},"id":300}],"ver":"1.2","eventtrackers":[{"event":1,"methods":[1,2]}],"privacy":1}', ver: '1.2'});
+    });
+
+    it('should build request with all possible Prebid asset properties', function() {
+      let bid = utils.deepClone(DEFAULT_NATIVE_VALID_BID)
+      bid[0].mediaTypes.native = {
+        title: {
+          required: false
+        },
+        body: {
+          required: false
+        },
+        body2: {
+          required: false
+        },
+        sponsoredBy: {
+          required: false
+        },
+        icon: {
+          required: false
+        },
+        image: {
+          required: false
+        },
+        clickUrl: {
+          required: false
+        },
+        displayUrl: {
+          required: false
+        },
+        privacyLink: {
+          required: false
+        },
+        privacyIcon: {
+          required: false
+        },
+        cta: {
+          required: false
+        },
+        rating: {
+          required: false
+        },
+        downloads: {
+          required: false
+        },
+        likes: {
+          required: false
+        },
+        price: {
+          required: false
+        },
+        salePrice: {
+          required: false
+        },
+        address: {
+          required: false
+        },
+        phone: {
+          required: false
+        },
+      }
+      const request = spec.buildRequests(bid, DEFAULT_OPTION);
+      const nativeImpression = JSON.parse(request[0].data.r).imp[0];
+      expect(nativeImpression.native).to.deep.equal({request: '{"assets":[{"required":0,"title":{"len":25},"id":100},{"required":0,"data":{"type":2},"id":402},{"required":0,"data":{"type":10},"id":410},{"required":0,"data":{"type":1},"id":401},{"required":0,"img":{"type":1},"id":201},{"required":0,"img":{"type":3},"id":203},{"required":0,"data":{"type":11},"id":411},{"required":0,"data":{"type":12},"id":412},{"required":0,"data":{"type":3},"id":403},{"required":0,"data":{"type":5},"id":405},{"required":0,"data":{"type":4},"id":404},{"required":0,"data":{"type":6},"id":406},{"required":0,"data":{"type":7},"id":407},{"required":0,"data":{"type":9},"id":409},{"required":0,"data":{"type":8},"id":408}],"ver":"1.2","eventtrackers":[{"event":1,"methods":[1,2]}],"privacy":1}', ver: '1.2'});
+    })
   });
 
   describe('buildRequestMultiFormat', function () {
@@ -2536,6 +2865,53 @@ describe('IndexexchangeAdapter', function () {
       expect(bannerResult[0].ttl).to.equal(300);
       expect(videoResult[0].ttl).to.equal(3600);
     });
+
+    it('should get correct bid response for native ad', function () {
+      const expectedParse = [
+        {
+          requestId: '1a2b3c4d',
+          cpm: 1,
+          creativeId: '12345',
+          mediaType: 'native',
+          width: 1,
+          height: 1,
+          currency: 'USD',
+          netRevenue: true,
+          meta: {
+            networkId: 50,
+            brandId: 303325,
+            brandName: 'OECTA',
+            advertiserDomains: ['www.abc.com']
+          },
+          native: {
+            body: 'Les pièces automobiles dont vous avez besoin, toujours sous la main.',
+            clickUrl: 'https://play.google.com/store/apps/details?id=de.autodoc.gmbh',
+            icon: {
+              height: 250,
+              width: 250,
+              url: 'https://cdn.liftoff.io/customers/1209/creatives/2501-icon-250x250.png'
+            },
+            image: {
+              height: 627,
+              width: 1200,
+              url: 'https://cdn.liftoff.io/customers/5a9cab9cc6/image/lambda_png/a0355879b06c09b09232.png'
+            },
+            impressionTrackers: [
+              'https://click.liftoff.io/v1/campaign_click/blah',
+              'https://impression-europe.liftoff.io/index/impression',
+              'https://a701.casalemedia.com/impression/v1'
+            ],
+            privacyLink: 'https://privacy.link.com',
+            sponsoredBy: 'autodoc.co.uk',
+            title: 'Autodoc',
+            video: '<VAST>blah</VAST>'
+          },
+          ttl: 3600
+        }
+      ];
+      const result = spec.interpretResponse({ body: DEFAULT_NATIVE_BID_RESPONSE }, { data: DEFAULT_BIDDER_REQUEST_DATA, validBidRequests: [] });
+      expect(result[0]).to.deep.equal(expectedParse[0]);
+    });
   });
 
   describe('bidrequest consent', function () {
@@ -2791,8 +3167,8 @@ describe('IndexexchangeAdapter', function () {
       bid.params.video.maxduration = 0;
 
       expect(spec.isBidRequestValid(bid)).to.be.true;
-      spec.buildRequests([bid], {});
-      expect(JSON.parse(localStorageValues[key])).to.deep.equal({ [TODAY]: { [ERROR_CODES.VIDEO_DURATION_INVALID]: 3 } });
+      spec.buildRequests([bid]);
+      expect(JSON.parse(localStorageValues[key])).to.deep.equal({ [TODAY]: { [ERROR_CODES.VIDEO_DURATION_INVALID]: 2 } });
     });
 
     it('should increment errors for errorCode', () => {

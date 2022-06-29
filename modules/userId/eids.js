@@ -307,11 +307,23 @@ export const USER_IDS_CONFIG = {
     }
   },
 
+  // tncId
+  'tncid': {
+    source: 'thenewco.it',
+    atype: 3
+  },
+
   // Gravito MP ID
   'gravitompId': {
     source: 'gravito.net',
     atype: 1
   },
+
+  // cpexId
+  'cpexId': {
+    source: 'czechadid.cz',
+    atype: 1
+  }
 };
 
 // this function will create an eid object for the given UserId sub-module
