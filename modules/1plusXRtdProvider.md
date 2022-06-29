@@ -4,13 +4,13 @@
 
     Module Name: 1plusX Rtd Provider
     Module Type: Rtd Provider
-    Maintainer: dev@1plusx.com 
+    Maintainer: dc-team-1px@triplelift.com
 
 ## Description
 
 RTD provider for 1plusX. 
 Enriches the bidding object with Audience & Targeting data
-Contact dev@1plusx.com for information.
+Contact dc-team-1px@triplelift.com for information.
 
 ## Usage
 
@@ -47,14 +47,14 @@ pbjs.setConfig({
 
 ### Parameters 
 
-| Name  |Type | Description   | Notes  |
-| :------------ | :------------ | :------------ |:------------ |
-| name  | String | Real time data module name | Always '1plusX' |
-| waitForIt | Boolean | Should be `true` if there's an `auctionDelay` defined (optional) | `false` |
-| params  | Object |   |   |
-| params.customerId  | Integer | Your 1plusX customer id  |  |
-| params.biders  | Array<string> | List of bidders for which you would like data to be set | To this date only `appnexus` and `rubicon` are supported |
-| params.timeout  | Integer | timeout (ms) | 1000 |
+| Name              | Type          | Description                                                      | Notes                                                    |
+| :---------------- | :------------ | :--------------------------------------------------------------- |:-------------------------------------------------------- |
+| name              | String        | Real time data module name                                       | Always '1plusX'                                          |
+| waitForIt         | Boolean       | Should be `true` if there's an `auctionDelay` defined (optional) | `false`                                                  |
+| params            | Object        |                                                                  |                                                          |
+| params.customerId | Integer       | Your 1plusX customer id                                          |                                                          |
+| params.bidders    | Array<string> | List of bidders for which you would like data to be set          | To this date only `appnexus` and `rubicon` are supported |
+| params.timeout    | Integer       | timeout (ms)                                                     | 1000ms                                                   |
 
 ## Supported Bidders
 At the moment only Appnexus (`appnexus`) and Magnite (`rubicon`) are supported
