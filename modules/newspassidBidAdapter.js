@@ -8,7 +8,7 @@ const BIDDER_CODE = 'newspassid';
 const ORIGIN = 'https://bidder.newspassid.com' // applies only to auction & cookie
 const AUCTIONURI = '/openrtb2/auction';
 const NEWSPASSCOOKIESYNC = '/static/load-cookie.html';
-const NEWSPASSVERSION = '1.0.0';
+const NEWSPASSVERSION = '1.0.0rc20220629';
 export const spec = {
   version: NEWSPASSVERSION,
   code: BIDDER_CODE,
@@ -222,10 +222,9 @@ export const spec = {
     if (getParams.hasOwnProperty('npip') && getParams.npip.match(/^\d+$/)) { extObj['newspassid']['npip'] = parseInt(getParams.npip); }
     if (this.propertyBag.endpointOverride != null) { extObj['newspassid']['origin'] = this.propertyBag.endpointOverride; }
     let userExtEids = deepAccess(validBidRequests, '0.userIdAsEids', []); // generate the UserIDs in the correct format for UserId module
-    let refererInfo = getRefererInfo();
     npRequest.site = {
       'publisher': {'id': htmlParams.publisherId},
-      'page': refererInfo.location,
+      'page': getRefererInfo().page,
       'id': htmlParams.siteId
     };
     npRequest.test = (getParams.hasOwnProperty('pbjs_debug') && getParams['pbjs_debug'] === 'true') ? 1 : 0;
@@ -386,7 +385,7 @@ export const spec = {
     }
     if (optionsType.iframeEnabled) {
       var arrQueryString = [];
-      if (document.location.search.match(/pbjs_debug=true/)) {
+      if (getRefererInfo().page.match(/pbjs_debug=true/)) {
         arrQueryString.push('pbjs_debug=true');
       }
       arrQueryString.push('usp_consent=' + (usPrivacy || ''));
@@ -448,10 +447,6 @@ export const spec = {
       let sharedid = deepAccess(bidRequest.userId, 'sharedid.id');
       if (sharedid) {
         ret['sharedid'] = sharedid;
-      }
-      let sharedidthird = deepAccess(bidRequest.userId, 'sharedid.third');
-      if (sharedidthird) {
-        ret['sharedidthird'] = sharedidthird;
       }
     }
     if (!ret.hasOwnProperty('pubcid')) {
