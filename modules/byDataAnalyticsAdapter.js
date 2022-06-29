@@ -22,14 +22,11 @@ var isDataSend = window.asc_data || false
 var bdNbTo = { 'to': [], 'nb': [] }
 
 /* method used for testing parameters */
-function isKeyInUrl(name, url) {
-  if (!url) url = window.location.href
-  name = name.replace(/[\[\]]/g, '\\$&');
-  var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)')
-  var results = regex.exec(url)
-  if (!results) return null
-  if (!results[2]) return ''
-  return decodeURIComponent(results[2].replace(/\+/g, ' '))
+function isKeyInUrl(name) {
+  const queryString = window.location.search;
+  const urlParams = new URLSearchParams(queryString);
+  const param = urlParams.get(name)
+  return param ? true : false
 }
 
 /* return ad unit full path wrt custom ad unit code */
