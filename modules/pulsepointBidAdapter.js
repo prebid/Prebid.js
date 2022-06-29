@@ -1,7 +1,7 @@
 /* eslint dot-notation:0, quote-props:0 */
-import { convertTypes, deepAccess, isArray, logError, isFn } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { Renderer } from '../src/Renderer.js';
+import {convertTypes, deepAccess, isArray, isFn, logError} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {Renderer} from '../src/Renderer.js';
 
 const NATIVE_DEFAULTS = {
   TITLE_LEN: 100,
@@ -45,7 +45,7 @@ export const spec = {
       site: site(bidRequests, bidderRequest),
       app: app(bidRequests),
       device: device(),
-      bcat: bidRequests[0].params.bcat,
+      bcat: deepAccess(bidderRequest.ortb2Imp, 'bcat') || bidRequests[0].params.bcat,
       badv: bidRequests[0].params.badv,
       user: user(bidRequests[0], bidderRequest),
       regs: regs(bidderRequest),
@@ -330,8 +330,9 @@ function site(bidRequests, bidderRequest) {
       publisher: {
         id: pubId.toString(),
       },
-      ref: referrer(),
-      page: bidderRequest && bidderRequest.refererInfo ? bidderRequest.refererInfo.referer : '',
+      // TODO: does the fallback make sense here?
+      ref: bidderRequest?.refererInfo?.ref || window.document.referrer,
+      page: bidderRequest?.refererInfo?.page || ''
     }
   }
   return null;
@@ -354,17 +355,6 @@ function app(bidderRequest) {
     }
   }
   return null;
-}
-
-/**
- * Attempts to capture the referrer url.
- */
-function referrer() {
-  try {
-    return window.top.document.referrer;
-  } catch (e) {
-    return document.referrer;
-  }
 }
 
 /**
@@ -419,59 +409,12 @@ function user(bidRequest, bidderRequest) {
     }
   }
   if (bidRequest) {
-    if (bidRequest.userId) {
-      ext.eids = [];
-      addExternalUserId(ext.eids, bidRequest.userId.pubcid, 'pubcid.org');
-      addExternalUserId(ext.eids, bidRequest.userId.britepoolid, 'britepool.com');
-      addExternalUserId(ext.eids, bidRequest.userId.criteoId, 'criteo.com');
-      addExternalUserId(ext.eids, bidRequest.userId.idl_env, 'liveramp.com');
-      addExternalUserId(ext.eids, deepAccess(bidRequest, 'userId.id5id.uid'), 'id5-sync.com', deepAccess(bidRequest, 'userId.id5id.ext'));
-      addExternalUserId(ext.eids, deepAccess(bidRequest, 'userId.parrableId.eid'), 'parrable.com');
-      addExternalUserId(ext.eids, bidRequest.userId.fabrickId, 'neustar.biz');
-      addExternalUserId(ext.eids, deepAccess(bidRequest, 'userId.haloId.haloId'), 'audigent.com');
-      addExternalUserId(ext.eids, bidRequest.userId.merkleId, 'merkleinc.com');
-      addExternalUserId(ext.eids, bidRequest.userId.lotamePanoramaId, 'crwdcntrl.net');
-      addExternalUserId(ext.eids, bidRequest.userId.connectid, 'verizonmedia.com');
-      addExternalUserId(ext.eids, deepAccess(bidRequest, 'userId.uid2.id'), 'uidapi.com');
-      // liveintent
-      if (bidRequest.userId.lipb && bidRequest.userId.lipb.lipbid) {
-        addExternalUserId(ext.eids, bidRequest.userId.lipb.lipbid, 'liveintent.com');
-      }
-      // TTD
-      addExternalUserId(ext.eids, bidRequest.userId.tdid, 'adserver.org', {
-        rtiPartner: 'TDID'
-      });
-      // digitrust
-      const digitrustResponse = bidRequest.userId.digitrustid;
-      if (digitrustResponse && digitrustResponse.data) {
-        var digitrust = {};
-        if (digitrustResponse.data.id) {
-          digitrust.id = digitrustResponse.data.id;
-        }
-        if (digitrustResponse.data.keyv) {
-          digitrust.keyv = digitrustResponse.data.keyv;
-        }
-        ext.digitrust = digitrust;
-      }
+    let eids = bidRequest.userIdAsEids;
+    if (eids) {
+      ext.eids = eids;
     }
   }
   return { ext };
-}
-
-/**
- * Produces external userid object in ortb 3.0 model.
- */
-function addExternalUserId(eids, id, source, uidExt) {
-  if (id) {
-    var uid = { id };
-    if (uidExt) {
-      uid.ext = uidExt;
-    }
-    eids.push({
-      source,
-      uids: [ uid ]
-    });
-  }
 }
 
 /**

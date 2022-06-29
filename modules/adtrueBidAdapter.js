@@ -4,8 +4,8 @@ import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import {getStorageManager} from '../src/storageManager.js';
 
-const storage = getStorageManager();
 const BIDDER_CODE = 'adtrue';
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 const ADTRUE_CURRENCY = 'USD';
 const ENDPOINT_URL = 'https://hb.adtrue.com/prebid/auction';
 const LOG_WARN_PREFIX = 'AdTrue: ';
@@ -133,8 +133,9 @@ function _parseAdSlot(bid) {
 
 function _initConf(refererInfo) {
   return {
-    pageURL: (refererInfo && refererInfo.referer) ? refererInfo.referer : window.location.href,
-    refURL: window.document.referrer
+    // TODO: do the fallbacks make sense here?
+    pageURL: refererInfo?.page || window.location.href,
+    refURL: refererInfo?.ref || window.document.referrer
   };
 }
 

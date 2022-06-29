@@ -25,12 +25,11 @@ function getBidFloor(bidRequest) {
 }
 
 function getPageUrl(bidRequest, bidderRequest) {
-  let pageUrl = config.getConfig('pageUrl');
-
+  let pageUrl;
   if (bidRequest.params.referrer) {
     pageUrl = bidRequest.params.referrer;
-  } else if (!pageUrl) {
-    pageUrl = bidderRequest.refererInfo.referer;
+  } else {
+    pageUrl = bidderRequest.refererInfo.page;
   }
 
   return bidRequest.params.secure ? pageUrl.replace(/^http:/i, 'https:') : pageUrl;
@@ -177,7 +176,7 @@ export const spec = {
     const { nurl } = bid || {};
 
     if (bid.nurl) {
-      triggerPixel(replaceAuctionPrice(nurl, bid.cpm));
+      triggerPixel(replaceAuctionPrice(nurl, bid.originalCpm || bid.cpm));
     };
   }
 }

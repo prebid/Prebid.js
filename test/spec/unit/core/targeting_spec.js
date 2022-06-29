@@ -228,6 +228,8 @@ describe('targeting tests', function () {
   let sandbox;
   let enableSendAllBids = false;
   let useBidCache;
+  let bidCacheFilterFunction;
+  let undef;
 
   beforeEach(function() {
     sandbox = sinon.sandbox.create();
@@ -242,12 +244,16 @@ describe('targeting tests', function () {
       if (key === 'useBidCache') {
         return useBidCache;
       }
+      if (key === 'bidCacheFilterFunction') {
+        return bidCacheFilterFunction;
+      }
       return origGetConfig.apply(config, arguments);
     });
   });
 
   afterEach(function () {
     sandbox.restore();
+    bidCacheFilterFunction = undef;
   });
 
   describe('getAllTargeting', function () {
@@ -593,7 +599,9 @@ describe('targeting tests', function () {
           }
         });
         const defaultKeys = new Set(Object.values(CONSTANTS.DEFAULT_TARGETING_KEYS));
-        Object.values(CONSTANTS.NATIVE_KEYS).forEach((k) => defaultKeys.add(k));
+        if (FEATURES.NATIVE) {
+          Object.values(CONSTANTS.NATIVE_KEYS).forEach((k) => defaultKeys.add(k));
+        }
 
         const expectedKeys = new Set();
         bidsReceived
@@ -796,26 +804,28 @@ describe('targeting tests', function () {
       expect(targeting['/123456/header-bid-tag-0'][CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_rubicon']).to.deep.equal(targeting['/123456/header-bid-tag-0'][CONSTANTS.TARGETING_KEYS.PRICE_BUCKET]);
     });
 
-    it('ensures keys are properly generated when enableSendAllBids is true and multiple bidders use native', function() {
-      const nativeAdUnitCode = '/19968336/prebid_native_example_1';
-      enableSendAllBids = true;
+    if (FEATURES.NATIVE) {
+      it('ensures keys are properly generated when enableSendAllBids is true and multiple bidders use native', function () {
+        const nativeAdUnitCode = '/19968336/prebid_native_example_1';
+        enableSendAllBids = true;
 
-      // update mocks for this test to return native bids
-      amBidsReceivedStub.callsFake(function() {
-        return [nativeBid1, nativeBid2];
-      });
-      amGetAdUnitsStub.callsFake(function() {
-        return [nativeAdUnitCode];
-      });
+        // update mocks for this test to return native bids
+        amBidsReceivedStub.callsFake(function () {
+          return [nativeBid1, nativeBid2];
+        });
+        amGetAdUnitsStub.callsFake(function () {
+          return [nativeAdUnitCode];
+        });
 
-      let targeting = targetingInstance.getAllTargeting([nativeAdUnitCode]);
-      expect(targeting[nativeAdUnitCode].hb_native_image).to.equal(nativeBid1.native.image.url);
-      expect(targeting[nativeAdUnitCode].hb_native_linkurl).to.equal(nativeBid1.native.clickUrl);
-      expect(targeting[nativeAdUnitCode].hb_native_title).to.equal(nativeBid1.native.title);
-      expect(targeting[nativeAdUnitCode].hb_native_image_dgad).to.exist.and.to.equal(nativeBid2.native.image.url);
-      expect(targeting[nativeAdUnitCode].hb_pb_dgads).to.exist.and.to.equal(nativeBid2.pbMg);
-      expect(targeting[nativeAdUnitCode].hb_native_body_appne).to.exist.and.to.equal(nativeBid1.native.body);
-    });
+        let targeting = targetingInstance.getAllTargeting([nativeAdUnitCode]);
+        expect(targeting[nativeAdUnitCode].hb_native_image).to.equal(nativeBid1.native.image.url);
+        expect(targeting[nativeAdUnitCode].hb_native_linkurl).to.equal(nativeBid1.native.clickUrl);
+        expect(targeting[nativeAdUnitCode].hb_native_title).to.equal(nativeBid1.native.title);
+        expect(targeting[nativeAdUnitCode].hb_native_image_dgad).to.exist.and.to.equal(nativeBid2.native.image.url);
+        expect(targeting[nativeAdUnitCode].hb_pb_dgads).to.exist.and.to.equal(nativeBid2.pbMg);
+        expect(targeting[nativeAdUnitCode].hb_native_body_appne).to.exist.and.to.equal(nativeBid1.native.body);
+      });
+    }
 
     it('does not include adpod type bids in the getBidsReceived results', function () {
       let adpodBid = utils.deepClone(bid1);
@@ -899,6 +909,93 @@ describe('targeting tests', function () {
 
         expect(bids.length).to.equal(1);
         expect(bids[0].adId).to.equal('adid-2');
+      });
+
+      it('should use bidCacheFilterFunction', function() {
+        auctionManagerStub.returns([
+          createBidReceived({bidder: 'appnexus', cpm: 7, auctionId: 1, responseTimestamp: 100, adUnitCode: 'code-0', adId: 'adid-1', mediaType: 'banner'}),
+          createBidReceived({bidder: 'appnexus', cpm: 5, auctionId: 2, responseTimestamp: 102, adUnitCode: 'code-0', adId: 'adid-2', mediaType: 'banner'}),
+          createBidReceived({bidder: 'appnexus', cpm: 6, auctionId: 1, responseTimestamp: 101, adUnitCode: 'code-1', adId: 'adid-3', mediaType: 'banner'}),
+          createBidReceived({bidder: 'appnexus', cpm: 8, auctionId: 2, responseTimestamp: 103, adUnitCode: 'code-1', adId: 'adid-4', mediaType: 'banner'}),
+          createBidReceived({bidder: 'appnexus', cpm: 27, auctionId: 1, responseTimestamp: 100, adUnitCode: 'code-2', adId: 'adid-5', mediaType: 'video'}),
+          createBidReceived({bidder: 'appnexus', cpm: 25, auctionId: 2, responseTimestamp: 102, adUnitCode: 'code-2', adId: 'adid-6', mediaType: 'video'}),
+          createBidReceived({bidder: 'appnexus', cpm: 26, auctionId: 1, responseTimestamp: 101, adUnitCode: 'code-3', adId: 'adid-7', mediaType: 'video'}),
+          createBidReceived({bidder: 'appnexus', cpm: 28, auctionId: 2, responseTimestamp: 103, adUnitCode: 'code-3', adId: 'adid-8', mediaType: 'video'}),
+        ]);
+
+        let adUnitCodes = ['code-0', 'code-1', 'code-2', 'code-3'];
+        targetingInstance.setLatestAuctionForAdUnit('code-0', 2);
+        targetingInstance.setLatestAuctionForAdUnit('code-1', 2);
+        targetingInstance.setLatestAuctionForAdUnit('code-2', 2);
+        targetingInstance.setLatestAuctionForAdUnit('code-3', 2);
+
+        // Bid Caching On, No Filter Function
+        useBidCache = true;
+        bidCacheFilterFunction = undef;
+        let bids = targetingInstance.getWinningBids(adUnitCodes);
+
+        expect(bids.length).to.equal(4);
+        expect(bids[0].adId).to.equal('adid-1');
+        expect(bids[1].adId).to.equal('adid-4');
+        expect(bids[2].adId).to.equal('adid-5');
+        expect(bids[3].adId).to.equal('adid-8');
+
+        // Bid Caching Off, No Filter Function
+        useBidCache = false;
+        bidCacheFilterFunction = undef;
+        bids = targetingInstance.getWinningBids(adUnitCodes);
+
+        expect(bids.length).to.equal(4);
+        expect(bids[0].adId).to.equal('adid-2');
+        expect(bids[1].adId).to.equal('adid-4');
+        expect(bids[2].adId).to.equal('adid-6');
+        expect(bids[3].adId).to.equal('adid-8');
+
+        // Bid Caching On AGAIN, No Filter Function (should be same as first time)
+        useBidCache = true;
+        bidCacheFilterFunction = undef;
+        bids = targetingInstance.getWinningBids(adUnitCodes);
+
+        expect(bids.length).to.equal(4);
+        expect(bids[0].adId).to.equal('adid-1');
+        expect(bids[1].adId).to.equal('adid-4');
+        expect(bids[2].adId).to.equal('adid-5');
+        expect(bids[3].adId).to.equal('adid-8');
+
+        // Bid Caching On, with Filter Function to Exclude video
+        useBidCache = true;
+        let bcffCalled = 0;
+        bidCacheFilterFunction = bid => {
+          bcffCalled++;
+          return bid.mediaType !== 'video';
+        }
+        bids = targetingInstance.getWinningBids(adUnitCodes);
+
+        expect(bids.length).to.equal(4);
+        expect(bids[0].adId).to.equal('adid-1');
+        expect(bids[1].adId).to.equal('adid-4');
+        expect(bids[2].adId).to.equal('adid-6');
+        expect(bids[3].adId).to.equal('adid-8');
+        // filter function should have been called for each cached bid (4 times)
+        expect(bcffCalled).to.equal(4);
+
+        // Bid Caching Off, with Filter Function to Exclude video
+        // - should not use cached bids or call the filter function
+        useBidCache = false;
+        bcffCalled = 0;
+        bidCacheFilterFunction = bid => {
+          bcffCalled++;
+          return bid.mediaType !== 'video';
+        }
+        bids = targetingInstance.getWinningBids(adUnitCodes);
+
+        expect(bids.length).to.equal(4);
+        expect(bids[0].adId).to.equal('adid-2');
+        expect(bids[1].adId).to.equal('adid-4');
+        expect(bids[2].adId).to.equal('adid-6');
+        expect(bids[3].adId).to.equal('adid-8');
+        // filter function should not have been called
+        expect(bcffCalled).to.equal(0);
       });
 
       it('should not use rendered bid to get winning bid', function () {

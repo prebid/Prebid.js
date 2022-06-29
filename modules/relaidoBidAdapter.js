@@ -10,7 +10,7 @@ const ADAPTER_VERSION = '1.0.7';
 const DEFAULT_TTL = 300;
 const UUID_KEY = 'relaido_uuid';
 
-const storage = getStorageManager();
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 function isBidRequestValid(bid) {
   if (!deepAccess(bid, 'params.placementId')) {
@@ -101,7 +101,8 @@ function buildRequests(validBidRequests, bidderRequest) {
     uuid: getUuid(),
     pv: '$prebid.version$',
     imuid: imuid,
-    ref: bidderRequest.refererInfo.referer
+    // TODO: is 'page' the right value here?
+    ref: bidderRequest.refererInfo.page
   })
 
   return {
@@ -121,9 +122,8 @@ function interpretResponse(serverResponse, bidRequest) {
     return [];
   }
 
-  const playerUrl = bidRequest.player || body.playerUrl;
-
   for (const res of body.ads) {
+    const playerUrl = res.playerUrl || bidRequest.player || body.playerUrl;
     let bidResponse = {
       requestId: res.bidId,
       width: res.width,
@@ -131,6 +131,7 @@ function interpretResponse(serverResponse, bidRequest) {
       cpm: res.price,
       currency: res.currency,
       creativeId: res.creativeId,
+      playerUrl: playerUrl,
       dealId: body.dealId || '',
       ttl: body.ttl || DEFAULT_TTL,
       netRevenue: true,
@@ -151,9 +152,6 @@ function interpretResponse(serverResponse, bidRequest) {
     }
     bidResponses.push(bidResponse);
   }
-
-  // eslint-disable-next-line no-console
-  console.log(JSON.stringify(bidResponses));
   return bidResponses;
 }
 
