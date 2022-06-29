@@ -12,9 +12,6 @@ const PREBID_VERSION = '$prebid.version$';
 const DEFAULT_BID_TTL = 300;
 const DEFAULT_CURRENCY = 'USD';
 
-/* TEST MODE */
-const TEST_MODE_BANNER_SID = 1220291391;
-
 function getSize(size) {
   return {
     w: parseInt(size[0]),
