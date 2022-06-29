@@ -38,6 +38,7 @@ import {pubProvidedIdSubmodule} from 'modules/pubProvidedIdSystem.js';
 import {criteoIdSubmodule} from 'modules/criteoIdSystem.js';
 import {mwOpenLinkIdSubModule} from 'modules/mwOpenLinkIdSystem.js';
 import {tapadIdSubmodule} from 'modules/tapadIdSystem.js';
+import {tncidSubModule} from 'modules/tncIdSystem.js';
 import {getPrebidInternal} from 'src/utils.js';
 import {uid2IdSubmodule} from 'modules/uid2IdSystem.js';
 import {admixerIdSubmodule} from 'modules/admixerIdSystem.js';
@@ -784,9 +785,9 @@ describe('User ID', function () {
       expect(utils.logInfo.args[0][0]).to.exist.and.to.contain('User ID - usersync config updated for 1 submodules');
     });
 
-    it('config with 21 configurations should result in 21 submodules add', function () {
+    it('config with 22 configurations should result in 22 submodules add', function () {
       init(config);
-      setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, liveIntentIdSubmodule, britepoolIdSubmodule, netIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, hadronIdSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule, amxIdSubmodule, kinessoIdSubmodule, adqueryIdSubmodule]);
+      setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, liveIntentIdSubmodule, britepoolIdSubmodule, netIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, hadronIdSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule, amxIdSubmodule, kinessoIdSubmodule, adqueryIdSubmodule, tncidSubModule]);
       config.setConfig({
         userSync: {
           syncDelay: 0,
@@ -847,10 +848,12 @@ describe('User ID', function () {
           }, {
             name: 'qid',
             storage: {name: 'qid', type: 'html5'}
+          }, {
+            name: 'tncId'
           }]
         }
       });
-      expect(utils.logInfo.args[0][0]).to.exist.and.to.contain('User ID - usersync config updated for 21 submodules');
+      expect(utils.logInfo.args[0][0]).to.exist.and.to.contain('User ID - usersync config updated for 22 submodules');
     });
 
     it('config syncDelay updates module correctly', function () {

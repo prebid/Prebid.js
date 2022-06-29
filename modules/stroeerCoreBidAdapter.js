@@ -17,7 +17,7 @@ function getTopWindowReferrer() {
   try {
     return getWindowTop().document.referrer;
   } catch (e) {
-    return getWindowSelf().referrer;
+    return '';
   }
 }
 
@@ -119,13 +119,16 @@ export const spec = {
   buildRequests: function (validBidRequests = [], bidderRequest) {
     const anyBid = bidderRequest.bids[0];
 
+    const refererInfo = bidderRequest.refererInfo;
+
     const payload = {
       id: bidderRequest.auctionId,
       bids: [],
       ref: getTopWindowReferrer(),
       ssl: isSecureWindow(),
       mpa: isMainPageAccessible(),
-      timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart)
+      timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart),
+      url: refererInfo && (refererInfo.canonicalUrl || refererInfo.referer)
     };
 
     const userIds = anyBid.userId;
