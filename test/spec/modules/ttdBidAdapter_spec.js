@@ -56,6 +56,23 @@ describe('ttdBidAdapter', function () {
         expect(spec.isBidRequestValid(bid)).to.equal(false);
       });
 
+      it('should return true if placementId is not passed and gpid is passed', function () {
+        let bid = makeBid();
+        delete bid.params.placementId;
+        bid.ortb2Imp = {
+          ext: {
+            gpid: '/1111/home#header'
+          }
+        }
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
+      });
+
+      it('should return false if neither placementId nor gpid is passed', function () {
+        let bid = makeBid();
+        delete bid.params.placementId;
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
+      });
+
       it('should return false if neither mediaTypes.banner nor mediaTypes.video is passed', function () {
         let bid = makeBid();
         delete bid.mediaTypes

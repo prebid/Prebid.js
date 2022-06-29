@@ -324,6 +324,11 @@ export const spec = {
       return false;
     }
 
+    const gpid = utils.deepAccess(bid, 'ortb2Imp.ext.gpid');
+    if (!bid.params.placementId && !gpid) {
+      return false;
+    }
+
     const mediaTypesBanner = utils.deepAccess(bid, 'mediaTypes.banner');
     const mediaTypesVideo = utils.deepAccess(bid, 'mediaTypes.video');
 
