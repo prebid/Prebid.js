@@ -75,7 +75,7 @@ export const spec = {
       winLocation = window.location;
     }
 
-    const refferUrl = bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
+    const refferUrl = bidderRequest.refererInfo?.page;
     let refferLocation;
     try {
       refferLocation = refferUrl && new URL(refferUrl);
@@ -83,6 +83,7 @@ export const spec = {
       logMessage(e);
     }
 
+    // TODO: does the fallback to window.location make sense?
     const location = refferLocation || winLocation;
     let placements = [];
     let request = {

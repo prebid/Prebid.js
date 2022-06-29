@@ -18,7 +18,8 @@ const events = {
 const localStoragePrefix = 'yuktamediaAnalytics_';
 const utmTags = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
 const location = getWindowLocation();
-const referer = getRefererInfo().referer;
+// TODO: is 'page' the right value here?
+const referer = getRefererInfo().page;
 const _pageInfo = {
   userAgent: window.navigator.userAgent,
   timezoneOffset: new Date().getTimezoneOffset(),

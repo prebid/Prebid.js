@@ -18,7 +18,7 @@ import {find} from 'src/polyfill.js';
 import { server } from 'test/mocks/xhr.js';
 import {hook} from '../../src/hook.js';
 import {auctionManager} from '../../src/auctionManager.js';
-import 'src/debugging.js' // some tests look for debugging side effects
+import 'modules/debugging/index.js' // some tests look for debugging side effects
 import {AuctionIndex} from '../../src/auctionIndex.js';
 import {expect} from 'chai';
 import {synchronizePromise} from '../helpers/syncPromise.js';
@@ -682,6 +682,46 @@ describe('auctionmanager.js', function () {
     });
   });
 
+  describe('createAuction', () => {
+    let adUnits, stubMakeBidRequests, stubCallAdapters
+
+    beforeEach(() => {
+      stubMakeBidRequests = sinon.stub(adapterManager, 'makeBidRequests').returns([{
+        bidderCode: BIDDER_CODE,
+        bids: [{
+          bidder: BIDDER_CODE
+        }]
+      }]);
+      stubCallAdapters = sinon.stub(adapterManager, 'callBids').callsFake((au, reqs, addBid, done) => {
+        reqs.forEach(r => done.apply(r));
+      });
+      adUnits = [{
+        code: ADUNIT_CODE,
+        transactionId: ADUNIT_CODE,
+        bids: [
+          {bidder: BIDDER_CODE},
+        ]
+      }];
+    });
+
+    afterEach(() => {
+      stubMakeBidRequests.restore();
+      stubCallAdapters.restore();
+    });
+
+    it('passes global and bidder ortb2 to the auction', () => {
+      const ortb2Fragments = {
+        global: {},
+        bidder: {}
+      }
+      const auction = auctionManager.createAuction({adUnits, ortb2Fragments});
+      auction.callBids();
+      const anyArgs = [...Array(7).keys()].map(() => sinon.match.any);
+      sinon.assert.calledWith(stubMakeBidRequests, ...anyArgs.slice(0, 5).concat([sinon.match.same(ortb2Fragments)]));
+      sinon.assert.calledWith(stubCallAdapters, ...anyArgs.slice(0, 7).concat([sinon.match.same(ortb2Fragments)]));
+    });
+  });
+
   describe('addBidResponse #1', function () {
     let createAuctionStub;
     let adUnits;
@@ -1154,8 +1194,7 @@ describe('auctionmanager.js', function () {
           enabled: true,
           bidRequests: [{
             bidderCode: BIDDER_CODE,
-            adUnitCode: ADUNIT_CODE,
-            storedAuctionResponse: '11111'
+            adUnitCode: ADUNIT_CODE
           }]
         }
       });
@@ -1213,8 +1252,6 @@ describe('auctionmanager.js', function () {
 
       const bid = find(auctionBidRequests[0].bids, bid => bid.adUnitCode === ADUNIT_CODE);
       assert.equal(typeof bid !== 'undefined', true);
-      assert.equal(bid.hasOwnProperty('storedAuctionResponse'), true);
-      assert.equal(bid.storedAuctionResponse, '11111');
     });
   });
 

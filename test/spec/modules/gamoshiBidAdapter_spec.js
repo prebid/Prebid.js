@@ -201,10 +201,6 @@ describe('GamoshiAdapter', () => {
     it('check if you are in the top frame', () => {
       expect(helper.getTopFrame()).to.equal(0);
     });
-
-    it('verify domain parsing', () => {
-      expect(helper.getTopWindowDomain('http://www.domain.com')).to.equal('www.domain.com');
-    });
   });
 
   describe('Is String start with search', () => {
@@ -323,12 +319,16 @@ describe('GamoshiAdapter', () => {
 
     it('builds request correctly', () => {
       let bidRequest2 = utils.deepClone(bidRequest);
-      bidRequest2.refererInfo.referer = 'http://www.test.com/page.html';
+      Object.assign(bidRequest2.refererInfo, {
+        page: 'http://www.test.com/page.html',
+        domain: 'www.test.com',
+        ref: 'http://referrer.com'
+      })
       let response = spec.buildRequests([bidRequest], bidRequest2)[0];
 
       expect(response.data.site.domain).to.equal('www.test.com');
       expect(response.data.site.page).to.equal('http://www.test.com/page.html');
-      expect(response.data.site.ref).to.equal('http://www.test.com/page.html');
+      expect(response.data.site.ref).to.equal('http://referrer.com');
       expect(response.data.imp.length).to.equal(1);
       expect(response.data.imp[0].id).to.equal(bidRequest.transactionId);
       expect(response.data.imp[0].instl).to.equal(0);

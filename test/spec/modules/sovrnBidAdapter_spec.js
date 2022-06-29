@@ -21,7 +21,8 @@ const baseBidRequest = {
 }
 const baseBidderRequest = {
   refererInfo: {
-    referer: 'http://example.com/page.html',
+    page: 'http://example.com/page.html',
+    domain: 'example.com',
   }
 }
 
@@ -94,9 +95,9 @@ describe('sovrnBidAdapter', function() {
         expect(impression.banner.h).to.equal(1)
       })
 
-      it('sets the proper video object', function() {
-        const width = 640
-        const height = 480
+      it('sets the proper video object with sizes defined', function() {
+        const width = 300
+        const height = 250
         const mimes = ['video/mp4', 'application/javascript']
         const protocols = [2, 5]
         const minduration = 5
@@ -104,6 +105,42 @@ describe('sovrnBidAdapter', function() {
         const startdelay = 0
         const videoBidRequest = {
           ...baseBidRequest,
+          mediaTypes: {
+            video: {
+              mimes,
+              protocols,
+              playerSize: [[width, height], [360, 240]],
+              minduration,
+              maxduration,
+              startdelay
+            }
+          }
+        }
+        const request = spec.buildRequests([videoBidRequest], baseBidderRequest)
+        const payload = JSON.parse(request.data)
+        const impression = payload.imp[0]
+
+        expect(impression.video.w).to.equal(width)
+        expect(impression.video.h).to.equal(height)
+        expect(impression.video.mimes).to.have.same.members(mimes)
+        expect(impression.video.protocols).to.have.same.members(protocols)
+        expect(impression.video.minduration).to.equal(minduration)
+        expect(impression.video.maxduration).to.equal(maxduration)
+        expect(impression.video.startdelay).to.equal(startdelay)
+      })
+
+      it('sets the proper video object wihtout sizes defined but video sizes defined', function() {
+        const width = 360
+        const height = 240
+        const mimes = ['video/mp4', 'application/javascript']
+        const protocols = [2, 5]
+        const minduration = 5
+        const maxduration = 60
+        const startdelay = 0
+        const modifiedBidRequest = baseBidRequest;
+        delete modifiedBidRequest.sizes;
+        const videoBidRequest = {
+          ...modifiedBidRequest,
           mediaTypes: {
             video: {
               mimes,
@@ -253,8 +290,6 @@ describe('sovrnBidAdapter', function() {
       expect(secondEID.uids[0].id).to.equal('SOMESORTOFID')
       expect(secondEID.uids[0].ext.rtiPartner).to.equal('TDID')
       expect(secondEID.uids[0].atype).to.equal(1)
-      expect(ext.tpid[0].source).to.equal('criteo.com')
-      expect(ext.tpid[0].uid).to.equal('A_CRITEO_ID')
       expect(ext.prebid_criteoid).to.equal('A_CRITEO_ID')
     })
 
@@ -307,30 +342,17 @@ describe('sovrnBidAdapter', function() {
       expect(impression.bidfloor).to.equal(2.00)
     })
     describe('First Party Data', function () {
-      let sandbox
-
-      beforeEach(function() {
-        sandbox = sinon.sandbox.create()
-      })
-      afterEach(function() {
-        sandbox.restore()
-      })
       it('should provide first party data if provided', function() {
-        sandbox.stub(config, 'getConfig').callsFake(key => {
-          const cfg = {
-            ortb2: {
-              site: {
-                keywords: 'test keyword'
-              },
-              user: {
-                data: 'some user data'
-              }
-            }
+        const ortb2 = {
+          site: {
+            keywords: 'test keyword'
+          },
+          user: {
+            data: 'some user data'
           }
-          return utils.deepAccess(cfg, key)
-        })
+        };
 
-        const request = spec.buildRequests([baseBidRequest], baseBidderRequest)
+        const request = spec.buildRequests([baseBidRequest], {...baseBidderRequest, ortb2})
         const { user, site } = JSON.parse(request.data)
 
         expect(user.data).to.equal('some user data')
