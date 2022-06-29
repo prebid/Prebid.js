@@ -624,6 +624,7 @@ const testsBuildRequests = [
         pageDescription: '',
         pageTitle: '',
         pageUrl: 'http://localhost:9999/integrationExamples/gpt/bliink-adapter.html?pbjs_debug=true',
+        schain: {},
         tags: [
           {
             transactionId: '2def0c5b2a7f6e',
@@ -661,6 +662,61 @@ const testsBuildRequests = [
         pageTitle: '',
         keywords: '',
         pageUrl: 'http://localhost:9999/integrationExamples/gpt/bliink-adapter.html?pbjs_debug=true',
+        schain: {},
+        tags: [
+          {
+            transactionId: '2def0c5b2a7f6e',
+            id: '14f30eca-85d2-11e8-9eed-0242ac120007',
+            imageUrl: '',
+            mediaTypes: ['banner'],
+            sizes: [
+              {
+                h: 250,
+                w: 300,
+              },
+            ],
+          },
+        ]
+      }
+    }
+  },
+  {
+    title: 'Should build request width schain if exists',
+    args: {
+      fn: spec.buildRequests([{schain: {
+        ver: '1.0',
+        complete: 1,
+        nodes: [{
+          asi: 'ssp.test',
+          sid: '00001',
+          hp: 1
+        }]
+      }}], Object.assign(getConfigBuildRequest('banner'), {
+        gdprConsent: {
+          gdprApplies: true,
+          consentString: 'XXXX'
+        },
+      }))
+    },
+    want: {
+      method: 'POST',
+      url: BLIINK_ENDPOINT_ENGINE,
+      data: {
+        gdpr: true,
+        gdpr_consent: 'XXXX',
+        pageDescription: '',
+        pageTitle: '',
+        keywords: '',
+        pageUrl: 'http://localhost:9999/integrationExamples/gpt/bliink-adapter.html?pbjs_debug=true',
+        schain: {
+          ver: '1.0',
+          complete: 1,
+          nodes: [{
+            asi: 'ssp.test',
+            sid: '00001',
+            hp: 1
+          }]
+        },
         tags: [
           {
             transactionId: '2def0c5b2a7f6e',

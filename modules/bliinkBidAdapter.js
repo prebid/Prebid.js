@@ -4,7 +4,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { config } from '../src/config.js'
 import { _each, deepAccess, cleanObj } from '../src/utils.js'
 export const BIDDER_CODE = 'bliink'
-export const BLIINK_ENDPOINT_ENGINE = 'https://engine-stg.bliink.io/prebid'
+export const BLIINK_ENDPOINT_ENGINE = 'https://engine.bliink.io/prebid'
 
 export const BLIINK_ENDPOINT_COOKIE_SYNC_IFRAME = 'https://storage.googleapis.com/bliink-creatives-web-app/bliink/cookie_sync/index.html'
 export const META_KEYWORDS = 'keywords'
@@ -151,9 +151,9 @@ export const isBidRequestValid = (bid) => {
  * @param bidderRequest
  * @return {{ method: string, url: string } | null}
  */
-export const buildRequests = (_, bidderRequest) => {
+export const buildRequests = (validBidRequests, bidderRequest) => {
   if (!bidderRequest) return null
-
+  const schain = _getSchain(validBidRequests[0])
   const tags = bidderRequest.bids.map((bid) => {
     return {
       sizes: bid.sizes.map((size) => ({ w: size[0], h: size[1] })),
@@ -165,12 +165,13 @@ export const buildRequests = (_, bidderRequest) => {
   });
 
   const data = {
+    schain: schain || {},
     pageTitle: document.title,
     pageUrl: bidderRequest.refererInfo.referer,
     pageDescription: getMetaValue(META_DESCRIPTION),
     keywords: getKeywords().join(','),
     gdpr: false,
-    gdpr_consent: '',
+    gdprConsent: '',
     tags: tags,
   };
   const gdprConsentData = _getGdprConsent(bidderRequest) || {};
@@ -271,9 +272,13 @@ function _getGdprConsent(bidderRequest) {
   } = bidderRequest.gdprConsent;
 
   return cleanObj({
-    gdpr_consent: consentString,
+    gdprConsent: consentString,
     gdpr: gdprApplies,
   });
+}
+
+function _getSchain(bidRequest) {
+  return deepAccess(bidRequest, 'schain');
 }
 
 /**
