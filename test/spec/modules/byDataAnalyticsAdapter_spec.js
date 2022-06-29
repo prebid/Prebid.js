@@ -51,6 +51,7 @@ let bidWonArgs = {
   mediaType: 'display',
   cpm: 0.50
 }
+
 let auctionEndArgs = {
   adUnitCodes: ['div-gpt-ad-mrec1'],
   adUnits: [{

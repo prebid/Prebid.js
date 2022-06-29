@@ -1,14 +1,14 @@
 # Overview
 
-Module Name: InSkin Bid Adapter
+Module Name: Inskin Bid Adapter
 
 Module Type: Bid Adapter
 
-Maintainer: jgrimes@adzerk.com
+Maintainer: tech@inskinmedia.com
 
 # Description
 
-Connects to InSkin Media for receiving bids from configured demand sources.
+Connects to Inskin Media for receiving bids from configured demand sources.
 
 # Test Parameters
 ```javascript
@@ -21,7 +21,8 @@ Connects to InSkin Media for receiving bids from configured demand sources.
                     bidder: 'inskin',
                     params: {
                         networkId: '9874',
-                        siteId: '983808'
+                        siteId: '983808',
+                        publisherId: '123456'
                     }
                 }
             ]

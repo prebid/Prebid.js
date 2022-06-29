@@ -1,8 +1,8 @@
 
-import * as utils from '../src/utils.js';
+import { timestamp, deepAccess } from '../src/utils.js';
+import { getOrigin } from '../libraries/getOrigin/index.js';
 import { config } from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {getOrigin} from '../src/utils.js';
 const BIDDER_CODE = 'resetdigital';
 
 export const spec = {
@@ -20,14 +20,16 @@ export const spec = {
       ? config.getConfig('userSync').syncsPerBidder : 5
 
     const payload = {
-      start_time: utils.timestamp(),
+      start_time: timestamp(),
       language: window.navigator.userLanguage || window.navigator.language,
       site: {
         domain: getOrigin(),
         iframe: !bidderRequest.refererInfo.reachedTop,
+        // TODO: the last element in refererInfo.stack is window.location.href, that's unlikely to have been the intent here
         url: stack && stack.length > 0 ? [stack.length - 1] : null,
         https: (window.location.protocol === 'https:'),
-        referrer: bidderRequest.refererInfo.referer
+        // TODO: is 'page' the right value here?
+        referrer: bidderRequest.refererInfo.page
       },
       imps: [],
       user_ids: validBidRequests[0].userId,
@@ -51,12 +53,12 @@ export const spec = {
         imp_id: req.transactionId,
         sizes: req.sizes,
         force_bid: req.params.forceBid,
-        media_types: utils.deepAccess(req, 'mediaTypes')
+        media_types: deepAccess(req, 'mediaTypes')
       });
     }
 
     let params = validBidRequests[0].params
-    let url = params.endpoint ? params.endpoint : '//hb.vhsrv.com'
+    let url = params.endpoint ? params.endpoint : '//ads.resetsrv.com'
     return {
       method: 'POST',
       url: url,

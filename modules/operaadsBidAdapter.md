@@ -16,10 +16,9 @@ Module that connects to OperaAds's demand sources
 
 | Name | Scope | Type | Description | Example
 | ---- | ----- | ---- | ----------- | -------
-| `placementId` | required | String | The Placement Id provided by Opera Ads. | `s12345678`
-| `endpointId` | required | String | The Endpoint Id provided by Opera Ads. | `ep12345678`
-| `publisherId` | required | String | The Publisher Id provided by Opera Ads. | `pub12345678`
-| `currency` | optional | String or String[] | Currency. | `USD`
+| `placementId` | required | String | The Placement Id provided by Opera Ads. | `s5340077725248`
+| `endpointId` | required | String | The Endpoint Id provided by Opera Ads. | `ep3425464070464`
+| `publisherId` | required | String | The Publisher Id provided by Opera Ads. | `pub3054952966336`
 | `bcat` | optional | String or String[] | The bcat value. | `IAB9-31`
 
 ### Bid Video Parameters
@@ -66,9 +65,9 @@ var adUnits = [{
   bids: [{
     bidder: 'operaads',
     params: {
-      placementId: 's12345678',
-      endpointId: 's12345678',
-      publisherId: 's12345678'
+      placementId: 's5340077725248',
+      endpointId: 'ep3425464070464',
+      publisherId: 'pub3054952966336'
     }
   }]
 }];
@@ -92,9 +91,9 @@ var adUnits = [{
   bids: [{
     bidder: 'operaads',
     params: {
-      placementId: 's12345678',
-      endpointId: 's12345678',
-      publisherId: 's12345678'
+      placementId: 's5340077725248',
+      endpointId: 'ep3425464070464',
+      publisherId: 'pub3054952966336'
     }
   }]
 }];
@@ -126,9 +125,9 @@ var adUnits = [{
   bids: [{
     bidder: 'operaads',
     params: {
-      placementId: 's12345678',
-      endpointId: 's12345678',
-      publisherId: 's12345678'
+      placementId: 's5340077725248',
+      endpointId: 'ep3425464070464',
+      publisherId: 'pub3054952966336'
     }
   }]
 }];

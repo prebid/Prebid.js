@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import * as utils from 'src/utils.js';
 import { spec } from 'modules/nobidBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import { config } from 'src/config.js';
 import * as bidderFactory from 'src/adapters/bidderFactory.js';
 
 describe('Nobid Adapter', function () {
@@ -50,6 +51,68 @@ describe('Nobid Adapter', function () {
     });
   });
 
+  describe('Request with ORTB2', function () {
+    const SITE_ID = 2;
+    const REFERER = 'https://www.examplereferer.com';
+    const BIDDER_CODE = 'duration';
+    let bidRequests = [
+      {
+        'bidder': BIDDER_CODE,
+        'params': {
+          'siteId': SITE_ID
+        },
+        'adUnitCode': 'adunit-code',
+        'sizes': [[300, 250]],
+        'bidId': '30b31c1838de1e',
+        'bidderRequestId': '22edbae2733bf6',
+        'auctionId': '1d1a030790a475',
+      }
+    ];
+
+    let bidderRequest = {
+      refererInfo: {page: REFERER}, bidderCode: BIDDER_CODE
+    }
+
+    const siteName = 'example';
+    const siteDomain = 'page.example.com';
+    const sitePage = 'https://page.example.com/here.html';
+    const siteRef = 'https://ref.example.com';
+    const siteKeywords = 'power tools, drills';
+    const siteSearch = 'drill';
+    const siteCat = 'IAB2';
+    const siteSectionCat = 'IAB2-2';
+    const sitePageCat = 'IAB2-12';
+
+    it('ortb2 should exist', function () {
+      const ortb2 = {
+        site: {
+          name: siteName,
+          domain: siteDomain,
+          cat: [ siteCat ],
+          sectioncat: [ siteSectionCat ],
+          pagecat: [ sitePageCat ],
+          page: sitePage,
+          ref: siteRef,
+          keywords: siteKeywords,
+          search: siteSearch
+        }
+      };
+      const request = spec.buildRequests(bidRequests, {...bidderRequest, ortb2});
+      let payload = JSON.parse(request.data);
+      payload = JSON.parse(JSON.stringify(payload));
+      expect(payload.sid).to.equal(SITE_ID);
+      expect(payload.ortb2.site.name).to.equal(siteName);
+      expect(payload.ortb2.site.domain).to.equal(siteDomain);
+      expect(payload.ortb2.site.page).to.equal(sitePage);
+      expect(payload.ortb2.site.ref).to.equal(siteRef);
+      expect(payload.ortb2.site.keywords).to.equal(siteKeywords);
+      expect(payload.ortb2.site.search).to.equal(siteSearch);
+      expect(payload.ortb2.site.cat[0]).to.equal(siteCat);
+      expect(payload.ortb2.site.sectioncat[0]).to.equal(siteSectionCat);
+      expect(payload.ortb2.site.pagecat[0]).to.equal(sitePageCat);
+    });
+  });
+
   describe('isDurationBidRequestValid', function () {
     const SITE_ID = 2;
     const REFERER = 'https://www.examplereferer.com';
@@ -69,7 +132,7 @@ describe('Nobid Adapter', function () {
     ];
 
     let bidderRequest = {
-      refererInfo: {referer: REFERER}, bidderCode: BIDDER_CODE
+      refererInfo: {page: REFERER}, bidderCode: BIDDER_CODE
     }
 
     it('should add source and version to the tag', function () {
@@ -243,7 +306,7 @@ describe('Nobid Adapter', function () {
     ];
 
     let bidderRequest = {
-      refererInfo: {referer: REFERER}
+      refererInfo: {page: REFERER}
     }
 
     it('should add source and version to the tag', function () {
@@ -255,7 +318,6 @@ describe('Nobid Adapter', function () {
       expect(payload.a).to.exist;
       expect(payload.t).to.exist;
       expect(payload.tz).to.exist;
-      expect(payload.r).to.exist.and.to.equal('100x100');
       expect(payload.lang).to.exist;
       expect(payload.ref).to.exist;
       expect(payload.a[0].d).to.exist.and.to.equal('adunit-code');
@@ -333,7 +395,7 @@ describe('Nobid Adapter', function () {
     ];
 
     let bidderRequest = {
-      refererInfo: {referer: REFERER}
+      refererInfo: {page: REFERER}
     }
 
     it('should add source and version to the tag', function () {
@@ -419,7 +481,7 @@ describe('Nobid Adapter', function () {
     ];
 
     let bidderRequest = {
-      refererInfo: {referer: REFERER}
+      refererInfo: {page: REFERER}
     }
 
     it('should criteo eid', function () {
@@ -453,7 +515,7 @@ describe('Nobid Adapter', function () {
     ];
 
     let bidderRequest = {
-      refererInfo: {referer: REFERER}
+      refererInfo: {page: REFERER}
     }
 
     it('should add source and version to the tag', function () {
@@ -587,7 +649,7 @@ describe('Nobid Adapter', function () {
     ];
 
     let bidderRequest = {
-      refererInfo: {referer: REFERER}
+      refererInfo: {page: REFERER}
     }
 
     it('should refreshCount = 4', function () {

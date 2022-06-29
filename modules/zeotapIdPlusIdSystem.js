@@ -4,7 +4,7 @@
  * @module modules/zeotapIdPlusIdSystem
  * @requires module:modules/userId
  */
-import * as utils from '../src/utils.js'
+import { isStr, isPlainObject } from '../src/utils.js';
 import {submodule} from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 
@@ -21,7 +21,7 @@ function readFromLocalStorage() {
 }
 
 export function getStorage() {
-  return getStorageManager(ZEOTAP_VENDOR_ID, ZEOTAP_MODULE_NAME);
+  return getStorageManager({gvlid: ZEOTAP_VENDOR_ID, moduleName: ZEOTAP_MODULE_NAME});
 }
 
 export const storage = getStorage();
@@ -45,7 +45,7 @@ export const zeotapIdPlusSubmodule = {
    * @return { Object | string | undefined }
    */
   decode(value) {
-    const id = value ? utils.isStr(value) ? value : utils.isPlainObject(value) ? value.id : undefined : undefined;
+    const id = value ? isStr(value) ? value : isPlainObject(value) ? value.id : undefined : undefined;
     return id ? {
       'IDP': JSON.parse(atob(id))
     } : undefined;

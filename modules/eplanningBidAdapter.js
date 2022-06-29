@@ -1,16 +1,15 @@
-import * as utils from '../src/utils.js';
-import { getGlobal } from '../src/prebidGlobal.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { getStorageManager } from '../src/storageManager.js';
-
-export const storage = getStorageManager();
+import {getWindowSelf, isEmpty, parseSizesInput} from '../src/utils.js';
+import {getGlobal} from '../src/prebidGlobal.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {getStorageManager} from '../src/storageManager.js';
 
 const BIDDER_CODE = 'eplanning';
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 const rnd = Math.random();
-const DEFAULT_SV = 'ads.us.e-planning.net';
+const DEFAULT_SV = 'pbjs.e-planning.net';
 const DEFAULT_ISV = 'i.e-planning.net';
 const PARAMS = ['ci', 'sv', 't', 'ml', 'sn'];
-const DOLLARS = 'USD';
+const DOLLAR_CODE = 'USD';
 const NET_REVENUE = true;
 const TTL = 120;
 const NULL_SIZE = '1x1';
@@ -37,18 +36,16 @@ export const spec = {
     const urlConfig = getUrlConfig(bidRequests);
     const pcrs = getCharset();
     const spaces = getSpaces(bidRequests, urlConfig.ml);
-    const pageUrl = bidderRequest.refererInfo.referer;
-    const getDomain = (url) => {
-      let anchor = document.createElement('a');
-      anchor.href = url;
-      return anchor.hostname;
-    }
+    // TODO: do the fallbacks make sense here?
+    const pageUrl = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
+    const domain = bidderRequest.refererInfo.domain || window.location.host
     if (urlConfig.t) {
       url = 'https://' + urlConfig.isv + '/layers/t_pbjs_2.json';
       params = {};
     } else {
-      url = 'https://' + (urlConfig.sv || DEFAULT_SV) + '/pbjs/1/' + urlConfig.ci + '/' + dfpClientId + '/' + getDomain(pageUrl) + '/' + sec;
-      const referrerUrl = bidderRequest.refererInfo.referer.reachedTop ? window.top.document.referrer : bidderRequest.refererInfo.referer;
+      url = 'https://' + (urlConfig.sv || DEFAULT_SV) + '/pbjs/1/' + urlConfig.ci + '/' + dfpClientId + '/' + domain + '/' + sec;
+      // TODO: does the fallback make sense here?
+      const referrerUrl = bidderRequest.refererInfo.ref || bidderRequest.refererInfo.topmostLocation
 
       if (storage.hasLocalStorage()) {
         registerViewabilityAllBids(bidRequests);
@@ -102,9 +99,9 @@ export const spec = {
     const response = serverResponse.body;
     let bidResponses = [];
 
-    if (response && !utils.isEmpty(response.sp)) {
+    if (response && !isEmpty(response.sp)) {
       response.sp.forEach(space => {
-        if (!utils.isEmpty(space.a)) {
+        if (!isEmpty(space.a)) {
           space.a.forEach(ad => {
             const bidResponse = {
               requestId: request.adUnitToBidId[space.k],
@@ -115,7 +112,7 @@ export const spec = {
               ttl: TTL,
               creativeId: ad.crid,
               netRevenue: NET_REVENUE,
-              currency: DOLLARS,
+              currency: DOLLAR_CODE,
             };
             if (ad.adom) {
               bidResponse.meta = {
@@ -132,9 +129,9 @@ export const spec = {
   },
   getUserSyncs: function(syncOptions, serverResponses) {
     const syncs = [];
-    const response = !utils.isEmpty(serverResponses) && serverResponses[0].body;
+    const response = !isEmpty(serverResponses) && serverResponses[0].body;
 
-    if (response && !utils.isEmpty(response.cs)) {
+    if (response && !isEmpty(response.cs)) {
       const responseSyncs = response.cs;
       responseSyncs.forEach(sync => {
         if (typeof sync === 'string' && syncOptions.pixelEnabled) {
@@ -159,7 +156,7 @@ function getUserAgent() {
   return window.navigator.userAgent;
 }
 function getInnerWidth() {
-  return utils.getWindowSelf().innerWidth;
+  return getWindowSelf().innerWidth;
 }
 function isMobileUserAgent() {
   return getUserAgent().match(/(mobile)|(ip(hone|ad))|(android)|(blackberry)|(nokia)|(phone)|(opera\smini)/i);
@@ -216,7 +213,7 @@ function compareSizesByPriority(size1, size2) {
 }
 
 function getSizesSortedByPriority(sizes) {
-  return utils.parseSizesInput(sizes).sort(compareSizesByPriority);
+  return parseSizesInput(sizes).sort(compareSizesByPriority);
 }
 
 function getSize(bid, first) {

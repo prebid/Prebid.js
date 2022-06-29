@@ -1,4 +1,4 @@
-import {expect} from 'chai';
+import {expect, assert} from 'chai';
 import {spec} from 'modules/medianetBidAdapter.js';
 import { makeSlot } from '../integration/faker/googletag.js';
 import { config } from 'src/config.js';
@@ -97,6 +97,56 @@ let VALID_BID_REQUEST = [{
     'bidId': '3f97ca71b1e5c2',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
+    'bidRequestsCount': 1
+  }],
+  VALID_BID_REQUEST_WITH_ORTB2 = [{
+    'bidder': 'medianet',
+    'params': {
+      'crid': 'crid',
+      'cid': 'customer_id',
+      'site': {
+        'page': 'http://media.net/prebidtest',
+        'domain': 'media.net',
+        'ref': 'http://media.net/prebidtest',
+        'isTop': true
+      }
+    },
+    'adUnitCode': 'div-gpt-ad-1460505748561-0',
+    'transactionId': '277b631f-92f5-4844-8b19-ea13c095d3f1',
+    'mediaTypes': {
+      'banner': {
+        'sizes': [[300, 250]],
+      }
+    },
+    'bidId': '28f8f8130a583e',
+    'bidderRequestId': '1e9b1f07797c1c',
+    'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
+    'ortb2Imp': { 'ext': { 'data': { 'pbadslot': '/12345/my-gpt-tag-0' } } },
+    'bidRequestsCount': 1
+  }, {
+    'bidder': 'medianet',
+    'params': {
+      'crid': 'crid',
+      'cid': 'customer_id',
+      'site': {
+        'page': 'http://media.net/prebidtest',
+        'domain': 'media.net',
+        'ref': 'http://media.net/prebidtest',
+        'isTop': true
+      }
+    },
+    'adUnitCode': 'div-gpt-ad-1460505748561-123',
+    'transactionId': 'c52a5c62-3c2b-4b90-9ff8-ec1487754822',
+    'mediaTypes': {
+      'banner': {
+        'sizes': [[300, 251]],
+      }
+    },
+    'sizes': [[300, 251]],
+    'bidId': '3f97ca71b1e5c2',
+    'bidderRequestId': '1e9b1f07797c1c',
+    'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
+    'ortb2Imp': { 'ext': { 'data': { 'pbadslot': '/12345/my-gpt-tag-0' } } },
     'bidRequestsCount': 1
   }],
   VALID_BID_REQUEST_WITH_USERID = [{
@@ -311,6 +361,9 @@ let VALID_BID_REQUEST = [{
     'refererInfo': {
       referer: 'http://media.net/prebidtest',
       stack: ['http://media.net/prebidtest'],
+      page: 'http://media.net/page',
+      domain: 'media.net',
+      topmostLocation: 'http://media.net/topmost',
       reachedTop: true
     }
   },
@@ -319,6 +372,7 @@ let VALID_BID_REQUEST = [{
       'page': 'http://media.net/prebidtest',
       'domain': 'media.net',
       'ref': 'http://media.net/prebidtest',
+      'topMostLocation': 'http://media.net/topmost',
       'isTop': true
     },
     'ext': {
@@ -335,6 +389,7 @@ let VALID_BID_REQUEST = [{
     'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
     'imp': [{
       'id': '28f8f8130a583e',
+      'transactionId': '277b631f-92f5-4844-8b19-ea13c095d3f1',
       'ext': {
         'dfp_id': 'div-gpt-ad-1460505748561-0',
         'visibility': 1,
@@ -367,6 +422,7 @@ let VALID_BID_REQUEST = [{
       }
     }, {
       'id': '3f97ca71b1e5c2',
+      'transactionId': 'c52a5c62-3c2b-4b90-9ff8-ec1487754822',
       'ext': {
         'dfp_id': 'div-gpt-ad-1460505748561-123',
         'visibility': 1,
@@ -404,6 +460,7 @@ let VALID_BID_REQUEST = [{
       'page': 'http://media.net/prebidtest',
       'domain': 'media.net',
       'ref': 'http://media.net/prebidtest',
+      'topMostLocation': 'http://media.net/topmost',
       'isTop': true
     },
     'ext': {
@@ -420,6 +477,7 @@ let VALID_BID_REQUEST = [{
     'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
     'imp': [{
       'id': '28f8f8130a583e',
+      'transactionId': '277b631f-92f5-4844-8b19-ea13c095d3f1',
       'ext': {
         'dfp_id': 'div-gpt-ad-1460505748561-0',
         'visibility': 1,
@@ -452,6 +510,7 @@ let VALID_BID_REQUEST = [{
       }
     }, {
       'id': '3f97ca71b1e5c2',
+      'transactionId': 'c52a5c62-3c2b-4b90-9ff8-ec1487754822',
       'ext': {
         'dfp_id': 'div-gpt-ad-1460505748561-123',
         'visibility': 1,
@@ -490,6 +549,7 @@ let VALID_BID_REQUEST = [{
       'page': 'http://media.net/prebidtest',
       'domain': 'media.net',
       'ref': 'http://media.net/prebidtest',
+      'topMostLocation': 'http://media.net/topmost',
       'isTop': true
     },
     'ext': {
@@ -506,6 +566,7 @@ let VALID_BID_REQUEST = [{
     'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
     'imp': [{
       'id': '28f8f8130a583e',
+      'transactionId': '277b631f-92f5-4844-8b19-ea13c095d3f1',
       'ext': {
         'dfp_id': 'div-gpt-ad-1460505748561-0',
         'visibility': 1,
@@ -537,6 +598,7 @@ let VALID_BID_REQUEST = [{
       }
     }, {
       'id': '3f97ca71b1e5c2',
+      'transactionId': 'c52a5c62-3c2b-4b90-9ff8-ec1487754822',
       'ext': {
         'dfp_id': 'div-gpt-ad-1460505748561-123',
         'visibility': 1,
@@ -574,6 +636,7 @@ let VALID_BID_REQUEST = [{
       'page': 'http://media.net/prebidtest',
       'domain': 'media.net',
       'ref': 'http://media.net/prebidtest',
+      'topMostLocation': 'http://media.net/topmost',
       'isTop': true
     },
     'ext': {
@@ -593,6 +656,7 @@ let VALID_BID_REQUEST = [{
     'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
     'imp': [{
       'id': '28f8f8130a583e',
+      'transactionId': '277b631f-92f5-4844-8b19-ea13c095d3f1',
       'tagid': 'crid',
       'ext': {
         'dfp_id': 'div-gpt-ad-1460505748561-0',
@@ -626,6 +690,7 @@ let VALID_BID_REQUEST = [{
       }
     }, {
       'id': '3f97ca71b1e5c2',
+      'transactionId': 'c52a5c62-3c2b-4b90-9ff8-ec1487754822',
       'tagid': 'crid',
       'ext': {
         'dfp_id': 'div-gpt-ad-1460505748561-123',
@@ -665,6 +730,7 @@ let VALID_BID_REQUEST = [{
       'page': 'http://media.net/prebidtest',
       'domain': 'media.net',
       'ref': 'http://media.net/prebidtest',
+      'topMostLocation': 'http://media.net/topmost',
       'isTop': true
     },
     'ext': {
@@ -681,6 +747,7 @@ let VALID_BID_REQUEST = [{
     'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
     'imp': [{
       'id': '28f8f8130a583e',
+      'transactionId': '277b631f-92f5-4844-8b19-ea13c095d3f1',
       'tagid': 'crid',
       'ext': {
         'dfp_id': 'div-gpt-ad-1460505748561-0',
@@ -714,6 +781,7 @@ let VALID_BID_REQUEST = [{
       }
     }, {
       'id': '3f97ca71b1e5c2',
+      'transactionId': 'c52a5c62-3c2b-4b90-9ff8-ec1487754822',
       'tagid': 'crid',
       'ext': {
         'dfp_id': 'div-gpt-ad-1460505748561-123',
@@ -1055,6 +1123,9 @@ let VALID_BID_REQUEST = [{
     refererInfo: {
       referer: 'http://media.net/prebidtest',
       stack: ['http://media.net/prebidtest'],
+      page: 'http://media.net/page',
+      domain: 'media.net',
+      topmostLocation: 'http://media.net/topmost',
       reachedTop: true
     }
   },
@@ -1063,8 +1134,8 @@ let VALID_BID_REQUEST = [{
       'domain': 'media.net',
       'page': 'http://media.net/prebidtest',
       'ref': 'http://media.net/prebidtest',
+      'topMostLocation': 'http://media.net/topmost',
       'isTop': true
-
     },
     'ext': {
       'customer_id': 'customer_id',
@@ -1082,6 +1153,7 @@ let VALID_BID_REQUEST = [{
     'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
     'imp': [{
       'id': '28f8f8130a583e',
+      'transactionId': '277b631f-92f5-4844-8b19-ea13c095d3f1',
       'ext': {
         'dfp_id': 'div-gpt-ad-1460505748561-0',
         'visibility': 1,
@@ -1113,6 +1185,7 @@ let VALID_BID_REQUEST = [{
       }
     }, {
       'id': '3f97ca71b1e5c2',
+      'transactionId': 'c52a5c62-3c2b-4b90-9ff8-ec1487754822',
       'ext': {
         'dfp_id': 'div-gpt-ad-1460505748561-123',
         'visibility': 1,
@@ -1245,6 +1318,17 @@ describe('Media.net bid adapter', function () {
       });
       let bidreq = spec.buildRequests(VALID_BID_REQUEST_WITH_CRID, VALID_AUCTIONDATA);
       expect(JSON.parse(bidreq.data)).to.deep.equal(VALID_PAYLOAD_WITH_CRID);
+    });
+
+    it('should have valid ortb2Imp param present in bid request', function() {
+      let bidreq = spec.buildRequests(VALID_BID_REQUEST_WITH_ORTB2, VALID_AUCTIONDATA);
+      let actual = JSON.parse(bidreq.data).imp[0].ortb2Imp;
+      const expected = VALID_BID_REQUEST_WITH_ORTB2[0].ortb2Imp
+      assert.equal(JSON.stringify(actual), JSON.stringify(expected))
+
+      bidreq = spec.buildRequests(VALID_BID_REQUEST, VALID_AUCTIONDATA);
+      actual = JSON.parse(bidreq.data).imp[0].ortb2Imp;
+      assert.equal(actual, undefined)
     });
 
     it('should have userid in bid request', function () {

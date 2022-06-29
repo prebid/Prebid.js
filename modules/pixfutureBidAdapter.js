@@ -1,18 +1,27 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { BANNER } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
-import includes from 'core-js-pure/features/array/includes.js';
-import * as utils from '../src/utils.js';
-import { auctionManager } from '../src/auctionManager.js';
-import find from 'core-js-pure/features/array/find.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {BANNER} from '../src/mediaTypes.js';
+import {config} from '../src/config.js';
+import {find, includes} from '../src/polyfill.js';
+import {
+  convertCamelToUnderscore,
+  deepAccess,
+  isArray,
+  isEmpty,
+  isFn,
+  isNumber,
+  isPlainObject,
+  transformBidderParamKeywords
+} from '../src/utils.js';
+import {auctionManager} from '../src/auctionManager.js';
+import {hasPurpose1Consent} from '../src/utils/gpdr.js';
 
 const SOURCE = 'pbjs';
-const storageManager = getStorageManager();
+const storageManager = getStorageManager({bidderCode: 'pixfuture'});
 const USER_PARAMS = ['age', 'externalUid', 'segments', 'gender', 'dnt', 'language'];
 export const spec = {
   code: 'pixfuture',
-  hostname: 'https://prebid-js.pixfuture.com',
+  hostname: 'https://gosrv.pixfuture.com',
 
   getHostname() {
     let ret = this.hostname;
@@ -34,7 +43,7 @@ export const spec = {
     return validBidRequests.map((bidRequest) => {
       let referer = '';
       if (bidderRequest && bidderRequest.refererInfo) {
-        referer = bidderRequest.refererInfo.referer || '';
+        referer = bidderRequest.refererInfo.page || '';
       }
 
       const userObjBid = find(validBidRequests, hasUserInfo);
@@ -47,13 +56,13 @@ export const spec = {
         Object.keys(userObjBid.params.user)
           .filter(param => includes(USER_PARAMS, param))
           .forEach((param) => {
-            let uparam = utils.convertCamelToUnderscore(param);
-            if (param === 'segments' && utils.isArray(userObjBid.params.user[param])) {
+            let uparam = convertCamelToUnderscore(param);
+            if (param === 'segments' && isArray(userObjBid.params.user[param])) {
               let segs = [];
               userObjBid.params.user[param].forEach(val => {
-                if (utils.isNumber(val)) {
+                if (isNumber(val)) {
                   segs.push({'id': val});
-                } else if (utils.isPlainObject(val)) {
+                } else if (isPlainObject(val)) {
                   segs.push(val);
                 }
               });
@@ -77,12 +86,13 @@ export const spec = {
       };
 
       if (bidderRequest && bidderRequest.uspConsent) {
-        payload.us_privacy = bidderRequest.uspConsent
+        payload.us_privacy = bidderRequest.uspConsent;
       }
 
       if (bidderRequest && bidderRequest.refererInfo) {
         let refererinfo = {
-          rd_ref: encodeURIComponent(bidderRequest.refererInfo.referer),
+          // TODO: this collects everything it finds, except for canonicalUrl
+          rd_ref: encodeURIComponent(bidderRequest.refererInfo.topmostLocation),
           rd_top: bidderRequest.refererInfo.reachedTop,
           rd_ifs: bidderRequest.refererInfo.numIframes,
           rd_stk: bidderRequest.refererInfo.stack.map((url) => encodeURIComponent(url)).join(',')
@@ -93,14 +103,13 @@ export const spec = {
       if (validBidRequests[0].userId) {
         let eids = [];
 
-        addUserId(eids, utils.deepAccess(validBidRequests[0], `userId.flocId.id`), 'chrome.com', null);
-        addUserId(eids, utils.deepAccess(validBidRequests[0], `userId.criteoId`), 'criteo.com', null);
-        addUserId(eids, utils.deepAccess(validBidRequests[0], `userId.unifiedId`), 'thetradedesk.com', null);
-        addUserId(eids, utils.deepAccess(validBidRequests[0], `userId.id5Id`), 'id5.io', null);
-        addUserId(eids, utils.deepAccess(validBidRequests[0], `userId.sharedId`), 'thetradedesk.com', null);
-        addUserId(eids, utils.deepAccess(validBidRequests[0], `userId.identityLink`), 'liveramp.com', null);
-        addUserId(eids, utils.deepAccess(validBidRequests[0], `userId.liveIntentId`), 'liveintent.com', null);
-        addUserId(eids, utils.deepAccess(validBidRequests[0], `userId.fabrickId`), 'home.neustar', null);
+        addUserId(eids, deepAccess(validBidRequests[0], `userId.criteoId`), 'criteo.com', null);
+        addUserId(eids, deepAccess(validBidRequests[0], `userId.unifiedId`), 'thetradedesk.com', null);
+        addUserId(eids, deepAccess(validBidRequests[0], `userId.id5Id`), 'id5.io', null);
+        addUserId(eids, deepAccess(validBidRequests[0], `userId.sharedId`), 'thetradedesk.com', null);
+        addUserId(eids, deepAccess(validBidRequests[0], `userId.identityLink`), 'liveramp.com', null);
+        addUserId(eids, deepAccess(validBidRequests[0], `userId.liveIntentId`), 'liveintent.com', null);
+        addUserId(eids, deepAccess(validBidRequests[0], `userId.fabrickId`), 'home.neustar', null);
 
         if (eids.length) {
           payload.eids = eids;
@@ -112,7 +121,7 @@ export const spec = {
       }
 
       const ret = {
-        url: `${hostname}/auc/auc.php`,
+        url: `${hostname}/pixservices`,
         method: 'POST',
         options: {withCredentials: false},
         data: {
@@ -153,6 +162,16 @@ export const spec = {
 
     return bids;
   },
+  getUserSyncs: function (syncOptions, bid, gdprConsent) {
+    var pixid = '';
+    if (typeof bid[0] === 'undefined' || bid[0] === null) { pixid = '0'; } else { pixid = bid[0].body.pix_id; }
+    if (syncOptions.iframeEnabled && hasPurpose1Consent(gdprConsent)) {
+      return [{
+        type: 'iframe',
+        url: 'https://gosrv.pixfuture.com/cookiesync?adsync=' + gdprConsent.consentString + '&pixid=' + pixid + '&gdprconcent=' + gdprConsent.gdprApplies
+      }];
+    }
+  }
 };
 
 function newBid(serverBid, rtbBid, placementId, uuid) {
@@ -201,6 +220,13 @@ function bidToTag(bid) {
   }
   if (bid.params.position) {
     tag.position = {'above': 1, 'below': 2}[bid.params.position] || 0;
+  } else {
+    let mediaTypePos = deepAccess(bid, `mediaTypes.banner.pos`) || deepAccess(bid, `mediaTypes.video.pos`);
+    // only support unknown, atf, and btf values for position at this time
+    if (mediaTypePos === 0 || mediaTypePos === 1 || mediaTypePos === 3) {
+      // ortb spec treats btf === 3, but our system interprets btf === 2; so converting the ortb value here for consistency
+      tag.position = (mediaTypePos === 3) ? 2 : mediaTypePos;
+    }
   }
   if (bid.params.trafficSourceCode) {
     tag.traffic_source_code = bid.params.trafficSourceCode;
@@ -223,8 +249,8 @@ function bidToTag(bid) {
   if (bid.params.externalImpId) {
     tag.external_imp_id = bid.params.externalImpId;
   }
-  if (!utils.isEmpty(bid.params.keywords)) {
-    let keywords = utils.transformBidderParamKeywords(bid.params.keywords);
+  if (!isEmpty(bid.params.keywords)) {
+    let keywords = transformBidderParamKeywords(bid.params.keywords);
 
     if (keywords.length > 0) {
       keywords.forEach(deleteValues);
@@ -232,7 +258,7 @@ function bidToTag(bid) {
     tag.keywords = keywords;
   }
 
-  let gpid = utils.deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+  let gpid = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
   if (gpid) {
     tag.gpid = gpid;
   }
@@ -241,7 +267,7 @@ function bidToTag(bid) {
     tag.video = Object.assign({}, tag.video, {custom_renderer_present: true});
   }
 
-  if (bid.params.frameworks && utils.isArray(bid.params.frameworks)) {
+  if (bid.params.frameworks && isArray(bid.params.frameworks)) {
     tag['banner_frameworks'] = bid.params.frameworks;
   }
 
@@ -276,8 +302,8 @@ function transformSizes(requestSizes) {
   let sizes = [];
   let sizeObj = {};
 
-  if (utils.isArray(requestSizes) && requestSizes.length === 2 &&
-            !utils.isArray(requestSizes[0])) {
+  if (isArray(requestSizes) && requestSizes.length === 2 &&
+            !isArray(requestSizes[0])) {
     sizeObj.width = parseInt(requestSizes[0], 10);
     sizeObj.height = parseInt(requestSizes[1], 10);
     sizes.push(sizeObj);
@@ -295,7 +321,7 @@ function transformSizes(requestSizes) {
 }
 
 function getBidFloor(bid) {
-  if (!utils.isFn(bid.getFloor)) {
+  if (!isFn(bid.getFloor)) {
     return (bid.params.reserve) ? bid.params.reserve : null;
   }
 
@@ -304,7 +330,7 @@ function getBidFloor(bid) {
     mediaType: '*',
     size: '*'
   });
-  if (utils.isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
+  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
     return floor.floor;
   }
   return null;
@@ -317,7 +343,7 @@ function deleteValues(keyPairObj) {
 }
 
 function isPopulatedArray(arr) {
-  return !!(utils.isArray(arr) && arr.length > 0);
+  return !!(isArray(arr) && arr.length > 0);
 }
 
 registerBidder(spec);

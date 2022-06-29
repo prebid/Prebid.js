@@ -99,7 +99,6 @@ const ascAdapter = Object.assign(adapter({ url: DEFAULT_EVENT_URL, analyticsType
       case BID_WON:
         onBidWon(args);
         break;
-
       default:
         break;
     }
@@ -362,6 +361,7 @@ ascAdapter.dataProcess = function (t) {
     });
     bdNbTo['nb'].forEach(i => {
       if (u.bidadv === i.bidder && u.bid === i.bidId) { u.inb = 1; }
+
     })
   });
   return payload;

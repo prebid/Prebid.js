@@ -19,6 +19,7 @@ Maintainer: byData
 
 Analytics adapter for https://bydata.com/. Contact admin@byData.com for information.
 
+
 # Test Parameters
 
 ```

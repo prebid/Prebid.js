@@ -2,10 +2,10 @@
  * ga.js - analytics adapter for google analytics
  */
 
-var events = require('../src/events.js');
-var utils = require('../src/utils.js');
-var CONSTANTS = require('../src/constants.json');
-var adapterManager = require('../src/adapterManager.js').default;
+import { _each, logMessage } from '../src/utils.js';
+import * as events from '../src/events.js';
+import CONSTANTS from '../src/constants.json';
+import adapterManager from '../src/adapterManager.js';
 
 var BID_REQUESTED = CONSTANTS.EVENTS.BID_REQUESTED;
 var BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
@@ -22,6 +22,7 @@ var _enableDistribution = false;
 var _cpmDistribution = null;
 var _trackerSend = null;
 var _sampled = true;
+var _sendFloors = false;
 
 let adapter = {};
 
@@ -46,6 +47,9 @@ adapter.enableAnalytics = function ({ provider, options }) {
   if (options && typeof options.cpmDistribution === 'function') {
     _cpmDistribution = options.cpmDistribution;
   }
+  if (options && typeof options.sendFloors !== 'undefined') {
+    _sendFloors = options.sendFloors;
+  }
 
   var bid = null;
 
@@ -54,7 +58,7 @@ adapter.enableAnalytics = function ({ provider, options }) {
 
     var existingEvents = events.getEvents();
 
-    utils._each(existingEvents, function (eventObj) {
+    _each(existingEvents, function (eventObj) {
       if (typeof eventObj !== 'object') {
         return;
       }
@@ -98,12 +102,12 @@ adapter.enableAnalytics = function ({ provider, options }) {
       sendBidWonToGa(bid);
     });
   } else {
-    utils.logMessage('Prebid.js google analytics disabled by sampling');
+    logMessage('Prebid.js google analytics disabled by sampling');
   }
 
   // finally set this function to return log message, prevents multiple adapter listeners
   this.enableAnalytics = function _enable() {
-    return utils.logMessage(`Analytics adapter already enabled, unnecessary call to \`enableAnalytics\`.`);
+    return logMessage(`Analytics adapter already enabled, unnecessary call to \`enableAnalytics\`.`);
   };
 };
 
@@ -129,7 +133,7 @@ function checkAnalytics() {
     _enableCheck = false;
   }
 
-  utils.logMessage('event count sent to GA: ' + _eventCount);
+  logMessage('event count sent to GA: ' + _eventCount);
 }
 
 function convertToCents(dollars) {
@@ -203,7 +207,17 @@ function sendBidRequestToGa(bid) {
   if (bid && bid.bidderCode) {
     _analyticsQueue.push(function () {
       _eventCount++;
-      window[_gaGlobal](_trackerSend, 'event', _category, 'Requests', bid.bidderCode, 1, _disableInteraction);
+      if (_sendFloors) {
+        var floor = 'No Floor';
+        if (bid.floorData) {
+          floor = bid.floorData.floorValue;
+        } else if (bid.bids.length) {
+          floor = bid.bids[0].getFloor().floor;
+        }
+        window[_gaGlobal](_trackerSend, 'event', _category, 'Requests by Floor=' + floor, bid.bidderCode, 1, _disableInteraction);
+      } else {
+        window[_gaGlobal](_trackerSend, 'event', _category, 'Requests', bid.bidderCode, 1, _disableInteraction);
+      }
     });
   }
 
@@ -229,8 +243,12 @@ function sendBidResponseToGa(bid) {
           _eventCount++;
           window[_gaGlobal](_trackerSend, 'event', 'Prebid.js CPM Distribution', cpmDis, bidder, 1, _disableInteraction);
         }
-
-        window[_gaGlobal](_trackerSend, 'event', _category, 'Bids', bidder, cpmCents, _disableInteraction);
+        if (_sendFloors) {
+          var floor = (bid.floorData) ? bid.floorData.floorValue : 'No Floor';
+          window[_gaGlobal](_trackerSend, 'event', _category, 'Bids by Floor=' + floor, 'Size=' + bid.size + ',' + bidder, cpmCents, _disableInteraction);
+        } else {
+          window[_gaGlobal](_trackerSend, 'event', _category, 'Bids', bidder, cpmCents, _disableInteraction);
+        }
         window[_gaGlobal](_trackerSend, 'event', _category, 'Bid Load Time', bidder, bid.timeToRespond, _disableInteraction);
       }
     });
@@ -242,7 +260,7 @@ function sendBidResponseToGa(bid) {
 
 function sendBidTimeouts(timedOutBidders) {
   _analyticsQueue.push(function () {
-    utils._each(timedOutBidders, function (bidderCode) {
+    _each(timedOutBidders, function (bidderCode) {
       _eventCount++;
       var bidderName = bidderCode.bidder;
       window[_gaGlobal](_trackerSend, 'event', _category, 'Timeouts', bidderName, _disableInteraction);
@@ -256,7 +274,12 @@ function sendBidWonToGa(bid) {
   var cpmCents = convertToCents(bid.cpm);
   _analyticsQueue.push(function () {
     _eventCount++;
-    window[_gaGlobal](_trackerSend, 'event', _category, 'Wins', bid.bidderCode, cpmCents, _disableInteraction);
+    if (_sendFloors) {
+      var floor = (bid.floorData) ? bid.floorData.floorValue : 'No Floor';
+      window[_gaGlobal](_trackerSend, 'event', _category, 'Wins by Floor=' + floor, 'Size=' + bid.size + ',' + bid.bidderCode, cpmCents, _disableInteraction);
+    } else {
+      window[_gaGlobal](_trackerSend, 'event', _category, 'Wins', bid.bidderCode, cpmCents, _disableInteraction);
+    }
   });
 
   checkAnalytics();

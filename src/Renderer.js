@@ -1,6 +1,8 @@
 import { loadExternalScript } from './adloader.js';
-import * as utils from './utils.js';
-import find from 'core-js-pure/features/array/find.js';
+import {
+  logError, logWarn, logMessage, deepAccess
+} from './utils.js';
+import {find} from './polyfill.js';
 const moduleCode = 'outstream';
 
 /**
@@ -25,7 +27,7 @@ export function Renderer(options) {
   this.cmd = [];
   this.push = func => {
     if (typeof func !== 'function') {
-      utils.logError('Commands given to Renderer.push must be wrapped in a function');
+      logError('Commands given to Renderer.push must be wrapped in a function');
       return;
     }
     this.loaded ? func.call() : this.cmd.push(func);
@@ -44,16 +46,16 @@ export function Renderer(options) {
       if (this._render) {
         this._render.apply(this, renderArgs)
       } else {
-        utils.logWarn(`No render function was provided, please use .setRender on the renderer`);
+        logWarn(`No render function was provided, please use .setRender on the renderer`);
       }
     }
 
     if (!isRendererPreferredFromAdUnit(adUnitCode)) {
       // we expect to load a renderer url once only so cache the request to load script
       this.cmd.unshift(runRender) // should render run first ?
-      loadExternalScript(url, moduleCode, this.callback);
+      loadExternalScript(url, moduleCode, this.callback, this.documentContext);
     } else {
-      utils.logWarn(`External Js not loaded by Renderer since renderer url and callback is already defined on adUnit ${adUnitCode}`);
+      logWarn(`External Js not loaded by Renderer since renderer url and callback is already defined on adUnit ${adUnitCode}`);
       runRender()
     }
   }.bind(this) // bind the function to this object to avoid 'this' errors
@@ -80,7 +82,7 @@ Renderer.prototype.handleVideoEvent = function({ id, eventName }) {
     this.handlers[eventName]();
   }
 
-  utils.logMessage(`Prebid Renderer event for id ${id} type ${eventName}`);
+  logMessage(`Prebid Renderer event for id ${id} type ${eventName}`);
 };
 
 /*
@@ -92,7 +94,7 @@ Renderer.prototype.process = function() {
     try {
       this.cmd.shift().call();
     } catch (error) {
-      utils.logError('Error processing Renderer command: ', error);
+      logError('Error processing Renderer command: ', error);
     }
   }
 };
@@ -110,9 +112,18 @@ export function isRendererRequired(renderer) {
  * Render the bid returned by the adapter
  * @param {Object} renderer Renderer object installed by adapter
  * @param {Object} bid Bid response
+ * @param {Document} doc context document of bid
  */
-export function executeRenderer(renderer, bid) {
-  renderer.render(bid);
+export function executeRenderer(renderer, bid, doc) {
+  let docContext = null;
+  if (renderer.config && renderer.config.documentResolver) {
+    docContext = renderer.config.documentResolver(bid, document, doc);// a user provided callback, which should return a Document, and expect the parameters; bid, sourceDocument, renderDocument
+  }
+  if (!docContext) {
+    docContext = document;
+  }
+  renderer.documentContext = docContext;
+  renderer.render(bid, renderer.documentContext);
 }
 
 function isRendererPreferredFromAdUnit(adUnitCode) {
@@ -126,11 +137,11 @@ function isRendererPreferredFromAdUnit(adUnitCode) {
   }
 
   // renderer defined at adUnit level
-  const adUnitRenderer = utils.deepAccess(adUnit, 'renderer');
+  const adUnitRenderer = deepAccess(adUnit, 'renderer');
   const hasValidAdUnitRenderer = !!(adUnitRenderer && adUnitRenderer.url && adUnitRenderer.render);
 
   // renderer defined at adUnit.mediaTypes level
-  const mediaTypeRenderer = utils.deepAccess(adUnit, 'mediaTypes.video.renderer');
+  const mediaTypeRenderer = deepAccess(adUnit, 'mediaTypes.video.renderer');
   const hasValidMediaTypeRenderer = !!(mediaTypeRenderer && mediaTypeRenderer.url && mediaTypeRenderer.render)
 
   return !!(
