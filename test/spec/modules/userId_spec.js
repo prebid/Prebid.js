@@ -466,6 +466,7 @@ describe('User ID', function () {
     describe('refreshing before init is complete', () => {
       const MOCK_ID = {'MOCKID': '1111'};
       let mockIdCallback;
+      let startInit;
 
       beforeEach(() => {
         mockIdCallback = sinon.stub();
@@ -480,7 +481,7 @@ describe('User ID', function () {
         };
         init(config);
         setSubmoduleRegistry([mockIdSystem]);
-        config.setConfig({
+        startInit = () => config.setConfig({
           userSync: {
             auctionDelay: 10,
             userIds: [{
@@ -492,6 +493,7 @@ describe('User ID', function () {
       });
 
       it('should still resolve promises returned by getUserIdsAsync', () => {
+        startInit();
         let result = null;
         getGlobal().getUserIdsAsync().then((val) => { result = val; });
         return clearStack().then(() => {
@@ -506,6 +508,7 @@ describe('User ID', function () {
       it('should not stop auctions', (done) => {
         // simulate an infinite `auctionDelay`; refreshing should still allow the auction to continue
         // as soon as ID submodules have completed init
+        startInit();
         requestBidsHook(() => {
           done();
         }, {adUnits: [getAdUnitMock()]}, {delay: delay()});
@@ -519,6 +522,7 @@ describe('User ID', function () {
       it('should not get stuck when init fails', () => {
         const err = new Error();
         mockIdCallback.callsFake(() => { throw err; });
+        startInit();
         return getGlobal().getUserIdsAsync().catch((e) =>
           expect(e).to.equal(err)
         );
@@ -2531,7 +2535,6 @@ describe('User ID', function () {
 
         // init id system
         attachIdSystem(mockIdSystem);
-        config.setConfig(userIdConfig);
       });
 
       afterEach(function () {
@@ -2541,6 +2544,8 @@ describe('User ID', function () {
       it('calls getId if no stored consent data and refresh is not needed', function () {
         coreStorage.setCookie(mockIdCookieName, JSON.stringify({id: '1234'}), expStr);
         coreStorage.setCookie(`${mockIdCookieName}_last`, (new Date(Date.now() - 1 * 1000).toUTCString()), expStr);
+
+        config.setConfig(userIdConfig);
 
         let innerAdUnits;
         return runBidsHook((config) => {
@@ -2555,6 +2560,8 @@ describe('User ID', function () {
       it('calls getId if no stored consent data but refresh is needed', function () {
         coreStorage.setCookie(mockIdCookieName, JSON.stringify({id: '1234'}), expStr);
         coreStorage.setCookie(`${mockIdCookieName}_last`, (new Date(Date.now() - 60 * 1000).toUTCString()), expStr);
+
+        config.setConfig(userIdConfig);
 
         let innerAdUnits;
         return runBidsHook((config) => {
@@ -2572,6 +2579,8 @@ describe('User ID', function () {
 
         setStoredConsentData();
 
+        config.setConfig(userIdConfig);
+
         let innerAdUnits;
         return runBidsHook((config) => {
           innerAdUnits = config.adUnits
@@ -2588,6 +2597,8 @@ describe('User ID', function () {
 
         setStoredConsentData({...consentData, consentString: 'different'});
 
+        config.setConfig(userIdConfig);
+
         let innerAdUnits;
         return runBidsHook((config) => {
           innerAdUnits = config.adUnits
@@ -2603,6 +2614,8 @@ describe('User ID', function () {
         coreStorage.setCookie(`${mockIdCookieName}_last`, (new Date(Date.now() - 1 * 1000).toUTCString()), expStr);
 
         setStoredConsentData({...consentData});
+
+        config.setConfig(userIdConfig);
 
         let innerAdUnits;
         return runBidsHook((config) => {
