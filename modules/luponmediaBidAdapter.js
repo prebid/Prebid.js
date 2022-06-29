@@ -516,7 +516,7 @@ function setSiteAndUserData(bidRequest, mediaType, data) {
 
   if (bidRequest.params.keywords) BID_FPD.site.keywords = (isArray(bidRequest.params.keywords)) ? bidRequest.params.keywords.join(',') : bidRequest.params.keywords;
 
-  let fpd = mergeDeep({}, config.getConfig('ortb2') || {}, BID_FPD);
+  let fpd = mergeDeep({}, bidderRequest.ortb2 || {}, BID_FPD);
   let impData = deepAccess(bidRequest.ortb2Imp, 'ext.data') || {};
 
   const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
