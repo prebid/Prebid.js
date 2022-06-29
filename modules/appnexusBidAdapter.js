@@ -33,6 +33,7 @@ import {find, includes} from '../src/polyfill.js';
 import {INSTREAM, OUTSTREAM} from '../src/video.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {bidderSettings} from '../src/bidderSettings.js';
+import {hasPurpose1Consent} from '../src/utils/gpdr.js';
 
 const BIDDER_CODE = 'appnexus';
 const URL = 'https://ib.adnxs.com/ut/v3/prebid';
@@ -92,7 +93,6 @@ export const spec = {
   gvlid: GVLID,
   aliases: [
     { code: 'appnexusAst', gvlid: 32 },
-    { code: 'brealtime' },
     { code: 'emxdigital', gvlid: 183 },
     { code: 'pagescience' },
     { code: 'defymedia' },
@@ -100,7 +100,6 @@ export const spec = {
     { code: 'matomy' },
     { code: 'featureforward' },
     { code: 'oftmedia' },
-    { code: 'districtm', gvlid: 144 },
     { code: 'adasta' },
     { code: 'beintoo', gvlid: 618 },
   ],
@@ -267,12 +266,13 @@ export const spec = {
 
     if (bidderRequest && bidderRequest.refererInfo) {
       let refererinfo = {
-        rd_ref: encodeURIComponent(bidderRequest.refererInfo.referer),
+        // TODO: are these the correct referer values?
+        rd_ref: encodeURIComponent(bidderRequest.refererInfo.topmostLocation),
         rd_top: bidderRequest.refererInfo.reachedTop,
         rd_ifs: bidderRequest.refererInfo.numIframes,
         rd_stk: bidderRequest.refererInfo.stack.map((url) => encodeURIComponent(url)).join(',')
       }
-      let pubPageUrl = config.getConfig('pageUrl');
+      let pubPageUrl = bidderRequest.refererInfo.canonicalUrl;
       if (isStr(pubPageUrl) && pubPageUrl !== '') {
         refererinfo.rd_can = pubPageUrl;
       }
@@ -292,7 +292,6 @@ export const spec = {
     if (bidRequests[0].userId) {
       let eids = [];
 
-      addUserId(eids, deepAccess(bidRequests[0], `userId.flocId.id`), 'chrome.com', null);
       addUserId(eids, deepAccess(bidRequests[0], `userId.criteoId`), 'criteo.com', null);
       addUserId(eids, deepAccess(bidRequests[0], `userId.netId`), 'netid.de', null);
       addUserId(eids, deepAccess(bidRequests[0], `userId.idl_env`), 'liveramp.com', null);
@@ -386,7 +385,7 @@ export const spec = {
   },
 
   getUserSyncs: function (syncOptions, responses, gdprConsent) {
-    if (syncOptions.iframeEnabled && hasPurpose1Consent({gdprConsent})) {
+    if (syncOptions.iframeEnabled && hasPurpose1Consent(gdprConsent)) {
       return [{
         type: 'iframe',
         url: 'https://acdn.adnxs.com/dmp/async_usersync.html'
@@ -394,11 +393,22 @@ export const spec = {
     }
   },
 
-  transformBidParams: function (params, isOpenRtb) {
+  transformBidParams: function (params, isOpenRtb, adUnit, bidRequests) {
     let conversionFn = transformBidderParamKeywords;
     if (isOpenRtb === true) {
+      let s2sEndpointUrl = null;
       let s2sConfig = config.getConfig('s2sConfig');
-      let s2sEndpointUrl = deepAccess(s2sConfig, 'endpoint.p1Consent');
+
+      if (isPlainObject(s2sConfig)) {
+        s2sEndpointUrl = deepAccess(s2sConfig, 'endpoint.p1Consent');
+      } else if (isArray(s2sConfig)) {
+        s2sConfig.forEach(s2sCfg => {
+          if (includes(s2sCfg.bidders, adUnit.bids[0].bidder)) {
+            s2sEndpointUrl = deepAccess(s2sCfg, 'endpoint.p1Consent');
+          }
+        })
+      }
+
       if (s2sEndpointUrl && s2sEndpointUrl.match('/openrtb2/prebid')) {
         conversionFn = convertKeywordsToString;
       }
@@ -538,16 +548,6 @@ function getViewabilityScriptUrlFromPayload(viewJsPayload) {
   return jsTrackerSrc;
 }
 
-function hasPurpose1Consent(bidderRequest) {
-  let result = true;
-  if (bidderRequest && bidderRequest.gdprConsent) {
-    if (bidderRequest.gdprConsent.gdprApplies && bidderRequest.gdprConsent.apiVersion === 2) {
-      result = !!(deepAccess(bidderRequest.gdprConsent, 'vendorData.purpose.consents.1') === true);
-    }
-  }
-  return result;
-}
-
 function formatRequest(payload, bidderRequest) {
   let request = [];
   let options = {
@@ -556,7 +556,7 @@ function formatRequest(payload, bidderRequest) {
 
   let endpointUrl = URL;
 
-  if (!hasPurpose1Consent(bidderRequest)) {
+  if (!hasPurpose1Consent(bidderRequest?.gdprConsent)) {
     endpointUrl = URL_SIMPLE;
   }
 

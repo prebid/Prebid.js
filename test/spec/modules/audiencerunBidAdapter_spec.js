@@ -114,7 +114,8 @@ describe('AudienceRun bid adapter tests', function () {
         },
         refererInfo: {
           canonicalUrl: undefined,
-          referer: 'https://example.com',
+          page: 'https://example.com',
+          topmostLocation: 'https://example.com',
           numIframes: 0,
           reachedTop: true,
         },

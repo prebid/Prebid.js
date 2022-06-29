@@ -9,7 +9,7 @@ function useLocal(module) {
   })
 }
 
-module.exports = function (test = false) {
+module.exports = function (options = {}) {
   return {
     'presets': [
       [
@@ -18,12 +18,12 @@ module.exports = function (test = false) {
           'useBuiltIns': 'entry',
           'corejs': '3.13.0',
           // a lot of tests use sinon.stub & others that stopped working on ES6 modules with webpack 5
-          'modules': test ? 'commonjs' : 'auto',
+          'modules': options.test ? 'commonjs' : 'auto',
         }
       ]
     ],
     'plugins': [
-      path.resolve(__dirname, './plugins/pbjsGlobals.js'),
+      [path.resolve(__dirname, './plugins/pbjsGlobals.js'), options],
       useLocal('babel-plugin-transform-object-assign'),
     ],
   }

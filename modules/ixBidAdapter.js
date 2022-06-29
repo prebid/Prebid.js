@@ -4,6 +4,7 @@ import {
   deepAccess,
   deepClone,
   deepSetValue,
+  getGptSlotInfoForAdUnitCode,
   hasDeviceAccess,
   inIframe,
   isArray,
@@ -29,7 +30,8 @@ import {Renderer} from '../src/Renderer.js';
 const BIDDER_CODE = 'ix';
 const ALIAS_BIDDER_CODE = 'roundel';
 const GLOBAL_VENDOR_ID = 10;
-const SECURE_BID_URL = 'https://htlb.casalemedia.com/cygnus';
+const MODULE_TYPE = 'bid-adapter';
+const SECURE_BID_URL = 'https://htlb.casalemedia.com/openrtb/pbjs';
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BANNER_ENDPOINT_VERSION = 7.2;
 const VIDEO_ENDPOINT_VERSION = 8.1;
@@ -39,11 +41,12 @@ const VIDEO_TIME_TO_LIVE = 3600; // 1hr
 const NET_REVENUE = true;
 const MAX_REQUEST_SIZE = 8000;
 const MAX_REQUEST_LIMIT = 4;
+const OUTSTREAM_MINIMUM_PLAYER_SIZE = [144, 144];
 const PRICE_TO_DOLLAR_FACTOR = {
   JPY: 1
 };
 const USER_SYNC_URL = 'https://js-sec.indexww.com/um/ixmatch.html';
-const RENDERER_URL = 'https://js-sec.indexww.com/htv/video-player.js';
+
 const FLOOR_SOURCE = { PBJS: 'p', IX: 'x' };
 export const ERROR_CODES = {
   BID_SIZE_INVALID_FORMAT: 1,
@@ -73,7 +76,7 @@ const SOURCE_RTI_MAPPING = {
   'id5-sync.com': '', // ID5 Universal ID, configured as id5Id
   'crwdcntrl.net': '', // Lotame Panorama ID, lotamePanoramaId
   'epsilon.com': '', // Publisher Link, publinkId
-  'audigent.com': '', // Halo ID from Audigent, haloId
+  'audigent.com': '', // Hadron ID from Audigent, hadronId
   'pubcid.org': '', // SharedID, pubcid
   'trustpid.com': '' // Trustpid
 };
@@ -86,7 +89,6 @@ const PROVIDERS = [
   'connectid',
   'tapadId',
   'quantcastId',
-  'flocId',
   'pubProvidedId'
 ];
 const REQUIRED_VIDEO_PARAMS = ['mimes', 'minduration', 'maxduration']; // note: protocol/protocols is also reqd
@@ -175,7 +177,11 @@ function bidToVideoImp(bid) {
     if (context === INSTREAM) {
       imp.video.placement = 1;
     } else if (context === OUTSTREAM) {
-      imp.video.placement = 4;
+      if (deepAccess(videoParamRef, 'playerConfig.floatOnScroll')) {
+        imp.video.placement = 5;
+      } else {
+        imp.video.placement = 4;
+      }
     } else {
       logWarn(`IX Bid Adapter: Video context '${context}' is not supported`);
     }
@@ -449,11 +455,10 @@ function getBidRequest(id, impressions, validBidRequests) {
  * From the userIdAsEids array, filter for the ones our adserver can use, and modify them
  * for our purposes, e.g. add rtiPartner
  * @param {array} allEids userIdAsEids passed in by prebid
- * @param {object} flocId flocId passed in by prebid
  * @return {object} contains toSend (eids to send to the adserver) and seenSources (used to filter
  *                  identity info from IX Library)
  */
-function getEidInfo(allEids, flocData) {
+function getEidInfo(allEids) {
   let toSend = [];
   let seenSources = {};
   if (isArray(allEids)) {
@@ -469,16 +474,6 @@ function getEidInfo(allEids, flocData) {
         toSend.push(eid);
       }
     }
-  }
-
-  const isValidFlocId = flocData && flocData.id && flocData.version;
-  if (isValidFlocId) {
-    const flocEid = {
-      'source': 'chrome.com',
-      'uids': [{ 'id': flocData.id, 'ext': { 'rtiPartner': 'flocId', 'ver': flocData.version } }]
-    };
-    toSend.push(flocEid);
-    seenSources['chrome.com'] = true;
   }
 
   return { toSend, seenSources };
@@ -498,9 +493,9 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   // Always use secure HTTPS protocol.
   let baseUrl = SECURE_BID_URL;
   // Get ids from Prebid User ID Modules
-  let eidInfo = getEidInfo(deepAccess(validBidRequests, '0.userIdAsEids'), deepAccess(validBidRequests, '0.userId.flocId'));
+  let eidInfo = getEidInfo(deepAccess(validBidRequests, '0.userIdAsEids'));
   let userEids = eidInfo.toSend;
-  const pageUrl = getPageUrl() || deepAccess(bidderRequest, 'refererInfo.referer');
+  const pageUrl = deepAccess(bidderRequest, 'refererInfo.page');
 
   // RTI ids will be included in the bid request if the function getIdentityInfo() is loaded
   // and if the data for the partner exist
@@ -525,6 +520,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   }
 
   const r = {};
+  const tmax = config.getConfig('bidderTimeout');
 
   // Since bidderRequestId are the same for different bid request, just use the first one.
   r.id = validBidRequests[0].bidderRequestId.toString();
@@ -543,6 +539,9 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
     r.ext.ixdiag[key] = ixdiag[key];
   }
 
+  if (tmax) {
+    r.ext.ixdiag.tmax = tmax
+  }
   // Get cached errors stored in LocalStorage
   const cachedErrors = getCachedErrors();
 
@@ -734,7 +733,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
 
     currentRequestSize += currentImpressionSize;
 
-    const fpd = config.getConfig('ortb2') || {};
+    const fpd = deepAccess(bidderRequest, 'ortb2') || {};
 
     if (!isEmpty(fpd) && !isFpdAdded) {
       r.ext.ixdiag.fpd = true;
@@ -834,7 +833,8 @@ function buildIXDiag(validBidRequests) {
     allu: 0,
     ren: false,
     version: '$prebid.version$',
-    userIds: _getUserIds(validBidRequests[0])
+    userIds: _getUserIds(validBidRequests[0]),
+    url: window.location.href.split('?')[0]
   };
 
   // create ad unit map and collect the required diag properties
@@ -856,12 +856,10 @@ function buildIXDiag(validBidRequests) {
 
       if (deepAccess(bid, 'mediaTypes.video.context') === 'outstream') {
         ixdiag.ou++;
-        // renderer only needed for outstream
 
-        const hasRenderer = typeof (deepAccess(bid, 'renderer') || deepAccess(bid, 'mediaTypes.video.renderer')) === 'object';
-
-        // if any one ad unit is missing renderer, set ren status to false in diag
-        ixdiag.ren = ixdiag.ren && hasRenderer ? (deepAccess(ixdiag, 'ren')) : hasRenderer;
+        if (isIndexRendererPreferred(bid)) {
+          ixdiag.ren = true;
+        }
       }
 
       if (deepAccess(bid, 'mediaTypes.video.context') === 'instream') {
@@ -947,26 +945,12 @@ function createBannerImps(validBidRequest, missingBannerSizes, bannerImps) {
 }
 
 /**
- * Returns the `pageUrl` set by publisher on the page if it is an valid url
- */
-function getPageUrl() {
-  const pageUrl = config.getConfig('pageUrl');
-  try {
-    const url = new URL(pageUrl);
-    return url.href;
-  } catch (_) {
-    logWarn(`IX Bid Adapter: invalid pageUrl config property value set: ${pageUrl}`);
-    return undefined;
-  }
-}
-
-/**
  * Determines IX configuration type based on IX params
  * @param {object} valid  IX configured param
  * @returns {string}
  */
 function detectParamsType(validBidRequest) {
-  if (deepAccess(validBidRequest, 'params.video') && deepAccess(validBidRequest, 'mediaTypes.video')) {
+  if (deepAccess(validBidRequest, 'mediaTypes.video') && bidToVideoImp(validBidRequest).video) {
     return VIDEO;
   }
 
@@ -1085,7 +1069,7 @@ function localStorageHandler(data) {
       hasEnforcementHook: false,
       valid: hasDeviceAccess()
     };
-    validateStorageEnforcement(GLOBAL_VENDOR_ID, BIDDER_CODE, DEFAULT_ENFORCEMENT_SETTINGS, (permissions) => {
+    validateStorageEnforcement(GLOBAL_VENDOR_ID, BIDDER_CODE, MODULE_TYPE, DEFAULT_ENFORCEMENT_SETTINGS, (permissions) => {
       if (permissions.valid) {
         storeErrorEventData(data);
       }
@@ -1128,24 +1112,18 @@ function getCachedErrors() {
 
 /**
  *
- * Initialize Outstream Renderer
+ * Initialize IX Outstream Renderer
  * @param {Object} bid
  */
 function outstreamRenderer(bid) {
-  bid.renderer.push(() => {
-    var config = {
-      width: bid.width,
-      height: bid.height,
-      timeout: 3000
-    };
-
-    // IXOutstreamPlayer supports both vastUrl and vastXml, so we can pass either.
-    // Since vastUrl is going to be deprecated from exchange response, vastXml takes priority.
-    if (bid.vastXml) {
-      window.IXOutstreamPlayer(bid.vastXml, bid.adUnitCode, config);
-    } else {
-      window.IXOutstreamPlayer(bid.vastUrl, bid.adUnitCode, config);
+  bid.renderer.push(function () {
+    const adUnitCode = bid.adUnitCode;
+    const divId = document.getElementById(adUnitCode) ? adUnitCode : getGptSlotInfoForAdUnitCode(adUnitCode).divId;
+    if (!divId) {
+      logWarn(`IX Bid Adapter: adUnitCode: ${divId} not found on page.`);
+      return;
     }
+    window.createIXPlayer(divId, bid);
   });
 }
 
@@ -1154,10 +1132,10 @@ function outstreamRenderer(bid) {
  * @param {string} id
  * @returns {Renderer}
  */
-function createRenderer(id) {
+function createRenderer(id, renderUrl) {
   const renderer = Renderer.install({
     id: id,
-    url: RENDERER_URL,
+    url: renderUrl,
     loaded: false
   });
 
@@ -1165,9 +1143,35 @@ function createRenderer(id) {
     renderer.setRender(outstreamRenderer);
   } catch (err) {
     logWarn('Prebid Error calling setRender on renderer', err);
+    return null;
+  }
+
+  if (!renderUrl) {
+    logWarn('Outstream renderer URL not found');
+    return null;
   }
 
   return renderer;
+}
+
+/**
+ * Returns whether our renderer could potentially be used.
+ * @param {*} bid bid object
+ */
+function isIndexRendererPreferred(bid) {
+  if (deepAccess(bid, 'mediaTypes.video.context') !== 'outstream') {
+    return false;
+  }
+
+  // ad unit renderer could be on the adUnit.mediaTypes.video level or adUnit level
+  let renderer = deepAccess(bid, 'mediaTypes.video.renderer');
+  if (!renderer) {
+    renderer = deepAccess(bid, 'renderer');
+  }
+
+  const isValid = !!(typeof (renderer) === 'object' && renderer.url && renderer.render);
+  // if renderer on the adunit is not valid or it's only a backup, our renderer may be used
+  return !isValid || renderer.backupOnly;
 }
 
 export const spec = {
@@ -1253,6 +1257,17 @@ export const spec = {
         return false;
       }
     }
+
+    const videoImp = bidToVideoImp(bid).video;
+    if (deepAccess(bid, 'mediaTypes.video.context') === OUTSTREAM && isIndexRendererPreferred(bid) && videoImp) {
+      const outstreamPlayerSize = [deepAccess(videoImp, 'w'), deepAccess(videoImp, 'h')];
+      const isValidSize = outstreamPlayerSize[0] >= OUTSTREAM_MINIMUM_PLAYER_SIZE[0] && outstreamPlayerSize[1] >= OUTSTREAM_MINIMUM_PLAYER_SIZE[1];
+      if (!isValidSize) {
+        logError(`IX Bid Adapter: ${outstreamPlayerSize} is an invalid size for IX outstream renderer`);
+        return false;
+      }
+    }
+
     return true;
   },
 
@@ -1363,8 +1378,12 @@ export const spec = {
         const bidRequest = getBidRequest(innerBids[j].impid, requestBid.imp, bidderRequest.validBidRequests);
         bid = parseBid(innerBids[j], responseBody.cur, bidRequest);
 
-        if (!deepAccess(bid, 'mediaTypes.video.renderer') && deepAccess(bid, 'mediaTypes.video.context') === 'outstream') {
-          bid.renderer = createRenderer(innerBids[j].bidId);
+        if (bid.mediaType === VIDEO && isIndexRendererPreferred(bidRequest)) {
+          const renderUrl = deepAccess(responseBody, 'ext.videoplayerurl');
+          bid.renderer = createRenderer(innerBids[j].bidId, renderUrl);
+          if (!bid.renderer) {
+            continue;
+          }
         }
 
         bids.push(bid);

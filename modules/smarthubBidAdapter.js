@@ -100,7 +100,7 @@ function buildRequestParams(bidderRequest = {}, placements = []) {
     winLocation = window.location;
   }
 
-  const refferUrl = bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
+  const refferUrl = bidderRequest.refererInfo && bidderRequest.refererInfo.page;
   let refferLocation;
   try {
     refferLocation = refferUrl && new URL(refferUrl);

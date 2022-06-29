@@ -189,7 +189,7 @@ export const spec = {
    */
   buildRequests(validBidRequests, bidderRequest) {
     const payload = {
-      url: bidderRequest.refererInfo.referer,
+      url: bidderRequest.refererInfo.page,
       publisherToken: validBidRequests[0].params.publisherId,
       cmp: !!bidderRequest.gdprConsent,
       timeout: bidderRequest.timeout,
