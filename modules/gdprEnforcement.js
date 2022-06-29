@@ -2,15 +2,14 @@
  * This module gives publishers extra set of features to enforce individual purposes of TCF v2
  */
 
-import { deepAccess, logWarn, isArray, hasDeviceAccess } from '../src/utils.js';
-import { config } from '../src/config.js';
-import adapterManager, { gdprDataHandler } from '../src/adapterManager.js';
-import find from 'core-js-pure/features/array/find.js';
-import includes from 'core-js-pure/features/array/includes.js';
-import { registerSyncInner } from '../src/adapters/bidderFactory.js';
-import { getHook } from '../src/hook.js';
-import { validateStorageEnforcement } from '../src/storageManager.js';
-import events from '../src/events.js';
+import {deepAccess, hasDeviceAccess, isArray, logWarn} from '../src/utils.js';
+import {config} from '../src/config.js';
+import adapterManager, {gdprDataHandler} from '../src/adapterManager.js';
+import {find, includes} from '../src/polyfill.js';
+import {registerSyncInner} from '../src/adapters/bidderFactory.js';
+import {getHook} from '../src/hook.js';
+import {validateStorageEnforcement} from '../src/storageManager.js';
+import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
 
 const TCF2 = {
@@ -18,6 +17,8 @@ const TCF2 = {
   'purpose2': { id: 2, name: 'basicAds' },
   'purpose7': { id: 7, name: 'measurement' }
 }
+
+const VENDORLESS_MODULE_TYPES = ['fpid-module'];
 
 /*
   These rules would be used if `consentManagement.gdpr.rules` is undefined by the publisher.
@@ -44,7 +45,7 @@ const storageBlocked = [];
 const biddersBlocked = [];
 const analyticsBlocked = [];
 
-let addedDeviceAccessHook = false;
+let hooksAdded = false;
 
 // Helps in stubbing these functions in unit tests.
 export const internal = {
@@ -124,9 +125,10 @@ function getGvlidForAnalyticsAdapter(code) {
  * @param {Object} consentData - gdpr consent data
  * @param {string=} currentModule - Bidder code of the current module
  * @param {number=} gvlId - GVL ID for the module
+ * @param {string=} moduleType module type
  * @returns {boolean}
  */
-export function validateRules(rule, consentData, currentModule, gvlId) {
+export function validateRules(rule, consentData, currentModule, gvlId, moduleType) {
   const purposeId = TCF2[Object.keys(TCF2).filter(purposeName => TCF2[purposeName].name === rule.purpose)[0]].id;
 
   // return 'true' if vendor present in 'vendorExceptions'
@@ -139,12 +141,14 @@ export function validateRules(rule, consentData, currentModule, gvlId) {
   const vendorConsent = deepAccess(consentData, `vendorData.vendor.consents.${gvlId}`);
   const liTransparency = deepAccess(consentData, `vendorData.purpose.legitimateInterests.${purposeId}`);
 
+  const vendorlessModule = includes(VENDORLESS_MODULE_TYPES, moduleType);
+
   /*
     Since vendor exceptions have already been handled, the purpose as a whole is allowed if it's not being enforced
     or the user has consented. Similar with vendors.
   */
   const purposeAllowed = rule.enforcePurpose === false || purposeConsent === true;
-  const vendorAllowed = rule.enforceVendor === false || vendorConsent === true;
+  const vendorAllowed = rule.enforceVendor === false || vendorConsent === true || vendorlessModule === true;
 
   /*
     Few if any vendors should be declaring Legitimate Interest for Device Access (Purpose 1), but some are claiming
@@ -163,45 +167,40 @@ export function validateRules(rule, consentData, currentModule, gvlId) {
  * @param {Function} fn reference to original function (used by hook logic)
  * @param {Number=} gvlid gvlid of the module
  * @param {string=} moduleName name of the module
+ * @param {string=} moduleType module type
  */
-export function deviceAccessHook(fn, gvlid, moduleName, result) {
+export function deviceAccessHook(fn, gvlid, moduleName, moduleType, result) {
   result = Object.assign({}, {
     hasEnforcementHook: true
   });
   if (!hasDeviceAccess()) {
     logWarn('Device access is disabled by Publisher');
     result.valid = false;
-    fn.call(this, gvlid, moduleName, result);
+    fn.call(this, gvlid, moduleName, moduleType, result);
   } else {
     const consentData = gdprDataHandler.getConsentData();
     if (consentData && consentData.gdprApplies) {
-      if (consentData.apiVersion === 2) {
-        const curBidder = config.getCurrentBidder();
-        // Bidders have a copy of storage object with bidder code binded. Aliases will also pass the same bidder code when invoking storage functions and hence if alias tries to access device we will try to grab the gvl id for alias instead of original bidder
-        if (curBidder && (curBidder != moduleName) && adapterManager.aliasRegistry[curBidder] === moduleName) {
-          gvlid = getGvlid(curBidder);
-        } else {
-          gvlid = getGvlid(moduleName) || gvlid;
-        }
-        const curModule = moduleName || curBidder;
-        let isAllowed = validateRules(purpose1Rule, consentData, curModule, gvlid);
-        if (isAllowed) {
-          result.valid = true;
-          fn.call(this, gvlid, moduleName, result);
-        } else {
-          curModule && logWarn(`TCF2 denied device access for ${curModule}`);
-          result.valid = false;
-          storageBlocked.push(curModule);
-          fn.call(this, gvlid, moduleName, result);
-        }
+      const curBidder = config.getCurrentBidder();
+      // Bidders have a copy of storage object with bidder code binded. Aliases will also pass the same bidder code when invoking storage functions and hence if alias tries to access device we will try to grab the gvl id for alias instead of original bidder
+      if (curBidder && (curBidder != moduleName) && adapterManager.aliasRegistry[curBidder] === moduleName) {
+        gvlid = getGvlid(curBidder);
       } else {
-        // The module doesn't enforce TCF1.1 strings
+        gvlid = getGvlid(moduleName) || gvlid;
+      }
+      const curModule = moduleName || curBidder;
+      let isAllowed = validateRules(purpose1Rule, consentData, curModule, gvlid, moduleType);
+      if (isAllowed) {
         result.valid = true;
-        fn.call(this, gvlid, moduleName, result);
+        fn.call(this, gvlid, moduleName, moduleType, result);
+      } else {
+        curModule && logWarn(`TCF2 denied device access for ${curModule}`);
+        result.valid = false;
+        storageBlocked.push(curModule);
+        fn.call(this, gvlid, moduleName, moduleType, result);
       }
     } else {
       result.valid = true;
-      fn.call(this, gvlid, moduleName, result);
+      fn.call(this, gvlid, moduleName, moduleType, result);
     }
   }
 }
@@ -214,19 +213,14 @@ export function deviceAccessHook(fn, gvlid, moduleName, result) {
 export function userSyncHook(fn, ...args) {
   const consentData = gdprDataHandler.getConsentData();
   if (consentData && consentData.gdprApplies) {
-    if (consentData.apiVersion === 2) {
-      const curBidder = config.getCurrentBidder();
-      const gvlid = getGvlid(curBidder);
-      let isAllowed = validateRules(purpose1Rule, consentData, curBidder, gvlid);
-      if (isAllowed) {
-        fn.call(this, ...args);
-      } else {
-        logWarn(`User sync not allowed for ${curBidder}`);
-        storageBlocked.push(curBidder);
-      }
-    } else {
-      // The module doesn't enforce TCF1.1 strings
+    const curBidder = config.getCurrentBidder();
+    const gvlid = getGvlid(curBidder);
+    let isAllowed = validateRules(purpose1Rule, consentData, curBidder, gvlid);
+    if (isAllowed) {
       fn.call(this, ...args);
+    } else {
+      logWarn(`User sync not allowed for ${curBidder}`);
+      storageBlocked.push(curBidder);
     }
   } else {
     fn.call(this, ...args);
@@ -241,24 +235,19 @@ export function userSyncHook(fn, ...args) {
  */
 export function userIdHook(fn, submodules, consentData) {
   if (consentData && consentData.gdprApplies) {
-    if (consentData.apiVersion === 2) {
-      let userIdModules = submodules.map((submodule) => {
-        const gvlid = getGvlid(submodule.submodule);
-        const moduleName = submodule.submodule.name;
-        let isAllowed = validateRules(purpose1Rule, consentData, moduleName, gvlid);
-        if (isAllowed) {
-          return submodule;
-        } else {
-          logWarn(`User denied permission to fetch user id for ${moduleName} User id module`);
-          storageBlocked.push(moduleName);
-        }
-        return undefined;
-      }).filter(module => module)
-      fn.call(this, userIdModules, { ...consentData, hasValidated: true });
-    } else {
-      // The module doesn't enforce TCF1.1 strings
-      fn.call(this, submodules, consentData);
-    }
+    let userIdModules = submodules.map((submodule) => {
+      const gvlid = getGvlid(submodule.submodule);
+      const moduleName = submodule.submodule.name;
+      let isAllowed = validateRules(purpose1Rule, consentData, moduleName, gvlid);
+      if (isAllowed) {
+        return submodule;
+      } else {
+        logWarn(`User denied permission to fetch user id for ${moduleName} User id module`);
+        storageBlocked.push(moduleName);
+      }
+      return undefined;
+    }).filter(module => module)
+    fn.call(this, userIdModules, { ...consentData, hasValidated: true });
   } else {
     fn.call(this, submodules, consentData);
   }
@@ -273,25 +262,20 @@ export function userIdHook(fn, submodules, consentData) {
 export function makeBidRequestsHook(fn, adUnits, ...args) {
   const consentData = gdprDataHandler.getConsentData();
   if (consentData && consentData.gdprApplies) {
-    if (consentData.apiVersion === 2) {
-      adUnits.forEach(adUnit => {
-        adUnit.bids = adUnit.bids.filter(bid => {
-          const currBidder = bid.bidder;
-          const gvlId = getGvlid(currBidder);
-          if (includes(biddersBlocked, currBidder)) return false;
-          const isAllowed = !!validateRules(purpose2Rule, consentData, currBidder, gvlId);
-          if (!isAllowed) {
-            logWarn(`TCF2 blocked auction for ${currBidder}`);
-            biddersBlocked.push(currBidder);
-          }
-          return isAllowed;
-        });
+    adUnits.forEach(adUnit => {
+      adUnit.bids = adUnit.bids.filter(bid => {
+        const currBidder = bid.bidder;
+        const gvlId = getGvlid(currBidder);
+        if (includes(biddersBlocked, currBidder)) return false;
+        const isAllowed = !!validateRules(purpose2Rule, consentData, currBidder, gvlId);
+        if (!isAllowed) {
+          logWarn(`TCF2 blocked auction for ${currBidder}`);
+          biddersBlocked.push(currBidder);
+        }
+        return isAllowed;
       });
-      fn.call(this, adUnits, ...args);
-    } else {
-      // The module doesn't enforce TCF1.1 strings
-      fn.call(this, adUnits, ...args);
-    }
+    });
+    fn.call(this, adUnits, ...args);
   } else {
     fn.call(this, adUnits, ...args);
   }
@@ -306,25 +290,20 @@ export function makeBidRequestsHook(fn, adUnits, ...args) {
 export function enableAnalyticsHook(fn, config) {
   const consentData = gdprDataHandler.getConsentData();
   if (consentData && consentData.gdprApplies) {
-    if (consentData.apiVersion === 2) {
-      if (!isArray(config)) {
-        config = [config]
-      }
-      config = config.filter(conf => {
-        const analyticsAdapterCode = conf.provider;
-        const gvlid = getGvlid(analyticsAdapterCode);
-        const isAllowed = !!validateRules(purpose7Rule, consentData, analyticsAdapterCode, gvlid);
-        if (!isAllowed) {
-          analyticsBlocked.push(analyticsAdapterCode);
-          logWarn(`TCF2 blocked analytics adapter ${conf.provider}`);
-        }
-        return isAllowed;
-      });
-      fn.call(this, config);
-    } else {
-      // This module doesn't enforce TCF1.1 strings
-      fn.call(this, config);
+    if (!isArray(config)) {
+      config = [config]
     }
+    config = config.filter(conf => {
+      const analyticsAdapterCode = conf.provider;
+      const gvlid = getGvlid(analyticsAdapterCode);
+      const isAllowed = !!validateRules(purpose7Rule, consentData, analyticsAdapterCode, gvlid);
+      if (!isAllowed) {
+        analyticsBlocked.push(analyticsAdapterCode);
+        logWarn(`TCF2 blocked analytics adapter ${conf.provider}`);
+      }
+      return isAllowed;
+    });
+    fn.call(this, config);
   } else {
     fn.call(this, config);
   }
@@ -381,20 +360,32 @@ export function setEnforcementConfig(config) {
     purpose2Rule = DEFAULT_RULES[1];
   }
 
-  if (purpose1Rule && !addedDeviceAccessHook) {
-    addedDeviceAccessHook = true;
-    validateStorageEnforcement.before(deviceAccessHook, 49);
-    registerSyncInner.before(userSyncHook, 48);
-    // Using getHook as user id and gdprEnforcement are both optional modules. Using import will auto include the file in build
-    getHook('validateGdprEnforcement').before(userIdHook, 47);
+  if (!hooksAdded) {
+    if (purpose1Rule) {
+      hooksAdded = true;
+      validateStorageEnforcement.before(deviceAccessHook, 49);
+      registerSyncInner.before(userSyncHook, 48);
+      // Using getHook as user id and gdprEnforcement are both optional modules. Using import will auto include the file in build
+      getHook('validateGdprEnforcement').before(userIdHook, 47);
+    }
+    if (purpose2Rule) {
+      getHook('makeBidRequests').before(makeBidRequestsHook);
+    }
+    if (purpose7Rule) {
+      getHook('enableAnalyticsCb').before(enableAnalyticsHook);
+    }
   }
-  if (purpose2Rule) {
-    getHook('makeBidRequests').before(makeBidRequestsHook);
-  }
+}
 
-  if (purpose7Rule) {
-    getHook('enableAnalyticsCb').before(enableAnalyticsHook);
-  }
+export function uninstall() {
+  [
+    validateStorageEnforcement.getHooks({hook: deviceAccessHook}),
+    registerSyncInner.getHooks({hook: userSyncHook}),
+    getHook('validateGdprEnforcement').getHooks({hook: userIdHook}),
+    getHook('makeBidRequests').getHooks({hook: makeBidRequestsHook}),
+    getHook('enableAnalyticsCb').getHooks({hook: enableAnalyticsHook}),
+  ].forEach(hook => hook.remove());
+  hooksAdded = false;
 }
 
 config.getConfig('consentManagement', config => setEnforcementConfig(config.consentManagement));

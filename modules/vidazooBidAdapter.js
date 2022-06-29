@@ -15,7 +15,6 @@ const SESSION_ID_KEY = 'vidSid';
 export const SUPPORTED_ID_SYSTEMS = {
   'britepoolid': 1,
   'criteoId': 1,
-  'digitrustid': 1,
   'id5id': 1,
   'idl_env': 1,
   'lipb': 1,
@@ -24,7 +23,7 @@ export const SUPPORTED_ID_SYSTEMS = {
   'pubcid': 1,
   'tdid': 1,
 };
-const storage = getStorageManager(GVLID);
+const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
 
 export function createDomain(subDomain = DEFAULT_SUB_DOMAIN) {
   return `https://${subDomain}.cootlogix.com`;
@@ -48,7 +47,7 @@ function isBidRequestValid(bid) {
 }
 
 function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
-  const { params, bidId, userId, adUnitCode } = bid;
+  const { params, bidId, userId, adUnitCode, schain } = bid;
   const { bidFloor, ext } = params;
   const hashUrl = hashCode(topWindowUrl);
   const dealId = getNextDealId(hashUrl);
@@ -71,7 +70,8 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
     uniqueDealId: uniqueDealId,
     bidderVersion: BIDDER_VERSION,
     prebidVersion: '$prebid.version$',
-    res: `${screen.width}x${screen.height}`
+    res: `${screen.width}x${screen.height}`,
+    schain: schain
   };
 
   appendUserIdsToRequestPayload(data, userId);
@@ -128,7 +128,8 @@ function appendUserIdsToRequestPayload(payloadRef, userIds) {
 }
 
 function buildRequests(validBidRequests, bidderRequest) {
-  const topWindowUrl = bidderRequest.refererInfo.referer;
+  // TODO: does the fallback make sense here?
+  const topWindowUrl = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
   const requests = [];
   validBidRequests.forEach(validBidRequest => {
     const sizes = parseSizesInput(validBidRequest.sizes);

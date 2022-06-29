@@ -1,6 +1,7 @@
 import {hook} from './hook.js';
-import { hasDeviceAccess, checkCookieSupport, logError } from './utils.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import {hasDeviceAccess, checkCookieSupport, logError, logInfo, isPlainObject} from './utils.js';
+import {includes} from './polyfill.js';
+import {bidderSettings as defaultBidderSettings} from './bidderSettings.js';
 
 const moduleTypeWhiteList = ['core', 'prebid-module'];
 
@@ -10,7 +11,8 @@ export let storageCallbacks = [];
  * Storage options
  * @typedef {Object} storageOptions
  * @property {Number=} gvlid - Vendor id
- * @property {string} moduleName - Module name
+ * @property {string} moduleName? - Module name
+ * @property {string=} bidderCode? - Bidder code
  * @property {string=} moduleType - Module type, value can be anyone of core or prebid-module
  */
 
@@ -18,23 +20,35 @@ export let storageCallbacks = [];
  * Returns list of storage related functions with gvlid, module name and module type in its scope.
  * All three argument are optional here. Below shows the usage of of these
  * - GVL Id: Pass GVL id if you are a vendor
- * - Module name: All modules need to pass module name
+ * - Bidder code: All bid adapters need to pass bidderCode
+ * - Module name: All other modules need to pass module name
  * - Module type: Some modules may need these functions but are not vendor. e.g prebid core files in src and modules like currency.
  * @param {storageOptions} options
  */
-export function newStorageManager({gvlid, moduleName, moduleType} = {}) {
+export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = {}, {bidderSettings = defaultBidderSettings} = {}) {
+  function isBidderAllowed() {
+    if (bidderCode == null) {
+      return true;
+    }
+    const storageAllowed = bidderSettings.get(bidderCode, 'storageAllowed');
+    return storageAllowed == null ? false : storageAllowed;
+  }
   function isValid(cb) {
     if (includes(moduleTypeWhiteList, moduleType)) {
       let result = {
         valid: true
       }
       return cb(result);
+    } else if (!isBidderAllowed()) {
+      logInfo(`bidderSettings denied access to device storage for bidder '${bidderCode}'`);
+      const result = {valid: false};
+      return cb(result);
     } else {
       let value;
       let hookDetails = {
         hasEnforcementHook: false
       }
-      validateStorageEnforcement(gvlid, moduleName, hookDetails, function(result) {
+      validateStorageEnforcement(gvlid, bidderCode || moduleName, moduleType, hookDetails, function(result) {
         if (result && result.hasEnforcementHook) {
           value = cb(result);
         } else {
@@ -289,7 +303,7 @@ export function newStorageManager({gvlid, moduleName, moduleType} = {}) {
 /**
  * This hook validates the storage enforcement if gdprEnforcement module is included
  */
-export const validateStorageEnforcement = hook('async', function(gvlid, moduleName, hookDetails, callback) {
+export const validateStorageEnforcement = hook('async', function(gvlid, moduleName, moduleType, hookDetails, callback) {
   callback(hookDetails);
 }, 'validateStorageEnforcement');
 
@@ -303,12 +317,18 @@ export function getCoreStorageManager(moduleName) {
 
 /**
  * Note: Core modules or Prebid modules like Currency, SizeMapping should use getCoreStorageManager
- * This function returns storage functions to access cookies and localstorage. Bidders and User id modules should import this and use it in their module if needed. GVL ID and Module name are optional param but gvl id is needed for when gdpr enforcement module is used.
- * @param {Number=} gvlid Vendor id
- * @param {string=} moduleName BidderCode or module name
+ * This function returns storage functions to access cookies and localstorage. Bidders and User id modules should import this and use it in their module if needed.
+ * Bid adapters should always provide `bidderCode`. GVL ID and Module name are optional param but gvl id is needed for when gdpr enforcement module is used.
+ * @param {Number=} gvlid? Vendor id - required for proper GDPR integration
+ * @param {string=} bidderCode? - required for bid adapters
+ * @param {string=} moduleName? module name
+ * @param {string=} moduleType? module type
  */
-export function getStorageManager(gvlid, moduleName) {
-  return newStorageManager({gvlid: gvlid, moduleName: moduleName});
+export function getStorageManager({gvlid, moduleName, bidderCode, moduleType} = {}) {
+  if (arguments.length > 1 || (arguments.length > 0 && !isPlainObject(arguments[0]))) {
+    throw new Error('Invalid invocation for getStorageManager')
+  }
+  return newStorageManager({gvlid, moduleName, bidderCode, moduleType});
 }
 
 export function resetData() {

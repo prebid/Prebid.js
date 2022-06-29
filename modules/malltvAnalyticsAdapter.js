@@ -184,5 +184,5 @@ malltvAnalyticsAdapter.enableAnalytics = function (config) {
 
 adapterManager.registerAnalyticsAdapter({
   adapter: malltvAnalyticsAdapter,
-  code: 'malltvAnalytics'
+  code: 'malltv'
 })

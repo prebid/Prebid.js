@@ -1,7 +1,7 @@
-import { _map, logWarn, deepAccess, isArray } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import {BANNER, VIDEO} from '../src/mediaTypes.js'
-import find from 'core-js-pure/features/array/find.js';
+import {_map, deepAccess, isArray, logWarn} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {find} from '../src/polyfill.js';
 import {auctionManager} from '../src/auctionManager.js';
 import {Renderer} from '../src/Renderer.js';
 
@@ -198,7 +198,8 @@ export const spec = {
    */
   buildRequests(validBidRequests, bidderRequest) {
     const payload = {
-      url: bidderRequest.refererInfo.referer,
+      // TODO: is 'page' the right value here?
+      url: bidderRequest.refererInfo.page,
       cmp: !!bidderRequest.gdprConsent,
       bidRequests: buildBidRequests(validBidRequests)
     };
