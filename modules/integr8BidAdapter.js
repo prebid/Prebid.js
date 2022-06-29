@@ -46,7 +46,7 @@ export const spec = {
       bidderRequestId = bidderRequest.bidderRequestId;
 
       if (bidderRequest.refererInfo) {
-        url = bidderRequest.refererInfo.referer;
+        url = bidderRequest.refererInfo.page;
       }
     }
 

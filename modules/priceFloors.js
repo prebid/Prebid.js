@@ -75,11 +75,15 @@ function roundUp(number, precision) {
   return Math.ceil((parseFloat(number) * Math.pow(10, precision)).toFixed(1)) / Math.pow(10, precision);
 }
 
-let referrerHostname;
-function getHostNameFromReferer(referer) {
-  referrerHostname = parseUrl(referer, {noDecodeWholeURL: true}).hostname;
-  return referrerHostname;
-}
+const getHostname = (() => {
+  let domain;
+  return function() {
+    if (domain == null) {
+      domain = parseUrl(getRefererInfo().topmostLocation, {noDecodeWholeUrl: true}).hostname;
+    }
+    return domain;
+  }
+})();
 
 // First look into bidRequest!
 function getGptSlotFromAdUnit(transactionId, {index = auctionManager.index} = {}) {
@@ -99,7 +103,7 @@ export let fieldMatchingFunctions = {
   'size': (bidRequest, bidResponse) => parseGPTSingleSizeArray(bidResponse.size) || '*',
   'mediaType': (bidRequest, bidResponse) => bidResponse.mediaType || 'banner',
   'gptSlot': (bidRequest, bidResponse) => getGptSlotFromAdUnit((bidRequest || bidResponse).transactionId) || getGptSlotInfoForAdUnitCode(getAdUnitCode(bidRequest, bidResponse)).gptSlot,
-  'domain': (bidRequest, bidResponse) => referrerHostname || getHostNameFromReferer(getRefererInfo().referer),
+  'domain': getHostname,
   'adUnitCode': (bidRequest, bidResponse) => getAdUnitCode(bidRequest, bidResponse)
 }
 

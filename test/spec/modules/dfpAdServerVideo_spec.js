@@ -10,6 +10,9 @@ import { auctionManager } from 'src/auctionManager.js';
 import { gdprDataHandler, uspDataHandler } from 'src/adapterManager.js';
 import * as adpod from 'modules/adpod.js';
 import { server } from 'test/mocks/xhr.js';
+import * as adServer from 'src/adserver.js';
+import {deepClone} from 'src/utils.js';
+import {hook} from '../../../src/hook.js';
 
 const bid = {
   videoCacheKey: 'abc',
@@ -20,6 +23,10 @@ const bid = {
 };
 
 describe('The DFP video support module', function () {
+  before(() => {
+    hook.ready();
+  });
+
   it('should make a legal request URL when given the required params', function () {
     const url = parse(buildDfpVideoUrl({
       adUnit: adUnit,
@@ -225,6 +232,44 @@ describe('The DFP video support module', function () {
     expect(queryObject.addtl_consent).to.equal(undefined);
     gdprDataHandlerStub.restore();
   });
+
+  describe('GAM PPID', () => {
+    let ppid;
+    let getPPIDStub;
+    beforeEach(() => {
+      getPPIDStub = sinon.stub(adServer, 'getPPID').callsFake(() => ppid);
+    });
+    afterEach(() => {
+      getPPIDStub.restore();
+    });
+
+    Object.entries({
+      'params': {params: {'iu': 'mock/unit'}},
+      'url': {url: 'https://video.adserver.mock/', params: {'iu': 'mock/unit'}}
+    }).forEach(([t, opts]) => {
+      describe(`when using ${t}`, () => {
+        function buildUrlAndGetParams() {
+          const url = parse(buildDfpVideoUrl(Object.assign({
+            adUnit: adUnit,
+            bid: deepClone(bid),
+          }, opts)));
+          return utils.parseQS(url.query);
+        }
+
+        it('should be included if available', () => {
+          ppid = 'mockPPID';
+          const q = buildUrlAndGetParams();
+          expect(q.ppid).to.equal('mockPPID');
+        });
+
+        it('should not be included if not available', () => {
+          ppid = undefined;
+          const q = buildUrlAndGetParams();
+          expect(q.hasOwnProperty('ppid')).to.be.false;
+        })
+      })
+    })
+  })
 
   describe('special targeting unit test', function () {
     const allTargetingData = {

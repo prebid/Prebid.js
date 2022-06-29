@@ -18,8 +18,13 @@ const STALE_RENDER = constants.EVENTS.STALE_RENDER;
 
 const HANDLER_MAP = {
   'Prebid Request': handleRenderRequest,
-  'Prebid Native': handleNativeRequest,
   'Prebid Event': handleEventRequest,
+}
+
+if (FEATURES.NATIVE) {
+  Object.assign(HANDLER_MAP, {
+    'Prebid Native': handleNativeRequest,
+  })
 }
 
 export function listenMessagesFromCreative() {

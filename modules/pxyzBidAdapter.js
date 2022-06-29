@@ -32,7 +32,7 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (bidRequests, bidderRequest) {
-    const referer = bidderRequest.refererInfo.referer;
+    const referer = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
     const parts = referer.split('/');
 
     let protocol, hostname;

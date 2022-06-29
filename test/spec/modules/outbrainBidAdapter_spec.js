@@ -180,7 +180,7 @@ describe('Outbrain Adapter', function () {
 
       const commonBidderRequest = {
         refererInfo: {
-          referer: 'https://example.com/'
+          page: 'https://example.com/'
         }
       }
 

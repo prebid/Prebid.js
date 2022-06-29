@@ -50,7 +50,8 @@ export const spec = {
         currency: currency,
         sizes: sizes,
         bidId: bidRequest.bidId,
-        referer: bidderRequest.refererInfo.referer,
+        // TODO: is 'page' the right value here?
+        referer: bidderRequest.refererInfo.page,
       };
 
       return {

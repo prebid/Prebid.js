@@ -25,11 +25,14 @@ export const spec = {
       const params = bidRequest.params;
       const placementId = params.placementId;
       const cb = Math.floor(Math.random() * 99999999999);
-      const referrer = bidderRequest.refererInfo.referer;
+      // TODO: is 'page' the right value here?
+      const referrer = bidderRequest.refererInfo.page;
       const bidId = bidRequest.bidId;
       const transactionId = bidRequest.transactionId;
       const unitCode = bidRequest.adUnitCode;
       const timeout = config.getConfig('bidderTimeout');
+      const language = window.navigator.language;
+      const screenSize = window.screen.width + 'x' + window.screen.height;
       const payload = {
         v: 'hb1',
         p: placementId,
@@ -39,7 +42,9 @@ export const spec = {
         tid: transactionId,
         uc: unitCode,
         tmax: timeout,
-        t: 'i'
+        t: 'i',
+        language: language,
+        screen_size: screenSize
       };
 
       const mediaType = getMediaType(bidRequest);
@@ -66,6 +71,13 @@ export const spec = {
       const imuid = deepAccess(bidRequest, 'userId.imuid');
       if (isStr(imuid) && !isEmpty(imuid)) {
         payload.imuid = imuid;
+      }
+
+      // DACID
+      const dacId = deepAccess(bidRequest, 'userId.dacId.id');
+      if (isStr(dacId) && !isEmpty(dacId)) {
+        payload.dac_id = dacId;
+        payload.fuuid = dacId;
       }
 
       return {

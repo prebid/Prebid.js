@@ -16,7 +16,6 @@ import { loadExternalScript } from '../../../src/adloader.js';
 import * as utils from '../../../src/utils.js';
 import { config } from '../../../src/config.js';
 import { NATIVE } from '../../../src/mediaTypes.js';
-import * as prebidGlobal from 'src/prebidGlobal.js';
 import { executeRenderer } from '../../../src/Renderer.js';
 
 const BidRequestBuilder = function BidRequestBuilder(options) {
@@ -124,11 +123,18 @@ describe('Adagio bid adapter', () => {
     adagioMock = sinon.mock(adagio);
     utilsMock = sinon.mock(utils);
 
+    $$PREBID_GLOBAL$$.bidderSettings = {
+      adagio: {
+        storageAllowed: true
+      }
+    };
+
     sandbox = sinon.createSandbox();
   });
 
   afterEach(() => {
     window.ADAGIO = undefined;
+    $$PREBID_GLOBAL$$.bidderSettings = {};
 
     adagioMock.restore();
     utilsMock.restore();
@@ -137,24 +143,24 @@ describe('Adagio bid adapter', () => {
   });
 
   describe('get and set params at adUnit level from global Prebid configuration', function() {
-    it('should set params get from ortb2 config or bidderSettings. Priority to bidderSetting', function() {
+    it('should set params get from bid.ortb2', function() {
       const bid = new BidRequestBuilder().build();
+      bid.ortb2 = {
+        site: {
+          ext: {
+            data: {
+              environment: 'desktop',
+              pagetype: 'abc'
+            }
+          }
+        }
+      };
 
       sandbox.stub(config, 'getConfig').callsFake(key => {
         const config = {
           adagio: {
             pagetype: 'article'
           },
-          ortb2: {
-            site: {
-              ext: {
-                data: {
-                  environment: 'desktop',
-                  pagetype: 'abc'
-                }
-              }
-            }
-          }
         };
         return utils.deepAccess(config, key);
       });
@@ -1381,21 +1387,13 @@ describe('Adagio bid adapter', () => {
 
   describe('site information using refererDetection or window.top', function() {
     it('should returns domain, page and window.referrer in a window.top context', function() {
-      sandbox.stub(utils, 'getWindowTop').returns({
-        location: {
-          hostname: 'test.io',
-          href: 'https://test.io/article/a.html'
-        },
-        document: {
-          referrer: 'https://google.com'
-        }
-      });
-
       const bidderRequest = new BidderRequestBuilder({
         refererInfo: {
           numIframes: 0,
           reachedTop: true,
-          referer: 'https://test.io/article/a.html'
+          page: 'https://test.io/article/a.html',
+          domain: 'test.io',
+          ref: 'https://google.com'
         }
       }).build();
 
@@ -1418,13 +1416,15 @@ describe('Adagio bid adapter', () => {
       const info = {
         numIframes: 0,
         reachedTop: true,
-        referer: 'http://level.io/',
+        page: 'http://level.io/',
         stack: [
           'http://level.io/',
           'http://example.com/iframe1.html',
           'http://example.com/iframe2.html'
         ],
-        canonicalUrl: ''
+        canonicalUrl: '',
+        domain: 'level.io',
+        ref: null,
       };
 
       const bidderRequest = new BidderRequestBuilder({
@@ -1445,13 +1445,16 @@ describe('Adagio bid adapter', () => {
       const info = {
         numIframes: 2,
         reachedTop: false,
-        referer: 'http://example.com/iframe1.html',
+        topmostLocation: 'http://example.com/iframe1.html',
         stack: [
           null,
           'http://example.com/iframe1.html',
           'http://example.com/iframe2.html'
         ],
-        canonicalUrl: ''
+        canonicalUrl: '',
+        page: null,
+        domain: null,
+        ref: null
       };
 
       const bidderRequest = new BidderRequestBuilder({
