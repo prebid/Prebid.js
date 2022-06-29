@@ -32,8 +32,8 @@ export const spec = {
       const DEBUG_URL = 'https://api-test.scaleout.jp/adsv/v1';
       const URL = 'https://d.socdm.com/adsv/v1';
       const url = validReq.params.debug ? DEBUG_URL : URL;
-      const criteoId = getcriteoId(validReq);
-      const id5id = getid5id(validReq);
+      const criteoId = getCriteoId(validReq);
+      const id5id = getId5Id(validReq);
       let data = ``;
       data = tryAppendQueryString(data, 'posall', 'SSPLOC');
       const id = getBidIdParameter('id', validReq.params);
@@ -285,11 +285,11 @@ function getCurrencyType() {
  * @param validReq request
  * @return {null|string}
  */
-function getcriteoId(validReq) {
+function getCriteoId(validReq) {
   return (validReq.userId && validReq.userId.criteoId) ? validReq.userId.criteoId : null
 }
 
-function getid5id(validReq) {
+function getId5Id(validReq) {
   return (validReq.userId && validReq.userId.id5id && validReq.userId.id5id.uid) ? validReq.userId.id5id.uid : null
 }
 function getHyperId(validReq) {
