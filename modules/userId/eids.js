@@ -151,15 +151,25 @@ export const USER_IDS_CONFIG = {
 
   // merkleId
   'merkleId': {
-    source: 'merkleinc.com',
     atype: 3,
+    getSource: function(data) {
+      if (data?.ext?.ssp) {
+        return `${data.ext.ssp}.merkleinc.com`
+      }
+      return 'merkleinc.com'
+    },
     getValue: function(data) {
       return data.id;
     },
     getUidExt: function(data) {
-      return (data && data.keyID) ? {
-        keyID: data.keyID
-      } : undefined;
+      if (data.keyID) {
+        return {
+          keyID: data.keyID
+        }
+      }
+      if (data.ext) {
+        return data.ext;
+      }
     }
   },
 
@@ -181,21 +191,9 @@ export const USER_IDS_CONFIG = {
     atype: 1
   },
 
-  // haloId (deprecated in 7.0, use hadronId)
-  'haloId': {
-    source: 'audigent.com',
-    atype: 1
-  },
-
   // quantcastId
   'quantcastId': {
     source: 'quantcast.com',
-    atype: 1
-  },
-
-  // nextroll
-  'nextrollId': {
-    source: 'nextroll.com',
     atype: 1
   },
 
@@ -243,12 +241,6 @@ export const USER_IDS_CONFIG = {
     getValue: function(data) {
       return data.id;
     }
-  },
-
-  // Akamai Data Activation Platform (DAP)
-  'dapId': {
-    source: 'akamai.com',
-    atype: 1
   },
 
   'deepintentId': {
@@ -315,11 +307,23 @@ export const USER_IDS_CONFIG = {
     }
   },
 
+  // tncId
+  'tncid': {
+    source: 'thenewco.it',
+    atype: 3
+  },
+
   // Gravito MP ID
   'gravitompId': {
     source: 'gravito.net',
     atype: 1
   },
+
+  // cpexId
+  'cpexId': {
+    source: 'czechadid.cz',
+    atype: 1
+  }
 };
 
 // this function will create an eid object for the given UserId sub-module
@@ -327,7 +331,8 @@ function createEidObject(userIdData, subModuleKey) {
   const conf = USER_IDS_CONFIG[subModuleKey];
   if (conf && userIdData) {
     let eid = {};
-    eid.source = conf['source'];
+    eid.source = isFn(conf['getSource']) ? conf['getSource'](userIdData) : conf['source'];
+
     const value = isFn(conf['getValue']) ? conf['getValue'](userIdData) : userIdData;
     if (isStr(value)) {
       const uid = { id: value, atype: conf['atype'] };
@@ -357,10 +362,19 @@ function createEidObject(userIdData, subModuleKey) {
 // if any adapter does not want any particular userId to be passed then adapter can use Array.filter(e => e.source != 'tdid')
 export function createEidsArray(bidRequestUserId) {
   let eids = [];
+
   for (const subModuleKey in bidRequestUserId) {
     if (bidRequestUserId.hasOwnProperty(subModuleKey)) {
       if (subModuleKey === 'pubProvidedId') {
         eids = eids.concat(bidRequestUserId['pubProvidedId']);
+      } else if (Array.isArray(bidRequestUserId[subModuleKey])) {
+        bidRequestUserId[subModuleKey].forEach((config, index, arr) => {
+          const eid = createEidObject(config, subModuleKey);
+
+          if (eid) {
+            eids.push(eid);
+          }
+        })
       } else {
         const eid = createEidObject(bidRequestUserId[subModuleKey], subModuleKey);
         if (eid) {

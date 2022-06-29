@@ -39,6 +39,7 @@ import { S2S_VENDORS } from './config.js';
 import { ajax } from '../../src/ajax.js';
 import {hook} from '../../src/hook.js';
 import {getGlobal} from '../../src/prebidGlobal.js';
+import {hasPurpose1Consent} from '../../src/utils/gpdr.js';
 
 const getConfig = config.getConfig;
 
@@ -389,18 +390,13 @@ function _appendSiteAppDevice(request, pageUrl, accountId) {
   }
 }
 
-function addBidderFirstPartyDataToRequest(request) {
-  const bidderConfig = config.getBidderConfig();
-  const fpdConfigs = Object.keys(bidderConfig).reduce((acc, bidder) => {
-    const currBidderConfig = bidderConfig[bidder];
-    if (currBidderConfig.ortb2) {
-      const ortb2 = mergeDeep({}, currBidderConfig.ortb2);
-
-      acc.push({
-        bidders: [ bidder ],
-        config: { ortb2 }
-      });
-    }
+function addBidderFirstPartyDataToRequest(request, bidderFpd) {
+  const fpdConfigs = Object.entries(bidderFpd).reduce((acc, [bidder, bidderOrtb2]) => {
+    const ortb2 = mergeDeep({}, bidderOrtb2);
+    acc.push({
+      bidders: [ bidder ],
+      config: { ortb2 }
+    });
     return acc;
   }, []);
 
@@ -442,18 +438,19 @@ let nativeEventTrackerMethodMap = {
   js: 2
 };
 
-// enable reverse lookup
-[
-  nativeDataIdMap,
-  nativeImgIdMap,
-  nativeEventTrackerEventMap,
-  nativeEventTrackerMethodMap
-].forEach(map => {
-  Object.keys(map).forEach(key => {
-    map[map[key]] = key;
+if (FEATURES.NATIVE) {
+  // enable reverse lookup
+  [
+    nativeDataIdMap,
+    nativeImgIdMap,
+    nativeEventTrackerEventMap,
+    nativeEventTrackerMethodMap
+  ].forEach(map => {
+    Object.keys(map).forEach(key => {
+      map[map[key]] = key;
+    });
   });
-});
-
+}
 /*
  * Protocol spec for OpenRTB endpoint
  * e.g., https://<prebid-server-url>/v1/openrtb2/auction
@@ -562,7 +559,7 @@ Object.assign(ORTB2.prototype, {
 
       const nativeParams = adUnit.nativeParams;
       let nativeAssets;
-      if (nativeParams) {
+      if (FEATURES.NATIVE && nativeParams) {
         let idCounter = -1;
         try {
           nativeAssets = nativeAssetCache[impressionId] = Object.keys(nativeParams).reduce((assets, type) => {
@@ -687,7 +684,7 @@ Object.assign(ORTB2.prototype, {
         }
       }
 
-      if (nativeAssets) {
+      if (FEATURES.NATIVE && nativeAssets) {
         try {
           mediaTypes['native'] = {
             request: JSON.stringify({
@@ -716,7 +713,10 @@ Object.assign(ORTB2.prototype, {
         if (adapter && adapter.getSpec().transformBidParams) {
           bid.params = adapter.getSpec().transformBidParams(bid.params, true, adUnit, bidRequests);
         }
-        acc[bid.bidder] = (s2sConfig.adapterOptions && s2sConfig.adapterOptions[bid.bidder]) ? Object.assign({}, bid.params, s2sConfig.adapterOptions[bid.bidder]) : bid.params;
+        deepSetValue(acc,
+          `prebid.bidder.${bid.bidder}`,
+          (s2sConfig.adapterOptions && s2sConfig.adapterOptions[bid.bidder]) ? Object.assign({}, bid.params, s2sConfig.adapterOptions[bid.bidder]) : bid.params
+        );
         return acc;
       }, {...deepAccess(adUnit, 'ortb2Imp.ext')});
 
@@ -752,12 +752,6 @@ Object.assign(ORTB2.prototype, {
       });
 
       mergeDeep(imp, mediaTypes);
-
-      // if storedAuctionResponse has been set, pass SRID
-      const storedAuctionResponseBid = find(firstBidRequest.bids, bid => (bid.adUnitCode === adUnit.code && bid.storedAuctionResponse));
-      if (storedAuctionResponseBid) {
-        deepSetValue(imp, 'ext.prebid.storedauctionresponse.id', storedAuctionResponseBid.storedAuctionResponse.toString());
-      }
 
       const floor = (() => {
         // we have to pick a floor for the imp - here we attempt to find the minimum floor
@@ -879,7 +873,7 @@ Object.assign(ORTB2.prototype, {
       request.cur = [adServerCur[0]];
     }
 
-    _appendSiteAppDevice(request, bidRequests[0].refererInfo.referer, s2sConfig.accountId);
+    _appendSiteAppDevice(request, bidRequests[0].refererInfo.page, s2sConfig.accountId);
 
     // pass schain object if it is present
     const schain = deepAccess(bidRequests, '0.bids.0.schain');
@@ -948,10 +942,10 @@ Object.assign(ORTB2.prototype, {
       deepSetValue(request, 'regs.coppa', 1);
     }
 
-    const commonFpd = getConfig('ortb2') || {};
+    const commonFpd = s2sBidRequest.ortb2Fragments?.global || {};
     mergeDeep(request, commonFpd);
 
-    addBidderFirstPartyDataToRequest(request);
+    addBidderFirstPartyDataToRequest(request, s2sBidRequest.ortb2Fragments?.bidder || {});
 
     request.imp.forEach((imp) => this.impRequested[imp.id] = imp);
     return request;
@@ -1043,7 +1037,7 @@ Object.assign(ORTB2.prototype, {
 
             if (bid.adm) { bidObject.vastXml = bid.adm; }
             if (!bidObject.vastUrl && bid.nurl) { bidObject.vastUrl = bid.nurl; }
-          } else if (deepAccess(bid, 'ext.prebid.type') === NATIVE) {
+          } else if (FEATURES.NATIVE && deepAccess(bid, 'ext.prebid.type') === NATIVE) {
             bidObject.mediaType = NATIVE;
             let adm;
             if (typeof bid.adm === 'string') {
@@ -1157,16 +1151,6 @@ function bidWonHandler(bid) {
     // remove from wurl cache, since the wurl url was called
     removeWurl(bid.auctionId, bid.adId);
   }
-}
-
-function hasPurpose1Consent(gdprConsent) {
-  let result = true;
-  if (gdprConsent) {
-    if (gdprConsent.gdprApplies && gdprConsent.apiVersion === 2) {
-      result = !!(deepAccess(gdprConsent, 'vendorData.purpose.consents.1') === true);
-    }
-  }
-  return result;
 }
 
 function getMatchingConsentUrl(urlProp, gdprConsent) {

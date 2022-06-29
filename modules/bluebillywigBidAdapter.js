@@ -306,7 +306,7 @@ export const spec = {
     if (getConfig('coppa') == true) deepSetValue(request, 'regs.coppa', 1);
 
     // Enrich the request with any external data we may have
-    BB_HELPERS.addSiteAppDevice(request, bidderRequest.refererInfo && bidderRequest.refererInfo.referer);
+    BB_HELPERS.addSiteAppDevice(request, bidderRequest.refererInfo && bidderRequest.refererInfo.page);
     BB_HELPERS.addSchain(request, validBidRequests);
     BB_HELPERS.addCurrency(request);
     BB_HELPERS.addUserIds(request, validBidRequests);

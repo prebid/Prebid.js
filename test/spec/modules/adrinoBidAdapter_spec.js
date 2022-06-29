@@ -75,7 +75,7 @@ describe('adrinoBidAdapter', function () {
     it('should build the request correctly with gdpr', function () {
       const result = spec.buildRequests(
         [ bidRequest ],
-        { gdprConsent: { gdprApplies: true, consentString: 'abc123' }, refererInfo: { referer: 'http://example.com/' } }
+        { gdprConsent: { gdprApplies: true, consentString: 'abc123' }, refererInfo: { page: 'http://example.com/' } }
       );
       expect(result.length).to.equal(1);
       expect(result[0].method).to.equal('POST');
@@ -91,7 +91,7 @@ describe('adrinoBidAdapter', function () {
     it('should build the request correctly without gdpr', function () {
       const result = spec.buildRequests(
         [ bidRequest ],
-        { refererInfo: { referer: 'http://example.com/' } }
+        { refererInfo: { page: 'http://example.com/' } }
       );
       expect(result.length).to.equal(1);
       expect(result[0].method).to.equal('POST');
