@@ -6,7 +6,7 @@ import {_each, deepAccess, deepSetValue} from '../src/utils.js'
 export const BIDDER_CODE = 'bliink'
 export const BLIINK_ENDPOINT_ENGINE = 'https://engine.bliink.io/prebid'
 
-export const BLIINK_ENDPOINT_COOKIE_SYNC_IFRAME = 'https://storage.googleapis.com/bliink-creatives-web-app/bliink/cookie_sync/index.html'
+export const BLIINK_ENDPOINT_COOKIE_SYNC_IFRAME = 'https://tag.bliink.io/usersync.html'
 export const META_KEYWORDS = 'keywords'
 export const META_DESCRIPTION = 'description'
 
