@@ -2,7 +2,7 @@
 // eslint-disable-next-line prebid/validate-imports
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { config } from '../src/config.js'
-import { _each, deepAccess, cleanObj } from '../src/utils.js'
+import {_each, deepAccess, deepSetValue} from '../src/utils.js'
 export const BIDDER_CODE = 'bliink'
 export const BLIINK_ENDPOINT_ENGINE = 'https://engine.bliink.io/prebid'
 
@@ -19,7 +19,6 @@ const aliasBidderCode = ['bk']
 /**
  * @description get coppa value from config
  */
-
 function getCoppa() {
   return config.getConfig('coppa') === true ? 1 : 0;
 }
@@ -92,46 +91,43 @@ export function getKeywords() {
   return [];
 }
 
-export const parseXML = (content) => {
-  if (typeof content !== 'string' || content.length === 0) return null
-
-  const parser = new DOMParser()
-  let xml;
-
-  try {
-    xml = parser.parseFromString(content, 'text/xml')
-  } catch (e) {}
-
-  if (
-    xml &&
-    xml.getElementsByTagName('VAST')[0] &&
-    xml.getElementsByTagName('VAST')[0].tagName === 'VAST'
-  ) {
-    return xml;
-  }
-
-  return null;
-};
-
 /**
  * @param bidRequest
- * @param bliinkCreative
- * @return {{cpm, netRevenue: boolean, requestId, width: (*|number), currency, ttl: number, creativeId, height: (*|number)} & {mediaType: string, vastXml}}
+ * @return {({cpm, netRevenue: boolean, requestId, width: number, currency, ttl: number, creativeId, height: number}&{mediaType: string, vastXml})|null}
  */
-export const buildBid = (bidRequest, bliinkCreative) => {
-  if (!bidRequest || !bliinkCreative || !bidRequest.creative || !bidRequest.creative[bliinkCreative.mediaType]) return null;
+export const buildBid = (bidRequest) => {
+  if (!bidRequest || !bidRequest.creative || !bidRequest.creative.media_type) return null;
 
-  const bidResponse = Object.assign(bliinkCreative, {
+  let bid;
+  switch (bidRequest.creative.media_type) {
+    case VIDEO:
+      const vastXml = bidRequest.creative.video.content
+      bid = {
+        vastXml,
+        mediaType: 'video',
+        vastUrl: 'data:text/xml;charset=utf-8;base64,' + btoa(vastXml.replace(/\\"/g, '"'))
+      };
+      break;
+    case BANNER:
+      bid = {
+        ad: bidRequest.creative.banner.adm,
+        mediaType: 'banner',
+      };
+      break;
+    default:
+      return null;
+  }
+
+  return Object.assign(bid, {
     cpm: bidRequest.price,
     currency: bidRequest.currency,
     creativeId: bidRequest.creative.creativeId,
     requestId: bidRequest.transactionId,
-    width: bidRequest.creative[bliinkCreative.mediaType].width || 1,
-    height: bidRequest.creative[bliinkCreative.mediaType].height || 1,
+    width: bidRequest.creative[bid.mediaType].width || 1,
+    height: bidRequest.creative[bid.mediaType].height || 1,
     ttl: 3600,
     netRevenue: true,
   });
-  return bidResponse;
 };
 
 /**
@@ -141,46 +137,56 @@ export const buildBid = (bidRequest, bliinkCreative) => {
  * @return boolean
  */
 export const isBidRequestValid = (bid) => {
-  return !(!bid || !bid.params || !bid.params.placement || !bid.params.tagId);
+  return bid.params && !!bid.params.tagId;
 };
 
 /**
  * @description Takes an array of valid bid requests, all of which are guaranteed to have passed the isBidRequestValid() test.
  *
- * @param _[]
+ * @param validBidRequests
  * @param bidderRequest
- * @return {{ method: string, url: string } | null}
+ * @returns {null|{method: string, data: {gdprConsent: string, keywords: string, pageTitle: string, pageDescription: (*|string), pageUrl, gdpr: boolean, tags: *}, url: string}}
  */
 export const buildRequests = (validBidRequests, bidderRequest) => {
-  if (!bidderRequest) return null
-  const schain = _getSchain(validBidRequests[0])
+  if (!validBidRequests || !bidderRequest || !bidderRequest.bids) return null
+
   const tags = bidderRequest.bids.map((bid) => {
     return {
       sizes: bid.sizes.map((size) => ({ w: size[0], h: size[1] })),
       id: bid.params.tagId,
       transactionId: bid.bidId,
       mediaTypes: Object.keys(bid.mediaTypes),
-      imageUrl: '',
+      imageUrl: bid.params.imageUrl,
     };
   });
 
-  const data = {
-    schain: schain || {},
+  let request = {
+    tags,
     pageTitle: document.title,
     pageUrl: bidderRequest.refererInfo.referer,
     pageDescription: getMetaValue(META_DESCRIPTION),
     keywords: getKeywords().join(','),
-    gdpr: false,
-    gdprConsent: '',
-    tags: tags,
   };
-  const gdprConsentData = _getGdprConsent(bidderRequest) || {};
-  const postData = Object.assign(data, gdprConsentData);
+  const schain = deepAccess(validBidRequests[0], 'schain')
+  if (schain) {
+    deepSetValue(request, 'schain', schain);
+  }
+  const gdprConsent = deepAccess(bidderRequest, 'gdprConsent');
+  if (!!gdprConsent && gdprConsent.gdprApplies) {
+    deepSetValue(request, 'gdpr', 1);
+    deepSetValue(request, 'gdprConsent', gdprConsent.consentString);
+  }
+  if (config.getConfig('coppa')) {
+    deepSetValue(request, 'coppa', 1);
+  }
+  if (bidderRequest.uspConsent) {
+    deepSetValue(request, 'uspConsent', bidderRequest.uspConsent);
+  }
 
   return {
     method: 'POST',
     url: BLIINK_ENDPOINT_ENGINE,
-    data: postData,
+    data: request,
   };
 };
 
@@ -192,37 +198,10 @@ export const buildRequests = (validBidRequests, bidderRequest) => {
  * @return
  */
 const interpretResponse = (serverResponse, request) => {
-  if (serverResponse && serverResponse.mode === 'no-ad') {
-    return [];
-  }
   const bodyResponse = serverResponse.body.bids
   const bidResponses = [];
   _each(bodyResponse, function (response) {
-    let xml;
-    if (response.creative.video && response.creative.video.content) {
-      xml = parseXML(response.creative.video.content);
-    }
-    let creative;
-    switch (response.creative.media_type) {
-      case xml && VIDEO:
-        const vastXml = response.creative.video.content
-        creative = {
-          mediaType: 'video',
-          vastXml,
-          vastUrl: 'data:text/xml;charset=utf-8;base64,' + btoa(vastXml.replace(/\\"/g, '"'))
-        };
-
-        return bidResponses.push(buildBid(response, creative));
-      case BANNER:
-        creative = {
-          ad: response.creative.banner.adm,
-          mediaType: 'banner',
-        };
-        return bidResponses.push(buildBid(response, creative));
-
-      default:
-        break;
-    }
+    return bidResponses.push(buildBid(response));
   });
   return bidResponses;
 };
@@ -260,26 +239,6 @@ const getUserSyncs = (syncOptions, serverResponses, gdprConsent) => {
 
   return syncs;
 };
-
-function _getGdprConsent(bidderRequest) {
-  if (!deepAccess(bidderRequest, 'gdprConsent')) {
-    return false;
-  }
-
-  const {
-    gdprApplies,
-    consentString,
-  } = bidderRequest.gdprConsent;
-
-  return cleanObj({
-    gdprConsent: consentString,
-    gdpr: gdprApplies,
-  });
-}
-
-function _getSchain(bidRequest) {
-  return deepAccess(bidRequest, 'schain');
-}
 
 /**
  * @type {{interpretResponse: interpretResponse, code: string, aliases: string[], getUserSyncs: getUserSyncs, buildRequests: buildRequests, onTimeout: onTimeout, onSetTargeting: onSetTargeting, isBidRequestValid: isBidRequestValid, onBidWon: onBidWon}}
