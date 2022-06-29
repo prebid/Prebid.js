@@ -3,7 +3,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 
-const storageManager = getStorageManager();
+const storageManager = getStorageManager({bidderCode: 'orbidder'});
 
 /**
  * Determines whether or not the given bid response is valid.
@@ -82,7 +82,7 @@ export const spec = {
     return validBidRequests.map((bidRequest) => {
       let referer = '';
       if (bidderRequest && bidderRequest.refererInfo) {
-        referer = bidderRequest.refererInfo.referer || '';
+        referer = bidderRequest.refererInfo.page || '';
       }
 
       bidRequest.params.bidfloor = getBidFloor(bidRequest);

@@ -1,14 +1,26 @@
-import { Renderer } from '../src/Renderer.js';
+import {Renderer} from '../src/Renderer.js';
 import {
-  logError, convertTypes, convertCamelToUnderscore, isArray, deepClone, logWarn, logMessage, getBidRequest, deepAccess,
-  isStr, createTrackPixelHtml, isEmpty, transformBidderParamKeywords, chunk, isArrayOfNums
+  chunk,
+  convertCamelToUnderscore,
+  convertTypes,
+  createTrackPixelHtml,
+  deepAccess,
+  deepClone,
+  getBidRequest,
+  isArray,
+  isArrayOfNums,
+  isEmpty,
+  isStr,
+  logError,
+  logMessage,
+  logWarn,
+  transformBidderParamKeywords
 } from '../src/utils.js';
-import { config } from '../src/config.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import find from 'core-js-pure/features/array/find.js';
-import includes from 'core-js-pure/features/array/includes.js';
-import { OUTSTREAM, INSTREAM } from '../src/video.js';
+import {config} from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {find, includes} from '../src/polyfill.js';
+import {INSTREAM, OUTSTREAM} from '../src/video.js';
 
 const BIDDER_CODE = 'adrelevantis';
 const URL = 'https://ssp.adrelevantis.com/prebid';
@@ -115,7 +127,8 @@ export const spec = {
 
     if (bidderRequest && bidderRequest.refererInfo) {
       let refererinfo = {
-        rd_ref: encodeURIComponent(bidderRequest.refererInfo.referer),
+        // TODO: this sends everything it finds to the backend, except for canonicalUrl
+        rd_ref: encodeURIComponent(bidderRequest.refererInfo.topmostLocation),
         rd_top: bidderRequest.refererInfo.reachedTop,
         rd_ifs: bidderRequest.refererInfo.numIframes,
         rd_stk: bidderRequest.refererInfo.stack.map((url) => encodeURIComponent(url)).join(',')
@@ -123,13 +136,12 @@ export const spec = {
       payload.referrer_detection = refererinfo;
     }
 
-    let fpdcfg = config.getLegacyFpd(config.getConfig('ortb2'));
-    if (fpdcfg && fpdcfg.context) {
-      let fdata = {
-        keywords: fpdcfg.context.keywords || '',
-        category: fpdcfg.context.category || ''
+    const ortb2Site = bidderRequest.ortb2?.site;
+    if (ortb2Site) {
+      payload.fpd = {
+        keywords: ortb2Site.keywords || '',
+        category: deepAccess(ortb2Site, 'ext.data.category') || ''
       }
-      payload.fpd = fdata;
     }
 
     const request = formatRequest(payload, bidderRequest);
@@ -433,6 +445,13 @@ function bidToTag(bid) {
   tag.disable_psa = true;
   if (bid.params.position) {
     tag.position = {'above': 1, 'below': 2}[bid.params.position] || 0;
+  } else {
+    let mediaTypePos = deepAccess(bid, `mediaTypes.banner.pos`) || deepAccess(bid, `mediaTypes.video.pos`);
+    // only support unknown, atf, and btf values for position at this time
+    if (mediaTypePos === 0 || mediaTypePos === 1 || mediaTypePos === 3) {
+      // ortb spec treats btf === 3, but our system interprets btf === 2; so converting the ortb value here for consistency
+      tag.position = (mediaTypePos === 3) ? 2 : mediaTypePos;
+    }
   }
   if (bid.params.trafficSourceCode) {
     tag.traffic_source_code = bid.params.trafficSourceCode;

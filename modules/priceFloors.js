@@ -1,13 +1,30 @@
-import { parseUrl, deepAccess, parseGPTSingleSizeArray, getGptSlotInfoForAdUnitCode, deepSetValue, logWarn, deepClone, getParameterByName, generateUUID, logError, logInfo, isNumber, pick, debugTurnedOn } from '../src/utils.js';
-import { getGlobal } from '../src/prebidGlobal.js';
-import { config } from '../src/config.js';
-import { ajaxBuilder } from '../src/ajax.js';
-import events from '../src/events.js';
+import {
+  debugTurnedOn,
+  deepAccess,
+  deepClone,
+  deepSetValue,
+  generateUUID,
+  getGptSlotInfoForAdUnitCode,
+  getParameterByName,
+  isNumber,
+  logError,
+  logInfo,
+  logWarn,
+  parseGPTSingleSizeArray,
+  parseUrl,
+  pick
+} from '../src/utils.js';
+import {getGlobal} from '../src/prebidGlobal.js';
+import {config} from '../src/config.js';
+import {ajaxBuilder} from '../src/ajax.js';
+import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
-import { getHook } from '../src/hook.js';
-import { createBid } from '../src/bidfactory.js';
-import find from 'core-js-pure/features/array/find.js';
-import { getRefererInfo } from '../src/refererDetection.js';
+import {getHook} from '../src/hook.js';
+import {createBid} from '../src/bidfactory.js';
+import {find} from '../src/polyfill.js';
+import {getRefererInfo} from '../src/refererDetection.js';
+import {bidderSettings} from '../src/bidderSettings.js';
+import {auctionManager} from '../src/auctionManager.js';
 
 /**
  * @summary This Module is intended to provide users with the ability to dynamically set and enforce price floors on a per auction basis.
@@ -58,16 +75,25 @@ function roundUp(number, precision) {
   return Math.ceil((parseFloat(number) * Math.pow(10, precision)).toFixed(1)) / Math.pow(10, precision);
 }
 
-let referrerHostname;
-function getHostNameFromReferer(referer) {
-  referrerHostname = parseUrl(referer, {noDecodeWholeURL: true}).hostname;
-  return referrerHostname;
-}
+const getHostname = (() => {
+  let domain;
+  return function() {
+    if (domain == null) {
+      domain = parseUrl(getRefererInfo().topmostLocation, {noDecodeWholeUrl: true}).hostname;
+    }
+    return domain;
+  }
+})();
 
 // First look into bidRequest!
-function getGptSlotFromBidRequest(bidRequest) {
-  const isGam = deepAccess(bidRequest, 'ortb2Imp.ext.data.adserver.name') === 'gam';
-  return isGam && bidRequest.ortb2Imp.ext.data.adserver.adslot;
+function getGptSlotFromAdUnit(transactionId, {index = auctionManager.index} = {}) {
+  const adUnit = index.getAdUnit({transactionId});
+  const isGam = deepAccess(adUnit, 'ortb2Imp.ext.data.adserver.name') === 'gam';
+  return isGam && adUnit.ortb2Imp.ext.data.adserver.adslot;
+}
+
+function getAdUnitCode(request, response, {index = auctionManager.index} = {}) {
+  return request?.adUnitCode || index.getAdUnit(response).code;
 }
 
 /**
@@ -76,9 +102,9 @@ function getGptSlotFromBidRequest(bidRequest) {
 export let fieldMatchingFunctions = {
   'size': (bidRequest, bidResponse) => parseGPTSingleSizeArray(bidResponse.size) || '*',
   'mediaType': (bidRequest, bidResponse) => bidResponse.mediaType || 'banner',
-  'gptSlot': (bidRequest, bidResponse) => getGptSlotFromBidRequest(bidRequest) || getGptSlotInfoForAdUnitCode(bidRequest.adUnitCode).gptSlot,
-  'domain': (bidRequest, bidResponse) => referrerHostname || getHostNameFromReferer(getRefererInfo().referer),
-  'adUnitCode': (bidRequest, bidResponse) => bidRequest.adUnitCode
+  'gptSlot': (bidRequest, bidResponse) => getGptSlotFromAdUnit((bidRequest || bidResponse).transactionId) || getGptSlotInfoForAdUnitCode(getAdUnitCode(bidRequest, bidResponse)).gptSlot,
+  'domain': getHostname,
+  'adUnitCode': (bidRequest, bidResponse) => getAdUnitCode(bidRequest, bidResponse)
 }
 
 /**
@@ -116,10 +142,14 @@ export function getFirstMatchingFloor(floorData, bidObject, responseObject = {})
 
   let matchingData = {
     floorMin: floorData.floorMin || 0,
-    floorRuleValue: floorData.values[matchingRule] || floorData.default,
+    floorRuleValue: isNaN(floorData.values[matchingRule]) ? floorData.default : floorData.values[matchingRule],
     matchingData: allPossibleMatches[0], // the first possible match is an "exact" so contains all data relevant for anlaytics adapters
     matchingRule
   };
+  // use adUnit floorMin as priority!
+  if (typeof deepAccess(bidObject, 'ortb2Imp.ext.prebid.floorMin') === 'number') {
+    matchingData.floorMin = bidObject.ortb2Imp.ext.prebid.floorMin;
+  }
   matchingData.matchingFloor = Math.max(matchingData.floorMin, matchingData.floorRuleValue);
   // save for later lookup if needed
   deepSetValue(floorData, `matchingInputs.${matchingInput}`, {...matchingData});
@@ -147,7 +177,7 @@ function generatePossibleEnumerations(arrayOfFields, delimiter) {
  * @summary If a the input bidder has a registered cpmadjustment it returns the input CPM after being adjusted
  */
 export function getBiddersCpmAdjustment(bidderName, inputCpm, bid = {}) {
-  const adjustmentFunction = deepAccess(getGlobal(), `bidderSettings.${bidderName}.bidCpmAdjustment`) || deepAccess(getGlobal(), 'bidderSettings.standard.bidCpmAdjustment');
+  const adjustmentFunction = bidderSettings.get(bidderName, 'bidCpmAdjustment');
   if (adjustmentFunction) {
     return parseFloat(adjustmentFunction(inputCpm, {...bid, cpm: inputCpm}));
   }
@@ -664,15 +694,16 @@ function shouldFloorBid(floorData, floorInfo, bid) {
  * And if the rule we find determines a bid should be floored we will do so.
  */
 export function addBidResponseHook(fn, adUnitCode, bid) {
-  let floorData = _floorDataForAuction[this.bidderRequest.auctionId];
-  // if no floor data or associated bidRequest then bail
-  const matchingBidRequest = find(this.bidderRequest.bids, bidRequest => bidRequest.bidId && bidRequest.bidId === bid.requestId);
-  if (!floorData || !bid || floorData.skipped || !matchingBidRequest) {
+  let floorData = _floorDataForAuction[bid.auctionId];
+  // if no floor data then bail
+  if (!floorData || !bid || floorData.skipped) {
     return fn.call(this, adUnitCode, bid);
   }
 
+  const matchingBidRequest = auctionManager.index.getBidRequest(bid)
+
   // get the matching rule
-  let floorInfo = getFirstMatchingFloor(floorData.data, {...matchingBidRequest}, {...bid, size: [bid.width, bid.height]});
+  let floorInfo = getFirstMatchingFloor(floorData.data, matchingBidRequest, {...bid, size: [bid.width, bid.height]});
 
   if (!floorInfo.matchingFloor) {
     logWarn(`${MODULE_NAME}: unable to determine a matching price floor for bidResponse`, bid);
@@ -706,7 +737,7 @@ export function addBidResponseHook(fn, adUnitCode, bid) {
   if (shouldFloorBid(floorData, floorInfo, bid)) {
     // bid fails floor -> throw it out
     // create basic bid no-bid with necessary data fro analytics adapters
-    let flooredBid = createBid(CONSTANTS.STATUS.NO_BID, matchingBidRequest);
+    let flooredBid = createBid(CONSTANTS.STATUS.NO_BID, bid.getIdentifiers());
     Object.assign(flooredBid, pick(bid, [
       'floorData',
       'width',

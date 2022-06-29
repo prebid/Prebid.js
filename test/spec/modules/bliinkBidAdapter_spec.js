@@ -120,11 +120,14 @@ const getConfigBuildRequest = (placement) => {
     bidderCode: 'bliink',
     bids: [getConfigBid(placement)],
     refererInfo: {
-      canonicalUrl: null,
-      isAmp: false,
-      numIframes: 0,
-      reachedTop: true,
-      referer: 'http://localhost:9999/integrationExamples/gpt/bliink-adapter.html?pbjs_debug=true',
+      page: 'http://localhost:9999/integrationExamples/gpt/bliink-adapter.html?pbjs_debug=true',
+      legacy: {
+        canonicalUrl: null,
+        isAmp: false,
+        numIframes: 0,
+        reachedTop: true,
+        referer: 'http://localhost:9999/integrationExamples/gpt/bliink-adapter.html?pbjs_debug=true',
+      }
     },
   }
 
@@ -474,9 +477,11 @@ const testsBuildRequests = [
         bidderRequestId: getConfigBuildRequest('banner').bidderRequestId,
         bidderCode: getConfigBuildRequest('banner').bidderCode,
         bids: getConfigBuildRequest('banner').bids,
-        refererInfo: getConfigBuildRequest('banner').refererInfo
+        refererInfo: getConfigBuildRequest('banner').refererInfo.legacy
       },
       data: {
+        gdpr: false,
+        gdpr_consent: '',
         height: 250,
         width: 300,
         keywords: '',
@@ -503,7 +508,7 @@ const testsBuildRequests = [
         bidderRequestId: getConfigBuildRequest('banner').bidderRequestId,
         bidderCode: getConfigBuildRequest('banner').bidderCode,
         bids: getConfigBuildRequest('banner').bids,
-        refererInfo: getConfigBuildRequest('banner').refererInfo
+        refererInfo: getConfigBuildRequest('banner').refererInfo.legacy
       },
       data: {
         gdpr: true,

@@ -1,9 +1,9 @@
-import { isArray, getUniqueIdentifierStr, parseUrl, deepAccess, logWarn, logError, logInfo } from '../src/utils.js';
-import {loadExternalScript} from '../src/adloader.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import find from 'core-js-pure/features/array/find.js';
+import { deepAccess, getUniqueIdentifierStr, isArray, logError, logInfo, logWarn, parseUrl } from '../src/utils.js';
+import { loadExternalScript } from '../src/adloader.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { find } from '../src/polyfill.js';
 import { verify } from 'criteo-direct-rsa-validate/build/verify.js'; // ref#2
 import { getStorageManager } from '../src/storageManager.js';
 
@@ -13,7 +13,7 @@ const BIDDER_CODE = 'criteo';
 const CDB_ENDPOINT = 'https://bidder.criteo.com/cdb';
 const PROFILE_ID_INLINE = 207;
 export const PROFILE_ID_PUBLISHERTAG = 185;
-const storage = getStorageManager(GVLID);
+const storage = getStorageManager({ gvlid: GVLID, bidderCode: BIDDER_CODE });
 const LOG_PREFIX = 'Criteo: ';
 
 /*
@@ -24,7 +24,7 @@ const LOG_PREFIX = 'Criteo: ';
   Unminified source code can be found in the privately shared repo: https://github.com/Prebid-org/prebid-js-external-js-criteo/blob/master/dist/prod.js
 */
 const FAST_BID_VERSION_PLACEHOLDER = '%FAST_BID_VERSION%';
-export const FAST_BID_VERSION_CURRENT = 113;
+export const FAST_BID_VERSION_CURRENT = 123;
 const FAST_BID_VERSION_LATEST = 'latest';
 const FAST_BID_VERSION_NONE = 'none';
 const PUBLISHER_TAG_URL_TEMPLATE = 'https://static.criteo.net/js/ld/publishertag.prebid' + FAST_BID_VERSION_PLACEHOLDER + '.js';
@@ -35,7 +35,7 @@ const FAST_BID_PUBKEY_N = 'ztQYwCE5BU7T9CDM5he6rKoabstXRmkzx54zFPZkWbK530dwtLBDe
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  supportedMediaTypes: [ BANNER, VIDEO, NATIVE ],
+  supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   /** f
    * @param {object} bid
@@ -65,11 +65,11 @@ export const spec = {
   buildRequests: (bidRequests, bidderRequest) => {
     let url;
     let data;
-    let fpd = config.getLegacyFpd(config.getConfig('ortb2')) || {};
+    let fpd = bidderRequest.ortb2 || {};
 
     Object.assign(bidderRequest, {
-      publisherExt: fpd.context,
-      userExt: fpd.user,
+      publisherExt: fpd.site?.ext,
+      userExt: fpd.user?.ext,
       ceh: config.getConfig('criteo.ceh')
     });
 
@@ -139,6 +139,13 @@ export const spec = {
           height: slot.height,
           dealId: slot.dealCode,
         };
+        if (body.ext?.paf?.transmission && slot.ext?.paf?.content_id) {
+          const pafResponseMeta = {
+            content_id: slot.ext.paf.content_id,
+            transmission: response.ext.paf.transmission
+          };
+          bid.meta = Object.assign({}, bid.meta, { paf: pafResponseMeta });
+        }
         if (slot.adomain) {
           bid.meta = Object.assign({}, bid.meta, { advertiserDomains: slot.adomain });
         }
@@ -217,9 +224,9 @@ function publisherTagAvailable() {
 function buildContext(bidRequests, bidderRequest) {
   let referrer = '';
   if (bidderRequest && bidderRequest.refererInfo) {
-    referrer = bidderRequest.refererInfo.referer;
+    referrer = bidderRequest.refererInfo.page;
   }
-  const queryString = parseUrl(referrer).search;
+  const queryString = parseUrl(bidderRequest?.refererInfo?.topmostLocation).search;
 
   const context = {
     url: referrer,
@@ -265,11 +272,11 @@ function checkNativeSendId(bidRequest) {
   return !(bidRequest.nativeParams &&
     (
       (bidRequest.nativeParams.image && ((bidRequest.nativeParams.image.sendId !== true || bidRequest.nativeParams.image.sendTargetingKeys === true))) ||
-        (bidRequest.nativeParams.icon && ((bidRequest.nativeParams.icon.sendId !== true || bidRequest.nativeParams.icon.sendTargetingKeys === true))) ||
-        (bidRequest.nativeParams.clickUrl && ((bidRequest.nativeParams.clickUrl.sendId !== true || bidRequest.nativeParams.clickUrl.sendTargetingKeys === true))) ||
-        (bidRequest.nativeParams.displayUrl && ((bidRequest.nativeParams.displayUrl.sendId !== true || bidRequest.nativeParams.displayUrl.sendTargetingKeys === true))) ||
-        (bidRequest.nativeParams.privacyLink && ((bidRequest.nativeParams.privacyLink.sendId !== true || bidRequest.nativeParams.privacyLink.sendTargetingKeys === true))) ||
-        (bidRequest.nativeParams.privacyIcon && ((bidRequest.nativeParams.privacyIcon.sendId !== true || bidRequest.nativeParams.privacyIcon.sendTargetingKeys === true)))
+      (bidRequest.nativeParams.icon && ((bidRequest.nativeParams.icon.sendId !== true || bidRequest.nativeParams.icon.sendTargetingKeys === true))) ||
+      (bidRequest.nativeParams.clickUrl && ((bidRequest.nativeParams.clickUrl.sendId !== true || bidRequest.nativeParams.clickUrl.sendTargetingKeys === true))) ||
+      (bidRequest.nativeParams.displayUrl && ((bidRequest.nativeParams.displayUrl.sendId !== true || bidRequest.nativeParams.displayUrl.sendTargetingKeys === true))) ||
+      (bidRequest.nativeParams.privacyLink && ((bidRequest.nativeParams.privacyLink.sendId !== true || bidRequest.nativeParams.privacyLink.sendTargetingKeys === true))) ||
+      (bidRequest.nativeParams.privacyIcon && ((bidRequest.nativeParams.privacyIcon.sendId !== true || bidRequest.nativeParams.privacyIcon.sendTargetingKeys === true)))
     ));
 }
 
@@ -281,13 +288,15 @@ function checkNativeSendId(bidRequest) {
  */
 function buildCdbRequest(context, bidRequests, bidderRequest) {
   let networkId;
+  let schain;
   const request = {
     publisher: {
       url: context.url,
-      ext: bidderRequest.publisherExt
+      ext: bidderRequest.publisherExt,
     },
     slots: bidRequests.map(bidRequest => {
       networkId = bidRequest.params.networkId || networkId;
+      schain = bidRequest.schain || schain;
       const slot = {
         impid: bidRequest.adUnitCode,
         transactionid: bidRequest.transactionId,
@@ -310,9 +319,9 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
         if (!checkNativeSendId(bidRequest)) {
           logWarn(LOG_PREFIX + 'all native assets containing URL should be sent as placeholders with sendId(icon, image, clickUrl, displayUrl, privacyLink, privacyIcon)');
         }
-        slot.sizes = parseSizes(retrieveBannerSizes(bidRequest), parseNativeSize);
+        slot.sizes = parseSizes(deepAccess(bidRequest, 'mediaTypes.banner.sizes'), parseNativeSize);
       } else {
-        slot.sizes = parseSizes(retrieveBannerSizes(bidRequest), parseSize);
+        slot.sizes = parseSizes(deepAccess(bidRequest, 'mediaTypes.banner.sizes'), parseSize);
       }
       if (hasVideoMediaType(bidRequest)) {
         const video = {
@@ -344,6 +353,13 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
   if (networkId) {
     request.publisher.networkid = networkId;
   }
+  if (schain) {
+    request.source = {
+      ext: {
+        schain: schain
+      }
+    }
+  };
   request.user = {
     ext: bidderRequest.userExt
   };
@@ -366,11 +382,10 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
   return request;
 }
 
-function retrieveBannerSizes(bidRequest) {
-  return deepAccess(bidRequest, 'mediaTypes.banner.sizes') || bidRequest.sizes;
-}
-
 function parseSizes(sizes, parser) {
+  if (sizes == undefined) {
+    return [];
+  }
   if (Array.isArray(sizes[0])) { // is there several sizes ? (ie. [[728,90],[200,300]])
     return sizes.map(size => parser(size));
   }
@@ -397,7 +412,7 @@ function hasValidVideoMediaType(bidRequest) {
 
   var requiredMediaTypesParams = ['mimes', 'playerSize', 'maxduration', 'protocols', 'api', 'skip', 'placement', 'playbackmethod'];
 
-  requiredMediaTypesParams.forEach(function(param) {
+  requiredMediaTypesParams.forEach(function (param) {
     if (deepAccess(bidRequest, 'mediaTypes.video.' + param) === undefined && deepAccess(bidRequest, 'params.video.' + param) === undefined) {
       isValid = false;
       logError('Criteo Bid Adapter: mediaTypes.video.' + param + ' is required');
