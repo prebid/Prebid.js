@@ -26,7 +26,7 @@ function isKeyInUrl(name) {
   const queryString = window.location.search;
   const urlParams = new URLSearchParams(queryString);
   const param = urlParams.get(name)
-  return param ? true : false
+  return param
 }
 
 /* return ad unit full path wrt custom ad unit code */
@@ -361,7 +361,6 @@ ascAdapter.dataProcess = function (t) {
     });
     bdNbTo['nb'].forEach(i => {
       if (u.bidadv === i.bidder && u.bid === i.bidId) { u.inb = 1; }
-
     })
   });
   return payload;
