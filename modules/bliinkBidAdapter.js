@@ -222,20 +222,20 @@ const getUserSyncs = (syncOptions, serverResponses, gdprConsent, uspConsent) => 
     let apiVersion
     let gdpr = false
     if (gdprConsent) {
-      gdprParams = `gdpr=${gdprConsent.consentString}`;
-      apiVersion = `apiVersion=${gdprConsent.apiVersion}`
+      gdprParams = `&gdprConsent=${gdprConsent.consentString}`;
+      apiVersion = `&apiVersion=${gdprConsent.apiVersion}`
       gdpr = Number(
         gdprConsent.gdprApplies)
     }
     if (uspConsent) {
-      uspConsentStr = `uspConsent=${uspConsent}`;
+      uspConsentStr = `&uspConsent=${uspConsent}`;
     }
     let sync;
     if (syncOptions.iframeEnabled) {
       sync = [
         {
           type: 'iframe',
-          url: `${BLIINK_ENDPOINT_COOKIE_SYNC_IFRAME}?gdpr=${gdpr}&coppa=${getCoppa()}&${uspConsentStr}&${gdprParams}&${apiVersion}`,
+          url: `${BLIINK_ENDPOINT_COOKIE_SYNC_IFRAME}?gdpr=${gdpr}&coppa=${getCoppa()}${uspConsentStr}${gdprParams}${apiVersion}`,
         },
       ];
     } else {
