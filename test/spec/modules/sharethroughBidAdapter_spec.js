@@ -601,11 +601,11 @@ describe('sharethrough adapter spec', function () {
       const serverResponses = [{ body: { cookieSyncUrls: cookieSyncs } }];
 
       it('returns an array of correctly formatted user syncs', function () {
-        const syncArray = spec.getUserSyncs({ pixelEnabled: true }, serverResponses, null, 'fake-privacy-signal');
+        const syncArray = spec.getUserSyncs({ pixelEnabled: true }, serverResponses);
         expect(syncArray).to.deep.equal([
-          { type: 'image', url: 'cookieUrl1&us_privacy=fake-privacy-signal' },
-          { type: 'image', url: 'cookieUrl2&us_privacy=fake-privacy-signal' },
-          { type: 'image', url: 'cookieUrl3&us_privacy=fake-privacy-signal' }],
+          { type: 'image', url: 'cookieUrl1' },
+          { type: 'image', url: 'cookieUrl2' },
+          { type: 'image', url: 'cookieUrl3' }],
         );
       });
 
