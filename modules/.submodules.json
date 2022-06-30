@@ -82,6 +82,12 @@
         "resetdigitalBidAdapter",
         "rtbhouseBidAdapter.js"
       ]
+    },
+    "video": {
+      "files": [ "./index.js" ],
+      "dependants": [
+        "jwplayerVideoProvider"
+      ]
     }
   }
 }

@@ -1,6 +1,5 @@
 import { module } from '../../src/hook.js';
 import { ParentModule, SubmoduleBuilder } from './shared/parentModule.js';
-import { videoEvents } from './constants/events.js';
 
 // define, ortb object,  events
 
@@ -91,14 +90,6 @@ import { videoEvents } from './constants/events.js';
  */
 
 /**
- * Util meant to be shared across video submodules.
- * @description  Meant to be removed when modules are allowed to import shared utils without duplicating code
- * @typedef sharedUtils
- * @property {Object} videoEvents - map of event strings. See events.js for specific keys
- */
-const sharedUtils = { videoEvents };
-
-/**
  * @summary Maps a Video Provider factory to the video player's vendor code.
  * @type {vendorSubmoduleDirectory}
  */
@@ -185,7 +176,7 @@ export function VideoCore(parentModule_) {
  * @returns {VideoCore}
  */
 export function videoCoreFactory() {
-  const videoSubmoduleBuilder = SubmoduleBuilder(videoVendorDirectory, sharedUtils);
+  const videoSubmoduleBuilder = SubmoduleBuilder(videoVendorDirectory);
   const parentModule = ParentModule(videoSubmoduleBuilder);
   return VideoCore(parentModule);
 }
@@ -194,4 +185,4 @@ function attachVideoProvider(submoduleFactory) {
   videoVendorDirectory[submoduleFactory.vendorCode] = submoduleFactory;
 }
 
-module('videoModule', attachVideoProvider);
+module('video', attachVideoProvider);
