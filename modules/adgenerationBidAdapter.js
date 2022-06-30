@@ -47,18 +47,13 @@ export const spec = {
       data = tryAppendQueryString(data, 'pbver', '$prebid.version$');
       data = tryAppendQueryString(data, 'sdkname', 'prebidjs');
       data = tryAppendQueryString(data, 'adapterver', ADGENE_PREBID_VERSION);
+      data = tryAppendQueryString(data, 'adgext_criteo_id', criteoId);
+      data = tryAppendQueryString(data, 'adgext_id5_id', id5id);
       // native以外にvideo等の対応が入った場合は要修正
       if (!validReq.mediaTypes || !validReq.mediaTypes.native) {
         data = tryAppendQueryString(data, 'imark', '1');
       }
 
-      if (criteoId != null) {
-        data = tryAppendQueryString(data, 'adgext_criteo_id', criteoId);
-      }
-
-      if (id5id != null) {
-        data = tryAppendQueryString(data, 'adgext_id5_id', id5id);
-      }
       // TODO: is 'page' the right value here?
       data = tryAppendQueryString(data, 'tp', bidderRequest.refererInfo.page);
       if (isIos()) {
