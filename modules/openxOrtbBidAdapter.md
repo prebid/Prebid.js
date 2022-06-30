@@ -1,16 +1,15 @@
 # Overview
 
 ```
-Module Name: OpenX Bidder Adapter
+Module Name: OpenX OpenRTB Bidder Adapter
 Module Type: Bidder Adapter
 Maintainer: team-openx@openx.com
 ```
 
 # Description
 
-Module that connects to OpenX's demand sources.
-Note there is an updated version of the OpenX bid adapter called openxOrtbBidAdapter.
-Publishers are welcome to test the other adapter and give feedback. Please note you should only include either openxBidAdapter or openxOrtbBidAdapter in your build.
+This is an updated version of the OpenX bid adapter which calls our new serving architecture.
+Publishers are welcome to test this adapter and give feedback. Please note you should only include either openxBidAdapter or openxOrtbBidAdapter in your build.
 
 # Bid Parameters
 ## Banner
@@ -30,7 +29,7 @@ Publishers are welcome to test the other adapter and give feedback. Please note 
 | ---- | ----- | ---- | ----------- | -------
 | `unit` | required | String | OpenX ad unit ID provided by your OpenX representative. | "1611023122"
 | `delDomain` | required | String |  OpenX delivery domain provided by your OpenX representative.  | "PUBLISHER-d.openx.net"
-| `openrtb` | optional | OpenRTB Impression | An OpenRtb Impression with Video subtype properties | `{ imp: [{ video: {mimes: ['video/x-ms-wmv, video/mp4']} }] }`
+| `video` | optional | OpenRTB video subtypes | Alternatively can be added under adUnit.mediaTypes.video | `{ video: {mimes: ['video/mp4']}`
 
 
 # Example
