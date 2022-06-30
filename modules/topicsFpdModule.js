@@ -2,27 +2,29 @@ import {logError, mergeDeep} from '../src/utils.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {submodule} from '../src/hook.js';
 
+export const TOPICS_TAXONOMY = 600;
+
 export function getTopicsData(name, topics) {
-  const data = Object.entries(
+  return Object.entries(
     topics.reduce((byTaxVersion, topic) => {
       const taxv = topic.taxonomyVersion;
       if (!byTaxVersion.hasOwnProperty(taxv)) byTaxVersion[taxv] = [];
       byTaxVersion[taxv].push(topic.topic);
       return byTaxVersion;
     }, {})
-  ).map(([taxv, topics]) => ({
-    ext: {
-      segtax: 600,
-      segclass: taxv
-    },
-    segment: topics.map((topic) => ({id: topic.toString()}))
-  }));
-  if (name != null) {
-    data.forEach((datum) => {
+  ).map(([taxv, topics]) => {
+    const datum = {
+      ext: {
+        segtax: TOPICS_TAXONOMY,
+        segclass: taxv
+      },
+      segment: topics.map((topic) => ({id: topic.toString()}))
+    };
+    if (name != null) {
       datum.name = name;
-    });
-  }
-  return data;
+    }
+    return datum;
+  });
 }
 
 export function getTopics(doc = document) {

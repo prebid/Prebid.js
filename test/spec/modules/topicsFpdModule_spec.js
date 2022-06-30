@@ -1,4 +1,4 @@
-import {getTopics, getTopicsData, processFpd} from '../../../modules/topicsFpdModule.js';
+import {getTopics, getTopicsData, processFpd, TOPICS_TAXONOMY} from '../../../modules/topicsFpdModule.js';
 import {deepClone} from '../../../src/utils.js';
 
 describe('getTopicsData', () => {
@@ -70,10 +70,11 @@ describe('getTopicsData', () => {
   ].forEach(({t, topics, expected}) => {
     it(`on ${t}`, () => {
       const actual = getTopicsData('mockName', topics);
+      expect(actual.length).to.eql(expected.length);
       actual.forEach((data, i) => {
         sinon.assert.match(data, expected[i]);
         expect(data.name).to.equal('mockName');
-        expect(data.ext.segtax).to.eql(600);
+        expect(data.ext.segtax).to.eql(TOPICS_TAXONOMY);
       })
     });
 
