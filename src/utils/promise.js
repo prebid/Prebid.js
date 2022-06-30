@@ -7,6 +7,7 @@ const FAIL = 1;
 export class GreedyPromise extends Promise {
   #result;
   #callbacks;
+  #parent = null;
 
   /**
    * Convenience wrapper for setTimeout; takes care of returning an already fulfilled GreedyPromise when the delay is zero.
@@ -53,8 +54,21 @@ export class GreedyPromise extends Promise {
     this.#callbacks = callbacks;
   }
   then(onSuccess, onError) {
+    if (typeof onError === 'function') {
+      // if an error handler is provided, attach a dummy error handler to super,
+      // and do the same for all promises without an error handler that precede this one in a chain.
+      // This is to avoid unhandled rejection events / warnings for errors that were, in fact, handled;
+      // since we are not using super's callback mechanisms we need to make it aware of this separately.
+      let node = this;
+      while (node) {
+        super.then.call(node, null, () => null);
+        const next = node.#parent;
+        node.#parent = null; // since we attached a handler already, we are no longer interested in what will happen later in the chain
+        node = next;
+      }
+    }
     const result = this.#result;
-    return new GreedyPromise((resolve, reject) => {
+    const res = new GreedyPromise((resolve, reject) => {
       const continuation = () => {
         let value = result[1];
         let [handler, resolveFn] = result[0] === SUCCESS ? [onSuccess, resolve] : [onError, reject];
@@ -70,7 +84,9 @@ export class GreedyPromise extends Promise {
         resolveFn(value);
       }
       result.length ? continuation() : this.#callbacks.push(continuation);
-    })
+    });
+    res.#parent = this;
+    return res;
   }
 }
 
