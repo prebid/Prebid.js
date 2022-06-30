@@ -1,4 +1,4 @@
-import { SubmoduleBuilder, ParentModule } from 'modules/videoModule/shared/parentModule.js';
+import { SubmoduleBuilder, ParentModule } from 'libraries/video/shared/parentModule.js';
 import { expect } from 'chai';
 
 describe('Parent Module', function() {

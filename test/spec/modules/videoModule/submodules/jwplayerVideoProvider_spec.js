@@ -8,13 +8,13 @@ import {
 
 import {
   PROTOCOLS, API_FRAMEWORKS, VIDEO_MIME_TYPE, PLAYBACK_METHODS, PLACEMENT, VPAID_MIME_TYPE
-} from 'modules/videoModule/constants/ortb.js';
+} from 'libraries/video/constants/ortb.js';
 
 import {
   SETUP_COMPLETE, SETUP_FAILED, PLAY, AD_IMPRESSION, videoEvents
-} from 'modules/videoModule/constants/events.js';
+} from 'libraries/video/constants/events.js';
 
-import { PLAYBACK_MODE } from 'modules/videoModule/constants/enums.js';
+import { PLAYBACK_MODE } from 'libraries/video/constants/enums.js';
 
 function getPlayerMock() {
   return makePlayerFactoryMock({

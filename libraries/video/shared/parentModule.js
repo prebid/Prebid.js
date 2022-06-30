@@ -50,6 +50,7 @@ export function ParentModule(submoduleBuilder_) {
  * @typedef {Object} SubmoduleBuilder
  * @summary Instantiates submodules
  * @param {vendorSubmoduleDirectory} submoduleDirectory_
+ * @param {Object|null|undefined} sharedUtils_
  * @returns {SubmoduleBuilder}
  * @constructor
  */
