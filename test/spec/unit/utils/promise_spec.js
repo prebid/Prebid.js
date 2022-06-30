@@ -19,6 +19,60 @@ describe('GreedyPromise', () => {
     })
   });
 
+  describe('unhandled rejections', () => {
+    let unhandled;
+
+    beforeEach(() => {
+      unhandled = sinon.stub();
+      window.addEventListener('unhandledrejection', unhandled);
+    });
+
+    afterEach(() => {
+      window.removeEventListener('unhandledrejection', unhandled);
+    });
+
+    function getUnhandledErrors() {
+      return unhandled.args.map((args) => args[0].reason);
+    }
+
+    Object.entries({
+      'simple reject': (P) => P.reject('err'),
+      'caught reject': (P) => P.reject('err').catch((e) => e),
+      'error handler that throws': (P) => P.reject('err').catch((e) => { throw e }),
+      'rejection handled later in the chain': (P) => P.reject('err').then((v) => v).catch((e) => e),
+      'multiple errors in one chain': (P) => P.reject('err').then((v) => v).catch((e) => e).then((v) => P.reject(v)),
+      'multiple errors in one chain, all handled': (P) => P.reject('err').then((v) => v).catch((e) => e).then((v) => P.reject(v)).catch((e) => e),
+      'separate chains for rejection and handling': (P) => {
+        const p = P.reject('err');
+        p.then((v) => v).catch((e) => e)
+        p.then((v) => v);
+      },
+      // eslint-disable-next-line no-throw-literal
+      'exception in resolver': (P) => new P(() => { throw 'err'; }),
+      // eslint-disable-next-line no-throw-literal
+      'exception in resolver, caught': (P) => new P(() => { throw 'err' }).catch((e) => e),
+      'errors from nested promises': (P) => new P((resolve) => setTimeout(() => resolve(P.reject('err')))),
+      'errors from nested promises, caught': (P) => new P((resolve) => setTimeout(() => resolve(P.reject('err')))).catch((e) => e),
+    }).forEach(([t, op]) => {
+      describe(`on ${t}`, () => {
+        it('should match vanilla Promises', () => {
+          let vanillaUnhandled;
+          return new Promise((resolve) => {
+            op(Promise);
+            setTimeout(() => {
+              vanillaUnhandled = getUnhandledErrors();
+              unhandled.reset();
+              op(GreedyPromise);
+              setTimeout(resolve, 10);
+            }, 10)
+          }).then(() => {
+            expect(getUnhandledErrors()).to.eql(vanillaUnhandled);
+          })
+        })
+      })
+    });
+  });
+
   describe('idioms', () => {
     let makePromise, pendingFailure, pendingSuccess;
 
