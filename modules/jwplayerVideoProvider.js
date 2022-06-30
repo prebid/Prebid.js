@@ -1,5 +1,5 @@
 import {
-  PROTOCOLS, API_FRAMEWORKS, VIDEO_MIME_TYPE, PLAYBACK_METHODS, PLACEMENT, VPAID_MIME_TYPE
+  PROTOCOLS, API_FRAMEWORKS, VIDEO_MIME_TYPE, PLAYBACK_METHODS, PLACEMENT, VPAID_MIME_TYPE, AD_POSITION
 } from '../libraries/video/constants/ortb.js';
 import {
   SETUP_COMPLETE, SETUP_FAILED, DESTROYED, AD_REQUEST, AD_BREAK_START, AD_LOADED, AD_STARTED, AD_IMPRESSION, AD_PLAY,
@@ -120,7 +120,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
       // only specify ad position when in Fullscreen since computational cost is low
       // ad position options are listed in oRTB 2.5 section 5.4
       // https://www.iab.com/wp-content/uploads/2016/03/OpenRTB-API-Specification-Version-2-5-FINAL.pdf
-      video.pos = 7; // TODO make constant in oRTB
+      video.pos = AD_POSITION.FULL_SCREEN; // TODO make constant in oRTB
     }
 
     const item = player.getPlaylistItem() || {}; // TODO does player call need optimization ?
