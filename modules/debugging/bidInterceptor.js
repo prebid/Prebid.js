@@ -122,7 +122,7 @@ Object.assign(BidInterceptor.prototype, {
       replFn = () => ({});
     } else {
       replFn = ({args, ref = replDef}) => {
-        const result = {};
+        const result = Array.isArray(ref) ? [] : {};
         Object.entries(ref).forEach(([key, val]) => {
           if (typeof val === 'function') {
             result[key] = val(...args);

@@ -5,7 +5,7 @@ var webpack = require('webpack');
 var helpers = require('./gulpHelpers.js');
 var { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 var argv = require('yargs').argv;
-const babelConfig = require('./babelConfig.js')({disableFeatures: helpers.getDisabledFeatures()});
+const babelConfig = require('./babelConfig.js')({disableFeatures: helpers.getDisabledFeatures(), prebidDistUrlBase: argv.distUrlBase});
 
 var plugins = [
   new webpack.EnvironmentPlugin({'LiveConnectMode': null}),
