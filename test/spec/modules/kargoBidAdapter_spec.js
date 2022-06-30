@@ -572,6 +572,7 @@ describe('kargo adapter tests', function () {
         cpm: 2.5,
         width: 300,
         height: 250,
+        ad: '<VAST></VAST>',
         vastXml: '<VAST></VAST>',
         ttl: 300,
         creativeId: 'bar',
