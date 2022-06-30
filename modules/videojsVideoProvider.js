@@ -1,20 +1,21 @@
 import {
-  SETUP_COMPLETE, SETUP_FAILED, DESTROYED, AD_REQUEST, AD_BREAK_START, AD_LOADED, AD_STARTED, AD_IMPRESSION, AD_PLAY,
-  AD_TIME, AD_PAUSE, AD_CLICK, AD_SKIPPED, AD_ERROR, AD_COMPLETE, AD_BREAK_END, PLAYLIST, PLAYBACK_REQUEST,
+  SETUP_COMPLETE, SETUP_FAILED, DESTROYED, PLAYLIST, PLAYBACK_REQUEST,
   AUTOSTART_BLOCKED, PLAY_ATTEMPT_FAILED, CONTENT_LOADED, PLAY, PAUSE, BUFFER, TIME, SEEK_START, SEEK_END, MUTE, VOLUME,
-  RENDITION_UPDATE, ERROR, COMPLETE, PLAYLIST_COMPLETE, FULLSCREEN, PLAYER_RESIZE, VIEWABLE, CAST, PLAYBACK_MODE
-} from './videoModule/constants/events.js';
+  RENDITION_UPDATE, ERROR, COMPLETE, PLAYLIST_COMPLETE, FULLSCREEN, PLAYER_RESIZE, VIEWABLE, CAST
+} from '../libraries/video/constants/events.js';
+// pending events: AD_REQUEST, AD_BREAK_START, AD_LOADED, AD_STARTED, AD_IMPRESSION, AD_PLAY,
+//   AD_TIME, AD_PAUSE, AD_CLICK, AD_SKIPPED, AD_ERROR, AD_COMPLETE, AD_BREAK_END
 import {
   PROTOCOLS, API_FRAMEWORKS, VIDEO_MIME_TYPE, PLAYBACK_METHODS, PLACEMENT, VPAID_MIME_TYPE, AD_POSITION, PLAYBACK_END
-} from './videoModule/constants/ortb.js';
-import { VIDEO_JS_VENDOR } from './videoModule/constants/vendorCodes.js';
-import { videoVendorDirectory } from './videoModule/vendorDirectory.js';
+} from '../libraries/video/constants/ortb.js';
+import { VIDEO_JS_VENDOR } from '../libraries/video/constants/vendorCodes.js';
+import { submodule } from '../src/hook.js';
 
 export function VideojsProvider(config, videojs_, adState_, timeState_, callbackStorage_, utils) {
   let videojs = videojs_;
   // Supplied callbacks are typically wrapped by handlers
   // we use this dict to keep track of these pairings
-  const callback_to_handler = {};
+  const callbackToHandler = {};
 
   let player = null;
   let playerVersion = null;
@@ -61,8 +62,8 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
     if(!player){
       // setupCompleteCallback should already be hooked to player.ready so no need to include it here
       player = videojs(divId, playerConfig, adSetup)
-      setupFailedCallback && player.on('error', callback_to_handler[setupFailedCallback])
-      setupCompleteCallback && player.on('ready', callback_to_handler[setupCompleteCallback])
+      setupFailedCallback && player.on('error', callbackToHandler[setupFailedCallback])
+      setupCompleteCallback && player.on('ready', callbackToHandler[setupCompleteCallback])
       return
     }
 
@@ -192,7 +193,7 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
         divId,
         type
       };
-      
+
       registerPreSetupListeners(type, callback, payload);
       if (!player) {
         return;
@@ -242,7 +243,7 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
       default:
         return
     }
-    callback_to_handler[callback] = eventHandler
+    callbackToHandler[callback] = eventHandler
     player && player.on(utils.getVideojsEventName(type), eventHandler);
   }
 
@@ -481,7 +482,6 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
     }
 
   }
-  
 
   function offEvents(events, callback) {
     for (let event of events) {
@@ -560,7 +560,7 @@ const videojsSubmoduleFactory = function (config) {
   const vjs = window.videojs;
   return VideojsProvider(config, vjs, adState, timeState, callbackStorage, utils);
 }
-videojsSubmoduleFactory.vendorCode = VIDEO_JS_VENDOR;
 
-videoVendorDirectory[VIDEO_JS_VENDOR] = videojsSubmoduleFactory;
+videojsSubmoduleFactory.vendorCode = VIDEO_JS_VENDOR;
+submodule('video', videojsSubmoduleFactory);
 export default videojsSubmoduleFactory;
