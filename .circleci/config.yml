@@ -49,7 +49,7 @@ aliases:
 
   - &start_browserstack
     name: Start BrowserStackLocal
-    command: ./BrowserStackLocal --key ${BROWSERSTACK_ACCESS_KEY} --automate-only
+    command: ./BrowserStackLocal --key ${BROWSERSTACK_ACCESS_KEY} --automate-only --local-identifier ${CIRCLE_WORKFLOW_JOB_ID}
     background: true
 
   - &unit_test_steps
