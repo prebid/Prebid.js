@@ -42,7 +42,7 @@ const generateBidRequest = ({bidId, adUnitCode, bidOverrideObject, zid, ortb2}) 
   bidRequest.sizes = [[300, 250]];
 
   bidRequest.params.sid = DEFAULT_SID;
-  if(typeof zid == 'number'){
+  if (typeof zid == 'number') {
     bidRequest.params.zid = zid;
   }
 
@@ -101,7 +101,7 @@ const generateAdmPayload = (admPayloadType) => {
     case 'banner':
       ADM_PAYLOAD = '<script>logInfo(\'ad\'); AdPlacement </script>'; // banner
       break;
-    default: '<script>logInfo(\'ad\'); AdPlacement </script>';break;
+    default: '<script>logInfo(\'ad\'); AdPlacement </script>'; break;
   };
 
   return ADM_PAYLOAD;
@@ -127,8 +127,8 @@ const generateResponseMock = (admPayloadType) => {
   };
   const { validBidRequests, bidderRequest } = generateBuildRequestMock({adUnitType: admPayloadType});
   const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
-  
-    return {serverResponse, data, bidderRequest};
+
+  return {serverResponse, data, bidderRequest};
 }
 
 // Unit tests
@@ -142,7 +142,6 @@ describe('adtargetme Bid Adapter:', () => {
     it('should define the correct bidder code', () => {
       expect(spec.code).to.equal('adtargetme')
     });
-
   });
 
   describe('getUserSyncs()', () => {
@@ -220,7 +219,7 @@ describe('adtargetme Bid Adapter:', () => {
       {params: {}},
       {params: {sid: '1234', zid: '4321'}},
       {params: {sid: '1220291391', zid: 4321}},
-      {params: {zid: ''}}, 
+      {params: {zid: ''}},
       {params: {sid: '', zid: ''}},
     ];
 
@@ -239,7 +238,6 @@ describe('adtargetme Bid Adapter:', () => {
       };
       expect(spec.isBidRequestValid(validBid)).to.be.true;
     });
-
   });
 
   describe('Price Floor module support:', () => {
@@ -614,8 +612,6 @@ describe('adtargetme Bid Adapter:', () => {
     });
   });
 
-  
-
   describe('GDPR & Consent:', () => {
     it('should return request objects that do not send cookies if purpose 1 consent is not provided', () => {
       const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
@@ -650,7 +646,7 @@ describe('adtargetme Bid Adapter:', () => {
       expect(response).to.deep.include(
         {
           method: 'POST',
-          url: testOverrideEndpoint+sid
+          url: testOverrideEndpoint + sid
         });
     });
 
@@ -663,10 +659,9 @@ describe('adtargetme Bid Adapter:', () => {
       const response = spec.buildRequests(validBidRequests, bidderRequest);
       expect(response[0]).to.deep.include({
         method: 'POST',
-        url: 'https://z.cdn.adtarget.market/ssp?s='+sid
+        url: 'https://z.cdn.adtarget.market/ssp?prebid&s=' + sid
       });
     });
-
 
     it('should return a single request object for single request mode', () => {
       let { bidRequest, validBidRequests, bidderRequest } = generateBuildRequestMock({});
@@ -678,7 +673,7 @@ describe('adtargetme Bid Adapter:', () => {
       bidderRequest.bids = validBidRequests;
 
       config.setConfig({
-        adtargetme: { 
+        adtargetme: {
           singleRequestMode: true
         }
       });
@@ -789,7 +784,7 @@ describe('adtargetme Bid Adapter:', () => {
 
     it('should use placementId value as imp.tagid in the outbound bid-request when using "zid"', () => {
       let { validBidRequests, bidderRequest } = generateBuildRequestMock({}),
-      TEST_ZID = 54321;
+        TEST_ZID = 54321;
       validBidRequests[0].params.zid = TEST_ZID;
       const data = spec.buildRequests(validBidRequests, bidderRequest).data;
       expect(data.imp[0].tagid).to.deep.equal(TEST_ZID);
@@ -810,7 +805,7 @@ describe('adtargetme Bid Adapter:', () => {
       });
     });
 
-    // Validate Banner imp 
+    // Validate Banner imp
     it('should generate a valid "Banner" imp object', () => {
       config.setConfig({
         adtargetme: { mode: 'banner' }
@@ -929,4 +924,3 @@ describe('adtargetme Bid Adapter:', () => {
     });
   });
 });
-

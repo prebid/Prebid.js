@@ -6,7 +6,7 @@ import { hasPurpose1Consent } from '../src/utils/gpdr.js';
 
 const INTEGRATION_METHOD = 'prebid.js';
 const BIDDER_CODE = 'adtargetme';
-const ENDPOINT = 'https://z.cdn.adtarget.market/ssp?s=';
+const ENDPOINT = 'https://z.cdn.adtarget.market/ssp?prebid&s=';
 const ADAPTER_VERSION = '1.0.0';
 const PREBID_VERSION = '$prebid.version$';
 const DEFAULT_BID_TTL = 300;
@@ -105,7 +105,7 @@ function validateAppendObject(validationType, allowedKeys, inputObject, appendTo
 
 function getTtl(bidderRequest) {
   const ttl = config.getConfig('adtargetme.ttl');
-  return ttl ? validateTTL(ttl) : validateTTL(deepAccess(bidderRequest, 'params.ttl')) ;
+  return ttl ? validateTTL(ttl) : validateTTL(deepAccess(bidderRequest, 'params.ttl'));
 };
 
 function validateTTL(ttl) {
@@ -120,7 +120,6 @@ function getFloorModuleData(bid) {
   };
   return (isFn(bid.getFloor)) ? bid.getFloor(getFloorRequestObject) : false;
 };
-
 
 function generateOpenRtbObject(bidderRequest, bid) {
   if (bidderRequest) {
@@ -163,12 +162,6 @@ function generateOpenRtbObject(bidderRequest, bid) {
     };
 
     outBoundBidRequest.site.id = bid.params.sid;
-/*
-    if (deepAccess(bid, 'params.zid')) {
-      outBoundBidRequest.site.ext = outBoundBidRequest.site.ext || {};
-      outBoundBidRequest.site.ext.zid = bid.params.zid;
-    }
-*/
 
     if (bidderRequest.ortb2) {
       outBoundBidRequest = appendFirstPartyData(outBoundBidRequest, bid);
@@ -302,7 +295,7 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
 
 function generateServerRequest({payload, requestOptions, bidderRequest}) {
   return {
-    url: (config.getConfig('adtargetme.endpoint') || ENDPOINT) + (payload.site.id || ""),
+    url: (config.getConfig('adtargetme.endpoint') || ENDPOINT) + (payload.site.id || ''),
     method: 'POST',
     data: payload,
     options: requestOptions,
@@ -349,14 +342,12 @@ export const spec = {
       return generateServerRequest({payload, requestOptions, bidderRequest});
     }
 
-
     return validBidRequests.map(bid => {
       const payloadClone = generateOpenRtbObject(bidderRequest, bid);
       appendImpObject(bid, payloadClone);
 
       return generateServerRequest({payload: payloadClone, requestOptions, bidderRequest: bid});
     });
-    
   },
 
   interpretResponse: function(serverResponse, { data, bidderRequest }) {
@@ -415,4 +406,3 @@ export const spec = {
 };
 
 registerBidder(spec);
-
