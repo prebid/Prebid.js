@@ -20,14 +20,36 @@ describe('GreedyPromise', () => {
   });
 
   describe('unhandled rejections', () => {
-    let unhandled;
+    let unhandled, done, stop;
 
-    beforeEach(() => {
+    function reset(expectUnhandled) {
+      let pending = expectUnhandled;
+      let resolver;
+      unhandled.reset();
+      unhandled.callsFake(() => {
+        pending--;
+        if (pending === 0) {
+          resolver();
+        }
+      })
+      done = new Promise((resolve) => {
+        resolver = resolve;
+        stop = function () {
+          if (expectUnhandled === 0) {
+            resolve()
+          } else {
+            resolver = resolve;
+          }
+        }
+      })
+    }
+
+    before(() => {
       unhandled = sinon.stub();
       window.addEventListener('unhandledrejection', unhandled);
     });
 
-    afterEach(() => {
+    after(() => {
       window.removeEventListener('unhandledrejection', unhandled);
     });
 
@@ -36,37 +58,49 @@ describe('GreedyPromise', () => {
     }
 
     Object.entries({
-      'simple reject': (P) => P.reject('err'),
-      'caught reject': (P) => P.reject('err').catch((e) => e),
-      'error handler that throws': (P) => P.reject('err').catch((e) => { throw e }),
-      'rejection handled later in the chain': (P) => P.reject('err').then((v) => v).catch((e) => e),
-      'multiple errors in one chain': (P) => P.reject('err').then((v) => v).catch((e) => e).then((v) => P.reject(v)),
-      'multiple errors in one chain, all handled': (P) => P.reject('err').then((v) => v).catch((e) => e).then((v) => P.reject(v)).catch((e) => e),
-      'separate chains for rejection and handling': (P) => {
+      'simple reject': [1, (P) => { P.reject('err'); stop() }],
+      'caught reject': [0, (P) => P.reject('err').catch((e) => { stop(); return e })],
+      'unhandled reject with finally': [1, (P) => P.reject('err').finally(() => 'finally')],
+      'error handler that throws': [1, (P) => P.reject('err').catch((e) => { stop(); throw e })],
+      'rejection handled later in the chain': [0, (P) => P.reject('err').then((v) => v).catch((e) => { stop(); return e })],
+      'multiple errors in one chain': [1, (P) => P.reject('err').then((v) => v).catch((e) => e).then((v) => { stop(); return P.reject(v) })],
+      'multiple errors in one chain, all handled': [0, (P) => P.reject('err').then((v) => v).catch((e) => e).then((v) => P.reject(v)).catch((e) => { stop(); return e })],
+      'separate chains for rejection and handling': [1, (P) => {
         const p = P.reject('err');
-        p.then((v) => v).catch((e) => e)
+        p.catch((e) => { stop(); return e; })
         p.then((v) => v);
-      },
+      }],
+      'separate rejections merged without handling': [2, (P) => {
+        const p1 = P.reject('err1');
+        const p2 = P.reject('err2');
+        p1.then(() => p2).finally(stop);
+      }],
+      'separate rejections merged for handling': [0, (P) => {
+        const p1 = P.reject('err1');
+        const p2 = P.reject('err2');
+        P.all([p1, p2]).catch((e) => { stop(); return e });
+      }],
       // eslint-disable-next-line no-throw-literal
-      'exception in resolver': (P) => new P(() => { throw 'err'; }),
+      'exception in resolver': [1, (P) => new P(() => { stop(); throw 'err'; })],
       // eslint-disable-next-line no-throw-literal
-      'exception in resolver, caught': (P) => new P(() => { throw 'err' }).catch((e) => e),
-      'errors from nested promises': (P) => new P((resolve) => setTimeout(() => resolve(P.reject('err')))),
-      'errors from nested promises, caught': (P) => new P((resolve) => setTimeout(() => resolve(P.reject('err')))).catch((e) => e),
-    }).forEach(([t, op]) => {
+      'exception in resolver, caught': [0, (P) => new P(() => { throw 'err' }).catch((e) => { stop(); return e })],
+      'errors from nested promises': [1, (P) => new P((resolve) => setTimeout(() => { resolve(P.reject('err')); stop(); }))],
+      'errors from nested promises, caught': [0, (P) => new P((resolve) => setTimeout(() => resolve(P.reject('err')))).catch((e) => { stop(); return e })],
+    }).forEach(([t, [expectUnhandled, op]]) => {
       describe(`on ${t}`, () => {
         it('should match vanilla Promises', () => {
           let vanillaUnhandled;
-          return new Promise((resolve) => {
-            op(Promise);
-            setTimeout(() => {
-              vanillaUnhandled = getUnhandledErrors();
-              unhandled.reset();
-              op(GreedyPromise);
-              setTimeout(resolve, 10);
-            }, 10)
+          reset(expectUnhandled);
+          op(Promise);
+          return done.then(() => {
+            vanillaUnhandled = getUnhandledErrors();
+            reset(expectUnhandled);
+            op(GreedyPromise);
+            return done;
           }).then(() => {
-            expect(getUnhandledErrors()).to.eql(vanillaUnhandled);
+            const actualUnhandled = getUnhandledErrors();
+            expect(actualUnhandled.length).to.eql(expectUnhandled);
+            expect(actualUnhandled).to.eql(vanillaUnhandled);
           })
         })
       })
