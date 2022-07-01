@@ -36,12 +36,15 @@ describe('33acrossBidAdapter:', function () {
             w: 1024,
             h: 728,
             pxr: 2,
+            osv: 'fooosv',
+            mdl: 'foomodel',
             vp: {
               w: 800,
               h: 600
             },
             ah: 500,
-            mtp: 0
+            mtp: 0,
+            browserv: 'foouafullversion'
           }
         }
       },
@@ -388,7 +391,20 @@ describe('33acrossBidAdapter:', function () {
         availHeight: 500
       },
       navigator: {
-        maxTouchPoints: 0
+        maxTouchPoints: 0,
+        userAgentData: {
+          getHighEntropyValues() {
+            return {
+              then(fn) {
+                fn({
+                  platformVersion: 'fooosv',
+                  uaFullVersion: 'foouafullversion',
+                  model: 'foomodel'
+                });
+              }
+            }
+          }
+        }
       },
       document: {
         visibilityState: 'visible',
@@ -407,7 +423,6 @@ describe('33acrossBidAdapter:', function () {
         .withBanner()
         .build()
     );
-
     sandbox = sinon.sandbox.create();
     sandbox.stub(Date, 'now').returns(1);
     sandbox.stub(document, 'getElementById').returns(element);

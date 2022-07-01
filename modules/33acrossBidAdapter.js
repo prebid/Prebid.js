@@ -1,5 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
+import { getStorageManager } from '../src/storageManager.js';
 import {
   deepAccess,
   uniques,
@@ -59,6 +60,41 @@ function getTTXConfig() {
   );
 
   return ttxSettings;
+}
+
+const storage = getStorageManager({gvlid: GVLID, moduleName: BIDDER_CODE})
+const UA_DATA_KEY = `${BIDDER_CODE}UaReducedData`;
+
+function getStoredUaReducedData() {
+  try {
+    return JSON.parse(storage.getDataFromLocalStorage(UA_DATA_KEY));
+  } catch (err) {
+    return null;
+  }
+}
+
+function storeUaReducedData(uaData) {
+  storage.setDataInLocalStorage(UA_DATA_KEY, JSON.stringify(uaData));
+}
+
+function calculateUaReducedData() {
+  let uaReducedData = {};
+
+  getWindowSelf().navigator.userAgentData.getHighEntropyValues(
+    ['model', 'uaFullVersion', 'platformVersion']
+  ).then((uaData) => {
+    uaReducedData = uaData;
+
+    storeUaReducedData(uaReducedData);
+  });
+
+  return uaReducedData;
+}
+
+calculateUaReducedData();
+
+function fetchUAReducedData() {
+  return getStoredUaReducedData() || calculateUaReducedData();
 }
 
 // **************************** VALIDATION *************************** //
@@ -739,14 +775,23 @@ function _createSync({ siteId = 'zzz000000000003zzz', gdprConsent = {}, uspConse
 function _buildDeviceORTB() {
   const win = getWindowSelf();
 
+  const {
+    uaFullVersion: browserv,
+    platformVersion: osv,
+    model
+  } = fetchUAReducedData();
+
   return {
     ext: {
       ttx: {
         ...getScreenDimensions(),
         pxr: win.devicePixelRatio,
+        osv,
+        ...(model ? { mdl: model } : {}),
         vp: getViewportDimensions(),
         ah: getWindowSelf().screen.availHeight,
-        mtp: win.navigator.maxTouchPoints
+        mtp: win.navigator.maxTouchPoints,
+        browserv
       }
     }
   };
