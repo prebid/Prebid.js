@@ -49,8 +49,8 @@ export const hadronIdSubmodule = {
   /**
    * decode the stored id value for passing to bid requests
    * @function
-   * @param {{value:string}} value
-   * @returns {{hadronId:Object}}
+   * @param {string} value
+   * @returns {Object}
    */
   decode(value) {
     let hadronId = storage.getDataFromLocalStorage('auHadronId');
