@@ -739,16 +739,17 @@ function _createSync({ siteId = 'zzz000000000003zzz', gdprConsent = {}, uspConse
 function _buildDeviceORTB() {
   const win = getWindowSelf();
 
-  return setExtensions({
-    ...getScreenDimensions(),
-    pxratio: win.devicePixelRatio
-  }, {
-    ttx: {
-      viewport: getViewportDimensions(),
-      availheight: getWindowSelf().screen.availHeight,
-      maxtouchpoints: win.navigator.maxTouchPoints
+  return {
+    ext: {
+      ttx: {
+        ...getScreenDimensions(),
+        pxr: win.devicePixelRatio,
+        vp: getViewportDimensions(),
+        ah: getWindowSelf().screen.availHeight,
+        mtp: win.navigator.maxTouchPoints
+      }
     }
-  });
+  };
 }
 
 function getTopMostAccessibleWindow() {
