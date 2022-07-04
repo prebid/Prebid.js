@@ -2,19 +2,19 @@
 'use strict';
 
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {NATIVE, BANNER, VIDEO} from '../src/mediaTypes.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {
-  mergeDeep,
   _map,
   deepAccess,
-  getDNT,
-  parseSizesInput,
   deepSetValue,
-  isStr,
+  getDNT,
   isArray,
   isPlainObject,
-  parseUrl,
-  replaceAuctionPrice, triggerPixel
+  isStr,
+  mergeDeep,
+  parseSizesInput,
+  replaceAuctionPrice,
+  triggerPixel
 } from '../src/utils.js';
 import {config} from '../src/config.js';
 
@@ -67,7 +67,7 @@ export const spec = {
   buildRequests: (validBidRequests, bidderRequest) => {
     let app, site;
 
-    const commonFpd = getConfig('ortb2') || {};
+    const commonFpd = bidderRequest.ortb2 || {};
     let { user } = commonFpd;
 
     if (typeof getConfig('app') === 'object') {
@@ -82,8 +82,8 @@ export const spec = {
       }
 
       if (!site.page) {
-        site.page = bidderRequest.refererInfo.referer;
-        site.domain = parseUrl(bidderRequest.refererInfo.referer).hostname;
+        site.page = bidderRequest.refererInfo.page;
+        site.domain = bidderRequest.refererInfo.domain;
       }
     }
 

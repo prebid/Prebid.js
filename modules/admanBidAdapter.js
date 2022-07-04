@@ -65,8 +65,9 @@ export const spec = {
   buildRequests: (validBidRequests = [], bidderRequest) => {
     let winTop = window;
     let location;
+    // TODO: this odd try-catch block was copied in several adapters; it doesn't seem to be correct for cross-origin
     try {
-      location = new URL(bidderRequest.refererInfo.referer)
+      location = new URL(bidderRequest.refererInfo.page)
       winTop = window.top;
     } catch (e) {
       location = winTop.location;
@@ -110,6 +111,7 @@ export const spec = {
       if (bid.userId) {
         getUserId(placement.eids, bid.userId.uid2 && bid.userId.uid2.id, 'uidapi.com');
         getUserId(placement.eids, bid.userId.lotamePanoramaId, 'lotame.com');
+        getUserId(placement.eids, bid.userId.idx, 'idx.lat');
       }
       if (traff === VIDEO) {
         placement.playerSize = bid.mediaTypes[VIDEO].playerSize;

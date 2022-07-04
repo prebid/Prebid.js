@@ -21,6 +21,7 @@ const HOST_GETTERS = {
   bidsxchange: () => 'ghb.hbd.bidsxchange.com',
   streamkey: () => 'ghb.hb.streamkey.net',
   janet: () => 'ghb.bidder.jmgads.com',
+  pgam: () => 'ghb.pgamssp.com',
 }
 const getUri = function (bidderCode) {
   let bidderWithoutSuffix = bidderCode.split('_')[0];
@@ -37,7 +38,8 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: 410,
   aliases: ['onefiftytwomedia', 'selectmedia', 'appaloosa', 'bidsxchange', 'streamkey', 'janet',
-    { code: 'navelix', gvlid: 380 }
+    { code: 'navelix', gvlid: 380 },
+    'pgam'
   ],
   supportedMediaTypes: [VIDEO, BANNER],
   isBidRequestValid: function (bid) {
@@ -158,7 +160,8 @@ function parseRTBResponse(serverResponse, adapterRequest) {
 function bidToTag(bidRequests, adapterRequest) {
   // start publisher env
   const tag = {
-    Domain: deepAccess(adapterRequest, 'refererInfo.referer')
+    // TODO: is 'page' the right value here?
+    Domain: deepAccess(adapterRequest, 'refererInfo.page')
   };
   if (config.getConfig('coppa') === true) {
     tag.Coppa = 1;

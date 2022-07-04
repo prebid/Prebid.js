@@ -9,7 +9,6 @@ import {
   parseSizesInput,
   parseUrl
 } from '../src/utils.js';
-import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {Renderer} from '../src/Renderer.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
@@ -31,7 +30,7 @@ export const SUPPORTED_USER_IDS = [
   { key: 'tdid', source: 'adserver.org', rtiPartner: 'TDID', queryParam: 'tdid' },
   { key: 'idl_env', source: 'liveramp.com', rtiPartner: 'idl', queryParam: 'idl' },
   { key: 'uid2.id', source: 'uidapi.com', rtiPartner: 'UID2', queryParam: 'uid2' },
-  { key: 'haloId', source: 'audigent.com', atype: 1, queryParam: 'haloid' }
+  { key: 'hadronId', source: 'audigent.com', atype: 1, queryParam: 'hadronid' }
 ];
 
 let appId = '';
@@ -305,16 +304,7 @@ function isBannerBidValid(bid) {
 }
 
 function getTopWindowLocation(bidderRequest) {
-  let url = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
-  return parseUrl(config.getConfig('pageUrl') || url, { decodeSearchAsString: true });
-}
-
-function getTopWindowReferrer() {
-  try {
-    return window.top.document.referrer;
-  } catch (e) {
-    return '';
-  }
+  return parseUrl(bidderRequest?.refererInfo?.page, { decodeSearchAsString: true });
 }
 
 function getEids(bid) {
@@ -369,7 +359,7 @@ function createVideoRequestData(bid, bidderRequest) {
   let tagid = getVideoBidParam(bid, 'tagid');
   let topLocation = getTopWindowLocation(bidderRequest);
   let eids = getEids(bid);
-  let ortb2 = deepClone(config.getConfig('ortb2'));
+  let ortb2 = deepClone(bidderRequest.ortb2);
   let payload = {
     isPrebid: true,
     appId: appId,
@@ -433,7 +423,7 @@ function createVideoRequestData(bid, bidderRequest) {
 
 function createBannerRequestData(bids, bidderRequest) {
   let topLocation = getTopWindowLocation(bidderRequest);
-  let topReferrer = getTopWindowReferrer();
+  let topReferrer = bidderRequest.refererInfo?.ref;
   let slots = bids.map(bid => {
     return {
       slot: bid.adUnitCode,
@@ -443,7 +433,7 @@ function createBannerRequestData(bids, bidderRequest) {
       sizes: getBannerSizes(bid)
     };
   });
-  let ortb2 = deepClone(config.getConfig('ortb2'));
+  let ortb2 = deepClone(bidderRequest.ortb2);
   let payload = {
     slots: slots,
     ortb2: ortb2,
