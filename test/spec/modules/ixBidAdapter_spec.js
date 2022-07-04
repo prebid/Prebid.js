@@ -1540,6 +1540,7 @@ describe('IndexexchangeAdapter', function () {
       expect(impression.id).to.equal(DEFAULT_BANNER_VALID_BID[0].bidId);
       expect(impression.banner.format).to.be.length(2);
       expect(impression.banner.topframe).to.be.oneOf([0, 1]);
+      expect(impression.ext.tid).to.equal(DEFAULT_BANNER_VALID_BID[0].transactionId);
 
       impression.banner.format.map(({ w, h, ext }, index) => {
         const size = DEFAULT_BANNER_VALID_BID[0].mediaTypes.banner.sizes[index];
@@ -1549,7 +1550,6 @@ describe('IndexexchangeAdapter', function () {
         expect(h).to.equal(size[1]);
         expect(ext.siteID).to.equal(DEFAULT_BANNER_VALID_BID[0].params.siteId);
         expect(ext.sid).to.equal(sidValue);
-        expect(ext.tid).to.equal(DEFAULT_BANNER_VALID_BID[0].transactionId);
       });
     });
 
