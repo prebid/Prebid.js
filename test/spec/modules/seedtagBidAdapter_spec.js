@@ -234,7 +234,7 @@ describe('Seedtag Adapter', function () {
       ).to.be.above(-1);
       expect(data.auctionStart).to.be.greaterThanOrEqual(now);
       expect(data.ttfb).to.be.greaterThanOrEqual(0);
-      
+
       expect(data.bidRequests[0].adUnitCode).to.equal('adunit-code');
     });
 

@@ -157,7 +157,7 @@ function ttfb() {
   const ttfb = (() => {
     // Timing API V2
     try {
-      const entry = performance.getEntriesByType("navigation")[0];
+      const entry = performance.getEntriesByType('navigation')[0];
       return Math.round(entry.responseStart - entry.startTime);
     } catch (e) {
       // Timing API V1
