@@ -1,6 +1,7 @@
 [
   "adlooxAnalyticsAdapter",
   "adlooxRtdProvider",
+  "iasRtdProvider",
   "sirdataRtdProvider",
   "weboramaRtdProvider",
   "currency",
