@@ -22,6 +22,11 @@ const BANNER_CODE = 1;
 const NATIVE_CODE = 2;
 const VIDEO_CODE = 4;
 
+const AUDIENCE_IDS = [
+  {type: 6, bidKey: 'userId.imuid'},
+  {type: 7, bidKey: 'userId.id5id.uid'}
+]
+
 function createCBT() {
   const randomValue = Math.floor(Math.random() * Math.pow(10, 18)).toString(16);
   const date = new Date().getTime().toString(16);
@@ -88,11 +93,13 @@ export const spec = {
         params['idl_env'] = idlEnv
       }
 
-      const imuid = deepAccess(bid, 'userId.imuid');
-      if (imuid) {
-        params['aids'] = params['aids'] || []
-        params['aids'].push({ type: 6, id: imuid })
-      }
+      AUDIENCE_IDS.forEach((audienceId) => {
+        const bidAudienceId = deepAccess(bid, audienceId.bidKey);
+        if (bidAudienceId) {
+          params['aids'] = params['aids'] || []
+          params['aids'].push({ type: audienceId.type, id: bidAudienceId })
+        }
+      })
 
       requests.push({
         method: 'GET',

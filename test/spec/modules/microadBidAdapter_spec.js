@@ -310,6 +310,21 @@ describe('microadBidAdapter', () => {
         );
       })
     });
+
+    it('should add ID5 ID if it is available in request parameters', () => {
+      const bidRequestWithId5id = Object.assign({}, bidRequestTemplate, {
+        userId: {id5id: {uid: 'id5id-sample'}}
+      });
+      const requests = spec.buildRequests([bidRequestWithId5id], bidderRequest)
+      requests.forEach(request => {
+        expect(request.data).to.deep.equal(
+          Object.assign({}, expectedResultTemplate, {
+            cbt: request.data.cbt,
+            aids: [{type: 7, id: 'id5id-sample'}]
+          })
+        );
+      })
+    });
   });
 
   describe('interpretResponse', () => {
