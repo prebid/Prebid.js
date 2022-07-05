@@ -355,6 +355,21 @@ describe('microadBidAdapter', () => {
         );
       })
     });
+
+    it('should add Parrable ID if it is available in request parameters', () => {
+      const bidRequestWithNovatiq = Object.assign({}, bidRequestTemplate, {
+        userId: {parrableId: {eid: 'parrable-id-sample'}}
+      });
+      const requests = spec.buildRequests([bidRequestWithNovatiq], bidderRequest)
+      requests.forEach(request => {
+        expect(request.data).to.deep.equal(
+          Object.assign({}, expectedResultTemplate, {
+            cbt: request.data.cbt,
+            aids: [{type: 10, id: 'parrable-id-sample'}]
+          })
+        );
+      })
+    });
   });
 
   describe('interpretResponse', () => {
