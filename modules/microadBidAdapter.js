@@ -88,6 +88,12 @@ export const spec = {
         params['idl_env'] = idlEnv
       }
 
+      const imuid = deepAccess(bid, 'userId.imuid');
+      if (imuid) {
+        params['aids'] = params['aids'] || []
+        params['aids'].push({ type: 6, id: imuid })
+      }
+
       requests.push({
         method: 'GET',
         url: ENDPOINT_URLS[ENVIRONMENT],

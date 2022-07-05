@@ -295,6 +295,21 @@ describe('microadBidAdapter', () => {
         );
       })
     });
+
+    it('should add IM-UID if it is available in request parameters', () => {
+      const bidRequestWithImuid = Object.assign({}, bidRequestTemplate, {
+        userId: {imuid: 'imuid-sample'}
+      });
+      const requests = spec.buildRequests([bidRequestWithImuid], bidderRequest)
+      requests.forEach(request => {
+        expect(request.data).to.deep.equal(
+          Object.assign({}, expectedResultTemplate, {
+            cbt: request.data.cbt,
+            aids: [{type: 6, id: 'imuid-sample'}]
+          })
+        );
+      })
+    });
   });
 
   describe('interpretResponse', () => {
