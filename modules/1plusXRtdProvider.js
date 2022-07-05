@@ -20,7 +20,7 @@ const LOG_PREFIX = '[1plusX RTD Module]: ';
  * @param {Object} reqBidsConfigObj Config object for the bidders; each adapter has its own entry
  * @returns {Object} Extracted configuration parameters for the module
  */
-const extractConfig = (moduleConfig, reqBidsConfigObj) => {
+export const extractConfig = (moduleConfig, reqBidsConfigObj) => {
   // CustomerId
   const customerId = deepAccess(moduleConfig, 'params.customerId');
   if (!customerId) {

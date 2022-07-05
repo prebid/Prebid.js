@@ -1,13 +1,20 @@
 import { config } from 'src/config';
 import {
   onePlusXSubmodule,
+  extractConfig,
   buildOrtb2Updates,
   updateBidderConfig,
   setTargetingDataToConfig
 } from 'modules/1plusXRtdProvider';
 
 describe('1plusXRtdProvider', () => {
-  const reqBidsConfigObj = {};
+  const reqBidsConfigObj = {
+    adUnits: [{
+      bids: [
+        { bidder: 'appnexus' }
+      ]
+    }]
+  };
   let fakeServer;
   const fakeResponseHeaders = {
     'Content-Type': 'application/json',
@@ -64,7 +71,7 @@ describe('1plusXRtdProvider', () => {
       // Nice case; everything runs as expected
       {
         const callbackSpy = sinon.spy();
-        const config = { params: { customerId: 'test' } };
+        const config = { params: { customerId: 'test', bidders: ['appnexus'] } };
         onePlusXSubmodule.getBidRequestData(reqBidsConfigObj, callbackSpy, config);
         setTimeout(() => {
           expect(callbackSpy.calledOnce).to.be.true
@@ -79,6 +86,61 @@ describe('1plusXRtdProvider', () => {
           expect(callbackSpy.calledOnce).to.be.true
         }, 100);
       }
+      // No bidders in config => error but still callback called
+      {
+        const callbackSpy = sinon.spy();
+        const config = { customerId: 'test' }
+        onePlusXSubmodule.getBidRequestData(reqBidsConfigObj, callbackSpy, config);
+        setTimeout(() => {
+          expect(callbackSpy.calledOnce).to.be.true
+        }, 100);
+      }
+    })
+  })
+
+  describe('extractConfig', () => {
+    const customerId = 'test';
+    const timeout = 1000;
+    const bidders = ['appnexus'];
+
+    it('Throws an error if no customerId is specified', () => {
+      const moduleConfig = { params: { timeout, bidders } };
+      expect(() => extractConfig(moduleConfig, reqBidsConfigObj)).to.throw();
+    })
+    it('Throws an error if no bidder is specified', () => {
+      const moduleConfig = { params: { customerId, timeout } };
+      expect(() => extractConfig(moduleConfig, reqBidsConfigObj)).to.throw();
+    })
+    it("Throws an error if there's no bidder in reqBidsConfigObj", () => {
+      const moduleConfig = { params: { customerId, timeout, bidders } };
+      const reqBidsConfigEmpty = { adUnits: [{ bids: [] }] };
+      expect(() => extractConfig(moduleConfig, reqBidsConfigEmpty)).to.throw();
+    })
+    it('Returns an object containing the parameters specified', () => {
+      const moduleConfig = { params: { customerId, timeout, bidders } };
+      const expectedKeys = ['customerId', 'timeout', 'bidders']
+      const extractedConfig = extractConfig(moduleConfig, reqBidsConfigObj);
+      expect(extractedConfig).to.be.an('object').and.to.have.all.keys(expectedKeys);
+      expect(extractedConfig.customerId).to.equal(customerId);
+      expect(extractedConfig.timeout).to.equal(timeout);
+      expect(extractedConfig.bidders).to.deep.equal(bidders);
+    })
+    /* 1plusX RTD module may only use bidders that are both specified in :
+        - the bid request configuration
+        - AND in the 1plusX RTD module configuration
+      Below 2 tests are enforcing those rules 
+    */
+    it('Returns the intersection of bidders found in bid request config & module config', () => {
+      const bidders = ['appnexus', 'rubicon'];
+      const moduleConfig = { params: { customerId, timeout, bidders } };
+      const { bidders: extractedBidders } = extractConfig(moduleConfig, reqBidsConfigObj);
+      expect(extractedBidders).to.be.an('array').and.to.have.length(1); 7
+      expect(extractedBidders[0]).to.equal('appnexus');
+    })
+    it('Throws an error if no bidder can be used by the module', () => {
+      const bidders = ['rubicon'];
+      const moduleConfig = { params: { customerId, timeout, bidders } };
+      expect(() => extractConfig(moduleConfig, reqBidsConfigObj)).to.throw();
     })
   })
 
