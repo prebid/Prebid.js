@@ -34,6 +34,7 @@ export const spec = {
       const url = validReq.params.debug ? DEBUG_URL : URL;
       const criteoId = getCriteoId(validReq);
       const id5id = getId5Id(validReq);
+      const id5LinkType = getId5LinkType(validReq);
       let data = ``;
       data = tryAppendQueryString(data, 'posall', 'SSPLOC');
       const id = getBidIdParameter('id', validReq.params);
@@ -49,6 +50,7 @@ export const spec = {
       data = tryAppendQueryString(data, 'adapterver', ADGENE_PREBID_VERSION);
       data = tryAppendQueryString(data, 'adgext_criteo_id', criteoId);
       data = tryAppendQueryString(data, 'adgext_id5_id', id5id);
+      data = tryAppendQueryString(data, 'adgext_id5_id_link_type', id5LinkType);
       // native以外にvideo等の対応が入った場合は要修正
       if (!validReq.mediaTypes || !validReq.mediaTypes.native) {
         data = tryAppendQueryString(data, 'imark', '1');
@@ -285,8 +287,17 @@ function getCriteoId(validReq) {
 }
 
 function getId5Id(validReq) {
-  return (validReq.userId && validReq.userId.id5id && validReq.userId.id5id.uid) ? validReq.userId.id5id.uid : null
+  return validId5(validReq) ? validReq.userId.id5id.uid : null
 }
+
+function getId5LinkType(validReq) {
+  return validId5(validReq) ? validReq.userId.id5id.ext.linkType : null
+}
+
+function validId5(validReq) {
+  return validReq.userId && validReq.userId.id5id && validReq.userId.id5id.uid && validReq.userId.id5id.ext.linkType
+}
+
 function getHyperId(validReq) {
   if (validReq.userId && validReq.userId.novatiq && validReq.userId.novatiq.snowflake.syncResponse === 1) {
     return validReq.userId.novatiq.snowflake.id;
