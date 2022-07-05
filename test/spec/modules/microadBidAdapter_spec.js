@@ -325,6 +325,21 @@ describe('microadBidAdapter', () => {
         );
       })
     });
+
+    it('should add Unified ID if it is available in request parameters', () => {
+      const bidRequestWithId5id = Object.assign({}, bidRequestTemplate, {
+        userId: {tdid: 'unified-id-sample'}
+      });
+      const requests = spec.buildRequests([bidRequestWithId5id], bidderRequest)
+      requests.forEach(request => {
+        expect(request.data).to.deep.equal(
+          Object.assign({}, expectedResultTemplate, {
+            cbt: request.data.cbt,
+            aids: [{type: 8, id: 'unified-id-sample'}]
+          })
+        );
+      })
+    });
   });
 
   describe('interpretResponse', () => {

@@ -24,7 +24,8 @@ const VIDEO_CODE = 4;
 
 const AUDIENCE_IDS = [
   {type: 6, bidKey: 'userId.imuid'},
-  {type: 7, bidKey: 'userId.id5id.uid'}
+  {type: 7, bidKey: 'userId.id5id.uid'},
+  {type: 8, bidKey: 'userId.tdid'}
 ]
 
 function createCBT() {
