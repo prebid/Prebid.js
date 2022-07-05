@@ -69,7 +69,8 @@
     ],
     "fpdModule": [
       "enrichmentFpdModule",
-      "validationFpdModule"
+      "validationFpdModule",
+      "topicsFpdModule"
     ]
   },
   "libraries": {
