@@ -25,7 +25,8 @@ const VIDEO_CODE = 4;
 const AUDIENCE_IDS = [
   {type: 6, bidKey: 'userId.imuid'},
   {type: 7, bidKey: 'userId.id5id.uid'},
-  {type: 8, bidKey: 'userId.tdid'}
+  {type: 8, bidKey: 'userId.tdid'},
+  {type: 9, bidKey: 'userId.novatiq.snowflake'}
 ]
 
 function createCBT() {
@@ -96,7 +97,7 @@ export const spec = {
 
       AUDIENCE_IDS.forEach((audienceId) => {
         const bidAudienceId = deepAccess(bid, audienceId.bidKey);
-        if (bidAudienceId) {
+        if (!isEmpty(bidAudienceId) && isStr(bidAudienceId)) {
           params['aids'] = params['aids'] || []
           params['aids'].push({ type: audienceId.type, id: bidAudienceId })
         }

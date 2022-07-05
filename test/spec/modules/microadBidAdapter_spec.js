@@ -340,6 +340,21 @@ describe('microadBidAdapter', () => {
         );
       })
     });
+
+    it('should add Novatiq Hyper ID if it is available in request parameters', () => {
+      const bidRequestWithNovatiq = Object.assign({}, bidRequestTemplate, {
+        userId: {novatiq: {snowflake: 'novatiq-id-sample'}}
+      });
+      const requests = spec.buildRequests([bidRequestWithNovatiq], bidderRequest)
+      requests.forEach(request => {
+        expect(request.data).to.deep.equal(
+          Object.assign({}, expectedResultTemplate, {
+            cbt: request.data.cbt,
+            aids: [{type: 9, id: 'novatiq-id-sample'}]
+          })
+        );
+      })
+    });
   });
 
   describe('interpretResponse', () => {
