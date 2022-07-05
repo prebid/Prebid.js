@@ -624,6 +624,14 @@ describe('pubxai analytics adapter', function() {
           }
         },
         'floorProvider': 'PubXFloorProvider',
+        'floorExtraData': {
+          'fetchStatus': 'success',
+          'floorProvider': 'PubXFloorProvider',
+          'location': 'fetch',
+          'modelVersion': 'test model 1.0',
+          'skipRate': 0,
+          'skipped': false
+        },
         'isWinningBid': true,
         'mediaType': 'banner',
         'netRevenue': true,

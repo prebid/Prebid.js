@@ -92,6 +92,7 @@ function mapBidResponse(bidResponse, status) {
       Object.assign(bid, {
         bidId: bidResponse.requestId,
         floorProvider: events.floorDetail ? events.floorDetail.floorProvider : null,
+        floorExtraData: events.floorDetail ? events.floorDetail : null,
         isWinningBid: true,
         placementId: bidResponse.params ? deepAccess(bidResponse, 'params.0.placementId') : null,
         renderedSize: bidResponse.size,
