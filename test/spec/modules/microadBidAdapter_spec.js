@@ -281,7 +281,7 @@ describe('microadBidAdapter', () => {
       })
     });
 
-    it('should not add Liveramp identity link if it is not available in request parameters', () => {
+    it('should not add Liveramp identity link and Audience ID if it is not available in request parameters', () => {
       const bidRequestWithLiveramp = Object.assign({}, bidRequestTemplate, {
         userId: {}
       });
@@ -296,95 +296,44 @@ describe('microadBidAdapter', () => {
       })
     });
 
-    it('should add IM-UID if it is available in request parameters', () => {
-      const bidRequestWithImuid = Object.assign({}, bidRequestTemplate, {
-        userId: {imuid: 'imuid-sample'}
-      });
-      const requests = spec.buildRequests([bidRequestWithImuid], bidderRequest)
-      requests.forEach(request => {
-        expect(request.data).to.deep.equal(
-          Object.assign({}, expectedResultTemplate, {
+    Object.entries({
+      'IM-UID': {
+        userId: {imuid: 'imuid-sample'},
+        expected: [{type: 6, id: 'imuid-sample'}]
+      },
+      'ID5 ID': {
+        userId: {id5id: {uid: 'id5id-sample'}},
+        expected: [{type: 7, id: 'id5id-sample'}]
+      },
+      'Unified ID': {
+        userId: {tdid: 'unified-sample'},
+        expected: [{type: 8, id: 'unified-sample'}]
+      },
+      'Novatiq Snowflake ID': {
+        userId: {novatiq: {snowflake: 'novatiq-sample'}},
+        expected: [{type: 9, id: 'novatiq-sample'}]
+      },
+      'Parrable ID': {
+        userId: {parrableId: {eid: 'parrable-sample'}},
+        expected: [{type: 10, id: 'parrable-sample'}]
+      },
+      'AudienceOne User ID': {
+        userId: {dacId: {id: 'audience-one-sample'}},
+        expected: [{type: 11, id: 'audience-one-sample'}]
+      }
+    }).forEach(([test, arg]) => {
+      it(`should add ${test} if it is available in request parameters`, () => {
+        const bidRequestWithUserId = { ...bidRequestTemplate, userId: arg.userId }
+        const requests = spec.buildRequests([bidRequestWithUserId], bidderRequest)
+        requests.forEach((request) => {
+          expect(request.data).to.deep.equal({
+            ...expectedResultTemplate,
             cbt: request.data.cbt,
-            aids: [{type: 6, id: 'imuid-sample'}]
+            aids: arg.expected
           })
-        );
+        })
       })
-    });
-
-    it('should add ID5 ID if it is available in request parameters', () => {
-      const bidRequestWithId5id = Object.assign({}, bidRequestTemplate, {
-        userId: {id5id: {uid: 'id5id-sample'}}
-      });
-      const requests = spec.buildRequests([bidRequestWithId5id], bidderRequest)
-      requests.forEach(request => {
-        expect(request.data).to.deep.equal(
-          Object.assign({}, expectedResultTemplate, {
-            cbt: request.data.cbt,
-            aids: [{type: 7, id: 'id5id-sample'}]
-          })
-        );
-      })
-    });
-
-    it('should add Unified ID if it is available in request parameters', () => {
-      const bidRequestWithId5id = Object.assign({}, bidRequestTemplate, {
-        userId: {tdid: 'unified-id-sample'}
-      });
-      const requests = spec.buildRequests([bidRequestWithId5id], bidderRequest)
-      requests.forEach(request => {
-        expect(request.data).to.deep.equal(
-          Object.assign({}, expectedResultTemplate, {
-            cbt: request.data.cbt,
-            aids: [{type: 8, id: 'unified-id-sample'}]
-          })
-        );
-      })
-    });
-
-    it('should add Novatiq Hyper ID if it is available in request parameters', () => {
-      const bidRequestWithNovatiq = Object.assign({}, bidRequestTemplate, {
-        userId: {novatiq: {snowflake: 'novatiq-id-sample'}}
-      });
-      const requests = spec.buildRequests([bidRequestWithNovatiq], bidderRequest)
-      requests.forEach(request => {
-        expect(request.data).to.deep.equal(
-          Object.assign({}, expectedResultTemplate, {
-            cbt: request.data.cbt,
-            aids: [{type: 9, id: 'novatiq-id-sample'}]
-          })
-        );
-      })
-    });
-
-    it('should add Parrable ID if it is available in request parameters', () => {
-      const bidRequestWithNovatiq = Object.assign({}, bidRequestTemplate, {
-        userId: {parrableId: {eid: 'parrable-id-sample'}}
-      });
-      const requests = spec.buildRequests([bidRequestWithNovatiq], bidderRequest)
-      requests.forEach(request => {
-        expect(request.data).to.deep.equal(
-          Object.assign({}, expectedResultTemplate, {
-            cbt: request.data.cbt,
-            aids: [{type: 10, id: 'parrable-id-sample'}]
-          })
-        );
-      })
-    });
-
-    it('should add AudienceOne User ID if it is available in request parameters', () => {
-      const bidRequestWithNovatiq = Object.assign({}, bidRequestTemplate, {
-        userId: {dacId: {id: 'audiece-one-id-sample'}}
-      });
-      const requests = spec.buildRequests([bidRequestWithNovatiq], bidderRequest)
-      requests.forEach(request => {
-        expect(request.data).to.deep.equal(
-          Object.assign({}, expectedResultTemplate, {
-            cbt: request.data.cbt,
-            aids: [{type: 11, id: 'audiece-one-id-sample'}]
-          })
-        );
-      })
-    });
+    })
   });
 
   describe('interpretResponse', () => {
