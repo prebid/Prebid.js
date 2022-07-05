@@ -149,7 +149,7 @@ describe('AdgenerationAdapter', function () {
       native: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=1x1&currency=JPY&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.4.0&tp=https%3A%2F%2Fexample.com`,
       bannerWithHyperId: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=320x100&currency=JPY&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.4.0&imark=1&tp=https%3A%2F%2Fexample.com&hyper_id=novatiqId`,
       bannerWithAdgextCriteoId: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=320x100&currency=JPY&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.4.0&adgext_criteo_id=criteo-id-test-1234567890&imark=1&tp=https%3A%2F%2Fexample.com`,
-      bannerWithAdgextId5Id: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=320x100&currency=JPY&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.4.0&adgext_id5_id=id5-id-test-1234567890&imark=1&tp=https%3A%2F%2Fexample.com`,
+      bannerWithAdgextId5Id: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=320x100&currency=JPY&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.4.0&adgext_id5_id=id5-id-test-1234567890&adgext_id5_id_link_type=2&imark=1&tp=https%3A%2F%2Fexample.com`,
     };
     it('sends bid request to ENDPOINT via GET', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
