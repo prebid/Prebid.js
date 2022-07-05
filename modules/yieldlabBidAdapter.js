@@ -49,6 +49,9 @@ export const spec = {
       if (sizes.length > 0) {
         adslotSizes.push(bid.params.adslotId + ':' + sizes.join('|'))
       }
+      if (bid.params.extId) {
+        query.id = bid.params.extId;
+      }
       if (bid.params.targeting) {
         query.t = createTargetingString(bid.params.targeting)
       }
@@ -165,6 +168,7 @@ export const spec = {
         }
 
         if (isNative(bidRequest, adType)) {
+          // there may be publishers still rely on it
           const url = `${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/?ts=${timestamp}${extId}${gdprApplies}${gdprConsent}${pvId}`
           bidResponse.adUrl = url
           bidResponse.mediaType = NATIVE

@@ -133,25 +133,47 @@ describe('Missena Adapter', function () {
   });
 
   describe('getUserSyncs', function () {
-    const expectedUserSyncs = [
-      { type: 'iframe', url: 'https://sync.missena.io/iframe' },
-    ];
-    const serverResponses = [];
+    const syncFrameUrl = 'https://sync.missena.io/iframe';
+    const consentString = 'sampleString';
+    const iframeEnabledOptions = {
+      iframeEnabled: true,
+    };
+    const iframeDisabledOptions = {
+      iframeEnabled: false,
+    };
 
     it('should return userSync when iframeEnabled', function () {
-      const syncOptions = {
-        iframeEnabled: true,
-      };
-      const userSyncs = spec.getUserSyncs(syncOptions, serverResponses);
-      expect(userSyncs).to.deep.equal(expectedUserSyncs);
+      const userSync = spec.getUserSyncs(iframeEnabledOptions, []);
+
+      expect(userSync.length).to.be.equal(1);
+      expect(userSync[0].type).to.be.equal('iframe');
+      expect(userSync[0].url).to.be.equal(syncFrameUrl);
     });
 
     it('should return empty array when iframeEnabled is false', function () {
-      const syncOptions = {
-        iframeEnabled: false,
-      };
-      const userSyncs = spec.getUserSyncs(syncOptions, serverResponses);
-      expect(userSyncs).to.deep.equal([]);
+      const userSync = spec.getUserSyncs(iframeDisabledOptions, []);
+      expect(userSync.length).to.be.equal(0);
+    });
+
+    it('sync frame url should contain gdpr data when present', function () {
+      const userSync = spec.getUserSyncs(iframeEnabledOptions, [], {
+        gdprApplies: true,
+        consentString,
+      });
+      const expectedUrl = `${syncFrameUrl}?gdpr=1&gdpr_consent=${consentString}`;
+      expect(userSync.length).to.be.equal(1);
+      expect(userSync[0].type).to.be.equal('iframe');
+      expect(userSync[0].url).to.be.equal(expectedUrl);
+    });
+    it('sync frame url should contain gdpr data when present (gdprApplies false)', function () {
+      const userSync = spec.getUserSyncs(iframeEnabledOptions, [], {
+        gdprApplies: false,
+        consentString,
+      });
+      const expectedUrl = `${syncFrameUrl}?gdpr=0&gdpr_consent=${consentString}`;
+      expect(userSync.length).to.be.equal(1);
+      expect(userSync[0].type).to.be.equal('iframe');
+      expect(userSync[0].url).to.be.equal(expectedUrl);
     });
   });
 });

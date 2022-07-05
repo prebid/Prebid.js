@@ -91,7 +91,7 @@ module.exports = {
   },
   getLibraryFiles(name) {
     const library = libraries[name];
-    const files = library.files.map(file => require.resolve(file, {paths: ['./libraries/' + name + '/']}));
+    const files = library.files.map((file) => path.resolve('./libraries/', name, file))
     return files;
   },
   isLibrary(name) {
