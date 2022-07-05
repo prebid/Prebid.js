@@ -27,7 +27,8 @@ const AUDIENCE_IDS = [
   {type: 7, bidKey: 'userId.id5id.uid'},
   {type: 8, bidKey: 'userId.tdid'},
   {type: 9, bidKey: 'userId.novatiq.snowflake'},
-  {type: 10, bidKey: 'userId.parrableId.eid'}
+  {type: 10, bidKey: 'userId.parrableId.eid'},
+  {type: 11, bidKey: 'userId.dacId.id'}
 ]
 
 function createCBT() {

@@ -370,6 +370,21 @@ describe('microadBidAdapter', () => {
         );
       })
     });
+
+    it('should add AudienceOne User ID if it is available in request parameters', () => {
+      const bidRequestWithNovatiq = Object.assign({}, bidRequestTemplate, {
+        userId: {dacId: {id: 'audiece-one-id-sample'}}
+      });
+      const requests = spec.buildRequests([bidRequestWithNovatiq], bidderRequest)
+      requests.forEach(request => {
+        expect(request.data).to.deep.equal(
+          Object.assign({}, expectedResultTemplate, {
+            cbt: request.data.cbt,
+            aids: [{type: 11, id: 'audiece-one-id-sample'}]
+          })
+        );
+      })
+    });
   });
 
   describe('interpretResponse', () => {
