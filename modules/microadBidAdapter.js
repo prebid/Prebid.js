@@ -28,7 +28,8 @@ const AUDIENCE_IDS = [
   {type: 8, bidKey: 'userId.tdid'},
   {type: 9, bidKey: 'userId.novatiq.snowflake'},
   {type: 10, bidKey: 'userId.parrableId.eid'},
-  {type: 11, bidKey: 'userId.dacId.id'}
+  {type: 11, bidKey: 'userId.dacId.id'},
+  {type: 12, bidKey: 'userId.idl_env'}
 ]
 
 function createCBT() {
@@ -92,18 +93,18 @@ export const spec = {
         }
       }
 
-      const idlEnv = deepAccess(bid, 'userId.idl_env')
-      if (!isEmpty(idlEnv) && isStr(idlEnv)) {
-        params['idl_env'] = idlEnv
-      }
-
+      const aidsParams = []
       AUDIENCE_IDS.forEach((audienceId) => {
         const bidAudienceId = deepAccess(bid, audienceId.bidKey);
         if (!isEmpty(bidAudienceId) && isStr(bidAudienceId)) {
-          params['aids'] = params['aids'] || []
-          params['aids'].push({ type: audienceId.type, id: bidAudienceId })
+          aidsParams.push({ type: audienceId.type, id: bidAudienceId });
+          // Set Ramp ID
+          if (audienceId.type === 12) params['idl_env'] = bidAudienceId;
         }
       })
+      if (aidsParams.length > 0) {
+        params['aids'] = JSON.stringify(aidsParams)
+      }
 
       requests.push({
         method: 'GET',

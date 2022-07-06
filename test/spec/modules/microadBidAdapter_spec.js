@@ -266,27 +266,11 @@ describe('microadBidAdapter', () => {
       });
     });
 
-    it('should add Liveramp identity link if it is available in request parameters', () => {
-      const bidRequestWithLiveramp = Object.assign({}, bidRequestTemplate, {
-        userId: {idl_env: 'idl-env-sample'}
-      });
-      const requests = spec.buildRequests([bidRequestWithLiveramp], bidderRequest)
-      requests.forEach(request => {
-        expect(request.data).to.deep.equal(
-          Object.assign({}, expectedResultTemplate, {
-            cbt: request.data.cbt,
-            idl_env: 'idl-env-sample'
-          })
-        );
-      })
-    });
-
     it('should not add Liveramp identity link and Audience ID if it is not available in request parameters', () => {
       const bidRequestWithLiveramp = Object.assign({}, bidRequestTemplate, {
         userId: {}
       });
       const requests = spec.buildRequests([bidRequestWithLiveramp], bidderRequest)
-      const expectedResult = Object.assign({}, expectedResultTemplate)
       requests.forEach(request => {
         expect(request.data).to.deep.equal(
           Object.assign({}, expectedResultTemplate, {
@@ -299,27 +283,31 @@ describe('microadBidAdapter', () => {
     Object.entries({
       'IM-UID': {
         userId: {imuid: 'imuid-sample'},
-        expected: [{type: 6, id: 'imuid-sample'}]
+        expected: {aids: JSON.stringify([{type: 6, id: 'imuid-sample'}])}
       },
       'ID5 ID': {
         userId: {id5id: {uid: 'id5id-sample'}},
-        expected: [{type: 7, id: 'id5id-sample'}]
+        expected: {aids: JSON.stringify([{type: 7, id: 'id5id-sample'}])}
       },
       'Unified ID': {
         userId: {tdid: 'unified-sample'},
-        expected: [{type: 8, id: 'unified-sample'}]
+        expected: {aids: JSON.stringify([{type: 8, id: 'unified-sample'}])}
       },
       'Novatiq Snowflake ID': {
         userId: {novatiq: {snowflake: 'novatiq-sample'}},
-        expected: [{type: 9, id: 'novatiq-sample'}]
+        expected: {aids: JSON.stringify([{type: 9, id: 'novatiq-sample'}])}
       },
       'Parrable ID': {
         userId: {parrableId: {eid: 'parrable-sample'}},
-        expected: [{type: 10, id: 'parrable-sample'}]
+        expected: {aids: JSON.stringify([{type: 10, id: 'parrable-sample'}])}
       },
       'AudienceOne User ID': {
         userId: {dacId: {id: 'audience-one-sample'}},
-        expected: [{type: 11, id: 'audience-one-sample'}]
+        expected: {aids: JSON.stringify([{type: 11, id: 'audience-one-sample'}])}
+      },
+      'Ramp ID and Liveramp identity': {
+        userId: {idl_env: 'idl-env-sample'},
+        expected: {idl_env: 'idl-env-sample', aids: JSON.stringify([{type: 12, id: 'idl-env-sample'}])}
       }
     }).forEach(([test, arg]) => {
       it(`should add ${test} if it is available in request parameters`, () => {
@@ -329,7 +317,7 @@ describe('microadBidAdapter', () => {
           expect(request.data).to.deep.equal({
             ...expectedResultTemplate,
             cbt: request.data.cbt,
-            aids: arg.expected
+            ...arg.expected
           })
         })
       })
