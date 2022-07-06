@@ -8,6 +8,7 @@ import { uspDataHandler } from 'src/adapterManager.js';
 import { init, requestBidsHook, setSubmoduleRegistry } from 'modules/userId/index.js';
 import { parrableIdSubmodule } from 'modules/parrableIdSystem.js';
 import { server } from 'test/mocks/xhr.js';
+import {mockGdprConsent} from '../../helpers/consentData.js';
 
 const storage = newStorageManager();
 
@@ -95,6 +96,12 @@ function decodeBase64UrlSafe(encBase64) {
 }
 
 describe('Parrable ID System', function() {
+  after(() => {
+    // reset ID system to avoid delayed callbacks in other tests
+    config.resetConfig();
+    init(config);
+  });
+
   describe('parrableIdSystem.getId()', function() {
     describe('response callback function', function() {
       let logErrorStub;
@@ -127,7 +134,7 @@ describe('Parrable ID System', function() {
         expect(data).to.deep.equal({
           eid: P_COOKIE_EID,
           trackers: P_CONFIG_MOCK.params.partners.split(','),
-          url: getRefererInfo().referer,
+          url: getRefererInfo().page,
           prebidVersion: '$prebid.version$',
           isIframe: true
         });
@@ -639,18 +646,22 @@ describe('Parrable ID System', function() {
 
   describe('userId requestBids hook', function() {
     let adUnits;
+    let sandbox;
 
     beforeEach(function() {
+      sandbox = sinon.sandbox.create();
+      mockGdprConsent(sandbox);
       adUnits = [getAdUnitMock()];
       writeParrableCookie({ eid: P_COOKIE_EID, ibaOptout: true });
-      setSubmoduleRegistry([parrableIdSubmodule]);
       init(config);
+      setSubmoduleRegistry([parrableIdSubmodule]);
       config.setConfig(getConfigMock());
     });
 
     afterEach(function() {
       removeParrableCookie();
       storage.setCookie(P_COOKIE_NAME, '', EXPIRED_COOKIE_DATE);
+      sandbox.restore();
     });
 
     it('when a stored Parrable ID exists it is added to bids', function(done) {

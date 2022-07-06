@@ -387,6 +387,45 @@ describe('33acrossBidAdapter:', function () {
 
   describe('isBidRequestValid:', function() {
     context('basic validation', function() {
+      it('returns true for valid bidder name values', function() {
+        const validBidderName = [
+          '33across',
+          '33across_mgni'
+        ];
+
+        validBidderName.forEach((bidderName) => {
+          const bid = {
+            bidder: bidderName,
+            params: {
+              siteId: 'sample33xGUID123456789'
+            }
+          };
+
+          expect(spec.isBidRequestValid(bid)).to.be.true;
+        });
+      });
+
+      it('returns false for invalid bidder name values', function() {
+        const invalidBidderName = [
+          undefined,
+          '33',
+          '33x',
+          'thirtythree',
+          ''
+        ];
+
+        invalidBidderName.forEach((bidderName) => {
+          const bid = {
+            bidder: bidderName,
+            params: {
+              siteId: 'sample33xGUID123456789'
+            }
+          };
+
+          expect(spec.isBidRequestValid(bid)).to.be.false;
+        });
+      });
+
       it('returns true for valid guid values', function() {
         // NOTE: We ignore whitespace at the start and end since
         // in our experience these are common typos
@@ -919,7 +958,7 @@ describe('33acrossBidAdapter:', function () {
       it('returns corresponding server requests with site.page set', function() {
         const bidderRequest = {
           refererInfo: {
-            referer: 'http://foo.com/bar'
+            page: 'http://foo.com/bar'
           }
         };
 

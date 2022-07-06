@@ -561,38 +561,33 @@ describe('mediakeysBidAdapter', function () {
       });
 
       it('should set properties at payload level from FPD', function() {
-        sandbox.stub(config, 'getConfig').callsFake(key => {
-          const config = {
-            ortb2: {
-              site: {
-                domain: 'domain.example',
-                cat: ['IAB12'],
-                ext: {
-                  data: {
-                    category: 'sport',
-                  }
-                }
-              },
-              user: {
-                yob: 1985,
-                gender: 'm',
-                geo: {
-                  country: 'FR',
-                  city: 'Marseille'
-                },
-                ext: {
-                  data: {
-                    registered: true
-                  }
-                }
+        const ortb2 = {
+          site: {
+            domain: 'domain.example',
+            cat: ['IAB12'],
+            ext: {
+              data: {
+                category: 'sport',
               }
             }
-          };
-          return utils.deepAccess(config, key);
-        });
+          },
+          user: {
+            yob: 1985,
+            gender: 'm',
+            geo: {
+              country: 'FR',
+              city: 'Marseille'
+            },
+            ext: {
+              data: {
+                registered: true
+              }
+            }
+          }
+        };
 
         const bidRequests = [utils.deepClone(bid)];
-        const request = spec.buildRequests(bidRequests, bidderRequest);
+        const request = spec.buildRequests(bidRequests, {...bidderRequest, ortb2});
         const data = request.data;
         expect(data.site.domain).to.equal('domain.example');
         expect(data.site.cat[0]).to.equal('IAB12');

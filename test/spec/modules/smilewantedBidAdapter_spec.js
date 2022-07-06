@@ -163,7 +163,7 @@ describe('smilewantedBidAdapterTests', function () {
   it('SmileWanted - Verify build request with referrer', function () {
     const request = spec.buildRequests(DISPLAY_REQUEST, {
       refererInfo: {
-        referer: 'https://localhost/Prebid.js/integrationExamples/gpt/hello_world.html'
+        page: 'https://localhost/Prebid.js/integrationExamples/gpt/hello_world.html'
       }
     });
     const requestContent = JSON.parse(request[0].data);

@@ -2,8 +2,7 @@ import { logError } from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-
-const CONSTANTS = require('../src/constants.json');
+import CONSTANTS from '../src/constants.json';
 
 const analyticsType = 'endpoint';
 const EPL_HOST = 'https://ads.us.e-planning.net/hba/1/';

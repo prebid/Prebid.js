@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import * as events from 'src/events.js';
 import CONSTANTS from 'src/constants.json';
 import { server } from 'test/mocks/xhr.js';
+import {disableAjaxForAnalytics, enableAjaxForAnalytics} from '../mocks/analyticsStub.js';
 
 const REQUEST_BIDS = CONSTANTS.EVENTS.REQUEST_BIDS;
 const BID_REQUESTED = CONSTANTS.EVENTS.BID_REQUESTED;
@@ -25,6 +26,9 @@ FEATURE: Analytics Adapters API
     AND an  \`example\` instance of \`AnalyticsAdapter\`\n`, () => {
   let adapter;
 
+  before(enableAjaxForAnalytics);
+  after(disableAjaxForAnalytics);
+
   beforeEach(function () {
     adapter = new AnalyticsAdapter(config);
   });
@@ -32,6 +36,14 @@ FEATURE: Analytics Adapters API
   afterEach(function () {
     adapter.disableAnalytics();
   });
+
+  it('should track enable status in `enabled`', () => {
+    expect(adapter.enabled).to.equal(false);
+    adapter.enableAnalytics();
+    expect(adapter.enabled).to.equal(true);
+    adapter.disableAnalytics();
+    expect(adapter.enabled).to.equal(false);
+  })
 
   it(`SHOULD call the endpoint WHEN an event occurs that is to be tracked`, function () {
     const eventType = BID_REQUESTED;
