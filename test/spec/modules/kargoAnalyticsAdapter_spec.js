@@ -27,7 +27,7 @@ describe('Kargo Analytics Adapter', function () {
       const bidResponse = {
         bidder: 'kargo',
         auctionId: '66529d4c-8998-47c2-ab3e-5b953490b98f',
-        timeToResponse: 192,
+        timeToRespond: 192,
       };
 
       events.emit(constants.EVENTS.AUCTION_INIT, {
