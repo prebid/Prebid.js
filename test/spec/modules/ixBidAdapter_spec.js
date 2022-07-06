@@ -677,18 +677,109 @@ describe('IndexexchangeAdapter', function () {
       const syncOptions = {
         'iframeEnabled': true
       }
-      let userSync = spec.getUserSyncs(syncOptions);
+      let userSync = spec.getUserSyncs(syncOptions, []);
       expect(userSync[0].type).to.equal('iframe');
       const USER_SYNC_URL = 'https://js-sec.indexww.com/um/ixmatch.html';
       expect(userSync[0].url).to.equal(USER_SYNC_URL);
     });
 
-    it('When iframeEnabled is false, no userSync should be returned', function () {
+    it('When iframeEnabled = false, default to img', function () {
       const syncOptions = {
-        'iframeEnabled': false
+        'iframeEnabled': false,
       }
-      let userSync = spec.getUserSyncs(syncOptions);
-      expect(userSync).to.be.an('array').that.is.empty;
+      let userSync = spec.getUserSyncs(syncOptions, []);
+      expect(userSync[0].type).to.equal('image');
+      const USER_SYNC_URL = 'https://dsum.casalemedia.com/pbusermatch?origin=prebid&site_id=123&p=1&i=0&gdpr=1&gdpr_consent=3huaa11=qu3198ae&us_privacy=';
+      expect(userSync[0].url).to.equal(USER_SYNC_URL);
+    });
+
+    it('UserSync test : check type = pixel, check usermatch URL, no exchange data, only drop 1', function () {
+      const syncOptions = {
+        'pixelEnabled': true
+      }
+      config.setConfig({
+        userSync: {
+          pixelEnabled: true,
+          syncsPerBidder: 3
+        }
+      })
+      let userSync = spec.getUserSyncs(syncOptions, []);
+      expect(userSync[0].type).to.equal('image');
+      const USER_SYNC_URL = 'https://dsum.casalemedia.com/pbusermatch?origin=prebid&site_id=123&p=1&i=0&gdpr=1&gdpr_consent=3huaa11=qu3198ae&us_privacy=';
+      expect(userSync[0].url).to.equal(USER_SYNC_URL);
+    });
+
+    it('UserSync test : check type = pixel, check usermatch URL with override set to 0', function () {
+      const syncOptions = {
+        'pixelEnabled': true
+      }
+      config.setConfig({
+        userSync: {
+          pixelEnabled: true,
+          syncsPerBidder: 3
+        }
+      });
+      let userSync = spec.getUserSyncs(syncOptions, [{'body': {'ext': {'publishersyncsperbidderoverride': 0}}}]);
+      expect(userSync.length).to.equal(0);
+    });
+
+    it('UserSync test : check type = pixel, check usermatch URL with override set', function () {
+      const syncOptions = {
+        'pixelEnabled': true
+      }
+      config.setConfig({
+        userSync: {
+          pixelEnabled: true,
+          syncsPerBidder: 3
+        }
+      });
+      let userSync = spec.getUserSyncs(syncOptions, [{'body': {'ext': {'publishersyncsperbidderoverride': 2}}}]);
+      expect(userSync[0].type).to.equal('image');
+      const USER_SYNC_URL_0 = 'https://dsum.casalemedia.com/pbusermatch?origin=prebid&site_id=123&p=2&i=0&gdpr=1&gdpr_consent=3huaa11=qu3198ae&us_privacy=';
+      const USER_SYNC_URL_1 = 'https://dsum.casalemedia.com/pbusermatch?origin=prebid&site_id=123&p=2&i=1&gdpr=1&gdpr_consent=3huaa11=qu3198ae&us_privacy=';
+      expect(userSync[0].url).to.equal(USER_SYNC_URL_0);
+      expect(userSync[1].url).to.equal(USER_SYNC_URL_1);
+      expect(userSync.length).to.equal(2);
+    });
+
+    it('UserSync test : check type = pixel, check usermatch URL with override greater than publisher syncs per bidder , use syncsperbidder', function () {
+      const syncOptions = {
+        'pixelEnabled': true
+      }
+      config.setConfig({
+        userSync: {
+          pixelEnabled: true,
+          syncsPerBidder: 3
+        }
+      });
+      let userSync = spec.getUserSyncs(syncOptions, [{'body': {'ext': {'publishersyncsperbidderoverride': 4}}}]);
+      expect(userSync[0].type).to.equal('image');
+      const USER_SYNC_URL_0 = 'https://dsum.casalemedia.com/pbusermatch?origin=prebid&site_id=123&p=3&i=0&gdpr=1&gdpr_consent=3huaa11=qu3198ae&us_privacy=';
+      const USER_SYNC_URL_1 = 'https://dsum.casalemedia.com/pbusermatch?origin=prebid&site_id=123&p=3&i=1&gdpr=1&gdpr_consent=3huaa11=qu3198ae&us_privacy=';
+      const USER_SYNC_URL_2 = 'https://dsum.casalemedia.com/pbusermatch?origin=prebid&site_id=123&p=3&i=2&gdpr=1&gdpr_consent=3huaa11=qu3198ae&us_privacy=';
+      expect(userSync[0].url).to.equal(USER_SYNC_URL_0);
+      expect(userSync[1].url).to.equal(USER_SYNC_URL_1);
+      expect(userSync[2].url).to.equal(USER_SYNC_URL_2);
+      expect(userSync.length).to.equal(3);
+    });
+
+    it('UserSync test : check type = pixel, syncsPerBidder = 0, still use override', function () {
+      const syncOptions = {
+        'pixelEnabled': true
+      }
+      config.setConfig({
+        userSync: {
+          pixelEnabled: true,
+          syncsPerBidder: 0
+        }
+      });
+      let userSync = spec.getUserSyncs(syncOptions, [{'body': {'ext': {'publishersyncsperbidderoverride': 2}}}]);
+      expect(userSync[0].type).to.equal('image');
+      const USER_SYNC_URL_0 = 'https://dsum.casalemedia.com/pbusermatch?origin=prebid&site_id=123&p=2&i=0&gdpr=1&gdpr_consent=3huaa11=qu3198ae&us_privacy=';
+      const USER_SYNC_URL_1 = 'https://dsum.casalemedia.com/pbusermatch?origin=prebid&site_id=123&p=2&i=1&gdpr=1&gdpr_consent=3huaa11=qu3198ae&us_privacy=';
+      expect(userSync[0].url).to.equal(USER_SYNC_URL_0);
+      expect(userSync[1].url).to.equal(USER_SYNC_URL_1);
+      expect(userSync.length).to.equal(2);
     });
   });
 
