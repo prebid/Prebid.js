@@ -10,7 +10,8 @@ import {submodule} from '../src/hook.js';
 import { coppaDataHandler } from '../src/adapterManager.js';
 import {getStorageManager} from '../src/storageManager.js';
 
-export const storage = getStorageManager({moduleName: 'pubCommonId'});
+const GVLID = 887;
+export const storage = getStorageManager({gvlid: GVLID, moduleName: 'pubCommonId'});
 const COOKIE = 'cookie';
 const LOCAL_STORAGE = 'html5';
 const OPTOUT_NAME = '_pubcid_optout';
@@ -73,6 +74,11 @@ export const sharedIdSystemSubmodule = {
    */
   name: 'sharedId',
   aliasName: 'pubCommonId',
+  /**
+   * Vendor id of prebid
+   * @type {Number}
+   */
+  gvlid: GVLID,
 
   /**
    * decode the stored id value for passing to bid requests
