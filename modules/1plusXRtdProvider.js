@@ -11,7 +11,6 @@ import {
 const REAL_TIME_MODULE = 'realTimeData';
 const MODULE_NAME = '1plusX';
 const PAPI_VERSION = 'v1.0';
-const SUPPORTED_BIDDERS = ['appnexus', 'rubicon'];
 const LOG_PREFIX = '[1plusX RTD Module]: ';
 // Functions
 /**
@@ -43,12 +42,9 @@ export const extractConfig = (moduleConfig, reqBidsConfigObj) => {
     throw new Error('Missing parameter bidders in bidRequestConfig');
   }
 
-  const bidders = biddersTemp.filter(
-    bidder =>
-      SUPPORTED_BIDDERS.includes(bidder) && adUnitBidders.includes(bidder)
-  );
+  const bidders = biddersTemp.filter(bidder => adUnitBidders.includes(bidder));
   if (!bidders.length) {
-    throw new Error('No supported bidder found in config parameter bidders');
+    throw new Error('No bidRequestConfig bidder found in moduleConfig bidders');
   }
 
   return { customerId, timeout, bidders };
@@ -117,9 +113,6 @@ export const buildOrtb2Updates = ({ segments = [], topics = [] }) => {
  * @returns {Object} Updated bidder config
  */
 export const updateBidderConfig = (bidder, ortb2Updates, bidderConfigs) => {
-  if (!SUPPORTED_BIDDERS.includes(bidder)) {
-    return null;
-  }
   const { site, userData } = ortb2Updates;
   const bidderConfigCopy = mergeDeep({}, bidderConfigs[bidder]);
 
