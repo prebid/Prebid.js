@@ -14,5 +14,6 @@
     "improvedigitalBidAdapter",
     "currency",
     "schain",
-    "marfeelAnalyticsAdapter"
+    "marfeelAnalyticsAdapter",
+    "seedtagBidAdapter"
 ]
