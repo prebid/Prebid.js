@@ -1,4 +1,17 @@
-import { isStr, _each, parseUrl, getWindowTop, getBidIdParameter } from '../src/utils.js';
+import {
+  _each,
+  createTrackPixelHtml,
+  deepAccess,
+  isStr,
+  getWindowTop,
+  getBidIdParameter,
+  logMessage,
+  parseUrl,
+  triggerPixel,
+} from '../src/utils.js';
+
+import CONSTANTS from '../src/constants.json'
+import * as events from '../src/events.js'
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 
@@ -7,6 +20,12 @@ const ENDPOINT = 'https://pbs.nextmillmedia.com/openrtb2/auction';
 const TEST_ENDPOINT = 'https://test.pbs.nextmillmedia.com/openrtb2/auction';
 const SYNC_ENDPOINT = 'https://statics.nextmillmedia.com/load-cookie.html?v=4';
 const TIME_TO_LIVE = 360;
+
+const EXPIRENCE_WURL = 20 * 60000
+const wurlMap = {}
+
+events.on(CONSTANTS.EVENTS.BID_WON, bidWonHandler)
+cleanWurl()
 
 export const spec = {
   code: BIDDER_CODE,
@@ -24,8 +43,11 @@ export const spec = {
 
     _each(validBidRequests, function(bid) {
       window.nmmRefreshCounts[bid.adUnitCode] = window.nmmRefreshCounts[bid.adUnitCode] || 0;
+      const auctionId = bid.auctionId
+      const bidId = bid.bidId
+
       const postBody = {
-        'id': bid.auctionId,
+        'id': auctionId,
         'ext': {
           'prebid': {
             'storedrequest': {
@@ -73,7 +95,9 @@ export const spec = {
           contentType: 'application/json',
           withCredentials: true
         },
-        bidId: bid.bidId
+
+        bidId,
+        auctionId,
       });
     });
 
@@ -86,11 +110,20 @@ export const spec = {
 
     _each(response.seatbid, (resp) => {
       _each(resp.bid, (bid) => {
+        const requestId = bidRequest.bidId
+        const auctionId = bidRequest.auctionId
+        const wurl = deepAccess(bid, 'ext.prebid.events.win')
+        addWurl({auctionId, requestId, wurl})
+
+        const {ad, adUrl} = getAd(bid)
+
         bidResponses.push({
-          requestId: bidRequest.bidId,
+          requestId,
           cpm: bid.price,
           width: bid.w,
           height: bid.h,
+          ad,
+          adUrl,
           creativeId: bid.adid,
           currency: response.cur,
           netRevenue: false,
@@ -99,7 +132,6 @@ export const spec = {
             advertiserDomains: bid.adomain || []
           },
 
-          ad: bid.adm
         });
       });
     });
@@ -163,4 +195,65 @@ function getTopWindow(curWindow, nesting = 0) {
   }
 }
 
-registerBidder(spec);
+function getAd(bid) {
+  let ad
+  let adUrl
+
+  if (deepAccess(bid, 'ext.prebid.type') === BANNER) {
+    if (bid.adm && bid.nurl) {
+      ad = bid.adm
+      ad += createTrackPixelHtml(decodeURIComponent(bid.nurl))
+    } else if (bid.adm) {
+      ad = bid.adm
+    } else if (bid.nurl) {
+      adUrl = bid.nurl
+    }
+  }
+
+  return {ad, adUrl}
+}
+
+function getKeyWurl({auctionId, requestId}) {
+  return `${auctionId}-${requestId}`
+}
+
+function addWurl({wurl, requestId, auctionId}) {
+  if (!wurl) return
+
+  const expirence = Date.now() + EXPIRENCE_WURL
+  const key = getKeyWurl({auctionId, requestId})
+  wurlMap[key] = {wurl, expirence}
+}
+
+function removeWurl({auctionId, requestId}) {
+  const key = getKeyWurl({auctionId, requestId})
+  delete wurlMap[key]
+}
+
+function getWurl({auctionId, requestId}) {
+  const key = getKeyWurl({auctionId, requestId})
+  return wurlMap[key] && wurlMap[key].wurl
+}
+
+function bidWonHandler(bid) {
+  const {auctionId, requestId} = bid
+  const wurl = getWurl({auctionId, requestId})
+  if (wurl) {
+    logMessage(`(nextmillennium) Invoking image pixel for wurl on BID_WIN: "${wurl}"`)
+    triggerPixel(wurl)
+    removeWurl({auctionId, requestId})
+  }
+}
+
+function cleanWurl() {
+  const dateNow = Date.now()
+  Object.keys(wurlMap).forEach(key => {
+    if (dateNow >= wurlMap[key].expirence) {
+      delete wurlMap[key]
+    }
+  })
+
+  setTimeout(cleanWurl, 60000)
+}
+
+registerBidder(spec)
