@@ -44,7 +44,7 @@ function handleBidResponseData (bidResponse) {
   }
 
   _logBidResponseData.auctionId = bidResponse.auctionId;
-  _logBidResponseData.responseTime = bidResponse.responseTimestamp - bidResponse.requestTimestamp;
+  _logBidResponseData.responseTime = bidResponse.timeToRespond;
   sendAuctionData(_logBidResponseData);
 }
 
