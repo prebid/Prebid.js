@@ -214,6 +214,10 @@ describe('yieldlabBidAdapter', () => {
       it('passes correct size to bid request', () => {
         expect(request.url).to.include('728x90')
       })
+
+      it('passes external id to bid request', () => {
+        expect(request.url).to.include('id=abc')
+      })
     })
 
     describe('iab_content handling', () => {

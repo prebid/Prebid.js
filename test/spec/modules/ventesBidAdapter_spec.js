@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import * as utils from 'src/utils.js';
 import { spec } from 'modules/ventesBidAdapter.js';
 
-const BIDDER_URL = 'http://13.234.201.146:8088/va/ad';
+const BIDDER_URL = 'https://ad.ventesavenues.in/va/ad';
 
 describe('Ventes Adapter', function () {
   const examples = {
@@ -35,7 +35,7 @@ describe('Ventes Adapter', function () {
 
     serverRequest_banner: {
       method: 'POST',
-      url: 'http://13.234.201.146:8088/va/ad',
+      url: BIDDER_URL,
       data: {
         id: 'bid_request_id',
         imp: [
