@@ -789,9 +789,8 @@ function _buildDeviceORTB() {
         osv,
         ...(model ? { mdl: model } : {}),
         vp: getViewportDimensions(),
-        ah: getWindowSelf().screen.availHeight,
-        mtp: win.navigator.maxTouchPoints,
-        browserv
+        ah: win.screen.availHeight,
+        mtp: win.navigator.maxTouchPoints
       }
     }
   };
