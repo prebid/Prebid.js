@@ -49,7 +49,7 @@ function tryParse(data) {
  * @returns {Site|null} Formatted Site OpenRtb object or null
  */
 function getOpenRTBSiteObject(bidderRequest) {
-  const refererInfo = bidderRequest && bidderRequest.refererInfo || null;
+  const refererInfo = (bidderRequest && bidderRequest.refererInfo) || null;
 
   const domain = refererInfo ? refererInfo.domain : window.location.hostname;
   const publisherId = config.getConfig('adot.publisherId');
