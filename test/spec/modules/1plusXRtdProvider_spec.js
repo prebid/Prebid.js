@@ -8,13 +8,7 @@ import {
 } from 'modules/1plusXRtdProvider';
 
 describe('1plusXRtdProvider', () => {
-  const reqBidsConfigObj = {
-    adUnits: [{
-      bids: [
-        { bidder: 'appnexus' }
-      ]
-    }]
-  };
+  // Fake server config
   let fakeServer;
   const fakeResponseHeaders = {
     'Content-Type': 'application/json',
@@ -25,13 +19,23 @@ describe('1plusXRtdProvider', () => {
     t: ['targeting1', 'targeting2', 'targeting3']
   };
 
+  // Bid request config
+  const reqBidsConfigObj = {
+    adUnits: [{
+      bids: [
+        { bidder: 'appnexus' }
+      ]
+    }]
+  };
+
+  // Bidder configs
   const bidderConfigInitial = {
     ortb2: {
       user: { keywords: '' },
-      site: { content: { data: [] } }
+      site: { ext: {} }
     }
   }
-  const bidderConfigInitialWith1plusXEntry = {
+  const bidderConfigInitialWith1plusXUserData = {
     ortb2: {
       user: {
         data: [{ name: '1plusX.com', segment: [{ id: 'initial' }] }]
@@ -47,6 +51,28 @@ describe('1plusXRtdProvider', () => {
       site: { content: { data: [] } }
     }
   }
+  const bidderConfigInitialWith1plusXSiteContent = {
+    ortb2: {
+      user: { data: [] },
+      site: {
+        content: {
+          data: [{ name: '1plusX.com', segment: [{ id: 'initial' }] }]
+        }
+      },
+    }
+  }
+  const bidderConfigInitialWithSiteContent = {
+    ortb2: {
+      user: { data: [] },
+      site: {
+        content: {
+          data: [{ name: 'hello.world', segment: [{ id: 'initial' }] }]
+        }
+      },
+    }
+  }
+  // Util functions
+  const randomBidder = (len = 5) => Math.random().toString(36).replace(/[^a-z]+/g, '').substring(0, len);
 
   before(() => {
     config.resetConfig();
@@ -145,9 +171,25 @@ describe('1plusXRtdProvider', () => {
   })
 
   describe('buildOrtb2Updates', () => {
-    it('fills site.keywords & user.data in the ortb2 config', () => {
+    it('fills site.content.data & user.data in the ortb2 config', () => {
       const rtdData = { segments: fakeResponse.s, topics: fakeResponse.t };
-      const ortb2Updates = buildOrtb2Updates(rtdData);
+      const ortb2Updates = buildOrtb2Updates(rtdData, randomBidder());
+
+      const expectedOutput = {
+        siteContentData: {
+          name: '1plusX.com',
+          segment: rtdData.topics.map((topicId) => ({ id: topicId }))
+        },
+        userData: {
+          name: '1plusX.com',
+          segment: rtdData.segments.map((segmentId) => ({ id: segmentId }))
+        }
+      }
+      expect([ortb2Updates]).to.deep.include.members([expectedOutput]);
+    });
+    it('fills site.keywords & user.data in the ortb2 config (appnexus specific)', () => {
+      const rtdData = { segments: fakeResponse.s, topics: fakeResponse.t };
+      const ortb2Updates = buildOrtb2Updates(rtdData, 'appnexus');
 
       const expectedOutput = {
         site: {
@@ -163,7 +205,23 @@ describe('1plusXRtdProvider', () => {
 
     it('defaults to empty array if no segment is given', () => {
       const rtdData = { topics: fakeResponse.t };
-      const ortb2Updates = buildOrtb2Updates(rtdData);
+      const ortb2Updates = buildOrtb2Updates(rtdData, randomBidder());
+
+      const expectedOutput = {
+        siteContentData: {
+          name: '1plusX.com',
+          segment: rtdData.topics.map((topicId) => ({ id: topicId }))
+        },
+        userData: {
+          name: '1plusX.com',
+          segment: []
+        }
+      }
+      expect(ortb2Updates).to.deep.include(expectedOutput);
+    })
+    it('defaults to empty array if no segment is given (appnexus specific)', () => {
+      const rtdData = { topics: fakeResponse.t };
+      const ortb2Updates = buildOrtb2Updates(rtdData, 'appnexus');
 
       const expectedOutput = {
         site: {
@@ -177,9 +235,25 @@ describe('1plusXRtdProvider', () => {
       expect(ortb2Updates).to.deep.include(expectedOutput);
     })
 
-    it('defaults to empty string if no topic is given', () => {
+    it('defaults to empty array if no topic is given', () => {
       const rtdData = { segments: fakeResponse.s };
-      const ortb2Updates = buildOrtb2Updates(rtdData);
+      const ortb2Updates = buildOrtb2Updates(rtdData, randomBidder());
+
+      const expectedOutput = {
+        siteContentData: {
+          name: '1plusX.com',
+          segment: []
+        },
+        userData: {
+          name: '1plusX.com',
+          segment: rtdData.segments.map((segmentId) => ({ id: segmentId }))
+        }
+      }
+      expect(ortb2Updates).to.deep.include(expectedOutput);
+    })
+    it('defaults to empty string if no topic is given (appnexus specific)', () => {
+      const rtdData = { segments: fakeResponse.s };
+      const ortb2Updates = buildOrtb2Updates(rtdData, 'appnexus');
 
       const expectedOutput = {
         site: {
@@ -195,7 +269,7 @@ describe('1plusXRtdProvider', () => {
   })
 
   describe('updateBidderConfig', () => {
-    const ortb2Updates = {
+    const ortb2UpdatesAppNexus = {
       site: {
         keywords: fakeResponse.t.join(','),
       },
@@ -204,9 +278,19 @@ describe('1plusXRtdProvider', () => {
         segment: fakeResponse.s.map((segmentId) => ({ id: segmentId }))
       }
     }
+    const ortb2Updates = {
+      siteContentData: {
+        name: '1plusX.com',
+        segment: fakeResponse.t.map((topicId) => ({ id: topicId }))
+      },
+      userData: {
+        name: '1plusX.com',
+        segment: fakeResponse.s.map((segmentId) => ({ id: segmentId }))
+      }
+    }
 
     it('merges fetched data in bidderConfig for configured bidders', () => {
-      const bidder = 'rubicon';
+      const bidder = randomBidder();
       // Set initial config
       config.setBidderConfig({
         bidders: [bidder],
@@ -216,7 +300,7 @@ describe('1plusXRtdProvider', () => {
       const newBidderConfig = updateBidderConfig(bidder, ortb2Updates, config.getBidderConfig());
       // Check that the targeting data has been set in the config
       expect(newBidderConfig).not.to.be.null;
-      expect(newBidderConfig.ortb2.site).to.deep.include(ortb2Updates.site);
+      expect(newBidderConfig.ortb2.site.content.data).to.deep.include(ortb2Updates.siteContentData);
       expect(newBidderConfig.ortb2.user.data).to.deep.include(ortb2Updates.userData);
       // Check that existing config didn't get erased
       expect(newBidderConfig.ortb2.site).to.deep.include(bidderConfigInitial.ortb2.site);
@@ -231,26 +315,26 @@ describe('1plusXRtdProvider', () => {
         config: bidderConfigInitial
       });
       // Call submodule's setBidderConfig
-      const newBidderConfig = updateBidderConfig(bidder, ortb2Updates, config.getBidderConfig());
+      const newBidderConfig = updateBidderConfig(bidder, ortb2UpdatesAppNexus, config.getBidderConfig());
 
       // Check that the targeting data has been set in the config
       expect(newBidderConfig).not.to.be.null;
-      expect(newBidderConfig.ortb2.site).to.deep.include(ortb2Updates.site);
-      expect(newBidderConfig.ortb2.user.data).to.deep.include(ortb2Updates.userData);
+      expect(newBidderConfig.ortb2.site).to.deep.include(ortb2UpdatesAppNexus.site);
+      expect(newBidderConfig.ortb2.user.data).to.deep.include(ortb2UpdatesAppNexus.userData);
       // Check that existing config didn't get erased
       expect(newBidderConfig.ortb2.site).to.deep.include(bidderConfigInitial.ortb2.site);
       expect(newBidderConfig.ortb2.user).to.deep.include(bidderConfigInitial.ortb2.user);
     })
 
     it('overwrites an existing 1plus.com entry in ortb2.user.data', () => {
-      const bidder = 'appnexus';
+      const bidder = randomBidder();
       // Set initial config
       config.setBidderConfig({
         bidders: [bidder],
-        config: bidderConfigInitialWith1plusXEntry
+        config: bidderConfigInitialWith1plusXUserData
       });
       // Save previous user.data entry
-      const previousUserData = bidderConfigInitialWithUserData.ortb2.user.data[0]
+      const previousUserData = bidderConfigInitialWith1plusXUserData.ortb2.user.data[0];
       // Call submodule's setBidderConfig
       const newBidderConfig = updateBidderConfig(bidder, ortb2Updates, config.getBidderConfig());
       // Check that the targeting data has been set in the config
@@ -258,16 +342,15 @@ describe('1plusXRtdProvider', () => {
       expect(newBidderConfig.ortb2.user.data).to.deep.include(ortb2Updates.userData);
       expect(newBidderConfig.ortb2.user.data).not.to.include(previousUserData);
     })
-
     it("doesn't overwrite entries in ortb2.user.data that aren't 1plusx.com", () => {
-      const bidder = 'appnexus';
+      const bidder = randomBidder();
       // Set initial config
       config.setBidderConfig({
         bidders: [bidder],
         config: bidderConfigInitialWithUserData
       });
       // Save previous user.data entry
-      const previousUserData = bidderConfigInitialWithUserData.ortb2.user.data[0]
+      const previousUserData = bidderConfigInitialWithUserData.ortb2.user.data[0];
       // Call submodule's setBidderConfig
       const newBidderConfig = updateBidderConfig(bidder, ortb2Updates, config.getBidderConfig());
       // Check that the targeting data has been set in the config
@@ -275,18 +358,63 @@ describe('1plusXRtdProvider', () => {
       expect(newBidderConfig.ortb2.user.data).to.deep.include(ortb2Updates.userData);
       expect(newBidderConfig.ortb2.user.data).to.deep.include(previousUserData);
     })
+
+    it('overwrites an existing 1plus.com entry in ortb2.site.content.data', () => {
+      const bidder = randomBidder();
+      // Set initial config
+      config.setBidderConfig({
+        bidders: [bidder],
+        config: bidderConfigInitialWith1plusXSiteContent
+      });
+      // Save previous user.data entry
+      const previousSiteContent = bidderConfigInitialWith1plusXSiteContent.ortb2.site.content.data[0];
+      // Call submodule's setBidderConfig
+      const newBidderConfig = updateBidderConfig(bidder, ortb2Updates, config.getBidderConfig());
+      // Check that the targeting data has been set in the config
+      expect(newBidderConfig).not.to.be.null;
+      expect(newBidderConfig.ortb2.site.content.data).to.deep.include(ortb2Updates.siteContentData);
+      expect(newBidderConfig.ortb2.site.content.data).not.to.include(previousSiteContent);
+    })
+    it("doesn't overwrite entries in ortb2.site.content.data that aren't 1plusx.com", () => {
+      const bidder = randomBidder();
+      // Set initial config
+      config.setBidderConfig({
+        bidders: [bidder],
+        config: bidderConfigInitialWithSiteContent
+      });
+      // Save previous user.data entry
+      const previousSiteContent = bidderConfigInitialWithSiteContent.ortb2.site.content.data[0];
+      // Call submodule's setBidderConfig
+      const newBidderConfig = updateBidderConfig(bidder, ortb2Updates, config.getBidderConfig());
+      // Check that the targeting data has been set in the config
+      expect(newBidderConfig).not.to.be.null;
+      expect(newBidderConfig.ortb2.site.content.data).to.deep.include(ortb2Updates.siteContentData);
+      expect(newBidderConfig.ortb2.site.content.data).to.deep.include(previousSiteContent);
+    })
   })
 
   describe('setTargetingDataToConfig', () => {
+    const expectedKeywords = fakeResponse.t.join(',');
+    const expectedSiteContentObj = {
+      data: [{
+        name: '1plusX.com',
+        segment: fakeResponse.t.map((topicId) => ({ id: topicId }))
+      }]
+    }
+    const expectedUserObj = {
+      data: [{
+        name: '1plusX.com',
+        segment: fakeResponse.s.map((segmentId) => ({ id: segmentId }))
+      }]
+    }
     const expectedOrtb2 = {
-      site: {
-        keywords: fakeResponse.t.join(',')
+      appnexus: {
+        site: { keywords: expectedKeywords },
+        user: expectedUserObj
       },
-      user: {
-        data: [{
-          name: '1plusX.com',
-          segment: fakeResponse.s.map((segmentId) => ({ id: segmentId }))
-        }]
+      rubicon: {
+        site: { content: expectedSiteContentObj },
+        user: expectedUserObj
       }
     }
 
@@ -303,11 +431,14 @@ describe('1plusXRtdProvider', () => {
       // Check that the targeting data has been set in both configs
       for (const bidder of bidders) {
         const newConfig = config.getBidderConfig()[bidder];
-        expect(newConfig.ortb2.site).to.deep.include(expectedOrtb2.site);
-        expect(newConfig.ortb2.user).to.deep.include(expectedOrtb2.user);
+        // Check that we got what we expect
+        const expectedConfErr = (prop) => `New config for ${bidder} doesn't comply with expected at ${prop}`;
+        expect(newConfig.ortb2.site, expectedConfErr('site')).to.deep.include(expectedOrtb2[bidder].site);
+        expect(newConfig.ortb2.user, expectedConfErr('user')).to.deep.include(expectedOrtb2[bidder].user);
         // Check that existing config didn't get erased
-        expect(newConfig.ortb2.site).to.deep.include(bidderConfigInitial.ortb2.site);
-        expect(newConfig.ortb2.user).to.deep.include(bidderConfigInitial.ortb2.user);
+        const existingConfErr = (prop) => `Existing config for ${bidder} got unlawfully overwritten at ${prop}`;
+        expect(newConfig.ortb2.site, existingConfErr('site')).to.deep.include(bidderConfigInitial.ortb2.site);
+        expect(newConfig.ortb2.user, existingConfErr('user')).to.deep.include(bidderConfigInitial.ortb2.user);
       }
     })
   })

@@ -10,8 +10,10 @@ import {
 // Constants
 const REAL_TIME_MODULE = 'realTimeData';
 const MODULE_NAME = '1plusX';
+const ORTB2_NAME = '1plusX.com'
 const PAPI_VERSION = 'v1.0';
 const LOG_PREFIX = '[1plusX RTD Module]: ';
+const LEGACY_SITE_KEYWORDS_BIDDERS = ['appnexus'];
 // Functions
 /**
  * Extracts the parameters for 1plusX RTD module from the config object passed at instanciation
@@ -94,15 +96,29 @@ const getTargetingDataFromPapi = (papiUrl) => {
  * @param {string[]} topics Represents the topics of the page
  * @returns {Object} Object describing the updates to make on bidder configs
  */
-export const buildOrtb2Updates = ({ segments = [], topics = [] }) => {
+export const buildOrtb2Updates = ({ segments = [], topics = [] }, bidder) => {
+  // Currently appnexus bidAdapter doesn't support topics in `site.content.data.segment`
+  // Therefore, writing them in `site.keywords` until it's supported
+  // Other bidAdapters do fine with `site.content.data.segment`
+  const writeToLegacySiteKeywords = LEGACY_SITE_KEYWORDS_BIDDERS.includes(bidder);
+
   const userData = {
-    name: '1plusX.com',
+    name: ORTB2_NAME,
     segment: segments.map((segmentId) => ({ id: segmentId }))
   };
-  const site = {
-    keywords: topics.join(',')
-  };
-  return { userData, site };
+
+  if (writeToLegacySiteKeywords) {
+    const site = {
+      keywords: topics.join(',')
+    };
+    return { userData, site };
+  } else {
+    const siteContentData = {
+      name: ORTB2_NAME,
+      segment: topics.map((topicId) => ({ id: topicId }))
+    }
+    return { userData, siteContentData };
+  }
 }
 
 /**
@@ -113,20 +129,35 @@ export const buildOrtb2Updates = ({ segments = [], topics = [] }) => {
  * @returns {Object} Updated bidder config
  */
 export const updateBidderConfig = (bidder, ortb2Updates, bidderConfigs) => {
-  const { site, userData } = ortb2Updates;
+  const { site, siteContentData, userData } = ortb2Updates;
   const bidderConfigCopy = mergeDeep({}, bidderConfigs[bidder]);
 
-  const currentSite = deepAccess(bidderConfigCopy, 'ortb2.site')
-  const updatedSite = mergeDeep(currentSite, site);
+  if (site) {
+    // Legacy : cf. comment on buildOrtb2Updates first lines
+    const currentSite = deepAccess(bidderConfigCopy, 'ortb2.site')
+    const updatedSite = mergeDeep(currentSite, site);
+    deepSetValue(bidderConfigCopy, 'ortb2.site', updatedSite);
+  }
 
-  const currentUserData = deepAccess(bidderConfigCopy, 'ortb2.user.data') || [];
-  const updatedUserData = [
-    ...currentUserData.filter(({ name }) => name != userData.name),
-    userData
-  ];
+  if (siteContentData) {
+    const siteDataPath = 'ortb2.site.content.data'
+    const currentSiteContentData = deepAccess(bidderConfigCopy, siteDataPath) || [];
+    const updatedSiteContentData = [
+      ...currentSiteContentData.filter(({ name }) => name != siteContentData.name),
+      siteContentData
+    ];
+    deepSetValue(bidderConfigCopy, siteDataPath, updatedSiteContentData);
+  }
 
-  deepSetValue(bidderConfigCopy, 'ortb2.site', updatedSite);
-  deepSetValue(bidderConfigCopy, 'ortb2.user.data', updatedUserData);
+  if (userData) {
+    const userDataPath = 'ortb2.user.data';
+    const currentUserData = deepAccess(bidderConfigCopy, userDataPath) || [];
+    const updatedUserData = [
+      ...currentUserData.filter(({ name }) => name != userData.name),
+      userData
+    ];
+    deepSetValue(bidderConfigCopy, userDataPath, updatedUserData);
+  }
 
   return bidderConfigCopy;
 };
@@ -140,9 +171,9 @@ export const updateBidderConfig = (bidder, ortb2Updates, bidderConfigs) => {
 export const setTargetingDataToConfig = (papiResponse, { bidders }) => {
   const bidderConfigs = config.getBidderConfig();
   const { s: segments, t: topics } = papiResponse;
-  const ortb2Updates = buildOrtb2Updates({ segments, topics });
 
   for (const bidder of bidders) {
+    const ortb2Updates = buildOrtb2Updates({ segments, topics }, bidder);
     const updatedBidderConfig = updateBidderConfig(bidder, ortb2Updates, bidderConfigs);
     if (updatedBidderConfig) {
       config.setBidderConfig({
