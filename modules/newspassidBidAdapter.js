@@ -1,4 +1,4 @@
-import { logInfo, logError, deepAccess, logWarn, deepSetValue, isArray, contains } from '../src/utils.js';
+import { logInfo, logError, deepAccess, logWarn, deepSetValue, isArray, contains, parseUrl } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
@@ -8,7 +8,7 @@ const BIDDER_CODE = 'newspassid';
 const ORIGIN = 'https://bidder.newspassid.com' // applies only to auction & cookie
 const AUCTIONURI = '/openrtb2/auction';
 const NEWSPASSCOOKIESYNC = '/static/load-cookie.html';
-const NEWSPASSVERSION = '1.0.0';
+const NEWSPASSVERSION = '1.1.0';
 export const spec = {
   version: NEWSPASSVERSION,
   code: BIDDER_CODE,
@@ -137,7 +137,13 @@ export const spec = {
     singleRequest = singleRequest !== false; // undefined & true will be true
     logInfo(`config newspassid.singleRequest : `, singleRequest);
     let npRequest = {}; // we only want to set specific properties on this, not validBidRequests[0].params
-    delete npRequest.test; // don't allow test to be set in the config - ONLY use $_GET['pbjs_debug']
+    logInfo('going to get ortb2 from bidder request...');
+    let fpd = deepAccess(bidderRequest, 'ortb2', null);
+    logInfo('got fpd: ', fpd);
+    if (fpd && deepAccess(fpd, 'user')) {
+      logInfo('added FPD user object');
+      npRequest.user = fpd.user;
+    }
     const getParams = this.getGetParametersAsObject();
     const isTestMode = getParams['nptestmode'] || null; // this can be any string, it's used for testing ads
     npRequest.device = {'w': window.innerWidth, 'h': window.innerHeight};
@@ -148,7 +154,8 @@ export const spec = {
       let placementId = placementIdOverrideFromGetParam || this.getPlacementId(npBidRequest); // prefer to use a valid override param, else the bidRequest placement Id
       obj.id = npBidRequest.bidId; // this causes an error if we change it to something else, even if you update the bidRequest object: "WARNING: Bidder newspass made bid for unknown request ID: mb7953.859498327448. Ignoring."
       obj.tagid = placementId;
-      obj.secure = window.location.protocol === 'https:' ? 1 : 0;
+      let parsed = parseUrl(getRefererInfo().page);
+      obj.secure = parsed.protocol === 'https' ? 1 : 0;
       let arrBannerSizes = [];
       if (!npBidRequest.hasOwnProperty('mediaTypes')) {
         if (npBidRequest.hasOwnProperty('sizes')) {
@@ -197,6 +204,14 @@ export const spec = {
           obj.ext['newspassid'].customData[0].targeting['nptestmode'] = isTestMode;
         }
       }
+      if (fpd && deepAccess(fpd, 'site')) {
+        logInfo('adding fpd.site');
+        if (deepAccess(obj, 'ext.newspassid.customData.0.targeting', false)) {
+          obj.ext.newspassid.customData[0].targeting = Object.assign(obj.ext.newspassid.customData[0].targeting, fpd.site);
+        } else {
+          deepSetValue(obj, 'ext.newspassid.customData.0.targeting', fpd.site);
+        }
+      }
       if (!schain && deepAccess(npBidRequest, 'schain')) {
         schain = npBidRequest.schain;
       }
@@ -212,7 +227,7 @@ export const spec = {
         extObj['newspassid'].pubcid = userIds.pubcid;
       }
     }
-    extObj['newspassid'].pv = this.getPageId(); // attach the page ID that will be common to all auciton calls for this page if refresh() is called
+    extObj['newspassid'].pv = this.getPageId(); // attach the page ID that will be common to all auction calls for this page if refresh() is called
     let whitelistAdserverKeys = config.getConfig('newspassid.np_whitelist_adserver_keys');
     let useWhitelistAdserverKeys = isArray(whitelistAdserverKeys) && whitelistAdserverKeys.length > 0;
     extObj['newspassid']['np_kvp_rw'] = useWhitelistAdserverKeys ? 1 : 0;
@@ -227,7 +242,7 @@ export const spec = {
       'page': getRefererInfo().page,
       'id': htmlParams.siteId
     };
-    npRequest.test = (getParams.hasOwnProperty('pbjs_debug') && getParams['pbjs_debug'] === 'true') ? 1 : 0;
+    npRequest.test = config.getConfig('debug') ? 1 : 0;
     if (bidderRequest && bidderRequest.uspConsent) {
       logInfo('ADDING USP consent info');
       deepSetValue(npRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent);
@@ -385,7 +400,7 @@ export const spec = {
     }
     if (optionsType.iframeEnabled) {
       var arrQueryString = [];
-      if (getRefererInfo().page.match(/pbjs_debug=true/)) {
+      if (config.getConfig('debug')) {
         arrQueryString.push('pbjs_debug=true');
       }
       arrQueryString.push('usp_consent=' + (usPrivacy || ''));
@@ -464,7 +479,7 @@ export const spec = {
     let arr = this.getGetParametersAsObject();
     if (arr.hasOwnProperty('npstoredrequest')) {
       if (this.isValidPlacementId(arr['npstoredrequest'])) {
-        logInfo(`using GET ${'np'}storedrequest ` + arr['npstoredrequest'] + ' to replace placementId');
+        logInfo(`using GET npstoredrequest ` + arr['npstoredrequest'] + ' to replace placementId');
         return arr['npstoredrequest'];
       } else {
         logError(`GET npstoredrequest FAILED VALIDATION - will not use it`);
@@ -473,14 +488,9 @@ export const spec = {
     return null;
   },
   getGetParametersAsObject() {
-    let items = location.search.substr(1).split('&');
-    let ret = {};
-    let tmp = null;
-    for (let index = 0; index < items.length; index++) {
-      tmp = items[index].split('=');
-      ret[tmp[0]] = tmp[1];
-    }
-    return ret;
+    let parsed = parseUrl(getRefererInfo().page);
+    logInfo('getGetParametersAsObject found:', parsed.search);
+    return parsed.search;
   },
   blockTheRequest() {
     let npRequest = config.getConfig('newspassid.np_request');
