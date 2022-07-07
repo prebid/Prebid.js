@@ -8,7 +8,7 @@ const BIDDER_CODE = 'newspassid';
 const ORIGIN = 'https://bidder.newspassid.com' // applies only to auction & cookie
 const AUCTIONURI = '/openrtb2/auction';
 const NEWSPASSCOOKIESYNC = '/static/load-cookie.html';
-const NEWSPASSVERSION = '1.1.0';
+const NEWSPASSVERSION = '1.0.1';
 export const spec = {
   version: NEWSPASSVERSION,
   code: BIDDER_CODE,
