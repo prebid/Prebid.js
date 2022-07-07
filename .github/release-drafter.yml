@@ -10,7 +10,8 @@ categories:
     labels:
       - 'fix'
       - 'bugfix'
-      - 'bug'      
+      - 'bug'
+    default: maintenance
 change-template: '- $TITLE (#$NUMBER)'
 version-resolver:
   major:
