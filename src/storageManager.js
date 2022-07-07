@@ -154,11 +154,7 @@ export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = 
   const cookiesAreEnabled = function (done) {
     let cb = function (result) {
       if (result && result.valid) {
-        if (checkCookieSupport()) {
-          return true;
-        }
-        window.document.cookie = 'prebid.cookieTest';
-        return window.document.cookie.indexOf('prebid.cookieTest') !== -1;
+        return checkCookieSupport();
       }
       return false;
     }
