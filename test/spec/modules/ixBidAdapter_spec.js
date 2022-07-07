@@ -3298,7 +3298,7 @@ describe('IndexexchangeAdapter', function () {
           }
         }
       };
-      bid.schain.nodes[0].asi = Array(10375).join('#')
+      bid.schain.nodes[0].asi = Array(10380).join('#')
 
       expect(spec.isBidRequestValid(bid)).to.be.true;
       spec.buildRequests([bid], {ortb2});
