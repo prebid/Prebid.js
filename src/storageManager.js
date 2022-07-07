@@ -1,11 +1,13 @@
 import {hook} from './hook.js';
 import {hasDeviceAccess, checkCookieSupport, logError, logInfo, isPlainObject} from './utils.js';
-import {includes} from './polyfill.js';
 import {bidderSettings as defaultBidderSettings} from './bidderSettings.js';
+import {config} from './config.js';
 
 const moduleTypeWhiteList = ['core', 'prebid-module'];
 
 export let storageCallbacks = [];
+
+export const ALWAYS_ENFORCE = 'alwaysEnforceDeviceAccess';
 
 /**
  * Storage options
@@ -33,8 +35,11 @@ export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = 
     const storageAllowed = bidderSettings.get(bidderCode, 'storageAllowed');
     return storageAllowed == null ? false : storageAllowed;
   }
+
+  const isWhitelisted = moduleTypeWhiteList.includes(moduleType);
+
   function isValid(cb) {
-    if (includes(moduleTypeWhiteList, moduleType)) {
+    if (isWhitelisted && !config.getConfig(ALWAYS_ENFORCE)) {
       let result = {
         valid: true
       }
@@ -48,7 +53,7 @@ export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = 
       let hookDetails = {
         hasEnforcementHook: false
       }
-      validateStorageEnforcement(gvlid, bidderCode || moduleName, hookDetails, function(result) {
+      validateStorageEnforcement(isWhitelisted, gvlid, bidderCode || moduleName, hookDetails, function(result) {
         if (result && result.hasEnforcementHook) {
           value = cb(result);
         } else {
@@ -303,7 +308,7 @@ export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = 
 /**
  * This hook validates the storage enforcement if gdprEnforcement module is included
  */
-export const validateStorageEnforcement = hook('async', function(gvlid, moduleName, hookDetails, callback) {
+export const validateStorageEnforcement = hook('async', function(isVendorless, gvlid, moduleName, hookDetails, callback) {
   callback(hookDetails);
 }, 'validateStorageEnforcement');
 

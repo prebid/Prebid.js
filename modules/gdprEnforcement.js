@@ -167,17 +167,19 @@ export function validateRules(rule, consentData, currentModule, gvlId, vendorles
 /**
  * This hook checks whether module has permission to access device or not. Device access include cookie and local storage
  * @param {Function} fn reference to original function (used by hook logic)
+ * @param isVendorless if true, do not require vendor consent (for e.g. core modules)
  * @param {Number=} gvlid gvlid of the module
  * @param {string=} moduleName name of the module
+ * @param result
  */
-export function deviceAccessHook(fn, gvlid, moduleName, result) {
+export function deviceAccessHook(fn, isVendorless, gvlid, moduleName, result, {validate = validateRules} = {}) {
   result = Object.assign({}, {
     hasEnforcementHook: true
   });
   if (!hasDeviceAccess()) {
     logWarn('Device access is disabled by Publisher');
     result.valid = false;
-    fn.call(this, gvlid, moduleName, result);
+    fn.call(this, isVendorless, gvlid, moduleName, result);
   } else {
     const consentData = gdprDataHandler.getConsentData();
     if (consentData && consentData.gdprApplies) {
@@ -189,19 +191,19 @@ export function deviceAccessHook(fn, gvlid, moduleName, result) {
         gvlid = getGvlid(moduleName) || gvlid;
       }
       const curModule = moduleName || curBidder;
-      let isAllowed = validateRules(purpose1Rule, consentData, curModule, gvlid);
+      let isAllowed = validate(purpose1Rule, consentData, curModule, gvlid, isVendorless ? () => true : undefined);
       if (isAllowed) {
         result.valid = true;
-        fn.call(this, gvlid, moduleName, result);
+        fn.call(this, isVendorless, gvlid, moduleName, result);
       } else {
         curModule && logWarn(`TCF2 denied device access for ${curModule}`);
         result.valid = false;
         storageBlocked.push(curModule);
-        fn.call(this, gvlid, moduleName, result);
+        fn.call(this, isVendorless, gvlid, moduleName, result);
       }
     } else {
       result.valid = true;
-      fn.call(this, gvlid, moduleName, result);
+      fn.call(this, isVendorless, gvlid, moduleName, result);
     }
   }
 }

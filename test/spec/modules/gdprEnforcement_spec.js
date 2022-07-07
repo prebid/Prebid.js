@@ -150,13 +150,13 @@ describe('gdpr enforcement', function () {
         }
       });
 
-      deviceAccessHook(nextFnSpy);
+      deviceAccessHook(nextFnSpy, false);
       expect(nextFnSpy.calledOnce).to.equal(true);
       let result = {
         hasEnforcementHook: true,
         valid: false
       }
-      sinon.assert.calledWith(nextFnSpy, undefined, undefined, result);
+      sinon.assert.calledWith(nextFnSpy, false, undefined, undefined, result);
     });
 
     it('should only check for consent for vendor exceptions when enforcePurpose and enforceVendor are false', function () {
@@ -178,8 +178,8 @@ describe('gdpr enforcement', function () {
       consentData.apiVersion = 2;
       gdprDataHandlerStub.returns(consentData);
 
-      deviceAccessHook(nextFnSpy, 1, 'appnexus');
-      deviceAccessHook(nextFnSpy, 5, 'rubicon');
+      deviceAccessHook(nextFnSpy, false, 1, 'appnexus');
+      deviceAccessHook(nextFnSpy, false, 5, 'rubicon');
       expect(logWarnSpy.callCount).to.equal(0);
     });
 
@@ -201,8 +201,8 @@ describe('gdpr enforcement', function () {
       consentData.apiVersion = 2;
       gdprDataHandlerStub.returns(consentData);
 
-      deviceAccessHook(nextFnSpy, 1, 'appnexus');
-      deviceAccessHook(nextFnSpy, 3, 'rubicon');
+      deviceAccessHook(nextFnSpy, false, 1, 'appnexus');
+      deviceAccessHook(nextFnSpy, false, 3, 'rubicon');
       expect(logWarnSpy.callCount).to.equal(1);
     });
 
@@ -224,13 +224,13 @@ describe('gdpr enforcement', function () {
       consentData.apiVersion = 2;
       gdprDataHandlerStub.returns(consentData);
 
-      deviceAccessHook(nextFnSpy, 1, 'appnexus');
+      deviceAccessHook(nextFnSpy, false, 1, 'appnexus');
       expect(nextFnSpy.calledOnce).to.equal(true);
       let result = {
         hasEnforcementHook: true,
         valid: true
       }
-      sinon.assert.calledWith(nextFnSpy, 1, 'appnexus', result);
+      sinon.assert.calledWith(nextFnSpy, false, 1, 'appnexus', result);
     });
 
     it('should use gvlMapping set by publisher', function() {
@@ -255,13 +255,13 @@ describe('gdpr enforcement', function () {
       consentData.apiVersion = 2;
       gdprDataHandlerStub.returns(consentData);
 
-      deviceAccessHook(nextFnSpy, 1, 'appnexus');
+      deviceAccessHook(nextFnSpy, false, 1, 'appnexus');
       expect(nextFnSpy.calledOnce).to.equal(true);
       let result = {
         hasEnforcementHook: true,
         valid: true
       }
-      sinon.assert.calledWith(nextFnSpy, 4, 'appnexus', result);
+      sinon.assert.calledWith(nextFnSpy, false, 4, 'appnexus', result);
       config.resetConfig();
     });
 
@@ -290,16 +290,37 @@ describe('gdpr enforcement', function () {
       consentData.apiVersion = 2;
       gdprDataHandlerStub.returns(consentData);
 
-      deviceAccessHook(nextFnSpy, 1, 'appnexus');
+      deviceAccessHook(nextFnSpy, false, 1, 'appnexus');
       expect(nextFnSpy.calledOnce).to.equal(true);
       let result = {
         hasEnforcementHook: true,
         valid: true
       }
-      sinon.assert.calledWith(nextFnSpy, 4, 'appnexus', result);
+      sinon.assert.calledWith(nextFnSpy, false, 4, 'appnexus', result);
       config.resetConfig();
       curBidderStub.restore();
     });
+
+    it('should mark module as vendorless for rule validation when isVendorless = true', () => {
+      setEnforcementConfig({
+        gdpr: {
+          rules: [{
+            purpose: 'storage',
+            enforcePurpose: true,
+            enforceVendor: true,
+            vendorExceptions: []
+          }]
+        }
+      });
+      let consentData = {}
+      consentData.vendorData = staticConfig.consentData.getTCData;
+      consentData.gdprApplies = true;
+      consentData.apiVersion = 2;
+      gdprDataHandlerStub.returns(consentData);
+      const validate = sinon.stub().callsFake(() => true);
+      deviceAccessHook(nextFnSpy, true, 123, 'mockModule', undefined, {validate});
+      expect(validate.args[0][4]('mockModule')).to.be.true;
+    })
   });
 
   describe('userSyncHook', function () {

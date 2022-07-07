@@ -3,7 +3,7 @@ import {
   getCoreStorageManager,
   storageCallbacks,
   getStorageManager,
-  newStorageManager
+  newStorageManager, ALWAYS_ENFORCE, validateStorageEnforcement
 } from 'src/storageManager.js';
 import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
@@ -54,6 +54,34 @@ describe('storage manager', function() {
     expect(deviceAccessSpy.calledOnce).to.equal(true);
     deviceAccessSpy.restore();
   });
+
+  describe(`when '${ALWAYS_ENFORCE}' is set, core storage`, () => {
+    let storage, validateHook;
+
+    beforeEach(() => {
+      storage = getCoreStorageManager();
+      validateHook = sinon.stub().callsFake(function (next, ...args) {
+        next.apply(this, args);
+      });
+      validateStorageEnforcement.before(validateHook, 99);
+      config.setConfig({[ALWAYS_ENFORCE]: true});
+    });
+
+    afterEach(() => {
+      validateStorageEnforcement.getHooks({hook: validateHook}).remove();
+      config.resetConfig();
+    })
+
+    it('should respect deviceAccess', () => {
+      config.setConfig({deviceAccess: false});
+      expect(storage.localStorageIsEnabled()).to.be.false;
+    });
+
+    it('should respect consent enforcement', () => {
+      storage.localStorageIsEnabled();
+      expect(validateHook.args[0][1]).to.eql(true); // isVendorless should be set to true
+    })
+  })
 
   describe('localstorage forbidden access in 3rd-party context', function() {
     let errorLogSpy;
