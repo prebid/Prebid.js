@@ -287,27 +287,27 @@ describe('microadBidAdapter', () => {
       },
       'ID5 ID': {
         userId: {id5id: {uid: 'id5id-sample'}},
-        expected: {aids: JSON.stringify([{type: 7, id: 'id5id-sample'}])}
+        expected: {aids: JSON.stringify([{type: 8, id: 'id5id-sample'}])}
       },
       'Unified ID': {
         userId: {tdid: 'unified-sample'},
-        expected: {aids: JSON.stringify([{type: 8, id: 'unified-sample'}])}
+        expected: {aids: JSON.stringify([{type: 9, id: 'unified-sample'}])}
       },
       'Novatiq Snowflake ID': {
         userId: {novatiq: {snowflake: 'novatiq-sample'}},
-        expected: {aids: JSON.stringify([{type: 9, id: 'novatiq-sample'}])}
+        expected: {aids: JSON.stringify([{type: 10, id: 'novatiq-sample'}])}
       },
       'Parrable ID': {
         userId: {parrableId: {eid: 'parrable-sample'}},
-        expected: {aids: JSON.stringify([{type: 10, id: 'parrable-sample'}])}
+        expected: {aids: JSON.stringify([{type: 11, id: 'parrable-sample'}])}
       },
       'AudienceOne User ID': {
         userId: {dacId: {id: 'audience-one-sample'}},
-        expected: {aids: JSON.stringify([{type: 11, id: 'audience-one-sample'}])}
+        expected: {aids: JSON.stringify([{type: 12, id: 'audience-one-sample'}])}
       },
       'Ramp ID and Liveramp identity': {
         userId: {idl_env: 'idl-env-sample'},
-        expected: {idl_env: 'idl-env-sample', aids: JSON.stringify([{type: 12, id: 'idl-env-sample'}])}
+        expected: {idl_env: 'idl-env-sample', aids: JSON.stringify([{type: 13, id: 'idl-env-sample'}])}
       }
     }).forEach(([test, arg]) => {
       it(`should add ${test} if it is available in request parameters`, () => {

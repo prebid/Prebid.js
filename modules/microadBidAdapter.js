@@ -24,12 +24,12 @@ const VIDEO_CODE = 4;
 
 const AUDIENCE_IDS = [
   {type: 6, bidKey: 'userId.imuid'},
-  {type: 7, bidKey: 'userId.id5id.uid'},
-  {type: 8, bidKey: 'userId.tdid'},
-  {type: 9, bidKey: 'userId.novatiq.snowflake'},
-  {type: 10, bidKey: 'userId.parrableId.eid'},
-  {type: 11, bidKey: 'userId.dacId.id'},
-  {type: 12, bidKey: 'userId.idl_env'}
+  {type: 8, bidKey: 'userId.id5id.uid'},
+  {type: 9, bidKey: 'userId.tdid'},
+  {type: 10, bidKey: 'userId.novatiq.snowflake'},
+  {type: 11, bidKey: 'userId.parrableId.eid'},
+  {type: 12, bidKey: 'userId.dacId.id'},
+  {type: 13, bidKey: 'userId.idl_env'}
 ]
 
 function createCBT() {
@@ -99,7 +99,7 @@ export const spec = {
         if (!isEmpty(bidAudienceId) && isStr(bidAudienceId)) {
           aidsParams.push({ type: audienceId.type, id: bidAudienceId });
           // Set Ramp ID
-          if (audienceId.type === 12) params['idl_env'] = bidAudienceId;
+          if (audienceId.type === 13) params['idl_env'] = bidAudienceId;
         }
       })
       if (aidsParams.length > 0) {
