@@ -12,6 +12,12 @@ import {validateStorageEnforcement} from '../src/storageManager.js';
 import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
 
+// modules for which vendor consent is not needed (see https://github.com/prebid/Prebid.js/issues/8161)
+const VENDORLESS_MODULES = new Set([
+  'sharedId',
+  'pubCommonId'
+]);
+
 const TCF2 = {
   'purpose1': { id: 1, name: 'storage' },
   'purpose2': { id: 2, name: 'basicAds' },
@@ -123,9 +129,10 @@ function getGvlidForAnalyticsAdapter(code) {
  * @param {Object} consentData - gdpr consent data
  * @param {string=} currentModule - Bidder code of the current module
  * @param {number=} gvlId - GVL ID for the module
+ * @param vendorlessModule a predicate function that takes a module name, and returns true if the module does not need vendor consent
  * @returns {boolean}
  */
-export function validateRules(rule, consentData, currentModule, gvlId) {
+export function validateRules(rule, consentData, currentModule, gvlId, vendorlessModule = VENDORLESS_MODULES.has.bind(VENDORLESS_MODULES)) {
   const purposeId = TCF2[Object.keys(TCF2).filter(purposeName => TCF2[purposeName].name === rule.purpose)[0]].id;
 
   // return 'true' if vendor present in 'vendorExceptions'
@@ -143,7 +150,7 @@ export function validateRules(rule, consentData, currentModule, gvlId) {
     or the user has consented. Similar with vendors.
   */
   const purposeAllowed = rule.enforcePurpose === false || purposeConsent === true;
-  const vendorAllowed = rule.enforceVendor === false || vendorConsent === true;
+  const vendorAllowed = vendorlessModule(currentModule) || rule.enforceVendor === false || vendorConsent === true;
 
   /*
     Few if any vendors should be declaring Legitimate Interest for Device Access (Purpose 1), but some are claiming

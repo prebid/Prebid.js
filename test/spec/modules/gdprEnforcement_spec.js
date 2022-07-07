@@ -17,6 +17,9 @@ import adapterManager, { gdprDataHandler } from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
 import { validateStorageEnforcement } from 'src/storageManager.js';
 import * as events from 'src/events.js';
+import 'modules/appnexusBidAdapter.js'; // some tests expect this to be in the adapter registry
+import 'src/prebid.js'
+import {hook} from '../../../src/hook.js';
 
 describe('gdpr enforcement', function () {
   let nextFnSpy;
@@ -96,6 +99,10 @@ describe('gdpr enforcement', function () {
       }
     }
   };
+
+  before(() => {
+    hook.ready();
+  });
 
   after(function () {
     validateStorageEnforcement.getHooks({ hook: deviceAccessHook }).remove();
@@ -887,6 +894,33 @@ describe('gdpr enforcement', function () {
       const isAllowed = validateRules(gdprRule, consentData, vendorBlockedModule, vendorBlockedGvlId);
       expect(isAllowed).to.equal(true);
     });
+
+    describe('when module does not need vendor consent', () => {
+      Object.entries({
+        'storage': 1,
+        'basicAds': 2,
+        'measurement': 7
+      }).forEach(([purpose, purposeNo]) => {
+        describe(`for purpose ${purpose}`, () => {
+          const rule = createGdprRule(purpose);
+          Object.entries({
+            'allowed': true,
+            'not allowed': false
+          }).forEach(([t, consentGiven]) => {
+            it(`should be ${t} when purpose is ${t}`, () => {
+              const consent = utils.deepClone(consentData);
+              consent.vendorData.purpose.consents[purposeNo] = consentGiven;
+              // vendor consent (and gvlid) should be ignored
+              consent.vendorData.vendor.consents[123] = !consentGiven;
+              // take legitimate interest out of the picture for this test
+              consent.vendorData.purpose.legitimateInterests = {};
+              const actual = validateRules(rule, consent, 'mockModule', 123, () => true);
+              expect(actual).to.equal(consentGiven);
+            })
+          })
+        })
+      })
+    })
 
     describe('Purpose 2 special case', function () {
       const consentDataWithLIFalse = utils.deepClone(consentData);
