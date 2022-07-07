@@ -1048,9 +1048,14 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
       currentImpressionSize = encodeURIComponent(JSON.stringify({ impressionObjects })).length;
     }
 
-    const gpid = impressions[transactionIds[adUnitIndex]].gpid;
+    let gpid = impressions[transactionIds[adUnitIndex]].gpid;
     const dfpAdUnitCode = impressions[transactionIds[adUnitIndex]].dfp_ad_unit_code;
+<<<<<<< HEAD
     const tid = impressions[transactionIds[adUnitIndex]].tid
+=======
+    const divId = getGptSlotInfoForAdUnitCode(dfpAdUnitCode).divId;
+    gpid = gpid ? gpid : (str(dfpAdUnitCode) + str(divId));
+>>>>>>> 6d028a45 (beginning work)
     if (impressionObjects.length && BANNER in impressionObjects[0]) {
       const { id, banner: { topframe } } = impressionObjects[0];
       const _bannerImpression = {
@@ -1258,7 +1263,8 @@ function createNativeImps(validBidRequest, nativeImps) {
     nativeImps[validBidRequest.transactionId] = {};
     nativeImps[validBidRequest.transactionId].ixImps = [];
     nativeImps[validBidRequest.transactionId].ixImps.push(imp);
-    nativeImps[validBidRequest.transactionId].gpid = deepAccess(validBidRequest, 'ortb2Imp.ext.gpid')
+    nativeImps[validBidRequest.transactionId].gpid = deepAccess(validBidRequest, 'ortb2Imp.ext.gpid');
+    nativeImps[validBidRequest.transactionId].pbAdSlot = deepAccess(validBidRequest, 'ortb2Imp.ext.data.pbadslot');
   }
 }
 
@@ -1274,7 +1280,11 @@ function createVideoImps(validBidRequest, videoImps) {
     videoImps[validBidRequest.transactionId].ixImps = [];
     videoImps[validBidRequest.transactionId].ixImps.push(imp);
     videoImps[validBidRequest.transactionId].gpid = deepAccess(validBidRequest, 'ortb2Imp.ext.gpid');
+<<<<<<< HEAD
     videoImps[validBidRequest.transactionId].tid = deepAccess(validBidRequest, 'ortb2Imp.ext.tid');
+=======
+    videoImps[validBidRequest.transactionId].pbAdSlot = deepAccess(validBidRequest, 'ortb2Imp.ext.data.pbadslot');
+>>>>>>> 6d028a45 (beginning work)
   }
 }
 
@@ -1301,7 +1311,11 @@ function createBannerImps(validBidRequest, missingBannerSizes, bannerImps) {
 
   bannerImps[validBidRequest.transactionId].gpid = deepAccess(validBidRequest, 'ortb2Imp.ext.gpid');
   bannerImps[validBidRequest.transactionId].dfp_ad_unit_code = deepAccess(validBidRequest, 'ortb2Imp.ext.data.adserver.adslot');
+<<<<<<< HEAD
   bannerImps[validBidRequest.transactionId].tid = deepAccess(validBidRequest, 'ortb2Imp.ext.tid');
+=======
+  bannerImps[validBidRequest.transactionId].pbAdSlot = deepAccess(validBidRequest, 'ortb2Imp.ext.data.pbadslot');
+>>>>>>> 6d028a45 (beginning work)
 
   // Create IX imps from params.size
   if (bannerSizeDefined) {
