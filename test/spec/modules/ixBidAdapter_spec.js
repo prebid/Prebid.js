@@ -3346,6 +3346,7 @@ describe('IndexexchangeAdapter', function () {
 
     it('should not save error data into localstorage if consent is not given', () => {
       config.setConfig({ deviceAccess: false });
+      storage.localStorageIsEnabled.restore(); // let core manage device access
       const bid = utils.deepClone(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0]);
       bid.params.size = ['400', 100];
       expect(spec.isBidRequestValid(bid)).to.be.false;
