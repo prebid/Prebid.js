@@ -42,14 +42,6 @@ function setImDataInCookie(value) {
 */
 export function getBidderFunction(bidderName) {
   const biddersFunction = {
-    ix: function (bid, data) {
-      if (data.im_segments && data.im_segments.length) {
-        config.setConfig({
-          ix: {firstPartyData: {im_segments: data.im_segments}},
-        });
-      }
-      return bid
-    },
     pubmatic: function (bid, data) {
       if (data.im_segments && data.im_segments.length) {
         const dctr = deepAccess(bid, 'params.dctr');
