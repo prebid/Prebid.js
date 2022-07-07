@@ -182,16 +182,16 @@ class Configure {
 
 class PageDetail {
   constructor () {
-    const canonicalUrl = this._getUrlFromSelector('link[rel="canonical"]', 'href');
     const ogUrl = this._getUrlFromSelector('meta[property="og:url"]', 'content');
     const twitterUrl = this._getUrlFromSelector('meta[name="twitter:url"]', 'content');
     const refererInfo = getRefererInfo();
 
-    this.domain = URL.parseUrl(refererInfo.referer).hostname;
-    this.page = refererInfo.referer;
+    // TODO: are these the right refererInfo values?
+    this.domain = refererInfo.domain;
+    this.page = refererInfo.page;
     this.is_top = refererInfo.reachedTop;
-    this.referrer = this._getTopWindowReferrer();
-    this.canonical_url = canonicalUrl;
+    this.referrer = refererInfo.ref || window.document.referrer;
+    this.canonical_url = refererInfo.canonicalUrl;
     this.og_url = ogUrl;
     this.twitter_url = twitterUrl;
     this.screen = this._getWindowSize();

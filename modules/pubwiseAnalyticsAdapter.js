@@ -224,7 +224,8 @@ function filterAuctionInit(data) {
   modified.refererInfo = {};
   // handle clean referrer, we only need one
   if (typeof modified.bidderRequests !== 'undefined' && typeof modified.bidderRequests[0] !== 'undefined' && typeof modified.bidderRequests[0].refererInfo !== 'undefined') {
-    modified.refererInfo = modified.bidderRequests[0].refererInfo;
+    // TODO: please do not send internal data structures over the network
+    modified.refererInfo = modified.bidderRequests[0].refererInfo.legacy;
   }
 
   if (typeof modified.adUnitCodes !== 'undefined') {

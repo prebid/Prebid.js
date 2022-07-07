@@ -148,7 +148,7 @@ function sendBillingEvent(event) {
 
 function getBasicEventDetails(auctionId, trigger) {
   let auctionCache = cache.auctions[auctionId];
-  let referrer = config.getConfig('pageUrl') || pageReferer || (auctionCache && auctionCache.referrer);
+  let referrer = pageReferer || (auctionCache && auctionCache.referrer);
   let message = {
     timestamps: {
       prebidLoaded: rubiconAdapter.MODULE_INITIALIZED_TIME,
@@ -676,7 +676,8 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         cacheEntry.bids = {};
         cacheEntry.bidsWon = {};
         cacheEntry.gamHasRendered = {};
-        cacheEntry.referrer = pageReferer = deepAccess(args, 'bidderRequests.0.refererInfo.referer');
+        // TODO: is 'page' the right value here?
+        cacheEntry.referrer = pageReferer = deepAccess(args, 'bidderRequests.0.refererInfo.page');
         cacheEntry.bidderOrder = [];
         const floorData = deepAccess(args, 'bidderRequests.0.bids.0.floorData');
         if (floorData) {

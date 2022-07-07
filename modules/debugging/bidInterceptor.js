@@ -3,10 +3,8 @@ import {
   deepClone,
   deepEqual,
   delayExecution,
-  prefixLog,
   mergeDeep
 } from '../../src/utils.js';
-const { logMessage, logWarn, logError } = prefixLog('DEBUG:');
 
 /**
  * @typedef {Number|String|boolean|null|undefined} Scalar
@@ -14,6 +12,7 @@ const { logMessage, logWarn, logError } = prefixLog('DEBUG:');
 
 export function BidInterceptor(opts = {}) {
   ({setTimeout: this.setTimeout = window.setTimeout.bind(window)} = opts);
+  this.logger = opts.logger;
   this.rules = [];
 }
 
@@ -22,10 +21,10 @@ Object.assign(BidInterceptor.prototype, {
     delay: 0
   },
   serializeConfig(ruleDefs) {
-    function isSerializable(ruleDef, i) {
+    const isSerializable = (ruleDef, i) => {
       const serializable = deepEqual(ruleDef, JSON.parse(JSON.stringify(ruleDef)), {checkTypes: true});
       if (!serializable && !deepAccess(ruleDef, 'options.suppressWarnings')) {
-        logWarn(`Bid interceptor rule definition #${i + 1} is not serializable and will be lost after a refresh. Rule definition: `, ruleDef);
+        this.logger.logWarn(`Bid interceptor rule definition #${i + 1} is not serializable and will be lost after a refresh. Rule definition: `, ruleDef);
       }
       return serializable;
     }
@@ -79,7 +78,7 @@ Object.assign(BidInterceptor.prototype, {
       return matchDef;
     }
     if (typeof matchDef !== 'object') {
-      logError(`Invalid 'when' definition for debug bid interceptor (in rule #${ruleNo})`);
+      this.logger.logError(`Invalid 'when' definition for debug bid interceptor (in rule #${ruleNo})`);
       return () => false;
     }
     function matches(candidate, {ref = matchDef, args = []}) {
@@ -119,11 +118,11 @@ Object.assign(BidInterceptor.prototype, {
     if (typeof replDef === 'function') {
       replFn = ({args}) => replDef(...args);
     } else if (typeof replDef !== 'object') {
-      logError(`Invalid 'then' definition for debug bid interceptor (in rule #${ruleNo})`);
+      this.logger.logError(`Invalid 'then' definition for debug bid interceptor (in rule #${ruleNo})`);
       replFn = () => ({});
     } else {
       replFn = ({args, ref = replDef}) => {
-        const result = {};
+        const result = Array.isArray(ref) ? [] : {};
         Object.entries(ref).forEach(([key, val]) => {
           if (typeof val === 'function') {
             result[key] = val(...args);
@@ -213,7 +212,7 @@ Object.assign(BidInterceptor.prototype, {
       matches.forEach((match) => {
         const mockResponse = match.rule.replace(match.bid, bidRequest);
         const delay = match.rule.options.delay;
-        logMessage(`Intercepted bid request (matching rule #${match.rule.no}), mocking response in ${delay}ms. Request, response:`, match.bid, mockResponse)
+        this.logger.logMessage(`Intercepted bid request (matching rule #${match.rule.no}), mocking response in ${delay}ms. Request, response:`, match.bid, mockResponse)
         this.setTimeout(() => {
           addBid(mockResponse, match.bid);
           callDone();

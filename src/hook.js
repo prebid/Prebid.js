@@ -1,9 +1,27 @@
-
 import funHooks from 'fun-hooks/no-eval/index.js';
+import {promiseControls} from './utils/promise.js';
 
 export let hook = funHooks({
   ready: funHooks.SYNC | funHooks.ASYNC | funHooks.QUEUE
 });
+
+const readyCtl = promiseControls();
+hook.ready = (() => {
+  const ready = hook.ready;
+  return function () {
+    try {
+      return ready.apply(hook, arguments);
+    } finally {
+      readyCtl.resolve();
+    }
+  }
+})();
+
+/**
+ * A promise that resolves when hooks are ready.
+ * @type {Promise}
+ */
+export const ready = readyCtl.promise;
 
 export const getHook = hook.get;
 

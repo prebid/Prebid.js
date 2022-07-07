@@ -2,12 +2,13 @@ import { expect } from 'chai';
 import { spec } from 'modules/minutemediaBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
-import { VIDEO } from '../../../src/mediaTypes.js';
-import { deepClone } from 'src/utils.js';
+import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
+import * as utils from 'src/utils.js';
 
-const ENDPOINT = 'https://hb.minutemedia-prebid.com/hb-mm';
-const TEST_ENDPOINT = 'https://hb.minutemedia-prebid.com/hb-mm-test';
+const ENDPOINT = 'https://hb.minutemedia-prebid.com/hb-mm-multi';
+const TEST_ENDPOINT = 'https://hb.minutemedia-prebid.com/hb-multi-mm-test';
 const TTL = 360;
+/* eslint no-console: ["error", { allow: ["log", "warn", "error"] }] */
 
 describe('minutemediaAdapter', function () {
   const adapter = newBidder(spec);
@@ -54,6 +55,29 @@ describe('minutemediaAdapter', function () {
         'bidId': '299ffc8cca0b87',
         'bidderRequestId': '1144f487e563f9',
         'auctionId': 'bfc420c3-8577-4568-9766-a8a935fb620d',
+        'mediaTypes': {
+          'video': {
+            'playerSize': [[640, 480]],
+            'context': 'instream'
+          }
+        },
+        'vastXml': '"<VAST version=\\\"2.0\\\">...</VAST>"'
+      },
+      {
+        'bidder': spec.code,
+        'adUnitCode': 'adunit-code',
+        'sizes': [[300, 250]],
+        'params': {
+          'org': 'jdye8weeyirk00000001'
+        },
+        'bidId': '299ffc8cca0b87',
+        'bidderRequestId': '1144f487e563f9',
+        'auctionId': 'bfc420c3-8577-4568-9766-a8a935fb620d',
+        'mediaTypes': {
+          'banner': {
+          }
+        },
+        'ad': '"<img src=\"https://...\"/>"'
       }
     ];
 
@@ -77,44 +101,41 @@ describe('minutemediaAdapter', function () {
     }
     const placementId = '12345678';
 
-    it('sends the placementId as a query param', function () {
+    it('sends the placementId to ENDPOINT via POST', function () {
       bidRequests[0].params.placementId = placementId;
-      const requests = spec.buildRequests(bidRequests, bidderRequest);
-      for (const request of requests) {
-        expect(request.data.placement_id).to.equal(placementId);
-      }
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.bids[0].placementId).to.equal(placementId);
     });
 
-    it('sends bid request to ENDPOINT via GET', function () {
-      const requests = spec.buildRequests(bidRequests, bidderRequest);
-      for (const request of requests) {
-        expect(request.url).to.equal(ENDPOINT);
-        expect(request.method).to.equal('GET');
-      }
+    it('sends bid request to ENDPOINT via POST', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.url).to.equal(ENDPOINT);
+      expect(request.method).to.equal('POST');
     });
 
-    it('sends bid request to test ENDPOINT via GET', function () {
-      const requests = spec.buildRequests(testModeBidRequests, bidderRequest);
-      for (const request of requests) {
-        expect(request.url).to.equal(TEST_ENDPOINT);
-        expect(request.method).to.equal('GET');
-      }
+    it('sends bid request to TEST ENDPOINT via POST', function () {
+      const request = spec.buildRequests(testModeBidRequests, bidderRequest);
+      expect(request.url).to.equal(TEST_ENDPOINT);
+      expect(request.method).to.equal('POST');
     });
 
     it('should send the correct bid Id', function () {
-      const requests = spec.buildRequests(bidRequests, bidderRequest);
-      for (const request of requests) {
-        expect(request.data.bid_id).to.equal('299ffc8cca0b87');
-      }
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.bids[0].bidId).to.equal('299ffc8cca0b87');
     });
 
-    it('should send the correct width and height', function () {
-      const requests = spec.buildRequests(bidRequests, bidderRequest);
-      for (const request of requests) {
-        expect(request.data).to.be.an('object');
-        expect(request.data).to.have.property('width', 640);
-        expect(request.data).to.have.property('height', 480);
-      }
+    it('should send the correct sizes array', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.bids[0].sizes).to.be.an('array');
+      expect(request.data.bids[0].sizes).to.equal(bidRequests[0].sizes)
+      expect(request.data.bids[1].sizes).to.be.an('array');
+      expect(request.data.bids[1].sizes).to.equal(bidRequests[1].sizes)
+    });
+
+    it('should send the correct media type', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.bids[0].mediaType).to.equal(VIDEO)
+      expect(request.data.bids[1].mediaType).to.equal(BANNER)
     });
 
     it('should respect syncEnabled option', function() {
@@ -129,11 +150,9 @@ describe('minutemediaAdapter', function () {
           }
         }
       });
-      const requests = spec.buildRequests(bidRequests, bidderRequest);
-      for (const request of requests) {
-        expect(request.data).to.be.an('object');
-        expect(request.data).to.not.have.property('cs_method');
-      }
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.params).to.be.an('object');
+      expect(request.data.params).to.not.have.property('cs_method');
     });
 
     it('should respect "iframe" filter settings', function () {
@@ -148,11 +167,9 @@ describe('minutemediaAdapter', function () {
           }
         }
       });
-      const requests = spec.buildRequests(bidRequests, bidderRequest);
-      for (const request of requests) {
-        expect(request.data).to.be.an('object');
-        expect(request.data).to.have.property('cs_method', 'iframe');
-      }
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.params).to.be.an('object');
+      expect(request.data.params).to.have.property('cs_method', 'iframe');
     });
 
     it('should respect "all" filter settings', function () {
@@ -167,24 +184,21 @@ describe('minutemediaAdapter', function () {
           }
         }
       });
-      const requests = spec.buildRequests(bidRequests, bidderRequest);
-      for (const request of requests) {
-        expect(request.data).to.be.an('object');
-        expect(request.data).to.have.property('cs_method', 'iframe');
-      }
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.params).to.be.an('object');
+      expect(request.data.params).to.have.property('cs_method', 'iframe');
     });
 
     it('should send the pixel user sync param if userSync is enabled and no "iframe" or "all" configs are present', function () {
+      config.resetConfig();
       config.setConfig({
         userSync: {
-          syncEnabled: true
+          syncEnabled: true,
         }
       });
-      const requests = spec.buildRequests(bidRequests, bidderRequest);
-      for (const request of requests) {
-        expect(request.data).to.be.an('object');
-        expect(request.data).to.have.property('cs_method', 'pixel');
-      }
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.params).to.be.an('object');
+      expect(request.data.params).to.have.property('cs_method', 'pixel');
     });
 
     it('should respect total exclusion', function() {
@@ -203,48 +217,38 @@ describe('minutemediaAdapter', function () {
           }
         }
       });
-      const requests = spec.buildRequests(bidRequests, bidderRequest);
-      for (const request of requests) {
-        expect(request.data).to.be.an('object');
-        expect(request.data).to.not.have.property('cs_method');
-      }
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.params).to.be.an('object');
+      expect(request.data.params).to.not.have.property('cs_method');
     });
 
     it('should have us_privacy param if usPrivacy is available in the bidRequest', function () {
       const bidderRequestWithUSP = Object.assign({uspConsent: '1YNN'}, bidderRequest);
-      const requests = spec.buildRequests(bidRequests, bidderRequestWithUSP);
-      for (const request of requests) {
-        expect(request.data).to.be.an('object');
-        expect(request.data).to.have.property('us_privacy', '1YNN');
-      }
+      const request = spec.buildRequests(bidRequests, bidderRequestWithUSP);
+      expect(request.data.params).to.be.an('object');
+      expect(request.data.params).to.have.property('us_privacy', '1YNN');
     });
 
     it('should have an empty us_privacy param if usPrivacy is missing in the bidRequest', function () {
-      const requests = spec.buildRequests(bidRequests, bidderRequest);
-      for (const request of requests) {
-        expect(request.data).to.be.an('object');
-        expect(request.data).to.not.have.property('us_privacy');
-      }
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.params).to.be.an('object');
+      expect(request.data.params).to.not.have.property('us_privacy');
     });
 
     it('should not send the gdpr param if gdprApplies is false in the bidRequest', function () {
       const bidderRequestWithGDPR = Object.assign({gdprConsent: {gdprApplies: false}}, bidderRequest);
-      const requests = spec.buildRequests(bidRequests, bidderRequestWithGDPR);
-      for (const request of requests) {
-        expect(request.data).to.be.an('object');
-        expect(request.data).to.not.have.property('gdpr');
-        expect(request.data).to.not.have.property('gdpr_consent');
-      }
+      const request = spec.buildRequests(bidRequests, bidderRequestWithGDPR);
+      expect(request.data.params).to.be.an('object');
+      expect(request.data.params).to.not.have.property('gdpr');
+      expect(request.data.params).to.not.have.property('gdpr_consent');
     });
 
     it('should send the gdpr param if gdprApplies is true in the bidRequest', function () {
       const bidderRequestWithGDPR = Object.assign({gdprConsent: {gdprApplies: true, consentString: 'test-consent-string'}}, bidderRequest);
-      const requests = spec.buildRequests(bidRequests, bidderRequestWithGDPR);
-      for (const request of requests) {
-        expect(request.data).to.be.an('object');
-        expect(request.data).to.have.property('gdpr', true);
-        expect(request.data).to.have.property('gdpr_consent', 'test-consent-string');
-      }
+      const request = spec.buildRequests(bidRequests, bidderRequestWithGDPR);
+      expect(request.data.params).to.be.an('object');
+      expect(request.data.params).to.have.property('gdpr', true);
+      expect(request.data.params).to.have.property('gdpr_consent', 'test-consent-string');
     });
 
     it('should have schain param if it is available in the bidRequest', () => {
@@ -254,15 +258,13 @@ describe('minutemediaAdapter', function () {
         nodes: [{ asi: 'indirectseller.com', sid: '00001', hp: 1 }],
       };
       bidRequests[0].schain = schain;
-      const requests = spec.buildRequests(bidRequests, bidderRequest);
-      for (const request of requests) {
-        expect(request.data).to.be.an('object');
-        expect(request.data).to.have.property('schain', '1.0,1!indirectseller.com,00001,1,,,');
-      }
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.params).to.be.an('object');
+      expect(request.data.params).to.have.property('schain', '1.0,1!indirectseller.com,00001,1,,,');
     });
 
-    it('should set floor_price to getFloor.floor value if it is greater than params.floorPrice', function() {
-      const bid = deepClone(bidRequests[0]);
+    it('should set flooPrice to getFloor.floor value if it is greater than params.floorPrice', function() {
+      const bid = utils.deepClone(bidRequests[0]);
       bid.getFloor = () => {
         return {
           currency: 'USD',
@@ -270,13 +272,13 @@ describe('minutemediaAdapter', function () {
         }
       }
       bid.params.floorPrice = 0.64;
-      const request = spec.buildRequests([bid], bidderRequest)[0];
-      expect(request.data).to.be.an('object');
-      expect(request.data).to.have.property('floor_price', 3.32);
+      const request = spec.buildRequests([bid], bidderRequest);
+      expect(request.data.bids[0]).to.be.an('object');
+      expect(request.data.bids[0]).to.have.property('floorPrice', 3.32);
     });
 
-    it('should set floor_price to params.floorPrice value if it is greater than getFloor.floor', function() {
-      const bid = deepClone(bidRequests[0]);
+    it('should set floorPrice to params.floorPrice value if it is greater than getFloor.floor', function() {
+      const bid = utils.deepClone(bidRequests[0]);
       bid.getFloor = () => {
         return {
           currency: 'USD',
@@ -284,61 +286,109 @@ describe('minutemediaAdapter', function () {
         }
       }
       bid.params.floorPrice = 1.5;
-      const request = spec.buildRequests([bid], bidderRequest)[0];
-      expect(request.data).to.be.an('object');
-      expect(request.data).to.have.property('floor_price', 1.5);
+      const request = spec.buildRequests([bid], bidderRequest);
+      expect(request.data.bids[0]).to.be.an('object');
+      expect(request.data.bids[0]).to.have.property('floorPrice', 1.5);
     });
   });
 
   describe('interpretResponse', function () {
     const response = {
+      params: {
+        currency: 'USD',
+        netRevenue: true,
+      },
+      bids: [{
+        cpm: 12.5,
+        vastXml: '<VAST version="3.0"></VAST>',
+        width: 640,
+        height: 480,
+        requestId: '21e12606d47ba7',
+        adomain: ['abc.com'],
+        mediaType: VIDEO
+      },
+      {
+        cpm: 12.5,
+        ad: '"<img src=\"https://...\"/>"',
+        width: 300,
+        height: 250,
+        requestId: '21e12606d47ba7',
+        adomain: ['abc.com'],
+        mediaType: BANNER
+      }]
+    };
+
+    const expectedVideoResponse = {
+      requestId: '21e12606d47ba7',
       cpm: 12.5,
-      vastXml: '<VAST version="3.0"></VAST>',
+      currency: 'USD',
       width: 640,
       height: 480,
-      requestId: '21e12606d47ba7',
+      ttl: TTL,
+      creativeId: '21e12606d47ba7',
       netRevenue: true,
+      nurl: 'http://example.com/win/1234',
+      mediaType: VIDEO,
+      meta: {
+        mediaType: VIDEO,
+        advertiserDomains: ['abc.com']
+      },
+      vastXml: '<VAST version="3.0"></VAST>',
+    };
+
+    const expectedBannerResponse = {
+      requestId: '21e12606d47ba7',
+      cpm: 12.5,
       currency: 'USD',
-      adomain: ['abc.com']
+      width: 640,
+      height: 480,
+      ttl: TTL,
+      creativeId: '21e12606d47ba7',
+      netRevenue: true,
+      nurl: 'http://example.com/win/1234',
+      mediaType: BANNER,
+      meta: {
+        mediaType: BANNER,
+        advertiserDomains: ['abc.com']
+      },
+      ad: '"<img src=\"https://...\"/>"'
     };
 
     it('should get correct bid response', function () {
-      let expectedResponse = [
-        {
-          requestId: '21e12606d47ba7',
-          cpm: 12.5,
-          width: 640,
-          height: 480,
-          creativeId: '21e12606d47ba7',
-          currency: 'USD',
-          netRevenue: true,
-          ttl: TTL,
-          vastXml: '<VAST version="3.0"></VAST>',
-          mediaType: VIDEO,
-          meta: {
-            advertiserDomains: ['abc.com']
-          }
-        }
-      ];
       const result = spec.interpretResponse({ body: response });
-      expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
+      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedVideoResponse));
+      expect(Object.keys(result[1])).to.deep.equal(Object.keys(expectedBannerResponse));
+    });
+
+    it('video type should have vastXml key', function () {
+      const result = spec.interpretResponse({ body: response });
+      expect(result[0].vastXml).to.equal(expectedVideoResponse.vastXml)
+    });
+
+    it('banner type should have ad key', function () {
+      const result = spec.interpretResponse({ body: response });
+      expect(result[1].ad).to.equal(expectedBannerResponse.ad)
     });
   })
 
   describe('getUserSyncs', function() {
     const imageSyncResponse = {
       body: {
-        userSyncPixels: [
-          'https://image-sync-url.test/1',
-          'https://image-sync-url.test/2',
-          'https://image-sync-url.test/3'
-        ]
+        params: {
+          userSyncPixels: [
+            'https://image-sync-url.test/1',
+            'https://image-sync-url.test/2',
+            'https://image-sync-url.test/3'
+          ]
+        }
       }
     };
 
     const iframeSyncResponse = {
       body: {
-        userSyncURL: 'https://iframe-sync-url.test'
+        params: {
+          userSyncURL: 'https://iframe-sync-url.test'
+        }
       }
     };
 
@@ -401,5 +451,29 @@ describe('minutemediaAdapter', function () {
       const syncs = spec.getUserSyncs({ pixelEnabled: false }, [imageSyncResponse]);
       expect(syncs).to.deep.equal([]);
     });
+  })
+
+  describe('onBidWon', function() {
+    beforeEach(function() {
+      sinon.stub(utils, 'triggerPixel');
+    });
+    afterEach(function() {
+      utils.triggerPixel.restore();
+    });
+
+    it('Should trigger pixel if bid nurl', function() {
+      const bid = {
+        'bidder': spec.code,
+        'adUnitCode': 'adunit-code',
+        'sizes': [['640', '480']],
+        'nurl': 'http://example.com/win/1234',
+        'params': {
+          'org': 'jdye8weeyirk00000001'
+        }
+      };
+
+      spec.onBidWon(bid);
+      expect(utils.triggerPixel.callCount).to.equal(1)
+    })
   })
 });

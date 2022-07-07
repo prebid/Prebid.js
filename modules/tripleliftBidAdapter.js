@@ -1,7 +1,8 @@
-import { tryAppendQueryString, logMessage, isEmpty, isStr, isPlainObject, isArray, logWarn } from '../src/utils.js';
+import { tryAppendQueryString, logMessage, logError, isEmpty, isStr, isPlainObject, isArray, logWarn } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 const GVLID = 28;
 const BIDDER_CODE = 'triplelift';
@@ -10,6 +11,7 @@ const BANNER_TIME_TO_LIVE = 300;
 const INSTREAM_TIME_TO_LIVE = 3600;
 let gdprApplies = true;
 let consentString = null;
+export const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
 
 export const tripleliftAdapterSpec = {
   gvlid: GVLID,
@@ -21,13 +23,13 @@ export const tripleliftAdapterSpec = {
 
   buildRequests: function(bidRequests, bidderRequest) {
     let tlCall = STR_ENDPOINT;
-    let data = _buildPostBody(bidRequests);
+    let data = _buildPostBody(bidRequests, bidderRequest);
 
     tlCall = tryAppendQueryString(tlCall, 'lib', 'prebid');
     tlCall = tryAppendQueryString(tlCall, 'v', '$prebid.version$');
 
     if (bidderRequest && bidderRequest.refererInfo) {
-      let referrer = bidderRequest.refererInfo.referer;
+      let referrer = bidderRequest.refererInfo.page;
       tlCall = tryAppendQueryString(tlCall, 'referrer', referrer);
     }
 
@@ -107,10 +109,10 @@ function _getSyncType(syncOptions) {
   if (syncOptions.pixelEnabled) return 'image';
 }
 
-function _buildPostBody(bidRequests) {
+function _buildPostBody(bidRequests, bidderRequest) {
   let data = {};
   let { schain } = bidRequests[0];
-  const globalFpd = _getGlobalFpd();
+  const globalFpd = _getGlobalFpd(bidderRequest);
 
   data.imp = bidRequests.map(function(bidRequest, index) {
     let imp = {
@@ -175,27 +177,44 @@ function _getORTBVideo(bidRequest) {
 function _getFloor (bid) {
   let floor = null;
   if (typeof bid.getFloor === 'function') {
-    const floorInfo = bid.getFloor({
-      currency: 'USD',
-      mediaType: _isInstreamBidRequest(bid) ? 'video' : 'banner',
-      size: '*'
-    });
-    if (typeof floorInfo === 'object' &&
-    floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
-      floor = parseFloat(floorInfo.floor);
+    try {
+      const floorInfo = bid.getFloor({
+        currency: 'USD',
+        mediaType: _isInstreamBidRequest(bid) ? 'video' : 'banner',
+        size: '*'
+      });
+      if (typeof floorInfo === 'object' &&
+      floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
+        floor = parseFloat(floorInfo.floor);
+      }
+    } catch (err) {
+      logError('Triplelift: getFloor threw an error: ', err);
     }
   }
   return floor !== null ? floor : bid.params.floor;
 }
 
-function _getGlobalFpd() {
+function _getGlobalFpd(bidderRequest) {
   const fpd = {};
   const context = {}
   const user = {};
-  const ortbData = config.getConfig('ortb2') || {};
+  const ortbData = bidderRequest.ortb2 || {};
+  const opeCloudStorage = _fetchOpeCloud();
 
   const fpdContext = Object.assign({}, ortbData.site);
   const fpdUser = Object.assign({}, ortbData.user);
+
+  if (opeCloudStorage) {
+    fpdUser.data = fpdUser.data || []
+    try {
+      fpdUser.data.push({
+        name: 'www.1plusx.com',
+        ext: opeCloudStorage
+      })
+    } catch (err) {
+      logError('Triplelift: error adding 1plusX segments: ', err);
+    }
+  }
 
   _addEntries(context, fpdContext);
   _addEntries(user, fpdUser);
@@ -207,6 +226,18 @@ function _getGlobalFpd() {
     fpd.user = user;
   }
   return fpd;
+}
+
+function _fetchOpeCloud() {
+  const opeCloud = storage.getDataFromLocalStorage('opecloud_ctx');
+  if (!opeCloud) return null;
+  try {
+    const parsedJson = JSON.parse(opeCloud);
+    return parsedJson
+  } catch (err) {
+    logError('Triplelift: error parsing JSON: ', err);
+    return null
+  }
 }
 
 function _getAdUnitFpd(adUnitFpd) {

@@ -4,7 +4,7 @@ import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { createEidsArray } from './userId/eids.js';
 
-const VERSION = '4.1.0';
+const VERSION = '4.1.1';
 const BIDDER_CODE = 'sharethrough';
 const SUPPLY_ID = 'WYu2BXv1';
 
@@ -23,7 +23,7 @@ export const sharethroughAdapterSpec = {
 
   buildRequests: (bidRequests, bidderRequest) => {
     const timeout = config.getConfig('bidderTimeout');
-    const firstPartyData = config.getConfig('ortb2') || {};
+    const firstPartyData = bidderRequest.ortb2 || {};
 
     const nonHttp = sharethroughInternal.getProtocol().indexOf('http') < 0;
     const secure = nonHttp || (sharethroughInternal.getProtocol().indexOf('https') > -1);
@@ -34,9 +34,9 @@ export const sharethroughAdapterSpec = {
       cur: ['USD'],
       tmax: timeout,
       site: {
-        domain: window.location.hostname,
-        page: window.location.href,
-        ref: deepAccess(bidderRequest, 'refererInfo.referer'),
+        domain: deepAccess(bidderRequest, 'refererInfo.domain', window.location.hostname),
+        page: deepAccess(bidderRequest, 'refererInfo.page', window.location.href),
+        ref: deepAccess(bidderRequest, 'refererInfo.ref'),
         ...firstPartyData.site,
       },
       device: {
@@ -58,14 +58,14 @@ export const sharethroughAdapterSpec = {
           schain: bidRequests[0].schain,
         },
       },
-      bcat: bidRequests[0].params.bcat || [],
+      bcat: deepAccess(bidderRequest.ortb2Imp, 'bcat') || bidRequests[0].params.bcat || [],
       badv: bidRequests[0].params.badv || [],
       test: 0,
     };
 
     req.user = nullish(firstPartyData.user, {});
     if (!req.user.ext) req.user.ext = {};
-    req.user.ext.eids = userIdAsEids(bidRequests[0]);
+    req.user.ext.eids = createEidsArray(deepAccess(bidRequests[0], 'userId')) || [];
 
     if (bidderRequest.gdprConsent) {
       const gdprApplies = bidderRequest.gdprConsent.gdprApplies === true;
@@ -180,21 +180,12 @@ export const sharethroughAdapterSpec = {
     });
   },
 
-  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
-    const syncParams = uspConsent ? `&us_privacy=${uspConsent}` : '';
-    const syncs = [];
-    const shouldCookieSync = syncOptions.pixelEnabled &&
-      serverResponses.length > 0 &&
-      serverResponses[0].body &&
-      serverResponses[0].body.cookieSyncUrls;
+  getUserSyncs: (syncOptions, serverResponses) => {
+    const shouldCookieSync = syncOptions.pixelEnabled && deepAccess(serverResponses, '0.body.cookieSyncUrls') !== undefined;
 
-    if (shouldCookieSync) {
-      serverResponses[0].body.cookieSyncUrls.forEach(url => {
-        syncs.push({ type: 'image', url: url + syncParams });
-      });
-    }
-
-    return syncs;
+    return shouldCookieSync
+      ? serverResponses[0].body.cookieSyncUrls.map(url => ({ type: 'image', url: url }))
+      : [];
   },
 
   // Empty implementation for prebid core to be able to find it
@@ -241,21 +232,6 @@ function getBidRequestFloor(bid) {
     }
   }
   return floor !== null ? floor : bid.params.floor;
-}
-
-function userIdAsEids(bidRequest) {
-  const eids = createEidsArray(deepAccess(bidRequest, 'userId')) || [];
-
-  const flocData = deepAccess(bidRequest, 'userId.flocId');
-  const isFlocIdValid = flocData && flocData.id && flocData.version;
-  if (isFlocIdValid) {
-    eids.push({
-      source: 'chrome.com',
-      uids: [{ id: flocData.id, atype: 1, ext: { ver: flocData.version } }],
-    });
-  }
-
-  return eids;
 }
 
 function getProtocol() {

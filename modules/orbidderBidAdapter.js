@@ -82,7 +82,7 @@ export const spec = {
     return validBidRequests.map((bidRequest) => {
       let referer = '';
       if (bidderRequest && bidderRequest.refererInfo) {
-        referer = bidderRequest.refererInfo.referer || '';
+        referer = bidderRequest.refererInfo.page || '';
       }
 
       bidRequest.params.bidfloor = getBidFloor(bidRequest);

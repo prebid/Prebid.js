@@ -51,7 +51,7 @@ export const spec = {
     let referrer = '';
 
     if (bidderRequest && bidderRequest.refererInfo) {
-      referrer = bidderRequest.refererInfo.referer;
+      referrer = bidderRequest.refererInfo.page;
     }
 
     const payload = {

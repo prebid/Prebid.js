@@ -4,9 +4,7 @@ import {find} from '../src/polyfill.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 const BID_METHOD = 'POST';
-const BIDDER_URL = 'http://13.234.201.146:8088/va/ad';
-
-const DOMAIN_REGEX = new RegExp('//([^/]*)');
+const BIDDER_URL = 'https://ad.ventesavenues.in/va/ad';
 
 function groupBy(values, key) {
   const groups = values.reduce((acc, value) => {
@@ -69,26 +67,16 @@ function validateParameters(parameters) {
   return true;
 }
 
-function extractSiteDomainFromURL(url) {
-  if (!url || !isStr(url)) return null;
-
-  const domain = url.match(DOMAIN_REGEX);
-
-  if (isArray(domain) && domain.length === 2) return domain[1];
-
-  return null;
-}
-
 function generateSiteFromAdUnitContext(bidRequests, adUnitContext) {
   if (!adUnitContext || !adUnitContext.refererInfo) return null;
 
-  const domain = extractSiteDomainFromURL(adUnitContext.refererInfo.referer);
+  const domain = adUnitContext.refererInfo.domain;
   const publisherId = bidRequests[0].params.publisherId;
 
   if (!domain) return null;
 
   return {
-    page: adUnitContext.refererInfo.referer,
+    page: adUnitContext.refererInfo.page,
     domain: domain,
     name: domain,
     publisher: {
