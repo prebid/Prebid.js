@@ -5,7 +5,7 @@ import {
   adUnitsFilter, flatten, getHighestCpm, isArrayOfNums, isGptPubadsDefined, uniques, logInfo,
   contains, logError, isArray, deepClone, deepAccess, isNumber, logWarn, logMessage, isFn,
   transformAdServerTargetingObj, bind, replaceAuctionPrice, replaceClickThrough, insertElement,
-  inIframe, callBurl, createInvisibleIframe, generateUUID, unsupportedBidderMessage, isEmpty, mergeDeep
+  inIframe, callBurl, createInvisibleIframe, generateUUID, unsupportedBidderMessage, isEmpty, mergeDeep, deepSetValue
 } from './utils.js';
 import { listenMessagesFromCreative } from './secureCreatives.js';
 import { userSync } from './userSync.js';
@@ -615,6 +615,9 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
     const bidders = allBidders.filter(bidder => !s2sBidders.has(bidder));
 
     adUnit.transactionId = generateUUID();
+
+    // Populate ortb2Imp.ext.tid with transactionId. Specifying a transaction ID per item in the ortb impression array, lets multiple transaction IDs be transmitted in a single bid request.
+    deepSetValue(adUnit, 'ortb2Imp.ext.tid', adUnit.transactionId)
 
     bidders.forEach(bidder => {
       const adapter = bidderRegistry[bidder];
