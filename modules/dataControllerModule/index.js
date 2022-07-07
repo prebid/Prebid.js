@@ -4,146 +4,159 @@
  */
 import {config} from '../../src/config.js';
 import {getHook, module} from '../../src/hook.js';
-import {deepAccess, logInfo} from '../../src/utils.js';
-import {processBidderRequests} from '../../src/adapters/bidderFactory.js';
+import {deepAccess, prefixLog} from '../../src/utils.js';
+import {startAuction} from '../../src/prebid.js';
 
 const LOG_PRE_FIX = 'Data_Controller : ';
 const ALL = '*';
 const MODULE_NAME = 'dataController';
-let dataControllerConfig;
+let _dataControllerConfig;
 
-const _logInfo = createLogInfo(LOG_PRE_FIX);
-
-function createLogInfo(prefix) {
-  return function (...strings) {
-    logInfo(prefix + ' ', ...strings);
-  }
-}
-
-function hasValidConfiguration() {
-  dataControllerConfig = config.getConfig(MODULE_NAME);
-
-  if (!dataControllerConfig) {
-    _logInfo(`Data Controller is not configred`);
-    processBidderRequests.getHooks({hook: filterBidData}).remove();
-    return false;
-  }
-
-  if (dataControllerConfig.filterEIDwhenSDA && dataControllerConfig.filterSDAwhenEID) {
-    _logInfo(`Data Controller can be configured with either filterEIDwhenSDA or filterSDAwhenEID`);
-    processBidderRequests.getHooks({hook: filterBidData}).remove();
-    return false;
-  }
-  return true;
-}
+const _logger = prefixLog(LOG_PRE_FIX);
 
 /**
  * BidderRequests hook to intiate module and reset data object
  */
-export function filterBidData(fn, specDetails, bids, bidderRequest, ...args) {
-  if (hasValidConfiguration()) {
-    if (dataControllerConfig.filterEIDwhenSDA) {
-      filterEIDs(bids, bidderRequest.bidderCode);
-    }
-
-    if (dataControllerConfig.filterSDAwhenEID) {
-      filterSDA(bids, bidderRequest.bidderCode);
-    }
+export function filterBidData(fn, req) {
+  if (_dataControllerConfig.filterEIDwhenSDA) {
+    filterEIDs(req.adUnits, req.ortb2Fragments);
   }
-  fn.call(this, specDetails, bids, bidderRequest, ...args);
+
+  if (_dataControllerConfig.filterSDAwhenEID) {
+    filterSDA(req.adUnits, req.ortb2Fragments);
+  }
+  fn.call(this, req);
+  return req;
 }
 
-function filterEIDs(bids, bidderCode) {
-  let allBidderConfigs = config.getBidderConfig();
-  let bidderConfig = allBidderConfigs[bidderCode];
-  let resetEID = containsConfiguredSDA(bidderConfig);
-  if (resetEID) {
-    bids.forEach(bid => {
-      bid.userIdAsEids = [];
-    })
-  }
-}
-
-function containsConfiguredEIDS(eidSources) {
-  if (dataControllerConfig.filterSDAwhenEID.includes(ALL)) {
+function containsConfiguredEIDS(eidSourcesMap, bidderCode) {
+  if (_dataControllerConfig.filterSDAwhenEID.includes(ALL)) {
     return true;
   }
-  let containsSource = false;
-  dataControllerConfig.filterSDAwhenEID.forEach(source => {
-    if (eidSources.has(source)) {
-      containsSource = true;
+  let bidderEIDs = eidSourcesMap.get(bidderCode);
+  if (bidderEIDs == undefined) {
+    return false;
+  }
+  let containsEIDs = false;
+  _dataControllerConfig.filterSDAwhenEID.forEach(source => {
+    if (bidderEIDs.has(source)) {
+      containsEIDs = true;
     }
   });
-  return containsSource;
+  return containsEIDs;
 }
 
-function containsConfiguredSDA(bidderConfig) {
-  if (dataControllerConfig.filterEIDwhenSDA.includes(ALL)) {
+export function containsConfiguredSDA(segementMap, bidderCode) {
+  if (_dataControllerConfig.filterEIDwhenSDA.includes(ALL)) {
     return true;
   }
-  let segementSet = getSegmentConfig(bidderConfig);
 
-  let containsSegment = false;
-  dataControllerConfig.filterEIDwhenSDA.forEach(segment => {
-    if (segementSet.has(segment)) {
-      containsSegment = true;
+  let bidderSegement = segementMap.get(bidderCode);
+  if (bidderSegement == undefined) {
+    return false;
+  }
+
+  let containsSDA = false;
+  _dataControllerConfig.filterEIDwhenSDA.forEach(segment => {
+    if (bidderSegement.has(segment)) {
+      containsSDA = true;
     }
   });
-  return containsSegment;
+  return containsSDA;
 }
 
-function getSegmentConfig(bidderConfig) {
-  let segementSet = new Set();
-  let userData = deepAccess(bidderConfig, 'ortb2.user.data') || [];
-  if (userData) {
-    for (let i = 0; i < userData.length; i++) {
-      let segments = userData[i].segment;
-      let segmentPrefix = '';
-      if (userData[i].name) {
-        segmentPrefix = userData[i].name + ':';
-      }
+export function getSegmentConfig(ortb2Fragments) {
+  let bidderSDAMap = new Map();
 
-      if (userData[i].ext && userData[i].ext.segtax) {
-        segmentPrefix += userData[i].ext.segtax + ':';
-      }
-      for (let j = 0; j < segments.length; j++) {
-        segementSet.add(segmentPrefix + segments[j].id);
-      }
-    }
-  }
-  return segementSet;
-}
+  for (const [key, value] of Object.entries(ortb2Fragments.bidder)) {
+    let userData = deepAccess(value, 'user.data') || [];
 
-function getEIDsSource(requestObject) {
-  let source = new Set();
-
-  requestObject.forEach(eids => {
-    if ('userIdAsEids' in eids) {
-      eids.userIdAsEids.forEach((value) => {
-        if ('source' in value) {
-          source.add(value['source']);
+    if (userData) {
+      let segmentSet = new Set();
+      for (let i = 0; i < userData.length; i++) {
+        let segments = userData[i].segment;
+        let segmentPrefix = '';
+        if (userData[i].name) {
+          segmentPrefix = userData[i].name + ':';
         }
-      });
+
+        if (userData[i].ext && userData[i].ext.segtax) {
+          segmentPrefix += userData[i].ext.segtax + ':';
+        }
+        for (let j = 0; j < segments.length; j++) {
+          segmentSet.add(segmentPrefix + segments[j].id);
+        }
+      }
+      bidderSDAMap.set(key, segmentSet);
     }
-  });
-  return source;
+  }
+  return bidderSDAMap;
 }
 
-function filterSDA(bids, bidderCode) {
-  let eidSources = getEIDsSource(bids);
+function getEIDsSource(adUnits) {
+  let bidderEIDSMap = new Map();
+  adUnits.forEach(adUnit => {
+    adUnit.bids.forEach(bid => {
+      let userEIDs = deepAccess(bid, 'userIdAsEids') || [];
 
-  let resetSDA = containsConfiguredEIDS(eidSources);
-  const allBidderConfigs = config.getBidderConfig();
-  if (resetSDA) {
-    let bidderConfig = allBidderConfigs[bidderCode];
-    bidderConfig.ortb2.user.data = [];
-    config.setBidderConfig(allBidderConfigs, false);
+      if (userEIDs) {
+        let sourceSet = new Set();
+        for (let i = 0; i < userEIDs.length; i++) {
+          let source = userEIDs[i].source;
+          sourceSet.add(source);
+        }
+        bidderEIDSMap.set(bid.bidder, sourceSet);
+      }
+    });
+  });
+
+  return bidderEIDSMap;
+}
+
+function filterSDA(adUnits, ortb2Fragments) {
+  let bidderEIDSMap = getEIDsSource(adUnits);
+  for (const [key, value] of Object.entries(ortb2Fragments.bidder)) {
+    let resetSDA = containsConfiguredEIDS(bidderEIDSMap, key);
+    if (resetSDA) {
+      value.user.data = []
+    }
   }
 }
 
-export function initHook() {
-  getHook('processBidderRequests').before(filterBidData);
+function filterEIDs(adUnits, ortb2Fragments) {
+  let segementMap = getSegmentConfig(ortb2Fragments);
+
+  adUnits.forEach(adUnit => {
+    adUnit.bids.forEach(bid => {
+      let resetEID = containsConfiguredSDA(segementMap, bid.bidder);
+      if (resetEID) {
+        bid.userIdAsEids = [];
+      }
+    });
+  });
+
+  return adUnits;
 }
 
-initHook();
-module(MODULE_NAME, initHook);
+export function init() {
+  const confListener = config.getConfig(MODULE_NAME, dataControllerConfig => {
+    if (!dataControllerConfig || !dataControllerConfig.dataController) {
+      _logger.logInfo(`Data Controller is not configured`);
+      startAuction.getHooks({hook: filterBidData}).remove();
+      return;
+    }
+
+    if (dataControllerConfig.dataController.filterEIDwhenSDA && dataControllerConfig.dataController.filterSDAwhenEID) {
+      _logger.logInfo(`Data Controller can be configured with either filterEIDwhenSDA or filterSDAwhenEID`);
+      startAuction.getHooks({hook: filterBidData}).remove();
+      return;
+    }
+    confListener(); // unsubscribe config listener
+    _dataControllerConfig = dataControllerConfig.dataController;
+
+    getHook('startAuction').before(filterBidData);
+  });
+}
+
+init();
+module(MODULE_NAME, init);
