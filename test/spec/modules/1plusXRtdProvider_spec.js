@@ -1,6 +1,7 @@
 import { config } from 'src/config';
 import {
   onePlusXSubmodule,
+  segtaxes,
   extractConfig,
   buildOrtb2Updates,
   updateBidderConfig,
@@ -56,7 +57,9 @@ describe('1plusXRtdProvider', () => {
       user: { data: [] },
       site: {
         content: {
-          data: [{ name: '1plusX.com', segment: [{ id: 'initial' }] }]
+          data: [{
+            name: '1plusX.com', segment: [{ id: 'initial' }], ext: { segtax: 525 }
+          }]
         }
       },
     }
@@ -178,7 +181,8 @@ describe('1plusXRtdProvider', () => {
       const expectedOutput = {
         siteContentData: {
           name: '1plusX.com',
-          segment: rtdData.topics.map((topicId) => ({ id: topicId }))
+          segment: rtdData.topics.map((topicId) => ({ id: topicId })),
+          ext: { segtax: segtaxes.CONTENT }
         },
         userData: {
           name: '1plusX.com',
@@ -210,7 +214,8 @@ describe('1plusXRtdProvider', () => {
       const expectedOutput = {
         siteContentData: {
           name: '1plusX.com',
-          segment: rtdData.topics.map((topicId) => ({ id: topicId }))
+          segment: rtdData.topics.map((topicId) => ({ id: topicId })),
+          ext: { segtax: segtaxes.CONTENT }
         },
         userData: {
           name: '1plusX.com',
@@ -242,7 +247,8 @@ describe('1plusXRtdProvider', () => {
       const expectedOutput = {
         siteContentData: {
           name: '1plusX.com',
-          segment: []
+          segment: [],
+          ext: { segtax: segtaxes.CONTENT }
         },
         userData: {
           name: '1plusX.com',
@@ -281,7 +287,8 @@ describe('1plusXRtdProvider', () => {
     const ortb2Updates = {
       siteContentData: {
         name: '1plusX.com',
-        segment: fakeResponse.t.map((topicId) => ({ id: topicId }))
+        segment: fakeResponse.t.map((topicId) => ({ id: topicId })),
+        ext: { segtax: segtaxes.CONTENT }
       },
       userData: {
         name: '1plusX.com',
@@ -398,7 +405,8 @@ describe('1plusXRtdProvider', () => {
     const expectedSiteContentObj = {
       data: [{
         name: '1plusX.com',
-        segment: fakeResponse.t.map((topicId) => ({ id: topicId }))
+        segment: fakeResponse.t.map((topicId) => ({ id: topicId })),
+        ext: { segtax: segtaxes.CONTENT }
       }]
     }
     const expectedUserObj = {

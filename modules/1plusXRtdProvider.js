@@ -14,6 +14,11 @@ const ORTB2_NAME = '1plusX.com'
 const PAPI_VERSION = 'v1.0';
 const LOG_PREFIX = '[1plusX RTD Module]: ';
 const LEGACY_SITE_KEYWORDS_BIDDERS = ['appnexus'];
+export const segtaxes = {
+  // cf. https://github.com/InteractiveAdvertisingBureau/openrtb/pull/108
+  AUDIENCE: 526,
+  CONTENT: 527,
+};
 // Functions
 /**
  * Extracts the parameters for 1plusX RTD module from the config object passed at instanciation
@@ -115,7 +120,8 @@ export const buildOrtb2Updates = ({ segments = [], topics = [] }, bidder) => {
   } else {
     const siteContentData = {
       name: ORTB2_NAME,
-      segment: topics.map((topicId) => ({ id: topicId }))
+      segment: topics.map((topicId) => ({ id: topicId })),
+      ext: { segtax: segtaxes.CONTENT }
     }
     return { userData, siteContentData };
   }
@@ -140,7 +146,7 @@ export const updateBidderConfig = (bidder, ortb2Updates, bidderConfigs) => {
   }
 
   if (siteContentData) {
-    const siteDataPath = 'ortb2.site.content.data'
+    const siteDataPath = 'ortb2.site.content.data';
     const currentSiteContentData = deepAccess(bidderConfigCopy, siteDataPath) || [];
     const updatedSiteContentData = [
       ...currentSiteContentData.filter(({ name }) => name != siteContentData.name),
