@@ -39,7 +39,7 @@ const BANNER_TIME_TO_LIVE = 300;
 const VIDEO_TIME_TO_LIVE = 3600; // 1hr
 const NATIVE_TIME_TO_LIVE = 3600; // Since native can have video, use ttl same as video
 const NET_REVENUE = true;
-const MAX_REQUEST_SIZE = 8000;
+const MAX_REQUEST_SIZE = 32000; // IX POST limit
 const MAX_REQUEST_LIMIT = 4;
 const OUTSTREAM_MINIMUM_PLAYER_SIZE = [144, 144];
 const PRICE_TO_DOLLAR_FACTOR = {
@@ -962,20 +962,8 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
     deepSetValue(r, 'regs.coppa', 1);
   }
 
-  const payload = {};
   // Use the siteId in the first bid request as the main siteId.
   siteID = validBidRequests[0].params.siteId;
-  payload.s = siteID;
-  payload.v = version;
-  if (version) {
-    payload.v = version;
-  }
-  payload.ac = 'j';
-  payload.sd = 1;
-
-  if (version === VIDEO_ENDPOINT_VERSION) {
-    payload.nf = 1;
-  }
 
   // Parse additional runtime configs.
   const bidderCode = (bidderRequest && bidderRequest.bidderCode) || 'ix';
@@ -983,7 +971,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   const requests = [];
   let requestSequenceNumber = 0;
   const transactionIds = Object.keys(impressions);
-  const baseRequestSize = `${baseUrl}${parseQueryStringParameters({ ...payload, r: JSON.stringify(r) })}`.length;
+  const baseRequestSize = `${baseUrl}${parseQueryStringParameters({ r: JSON.stringify(r) })}`.length;
 
   if (baseRequestSize > MAX_REQUEST_SIZE) {
     logError('IX Bid Adapter: Base request size has exceeded maximum request size.', { bidder: BIDDER_CODE, code: ERROR_CODES.EXCEEDS_MAX_SIZE });
@@ -1018,11 +1006,6 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
       } else {
         logError('IX Bid Adapter: IX config FPD request size has exceeded maximum request size.', { bidder: BIDDER_CODE, code: ERROR_CODES.IX_FPD_EXCEEDS_MAX_SIZE });
       }
-    }
-
-    // Create t in payload if timeout is configured.
-    if (typeof otherIxConfig.timeout === 'number') {
-      payload.t = otherIxConfig.timeout;
     }
 
     if (typeof otherIxConfig.detectMissingSizes === 'boolean') {
@@ -1120,12 +1103,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
         }
       });
 
-      const clonedRObject = deepClone(r);
-
-      clonedRObject.site = mergeDeep({}, clonedRObject.site, site);
-      clonedRObject.user = mergeDeep({}, clonedRObject.user, user);
-
-      const requestSize = `${baseUrl}${parseQueryStringParameters({ ...payload, r: JSON.stringify(clonedRObject) })}`.length;
+      const requestSize = `${baseUrl}${parseQueryStringParameters({ r: JSON.stringify(r) })}`.length;
 
       if (requestSize < MAX_REQUEST_SIZE) {
         r.site = mergeDeep({}, r.site, site);
@@ -1156,19 +1134,19 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
     const isLastAdUnit = adUnitIndex === transactionIds.length - 1;
 
     if (wasAdUnitImpressionsTrimmed || isLastAdUnit) {
-      const clonedPayload = deepClone(payload);
       if (!isLastAdUnit || requestSequenceNumber) {
         r.ext.ixdiag.sn = requestSequenceNumber;
-        clonedPayload.sn = requestSequenceNumber;
       }
 
       requestSequenceNumber++;
-      clonedPayload.r = JSON.stringify(r);
 
       requests.push({
-        method: 'GET',
-        url: baseUrl,
-        data: clonedPayload,
+        method: 'POST',
+        url: baseUrl + '?s=' + validBidRequests[0].params.siteId,
+        data: deepClone(r),
+        options: {
+          contentType: 'text/plain',
+        },
         validBidRequests
       });
 
