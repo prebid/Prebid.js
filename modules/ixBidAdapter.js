@@ -1050,6 +1050,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
 
     const gpid = impressions[transactionIds[adUnitIndex]].gpid;
     const dfpAdUnitCode = impressions[transactionIds[adUnitIndex]].dfp_ad_unit_code;
+    const tid = impressions[transactionIds[adUnitIndex]].tid
     if (impressionObjects.length && BANNER in impressionObjects[0]) {
       const { id, banner: { topframe } } = impressionObjects[0];
       const _bannerImpression = {
@@ -1060,10 +1061,11 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
         },
       }
 
-      if (dfpAdUnitCode || gpid) {
+      if (dfpAdUnitCode || gpid || tid) {
         _bannerImpression.ext = {};
         _bannerImpression.ext.dfp_ad_unit_code = dfpAdUnitCode;
         _bannerImpression.ext.gpid = gpid;
+        _bannerImpression.ext.tid = tid;
       }
 
       if ('bidfloor' in impressionObjects[0]) {
@@ -1272,6 +1274,7 @@ function createVideoImps(validBidRequest, videoImps) {
     videoImps[validBidRequest.transactionId].ixImps = [];
     videoImps[validBidRequest.transactionId].ixImps.push(imp);
     videoImps[validBidRequest.transactionId].gpid = deepAccess(validBidRequest, 'ortb2Imp.ext.gpid');
+    videoImps[validBidRequest.transactionId].tid = deepAccess(validBidRequest, 'ortb2Imp.ext.tid');
   }
 }
 
@@ -1298,6 +1301,7 @@ function createBannerImps(validBidRequest, missingBannerSizes, bannerImps) {
 
   bannerImps[validBidRequest.transactionId].gpid = deepAccess(validBidRequest, 'ortb2Imp.ext.gpid');
   bannerImps[validBidRequest.transactionId].dfp_ad_unit_code = deepAccess(validBidRequest, 'ortb2Imp.ext.data.adserver.adslot');
+  bannerImps[validBidRequest.transactionId].tid = deepAccess(validBidRequest, 'ortb2Imp.ext.tid');
 
   // Create IX imps from params.size
   if (bannerSizeDefined) {
