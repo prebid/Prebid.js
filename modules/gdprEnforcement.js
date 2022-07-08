@@ -123,6 +123,18 @@ function getGvlidForAnalyticsAdapter(code) {
   return adapterManager.getAnalyticsAdapter(code) && (adapterManager.getAnalyticsAdapter(code).gvlid || null);
 }
 
+export function shouldEnforce(consentData, purpose, name) {
+  if (consentData == null && gdprDataHandler.enabled) {
+    // there is no consent data, but the GDPR module has been installed and configured
+    // NOTE: this check is not foolproof, as when Prebid first loads, enforcement hooks have not been attached yet
+    // This piece of code would not run at all, and `gdprDataHandler.enabled` would be false, until the first
+    // `setConfig({consentManagement})`
+    logWarn(`Attempting operation that requires purpose ${purpose} consent while consent data is not available${name ? ` (module: ${name})` : ''}. Assuming no consent was given.`)
+    return true;
+  }
+  return consentData && consentData.gdprApplies;
+}
+
 /**
  * This function takes in a rule and consentData and validates against the consentData provided. Depending on what it returns,
  * the caller may decide to suppress a TCF-sensitive activity.
@@ -183,7 +195,7 @@ export function deviceAccessHook(fn, isVendorless, gvlid, moduleName, result, {v
     fn.call(this, isVendorless, gvlid, moduleName, result);
   } else {
     const consentData = gdprDataHandler.getConsentData();
-    if (consentData && consentData.gdprApplies) {
+    if (shouldEnforce(consentData, 1, moduleName)) {
       const curBidder = config.getCurrentBidder();
       // Bidders have a copy of storage object with bidder code binded. Aliases will also pass the same bidder code when invoking storage functions and hence if alias tries to access device we will try to grab the gvl id for alias instead of original bidder
       if (curBidder && (curBidder != moduleName) && adapterManager.aliasRegistry[curBidder] === moduleName) {
@@ -216,8 +228,8 @@ export function deviceAccessHook(fn, isVendorless, gvlid, moduleName, result, {v
  */
 export function userSyncHook(fn, ...args) {
   const consentData = gdprDataHandler.getConsentData();
-  if (consentData && consentData.gdprApplies) {
-    const curBidder = config.getCurrentBidder();
+  const curBidder = config.getCurrentBidder();
+  if (shouldEnforce(consentData, 1, curBidder)) {
     const gvlid = getGvlid(curBidder);
     let isAllowed = validateRules(purpose1Rule, consentData, curBidder, gvlid);
     if (isAllowed) {
@@ -238,7 +250,7 @@ export function userSyncHook(fn, ...args) {
  * @param {Object} consentData GDPR consent data
  */
 export function userIdHook(fn, submodules, consentData) {
-  if (consentData && consentData.gdprApplies) {
+  if (shouldEnforce(consentData, 1, 'User ID')) {
     let userIdModules = submodules.map((submodule) => {
       const gvlid = getGvlid(submodule.submodule);
       const moduleName = submodule.submodule.name;
@@ -265,7 +277,7 @@ export function userIdHook(fn, submodules, consentData) {
  */
 export function makeBidRequestsHook(fn, adUnits, ...args) {
   const consentData = gdprDataHandler.getConsentData();
-  if (consentData && consentData.gdprApplies) {
+  if (shouldEnforce(consentData, 2)) {
     adUnits.forEach(adUnit => {
       adUnit.bids = adUnit.bids.filter(bid => {
         const currBidder = bid.bidder;
@@ -293,7 +305,7 @@ export function makeBidRequestsHook(fn, adUnits, ...args) {
  */
 export function enableAnalyticsHook(fn, config) {
   const consentData = gdprDataHandler.getConsentData();
-  if (consentData && consentData.gdprApplies) {
+  if (shouldEnforce(consentData, 7, 'Analytics')) {
     if (!isArray(config)) {
       config = [config]
     }
