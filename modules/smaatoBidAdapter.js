@@ -16,9 +16,10 @@ const buildOpenRtbBidRequest = (bidRequest, bidderRequest) => {
     tmax: bidderRequest.timeout,
     site: {
       id: window.location.hostname,
-      domain: window.location.hostname,
-      page: window.location.href,
-      ref: bidderRequest.refererInfo.referer
+      // TODO: do the fallbacks make sense here?
+      domain: bidderRequest.refererInfo.domain || window.location.hostname,
+      page: bidderRequest.refererInfo.page || window.location.href,
+      ref: bidderRequest.refererInfo.ref
     },
     device: {
       language: (navigator && navigator.language) ? navigator.language.split('-')[0] : '',
@@ -44,7 +45,7 @@ const buildOpenRtbBidRequest = (bidRequest, bidderRequest) => {
     }
   };
 
-  let ortb2 = config.getConfig('ortb2') || {};
+  let ortb2 = bidderRequest.ortb2 || {};
   Object.assign(requestTemplate.user, ortb2.user);
   Object.assign(requestTemplate.site, ortb2.site);
 

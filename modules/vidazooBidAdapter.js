@@ -15,7 +15,6 @@ const SESSION_ID_KEY = 'vidSid';
 export const SUPPORTED_ID_SYSTEMS = {
   'britepoolid': 1,
   'criteoId': 1,
-  'digitrustid': 1,
   'id5id': 1,
   'idl_env': 1,
   'lipb': 1,
@@ -129,7 +128,8 @@ function appendUserIdsToRequestPayload(payloadRef, userIds) {
 }
 
 function buildRequests(validBidRequests, bidderRequest) {
-  const topWindowUrl = bidderRequest.refererInfo.referer;
+  // TODO: does the fallback make sense here?
+  const topWindowUrl = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
   const requests = [];
   validBidRequests.forEach(validBidRequest => {
     const sizes = parseSizesInput(validBidRequest.sizes);

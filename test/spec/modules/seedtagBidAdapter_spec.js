@@ -196,7 +196,7 @@ describe('Seedtag Adapter', function () {
 
   describe('buildRequests method', function () {
     const bidderRequest = {
-      refererInfo: { referer: 'referer' },
+      refererInfo: { page: 'referer' },
       timeout: 1000,
     };
     const mandatoryParams = {
@@ -223,6 +223,7 @@ describe('Seedtag Adapter', function () {
     });
 
     it('Common data request should be correct', function () {
+      const now = Date.now();
       const request = spec.buildRequests(validBidRequests, bidderRequest);
       const data = JSON.parse(request.data);
       expect(data.url).to.equal('referer');
@@ -231,6 +232,9 @@ describe('Seedtag Adapter', function () {
       expect(
         ['fixed', 'mobile', 'unknown'].indexOf(data.connectionType)
       ).to.be.above(-1);
+      expect(data.auctionStart).to.be.greaterThanOrEqual(now);
+      expect(data.ttfb).to.be.greaterThanOrEqual(0);
+
       expect(data.bidRequests[0].adUnitCode).to.equal('adunit-code');
     });
 

@@ -62,7 +62,8 @@ describe('Adserver.Online bidding adapter', function () {
     refererInfo: {
       numIframes: 0,
       reachedTop: true,
-      referer: 'https://example.com'
+      page: 'https://example.com',
+      domain: 'example.com'
     }
   };
 
