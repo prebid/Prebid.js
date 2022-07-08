@@ -1,7 +1,6 @@
 [
     "appnexusBidAdapter",
     "ixBidAdapter",
-    "oneVideoBidAdapter",
     "openxBidAdapter",
     "pubmaticBidAdapter",
     "rhythmoneBidAdapter",
