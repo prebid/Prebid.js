@@ -67,30 +67,11 @@ const SUPPORTED_TYPES = {
   image: IMAGE
 };
 
-const { NATIVE_KEYS, NATIVE_ASSET_TYPES, NATIVE_IMAGE_TYPES, PREBID_NATIVE_DATA_KEYS_TO_ORTB, NATIVE_KEYS_THAT_ARE_NOT_ASSETS } = CONSTANTS;
+const { NATIVE_ASSET_TYPES, NATIVE_IMAGE_TYPES, PREBID_NATIVE_DATA_KEYS_TO_ORTB, NATIVE_KEYS_THAT_ARE_NOT_ASSETS } = CONSTANTS;
 
-// Asset type mapping as per Native IAB spec 1.2
-// https://www.iab.com/wp-content/uploads/2017/04/OpenRTB-Native-Ads-Specification-Draft_1.2_2017-04.pdf#page=40
-const assetTypeMapping = {
-  'image': {
-    1: 'icon',
-    3: 'image'
-  },
-  'data': {
-    1: 'sponsoredBy',
-    2: 'body',
-    3: 'rating',
-    4: 'likes',
-    5: 'downloads',
-    6: 'price',
-    7: 'salePrice',
-    8: 'phone',
-    9: 'address',
-    10: 'body2',
-    11: 'displayUrl',
-    12: 'cta',
-  }
-}
+// inverse native maps useful for converting to legacy
+const PREBID_NATIVE_DATA_KEYS_TO_ORTB_INVERSE = inverse(PREBID_NATIVE_DATA_KEYS_TO_ORTB);
+const NATIVE_ASSET_TYPES_INVERSE = inverse(NATIVE_ASSET_TYPES);
 
 export const nativeMapper = new Map();
 /**
@@ -211,7 +192,7 @@ export function nativeBidIsValid(bid, {index = auctionManager.index} = {}) {
   const adUnit = index.getAdUnit(bid);
   if (!adUnit) { return false; }
   let ortbRequest =
-  adUnit?.nativeParams?.ortb || toOrtbNativeRequest(adUnit.nativeParams);
+  adUnit?.nativeParams?.ortb || nativeMapper.get(bid.requestId) || toOrtbNativeRequest(adUnit.nativeParams);
   let ortbResponse =
   bid.native?.ortb || toOrtbNativeResponse(bid.native, ortbRequest);
   return isNativeOpenRTBBidValid(ortbResponse, ortbRequest);
@@ -366,26 +347,19 @@ export function getAllAssetsMessage(data, adObject) {
     adId: data.adId,
   };
 
-  // Provide a mapping from legacy asset to openRTB id, so legacy creatives can still display ads
-  const nativeAssetToOrtbId = {};
+  // Pass to Prebid Universal Creative all assets, the legacy ones + the ortb ones (under ortb property)
   const ortbRequest = nativeMapper.get(adObject.requestId);
-  const ortbAssets = ortbRequest?.assets || [];
-  for (const asset of ortbAssets) {
-    if (asset.title) {
-      nativeAssetToOrtbId['hb_native_title'] = asset.id;
-    } else if (asset.img) {
-      nativeAssetToOrtbId['hb_native_' + assetTypeMapping.image[asset.img.type]] = asset.id;
-    } else if (asset.data) {
-      nativeAssetToOrtbId[NATIVE_KEYS[assetTypeMapping.data[asset.data.type]]] = asset.id;
-    }
+  const ortbResponse = adObject.native?.ortb;
+  let legacyResponse = {};
+  if (ortbRequest && ortbResponse) {
+    legacyResponse = toLegacyResponse(ortbResponse, ortbRequest);
+    adObject.native = {
+      ...adObject.native,
+      ...legacyResponse
+    };
   }
-  adObject.native.nativeAssetToOrtbId = nativeAssetToOrtbId;
-
   if (adObject.native.ortb) {
-    Object.keys(adObject.native).forEach(key => {
-      message[key] = adObject.native[key];
-    });
-    return message;
+    message.ortb = adObject.native.ortb;
   }
   message.assets = [];
 
@@ -454,7 +428,7 @@ export function toOrtbNativeRequest(legacyNativeAssets) {
   };
   for (let key in legacyNativeAssets) {
     // skip conversion for non-asset keys
-    if (!(key in NATIVE_KEYS) || (key in NATIVE_KEYS_THAT_ARE_NOT_ASSETS)) continue;
+    if (key in NATIVE_KEYS_THAT_ARE_NOT_ASSETS) continue;
 
     const asset = legacyNativeAssets[key];
     let required = 0;
@@ -669,6 +643,29 @@ export function toOrtbNativeResponse(legacyResponse, ortbRequest) {
 }
 
 /**
+ * Generates a legacy response from an ortb response. Useful during the transition period.
+ * @param {*} ortbResponse a standard ortb response object
+ * @param {*} ortbRequest the ortb request, useful to match ids.
+ * @returns an object containing the response in legacy native format: { title: "this is a title", image: ... }
+ */
+function toLegacyResponse(ortbResponse, ortbRequest) {
+  const legacyResponse = {};
+  const requestAssets = ortbRequest?.assets || [];
+  legacyResponse.clickUrl = ortbResponse.link.url;
+  for (const asset of ortbResponse?.assets || []) {
+    const requestAsset = requestAssets.find(reqAsset => asset.id === reqAsset.id);
+    if (asset.title) {
+      legacyResponse.title = asset.title.text;
+    } else if (asset.img) {
+      legacyResponse[requestAsset.img.type === NATIVE_IMAGE_TYPES.MAIN ? 'image' : 'icon'] = asset.img.url;
+    } else if (asset.data) {
+      legacyResponse[PREBID_NATIVE_DATA_KEYS_TO_ORTB_INVERSE[NATIVE_ASSET_TYPES_INVERSE[requestAsset.data.type]]] = asset.data.value;
+    }
+  }
+  return legacyResponse;
+}
+
+/**
  * Converts an OpenRTB request to a proprietary Prebid.js format.
  * The proprietary Prebid format has many limitations and will be dropped in
  * the future; adapters are encouraged to stop using it in favour of OpenRTB format.
@@ -698,4 +695,15 @@ export function convertLegacyNativeRequestToOrtb(bidRequests) {
     }
   }
   return bidRequests;
+}
+
+/**
+ * Inverts key-values of an object.
+ */
+function inverse(obj) {
+  var retobj = {};
+  for (var key in obj) {
+    retobj[obj[key]] = key;
+  }
+  return retobj;
 }
