@@ -5,6 +5,7 @@ import enc from 'crypto-js/enc-utf8';
 import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
+import { getStorageManager } from '../src/storageManager.js';
 import { auctionManager } from '../src/auctionManager.js';
 import { ajax } from '../src/ajax.js';
 
@@ -15,6 +16,7 @@ const DEFAULT_EVENT_URL = 'https://pbjs-stream.bydata.com/topics/prebid'
 const analyticsType = 'endpoint'
 const isBydata = isKeyInUrl('bydata_debug')
 const adunitsMap = {}
+const storage = getStorageManager();
 let initOptions = {}
 var payload = {}
 var winPayload = {}
@@ -264,10 +266,10 @@ ascAdapter.getVisitorData = function (data = {}) {
   }
 
   const { clientId } = initOptions;
-  var userId = window.localStorage.getItem('userId');
+  var userId = storage.getDataFromLocalStorage('userId')
   if (!userId) {
     userId = generateUid();
-    window.localStorage.setItem('userId', userId);
+    storage.setDataInLocalStorage('userId', userId);
   }
   var screenSize = { width: window.screen.width, height: window.screen.height };
   var deviceType = giveDeviceTypeOnScreenSize();
