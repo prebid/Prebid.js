@@ -1,30 +1,45 @@
-import {logError, mergeDeep} from '../src/utils.js';
+import {logError, logWarn, mergeDeep} from '../src/utils.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {submodule} from '../src/hook.js';
 
-export const TOPICS_TAXONOMY = 600;
+const TAXONOMIES = {
+  // map from topic taxonomyVersion to IAB segment taxonomy
+  '1': 600
+}
 
-export function getTopicsData(name, topics) {
-  return Object.entries(
-    topics.reduce((byTaxVersion, topic) => {
-      const taxv = topic.taxonomyVersion;
-      if (!byTaxVersion.hasOwnProperty(taxv)) byTaxVersion[taxv] = [];
-      byTaxVersion[taxv].push(topic.topic);
-      return byTaxVersion;
-    }, {})
-  ).map(([taxv, topics]) => {
-    const datum = {
-      ext: {
-        segtax: TOPICS_TAXONOMY,
-        segclass: taxv
-      },
-      segment: topics.map((topic) => ({id: topic.toString()}))
-    };
-    if (name != null) {
-      datum.name = name;
-    }
-    return datum;
-  });
+function partitionBy(field, items) {
+  return items.reduce((partitions, item) => {
+    const key = item[field];
+    if (!partitions.hasOwnProperty(key)) partitions[key] = [];
+    partitions[key].push(item);
+    return partitions;
+  }, {});
+}
+
+export function getTopicsData(name, topics, taxonomies = TAXONOMIES) {
+  return Object.entries(partitionBy('taxonomyVersion', topics))
+    .filter(([taxonomyVersion]) => {
+      if (!taxonomies.hasOwnProperty(taxonomyVersion)) {
+        logWarn(`Unrecognized taxonomyVersion from Topics API: "${taxonomyVersion}"; topic will be ignored`);
+        return false;
+      }
+      return true;
+    }).flatMap(([taxonomyVersion, topics]) =>
+      Object.entries(partitionBy('modelVersion', topics))
+        .map(([modelVersion, topics]) => {
+          const datum = {
+            ext: {
+              segtax: taxonomies[taxonomyVersion],
+              segclass: modelVersion
+            },
+            segment: topics.map((topic) => ({id: topic.topic.toString()}))
+          };
+          if (name != null) {
+            datum.name = name;
+          }
+          return datum;
+        })
+    );
 }
 
 export function getTopics(doc = document) {

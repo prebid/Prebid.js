@@ -1,12 +1,20 @@
-import {getTopics, getTopicsData, processFpd, TOPICS_TAXONOMY} from '../../../modules/topicsFpdModule.js';
+import {getTopics, getTopicsData, processFpd} from '../../../modules/topicsFpdModule.js';
 import {deepClone} from '../../../src/utils.js';
 
 describe('getTopicsData', () => {
-  function makeTopic(topic, taxv) {
+  function makeTopic(topic, modelv, taxv = '1') {
     return {
       topic,
-      taxonomyVersion: taxv
+      taxonomyVersion: taxv,
+      modelVersion: modelv
     }
+  }
+
+  function byTaxClass(segments) {
+    return segments.reduce((memo, segment) => {
+      memo[`${segment.ext.segtax}:${segment.ext.segclass}`] = segment;
+      return memo;
+    }, {})
   }
 
   [
@@ -17,11 +25,12 @@ describe('getTopicsData', () => {
     },
     {
       t: 'single topic',
-      topics: [makeTopic(123, 'v1')],
+      topics: [makeTopic(123, 'm1')],
       expected: [
         {
           ext: {
-            segclass: 'v1'
+            segtax: 600,
+            segclass: 'm1'
           },
           segment: [
             {id: '123'}
@@ -30,12 +39,13 @@ describe('getTopicsData', () => {
       ]
     },
     {
-      t: 'multiple topics with the same taxonomy version',
-      topics: [makeTopic(123, 'v1'), makeTopic(321, 'v1')],
+      t: 'multiple topics with the same model version',
+      topics: [makeTopic(123, 'm1'), makeTopic(321, 'm1')],
       expected: [
         {
           ext: {
-            segclass: 'v1'
+            segtax: 600,
+            segclass: 'm1'
           },
           segment: [
             {id: '123'},
@@ -45,12 +55,13 @@ describe('getTopicsData', () => {
       ]
     },
     {
-      t: 'multiple topics with different taxonomy versions',
-      topics: [makeTopic(1, 'v1'), makeTopic(2, 'v1'), makeTopic(3, 'v2')],
+      t: 'multiple topics with different model versions',
+      topics: [makeTopic(1, 'm1'), makeTopic(2, 'm1'), makeTopic(3, 'm2')],
       expected: [
         {
           ext: {
-            segclass: 'v1'
+            segtax: 600,
+            segclass: 'm1'
           },
           segment: [
             {id: '1'},
@@ -59,28 +70,87 @@ describe('getTopicsData', () => {
         },
         {
           ext: {
-            segclass: 'v2'
+            segtax: 600,
+            segclass: 'm2'
           },
           segment: [
             {id: '3'}
           ]
         }
       ]
+    },
+    {
+      t: 'multiple topics, some with a taxonomy version other than "1"',
+      topics: [makeTopic(123, 'm1'), makeTopic(321, 'm1', 'other')],
+      expected: [
+        {
+          ext: {
+            segtax: 600,
+            segclass: 'm1'
+          },
+          segment: [
+            {id: '123'}
+          ]
+        }
+      ]
+    },
+    {
+      t: 'multiple topics in multiple taxonomies',
+      taxonomies: {
+        '1': 600,
+        '2': 601
+      },
+      topics: [
+        makeTopic(123, 'm1', '1'),
+        makeTopic(321, 'm1', '2'),
+        makeTopic(213, 'm2', '1'),
+      ],
+      expected: [
+        {
+          ext: {
+            segtax: 600,
+            segclass: 'm1'
+          },
+          segment: [
+            {id: '123'}
+          ]
+        },
+        {
+          ext: {
+            segtax: 601,
+            segclass: 'm1',
+          },
+          segment: [
+            {id: '321'}
+          ]
+        },
+        {
+          ext: {
+            segtax: 600,
+            segclass: 'm2'
+          },
+          segment: [
+            {id: '213'}
+          ]
+        }
+      ]
     }
-  ].forEach(({t, topics, expected}) => {
-    it(`on ${t}`, () => {
-      const actual = getTopicsData('mockName', topics);
-      expect(actual.length).to.eql(expected.length);
-      actual.forEach((data, i) => {
-        sinon.assert.match(data, expected[i]);
-        expect(data.name).to.equal('mockName');
-        expect(data.ext.segtax).to.eql(TOPICS_TAXONOMY);
-      })
-    });
+  ].forEach(({t, topics, expected, taxonomies}) => {
+    describe(`on ${t}`, () => {
+      it('should convert topics to user.data segments correctly', () => {
+        const actual = getTopicsData('mockName', topics, taxonomies);
+        expect(actual.length).to.eql(expected.length);
+        expected = byTaxClass(expected);
+        Object.entries(byTaxClass(actual)).forEach(([key, datum]) => {
+          sinon.assert.match(datum, expected[key]);
+          expect(datum.name).to.equal('mockName');
+        })
+      });
 
-    it('should not set name if null', () => {
-      getTopicsData(null, topics).forEach((data) => {
-        expect(data.hasOwnProperty('name')).to.be.false;
+      it('should not set name if null', () => {
+        getTopicsData(null, topics).forEach((data) => {
+          expect(data.hasOwnProperty('name')).to.be.false;
+        })
       })
     })
   })
