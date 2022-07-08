@@ -83,7 +83,13 @@ function getOpenRTBDeviceObject() {
  */
 function getOpenRTBUserObject(bidderRequest) {
   if (!bidderRequest || !bidderRequest.gdprConsent || !isStr(bidderRequest.gdprConsent.consentString)) return null;
-  return { ext: { consent: bidderRequest.gdprConsent.consentString } };
+
+  return {
+    ext: {
+      consent: bidderRequest.gdprConsent.consentString,
+      pubProvidedId: bidderRequest.userId && bidderRequest.userId.pubProvidedId,
+    },
+  };
 }
 
 /**
