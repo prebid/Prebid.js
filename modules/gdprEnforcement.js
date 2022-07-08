@@ -19,6 +19,8 @@ const VENDORLESS_MODULES = new Set([
   'pubProvidedId',
 ]);
 
+export const STRICT_STORAGE_ENFORCEMENT = 'strictStorageEnforcement';
+
 const TCF2 = {
   'purpose1': { id: 1, name: 'storage' },
   'purpose2': { id: 2, name: 'basicAds' },
@@ -51,6 +53,7 @@ const biddersBlocked = [];
 const analyticsBlocked = [];
 
 let hooksAdded = false;
+let strictStorageEnforcement = false;
 
 // Helps in stubbing these functions in unit tests.
 export const internal = {
@@ -192,7 +195,9 @@ export function deviceAccessHook(fn, isVendorless, gvlid, moduleName, result, {v
   if (!hasDeviceAccess()) {
     logWarn('Device access is disabled by Publisher');
     result.valid = false;
-    fn.call(this, isVendorless, gvlid, moduleName, result);
+  } else if (isVendorless && !strictStorageEnforcement) {
+    // for vendorless (core) storage, do not enforce rules unless strictStorageEnforcement is set
+    result.valid = true;
   } else {
     const consentData = gdprDataHandler.getConsentData();
     if (shouldEnforce(consentData, 1, moduleName)) {
@@ -207,18 +212,16 @@ export function deviceAccessHook(fn, isVendorless, gvlid, moduleName, result, {v
       let isAllowed = validate(purpose1Rule, consentData, curModule, gvlid, isVendorless ? () => true : undefined);
       if (isAllowed) {
         result.valid = true;
-        fn.call(this, isVendorless, gvlid, moduleName, result);
       } else {
         curModule && logWarn(`TCF2 denied device access for ${curModule}`);
         result.valid = false;
         storageBlocked.push(curModule);
-        fn.call(this, isVendorless, gvlid, moduleName, result);
       }
     } else {
       result.valid = true;
-      fn.call(this, isVendorless, gvlid, moduleName, result);
     }
   }
+  fn.call(this, isVendorless, gvlid, moduleName, result);
 }
 
 /**
@@ -363,6 +366,7 @@ export function setEnforcementConfig(config) {
   } else {
     enforcementRules = rules;
   }
+  strictStorageEnforcement = !!deepAccess(config, STRICT_STORAGE_ENFORCEMENT);
 
   purpose1Rule = find(enforcementRules, hasPurpose1);
   purpose2Rule = find(enforcementRules, hasPurpose2);

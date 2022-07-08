@@ -1,13 +1,10 @@
 import {hook} from './hook.js';
 import {hasDeviceAccess, checkCookieSupport, logError, logInfo, isPlainObject} from './utils.js';
 import {bidderSettings as defaultBidderSettings} from './bidderSettings.js';
-import {config} from './config.js';
 
 const moduleTypeWhiteList = ['core', 'prebid-module'];
 
 export let storageCallbacks = [];
-
-export const ALWAYS_ENFORCE = 'alwaysEnforceDeviceAccess';
 
 /**
  * Storage options
@@ -36,15 +33,10 @@ export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = 
     return storageAllowed == null ? false : storageAllowed;
   }
 
-  const isWhitelisted = moduleTypeWhiteList.includes(moduleType);
+  const isVendorless = moduleTypeWhiteList.includes(moduleType);
 
   function isValid(cb) {
-    if (isWhitelisted && !config.getConfig(ALWAYS_ENFORCE)) {
-      let result = {
-        valid: true
-      }
-      return cb(result);
-    } else if (!isBidderAllowed()) {
+    if (!isBidderAllowed()) {
       logInfo(`bidderSettings denied access to device storage for bidder '${bidderCode}'`);
       const result = {valid: false};
       return cb(result);
@@ -53,7 +45,7 @@ export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = 
       let hookDetails = {
         hasEnforcementHook: false
       }
-      validateStorageEnforcement(isWhitelisted, gvlid, bidderCode || moduleName, hookDetails, function(result) {
+      validateStorageEnforcement(isVendorless, gvlid, bidderCode || moduleName, hookDetails, function(result) {
         if (result && result.hasEnforcementHook) {
           value = cb(result);
         } else {

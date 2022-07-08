@@ -10,7 +10,7 @@ import {
   purpose2Rule,
   enableAnalyticsHook,
   getGvlid,
-  internal
+  internal, STRICT_STORAGE_ENFORCEMENT
 } from 'modules/gdprEnforcement.js';
 import { config } from 'src/config.js';
 import adapterManager, { gdprDataHandler } from 'src/adapterManager.js';
@@ -301,25 +301,31 @@ describe('gdpr enforcement', function () {
       curBidderStub.restore();
     });
 
-    it('should mark module as vendorless for rule validation when isVendorless = true', () => {
+    it(`should mark module as vendorless for rule validation when isVendorless = true and ${STRICT_STORAGE_ENFORCEMENT} is set`, () => {
       setEnforcementConfig({
-        gdpr: {
-          rules: [{
-            purpose: 'storage',
-            enforcePurpose: true,
-            enforceVendor: true,
-            vendorExceptions: []
-          }]
-        }
+        [STRICT_STORAGE_ENFORCEMENT]: true
       });
-      let consentData = {}
-      consentData.vendorData = staticConfig.consentData.getTCData;
-      consentData.gdprApplies = true;
-      consentData.apiVersion = 2;
+      let consentData = {
+        vendorData: staticConfig.consentData.getTCData,
+        gdprApplies: true
+      }
       gdprDataHandlerStub.returns(consentData);
       const validate = sinon.stub().callsFake(() => true);
       deviceAccessHook(nextFnSpy, true, 123, 'mockModule', undefined, {validate});
       expect(validate.args[0][4]('mockModule')).to.be.true;
+    });
+
+    it(`should not enforce consent for vendorless modules if ${STRICT_STORAGE_ENFORCEMENT} is not set`, () => {
+      setEnforcementConfig({});
+      let consentData = {
+        vendorData: staticConfig.consentData.getTCData,
+        gdprApplies: true
+      }
+      gdprDataHandlerStub.returns(consentData);
+      const validate = sinon.stub().callsFake(() => false);
+      deviceAccessHook(nextFnSpy, true, 123, 'mockModule', undefined, {validate});
+      sinon.assert.callCount(validate, 0);
+      sinon.assert.calledWith(nextFnSpy, true, 123, 'mockModule', {hasEnforcementHook: true, valid: true});
     })
   });
 

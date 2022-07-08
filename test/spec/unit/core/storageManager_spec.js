@@ -3,7 +3,7 @@ import {
   getCoreStorageManager,
   storageCallbacks,
   getStorageManager,
-  newStorageManager, ALWAYS_ENFORCE, validateStorageEnforcement
+  newStorageManager, validateStorageEnforcement
 } from 'src/storageManager.js';
 import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
@@ -55,7 +55,7 @@ describe('storage manager', function() {
     deviceAccessSpy.restore();
   });
 
-  describe(`when '${ALWAYS_ENFORCE}' is set, core storage`, () => {
+  describe(`core storage`, () => {
     let storage, validateHook;
 
     beforeEach(() => {
@@ -64,7 +64,6 @@ describe('storage manager', function() {
         next.apply(this, args);
       });
       validateStorageEnforcement.before(validateHook, 99);
-      config.setConfig({[ALWAYS_ENFORCE]: true});
     });
 
     afterEach(() => {
@@ -72,14 +71,14 @@ describe('storage manager', function() {
       config.resetConfig();
     })
 
-    it('should respect deviceAccess', () => {
-      config.setConfig({deviceAccess: false});
-      expect(storage.localStorageIsEnabled()).to.be.false;
-    });
-
-    it('should respect consent enforcement', () => {
+    it('should respect (vendorless) consent enforcement', () => {
       storage.localStorageIsEnabled();
       expect(validateHook.args[0][1]).to.eql(true); // isVendorless should be set to true
+    });
+
+    it('should respect the deviceAccess flag', () => {
+      config.setConfig({deviceAccess: false});
+      expect(storage.localStorageIsEnabled()).to.be.false
     })
   })
 
