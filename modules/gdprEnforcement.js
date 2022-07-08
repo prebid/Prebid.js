@@ -15,7 +15,8 @@ import CONSTANTS from '../src/constants.json';
 // modules for which vendor consent is not needed (see https://github.com/prebid/Prebid.js/issues/8161)
 const VENDORLESS_MODULES = new Set([
   'sharedId',
-  'pubCommonId'
+  'pubCommonId',
+  'pubProvidedId',
 ]);
 
 const TCF2 = {
