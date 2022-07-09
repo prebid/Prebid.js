@@ -13,9 +13,9 @@ export const spec = {
   gvlid: GVLID,
   supportedMediaTypes: [NATIVE],
 
-  getBidderConfig: function (property) {  
+  getBidderConfig: function (property) {
     return config.getConfig(`${BIDDER_CODE}.${property}`);
-  },  
+  },
 
   isBidRequestValid: function (bid) {
     return !!(bid.bidId) &&
@@ -48,7 +48,7 @@ export const spec = {
           consentRequired: bidderRequest.gdprConsent.gdprApplies
         }
       }
-      
+
       bidRequests.push({
         method: REQUEST_METHOD,
         url: host + '/bidder/bid/',
@@ -74,7 +74,7 @@ export const spec = {
 
   onBidWon: function (bid) {
     if (bid['requestId']) {
-      let host = this.getBidderConfig('host') || BIDDER_HOST;  
+      let host = this.getBidderConfig('host') || BIDDER_HOST;
       triggerPixel(host + '/bidder/won/' + bid['requestId']);
     }
   }
