@@ -12,7 +12,18 @@ const MODULE = 'frvr';
  * @param args
  */
 function handleAuctionInit(args) {
-  handleEvent("hb_auction_init", args);
+  const o = {}
+  if (args.auctionId) {
+    o.auctionId = args.auctionId;
+  }
+  if (args.timestamp) {
+    o.timestamp = args.timestamp;
+  }
+  if (args.adUnits) {
+    o.adUnits = mapAdUnits(args.adUnits);
+  }
+
+  handleEvent("hb_auction_init", o);
 }
 
 /**
@@ -20,7 +31,38 @@ function handleAuctionInit(args) {
  * @param args
  */
 function handleBidRequested(args) {
-  handleEvent("hb_bid_request", args);
+  const o = {}
+  if(args.auctionId) {
+    o.auctionId = args.auctionId;
+  }
+  if(args.bidderCode) {
+    o.bidderCode = args.bidderCode;
+  }
+  if(args.start) {
+    o.start = args.start;
+  }
+  if (args.timeout) {
+    o.timeout = args.timeout;
+  }
+  if (args.bidderRequestId) {
+    o.bidderRequestId = args.bidderRequestId;
+  }
+
+  if (args.bids) {
+    o.bids = args.bids
+      .map(e => {
+        return {
+          bidder: e.bidder,
+          params: e.params,
+          bidId: e.bidId,
+          adUnitCode: e.adUnitCode,
+          transactionId: e.transactionId,
+          bidderRequestId: e.bidderRequestId
+        }
+      });
+  }
+
+  handleEvent("hb_bid_request", o);
 }
 
 /**
@@ -40,10 +82,41 @@ function handleBidResponse(args) {
  * @param args
  */
 function handleBidAdjustment(args) {
-  var o = utils.deepClone(args);
-  if (o && o.ad) {
-    delete o.ad;
+  var o = {};
+  if (args.bidderCode) {
+    o.bidderCode = args.bidderCode;
   }
+  if (args.adId) {
+    o.adId = args.adId;
+  }
+  if (args.width) {
+    o.size = [args.width, args.height];
+  }
+  if (args.cpm) {
+    o.cpm = args.cpm;
+  }
+  if (args.creativeId) {
+    o.creativeId = args.creativeId;
+  }
+  if (args.currency) {
+    o.currency = args.currency;
+  }
+  if (args.auctionId) {
+    o.auctionId = args.auctionId;
+  }
+  if (args.adUnitCode) {
+    o.adUnitCode = args.adUnitCode;
+  }
+  if (args.timeToRespond) {
+    o.timeToRespond = args.timeToRespond;
+  }
+  if (args.requestTimestamp) {
+    o.requestTimestamp = args.requestTimestamp;
+  }
+  if (args.responseTimestamp) {
+    o.responseTimestamp = args.responseTimestamp;
+  }
+
   handleEvent("hb_bid_adjustment", o);
 }
 
@@ -52,7 +125,41 @@ function handleBidAdjustment(args) {
  * @param args
  */
 function handleBidderDone(args) {
-  handleEvent("hb_bidder_done", args);
+  const o = {}
+  if(args.auctionId) {
+    o.auctionId = args.auctionId;
+  }
+  if(args.bidderCode) {
+    o.bidderCode = args.bidderCode;
+  }
+  if(args.start) {
+    o.start = args.start;
+  }
+  if (args.timeout) {
+    o.timeout = args.timeout;
+  }
+  if (args.bidderRequestId) {
+    o.bidderRequestId = args.bidderRequestId;
+  }
+  if (args.serverResponseTimeMs) {
+    o.serverResponseTimeMs = args.serverResponseTimeMs;
+  }
+
+  if (args.bids) {
+    o.bids = args.bids
+      .map(e => {
+        return {
+          bidder: e.bidder,
+          params: e.params,
+          bidId: e.bidId,
+          adUnitCode: e.adUnitCode,
+          transactionId: e.transactionId,
+          bidderRequestId: e.bidderRequestId
+        }
+      });
+  }
+
+  handleEvent("hb_bidder_done", o);
 }
 
 /**
@@ -60,12 +167,30 @@ function handleBidderDone(args) {
  * @param args
  */
 function handleAuctionEnd(args) {
-  var o = utils.deepClone(args);
-
-  if (o && o.bidsReceived) {
-    for (var i = 0; i < o.bidsReceived.length; i++) {
-      delete o.bidsReceived[i]["ad"];
-    }
+  var o = {};
+  if (args.auctionId) {
+    o.auctionId = args.auctionId;
+  }
+  if (args.timestamp) {
+    o.timestamp = args.timestamp;
+  }
+  if(args.auctionEnd) {
+    o.auctionEnd = args.auctionEnd;
+  }
+  if (args.adUnits) {
+    o.adUnits = mapAdUnits(args.adUnits);
+  }
+  if (args.bidderRequests) {
+    o.bidderRequests = mapBidderRequests(args.bidderRequests);
+  }
+  if (args.bidsReceived) {
+    o.bidsReceived = mapBids(args.bidsReceived);
+  }
+  if (args.noBids) {
+    o.noBids = mapBids(args.noBids);
+  }
+  if (args.winningBids) {
+    o.winningBids = mapBids(args.winningBids);
   }
   handleEvent("hb_auction_end", o);
 }
@@ -102,6 +227,127 @@ function handleEvent(name, data) {
     window.FRVR.tracker.logEvent(name, data);
   }
 }
+
+// Utils
+
+function mapAdUnits(adUnits) {
+  if (!adUnits) {
+    return [];
+  }
+  return adUnits.map(e => {
+    return {
+      code: e.code,
+      sizes: e.sizes,
+      bidders: mapBidders(e.bids)
+    }
+  });
+}
+
+function mapBidders(bids) {
+  if (!bids) {
+    return [];
+  }
+
+  return bids.map(e => {
+    return {
+      bidder: e.bidder,
+      params: e.params
+    }
+  })
+}
+
+function mapBidderRequests(bidsReqs) {
+  if (!bidsReqs) {
+    return [];
+  }
+
+  return bidsReqs.map(e => {
+    return {
+      bidderCode: e.bidderCode,
+      auctionId: e.auctionId,
+      bidderRequestId: e.bidderRequestId,
+      bids: e.bids.map( b => {
+        return {
+          bidder: b.bidder,
+          params: b.params,
+          bidId: b.bidId,
+          adUnitCode: b.adUnitCode,
+          bidderRequestId: b.bidderRequestId,
+          serverResponseTimeMs: b.serverResponseTimeMs
+        }
+      }),
+      auctionStart: e.auctionStart,
+      timeout: e.timeout,
+      start: e.start,
+      serverResponseTimeMs: e.serverResponseTimeMs
+    }
+  })
+}
+
+function mapBids(bids) {
+  if (!bids) {
+    return []
+  }
+
+  return bids.map(b => {
+    const r = {};
+    if (b.bidderCode) {
+      r.bidderCode = b.bidderCode;
+    }
+    if (b.bidder) {
+      r.bidder = b.bidder;
+    }
+    if (b.params) {
+      r.params = b.params;
+    }
+    if (b.transactionId) {
+      r.transactionId = b.transactionId;
+    }
+    if (b.width) {
+      r.size = [b.width, b.height];
+    }
+    if (b.adId) {
+      r.adId = b.adId;
+    }
+    if (b.requestId) {
+      r.requestId = b.requestId;
+    }
+    if (b.cpm) {
+      r.cpm = b.cpm;
+    }
+    if (b.creativeId) {
+      r.creativeId = b.creativeId;
+    }
+    if (b.currency) {
+      r.currency = b.currency;
+    }
+    if (b.auctionId) {
+      r.auctionId = b.auctionId;
+    }
+    if (b.responseTimestamp) {
+      r.responseTimestamp = b.responseTimestamp;
+    }
+    if (b.requestTimestamp) {
+      r.requestTimestamp = b.requestTimestamp;
+    }
+    if (b.adUnitCode) {
+      r.adUnitCode = b.adUnitCode;
+    }
+    if (b.timeToRespond) {
+      r.timeToRespond = b.timeToRespond;
+    }
+    if (b.bidId) {
+      r.bidId = b.bidId;
+    }
+    if (b.bidderRequestId) {
+      r.bidderRequestId = b.bidderRequestId;
+    }
+
+    return r;
+  });
+}
+
+//
 
 let frvrAdapter = Object.assign(adapter({analyticsType}), {
   track({eventType, args}) {
