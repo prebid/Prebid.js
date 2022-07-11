@@ -751,7 +751,7 @@ export function addBidResponseHook(fn, adUnitCode, bid) {
     flooredBid.status = CONSTANTS.BID_STATUS.BID_REJECTED;
     // if floor not met update bid with 0 cpm so it is not included downstream and marked as no-bid
     flooredBid.cpm = 0;
-    logWarn(`${MODULE_NAME}: ${flooredBid.bidderCode}'s Bid Response for ${adUnitCode} was rejected due to floor not met`, bid);
+    logWarn(`${MODULE_NAME}: ${flooredBid.bidderCode}'s Bid Response for ${adUnitCode} was rejected due to floor not met (adjusted cpm: ${bid?.floorData?.cpmAfterAdjustments}, floor: ${floorInfo?.matchingFloor})`, bid);
     return fn.call(this, adUnitCode, flooredBid);
   }
   return fn.call(this, adUnitCode, bid);
