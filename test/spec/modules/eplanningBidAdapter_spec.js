@@ -652,7 +652,6 @@ describe('E-Planning Adapter', function () {
     let sandbox = sinon.sandbox.create();
     let intersectionObserverStub;
     let intersectionCallback;
-    let visibilityStateStub;
 
     function setIntersectionObserverMock(params) {
       let fakeIntersectionObserver = (stateChange, options) => {
