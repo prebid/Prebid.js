@@ -19,6 +19,20 @@ var validBidRequests = [
     transactionId: '2e63c0ed-b10c-4008-aed5-84582cecfe87'
   }
 ];
+var validBidRequestsNoCustomData = [
+  {
+    adUnitCode: 'div-gpt-ad-1460505748561-0',
+    auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99',
+    bidId: '2899ec066a91ff8',
+    bidRequestsCount: 1,
+    bidder: 'newspassid',
+    bidderRequestId: '1c1586b27a1b5c8',
+    crumbs: {pubcid: '203a0692-f728-4856-87f6-9a25a6b63715'},
+    params: { publisherId: '9876abcd12-3', placementId: '1310000099', siteId: '1234567890', id: 'fea37168-78f1-4a23-a40e-88437a99377e', auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99', imp: [ { id: '2899ec066a91ff8', tagid: 'undefined', secure: 1, banner: { format: [{ w: 300, h: 250 }, { w: 300, h: 600 }], h: 250, topframe: 1, w: 300 } } ] },
+    sizes: [[300, 250], [300, 600]],
+    transactionId: '2e63c0ed-b10c-4008-aed5-84582cecfe87'
+  }
+];
 var validBidRequestsMulti = [
   {
     testId: 1,
@@ -1507,6 +1521,57 @@ describe('newspassid Adapter', function () {
       const request = spec.buildRequests(validBidRequests, validBidderRequest);
       const payload = JSON.parse(request.data);
       expect(payload.ext.newspassid.np_kvp_rw).to.equal(0);
+    });
+    it('should handle ortb2 site data', function () {
+      let bidderRequest = JSON.parse(JSON.stringify(validBidderRequest));
+      bidderRequest.ortb2 = {
+        'site': {
+          'name': 'example_ortb2_name',
+          'domain': 'page.example.com',
+          'cat': ['IAB2'],
+          'sectioncat': ['IAB2-2'],
+          'pagecat': ['IAB2-2'],
+          'page': 'https://page.example.com/here.html',
+          'ref': 'https://ref.example.com',
+          'keywords': 'power tools, drills',
+          'search': 'drill'
+        }
+      };
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.imp[0].ext.newspassid.customData[0].targeting.name).to.equal('example_ortb2_name');
+      expect(payload.user.ext).to.not.have.property('gender');
+    });
+    it('should add ortb2 site data when there is no customData already created', function () {
+      let bidderRequest = JSON.parse(JSON.stringify(validBidderRequest));
+      bidderRequest.ortb2 = {
+        'site': {
+          'name': 'example_ortb2_name',
+          'domain': 'page.example.com',
+          'cat': ['IAB2'],
+          'sectioncat': ['IAB2-2'],
+          'pagecat': ['IAB2-2'],
+          'page': 'https://page.example.com/here.html',
+          'ref': 'https://ref.example.com',
+          'keywords': 'power tools, drills',
+          'search': 'drill'
+        }
+      };
+      const request = spec.buildRequests(validBidRequestsNoCustomData, bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.imp[0].ext.newspassid.customData[0].targeting.name).to.equal('example_ortb2_name');
+      expect(payload.imp[0].ext.newspassid.customData[0].targeting).to.not.have.property('gender')
+    });
+    it('should add ortb2 user data to the user object', function () {
+      let bidderRequest = JSON.parse(JSON.stringify(validBidderRequest));
+      bidderRequest.ortb2 = {
+        'user': {
+          'gender': 'I identify as a box of rocks'
+        }
+      };
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.user.gender).to.equal('I identify as a box of rocks');
     });
     it('handles schain object in each bidrequest (will be the same in each br)', function () {
       let br = JSON.parse(JSON.stringify(validBidRequests));
