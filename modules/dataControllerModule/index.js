@@ -4,13 +4,13 @@
  */
 import {config} from '../../src/config.js';
 import {getHook, module} from '../../src/hook.js';
-import {deepAccess, prefixLog, deepSetValue} from '../../src/utils.js';
+import {deepAccess, deepSetValue, prefixLog} from '../../src/utils.js';
 import {startAuction} from '../../src/prebid.js';
 
 const LOG_PRE_FIX = 'Data_Controller : ';
 const ALL = '*';
 const MODULE_NAME = 'dataController';
-const GLOBAL = 'global';
+const GLOBAL = {};
 let _dataControllerConfig;
 
 const _logger = prefixLog(LOG_PRE_FIX);
@@ -39,7 +39,7 @@ function containsConfiguredEIDS(eidSourcesMap, bidderCode) {
     return false;
   }
   let containsEIDs = false;
-  _dataControllerConfig.filterSDAwhenEID.forEach(source => {
+  _dataControllerConfig.filterSDAwhenEID.some(source => {
     if (bidderEIDs.has(source)) {
       containsEIDs = true;
     }
@@ -59,7 +59,7 @@ function hasValue(bidderSegement) {
   if (bidderSegement == undefined) {
     return false;
   }
-  _dataControllerConfig.filterEIDwhenSDA.forEach(segment => {
+  _dataControllerConfig.filterEIDwhenSDA.some(segment => {
     if (bidderSegement.has(segment)) {
       containsSDA = true;
     }
@@ -69,21 +69,20 @@ function hasValue(bidderSegement) {
 
 function getSegmentConfig(ortb2Fragments) {
   let bidderSDAMap = new Map();
-  let globalUserData = deepAccess(ortb2Fragments, 'global.user.data') || [];
-  let globalSegment = constructSegment(globalUserData);
-  if (globalSegment && globalSegment.size > 0) {
-    bidderSDAMap.set(GLOBAL, globalSegment);
-  }
+  let globalObject = deepAccess(ortb2Fragments, 'global') || {};
+
+  collectSegments(bidderSDAMap, GLOBAL, globalObject);
   if (ortb2Fragments.bidder) {
     for (const [key, value] of Object.entries(ortb2Fragments.bidder)) {
-      let userData = deepAccess(value, 'user.data') || [];
-      let segmentSet = constructSegment(userData);
-      if (segmentSet && segmentSet.size > 0) {
-        bidderSDAMap.set(key, segmentSet);
-      }
+      collectSegments(bidderSDAMap, key, value);
     }
   }
   return bidderSDAMap;
+}
+
+function collectSegments(bidderSDAMap, key, data) {
+  let segmentSet = constructSegment(deepAccess(data, 'user.data') || []);
+  if (segmentSet && segmentSet.size > 0) bidderSDAMap.set(key, segmentSet);
 }
 
 function constructSegment(userData) {
@@ -135,7 +134,7 @@ function filterSDA(adUnits, ortb2Fragments) {
   for (const [key, value] of Object.entries(ortb2Fragments.bidder)) {
     let resetSDA = containsConfiguredEIDS(bidderEIDSMap, key);
     if (resetSDA) {
-      deepSetValue(value, 'user.data', [])
+      deepSetValue(value, 'user.data', []);
       resetGlobal = true;
     }
   }
