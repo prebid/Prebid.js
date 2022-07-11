@@ -147,6 +147,21 @@ describe('33acrossBidAdapter:', function () {
       return this;
     };
 
+    this.withProductAndGPID = (prod = 'siab', gpid) => {
+      ttxRequest.imp.forEach((imp) => {
+        Object.assign(imp, {
+          ext: {
+            gpid,
+            ttx: {
+              prod
+            }
+          }
+        });
+      });
+
+      return this;
+    };
+
     this.withGdprConsent = (consent, gdpr) => {
       Object.assign(ttxRequest, {
         user: {
@@ -1166,6 +1181,40 @@ describe('33acrossBidAdapter:', function () {
           .build();
 
         const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+
+        validateBuiltServerRequest(builtServerRequest, serverRequest);
+      });
+    });
+
+    context('when Global Placement ID (gpid) is defined', function() {
+      let bidderRequest;
+
+      beforeEach(function() {
+        bidderRequest = {};
+      });
+
+      it('passes the Global Placement ID (gpid) in the request', function() {
+        const ttxRequest = new TtxRequestBuilder()
+          .withBanner()
+          .withProductAndGPID('siab', 'fakeGPID0')
+          .build();
+        const serverRequest = new ServerRequestBuilder()
+          .withData(ttxRequest)
+          .build();
+
+        let copyBidRequest = utils.deepClone(bidRequests);
+        const addGPIDBidRequests = copyBidRequest.map(function(bidRequest, index) {
+          return {
+            ...bidRequest,
+            ortb2Imp: {
+              ext: {
+                gpid: 'fakeGPID' + index
+              }
+            }
+          };
+        });
+
+        const [ builtServerRequest ] = spec.buildRequests(addGPIDBidRequests, bidderRequest);
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });

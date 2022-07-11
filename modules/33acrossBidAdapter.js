@@ -379,6 +379,12 @@ function _buildImpORTB(bidRequest) {
     }
   };
 
+  const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
+
+  if (gpid) {
+    imp.ext.gpid = gpid;
+  }
+
   if (deepAccess(bidRequest, 'mediaTypes.banner')) {
     imp.banner = {
       ..._buildBannerORTB(bidRequest)
