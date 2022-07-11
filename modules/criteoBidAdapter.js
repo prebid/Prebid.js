@@ -13,7 +13,7 @@ const BIDDER_CODE = 'criteo';
 const CDB_ENDPOINT = 'https://bidder.criteo.com/cdb';
 const PROFILE_ID_INLINE = 207;
 export const PROFILE_ID_PUBLISHERTAG = 185;
-const storage = getStorageManager({ gvlid: GVLID, bidderCode: BIDDER_CODE });
+export const storage = getStorageManager({ gvlid: GVLID, bidderCode: BIDDER_CODE });
 const LOG_PREFIX = 'Criteo: ';
 
 /*
@@ -254,6 +254,12 @@ function buildCdbUrl(context) {
   url += '&av=' + String(ADAPTER_VERSION);
   url += '&wv=' + encodeURIComponent('$prebid.version$');
   url += '&cb=' + String(Math.floor(Math.random() * 99999999999));
+
+  if (storage.localStorageIsEnabled()) {
+    url += '&lsavail=1';
+  } else {
+    url += '&lsavail=0';
+  }
 
   if (context.amp) {
     url += '&im=1';
