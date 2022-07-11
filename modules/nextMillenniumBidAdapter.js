@@ -144,7 +144,7 @@ function getAdEl(bid) {
 }
 function getBoundingClient(bid) {
   const el = getAdEl(bid)
-  if (!el) return null
+  if (!el) return {}
   return el.getBoundingClientRect();
 }
 
