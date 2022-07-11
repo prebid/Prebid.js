@@ -30,7 +30,6 @@ import {Renderer} from '../src/Renderer.js';
 const BIDDER_CODE = 'ix';
 const ALIAS_BIDDER_CODE = 'roundel';
 const GLOBAL_VENDOR_ID = 10;
-const MODULE_TYPE = 'bid-adapter';
 const SECURE_BID_URL = 'https://htlb.casalemedia.com/openrtb/pbjs';
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO, NATIVE];
 const BANNER_ENDPOINT_VERSION = 7.2;
@@ -46,9 +45,9 @@ const OUTSTREAM_MINIMUM_PLAYER_SIZE = [144, 144];
 const PRICE_TO_DOLLAR_FACTOR = {
   JPY: 1
 };
-const USER_SYNC_URL = 'https://js-sec.indexww.com/um/ixmatch.html';
-
+const IFRAME_USER_SYNC_URL = 'https://js-sec.indexww.com/um/ixmatch.html';
 const FLOOR_SOURCE = { PBJS: 'p', IX: 'x' };
+const IMG_USER_SYNC_URL = 'https://dsum.casalemedia.com/pbusermatch?origin=prebid'
 export const ERROR_CODES = {
   BID_SIZE_INVALID_FORMAT: 1,
   BID_SIZE_NOT_INCLUDED: 2,
@@ -191,6 +190,9 @@ const NATIVE_EVENT_TRACKING_METHOD = {
 const LOCAL_STORAGE_KEY = 'ixdiag';
 let hasRegisteredHandler = false;
 export const storage = getStorageManager({gvlid: GLOBAL_VENDOR_ID, bidderCode: BIDDER_CODE});
+let siteID = 0;
+let gdprConsent = '';
+let usPrivacy = '';
 
 // Possible values for bidResponse.seatBid[].bid[].mtype which indicates the type of the creative markup so that it can properly be associated with the right sub-object of the BidRequest.Imp.
 const MEDIA_TYPES = {
@@ -882,6 +884,11 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   if (tmax) {
     r.ext.ixdiag.tmax = tmax
   }
+
+  if (config.getConfig('userSync')) {
+    r.ext.ixdiag.syncsPerBidder = config.getConfig('userSync').syncsPerBidder;
+  }
+
   // Get cached errors stored in LocalStorage
   const cachedErrors = getCachedErrors();
 
@@ -910,7 +917,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   // Apply GDPR information to the request if GDPR is enabled.
   if (bidderRequest) {
     if (bidderRequest.gdprConsent) {
-      const gdprConsent = bidderRequest.gdprConsent;
+      gdprConsent = bidderRequest.gdprConsent;
 
       if (gdprConsent.hasOwnProperty('gdprApplies')) {
         r.regs = {
@@ -936,6 +943,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
 
     if (bidderRequest.uspConsent) {
       deepSetValue(r, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+      usPrivacy = bidderRequest.uspConsent;
     }
 
     if (pageUrl) {
@@ -949,7 +957,9 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
 
   const payload = {};
   // Use the siteId in the first bid request as the main siteId.
-  payload.s = validBidRequests[0].params.siteId;
+  siteID = validBidRequests[0].params.siteId;
+  payload.s = siteID;
+  payload.v = version;
   if (version) {
     payload.v = version;
   }
@@ -1040,6 +1050,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
 
     const gpid = impressions[transactionIds[adUnitIndex]].gpid;
     const dfpAdUnitCode = impressions[transactionIds[adUnitIndex]].dfp_ad_unit_code;
+    const tid = impressions[transactionIds[adUnitIndex]].tid
     if (impressionObjects.length && BANNER in impressionObjects[0]) {
       const { id, banner: { topframe } } = impressionObjects[0];
       const _bannerImpression = {
@@ -1050,10 +1061,11 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
         },
       }
 
-      if (dfpAdUnitCode || gpid) {
+      if (dfpAdUnitCode || gpid || tid) {
         _bannerImpression.ext = {};
         _bannerImpression.ext.dfp_ad_unit_code = dfpAdUnitCode;
         _bannerImpression.ext.gpid = gpid;
+        _bannerImpression.ext.tid = tid;
       }
 
       if ('bidfloor' in impressionObjects[0]) {
@@ -1262,6 +1274,7 @@ function createVideoImps(validBidRequest, videoImps) {
     videoImps[validBidRequest.transactionId].ixImps = [];
     videoImps[validBidRequest.transactionId].ixImps.push(imp);
     videoImps[validBidRequest.transactionId].gpid = deepAccess(validBidRequest, 'ortb2Imp.ext.gpid');
+    videoImps[validBidRequest.transactionId].tid = deepAccess(validBidRequest, 'ortb2Imp.ext.tid');
   }
 }
 
@@ -1288,6 +1301,7 @@ function createBannerImps(validBidRequest, missingBannerSizes, bannerImps) {
 
   bannerImps[validBidRequest.transactionId].gpid = deepAccess(validBidRequest, 'ortb2Imp.ext.gpid');
   bannerImps[validBidRequest.transactionId].dfp_ad_unit_code = deepAccess(validBidRequest, 'ortb2Imp.ext.data.adserver.adslot');
+  bannerImps[validBidRequest.transactionId].tid = deepAccess(validBidRequest, 'ortb2Imp.ext.tid');
 
   // Create IX imps from params.size
   if (bannerSizeDefined) {
@@ -1414,7 +1428,7 @@ function localStorageHandler(data) {
       hasEnforcementHook: false,
       valid: hasDeviceAccess()
     };
-    validateStorageEnforcement(GLOBAL_VENDOR_ID, BIDDER_CODE, MODULE_TYPE, DEFAULT_ENFORCEMENT_SETTINGS, (permissions) => {
+    validateStorageEnforcement(GLOBAL_VENDOR_ID, BIDDER_CODE, DEFAULT_ENFORCEMENT_SETTINGS, (permissions) => {
       if (permissions.valid) {
         storeErrorEventData(data);
       }
@@ -1763,11 +1777,60 @@ export const spec = {
    * @returns {array} User sync pixels
    */
   getUserSyncs: function (syncOptions, serverResponses) {
-    return (syncOptions.iframeEnabled) ? [{
-      type: 'iframe',
-      url: USER_SYNC_URL
-    }] : [];
+    const syncs = [];
+    let publisherSyncsPerBidderOverride = null;
+    if (serverResponses.length > 0) {
+      publisherSyncsPerBidderOverride = deepAccess(serverResponses[0], 'body.ext.publishersyncsperbidderoverride');
+    }
+    if (publisherSyncsPerBidderOverride !== undefined && publisherSyncsPerBidderOverride == 0) {
+      return [];
+    }
+    if (syncOptions.iframeEnabled) {
+      syncs.push({
+        type: 'iframe',
+        url: IFRAME_USER_SYNC_URL
+      })
+    } else {
+      let publisherSyncsPerBidder = null;
+      if (config.getConfig('userSync')) {
+        publisherSyncsPerBidder = config.getConfig('userSync').syncsPerBidder
+      }
+      if (publisherSyncsPerBidder === 0) {
+        publisherSyncsPerBidder = publisherSyncsPerBidderOverride
+      }
+      if (publisherSyncsPerBidderOverride && (publisherSyncsPerBidder === 0 || publisherSyncsPerBidder)) {
+        publisherSyncsPerBidder = publisherSyncsPerBidderOverride > publisherSyncsPerBidder ? publisherSyncsPerBidder : publisherSyncsPerBidderOverride
+      } else {
+        publisherSyncsPerBidder = 1
+      }
+      for (let i = 0; i < publisherSyncsPerBidder; i++) {
+        syncs.push({
+          type: 'image',
+          url: buildImgSyncUrl(publisherSyncsPerBidder, i)
+        })
+      }
+    }
+    return syncs;
   }
 };
+
+/**
+   * Build img user sync url
+   * @param {int} syncsPerBidder number of syncs Per Bidder
+   * @param {int} index index to pass
+   * @returns {string} img user sync url
+   */
+function buildImgSyncUrl(syncsPerBidder, index) {
+  let consentString = '';
+  let gdprApplies = '0';
+  if (gdprConsent && gdprConsent.hasOwnProperty('gdprApplies')) {
+    gdprApplies = gdprConsent.gdprApplies ? '1' : '0';
+  }
+  if (gdprConsent && gdprConsent.hasOwnProperty('consentString')) {
+    consentString = gdprConsent.consentString || '';
+  }
+
+  return IMG_USER_SYNC_URL + '&site_id=' + siteID.toString() + '&p=' + syncsPerBidder.toString() + '&i=' + index.toString() + '&gdpr=' + gdprApplies + '&gdpr_consent=' + consentString + '&us_privacy=' + (usPrivacy || '');
+}
 
 registerBidder(spec);
