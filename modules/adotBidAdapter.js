@@ -62,6 +62,9 @@ function getOpenRTBSiteObject(bidderRequest) {
     name: domain,
     publisher: {
       id: publisherId
+    },
+    ext: {
+      schain: bidderRequest.schain
     }
   };
 }
