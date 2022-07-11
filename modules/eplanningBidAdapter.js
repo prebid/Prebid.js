@@ -401,12 +401,12 @@ function getViewabilityTracker() {
 
   function defineObserver() {
     if (!observer) {
-      var observerOptions = {
+      var observerConfig = {
         root: null,
         rootMargin: '0px',
         threshold: [VIEWABILITY_MIN_RATIO]
       };
-      observer = new IntersectionObserver(intersectionCallback.bind(this), observerOptions);
+      observer = new IntersectionObserver(intersectionCallback.bind(this), observerConfig);
     }
   }
   function processIntervalVisibilityStatus(elapsedVisibleIntervals, element, callback) {
