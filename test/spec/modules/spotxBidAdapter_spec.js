@@ -184,17 +184,17 @@ describe('the spotx adapter', function () {
         maxduration: 10
       })
       expect(request.data.imp.video.ext).to.deep.equal({
-         ad_volume: 1,
-         hide_skin: 1,
-         ad_unit: 'incontent',
-         outstream_options: {foo: 'bar'},
-         outstream_function: '987',
-         custom: {bar: 'foo'},
-         sdk_name: 'Prebid 1+',
-         versionOrtb: '2.3',
-         placement: 1,
-         pos: 1
-       });
+        ad_volume: 1,
+        hide_skin: 1,
+        ad_unit: 'incontent',
+        outstream_options: {foo: 'bar'},
+        outstream_function: '987',
+        custom: {bar: 'foo'},
+        sdk_name: 'Prebid 1+',
+        versionOrtb: '2.3',
+        placement: 1,
+        pos: 1
+      });
 
       expect(request.data.imp.video.startdelay).to.equal(1);
       expect(request.data.ext).to.deep.equal({
@@ -220,22 +220,22 @@ describe('the spotx adapter', function () {
           }]
         }],
         fpc: 'pubcid_1'
-      });
+      })
 
       expect(request.data.source).to.deep.equal({
-          ext: {
-            schain: {
-              complete: 1,
-              nodes: [
-                {
-                  asi: 'indirectseller.com',
-                  sid: '00001',
-                  hp: 1
-                }
-              ]
-            }
+        ext: {
+          schain: {
+            complete: 1,
+            nodes: [
+              {
+                asi: 'indirectseller.com',
+                sid: '00001',
+                hp: 1
+              }
+            ]
           }
-        })
+        }
+      })
     });
 
     it('should process premarket bids', function() {

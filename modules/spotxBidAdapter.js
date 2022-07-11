@@ -131,20 +131,20 @@ export const spec = {
             vastStr = preMarketBid['vast_string'];
           }
           ext.pre_market_bids.push({
-                                     id: preMarketBid['deal_id'],
-                                     seatbid: [{
-                                       bid: [{
-                                         impid: Date.now(),
-                                         dealid: preMarketBid['deal_id'],
-                                         price: preMarketBid['price'],
-                                         adm: vastStr
-                                       }]
-                                     }],
-                                     cur: preMarketBid['currency'],
-                                     ext: {
-                                       event_log: [{}]
-                                     }
-                                   });
+            id: preMarketBid['deal_id'],
+            seatbid: [{
+              bid: [{
+                impid: Date.now(),
+                dealid: preMarketBid['deal_id'],
+                price: preMarketBid['price'],
+                adm: vastStr
+              }]
+            }],
+            cur: preMarketBid['currency'],
+            ext: {
+              event_log: [{}]
+            }
+          });
         }
       }
 
@@ -163,10 +163,10 @@ export const spec = {
 
       if (isFn(bid.getFloor)) {
         let floorInfo = bid.getFloor({
-                                       currency: 'USD',
-                                       mediaType: 'video',
-                                       size: '*'
-                                     });
+          currency: 'USD',
+          mediaType: 'video',
+          size: '*'
+        });
 
         if (floorInfo.currency === 'USD') {
           spotxReq.bidfloor = floorInfo.floor;
@@ -378,33 +378,33 @@ export const spec = {
           if (context1 == 'outstream' || context2 == 'outstream') {
             const playersize = deepAccess(currentBidRequest, 'mediaTypes.video.playerSize');
             const renderer = Renderer.install({
-                                                id: 0,
-                                                url: '/',
-                                                config: {
-                                                  adText: 'SpotX Outstream Video Ad via Prebid.js',
-                                                  player_width: playersize[0][0],
-                                                  player_height: playersize[0][1],
-                                                  content_page_url: deepAccess(bidderRequest, 'data.site.page'),
-                                                  ad_mute: +!!deepAccess(currentBidRequest, 'params.ad_mute'),
-                                                  hide_skin: +!!deepAccess(currentBidRequest, 'params.hide_skin'),
-                                                  outstream_options: deepAccess(currentBidRequest, 'params.outstream_options'),
-                                                  outstream_function: deepAccess(currentBidRequest, 'params.outstream_function')
-                                                }
-                                              });
+              id: 0,
+              url: '/',
+              config: {
+                adText: 'SpotX Outstream Video Ad via Prebid.js',
+                player_width: playersize[0][0],
+                player_height: playersize[0][1],
+                content_page_url: deepAccess(bidderRequest, 'data.site.page'),
+                ad_mute: +!!deepAccess(currentBidRequest, 'params.ad_mute'),
+                hide_skin: +!!deepAccess(currentBidRequest, 'params.hide_skin'),
+                outstream_options: deepAccess(currentBidRequest, 'params.outstream_options'),
+                outstream_function: deepAccess(currentBidRequest, 'params.outstream_function')
+              }
+            });
 
             try {
               renderer.setRender(outstreamRender);
               renderer.setEventHandlers({
-                                          impression: function impression() {
-                                            return logMessage('SpotX outstream video impression event');
-                                          },
-                                          loaded: function loaded() {
-                                            return logMessage('SpotX outstream video loaded event');
-                                          },
-                                          ended: function ended() {
-                                            logMessage('SpotX outstream renderer video event');
-                                          }
-                                        });
+                impression: function impression() {
+                  return logMessage('SpotX outstream video impression event');
+                },
+                loaded: function loaded() {
+                  return logMessage('SpotX outstream video loaded event');
+                },
+                ended: function ended() {
+                  logMessage('SpotX outstream renderer video event');
+                }
+              });
             } catch (err) {
               logWarn('Prebid Error calling setRender or setEventHandlers on renderer', err);
             }
