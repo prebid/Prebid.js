@@ -1649,6 +1649,26 @@ describe('IndexexchangeAdapter', function () {
       expect(gpid).to.equal(GPID);
     });
 
+    it('should still build gpid in request if ortb2Imp.ext.gpid does not exist', function () {
+      const AD_UNIT_CODE = '/1111/home';
+      const validBids = utils.deepClone(DEFAULT_BANNER_VALID_BID);
+      sinon.stub(utils, 'getGptSlotInfoForAdUnitCode')
+        .onFirstCall().returns({ gptSlot: '/123123/gpt_publisher/adunit-code-3', divId: 'adunit-code-3-div-id' });
+      validBids[0].ortb2Imp = {
+        ext: {
+          data: {
+            adserver: {
+              name: 'gam',
+              adslot: AD_UNIT_CODE
+            }
+          }
+        }
+      }
+      const requests = spec.buildRequests(validBids, DEFAULT_OPTION);
+      const { ext: { gpid } } = JSON.parse(requests[0].data.r).imp[0];
+      expect(gpid).to.equal(GPID);
+    }); 
+
     it('should send gpid in request if ortb2Imp.ext.gpid exists when no size present', function () {
       const validBids = utils.deepClone(DEFAULT_BANNER_VALID_BID_PARAM_NO_SIZE);
       validBids[0].ortb2Imp = {
