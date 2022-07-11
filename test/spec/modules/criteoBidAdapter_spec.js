@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import {
   tryGetCriteoFastBid,
   spec,
+  storage,
   PROFILE_ID_PUBLISHERTAG,
   ADAPTER_VERSION,
   canFastBid, getFastBidUrl, FAST_BID_VERSION_CURRENT
@@ -11,6 +12,7 @@ import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils.js';
 import { config } from '../../../src/config.js';
 import { NATIVE, VIDEO } from '../../../src/mediaTypes.js';
+import * as storageManager from 'src/storageManager.js';
 
 describe('The Criteo bidding adapter', function () {
   let utilsMock, sandbox;
@@ -28,7 +30,7 @@ describe('The Criteo bidding adapter', function () {
     sandbox = sinon.sandbox.create();
   });
 
-  afterEach(function() {
+  afterEach(function () {
     $$PREBID_GLOBAL$$.bidderSettings = {};
     global.Criteo = undefined;
     utilsMock.restore();
@@ -426,7 +428,15 @@ describe('The Criteo bidding adapter', function () {
       },
     };
 
+    let localStorageIsEnabledStub;
+
+    this.beforeEach(function () {
+      localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled');
+      localStorageIsEnabledStub.returns(true);
+    });
+
     afterEach(function () {
+      localStorageIsEnabledStub.restore();
       config.resetConfig();
     });
 
@@ -470,7 +480,7 @@ describe('The Criteo bidding adapter', function () {
         },
       ];
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.url).to.match(/^https:\/\/bidder\.criteo\.com\/cdb\?profileId=207&av=\d+&wv=[^&]+&cb=\d+&im=1&debug=1&nolog=1/);
+      expect(request.url).to.match(/^https:\/\/bidder\.criteo\.com\/cdb\?profileId=207&av=\d+&wv=[^&]+&cb=\d+&lsavail=1&im=1&debug=1&nolog=1/);
       expect(request.method).to.equal('POST');
       const ortbRequest = request.data;
       expect(ortbRequest.publisher.url).to.equal(refererUrl);
@@ -934,7 +944,7 @@ describe('The Criteo bidding adapter', function () {
         },
       ];
 
-      const request = spec.buildRequests(bidRequests, {...bidderRequest, ortb2: {}});
+      const request = spec.buildRequests(bidRequests, { ...bidderRequest, ortb2: {} });
       expect(request.data.publisher.ext).to.equal(undefined);
       expect(request.data.user.ext).to.equal(undefined);
       expect(request.data.slots[0].ext).to.equal(undefined);
@@ -961,7 +971,7 @@ describe('The Criteo bidding adapter', function () {
         },
       ];
 
-      const request = spec.buildRequests(bidRequests, {...bidderRequest, ortb2: {}});
+      const request = spec.buildRequests(bidRequests, { ...bidderRequest, ortb2: {} });
       expect(request.data.slots[0].ext).to.deep.equal({
         bidfloor: 0.75,
       });
@@ -1015,7 +1025,7 @@ describe('The Criteo bidding adapter', function () {
         user: userData
       };
 
-      const request = spec.buildRequests(bidRequests, {...bidderRequest, ortb2});
+      const request = spec.buildRequests(bidRequests, { ...bidderRequest, ortb2 });
       expect(request.data.publisher.ext).to.deep.equal({ data: { pageType: 'article' } });
       expect(request.data.user.ext).to.deep.equal({ data: { registered: true } });
       expect(request.data.slots[0].ext).to.deep.equal({

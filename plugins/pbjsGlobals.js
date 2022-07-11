@@ -19,7 +19,8 @@ function featureMap(disable = []) {
 
 function getNpmVersion(version) {
   try {
-    return /^(.*?)(-pre)?$/.exec(version)[1];
+    // only use "real" versions (that is, not the -pre ones, they won't be on jsDelivr)
+    return /^([\d.]+)$/.exec(version)[1];
   } catch (e) {
     return 'latest';
   }

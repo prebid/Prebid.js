@@ -18,8 +18,6 @@ const TCF2 = {
   'purpose7': { id: 7, name: 'measurement' }
 }
 
-const VENDORLESS_MODULE_TYPES = ['fpid-module'];
-
 /*
   These rules would be used if `consentManagement.gdpr.rules` is undefined by the publisher.
 */
@@ -125,10 +123,9 @@ function getGvlidForAnalyticsAdapter(code) {
  * @param {Object} consentData - gdpr consent data
  * @param {string=} currentModule - Bidder code of the current module
  * @param {number=} gvlId - GVL ID for the module
- * @param {string=} moduleType module type
  * @returns {boolean}
  */
-export function validateRules(rule, consentData, currentModule, gvlId, moduleType) {
+export function validateRules(rule, consentData, currentModule, gvlId) {
   const purposeId = TCF2[Object.keys(TCF2).filter(purposeName => TCF2[purposeName].name === rule.purpose)[0]].id;
 
   // return 'true' if vendor present in 'vendorExceptions'
@@ -141,14 +138,12 @@ export function validateRules(rule, consentData, currentModule, gvlId, moduleTyp
   const vendorConsent = deepAccess(consentData, `vendorData.vendor.consents.${gvlId}`);
   const liTransparency = deepAccess(consentData, `vendorData.purpose.legitimateInterests.${purposeId}`);
 
-  const vendorlessModule = includes(VENDORLESS_MODULE_TYPES, moduleType);
-
   /*
     Since vendor exceptions have already been handled, the purpose as a whole is allowed if it's not being enforced
     or the user has consented. Similar with vendors.
   */
   const purposeAllowed = rule.enforcePurpose === false || purposeConsent === true;
-  const vendorAllowed = rule.enforceVendor === false || vendorConsent === true || vendorlessModule === true;
+  const vendorAllowed = rule.enforceVendor === false || vendorConsent === true;
 
   /*
     Few if any vendors should be declaring Legitimate Interest for Device Access (Purpose 1), but some are claiming
@@ -167,16 +162,15 @@ export function validateRules(rule, consentData, currentModule, gvlId, moduleTyp
  * @param {Function} fn reference to original function (used by hook logic)
  * @param {Number=} gvlid gvlid of the module
  * @param {string=} moduleName name of the module
- * @param {string=} moduleType module type
  */
-export function deviceAccessHook(fn, gvlid, moduleName, moduleType, result) {
+export function deviceAccessHook(fn, gvlid, moduleName, result) {
   result = Object.assign({}, {
     hasEnforcementHook: true
   });
   if (!hasDeviceAccess()) {
     logWarn('Device access is disabled by Publisher');
     result.valid = false;
-    fn.call(this, gvlid, moduleName, moduleType, result);
+    fn.call(this, gvlid, moduleName, result);
   } else {
     const consentData = gdprDataHandler.getConsentData();
     if (consentData && consentData.gdprApplies) {
@@ -188,19 +182,19 @@ export function deviceAccessHook(fn, gvlid, moduleName, moduleType, result) {
         gvlid = getGvlid(moduleName) || gvlid;
       }
       const curModule = moduleName || curBidder;
-      let isAllowed = validateRules(purpose1Rule, consentData, curModule, gvlid, moduleType);
+      let isAllowed = validateRules(purpose1Rule, consentData, curModule, gvlid);
       if (isAllowed) {
         result.valid = true;
-        fn.call(this, gvlid, moduleName, moduleType, result);
+        fn.call(this, gvlid, moduleName, result);
       } else {
         curModule && logWarn(`TCF2 denied device access for ${curModule}`);
         result.valid = false;
         storageBlocked.push(curModule);
-        fn.call(this, gvlid, moduleName, moduleType, result);
+        fn.call(this, gvlid, moduleName, result);
       }
     } else {
       result.valid = true;
-      fn.call(this, gvlid, moduleName, moduleType, result);
+      fn.call(this, gvlid, moduleName, result);
     }
   }
 }
