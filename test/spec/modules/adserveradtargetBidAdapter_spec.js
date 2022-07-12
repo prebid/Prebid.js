@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { config } from 'src/config.js';
 import { BANNER } from 'src/mediaTypes.js';
-import { spec } from 'modules/adtargetmeBidAdapter.js';
+import { spec } from 'modules/adserveradtargetBidAdapter.js';
 
 const DEFAULT_SID = 1220291391;
 const DEFAULT_ZID = 1836455615;
@@ -22,7 +22,7 @@ const generateBidRequest = ({bidId, adUnitCode, bidOverrideObject, zid, ortb2}) 
     auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
     bidId,
     bidderRequestsCount: 1,
-    bidder: 'adtargetme',
+    bidder: 'adserveradtarget',
     bidderRequestId: '7101db09af0db2',
     bidderWinsCount: 0,
     mediaTypes: {},
@@ -54,7 +54,7 @@ let generateBidderRequest = (bidRequestArray, adUnitCode, ortb2 = {}) => {
     adUnitCode: adUnitCode || 'default-adUnitCode',
     auctionId: 'd4c83a3b-18e4-4208-b98b-63848449c7aa',
     auctionStart: new Date().getTime(),
-    bidderCode: 'adtargetme',
+    bidderCode: 'adserveradtarget',
     bidderRequestId: '112f1c7c5d399a',
     bids: bidRequestArray,
     refererInfo: {
@@ -132,7 +132,7 @@ const generateResponseMock = (admPayloadType) => {
 }
 
 // Unit tests
-describe('adtargetme Bid Adapter:', () => {
+describe('AdserverAdtarget Bid Adapter:', () => {
   it('PLACEHOLDER TO PASS GULP', () => {
     const obj = {};
     expect(obj).to.be.an('object');
@@ -140,7 +140,7 @@ describe('adtargetme Bid Adapter:', () => {
 
   describe('Validate basic properties', () => {
     it('should define the correct bidder code', () => {
-      expect(spec.code).to.equal('adtargetme')
+      expect(spec.code).to.equal('adserveradtarget')
     });
   });
 
@@ -638,7 +638,7 @@ describe('adtargetme Bid Adapter:', () => {
       const sid = validBidRequests[0].params.sid;
       const testOverrideEndpoint = 'http://new_bidder_host.com/ssp?s=';
       config.setConfig({
-        adtargetme: {
+        adserveradtarget: {
           endpoint: testOverrideEndpoint
         }
       });
@@ -652,7 +652,7 @@ describe('adtargetme Bid Adapter:', () => {
 
     it('should route request to endpoint + sid', () => {
       config.setConfig({
-        adtargetme: {}
+        adserveradtarget: {}
       });
       const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
       const sid = validBidRequests[0].params.sid;
@@ -673,7 +673,7 @@ describe('adtargetme Bid Adapter:', () => {
       bidderRequest.bids = validBidRequests;
 
       config.setConfig({
-        adtargetme: {
+        adserveradtarget: {
           singleRequestMode: true
         }
       });
@@ -792,10 +792,10 @@ describe('adtargetme Bid Adapter:', () => {
   });
 
   describe('Request Payload oRTB bid.imp validation:', () => {
-    // Validate Banner imp imp when adtargetme.mode=undefined
+    // Validate Banner imp imp when adserveradtarget.mode=undefined
     it('should generate a valid "Banner" imp object', () => {
       config.setConfig({
-        adtargetme: {}
+        adserveradtarget: {}
       });
       const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
       const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
@@ -808,7 +808,7 @@ describe('adtargetme Bid Adapter:', () => {
     // Validate Banner imp
     it('should generate a valid "Banner" imp object', () => {
       config.setConfig({
-        adtargetme: { mode: 'banner' }
+        adserveradtarget: { mode: 'banner' }
       });
       const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
       const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
@@ -868,10 +868,10 @@ describe('adtargetme Bid Adapter:', () => {
     describe('Time To Live (ttl)', () => {
       const UNSUPPORTED_TTL_FORMATS = ['string', [1, 2, 3], true, false, null, undefined];
       UNSUPPORTED_TTL_FORMATS.forEach(param => {
-        it('should not allow unsupported global adtargetme.ttl formats and default to 300', () => {
+        it('should not allow unsupported global adserveradtarget.ttl formats and default to 300', () => {
           const { serverResponse, bidderRequest } = generateResponseMock('banner');
           config.setConfig({
-            adtargetme: { ttl: param }
+            adserveradtarget: { ttl: param }
           });
           const response = spec.interpretResponse(serverResponse, {bidderRequest});
           expect(response[0].ttl).to.equal(300);
@@ -887,10 +887,10 @@ describe('adtargetme Bid Adapter:', () => {
 
       const UNSUPPORTED_TTL_VALUES = [-1, 3601];
       UNSUPPORTED_TTL_VALUES.forEach(param => {
-        it('should not allow invalid global adtargetme.ttl values 3600 < ttl < 0 and default to 300', () => {
+        it('should not allow invalid global adserveradtarget.ttl values 3600 < ttl < 0 and default to 300', () => {
           const { serverResponse, bidderRequest } = generateResponseMock('banner');
           config.setConfig({
-            adtargetme: { ttl: param }
+            adserveradtarget: { ttl: param }
           });
           const response = spec.interpretResponse(serverResponse, {bidderRequest});
           expect(response[0].ttl).to.equal(300);
@@ -907,7 +907,7 @@ describe('adtargetme Bid Adapter:', () => {
       it('should give presedence to Gloabl ttl over params.ttl ', () => {
         const { serverResponse, bidderRequest } = generateResponseMock('banner');
         config.setConfig({
-          adtargetme: { ttl: 500 }
+          adserveradtarget: { ttl: 500 }
         });
         bidderRequest.bids[0].params.ttl = 400;
         const response = spec.interpretResponse(serverResponse, {bidderRequest});
