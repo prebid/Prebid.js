@@ -3,7 +3,7 @@
 ```
 Module Name: mabidder Bid Adapter
 Module Type: Bidder Adapter
-Maintainer: ecdrsvc@
+Maintainer: lmprebidadapter@loblaw.ca
 ```
 
 # Description
@@ -17,14 +17,14 @@ var adUnits = [
         code: 'test_banner',
         mediaTypes: {
             banner: {
-                sizes: [728, 90]
+                sizes: [300, 250]
             }
         },
         bids: [{
-            bidder: 'ecdrsvc',
+            bidder: 'mabidder',
             params: {
-                accountId: "someAccount",
-                placementId: "somePlace"
+                placementId: "test",
+                ppid: "test"
             }
         }],
     }
