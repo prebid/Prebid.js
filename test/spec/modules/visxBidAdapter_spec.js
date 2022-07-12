@@ -85,10 +85,10 @@ describe('VisxAdapter', function () {
     const bidderRequest = {
       timeout: 3000,
       refererInfo: {
-        referer: 'https://example.com'
+        page: 'https://example.com'
       }
     };
-    const referrer = bidderRequest.refererInfo.referer;
+    const referrer = bidderRequest.refererInfo.page;
     const schainObject = {
       ver: '1.0',
       nodes: [
@@ -425,10 +425,10 @@ describe('VisxAdapter', function () {
     const bidderRequest = {
       timeout: 3000,
       refererInfo: {
-        referer: 'https://example.com'
+        page: 'https://example.com'
       }
     };
-    const referrer = bidderRequest.refererInfo.referer;
+    const referrer = bidderRequest.refererInfo.page;
     const bidRequests = [
       {
         'bidder': 'visx',
@@ -489,10 +489,10 @@ describe('VisxAdapter', function () {
     const bidderRequest = {
       timeout: 3000,
       refererInfo: {
-        referer: 'https://example.com'
+        page: 'https://example.com'
       }
     };
-    const referrer = bidderRequest.refererInfo.referer;
+    const referrer = bidderRequest.refererInfo.page;
     const bidRequests = [
       {
         'bidder': 'visx',

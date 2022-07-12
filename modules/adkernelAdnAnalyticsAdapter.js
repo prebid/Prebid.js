@@ -381,6 +381,7 @@ export function ExpiringQueue(callback, ttl) {
   }
 }
 
+// TODO: this should reuse logic from refererDetection
 function getNavigationInfo() {
   try {
     return getLocationAndReferrer(self.top);

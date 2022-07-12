@@ -61,17 +61,17 @@ MACRO['creatype'] = function(b, c) {
 };
 MACRO['pageurl'] = function(b, c) {
   const refererInfo = getRefererInfo();
-  return (refererInfo.canonicalUrl || refererInfo.referer || '').substr(0, 300).split(/[?#]/)[0];
+  return (refererInfo.page || '').substr(0, 300).split(/[?#]/)[0];
 };
-MACRO['pbadslot'] = function(b, c) {
+MACRO['gpid'] = function(b, c) {
   const adUnit = find(auctionManager.getAdUnits(), a => b.adUnitCode === a.code);
-  return deepAccess(adUnit, 'ortb2Imp.ext.data.pbadslot') || getGptSlotInfoForAdUnitCode(b.adUnitCode).gptSlot || b.adUnitCode;
+  return deepAccess(adUnit, 'ortb2Imp.ext.gpid') || deepAccess(adUnit, 'ortb2Imp.ext.data.pbadslot') || getGptSlotInfoForAdUnitCode(b.adUnitCode).gptSlot || b.adUnitCode;
 };
-MACRO['pbAdSlot'] = MACRO['pbadslot']; // legacy
+MACRO['pbAdSlot'] = MACRO['pbadslot'] = MACRO['gpid']; // legacy
 
 const PARAMS_DEFAULT = {
   'id1': function(b) { return b.adUnitCode },
-  'id2': '%%pbadslot%%',
+  'id2': '%%gpid%%',
   'id3': function(b) { return b.bidder },
   'id4': function(b) { return b.adId },
   'id5': function(b) { return b.dealId },
@@ -138,7 +138,11 @@ analyticsAdapter.enableAnalytics = function(config) {
     toselector: config.options.toselector || function(bid) {
       let code = getGptSlotInfoForAdUnitCode(bid.adUnitCode).divId || bid.adUnitCode;
       // https://mathiasbynens.be/notes/css-escapes
-      code = code.replace(/^\d/, '\\3$& ');
+      try {
+        code = CSS.escape(code);
+      } catch (_) {
+        code = code.replace(/^\d/, '\\3$& ');
+      }
       return `#${code}`
     },
     client: config.options.client,

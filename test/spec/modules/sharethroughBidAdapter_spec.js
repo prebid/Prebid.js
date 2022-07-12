@@ -114,10 +114,6 @@ describe('sharethrough adapter spec', function () {
             sharedid: {
               id: 'fake-sharedid',
             },
-            flocId: {
-              id: 'fake-flocid',
-              version: '42',
-            },
           },
           crumbs: {
             pubcid: 'fake-pubcid-in-crumbs-obj',
@@ -170,7 +166,7 @@ describe('sharethrough adapter spec', function () {
 
       bidderRequest = {
         refererInfo: {
-          referer: 'https://referer.com',
+          ref: 'https://referer.com',
         },
       };
     });
@@ -222,7 +218,6 @@ describe('sharethrough adapter spec', function () {
               'crwdcntrl.net': { id: 'fake-lotame' },
               'parrable.com': { id: 'fake-parrable' },
               'netid.de': { id: 'fake-netid' },
-              'chrome.com': { id: 'fake-flocid' },
             };
             expect(openRtbReq.user.ext.eids).to.be.an('array').that.have.length(Object.keys(expectedEids).length);
             for (const eid of openRtbReq.user.ext.eids) {
@@ -487,19 +482,8 @@ describe('sharethrough adapter spec', function () {
           },
         };
 
-        let configStub;
-
-        beforeEach(() => {
-          configStub = sinon.stub(config, 'getConfig');
-          configStub.withArgs('ortb2').returns(firstPartyData);
-        });
-
-        afterEach(() => {
-          configStub.restore();
-        });
-
         it('should include first party data in open rtb request, site section', () => {
-          const openRtbReq = spec.buildRequests(bidRequests, bidderRequest)[0].data;
+          const openRtbReq = spec.buildRequests(bidRequests, {...bidderRequest, ortb2: firstPartyData})[0].data;
 
           expect(openRtbReq.site.name).to.equal(firstPartyData.site.name);
           expect(openRtbReq.site.keywords).to.equal(firstPartyData.site.keywords);
@@ -509,7 +493,7 @@ describe('sharethrough adapter spec', function () {
         });
 
         it('should include first party data in open rtb request, user section', () => {
-          const openRtbReq = spec.buildRequests(bidRequests, bidderRequest)[0].data;
+          const openRtbReq = spec.buildRequests(bidRequests, {...bidderRequest, ortb2: firstPartyData})[0].data;
 
           expect(openRtbReq.user.yob).to.equal(firstPartyData.user.yob);
           expect(openRtbReq.user.gender).to.equal(firstPartyData.user.gender);
@@ -617,11 +601,11 @@ describe('sharethrough adapter spec', function () {
       const serverResponses = [{ body: { cookieSyncUrls: cookieSyncs } }];
 
       it('returns an array of correctly formatted user syncs', function () {
-        const syncArray = spec.getUserSyncs({ pixelEnabled: true }, serverResponses, null, 'fake-privacy-signal');
+        const syncArray = spec.getUserSyncs({ pixelEnabled: true }, serverResponses);
         expect(syncArray).to.deep.equal([
-          { type: 'image', url: 'cookieUrl1&us_privacy=fake-privacy-signal' },
-          { type: 'image', url: 'cookieUrl2&us_privacy=fake-privacy-signal' },
-          { type: 'image', url: 'cookieUrl3&us_privacy=fake-privacy-signal' }],
+          { type: 'image', url: 'cookieUrl1' },
+          { type: 'image', url: 'cookieUrl2' },
+          { type: 'image', url: 'cookieUrl3' }],
         );
       });
 

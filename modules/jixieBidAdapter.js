@@ -1,11 +1,12 @@
-import { logWarn, parseUrl, deepAccess, isArray } from '../src/utils.js';
-import { config } from '../src/config.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { ajax } from '../src/ajax.js';
-import { getRefererInfo } from '../src/refererDetection.js';
-import { Renderer } from '../src/Renderer.js';
+import {deepAccess, getDNT, isArray, logWarn} from '../src/utils.js';
+import {config} from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {ajax} from '../src/ajax.js';
+import {getRefererInfo} from '../src/refererDetection.js';
+import {Renderer} from '../src/Renderer.js';
+import {createEidsArray} from './userId/eids.js';
 
 const BIDDER_CODE = 'jixie';
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
@@ -59,9 +60,16 @@ function fetchIds_() {
   return ret;
 }
 
+// device in the payload had been a simple string ('desktop', 'mobile')
+// Now changed to an object. yes the backend is able to handle it.
 function getDevice_() {
-  return ((/(ios|ipod|ipad|iphone|android|blackberry|iemobile|opera mini|webos)/i).test(navigator.userAgent)
-    ? 'mobile' : 'desktop');
+  const device = config.getConfig('device') || {};
+  device.w = device.w || window.innerWidth;
+  device.h = device.h || window.innerHeight;
+  device.ua = device.ua || navigator.userAgent;
+  device.dnt = getDNT() ? 1 : 0;
+  device.language = (navigator && navigator.language) ? navigator.language.split('-')[0] : '';
+  return device;
 }
 
 function pingTracking_(endpointOverride, qpobj) {
@@ -108,10 +116,12 @@ function getMiscDims_() {
     mkeywords: ''
   }
   try {
+    // TODO: this should pick refererInfo from bidderRequest
     let refererInfo_ = getRefererInfo();
-    let url_ = ((refererInfo_ && refererInfo_.referer) ? refererInfo_.referer : window.location.href);
+    // TODO: does the fallback make sense here?
+    let url_ = refererInfo_?.page || window.location.href
     ret.pageurl = url_;
-    ret.domain = parseUrl(url_).host;
+    ret.domain = refererInfo_?.domain || window.location.host
     ret.device = getDevice_();
     let keywords = document.getElementsByTagName('meta')['keywords'];
     if (keywords && keywords.content) {
@@ -120,6 +130,17 @@ function getMiscDims_() {
   } catch (error) {}
   return ret;
 }
+
+/* function addUserId(eids, id, source, rti) {
+  if (id) {
+    if (rti) {
+      eids.push({ source, id, rti_partner: rti });
+    } else {
+      eids.push({ source, id });
+    }
+  }
+  return eids;
+} */
 
 // easier for replacement in the unit test
 export const internal = {
@@ -163,7 +184,23 @@ export const spec = {
     }
 
     let ids = fetchIds_();
+    let eids = [];
     let miscDims = internal.getMiscDims();
+    let schain = deepAccess(validBidRequests[0], 'schain');
+
+    // all available user ids are sent to our backend in the standard array layout:
+    if (validBidRequests[0].userId) {
+      let eids1 = createEidsArray(validBidRequests[0].userId);
+      if (eids1.length) {
+        eids = eids1;
+      }
+    }
+    // we want to send this blob of info to our backend:
+    let pg = config.getConfig('priceGranularity');
+    if (!pg) {
+      pg = {};
+    }
+
     let transformedParams = Object.assign({}, {
       auctionid: bidderRequest.auctionId,
       timeout: bidderRequest.timeout,
@@ -174,6 +211,9 @@ export const spec = {
       pageurl: miscDims.pageurl,
       mkeywords: miscDims.mkeywords,
       bids: bids,
+      eids: eids,
+      schain: schain,
+      pricegranularity: pg,
       cfg: jixieCfgBlob
     }, ids);
     return Object.assign({}, {

@@ -253,6 +253,12 @@ export const spec = {
       if (!isNaN(bidFloor)) {
         data.imp[0].bidfloor = bidFloor;
       }
+
+      // If the price floors module is active, then we need to signal to PBS! If floorData obj is present is best way to check
+      if (typeof bidRequest.floorData === 'object') {
+        data.ext.prebid.floors = { enabled: false };
+      }
+
       // if value is set, will overwrite with same value
       data.imp[0].ext[bidRequest.bidder].video.size_id = determineRubiconVideoSizeId(bidRequest)
 
@@ -310,11 +316,6 @@ export const spec = {
       }
 
       applyFPD(bidRequest, VIDEO, data);
-
-      // if storedAuctionResponse has been set, pass SRID
-      if (bidRequest.storedAuctionResponse) {
-        deepSetValue(data.imp[0], 'ext.prebid.storedauctionresponse.id', bidRequest.storedAuctionResponse.toString());
-      }
 
       // set ext.prebid.auctiontimestamp using auction time
       deepSetValue(data.imp[0], 'ext.prebid.auctiontimestamp', bidderRequest.auctionStart);
@@ -830,11 +831,11 @@ function _getScreenResolution() {
  * @returns {string}
  */
 function _getPageUrl(bidRequest, bidderRequest) {
-  let pageUrl = config.getConfig('pageUrl');
+  let pageUrl;
   if (bidRequest.params.referrer) {
     pageUrl = bidRequest.params.referrer;
-  } else if (!pageUrl) {
-    pageUrl = bidderRequest.refererInfo.referer;
+  } else {
+    pageUrl = bidderRequest.refererInfo.page;
   }
   return bidRequest.params.secure ? pageUrl.replace(/^http:/i, 'https:') : pageUrl;
 }
@@ -1008,8 +1009,9 @@ function applyFPD(bidRequest, mediaType, data) {
 
   if (bidRequest.params.keywords) BID_FPD.site.keywords = (isArray(bidRequest.params.keywords)) ? bidRequest.params.keywords.join(',') : bidRequest.params.keywords;
 
-  let fpd = mergeDeep({}, config.getConfig('ortb2') || {}, BID_FPD);
-  let impData = deepAccess(bidRequest.ortb2Imp, 'ext.data') || {};
+  let fpd = mergeDeep({}, bidRequest.ortb2 || {}, BID_FPD);
+  let impExt = deepAccess(bidRequest.ortb2Imp, 'ext') || {};
+  let impExtData = deepAccess(bidRequest.ortb2Imp, 'ext.data') || {};
 
   const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
   const SEGTAX = {user: [4], site: [1, 2, 5, 6]};
@@ -1054,11 +1056,11 @@ function applyFPD(bidRequest, mediaType, data) {
         }
       });
     });
-    Object.keys(impData).forEach((key) => {
+    Object.keys(impExtData).forEach((key) => {
       if (key !== 'adserver') {
-        addBannerData(impData[key], 'site', key);
-      } else if (impData[key].name === 'gam') {
-        addBannerData(impData[key].adslot, name, key)
+        addBannerData(impExtData[key], 'site', key);
+      } else if (impExtData[key].name === 'gam') {
+        addBannerData(impExtData[key].adslot, name, key)
       }
     });
 
@@ -1072,8 +1074,8 @@ function applyFPD(bidRequest, mediaType, data) {
       delete data['tg_i.dfp_ad_unit_code'];
     }
   } else {
-    if (Object.keys(impData).length) {
-      mergeDeep(data.imp[0].ext, {data: impData});
+    if (Object.keys(impExt).length) {
+      mergeDeep(data.imp[0].ext, impExt);
     }
     // add in gpid
     if (gpid) {
