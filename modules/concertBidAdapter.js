@@ -207,6 +207,5 @@ function consentAllowsPpid(bidderRequest) {
   /* NOTE: We can't easily test GDPR consent, without the
    * `consent-string` npm module; so will have to rely on that
    * happening on the bid-server. */
-  return !(bidderRequest.uspConsent === 'string' && 
-          bidderRequest.uspConsent.toUpperCase().substring(0, 2) === '1YY');
+  return !(bidderRequest.uspConsent === 'string' && bidderRequest.uspConsent.toUpperCase().substring(0, 2) === '1YY');
 }
