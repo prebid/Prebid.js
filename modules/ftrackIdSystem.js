@@ -60,13 +60,13 @@ export const ftrackIdSubmodule = {
    * @param {SubmoduleConfig} config
    * @param {ConsentData} consentData
    * @param {(Object|undefined)} cacheIdObj
-   * @returns {IdResponse|undefined}
+   * @returns {IdResponse|undefined} A response object that contains id and/or callback.
    */
   getId (config, consentData, cacheIdObj) {
     if (this.isConfigOk(config) === false || this.isThereConsent(consentData) === false) return undefined;
 
     return {
-      callback: function () {
+      callback: function (cb) {
         window.D9v = {
           UserID: '99999999999999',
           CampID: '3175',
@@ -81,6 +81,8 @@ export const ftrackIdSubmodule = {
               storage.setDataInLocalStorage(`${FTRACK_PRIVACY_STORAGE_NAME}_exp`, (new Date(Date.now() + (1000 * 60 * 60 * 24 * LOCAL_STORAGE_EXP_DAYS))).toUTCString());
               storage.setDataInLocalStorage(`${FTRACK_PRIVACY_STORAGE_NAME}`, JSON.stringify(consentInfo));
             };
+
+            if (typeof cb === 'function') cb(response);
 
             return response;
           }

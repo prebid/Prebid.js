@@ -147,7 +147,7 @@ describe('FTRACK ID System', () => {
     });
 
     it(`should be the only method that gets a new ID aka hits the D9 endpoint`, () => {
-      ftrackIdSubmodule.getId(configMock, null, null).callback();
+      ftrackIdSubmodule.getId(configMock, null, null).callback(() => {});
       expect(loadExternalScript.called).to.be.ok;
       expect(loadExternalScript.args[0][0]).to.deep.equal('https://d9.flashtalking.com/d9core');
       loadExternalScript.resetHistory();
@@ -168,7 +168,7 @@ describe('FTRACK ID System', () => {
       it(`should use default IDs if config.params.id is not populated`, () => {
         let configMock1 = JSON.parse(JSON.stringify(configMock));
         delete configMock1.params.ids;
-        ftrackIdSubmodule.getId(configMock1, null, null).callback();
+        ftrackIdSubmodule.getId(configMock1, null, null).callback(() => {});
 
         expect(window.D9r).to.have.property('DeviceID', true);
         expect(window.D9r).to.have.property('SingleDeviceID', true);
@@ -181,7 +181,7 @@ describe('FTRACK ID System', () => {
           configMock1.params.ids['device id'] = 'test device ID';
           configMock1.params.ids['single device id'] = 'test single device ID';
           configMock1.params.ids['household id'] = 'test household ID';
-          ftrackIdSubmodule.getId(configMock1, null, null).callback();
+          ftrackIdSubmodule.getId(configMock1, null, null).callback(() => {});
 
           expect(window.D9r).to.not.have.property('DeviceID');
           expect(window.D9r).to.not.have.property('SingleDeviceID');
@@ -193,7 +193,7 @@ describe('FTRACK ID System', () => {
           configMock1.params.ids['device id'] = false;
           configMock1.params.ids['single device id'] = false;
           configMock1.params.ids['household id'] = false;
-          ftrackIdSubmodule.getId(configMock1, null, null).callback();
+          ftrackIdSubmodule.getId(configMock1, null, null).callback(() => {});
 
           expect(window.D9r).to.not.have.property('DeviceID');
           expect(window.D9r).to.not.have.property('SingleDeviceID');
@@ -203,7 +203,7 @@ describe('FTRACK ID System', () => {
         it(`- only device id`, () => {
           let configMock1 = JSON.parse(JSON.stringify(configMock));
           delete configMock1.params.ids['single device id'];
-          ftrackIdSubmodule.getId(configMock1, null, null).callback();
+          ftrackIdSubmodule.getId(configMock1, null, null).callback(() => {});
 
           expect(window.D9r).to.have.property('DeviceID', true);
           expect(window.D9r).to.not.have.property('SingleDeviceID');
@@ -213,7 +213,7 @@ describe('FTRACK ID System', () => {
         it(`- only single device id`, () => {
           let configMock1 = JSON.parse(JSON.stringify(configMock));
           delete configMock1.params.ids['device id'];
-          ftrackIdSubmodule.getId(configMock1, null, null).callback();
+          ftrackIdSubmodule.getId(configMock1, null, null).callback(() => {});
 
           expect(window.D9r).to.not.have.property('DeviceID');
           expect(window.D9r).to.have.property('SingleDeviceID', true);
@@ -225,7 +225,7 @@ describe('FTRACK ID System', () => {
           delete configMock1.params.ids['device id'];
           delete configMock1.params.ids['single device id'];
           configMock1.params.ids['household id'] = true;
-          ftrackIdSubmodule.getId(configMock1, null, null).callback();
+          ftrackIdSubmodule.getId(configMock1, null, null).callback(() => {});
 
           expect(window.D9r).to.not.have.property('DeviceID');
           expect(window.D9r).to.not.have.property('SingleDeviceID');
@@ -243,7 +243,7 @@ describe('FTRACK ID System', () => {
       expect(window.localStorage.getItem('ftrack-rtd')).to.not.be.ok;
       expect(window.localStorage.getItem('ftrack-rtd_exp')).to.not.be.ok;
 
-      ftrackIdSubmodule.getId(configMock, consentDataMock, null).callback();
+      ftrackIdSubmodule.getId(configMock, consentDataMock, null).callback(() => {});
       return new Promise(function(resolve, reject) {
         window.testTimer = function () {
           // Sinon fake server is NOT changing the readyState to 4, so instead
