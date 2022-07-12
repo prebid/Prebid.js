@@ -135,7 +135,7 @@ describe('33acrossBidAdapter:', function () {
 
     this.withProduct = (prod = 'siab') => {
       ttxRequest.imp.forEach((imp) => {
-        Object.assign(imp, {
+        utils.mergeDeep(imp, {
           ext: {
             ttx: {
               prod
@@ -147,14 +147,11 @@ describe('33acrossBidAdapter:', function () {
       return this;
     };
 
-    this.withProductAndGPID = (prod = 'siab', gpid) => {
+    this.withGpid = (gpid) => {
       ttxRequest.imp.forEach((imp) => {
-        Object.assign(imp, {
+        utils.mergeDeep(imp, {
           ext: {
-            gpid,
-            ttx: {
-              prod
-            }
+            gpid
           }
         });
       });
@@ -1196,14 +1193,15 @@ describe('33acrossBidAdapter:', function () {
       it('passes the Global Placement ID (gpid) in the request', function() {
         const ttxRequest = new TtxRequestBuilder()
           .withBanner()
-          .withProductAndGPID('siab', 'fakeGPID0')
+          .withProduct()
+          .withGpid('fakeGPID0')
           .build();
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)
           .build();
 
         let copyBidRequest = utils.deepClone(bidRequests);
-        const addGPIDBidRequests = copyBidRequest.map(function(bidRequest, index) {
+        const bidRequestsWithGpid = copyBidRequest.map(function(bidRequest, index) {
           return {
             ...bidRequest,
             ortb2Imp: {
@@ -1214,7 +1212,7 @@ describe('33acrossBidAdapter:', function () {
           };
         });
 
-        const [ builtServerRequest ] = spec.buildRequests(addGPIDBidRequests, bidderRequest);
+        const [ builtServerRequest ] = spec.buildRequests(bidRequestsWithGpid, bidderRequest);
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
