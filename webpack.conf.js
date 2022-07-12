@@ -6,7 +6,7 @@ var helpers = require('./gulpHelpers.js');
 var { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 var argv = require('yargs').argv;
 const fs = require('fs');
-const babelConfig = require('./babelConfig.js')({disableFeatures: helpers.getDisabledFeatures()});
+const babelConfig = require('./babelConfig.js')({disableFeatures: helpers.getDisabledFeatures(), prebidDistUrlBase: argv.distUrlBase});
 const {WebpackManifestPlugin} = require('webpack-manifest-plugin')
 
 var plugins = [

@@ -119,7 +119,7 @@ function makeDevpackPkg() {
     mode: 'development'
   })
 
-  const babelConfig = require('./babelConfig.js')({prebidDistUrlBase: '/build/dev/'});
+  const babelConfig = require('./babelConfig.js')({disableFeatures: helpers.getDisabledFeatures(), prebidDistUrlBase: argv.distUrlBase || '/build/dev/'});
 
   // update babel config to set local dist url
   cloned.module.rules

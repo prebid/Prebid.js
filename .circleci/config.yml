@@ -39,15 +39,18 @@ aliases:
       command: gulp e2e-test
 
   # Download and run BrowserStack local
-  - &setup_browserstack
-      name : Download BrowserStack Local binary and start it.
+  - &download_browserstack
+      name : Download BrowserStackLocal binary
       command : |
         # Download the browserstack binary file
         wget "https://www.browserstack.com/browserstack-local/BrowserStackLocal-linux-x64.zip"
         # Unzip it
         unzip BrowserStackLocal-linux-x64.zip
-        # Run the file with user's access key
-        ./BrowserStackLocal ${BROWSERSTACK_ACCESS_KEY} &
+
+  - &start_browserstack
+    name: Start BrowserStackLocal
+    command: ./BrowserStackLocal --key ${BROWSERSTACK_ACCESS_KEY} --automate-only --local-identifier ${CIRCLE_WORKFLOW_JOB_ID}
+    background: true
 
   - &unit_test_steps
     - checkout
@@ -55,7 +58,8 @@ aliases:
     - run: npm ci
     - save_cache: *save_dep_cache
     - run: *install
-    - run: *setup_browserstack
+    - run: *download_browserstack
+    - run: *start_browserstack
     - run: *run_unit_test
 
   - &endtoend_test_steps
@@ -64,7 +68,8 @@ aliases:
     - run: npm install
     - save_cache: *save_dep_cache
     - run: *install
-    - run: *setup_browserstack
+    - run: *download_browserstack
+    - run: *start_browserstack
     - run: *run_endtoend_test
 
 version: 2
