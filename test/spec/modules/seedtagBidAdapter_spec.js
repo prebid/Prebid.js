@@ -292,6 +292,31 @@ describe('Seedtag Adapter', function () {
         it('should expose gvlid', function () {
           expect(spec.gvlid).to.equal(157);
         });
+        it('should handle uspConsent', function () {
+          const uspConsent = '1---';
+
+          bidderRequest['uspConsent'] = uspConsent;
+
+          const request = spec.buildRequests(validBidRequests, bidderRequest);
+          const payload = JSON.parse(request.data);
+
+          expect(payload.uspConsent).to.exist;
+          expect(payload.uspConsent).to.equal(uspConsent);
+        });
+
+        it("shouldn't send uspConsent when not available", function () {
+          const uspConsent = undefined;
+
+          bidderRequest['uspConsent'] = uspConsent;
+
+          const request = spec.buildRequests(
+            validBidRequests,
+            bidderRequest
+          );
+          const payload = JSON.parse(request.data);
+
+          expect(payload.uspConsent).to.not.exist;
+        });
       });
     });
 
