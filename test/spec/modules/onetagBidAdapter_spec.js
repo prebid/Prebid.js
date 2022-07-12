@@ -193,7 +193,8 @@ describe('onetag', function () {
               'context',
               'playerSize',
               'mediaTypeInfo',
-              'type'
+              'type', 
+              'priceFloors'
             );
           } else if (isValid(BANNER, bid)) {
             expect(bid).to.have.all.keys(
@@ -205,7 +206,8 @@ describe('onetag', function () {
               'transactionId',
               'mediaTypeInfo',
               'sizes',
-              'type'
+              'type', 
+              'priceFloors'
             );
           }
           expect(bid.bidId).to.be.a('string');
