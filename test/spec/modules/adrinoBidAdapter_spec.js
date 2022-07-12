@@ -1,8 +1,13 @@
 import { expect } from 'chai';
 import { spec } from 'modules/adrinoBidAdapter.js';
+import {config} from '../../../src/config.js';
 import * as utils from '../../../src/utils';
 
 describe('adrinoBidAdapter', function () {
+  afterEach(() => {
+    config.resetConfig();
+  });
+
   describe('isBidRequestValid', function () {
     const validBid = {
       bidder: 'adrino',
@@ -71,6 +76,23 @@ describe('adrinoBidAdapter', function () {
       bidderRequestId: '98765432109876',
       auctionId: '01234567891234',
     };
+
+    it('should build the request correctly with custom domain', function () {
+      config.setConfig({adrino: { host: 'https://stg-prebid-bidder.adrino.io' }});
+      const result = spec.buildRequests(
+        [ bidRequest ],
+        { refererInfo: { page: 'http://example.com/' } }
+      );
+      expect(result.length).to.equal(1);
+      expect(result[0].method).to.equal('POST');
+      expect(result[0].url).to.equal('https://stg-prebid-bidder.adrino.io/bidder/bid/');
+      expect(result[0].data.bidId).to.equal('12345678901234');
+      expect(result[0].data.placementHash).to.equal('abcdef123456');
+      expect(result[0].data.referer).to.equal('http://example.com/');
+      expect(result[0].data.userAgent).to.equal(navigator.userAgent);
+      expect(result[0].data).to.have.property('nativeParams');
+      expect(result[0].data).not.to.have.property('gdprConsent');
+    });
 
     it('should build the request correctly with gdpr', function () {
       const result = spec.buildRequests(
