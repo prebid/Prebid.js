@@ -5,7 +5,7 @@ import { config } from '../src/config.js';
 import { hasPurpose1Consent } from '../src/utils/gpdr.js';
 
 const INTEGRATION_METHOD = 'prebid.js';
-const BIDDER_CODE = 'adtargetme';
+const BIDDER_CODE = 'adserveradtarget';
 const ENDPOINT = 'https://z.cdn.adtarget.market/ssp?prebid&s=';
 const ADAPTER_VERSION = '1.0.0';
 const PREBID_VERSION = '$prebid.version$';
@@ -104,7 +104,7 @@ function validateAppendObject(validationType, allowedKeys, inputObject, appendTo
 };
 
 function getTtl(bidderRequest) {
-  const ttl = config.getConfig('adtargetme.ttl');
+  const ttl = config.getConfig('adserveradtarget.ttl');
   return ttl ? validateTTL(ttl) : validateTTL(deepAccess(bidderRequest, 'params.ttl'));
 };
 
@@ -295,7 +295,7 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
 
 function generateServerRequest({payload, requestOptions, bidderRequest}) {
   return {
-    url: (config.getConfig('adtargetme.endpoint') || ENDPOINT) + (payload.site.id || ''),
+    url: (config.getConfig('adserveradtarget.endpoint') || ENDPOINT) + (payload.site.id || ''),
     method: 'POST',
     data: payload,
     options: requestOptions,
@@ -313,14 +313,14 @@ export const spec = {
     if (isPlainObject(params) && isNumber(params.sid)) {
       return true;
     } else {
-      logWarn('Adtargetme bidder params missing or incorrect');
+      logWarn('AdserverAdtarget bidder params missing or incorrect');
       return false;
     }
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
     if (isEmpty(validBidRequests) || isEmpty(bidderRequest)) {
-      logWarn('Adtargetme Adapter: buildRequests called with empty request');
+      logWarn('AdserverAdtarget Adapter: buildRequests called with empty request');
       return undefined;
     };
 
@@ -333,7 +333,7 @@ export const spec = {
 
     requestOptions.withCredentials = hasPurpose1Consent(bidderRequest.gdprConsent);
 
-    if (config.getConfig('adtargetme.singleRequestMode') === true) {
+    if (config.getConfig('adserveradtarget.singleRequestMode') === true) {
       const payload = generateOpenRtbObject(bidderRequest, validBidRequests[0]);
       validBidRequests.forEach(bid => {
         appendImpObject(bid, payload);

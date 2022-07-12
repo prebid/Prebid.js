@@ -1,11 +1,11 @@
 # Overview
 
-**Module Name**: adtargetme Bidder Adapter
+**Module Name**: adserveradtarget Bidder Adapter
 **Module Type**: Bidder Adapter
 **Maintainer**: info@adtarget.me
 
 # Description
-The Adtargetme Bid Adapter is an OpenRTB interface that support display demand from Adtarget 
+The AdserverAdtarget Bid Adapter is an OpenRTB interface that support display demand from Adtarget 
 
 # Supported Features:
 * Media Types: Banner 
@@ -14,9 +14,9 @@ The Adtargetme Bid Adapter is an OpenRTB interface that support display demand f
 * Advertiser domains
 
 # Mandatory Bidder Parameters
-The minimal requirements for the 'adtargetme' bid adapter to generate an outbound bid-request to our Adtargetme are:
+The minimal requirements for the 'adserveradtarget' bid adapter to generate an outbound bid-request to our AdserverAdtarget are:
 1. At least 1 banner adUnit 
-2. Your Adtargetme site id **bidder.params**.**sid**
+2. Your AdserverAdtarget site id **bidder.params**.**sid**
 
 ## Example:
 ```javascript
@@ -29,7 +29,7 @@ const adUnits = [{
         },
     bids: [
         {
-            bidder: 'adtargetme',
+            bidder: 'adserveradtarget',
             params: {
                 sid: 1220291391, // Site/App ID provided from SSP
             }
@@ -54,7 +54,7 @@ const adUnits = [{
         }
     },
     bids: [{
-        bidder: 'adtargetme',
+        bidder: 'adserveradtarget',
         params: {
             sid: 1220291391,
             bidOverride :{
