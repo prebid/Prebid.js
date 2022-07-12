@@ -4,7 +4,7 @@ let prebid = require('../package.json');
 const path = require('path');
 
 module.exports = function(api, options) {
-  const pbGlobal = options.globalVarName || prebid.globalVarName;
+  const pbGlobal = prebid.profile === "IH" ? prebid.ihGlobalVarName : prebid.globalVarName; //options.globalVarName || prebid.globalVarName;
   let replace = {
     '$prebid.version$': prebid.version,
     '$$PREBID_GLOBAL$$': pbGlobal,

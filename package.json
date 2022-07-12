@@ -27,7 +27,8 @@
     "header bidding",
     "prebid"
   ],
-  "globalVarName": "pbjs",
+  "globalVarName": "owpbjs",
+  "ihGlobalVarName": "ihowpbjs",
   "author": "the prebid.js contributors",
   "license": "Apache-2.0",
   "engines": {

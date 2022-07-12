@@ -837,9 +837,14 @@ function setUserIdentities(userIdentityData) {
     delete userIdentityData.pubProvidedEmail;
   }
   Object.assign(userIdentity, userIdentityData);
-  if (window.PWT && window.PWT.loginEvent) {
+  if ((window.IHPWT && window.IHPWT.loginEvent) || (window.PWT && window.PWT.loginEvent)) {
     reTriggerPartnerCallsWithEmailHashes();
-    window.PWT.loginEvent = false;
+    if (window.IHPWT) {
+      window.IHPWT.loginEvent = false;
+    }
+    if (window.PWT) {
+      window.PWT.loginEvent = false;
+    }
   }
 };
 
@@ -859,7 +864,7 @@ export function updateModuleParams(moduleToUpdate) {
   if (!params) return;
 
   let userIdentity = getUserIdentities() || {};
-  let enableSSO = (window.PWT && window.PWT.ssoEnabled) || false;
+  let enableSSO = (window.IHPWT && window.IHPWT.ssoEnabled) || (window.PWT && window.PWT.ssoEnabled) || false;
   let emailHashes = enableSSO && userIdentity.emailHash ? userIdentity.emailHash : userIdentity.pubProvidedEmailHash ? userIdentity.pubProvidedEmailHash : undefined;
   params.forEach(function(param) {
     moduleToUpdate.params[param.key] = (moduleToUpdate.name === 'id5Id' ? getRawPDString(emailHashes, userIdentity.userID) : emailHashes ? emailHashes[param.hashType] : undefined);
@@ -925,9 +930,8 @@ function getUserIdentities() {
 function processFBLoginData(refThis, response) {
   let emailHash = {};
   if (response.status === 'connected') {
-    window.PWT = window.PWT || {};
-    window.PWT.fbAt = response.authResponse.accessToken;
-    window.FB && window.FB.api('/me?fields=email&access_token=' + window.PWT.fbAt, function (response) {
+    // window.IHPWT = window.IHPWT || {};
+    window.FB && window.FB.api('/me?fields=email&access_token=' + response.authResponse.accessToken, function (response) {
       logInfo('SSO - Data received from FB API');
       if (response.error) {
         logInfo('SSO - User information could not be retrieved by facebook api [', response.error.message, ']');
@@ -953,7 +957,7 @@ function onSSOLogin(data) {
   let refThis = this;
   let email;
   let emailHash = {};
-  if (!window.PWT || !window.PWT.ssoEnabled) return;
+  if ((window.IHPWT && !window.IHPWT.ssoEnabled) || (window.PWT && !window.PWT.ssoEnabled)) return;
 
   switch (data.provider) {
     case undefined:
