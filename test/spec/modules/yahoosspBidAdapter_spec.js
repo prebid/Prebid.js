@@ -840,8 +840,7 @@ describe('YahooSSP Bid Adapter:', () => {
       const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
       const data = spec.buildRequests(validBidRequests, bidderRequest).data;
       expect(data.site).to.deep.equal({
-        id: bidderRequest.bids[0].params.dcn,
-        page: bidderRequest.refererInfo.referer
+        id: bidderRequest.bids[0].params.dcn
       });
 
       expect(data.device).to.deep.equal({
