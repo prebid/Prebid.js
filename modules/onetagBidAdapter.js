@@ -7,7 +7,7 @@ import {find} from '../src/polyfill.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { createEidsArray } from './userId/eids.js';
-import { deepClone, logWarn, logError, deepAccess } from '../src/utils.js';
+import { deepClone, logError, deepAccess } from '../src/utils.js';
 
 const ENDPOINT = 'https://onetag-sys.com/prebid-request';
 const USER_SYNC_ENDPOINT = 'https://onetag-sys.com/usync/';
@@ -270,7 +270,7 @@ function setGeneralInfo(bidRequest) {
   this['bidderRequestId'] = bidRequest.bidderRequestId;
   this['auctionId'] = bidRequest.auctionId;
   this['transactionId'] = bidRequest.transactionId;
-  this['gpid'] =  deepAccess(bidRequest, 'ortb2Imp.ext.gpid') || deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot');
+  this['gpid'] = deepAccess(bidRequest, 'ortb2Imp.ext.gpid') || deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot');
   this['pubId'] = params.pubId;
   this['ext'] = params.ext;
   if (params.pubClick) {
@@ -384,13 +384,12 @@ function getBidFloor(bidRequest, mediaType, sizes) {
   if (typeof bidRequest.getFloor === 'function') {
     sizes.forEach(size => {
       const floor = bidRequest.getFloor({
-        currency: 'EUR', 
+        currency: 'EUR',
         mediaType: mediaType || '*',
-        size: [size.width, size.height] 
-      });    
+        size: [size.width, size.height]
+      });
       floor.size = deepClone(size);
-      if (!floor.floor)
-        floor.floor = null;
+      if (!floor.floor) { floor.floor = null; }
       priceFloors.push(floor);
     });
   }
