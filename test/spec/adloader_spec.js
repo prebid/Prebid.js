@@ -72,21 +72,21 @@ describe('adLoader', function () {
 
   it('attaches passed attributes to a script', function () {
     const doc = {
-      createElement: function () {
-        return {
-          setAttribute: function (key, value) {
-            this[key] = value;
+        createElement: function () {
+          return {
+            setAttribute: function (key, value) {
+              this[key] = value;
+            }
+          }
+        },
+        getElementsByTagName: function() {
+          return {
+            firstChild: {
+              insertBefore: function() {}
+            }
           }
         }
       },
-      getElementsByTagName: function() {
-        return {
-          firstChild: {
-            insertBefore: function() {}
-          }
-        }
-      }
-    },
       attrs = {'z': 'A', 'y': 2};
     let script = adLoader.loadExternalScript('someUrl', 'criteo', undefined, doc, attrs);
     expect(script.z).to.equal('A');
