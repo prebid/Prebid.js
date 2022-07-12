@@ -193,7 +193,7 @@ describe('onetag', function () {
               'context',
               'playerSize',
               'mediaTypeInfo',
-              'type', 
+              'type',
               'priceFloors'
             );
           } else if (isValid(BANNER, bid)) {
@@ -206,7 +206,7 @@ describe('onetag', function () {
               'transactionId',
               'mediaTypeInfo',
               'sizes',
-              'type', 
+              'type',
               'priceFloors'
             );
           }
