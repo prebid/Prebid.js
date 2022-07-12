@@ -37,9 +37,9 @@ export const spec = {
             'refresh_count': window.nmmRefreshCounts[bid.adUnitCode]++,
             'elOffsets': getBoundingClient(bid),
             'scrollTop': window.pageYOffset || document.documentElement.scrollTop
-          },
-          ...bid.ortb2
-        }
+          }
+        },
+        ...bid.ortb2
       }
 
       const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
@@ -143,6 +143,7 @@ function getAdEl(bid) {
   return document.querySelector('#' + slotElementId);
 }
 function getBoundingClient(bid) {
+  // console.log(bid)
   const el = getAdEl(bid)
   if (!el) return {}
   return el.getBoundingClientRect();
