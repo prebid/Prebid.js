@@ -1247,11 +1247,11 @@ describe('Utils', function () {
   describe('setScriptAttributes', () => {
     it('correctly adds attributes from an object', () => {
       const script = document.createElement('script'),
-            attrs = {
-              'data-first_prop': '1',
-              'data-second_prop': 'b',
-              'id': 'newId'
-            };
+        attrs = {
+          'data-first_prop': '1',
+          'data-second_prop': 'b',
+          'id': 'newId'
+        };
       script.id = 'oldId';
       utils.setScriptAttributes(script, attrs);
       expect(script.dataset['first_prop']).to.equal('1');
