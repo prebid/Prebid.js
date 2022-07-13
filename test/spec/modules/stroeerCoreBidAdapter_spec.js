@@ -1,4 +1,4 @@
-import {assert} from 'chai';
+import {assert, expect} from 'chai';
 import {spec} from 'modules/stroeerCoreBidAdapter.js';
 import * as utils from 'src/utils.js';
 import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
@@ -961,6 +961,29 @@ describe('stroeerCore bid adapter', function () {
           const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq)[0];
           assert.lengthOf(serverRequestInfo.data.bids, 2);
           assert.notProperty(serverRequestInfo, 'uids');
+        });
+
+        it('should add schain if available', () => {
+          const schain = Object.freeze({
+            ver: '1.0',
+            complete: 1,
+            'nodes': [
+              {
+                asi: 'exchange1.com',
+                sid: 'ABC',
+                hp: 1,
+                rid: 'bid-request-1',
+                name: 'publisher',
+                domain: 'publisher.com'
+              }
+            ]
+          });
+
+          const bidReq = buildBidderRequest();
+          bidReq.bids.forEach(bid => bid.schain = schain);
+
+          const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq)[0];
+          assert.deepEqual(serverRequestInfo.data.schain, schain);
         });
       });
 

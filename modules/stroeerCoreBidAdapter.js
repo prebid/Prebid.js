@@ -209,6 +209,7 @@ export const spec = {
       kvg: getGlobalKeyValues(),
       // page is available on v7
       url: refererInfo && (refererInfo.page || refererInfo.canonicalUrl || refererInfo.referer),
+      schain: anyBid.schain
     };
 
     const userIds = anyBid.userId;
