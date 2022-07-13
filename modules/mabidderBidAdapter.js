@@ -1,6 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { deepAccess } from '../src/utils.js';
 const BIDDER_CODE = 'mabidder';
 export const baseUrl = 'https://prometheus-ix.ecdrsvc.com/prometheus/bid';
@@ -27,8 +27,6 @@ export const spec = {
       bids.push({
         bidId: bidRequest.bidId,
         sizes: sizes,
-        accountId: bidRequest.params.accountId,
-        placementId: bidRequest.params.placementId,
         ppid: bidRequest.params.ppid,
         mediaType: getFormatType(bidRequest)
       })
@@ -65,9 +63,10 @@ export const spec = {
   supportedMediaTypes: [BANNER]
 }
 
-const getFormatType = bidRequest => {
+function getFormatType(bidRequest) {
   if (deepAccess(bidRequest, 'mediaTypes.banner')) return BANNER
   if (deepAccess(bidRequest, 'mediaTypes.video')) return VIDEO
-  else return BANNER
+  if (deepAccess(bidRequest, 'mediaTypes.native')) return NATIVE
+  return BANNER
 }
 registerBidder(spec);
