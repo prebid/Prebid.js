@@ -314,7 +314,7 @@ describe('microadBidAdapter', () => {
         expected: {aids: JSON.stringify([{type: 14, id: 'criteo-id-sample'}])}
       },
       'Shared ID': {
-        userId: {pubcId: 'shared-id-sample'},
+        userId: {pubcid: 'shared-id-sample'},
         expected: {aids: JSON.stringify([{type: 15, id: 'shared-id-sample'}])}
       }
     }).forEach(([test, arg]) => {
