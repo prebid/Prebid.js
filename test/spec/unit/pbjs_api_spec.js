@@ -22,6 +22,7 @@ import {hook} from '../../../src/hook.js';
 import {reset as resetDebugging} from '../../../src/debugging.js';
 import $$PREBID_GLOBAL$$ from 'src/prebid.js';
 import {resetAuctionState} from 'src/auction.js';
+import * as writeHTML from 'src/utils/writeHTML.js'
 
 var assert = require('chai').assert;
 var expect = require('chai').expect;
@@ -1130,16 +1131,17 @@ describe('Unit: Prebid Module', function () {
   });
 
   describe('renderAd', function () {
-    var bidId = 1;
-    var doc = {};
-    var elStub = {};
-    var adResponse = {};
-    var spyLogError = null;
-    var spyLogMessage = null;
-    var spyLogWarn = null;
-    var spyAddWinningBid;
-    var inIframe = true;
-    var triggerPixelStub;
+    let bidId = 1;
+    let doc = {};
+    let elStub = {};
+    let adResponse = {};
+    let spyLogError = null;
+    let spyLogMessage = null;
+    let spyLogWarn = null;
+    let spyAddWinningBid;
+    let inIframe = true;
+    let triggerPixelStub;
+    let appendHTMLStub;
 
     function pushBidResponseToAuction(obj) {
       adResponse = Object.assign({
@@ -1158,8 +1160,6 @@ describe('Unit: Prebid Module', function () {
 
     beforeEach(function () {
       doc = {
-        write: sinon.spy(),
-        close: sinon.spy(),
         defaultView: {
           frameElement: {
             width: 0,
@@ -1180,6 +1180,7 @@ describe('Unit: Prebid Module', function () {
       spyLogMessage = sinon.spy(utils, 'logMessage');
       spyLogWarn = sinon.spy(utils, 'logWarn');
       spyAddWinningBid = sinon.spy(auctionManager, 'addWinningBid');
+      appendHTMLStub = sinon.stub(writeHTML, 'appendHTML');
 
       inIframe = true;
       sinon.stub(utils, 'inIframe').callsFake(() => inIframe);
@@ -1194,6 +1195,7 @@ describe('Unit: Prebid Module', function () {
       utils.inIframe.restore();
       triggerPixelStub.restore();
       spyAddWinningBid.restore();
+      appendHTMLStub.restore();
     });
 
     it('should require doc and id params', function () {
@@ -1214,8 +1216,7 @@ describe('Unit: Prebid Module', function () {
       });
       adResponse.ad = "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>";
       $$PREBID_GLOBAL$$.renderAd(doc, bidId);
-      assert.ok(doc.write.calledWith(adResponse.ad), 'ad was written to doc');
-      assert.ok(doc.close.called, 'close method called');
+      assert.ok(appendHTMLStub.calledWith(doc.body, adResponse.ad), 'ad was written to doc');
     });
 
     it('should place the url inside an iframe on the doc', function () {
@@ -1248,7 +1249,7 @@ describe('Unit: Prebid Module', function () {
         mediatype: 'video'
       });
       $$PREBID_GLOBAL$$.renderAd(doc, bidId);
-      sinon.assert.notCalled(doc.write);
+      sinon.assert.notCalled(appendHTMLStub);
     });
 
     it('should catch errors thrown when trying to write ads to the page', function () {
@@ -1257,7 +1258,7 @@ describe('Unit: Prebid Module', function () {
       });
 
       var error = { message: 'doc write error' };
-      doc.write = sinon.stub().throws(error);
+      appendHTMLStub.throws(error);
       $$PREBID_GLOBAL$$.renderAd(doc, bidId);
 
       var errorMessage = 'Error trying to write ad Id :' + bidId + ' to the page:' + error.message;

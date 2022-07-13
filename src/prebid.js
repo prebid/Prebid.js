@@ -23,6 +23,7 @@ import { emitAdRenderSucceeded, emitAdRenderFail } from './adRendering.js';
 import {gdprDataHandler, getS2SBidderSet, uspDataHandler, default as adapterManager} from './adapterManager.js';
 import CONSTANTS from './constants.json';
 import * as events from './events.js'
+import {appendHTML} from './utils/writeHTML.js';
 
 const $$PREBID_GLOBAL$$ = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -495,8 +496,7 @@ $$PREBID_GLOBAL$$.renderAd = hook('async', function (doc, id, options) {
             const message = `Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`;
             emitAdRenderFail({reason: PREVENT_WRITING_ON_MAIN_DOCUMENT, message, bid, id});
           } else if (ad) {
-            doc.write(ad);
-            doc.close();
+            appendHTML(doc.body, ad);
             setRenderSize(doc, width, height);
             reinjectNodeIfRemoved(creativeComment, doc, 'html');
             callBurl(bid);
