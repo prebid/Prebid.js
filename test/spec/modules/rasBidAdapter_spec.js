@@ -80,8 +80,8 @@ describe('rasBidAdapter', function () {
           'consentString': 'some-consent-string'
         },
         'refererInfo': {
-          'ref': 'https://refexample.com/',
-          'page': 'https://pageexample.com/'
+          'ref': 'https://example.org/',
+          'page': 'https://example.com/'
         }
       });
       expect(requests[0].url).to.have.string(CSR_ENDPOINT);
@@ -95,8 +95,8 @@ describe('rasBidAdapter', function () {
       expect(requests[0].url).to.have.string('bid_rate=1');
       expect(requests[0].url).to.have.string('gdpr_applies=true');
       expect(requests[0].url).to.have.string('euconsent=some-consent-string');
-      expect(requests[0].url).to.have.string('du=https%3A%2F%2Frefexample.com%2F');
-      expect(requests[0].url).to.have.string('dr=https%3A%2F%2Fpageexample.com%2F');
+      expect(requests[0].url).to.have.string('du=https%3A%2F%2Fexample.com%2F');
+      expect(requests[0].url).to.have.string('dr=https%3A%2F%2Fexample.org%2F');
     });
 
     it('should return empty consent string when undefined', function () {

@@ -9,8 +9,8 @@ const getEndpoint = (network) => `https://csr.onet.pl/${encodeURIComponent(netwo
 
 function parseParams(params, bidderRequest) {
   const newParams = {};
-  const du = deepAccess(bidderRequest, 'refererInfo.ref');
-  const dr = deepAccess(bidderRequest, 'refererInfo.page');
+  const du = deepAccess(bidderRequest, 'refererInfo.page');
+  const dr = deepAccess(bidderRequest, 'refererInfo.ref');
 
   if (du) {
     newParams.du = du;
