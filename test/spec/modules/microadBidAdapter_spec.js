@@ -308,6 +308,14 @@ describe('microadBidAdapter', () => {
       'Ramp ID and Liveramp identity': {
         userId: {idl_env: 'idl-env-sample'},
         expected: {idl_env: 'idl-env-sample', aids: JSON.stringify([{type: 13, id: 'idl-env-sample'}])}
+      },
+      'Criteo ID': {
+        userId: {criteoId: 'criteo-id-sample'},
+        expected: {aids: JSON.stringify([{type: 14, id: 'criteo-id-sample'}])}
+      },
+      'Shared ID': {
+        userId: {pubcId: 'shared-id-sample'},
+        expected: {aids: JSON.stringify([{type: 15, id: 'shared-id-sample'}])}
       }
     }).forEach(([test, arg]) => {
       it(`should add ${test} if it is available in request parameters`, () => {
