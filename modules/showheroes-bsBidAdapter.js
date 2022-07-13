@@ -14,7 +14,7 @@ import { loadExternalScript } from '../src/adloader.js';
 
 const PROD_ENDPOINT = 'https://bs.showheroes.com/api/v1/bid';
 const STAGE_ENDPOINT = 'https://bid-service.stage.showheroes.com/api/v1/bid';
-const VIRALIZE_ENDPOINT = 'https://api.viralize.com/prebid-sh/'; // @TODO refine the url later
+const VIRALIZE_ENDPOINT = 'https://ads.viralize.tv/prebid-sh/';
 const PROD_PUBLISHER_TAG = 'https://static.showheroes.com/publishertag.js';
 const STAGE_PUBLISHER_TAG = 'https://pubtag.stage.showheroes.com/publishertag.js';
 const PROD_VL = 'https://video-library.showheroes.com';
@@ -94,7 +94,7 @@ export const spec = {
           rBid.unitId = getBidIdParameter('unitId', bid.params);
           rBid.sizes = size;
           rBid.mediaTypes = {
-            [type]: {"context": context}
+            [type]: {'context': context}
           };
         } else {
           rBid.playerId = getBidIdParameter('playerId', bid.params);
@@ -116,8 +116,7 @@ export const spec = {
         if (bannerSizes && bannerSizes[0]) {
           adUnits.push(makeBids(BANNER, bannerSizes, isViralize));
         }
-      }
-      else {
+      } else {
         videoSizes.forEach((size) => {
           adUnits.push(makeBids(VIDEO, size));
         });
@@ -136,11 +135,11 @@ export const spec = {
     if (isViralize) {
       endpointUrl = VIRALIZE_ENDPOINT;
       data = {
-        "bidRequests": adUnits,
-        "context": {
-          "gdprConsent": gdprConsent,
-          "schain": {"validation": "strict", "config": {}},
-          "pageURL": QA.pageURL || encodeURIComponent(pageURL)
+        'bidRequests': adUnits,
+        'context': {
+          'gdprConsent': gdprConsent,
+          'schain': defaultSchain,
+          'pageURL': QA.pageURL || encodeURIComponent(pageURL)
         }
       }
     } else {
@@ -291,7 +290,7 @@ function createBids(bidRes, reqData) {
 
 function outstreamRender(bid) {
   let embedCode;
-  if (bid.isViralize) {
+  if (bid.renderer.config.isViralize) {
     embedCode = createOutstreamEmbedCodeV2(bid);
   } else {
     embedCode = createOutstreamEmbedCode(bid);
@@ -344,9 +343,9 @@ function createOutstreamEmbedCode(bid) {
 }
 
 function createOutstreamEmbedCodeV2(bid) {
-  const tpl = document.createElement('template');
-  tpl.innerHTML = bid.ad;
-  return tpl.content;
+  const range = document.createRange();
+  range.selectNode(document.getElementsByTagName('body')[0]);
+  return range.createContextualFragment(getBidIdParameter('ad', bid.renderer.config));
 }
 
 function getBannerHtml (bid, reqBid, reqData) {
