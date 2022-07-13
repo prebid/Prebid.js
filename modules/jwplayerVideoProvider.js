@@ -1021,8 +1021,17 @@ export function adStateFactory() {
   function parseImaAdWrapperIds(adEvent) {
     const ima = adEvent.ima;
     const ad = ima && ima.ad;
-    const h = ad && ad.h;
-    return h && h.adWrapperIds;
+    if (!ad) {
+      return;
+    }
+
+    const adProperties = Object.keys(ad);
+    adProperties.forEach(property => {
+      const value = ad[property];
+      if (value.adWrapperIds) {
+        return value.adWrapperIds;
+      }
+    });
   }
 
   return adState;
