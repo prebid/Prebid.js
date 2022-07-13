@@ -68,7 +68,11 @@ export const USER_IDS_CONFIG = {
     source: 'flashtalking.com',
     atype: 1,
     getValue: function(data) {
-      return data.DeviceID && data.DeviceID.join(',') || '';
+      let value = '';
+      if (data.DeviceID) {
+        value = data.DeviceID.join(',');
+      }
+      return value;
     },
     getUidExt: function(data) {
       return 'DeviceID';
