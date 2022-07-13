@@ -125,6 +125,20 @@ describe('nativoBidAdapterTests', function () {
       expect(request.url).to.include('ntv_pas')
     })
 
+    it('ntv_url parameter should NOT be empty even if the utl parameter was set as an empty value', function () {
+      bidRequests[0].params.url = ''
+      const request = spec.buildRequests(bidRequests, {
+        bidderRequestId: 123456,
+        refererInfo: {
+          referer: 'https://www.test.com',
+        },
+      })
+
+      expect(request.url).to.exist
+      expect(request.url).to.be.a('string')
+      expect(request.url).to.not.be.empty
+    })
+
     it('url should NOT contain placement specific query string parameters if placementId option is not provided', function () {
       bidRequests[0].params = {}
       const request = spec.buildRequests(bidRequests, {

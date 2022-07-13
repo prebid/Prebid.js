@@ -143,8 +143,11 @@ export const spec = {
       pageUrl = deepAccess(
         bidRequest,
         'params.url',
-        bidderRequest.refererInfo.page
       )
+      if (pageUrl == undefined || pageUrl === '') {
+        pageUrl = bidderRequest.refererInfo.page
+      }
+
       placementId = deepAccess(bidRequest, 'params.placementId')
 
       const bidDataKeys = [bidRequest.adUnitCode]
