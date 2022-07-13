@@ -68,16 +68,10 @@ export const USER_IDS_CONFIG = {
     source: 'flashtalking.com',
     atype: 1,
     getValue: function(data) {
-      var returnObject = {};
-      if (data.hasOwnProperty('DeviceID')) returnObject.DeviceID = data.DeviceID;
-      if (data.hasOwnProperty('HHID')) returnObject.HHID = data.HHID;
-      if (data.hasOwnProperty('SingleDeviceID')) returnObject.SingleDeviceID = data.SingleDeviceID;
-      return JSON.stringify(returnObject);
+      return data.DeviceID && data.DeviceID.join(',') || '';
     },
     getUidExt: function(data) {
-      if (data.ext) {
-        return data.ext;
-      }
+      return 'DeviceID';
     }
   },
 
@@ -336,7 +330,6 @@ function createEidObject(userIdData, subModuleKey) {
   if (conf && userIdData) {
     let eid = {};
     eid.source = isFn(conf['getSource']) ? conf['getSource'](userIdData) : conf['source'];
-
     const value = isFn(conf['getValue']) ? conf['getValue'](userIdData) : userIdData;
     if (isStr(value)) {
       const uid = { id: value, atype: conf['atype'] };
@@ -371,6 +364,15 @@ export function createEidsArray(bidRequestUserId) {
     if (bidRequestUserId.hasOwnProperty(subModuleKey)) {
       if (subModuleKey === 'pubProvidedId') {
         eids = eids.concat(bidRequestUserId['pubProvidedId']);
+      } else if (subModuleKey === 'ftrackId') {
+        // ftrack has multiple IDs so we add each one that exists
+        for (let id in bidRequestUserId[subModuleKey]) {
+          eids.push({
+            'atype': 1,
+            'ext': id,
+            'id': bidRequestUserId[subModuleKey][id]
+          });
+        }
       } else if (Array.isArray(bidRequestUserId[subModuleKey])) {
         bidRequestUserId[subModuleKey].forEach((config, index, arr) => {
           const eid = createEidObject(config, subModuleKey);
