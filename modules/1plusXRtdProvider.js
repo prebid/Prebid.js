@@ -106,25 +106,23 @@ export const buildOrtb2Updates = ({ segments = [], topics = [] }, bidder) => {
   // Therefore, writing them in `site.keywords` until it's supported
   // Other bidAdapters do fine with `site.content.data.segment`
   const writeToLegacySiteKeywords = LEGACY_SITE_KEYWORDS_BIDDERS.includes(bidder);
+  if (writeToLegacySiteKeywords) {
+    const site = {
+      keywords: topics.join(',')
+    };
+    return { site };
+  }
 
   const userData = {
     name: ORTB2_NAME,
     segment: segments.map((segmentId) => ({ id: segmentId }))
   };
-
-  if (writeToLegacySiteKeywords) {
-    const site = {
-      keywords: topics.join(',')
-    };
-    return { userData, site };
-  } else {
-    const siteContentData = {
-      name: ORTB2_NAME,
-      segment: topics.map((topicId) => ({ id: topicId })),
-      ext: { segtax: segtaxes.CONTENT }
-    }
-    return { userData, siteContentData };
+  const siteContentData = {
+    name: ORTB2_NAME,
+    segment: topics.map((topicId) => ({ id: topicId })),
+    ext: { segtax: segtaxes.CONTENT }
   }
+  return { userData, siteContentData };
 }
 
 /**
@@ -168,6 +166,14 @@ export const updateBidderConfig = (bidder, ortb2Updates, bidderConfigs) => {
   return bidderConfigCopy;
 };
 
+const setAppnexusAudiences = (audiences) => {
+  config.setConfig({
+    appnexusAuctionKeywords: {
+      '1plusX': audiences,
+    },
+  });
+}
+
 /**
  * Updates bidder configs with the targeting data retreived from Profile API
  * @param {Object} papiResponse Response from Profile API
@@ -186,6 +192,10 @@ export const setTargetingDataToConfig = (papiResponse, { bidders }) => {
         bidders: [bidder],
         config: updatedBidderConfig
       });
+    }
+    if (bidder === 'appnexus') {
+      // Do the legacy stuff for appnexus with segments
+      setAppnexusAudiences(segments);
     }
   }
 }
