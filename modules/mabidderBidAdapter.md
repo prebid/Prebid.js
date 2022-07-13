@@ -23,7 +23,6 @@ var adUnits = [
         bids: [{
             bidder: 'mabidder',
             params: {
-                placementId: "test",
                 ppid: "test"
             }
         }],
