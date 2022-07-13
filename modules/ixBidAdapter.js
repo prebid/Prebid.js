@@ -1051,6 +1051,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
     let gpid = impressions[transactionIds[adUnitIndex]].gpid;
     const dfpAdUnitCode = impressions[transactionIds[adUnitIndex]].dfp_ad_unit_code;
 <<<<<<< HEAD
+<<<<<<< HEAD
     const tid = impressions[transactionIds[adUnitIndex]].tid
 =======
     const divId = getGptSlotInfoForAdUnitCode(dfpAdUnitCode).divId;
@@ -1064,6 +1065,16 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
     console.log(divId);
     gpid = gpid ? gpid : dfpAdUnitCode.concat(divId);
 >>>>>>> 1ffe1cce (wip)
+=======
+    const slotInfo = getGptSlotInfoForAdUnitCode(dfpAdUnitCode);
+    let divId = null;
+    if (slotInfo) {
+      divId = slotInfo.divId;
+    }
+    if (!gpid && dfpAdUnitCode && divId) {
+      gpid = `${dfpAdUnitCode}#${divId}`
+    }
+>>>>>>> 032c3389 (Build GPID manually when dp_ad_unit_code is present and gpid doesnt already exist)
     if (impressionObjects.length && BANNER in impressionObjects[0]) {
       const { id, banner: { topframe } } = impressionObjects[0];
       const _bannerImpression = {
