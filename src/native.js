@@ -566,22 +566,24 @@ export function fromOrtbNativeRequest(openRTBRequest) {
  */
 export function convertOrtbRequestToProprietaryNative(bidRequests) {
   if (!bidRequests || !isArray(bidRequests)) return bidRequests;
-  // convert Native ORTB definition to old-style prebid native definition
-  for (const bidRequest of bidRequests) {
-    if (bidRequest.mediaTypes && bidRequest.mediaTypes[NATIVE] && bidRequest.mediaTypes[NATIVE].ortb) {
-      bidRequest.mediaTypes[NATIVE] = {
-        // to keep other keywords like sendTargetingKeys, rendererUrl...
-        ...Object.keys(bidRequest.mediaTypes[NATIVE])
-          .filter(key => NATIVE_KEYS_THAT_ARE_NOT_ASSETS.includes(key))
-          .reduce((obj, key) => ({
-            ...obj,
-            [key]: bidRequest.mediaTypes[NATIVE][key]
-          }), {}),
-        ...fromOrtbNativeRequest(bidRequest.mediaTypes[NATIVE].ortb)
-      }
-      bidRequest.nativeParams = bidRequest.mediaTypes[NATIVE];
-      if (bidRequest.nativeParams) {
-        processNativeAdUnitParams(bidRequest.nativeParams);
+  if (FEATURES.NATIVE) {
+    // convert Native ORTB definition to old-style prebid native definition
+    for (const bidRequest of bidRequests) {
+      if (bidRequest.mediaTypes && bidRequest.mediaTypes[NATIVE] && bidRequest.mediaTypes[NATIVE].ortb) {
+        bidRequest.mediaTypes[NATIVE] = {
+          // to keep other keywords like sendTargetingKeys, rendererUrl...
+          ...Object.keys(bidRequest.mediaTypes[NATIVE])
+            .filter(key => NATIVE_KEYS_THAT_ARE_NOT_ASSETS.includes(key))
+            .reduce((obj, key) => ({
+              ...obj,
+              [key]: bidRequest.mediaTypes[NATIVE][key]
+            }), {}),
+          ...fromOrtbNativeRequest(bidRequest.mediaTypes[NATIVE].ortb)
+        }
+        bidRequest.nativeParams = bidRequest.mediaTypes[NATIVE];
+        if (bidRequest.nativeParams) {
+          processNativeAdUnitParams(bidRequest.nativeParams);
+        }
       }
     }
   }
