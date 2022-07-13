@@ -370,13 +370,16 @@ export function createEidsArray(bidRequestUserId) {
         eids = eids.concat(bidRequestUserId['pubProvidedId']);
       } else if (subModuleKey === 'ftrackId') {
         // ftrack has multiple IDs so we add each one that exists
-        for (let id in bidRequestUserId[subModuleKey]) {
-          eids.push({
-            'atype': 1,
-            'ext': id,
-            'id': bidRequestUserId[subModuleKey][id]
-          });
+        let eid = {
+          'atype': 1,
+          'id': (bidRequestUserId[subModuleKey]['DeviceID'] || []).join('|'),
+          'ext': {}
         }
+        for (let id in bidRequestUserId[subModuleKey]) {
+          eid.ext[id] = (bidRequestUserId[subModuleKey][id] || []).join('|');
+        }
+
+        eids.push(eid);
       } else if (Array.isArray(bidRequestUserId[subModuleKey])) {
         bidRequestUserId[subModuleKey].forEach((config, index, arr) => {
           const eid = createEidObject(config, subModuleKey);
