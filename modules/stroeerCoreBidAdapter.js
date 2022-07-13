@@ -207,7 +207,8 @@ export const spec = {
       timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart),
       ab: win['yieldlove_ab'],
       kvg: getGlobalKeyValues(),
-      url: refererInfo && refererInfo.referer,
+      // page is available on v7
+      url: refererInfo && (refererInfo.page || refererInfo.canonicalUrl || refererInfo.referer),
     };
 
     const userIds = anyBid.userId;
