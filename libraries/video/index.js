@@ -165,6 +165,8 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     if (!bid) {
       return;
     }
+
+    pbGlobal.markWinningBidAsUsed(bid);
     pbEvents.emit(videoPrefix + eventName, { bid, adEvent: adEventPayload });
   }
 
