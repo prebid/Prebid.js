@@ -1028,8 +1028,9 @@ export function adStateFactory() {
     const adProperties = Object.keys(ad);
     adProperties.forEach(property => {
       const value = ad[property];
-      if (value.adWrapperIds) {
-        return value.adWrapperIds;
+      const wrapperIds = value.adWrapperIds;
+      if (wrapperIds) {
+        return wrapperIds;
       }
     });
   }
