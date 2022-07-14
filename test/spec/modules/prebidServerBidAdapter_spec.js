@@ -1920,27 +1920,33 @@ describe('S2S Adapter', function () {
         ver: '1.0'
       };
 
-      let request = utils.deepClone(REQUEST);
-      request.s2sConfig.extPrebid.schains = [
-        {
-          bidders: ['appnexus'],
-          schain: {
-            complete: 1,
-            nodes: [
-              {
-                asi: 'pbs.com',
-                hp: 1,
-                sid: '11111'
+      const s2sConfig = Object.assign({}, CONFIG, {
+        extPrebid: {
+          schains: [
+            {
+              bidders: ['appnexus'],
+              schain: {
+                complete: 1,
+                nodes: [
+                  {
+                    asi: 'pbs.com',
+                    hp: 1,
+                    sid: '11111'
+                  }
+                ],
+                ver: '1.0'
               }
-            ],
-            ver: '1.0'
-          }
+            }
+          ]
         }
-      ];
+      });
 
-      adapter.callBids(request, bidRequest, addBidResponse, done, ajax);
+      const s2sBidRequest = utils.deepClone(REQUEST);
+      s2sBidRequest.s2sConfig = s2sConfig;
+
+      adapter.callBids(s2sBidRequest, bidRequest, addBidResponse, done, ajax);
+
       let requestBid = JSON.parse(server.requests[0].requestBody);
-
       expect(requestBid.ext.prebid.schains).to.deep.equal([
         {
           bidders: ['appnexus'],

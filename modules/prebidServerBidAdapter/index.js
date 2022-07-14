@@ -862,52 +862,31 @@ Object.assign(ORTB2.prototype, {
     }
 
     // get reference to pbs config schain bidder names (if any exist)
-    let pbsSchainBidderNamesArr = [];
-    if (request.ext.prebid.schains) {
-      for (let i = 0; i < request.ext.prebid.schains.length; i++) {
-        pbsSchainBidderNamesArr = pbsSchainBidderNamesArr.concat(request.ext.prebid.schains[i].bidders);
-      }
-    }
+    const pbsSchainBidderNamesArr = request.ext.prebid?.schains ? request.ext.prebid.schains.flatMap(s => s.bidders) : [];
+    // create an schains object
+    const schains = Object.fromEntries(
+      (request.ext.prebid?.schains || []).map(({bidders, schain}) => [JSON.stringify(schain), {bidders: new Set(bidders), schain}])
+    );
 
-    // get reference to pbjs bidder specific schain values (if any exist)
-    let pbjsSchainValuesArr = [];
-
-    // iterate over pbjs bidder specific schains (if any exist)
-    for (let i = 0; i < bidRequests.length; i++) {
-      if (bidRequests[i].bids[0].schain) {
-        if (pbsSchainBidderNamesArr.indexOf(bidRequests[i].bids[0].bidder) === -1) {
-          // pbjs bidder schain not in pbs schain config.. need to add it
-          if (s2sConfig.extPrebid && typeof s2sConfig.extPrebid === 'object') {
-            if (pbjsSchainValuesArr.indexOf(JSON.stringify(bidRequests[i].bids[0].schain)) !== -1) {
-              s2sConfig.extPrebid.schains[pbjsSchainValuesArr.indexOf(JSON.stringify(bidRequests[i].bids[0].schain))].bidders.push(bidRequests[i].bids[0].bidder);
+    // compare bidder specific schains with pbs specific schains
+    request.ext.prebid.schains = Object.values(
+      bidRequests
+        .map((req) => [req.bidderCode, req.bids[0].schain])
+        .reduce((chains, [bidder, chain]) => {
+          const chainKey = JSON.stringify(chain);
+          if (chainKey && !chains.hasOwnProperty(chainKey)) {
+            if (pbsSchainBidderNamesArr.indexOf(bidder) !== -1) {
+              logInfo(`bidder-specific schain for ${bidder} skipped due to existing entry`);
             } else {
-              s2sConfig.extPrebid.schains.push({
-                bidders: [bidRequests[i].bids[0].bidder],
-                schain: bidRequests[i].bids[0].schain
-              });
+              chains[chainKey] = {bidders: new Set(), schain: chain};
+              chains[chainKey].bidders.add(bidder);
             }
-
-            pbjsSchainValuesArr.push(JSON.stringify(bidRequests[i].bids[0].schain));
-          } else {
-            // if the extPrebid object does not exist, add it along with the schain array
-            s2sConfig.extPrebid = {
-              schains: [{
-                bidders: [bidRequests[i].bids[0].bidder],
-                schain: bidRequests[i].bids[0].schain
-              }]
-            };
-
-            pbjsSchainValuesArr.push(JSON.stringify(bidRequests[i].bids[0].schain));
           }
-        } else {
-          logInfo(`bidder-specific schain for ${bidRequests[i].bids[0].bidder} skipped due to existing entry`);
-        }
-      }
-
-      if (i === bidRequests.length - 1 && pbjsSchainValuesArr.length > 0) {
-        request.ext.prebid = mergeDeep(request.ext.prebid, s2sConfig.extPrebid);
-      }
-    }
+          return chains;
+        }, schains)
+    ).map(({bidders, schain}) => ({bidders: Array.from(bidders), schain}));
+    // if schains evaluates to an empty array, remove it from the prebid object
+    if (request.ext.prebid.schains.length === 0) delete request.ext.prebid.schains;
 
     /**
      * @type {(string[]|string|undefined)} - OpenRTB property 'cur', currencies available for bids
