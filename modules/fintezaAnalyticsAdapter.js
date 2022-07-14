@@ -36,12 +36,7 @@ function getPageInfo() {
 
 function getUniqId() {
   let cookies;
-
-  try {
-    cookies = parseCookies(document.cookie);
-  } catch (a) {
-    cookies = {};
-  }
+  cookies = {};
 
   let isUniqFromLS;
   let uniq = cookies[ UNIQ_ID_KEY ];
