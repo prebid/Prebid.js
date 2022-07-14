@@ -151,7 +151,7 @@ export const spec = {
     try {
       storage.getCookie(name);
     } catch (a) {
-    return null;
+      return null;
     }
   },
 
