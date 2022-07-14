@@ -80,7 +80,7 @@ function storeUaReducedData(uaData) {
 function calculateUaReducedData() {
   let uaReducedData = {};
 
-  getWindowSelf().navigator.userAgentData.getHighEntropyValues(
+  getWindowSelf().navigator?.userAgentData?.getHighEntropyValues(
     ['model', 'uaFullVersion', 'platformVersion']
   ).then((uaData) => {
     uaReducedData = uaData;
