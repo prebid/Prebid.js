@@ -1,15 +1,14 @@
 <html>
 <head>
-  <!-- <script async src="./prebid7.2.0.js"></script> -->
-  <script>
-      var PREBID_TIMEOUT = 3000;
+<script>
+    var PREBID_TIMEOUT = 3000;
 
-      var googletag = googletag || {};
-      googletag.cmd = googletag.cmd || [];
+    var googletag = googletag || {};
+    googletag.cmd = googletag.cmd || [];
 
-      function initAdserver() {
-        if (pbjs.initAdserverSet) return;
-        (function() {
+    function initAdserver() {
+      if (pbjs.initAdserverSet) return;
+      (function() {
           var gads = document.createElement('script');
           gads.async = true;
           gads.type = 'text/javascript';
@@ -19,14 +18,13 @@
           var node = document.getElementsByTagName('script')[0];
           node.parentNode.insertBefore(gads, node);
         })();
-        pbjs.initAdserverSet = true;
-      };
-      setTimeout(initAdserver, PREBID_TIMEOUT);
+      pbjs.initAdserverSet = true;
+    };
+    setTimeout(initAdserver, PREBID_TIMEOUT);
 
-      var pbjs = pbjs || {};
-      pbjs.que = pbjs.que || [];
-
-      (function() {
+    var pbjs = pbjs || {};
+    pbjs.que = pbjs.que || [];
+    (function() {
         var pbjsEl = document.createElement("script");
         pbjsEl.type = "text/javascript";
         pbjsEl.async = true;
@@ -35,162 +33,68 @@
         pbjsTargetEl.insertBefore(pbjsEl, pbjsTargetEl.firstChild);
       })();
 
-      pbjs.que.push(function() {
-          var adUnits = [
-            {
-              code: 'div-gpt-ad-1460505748561-0',
-              mediaTypes: {
-                banner: {
-                  sizes: [[300, 250]]
-                } 
-              },
-              bids: [
-                {
-                  bidder: 'appnexus',
-                  params: {
-                    placementId: 13144370
-                  }
-                },
-                {
-                  bidder: 'rubicon',
-                  params: {
-                    accountId: 14062,
-                    siteId: 70608,
-                    zoneId: 498816
-                  }
-                },
-                {
-                  bidder: 'ix',
-                  params: {
-                    siteId: '300'
-                  }
-                },
-                {
-                  bidder: 'pubmatic',
-                  params: {
-                    publisherId: '156276',
-                    adSlot: 'pubmatic_test'
-                  }
-                }
-              ]
-            }
-          ];
-
-          pbjs.setBidderConfig({
-            "bidders": ['appnexus'],
-            "config": {
-              "schain": {
-                "validation": "relaxed",
-                "config": {
-                  "ver": "1.0",
-                  "complete": 1,
-                  "nodes": [
-                    {
-                      "asi": "test-2.com",
-                      "sid": "22222",
-                      "hp": 1
-                    }
-                  ]
+    pbjs.que.push(function() {
+        var adUnits = [{
+            code: 'div-gpt-ad-1460505748561-0',
+            mediaTypes: {
+              banner: {
+                sizes: [[300, 250]]
+              } 
+            },
+            bids: [
+              {
+                bidder: 'appnexus',
+                params: {
+                   placementId: 13144370
                 }
               }
-            }
-          });
+            ]
+          }];
 
-          // pbjs.setBidderConfig({
-          //   "bidders": ['pubmatic'],
-          //   "config": {
-          //     "schain": {
-          //       "validation": "relaxed",
-          //       "config": {
-          //         "ver": "1.0",
-          //         "complete": 1,
-          //         "nodes": [
-          //           {
-          //             "asi": "test-4.com",
-          //             "sid": "44444",
-          //             "hp": 1
-          //           }
-          //         ]
-          //       }
-          //     }
-          //   }
-          // });
+        pbjs.setConfig({
+          bidderTimeout: 3000,
+          s2sConfig : {
+            accountId : '1',
+            enabled : true, //default value set to false
+            defaultVendor: 'appnexus',
+            bidders : ['appnexus'],
+            timeout : 1000, //default value is 1000
+            adapter : 'prebidServer', //if we have any other s2s adapter, default value is s2s
+          }
+        });
 
-          pbjs.setConfig({
-            bidderTimeout: 3000,
-            s2sConfig : {
-              accountId : '1',
-              enabled : true, //default value set to false
-              defaultVendor: 'appnexus',
-              bidders : ['appnexus', 'rubicon', 'ix', 'pubmatic'],
-              timeout : 1000, //default value is 1000
-              adapter : 'prebidServer', //if we have any other s2s adapter, default value is s2s
-              extPrebid: {
-                schains: [
-                  {
-                    "bidders": ['appnexus'],
-                    "schain": {
-                      "ver": "1.0",
-                      "complete": 1,
-                      "nodes": [
-                        {
-                          "asi": "test-1.com",
-                          "sid": "11111",
-                          "hp":1
-                        }
-                      ]
-                    }
-                  },
-                  // {
-                  //   "bidders": ['pubmatic'],
-                  //   "schain": {
-                  //     "ver": "1.0",
-                  //     "complete": 1,
-                  //     "nodes": [
-                  //       {
-                  //         "asi": "test-2.com",
-                  //         "sid": "22222",
-                  //         "hp":1
-                  //       }
-                  //     ]
-                  //   }
-                  // }
-                ]
-              }
-            }
-          });
+        pbjs.addAdUnits(adUnits);
 
-          pbjs.addAdUnits(adUnits);
-
-          pbjs.requestBids({
+        pbjs.requestBids({
             bidsBackHandler: function(bidResponses) {
-              initAdserver();
+                initAdserver();
             }
-          })
-      });
-  </script>
-
-  <script>
-    googletag.cmd.push(function() {
-      var rightSlot = googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
-
-      pbjs.que.push(function() {
-          pbjs.setTargetingForGPTAsync();
-      });
-
-      googletag.pubads().enableSingleRequest();
-      googletag.enableServices();
+        })
     });
-  </script>
+</script>
+
+<script>
+    googletag.cmd.push(function() {
+        var rightSlot = googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
+
+        pbjs.que.push(function() {
+            pbjs.setTargetingForGPTAsync();
+        });
+
+        googletag.pubads().enableSingleRequest();
+        googletag.enableServices();
+    });
+    </script>
 </head>
 
 <body>
-  <h2>Prebid.js S2S Example</h2>
-  <h5>Div-1</h5>
-  <div id='div-gpt-ad-1460505748561-0'>
+    <h2>Prebid.js S2S Example</h2>
+
+    <h5>Div-1</h5>
+    <div id='div-gpt-ad-1460505748561-0'>
     <script type='text/javascript'>
-      googletag.cmd.push(function() { googletag.display('div-gpt-ad-1460505748561-0'); });
+        googletag.cmd.push(function() { googletag.display('div-gpt-ad-1460505748561-0'); });
     </script>
-  </div>
+    </div>
 </body>
 </html>
