@@ -12,6 +12,7 @@ const SYNC_URL = 'https://ssp.wp.pl/bidder/usersync';
 const NOTIFY_URL = 'https://ssp.wp.pl/bidder/notify';
 const TRACKER_URL = 'https://bdr.wpcdn.pl/tag/jstracker.js';
 const GVLID = 676;
+const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
 const TMAX = 450;
 const BIDDER_VERSION = '5.6';
 const DEFAULT_CURRENCY = 'PLN';
