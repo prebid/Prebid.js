@@ -101,7 +101,7 @@ const getNotificationPayload = bidData => {
 
 const cookieSupport = () => {
   const isSafari = /^((?!chrome|android|crios|fxios).)*safari/i.test(navigator.userAgent);
-  const useCookies = navigator.cookieEnabled || !!document.cookie.length;
+  const useCookies = navigator.cookieEnabled;
 
   return !isSafari && useCookies;
 };
