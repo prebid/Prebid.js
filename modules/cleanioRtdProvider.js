@@ -149,7 +149,11 @@ function readConfig(config) {
   }
 }
 
-function startBillableEvents() {
+/**
+ * The function to be called upon module init.
+ * Defined as a variable to be able to reset it naturally
+ */
+let startBillableEvents = function() {
   // Upon clean.io submodule initialization, every winner bid is considered to be protected
   // and therefore, subjected to billing
   events.on(CONSTANTS.EVENTS.BID_WON, winnerBidResponse => {
@@ -177,8 +181,14 @@ function beforeInit() {
     init: (config, userConsent) => {
       try {
         readConfig(config);
-        startBillableEvents();
         onModuleInit();
+
+        // Subscribing once to ensure no duplicate events
+        // in case module initialization code runs multiple times
+        // This should have been a part of submodule definition, but well...
+        // The assumption here is that in production init() will be called exactly once
+        startBillableEvents();
+        startBillableEvents = () => {};
         return true;
       } catch (err) {
         if (err instanceof ConfigError) {
