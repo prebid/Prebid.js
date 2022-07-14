@@ -4,6 +4,7 @@ import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {includes as strIncludes} from '../src/polyfill.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'sspBC';
 const BIDDER_URL = 'https://ssp.wp.pl/bidder/';
@@ -101,9 +102,7 @@ const getNotificationPayload = bidData => {
 
 const cookieSupport = () => {
   const isSafari = /^((?!chrome|android|crios|fxios).)*safari/i.test(navigator.userAgent);
-  const useCookies = navigator.cookieEnabled;
-
-  return !isSafari && useCookies;
+  return !isSafari && storage.cookiesAreEnabled();
 };
 
 const applyClientHints = ortbRequest => {
