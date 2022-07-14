@@ -11,8 +11,8 @@ import {
 import { VIDEO_JS_VENDOR } from '../libraries/video/constants/vendorCodes.js';
 import { submodule } from '../src/hook.js';
 
-export function VideojsProvider(config, videojs_, adState_, timeState_, callbackStorage_, utils) {
-  let videojs = videojs_;
+export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStorage_, utils) {
+  let vjs = vjs_;
   // Supplied callbacks are typically wrapped by handlers
   // we use this dict to keep track of these pairings
   const callbackToHandler = {};
@@ -28,12 +28,12 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
   let minimumSupportedPlayerVersion = '7.17.0';
 
   function init() {
-    if (!videojs) {
+    if (!vjs) {
       triggerSetupFailure(-1, 'Videojs not present')
       return;
     }
 
-    playerVersion = videojs.VERSION;
+    playerVersion = vjs.VERSION;
     if (playerVersion < minimumSupportedPlayerVersion) {
       triggerSetupFailure(-2, 'Videojs version not supported');
       return;
@@ -163,7 +163,7 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
 
     // Placement according to IQG Guidelines 4.2.8
     // https://cdn2.hubspot.net/hubfs/2848641/TrustworthyAccountabilityGroup_May2017/Docs/TAG-Inventory-Quality-Guidelines-v2_2-10-18-2016.pdf?t=1509469105938
-    const findPosition = videojs.dom.findPosition;
+    const findPosition = vjs.dom.findPosition;
     if (player.isFullscreen()) {
       video.pos = AD_POSITION.FULL_SCREEN;
     } else if (findPosition) {
@@ -550,7 +550,7 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
     }
 
     const setupConfig = utils.getSetupConfig(config);
-    player = videojs(divId, setupConfig, setupAds);
+    player = vjs(divId, setupConfig, setupAds);
   }
 }
 
@@ -582,7 +582,7 @@ export const utils = {
 
     return bottom >= 0 ? AD_POSITION.ABOVE_THE_FOLD : AD_POSITION.BELOW_THE_FOLD;
   },
-  
+
   getVideojsEventName: function(eventName) {
     switch (eventName) {
       case SETUP_COMPLETE:
