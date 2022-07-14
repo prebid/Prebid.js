@@ -220,7 +220,7 @@ export const spec = {
       userIDs: spec._getUserIds(tdid, usp, gdpr),
       // TODO: this should probably look at refererInfo
       pageURL: window.location.href,
-      rawCRB: spec._readCookie('krg_crb'),
+      rawCRB: storage.getCookie('krg_crb'),
       rawCRBLocalStorage: spec._getLocalStorageSafely('krg_crb')
     };
   },
