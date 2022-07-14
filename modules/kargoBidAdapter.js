@@ -146,18 +146,9 @@ export const spec = {
     });
   },
 
-  // PRIVATE
-  _readCookie(name) {
-    try {
-      storage.getCookie(name);
-    } catch (a) {
-      return null;
-    }
-  },
-
   _getCrbFromCookie() {
     try {
-      const crb = JSON.parse(decodeURIComponent(spec._readCookie('krg_crb')));
+      const crb = JSON.parse(decodeURIComponent(storage.getCookie('krg_crb')));
       if (crb && crb.v) {
         let vParsed = JSON.parse(atob(crb.v));
         if (vParsed) {
