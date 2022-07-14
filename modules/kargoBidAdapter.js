@@ -9,7 +9,7 @@ const HOST = 'https://krk.kargo.com';
 const SYNC = 'https://crb.kargo.com/api/v1/initsyncrnd/{UUID}?seed={SEED}&idx={INDEX}&gdpr={GDPR}&gdpr_consent={GDPR_CONSENT}&us_privacy={US_PRIVACY}';
 const SYNC_COUNT = 5;
 const GVLID = 972;
-const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO]
+const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO];
 const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
 
 let sessionId,
