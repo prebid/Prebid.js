@@ -447,7 +447,7 @@ export const spec = {
    * @param {Bid} bid
    */
   onBidWon: function (bid) {
-    if (bid.native) {
+    if (FEATURES.NATIVE && bid.native) {
       reloadViewabilityScriptWithCorrectParameters(bid);
     }
   }
@@ -715,7 +715,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
         bid.vastUrl = rtbBid.notify_url + '&redir=' + encodeURIComponent(rtbBid.rtb.video.asset_url);
         break;
     }
-  } else if (rtbBid.rtb[NATIVE]) {
+  } else if (FEATURES.NATIVE && rtbBid.rtb[NATIVE]) {
     const nativeAd = rtbBid.rtb[NATIVE];
 
     // setting up the jsTracker:
@@ -853,7 +853,7 @@ function bidToTag(bid) {
     tag.gpid = gpid;
   }
 
-  if (bid.mediaType === NATIVE || deepAccess(bid, `mediaTypes.${NATIVE}`)) {
+  if (FEATURES.NATIVE && (bid.mediaType === NATIVE || deepAccess(bid, `mediaTypes.${NATIVE}`))) {
     tag.ad_types.push(NATIVE);
     if (tag.sizes.length === 0) {
       tag.sizes = transformSizes([1, 1]);

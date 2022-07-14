@@ -1,4 +1,4 @@
-import {getWindowSelf, isEmpty, parseSizesInput} from '../src/utils.js';
+import {getWindowSelf, isEmpty, parseSizesInput, isGptPubadsDefined, isSlotMatchingAdUnitCode} from '../src/utils.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
@@ -291,13 +291,25 @@ function getCharset() {
 
 function waitForElementsPresent(elements) {
   const observer = new MutationObserver(function (mutationList, observer) {
+    let index;
+    let adView;
     if (mutationList && Array.isArray(mutationList)) {
       mutationList.forEach(mr => {
         if (mr && mr.addedNodes && Array.isArray(mr.addedNodes)) {
           mr.addedNodes.forEach(ad => {
-            let index = elements.indexOf(ad.id);
+            index = elements.indexOf(ad.id);
+            adView = ad;
+            if (index < 0) {
+              elements.forEach(code => {
+                let div = _getAdSlotHTMLElement(code);
+                if (div && div.contains(ad) && div.getBoundingClientRect().width > 0) {
+                  index = elements.indexOf(div.id);
+                  adView = div;
+                }
+              });
+            }
             if (index >= 0) {
-              registerViewability(ad);
+              registerViewability(adView, elements[index]);
               elements.splice(index, 1);
               if (!elements.length) {
                 observer.disconnect();
@@ -318,19 +330,41 @@ function waitForElementsPresent(elements) {
   });
 }
 
-function registerViewability(div) {
+function registerViewability(div, name) {
   visibilityHandler({
-    name: div.id,
+    name: name,
     div: div
   });
+}
+
+function _mapAdUnitPathToElementId(adUnitCode) {
+  if (isGptPubadsDefined()) {
+    // eslint-disable-next-line no-undef
+    const adSlots = googletag.pubads().getSlots();
+    const isMatchingAdSlot = isSlotMatchingAdUnitCode(adUnitCode);
+
+    for (let i = 0; i < adSlots.length; i++) {
+      if (isMatchingAdSlot(adSlots[i])) {
+        const id = adSlots[i].getSlotElementId();
+        return id;
+      }
+    }
+  }
+
+  return null;
+}
+
+function _getAdSlotHTMLElement(adUnitCode) {
+  return document.getElementById(adUnitCode) ||
+    document.getElementById(_mapAdUnitPathToElementId(adUnitCode));
 }
 
 function registerViewabilityAllBids(bids) {
   let elementsNotPresent = [];
   bids.forEach(bid => {
-    let div = document.getElementById(bid.adUnitCode);
+    let div = _getAdSlotHTMLElement(bid.adUnitCode);
     if (div) {
-      registerViewability(div);
+      registerViewability(div, bid.adUnitCode);
     } else {
       elementsNotPresent.push(bid.adUnitCode);
     }
@@ -345,114 +379,65 @@ function getViewabilityTracker() {
   let VIEWABILITY_TIME = 1000;
   let VIEWABILITY_MIN_RATIO = 0.5;
   let publicApi;
-  let context;
+  let observer;
+  let visibilityAds = {};
 
-  function segmentIsOutsideTheVisibleRange(visibleRangeEnd, p1, p2) {
-    return p1 > visibleRangeEnd || p2 < 0;
-  }
-
-  function segmentBeginsBeforeTheVisibleRange(p1) {
-    return p1 < 0;
-  }
-
-  function segmentEndsAfterTheVisibleRange(visibleRangeEnd, p2) {
-    return p2 < visibleRangeEnd;
-  }
-
-  function axialVisibilityRatio(visibleRangeEnd, p1, p2) {
-    let visibilityRatio = 0;
-    if (!segmentIsOutsideTheVisibleRange(visibleRangeEnd, p1, p2)) {
-      if (segmentBeginsBeforeTheVisibleRange(p1)) {
-        visibilityRatio = p2 / (p2 - p1);
+  function intersectionCallback(entries) {
+    entries.forEach(function(entry) {
+      var adBox = entry.target;
+      if (entry.isIntersecting) {
+        if (entry.intersectionRatio >= VIEWABILITY_MIN_RATIO && entry.boundingClientRect && entry.boundingClientRect.height > 0 && entry.boundingClientRect.width > 0) {
+          visibilityAds[adBox.id] = true;
+        }
       } else {
-        visibilityRatio = segmentEndsAfterTheVisibleRange(visibleRangeEnd, p2) ? 1 : (visibleRangeEnd - p1) / (p2 - p1);
+        visibilityAds[adBox.id] = false;
       }
+    });
+  }
+
+  function observedElementIsVisible(element) {
+    return visibilityAds[element.id] && document.visibilityState && document.visibilityState === 'visible';
+  }
+
+  function defineObserver() {
+    if (!observer) {
+      var observerConfig = {
+        root: null,
+        rootMargin: '0px',
+        threshold: [VIEWABILITY_MIN_RATIO]
+      };
+      observer = new IntersectionObserver(intersectionCallback.bind(this), observerConfig);
     }
-    return visibilityRatio;
   }
-
-  function isNotHiddenByNonFriendlyIframe() {
-    try { return (window === window.top) || window.frameElement; } catch (e) {}
-  }
-
-  function defineContext(e) {
-    try {
-      context = e && window.document.body.contains(e) ? window : (window.top.document.body.contains(e) ? top : undefined);
-    } catch (err) {}
-    return context;
-  }
-
-  function getContext(e) {
-    return context;
-  }
-
-  function verticalVisibilityRatio(position) {
-    return axialVisibilityRatio(getContext().innerHeight, position.top, position.bottom);
-  }
-
-  function horizontalVisibilityRatio(position) {
-    return axialVisibilityRatio(getContext().innerWidth, position.left, position.right);
-  }
-
-  function itIsNotHiddenByBannerAreaPosition(e) {
-    let position = e.getBoundingClientRect();
-    return (verticalVisibilityRatio(position) * horizontalVisibilityRatio(position)) > VIEWABILITY_MIN_RATIO;
-  }
-
-  function itIsNotHiddenByDisplayStyleCascade(e) {
-    return e.offsetHeight > 0 && e.offsetWidth > 0;
-  }
-
-  function itIsNotHiddenByOpacityStyleCascade(e) {
-    let s = e.style;
-    let p = e.parentNode;
-    return !(s && parseFloat(s.opacity) === 0) && (!p || itIsNotHiddenByOpacityStyleCascade(p));
-  }
-
-  function itIsNotHiddenByVisibilityStyleCascade(e) {
-    return getContext().getComputedStyle(e).visibility !== 'hidden';
-  }
-
-  function itIsNotHiddenByTabFocus() {
-    try { return getContext().top.document.hasFocus(); } catch (e) {}
-  }
-
-  function isDefined(e) {
-    return (e !== null) && (typeof e !== 'undefined');
-  }
-
-  function itIsNotHiddenByOrphanBranch() {
-    return isDefined(getContext());
-  }
-
-  function isContextInAnIframe() {
-    return isDefined(getContext().frameElement);
-  }
-
   function processIntervalVisibilityStatus(elapsedVisibleIntervals, element, callback) {
-    let visibleIntervals = isVisible(element) ? (elapsedVisibleIntervals + 1) : 0;
+    let visibleIntervals = observedElementIsVisible(element) ? (elapsedVisibleIntervals + 1) : 0;
     if (visibleIntervals === TIME_PARTITIONS) {
+      stopObserveViewability(element)
       callback();
     } else {
       setTimeout(processIntervalVisibilityStatus.bind(this, visibleIntervals, element, callback), VIEWABILITY_TIME / TIME_PARTITIONS);
     }
   }
 
-  function isVisible(element) {
-    defineContext(element);
-    return isNotHiddenByNonFriendlyIframe() &&
-      itIsNotHiddenByOrphanBranch() &&
-      itIsNotHiddenByTabFocus() &&
-      itIsNotHiddenByDisplayStyleCascade(element) &&
-      itIsNotHiddenByVisibilityStyleCascade(element) &&
-      itIsNotHiddenByOpacityStyleCascade(element) &&
-      itIsNotHiddenByBannerAreaPosition(element) &&
-      (!isContextInAnIframe() || isVisible(getContext().frameElement));
+  function stopObserveViewability(element) {
+    delete visibilityAds[element.id];
+    observer.unobserve(element);
+  }
+
+  function observeAds(element) {
+    observer.observe(element);
+  }
+
+  function initAndVerifyVisibility(element, callback) {
+    if (element) {
+      defineObserver();
+      observeAds(element);
+      processIntervalVisibilityStatus(0, element, callback);
+    }
   }
 
   publicApi = {
-    isVisible: isVisible,
-    onView: processIntervalVisibilityStatus.bind(this, 0)
+    onView: initAndVerifyVisibility.bind(this)
   };
 
   return publicApi;
