@@ -21,6 +21,7 @@ import {submodule} from '../src/hook.js';
 
 export const imUidLocalName = '__im_uid';
 export const imVidCookieName = '_im_vid';
+export const imPpidLocalName = '__im_ppid';
 export const imRtdLocalName = '__im_sids';
 export const storage = getStorageManager();
 const submoduleName = 'im';
@@ -38,8 +39,8 @@ function setImDataInCookie(value) {
 }
 
 /**
-* @param {string} bidderName
-*/
+ * @param {string} bidderName
+ */
 export function getBidderFunction(bidderName) {
   const biddersFunction = {
     pubmatic: function (bid, data) {
@@ -94,6 +95,11 @@ export function setRealTimeData(bidConfig, moduleConfig, data) {
     if (moduleConfig.params.setGptKeyValues || !moduleConfig.params.hasOwnProperty('setGptKeyValues')) {
       window.googletag = window.googletag || {cmd: []};
       window.googletag.cmd = window.googletag.cmd || [];
+      if (data.ppid) {
+        window.googletag.cmd.push(() => {
+          window.googletag.pubads().setPublisherProvidedId(data.ppid);
+        });
+      }
       window.googletag.cmd.push(() => {
         window.googletag.pubads().setTargeting('im_segments', data.im_segments);
       });
@@ -129,6 +135,7 @@ export function getRealTimeData(reqBidsConfigObj, onDone, moduleConfig) {
   const sids = storage.getDataFromLocalStorage(imRtdLocalName);
   const parsedSids = sids ? sids.split(',') : [];
   const mt = storage.getDataFromLocalStorage(`${imRtdLocalName}_mt`);
+  const localPpid = storage.getDataFromLocalStorage(imPpidLocalName);
   const localVid = storage.getCookie(imVidCookieName);
   let apiUrl = `https://sync6.im-apps.net/${cid}/rtd`;
   let expired = true;
@@ -144,7 +151,7 @@ export function getRealTimeData(reqBidsConfigObj, onDone, moduleConfig) {
   }
 
   if (sids !== null) {
-    setRealTimeData(reqBidsConfigObj, moduleConfig, {im_segments: parsedSids});
+    setRealTimeData(reqBidsConfigObj, moduleConfig, {im_segments: parsedSids, ppid: localPpid});
     onDone();
     alreadyDone = true;
   }
@@ -176,10 +183,11 @@ export function getApiCallback(reqBidsConfigObj, onDone, moduleConfig) {
           logError('unable to get Intimate Merger segment data');
         }
 
+        const imuidMt = storage.getDataFromLocalStorage(`${imUidLocalName}_mt`);
+        const imuidExpired = Date.parse(imuidMt) && Date.now() - (new Date(imuidMt)).getTime() < uidMaxAge;
+
         if (parsedResponse.uid) {
           const imuid = storage.getDataFromLocalStorage(imUidLocalName);
-          const imuidMt = storage.getDataFromLocalStorage(`${imUidLocalName}_mt`);
-          const imuidExpired = Date.parse(imuidMt) && Date.now() - (new Date(imuidMt)).getTime() < uidMaxAge;
           if (!imuid || imuidExpired) {
             storage.setDataInLocalStorage(imUidLocalName, parsedResponse.uid);
             storage.setDataInLocalStorage(`${imUidLocalName}_mt`, new Date(timestamp()).toUTCString());
@@ -190,8 +198,15 @@ export function getApiCallback(reqBidsConfigObj, onDone, moduleConfig) {
           setImDataInCookie(parsedResponse.vid);
         }
 
+        if (parsedResponse.ppid) {
+          const ppid = storage.getDataFromLocalStorage(imPpidLocalName);
+          if (!ppid || imuidExpired) {
+            storage.setDataInLocalStorage(imPpidLocalName, parsedResponse.ppid);
+          }
+        }
+
         if (parsedResponse.segments) {
-          setRealTimeData(reqBidsConfigObj, moduleConfig, {im_segments: parsedResponse.segments});
+          setRealTimeData(reqBidsConfigObj, moduleConfig, {im_segments: parsedResponse.segments, ppid: parsedResponse.ppid});
           storage.setDataInLocalStorage(imRtdLocalName, parsedResponse.segments);
           storage.setDataInLocalStorage(`${imRtdLocalName}_mt`, new Date(timestamp()).toUTCString());
         }
