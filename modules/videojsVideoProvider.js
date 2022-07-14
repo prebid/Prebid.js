@@ -32,47 +32,32 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
       triggerSetupFailure(-1, 'Videojs not present')
       return;
     }
-    playerVersion = videojs.VERSION;
 
+    playerVersion = videojs.VERSION;
     if (playerVersion < minimumSupportedPlayerVersion) {
-      triggerSetupFailure(-2, 'Videojs version not supported')
+      triggerSetupFailure(-2, 'Videojs version not supported');
       return;
     }
 
     if (!document.getElementById(divId)) {
-      triggerSetupFailure(-3, `No div found with id ${divId}`)
+      triggerSetupFailure(-3, `No div found with id ${divId}`);
       return;
     }
 
-    player = videojs(divId)
+    setupPlayer(playerConfig);
 
-    function adSetup(){
-      // Todo: the linter doesn't like optional chaining is there a better way to do this
-      const vendorConfig = config.playerConfig && config.playerConfig.params && config.playerConfig.params.vendorConfig;
-      const tags = vendorConfig && vendorConfig.advertising && vendorConfig.advertising.tag;
-      if (player.ima && tags) {
-        imaOptions = {
-          adTagUrl: tags[0]
-        };
-        player.ima(imaOptions);
-      }
-    }
-
-    // Instantiate player if it does not exist
-    if(!player){
-      // setupCompleteCallback should already be hooked to player.ready so no need to include it here
-      player = videojs(divId, playerConfig, adSetup)
-      setupFailedCallback && player.on('error', callbackToHandler[setupFailedCallback])
-      setupCompleteCallback && player.on('ready', callbackToHandler[setupCompleteCallback])
+    if (!player) {
+      triggerSetupFailure(-4, 'Failed to instantiate the player');
       return
     }
 
-    setupCompleteCallback && setupCompleteCallback(SETUP_COMPLETE, getSetupCompletePayload());
-    adSetup();
-
-    // TODO: make sure ortb gets called in integration example
-    // currently testing with a hacky solution by hooking it to window
-    // window.ortb = this.getOrtbParams
+    if (player.isReady_) {
+      triggerSetupComplete();
+    } else {
+      player.on('ready', function() {
+        triggerSetupComplete();
+      });
+    }
   }
 
   function triggerSetupFailure(errorCode, msg) {
@@ -85,6 +70,18 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
       sourceError: null
     };
     setupFailedCallback && setupFailedCallback(SETUP_FAILED, payload);
+    setupFailedCallback = null;
+  }
+
+  function triggerSetupComplete() {
+    const payload = {
+      divId,
+      playerVersion,
+      type: SETUP_COMPLETE,
+    };
+
+    setupCompleteCallback && setupCompleteCallback(SETUP_COMPLETE, payload);
+    setupCompleteCallback = null;
   }
 
   function getId() {
@@ -177,13 +174,53 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
   }
 
   // Plugins to integrate: https://github.com/googleads/videojs-ima
-  function setAdTagUrl(adTagUrl, options) {
+  function setAdTagUrl(adTagUrl) {
+    player.ima.changeAdTag(adTagUrl);
+    player.ima.requestAds();
   }
 
   // Should this function return some sort of signal
   // to specify whether or not the callback was succesfully hooked?
   function onEvents(events, callback) {
     if (!callback) {
+      return;
+    }
+    const vjEVENTS = [
+      'loadstart',
+      'progress',
+      'suspend',
+      'abort',
+      'error',
+      'emptied',
+      'stalled',
+      'loadedmetadata',
+      'loadeddata',
+      'canplay',
+      'canplaythrough',
+      'playing',
+      'waiting',
+      'seeking',
+      'seeked',
+      'ended',
+      'durationchange',
+      'timeupdate',
+      'play',
+      'pause',
+      'ratechange',
+      'resize',
+      'volumechange',
+    ]
+
+    vjEVENTS.forEach(ev => {
+      player.on(ev, function() {
+        console.log('vjs: ', ev);
+      });
+      player.el().addEventListener(ev, function() {
+        console.log('evtList: ', ev);
+      });
+    });
+
+    if (vjEVENTS) {
       return;
     }
 
@@ -203,23 +240,13 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
     }
   }
 
-  function getSetupCompletePayload() {
-    return {
-      divId,
-      playerVersion,
-      type: SETUP_COMPLETE,
-    };
-  }
-
   function registerPreSetupListeners(type, callback, payload) {
     let eventHandler;
     switch (type) {
       case SETUP_COMPLETE:
         setupCompleteCallback = callback
         eventHandler = () => {
-          payload = getSetupCompletePayload();
-          callback(type, payload);
-          setupCompleteCallback = null;
+          triggerSetupComplete();
         };
         break;
       case SETUP_FAILED:
@@ -247,7 +274,7 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
     player && player.on(utils.getVideojsEventName(type), eventHandler);
   }
 
-  function registerPostSetupListeners(type, callback, payload){
+  function registerPostSetupListeners(type, callback, payload) {
     let eventHandler;
 
     switch (type) {
@@ -354,10 +381,10 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
         eventHandler = e => {
           const duration = e.duration;
           const offset = e.offset;
-          pendingSeek = {
-            duration,
-            offset
-          };
+          // pendingSeek = {
+          //   duration,
+          //   offset
+          // };
           Object.assign(payload, {
             position: e.position,
             destination: offset,
@@ -370,12 +397,12 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
 
       case SEEK_END:
         eventHandler = () => {
-          Object.assign(payload, {
-            position: pendingSeek.offset,
-            duration: pendingSeek.duration
-          });
+          // Object.assign(payload, {
+          //   position: pendingSeek.offset,
+          //   duration: pendingSeek.duration
+          // });
           callback(type, payload);
-          pendingSeek = {};
+          // pendingSeek = {};
         };
         player.on('seeked', eventHandler);
         break;
@@ -427,9 +454,9 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
       case COMPLETE:
         eventHandler = e => {
           callback(type, payload);
-          timeState.clearState();
+          // timeState.clearState();
         };
-        player.on(COMPLETE, eventHandler);
+        player.on('ended', eventHandler);
         break;
 
       case PLAYLIST_COMPLETE:
@@ -478,9 +505,7 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
         break;
 
       default:
-        return;
     }
-
   }
 
   function offEvents(events, callback) {
@@ -491,7 +516,7 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
         continue;
       }
 
-      const eventHandler = callbackStorage.getCallback(event, callback);
+      const eventHandler = callbackToHandler[event];// callbackStorage.getCallback(event, callback);
       if (eventHandler) {
         player.off(videojsEvent, eventHandler);
       }
@@ -515,9 +540,38 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
     offEvents,
     destroy
   };
+
+  function setupPlayer(config) {
+    function setupAds() {
+      if (!player.ima) {
+        return;
+      }
+      player.ima({});
+    }
+
+    const setupConfig = utils.getSetupConfig(config);
+    player = videojs(divId, setupConfig, setupAds);
+  }
 }
 
 export const utils = {
+  getSetupConfig: function (config) {
+    if (!config) {
+      return;
+    }
+
+    const params = config.params || {};
+    const videojsConfig = params.vendorConfig || {};
+
+    if (videojsConfig.autostart === undefined && config.autostart !== undefined) {
+      videojsConfig.autostart = config.autostart
+    }
+
+    if (videojsConfig.muted === undefined && config.mute !== undefined) {
+      videojsConfig.muted = config.mute;
+    }
+  },
+
   getPositionCode: function({left, top, width, height}) {
     const bottom = window.innerHeight - top - height;
     const right = window.innerWidth - left - width;
@@ -528,6 +582,7 @@ export const utils = {
 
     return bottom >= 0 ? AD_POSITION.ABOVE_THE_FOLD : AD_POSITION.BELOW_THE_FOLD;
   },
+  
   getVideojsEventName: function(eventName) {
     switch (eventName) {
       case SETUP_COMPLETE:
@@ -555,7 +610,7 @@ export const utils = {
 const videojsSubmoduleFactory = function (config) {
   const adState = null;
   const timeState = null;
-  const callbackStorage = callbackStorageFactory();
+  const callbackStorage = null;
   // videojs factory is stored to window by default
   const vjs = window.videojs;
   return VideojsProvider(config, vjs, adState, timeState, callbackStorage, utils);
