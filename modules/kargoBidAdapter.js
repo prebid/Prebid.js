@@ -148,7 +148,11 @@ export const spec = {
 
   // PRIVATE
   _readCookie(name) {
+    try {
+      storage.getCookie(name);
+    } catch (a) {
     return null;
+    }
   },
 
   _getCrbFromCookie() {
