@@ -593,6 +593,11 @@ describe('kargo adapter tests', function () {
     var shouldSimulateOutdatedBrowser, crb, isActuallyOutdatedBrowser;
 
     beforeEach(() => {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        kargo: {
+          storageAllowed: true
+        }
+      };
       crb = {};
       shouldSimulateOutdatedBrowser = false;
       isActuallyOutdatedBrowser = false;
