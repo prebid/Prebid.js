@@ -196,17 +196,6 @@ function getData(name, remove = true) {
     });
   }
 
-  if (storage.cookiesAreEnabled()) {
-    document.cookie.split(';').forEach((item) => {
-      let value = item.split('=');
-      if (value[0].indexOf(name) > -1) {
-        data.push(value[1]);
-        if (remove) {
-          storage.setCookie(value[0], '', 'Thu, 01 Jan 1970 00:00:01 GMT');
-        }
-      }
-    });
-  }
   return data;
 }
 
