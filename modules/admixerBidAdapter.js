@@ -1,14 +1,15 @@
 import { logError } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
+import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'admixer';
-const ALIASES = ['go2net', 'adblender', 'adsyield'];
+const ALIASES = ['go2net', 'adblender', 'adsyield', 'futureads'];
 const ENDPOINT_URL = 'https://inv-nets.admixer.net/prebid.1.2.aspx';
 export const spec = {
   code: BIDDER_CODE,
   aliases: ALIASES,
-  supportedMediaTypes: ['banner', 'video'],
+  supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   /**
    * Determines whether or not the given bid request is valid.
    */
@@ -31,15 +32,16 @@ export const spec = {
     } while (w !== window.top);
     const payload = {
       imps: [],
-      ortb2: config.getConfig('ortb2'),
+      ortb2: bidderRequest.ortb2,
       docReferrer: docRef,
     };
     let endpointUrl;
     if (bidderRequest) {
       const {bidderCode} = bidderRequest;
       endpointUrl = config.getConfig(`${bidderCode}.endpoint_url`);
-      if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
-        payload.referrer = encodeURIComponent(bidderRequest.refererInfo.referer);
+      // TODO: is 'page' the right value here?
+      if (bidderRequest.refererInfo?.page) {
+        payload.referrer = encodeURIComponent(bidderRequest.refererInfo.page);
       }
       if (bidderRequest.gdprConsent) {
         payload.gdprConsent = {

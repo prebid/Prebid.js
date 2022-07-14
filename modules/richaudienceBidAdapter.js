@@ -1,4 +1,4 @@
-import { isEmpty, deepAccess, isStr } from '../src/utils.js';
+import {isEmpty, deepAccess, isStr} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
@@ -43,7 +43,8 @@ export const spec = {
         bidderRequestId: bid.bidderRequestId,
         tagId: bid.adUnitCode,
         sizes: raiGetSizes(bid),
-        referer: (typeof bidderRequest.refererInfo.referer != 'undefined' ? encodeURIComponent(bidderRequest.refererInfo.referer) : null),
+        // TODO: is 'page' the right value here?
+        referer: (typeof bidderRequest.refererInfo.page != 'undefined' ? encodeURIComponent(bidderRequest.refererInfo.page) : null),
         numIframes: (typeof bidderRequest.refererInfo.numIframes != 'undefined' ? bidderRequest.refererInfo.numIframes : null),
         transactionId: bid.transactionId,
         timeout: config.getConfig('bidderTimeout'),
@@ -52,17 +53,23 @@ export const spec = {
         videoData: raiGetVideoInfo(bid),
         scr_rsl: raiGetResolution(),
         cpuc: (typeof window.navigator != 'undefined' ? window.navigator.hardwareConcurrency : null),
-        kws: (!isEmpty(bid.params.keywords) ? bid.params.keywords : null)
+        kws: (!isEmpty(bid.params.keywords) ? bid.params.keywords : null),
+        schain: bid.schain
       };
 
-      REFERER = (typeof bidderRequest.refererInfo.referer != 'undefined' ? encodeURIComponent(bidderRequest.refererInfo.referer) : null)
+      // TODO: is 'page' the right value here?
+      REFERER = (typeof bidderRequest.refererInfo.page != 'undefined' ? encodeURIComponent(bidderRequest.refererInfo.page) : null)
 
       payload.gdpr_consent = '';
-      payload.gdpr = null;
+      payload.gdpr = false;
 
       if (bidderRequest && bidderRequest.gdprConsent) {
-        payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
-        payload.gdpr = bidderRequest.gdprConsent.gdprApplies;
+        if (typeof bidderRequest.gdprConsent.gdprApplies != 'undefined') {
+          payload.gdpr = bidderRequest.gdprConsent.gdprApplies;
+        }
+        if (typeof bidderRequest.gdprConsent.consentString != 'undefined') {
+          payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
+        }
       }
 
       var payloadString = JSON.stringify(payload);
@@ -192,6 +199,13 @@ function raiGetSizes(bid) {
 
 function raiGetDemandType(bid) {
   let raiFormat = 'display';
+  if (typeof bid.sizes != 'undefined') {
+    bid.sizes.forEach(function (sz) {
+      if ((sz[0] == '1800' && sz[1] == '1000') || (sz[0] == '1' && sz[1] == '1')) {
+        raiFormat = 'skin'
+      }
+    })
+  }
   if (bid.mediaTypes != undefined) {
     if (bid.mediaTypes.video != undefined) {
       raiFormat = 'video';
@@ -295,8 +309,8 @@ function raiGetFloor(bid, config) {
       raiFloor = bid.params.bidfloor;
     } else if (typeof bid.getFloor == 'function') {
       let floorSpec = bid.getFloor({
-        currency: config.getConfig('currency.adServerCurrency'),
-        mediaType: bid.mediaType.banner ? 'banner' : 'video',
+        currency: config.getConfig('floors.data.currency') != null ? config.getConfig('floors.data.currency') : 'USD',
+        mediaType: typeof bid.mediaTypes['banner'] == 'object' ? 'banner' : 'video',
         size: '*'
       })
 

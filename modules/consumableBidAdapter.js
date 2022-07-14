@@ -1,4 +1,4 @@
-import { logWarn, createTrackPixelHtml } from '../src/utils.js';
+import { logWarn, createTrackPixelHtml, deepAccess, isArray, deepSetValue } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'consumable';
@@ -47,8 +47,8 @@ export const spec = {
     const data = Object.assign({
       placements: [],
       time: Date.now(),
-      url: bidderRequest.refererInfo.referer,
-      referrer: document.referrer,
+      url: bidderRequest.refererInfo.page,
+      referrer: bidderRequest.refererInfo.ref,
       source: [{
         'name': 'prebidjs',
         'version': '$prebid.version$'
@@ -77,6 +77,8 @@ export const spec = {
         data.placements.push(placement);
       }
     });
+
+    handleEids(data, validBidRequests);
 
     ret.data = JSON.stringify(data);
     ret.bidRequest = validBidRequests;
@@ -122,9 +124,29 @@ export const spec = {
           bid.currency = 'USD';
           bid.creativeId = decision.adId;
           bid.ttl = 30;
-          bid.meta = { advertiserDomains: decision.adomain ? decision.adomain : [] }
           bid.netRevenue = true;
-          bid.referrer = bidRequest.bidderRequest.refererInfo.referer;
+          bid.referrer = bidRequest.bidderRequest.refererInfo.page;
+
+          bid.meta = {
+            advertiserDomains: decision.adomain || []
+          };
+
+          if (decision.cats) {
+            if (decision.cats.length > 0) {
+              bid.meta.primaryCatId = decision.cats[0];
+              if (decision.cats.length > 1) {
+                bid.meta.secondaryCatIds = decision.cats.slice(1);
+              }
+            }
+          }
+
+          if (decision.networkId) {
+            bid.meta.networkId = decision.networkId;
+          }
+
+          if (decision.mediaType) {
+            bid.meta.mediaType = decision.mediaType;
+          }
 
           bidResponses.push(bid);
         }
@@ -136,13 +158,15 @@ export const spec = {
 
   getUserSyncs: function(syncOptions, serverResponses) {
     if (syncOptions.iframeEnabled) {
-      return [{
-        type: 'iframe',
-        url: 'https://sync.serverbid.com/ss/' + siteId + '.html'
-      }];
+      if (!serverResponses || serverResponses.length === 0 || !serverResponses[0].body.bdr || serverResponses[0].body.bdr !== 'cx') {
+        return [{
+          type: 'iframe',
+          url: 'https://sync.serverbid.com/ss/' + siteId + '.html'
+        }];
+      }
     }
 
-    if (syncOptions.pixelEnabled && serverResponses.length > 0) {
+    if (syncOptions.pixelEnabled && serverResponses && serverResponses.length > 0) {
       return serverResponses[0].body.pixels;
     } else {
       logWarn(bidder + ': Please enable iframe based user syncing.');
@@ -210,6 +234,15 @@ function retrieveAd(decision, unitId, unitName) {
   let ad = decision.contents && decision.contents[0] && decision.contents[0].body + createTrackPixelHtml(decision.impressionUrl);
 
   return ad;
+}
+
+function handleEids(data, validBidRequests) {
+  let bidUserIdAsEids = deepAccess(validBidRequests, '0.userIdAsEids');
+  if (isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
+    deepSetValue(data, 'user.eids', bidUserIdAsEids);
+  } else {
+    deepSetValue(data, 'user.eids', undefined);
+  }
 }
 
 registerBidder(spec);

@@ -1,15 +1,11 @@
 // jshint esversion: 6, es3: false, node: true
 'use strict';
 
-import {
-  registerBidder
-} from '../src/adapters/bidderFactory.js';
-import {
-  NATIVE, BANNER, VIDEO
-} from '../src/mediaTypes.js';
-import { mergeDeep, _map, deepAccess, parseSizesInput, deepSetValue } from '../src/utils.js';
-import { config } from '../src/config.js';
-import { Renderer } from '../src/Renderer.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {_map, deepAccess, deepSetValue, mergeDeep, parseSizesInput} from '../src/utils.js';
+import {config} from '../src/config.js';
+import {Renderer} from '../src/Renderer.js';
 
 const { getConfig } = config;
 
@@ -66,7 +62,7 @@ export const spec = {
   buildRequests: (validBidRequests, bidderRequest) => {
     let app, site;
 
-    const commonFpd = getConfig('ortb2') || {};
+    const commonFpd = bidderRequest.ortb2 || {};
     let { user } = commonFpd;
 
     if (typeof getConfig('app') === 'object') {
@@ -81,7 +77,7 @@ export const spec = {
       }
 
       if (!site.page) {
-        site.page = bidderRequest.refererInfo.referer;
+        site.page = bidderRequest.refererInfo.page;
       }
     }
 
@@ -206,6 +202,11 @@ export const spec = {
       request.is_debug = !!test;
       request.test = 1;
     }
+
+    if (config.getConfig('coppa')) {
+      deepSetValue(request, 'regs.coppa', 1);
+    }
+
     if (deepAccess(bidderRequest, 'gdprConsent.gdprApplies') !== undefined) {
       deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
       deepSetValue(request, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies & 1);
@@ -227,9 +228,6 @@ export const spec = {
       method: 'POST',
       url: 'https://' + adxDomain + '/adx/openrtb',
       data: JSON.stringify(request),
-      options: {
-        contentType: 'application/json'
-      },
       bids: validBidRequests
     };
   },

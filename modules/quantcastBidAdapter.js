@@ -1,9 +1,10 @@
-import { deepAccess, logInfo, logError, isEmpty, isArray } from '../src/utils.js';
-import { ajax } from '../src/ajax.js';
-import { config } from '../src/config.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import find from 'core-js-pure/features/array/find.js';
+import {deepAccess, isArray, isEmpty, logError, logInfo} from '../src/utils.js';
+import {ajax} from '../src/ajax.js';
+import {config} from '../src/config.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {find} from '../src/polyfill.js';
+import {parseDomain} from '../src/refererDetection.js';
 
 const BIDDER_CODE = 'quantcast';
 const DEFAULT_BID_FLOOR = 0.0000000001;
@@ -21,7 +22,7 @@ export const QUANTCAST_PROTOCOL = 'https';
 export const QUANTCAST_PORT = '8443';
 export const QUANTCAST_FPA = '__qca';
 
-export const storage = getStorageManager(QUANTCAST_VENDOR_ID, BIDDER_CODE);
+export const storage = getStorageManager({gvlid: QUANTCAST_VENDOR_ID, bidderCode: BIDDER_CODE});
 
 function makeVideoImp(bid) {
   const videoInMediaType = deepAccess(bid, 'mediaTypes.video') || {};
@@ -74,21 +75,7 @@ function makeBannerImp(bid) {
   };
 }
 
-function getDomain(url) {
-  if (!url) {
-    return url;
-  }
-  return url.replace('http://', '').replace('https://', '').replace('www.', '').split(/[/?#]/)[0];
-}
-
-function checkTCFv1(vendorData) {
-  let vendorConsent = vendorData.vendorConsents && vendorData.vendorConsents[QUANTCAST_VENDOR_ID];
-  let purposeConsent = vendorData.purposeConsents && vendorData.purposeConsents[PURPOSE_DATA_COLLECT];
-
-  return !!(vendorConsent && purposeConsent);
-}
-
-function checkTCFv2(tcData) {
+function checkTCF(tcData) {
   let restrictions = tcData.publisher ? tcData.publisher.restrictions : {};
   let qcRestriction = restrictions && restrictions[PURPOSE_DATA_COLLECT]
     ? restrictions[PURPOSE_DATA_COLLECT][QUANTCAST_VENDOR_ID]
@@ -144,19 +131,15 @@ export const spec = {
     const bids = bidRequests || [];
     const gdprConsent = deepAccess(bidderRequest, 'gdprConsent') || {};
     const uspConsent = deepAccess(bidderRequest, 'uspConsent');
-    const referrer = deepAccess(bidderRequest, 'refererInfo.referer');
-    const page = deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || config.getConfig('pageUrl') || deepAccess(window, 'location.href');
-    const domain = getDomain(page);
+    const referrer = deepAccess(bidderRequest, 'refererInfo.ref');
+    const page = deepAccess(bidderRequest, 'refererInfo.page') || deepAccess(window, 'location.href');
+    const domain = parseDomain(page, {noLeadingWww: true});
 
     // Check for GDPR consent for purpose 1, and drop request if consent has not been given
     // Remaining consent checks are performed server-side.
     if (gdprConsent.gdprApplies) {
       if (gdprConsent.vendorData) {
-        if (gdprConsent.apiVersion === 1 && !checkTCFv1(gdprConsent.vendorData)) {
-          logInfo(`${BIDDER_CODE}: No purpose 1 consent for TCF v1`);
-          return;
-        }
-        if (gdprConsent.apiVersion === 2 && !checkTCFv2(gdprConsent.vendorData)) {
+        if (!checkTCF(gdprConsent.vendorData)) {
           logInfo(`${BIDDER_CODE}: No purpose 1 consent for TCF v2`);
           return;
         }

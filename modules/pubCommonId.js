@@ -5,7 +5,7 @@
  */
 import { logMessage, parseUrl, buildUrl, triggerPixel, generateUUID, isArray } from '../src/utils.js';
 import { config } from '../src/config.js';
-import events from '../src/events.js';
+import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
 import { getStorageManager } from '../src/storageManager.js';
 

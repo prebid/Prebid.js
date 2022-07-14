@@ -1,7 +1,8 @@
-import { logWarn, deepSetValue, deepAccess, isArray, isNumber, isBoolean, isStr } from '../src/utils.js';
+import {deepAccess, deepSetValue, isArray, isBoolean, isNumber, isStr, logWarn} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
+import {parseDomain} from '../src/refererDetection.js';
 
 const BIDDER_CODE = 'zeta_global_ssp';
 const ENDPOINT_URL = 'https://ssp.disqus.com/bid';
@@ -10,6 +11,8 @@ const USER_SYNC_URL_IMAGE = 'https://ssp.disqus.com/sync?type=image';
 const DEFAULT_CUR = 'USD';
 const TTL = 200;
 const NET_REV = true;
+
+const VIDEO_REGEX = new RegExp(/VAST\s+version/);
 
 const DATA_TYPES = {
   'NUMBER': 'number',
@@ -87,13 +90,12 @@ export const spec = {
     if (!impData.banner && !impData.video) {
       impData.banner = buildBanner(request);
     }
-    const fpd = config.getLegacyFpd(config.getConfig('ortb2')) || {};
     let payload = {
       id: bidderRequest.auctionId,
       cur: [DEFAULT_CUR],
       imp: [impData],
       site: params.site ? params.site : {},
-      device: {...fpd.device, ...params.device},
+      device: {...(bidderRequest.ortb2?.device || {}), ...params.device},
       user: params.user ? params.user : {},
       app: params.app ? params.app : {},
       ext: {
@@ -102,12 +104,12 @@ export const spec = {
       }
     };
     const rInfo = bidderRequest.refererInfo;
-    payload.site.page = config.getConfig('pageUrl') || ((rInfo && rInfo.referer) ? rInfo.referer.trim() : window.location.href);
-    payload.site.domain = config.getConfig('publisherDomain') || getDomainFromURL(payload.site.page);
+    // TODO: do the fallbacks make sense here?
+    payload.site.page = rInfo.page || rInfo.topmostLocation;
+    payload.site.domain = parseDomain(payload.site.page, {noLeadingWww: true});
 
     payload.device.ua = navigator.userAgent;
-    payload.device.devicetype = isMobile() ? 1 : isConnectedTV() ? 3 : 2;
-    payload.site.mobile = payload.device.devicetype === 1 ? 1 : 0;
+    payload.device.language = navigator.language;
 
     if (params.test) {
       payload.test = params.test;
@@ -125,9 +127,10 @@ export const spec = {
     }
 
     provideEids(request, payload);
+    const url = params.shortname ? ENDPOINT_URL.concat('?shortname=', params.shortname) : ENDPOINT_URL;
     return {
       method: 'POST',
-      url: ENDPOINT_URL,
+      url: url,
       data: JSON.stringify(payload),
     };
   },
@@ -161,6 +164,7 @@ export const spec = {
               advertiserDomains: zetaBid.adomain
             };
           }
+          provideMediaType(zetaBid, bid);
           bidResponses.push(bid);
         })
       })
@@ -266,22 +270,22 @@ function provideEids(request, payload) {
   }
 }
 
-function getDomainFromURL(url) {
-  let anchor = document.createElement('a');
-  anchor.href = url;
-  let hostname = anchor.hostname;
-  if (hostname.indexOf('www.') === 0) {
-    return hostname.substring(4);
+function provideMediaType(zetaBid, bid) {
+  if (zetaBid.ext && zetaBid.ext.bidtype) {
+    if (zetaBid.ext.bidtype === VIDEO) {
+      bid.mediaType = VIDEO;
+      bid.vastXml = bid.ad;
+    } else {
+      bid.mediaType = BANNER;
+    }
+  } else {
+    if (VIDEO_REGEX.test(bid.ad)) {
+      bid.mediaType = VIDEO;
+      bid.vastXml = bid.ad;
+    } else {
+      bid.mediaType = BANNER;
+    }
   }
-  return hostname;
-}
-
-function isMobile() {
-  return /(ios|ipod|ipad|iphone|android)/i.test(navigator.userAgent);
-}
-
-function isConnectedTV() {
-  return /(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i.test(navigator.userAgent);
 }
 
 registerBidder(spec);
