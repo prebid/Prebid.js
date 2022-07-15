@@ -157,8 +157,7 @@ function extendUserSessionTimeout() {
 }
 
 function userSessionID() {
-  let uSessID = storage.getDataFromLocalStorage(localStorageSessName());
-  return uSessID ? uSessID : '';
+  return storage.getDataFromLocalStorage(localStorageSessName()) || '';
 }
 
 function sessionExpired() {
