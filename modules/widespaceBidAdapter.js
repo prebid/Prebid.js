@@ -185,17 +185,6 @@ function storeData(data, name, stringify = true) {
 
 function getData(name, remove = true) {
   let data = [];
-  if (storage.hasLocalStorage()) {
-    Object.keys(localStorage).filter((key) => {
-      if (key.indexOf(name) > -1) {
-        data.push(storage.getDataFromLocalStorage(key));
-        if (remove) {
-          storage.removeDataFromLocalStorage(key);
-        }
-      }
-    });
-  }
-
   return data;
 }
 
