@@ -874,14 +874,24 @@ Object.assign(ORTB2.prototype, {
         .map((req) => [req.bidderCode, req.bids[0].schain])
         .reduce((chains, [bidder, chain]) => {
           const chainKey = JSON.stringify(chain);
-          if (chainKey && !chains.hasOwnProperty(chainKey)) {
-            if (pbsSchainBidderNamesArr.indexOf(bidder) !== -1) {
+
+          switch (true) {
+            // if pbjs bidder name is same as pbs bidder name, pbs bidder name always wins
+            case chainKey && pbsSchainBidderNamesArr.indexOf(bidder) !== -1:
               logInfo(`bidder-specific schain for ${bidder} skipped due to existing entry`);
-            } else {
+              break;
+            // if a pbjs schain obj is equal to an schain obj that exists on the pbs side, add the bidder name on the pbs side
+            case chainKey && chains.hasOwnProperty(chainKey) && pbsSchainBidderNamesArr.indexOf(bidder) === -1:
+              chains[chainKey].bidders.add(bidder);
+              break;
+            // if a pbjs schain obj is not on the pbs side, add a new schain entry on the pbs side
+            case chainKey && !chains.hasOwnProperty(chainKey):
               chains[chainKey] = {bidders: new Set(), schain: chain};
               chains[chainKey].bidders.add(bidder);
-            }
+              break;
+            default:
           }
+
           return chains;
         }, schains)
     ).map(({bidders, schain}) => ({bidders: Array.from(bidders), schain}));
