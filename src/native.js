@@ -3,6 +3,7 @@ import {includes} from './polyfill.js';
 import {auctionManager} from './auctionManager.js';
 import CONSTANTS from './constants.json';
 import { NATIVE } from './mediaTypes.js';
+import { filters } from './targeting.js';
 
 export const nativeAdapters = [];
 
@@ -349,6 +350,7 @@ export function getAllAssetsMessage(data, adObject) {
 
   // Pass to Prebid Universal Creative all assets, the legacy ones + the ortb ones (under ortb property)
   const ortbRequest = nativeMapper.get(adObject.requestId);
+  nativeMapper.delete(adObject.requestId);
   const ortbResponse = adObject.native?.ortb;
   let legacyResponse = {};
   if (ortbRequest && ortbResponse) {
@@ -381,7 +383,7 @@ export function getAllAssetsMessage(data, adObject) {
       message.assets.push({ key, value });
     }
   });
-
+  removeExpiredBidsFromNativeMapper();
   return message;
 }
 
@@ -708,4 +710,12 @@ function inverse(obj) {
     retobj[obj[key]] = key;
   }
   return retobj;
+}
+
+// to avoid memory leaks, this function will try to remove expired bids from the native wrapper.
+function removeExpiredBidsFromNativeMapper() {
+  const expiredBids = auctionManager.getBidsReceived().filter((bid) => !filters.isBidNotExpired(bid));
+  for (const expiredBid of expiredBids) {
+    nativeMapper.delete(expiredBid.requestId);
+  }
 }
