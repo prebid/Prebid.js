@@ -2,6 +2,10 @@ import { ftrackIdSubmodule } from 'modules/ftrackIdSystem.js';
 import * as utils from 'src/utils.js';
 import { uspDataHandler } from 'src/adapterManager.js';
 import { loadExternalScript } from 'src/adloader.js';
+import { getGlobal } from 'src/prebidGlobal.js';
+import { init, setSubmoduleRegistry } from 'modules/userId/index.js';
+import {createEidsArray} from 'modules/userId/eids.js';
+import {config} from 'src/config.js';
 let expect = require('chai').expect;
 
 let server;
@@ -296,6 +300,90 @@ describe('FTRACK ID System', () => {
 
     it(`should return cacheIdObj`, () => {
       expect(ftrackIdSubmodule.extendId(configMock, null, {cache: {id: ''}})).to.deep.equal({cache: {id: ''}});
+    });
+  });
+
+  describe('Uses ftrack getUserIdsAsEids() method', () => {
+    it('getUserIdsAsEids using the ftrack submodule and gets three ids (HHID, DeviceId, SingleDeviceId)', () => {
+      init(config);
+      setSubmoduleRegistry([ftrackIdSubmodule]);
+
+      const ids = {
+        ftrackId: {
+          HHID: ['household_test_id'],
+          DeviceID: ['device_test_id'],
+          SingleDeviceID: ['single_device_test_id']
+        }
+      };
+      config.setConfig({
+        userSync: {
+          auctionDelay: 10,
+          userIds: [{
+            name: 'ftrack', value: ids,
+          }]
+        }
+      });
+
+      getGlobal().getUserIdsAsync().then((ids) => {
+        expect(getGlobal().getUserIdsAsEids()).to.deep.equal(createEidsArray(ids));
+      });
+    });
+
+    it('gets only the deviceId', () => {
+      init(config);
+      setSubmoduleRegistry([ftrackIdSubmodule]);
+
+      const ids = { ftrackId: { DeviceID: ['device_test_id'] } };
+      config.setConfig({
+        userSync: {
+          auctionDelay: 10,
+          userIds: [{
+            name: 'ftrack', value: ids,
+          }]
+        }
+      });
+
+      getGlobal().getUserIdsAsync().then((ids) => {
+        expect(getGlobal().getUserIdsAsEids()).to.deep.equal(createEidsArray(ids));
+      });
+    });
+
+    it('gets only the user household id', () => {
+      init(config);
+      setSubmoduleRegistry([ftrackIdSubmodule]);
+
+      const ids = { ftrackId: { HHID: ['household_test_id'], } };
+      config.setConfig({
+        userSync: {
+          auctionDelay: 10,
+          userIds: [{
+            name: 'ftrack', value: ids,
+          }]
+        }
+      });
+
+      getGlobal().getUserIdsAsync().then((ids) => {
+        expect(getGlobal().getUserIdsAsEids()).to.deep.equal(createEidsArray(ids));
+      });
+    });
+
+    it('gets only the deviceId', () => {
+      init(config);
+      setSubmoduleRegistry([ftrackIdSubmodule]);
+
+      const ids = { ftrackId: { SingleDeviceID: ['single_device_test_id'] } };
+      config.setConfig({
+        userSync: {
+          auctionDelay: 10,
+          userIds: [{
+            name: 'ftrack', value: ids,
+          }]
+        }
+      });
+
+      getGlobal().getUserIdsAsync().then((ids) => {
+        expect(getGlobal().getUserIdsAsEids()).to.deep.equal(createEidsArray(ids));
+      });
     });
   });
 });
