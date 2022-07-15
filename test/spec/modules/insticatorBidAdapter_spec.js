@@ -276,7 +276,6 @@ describe('InsticatorBidAdapter', function () {
       expect(data.regs.ext.gdpr).to.equal(1);
       expect(data.regs.ext.gdprConsentString).to.equal(bidderRequest.gdprConsent.consentString);
       expect(data.user).to.be.an('object');
-      expect(data.user.id).to.equal(USER_ID_DUMMY_VALUE);
       expect(data.user).to.have.property('yob');
       expect(data.user.yob).to.equal(1984);
       expect(data.user).to.have.property('gender');
