@@ -36,7 +36,7 @@ describe('33acrossBidAdapter:', function () {
             w: 1024,
             h: 728,
             pxr: 2,
-            osv: 'fooosv',
+            pfv: 'fooosversion',
             mdl: 'foomodel',
             vp: {
               w: 800,
@@ -44,7 +44,7 @@ describe('33acrossBidAdapter:', function () {
             },
             ah: 500,
             mtp: 0,
-            browserv: 'foouafullversion'
+            uafv: 'foouafullversion'
           }
         }
       },
@@ -409,7 +409,7 @@ describe('33acrossBidAdapter:', function () {
             return {
               then(fn) {
                 fn({
-                  platformVersion: 'fooosv',
+                  platformVersion: 'fooosversion',
                   uaFullVersion: 'foouafullversion',
                   model: 'foomodel'
                 });

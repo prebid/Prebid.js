@@ -80,7 +80,8 @@ function storeUaReducedData(uaData) {
 function calculateUaReducedData() {
   let uaReducedData = {};
 
-  getWindowSelf().navigator?.userAgentData?.getHighEntropyValues(
+  // eslint-disable-next-line no-unused-expressions
+  getWindowSelf().navigator.userAgentData?.getHighEntropyValues(
     ['model', 'uaFullVersion', 'platformVersion']
   ).then((uaData) => {
     uaReducedData = uaData;
@@ -779,8 +780,8 @@ function _buildDeviceORTB() {
   const win = getWindowSelf();
 
   const {
-    uaFullVersion: browserv,
-    platformVersion: osv,
+    uaFullVersion: uafv,
+    platformVersion: pfv,
     model
   } = fetchUAReducedData();
 
@@ -789,11 +790,12 @@ function _buildDeviceORTB() {
       ttx: {
         ...getScreenDimensions(),
         pxr: win.devicePixelRatio,
-        osv,
+        pfv,
         ...(model ? { mdl: model } : {}),
         vp: getViewportDimensions(),
         ah: win.screen.availHeight,
-        mtp: win.navigator.maxTouchPoints
+        mtp: win.navigator.maxTouchPoints,
+        uafv
       }
     }
   };
