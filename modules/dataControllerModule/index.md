@@ -7,7 +7,6 @@ Module Name: Data Controller Module
 # Description
 
 This module will filter EIDs and SDA based on the configurations.
-The filtered EIDs are stored in 'dcUsersAsEids' configuration and filtered SDA are updated in bidder configuration.
 
 Sub module object with the following keys:
 

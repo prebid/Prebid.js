@@ -172,19 +172,20 @@ function filterEIDs(adUnits, ortb2Fragments) {
 
 export function init() {
   const confListener = config.getConfig(MODULE_NAME, dataControllerConfig => {
-    if (!dataControllerConfig || !dataControllerConfig.dataController) {
+    const dataController = dataControllerConfig && dataControllerConfig.dataController;
+    if (!dataController) {
       _logger.logInfo(`Data Controller is not configured`);
       startAuction.getHooks({hook: filterBidData}).remove();
       return;
     }
 
-    if (dataControllerConfig.dataController.filterEIDwhenSDA && dataControllerConfig.dataController.filterSDAwhenEID) {
+    if (dataController.filterEIDwhenSDA && dataController.filterSDAwhenEID) {
       _logger.logInfo(`Data Controller can be configured with either filterEIDwhenSDA or filterSDAwhenEID`);
       startAuction.getHooks({hook: filterBidData}).remove();
       return;
     }
     confListener(); // unsubscribe config listener
-    _dataControllerConfig = dataControllerConfig.dataController;
+    _dataControllerConfig = dataController;
 
     getHook('startAuction').before(filterBidData);
   });
