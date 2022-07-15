@@ -350,12 +350,13 @@ export function getAllAssetsMessage(data, adObject) {
 
   // Pass to Prebid Universal Creative all assets, the legacy ones + the ortb ones (under ortb property)
   const ortbRequest = nativeMapper.get(adObject.requestId);
+  let nativeReq = adObject.native;
   nativeMapper.delete(adObject.requestId);
   const ortbResponse = adObject.native?.ortb;
   let legacyResponse = {};
   if (ortbRequest && ortbResponse) {
     legacyResponse = toLegacyResponse(ortbResponse, ortbRequest);
-    adObject.native = {
+    nativeReq = {
       ...adObject.native,
       ...legacyResponse
     };
@@ -365,20 +366,20 @@ export function getAllAssetsMessage(data, adObject) {
   }
   message.assets = [];
 
-  Object.keys(adObject.native).forEach(function(key, index) {
-    if (key === 'adTemplate' && adObject.native[key]) {
-      message.adTemplate = getAssetValue(adObject.native[key]);
-    } else if (key === 'rendererUrl' && adObject.native[key]) {
-      message.rendererUrl = getAssetValue(adObject.native[key]);
+  Object.keys(nativeReq).forEach(function(key) {
+    if (key === 'adTemplate' && nativeReq[key]) {
+      message.adTemplate = getAssetValue(nativeReq[key]);
+    } else if (key === 'rendererUrl' && nativeReq[key]) {
+      message.rendererUrl = getAssetValue(nativeReq[key]);
     } else if (key === 'ext') {
-      Object.keys(adObject.native[key]).forEach(extKey => {
-        if (adObject.native[key][extKey]) {
-          const value = getAssetValue(adObject.native[key][extKey]);
+      Object.keys(nativeReq[key]).forEach(extKey => {
+        if (nativeReq[key][extKey]) {
+          const value = getAssetValue(nativeReq[key][extKey]);
           message.assets.push({ key: extKey, value });
         }
       })
-    } else if (adObject.native[key] && CONSTANTS.NATIVE_KEYS.hasOwnProperty(key)) {
-      const value = getAssetValue(adObject.native[key]);
+    } else if (nativeReq[key] && CONSTANTS.NATIVE_KEYS.hasOwnProperty(key)) {
+      const value = getAssetValue(nativeReq[key]);
 
       message.assets.push({ key, value });
     }
