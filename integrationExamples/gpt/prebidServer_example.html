@@ -47,64 +47,9 @@
                 params: {
                    placementId: 13144370
                 }
-              },
-              {
-                bidder: 'pubmatic',
-                params: {
-                  publisherId: '156276',
-                  adSlot: 'pubmatic_test'
-                }
-              },
-              {
-                bidder: 'rubicon',
-                params: {
-                  accountId: 14062,
-                  siteId: 70608,
-                  zoneId: 498816
-                }
               }
             ]
           }];
-
-        // pbjs.setBidderConfig({
-        //   "bidders": ['pubmatic'],
-        //   "config": {
-        //     "schain": {
-        //       "validation": "relaxed",
-        //       "config": {
-        //         "ver":"1.0",
-        //         "complete": 1,
-        //         "nodes": [
-        //           {
-        //             "asi":"test-1.com",
-        //             "sid":"11111",
-        //             "hp":1
-        //           }
-        //         ]
-        //       }
-        //     }
-        //   }
-        // });
-
-        // pbjs.setBidderConfig({
-        //   "bidders": ['rubicon'],
-        //   "config": {
-        //     "schain": {
-        //       "validation": "relaxed",
-        //       "config": {
-        //         "ver":"1.0",
-        //         "complete": 1,
-        //         "nodes": [
-        //           {
-        //             "asi":"test-2.com",
-        //             "sid":"22222",
-        //             "hp":1
-        //           }
-        //         ]
-        //       }
-        //     }
-        //   }
-        // });
 
         pbjs.setConfig({
           bidderTimeout: 3000,
@@ -112,27 +57,9 @@
             accountId : '1',
             enabled : true, //default value set to false
             defaultVendor: 'appnexus',
-            bidders : ['appnexus', 'rubicon', 'pubmatic'],
+            bidders : ['appnexus'],
             timeout : 1000, //default value is 1000
             adapter : 'prebidServer', //if we have any other s2s adapter, default value is s2s
-            // extPrebid: {
-            //   schains: [
-            //     {
-            //       "bidders": ["appnexus"],
-            //       "schain": {
-            //         "ver": "1.0",
-            //         "complete": 1,
-            //         "nodes": [
-            //           {
-            //             "asi": "test-1.com",
-            //             "sid": "11111",
-            //             "hp": 1
-            //           }
-            //         ]
-            //       }
-            //     }
-            //   ]
-            // }
           }
         });
 
