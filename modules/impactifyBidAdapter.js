@@ -40,7 +40,7 @@ const createOpenRtbRequest = (validBidRequests, bidderRequest) => {
   // Get the url parameters
   const queryString = window.location.search;
   const urlParams = new URLSearchParams(queryString);
-  const checkPrebid = urlParams.get('_checkPrebid')
+  const checkPrebid = urlParams.get('_checkPrebid');
   // Force impactify debugging parameter
   if (checkPrebid != null) {
     request.test = Number(checkPrebid);
