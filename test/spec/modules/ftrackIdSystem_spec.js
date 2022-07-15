@@ -275,7 +275,12 @@ describe('FTRACK ID System', () => {
 
   describe(`decode() method`, () => {
     it(`should respond with an object with the key 'ftrackId'`, () => {
-      expect(ftrackIdSubmodule.decode('value', configMock)).to.deep.equal({ftrackId: 'value'});
+      expect(ftrackIdSubmodule.decode('value', configMock)).to.deep.equal({
+        ftrackId: {
+          ext: { 0: 'v', 1: 'a', 2: 'l', 3: 'u', 4: 'e' },
+          uid: undefined,
+        },
+      });
     });
 
     it(`should not be making requests to retrieve a new ID, it should just be decoding a response`, () => {

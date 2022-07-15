@@ -48,9 +48,20 @@ export const ftrackIdSubmodule = {
    *   similar to the module name and ending in id or Id
    */
   decode (value, config) {
+    if (!value) { return }
+    const ext = {}
+
+    for (var key in value) {
+      /** unpack the strings from the arrays */
+      ext[key] = value[key][0]
+    }
+
     return {
-      ftrackId: value
-    };
+      ftrackId: {
+        uid: value.DeviceID && value.DeviceID[0],
+        ext
+      }
+    }
   },
 
   /**
