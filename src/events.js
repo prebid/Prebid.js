@@ -1,8 +1,9 @@
 /**
  * events.js
  */
-var utils = require('./utils.js');
-var CONSTANTS = require('./constants.json');
+import * as utils from './utils.js'
+import CONSTANTS from './constants.json';
+
 var slice = Array.prototype.slice;
 var push = Array.prototype.push;
 
@@ -148,5 +149,7 @@ const _public = (function () {
 
   return _public;
 }());
+
+utils._setEventEmitter(_public.emit.bind(_public));
 
 export const {on, off, get, getEvents, emit} = _public;

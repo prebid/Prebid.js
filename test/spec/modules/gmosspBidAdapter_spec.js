@@ -62,7 +62,7 @@ describe('GmosspAdapter', function () {
     it('sends bid request to ENDPOINT via GET', function () {
       const bidderRequest = {
         refererInfo: {
-          referer: 'https://hoge.com'
+          topmostLocation: 'https://hoge.com'
         }
       };
       const requests = spec.buildRequests(bidRequests, bidderRequest);
@@ -74,7 +74,7 @@ describe('GmosspAdapter', function () {
     it('should use fallback if refererInfo.referer in bid request is empty and im_uid ,shared_id, idl_env cookie is empty', function () {
       const bidderRequest = {
         refererInfo: {
-          referer: ''
+          topmostLocation: ''
         },
       };
       bidRequests[0].userId.imuid = '';

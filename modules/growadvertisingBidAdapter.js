@@ -101,7 +101,8 @@ export const spec = {
           netRevenue: true,
           ttl: response.ttl,
           adUnitCode: request.adUnitCode,
-          referrer: deepAccess(request, 'refererInfo.referer')
+          // TODO: is 'page' the right value here?
+          referrer: deepAccess(request, 'refererInfo.page')
         };
 
         if (response.hasOwnProperty(NATIVE)) {

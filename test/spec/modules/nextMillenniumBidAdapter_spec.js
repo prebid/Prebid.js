@@ -14,8 +14,59 @@ describe('nextMillenniumBidAdapterTests', function() {
       gdprConsent: {
         consentString: 'kjfdniwjnifwenrif3',
         gdprApplies: true
+      },
+      ortb2: {
+        device: {
+          w: 1500,
+          h: 1000
+        },
+        site: {
+          domain: 'example.com',
+          page: 'http://example.com'
+        }
       }
     }
+  ];
+
+  const bidRequestDataGI = [
+    {
+      adUnitCode: 'test-banner-gi',
+      bidId: 'bid1234',
+      auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+      bidder: 'nextMillennium',
+      params: { group_id: '1234' },
+      mediaTypes: {
+        banner: {
+          sizes: [[300, 250]]
+        }
+      },
+
+      sizes: [[300, 250]],
+      uspConsent: '1---',
+      gdprConsent: {
+        consentString: 'kjfdniwjnifwenrif3',
+        gdprApplies: true
+      }
+    },
+
+    {
+      adUnitCode: 'test-video-gi',
+      bidId: 'bid1234',
+      auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+      bidder: 'nextMillennium',
+      params: { group_id: '1234' },
+      mediaTypes: {
+        video: {
+          playerSize: [640, 480],
+        }
+      },
+
+      uspConsent: '1---',
+      gdprConsent: {
+        consentString: 'kjfdniwjnifwenrif3',
+        gdprApplies: true
+      }
+    },
   ];
 
   it('Request params check with GDPR and USP Consent', function () {
@@ -38,10 +89,30 @@ describe('nextMillenniumBidAdapterTests', function() {
     expect(JSON.parse(request[0].data).id).to.equal('b06c5141-fe8f-4cdf-9d7d-54415490a917');
   });
 
+  it('use parameters group_id', function() {
+    for (let test of bidRequestDataGI) {
+      const request = spec.buildRequests([test]);
+      const requestData = JSON.parse(request[0].data);
+      const storeRequestId = requestData.ext.prebid.storedrequest.id;
+      const templateRE = /^g\d+;\d+x\d+;/;
+      expect(templateRE.test(storeRequestId)).to.be.true;
+    };
+  });
+
   it('Check if refresh_count param is incremented', function() {
     const request = spec.buildRequests(bidRequestData);
     expect(JSON.parse(request[0].data).ext.nextMillennium.refresh_count).to.equal(3);
   });
+
+  it('Check if ORTB was added', function() {
+    const request = spec.buildRequests(bidRequestData)
+    expect(JSON.parse(request[0].data).site.domain).to.equal('example.com')
+  })
+
+  it('Check if elOffsets was added', function() {
+    const request = spec.buildRequests(bidRequestData)
+    expect(JSON.parse(request[0].data).ext.nextMillennium.elOffsets).to.be.an('object')
+  })
 
   it('Test getUserSyncs function', function () {
     const syncOptions = {

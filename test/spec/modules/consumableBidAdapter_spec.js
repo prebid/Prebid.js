@@ -1,6 +1,9 @@
 import {expect} from 'chai';
 import {spec} from 'modules/consumableBidAdapter.js';
 import {createBid} from 'src/bidfactory.js';
+import {config} from 'src/config.js';
+import {deepClone} from 'src/utils.js';
+import { createEidsArray } from 'modules/userId/eids.js';
 
 const ENDPOINT = 'https://e.serverbid.com/api/v2';
 const SMARTSYNC_CALLBACK = 'serverbidCallBids';
@@ -177,6 +180,69 @@ const AD_SERVER_RESPONSE = {
   }
 };
 
+const AD_SERVER_RESPONSE_2 = {
+  'headers': null,
+  'body': {
+    'user': { 'key': 'ue1-2d33e91b71e74929b4aeecc23f4376f1' },
+    'pixels': [{ 'type': 'image', 'url': '//sync.serverbid.com/ss/' }],
+    'bdr': 'notcx',
+    'decisions': {
+      '2b0f82502298c9': {
+        'adId': 2364764,
+        'creativeId': 1950991,
+        'flightId': 2788300,
+        'campaignId': 542982,
+        'clickUrl': 'https://e.serverbid.com/r',
+        'impressionUrl': 'https://e.serverbid.com/i.gif',
+        'contents': [{
+          'type': 'html',
+          'body': '<html></html>',
+          'data': {
+            'height': 90,
+            'width': 728,
+            'imageUrl': 'https://static.adzerk.net/Advertisers/b0ab77db8a7848c8b78931aed022a5ef.gif',
+            'fileName': 'b0ab77db8a7848c8b78931aed022a5ef.gif'
+          },
+          'template': 'image'
+        }],
+        'height': 90,
+        'width': 728,
+        'events': [],
+        'pricing': {'price': 0.5, 'clearPrice': 0.5, 'revenue': 0.0005, 'rateType': 2, 'eCPM': 0.5},
+        'mediaType': 'banner',
+        'cats': ['IAB1', 'IAB2', 'IAB3'],
+        'networkId': 1234567,
+      },
+      '123': {
+        'adId': 2364764,
+        'creativeId': 1950991,
+        'flightId': 2788300,
+        'campaignId': 542982,
+        'clickUrl': 'https://e.serverbid.com/r',
+        'impressionUrl': 'https://e.serverbid.com/i.gif',
+        'contents': [{
+          'type': 'html',
+          'body': '<html></html>',
+          'data': {
+            'height': 90,
+            'width': 728,
+            'imageUrl': 'https://static.adzerk.net/Advertisers/b0ab77db8a7848c8b78931aed022a5ef.gif',
+            'fileName': 'b0ab77db8a7848c8b78931aed022a5ef.gif'
+          },
+          'template': 'image'
+        }],
+        'height': 90,
+        'width': 728,
+        'events': [],
+        'pricing': {'price': 0.5, 'clearPrice': 0.5, 'revenue': 0.0005, 'rateType': 2, 'eCPM': 0.5},
+        'mediaType': 'banner',
+        'cats': ['IAB1', 'IAB2'],
+        'networkId': 2345678,
+      }
+    }
+  }
+};
+
 const BUILD_REQUESTS_OUTPUT = {
   method: 'POST',
   url: 'https://e.serverbid.com/api/v2',
@@ -285,7 +351,7 @@ describe('Consumable BidAdapter', function () {
     });
 
     it('registers bids', function () {
-      let bids = spec.interpretResponse(AD_SERVER_RESPONSE, BUILD_REQUESTS_OUTPUT);
+      let bids = spec.interpretResponse(AD_SERVER_RESPONSE_2, BUILD_REQUESTS_OUTPUT);
       bids.forEach(b => {
         expect(b).to.have.property('cpm');
         expect(b.cpm).to.be.above(0);
@@ -299,9 +365,13 @@ describe('Consumable BidAdapter', function () {
         expect(b).to.have.property('currency', 'USD');
         expect(b).to.have.property('creativeId');
         expect(b).to.have.property('ttl', 30);
-        expect(b.meta).to.have.property('advertiserDomains');
         expect(b).to.have.property('netRevenue', true);
         expect(b).to.have.property('referrer');
+        expect(b.meta).to.have.property('advertiserDomains');
+        expect(b.meta).to.have.property('primaryCatId');
+        expect(b.meta).to.have.property('secondaryCatIds');
+        expect(b.meta).to.have.property('networkId');
+        expect(b.meta).to.have.property('mediaType');
       });
     });
 
@@ -333,11 +403,101 @@ describe('Consumable BidAdapter', function () {
       expect(opts.length).to.equal(1);
     });
 
+    it('should return a sync url if iframe syncs are enabled and server response is empty', function () {
+      let opts = spec.getUserSyncs(syncOptions, []);
+
+      expect(opts.length).to.equal(1);
+    });
+
+    it('should return a sync url if iframe syncs are enabled and server response does not contain a bdr attribute', function () {
+      let opts = spec.getUserSyncs(syncOptions, [AD_SERVER_RESPONSE]);
+
+      expect(opts.length).to.equal(1);
+    });
+
+    it('should return a sync url if iframe syncs are enabled and server response contains a bdr attribute that is not cx', function () {
+      let opts = spec.getUserSyncs(syncOptions, [AD_SERVER_RESPONSE_2]);
+
+      expect(opts.length).to.equal(1);
+    });
+
     it('should return a sync url if pixel syncs are enabled and some are returned from the server', function () {
       let syncOptions = {'pixelEnabled': true};
       let opts = spec.getUserSyncs(syncOptions, [AD_SERVER_RESPONSE]);
 
       expect(opts.length).to.equal(1);
+    });
+  });
+  describe('unifiedId from userId module', function() {
+    let sandbox, bidderRequest;
+    beforeEach(() => {
+      sandbox = sinon.sandbox.create();
+      bidderRequest = deepClone(BIDDER_REQUEST_1);
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    it('Request should have unifiedId config params', function() {
+      bidderRequest.bidRequest[0].userId = {};
+      bidderRequest.bidRequest[0].userId.tdid = 'TTD_ID';
+      bidderRequest.bidRequest[0].userIdAsEids = createEidsArray(bidderRequest.bidRequest[0].userId);
+      let request = spec.buildRequests(bidderRequest.bidRequest, BIDDER_REQUEST_1);
+      let data = JSON.parse(request.data);
+      expect(data.user.eids).to.deep.equal([{
+        'source': 'adserver.org',
+        'uids': [{
+          'id': 'TTD_ID',
+          'atype': 1,
+          'ext': {
+            'rtiPartner': 'TDID'
+          }
+        }]
+      }]);
+    });
+
+    it('Request should have adsrvrOrgId from UserId Module if config and userId module both have TTD ID', function() {
+      sandbox.stub(config, 'getConfig').callsFake((key) => {
+        var config = {
+          adsrvrOrgId: {
+            'TDID': 'TTD_ID_FROM_CONFIG',
+            'TDID_LOOKUP': 'TRUE',
+            'TDID_CREATED_AT': '2022-06-21T09:47:00'
+          }
+        };
+        return config[key];
+      });
+      bidderRequest.bidRequest[0].userId = {};
+      bidderRequest.bidRequest[0].userId.tdid = 'TTD_ID';
+      bidderRequest.bidRequest[0].userIdAsEids = createEidsArray(bidderRequest.bidRequest[0].userId);
+      let request = spec.buildRequests(bidderRequest.bidRequest, BIDDER_REQUEST_1);
+      let data = JSON.parse(request.data);
+      expect(data.user.eids).to.deep.equal([{
+        'source': 'adserver.org',
+        'uids': [{
+          'id': 'TTD_ID',
+          'atype': 1,
+          'ext': {
+            'rtiPartner': 'TDID'
+          }
+        }]
+      }]);
+    });
+
+    it('Request should NOT have adsrvrOrgId params if userId is NOT object', function() {
+      let request = spec.buildRequests(bidderRequest.bidRequest, BIDDER_REQUEST_1);
+      let data = JSON.parse(request.data);
+      expect(data.user.eids).to.deep.equal(undefined);
+    });
+
+    it('Request should NOT have adsrvrOrgId params if userId.tdid is NOT string', function() {
+      bidderRequest.bidRequest[0].userId = {
+        tdid: 1234
+      };
+      let request = spec.buildRequests(bidderRequest.bidRequest, BIDDER_REQUEST_1);
+      let data = JSON.parse(request.data);
+      expect(data.user.eids).to.deep.equal(undefined);
     });
   });
 });

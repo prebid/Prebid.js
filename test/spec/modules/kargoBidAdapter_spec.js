@@ -1,6 +1,7 @@
 import {expect, assert} from 'chai';
 import {spec} from 'modules/kargoBidAdapter.js';
 import {config} from 'src/config.js';
+const utils = require('src/utils');
 
 describe('kargo adapter tests', function () {
   var sandbox, clock, frozenNow = new Date();
@@ -37,6 +38,11 @@ describe('kargo adapter tests', function () {
     var bids, undefinedCurrency, noAdServerCurrency, cookies = [], localStorageItems = [], sessionIds = [], requestCount = 0;
 
     beforeEach(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        kargo: {
+          storageAllowed: true
+        }
+      };
       undefinedCurrency = false;
       noAdServerCurrency = false;
       sandbox.stub(config, 'getConfig').callsFake(function(key) {
@@ -95,6 +101,7 @@ describe('kargo adapter tests', function () {
 
       cookies.length = 0;
       localStorageItems.length = 0;
+      $$PREBID_GLOBAL$$.bidderSettings = {};
     });
 
     function setCookie(cname, cvalue, exdays = 1) {
@@ -248,6 +255,10 @@ describe('kargo adapter tests', function () {
           1: [[320, 50], [300, 250], [300, 600]],
           2: [[320, 50], [300, 250], [300, 600]],
           3: [[320, 50], [300, 250], [300, 600]]
+        },
+        device: {
+          width: screen.width,
+          height: screen.height,
         },
         userIDs: {
           kargoID: '5f108831-302d-11e7-bf6b-4595acd3bf6c',
@@ -451,6 +462,17 @@ describe('kargo adapter tests', function () {
           adm: '<div id="4"></div>',
           width: 300,
           height: 250,
+          mediaType: 'banner',
+          metadata: {},
+          currency: 'EUR'
+        },
+        5: {
+          id: 'bar',
+          cpm: 2.5,
+          adm: '<VAST></VAST>',
+          width: 300,
+          height: 250,
+          mediaType: 'video',
           metadata: {},
           currency: 'EUR'
         }
@@ -476,6 +498,11 @@ describe('kargo adapter tests', function () {
           params: {
             placementId: 'bar'
           }
+        }, {
+          bidId: 5,
+          params: {
+            placementId: 'bar'
+          }
         }]
       });
       var expectation = [{
@@ -489,7 +516,10 @@ describe('kargo adapter tests', function () {
         dealId: undefined,
         netRevenue: true,
         currency: 'USD',
-        meta: undefined
+        mediaType: 'banner',
+        meta: {
+          mediaType: 'banner'
+        }
       }, {
         requestId: '2',
         cpm: 2.5,
@@ -501,7 +531,9 @@ describe('kargo adapter tests', function () {
         dealId: 'dmpmptest1234',
         netRevenue: true,
         currency: 'USD',
+        mediaType: 'banner',
         meta: {
+          mediaType: 'banner',
           clickUrl: 'https://foobar.com',
           advertiserDomains: ['https://foobar.com']
         }
@@ -516,7 +548,10 @@ describe('kargo adapter tests', function () {
         dealId: undefined,
         netRevenue: true,
         currency: 'USD',
-        meta: undefined
+        mediaType: 'banner',
+        meta: {
+          mediaType: 'banner'
+        }
       }, {
         requestId: '4',
         cpm: 2.5,
@@ -528,7 +563,26 @@ describe('kargo adapter tests', function () {
         dealId: undefined,
         netRevenue: true,
         currency: 'EUR',
-        meta: undefined
+        mediaType: 'banner',
+        meta: {
+          mediaType: 'banner'
+        }
+      }, {
+        requestId: '5',
+        cpm: 2.5,
+        width: 300,
+        height: 250,
+        ad: '<VAST></VAST>',
+        vastXml: '<VAST></VAST>',
+        ttl: 300,
+        creativeId: 'bar',
+        dealId: undefined,
+        netRevenue: true,
+        currency: 'EUR',
+        mediaType: 'video',
+        meta: {
+          mediaType: 'video'
+        }
       }];
       expect(resp).to.deep.equal(expectation);
     });
@@ -639,6 +693,28 @@ describe('kargo adapter tests', function () {
     it('no user syncs when no iframe syncing allowed', function() {
       turnOnClientId();
       safelyRun(() => expect(getUserSyncsWhenForbidden()).to.be.an('array').that.is.empty);
+    });
+  });
+
+  describe('timeout pixel trigger', function () {
+    let triggerPixelStub;
+
+    beforeEach(function () {
+      triggerPixelStub = sinon.stub(utils, 'triggerPixel');
+    });
+
+    afterEach(function () {
+      utils.triggerPixel.restore();
+    });
+
+    it('should call triggerPixel utils function when timed out is filled', function () {
+      spec.onTimeout();
+      expect(triggerPixelStub.getCall(0)).to.be.null;
+      spec.onTimeout([{ auctionId: '1234', timeout: 2000 }]);
+      expect(triggerPixelStub.getCall(0)).to.not.be.null;
+      expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.include('https://krk.kargo.com/api/v1/event/timeout');
+      expect(triggerPixelStub.getCall(0).args[0]).to.include('aid=1234');
+      expect(triggerPixelStub.getCall(0).args[0]).to.include('ato=2000');
     });
   });
 });

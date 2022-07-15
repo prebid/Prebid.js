@@ -1,4 +1,5 @@
-import {insertElement, isEmptyStr, isFn, isStr, logError, mergeDeep} from '../src/utils.js';
+import {isEmptyStr, isFn, isStr, logError, mergeDeep} from '../src/utils.js';
+import {loadExternalScript} from '../src/adloader.js';
 import {submodule} from '../src/hook.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {includes} from '../src/polyfill.js';
@@ -82,11 +83,8 @@ function executeCommand(command) {
 }
 
 function loadRtdScript(customerId) {
-  const script = document.createElement('script');
-  script.type = 'text/javascript';
-  script.async = true;
-  script.src = getClientUrl(customerId, window.location.hostname);
-  insertElement(script, window.document, 'head');
+  const url = getClientUrl(customerId, window.location.hostname);
+  loadExternalScript(url, MODULE_NAME)
 }
 
 function getAdUnits(adUnits, adUnitCodes) {

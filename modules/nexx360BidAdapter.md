@@ -10,9 +10,13 @@ Maintainer: gabriel@nexx360.io
 
 Connects to Nexx360 network for bids.
 
-Nexx360 bid adapter supports Banner only for the time being.
+To use us as a bidder you must have an account and an active "tagId" on our Nexx360 platform.
 
 # Test Parameters
+
+## Web
+
+### Display
 ```
 var adUnits = [
    // Banner adUnit
@@ -32,4 +36,24 @@ var adUnits = [
        }]
    },
 ];
+```
+
+### Video Instream
+```
+    var videoAdUnit = {
+        code: 'video1',
+        mediaTypes: {
+            video: {
+                playerSize: [640, 480],
+                context: 'instream'
+            }
+        },
+        bids: [{
+            bidder: 'nexx360',
+            params: {
+               account: '1067',
+               tagId: 'luvxjvgn'
+            }
+        }]
+    };
 ```
