@@ -1140,7 +1140,6 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
     const pbaAdSlot = impressions[transactionIds[adUnitIndex]].pbadslot
     const tagId = impressions[transactionIds[adUnitIndex]].tagId
     const adUnitCode = impressions[transactionIds[adUnitIndex]].adUnitCode
-    divId = impressions[transactionIds[adUnitIndex]].divId
     if (pbaAdSlot || tagId || adUnitCode || divId) {
       const clonedRObject = deepClone(r);
       const requestSize = `${baseUrl}${parseQueryStringParameters({ ...payload, r: JSON.stringify(clonedRObject) })}`.length;
