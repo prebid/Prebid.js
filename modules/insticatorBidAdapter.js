@@ -25,7 +25,7 @@ function getUserId() {
   let uid;
 
   if (storage.localStorageIsEnabled()) {
-    uid = storage.getDataInLocalStorage(USER_ID_KEY);
+    uid = storage.getDataFromLocalStorage(USER_ID_KEY);
   } else {
     uid = storage.getCookie(USER_ID_KEY);
   }
