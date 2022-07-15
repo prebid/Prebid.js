@@ -1267,7 +1267,6 @@ function createNativeImps(validBidRequest, nativeImps) {
     nativeImps[validBidRequest.transactionId].ixImps = [];
     nativeImps[validBidRequest.transactionId].ixImps.push(imp);
     nativeImps[validBidRequest.transactionId].gpid = deepAccess(validBidRequest, 'ortb2Imp.ext.gpid');
-    nativeImps[validBidRequest.transactionId].pbAdSlot = deepAccess(validBidRequest, 'ortb2Imp.ext.data.pbadslot');
     nativeImps[validBidRequest.transactionId].dfp_ad_unit_code = deepAccess(validBidRequest, 'ortb2Imp.ext.data.adserver.adslot');
   }
 }
@@ -1284,7 +1283,6 @@ function createVideoImps(validBidRequest, videoImps) {
     videoImps[validBidRequest.transactionId].ixImps = [];
     videoImps[validBidRequest.transactionId].ixImps.push(imp);
     videoImps[validBidRequest.transactionId].gpid = deepAccess(validBidRequest, 'ortb2Imp.ext.gpid');
-    videoImps[validBidRequest.transactionId].pbAdSlot = deepAccess(validBidRequest, 'ortb2Imp.ext.data.pbadslot');
     videoImps[validBidRequest.transactionId].dfp_ad_unit_code = deepAccess(validBidRequest, 'ortb2Imp.ext.data.adserver.adslot');
   }
 }
@@ -1313,7 +1311,6 @@ function createBannerImps(validBidRequest, missingBannerSizes, bannerImps) {
   bannerImps[validBidRequest.transactionId].gpid = deepAccess(validBidRequest, 'ortb2Imp.ext.gpid');
   bannerImps[validBidRequest.transactionId].dfp_ad_unit_code = deepAccess(validBidRequest, 'ortb2Imp.ext.data.adserver.adslot');
   bannerImps[validBidRequest.transactionId].tid = deepAccess(validBidRequest, 'ortb2Imp.ext.tid');
-  bannerImps[validBidRequest.transactionId].pbAdSlot = deepAccess(validBidRequest, 'ortb2Imp.ext.data.pbadslot');
 
   // Create IX imps from params.size
   if (bannerSizeDefined) {
