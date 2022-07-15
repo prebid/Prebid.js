@@ -183,6 +183,11 @@ describe('InsticatorBidAdapter', function () {
     let sandbox;
 
     beforeEach(() => {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        insticator: {
+          storageAllowed: true
+        }
+      };
       getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
       localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled');
       getCookieStub = sinon.stub(storage, 'getCookie');
@@ -198,6 +203,7 @@ describe('InsticatorBidAdapter', function () {
       localStorageIsEnabledStub.restore();
       getCookieStub.restore();
       cookiesAreEnabledStub.restore();
+      $$PREBID_GLOBAL$$.bidderSettings = {};
     });
 
     const serverRequests = spec.buildRequests([bidRequest], bidderRequest);
