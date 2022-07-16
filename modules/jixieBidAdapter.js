@@ -28,14 +28,14 @@ function setIds_(clientId, sessionId) {
     let expC = (new Date(new Date().setFullYear(new Date().getFullYear() + 1))).toUTCString();
     let expS = (new Date(new Date().setMinutes(new Date().getMinutes() + sidTTLMins_))).toUTCString();
 
-    storage.setCookie('_jx', clientId, expC, 'None', null);
-    storage.setCookie('_jx', clientId, expC, 'None', dd);
+    storage.setCookie('_jxx', clientId, expC, 'None', null);
+    storage.setCookie('_jxx', clientId, expC, 'None', dd);
 
-    storage.setCookie('_jxs', sessionId, expS, 'None', null);
-    storage.setCookie('_jxs', sessionId, expS, 'None', dd);
+    storage.setCookie('_jxxs', sessionId, expS, 'None', null);
+    storage.setCookie('_jxxs', sessionId, expS, 'None', dd);
 
-    storage.setDataInLocalStorage('_jx', clientId);
-    storage.setDataInLocalStorage('_jxs', sessionId);
+    storage.setDataInLocalStorage('_jxx', clientId);
+    storage.setDataInLocalStorage('_jxxs', sessionId);
   } catch (error) {}
 }
 
@@ -47,14 +47,14 @@ function fetchIds_() {
     session_id_ls: ''
   };
   try {
-    let tmp = storage.getCookie('_jx');
+    let tmp = storage.getCookie('_jxx');
     if (tmp) ret.client_id_c = tmp;
-    tmp = storage.getCookie('_jxs');
+    tmp = storage.getCookie('_jxxs');
     if (tmp) ret.session_id_c = tmp;
 
-    tmp = storage.getDataFromLocalStorage('_jx');
+    tmp = storage.getDataFromLocalStorage('_jxx');
     if (tmp) ret.client_id_ls = tmp;
-    tmp = storage.getDataFromLocalStorage('_jxs');
+    tmp = storage.getDataFromLocalStorage('_jxxs');
     if (tmp) ret.session_id_ls = tmp;
   } catch (error) {}
   return ret;
