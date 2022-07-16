@@ -1,7 +1,18 @@
-import { deepAccess, getDNT, getBidIdParameter, tryAppendQueryString, isEmpty, createTrackPixelHtml, logError, deepSetValue, getWindowTop, getWindowLocation } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import { BANNER } from '../src/mediaTypes.js';
+import {
+  createTrackPixelHtml,
+  deepAccess,
+  deepSetValue,
+  getBidIdParameter,
+  getDNT,
+  getWindowTop,
+  isEmpty,
+  logError,
+  tryAppendQueryString
+} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
+import {BANNER} from '../src/mediaTypes.js';
+
 const BIDDER_CODE = 'gmossp';
 const ENDPOINT = 'https://sp.gmossp-sp.jp/hb/prebid/query.ad';
 
@@ -155,9 +166,10 @@ function getUrlInfo(refererInfo) {
   }
 
   return {
-    url: getUrl(refererInfo),
     canonicalLink: canonicalLink,
-    ref: getReferrer(),
+    // TODO: are these the right refererInfo values?
+    url: refererInfo.topmostLocation,
+    ref: refererInfo.ref || window.document.referrer,
   };
 }
 
@@ -166,26 +178,6 @@ function getMetaElements() {
     return getWindowTop.document.getElementsByTagName('meta');
   } catch (e) {
     return document.getElementsByTagName('meta');
-  }
-}
-
-function getUrl(refererInfo) {
-  if (refererInfo && refererInfo.referer) {
-    return refererInfo.referer;
-  }
-
-  try {
-    return getWindowTop.location.href;
-  } catch (e) {
-    return getWindowLocation.href;
-  }
-}
-
-function getReferrer() {
-  try {
-    return getWindowTop.document.referrer;
-  } catch (e) {
-    return document.referrer;
   }
 }
 

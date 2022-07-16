@@ -1,11 +1,11 @@
-## DAC User ID Submodule
+## AudienceOne User ID Submodule
 
-DAC ID, provided by [D.A.Consortium Inc.](https://www.dac.co.jp/), is ID for ad targeting by using 1st party cookie.
+AudienceOne ID, provided by [D.A.Consortium Inc.](https://www.dac.co.jp/), is ID for ad targeting by using 1st party cookie.
 Please contact D.A.Consortium Inc. before using this ID.
 
-## Building Prebid with DAC ID Support
+## Building Prebid with AudienceOne ID Support
 
-First, make sure to add the DAC ID submodule to your Prebid.js package with:
+First, make sure to add the AudienceOne ID submodule to your Prebid.js package with:
 
 ```
 gulp build --modules=dacIdSystem

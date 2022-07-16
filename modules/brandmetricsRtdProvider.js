@@ -5,10 +5,10 @@
  * @module modules/brandmetricsRtdProvider
  * @requires module:modules/realTimeData
  */
-import { config } from '../src/config.js'
-import { submodule } from '../src/hook.js'
-import { deepSetValue, mergeDeep, logError, deepAccess } from '../src/utils.js'
-import {loadExternalScript} from '../src/adloader.js'
+import {submodule} from '../src/hook.js';
+import {deepAccess, deepSetValue, logError, mergeDeep} from '../src/utils.js';
+import {loadExternalScript} from '../src/adloader.js';
+
 const MODULE_NAME = 'brandmetrics'
 const MODULE_CODE = MODULE_NAME
 const RECEIVED_EVENTS = []
@@ -109,11 +109,8 @@ function processBrandmetricsEvents (reqBidsConfigObj, moduleConfig, callback) {
 function setBidderTargeting (reqBidsConfigObj, moduleConfig, key, val) {
   const bidders = deepAccess(moduleConfig, 'params.bidders')
   if (bidders && bidders.length > 0) {
-    const ortb2 = {}
-    deepSetValue(ortb2, 'ortb2.user.ext.data.' + key, val)
-    config.setBidderConfig({
-      bidders: bidders,
-      config: ortb2
+    bidders.forEach(bidder => {
+      deepSetValue(reqBidsConfigObj, `ortb2Fragments.bidder.${bidder}.user.ext.data.${key}`, val);
     })
   }
 }

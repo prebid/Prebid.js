@@ -5,6 +5,7 @@ import * as utils from 'src/utils.js';
 describe('YieldmoAdapter', function () {
   const BANNER_ENDPOINT = 'https://ads.yieldmo.com/exchange/prebid';
   const VIDEO_ENDPOINT = 'https://ads.yieldmo.com/exchange/prebidvideo';
+  const PB_COOKIE_ASSIST_SYNC_ENDPOINT = `https://ads.yieldmo.com/pbcas`;
 
   const mockBannerBid = (rootParams = {}, params = {}) => ({
     bidder: 'yieldmo',
@@ -606,8 +607,20 @@ describe('YieldmoAdapter', function () {
   });
 
   describe('getUserSync', function () {
-    it('should return a tracker with type and url as parameters', function () {
-      expect(spec.getUserSyncs()).to.deep.equal([]);
+    const gdprFlag = `&gdpr=0`;
+    const usPrivacy = `us_privacy=`;
+    const gdprString = `&gdpr_consent=`;
+    const pbCookieAssistSyncUrl = `${PB_COOKIE_ASSIST_SYNC_ENDPOINT}?${usPrivacy}${gdprFlag}${gdprString}`;
+    it('should use type iframe when iframeEnabled', function() {
+      const syncs = spec.getUserSyncs({iframeEnabled: true});
+      expect(syncs).to.deep.equal([{type: 'iframe', url: pbCookieAssistSyncUrl + '&type=iframe'}])
+    });
+    it('should use type image when pixelEnabled', function() {
+      const syncs = spec.getUserSyncs({pixelEnabled: true});
+      expect(syncs).to.deep.equal([{type: 'image', url: pbCookieAssistSyncUrl + '&type=image'}])
+    });
+    it('should register no syncs', function () {
+      expect(spec.getUserSyncs({})).to.deep.equal([]);
     });
   });
 });

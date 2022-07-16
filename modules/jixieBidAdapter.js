@@ -1,11 +1,11 @@
-import { logWarn, parseUrl, deepAccess, isArray, getDNT } from '../src/utils.js';
-import { config } from '../src/config.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { ajax } from '../src/ajax.js';
-import { getRefererInfo } from '../src/refererDetection.js';
-import { Renderer } from '../src/Renderer.js';
+import {deepAccess, getDNT, isArray, logWarn} from '../src/utils.js';
+import {config} from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {ajax} from '../src/ajax.js';
+import {getRefererInfo} from '../src/refererDetection.js';
+import {Renderer} from '../src/Renderer.js';
 import {createEidsArray} from './userId/eids.js';
 
 const BIDDER_CODE = 'jixie';
@@ -116,10 +116,12 @@ function getMiscDims_() {
     mkeywords: ''
   }
   try {
+    // TODO: this should pick refererInfo from bidderRequest
     let refererInfo_ = getRefererInfo();
-    let url_ = ((refererInfo_ && refererInfo_.referer) ? refererInfo_.referer : window.location.href);
+    // TODO: does the fallback make sense here?
+    let url_ = refererInfo_?.page || window.location.href
     ret.pageurl = url_;
-    ret.domain = parseUrl(url_).host;
+    ret.domain = refererInfo_?.domain || window.location.host
     ret.device = getDevice_();
     let keywords = document.getElementsByTagName('meta')['keywords'];
     if (keywords && keywords.content) {
@@ -184,6 +186,7 @@ export const spec = {
     let ids = fetchIds_();
     let eids = [];
     let miscDims = internal.getMiscDims();
+    let schain = deepAccess(validBidRequests[0], 'schain');
 
     // all available user ids are sent to our backend in the standard array layout:
     if (validBidRequests[0].userId) {
@@ -209,6 +212,7 @@ export const spec = {
       mkeywords: miscDims.mkeywords,
       bids: bids,
       eids: eids,
+      schain: schain,
       pricegranularity: pg,
       cfg: jixieCfgBlob
     }, ids);
