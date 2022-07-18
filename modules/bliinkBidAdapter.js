@@ -96,10 +96,11 @@ export function getKeywords() {
  * @return {({cpm, netRevenue: boolean, requestId, width: number, currency, ttl: number, creativeId, height: number}&{mediaType: string, vastXml})|null}
  */
 export const buildBid = (bidResponse) => {
-  if (!bidResponse || !bidResponse.creative || !bidResponse.creative.media_type) return null;
+  const mediaType = deepAccess(bidResponse, 'creative.media_type')
+  if (!bidResponse || !bidResponse.creative || !mediaType) return null;
 
   let bid;
-  switch (bidResponse.creative.media_type) {
+  switch (mediaType) {
     case VIDEO:
       const vastXml = deepAccess(bidResponse, 'creative.video.content');
       bid = {
@@ -121,10 +122,10 @@ export const buildBid = (bidResponse) => {
   return Object.assign(bid, {
     cpm: bidResponse.price,
     currency: bidResponse.currency || 'EUR',
-    creativeId: bidResponse.extras.deal_id,
-    requestId: bidResponse.extras.transaction_id,
-    width: deepAccess(bidResponse, `creative.${bid.mediaType}.width`) || 1,
-    height: deepAccess(bidResponse, `creative.${bid.mediaType}.height`) || 1,
+    creativeId: deepAccess(bidResponse, 'extras.deal_id'),
+    requestId: deepAccess(bidResponse, 'extras.transaction_id'),
+    width: deepAccess(bidResponse, `creative.${bid.mediaType}.width`, 1),
+    height: deepAccess(bidResponse, `creative.${bid.mediaType}.height`, 1),
     ttl: 3600,
     netRevenue: true,
   });
@@ -137,7 +138,7 @@ export const buildBid = (bidResponse) => {
  * @return boolean
  */
 export const isBidRequestValid = (bid) => {
-  return !!(bid && bid.params && !!bid.params.tagId);
+  return !!(bid && bid.params && !!deepAccess(bid, 'params.tagId'));
 };
 
 /**
@@ -156,7 +157,7 @@ export const buildRequests = (validBidRequests, bidderRequest) => {
       id: bid.params.tagId,
       transactionId: bid.bidId,
       mediaTypes: Object.keys(bid.mediaTypes),
-      imageUrl: bid.params.imageUrl || '',
+      imageUrl: deepAccess(bid, 'params.imageUrl', ''),
     };
   });
 
@@ -198,8 +199,8 @@ export const buildRequests = (validBidRequests, bidderRequest) => {
  * @return
  */
 const interpretResponse = (serverResponse) => {
-  if (!serverResponse.body || !serverResponse.body.bids) return []
-  const bodyResponse = serverResponse.body.bids
+  const bodyResponse = deepAccess(serverResponse, 'body.bids')
+  if (!serverResponse.body || !bodyResponse) return []
   const bidResponses = [];
   _each(bodyResponse, function (response) {
     return bidResponses.push(buildBid(response));
