@@ -21,6 +21,9 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
   let playerVersion = null;
   let imaOptions = null;
   const {playerConfig, divId} = config;
+  let isMuted;
+  let previousLastTimePosition = 0;
+  let lastTimePosition = 0;
 
   let setupCompleteCallback, setupFailedCallback;
 
@@ -82,6 +85,8 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
 
     setupCompleteCallback && setupCompleteCallback(SETUP_COMPLETE, payload);
     setupCompleteCallback = null;
+
+    isMuted = player.muted();
   }
 
   function getId() {
@@ -100,7 +105,7 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
     // Only include length if player is ready
     // player.readyState() returns a level of readiness from 0 to 4
     // https://docs.videojs.com/player#readyState
-    if (player.readyState() > 0) {
+    if (player.readyState()) {
       content.len = Math.round(player.duration());
     }
     const mediaItem = player.getMedia();
@@ -209,20 +214,16 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
       'ratechange',
       'resize',
       'volumechange',
+      'playerresize',
+      'mutechange',
+      'fullscreenchange',
     ]
 
     vjEVENTS.forEach(ev => {
-      player.on(ev, function() {
+      player.on(ev, function () {
         console.log('vjs: ', ev);
       });
-      player.el().addEventListener(ev, function() {
-        console.log('evtList: ', ev);
-      });
     });
-
-    if (vjEVENTS) {
-      return;
-    }
 
     for (let i = 0; i < events.length; i++) {
       const type = events[i];
@@ -250,22 +251,38 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
         };
         break;
       case SETUP_FAILED:
+        let isReady = false;
+        player.ready(() => {
+          isReady = true;
+        });
+
+        if (isReady) {
+          return;
+        }
         setupFailedCallback = callback
         eventHandler = () => {
+          let isReady = false;
+          player.ready(() => {
+            isReady = true;
+          });
+
+          if (isReady) {
+            return;
+          }
           // Videojs has no specific setup error handler
           // so we imitate it by hooking to the general error
           // handler and checking to see if the player has been setup
-          if (player.readyState() == 0) {
-            const e = player.error()
-            Object.assign(payload, {
-              playerVersion,
-              errorCode: e.errorTypes,
-              errorMessage: e.message,
-            });
-            callback(type, payload);
-            setupFailedCallback = null;
-          }
-        }
+          const error = player.error();
+          Object.assign(payload, {
+            playerVersion,
+            sourceError: error,
+            errorCode: error.code,
+            errorMessage: error.message,
+          });
+          callback(type, payload);
+          setupFailedCallback = null;
+        };
+        player.on(ERROR, eventHandler);
         break;
       default:
         return
@@ -285,81 +302,46 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
         player.on(utils.getVideojsEventName(type), eventHandler);
         break;
 
-      case PLAY:
-        eventHandler = () => {
-          callback(type, payload);
-        };
-        player.on(utils.getVideojsEventName(type), eventHandler);
-        break;
-
-      case PAUSE:
-        eventHandler = () => {
-          callback(type, payload);
-        };
-        player.on(utils.getVideojsEventName(type), eventHandler);
-        break;
-
-      case BUFFER:
-        eventHandler = () => {
-          Object.assign(payload, {
-            position: 0,
-            duration: 0,
-            playbackMode: -1
-          });
-          callback(type, payload);
-        };
-        player.el().addEventListener('waiting', eventHandler);
-        break;
-
-      // TODO: No time event fired by videojs
-      case TIME:
-        eventHandler = e => {
-          Object.assign(payload, {
-            position: e.position,
-            duration: e.duration
-          });
-          callback(type, payload);
-        };
-        player.el().addEventListener('timeupdate', eventHandler);
-        break;
-
       case PLAYLIST:
         eventHandler = e => {
-          const playlistItemCount = e.playlist.length;
           Object.assign(payload, {
-            playlistItemCount,
-            autostart: player.getConfig().autostart
+            playlistItemCount: 1,
+            autostart: player.autoplay()
           });
           callback(type, payload);
         };
+        player.on('sourceset', eventHandler);
         break;
+
       case PLAYBACK_REQUEST:
         eventHandler = e => {
-          payload.playReason = e.playReason;
+          payload.playReason = 'unknown';
           callback(type, payload);
         };
+        player.on(utils.getVideojsEventName(type), eventHandler);
         break;
-      case AUTOSTART_BLOCKED:
-        eventHandler = e => {
-          Object.assign(payload, {
-            sourceError: e.error,
-            errorCode: e.code,
-            errorMessage: e.message
-          });
-          callback(type, payload);
-        };
-        break;
-      case PLAY_ATTEMPT_FAILED:
-        eventHandler = e => {
-          Object.assign(payload, {
-            playReason: e.playReason,
-            sourceError: e.sourceError,
-            errorCode: e.code,
-            errorMessage: e.message
-          });
-          callback(type, payload);
-        };
-        break;
+
+        // case AUTOSTART_BLOCKED:
+      //   eventHandler = e => {
+      //     Object.assign(payload, {
+      //       sourceError: e.error,
+      //       errorCode: e.code,
+      //       errorMessage: e.message
+      //     });
+      //     callback(type, payload);
+      //   };
+      //   break;
+      // case PLAY_ATTEMPT_FAILED:
+      //   eventHandler = e => {
+      //     Object.assign(payload, {
+      //       playReason: e.playReason,
+      //       sourceError: e.sourceError,
+      //       errorCode: e.code,
+      //       errorMessage: e.message
+      //     });
+      //     callback(type, payload);
+      //   };
+      //   break;
 
       case CONTENT_LOADED:
         eventHandler = e => {
@@ -374,77 +356,113 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
           });
           callback(type, payload);
         };
-        player.el().addEventListener('loadeddata', eventHandler);
+        player.on(utils.getVideojsEventName(type), eventHandler);
+        break;
+      case PLAY:
+        eventHandler = () => {
+          callback(type, payload);
+        };
+        player.on(utils.getVideojsEventName(type), eventHandler);
+        break;
+
+      case PAUSE:
+        eventHandler = () => {
+          callback(type, payload);
+        };
+        player.on(type, eventHandler);
+        break;
+
+      // case BUFFER:
+      //   eventHandler = () => {
+      //     Object.assign(payload, {
+      //       position: 0,
+      //       duration: 0,
+      //       playbackMode: -1
+      //     });
+      //     callback(type, payload);
+      //   };
+      //   player.el().addEventListener('waiting', eventHandler);
+      //   break;
+
+      case TIME:
+        // might want to check seeking() and/or scrubbing()
+        eventHandler = e => {
+          previousLastTimePosition = lastTimePosition;
+          lastTimePosition = player.currentTime();
+          Object.assign(payload, {
+            position: lastTimePosition,
+            duration: player.duration()
+          });
+          callback(type, payload);
+        };
+        player.on(utils.getVideojsEventName(type), eventHandler);
         break;
 
       case SEEK_START:
         eventHandler = e => {
-          const duration = e.duration;
-          const offset = e.offset;
-          // pendingSeek = {
-          //   duration,
-          //   offset
-          // };
           Object.assign(payload, {
-            position: e.position,
-            destination: offset,
-            duration: duration
+            position: previousLastTimePosition,
+            destination: player.currentTime(),
+            duration: player.duration()
           });
           callback(type, payload);
         }
-        player.on('seek', eventHandler);
+        player.on(utils.getVideojsEventName(type), eventHandler);
         break;
 
       case SEEK_END:
         eventHandler = () => {
-          // Object.assign(payload, {
-          //   position: pendingSeek.offset,
-          //   duration: pendingSeek.duration
-          // });
+          Object.assign(payload, {
+            position: player.currentTime(),
+            duration: player.duration()
+          });
           callback(type, payload);
-          // pendingSeek = {};
         };
-        player.on('seeked', eventHandler);
+        player.on(utils.getVideojsEventName(type), eventHandler);
         break;
 
       case MUTE:
-        eventHandler = e => {
-          payload.mute = e.mute;
-          callback(type, payload);
+        eventHandler = () => {
+          const muteChange = player.muted();
+          if (isMuted !== muteChange) {
+            payload.mute = isMuted = muteChange;
+            callback(type, payload);
+          }
         };
-        player.on(MUTE, eventHandler);
+        player.on(utils.getVideojsEventName(VOLUME), eventHandler);
         break;
 
       case VOLUME:
         eventHandler = e => {
-          payload.volumePercentage = e.volume;
+          payload.volumePercentage = player.volume() * 100;
           callback(type, payload);
         };
-        player.on(VOLUME, eventHandler);
+        player.on(utils.getVideojsEventName(type), eventHandler);
         break;
 
-      case RENDITION_UPDATE:
-        eventHandler = e => {
-          const bitrate = e.bitrate;
-          const level = e.level;
-          Object.assign(payload, {
-            videoReportedBitrate: bitrate,
-            audioReportedBitrate: bitrate,
-            encodedVideoWidth: level.width,
-            encodedVideoHeight: level.height,
-            videoFramerate: e.frameRate
-          });
-          callback(type, payload);
-        };
-        player.on('visualQuality', eventHandler);
-        break;
+      // case RENDITION_UPDATE:
+      //   eventHandler = e => {
+      //     const bitrate = e.bitrate;
+      //     const level = e.level;
+      //     Object.assign(payload, {
+      //       videoReportedBitrate: bitrate,
+      //       audioReportedBitrate: bitrate,
+      //       encodedVideoWidth: level.width,
+      //       encodedVideoHeight: level.height,
+      //       videoFramerate: e.frameRate
+      //     });
+      //     callback(type, payload);
+      //   };
+      //   player.on('visualQuality', eventHandler);
+      //   break;
 
       case ERROR:
         eventHandler = e => {
+          const error = player.error();
           Object.assign(payload, {
-            sourceError: e.sourceError,
-            errorCode: e.code,
-            errorMessage: e.message,
+            sourceError: error,
+            errorCode: error.code,
+            errorMessage: error.message,
           });
           callback(type, payload);
         };
@@ -454,21 +472,21 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
       case COMPLETE:
         eventHandler = e => {
           callback(type, payload);
-          // timeState.clearState();
+          previousLastTimePosition = lastTimePosition = 0;
         };
-        player.on('ended', eventHandler);
+        player.on(utils.getVideojsEventName(type), eventHandler);
         break;
 
-      case PLAYLIST_COMPLETE:
-        eventHandler = () => {
-          callback(type, payload);
-        };
-        player.on(PLAYLIST_COMPLETE, eventHandler);
-        break;
+      // case PLAYLIST_COMPLETE:
+      //   eventHandler = () => {
+      //     callback(type, payload);
+      //   };
+      //   player.on(PLAYLIST_COMPLETE, eventHandler);
+      //   break;
 
       case FULLSCREEN:
         eventHandler = e => {
-          payload.fullscreen = e.fullscreen;
+          // payload.fullscreen = e.fullscreen;
           callback(type, payload);
         };
         player.on(FULLSCREEN, eventHandler);
@@ -476,33 +494,33 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
 
       case PLAYER_RESIZE:
         eventHandler = e => {
-          Object.assign(payload, {
-            height: e.height,
-            width: e.width,
-          });
+          // Object.assign(payload, {
+          //   height: e.height,
+          //   width: e.width,
+          // });
           callback(type, payload);
         };
-        player.on('resize', eventHandler);
+        player.on(utils.getVideojsEventName(type), eventHandler);
         break;
 
-      case VIEWABLE:
-        eventHandler = e => {
-          Object.assign(payload, {
-            viewable: e.viewable,
-            viewabilityPercentage: player.getPercentViewable() * 100,
-          });
-          callback(type, payload);
-        };
-        player.on(VIEWABLE, eventHandler);
-        break;
-
-      case CAST:
-        eventHandler = e => {
-          payload.casting = e.active;
-          callback(type, payload);
-        };
-        player.on(CAST, eventHandler);
-        break;
+      // case VIEWABLE:
+      //   eventHandler = e => {
+      //     Object.assign(payload, {
+      //       viewable: e.viewable,
+      //       viewabilityPercentage: player.getPercentViewable() * 100,
+      //     });
+      //     callback(type, payload);
+      //   };
+      //   player.on(VIEWABLE, eventHandler);
+      //   break;
+      //
+      // case CAST:
+      //   eventHandler = e => {
+      //     payload.casting = e.active;
+      //     callback(type, payload);
+      //   };
+      //   player.on(CAST, eventHandler);
+      //   break;
 
       default:
     }
@@ -591,19 +609,47 @@ export const utils = {
         return 'error';
       case DESTROYED:
         return 'dispose';
+      case PLAY:
+        return PLAY + 'ing';
+      case PLAYBACK_REQUEST:
+        return PLAY;
       case CONTENT_LOADED:
         return 'loadeddata';
       case SEEK_START:
         return 'seeking';
       case SEEK_END:
-        return 'timeupdate';
+        return 'seeked';
+      case TIME:
+        return TIME + 'update';
       case VOLUME:
-        return 'volumechange';
+        return VOLUME + 'change';
+      case MUTE:
+        return MUTE + 'change';
       case PLAYER_RESIZE:
         return 'playerresize';
+      case FULLSCREEN:
+        return FULLSCREEN + 'change';
+      case COMPLETE:
+        return 'ended';
       default:
         return eventName;
     }
+    /*
+    'loadstart',
+      'progress', buffer load ?
+      'suspend',
+      'abort',
+      'error',
+      'emptied',
+      'stalled',
+      'loadedmetadata', meta
+      'loadeddata', meta
+      'canplay',
+      'canplaythrough',
+      'waiting', buffer?
+      'durationchange', meta-duration
+      'ratechange',
+     */
   }
 };
 
