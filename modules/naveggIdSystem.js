@@ -34,17 +34,6 @@ function readnavIDFromCookie() {
   return storage.cookiesAreEnabled ? (storage.findSimilarCookies('nav') ? storage.findSimilarCookies('nav')[0] : null) : null;
 }
 
-function readnvgnavFromLocalStorage() {
-  var i;
-  const query = /[nvga]{3}\d+/;
-  for (i in window.localStorage) {
-    if (i.match(query) || (!query && typeof i === 'string')) {
-      const naveggId = storage.getDataFromLocalStorage(i.match(query).input).split('|')[0]
-      return naveggId.split('_')[0];
-    }
-  }
-}
-
 /** @type {Submodule} */
 export const naveggIdSubmodule = {
   /**
@@ -73,7 +62,7 @@ export const naveggIdSubmodule = {
   getId() {
     let naveggIdStringFromLocalStorage = null;
     if (storage.localStorageIsEnabled) {
-      naveggIdStringFromLocalStorage = readnaveggIdFromLocalStorage() || readnvgnavFromLocalStorage();
+      naveggIdStringFromLocalStorage = readnaveggIdFromLocalStorage();
     }
 
     const naveggIdString = naveggIdStringFromLocalStorage || readnaveggIDFromCookie() || readoldnaveggIDFromCookie() || readnvgIDFromCookie() || readnavIDFromCookie();
