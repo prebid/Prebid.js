@@ -1657,21 +1657,21 @@ export const spec = {
     }
 
     if (mediaTypeVideoRef && paramsVideoRef) {
+      const videoImp = bidToVideoImp(bid).video;
       const errorList = checkVideoParams(mediaTypeVideoRef, paramsVideoRef);
+      if (deepAccess(bid, 'mediaTypes.video.context') === OUTSTREAM && isIndexRendererPreferred(bid) && videoImp) {
+        const outstreamPlayerSize = [deepAccess(videoImp, 'w'), deepAccess(videoImp, 'h')];
+        const isValidSize = outstreamPlayerSize[0] >= OUTSTREAM_MINIMUM_PLAYER_SIZE[0] && outstreamPlayerSize[1] >= OUTSTREAM_MINIMUM_PLAYER_SIZE[1];
+        if (!isValidSize) {
+          logError(`IX Bid Adapter: ${outstreamPlayerSize} is an invalid size for IX outstream renderer`);
+          return false;
+        }
+      }
+
       if (errorList.length) {
         errorList.forEach((err) => {
           logError(err, { bidder: BIDDER_CODE, code: ERROR_CODES.PROPERTY_NOT_INCLUDED });
         });
-        return false;
-      }
-    }
-
-    const videoImp = bidToVideoImp(bid).video;
-    if (deepAccess(bid, 'mediaTypes.video.context') === OUTSTREAM && isIndexRendererPreferred(bid) && videoImp) {
-      const outstreamPlayerSize = [deepAccess(videoImp, 'w'), deepAccess(videoImp, 'h')];
-      const isValidSize = outstreamPlayerSize[0] >= OUTSTREAM_MINIMUM_PLAYER_SIZE[0] && outstreamPlayerSize[1] >= OUTSTREAM_MINIMUM_PLAYER_SIZE[1];
-      if (!isValidSize) {
-        logError(`IX Bid Adapter: ${outstreamPlayerSize} is an invalid size for IX outstream renderer`);
         return false;
       }
     }
