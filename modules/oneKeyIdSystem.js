@@ -58,7 +58,7 @@ export const oneKeyIdSubmodule = {
     * @returns {(Object|undefined)}
     */
   decode(data) {
-    return { pafData: data };
+    return { oneKeyData: data };
   },
   /**
     * performs action to obtain id and return a value in the callback's response argument
