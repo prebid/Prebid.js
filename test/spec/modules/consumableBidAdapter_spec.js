@@ -1,6 +1,9 @@
 import {expect} from 'chai';
 import {spec} from 'modules/consumableBidAdapter.js';
 import {createBid} from 'src/bidfactory.js';
+import {config} from 'src/config.js';
+import {deepClone} from 'src/utils.js';
+import { createEidsArray } from 'modules/userId/eids.js';
 
 const ENDPOINT = 'https://e.serverbid.com/api/v2';
 const SMARTSYNC_CALLBACK = 'serverbidCallBids';
@@ -423,6 +426,78 @@ describe('Consumable BidAdapter', function () {
       let opts = spec.getUserSyncs(syncOptions, [AD_SERVER_RESPONSE]);
 
       expect(opts.length).to.equal(1);
+    });
+  });
+  describe('unifiedId from userId module', function() {
+    let sandbox, bidderRequest;
+    beforeEach(() => {
+      sandbox = sinon.sandbox.create();
+      bidderRequest = deepClone(BIDDER_REQUEST_1);
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    it('Request should have unifiedId config params', function() {
+      bidderRequest.bidRequest[0].userId = {};
+      bidderRequest.bidRequest[0].userId.tdid = 'TTD_ID';
+      bidderRequest.bidRequest[0].userIdAsEids = createEidsArray(bidderRequest.bidRequest[0].userId);
+      let request = spec.buildRequests(bidderRequest.bidRequest, BIDDER_REQUEST_1);
+      let data = JSON.parse(request.data);
+      expect(data.user.eids).to.deep.equal([{
+        'source': 'adserver.org',
+        'uids': [{
+          'id': 'TTD_ID',
+          'atype': 1,
+          'ext': {
+            'rtiPartner': 'TDID'
+          }
+        }]
+      }]);
+    });
+
+    it('Request should have adsrvrOrgId from UserId Module if config and userId module both have TTD ID', function() {
+      sandbox.stub(config, 'getConfig').callsFake((key) => {
+        var config = {
+          adsrvrOrgId: {
+            'TDID': 'TTD_ID_FROM_CONFIG',
+            'TDID_LOOKUP': 'TRUE',
+            'TDID_CREATED_AT': '2022-06-21T09:47:00'
+          }
+        };
+        return config[key];
+      });
+      bidderRequest.bidRequest[0].userId = {};
+      bidderRequest.bidRequest[0].userId.tdid = 'TTD_ID';
+      bidderRequest.bidRequest[0].userIdAsEids = createEidsArray(bidderRequest.bidRequest[0].userId);
+      let request = spec.buildRequests(bidderRequest.bidRequest, BIDDER_REQUEST_1);
+      let data = JSON.parse(request.data);
+      expect(data.user.eids).to.deep.equal([{
+        'source': 'adserver.org',
+        'uids': [{
+          'id': 'TTD_ID',
+          'atype': 1,
+          'ext': {
+            'rtiPartner': 'TDID'
+          }
+        }]
+      }]);
+    });
+
+    it('Request should NOT have adsrvrOrgId params if userId is NOT object', function() {
+      let request = spec.buildRequests(bidderRequest.bidRequest, BIDDER_REQUEST_1);
+      let data = JSON.parse(request.data);
+      expect(data.user.eids).to.deep.equal(undefined);
+    });
+
+    it('Request should NOT have adsrvrOrgId params if userId.tdid is NOT string', function() {
+      bidderRequest.bidRequest[0].userId = {
+        tdid: 1234
+      };
+      let request = spec.buildRequests(bidderRequest.bidRequest, BIDDER_REQUEST_1);
+      let data = JSON.parse(request.data);
+      expect(data.user.eids).to.deep.equal(undefined);
     });
   });
 });

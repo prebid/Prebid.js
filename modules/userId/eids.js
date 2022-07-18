@@ -319,6 +319,11 @@ export const USER_IDS_CONFIG = {
     atype: 1
   },
 
+  // cpexId
+  'cpexId': {
+    source: 'czechadid.cz',
+    atype: 1
+  }
 };
 
 // this function will create an eid object for the given UserId sub-module
