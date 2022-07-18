@@ -95,13 +95,13 @@ export function getKeywords() {
  * @param bidRequest
  * @return {({cpm, netRevenue: boolean, requestId, width: number, currency, ttl: number, creativeId, height: number}&{mediaType: string, vastXml})|null}
  */
-export const buildBid = (bidRequest) => {
-  if (!bidRequest || !bidRequest.creative || !bidRequest.creative.media_type) return null;
+export const buildBid = (bidResponse) => {
+  if (!bidResponse || !bidResponse.creative || !bidResponse.creative.media_type) return null;
 
   let bid;
-  switch (bidRequest.creative.media_type) {
+  switch (bidResponse.creative.media_type) {
     case VIDEO:
-      const vastXml = bidRequest.creative.video.content
+      const vastXml = deepAccess(bidResponse, 'creative.video.content');
       bid = {
         vastXml,
         mediaType: 'video',
@@ -109,22 +109,22 @@ export const buildBid = (bidRequest) => {
       };
       break;
     case BANNER:
+      const adm = deepAccess(bidResponse, 'creative.banner.adm');
       bid = {
-        ad: bidRequest.creative.banner.adm,
+        ad: adm,
         mediaType: 'banner',
       };
       break;
     default:
       return null;
   }
-
   return Object.assign(bid, {
-    cpm: bidRequest.price,
-    currency: bidRequest.currency || 'EUR',
-    creativeId: bidRequest.extras.deal_id,
-    requestId: bidRequest.extras.transaction_id,
-    width: bidRequest.creative[bid.mediaType].width || 1,
-    height: bidRequest.creative[bid.mediaType].height || 1,
+    cpm: bidResponse.price,
+    currency: bidResponse.currency || 'EUR',
+    creativeId: bidResponse.extras.deal_id,
+    requestId: bidResponse.extras.transaction_id,
+    width: deepAccess(bidResponse, `creative.${bid.mediaType}.width`) || 1,
+    height: deepAccess(bidResponse, `creative.${bid.mediaType}.height`) || 1,
     ttl: 3600,
     netRevenue: true,
   });
@@ -169,15 +169,15 @@ export const buildRequests = (validBidRequests, bidderRequest) => {
   };
   const schain = deepAccess(validBidRequests[0], 'schain')
   if (schain) {
-    deepSetValue(request, 'schain', schain);
+    request.schain = schain
   }
   const gdprConsent = deepAccess(bidderRequest, 'gdprConsent');
   if (!!gdprConsent && gdprConsent.gdprApplies) {
-    deepSetValue(request, 'gdpr', true);
+    request.gdpr = true
     deepSetValue(request, 'gdprConsent', gdprConsent.consentString);
   }
   if (config.getConfig('coppa')) {
-    deepSetValue(request, 'coppa', 1);
+    request.coppa = 1
   }
   if (bidderRequest.uspConsent) {
     deepSetValue(request, 'uspConsent', bidderRequest.uspConsent);
@@ -239,7 +239,7 @@ const getUserSyncs = (syncOptions, serverResponses, gdprConsent, uspConsent) => 
         },
       ];
     } else {
-      sync = serverResponses[0].body.userSyncs;
+      sync = deepAccess(serverResponses[0], 'body.userSyncs');
     }
 
     return sync;
