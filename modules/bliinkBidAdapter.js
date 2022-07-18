@@ -123,8 +123,8 @@ export const buildBid = (bidResponse) => {
     currency: bidResponse.currency || 'EUR',
     creativeId: deepAccess(bidResponse, 'extras.deal_id'),
     requestId: deepAccess(bidResponse, 'extras.transaction_id'),
-    width: deepAccess(bidResponse, `creative.${bid.mediaType}.width`, 1),
-    height: deepAccess(bidResponse, `creative.${bid.mediaType}.height`, 1),
+    width: deepAccess(bidResponse, `creative.${bid.mediaType}.width`) || 1,
+    height: deepAccess(bidResponse, `creative.${bid.mediaType}.height`) || 1,
     ttl: 3600,
     netRevenue: true,
   });
