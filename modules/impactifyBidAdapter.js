@@ -37,9 +37,13 @@ const createOpenRtbRequest = (validBidRequests, bidderRequest) => {
     source: {tid: bidderRequest.auctionId}
   };
 
+  // Get the url parameters
+  const queryString = window.location.search;
+  const urlParams = new URLSearchParams(queryString);
+  const checkPrebid = urlParams.get('_checkPrebid');
   // Force impactify debugging parameter
-  if (window.localStorage.getItem('_im_db_bidder') != null) {
-    request.test = Number(window.localStorage.getItem('_im_db_bidder'));
+  if (checkPrebid != null) {
+    request.test = Number(checkPrebid);
   }
 
   // Set Schain in request
