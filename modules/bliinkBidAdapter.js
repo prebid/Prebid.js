@@ -164,7 +164,7 @@ export const buildRequests = (validBidRequests, bidderRequest) => {
   let request = {
     tags,
     pageTitle: document.title,
-    pageUrl: bidderRequest.refererInfo.page,
+    pageUrl: deepAccess(bidderRequest, 'refererInfo.page'),
     pageDescription: getMetaValue(META_DESCRIPTION),
     keywords: getKeywords().join(','),
   };
