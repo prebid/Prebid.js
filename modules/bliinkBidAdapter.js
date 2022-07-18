@@ -95,13 +95,14 @@ export function getKeywords() {
  * @param bidRequest
  * @return {({cpm, netRevenue: boolean, requestId, width: number, currency, ttl: number, creativeId, height: number}&{mediaType: string, vastXml})|null}
  */
-export const buildBid = (bidRequest) => {
-  if (!bidRequest || !bidRequest.creative || !bidRequest.creative.media_type) return null;
+export const buildBid = (bidResponse) => {
+  const mediaType = deepAccess(bidResponse, 'creative.media_type')
+  if (!mediaType) return null;
 
   let bid;
-  switch (bidRequest.creative.media_type) {
+  switch (mediaType) {
     case VIDEO:
-      const vastXml = bidRequest.creative.video.content
+      const vastXml = deepAccess(bidResponse, 'creative.video.content');
       bid = {
         vastXml,
         mediaType: 'video',
@@ -110,21 +111,20 @@ export const buildBid = (bidRequest) => {
       break;
     case BANNER:
       bid = {
-        ad: bidRequest.creative.banner.adm,
+        ad: deepAccess(bidResponse, 'creative.banner.adm'),
         mediaType: 'banner',
       };
       break;
     default:
       return null;
   }
-
   return Object.assign(bid, {
-    cpm: bidRequest.price,
-    currency: bidRequest.currency || 'EUR',
-    creativeId: bidRequest.extras.deal_id,
-    requestId: bidRequest.extras.transaction_id,
-    width: bidRequest.creative[bid.mediaType].width || 1,
-    height: bidRequest.creative[bid.mediaType].height || 1,
+    cpm: bidResponse.price,
+    currency: bidResponse.currency || 'EUR',
+    creativeId: deepAccess(bidResponse, 'extras.deal_id'),
+    requestId: deepAccess(bidResponse, 'extras.transaction_id'),
+    width: deepAccess(bidResponse, `creative.${bid.mediaType}.width`) || 1,
+    height: deepAccess(bidResponse, `creative.${bid.mediaType}.height`) || 1,
     ttl: 3600,
     netRevenue: true,
   });
@@ -137,7 +137,7 @@ export const buildBid = (bidRequest) => {
  * @return boolean
  */
 export const isBidRequestValid = (bid) => {
-  return !!(bid && bid.params && !!bid.params.tagId);
+  return !!deepAccess(bid, 'params.tagId');
 };
 
 /**
@@ -156,28 +156,28 @@ export const buildRequests = (validBidRequests, bidderRequest) => {
       id: bid.params.tagId,
       transactionId: bid.bidId,
       mediaTypes: Object.keys(bid.mediaTypes),
-      imageUrl: bid.params.imageUrl || '',
+      imageUrl: deepAccess(bid, 'params.imageUrl', ''),
     };
   });
 
   let request = {
     tags,
     pageTitle: document.title,
-    pageUrl: bidderRequest.refererInfo.page,
+    pageUrl: deepAccess(bidderRequest, 'refererInfo.page'),
     pageDescription: getMetaValue(META_DESCRIPTION),
     keywords: getKeywords().join(','),
   };
   const schain = deepAccess(validBidRequests[0], 'schain')
   if (schain) {
-    deepSetValue(request, 'schain', schain);
+    request.schain = schain
   }
   const gdprConsent = deepAccess(bidderRequest, 'gdprConsent');
   if (!!gdprConsent && gdprConsent.gdprApplies) {
-    deepSetValue(request, 'gdpr', true);
+    request.gdpr = true
     deepSetValue(request, 'gdprConsent', gdprConsent.consentString);
   }
   if (config.getConfig('coppa')) {
-    deepSetValue(request, 'coppa', 1);
+    request.coppa = 1
   }
   if (bidderRequest.uspConsent) {
     deepSetValue(request, 'uspConsent', bidderRequest.uspConsent);
@@ -198,8 +198,8 @@ export const buildRequests = (validBidRequests, bidderRequest) => {
  * @return
  */
 const interpretResponse = (serverResponse) => {
-  if (!serverResponse.body || !serverResponse.body.bids) return []
-  const bodyResponse = serverResponse.body.bids
+  const bodyResponse = deepAccess(serverResponse, 'body.bids')
+  if (!serverResponse.body || !bodyResponse) return []
   const bidResponses = [];
   _each(bodyResponse, function (response) {
     return bidResponses.push(buildBid(response));
@@ -239,7 +239,7 @@ const getUserSyncs = (syncOptions, serverResponses, gdprConsent, uspConsent) => 
         },
       ];
     } else {
-      sync = serverResponses[0].body.userSyncs;
+      sync = deepAccess(serverResponses[0], 'body.userSyncs');
     }
 
     return sync;
