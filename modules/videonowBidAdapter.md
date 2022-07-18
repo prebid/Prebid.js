@@ -9,7 +9,6 @@
 Videonow Bidder Adapter for Prebid.js. About: https://videonow.ru/
 
 
-
 Use `videonow` as bidder:
 
 # Params
