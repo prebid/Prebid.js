@@ -1026,6 +1026,8 @@ function applyFPD(bidRequest, mediaType, data) {
         }, []);
         if (segments.length > 0) return segments.toString();
       }).toString();
+    } else if (typeof prop === 'object' && !Array.isArray(prop)) {
+      return undefined;
     } else if (typeof prop !== 'undefined') {
       return (Array.isArray(prop)) ? prop.filter(value => {
         if (typeof value !== 'object' && typeof value !== 'undefined') return value.toString();
