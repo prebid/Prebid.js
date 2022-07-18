@@ -97,7 +97,7 @@ export function getKeywords() {
  */
 export const buildBid = (bidResponse) => {
   const mediaType = deepAccess(bidResponse, 'creative.media_type')
-  if (!bidResponse || !bidResponse.creative || !mediaType) return null;
+  if (!mediaType) return null;
 
   let bid;
   switch (mediaType) {
@@ -110,9 +110,8 @@ export const buildBid = (bidResponse) => {
       };
       break;
     case BANNER:
-      const adm = deepAccess(bidResponse, 'creative.banner.adm');
       bid = {
-        ad: adm,
+        ad: deepAccess(bidResponse, 'creative.banner.adm'),
         mediaType: 'banner',
       };
       break;
@@ -138,7 +137,7 @@ export const buildBid = (bidResponse) => {
  * @return boolean
  */
 export const isBidRequestValid = (bid) => {
-  return !!(bid && bid.params && !!deepAccess(bid, 'params.tagId'));
+  return !!deepAccess(bid, 'params.tagId');
 };
 
 /**
