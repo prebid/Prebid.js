@@ -290,6 +290,7 @@ describe('IndexexchangeAdapter', function () {
     {
       bidder: 'ix',
       params: {
+        tagId: '123',
         siteId: '123',
         size: [300, 250],
       },
@@ -304,7 +305,10 @@ describe('IndexexchangeAdapter', function () {
       },
       ortb2Imp: {
         ext: {
-          tid: '173f49a8-7549-4218-a23c-e7ba59b47230'
+          tid: '173f49a8-7549-4218-a23c-e7ba59b47230',
+          data: {
+            pbadslot: 'div-gpt-ad-1460505748562-0'
+          }
         }
       },
       adUnitCode: 'div-gpt-ad-1460505748562-0',
@@ -320,6 +324,7 @@ describe('IndexexchangeAdapter', function () {
     {
       bidder: 'ix',
       params: {
+        tagId: '123',
         siteId: '456',
         video: {
           skippable: false,
@@ -344,7 +349,10 @@ describe('IndexexchangeAdapter', function () {
       },
       ortb2Imp: {
         ext: {
-          tid: '173f49a8-7549-4218-a23c-e7ba59b47230'
+          tid: '173f49a8-7549-4218-a23c-e7ba59b47230',
+          data: {
+            pbadslot: 'div-gpt-ad-1460505748562-0'
+          }
         }
       },
       adUnitCode: 'div-gpt-ad-1460505748562-0',
@@ -2614,6 +2622,9 @@ describe('IndexexchangeAdapter', function () {
         expect(diagObj.allu).to.equal(2);
         expect(diagObj.version).to.equal('$prebid.version$');
         expect(diagObj.url).to.equal('http://localhost:9876/context.html')
+        expect(diagObj.pbadslot).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].ortb2Imp.ext.data.pbadslot)
+        expect(diagObj.tagid).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params.tagId)
+        expect(diagObj.adunitcode).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].adUnitCode)
       });
     });
   });
