@@ -279,6 +279,11 @@ describe('gumgumAdapter', function () {
         const bidRequest = spec.buildRequests([request])[0];
         expect(bidRequest.data.pi).to.equal(3);
       });
+      it('should set the correct pi param if product param is found and is equal to skin', function () {
+        const request = { ...bidRequests[0], params: { ...zoneParam, product: 'Skin' } };
+        const bidRequest = spec.buildRequests([request])[0];
+        expect(bidRequest.data.pi).to.equal(8);
+      });
       it('should default the pi param to 2 if only zone or pubId param is found', function () {
         const zoneRequest = { ...bidRequests[0], params: zoneParam };
         const pubIdRequest = { ...bidRequests[0], params: pubIdParam };
@@ -546,7 +551,7 @@ describe('gumgumAdapter', function () {
     });
 
     it('should handle no gg params', function () {
-      const bidRequest = spec.buildRequests(bidRequests, { refererInfo: { referer: 'https://www.prebid.org/?param1=foo&param2=bar&param3=baz' } })[0];
+      const bidRequest = spec.buildRequests(bidRequests, { refererInfo: { page: 'https://www.prebid.org/?param1=foo&param2=bar&param3=baz' } })[0];
 
       // no params are in object
       expect(bidRequest.data.hasOwnProperty('eAdBuyId')).to.be.false;
@@ -555,7 +560,7 @@ describe('gumgumAdapter', function () {
     });
 
     it('should handle encrypted ad buy id', function () {
-      const bidRequest = spec.buildRequests(bidRequests, { refererInfo: { referer: 'https://www.prebid.org/?param1=foo&ggad=bar&param3=baz' } })[0];
+      const bidRequest = spec.buildRequests(bidRequests, { refererInfo: { page: 'https://www.prebid.org/?param1=foo&ggad=bar&param3=baz' } })[0];
 
       // correct params are in object
       expect(bidRequest.data.hasOwnProperty('eAdBuyId')).to.be.true;
@@ -567,7 +572,7 @@ describe('gumgumAdapter', function () {
     });
 
     it('should handle unencrypted ad buy id', function () {
-      const bidRequest = spec.buildRequests(bidRequests, { refererInfo: { referer: 'https://www.prebid.org/?param1=foo&ggad=123&param3=baz' } })[0];
+      const bidRequest = spec.buildRequests(bidRequests, { refererInfo: { page: 'https://www.prebid.org/?param1=foo&ggad=123&param3=baz' } })[0];
 
       // correct params are in object
       expect(bidRequest.data.hasOwnProperty('eAdBuyId')).to.be.false;
@@ -579,7 +584,7 @@ describe('gumgumAdapter', function () {
     });
 
     it('should handle multiple gg params', function () {
-      const bidRequest = spec.buildRequests(bidRequests, { refererInfo: { referer: 'https://www.prebid.org/?ggdeal=foo&ggad=bar&param3=baz' } })[0];
+      const bidRequest = spec.buildRequests(bidRequests, { refererInfo: { page: 'https://www.prebid.org/?ggdeal=foo&ggad=bar&param3=baz' } })[0];
 
       // correct params are in object
       expect(bidRequest.data.hasOwnProperty('eAdBuyId')).to.be.true;

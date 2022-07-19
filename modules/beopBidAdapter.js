@@ -1,4 +1,5 @@
 import { deepAccess, isArray, logWarn, triggerPixel, buildUrl, logInfo, getValue, getBidIdParameter } from '../src/utils.js';
+import { getRefererInfo } from '../src/refererDetection.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 const BIDDER_CODE = 'beop';
@@ -36,18 +37,17 @@ export const spec = {
     */
   buildRequests: function(validBidRequests, bidderRequest) {
     const slots = validBidRequests.map(beOpRequestSlotsMaker);
-    let pageUrl = deepAccess(window, 'location.href') || deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || config.getConfig('pageUrl');
-    let fpd = config.getLegacyFpd(config.getConfig('ortb2'));
-    let gdpr = bidderRequest.gdprConsent;
-    let firstSlot = slots[0];
-    let payloadObject = {
+    const pageUrl = getPageUrl(bidderRequest.refererInfo, window);
+    const gdpr = bidderRequest.gdprConsent;
+    const firstSlot = slots[0];
+    const payloadObject = {
       at: new Date().toString(),
       nid: firstSlot.nid,
       nptnid: firstSlot.nptnid,
       pid: firstSlot.pid,
       url: pageUrl,
       lang: (window.navigator.language || window.navigator.languages[0]),
-      kwds: (fpd && fpd.site && fpd.site.keywords) || [],
+      kwds: bidderRequest.ortb2?.site?.keywords || [],
       dbg: false,
       slts: slots,
       is_amp: deepAccess(bidderRequest, 'referrerInfo.isAmp'),
@@ -100,6 +100,7 @@ export const spec = {
 
 function buildTrackingParams(data, info, value) {
   const accountId = data.params.accountId;
+  const pageUrl = getPageUrl(null, window);
   return {
     pid: accountId === undefined ? data.ad.match(/account: \“([a-f\d]{24})\“/)[1] : accountId,
     nid: data.params.networkId,
@@ -110,7 +111,7 @@ function buildTrackingParams(data, info, value) {
     se_ca: 'bid',
     se_ac: info,
     se_va: value,
-    url: window.location.href
+    url: pageUrl
   };
 }
 
@@ -139,6 +140,49 @@ function beOpRequestSlotsMaker(bid) {
     bdrc: getBidIdParameter('bidderRequestCount', bid),
     bwc: getBidIdParameter('bidderWinsCount', bid),
   }
+}
+
+const protocolRelativeRegExp = /^\/\//
+function isProtocolRelativeUrl(url) {
+  return url && url.match(protocolRelativeRegExp) != null;
+}
+
+const withProtocolRegExp = /[a-z]{1,}:\/\//
+function isNoProtocolUrl(url) {
+  return url && url.match(withProtocolRegExp) == null;
+}
+
+function ensureProtocolInUrl(url, defaultProtocol) {
+  if (isProtocolRelativeUrl(url)) {
+    return `${defaultProtocol}${url}`;
+  } else if (isNoProtocolUrl(url)) {
+    return `${defaultProtocol}//${url}`;
+  }
+  return url;
+}
+
+/**
+ * sometimes trying to access a field (protected?) triggers an exception
+ * Ex deepAccess(window, 'top.location.href') might throw if it crosses origins
+ * so here is a lenient version
+ */
+function safeDeepAccess(obj, path) {
+  try {
+    return deepAccess(obj, path)
+  } catch (_e) {
+    return null;
+  }
+}
+
+function getPageUrl(refererInfo, window) {
+  refererInfo = refererInfo || getRefererInfo();
+  let pageUrl = refererInfo.canonicalUrl || safeDeepAccess(window, 'top.location.href') || deepAccess(window, 'location.href');
+  // Ensure the protocol is present (looks like sometimes the extracted pageUrl misses it)
+  if (pageUrl != null) {
+    const defaultProtocol = safeDeepAccess(window, 'top.location.protocol') || deepAccess(window, 'location.protocol');
+    pageUrl = ensureProtocolInUrl(pageUrl, defaultProtocol);
+  }
+  return pageUrl;
 }
 
 registerBidder(spec);

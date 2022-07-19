@@ -7,7 +7,6 @@ import {
   deepSetValue,
   getAdUnitSizes,
   getDNT,
-  inIframe,
   isArray,
   isArrayOfNums,
   isEmpty,
@@ -15,8 +14,7 @@ import {
   isPlainObject,
   isStr,
   mergeDeep,
-  parseGPTSingleSizeArrayToRtbSize,
-  parseUrl
+  parseGPTSingleSizeArrayToRtbSize
 } from '../src/utils.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
@@ -94,7 +92,8 @@ export const spec = {
     {code: 'ergadx'},
     {code: 'turktelekom'},
     {code: 'felixads'},
-    {code: 'motionspots'}
+    {code: 'motionspots'},
+    {code: 'sonic_twist'}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
@@ -226,7 +225,7 @@ registerBidder(spec);
  * @param refererInfo {refererInfo}
  */
 function groupImpressionsByHostZone(bidRequests, refererInfo) {
-  let secure = (refererInfo && refererInfo.referer.indexOf('https:') === 0);
+  let secure = (refererInfo && refererInfo.page?.indexOf('https:') === 0);
   return Object.values(
     bidRequests.map(bidRequest => buildImp(bidRequest, secure))
       .reduce((acc, curr, index) => {
@@ -506,7 +505,7 @@ function makeSyncInfo(bidderRequest) {
  * @return {Object} Complete rtb request
  */
 function buildRtbRequest(imps, bidderRequest, schain) {
-  let fpd = config.getConfig('ortb2') || {};
+  let fpd = bidderRequest.ortb2 || {};
 
   let req = mergeDeep(
     makeBaseRequest(bidderRequest, imps, fpd),
@@ -535,14 +534,13 @@ function getLanguage() {
  * Creates site description object
  */
 function createSite(refInfo, fpd) {
-  let url = parseUrl(refInfo.referer);
   let site = {
-    'domain': url.hostname,
-    'page': `${url.protocol}://${url.hostname}${url.pathname}`
+    'domain': refInfo.domain,
+    'page': refInfo.page
   };
   mergeDeep(site, fpd.site);
-  if (!inIframe() && document.referrer) {
-    site.ref = document.referrer;
+  if (refInfo.ref != null) {
+    site.ref = refInfo.ref;
   } else {
     delete site.ref;
   }
