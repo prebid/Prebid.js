@@ -308,6 +308,10 @@ describe('secureCreatives', () => {
     });
 
     describe('Prebid Native', function() {
+      if (!FEATURES.NATIVE) {
+        return;
+      }
+
       it('Prebid native should render', function () {
         pushBidResponseToAuction({});
 

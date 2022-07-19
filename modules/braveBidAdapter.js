@@ -62,23 +62,9 @@ export const spec = {
       return impObject;
     });
 
-    let w = window;
-    let l = w.document.location.href;
-    let r = w.document.referrer;
-
-    let loopChecker = 0;
-    while (w !== w.parent) {
-      if (++loopChecker == 10) break;
-      try {
-        w = w.parent;
-        l = w.location.href;
-        r = w.document.referrer;
-      } catch (e) {
-        break;
-      }
-    }
-
-    let page = l || bidderRequest.refererInfo.referer;
+    // TODO: do these values make sense?
+    let page = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
+    let r = bidderRequest.refererInfo.ref;
 
     let data = {
       id: bidderRequest.bidderRequestId,

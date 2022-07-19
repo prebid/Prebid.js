@@ -69,8 +69,8 @@ function newBidRequest(bid, bidderRequest) {
     params: bid.params,
     prebidJsVersion: '$prebid.version$',
     url: window.location.href,
-    domain: config.getConfig('publisherDomain'),
-    referer: bidderRequest.refererInfo.referer,
+    domain: bidderRequest.refererInfo.domain,
+    referer: bidderRequest.refererInfo.page,
     auctionStartTime: bidderRequest.auctionStart,
     currency: currency,
     timeout: config.getConfig('bidderTimeout')
