@@ -1176,7 +1176,7 @@ describe('triplelift adapter', function () {
               imp_id: 2,
               crid: '5989_33264_352817187',
               cpm: 20,
-              ad: '<VAST xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="2.0" xsi:noNamespaceSchemaLocation="vast.xsd">\n  <Ad id="21641499">\n  \t<Wrapper><Error><![CDATA[https://eb2.3lift.com/sce?aid=148508128401385324170&inv_code=Mediavine_mobile_outstream&e=[ERRORCODE]&block=video]]>',
+              ad: '<VAST xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="2.0" xsi:noNamespaceSchemaLocation="vast.xsd">\n  <Ad id="21641499">\n  \t<Wrapper><Error><![CDATA[https://eb2.3lift.com/sce?aid=148508128401385324170&inv_code=testing_mobile_outstream&e=[ERRORCODE]&block=video]]>',
               tl_source: 'hdx',
               advertiser_name: 'zennioptical.com',
               adomain: ['zennioptical.com'],
@@ -1239,7 +1239,7 @@ describe('triplelift adapter', function () {
           {
             bidder: 'triplelift',
             params: {
-              inventoryCode: 'Mediavine_desktop_outstream',
+              inventoryCode: 'testing_desktop_outstream',
               floor: 1
             },
             nativeParams: {},
@@ -1280,7 +1280,7 @@ describe('triplelift adapter', function () {
           {
             bidder: 'triplelift',
             params: {
-              inventoryCode: 'Mediavine_desktop_outstream',
+              inventoryCode: 'testing_desktop_outstream',
               floor: 1
             },
             nativeParams: {},
@@ -1377,7 +1377,7 @@ describe('triplelift adapter', function () {
       // video bid on banner+outstream request
       expect(result[2].mediaType).to.equal('video');
       expect(result[2].meta.mediaType).to.equal('video');
-      expect(result[2].vastXml).to.include('aid=148508128401385324170&inv_code=Mediavine_mobile_outstream');
+      expect(result[2].vastXml).to.include('aid=148508128401385324170&inv_code=testing_mobile_outstream');
       // banner bid on banner+outstream request
       expect(result[3].meta.mediaType).to.equal('banner');
     })
