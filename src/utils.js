@@ -2,6 +2,7 @@ import { config } from './config.js';
 import clone from 'just-clone';
 import {find, includes} from './polyfill.js';
 import CONSTANTS from './constants.json';
+import {GreedyPromise} from './utils/promise.js';
 export { default as deepAccess } from 'dlv/index.js';
 export { default as deepSetValue } from 'dset';
 
@@ -487,7 +488,7 @@ export function hasOwn(objectToCheck, propertyToCheckFor) {
 * @param {HTMLElement} [doc]
 * @param {HTMLElement} [target]
 * @param {Boolean} [asLastChildChild]
-* @return {HTMLElement}
+* @return {HTML Element}
 */
 export function insertElement(elm, doc, target, asLastChildChild) {
   doc = doc || document;
@@ -517,7 +518,7 @@ export function insertElement(elm, doc, target, asLastChildChild) {
  */
 export function waitForElementToLoad(element, timeout) {
   let timer = null;
-  return new Promise((resolve) => {
+  return new GreedyPromise((resolve) => {
     const onLoad = function() {
       element.removeEventListener('load', onLoad);
       element.removeEventListener('error', onLoad);
