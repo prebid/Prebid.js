@@ -14,6 +14,7 @@ const {
 } = CONSTANTS;
 
 let allEvents = {}
+let auctionEnd = {}
 let initOptions = {}
 let endpoint = 'https://default'
 let objectToSearchForBidderCode = ['bidderRequests', 'bidsReceived', 'noBids']
@@ -22,29 +23,42 @@ function getAdapterNameForAlias(aliasName) {
   return adapterManager.aliasRegistry[aliasName] || aliasName;
 }
 
-function setOriginalBidder(arg) {
+function setOriginalBidder(arg, removead) {
   Object.keys(arg).forEach(key => {
     arg[key]['originalBidder'] = getAdapterNameForAlias(arg[key]['bidderCode']);
     if (typeof arg[key]['creativeId'] == 'number') { arg[key]['creativeId'] = arg[key]['creativeId'].toString(); }
+    if (removead && typeof arg[key]['ad'] != 'undefined') { arg[key]['ad'] = 'emptied'; }
+    if (typeof arg[key]['gdprConsent'] != 'undefined' && typeof arg[key]['gdprConsent']['vendorData'] != 'undefined') {
+      arg[key]['gdprConsent']['vendorData'] = 'emptied';
+    }
   });
   return arg
 }
 
-function checkBidderCode(args) {
+function checkBidderCode(args, removead) {
   if (typeof args == 'object') {
     for (let i = 0; i < objectToSearchForBidderCode.length; i++) {
-      if (typeof args[objectToSearchForBidderCode[i]] == 'object') { args[objectToSearchForBidderCode[i]] = setOriginalBidder(args[objectToSearchForBidderCode[i]]) }
+      if (typeof args[objectToSearchForBidderCode[i]] == 'object') { args[objectToSearchForBidderCode[i]] = setOriginalBidder(args[objectToSearchForBidderCode[i]], removead) }
     }
   }
   if (typeof args['bidderCode'] == 'string') { args['originalBidder'] = getAdapterNameForAlias(args['bidderCode']); } else if (typeof args['bidder'] == 'string') { args['originalBidder'] = getAdapterNameForAlias(args['bidder']); }
   if (typeof args['creativeId'] == 'number') { args['creativeId'] = args['creativeId'].toString(); }
+
   return args
 }
 
 function addEvent(eventType, args) {
-  if (allEvents[eventType] == undefined) { allEvents[eventType] = [] }
-  if (eventType && args) { args = checkBidderCode(args); }
-  allEvents[eventType].push(args);
+  let argsCleaned;
+  if (eventType && args) {
+    if (allEvents[eventType] == undefined) { allEvents[eventType] = [] }
+    argsCleaned = checkBidderCode(JSON.parse(JSON.stringify(args)), false);
+    allEvents[eventType].push(argsCleaned);
+    argsCleaned = checkBidderCode(JSON.parse(JSON.stringify(args)), true);
+    if (['auctionend', 'bidtimeout'].includes(eventType.toLowerCase())) {
+      if (auctionEnd[eventType] == undefined) { auctionEnd[eventType] = [] }
+      auctionEnd[eventType].push(argsCleaned);
+    }
+  }
 }
 
 function handleBidWon(args) {
@@ -53,7 +67,10 @@ function handleBidWon(args) {
 }
 
 function handleAuctionEnd() {
-  ajax(endpoint + '.bidwatch.io/analytics/auctions', null, JSON.stringify(allEvents), {method: 'POST', withCredentials: true});
+  ajax(endpoint + '.bidwatch.io/analytics/auctions', null, JSON.stringify(auctionEnd), {method: 'POST', withCredentials: true});
+  if (typeof allEvents['bidResponse'] != 'undefined') {
+    for (let i = 0; i < allEvents['bidResponse'].length; i++) { ajax(endpoint + '.bidwatch.io/analytics/creatives', null, JSON.stringify(allEvents['bidResponse'][i]), {method: 'POST', withCredentials: true}); }
+  }
 }
 
 let bidwatchAnalytics = Object.assign(adapter({url, analyticsType}), {
