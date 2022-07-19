@@ -984,7 +984,6 @@ Object.assign(ORTB2.prototype, {
           });
           bidObject.requestTimestamp = this.requestTimestamp;
           bidObject.cpm = cpm;
-          bidObject.bidderCode = seatbid.seat;
           if (bid?.ext?.prebid?.meta?.adaptercode) {
             bidObject.adapterCode = bid.ext.prebid.meta.adaptercode;
           } else if (bidRequest?.bidder) {
