@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { isInteger } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
@@ -22,7 +22,7 @@ function template(strings, ...keys) {
     let dict = values[values.length - 1] || {};
     let result = [strings[0]];
     keys.forEach(function(key, i) {
-      let value = utils.isInteger(key) ? values[key] : dict[key];
+      let value = isInteger(key) ? values[key] : dict[key];
       result.push(value, strings[i + 1]);
     });
     return result.join('');
