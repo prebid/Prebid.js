@@ -71,7 +71,6 @@ export const spec = {
       const foo = {
         account: adunitValue.params.account,
         tagId: adunitValue.params.tagId,
-        videoExt: adunitValue.params.videoExt,
         label: adunitValue.adUnitCode,
         bidId: adunitValue.bidId,
         auctionId: adunitValue.auctionId,
