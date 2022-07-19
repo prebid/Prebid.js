@@ -140,11 +140,9 @@ export const spec = {
             'consent': value['consent'],
             'tagId': value['tagId']
           },
-          /*
           meta: {
-            'advertiserDomains': value['adomain']
+            'advertiserDomains': value['adomain'] || []
           }
-          */
         };
         if (value.type === 'banner') bidResponse.adUrl = url;
         if (value.type === 'video') {
