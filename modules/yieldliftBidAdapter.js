@@ -72,6 +72,12 @@ export const spec = {
       utils.deepSetValue(openrtbRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent);
     }
 
+    // EIDS
+    const eids = utils.deepAccess(validBidRequests[0], 'userIdAsEids');
+    if (Array.isArray(eids) && eids.length > 0) {
+      utils.deepSetValue(openrtbRequest, 'user.ext.eids', eids);
+    }
+
     const payloadString = JSON.stringify(openrtbRequest);
     return {
       method: 'POST',
