@@ -23,8 +23,6 @@ const BIDDER_CODE = 'yieldmo';
 const CURRENCY = 'USD';
 const TIME_TO_LIVE = 300;
 const NET_REVENUE = true;
-const BANNER_STG_SERVER_ENDPOINT = 'http://qa-test-01.aws.in.yieldmo.com:8080/bidder?bidderId=1&placementId=2438568554933461939';
-const VIDEO_SERVER_ENDPOINT = 'https://ads.yieldmo.com/exchange/prebidvideo';
 const PB_COOKIE_ASSIST_SYNC_ENDPOINT = `https://ads.yieldmo.com/pbcas`;
 const BANNER_PATH = '/exchange/prebid';
 const VIDEO_PATH = '/exchange/prebidvideo';
