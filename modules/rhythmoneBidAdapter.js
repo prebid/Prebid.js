@@ -62,25 +62,11 @@ function RhythmOneBidAdapter() {
   }
 
   function frameSite(bidderRequest) {
-    var site = {
-      domain: '',
-      page: '',
-      ref: ''
+    return {
+      domain: bidderRequest?.refererInfo?.domain || '',
+      page: bidderRequest?.refererInfo?.page || '',
+      ref: bidderRequest?.refererInfo?.ref || ''
     }
-    if (bidderRequest && bidderRequest.refererInfo) {
-      var ri = bidderRequest.refererInfo;
-      site.ref = ri.referer;
-
-      if (ri.stack.length) {
-        site.page = ri.stack[ri.stack.length - 1];
-
-        // clever trick to get the domain
-        var el = document.createElement('a');
-        el.href = ri.stack[0];
-        site.domain = el.hostname;
-      }
-    }
-    return site;
   }
 
   function frameDevice() {

@@ -1,3 +1,5 @@
+import 'src/prebid.js';
+
 describe('Publisher API _ AdUnits', function () {
   var assert = require('chai').assert;
   var expect = require('chai').expect;
@@ -23,10 +25,10 @@ describe('Publisher API _ AdUnits', function () {
         }
       ]
     }, {
-      fpd: {
-        context: {
-          pbAdSlot: 'adSlotTest',
+      ortb2Imp: {
+        ext: {
           data: {
+            pbadslot: 'adSlotTest',
             inventory: [4],
             keywords: 'foo,bar',
             visitor: [1, 2, 3],

@@ -5,7 +5,7 @@ import {
   adUnitsFilter, flatten, getHighestCpm, isArrayOfNums, isGptPubadsDefined, uniques, logInfo,
   contains, logError, isArray, deepClone, deepAccess, isNumber, logWarn, logMessage, isFn,
   transformAdServerTargetingObj, bind, replaceAuctionPrice, replaceClickThrough, insertElement,
-  inIframe, callBurl, createInvisibleIframe, generateUUID, unsupportedBidderMessage, isEmpty
+  inIframe, callBurl, createInvisibleIframe, generateUUID, unsupportedBidderMessage, isEmpty, mergeDeep, deepSetValue
 } from './utils.js';
 import { listenMessagesFromCreative } from './secureCreatives.js';
 import { userSync } from './userSync.js';
@@ -13,7 +13,7 @@ import { config } from './config.js';
 import { auctionManager } from './auctionManager.js';
 import { filters, targeting } from './targeting.js';
 import { hook } from './hook.js';
-import { sessionLoader } from './debugging.js';
+import { loadSession } from './debugging.js';
 import {includes} from './polyfill.js';
 import { adunitCounter } from './adUnits.js';
 import { executeRenderer, isRendererRequired } from './Renderer.js';
@@ -36,7 +36,7 @@ const eventValidators = {
 };
 
 // initialize existing debugging sessions if present
-sessionLoader();
+loadSession();
 
 /* Public vars */
 $$PREBID_GLOBAL$$.bidderSettings = $$PREBID_GLOBAL$$.bidderSettings || {};
@@ -188,9 +188,12 @@ export const adUnitSetupChecks = {
   validateAdUnit,
   validateBannerMediaType,
   validateVideoMediaType,
-  validateNativeMediaType,
   validateSizes
 };
+
+if (FEATURES.NATIVE) {
+  Object.assign(adUnitSetupChecks, {validateNativeMediaType});
+}
 
 export const checkAdUnitSetup = hook('sync', function (adUnits) {
   const validatedAdUnits = [];
@@ -212,7 +215,7 @@ export const checkAdUnitSetup = hook('sync', function (adUnits) {
       if (mediaTypes.video.hasOwnProperty('pos')) validatedVideo = validateAdUnitPos(validatedVideo, 'video');
     }
 
-    if (mediaTypes.native) {
+    if (FEATURES.NATIVE && mediaTypes.native) {
       validatedNative = validatedVideo ? validateNativeMediaType(validatedVideo) : validatedBanner ? validateNativeMediaType(validatedBanner) : validateNativeMediaType(adUnit);
     }
 
@@ -570,15 +573,21 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
  * @param {String} requestOptions.auctionId
  * @alias module:pbjs.requestBids
  */
-$$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels, auctionId } = {}) {
+$$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels, auctionId, ortb2 } = {}) {
   events.emit(REQUEST_BIDS);
   const cbTimeout = timeout || config.getConfig('bidderTimeout');
-  adUnits = (adUnits && config.convertAdUnitFpd(isArray(adUnits) ? adUnits : [adUnits])) || $$PREBID_GLOBAL$$.adUnits;
-
+  adUnits = adUnits || $$PREBID_GLOBAL$$.adUnits;
+  adUnits = (isArray(adUnits) ? adUnits : [adUnits]);
   logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', arguments);
+  const ortb2Fragments = {
+    global: mergeDeep({}, config.getAnyConfig('ortb2') || {}, ortb2 || {}),
+    bidder: Object.fromEntries(Object.entries(config.getBidderConfig()).map(([bidder, cfg]) => [bidder, cfg.ortb2]).filter(([_, ortb2]) => ortb2 != null))
+  }
+  return startAuction({bidsBackHandler, timeout: cbTimeout, adUnits, adUnitCodes, labels, auctionId, ortb2Fragments});
+}, 'requestBids');
 
+export const startAuction = hook('async', function ({ bidsBackHandler, timeout: cbTimeout, adUnits, adUnitCodes, labels, auctionId, ortb2Fragments } = {}) {
   const s2sBidders = getS2SBidderSet(config.getConfig('s2sConfig') || []);
-
   adUnits = checkAdUnitSetup(adUnits);
 
   if (adUnitCodes && adUnitCodes.length) {
@@ -606,6 +615,9 @@ $$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeo
     const bidders = allBidders.filter(bidder => !s2sBidders.has(bidder));
 
     adUnit.transactionId = generateUUID();
+
+    // Populate ortb2Imp.ext.tid with transactionId. Specifying a transaction ID per item in the ortb impression array, lets multiple transaction IDs be transmitted in a single bid request.
+    deepSetValue(adUnit, 'ortb2Imp.ext.tid', adUnit.transactionId)
 
     bidders.forEach(bidder => {
       const adapter = bidderRegistry[bidder];
@@ -639,7 +651,15 @@ $$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeo
     return;
   }
 
-  const auction = auctionManager.createAuction({ adUnits, adUnitCodes, callback: bidsBackHandler, cbTimeout, labels, auctionId });
+  const auction = auctionManager.createAuction({
+    adUnits,
+    adUnitCodes,
+    callback: bidsBackHandler,
+    cbTimeout,
+    labels,
+    auctionId,
+    ortb2Fragments
+  });
 
   let adUnitsLen = adUnits.length;
   if (adUnitsLen > 15) {
@@ -648,7 +668,7 @@ $$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeo
 
   adUnitCodes.forEach(code => targeting.setLatestAuctionForAdUnit(code, auction.getAuctionId()));
   auction.callBids();
-});
+}, 'startAuction');
 
 export function executeCallbacks(fn, reqBidsConfigObj) {
   runAll(storageCallbacks);
@@ -674,7 +694,7 @@ $$PREBID_GLOBAL$$.requestBids.before(executeCallbacks, 49);
  */
 $$PREBID_GLOBAL$$.addAdUnits = function (adUnitArr) {
   logInfo('Invoking $$PREBID_GLOBAL$$.addAdUnits', arguments);
-  $$PREBID_GLOBAL$$.adUnits.push.apply($$PREBID_GLOBAL$$.adUnits, config.convertAdUnitFpd(isArray(adUnitArr) ? adUnitArr : [adUnitArr]));
+  $$PREBID_GLOBAL$$.adUnits.push.apply($$PREBID_GLOBAL$$.adUnits, isArray(adUnitArr) ? adUnitArr : [adUnitArr]);
   // emit event
   events.emit(ADD_AD_UNITS);
 };
@@ -913,56 +933,16 @@ $$PREBID_GLOBAL$$.markWinningBidAsUsed = function (markBidRequest) {
  * @param {Object} options
  * @alias module:pbjs.getConfig
  */
-$$PREBID_GLOBAL$$.getConfig = config.getConfig;
-$$PREBID_GLOBAL$$.readConfig = config.readConfig;
+$$PREBID_GLOBAL$$.getConfig = config.getAnyConfig;
+$$PREBID_GLOBAL$$.readConfig = config.readAnyConfig;
 $$PREBID_GLOBAL$$.mergeConfig = config.mergeConfig;
 $$PREBID_GLOBAL$$.mergeBidderConfig = config.mergeBidderConfig;
 
 /**
  * Set Prebid config options.
- * (Added in version 0.27.0).
- *
- * `setConfig` is designed to allow for advanced configuration while
- * reducing the surface area of the public API.  For more information
- * about the move to `setConfig` (and the resulting deprecations of
- * some other public methods), see [the Prebid 1.0 public API
- * proposal](https://gist.github.com/mkendall07/51ee5f6b9f2df01a89162cf6de7fe5b6).
- *
- * #### Troubleshooting your configuration
- *
- * If you call `pbjs.setConfig` without an object, e.g.,
- *
- * `pbjs.setConfig('debug', 'true'))`
- *
- * then Prebid.js will print an error to the console that says:
- *
- * ```
- * ERROR: setConfig options must be an object
- * ```
- *
- * If you don't see that message, you can assume the config object is valid.
+ * See https://docs.prebid.org/dev-docs/publisher-api-reference/setConfig.html
  *
  * @param {Object} options Global Prebid configuration object. Must be JSON - no JavaScript functions are allowed.
- * @param {string} options.bidderSequence The order in which bidders are called.  Example: `pbjs.setConfig({ bidderSequence: "fixed" })`.  Allowed values: `"fixed"` (order defined in `adUnit.bids` array on page), `"random"`.
- * @param {boolean} options.debug Turn debug logging on/off. Example: `pbjs.setConfig({ debug: true })`.
- * @param {string} options.priceGranularity The bid price granularity to use.  Example: `pbjs.setConfig({ priceGranularity: "medium" })`. Allowed values: `"low"` ($0.50), `"medium"` ($0.10), `"high"` ($0.01), `"auto"` (sliding scale), `"dense"` (like `"auto"`, with smaller increments at lower CPMs), or a custom price bucket object, e.g., `{ "buckets" : [{"min" : 0,"max" : 20,"increment" : 0.1,"cap" : true}]}`.
- * @param {boolean} options.enableSendAllBids Turn "send all bids" mode on/off.  Example: `pbjs.setConfig({ enableSendAllBids: true })`.
- * @param {number} options.bidderTimeout Set a global bidder timeout, in milliseconds.  Example: `pbjs.setConfig({ bidderTimeout: 3000 })`.  Note that it's still possible for a bid to get into the auction that responds after this timeout. This is due to how [`setTimeout`](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/setTimeout) works in JS: it queues the callback in the event loop in an approximate location that should execute after this time but it is not guaranteed.  For more information about the asynchronous event loop and `setTimeout`, see [How JavaScript Timers Work](https://johnresig.com/blog/how-javascript-timers-work/).
- * @param {string} options.publisherDomain The publisher's domain where Prebid is running, for cross-domain iFrame communication.  Example: `pbjs.setConfig({ publisherDomain: "https://www.theverge.com" })`.
- * @param {Object} options.s2sConfig The configuration object for [server-to-server header bidding](http://prebid.org/dev-docs/get-started-with-prebid-server.html).  Example:
- * @alias module:pbjs.setConfig
- * ```
- * pbjs.setConfig({
- *     s2sConfig: {
- *         accountId: '1',
- *         enabled: true,
- *         bidders: ['appnexus', 'pubmatic'],
- *         timeout: 1000,
- *         adapter: 'prebidServer',
- *         endpoint: 'https://prebid.adnxs.com/pbs/v1/auction'
- *     }
- * })
- * ```
  */
 $$PREBID_GLOBAL$$.setConfig = config.setConfig;
 $$PREBID_GLOBAL$$.setBidderConfig = config.setBidderConfig;

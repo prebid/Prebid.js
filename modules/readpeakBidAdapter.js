@@ -1,4 +1,4 @@
-import { logError, replaceAuctionPrice, parseUrl } from '../src/utils.js';
+import { logError, replaceAuctionPrice, triggerPixel, isStr } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { NATIVE, BANNER } from '../src/mediaTypes.js';
@@ -64,8 +64,16 @@ export const spec = {
     };
   },
 
-  interpretResponse: (response, request) =>
-    bidResponseAvailable(request, response)
+  interpretResponse: (response, request) => {
+    return bidResponseAvailable(request, response)
+  },
+
+  onBidWon: (bid) => {
+    if (bid.burl && isStr(bid.burl)) {
+      bid.burl = replaceAuctionPrice(bid.burl, bid.cpm);
+      triggerPixel(bid.burl);
+    }
+  },
 };
 
 function bidResponseAvailable(bidRequest, bidResponse) {
@@ -103,6 +111,7 @@ function bidResponseAvailable(bidRequest, bidResponse) {
         bid.ad = idToBidMap[id].adm
         bid.width = idToBidMap[id].w
         bid.height = idToBidMap[id].h
+        bid.burl = idToBidMap[id].burl
       }
       if (idToBidMap[id].adomain) {
         bid.meta = {
@@ -238,12 +247,6 @@ function bannerImpression(slot) {
 }
 
 function site(bidRequests, bidderRequest) {
-  const url =
-    config.getConfig('pageUrl') ||
-    (bidderRequest &&
-      bidderRequest.refererInfo &&
-      bidderRequest.refererInfo.referer);
-
   const pubId =
     bidRequests && bidRequests.length > 0
       ? bidRequests[0].params.publisherId
@@ -255,12 +258,11 @@ function site(bidRequests, bidderRequest) {
     return {
       publisher: {
         id: pubId.toString(),
-        domain: config.getConfig('publisherDomain')
+        domain: bidderRequest?.refererInfo?.domain,
       },
       id: siteId ? siteId.toString() : pubId.toString(),
-      page: url,
-      domain:
-        (url && parseUrl(url).hostname) || config.getConfig('publisherDomain')
+      page: bidderRequest?.refererInfo?.page,
+      domain: bidderRequest?.refererInfo?.domain
     };
   }
   return undefined;

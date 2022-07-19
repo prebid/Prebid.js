@@ -74,16 +74,6 @@ pbjs.setConfig({
                 partner: "30182847-e426-4ff9-b2b5-9ca1324ea09b"
             }
         },{
-            name: 'akamaiDAPId',
-            params: {
-              apiHostname: '<see your Akamai account rep>',
-              domain: 'your-domain.com',
-              type: 'email' | 'mobile' | ... | 'dap-signature:1.0.0',
-              identity: ‘your@email.com’ | ‘6175551234' | ...,
-              apiVersion: 'v1' | 'x1',
-              attributes: '{ "cohorts": [ "3:14400", "5:14400", "7:0" ],"first_name": "...","last_name": "..." }'
-            }
-        },{
             name: 'identityLink',
             params: {
                 pid: '999', // Set your real identityLink placement ID here
@@ -149,11 +139,6 @@ pbjs.setConfig({
                   name: '__adm__admixer',
                   expires: 30
               }
-        },{
-              name: 'flocId',
-               params: {
-                    token: "Registered token or default sharedid.org token" // Default sharedid.org token: "A3dHTSoNUMjjERBLlrvJSelNnwWUCwVQhZ5tNQ+sll7y+LkPPVZXtB77u2y7CweRIxiYaGwGXNlW1/dFp8VMEgIAAAB+eyJvcmlnaW4iOiJodHRwczovL3NoYXJlZGlkLm9yZzo0NDMiLCJmZWF0dXJlIjoiSW50ZXJlc3RDb2hvcnRBUEkiLCJleHBpcnkiOjE2MjYyMjA3OTksImlzU3ViZG9tYWluIjp0cnVlLCJpc1RoaXJkUGFydHkiOnRydWV9"
-           }
         },{
              name: "kpuid",
              params:{
@@ -255,11 +240,6 @@ pbjs.setConfig({
                 refreshInSeconds: 8*3600 // User Id cache lifetime in seconds, defaulting to 'expires'
             },
         }, {
-                name: 'nextrollId',
-                params: {
-                    partnerId: "1009",         // Set your real NextRoll partner ID here for production
-                }
-        }, {
              name: 'criteo',
              storage: {              // It is best not to specify this parameter since the module needs to be called as many times as possible
                  type: 'html5',
@@ -293,21 +273,9 @@ pbjs.setConfig({
                   expires: 30
               }
        },{
-              name: 'flocId',
-               params: {
-               token: "Registered token or default sharedid.org token" // Default sharedid.org token: "A3dHTSoNUMjjERBLlrvJSelNnwWUCwVQhZ5tNQ+sll7y+LkPPVZXtB77u2y7CweRIxiYaGwGXNlW1/dFp8VMEgIAAAB+eyJvcmlnaW4iOiJodHRwczovL3NoYXJlZGlkLm9yZzo0NDMiLCJmZWF0dXJlIjoiSW50ZXJlc3RDb2hvcnRBUEkiLCJleHBpcnkiOjE2MjYyMjA3OTksImlzU3ViZG9tYWluIjp0cnVlLCJpc1RoaXJkUGFydHkiOnRydWV9"
-        }
-        },{
             name: "deepintentId",
             storage: {
                 type: "html5",
-                name: "_dpes_id",
-                expires: 90
-            }
-        },{
-            name: "deepintentId",
-            storage: {
-                type: "cookie",
                 name: "_dpes_id",
                 expires: 90
             }
@@ -383,6 +351,23 @@ pbjs.setConfig({
         },
         {
             name: 'naveggId',
+        }],
+        syncDelay: 5000
+    }
+});
+```
+```
+
+Example showing how to configure a `params` object to pass directly to bid adapters
+
+```
+pbjs.setConfig({
+    userSync: {
+        userIds: [{
+            name: 'tncId',
+            params: {
+              providerId: "c8549079-f149-4529-a34b-3fa91ef257d1"
+            }
         }],
         syncDelay: 5000
     }

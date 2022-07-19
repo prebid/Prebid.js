@@ -86,17 +86,15 @@ import {
 import {
   deepSetValue,
   isEmpty,
-  mergeDeep,
-  logError,
-  logWarn,
-  tryAppendQueryString,
-  logMessage,
   isFn,
+  logError,
+  logMessage,
   isArray,
   isStr,
   isBoolean,
   isPlainObject,
   deepClone,
+  tryAppendQueryString, mergeDeep, logWarn
 } from '../src/utils.js';
 import {
   submodule
@@ -626,7 +624,7 @@ function handleBidRequestData(reqBids, moduleParams) {
           if (ph.sendToBidders(bid, adUnit.code, cph.data, cph.metadata)) {
             // logMessage(`handling bidder '${bid.bidder}' with ${ph.metadata.source} data`);
 
-            handleBid(bid, cph.data, ph.metadata);
+            handleBid(reqBids, bid, cph.data, ph.metadata);
           }
         })
       )
@@ -671,15 +669,17 @@ const SMARTADSERVER = 'smartadserver';
 const bidderAliasRegistry = adapterManager.aliasRegistry || {};
 
 /** handle individual bid
+ * @param reqBids
  * @param {Object} bid
  * @param {Object} profile
  * @param {Object} metadata
  * @returns {void}
  */
-function handleBid(bid, profile, metadata) {
+function handleBid(reqBids, bid, profile, metadata) {
   const bidder = bidderAliasRegistry[bid.bidder] || bid.bidder;
 
   switch (bidder) {
+    // TODO: these special cases should not be necessary - all adapters should look into FPD, not just their params
     case APPNEXUS:
       handleAppnexusBid(bid, profile);
 
@@ -699,7 +699,7 @@ function handleBid(bid, profile, metadata) {
 
       break;
     default:
-      handleBidViaORTB2(bid, profile, metadata);
+      handleBidViaORTB2(reqBids, bid, profile, metadata);
   }
 }
 
@@ -786,18 +786,19 @@ function handleRubiconBid(bid, profile, metadata) {
 }
 
 /** handle generic bid via ortb2 arbitrary data
+ * @param reqBids
  * @param {Object} bid
  * @param {Object} profile
  * @param {Object} metadata
  * @returns {void}
  */
-function handleBidViaORTB2(bid, profile, metadata) {
+function handleBidViaORTB2(reqBids, bid, profile, metadata) {
   if (isBoolean(metadata.user)) {
     logMessage(`bidder '${bid.bidder}' is not directly supported, trying set data via bidder ortb2 fpd`);
     const section = ((metadata.user) ? 'user' : 'site');
-    const base = `ortb2.${section}.ext.data`;
+    const base = `${bid.bidder}.${section}.ext.data`;
 
-    assignProfileToObject(bid, base, profile);
+    assignProfileToObject(reqBids.ortb2Fragments?.bidder, base, profile);
   } else {
     logMessage(`SKIP unsupported bidder '${bid.bidder}', data from '${metadata.source}' is not defined as user or site-centric`);
   }

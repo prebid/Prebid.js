@@ -71,8 +71,10 @@ function buildVideo(bidRequest) {
   const w = deepAccess(bidRequest, 'mediaTypes.video.w');
   const h = deepAccess(bidRequest, 'mediaTypes.video.h');
   const mimes = deepAccess(bidRequest, 'mediaTypes.video.mimes');
+  const placement = deepAccess(bidRequest, 'mediaTypes.video.placement') || 3;
 
   return {
+    placement,
     mimes,
     w,
     h,
@@ -177,9 +179,10 @@ function buildRequest(validBidRequests, bidderRequest) {
       tid: bidderRequest.auctionId,
     },
     site: {
-      domain: location.hostname,
-      page: location.href,
-      ref: bidderRequest.refererInfo.referer,
+      // TODO: are these the right refererInfo values?
+      domain: bidderRequest.refererInfo.domain,
+      page: bidderRequest.refererInfo.page,
+      ref: bidderRequest.refererInfo.ref,
     },
     device: buildDevice(),
     regs: buildRegs(bidderRequest),
@@ -326,6 +329,13 @@ function validateVideo(bid) {
 
   if (!Array.isArray(mimes) || mimes.length === 0) {
     logError('insticator: mimes not specified');
+    return false;
+  }
+
+  const placement = deepAccess(bid, 'mediaTypes.video.placement');
+
+  if (typeof placement !== 'undefined' && typeof placement !== 'number') {
+    logError('insticator: video placement is not a number');
     return false;
   }
 

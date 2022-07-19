@@ -19,14 +19,13 @@ import {
   logInfo,
   logWarn,
   mergeDeep,
-  parseUrl
 } from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {loadExternalScript} from '../src/adloader.js';
 import {verify} from 'criteo-direct-rsa-validate/build/verify.js';
 import {getStorageManager} from '../src/storageManager.js';
-import {getRefererInfo} from '../src/refererDetection.js';
+import {getRefererInfo, parseDomain} from '../src/refererDetection.js';
 import {createEidsArray} from './userId/eids.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
@@ -270,12 +269,11 @@ function getDevice() {
 
 function getSite(bidderRequest) {
   const { refererInfo } = bidderRequest;
-  const url = parseUrl(refererInfo.referer);
-
   return {
-    domain: url.hostname || '',
-    page: refererInfo.referer || '',
-    referrer: canAccessTopWindow() ? getWindowTop().document.referrer || '' : getWindowSelf().document.referrer || '',
+    // TODO: do these fallbacks make sense?
+    domain: refererInfo.domain || parseDomain(refererInfo.topmostLocation) || '',
+    page: refererInfo.page || refererInfo.topmostLocation || '',
+    referrer: refererInfo.ref || getWindowSelf().document.referrer || '',
     top: refererInfo.reachedTop
   };
 };
@@ -621,7 +619,7 @@ export function setExtraParam(bid, paramName) {
   }
 
   const adgGlobalConf = config.getConfig('adagio') || {};
-  const ortb2Conf = config.getConfig('ortb2');
+  const ortb2Conf = bid.ortb2;
 
   const detected = adgGlobalConf[paramName] || deepAccess(ortb2Conf, `site.ext.data.${paramName}`, null);
   if (detected) {

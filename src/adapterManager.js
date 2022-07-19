@@ -17,7 +17,7 @@ import {
   logError,
   logInfo,
   logMessage,
-  logWarn,
+  logWarn, mergeDeep,
   shuffle,
   timestamp,
 } from './utils.js';
@@ -68,8 +68,7 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, src}) {
           'nativeParams',
           'ortb2Imp',
           'mediaType',
-          'renderer',
-          'storedAuctionResponse'
+          'renderer'
         ]));
 
         const mediaTypes = bid.mediaTypes == null ? adUnit.mediaTypes : bid.mediaTypes
@@ -206,13 +205,15 @@ export function _partitionBidders (adUnits, s2sConfigs, {getS2SBidders = getS2SB
 
 export const partitionBidders = hook('sync', _partitionBidders, 'partitionBidders');
 
-adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, auctionId, cbTimeout, labels) {
+adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, auctionId, cbTimeout, labels, ortb2Fragments = {}) {
   /**
    * emit and pass adunits for external modification
    * @see {@link https://github.com/prebid/Prebid.js/issues/4149|Issue}
    */
   events.emit(CONSTANTS.EVENTS.BEFORE_REQUEST_BIDS, adUnits);
-  decorateAdUnitsWithNativeParams(adUnits);
+  if (FEATURES.NATIVE) {
+    decorateAdUnitsWithNativeParams(adUnits);
+  }
   adUnits = setupAdUnitMediaTypes(adUnits, labels);
 
   let {[PARTITIONS.CLIENT]: clientBidders, [PARTITIONS.SERVER]: serverBidders} = partitionBidders(adUnits, _s2sConfigs);
@@ -224,6 +225,16 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
 
   let bidRequests = [];
 
+  const ortb2 = ortb2Fragments.global || {};
+  const bidderOrtb2 = ortb2Fragments.bidder || {};
+
+  function addOrtb2(bidderRequest) {
+    const fpd = Object.freeze(mergeDeep({}, ortb2, bidderOrtb2[bidderRequest.bidderCode]));
+    bidderRequest.ortb2 = fpd;
+    bidderRequest.bids.forEach((bid) => bid.ortb2 = fpd);
+    return bidderRequest;
+  }
+
   _s2sConfigs.forEach(s2sConfig => {
     if (s2sConfig && s2sConfig.enabled) {
       let adUnitsS2SCopy = getAdUnitCopyForPrebidServer(adUnits, s2sConfig);
@@ -232,7 +243,7 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
       let uniquePbsTid = generateUUID();
       serverBidders.forEach(bidderCode => {
         const bidderRequestId = getUniqueIdentifierStr();
-        const bidderRequest = {
+        const bidderRequest = addOrtb2({
           bidderCode,
           auctionId,
           bidderRequestId,
@@ -241,8 +252,8 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
           auctionStart: auctionStart,
           timeout: s2sConfig.timeout,
           src: CONSTANTS.S2S.SRC,
-          refererInfo
-        };
+          refererInfo,
+        });
         if (bidderRequest.bids.length !== 0) {
           bidRequests.push(bidderRequest);
         }
@@ -269,15 +280,15 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
   let adUnitsClientCopy = getAdUnitCopyForClientAdapters(adUnits);
   clientBidders.forEach(bidderCode => {
     const bidderRequestId = getUniqueIdentifierStr();
-    const bidderRequest = {
+    const bidderRequest = addOrtb2({
       bidderCode,
       auctionId,
       bidderRequestId,
       bids: hookedGetBids({bidderCode, auctionId, bidderRequestId, 'adUnits': deepClone(adUnitsClientCopy), labels, src: 'client'}),
       auctionStart: auctionStart,
       timeout: cbTimeout,
-      refererInfo
-    };
+      refererInfo,
+    });
     const adapter = _bidderRegistry[bidderCode];
     if (!adapter) {
       logError(`Trying to make a request for bidder that does not exist: ${bidderCode}`);
@@ -302,7 +313,7 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
   return bidRequests;
 }, 'makeBidRequests');
 
-adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, requestCallbacks, requestBidsTimeout, onTimelyResponse) => {
+adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, requestCallbacks, requestBidsTimeout, onTimelyResponse, ortb2Fragments = {}) => {
   if (!bidRequests.length) {
     logWarn('callBids executed with no bidRequests.  Were they filtered by labels or sizing?');
     return;
@@ -346,7 +357,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
       let uniqueServerRequests = serverBidRequests.filter(serverBidRequest => serverBidRequest.uniquePbsTid === uniquePbsTid);
 
       if (s2sAdapter) {
-        let s2sBidRequest = {tid: sourceTid, 'ad_units': adUnitsS2SCopy, s2sConfig};
+        let s2sBidRequest = {tid: sourceTid, 'ad_units': adUnitsS2SCopy, s2sConfig, ortb2Fragments};
         if (s2sBidRequest.ad_units.length) {
           let doneCbs = uniqueServerRequests.map(bidRequest => {
             bidRequest.start = timestamp();
@@ -416,7 +427,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
 function getSupportedMediaTypes(bidderCode) {
   let supportedMediaTypes = [];
   if (includes(adapterManager.videoAdapters, bidderCode)) supportedMediaTypes.push('video');
-  if (includes(nativeAdapters, bidderCode)) supportedMediaTypes.push('native');
+  if (FEATURES.NATIVE && includes(nativeAdapters, bidderCode)) supportedMediaTypes.push('native');
   return supportedMediaTypes;
 }
 
@@ -430,7 +441,7 @@ adapterManager.registerBidAdapter = function (bidAdapter, bidderCode, {supported
       if (includes(supportedMediaTypes, 'video')) {
         adapterManager.videoAdapters.push(bidderCode);
       }
-      if (includes(supportedMediaTypes, 'native')) {
+      if (FEATURES.NATIVE && includes(supportedMediaTypes, 'native')) {
         nativeAdapters.push(bidderCode);
       }
     } else {
