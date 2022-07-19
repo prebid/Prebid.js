@@ -113,7 +113,6 @@ export const c1xAdapter = {
       return bidResponses;
     } else {
       serverResponse.forEach(bid => {
-        logInfo('bid')
         logInfo(bid)
         if (bid.bid) {
           if (bid.bidType === 'NET_BID') {
@@ -140,7 +139,7 @@ export const c1xAdapter = {
               curBid.requestId = requests[i].bidId;
             }
           }
-          logInfo(LOG_MSG.noBid + bid.adId);
+          logInfo(LOG_MSG.bidWin + bid.adId + ' size: ' + curBid.width + 'x' + curBid.height);
           bidResponses.push(curBid);
         } else {
           // no bid
