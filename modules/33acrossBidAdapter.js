@@ -62,8 +62,8 @@ function getTTXConfig() {
   return ttxSettings;
 }
 
-const storage = getStorageManager({gvlid: GVLID, moduleName: BIDDER_CODE})
-const UA_DATA_KEY = `${BIDDER_CODE}UaReducedData`;
+export const storage = getStorageManager({gvlid: GVLID, moduleName: BIDDER_CODE})
+export const UA_DATA_KEY = `${BIDDER_CODE}UaReducedData`;
 
 function getStoredUaReducedData() {
   try {
@@ -86,7 +86,9 @@ function calculateUaReducedData() {
   ).then((uaData) => {
     uaReducedData = uaData;
 
-    storeUaReducedData(uaReducedData);
+    if (Object.values(uaData).find(value => !!value).length) {
+      storeUaReducedData(uaReducedData);
+    }
   });
 
   return uaReducedData;
