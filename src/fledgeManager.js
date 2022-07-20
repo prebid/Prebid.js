@@ -36,7 +36,7 @@ export function newFledgeManager() {
     const adUnitCode = bidRequest.adUnitCode;
     if (isGTPRan()) {
       const gptSlotInfo = getGptSlotInfoForAdUnitCode(adUnitCode);
-      if (gptSlotInfo && gptSlotInfo.gptSlot && gptSlotInfo.gptSlot.addComponentAuction) {
+      if (gptSlotInfo.gptSlot && gptSlotInfo.gptSlot.addComponentAuction) {
         gptSlotInfo.gptSlot.addComponentAuction(seller, fledgeAuctionConfig);
       } else {
         logWarn(MODULE, `Unable to register auction config for adUnit: ${adUnitCode}.`);
