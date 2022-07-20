@@ -12,6 +12,7 @@ import {find, includes} from './polyfill.js';
 import {executeRenderer, isRendererRequired} from './Renderer.js';
 import {config} from './config.js';
 import {emitAdRenderFail, emitAdRenderSucceeded} from './adRendering.js';
+import {fledgeManager} from './fledgeManager.js';
 
 const BID_WON = constants.EVENTS.BID_WON;
 const STALE_RENDER = constants.EVENTS.STALE_RENDER;
@@ -85,6 +86,25 @@ function handleRenderRequest(reply, data, adObject) {
     }
   }
 
+  const fledgeAuctionConfig = fledgeManager.getAuctionConfig(adObject);
+  if (fledgeAuctionConfig) {
+    logWarn(`Ad id ${adObject.adId} is being fledged`, fledgeAuctionConfig);
+    navigator.runAdAuction(fledgeAuctionConfig).then((fledgeAdUri) => {
+      if (fledgeAdUri) {
+        logWarn(`Ad id ${adObject.adId} has been fledged by ${fledgeAdUri}`);
+        adObject.ad = '';
+        adObject.adUrl = fledgeAdUri;
+      } else {
+        logWarn(`Ad id ${adObject.adId} was NOT fledged, rendering normal ad`);
+      }
+      renderRequest(reply, adObject, data, {isFledge: true});
+    });
+  } else {
+    renderRequest(reply, adObject, data);
+  }
+}
+
+function renderRequest(reply, adObject, data, options = {}) {
   try {
     _sendAdToCreative(adObject, reply);
   } catch (e) {
@@ -97,10 +117,11 @@ function handleRenderRequest(reply, data, adObject) {
     return;
   }
 
-  // save winning bids
-  auctionManager.addWinningBid(adObject);
-
-  events.emit(BID_WON, adObject);
+  if (!options.isFledge) {
+    // save winning bids
+    auctionManager.addWinningBid(adObject);
+    events.emit(BID_WON, adObject);
+  }
 }
 
 function handleNativeRequest(reply, data, adObject) {

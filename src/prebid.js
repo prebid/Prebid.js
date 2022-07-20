@@ -23,6 +23,7 @@ import { emitAdRenderSucceeded, emitAdRenderFail } from './adRendering.js';
 import {gdprDataHandler, getS2SBidderSet, uspDataHandler, default as adapterManager} from './adapterManager.js';
 import CONSTANTS from './constants.json';
 import * as events from './events.js'
+import { fledgeManager } from './fledgeManager.js';
 
 const $$PREBID_GLOBAL$$ = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -456,69 +457,8 @@ $$PREBID_GLOBAL$$.renderAd = hook('async', function (doc, id, options) {
       const bid = auctionManager.findBidByAdId(id);
 
       if (bid) {
-        let shouldRender = true;
-        if (bid && bid.status === CONSTANTS.BID_STATUS.RENDERED) {
-          logWarn(`Ad id ${bid.adId} has been rendered before`);
-          events.emit(STALE_RENDER, bid);
-          if (deepAccess(config.getConfig('auctionOptions'), 'suppressStaleRender')) {
-            shouldRender = false;
-          }
-        }
-
-        if (shouldRender) {
-          // replace macros according to openRTB with price paid = bid.cpm
-          bid.ad = replaceAuctionPrice(bid.ad, bid.originalCpm || bid.cpm);
-          bid.adUrl = replaceAuctionPrice(bid.adUrl, bid.originalCpm || bid.cpm);
-          // replacing clickthrough if submitted
-          if (options && options.clickThrough) {
-            const {clickThrough} = options;
-            bid.ad = replaceClickThrough(bid.ad, clickThrough);
-            bid.adUrl = replaceClickThrough(bid.adUrl, clickThrough);
-          }
-
-          // save winning bids
-          auctionManager.addWinningBid(bid);
-
-          // emit 'bid won' event here
-          events.emit(BID_WON, bid);
-
-          const {height, width, ad, mediaType, adUrl, renderer} = bid;
-
-          const creativeComment = document.createComment(`Creative ${bid.creativeId} served by ${bid.bidder} Prebid.js Header Bidding`);
-          insertElement(creativeComment, doc, 'html');
-
-          if (isRendererRequired(renderer)) {
-            executeRenderer(renderer, bid, doc);
-            reinjectNodeIfRemoved(creativeComment, doc, 'html');
-            emitAdRenderSucceeded({ doc, bid, id });
-          } else if ((doc === document && !inIframe()) || mediaType === 'video') {
-            const message = `Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`;
-            emitAdRenderFail({reason: PREVENT_WRITING_ON_MAIN_DOCUMENT, message, bid, id});
-          } else if (ad) {
-            doc.write(ad);
-            doc.close();
-            setRenderSize(doc, width, height);
-            reinjectNodeIfRemoved(creativeComment, doc, 'html');
-            callBurl(bid);
-            emitAdRenderSucceeded({ doc, bid, id });
-          } else if (adUrl) {
-            const iframe = createInvisibleIframe();
-            iframe.height = height;
-            iframe.width = width;
-            iframe.style.display = 'inline';
-            iframe.style.overflow = 'hidden';
-            iframe.src = adUrl;
-
-            insertElement(iframe, doc, 'body');
-            setRenderSize(doc, width, height);
-            reinjectNodeIfRemoved(creativeComment, doc, 'html');
-            callBurl(bid);
-            emitAdRenderSucceeded({ doc, bid, id });
-          } else {
-            const message = `Error trying to write ad. No ad for bid response id: ${id}`;
-            emitAdRenderFail({reason: NO_AD, message, bid, id});
-          }
-        }
+        logError('Invoking $$PREBID_GLOBAL$$.renderAd found bid', bid);
+        fledgeManager.runAdAuction(bid, doc, _handlePrebidAdRender, id, options)
       } else {
         const message = `Error trying to write ad. Cannot find ad by given id : ${id}`;
         emitAdRenderFail({ reason: CANNOT_FIND_AD, message, id });
@@ -532,6 +472,71 @@ $$PREBID_GLOBAL$$.renderAd = hook('async', function (doc, id, options) {
     emitAdRenderFail({ reason: MISSING_DOC_OR_ADID, message, id });
   }
 });
+
+function _handlePrebidAdRender(bid, doc, id, options) {
+  let shouldRender = true;
+  if (bid && bid.status === CONSTANTS.BID_STATUS.RENDERED) {
+    logWarn(`Ad id ${bid.adId} has been rendered before`);
+    events.emit(STALE_RENDER, bid);
+    if (deepAccess(config.getConfig('auctionOptions'), 'suppressStaleRender')) {
+      shouldRender = false;
+    }
+  }
+
+  if (shouldRender) {
+    // replace macros according to openRTB with price paid = bid.cpm
+    bid.ad = replaceAuctionPrice(bid.ad, bid.originalCpm || bid.cpm);
+    bid.adUrl = replaceAuctionPrice(bid.adUrl, bid.originalCpm || bid.cpm);
+    // replacing clickthrough if submitted
+    if (options && options.clickThrough) {
+      const {clickThrough} = options;
+      bid.ad = replaceClickThrough(bid.ad, clickThrough);
+      bid.adUrl = replaceClickThrough(bid.adUrl, clickThrough);
+    }
+
+    // save winning bids
+    auctionManager.addWinningBid(bid);
+
+    // emit 'bid won' event here
+    events.emit(BID_WON, bid);
+
+    const {height, width, ad, mediaType, adUrl, renderer} = bid;
+
+    const creativeComment = document.createComment(`Creative ${bid.creativeId} served by ${bid.bidder} Prebid.js Header Bidding`);
+    insertElement(creativeComment, doc, 'html');
+    if (isRendererRequired(renderer)) {
+      executeRenderer(renderer, bid, doc);
+      reinjectNodeIfRemoved(creativeComment, doc, 'html');
+      emitAdRenderSucceeded({ doc, bid, id });
+    } else if ((doc === document && !inIframe()) || mediaType === 'video') {
+      const message = `Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`;
+      emitAdRenderFail({reason: PREVENT_WRITING_ON_MAIN_DOCUMENT, message, bid, id});
+    } else if (ad) {
+      doc.write(ad);
+      doc.close();
+      setRenderSize(doc, width, height);
+      reinjectNodeIfRemoved(creativeComment, doc, 'html');
+      callBurl(bid);
+      emitAdRenderSucceeded({ doc, bid, id });
+    } else if (adUrl) {
+      const iframe = createInvisibleIframe();
+      iframe.height = height;
+      iframe.width = width;
+      iframe.style.display = 'inline';
+      iframe.style.overflow = 'hidden';
+      iframe.src = adUrl;
+
+      insertElement(iframe, doc, 'body');
+      setRenderSize(doc, width, height);
+      reinjectNodeIfRemoved(creativeComment, doc, 'html');
+      callBurl(bid);
+      emitAdRenderSucceeded({ doc, bid, id });
+    } else {
+      const message = `Error trying to write ad. No ad for bid response id: ${id}`;
+      emitAdRenderFail({reason: NO_AD, message, bid, id});
+    }
+  }
+}
 
 /**
  * Remove adUnit from the $$PREBID_GLOBAL$$ configuration, if there are no addUnitCode(s) it will remove all

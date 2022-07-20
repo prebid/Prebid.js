@@ -5,6 +5,7 @@ import { expect } from 'chai';
 import { userSync } from 'src/userSync.js'
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
+import { fledgeManager } from 'src/fledgeManager.js';
 import { server } from 'test/mocks/xhr.js';
 import CONSTANTS from 'src/constants.json';
 import * as events from 'src/events.js';
@@ -1158,6 +1159,72 @@ describe('validate bid response: ', function () {
       expect(addBidResponseStub.calledOnce).to.equal(false);
       expect(logWarnSpy.callCount).to.equal(1);
     });
+  });
+
+  describe('when interpretResponse returns BidderAuctionResponse', function() {
+    const bidRequest = {
+      bids: [{
+        bidId: '1',
+        bidder: CODE,
+        auctionId: 'first-bid-id',
+        adUnitCode: 'mock/placement',
+        transactionId: 'au',
+      }]
+    };
+    const fledgeAuctionConfig = {
+      bidId: '1',
+    }
+    it('should unwrap bids', function() {
+      const bidder = newBidder(spec);
+      spec.interpretResponse.returns({
+        bids: bids
+      });
+      bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+      expect(addBidResponseStub.calledOnce).to.equal(true);
+      expect(addBidResponseStub.firstCall.args[0]).to.equal('mock/placement');
+    });
+    describe('when response has FLEDGE auction config', function() {
+      let fledgeManagerStub;
+
+      beforeEach(function () {
+        fledgeManagerStub = sinon.stub(fledgeManager, 'addComponentAuction')
+      });
+
+      afterEach(function () {
+        fledgeManagerStub.restore();
+      });
+
+      it('should call fledgeManager with FLEDGE configs', function() {
+        const bidder = newBidder(spec);
+        spec.interpretResponse.returns({
+          bids: bids,
+          fledgeAuctionConfigs: [fledgeAuctionConfig]
+        });
+        bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+
+        expect(fledgeManagerStub.calledOnce).to.equal(true);
+        expect(fledgeManagerStub.firstCall.args[0]).to.equal(bidRequest.bids[0]);
+        expect(fledgeManagerStub.firstCall.args[1]).to.equal(fledgeAuctionConfig);
+
+        expect(addBidResponseStub.calledOnce).to.equal(true);
+        expect(addBidResponseStub.firstCall.args[0]).to.equal('mock/placement');
+      })
+
+      it('should call fledgeManager with FLEDGE configs even if no bids returned', function() {
+        const bidder = newBidder(spec);
+        spec.interpretResponse.returns({
+          bids: [],
+          fledgeAuctionConfigs: [fledgeAuctionConfig]
+        });
+        bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+
+        expect(fledgeManagerStub.calledOnce).to.equal(true);
+        expect(fledgeManagerStub.firstCall.args[0]).to.equal(bidRequest.bids[0]);
+        expect(fledgeManagerStub.firstCall.args[1]).to.equal(fledgeAuctionConfig);
+
+        expect(addBidResponseStub.calledOnce).to.equal(false);
+      })
+    })
   })
 });
 

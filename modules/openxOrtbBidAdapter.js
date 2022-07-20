@@ -67,12 +67,17 @@ function createBannerRequest(bids, bidderRequest) {
       },
       ext: {divid: bid.adUnitCode}
     };
+
+    if (bidderRequest.fledgeEnabled) {
+      imp.ext.ae = bid?.ortb2Imp?.ext?.ae
+    }
+
     enrichImp(imp, bid, floor);
     return imp;
   });
   return {
     method: 'POST',
-    url: REQUEST_URL,
+    url: config.getConfig('openxOrtbUrl') || REQUEST_URL,
     data: data
   }
 }
@@ -190,6 +195,9 @@ function getBaseRequest(bid, bidderRequest) {
   if (bid.params.delDomain) {
     utils.deepSetValue(req, 'ext.delDomain', bid.params.delDomain);
   }
+  if (bid.params.response_template_name) {
+    utils.deepSetValue(req, 'ext.response_template_name', bid.params.response_template_name);
+  }
   if (bid.params.test) {
     req.test = 1
   }
@@ -251,7 +259,7 @@ function getFloor(bid, mediaType) {
   return floor;
 }
 
-function interpretResponse(resp, req) {
+function interpretOrtbResponse(resp, req) {
   // pass these from request to the responses for use in userSync
   if (req.data.ext) {
     if (req.data.ext.delDomain) {
@@ -309,6 +317,36 @@ function interpretResponse(resp, req) {
     })];
   });
 
+  return bids;
+}
+
+function interpretResponse(resp, req) {
+  const bids = interpretOrtbResponse(resp, req);
+  let fledgeAuctionConfigs = utils.deepAccess(resp, 'body.ext.fledge_auction_configs');
+  if (fledgeAuctionConfigs) {
+    // temporary workaround for demo
+    if (utils.deepAccess(req, 'data.ext.response_template_name') == 'test_banner_ad') {
+      const DEFAULT_DEMO_AUCTION_CONFIG = {
+        'seller': 'https://ssp-fledge-demo.glitch.me',
+        'x-allow-fledge': true,
+        'decisionLogicUrl': 'https://ssp-fledge-demo.glitch.me/ssp/decision-logic.js',
+        'interestGroupBuyers': ['https://dsp-fledge-demo.glitch.me'],
+        'auctionSignals': {'auction_signals': 'auction_signals'},
+        'sellerSignals': {'seller_signals': 'seller_signals'},
+        'perBuyerSignals': {
+          'https://dsp-fledge-demo.glitch.me': {'per_buyer_signals': 'per_buyer_signals'}
+        }
+      };
+      fledgeAuctionConfigs = Object.entries(fledgeAuctionConfigs).map(([bidId, cfg]) => { return Object.assign({}, DEFAULT_DEMO_AUCTION_CONFIG, {bidId}) });
+    } else {
+      fledgeAuctionConfigs = Object.entries(fledgeAuctionConfigs).map(([bidId, cfg]) => { return {...cfg, bidId} });
+    }
+
+    return {
+      bids: bids,
+      fledgeAuctionConfigs: fledgeAuctionConfigs,
+    }
+  }
   return bids;
 }
 

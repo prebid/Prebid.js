@@ -15,6 +15,7 @@ import { getHook, hook } from '../hook.js';
 import { getCoreStorageManager } from '../storageManager.js';
 import {auctionManager} from '../auctionManager.js';
 import { bidderSettings } from '../bidderSettings.js';
+import {fledgeManager} from '../fledgeManager.js';
 
 export const storage = getCoreStorageManager('bidderFactory');
 
@@ -70,6 +71,13 @@ export const storage = getCoreStorageManager('bidderFactory');
  *
  * @property {string} bidId A string which uniquely identifies this BidRequest in the current Auction.
  * @property {object} params Any bidder-specific params which the publisher used in their bid request.
+ */
+
+/**
+ * @typedef {object} BidderAuctionResponse An object encapsulating an adapter response for current Auction
+ *
+ * @property {Array<Bid>} bids Contextual bids returned by this adapter, if any
+ * @property {object|null} fledgeAuctionConfigs Optional FLEDGE response, as a map of impid -> auction_config
  */
 
 /**
@@ -226,6 +234,19 @@ export function newBidder(spec) {
           onTimelyResponse(spec.code);
           responses.push(resp)
         },
+        /** Extract additional data from a structured response
+         * @param {BidderAuctionResponse} resp
+         */
+        onBidderAuctionResponse: (resp) => {
+          if (isArray(resp.fledgeAuctionConfigs)) {
+            resp.fledgeAuctionConfigs.forEach((fledgeAuctionConfig) => {
+              const bidRequest = bidRequestMap[fledgeAuctionConfig.bidId];
+              if (bidRequest) {
+                fledgeManager.addComponentAuction(bidRequest, fledgeAuctionConfig);
+              }
+            });
+          }
+        },
         // If the server responds with an error, there's not much we can do beside logging.
         onError: (errorMessage, error) => {
           onTimelyResponse(spec.code);
@@ -295,7 +316,7 @@ export function newBidder(spec) {
  * @param onBid {function({})} invoked once for each bid in the response - with the bid as returned by interpretResponse
  * @param onCompletion {function()} invoked once when all bid requests have been processed
  */
-export const processBidderRequests = hook('sync', function (spec, bids, bidderRequest, ajax, wrapCallback, {onRequest, onResponse, onError, onBid, onCompletion}) {
+export const processBidderRequests = hook('sync', function (spec, bids, bidderRequest, ajax, wrapCallback, {onRequest, onResponse, onBidderAuctionResponse, onError, onBid, onCompletion}) {
   let requests = spec.buildRequests(bids, bidderRequest);
   if (!requests || requests.length === 0) {
     onCompletion();
@@ -323,13 +344,20 @@ export const processBidderRequests = hook('sync', function (spec, bids, bidderRe
       };
       onResponse(response);
 
-      let bids;
       try {
-        bids = spec.interpretResponse(response, request);
+        response = spec.interpretResponse(response, request);
       } catch (err) {
         logError(`Bidder ${spec.code} failed to interpret the server's response. Continuing without bids`, null, err);
         requestDone();
         return;
+      }
+
+      let bids;
+      if (response && 'bids' in response) {
+        onBidderAuctionResponse(response);
+        bids = response.bids;
+      } else {
+        bids = response;
       }
 
       if (bids) {
