@@ -61,7 +61,7 @@ describe('imRtdProvider', function () {
 
       it(`should return bid with correct key data: ${bidderName}`, function () {
         const bid = {bidder: bidderName};
-        expect(getBidderFunction(bidderName)(bid, {'im_segments': ['12345', '67890'], ppid: 'testppid'})).to.equal(bid);
+        expect(getBidderFunction(bidderName)(bid, {'im_segments': ['12345', '67890'], ppid: 'testPpid'})).to.equal(bid);
       });
       it(`should return bid without data: ${bidderName}`, function () {
         const bid = {bidder: bidderName};
@@ -85,7 +85,7 @@ describe('imRtdProvider', function () {
             }
           }
         };
-        expect(getBidderFunction('fluct')(bid, {im_segments: ['12345', '67890'], ppid: 'testppid'}))
+        expect(getBidderFunction('fluct')(bid, {im_segments: ['12345', '67890'], ppid: 'testPpid'}))
           .to.eql(
             {
               bidder: 'fluct',
@@ -161,7 +161,7 @@ describe('imRtdProvider', function () {
     it('should return the uid when sids(rtd) not expired', function () {
       getLocalStorageStub.withArgs(imUidLocalName).returns('testUid');
       getLocalStorageStub.withArgs(imRtdLocalName).returns('testSids');
-      getLocalStorageStub.withArgs(imPpidLocalName).returns('testppid');
+      getLocalStorageStub.withArgs(imPpidLocalName).returns('testPpid');
       getCookieStub.withArgs(imVidCookieName).returns('testUid');
       getLocalStorageStub.withArgs(`${imRtdLocalName}_mt`).returns(new Date(timestamp()).toUTCString());
       expect(getRealTimeData(testReqBidsConfigObj, onDone, moduleConfig)).to.equal(undefined)
@@ -170,7 +170,7 @@ describe('imRtdProvider', function () {
     it('should return the uid when it exists uid, sids(rtd), vid in storages and sids(rtd) expired', function () {
       getLocalStorageStub.withArgs(imUidLocalName).returns('testUid');
       getLocalStorageStub.withArgs(imRtdLocalName).returns('testSids');
-      getLocalStorageStub.withArgs(imPpidLocalName).returns('testppid');
+      getLocalStorageStub.withArgs(imPpidLocalName).returns('testPpid');
       getCookieStub.withArgs(imVidCookieName).returns('testUid');
       getLocalStorageStub.withArgs(`${imRtdLocalName}_mt`).returns(0);
       expect(getRealTimeData(testReqBidsConfigObj, onDone, moduleConfig)).to.equal(undefined)
@@ -179,7 +179,7 @@ describe('imRtdProvider', function () {
     it('should return the uid when uid not expired', function () {
       getLocalStorageStub.withArgs(imUidLocalName).returns('testUid');
       getLocalStorageStub.withArgs(imRtdLocalName).returns('testSids');
-      getLocalStorageStub.withArgs(imPpidLocalName).returns('testppid');
+      getLocalStorageStub.withArgs(imPpidLocalName).returns('testPpid');
       getCookieStub.withArgs(imVidCookieName).returns('testUid');
       getLocalStorageStub.withArgs(`${imUidLocalName}_mt`).returns(new Date(timestamp()).toUTCString());
       expect(getRealTimeData(testReqBidsConfigObj, onDone, moduleConfig)).to.equal(undefined)
@@ -195,7 +195,7 @@ describe('imRtdProvider', function () {
 
     it('should return "undefined" success', function () {
       const res = getApiCallback(testReqBidsConfigObj, false, moduleConfig);
-      const successResponse = '{"uid": "testid", "segments": "testsegment", "vid": "testvid", "ppid": "testppid"}';
+      const successResponse = '{"uid": "testUid", "segments": "testsegment", "vid": "testVid", "ppid": "testPpid"}';
       expect(res.success(successResponse, {status: 200})).to.equal(undefined);
       expect(res.error()).to.equal(undefined);
     });
