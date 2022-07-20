@@ -1,4 +1,5 @@
-import { logWarn, createTrackPixelHtml } from '../src/utils.js';
+import { logWarn, createTrackPixelHtml, deepAccess, isArray, deepSetValue } from '../src/utils.js';
+import {config} from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'consumable';
@@ -66,6 +67,14 @@ export const spec = {
       data.ccpa = bidderRequest.uspConsent;
     }
 
+    if (bidderRequest && bidderRequest.schain) {
+      data.schain = bidderRequest.schain;
+    }
+
+    if (config.getConfig('coppa')) {
+      data.coppa = true;
+    }
+
     validBidRequests.map(bid => {
       const sizes = (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) || bid.sizes || [];
       const placement = Object.assign({
@@ -77,6 +86,8 @@ export const spec = {
         data.placements.push(placement);
       }
     });
+
+    handleEids(data, validBidRequests);
 
     ret.data = JSON.stringify(data);
     ret.bidRequest = validBidRequests;
@@ -232,6 +243,15 @@ function retrieveAd(decision, unitId, unitName) {
   let ad = decision.contents && decision.contents[0] && decision.contents[0].body + createTrackPixelHtml(decision.impressionUrl);
 
   return ad;
+}
+
+function handleEids(data, validBidRequests) {
+  let bidUserIdAsEids = deepAccess(validBidRequests, '0.userIdAsEids');
+  if (isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
+    deepSetValue(data, 'user.eids', bidUserIdAsEids);
+  } else {
+    deepSetValue(data, 'user.eids', undefined);
+  }
 }
 
 registerBidder(spec);

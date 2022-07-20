@@ -16,7 +16,6 @@ import * as auctionModule from 'src/auction.js';
 import { registerBidder } from 'src/adapters/bidderFactory.js';
 import { _sendAdToCreative } from 'src/secureCreatives.js';
 import {find} from 'src/polyfill.js';
-import {synchronizePromise} from '../../helpers/syncPromise.js';
 import * as pbjsModule from 'src/prebid.js';
 import {hook} from '../../../src/hook.js';
 import {reset as resetDebugging} from '../../../src/debugging.js';
@@ -195,7 +194,7 @@ window.apntag = {
 }
 
 describe('Unit: Prebid Module', function () {
-  let bidExpiryStub, promiseSandbox;
+  let bidExpiryStub
 
   before(() => {
     hook.ready();
@@ -204,15 +203,12 @@ describe('Unit: Prebid Module', function () {
   });
 
   beforeEach(function () {
-    promiseSandbox = sinon.createSandbox();
-    synchronizePromise(promiseSandbox);
     bidExpiryStub = sinon.stub(filters, 'isBidNotExpired').callsFake(() => true);
     configObj.setConfig({ useBidCache: true });
     resetAuctionState();
   });
 
   afterEach(function() {
-    promiseSandbox.restore();
     $$PREBID_GLOBAL$$.adUnits = [];
     bidExpiryStub.restore();
     configObj.setConfig({ useBidCache: false });

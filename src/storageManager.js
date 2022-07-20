@@ -48,7 +48,7 @@ export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = 
       let hookDetails = {
         hasEnforcementHook: false
       }
-      validateStorageEnforcement(gvlid, bidderCode || moduleName, moduleType, hookDetails, function(result) {
+      validateStorageEnforcement(gvlid, bidderCode || moduleName, hookDetails, function(result) {
         if (result && result.hasEnforcementHook) {
           value = cb(result);
         } else {
@@ -303,7 +303,7 @@ export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = 
 /**
  * This hook validates the storage enforcement if gdprEnforcement module is included
  */
-export const validateStorageEnforcement = hook('async', function(gvlid, moduleName, moduleType, hookDetails, callback) {
+export const validateStorageEnforcement = hook('async', function(gvlid, moduleName, hookDetails, callback) {
   callback(hookDetails);
 }, 'validateStorageEnforcement');
 
@@ -322,13 +322,12 @@ export function getCoreStorageManager(moduleName) {
  * @param {Number=} gvlid? Vendor id - required for proper GDPR integration
  * @param {string=} bidderCode? - required for bid adapters
  * @param {string=} moduleName? module name
- * @param {string=} moduleType? module type
  */
-export function getStorageManager({gvlid, moduleName, bidderCode, moduleType} = {}) {
+export function getStorageManager({gvlid, moduleName, bidderCode} = {}) {
   if (arguments.length > 1 || (arguments.length > 0 && !isPlainObject(arguments[0]))) {
     throw new Error('Invalid invocation for getStorageManager')
   }
-  return newStorageManager({gvlid, moduleName, bidderCode, moduleType});
+  return newStorageManager({gvlid, moduleName, bidderCode});
 }
 
 export function resetData() {

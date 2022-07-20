@@ -233,7 +233,7 @@ function getBid(requestId, currency, bidResponse) {
 
   return {
     requestId,
-    ttl: 360,
+    ttl: 60,
     mediaType: BANNER,
     cpm,
     creativeId,
