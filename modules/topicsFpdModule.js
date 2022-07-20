@@ -1,6 +1,7 @@
 import {logError, logWarn, mergeDeep} from '../src/utils.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {submodule} from '../src/hook.js';
+import {GreedyPromise} from '../src/utils/promise.js';
 
 const TAXONOMIES = {
   // map from topic taxonomyVersion to IAB segment taxonomy
@@ -46,14 +47,13 @@ export function getTopics(doc = document) {
   let topics = null;
   try {
     if ('browsingTopics' in doc && doc.featurePolicy.allowsFeature('browsing-topics')) {
-      topics = doc.browsingTopics();
+      topics = GreedyPromise.resolve(doc.browsingTopics());
     }
   } catch (e) {
     logError('Could not call topics API', e);
   }
   if (topics == null) {
-    // TODO: convert this to GreedyPromise once #8626 gets merged
-    topics = Promise.resolve([]);
+    topics = GreedyPromise.resolve([]);
   }
   return topics;
 }
