@@ -320,9 +320,10 @@ export const spec = {
       // set ext.prebid.auctiontimestamp using auction time
       deepSetValue(data.imp[0], 'ext.prebid.auctiontimestamp', bidderRequest.auctionStart);
 
-      // delete stored requests - top level and imp level both 'ext.prebid' objects are set above so no exception thrown here
-      delete data.ext.prebid.storedrequest;
-      delete data.imp[0].ext.prebid.storedrequest;
+      // set storedrequests to undefined so not sent to PBS
+      // top level and imp level both 'ext.prebid' objects are set above so no exception thrown here
+      data.ext.prebid.storedrequest = undefined;
+      data.imp[0].ext.prebid.storedrequest = undefined;
 
       return {
         method: 'POST',
