@@ -16,7 +16,7 @@ const SUPPORTED_AD_TYPES = [BANNER]
  * Keep track of bid data by keys
  * @returns {Object} - Map of bid data that can be referenced by multiple keys
  */
-const BidDataMap = () => {
+export const BidDataMap = () => {
   const referenceMap = {}
   const bids = []
 
@@ -25,7 +25,7 @@ const BidDataMap = () => {
    * @param {String} key - The key to store the index reference
    * @param {Integer} index - The index value of the bidData
    */
-  function adKeyReference(key, index) {
+  function addKeyReference(key, index) {
     if (!referenceMap.hasOwnProperty(key)) {
       referenceMap[key] = index
     }
@@ -42,12 +42,12 @@ const BidDataMap = () => {
 
     if (Array.isArray(keys)) {
       keys.forEach((key) => {
-        adKeyReference(String(key), index)
+        addKeyReference(String(key), index)
       })
       return
     }
 
-    adKeyReference(String(keys), index)
+    addKeyReference(String(keys), index)
   }
 
   /**
@@ -132,25 +132,32 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     const placementIds = new Set()
-    let placementId, pageUrl
     const bidDataMap = BidDataMap()
+    const placementSizes = { length: 0 }
+    let placementId, pageUrl
     validBidRequests.forEach((request) => {
       pageUrl = deepAccess(
         request,
         'params.url',
-        bidderRequest.refererInfo.referer
+        bidderRequest.refererInfo.page
       )
       placementId = deepAccess(request, 'params.placementId')
 
-      if (placementId) {
+      const bidDataKeys = [request.adUnitCode]
+
+      if (placementId && !placementIds.has(placementId)) {
         placementIds.add(placementId)
+        bidDataKeys.push(placementId)
+
+        placementSizes[placementId] = request.sizes
+        placementSizes.length++
       }
 
       const bidData = {
         bidId: request.bidId,
         size: getLargestSize(request.sizes),
       }
-      bidDataMap.addBidData(bidData, [placementId, request.adUnitCode])
+      bidDataMap.addBidData(bidData, bidDataKeys)
     })
     bidRequestMap[bidderRequest.bidderRequestId] = bidDataMap
 
@@ -197,6 +204,11 @@ export const spec = {
 
     if (campaignsToFilter.size > 0) {
       params.unshift({ key: 'ntv_ctf', value: Array.from(campaignsToFilter).join(',') })
+    }
+
+    // Placement Sizes
+    if (placementSizes.length) {
+      params.unshift({ key: 'ntv_pas', value: btoa(JSON.stringify(placementSizes)) })
     }
 
     // Add placement IDs

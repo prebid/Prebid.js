@@ -75,7 +75,7 @@ export const spec = {
       winLocation = window.location;
     }
 
-    const refferUrl = bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
+    const refferUrl = bidderRequest.refererInfo?.page;
     let refferLocation;
     try {
       refferLocation = refferUrl && new URL(refferUrl);
@@ -83,6 +83,7 @@ export const spec = {
       logMessage(e);
     }
 
+    // TODO: does the fallback to window.location make sense?
     const location = refferLocation || winLocation;
     let placements = [];
     let request = {
@@ -107,7 +108,7 @@ export const spec = {
 
     for (let i = 0; i < validBidRequests.length; i++) {
       let bid = validBidRequests[i];
-      let traff = bid.params.traffic || BANNER
+      let traff = bid.params.traffic || BANNER;
       let placement = {
         placementId: bid.params.placement_id,
         groupId: bid.params.group_id,
@@ -116,19 +117,7 @@ export const spec = {
         eids: [],
         floor: {}
       };
-      if (typeof bid.getFloor === 'function') {
-        let tmpFloor = {};
-        for (let size of placement.sizes) {
-          tmpFloor = bid.getFloor({
-            currency: 'USD',
-            mediaType: traff,
-            size: size
-          });
-          if (tmpFloor) {
-            placement.floor[`${size[0]}x${size[1]}`] = tmpFloor.floor;
-          }
-        }
-      }
+
       if (bid.schain) {
         placement.schain = bid.schain;
       }
@@ -147,9 +136,7 @@ export const spec = {
       }
       if (traff === BANNER) {
         placement.sizes = bid.mediaTypes[BANNER].sizes
-      }
-
-      if (traff === VIDEO) {
+      } else if (traff === VIDEO) {
         placement.sizes = bid.mediaTypes[VIDEO].playerSize;
         placement.playerSize = bid.mediaTypes[VIDEO].playerSize;
         placement.minduration = bid.mediaTypes[VIDEO].minduration;
@@ -167,6 +154,20 @@ export const spec = {
         placement.api = bid.mediaTypes[VIDEO].api;
         placement.linearity = bid.mediaTypes[VIDEO].linearity;
       }
+      if (typeof bid.getFloor === 'function') {
+        let tmpFloor = {};
+        for (let size of placement.sizes) {
+          tmpFloor = bid.getFloor({
+            currency: 'USD',
+            mediaType: traff,
+            size: size
+          });
+          if (tmpFloor) {
+            placement.floor[`${size[0]}x${size[1]}`] = tmpFloor.floor;
+          }
+        }
+      }
+
       placements.push(placement);
     }
     return {

@@ -145,7 +145,7 @@ describe('The smartx adapter', function () {
       bid = getValidBidObject();
       bidRequestObj = {
         refererInfo: {
-          referer: 'prebid.js'
+          page: 'prebid.js'
         }
       };
     });
@@ -574,7 +574,7 @@ describe('The smartx adapter', function () {
       bid = getValidBidObject();
       bidRequestObj = {
         refererInfo: {
-          referer: 'prebid.js'
+          page: 'prebid.js'
         }
       };
       delete bid.params.bidfloor;

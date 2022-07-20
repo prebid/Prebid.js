@@ -4,7 +4,7 @@
  * @module modules/trustpidSystem
  * @requires module:modules/userId
  */
-import { logInfo, logError } from '../src/utils.js';
+import { logInfo } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 
@@ -22,10 +22,9 @@ export const storage = getStorageManager({gvlid: null, moduleName: MODULE_NAME})
  * @param event
  */
 function messageHandler(event) {
-  let msg;
   try {
-    if (event && event.data && typeof event.data === 'string' && event.data) {
-      msg = JSON.parse(event.data);
+    if (event && event.data && typeof event.data === 'string') {
+      const msg = JSON.parse(event.data);
       if (msg.msgType === 'MNOSELECTOR' && msg.body && msg.body.url) {
         let URL = msg.body.url.split('//');
         let domainURL = URL[1].split('/');
@@ -35,7 +34,7 @@ function messageHandler(event) {
       }
     }
   } catch (e) {
-    logError(e);
+    logInfo(`${LOG_PREFIX}: Unsupported message caught. Origin: ${event.origin}, data: ${event.data}.`);
   }
 }
 
@@ -44,31 +43,13 @@ function messageHandler(event) {
  * @param domain
  */
 function getDomainAcronym(domain) {
-  let acronym = '';
   const prefix = '-';
-  switch (domain) {
-    case 'tmi.mno.link':
-      acronym = 'ndye';
-      break;
-    case 'tmi.vodafone.de':
-      acronym = 'pqnx';
-      break;
-    case 'tmi.telekom.de':
-      acronym = 'avgw';
-      break;
-    case 'tmi.tmid.es':
-      acronym = 'kjws';
-      break;
-    case 'uat.mno.link':
-      acronym = 'xxxx';
-      break;
-    case 'es.tmiservice.orange.com':
-      acronym = 'aplw';
-      break;
-    default:
-      return 'none';
+  const acronym = window.FC_CONF?.TELCO_ACRONYM?.[domain];
+  if (!acronym) {
+    logInfo(`${LOG_PREFIX}: No acronym found for domain: ${domain}`);
+    return;
   }
-  return mnoAcronym = prefix + acronym;
+  mnoAcronym = prefix + acronym;
 }
 
 // Set a listener to handle the iframe response message.

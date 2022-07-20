@@ -56,8 +56,6 @@ describe('Yandex adapter', function () {
   });
 
   describe('buildRequests', function () {
-    const refererUrl = 'https://yandex.ru/secure-ads';
-
     const gdprConsent = {
       gdprApplies: 1,
       consentString: 'concent-string',
@@ -66,7 +64,7 @@ describe('Yandex adapter', function () {
 
     const bidderRequest = {
       refererInfo: {
-        referer: refererUrl
+        domain: 'yandex.ru'
       },
       gdprConsent
     };
