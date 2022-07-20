@@ -320,6 +320,10 @@ export const spec = {
       // set ext.prebid.auctiontimestamp using auction time
       deepSetValue(data.imp[0], 'ext.prebid.auctiontimestamp', bidderRequest.auctionStart);
 
+      // delete stored requests - top level and imp level both 'ext.prebid' objects are set above so no exception thrown here
+      delete data.ext.prebid.storedrequest;
+      delete data.imp[0].ext.prebid.storedrequest;
+
       return {
         method: 'POST',
         url: `https://${rubiConf.videoHost || 'prebid-server'}.rubiconproject.com/openrtb2/auction`,
