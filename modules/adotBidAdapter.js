@@ -49,19 +49,22 @@ function tryParse(data) {
  * @returns {Site|null} Formatted Site OpenRtb object or null
  */
 function getOpenRTBSiteObject(bidderRequest) {
-  if (!bidderRequest || !bidderRequest.refererInfo) return null;
+  const refererInfo = (bidderRequest && bidderRequest.refererInfo) || null;
 
-  const domain = bidderRequest.refererInfo.domain;
+  const domain = refererInfo ? refererInfo.domain : window.location.hostname;
   const publisherId = config.getConfig('adot.publisherId');
 
   if (!domain) return null;
 
   return {
-    page: bidderRequest.refererInfo.page,
+    page: refererInfo ? refererInfo.page : window.location.href,
     domain: domain,
     name: domain,
     publisher: {
       id: publisherId
+    },
+    ext: {
+      schain: bidderRequest.schain
     }
   };
 }
@@ -83,7 +86,13 @@ function getOpenRTBDeviceObject() {
  */
 function getOpenRTBUserObject(bidderRequest) {
   if (!bidderRequest || !bidderRequest.gdprConsent || !isStr(bidderRequest.gdprConsent.consentString)) return null;
-  return { ext: { consent: bidderRequest.gdprConsent.consentString } };
+
+  return {
+    ext: {
+      consent: bidderRequest.gdprConsent.consentString,
+      pubProvidedId: bidderRequest.userId && bidderRequest.userId.pubProvidedId,
+    },
+  };
 }
 
 /**
