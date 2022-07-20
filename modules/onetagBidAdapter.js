@@ -396,7 +396,7 @@ function getBidFloor(bidRequest, mediaType, sizes) {
   return priceFloors;
 }
 
-function isSchainValid(schain) {
+export function isSchainValid(schain) {
   let isValid = false;
   const requiredFields = ['asi', 'sid', 'hp'];
   if (!schain || !schain.nodes) return isValid;
