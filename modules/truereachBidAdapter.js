@@ -94,7 +94,7 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
-        url: 'https://ads.momagic.com/jsp/usersync.jsp' + gdprParams
+        url: 'https://ads-sg.momagic.com/jsp/usersync.jsp' + gdprParams
       });
     }
     return syncs;
