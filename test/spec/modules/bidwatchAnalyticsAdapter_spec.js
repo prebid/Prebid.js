@@ -106,7 +106,8 @@ describe('BidWatch Analytics', function () {
         'gdprConsent': {
           'consentString': 'CONSENT',
           'gdprApplies': true,
-          'apiVersion': 2
+          'apiVersion': 2,
+          'vendorData': 'lot of datas'
         },
         'start': 1647424261189
       },
@@ -264,7 +265,6 @@ describe('BidWatch Analytics', function () {
     afterEach(function () {
       events.getEvents.restore();
     });
-
     it('should catch events of interest', function () {
       sinon.spy(bidwatchAnalytics, 'track');
 
