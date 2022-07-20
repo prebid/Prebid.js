@@ -56,13 +56,15 @@ function getTopWindowReferrer() {
   }
 }
 
-function siteDetails(site) {
+function siteDetails(site, bidderRequest) {
+  const urlData = bidderRequest.refererInfo;
   site = site || {};
   let siteData = {
-    domain: site.domain || mnData.urlData.domain,
-    page: site.page || mnData.urlData.page,
+    domain: site.domain || urlData.domain,
+    page: site.page || urlData.page,
     ref: site.ref || getTopWindowReferrer(),
-    isTop: site.isTop || mnData.urlData.isTop
+    topMostLocation: urlData.topmostLocation,
+    isTop: site.isTop || urlData.reachedTop
   };
 
   return Object.assign(siteData, getPageMeta());
@@ -187,6 +189,7 @@ function slotParams(bidRequest) {
   // check with Media.net Account manager for  bid floor and crid parameters
   let params = {
     id: bidRequest.bidId,
+    transactionId: bidRequest.transactionId,
     ext: {
       dfp_id: bidRequest.adUnitCode,
       display_count: bidRequest.bidRequestsCount
@@ -320,10 +323,11 @@ function getBidderURL(cid) {
 
 function generatePayload(bidRequests, bidderRequests) {
   return {
-    site: siteDetails(bidRequests[0].params.site),
+    site: siteDetails(bidRequests[0].params.site, bidderRequests),
     ext: extParams(bidRequests[0], bidderRequests),
     id: bidRequests[0].auctionId,
     imp: bidRequests.map(request => slotParams(request)),
+    ortb2: bidderRequests.ortb2,
     tmax: bidderRequests.timeout || config.getConfig('bidderTimeout')
   }
 }

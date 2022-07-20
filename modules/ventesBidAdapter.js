@@ -4,7 +4,7 @@ import {find} from '../src/polyfill.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 const BID_METHOD = 'POST';
-const BIDDER_URL = 'http://13.234.201.146:8088/va/ad';
+const BIDDER_URL = 'https://ad.ventesavenues.in/va/ad';
 
 function groupBy(values, key) {
   const groups = values.reduce((acc, value) => {

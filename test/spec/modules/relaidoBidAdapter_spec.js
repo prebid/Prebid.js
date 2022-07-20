@@ -81,8 +81,8 @@ describe('RelaidoAdapter', function () {
       data: {
         bids: [{
           bidId: bidRequest.bidId,
-          width: bidRequest.mediaTypes.video.playerSize[0][0],
-          height: bidRequest.mediaTypes.video.playerSize[0][1],
+          width: bidRequest.mediaTypes.video.playerSize[0][0] || bidRequest.mediaTypes.video.playerSize[0],
+          height: bidRequest.mediaTypes.video.playerSize[0][1] || bidRequest.mediaTypes.video.playerSize[1],
           mediaType: 'video'}]
       }
     };
@@ -95,6 +95,33 @@ describe('RelaidoAdapter', function () {
 
   describe('spec.isBidRequestValid', function () {
     it('should return true when the required params are passed by video', function () {
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+    });
+
+    it('should return true when not existed mediaTypes.video.playerSize and existed valid params.video.playerSize by video', function () {
+      bidRequest.mediaTypes = {
+        video: {
+          context: 'outstream'
+        }
+      };
+      bidRequest.params = {
+        placementId: '100000',
+        video: {
+          playerSize: [
+            [640, 360]
+          ]
+        }
+      };
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+    });
+
+    it('should return even true when the playerSize is Array[Number, Number] by video', function () {
+      bidRequest.mediaTypes = {
+        video: {
+          context: 'outstream',
+          playerSize: [640, 360]
+        }
+      };
       expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
     });
 

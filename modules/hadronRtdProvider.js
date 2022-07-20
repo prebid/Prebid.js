@@ -24,6 +24,15 @@ export const RTD_LOCAL_NAME = 'auHadronRtd';
 export const storage = getStorageManager({gvlid: AU_GVLID, moduleName: SUBMODULE_NAME});
 
 /**
+ * @param {string} url
+ * @param {string} params
+ * @returns {string}
+ */
+const urlAddParams = (url, params) => {
+  return url + (url.indexOf('?') > -1 ? '&' : '?') + params
+}
+
+/**
  * Deep set an object unless value present.
  * @param {Object} obj
  * @param {String} path
@@ -165,8 +174,12 @@ export function getRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
       userIds.hadronId = hadronId;
       getRealTimeDataAsync(bidConfig, onDone, rtdConfig, userConsent, userIds);
     }
+    const partnerId = rtdConfig.params.partnerId | 0;
     const hadronIdUrl = rtdConfig.params && rtdConfig.params.hadronIdUrl;
-    const scriptUrl = paramOrDefault(hadronIdUrl, HADRON_ID_DEFAULT_URL, userIds);
+    const scriptUrl = urlAddParams(
+      paramOrDefault(hadronIdUrl, HADRON_ID_DEFAULT_URL, userIds),
+      `partner_id=${partnerId}&_it=prebid`
+    );
     loadExternalScript(scriptUrl, 'hadron', () => {
       logInfo(LOG_PREFIX, 'hadronIdTag loaded', scriptUrl);
     })
