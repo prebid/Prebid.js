@@ -28,7 +28,8 @@ describe('imRtdProvider', function () {
   const moduleConfig = {
     params: {
       cid: 5126,
-      setGptKeyValues: true
+      setGptKeyValues: true,
+      setGptPublisherProvidedId: true
     }
   }
 
