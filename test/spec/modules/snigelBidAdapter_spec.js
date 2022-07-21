@@ -175,9 +175,11 @@ describe('snigelBidAdapter', function () {
   describe('getUserSyncs', function () {
     it('should not return any user syncs if domain does not exist in response', function () {
       const response = {
-        id: BASE_BIDDER_REQUEST.bidderRequestId,
-        cur: 'USD',
-        bids: [],
+        body: {
+          id: BASE_BIDDER_REQUEST.bidderRequestId,
+          cur: 'USD',
+          bids: [],
+        }
       };
       const syncOptions = {
         iframeEnabled: true,
@@ -192,10 +194,12 @@ describe('snigelBidAdapter', function () {
 
     it('should not return any user syncs if publisher disabled iframe-based sync', function () {
       const response = {
-        id: BASE_BIDDER_REQUEST.bidderRequestId,
-        cur: 'USD',
-        domain: 'localhost',
-        bids: [],
+        body: {
+          id: BASE_BIDDER_REQUEST.bidderRequestId,
+          cur: 'USD',
+          domain: 'localhost',
+          bids: [],
+        }
       };
       const syncOptions = {
         iframeEnabled: false,
@@ -210,10 +214,12 @@ describe('snigelBidAdapter', function () {
 
     it('should not return any user syncs if GDPR applies and the user did not consent to purpose one', function () {
       const response = {
-        id: BASE_BIDDER_REQUEST.bidderRequestId,
-        cur: 'USD',
-        domain: 'localhost',
-        bids: [],
+        body: {
+          id: BASE_BIDDER_REQUEST.bidderRequestId,
+          cur: 'USD',
+          domain: 'localhost',
+          bids: [],
+        }
       };
       const syncOptions = {
         iframeEnabled: true,
@@ -233,10 +239,12 @@ describe('snigelBidAdapter', function () {
 
     it("should return an iframe specific to the publisher's property if all conditions are met", function () {
       const response = {
-        id: BASE_BIDDER_REQUEST.bidderRequestId,
-        cur: 'USD',
-        domain: 'localhost',
-        bids: [],
+        body: {
+          id: BASE_BIDDER_REQUEST.bidderRequestId,
+          cur: 'USD',
+          domain: 'localhost',
+          bids: [],
+        }
       };
       const syncOptions = {
         iframeEnabled: true,
@@ -256,10 +264,12 @@ describe('snigelBidAdapter', function () {
 
     it('should pass GDPR applicability and consent string as query parameters', function () {
       const response = {
-        id: BASE_BIDDER_REQUEST.bidderRequestId,
-        cur: 'USD',
-        domain: 'localhost',
-        bids: [],
+        body: {
+          id: BASE_BIDDER_REQUEST.bidderRequestId,
+          cur: 'USD',
+          domain: 'localhost',
+          bids: [],
+        }
       };
       const syncOptions = {
         iframeEnabled: true,
