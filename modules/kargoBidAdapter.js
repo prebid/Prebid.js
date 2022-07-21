@@ -148,7 +148,7 @@ export const spec = {
 
   _getCrbFromCookie() {
     try {
-      const crb = JSON.parse(decodeURIComponent(storage.getCookie('krg_crb')));
+      const crb = JSON.parse(storage.getCookie('krg_crb'));
       if (crb && crb.v) {
         let vParsed = JSON.parse(atob(crb.v));
         if (vParsed) {
