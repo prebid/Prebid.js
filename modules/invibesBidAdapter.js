@@ -381,7 +381,7 @@ function getUserIds(bidUserId) {
 function parseQueryStringParams() {
   let params = {};
   try {
-    params = JSON.parse(localStorage.ivbs);
+    params = JSON.parse(storage.getDataFromLocalStorage('ivbs'));
   } catch (e) {
   }
   let re = /[\\?&]([^=]+)=([^\\?&#]+)/g;
