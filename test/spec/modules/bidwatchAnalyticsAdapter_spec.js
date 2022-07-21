@@ -107,7 +107,7 @@ describe('BidWatch Analytics', function () {
           'consentString': 'CONSENT',
           'gdprApplies': true,
           'apiVersion': 2,
-          'vendorData': 'lot of datas'
+          'vendorData': 'a lot of borring stuff',
         },
         'start': 1647424261189
       },
@@ -265,6 +265,7 @@ describe('BidWatch Analytics', function () {
     afterEach(function () {
       events.getEvents.restore();
     });
+
     it('should catch events of interest', function () {
       sinon.spy(bidwatchAnalytics, 'track');
 
@@ -281,7 +282,22 @@ describe('BidWatch Analytics', function () {
       });
       events.emit(constants.EVENTS.BID_TIMEOUT, bidTimeout);
       events.emit(constants.EVENTS.AUCTION_END, auctionEnd);
+      expect(server.requests.length).to.equal(1);
+      let message = JSON.parse(server.requests[0].requestBody);
+      expect(message).to.have.property('auctionEnd').exist;
+      expect(message.auctionEnd).to.have.lengthOf(1);
+      expect(message.auctionEnd[0]).to.have.property('bidsReceived').and.to.have.lengthOf(1);
+      expect(message.auctionEnd[0].bidsReceived[0]).to.have.property('ad');
+      expect(message.auctionEnd[0].bidsReceived[0].ad).to.equal('emptied');
+      expect(message.auctionEnd[0]).to.have.property('bidderRequests').and.to.have.lengthOf(1);
+      expect(message.auctionEnd[0].bidderRequests[0]).to.have.property('gdprConsent');
+      expect(message.auctionEnd[0].bidderRequests[0].gdprConsent).to.have.property('vendorData');
+      expect(message.auctionEnd[0].bidderRequests[0].gdprConsent.vendorData).to.equal('emptied');
       events.emit(constants.EVENTS.BID_WON, bidWon);
+      expect(server.requests.length).to.equal(2);
+      message = JSON.parse(server.requests[1].requestBody);
+      expect(message).to.have.property('ad').and.to.equal('emptied');
+      expect(message).to.have.property('cpmIncrement').and.to.equal(27.4276);
       sinon.assert.callCount(bidwatchAnalytics.track, 3);
     });
   });
