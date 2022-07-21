@@ -1,4 +1,4 @@
-import { deepSetValue, logInfo, deepAccess } from '../src/utils.js';
+import {deepSetValue, logInfo, deepAccess} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 
@@ -73,9 +73,9 @@ export const spec = {
     }
 
     // EIDS
-    const eids = utils.deepAccess(validBidRequests[0], 'userIdAsEids');
+    const eids = deepAccess(validBidRequests[0], 'userIdAsEids');
     if (Array.isArray(eids) && eids.length > 0) {
-      utils.deepSetValue(openrtbRequest, 'user.ext.eids', eids);
+      deepSetValue(openrtbRequest, 'user.ext.eids', eids);
     }
 
     const payloadString = JSON.stringify(openrtbRequest);
