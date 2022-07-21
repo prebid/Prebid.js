@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { logWarn, deepAccess } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 const BIDDER_CODE = 'zeta_global';
@@ -24,30 +24,30 @@ export const spec = {
     if (!(bid &&
           bid.bidId &&
           bid.params)) {
-      utils.logWarn('Invalid bid request - missing required bid data');
+      logWarn('Invalid bid request - missing required bid data');
       return false;
     }
 
     if (!(bid.params.user &&
           bid.params.user.buyeruid)) {
-      utils.logWarn('Invalid bid request - missing required user data');
+      logWarn('Invalid bid request - missing required user data');
       return false;
     }
 
     if (!(bid.params.device &&
           bid.params.device.ip)) {
-      utils.logWarn('Invalid bid request - missing required device data');
+      logWarn('Invalid bid request - missing required device data');
       return false;
     }
 
     if (!(bid.params.device.geo &&
           bid.params.device.geo.country)) {
-      utils.logWarn('Invalid bid request - missing required geo data');
+      logWarn('Invalid bid request - missing required geo data');
       return false;
     }
 
     if (!bid.params.definerId) {
-      utils.logWarn('Invalid bid request - missing required definer data');
+      logWarn('Invalid bid request - missing required definer data');
       return false;
     }
 
@@ -84,7 +84,7 @@ export const spec = {
       allimps: params.allimps,
       cur: [DEFAULT_CUR],
       wlang: params.wlang,
-      bcat: params.bcat,
+      bcat: deepAccess(bidderRequest.ortb2Imp, 'bcat') || params.bcat,
       badv: params.badv,
       bapp: params.bapp,
       source: params.source ? params.source : {},
@@ -94,7 +94,7 @@ export const spec = {
 
     payload.device.ua = navigator.userAgent;
     payload.device.ip = navigator.ip;
-    payload.site.page = bidderRequest.refererInfo.referer;
+    payload.site.page = bidderRequest.refererInfo.page;
     payload.site.mobile = /(ios|ipod|ipad|iphone|android)/i.test(navigator.userAgent) ? 1 : 0;
     payload.ext.definerId = params.definerId;
 
@@ -150,20 +150,24 @@ export const spec = {
   },
 
   /**
-     * Register the user sync pixels which should be dropped after the auction.
-     *
-     * @param {SyncOptions} syncOptions Which user syncs are allowed?
-     * @param {ServerResponse[]} serverResponses List of server's responses.
-     * @param gdprConsent The GDPR consent parameters
-     * @param uspConsent The USP consent parameters
-     * @return {UserSync[]} The user syncs which should be dropped.
-     */
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
+   * Register the user sync pixels which should be dropped after the auction.
+   *
+   * @param {SyncOptions} syncOptions Which user syncs are allowed?
+   * @param {ServerResponse[]} serverResponses List of server's responses.
+   * @param definerId The calling entity's definer id
+   * @param gdprConsent The GDPR consent parameters
+   * @param uspConsent The USP consent parameters
+   * @return {UserSync[]} The user syncs which should be dropped.
+   */
+  getUserSyncs: function(syncOptions, serverResponses, definerId, gdprConsent, uspConsent) {
     const syncs = [];
+    if (definerId === '' || definerId === null) {
+      definerId = PREBID_DEFINER_ID;
+    }
     if (syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
-        url: USER_SYNC_URL.concat(PREBID_DEFINER_ID)
+        url: USER_SYNC_URL.concat(definerId)
       });
     }
     return syncs;

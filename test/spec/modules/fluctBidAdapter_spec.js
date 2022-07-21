@@ -1,7 +1,7 @@
 import {expect} from 'chai';
-import {spec} from 'modules/fluctBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
-import {config} from 'src/config.js';
+import {spec} from 'modules/fluctBidAdapter';
+import {newBidder} from 'src/adapters/bidderFactory';
+import {config} from 'src/config';
 
 describe('fluctAdapter', function () {
   const adapter = newBidder(spec);
@@ -78,6 +78,103 @@ describe('fluctAdapter', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.method).to.equal('POST');
     });
+
+    it('sends bid request to ENDPOINT with query parameter', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.url).to.equal('https://hb.adingo.jp/prebid?dfpUnitCode=%2F100000%2Funit_code&tagId=10000%3A100000001&groupId=1000000002');
+    });
+
+    it('includes data.user.eids = [] by default', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.user.eids).to.eql([]);
+    });
+
+    it('includes no data.params.kv by default', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.params.kv).to.eql(undefined);
+    });
+
+    it('includes filtered user.eids if any exists', function () {
+      const bidRequests2 = bidRequests.map(
+        (bidReq) => Object.assign(bidReq, {
+          userIdAsEids: [
+            {
+              source: 'foobar.com',
+              uids: [
+                { id: 'foobar-id' }
+              ],
+            },
+            {
+              source: 'adserver.org',
+              uids: [
+                { id: 'tdid' }
+              ],
+            },
+            {
+              source: 'criteo.com',
+              uids: [
+                { id: 'criteo-id' }
+              ],
+            },
+            {
+              source: 'intimatemerger.com',
+              uids: [
+                { id: 'imuid' }
+              ],
+            },
+            {
+              source: 'liveramp.com',
+              uids: [
+                { id: 'idl-env' }
+              ],
+            },
+          ],
+        })
+      );
+      const request = spec.buildRequests(bidRequests2, bidderRequest)[0];
+      expect(request.data.user.eids).to.eql([
+        {
+          source: 'adserver.org',
+          uids: [
+            { id: 'tdid' }
+          ],
+        },
+        {
+          source: 'criteo.com',
+          uids: [
+            { id: 'criteo-id' }
+          ],
+        },
+        {
+          source: 'intimatemerger.com',
+          uids: [
+            { id: 'imuid' }
+          ],
+        },
+        {
+          source: 'liveramp.com',
+          uids: [
+            { id: 'idl-env' }
+          ],
+        },
+      ]);
+    });
+
+    it('includes data.params.kv if any exists', function () {
+      const bidRequests2 = bidRequests.map(
+        (bidReq) => Object.assign(bidReq, {
+          params: {
+            kv: {
+              imsids: ['imsid1', 'imsid2']
+            }
+          }
+        })
+      );
+      const request = spec.buildRequests(bidRequests2, bidderRequest)[0];
+      expect(request.data.params.kv).to.eql({
+        imsids: ['imsid1', 'imsid2']
+      });
+    });
   });
 
   describe('interpretResponse', function() {
@@ -114,6 +211,7 @@ describe('fluctAdapter', function () {
               adm: '<!-- test creative -->',
               burl: 'https://i.adingo.jp/?test=1&et=hb&bidid=237f4d1a293f99',
               crid: 'test_creative',
+              adomain: ['test_adomain']
             }]
           }]
         }
@@ -131,6 +229,9 @@ describe('fluctAdapter', function () {
           creativeId: 'test_creative',
           ttl: 300,
           ad: '<!-- test creative -->' + callBeaconSnippet,
+          meta: {
+            advertiserDomains: ['test_adomain'],
+          },
         }
       ];
 
@@ -186,6 +287,9 @@ describe('fluctAdapter', function () {
           ttl: 300,
           ad: '<!-- test creative -->' + callBeaconSnippet,
           dealId: 'test_deal',
+          meta: {
+            advertiserDomains: [],
+          },
         }
       ];
 

@@ -1,0 +1,112 @@
+<html>
+<head>
+    <script async src="../../build/dev/prebid.js"></script>
+    <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
+    <script>
+        var FAILSAFE_TIMEOUT = 3300;
+        var PREBID_TIMEOUT = 2000;
+
+        var adUnits = [{
+            code: 'div-gpt-ad-1460505748561-0',
+            mediaTypes: {
+                banner: {
+                    sizes: [[300, 250], [300,600]],
+                }
+            },
+            // Replace this object to test a new Adapter!
+            bids: [
+            {
+                bidder: 'pubmatic',
+                params: {
+                    publisherId: '156276',         // required
+                    adSlot: 'pubmatic_test',       // required
+                }
+            }
+            ]
+
+        }];
+
+        var pbjs = pbjs || {};
+        pbjs.que = pbjs.que || [];
+
+    </script>
+
+    <script>
+        var googletag = googletag || {};
+        googletag.cmd = googletag.cmd || [];
+        googletag.cmd.push(function() {
+            googletag.pubads().disableInitialLoad();
+        });
+
+        pbjs.que.push(function() {
+            pbjs.setConfig({
+              debugging: {
+                    enabled: true
+                },
+              ortb2: {
+                user: {
+                  data: [
+                    // ID Ward segment taxonomy inserted here
+                  ]
+                },
+              },
+              realTimeData: {
+                dataProviders: [
+                  {
+                    name: "idWard",                    
+                    params: {
+                      cohortStorageKey: "cohort_ids",
+                      
+                    }
+                  }
+                ]
+              }
+            });
+            pbjs.addAdUnits(adUnits);
+            pbjs.requestBids({
+                bidsBackHandler: sendAdserverRequest,
+                timeout: PREBID_TIMEOUT
+            });
+
+            document.getElementById( "user-segments" ).innerHTML = JSON.stringify( pbjs.getConfig('ortb2') );
+        });
+
+        function sendAdserverRequest() {
+            if (pbjs.adserverRequestSent) return;
+            pbjs.adserverRequestSent = true;
+            googletag.cmd.push(function() {
+                pbjs.que.push(function() {
+                    pbjs.setTargetingForGPTAsync();
+                    googletag.pubads().refresh();
+                });
+            });
+        }
+
+        setTimeout(function() {
+            sendAdserverRequest();
+        }, FAILSAFE_TIMEOUT);
+
+    </script>
+
+    <script>
+        googletag.cmd.push(function () {
+            googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
+            googletag.pubads().enableSingleRequest();
+            googletag.enableServices();
+        });
+    </script>
+
+                              <script>!function(a){var e="https://s.go-mpulse.net/boomerang/",t="addEventListener";if("False"=="True")a.BOOMR_config=a.BOOMR_config||{},a.BOOMR_config.PageParams=a.BOOMR_config.PageParams||{},a.BOOMR_config.PageParams.pci=!0,e="https://s2.go-mpulse.net/boomerang/";if(window.BOOMR_API_key="5G3ZS-8L7PG-U23WM-5CA4K-LQ3YP",function(){function n(e){a.BOOMR_onload=e&&e.timeStamp||(new Date).getTime()}if(!a.BOOMR||!a.BOOMR.version&&!a.BOOMR.snippetExecuted){a.BOOMR=a.BOOMR||{},a.BOOMR.snippetExecuted=!0;var i,_,o,r=document.createElement("iframe");if(a[t])a[t]("load",n,!1);else if(a.attachEvent)a.attachEvent("onload",n);r.src="javascript:void(0)",r.title="",r.role="presentation",(r.frameElement||r).style.cssText="width:0;height:0;border:0;display:none;",o=document.getElementsByTagName("script")[0],o.parentNode.insertBefore(r,o);try{_=r.contentWindow.document}catch(O){i=document.domain,r.src="javascript:var d=document.open();d.domain='"+i+"';void(0);",_=r.contentWindow.document}_.open()._l=function(){var a=this.createElement("script");if(i)this.domain=i;a.id="boomr-if-as",a.src=e+"5G3ZS-8L7PG-U23WM-5CA4K-LQ3YP",BOOMR_lstart=(new Date).getTime(),this.body.appendChild(a)},_.write("<bo"+'dy onload="document._l();">'),_.close()}}(),"".length>0)if(a&&"performance"in a&&a.performance&&"function"==typeof a.performance.setResourceTimingBufferSize)a.performance.setResourceTimingBufferSize();!function(){if(BOOMR=a.BOOMR||{},BOOMR.plugins=BOOMR.plugins||{},!BOOMR.plugins.AK){var e=""=="true"?1:0,t="",n="ghh4w4yxem66iyi6ijxa-f-a8f1ed317-clientnsv4-s.akamaihd.net",i="false"=="true"?2:1,_={"ak.v":"32","ak.cp":"540505","ak.ai":parseInt("351538",10),"ak.ol":"0","ak.cr":17,"ak.ipv":4,"ak.proto":"http/1.1","ak.rid":"322de403","ak.r":36326,"ak.a2":e,"ak.m":"dscx","ak.n":"essl","ak.bpcip":"49.207.203.0","ak.cport":5172,"ak.gh":"23.47.149.85","ak.quicv":"","ak.tlsv":"tls1.2","ak.0rtt":"","ak.csrc":"-","ak.acc":"bbr","ak.t":"1629373038","ak.ak":"hOBiQwZUYzCg5VSAfCLimQ==admFPBlxVf0VKeanKFKUThzq+or23aIaVFP5DBXpeOGEuvD5mQz0UZbvK242Y8cupS91bsNaM7uJT3/O00EszGTxlFhkv439YkTWfyegvqVlJhcrZ7jcRkIoyrmjoBqDZoF0WaG4rhwmNzkKEv6T1noRYwEWwRHOG8p7osPXWy5as6KkmhOYUiYk8S5hQj+HFzhYI5YUTx+8urmHdpVIDBkramcrT2V89mb0cH5L2bSGS2hahAA3Kkf+0Dul7r5hDFQaVTf17e4oKdM1G8cKVF5LGRxRl3v4Rn6tBJ+fjrJ7XYQWV30w1LPwcAmSfRX8iTCK4xzHwG1fwDFHb5tWVsxHeEkRgNN3/KhnrCjxKtaROjJeWypJf/rjn1HWHwy7uVVsP9f/HRN3drCCkEvJBmu6yi0jzFFCoeEkbUEoq+8=","ak.pv":"396","ak.dpoabenc":"","ak.tf":i};if(""!==t)_["ak.ruds"]=t;var o={i:!1,av:function(e){var t="http.initiator";if(e&&(!e[t]||"spa_hard"===e[t]))_["ak.feo"]=void 0!==a.aFeoApplied?1:0,BOOMR.addVar(_)},rv:function(){var a=["ak.bpcip","ak.cport","ak.cr","ak.csrc","ak.gh","ak.ipv","ak.m","ak.n","ak.ol","ak.proto","ak.quicv","ak.tlsv","ak.0rtt","ak.r","ak.acc","ak.t","ak.tf"];BOOMR.removeVar(a)}};BOOMR.plugins.AK={akVars:_,akDNSPreFetchDomain:n,init:function(){if(!o.i){var a=BOOMR.subscribe;a("before_beacon",o.av,null,null),a("onbeacon",o.rv,null,null),o.i=!0}return this},is_complete:function(){return!0}}}}()}(window);</script></head>
+
+<body>
+<h2>Prebid.js Test</h2>
+<h5>Div-1</h5>
+<div id='div-gpt-ad-1460505748561-0'>
+    <script type='text/javascript'>
+        googletag.cmd.push(function() { googletag.display('div-gpt-ad-1460505748561-0'); });
+    </script>
+</div>
+<h5>First Party Data (ortb2) Sent to Bidding Adapter</h5>
+<div id="user-segments"></div>
+</body>
+</html>

@@ -31,22 +31,6 @@ describe('CleanmedianetAdapter', function () {
       ).to.equal(true);
     });
 
-    it('should validate bid floor', function() {
-      expect(
-        spec.isBidRequestValid({ params: { supplyPartnerId: '123' } })
-      ).to.equal(true); // bidfloor has a default
-      expect(
-        spec.isBidRequestValid({
-          params: { supplyPartnerId: '123', bidfloor: '123' }
-        })
-      ).to.equal(false);
-      expect(
-        spec.isBidRequestValid({
-          params: { supplyPartnerId: '123', bidfloor: 0.1 }
-        })
-      ).to.equal(true);
-    });
-
     it('should validate adpos', function() {
       expect(
         spec.isBidRequestValid({ params: { supplyPartnerId: '123' } })
@@ -101,7 +85,7 @@ describe('CleanmedianetAdapter', function () {
       },
       sizes: [[300, 250], [300, 600]],
       transactionId: 'a123456789',
-      refererInfo: { referer: 'https://examplereferer.com' },
+      refererInfo: { referer: 'https://examplereferer.com', domain: 'examplereferer.com' },
       gdprConsent: {
         consentString: 'some string',
         gdprApplies: true
@@ -130,11 +114,16 @@ describe('CleanmedianetAdapter', function () {
 
     it('builds request correctly', function() {
       let bidRequest2 = utils.deepClone(bidRequest);
-      bidRequest2.refererInfo.referer = 'https://www.test.com/page.html';
+      Object.assign(bidRequest2.refererInfo, {
+        page: 'https://www.test.com/page.html',
+        domain: 'test.com',
+        ref: 'https://referer.com'
+      })
+
       let response = spec.buildRequests([bidRequest], bidRequest2)[0];
-      expect(response.data.site.domain).to.equal('www.test.com');
+      expect(response.data.site.domain).to.equal('test.com');
       expect(response.data.site.page).to.equal('https://www.test.com/page.html');
-      expect(response.data.site.ref).to.equal('https://www.test.com/page.html');
+      expect(response.data.site.ref).to.equal('https://referer.com');
       expect(response.data.imp.length).to.equal(1);
       expect(response.data.imp[0].id).to.equal(bidRequest.transactionId);
       expect(response.data.imp[0].instl).to.equal(0);
@@ -158,15 +147,6 @@ describe('CleanmedianetAdapter', function () {
       )[0];
       expect(response.data.imp[0].instl).to.equal(
         bidRequestWithInstlEquals0.params.instl
-      );
-      const bidRequestWithBidfloorEquals1 = utils.deepClone(bidRequest);
-      bidRequestWithBidfloorEquals1.params.bidfloor = 1;
-      response = spec.buildRequests(
-        [bidRequestWithBidfloorEquals1],
-        bidRequest2
-      )[0];
-      expect(response.data.imp[0].bidfloor).to.equal(
-        bidRequestWithBidfloorEquals1.params.bidfloor
       );
     });
 

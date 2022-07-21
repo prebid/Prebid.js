@@ -61,8 +61,8 @@ describe('microadBidAdapter', () => {
   describe('buildRequests', () => {
     const bidderRequest = {
       refererInfo: {
-        canonicalUrl: 'https://example.com/to',
-        referer: 'https://example.com/from'
+        page: 'https://example.com/to',
+        ref: 'https://example.com/from'
       }
     };
     const expectedResultTemplate = {
@@ -124,10 +124,10 @@ describe('microadBidAdapter', () => {
       ]);
     });
 
-    it('should use window.location.href if there is no canonicalUrl', () => {
+    it('should use window.location.href if there is no page', () => {
       const bidderRequestWithoutCanonicalUrl = {
         refererInfo: {
-          referer: 'https://example.com/from'
+          ref: 'https://example.com/from'
         }
       };
       const requests = spec.buildRequests([bidRequestTemplate], bidderRequestWithoutCanonicalUrl);
@@ -265,6 +265,36 @@ describe('microadBidAdapter', () => {
         expect(request.url.lastIndexOf('https', 0) === 0).to.be.true;
       });
     });
+
+    it('should add Liveramp identity link if it is available in request parameters', () => {
+      const bidRequestWithLiveramp = Object.assign({}, bidRequestTemplate, {
+        userId: {idl_env: 'idl-env-sample'}
+      });
+      const requests = spec.buildRequests([bidRequestWithLiveramp], bidderRequest)
+      requests.forEach(request => {
+        expect(request.data).to.deep.equal(
+          Object.assign({}, expectedResultTemplate, {
+            cbt: request.data.cbt,
+            idl_env: 'idl-env-sample'
+          })
+        );
+      })
+    });
+
+    it('should not add Liveramp identity link if it is not available in request parameters', () => {
+      const bidRequestWithLiveramp = Object.assign({}, bidRequestTemplate, {
+        userId: {}
+      });
+      const requests = spec.buildRequests([bidRequestWithLiveramp], bidderRequest)
+      const expectedResult = Object.assign({}, expectedResultTemplate)
+      requests.forEach(request => {
+        expect(request.data).to.deep.equal(
+          Object.assign({}, expectedResultTemplate, {
+            cbt: request.data.cbt
+          })
+        );
+      })
+    });
   });
 
   describe('interpretResponse', () => {
@@ -278,7 +308,10 @@ describe('microadBidAdapter', () => {
         ttl: 10,
         creativeId: 'creative-id',
         netRevenue: true,
-        currency: 'JPY'
+        currency: 'JPY',
+        meta: {
+          advertiserDomains: ['foobar.com']
+        }
       }
     };
     const expectedBidResponseTemplate = {
@@ -290,7 +323,10 @@ describe('microadBidAdapter', () => {
       ttl: 10,
       creativeId: 'creative-id',
       netRevenue: true,
-      currency: 'JPY'
+      currency: 'JPY',
+      meta: {
+        advertiserDomains: ['foobar.com']
+      }
     };
 
     it('should return nothing if server response body does not contain cpm', () => {
@@ -323,6 +359,16 @@ describe('microadBidAdapter', () => {
       });
 
       expect(spec.interpretResponse(serverResponseWithDealId)).to.deep.equal([expectedBidResponse]);
+    });
+
+    it('should return a valid bidResponse without meta if serverResponse is valid, has a nonzero cpm and no deal id', () => {
+      const serverResponseWithoutMeta = Object.assign({}, utils.deepClone(serverResponseTemplate));
+      delete serverResponseWithoutMeta.body.meta;
+      const expectedBidResponse = Object.assign({}, expectedBidResponseTemplate, {
+        meta: { advertiserDomains: [] }
+      });
+
+      expect(spec.interpretResponse(serverResponseWithoutMeta)).to.deep.equal([expectedBidResponse]);
     });
   });
 

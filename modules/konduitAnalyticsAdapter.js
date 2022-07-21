@@ -1,7 +1,7 @@
+import { parseSizesInput, logError, uniques } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-import * as utils from '../src/utils.js';
 import { targeting } from '../src/targeting.js';
 import { config } from '../src/config.js';
 import CONSTANTS from '../src/constants.json';
@@ -84,7 +84,7 @@ const konduitAnalyticsAdapter = Object.assign(
 );
 
 function obtainBidTimeoutInfo (args) {
-  return args.map(item => item.bidder).filter(utils.uniques);
+  return args.map(item => item.bidder).filter(uniques);
 }
 
 function obtainAuctionInfo (auction) {
@@ -109,7 +109,7 @@ function obtainBidRequestsInfo (bidRequests) {
         adUnitCode: bid.adUnitCode,
         bidId: bid.bidId,
         startTime: bid.startTime,
-        sizes: utils.parseSizesInput(bid.sizes).toString(),
+        sizes: parseSizesInput(bid.sizes).toString(),
         params: bid.params
       };
     }),
@@ -208,7 +208,7 @@ konduitAnalyticsAdapter.enableAnalytics = function (analyticsConfig) {
   const konduitId = config.getConfig('konduit.konduitId');
 
   if (!konduitId) {
-    utils.logError('A konduitId in config is required to use konduitAnalyticsAdapter');
+    logError('A konduitId in config is required to use konduitAnalyticsAdapter');
     return;
   }
 

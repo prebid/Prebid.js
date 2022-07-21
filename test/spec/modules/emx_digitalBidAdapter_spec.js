@@ -211,7 +211,9 @@ describe('emx_digital Adapter', function () {
       'refererInfo': {
         'numIframes': 0,
         'reachedTop': true,
-        'referer': 'https://example.com/index.html?pbjs_debug=true'
+        'page': 'https://example.com/index.html?pbjs_debug=true',
+        'domain': 'example.com',
+        'ref': 'https://referrer.com'
       },
       'bids': [{
         'bidder': 'emx_digital',
@@ -304,7 +306,7 @@ describe('emx_digital Adapter', function () {
       request = JSON.parse(request.data);
       expect(request.site).to.have.property('domain', 'example.com');
       expect(request.site).to.have.property('page', 'https://example.com/index.html?pbjs_debug=true');
-      expect(request.site).to.have.property('ref', window.top.document.referrer);
+      expect(request.site).to.have.property('ref', 'https://referrer.com');
     });
 
     it('builds correctly formatted request banner object', function () {
@@ -413,6 +415,50 @@ describe('emx_digital Adapter', function () {
       expect(request.source.ext.schain).to.have.property('complete', 1);
       expect(request.source.ext.schain).to.have.property('ver', '1.0');
       expect(request.source.ext.schain.nodes[0].asi).to.equal(schainBidderRequest.bids[0].schain.nodes[0].asi);
+    });
+
+    it('should add liveramp identitylink id to request', () => {
+      const idl_env = '123';
+      const bidRequestWithID = utils.deepClone(bidderRequest);
+      bidRequestWithID.userId = { idl_env };
+      let requestWithID = spec.buildRequests(bidRequestWithID.bids, bidRequestWithID);
+      requestWithID = JSON.parse(requestWithID.data);
+      expect(requestWithID.user.ext.eids[0]).to.deep.equal({
+        source: 'liveramp.com',
+        uids: [{
+          id: idl_env,
+          ext: {
+            rtiPartner: 'idl'
+          }
+        }]
+      });
+    });
+
+    it('should add gpid to request if present', () => {
+      const gpid = '/12345/my-gpt-tag-0';
+      let bid = utils.deepClone(bidderRequest.bids[0]);
+      bid.ortb2Imp = { ext: { data: { adserver: { adslot: gpid } } } };
+      bid.ortb2Imp = { ext: { data: { pbadslot: gpid } } };
+      let requestWithGPID = spec.buildRequests([bid], bidderRequest);
+      requestWithGPID = JSON.parse(requestWithGPID.data);
+      expect(requestWithGPID.imp[0].ext.gpid).to.exist.and.equal(gpid);
+    });
+
+    it('should add UID 2.0 to request', () => {
+      const uid2 = { id: '456' };
+      const bidRequestWithUID = utils.deepClone(bidderRequest);
+      bidRequestWithUID.userId = { uid2 };
+      let requestWithUID = spec.buildRequests(bidRequestWithUID.bids, bidRequestWithUID);
+      requestWithUID = JSON.parse(requestWithUID.data);
+      expect(requestWithUID.user.ext.eids[0]).to.deep.equal({
+        source: 'uidapi.com',
+        uids: [{
+          id: uid2.id,
+          ext: {
+            rtiPartner: 'UID2'
+          }
+        }]
+      });
     });
   });
 

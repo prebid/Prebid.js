@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { tripleliftAdapterSpec } from 'modules/tripleliftBidAdapter.js';
+import { tripleliftAdapterSpec, storage } from 'modules/tripleliftBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { deepClone } from 'src/utils.js';
 import { config } from 'src/config.js';
@@ -11,8 +11,7 @@ const GDPR_CONSENT_STR = 'BOONm0NOONm0NABABAENAa-AAAARh7______b9_3__7_9uz_Kv_K7V
 
 describe('triplelift adapter', function () {
   const adapter = newBidder(tripleliftAdapterSpec);
-  let bid, instreamBid;
-  let sandbox;
+  let bid, instreamBid, sandbox, logErrorSpy;
 
   this.beforeEach(() => {
     bid = {
@@ -371,7 +370,7 @@ describe('triplelift adapter', function () {
           }
         ],
         refererInfo: {
-          referer: 'https://examplereferer.com'
+          page: 'https://examplereferer.com'
         },
         gdprConsent: {
           consentString: GDPR_CONSENT_STR,
@@ -379,9 +378,18 @@ describe('triplelift adapter', function () {
         },
       };
       sandbox = sinon.sandbox.create();
+      logErrorSpy = sinon.spy(utils, 'logError');
+
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        triplelift: {
+          storageAllowed: true
+        }
+      };
     });
     afterEach(() => {
       sandbox.restore();
+      utils.logError.restore();
+      $$PREBID_GLOBAL$$.bidderSettings = {};
     });
 
     it('exists and is an object', function () {
@@ -568,6 +576,134 @@ describe('triplelift adapter', function () {
       expect(payload.user.ext.eids).to.have.lengthOf(4);
     });
 
+    it('should remove malformed ids that would otherwise break call', function () {
+      let tdidId = '6bca7f6b-a98a-46c0-be05-6020f7604598';
+      let idlEnvId = null; // fail; can't be null
+      let criteoId = '53e30ea700424f7bbdd793b02abc5d7';
+      let pubcid = ''; // fail; can't be empty string
+
+      let bidRequestsMultiple = [
+        { ...bidRequests[0], userId: { tdid: tdidId, idl_env: idlEnvId, criteoId, pubcid } },
+        { ...bidRequests[0], userId: { tdid: tdidId, idl_env: idlEnvId, criteoId, pubcid } },
+        { ...bidRequests[0], userId: { tdid: tdidId, idl_env: idlEnvId, criteoId, pubcid } }
+      ];
+
+      let request = tripleliftAdapterSpec.buildRequests(bidRequestsMultiple, bidderRequest);
+      let payload = request.data;
+
+      expect(payload.user).to.deep.equal({
+        ext: {
+          eids: [
+            {
+              source: 'adserver.org',
+              uids: [
+                {
+                  id: tdidId,
+                  ext: { rtiPartner: 'TDID' }
+                }
+              ],
+            },
+            {
+              source: 'criteo.com',
+              uids: [
+                {
+                  id: criteoId,
+                  ext: { rtiPartner: 'criteoId' }
+                }
+              ]
+            }
+          ]
+        }
+      });
+
+      expect(payload.user.ext.eids).to.be.an('array');
+      expect(payload.user.ext.eids).to.have.lengthOf(2);
+
+      tdidId = {}; // fail; can't be empty object
+      idlEnvId = { id: '987654' }; // pass
+      criteoId = [{ id: '123456' }]; // fail; can't be an array
+      pubcid = '3261d8ad-435d-481d-abd1-9f1a9ec99f0e'; // pass
+
+      bidRequestsMultiple = [
+        { ...bidRequests[0], userId: { tdid: tdidId, idl_env: idlEnvId, criteoId, pubcid } },
+        { ...bidRequests[0], userId: { tdid: tdidId, idl_env: idlEnvId, criteoId, pubcid } },
+        { ...bidRequests[0], userId: { tdid: tdidId, idl_env: idlEnvId, criteoId, pubcid } }
+      ];
+
+      request = tripleliftAdapterSpec.buildRequests(bidRequestsMultiple, bidderRequest);
+      payload = request.data;
+
+      expect(payload.user).to.deep.equal({
+        ext: {
+          eids: [
+            {
+              source: 'liveramp.com',
+              uids: [
+                {
+                  id: '987654',
+                  ext: { rtiPartner: 'idl' }
+                }
+              ]
+            },
+            {
+              source: 'pubcid.org',
+              uids: [
+                {
+                  id: pubcid,
+                  ext: { rtiPartner: 'pubcid' }
+                }
+              ]
+            }
+          ]
+        }
+      });
+
+      expect(payload.user.ext.eids).to.be.an('array');
+      expect(payload.user.ext.eids).to.have.lengthOf(2);
+
+      tdidId = { id: '987654' }; // pass
+      idlEnvId = { id: 987654 }; // fail; can't be an int
+      criteoId = '53e30ea700424f7bbdd793b02abc5d7'; // pass
+      pubcid = { id: '' }; // fail; can't be an empty string
+
+      bidRequestsMultiple = [
+        { ...bidRequests[0], userId: { tdid: tdidId, idl_env: idlEnvId, criteoId, pubcid } },
+        { ...bidRequests[0], userId: { tdid: tdidId, idl_env: idlEnvId, criteoId, pubcid } },
+        { ...bidRequests[0], userId: { tdid: tdidId, idl_env: idlEnvId, criteoId, pubcid } }
+      ];
+
+      request = tripleliftAdapterSpec.buildRequests(bidRequestsMultiple, bidderRequest);
+      payload = request.data;
+
+      expect(payload.user).to.deep.equal({
+        ext: {
+          eids: [
+            {
+              source: 'adserver.org',
+              uids: [
+                {
+                  id: '987654',
+                  ext: { rtiPartner: 'TDID' }
+                }
+              ],
+            },
+            {
+              source: 'criteo.com',
+              uids: [
+                {
+                  id: criteoId,
+                  ext: { rtiPartner: 'criteoId' }
+                }
+              ]
+            }
+          ]
+        }
+      });
+
+      expect(payload.user.ext.eids).to.be.an('array');
+      expect(payload.user.ext.eids).to.have.lengthOf(2);
+    });
+
     it('should return a query string for TL call', function () {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       const url = request.url;
@@ -659,6 +795,15 @@ describe('triplelift adapter', function () {
         size: '*'
       })).to.be.true;
     });
+    it('should catch error if getFloor throws error', function() {
+      bidRequests[0].getFloor = () => {
+        throw new Error('An exception!');
+      };
+
+      tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+
+      expect(logErrorSpy.calledOnce).to.equal(true);
+    });
     it('should send global config fpd if kvps are available', function() {
       const sens = null;
       const category = ['news', 'weather', 'hurricane'];
@@ -676,16 +821,10 @@ describe('triplelift adapter', function () {
           sens: sens,
         }
       }
-      sandbox.stub(config, 'getConfig').callsFake(key => {
-        const config = {
-          ortb2
-        };
-        return utils.deepAccess(config, key);
-      });
-      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, {...bidderRequest, ortb2});
       const { data: payload } = request;
       expect(payload.ext.fpd.user).to.not.exist;
-      expect(payload.ext.fpd.context.data).to.haveOwnProperty('category');
+      expect(payload.ext.fpd.context.ext.data).to.haveOwnProperty('category');
       expect(payload.ext.fpd.context).to.haveOwnProperty('pmp_elig');
     });
     it('should send ad unit fpd if kvps are available', function() {
@@ -694,6 +833,68 @@ describe('triplelift adapter', function () {
       expect(request.data.imp[0].fpd.context.data).to.haveOwnProperty('pbAdSlot');
       expect(request.data.imp[0].fpd.context.data).to.haveOwnProperty('adUnitSpecificAttribute');
       expect(request.data.imp[1].fpd).to.not.exist;
+    });
+    it('should send 1PlusX data as fpd if localStorage is available and no other fpd is defined', function() {
+      sandbox.stub(storage, 'getDataFromLocalStorage').callsFake(() => '{"kid":1,"s":"ySRdArquXuBolr/cVv0UNqrJhTO4QZsbNH/t+2kR3gXjbA==","t":"/yVtBrquXuBolr/cVv0UNtx1mssdLYeKFhWFI3Dq1dJnug=="}');
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.ext.fpd).to.deep.equal({
+        'user': {
+          'data': [
+            {
+              'name': 'www.1plusx.com',
+              'ext': {
+                'kid': 1,
+                's': 'ySRdArquXuBolr/cVv0UNqrJhTO4QZsbNH/t+2kR3gXjbA==',
+                't': '/yVtBrquXuBolr/cVv0UNtx1mssdLYeKFhWFI3Dq1dJnug=='
+              }
+            }
+          ]
+        }
+      })
+    });
+    it('should append 1PlusX data to existing user.data entries if localStorage is available', function() {
+      bidderRequest.ortb2 = {
+        user: {
+          data: [
+            { name: 'dataprovider.com', ext: { segtax: 4 }, segment: [{ id: '1' }] }
+          ]
+        }
+      }
+      sandbox.stub(storage, 'getDataFromLocalStorage').callsFake(() => '{"kid":1,"s":"ySRdArquXuBolr/cVv0UNqrJhTO4QZsbNH/t+2kR3gXjbA==","t":"/yVtBrquXuBolr/cVv0UNtx1mssdLYeKFhWFI3Dq1dJnug=="}');
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.ext.fpd).to.deep.equal({
+        'user': {
+          'data': [
+            { 'name': 'dataprovider.com', 'ext': { 'segtax': 4 }, 'segment': [{ 'id': '1' }] },
+            {
+              'name': 'www.1plusx.com',
+              'ext': {
+                'kid': 1,
+                's': 'ySRdArquXuBolr/cVv0UNqrJhTO4QZsbNH/t+2kR3gXjbA==',
+                't': '/yVtBrquXuBolr/cVv0UNtx1mssdLYeKFhWFI3Dq1dJnug=='
+              }
+            }
+          ]
+        }
+      })
+    });
+    it('should not append anything if getDataFromLocalStorage returns null', function() {
+      bidderRequest.ortb2 = {
+        user: {
+          data: [
+            { name: 'dataprovider.com', ext: { segtax: 4 }, segment: [{ id: '1' }] }
+          ]
+        }
+      }
+      sandbox.stub(storage, 'getDataFromLocalStorage').callsFake(() => null);
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.ext.fpd).to.deep.equal({
+        'user': {
+          'data': [
+            { 'name': 'dataprovider.com', 'ext': { 'segtax': 4 }, 'segment': [{ 'id': '1' }] },
+          ]
+        }
+      })
     });
   });
 
@@ -809,6 +1010,8 @@ describe('triplelift adapter', function () {
       expect(result).to.have.length(2);
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
       expect(Object.keys(result[1])).to.have.members(Object.keys(expectedResponse[1]));
+      expect(result[0].ttl).to.equal(300);
+      expect(result[1].ttl).to.equal(3600);
     });
 
     it('should return multiple responses to support SRA', function () {

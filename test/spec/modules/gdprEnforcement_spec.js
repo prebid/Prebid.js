@@ -16,7 +16,7 @@ import { config } from 'src/config.js';
 import adapterManager, { gdprDataHandler } from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
 import { validateStorageEnforcement } from 'src/storageManager.js';
-import events from 'src/events.js';
+import * as events from 'src/events.js';
 
 describe('gdpr enforcement', function () {
   let nextFnSpy;
