@@ -263,7 +263,7 @@ function interpretResponse(resp, req) {
   }
 
   const respBody = resp.body;
-  if ('nbr' in respBody) {
+  if (!respBody || 'nbr' in respBody) {
     return [];
   }
 
