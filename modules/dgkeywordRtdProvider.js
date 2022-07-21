@@ -7,7 +7,7 @@
  * @requires module:modules/realTimeData
  */
 
-import { logMessage, deepSetValue, logError, logInfo } from '../src/utils.js';
+import {logMessage, deepSetValue, logError, logInfo, mergeDeep} from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getGlobal } from '../src/prebidGlobal.js';
@@ -62,8 +62,7 @@ export function getDgKeywordsAndSet(reqBidsConfigObj, callback, moduleConfig, us
                 let addOrtb2 = {};
                 deepSetValue(addOrtb2, 'site.keywords', keywords);
                 deepSetValue(addOrtb2, 'user.keywords', keywords);
-                const ortb2 = {ortb2: addOrtb2};
-                reqBidsConfigObj.setBidderConfig({ bidders: Object.keys(targetBidKeys), config: ortb2 });
+                mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, Object.fromEntries(Object.keys(targetBidKeys).map(bidder => [bidder, addOrtb2])));
               }
             }
           }

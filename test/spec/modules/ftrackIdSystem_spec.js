@@ -1,6 +1,11 @@
 import { ftrackIdSubmodule } from 'modules/ftrackIdSystem.js';
 import * as utils from 'src/utils.js';
 import { uspDataHandler } from 'src/adapterManager.js';
+import { loadExternalScript } from 'src/adloader.js';
+import { getGlobal } from 'src/prebidGlobal.js';
+import { init, setSubmoduleRegistry } from 'modules/userId/index.js';
+import {createEidsArray} from 'modules/userId/eids.js';
+import {config} from 'src/config.js';
 let expect = require('chai').expect;
 
 let server;
@@ -95,15 +100,7 @@ describe('FTRACK ID System', () => {
       delete configMock1.params.url;
 
       ftrackIdSubmodule.isConfigOk(configMock1);
-      expect(logWarnStub.args[0][0]).to.equal(`FTRACK - config.params.url is required for ftrack to run. Url should be "https://d9.flashtalking.com/d9core".`);
-    });
-
-    it(`should be rejected if 'storage.param.url' does not exist or is not 'https://d9.flashtalking.com/d9core'`, () => {
-      let configMock1 = JSON.parse(JSON.stringify(configMock));
-      configMock1.params.url = 'https://d9.NOT.flashtalking.com/d9core';
-
-      ftrackIdSubmodule.isConfigOk(configMock1);
-      expect(logWarnStub.args[0][0]).to.equal(`FTRACK - config.params.url is required for ftrack to run. Url should be "https://d9.flashtalking.com/d9core".`);
+      expect(logWarnStub.args[0][0]).to.equal(`FTRACK - config.params.url is required for ftrack to run.`);
     });
   });
 
@@ -154,32 +151,28 @@ describe('FTRACK ID System', () => {
     });
 
     it(`should be the only method that gets a new ID aka hits the D9 endpoint`, () => {
-      let appendChildStub = sinon.stub(window.document.body, 'appendChild');
-
-      ftrackIdSubmodule.getId(configMock, null, null).callback();
-      expect(window.document.body.appendChild.called).to.be.ok;
-      let actualScriptTag = window.document.body.appendChild.args[0][0];
-      expect(actualScriptTag.tagName.toLowerCase()).to.equal('script');
-      expect(actualScriptTag.getAttribute('src')).to.equal('https://d9.flashtalking.com/d9core');
-      appendChildStub.resetHistory();
+      ftrackIdSubmodule.getId(configMock, null, null).callback(() => {});
+      expect(loadExternalScript.called).to.be.ok;
+      expect(loadExternalScript.args[0][0]).to.deep.equal('https://d9.flashtalking.com/d9core');
+      loadExternalScript.resetHistory();
 
       ftrackIdSubmodule.decode('value', configMock);
-      expect(window.document.body.appendChild.called).to.not.be.ok;
-      expect(window.document.body.appendChild.args).to.deep.equal([]);
-      appendChildStub.resetHistory();
+      expect(loadExternalScript.called).to.not.be.ok;
+      expect(loadExternalScript.args).to.deep.equal([]);
+      loadExternalScript.resetHistory();
 
       ftrackIdSubmodule.extendId(configMock, null, {cache: {id: ''}});
-      expect(window.document.body.appendChild.called).to.not.be.ok;
-      expect(window.document.body.appendChild.args).to.deep.equal([]);
+      expect(loadExternalScript.called).to.not.be.ok;
+      expect(loadExternalScript.args).to.deep.equal([]);
 
-      appendChildStub.restore();
+      loadExternalScript.restore();
     });
 
     describe(`should use the "ids" setting in the config:`, () => {
       it(`should use default IDs if config.params.id is not populated`, () => {
         let configMock1 = JSON.parse(JSON.stringify(configMock));
         delete configMock1.params.ids;
-        ftrackIdSubmodule.getId(configMock1, null, null).callback();
+        ftrackIdSubmodule.getId(configMock1, null, null).callback(() => {});
 
         expect(window.D9r).to.have.property('DeviceID', true);
         expect(window.D9r).to.have.property('SingleDeviceID', true);
@@ -192,7 +185,7 @@ describe('FTRACK ID System', () => {
           configMock1.params.ids['device id'] = 'test device ID';
           configMock1.params.ids['single device id'] = 'test single device ID';
           configMock1.params.ids['household id'] = 'test household ID';
-          ftrackIdSubmodule.getId(configMock1, null, null).callback();
+          ftrackIdSubmodule.getId(configMock1, null, null).callback(() => {});
 
           expect(window.D9r).to.not.have.property('DeviceID');
           expect(window.D9r).to.not.have.property('SingleDeviceID');
@@ -204,7 +197,7 @@ describe('FTRACK ID System', () => {
           configMock1.params.ids['device id'] = false;
           configMock1.params.ids['single device id'] = false;
           configMock1.params.ids['household id'] = false;
-          ftrackIdSubmodule.getId(configMock1, null, null).callback();
+          ftrackIdSubmodule.getId(configMock1, null, null).callback(() => {});
 
           expect(window.D9r).to.not.have.property('DeviceID');
           expect(window.D9r).to.not.have.property('SingleDeviceID');
@@ -214,7 +207,7 @@ describe('FTRACK ID System', () => {
         it(`- only device id`, () => {
           let configMock1 = JSON.parse(JSON.stringify(configMock));
           delete configMock1.params.ids['single device id'];
-          ftrackIdSubmodule.getId(configMock1, null, null).callback();
+          ftrackIdSubmodule.getId(configMock1, null, null).callback(() => {});
 
           expect(window.D9r).to.have.property('DeviceID', true);
           expect(window.D9r).to.not.have.property('SingleDeviceID');
@@ -224,7 +217,7 @@ describe('FTRACK ID System', () => {
         it(`- only single device id`, () => {
           let configMock1 = JSON.parse(JSON.stringify(configMock));
           delete configMock1.params.ids['device id'];
-          ftrackIdSubmodule.getId(configMock1, null, null).callback();
+          ftrackIdSubmodule.getId(configMock1, null, null).callback(() => {});
 
           expect(window.D9r).to.not.have.property('DeviceID');
           expect(window.D9r).to.have.property('SingleDeviceID', true);
@@ -236,7 +229,7 @@ describe('FTRACK ID System', () => {
           delete configMock1.params.ids['device id'];
           delete configMock1.params.ids['single device id'];
           configMock1.params.ids['household id'] = true;
-          ftrackIdSubmodule.getId(configMock1, null, null).callback();
+          ftrackIdSubmodule.getId(configMock1, null, null).callback(() => {});
 
           expect(window.D9r).to.not.have.property('DeviceID');
           expect(window.D9r).to.not.have.property('SingleDeviceID');
@@ -254,7 +247,7 @@ describe('FTRACK ID System', () => {
       expect(window.localStorage.getItem('ftrack-rtd')).to.not.be.ok;
       expect(window.localStorage.getItem('ftrack-rtd_exp')).to.not.be.ok;
 
-      ftrackIdSubmodule.getId(configMock, consentDataMock, null).callback();
+      ftrackIdSubmodule.getId(configMock, consentDataMock, null).callback(() => {});
       return new Promise(function(resolve, reject) {
         window.testTimer = function () {
           // Sinon fake server is NOT changing the readyState to 4, so instead
@@ -282,7 +275,12 @@ describe('FTRACK ID System', () => {
 
   describe(`decode() method`, () => {
     it(`should respond with an object with the key 'ftrackId'`, () => {
-      expect(ftrackIdSubmodule.decode('value', configMock)).to.deep.equal({ftrackId: 'value'});
+      expect(ftrackIdSubmodule.decode('value', configMock)).to.deep.equal({
+        ftrackId: {
+          ext: { 0: 'v', 1: 'a', 2: 'l', 3: 'u', 4: 'e' },
+          uid: undefined,
+        },
+      });
     });
 
     it(`should not be making requests to retrieve a new ID, it should just be decoding a response`, () => {
@@ -307,6 +305,110 @@ describe('FTRACK ID System', () => {
 
     it(`should return cacheIdObj`, () => {
       expect(ftrackIdSubmodule.extendId(configMock, null, {cache: {id: ''}})).to.deep.equal({cache: {id: ''}});
+    });
+  });
+
+  describe('Uses ftrack getUserIdsAsEids() method', () => {
+    it('getUserIdsAsEids using the ftrack submodule and gets three ids (HHID, DeviceId, SingleDeviceId)', () => {
+      init(config);
+      setSubmoduleRegistry([ftrackIdSubmodule]);
+
+      const ids = {
+        ftrackId: {
+          HHID: ['household_test_id'],
+          DeviceID: ['device_test_id'],
+          SingleDeviceID: ['single_device_test_id']
+        }
+      };
+      config.setConfig({
+        userSync: {
+          auctionDelay: 10,
+          userIds: [{
+            name: 'ftrack', value: ids,
+          }]
+        }
+      });
+
+      getGlobal().getUserIdsAsync().then((ids) => {
+        expect(getGlobal().getUserIdsAsEids()).to.deep.equal([{
+          id: 'device_test_id',
+          atype: 1,
+          ext: {
+            HHID: 'household_test_id',
+            DeviceID: 'device_test_id',
+            SingleDeviceID: 'single_device_test_id',
+          }
+        }]);
+      });
+    });
+
+    it('gets only the deviceId', () => {
+      init(config);
+      setSubmoduleRegistry([ftrackIdSubmodule]);
+
+      const ids = { ftrackId: { DeviceID: ['device_test_id'] } };
+      config.setConfig({
+        userSync: {
+          auctionDelay: 10,
+          userIds: [{
+            name: 'ftrack', value: ids,
+          }]
+        }
+      });
+
+      getGlobal().getUserIdsAsync().then((ids) => {
+        expect(getGlobal().getUserIdsAsEids()).to.deep.equal([{
+          id: 'device_test_id',
+          atype: 1,
+          ext: { DeviceID: 'device_test_id' }
+        }]);
+      });
+    });
+
+    it('gets only the user household id', () => {
+      init(config);
+      setSubmoduleRegistry([ftrackIdSubmodule]);
+
+      const ids = { ftrackId: { HHID: ['household_test_id'], } };
+      config.setConfig({
+        userSync: {
+          auctionDelay: 10,
+          userIds: [{
+            name: 'ftrack', value: ids,
+          }]
+        }
+      });
+
+      getGlobal().getUserIdsAsync().then((ids) => {
+        expect(getGlobal().getUserIdsAsEids()).to.deep.equal([{
+          id: '',
+          atype: 1,
+          ext: { HHID: 'household_test_id' }
+        }]);
+      });
+    });
+
+    it('gets only the deviceId', () => {
+      init(config);
+      setSubmoduleRegistry([ftrackIdSubmodule]);
+
+      const ids = { ftrackId: { SingleDeviceID: ['single_device_test_id'] } };
+      config.setConfig({
+        userSync: {
+          auctionDelay: 10,
+          userIds: [{
+            name: 'ftrack', value: ids,
+          }]
+        }
+      });
+
+      getGlobal().getUserIdsAsync().then((ids) => {
+        expect(getGlobal().getUserIdsAsEids()).to.deep.equal([{
+          id: '',
+          atype: 1,
+          ext: { SingleDeviceID: 'single_device_test_id' }
+        }]);
+      });
     });
   });
 });

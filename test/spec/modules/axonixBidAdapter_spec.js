@@ -65,7 +65,7 @@ describe('AxonixBidAdapter', function () {
       gdprApplies: true
     },
     refererInfo: {
-      referer: 'https://www.prebid.org',
+      page: 'https://www.prebid.org',
       canonicalUrl: 'https://www.prebid.org/the/link/to/the/page'
     }
   };

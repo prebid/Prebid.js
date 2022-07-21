@@ -131,7 +131,7 @@ import * as events from '../../src/events.js';
 import {getGlobal} from '../../src/prebidGlobal.js';
 import {gdprDataHandler} from '../../src/adapterManager.js';
 import CONSTANTS from '../../src/constants.json';
-import {hook, module} from '../../src/hook.js';
+import {hook, module, ready as hooksReady} from '../../src/hook.js';
 import {buildEidPermissions, createEidsArray, USER_IDS_CONFIG} from './eids.js';
 import {getCoreStorageManager} from '../../src/storageManager.js';
 import {
@@ -151,6 +151,9 @@ import {
   timestamp,
   isEmpty
 } from '../../src/utils.js';
+import {getPPID as coreGetPPID} from '../../src/adserver.js';
+import {defer, GreedyPromise} from '../../src/utils/promise.js';
+import {hasPurpose1Consent} from '../../src/utils/gpdr.js';
 
 const MODULE_NAME = 'User ID';
 const COOKIE = 'cookie';
@@ -337,26 +340,6 @@ function storedConsentDataMatchesConsentData(storedConsentData, consentData) {
 }
 
 /**
- * test if consent module is present, applies, and is valid for local storage or cookies (purpose 1)
- * @param {ConsentData} consentData
- * @returns {boolean}
- */
-function hasGDPRConsent(consentData) {
-  if (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) {
-    if (!consentData.consentString) {
-      return false;
-    }
-    if (consentData.apiVersion === 1 && deepAccess(consentData, 'vendorData.purposeConsents.1') === false) {
-      return false;
-    }
-    if (consentData.apiVersion === 2 && deepAccess(consentData, 'vendorData.purpose.consents.1') === false) {
-      return false;
-    }
-  }
-  return true;
-}
-
-/**
    * Find the root domain
    * @param {string|undefined} fullDomain
    * @return {string}
@@ -423,7 +406,7 @@ function processSubmoduleCallbacks(submodules, cb) {
     }, submodules.length);
   }
   submodules.forEach(function (submodule) {
-    submodule.callback(function callbackCompleted(idObj) {
+    function callbackCompleted(idObj) {
       // if valid, id data should be saved to cookie/html storage
       if (idObj) {
         if (submodule.config.storage) {
@@ -435,8 +418,13 @@ function processSubmoduleCallbacks(submodules, cb) {
         logInfo(`${MODULE_NAME}: ${submodule.submodule.name} - request id responded with an empty value`);
       }
       done();
-    });
-
+    }
+    try {
+      submodule.callback(callbackCompleted);
+    } catch (e) {
+      logError(`Error in userID module '${submodule.submodule.name}':`, e);
+      done();
+    }
     // clear callback, this prop is used to test if all submodule callbacks are complete below
     submodule.callback = undefined;
   });
@@ -516,56 +504,20 @@ function addIdDataToAdUnitBids(adUnits, submodules) {
   });
 }
 
-function delayFor(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
+const INIT_CANCELED = {};
 
-function idSystemInitializer({delay = delayFor} = {}) {
-  /**
-   * @returns a {promise, resolve, reject} trio where `promise` is resolved by calling `resolve` or `reject`.
-   */
-  function breakpoint() {
-    const [SUCCESS, FAIL, RESULT] = [0, 1, 2];
-    const status = {};
-
-    function finisher(slot) {
-      return function (val) {
-        if (status[slot] != null) {
-          status[slot](val);
-        } else {
-          status[slot] = true;
-          status[RESULT] = val;
-        }
-      }
-    }
-
-    return {
-      promise: new Promise((resolve, reject) => {
-        if (status[SUCCESS] != null) {
-          resolve(status[RESULT]);
-        } else if (status[FAIL] != null) {
-          reject(status[RESULT]);
-        } else {
-          status[SUCCESS] = resolve;
-          status[FAIL] = reject;
-        }
-      }),
-      resolve: finisher(SUCCESS),
-      reject: finisher(FAIL)
-    }
-  }
-
-  const startInit = breakpoint();
-  const startCallbacks = breakpoint();
+function idSystemInitializer({delay = GreedyPromise.timeout} = {}) {
+  const startInit = defer();
+  const startCallbacks = defer();
   let cancel;
   let initialized = false;
 
   function cancelAndTry(promise) {
     if (cancel != null) {
-      cancel.reject();
+      cancel.reject(INIT_CANCELED);
     }
-    cancel = breakpoint();
-    return Promise.race([promise, cancel.promise]);
+    cancel = defer();
+    return GreedyPromise.race([promise, cancel.promise]);
   }
 
   // grab a reference to global vars so that the promise chains remain isolated;
@@ -584,7 +536,7 @@ function idSystemInitializer({delay = delayFor} = {}) {
   }
 
   let done = cancelAndTry(
-    startInit.promise
+    GreedyPromise.all([hooksReady, startInit.promise])
       .then(() => gdprDataHandler.promise)
       .then(checkRefs((consentData) => {
         initSubmodules(initModules, allModules, consentData);
@@ -593,7 +545,7 @@ function idSystemInitializer({delay = delayFor} = {}) {
       .then(checkRefs(() => {
         const modWithCb = initModules.filter(item => isFn(item.callback));
         if (modWithCb.length) {
-          return new Promise((resolve) => processSubmoduleCallbacks(modWithCb, resolve));
+          return new GreedyPromise((resolve) => processSubmoduleCallbacks(modWithCb, resolve));
         }
       }))
   );
@@ -617,7 +569,7 @@ function idSystemInitializer({delay = delayFor} = {}) {
         });
       }
     }
-    if (refresh) {
+    if (refresh && initialized) {
       done = cancelAndTry(
         done
           .catch(() => null)
@@ -632,7 +584,7 @@ function idSystemInitializer({delay = delayFor} = {}) {
               return sm.callback != null;
             });
             if (cbModules.length) {
-              return new Promise((resolve) => processSubmoduleCallbacks(cbModules, resolve));
+              return new GreedyPromise((resolve) => processSubmoduleCallbacks(cbModules, resolve));
             }
           }))
       );
@@ -643,6 +595,19 @@ function idSystemInitializer({delay = delayFor} = {}) {
 
 let initIdSystem;
 
+function getPPID() {
+  // userSync.ppid should be one of the 'source' values in getUserIdsAsEids() eg pubcid.org or id5-sync.com
+  const matchingUserId = ppidSource && (getUserIdsAsEids() || []).find(userID => userID.source === ppidSource);
+  if (matchingUserId && typeof deepAccess(matchingUserId, 'uids.0.id') === 'string') {
+    const ppidValue = matchingUserId.uids[0].id.replace(/[\W_]/g, '');
+    if (ppidValue.length >= 32 && ppidValue.length <= 150) {
+      return ppidValue;
+    } else {
+      logWarn(`User ID - Googletag Publisher Provided ID for ${ppidSource} is not between 32 and 150 characters - ${ppidValue}`);
+    }
+  }
+}
+
 /**
  * Hook is executed before adapters, but after consentManagement. Consent data is requied because
  * this module requires GDPR consent with Purpose #1 to save data locally.
@@ -652,30 +617,23 @@ let initIdSystem;
  * @param {Object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
  * @param {function} fn required; The next function in the chain, used by hook.js
  */
-export function requestBidsHook(fn, reqBidsConfigObj, {delay = delayFor} = {}) {
-  Promise.race([
+export function requestBidsHook(fn, reqBidsConfigObj, {delay = GreedyPromise.timeout} = {}) {
+  GreedyPromise.race([
     getUserIdsAsync(),
     delay(auctionDelay)
   ]).then(() => {
     // pass available user id data to bid adapters
     addIdDataToAdUnitBids(reqBidsConfigObj.adUnits || getGlobal().adUnits, initializedSubmodules);
-
-    // userSync.ppid should be one of the 'source' values in getUserIdsAsEids() eg pubcid.org or id5-sync.com
-    const matchingUserId = ppidSource && (getUserIdsAsEids() || []).find(userID => userID.source === ppidSource);
-    if (matchingUserId && typeof deepAccess(matchingUserId, 'uids.0.id') === 'string') {
-      const ppidValue = matchingUserId.uids[0].id.replace(/[\W_]/g, '');
-      if (ppidValue.length >= 32 && ppidValue.length <= 150) {
-        if (isGptPubadsDefined()) {
-          window.googletag.pubads().setPublisherProvidedId(ppidValue);
-        } else {
-          window.googletag = window.googletag || {};
-          window.googletag.cmd = window.googletag.cmd || [];
-          window.googletag.cmd.push(function() {
-            window.googletag.pubads().setPublisherProvidedId(ppidValue);
-          });
-        }
+    const ppid = getPPID();
+    if (ppid) {
+      if (isGptPubadsDefined()) {
+        window.googletag.pubads().setPublisherProvidedId(ppid);
       } else {
-        logWarn(`User ID - Googletag Publisher Provided ID for ${ppidSource} is not between 32 and 150 characters - ${ppidValue}`);
+        window.googletag = window.googletag || {};
+        window.googletag.cmd = window.googletag.cmd || [];
+        window.googletag.cmd.push(function() {
+          window.googletag.pubads().setPublisherProvidedId(ppid);
+        });
       }
     }
 
@@ -803,8 +761,18 @@ function refreshUserIds({submoduleNames} = {}, callback) {
  * });
  * ```
  */
+
 function getUserIdsAsync() {
-  return initIdSystem().then(() => getUserIds(), () => getUserIdsAsync());
+  return initIdSystem().then(
+    () => getUserIds(),
+    (e) =>
+      e === INIT_CANCELED
+        // there's a pending refresh - because GreedyPromise runs this synchronously, we are now in the middle
+        // of canceling the previous init, before the refresh logic has had a chance to run.
+        // Use a "normal" Promise to clear the stack and let it complete (or this will just recurse infinitely)
+        ? Promise.resolve().then(getUserIdsAsync)
+        : GreedyPromise.reject(e)
+  );
 }
 
 /**
@@ -868,7 +836,7 @@ function populateSubmoduleId(submodule, consentData, storedConsentData, forceRef
 function initSubmodules(dest, submodules, consentData, forceRefresh = false) {
   // gdpr consent with purpose one is required, otherwise exit immediately
   let { userIdModules, hasValidated } = validateGdprEnforcement(submodules, consentData);
-  if (!hasValidated && !hasGDPRConsent(consentData)) {
+  if (!hasValidated && !hasPurpose1Consent(consentData)) {
     logWarn(`${MODULE_NAME} - gdpr permission not valid for local storage or cookies, exit module`);
     return [];
   }
@@ -878,8 +846,12 @@ function initSubmodules(dest, submodules, consentData, forceRefresh = false) {
   setStoredConsentData(consentData);
 
   const initialized = userIdModules.reduce((carry, submodule) => {
-    populateSubmoduleId(submodule, consentData, storedConsentData, forceRefresh);
-    carry.push(submodule);
+    try {
+      populateSubmoduleId(submodule, consentData, storedConsentData, forceRefresh);
+      carry.push(submodule);
+    } catch (e) {
+      logError(`Error in userID module '${submodule.submodule.name}':`, e);
+    }
     return carry;
   }, []);
   if (initialized.length) {
@@ -947,6 +919,8 @@ function updateSubmodules() {
     return;
   }
   // do this to avoid reprocessing submodules
+  // TODO: the logic does not match the comment - addedSubmodules is always a copy of submoduleRegistry
+  // (if it did it would not be correct - it's not enough to find new modules, as others may have been removed or changed)
   const addedSubmodules = submoduleRegistry.filter(i => !find(submodules, j => j.name === i.name));
 
   submodules.splice(0, submodules.length);
@@ -968,6 +942,7 @@ function updateSubmodules() {
   if (!addedUserIdHook && submodules.length) {
     // priority value 40 will load after consentManagement with a priority of 50
     getGlobal().requestBids.before(requestBidsHook, 40);
+    coreGetPPID.after((next) => next(getPPID()));
     logInfo(`${MODULE_NAME} - usersync config updated for ${submodules.length} submodules: `, submodules.map(a => a.submodule.name));
     addedUserIdHook = true;
   }
@@ -981,6 +956,17 @@ export function attachIdSystem(submodule) {
   if (!find(submoduleRegistry, i => i.name === submodule.name)) {
     submoduleRegistry.push(submodule);
     updateSubmodules();
+    // TODO: a test case wants this to work even if called after init (the setConfig({userId}))
+    // so we trigger a refresh. But is that even possible outside of tests?
+    initIdSystem({refresh: true, submoduleNames: [submodule.name]});
+  }
+}
+
+function normalizePromise(fn) {
+  // for public methods that return promises, make sure we return a "normal" one - to avoid
+  // exposing confusing stack traces
+  return function() {
+    return Promise.resolve(fn.apply(this, arguments));
   }
 }
 
@@ -989,7 +975,7 @@ export function attachIdSystem(submodule) {
  * so a callback is added to fire after the consentManagement module.
  * @param {{getConfig:function}} config
  */
-export function init(config, {delay = delayFor} = {}) {
+export function init(config, {delay = GreedyPromise.timeout} = {}) {
   ppidSource = undefined;
   submodules = [];
   configRegistry = [];
@@ -1034,10 +1020,10 @@ export function init(config, {delay = delayFor} = {}) {
   // exposing getUserIds function in global-name-space so that userIds stored in Prebid can be used by external codes.
   (getGlobal()).getUserIds = getUserIds;
   (getGlobal()).getUserIdsAsEids = getUserIdsAsEids;
-  (getGlobal()).getEncryptedEidsForSource = getEncryptedEidsForSource;
+  (getGlobal()).getEncryptedEidsForSource = normalizePromise(getEncryptedEidsForSource);
   (getGlobal()).registerSignalSources = registerSignalSources;
-  (getGlobal()).refreshUserIds = refreshUserIds;
-  (getGlobal()).getUserIdsAsync = getUserIdsAsync;
+  (getGlobal()).refreshUserIds = normalizePromise(refreshUserIds);
+  (getGlobal()).getUserIdsAsync = normalizePromise(getUserIdsAsync);
   (getGlobal()).getUserIdsAsEidBySource = getUserIdsAsEidBySource;
 }
 

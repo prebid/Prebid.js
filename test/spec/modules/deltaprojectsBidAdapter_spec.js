@@ -7,6 +7,7 @@ import {
 } from 'modules/deltaprojectsBidAdapter.js';
 
 const BID_REQ_REFER = 'http://example.com/page?param=val';
+const BID_REQ_DOMAIN = 'example.com'
 
 describe('deltaprojectsBidAdapter', function() {
   describe('isBidRequestValid', function () {
@@ -62,7 +63,7 @@ describe('deltaprojectsBidAdapter', function() {
       auctionId: '1d1a030790a475',
     }
     const bidRequests = [BIDREQ];
-    const bannerRequest = spec.buildRequests(bidRequests, {refererInfo: { referer: BID_REQ_REFER }})[0];
+    const bannerRequest = spec.buildRequests(bidRequests, {refererInfo: { page: BID_REQ_REFER, domain: BID_REQ_DOMAIN }})[0];
     const bannerRequestBody = bannerRequest.data;
 
     it('send bid request with test tag if it is set in the param', function () {

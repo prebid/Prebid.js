@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import {
   tryGetCriteoFastBid,
   spec,
+  storage,
   PROFILE_ID_PUBLISHERTAG,
   ADAPTER_VERSION,
   canFastBid, getFastBidUrl, FAST_BID_VERSION_CURRENT
@@ -11,11 +12,17 @@ import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils.js';
 import { config } from '../../../src/config.js';
 import { NATIVE, VIDEO } from '../../../src/mediaTypes.js';
+import * as storageManager from 'src/storageManager.js';
 
 describe('The Criteo bidding adapter', function () {
   let utilsMock, sandbox;
 
   beforeEach(function () {
+    $$PREBID_GLOBAL$$.bidderSettings = {
+      criteo: {
+        storageAllowed: true
+      }
+    };
     // Remove FastBid to avoid side effects
     localStorage.removeItem('criteo_fast_bid');
     utilsMock = sinon.mock(utils);
@@ -24,6 +31,7 @@ describe('The Criteo bidding adapter', function () {
   });
 
   afterEach(function () {
+    $$PREBID_GLOBAL$$.bidderSettings = {};
     global.Criteo = undefined;
     utilsMock.restore();
     sandbox.restore();
@@ -404,7 +412,8 @@ describe('The Criteo bidding adapter', function () {
     const refererUrl = 'https://criteo.com?pbt_debug=1&pbt_nolog=1';
     const bidderRequest = {
       refererInfo: {
-        referer: refererUrl
+        page: refererUrl,
+        topmostLocation: refererUrl
       },
       timeout: 3000,
       gdprConsent: {
@@ -419,7 +428,15 @@ describe('The Criteo bidding adapter', function () {
       },
     };
 
+    let localStorageIsEnabledStub;
+
+    this.beforeEach(function () {
+      localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled');
+      localStorageIsEnabledStub.returns(true);
+    });
+
     afterEach(function () {
+      localStorageIsEnabledStub.restore();
       config.resetConfig();
     });
 
@@ -463,7 +480,7 @@ describe('The Criteo bidding adapter', function () {
         },
       ];
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.url).to.match(/^https:\/\/bidder\.criteo\.com\/cdb\?profileId=207&av=\d+&wv=[^&]+&cb=\d+&im=1&debug=1&nolog=1/);
+      expect(request.url).to.match(/^https:\/\/bidder\.criteo\.com\/cdb\?profileId=207&av=\d+&wv=[^&]+&cb=\d+&lsavail=1&im=1&debug=1&nolog=1/);
       expect(request.method).to.equal('POST');
       const ortbRequest = request.data;
       expect(ortbRequest.publisher.url).to.equal(refererUrl);
@@ -553,7 +570,8 @@ describe('The Criteo bidding adapter', function () {
     it('should properly build a networkId request', function () {
       const bidderRequest = {
         refererInfo: {
-          referer: refererUrl
+          page: refererUrl,
+          topmostLocation: refererUrl,
         },
         timeout: 3000,
         gdprConsent: {
@@ -600,7 +618,8 @@ describe('The Criteo bidding adapter', function () {
     it('should properly build a mixed request', function () {
       const bidderRequest = {
         refererInfo: {
-          referer: refererUrl
+          page: refererUrl,
+          topmostLocation: refererUrl,
         },
         timeout: 3000
       };
@@ -925,19 +944,14 @@ describe('The Criteo bidding adapter', function () {
         },
       ];
 
-      sandbox.stub(config, 'getConfig').callsFake(key => {
-        const config = {
-        };
-        return utils.deepAccess(config, key);
-      });
-
-      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const request = spec.buildRequests(bidRequests, { ...bidderRequest, ortb2: {} });
       expect(request.data.publisher.ext).to.equal(undefined);
       expect(request.data.user.ext).to.equal(undefined);
       expect(request.data.slots[0].ext).to.equal(undefined);
     });
 
     it('should properly build a request with criteo specific ad unit first party data', function () {
+      // TODO: this test does not do what it says
       const bidRequests = [
         {
           bidder: 'criteo',
@@ -957,13 +971,7 @@ describe('The Criteo bidding adapter', function () {
         },
       ];
 
-      sandbox.stub(config, 'getConfig').callsFake(key => {
-        const config = {
-        };
-        return utils.deepAccess(config, key);
-      });
-
-      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const request = spec.buildRequests(bidRequests, { ...bidderRequest, ortb2: {} });
       expect(request.data.slots[0].ext).to.deep.equal({
         bidfloor: 0.75,
       });
@@ -1012,17 +1020,12 @@ describe('The Criteo bidding adapter', function () {
         },
       ];
 
-      sandbox.stub(config, 'getConfig').callsFake(key => {
-        const config = {
-          ortb2: {
-            site: siteData,
-            user: userData
-          }
-        };
-        return utils.deepAccess(config, key);
-      });
+      const ortb2 = {
+        site: siteData,
+        user: userData
+      };
 
-      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const request = spec.buildRequests(bidRequests, { ...bidderRequest, ortb2 });
       expect(request.data.publisher.ext).to.deep.equal({ data: { pageType: 'article' } });
       expect(request.data.user.ext).to.deep.equal({ data: { registered: true } });
       expect(request.data.slots[0].ext).to.deep.equal({
@@ -1346,6 +1349,79 @@ describe('The Criteo bidding adapter', function () {
       expect(bids).to.have.lengthOf(2);
       const prebidBids = bids.map(bid => Object.assign(createBid(CONSTANTS.STATUS.GOOD, request.bidRequests[0]), bid));
       expect(prebidBids[0].adId).to.not.equal(prebidBids[1].adId);
+    });
+
+    [{
+      hasBidResponseLevelPafData: true,
+      hasBidResponseBidLevelPafData: true,
+      shouldContainsBidMetaPafData: true
+    },
+    {
+      hasBidResponseLevelPafData: false,
+      hasBidResponseBidLevelPafData: true,
+      shouldContainsBidMetaPafData: false
+    },
+    {
+      hasBidResponseLevelPafData: true,
+      hasBidResponseBidLevelPafData: false,
+      shouldContainsBidMetaPafData: false
+    },
+    {
+      hasBidResponseLevelPafData: false,
+      hasBidResponseBidLevelPafData: false,
+      shouldContainsBidMetaPafData: false
+    }].forEach(testCase => {
+      const bidPafContentId = 'abcdef';
+      const pafTransmission = {
+        version: '12'
+      };
+      const response = {
+        slots: [
+          {
+            width: 300,
+            height: 250,
+            cpm: 10,
+            impid: 'adUnitId',
+            ext: (testCase.hasBidResponseBidLevelPafData ? {
+              paf: {
+                content_id: bidPafContentId
+              }
+            } : undefined)
+          }
+        ],
+        ext: (testCase.hasBidResponseLevelPafData ? {
+          paf: {
+            transmission: pafTransmission
+          }
+        } : undefined)
+      };
+
+      const request = {
+        bidRequests: [{
+          adUnitCode: 'adUnitId',
+          sizes: [[300, 250]],
+          params: {
+            networkId: 456,
+          }
+        }]
+      };
+
+      const bids = spec.interpretResponse(response, request);
+
+      expect(bids).to.have.lengthOf(1);
+
+      const theoreticalBidMetaPafData = {
+        paf: {
+          content_id: bidPafContentId,
+          transmission: pafTransmission
+        }
+      };
+
+      if (testCase.shouldContainsBidMetaPafData) {
+        expect(bids[0].meta).to.deep.equal(theoreticalBidMetaPafData);
+      } else {
+        expect(bids[0].meta).not.to.deep.equal(theoreticalBidMetaPafData);
+      }
     });
   });
 

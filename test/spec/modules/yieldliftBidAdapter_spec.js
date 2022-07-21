@@ -45,7 +45,7 @@ const RESPONSE = {
             'price': 0.18,
             'adm': '<script>adm</script>',
             'adid': '144762342',
-            'adomain': [
+            'advertiserDomains': [
               'https://dummydomain.com'
             ],
             'iurl': 'iurl',
@@ -74,7 +74,7 @@ const RESPONSE = {
             'price': 0.1,
             'adm': '<script>adm2</script>',
             'adid': '144762342',
-            'adomain': [
+            'advertiserDomains': [
               'https://dummydomain.com'
             ],
             'iurl': 'iurl',
@@ -208,7 +208,7 @@ describe('YieldLift', function () {
         expect(bids[index]).to.have.property('height', RESPONSE.body.seatbid[0].bid[index].h);
         expect(bids[index]).to.have.property('ad', RESPONSE.body.seatbid[0].bid[index].adm);
         expect(bids[index]).to.have.property('creativeId', RESPONSE.body.seatbid[0].bid[index].crid);
-        expect(bids[index].meta).to.have.property('adomain', RESPONSE.body.seatbid[0].bid[index].adomain);
+        expect(bids[index].meta).to.have.property('advertiserDomains', RESPONSE.body.seatbid[0].bid[index].advertiserDomains);
         expect(bids[index]).to.have.property('ttl', 30);
         expect(bids[index]).to.have.property('netRevenue', true);
       }
