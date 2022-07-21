@@ -5,7 +5,9 @@ import { isEmpty, getAdUnitSizes, parseSizesInput, deepAccess } from '../src/uti
 const BIDDER_CODE = 'ras';
 const VERSION = '1.0';
 
-const getEndpoint = (network) => `https://csr.onet.pl/${encodeURIComponent(network)}/csr-006/csr.json?`;
+const getEndpoint = (network) => {
+  return `https://csr.onet.pl/${encodeURIComponent(network)}/csr-006/csr.json?nid=${encodeURIComponent(network)}&`;
+};
 
 function parseParams(params, bidderRequest) {
   const newParams = {};
