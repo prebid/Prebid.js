@@ -190,40 +190,6 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
     if (!callback) {
       return;
     }
-    const vjEVENTS = [
-      'loadstart',
-      'progress',
-      'suspend',
-      'abort',
-      'error',
-      'emptied',
-      'stalled',
-      'loadedmetadata',
-      'loadeddata',
-      'canplay',
-      'canplaythrough',
-      'playing',
-      'waiting',
-      'seeking',
-      'seeked',
-      'ended',
-      'durationchange',
-      'timeupdate',
-      'play',
-      'pause',
-      'ratechange',
-      'resize',
-      'volumechange',
-      'playerresize',
-      'mutechange',
-      'fullscreenchange',
-    ]
-
-    vjEVENTS.forEach(ev => {
-      player.on(ev, function () {
-        console.log('vjs: ', ev);
-      });
-    });
 
     for (let i = 0; i < events.length; i++) {
       const type = events[i];
@@ -310,6 +276,7 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
           });
           callback(type, payload);
         };
+        // TODO: sourceset is experimental
         player.on('sourceset', eventHandler);
         break;
 
@@ -486,7 +453,7 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
 
       case FULLSCREEN:
         eventHandler = e => {
-          // payload.fullscreen = e.fullscreen;
+          payload.fullscreen = player.isFullscreen();
           callback(type, payload);
         };
         player.on(FULLSCREEN, eventHandler);
@@ -494,10 +461,10 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
 
       case PLAYER_RESIZE:
         eventHandler = e => {
-          // Object.assign(payload, {
-          //   height: e.height,
-          //   width: e.width,
-          // });
+          Object.assign(payload, {
+            height: player.currentHeight(),
+            width: player.currentWidth(),
+          });
           callback(type, payload);
         };
         player.on(utils.getVideojsEventName(type), eventHandler);
