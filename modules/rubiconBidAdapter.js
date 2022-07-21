@@ -320,6 +320,11 @@ export const spec = {
       // set ext.prebid.auctiontimestamp using auction time
       deepSetValue(data.imp[0], 'ext.prebid.auctiontimestamp', bidderRequest.auctionStart);
 
+      // set storedrequests to undefined so not sent to PBS
+      // top level and imp level both 'ext.prebid' objects are set above so no exception thrown here
+      data.ext.prebid.storedrequest = undefined;
+      data.imp[0].ext.prebid.storedrequest = undefined;
+
       return {
         method: 'POST',
         url: `https://${rubiConf.videoHost || 'prebid-server'}.rubiconproject.com/openrtb2/auction`,
