@@ -45,7 +45,7 @@ const RESPONSE = {
             'price': 0.18,
             'adm': '<script>adm</script>',
             'adid': '144762342',
-            'adomain': [
+            'advertiserDomains': [
               'https://dummydomain.com'
             ],
             'iurl': 'iurl',
