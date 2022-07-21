@@ -76,6 +76,7 @@ import {bidderSettings} from './bidderSettings.js';
 import * as events from './events.js'
 import adapterManager from './adapterManager.js';
 import CONSTANTS from './constants.json';
+import {GreedyPromise} from './utils/promise.js';
 
 const { syncUsers } = userSync;
 
@@ -384,9 +385,9 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
 
   function waitFor(requestId, result) {
     if (ready[requestId] == null) {
-      ready[requestId] = Promise.resolve();
+      ready[requestId] = GreedyPromise.resolve();
     }
-    ready[requestId] = ready[requestId].then(() => Promise.resolve(result).catch(() => {}))
+    ready[requestId] = ready[requestId].then(() => GreedyPromise.resolve(result).catch(() => {}))
   }
 
   function guard(bidderRequest, fn) {
@@ -398,9 +399,9 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
     const wait = ready[bidderRequest.bidderRequestId];
     const orphanWait = ready['']; // also wait for "orphan" responses that are not associated with any request
     if ((wait != null || orphanWait != null) && timeRemaining > 0) {
-      Promise.race([
-        new Promise((resolve) => setTimeout(resolve, timeRemaining)),
-        Promise.resolve(orphanWait).then(() => wait)
+      GreedyPromise.race([
+        GreedyPromise.timeout(timeRemaining),
+        GreedyPromise.resolve(orphanWait).then(() => wait)
       ]).then(fn);
     } else {
       fn();

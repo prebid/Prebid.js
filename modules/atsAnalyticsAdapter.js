@@ -267,7 +267,7 @@ function sendDataToAnalytic (events) {
 }
 
 // preflight request, to check did publisher have permission to send data to analytics endpoint
-function preflightRequest (envelopeSourceCookieValue, events) {
+function preflightRequest (events) {
   logInfo('ATS Analytics - preflight request!');
   ajax(preflightUrl + atsAnalyticsAdapter.context.pid,
     {
@@ -277,7 +277,7 @@ function preflightRequest (envelopeSourceCookieValue, events) {
         let samplingRate = samplingRateObject.samplingRate;
         atsAnalyticsAdapter.setSamplingCookie(samplingRate);
         let samplingRateNumber = Number(samplingRate);
-        if (data && samplingRate && atsAnalyticsAdapter.shouldFireRequest(samplingRateNumber) && envelopeSourceCookieValue != null) {
+        if (data && samplingRate && atsAnalyticsAdapter.shouldFireRequest(samplingRateNumber)) {
           logInfo('ATS Analytics - events to send: ', events);
           sendDataToAnalytic(events);
         }
@@ -377,12 +377,11 @@ atsAnalyticsAdapter.callHandler = function (evtype, args) {
         }
         // check should we send data to analytics or not, check first cookie value _lr_sampling_rate
         try {
-          let envelopeSourceCookieValue = storage.getCookie('_lr_env_src_ats');
           let samplingRateCookie = storage.getCookie('_lr_sampling_rate');
           if (!samplingRateCookie) {
-            preflightRequest(envelopeSourceCookieValue, events);
+            preflightRequest(events);
           } else {
-            if (atsAnalyticsAdapter.shouldFireRequest(parseInt(samplingRateCookie)) && envelopeSourceCookieValue != null) {
+            if (atsAnalyticsAdapter.shouldFireRequest(parseInt(samplingRateCookie))) {
               logInfo('ATS Analytics - events to send: ', events);
               sendDataToAnalytic(events);
             }
