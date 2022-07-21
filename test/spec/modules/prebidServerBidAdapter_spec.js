@@ -2692,6 +2692,26 @@ describe('S2S Adapter', function () {
       sinon.assert.match(actual.imp[0], sinon.match(ortb2Imp));
     });
 
+    it('setting adapterCode for default bidder', function () {
+      config.setConfig({ CONFIG });
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      server.requests[0].respond(200, {}, JSON.stringify(RESPONSE_OPENRTB));
+
+      const response = addBidResponse.firstCall.args[1];
+      expect(response).to.have.property('adapterCode', 'appnexus');
+    });
+
+    it('setting adapterCode for alternate bidder', function () {
+      config.setConfig({ CONFIG });
+      let RESPONSE_OPENRTB2 = deepClone(RESPONSE_OPENRTB);
+      RESPONSE_OPENRTB2.seatbid[0].bid[0].ext.prebid.meta.adaptercode = 'appnexus2'
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      server.requests[0].respond(200, {}, JSON.stringify(RESPONSE_OPENRTB2));
+
+      const response = addBidResponse.firstCall.args[1];
+      expect(response).to.have.property('adapterCode', 'appnexus2');
+    });
+
     describe('on sync requested with no cookie', () => {
       let cfg, req, csRes;
 
