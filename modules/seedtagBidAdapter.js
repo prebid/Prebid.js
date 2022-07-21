@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js'
+import { isArray, _map, triggerPixel } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { VIDEO, BANNER } from '../src/mediaTypes.js'
 
@@ -13,6 +13,11 @@ const ALLOWED_PLACEMENTS = {
   banner: true,
   video: true
 }
+
+// Global Vendor List Id
+// https://iabeurope.eu/vendor-list-tcf-v2-0/
+const GVLID = 157;
+
 const mediaTypesMap = {
   [BANNER]: 'display',
   [VIDEO]: 'video'
@@ -62,13 +67,13 @@ function hasMandatoryVideoParams(bid) {
   const videoParams = getVideoParams(bid)
 
   return hasVideoMediaType(bid) && !!videoParams.playerSize &&
-    utils.isArray(videoParams.playerSize) &&
+    isArray(videoParams.playerSize) &&
     videoParams.playerSize.length > 0;
 }
 
 function buildBidRequest(validBidRequest) {
   const params = validBidRequest.params;
-  const mediaTypes = utils._map(
+  const mediaTypes = _map(
     Object.keys(validBidRequest.mediaTypes),
     function (pbjsType) {
       return mediaTypesMap[pbjsType];
@@ -81,6 +86,7 @@ function buildBidRequest(validBidRequest) {
     sizes: validBidRequest.sizes,
     supplyTypes: mediaTypes,
     adUnitId: params.adUnitId,
+    adUnitCode: validBidRequest.adUnitCode,
     placement: params.placement,
     requestCount: validBidRequest.bidderRequestsCount || 1 // FIXME : in unit test the parameter bidderRequestsCount is undefined
   };
@@ -141,22 +147,56 @@ function buildBidResponse(seedtagBid) {
   return bid;
 }
 
+/**
+ *
+ * @returns Measure time to first byte implementation
+ * @see https://web.dev/ttfb/
+ *      https://developer.mozilla.org/en-US/docs/Web/API/Navigation_timing_API
+ */
+function ttfb() {
+  const ttfb = (() => {
+    // Timing API V2
+    try {
+      const entry = performance.getEntriesByType('navigation')[0];
+      return Math.round(entry.responseStart - entry.startTime);
+    } catch (e) {
+      // Timing API V1
+      try {
+        const entry = performance.timing;
+        return Math.round(entry.responseStart - entry.fetchStart);
+      } catch (e) {
+        // Timing API not available
+        return 0;
+      }
+    }
+  })();
+
+  // prevent negative or excessive value
+  // @see https://github.com/googleChrome/web-vitals/issues/162
+  //      https://github.com/googleChrome/web-vitals/issues/137
+  return ttfb >= 0 && ttfb <= performance.now() ? ttfb : 0;
+}
+
 export function getTimeoutUrl (data) {
   let queryParams = '';
   if (
-    utils.isArray(data) && data[0] &&
-    utils.isArray(data[0].params) && data[0].params[0]
+    isArray(data) && data[0] &&
+    isArray(data[0].params) && data[0].params[0]
   ) {
     const params = data[0].params[0];
+    const timeout = data[0].timeout
+
     queryParams =
       '?publisherToken=' + params.publisherId +
-      '&adUnitId=' + params.adUnitId;
+      '&adUnitId=' + params.adUnitId +
+      '&timeout=' + timeout;
   }
   return SEEDTAG_SSP_ONTIMEOUT_ENDPOINT + queryParams;
 }
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   aliases: [SEEDTAG_ALIAS],
   supportedMediaTypes: [BANNER, VIDEO],
   /**
@@ -179,19 +219,25 @@ export const spec = {
    */
   buildRequests(validBidRequests, bidderRequest) {
     const payload = {
-      url: bidderRequest.refererInfo.referer,
+      url: bidderRequest.refererInfo.page,
       publisherToken: validBidRequests[0].params.publisherId,
       cmp: !!bidderRequest.gdprConsent,
       timeout: bidderRequest.timeout,
       version: '$prebid.version$',
       connectionType: getConnectionType(),
-      bidRequests: utils._map(validBidRequests, buildBidRequest)
+      auctionStart: bidderRequest.auctionStart || Date.now(),
+      ttfb: ttfb(),
+      bidRequests: _map(validBidRequests, buildBidRequest),
     };
 
     if (payload.cmp) {
       const gdprApplies = bidderRequest.gdprConsent.gdprApplies;
       if (gdprApplies !== undefined) payload['ga'] = gdprApplies;
       payload['cd'] = bidderRequest.gdprConsent.consentString;
+    }
+
+    if (bidderRequest.uspConsent) {
+      payload['uspConsent'] = bidderRequest.uspConsent
     }
 
     const payloadString = JSON.stringify(payload)
@@ -210,8 +256,8 @@ export const spec = {
    */
   interpretResponse: function(serverResponse) {
     const serverBody = serverResponse.body;
-    if (serverBody && serverBody.bids && utils.isArray(serverBody.bids)) {
-      return utils._map(serverBody.bids, function(bid) {
+    if (serverBody && serverBody.bids && isArray(serverBody.bids)) {
+      return _map(serverBody.bids, function(bid) {
         return buildBidResponse(bid);
       });
     } else {
@@ -242,7 +288,7 @@ export const spec = {
    */
   onTimeout(data) {
     const url = getTimeoutUrl(data);
-    utils.triggerPixel(url);
+    triggerPixel(url);
   },
 
   /**
@@ -251,7 +297,7 @@ export const spec = {
    */
   onBidWon: function (bid) {
     if (bid && bid.nurl) {
-      utils.triggerPixel(bid.nurl);
+      triggerPixel(bid.nurl);
     }
   }
 }

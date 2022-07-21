@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { triggerPixel } from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
@@ -45,7 +45,8 @@ export const spec = {
         sizes: sizes,
         bidId: bidRequest.bidId,
         categories: bidRequest.params.categories,
-        referer: bidderRequest.refererInfo.referer,
+        // TODO: should referer be 'ref'?
+        referer: bidderRequest.refererInfo.page,
         jaySupported: jaySupported,
         device: device,
         adapterVersion: 5,
@@ -79,7 +80,7 @@ export const spec = {
   },
   onBidWon: function (bid) {
     if (!bid['nurl']) { return; }
-    utils.triggerPixel(bid['nurl']);
+    triggerPixel(bid['nurl']);
   }
 };
 

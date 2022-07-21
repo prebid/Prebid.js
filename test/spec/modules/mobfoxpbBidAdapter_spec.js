@@ -45,7 +45,7 @@ describe('MobfoxHBBidAdapter', function () {
       expect(serverRequest.method).to.equal('POST');
     });
     it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal('https://bes.mobfox.com/?c=o&m=multi');
+      expect(serverRequest.url).to.equal('https://bes.mobfox.com/pbjs');
     });
     it('Returns valid data if array of bids is valid', function () {
       let data = serverRequest.data;
@@ -60,12 +60,13 @@ describe('MobfoxHBBidAdapter', function () {
       expect(data.gdpr).to.not.exist;
       expect(data.ccpa).to.not.exist;
       let placement = data['placements'][0];
-      expect(placement).to.have.keys('placementId', 'bidId', 'traffic', 'sizes', 'schain');
+      expect(placement).to.have.keys('placementId', 'bidId', 'traffic', 'sizes', 'schain', 'bidfloor');
       expect(placement.placementId).to.equal(783);
       expect(placement.bidId).to.equal('23fhj33i987f');
       expect(placement.traffic).to.equal(BANNER);
       expect(placement.schain).to.be.an('object');
       expect(placement.sizes).to.be.an('array');
+      expect(placement.bidfloor).to.equal(0);
     });
 
     it('Returns valid data for mediatype video', function () {
@@ -80,7 +81,9 @@ describe('MobfoxHBBidAdapter', function () {
       expect(data).to.be.an('object');
       let placement = data['placements'][0];
       expect(placement).to.be.an('object');
-      expect(placement).to.have.keys('placementId', 'bidId', 'traffic', 'wPlayer', 'hPlayer', 'schain');
+      expect(placement).to.have.keys('placementId', 'bidId', 'traffic', 'playerSize', 'wPlayer', 'hPlayer', 'schain', 'bidfloor',
+        'minduration', 'maxduration', 'mimes', 'protocols', 'startdelay', 'placement',
+        'skip', 'skipafter', 'minbitrate', 'maxbitrate', 'delivery', 'playbackmethod', 'api', 'linearity');
       expect(placement.traffic).to.equal(VIDEO);
       expect(placement.wPlayer).to.equal(playerSize[0]);
       expect(placement.hPlayer).to.equal(playerSize[1]);
@@ -108,7 +111,7 @@ describe('MobfoxHBBidAdapter', function () {
       expect(data).to.be.an('object');
       let placement = data['placements'][0];
       expect(placement).to.be.an('object');
-      expect(placement).to.have.keys('placementId', 'bidId', 'traffic', 'native', 'schain');
+      expect(placement).to.have.keys('placementId', 'bidId', 'traffic', 'native', 'schain', 'bidfloor');
       expect(placement.traffic).to.equal(NATIVE);
       expect(placement.native).to.equal(native);
     });
@@ -161,7 +164,7 @@ describe('MobfoxHBBidAdapter', function () {
       expect(bannerResponses).to.be.an('array').that.is.not.empty;
       let dataItem = bannerResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId',
-        'netRevenue', 'currency', 'dealId', 'mediaType');
+        'netRevenue', 'currency', 'dealId', 'mediaType', 'meta');
       expect(dataItem.requestId).to.equal('23fhj33i987f');
       expect(dataItem.cpm).to.equal(0.4);
       expect(dataItem.width).to.equal(300);
@@ -191,7 +194,7 @@ describe('MobfoxHBBidAdapter', function () {
 
       let dataItem = videoResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'vastUrl', 'ttl', 'creativeId',
-        'netRevenue', 'currency', 'dealId', 'mediaType');
+        'netRevenue', 'currency', 'dealId', 'mediaType', 'meta');
       expect(dataItem.requestId).to.equal('23fhj33i987f');
       expect(dataItem.cpm).to.equal(0.5);
       expect(dataItem.vastUrl).to.equal('test.com');
@@ -222,7 +225,7 @@ describe('MobfoxHBBidAdapter', function () {
       expect(nativeResponses).to.be.an('array').that.is.not.empty;
 
       let dataItem = nativeResponses[0];
-      expect(dataItem).to.have.keys('requestId', 'cpm', 'ttl', 'creativeId', 'netRevenue', 'currency', 'mediaType', 'native');
+      expect(dataItem).to.have.keys('requestId', 'cpm', 'ttl', 'creativeId', 'netRevenue', 'currency', 'mediaType', 'native', 'meta');
       expect(dataItem.native).to.have.keys('clickUrl', 'impressionTrackers', 'title', 'image')
       expect(dataItem.requestId).to.equal('23fhj33i987f');
       expect(dataItem.cpm).to.equal(0.4);

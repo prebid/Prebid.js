@@ -204,6 +204,29 @@ describe('ANIVIEW Bid Adapter Test', function () {
       expect(bidResponse.renderer.loaded).to.equal(false)
       expect(bidResponse.width).to.equal(640)
       expect(bidResponse.height).to.equal(480)
+    });
+
+    it('Support banner format', function () {
+      const bidRequest = spec.buildRequests([
+        {
+          bidId: '253dcb69fb2577',
+          params: {
+            playerDomain: 'example.com',
+            AV_PUBLISHERID: '55b78633181f4603178b4568',
+            AV_CHANNELID: '55b7904d181f46410f8b4568'
+          },
+          mediaTypes: {
+            banner: {
+              sizes: [[640, 480]],
+            }
+          }
+        }
+      ])[0]
+      const bidResponse = spec.interpretResponse(serverResponse, bidRequest)[0]
+
+      expect(bidResponse.ad).to.have.string('https://example.com/script/6.1/prebidRenderer.js');
+      expect(bidResponse.width).to.equal(640)
+      expect(bidResponse.height).to.equal(480)
     })
   });
 

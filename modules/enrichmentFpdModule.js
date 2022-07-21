@@ -1,43 +1,94 @@
+
 /**
  * This module sets default values and validates ortb2 first part data
  * @module modules/firstPartyData
  */
-import * as utils from '../src/utils.js';
-import { submodule } from '../src/hook.js'
-import { getRefererInfo } from '../src/refererDetection.js'
+import { timestamp, mergeDeep } from '../src/utils.js';
+import { submodule } from '../src/hook.js';
+import {getRefererInfo, parseDomain} from '../src/refererDetection.js';
+import { getCoreStorageManager } from '../src/storageManager.js';
 
 let ortb2 = {};
 let win = (window === window.top) ? window : window.top;
+export const coreStorage = getCoreStorageManager('enrichmentFpd');
+
+/**
+  * Find the root domain
+  * @param {string|undefined} fullDomain
+  * @return {string}
+*/
+export function findRootDomain(fullDomain = window.location.hostname) {
+  if (!coreStorage.cookiesAreEnabled()) {
+    return fullDomain;
+  }
+
+  const domainParts = fullDomain.split('.');
+  if (domainParts.length == 2) {
+    return fullDomain;
+  }
+  let rootDomain;
+  let continueSearching;
+  let startIndex = -2;
+  const TEST_COOKIE_NAME = `_rdc${Date.now()}`;
+  const TEST_COOKIE_VALUE = 'writeable';
+  do {
+    rootDomain = domainParts.slice(startIndex).join('.');
+    let expirationDate = new Date(timestamp() + 10 * 1000).toUTCString();
+
+    // Write a test cookie
+    coreStorage.setCookie(
+      TEST_COOKIE_NAME,
+      TEST_COOKIE_VALUE,
+      expirationDate,
+      'Lax',
+      rootDomain,
+      undefined
+    );
+
+    // See if the write was successful
+    const value = coreStorage.getCookie(TEST_COOKIE_NAME, undefined);
+    if (value === TEST_COOKIE_VALUE) {
+      continueSearching = false;
+      // Delete our test cookie
+      coreStorage.setCookie(
+        TEST_COOKIE_NAME,
+        '',
+        'Thu, 01 Jan 1970 00:00:01 GMT',
+        undefined,
+        rootDomain,
+        undefined
+      );
+    } else {
+      startIndex += -1;
+      continueSearching = Math.abs(startIndex) <= domainParts.length;
+    }
+  } while (continueSearching);
+  return rootDomain;
+}
 
 /**
  * Checks for referer and if exists merges into ortb2 global data
  */
 function setReferer() {
-  if (getRefererInfo().referer) utils.mergeDeep(ortb2, { site: { ref: getRefererInfo().referer } });
+  if (getRefererInfo().ref) mergeDeep(ortb2, { site: { ref: getRefererInfo().ref } });
 }
 
 /**
  * Checks for canonical url and if exists merges into ortb2 global data
  */
 function setPage() {
-  if (getRefererInfo().canonicalUrl) utils.mergeDeep(ortb2, { site: { page: getRefererInfo().canonicalUrl } });
+  if (getRefererInfo().page) mergeDeep(ortb2, { site: { page: getRefererInfo().page } });
 }
 
 /**
  * Checks for canonical url and if exists retrieves domain and merges into ortb2 global data
  */
 function setDomain() {
-  let parseDomain = function(url) {
-    if (!url || typeof url !== 'string' || url.length === 0) return;
-
-    var match = url.match(/^(?:https?:\/\/)?(?:www\.)?(.*?(?=(\?|\#|\/|$)))/i);
-
-    return match && match[1];
+  const domain = parseDomain(getRefererInfo().page, {noLeadingWww: true});
+  if (domain) {
+    mergeDeep(ortb2, { site: { domain: domain } });
+    mergeDeep(ortb2, { site: { publisher: { domain: findRootDomain(domain) } } });
   };
-
-  let domain = parseDomain(getRefererInfo().canonicalUrl)
-
-  if (domain) utils.mergeDeep(ortb2, { site: { domain: domain } });
 }
 
 /**
@@ -55,7 +106,7 @@ function setDimensions() {
     height = window.innerHeight || window.document.documentElement.clientHeight || window.document.body.clientHeight;
   }
 
-  utils.mergeDeep(ortb2, { device: { w: width, h: height } });
+  mergeDeep(ortb2, { device: { w: width, h: height } });
 }
 
 /**
@@ -70,7 +121,7 @@ function setKeywords() {
     keywords = window.document.querySelector("meta[name='keywords']");
   }
 
-  if (keywords && keywords.content) utils.mergeDeep(ortb2, { site: { keywords: keywords.content.replace(/\s/g, '') } });
+  if (keywords && keywords.content) mergeDeep(ortb2, { site: { keywords: keywords.content.replace(/\s/g, '') } });
 }
 
 /**
@@ -91,17 +142,19 @@ function runEnrichments() {
 /**
  * Sets default values to ortb2 if exists and adds currency and ortb2 setConfig callbacks on init
  */
-export function initSubmodule(fpdConf, data) {
+export function processFpd(fpdConf, {global}) {
   resetOrtb2();
 
-  return (!fpdConf.skipEnrichments) ? utils.mergeDeep(runEnrichments(), data) : data;
+  return {
+    global: (!fpdConf.skipEnrichments) ? mergeDeep(runEnrichments(), global) : global
+  };
 }
 
 /** @type {firstPartyDataSubmodule} */
 export const enrichmentsSubmodule = {
   name: 'enrichments',
   queue: 2,
-  init: initSubmodule
+  processFpd
 }
 
 submodule('firstPartyData', enrichmentsSubmodule)

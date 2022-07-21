@@ -21,7 +21,7 @@ describe('AdTrueBidAdapter', function () {
         params: {
           publisherId: '1212',
           zoneId: '21423',
-          reserve: 0.2
+          reserve: 0
         },
         placementCode: 'adunit-code-1',
         sizes: [[300, 250]],

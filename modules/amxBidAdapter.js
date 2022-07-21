@@ -5,7 +5,7 @@ import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'amx';
-const storage = getStorageManager(737, BIDDER_CODE);
+const storage = getStorageManager({gvlid: 737, bidderCode: BIDDER_CODE});
 const SIMPLE_TLD_TEST = /\.com?\.\w{2,4}$/;
 const DEFAULT_ENDPOINT = 'https://prebid.a-mo.net/a/c';
 const VERSION = 'pba1.3.1';
@@ -13,19 +13,9 @@ const VAST_RXP = /^\s*<\??(?:vast|xml)/i;
 const TRACKING_ENDPOINT = 'https://1x1.a-mo.net/hbx/';
 const AMUID_KEY = '__amuidpb';
 
-function getLocation (request) {
-  const refInfo = request.refererInfo;
-  if (refInfo == null) {
-    return parseUrl(location.href);
-  }
-
-  if (refInfo.isAmp && refInfo.referer != null) {
-    return parseUrl(refInfo.referer)
-  }
-
-  const topUrl = refInfo.numIframes > 0 && refInfo.stack[0] != null
-    ? refInfo.stack[0] : location.href;
-  return parseUrl(topUrl);
+function getLocation(request) {
+  // TODO: does it make sense to fall back to window.location?
+  return parseUrl(request.refererInfo?.topmostLocation || window.location.href)
 };
 
 const largestSize = (sizes, mediaTypes) => {
@@ -243,15 +233,16 @@ export const spec = {
       gs: deepAccess(bidderRequest, 'gdprConsent.gdprApplies', ''),
       gc: deepAccess(bidderRequest, 'gdprConsent.consentString', ''),
       u: deepAccess(bidderRequest, 'refererInfo.canonicalUrl', loc.href),
+      // TODO: are these referer values correct?
       do: loc.hostname,
-      re: deepAccess(bidderRequest, 'refererInfo.referer'),
+      re: deepAccess(bidderRequest, 'refererInfo.ref'),
       am: getUIDSafe(),
       usp: bidderRequest.uspConsent || '1---',
       smt: 1,
       d: '',
       m: createBidMap(bidRequests),
       cpp: config.getConfig('coppa') ? 1 : 0,
-      fpd2: config.getConfig('ortb2'),
+      fpd2: bidderRequest.ortb2,
       tmax: config.getConfig('bidderTimeout'),
       eids: values(bidRequests.reduce((all, bid) => {
         // we only want unique ones in here

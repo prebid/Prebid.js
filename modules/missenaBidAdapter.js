@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { formatQS, logInfo } from '../src/utils.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
@@ -35,7 +35,8 @@ export const spec = {
       };
 
       if (bidderRequest && bidderRequest.refererInfo) {
-        payload.referer = bidderRequest.refererInfo.referer;
+        // TODO: is 'topmostLocation' the right value here?
+        payload.referer = bidderRequest.refererInfo.topmostLocation;
         payload.referer_canonical = bidderRequest.refererInfo.canonicalUrl;
       }
 
@@ -43,15 +44,13 @@ export const spec = {
         payload.consent_string = bidderRequest.gdprConsent.consentString;
         payload.consent_required = bidderRequest.gdprConsent.gdprApplies;
       }
-
+      const baseUrl = bidRequest.params.baseUrl || ENDPOINT_URL;
+      if (bidRequest.params.test) {
+        payload.test = bidRequest.params.test;
+      }
       return {
         method: 'POST',
-        url:
-          ENDPOINT_URL +
-          '?' +
-          utils.formatQS({
-            t: bidRequest.params.apiKey,
-          }),
+        url: baseUrl + '?' + formatQS({ t: bidRequest.params.apiKey }),
         data: JSON.stringify(payload),
       };
     });
@@ -73,13 +72,36 @@ export const spec = {
 
     return bidResponses;
   },
+  getUserSyncs: function (
+    syncOptions,
+    serverResponses,
+    gdprConsent,
+    uspConsent
+  ) {
+    if (!syncOptions.iframeEnabled) {
+      return [];
+    }
 
+    let gdprParams = '';
+    if (
+      gdprConsent &&
+      'gdprApplies' in gdprConsent &&
+      typeof gdprConsent.gdprApplies === 'boolean'
+    ) {
+      gdprParams = `?gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${
+        gdprConsent.consentString
+      }`;
+    }
+    return [
+      { type: 'iframe', url: 'https://sync.missena.io/iframe' + gdprParams },
+    ];
+  },
   /**
    * Register bidder specific code, which will execute if bidder timed out after an auction
    * @param {data} Containing timeout specific data
    */
   onTimeout: function onTimeout(timeoutData) {
-    utils.logInfo('Missena - Timeout from adapter', timeoutData);
+    logInfo('Missena - Timeout from adapter', timeoutData);
   },
 
   /**
@@ -87,7 +109,7 @@ export const spec = {
    * @param {Bid} The bid that won the auction
    */
   onBidWon: function (bid) {
-    utils.logInfo('Missena - Bid won', bid);
+    logInfo('Missena - Bid won', bid);
   },
 };
 
