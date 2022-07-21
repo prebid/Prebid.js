@@ -122,7 +122,7 @@ export const id5IdSubmodule = {
       'gdpr': hasGdpr,
       'nbPage': incrementNb(config.params.partner),
       'o': 'pbjs',
-      'rf': referer.referer,
+      'rf': referer.topmostLocation,
       'top': referer.reachedTop ? 1 : 0,
       'u': referer.stack[0] || window.location.href,
       'v': '$prebid.version$'

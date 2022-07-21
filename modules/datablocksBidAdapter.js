@@ -347,10 +347,11 @@ export const spec = {
     // GENERATE SITE OBJECT
     let site = {
       domain: window.location.host,
-      page: bidderRequest.refererInfo.referer,
+      // TODO: is 'page' the right value here?
+      page: bidderRequest.refererInfo.page,
       schain: validRequests[0].schain || {},
       ext: {
-        p_domain: config.getConfig('publisherDomain'),
+        p_domain: bidderRequest.refererInfo.domain,
         rt: bidderRequest.refererInfo.reachedTop,
         frames: bidderRequest.refererInfo.numIframes,
         stack: bidderRequest.refererInfo.stack,
@@ -383,7 +384,7 @@ export const spec = {
         gdpr: bidderRequest.gdprConsent || {},
         usp: bidderRequest.uspConsent || {},
         client_info: this.get_client_info(),
-        ortb2: config.getConfig('ortb2') || {}
+        ortb2: bidderRequest.ortb2 || {}
       }
     };
 

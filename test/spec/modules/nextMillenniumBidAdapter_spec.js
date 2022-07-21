@@ -14,6 +14,16 @@ describe('nextMillenniumBidAdapterTests', function() {
       gdprConsent: {
         consentString: 'kjfdniwjnifwenrif3',
         gdprApplies: true
+      },
+      ortb2: {
+        device: {
+          w: 1500,
+          h: 1000
+        },
+        site: {
+          domain: 'example.com',
+          page: 'http://example.com'
+        }
       }
     }
   ];
@@ -93,6 +103,16 @@ describe('nextMillenniumBidAdapterTests', function() {
     const request = spec.buildRequests(bidRequestData);
     expect(JSON.parse(request[0].data).ext.nextMillennium.refresh_count).to.equal(3);
   });
+
+  it('Check if ORTB was added', function() {
+    const request = spec.buildRequests(bidRequestData)
+    expect(JSON.parse(request[0].data).site.domain).to.equal('example.com')
+  })
+
+  it('Check if elOffsets was added', function() {
+    const request = spec.buildRequests(bidRequestData)
+    expect(JSON.parse(request[0].data).ext.nextMillennium.elOffsets).to.be.an('object')
+  })
 
   it('Test getUserSyncs function', function () {
     const syncOptions = {

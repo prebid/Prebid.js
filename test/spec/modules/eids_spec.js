@@ -82,20 +82,65 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
-  it('merkleId', function() {
+  it('merkleId (legacy) - supports single id', function() {
     const userId = {
       merkleId: {
         id: 'some-random-id-value', keyID: 1
       }
     };
     const newEids = createEidsArray(userId);
+
     expect(newEids.length).to.equal(1);
     expect(newEids[0]).to.deep.equal({
       source: 'merkleinc.com',
+      uids: [{
+        id: 'some-random-id-value',
+        atype: 3,
+        ext: { keyID: 1 }
+      }]
+    });
+  });
+
+  it('merkleId supports multiple source providers', function() {
+    const userId = {
+      merkleId: [{
+        id: 'some-random-id-value', ext: { enc: 1, keyID: 16, idName: 'pamId', ssp: 'ssp1' }
+      }, {
+        id: 'another-random-id-value',
+        ext: {
+          enc: 1,
+          idName: 'pamId',
+          third: 4,
+          ssp: 'ssp2'
+        }
+      }]
+    }
+
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(2);
+    expect(newEids[0]).to.deep.equal({
+      source: 'ssp1.merkleinc.com',
       uids: [{id: 'some-random-id-value',
         atype: 3,
-        ext: { keyID: 1
-        }}]
+        ext: {
+          enc: 1,
+          keyID: 16,
+          idName: 'pamId',
+          ssp: 'ssp1'
+        }
+      }]
+    });
+    expect(newEids[1]).to.deep.equal({
+      source: 'ssp2.merkleinc.com',
+      uids: [{id: 'another-random-id-value',
+        atype: 3,
+        ext: {
+          third: 4,
+          enc: 1,
+          idName: 'pamId',
+          ssp: 'ssp2'
+        }
+      }]
     });
   });
 
@@ -213,18 +258,6 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
-  it('NextRollId', function() {
-    const userId = {
-      nextrollId: 'some-random-id-value'
-    };
-    const newEids = createEidsArray(userId);
-    expect(newEids.length).to.equal(1);
-    expect(newEids[0]).to.deep.equal({
-      source: 'nextroll.com',
-      uids: [{id: 'some-random-id-value', atype: 1}]
-    });
-  });
-
   it('zeotapIdPlus', function() {
     const userId = {
       IDP: 'some-random-id-value'
@@ -293,6 +326,20 @@ describe('eids array generation for known sub-modules', function() {
       source: 'kpuid.com',
       uids: [{
         id: 'Sample_Token',
+        atype: 3
+      }]
+    });
+  });
+  it('tncid', function() {
+    const userId = {
+      tncid: 'TEST_TNCID'
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'thenewco.it',
+      uids: [{
+        id: 'TEST_TNCID',
         atype: 3
       }]
     });
@@ -380,8 +427,19 @@ describe('eids array generation for known sub-modules', function() {
       }]
     });
   });
+
+  it('cpexId', () => {
+    const id = 'some-random-id-value'
+    const userId = { cpexId: id };
+    const [eid] = createEidsArray(userId);
+    expect(eid).to.deep.equal({
+      source: 'czechadid.cz',
+      uids: [{ id: 'some-random-id-value', atype: 1 }]
+    });
+  });
 });
-describe('Negative case', function() {
+
+describe('Negative case', function () {
   it('eids array generation for UN-known sub-module', function() {
     // UnknownCommonId
     const userId = {

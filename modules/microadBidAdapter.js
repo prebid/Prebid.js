@@ -51,8 +51,9 @@ export const spec = {
       const bidParams = bid.params;
       const params = {
         spot: bidParams.spot,
-        url: bidderRequest.refererInfo.canonicalUrl || window.location.href,
-        referrer: bidderRequest.refererInfo.referer,
+        // TODO: are these the right refererInfo values - does the fallback make sense here?
+        url: bidderRequest.refererInfo.page || window.location.href,
+        referrer: bidderRequest.refererInfo.ref,
         bid_id: bid.bidId,
         transaction_id: bid.transactionId,
         media_types: convertMediaTypes(bid),

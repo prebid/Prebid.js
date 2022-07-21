@@ -7,6 +7,7 @@ import { _map, deepSetValue, isEmpty, deepAccess } from '../src/utils.js';
 import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'seedingAlliance';
+const GVL_ID = 371;
 const DEFAULT_CUR = 'EUR';
 const ENDPOINT_URL = 'https://b.nativendo.de/cds/rtb/bid?format=openrtb2.5&ssp=pb';
 
@@ -52,6 +53,8 @@ const NATIVE_PARAMS = {
 export const spec = {
   code: BIDDER_CODE,
 
+  gvlid: GVL_ID,
+
   supportedMediaTypes: [NATIVE],
 
   isBidRequestValid: function(bid) {
@@ -62,7 +65,7 @@ export const spec = {
     const pt = setOnAny(validBidRequests, 'params.pt') || setOnAny(validBidRequests, 'params.priceType') || 'net';
     const tid = validBidRequests[0].transactionId;
     const cur = [config.getConfig('currency.adServerCurrency') || DEFAULT_CUR];
-    let url = bidderRequest.refererInfo.referer;
+    let url = bidderRequest.refererInfo.page;
 
     const imp = validBidRequests.map((bid, id) => {
       const assets = _map(bid.nativeParams, (bidParams, key) => {

@@ -1,9 +1,21 @@
-import { parseUrl, getWindowTop, isArray, getGptSlotInfoForAdUnitCode, isStr, deepAccess, isEmpty, logError, triggerPixel, buildUrl, isEmptyStr, logInfo } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { getRefererInfo } from '../src/refererDetection.js';
-import { Renderer } from '../src/Renderer.js';
+import {
+  buildUrl,
+  deepAccess,
+  getGptSlotInfoForAdUnitCode,
+  getWindowTop,
+  isArray,
+  isEmpty,
+  isEmptyStr,
+  isStr,
+  logError,
+  logInfo,
+  triggerPixel
+} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {getRefererInfo} from '../src/refererDetection.js';
+import {Renderer} from '../src/Renderer.js';
 
 const BIDDER_CODE = 'medianet';
 const BID_URL = 'https://prebid.media.net/rtb/prebid';
@@ -19,6 +31,8 @@ const EVENTS = {
 };
 const EVENT_PIXEL_URL = 'qsearch-a.akamaihd.net/log';
 const OUTSTREAM = 'outstream';
+
+// TODO: this should be picked from bidderRequest
 let refererInfo = getRefererInfo();
 
 let mnData = {};
@@ -27,8 +41,8 @@ window.mnet = window.mnet || {};
 window.mnet.queue = window.mnet.queue || [];
 
 mnData.urlData = {
-  domain: parseUrl(refererInfo.referer, {noDecodeWholeURL: true}).hostname,
-  page: refererInfo.referer,
+  domain: refererInfo.domain,
+  page: refererInfo.page,
   isTop: refererInfo.reachedTop
 };
 
@@ -42,13 +56,15 @@ function getTopWindowReferrer() {
   }
 }
 
-function siteDetails(site) {
+function siteDetails(site, bidderRequest) {
+  const urlData = bidderRequest.refererInfo;
   site = site || {};
   let siteData = {
-    domain: site.domain || mnData.urlData.domain,
-    page: site.page || mnData.urlData.page,
+    domain: site.domain || urlData.domain,
+    page: site.page || urlData.page,
     ref: site.ref || getTopWindowReferrer(),
-    isTop: site.isTop || mnData.urlData.isTop
+    topMostLocation: urlData.topmostLocation,
+    isTop: site.isTop || urlData.reachedTop
   };
 
   return Object.assign(siteData, getPageMeta());
@@ -173,6 +189,7 @@ function slotParams(bidRequest) {
   // check with Media.net Account manager for  bid floor and crid parameters
   let params = {
     id: bidRequest.bidId,
+    transactionId: bidRequest.transactionId,
     ext: {
       dfp_id: bidRequest.adUnitCode,
       display_count: bidRequest.bidRequestsCount
@@ -306,10 +323,11 @@ function getBidderURL(cid) {
 
 function generatePayload(bidRequests, bidderRequests) {
   return {
-    site: siteDetails(bidRequests[0].params.site),
+    site: siteDetails(bidRequests[0].params.site, bidderRequests),
     ext: extParams(bidRequests[0], bidderRequests),
     id: bidRequests[0].auctionId,
     imp: bidRequests.map(request => slotParams(request)),
+    ortb2: bidderRequests.ortb2,
     tmax: bidderRequests.timeout || config.getConfig('bidderTimeout')
   }
 }

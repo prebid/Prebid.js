@@ -2,6 +2,7 @@ import { config } from './config.js';
 import clone from 'just-clone';
 import {find, includes} from './polyfill.js';
 import CONSTANTS from './constants.json';
+import {GreedyPromise} from './utils/promise.js';
 export { default as deepAccess } from 'dlv/index.js';
 export { default as deepSetValue } from 'dset';
 
@@ -487,7 +488,7 @@ export function hasOwn(objectToCheck, propertyToCheckFor) {
 * @param {HTMLElement} [doc]
 * @param {HTMLElement} [target]
 * @param {Boolean} [asLastChildChild]
-* @return {HTMLElement}
+* @return {HTML Element}
 */
 export function insertElement(elm, doc, target, asLastChildChild) {
   doc = doc || document;
@@ -517,7 +518,7 @@ export function insertElement(elm, doc, target, asLastChildChild) {
  */
 export function waitForElementToLoad(element, timeout) {
   let timer = null;
-  return new Promise((resolve) => {
+  return new GreedyPromise((resolve) => {
     const onLoad = function() {
       element.removeEventListener('load', onLoad);
       element.removeEventListener('error', onLoad);
@@ -924,17 +925,6 @@ export function getUserConfiguredParams(adUnits, adUnitCode, bidder) {
     .reduce(flatten, [])
     .filter((bidderData) => bidderData.bidder === bidder)
     .map((bidderData) => bidderData.params || {});
-}
-/**
- * Returns the origin
- */
-export function getOrigin() {
-  // IE10 does not have this property. https://gist.github.com/hbogs/7908703
-  if (!window.location.origin) {
-    return window.location.protocol + '//' + window.location.hostname + (window.location.port ? ':' + window.location.port : '');
-  } else {
-    return window.location.origin;
-  }
 }
 
 /**

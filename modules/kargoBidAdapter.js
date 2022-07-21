@@ -88,6 +88,7 @@ export const spec = {
       }
 
       const bidResponse = {
+        ad: adUnit.adm,
         requestId: bidId,
         cpm: Number(adUnit.cpm),
         width: adUnit.width,
@@ -103,8 +104,6 @@ export const spec = {
 
       if (meta.mediaType == VIDEO) {
         bidResponse.vastXml = adUnit.adm;
-      } else {
-        bidResponse.ad = adUnit.adm;
       }
 
       bidResponses.push(bidResponse);
@@ -241,6 +240,7 @@ export const spec = {
   _getAllMetadata(tdid, usp, gdpr) {
     return {
       userIDs: spec._getUserIds(tdid, usp, gdpr),
+      // TODO: this should probably look at refererInfo
       pageURL: window.location.href,
       rawCRB: spec._readCookie('krg_crb'),
       rawCRBLocalStorage: spec._getLocalStorageSafely('krg_crb')
