@@ -2703,13 +2703,13 @@ describe('S2S Adapter', function () {
 
     it('setting adapterCode for alternate bidder', function () {
       config.setConfig({ CONFIG });
-      RESPONSE_OPENRTB.seatbid[0].bid[0].ext.prebid.meta.adaptercode = 'appnexus2'
+      let RESPONSE_OPENRTB2 = deepClone(RESPONSE_OPENRTB);
+      RESPONSE_OPENRTB2.seatbid[0].bid[0].ext.prebid.meta.adaptercode = 'appnexus2'
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
-      server.requests[0].respond(200, {}, JSON.stringify(RESPONSE_OPENRTB));
+      server.requests[0].respond(200, {}, JSON.stringify(RESPONSE_OPENRTB2));
 
       const response = addBidResponse.firstCall.args[1];
       expect(response).to.have.property('adapterCode', 'appnexus2');
-      delete RESPONSE_OPENRTB.seatbid[0].bid[0].ext.prebid.meta.adaptercode;
     });
 
     describe('on sync requested with no cookie', () => {
