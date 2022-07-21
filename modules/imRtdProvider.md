@@ -39,5 +39,5 @@ pbjs.setConfig(
 | waitForIt | Optional | Boolean | Required to ensure that the auction is delayed until prefetch is complete. Defaults to false but recommended to true | `true` |
 | params | Required | Object | Details of module params. | |
 | params.cid | Required | Number | This is the Customer ID value obtained via Intimate Merger. | `5126` |
-| params.setGptKeyValues | Optional | Boolean | This is set targeting for GPT/GAM. Default setting is true. | `true` |
+| params.setGptKeyValues | Optional | Boolean | This is set targeting for GPT/GAM. Default setting is false. | `true` |
 | params.setGptPublisherProvidedId | Optional | Boolean | This is set Publisher Provided Identifier for GPT/GAM. Default setting is false. | `true` |

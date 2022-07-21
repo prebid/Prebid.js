@@ -88,9 +88,7 @@ export function setRealTimeData(bidConfig, moduleConfig, data) {
   const adUnits = bidConfig.adUnits || getGlobal().adUnits;
   const utils = {deepSetValue, deepAccess, logInfo, logError, mergeDeep};
 
-  if (moduleConfig.params.setGptKeyValues
-    || !moduleConfig.params.hasOwnProperty('setGptKeyValues')
-    || moduleConfig.params.setGptPublisherProvidedId) {
+  if (moduleConfig.params.setGptKeyValues || moduleConfig.params.setGptPublisherProvidedId) {
     window.googletag = window.googletag || {cmd: []};
     window.googletag.cmd = window.googletag.cmd || [];
   }
@@ -105,7 +103,7 @@ export function setRealTimeData(bidConfig, moduleConfig, data) {
     const ortb2 = bidConfig.ortb2Fragments?.global || {};
     deepSetValue(ortb2, 'user.ext.data.im_segments', data.im_segments);
 
-    if (moduleConfig.params.setGptKeyValues || !moduleConfig.params.hasOwnProperty('setGptKeyValues')) {
+    if (moduleConfig.params.setGptKeyValues) {
       window.googletag.cmd.push(() => {
         window.googletag.pubads().setTargeting('im_segments', data.im_segments);
       });
