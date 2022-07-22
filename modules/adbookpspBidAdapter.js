@@ -1,13 +1,24 @@
-import includes from 'prebidjs-polyfill/includes.js';
-import find from 'prebidjs-polyfill/find.js';
-import { config } from '../src/config.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {find, includes} from '../src/polyfill.js';
+import {config} from '../src/config.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {getStorageManager} from '../src/storageManager.js';
 import {
-  isPlainObject, deepSetValue, deepAccess, logWarn, inIframe, isNumber, logError, isArray, uniques,
-  flatten, triggerPixel, isStr, isEmptyStr, generateUUID
+  deepAccess,
+  deepSetValue,
+  flatten,
+  generateUUID,
+  inIframe,
+  isArray,
+  isEmptyStr,
+  isNumber,
+  isPlainObject,
+  isStr,
+  logError,
+  logWarn,
+  triggerPixel,
+  uniques
 } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 /**
  * CONSTANTS
@@ -112,9 +123,9 @@ function buildRequest(validBidRequests, bidderRequest) {
     id: bidderRequest.bidderRequestId,
     tmax: bidderRequest.timeout,
     site: {
-      domain: window.location.hostname,
-      page: window.location.href,
-      ref: bidderRequest.refererInfo.referer,
+      domain: bidderRequest.refererInfo.domain,
+      page: bidderRequest.refererInfo.page,
+      ref: bidderRequest.refererInfo.ref,
     },
     source: buildSource(validBidRequests, bidderRequest),
     device: buildDevice(),
@@ -577,7 +588,7 @@ function bannerHasSingleSize(bidRequest) {
  * USER SYNC
  */
 
-export const storage = getStorageManager();
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 function getUserSyncs(syncOptions, responses, gdprConsent, uspConsent) {
   return responses

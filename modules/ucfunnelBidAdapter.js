@@ -3,7 +3,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { config } from '../src/config.js';
-const storage = getStorageManager();
+
 const COOKIE_NAME = 'ucf_uid';
 const VER = 'ADGENT_PREBID-2018011501';
 const BIDDER_CODE = 'ucfunnel';
@@ -13,6 +13,7 @@ const VIDEO_CONTEXT = {
   INSTREAM: 0,
   OUSTREAM: 2
 }
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 export const spec = {
   code: BIDDER_CODE,
@@ -263,13 +264,13 @@ function getRequestData(bid, bidderRequest) {
   }
 
   addUserId(bidData, bid.userId);
+  // TODO: is 'page' the right value here? does the fallback make sense?
+  bidData.u = bidderRequest?.refererInfo?.page || bidderRequest?.refererInfo?.topmostLocation;
   try {
     bidData.host = window.top.location.hostname;
-    bidData.u = config.getConfig('publisherDomain') || window.top.location.href;
     bidData.xr = 0;
   } catch (e) {
     bidData.host = window.location.hostname;
-    bidData.u = config.getConfig('publisherDomain') || bidderRequest.refererInfo.referrer || document.referrer || window.location.href;
     bidData.xr = 1;
   }
 
@@ -313,17 +314,10 @@ function getRequestData(bid, bidderRequest) {
   }
 
   if (bidderRequest && bidderRequest.gdprConsent) {
-    if (bidderRequest.gdprConsent.apiVersion == 1) {
-      Object.assign(bidData, {
-        gdpr: bidderRequest.gdprConsent.gdprApplies ? 1 : 0,
-        euconsent: bidderRequest.gdprConsent.consentString
-      });
-    } else if (bidderRequest.gdprConsent.apiVersion == 2) {
-      Object.assign(bidData, {
-        gdpr: bidderRequest.gdprConsent.gdprApplies ? 1 : 0,
-        'euconsent-v2': bidderRequest.gdprConsent.consentString
-      });
-    }
+    Object.assign(bidData, {
+      gdpr: bidderRequest.gdprConsent.gdprApplies ? 1 : 0,
+      'euconsent-v2': bidderRequest.gdprConsent.consentString
+    });
   }
 
   if (config.getConfig('coppa')) {
@@ -337,9 +331,9 @@ function addUserId(bidData, userId) {
   bidData['eids'] = '';
   _each(userId, (userIdObjectOrValue, userIdProviderKey) => {
     switch (userIdProviderKey) {
-      case 'haloId':
-        if (userIdObjectOrValue.haloId) {
-          bidData[userIdProviderKey + 'haloId'] = userIdObjectOrValue.haloId;
+      case 'hadronId':
+        if (userIdObjectOrValue.hadronId) {
+          bidData[userIdProviderKey + 'hadronId'] = userIdObjectOrValue.hadronId;
         }
         if (userIdObjectOrValue.auSeg) {
           bidData[userIdProviderKey + '_auSeg'] = userIdObjectOrValue.auSeg;
@@ -370,11 +364,6 @@ function addUserId(bidData, userId) {
           bidData['eids'] = (bidData['eids'].length > 0)
             ? (bidData['eids'] + '!verizonMediaId,' + userIdObjectOrValue)
             : ('verizonMediaId,' + userIdObjectOrValue);
-        }
-        break;
-      case 'flocId':
-        if (userIdObjectOrValue.id) {
-          bidData['cid'] = userIdObjectOrValue.id;
         }
         break;
       default:

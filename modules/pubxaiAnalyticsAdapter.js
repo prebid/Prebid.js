@@ -91,7 +91,12 @@ function mapBidResponse(bidResponse, status) {
     } else {
       Object.assign(bid, {
         bidId: bidResponse.requestId,
-        floorProvider: events.floorDetail ? events.floorDetail.floorProvider : null,
+        floorProvider: events.floorDetail?.floorProvider || null,
+        floorFetchStatus: events.floorDetail?.fetchStatus || null,
+        floorLocation: events.floorDetail?.location || null,
+        floorModelVersion: events.floorDetail?.modelVersion || null,
+        floorSkipRate: events.floorDetail?.skipRate || 0,
+        isFloorSkipped: events.floorDetail?.skipped || false,
         isWinningBid: true,
         placementId: bidResponse.params ? deepAccess(bidResponse, 'params.0.placementId') : null,
         renderedSize: bidResponse.size,
@@ -142,13 +147,14 @@ function send(data, status) {
     let location = getWindowLocation();
     const storage = getStorage();
     data.initOptions = initOptions;
+    data.pageDetail = {};
+    Object.assign(data.pageDetail, {
+      host: location.host,
+      path: location.pathname,
+      search: location.search
+    });
     if (typeof data !== 'undefined' && typeof data.auctionInit !== 'undefined') {
-      Object.assign(data.pageDetail, {
-        host: location.host,
-        path: location.pathname,
-        search: location.search,
-        adUnitCount: data.auctionInit.adUnitCodes ? data.auctionInit.adUnitCodes.length : null
-      });
+      data.pageDetail.adUnitCount = data.auctionInit.adUnitCodes ? data.auctionInit.adUnitCodes.length : null;
       data.initOptions.auctionId = data.auctionInit.auctionId;
       delete data.auctionInit;
 

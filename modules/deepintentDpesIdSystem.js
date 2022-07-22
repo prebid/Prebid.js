@@ -9,7 +9,7 @@ import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const MODULE_NAME = 'deepintentId';
-export const storage = getStorageManager(null, MODULE_NAME);
+export const storage = getStorageManager({gvlid: null, moduleName: MODULE_NAME});
 
 /** @type {Submodule} */
 export const deepintentDpesSubmodule = {

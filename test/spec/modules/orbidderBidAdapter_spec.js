@@ -63,7 +63,7 @@ describe('orbidderBidAdapter', () => {
     return spec.buildRequests(buildRequest, {
       ...bidderRequest || {},
       refererInfo: {
-        referer: 'https://localhost:9876/'
+        page: 'https://localhost:9876/'
       }
     })[0];
   };
@@ -281,6 +281,27 @@ describe('orbidderBidAdapter', () => {
       expect(gdprConsent.consentRequired).to.be.equal(false);
       expect(gdprConsent.consentString).to.be.equal(consentString);
     });
+  });
+
+  describe('buildRequests with price floor module', () => {
+    const bidRequest = deepClone(defaultBidRequestBanner);
+    bidRequest.params.bidfloor = 1;
+    bidRequest.getFloor = (floorObj) => {
+      return {
+        floor: bidRequest.floors.values['banner|640x480'],
+        currency: floorObj.currency,
+        mediaType: floorObj.mediaType
+      }
+    };
+
+    bidRequest.floors = {
+      currency: 'EUR',
+      values: {
+        'banner|640x480': 15.07
+      }
+    };
+    const request = buildRequest(bidRequest);
+    expect(request.data.params.bidfloor).to.equal(15.07);
   });
 
   describe('interpretResponse', () => {

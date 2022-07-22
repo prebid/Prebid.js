@@ -44,9 +44,9 @@ export const spec = {
       id: bidderRequest.auctionId,
       imp: impressions,
       site: {
-        domain: window.location.hostname,
-        page: window.location.href,
-        ref: bidderRequest.refererInfo ? bidderRequest.refererInfo.referer || null : null
+        domain: bidderRequest.refererInfo?.domain,
+        page: bidderRequest.refererInfo?.page,
+        ref: bidderRequest.refererInfo?.ref,
       },
       ext: {
         exchange: {
@@ -96,9 +96,7 @@ export const spec = {
           creativeId: bid.crid,
           netRevenue: DEFAULT_NET_REVENUE,
           currency: DEFAULT_CURRENCY,
-          meta: {
-            adomain: bid.adomain
-          }
+          meta: { advertiserDomains: bid && bid.advertiserDomains ? bid.advertiserDomains : [] }
         })
       })
     } else {

@@ -96,7 +96,11 @@ describe('the spotx adapter', function () {
 
     beforeEach(function() {
       bid = getValidBidObject();
-      bidRequestObj = {refererInfo: {referer: 'prebid.js'}};
+      bidRequestObj = {
+        refererInfo: {
+          page: 'prebid.js'
+        }
+      };
     });
 
     it('should build a very basic request', function() {
@@ -353,24 +357,7 @@ describe('the spotx adapter', function () {
       config.getConfig.restore();
     });
 
-    it('should use pageUrl from config if page param is not passed', function() {
-      var request;
-
-      var origGetConfig = config.getConfig;
-      sinon.stub(config, 'getConfig').callsFake(function (key) {
-        if (key === 'pageUrl') {
-          return 'https://www.spotx.tv';
-        }
-        return origGetConfig.apply(config, arguments);
-      });
-
-      request = spec.buildRequests([bid], bidRequestObj)[0];
-
-      expect(request.data.site.page).to.equal('https://www.spotx.tv');
-      config.getConfig.restore();
-    });
-
-    it('should use refererInfo.referer if no page or pageUrl are passed', function() {
+    it('should use refererInfo.referer if no page is passed', function() {
       var request;
 
       request = spec.buildRequests([bid], bidRequestObj)[0];

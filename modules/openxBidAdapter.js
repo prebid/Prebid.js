@@ -1,8 +1,18 @@
-import { deepAccess, convertTypes, isArray, inIframe, _map, deepSetValue, _each, parseSizesInput, parseUrl } from '../src/utils.js';
+import {
+  _each,
+  _map,
+  convertTypes,
+  deepAccess,
+  deepSetValue,
+  inIframe,
+  isArray,
+  parseSizesInput,
+  parseUrl
+} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import includes from 'prebidjs-polyfill/includes.js'
+import {includes} from '../src/polyfill.js';
 
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const VIDEO_TARGETING = ['startdelay', 'mimes', 'minduration', 'maxduration',
@@ -18,7 +28,7 @@ export const USER_ID_CODE_TO_QUERY_ARG = {
   britepoolid: 'britepoolid', // BritePool ID
   criteoId: 'criteoid', // CriteoID
   fabrickId: 'nuestarid', // Fabrick ID by Nuestar
-  haloId: 'audigentid', // Halo ID from Audigent
+  hadronId: 'audigentid', // Hadron ID from Audigent
   id5id: 'id5id', // ID5 ID
   idl_env: 'lre', // LiveRamp IdentityLink
   IDP: 'zeotapid', // zeotapIdPlus ID+
@@ -34,7 +44,6 @@ export const USER_ID_CODE_TO_QUERY_ARG = {
   tapadId: 'tapadid', // Tapad Id
   tdid: 'ttduuid', // The Trade Desk Unified ID
   uid2: 'uid2', // Unified ID 2.0
-  flocId: 'floc', // Chrome FLoC,
   admixerId: 'admixerid', // AdMixer ID
   deepintentId: 'deepintentid', // DeepIntent ID
   dmdId: 'dmdid', // DMD Marketing Corp ID
@@ -249,7 +258,7 @@ function buildCommonQueryParamsFromBids(bids, bidderRequest) {
   let defaultParams;
 
   defaultParams = {
-    ju: config.getConfig('pageUrl') || bidderRequest.refererInfo.referer,
+    ju: bidderRequest.refererInfo.page,
     ch: document.charSet || document.characterSet,
     res: `${screen.width}x${screen.height}x${screen.colorDepth}`,
     ifr: isInIframe,
@@ -261,12 +270,12 @@ function buildCommonQueryParamsFromBids(bids, bidderRequest) {
     nocache: new Date().getTime()
   };
 
-  const userDataSegments = buildFpdQueryParams('ortb2.user.data');
+  const userDataSegments = buildFpdQueryParams('user.data', bidderRequest.ortb2);
   if (userDataSegments.length > 0) {
     defaultParams.sm = userDataSegments;
   }
 
-  const siteContentDataSegments = buildFpdQueryParams('ortb2.site.content.data');
+  const siteContentDataSegments = buildFpdQueryParams('site.content.data', bidderRequest.ortb2);
   if (siteContentDataSegments.length > 0) {
     defaultParams.scsm = siteContentDataSegments;
   }
@@ -309,8 +318,8 @@ function buildCommonQueryParamsFromBids(bids, bidderRequest) {
   return defaultParams;
 }
 
-function buildFpdQueryParams(fpdPath) {
-  const firstPartyData = config.getConfig(fpdPath);
+function buildFpdQueryParams(fpdPath, ortb2) {
+  const firstPartyData = deepAccess(ortb2, fpdPath);
   if (!Array.isArray(firstPartyData) || !firstPartyData.length) {
     return '';
   }
@@ -338,9 +347,6 @@ function appendUserIdsToQueryParams(queryParams, userIds) {
     if (USER_ID_CODE_TO_QUERY_ARG.hasOwnProperty(userIdProviderKey)) {
       switch (userIdProviderKey) {
         case 'merkleId':
-          queryParams[key] = userIdObjectOrValue.id;
-          break;
-        case 'flocId':
           queryParams[key] = userIdObjectOrValue.id;
           break;
         case 'uid2':

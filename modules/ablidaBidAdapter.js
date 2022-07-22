@@ -45,7 +45,8 @@ export const spec = {
         sizes: sizes,
         bidId: bidRequest.bidId,
         categories: bidRequest.params.categories,
-        referer: bidderRequest.refererInfo.referer,
+        // TODO: should referer be 'ref'?
+        referer: bidderRequest.refererInfo.page,
         jaySupported: jaySupported,
         device: device,
         adapterVersion: 5,

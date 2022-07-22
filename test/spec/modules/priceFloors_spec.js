@@ -14,7 +14,7 @@ import {
   fieldMatchingFunctions,
   allowedFields
 } from 'modules/priceFloors.js';
-import events from 'src/events.js';
+import * as events from 'src/events.js';
 import * as mockGpt from '../integration/faker/googletag.js';
 import 'src/prebid.js';
 import {createBid} from '../../../src/bidfactory.js';
@@ -113,6 +113,7 @@ describe('the price floors module', function () {
     bidder: 'rubicon',
     adUnitCode: 'test_div_1',
     auctionId: '1234-56-789',
+    transactionId: 'tr_test_div_1'
   };
 
   function getAdUnitMock(code = 'adUnit-code') {
@@ -229,6 +230,94 @@ describe('the price floors module', function () {
   });
 
   describe('getFirstMatchingFloor', function () {
+    it('uses a 0 floor as overrite', function () {
+      let inputFloorData = {
+        currency: 'USD',
+        schema: {
+          delimiter: '|',
+          fields: ['adUnitCode']
+        },
+        values: {
+          'test_div_1': 0,
+          'test_div_2': 2
+        },
+        default: 0.5
+      };
+
+      expect(getFirstMatchingFloor(inputFloorData, basicBidRequest, {mediaType: 'banner', size: '*'})).to.deep.equal({
+        floorMin: 0,
+        floorRuleValue: 0,
+        matchingFloor: 0,
+        matchingData: 'test_div_1',
+        matchingRule: 'test_div_1'
+      });
+
+      expect(getFirstMatchingFloor(inputFloorData, {...basicBidRequest, adUnitCode: 'test_div_2'}, {mediaType: 'banner', size: '*'})).to.deep.equal({
+        floorMin: 0,
+        floorRuleValue: 2,
+        matchingFloor: 2,
+        matchingData: 'test_div_2',
+        matchingRule: 'test_div_2'
+      });
+
+      expect(getFirstMatchingFloor(inputFloorData, {...basicBidRequest, adUnitCode: 'test_div_3'}, {mediaType: 'banner', size: '*'})).to.deep.equal({
+        floorMin: 0,
+        floorRuleValue: 0.5,
+        matchingFloor: 0.5,
+        matchingData: 'test_div_3',
+        matchingRule: undefined
+      });
+    });
+    it('correctly applies floorMin if on adunit', function () {
+      let inputFloorData = {
+        floorMin: 2.6,
+        currency: 'USD',
+        schema: {
+          delimiter: '|',
+          fields: ['adUnitCode']
+        },
+        values: {
+          'test_div_1': 1.0,
+          'test_div_2': 2.0
+        },
+        default: 0.5
+      };
+
+      let myBidRequest = { ...basicBidRequest };
+
+      // should take adunit floormin first even if lower
+      utils.deepSetValue(myBidRequest, 'ortb2Imp.ext.prebid.floorMin', 2.2);
+      expect(getFirstMatchingFloor(inputFloorData, myBidRequest, { mediaType: 'banner', size: '*' })).to.deep.equal({
+        floorMin: 2.2,
+        floorRuleValue: 1.0,
+        matchingFloor: 2.2,
+        matchingData: 'test_div_1',
+        matchingRule: 'test_div_1'
+      });
+      delete inputFloorData.matchingInputs;
+
+      // should take adunit floormin if higher
+      utils.deepSetValue(myBidRequest, 'ortb2Imp.ext.prebid.floorMin', 3.0);
+      expect(getFirstMatchingFloor(inputFloorData, myBidRequest, { mediaType: 'banner', size: '*' })).to.deep.equal({
+        floorMin: 3.0,
+        floorRuleValue: 1.0,
+        matchingFloor: 3.0,
+        matchingData: 'test_div_1',
+        matchingRule: 'test_div_1'
+      });
+      delete inputFloorData.matchingInputs;
+
+      // should take top floormin if no adunit floor min
+      delete myBidRequest.ortb2Imp;
+      expect(getFirstMatchingFloor(inputFloorData, myBidRequest, { mediaType: 'banner', size: '*' })).to.deep.equal({
+        floorMin: 2.6,
+        floorRuleValue: 1.0,
+        matchingFloor: 2.6,
+        matchingData: 'test_div_1',
+        matchingRule: 'test_div_1'
+      });
+      delete inputFloorData.matchingInputs;
+    });
     it('selects the right floor for different mediaTypes', function () {
       // banner with * size (not in rule file so does not do anything)
       expect(getFirstMatchingFloor({...basicFloorData}, basicBidRequest, {mediaType: 'banner', size: '*'})).to.deep.equal({
@@ -1734,5 +1823,50 @@ describe('the price floors module', function () {
       // should be undefined now
       expect(_floorDataForAuction[AUCTION_END_EVENT.auctionId]).to.be.undefined;
     });
+  });
+
+  describe('fieldMatchingFunctions', () => {
+    let sandbox;
+
+    const req = {
+      ...basicBidRequest,
+    }
+
+    const resp = {
+      transactionId: req.transactionId,
+      size: [100, 100],
+      mediaType: 'banner',
+    }
+
+    beforeEach(() => {
+      sandbox = sinon.sandbox.create();
+      sandbox.stub(auctionManager, 'index').get(() => stubAuctionIndex({
+        adUnits: [
+          {
+            code: req.adUnitCode,
+            transactionId: req.transactionId,
+            ortb2Imp: {ext: {data: {adserver: {name: 'gam', adslot: 'slot'}}}}
+          }
+        ]
+      }));
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    })
+
+    Object.entries({
+      size: '100x100',
+      mediaType: resp.mediaType,
+      gptSlot: 'slot',
+      domain: 'localhost',
+      adUnitCode: req.adUnitCode,
+    }).forEach(([test, expected]) => {
+      describe(`${test}`, () => {
+        it('should work with only bidResponse', () => {
+          expect(fieldMatchingFunctions[test](undefined, resp)).to.eql(expected)
+        })
+      });
+    })
   });
 });
