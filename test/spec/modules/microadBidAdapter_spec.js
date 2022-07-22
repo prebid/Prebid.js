@@ -267,10 +267,10 @@ describe('microadBidAdapter', () => {
     });
 
     it('should not add Liveramp identity link and Audience ID if it is not available in request parameters', () => {
-      const bidRequestWithLiveramp = Object.assign({}, bidRequestTemplate, {
+      const bidRequestWithOutLiveramp = Object.assign({}, bidRequestTemplate, {
         userId: {}
       });
-      const requests = spec.buildRequests([bidRequestWithLiveramp], bidderRequest)
+      const requests = spec.buildRequests([bidRequestWithOutLiveramp], bidderRequest)
       requests.forEach(request => {
         expect(request.data).to.deep.equal(
           Object.assign({}, expectedResultTemplate, {
