@@ -537,7 +537,7 @@ describe('the spotx adapter', function () {
 
     it('should set the renderer attached to the bid to render immediately', function () {
       var renderer = spec.interpretResponse(serverResponse, bidderRequestObj)[0].renderer,
-          hasRun = false;
+        hasRun = false;
       expect(renderer._render).to.be.a('function');
       renderer._render = () => {
         hasRun = true;
