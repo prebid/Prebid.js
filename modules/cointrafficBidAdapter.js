@@ -1,10 +1,10 @@
-import * as utils from '../src/utils.js';
+import { parseSizesInput, logError, isEmpty } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js'
 import { config } from '../src/config.js'
 
 const BIDDER_CODE = 'cointraffic';
-const ENDPOINT_URL = 'https://appspb.cointraffic.io/pb/tmp';
+const ENDPOINT_URL = 'https://apps-pbd.ctengine.io/pb/tmp';
 const DEFAULT_CURRENCY = 'EUR';
 const ALLOWED_CURRENCIES = [
   'EUR', 'USD', 'JPY', 'BGN', 'CZK', 'DKK', 'GBP', 'HUF', 'PLN', 'RON', 'SEK', 'CHF', 'ISK', 'NOK', 'HRK', 'RUB', 'TRY',
@@ -34,14 +34,14 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     return validBidRequests.map(bidRequest => {
-      const sizes = utils.parseSizesInput(bidRequest.params.size || bidRequest.sizes);
+      const sizes = parseSizesInput(bidRequest.params.size || bidRequest.sizes);
       const currency =
         config.getConfig(`currency.bidderCurrencyDefault.${BIDDER_CODE}`) ||
         config.getConfig('currency.adServerCurrency') ||
         DEFAULT_CURRENCY;
 
       if (ALLOWED_CURRENCIES.indexOf(currency) === -1) {
-        utils.logError('Currency is not supported - ' + currency);
+        logError('Currency is not supported - ' + currency);
         return;
       }
 
@@ -50,7 +50,8 @@ export const spec = {
         currency: currency,
         sizes: sizes,
         bidId: bidRequest.bidId,
-        referer: bidderRequest.refererInfo.referer,
+        // TODO: is 'page' the right value here?
+        referer: bidderRequest.refererInfo.page,
       };
 
       return {
@@ -72,7 +73,7 @@ export const spec = {
     const bidResponses = [];
     const response = serverResponse.body;
 
-    if (utils.isEmpty(response)) {
+    if (isEmpty(response)) {
       return bidResponses;
     }
 
@@ -85,7 +86,11 @@ export const spec = {
       height: response.height,
       creativeId: response.creativeId,
       ttl: response.ttl,
-      ad: response.ad
+      ad: response.ad,
+      meta: {
+        advertiserDomains: response.adomain && response.adomain.length ? response.adomain : [],
+        mediaType: response.mediaType
+      }
     };
 
     bidResponses.push(bidResponse);

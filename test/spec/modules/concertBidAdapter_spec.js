@@ -8,7 +8,15 @@ describe('ConcertAdapter', function () {
   let bidRequest;
   let bidResponse;
 
+  afterEach(function () {
+    $$PREBID_GLOBAL$$.bidderSettings = {};
+  });
   beforeEach(function () {
+    $$PREBID_GLOBAL$$.bidderSettings = {
+      concert: {
+        storageAllowed: true
+      }
+    };
     bidRequests = [
       {
         bidder: 'concert',
@@ -25,7 +33,7 @@ describe('ConcertAdapter', function () {
 
     bidRequest = {
       refererInfo: {
-        referer: 'https://www.google.com'
+        page: 'https://www.google.com'
       },
       uspConsent: '1YYY',
       gdprConsent: {}
@@ -116,7 +124,7 @@ describe('ConcertAdapter', function () {
   describe('spec.interpretResponse', function() {
     it('should return bids in the shape expected by prebid', function() {
       const bids = spec.interpretResponse(bidResponse, bidRequest);
-      const requiredFields = ['requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId', 'netRevenue', 'currency'];
+      const requiredFields = ['requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'meta', 'creativeId', 'netRevenue', 'currency'];
 
       requiredFields.forEach(function(field) {
         expect(bids[0]).to.have.property(field);

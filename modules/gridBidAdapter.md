@@ -9,33 +9,51 @@ Maintainer: grid-tech@themediagrid.com
 Module that connects to Grid demand source to fetch bids.
 Grid bid adapter supports Banner and Video (instream and outstream).
 
+#Bidder Config
+You can allow writing in localStorage `pbjs.setBidderConfig` for the bidder `grid`
+```
+pbjs.setBidderConfig({
+    bidders: ["grid"],
+    config: {
+        localStorageWriteAllowed: true
+    }
+})
+```
+
 # Test Parameters
 ```
     var adUnits = [
            {
                code: 'test-div',
-               sizes: [[300, 250]],
+               mediaTypes: {
+                   banner: {
+                       sizes: [[300, 250], [300,600]],
+                   }
+               },
                bids: [
                    {
                        bidder: "grid",
                        params: {
                            uid: '1',
-                           priceType: 'gross' // by default is 'net'
+                           bidFloor: 0.5
                        }
                    }
                ]
            },{
                code: 'test-div',
-               sizes: [[728, 90]],
                bids: [
                    {
                        bidder: "grid",
                        params: {
                            uid: 2,
-                           priceType: 'gross',
                            keywords: {
-                               brandsafety: ['disaster'],
-                               topic: ['stress', 'fear']
+                               site: {
+                                  publisher: [{
+                                    name: 'someKeywordsName',
+                                    brandsafety: ['disaster'],
+                                    topic: ['stress', 'fear']
+                                  }]
+                                }
                            }
                        }
                    }
@@ -44,7 +62,12 @@ Grid bid adapter supports Banner and Video (instream and outstream).
            {
                code: 'test-div',
                sizes: [[728, 90]],
-               mediaTypes: { video: {} },
+               mediaTypes: {
+                   video: {
+                       playerSize: [1280, 720],
+                       context: 'instream'
+                   }
+               },
                bids: [
                    {
                        bidder: "grid",

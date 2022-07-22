@@ -2,7 +2,7 @@
 
 **Module Name**: AudienceRun Bidder Adapter  
 **Module Type**: Bidder Adapter  
-**Maintainer**: prebid@audiencerun.com 
+**Maintainer**: github@audiencerun.com
 
 # Description
 

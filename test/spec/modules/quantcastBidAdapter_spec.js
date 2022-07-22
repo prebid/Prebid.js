@@ -7,7 +7,8 @@ import {
   QUANTCAST_TEST_PUBLISHER,
   QUANTCAST_PROTOCOL,
   QUANTCAST_PORT,
-  spec as qcSpec
+  spec as qcSpec,
+  storage
 } from '../../../modules/quantcastBidAdapter.js';
 import { newBidder } from '../../../src/adapters/bidderFactory.js';
 import { parseUrl } from 'src/utils.js';
@@ -18,7 +19,15 @@ describe('Quantcast adapter', function () {
   let bidRequest;
   let bidderRequest;
 
+  afterEach(function () {
+    $$PREBID_GLOBAL$$.bidderSettings = {};
+  });
   beforeEach(function () {
+    $$PREBID_GLOBAL$$.bidderSettings = {
+      quantcast: {
+        storageAllowed: true
+      }
+    };
     bidRequest = {
       bidder: 'quantcast',
       bidId: '2f7b179d443f14',
@@ -38,22 +47,24 @@ describe('Quantcast adapter', function () {
 
     bidderRequest = {
       refererInfo: {
-        referer: 'http://example.com/hello.html',
-        canonicalUrl: 'http://example.com/hello.html'
+        page: 'http://example.com/hello.html',
+        ref: 'http://example.com/hello.html',
+        domain: 'example.com'
       }
     };
+
+    storage.setCookie('__qca', '', 'Thu, 01 Jan 1970 00:00:00 GMT');
   });
 
-  function setupVideoBidRequest(videoParams) {
+  function setupVideoBidRequest(videoParams, mediaTypesParams) {
     bidRequest.params = {
       publisherId: 'test-publisher', // REQUIRED - Publisher ID provided by Quantcast
       // Video object as specified in OpenRTB 2.5
       video: videoParams
     };
-    bidRequest['mediaTypes'] = {
-      video: {
-        context: 'instream',
-        playerSize: [600, 300]
+    if (mediaTypesParams) {
+      bidRequest['mediaTypes'] = {
+        video: mediaTypesParams
       }
     }
   };
@@ -140,7 +151,8 @@ describe('Quantcast adapter', function () {
       gdprSignal: 0,
       uspSignal: 0,
       coppa: 0,
-      prebidJsVersion: '$prebid.version$'
+      prebidJsVersion: '$prebid.version$',
+      fpa: ''
     };
 
     it('sends banner bid requests contains all the required parameters', function () {
@@ -171,6 +183,9 @@ describe('Quantcast adapter', function () {
         delivery: [1], // optional
         placement: 1, // optional
         api: [2, 3] // optional
+      }, {
+        context: 'instream',
+        playerSize: [600, 300]
       });
 
       const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
@@ -208,7 +223,68 @@ describe('Quantcast adapter', function () {
         gdprSignal: 0,
         uspSignal: 0,
         coppa: 0,
-        prebidJsVersion: '$prebid.version$'
+        prebidJsVersion: '$prebid.version$',
+        fpa: ''
+      };
+
+      expect(requests[0].data).to.equal(JSON.stringify(expectedVideoBidRequest));
+    });
+
+    it('sends video bid requests containing all the required parameters from mediaTypes', function() {
+      setupVideoBidRequest(null, {
+        mimes: ['video/mp4'], // required
+        minduration: 3, // optional
+        maxduration: 5, // optional
+        protocols: [3], // optional
+        startdelay: 1, // optional
+        linearity: 1, // optinal
+        battr: [1, 2], // optional
+        maxbitrate: 10, // optional
+        playbackmethod: [1], // optional
+        delivery: [1], // optional
+        placement: 1, // optional
+        api: [2, 3], // optional
+        context: 'instream',
+        playerSize: [600, 300]
+      });
+
+      const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
+      const expectedVideoBidRequest = {
+        publisherId: QUANTCAST_TEST_PUBLISHER,
+        requestId: '2f7b179d443f14',
+        imp: [
+          {
+            video: {
+              mimes: ['video/mp4'],
+              minduration: 3,
+              maxduration: 5,
+              protocols: [3],
+              startdelay: 1,
+              linearity: 1,
+              battr: [1, 2],
+              maxbitrate: 10,
+              playbackmethod: [1],
+              delivery: [1],
+              placement: 1,
+              api: [2, 3],
+              w: 600,
+              h: 300
+            },
+            placementCode: 'div-gpt-ad-1438287399331-0',
+            bidFloor: 1e-10
+          }
+        ],
+        site: {
+          page: 'http://example.com/hello.html',
+          referrer: 'http://example.com/hello.html',
+          domain: 'example.com'
+        },
+        bidId: '2f7b179d443f14',
+        gdprSignal: 0,
+        uspSignal: 0,
+        coppa: 0,
+        prebidJsVersion: '$prebid.version$',
+        fpa: ''
       };
 
       expect(requests[0].data).to.equal(JSON.stringify(expectedVideoBidRequest));
@@ -217,6 +293,9 @@ describe('Quantcast adapter', function () {
     it('overrides video parameters with parameters from adunit', function() {
       setupVideoBidRequest({
         mimes: ['video/mp4']
+      }, {
+        context: 'instream',
+        playerSize: [600, 300]
       });
       bidRequest.mediaTypes.video.mimes = ['video/webm'];
 
@@ -244,14 +323,18 @@ describe('Quantcast adapter', function () {
         gdprSignal: 0,
         uspSignal: 0,
         coppa: 0,
-        prebidJsVersion: '$prebid.version$'
+        prebidJsVersion: '$prebid.version$',
+        fpa: ''
       };
 
       expect(requests[0].data).to.equal(JSON.stringify(expectedVideoBidRequest));
     });
 
     it('sends video bid request when no video parameters are given', function () {
-      setupVideoBidRequest(null);
+      setupVideoBidRequest(null, {
+        context: 'instream',
+        playerSize: [600, 300]
+      });
 
       const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
       const expectedVideoBidRequest = {
@@ -276,7 +359,8 @@ describe('Quantcast adapter', function () {
         gdprSignal: 0,
         uspSignal: 0,
         coppa: 0,
-        prebidJsVersion: '$prebid.version$'
+        prebidJsVersion: '$prebid.version$',
+        fpa: ''
       };
 
       expect(requests[0].data).to.equal(JSON.stringify(expectedVideoBidRequest));
@@ -340,7 +424,8 @@ describe('Quantcast adapter', function () {
         gdprSignal: 0,
         uspSignal: 0,
         coppa: 0,
-        prebidJsVersion: '$prebid.version$'
+        prebidJsVersion: '$prebid.version$',
+        fpa: ''
       };
 
       expect(requests[0].data).to.equal(JSON.stringify(expectedBidRequest));
@@ -360,74 +445,6 @@ describe('Quantcast adapter', function () {
 
     expect(parsed.gdprSignal).to.equal(1);
     expect(parsed.gdprConsent).to.equal('consentString');
-  });
-
-  it('allows TCF v1 request with consent for purpose 1', function () {
-    const bidderRequest = {
-      gdprConsent: {
-        gdprApplies: true,
-        consentString: 'consentString',
-        vendorData: {
-          vendorConsents: {
-            '11': true
-          },
-          purposeConsents: {
-            '1': true
-          }
-        },
-        apiVersion: 1
-      }
-    };
-
-    const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
-    const parsed = JSON.parse(requests[0].data);
-
-    expect(parsed.gdprSignal).to.equal(1);
-    expect(parsed.gdprConsent).to.equal('consentString');
-  });
-
-  it('blocks TCF v1 request without vendor consent', function () {
-    const bidderRequest = {
-      gdprConsent: {
-        gdprApplies: true,
-        consentString: 'consentString',
-        vendorData: {
-          vendorConsents: {
-            '11': false
-          },
-          purposeConsents: {
-            '1': true
-          }
-        },
-        apiVersion: 1
-      }
-    };
-
-    const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
-
-    expect(requests).to.equal(undefined);
-  });
-
-  it('blocks TCF v1 request without consent for purpose 1', function () {
-    const bidderRequest = {
-      gdprConsent: {
-        gdprApplies: true,
-        consentString: 'consentString',
-        vendorData: {
-          vendorConsents: {
-            '11': true
-          },
-          purposeConsents: {
-            '1': false
-          }
-        },
-        apiVersion: 1
-      }
-    };
-
-    const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
-
-    expect(requests).to.equal(undefined);
   });
 
   it('allows TCF v2 request when Quantcast has consent for purpose 1', function() {
@@ -584,6 +601,13 @@ describe('Quantcast adapter', function () {
     expect(parsed.uspConsent).to.equal('consentString');
   });
 
+  it('propagates Quantcast first-party cookie (fpa)', function() {
+    storage.setCookie('__qca', 'P0-TestFPA');
+    const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
+    const parsed = JSON.parse(requests[0].data);
+    expect(parsed.fpa).to.equal('P0-TestFPA');
+  });
+
   describe('propagates coppa', function() {
     let sandbox;
     beforeEach(() => {
@@ -643,7 +667,10 @@ describe('Quantcast adapter', function () {
             '<!DOCTYPE html><div style="height: 250; width: 300; display: table-cell; vertical-align: middle;"><div style="width: 300px; margin-left: auto; margin-right: auto;"><script src="https://adserver.adtechus.com/addyn/3.0/5399.1/2394397/0/-1/QUANTCAST;size=300x250;target=_blank;alias=;kvp36=;sub1=;kvl=;kvc=;kvs=300x250;kvi=;kva=;sub2=;rdclick=http://exch.quantserve.com/r?a=;labels=_qc.clk,_click.adserver.rtb,_click.rand.;rtbip=;rtbdata2=;redirecturl2=" type="text/javascript"></script><img src="https://exch.quantserve.com/pixel/p_12345.gif?media=ad&p=&r=&rand=&labels=_qc.imp,_imp.adserver.rtb&rtbip=&rtbdata2=" style="display: none;" border="0" height="1" width="1" alt="Quantcast"/></div></div>',
           creativeId: 1001,
           width: 300,
-          height: 250
+          height: 250,
+          meta: {
+            advertiserDomains: ['dailymail.com']
+          }
         }
       ]
     };
@@ -703,7 +730,10 @@ describe('Quantcast adapter', function () {
         ttl: QUANTCAST_TTL,
         creativeId: 1001,
         netRevenue: QUANTCAST_NET_REVENUE,
-        currency: 'USD'
+        currency: 'USD',
+        meta: {
+          advertiserDomains: ['dailymail.com']
+        }
       };
       const interpretedResponse = qcSpec.interpretResponse(response);
 
@@ -723,7 +753,10 @@ describe('Quantcast adapter', function () {
         creativeId: 1001,
         netRevenue: QUANTCAST_NET_REVENUE,
         currency: 'USD',
-        dealId: 'test-dealid'
+        dealId: 'test-dealid',
+        meta: {
+          advertiserDomains: ['dailymail.com']
+        }
       };
       const interpretedResponse = qcSpec.interpretResponse(response);
 

@@ -1,6 +1,6 @@
 /*
  * Module for getting and setting Prebid configuration.
- */
+*/
 
 /**
  * @typedef {Object} MediaTypePriceGranularity
@@ -13,22 +13,20 @@
  */
 
 import { isValidPriceConfig } from './cpmBucketManager.js';
-import find from 'core-js-pure/features/array/find.js';
-import includes from 'core-js-pure/features/array/includes.js';
-import Set from 'core-js-pure/features/set';
-import { mergeDeep } from './utils.js';
+import {find, includes, arrayFrom as from} from './polyfill.js';
+import {
+  mergeDeep, deepClone, getParameterByName, isPlainObject, logMessage, logWarn, logError,
+  isArray, isStr, isBoolean, deepAccess, bind
+} from './utils.js';
+import CONSTANTS from './constants.json';
 
-const from = require('core-js-pure/features/array/from.js');
-const utils = require('./utils.js');
-const CONSTANTS = require('./constants.json');
-
-const DEFAULT_DEBUG = utils.getParameterByName(CONSTANTS.DEBUG_MODE).toUpperCase() === 'TRUE';
+const DEFAULT_DEBUG = getParameterByName(CONSTANTS.DEBUG_MODE).toUpperCase() === 'TRUE';
 const DEFAULT_BIDDER_TIMEOUT = 3000;
-const DEFAULT_PUBLISHER_DOMAIN = window.location.origin;
 const DEFAULT_ENABLE_SEND_ALL_BIDS = true;
 const DEFAULT_DISABLE_AJAX_TIMEOUT = false;
 const DEFAULT_BID_CACHE = false;
 const DEFAULT_DEVICE_ACCESS = true;
+const DEFAULT_MAX_NESTED_IFRAMES = 10;
 
 const DEFAULT_TIMEOUTBUFFER = 400;
 
@@ -87,12 +85,12 @@ export function newConfig() {
         this._bidderTimeout = val;
       },
 
-      // domain where prebid is running for cross domain iframe communication
-      _publisherDomain: DEFAULT_PUBLISHER_DOMAIN,
+      _publisherDomain: null,
       get publisherDomain() {
         return this._publisherDomain;
       },
       set publisherDomain(val) {
+        logWarn('publisherDomain is deprecated and has no effect since v7 - use pageUrl instead')
         this._publisherDomain = val;
       },
 
@@ -102,10 +100,10 @@ export function newConfig() {
         if (validatePriceGranularity(val)) {
           if (typeof val === 'string') {
             this._priceGranularity = (hasGranularity(val)) ? val : GRANULARITY_OPTIONS.MEDIUM;
-          } else if (utils.isPlainObject(val)) {
+          } else if (isPlainObject(val)) {
             this._customPriceBucket = val;
             this._priceGranularity = GRANULARITY_OPTIONS.CUSTOM;
-            utils.logMessage('Using custom price granularity');
+            logMessage('Using custom price granularity');
           }
         }
       },
@@ -132,12 +130,12 @@ export function newConfig() {
           if (validatePriceGranularity(val[item])) {
             if (typeof val === 'string') {
               aggregate[item] = (hasGranularity(val[item])) ? val[item] : this._priceGranularity;
-            } else if (utils.isPlainObject(val)) {
+            } else if (isPlainObject(val)) {
               aggregate[item] = val[item];
-              utils.logMessage(`Using custom price granularity for ${item}`);
+              logMessage(`Using custom price granularity for ${item}`);
             }
           } else {
-            utils.logWarn(`Invalid price granularity for media type: ${item}`);
+            logWarn(`Invalid price granularity for media type: ${item}`);
           }
           return aggregate;
         }, {});
@@ -179,7 +177,7 @@ export function newConfig() {
         if (VALID_ORDERS[val]) {
           this._bidderSequence = val;
         } else {
-          utils.logWarn(`Invalid order: ${val}. Bidder Sequence was not set.`);
+          logWarn(`Invalid order: ${val}. Bidder Sequence was not set.`);
         }
       },
 
@@ -198,6 +196,25 @@ export function newConfig() {
       },
       set disableAjaxTimeout(val) {
         this._disableAjaxTimeout = val;
+      },
+
+      // default max nested iframes for referer detection
+      _maxNestedIframes: DEFAULT_MAX_NESTED_IFRAMES,
+      get maxNestedIframes() {
+        return this._maxNestedIframes;
+      },
+      set maxNestedIframes(val) {
+        this._maxNestedIframes = val;
+      },
+
+      _auctionOptions: {},
+      get auctionOptions() {
+        return this._auctionOptions;
+      },
+      set auctionOptions(val) {
+        if (validateauctionOptions(val)) {
+          this._auctionOptions = val;
+        }
       },
     };
 
@@ -222,17 +239,46 @@ export function newConfig() {
 
     function validatePriceGranularity(val) {
       if (!val) {
-        utils.logError('Prebid Error: no value passed to `setPriceGranularity()`');
+        logError('Prebid Error: no value passed to `setPriceGranularity()`');
         return false;
       }
       if (typeof val === 'string') {
         if (!hasGranularity(val)) {
-          utils.logWarn('Prebid Warning: setPriceGranularity was called with invalid setting, using `medium` as default.');
+          logWarn('Prebid Warning: setPriceGranularity was called with invalid setting, using `medium` as default.');
         }
-      } else if (utils.isPlainObject(val)) {
+      } else if (isPlainObject(val)) {
         if (!isValidPriceConfig(val)) {
-          utils.logError('Invalid custom price value passed to `setPriceGranularity()`');
+          logError('Invalid custom price value passed to `setPriceGranularity()`');
           return false;
+        }
+      }
+      return true;
+    }
+
+    function validateauctionOptions(val) {
+      if (!isPlainObject(val)) {
+        logWarn('Auction Options must be an object')
+        return false
+      }
+
+      for (let k of Object.keys(val)) {
+        if (k !== 'secondaryBidders' && k !== 'suppressStaleRender') {
+          logWarn(`Auction Options given an incorrect param: ${k}`)
+          return false
+        }
+        if (k === 'secondaryBidders') {
+          if (!isArray(val[k])) {
+            logWarn(`Auction Options ${k} must be of type Array`);
+            return false
+          } else if (!val[k].every(isStr)) {
+            logWarn(`Auction Options ${k} must be only string`);
+            return false
+          }
+        } else if (k === 'suppressStaleRender') {
+          if (!isBoolean(val[k])) {
+            logWarn(`Auction Options ${k} must be of type boolean`);
+            return false;
+          }
         }
       }
       return true;
@@ -244,7 +290,7 @@ export function newConfig() {
    * @private
    */
   function _getConfig() {
-    if (currBidder && bidderConfig && utils.isPlainObject(bidderConfig[currBidder])) {
+    if (currBidder && bidderConfig && isPlainObject(bidderConfig[currBidder])) {
       let currBidderConfig = bidderConfig[currBidder];
       const configTopicSet = new Set(Object.keys(config).concat(Object.keys(currBidderConfig)));
 
@@ -254,7 +300,7 @@ export function newConfig() {
         } else if (typeof config[topic] === 'undefined') {
           memo[topic] = currBidderConfig[topic];
         } else {
-          if (utils.isPlainObject(currBidderConfig[topic])) {
+          if (isPlainObject(currBidderConfig[topic])) {
             memo[topic] = mergeDeep({}, config[topic], currBidderConfig[topic]);
           } else {
             memo[topic] = currBidderConfig[topic];
@@ -266,22 +312,52 @@ export function newConfig() {
     return Object.assign({}, config);
   }
 
-  /*
-   * Returns configuration object if called without parameters,
-   * or single configuration property if given a string matching a configuration
-   * property name.  Allows deep access e.g. getConfig('currency.adServerCurrency')
-   *
-   * If called with callback parameter, or a string and a callback parameter,
-   * subscribes to configuration updates. See `subscribe` function for usage.
-   */
-  function getConfig(...args) {
-    if (args.length <= 1 && typeof args[0] !== 'function') {
-      const option = args[0];
-      return option ? utils.deepAccess(_getConfig(), option) : _getConfig();
-    }
-
-    return subscribe(...args);
+  function _getRestrictedConfig() {
+    // This causes reading 'ortb2' to throw an error; with prebid 7, that will almost
+    // always be the incorrect way to access FPD configuration (https://github.com/prebid/Prebid.js/issues/7651)
+    // code that needs the ortb2 config should explicitly use `getAnyConfig`
+    // TODO: this is meant as a temporary tripwire to catch inadvertent use of `getConfig('ortb')` as we transition.
+    // It should be removed once the risk of that happening is low enough.
+    const conf = _getConfig();
+    Object.defineProperty(conf, 'ortb2', {
+      get: function () {
+        throw new Error('invalid access to \'orbt2\' config - use request parameters instead');
+      }
+    });
+    return conf;
   }
+
+  const [getAnyConfig, getConfig] = [_getConfig, _getRestrictedConfig].map(accessor => {
+    /*
+     * Returns configuration object if called without parameters,
+     * or single configuration property if given a string matching a configuration
+     * property name.  Allows deep access e.g. getConfig('currency.adServerCurrency')
+     *
+     * If called with callback parameter, or a string and a callback parameter,
+     * subscribes to configuration updates. See `subscribe` function for usage.
+     */
+    return function getConfig(...args) {
+      if (args.length <= 1 && typeof args[0] !== 'function') {
+        const option = args[0];
+        return option ? deepAccess(accessor(), option) : _getConfig();
+      }
+
+      return subscribe(...args);
+    }
+  })
+
+  const [readConfig, readAnyConfig] = [getConfig, getAnyConfig].map(wrapee => {
+    /*
+     * Like getConfig, except that it returns a deepClone of the result.
+     */
+    return function readConfig(...args) {
+      let res = wrapee(...args);
+      if (res && typeof res === 'object') {
+        res = deepClone(res);
+      }
+      return res;
+    }
+  })
 
   /**
    * Internal API for modules (such as prebid-server) that might need access to all bidder config
@@ -295,8 +371,8 @@ export function newConfig() {
    * listeners that were added by the `subscribe` function
    */
   function setConfig(options) {
-    if (!utils.isPlainObject(options)) {
-      utils.logError('setConfig options must be an object');
+    if (!isPlainObject(options)) {
+      logError('setConfig options must be an object');
       return;
     }
 
@@ -306,7 +382,7 @@ export function newConfig() {
     topics.forEach(topic => {
       let option = options[topic];
 
-      if (utils.isPlainObject(defaults[topic]) && utils.isPlainObject(option)) {
+      if (isPlainObject(defaults[topic]) && isPlainObject(option)) {
         option = Object.assign({}, defaults[topic], option);
       }
 
@@ -321,8 +397,8 @@ export function newConfig() {
    * @param {object} options
    */
   function setDefaults(options) {
-    if (!utils.isPlainObject(defaults)) {
-      utils.logError('defaults must be an object');
+    if (!isPlainObject(defaults)) {
+      logError('defaults must be an object');
       return;
     }
 
@@ -338,6 +414,8 @@ export function newConfig() {
    * updates when specific properties are updated by passing a topic string as
    * the first parameter.
    *
+   * If `options.init` is true, the listener will be immediately called with the current options.
+   *
    * Returns an `unsubscribe` function for removing the subscriber from the
    * set of listeners
    *
@@ -351,8 +429,9 @@ export function newConfig() {
    * // unsubscribe
    * const unsubscribe = subscribe(...);
    * unsubscribe(); // no longer listening
+   *
    */
-  function subscribe(topic, listener) {
+  function subscribe(topic, listener, options = {}) {
     let callback = listener;
 
     if (typeof topic !== 'string') {
@@ -360,15 +439,25 @@ export function newConfig() {
       // meaning it gets called for any config change
       callback = topic;
       topic = ALL_TOPICS;
+      options = listener || {};
     }
 
     if (typeof callback !== 'function') {
-      utils.logError('listener must be a function');
+      logError('listener must be a function');
       return;
     }
 
     const nl = { topic, callback };
     listeners.push(nl);
+
+    if (options.init) {
+      if (topic === ALL_TOPICS) {
+        callback(getConfig())
+      } else {
+        // eslint-disable-next-line standard/no-callback-literal
+        callback({[topic]: getConfig(topic)});
+      }
+    }
 
     // save and call this function to remove the listener
     return function unsubscribe() {
@@ -395,7 +484,7 @@ export function newConfig() {
       .forEach(listener => listener.callback(options));
   }
 
-  function setBidderConfig(config) {
+  function setBidderConfig(config, mergeFlag = false) {
     try {
       check(config);
       config.bidders.forEach(bidder => {
@@ -404,27 +493,50 @@ export function newConfig() {
         }
         Object.keys(config.config).forEach(topic => {
           let option = config.config[topic];
-          if (utils.isPlainObject(option)) {
-            bidderConfig[bidder][topic] = Object.assign({}, bidderConfig[bidder][topic] || {}, option);
+
+          if (isPlainObject(option)) {
+            const func = mergeFlag ? mergeDeep : Object.assign;
+            bidderConfig[bidder][topic] = func({}, bidderConfig[bidder][topic] || {}, option);
           } else {
             bidderConfig[bidder][topic] = option;
           }
         });
       });
     } catch (e) {
-      utils.logError(e);
+      logError(e);
     }
+
     function check(obj) {
-      if (!utils.isPlainObject(obj)) {
+      if (!isPlainObject(obj)) {
         throw 'setBidderConfig bidder options must be an object';
       }
       if (!(Array.isArray(obj.bidders) && obj.bidders.length)) {
         throw 'setBidderConfig bidder options must contain a bidders list with at least 1 bidder';
       }
-      if (!utils.isPlainObject(obj.config)) {
+      if (!isPlainObject(obj.config)) {
         throw 'setBidderConfig bidder options must contain a config object';
       }
     }
+  }
+
+  function mergeConfig(obj) {
+    if (!isPlainObject(obj)) {
+      logError('mergeConfig input must be an object');
+      return;
+    }
+
+    const mergedConfig = Object.keys(obj).reduce((accum, key) => {
+      const prevConf = _getConfig(key)[key] || {};
+      accum[key] = mergeDeep(prevConf, obj[key]);
+      return accum;
+    }, {});
+
+    setConfig({ ...mergedConfig });
+    return mergedConfig;
+  }
+
+  function mergeBidderConfig(obj) {
+    return setBidderConfig(obj, true);
   }
 
   /**
@@ -435,16 +547,16 @@ export function newConfig() {
     try {
       return fn();
     } finally {
-      currBidder = null;
+      resetBidder();
     }
   }
   function callbackWithBidder(bidder) {
     return function(cb) {
       return function(...args) {
         if (typeof cb === 'function') {
-          return runWithBidder(bidder, utils.bind.call(cb, this, ...args))
+          return runWithBidder(bidder, bind.call(cb, this, ...args))
         } else {
-          utils.logWarn('config.callbackWithBidder callback is not a function');
+          logWarn('config.callbackWithBidder callback is not a function');
         }
       }
     }
@@ -454,18 +566,28 @@ export function newConfig() {
     return currBidder;
   }
 
+  function resetBidder() {
+    currBidder = null;
+  }
+
   resetConfig();
 
   return {
     getCurrentBidder,
+    resetBidder,
     getConfig,
+    getAnyConfig,
+    readConfig,
+    readAnyConfig,
     setConfig,
+    mergeConfig,
     setDefaults,
     resetConfig,
     runWithBidder,
     callbackWithBidder,
     setBidderConfig,
-    getBidderConfig
+    getBidderConfig,
+    mergeBidderConfig,
   };
 }
 

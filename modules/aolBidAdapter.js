@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { isInteger, logError, isEmpty, logWarn, getUniqueIdentifierStr, _each, deepSetValue } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 
@@ -30,6 +30,18 @@ const SYNC_TYPES = {
   }
 };
 
+const SUPPORTED_USER_ID_SOURCES = [
+  'adserver.org',
+  'criteo.com',
+  'id5-sync.com',
+  'intentiq.com',
+  'liveintent.com',
+  'quantcast.com',
+  'verizonmedia.com',
+  'liveramp.com',
+  'yahoo.com'
+];
+
 const pubapiTemplate = template`${'host'}/pubapi/3.0/${'network'}/${'placement'}/${'pageid'}/${'sizeid'}/ADTECH;v=2;cmd=bid;cors=yes;alias=${'alias'};misc=${'misc'};${'dynamicParams'}`;
 const nexageBaseApiTemplate = template`${'host'}/bidRequest?`;
 const nexageGetApiTemplate = template`dcn=${'dcn'}&pos=${'pos'}&cmd=bid${'dynamicParams'}`;
@@ -53,7 +65,7 @@ function template(strings, ...keys) {
     let dict = values[values.length - 1] || {};
     let result = [strings[0]];
     keys.forEach(function (key, i) {
-      let value = utils.isInteger(key) ? values[key] : dict[key];
+      let value = isInteger(key) ? values[key] : dict[key];
       result.push(value, strings[i + 1]);
     });
     return result.join('');
@@ -75,9 +87,7 @@ function _isOneMobileBidder(bidderCode) {
 function _isNexageRequestPost(bid) {
   if (_isOneMobileBidder(bid.bidder) && bid.params.id && bid.params.imp && bid.params.imp[0]) {
     let imp = bid.params.imp[0];
-    return imp.id && imp.tagid &&
-      ((imp.banner && imp.banner.w && imp.banner.h) ||
-        (imp.video && imp.video.mimes && imp.video.minduration && imp.video.maxduration));
+    return imp.id && imp.tagid && imp.banner && imp.banner.w && imp.banner.h;
   }
 }
 
@@ -101,6 +111,12 @@ function resolveEndpointCode(bid) {
   } else if (isMarketplaceBid(bid)) {
     return AOL_ENDPOINTS.DISPLAY.GET;
   }
+}
+
+function getSupportedEids(bid) {
+  return bid.userIdAsEids.filter(eid => {
+    return SUPPORTED_USER_ID_SOURCES.indexOf(eid.source) !== -1
+  });
 }
 
 export const spec = {
@@ -132,7 +148,7 @@ export const spec = {
   },
   interpretResponse({ body }, bidRequest) {
     if (!body) {
-      utils.logError('Empty bid response', bidRequest.bidderCode, body);
+      logError('Empty bid response', bidRequest.bidderCode, body);
     } else {
       let bid = this._parseBidResponse(body, bidRequest);
 
@@ -142,7 +158,7 @@ export const spec = {
     }
   },
   getUserSyncs(options, serverResponses) {
-    const bidResponse = !utils.isEmpty(serverResponses) && serverResponses[0].body;
+    const bidResponse = !isEmpty(serverResponses) && serverResponses[0].body;
 
     if (bidResponse && bidResponse.ext && bidResponse.ext.pixels) {
       return this.parsePixelItems(bidResponse.ext.pixels);
@@ -200,7 +216,7 @@ export const spec = {
     let server;
 
     if (!MP_SERVER_MAP.hasOwnProperty(regionParam)) {
-      utils.logWarn(`Unknown region '${regionParam}' for AOL bidder.`);
+      logWarn(`Unknown region '${regionParam}' for AOL bidder.`);
       regionParam = 'us'; // Default region.
     }
 
@@ -219,13 +235,20 @@ export const spec = {
       placement: parseInt(params.placement),
       pageid: params.pageId || 0,
       sizeid: params.sizeId || 0,
-      alias: params.alias || utils.getUniqueIdentifierStr(),
+      alias: params.alias || getUniqueIdentifierStr(),
       misc: new Date().getTime(), // cache busting
       dynamicParams: this.formatMarketplaceDynamicParams(params, consentData)
     }));
   },
   buildOneMobileGetUrl(bid, consentData) {
     let { dcn, pos, ext } = bid.params;
+    if (typeof bid.userId === 'object') {
+      ext = ext || {};
+      let eids = getSupportedEids(bid);
+      eids.forEach(eid => {
+        ext['eid' + eid.source] = eid.uids[0].id;
+      });
+    }
     let nexageApi = this.buildOneMobileBaseUrl(bid);
     if (dcn && pos) {
       let dynamicParams = this.formatOneMobileDynamicParams(ext, consentData);
@@ -247,15 +270,11 @@ export const spec = {
   formatMarketplaceDynamicParams(params = {}, consentData = {}) {
     let queryParams = {};
 
-    if (params.bidFloor) {
-      queryParams.bidfloor = params.bidFloor;
-    }
-
     Object.assign(queryParams, this.formatKeyValues(params.keyValues));
     Object.assign(queryParams, this.formatConsentData(consentData));
 
     let paramsFormatted = '';
-    utils._each(queryParams, (value, key) => {
+    _each(queryParams, (value, key) => {
       paramsFormatted += `${key}=${encodeURIComponent(value)};`;
     });
 
@@ -269,7 +288,7 @@ export const spec = {
     Object.assign(params, this.formatConsentData(consentData));
 
     let paramsFormatted = '';
-    utils._each(params, (value, key) => {
+    _each(params, (value, key) => {
       paramsFormatted += `&${key}=${encodeURIComponent(value)}`;
     });
 
@@ -282,14 +301,24 @@ export const spec = {
     };
 
     if (this.isEUConsentRequired(consentData)) {
-      utils.deepSetValue(openRtbObject, 'regs.ext.gdpr', NUMERIC_VALUES.TRUE);
+      deepSetValue(openRtbObject, 'regs.ext.gdpr', NUMERIC_VALUES.TRUE);
       if (consentData.gdpr.consentString) {
-        utils.deepSetValue(openRtbObject, 'user.ext.consent', consentData.gdpr.consentString);
+        deepSetValue(openRtbObject, 'user.ext.consent', consentData.gdpr.consentString);
       }
     }
 
     if (consentData.uspConsent) {
-      utils.deepSetValue(openRtbObject, 'regs.ext.us_privacy', consentData.uspConsent);
+      deepSetValue(openRtbObject, 'regs.ext.us_privacy', consentData.uspConsent);
+    }
+
+    if (typeof bid.userId === 'object') {
+      openRtbObject.user = openRtbObject.user || {};
+      openRtbObject.user.ext = openRtbObject.user.ext || {};
+
+      let eids = getSupportedEids(bid);
+      if (eids.length > 0) {
+        openRtbObject.user.ext.eids = eids
+      }
     }
 
     return openRtbObject;
@@ -300,7 +329,7 @@ export const spec = {
   formatKeyValues(keyValues) {
     let keyValuesHash = {};
 
-    utils._each(keyValues, (value, key) => {
+    _each(keyValues, (value, key) => {
       keyValuesHash[`kv${key}`] = value;
     });
 
@@ -336,7 +365,7 @@ export const spec = {
           let tagName = item.match(tagNameRegExp)[0];
           let url = item.match(srcRegExp)[2];
 
-          if (tagName && tagName) {
+          if (tagName && url) {
             pixelsItems.push({
               type: tagName === SYNC_TYPES.IMAGE.TAG ? SYNC_TYPES.IMAGE.TYPE : SYNC_TYPES.IFRAME.TYPE,
               url: url
@@ -366,7 +395,7 @@ export const spec = {
       cpm = bidData.price;
 
       if (cpm === null || isNaN(cpm)) {
-        utils.logError('Invalid price in bid response', AOL_BIDDERS_CODES.AOL, bidData);
+        logError('Invalid price in bid response', AOL_BIDDERS_CODES.AOL, bidData);
         return;
       }
     }
@@ -383,6 +412,9 @@ export const spec = {
       currency: response.cur || 'USD',
       dealId: bidData.dealid,
       netRevenue: true,
+      meta: {
+        advertiserDomains: bidData && bidData.adomain ? bidData.adomain : []
+      },
       ttl: bidRequest.ttl
     };
   },

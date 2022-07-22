@@ -1,7 +1,7 @@
-import { deepAccess, getBidRequest, getKeyByValue, insertHtmlIntoIframe, logError, triggerPixel } from './utils.js';
-import includes from 'core-js-pure/features/array/includes.js';
-
-const CONSTANTS = require('./constants.json');
+import { deepAccess, getKeyByValue, insertHtmlIntoIframe, logError, triggerPixel } from './utils.js';
+import {includes} from './polyfill.js';
+import {auctionManager} from './auctionManager.js';
+import CONSTANTS from './constants.json';
 
 export const nativeAdapters = [];
 
@@ -33,6 +33,16 @@ export function processNativeAdUnitParams(params) {
   }
 
   return params;
+}
+
+export function decorateAdUnitsWithNativeParams(adUnits) {
+  adUnits.forEach(adUnit => {
+    const nativeParams =
+      adUnit.nativeParams || deepAccess(adUnit, 'mediaTypes.native');
+    if (nativeParams) {
+      adUnit.nativeParams = processNativeAdUnitParams(nativeParams);
+    }
+  });
 }
 
 /**
@@ -68,28 +78,13 @@ export const hasNonNativeBidder = adUnit =>
  * @param {BidRequest[]} bidRequests All bid requests for an auction
  * @return {Boolean} If object is valid
  */
-export function nativeBidIsValid(bid, bidRequests) {
-  const bidRequest = getBidRequest(bid.requestId, bidRequests);
-  if (!bidRequest) { return false; }
-
+export function nativeBidIsValid(bid, {index = auctionManager.index} = {}) {
   // all native bid responses must define a landing page url
   if (!deepAccess(bid, 'native.clickUrl')) {
     return false;
   }
 
-  if (deepAccess(bid, 'native.image')) {
-    if (!deepAccess(bid, 'native.image.height') || !deepAccess(bid, 'native.image.width')) {
-      return false;
-    }
-  }
-
-  if (deepAccess(bid, 'native.icon')) {
-    if (!deepAccess(bid, 'native.icon.height') || !deepAccess(bid, 'native.icon.width')) {
-      return false;
-    }
-  }
-
-  const requestedAssets = bidRequest.nativeParams;
+  const requestedAssets = index.getAdUnit(bid).nativeParams;
   if (!requestedAssets) {
     return true;
   }
@@ -151,24 +146,51 @@ export function fireNativeTrackers(message, adObject) {
  * @param {Object} bid
  * @return {Object} targeting
  */
-export function getNativeTargeting(bid, bidReq) {
+export function getNativeTargeting(bid, {index = auctionManager.index} = {}) {
   let keyValues = {};
+  const adUnit = index.getAdUnit(bid);
+  if (deepAccess(adUnit, 'nativeParams.rendererUrl')) {
+    bid['native']['rendererUrl'] = getAssetValue(adUnit.nativeParams['rendererUrl']);
+  } else if (deepAccess(adUnit, 'nativeParams.adTemplate')) {
+    bid['native']['adTemplate'] = getAssetValue(adUnit.nativeParams['adTemplate']);
+  }
 
-  Object.keys(bid['native']).forEach(asset => {
-    const key = CONSTANTS.NATIVE_KEYS[asset];
-    let value = getAssetValue(bid['native'][asset]);
+  const globalSendTargetingKeys = deepAccess(
+    adUnit,
+    `nativeParams.sendTargetingKeys`
+  ) !== false;
 
-    const sendPlaceholder = deepAccess(
-      bidReq,
-      `mediaTypes.native.${asset}.sendId`
-    );
+  const nativeKeys = getNativeKeys(adUnit);
+
+  const flatBidNativeKeys = { ...bid.native, ...bid.native.ext };
+  delete flatBidNativeKeys.ext;
+
+  Object.keys(flatBidNativeKeys).forEach(asset => {
+    const key = nativeKeys[asset];
+    let value = getAssetValue(bid.native[asset]) || getAssetValue(deepAccess(bid, `native.ext.${asset}`));
+
+    if (asset === 'adTemplate' || !key || !value) {
+      return;
+    }
+
+    let sendPlaceholder = deepAccess(adUnit, `nativeParams.${asset}.sendId`);
+    if (typeof sendPlaceholder !== 'boolean') {
+      sendPlaceholder = deepAccess(adUnit, `nativeParams.ext.${asset}.sendId`);
+    }
 
     if (sendPlaceholder) {
       const placeholder = `${key}:${bid.adId}`;
       value = placeholder;
     }
 
-    if (key && value) {
+    let assetSendTargetingKeys = deepAccess(adUnit, `nativeParams.${asset}.sendTargetingKeys`)
+    if (typeof assetSendTargetingKeys !== 'boolean') {
+      assetSendTargetingKeys = deepAccess(adUnit, `nativeParams.ext.${asset}.sendTargetingKeys`);
+    }
+
+    const sendTargeting = typeof assetSendTargetingKeys === 'boolean' ? assetSendTargetingKeys : globalSendTargetingKeys;
+
+    if (sendTargeting) {
       keyValues[key] = value;
     }
   });
@@ -187,11 +209,46 @@ export function getAssetMessage(data, adObject) {
     assets: [],
   };
 
+  if (adObject.native.hasOwnProperty('adTemplate')) {
+    message.adTemplate = getAssetValue(adObject.native['adTemplate']);
+  } if (adObject.native.hasOwnProperty('rendererUrl')) {
+    message.rendererUrl = getAssetValue(adObject.native['rendererUrl']);
+  }
+
   data.assets.forEach(asset => {
     const key = getKeyByValue(CONSTANTS.NATIVE_KEYS, asset);
     const value = getAssetValue(adObject.native[key]);
 
     message.assets.push({ key, value });
+  });
+
+  return message;
+}
+
+export function getAllAssetsMessage(data, adObject) {
+  const message = {
+    message: 'assetResponse',
+    adId: data.adId,
+    assets: []
+  };
+
+  Object.keys(adObject.native).forEach(function(key, index) {
+    if (key === 'adTemplate' && adObject.native[key]) {
+      message.adTemplate = getAssetValue(adObject.native[key]);
+    } else if (key === 'rendererUrl' && adObject.native[key]) {
+      message.rendererUrl = getAssetValue(adObject.native[key]);
+    } else if (key === 'ext') {
+      Object.keys(adObject.native[key]).forEach(extKey => {
+        if (adObject.native[key][extKey]) {
+          const value = getAssetValue(adObject.native[key][extKey]);
+          message.assets.push({ key: extKey, value });
+        }
+      })
+    } else if (adObject.native[key] && CONSTANTS.NATIVE_KEYS.hasOwnProperty(key)) {
+      const value = getAssetValue(adObject.native[key]);
+
+      message.assets.push({ key, value });
+    }
   });
 
   return message;
@@ -207,4 +264,19 @@ function getAssetValue(value) {
   }
 
   return value;
+}
+
+function getNativeKeys(adUnit) {
+  const extraNativeKeys = {}
+
+  if (deepAccess(adUnit, 'nativeParams.ext')) {
+    Object.keys(adUnit.nativeParams.ext).forEach(extKey => {
+      extraNativeKeys[extKey] = `hb_native_${extKey}`;
+    })
+  }
+
+  return {
+    ...CONSTANTS.NATIVE_KEYS,
+    ...extraNativeKeys
+  }
 }

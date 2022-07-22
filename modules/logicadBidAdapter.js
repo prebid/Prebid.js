@@ -60,8 +60,10 @@ function newBidRequest(bid, bidderRequest) {
       mediaTypes: bid.mediaTypes
     }],
     prebidJsVersion: '$prebid.version$',
-    referrer: bidderRequest.refererInfo.referer,
+    // TODO: is 'page' the right value here?
+    referrer: bidderRequest.refererInfo.page,
     auctionStartTime: bidderRequest.auctionStart,
+    eids: bid.userIdAsEids,
   };
 }
 

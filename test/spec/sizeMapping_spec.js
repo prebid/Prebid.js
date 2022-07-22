@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { resolveStatus, setSizeConfig, sizeSupported } from 'src/sizeMapping.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import {includes} from 'src/polyfill.js'
 
 let utils = require('src/utils');
 let deepClone = utils.deepClone;
@@ -89,6 +89,15 @@ describe('sizeMapping', function () {
 
       sandbox.stub(utils, 'logWarn');
 
+      resolveStatus(undefined, testSizes, undefined, errorConfig);
+      expect(utils.logWarn.firstCall.args[0]).to.match(/missing.+?mediaQuery/);
+    });
+
+    it('should log a warning message when mediaQuery property is declared as an empty string', function() {
+      const errorConfig = deepClone(sizeConfig);
+      errorConfig[0].mediaQuery = '';
+
+      sandbox.stub(utils, 'logWarn');
       resolveStatus(undefined, testSizes, undefined, errorConfig);
       expect(utils.logWarn.firstCall.args[0]).to.match(/missing.+?mediaQuery/);
     });

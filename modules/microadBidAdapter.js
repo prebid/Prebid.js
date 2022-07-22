@@ -1,3 +1,4 @@
+import { deepAccess, isEmpty, isStr } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 
@@ -50,8 +51,9 @@ export const spec = {
       const bidParams = bid.params;
       const params = {
         spot: bidParams.spot,
-        url: bidderRequest.refererInfo.canonicalUrl || window.location.href,
-        referrer: bidderRequest.refererInfo.referer,
+        // TODO: are these the right refererInfo values - does the fallback make sense here?
+        url: bidderRequest.refererInfo.page || window.location.href,
+        referrer: bidderRequest.refererInfo.ref,
         bid_id: bid.bidId,
         transaction_id: bid.transactionId,
         media_types: convertMediaTypes(bid),
@@ -81,6 +83,11 @@ export const spec = {
         }
       }
 
+      const idlEnv = deepAccess(bid, 'userId.idl_env')
+      if (!isEmpty(idlEnv) && isStr(idlEnv)) {
+        params['idl_env'] = idlEnv
+      }
+
       requests.push({
         method: 'GET',
         url: ENDPOINT_URLS[ENVIRONMENT],
@@ -105,6 +112,7 @@ export const spec = {
         creativeId: body.creativeId,
         netRevenue: body.netRevenue,
         currency: body.currency,
+        meta: body.meta || { advertiserDomains: [] }
       };
 
       if (body.dealId) {

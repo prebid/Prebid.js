@@ -22,13 +22,36 @@ Module that connects to VDO.AI's demand sources
             },
             bids: [
                 {
-                    bidder: "vdo.ai",
+                    bidder: "vdoai",
                     params: {
-                        placement: 'newsdv77',
+                        placementId: 'newsdv77',
                         bidFloor: 0.01  // Optional
                     }
                 }
             ]
         }
     ];
+```
+
+
+# Video Test Parameters
+```
+var videoAdUnit = {
+  code: 'test-div',
+  sizes: [[640, 480]],
+  mediaTypes: {
+    video: {
+      playerSize: [[640, 480]],
+      context: 'instream'
+    },
+  },
+  bids: [
+    {
+        bidder: "vdoai",
+        params: {
+            placementId: 'newsdv77'
+        }
+    }
+  ]
+};
 ```

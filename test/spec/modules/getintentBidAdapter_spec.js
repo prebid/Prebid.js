@@ -1,5 +1,6 @@
 import { expect } from 'chai'
 import { spec } from 'modules/getintentBidAdapter.js'
+import {deepClone} from 'src/utils';
 
 describe('GetIntent Adapter Tests:', function () {
   const bidRequests = [{
@@ -17,8 +18,41 @@ describe('GetIntent Adapter Tests:', function () {
       tid: 't1000'
     },
     sizes: [[50, 50], [100, 100]]
-  }]
+  }];
   const videoBidRequest = {
+    mediaTypes: {
+      video: {
+        protocols: [1, 2, 3],
+        mimes: ['video/mp4'],
+        minduration: 5,
+        maxduration: 30,
+        minbitrate: 500,
+        maxbitrate: 1000,
+        api: [2],
+        skip: 1
+      }
+    },
+    bidId: 'bid789',
+    params: {
+      pid: 'p1001',
+      tid: 't1001',
+    },
+    sizes: [300, 250],
+    mediaType: 'video'
+  };
+  const videoBidRequestWithVideoParams = {
+    mediaTypes: {
+      video: {
+        protocols: [1, 2, 3],
+        mimes: ['video/mp4'],
+        minduration: 5,
+        maxduration: 30,
+        minbitrate: 500,
+        maxbitrate: 1000,
+        api: [2],
+        skip: 0
+      }
+    },
     bidId: 'bid789',
     params: {
       pid: 'p1001',
@@ -27,7 +61,7 @@ describe('GetIntent Adapter Tests:', function () {
         mimes: ['video/mp4', 'application/javascript'],
         max_dur: 20,
         api: [1, 2],
-        skippable: true
+        skippable: 'ALLOW'
       }
     },
     sizes: [300, 250],
@@ -58,10 +92,54 @@ describe('GetIntent Adapter Tests:', function () {
     expect(serverRequest.data.tid).to.equal('t1001');
     expect(serverRequest.data.size).to.equal('300x250');
     expect(serverRequest.data.is_video).to.equal(true);
+    expect(serverRequest.data.protocols).to.equal('1,2,3');
+    expect(serverRequest.data.mimes).to.equal('video/mp4');
+    expect(serverRequest.data.min_dur).to.equal(5);
+    expect(serverRequest.data.max_dur).to.equal(30);
+    expect(serverRequest.data.min_btr).to.equal(500);
+    expect(serverRequest.data.max_btr).to.equal(1000);
+    expect(serverRequest.data.api).to.equal('2');
+    expect(serverRequest.data.skippable).to.equal('ALLOW');
+  });
+
+  it('Verify build video request with video params', function () {
+    const serverRequests = spec.buildRequests([videoBidRequestWithVideoParams]);
+    let serverRequest = serverRequests[0];
+    expect(serverRequest.url).to.equal('https://px.adhigh.net/rtb/direct_vast');
+    expect(serverRequest.method).to.equal('GET');
+    expect(serverRequest.data.bid_id).to.equal('bid789');
+    expect(serverRequest.data.pid).to.equal('p1001');
+    expect(serverRequest.data.tid).to.equal('t1001');
+    expect(serverRequest.data.size).to.equal('300x250');
+    expect(serverRequest.data.is_video).to.equal(true);
     expect(serverRequest.data.mimes).to.equal('video/mp4,application/javascript');
     expect(serverRequest.data.max_dur).to.equal(20);
     expect(serverRequest.data.api).to.equal('1,2');
-    expect(serverRequest.data.skippable).to.equal(true);
+    expect(serverRequest.data.skippable).to.equal('ALLOW');
+  });
+
+  it('Verify bid floor without price floors module', function() {
+    const bidRequestWithFloor = deepClone(bidRequests[0]);
+    bidRequestWithFloor.params.floor = 10
+    bidRequestWithFloor.params.cur = 'USD'
+
+    const serverRequests = spec.buildRequests([bidRequestWithFloor]);
+    let serverRequest = serverRequests[0];
+    expect(serverRequest.data.cur).to.equal('USD');
+    expect(serverRequest.data.floor).to.equal(10);
+  });
+
+  it('Verify bid floor with price floors module', function() {
+    const bidRequestWithFloor = deepClone(bidRequests[0]);
+    bidRequestWithFloor.params.floor = 10
+    bidRequestWithFloor.params.cur = 'USD'
+    const getFloorResponse = {floor: 5, currency: 'EUR'};
+    bidRequestWithFloor.getFloor = () => getFloorResponse;
+
+    const serverRequests = spec.buildRequests([bidRequestWithFloor]);
+    let serverRequest = serverRequests[0];
+    expect(serverRequest.data.cur).to.equal('EUR');
+    expect(serverRequest.data.floor).to.equal(5);
   });
 
   it('Verify parse response', function () {
