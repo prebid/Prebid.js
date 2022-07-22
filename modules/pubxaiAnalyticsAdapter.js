@@ -91,7 +91,12 @@ function mapBidResponse(bidResponse, status) {
     } else {
       Object.assign(bid, {
         bidId: bidResponse.requestId,
-        floorProvider: events.floorDetail ? events.floorDetail.floorProvider : null,
+        floorProvider: events.floorDetail?.floorProvider || null,
+        floorFetchStatus: events.floorDetail?.fetchStatus || null,
+        floorLocation: events.floorDetail?.location || null,
+        floorModelVersion: events.floorDetail?.modelVersion || null,
+        floorSkipRate: events.floorDetail?.skipRate || 0,
+        isFloorSkipped: events.floorDetail?.skipped || false,
         isWinningBid: true,
         placementId: bidResponse.params ? deepAccess(bidResponse, 'params.0.placementId') : null,
         renderedSize: bidResponse.size,

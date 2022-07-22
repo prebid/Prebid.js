@@ -124,12 +124,12 @@ describe('getBidRequestData', () => {
   })
 
   it('should set targeting keys for specified bidders', () => {
-    brandmetricsRTD.brandmetricsSubmodule.getBidRequestData({}, () => {
-      const bidderConfig = config.getBidderConfig()
+    const bidderOrtb2 = {};
+    brandmetricsRTD.brandmetricsSubmodule.getBidRequestData({ortb2Fragments: {bidder: bidderOrtb2}}, () => {
       const expected = VALID_CONFIG.params.bidders
 
       expected.forEach(exp => {
-        expect(bidderConfig[exp].ortb2.user.ext.data.mockTargetKey).to.equal('mockMeasurementId')
+        expect(bidderOrtb2[exp].user.ext.data.mockTargetKey).to.equal('mockMeasurementId')
       })
     }, VALID_CONFIG);
 
@@ -161,9 +161,9 @@ describe('getBidRequestData', () => {
       }
     });
 
-    brandmetricsRTD.brandmetricsSubmodule.getBidRequestData({}, () => {}, VALID_CONFIG);
-    const bidderConfig = config.getBidderConfig()
-    expect(Object.keys(bidderConfig).length).to.equal(0)
+    const bidderOrtb2 = {};
+    brandmetricsRTD.brandmetricsSubmodule.getBidRequestData({ortb2Fragments: {bidder: bidderOrtb2}}, () => {}, VALID_CONFIG);
+    expect(Object.keys(bidderOrtb2).length).to.equal(0)
   });
 
   it('should use a default targeting key name if the brandmetrics- configuration does not include one', () => {
@@ -179,13 +179,13 @@ describe('getBidRequestData', () => {
       }
     });
 
-    brandmetricsRTD.brandmetricsSubmodule.getBidRequestData({}, () => {}, VALID_CONFIG);
+    const bidderOrtb2 = {};
+    brandmetricsRTD.brandmetricsSubmodule.getBidRequestData({ortb2Fragments: {bidder: bidderOrtb2}}, () => {}, VALID_CONFIG);
 
-    const bidderConfig = config.getBidderConfig()
     const expected = VALID_CONFIG.params.bidders
 
     expected.forEach(exp => {
-      expect(bidderConfig[exp].ortb2.user.ext.data.brandmetrics_survey).to.equal('mockMeasurementId')
+      expect(bidderOrtb2[exp].user.ext.data.brandmetrics_survey).to.equal('mockMeasurementId')
     })
   });
 });

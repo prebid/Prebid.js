@@ -133,8 +133,9 @@ function _parseAdSlot(bid) {
 
 function _initConf(refererInfo) {
   return {
-    pageURL: (refererInfo && refererInfo.referer) ? refererInfo.referer : window.location.href,
-    refURL: window.document.referrer
+    // TODO: do the fallbacks make sense here?
+    pageURL: refererInfo?.page || window.location.href,
+    refURL: refererInfo?.ref || window.document.referrer
   };
 }
 

@@ -3,8 +3,13 @@ on:
   issues:
     types:
       - opened
+permissions:
+  contents: read
+
 jobs:
   track_issue:
+    permissions:
+      contents: none
     runs-on: ubuntu-latest
     steps:
       - name: Generate token
