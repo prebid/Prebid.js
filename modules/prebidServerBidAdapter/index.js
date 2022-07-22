@@ -700,7 +700,7 @@ Object.assign(ORTB2.prototype, {
           };
           // saving the converted ortb native request into the native mapper, so the Universal Creative
           // can render the native ad directly.
-          bidRequests.forEach(bidRequest => bidRequest.bids.forEach(bid => nativeMapper.set(bid.bidId, request)));
+          adUnit.bids.forEach(bid => nativeMapper.set(bid.bid_id, request));
         } catch (e) {
           logError('error creating native request: ' + String(e));
         }
