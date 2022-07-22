@@ -11,7 +11,7 @@ const DEFAULT_TIMEOUT = 1000;
 const BID_HOST = 'https://mweb-hb.presage.io/api/header-bidding-request';
 const TIMEOUT_MONITORING_HOST = 'https://ms-ads-monitoring-events.presage.io';
 const MS_COOKIE_SYNC_DOMAIN = 'https://ms-cookie-sync.presage.io';
-const ADAPTER_VERSION = '1.2.12';
+const ADAPTER_VERSION = '1.2.13';
 
 function getClientWidth() {
   const documentElementClientWidth = window.top.document.documentElement.clientWidth

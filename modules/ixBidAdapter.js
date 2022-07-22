@@ -1053,9 +1053,14 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
       currentImpressionSize = encodeURIComponent(JSON.stringify({ impressionObjects })).length;
     }
 
-    const gpid = impressions[transactionIds[adUnitIndex]].gpid;
+    let gpid = impressions[transactionIds[adUnitIndex]].gpid;
     const dfpAdUnitCode = impressions[transactionIds[adUnitIndex]].dfp_ad_unit_code;
-    const tid = impressions[transactionIds[adUnitIndex]].tid
+    const tid = impressions[transactionIds[adUnitIndex]].tid;
+    const divId = impressions[transactionIds[adUnitIndex]].divId;
+
+    if (!gpid && dfpAdUnitCode && divId) {
+      gpid = `${dfpAdUnitCode}#${divId}`
+    }
     if (impressionObjects.length && BANNER in impressionObjects[0]) {
       const { id, banner: { topframe } } = impressionObjects[0];
       const _bannerImpression = {
@@ -1135,7 +1140,6 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
     const pbaAdSlot = impressions[transactionIds[adUnitIndex]].pbadslot
     const tagId = impressions[transactionIds[adUnitIndex]].tagId
     const adUnitCode = impressions[transactionIds[adUnitIndex]].adUnitCode
-    const divId = impressions[transactionIds[adUnitIndex]].divId
     if (pbaAdSlot || tagId || adUnitCode || divId) {
       const clonedRObject = deepClone(r);
       const requestSize = `${baseUrl}${parseQueryStringParameters({ ...payload, r: JSON.stringify(clonedRObject) })}`.length;
@@ -1279,7 +1283,8 @@ function createNativeImps(validBidRequest, nativeImps) {
     nativeImps[validBidRequest.transactionId] = {};
     nativeImps[validBidRequest.transactionId].ixImps = [];
     nativeImps[validBidRequest.transactionId].ixImps.push(imp);
-    nativeImps[validBidRequest.transactionId].gpid = deepAccess(validBidRequest, 'ortb2Imp.ext.gpid')
+    nativeImps[validBidRequest.transactionId].gpid = deepAccess(validBidRequest, 'ortb2Imp.ext.gpid');
+    nativeImps[validBidRequest.transactionId].dfp_ad_unit_code = deepAccess(validBidRequest, 'ortb2Imp.ext.data.adserver.adslot');
     nativeImps[validBidRequest.transactionId].pbadslot = deepAccess(validBidRequest, 'ortb2Imp.ext.data.pbadslot');
     nativeImps[validBidRequest.transactionId].tagId = deepAccess(validBidRequest, 'params.tagId');
 
@@ -1302,6 +1307,7 @@ function createVideoImps(validBidRequest, videoImps) {
     videoImps[validBidRequest.transactionId].ixImps = [];
     videoImps[validBidRequest.transactionId].ixImps.push(imp);
     videoImps[validBidRequest.transactionId].gpid = deepAccess(validBidRequest, 'ortb2Imp.ext.gpid');
+    videoImps[validBidRequest.transactionId].dfp_ad_unit_code = deepAccess(validBidRequest, 'ortb2Imp.ext.data.adserver.adslot');
     videoImps[validBidRequest.transactionId].pbadslot = deepAccess(validBidRequest, 'ortb2Imp.ext.data.pbadslot');
     videoImps[validBidRequest.transactionId].tagId = deepAccess(validBidRequest, 'params.tagId');
 
@@ -1651,21 +1657,21 @@ export const spec = {
     }
 
     if (mediaTypeVideoRef && paramsVideoRef) {
+      const videoImp = bidToVideoImp(bid).video;
       const errorList = checkVideoParams(mediaTypeVideoRef, paramsVideoRef);
+      if (deepAccess(bid, 'mediaTypes.video.context') === OUTSTREAM && isIndexRendererPreferred(bid) && videoImp) {
+        const outstreamPlayerSize = [deepAccess(videoImp, 'w'), deepAccess(videoImp, 'h')];
+        const isValidSize = outstreamPlayerSize[0] >= OUTSTREAM_MINIMUM_PLAYER_SIZE[0] && outstreamPlayerSize[1] >= OUTSTREAM_MINIMUM_PLAYER_SIZE[1];
+        if (!isValidSize) {
+          logError(`IX Bid Adapter: ${outstreamPlayerSize} is an invalid size for IX outstream renderer`);
+          return false;
+        }
+      }
+
       if (errorList.length) {
         errorList.forEach((err) => {
           logError(err, { bidder: BIDDER_CODE, code: ERROR_CODES.PROPERTY_NOT_INCLUDED });
         });
-        return false;
-      }
-    }
-
-    const videoImp = bidToVideoImp(bid).video;
-    if (deepAccess(bid, 'mediaTypes.video.context') === OUTSTREAM && isIndexRendererPreferred(bid) && videoImp) {
-      const outstreamPlayerSize = [deepAccess(videoImp, 'w'), deepAccess(videoImp, 'h')];
-      const isValidSize = outstreamPlayerSize[0] >= OUTSTREAM_MINIMUM_PLAYER_SIZE[0] && outstreamPlayerSize[1] >= OUTSTREAM_MINIMUM_PLAYER_SIZE[1];
-      if (!isValidSize) {
-        logError(`IX Bid Adapter: ${outstreamPlayerSize} is an invalid size for IX outstream renderer`);
         return false;
       }
     }
