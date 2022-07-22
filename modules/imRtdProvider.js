@@ -93,7 +93,7 @@ export function setRealTimeData(bidConfig, moduleConfig, data) {
     window.googletag.cmd = window.googletag.cmd || [];
   }
 
-  if(moduleConfig.params.setGptPublisherProvidedId && data.ppid) {
+  if(data.ppid && moduleConfig.params.setGptPublisherProvidedId) {
     window.googletag.cmd.push(() => {
       window.googletag.pubads().setPublisherProvidedId(data.ppid);
     });
