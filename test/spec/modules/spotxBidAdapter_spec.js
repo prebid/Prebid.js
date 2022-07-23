@@ -442,6 +442,7 @@ describe('the spotx adapter', function () {
             },
             bidId: 123,
             params: {
+              ad_unit: 'outstream',
               player_width: 400,
               player_height: 300,
               content_page_url: 'prebid.js',
@@ -532,6 +533,17 @@ describe('the spotx adapter', function () {
       expect(responses[1].vastUrl).to.equal('https://search.spotxchange.com/ad/vast.html?key=cache124');
       expect(responses[1].videoCacheKey).to.equal('cache124');
       expect(responses[1].width).to.equal(200);
+    });
+
+    it('should set the renderer attached to the bid to render immediately', function () {
+      var renderer = spec.interpretResponse(serverResponse, bidderRequestObj)[0].renderer,
+        hasRun = false;
+      expect(renderer._render).to.be.a('function');
+      renderer._render = () => {
+        hasRun = true;
+      }
+      renderer.render();
+      expect(hasRun).to.equal(true);
     });
   });
 
