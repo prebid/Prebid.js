@@ -244,6 +244,7 @@ function generateBidParameters(bid, bidderRequest) {
   const bidObject = {
     adUnitCode: getBidIdParameter('adUnitCode', bid),
     bidId: getBidIdParameter('bidId', bid),
+    loop: getBidIdParameter('bidderRequestsCount', bid),
     bidderRequestId: getBidIdParameter('bidderRequestId', bid),
     floorPrice: Math.max(getFloorPrice(bid, mediaType), paramsFloorPrice),
     mediaType,
