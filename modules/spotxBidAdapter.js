@@ -379,7 +379,7 @@ export const spec = {
             const playersize = deepAccess(currentBidRequest, 'mediaTypes.video.playerSize');
             const renderer = Renderer.install({
               id: 0,
-              url: '/',
+              renderNow: true,
               config: {
                 adText: 'SpotX Outstream Video Ad via Prebid.js',
                 player_width: playersize[0][0],
