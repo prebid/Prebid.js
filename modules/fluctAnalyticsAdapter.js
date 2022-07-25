@@ -188,7 +188,7 @@ let fluctAnalyticsAdapter = Object.assign(
           /** @type {AdRenderSucceededEvent} */
           let adRenderSucceededEvent = args;
           let { bid: { auctionId, requestId } } = adRenderSucceededEvent;
-          Object.assign(cache.auctions[auctionId].bids[requestId], {
+          Object.assign(cache.auctions[auctionId].bids[requestId], bid, {
             noBid: false,
             prebidWon: true,
             bidWon: true,
