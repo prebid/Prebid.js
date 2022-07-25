@@ -49,6 +49,7 @@
       "dfpAdServerVideo"
     ],
     "rtdModule": [
+      "1plusXRtdProvider",
       "airgridRtdProvider",
       "akamaiDapRtdProvider",
       "blueconicRtdProvider",
