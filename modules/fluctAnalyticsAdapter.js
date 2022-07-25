@@ -225,15 +225,7 @@ const sendMessage = (auctionId) => {
     auctionId: aidSuffix ? `${auctionId}_${aidSuffix}` : auctionId,
     bids: Object.values(bids).map(bid => {
       const {
-        adserverTargeting: {
-          fbs_adid,
-          fbs_adomain,
-          fbs_bidder,
-          fbs_format,
-          fbs_pb,
-          fbs_size,
-          fbs_source,
-        },
+        adserverTargeting,
         adUnitCode,
         bidder,
         bidWon,
@@ -254,13 +246,13 @@ const sendMessage = (auctionId) => {
       const { analytics, code, originalCode, ortb2Imp } = find(adUnits, adUnit => [adUnit.originalCode, adUnit.code].includes(adUnitCode));
       return {
         adserverTargeting: {
-          fbs_adid,
-          fbs_adomain,
-          fbs_bidder,
-          fbs_format,
-          fbs_pb,
-          fbs_size,
-          fbs_source,
+          fbs_adid: adserverTargeting?.fbs_adid,
+          fbs_adomain: adserverTargeting?.fbs_adomain,
+          fbs_bidder: adserverTargeting?.fbs_bidder,
+          fbs_format: adserverTargeting?.fbs_format,
+          fbs_pb: adserverTargeting?.fbs_pb,
+          fbs_size: adserverTargeting?.fbs_size,
+          fbs_source: adserverTargeting?.fbs_source,
         },
         adUnitCode: code,
         eids: userIdAsEids?.map(userIdAsEid => userIdAsEid.source),
