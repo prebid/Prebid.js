@@ -96,7 +96,11 @@ describe('the spotx adapter', function () {
 
     beforeEach(function() {
       bid = getValidBidObject();
-      bidRequestObj = {refererInfo: {referer: 'prebid.js'}};
+      bidRequestObj = {
+        refererInfo: {
+          page: 'prebid.js'
+        }
+      };
     });
 
     it('should build a very basic request', function() {
@@ -353,24 +357,7 @@ describe('the spotx adapter', function () {
       config.getConfig.restore();
     });
 
-    it('should use pageUrl from config if page param is not passed', function() {
-      var request;
-
-      var origGetConfig = config.getConfig;
-      sinon.stub(config, 'getConfig').callsFake(function (key) {
-        if (key === 'pageUrl') {
-          return 'https://www.spotx.tv';
-        }
-        return origGetConfig.apply(config, arguments);
-      });
-
-      request = spec.buildRequests([bid], bidRequestObj)[0];
-
-      expect(request.data.site.page).to.equal('https://www.spotx.tv');
-      config.getConfig.restore();
-    });
-
-    it('should use refererInfo.referer if no page or pageUrl are passed', function() {
+    it('should use refererInfo.referer if no page is passed', function() {
       var request;
 
       request = spec.buildRequests([bid], bidRequestObj)[0];
@@ -455,6 +442,7 @@ describe('the spotx adapter', function () {
             },
             bidId: 123,
             params: {
+              ad_unit: 'outstream',
               player_width: 400,
               player_height: 300,
               content_page_url: 'prebid.js',
@@ -545,6 +533,17 @@ describe('the spotx adapter', function () {
       expect(responses[1].vastUrl).to.equal('https://search.spotxchange.com/ad/vast.html?key=cache124');
       expect(responses[1].videoCacheKey).to.equal('cache124');
       expect(responses[1].width).to.equal(200);
+    });
+
+    it('should set the renderer attached to the bid to render immediately', function () {
+      var renderer = spec.interpretResponse(serverResponse, bidderRequestObj)[0].renderer,
+        hasRun = false;
+      expect(renderer._render).to.be.a('function');
+      renderer._render = () => {
+        hasRun = true;
+      }
+      renderer.render();
+      expect(hasRun).to.equal(true);
     });
   });
 

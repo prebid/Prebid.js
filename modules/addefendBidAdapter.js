@@ -21,7 +21,8 @@ export const spec = {
       pageId: false,
       gdpr_applies: bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies ? bidderRequest.gdprConsent.gdprApplies : 'true',
       gdpr_consent: bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString ? bidderRequest.gdprConsent.consentString : '',
-      referer: bidderRequest.refererInfo.referer,
+      // TODO: is 'page' the correct item here?
+      referer: bidderRequest.refererInfo.page,
       bids: [],
     };
 

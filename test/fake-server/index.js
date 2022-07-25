@@ -5,8 +5,9 @@ const morgan = require('morgan');
 const bodyParser = require('body-parser');
 const argv = require('yargs').argv;
 const fakeResponder = require('./fake-responder.js');
+const bundleMaker = require('./bundle.js');
 
-const PORT = argv.port || '3000';
+const PORT = argv.port || '4444';
 
 // Initialize express app
 const app = express();
@@ -24,7 +25,11 @@ app.use(function(req, res, next) {
   next();
 });
 
-app.post('/', fakeResponder, (req, res) => {
+app.get('/bundle', bundleMaker, (req, res) => {
+  res.send();
+});
+
+app.post('/appnexus', fakeResponder, (req, res) => {
   res.send();
 });
 

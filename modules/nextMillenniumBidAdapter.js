@@ -1,9 +1,10 @@
-import { isStr, _each, getBidIdParameter } from '../src/utils.js';
+import { isStr, _each, parseUrl, getWindowTop, getBidIdParameter } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'nextMillennium';
 const ENDPOINT = 'https://pbs.nextmillmedia.com/openrtb2/auction';
+const TEST_ENDPOINT = 'https://test.pbs.nextmillmedia.com/openrtb2/auction';
 const SYNC_ENDPOINT = 'https://statics.nextmillmedia.com/load-cookie.html?v=4';
 const TIME_TO_LIVE = 360;
 
@@ -34,8 +35,11 @@ export const spec = {
 
           'nextMillennium': {
             'refresh_count': window.nmmRefreshCounts[bid.adUnitCode]++,
+            'elOffsets': getBoundingClient(bid),
+            'scrollTop': window.pageYOffset || document.documentElement.scrollTop
           }
-        }
+        },
+        ...bid.ortb2
       }
 
       const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
@@ -61,9 +65,12 @@ export const spec = {
         }
       }
 
+      const urlParameters = parseUrl(getWindowTop().location.href).search;
+      const isTest = urlParameters['pbs'] && urlParameters['pbs'] === 'test';
+
       requests.push({
         method: 'POST',
-        url: ENDPOINT,
+        url: isTest ? TEST_ENDPOINT : ENDPOINT,
         data: JSON.stringify(postBody),
         options: {
           contentType: 'application/json',
@@ -128,6 +135,19 @@ export const spec = {
     }];
   },
 };
+function getAdEl(bid) {
+  // best way I could think of to get El, is by matching adUnitCode to google slots...
+  const slot = window.googletag && window.googletag.pubads && window.googletag.pubads().getSlots().find(slot => slot.getAdUnitPath() === bid.adUnitCode);
+  const slotElementId = slot && slot.getSlotElementId();
+  if (!slotElementId) return null;
+  return document.querySelector('#' + slotElementId);
+}
+function getBoundingClient(bid) {
+  // console.log(bid)
+  const el = getAdEl(bid)
+  if (!el) return {}
+  return el.getBoundingClientRect();
+}
 
 function getPlacementId(bid) {
   const groupId = getBidIdParameter('group_id', bid.params)
