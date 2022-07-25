@@ -49,14 +49,12 @@ export const spec = {
     const bidResponses = [];
     if (serverResponse.body) {
       const body = serverResponse.body;
-      body.forEach((bidResponse) => {
-        if (Array.isArray(bidResponse.advertiserDomains)) {
-          bidResponse.meta = { advertiserDomains: bidResponse.advertiserDomains };
-        } else {
-          bidResponse.meta = { advertiserDomains: [] };
-        }
+      if (!body || typeof body !== 'object' || !body.Responses || !body.Responses.length > 0) {
+        return [];
+      }
+      body.Responses.forEach((bidResponse) => {
         bidResponses.push(bidResponse);
-      })
+      });
     }
     return bidResponses;
   },
