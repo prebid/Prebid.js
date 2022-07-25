@@ -59,7 +59,7 @@ function getBidFloor(bid) {
 
 function getSource(validBidRequests) {
   let source = {
-    tid: validBidRequests[0].transactionId
+    tid: utils.deepAccess(validBidRequests[0], 'ortb2Imp.ext.tid')
   };
   if (validBidRequests[0].schain) {
     utils.deepSetValue(source, 'ext.schain', validBidRequests[0].schain);
@@ -217,6 +217,12 @@ function banner(bid) {
       format: sizes,
     },
     optionalParams);
+
+  const battr = utils.deepAccess(bid, 'ortb2Imp.battr');
+  if (battr) {
+    banner.battr = battr
+  }
+
   return banner;
 }
 
@@ -282,6 +288,11 @@ function video(bid) {
   }
   if (maxbitrate && utils.isInteger(maxbitrate)) {
     video.maxbitrate = maxbitrate;
+  }
+
+  const battr = utils.deepAccess(bid, 'ortb2Imp.battr');
+  if (battr) {
+    video.battr = battr
   }
 
   return video;
@@ -384,6 +395,10 @@ export const spec = {
 
     if (firstPartyData && firstPartyData.bcat) {
       topLevel.bcat = firstPartyData.bcat;
+    }
+
+    if (firstPartyData && firstPartyData.badv) {
+      topLevel.badv = firstPartyData.badv;
     }
 
     let url = BIDDER_ENDPOINT + bidderRequest.bids[0].params.supplySourceId;

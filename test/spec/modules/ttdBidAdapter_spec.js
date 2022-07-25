@@ -185,9 +185,13 @@ describe('ttdBidAdapter', function () {
           'sizes': [[300, 250], [300, 600]]
         }
       },
+      'ortb2Imp': {
+        'ext': {
+          'tid': '8651474f-58b1-4368-b812-84f8c937a099',
+        }
+      },
       'sizes': [[300, 250], [300, 600]],
       'adUnitCode': 'div-gpt-ad-1460505748561-0',
-      'transactionId': '8651474f-58b1-4368-b812-84f8c937a099',
       'bidId': '243310435309b5',
       'bidderRequestId': '18084284054531',
       'auctionId': 'e7b34fa3-8654-424e-8c49-03e509e53d8c',
@@ -323,6 +327,25 @@ describe('ttdBidAdapter', function () {
       const requestBody = testBuildRequests(baseBannerBidRequests, {...baseBidderRequest, ortb2}).data;
       config.resetConfig();
       expect(requestBody.bcat).to.deep.equal(['IAB1-1', 'IAB2-9']);
+    });
+
+    it('sets badv properly if sent', function () {
+      const ortb2 = {
+        badv: ['adv1.com', 'adv2.com']
+      };
+      const requestBody = testBuildRequests(baseBannerBidRequests, {...baseBidderRequest, ortb2}).data;
+      config.resetConfig();
+      expect(requestBody.badv).to.deep.equal(['adv1.com', 'adv2.com']);
+    });
+
+    it('sets battr properly if present', function () {
+      let clonedBannerRequests = deepClone(baseBannerBidRequests);
+      const battr = [1, 2, 3];
+      clonedBannerRequests[0].ortb2Imp = {
+        battr: battr
+      };
+      const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
+      expect(requestBody.imp[0].banner.battr).to.equal(battr);
     });
 
     it('sets ext properly', function () {
@@ -472,9 +495,13 @@ describe('ttdBidAdapter', function () {
           'sizes': [[300, 250], [300, 600]]
         }
       },
+      'ortb2Imp': {
+        'ext': {
+          'tid': '8651474f-58b1-4368-b812-84f8c937a099',
+        }
+      },
       'sizes': [[300, 250], [300, 600]],
       'adUnitCode': 'div-gpt-ad-1460505748561-0',
-      'transactionId': '8651474f-58b1-4368-b812-84f8c937a099',
       'bidId': 'small',
       'bidderRequestId': '18084284054531',
       'auctionId': 'e7b34fa3-8654-424e-8c49-03e509e53d8c',
@@ -491,9 +518,13 @@ describe('ttdBidAdapter', function () {
           'sizes': [[728, 90]]
         }
       },
+      'ortb2Imp': {
+        'ext': {
+          'tid': '12345678-58b1-4368-b812-84f8c937a099',
+        }
+      },
       'sizes': [[728, 90]],
       'adUnitCode': 'div-gpt-ad-91515710-0',
-      'transactionId': '825c1228-ca8c-4657-b40f-2df500621527',
       'bidId': 'large',
       'bidderRequestId': '18084284054531',
       'auctionId': 'e7b34fa3-8654-424e-8c49-03e509e53d8c',
@@ -576,8 +607,12 @@ describe('ttdBidAdapter', function () {
           'sizes': [[300, 250], [300, 600]]
         }
       },
+      'ortb2Imp': {
+        'ext': {
+          'tid': '8651474f-58b1-4368-b812-84f8c937a099',
+        }
+      },
       'adUnitCode': 'div-gpt-ad-1460505748561-0',
-      'transactionId': '8651474f-58b1-4368-b812-84f8c937a099',
       'bidId': '243310435309b5',
       'bidderRequestId': '18084284054531',
       'auctionId': 'e7b34fa3-8654-424e-8c49-03e509e53d8c',
@@ -636,8 +671,12 @@ describe('ttdBidAdapter', function () {
           'maxduration': 30
         }
       },
+      'ortb2Imp': {
+        'ext': {
+          'tid': '8651474f-58b1-4368-b812-84f8c937a099',
+        }
+      },
       'adUnitCode': 'div-gpt-ad-1460505748561-0',
-      'transactionId': '8651474f-58b1-4368-b812-84f8c937a099',
       'bidId': '243310435309b5',
       'bidderRequestId': '18084284054531',
       'auctionId': 'e7b34fa3-8654-424e-8c49-03e509e53d8c',
