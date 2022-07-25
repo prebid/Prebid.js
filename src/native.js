@@ -1,4 +1,4 @@
-import { deepAccess, getKeyByValue, insertHtmlIntoIframe, isInteger, isNumber, isPlainObject, logError, triggerPixel, isBoolean, isArray } from './utils.js';
+import { deepAccess, getKeyByValue, insertHtmlIntoIframe, isInteger, isNumber, isPlainObject, logError, triggerPixel, isBoolean, isArray, deepClone } from './utils.js';
 import {includes} from './polyfill.js';
 import {auctionManager} from './auctionManager.js';
 import CONSTANTS from './constants.json';
@@ -564,14 +564,23 @@ export function fromOrtbNativeRequest(openRTBRequest) {
  * Converts an OpenRTB request to a proprietary Prebid.js format.
  * The proprietary Prebid format has many limitations and will be dropped in
  * the future; adapters are encouraged to stop using it in favour of OpenRTB format.
+ * IMPLEMENTATION DETAILS: This function returns the same exact object if no
+ * conversion is needed. If a conversion is needed (meaning, at least one
+ * bidRequest contains a native.ortb definition), it will return a copy.
+ *
  * @param {BidRequest[]} bidRequests an array of valid bid requests
  * @returns an array of valid bid requests where the openRTB bids are converted to proprietary format.
  */
 export function convertOrtbRequestToProprietaryNative(bidRequests) {
+  let needsToBeCopied = false;
   if (!bidRequests || !isArray(bidRequests)) return bidRequests;
   if (FEATURES.NATIVE) {
+    // check if a conversion is needed
+    needsToBeCopied = bidRequests.some(bidRequest => bidRequest.mediaTypes && bidRequest.mediaTypes[NATIVE] && bidRequest.mediaTypes[NATIVE].ortb);
+    if (!needsToBeCopied) return bidRequests;
+    let bidRequestsCopy = deepClone(bidRequests);
     // convert Native ORTB definition to old-style prebid native definition
-    for (const bidRequest of bidRequests) {
+    for (const bidRequest of bidRequestsCopy) {
       if (bidRequest.mediaTypes && bidRequest.mediaTypes[NATIVE] && bidRequest.mediaTypes[NATIVE].ortb) {
         bidRequest.mediaTypes[NATIVE] = {
           // to keep other keywords like sendTargetingKeys, rendererUrl...
@@ -589,6 +598,7 @@ export function convertOrtbRequestToProprietaryNative(bidRequests) {
         }
       }
     }
+    return bidRequestsCopy;
   }
   return bidRequests;
 }
