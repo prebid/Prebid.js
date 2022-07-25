@@ -1,6 +1,7 @@
 import { logWarn, logMessage, debugTurnedOn, generateUUID } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
+import { hasPurpose1Consent } from '../src/utils/gpdr.js';
 
 const BIDDER_CODE = 'concert';
 const CONCERT_ENDPOINT = 'https://bids.concert.io';
@@ -207,5 +208,11 @@ function consentAllowsPpid(bidderRequest) {
   /* NOTE: We can't easily test GDPR consent, without the
    * `consent-string` npm module; so will have to rely on that
    * happening on the bid-server. */
-  return !(bidderRequest.uspConsent === 'string' && bidderRequest.uspConsent.toUpperCase().substring(0, 2) === '1YY');
+  const uspConsent = !(bidderRequest?.uspConsent === 'string' &&
+    bidderRequest?.uspConsent[0] === '1' &&
+    bidderRequest?.uspConsent[2].toUpperCase() === 'Y');
+
+  const gdprConsent = bidderRequest?.gdprConsent && hasPurpose1Consent(bidderRequest?.gdprConsent);
+
+  return (uspConsent || gdprConsent);
 }
