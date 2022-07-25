@@ -150,7 +150,7 @@ function readConfig(config) {
 }
 
 /**
- * The function to be called upon module init.
+ * The function to be called upon module init
  * Defined as a variable to be able to reset it naturally
  */
 let startBillableEvents = function() {
