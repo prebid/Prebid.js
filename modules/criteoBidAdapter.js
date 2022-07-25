@@ -10,7 +10,6 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { hasPurpose1Consent } from '../src/utils/gpdr.js';
 
-
 const GVLID = 91;
 export const ADAPTER_VERSION = 34;
 const BIDDER_CODE = 'criteo';
