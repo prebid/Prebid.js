@@ -87,7 +87,7 @@ export const spec = {
     bidResponses.push(bidResponse);
     logInfo('bidResponses', bidResponses);
 
-    if(res && res.qid) {
+    if (res && res.qid) {
       if (storage.getDataFromLocalStorage('qid')) {
         qid = storage.getDataFromLocalStorage('qid');
         if (qid && qid.includes('%7B%22')) {
