@@ -308,106 +308,179 @@ describe('FTRACK ID System', () => {
     });
   });
 
-  describe('Uses ftrack getUserIdsAsEids() method', () => {
-    it('getUserIdsAsEids using the ftrack submodule and gets three ids (HHID, DeviceId, SingleDeviceId)', () => {
+  describe('pbjs.getUserIdsAsEids()', () => {
+    let ids = {
+      ftrackId: {}
+    };
+    let expectedIds;
+
+    beforeEach(() => {
       init(config);
       setSubmoduleRegistry([ftrackIdSubmodule]);
+    });
 
-      const ids = {
-        ftrackId: {
-          HHID: ['household_test_id'],
-          DeviceID: ['device_test_id'],
-          SingleDeviceID: ['single_device_test_id']
-        }
+    it('should return the correct EIDs schema', () => {
+      expectedIds = {
+        HHID: ['household_test_id'],
+        DeviceID: ['device_test_id'],
+        SingleDeviceID: ['single_device_test_id']
       };
+      ids.ftrackId = expectedIds;
+
       config.setConfig({
         userSync: {
           auctionDelay: 10,
           userIds: [{
-            name: 'ftrack', value: ids,
+            name: 'ftrack',
+            value: ids,
           }]
         }
       });
 
-      getGlobal().getUserIdsAsync().then((ids) => {
+      expect(getGlobal().getUserIdsAsEids()).to.deep.equal([{
+        id: 'device_test_id',
+        atype: 1,
+        ext: {
+          HHID: expectedIds.HHID.join('|'),
+          DeviceID: expectedIds.DeviceID.join('|'),
+          SingleDeviceID: expectedIds.SingleDeviceID.join('|')
+        }
+      }]);
+    });
+
+    describe('by ID type:', () => {
+      it('- DeviceID', () => {
+        expectedIds = {
+          DeviceID: ['device_test_id']
+        };
+        ids.ftrackId = expectedIds;
+
+        config.setConfig({
+          userSync: {
+            auctionDelay: 10,
+            userIds: [{
+              name: 'ftrack',
+              value: ids,
+            }]
+          }
+        });
+
         expect(getGlobal().getUserIdsAsEids()).to.deep.equal([{
           id: 'device_test_id',
           atype: 1,
           ext: {
-            HHID: 'household_test_id',
-            DeviceID: 'device_test_id',
-            SingleDeviceID: 'single_device_test_id',
+            DeviceID: expectedIds.DeviceID.join('|')
+          }
+        }]);
+      });
+
+      it('- HHID', () => {
+        expectedIds = {
+          HHID: ['household_test_id']
+        };
+        ids.ftrackId = expectedIds;
+
+        config.setConfig({
+          userSync: {
+            auctionDelay: 10,
+            userIds: [{
+              name: 'ftrack',
+              value: ids,
+            }]
+          }
+        });
+
+        expect(getGlobal().getUserIdsAsEids()).to.deep.equal([{
+          id: '',
+          atype: 1,
+          ext: {
+            HHID: expectedIds.HHID.join('|')
+          }
+        }]);
+      });
+
+      it('- SingleDeviceID', () => {
+        expectedIds = {
+          SingleDeviceID: ['single_device_test_id']
+        };
+        ids.ftrackId = expectedIds;
+
+        config.setConfig({
+          userSync: {
+            auctionDelay: 10,
+            userIds: [{
+              name: 'ftrack', value: ids,
+            }]
+          }
+        });
+
+        expect(getGlobal().getUserIdsAsEids()).to.deep.equal([{
+          id: '',
+          atype: 1,
+          ext: {
+            SingleDeviceID: expectedIds.SingleDeviceID.join('|')
           }
         }]);
       });
     });
+  });
 
-    it('gets only the deviceId', () => {
+  describe('pbjs.getUserIdsAsync()', () => {
+    it('should return the IDs in the correct schema', () => {
       init(config);
       setSubmoduleRegistry([ftrackIdSubmodule]);
 
-      const ids = { ftrackId: { DeviceID: ['device_test_id'] } };
+      let expectedIds = {
+        HHID: ['household_test_id'],
+        DeviceID: ['device_test_id'],
+        SingleDeviceID: ['single_device_test_id']
+      };
+
       config.setConfig({
         userSync: {
           auctionDelay: 10,
           userIds: [{
-            name: 'ftrack', value: ids,
+            name: 'ftrack',
+            value: {
+              ftrackId: expectedIds
+            },
           }]
         }
       });
 
-      getGlobal().getUserIdsAsync().then((ids) => {
-        expect(getGlobal().getUserIdsAsEids()).to.deep.equal([{
-          id: 'device_test_id',
-          atype: 1,
-          ext: { DeviceID: 'device_test_id' }
-        }]);
+      getGlobal().getUserIdsAsync().then(ids => {
+        expect(ids).to.deep.equal({
+          ftrackId: expectedIds
+        });
       });
     });
+  });
 
-    it('gets only the user household id', () => {
+  describe('pbjs.getUserIds()', () => {
+    it('should return the IDs in the correct schema', () => {
       init(config);
       setSubmoduleRegistry([ftrackIdSubmodule]);
 
-      const ids = { ftrackId: { HHID: ['household_test_id'], } };
+      let expectedIds = {
+        HHID: ['household_test_id'],
+        DeviceID: ['device_test_id'],
+        SingleDeviceID: ['single_device_test_id']
+      };
+
       config.setConfig({
         userSync: {
           auctionDelay: 10,
           userIds: [{
-            name: 'ftrack', value: ids,
+            name: 'ftrack',
+            value: {
+              ftrackId: expectedIds
+            },
           }]
         }
       });
 
-      getGlobal().getUserIdsAsync().then((ids) => {
-        expect(getGlobal().getUserIdsAsEids()).to.deep.equal([{
-          id: '',
-          atype: 1,
-          ext: { HHID: 'household_test_id' }
-        }]);
-      });
-    });
-
-    it('gets only the deviceId', () => {
-      init(config);
-      setSubmoduleRegistry([ftrackIdSubmodule]);
-
-      const ids = { ftrackId: { SingleDeviceID: ['single_device_test_id'] } };
-      config.setConfig({
-        userSync: {
-          auctionDelay: 10,
-          userIds: [{
-            name: 'ftrack', value: ids,
-          }]
-        }
-      });
-
-      getGlobal().getUserIdsAsync().then((ids) => {
-        expect(getGlobal().getUserIdsAsEids()).to.deep.equal([{
-          id: '',
-          atype: 1,
-          ext: { SingleDeviceID: 'single_device_test_id' }
-        }]);
+      expect(getGlobal().getUserIds()).to.deep.equal({
+        'ftrackId': expectedIds
       });
     });
   });

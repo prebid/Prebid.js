@@ -302,6 +302,7 @@ describe('eids array generation for known sub-modules', function() {
       }]
     });
   });
+
   it('uid2', function() {
     const userId = {
       uid2: {'id': 'Sample_AD_Token'}
@@ -316,6 +317,7 @@ describe('eids array generation for known sub-modules', function() {
       }]
     });
   });
+
   it('kpuid', function() {
     const userId = {
       kpuid: 'Sample_Token'
@@ -330,6 +332,7 @@ describe('eids array generation for known sub-modules', function() {
       }]
     });
   });
+
   it('tncid', function() {
     const userId = {
       tncid: 'TEST_TNCID'
@@ -344,6 +347,7 @@ describe('eids array generation for known sub-modules', function() {
       }]
     });
   });
+
   it('pubProvidedId', function() {
     const userId = {
       pubProvidedId: [{
@@ -435,6 +439,32 @@ describe('eids array generation for known sub-modules', function() {
     expect(eid).to.deep.equal({
       source: 'czechadid.cz',
       uids: [{ id: 'some-random-id-value', atype: 1 }]
+    });
+  });
+
+  describe('ftrackId', () => {
+    it('should return the correct EID schema', () => {
+      expect(createEidsArray({
+        ftrackId: {
+          DeviceId: ['aaa', 'bbb'],
+          SingleDeviceId: ['ccc', 'ddd'],
+          HHID: ['eee', 'fff']
+        },
+        foo: {
+          bar: 'baz'
+        },
+        lorem: {
+          ipsum: ''
+        }
+      })).to.deep.equal([{
+        'atype': 1,
+        'id': '',
+        'ext': {
+          'DeviceId': 'aaa|bbb',
+          'SingleDeviceId': 'ccc|ddd',
+          'HHID': 'eee|fff'
+        }
+      }]);
     });
   });
 });
