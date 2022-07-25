@@ -932,7 +932,7 @@ Object.assign(ORTB2.prototype, {
           bidObject.requestTimestamp = this.requestTimestamp;
           bidObject.cpm = cpm;
           bidObject.originalCpm = cpm;
-					bidObject.originalCurrency = response.cur;
+          bidObject.originalCurrency = response.cur;
 
           // temporarily leaving attaching it to each bidResponse so no breaking change
           // BUT: this is a flat map, so it should be only attached to bidderRequest, a the change above does

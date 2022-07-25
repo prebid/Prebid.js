@@ -86,7 +86,7 @@ export const sharethroughAdapterSpec = {
       if (gpid) {
         impression.ext = { gpid: gpid };
       }
-      //Disabling Outstream request temporarily
+      // Disabling Outstream request temporarily
 
       const bannerRequest = deepAccess(bidReq, 'mediaTypes.banner');
 
@@ -120,7 +120,7 @@ export const sharethroughAdapterSpec = {
       //   if (videoRequest.companiontype) impression.video.companiontype = videoRequest.companiontype;
       //   if (videoRequest.companionad) impression.video.companionad = videoRequest.companionad;
       // } else {
-        if (bannerRequest) {
+      if (bannerRequest) {
         impression.banner = {
           pos: deepAccess(bidReq, 'mediaTypes.banner.pos', 0),
           topframe: inIframe() ? 0 : 1,
