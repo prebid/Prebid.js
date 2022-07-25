@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/rasBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 
-const CSR_ENDPOINT = 'https://csr.onet.pl/4178463/csr-006/csr.json?';
+const CSR_ENDPOINT = 'https://csr.onet.pl/4178463/csr-006/csr.json?nid=4178463&';
 
 describe('rasBidAdapter', function () {
   const adapter = newBidder(spec);

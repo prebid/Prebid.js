@@ -384,7 +384,7 @@ function parseQueryStringParams() {
     let storedParam = storage.getDataFromLocalStorage('ivbs');
     if (storedParam != null) {
       params = JSON.parse(storedParam);
-	}
+    }
   } catch (e) {
   }
   let re = /[\\?&]([^=]+)=([^\\?&#]+)/g;

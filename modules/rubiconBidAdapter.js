@@ -1032,7 +1032,7 @@ function applyFPD(bidRequest, mediaType, data) {
         if (segments.length > 0) return segments.toString();
       }).toString();
     } else if (typeof prop === 'object' && !Array.isArray(prop)) {
-      logWarn('Rubicon: Filtered FPD key: ', key, ': Expected value to be string, integer, or an array of strings/ints');
+      return undefined;
     } else if (typeof prop !== 'undefined') {
       return (Array.isArray(prop)) ? prop.filter(value => {
         if (typeof value !== 'object' && typeof value !== 'undefined') return value.toString();
