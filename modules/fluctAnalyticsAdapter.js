@@ -20,7 +20,7 @@ const find = _find;
 const url = 'https://an.adingo.jp';
 
 /** AdUnit */
-/** @typedef {{ code: string, originalCode?: string, dwid: string, path?: string, analytics?: { bidder: string, dwid: string }[], bids: Bid[], mediaTypes: MediaTypes, transactionId: string, ortb2Imp: Ortb2Imp }} AdUnit */
+/** @typedef {{ code: string, originalCode?: string, dwid: string, path?: string, analytics?: { bidder: string, dwid: string }[], bids: Bid[], mediaTypes: MediaTypes, transactionId: string, ortb2Imp?: Ortb2Imp }} AdUnit */
 /** @typedef {{ banner: { name: string, sizes?: [number, number][], sizeConfig?: { minViewPort: [number, number], sizes: [number, number][] }[] }, video: any }} MediaTypes */
 /** @typedef {{ ext: { data: { adserver?: { name: string, adSlot: string }, pbadslot: string } } }} Ortb2Imp */
 /** @typedef {{ [key: string]: string|number }[] } Params */
@@ -251,8 +251,7 @@ const sendMessage = (auctionId) => {
         width
       } = bid;
 
-      const { analytics, code, originalCode, ortb2Imp: { ext: { data: { pbadslot } } } } = find(adUnits, adUnit => [adUnit.originalCode, adUnit.code].includes(adUnitCode));
-
+      const { analytics, code, originalCode, ortb2Imp } = find(adUnits, adUnit => [adUnit.originalCode, adUnit.code].includes(adUnitCode));
       return {
         adserverTargeting: {
           fbs_adid,
@@ -264,7 +263,7 @@ const sendMessage = (auctionId) => {
           fbs_source,
         },
         adUnitCode: code,
-        eids: userIdAsEids.map(userIdAsEid => userIdAsEid.source),
+        eids: userIdAsEids?.map(userIdAsEid => userIdAsEid.source),
         bidder,
         bidWon,
         cpm,
@@ -274,7 +273,7 @@ const sendMessage = (auctionId) => {
         netRevenue,
         noBid,
         originalAdUnitCode: originalCode,
-        pbadslot,
+        pbadslot: ortb2Imp?.ext?.data?.pbadslot,
         prebidWon,
         requestId,
         timeout,
