@@ -5,7 +5,7 @@ import CONSTANTS from '../src/constants.json';
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 import { getHook } from '../src/hook.js';
-import {promiseControls} from '../src/utils/promise.js';
+import {defer} from '../src/utils/promise.js';
 
 const DEFAULT_CURRENCY_RATE_URL = 'https://cdn.jsdelivr.net/gh/prebid/currency-file@1/latest.json?date=$$TODAY$$';
 const CURRENCY_RATE_PRECISION = 4;
@@ -24,7 +24,7 @@ var defaultRates;
 export const ready = (() => {
   let ctl;
   function reset() {
-    ctl = promiseControls();
+    ctl = defer();
   }
   reset();
   return {done: () => ctl.resolve(), reset, promise: () => ctl.promise}
