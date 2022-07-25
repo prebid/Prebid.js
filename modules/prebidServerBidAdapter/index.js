@@ -861,6 +861,43 @@ Object.assign(ORTB2.prototype, {
       request.ext.prebid = mergeDeep(request.ext.prebid, s2sConfig.extPrebid);
     }
 
+    // get reference to pbs config schain bidder names (if any exist)
+    const pbsSchainBidderNamesArr = request.ext.prebid?.schains ? request.ext.prebid.schains.flatMap(s => s.bidders) : [];
+    // create an schains object
+    const schains = Object.fromEntries(
+      (request.ext.prebid?.schains || []).map(({bidders, schain}) => [JSON.stringify(schain), {bidders: new Set(bidders), schain}])
+    );
+
+    // compare bidder specific schains with pbs specific schains
+    request.ext.prebid.schains = Object.values(
+      bidRequests
+        .map((req) => [req.bidderCode, req.bids[0].schain])
+        .reduce((chains, [bidder, chain]) => {
+          const chainKey = JSON.stringify(chain);
+
+          switch (true) {
+            // if pbjs bidder name is same as pbs bidder name, pbs bidder name always wins
+            case chainKey && pbsSchainBidderNamesArr.indexOf(bidder) !== -1:
+              logInfo(`bidder-specific schain for ${bidder} skipped due to existing entry`);
+              break;
+            // if a pbjs schain obj is equal to an schain obj that exists on the pbs side, add the bidder name on the pbs side
+            case chainKey && chains.hasOwnProperty(chainKey) && pbsSchainBidderNamesArr.indexOf(bidder) === -1:
+              chains[chainKey].bidders.add(bidder);
+              break;
+            // if a pbjs schain obj is not on the pbs side, add a new schain entry on the pbs side
+            case chainKey && !chains.hasOwnProperty(chainKey):
+              chains[chainKey] = {bidders: new Set(), schain: chain};
+              chains[chainKey].bidders.add(bidder);
+              break;
+            default:
+          }
+
+          return chains;
+        }, schains)
+    ).map(({bidders, schain}) => ({bidders: Array.from(bidders), schain}));
+    // if schains evaluates to an empty array, remove it from the prebid object
+    if (request.ext.prebid.schains.length === 0) delete request.ext.prebid.schains;
+
     /**
      * @type {(string[]|string|undefined)} - OpenRTB property 'cur', currencies available for bids
      */
