@@ -623,7 +623,7 @@ describe('the spotx adapter', function () {
 
       responses[0].renderer.render(responses[0]);
       expect(loadExternalScript.called).to.be.true;
-      attrs = valuesToString(loadExternalScript.args[1][4]);
+      attrs = valuesToString(loadExternalScript.args[0][4]);
 
       expect(attrs['data-spotx_channel_id']).to.equal('12345');
       expect(attrs['data-spotx_vast_url']).to.equal('https://search.spotxchange.com/ad/vast.html?key=cache123');
@@ -651,15 +651,15 @@ describe('the spotx adapter', function () {
       let responses = spec.interpretResponse(serverResponse, bidderRequestObj);
       responses[0].renderer.render(responses[0]);
       expect(loadExternalScript.called).to.be.true;
-      expect(loadExternalScript.args[1][3].nodeName).to.equal('IFRAME');
+      expect(loadExternalScript.args[0][3].nodeName).to.equal('IFRAME');
     });
 
     it('should adjust width and height to match slot clientWidth if playersize_auto_adapt is used', function() {
       let responses = spec.interpretResponse(serverResponse, bidderRequestObj);
 
       responses[0].renderer.render(responses[0]);
-      expect(loadExternalScript.args[1][4]['data-spotx_content_width']).to.equal('200');
-      expect(loadExternalScript.args[1][4]['data-spotx_content_height']).to.equal('150');
+      expect(loadExternalScript.args[0][4]['data-spotx_content_width']).to.equal('200');
+      expect(loadExternalScript.args[0][4]['data-spotx_content_height']).to.equal('150');
     });
 
     it('should use a default 4/3 ratio if playersize_auto_adapt is used and response does not contain width or height', function() {
@@ -668,8 +668,8 @@ describe('the spotx adapter', function () {
       let responses = spec.interpretResponse(serverResponse, bidderRequestObj);
 
       responses[0].renderer.render(responses[0]);
-      expect(loadExternalScript.args[1][4]['data-spotx_content_width']).to.equal('200');
-      expect(loadExternalScript.args[1][4]['data-spotx_content_height']).to.equal('150');
+      expect(loadExternalScript.args[0][4]['data-spotx_content_width']).to.equal('200');
+      expect(loadExternalScript.args[0][4]['data-spotx_content_height']).to.equal('150');
     });
   });
 });
