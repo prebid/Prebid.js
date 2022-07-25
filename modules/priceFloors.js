@@ -25,6 +25,7 @@ import {find} from '../src/polyfill.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {bidderSettings} from '../src/bidderSettings.js';
 import {auctionManager} from '../src/auctionManager.js';
+import {IMP, PBS, registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
 
 /**
  * @summary This Module is intended to provide users with the ability to dynamically set and enforce price floors on a per auction basis.
@@ -758,3 +759,39 @@ export function addBidResponseHook(fn, adUnitCode, bid) {
 }
 
 config.getConfig('floors', config => handleSetFloorsConfig(config.floors));
+
+/**
+ * Sets bidfloor and bidfloorcur for ORTB imp objects
+ */
+export function setOrtbImpBidFloor(imp, bidRequest, context) {
+  if (typeof bidRequest.getFloor === 'function') {
+    let currency, floor;
+    try {
+      ({currency, floor} = bidRequest.getFloor({
+        currency: context.currency || config.getConfig('currency.adServerCurrency') || 'USD'
+      }));
+    } catch (e) {
+      logWarn('Cannot compute floor for bid', bidRequest);
+      return;
+    }
+    floor = parseFloat(floor);
+    if (currency != null && floor != null && !isNaN(floor)) {
+      Object.assign(imp, {
+        bidfloor: floor,
+        bidfloorcur: currency
+      });
+    }
+  }
+}
+
+/**
+ * PBS specific extension: set ext.prebid.floors.enabled = false if floors are processed client-side
+ */
+export function setOrtbExtPrebidFloors(ortbRequest) {
+  if (addedFloorsHook) {
+    deepSetValue(ortbRequest, 'ext.prebid.floors.enabled', false);
+  }
+}
+
+registerOrtbProcessor({type: IMP, name: 'bidfloor', fn: setOrtbImpBidFloor});
+registerOrtbProcessor({type: REQUEST, name: 'extPrebidFloors', fn: setOrtbExtPrebidFloors, dialects: [PBS]});

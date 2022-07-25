@@ -1,6 +1,18 @@
 import { config } from '../src/config.js';
 import adapterManager from '../src/adapterManager.js';
-import { isNumber, isStr, isArray, isPlainObject, hasOwn, logError, isInteger, _each, logWarn } from '../src/utils.js';
+import {
+  isNumber,
+  isStr,
+  isArray,
+  isPlainObject,
+  hasOwn,
+  logError,
+  isInteger,
+  _each,
+  logWarn,
+  deepAccess, deepSetValue
+} from '../src/utils.js';
+import {registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
 
 // https://github.com/InteractiveAdvertisingBureau/openrtb/blob/master/supplychainobject.md
 
@@ -181,3 +193,14 @@ export function init() {
 }
 
 init()
+
+export function setOrtbSourceExtSchain(ortbRequest, bidderRequest, context) {
+  if (!deepAccess(ortbRequest, 'source.ext.schain')) {
+    const schain = deepAccess(context, 'bidRequests.0.schain');
+    if (schain) {
+      deepSetValue(ortbRequest, 'source.ext.schain', schain);
+    }
+  }
+}
+
+registerOrtbProcessor({type: REQUEST, name: 'sourceExtSchain', fn: setOrtbSourceExtSchain});

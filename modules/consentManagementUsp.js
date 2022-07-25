@@ -4,10 +4,11 @@
  * information and make it available for any USP (CCPA) supported adapters to
  * read/pass this information to their system.
  */
-import { isFn, logInfo, logWarn, isStr, isNumber, isPlainObject, logError } from '../src/utils.js';
+import {isFn, logInfo, logWarn, isStr, isNumber, isPlainObject, logError, deepSetValue} from '../src/utils.js';
 import { config } from '../src/config.js';
 import { uspDataHandler } from '../src/adapterManager.js';
 import {getGlobal} from '../src/prebidGlobal.js';
+import {registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
 
 const DEFAULT_CONSENT_API = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 50;
@@ -305,3 +306,11 @@ function enableConsentManagement(configFromUser = false) {
 }
 config.getConfig('consentManagement', config => setConsentConfig(config.consentManagement));
 setTimeout(() => !addedConsentHook && enableConsentManagement())
+
+export function setOrtbUsp(ortbRequest, bidderRequest) {
+  if (bidderRequest.uspConsent) {
+    deepSetValue(ortbRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+  }
+}
+
+registerOrtbProcessor({type: REQUEST, name: 'usp', fn: setOrtbUsp});

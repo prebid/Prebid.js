@@ -1,0 +1,102 @@
+import {config} from 'src/config.js';
+import {setOrtbExtPrebidFloors, setOrtbImpBidFloor} from '../../../modules/priceFloors.js';
+
+describe('pbjs - ortb imp floor params', () => {
+  before(() => {
+    config.resetConfig();
+  });
+
+  afterEach(() => {
+    config.resetConfig();
+  });
+
+  Object.entries({
+    'has no getFloor': {},
+    'has getFloor that throws': {
+      getFloor: sinon.stub().callsFake(() => { throw new Error() }),
+    },
+    'returns invalid floor': {
+      getFloor: sinon.stub().callsFake(() => ({floor: NaN, currency: null}))
+    }
+  }).forEach(([t, req]) => {
+    it(`has no effect if bid ${t}`, () => {
+      const imp = {};
+      setOrtbImpBidFloor(imp, {}, {});
+      expect(imp).to.eql({});
+    })
+  })
+
+  it('sets bidfoor and bidfloorcur according to getFloor', () => {
+    const imp = {};
+    const req = {
+      getFloor() {
+        return {
+          currency: 'EUR',
+          floor: '1.23'
+        }
+      }
+    };
+    setOrtbImpBidFloor(imp, req, {});
+    expect(imp).to.eql({
+      bidfloor: 1.23,
+      bidfloorcur: 'EUR'
+    })
+  });
+
+  Object.entries({
+    'missing currency': {floor: 1.23},
+    'missing floor': {currency: 'USD'},
+    'not a number': {floor: 'abc', currency: 'USD'}
+  }).forEach(([t, floor]) => {
+    it(`should not set bidfloor if floor is ${t}`, () => {
+      const imp = {};
+      const req = {
+        getFloor: () => floor
+      }
+      setOrtbImpBidFloor(imp, req, {});
+      expect(imp).to.eql({});
+    })
+  })
+
+  describe('asks for floor in currency', () => {
+    let req;
+    beforeEach(() => {
+      req = {
+        getFloor(opts) {
+          return {
+            floor: 1.23,
+            currency: opts.currency
+          }
+        }
+      }
+    })
+
+    it('from context.currency', () => {
+      const imp = {};
+      setOrtbImpBidFloor(imp, req, {currency: 'JPY'});
+      config.setConfig({
+        currency: {
+          adServerCurrency: 'EUR'
+        }
+      })
+      expect(imp.bidfloorcur).to.eql('JPY');
+    });
+
+    it('from config', () => {
+      const imp = {};
+      config.setConfig({
+        currency: {
+          adServerCurrency: 'EUR'
+        }
+      });
+      setOrtbImpBidFloor(imp, req, {});
+      expect(imp.bidfloorcur).to.eql('EUR');
+    });
+
+    it('defaults to USD', () => {
+      const imp = {};
+      setOrtbImpBidFloor(imp, req, {});
+      expect(imp.bidfloorcur).to.eql('USD');
+    })
+  })
+});

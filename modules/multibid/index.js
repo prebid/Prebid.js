@@ -12,6 +12,7 @@ import * as events from '../../src/events.js';
 import CONSTANTS from '../../src/constants.json';
 import {addBidderRequests} from '../../src/auction.js';
 import {getHighestCpmBidsFromBidPool, sortByDealAndPriceBucketOrCpm} from '../../src/targeting.js';
+import {PBS, registerOrtbProcessor, REQUEST} from '../../src/pbjsORTB.js';
 
 const MODULE_NAME = 'multibid';
 let hasMultibid = false;
@@ -234,3 +235,14 @@ function init() {
 }
 
 init();
+
+export function setOrtbExtPrebidMultibid(ortbRequest) {
+  const multibid = config.getConfig('multibid');
+  if (multibid) {
+    deepSetValue(ortbRequest, 'ext.prebid.multibid', multibid.map(o =>
+      Object.fromEntries(Object.entries(o).map(([k, v]) => [k.toLowerCase(), v])))
+    )
+  }
+}
+
+registerOrtbProcessor({type: REQUEST, name: 'extPrebidMultibid', fn: setOrtbExtPrebidMultibid, dialects: [PBS]});

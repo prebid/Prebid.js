@@ -13,12 +13,21 @@ import 'modules/appnexusBidAdapter.js' // appnexus alias test
 import 'modules/rubiconBidAdapter.js' // rubicon alias test
 import 'src/prebid.js' // $$PREBID_GLOBAL$$.aliasBidder test
 import 'modules/currency.js' // adServerCurrency test
+// also load modules that register ORTB processors
+import 'modules/currency.js';
+import 'modules/userId/index.js';
+import 'modules/multibid/index.js';
+import 'modules/priceFloors.js';
+import 'modules/consentManagement.js';
+import 'modules/consentManagementUsp.js';
+import 'modules/schain.js';
 import { hook } from '../../../src/hook.js';
 import { decorateAdUnitsWithNativeParams } from '../../../src/native.js';
 import { auctionManager } from '../../../src/auctionManager.js';
 import { stubAuctionIndex } from '../../helpers/indexStub.js';
 import { registerBidder } from 'src/adapters/bidderFactory.js';
 import {getGlobal} from '../../../src/prebidGlobal.js';
+import {currencyConverter} from '../../../modules/prebidServerBidAdapter/ortbConverter.js';
 
 let CONFIG = {
   accountId: '1',
@@ -472,6 +481,7 @@ describe('S2S Adapter', function () {
 
   beforeEach(function () {
     config.resetConfig();
+    config.setConfig({floors: {enabled: false}});
     adapter = new Adapter();
     BID_REQUESTS = [
       {
@@ -1188,6 +1198,7 @@ describe('S2S Adapter', function () {
                 mockConvertCurrency = null;
                 delete getGlobal().convertCurrency;
               }
+              currencyConverter.clear();
             });
 
             afterEach(() => {
@@ -1343,13 +1354,14 @@ describe('S2S Adapter', function () {
 
       const aliasBidder = {
         bidder: 'beintoo',
+        bid_id: REQUEST.ad_units[0].bids[0].bid_id,
         params: { placementId: '123456' }
       };
 
       const request = utils.deepClone(REQUEST);
       request.ad_units[0].bids = [aliasBidder];
 
-      adapter.callBids(request, BID_REQUESTS, addBidResponse, done, ajax);
+      adapter.callBids(request, [{...BID_REQUESTS[0], bidderCode: 'beintoo'}], addBidResponse, done, ajax);
 
       const requestBid = JSON.parse(server.requests[0].requestBody);
       expect(requestBid.ext).to.haveOwnProperty('prebid');
@@ -1371,6 +1383,7 @@ describe('S2S Adapter', function () {
       const alias = 'foobar';
       const aliasBidder = {
         bidder: alias,
+        bid_id: REQUEST.ad_units[0].bids[0].bid_id,
         params: { placementId: '123456' }
       };
 
@@ -1379,7 +1392,7 @@ describe('S2S Adapter', function () {
 
       // TODO: stub this
       $$PREBID_GLOBAL$$.aliasBidder('appnexus', alias);
-      adapter.callBids(request, BID_REQUESTS, addBidResponse, done, ajax);
+      adapter.callBids(request, [{...BID_REQUESTS[0], bidderCode: 'foobar'}], addBidResponse, done, ajax);
 
       const requestBid = JSON.parse(server.requests[0].requestBody);
       expect(requestBid.ext).to.haveOwnProperty('prebid');
@@ -1411,13 +1424,14 @@ describe('S2S Adapter', function () {
       })
       const aliasBidder = {
         bidder: 'bidderCodeForTestSkipBPSAlias_Alias',
+        bid_id: REQUEST.ad_units[0].bids[0].bid_id,
         params: { aid: 123 }
       };
 
       const request = utils.deepClone(REQUEST);
       request.ad_units[0].bids = [aliasBidder];
 
-      adapter.callBids(request, BID_REQUESTS, addBidResponse, done, ajax);
+      adapter.callBids(request, [{...BID_REQUESTS[0], bidderCode: aliasBidder.bidder}], addBidResponse, done, ajax);
 
       const requestBid = JSON.parse(server.requests[0].requestBody);
 
@@ -1447,6 +1461,7 @@ describe('S2S Adapter', function () {
       const alias = 'foobar_1';
       const aliasBidder = {
         bidder: alias,
+        bid_id: REQUEST.ad_units[0].bids[0].bid_id,
         params: { aid: 1234567 }
       };
 
@@ -1455,7 +1470,7 @@ describe('S2S Adapter', function () {
 
       // TODO: stub this
       $$PREBID_GLOBAL$$.aliasBidder('appnexus', alias, { skipPbsAliasing: true });
-      adapter.callBids(request, BID_REQUESTS, addBidResponse, done, ajax);
+      adapter.callBids(request, [{...BID_REQUESTS[0], bidderCode: aliasBidder.bidder}], addBidResponse, done, ajax);
 
       const requestBid = JSON.parse(server.requests[0].requestBody);
 
@@ -1482,14 +1497,15 @@ describe('S2S Adapter', function () {
       });
       config.setConfig({ s2sConfig: s2sConfig });
 
-      const myRequest = utils.deepClone(REQUEST);
-      myRequest.ad_units[0].bids[0].params.usePaymentRule = true;
-      myRequest.ad_units[0].bids[0].params.keywords = {
-        foo: ['bar', 'baz'],
-        fizz: ['buzz']
-      };
+      Object.assign(BID_REQUESTS[0].bids[0].params, {
+        usePaymentRule: true,
+        keywords: {
+          foo: ['bar', 'baz'],
+          fizz: ['buzz']
+        }
+      })
 
-      adapter.callBids(myRequest, BID_REQUESTS, addBidResponse, done, ajax);
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
       const requestBid = JSON.parse(server.requests[0].requestBody);
 
       const requestParams = requestBid.imp[0].ext.prebid.bidder;
@@ -1685,18 +1701,6 @@ describe('S2S Adapter', function () {
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'id5-sync.com')[0].uids[0].ext.linkType).is.equal('some-link-type');
       // LiveRamp should exist
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'liveramp.com')[0].uids[0].id).is.equal('0000-1111-2222-3333');
-    });
-
-    it('when config \'currency.adServerCurrency\' value is an array: ORTB has property \'cur\' value set to a single item array', function () {
-      config.setConfig({
-        currency: { adServerCurrency: ['USD', 'GB', 'UK', 'AU'] },
-      });
-
-      const bidRequests = utils.deepClone(BID_REQUESTS);
-      adapter.callBids(REQUEST, bidRequests, addBidResponse, done, ajax);
-
-      const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
-      expect(parsedRequestBody.cur).to.deep.equal(['USD']);
     });
 
     it('when config \'currency.adServerCurrency\' value is a string: ORTB has property \'cur\' value set to a single item array', function () {
@@ -2030,31 +2034,6 @@ describe('S2S Adapter', function () {
           }
         }
       ]);
-    });
-
-    it('passes schain object in request', function () {
-      const bidRequests = utils.deepClone(BID_REQUESTS);
-      const schainObject = {
-        'ver': '1.0',
-        'complete': 1,
-        'nodes': [
-          {
-            'asi': 'indirectseller.com',
-            'sid': '00001',
-            'hp': 1
-          },
-
-          {
-            'asi': 'indirectseller-2.com',
-            'sid': '00002',
-            'hp': 2
-          }
-        ]
-      };
-      bidRequests[0].bids[0].schain = schainObject;
-      adapter.callBids(REQUEST, bidRequests, addBidResponse, done, ajax);
-      const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
-      expect(parsedRequestBody.source.ext.schain).to.deep.equal(schainObject);
     });
 
     it('passes multibid array in request', function () {
@@ -2717,43 +2696,6 @@ describe('S2S Adapter', function () {
       expect(response).to.have.property('pbsBidId', '654321');
     });
 
-    it('handles response cache from ext.prebid.targeting with wurl and removes invalid targeting', function () {
-      const s2sConfig = Object.assign({}, CONFIG, {
-        endpoint: {
-          p1Consent: 'https://prebidserverurl/openrtb2/auction?querystring=param'
-        }
-      });
-      config.setConfig({ s2sConfig });
-      const cacheResponse = utils.deepClone(RESPONSE_OPENRTB_VIDEO);
-      cacheResponse.seatbid.forEach(item => {
-        item.bid[0].ext.prebid.events = {
-          win: 'https://wurl.com?a=1&b=2'
-        };
-        item.bid[0].ext.prebid.targeting = {
-          hb_uuid: 'a5ad3993',
-          hb_cache_host: 'prebid-cache.net',
-          hb_cache_path: '/cache',
-          hb_winurl: 'https://hbwinurl.com?a=1&b=2',
-          hb_bidid: '1234567890',
-        }
-      });
-
-      const s2sVidRequest = utils.deepClone(VIDEO_REQUEST);
-      s2sVidRequest.s2sConfig = s2sConfig;
-
-      adapter.callBids(s2sVidRequest, BID_REQUESTS, addBidResponse, done, ajax);
-      server.requests[0].respond(200, {}, JSON.stringify(cacheResponse));
-
-      sinon.assert.calledOnce(addBidResponse);
-      const response = addBidResponse.firstCall.args[1];
-
-      expect(response.adserverTargeting).to.deep.equal({
-        hb_uuid: 'a5ad3993',
-        hb_cache_host: 'prebid-cache.net',
-        hb_cache_path: '/cache'
-      });
-    });
-
     it('add request property pbsBidId with ext.prebid.bidid value', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
         endpoint: {
@@ -3359,11 +3301,7 @@ describe('S2S Adapter', function () {
 
       expect(requestBid.ext.prebid.floors).to.be.undefined;
 
-      // should pass of floorData is object
-      bidRequest[0].bids[0].floorData = {
-        skipped: false,
-        location: 'fetch',
-      }
+      config.setConfig({floors: {}});
 
       adapter.callBids(REQUEST, bidRequest, addBidResponse, done, ajax);
       requestBid = JSON.parse(server.requests[1].requestBody);
