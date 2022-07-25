@@ -2139,6 +2139,33 @@ describe('the rubicon adapter', function () {
           expect(request.data.imp[0].ext.data.pbadslot).to.equal('1234567890');
         });
 
+        it('should NOT include storedrequests in pbs payload', function () {
+          createVideoBidderRequest();
+          bidderRequest.bids[0].ortb2 = {
+            ext: {
+              prebid: {
+                storedrequest: 'no-send-top-level-sr'
+              }
+            }
+          }
+
+          bidderRequest.bids[0].ortb2Imp = {
+            ext: {
+              prebid: {
+                storedrequest: 'no-send-imp-sr'
+              }
+            }
+          }
+
+          sandbox.stub(Date, 'now').callsFake(() =>
+            bidderRequest.auctionStart + 100
+          );
+
+          const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(request.data.ext.prebid.storedrequest).to.be.undefined;
+          expect(request.data.imp[0].ext.prebid.storedrequest).to.be.undefined;
+        });
+
         it('should include GAM ad unit in bid request', function () {
           createVideoBidderRequest();
           bidderRequest.bids[0].ortb2Imp = {

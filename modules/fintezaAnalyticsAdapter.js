@@ -35,16 +35,8 @@ function getPageInfo() {
 }
 
 function getUniqId() {
-  let cookies;
-
-  try {
-    cookies = parseCookies(document.cookie);
-  } catch (a) {
-    cookies = {};
-  }
-
   let isUniqFromLS;
-  let uniq = cookies[ UNIQ_ID_KEY ];
+  let uniq = storage.getCookie(UNIQ_ID_KEY);
   if (!uniq) {
     try {
       if (storage.hasLocalStorage()) {

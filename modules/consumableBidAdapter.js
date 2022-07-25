@@ -1,4 +1,5 @@
 import { logWarn, createTrackPixelHtml, deepAccess, isArray, deepSetValue } from '../src/utils.js';
+import {config} from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'consumable';
@@ -64,6 +65,14 @@ export const spec = {
 
     if (bidderRequest && bidderRequest.uspConsent) {
       data.ccpa = bidderRequest.uspConsent;
+    }
+
+    if (bidderRequest && bidderRequest.schain) {
+      data.schain = bidderRequest.schain;
+    }
+
+    if (config.getConfig('coppa')) {
+      data.coppa = true;
     }
 
     validBidRequests.map(bid => {
