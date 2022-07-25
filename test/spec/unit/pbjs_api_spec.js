@@ -218,6 +218,51 @@ describe('Unit: Prebid Module', function () {
     auctionManager.clearAllAuctions();
   });
 
+  describe('and global adUnits', () => {
+    const startingAdUnits = [
+      {
+        code: 'one',
+      },
+      {
+        code: 'two',
+      }
+    ];
+    let actualAdUnits, hookRan, done;
+
+    function deferringHook(next, req) {
+      setTimeout(() => {
+        actualAdUnits = req.adUnits || $$PREBID_GLOBAL$$.adUnits;
+        done();
+      });
+    }
+
+    beforeEach(() => {
+      $$PREBID_GLOBAL$$.requestBids.before(deferringHook, 99);
+      $$PREBID_GLOBAL$$.adUnits.splice(0, $$PREBID_GLOBAL$$.adUnits.length, ...startingAdUnits);
+      hookRan = new Promise((resolve) => {
+        done = resolve;
+      });
+    });
+
+    afterEach(() => {
+      $$PREBID_GLOBAL$$.requestBids.getHooks({hook: deferringHook}).remove();
+      $$PREBID_GLOBAL$$.adUnits.splice(0, $$PREBID_GLOBAL$$.adUnits.length);
+    })
+
+    Object.entries({
+      'addAdUnits': (g) => g.addAdUnits({code: 'three'}),
+      'removeAdUnit': (g) => g.removeAdUnit('one')
+    }).forEach(([method, op]) => {
+      it(`once called, should not be affected by ${method}`, () => {
+        $$PREBID_GLOBAL$$.requestBids({});
+        op($$PREBID_GLOBAL$$);
+        return hookRan.then(() => {
+          expect(actualAdUnits).to.eql(startingAdUnits);
+        })
+      });
+    });
+  });
+
   describe('getAdserverTargetingForAdUnitCodeStr', function () {
     beforeEach(function () {
       resetAuction();
