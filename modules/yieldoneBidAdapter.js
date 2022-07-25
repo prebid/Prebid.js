@@ -80,6 +80,12 @@ export const spec = {
         payload.fuuid = dacId;
       }
 
+      // ID5
+      const id5id = deepAccess(bidRequest, 'userId.id5id.uid');
+      if (isStr(id5id) && !isEmpty(id5id)) {
+        payload.id5Id = id5id;
+      }
+
       return {
         method: 'GET',
         url: ENDPOINT_URL,
