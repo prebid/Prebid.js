@@ -681,11 +681,11 @@ function toLegacyResponse(ortbResponse, ortbRequest) {
 }
 
 /**
- * Converts an OpenRTB request to a proprietary Prebid.js format.
+ * Converts a Legacy native request to OpenRTB.
  * The proprietary Prebid format has many limitations and will be dropped in
  * the future; adapters are encouraged to stop using it in favour of OpenRTB format.
  * @param {BidRequest[]} bidRequests an array of valid bid requests
- * @returns an array of valid bid requests where the openRTB bids are converted to proprietary format.
+ * @returns an array of valid bid requests where the legacy format is converted to OpenRTB.
  */
 export function convertLegacyNativeRequestToOrtb(bidRequests) {
   if (!bidRequests || !isArray(bidRequests)) return bidRequests;
