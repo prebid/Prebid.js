@@ -29,7 +29,7 @@ cleanWurl()
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [BANNER],
+  supportedMediaTypes: [BANNER, VIDEO],
 
   isBidRequestValid: function(bid) {
     return !!(
