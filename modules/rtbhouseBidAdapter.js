@@ -1,4 +1,5 @@
-import {deepAccess, getOrigin, isArray, logError} from '../src/utils.js';
+import {deepAccess, isArray, logError} from '../src/utils.js';
+import { getOrigin } from '../libraries/getOrigin/index.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {includes} from '../src/polyfill.js';
@@ -180,7 +181,7 @@ function mapSite(slot, bidderRequest) {
     publisher: {
       id: pubId.toString(),
     },
-    page: bidderRequest.refererInfo.referer,
+    page: bidderRequest.refererInfo.page,
     name: getOrigin()
   };
   if (channel) {
