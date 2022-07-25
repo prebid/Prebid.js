@@ -4,7 +4,6 @@ import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { includes as strIncludes } from '../src/polyfill.js';
-import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'sspBC';
 const BIDDER_URL = 'https://ssp.wp.pl/bidder/';
@@ -12,9 +11,8 @@ const SYNC_URL = 'https://ssp.wp.pl/bidder/usersync';
 const NOTIFY_URL = 'https://ssp.wp.pl/bidder/notify';
 const TRACKER_URL = 'https://bdr.wpcdn.pl/tag/jstracker.js';
 const GVLID = 676;
-const storage = getStorageManager({ gvlid: GVLID, bidderCode: BIDDER_CODE });
 const TMAX = 450;
-const BIDDER_VERSION = '5.6';
+const BIDDER_VERSION = '5.7';
 const DEFAULT_CURRENCY = 'PLN';
 const W = window;
 const { navigator } = W;
@@ -100,11 +98,6 @@ const getNotificationPayload = bidData => {
     }
   }
 }
-
-const cookieSupport = () => {
-  const isSafari = /^((?!chrome|android|crios|fxios).)*safari/i.test(navigator.userAgent);
-  return !isSafari && storage.cookiesAreEnabled();
-};
 
 const applyClientHints = ortbRequest => {
   const { location } = document;
@@ -575,7 +568,7 @@ const spec = {
 
     return {
       method: 'POST',
-      url: `${BIDDER_URL}?cs=${cookieSupport()}&bdver=${BIDDER_VERSION}&pbver=${pbver}&inver=0`,
+      url: `${BIDDER_URL}?bdver=${BIDDER_VERSION}&pbver=${pbver}&inver=0`,
       data: JSON.stringify(payload),
       bidderRequest,
     };
