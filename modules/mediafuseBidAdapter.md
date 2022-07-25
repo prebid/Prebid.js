@@ -5,7 +5,7 @@ Module Name:  Mediafuse Bid Adapter
 Module Type:  Bidder Adapter
 Maintainer: prebid-js@xandr.com
 ```
-
+# MediaFuse prebid js adapter was not working with Prebid v6.20, it only works on v.6.16. Wanted to know the root cause and a mitigation
 # Description
 
 Connects to Mediafuse exchange for bids.
