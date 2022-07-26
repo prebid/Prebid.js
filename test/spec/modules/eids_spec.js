@@ -446,8 +446,8 @@ describe('eids array generation for known sub-modules', function() {
     it('should return the correct EID schema', () => {
       expect(createEidsArray({
         ftrackId: {
-          DeviceId: ['aaa', 'bbb'],
-          SingleDeviceId: ['ccc', 'ddd'],
+          DeviceID: ['aaa', 'bbb'],
+          SingleDeviceID: ['ccc', 'ddd'],
           HHID: ['eee', 'fff']
         },
         foo: {
@@ -457,12 +457,12 @@ describe('eids array generation for known sub-modules', function() {
           ipsum: ''
         }
       })).to.deep.equal([{
-        'atype': 1,
-        'id': '',
-        'ext': {
-          'DeviceId': 'aaa|bbb',
-          'SingleDeviceId': 'ccc|ddd',
-          'HHID': 'eee|fff'
+        atype: 1,
+        id: 'aaa|bbb',
+        ext: {
+          DeviceID: 'aaa|bbb',
+          SingleDeviceID: 'ccc|ddd',
+          HHID: 'eee|fff'
         }
       }]);
     });

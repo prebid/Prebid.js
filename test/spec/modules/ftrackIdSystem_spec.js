@@ -366,11 +366,7 @@ describe('FTRACK ID System', () => {
 
     describe('pbjs.getUserIds()', () => {
       it('should return the IDs in the correct schema', () => {
-        console.log('userSyncConfigMock', JSON.stringify(userSyncConfigMock, null, 4));
         config.setConfig(userSyncConfigMock);
-
-        console.log('getGlobal().getUserIds()', JSON.stringify(getGlobal().getUserIds(), null, 4));
-        console.log('expected', JSON.stringify({ 'ftrackId': expectedIds }, null, 4));
 
         expect(getGlobal().getUserIds()).to.deep.equal({
           'ftrackId': expectedIds
