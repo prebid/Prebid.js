@@ -344,7 +344,7 @@ describe('FTRACK ID System', () => {
     });
 
     afterEach(() => {
-      // Reset the defaults state for expectedIds, overwrite within test if needed
+      // Reset expectedIds to the default values because some tests overwrite them
       expectedIds = {
         HHID: ['household_test_id'],
         DeviceID: ['device_test_id'],
