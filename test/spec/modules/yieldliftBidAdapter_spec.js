@@ -191,6 +191,26 @@ describe('YieldLift', function () {
       expect(payload.user.ext).to.have.property('consent', req.gdprConsent.consentString);
       expect(payload.regs.ext).to.have.property('gdpr', 1);
     });
+
+    it('should properly forward eids parameters', function () {
+      const req = Object.assign({}, REQUEST);
+      req.bidRequest[0].userIdAsEids = [
+        {
+          source: 'dummy.com',
+          uids: [
+            {
+              id: 'd6d0a86c-20c6-4410-a47b-5cba383a698a',
+              atype: 1
+            }
+          ]
+        }];
+      let request = spec.buildRequests(req.bidRequest, req);
+
+      const payload = JSON.parse(request.data);
+      expect(payload.user.ext.eids[0].source).to.equal('dummy.com');
+      expect(payload.user.ext.eids[0].uids[0].id).to.equal('d6d0a86c-20c6-4410-a47b-5cba383a698a');
+      expect(payload.user.ext.eids[0].uids[0].atype).to.equal(1);
+    });
   });
 
   describe('interpretResponse', function () {

@@ -1,4 +1,4 @@
-import { deepSetValue, logInfo, deepAccess } from '../src/utils.js';
+import {deepSetValue, logInfo, deepAccess} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 
@@ -70,6 +70,12 @@ export const spec = {
     // CCPA
     if (bidderRequest.uspConsent) {
       deepSetValue(openrtbRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+    }
+
+    // EIDS
+    const eids = deepAccess(validBidRequests[0], 'userIdAsEids');
+    if (Array.isArray(eids) && eids.length > 0) {
+      deepSetValue(openrtbRequest, 'user.ext.eids', eids);
     }
 
     const payloadString = JSON.stringify(openrtbRequest);
