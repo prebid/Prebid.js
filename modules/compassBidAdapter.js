@@ -1,4 +1,5 @@
 import { isFn, deepAccess, logMessage, logError } from '../src/utils.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
@@ -112,6 +113,9 @@ export const spec = {
   },
 
   buildRequests: (validBidRequests = [], bidderRequest = {}) => {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     let deviceWidth = 0;
     let deviceHeight = 0;
 

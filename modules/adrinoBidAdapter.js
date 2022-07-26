@@ -1,6 +1,8 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {triggerPixel} from '../src/utils.js';
 import {NATIVE} from '../src/mediaTypes.js';
+import {config} from '../src/config.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'adrino';
 const REQUEST_METHOD = 'POST';
@@ -11,6 +13,10 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
   supportedMediaTypes: [NATIVE],
+
+  getBidderConfig: function (property) {
+    return config.getConfig(`${BIDDER_CODE}.${property}`);
+  },
 
   isBidRequestValid: function (bid) {
     return !!(bid.bidId) &&
@@ -23,9 +29,13 @@ export const spec = {
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
     const bidRequests = [];
 
     for (let i = 0; i < validBidRequests.length; i++) {
+      let host = this.getBidderConfig('host') || BIDDER_HOST;
+
       let requestData = {
         bidId: validBidRequests[i].bidId,
         nativeParams: validBidRequests[i].nativeParams,
@@ -44,7 +54,7 @@ export const spec = {
 
       bidRequests.push({
         method: REQUEST_METHOD,
-        url: BIDDER_HOST + '/bidder/bid/',
+        url: host + '/bidder/bid/',
         data: requestData,
         options: {
           contentType: 'application/json',
@@ -67,7 +77,8 @@ export const spec = {
 
   onBidWon: function (bid) {
     if (bid['requestId']) {
-      triggerPixel(BIDDER_HOST + '/bidder/won/' + bid['requestId']);
+      let host = this.getBidderConfig('host') || BIDDER_HOST;
+      triggerPixel(host + '/bidder/won/' + bid['requestId']);
     }
   }
 };

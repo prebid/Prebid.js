@@ -8,6 +8,7 @@ import { NATIVE, BANNER } from '../src/mediaTypes.js';
 import { deepAccess, deepSetValue, replaceAuctionPrice, _map, isArray } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'outbrain';
 const GVLID = 164;
@@ -53,6 +54,8 @@ export const spec = {
     );
   },
   buildRequests: (validBidRequests, bidderRequest) => {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
     const page = bidderRequest.refererInfo.page;
     const ua = navigator.userAgent;
     const test = setOnAny(validBidRequests, 'params.test');

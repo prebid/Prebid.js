@@ -42,6 +42,24 @@ export const spec = {
       },
       schain: schain
     };
+
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      payload.gdpr_consent = {
+        consent_string: bidderRequest.gdprConsent.consentString,
+        consent_required: bidderRequest.gdprConsent.gdprApplies
+      };
+
+      if (bidderRequest.gdprConsent.addtlConsent && bidderRequest.gdprConsent.addtlConsent.indexOf('~') !== -1) {
+        let ac = bidderRequest.gdprConsent.addtlConsent;
+        let acStr = ac.substring(ac.indexOf('~') + 1);
+        payload.gdpr_consent.addtl_consent = acStr.split('.').map(id => parseInt(id, 10));
+      }
+    }
+
+    if (bidderRequest && bidderRequest.uspConsent) {
+      payload.us_privacy = bidderRequest.uspConsent
+    }
+
     return formatRequest(payload, bidderRequest);
   },
 

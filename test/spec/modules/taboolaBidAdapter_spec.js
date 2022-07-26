@@ -370,7 +370,7 @@ describe('Taboola Adapter', function () {
           requestId: request.bids[0].bidId,
           cpm: bid.price,
           creativeId: bid.crid,
-          ttl: 360,
+          ttl: 60,
           netRevenue: false,
           currency: serverResponse.body.cur,
           mediaType: 'banner',
