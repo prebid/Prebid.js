@@ -2,7 +2,7 @@ import {deepSetValue, getDefinedParams, mergeDeep} from '../../../src/utils.js';
 import {fillBannerImp, bannerResponseProcessor} from './banner.js';
 import {fillVideoResponse, fillVideoImp} from './video.js';
 import {setResponseMediaType} from './mediaType.js';
-import {fillNativeImp, fillNativeResponse} from './native.js';
+import {fillNativeImp, fillNativeResponse, populateNativeMapper} from './native.js';
 import {REQUEST, IMP, BID_RESPONSE} from '../../../src/pbjsORTB.js';
 import {config} from '../../../src/config.js';
 
@@ -128,10 +128,17 @@ export const DEFAULT_PROCESSORS = {
 }
 
 if (FEATURES.NATIVE) {
-  DEFAULT_PROCESSORS[IMP].native = {
-    // populates imp.native
-    fn: fillNativeImp
-  }
+  Object.assign(DEFAULT_PROCESSORS[IMP], {
+    native: {
+      // populates imp.native
+      fn: fillNativeImp
+    },
+    nativeMapper: {
+      // TODO: this really shouldn't be needed - unify ortb native logic instead
+      fn: populateNativeMapper,
+      priority: -1
+    }
+  })
   DEFAULT_PROCESSORS[BID_RESPONSE].native = {
     // populates bidResponse.native if bidResponse.mediaType === NATIVE
     fn: fillNativeResponse

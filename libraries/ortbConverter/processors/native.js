@@ -1,8 +1,10 @@
 // TODO: this was summarily moved here from pbsBidAdapter, is untested except indirectly through it,
 //  and waiting for  https://github.com/prebid/Prebid.js/pull/8086
 
-import {cleanObj, deepAccess, isNumber, isPlainObject, logError, pick} from '../../../src/utils.js';
+import {cleanObj, deepAccess, isNumber, isPlainObject, logError} from '../../../src/utils.js';
 import {NATIVE} from '../../../src/mediaTypes.js';
+import {nativeMapper} from '../../../src/native.js';
+
 const nativeImgIdMap = {
   icon: 1,
   image: 3
@@ -22,8 +24,6 @@ const nativeDataIdMap = {
   body2: 10, // desc2
   cta: 12 // ctatext
 };
-
-const nativeDataNames = Object.keys(nativeDataIdMap);
 
 const nativeEventTrackerMethodMap = {
   img: 1,
@@ -53,11 +53,11 @@ if (FEATURES.NATIVE) {
 
 export function fillNativeImp(imp, bidRequest, context) {
   const nativeParams = bidRequest.nativeParams;
-  if (nativeParams) {
+  let nativeAssets = deepAccess(nativeParams, 'ortb.assets');
+  if (nativeParams && !nativeAssets) {
     let idCounter = -1;
-    let nativeAssets;
     try {
-      nativeAssets = context.nativeAssets = Object.keys(nativeParams).reduce((assets, type) => {
+      nativeAssets = Object.keys(nativeParams).reduce((assets, type) => {
         let params = nativeParams[type];
 
         function newAsset(obj) {
@@ -123,78 +123,70 @@ export function fillNativeImp(imp, bidRequest, context) {
     } catch (e) {
       logError('error creating native request: ' + String(e));
     }
+  }
+  if (nativeAssets) {
+    const defaultRequest = {
+      // TODO: determine best way to pass these and if we allow defaults
+      context: 1,
+      plcmttype: 1,
+      eventtrackers: [
+        {event: 1, methods: [1]}
+      ],
+      // TODO: figure out how to support privacy field
+      // privacy: int
+      assets: nativeAssets
+    };
+    const ortbRequest = deepAccess(nativeParams, 'ortb');
     try {
+      const request = ortbRequest ? Object.assign(defaultRequest, ortbRequest) : defaultRequest;
       imp.native = {
-        request: JSON.stringify({
-          // TODO: determine best way to pass these and if we allow defaults
-          context: 1,
-          plcmttype: 1,
-          eventtrackers: [
-            {event: 1, methods: [1]}
-          ],
-          // TODO: figure out how to support privacy field
-          // privacy: int
-          assets: nativeAssets
-        }),
+        request: JSON.stringify(request),
         ver: '1.2'
-      }
+      };
+      context.nativeRequest = request;
     } catch (e) {
-      logError('error creating native request: ' + String(e))
+      logError('error creating native request: ' + String(e));
     }
   }
 }
 
+export function populateNativeMapper(imp, bidRequest, context) {
+  // saving the converted ortb native request into the native mapper, so the Universal Creative
+  // can render the native ad directly.
+  nativeMapper.set(bidRequest.bidId, context.nativeRequest)
+}
+
 export function fillNativeResponse(bidObject, bid, context) {
   if (bidObject.mediaType === NATIVE) {
-    let adm;
+    let ortb;
     if (typeof bid.adm === 'string') {
-      adm = bidObject.adm = JSON.parse(bid.adm);
+      ortb = bidObject.adm = JSON.parse(bid.adm);
     } else {
-      adm = bidObject.adm = bid.adm;
+      ortb = bidObject.adm = bid.adm;
     }
 
-    let trackers = {
-      [nativeEventTrackerMethodMap.img]: adm.imptrackers || [],
-      [nativeEventTrackerMethodMap.js]: adm.jstracker ? [adm.jstracker] : []
-    };
-    if (adm.eventtrackers) {
-      adm.eventtrackers.forEach(tracker => {
-        switch (tracker.method) {
-          case nativeEventTrackerMethodMap.img:
-            trackers[nativeEventTrackerMethodMap.img].push(tracker.url);
-            break;
-          case nativeEventTrackerMethodMap.js:
-            trackers[nativeEventTrackerMethodMap.js].push(tracker.url);
-            break;
-        }
-      });
+    // ortb.imptrackers and ortb.jstracker are going to be deprecated. So, when we find
+    // those properties, we're creating the equivalent eventtrackers and let prebid universal
+    //  creative deal with it
+    for (const imptracker of ortb.imptrackers || []) {
+      ortb.eventtrackers.push({
+        event: nativeEventTrackerEventMap.impression,
+        method: nativeEventTrackerMethodMap.img,
+        url: imptracker
+      })
+    }
+    if (ortb.jstracker) {
+      ortb.eventtrackers.push({
+        event: nativeEventTrackerEventMap.impression,
+        method: nativeEventTrackerMethodMap.js,
+        url: ortb.jstracker
+      })
     }
 
-    if (isPlainObject(adm) && Array.isArray(adm.assets)) {
-      let origAssets = context.nativeAssets;
-      bidObject.native = cleanObj(adm.assets.reduce((native, asset) => {
-        let origAsset = origAssets[asset.id];
-        if (isPlainObject(asset.img)) {
-          native[origAsset.img.type ? nativeImgIdMap[origAsset.img.type] : 'image'] = pick(
-            asset.img,
-            ['url', 'w as width', 'h as height']
-          );
-        } else if (isPlainObject(asset.title)) {
-          native['title'] = asset.title.text
-        } else if (isPlainObject(asset.data)) {
-          nativeDataNames.forEach(dataType => {
-            if (nativeDataIdMap[dataType] === origAsset.data.type) {
-              native[dataType] = asset.data.value;
-            }
-          });
-        }
-        return native;
-      }, cleanObj({
-        clickUrl: adm.link,
-        clickTrackers: deepAccess(adm, 'link.clicktrackers'),
-        impressionTrackers: trackers[nativeEventTrackerMethodMap.img],
-        javascriptTrackers: trackers[nativeEventTrackerMethodMap.js]
-      })));
+    if (isPlainObject(ortb) && Array.isArray(ortb.assets)) {
+      bidObject.native = {
+        ortb,
+      }
     } else {
       logError('prebid server native response contained no assets');
     }

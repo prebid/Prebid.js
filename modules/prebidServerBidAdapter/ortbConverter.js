@@ -109,6 +109,11 @@ const PBS_CONVERTER = ortbConverter({
       id(orig, imp, proxyBidRequest, context) {
         imp.id = context.impId;
       },
+      nativeMapper(orig, imp, proxyBidRequest, context) {
+        for (const req of context.actualBidderRequests) {
+          orig(imp, req, context);
+        }
+      },
       params(orig, imp, proxyBidRequest, context) {
         // override params processing to do it for each bidRequest in this imp;
         // also, take overrides from s2sConfig.adapterOptions
