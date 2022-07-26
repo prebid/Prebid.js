@@ -138,7 +138,7 @@ including the _bidder code_ of any bidder in the `acBidders` array.
 Separately from Standard Cohorts - The Permutive RTD module also supports passing any of the **custom** cohorts created in the dashboard to some SSP partners for targeting
 e.g. setting up publisher deals. For these activations, cohort IDs are set in bidder-specific locations per ad unit (custom parameters).
 
-Currently, the supported bidders for custom cohort targeting are:
+Currently, bidders with known support for custom cohort targeting are:
 
 - Xandr
 - Magnite
