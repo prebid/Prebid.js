@@ -193,20 +193,10 @@ If you know that a particular ORTB request/response pair deals with exclusively 
 Note that - compared to the above - this has additional effects, because `context.mediaType` is also considered during `imp` generation - see [special context properties](#special-context).
 
 ```javascript
-registerBidder({
-    // ...
-    buildRequests(bidRequests, bidderRequest) {
-        return [
-            {
-                data: converter.toORTB({
-                    bidRequests: bidRequests.filter(isVideoBid), 
-                    bidderRequest, 
-                    context: {mediaType: 'video'} // make everything in this request/response deal with video only
-                })
-                // plus URL, method, etc
-            }
-        ]
-    }
+converter.toORTB({
+    bidRequests: bidRequests.filter(isVideoBid),
+    bidderRequest,
+    context: {mediaType: 'video'} // make everything in this request/response deal with video only
 })
 ```
 
