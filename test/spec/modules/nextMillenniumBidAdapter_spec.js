@@ -161,4 +161,86 @@ describe('nextMillenniumBidAdapterTests', function() {
     expect(bid.height).to.equal(250);
     expect(bid.currency).to.equal('USD');
   });
+
+  it('validate_videowrapper_response_params', function() {
+    const serverResponse = {
+      body: {
+        id: 'f7b3d2da-e762-410c-b069-424f92c4c4b2',
+        seatbid: [
+          {
+            bid: [
+              {
+                id: '7457329903666272789',
+                price: 0.5,
+                adm: 'https://some_vast_host.com/vast.xml',
+                adid: '96846035',
+                adomain: ['test.addomain.com'],
+                w: 300,
+                h: 250,
+                ext: {
+                  prebid: {
+                    type: 'video'
+                  }
+                }
+              }
+            ]
+          }
+        ],
+        cur: 'USD'
+      }
+    };
+
+    let bids = spec.interpretResponse(serverResponse, bidRequestData[0]);
+    expect(bids).to.have.lengthOf(1);
+
+    let bid = bids[0];
+
+    expect(bid.creativeId).to.equal('96846035');
+    expect(bid.vastUrl).to.equal('https://some_vast_host.com/vast.xml');
+    expect(bid.cpm).to.equal(0.5);
+    expect(bid.width).to.equal(300);
+    expect(bid.height).to.equal(250);
+    expect(bid.currency).to.equal('USD');
+  });
+
+  it('validate_videoxml_response_params', function() {
+    const serverResponse = {
+      body: {
+        id: 'f7b3d2da-e762-410c-b069-424f92c4c4b2',
+        seatbid: [
+          {
+            bid: [
+              {
+                id: '7457329903666272789',
+                price: 0.5,
+                adm: '<vast><ad></ad></vast>',
+                adid: '96846035',
+                adomain: ['test.addomain.com'],
+                w: 300,
+                h: 250,
+                ext: {
+                  prebid: {
+                    type: 'video'
+                  }
+                }
+              }
+            ]
+          }
+        ],
+        cur: 'USD'
+      }
+    };
+
+    let bids = spec.interpretResponse(serverResponse, bidRequestData[0]);
+    expect(bids).to.have.lengthOf(1);
+
+    let bid = bids[0];
+
+    expect(bid.creativeId).to.equal('96846035');
+    expect(bid.vastXml).to.equal('<vast><ad></ad></vast>');
+    expect(bid.cpm).to.equal(0.5);
+    expect(bid.width).to.equal(300);
+    expect(bid.height).to.equal(250);
+    expect(bid.currency).to.equal('USD');
+  });
 });
