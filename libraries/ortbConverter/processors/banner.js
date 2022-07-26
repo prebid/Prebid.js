@@ -1,30 +1,24 @@
-import {createTrackPixelHtml, deepAccess, inIframe, mergeDeep, parseSizesInput} from '../../../src/utils.js';
+import {createTrackPixelHtml, deepAccess, inIframe, mergeDeep} from '../../../src/utils.js';
 import {BANNER} from '../../../src/mediaTypes.js';
+import {sizesToFormat} from '../lib/sizes.js';
 
 /**
  * fill in a request `imp` with banner parameters from `bidRequest`.
  */
-export function fillBannerImp(imp, bidRequest) {
+export function fillBannerImp(imp, bidRequest, context) {
+  if (context.mediaType && context.mediaType !== BANNER) return;
+
   const bannerParams = deepAccess(bidRequest, 'mediaTypes.banner');
   if (bannerParams && bannerParams.sizes) {
-    const sizes = parseSizesInput(bannerParams.sizes);
-
-    // get banner sizes in form [{ w: <int>, h: <int> }, ...]
-    const format = sizes.map(size => {
-      const [width, height] = size.split('x');
-      return {
-        w: parseInt(width, 10),
-        h: parseInt(height, 10)
-      };
-    });
-
-    const banner = {format, topframe: inIframe() === true ? 0 : 1};
+    const banner = {
+      format: sizesToFormat(bannerParams.sizes),
+      topframe: inIframe() === true ? 0 : 1
+    };
 
     if (bannerParams.hasOwnProperty('pos')) {
       banner.pos = bannerParams.pos;
     }
 
-    // TODO: there are other properties we could set, such as topframe
     imp.banner = mergeDeep(banner, imp.banner);
   }
 }

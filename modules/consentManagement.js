@@ -357,11 +357,9 @@ config.getConfig('consentManagement', config => setConsentConfig(config.consentM
 export function setOrtbGdpr(ortbRequest, bidderRequest) {
   const consent = bidderRequest.gdprConsent;
   if (consent) {
-    let gdprApplies;
     if (typeof consent.gdprApplies === 'boolean') {
-      gdprApplies = consent.gdprApplies ? 1 : 0;
+      deepSetValue(ortbRequest, 'regs.ext.gdpr', consent.gdprApplies ? 1 : 0);
     }
-    deepSetValue(ortbRequest, 'regs.ext.gdpr', gdprApplies);
     deepSetValue(ortbRequest, 'user.ext.consent', consent.consentString);
     const addtl = consent.addtlConsent;
     if (addtl && typeof addtl === 'string') {

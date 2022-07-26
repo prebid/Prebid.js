@@ -14,6 +14,20 @@ describe('pbjs - ortb gpdr', () => {
     expect(req).to.eql({});
   });
 
+  it('sets user.ext.consent, but not regs.ext.gdpr, if gpdrApplies is not a boolean', () => {
+    const req = {};
+    setOrtbGdpr(req, {
+      gdprConsent: {consentString: 'mock-consent'}
+    });
+    expect(req).to.eql({
+      user: {
+        ext: {
+          consent: 'mock-consent'
+        }
+      }
+    })
+  })
+
   it('sets ConsentedProvidersSettings', () => {
     const req = {};
     setOrtbGdpr(req, {gdprConsent: {addtlConsent: 'tl'}});

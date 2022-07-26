@@ -89,11 +89,27 @@ describe('pbjs -> ortb video conversion', () => {
           h: 2
         }
       }
+    },
+    {
+      t: 'video request with 2-tuple playerSize',
+      request: {
+        mediaTypes: {
+          video: {
+            playerSize: [1, 2]
+          }
+        }
+      },
+      imp: {
+        video: {
+          w: 1,
+          h: 2
+        }
+      }
     }
   ].forEach(({t, request, imp}) => {
     it(`can handle ${t}`, () => {
       const actual = {};
-      fillVideoImp(actual, request);
+      fillVideoImp(actual, request, {});
       sinon.assert.match(actual, imp);
     });
   });
@@ -104,9 +120,15 @@ describe('pbjs -> ortb video conversion', () => {
         someParam: 'someValue'
       }
     };
-    fillVideoImp(imp, {mediaTypes: {video: {playerSize: [[1, 2]]}}});
+    fillVideoImp(imp, {mediaTypes: {video: {playerSize: [[1, 2]]}}}, {});
     expect(imp.video.someParam).to.eql('someValue');
-  })
+  });
+
+  it('does nothing is context.mediaType is set but is not VIDEO', () => {
+    const imp = {};
+    fillVideoImp(imp, {mediaTypes: {video: {playerSize: [[1, 2]]}}}, {mediaType: BANNER});
+    expect(imp).to.eql({});
+  });
 });
 
 describe('ortb -> pbjs video conversion', () => {

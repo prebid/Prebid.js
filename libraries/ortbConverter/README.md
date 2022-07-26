@@ -189,7 +189,8 @@ const converter = ortbConverter({
 })
 ```
 
-If you know that a particular ORTB request/response pair deals with exclusively one mediaType, you may also pass it directly in the [context parameter](#context):
+If you know that a particular ORTB request/response pair deals with exclusively one mediaType, you may also pass it directly in the [context parameter](#context). 
+Note that - compared to the above - this has additional effects, because `context.mediaType` is also considered during `imp` generation - see [special context properties](#special-context).
 
 ```javascript
 registerBidder({
@@ -200,7 +201,7 @@ registerBidder({
                 data: converter.toORTB({
                     bidRequests: bidRequests.filter(isVideoBid), 
                     bidderRequest, 
-                    context: {mediaType: 'video'}
+                    context: {mediaType: 'video'} // make everything in this request/response deal with video only
                 })
                 // plus URL, method, etc
             }
@@ -361,11 +362,14 @@ const converter = ortbConverter({
 - the `context` argument of `ortbConverter`: e.g. `ortbConverter({context: {ttl: 30}})`. This will set `context.ttl = 30` globally for the converter.
 - the `context` argument of `toORTB`: e.g. `converter.toORTB({bidRequests, bidderRequest, context: {ttl: 30}})`. This will set `context.ttl = 30` only for this request.
 
-### Special `context` properties
+### <a id="special-context"/> Special `context` properties
 
 For ease of use, the conversion logic gives special meaning to some context properties:
 
- - `mediaType`: a bid mediaType (`'banner'`, `'video'`, or `'native'`). If specified, sets the response mediaType (see [example](#response-mediaTypes)).
+ - `mediaType`: a bid mediaType (`'banner'`, `'video'`, or `'native'`). If specified:  
+   - disables `imp` generation for other media types (i.e., if `context.mediaType === 'banner'`, only `imp.banner` will be populated; `imp.video` and `imp.native` will not, even if the bid request specifies them);
+   - is passed as the `mediaType` option to `bidRequest.getFloor` when computing price floors;
+   - sets `bidResponse.mediaType`.
  - `currency`: a currency string (e.g. `'EUR'`). If specified, overrides the currency to use for computing price floors and `request.cur`. If omitted, both default to `getConfig('currency.adServerCurrency')`.
  - `ttl`: the default value to use for `bidResponse.ttl` (if the ORTB response does not provide one in `seatbid[].bid[].exp`).
  - `netRevenue`: the value to set as `bidResponse.netRevenue`. This is a required property of bid responses that does not have a clear ORTB counterpart. 

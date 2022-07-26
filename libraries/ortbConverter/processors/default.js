@@ -1,4 +1,4 @@
-import {deepSetValue, getDefinedParams, mergeDeep} from '../../../src/utils.js';
+import {deepSetValue, getDefinedParams, getDNT, mergeDeep} from '../../../src/utils.js';
 import {fillBannerImp, bannerResponseProcessor} from './banner.js';
 import {fillVideoResponse, fillVideoImp} from './video.js';
 import {setResponseMediaType} from './mediaType.js';
@@ -21,8 +21,8 @@ export const DEFAULT_PROCESSORS = {
     siteFpd: fpdFromTopLevelConfig('site'),
     deviceFpd: fpdFromTopLevelConfig('device'),
     device: {
-      // sets device.w / device.h
-      fn: setDeviceDimensions
+      // sets device w / h / ua / language
+      fn: setDevice
     },
     site: {
       // sets site.domain, page, and ref from refererInfo
@@ -40,8 +40,9 @@ export const DEFAULT_PROCESSORS = {
     },
     coppa: {
       fn(ortbRequest) {
-        if (config.getConfig('coppa') === true) {
-          deepSetValue(ortbRequest, 'regs.coppa', 1);
+        const coppa = config.getConfig('coppa');
+        if (typeof coppa === 'boolean') {
+          deepSetValue(ortbRequest, 'regs.coppa', coppa ? 1 : 0);
         }
       }
     },
@@ -157,10 +158,13 @@ function fpdFromTopLevelConfig(prop) {
   }
 }
 
-export function setDeviceDimensions(ortbRequest) {
+export function setDevice(ortbRequest) {
   ortbRequest.device = Object.assign({
     w: window.innerWidth,
-    h: window.innerHeight
+    h: window.innerHeight,
+    dnt: getDNT() ? 1 : 0,
+    ua: window.navigator.userAgent,
+    language: window.navigator.language.split('-').shift()
   }, ortbRequest.device);
 }
 

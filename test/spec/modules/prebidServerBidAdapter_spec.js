@@ -965,11 +965,11 @@ describe('S2S Adapter', function () {
       config.setConfig(_config);
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
       const requestBid = JSON.parse(server.requests[0].requestBody);
-      expect(requestBid.device).to.deep.equal({
+      sinon.assert.match(requestBid.device, {
         ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC',
         w: window.innerWidth,
         h: window.innerHeight
-      });
+      })
       expect(requestBid.app).to.deep.equal({
         bundle: 'com.test.app',
         publisher: { 'id': '1' }
@@ -992,11 +992,11 @@ describe('S2S Adapter', function () {
       config.setConfig(_config);
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
       const requestBid = JSON.parse(server.requests[0].requestBody);
-      expect(requestBid.device).to.deep.equal({
+      sinon.assert.match(requestBid.device, {
         ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC',
         w: window.innerWidth,
         h: window.innerHeight
-      });
+      })
       expect(requestBid.app).to.deep.equal({
         bundle: 'com.test.app',
         publisher: { 'id': '1' }
@@ -1037,6 +1037,8 @@ describe('S2S Adapter', function () {
         expect(
           BID_REQUESTS[0].bids[0].getFloor.calledWith({
             currency: 'USD',
+            mediaType: '*',
+            size: '*'
           })
         ).to.be.true;
 
@@ -1066,6 +1068,8 @@ describe('S2S Adapter', function () {
         expect(
           BID_REQUESTS[0].bids[0].getFloor.calledWith({
             currency: 'USD',
+            mediaType: '*',
+            size: '*'
           })
         ).to.be.true;
 
@@ -1093,6 +1097,8 @@ describe('S2S Adapter', function () {
         expect(
           BID_REQUESTS[0].bids[0].getFloor.calledWith({
             currency: 'JPY',
+            mediaType: '*',
+            size: '*'
           })
         ).to.be.true;
       });
@@ -1309,10 +1315,10 @@ describe('S2S Adapter', function () {
           config.setConfig(_config);
           adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
           const requestBid = JSON.parse(server.requests[0].requestBody);
-          expect(requestBid.device).to.deep.equal({
+          sinon.assert.match(requestBid.device, {
             w: window.innerWidth,
             h: window.innerHeight
-          });
+          })
           expect(requestBid.app).to.deep.equal({
             bundle: 'com.test.app',
             publisher: { 'id': '1' }

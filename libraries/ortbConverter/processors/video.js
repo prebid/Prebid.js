@@ -1,5 +1,6 @@
 import {deepAccess, inIframe, isEmpty, logWarn, mergeDeep} from '../../../src/utils.js';
 import {VIDEO} from '../../../src/mediaTypes.js';
+import {sizesToFormat} from '../lib/sizes.js';
 
 const PBJS_SPECIFIC_VIDEO_PARAMS = new Set(['context', 'playerSize'])
 
@@ -8,7 +9,9 @@ const PLACEMENT = {
   'outstream': 4
 }
 
-export function fillVideoImp(imp, bidRequest) {
+export function fillVideoImp(imp, bidRequest, context) {
+  if (context.mediaType && context.mediaType !== VIDEO) return;
+
   const videoParams = deepAccess(bidRequest, 'mediaTypes.video');
   if (!isEmpty(videoParams)) {
     const video = Object.fromEntries(
@@ -17,10 +20,11 @@ export function fillVideoImp(imp, bidRequest) {
         .concat([['topframe', inIframe() ? 0 : 1]])
     );
     if (videoParams.playerSize) {
-      if (videoParams.playerSize.length > 1) {
+      const format = sizesToFormat(videoParams.playerSize);
+      if (format.length > 1) {
         logWarn('video request specifies more than one playerSize; all but the first will be ignored')
       }
-      [video.w, video.h] = videoParams.playerSize[0];
+      Object.assign(video, format[0]);
     }
     const placement = PLACEMENT[videoParams.context];
     if (placement != null) {

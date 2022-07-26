@@ -98,5 +98,16 @@ describe('pbjs - ortb imp floor params', () => {
       setOrtbImpBidFloor(imp, req, {});
       expect(imp.bidfloorcur).to.eql('USD');
     })
+  });
+
+  it('asks for specific mediaType if context.mediaType is set', () => {
+    let reqMediaType;
+    const req = {
+      getFloor(opts) {
+        reqMediaType = opts.mediaType;
+      }
+    }
+    setOrtbImpBidFloor({}, req, {mediaType: 'banner'});
+    expect(reqMediaType).to.eql('banner');
   })
 });

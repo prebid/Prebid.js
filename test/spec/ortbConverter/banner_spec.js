@@ -88,7 +88,7 @@ describe('pbjs -> ortb banner conversion', () => {
   ].forEach(({t, request, imp}) => {
     it(`can convert ${t}`, () => {
       const actual = {};
-      fillBannerImp(actual, request);
+      fillBannerImp(actual, request, {});
       sinon.assert.match(actual, imp);
     });
   });
@@ -99,8 +99,14 @@ describe('pbjs -> ortb banner conversion', () => {
         someParam: 'someValue'
       }
     };
-    fillBannerImp(imp, {mediaTypes: {banner: {sizes: [1, 2]}}});
+    fillBannerImp(imp, {mediaTypes: {banner: {sizes: [1, 2]}}}, {});
     expect(imp.banner.someParam).to.eql('someValue');
+  });
+
+  it('does nothing if context.mediaType is set but is not BANNER', () => {
+    const imp = {};
+    fillBannerImp(imp, {mediaTypes: {banner: {sizes: [1, 2]}}}, {mediaType: VIDEO});
+    expect(imp).to.eql({});
   })
 });
 
@@ -170,5 +176,5 @@ describe('ortb -> pbjs banner conversion', () => {
       seatbid2Banner(response, seatbid, context);
       expect(response).to.eql(expected)
     })
-  })
+  });
 })

@@ -1,14 +1,10 @@
-import {setDeviceDimensions, setSite} from '../../../libraries/ortbConverter/processors/default.js';
+import {setDevice, setSite} from '../../../libraries/ortbConverter/processors/default.js';
 
-describe('setDeviceDimensions', () => {
-  it('sets device.w and h', () => {
-    const req = {
-      ext: {}
-    };
-    setDeviceDimensions(req);
-    expect(req.device.h).to.exist;
-    expect(req.device.w).to.exist;
-    expect(req.ext).to.eql({});
+describe('setDevice', () => {
+  it('sets device.w,  h, dnt, language, ua', () => {
+    const req = {};
+    setDevice(req);
+    ['h', 'w', 'dnt', 'language', 'ua'].forEach(prop => expect(req.device[prop]).to.exist)
   });
 
   it('does not override FPD', () => {
@@ -19,12 +15,12 @@ describe('setDeviceDimensions', () => {
         ext: {}
       }
     };
-    setDeviceDimensions(req);
-    expect(req.device).to.eql({
+    setDevice(req);
+    sinon.assert.match(req.device, {
       w: 'w',
       h: 'h',
       ext: {}
-    });
+    })
   });
 });
 

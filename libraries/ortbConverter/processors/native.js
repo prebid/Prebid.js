@@ -52,6 +52,8 @@ if (FEATURES.NATIVE) {
 }
 
 export function fillNativeImp(imp, bidRequest, context) {
+  if (context.mediaType && context.mediaType !== NATIVE) return;
+
   const nativeParams = bidRequest.nativeParams;
   let nativeAssets = deepAccess(nativeParams, 'ortb.assets');
   if (nativeParams && !nativeAssets) {
