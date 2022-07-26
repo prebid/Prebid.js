@@ -4,6 +4,14 @@ import {newBidder} from 'src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from 'src/mediaTypes.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
+// load modules that register ORTB processors
+import 'modules/currency.js';
+import 'modules/userId/index.js';
+import 'modules/multibid/index.js';
+import 'modules/priceFloors.js';
+import 'modules/consentManagement.js';
+import 'modules/consentManagementUsp.js';
+import 'modules/schain.js';
 
 const DEFAULT_SYNC = SYNC_URL + '?ph=' + DEFAULT_PH;
 
