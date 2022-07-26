@@ -116,7 +116,7 @@ describe('nextMillenniumBidAdapterTests', function() {
 
   it('Check if refferer was added', function() {
     const request = spec.buildRequests(bidRequestData)
-    expect(JSON.parse(request[0].data).device.refferer).to.exist
+    expect(JSON.parse(request[0].data).device.referrer).to.exist
   })
 
   it('Check if imp object was added', function() {
