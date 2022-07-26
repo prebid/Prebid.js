@@ -85,14 +85,14 @@ a single return value.
 
 You can customize each of these steps using the `ortbConverter` arguments `imp`, `request`, `bidResponse` and `response`:
 
-### Customizing imps: `imp(buildImp, bidRequest, context)`
+### <a id="imp" />Customizing imps: `imp(buildImp, bidRequest, context)`
 
 Invoked once for each input `bidRequest`; should return the ORTB `imp` object to include in the request.
 The arguments are:
 
-- `buildImp`: a function taking `(bidRequest, context)` and returning an ORTB `imp` object.
-- `bidRequest`: the bid request object to convert. 
-- `context`: a [context object](#context) that contains, at minimum:
+- `buildImp`: a function taking `(bidRequest, context)` and returning an ORTB `imp` object;
+- `bidRequest`: the bid request object to convert;
+- `context`: a [context object](#context) that contains at least:
    - `bidderRequest`: the `bidderRequest` argument passed to `toORTB`.
    
 #### <a id="params" />Example: attaching custom bid params
@@ -119,15 +119,16 @@ const converter = ortbConverter({
 })
 ```
 
-### Customizing the request: `request(buildRequest, imps, bidderRequest, context)`
+### <a id="request" /> Customizing the request: `request(buildRequest, imps, bidderRequest, context)`
 
-Invoked once after all bidRequests have been converted into `imp`s; should return the complete ORTB request.
+Invoked once after all bidRequests have been converted into `imp`s; should return the complete ORTB request. The return value
+of this function is also the return value of `toORTB`.
 The arguments are:
 
-- `buildRequest`: a function taking `(imps, bidderRequest, context)` and returning an ORTB request object.
-- `imps` an array of ORTB `imp` objects that should be included in the request
-- `bidderRequest`: the `bidderRequest` argument passed to `toORTB`.
-- `context`: a [context object](#context) that contains, at minimum:
+- `buildRequest`: a function taking `(imps, bidderRequest, context)` and returning an ORTB request object;
+- `imps` an array of ORTB `imp` objects that should be included in the request;
+- `bidderRequest`: the `bidderRequest` argument passed to `toORTB`;
+- `context`: a [context object](#context) that contains at least:
     - `bidRequests`: the `bidRequests` argument passed to `toORTB`.
 
 #### Example: setting additional request properties
@@ -142,18 +143,18 @@ const converter = ortbConverter({
 })
 ```
 
-### Customizing bid responses: `bidResponse(buildBidResponse, bid, context)`
+### <a id="bidResponse" /> Customizing bid responses: `bidResponse(buildBidResponse, bid, context)`
 
 Invoked once for each `seatbid[].bid[]` in the response; should return the corresponding Prebid.js bid response object.
 The arguments are:
-- `buildBidResponse`: a function taking `(bid, context)` and returning a Prebid.js bid response object.
-- `bid`: an ORTB `seatbid[].bid[]` object
-- `context`: a [context object](#context) that contains, at minimum:
-    - `seatbid`: the ORTB `seatbid[]` object that encloses `bid`
-    - `imp`: the ORTB request's `imp` object that matches `bid.impid`
-    - `bidRequest`: the Prebid.js bid request object that was used to generate `context.imp`
-    - `ortbRequest`: the `request` argument passed to `fromORTB`
-    - `ortbResponse`: the `response` argument passed to `fromORTB`
+- `buildBidResponse`: a function taking `(bid, context)` and returning a Prebid.js bid response object;
+- `bid`: an ORTB `seatbid[].bid[]` object;
+- `context`: a [context object](#context) that contains at least:
+    - `seatbid`: the ORTB `seatbid[]` object that encloses `bid`;
+    - `imp`: the ORTB request's `imp` object that matches `bid.impid`;
+    - `bidRequest`: the Prebid.js bid request object that was used to generate `context.imp`;
+    - `ortbRequest`: the `request` argument passed to `fromORTB`;
+    - `ortbResponse`: the `response` argument passed to `fromORTB`.
 
 #### Example: setting a custom outstream renderer
 
@@ -169,6 +170,7 @@ const converter = ortbConverter({
                 adUnitCode: bidRequest.adUnitCode
             });
         }
+        return bidResponse;
     }
 })
 ```
@@ -187,6 +189,26 @@ const converter = ortbConverter({
 })
 ```
 
+If you know that a particular ORTB request/response pair deals with exclusively one mediaType, you may also pass it directly in the [context parameter](#context):
+
+```javascript
+registerBidder({
+    // ...
+    buildRequests(bidRequests, bidderRequest) {
+        return [
+            {
+                data: converter.toORTB({
+                    bidRequests: bidRequests.filter(isVideoBid), 
+                    bidderRequest, 
+                    context: {mediaType: 'video'}
+                })
+                // plus URL, method, etc
+            }
+        ]
+    }
+})
+```
+
 Note that this will _not_ work as intended:
 
 ```javascript
@@ -197,12 +219,13 @@ const converter = ortbConverter({
                                                             // mediaType to properly populate bidResponse.ad, 
                                                             // bidResponse.native etc
         bidResponse.mediaType = deepAccess(bid, 'ext.mediaType'); // too late, use context.mediaType
+        return bidResponse;
     }
 });
 
 ```
 
-### Customizing the response: `response(buildResponse, bidResponses, ortbResponse, context)`
+### <a id="response" /> Customizing the response: `response(buildResponse, bidResponses, ortbResponse, context)`
 
 Invoked once, after all `seatbid[].bid[]` objects have been converted to corresponding bid responses. The value returned 
 by this function is also the value returned by `fromORTB`.
@@ -211,7 +234,7 @@ The arguments are:
 - `buildResponse`: a function that takes `(bidResponses, ortbResponse, context)` and returns `{bids: bidResponses}`. In the future, this may contain additional response data not necessarily tied to any bid (for example fledge auction configuration).
 - `bidResponses`: array of Prebid.js bid response objects
 - `ortbResponse`: the `response` argument passed to `fromORTB`
-- `context`: a [context object](#context) that contains, at minimum:
+- `context`: a [context object](#context) that contains at least:
     - `ortbRequest`: the `request` argument passed to `fromORTB`;
     - `bidderRequest`: the `bidderRequest` argument passed to `toORTB`;
     - `bidRequests`: the `bidRequests` argument passed to `toORTB`.
@@ -262,6 +285,49 @@ With the main difference being that setting `currency: false` will disable curre
 version will still set `request.cur`, then delete it. If the currency processor is ever updated to deal with more than just `request.cur`, the `request`
 function will also need to be updated accordingly.
 
+#### Example: overriding currency
+
+Processors can also be overridden:
+
+```javascript
+const converter = ortbConverter({
+    overrides: {
+        request: {
+            currency(orig, ortbRequest, bidderRequest, context) {
+                if (alwaysUSD) { 
+                    // for the sake of this example, we want to sometimes only use USD
+                    ortbRequest.cur = ['USD']  
+                } else {
+                    // and other times, default to the original currency processor
+                    orig(ortbRequest, bidderRequest, context)
+                }
+            } 
+        }
+    }
+});
+```
+
+#### Processor override functions
+
+Processor overrides are similar to the override options described above, except that they take the object to process as argument:
+
+- `imp` processor overrides take `(orig, imp, bidRequest, context)`, where:
+   - `orig` is the processor function being overridden, which itself takes `(imp, bidRequest, context)`;
+   - `imp` is the (partial) imp object to modify;
+   - `bidRequest` and `context` are the same arguments passed to [imp](#imp).
+- `request` processor overrides take `(orig, ortbRequest, bidderRequest, context)`, where:
+   - `orig` is the processor function being overridden, and takes `(ortbRequest, bidderRequest, context)`;
+   - `ortbRequest` is the partial request to modify;
+   - `bidderRequest` and `context` are the same arguments passed to [request](#reuqest).
+- `bidResponse` processor overrides take `(orig, bidResponse, bid, context)`, where: 
+   - `orig` is the processor function being overridden, and takes `(bidResponse, bid, context)`;
+   - `bidResponse` is the partial bid response to modify;
+   - `bid` and `context` are the same arguments passed to [bidResponse](#bidResponse)
+- `response` processor overrides take `(orig, response, ortbResponse, context)`, where:
+   - `orig` is the processor function being overriden, and takes `(response, ortbResponse, context)`;
+   - `response` is the partial response to modify;
+   - `ortbRespones` and `context` are the same arguments passed to [response](#response).
+
 ### <a id="context" /> The `context` argument
 
 All customization functions take a `context` argument. This is a plain JS object that is shared between `request` and its corresponding `response`; and between `imp` and its corresponding `bidResponse`:
@@ -269,12 +335,23 @@ All customization functions take a `context` argument. This is a plain JS object
 ```javascript
 const converter = ortbConverter({
     request(buildRequest, imps, bidderRequest, context) {
-        context.someProperty = somethingInterestingAbout(bidderRequest);
+        context.someRequestData = somethingInterestingAbout(bidderRequest);
         return buildRequest(imps, bidderRequest, context);
     },
     response(buildResponse, bidResponses, ortbResponse, context) {
-        context.someProperty // computed above in `request`, made available here during response processing
-        return buildResponse(bidResponses, ortbResponse, context); 
+        const response = buildResponse(bidResponses, ortbResponse, context);
+        doSomethingWith(context.someRequestData) // computed above in `request`, made available here during response processing
+        return response;
+    },
+    imp(buildImp, bidRequest, context) {
+        // likewise, `context` here will be later passed to `bidResponse` (if one matches the imp generated here)
+        context.someImpData = somethingInterestingAbout(bidRequest);
+        return buildImp(bidRequest, context);
+    },
+    bidResponse(buildBidResponse, bid, context) {
+        const bidResponse = buildBidResponse(bid, context);
+        doSomethingWith(context.someImpData);
+        return bidResponse;
     }
 })
 ```
