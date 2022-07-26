@@ -129,7 +129,7 @@ Acbidders can be added or removed from the list using this feature, however, thi
 As a secondary option, new demand partner bidders may be added manually.
 
 To do so, a Publisher may define which bidders should receive Standard Cohorts by
-Including the _ID_ of any bidder in the `acBidders` array.
+including the _bidder code_ of any bidder in the `acBidders` array.
 
 **Note:** If a Publisher ever needs to remove a manually-added bidder, the bidder will also need to be removed manually.
 
