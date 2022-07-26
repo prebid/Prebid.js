@@ -13,6 +13,7 @@ import {
 } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const { getConfig } = config;
 
@@ -73,6 +74,8 @@ export const spec = {
     return !!smartadId;
   },
   buildRequests: (validBidRequests, bidderRequest) => {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
     let app, site;
 
     const commonFpd = bidderRequest.ortb2 || {};

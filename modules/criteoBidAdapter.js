@@ -6,6 +6,7 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { find } from '../src/polyfill.js';
 import { verify } from 'criteo-direct-rsa-validate/build/verify.js'; // ref#2
 import { getStorageManager } from '../src/storageManager.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { hasPurpose1Consent } from '../src/utils/gpdr.js';
 
@@ -164,6 +165,9 @@ export const spec = {
    * @return {ServerRequest}
    */
   buildRequests: (bidRequests, bidderRequest) => {
+    // convert Native ORTB definition to old-style prebid native definition
+    bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
+
     let url;
     let data;
     let fpd = bidderRequest.ortb2 || {};

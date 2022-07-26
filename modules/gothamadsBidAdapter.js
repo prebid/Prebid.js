@@ -2,6 +2,7 @@ import { logMessage, deepSetValue, deepAccess, _map, logWarn } from '../src/util
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'gothamads';
 const ACCOUNTID_MACROS = '[account_id]';
@@ -68,6 +69,9 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: (validBidRequests, bidderRequest) => {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     if (validBidRequests && validBidRequests.length === 0) return []
     let accuontId = validBidRequests[0].params.accountId;
     const endpointURL = URL_ENDPOINT.replace(ACCOUNTID_MACROS, accuontId);

@@ -18,6 +18,7 @@ import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
 import {createEidsArray} from './userId/eids.js';
 import {hasPurpose1Consent} from '../src/utils/gpdr.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'improvedigital';
 const CREATIVE_TTL = 300;
@@ -91,6 +92,9 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests(bidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
+
     const request = {
       cur: [config.getConfig('currency.adServerCurrency') || 'USD'],
       ext: {

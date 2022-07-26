@@ -20,6 +20,7 @@ import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {find, includes} from '../src/polyfill.js';
 import {config} from '../src/config.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 /*
  * In case you're AdKernel whitelable platform's client who needs branded adapter to
@@ -119,6 +120,9 @@ export const spec = {
    * @returns {ServerRequest[]}
    */
   buildRequests: function (bidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
+
     let impGroups = groupImpressionsByHostZone(bidRequests, bidderRequest.refererInfo);
     let requests = [];
     let schain = bidRequests[0].schain;

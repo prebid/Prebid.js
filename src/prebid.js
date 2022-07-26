@@ -129,6 +129,16 @@ function validateVideoMediaType(adUnit) {
 function validateNativeMediaType(adUnit) {
   const validatedAdUnit = deepClone(adUnit);
   const native = validatedAdUnit.mediaTypes.native;
+  // if native assets are specified in OpenRTB format, remove legacy assets and print a warn.
+  if (native.ortb) {
+    const legacyNativeKeys = Object.keys(CONSTANTS.NATIVE_KEYS).filter(key => CONSTANTS.NATIVE_KEYS[key].includes('hb_native_'));
+    const nativeKeys = Object.keys(native);
+    const intersection = nativeKeys.filter(nativeKey => legacyNativeKeys.includes(nativeKey));
+    if (intersection.length > 0) {
+      logError(`when using native OpenRTB format, you cannot use legacy native properties. Deleting ${intersection} keys from request.`);
+      intersection.forEach(legacyKey => delete validatedAdUnit.mediaTypes.native[legacyKey]);
+    }
+  }
   if (native.image && native.image.sizes && !Array.isArray(native.image.sizes)) {
     logError('Please use an array of sizes for native.image.sizes field.  Removing invalid mediaTypes.native.image.sizes property from request.');
     delete validatedAdUnit.mediaTypes.native.image.sizes;
