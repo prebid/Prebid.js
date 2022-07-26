@@ -187,21 +187,21 @@ let fluctAnalyticsAdapter = Object.assign(
         case EVENTS.AD_RENDER_SUCCEEDED: {
           /** @type {AdRenderSucceededEvent} */
           let adRenderSucceededEvent = args;
-          let { bid: { auctionId, requestId } } = adRenderSucceededEvent;
-          Object.assign(cache.auctions[auctionId].bids[requestId], bid, {
+          let { bid } = adRenderSucceededEvent;
+          Object.assign(cache.auctions[bid.auctionId].bids[bid.requestId], bid, {
             noBid: false,
             prebidWon: true,
             bidWon: true,
             timeout: false,
           });
           /** オークション単位で `AD_RENDER_SUCCEEDED` イベントをまとめて送信する */
-          if (isBrowsiId(auctionId)) {
+          if (isBrowsiId(bid.auctionId)) {
             /** 原則1オークション:1枠 */
-            sendMessage(auctionId);
+            sendMessage(bid.auctionId);
           } else {
-            clearTimeout(cache.timeouts[auctionId]);
-            cache.timeouts[auctionId] = setTimeout(() => {
-              sendMessage(auctionId);
+            clearTimeout(cache.timeouts[bid.auctionId]);
+            cache.timeouts[bid.auctionId] = setTimeout(() => {
+              sendMessage(bid.auctionId);
             }, Math.min(config.getConfig('timeoutBuffer') || 400, 400));
           }
           break;
