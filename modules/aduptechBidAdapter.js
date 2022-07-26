@@ -1,6 +1,7 @@
 import {deepAccess, getAdUnitSizes} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 export const BIDDER_CODE = 'aduptech';
 export const ENDPOINT_URL_PUBLISHER_PLACEHOLDER = '{PUBLISHER}';
@@ -198,6 +199,9 @@ export const spec = {
    * @returns {Object[]}
    */
   buildRequests: (validBidRequests, bidderRequest) => {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     const requests = [];
 
     // stop here on invalid or empty data
