@@ -332,7 +332,7 @@ describe('native.js', function () {
       adId: '123',
     };
 
-    const message = getAllAssetsMessage(messageRequest, bid);
+    const message = getAllAssetsMessage(messageRequest, bid, {getNativeReq: () => null});
 
     expect(message.assets.length).to.equal(9);
     expect(message.assets).to.deep.include({
@@ -380,7 +380,7 @@ describe('native.js', function () {
       adId: '123',
     };
 
-    const message = getAllAssetsMessage(messageRequest, bidWithUndefinedFields);
+    const message = getAllAssetsMessage(messageRequest, bidWithUndefinedFields, {getNativeReq: () => null});
 
     expect(message.assets.length).to.equal(4);
     expect(message.assets).to.deep.include({

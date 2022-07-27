@@ -1,9 +1,20 @@
-import { deepAccess, getKeyByValue, insertHtmlIntoIframe, isInteger, isNumber, isPlainObject, logError, triggerPixel, isBoolean, isArray, deepClone } from './utils.js';
+import {
+  deepAccess,
+  deepClone,
+  getKeyByValue,
+  insertHtmlIntoIframe,
+  isArray,
+  isBoolean,
+  isInteger,
+  isNumber,
+  isPlainObject,
+  logError,
+  triggerPixel
+} from './utils.js';
 import {includes} from './polyfill.js';
 import {auctionManager} from './auctionManager.js';
 import CONSTANTS from './constants.json';
-import { NATIVE } from './mediaTypes.js';
-import { filters } from './targeting.js';
+import {NATIVE} from './mediaTypes.js';
 
 export const nativeAdapters = [];
 
@@ -97,6 +108,9 @@ export function decorateAdUnitsWithNativeParams(adUnits) {
       adUnit.nativeParams || deepAccess(adUnit, 'mediaTypes.native');
     if (nativeParams) {
       adUnit.nativeParams = processNativeAdUnitParams(nativeParams);
+    }
+    if (adUnit.nativeParams) {
+      adUnit.nativeOrtbRequest = adUnit.nativeParams.ortb || toOrtbNativeRequest(adUnit.nativeParams);
     }
   });
 }
@@ -342,16 +356,15 @@ export function getAssetMessage(data, adObject) {
   return message;
 }
 
-export function getAllAssetsMessage(data, adObject) {
+export function getAllAssetsMessage(data, adObject, {getNativeReq = (bidResponse) => auctionManager.index.getAdUnit(bidResponse).nativeOrtbRequest} = {}) {
   const message = {
     message: 'assetResponse',
     adId: data.adId,
   };
 
   // Pass to Prebid Universal Creative all assets, the legacy ones + the ortb ones (under ortb property)
-  const ortbRequest = nativeMapper.get(adObject.requestId);
+  const ortbRequest = getNativeReq(adObject);
   let nativeReq = adObject.native;
-  nativeMapper.delete(adObject.requestId);
   const ortbResponse = adObject.native?.ortb;
   let legacyResponse = {};
   if (ortbRequest && ortbResponse) {
@@ -384,7 +397,6 @@ export function getAllAssetsMessage(data, adObject) {
       message.assets.push({ key, value });
     }
   });
-  removeExpiredBidsFromNativeMapper();
   return message;
 }
 
@@ -459,7 +471,7 @@ export function toOrtbNativeRequest(legacyNativeAssets) {
       if (asset.aspect_ratios) {
         if (!isArray(asset.aspect_ratios)) {
           logError("image.aspect_ratios was passed, but it's not a an array:", asset.aspect_ratios);
-        } else if (asset.aspect_ratios.length != 1) {
+        } else if (!asset.aspect_ratios.length) {
           logError("image.aspect_ratios was passed, but it's empty:", asset.aspect_ratios);
         } else {
           const { min_width: minWidth, min_height: minHeight } = asset.aspect_ratios[0];
@@ -468,6 +480,14 @@ export function toOrtbNativeRequest(legacyNativeAssets) {
           } else {
             ortbAsset.img.wmin = minWidth;
             ortbAsset.img.hmin = minHeight;
+          }
+          const aspectRatios = asset.aspect_ratios
+            .filter((ar) => ar.ratio_width && ar.ratio_height)
+            .map(ratio => `${ratio.ratio_width}:${ratio.ratio_height}`);
+          if (aspectRatios.length > 0) {
+            ortbAsset.img.ext = {
+              aspectratios: aspectRatios
+            }
           }
         }
       }
@@ -492,9 +512,7 @@ export function toOrtbNativeRequest(legacyNativeAssets) {
       }
     // all extensions to the native bid request are passed as is
     } else if (key === 'ext') {
-      ortbAsset.ext = {
-        asset
-      };
+      ortbAsset.ext = asset;
       // in `ext` case, required field is not needed
       delete ortbAsset.required;
     }
@@ -681,38 +699,6 @@ function toLegacyResponse(ortbResponse, ortbRequest) {
 }
 
 /**
- * Converts a Legacy native request to OpenRTB.
- * The proprietary Prebid format has many limitations and will be dropped in
- * the future; adapters are encouraged to stop using it in favour of OpenRTB format.
- * @param {BidRequest[]} bidRequests an array of valid bid requests
- * @returns an array of valid bid requests where the legacy format is converted to OpenRTB.
- */
-export function convertLegacyNativeRequestToOrtb(bidRequests) {
-  if (!bidRequests || !isArray(bidRequests)) return bidRequests;
-  // convert Native ORTB definition to old-style prebid native definition
-  for (const bidRequest of bidRequests) {
-    if (bidRequest.mediaTypes && bidRequest.mediaTypes[NATIVE]) {
-      if (bidRequest.mediaTypes[NATIVE].ortb) continue;
-      // legacy case
-      const ortbRequest = toOrtbNativeRequest(bidRequest.mediaTypes[NATIVE]);
-      bidRequest.mediaTypes[NATIVE] = {
-        ...Object.entries(bidRequest.mediaTypes['native'])
-          .filter(([key, value]) => NATIVE_KEYS_THAT_ARE_NOT_ASSETS.includes(key))
-          .reduce((acc, curr) => { acc[curr[0]] = curr[1]; return acc }, {}),
-        ortb: ortbRequest
-      }
-      nativeMapper.set(bidRequest.bidId, ortbRequest);
-      // to keep other keywords like sendTargetingKeys, rendererUrl...
-      bidRequest.nativeParams = bidRequest.mediaTypes[NATIVE];
-      if (bidRequest.nativeParams) {
-        processNativeAdUnitParams(bidRequest.nativeParams);
-      }
-    }
-  }
-  return bidRequests;
-}
-
-/**
  * Inverts key-values of an object.
  */
 function inverse(obj) {
@@ -721,12 +707,4 @@ function inverse(obj) {
     retobj[obj[key]] = key;
   }
   return retobj;
-}
-
-// to avoid memory leaks, this function will try to remove expired bids from the native wrapper.
-function removeExpiredBidsFromNativeMapper() {
-  const expiredBids = auctionManager.getBidsReceived().filter((bid) => !filters.isBidNotExpired(bid));
-  for (const expiredBid of expiredBids) {
-    nativeMapper.delete(expiredBid.requestId);
-  }
 }

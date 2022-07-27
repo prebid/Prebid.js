@@ -446,11 +446,6 @@ if (FEATURES.NATIVE) {
     });
   });
 }
-/*
- * Protocol spec for OpenRTB endpoint
- * e.g., https://<prebid-server-url>/v1/openrtb2/auction
- */
-let nativeAssetCache = {}; // store processed native params to preserve
 
 /**
  * map wurl to auction id and adId for use in the BID_WON event
@@ -553,11 +548,13 @@ Object.assign(ORTB2.prototype, {
       this.adUnitsByImp[impressionId] = adUnit;
 
       const nativeParams = adUnit.nativeParams;
-      let nativeAssets = nativeAssetCache[impressionId] = deepAccess(nativeParams, 'ortb.assets');
+      let nativeAssets = deepAccess(nativeParams, 'ortb.assets');
       if (FEATURES.NATIVE && nativeParams && !nativeAssets) {
+        // TODO: all of this should not be necessary, the same logic is in native.js
+        // will be refactored as part of https://github.com/prebid/Prebid.js/pull/8738
         let idCounter = -1;
         try {
-          nativeAssets = nativeAssetCache[impressionId] = Object.keys(nativeParams).reduce((assets, type) => {
+          nativeAssets = Object.keys(nativeParams).reduce((assets, type) => {
             let params = nativeParams[type];
 
             function newAsset(obj) {
@@ -691,7 +688,7 @@ Object.assign(ORTB2.prototype, {
           // privacy: int
           assets: nativeAssets
         };
-        const ortbRequest = deepAccess(nativeParams, 'ortb');
+        const ortbRequest = deepAccess(adUnit, 'nativeOrtbRequest');
         try {
           const request = ortbRequest ? Object.assign(defaultRequest, ortbRequest) : defaultRequest;
           mediaTypes[NATIVE] = {
