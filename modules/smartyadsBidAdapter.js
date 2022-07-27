@@ -2,6 +2,7 @@ import { logMessage } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'smartyads';
 const AD_URL = 'https://n1.smartyads.com/?c=o&m=prebid&secret_key=prebid_js';
@@ -33,6 +34,9 @@ export const spec = {
   },
 
   buildRequests: (validBidRequests = [], bidderRequest) => {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     let winTop = window;
     let location;
     // TODO: this odd try-catch block was copied in several adapters; it doesn't seem to be correct for cross-origin

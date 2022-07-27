@@ -1368,3 +1368,16 @@ export function safeJSONParse(data) {
     return JSON.parse(data);
   } catch (e) {}
 }
+
+/**
+ * Sets dataset attributes on a script
+ * @param {Script} script
+ * @param {object} attributes
+ */
+export function setScriptAttributes(script, attributes) {
+  for (let key in attributes) {
+    if (attributes.hasOwnProperty(key)) {
+      script.setAttribute(key, attributes[key]);
+    }
+  }
+}

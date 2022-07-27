@@ -372,11 +372,11 @@ export function createEidsArray(bidRequestUserId) {
         // ftrack has multiple IDs so we add each one that exists
         let eid = {
           'atype': 1,
-          'id': (bidRequestUserId[subModuleKey]['DeviceID'] || []).join('|'),
+          'id': (bidRequestUserId.ftrackId.DeviceID || []).join('|'),
           'ext': {}
         }
-        for (let id in bidRequestUserId[subModuleKey]) {
-          eid.ext[id] = (bidRequestUserId[subModuleKey][id] || []).join('|');
+        for (let id in bidRequestUserId.ftrackId) {
+          eid.ext[id] = (bidRequestUserId.ftrackId[id] || []).join('|');
         }
 
         eids.push(eid);
