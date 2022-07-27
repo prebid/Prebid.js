@@ -223,7 +223,7 @@ function getBid(requestId, currency, bidResponse) {
     return;
   }
   
-  if(typeof bidResponse['exp'] == 'undefined') {
+  if (typeof bidResponse['exp'] == 'undefined') {
     bidResponse['exp'] = 60;
   }
 
