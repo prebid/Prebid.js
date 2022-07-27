@@ -222,9 +222,7 @@ function getBid(requestId, currency, bidResponse) {
   if (!bidResponse) {
     return;
   }
-  if (typeof bidResponse['exp'] == 'undefined') {
-    bidResponse['exp'] = 60;
-  }
+  
   const {
     price: cpm, crid: creativeId, adm: ad, w: width, h: height, exp: ttl, adomain: advertiserDomains, meta = {}
   } = bidResponse;
