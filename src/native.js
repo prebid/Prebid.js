@@ -86,6 +86,20 @@ const { NATIVE_ASSET_TYPES, NATIVE_IMAGE_TYPES, PREBID_NATIVE_DATA_KEYS_TO_ORTB,
 const PREBID_NATIVE_DATA_KEYS_TO_ORTB_INVERSE = inverse(PREBID_NATIVE_DATA_KEYS_TO_ORTB);
 const NATIVE_ASSET_TYPES_INVERSE = inverse(NATIVE_ASSET_TYPES);
 
+const TRACKER_METHODS = {
+  img: 1,
+  js: 2,
+  1: 'img',
+  2: 'js'
+}
+
+const TRACKER_EVENTS = {
+  impression: 1,
+  'viewable-mrc50': 2,
+  'viewable-mrc100': 3,
+  'viewable-video50': 4,
+}
+
 /**
  * Recieves nativeParams from an adUnit. If the params were not of type 'type',
  * passes them on directly. If they were of type 'type', translate
@@ -254,20 +268,45 @@ export function isNativeOpenRTBBidValid(bidORTB, bidRequestORTB) {
  *   fireTrackers(); // fires impressions when creative is loaded
  * </script>
  */
-export function fireNativeTrackers(message, adObject) {
-  let trackers;
+export function fireNativeTrackers(message, bidResponse) {
+  const nativeResponse = bidResponse.native.ortb || legacyPropertiesToOrtbNative(bidResponse.native);
+
   if (message.action === 'click') {
-    trackers = adObject['native'] && adObject['native'].clickTrackers;
+    fireClickTrackers(nativeResponse);
   } else {
-    trackers = adObject['native'] && adObject['native'].impressionTrackers;
-
-    if (adObject['native'] && adObject['native'].javascriptTrackers) {
-      insertHtmlIntoIframe(adObject['native'].javascriptTrackers);
-    }
+    fireImpressionTrackers(nativeResponse);
   }
-
-  (trackers || []).forEach(triggerPixel);
   return message.action;
+}
+
+export function fireImpressionTrackers(nativeResponse, {runMarkup = (mkup) => insertHtmlIntoIframe(mkup), fetchURL = triggerPixel} = {}) {
+  const impTrackers = (nativeResponse.eventtrackers || [])
+    .filter(tracker => tracker.event === TRACKER_EVENTS.impression);
+
+  let {img, js} = impTrackers.reduce((tally, tracker) => {
+    if (TRACKER_METHODS.hasOwnProperty(tracker.method)) {
+      tally[TRACKER_METHODS[tracker.method]].push(tracker.url)
+    }
+    return tally;
+  }, {img: [], js: []});
+
+  if (nativeResponse.imptrackers) {
+    img = img.concat(nativeResponse.imptrackers);
+  }
+  img.forEach(url => fetchURL(url));
+
+  js = js.map(url => `<script async src="${url}"></script>`);
+  if (nativeResponse.jstracker) {
+    // jstracker is already HTML markup
+    js = js.concat([nativeResponse.jstracker]);
+  }
+  if (js.length) {
+    runMarkup(js.join('\n'));
+  }
+}
+
+export function fireClickTrackers(nativeResponse, {fetchURL = triggerPixel} = {}) {
+  (nativeResponse.link?.clicktrackers || []).forEach(url => fetchURL(url));
 }
 
 /**
@@ -610,14 +649,52 @@ export function convertOrtbRequestToProprietaryNative(bidRequests) {
   return bidRequests;
 }
 
+/**
+ * convert PBJS proprietary native properties that are *not* assets to the ORTB native format.
+ *
+ * @param legacyNative `bidResponse.native` object as returned by adapters
+ */
+export function legacyPropertiesToOrtbNative(legacyNative) {
+  const response = {
+    link: {},
+    eventtrackers: []
+  }
+  Object.entries(legacyNative).forEach(([key, value]) => {
+    switch (key) {
+      case 'clickUrl':
+        response.link.url = value;
+        break;
+      case 'clickTrackers':
+        response.link.clicktrackers = Array.isArray(value) ? value : [value];
+        break;
+      case 'impressionTrackers':
+        (Array.isArray(value) ? value : [value]).forEach(url => {
+          response.eventtrackers.push({
+            event: TRACKER_EVENTS.impression,
+            method: TRACKER_METHODS.img,
+            url
+          });
+        });
+        break;
+      case 'javascriptTrackers':
+        // jstracker is deprecated, but we need to use it here since 'javascriptTrackers' is markup, not an url
+        // TODO: at the time of writing this, core expected javascriptTrackers to be a string (despite the name),
+        // but many adapters are passing an array. It's possible that some of them are, in fact, passing URLs and not markup
+        // in general, native trackers seem to be neglected and/or broken
+        response.jstracker = Array.isArray(value) ? value.join('') : value;
+        break;
+    }
+  })
+  return response;
+}
+
 export function toOrtbNativeResponse(legacyResponse, ortbRequest) {
   // copy the request, so we don't pollute it with response data below
   ortbRequest = deepClone(ortbRequest);
 
   const ortbResponse = {
-    link: {},
-    assets: [],
-    eventtrackers: []
+    ...legacyPropertiesToOrtbNative(legacyResponse),
+    assets: []
   };
   Object.keys(legacyResponse).filter(key => !!legacyResponse[key]).forEach(key => {
     const value = legacyResponse[key];
@@ -638,20 +715,6 @@ export function toOrtbNativeResponse(legacyResponse, ortbRequest) {
           url: value
         };
         ortbResponse.assets.push(imageAsset);
-        break;
-      case 'clickUrl':
-        ortbResponse.link.url = value;
-        break;
-      case 'clickTrackers':
-        ortbResponse.link.clicktrackers = value;
-        break;
-      case 'impressionTrackers':
-      case 'javascriptTrackers':
-        ortbResponse.eventtrackers.push({
-          event: 1,
-          method: key === 'impressionTrackers' ? 1 : 2,
-          url: value,
-        });
         break;
       default:
         if (key in PREBID_NATIVE_DATA_KEYS_TO_ORTB) {
