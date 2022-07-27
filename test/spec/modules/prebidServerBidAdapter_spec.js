@@ -1333,8 +1333,9 @@ describe('S2S Adapter', function () {
           config.setConfig(_config);
           adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
           const requestBid = JSON.parse(server.requests[0].requestBody);
-
-          const expectReq = {
+          const ortbReq = JSON.parse(requestBid.imp[0].native.request);
+          expect(ortbReq).to.deep.equal({
+            'ver': '1.2',
             'context': 1,
             'plcmttype': 1,
             'eventtrackers': [{
@@ -1378,9 +1379,7 @@ describe('S2S Adapter', function () {
                 }
               }
             ]
-          };
-
-          expect(JSON.parse(requestBid.imp[0].native.request)).to.deep.equal(expectReq);
+          });
           expect(requestBid.imp[0].native.ver).to.equal('1.2');
         });
 
@@ -1399,11 +1398,9 @@ describe('S2S Adapter', function () {
           config.setConfig(_config);
           adapter.callBids(openRtbNativeRequest, BID_REQUESTS, addBidResponse, done, ajax);
           const requestBid = JSON.parse(server.requests[0].requestBody);
-
-          expect(requestBid.imp[0].native).to.deep.equal({
-            request: JSON.stringify(NATIVE_ORTB_MTO.ortb),
-            ver: '1.2'
-          });
+          const nativeReq = JSON.parse(requestBid.imp[0].native.request);
+          expect(nativeReq).to.deep.equal(NATIVE_ORTB_MTO.ortb);
+          expect(requestBid.imp[0].native.ver).to.equal('1.2');
         });
 
         it('should not include ext.aspectratios if adunit\'s aspect_ratios do not define radio_width and ratio_height', () => {
