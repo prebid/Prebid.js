@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import magniteAdapter, {
   parseBidResponse,
   getHostNameFromReferer,
@@ -471,7 +470,6 @@ describe('magnite analytics adapter', function () {
     }
 
     beforeEach(function () {
-      console.log('RUNNING BEFORE EACH');
       magniteAdapter.enableAnalytics({
         options: {
           endpoint: '//localhost:9999/event',
@@ -480,11 +478,6 @@ describe('magnite analytics adapter', function () {
       });
       config.setConfig({ rubicon: { updatePageView: true } });
     });
-
-    // afterEach(function () {
-    //   console.log('RUNNING afterEach')
-    //   magniteAdapter.disableAnalytics();
-    // });
 
     it('should build a batched message from prebid events', function () {
       performStandardAuction();
@@ -496,8 +489,6 @@ describe('magnite analytics adapter', function () {
 
       let message = JSON.parse(request.requestBody);
       validate(message);
-
-      console.log(`ANALYTICS PAYLOAD: \n`, JSON.stringify(message, null, 2));
 
       expect(message).to.deep.equal(ANALYTICS_MESSAGE);
     });
@@ -692,225 +683,224 @@ describe('magnite analytics adapter', function () {
         expect(message).to.deep.equal(expectedMessage);
       });
 
-      // it('should pick up existing localStorage and use its values', function () {
-      //   // set some localStorage
-      //   let inputlocalStorage = {
-      //     id: '987654',
-      //     start: 1519767017881, // 15 mins before "now"
-      //     expires: 1519767039481, // six hours later
-      //     lastSeen: 1519766113781,
-      //     fpkvs: { source: 'tw' }
-      //   };
-      //   getDataFromLocalStorageStub.withArgs('rpaSession').returns(btoa(JSON.stringify(inputlocalStorage)));
+      it('should pick up existing localStorage and use its values', function () {
+        // set some localStorage
+        let inputlocalStorage = {
+          id: '987654',
+          start: 1519767017881, // 15 mins before "now"
+          expires: 1519767039481, // six hours later
+          lastSeen: 1519766113781,
+          fpkvs: { source: 'tw' }
+        };
+        getDataFromLocalStorageStub.withArgs('mgniSession').returns(btoa(JSON.stringify(inputlocalStorage)));
 
-      //   config.setConfig({
-      //     rubicon: {
-      //       fpkvs: {
-      //         link: 'email' // should merge this with what is in the localStorage!
-      //       }
-      //     }
-      //   });
-      //   performStandardAuction();
-      //   expect(server.requests.length).to.equal(1);
-      //   let request = server.requests[0];
-      //   let message = JSON.parse(request.requestBody);
-      //   validate(message);
+        config.setConfig({
+          rubicon: {
+            fpkvs: {
+              link: 'email' // should merge this with what is in the localStorage!
+            }
+          }
+        });
+        performStandardAuction();
+        expect(server.requests.length).to.equal(1);
+        let request = server.requests[0];
+        let message = JSON.parse(request.requestBody);
+        validate(message);
 
-      //   let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
-      //   expectedMessage.session = {
-      //     id: '987654',
-      //     start: 1519767017881,
-      //     expires: 1519767039481,
-      //     pvid: expectedPvid
-      //   }
-      //   expectedMessage.fpkvs = [
-      //     { key: 'source', value: 'tw' },
-      //     { key: 'link', value: 'email' }
-      //   ]
-      //   expect(message).to.deep.equal(expectedMessage);
+        let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
+        expectedMessage.session = {
+          id: '987654',
+          start: 1519767017881,
+          expires: 1519767039481,
+          pvid: expectedPvid
+        }
+        expectedMessage.fpkvs = [
+          { key: 'source', value: 'tw' },
+          { key: 'link', value: 'email' }
+        ]
+        expect(message).to.deep.equal(expectedMessage);
 
-      //   let calledWith;
-      //   try {
-      //     calledWith = JSON.parse(atob(setDataInLocalStorageStub.getCall(0).args[1]));
-      //   } catch (e) {
-      //     calledWith = {};
-      //   }
+        let calledWith;
+        try {
+          calledWith = JSON.parse(atob(setDataInLocalStorageStub.getCall(0).args[1]));
+        } catch (e) {
+          calledWith = {};
+        }
 
-      //   expect(calledWith).to.deep.equal({
-      //     id: '987654', // should have stayed same
-      //     start: 1519766113781, // should have stayed same
-      //     expires: 1519787713781, // should have stayed same
-      //     lastSeen: 1519767013781, // lastSeen updated to our "now"
-      //     fpkvs: { source: 'tw', link: 'email' }, // link merged in
-      //     pvid: expectedPvid // new pvid stored
-      //   });
-      // });
+        expect(calledWith).to.deep.equal({
+          id: '987654', // should have stayed same
+          start: 1519766113781, // should have stayed same
+          expires: 1519787713781, // should have stayed same
+          lastSeen: 1519767013781, // lastSeen updated to our "now"
+          fpkvs: { source: 'tw', link: 'email' }, // link merged in
+          pvid: expectedPvid // new pvid stored
+        });
+      });
 
-      // it('should overwrite matching localstorge value and use its remaining values', function () {
-      //   sandbox.stub(utils, 'getWindowLocation').returns({ 'search': '?utm_source=fb&utm_click=dog' });
+      it('should overwrite matching localstorge value and use its remaining values', function () {
+        sandbox.stub(utils, 'getWindowLocation').returns({ 'search': '?utm_source=fb&utm_click=dog' });
 
-      //   // set some localStorage
-      //   let inputlocalStorage = {
-      //     id: '987654',
-      //     start: 1519766113781, // 15 mins before "now"
-      //     expires: 1519787713781, // six hours later
-      //     lastSeen: 1519766113781,
-      //     fpkvs: { source: 'tw', link: 'email' }
-      //   };
-      //   getDataFromLocalStorageStub.withArgs('rpaSession').returns(btoa(JSON.stringify(inputlocalStorage)));
+        // set some localStorage
+        let inputlocalStorage = {
+          id: '987654',
+          start: 1519766113781, // 15 mins before "now"
+          expires: 1519787713781, // six hours later
+          lastSeen: 1519766113781,
+          fpkvs: { source: 'tw', link: 'email' }
+        };
+        getDataFromLocalStorageStub.withArgs('mgniSession').returns(btoa(JSON.stringify(inputlocalStorage)));
 
-      //   config.setConfig({
-      //     rubicon: {
-      //       fpkvs: {
-      //         link: 'email' // should merge this with what is in the localStorage!
-      //       }
-      //     }
-      //   });
-      //   performStandardAuction();
-      //   expect(server.requests.length).to.equal(1);
-      //   let request = server.requests[0];
-      //   let message = JSON.parse(request.requestBody);
-      //   validate(message);
+        config.setConfig({
+          rubicon: {
+            fpkvs: {
+              link: 'email' // should merge this with what is in the localStorage!
+            }
+          }
+        });
+        performStandardAuction();
+        expect(server.requests.length).to.equal(1);
+        let request = server.requests[0];
+        let message = JSON.parse(request.requestBody);
+        validate(message);
 
-      //   let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
-      //   expectedMessage.session = {
-      //     id: '987654',
-      //     start: 1519766113781,
-      //     expires: 1519787713781,
-      //     pvid: expectedPvid
-      //   }
-      //   expectedMessage.fpkvs = [
-      //     { key: 'source', value: 'fb' },
-      //     { key: 'link', value: 'email' },
-      //     { key: 'click', value: 'dog' }
-      //   ]
+        let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
+        expectedMessage.session = {
+          id: '987654',
+          start: 1519766113781,
+          expires: 1519787713781,
+          pvid: expectedPvid
+        }
+        expectedMessage.fpkvs = [
+          { key: 'source', value: 'fb' },
+          { key: 'link', value: 'email' },
+          { key: 'click', value: 'dog' }
+        ]
 
-      //   message.fpkvs.sort((left, right) => left.key < right.key);
-      //   expectedMessage.fpkvs.sort((left, right) => left.key < right.key);
+        message.fpkvs.sort((left, right) => left.key < right.key);
+        expectedMessage.fpkvs.sort((left, right) => left.key < right.key);
 
-      //   expect(message).to.deep.equal(expectedMessage);
+        expect(message).to.deep.equal(expectedMessage);
 
-      //   let calledWith;
-      //   try {
-      //     calledWith = JSON.parse(atob(setDataInLocalStorageStub.getCall(0).args[1]));
-      //   } catch (e) {
-      //     calledWith = {};
-      //   }
+        let calledWith;
+        try {
+          calledWith = JSON.parse(atob(setDataInLocalStorageStub.getCall(0).args[1]));
+        } catch (e) {
+          calledWith = {};
+        }
 
-      //   expect(calledWith).to.deep.equal({
-      //     id: '987654', // should have stayed same
-      //     start: 1519766113781, // should have stayed same
-      //     expires: 1519787713781, // should have stayed same
-      //     lastSeen: 1519767013781, // lastSeen updated to our "now"
-      //     fpkvs: { source: 'fb', link: 'email', click: 'dog' }, // link merged in
-      //     pvid: expectedPvid // new pvid stored
-      //   });
-      // });
+        expect(calledWith).to.deep.equal({
+          id: '987654', // should have stayed same
+          start: 1519766113781, // should have stayed same
+          expires: 1519787713781, // should have stayed same
+          lastSeen: 1519767013781, // lastSeen updated to our "now"
+          fpkvs: { source: 'fb', link: 'email', click: 'dog' }, // link merged in
+          pvid: expectedPvid // new pvid stored
+        });
+      });
 
-      // it('should throw out session if lastSeen > 30 mins ago and create new one', function () {
-      //   // set some localStorage
-      //   let inputlocalStorage = {
-      //     id: '987654',
-      //     start: 1519764313781, // 45 mins before "now"
-      //     expires: 1519785913781, // six hours later
-      //     lastSeen: 1519764313781, // 45 mins before "now"
-      //     fpkvs: { source: 'tw' }
-      //   };
-      //   getDataFromLocalStorageStub.withArgs('rpaSession').returns(btoa(JSON.stringify(inputlocalStorage)));
+      it('should throw out session if lastSeen > 30 mins ago and create new one', function () {
+        // set some localStorage
+        let inputlocalStorage = {
+          id: '987654',
+          start: 1519764313781, // 45 mins before "now"
+          expires: 1519785913781, // six hours later
+          lastSeen: 1519764313781, // 45 mins before "now"
+          fpkvs: { source: 'tw' }
+        };
+        getDataFromLocalStorageStub.withArgs('mgniSession').returns(btoa(JSON.stringify(inputlocalStorage)));
 
-      //   config.setConfig({
-      //     rubicon: {
-      //       fpkvs: {
-      //         link: 'email' // should merge this with what is in the localStorage!
-      //       }
-      //     }
-      //   });
+        config.setConfig({
+          rubicon: {
+            fpkvs: {
+              link: 'email' // should merge this with what is in the localStorage!
+            }
+          }
+        });
 
-      //   performStandardAuction();
-      //   expect(server.requests.length).to.equal(1);
-      //   let request = server.requests[0];
-      //   let message = JSON.parse(request.requestBody);
-      //   validate(message);
+        performStandardAuction();
+        expect(server.requests.length).to.equal(1);
+        let request = server.requests[0];
+        let message = JSON.parse(request.requestBody);
+        validate(message);
 
-      //   let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
-      //   // session should match what is already in ANALYTICS_MESSAGE, just need to add pvid
-      //   expectedMessage.session.pvid = expectedPvid;
+        let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
+        // session should match what is already in ANALYTICS_MESSAGE, just need to add pvid
+        expectedMessage.session.pvid = expectedPvid;
 
-      //   // the saved fpkvs should have been thrown out since session expired
-      //   expectedMessage.fpkvs = [
-      //     { key: 'link', value: 'email' }
-      //   ]
-      //   expect(message).to.deep.equal(expectedMessage);
+        // the saved fpkvs should have been thrown out since session expired
+        expectedMessage.fpkvs = [
+          { key: 'link', value: 'email' }
+        ]
+        expect(message).to.deep.equal(expectedMessage);
 
-      //   let calledWith;
-      //   try {
-      //     calledWith = JSON.parse(atob(setDataInLocalStorageStub.getCall(0).args[1]));
-      //   } catch (e) {
-      //     calledWith = {};
-      //   }
+        let calledWith;
+        try {
+          calledWith = JSON.parse(atob(setDataInLocalStorageStub.getCall(0).args[1]));
+        } catch (e) {
+          calledWith = {};
+        }
 
-      //   expect(calledWith).to.deep.equal({
-      //     id: STUBBED_UUID, // should have stayed same
-      //     start: 1519767013781, // should have stayed same
-      //     expires: 1519788613781, // should have stayed same
-      //     lastSeen: 1519767013781, // lastSeen updated to our "now"
-      //     fpkvs: { link: 'email' }, // link merged in
-      //     pvid: expectedPvid // new pvid stored
-      //   });
-      // });
+        expect(calledWith).to.deep.equal({
+          id: STUBBED_UUID, // should have stayed same
+          start: 1519767013781, // should have stayed same
+          expires: 1519788613781, // should have stayed same
+          lastSeen: 1519767013781, // lastSeen updated to our "now"
+          fpkvs: { link: 'email' }, // link merged in
+          pvid: expectedPvid // new pvid stored
+        });
+      });
 
-      // it('should throw out session if past expires time and create new one', function () {
-      //   // set some localStorage
-      //   let inputlocalStorage = {
-      //     id: '987654',
-      //     start: 1519745353781, // 6 hours before "expires"
-      //     expires: 1519766953781, // little more than six hours ago
-      //     lastSeen: 1519767008781, // 5 seconds ago
-      //     fpkvs: { source: 'tw' }
-      //   };
-      //   getDataFromLocalStorageStub.withArgs('rpaSession').returns(btoa(JSON.stringify(inputlocalStorage)));
+      it('should throw out session if past expires time and create new one', function () {
+        // set some localStorage
+        let inputlocalStorage = {
+          id: '987654',
+          start: 1519745353781, // 6 hours before "expires"
+          expires: 1519766953781, // little more than six hours ago
+          lastSeen: 1519767008781, // 5 seconds ago
+          fpkvs: { source: 'tw' }
+        };
+        getDataFromLocalStorageStub.withArgs('mgniSession').returns(btoa(JSON.stringify(inputlocalStorage)));
 
-      //   config.setConfig({
-      //     rubicon: {
-      //       fpkvs: {
-      //         link: 'email' // should merge this with what is in the localStorage!
-      //       }
-      //     }
-      //   });
+        config.setConfig({
+          rubicon: {
+            fpkvs: {
+              link: 'email' // should merge this with what is in the localStorage!
+            }
+          }
+        });
 
-      //   performStandardAuction();
-      //   expect(server.requests.length).to.equal(1);
-      //   let request = server.requests[0];
-      //   let message = JSON.parse(request.requestBody);
-      //   validate(message);
+        performStandardAuction();
+        expect(server.requests.length).to.equal(1);
+        let request = server.requests[0];
+        let message = JSON.parse(request.requestBody);
+        validate(message);
 
-      //   let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
-      //   // session should match what is already in ANALYTICS_MESSAGE, just need to add pvid
-      //   expectedMessage.session.pvid = expectedPvid;
+        let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
+        // session should match what is already in ANALYTICS_MESSAGE, just need to add pvid
+        expectedMessage.session.pvid = expectedPvid;
 
-      //   // the saved fpkvs should have been thrown out since session expired
-      //   expectedMessage.fpkvs = [
-      //     { key: 'link', value: 'email' }
-      //   ]
-      //   expect(message).to.deep.equal(expectedMessage);
+        // the saved fpkvs should have been thrown out since session expired
+        expectedMessage.fpkvs = [
+          { key: 'link', value: 'email' }
+        ]
+        expect(message).to.deep.equal(expectedMessage);
 
-      //   let calledWith;
-      //   try {
-      //     calledWith = JSON.parse(atob(setDataInLocalStorageStub.getCall(0).args[1]));
-      //   } catch (e) {
-      //     calledWith = {};
-      //   }
+        let calledWith;
+        try {
+          calledWith = JSON.parse(atob(setDataInLocalStorageStub.getCall(0).args[1]));
+        } catch (e) {
+          calledWith = {};
+        }
 
-      //   expect(calledWith).to.deep.equal({
-      //     id: STUBBED_UUID, // should have stayed same
-      //     start: 1519767013781, // should have stayed same
-      //     expires: 1519788613781, // should have stayed same
-      //     lastSeen: 1519767013781, // lastSeen updated to our "now"
-      //     fpkvs: { link: 'email' }, // link merged in
-      //     pvid: expectedPvid // new pvid stored
-      //   });
-      // });
+        expect(calledWith).to.deep.equal({
+          id: STUBBED_UUID, // should have stayed same
+          start: 1519767013781, // should have stayed same
+          expires: 1519788613781, // should have stayed same
+          lastSeen: 1519767013781, // lastSeen updated to our "now"
+          fpkvs: { link: 'email' }, // link merged in
+          pvid: expectedPvid // new pvid stored
+        });
+      });
     });
-
   });
 });

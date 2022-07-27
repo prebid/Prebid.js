@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { generateUUID, mergeDeep, deepAccess, parseUrl, logError, pick, isEmpty, logWarn, debugTurnedOn, parseQS, getWindowLocation, isAdUnitCodeMatchingSlot, isNumber, deepSetValue, deepClone, logInfo } from '../src/utils.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
@@ -126,7 +125,6 @@ const sendEvent = payload => {
     ...getTopLevelDetails(),
     ...payload
   }
-  console.log('Magnite Analytics: Sending Event: ', event.trigger);
   ajax(
     rubiConf.analyticsEndpoint || endpoint,
     null,
@@ -138,7 +136,6 @@ const sendEvent = payload => {
 }
 
 const sendAuctionEvent = (auctionId, trigger) => {
-  console.log(`MAGNITE: AUCTION SEND EVENT`);
   let auctionCache = cache.auctions[auctionId];
   const auctionEvent = formatAuction(auctionCache.auction);
 
@@ -560,7 +557,6 @@ magniteAdapter.originEnableAnalytics = magniteAdapter.enableAnalytics;
 function enableMgniAnalytics(config = {}) {
   let error = false;
   // endpoint
-  console.log(`setting endpoint to `, deepAccess(config, 'options.endpoint'));
   endpoint = deepAccess(config, 'options.endpoint');
   if (!endpoint) {
     logError(`${MODULE_NAME}: required endpoint missing`);
@@ -573,7 +569,6 @@ function enableMgniAnalytics(config = {}) {
     error = true;
   }
   if (!error) {
-    console.log('THIS IS ', this);
     magniteAdapter.originEnableAnalytics(config);
   }
 };
@@ -584,7 +579,6 @@ magniteAdapter.originDisableAnalytics = magniteAdapter.disableAnalytics;
 magniteAdapter.disableAnalytics = function() {
   // trick analytics module to register our enable back as main one
   magniteAdapter._oldEnable = enableMgniAnalytics;
-  console.log('MAGNITE DISABLE ANALYTICS');
   endpoint = undefined;
   accountId = undefined;
   resetConfs();
@@ -597,7 +591,6 @@ magniteAdapter.referrerHostname = '';
 magniteAdapter.track = ({ eventType, args }) => {
   switch (eventType) {
     case AUCTION_INIT:
-      console.log(`MAGNITE: AUCTION INIT`, args);
       // set the rubicon aliases
       setRubiconAliases(adapterManager.aliasRegistry);
 
@@ -671,13 +664,11 @@ magniteAdapter.track = ({ eventType, args }) => {
         gamRenders,
         pendingEvents: {}
       }
-      console.log(`MAGNITE: AUCTION cache`, cache);
 
       // keeping order of auctions and if they have been sent or not
       cache.auctionOrder.push(args.auctionId);
       break;
     case BID_REQUESTED:
-      console.log(`MAGNITE: BID_REQUESTED`, args);
       args.bids.forEach(bid => {
         const adUnit = deepAccess(cache, `auctions.${args.auctionId}.auction.adUnits.${bid.adUnitCode}`);
         adUnit.bids[bid.bidId] = pick(bid, [
@@ -697,7 +688,6 @@ magniteAdapter.track = ({ eventType, args }) => {
       });
       break;
     case BID_RESPONSE:
-      console.log(`MAGNITE: BID_RESPONSE`, args);
       const auctionEntry = deepAccess(cache, `auctions.${args.auctionId}.auction`);
       const adUnit = deepAccess(auctionEntry, `adUnits.${args.adUnitCode}`);
       let bid = adUnit.bids[args.requestId];
@@ -747,7 +737,6 @@ magniteAdapter.track = ({ eventType, args }) => {
       bid.bidResponse = parseBidResponse(args, bid.bidResponse);
       break;
     case BIDDER_DONE:
-      console.log(`MAGNITE: BIDDER_DONE`, args);
       const serverError = deepAccess(args, 'serverErrors.0');
       const serverResponseTimeMs = args.serverResponseTimeMs;
       args.bids.forEach(bid => {
@@ -768,14 +757,11 @@ magniteAdapter.track = ({ eventType, args }) => {
       });
       break;
     case BID_WON:
-      console.log(`MAGNITE: BID_WON`, args);
       const bidWon = formatBidWon(args);
       addEventToQueue({ bidsWon: [bidWon] }, bidWon.renderAuctionId, 'bidWon');
       break;
     case AUCTION_END:
-      console.log(`MAGNITE: AUCTION END`, args);
       let auctionCache = cache.auctions[args.auctionId];
-      console.log(`MAGNITE: AUCTION END auctionCache`, auctionCache);
       // if for some reason the auction did not do its normal thing, this could be undefied so bail
       if (!auctionCache) {
         break;
@@ -795,7 +781,6 @@ magniteAdapter.track = ({ eventType, args }) => {
       }
       break;
     case BID_TIMEOUT:
-      console.log(`MAGNITE: BID_TIMEOUT`, args);
       args.forEach(badBid => {
         let bid = deepAccess(cache, `auctions.${badBid.auctionId}.auction.adUnits.${badBid.adUnitCode}.bids.${badBid.bidId}`, {});
         // might be set already by bidder-done, so do not overwrite
