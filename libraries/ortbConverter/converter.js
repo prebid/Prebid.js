@@ -97,11 +97,11 @@ export function ortbConverter({
           if (result.hasOwnProperty('id')) {
             impContext.bidRequest = bidRequest;
             ctx.imp[result.id] = impContext;
+            return result;
           } else {
             logError('Converted ORTB imp does not specify an id, ignoring bid request', bidRequest, result);
           }
         }
-        return result;
       }).filter(Boolean);
 
       const request = buildRequest(imps, bidderRequest, ctx.req);

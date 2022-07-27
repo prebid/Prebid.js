@@ -186,6 +186,17 @@ describe('pbjs-ortb converter', () => {
     expect(cvt.toORTB({bidderRequest: MOCK_BIDDER_REQUEST}).imp.length).to.eql(1);
   });
 
+  it('does not include imps that have no id', () => {
+    const cvt = makeConverter({
+      imp(buildImp, bidRequest, context) {
+        const imp = buildImp(bidRequest, context);
+        delete imp.id;
+        return imp;
+      }
+    });
+    expect(cvt.toORTB({bidderRequest: MOCK_BIDDER_REQUEST}).imp.length).to.eql(0);
+  })
+
   it('allows overriding of response building with bidResponse', () => {
     const cvt = makeConverter({
       bidResponse(buildResponse, bid, context) {
