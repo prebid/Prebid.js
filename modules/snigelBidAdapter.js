@@ -8,11 +8,8 @@ import {bidderSettings} from '../src/bidderSettings.js';
 const BIDDER_CODE = 'snigel';
 const GVLID = 1076;
 const DEFAULT_URL = 'https://adserv.snigelweb.com/bp/v1/prebid';
-const DEFAULT_USER_SYNC_URL_TEMPLATE = 'https://cdn.snigelweb.com/adengine/{DOMAIN}/amp-sync.html';
-const DEFAULT_TTL = 360;
+const DEFAULT_TTL = 60;
 const DEFAULT_CURRENCIES = ['USD'];
-const ADVERTISER_NAME = 'Snigel Web Services Ltd.';
-const ADVERTISER_DOMAINS = ['snigel.com'];
 
 export const spec = {
   code: BIDDER_CODE,
@@ -64,19 +61,16 @@ export const spec = {
         height: bid.height,
         ad: bid.ad,
         netRevenue: true,
-        ttl: DEFAULT_TTL,
-        meta: {
-          advertiserName: ADVERTISER_NAME,
-          advertiserDomains: ADVERTISER_DOMAINS,
-        },
+        ttl: bid.ttl || DEFAULT_TTL,
+        meta: bid.meta,
       };
     });
   },
 
-  getUserSyncs: function (syncOptions, responses, gdprConsent) {
-    const domain = deepAccess(responses[0], 'body.domain');
-    if (domain && syncOptions.iframeEnabled && hasPurpose1Consent(gdprConsent)) {
-      return [{type: 'iframe', url: getSyncEndpoint(domain, gdprConsent)}];
+  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
+    const syncUrl = getSyncUrl(responses || []);
+    if (syncUrl && syncOptions.iframeEnabled && hasSyncConsent(gdprConsent, uspConsent)) {
+      return [{type: 'iframe', url: getSyncEndpoint(syncUrl, gdprConsent)}];
     }
   },
 };
@@ -103,13 +97,21 @@ function getCurrencies() {
   return bidderSettings.get(BIDDER_CODE, 'cur') || DEFAULT_CURRENCIES;
 }
 
-function getSyncEndpoint(domain, gdprConsent) {
-  const template = bidderSettings.get(BIDDER_CODE, 'syncUrlTemplate') || DEFAULT_USER_SYNC_URL_TEMPLATE;
-  const url = template.replace('{DOMAIN}', domain);
-  return passConsentParamsToSync(gdprConsent, url);
+function hasSyncConsent(gdprConsent, uspConsent) {
+  if (gdprConsent?.gdprApplies && !hasPurpose1Consent(gdprConsent)) {
+    return false;
+  } else if (uspConsent && uspConsent[1] === 'Y' && uspConsent[2] === 'Y') {
+    return false;
+  } else {
+    return true;
+  }
 }
 
-function passConsentParamsToSync(gdprConsent, url) {
+function getSyncUrl(responses) {
+  return bidderSettings.get(BIDDER_CODE, 'syncUrl') || deepAccess(responses[0], 'body.syncUrl');
+}
+
+function getSyncEndpoint(url, gdprConsent) {
   return `${url}?gdpr=${gdprConsent?.gdprApplies ? 1 : 0}&gdpr_consent=${encodeURIComponent(
     gdprConsent?.consentString || ''
   )}`;

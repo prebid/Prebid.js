@@ -144,7 +144,6 @@ describe('snigelBidAdapter', function () {
         body: {
           id: BASE_BIDDER_REQUEST.bidderRequestId,
           cur: 'USD',
-          domain: 'localhost',
           bids: [
             {
               uuid: BASE_BID_REQUEST.bidId,
@@ -153,6 +152,9 @@ describe('snigelBidAdapter', function () {
               width: 728,
               height: 90,
               crid: 'test',
+              meta: {
+                advertiserDomains: ['addomain.com'],
+              },
             },
           ],
         },
@@ -163,23 +165,21 @@ describe('snigelBidAdapter', function () {
       const bid = bids[0];
       expect(isValid(BASE_BID_REQUEST.adUnitCode, bid)).to.be.true;
       expect(bid).to.have.property('meta');
-      expect(bid.meta).to.have.property('advertiserName');
-      expect(bid.meta.advertiserName).to.equal('Snigel Web Services Ltd.');
       expect(bid.meta).to.have.property('advertiserDomains');
       expect(bid.meta.advertiserDomains).to.be.an('array');
       expect(bid.meta.advertiserDomains.length).to.equal(1);
-      expect(bid.meta.advertiserDomains[0]).to.equal('snigel.com');
+      expect(bid.meta.advertiserDomains[0]).to.equal('addomain.com');
     });
   });
 
   describe('getUserSyncs', function () {
-    it('should not return any user syncs if domain does not exist in response', function () {
+    it('should not return any user syncs if sync url does not exist in response', function () {
       const response = {
         body: {
           id: BASE_BIDDER_REQUEST.bidderRequestId,
           cur: 'USD',
           bids: [],
-        }
+        },
       };
       const syncOptions = {
         iframeEnabled: true,
@@ -197,9 +197,9 @@ describe('snigelBidAdapter', function () {
         body: {
           id: BASE_BIDDER_REQUEST.bidderRequestId,
           cur: 'USD',
-          domain: 'localhost',
+          syncUrl: 'https://somesyncurl',
           bids: [],
-        }
+        },
       };
       const syncOptions = {
         iframeEnabled: false,
@@ -217,9 +217,9 @@ describe('snigelBidAdapter', function () {
         body: {
           id: BASE_BIDDER_REQUEST.bidderRequestId,
           cur: 'USD',
-          domain: 'localhost',
+          syncUrl: 'https://somesyncurl',
           bids: [],
-        }
+        },
       };
       const syncOptions = {
         iframeEnabled: true,
@@ -242,9 +242,9 @@ describe('snigelBidAdapter', function () {
         body: {
           id: BASE_BIDDER_REQUEST.bidderRequestId,
           cur: 'USD',
-          domain: 'localhost',
+          syncUrl: 'https://somesyncurl',
           bids: [],
-        }
+        },
       };
       const syncOptions = {
         iframeEnabled: true,
@@ -259,7 +259,7 @@ describe('snigelBidAdapter', function () {
       expect(sync).to.have.property('type');
       expect(sync.type).to.equal('iframe');
       expect(sync).to.have.property('url');
-      expect(sync.url).to.equal('https://cdn.snigelweb.com/adengine/localhost/amp-sync.html?gdpr=0&gdpr_consent=');
+      expect(sync.url).to.equal('https://somesyncurl?gdpr=0&gdpr_consent=');
     });
 
     it('should pass GDPR applicability and consent string as query parameters', function () {
@@ -267,9 +267,9 @@ describe('snigelBidAdapter', function () {
         body: {
           id: BASE_BIDDER_REQUEST.bidderRequestId,
           cur: 'USD',
-          domain: 'localhost',
+          syncUrl: 'https://somesyncurl',
           bids: [],
-        }
+        },
       };
       const syncOptions = {
         iframeEnabled: true,
@@ -290,9 +290,7 @@ describe('snigelBidAdapter', function () {
       expect(sync).to.have.property('type');
       expect(sync.type).to.equal('iframe');
       expect(sync).to.have.property('url');
-      expect(sync.url).to.equal(
-        `https://cdn.snigelweb.com/adengine/localhost/amp-sync.html?gdpr=1&gdpr_consent=${DUMMY_GDPR_CONSENT_STRING}`
-      );
+      expect(sync.url).to.equal(`https://somesyncurl?gdpr=1&gdpr_consent=${DUMMY_GDPR_CONSENT_STRING}`);
     });
   });
 });
