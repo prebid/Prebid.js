@@ -408,9 +408,9 @@ describe('Taboola Adapter', function () {
             'advertiserDomains': bid.adomain
           },
         }
-      ]
-      const res = spec.interpretResponse(serverResponse, request)
-      expect(res).to.deep.equal(expectedRes)
+      ];
+      const res = spec.interpretResponse(serverResponse, request);
+      expect(res).to.deep.equal(expectedRes);
     });
   })
 
