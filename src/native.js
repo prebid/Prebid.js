@@ -9,7 +9,8 @@ import {
   isNumber,
   isPlainObject,
   logError,
-  triggerPixel
+  triggerPixel,
+  pick
 } from './utils.js';
 import {includes} from './polyfill.js';
 import {auctionManager} from './auctionManager.js';
@@ -587,30 +588,21 @@ export function fromOrtbNativeRequest(openRTBRequest) {
  * @returns an array of valid bid requests where the openRTB bids are converted to proprietary format.
  */
 export function convertOrtbRequestToProprietaryNative(bidRequests) {
-  let needsToBeCopied = false;
-  if (!bidRequests || !isArray(bidRequests)) return bidRequests;
   if (FEATURES.NATIVE) {
+    if (!bidRequests || !isArray(bidRequests)) return bidRequests;
     // check if a conversion is needed
-    needsToBeCopied = bidRequests.some(bidRequest => bidRequest.mediaTypes && bidRequest.mediaTypes[NATIVE] && bidRequest.mediaTypes[NATIVE].ortb);
-    if (!needsToBeCopied) return bidRequests;
+    if (!bidRequests.some(bidRequest => (bidRequest?.mediaTypes || {})[NATIVE]?.ortb)) {
+      return bidRequests;
+    }
     let bidRequestsCopy = deepClone(bidRequests);
     // convert Native ORTB definition to old-style prebid native definition
     for (const bidRequest of bidRequestsCopy) {
       if (bidRequest.mediaTypes && bidRequest.mediaTypes[NATIVE] && bidRequest.mediaTypes[NATIVE].ortb) {
-        bidRequest.mediaTypes[NATIVE] = {
-          // to keep other keywords like sendTargetingKeys, rendererUrl...
-          ...Object.keys(bidRequest.mediaTypes[NATIVE])
-            .filter(key => NATIVE_KEYS_THAT_ARE_NOT_ASSETS.includes(key))
-            .reduce((obj, key) => ({
-              ...obj,
-              [key]: bidRequest.mediaTypes[NATIVE][key]
-            }), {}),
-          ...fromOrtbNativeRequest(bidRequest.mediaTypes[NATIVE].ortb)
-        }
-        bidRequest.nativeParams = bidRequest.mediaTypes[NATIVE];
-        if (bidRequest.nativeParams) {
-          processNativeAdUnitParams(bidRequest.nativeParams);
-        }
+        bidRequest.mediaTypes[NATIVE] = Object.assign(
+          pick(bidRequest.mediaTypes[NATIVE], NATIVE_KEYS_THAT_ARE_NOT_ASSETS),
+          fromOrtbNativeRequest(bidRequest.mediaTypes[NATIVE].ortb)
+        );
+        bidRequest.nativeParams = processNativeAdUnitParams(bidRequest.mediaTypes[NATIVE]);
       }
     }
     return bidRequestsCopy;
