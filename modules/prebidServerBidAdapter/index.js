@@ -78,12 +78,13 @@ let eidPermissions;
  * @property {boolean} [cacheMarkup] whether to cache the adm result
  * @property {string} [syncEndpoint] endpoint URL for syncing cookies
  * @property {Object} [extPrebid] properties will be merged into request.ext.prebid
+ * @property {Object} [ortbNative] base value for imp.native.request
  */
 
 /**
  * @type {S2SDefaultConfig}
  */
-const s2sDefaultConfig = {
+export const s2sDefaultConfig = {
   bidders: Object.freeze([]),
   timeout: 1000,
   syncTimeout: 1000,
@@ -91,7 +92,14 @@ const s2sDefaultConfig = {
   adapter: 'prebidServer',
   allowUnknownBidderCodes: false,
   adapterOptions: {},
-  syncUrlModifier: {}
+  syncUrlModifier: {},
+  ortbNative: {
+    context: 1,
+    plcmttype: 1,
+    eventtrackers: [
+      {event: 1, methods: [1]}
+    ],
+  }
 };
 
 config.setDefaults({

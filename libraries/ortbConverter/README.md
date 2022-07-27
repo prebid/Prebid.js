@@ -356,15 +356,16 @@ const converter = ortbConverter({
 
 For ease of use, the conversion logic gives special meaning to some context properties:
 
- - `mediaType`: a bid mediaType (`'banner'`, `'video'`, or `'native'`). If specified:  
-   - disables `imp` generation for other media types (i.e., if `context.mediaType === 'banner'`, only `imp.banner` will be populated; `imp.video` and `imp.native` will not, even if the bid request specifies them);
-   - is passed as the `mediaType` option to `bidRequest.getFloor` when computing price floors;
-   - sets `bidResponse.mediaType`.
  - `currency`: a currency string (e.g. `'EUR'`). If specified, overrides the currency to use for computing price floors and `request.cur`. If omitted, both default to `getConfig('currency.adServerCurrency')`.
+ - `mediaType`: a bid mediaType (`'banner'`, `'video'`, or `'native'`). If specified:
+    - disables `imp` generation for other media types (i.e., if `context.mediaType === 'banner'`, only `imp.banner` will be populated; `imp.video` and `imp.native` will not, even if the bid request specifies them);
+    - is passed as the `mediaType` option to `bidRequest.getFloor` when computing price floors;
+    - sets `bidResponse.mediaType`.
+ - `nativeRequest`: a plain object that serves as the base value for `imp.native.request` (and is relevant only for native bid requests).
+      If not specified, the only property that is guaranteed to be populated is `assets`, since Prebid does not require anything else to define a native adUnit. You can use `context.nativeRequest` to provide other properties; for example, you may want to signal support for native impression trackers by setting it to `{eventtrackers: [{event: 1, methods: [1, 2]}]}` (see also the [ORTB Native spec](https://www.iab.com/wp-content/uploads/2018/03/OpenRTB-Native-Ads-Specification-Final-1.2.pdf)).
+ - `netRevenue`: the value to set as `bidResponse.netRevenue`. This is a required property of bid responses that does not have a clear ORTB counterpart.
  - `ttl`: the default value to use for `bidResponse.ttl` (if the ORTB response does not provide one in `seatbid[].bid[].exp`).
- - `netRevenue`: the value to set as `bidResponse.netRevenue`. This is a required property of bid responses that does not have a clear ORTB counterpart. 
-
-
+   
 ## Prebid Server extensions
 
 If your endpoint is a Prebid Server instance, you may take advantage of the `pbsExtension` companion library, which adds a number of processors that can populate and parse PBS-specific extensions (typically prefixed `ext.prebid`); these include bidder params (with `transformBidParams`), bidder aliases, targeting keys, and others. 

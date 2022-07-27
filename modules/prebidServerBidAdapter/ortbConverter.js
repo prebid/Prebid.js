@@ -27,7 +27,7 @@ const BIDDER_SPECIFIC_REQUEST_PROPS = new Set(['bidderCode', 'bidderRequestId', 
 const PBS_CONVERTER = ortbConverter({
   processors: pbsExtensions,
   context: {
-    netRevenue: DEFAULT_S2S_NETREVENUE
+    netRevenue: DEFAULT_S2S_NETREVENUE,
   },
   imp(buildImp, proxyBidRequest, context) {
     Object.assign(context, proxyBidRequest.pbsData);
@@ -272,6 +272,7 @@ export function buildPBSRequest(s2sBidRequest, bidderRequests, adUnits, requeste
       requestedBidders,
       actualBidderRequests: bidderRequests,
       eidPermissions,
+      nativeRequest: s2sBidRequest.s2sConfig.ortbNative
     }
   });
 }
