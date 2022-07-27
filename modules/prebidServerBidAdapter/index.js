@@ -2,7 +2,6 @@ import Adapter from '../../src/adapter.js';
 import {createBid} from '../../src/bidfactory.js';
 import {
   bind,
-  cleanObj,
   createTrackPixelHtml,
   deepAccess,
   deepClone,
@@ -546,80 +545,6 @@ Object.assign(ORTB2.prototype, {
       impIds.add(impressionId);
       this.adUnitsByImp[impressionId] = adUnit;
 
-      const nativeParams = adUnit.nativeParams;
-      let nativeAssets = deepAccess(nativeParams, 'ortb.assets');
-      if (FEATURES.NATIVE && nativeParams && !nativeAssets) {
-        // TODO: all of this should not be necessary, the same logic is in native.js
-        // will be refactored as part of https://github.com/prebid/Prebid.js/pull/8738
-        let idCounter = -1;
-        try {
-          nativeAssets = Object.keys(nativeParams).reduce((assets, type) => {
-            let params = nativeParams[type];
-
-            function newAsset(obj) {
-              idCounter++;
-              return Object.assign({
-                required: params.required ? 1 : 0,
-                id: (isNumber(params.id)) ? idCounter = params.id : idCounter
-              }, obj ? cleanObj(obj) : {});
-            }
-
-            switch (type) {
-              case 'image':
-              case 'icon':
-                let imgTypeId = nativeImgIdMap[type];
-                let asset = cleanObj({
-                  type: imgTypeId,
-                  w: deepAccess(params, 'sizes.0'),
-                  h: deepAccess(params, 'sizes.1'),
-                  wmin: deepAccess(params, 'aspect_ratios.0.min_width'),
-                  hmin: deepAccess(params, 'aspect_ratios.0.min_height')
-                });
-                if (!((asset.w && asset.h) || (asset.hmin && asset.wmin))) {
-                  throw 'invalid img sizes (must provide sizes or min_height & min_width if using aspect_ratios)';
-                }
-                if (Array.isArray(params.aspect_ratios)) {
-                  // pass aspect_ratios as ext data I guess?
-                  const aspectRatios = params.aspect_ratios
-                    .filter((ar) => ar.ratio_width && ar.ratio_height)
-                    .map(ratio => `${ratio.ratio_width}:${ratio.ratio_height}`);
-                  if (aspectRatios.length > 0) {
-                    asset.ext = {
-                      aspectratios: aspectRatios
-                    }
-                  }
-                }
-                assets.push(newAsset({
-                  img: asset
-                }));
-                break;
-              case 'title':
-                if (!params.len) {
-                  throw 'invalid title.len';
-                }
-                assets.push(newAsset({
-                  title: {
-                    len: params.len
-                  }
-                }));
-                break;
-              default:
-                let dataAssetTypeId = nativeDataIdMap[type];
-                if (dataAssetTypeId) {
-                  assets.push(newAsset({
-                    data: {
-                      type: dataAssetTypeId,
-                      len: params.len
-                    }
-                  }))
-                }
-            }
-            return assets;
-          }, []);
-        } catch (e) {
-          logError('error creating native request: ' + String(e))
-        }
-      }
       const videoParams = deepAccess(adUnit, 'mediaTypes.video');
       const bannerParams = deepAccess(adUnit, 'mediaTypes.banner');
 
@@ -674,8 +599,8 @@ Object.assign(ORTB2.prototype, {
             }, {});
         }
       }
-
-      if (FEATURES.NATIVE && nativeAssets) {
+      const nativeReq = deepAccess(adUnit, 'nativeOrtbRequest')
+      if (FEATURES.NATIVE && nativeReq) {
         const defaultRequest = {
           // TODO: determine best way to pass these and if we allow defaults
           context: 1,
@@ -685,11 +610,9 @@ Object.assign(ORTB2.prototype, {
           ],
           // TODO: figure out how to support privacy field
           // privacy: int
-          assets: nativeAssets
         };
-        const ortbRequest = deepAccess(adUnit, 'nativeOrtbRequest');
         try {
-          const request = ortbRequest ? Object.assign(defaultRequest, ortbRequest) : defaultRequest;
+          const request = Object.assign(defaultRequest, nativeReq);
           mediaTypes[NATIVE] = {
             request: JSON.stringify(request),
             ver: '1.2'
