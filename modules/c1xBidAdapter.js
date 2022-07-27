@@ -1,8 +1,6 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {logInfo, logError} from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { logInfo, logError } from '../src/utils.js';
 import { BANNER } from '../src/mediaTypes.js';
-// import { userSync } from '../src/userSync.js';
-// import { bidderSettings } from '../src/bidderSettings.js';
 
 const BIDDER_CODE = 'c1x';
 const URL = 'https://hb-stg.c1exchange.com/ht';
@@ -28,7 +26,7 @@ export const c1xAdapter = {
    *
    * @param {object} bid The bid to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
-  */
+   */
   // check the bids sent to c1x bidder
   isBidRequestValid: function (bid) {
     if (bid.bidder !== BIDDER_CODE || typeof bid.params === 'undefined') {
@@ -41,15 +39,14 @@ export const c1xAdapter = {
   },
 
   /**
-    * Make a server request from the list of BidRequests.
-    *
-    * @param {BidRequest[]} validBidRequests A non-empty list of valid bid requests that should be sent to the Server.
-    * @return ServerRequest Info describing the request to the server.
+   * Make a server request from the list of BidRequests.
+   *
+   * @param {BidRequest[]} validBidRequests A non-empty list of valid bid requests that should be sent to the Server.
+   * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     let payload = {};
     let tagObj = {};
-    // let pixelUrl = '';
     let bidRequest = [];
     const adunits = validBidRequests.length;
     const rnd = new Date().getTime();
@@ -58,17 +55,13 @@ export const c1xAdapter = {
 
     // flattened tags in a tag object
     tagObj = c1xTags.reduce((current, next) => Object.assign(current, next));
-    // const _bidderSettings = bidderSettings.getSettings();
-    // const pixelId = _bidderSettings.c1x.pixelId || '';
-    // const useSSL = document.location.protocol;
-    // const endpoint = _bidderSettings.c1x.endpoint;
 
     payload = {
       adunits: adunits.toString(),
       rnd: rnd.toString(),
       response: 'json',
       compress: 'gzip'
-    }
+    };
 
     // for GDPR support
     if (bidderRequest && bidderRequest.gdprConsent) {
@@ -76,17 +69,6 @@ export const c1xAdapter = {
       payload['consent_required'] = (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies.toString() : 'true'
       ;
     }
-
-    // if (pixelId) {
-    //   pixelUrl = (useSSL ? 'https:' : 'http:') + PIXEL_ENDPOINT + pixelId;
-    //   if (payload.consent_required) {
-    //     pixelUrl += '&gdpr=' + (bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
-    //     pixelUrl += '&consent=' + encodeURIComponent(bidderRequest.gdprConsent.consentString || '');
-    //   }
-    //   userSync.registerSync('image', BIDDER_CODE, pixelUrl);
-    // }
-
-    // tagObj['site'] = _bidderSettings.c1x.siteId | '';
 
     Object.assign(payload, tagObj);
     let payloadString = stringifyPayload(payload);
@@ -100,7 +82,7 @@ export const c1xAdapter = {
     return bidRequest;
   },
 
-  interpretResponse: function(serverResponse, requests) {
+  interpretResponse: function (serverResponse, requests) {
     serverResponse = serverResponse.body;
     requests = requests.bids || [];
     const currency = 'USD';
@@ -162,7 +144,7 @@ function bidToTag(bid, index) {
   // TODO: Multiple Floor Prices
 
   const sizesArr = bid.sizes;
-  const floorPriceMap = bid.params.floorPriceMap || '';
+  const floorPriceMap = getBidFloor(bid);
 
   const dealId = bid.params.dealId || '';
 
@@ -185,6 +167,26 @@ function bidToTag(bid, index) {
   }
 
   return tag;
+}
+
+function getBidFloor(bidRequest) {
+  let floorInfo = {};
+
+  if (typeof bidRequest.getFloor === 'function') {
+    floorInfo = bidRequest.getFloor({
+      currency: 'USD',
+      mediaType: 'banner',
+      size: '*',
+    });
+  }
+
+  let floor =
+    floorInfo.floor ||
+    bidRequest.params.bidfloor ||
+    bidRequest.params.floorPriceMap ||
+    0;
+
+  return floor;
 }
 
 function bidToShortTag(bid) {

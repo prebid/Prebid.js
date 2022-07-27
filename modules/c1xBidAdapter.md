@@ -20,7 +20,10 @@ Module that connects to C1X's demand sources
     bids: [{
         bidder: 'c1x',
         params: {
-            placementId: 'div-gpt-ad-1654594619717-0'
+            placementId: 'div-gpt-ad-1654594619717-0',
+            'floorPriceMap': {
+                    '300x250': 4.35
+            }
         }
     }]
   }, {
@@ -34,6 +37,9 @@ Module that connects to C1X's demand sources
         bidder: 'c1x',
         params: {
             placementId: 'div-gpt-ad-1654940683355-0',
+            'floorPriceMap': {
+                    '300x250': 4.35
+            }
             dealId: '1233' // optional parameter
         }
     }]
