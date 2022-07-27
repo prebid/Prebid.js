@@ -1,6 +1,5 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
-import { getStorageManager } from '../src/storageManager.js';
 import {
   deepAccess,
   uniques,
@@ -60,44 +59,6 @@ function getTTXConfig() {
   );
 
   return ttxSettings;
-}
-
-export const storage = getStorageManager({gvlid: GVLID, moduleName: BIDDER_CODE})
-export const UA_DATA_KEY = `${BIDDER_CODE}UaReducedData`;
-
-function getStoredUaReducedData() {
-  try {
-    return JSON.parse(storage.getDataFromLocalStorage(UA_DATA_KEY));
-  } catch (err) {
-    return null;
-  }
-}
-
-function storeUaReducedData(uaData) {
-  storage.setDataInLocalStorage(UA_DATA_KEY, JSON.stringify(uaData));
-}
-
-function calculateUaReducedData() {
-  let uaReducedData = {};
-
-  // eslint-disable-next-line no-unused-expressions
-  getWindowSelf().navigator.userAgentData?.getHighEntropyValues(
-    ['model', 'uaFullVersion', 'platformVersion']
-  ).then((uaData) => {
-    uaReducedData = uaData;
-
-    if (Object.values(uaData).find(value => !!value).length) {
-      storeUaReducedData(uaReducedData);
-    }
-  });
-
-  return uaReducedData;
-}
-
-calculateUaReducedData();
-
-function fetchUAReducedData() {
-  return getStoredUaReducedData() || calculateUaReducedData();
 }
 
 // **************************** VALIDATION *************************** //
@@ -781,23 +742,14 @@ function _createSync({ siteId = 'zzz000000000003zzz', gdprConsent = {}, uspConse
 function _buildDeviceORTB() {
   const win = getWindowSelf();
 
-  const {
-    uaFullVersion: uafv,
-    platformVersion: pfv,
-    model
-  } = fetchUAReducedData();
-
   return {
     ext: {
       ttx: {
         ...getScreenDimensions(),
         pxr: win.devicePixelRatio,
-        pfv,
-        ...(model ? { mdl: model } : {}),
         vp: getViewportDimensions(),
         ah: win.screen.availHeight,
-        mtp: win.navigator.maxTouchPoints,
-        uafv
+        mtp: win.navigator.maxTouchPoints
       }
     }
   };

@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 
-import { spec, storage, UA_DATA_KEY } from 'modules/33acrossBidAdapter.js';
+import { spec } from 'modules/33acrossBidAdapter.js';
 
 function validateBuiltServerRequest(builtReq, expectedReq) {
   expect(builtReq.url).to.equal(expectedReq.url);
@@ -36,15 +36,12 @@ describe('33acrossBidAdapter:', function () {
             w: 1024,
             h: 728,
             pxr: 2,
-            pfv: 'fooosversion',
-            mdl: 'foomodel',
             vp: {
               w: 800,
               h: 600
             },
             ah: 500,
-            mtp: 0,
-            uafv: 'foouafullversion'
+            mtp: 0
           }
         }
       },
@@ -403,20 +400,7 @@ describe('33acrossBidAdapter:', function () {
         availHeight: 500
       },
       navigator: {
-        maxTouchPoints: 0,
-        userAgentData: {
-          getHighEntropyValues() {
-            return {
-              then(fn) {
-                fn({
-                  platformVersion: 'fooosversion',
-                  uaFullVersion: 'foouafullversion',
-                  model: 'foomodel'
-                });
-              }
-            }
-          }
-        }
+        maxTouchPoints: 0
       },
       document: {
         visibilityState: 'visible',
@@ -440,10 +424,6 @@ describe('33acrossBidAdapter:', function () {
     sandbox.stub(document, 'getElementById').returns(element);
     sandbox.stub(utils, 'getWindowTop').returns(win);
     sandbox.stub(utils, 'getWindowSelf').returns(win);
-    sandbox
-      .stub(storage, 'getDataFromLocalStorage')
-      .withArgs(UA_DATA_KEY)
-      .returns(null);
   });
 
   afterEach(function() {
@@ -1220,24 +1200,6 @@ describe('33acrossBidAdapter:', function () {
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
-    });
-
-    it('stores the user agent entropy values', function() {
-      const ttxRequest = new TtxRequestBuilder()
-        .build();
-      const serverRequest = new ServerRequestBuilder()
-        .withData(ttxRequest)
-        .build();
-
-      sandbox.spy(storage, 'setDataInLocalStorage');
-
-      spec.buildRequests(bidRequests);
-
-      sinon.assert.calledWith(storage.setDataInLocalStorage, UA_DATA_KEY, JSON.stringify({
-        platformVersion: 'fooosversion',
-        uaFullVersion: 'foouafullversion',
-        model: 'foomodel'
-      }));
     });
 
     context('when referer value is not available', function() {
