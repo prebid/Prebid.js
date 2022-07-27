@@ -85,7 +85,6 @@ const { NATIVE_ASSET_TYPES, NATIVE_IMAGE_TYPES, PREBID_NATIVE_DATA_KEYS_TO_ORTB,
 const PREBID_NATIVE_DATA_KEYS_TO_ORTB_INVERSE = inverse(PREBID_NATIVE_DATA_KEYS_TO_ORTB);
 const NATIVE_ASSET_TYPES_INVERSE = inverse(NATIVE_ASSET_TYPES);
 
-export const nativeMapper = new Map();
 /**
  * Recieves nativeParams from an adUnit. If the params were not of type 'type',
  * passes them on directly. If they were of type 'type', translate
@@ -206,10 +205,8 @@ export const hasNonNativeBidder = adUnit =>
 export function nativeBidIsValid(bid, {index = auctionManager.index} = {}) {
   const adUnit = index.getAdUnit(bid);
   if (!adUnit) { return false; }
-  let ortbRequest =
-  adUnit?.nativeParams?.ortb || nativeMapper.get(bid.requestId) || toOrtbNativeRequest(adUnit.nativeParams);
-  let ortbResponse =
-  bid.native?.ortb || toOrtbNativeResponse(bid.native, ortbRequest);
+  let ortbRequest = adUnit.nativeOrtbRequest
+  let ortbResponse = bid.native?.ortb || toOrtbNativeResponse(bid.native, ortbRequest);
   return isNativeOpenRTBBidValid(ortbResponse, ortbRequest);
 }
 
@@ -494,7 +491,7 @@ export function toOrtbNativeRequest(legacyNativeAssets) {
 
       // if asset.sizes exist, by OpenRTB spec we should remove wmin and hmin
       if (asset.sizes) {
-        if (asset.sizes.length != 2 || !isInteger(asset.sizes[0]) || !isInteger(asset.sizes[1])) {
+        if (asset.sizes.length !== 2 || !isInteger(asset.sizes[0]) || !isInteger(asset.sizes[1])) {
           logError('image.sizes was passed, but its value is not an array of integers:', asset.sizes);
         } else {
           ortbAsset.img.w = asset.sizes[0];
@@ -622,6 +619,9 @@ export function convertOrtbRequestToProprietaryNative(bidRequests) {
 }
 
 export function toOrtbNativeResponse(legacyResponse, ortbRequest) {
+  // copy the request, so we don't pollute it with response data below
+  ortbRequest = deepClone(ortbRequest);
+
   const ortbResponse = {
     link: {},
     assets: [],
@@ -657,7 +657,7 @@ export function toOrtbNativeResponse(legacyResponse, ortbRequest) {
       case 'javascriptTrackers':
         ortbResponse.eventtrackers.push({
           event: 1,
-          method: key == 'impressionTrackers' ? 1 : 2,
+          method: key === 'impressionTrackers' ? 1 : 2,
           url: value,
         });
         break;
