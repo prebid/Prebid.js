@@ -1,5 +1,4 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { deepAccess } from '../src/utils.js';
 const BIDDER_CODE = 'mabidder';
@@ -10,10 +9,10 @@ export const spec = {
     if (typeof bid.params === 'undefined') {
       return false;
     }
-    return !!(bid.params.accountId && bid.params.placementId && bid.params.ppid && bid.sizes && Array.isArray(bid.sizes) && Array.isArray(bid.sizes[0]))
+    return !!(bid.params.ppid && bid.sizes && Array.isArray(bid.sizes) && Array.isArray(bid.sizes[0]))
   },
   buildRequests: function(validBidRequests, bidderRequest) {
-    const fpd = config.getConfig('ortb2');
+    const fpd = bidderRequest.ortb2;
     const bids = [];
 
     validBidRequests.forEach(bidRequest => {
@@ -32,15 +31,15 @@ export const spec = {
       })
     });
     const req = {
-        url: baseUrl,
-        method: 'POST',
-        data: {
-          v: $$PREBID_GLOBAL$$.version,
-          bids: bids,
-          url: bidderRequest.refererInfo.canonicalUrl || '',
-          referer: bidderRequest.refererInfo.referer || '',
-          fpd: fpd ? JSON.stringify(fpd) : JSON.stringify({})
-        }
+      url: baseUrl,
+      method: 'POST',
+      data: {
+        v: $$PREBID_GLOBAL$$.version,
+        bids: bids,
+        url: bidderRequest.refererInfo.canonicalUrl || '',
+        referer: bidderRequest.refererInfo.referer || '',
+        fpd: fpd ? JSON.stringify(fpd) : JSON.stringify({})
+      }
     };
 
     return req;
