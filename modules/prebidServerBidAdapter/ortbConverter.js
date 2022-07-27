@@ -110,7 +110,7 @@ const PBS_CONVERTER = ortbConverter({
         imp.id = context.impId;
       },
       nativeMapper(orig, imp, proxyBidRequest, context) {
-        for (const req of context.actualBidderRequests) {
+        for (const req of context.actualBidRequests.values()) {
           orig(imp, req, context);
         }
       },
