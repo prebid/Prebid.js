@@ -150,7 +150,6 @@ const sendAuctionEvent = (auctionId, trigger) => {
 const formatAuction = auction => {
   const auctionEvent = deepClone(auction);
 
-  console.log('FORMAT AUCTION: ', JSON.stringify(auctionEvent, null, 2));
   // We stored adUnits and bids as objects for quick lookups, now they are mapped into arrays for PBA
   auctionEvent.adUnits = Object.entries(auctionEvent.adUnits).map(([tid, adUnit]) => {
     adUnit.bids = Object.entries(adUnit.bids).map(([bidId, bid]) => {
