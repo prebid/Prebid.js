@@ -222,7 +222,6 @@ function getBid(requestId, currency, bidResponse) {
   if (!bidResponse) {
     return;
   }
-  
   if (typeof bidResponse['exp'] == 'undefined') {
     bidResponse['exp'] = 60;
   }
