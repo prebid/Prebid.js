@@ -222,7 +222,6 @@ function getBid(requestId, currency, bidResponse) {
   if (!bidResponse) {
     return;
   }
-  
   const {
     price: cpm, crid: creativeId, adm: ad, w: width, h: height, exp: ttl, adomain: advertiserDomains, meta = {}
   } = bidResponse;
