@@ -791,7 +791,7 @@ export function setOrtbImpBidFloor(imp, bidRequest, context) {
  */
 export function setOrtbExtPrebidFloors(ortbRequest) {
   if (addedFloorsHook) {
-    deepSetValue(ortbRequest, 'ext.prebid.floors.enabled', false);
+    deepSetValue(ortbRequest, 'ext.prebid.floors.enabled', ortbRequest.ext?.prebid?.floors?.enabled || false);
   }
 }
 

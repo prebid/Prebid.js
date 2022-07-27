@@ -1,5 +1,6 @@
 import {config} from 'src/config.js';
 import {setOrtbExtPrebidFloors, setOrtbImpBidFloor} from '../../../modules/priceFloors.js';
+import 'src/prebid.js';
 
 describe('pbjs - ortb imp floor params', () => {
   before(() => {
@@ -111,3 +112,32 @@ describe('pbjs - ortb imp floor params', () => {
     expect(reqMediaType).to.eql('banner');
   })
 });
+
+describe('setOrtbExtPrebidFloors', () => {
+  before(() => {
+    config.setConfig({floors: {}});
+  })
+  after(() => {
+    config.setConfig({floors: {enabled: false}});
+  });
+
+  it('should set ext.prebid.floors.enabled to false', () => {
+    const req = {};
+    setOrtbExtPrebidFloors(req);
+    expect(req.ext.prebid.floors.enabled).to.equal(false);
+  })
+
+  it('should respect fpd', () => {
+    const req = {
+      ext: {
+        prebid: {
+          floors: {
+            enabled: true
+          }
+        }
+      }
+    }
+    setOrtbExtPrebidFloors(req);
+    expect(req.ext.prebid.floors.enabled).to.equal(true);
+  })
+})
