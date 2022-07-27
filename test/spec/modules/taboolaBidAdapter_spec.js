@@ -391,7 +391,7 @@ describe('Taboola Adapter', function () {
     it('should set the correct ttl form the response', function () {
       // set exp-ttl to be 125
       const [bid] = serverResponse.body.seatbid[0].bid;
-      serverResponse.body.seatbid[0].bid[0].exp = 125
+      serverResponse.body.seatbid[0].bid[0].exp = 125;
       const expectedRes = [
         {
           requestId: request.bids[0].bidId,
