@@ -29,6 +29,8 @@ import {ADPOD, BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {auctionManager} from '../src/auctionManager.js';
 import {find, includes} from '../src/polyfill.js';
 import {INSTREAM, OUTSTREAM} from '../src/video.js';
+import {hasPurpose1Consent} from '../src/utils/gpdr.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'goldbach';
 const URL = 'https://ib.adnxs.com/ut/v3/prebid';
@@ -112,6 +114,9 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (bidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
+
     let localBidRequests = [];
     bidRequests.forEach(bid => {
       if (Array.isArray(bid.params.placementId)) {
@@ -246,7 +251,8 @@ export const spec = {
 
     if (bidderRequest && bidderRequest.refererInfo) {
       let refererinfo = {
-        rd_ref: encodeURIComponent(bidderRequest.refererInfo.referer),
+        // TODO: this collects everything it finds, except for topmostLocation
+        rd_ref: encodeURIComponent(bidderRequest.refererInfo.topmostLocation),
         rd_top: bidderRequest.refererInfo.reachedTop,
         rd_ifs: bidderRequest.refererInfo.numIframes,
         rd_stk: bidderRequest.refererInfo.stack.map((url) => encodeURIComponent(url)).join(',')
@@ -267,7 +273,6 @@ export const spec = {
     if (bidRequests[0].userId) {
       let eids = [];
 
-      addUserId(eids, deepAccess(bidRequests[0], `userId.flocId.id`), 'chrome.com', null);
       addUserId(eids, deepAccess(bidRequests[0], `userId.criteoId`), 'criteo.com', null);
       addUserId(eids, deepAccess(bidRequests[0], `userId.netId`), 'netid.de', null);
       addUserId(eids, deepAccess(bidRequests[0], `userId.idl_env`), 'liveramp.com', null);
@@ -533,16 +538,6 @@ function getViewabilityScriptUrlFromPayload(viewJsPayload) {
   return jsTrackerSrc;
 }
 
-function hasPurpose1Consent(bidderRequest) {
-  let result = true;
-  if (bidderRequest && bidderRequest.gdprConsent) {
-    if (bidderRequest.gdprConsent.gdprApplies && bidderRequest.gdprConsent.apiVersion === 2) {
-      result = !!(deepAccess(bidderRequest.gdprConsent, 'vendorData.purpose.consents.1') === true);
-    }
-  }
-  return result;
-}
-
 function formatRequest(payload, bidderRequest) {
   let request = [];
   let options = {
@@ -551,7 +546,7 @@ function formatRequest(payload, bidderRequest) {
 
   let endpointUrl = URL;
 
-  if (!hasPurpose1Consent(bidderRequest)) {
+  if (!hasPurpose1Consent(bidderRequest?.gdprConsent)) {
     endpointUrl = URL_SIMPLE;
   }
 

@@ -23,7 +23,7 @@ export const spec = {
           output: 'js',
           pub: bidRequest.params.pub,
           zone: bidRequest.params.zone,
-          url: bidderRequest && bidderRequest.refererInfo ? encodeURIComponent(bidderRequest.refererInfo.referer) : '',
+          url: bidderRequest && bidderRequest.refererInfo ? encodeURIComponent(bidderRequest.refererInfo.page) : '',
           width: arrSize[0],
           height: arrSize[1],
           vpw: window.screen.width,

@@ -26,12 +26,12 @@ export let storageCallbacks = [];
  * @param {storageOptions} options
  */
 export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = {}, {bidderSettings = defaultBidderSettings} = {}) {
-  function isBidderDisallowed() {
+  function isBidderAllowed() {
     if (bidderCode == null) {
-      return false;
+      return true;
     }
     const storageAllowed = bidderSettings.get(bidderCode, 'storageAllowed');
-    return storageAllowed == null ? false : !storageAllowed;
+    return storageAllowed == null ? false : storageAllowed;
   }
   function isValid(cb) {
     if (includes(moduleTypeWhiteList, moduleType)) {
@@ -39,7 +39,7 @@ export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = 
         valid: true
       }
       return cb(result);
-    } else if (isBidderDisallowed()) {
+    } else if (!isBidderAllowed()) {
       logInfo(`bidderSettings denied access to device storage for bidder '${bidderCode}'`);
       const result = {valid: false};
       return cb(result);

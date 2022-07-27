@@ -599,7 +599,9 @@ describe('targeting tests', function () {
           }
         });
         const defaultKeys = new Set(Object.values(CONSTANTS.DEFAULT_TARGETING_KEYS));
-        Object.values(CONSTANTS.NATIVE_KEYS).forEach((k) => defaultKeys.add(k));
+        if (FEATURES.NATIVE) {
+          Object.values(CONSTANTS.NATIVE_KEYS).forEach((k) => defaultKeys.add(k));
+        }
 
         const expectedKeys = new Set();
         bidsReceived
@@ -802,26 +804,28 @@ describe('targeting tests', function () {
       expect(targeting['/123456/header-bid-tag-0'][CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_rubicon']).to.deep.equal(targeting['/123456/header-bid-tag-0'][CONSTANTS.TARGETING_KEYS.PRICE_BUCKET]);
     });
 
-    it('ensures keys are properly generated when enableSendAllBids is true and multiple bidders use native', function() {
-      const nativeAdUnitCode = '/19968336/prebid_native_example_1';
-      enableSendAllBids = true;
+    if (FEATURES.NATIVE) {
+      it('ensures keys are properly generated when enableSendAllBids is true and multiple bidders use native', function () {
+        const nativeAdUnitCode = '/19968336/prebid_native_example_1';
+        enableSendAllBids = true;
 
-      // update mocks for this test to return native bids
-      amBidsReceivedStub.callsFake(function() {
-        return [nativeBid1, nativeBid2];
-      });
-      amGetAdUnitsStub.callsFake(function() {
-        return [nativeAdUnitCode];
-      });
+        // update mocks for this test to return native bids
+        amBidsReceivedStub.callsFake(function () {
+          return [nativeBid1, nativeBid2];
+        });
+        amGetAdUnitsStub.callsFake(function () {
+          return [nativeAdUnitCode];
+        });
 
-      let targeting = targetingInstance.getAllTargeting([nativeAdUnitCode]);
-      expect(targeting[nativeAdUnitCode].hb_native_image).to.equal(nativeBid1.native.image.url);
-      expect(targeting[nativeAdUnitCode].hb_native_linkurl).to.equal(nativeBid1.native.clickUrl);
-      expect(targeting[nativeAdUnitCode].hb_native_title).to.equal(nativeBid1.native.title);
-      expect(targeting[nativeAdUnitCode].hb_native_image_dgad).to.exist.and.to.equal(nativeBid2.native.image.url);
-      expect(targeting[nativeAdUnitCode].hb_pb_dgads).to.exist.and.to.equal(nativeBid2.pbMg);
-      expect(targeting[nativeAdUnitCode].hb_native_body_appne).to.exist.and.to.equal(nativeBid1.native.body);
-    });
+        let targeting = targetingInstance.getAllTargeting([nativeAdUnitCode]);
+        expect(targeting[nativeAdUnitCode].hb_native_image).to.equal(nativeBid1.native.image.url);
+        expect(targeting[nativeAdUnitCode].hb_native_linkurl).to.equal(nativeBid1.native.clickUrl);
+        expect(targeting[nativeAdUnitCode].hb_native_title).to.equal(nativeBid1.native.title);
+        expect(targeting[nativeAdUnitCode].hb_native_image_dgad).to.exist.and.to.equal(nativeBid2.native.image.url);
+        expect(targeting[nativeAdUnitCode].hb_pb_dgads).to.exist.and.to.equal(nativeBid2.pbMg);
+        expect(targeting[nativeAdUnitCode].hb_native_body_appne).to.exist.and.to.equal(nativeBid1.native.body);
+      });
+    }
 
     it('does not include adpod type bids in the getBidsReceived results', function () {
       let adpodBid = utils.deepClone(bid1);

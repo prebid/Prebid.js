@@ -1,6 +1,7 @@
 import { isFn, deepAccess, getWindowTop } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'mobfoxpb';
 const AD_URL = 'https://bes.mobfox.com/pbjs';
@@ -48,6 +49,8 @@ export const spec = {
   },
 
   buildRequests: (validBidRequests = [], bidderRequest) => {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
     const winTop = getWindowTop();
     const location = winTop.location;
     const placements = [];
