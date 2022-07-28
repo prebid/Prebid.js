@@ -480,7 +480,7 @@ export function toOrtbNativeRequest(legacyNativeAssets) {
   };
   for (let key in legacyNativeAssets) {
     // skip conversion for non-asset keys
-    if (key in NATIVE_KEYS_THAT_ARE_NOT_ASSETS) continue;
+    if (NATIVE_KEYS_THAT_ARE_NOT_ASSETS.includes(key)) continue;
 
     const asset = legacyNativeAssets[key];
     let required = 0;
