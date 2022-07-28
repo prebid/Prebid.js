@@ -29,6 +29,9 @@ const converter = ortbConverter({
   },
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
+    if (bidRequest.mediaTypes[VIDEO]?.context === 'outstream') {
+      imp.video.placement = imp.video.placement || 4;
+    }
     mergeDeep(imp, {
       tagid: bidRequest.params.unit,
       ext: {

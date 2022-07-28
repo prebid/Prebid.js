@@ -6,7 +6,6 @@ const PBJS_SPECIFIC_VIDEO_PARAMS = new Set(['context', 'playerSize'])
 
 const PLACEMENT = {
   'instream': 1,
-  'outstream': 4
 }
 
 export function fillVideoImp(imp, bidRequest, context) {
