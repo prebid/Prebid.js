@@ -12,6 +12,7 @@ import {hook} from '../../../../src/hook.js';
 import {auctionManager} from '../../../../src/auctionManager.js';
 import {stubAuctionIndex} from '../../../helpers/indexStub.js';
 import { bidderSettings } from '../../../../src/bidderSettings.js';
+import {decorateAdUnitsWithNativeParams} from '../../../../src/native.js';
 
 const CODE = 'sampleBidder';
 const MOCK_BIDS_REQUEST = {
@@ -882,6 +883,7 @@ describe('validate bid response: ', function () {
           title: {'required': true},
         }
       }]
+      decorateAdUnitsWithNativeParams(adUnits);
       let bidRequest = {
         bids: [{
           bidId: '1',
@@ -923,6 +925,7 @@ describe('validate bid response: ', function () {
           title: {'required': true},
         },
       }];
+      decorateAdUnitsWithNativeParams(adUnits);
       let bidRequest = {
         bids: [{
           bidId: '1',
