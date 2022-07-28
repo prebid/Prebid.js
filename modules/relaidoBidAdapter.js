@@ -106,7 +106,6 @@ function buildRequests(validBidRequests, bidderRequest) {
     pv: '$prebid.version$',
     imuid: imuid,
     canonical_url_hash: getCanonicalUrlHash(bidderRequest.refererInfo),
-    // TODO: is 'page' the right value here?
     ref: bidderRequest.refererInfo.page
   });
 
