@@ -1369,6 +1369,7 @@ describe('S2S Adapter', function () {
             bundle: 'com.test.app',
             publisher: { 'id': '1' }
           });
+          expect(requestBid.imp[0].native.ver).to.equal('1.2');
         });
 
         it('adds native request for OpenRTB', function () {
