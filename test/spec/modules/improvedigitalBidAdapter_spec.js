@@ -1,9 +1,20 @@
 import { expect } from 'chai';
-import { spec } from 'modules/improvedigitalBidAdapter.js';
+import {CONVERTER, spec} from 'modules/improvedigitalBidAdapter.js';
 import { config } from 'src/config.js';
 import { deepClone } from 'src/utils.js';
 import {BANNER, NATIVE, VIDEO} from '../../../src/mediaTypes';
 import { deepSetValue } from '../../../src/utils';
+// load modules that register ORTB processors
+import 'src/prebid.js';
+import 'modules/currency.js';
+import 'modules/userId/index.js';
+import 'modules/multibid/index.js';
+import 'modules/priceFloors.js';
+import 'modules/consentManagement.js';
+import 'modules/consentManagementUsp.js';
+import 'modules/schain.js';
+import {decorateAdUnitsWithNativeParams, toLegacyResponse} from '../../../src/native.js';
+import {createEidsArray} from '../../../modules/userId/eids.js';
 
 describe('Improve Digital Adapter Tests', function () {
   const METHOD = 'POST';
@@ -92,6 +103,7 @@ describe('Improve Digital Adapter Tests', function () {
   };
 
   const simpleSmartTagBidRequest = {
+    mediaTypes: {},
     bidder: 'improvedigital',
     bidId: '1a2b3c',
     placementCode: 'placement1',
@@ -102,27 +114,27 @@ describe('Improve Digital Adapter Tests', function () {
   };
 
   const bidderRequest = {
-    bids: [simpleBidRequest]
+    bids: [simpleBidRequest],
   };
 
   const extendBidderRequest = {
-    bids: [extendBidRequest]
+    bids: [extendBidRequest],
   };
 
   const instreamBidderRequest = {
-    bids: [instreamBidRequest]
+    bids: [instreamBidRequest],
   };
 
   const outstreamBidderRequest = {
-    bids: [outstreamBidRequest]
+    bids: [outstreamBidRequest],
   };
 
   const multiFormatBidderRequest = {
-    bids: [multiFormatBidRequest]
+    bids: [multiFormatBidRequest],
   };
 
   const nativeBidderRequest = {
-    bids: [nativeBidRequest]
+    bids: [nativeBidRequest],
   };
 
   const gdprConsent = {
@@ -145,6 +157,12 @@ describe('Improve Digital Adapter Tests', function () {
       domain: 'blah.com'
     },
   };
+
+  function updateNativeParams(bidRequests) {
+    bidRequests = deepClone(bidRequests);
+    decorateAdUnitsWithNativeParams(bidRequests);
+    return bidRequests;
+  }
 
   describe('isBidRequestValid', function () {
     it('should return false when no bid', function () {
@@ -202,7 +220,6 @@ describe('Improve Digital Adapter Tests', function () {
       expect(request).to.be.an('object');
       expect(request.method).to.equal(METHOD);
       expect(request.url).to.equal(AD_SERVER_URL);
-      expect(request.bidderRequest).to.deep.equal(bidderRequest);
 
       const payload = JSON.parse(request.data);
       expect(payload).to.be.an('object');
@@ -211,11 +228,11 @@ describe('Improve Digital Adapter Tests', function () {
       expect(payload.cur).to.be.an('array');
       expect(payload.regs).to.not.exist;
       expect(payload.schain).to.not.exist;
-      expect(payload.source).to.deep.equal({ ext: {}, tid: 'f183e871-fbed-45f0-a427-c8a63c4c01eb' });
+      sinon.assert.match(payload.source, {tid: 'f183e871-fbed-45f0-a427-c8a63c4c01eb'})
       expect(payload.device).to.be.an('object');
       expect(payload.user).to.not.exist;
-      expect(payload.imp).to.deep.equal([
-        {
+      sinon.assert.match(payload.imp, [
+        sinon.match({
           id: '33e9500b21129f',
           secure: 0,
           ext: {
@@ -229,28 +246,23 @@ describe('Improve Digital Adapter Tests', function () {
               {w: 160, h: 600},
             ]
           }
-        }
+        })
       ]);
     });
 
     it('should make a well-formed request object for multi-format ad unit', function () {
       getConfigStub = sinon.stub(config, 'getConfig');
       getConfigStub.withArgs('improvedigital.usePrebidSizes').returns(true);
-      const request = spec.buildRequests([multiFormatBidRequest], multiFormatBidderRequest)[0];
+      const request = spec.buildRequests(updateNativeParams([multiFormatBidRequest]), multiFormatBidderRequest)[0];
       expect(request).to.be.an('object');
       expect(request.method).to.equal(METHOD);
       expect(request.url).to.equal(AD_SERVER_URL);
-      expect(request.bidderRequest).to.deep.equal(multiFormatBidderRequest);
 
       const payload = JSON.parse(request.data);
       expect(payload).to.be.an('object');
-      expect(payload.imp).to.deep.equal([
-        {
+      sinon.assert.match(payload.imp, [
+        sinon.match({
           id: '33e9500b21129f',
-          native: {
-            request: '{"assets":[{"id":3,"required":1,"data":{"type":2}}]}',
-            ver: '1.2'
-          },
           secure: 0,
           ext: {
             bidder: {
@@ -269,53 +281,54 @@ describe('Improve Digital Adapter Tests', function () {
               {w: 160, h: 600},
             ]
           }
-        }
+        })
       ]);
+      if (FEATURES.NATIVE) {
+        sinon.assert.match(payload.imp[0], {
+          native: {
+            ver: '1.2'
+          },
+        })
+        const nativeReq = JSON.parse(payload.imp[0].native.request);
+        sinon.assert.match(nativeReq, {
+          eventtrackers: [
+            {event: 1, methods: [1, 2]},
+          ],
+          'assets': [
+            sinon.match({'required': 1, 'data': {'type': 2}})
+          ]
+        });
+      }
     });
 
-    it('should make a well-formed native request', function () {
-      const payload = JSON.parse(spec.buildRequests([nativeBidRequest], {})[0].data);
-      expect(payload.imp[0].native).to.deep.equal({
-        ver: '1.2',
-        request: '{\"assets\":[{\"id\":0,\"required\":1,\"title\":{\"len\":140}},{\"id\":3,\"required\":1,\"data\":{\"type\":2}}]}'
+    if (FEATURES.NATIVE) {
+      it('should make a well-formed native request', function () {
+        const payload = JSON.parse(spec.buildRequests(updateNativeParams([nativeBidRequest]), {})[0].data);
+        const nativeReq = JSON.parse(payload.imp[0].native.request);
+        sinon.assert.match(nativeReq, {
+          eventtrackers: [
+            {event: 1, methods: [1, 2]},
+          ],
+          assets: [
+            sinon.match({required: 1, title: {len: 140}}),
+            sinon.match({required: 1, data: {type: 2}})
+          ]
+        })
       });
-    });
 
-    it('should not make native request when nativeParams is undefined', function () {
-      const request = deepClone(nativeBidRequest);
-      delete request.nativeParams;
-      const payload = JSON.parse(spec.buildRequests([request], {})[0].data);
-      expect(payload.imp[0].native).to.not.exist;
-    });
-
-    it('should not make native request when no assets', function () {
-      const request = deepClone(nativeBidRequest);
-      request.nativeParams = {};
-      const payload = JSON.parse(spec.buildRequests([request], {})[0].data);
-      expect(payload.imp[0].native).to.not.exist;
-    });
-
-    it('should make a well-formed native request', function () {
-      const payload = JSON.parse(spec.buildRequests([nativeBidRequest], {})[0].data);
-      expect(payload.imp[0].native).to.deep.equal({
-        ver: '1.2',
-        request: '{\"assets\":[{\"id\":0,\"required\":1,\"title\":{\"len\":140}},{\"id\":3,\"required\":1,\"data\":{\"type\":2}}]}'
+      it('should not make native request when nativeOrtbRequest is undefined', function () {
+        const requests = updateNativeParams([nativeBidRequest]);
+        delete requests[0].nativeOrtbRequest;
+        const payload = JSON.parse(spec.buildRequests(requests, {})[0].data);
+        expect(payload.imp[0].native).to.not.exist;
       });
-    });
 
-    it('should not make native request when nativeParams is undefined', function () {
-      const request = deepClone(nativeBidRequest);
-      delete request.nativeParams;
-      const payload = JSON.parse(spec.buildRequests([request], {})[0].data);
-      expect(payload.imp[0].native).to.not.exist;
-    });
-
-    it('should not make native request when no assets', function () {
-      const request = deepClone(nativeBidRequest);
-      request.nativeParams = {};
-      const payload = JSON.parse(spec.buildRequests([request], {})[0].data);
-      expect(payload.imp[0].native).to.not.exist;
-    });
+      it('should not make native request when no assets', function () {
+        const requests = updateNativeParams([{...nativeBidRequest, nativeParams: {}}])
+        const payload = JSON.parse(spec.buildRequests(requests, {})[0].data);
+        expect(payload.imp[0].native).to.not.exist;
+      });
+    }
 
     it('should set placementKey and publisherId for smart tags', function () {
       const payload = JSON.parse(spec.buildRequests([simpleSmartTagBidRequest], bidderRequest)[0].data);
@@ -582,7 +595,7 @@ describe('Improve Digital Adapter Tests', function () {
         }]
       }]}};
       const bidRequest = Object.assign({}, simpleBidRequest);
-      bidRequest.userId = userId;
+      bidRequest.userIdAsEids = createEidsArray(userId);
       const request = spec.buildRequests([bidRequest], bidderRequestReferrer)[0];
       const payload = JSON.parse(request.data);
       expect(payload.user).to.deep.equal(expectedUserObject);
@@ -595,8 +608,6 @@ describe('Improve Digital Adapter Tests', function () {
       ], bidderRequest);
       expect(requests).to.be.an('array');
       expect(requests.length).to.equal(2);
-      expect(requests[0].bidderRequest).to.deep.equal(bidderRequest);
-      expect(requests[1].bidderRequest).to.deep.equal(bidderRequest);
     });
 
     it('should return one request in a single request mode', function () {
@@ -631,7 +642,7 @@ describe('Improve Digital Adapter Tests', function () {
       getConfigStub.withArgs('improvedigital.usePrebidSizes').returns(true);
       const request = spec.buildRequests([simpleBidRequest], bidderRequest)[0];
       const payload = JSON.parse(request.data);
-      expect(payload.imp[0].banner).to.deep.equal({
+      sinon.assert.match(payload.imp[0].banner, {
         format: [
           { w: 300, h: 250 },
           { w: 160, h: 600 }
@@ -650,7 +661,7 @@ describe('Improve Digital Adapter Tests', function () {
       bidRequest.params.size = size;
       const request = spec.buildRequests([bidRequest], bidderRequest)[0];
       const payload = JSON.parse(request.data);
-      expect(payload.imp[0].banner).to.deep.equal({
+      sinon.assert.match(payload.imp[0].banner, {
         format: [
           { w: 300, h: 250 },
           { w: 160, h: 600 }
@@ -746,6 +757,7 @@ describe('Improve Digital Adapter Tests', function () {
     it('should set site when app not available', function () {
       getConfigStub = sinon.stub(config, 'getConfig');
       getConfigStub.withArgs('app').returns(undefined);
+      getConfigStub.withArgs('site').returns({});
       let request = spec.buildRequests([simpleBidRequest], bidderRequest)[0];
       let payload = JSON.parse(request.data);
       expect(payload.site).does.exist;
@@ -1036,9 +1048,6 @@ describe('Improve Digital Adapter Tests', function () {
         dealId: 320896,
         netRevenue: false,
         mediaType: BANNER,
-        meta: {
-          advertiserDomains: []
-        }
       }
     ];
 
@@ -1056,9 +1065,6 @@ describe('Improve Digital Adapter Tests', function () {
         dealId: 320896,
         netRevenue: false,
         mediaType: BANNER,
-        meta: {
-          advertiserDomains: []
-        }
       }
     ];
 
@@ -1084,93 +1090,105 @@ describe('Improve Digital Adapter Tests', function () {
       content: expectedBidOutstreamVideo[0].vastXml
     };
 
+    function makeRequest(bidderRequest) {
+      return {
+        ortbRequest: CONVERTER.toORTB({bidderRequest})
+      }
+    }
+
+    function expectMatch(actual, expected) {
+      sinon.assert.match(actual, expected.map(i => sinon.match(i)));
+    }
+
     it('should return a well-formed display bid', function () {
-      const bids = spec.interpretResponse(serverResponse, {bidderRequest});
-      expect(bids).to.deep.equal(expectedBid);
+      const bids = spec.interpretResponse(serverResponse, makeRequest(bidderRequest));
+      expectMatch(bids, expectedBid);
     });
 
     it('should return a well-formed display bid for multi-format ad unit', function () {
-      const bids = spec.interpretResponse(serverResponse, {bidderRequest: multiFormatBidderRequest});
-      expect(bids).to.deep.equal(expectedBid);
+      const bids = spec.interpretResponse(serverResponse, makeRequest(multiFormatBidderRequest));
+      expectMatch(bids, expectedBid);
     });
 
     it('should return two bids', function () {
-      const bids = spec.interpretResponse(serverResponseTwoBids, {bidderRequest});
-      expect(bids).to.deep.equal(expectedTwoBids);
+      const bids = spec.interpretResponse(serverResponseTwoBids, makeRequest(bidderRequest));
+      expectMatch(bids, expectedTwoBids);
     });
 
     it('should set dealId correctly', function () {
+      const request = makeRequest(bidderRequest);
       const response = deepClone(serverResponse);
       let bids;
 
       delete response.body.seatbid[0].bid[0].ext.improvedigital.line_item_id;
       response.body.seatbid[0].bid[0].ext.improvedigital.buying_type = 'deal_id';
-      bids = spec.interpretResponse(response, {bidderRequest});
+      bids = spec.interpretResponse(response, request);
       expect(bids[0].dealId).to.not.exist;
 
       response.body.seatbid[0].bid[0].ext.improvedigital.line_item_id = 268515;
       delete response.body.seatbid[0].bid[0].ext.improvedigital.buying_type;
-      bids = spec.interpretResponse(response, {bidderRequest});
+      bids = spec.interpretResponse(response, request);
       expect(bids[0].dealId).to.not.exist;
 
       response.body.seatbid[0].bid[0].ext.improvedigital.line_item_id = 268515;
       response.body.seatbid[0].bid[0].ext.improvedigital.buying_type = 'rtb';
-      bids = spec.interpretResponse(response, {bidderRequest});
+      bids = spec.interpretResponse(response, request);
       expect(bids[0].dealId).to.not.exist;
 
       response.body.seatbid[0].bid[0].ext.improvedigital.line_item_id = 268515;
       response.body.seatbid[0].bid[0].ext.improvedigital.buying_type = 'classic';
-      bids = spec.interpretResponse(response, {bidderRequest});
+      bids = spec.interpretResponse(response, request);
       expect(bids[0].dealId).to.equal(268515);
 
       response.body.seatbid[0].bid[0].ext.improvedigital.line_item_id = 268515;
       response.body.seatbid[0].bid[0].ext.improvedigital.buying_type = 'deal_id';
-      bids = spec.interpretResponse(response, {bidderRequest});
+      bids = spec.interpretResponse(response, request);
       expect(bids[0].dealId).to.equal(268515);
     });
 
     it('should set currency', function () {
       const response = deepClone(serverResponse);
       response.body.cur = 'eur';
-      const bids = spec.interpretResponse(response, {bidderRequest});
+      const bids = spec.interpretResponse(response, makeRequest(bidderRequest));
       expect(bids[0].currency).to.equal('EUR');
     });
 
     it('should return empty array for bad response or no price', function () {
+      const request = makeRequest(bidderRequest);
       let response = deepClone(serverResponse);
       let bids;
 
       // Price missing or 0
       response.body.seatbid[0].bid[0].price = 0;
-      bids = spec.interpretResponse(response, {bidderRequest});
+      bids = spec.interpretResponse(response, request);
       expect(bids).to.deep.equal([]);
       delete response.body.seatbid[0].bid[0];
-      bids = spec.interpretResponse(response, {bidderRequest});
+      bids = spec.interpretResponse(response, request);
       expect(bids).to.deep.equal([]);
       response.body.seatbid[0].bid[0] = [];
-      bids = spec.interpretResponse(response, {bidderRequest});
+      bids = spec.interpretResponse(response, request);
       expect(bids).to.deep.equal([]);
 
       // errorCode present
       response = deepClone(serverResponse);
       response.body.seatbid[0].bid[0].errorCode = undefined;
-      bids = spec.interpretResponse(response, {bidderRequest});
+      bids = spec.interpretResponse(response, request);
       expect(bids).to.deep.equal([]);
 
       // adm and native missing
       response = deepClone(serverResponse);
       delete response.body.seatbid[0].bid[0].adm;
-      bids = spec.interpretResponse(response, {bidderRequest});
+      bids = spec.interpretResponse(response, request);
       expect(bids).to.deep.equal([]);
       response.body.seatbid[0].bid[0].adm = null;
-      bids = spec.interpretResponse(response, {bidderRequest});
+      bids = spec.interpretResponse(response, request);
       expect(bids).to.deep.equal([]);
     });
 
     it('should set netRevenue', function () {
       const response = deepClone(serverResponse);
       response.body.seatbid[0].bid[0].ext.improvedigital.is_net = true;
-      const bids = spec.interpretResponse(response, {bidderRequest});
+      const bids = spec.interpretResponse(response, makeRequest(bidderRequest));
       expect(bids[0].netRevenue).to.equal(true);
     });
 
@@ -1178,69 +1196,63 @@ describe('Improve Digital Adapter Tests', function () {
       const adomain = ['domain.com'];
       const response = deepClone(serverResponse);
       response.body.seatbid[0].bid[0].adomain = adomain;
-      const bids = spec.interpretResponse(response, {bidderRequest});
+      const bids = spec.interpretResponse(response, makeRequest(bidderRequest));
       expect(bids[0].meta.advertiserDomains).to.equal(adomain);
     });
     //
     // Native ads
-    it('should return a well-formed native ad bid', function () {
-      const bids = spec.interpretResponse(serverResponseNative, {bidderRequest: nativeBidderRequest});
-      // Verify Native Response
-      expect(bids[0].native).to.exist;
-      const nativeBid = bids[0].native;
-      const nativeResp = JSON.parse(serverResponseNative.body.seatbid[0].bid[0].adm);
-      // Verify Native Response
-      expect(nativeBid.clickUrl).to.exist.and.equal(nativeResp.link.url);
-      expect(nativeBid.impressionTrackers).to.exist.and.deep.equal(nativeResp.imptrackers);
-      expect(nativeBid.javascriptTrackers).to.exist.and.deep.equal(nativeResp.jstracker);
+    if (FEATURES.NATIVE) {
+      it('should return a well-formed native ad bid', function () {
+        const reqBids = updateNativeParams(nativeBidderRequest.bids);
+        const request = makeRequest({
+          ...nativeBidderRequest,
+          reqBids
+        })
+        const bids = spec.interpretResponse(serverResponseNative, request);
+        expect(bids[0].native.ortb).to.eql(JSON.parse(serverResponseNative.body.seatbid[0].bid[0].adm))
+      });
 
-      // Verify Assets
-      expect(nativeBid.title).to.exist.and.equal('Sample Prebid Test Title');
-      expect(nativeBid.sponsoredBy).to.exist.and.equal('ImproveDigital');
-      expect(nativeBid.body).to.exist.and.equal('Test content.');
-    });
-
-    it('should return a well-formed native bid for multi-format ad unit', function () {
-      const bids = spec.interpretResponse(serverResponseNative, {bidderRequest: multiFormatBidderRequest});
-      expect(bids[0].mediaType).to.equal(NATIVE);
-    });
+      it('should return a well-formed native bid for multi-format ad unit', function () {
+        const bids = spec.interpretResponse(serverResponseNative, makeRequest(multiFormatBidderRequest));
+        expect(bids[0].mediaType).to.equal(NATIVE);
+      });
+    }
 
     // Video
     it('should return a well-formed instream video bid', function () {
-      const bids = spec.interpretResponse(serverResponseVideo, {bidderRequest: instreamBidderRequest});
-      expect(bids).to.deep.equal(expectedBidInstreamVideo);
+      const bids = spec.interpretResponse(serverResponseVideo, makeRequest(instreamBidderRequest));
+      expectMatch(bids, expectedBidInstreamVideo);
     });
 
     it('should return a well-formed outstream video bid', function () {
-      const bids = spec.interpretResponse(serverResponseVideo, {bidderRequest: outstreamBidderRequest});
+      const bids = spec.interpretResponse(serverResponseVideo, makeRequest(outstreamBidderRequest));
       expect(bids[0].renderer).to.exist;
-      delete (bids[0].renderer);
-      expect(bids).to.deep.equal(expectedBidOutstreamVideo);
+      expectMatch(bids, expectedBidOutstreamVideo);
     });
 
     it('should return a well-formed outstream video bid for multi-format ad unit', function () {
+      const request = makeRequest(multiFormatBidderRequest);
       const videoResponse = deepClone(serverResponseVideo);
-      let bids = spec.interpretResponse(videoResponse, {bidderRequest: multiFormatBidderRequest});
+      let bids = spec.interpretResponse(videoResponse, request);
       expect(bids[0].renderer).to.exist;
-      delete (bids[0].renderer);
-      expect(bids).to.deep.equal(expectedBidOutstreamVideo);
+      expectMatch(bids, expectedBidOutstreamVideo);
 
       videoResponse.body.seatbid[0].bid[0].adm = '<vAst';
-      bids = spec.interpretResponse(videoResponse, {bidderRequest: multiFormatBidderRequest});
+      bids = spec.interpretResponse(videoResponse, request);
       expect(bids[0].mediaType).to.equal(VIDEO);
 
       videoResponse.body.seatbid[0].bid[0].adm = '<?xml';
-      bids = spec.interpretResponse(videoResponse, {bidderRequest: multiFormatBidderRequest});
+      bids = spec.interpretResponse(videoResponse, request);
       expect(bids[0].mediaType).to.equal(VIDEO);
     });
 
     it('should not affect non-RAZR bids', function () {
-      const bids = spec.interpretResponse(serverResponse, {bidderRequest});
+      const bids = spec.interpretResponse(serverResponse, makeRequest(bidderRequest));
       expect(bids[0].renderer).to.not.exist;
     });
 
     it('should detect RAZR bids', function () {
-      const bids = spec.interpretResponse(serverResponseRazr, {bidderRequest});
+      const bids = spec.interpretResponse(serverResponseRazr, makeRequest(bidderRequest));
       expect(bids[0].renderer).to.exist;
     });
   });
