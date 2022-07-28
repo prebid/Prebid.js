@@ -63,10 +63,11 @@ export function fillVideoImp(imp, bidRequest, context) {
     if (placement != null) {
       video.placement = placement;
     }
+    mergeDeep(video, imp.video);
     Object.entries(VALIDATIONS)
       .filter(([key]) => video.hasOwnProperty(key))
       .forEach(([key, fn]) => fn(video, video[key]));
-    imp.video = mergeDeep(video, imp.video);
+    imp.video = video;
   }
 }
 
