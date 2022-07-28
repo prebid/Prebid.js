@@ -1,4 +1,3 @@
-import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import * as utils from '../src/utils.js';
 import {mergeDeep} from '../src/utils.js';
@@ -52,11 +51,6 @@ const converter = ortbConverter({
       at: 1,
       ext: {
         bc: `${bidderConfig}_${bidderVersion}`
-      },
-      regs: {
-        // always set regs.coppa, even when not configured
-        // TODO: is this necessary?
-        coppa: config.getConfig('coppa') ? 1 : 0
       }
     })
     const bid = context.bidRequests[0];
@@ -83,9 +77,7 @@ const converter = ortbConverter({
     }
     const {ortbResponse} = context;
     if (ortbResponse.ext && ortbResponse.ext.paf) {
-      // TODO: the following is likely incorrect when an ORTB response contains more than one bid
-      // all of them would be set with the same content_id (from the last bid), since they share the same `paf` object
-      bidResponse.meta.paf = ortbResponse.ext.paf;
+      bidResponse.meta.paf = Object.assign({}, ortbResponse.ext.paf);
       bidResponse.meta.paf.content_id = utils.deepAccess(bid, 'ext.paf.content_id');
     }
     return bidResponse;
@@ -143,7 +135,6 @@ function buildRequests(bids, bidderRequest) {
   let bannerBids = bids.filter(bid => isBannerBid(bid));
   let requests = bannerBids.length ? [createRequest(bannerBids, bidderRequest, BANNER)] : [];
   videoBids.forEach(bid => {
-    // TODO: why is this creating a request for each bid, instead of aggregating them together as with banner?
     requests.push(createRequest([bid], bidderRequest, VIDEO));
   });
   return requests;
