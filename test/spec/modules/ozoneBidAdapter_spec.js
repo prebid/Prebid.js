@@ -6,6 +6,7 @@ import {getGranularityKeyName, getGranularityObject} from '../../../modules/ozon
 import * as utils from '../../../src/utils.js';
 const OZONEURI = 'https://elb.the-ozone-project.com/openrtb2/auction';
 const BIDDER_CODE = 'ozone';
+
 var validBidRequests = [
   {
     adUnitCode: 'div-gpt-ad-1460505748561-0',
