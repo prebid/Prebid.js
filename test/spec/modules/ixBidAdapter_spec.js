@@ -121,6 +121,11 @@ describe('IndexexchangeAdapter', function () {
           playerSize: [[400, 100]]
         }
       },
+      ortb2Imp: {
+        ext: {
+          tid: '173f49a8-7549-4218-a23c-e7ba59b47230'
+        }
+      },
       adUnitCode: 'div-gpt-ad-1460505748562-0',
       transactionId: '173f49a8-7549-4218-a23c-e7ba59b47230',
       bidId: '1a2b3c4e',
@@ -141,6 +146,11 @@ describe('IndexexchangeAdapter', function () {
       mediaTypes: {
         banner: {
           sizes: [[300, 250]]
+        }
+      },
+      ortb2Imp: {
+        ext: {
+          tid: '173f49a8-7549-4218-a23c-e7ba59b47229'
         }
       },
       adUnitCode: 'div-gpt-ad-1460505748561-0',
@@ -165,6 +175,11 @@ describe('IndexexchangeAdapter', function () {
           sizes: [[300, 250], [300, 600]]
         }
       },
+      ortb2Imp: {
+        ext: {
+          tid: '173f49a8-7549-4218-a23c-e7ba59b47229'
+        }
+      },
       adUnitCode: 'div-gpt-ad-1460505748561-0',
       transactionId: '173f49a8-7549-4218-a23c-e7ba59b47229',
       bidId: '1a2b3c4d',
@@ -183,6 +198,11 @@ describe('IndexexchangeAdapter', function () {
       mediaTypes: {
         banner: {
           sizes: [[300, 250], [300, 600]]
+        }
+      },
+      ortb2Imp: {
+        ext: {
+          tid: '173f49a8-7549-4218-a23c-e7ba59b47229'
         }
       },
       adUnitCode: 'div-gpt-ad-1460505748561-0',
@@ -212,6 +232,11 @@ describe('IndexexchangeAdapter', function () {
           minduration: 0,
           maxduration: 60,
           protocols: [2]
+        }
+      },
+      ortb2Imp: {
+        ext: {
+          tid: '173f49a8-7549-4218-a23c-e7ba59b47230'
         }
       },
       adUnitCode: 'div-gpt-ad-1460505748562-0',
@@ -247,6 +272,11 @@ describe('IndexexchangeAdapter', function () {
           playerSize: [[400, 100], [200, 400]]
         }
       },
+      ortb2Imp: {
+        ext: {
+          tid: '173f49a8-7549-4218-a23c-e7ba59b47230'
+        }
+      },
       adUnitCode: 'div-gpt-ad-1460505748562-0',
       transactionId: '173f49a8-7549-4218-a23c-e7ba59b47230',
       bidId: '1a2b3c4e',
@@ -260,6 +290,7 @@ describe('IndexexchangeAdapter', function () {
     {
       bidder: 'ix',
       params: {
+        tagId: '123',
         siteId: '123',
         size: [300, 250],
       },
@@ -270,6 +301,14 @@ describe('IndexexchangeAdapter', function () {
         },
         banner: {
           sizes: [[300, 250], [300, 600], [400, 500]]
+        }
+      },
+      ortb2Imp: {
+        ext: {
+          tid: '173f49a8-7549-4218-a23c-e7ba59b47230',
+          data: {
+            pbadslot: 'div-gpt-ad-1460505748562-0'
+          }
         }
       },
       adUnitCode: 'div-gpt-ad-1460505748562-0',
@@ -285,6 +324,7 @@ describe('IndexexchangeAdapter', function () {
     {
       bidder: 'ix',
       params: {
+        tagId: '123',
         siteId: '456',
         video: {
           skippable: false,
@@ -305,6 +345,14 @@ describe('IndexexchangeAdapter', function () {
         },
         banner: {
           sizes: [[300, 250], [300, 600]]
+        }
+      },
+      ortb2Imp: {
+        ext: {
+          tid: '173f49a8-7549-4218-a23c-e7ba59b47230',
+          data: {
+            pbadslot: 'div-gpt-ad-1460505748562-0'
+          }
         }
       },
       adUnitCode: 'div-gpt-ad-1460505748562-0',
@@ -677,18 +725,109 @@ describe('IndexexchangeAdapter', function () {
       const syncOptions = {
         'iframeEnabled': true
       }
-      let userSync = spec.getUserSyncs(syncOptions);
+      let userSync = spec.getUserSyncs(syncOptions, []);
       expect(userSync[0].type).to.equal('iframe');
       const USER_SYNC_URL = 'https://js-sec.indexww.com/um/ixmatch.html';
       expect(userSync[0].url).to.equal(USER_SYNC_URL);
     });
 
-    it('When iframeEnabled is false, no userSync should be returned', function () {
+    it('When iframeEnabled = false, default to img', function () {
       const syncOptions = {
-        'iframeEnabled': false
+        'iframeEnabled': false,
       }
-      let userSync = spec.getUserSyncs(syncOptions);
-      expect(userSync).to.be.an('array').that.is.empty;
+      let userSync = spec.getUserSyncs(syncOptions, []);
+      expect(userSync[0].type).to.equal('image');
+      const USER_SYNC_URL = 'https://dsum.casalemedia.com/pbusermatch?origin=prebid&site_id=123&p=1&i=0&gdpr=1&gdpr_consent=3huaa11=qu3198ae&us_privacy=';
+      expect(userSync[0].url).to.equal(USER_SYNC_URL);
+    });
+
+    it('UserSync test : check type = pixel, check usermatch URL, no exchange data, only drop 1', function () {
+      const syncOptions = {
+        'pixelEnabled': true
+      }
+      config.setConfig({
+        userSync: {
+          pixelEnabled: true,
+          syncsPerBidder: 3
+        }
+      })
+      let userSync = spec.getUserSyncs(syncOptions, []);
+      expect(userSync[0].type).to.equal('image');
+      const USER_SYNC_URL = 'https://dsum.casalemedia.com/pbusermatch?origin=prebid&site_id=123&p=1&i=0&gdpr=1&gdpr_consent=3huaa11=qu3198ae&us_privacy=';
+      expect(userSync[0].url).to.equal(USER_SYNC_URL);
+    });
+
+    it('UserSync test : check type = pixel, check usermatch URL with override set to 0', function () {
+      const syncOptions = {
+        'pixelEnabled': true
+      }
+      config.setConfig({
+        userSync: {
+          pixelEnabled: true,
+          syncsPerBidder: 3
+        }
+      });
+      let userSync = spec.getUserSyncs(syncOptions, [{'body': {'ext': {'publishersyncsperbidderoverride': 0}}}]);
+      expect(userSync.length).to.equal(0);
+    });
+
+    it('UserSync test : check type = pixel, check usermatch URL with override set', function () {
+      const syncOptions = {
+        'pixelEnabled': true
+      }
+      config.setConfig({
+        userSync: {
+          pixelEnabled: true,
+          syncsPerBidder: 3
+        }
+      });
+      let userSync = spec.getUserSyncs(syncOptions, [{'body': {'ext': {'publishersyncsperbidderoverride': 2}}}]);
+      expect(userSync[0].type).to.equal('image');
+      const USER_SYNC_URL_0 = 'https://dsum.casalemedia.com/pbusermatch?origin=prebid&site_id=123&p=2&i=0&gdpr=1&gdpr_consent=3huaa11=qu3198ae&us_privacy=';
+      const USER_SYNC_URL_1 = 'https://dsum.casalemedia.com/pbusermatch?origin=prebid&site_id=123&p=2&i=1&gdpr=1&gdpr_consent=3huaa11=qu3198ae&us_privacy=';
+      expect(userSync[0].url).to.equal(USER_SYNC_URL_0);
+      expect(userSync[1].url).to.equal(USER_SYNC_URL_1);
+      expect(userSync.length).to.equal(2);
+    });
+
+    it('UserSync test : check type = pixel, check usermatch URL with override greater than publisher syncs per bidder , use syncsperbidder', function () {
+      const syncOptions = {
+        'pixelEnabled': true
+      }
+      config.setConfig({
+        userSync: {
+          pixelEnabled: true,
+          syncsPerBidder: 3
+        }
+      });
+      let userSync = spec.getUserSyncs(syncOptions, [{'body': {'ext': {'publishersyncsperbidderoverride': 4}}}]);
+      expect(userSync[0].type).to.equal('image');
+      const USER_SYNC_URL_0 = 'https://dsum.casalemedia.com/pbusermatch?origin=prebid&site_id=123&p=3&i=0&gdpr=1&gdpr_consent=3huaa11=qu3198ae&us_privacy=';
+      const USER_SYNC_URL_1 = 'https://dsum.casalemedia.com/pbusermatch?origin=prebid&site_id=123&p=3&i=1&gdpr=1&gdpr_consent=3huaa11=qu3198ae&us_privacy=';
+      const USER_SYNC_URL_2 = 'https://dsum.casalemedia.com/pbusermatch?origin=prebid&site_id=123&p=3&i=2&gdpr=1&gdpr_consent=3huaa11=qu3198ae&us_privacy=';
+      expect(userSync[0].url).to.equal(USER_SYNC_URL_0);
+      expect(userSync[1].url).to.equal(USER_SYNC_URL_1);
+      expect(userSync[2].url).to.equal(USER_SYNC_URL_2);
+      expect(userSync.length).to.equal(3);
+    });
+
+    it('UserSync test : check type = pixel, syncsPerBidder = 0, still use override', function () {
+      const syncOptions = {
+        'pixelEnabled': true
+      }
+      config.setConfig({
+        userSync: {
+          pixelEnabled: true,
+          syncsPerBidder: 0
+        }
+      });
+      let userSync = spec.getUserSyncs(syncOptions, [{'body': {'ext': {'publishersyncsperbidderoverride': 2}}}]);
+      expect(userSync[0].type).to.equal('image');
+      const USER_SYNC_URL_0 = 'https://dsum.casalemedia.com/pbusermatch?origin=prebid&site_id=123&p=2&i=0&gdpr=1&gdpr_consent=3huaa11=qu3198ae&us_privacy=';
+      const USER_SYNC_URL_1 = 'https://dsum.casalemedia.com/pbusermatch?origin=prebid&site_id=123&p=2&i=1&gdpr=1&gdpr_consent=3huaa11=qu3198ae&us_privacy=';
+      expect(userSync[0].url).to.equal(USER_SYNC_URL_0);
+      expect(userSync[1].url).to.equal(USER_SYNC_URL_1);
+      expect(userSync.length).to.equal(2);
     });
   });
 
@@ -1518,6 +1657,70 @@ describe('IndexexchangeAdapter', function () {
       expect(gpid).to.equal(GPID);
     });
 
+    it('should still build gpid in request if ortb2Imp.ext.gpid does not exist', function () {
+      const AD_UNIT_CODE = '/1111/home';
+      const validBids = utils.deepClone(DEFAULT_BANNER_VALID_BID);
+      sinon.stub(utils, 'getGptSlotInfoForAdUnitCode')
+        .returns({ gptSlot: AD_UNIT_CODE, divId: 'adunit-code-3-div-id' });
+      validBids[0].ortb2Imp = {
+        ext: {
+          data: {
+            adserver: {
+              name: 'gam',
+              adslot: AD_UNIT_CODE
+            }
+          }
+        }
+      }
+      const requests = spec.buildRequests(validBids, DEFAULT_OPTION);
+      const { ext: { gpid } } = JSON.parse(requests[0].data.r).imp[0];
+      utils.getGptSlotInfoForAdUnitCode.restore();
+      expect(gpid).to.equal(`${AD_UNIT_CODE}#adunit-code-3-div-id`);
+    });
+
+    it('should not build gpid if divid doesnt exist when ortb2Imp.ext.gpid does not exist', function () {
+      const AD_UNIT_CODE = '/1111/home';
+      const validBids = utils.deepClone(DEFAULT_BANNER_VALID_BID);
+      sinon.stub(utils, 'getGptSlotInfoForAdUnitCode')
+        .returns({ gptSlot: AD_UNIT_CODE });
+      validBids[0].ortb2Imp = {
+        ext: {
+          data: {
+            adserver: {
+              name: 'gam',
+              adslot: AD_UNIT_CODE
+            }
+          }
+        }
+      }
+      const requests = spec.buildRequests(validBids, DEFAULT_OPTION);
+      const imp = JSON.parse(requests[0].data.r).imp[0];
+      utils.getGptSlotInfoForAdUnitCode.restore();
+      expect(imp.ext.gpid).to.be.undefined;
+      expect(imp.ext.dfp_ad_unit_code).to.equal(AD_UNIT_CODE)
+    });
+
+    it('should not build gpid if dfp ad unit code / divid doesnt exist when ortb2Imp.ext.gpid does not exist', function () {
+      const AD_UNIT_CODE = '/1111/home';
+      const validBids = utils.deepClone(DEFAULT_BANNER_VALID_BID);
+      sinon.stub(utils, 'getGptSlotInfoForAdUnitCode')
+        .returns({});
+      validBids[0].ortb2Imp = {
+        ext: {
+          data: {
+            adserver: {
+              name: 'gam',
+            }
+          }
+        }
+      }
+      const requests = spec.buildRequests(validBids, DEFAULT_OPTION);
+
+      const imp = JSON.parse(requests[0].data.r).imp[0];
+      utils.getGptSlotInfoForAdUnitCode.restore();
+      expect(imp.ext).to.be.undefined;
+    });
+
     it('should send gpid in request if ortb2Imp.ext.gpid exists when no size present', function () {
       const validBids = utils.deepClone(DEFAULT_BANNER_VALID_BID_PARAM_NO_SIZE);
       validBids[0].ortb2Imp = {
@@ -1629,6 +1832,7 @@ describe('IndexexchangeAdapter', function () {
       expect(impression.id).to.equal(DEFAULT_BANNER_VALID_BID[0].bidId);
       expect(impression.banner.format).to.be.length(2);
       expect(impression.banner.topframe).to.be.oneOf([0, 1]);
+      expect(impression.ext.tid).to.equal(DEFAULT_BANNER_VALID_BID[0].transactionId);
 
       impression.banner.format.map(({ w, h, ext }, index) => {
         const size = DEFAULT_BANNER_VALID_BID[0].mediaTypes.banner.sizes[index];
@@ -2482,6 +2686,9 @@ describe('IndexexchangeAdapter', function () {
         expect(diagObj.allu).to.equal(2);
         expect(diagObj.version).to.equal('$prebid.version$');
         expect(diagObj.url).to.equal('http://localhost:9876/context.html')
+        expect(diagObj.pbadslot).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].ortb2Imp.ext.data.pbadslot)
+        expect(diagObj.tagid).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params.tagId)
+        expect(diagObj.adunitcode).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].adUnitCode)
       });
     });
   });
@@ -3255,6 +3462,7 @@ describe('IndexexchangeAdapter', function () {
 
     it('should not save error data into localstorage if consent is not given', () => {
       config.setConfig({ deviceAccess: false });
+      storage.localStorageIsEnabled.restore(); // let core manage device access
       const bid = utils.deepClone(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0]);
       bid.params.size = ['400', 100];
       expect(spec.isBidRequestValid(bid)).to.be.false;

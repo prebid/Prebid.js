@@ -5,6 +5,7 @@ import {isArray, isBoolean, isFn, isPlainObject, isStr, logError, replaceAuction
 import {find} from '../src/polyfill.js';
 import {config} from '../src/config.js';
 import {OUTSTREAM} from '../src/video.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'adot';
 const ADAPTER_VERSION = 'v2.0.0';
@@ -49,19 +50,22 @@ function tryParse(data) {
  * @returns {Site|null} Formatted Site OpenRtb object or null
  */
 function getOpenRTBSiteObject(bidderRequest) {
-  if (!bidderRequest || !bidderRequest.refererInfo) return null;
+  const refererInfo = (bidderRequest && bidderRequest.refererInfo) || null;
 
-  const domain = bidderRequest.refererInfo.domain;
+  const domain = refererInfo ? refererInfo.domain : window.location.hostname;
   const publisherId = config.getConfig('adot.publisherId');
 
   if (!domain) return null;
 
   return {
-    page: bidderRequest.refererInfo.page,
+    page: refererInfo ? refererInfo.page : window.location.href,
     domain: domain,
     name: domain,
     publisher: {
       id: publisherId
+    },
+    ext: {
+      schain: bidderRequest.schain
     }
   };
 }
@@ -83,7 +87,13 @@ function getOpenRTBDeviceObject() {
  */
 function getOpenRTBUserObject(bidderRequest) {
   if (!bidderRequest || !bidderRequest.gdprConsent || !isStr(bidderRequest.gdprConsent.consentString)) return null;
-  return { ext: { consent: bidderRequest.gdprConsent.consentString } };
+
+  return {
+    ext: {
+      consent: bidderRequest.gdprConsent.consentString,
+      pubProvidedId: bidderRequest.userId && bidderRequest.userId.pubProvidedId,
+    },
+  };
 }
 
 /**
@@ -364,6 +374,8 @@ function splitAdUnits(validBidRequests) {
  * @returns {Array<AjaxRequest>}
  */
 function buildRequests(validBidRequests, bidderRequest) {
+  // convert Native ORTB definition to old-style prebid native definition
+  validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
   const adUnits = splitAdUnits(validBidRequests);
   const publisherPathConfig = config.getConfig('adot.publisherPath');
   const publisherPath = publisherPathConfig === undefined ? '' : '/' + publisherPathConfig;

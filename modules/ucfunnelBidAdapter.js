@@ -3,6 +3,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { config } from '../src/config.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const COOKIE_NAME = 'ucf_uid';
 const VER = 'ADGENT_PREBID-2018011501';
@@ -46,6 +47,9 @@ export const spec = {
    * @return {ServerRequest}
    */
   buildRequests: function(bids, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    bids = convertOrtbRequestToProprietaryNative(bids);
+
     return bids.map(bid => {
       return {
         method: 'GET',
