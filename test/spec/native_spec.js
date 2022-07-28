@@ -8,7 +8,7 @@ import {
   decorateAdUnitsWithNativeParams,
   isOpenRTBBidRequestValid,
   isNativeOpenRTBBidValid,
-  toOrtbNativeRequest,
+  toOrtbNativeRequest, toOrtbNativeResponse, legacyPropertiesToOrtbNative, fireImpressionTrackers, fireClickTrackers,
 } from 'src/native.js';
 import CONSTANTS from 'src/constants.json';
 import { stubAuctionIndex } from '../helpers/indexStub.js';
@@ -332,7 +332,7 @@ describe('native.js', function () {
       adId: '123',
     };
 
-    const message = getAllAssetsMessage(messageRequest, bid);
+    const message = getAllAssetsMessage(messageRequest, bid, {getNativeReq: () => null});
 
     expect(message.assets.length).to.equal(9);
     expect(message.assets).to.deep.include({
@@ -380,7 +380,7 @@ describe('native.js', function () {
       adId: '123',
     };
 
-    const message = getAllAssetsMessage(messageRequest, bidWithUndefinedFields);
+    const message = getAllAssetsMessage(messageRequest, bidWithUndefinedFields, {getNativeReq: () => null});
 
     expect(message.assets.length).to.equal(4);
     expect(message.assets).to.deep.include({
@@ -883,3 +883,142 @@ describe('validate native', function () {
     });
   }
 });
+
+describe('legacyPropertiesToOrtbNative', () => {
+  describe('click trakckers', () => {
+    it('should convert clickUrl to link.url', () => {
+      const native = legacyPropertiesToOrtbNative({clickUrl: 'some-url'});
+      expect(native.link.url).to.eql('some-url');
+    });
+    it('should convert single clickTrackers to link.clicktrackers', () => {
+      const native = legacyPropertiesToOrtbNative({clickTrackers: 'some-url'});
+      expect(native.link.clicktrackers).to.eql([
+        'some-url'
+      ])
+    });
+    it('should convert multiple clickTrackers into link.clicktrackers', () => {
+      const native = legacyPropertiesToOrtbNative({clickTrackers: ['url1', 'url2']});
+      expect(native.link.clicktrackers).to.eql([
+        'url1',
+        'url2'
+      ])
+    })
+  });
+  describe('impressionTrackers', () => {
+    it('should convert a single tracker into an eventtracker entry', () => {
+      const native = legacyPropertiesToOrtbNative({impressionTrackers: 'some-url'});
+      expect(native.eventtrackers).to.eql([
+        {
+          event: 1,
+          method: 1,
+          url: 'some-url'
+        }
+      ]);
+    });
+
+    it('should convert an array into corresponding eventtracker entries', () => {
+      const native = legacyPropertiesToOrtbNative({impressionTrackers: ['url1', 'url2']});
+      expect(native.eventtrackers).to.eql([
+        {
+          event: 1,
+          method: 1,
+          url: 'url1'
+        },
+        {
+          event: 1,
+          method: 1,
+          url: 'url2'
+        }
+      ])
+    })
+  });
+  describe('javascriptTrackers', () => {
+    it('should convert a single value into jstracker', () => {
+      const native = legacyPropertiesToOrtbNative({javascriptTrackers: 'some-markup'});
+      expect(native.jstracker).to.eql('some-markup');
+    })
+    it('should merge multiple values into a single jstracker', () => {
+      const native = legacyPropertiesToOrtbNative({javascriptTrackers: ['some-markup', 'some-other-markup']});
+      expect(native.jstracker).to.eql('some-markupsome-other-markup');
+    })
+  });
+});
+
+describe('fireImpressionTrackers', () => {
+  let runMarkup, fetchURL;
+  beforeEach(() => {
+    runMarkup = sinon.stub();
+    fetchURL = sinon.stub();
+  })
+
+  function runTrackers(resp) {
+    fireImpressionTrackers(resp, {runMarkup, fetchURL})
+  }
+
+  it('should run markup in jstracker', () => {
+    runTrackers({
+      jstracker: 'some-markup'
+    });
+    sinon.assert.calledWith(runMarkup, 'some-markup');
+  });
+
+  it('should fetch each url in imptrackers', () => {
+    const urls = ['url1', 'url2'];
+    runTrackers({
+      imptrackers: urls
+    });
+    urls.forEach(url => sinon.assert.calledWith(fetchURL, url));
+  });
+
+  it('should fetch each url in eventtrackers that use the image method', () => {
+    const urls = ['url1', 'url2'];
+    runTrackers({
+      eventtrackers: urls.map(url => ({event: 1, method: 1, url}))
+    });
+    urls.forEach(url => sinon.assert.calledWith(fetchURL, url))
+  });
+
+  it('should load as a script each url in eventtrackers that use the js method', () => {
+    const urls = ['url1', 'url2'];
+    runTrackers({
+      eventtrackers: urls.map(url => ({event: 1, method: 2, url}))
+    });
+    urls.forEach(url => sinon.assert.calledWith(runMarkup, sinon.match(`script async src="${url}"`)))
+  });
+
+  it('should not fire trackers that are not impression trakcers', () => {
+    runTrackers({
+      link: {
+        clicktrackers: ['click-url']
+      },
+      eventtrackers: [{
+        event: 2, // not imp
+        method: 1,
+        url: 'some-url'
+      }]
+    });
+    sinon.assert.notCalled(fetchURL);
+    sinon.assert.notCalled(runMarkup);
+  })
+})
+
+describe('fireClickTrackers', () => {
+  let fetchURL;
+  beforeEach(() => {
+    fetchURL = sinon.stub();
+  });
+
+  function runTrackers(resp) {
+    fireClickTrackers(resp, {fetchURL});
+  }
+
+  it('should load each URL in link.clicktrackers', () => {
+    const urls = ['url1', 'url2'];
+    runTrackers({
+      link: {
+        clicktrackers: urls
+      }
+    });
+    urls.forEach(url => sinon.assert.calledWith(fetchURL, url));
+  })
+})
