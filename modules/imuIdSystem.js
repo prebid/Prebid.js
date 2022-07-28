@@ -13,14 +13,19 @@ import { getStorageManager } from '../src/storageManager.js';
 export const storage = getStorageManager();
 
 export const storageKey = '__im_uid';
+export const storagePpKey = '__im_ppid';
 export const cookieKey = '_im_vid';
-export const apiUrl = 'https://audiencedata.im-apps.net/imuid/get';
+export const apiUrl = 'https://sync6.im-apps.net/1/rtd';
 const storageMaxAge = 1800000; // 30 minites (30 * 60 * 1000)
 const cookiesMaxAge = 97200000000; // 37 months ((365 * 3 + 30) * 24 * 60 * 60 * 1000)
 
 export function setImDataInLocalStorage(value) {
   storage.setDataInLocalStorage(storageKey, value);
   storage.setDataInLocalStorage(`${storageKey}_mt`, new Date(timestamp()).toUTCString());
+}
+
+export function setImPpDataInLocalStorage(value) {
+  storage.setDataInLocalStorage(storagePpKey, value);
 }
 
 export function removeImDataFromLocalStorage() {
@@ -45,6 +50,7 @@ export function getLocalData() {
   }
   return {
     id: storage.getDataFromLocalStorage(storageKey),
+    ppid: storage.getDataFromLocalStorage(storagePpKey),
     vid: storage.getCookie(cookieKey),
     expired: expired
   };
@@ -56,6 +62,7 @@ export function apiSuccessProcess(jsonResponse) {
   }
   if (jsonResponse.uid) {
     setImDataInLocalStorage(jsonResponse.uid);
+    setImPpDataInLocalStorage(jsonResponse.ppid);
     if (jsonResponse.vid) {
       setImDataInCookie(jsonResponse.vid);
     }
@@ -114,9 +121,12 @@ export const imuIdSubmodule = {
    * @function
    * @returns {{imuid: string} | undefined}
    */
-  decode(id) {
-    if (id && typeof id === 'string') {
-      return {imuid: id};
+  decode(ids) {
+    if (ids && typeof ids === 'object') {
+      return {
+        imppid: ids.imppid,
+        imuid: ids.imuid
+      };
     }
     return undefined;
   },
@@ -144,7 +154,12 @@ export const imuIdSubmodule = {
     if (localData.expired) {
       callImuidApi(apiUrl)();
     }
-    return {id: localData.id};
+    return {
+      id: {
+        imuid: localData.id,
+        imppid: localData.ppid
+      }
+    };
   }
 };
 
