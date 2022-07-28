@@ -6,7 +6,7 @@ import { newBidder } from 'src/adapters/bidderFactory';
 const BIDDER_CODE = 'datawrkz';
 const ENDPOINT_URL = 'https://at.datawrkz.com/exchange/openrtb23/';
 const SITE_ID = 'site_id';
-const FINAL_URL = ENDPOINT_URL + SITE_ID+ '?hb=1';
+const FINAL_URL = ENDPOINT_URL + SITE_ID + '?hb=1';
 
 describe('datawrkzAdapterTests', function () {
   const adapter = newBidder(spec);
@@ -82,7 +82,7 @@ describe('datawrkzAdapterTests', function () {
     }];
     const bannerBidRequestsSingleArraySlotAndDeals = [{
       'bidder': BIDDER_CODE,
-      'params': {'site_id': SITE_ID, 'bidfloor': 1.00, 'deals': [{id: "deal_1"},{id: "deal_2"}]},
+      'params': {'site_id': SITE_ID, 'bidfloor': 1.00, 'deals': [{id: 'deal_1'}, {id: 'deal_2'}]},
       'mediaTypes': {'banner': {}},
       'adUnitCode': 'adUnitCode',
       'transactionId': 'transactionId',
@@ -110,7 +110,7 @@ describe('datawrkzAdapterTests', function () {
     }];
     const nativeBidRequestsSingleArraySlotAndDeals = [{
       'bidder': BIDDER_CODE,
-      'params': {'site_id': SITE_ID, 'bidfloor': 1.00, 'deals': [{id: "deal_1"},{id: "deal_2"}]},
+      'params': {'site_id': SITE_ID, 'bidfloor': 1.00, 'deals': [{id: 'deal_1'}, {id: 'deal_2'}]},
       'mediaTypes': {'native': {
         'title': {'len': 80},
         'image': {'sizes': [300, 250]},
@@ -137,7 +137,7 @@ describe('datawrkzAdapterTests', function () {
     }];
     const instreamVideoBidRequestsSingleArraySlotAndDeals = [{
       'bidder': BIDDER_CODE,
-      'params': {'site_id': SITE_ID, 'bidfloor': 1.00, 'deals': [{id: "deal_1"},{id: "deal_2"}]},
+      'params': {'site_id': SITE_ID, 'bidfloor': 1.00, 'deals': [{id: 'deal_1'}, {id: 'deal_2'}]},
       'mediaTypes': {'video': {'context': 'instream', 'playerSize': [640, 480]}},
       'adUnitCode': 'adUnitCode',
       'transactionId': 'transactionId',
@@ -157,7 +157,7 @@ describe('datawrkzAdapterTests', function () {
     }];
     const outstreamVideoBidRequestsSingleArraySlotAndDeals = [{
       'bidder': BIDDER_CODE,
-      'params': {'site_id': SITE_ID, 'bidfloor': 1.00, 'deals': [{id: "deal_1"},{id: "deal_2"}]},
+      'params': {'site_id': SITE_ID, 'bidfloor': 1.00, 'deals': [{id: 'deal_1'}, {id: 'deal_2'}]},
       'mediaTypes': {'video': {'context': 'outstream', 'playerSize': [640, 480], 'mimes': ['video/mp4', 'video/x-flv']}},
       'adUnitCode': 'adUnitCode',
       'transactionId': 'transactionId',
