@@ -96,7 +96,14 @@ adUnits = [{
 									skippable: true,
 									playback_method: ['auto_play_sound_off']
 								},
-							customData: [{"settings": {}, "targeting": {"key": "value", "key2": ["value1", "value2"]}}]
+							customData: [{
+							      "settings": {},
+							      "targeting": {
+							          "key": "value",
+								  "key2": ["value1", "value2"]
+								  }
+							}
+							]
 
 							}
 						}]
