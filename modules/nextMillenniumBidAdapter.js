@@ -1,4 +1,5 @@
 import { isStr, _each, parseUrl, getWindowTop, getBidIdParameter } from '../src/utils.js';
+import { getRefererInfo } from '../src/refererDetection.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 
@@ -29,7 +30,7 @@ export const spec = {
       if (bid.sizes && !Array.isArray(bid.sizes[0])) bid.sizes = [bid.sizes]
       if (!bid.ortb2) bid.ortb2 = {}
       if (!bid.ortb2.device) bid.ortb2.device = {}
-      bid.ortb2.device.referrer = getWindowTop().document && getWindowTop().document.referrer
+      bid.ortb2.device.referrer = (getRefererInfo && getRefererInfo().ref) || ''
       const postBody = {
         'id': bid.auctionId,
         'ext': {
