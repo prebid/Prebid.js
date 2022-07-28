@@ -1,11 +1,46 @@
-import {deepAccess, inIframe, isEmpty, logWarn, mergeDeep} from '../../../src/utils.js';
+import {deepAccess, isEmpty, logWarn, mergeDeep} from '../../../src/utils.js';
 import {VIDEO} from '../../../src/mediaTypes.js';
 import {sizesToFormat} from '../lib/sizes.js';
 
-const PBJS_SPECIFIC_VIDEO_PARAMS = new Set(['context', 'playerSize'])
+// parameters that share the same name & semantics between pbjs adUnits and imp.video
+const ORTB_VIDEO_PARAMS = new Set([
+  'pos',
+  'placement',
+  'api',
+  'mimes',
+  'protocols',
+  'playbackmethod',
+  'minduration',
+  'maxduration',
+  'w',
+  'h',
+  'startdelay',
+  'placement',
+  'linearity',
+  'skip',
+  'skipmin',
+  'skipafter',
+  'minbitrate',
+  'maxbitrate',
+  'delivery',
+  'playbackend'
+]);
 
 const PLACEMENT = {
   'instream': 1,
+}
+
+export const VALIDATIONS = {
+  skip(video, value) {
+    if (value !== 0 && value !== 1) {
+      logWarn(`mediaTypes.video.skip must be 0 or 1, got ${value} instead - ignoring skip parameters`);
+      delete video.skip;
+    }
+    if (value !== 1) {
+      delete video.skipmin;
+      delete video.skipafter;
+    }
+  }
 }
 
 export function fillVideoImp(imp, bidRequest, context) {
@@ -15,8 +50,7 @@ export function fillVideoImp(imp, bidRequest, context) {
   if (!isEmpty(videoParams)) {
     const video = Object.fromEntries(
       Object.entries(videoParams)
-        .filter(([name]) => !PBJS_SPECIFIC_VIDEO_PARAMS.has(name))
-        .concat([['topframe', inIframe() ? 0 : 1]])
+        .filter(([name]) => ORTB_VIDEO_PARAMS.has(name))
     );
     if (videoParams.playerSize) {
       const format = sizesToFormat(videoParams.playerSize);
@@ -29,6 +63,9 @@ export function fillVideoImp(imp, bidRequest, context) {
     if (placement != null) {
       video.placement = placement;
     }
+    Object.entries(VALIDATIONS)
+      .filter(([key]) => video.hasOwnProperty(key))
+      .forEach(([key, fn]) => fn(video, video[key]));
     imp.video = mergeDeep(video, imp.video);
   }
 }

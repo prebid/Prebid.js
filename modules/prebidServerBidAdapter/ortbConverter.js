@@ -91,6 +91,13 @@ const PBS_CONVERTER = ortbConverter({
 
     const bidResponse = buildBidResponse(bid, context);
 
+    if (bidResponse.native?.ortb) {
+      // TODO: do we need to set bidResponse.adm here?
+      // Any consumers can now get the same object from bidResponse.native.ortb;
+      // I could not find any, which raises the question - who is looking for this?
+      bidResponse.adm = bidResponse.native.ortb;
+    }
+
     // because core has special treatment for PBS adapter responses, we need some additional processing
     bidResponse.requestTimestamp = context.requestTimestamp;
     const status = bid.price !== 0 ? CONSTANTS.STATUS.GOOD : CONSTANTS.STATUS.NO_BID;

@@ -1,4 +1,4 @@
-import {setOrtbGdpr} from '../../../modules/consentManagement.js';
+import {setOrtbAdditionalConsent, setOrtbGdpr} from '../../../modules/consentManagement.js';
 
 describe('pbjs - ortb gpdr', () => {
   it('sets gdpr properties from bidderRequest', () => {
@@ -26,11 +26,13 @@ describe('pbjs - ortb gpdr', () => {
         }
       }
     })
-  })
+  });
+});
 
+describe('pbjs -> ortb addtlConsent', () => {
   it('sets ConsentedProvidersSettings', () => {
     const req = {};
-    setOrtbGdpr(req, {gdprConsent: {addtlConsent: 'tl'}});
-    expect(req.user.ext.ConsentedProvidersSettings.consented_providers).to.eql('tl')
+    setOrtbAdditionalConsent(req, {gdprConsent: {addtlConsent: 'tl'}});
+    expect(req.user.ext.ConsentedProvidersSettings.consented_providers).to.eql('tl');
   });
 })

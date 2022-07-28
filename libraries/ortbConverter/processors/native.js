@@ -1,4 +1,4 @@
-import {isPlainObject, mergeDeep} from '../../../src/utils.js';
+import {isPlainObject, logWarn, mergeDeep} from '../../../src/utils.js';
 import {NATIVE} from '../../../src/mediaTypes.js';
 
 export function fillNativeImp(imp, bidRequest, context) {
@@ -6,23 +6,24 @@ export function fillNativeImp(imp, bidRequest, context) {
   let nativeReq = bidRequest.nativeOrtbRequest;
   if (nativeReq) {
     nativeReq = mergeDeep({}, context.nativeRequest, nativeReq);
-    imp.native = mergeDeep({}, {
-      request: JSON.stringify(nativeReq),
-      ver: nativeReq.ver
-    }, imp.native)
+    if (nativeReq.assets?.length) {
+      imp.native = mergeDeep({}, {
+        request: JSON.stringify(nativeReq),
+        ver: nativeReq.ver
+      }, imp.native)
+    } else {
+      logWarn('mediaTypes.native is set, but no assets were specified. Native request skipped.', bidRequest)
+    }
   }
 }
 
 export function fillNativeResponse(bidResponse, bid) {
   if (bidResponse.mediaType === NATIVE) {
     let ortb;
-    // TODO: do we need to set bidResponse.adm here?
-    // Any consumers can now get the same object from bidResponse.native.ortb;
-    // I could not find any, which raises the question - who is looking for this?
     if (typeof bid.adm === 'string') {
-      ortb = bidResponse.adm = JSON.parse(bid.adm);
+      ortb = JSON.parse(bid.adm);
     } else {
-      ortb = bidResponse.adm = bid.adm;
+      ortb = bid.adm;
     }
 
     if (isPlainObject(ortb) && Array.isArray(ortb.assets)) {

@@ -1,5 +1,8 @@
 import {fillBannerImp, bannerResponseProcessor} from '../../../libraries/ortbConverter/processors/banner.js';
 import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
+import {inIframe} from '../../../src/utils.js';
+
+const topframe = inIframe() ? 0 : 1;
 
 describe('pbjs -> ortb banner conversion', () => {
   [
@@ -13,11 +16,27 @@ describe('pbjs -> ortb banner conversion', () => {
       imp: {}
     },
     {
+      t: 'banner with no sizes',
+      request: {
+        mediaTypes: {
+          banner: {
+            pos: 'pos',
+          }
+        }
+      },
+      imp: {
+        banner: {
+          topframe,
+          pos: 'pos',
+        }
+      }
+    },
+    {
       t: 'single size banner',
       request: {
         mediaTypes: {
           banner: {
-            sizes: [1, 2]
+            sizes: [1, 2],
           }
         }
       },
@@ -25,7 +44,8 @@ describe('pbjs -> ortb banner conversion', () => {
         banner: {
           format: [
             {w: 1, h: 2}
-          ]
+          ],
+          topframe,
         }
       }
     },
@@ -43,7 +63,8 @@ describe('pbjs -> ortb banner conversion', () => {
           format: [
             {w: 1, h: 2},
             {w: 3, h: 4}
-          ]
+          ],
+          topframe,
         }
       }
     },
@@ -62,7 +83,8 @@ describe('pbjs -> ortb banner conversion', () => {
           format: [
             {w: 1, h: 2}
           ],
-          pos: 'pos'
+          pos: 'pos',
+          topframe,
         }
       },
     },
@@ -81,7 +103,8 @@ describe('pbjs -> ortb banner conversion', () => {
           format: [
             {w: 1, h: 2}
           ],
-          pos: 0
+          pos: 0,
+          topframe,
         }
       }
     }
@@ -89,7 +112,7 @@ describe('pbjs -> ortb banner conversion', () => {
     it(`can convert ${t}`, () => {
       const actual = {};
       fillBannerImp(actual, request, {});
-      sinon.assert.match(actual, imp);
+      expect(actual).to.eql(imp);
     });
   });
 

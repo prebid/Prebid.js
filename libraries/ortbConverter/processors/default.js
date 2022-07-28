@@ -32,10 +32,13 @@ export const DEFAULT_PROCESSORS = {
       // sets request properties id, tmax, test
       fn(ortbRequest, bidderRequest) {
         Object.assign(ortbRequest, {
-          id: bidderRequest.auctionId,
-          tmax: bidderRequest.timeout,
-          test: 0
-        })
+          id: ortbRequest.id || bidderRequest.auctionId,
+          test: ortbRequest.test || 0
+        });
+        const timeout = parseInt(bidderRequest.timeout, 10);
+        if (!isNaN(timeout)) {
+          ortbRequest.tmax = timeout;
+        }
       }
     },
     coppa: {
@@ -162,5 +165,7 @@ export function setDevice(ortbRequest) {
 }
 
 export function setSite(ortbRequest, bidderRequest) {
-  ortbRequest.site = Object.assign(getDefinedParams(bidderRequest.refererInfo, ['page', 'domain', 'ref']), ortbRequest.site);
+  if (bidderRequest.refererInfo) {
+    ortbRequest.site = Object.assign(getDefinedParams(bidderRequest.refererInfo, ['page', 'domain', 'ref']), ortbRequest.site);
+  }
 }

@@ -361,11 +361,15 @@ export function setOrtbGdpr(ortbRequest, bidderRequest) {
       deepSetValue(ortbRequest, 'regs.ext.gdpr', consent.gdprApplies ? 1 : 0);
     }
     deepSetValue(ortbRequest, 'user.ext.consent', consent.consentString);
-    const addtl = consent.addtlConsent;
-    if (addtl && typeof addtl === 'string') {
-      deepSetValue(ortbRequest, 'user.ext.ConsentedProvidersSettings.consented_providers', addtl);
-    }
+  }
+}
+
+export function setOrtbAdditionalConsent(ortbRequest, bidderRequest) {
+  const addtl = bidderRequest.gdprConsent?.addtlConsent;
+  if (addtl && typeof addtl === 'string') {
+    deepSetValue(ortbRequest, 'user.ext.ConsentedProvidersSettings.consented_providers', addtl);
   }
 }
 
 registerOrtbProcessor({type: REQUEST, name: 'gdpr', fn: setOrtbGdpr});
+registerOrtbProcessor({type: REQUEST, name: 'gdprAddtlConsent', fn: setOrtbAdditionalConsent})

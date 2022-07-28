@@ -13,7 +13,7 @@ describe('pbjs -> ortb native requests', () => {
   });
 
   it('should set imp.native according to nativeOrtbRequest', () => {
-    const nativeOrtbRequest = {ver: 'version', prop: 'value'};
+    const nativeOrtbRequest = {ver: 'version', prop: 'value', assets: [{}]};
     const imp = toNative({nativeOrtbRequest}, {});
     expect(imp.native.ver).to.eql('version');
     expect(JSON.parse(imp.native.request)).to.eql(nativeOrtbRequest);
@@ -24,11 +24,12 @@ describe('pbjs -> ortb native requests', () => {
   });
 
   it('should merge context.nativeRequest', () => {
-    const nativeOrtbRequest = {ver: 'version', prop: 'value'};
+    const nativeOrtbRequest = {ver: 'version', prop: 'value', assets: [{}]};
     const nativeDefaults = {prop: 'overridden', other: 'other'};
     const imp = toNative({nativeOrtbRequest}, {nativeRequest: nativeDefaults});
     expect(imp.native.ver).to.eql('version');
     expect(JSON.parse(imp.native.request)).to.eql({
+      assets: [{}],
       ver: 'version',
       prop: 'value',
       other: 'other'
@@ -43,6 +44,12 @@ describe('pbjs -> ortb native requests', () => {
     }
     fillNativeImp(imp, {nativeOrtbRequest: {ver: 'version'}}, {});
     expect(imp.native.something).to.eql('orother')
+  });
+
+  it('should do nothing if there are no assets', () => {
+    const imp = {};
+    fillNativeImp(imp, {nativeOrtbRequest: {assets: []}}, {});
+    expect(imp).to.eql({});
   })
 });
 

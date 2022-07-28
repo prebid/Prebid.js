@@ -1,4 +1,4 @@
-import {fillVideoResponse, fillVideoImp} from '../../../libraries/ortbConverter/processors/video.js';
+import {fillVideoImp, fillVideoResponse, VALIDATIONS} from '../../../libraries/ortbConverter/processors/video.js';
 import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
 
 describe('pbjs -> ortb video conversion', () => {
@@ -20,7 +20,7 @@ describe('pbjs -> ortb video conversion', () => {
             playerSize: [[1, 2]],
             context: 'instream',
             mimes: ['video/mp4'],
-            skip: 1
+            skip: 1,
           }
         }
       },
@@ -30,7 +30,7 @@ describe('pbjs -> ortb video conversion', () => {
           h: 2,
           mimes: ['video/mp4'],
           skip: 1,
-          placement: 1
+          placement: 1,
         },
       },
     },
@@ -51,7 +51,7 @@ describe('pbjs -> ortb video conversion', () => {
           w: 1,
           h: 2,
           mimes: ['video/mp4'],
-          skip: 1
+          skip: 1,
         },
       },
     },
@@ -69,7 +69,7 @@ describe('pbjs -> ortb video conversion', () => {
         video: {
           w: 1,
           h: 2,
-          placement: 'explicit'
+          placement: 'explicit',
         }
       }
     },
@@ -85,7 +85,7 @@ describe('pbjs -> ortb video conversion', () => {
       imp: {
         video: {
           w: 1,
-          h: 2
+          h: 2,
         }
       }
     },
@@ -101,7 +101,25 @@ describe('pbjs -> ortb video conversion', () => {
       imp: {
         video: {
           w: 1,
-          h: 2
+          h: 2,
+        }
+      }
+    },
+    {
+      t: 'video request with invalid skip',
+      request: {
+        mediaTypes: {
+          video: {
+            context: 'instream',
+            skip: 'invalid',
+            skipmin: 1,
+            skipafter: 2
+          }
+        }
+      },
+      imp: {
+        video: {
+          placement: 1,
         }
       }
     }
@@ -109,7 +127,7 @@ describe('pbjs -> ortb video conversion', () => {
     it(`can handle ${t}`, () => {
       const actual = {};
       fillVideoImp(actual, request, {});
-      sinon.assert.match(actual, imp);
+      expect(actual).to.eql(imp);
     });
   });
 
@@ -128,6 +146,33 @@ describe('pbjs -> ortb video conversion', () => {
     fillVideoImp(imp, {mediaTypes: {video: {playerSize: [[1, 2]]}}}, {mediaType: BANNER});
     expect(imp).to.eql({});
   });
+
+  describe('validations', () => {
+    describe('skip', () => {
+      Object.entries({
+        'not set': 0,
+        'invalid': 'invalid'
+      }).forEach(([t, skip]) => {
+        it(`should move skip attributes when skip is ${t}`, () => {
+          const video = {
+            skip,
+            skipmin: 123,
+            skipafter: 321
+          }
+          VALIDATIONS.skip(video, skip);
+          expect(video.skipmin).to.not.exist;
+          expect(video.skipafter).to.not.exist;
+        })
+      });
+      it('should remove skip if invalid', () => {
+        const video = {
+          skip: 'invalid'
+        }
+        VALIDATIONS.skip(video, video.skip);
+        expect(video).to.eql({});
+      })
+    });
+  })
 });
 
 describe('ortb -> pbjs video conversion', () => {

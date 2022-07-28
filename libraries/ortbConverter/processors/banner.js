@@ -9,12 +9,13 @@ export function fillBannerImp(imp, bidRequest, context) {
   if (context.mediaType && context.mediaType !== BANNER) return;
 
   const bannerParams = deepAccess(bidRequest, 'mediaTypes.banner');
-  if (bannerParams && bannerParams.sizes) {
+  if (bannerParams) {
     const banner = {
-      format: sizesToFormat(bannerParams.sizes),
       topframe: inIframe() === true ? 0 : 1
     };
-
+    if (bannerParams.sizes) {
+      banner.format = sizesToFormat(bannerParams.sizes);
+    }
     if (bannerParams.hasOwnProperty('pos')) {
       banner.pos = bannerParams.pos;
     }
