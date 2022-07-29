@@ -30,19 +30,6 @@ const PLACEMENT = {
   'instream': 1,
 }
 
-export const VALIDATIONS = {
-  skip(video, value) {
-    if (value !== 0 && value !== 1) {
-      logWarn(`mediaTypes.video.skip must be 0 or 1, got ${value} instead - ignoring skip parameters`);
-      delete video.skip;
-    }
-    if (value !== 1) {
-      delete video.skipmin;
-      delete video.skipafter;
-    }
-  }
-}
-
 export function fillVideoImp(imp, bidRequest, context) {
   if (context.mediaType && context.mediaType !== VIDEO) return;
 
@@ -63,11 +50,7 @@ export function fillVideoImp(imp, bidRequest, context) {
     if (placement != null) {
       video.placement = placement;
     }
-    mergeDeep(video, imp.video);
-    Object.entries(VALIDATIONS)
-      .filter(([key]) => video.hasOwnProperty(key))
-      .forEach(([key, fn]) => fn(video, video[key]));
-    imp.video = video;
+    imp.video = mergeDeep(video, imp.video);
   }
 }
 

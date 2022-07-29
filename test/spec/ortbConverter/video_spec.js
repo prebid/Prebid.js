@@ -105,24 +105,6 @@ describe('pbjs -> ortb video conversion', () => {
         }
       }
     },
-    {
-      t: 'video request with invalid skip',
-      request: {
-        mediaTypes: {
-          video: {
-            context: 'instream',
-            skip: 'invalid',
-            skipmin: 1,
-            skipafter: 2
-          }
-        }
-      },
-      imp: {
-        video: {
-          placement: 1,
-        }
-      }
-    }
   ].forEach(({t, request, imp}) => {
     it(`can handle ${t}`, () => {
       const actual = {};
@@ -146,33 +128,6 @@ describe('pbjs -> ortb video conversion', () => {
     fillVideoImp(imp, {mediaTypes: {video: {playerSize: [[1, 2]]}}}, {mediaType: BANNER});
     expect(imp).to.eql({});
   });
-
-  describe('validations', () => {
-    describe('skip', () => {
-      Object.entries({
-        'not set': 0,
-        'invalid': 'invalid'
-      }).forEach(([t, skip]) => {
-        it(`should move skip attributes when skip is ${t}`, () => {
-          const video = {
-            skip,
-            skipmin: 123,
-            skipafter: 321
-          }
-          VALIDATIONS.skip(video, skip);
-          expect(video.skipmin).to.not.exist;
-          expect(video.skipafter).to.not.exist;
-        })
-      });
-      it('should remove skip if invalid', () => {
-        const video = {
-          skip: 'invalid'
-        }
-        VALIDATIONS.skip(video, video.skip);
-        expect(video).to.eql({});
-      })
-    });
-  })
 });
 
 describe('ortb -> pbjs video conversion', () => {

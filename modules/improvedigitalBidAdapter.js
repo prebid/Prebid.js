@@ -138,6 +138,15 @@ export const CONVERTER = ortbConverter({
           bidRequest.mediaTypes[VIDEO],
           bidRequest.params?.video
         )
+        // skip must be 0 or 1
+        if (video.skip !== 1) {
+          delete video.skipmin;
+          delete video.skipafter;
+          if (video.skip !== 0) {
+            logWarn(`video.skip: invalid value '${video.skip}'. Expected 0 or 1`);
+            delete video.skip;
+          }
+        }
         fillImpVideo(
           imp,
           {...bidRequest, mediaTypes: {[VIDEO]: video}},
