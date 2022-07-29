@@ -3,6 +3,7 @@ import {spec, checkVideoPlacement} from 'modules/pubmaticBidAdapter.js';
 import * as utils from 'src/utils.js';
 import {config} from 'src/config.js';
 import { createEidsArray } from 'modules/userId/eids.js';
+import { bidderSettings } from 'src/bidderSettings.js';
 const constants = require('src/constants.json');
 
 describe('PubMatic adapter', function () {
@@ -1103,6 +1104,62 @@ describe('PubMatic adapter', function () {
         expect(data.imp[0].bidfloorcur).to.equal(bidRequests[0].params.currency);
         expect(data.source.ext.schain).to.deep.equal(bidRequests[0].schain);
   		});
+
+      describe('Marketplace parameters', function() {
+        let bidderSettingStub;
+        beforeEach(function() {
+          bidderSettingStub = sinon.stub(bidderSettings, 'get');
+        });
+
+        afterEach(function() {
+          bidderSettingStub.restore();
+        });
+
+        it('should not be present when allowAlternateBidderCodes is undefined', function () {
+          bidderSettingStub.returns(undefined);
+          let request = spec.buildRequests(bidRequests, {
+            auctionId: 'new-auction-id'
+          });
+          let data = JSON.parse(request.data);
+          expect(data.ext.marketplace).to.equal(undefined);
+        });
+
+        it('should be pubmatic and groupm when allowedAlternateBidderCodes is \'groupm\'', function () {
+          bidderSettingStub.withArgs('pubmatic', 'allowAlternateBidderCodes').returns(true);
+          bidderSettingStub.withArgs('pubmatic', 'allowedAlternateBidderCodes').returns(['groupm']);
+          let request = spec.buildRequests(bidRequests, {
+            auctionId: 'new-auction-id',
+            bidderCode: 'pubmatic'
+          });
+          let data = JSON.parse(request.data);
+          expect(data.ext.marketplace.allowedbidders).to.be.an('array');
+          expect(data.ext.marketplace.allowedbidders.length).to.equal(2);
+          expect(data.ext.marketplace.allowedbidders[0]).to.equal('pubmatic');
+          expect(data.ext.marketplace.allowedbidders[1]).to.equal('groupm');
+        });
+
+        it('should be ALL by default', function () {
+          bidderSettingStub.returns(true);
+          let request = spec.buildRequests(bidRequests, {
+            auctionId: 'new-auction-id'
+          });
+          let data = JSON.parse(request.data);
+          expect(data.ext.marketplace.allowedbidders).to.be.an('array');
+          expect(data.ext.marketplace.allowedbidders[0]).to.equal('all');
+        });
+
+        it('should be ALL when allowedAlternateBidderCodes is \'*\'', function () {
+          bidderSettingStub.withArgs('pubmatic', 'allowAlternateBidderCodes').returns(true);
+          bidderSettingStub.withArgs('pubmatic', 'allowedAlternateBidderCodes').returns(['*']);
+          let request = spec.buildRequests(bidRequests, {
+            auctionId: 'new-auction-id',
+            bidderCode: 'pubmatic'
+          });
+          let data = JSON.parse(request.data);
+          expect(data.ext.marketplace.allowedbidders).to.be.an('array');
+          expect(data.ext.marketplace.allowedbidders[0]).to.equal('all');
+        });
+      })
 
       it('Set content from config, set site.content', function() {
         let sandbox = sinon.sandbox.create();

@@ -1,10 +1,9 @@
-import { logWarn, _each, isBoolean, isStr, isArray, inIframe, mergeDeep, deepAccess, isNumber, deepSetValue, logInfo, logError, deepClone, convertTypes } from '../src/utils.js';
+import { logWarn, _each, isBoolean, isStr, isArray, inIframe, mergeDeep, deepAccess, isNumber, deepSetValue, logInfo, logError, deepClone, convertTypes, uniques } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { bidderSettings } from '../src/bidderSettings.js';
-import { uniques } from '../../../Prebid.js/src/utils.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'pubmatic';
