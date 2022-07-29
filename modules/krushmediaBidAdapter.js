@@ -1,6 +1,7 @@
 import { isFn, deepAccess, logMessage } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'krushmedia';
 const AD_URL = 'https://ads4.krushmedia.com/?c=rtb&m=hb';
@@ -49,6 +50,9 @@ export const spec = {
   },
 
   buildRequests: (validBidRequests = [], bidderRequest) => {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     let winTop = window;
     let location;
     // TODO: this odd try-catch block was copied in several adapters; it doesn't seem to be correct for cross-origin

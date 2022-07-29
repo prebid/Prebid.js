@@ -33,6 +33,22 @@ const BIDDER_REQUEST_1 = {
       transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
     }
   ],
+  schain: {
+    'ver': '1.0',
+    'complete': 1,
+    'nodes': [
+      {
+        'asi': 'indirectseller.com',
+        'sid': '00001',
+        'hp': 1
+      },
+      {
+        'asi': 'indirectseller-2.com',
+        'sid': '00002',
+        'hp': 2
+      },
+    ]
+  },
   gdprConsent: {
     consentString: 'consent-test',
     gdprApplies: false
@@ -335,7 +351,37 @@ describe('Consumable BidAdapter', function () {
       let request = spec.buildRequests(BIDDER_REQUEST_1.bidRequest, BIDDER_REQUEST_1);
 
       expect(request.bidderRequest).to.equal(BIDDER_REQUEST_1);
-    })
+    });
+
+    it('should contain schain if it exists in the bidRequest', function () {
+      let request = spec.buildRequests(BIDDER_REQUEST_1.bidRequest, BIDDER_REQUEST_1);
+      let data = JSON.parse(request.data);
+
+      expect(data.schain).to.deep.equal(BIDDER_REQUEST_1.schain)
+    });
+
+    it('should not contain schain if it does not exist in the bidRequest', function () {
+      let request = spec.buildRequests(BIDDER_REQUEST_2.bidRequest, BIDDER_REQUEST_2);
+      let data = JSON.parse(request.data);
+
+      expect(data.schain).to.be.undefined;
+    });
+
+    it('should contain coppa if configured', function () {
+      config.setConfig({ coppa: true });
+      let request = spec.buildRequests(BIDDER_REQUEST_1.bidRequest, BIDDER_REQUEST_1);
+      let data = JSON.parse(request.data);
+
+      expect(data.coppa).to.be.true;
+    });
+
+    it('should not contain coppa if not configured', function () {
+      config.setConfig({ coppa: false });
+      let request = spec.buildRequests(BIDDER_REQUEST_1.bidRequest, BIDDER_REQUEST_1);
+      let data = JSON.parse(request.data);
+
+      expect(data.coppa).to.be.undefined;
+    });
   });
   describe('interpretResponse validation', function () {
     it('response should have valid bidderCode', function () {
