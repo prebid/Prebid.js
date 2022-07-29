@@ -18,5 +18,8 @@
   "sonobiBidAdapter",
   "yieldmoBidAdapter",
   "smartadserverBidAdapter",
-  "schain"
+  "schain",
+  "amxBidAdapter",
+  "tripleliftBidAdapter",
+  "synacormediaBidAdapter"
 ]
