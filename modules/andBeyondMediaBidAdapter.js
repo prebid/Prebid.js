@@ -4,7 +4,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 
-const BIDDER_CODE = 'andbeyondmedia';
+const BIDDER_CODE = 'beyondmedia';
 const AD_URL = 'https://backend.andbeyond.media/pbjs';
 const SYNC_URL = 'https://cookies.andbeyond.media';
 
@@ -127,7 +127,7 @@ export const spec = {
     } catch (e) {
       logMessage(e);
     }
-    // TODO: does the fallback make sense here?
+
     let location = refferLocation || winLocation;
     const language = (navigator && navigator.language) ? navigator.language.split('-')[0] : '';
     const host = location.host;
