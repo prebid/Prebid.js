@@ -11,8 +11,11 @@ describe('adnuntiusBidAdapter', function () {
   const GVLID = 855;
   const usi = utils.generateUUID()
   const meta = [{ key: 'usi', value: usi }]
-  const storage = getStorageManager({ gvlid: GVLID, moduleName: 'adnuntius' })
-  storage.setDataInLocalStorage('adn.metaData', JSON.stringify(meta))
+
+  before(() => {
+    const storage = getStorageManager({gvlid: GVLID, moduleName: 'adnuntius'})
+    storage.setDataInLocalStorage('adn.metaData', JSON.stringify(meta))
+  });
 
   beforeEach(function () {
     $$PREBID_GLOBAL$$.bidderSettings = {

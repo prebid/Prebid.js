@@ -1,5 +1,5 @@
 import {includes} from './polyfill.js';
-import { logError, logWarn, insertElement } from './utils.js';
+import { logError, logWarn, insertElement, setScriptAttributes } from './utils.js';
 
 const _requestCache = new WeakMap();
 // The below list contains modules or vendors whom Prebid allows to load external JS.
@@ -9,6 +9,7 @@ const _approvedLoadExternalJSList = [
   'criteo',
   'outstream',
   'adagio',
+  'spotx',
   'browsi',
   'brandmetrics',
   'justtag',
@@ -27,8 +28,9 @@ const _approvedLoadExternalJSList = [
  * @param {string} moduleCode bidderCode or module code of the module requesting this resource
  * @param {function} [callback] callback function to be called after the script is loaded
  * @param {Document} [doc] the context document, in which the script will be loaded, defaults to loaded document
+ * @param {object} an object of attributes to be added to the script with setAttribute by [key] and [value]; Only the attributes passed in the first request of a url will be added.
  */
-export function loadExternalScript(url, moduleCode, callback, doc) {
+export function loadExternalScript(url, moduleCode, callback, doc, attributes) {
   if (!moduleCode || !url) {
     logError('cannot load external script without url and moduleCode');
     return;
@@ -77,9 +79,9 @@ export function loadExternalScript(url, moduleCode, callback, doc) {
     } catch (e) {
       logError('Error executing callback', 'adloader.js:loadExternalScript', e);
     }
-  }, doc);
+  }, doc, attributes);
 
-  function requestResource(tagSrc, callback, doc) {
+  function requestResource(tagSrc, callback, doc, attributes) {
     if (!doc) {
       doc = document;
     }
@@ -106,6 +108,10 @@ export function loadExternalScript(url, moduleCode, callback, doc) {
     }
 
     jptScript.src = tagSrc;
+
+    if (attributes) {
+      setScriptAttributes(jptScript, attributes);
+    }
 
     // add the new script tag to the page
     insertElement(jptScript, doc);

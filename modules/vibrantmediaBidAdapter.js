@@ -1,3 +1,4 @@
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 /*
  * Vibrant Media Ltd.
  *
@@ -123,6 +124,9 @@ export const spec = {
    * @return ServerRequest Info describing the request to the prebid server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     const transformedBidRequests = transformBidRequests(validBidRequests);
 
     var url = window.parent.location.href;
