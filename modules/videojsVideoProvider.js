@@ -1,8 +1,31 @@
 import {
-  SETUP_COMPLETE, SETUP_FAILED, DESTROYED, PLAYLIST, PLAYBACK_REQUEST,
-  AUTOSTART_BLOCKED, PLAY_ATTEMPT_FAILED, CONTENT_LOADED, PLAY, PAUSE, BUFFER, TIME, SEEK_START, SEEK_END, MUTE, VOLUME,
-  RENDITION_UPDATE, ERROR, COMPLETE, PLAYLIST_COMPLETE, FULLSCREEN, PLAYER_RESIZE, VIEWABLE, CAST
-} from '../libraries/video/constants/events.js';
+  SETUP_COMPLETE,
+  SETUP_FAILED,
+  DESTROYED,
+  PLAYLIST,
+  PLAYBACK_REQUEST,
+  AUTOSTART_BLOCKED,
+  PLAY_ATTEMPT_FAILED,
+  CONTENT_LOADED,
+  PLAY,
+  PAUSE,
+  BUFFER,
+  TIME,
+  SEEK_START,
+  SEEK_END,
+  MUTE,
+  VOLUME,
+  RENDITION_UPDATE,
+  ERROR,
+  COMPLETE,
+  PLAYLIST_COMPLETE,
+  FULLSCREEN,
+  PLAYER_RESIZE,
+  VIEWABLE,
+  CAST,
+  AD_REQUEST,
+  AD_IMPRESSION, AD_TIME, AD_COMPLETE, AD_SKIPPED, AD_CLICK
+} from '../libraries/video/constants/events.js'
 // pending events: AD_REQUEST, AD_BREAK_START, AD_LOADED, AD_STARTED, AD_IMPRESSION, AD_PLAY,
 //   AD_TIME, AD_PAUSE, AD_CLICK, AD_SKIPPED, AD_ERROR, AD_COMPLETE, AD_BREAK_END
 import {
@@ -10,6 +33,24 @@ import {
 } from '../libraries/video/constants/ortb.js';
 import { VIDEO_JS_VENDOR } from '../libraries/video/constants/vendorCodes.js';
 import { submodule } from '../src/hook.js';
+
+/*
+Plugins of interest:
+https://www.npmjs.com/package/videojs-chromecast
+https://www.npmjs.com/package/@silvermine/videojs-airplay
+https://www.npmjs.com/package/videojs-airplay
+https://www.npmjs.com/package/@silvermine/videojs-chromecast
+https://www.npmjs.com/package/videojs-ima
+https://github.com/googleads/videojs-ima
+https://github.com/videojs/videojs-playlist
+https://github.com/videojs/videojs-contrib-ads
+https://github.com/videojs/videojs-errors
+https://github.com/videojs/videojs-overlay
+https://github.com/videojs/videojs-playlist-ui
+
+inspiration: https://github.com/Conviva/conviva-js-videojs/blob/master/conviva-videojs-module.js
+
+ */
 
 export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStorage_, utils) {
   let vjs = vjs_;
@@ -19,7 +60,6 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
 
   let player = null;
   let playerVersion = null;
-  let imaOptions = null;
   const {playerConfig, divId} = config;
   let isMuted;
   let previousLastTimePosition = 0;
@@ -129,22 +169,24 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
       // Follows w3 spec https://www.w3.org/TR/2011/WD-html5-20110113/video.html#dom-navigator-canplaytype
       type => player.canPlayType(type) !== ''
     )
+
     // IMA supports vpaid unless its expliclty turned off
-    if (imaOptions && imaOptions.vpaidMode !== 0) {
+    // TODO: needs a reference to the imaOptions used at setup to determine if vpaid can be used
+    // if (imaOptions && imaOptions.vpaidMode !== 0) {
       supportedMediaTypes.push(VPAID_MIME_TYPE);
-    }
+    // }
 
     const video = {
       mimes: supportedMediaTypes,
       // Based on the protocol support provided by the videojs-ima plugin
       // https://developers.google.com/interactive-media-ads/docs/sdks/html5/client-side/compatibility
       // Need to check for the plugins
-      protocols: imaOptions ? [
+      protocols: [
         PROTOCOLS.VAST_2_0,
-      ] : [],
-      api: imaOptions ? [
-        API_FRAMEWORKS.VPAID_2_0
-      ] : [],
+      ],
+      api: [
+        API_FRAMEWORKS.VPAID_2_0 // TODO: needs a reference to the imaOptions used at setup to determine if vpaid can be used
+      ],
       // TODO: Make sure this returns dimensions in DIPS
       h: player.currentHeight(),
       w: player.currentWidth(),
@@ -180,6 +222,10 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
 
   // Plugins to integrate: https://github.com/googleads/videojs-ima
   function setAdTagUrl(adTagUrl) {
+    if (!player.ima) {
+      return;
+    }
+
     player.ima.changeAdTag(adTagUrl);
     player.ima.requestAds();
   }
@@ -199,11 +245,10 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
       };
 
       registerPreSetupListeners(type, callback, payload);
-      if (!player) {
-        return;
-      }
 
-      registerPostSetupListeners(type, callback, payload);
+      player.ready(() => {
+        registerPostSetupListeners(type, callback, payload);
+      });
     }
   }
 
@@ -271,7 +316,7 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
       case PLAYLIST:
         eventHandler = e => {
           Object.assign(payload, {
-            playlistItemCount: 1,
+            playlistItemCount: utils.getPlaylistCount(player),
             autostart: player.autoplay()
           });
           callback(type, payload);
@@ -310,20 +355,93 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
       //   };
       //   break;
 
+      case AD_REQUEST:
+        if (!player.ima) {
+          return;
+        }
+
+        eventHandler = e => {
+          payload.adTagUrl = e.AdsRequest.adTagUrl;
+          callback(type, payload);
+        };
+        player.on('ads-request', eventHandler);
+        break
+
+      case AD_IMPRESSION:
+        if (!player.ima) {
+          return;
+        }
+
+        eventHandler = () => {
+          // Object.assign(payload, adState.getState(), timeState.getState());
+          callback(type, payload);
+        };
+        player.on('ads-manager', () => player.ima.addEventListener('impression', eventHandler));
+        break
+
+      case AD_TIME:
+        if (!player.ima) {
+          return;
+        }
+
+        eventHandler = () => {
+          // Object.assign(payload, adState.getState(), timeState.getState());
+          callback(type, payload);
+        };
+        player.on('ads-manager', () => player.ima.addEventListener('adProgress', eventHandler));
+        break
+
+      case AD_COMPLETE:
+        if (!player.ima) {
+          return;
+        }
+
+        eventHandler = () => {
+          // Object.assign(payload, adState.getState(), timeState.getState());
+          callback(type, payload);
+        };
+        player.on('ads-manager', () => player.ima.addEventListener('complete', eventHandler));
+        break
+
+      case AD_SKIPPED:
+        if (!player.ima) {
+          return;
+        }
+
+        eventHandler = () => {
+          // Object.assign(payload, adState.getState(), timeState.getState());
+          callback(type, payload);
+        };
+        player.on('ads-manager', () => player.ima.addEventListener('skip', eventHandler));
+        break
+
+      case AD_CLICK:
+        if (!player.ima) {
+          return;
+        }
+        eventHandler = () => {
+          // Object.assign(payload, adState.getState(), timeState.getState());
+          callback(type, payload);
+        };
+        player.on('ads-manager', () => player.ima.addEventListener('click', eventHandler));
+        break
+
       case CONTENT_LOADED:
         eventHandler = e => {
-          const {target} = e
+          const media = player.getMedia();
+          const contentUrl = utils.getMediaUrl(player.src, media && media.src, e && e.target && e.target.currentSrc)
           Object.assign(payload, {
-            contentId: target.currentSrc,
-            contentUrl: target.currentSrc, // cover other sources ? util ?
-            title: null,
-            description: null,
-            playlistIndex: null,
+            contentId: null,
+            contentUrl,
+            title: media && media.title,
+            description: media && media.description, // TODO: description is not part of the videojs Media spec
+            playlistIndex: utils.getCurrentPlaylistIndex(player),
             contentTags: null
           });
           callback(type, payload);
         };
-        player.on(utils.getVideojsEventName(type), eventHandler);
+        // TODO: sourceset is experimental
+        player.on('sourceset', eventHandler);
         break;
       case PLAY:
         eventHandler = () => {
@@ -456,7 +574,7 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
           payload.fullscreen = player.isFullscreen();
           callback(type, payload);
         };
-        player.on(FULLSCREEN, eventHandler);
+        player.on(utils.getVideojsEventName(type), eventHandler);
         break;
 
       case PLAYER_RESIZE:
@@ -527,11 +645,13 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
   };
 
   function setupPlayer(config) {
+    // TODO: support https://www.npmjs.com/package/videojs-vast-vpaid
     function setupAds() {
       if (!player.ima) {
         return;
       }
       player.ima({});
+      window.imaPlayer = player.ima
     }
 
     const setupConfig = utils.getSetupConfig(config);
@@ -555,6 +675,8 @@ export const utils = {
     if (videojsConfig.muted === undefined && config.mute !== undefined) {
       videojsConfig.muted = config.mute;
     }
+
+    return videojsConfig;
   },
 
   getPositionCode: function({left, top, width, height}) {
@@ -580,8 +702,6 @@ export const utils = {
         return PLAY + 'ing';
       case PLAYBACK_REQUEST:
         return PLAY;
-      case CONTENT_LOADED:
-        return 'loadeddata';
       case SEEK_START:
         return 'seeking';
       case SEEK_END:
@@ -617,6 +737,45 @@ export const utils = {
       'durationchange', meta-duration
       'ratechange',
      */
+  },
+
+  getMediaUrl: function(playerSrc, mediaSrc, eventTargetSrc) {
+    const source = playerSrc || mediaSrc || eventTargetSrc;
+
+    if (!source) {
+      return;
+    }
+
+    if (Array.isArray(source) && source.length) {
+      return this.parseSource(source[0]);
+    }
+
+    return this.parseSource(source)
+  },
+
+  parseSource: function (source) {
+    const type = typeof source;
+    if (type === 'string') {
+      return source;
+    } else if (type === 'object') {
+      return source.src;
+    }
+  },
+
+  getPlaylistCount: function (player) {
+    const playlist = player.playlist; // has playlist plugin
+    if (!playlist) {
+      return;
+    }
+    return playlist.lastIndex && playlist.lastIndex() + 1;
+  },
+
+  getCurrentPlaylistIndex: function (player) {
+    const playlist = player.playlist; // has playlist plugin
+    if (!playlist) {
+      return;
+    }
+    return playlist.currentIndex && playlist.currentIndex();
   }
 };
 
