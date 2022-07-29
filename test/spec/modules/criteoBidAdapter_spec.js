@@ -10,9 +10,10 @@ import {
 import { createBid } from 'src/bidfactory.js';
 import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils.js';
+import * as refererDetection from 'src/refererDetection.js';
 import { config } from '../../../src/config.js';
-import { NATIVE, VIDEO } from '../../../src/mediaTypes.js';
 import * as storageManager from 'src/storageManager.js';
+import { NATIVE, VIDEO } from '../../../src/mediaTypes.js';
 
 describe('The Criteo bidding adapter', function () {
   let utilsMock, sandbox;
@@ -35,6 +36,183 @@ describe('The Criteo bidding adapter', function () {
     global.Criteo = undefined;
     utilsMock.restore();
     sandbox.restore();
+  });
+
+  describe('getUserSyncs', function () {
+    const syncOptionsIframeEnabled = {
+      iframeEnabled: true
+    };
+
+    const expectedHash = {
+      cw: true,
+      lsw: true,
+      origin: 'criteoPrebidAdapter',
+      requestId: '123456',
+      tld: 'www.abc.com',
+      topUrl: 'www.abc.com',
+      version: '$prebid.version$'.replace(/\./g, '_'),
+    };
+
+    let randomStub,
+      getConfigStub,
+      getRefererInfoStub,
+      cookiesAreEnabledStub,
+      localStorageIsEnabledStub,
+      getCookieStub,
+      getDataFromLocalStorageStub;
+
+    beforeEach(function () {
+      getConfigStub = sinon.stub(config, 'getConfig');
+      getConfigStub.withArgs('criteo.fastBidVersion').returns('none');
+
+      randomStub = sinon.stub(Math, 'random');
+      randomStub.returns(123456);
+
+      getRefererInfoStub = sinon.stub(refererDetection, 'getRefererInfo');
+      getRefererInfoStub.returns({
+        domain: 'www.abc.com'
+      });
+
+      cookiesAreEnabledStub = sinon.stub(storage, 'cookiesAreEnabled');
+      cookiesAreEnabledStub.returns(true);
+      localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled');
+      localStorageIsEnabledStub.returns(true);
+
+      getCookieStub = sinon.stub(storage, 'getCookie')
+      getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
+    });
+
+    afterEach(function () {
+      randomStub.restore();
+      getConfigStub.restore();
+      getRefererInfoStub.restore();
+      cookiesAreEnabledStub.restore();
+      localStorageIsEnabledStub.restore();
+      getCookieStub.restore();
+      getDataFromLocalStorageStub.restore();
+    });
+
+    it('should not trigger sync if publisher is using fast bid', function () {
+      getConfigStub.withArgs('criteo.fastBidVersion').returns('latest');
+
+      const userSyncs = spec.getUserSyncs(syncOptionsIframeEnabled, undefined, undefined, undefined);
+
+      expect(userSyncs).to.eql([]);
+    });
+
+    it('should not trigger sync if publisher did not enable iframe based syncs', function () {
+      const userSyncs = spec.getUserSyncs({
+        iframeEnabled: false
+      }, undefined, undefined, undefined);
+
+      expect(userSyncs).to.eql([]);
+    });
+
+    it('should not trigger sync if purpose one is not granted', function () {
+      const gdprConsent = {
+        gdprApplies: true,
+        consentString: 'ABC',
+        vendorData: {
+          purpose: {
+            consents: {
+              1: false
+            }
+          }
+        }
+      };
+      const userSyncs = spec.getUserSyncs(syncOptionsIframeEnabled, undefined, gdprConsent, undefined);
+
+      expect(userSyncs).to.eql([]);
+    });
+
+    it('forwards ids from cookies', function () {
+      const cookieData = {
+        'cto_bundle': 'a',
+        'cto_sid': 'b',
+        'cto_lwid': 'c',
+        'cto_idcpy': 'd',
+        'cto_optout': 'e'
+      };
+
+      const expectedHashWithCookieData = {
+        ...expectedHash,
+        ...{
+          bundle: cookieData['cto_bundle'],
+          localWebId: cookieData['cto_lwid'],
+          secureIdCookie: cookieData['cto_sid'],
+          uid: cookieData['cto_idcpy'],
+          optoutCookie: cookieData['cto_optout']
+        }
+      };
+
+      getCookieStub.callsFake(cookieName => cookieData[cookieName]);
+
+      const userSyncs = spec.getUserSyncs(syncOptionsIframeEnabled, undefined, undefined, undefined);
+
+      expect(userSyncs).to.eql([{
+        type: 'iframe',
+        url: `https://gum.criteo.com/syncframe?origin=criteoPrebidAdapter&topUrl=www.abc.com#${JSON.stringify(expectedHashWithCookieData, Object.keys(expectedHashWithCookieData).sort()).replace(/"/g, '%22')}`
+      }]);
+    });
+
+    it('forwards ids from local storage', function () {
+      const localStorageData = {
+        'cto_bundle': 'a',
+        'cto_sid': 'b',
+        'cto_lwid': 'c',
+        'cto_idcpy': 'd',
+        'cto_optout': 'e'
+      };
+
+      const expectedHashWithLocalStorageData = {
+        ...expectedHash,
+        ...{
+          bundle: localStorageData['cto_bundle'],
+          localWebId: localStorageData['cto_lwid'],
+          secureIdCookie: localStorageData['cto_sid'],
+          uid: localStorageData['cto_idcpy'],
+          optoutCookie: localStorageData['cto_optout']
+        }
+      };
+
+      getDataFromLocalStorageStub.callsFake(localStorageName => localStorageData[localStorageName]);
+
+      const userSyncs = spec.getUserSyncs(syncOptionsIframeEnabled, undefined, undefined, undefined);
+
+      expect(userSyncs).to.eql([{
+        type: 'iframe',
+        url: `https://gum.criteo.com/syncframe?origin=criteoPrebidAdapter&topUrl=www.abc.com#${JSON.stringify(expectedHashWithLocalStorageData, Object.keys(expectedHashWithLocalStorageData).sort()).replace(/"/g, '%22')}`
+      }]);
+    });
+
+    it('forwards gdpr data', function () {
+      const gdprConsent = {
+        gdprApplies: true,
+        consentString: 'ABC',
+        vendorData: {
+          purpose: {
+            consents: {
+              1: true
+            }
+          }
+        }
+      };
+      const userSyncs = spec.getUserSyncs(syncOptionsIframeEnabled, undefined, gdprConsent, undefined);
+
+      expect(userSyncs).to.eql([{
+        type: 'iframe',
+        url: `https://gum.criteo.com/syncframe?origin=criteoPrebidAdapter&topUrl=www.abc.com&gdpr=1&gdpr_consent=ABC#${JSON.stringify(expectedHash).replace(/"/g, '%22')}`
+      }]);
+    });
+
+    it('forwards usp data', function () {
+      const userSyncs = spec.getUserSyncs(syncOptionsIframeEnabled, undefined, undefined, 'ABC');
+
+      expect(userSyncs).to.eql([{
+        type: 'iframe',
+        url: `https://gum.criteo.com/syncframe?origin=criteoPrebidAdapter&topUrl=www.abc.com&us_privacy=ABC#${JSON.stringify(expectedHash).replace(/"/g, '%22')}`
+      }]);
+    });
   });
 
   describe('isBidRequestValid', function () {
