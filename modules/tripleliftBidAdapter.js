@@ -318,7 +318,7 @@ function getUniversalEids(bidRequest) {
   let eids = [];
   if (bidRequest.userIdAsEids) {
     bidRequest.userIdAsEids.forEach(id => {
-      if (common.indexOf(eid) === -1) {
+      if (common.indexOf(id) === -1) {
         eids.push(id); // each element of userIdAsEids is already formatted
       }
     });
