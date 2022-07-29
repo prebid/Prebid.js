@@ -139,7 +139,8 @@ function _buildPostBody(bidRequests, bidderRequest) {
     ...getUnifiedIdEids([bidRequests[0]]),
     ...getIdentityLinkEids([bidRequests[0]]),
     ...getCriteoEids([bidRequests[0]]),
-    ...getPubCommonEids([bidRequests[0]])
+    ...getPubCommonEids([bidRequests[0]]),
+    ...getUniversalEids([bidRequests[0]])
   ];
 
   if (eids.length > 0) {
@@ -310,6 +311,19 @@ function getCriteoEids(bidRequest) {
 
 function getPubCommonEids(bidRequest) {
   return getEids(bidRequest, 'pubcid', 'pubcid.org', 'pubcid');
+}
+
+function getUniversalEids(bidRequest) {
+  let common = ['tdid', 'idl_env', 'criteoId', 'pubcid'];
+  let eids = [];
+  if (bidRequest.userIdAsEids) {
+    bidRequest.userIdAsEids.forEach(id => {
+      if (common.indexOf(eid) === -1) {
+        eids.push(id); // each element of userIdAsEids is already formatted
+      }
+    });
+  }
+  return eids;
 }
 
 function getEids(bidRequest, type, source, rtiPartner) {
