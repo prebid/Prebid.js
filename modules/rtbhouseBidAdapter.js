@@ -81,6 +81,14 @@ export const spec = {
       }
     }
 
+    const clientHints = getClientHints();
+    if (clientHints) {
+      const { device = {} } = request;
+      const { sua = {} } = device;
+      device.sua = { ...sua, ...clientHints };
+      request.device = device;
+    }
+
     return {
       method: 'POST',
       url: 'https://' + validBidRequests[0].params.region + '.' + ENDPOINT_URL,
@@ -419,4 +427,20 @@ function interpretNativeAd(adm) {
     }
   });
   return result;
+}
+
+function getClientHints() {
+  let clientHints = {};
+  const { userAgentData = {} } = navigator;
+  
+  const { brands = [] } = userAgentData;
+  if (brands.length > 0) {
+    clientHints.browsers = brands;
+  }
+
+  if(Object.keys(clientHints).length === 0) {
+    clientHints = null;
+  }
+  
+  return clientHints;
 }
