@@ -234,18 +234,16 @@ export function newBidder(spec) {
           onTimelyResponse(spec.code);
           responses.push(resp)
         },
-        /** Extract additional data from a structured response
-         * @param {BidderAuctionResponse} resp
+        /** Process eventual BidderAuctionResponse.fledgeAuctionConfig field in response.
+         * @param {Array<FledgeAuctionConfig>} fledgeAuctionConfigs
          */
-        onBidderAuctionResponse: (resp) => {
-          if (isArray(resp.fledgeAuctionConfigs)) {
-            resp.fledgeAuctionConfigs.forEach((fledgeAuctionConfig) => {
-              const bidRequest = bidRequestMap[fledgeAuctionConfig.bidId];
-              if (bidRequest) {
-                fledgeManager.addComponentAuction(bidRequest, fledgeAuctionConfig);
-              }
-            });
-          }
+        onFledgeAuctionConfigs: (fledgeAuctionConfigs) => {
+          fledgeAuctionConfigs.forEach((fledgeAuctionConfig) => {
+            const bidRequest = bidRequestMap[fledgeAuctionConfig.bidId];
+            if (bidRequest) {
+              fledgeManager.addComponentAuction(bidRequest, fledgeAuctionConfig);
+            }
+          });
         },
         // If the server responds with an error, there's not much we can do beside logging.
         onError: (errorMessage, error) => {
@@ -316,7 +314,7 @@ export function newBidder(spec) {
  * @param onBid {function({})} invoked once for each bid in the response - with the bid as returned by interpretResponse
  * @param onCompletion {function()} invoked once when all bid requests have been processed
  */
-export const processBidderRequests = hook('sync', function (spec, bids, bidderRequest, ajax, wrapCallback, {onRequest, onResponse, onBidderAuctionResponse, onError, onBid, onCompletion}) {
+export const processBidderRequests = hook('sync', function (spec, bids, bidderRequest, ajax, wrapCallback, {onRequest, onResponse, onFledgeAuctionConfigs, onError, onBid, onCompletion}) {
   let requests = spec.buildRequests(bids, bidderRequest);
   if (!requests || requests.length === 0) {
     onCompletion();
@@ -353,8 +351,9 @@ export const processBidderRequests = hook('sync', function (spec, bids, bidderRe
       }
 
       let bids;
-      if (response && 'bids' in response) {
-        onBidderAuctionResponse(response);
+      // Extract additional data from a structured {BidderAuctionResponse} response
+      if (response && isArray(response.fledgeAuctionConfigs)) {
+        onFledgeAuctionConfigs(response.fledgeAuctionConfigs);
         bids = response.bids;
       } else {
         bids = response;

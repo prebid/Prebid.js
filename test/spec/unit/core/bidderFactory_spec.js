@@ -1174,15 +1174,6 @@ describe('validate bid response: ', function () {
     const fledgeAuctionConfig = {
       bidId: '1',
     }
-    it('should unwrap bids', function() {
-      const bidder = newBidder(spec);
-      spec.interpretResponse.returns({
-        bids: bids
-      });
-      bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
-      expect(addBidResponseStub.calledOnce).to.equal(true);
-      expect(addBidResponseStub.firstCall.args[0]).to.equal('mock/placement');
-    });
     describe('when response has FLEDGE auction config', function() {
       let fledgeManagerStub;
 
@@ -1192,6 +1183,17 @@ describe('validate bid response: ', function () {
 
       afterEach(function () {
         fledgeManagerStub.restore();
+      });
+
+      it('should unwrap bids', function() {
+        const bidder = newBidder(spec);
+        spec.interpretResponse.returns({
+          bids: bids,
+          fledgeAuctionConfigs: []
+        });
+        bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+        expect(addBidResponseStub.calledOnce).to.equal(true);
+        expect(addBidResponseStub.firstCall.args[0]).to.equal('mock/placement');
       });
 
       it('should call fledgeManager with FLEDGE configs', function() {
