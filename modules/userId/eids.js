@@ -278,7 +278,7 @@ export const USER_IDS_CONFIG = {
   },
 
   'imppid': {
-    source: 'intimatemerger.com',
+    source: 'ppid.intimatemerger.com',
     atype: 1
   },
 
