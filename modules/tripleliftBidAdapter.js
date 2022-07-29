@@ -314,11 +314,11 @@ function getPubCommonEids(bidRequest) {
 }
 
 function getUniversalEids(bidRequest) {
-  let common = ['tdid', 'idl_env', 'criteoId', 'pubcid'];
+  let common = ['adserver.org', 'liveramp.com', 'criteo.com', 'pubcid.org'];
   let eids = [];
   if (bidRequest.userIdAsEids) {
     bidRequest.userIdAsEids.forEach(id => {
-      if (common.indexOf(id) === -1) {
+      if (common.indexOf(id.source) === -1) {
         eids.push(id); // each element of userIdAsEids is already formatted
       }
     });
