@@ -1094,14 +1094,15 @@ export const spec = {
     if (allowAlternateBidder !== undefined) {
       payload.ext.marketplace = {};
       if (bidderRequest && allowAlternateBidder == true) {
-        const allowedBiddersList = bidderSettings.get(bidderRequest.bidderCode, 'allowedAlternateBidderCodes');
+        let allowedBiddersList = bidderSettings.get(bidderRequest.bidderCode, 'allowedAlternateBidderCodes');
         if (isArray(allowedBiddersList)) {
-          biddersList = (allowedBiddersList.length === 1 && allowedBiddersList[0] === '*') ? allBiddersList : [...biddersList, ...allowedBiddersList];
+          allowedBiddersList = allowedBiddersList.map(val => val.trim().toLowerCase()).filter(val => !!val).filter(uniques)
+          biddersList = (allowedBiddersList.includes('*') || allowedBiddersList.length === 0) ? allBiddersList : [...biddersList, ...allowedBiddersList];
         } else {
           biddersList = allBiddersList;
         }
       }
-      payload.ext.marketplace.allowedbidders = biddersList.map(val => val.trim()).filter(uniques);
+      payload.ext.marketplace.allowedbidders = biddersList.filter(uniques);
     }
 
     payload.user.gender = (conf.gender ? conf.gender.trim() : UNDEFINED);
