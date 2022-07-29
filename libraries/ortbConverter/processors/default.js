@@ -85,7 +85,7 @@ export const DEFAULT_PROCESSORS = {
   },
   [BID_RESPONSE]: {
     mediaType: {
-      // sets bidResponse.mediaType from seatbid.bid[].mtype, falling back to the mediaType from the request if possible
+      // sets bidResponse.mediaType from context.mediaType, falling back to seatbid.bid[].mtype
       priority: 99,
       fn: setResponseMediaType
     },
@@ -118,13 +118,8 @@ export const DEFAULT_PROCESSORS = {
         if (!bidResponse.meta) {
           bidResponse.meta = {};
         }
-      }
-    },
-    advertiserDomains: {
-      // sets bidResponse.meta.advertiserDomains
-      fn(bidResponse, bid) {
         if (bid.adomain) {
-          deepSetValue(bidResponse, 'meta.advertiserDomains', bid.adomain);
+          bidResponse.meta.advertiserDomains = bid.adomain;
         }
       }
     }

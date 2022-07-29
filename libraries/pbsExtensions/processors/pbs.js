@@ -29,7 +29,7 @@ export const PBS_PROCESSORS = {
   },
   [BID_RESPONSE]: {
     mediaType: {
-      // sets bidResponse.mediaType according to imp.ext.prebid.type
+      // sets bidResponse.mediaType according to context.mediaType, falling back to imp.ext.prebid.type
       fn: extPrebidMediaType,
       priority: 99,
     },

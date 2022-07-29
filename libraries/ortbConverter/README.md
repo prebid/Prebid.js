@@ -23,8 +23,8 @@ registerBidder({
         const data = converter.toORTB({bidRequests, bidderRequest})
         // you may need to adjust `data` to suit your needs - see "customization" below
         return [{
-            method: 'POST',
-            url: 'your-endpoint',
+            method: METHOD,
+            url: ENDPOINT_URL,
             data
         }]
     },
@@ -276,22 +276,24 @@ With the main difference being that setting `currency: false` will disable curre
 version will still set `request.cur`, then delete it. If the currency processor is ever updated to deal with more than just `request.cur`, the `request`
 function will also need to be updated accordingly.
 
-#### Example: overriding currency
+#### Example: taking video parameters from `bidRequest.params.video`
 
 Processors can also be overridden:
 
 ```javascript
 const converter = ortbConverter({
     overrides: {
-        request: {
-            currency(orig, ortbRequest, bidderRequest, context) {
-                if (alwaysUSD) { 
-                    // for the sake of this example, we want to sometimes only use USD
-                    ortbRequest.cur = ['USD']  
-                } else {
-                    // and other times, default to the original currency processor
-                    orig(ortbRequest, bidderRequest, context)
+        imp: {
+            video(orig, imp, bidRequest, context) {
+                // `orig` is the video imp processor, which looks at bidRequest.mediaTypes[VIDEO] 
+                // to populate imp.video
+                // alter its input `bidRequest` to also pick up parameters from `bidRequest.params`
+                let videoParams = bidRequest.mediaTypes[VIDEO];
+                if (videoParams) {
+                    videoParams = Object.assign({}, videoParams, bidRequest.params.video);
+                    bidRequest = {...bidRequest, mediaTypes: {[VIDEO]: videoParams}}
                 }
+                orig(imp, bidRequest, context);
             } 
         }
     }
@@ -325,23 +327,14 @@ All customization functions take a `context` argument. This is a plain JS object
 
 ```javascript
 const converter = ortbConverter({
-    request(buildRequest, imps, bidderRequest, context) {
-        context.someRequestData = somethingInterestingAbout(bidderRequest);
-        return buildRequest(imps, bidderRequest, context);
-    },
-    response(buildResponse, bidResponses, ortbResponse, context) {
-        const response = buildResponse(bidResponses, ortbResponse, context);
-        doSomethingWith(context.someRequestData) // computed above in `request`, made available here during response processing
-        return response;
-    },
     imp(buildImp, bidRequest, context) {
-        // likewise, `context` here will be later passed to `bidResponse` (if one matches the imp generated here)
-        context.someImpData = somethingInterestingAbout(bidRequest);
+        // `context` here will be later passed to `bidResponse` (if one matches the imp generated here)
+        context.someData = somethingInterestingAbout(bidRequest);
         return buildImp(bidRequest, context);
     },
     bidResponse(buildBidResponse, bid, context) {
         const bidResponse = buildBidResponse(bid, context);
-        doSomethingWith(context.someImpData);
+        doSomethingWith(context.someData);
         return bidResponse;
     }
 })
