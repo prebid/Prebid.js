@@ -1146,7 +1146,11 @@ export const spec = {
     // First Party Data
     const commonFpd = (bidderRequest && bidderRequest.ortb2) || {};
     if (commonFpd.site) {
+      const { page, domain, ref } = payload.site;
       mergeDeep(payload, {site: commonFpd.site});
+      payload.site.page = page;
+      payload.site.domain = domain;
+      payload.site.ref = ref;
     }
     if (commonFpd.user) {
       mergeDeep(payload, {user: commonFpd.user});

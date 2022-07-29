@@ -1631,17 +1631,15 @@ describe('PubMatic adapter', function () {
       describe('FPD', function() {
         let newRequest;
 
-        it('ortb2.site should be merged in the request', function() {
+        it('ortb2.site should be merged except page, domain & ref in the request', function() {
           const ortb2 = {
             site: {
-              domain: 'page.example.com',
               cat: ['IAB2'],
               sectioncat: ['IAB2-2']
             }
           };
           const request = spec.buildRequests(bidRequests, {ortb2});
           let data = JSON.parse(request.data);
-          expect(data.site.domain).to.equal('page.example.com');
           expect(data.site.cat).to.deep.equal(['IAB2']);
           expect(data.site.sectioncat).to.deep.equal(['IAB2-2']);
         });
