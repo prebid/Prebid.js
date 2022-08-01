@@ -432,15 +432,15 @@ function interpretNativeAd(adm) {
 function getClientHints() {
   let clientHints = {};
   const { userAgentData = {} } = navigator;
-  
+
   const { brands = [] } = userAgentData;
   if (brands.length > 0) {
     clientHints.browsers = brands;
   }
 
-  if(Object.keys(clientHints).length === 0) {
+  if (Object.keys(clientHints).length === 0) {
     clientHints = null;
   }
-  
+
   return clientHints;
 }
