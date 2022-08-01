@@ -24,14 +24,14 @@ describe('pbjs -> ortb native requests', () => {
   });
 
   it('should merge context.nativeRequest', () => {
-    const nativeOrtbRequest = {ver: 'version', prop: 'value', assets: [{}]};
-    const nativeDefaults = {prop: 'overridden', other: 'other'};
+    const nativeOrtbRequest = {ver: 'version', eventtrackers: [{tracker: 'req'}], assets: [{}]};
+    const nativeDefaults = {eventtrackers: [{tracker: 'default'}], other: 'other'};
     const imp = toNative({nativeOrtbRequest}, {nativeRequest: nativeDefaults});
     expect(imp.native.ver).to.eql('version');
     expect(JSON.parse(imp.native.request)).to.eql({
       assets: [{}],
       ver: 'version',
-      prop: 'value',
+      eventtrackers: [{tracker: 'req'}],
       other: 'other'
     });
   });

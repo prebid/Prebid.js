@@ -5,7 +5,7 @@ export function fillNativeImp(imp, bidRequest, context) {
   if (context.mediaType && context.mediaType !== NATIVE) return;
   let nativeReq = bidRequest.nativeOrtbRequest;
   if (nativeReq) {
-    nativeReq = mergeDeep({}, context.nativeRequest, nativeReq);
+    nativeReq = Object.assign({}, context.nativeRequest, nativeReq);
     if (nativeReq.assets?.length) {
       imp.native = mergeDeep({}, {
         request: JSON.stringify(nativeReq),
