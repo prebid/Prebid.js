@@ -516,8 +516,6 @@ function tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded, {index = au
 
 const callPrebidCacheWithBatchRequestsEnabled = (auctionInstance, afterBidAdded, batchTimeout) => {
   setTimeout(() => {
-    // eslint-disable-next-line no-console
-    console.log(batchBidResponseArrayToPass);
     for (let i = 0; i < batchBidResponseArrayToPass.length; i++) {
       if (batchBidResponseArrayToPass[i].length > 0) {
         store(batchBidResponseArrayToPass[i], function (error, cacheIds, batchedBidRequestIds) {
