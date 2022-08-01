@@ -963,7 +963,7 @@ export function adStateFactory() {
       adTagUrl: event.tag,
       offset: event.adPosition,
       loadTime: event.timeLoading,
-      vastAdId: event.id,
+      vastAdId: event.id, // TODO: delete from spec!! seems JW Player specific
       adDescription: event.description,
       adServer: event.adsystem,
       adTitle: event.adtitle,
