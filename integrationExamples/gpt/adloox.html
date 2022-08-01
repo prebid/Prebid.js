@@ -117,17 +117,17 @@
                 if (videoBids) {
 // DEMO NOTES: your environment likely will use the commented section ////
                     var videoUrl = videoBids.bids[0].vastUrl;
-//                    var videoUrl = pbjs.adServers.dfp.buildVideoUrl({
-//                        adUnit: videoAdUnit,
-//                        params: {
-//                            iu: '/19968336/prebid_cache_video_adunit',
-//                            cust_params: {
-//                                section: 'blog',
-//                                anotherKey: 'anotherValue'
-//                            },
-//                            output: 'vast'
-//                        }
-//                    });
+                    var videoUrl = pbjs.adServers.dfp.buildVideoUrl({
+                        adUnit: videoAdUnit,
+                        params: {
+                            iu: '/19968336/prebid_cache_video_adunit',
+                            cust_params: {
+                                section: 'blog',
+                                anotherKey: 'anotherValue'
+                            },
+                            output: 'vast'
+                        }
+                    });
 //////////////////////////////////////////////////////////////////////////
                     var ret = pbjs.adServers.adloox.buildVideoUrl({
                         adUnit: videoAdUnit,
