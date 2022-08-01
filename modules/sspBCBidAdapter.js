@@ -562,7 +562,11 @@ const spec = {
       tmax,
       user: {},
       regs: {},
-      device: { language: getBrowserLanguage() },
+      device: {
+        language: getBrowserLanguage(),
+        w: screen.width,
+        h: screen.height,
+      },
       test: testMode,
     };
 
