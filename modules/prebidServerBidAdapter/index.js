@@ -391,6 +391,15 @@ function _appendSiteAppDevice(request, pageUrl, accountId) {
   }
 }
 
+function getSiteObj(objToAddProp, checkObj, sitePropList) {
+  sitePropList.forEach((prop) => {
+    // will delete property if it is overrided by ortb2 config
+    if (objToAddProp?.[prop]) delete objToAddProp?.[prop];
+    if (checkObj?.[propName]) objToAddProp[propName] = checkObj[propName];
+  });
+  return objToAddProp;
+}
+
 function addBidderFirstPartyDataToRequest(request, bidderFpd) {
   const fpdConfigs = Object.entries(bidderFpd).reduce((acc, [bidder, bidderOrtb2]) => {
     const ortb2 = mergeDeep({}, bidderOrtb2);
@@ -980,8 +989,11 @@ Object.assign(ORTB2.prototype, {
       deepSetValue(request, 'regs.coppa', 1);
     }
 
+    const sitePropList = ['page', 'domain', 'ref'];
+    const siteObj = getSiteObj({}, request.site, sitePropList);
     const commonFpd = s2sBidRequest.ortb2Fragments?.global || {};
     mergeDeep(request, commonFpd);
+    request.site = getSiteObj(request.site, siteObj, sitePropList);
 
     addBidderFirstPartyDataToRequest(request, s2sBidRequest.ortb2Fragments?.bidder || {});
 
