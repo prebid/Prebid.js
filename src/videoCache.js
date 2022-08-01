@@ -106,7 +106,7 @@ function toStorageRequest(bid, {index = auctionManager.index} = {}) {
  * @return {Function} A callback which interprets the cache server's responses, and makes up the right
  *   arguments for our callback.
  */
-function shimStorageCallback(done) {
+function shimStorageCallback(done, batchedBidRequestIds) {
   return {
     success: function (responseBody) {
       let ids;
@@ -118,7 +118,7 @@ function shimStorageCallback(done) {
       }
 
       if (ids) {
-        done(null, ids);
+        done(null, ids, batchedBidRequestIds);
       } else {
         done(new Error("The cache server didn't respond with a responses property."), []);
       }
@@ -136,12 +136,13 @@ function shimStorageCallback(done) {
  * @param {videoCacheStoreCallback} [done] An optional callback which should be executed after
  * the data has been stored in the cache.
  */
-export function store(bids, done) {
+export function store(bids, done, isBatchRequest) {
+  const batchedBidRequestIds = isBatchRequest ? bids.map(bid => bid.requestId) : [];
   const requestData = {
     puts: bids.map(toStorageRequest)
   };
 
-  ajax(config.getConfig('cache.url'), shimStorageCallback(done), JSON.stringify(requestData), {
+  ajax(config.getConfig('cache.url'), shimStorageCallback(done, batchedBidRequestIds), JSON.stringify(requestData), {
     contentType: 'text/plain',
     withCredentials: true
   });
