@@ -51,7 +51,8 @@ describe('RelaidoAdapter', function () {
     bidderRequest = {
       timeout: 1000,
       refererInfo: {
-        page: 'https://publisher.com/home'
+        page: 'https://publisher.com/home?aaa=test1&bbb=test2',
+        canonicalUrl: 'https://publisher.com/home'
       }
     };
     serverResponse = {
@@ -238,6 +239,7 @@ describe('RelaidoAdapter', function () {
       const request = data.bids[0];
       expect(bidRequests.method).to.equal('POST');
       expect(bidRequests.url).to.equal('https://api.relaido.jp/bid/v1/sprebid');
+      expect(data.canonical_url_hash).to.equal('e6092f44a0044903ae3764126eedd6187c1d9f04');
       expect(data.ref).to.equal(bidderRequest.refererInfo.page);
       expect(data.timeout_ms).to.equal(bidderRequest.timeout);
       expect(request.ad_unit_code).to.equal(bidRequest.adUnitCode);
