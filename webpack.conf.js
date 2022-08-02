@@ -1,20 +1,14 @@
+const TerserPlugin = require('terser-webpack-plugin');
 var prebid = require('./package.json');
 var path = require('path');
 var webpack = require('webpack');
 var helpers = require('./gulpHelpers.js');
-var RequireEnsureWithoutJsonp = require('./plugins/RequireEnsureWithoutJsonp.js');
 var { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 var argv = require('yargs').argv;
-var allowedModules = require('./allowedModules.js');
-
-// list of module names to never include in the common bundle chunk
-var neverBundle = [
-  'AnalyticsAdapter.js'
-];
+const babelConfig = require('./babelConfig.js')({disableFeatures: helpers.getDisabledFeatures(), prebidDistUrlBase: argv.distUrlBase});
 
 var plugins = [
-  new RequireEnsureWithoutJsonp(),
-  new webpack.EnvironmentPlugin(['LiveConnectMode'])
+  new webpack.EnvironmentPlugin({'LiveConnectMode': null}),
 ];
 
 if (argv.analyze) {
@@ -23,27 +17,8 @@ if (argv.analyze) {
   )
 }
 
-plugins.push( // this plugin must be last so it can be easily removed for karma unit tests
-  new webpack.optimize.CommonsChunkPlugin({
-    name: 'prebid',
-    filename: 'prebid-core.js',
-    minChunks: function(module) {
-      return (
-        (
-          module.context && module.context.startsWith(path.resolve('./src')) &&
-          !(module.resource && neverBundle.some(name => module.resource.includes(name)))
-        ) ||
-        (
-          module.resource && (allowedModules.src.concat(['core-js'])).some(
-            name => module.resource.includes(path.resolve('./node_modules/' + name))
-          )
-        )
-      );
-    }
-  })
-);
-
 module.exports = {
+  mode: 'production',
   devtool: 'source-map',
   resolve: {
     modules: [
@@ -51,8 +26,42 @@ module.exports = {
       'node_modules'
     ],
   },
+  entry: (() => {
+    const entry = {
+      'prebid-core': {
+        import: './src/prebid.js'
+      },
+      'debugging-standalone': {
+        import: './modules/debugging/standalone.js'
+      }
+    };
+    const selectedModules = new Set(helpers.getArgModules());
+
+    Object.entries(helpers.getModules()).forEach(([fn, mod]) => {
+      if (selectedModules.size === 0 || selectedModules.has(mod)) {
+        const moduleEntry = {
+          import: fn,
+          dependOn: 'prebid-core'
+        };
+
+        if (helpers.isLibrary(mod)) {
+          const libraryFiles = helpers.getLibraryFiles(mod);
+          moduleEntry.import = libraryFiles || moduleEntry.import;
+        }
+
+        const libraries = helpers.getParentLibraries(mod);
+        if (libraries.length) {
+          moduleEntry.dependOn = ['prebid-core'].concat(libraries);
+        }
+
+        entry[mod] = moduleEntry;
+      }
+    });
+    return entry;
+  })(),
   output: {
-    jsonpFunction: prebid.globalVarName + 'Chunk'
+    chunkLoadingGlobal: prebid.globalVarName + 'Chunk',
+    chunkLoading: 'jsonp',
   },
   module: {
     rules: [
@@ -62,7 +71,7 @@ module.exports = {
         use: [
           {
             loader: 'babel-loader',
-            options: helpers.getAnalyticsOptions(),
+            options: Object.assign({}, babelConfig, helpers.getAnalyticsOptions()),
           }
         ]
       },
@@ -72,9 +81,22 @@ module.exports = {
         use: [
           {
             loader: 'babel-loader',
+            options: babelConfig
           }
         ],
       }
+    ]
+  },
+  optimization: {
+    usedExports: true,
+    sideEffects: true,
+    minimizer: [
+      new TerserPlugin({
+        extractComments: false, // do not generate unhelpful LICENSE comment
+        terserOptions: {
+          module: true, // do not prepend every module with 'use strict'; allow mangling of top-level locals
+        }
+      })
     ]
   },
   plugins

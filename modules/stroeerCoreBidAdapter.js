@@ -13,14 +13,6 @@ const USER_SYNC_IFRAME_URL = 'https://js.adscale.de/pbsync.html';
 const isSecureWindow = () => getWindowSelf().location.protocol === 'https:';
 const isMainPageAccessible = () => getMostAccessibleTopWindow() === getWindowTop();
 
-function getTopWindowReferrer() {
-  try {
-    return getWindowTop().document.referrer;
-  } catch (e) {
-    return getWindowSelf().referrer;
-  }
-}
-
 function getMostAccessibleTopWindow() {
   let res = getWindowSelf();
 
@@ -119,13 +111,17 @@ export const spec = {
   buildRequests: function (validBidRequests = [], bidderRequest) {
     const anyBid = bidderRequest.bids[0];
 
+    const refererInfo = bidderRequest.refererInfo;
+
     const payload = {
       id: bidderRequest.auctionId,
       bids: [],
-      ref: getTopWindowReferrer(),
+      ref: refererInfo.ref,
       ssl: isSecureWindow(),
       mpa: isMainPageAccessible(),
-      timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart)
+      timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart),
+      url: refererInfo.page,
+      schain: anyBid.schain
     };
 
     const userIds = anyBid.userId;

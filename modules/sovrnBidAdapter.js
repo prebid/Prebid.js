@@ -1,8 +1,21 @@
-import { _each, getBidIdParameter, isArray, deepClone, parseUrl, getUniqueIdentifierStr, deepSetValue, logError, deepAccess, isInteger, logWarn } from '../src/utils.js';
+import {
+  _each,
+  getBidIdParameter,
+  isArray,
+  getUniqueIdentifierStr,
+  deepSetValue,
+  logError,
+  deepAccess,
+  isInteger,
+  logWarn
+} from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { ADPOD, BANNER, VIDEO } from '../src/mediaTypes.js'
-import { createEidsArray } from './userId/eids.js';
-import {config} from '../src/config.js';
+import {
+  ADPOD,
+  BANNER,
+  VIDEO
+} from '../src/mediaTypes.js'
+import {createEidsArray} from './userId/eids.js';
 
 const ORTB_VIDEO_PARAMS = {
   'mimes': (value) => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string'),
@@ -12,7 +25,7 @@ const ORTB_VIDEO_PARAMS = {
   'w': (value) => isInteger(value),
   'h': (value) => isInteger(value),
   'startdelay': (value) => isInteger(value),
-  'placement': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 5),
+  'placement': (value) => isInteger(value) && value >= 1 && value <= 5,
   'linearity': (value) => [1, 2].indexOf(value) !== -1,
   'skip': (value) => [0, 1].indexOf(value) !== -1,
   'skipmin': (value) => isInteger(value),
@@ -25,9 +38,17 @@ const ORTB_VIDEO_PARAMS = {
   'boxingallowed': (value) => [0, 1].indexOf(value) !== -1,
   'playbackmethod': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 6),
   'playbackend': (value) => [1, 2, 3].indexOf(value) !== -1,
-  'delivery': (value) => [1, 2, 3].indexOf(value) !== -1,
-  'pos': (value) => Array.isArray(value) && value.every(v => v >= 0 && v <= 7),
+  'delivery': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 3),
+  'pos': (value) => isInteger(value) && value >= 1 && value <= 7,
   'api': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 6)
+}
+
+const REQUIRED_VIDEO_PARAMS = {
+  context: (value) => value !== ADPOD,
+  mimes: ORTB_VIDEO_PARAMS.mimes,
+  minduration: ORTB_VIDEO_PARAMS.minduration,
+  maxduration: ORTB_VIDEO_PARAMS.maxduration,
+  protocols: ORTB_VIDEO_PARAMS.protocols
 }
 
 export const spec = {
@@ -40,19 +61,25 @@ export const spec = {
    * @param {object} bid the Sovrn bid to validate
    * @return boolean for whether or not a bid is valid
    */
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
+    const video = bid?.mediaTypes?.video
     return !!(
       bid.params.tagid &&
       !isNaN(parseFloat(bid.params.tagid)) &&
-      isFinite(bid.params.tagid) &&
-      deepAccess(bid, 'mediaTypes.video.context') !== ADPOD
+      isFinite(bid.params.tagid) && (
+        !video || (
+          Object.keys(REQUIRED_VIDEO_PARAMS)
+            .every(key => REQUIRED_VIDEO_PARAMS[key](video[key]))
+        )
+      )
     )
   },
 
   /**
    * Format the bid request object for our endpoint
-   * @param {BidRequest[]} bidRequests Array of Sovrn bidders
    * @return object of parameters for Prebid AJAX request
+   * @param bidReqs
+   * @param bidderRequest
    */
   buildRequests: function(bidReqs, bidderRequest) {
     try {
@@ -60,7 +87,6 @@ export const spec = {
       let iv;
       let schain;
       let eids;
-      let tpid = []
       let criteoId;
 
       _each(bidReqs, function (bid) {
@@ -71,7 +97,6 @@ export const spec = {
               if (id.source === 'criteo.com') {
                 criteoId = id.uids[0].id
               }
-              tpid.push({source: id.source, uid: id.uids[0].id})
             }
           })
         }
@@ -121,12 +146,11 @@ export const spec = {
         sovrnImps.push(imp)
       })
 
-      const fpd = deepClone(config.getConfig('ortb2'))
+      const fpd = bidderRequest.ortb2 || {};
 
       const site = fpd.site || {}
-      site.page = bidderRequest.refererInfo.referer
-      // clever trick to get the domain
-      site.domain = parseUrl(site.page).hostname
+      site.page = bidderRequest.refererInfo.page
+      site.domain = bidderRequest.refererInfo.domain
 
       const sovrnBidReq = {
         id: getUniqueIdentifierStr(),
@@ -153,7 +177,6 @@ export const spec = {
 
       if (eids) {
         deepSetValue(sovrnBidReq, 'user.ext.eids', eids)
-        deepSetValue(sovrnBidReq, 'user.ext.tpid', tpid)
         if (criteoId) {
           deepSetValue(sovrnBidReq, 'user.ext.prebid_criteoid', criteoId)
         }
@@ -179,14 +202,12 @@ export const spec = {
    * @return {Bid[]} An array of formatted bids.
   */
   interpretResponse: function({ body: {id, seatbid} }) {
+    if (!id || !seatbid || !Array.isArray(seatbid)) return []
+
     try {
-      let sovrnBidResponses = [];
-      if (id &&
-        seatbid &&
-        seatbid.length > 0 &&
-        seatbid[0].bid &&
-        seatbid[0].bid.length > 0) {
-        seatbid[0].bid.map(sovrnBid => {
+      return seatbid
+        .filter(seat => seat)
+        .map(seat => seat.bid.map(sovrnBid => {
           const bid = {
             requestId: sovrnBid.impid,
             cpm: parseFloat(sovrnBid.price),
@@ -196,23 +217,23 @@ export const spec = {
             dealId: sovrnBid.dealid || null,
             currency: 'USD',
             netRevenue: true,
-            ttl: sovrnBid.ext ? (sovrnBid.ext.ttl || 90) : 90,
+            mediaType: sovrnBid.nurl ? BANNER : VIDEO,
+            ttl: sovrnBid.ext?.ttl || 90,
             meta: { advertiserDomains: sovrnBid && sovrnBid.adomain ? sovrnBid.adomain : [] }
           }
 
-          if (!sovrnBid.nurl) {
-            bid.mediaType = VIDEO
-            bid.vastXml = decodeURIComponent(sovrnBid.adm)
-          } else {
-            bid.mediaType = BANNER
+          if (sovrnBid.nurl) {
             bid.ad = decodeURIComponent(`${sovrnBid.adm}<img src="${sovrnBid.nurl}">`)
+          } else {
+            bid.vastXml = decodeURIComponent(sovrnBid.adm)
           }
-          sovrnBidResponses.push(bid);
-        });
-      }
-      return sovrnBidResponses
+
+          return bid
+        }))
+        .flat()
     } catch (e) {
-      logError('Could not intrepret bidresponse, error deatils:', e);
+      logError('Could not interpret bidresponse, error details:', e)
+      return e
     }
   },
 
@@ -256,11 +277,16 @@ export const spec = {
 
 function _buildVideoRequestObj(bid) {
   const videoObj = {}
+  const bidSizes = deepAccess(bid, 'sizes')
   const videoAdUnitParams = deepAccess(bid, 'mediaTypes.video', {})
   const videoBidderParams = deepAccess(bid, 'params.video', {})
   const computedParams = {}
 
-  if (Array.isArray(videoAdUnitParams.playerSize)) {
+  if (bidSizes) {
+    const sizes = (Array.isArray(bidSizes[0])) ? bidSizes[0] : bidSizes
+    computedParams.w = sizes[0]
+    computedParams.h = sizes[1]
+  } else if (Array.isArray(videoAdUnitParams.playerSize)) {
     const sizes = (Array.isArray(videoAdUnitParams.playerSize[0])) ? videoAdUnitParams.playerSize[0] : videoAdUnitParams.playerSize
     computedParams.w = sizes[0]
     computedParams.h = sizes[1]

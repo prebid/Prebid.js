@@ -5,6 +5,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
+import {parseDomain} from '../src/refererDetection.js';
 
 const BIDDER_CODE = 'tappx';
 const GVLID_CODE = 628;
@@ -555,19 +556,9 @@ export function _checkParamDataType(key, value, datatype) {
 }
 
 export function _extractPageUrl(validBidRequests, bidderRequest) {
-  let referrer = deepAccess(bidderRequest, 'refererInfo.referer');
-  let page = deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || deepAccess(window, 'location.href');
-  let paramUrl = deepAccess(validBidRequests, 'params.domainUrl') || config.getConfig('pageUrl');
-
-  let domainUrl = referrer || page || paramUrl;
-
-  try {
-    domainUrl = domainUrl.match(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n?]+)/img)[0].replace(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?/img, '');
-  } catch (error) {
-    domainUrl = undefined;
-  }
-
-  return domainUrl;
+  // TODO: does the fallback make sense?
+  let url = bidderRequest?.refererInfo?.page || bidderRequest.refererInfo?.topmostLocation;
+  return parseDomain(url, {noLeadingWww: true});
 }
 
 registerBidder(spec);

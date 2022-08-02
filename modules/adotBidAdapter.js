@@ -1,17 +1,17 @@
 import {Renderer} from '../src/Renderer.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {isStr, isFn, isArray, isPlainObject, isBoolean, logError, replaceAuctionPrice} from '../src/utils.js';
-import find from 'core-js-pure/features/array/find.js';
-import { config } from '../src/config.js';
-import { OUTSTREAM } from '../src/video.js';
+import {isArray, isBoolean, isFn, isPlainObject, isStr, logError, replaceAuctionPrice} from '../src/utils.js';
+import {find} from '../src/polyfill.js';
+import {config} from '../src/config.js';
+import {OUTSTREAM} from '../src/video.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'adot';
 const ADAPTER_VERSION = 'v2.0.0';
 const BID_METHOD = 'POST';
 const BIDDER_URL = 'https://dsp.adotmob.com/headerbidding{PUBLISHER_PATH}/bidrequest';
-const REQUIRED_VIDEO_PARAMS = ['mimes', 'minduration', 'maxduration', 'protocols'];
-const DOMAIN_REGEX = new RegExp('//([^/]*)');
+const REQUIRED_VIDEO_PARAMS = ['mimes', 'protocols'];
 const FIRST_PRICE = 1;
 const IMP_BUILDER = { banner: buildBanner, video: buildVideo, native: buildNative };
 const NATIVE_PLACEMENTS = {
@@ -44,38 +44,28 @@ function tryParse(data) {
 }
 
 /**
- * Extract domain from given url
- *
- * @param {string} url
- * @returns {string|null} Extracted domain
- */
-function extractDomainFromURL(url) {
-  if (!url || !isStr(url)) return null;
-  const domain = url.match(DOMAIN_REGEX);
-  if (isArray(domain) && domain.length === 2) return domain[1];
-  return null;
-}
-
-/**
  * Create and return site OpenRtb object from given bidderRequest
  *
  * @param {BidderRequest} bidderRequest
  * @returns {Site|null} Formatted Site OpenRtb object or null
  */
 function getOpenRTBSiteObject(bidderRequest) {
-  if (!bidderRequest || !bidderRequest.refererInfo) return null;
+  const refererInfo = (bidderRequest && bidderRequest.refererInfo) || null;
 
-  const domain = extractDomainFromURL(bidderRequest.refererInfo.referer);
+  const domain = refererInfo ? refererInfo.domain : window.location.hostname;
   const publisherId = config.getConfig('adot.publisherId');
 
   if (!domain) return null;
 
   return {
-    page: bidderRequest.refererInfo.referer,
+    page: refererInfo ? refererInfo.page : window.location.href,
     domain: domain,
     name: domain,
     publisher: {
       id: publisherId
+    },
+    ext: {
+      schain: bidderRequest.schain
     }
   };
 }
@@ -97,7 +87,13 @@ function getOpenRTBDeviceObject() {
  */
 function getOpenRTBUserObject(bidderRequest) {
   if (!bidderRequest || !bidderRequest.gdprConsent || !isStr(bidderRequest.gdprConsent.consentString)) return null;
-  return { ext: { consent: bidderRequest.gdprConsent.consentString } };
+
+  return {
+    ext: {
+      consent: bidderRequest.gdprConsent.consentString,
+      pubProvidedId: bidderRequest.userId && bidderRequest.userId.pubProvidedId,
+    },
+  };
 }
 
 /**
@@ -378,6 +374,8 @@ function splitAdUnits(validBidRequests) {
  * @returns {Array<AjaxRequest>}
  */
 function buildRequests(validBidRequests, bidderRequest) {
+  // convert Native ORTB definition to old-style prebid native definition
+  validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
   const adUnits = splitAdUnits(validBidRequests);
   const publisherPathConfig = config.getConfig('adot.publisherPath');
   const publisherPath = publisherPathConfig === undefined ? '' : '/' + publisherPathConfig;

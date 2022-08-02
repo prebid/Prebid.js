@@ -12,13 +12,9 @@ const GVLID = 380;
 const COOKIE_SYNC_FALLBACK_URLS = [
   'https://x.bidswitch.net/sync?ssp=vidoomy',
   'https://ib.adnxs.com/getuid?https%3A%2F%2Fa-prebid.vidoomy.com%2Fsetuid%3Fbidder%3Dadnxs%26gdpr%3D{{GDPR}}%26gdpr_consent%3D{{GDPR_CONSENT}}%26uid%3D%24UID',
-  'https://pixel-sync.sitescout.com/dmp/pixelSync?nid=120&redir=https%3A%2F%2Fa.vidoomy.com%2Fapi%2Frtbserver%2Fcookie%3Fi%3DCEN%26uid%3D%7BuserId%7D',
-  'https://sync.1rx.io/usersync2/vidoomy?redir=https%3A%2F%2Fa.vidoomy.com%2Fapi%2Frtbserver%2Fcookie%3Fi%3DUN%26uid%3D%5BRX_UUID%5D',
-  'https://rtb.openx.net/sync/prebid?gdpr={{GDPR}}&gdpr_consent={{GDPR_CONSENT}}&r=https%3A%2F%2Fa-prebid.vidoomy.com%2Fsetuid%3Fbidder%3Dopenx%26uid%3D$%7BUID%7D',
-  'https://ads.pubmatic.com/AdServer/js/user_sync.html?gdpr={{GDPR}}&gdpr_consent={{GDPR_CONSENT}}&us_privacy=&predirect=https%3A%2F%2Fa-prebid.vidoomy.com%2Fsetuid%3Fbidder%3Dpubmatic%26gdpr%3D{{GDPR}}%26gdpr_consent%3D{{GDPR_CONSENT}}%26uid%3D',
+  'https://pixel-sync.sitescout.com/dmp/pixelSync?nid=120&gdpr={{GDPR}}&gdpr_consent={{GDPR_CONSENT}}&redir=https%3A%2F%2Fa.vidoomy.com%2Fapi%2Frtbserver%2Fcookie%3Fi%3DCEN%26uid%3D%7BuserId%7D',
   'https://cm.adform.net/cookie?redirect_url=https%3A%2F%2Fa-prebid.vidoomy.com%2Fsetuid%3Fbidder%3Dadf%26gdpr%3D{{GDPR}}%26gdpr_consent%3D{{GDPR_CONSENT}}%26uid%3D%24UID',
-  'https://ups.analytics.yahoo.com/ups/58531/occ?gdpr={{GDPR}}&gdpr_consent={{GDPR_CONSENT}}',
-  'https://ap.lijit.com/pixel?redir=https%3A%2F%2Fa-prebid.vidoomy.com%2Fsetuid%3Fbidder%3Dsovrn%26gdpr%3D{{GDPR}}%26gdpr_consent%3D{{GDPR_CONSENT}}%26uid%3D%24UID'
+  'https://ups.analytics.yahoo.com/ups/58531/occ?gdpr={{GDPR}}&gdpr_consent={{GDPR_CONSENT}}'
 ];
 
 const isBidRequestValid = bid => {
@@ -77,9 +73,8 @@ const buildRequests = (validBidRequests, bidderRequest) => {
     }
     const [w, h] = (parseSizesInput(sizes)[0] || '0x0').split('x');
 
-    const aElement = document.createElement('a');
-    aElement.href = (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) || top.location.href;
-    const hostname = aElement.hostname
+    // TODO: is 'domain' the right value here?
+    const hostname = bidderRequest.refererInfo.domain || window.location.hostname;
 
     const videoContext = deepAccess(bid, 'mediaTypes.video.context');
     const bidfloor = deepAccess(bid, `params.bidfloor`, 0);
@@ -99,7 +94,8 @@ const buildRequests = (validBidRequests, bidderRequest) => {
       schain: bid.schain || '',
       bidfloor,
       d: getDomainWithoutSubdomain(hostname), // 'vidoomy.com',
-      sp: encodeURIComponent(aElement.href),
+      // TODO: does the fallback make sense here?
+      sp: encodeURIComponent(bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation),
       usp: bidderRequest.uspConsent || '',
       coppa: !!config.getConfig('coppa'),
       videoContext: videoContext || ''

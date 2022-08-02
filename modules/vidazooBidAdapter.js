@@ -1,4 +1,4 @@
-import { _each, deepAccess, parseSizesInput } from '../src/utils.js';
+import { _each, deepAccess, parseSizesInput, parseUrl } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -15,7 +15,6 @@ const SESSION_ID_KEY = 'vidSid';
 export const SUPPORTED_ID_SYSTEMS = {
   'britepoolid': 1,
   'criteoId': 1,
-  'digitrustid': 1,
   'id5id': 1,
   'idl_env': 1,
   'lipb': 1,
@@ -24,7 +23,16 @@ export const SUPPORTED_ID_SYSTEMS = {
   'pubcid': 1,
   'tdid': 1,
 };
-const storage = getStorageManager(GVLID);
+const storage = getStorageManager({ gvlid: GVLID, bidderCode: BIDDER_CODE });
+
+function getTopWindowQueryParams() {
+  try {
+    const parsedUrl = parseUrl(window.top.document.URL, { decodeSearchAsString: true });
+    return parsedUrl.search;
+  } catch (e) {
+    return '';
+  }
+}
 
 export function createDomain(subDomain = DEFAULT_SUB_DOMAIN) {
   return `https://${subDomain}.cootlogix.com`;
@@ -60,6 +68,7 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
 
   let data = {
     url: encodeURIComponent(topWindowUrl),
+    uqs: getTopWindowQueryParams(),
     cb: Date.now(),
     bidFloor: bidFloor,
     bidId: bidId,
@@ -129,7 +138,8 @@ function appendUserIdsToRequestPayload(payloadRef, userIds) {
 }
 
 function buildRequests(validBidRequests, bidderRequest) {
-  const topWindowUrl = bidderRequest.refererInfo.referer;
+  // TODO: does the fallback make sense here?
+  const topWindowUrl = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
   const requests = [];
   validBidRequests.forEach(validBidRequest => {
     const sizes = parseSizesInput(validBidRequest.sizes);
