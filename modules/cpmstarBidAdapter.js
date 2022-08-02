@@ -93,10 +93,20 @@ export const spec = {
         url += '&tfcd=' + (config.getConfig('coppa') ? 1 : 0);
       }
 
+      let body = {};
+      let adUnitCode = bidRequest.adUnitCode;
+      if (adUnitCode) {
+        body.adUnitCode = adUnitCode;
+      }
+      if (mediaType == VIDEO) {
+        body.video = utils.deepAccess(bidRequest, 'mediaTypes.video');
+      }
+
       requests.push({
-        method: 'GET',
+        method: 'POST',
         url: url,
         bidRequest: bidRequest,
+        data: body
       });
     }
 
