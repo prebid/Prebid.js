@@ -79,7 +79,7 @@ describe('imuId module', function () {
   describe('getApiUrl()', function () {
     it('should return default url when cid only', function () {
       const url = getApiUrl(5126);
-      expect(url).to.be.equal(`${apiUrl}?cid=5126`);
+      expect(url).to.be.equal(`https://sync6.im-apps.net/5126/pid`);
     });
 
     it('should return param url when set url', function () {

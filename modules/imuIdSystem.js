@@ -84,10 +84,11 @@ export function getApiCallback(callback) {
         }
       }
       if (callback && responseObj.uid) {
-        callback({
+        const callbackObj = {
           imuid: responseObj.uid,
           imppid: responseObj.ppid
-        });
+        };
+        callback(callbackObj);
       }
     },
     error: error => {
