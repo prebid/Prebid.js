@@ -391,11 +391,11 @@ function _appendSiteAppDevice(request, pageUrl, accountId) {
   }
 }
 
-function getSiteObj(objToAddProp, checkObj, sitePropList) {
+function getSiteObj(objToAddProp, referObj, sitePropList) {
   sitePropList.forEach((prop) => {
     // will delete property if it is overrided by ortb2 config
     if (objToAddProp?.[prop]) delete objToAddProp?.[prop];
-    if (checkObj?.[propName]) objToAddProp[propName] = checkObj[propName];
+    if (referObj?.[propName]) objToAddProp[propName] = referObj[propName];
   });
   return objToAddProp;
 }
