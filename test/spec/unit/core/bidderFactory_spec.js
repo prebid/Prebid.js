@@ -1139,7 +1139,7 @@ describe('validate bid response: ', function () {
       expect(logErrorSpy.callCount).to.equal(0);
     });
 
-    it('should accept the bid, when allowedAlternateBidderCodes is marked as empty array and allowAlternateBidderCodes flag is true', function () {
+    it('should not accept the bid, when allowedAlternateBidderCodes is marked as empty array and allowAlternateBidderCodes flag is true', function () {
       bidderSettingStub.withArgs(CODE, 'allowAlternateBidderCodes').returns(true);
       bidderSettingStub.withArgs(CODE, 'allowedAlternateBidderCodes').returns([]);
 
@@ -1147,9 +1147,8 @@ describe('validate bid response: ', function () {
       spec.interpretResponse.returns(bids1);
       bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
-      expect(addBidResponseStub.calledOnce).to.equal(true);
-      expect(logWarnSpy.callCount).to.equal(0);
-      expect(logErrorSpy.callCount).to.equal(0);
+      expect(addBidResponseStub.calledOnce).to.equal(false);
+      expect(logWarnSpy.callCount).to.equal(1);
     });
 
     it('should accept the bid, when allowedAlternateBidderCodes contains bidder name and allowAlternateBidderCodes flag is true', function () {

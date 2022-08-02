@@ -261,7 +261,7 @@ export function newBidder(spec) {
     let alternateBiddersList = bidderSettings.get(requestBidder, 'allowedAlternateBidderCodes');
     if (!!responseBidder && !!requestBidder && requestBidder !== responseBidder) {
       alternateBiddersList = isArray(alternateBiddersList) ? alternateBiddersList.map(val => val.trim().toLowerCase()).filter(val => !!val).filter(uniques) : alternateBiddersList;
-      if (!allowAlternateBidderCodes || (isArray(alternateBiddersList) && (alternateBiddersList.length !== 0 && alternateBiddersList[0] !== '*' && !alternateBiddersList.includes(responseBidder)))) {
+      if (!allowAlternateBidderCodes || (isArray(alternateBiddersList) && (alternateBiddersList[0] !== '*' && !alternateBiddersList.includes(responseBidder)))) {
         return true;
       }
     }
