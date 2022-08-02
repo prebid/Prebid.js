@@ -32,6 +32,7 @@ import {
 } from '../libraries/video/constants/ortb.js';
 import { VIDEO_JS_VENDOR } from '../libraries/video/constants/vendorCodes.js';
 import { submodule } from '../src/hook.js';
+import stateFactory from '../libraries/video/shared/state'
 
 /*
 Plugins of interest:
@@ -57,6 +58,8 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
   // we use this dict to keep track of these pairings
   const callbackToHandler = {};
 
+  const adState = adState_;
+  const timeState = timeState_;
   let player = null;
   let playerVersion = null;
   const {playerConfig, divId} = config;
@@ -332,50 +335,32 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
         player.on(utils.getVideojsEventName(type), eventHandler);
         break;
 
-        // case AUTOSTART_BLOCKED:
-      //   eventHandler = e => {
-      //     Object.assign(payload, {
-      //       sourceError: e.error,
-      //       errorCode: e.code,
-      //       errorMessage: e.message
-      //     });
-      //     callback(type, payload);
-      //   };
-      //   break;
-      // case PLAY_ATTEMPT_FAILED:
-      //   eventHandler = e => {
-      //     Object.assign(payload, {
-      //       playReason: e.playReason,
-      //       sourceError: e.sourceError,
-      //       errorCode: e.code,
-      //       errorMessage: e.message
-      //     });
-      //     callback(type, payload);
-      //   };
-      //   break;
-
       case AD_REQUEST:
         if (!player.ima) {
           return;
         }
 
         eventHandler = e => {
-          console.log('ads-req: ', e);
-          payload.adTagUrl = e.AdsRequest.adTagUrl;
+          const adTagUrl = e.AdsRequest.adTagUrl;
+          adState.updateState({ adTagUrl });
+          payload.adTagUrl = adTagUrl;
           callback(type, payload);
         };
-        console.log('before once');
         player.on('ads-request', eventHandler); // TODO: e has ref to getSettings().VpaidMode - seems not
-        console.log('after once');
-        player.on('ads-ad-started', e => {
-          console.log('ads-ad-started: ', e);
-        });
-        player.on('ads-manager', e => {
-          console.log('ads-manager: ', e);
-        });
-        player.on('ads-loader', e => {
-          console.log('ads-loader: ', e);
-        });
+        break
+
+      case AD_LOADED:
+        if (!player.ima) {
+          return;
+        }
+
+        eventHandler = (e) => {
+          const imaAd = e.getAdData();
+          adState.updateForEvent(imaAd);
+          Object.assign(payload, adState.getState(), timeState.getState());
+          callback(type, payload);
+        };
+        player.one('ads-manager', () => player.ima.addEventListener('loaded', eventHandler));
         break
 
       case AD_STARTED:
@@ -384,7 +369,7 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
         }
 
         eventHandler = () => {
-          // Object.assign(payload, adState.getState(), timeState.getState());
+          Object.assign(payload, adState.getState(), timeState.getState());
           callback(type, payload);
         };
         player.one('ads-manager', () => player.ima.addEventListener('start', eventHandler));
@@ -396,10 +381,34 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
         }
 
         eventHandler = () => {
-          // Object.assign(payload, adState.getState(), timeState.getState());
+          Object.assign(payload, adState.getState(), timeState.getState());
           callback(type, payload);
         };
         player.one('ads-manager', () => player.ima.addEventListener('impression', eventHandler));
+        break
+
+      case AD_PLAY:
+        if (!player.ima) {
+          return;
+        }
+
+        eventHandler = () => {
+          Object.assign(payload, adState.getState(), timeState.getState());
+          callback(type, payload);
+        };
+        player.one('ads-manager', () => player.ima.addEventListener('resume', eventHandler));
+        break
+
+      case AD_PAUSE:
+        if (!player.ima) {
+          return;
+        }
+
+        eventHandler = () => {
+          Object.assign(payload, adState.getState(), timeState.getState());
+          callback(type, payload);
+        };
+        player.one('ads-manager', () => player.ima.addEventListener('pause', eventHandler));
         break
 
       case AD_TIME:
@@ -408,7 +417,7 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
         }
 
         eventHandler = () => {
-          // Object.assign(payload, adState.getState(), timeState.getState());
+          Object.assign(payload, adState.getState(), timeState.getState());
           callback(type, payload);
         };
         player.one('ads-manager', () => player.ima.addEventListener('adProgress', eventHandler));
@@ -420,8 +429,10 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
         }
 
         eventHandler = () => {
-          // Object.assign(payload, adState.getState(), timeState.getState());
+          Object.assign(payload, adState.getState(), timeState.getState());
           callback(type, payload);
+          adState.clearState();
+          console.log(type);
         };
         player.one('ads-manager', () => player.ima.addEventListener('complete', eventHandler));
         break
@@ -432,8 +443,10 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
         }
 
         eventHandler = () => {
-          // Object.assign(payload, adState.getState(), timeState.getState());
+          Object.assign(payload, adState.getState(), timeState.getState());
           callback(type, payload);
+          adState.clearState();
+          console.log(type);
         };
         player.one('ads-manager', () => player.ima.addEventListener('skip', eventHandler));
         break
@@ -443,8 +456,9 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
           return;
         }
         eventHandler = () => {
-          // Object.assign(payload, adState.getState(), timeState.getState());
+          Object.assign(payload, adState.getState(), timeState.getState());
           callback(type, payload);
+          console.log(type);
         };
         player.one('ads-manager', () => player.ima.addEventListener('click', eventHandler));
         break
@@ -453,11 +467,20 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
         if (!player.ima) {
           return;
         }
-        eventHandler = () => {
-          // Object.assign(payload, adState.getState(), timeState.getState());
+        eventHandler = e => {
+          const imaAdError = e.data.AdError;
+          Object.assign(payload, {
+            playerErrorCode: imaAdError.getErrorCode(),
+            vastErrorCode: imaAdError.getVastErrorCode(),
+            errorMessage: imaAdError.getMessage(),
+            sourceError: imaAdError.getInnerError()
+            // timeout
+          }, adState.getState(), timeState.getState());
           callback(type, payload);
+          adState.clearState();
+          console.log(type);
         };
-        player.one('ads-manager', () => player.ima.addEventListener(type, eventHandler));
+        player.on('adserror', eventHandler)
         break
 
       case CONTENT_LOADED:
@@ -477,6 +500,7 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
         // TODO: sourceset is experimental
         player.on('sourceset', eventHandler);
         break;
+
       case PLAY:
         eventHandler = () => {
           callback(type, payload);
@@ -490,18 +514,6 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
         };
         player.on(type, eventHandler);
         break;
-
-      // case BUFFER:
-      //   eventHandler = () => {
-      //     Object.assign(payload, {
-      //       position: 0,
-      //       duration: 0,
-      //       playbackMode: -1
-      //     });
-      //     callback(type, payload);
-      //   };
-      //   player.el().addEventListener('waiting', eventHandler);
-      //   break;
 
       case TIME:
         // might want to check seeking() and/or scrubbing()
@@ -559,22 +571,6 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
         player.on(utils.getVideojsEventName(type), eventHandler);
         break;
 
-      // case RENDITION_UPDATE:
-      //   eventHandler = e => {
-      //     const bitrate = e.bitrate;
-      //     const level = e.level;
-      //     Object.assign(payload, {
-      //       videoReportedBitrate: bitrate,
-      //       audioReportedBitrate: bitrate,
-      //       encodedVideoWidth: level.width,
-      //       encodedVideoHeight: level.height,
-      //       videoFramerate: e.frameRate
-      //     });
-      //     callback(type, payload);
-      //   };
-      //   player.on('visualQuality', eventHandler);
-      //   break;
-
       case ERROR:
         eventHandler = e => {
           const error = player.error();
@@ -595,13 +591,6 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
         };
         player.on(utils.getVideojsEventName(type), eventHandler);
         break;
-
-      // case PLAYLIST_COMPLETE:
-      //   eventHandler = () => {
-      //     callback(type, payload);
-      //   };
-      //   player.on(PLAYLIST_COMPLETE, eventHandler);
-      //   break;
 
       case FULLSCREEN:
         eventHandler = e => {
@@ -631,14 +620,6 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
       //     callback(type, payload);
       //   };
       //   player.on(VIEWABLE, eventHandler);
-      //   break;
-      //
-      // case CAST:
-      //   eventHandler = e => {
-      //     payload.casting = e.active;
-      //     callback(type, payload);
-      //   };
-      //   player.on(CAST, eventHandler);
       //   break;
 
       default:
@@ -773,66 +754,6 @@ export const utils = {
      */
   },
 
-  getAdInfo: function(imaAd) {
-    const skippable = imaAd.skippable;
-
-    //TODO: check traffickingParameters to determine if winning bid is passed
-
-    const updates = {
-      adId: imaAd.adId,
-      adServer: imaAd.adSystem,
-      advertiserName: imaAd.advertiserName,
-      redirectUrl: imaAd.clickThroughUrl,
-      creativeId: imaAd.creativeId || imaAd.creativeAdId,
-      dealId: imaAd.dealId,
-      adDescription: imaAd.description,
-      linear: imaAd.linear,
-      creativeUrl: imaAd.mediaUrl,
-      adTitle: imaAd.title,
-      universalAdId: imaAd.universalAdIdValue,
-      creativeType: imaAd.contentType,
-      wrapperAdIds: imaAd.wrapperAdIds,
-      skip: skippable ? 1 : 0,
-      // missing fields:
-      // loadTime
-      // advertiserId - TODO: does this even exist ? If not, remove from spec
-      // vastVersion
-      // adCategories
-      // campaignId
-      // waterfallIndex
-      // waterfallCount
-      // skipmin
-      // adTagUrl - for now, only has request ad tag
-      // adPlacementType
-    };
-
-    const adPodInfo = imaAd.adPodInfo;
-    if (adPodInfo && adPodInfo.podIndex > -1) {
-      updates.adPodCount = adPodInfo.totalAds;
-      updates.adPodIndex = adPodInfo.adPosition - 1; // Per IMA docs, adPosition is 1 based.
-    }
-
-    switch (adPodInfo.timeOffset) {
-      case -1:
-        updates.offset = 'post';
-        break
-
-      case 0:
-        // TODO: Defaults to 0 if this ad is not part of a pod, or the pod is not part of an ad playlist. - need to check if loaded dynamically and pass last content time update
-        updates.offset = 'pre';
-        break
-
-      default:
-        updates.offset = adPodInfo.timeOffset;
-    }
-
-    if (skippable) {
-      updates.skipafter = imaAd.skipTimeOffset;
-    }
-
-    return updates;
-  },
-
   getMediaUrl: function(playerSrc, mediaSrc, eventTargetSrc) {
     const source = playerSrc || mediaSrc || eventTargetSrc;
 
@@ -874,8 +795,8 @@ export const utils = {
 };
 
 const videojsSubmoduleFactory = function (config) {
-  const adState = null;
-  const timeState = null;
+  const adState = adStateFactory();
+  const timeState = stateFactory();
   const callbackStorage = null;
   // videojs factory is stored to window by default
   const vjs = window.videojs;
@@ -885,3 +806,81 @@ const videojsSubmoduleFactory = function (config) {
 videojsSubmoduleFactory.vendorCode = VIDEO_JS_VENDOR;
 submodule('video', videojsSubmoduleFactory);
 export default videojsSubmoduleFactory;
+
+// STATE
+
+/**
+ * @returns {State}
+ */
+export function adStateFactory() {
+  const adState = Object.assign({}, stateFactory());
+
+  function updateForEvent(event) {
+    if (!event) {
+      return;
+    }
+
+    const skippable = event.skippable;
+    // TODO: check traffickingParameters to determine if winning bid is passed
+    const updates = {
+      adId: event.adId,
+      adServer: event.adSystem,
+      advertiserName: event.advertiserName,
+      redirectUrl: event.clickThroughUrl,
+      creativeId: event.creativeId || event.creativeAdId,
+      dealId: event.dealId,
+      adDescription: event.description,
+      linear: event.linear,
+      creativeUrl: event.mediaUrl,
+      adTitle: event.title,
+      universalAdId: event.universalAdIdValue,
+      creativeType: event.contentType,
+      wrapperAdIds: event.wrapperAdIds,
+      skip: skippable ? 1 : 0,
+      // missing fields:
+      // loadTime
+      // advertiserId - TODO: does this even exist ? If not, remove from spec
+      // vastVersion
+      // adCategories
+      // campaignId
+      // waterfallIndex
+      // waterfallCount
+      // skipmin
+      // adTagUrl - for now, only has request ad tag
+      // adPlacementType
+    };
+
+    const adPodInfo = event.adPodInfo;
+    if (adPodInfo && adPodInfo.podIndex > -1) {
+      updates.adPodCount = adPodInfo.totalAds;
+      updates.adPodIndex = adPodInfo.adPosition - 1; // Per IMA docs, adPosition is 1 based.
+    }
+
+    if (adPodInfo && adPodInfo.timeOffset) {
+      switch (adPodInfo.timeOffset) {
+        case -1:
+          updates.offset = 'post';
+          break
+
+        case 0:
+          // TODO: Defaults to 0 if this ad is not part of a pod, or the pod is not part of an ad playlist. - need to check if loaded dynamically and pass last content time update
+          updates.offset = 'pre';
+          break
+
+        default:
+          updates.offset = adPodInfo.timeOffset;
+      }
+    }
+
+
+    if (skippable) {
+      updates.skipafter = event.skipTimeOffset;
+    }
+
+    this.updateState(updates);
+  }
+
+  adState.updateForEvent = updateForEvent;
+
+  return adState;
+}
