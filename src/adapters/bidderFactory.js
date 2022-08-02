@@ -9,13 +9,12 @@ import CONSTANTS from '../constants.json';
 import * as events from '../events.js';
 import {includes} from '../polyfill.js';
 import { ajax } from '../ajax.js';
-import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, flatten, uniques, timestamp, deepAccess, isArray, isPlainObject } from '../utils.js';
+import { logWarn, logInfo, logError, parseQueryStringParameters, delayExecution, parseSizesInput, flatten, uniques, timestamp, deepAccess, isArray, isPlainObject } from '../utils.js';
 import { ADPOD } from '../mediaTypes.js';
 import { getHook, hook } from '../hook.js';
 import { getCoreStorageManager } from '../storageManager.js';
 import {auctionManager} from '../auctionManager.js';
 import { bidderSettings } from '../bidderSettings.js';
-import {fledgeManager} from '../fledgeManager.js';
 
 export const storage = getCoreStorageManager('bidderFactory');
 
@@ -241,7 +240,7 @@ export function newBidder(spec) {
           fledgeAuctionConfigs.forEach((fledgeAuctionConfig) => {
             const bidRequest = bidRequestMap[fledgeAuctionConfig.bidId];
             if (bidRequest) {
-              fledgeManager.addComponentAuction(bidRequest, fledgeAuctionConfig);
+              addComponentAuction(bidRequest, fledgeAuctionConfig);
             }
           });
         },
@@ -444,6 +443,10 @@ export const registerSyncInner = hook('async', function(spec, responses, gdprCon
     }
   }
 }, 'registerSyncs')
+
+export const addComponentAuction = hook('sync', (_bidRequest, fledgeAuctionConfig) => {
+  logInfo(`bidderFactory.addComponentAuction`, fledgeAuctionConfig);
+}, 'addComponentAuction')
 
 export function preloadBidderMappingFile(fn, adUnits) {
   if (!config.getConfig('adpod.brandCategoryExclusion')) {

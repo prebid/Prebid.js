@@ -324,27 +324,15 @@ function interpretResponse(resp, req) {
   const bids = interpretOrtbResponse(resp, req);
   let fledgeAuctionConfigs = utils.deepAccess(resp, 'body.ext.fledge_auction_configs');
   if (fledgeAuctionConfigs) {
-    // temporary workaround for demo
-    if (utils.deepAccess(req, 'data.ext.response_template_name') == 'test_banner_ad') {
-      const DEFAULT_DEMO_AUCTION_CONFIG = {
-        'seller': 'https://ssp-fledge-demo.glitch.me',
-        'x-allow-fledge': true,
-        'decisionLogicUrl': 'https://ssp-fledge-demo.glitch.me/ssp/decision-logic.js',
-        'interestGroupBuyers': ['https://dsp-fledge-demo.glitch.me'],
-        'auctionSignals': {'auction_signals': 'auction_signals'},
-        'sellerSignals': {'seller_signals': 'seller_signals'},
-        'perBuyerSignals': {
-          'https://dsp-fledge-demo.glitch.me': {'per_buyer_signals': 'per_buyer_signals'}
-        }
-      };
-      fledgeAuctionConfigs = Object.entries(fledgeAuctionConfigs).map(([bidId, cfg]) => { return Object.assign({}, DEFAULT_DEMO_AUCTION_CONFIG, {bidId}) });
-    } else {
-      fledgeAuctionConfigs = Object.entries(fledgeAuctionConfigs).map(([bidId, cfg]) => { return {...cfg, bidId} });
-    }
-
+    fledgeAuctionConfigs = Object.entries(fledgeAuctionConfigs).map(([bidId, cfg]) => {
+      return Object.assign({
+        bidId,
+        auctionSignals: {}
+      }, cfg);
+    });
     return {
-      bids: bids,
-      fledgeAuctionConfigs: fledgeAuctionConfigs,
+      bids,
+      fledgeAuctionConfigs,
     }
   }
   return bids;

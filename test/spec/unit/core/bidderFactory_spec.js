@@ -5,7 +5,6 @@ import { expect } from 'chai';
 import { userSync } from 'src/userSync.js'
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
-import { fledgeManager } from 'src/fledgeManager.js';
 import { server } from 'test/mocks/xhr.js';
 import CONSTANTS from 'src/constants.json';
 import * as events from 'src/events.js';
@@ -1175,14 +1174,14 @@ describe('validate bid response: ', function () {
       bidId: '1',
     }
     describe('when response has FLEDGE auction config', function() {
-      let fledgeManagerStub;
+      let logInfoSpy;
 
       beforeEach(function () {
-        fledgeManagerStub = sinon.stub(fledgeManager, 'addComponentAuction')
+        logInfoSpy = sinon.spy(utils, 'logInfo');
       });
 
       afterEach(function () {
-        fledgeManagerStub.restore();
+        logInfoSpy.restore();
       });
 
       it('should unwrap bids', function() {
@@ -1204,10 +1203,8 @@ describe('validate bid response: ', function () {
         });
         bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
-        expect(fledgeManagerStub.calledOnce).to.equal(true);
-        expect(fledgeManagerStub.firstCall.args[0]).to.equal(bidRequest.bids[0]);
-        expect(fledgeManagerStub.firstCall.args[1]).to.equal(fledgeAuctionConfig);
-
+        expect(logInfoSpy.calledOnce).to.equal(true);
+        expect(logInfoSpy.firstCall.args[1]).to.equal(fledgeAuctionConfig);
         expect(addBidResponseStub.calledOnce).to.equal(true);
         expect(addBidResponseStub.firstCall.args[0]).to.equal('mock/placement');
       })
@@ -1220,10 +1217,8 @@ describe('validate bid response: ', function () {
         });
         bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
-        expect(fledgeManagerStub.calledOnce).to.equal(true);
-        expect(fledgeManagerStub.firstCall.args[0]).to.equal(bidRequest.bids[0]);
-        expect(fledgeManagerStub.firstCall.args[1]).to.equal(fledgeAuctionConfig);
-
+        expect(logInfoSpy.calledOnce).to.equal(true);
+        expect(logInfoSpy.firstCall.args[1]).to.equal(fledgeAuctionConfig);
         expect(addBidResponseStub.calledOnce).to.equal(false);
       })
     })
