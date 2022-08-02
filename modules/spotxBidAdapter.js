@@ -1,8 +1,9 @@
-import { logError, deepAccess, isArray, getBidIdParameter, getDNT, deepSetValue, isEmpty, _each, logMessage, logWarn, isBoolean, isNumber, isPlainObject, isFn } from '../src/utils.js';
+import { logError, deepAccess, isArray, getBidIdParameter, getDNT, deepSetValue, isEmpty, _each, logMessage, logWarn, isBoolean, isNumber, isPlainObject, isFn, setScriptAttributes } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO } from '../src/mediaTypes.js';
+import { loadExternalScript } from '../src/adloader.js';
 
 const BIDDER_CODE = 'spotx';
 const URL = 'https://search.spotxchange.com/openrtb/2.3/dados/';
@@ -379,7 +380,7 @@ export const spec = {
             const playersize = deepAccess(currentBidRequest, 'mediaTypes.video.playerSize');
             const renderer = Renderer.install({
               id: 0,
-              url: '/',
+              renderNow: true,
               config: {
                 adText: 'SpotX Outstream Video Ad via Prebid.js',
                 player_width: playersize[0][0],
@@ -421,11 +422,45 @@ export const spec = {
 }
 
 function createOutstreamScript(bid) {
-  const slot = getBidIdParameter('slot', bid.renderer.config.outstream_options);
-  logMessage('[SPOTX][renderer] Handle SpotX outstream renderer');
   const script = window.document.createElement('script');
+  let dataSpotXParams = createScriptAttributeMap(bid);
+
   script.type = 'text/javascript';
   script.src = 'https://js.spotx.tv/easi/v1/' + bid.channel_id + '.js';
+
+  setScriptAttributes(script, dataSpotXParams);
+
+  return script;
+}
+
+function outstreamRender(bid) {
+  if (bid.renderer.config.outstream_function != null && typeof bid.renderer.config.outstream_function === 'function') {
+    const script = createOutstreamScript(bid);
+    bid.renderer.config.outstream_function(bid, script);
+  } else {
+    try {
+      const inIframe = getBidIdParameter('in_iframe', bid.renderer.config.outstream_options);
+      const easiUrl = 'https://js.spotx.tv/easi/v1/' + bid.channel_id + '.js';
+      let attributes = createScriptAttributeMap(bid);
+      if (inIframe && window.document.getElementById(inIframe).nodeName == 'IFRAME') {
+        const rawframe = window.document.getElementById(inIframe);
+        let framedoc = rawframe.contentDocument;
+        if (!framedoc && rawframe.contentWindow) {
+          framedoc = rawframe.contentWindow.document;
+        }
+        loadExternalScript(easiUrl, BIDDER_CODE, undefined, framedoc, attributes);
+      } else {
+        loadExternalScript(easiUrl, BIDDER_CODE, undefined, undefined, attributes);
+      }
+    } catch (err) {
+      logError('[SPOTX][renderer] Error:' + err.message)
+    }
+  }
+}
+
+function createScriptAttributeMap(bid) {
+  const slot = getBidIdParameter('slot', bid.renderer.config.outstream_options);
+  logMessage('[SPOTX][renderer] Handle SpotX outstream renderer');
   let dataSpotXParams = {};
   dataSpotXParams['data-spotx_channel_id'] = '' + bid.channel_id;
   dataSpotXParams['data-spotx_vast_url'] = '' + bid.vastUrl;
@@ -440,6 +475,7 @@ function createOutstreamScript(bid) {
   dataSpotXParams['data-spotx_autoplay'] = '1';
   dataSpotXParams['data-spotx_blocked_autoplay_override_mode'] = '1';
   dataSpotXParams['data-spotx_video_slot_can_autoplay'] = '1';
+  dataSpotXParams['data-spotx_content_container_id'] = slot;
 
   const playersizeAutoAdapt = getBidIdParameter('playersize_auto_adapt', bid.renderer.config.outstream_options);
   if (playersizeAutoAdapt && isBoolean(playersizeAutoAdapt) && playersizeAutoAdapt === true) {
@@ -478,42 +514,7 @@ function createOutstreamScript(bid) {
       }
     }
   }
-
-  for (let key in dataSpotXParams) {
-    if (dataSpotXParams.hasOwnProperty(key)) {
-      script.setAttribute(key, dataSpotXParams[key]);
-    }
-  }
-
-  return script;
-}
-
-function outstreamRender(bid) {
-  const script = createOutstreamScript(bid);
-  if (bid.renderer.config.outstream_function != null && typeof bid.renderer.config.outstream_function === 'function') {
-    bid.renderer.config.outstream_function(bid, script);
-  } else {
-    try {
-      const inIframe = getBidIdParameter('in_iframe', bid.renderer.config.outstream_options);
-      if (inIframe && window.document.getElementById(inIframe).nodeName == 'IFRAME') {
-        const rawframe = window.document.getElementById(inIframe);
-        let framedoc = rawframe.contentDocument;
-        if (!framedoc && rawframe.contentWindow) {
-          framedoc = rawframe.contentWindow.document;
-        }
-        framedoc.body.appendChild(script);
-      } else {
-        const slot = getBidIdParameter('slot', bid.renderer.config.outstream_options);
-        if (slot && window.document.getElementById(slot)) {
-          window.document.getElementById(slot).appendChild(script);
-        } else {
-          window.document.getElementsByTagName('head')[0].appendChild(script);
-        }
-      }
-    } catch (err) {
-      logError('[SPOTX][renderer] Error:' + err.message)
-    }
-  }
+  return dataSpotXParams;
 }
 
 registerBidder(spec);

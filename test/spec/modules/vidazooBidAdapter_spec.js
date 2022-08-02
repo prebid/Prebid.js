@@ -81,6 +81,15 @@ const REQUEST = {
   }
 };
 
+function getTopWindowQueryParams() {
+  try {
+    const parsedUrl = utils.parseUrl(window.top.document.URL, { decodeSearchAsString: true });
+    return parsedUrl.search;
+  } catch (e) {
+    return '';
+  }
+}
+
 describe('VidazooBidAdapter', function () {
   describe('validtae spec', function () {
     it('exists and is a function', function () {
@@ -171,6 +180,7 @@ describe('VidazooBidAdapter', function () {
           prebidVersion: version,
           schain: BID.schain,
           res: `${window.top.screen.width}x${window.top.screen.height}`,
+          uqs: getTopWindowQueryParams(),
           'ext.param1': 'loremipsum',
           'ext.param2': 'dolorsitamet',
         }
