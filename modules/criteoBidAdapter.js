@@ -175,7 +175,8 @@ export const spec = {
     Object.assign(bidderRequest, {
       publisherExt: fpd.site?.ext,
       userExt: fpd.user?.ext,
-      ceh: config.getConfig('criteo.ceh')
+      ceh: config.getConfig('criteo.ceh'),
+      coppa: config.getConfig('coppa')
     });
 
     // If publisher tag not already loaded try to get it from fast bid
@@ -445,6 +446,9 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
     publisher: {
       url: context.url,
       ext: bidderRequest.publisherExt,
+    },
+    regs: {
+      coppa: bidderRequest.coppa === true ? 1 : (bidderRequest.coppa === false ? 0 : null)
     },
     slots: bidRequests.map(bidRequest => {
       networkId = bidRequest.params.networkId || networkId;
