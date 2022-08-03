@@ -434,6 +434,9 @@ const ID_REQUEST = {
       return null;
     }
     const request = {
+      eventtrackers: [
+        {event: 1, methods: [1, 2]}
+      ],
       assets: [],
     }
     for (let i of Object.keys(nativeParams)) {
