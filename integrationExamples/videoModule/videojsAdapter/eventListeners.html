@@ -9,9 +9,19 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/videojs-ima/1.11.0/videojs.ima.css"
     integrity="sha512-vvsEsf+dZDp6wbommO1Jbb2bpFhVQjw6pIzfE5fUY5Fgkmsgn/16sQWegqrd236T69kK5F1SbGZ+yK46a9il5A=="
     crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <script src="https://vjs.zencdn.net/7.17.0/video.min.js"></script>
+  <script src="https://imasdk.googleapis.com/js/sdkloader/ima3.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-contrib-ads/6.9.0/videojs-contrib-ads.js"
+          integrity="sha512-XjyyAijQGlXZET35toG8igvVs8HvfVgKXGnbfAs2EpZ0o8vjJoIrxL9RBBQbQjzAODIe0jvWelFfZOA3Z/vdWg=="
+          crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-ima/1.11.0/videojs.ima.js"
+          integrity="sha512-9ocW9fl8CKJhZp4cmDpLDGPuTQ93gvw1iIS6daMYc5Y0Xh1all8iwdoI+iNmZpiydpdDGyKMTriXDX0wfs2OEg=="
+          crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <title>VideoJS Event Listeners</title>
 
   <!-- Setup ad units -->
   <script>
+
     var adUnits = [{
       code: 'div-gpt-ad-51545-0',
       sizes: [[600, 500]],
@@ -21,18 +31,7 @@
         }
       },
       video: {
-        divId: 'vid-div-4',
-        adServer: {
-          vendorCode: "gam",
-          params: {
-            iu: '/19968336/prebid_cache_video_adunit',
-            cust_params: {
-              section: 'blog',
-              anotherKey: 'anotherValue'
-            },
-            output: 'vast'
-          }
-        },
+        divId: 'vid-div-1',
       },
 
       bids: [{
@@ -51,9 +50,8 @@
       pbjs.setConfig({
         video: {
           providers: [{
-            divId: 'vid-div-4',
-            // vendorCode for videojs
-            vendorCode: 2,
+            divId: 'vid-div-1',
+            vendorCode: 2, // videojs vendorCode
             playerConfig: {
               params: {
                 adConfig: {
@@ -68,28 +66,28 @@
         }
       });
       pbjs.addAdUnits(adUnits);
-      pbjs.onEvent('video_setupComplete', () => {
-        console.log('player setup complete');
+      pbjs.onEvent('video_setupComplete', e => {
+        console.log('player setup complete', e);
       });
 
-      pbjs.onEvent('video_setupFailed', () => {
-        console.log('player setup failed!');
+      pbjs.onEvent('video_setupFailed', e => {
+        console.log('player setup failed: ', e);
       });
 
       pbjs.onEvent('video_playlist', (e) => {
         console.log('videos pb playlist: ', e);
       });
 
-      pbjs.onEvent('video_play', () => {
-        console.log('videos pb play');
+      pbjs.onEvent('video_play', (e) => {
+        console.log('videos pb play: ', e);
       });
 
-      pbjs.onEvent('video_pause', () => {
-        console.log('videos pb pause');
+      pbjs.onEvent('video_pause', (e) => {
+        console.log('videos pb pause: ', e);
       });
 
-      pbjs.onEvent('video_playbackRequest', () => {
-        console.log('videos pb playbackRequest');
+      pbjs.onEvent('video_playbackRequest', (e) => {
+        console.log('videos pb playbackRequest: ', e);
       });
 
       pbjs.onEvent('video_contentLoaded', (e) => {
@@ -104,20 +102,20 @@
         console.log('videos pb seekEnd: ', e);
       });
 
-      pbjs.onEvent('video_mute', () => {
-        console.log('videos pb mute');
+      pbjs.onEvent('video_mute', (e) => {
+        console.log('videos pb mute: ', e);
       });
 
-      pbjs.onEvent('video_volume', () => {
-        console.log('videos pb volume');
+      pbjs.onEvent('video_volume', (e) => {
+        console.log('videos pb volume: ', e);
       });
 
       // pbjs.onEvent('video_time', (e) => {
       //   console.log('videos pb time: ', e);
       // });
 
-      pbjs.onEvent('video_complete', () => {
-        console.log('videos pb complete');
+      pbjs.onEvent('video_complete', (e) => {
+        console.log('videos pb complete: ', e);
       });
 
       pbjs.onEvent('video_fullscreen', (e) => {
@@ -165,15 +163,15 @@
       pbjs.requestBids();
     });
   </script>
+
 </head>
 
 <body>
-  <h2>VideoJS Adapter Test</h2>
+  <h2>VideoJS Event Listeners</h2>
 
   <h5>Div-1 existing Player</h5>
 
-  <video-js id='vid-div-1' class="vjs-big-play-centered"
-    data-setup='{"controls": true, "autoplay": false, "preload": "auto"}'>
+  <video-js id='vid-div-1' class="vjs-big-play-centered">
     <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4" type="video/mp4">
   </video-js>
 
@@ -190,17 +188,6 @@
   <video-js id='vid-div-4' class="vjs-big-play-centered">
     <source src="https://content.bitsontherun.com/videos/bkaovAYt-52qL9xLP.mp4" type="video/mp4">
   </video-js>
-//"http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
-
-  <script src="https://vjs.zencdn.net/7.17.0/video.min.js"></script>
-  <script src="https://imasdk.googleapis.com/js/sdkloader/ima3.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-contrib-ads/6.9.0/videojs-contrib-ads.js"
-    integrity="sha512-XjyyAijQGlXZET35toG8igvVs8HvfVgKXGnbfAs2EpZ0o8vjJoIrxL9RBBQbQjzAODIe0jvWelFfZOA3Z/vdWg=="
-    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-ima/1.11.0/videojs.ima.js"
-    integrity="sha512-9ocW9fl8CKJhZp4cmDpLDGPuTQ93gvw1iIS6daMYc5Y0Xh1all8iwdoI+iNmZpiydpdDGyKMTriXDX0wfs2OEg=="
-    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-
 </body>
 
 </html>
