@@ -171,7 +171,7 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
     // IMA supports vpaid unless its expliclty turned off
     // TODO: needs a reference to the imaOptions used at setup to determine if vpaid can be used
     // if (imaOptions && imaOptions.vpaidMode !== 0) {
-      supportedMediaTypes.push(VPAID_MIME_TYPE);
+    supportedMediaTypes.push(VPAID_MIME_TYPE);
     // }
 
     const video = {
@@ -356,7 +356,7 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
           Object.assign(payload, adState.getState(), timeState.getState());
           callback(type, payload);
         };
-        player.one('ads-manager', () => player.ima.addEventListener('loaded', eventHandler));
+        player.on('ads-manager', () => player.ima.addEventListener('loaded', eventHandler));
         break
 
       case AD_STARTED:
@@ -368,7 +368,7 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
           Object.assign(payload, adState.getState(), timeState.getState());
           callback(type, payload);
         };
-        player.one('ads-manager', () => player.ima.addEventListener('start', eventHandler));
+        player.on('ads-manager', () => player.ima.addEventListener('start', eventHandler));
         break
 
       case AD_IMPRESSION:
@@ -380,7 +380,7 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
           Object.assign(payload, adState.getState(), timeState.getState());
           callback(type, payload);
         };
-        player.one('ads-manager', () => player.ima.addEventListener('impression', eventHandler));
+        player.on('ads-manager', () => player.ima.addEventListener('impression', eventHandler));
         break
 
       case AD_PLAY:
@@ -392,7 +392,7 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
           Object.assign(payload, adState.getState(), timeState.getState());
           callback(type, payload);
         };
-        player.one('ads-manager', () => player.ima.addEventListener('resume', eventHandler));
+        player.on('ads-manager', () => player.ima.addEventListener('resume', eventHandler));
         break
 
       case AD_PAUSE:
@@ -404,7 +404,7 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
           Object.assign(payload, adState.getState(), timeState.getState());
           callback(type, payload);
         };
-        player.one('ads-manager', () => player.ima.addEventListener('pause', eventHandler));
+        player.on('ads-manager', () => player.ima.addEventListener('pause', eventHandler));
         break
 
       case AD_TIME:
@@ -416,7 +416,7 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
           Object.assign(payload, adState.getState(), timeState.getState());
           callback(type, payload);
         };
-        player.one('ads-manager', () => player.ima.addEventListener('adProgress', eventHandler));
+        player.on('ads-manager', () => player.ima.addEventListener('adProgress', eventHandler));
         break
 
       case AD_COMPLETE:
@@ -429,7 +429,7 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
           callback(type, payload);
           adState.clearState();
         };
-        player.one('ads-manager', () => player.ima.addEventListener('complete', eventHandler));
+        player.on('ads-manager', () => player.ima.addEventListener('complete', eventHandler));
         break
 
       case AD_SKIPPED:
@@ -442,7 +442,7 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
           callback(type, payload);
           adState.clearState();
         };
-        player.one('ads-manager', () => player.ima.addEventListener('skip', eventHandler));
+        player.on('ads-manager', () => player.ima.addEventListener('skip', eventHandler));
         break
 
       case AD_CLICK:
@@ -453,7 +453,7 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
           Object.assign(payload, adState.getState(), timeState.getState());
           callback(type, payload);
         };
-        player.one('ads-manager', () => player.ima.addEventListener('click', eventHandler));
+        player.on('ads-manager', () => player.ima.addEventListener('click', eventHandler));
         break
 
       case AD_ERROR:
@@ -654,9 +654,11 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
   function setupPlayer(config) {
     // TODO: support https://www.npmjs.com/package/videojs-vast-vpaid
     function setupAds() {
-      if (!player.ima) {
+      // when player.ima is already instantiated, it is an object.
+      if (!player.ima || typeof player.ima !== 'function') {
         return;
       }
+
       const adConfig = utils.getAdConfig(config);
       player.ima(adConfig);
       window.imaPlayer = player.ima
