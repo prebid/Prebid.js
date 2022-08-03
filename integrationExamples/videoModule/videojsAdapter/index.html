@@ -21,7 +21,7 @@
         }
       },
       video: {
-        divId: 'vid-div-1',
+        divId: 'vid-div-4',
         adServer: {
           vendorCode: "gam",
           params: {
@@ -48,32 +48,19 @@
     pbjs.que = pbjs.que || [];
 
     pbjs.que.push(function () {
-      pbjs.onEvent('adImpression', event => {
-        console.log('adImpression: ', event);
-      });
       pbjs.setConfig({
         video: {
           providers: [{
-            divId: 'vid-div-1',
+            divId: 'vid-div-4',
             // vendorCode for videojs
             vendorCode: 2,
             playerConfig: {
               params: {
+                adConfig: {
+                  numRedirects: 10
+                },
                 vendorConfig: {
-                  mediaid: 'd9J2zcaA',
-                  advertising: {
-                    adscheduleid: "00000000",
-                    client: 'vast',
-                    offset: "10",
-                    tag: [
-                      'https://pubads.g.doubleclick.net/gampad/ads?sz=640x480&' +
-                      'iu=/124319096/external/ad_rule_samples&ciu_szs=300x250&ad_rule=1&' +
-                      'impl=s&gdfp_req=1&env=vp&output=xml_vmap1&unviewed_position_start=1&' +
-                      'cust_params=sample_ar%3Dpremidpostpod%26deployment%3Dgmf-js&cmsid=496&' +
-                      'vid=short_onecue&correlator=',
-                      "http://playertest.longtailvideo.com/mid.xml"
-                    ],
-                  }
+                  "controls": true, "autoplay": false, "preload": "auto"
                 }
               }
             }
@@ -81,6 +68,100 @@
         }
       });
       pbjs.addAdUnits(adUnits);
+      pbjs.onEvent('video_setupComplete', () => {
+        console.log('player setup complete');
+      });
+
+      pbjs.onEvent('video_setupFailed', () => {
+        console.log('player setup failed!');
+      });
+
+      pbjs.onEvent('video_playlist', (e) => {
+        console.log('videos pb playlist: ', e);
+      });
+
+      pbjs.onEvent('video_play', () => {
+        console.log('videos pb play');
+      });
+
+      pbjs.onEvent('video_pause', () => {
+        console.log('videos pb pause');
+      });
+
+      pbjs.onEvent('video_playbackRequest', () => {
+        console.log('videos pb playbackRequest');
+      });
+
+      pbjs.onEvent('video_contentLoaded', (e) => {
+        console.log('videos pb contentLoaded: ', e);
+      });
+
+      pbjs.onEvent('video_seekStart', (e) => {
+        console.log('videos pb seekStart: ', e);
+      });
+
+      pbjs.onEvent('video_seekEnd', (e) => {
+        console.log('videos pb seekEnd: ', e);
+      });
+
+      pbjs.onEvent('video_mute', () => {
+        console.log('videos pb mute');
+      });
+
+      pbjs.onEvent('video_volume', () => {
+        console.log('videos pb volume');
+      });
+
+      // pbjs.onEvent('video_time', (e) => {
+      //   console.log('videos pb time: ', e);
+      // });
+
+      pbjs.onEvent('video_complete', () => {
+        console.log('videos pb complete');
+      });
+
+      pbjs.onEvent('video_fullscreen', (e) => {
+        console.log('videos pb fullscreen: ', e);
+      });
+
+      pbjs.onEvent('video_playerResize', (e) => {
+        console.log('videos pb playerResize: ', e);
+      });
+
+      pbjs.onEvent('video_adRequest', (e) => {
+        console.log('videos pb ad request: ', e);
+      });
+
+      pbjs.onEvent('video_adLoaded', e => {
+        console.log('videos pb ad load: ', e);
+      });
+
+      pbjs.onEvent('video_adImpression', (e) => {
+        console.log('videos pb ad impression: ', e);
+      });
+
+      pbjs.onEvent('video_adStarted', (e) => {
+        console.log('videos pb ad started: ', e);
+      });
+
+      // pbjs.onEvent('video_adTime', (e) => {
+      //   console.log('videos pb ad time: ', e);
+      // });
+
+      pbjs.onEvent('video_adComplete', (e) => {
+        console.log('videos pb ad complete: ', e);
+      });
+
+      pbjs.onEvent('video_adSkip', (e) => {
+        console.log('videos pb ad skip: ', e);
+      });
+
+      pbjs.onEvent('video_adClick', (e) => {
+        console.log('videos pb ad click: ', e);
+      });
+      pbjs.onEvent('video_adError', (e) => {
+        console.log('videos pb ad error: ', e);
+      });
       pbjs.requestBids();
     });
   </script>
@@ -91,19 +172,25 @@
 
   <h5>Div-1 existing Player</h5>
 
-  <video id='vid-div-1' class="video-js vjs-big-play-centered"
+  <video-js id='vid-div-1' class="vjs-big-play-centered"
     data-setup='{"controls": true, "autoplay": false, "preload": "auto"}'>
-    <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
-  </video>
+    <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4" type="video/mp4">
+  </video-js>
 
   <h5>Div-2 existing player without automatic setup</h5>
   <video-js id='vid-div-2' data-setup='{"controls": true}'>
-    <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+    <source src="http://content.bitsontherun.com/videos/bkaovAYt-DZ7jSYgM.mp4" type="video/mp4">
   </video-js>
 
   <h5>Div-3 controlled Player</h5>
   <div id='vid-div-3'></div>
 
+  <h5>Div-4 existing Player</h5>
+
+  <video-js id='vid-div-4' class="vjs-big-play-centered">
+    <source src="https://content.bitsontherun.com/videos/bkaovAYt-52qL9xLP.mp4" type="video/mp4">
+  </video-js>
+//"http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
 
   <script src="https://vjs.zencdn.net/7.17.0/video.min.js"></script>
   <script src="https://imasdk.googleapis.com/js/sdkloader/ima3.js"></script>
