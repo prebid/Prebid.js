@@ -6,12 +6,9 @@ const MANIFEST = 'package.json';
 const through = require('through2');
 const _ = require('lodash');
 const gutil = require('gulp-util');
-const dependencyMap = require('./modules/.submodules.json');
-const submodules = dependencyMap.parentModules;
-const libraries = dependencyMap.libraries;
+const submodules = require('./modules/.submodules.json').parentModules;
 
 const MODULE_PATH = './modules';
-const LIBRARY_PATH = './libraries';
 const BUILD_PATH = './build/dist';
 const DEV_PATH = './build/dev';
 const ANALYTICS_PATH = '../analytics';
@@ -71,68 +68,34 @@ module.exports = {
       }
     });
 
-    Object.keys(libraries).forEach(library => {
-      if (!modules.includes(library) && modules.some(module => libraries[library].dependants.includes(module))) {
-        modules.unshift(library);
-      }
-    });
-
     return modules;
-  },
-  getParentLibraries(moduleName) {
-    const libraryNames = [];
-    Object.keys(libraries).forEach(libraryName => {
-      const library = libraries[libraryName];
-      if (library.dependants.includes(moduleName)) {
-        libraryNames.push(libraryName);
-      }
-    });
-    return libraryNames;
-  },
-  getLibraryFiles(name) {
-    const library = libraries[name];
-    const files = library.files.map((file) => path.resolve('./libraries/', name, file))
-    return files;
-  },
-  isLibrary(name) {
-    return !!libraries[name];
   },
   getModules: _.memoize(function(externalModules) {
     externalModules = externalModules || [];
     var internalModules;
     try {
-      var getInternalModules = function(absolutePath) {
-        return fs.readdirSync(absolutePath)
-          .filter(file => (/^[^\.]+(\.js)?$/).test(file))
-          .reduce((memo, file) => {
-            var moduleName = file.split(new RegExp('[.\\' + path.sep + ']'))[0];
-            var modulePath = path.join(absolutePath, file);
-            if (fs.lstatSync(modulePath).isDirectory()) {
-              modulePath = path.join(modulePath, 'index.js')
-            }
-            if (fs.existsSync(modulePath)) {
-              memo[modulePath] = moduleName;
-            }
-            return memo;
-          }, {});
-      };
-
       var absoluteModulePath = path.join(__dirname, MODULE_PATH);
-      var absoluteLibraryPath = path.join(__dirname, LIBRARY_PATH);
-
-      internalModules = getInternalModules(absoluteModulePath);
-      var internalLibraries = getInternalModules(absoluteLibraryPath);
-      Object.assign(internalModules, internalLibraries);
+      internalModules = fs.readdirSync(absoluteModulePath)
+        .filter(file => (/^[^\.]+(\.js)?$/).test(file))
+        .reduce((memo, file) => {
+          var moduleName = file.split(new RegExp('[.\\' + path.sep + ']'))[0];
+          var modulePath = path.join(absoluteModulePath, file);
+          if (fs.lstatSync(modulePath).isDirectory()) {
+            modulePath = path.join(modulePath, 'index.js')
+          }
+          if (fs.existsSync(modulePath)) {
+            memo[modulePath] = moduleName;
+          }
+          return memo;
+        }, {});
     } catch (err) {
       internalModules = {};
     }
     return Object.assign(externalModules.reduce((memo, module) => {
       try {
         // prefer internal project modules before looking at project dependencies
-        var modulePath = require.resolve(module, {paths: [MODULE_PATH, LIBRARY_PATH]});
-        if (modulePath === '') {
-          modulePath = require.resolve(module);
-        }
+        var modulePath = require.resolve(module, {paths: ['./modules']});
+        if (modulePath === '') modulePath = require.resolve(module);
 
         memo[modulePath] = module;
       } catch (err) {
@@ -142,16 +105,20 @@ module.exports = {
     }, internalModules));
   }),
 
+  getBuiltPath(dev, assetPath) {
+    return path.join(__dirname, dev ? DEV_PATH : BUILD_PATH, assetPath)
+  },
+
   getBuiltModules: function(dev, externalModules) {
     var modules = this.getModuleNames(externalModules);
     if (Array.isArray(externalModules)) {
       modules = _.intersection(modules, externalModules);
     }
-    return modules.map(name => path.join(__dirname, dev ? DEV_PATH : BUILD_PATH, name + '.js'));
+    return modules.map(name => this.getBuiltPath(dev, name + '.js'));
   },
 
   getBuiltPrebidCoreFile: function(dev) {
-    return path.join(__dirname, dev ? DEV_PATH : BUILD_PATH, 'prebid-core' + '.js');
+    return this.getBuiltPath(dev, 'prebid-core.js')
   },
 
   getModulePaths: function(externalModules) {
