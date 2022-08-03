@@ -91,11 +91,11 @@ describe('imuId module', function () {
   describe('decode()', function () {
     it('should return the uid when it exists in local storages', function () {
       const id = imuIdSubmodule.decode({
-        imppid: 'testDecodeImUid',
+        imppid: 'imppid-value-imppid-value-imppid-value',
         imuid: 'testDecodeImPpid'
       });
       expect(id).to.be.deep.equal({
-        imppid: 'testDecodeImUid',
+        imppid: 'imppid-value-imppid-value-imppid-value',
         imuid: 'testDecodeImPpid'
       });
     });
@@ -109,13 +109,13 @@ describe('imuId module', function () {
   describe('getLocalData()', function () {
     it('always have the same key', function () {
       getLocalStorageStub.withArgs(storageKey).returns('testid');
-      getLocalStorageStub.withArgs(storagePpKey).returns('testppid');
+      getLocalStorageStub.withArgs(storagePpKey).returns('imppid-value-imppid-value-imppid-value');
       getCookieStub.withArgs(cookieKey).returns('testvid');
       getLocalStorageStub.withArgs(`${storageKey}_mt`).returns(new Date(utils.timestamp()).toUTCString());
       const localData = getLocalData();
       expect(localData).to.be.deep.equal({
         id: 'testid',
-        ppid: 'testppid',
+        ppid: 'imppid-value-imppid-value-imppid-value',
         vid: 'testvid',
         expired: false
       });
@@ -137,7 +137,7 @@ describe('imuId module', function () {
     it('should return the undefined when success response', function () {
       const res = apiSuccessProcess({
         uid: 'test',
-        ppid: 'test',
+        ppid: 'imppid-value-imppid-value-imppid-value',
         vid: 'test'
       });
       expect(res).to.equal(undefined);
