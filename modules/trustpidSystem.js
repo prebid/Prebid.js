@@ -84,7 +84,7 @@ function getTrustpidFromStorage() {
   logInfo(`${LOG_PREFIX}: Domain acronym found: ${acronym}`);
 
   // Domain is correct in both local storage and idGraph, but no acronym is existing for the domain
-  if (domain && !acronym) {
+  if (!acronym) {
     return {
       trustpid: null,
       acr: null
