@@ -1,10 +1,10 @@
 import {isStr, timestamp} from './utils.js';
+import {defer, GreedyPromise} from './utils/promise.js';
 
 export class ConsentHandler {
   #enabled;
   #data;
-  #promise;
-  #resolve;
+  #defer;
   #ready;
   generatedTime;
 
@@ -12,17 +12,17 @@ export class ConsentHandler {
     this.reset();
   }
 
+  #resolve(data) {
+    this.#ready = true;
+    this.#data = data;
+    this.#defer.resolve(data);
+  }
+
   /**
    * reset this handler (mainly for tests)
    */
   reset() {
-    this.#promise = new Promise((resolve) => {
-      this.#resolve = (data) => {
-        this.#ready = true;
-        this.#data = data;
-        resolve(data);
-      };
-    });
+    this.#defer = defer();
     this.#enabled = false;
     this.#data = null;
     this.#ready = false;
@@ -55,10 +55,13 @@ export class ConsentHandler {
    * @returns a promise than resolves to the consent data, or null if no consent data is available
    */
   get promise() {
+    if (this.#ready) {
+      return GreedyPromise.resolve(this.#data);
+    }
     if (!this.#enabled) {
       this.#resolve(null);
     }
-    return this.#promise;
+    return this.#defer.promise;
   }
 
   setConsentData(data, time = timestamp()) {

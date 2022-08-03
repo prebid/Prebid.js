@@ -1,5 +1,5 @@
 import {ajax} from '../src/ajax.js'
-import adapter from '../src/AnalyticsAdapter.js'
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js'
 import CONSTANTS from '../src/constants.json'
 import adapterManager from '../src/adapterManager.js'
 import {getGlobal} from '../src/prebidGlobal.js'
@@ -184,5 +184,5 @@ malltvAnalyticsAdapter.enableAnalytics = function (config) {
 
 adapterManager.registerAnalyticsAdapter({
   adapter: malltvAnalyticsAdapter,
-  code: 'malltvAnalytics'
+  code: 'malltv'
 })

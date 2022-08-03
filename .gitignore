@@ -16,7 +16,7 @@ selenium*.log
 integrationExamples/gpt/gpt.html
 integrationExamples/gpt/*-test.html
 integrationExamples/implementations/
-src/adapters/analytics/libraries
+libraries/analyticsAdapter/examples/libraries
 
 
 # Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion

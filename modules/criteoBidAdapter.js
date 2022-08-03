@@ -1,11 +1,14 @@
-import {deepAccess, getUniqueIdentifierStr, isArray, logError, logInfo, logWarn, parseUrl} from '../src/utils.js';
-import {loadExternalScript} from '../src/adloader.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {find} from '../src/polyfill.js';
-import {verify} from 'criteo-direct-rsa-validate/build/verify.js'; // ref#2
-import {getStorageManager} from '../src/storageManager.js';
+import { deepAccess, getUniqueIdentifierStr, isArray, logError, logInfo, logWarn, parseUrl } from '../src/utils.js';
+import { loadExternalScript } from '../src/adloader.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { find } from '../src/polyfill.js';
+import { verify } from 'criteo-direct-rsa-validate/build/verify.js'; // ref#2
+import { getStorageManager } from '../src/storageManager.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { getRefererInfo } from '../src/refererDetection.js';
+import { hasPurpose1Consent } from '../src/utils/gpdr.js';
 
 const GVLID = 91;
 export const ADAPTER_VERSION = 34;
@@ -13,7 +16,7 @@ const BIDDER_CODE = 'criteo';
 const CDB_ENDPOINT = 'https://bidder.criteo.com/cdb';
 const PROFILE_ID_INLINE = 207;
 export const PROFILE_ID_PUBLISHERTAG = 185;
-const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ gvlid: GVLID, bidderCode: BIDDER_CODE });
 const LOG_PREFIX = 'Criteo: ';
 
 /*
@@ -24,18 +27,117 @@ const LOG_PREFIX = 'Criteo: ';
   Unminified source code can be found in the privately shared repo: https://github.com/Prebid-org/prebid-js-external-js-criteo/blob/master/dist/prod.js
 */
 const FAST_BID_VERSION_PLACEHOLDER = '%FAST_BID_VERSION%';
-export const FAST_BID_VERSION_CURRENT = 117;
+export const FAST_BID_VERSION_CURRENT = 123;
 const FAST_BID_VERSION_LATEST = 'latest';
 const FAST_BID_VERSION_NONE = 'none';
 const PUBLISHER_TAG_URL_TEMPLATE = 'https://static.criteo.net/js/ld/publishertag.prebid' + FAST_BID_VERSION_PLACEHOLDER + '.js';
 const FAST_BID_PUBKEY_E = 65537;
 const FAST_BID_PUBKEY_N = 'ztQYwCE5BU7T9CDM5he6rKoabstXRmkzx54zFPZkWbK530dwtLBDeaWBMxHBUT55CYyboR/EZ4efghPi3CoNGfGWezpjko9P6p2EwGArtHEeS4slhu/SpSIFMjG6fdrpRoNuIAMhq1Z+Pr/+HOd1pThFKeGFr2/NhtAg+TXAzaU=';
 
+const SID_COOKIE_NAME = 'cto_sid';
+const IDCPY_COOKIE_NAME = 'cto_idcpy';
+const LWID_COOKIE_NAME = 'cto_lwid';
+const OPTOUT_COOKIE_NAME = 'cto_optout';
+const BUNDLE_COOKIE_NAME = 'cto_bundle';
+const GUID_RETENTION_TIME_HOUR = 24 * 30 * 13; // 13 months
+const OPTOUT_RETENTION_TIME_HOUR = 5 * 12 * 30 * 24; // 5 years
+
 /** @type {BidderSpec} */
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  supportedMediaTypes: [ BANNER, VIDEO, NATIVE ],
+  supportedMediaTypes: [BANNER, VIDEO, NATIVE],
+
+  getUserSyncs: function (syncOptions, _, gdprConsent, uspConsent) {
+    const fastBidVersion = config.getConfig('criteo.fastBidVersion');
+    if (canFastBid(fastBidVersion)) {
+      return [];
+    }
+
+    const refererInfo = getRefererInfo();
+    const origin = 'criteoPrebidAdapter';
+
+    if (syncOptions.iframeEnabled && hasPurpose1Consent(gdprConsent)) {
+      const queryParams = [];
+      queryParams.push(`origin=${origin}`);
+      queryParams.push(`topUrl=${refererInfo.domain}`);
+      if (gdprConsent) {
+        if (gdprConsent.gdprApplies) {
+          queryParams.push(`gdpr=${gdprConsent.gdprApplies == true ? 1 : 0}`);
+        }
+        if (gdprConsent.consentString) {
+          queryParams.push(`gdpr_consent=${gdprConsent.consentString}`);
+        }
+      }
+      if (uspConsent) {
+        queryParams.push(`us_privacy=${uspConsent}`);
+      }
+
+      const requestId = Math.random().toString();
+
+      const jsonHash = {
+        bundle: readFromAllStorages(BUNDLE_COOKIE_NAME),
+        cw: storage.cookiesAreEnabled(),
+        localWebId: readFromAllStorages(LWID_COOKIE_NAME),
+        lsw: storage.localStorageIsEnabled(),
+        optoutCookie: readFromAllStorages(OPTOUT_COOKIE_NAME),
+        origin: origin,
+        requestId: requestId,
+        secureIdCookie: readFromAllStorages(SID_COOKIE_NAME),
+        tld: refererInfo.domain,
+        topUrl: refererInfo.domain,
+        uid: readFromAllStorages(IDCPY_COOKIE_NAME),
+        version: '$prebid.version$'.replace(/\./g, '_'),
+      };
+
+      window.addEventListener('message', function handler(event) {
+        if (!event.data || event.origin != 'https://gum.criteo.com') {
+          return;
+        }
+
+        if (event.data.requestId !== requestId) {
+          return;
+        }
+
+        this.removeEventListener('message', handler);
+
+        event.stopImmediatePropagation();
+
+        const response = event.data;
+
+        if (response.optout) {
+          deleteFromAllStorages(IDCPY_COOKIE_NAME);
+          deleteFromAllStorages(SID_COOKIE_NAME);
+          deleteFromAllStorages(BUNDLE_COOKIE_NAME);
+          deleteFromAllStorages(LWID_COOKIE_NAME);
+
+          saveOnAllStorages(OPTOUT_COOKIE_NAME, true, OPTOUT_RETENTION_TIME_HOUR);
+        } else {
+          if (response.uid) {
+            saveOnAllStorages(IDCPY_COOKIE_NAME, response.uid, GUID_RETENTION_TIME_HOUR);
+          }
+
+          if (response.bundle) {
+            saveOnAllStorages(BUNDLE_COOKIE_NAME, response.bundle, GUID_RETENTION_TIME_HOUR);
+          }
+
+          if (response.removeSid) {
+            deleteFromAllStorages(SID_COOKIE_NAME);
+          } else if (response.sid) {
+            saveOnAllStorages(SID_COOKIE_NAME, response.sid, GUID_RETENTION_TIME_HOUR);
+          }
+        }
+      }, true);
+
+      const jsonHashSerialized = JSON.stringify(jsonHash).replace(/"/g, '%22');
+
+      return [{
+        type: 'iframe',
+        url: `https://gum.criteo.com/syncframe?${queryParams.join('&')}#${jsonHashSerialized}`
+      }];
+    }
+    return [];
+  },
 
   /** f
    * @param {object} bid
@@ -63,13 +165,16 @@ export const spec = {
    * @return {ServerRequest}
    */
   buildRequests: (bidRequests, bidderRequest) => {
+    // convert Native ORTB definition to old-style prebid native definition
+    bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
+
     let url;
     let data;
-    let fpd = config.getLegacyFpd(config.getConfig('ortb2')) || {};
+    let fpd = bidderRequest.ortb2 || {};
 
     Object.assign(bidderRequest, {
-      publisherExt: fpd.context,
-      userExt: fpd.user,
+      publisherExt: fpd.site?.ext,
+      userExt: fpd.user?.ext,
       ceh: config.getConfig('criteo.ceh')
     });
 
@@ -139,6 +244,13 @@ export const spec = {
           height: slot.height,
           dealId: slot.dealCode,
         };
+        if (body.ext?.paf?.transmission && slot.ext?.paf?.content_id) {
+          const pafResponseMeta = {
+            content_id: slot.ext.paf.content_id,
+            transmission: response.ext.paf.transmission
+          };
+          bid.meta = Object.assign({}, bid.meta, { paf: pafResponseMeta });
+        }
         if (slot.adomain) {
           bid.meta = Object.assign({}, bid.meta, { advertiserDomains: slot.adomain });
         }
@@ -202,6 +314,27 @@ export const spec = {
   },
 };
 
+function readFromAllStorages(name) {
+  const fromCookie = storage.getCookie(name);
+  const fromLocalStorage = storage.getDataFromLocalStorage(name);
+
+  return fromCookie || fromLocalStorage || undefined;
+}
+
+function saveOnAllStorages(name, value, expirationTimeHours) {
+  const date = new Date();
+  date.setTime(date.getTime() + (expirationTimeHours * 60 * 60 * 1000));
+  const expires = `expires=${date.toUTCString()}`;
+
+  storage.setCookie(name, value, expires);
+  storage.setDataInLocalStorage(name, value);
+}
+
+function deleteFromAllStorages(name) {
+  storage.setCookie(name, '', 0);
+  storage.removeDataFromLocalStorage(name);
+}
+
 /**
  * @return {boolean}
  */
@@ -217,9 +350,9 @@ function publisherTagAvailable() {
 function buildContext(bidRequests, bidderRequest) {
   let referrer = '';
   if (bidderRequest && bidderRequest.refererInfo) {
-    referrer = bidderRequest.refererInfo.referer;
+    referrer = bidderRequest.refererInfo.page;
   }
-  const queryString = parseUrl(referrer).search;
+  const queryString = parseUrl(bidderRequest?.refererInfo?.topmostLocation).search;
 
   const context = {
     url: referrer,
@@ -248,6 +381,12 @@ function buildCdbUrl(context) {
   url += '&wv=' + encodeURIComponent('$prebid.version$');
   url += '&cb=' + String(Math.floor(Math.random() * 99999999999));
 
+  if (storage.localStorageIsEnabled()) {
+    url += '&lsavail=1';
+  } else {
+    url += '&lsavail=0';
+  }
+
   if (context.amp) {
     url += '&im=1';
   }
@@ -258,6 +397,26 @@ function buildCdbUrl(context) {
     url += '&nolog=1';
   }
 
+  const bundle = readFromAllStorages(BUNDLE_COOKIE_NAME);
+  if (bundle) {
+    url += `&bundle=${bundle}`;
+  }
+
+  const optout = readFromAllStorages(OPTOUT_COOKIE_NAME);
+  if (optout) {
+    url += `&optout=1`;
+  }
+
+  const sid = readFromAllStorages(SID_COOKIE_NAME);
+  if (sid) {
+    url += `&sid=${sid}`;
+  }
+
+  const idcpy = readFromAllStorages(IDCPY_COOKIE_NAME);
+  if (idcpy) {
+    url += `&idcpy=${idcpy}`;
+  }
+
   return url;
 }
 
@@ -265,11 +424,11 @@ function checkNativeSendId(bidRequest) {
   return !(bidRequest.nativeParams &&
     (
       (bidRequest.nativeParams.image && ((bidRequest.nativeParams.image.sendId !== true || bidRequest.nativeParams.image.sendTargetingKeys === true))) ||
-        (bidRequest.nativeParams.icon && ((bidRequest.nativeParams.icon.sendId !== true || bidRequest.nativeParams.icon.sendTargetingKeys === true))) ||
-        (bidRequest.nativeParams.clickUrl && ((bidRequest.nativeParams.clickUrl.sendId !== true || bidRequest.nativeParams.clickUrl.sendTargetingKeys === true))) ||
-        (bidRequest.nativeParams.displayUrl && ((bidRequest.nativeParams.displayUrl.sendId !== true || bidRequest.nativeParams.displayUrl.sendTargetingKeys === true))) ||
-        (bidRequest.nativeParams.privacyLink && ((bidRequest.nativeParams.privacyLink.sendId !== true || bidRequest.nativeParams.privacyLink.sendTargetingKeys === true))) ||
-        (bidRequest.nativeParams.privacyIcon && ((bidRequest.nativeParams.privacyIcon.sendId !== true || bidRequest.nativeParams.privacyIcon.sendTargetingKeys === true)))
+      (bidRequest.nativeParams.icon && ((bidRequest.nativeParams.icon.sendId !== true || bidRequest.nativeParams.icon.sendTargetingKeys === true))) ||
+      (bidRequest.nativeParams.clickUrl && ((bidRequest.nativeParams.clickUrl.sendId !== true || bidRequest.nativeParams.clickUrl.sendTargetingKeys === true))) ||
+      (bidRequest.nativeParams.displayUrl && ((bidRequest.nativeParams.displayUrl.sendId !== true || bidRequest.nativeParams.displayUrl.sendTargetingKeys === true))) ||
+      (bidRequest.nativeParams.privacyLink && ((bidRequest.nativeParams.privacyLink.sendId !== true || bidRequest.nativeParams.privacyLink.sendTargetingKeys === true))) ||
+      (bidRequest.nativeParams.privacyIcon && ((bidRequest.nativeParams.privacyIcon.sendId !== true || bidRequest.nativeParams.privacyIcon.sendTargetingKeys === true)))
     ));
 }
 
@@ -285,7 +444,7 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
   const request = {
     publisher: {
       url: context.url,
-      ext: bidderRequest.publisherExt
+      ext: bidderRequest.publisherExt,
     },
     slots: bidRequests.map(bidRequest => {
       networkId = bidRequest.params.networkId || networkId;
@@ -405,7 +564,7 @@ function hasValidVideoMediaType(bidRequest) {
 
   var requiredMediaTypesParams = ['mimes', 'playerSize', 'maxduration', 'protocols', 'api', 'skip', 'placement', 'playbackmethod'];
 
-  requiredMediaTypesParams.forEach(function(param) {
+  requiredMediaTypesParams.forEach(function (param) {
     if (deepAccess(bidRequest, 'mediaTypes.video.' + param) === undefined && deepAccess(bidRequest, 'params.video.' + param) === undefined) {
       isValid = false;
       logError('Criteo Bid Adapter: mediaTypes.video.' + param + ' is required');

@@ -50,7 +50,6 @@ describe('imRtdProvider', function () {
 
   describe('getBidderFunction', function () {
     const assumedBidder = [
-      'ix',
       'pubmatic',
       'fluct'
     ];

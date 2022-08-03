@@ -18,9 +18,10 @@ const HOST_GETTERS = {
   navelix: () => 'ghb.hb.navelix.com',
   appaloosa: () => 'ghb.hb.appaloosa.media',
   onefiftytwomedia: () => 'ghb.ads.152media.com',
-  mediafuse: () => 'ghb.hbmp.mediafuse.com',
   bidsxchange: () => 'ghb.hbd.bidsxchange.com',
   streamkey: () => 'ghb.hb.streamkey.net',
+  janet: () => 'ghb.bidder.jmgads.com',
+  pgam: () => 'ghb.pgamssp.com',
 }
 const getUri = function (bidderCode) {
   let bidderWithoutSuffix = bidderCode.split('_')[0];
@@ -36,12 +37,10 @@ const syncsCache = {};
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 410,
-  aliases: ['onefiftytwomedia', 'selectmedia', 'appaloosa', 'bidsxchange', 'streamkey',
+  aliases: ['onefiftytwomedia', 'appaloosa', 'bidsxchange', 'streamkey', 'janet',
+    { code: 'selectmedia', gvlid: 775 },
     { code: 'navelix', gvlid: 380 },
-    {
-      code: 'mediafuse',
-      skipPbsAliasing: true
-    }
+    'pgam'
   ],
   supportedMediaTypes: [VIDEO, BANNER],
   isBidRequestValid: function (bid) {
@@ -162,7 +161,8 @@ function parseRTBResponse(serverResponse, adapterRequest) {
 function bidToTag(bidRequests, adapterRequest) {
   // start publisher env
   const tag = {
-    Domain: deepAccess(adapterRequest, 'refererInfo.referer')
+    // TODO: is 'page' the right value here?
+    Domain: deepAccess(adapterRequest, 'refererInfo.page')
   };
   if (config.getConfig('coppa') === true) {
     tag.Coppa = 1;
