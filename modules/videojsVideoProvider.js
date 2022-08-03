@@ -96,13 +96,9 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
       return
     }
 
-    if (player.isReady_) {
+    player.ready(() => {
       triggerSetupComplete();
-    } else {
-      player.on('ready', function() {
-        triggerSetupComplete();
-      });
-    }
+    });
   }
 
   function triggerSetupFailure(errorCode, msg) {
@@ -432,7 +428,6 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
           Object.assign(payload, adState.getState(), timeState.getState());
           callback(type, payload);
           adState.clearState();
-          console.log(type);
         };
         player.one('ads-manager', () => player.ima.addEventListener('complete', eventHandler));
         break
@@ -446,7 +441,6 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
           Object.assign(payload, adState.getState(), timeState.getState());
           callback(type, payload);
           adState.clearState();
-          console.log(type);
         };
         player.one('ads-manager', () => player.ima.addEventListener('skip', eventHandler));
         break
@@ -458,7 +452,6 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
         eventHandler = () => {
           Object.assign(payload, adState.getState(), timeState.getState());
           callback(type, payload);
-          console.log(type);
         };
         player.one('ads-manager', () => player.ima.addEventListener('click', eventHandler));
         break
@@ -478,7 +471,6 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
           }, adState.getState(), timeState.getState());
           callback(type, payload);
           adState.clearState();
-          console.log(type);
         };
         player.on('adserror', eventHandler)
         break
@@ -665,7 +657,7 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
       if (!player.ima) {
         return;
       }
-      player.ima({});
+      player.ima({numRedirects: 10});
       window.imaPlayer = player.ima
     }
 
@@ -835,7 +827,7 @@ export function adStateFactory() {
       adTitle: event.title,
       universalAdId: event.universalAdIdValue,
       creativeType: event.contentType,
-      wrapperAdIds: event.wrapperAdIds,
+      wrapperAdIds: event.adWrapperIds,
       skip: skippable ? 1 : 0,
       // missing fields:
       // loadTime
