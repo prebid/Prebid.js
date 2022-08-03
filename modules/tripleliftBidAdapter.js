@@ -140,7 +140,7 @@ function _buildPostBody(bidRequests, bidderRequest) {
     ...getIdentityLinkEids([bidRequests[0]]),
     ...getCriteoEids([bidRequests[0]]),
     ...getPubCommonEids([bidRequests[0]]),
-    ...getUniversalEids([bidRequests[0]])
+    ...getUniversalEids(bidRequests[0])
   ];
 
   if (eids.length > 0) {
@@ -319,7 +319,8 @@ function getUniversalEids(bidRequest) {
   if (bidRequest.userIdAsEids) {
     bidRequest.userIdAsEids.forEach(id => {
       if (common.indexOf(id.source) === -1) {
-        eids.push(id); // each element of userIdAsEids is already formatted
+        let uids = id.uids.map(uid => ({ id: uid.id, ext: { rtiPartner: id.source } }));
+        eids.push({ source: id.source, uids });
       }
     });
   }
