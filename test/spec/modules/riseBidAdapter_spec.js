@@ -8,8 +8,8 @@ import * as utils from 'src/utils.js';
 const ENDPOINT = 'https://hb.yellowblue.io/hb-multi';
 const TEST_ENDPOINT = 'https://hb.yellowblue.io/hb-multi-test';
 const RTB_DOMAIN_TEST = 'testseller.com';
-const RTB_DOMAIN_ENDPOINT = `https://hb.${RTB_DOMAIN_TEST}/hb-multi`;
-const RTB_DOMAIN_TEST_ENDPOINT = `https://hb.${RTB_DOMAIN_TEST}/hb-multi-test`;
+const RTB_DOMAIN_ENDPOINT = `https://${RTB_DOMAIN_TEST}/hb-multi`;
+const RTB_DOMAIN_TEST_ENDPOINT = `https://${RTB_DOMAIN_TEST}/hb-multi-test`;
 const TTL = 360;
 /* eslint no-console: ["error", { allow: ["log", "warn", "error"] }] */
 

@@ -228,7 +228,7 @@ function isSyncMethodAllowed(syncRule, bidderCode) {
  * @returns {string}
  */
 function getEndpoint(testMode, rtbDomain) {
-  const SELLER_ENDPOINT = rtbDomain ? `https://hb.${rtbDomain}/` : DEFAULT_SELLER_ENDPOINT;
+  const SELLER_ENDPOINT = rtbDomain ? `https://${rtbDomain}/` : DEFAULT_SELLER_ENDPOINT;
   return testMode
     ? SELLER_ENDPOINT + MODES.TEST
     : SELLER_ENDPOINT + MODES.PRODUCTION;
