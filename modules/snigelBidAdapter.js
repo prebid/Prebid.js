@@ -1,15 +1,17 @@
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
-import {deepAccess} from '../src/utils.js';
+import {deepAccess, isArray, isFn, isPlainObject} from '../src/utils.js';
 import {hasPurpose1Consent} from '../src/utils/gpdr.js';
-import {bidderSettings} from '../src/bidderSettings.js';
 
 const BIDDER_CODE = 'snigel';
 const GVLID = 1076;
 const DEFAULT_URL = 'https://adserv.snigelweb.com/bp/v1/prebid';
 const DEFAULT_TTL = 60;
 const DEFAULT_CURRENCIES = ['USD'];
+const FLOOR_MATCH_ALL_SIZES = '*';
+
+const getConfig = config.getConfig;
 
 export const spec = {
   code: BIDDER_CODE,
@@ -29,16 +31,23 @@ export const spec = {
         id: bidderRequest.bidderRequestId,
         cur: getCurrencies(),
         test: getTestFlag(),
+        devw: window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth,
+        devh: window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight,
+        version: $$PREBID_GLOBAL$$.version,
         gdprApplies: gdprApplies,
         gdprConsentString: gdprApplies === true ? deepAccess(bidderRequest, 'gdprConsent.consentString') : undefined,
+        gdprConsentProv: gdprApplies === true ? deepAccess(bidderRequest, 'gdprConsent.addtlConsent') : undefined,
         uspConsent: deepAccess(bidderRequest, 'uspConsent'),
-        coppa: config.getConfig('coppa'),
+        coppa: getConfig('coppa'),
+        eids: deepAccess(bidRequests, '0.userIdAsEids'),
+        schain: deepAccess(bidRequests, '0.schain'),
         page: getPage(bidderRequest),
         placements: bidRequests.map((r) => {
           return {
             uuid: r.bidId,
             name: r.params.placement,
             sizes: r.sizes,
+            floor: getPriceFloor(r, BANNER, FLOOR_MATCH_ALL_SIZES),
           };
         }),
       }),
@@ -79,22 +88,45 @@ registerBidder(spec);
 
 function getPage(bidderRequest) {
   return (
-    bidderSettings.get(BIDDER_CODE, 'page') ||
-    deepAccess(bidderRequest, 'refererInfo.canonicalUrl') ||
-    window.location.href
+    getConfig(`${BIDDER_CODE}.page`) || deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || window.location.href
   );
 }
 
 function getEndpoint() {
-  return bidderSettings.get(BIDDER_CODE, 'url') || DEFAULT_URL;
+  return getConfig(`${BIDDER_CODE}.url`) || DEFAULT_URL;
 }
 
 function getTestFlag() {
-  return bidderSettings.get(BIDDER_CODE, 'test') === true;
+  return getConfig(`${BIDDER_CODE}.test`) === true;
 }
 
 function getCurrencies() {
-  return bidderSettings.get(BIDDER_CODE, 'cur') || DEFAULT_CURRENCIES;
+  const currencyOverrides = getConfig(`${BIDDER_CODE}.cur`);
+  if (currencyOverrides !== undefined && (!isArray(currencyOverrides) || currencyOverrides.length === 0)) {
+    throw Error('Currency override must be an array with at least one currency');
+  }
+  return currencyOverrides || DEFAULT_CURRENCIES;
+}
+
+function getFloorCurrency() {
+  return getConfig(`${BIDDER_CODE}.floorCur`) || getCurrencies()[0];
+}
+
+function getPriceFloor(bidRequest, mediaType, size) {
+  if (isFn(bidRequest.getFloor)) {
+    const cur = getFloorCurrency();
+    const floorInfo = bidRequest.getFloor({
+      currency: cur,
+      mediaType: mediaType,
+      size: size,
+    });
+    if (isPlainObject(floorInfo) && !isNaN(floorInfo.floor)) {
+      return {
+        cur: floorInfo.currency || cur,
+        value: floorInfo.floor,
+      };
+    }
+  }
 }
 
 function hasSyncConsent(gdprConsent, uspConsent) {
@@ -108,7 +140,7 @@ function hasSyncConsent(gdprConsent, uspConsent) {
 }
 
 function getSyncUrl(responses) {
-  return bidderSettings.get(BIDDER_CODE, 'syncUrl') || deepAccess(responses[0], 'body.syncUrl');
+  return getConfig(`${BIDDER_CODE}.syncUrl`) || deepAccess(responses[0], 'body.syncUrl');
 }
 
 function getSyncEndpoint(url, gdprConsent) {
