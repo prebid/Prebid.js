@@ -33,6 +33,7 @@ import {
 import { VIDEO_JS_VENDOR } from '../libraries/video/constants/vendorCodes.js';
 import { submodule } from '../src/hook.js';
 import stateFactory from '../libraries/video/shared/state.js';
+import { PLAYBACK_MODE } from '../libraries/video/constants/enums'
 
 /*
 Plugins of interest:
@@ -217,7 +218,7 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
     if (player.isFullscreen()) {
       video.pos = AD_POSITION.FULL_SCREEN;
     } else if (findPosition) {
-      video.pos = utils.getPositionCode(findPosition(player.el()))
+      video.pos = utils.getPositionCode(findPosition(player.el()));
     }
 
     return {video, content};
@@ -344,8 +345,9 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
         eventHandler = (e) => {
           const imaAd = e.getAdData();
           adState.updateForEvent(imaAd);
-          Object.assign(payload, adState.getState(), timeState.getState());
+          Object.assign(payload, adState.getState());
           callback(type, payload);
+          timeState.clearState();
         };
         player.on('ads-manager', () => player.ima.addEventListener('loaded', eventHandler));
         break
@@ -356,7 +358,7 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
         }
 
         eventHandler = () => {
-          Object.assign(payload, adState.getState(), timeState.getState());
+          Object.assign(payload, adState.getState());
           callback(type, payload);
         };
         player.on('ads-manager', () => player.ima.addEventListener('start', eventHandler));
@@ -380,7 +382,7 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
         }
 
         eventHandler = () => {
-          Object.assign(payload, adState.getState(), timeState.getState());
+          Object.assign(payload, adState.getState());
           callback(type, payload);
         };
         player.on('ads-manager', () => player.ima.addEventListener('resume', eventHandler));
@@ -392,7 +394,7 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
         }
 
         eventHandler = () => {
-          Object.assign(payload, adState.getState(), timeState.getState());
+          Object.assign(payload, adState.getState());
           callback(type, payload);
         };
         player.on('ads-manager', () => player.ima.addEventListener('pause', eventHandler));
@@ -403,7 +405,9 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
           return;
         }
 
-        eventHandler = () => {
+        eventHandler = (e) => {
+          const adTimeEvent = e.getAdData();
+          timeState.updateForTimeEvent(adTimeEvent);
           Object.assign(payload, adState.getState(), timeState.getState());
           callback(type, payload);
         };
@@ -416,7 +420,7 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
         }
 
         eventHandler = () => {
-          Object.assign(payload, adState.getState(), timeState.getState());
+          Object.assign(payload, adState.getState());
           callback(type, payload);
           adState.clearState();
         };
@@ -502,10 +506,13 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
         // might want to check seeking() and/or scrubbing()
         eventHandler = e => {
           previousLastTimePosition = lastTimePosition;
-          lastTimePosition = player.currentTime();
+          const currentTime = player.currentTime();
+          const duration = player.duration();
+          timeState.updateForTimeEvent({ currentTime, duration });
+          lastTimePosition = currentTime;
           Object.assign(payload, {
             position: lastTimePosition,
-            duration: player.duration()
+            duration
           });
           callback(type, payload);
         };
@@ -571,6 +578,7 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
         eventHandler = e => {
           callback(type, payload);
           previousLastTimePosition = lastTimePosition = 0;
+          timeState.clearState();
         };
         player.on(utils.getVideojsEventName(type), eventHandler);
         break;
@@ -791,7 +799,7 @@ export const utils = {
 
 const videojsSubmoduleFactory = function (config) {
   const adState = adStateFactory();
-  const timeState = stateFactory();
+  const timeState = timeStateFactory();
   const callbackStorage = null;
   // videojs factory is stored to window by default
   const vjs = window.videojs;
@@ -867,7 +875,6 @@ export function adStateFactory() {
       }
     }
 
-
     if (skippable) {
       updates.skipafter = event.skipTimeOffset;
     }
@@ -878,4 +885,31 @@ export function adStateFactory() {
   adState.updateForEvent = updateForEvent;
 
   return adState;
+}
+
+export function timeStateFactory() {
+  const timeState = Object.assign({}, stateFactory());
+
+  function updateForTimeEvent(event) {
+    const { currentTime, duration } = event;
+    this.updateState({
+      time: currentTime,
+      duration,
+      playbackMode: getPlaybackMode(duration)
+    });
+  }
+
+  timeState.updateForTimeEvent = updateForTimeEvent;
+
+  function getPlaybackMode(duration) {
+    if (duration > 0) {
+      return PLAYBACK_MODE.VOD;
+    } else if (duration < 0) {
+      return PLAYBACK_MODE.DVR;
+    }
+
+    return PLAYBACK_MODE.LIVE;
+  }
+
+  return timeState;
 }
