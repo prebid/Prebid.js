@@ -2,7 +2,6 @@ import Adapter from '../../src/adapter.js';
 import {createBid} from '../../src/bidfactory.js';
 import {
   bind,
-  cleanObj,
   createTrackPixelHtml,
   deepAccess,
   deepClone,
@@ -24,19 +23,19 @@ import {
   logWarn,
   mergeDeep,
   parseSizesInput,
-  pick, timestamp,
+  timestamp,
   triggerPixel,
   uniques
 } from '../../src/utils.js';
 import CONSTANTS from '../../src/constants.json';
 import adapterManager from '../../src/adapterManager.js';
-import { config } from '../../src/config.js';
-import { VIDEO, NATIVE } from '../../src/mediaTypes.js';
-import { isValid } from '../../src/adapters/bidderFactory.js';
+import {config} from '../../src/config.js';
+import {NATIVE, VIDEO} from '../../src/mediaTypes.js';
+import {isValid} from '../../src/adapters/bidderFactory.js';
 import * as events from '../../src/events.js';
 import {find, includes} from '../../src/polyfill.js';
-import { S2S_VENDORS } from './config.js';
-import { ajax } from '../../src/ajax.js';
+import {S2S_VENDORS} from './config.js';
+import {ajax} from '../../src/ajax.js';
 import {hook} from '../../src/hook.js';
 import {getGlobal} from '../../src/prebidGlobal.js';
 import {hasPurpose1Consent} from '../../src/utils/gpdr.js';
@@ -406,20 +405,14 @@ function addBidderFirstPartyDataToRequest(request, bidderFpd) {
 }
 
 // https://iabtechlab.com/wp-content/uploads/2016/07/OpenRTB-Native-Ads-Specification-Final-1.2.pdf#page=40
-let nativeDataIdMap = {
-  sponsoredBy: 1, // sponsored
-  body: 2, // desc
-  rating: 3,
-  likes: 4,
-  downloads: 5,
-  price: 6,
-  salePrice: 7,
-  phone: 8,
-  address: 9,
-  body2: 10, // desc2
-  cta: 12 // ctatext
-};
-let nativeDataNames = Object.keys(nativeDataIdMap);
+let nativeDataNames = Object.keys(CONSTANTS.PREBID_NATIVE_DATA_KEYS_TO_ORTB);
+
+// returns object with legacy asset name as key and asset id as value:
+// { "sponsoredBy": 1, ... }
+let nativeDataIdMap = nativeDataNames.reduce((prev, key) => {
+  prev[key] = CONSTANTS.NATIVE_ASSET_TYPES[CONSTANTS.PREBID_NATIVE_DATA_KEYS_TO_ORTB[key]];
+  return prev;
+}, {});
 
 let nativeImgIdMap = {
   icon: 1,
@@ -438,23 +431,19 @@ let nativeEventTrackerMethodMap = {
   js: 2
 };
 
-// enable reverse lookup
-[
-  nativeDataIdMap,
-  nativeImgIdMap,
-  nativeEventTrackerEventMap,
-  nativeEventTrackerMethodMap
-].forEach(map => {
-  Object.keys(map).forEach(key => {
-    map[map[key]] = key;
+if (FEATURES.NATIVE) {
+  // enable reverse lookup
+  [
+    nativeDataIdMap,
+    nativeImgIdMap,
+    nativeEventTrackerEventMap,
+    nativeEventTrackerMethodMap
+  ].forEach(map => {
+    Object.keys(map).forEach(key => {
+      map[map[key]] = key;
+    });
   });
-});
-
-/*
- * Protocol spec for OpenRTB endpoint
- * e.g., https://<prebid-server-url>/v1/openrtb2/auction
- */
-let nativeAssetCache = {}; // store processed native params to preserve
+}
 
 /**
  * map wurl to auction id and adId for use in the BID_WON event
@@ -556,78 +545,6 @@ Object.assign(ORTB2.prototype, {
       impIds.add(impressionId);
       this.adUnitsByImp[impressionId] = adUnit;
 
-      const nativeParams = adUnit.nativeParams;
-      let nativeAssets;
-      if (nativeParams) {
-        let idCounter = -1;
-        try {
-          nativeAssets = nativeAssetCache[impressionId] = Object.keys(nativeParams).reduce((assets, type) => {
-            let params = nativeParams[type];
-
-            function newAsset(obj) {
-              idCounter++;
-              return Object.assign({
-                required: params.required ? 1 : 0,
-                id: (isNumber(params.id)) ? idCounter = params.id : idCounter
-              }, obj ? cleanObj(obj) : {});
-            }
-
-            switch (type) {
-              case 'image':
-              case 'icon':
-                let imgTypeId = nativeImgIdMap[type];
-                let asset = cleanObj({
-                  type: imgTypeId,
-                  w: deepAccess(params, 'sizes.0'),
-                  h: deepAccess(params, 'sizes.1'),
-                  wmin: deepAccess(params, 'aspect_ratios.0.min_width'),
-                  hmin: deepAccess(params, 'aspect_ratios.0.min_height')
-                });
-                if (!((asset.w && asset.h) || (asset.hmin && asset.wmin))) {
-                  throw 'invalid img sizes (must provide sizes or min_height & min_width if using aspect_ratios)';
-                }
-                if (Array.isArray(params.aspect_ratios)) {
-                  // pass aspect_ratios as ext data I guess?
-                  const aspectRatios = params.aspect_ratios
-                    .filter((ar) => ar.ratio_width && ar.ratio_height)
-                    .map(ratio => `${ratio.ratio_width}:${ratio.ratio_height}`);
-                  if (aspectRatios.length > 0) {
-                    asset.ext = {
-                      aspectratios: aspectRatios
-                    }
-                  }
-                }
-                assets.push(newAsset({
-                  img: asset
-                }));
-                break;
-              case 'title':
-                if (!params.len) {
-                  throw 'invalid title.len';
-                }
-                assets.push(newAsset({
-                  title: {
-                    len: params.len
-                  }
-                }));
-                break;
-              default:
-                let dataAssetTypeId = nativeDataIdMap[type];
-                if (dataAssetTypeId) {
-                  assets.push(newAsset({
-                    data: {
-                      type: dataAssetTypeId,
-                      len: params.len
-                    }
-                  }))
-                }
-            }
-            return assets;
-          }, []);
-        } catch (e) {
-          logError('error creating native request: ' + String(e))
-        }
-      }
       const videoParams = deepAccess(adUnit, 'mediaTypes.video');
       const bannerParams = deepAccess(adUnit, 'mediaTypes.banner');
 
@@ -682,25 +599,26 @@ Object.assign(ORTB2.prototype, {
             }, {});
         }
       }
-
-      if (nativeAssets) {
+      const nativeReq = deepAccess(adUnit, 'nativeOrtbRequest')
+      if (FEATURES.NATIVE && nativeReq) {
+        const defaultRequest = {
+          // TODO: determine best way to pass these and if we allow defaults
+          context: 1,
+          plcmttype: 1,
+          eventtrackers: [
+            { event: 1, methods: [1] }
+          ],
+          // TODO: figure out how to support privacy field
+          // privacy: int
+        };
         try {
-          mediaTypes['native'] = {
-            request: JSON.stringify({
-              // TODO: determine best way to pass these and if we allow defaults
-              context: 1,
-              plcmttype: 1,
-              eventtrackers: [
-                {event: 1, methods: [1]}
-              ],
-              // TODO: figure out how to support privacy field
-              // privacy: int
-              assets: nativeAssets
-            }),
+          const request = Object.assign(defaultRequest, nativeReq);
+          mediaTypes[NATIVE] = {
+            request: JSON.stringify(request),
             ver: '1.2'
-          }
+          };
         } catch (e) {
-          logError('error creating native request: ' + String(e))
+          logError('error creating native request: ' + String(e));
         }
       }
 
@@ -860,6 +778,43 @@ Object.assign(ORTB2.prototype, {
       request.ext.prebid = mergeDeep(request.ext.prebid, s2sConfig.extPrebid);
     }
 
+    // get reference to pbs config schain bidder names (if any exist)
+    const pbsSchainBidderNamesArr = request.ext.prebid?.schains ? request.ext.prebid.schains.flatMap(s => s.bidders) : [];
+    // create an schains object
+    const schains = Object.fromEntries(
+      (request.ext.prebid?.schains || []).map(({bidders, schain}) => [JSON.stringify(schain), {bidders: new Set(bidders), schain}])
+    );
+
+    // compare bidder specific schains with pbs specific schains
+    request.ext.prebid.schains = Object.values(
+      bidRequests
+        .map((req) => [req.bidderCode, req.bids[0].schain])
+        .reduce((chains, [bidder, chain]) => {
+          const chainKey = JSON.stringify(chain);
+
+          switch (true) {
+            // if pbjs bidder name is same as pbs bidder name, pbs bidder name always wins
+            case chainKey && pbsSchainBidderNamesArr.indexOf(bidder) !== -1:
+              logInfo(`bidder-specific schain for ${bidder} skipped due to existing entry`);
+              break;
+            // if a pbjs schain obj is equal to an schain obj that exists on the pbs side, add the bidder name on the pbs side
+            case chainKey && chains.hasOwnProperty(chainKey) && pbsSchainBidderNamesArr.indexOf(bidder) === -1:
+              chains[chainKey].bidders.add(bidder);
+              break;
+            // if a pbjs schain obj is not on the pbs side, add a new schain entry on the pbs side
+            case chainKey && !chains.hasOwnProperty(chainKey):
+              chains[chainKey] = {bidders: new Set(), schain: chain};
+              chains[chainKey].bidders.add(bidder);
+              break;
+            default:
+          }
+
+          return chains;
+        }, schains)
+    ).map(({bidders, schain}) => ({bidders: Array.from(bidders), schain}));
+    // if schains evaluates to an empty array, remove it from the prebid object
+    if (request.ext.prebid.schains.length === 0) delete request.ext.prebid.schains;
+
     /**
      * @type {(string[]|string|undefined)} - OpenRTB property 'cur', currencies available for bids
      */
@@ -983,6 +938,13 @@ Object.assign(ORTB2.prototype, {
           });
           bidObject.requestTimestamp = this.requestTimestamp;
           bidObject.cpm = cpm;
+          if (bid?.ext?.prebid?.meta?.adaptercode) {
+            bidObject.adapterCode = bid.ext.prebid.meta.adaptercode;
+          } else if (bidRequest?.bidder) {
+            bidObject.adapterCode = bidRequest.bidder;
+          } else {
+            bidObject.adapterCode = seatbid.seat;
+          }
 
           // temporarily leaving attaching it to each bidResponse so no breaking change
           // BUT: this is a flat map, so it should be only attached to bidderRequest, a the change above does
@@ -1036,57 +998,19 @@ Object.assign(ORTB2.prototype, {
 
             if (bid.adm) { bidObject.vastXml = bid.adm; }
             if (!bidObject.vastUrl && bid.nurl) { bidObject.vastUrl = bid.nurl; }
-          } else if (deepAccess(bid, 'ext.prebid.type') === NATIVE) {
+          } else if (FEATURES.NATIVE && deepAccess(bid, 'ext.prebid.type') === NATIVE) {
             bidObject.mediaType = NATIVE;
-            let adm;
+            let ortb;
             if (typeof bid.adm === 'string') {
-              adm = bidObject.adm = JSON.parse(bid.adm);
+              ortb = bidObject.adm = JSON.parse(bid.adm);
             } else {
-              adm = bidObject.adm = bid.adm;
+              ortb = bidObject.adm = bid.adm;
             }
 
-            let trackers = {
-              [nativeEventTrackerMethodMap.img]: adm.imptrackers || [],
-              [nativeEventTrackerMethodMap.js]: adm.jstracker ? [adm.jstracker] : []
-            };
-            if (adm.eventtrackers) {
-              adm.eventtrackers.forEach(tracker => {
-                switch (tracker.method) {
-                  case nativeEventTrackerMethodMap.img:
-                    trackers[nativeEventTrackerMethodMap.img].push(tracker.url);
-                    break;
-                  case nativeEventTrackerMethodMap.js:
-                    trackers[nativeEventTrackerMethodMap.js].push(tracker.url);
-                    break;
-                }
-              });
-            }
-
-            if (isPlainObject(adm) && Array.isArray(adm.assets)) {
-              let origAssets = nativeAssetCache[bid.impid];
-              bidObject.native = cleanObj(adm.assets.reduce((native, asset) => {
-                let origAsset = origAssets[asset.id];
-                if (isPlainObject(asset.img)) {
-                  native[origAsset.img.type ? nativeImgIdMap[origAsset.img.type] : 'image'] = pick(
-                    asset.img,
-                    ['url', 'w as width', 'h as height']
-                  );
-                } else if (isPlainObject(asset.title)) {
-                  native['title'] = asset.title.text
-                } else if (isPlainObject(asset.data)) {
-                  nativeDataNames.forEach(dataType => {
-                    if (nativeDataIdMap[dataType] === origAsset.data.type) {
-                      native[dataType] = asset.data.value;
-                    }
-                  });
-                }
-                return native;
-              }, cleanObj({
-                clickUrl: adm.link,
-                clickTrackers: deepAccess(adm, 'link.clicktrackers'),
-                impressionTrackers: trackers[nativeEventTrackerMethodMap.img],
-                javascriptTrackers: trackers[nativeEventTrackerMethodMap.js]
-              })));
+            if (isPlainObject(ortb) && Array.isArray(ortb.assets)) {
+              bidObject.native = {
+                ortb,
+              }
             } else {
               logError('prebid server native response contained no assets');
             }

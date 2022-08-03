@@ -38,6 +38,7 @@ import {pubProvidedIdSubmodule} from 'modules/pubProvidedIdSystem.js';
 import {criteoIdSubmodule} from 'modules/criteoIdSystem.js';
 import {mwOpenLinkIdSubModule} from 'modules/mwOpenLinkIdSystem.js';
 import {tapadIdSubmodule} from 'modules/tapadIdSystem.js';
+import {tncidSubModule} from 'modules/tncIdSystem.js';
 import {getPrebidInternal} from 'src/utils.js';
 import {uid2IdSubmodule} from 'modules/uid2IdSystem.js';
 import {admixerIdSubmodule} from 'modules/admixerIdSystem.js';
@@ -465,6 +466,7 @@ describe('User ID', function () {
     describe('refreshing before init is complete', () => {
       const MOCK_ID = {'MOCKID': '1111'};
       let mockIdCallback;
+      let startInit;
 
       beforeEach(() => {
         mockIdCallback = sinon.stub();
@@ -479,7 +481,7 @@ describe('User ID', function () {
         };
         init(config);
         setSubmoduleRegistry([mockIdSystem]);
-        config.setConfig({
+        startInit = () => config.setConfig({
           userSync: {
             auctionDelay: 10,
             userIds: [{
@@ -491,6 +493,7 @@ describe('User ID', function () {
       });
 
       it('should still resolve promises returned by getUserIdsAsync', () => {
+        startInit();
         let result = null;
         getGlobal().getUserIdsAsync().then((val) => { result = val; });
         return clearStack().then(() => {
@@ -505,6 +508,7 @@ describe('User ID', function () {
       it('should not stop auctions', (done) => {
         // simulate an infinite `auctionDelay`; refreshing should still allow the auction to continue
         // as soon as ID submodules have completed init
+        startInit();
         requestBidsHook(() => {
           done();
         }, {adUnits: [getAdUnitMock()]}, {delay: delay()});
@@ -518,6 +522,7 @@ describe('User ID', function () {
       it('should not get stuck when init fails', () => {
         const err = new Error();
         mockIdCallback.callsFake(() => { throw err; });
+        startInit();
         return getGlobal().getUserIdsAsync().catch((e) =>
           expect(e).to.equal(err)
         );
@@ -693,11 +698,15 @@ describe('User ID', function () {
       config.resetConfig();
     });
 
-    it('fails initialization if opt out cookie exists', function () {
+    it('does not fetch ids if opt out cookie exists', function () {
       init(config);
       setSubmoduleRegistry([sharedIdSystemSubmodule]);
-      config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie']));
-      expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('User ID - opt-out cookie found, exit module');
+      const cfg = getConfigMock(['pubCommonId', 'pubcid', 'cookie']);
+      cfg.userSync.auctionDelay = 1; // to let init complete without an auction
+      config.setConfig(cfg);
+      return getGlobal().getUserIdsAsync().then((uid) => {
+        expect(uid).to.eql({});
+      })
     });
 
     it('initializes if no opt out cookie exists', function () {
@@ -784,9 +793,9 @@ describe('User ID', function () {
       expect(utils.logInfo.args[0][0]).to.exist.and.to.contain('User ID - usersync config updated for 1 submodules');
     });
 
-    it('config with 21 configurations should result in 21 submodules add', function () {
+    it('config with 22 configurations should result in 22 submodules add', function () {
       init(config);
-      setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, liveIntentIdSubmodule, britepoolIdSubmodule, netIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, hadronIdSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule, amxIdSubmodule, kinessoIdSubmodule, adqueryIdSubmodule]);
+      setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, liveIntentIdSubmodule, britepoolIdSubmodule, netIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, hadronIdSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule, amxIdSubmodule, kinessoIdSubmodule, adqueryIdSubmodule, tncidSubModule]);
       config.setConfig({
         userSync: {
           syncDelay: 0,
@@ -847,10 +856,12 @@ describe('User ID', function () {
           }, {
             name: 'qid',
             storage: {name: 'qid', type: 'html5'}
+          }, {
+            name: 'tncId'
           }]
         }
       });
-      expect(utils.logInfo.args[0][0]).to.exist.and.to.contain('User ID - usersync config updated for 21 submodules');
+      expect(utils.logInfo.args[0][0]).to.exist.and.to.contain('User ID - usersync config updated for 22 submodules');
     });
 
     it('config syncDelay updates module correctly', function () {
@@ -2528,7 +2539,6 @@ describe('User ID', function () {
 
         // init id system
         attachIdSystem(mockIdSystem);
-        config.setConfig(userIdConfig);
       });
 
       afterEach(function () {
@@ -2538,6 +2548,8 @@ describe('User ID', function () {
       it('calls getId if no stored consent data and refresh is not needed', function () {
         coreStorage.setCookie(mockIdCookieName, JSON.stringify({id: '1234'}), expStr);
         coreStorage.setCookie(`${mockIdCookieName}_last`, (new Date(Date.now() - 1 * 1000).toUTCString()), expStr);
+
+        config.setConfig(userIdConfig);
 
         let innerAdUnits;
         return runBidsHook((config) => {
@@ -2552,6 +2564,8 @@ describe('User ID', function () {
       it('calls getId if no stored consent data but refresh is needed', function () {
         coreStorage.setCookie(mockIdCookieName, JSON.stringify({id: '1234'}), expStr);
         coreStorage.setCookie(`${mockIdCookieName}_last`, (new Date(Date.now() - 60 * 1000).toUTCString()), expStr);
+
+        config.setConfig(userIdConfig);
 
         let innerAdUnits;
         return runBidsHook((config) => {
@@ -2569,6 +2583,8 @@ describe('User ID', function () {
 
         setStoredConsentData();
 
+        config.setConfig(userIdConfig);
+
         let innerAdUnits;
         return runBidsHook((config) => {
           innerAdUnits = config.adUnits
@@ -2585,6 +2601,8 @@ describe('User ID', function () {
 
         setStoredConsentData({...consentData, consentString: 'different'});
 
+        config.setConfig(userIdConfig);
+
         let innerAdUnits;
         return runBidsHook((config) => {
           innerAdUnits = config.adUnits
@@ -2600,6 +2618,8 @@ describe('User ID', function () {
         coreStorage.setCookie(`${mockIdCookieName}_last`, (new Date(Date.now() - 1 * 1000).toUTCString()), expStr);
 
         setStoredConsentData({...consentData});
+
+        config.setConfig(userIdConfig);
 
         let innerAdUnits;
         return runBidsHook((config) => {

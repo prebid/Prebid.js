@@ -51,7 +51,8 @@ describe('RelaidoAdapter', function () {
     bidderRequest = {
       timeout: 1000,
       refererInfo: {
-        page: 'https://publisher.com/home'
+        page: 'https://publisher.com/home?aaa=test1&bbb=test2',
+        canonicalUrl: 'https://publisher.com/home'
       }
     };
     serverResponse = {
@@ -81,8 +82,8 @@ describe('RelaidoAdapter', function () {
       data: {
         bids: [{
           bidId: bidRequest.bidId,
-          width: bidRequest.mediaTypes.video.playerSize[0][0],
-          height: bidRequest.mediaTypes.video.playerSize[0][1],
+          width: bidRequest.mediaTypes.video.playerSize[0][0] || bidRequest.mediaTypes.video.playerSize[0],
+          height: bidRequest.mediaTypes.video.playerSize[0][1] || bidRequest.mediaTypes.video.playerSize[1],
           mediaType: 'video'}]
       }
     };
@@ -95,6 +96,33 @@ describe('RelaidoAdapter', function () {
 
   describe('spec.isBidRequestValid', function () {
     it('should return true when the required params are passed by video', function () {
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+    });
+
+    it('should return true when not existed mediaTypes.video.playerSize and existed valid params.video.playerSize by video', function () {
+      bidRequest.mediaTypes = {
+        video: {
+          context: 'outstream'
+        }
+      };
+      bidRequest.params = {
+        placementId: '100000',
+        video: {
+          playerSize: [
+            [640, 360]
+          ]
+        }
+      };
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+    });
+
+    it('should return even true when the playerSize is Array[Number, Number] by video', function () {
+      bidRequest.mediaTypes = {
+        video: {
+          context: 'outstream',
+          playerSize: [640, 360]
+        }
+      };
       expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
     });
 
@@ -211,6 +239,7 @@ describe('RelaidoAdapter', function () {
       const request = data.bids[0];
       expect(bidRequests.method).to.equal('POST');
       expect(bidRequests.url).to.equal('https://api.relaido.jp/bid/v1/sprebid');
+      expect(data.canonical_url_hash).to.equal('e6092f44a0044903ae3764126eedd6187c1d9f04');
       expect(data.ref).to.equal(bidderRequest.refererInfo.page);
       expect(data.timeout_ms).to.equal(bidderRequest.timeout);
       expect(request.ad_unit_code).to.equal(bidRequest.adUnitCode);

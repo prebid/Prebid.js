@@ -37,7 +37,8 @@ const syncsCache = {};
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 410,
-  aliases: ['onefiftytwomedia', 'selectmedia', 'appaloosa', 'bidsxchange', 'streamkey', 'janet',
+  aliases: ['onefiftytwomedia', 'appaloosa', 'bidsxchange', 'streamkey', 'janet',
+    { code: 'selectmedia', gvlid: 775 },
     { code: 'navelix', gvlid: 380 },
     'pgam'
   ],

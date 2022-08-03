@@ -161,7 +161,7 @@ describe('kargo adapter tests', function () {
     }
 
     function getKrgCrbOldStyle() {
-      return '%7B%22v%22%3A%22eyJzeW5jSWRzIjp7IjIiOiI4MmZhMjU1NS01OTY5LTQ2MTQtYjRjZS00ZGNmMTA4MGU5ZjkiLCIxNiI6IlZveElrOEFvSnowQUFFZENleUFBQUFDMiY1MDIiLCIyMyI6ImQyYTg1NWE1LTFiMWMtNDMwMC05NDBlLWE3MDhmYTFmMWJkZSIsIjI0IjoiVm94SWs4QW9KejBBQUVkQ2V5QUFBQUMyJjUwMiIsIjI1IjoiNWVlMjQxMzgtNWUwMy00YjlkLWE5NTMtMzhlODMzZjI4NDlmIiwiMl84MCI6ImQyYTg1NWE1LTFiMWMtNDMwMC05NDBlLWE3MDhmYTFmMWJkZSIsIjJfOTMiOiI1ZWUyNDEzOC01ZTAzLTRiOWQtYTk1My0zOGU4MzNmMjg0OWYifSwibGV4SWQiOiI1ZjEwODgzMS0zMDJkLTExZTctYmY2Yi00NTk1YWNkM2JmNmMiLCJjbGllbnRJZCI6IjI0MTBkOGYyLWMxMTEtNDgxMS04OGE1LTdiNWUxOTBlNDc1ZiIsIm9wdE91dCI6ZmFsc2UsImV4cGlyZVRpbWUiOjE0OTc0NDkzODI2NjgsImxhc3RTeW5jZWRBdCI6MTQ5NzM2Mjk3OTAxMn0=%22%7D';
+      return '{"v":"eyJzeW5jSWRzIjp7IjIiOiI4MmZhMjU1NS01OTY5LTQ2MTQtYjRjZS00ZGNmMTA4MGU5ZjkiLCIxNiI6IlZveElrOEFvSnowQUFFZENleUFBQUFDMiY1MDIiLCIyMyI6ImQyYTg1NWE1LTFiMWMtNDMwMC05NDBlLWE3MDhmYTFmMWJkZSIsIjI0IjoiVm94SWs4QW9KejBBQUVkQ2V5QUFBQUMyJjUwMiIsIjI1IjoiNWVlMjQxMzgtNWUwMy00YjlkLWE5NTMtMzhlODMzZjI4NDlmIiwiMl84MCI6ImQyYTg1NWE1LTFiMWMtNDMwMC05NDBlLWE3MDhmYTFmMWJkZSIsIjJfOTMiOiI1ZWUyNDEzOC01ZTAzLTRiOWQtYTk1My0zOGU4MzNmMjg0OWYifSwibGV4SWQiOiI1ZjEwODgzMS0zMDJkLTExZTctYmY2Yi00NTk1YWNkM2JmNmMiLCJjbGllbnRJZCI6IjI0MTBkOGYyLWMxMTEtNDgxMS04OGE1LTdiNWUxOTBlNDc1ZiIsIm9wdE91dCI6ZmFsc2UsImV4cGlyZVRpbWUiOjE0OTc0NDkzODI2NjgsImxhc3RTeW5jZWRBdCI6MTQ5NzM2Mjk3OTAxMn0="}';
     }
 
     function initializeKrgCrb(cookieOnly) {
@@ -188,7 +188,7 @@ describe('kargo adapter tests', function () {
     }
 
     function getInvalidKrgCrbType2OldStyle() {
-      return '%7B%22v%22%3A%22%26%26%26%26%26%26%22%7D';
+      return '{"v":"&&&&&&"}';
     }
 
     function initializeInvalidKrgCrbType2() {
@@ -200,7 +200,7 @@ describe('kargo adapter tests', function () {
     }
 
     function getInvalidKrgCrbType3OldStyle() {
-      return '%7B%22v%22%3A%22Ly8v%22%7D';
+      return '{"v":"Ly8v"}';
     }
 
     function initializeInvalidKrgCrbType3Cookie() {
@@ -208,7 +208,7 @@ describe('kargo adapter tests', function () {
     }
 
     function getInvalidKrgCrbType4OldStyle() {
-      return '%7B%22v%22%3A%22bnVsbA%3D%3D%22%7D';
+      return '{"v":"bnVsbA=="}';
     }
 
     function initializeInvalidKrgCrbType4Cookie() {
@@ -220,7 +220,7 @@ describe('kargo adapter tests', function () {
     }
 
     function getEmptyKrgCrbOldStyle() {
-      return '%7B%22v%22%3A%22eyJleHBpcmVUaW1lIjoxNDk3NDQ5MzgyNjY4LCJsYXN0U3luY2VkQXQiOjE0OTczNjI5NzkwMTJ9%22%7D';
+      return '{"v":"eyJleHBpcmVUaW1lIjoxNDk3NDQ5MzgyNjY4LCJsYXN0U3luY2VkQXQiOjE0OTczNjI5NzkwMTJ9"}';
     }
 
     function initializeEmptyKrgCrb() {
@@ -572,6 +572,7 @@ describe('kargo adapter tests', function () {
         cpm: 2.5,
         width: 300,
         height: 250,
+        ad: '<VAST></VAST>',
         vastXml: '<VAST></VAST>',
         ttl: 300,
         creativeId: 'bar',
@@ -592,6 +593,11 @@ describe('kargo adapter tests', function () {
     var shouldSimulateOutdatedBrowser, crb, isActuallyOutdatedBrowser;
 
     beforeEach(() => {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        kargo: {
+          storageAllowed: true
+        }
+      };
       crb = {};
       shouldSimulateOutdatedBrowser = false;
       isActuallyOutdatedBrowser = false;

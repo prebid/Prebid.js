@@ -370,6 +370,8 @@ function buildRequests(validBidRequests, bidderRequest) {
         data.pi = 5;
       } else if (mediaTypes.video) {
         data.pi = mediaTypes.video.linearity === 2 ? 6 : 7; // invideo : video
+      } else if (params.product && params.product.toLowerCase() === 'skins') {
+        data.pi = 8;
       }
     } else { // legacy params
       data = { ...data, ...handleLegacyParams(params, sizes) }

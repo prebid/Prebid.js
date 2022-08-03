@@ -81,3 +81,17 @@ You may request by emailing [mailto:privacy@flashtalking.com](privacy@flashtalki
 #### GDPR
 
 In its current state, Flashtalking’s FTrack Identity Framework User ID Module does not create an ID if a user's consentData is "truthy" (true, 1). In other words, if GDPR applies in any way to a user, FTrack does not create an ID. 
+
+---
+
+### If you are using pbjs.getUserIdsAsEids():
+
+Please note that the `uids` value is a stringified object of the IDs so publishers will need to `JSON.parse()` the value in order to use it:
+
+```
+{
+    "HHID": ["<USERS HH ID>"],
+    "DeviceID": ["<USERS DEVICE ID>"],
+    "SingleDeviceID": ["USERS SINGLE DEVICE ID"]
+}
+```
