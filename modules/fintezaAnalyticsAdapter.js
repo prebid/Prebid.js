@@ -1,11 +1,11 @@
+import { parseUrl, logError } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-import * as utils from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
+import CONSTANTS from '../src/constants.json';
 
 const storage = getStorageManager();
-const CONSTANTS = require('../src/constants.json');
 
 const ANALYTICS_TYPE = 'endpoint';
 const FINTEZA_HOST = 'https://content.mql5.com/tr';
@@ -28,23 +28,15 @@ function getPageInfo() {
   }
 
   if (document.referrer) {
-    pageInfo.referrerDomain = utils.parseUrl(document.referrer).hostname;
+    pageInfo.referrerDomain = parseUrl(document.referrer).hostname;
   }
 
   return pageInfo;
 }
 
 function getUniqId() {
-  let cookies;
-
-  try {
-    cookies = parseCookies(document.cookie);
-  } catch (a) {
-    cookies = {};
-  }
-
   let isUniqFromLS;
-  let uniq = cookies[ UNIQ_ID_KEY ];
+  let uniq = storage.getCookie(UNIQ_ID_KEY);
   if (!uniq) {
     try {
       if (storage.hasLocalStorage()) {
@@ -399,7 +391,7 @@ function sendTrackRequest(trackData) {
     );
     saveTrackRequestTime();
   } catch (err) {
-    utils.logError('Error on send data: ', err);
+    logError('Error on send data: ', err);
   }
 }
 
@@ -424,7 +416,7 @@ fntzAnalyticsAdapter.originEnableAnalytics = fntzAnalyticsAdapter.enableAnalytic
 
 fntzAnalyticsAdapter.enableAnalytics = function (config) {
   if (!config.options.id) {
-    utils.logError('Client ID (id) option is not defined. Analytics won\'t work');
+    logError('Client ID (id) option is not defined. Analytics won\'t work');
     return;
   }
 

@@ -153,7 +153,8 @@ describe('brightcomBidAdapter', function() {
           gdprApplies: true
         },
         refererInfo: {
-          referer: 'http://example.com/page.html',
+          page: 'http://example.com/page.html',
+          domain: 'example.com',
         }
       };
       bidderRequest.bids = bidRequests;

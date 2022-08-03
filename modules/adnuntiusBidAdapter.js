@@ -1,19 +1,21 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
-import * as utils from '../src/utils.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { isStr, deepAccess, logInfo } from '../src/utils.js';
 import { config } from '../src/config.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'adnuntius';
-const ENDPOINT_URL = 'https://delivery.adnuntius.com/i?tzo=';
+const ENDPOINT_URL = 'https://ads.adnuntius.delivery/i';
 const GVLID = 855;
+const DEFAULT_VAST_VERSION = 'vast4'
 
 const checkSegment = function (segment) {
-  if (utils.isStr(segment)) return segment;
+  if (isStr(segment)) return segment;
   if (segment.id) return segment.id
 }
 
 const getSegmentsFromOrtb = function (ortb2) {
-  const userData = utils.deepAccess(ortb2, 'user.data');
+  const userData = deepAccess(ortb2, 'user.data');
   let segments = [];
   if (userData) {
     userData.forEach(userdat => {
@@ -25,10 +27,26 @@ const getSegmentsFromOrtb = function (ortb2) {
   return segments
 }
 
+const handleMeta = function () {
+  const storage = getStorageManager({ gvlid: GVLID, bidderCode: BIDDER_CODE })
+  let adnMeta = null
+  if (storage.localStorageIsEnabled()) {
+    adnMeta = JSON.parse(storage.getDataFromLocalStorage('adn.metaData'))
+  }
+  const meta = (adnMeta !== null) ? adnMeta.reduce((acc, cur) => { return { ...acc, [cur.key]: cur.value } }, {}) : {}
+  return meta
+}
+
+const getUsi = function (meta, ortb2, bidderRequest) {
+  let usi = (meta !== null && meta.usi) ? meta.usi : false;
+  if (ortb2 && ortb2.user && ortb2.user.id) { usi = ortb2.user.id }
+  return usi
+}
+
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  supportedMediaTypes: [BANNER],
+  supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function (bid) {
     return !!(bid.bidId || (bid.params.member && bid.params.invCode));
   },
@@ -37,33 +55,51 @@ export const spec = {
     const networks = {};
     const bidRequests = {};
     const requests = [];
-    const ortb2 = config.getConfig('ortb2');
+    const request = [];
+    const ortb2 = bidderRequest.ortb2 || {};
+    const bidderConfig = config.getConfig();
+
+    const adnMeta = handleMeta()
+    const usi = getUsi(adnMeta, ortb2, bidderRequest)
     const segments = getSegmentsFromOrtb(ortb2);
     const tzo = new Date().getTimezoneOffset();
-    const gdprApplies = utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies');
-    const consentString = utils.deepAccess(bidderRequest, 'gdprConsent.consentString');
-    const reqConsent = (gdprApplies !== undefined) ? '&consentString=' + consentString : '';
-    const reqSegments = (segments.length > 0) ? '&segments=' + segments.join(',') : '';
+    const gdprApplies = deepAccess(bidderRequest, 'gdprConsent.gdprApplies');
+    const consentString = deepAccess(bidderRequest, 'gdprConsent.consentString');
 
+    request.push('tzo=' + tzo)
+    request.push('format=json')
+
+    if (gdprApplies !== undefined) request.push('consentString=' + consentString);
+    if (segments.length > 0) request.push('segments=' + segments.join(','));
+    if (usi) request.push('userId=' + usi);
+    if (bidderConfig.useCookie === false) request.push('noCookies=true')
     for (var i = 0; i < validBidRequests.length; i++) {
       const bid = validBidRequests[i]
-      const network = bid.params.network || 'network';
+      let network = bid.params.network || 'network';
       const targeting = bid.params.targeting || {};
+
+      if (bid.mediaTypes && bid.mediaTypes.video && bid.mediaTypes.video.context !== 'outstream') {
+        network += '_video'
+      }
 
       bidRequests[network] = bidRequests[network] || [];
       bidRequests[network].push(bid);
 
       networks[network] = networks[network] || {};
       networks[network].adUnits = networks[network].adUnits || [];
+      if (bidderRequest && bidderRequest.refererInfo) networks[network].context = bidderRequest.refererInfo.page;
+      if (adnMeta) networks[network].metaData = adnMeta;
       networks[network].adUnits.push({ ...targeting, auId: bid.params.auId, targetId: bid.bidId });
     }
 
     const networkKeys = Object.keys(networks)
     for (var j = 0; j < networkKeys.length; j++) {
       const network = networkKeys[j];
+      const networkRequest = [...request]
+      if (network.indexOf('_video') > -1) { networkRequest.push('tt=' + DEFAULT_VAST_VERSION) }
       requests.push({
         method: 'POST',
-        url: ENDPOINT_URL + tzo + '&format=json' + reqSegments + reqConsent,
+        url: ENDPOINT_URL + '?' + networkRequest.join('&'),
         data: JSON.stringify(networks[network]),
         bid: bidRequests[network]
       });
@@ -76,26 +112,37 @@ export const spec = {
     const adUnits = serverResponse.body.adUnits;
     const bidResponsesById = adUnits.reduce((response, adUnit) => {
       if (adUnit.matchedAdCount >= 1) {
-        const bid = adUnit.ads[0];
-        const effectiveCpm = (bid.cpc && bid.cpm) ? bid.bid.amount + bid.cpm.amount : (bid.cpc) ? bid.bid.amount : (bid.cpm) ? bid.cpm.amount : 0;
-        return {
+        const ad = adUnit.ads[0];
+        const effectiveCpm = (ad.bid) ? ad.bid.amount * 1000 : 0;
+        const adResponse = {
           ...response,
           [adUnit.targetId]: {
             requestId: adUnit.targetId,
             cpm: effectiveCpm,
-            width: Number(bid.creativeWidth),
-            height: Number(bid.creativeHeight),
-            creativeId: bid.creativeId,
-            currency: (bid.bid) ? bid.bid.currency : 'EUR',
+            width: Number(ad.creativeWidth),
+            height: Number(ad.creativeHeight),
+            creativeId: ad.creativeId,
+            currency: (ad.bid) ? ad.bid.currency : 'EUR',
+            dealId: ad.dealId || '',
             meta: {
-              advertiserDomains: (bid.destinationUrls.destination) ? [bid.destinationUrls.destination.split('/')[2]] : []
+              advertiserDomains: (ad.destinationUrls.destination) ? [ad.destinationUrls.destination.split('/')[2]] : []
 
             },
             netRevenue: false,
             ttl: 360,
-            ad: adUnit.html
           }
         }
+
+        if (adUnit.vastXml) {
+          adResponse[adUnit.targetId].vastXml = adUnit.vastXml
+          adResponse[adUnit.targetId].mediaType = 'video'
+        } else {
+          adResponse[adUnit.targetId].ad = adUnit.html
+        }
+
+        logInfo('BID', adResponse)
+
+        return adResponse
       } else return response
     }, {});
 

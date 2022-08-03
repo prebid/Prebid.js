@@ -1,12 +1,39 @@
 'use strict';
 
 import { BANNER } from '../src/mediaTypes.js';
-import { getAdUnitSizes, logWarn, isFn } from '../src/utils.js';
+import { getAdUnitSizes, logWarn, isFn, getWindowTop, getWindowSelf } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { ajax } from '../src/ajax.js'
 
 const BIDDER_CODE = 'ogury';
+const GVLID = 31;
 const DEFAULT_TIMEOUT = 1000;
-const BID_HOST = 'https://webmobile.presage.io/api/header-bidding-request';
+const BID_HOST = 'https://mweb-hb.presage.io/api/header-bidding-request';
+const TIMEOUT_MONITORING_HOST = 'https://ms-ads-monitoring-events.presage.io';
+const MS_COOKIE_SYNC_DOMAIN = 'https://ms-cookie-sync.presage.io';
+const ADAPTER_VERSION = '1.2.13';
+
+function getClientWidth() {
+  const documentElementClientWidth = window.top.document.documentElement.clientWidth
+    ? window.top.document.documentElement.clientWidth
+    : 0
+  const innerWidth = window.top.innerWidth ? window.top.innerWidth : 0
+  const outerWidth = window.top.outerWidth ? window.top.outerWidth : 0
+  const screenWidth = window.top.screen.width ? window.top.screen.width : 0
+
+  return documentElementClientWidth || innerWidth || outerWidth || screenWidth
+}
+
+function getClientHeight() {
+  const documentElementClientHeight = window.top.document.documentElement.clientHeight
+    ? window.top.document.documentElement.clientHeight
+    : 0
+  const innerHeight = window.top.innerHeight ? window.top.innerHeight : 0
+  const outerHeight = window.top.outerHeight ? window.top.outerHeight : 0
+  const screenHeight = window.top.screen.height ? window.top.screen.height : 0
+
+  return documentElementClientHeight || innerHeight || outerHeight || screenHeight
+}
 
 function isBidRequestValid(bid) {
   const adUnitSizes = getAdUnitSizes(bid);
@@ -18,35 +45,52 @@ function isBidRequestValid(bid) {
   return (isValidSizes && isValidAdUnitId && isValidAssetKey);
 }
 
+function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
+  if (!syncOptions.pixelEnabled) return [];
+
+  return [
+    {
+      type: 'image',
+      url: `${MS_COOKIE_SYNC_DOMAIN}/v1/init-sync/bid-switch?iab_string=${(gdprConsent && gdprConsent.consentString) || ''}&source=prebid`
+    },
+    {
+      type: 'image',
+      url: `${MS_COOKIE_SYNC_DOMAIN}/ttd/init-sync?iab_string=${(gdprConsent && gdprConsent.consentString) || ''}&source=prebid`
+    }
+  ]
+}
+
 function buildRequests(validBidRequests, bidderRequest) {
   const openRtbBidRequestBanner = {
     id: bidderRequest.auctionId,
     tmax: DEFAULT_TIMEOUT,
-    at: 2,
+    at: 1,
     regs: {
       ext: {
-        gdpr: 1
+        gdpr: bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies ? 1 : 0
       },
     },
     site: {
-      domain: location.hostname
+      domain: location.hostname,
+      page: location.href
     },
     user: {
       ext: {
         consent: ''
       }
     },
-    imp: []
+    imp: [],
+    ext: {
+      adapterversion: ADAPTER_VERSION,
+      prebidversion: '$prebid.version$'
+    },
+    device: {
+      w: getClientWidth(),
+      h: getClientHeight()
+    }
   };
 
-  if (bidderRequest.hasOwnProperty('gdprConsent') &&
-    bidderRequest.gdprConsent.hasOwnProperty('gdprApplies')) {
-    openRtbBidRequestBanner.regs.ext.gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0
-  }
-
-  if (bidderRequest.hasOwnProperty('gdprConsent') &&
-    bidderRequest.gdprConsent.hasOwnProperty('consentString') &&
-    bidderRequest.gdprConsent.consentString.length > 0) {
+  if (bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString) {
     openRtbBidRequestBanner.user.ext.consent = bidderRequest.gdprConsent.consentString
   }
 
@@ -54,17 +98,19 @@ function buildRequests(validBidRequests, bidderRequest) {
     const sizes = getAdUnitSizes(bidRequest)
       .map(size => ({ w: size[0], h: size[1] }));
 
-    if (bidRequest.hasOwnProperty('mediaTypes') &&
+    if (bidRequest.mediaTypes &&
       bidRequest.mediaTypes.hasOwnProperty('banner')) {
       openRtbBidRequestBanner.site.id = bidRequest.params.assetKey;
+      const floor = getFloor(bidRequest);
 
       openRtbBidRequestBanner.imp.push({
         id: bidRequest.bidId,
         tagid: bidRequest.params.adUnitId,
-        bidfloor: getFloor(bidRequest),
+        ...(floor && {bidfloor: floor}),
         banner: {
           format: sizes
-        }
+        },
+        ext: bidRequest.params
       });
     }
   });
@@ -72,7 +118,8 @@ function buildRequests(validBidRequests, bidderRequest) {
   return {
     method: 'POST',
     url: BID_HOST,
-    data: openRtbBidRequestBanner
+    data: openRtbBidRequestBanner,
+    options: {contentType: 'application/json'},
   };
 }
 
@@ -98,9 +145,13 @@ function interpretResponse(openRtbBidResponse) {
         creativeId: bid.id,
         netRevenue: true,
         ttl: 60,
+        ext: bid.ext,
         meta: {
           advertiserDomains: bid.adomain
-        }
+        },
+        nurl: bid.nurl,
+        adapterVersion: ADAPTER_VERSION,
+        prebidVersion: '$prebid.version$'
       };
 
       bidResponse.ad = bid.adm;
@@ -123,13 +174,41 @@ function getFloor(bid) {
   return floorResult.currency === 'USD' ? floorResult.floor : 0;
 }
 
+function getWindowContext() {
+  try {
+    return getWindowTop()
+  } catch (e) {
+    return getWindowSelf()
+  }
+}
+
+function onBidWon(bid) {
+  const w = getWindowContext()
+  w.OG_PREBID_BID_OBJECT = {
+    ...(bid && { ...bid }),
+  }
+  if (bid && bid.nurl) ajax(bid.nurl, null);
+}
+
+function onTimeout(timeoutData) {
+  ajax(`${TIMEOUT_MONITORING_HOST}/bid_timeout`, null, JSON.stringify({...timeoutData[0], location: window.location.href}), {
+    method: 'POST',
+    contentType: 'application/json'
+  });
+}
+
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER],
   isBidRequestValid,
+  getUserSyncs,
   buildRequests,
   interpretResponse,
-  getFloor
+  getFloor,
+  onBidWon,
+  getWindowContext,
+  onTimeout
 }
 
 registerBidder(spec);

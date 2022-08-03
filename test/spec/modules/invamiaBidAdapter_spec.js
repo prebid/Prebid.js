@@ -104,6 +104,7 @@ describe('invamia bid adapter tests', function () {
           hb: {
             cpm: 0.5,
             netRevenue: false,
+            adomains: ['securepubads.g.doubleclick.net'],
           },
           template: {
             html: '<ad></ad>',
@@ -128,6 +129,8 @@ describe('invamia bid adapter tests', function () {
       expect(bids[0].cpm).to.equal(0.5);
       expect(bids[0].netRevenue).to.equal(false);
       expect(bids[0].currency).to.equal('USD');
+      expect(bids[0].meta.advertiserDomains).to.be.lengthOf(1);
+      expect(bids[0].meta.advertiserDomains[0]).to.equal('securepubads.g.doubleclick.net');
     });
 
     it('should return empty bid response', function () {

@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { _each, deepAccess, parseSizesInput, parseUrl } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -15,7 +15,6 @@ const SESSION_ID_KEY = 'vidSid';
 export const SUPPORTED_ID_SYSTEMS = {
   'britepoolid': 1,
   'criteoId': 1,
-  'digitrustid': 1,
   'id5id': 1,
   'idl_env': 1,
   'lipb': 1,
@@ -24,7 +23,16 @@ export const SUPPORTED_ID_SYSTEMS = {
   'pubcid': 1,
   'tdid': 1,
 };
-const storage = getStorageManager(GVLID);
+const storage = getStorageManager({ gvlid: GVLID, bidderCode: BIDDER_CODE });
+
+function getTopWindowQueryParams() {
+  try {
+    const parsedUrl = parseUrl(window.top.document.URL, { decodeSearchAsString: true });
+    return parsedUrl.search;
+  } catch (e) {
+    return '';
+  }
+}
 
 export function createDomain(subDomain = DEFAULT_SUB_DOMAIN) {
   return `https://${subDomain}.cootlogix.com`;
@@ -48,7 +56,7 @@ function isBidRequestValid(bid) {
 }
 
 function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
-  const { params, bidId, userId, adUnitCode } = bid;
+  const { params, bidId, userId, adUnitCode, schain } = bid;
   const { bidFloor, ext } = params;
   const hashUrl = hashCode(topWindowUrl);
   const dealId = getNextDealId(hashUrl);
@@ -60,6 +68,7 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
 
   let data = {
     url: encodeURIComponent(topWindowUrl),
+    uqs: getTopWindowQueryParams(),
     cb: Date.now(),
     bidFloor: bidFloor,
     bidId: bidId,
@@ -71,7 +80,8 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
     uniqueDealId: uniqueDealId,
     bidderVersion: BIDDER_VERSION,
     prebidVersion: '$prebid.version$',
-    res: `${screen.width}x${screen.height}`
+    res: `${screen.width}x${screen.height}`,
+    schain: schain
   };
 
   appendUserIdsToRequestPayload(data, userId);
@@ -94,7 +104,7 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
     data: data
   };
 
-  utils._each(ext, (value, key) => {
+  _each(ext, (value, key) => {
     dto.data['ext.' + key] = value;
   });
 
@@ -103,13 +113,13 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
 
 function appendUserIdsToRequestPayload(payloadRef, userIds) {
   let key;
-  utils._each(userIds, (userId, idSystemProviderName) => {
+  _each(userIds, (userId, idSystemProviderName) => {
     if (SUPPORTED_ID_SYSTEMS[idSystemProviderName]) {
       key = `uid.${idSystemProviderName}`;
 
       switch (idSystemProviderName) {
         case 'digitrustid':
-          payloadRef[key] = utils.deepAccess(userId, 'data.id');
+          payloadRef[key] = deepAccess(userId, 'data.id');
           break;
         case 'lipb':
           payloadRef[key] = userId.lipbid;
@@ -128,10 +138,11 @@ function appendUserIdsToRequestPayload(payloadRef, userIds) {
 }
 
 function buildRequests(validBidRequests, bidderRequest) {
-  const topWindowUrl = bidderRequest.refererInfo.referer;
+  // TODO: does the fallback make sense here?
+  const topWindowUrl = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
   const requests = [];
   validBidRequests.forEach(validBidRequest => {
-    const sizes = utils.parseSizesInput(validBidRequest.sizes);
+    const sizes = parseSizesInput(validBidRequest.sizes);
     const request = buildRequest(validBidRequest, topWindowUrl, sizes, bidderRequest);
     requests.push(request);
   });
@@ -149,7 +160,7 @@ function interpretResponse(serverResponse, request) {
 
   try {
     results.forEach(result => {
-      const { creativeId, ad, price, exp, width, height, currency } = result;
+      const { creativeId, ad, price, exp, width, height, currency, advertiserDomains } = result;
       if (!ad || !price) {
         return;
       }
@@ -162,7 +173,10 @@ function interpretResponse(serverResponse, request) {
         currency: currency || CURRENCY,
         netRevenue: true,
         ttl: exp || TTL_SECONDS,
-        ad: ad
+        ad: ad,
+        meta: {
+          advertiserDomains: advertiserDomains || []
+        }
       })
     });
     return output;
@@ -266,8 +280,8 @@ export function tryParseJSON(value) {
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   version: BIDDER_VERSION,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER],
   isBidRequestValid,
   buildRequests,

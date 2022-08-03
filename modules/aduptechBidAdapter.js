@@ -1,7 +1,7 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import { BANNER, NATIVE } from '../src/mediaTypes.js'
-import * as utils from '../src/utils.js';
+import {deepAccess, getAdUnitSizes} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 export const BIDDER_CODE = 'aduptech';
 export const ENDPOINT_URL_PUBLISHER_PLACEHOLDER = '{PUBLISHER}';
@@ -37,19 +37,8 @@ export const internal = {
    * @returns {string}
    */
   extractPageUrl: (bidderRequest) => {
-    if (bidderRequest && utils.deepAccess(bidderRequest, 'refererInfo.canonicalUrl')) {
-      return bidderRequest.refererInfo.canonicalUrl;
-    }
-
-    if (config && config.getConfig('pageUrl')) {
-      return config.getConfig('pageUrl');
-    }
-
-    try {
-      return utils.getWindowTop().location.href;
-    } catch (e) {
-      return utils.getWindowSelf().location.href;
-    }
+    // TODO: does it make sense to fall back here?
+    return bidderRequest?.refererInfo?.page || window.location.href;
   },
 
   /**
@@ -59,15 +48,8 @@ export const internal = {
    * @returns {string}
    */
   extractReferrer: (bidderRequest) => {
-    if (bidderRequest && utils.deepAccess(bidderRequest, 'refererInfo.referer')) {
-      return bidderRequest.refererInfo.referer;
-    }
-
-    try {
-      return utils.getWindowTop().document.referrer;
-    } catch (e) {
-      return utils.getWindowSelf().document.referrer;
-    }
+    // TODO: does it make sense to fall back here?
+    return bidderRequest?.refererInfo?.ref || window.document.referrer;
   },
 
   /**
@@ -77,7 +59,7 @@ export const internal = {
    * @returns {null|Object.<string, *>}
    */
   extractBannerConfig: (bidRequest) => {
-    const sizes = utils.getAdUnitSizes(bidRequest);
+    const sizes = getAdUnitSizes(bidRequest);
     if (Array.isArray(sizes) && sizes.length > 0) {
       return { sizes: sizes };
     }
@@ -92,7 +74,7 @@ export const internal = {
    * @returns {null|Object.<string, *>}
    */
   extractNativeConfig: (bidRequest) => {
-    if (bidRequest && utils.deepAccess(bidRequest, 'mediaTypes.native')) {
+    if (bidRequest && deepAccess(bidRequest, 'mediaTypes.native')) {
       return bidRequest.mediaTypes.native;
     }
 
@@ -111,6 +93,30 @@ export const internal = {
     }
 
     return null;
+  },
+
+  /**
+   * Extracts the floor price params from given bidRequest
+   *
+   * @param {BidRequest} bidRequest
+   * @returns {undefined|float}
+   */
+  extractFloorPrice: (bidRequest) => {
+    let floorPrice;
+    if (bidRequest && bidRequest.params && bidRequest.params.floor) {
+      // if there is a manual floorPrice set
+      floorPrice = !isNaN(parseInt(bidRequest.params.floor)) ? bidRequest.params.floor : undefined;
+    }
+    if (typeof bidRequest.getFloor === 'function') {
+      // use prebid floor module
+      let floorInfo;
+      try {
+        floorInfo = bidRequest.getFloor();
+      } catch (e) {}
+      floorPrice = typeof floorInfo === 'object' && !isNaN(parseInt(floorInfo.floor)) ? floorInfo.floor : floorPrice;
+    }
+
+    return floorPrice;
   },
 
   /**
@@ -193,6 +199,9 @@ export const spec = {
    * @returns {Object[]}
    */
   buildRequests: (validBidRequests, bidderRequest) => {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     const requests = [];
 
     // stop here on invalid or empty data
@@ -248,6 +257,12 @@ export const spec = {
           bid.native = nativeConfig;
         }
 
+        // add floor price
+        const floorPrice = internal.extractFloorPrice(bidRequest);
+        if (floorPrice) {
+          bid.floorPrice = floorPrice;
+        }
+
         request.data.imp.push(bid);
       });
 
@@ -267,7 +282,7 @@ export const spec = {
     const bidResponses = [];
 
     // stop here on invalid or empty data
-    if (!response || !utils.deepAccess(response, 'body.bids') || response.body.bids.length === 0) {
+    if (!response || !deepAccess(response, 'body.bids') || response.body.bids.length === 0) {
       return bidResponses;
     }
 

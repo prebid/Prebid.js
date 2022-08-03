@@ -27,6 +27,9 @@ Ogury bid adapter supports Banner media type.
                     params: {
                         assetKey: 'OGY-CA41D116484F',
                         adUnitId: '2c4d61d0-90aa-0139-0cda-0242ac120004'
+                        xMargin?: 20
+                        yMargin?: 20
+                        gravity?: 'TOP_LEFT' || 'TOP_RIGHT' || 'BOTTOM_LEFT' || 'BOTTOM_RIGHT' || 'BOTTOM_CENTER' || 'TOP_CENTER' || 'CENTER'
                     }
                 }
             ]

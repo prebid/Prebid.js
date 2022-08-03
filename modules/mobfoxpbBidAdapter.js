@@ -1,9 +1,10 @@
+import { isFn, deepAccess, getWindowTop } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import * as utils from '../src/utils.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'mobfoxpb';
-const AD_URL = 'https://bes.mobfox.com/?c=o&m=multi';
+const AD_URL = 'https://bes.mobfox.com/pbjs';
 
 function isBidResponseValid(bid) {
   if (!bid.requestId || !bid.cpm || !bid.creativeId ||
@@ -22,16 +23,35 @@ function isBidResponseValid(bid) {
   }
 }
 
+function getBidFloor(bid) {
+  if (!isFn(bid.getFloor)) {
+    return deepAccess(bid, 'params.bidfloor', 0);
+  }
+
+  try {
+    const bidFloor = bid.getFloor({
+      currency: 'USD',
+      mediaType: '*',
+      size: '*',
+    });
+    return bidFloor.floor;
+  } catch (_) {
+    return 0
+  }
+}
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: (bid) => {
-    return Boolean(bid.bidId && bid.params && !isNaN(parseInt(bid.params.placementId)));
+    return Boolean(bid.bidId && bid.params && bid.params.placementId);
   },
 
   buildRequests: (validBidRequests = [], bidderRequest) => {
-    const winTop = utils.getWindowTop();
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+    const winTop = getWindowTop();
     const location = winTop.location;
     const placements = [];
     const request = {
@@ -60,19 +80,35 @@ export const spec = {
         placementId: bid.params.placementId,
         bidId: bid.bidId,
         schain: bid.schain || {},
+        bidfloor: getBidFloor(bid)
       };
       const mediaType = bid.mediaTypes
 
       if (mediaType && mediaType[BANNER] && mediaType[BANNER].sizes) {
-        placement.sizes = mediaType[BANNER].sizes;
         placement.traffic = BANNER;
+        placement.sizes = mediaType[BANNER].sizes;
       } else if (mediaType && mediaType[VIDEO] && mediaType[VIDEO].playerSize) {
+        placement.traffic = VIDEO;
         placement.wPlayer = mediaType[VIDEO].playerSize[0];
         placement.hPlayer = mediaType[VIDEO].playerSize[1];
-        placement.traffic = VIDEO;
+        placement.playerSize = mediaType[VIDEO].playerSize;
+        placement.minduration = mediaType[VIDEO].minduration;
+        placement.maxduration = mediaType[VIDEO].maxduration;
+        placement.mimes = mediaType[VIDEO].mimes;
+        placement.protocols = mediaType[VIDEO].protocols;
+        placement.startdelay = mediaType[VIDEO].startdelay;
+        placement.placement = mediaType[VIDEO].placement;
+        placement.skip = mediaType[VIDEO].skip;
+        placement.skipafter = mediaType[VIDEO].skipafter;
+        placement.minbitrate = mediaType[VIDEO].minbitrate;
+        placement.maxbitrate = mediaType[VIDEO].maxbitrate;
+        placement.delivery = mediaType[VIDEO].delivery;
+        placement.playbackmethod = mediaType[VIDEO].playbackmethod;
+        placement.api = mediaType[VIDEO].api;
+        placement.linearity = mediaType[VIDEO].linearity;
       } else if (mediaType && mediaType[NATIVE]) {
-        placement.native = mediaType[NATIVE];
         placement.traffic = NATIVE;
+        placement.native = mediaType[NATIVE];
       }
       placements.push(placement);
     }
@@ -89,6 +125,9 @@ export const spec = {
     for (let i = 0; i < serverResponse.body.length; i++) {
       let resItem = serverResponse.body[i];
       if (isBidResponseValid(resItem)) {
+        resItem.meta = resItem.meta || {};
+        resItem.meta.advertiserDomains = resItem.adomain || [];
+
         response.push(resItem);
       }
     }
