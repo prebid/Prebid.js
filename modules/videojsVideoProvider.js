@@ -32,7 +32,7 @@ import {
 } from '../libraries/video/constants/ortb.js';
 import { VIDEO_JS_VENDOR } from '../libraries/video/constants/vendorCodes.js';
 import { submodule } from '../src/hook.js';
-import stateFactory from '../libraries/video/shared/state'
+import stateFactory from '../libraries/video/shared/state.js';
 
 /*
 Plugins of interest:
@@ -62,12 +62,13 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
   const timeState = timeState_;
   let player = null;
   let playerVersion = null;
+  let playerIsSetup = false;
   const {playerConfig, divId} = config;
   let isMuted;
   let previousLastTimePosition = 0;
   let lastTimePosition = 0;
 
-  let setupCompleteCallback, setupFailedCallback;
+  let setupCompleteCallback, setupFailedCallback, setupFailedEventHandler;
 
   // TODO: test with older videojs versions
   let minimumSupportedPlayerVersion = '7.17.0';
@@ -96,9 +97,7 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
       return
     }
 
-    player.ready(() => {
-      triggerSetupComplete();
-    });
+    player.ready(triggerSetupComplete);
   }
 
   function triggerSetupFailure(errorCode, msg) {
@@ -115,6 +114,7 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
   }
 
   function triggerSetupComplete() {
+    playerIsSetup = true;
     const payload = {
       divId,
       playerVersion,
@@ -125,6 +125,11 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
     setupCompleteCallback = null;
 
     isMuted = player.muted();
+
+    if (setupFailedEventHandler) {
+      player.off('error', setupFailedEventHandler)
+      setupFailedEventHandler = null;
+    }
   }
 
   function getId() {
@@ -251,36 +256,26 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
   }
 
   function registerPreSetupListeners(type, callback, payload) {
-    let eventHandler;
     switch (type) {
       case SETUP_COMPLETE:
         setupCompleteCallback = callback
-        eventHandler = () => {
-          triggerSetupComplete();
-        };
         break;
       case SETUP_FAILED:
-        let isReady = false;
-        player.ready(() => {
-          isReady = true;
-        });
-
-        if (isReady) {
+        // no point in registering for setup failures if already setup.
+        if (playerIsSetup) {
           return;
         }
         setupFailedCallback = callback
-        eventHandler = () => {
-          let isReady = false;
-          player.ready(() => {
-            isReady = true;
-          });
-
-          if (isReady) {
+        setupFailedEventHandler = () => {
+          /*
+          Videojs has no specific setup error handler
+          so we imitate it by hooking to the general error
+          handler and checking to see if the player has been setup
+           */
+          if (playerIsSetup) {
             return;
           }
-          // Videojs has no specific setup error handler
-          // so we imitate it by hooking to the general error
-          // handler and checking to see if the player has been setup
+
           const error = player.error();
           Object.assign(payload, {
             playerVersion,
@@ -291,13 +286,9 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
           callback(type, payload);
           setupFailedCallback = null;
         };
-        player.on(ERROR, eventHandler);
+        player.on(ERROR, setupFailedEventHandler);
         break;
-      default:
-        return
     }
-    callbackToHandler[callback] = eventHandler
-    player && player.on(utils.getVideojsEventName(type), eventHandler);
   }
 
   function registerPostSetupListeners(type, callback, payload) {
