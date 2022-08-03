@@ -657,7 +657,8 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
       if (!player.ima) {
         return;
       }
-      player.ima({numRedirects: 10});
+      const adConfig = utils.getAdConfig(config);
+      player.ima(adConfig);
       window.imaPlayer = player.ima
     }
 
@@ -684,6 +685,15 @@ export const utils = {
     }
 
     return videojsConfig;
+  },
+
+  getAdConfig: function (config) {
+    const params = config && config.params;
+    if (!params) {
+      return {};
+    }
+
+    return params.adConfig || {};
   },
 
   getPositionCode: function({left, top, width, height}) {
