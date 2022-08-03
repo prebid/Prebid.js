@@ -1091,7 +1091,6 @@ export const spec = {
     payload.ext.wrapper.wv = $$REPO_AND_VERSION$$;
     payload.ext.wrapper.transactionId = conf.transactionId;
     payload.ext.wrapper.wp = 'pbjs';
-
     const allowAlternateBidder = bidderRequest ? bidderSettings.get(bidderRequest.bidderCode, 'allowAlternateBidderCodes') : undefined;
     if (allowAlternateBidder !== undefined) {
       payload.ext.marketplace = {};
@@ -1099,7 +1098,7 @@ export const spec = {
         let allowedBiddersList = bidderSettings.get(bidderRequest.bidderCode, 'allowedAlternateBidderCodes');
         if (isArray(allowedBiddersList)) {
           allowedBiddersList = allowedBiddersList.map(val => val.trim().toLowerCase()).filter(val => !!val).filter(uniques)
-          biddersList = (allowedBiddersList.includes('*') || allowedBiddersList.length === 0) ? allBiddersList : [...biddersList, ...allowedBiddersList];
+          biddersList = allowedBiddersList.includes('*') ? allBiddersList : [...biddersList, ...allowedBiddersList];
         } else {
           biddersList = allBiddersList;
         }
