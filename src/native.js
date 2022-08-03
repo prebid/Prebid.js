@@ -385,7 +385,7 @@ export function getAssetMessage(data, adObject) {
 
   data.assets.forEach(asset => {
     const key = getKeyByValue(CONSTANTS.NATIVE_KEYS, asset);
-    const value = getAssetValue(adObject.native[key]);
+    const value = getAssetValue(adObject.native[key]) ?? '';
 
     message.assets.push({ key, value });
   });
