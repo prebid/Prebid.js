@@ -1,13 +1,5 @@
-import { adqueryIdSubmodule, storage } from 'modules/adqueryIdSystem.js';
+import { adqueryIdSubmodule } from 'modules/adqueryIdSystem.js';
 import { server } from 'test/mocks/xhr.js';
-import {amxIdSubmodule} from '../../../modules/amxIdSystem';
-import * as utils from '../../../src/utils';
-
-const config = {
-  storage: {
-    type: 'html5',
-  },
-};
 
 describe('AdqueryIdSystem', function () {
   describe('qid submodule', () => {
@@ -21,16 +13,6 @@ describe('AdqueryIdSystem', function () {
   });
 
   describe('getId', function() {
-    let getDataFromLocalStorageStub;
-
-    beforeEach(function() {
-      getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
-    });
-
-    afterEach(function () {
-      getDataFromLocalStorageStub.restore();
-    });
-
     it('gets a adqueryId', function() {
       const config = {
         params: {}
@@ -43,19 +25,6 @@ describe('AdqueryIdSystem', function () {
       request.respond(200, { 'Content-Type': 'application/json' }, JSON.stringify({ qid: 'qid' }));
       expect(callbackSpy.lastCall.lastArg).to.deep.equal({qid: 'qid'});
     });
-
-    it('gets a cached adqueryId', function() {
-      const config = {
-        params: {}
-      };
-      getDataFromLocalStorageStub.withArgs('qid').returns('qid');
-
-      const callbackSpy = sinon.spy();
-      const callback = adqueryIdSubmodule.getId(config).callback;
-      callback(callbackSpy);
-      expect(callbackSpy.lastCall.lastArg).to.deep.equal({qid: 'qid'});
-    });
-
     it('allows configurable id url', function() {
       const config = {
         params: {

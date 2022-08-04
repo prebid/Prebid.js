@@ -50,10 +50,6 @@ export const adqueryIdSubmodule = {
    * @returns {{qid:Object}}
    */
   decode(value) {
-    let qid = storage.getDataFromLocalStorage('qid');
-    if (utils.isStr(qid)) {
-      return {qid: qid};
-    }
     return (value && typeof value['qid'] === 'string') ? { 'qid': value['qid'] } : undefined;
   },
   /**
@@ -71,30 +67,24 @@ export const adqueryIdSubmodule = {
       config.params.urlArg);
 
     const resp = function (callback) {
-      let qid = storage.getDataFromLocalStorage('qid');
-      if (utils.isStr(qid)) {
-        const responseObj = {qid: qid};
-        callback(responseObj);
-      } else {
-        const callbacks = {
-          success: response => {
-            let responseObj;
-            if (response) {
-              try {
-                responseObj = JSON.parse(response);
-              } catch (error) {
-                utils.logError(error);
-              }
+      const callbacks = {
+        success: response => {
+          let responseObj;
+          if (response) {
+            try {
+              responseObj = JSON.parse(response);
+            } catch (error) {
+              utils.logError(error);
             }
-            callback(responseObj);
-          },
-          error: error => {
-            utils.logError(`${MODULE_NAME}: ID fetch encountered an error`, error);
-            callback();
           }
-        };
-        ajax(url, callbacks, undefined, {method: 'GET'});
-      }
+          callback(responseObj);
+        },
+        error: error => {
+          utils.logError(`${MODULE_NAME}: ID fetch encountered an error`, error);
+          callback();
+        }
+      };
+      ajax(url, callbacks, undefined, {method: 'GET'});
     };
     return {callback: resp};
   }
