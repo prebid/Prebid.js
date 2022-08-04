@@ -1,6 +1,6 @@
 import { getParameterByName, logInfo, generateUUID, debugTurnedOn } from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
-import adapter from '../src/AnalyticsAdapter.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
 import { getStorageManager } from '../src/storageManager.js';
@@ -157,7 +157,7 @@ function extendUserSessionTimeout() {
 }
 
 function userSessionID() {
-  return storage.getDataFromLocalStorage(localStorageSessName()) ? localStorage.getItem(localStorageSessName()) : '';
+  return storage.getDataFromLocalStorage(localStorageSessName()) || '';
 }
 
 function sessionExpired() {

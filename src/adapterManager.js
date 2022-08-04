@@ -66,6 +66,7 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, src}) {
       .reduce((bids, bid) => {
         bid = Object.assign({}, bid, getDefinedParams(adUnit, [
           'nativeParams',
+          'nativeOrtbRequest',
           'ortb2Imp',
           'mediaType',
           'renderer'

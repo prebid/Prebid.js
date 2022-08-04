@@ -3,10 +3,11 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
 import { getStorageManager } from '../src/storageManager.js';
+import sha1 from 'crypto-js/sha1';
 
 const BIDDER_CODE = 'relaido';
 const BIDDER_DOMAIN = 'api.relaido.jp';
-const ADAPTER_VERSION = '1.0.8';
+const ADAPTER_VERSION = '1.0.9';
 const DEFAULT_TTL = 300;
 const UUID_KEY = 'relaido_uuid';
 
@@ -104,9 +105,9 @@ function buildRequests(validBidRequests, bidderRequest) {
     uuid: getUuid(),
     pv: '$prebid.version$',
     imuid: imuid,
-    // TODO: is 'page' the right value here?
+    canonical_url_hash: getCanonicalUrlHash(bidderRequest.refererInfo),
     ref: bidderRequest.refererInfo.page
-  })
+  });
 
   return {
     method: 'POST',
@@ -275,6 +276,14 @@ function getUuid() {
   const newId = generateUUID();
   storage.setCookie(UUID_KEY, newId);
   return newId;
+}
+
+function getCanonicalUrlHash(refererInfo) {
+  const canonicalUrl = refererInfo.canonicalUrl || null;
+  if (!canonicalUrl) {
+    return null;
+  }
+  return sha1(canonicalUrl).toString();
 }
 
 export function isMobile() {

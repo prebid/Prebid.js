@@ -279,8 +279,8 @@ describe('gumgumAdapter', function () {
         const bidRequest = spec.buildRequests([request])[0];
         expect(bidRequest.data.pi).to.equal(3);
       });
-      it('should set the correct pi param if product param is found and is equal to skin', function () {
-        const request = { ...bidRequests[0], params: { ...zoneParam, product: 'Skin' } };
+      it('should set the correct pi param if product param is found and is equal to skins', function () {
+        const request = { ...bidRequests[0], params: { ...zoneParam, product: 'Skins' } };
         const bidRequest = spec.buildRequests([request])[0];
         expect(bidRequest.data.pi).to.equal(8);
       });
