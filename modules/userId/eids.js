@@ -277,6 +277,11 @@ export const USER_IDS_CONFIG = {
     atype: 3
   },
 
+  'imppid': {
+    source: 'ppid.intimatemerger.com',
+    atype: 1
+  },
+
   'imuid': {
     source: 'intimatemerger.com',
     atype: 1
