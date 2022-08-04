@@ -519,7 +519,7 @@ const callPrebidCacheWithBatchRequestsEnabled = (auctionInstance, afterBidAdded,
     batchBidResponseArrayToPass.forEach((batch) => {
       if (batch.length > 0) {
         store(batch, function (error, cacheIds, batchedBidRequestIds) {
-          // need to increment below because responses from each batch request don't always respond in the same order they were called
+          // need to increment below b/c responses from each batch request don't always respond in the same order they were called
           numberOfTimesStoreCacheFuncWasProcessed++;
           batchedBidRequestIds.forEach((requestId, requestIdIndex) => {
             const currentBidResponse = batchBidResponseRequestIdMappingObject[requestId];
