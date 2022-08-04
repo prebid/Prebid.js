@@ -181,7 +181,7 @@ function initSession() {
       !checkSessionByExpires() ||
       !checkSessionByReferer() ||
       !checkSessionByDay()) {
-    sessionId = '' + timestamp + getRandAsStr(SESSION_RAND_PART); //lgtm [js/insecure-randomness]
+    sessionId = '' + timestamp + getRandAsStr(SESSION_RAND_PART); // lgtm [js/insecure-randomness]
     begin = timestamp;
 
     isNew = true;
