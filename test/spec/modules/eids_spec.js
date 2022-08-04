@@ -467,6 +467,38 @@ describe('eids array generation for known sub-modules', function() {
       }]);
     });
   });
+
+  describe('imuid', function() {
+    it('should return the correct EID schema with imuid', function() {
+      const userId = {
+        imuid: 'testimuid'
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'intimatemerger.com',
+        uids: [{
+          id: 'testimuid',
+          atype: 1
+        }]
+      });
+    });
+
+    it('should return the correct EID schema with imppid', function() {
+      const userId = {
+        imppid: 'imppid-value-imppid-value-imppid-value'
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'ppid.intimatemerger.com',
+        uids: [{
+          id: 'imppid-value-imppid-value-imppid-value',
+          atype: 1
+        }]
+      });
+    });
+  });
 });
 
 describe('Negative case', function () {
