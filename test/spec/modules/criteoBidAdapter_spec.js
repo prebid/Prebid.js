@@ -1213,6 +1213,31 @@ describe('The Criteo bidding adapter', function () {
         }
       });
     });
+
+    it('should properly build a request when coppa flag is true', function () {
+      const bidRequests = [];
+      const bidderRequest = {};
+      config.setConfig({ coppa: true });
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.regs.coppa).to.not.be.undefined;
+      expect(request.data.regs.coppa).to.equal(1);
+    });
+
+    it('should properly build a request when coppa flag is false', function () {
+      const bidRequests = [];
+      const bidderRequest = {};
+      config.setConfig({ coppa: false });
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.regs.coppa).to.not.be.undefined;
+      expect(request.data.regs.coppa).to.equal(0);
+    });
+
+    it('should properly build a request when coppa flag is not defined', function () {
+      const bidRequests = [];
+      const bidderRequest = {};
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.regs.coppa).to.be.undefined;
+    });
   });
 
   describe('interpretResponse', function () {
