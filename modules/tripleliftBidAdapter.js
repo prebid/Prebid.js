@@ -318,9 +318,13 @@ function getUniversalEids(bidRequest) {
   let eids = [];
   if (bidRequest.userIdAsEids) {
     bidRequest.userIdAsEids.forEach(id => {
-      if (common.indexOf(id.source) === -1) {
-        let uids = id.uids.map(uid => ({ id: uid.id, ext: { rtiPartner: id.source } }));
-        eids.push({ source: id.source, uids });
+      try {
+        if (common.indexOf(id.source) === -1) {
+          let uids = id.uids.map(uid => ({ id: uid.id, ext: { rtiPartner: id.source } }));
+          eids.push({ source: id.source, uids });
+        }
+      } catch (err) {
+        logWarn(`Triplelift: Error attempting to add ${id} to bid request`, err);
       }
     });
   }
