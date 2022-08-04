@@ -366,34 +366,9 @@ export function getNativeTargeting(bid, {index = auctionManager.index} = {}) {
   return keyValues;
 }
 
-/**
- * Constructs a message object containing asset values for each of the
- * requested data keys.
- */
-export function getAssetMessage(data, adObject) {
-  const message = {
-    message: 'assetResponse',
-    adId: data.adId,
-    assets: [],
-  };
+const getNativeRequest = (bidResponse) => auctionManager.index.getAdUnit(bidResponse)?.nativeOrtbRequest;
 
-  if (adObject.native.hasOwnProperty('adTemplate')) {
-    message.adTemplate = getAssetValue(adObject.native['adTemplate']);
-  } if (adObject.native.hasOwnProperty('rendererUrl')) {
-    message.rendererUrl = getAssetValue(adObject.native['rendererUrl']);
-  }
-
-  data.assets.forEach(asset => {
-    const key = getKeyByValue(CONSTANTS.NATIVE_KEYS, asset);
-    const value = getAssetValue(adObject.native[key]);
-
-    message.assets.push({ key, value });
-  });
-
-  return message;
-}
-
-export function getAllAssetsMessage(data, adObject, {getNativeReq = (bidResponse) => auctionManager.index.getAdUnit(bidResponse).nativeOrtbRequest} = {}) {
+function assetsMessage(data, adObject, keys, {getNativeReq = getNativeRequest} = {}) {
   const message = {
     message: 'assetResponse',
     adId: data.adId,
@@ -401,12 +376,12 @@ export function getAllAssetsMessage(data, adObject, {getNativeReq = (bidResponse
 
   // Pass to Prebid Universal Creative all assets, the legacy ones + the ortb ones (under ortb property)
   const ortbRequest = getNativeReq(adObject);
-  let nativeReq = adObject.native;
+  let nativeResp = adObject.native;
   const ortbResponse = adObject.native?.ortb;
   let legacyResponse = {};
   if (ortbRequest && ortbResponse) {
     legacyResponse = toLegacyResponse(ortbResponse, ortbRequest);
-    nativeReq = {
+    nativeResp = {
       ...adObject.native,
       ...legacyResponse
     };
@@ -416,25 +391,38 @@ export function getAllAssetsMessage(data, adObject, {getNativeReq = (bidResponse
   }
   message.assets = [];
 
-  Object.keys(nativeReq).forEach(function(key) {
-    if (key === 'adTemplate' && nativeReq[key]) {
-      message.adTemplate = getAssetValue(nativeReq[key]);
-    } else if (key === 'rendererUrl' && nativeReq[key]) {
-      message.rendererUrl = getAssetValue(nativeReq[key]);
+  (keys == null ? Object.keys(nativeResp) : keys).forEach(function(key) {
+    if (key === 'adTemplate' && nativeResp[key]) {
+      message.adTemplate = getAssetValue(nativeResp[key]);
+    } else if (key === 'rendererUrl' && nativeResp[key]) {
+      message.rendererUrl = getAssetValue(nativeResp[key]);
     } else if (key === 'ext') {
-      Object.keys(nativeReq[key]).forEach(extKey => {
-        if (nativeReq[key][extKey]) {
-          const value = getAssetValue(nativeReq[key][extKey]);
+      Object.keys(nativeResp[key]).forEach(extKey => {
+        if (nativeResp[key][extKey]) {
+          const value = getAssetValue(nativeResp[key][extKey]);
           message.assets.push({ key: extKey, value });
         }
       })
-    } else if (nativeReq[key] && CONSTANTS.NATIVE_KEYS.hasOwnProperty(key)) {
-      const value = getAssetValue(nativeReq[key]);
+    } else if (nativeResp[key] && CONSTANTS.NATIVE_KEYS.hasOwnProperty(key)) {
+      const value = getAssetValue(nativeResp[key]);
 
       message.assets.push({ key, value });
     }
   });
   return message;
+}
+
+/**
+ * Constructs a message object containing asset values for each of the
+ * requested data keys.
+ */
+export function getAssetMessage(data, adObject, {getNativeReq = getNativeRequest} = {}) {
+  const keys = data.assets.map((k) => getKeyByValue(CONSTANTS.NATIVE_KEYS, k));
+  return assetsMessage(data, adObject, keys, {getNativeReq});
+}
+
+export function getAllAssetsMessage(data, adObject, {getNativeReq = getNativeRequest} = {}) {
+  return assetsMessage(data, adObject, null, {getNativeReq});
 }
 
 /**

@@ -400,6 +400,66 @@ describe('native.js', function () {
       value: bid.native.ext.foo,
     });
   });
+
+  const SAMPLE_ORTB_REQUEST = toOrtbNativeRequest({
+    title: 'vtitle',
+    body: 'vbody'
+  });
+  const SAMPLE_ORTB_RESPONSE = {
+    native: {
+      ortb: {
+        link: {
+          url: 'url'
+        },
+        assets: [
+          {
+            id: 0,
+            title: {
+              text: 'vtitle'
+            }
+          },
+          {
+            id: 1,
+            data: {
+              value: 'vbody'
+            }
+          }
+        ]
+      }
+    }
+  }
+  describe('getAllAssetsMessage', () => {
+    it('returns assets in legacy format for ortb responses', () => {
+      const actual = getAllAssetsMessage({}, SAMPLE_ORTB_RESPONSE, {getNativeReq: () => SAMPLE_ORTB_REQUEST});
+      expect(actual.assets).to.eql([
+        {
+          key: 'clickUrl',
+          value: 'url'
+        },
+        {
+          key: 'title',
+          value: 'vtitle'
+        },
+        {
+          key: 'body',
+          value: 'vbody'
+        },
+      ])
+    });
+  });
+  describe('getAssetsMessage', () => {
+    Object.entries({
+      'hb_native_title': {key: 'title', value: 'vtitle'},
+      'hb_native_body': {key: 'body', value: 'vbody'}
+    }).forEach(([tkey, assetVal]) => {
+      it(`returns ${tkey} asset in legacy format for ortb responses`, () => {
+        const actual = getAssetMessage({
+          assets: [tkey]
+        }, SAMPLE_ORTB_RESPONSE, {getNativeReq: () => SAMPLE_ORTB_REQUEST})
+        expect(actual.assets).to.eql([assetVal])
+      })
+    })
+  })
 });
 
 describe('validate native openRTB', function () {
