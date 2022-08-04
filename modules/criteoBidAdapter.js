@@ -1,4 +1,4 @@
-import { deepAccess, getUniqueIdentifierStr, isArray, logError, logInfo, logWarn, parseUrl } from '../src/utils.js';
+import { deepAccess, isArray, logError, logInfo, logWarn, parseUrl } from '../src/utils.js';
 import { loadExternalScript } from '../src/adloader.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
@@ -235,7 +235,6 @@ export const spec = {
         const bidId = bidRequest.bidId;
         const bid = {
           requestId: bidId,
-          adId: slot.bidId || getUniqueIdentifierStr(),
           cpm: slot.cpm,
           currency: slot.currency,
           netRevenue: true,
