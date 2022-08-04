@@ -6,7 +6,7 @@ pbjs.que = pbjs.que || [];
     var pbjsEl = document.createElement('script'); pbjsEl.type = 'text/javascript';
     pbjsEl.async = true;
     pbjsEl.src = 'https://acdn.adnxs.com/prebid/not-for-prod/prebid.js'
-    var pbjsTargetEl = document.getElementsByTagName('ead')[0];
+    var pbjsTargetEl = document.getElementsByTagName('head')[0];
     pbjsTargetEl.insertBefore(pbjsEl, pbjsTargetEl.firstChild);
 })();
 
