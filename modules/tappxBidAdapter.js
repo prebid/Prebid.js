@@ -406,9 +406,9 @@ function buildOneRequest(validBidRequests, bidderRequest) {
         (typeof uuid !== 'undefined' && uuid !== null) &&
         (typeof uuid.source == 'string' && uuid.source !== null) &&
         (typeof uuid.uids[0].id == 'string' && uuid.uids[0].id !== null)
-    )
+    );
 
-    if (typeof user !== 'undefined') { user.ext.eids = eidsArr }
+    user.ext.eids = eidsArr;
   };
 
   let regs = {};

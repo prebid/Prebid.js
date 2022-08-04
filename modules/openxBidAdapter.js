@@ -213,13 +213,11 @@ function getViewportDimensions(isIfr) {
     } catch (e) {
       return;
     }
-    docEl = tDoc.documentElement;
     body = tDoc.body;
 
     width = tWin.innerWidth || docEl.clientWidth || body.clientWidth;
     height = tWin.innerHeight || docEl.clientHeight || body.clientHeight;
   } else {
-    docEl = tDoc.documentElement;
     width = tWin.innerWidth || docEl.clientWidth;
     height = tWin.innerHeight || docEl.clientHeight;
   }
