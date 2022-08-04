@@ -516,12 +516,14 @@ function tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded, {index = au
 
 const callPrebidCacheWithBatchRequestsEnabled = (auctionInstance, afterBidAdded, batchTimeout) => {
   setTimeout(() => {
-    for (let i = 0; i < batchBidResponseArrayToPass.length; i++) {
-      if (batchBidResponseArrayToPass[i].length > 0) {
-        store(batchBidResponseArrayToPass[i], function (error, cacheIds, batchedBidRequestIds) {
-          for (let j = 0; j < batchedBidRequestIds.length; j++) {
-            const currentBidResponse = batchBidResponseRequestIdMappingObject[batchedBidRequestIds[j]];
-            const currentCacheId = cacheIds[j];
+    batchBidResponseArrayToPass.forEach((batch) => {
+      if (batch.length > 0) {
+        store(batch, function (error, cacheIds, batchedBidRequestIds) {
+          // need to increment below because responses from each batch request don't always respond in the same order they were called
+          numberOfTimesStoreCacheFuncWasProcessed++;
+          batchedBidRequestIds.forEach((requestId, requestIdIndex) => {
+            const currentBidResponse = batchBidResponseRequestIdMappingObject[requestId];
+            const currentCacheId = cacheIds[requestIdIndex];
             if (error) {
               logWarn(`Failed to save to the video cache: ${error}. Video bid must be discarded.`);
 
@@ -541,10 +543,12 @@ const callPrebidCacheWithBatchRequestsEnabled = (auctionInstance, afterBidAdded,
                 afterBidAdded();
               }
             }
-          }
+
+            if (numberOfTimesStoreCacheFuncWasProcessed === batchBidResponseArrayToPass.length && requestIdIndex === batchedBidRequestIds.length - 1) batchRequests.init()
+          })
         }, true);
       }
-    }
+    });
   }, batchTimeout);
   shouldCallPrebidCache = false;
 };
@@ -574,27 +578,35 @@ const callPrebidCacheWithBatchRequestsDisabled = (auctionInstance, bidResponse, 
 };
 
 let batchBidResponseArrayToPass = [[]];
-let batchIndex = 0;
-let shouldCallPrebidCache = true;
+let batchBidIndex = 0;
 let batchBidResponseRequestIdMappingObject = {};
+let numberOfTimesStoreCacheFuncWasProcessed = 0;
+let shouldCallPrebidCache = true;
 
 export const batchRequests = {
   batchSize: () => config.getConfig('cache.batchSize'),
   batchTimeout: () => typeof config.getConfig('cache.batchTimeout') === 'number' && config.getConfig('cache.batchTimeout') > 0 ? config.getConfig('cache.batchTimeout') : 0,
   isEnabled: () => typeof config.getConfig('cache.batchSize') === 'number' && config.getConfig('cache.batchSize') > 0 ? config.getConfig('cache.batchSize') : false,
   createBatchArrayForStore: (batchSize, bidResponse) => {
-    if (batchBidResponseArrayToPass[batchIndex].length < batchSize) {
-      batchBidResponseArrayToPass[batchIndex].push(bidResponse);
+    if (!batchBidResponseArrayToPass[batchBidIndex]) batchBidResponseArrayToPass.push([]);
+    if (batchBidResponseArrayToPass[batchBidIndex].length < batchSize) {
+      batchBidResponseArrayToPass[batchBidIndex].push(bidResponse);
       batchBidResponseRequestIdMappingObject[bidResponse.requestId] = bidResponse;
 
-      if (batchBidResponseArrayToPass[batchIndex].length === batchSize) {
-        batchIndex++
-        batchBidResponseArrayToPass.push([]);
+      if (batchBidResponseArrayToPass[batchBidIndex].length === batchSize) {
+        batchBidIndex++;
       }
     }
   },
   getBatchRequests: () => {
     return batchBidResponseArrayToPass;
+  },
+  init: () => {
+    batchBidResponseArrayToPass = [[]];
+    batchBidIndex = 0;
+    batchBidResponseRequestIdMappingObject = {};
+    numberOfTimesStoreCacheFuncWasProcessed = 0;
+    shouldCallPrebidCache = true;
   }
 }
 
