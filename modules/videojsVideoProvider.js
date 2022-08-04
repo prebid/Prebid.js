@@ -475,7 +475,7 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
           const media = player.getMedia();
           const contentUrl = utils.getMediaUrl(player.src, media && media.src, e && e.target && e.target.currentSrc)
           Object.assign(payload, {
-            contentId: null,
+            contentId: media && media.id,
             contentUrl,
             title: media && media.title,
             description: media && media.description, // TODO: description is not part of the videojs Media spec
@@ -485,7 +485,7 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
           callback(type, payload);
         };
         // TODO: sourceset is experimental
-        player.on('sourceset', eventHandler);
+        player.on('loadstart', eventHandler); //  loadedmetadata?
         break;
 
       case PLAY:
