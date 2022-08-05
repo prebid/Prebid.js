@@ -45,7 +45,7 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: (bid) => {
-    return Boolean(bid.bidId && bid.params && bid.params.placementId);
+    return Boolean(bid.bidId && bid.params && (bid.params.placementId || bid.params.endpointId));
   },
   buildRequests: (validBidRequests = [], bidderRequest) => {
     let winTop = window;
@@ -79,7 +79,7 @@ export const spec = {
 
     for (let i = 0; i < len; i++) {
       let bid = validBidRequests[i];
-      const { mediaTypes } = bid;
+      const { mediaTypes, params } = bid;
       const placement = {};
       let sizes;
       if (mediaTypes) {
@@ -108,9 +108,18 @@ export const spec = {
           placement.native = mediaTypes[NATIVE];
         }
       }
+
+      const { placementId, endpointId } = params;
+      if (placementId) {
+        placement.placementId = placementId;
+        placement.type = 'publisher';
+      } else if (endpointId) {
+        placement.endpointId = endpointId;
+        placement.type = 'network';
+      }
+
       placements.push({
         ...placement,
-        placementId: bid.params.placementId,
         bidId: bid.bidId,
         sizes: sizes || [],
         wPlayer: sizes ? sizes[0] : 0,
