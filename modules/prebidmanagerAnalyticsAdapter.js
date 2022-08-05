@@ -1,8 +1,9 @@
 import { generateUUID, getParameterByName, logError, parseUrl, logInfo } from '../src/utils.js';
 import {ajaxBuilder} from '../src/ajax.js';
-import adapter from '../src/AnalyticsAdapter.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { getStorageManager } from '../src/storageManager.js';
+import CONSTANTS from '../src/constants.json';
 
 /**
  * prebidmanagerAnalyticsAdapter.js - analytics adapter for prebidmanager
@@ -12,7 +13,6 @@ const DEFAULT_EVENT_URL = 'https://endpoint.prebidmanager.com/endpoint'
 const analyticsType = 'endpoint';
 const analyticsName = 'Prebid Manager Analytics: ';
 
-var CONSTANTS = require('../src/constants.json');
 let ajax = ajaxBuilder(0);
 
 var _VERSION = 1;

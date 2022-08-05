@@ -16,9 +16,11 @@ import * as auctionModule from 'src/auction.js';
 import { registerBidder } from 'src/adapters/bidderFactory.js';
 import { _sendAdToCreative } from 'src/secureCreatives.js';
 import {find} from 'src/polyfill.js';
-import {synchronizePromise} from '../../helpers/syncPromise.js';
-import 'src/prebid.js';
+import * as pbjsModule from 'src/prebid.js';
 import {hook} from '../../../src/hook.js';
+import {reset as resetDebugging} from '../../../src/debugging.js';
+import $$PREBID_GLOBAL$$ from 'src/prebid.js';
+import {resetAuctionState} from 'src/auction.js';
 
 var assert = require('chai').assert;
 var expect = require('chai').expect;
@@ -33,7 +35,6 @@ require('modules/appnexusBidAdapter');
 
 var config = require('test/fixtures/config.json');
 
-$$PREBID_GLOBAL$$ = $$PREBID_GLOBAL$$ || {};
 var adUnits = getAdUnits();
 var adUnitCodes = getAdUnits().map(unit => unit.code);
 var bidsBackHandler = function() {};
@@ -193,21 +194,21 @@ window.apntag = {
 }
 
 describe('Unit: Prebid Module', function () {
-  let bidExpiryStub, promiseSandbox;
+  let bidExpiryStub
 
   before(() => {
     hook.ready();
+    $$PREBID_GLOBAL$$.requestBids.getHooks().remove();
+    resetDebugging();
   });
 
   beforeEach(function () {
-    promiseSandbox = sinon.createSandbox();
-    synchronizePromise(promiseSandbox);
     bidExpiryStub = sinon.stub(filters, 'isBidNotExpired').callsFake(() => true);
     configObj.setConfig({ useBidCache: true });
+    resetAuctionState();
   });
 
   afterEach(function() {
-    promiseSandbox.restore();
     $$PREBID_GLOBAL$$.adUnits = [];
     bidExpiryStub.restore();
     configObj.setConfig({ useBidCache: false });
@@ -215,6 +216,51 @@ describe('Unit: Prebid Module', function () {
 
   after(function() {
     auctionManager.clearAllAuctions();
+  });
+
+  describe('and global adUnits', () => {
+    const startingAdUnits = [
+      {
+        code: 'one',
+      },
+      {
+        code: 'two',
+      }
+    ];
+    let actualAdUnits, hookRan, done;
+
+    function deferringHook(next, req) {
+      setTimeout(() => {
+        actualAdUnits = req.adUnits || $$PREBID_GLOBAL$$.adUnits;
+        done();
+      });
+    }
+
+    beforeEach(() => {
+      $$PREBID_GLOBAL$$.requestBids.before(deferringHook, 99);
+      $$PREBID_GLOBAL$$.adUnits.splice(0, $$PREBID_GLOBAL$$.adUnits.length, ...startingAdUnits);
+      hookRan = new Promise((resolve) => {
+        done = resolve;
+      });
+    });
+
+    afterEach(() => {
+      $$PREBID_GLOBAL$$.requestBids.getHooks({hook: deferringHook}).remove();
+      $$PREBID_GLOBAL$$.adUnits.splice(0, $$PREBID_GLOBAL$$.adUnits.length);
+    })
+
+    Object.entries({
+      'addAdUnits': (g) => g.addAdUnits({code: 'three'}),
+      'removeAdUnit': (g) => g.removeAdUnit('one')
+    }).forEach(([method, op]) => {
+      it(`once called, should not be affected by ${method}`, () => {
+        $$PREBID_GLOBAL$$.requestBids({});
+        op($$PREBID_GLOBAL$$);
+        return hookRan.then(() => {
+          expect(actualAdUnits).to.eql(startingAdUnits);
+        })
+      });
+    });
   });
 
   describe('getAdserverTargetingForAdUnitCodeStr', function () {
@@ -1604,7 +1650,123 @@ describe('Unit: Prebid Module', function () {
         assert.ok(spyExecuteCallback.calledOnce, 'callback executed when bidRequests is empty');
       });
     });
+
+    describe('starts auction', () => {
+      let startAuctionStub;
+      function saHook(fn, ...args) {
+        return startAuctionStub(...args);
+      }
+      beforeEach(() => {
+        startAuctionStub = sinon.stub();
+        pbjsModule.startAuction.before(saHook);
+        configObj.resetConfig();
+      });
+      afterEach(() => {
+        pbjsModule.startAuction.getHooks({hook: saHook}).remove();
+      })
+      after(() => {
+        configObj.resetConfig();
+      });
+
+      it('passing global and auction-level FPD as ortb2Fragments.global', () => {
+        configObj.setConfig({
+          ortb2: {
+            'k1': 'v1',
+            'k2': {
+              'k3': 'v3',
+              'k4': 'v4'
+            }
+          }
+        });
+        $$PREBID_GLOBAL$$.requestBids({
+          ortb2: {
+            'k5': 'v5',
+            'k2': {
+              'k3': 'override',
+              'k7': 'v7'
+            }
+          }
+        });
+        sinon.assert.calledWith(startAuctionStub, sinon.match({
+          ortb2Fragments: {
+            global: {
+              'k1': 'v1',
+              'k5': 'v5',
+              'k2': {
+                'k3': 'override',
+                'k4': 'v4',
+                'k7': 'v7'
+              }
+            }
+          }
+        }))
+      });
+      it('passing bidder-specific FPD as ortb2Fragments.bidder', () => {
+        configObj.setBidderConfig({
+          bidders: ['bidderA', 'bidderC'],
+          config: {
+            ortb2: {
+              k1: 'v1'
+            }
+          }
+        });
+        configObj.setBidderConfig({
+          bidders: ['bidderB'],
+          config: {
+            ortb2: {
+              k2: 'v2'
+            }
+          }
+        });
+        $$PREBID_GLOBAL$$.requestBids({});
+        sinon.assert.calledWith(startAuctionStub, sinon.match({
+          ortb2Fragments: {
+            bidder: {
+              bidderA: {
+                k1: 'v1'
+              },
+              bidderB: {
+                k2: 'v2'
+              },
+              bidderC: {
+                k1: 'v1'
+              }
+            }
+          }
+        }));
+      });
+    });
   });
+
+  describe('startAuction', () => {
+    let sandbox, newAuctionStub;
+    beforeEach(() => {
+      sandbox = sinon.createSandbox();
+      newAuctionStub = sandbox.stub(auctionManager, 'createAuction').callsFake(() => ({
+        getAuctionId: () => 'mockAuctionId',
+        callBids: sinon.stub()
+      }));
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    it('passes ortb2 fragments to createAuction', () => {
+      const ortb2Fragments = {};
+      pbjsModule.startAuction({
+        adUnits: [{
+          code: 'au',
+          mediaTypes: {banner: {sizes: [[300, 250]]}},
+          bids: [{bidder: 'bd'}]
+        }],
+        ortb2Fragments
+      });
+      sinon.assert.calledWith(newAuctionStub, sinon.match({
+        ortb2Fragments: sinon.match.same(ortb2Fragments)
+      }));
+    });
+  })
 
   describe('requestBids', function () {
     var adUnitsBackup;
@@ -1626,6 +1788,7 @@ describe('Unit: Prebid Module', function () {
       let auctionArgs;
 
       beforeEach(function () {
+        auctionArgs = null;
         adUnitsBackup = auction.getAdUnits
         auctionManagerStub = sinon.stub(auctionManager, 'createAuction').callsFake(function() {
           auctionArgs = arguments[0];
@@ -1676,6 +1839,29 @@ describe('Unit: Prebid Module', function () {
           .and.not.to.equal('d0676a3c-ff32-45a5-af65-8175a8e7ddca');
         expect(auctionArgs.adUnits[1]).to.have.property('transactionId')
           .and.to.match(/[a-f0-9\-]{36}/i);
+      });
+
+      it('should always set ortb2.ext.tid same as transactionId in adUnits', function () {
+        $$PREBID_GLOBAL$$.requestBids({
+          adUnits: [
+            {
+              code: 'test1',
+              mediaTypes: { banner: { sizes: [] } },
+              bids: []
+            }, {
+              code: 'test2',
+              mediaTypes: { banner: { sizes: [] } },
+              bids: []
+            }
+          ]
+        });
+
+        expect(auctionArgs.adUnits[0]).to.have.property('transactionId');
+        expect(auctionArgs.adUnits[0]).to.have.property('ortb2Imp');
+        expect(auctionArgs.adUnits[0].transactionId).to.equal(auctionArgs.adUnits[0].ortb2Imp.ext.tid);
+        expect(auctionArgs.adUnits[1]).to.have.property('transactionId');
+        expect(auctionArgs.adUnits[1]).to.have.property('ortb2Imp');
+        expect(auctionArgs.adUnits[1].transactionId).to.equal(auctionArgs.adUnits[1].ortb2Imp.ext.tid);
       });
 
       it('should notify targeting of the latest auction for each adUnit', function () {
@@ -1898,6 +2084,22 @@ describe('Unit: Prebid Module', function () {
             expect(auctionArgs.adUnits[0].mediaTypes.banner.pos).to.equal(2);
             expect(auctionArgs.adUnits[1].mediaTypes.banner.pos).to.equal(0);
           });
+
+          it(`should allow no bids if 'ortb2Imp' is specified`, () => {
+            const adUnit = {
+              code: 'test',
+              mediaTypes: {
+                banner: {
+                  sizes: [[300, 250]]
+                }
+              },
+              ortb2Imp: {}
+            };
+            $$PREBID_GLOBAL$$.requestBids({
+              adUnits: [adUnit]
+            });
+            sinon.assert.match(auctionArgs.adUnits[0], adUnit);
+          });
         });
 
         describe('negative tests for validating adUnits', function() {
@@ -1955,59 +2157,61 @@ describe('Unit: Prebid Module', function () {
             expect(auctionArgs.adUnits[0].mediaTypes.video).to.exist;
             assert.ok(logErrorSpy.calledWith('Detected incorrect configuration of mediaTypes.video.playerSize.  Please specify only one set of dimensions in a format like: [[640, 480]]. Removing invalid mediaTypes.video.playerSize property from request.'));
 
-            let badNativeImgSize = [{
-              code: 'testb4',
-              bids: [],
-              mediaTypes: {
-                native: {
-                  image: {
-                    sizes: '300x250'
+            if (FEATURES.NATIVE) {
+              let badNativeImgSize = [{
+                code: 'testb4',
+                bids: [],
+                mediaTypes: {
+                  native: {
+                    image: {
+                      sizes: '300x250'
+                    }
                   }
                 }
-              }
-            }];
-            $$PREBID_GLOBAL$$.requestBids({
-              adUnits: badNativeImgSize
-            });
-            expect(auctionArgs.adUnits[0].mediaTypes.native.image.sizes).to.be.undefined;
-            expect(auctionArgs.adUnits[0].mediaTypes.native.image).to.exist;
-            assert.ok(logErrorSpy.calledWith('Please use an array of sizes for native.image.sizes field.  Removing invalid mediaTypes.native.image.sizes property from request.'));
+              }];
+              $$PREBID_GLOBAL$$.requestBids({
+                adUnits: badNativeImgSize
+              });
+              expect(auctionArgs.adUnits[0].mediaTypes.native.image.sizes).to.be.undefined;
+              expect(auctionArgs.adUnits[0].mediaTypes.native.image).to.exist;
+              assert.ok(logErrorSpy.calledWith('Please use an array of sizes for native.image.sizes field.  Removing invalid mediaTypes.native.image.sizes property from request.'));
 
-            let badNativeImgAspRat = [{
-              code: 'testb5',
-              bids: [],
-              mediaTypes: {
-                native: {
-                  image: {
-                    aspect_ratios: '300x250'
+              let badNativeImgAspRat = [{
+                code: 'testb5',
+                bids: [],
+                mediaTypes: {
+                  native: {
+                    image: {
+                      aspect_ratios: '300x250'
+                    }
                   }
                 }
-              }
-            }];
-            $$PREBID_GLOBAL$$.requestBids({
-              adUnits: badNativeImgAspRat
-            });
-            expect(auctionArgs.adUnits[0].mediaTypes.native.image.aspect_ratios).to.be.undefined;
-            expect(auctionArgs.adUnits[0].mediaTypes.native.image).to.exist;
-            assert.ok(logErrorSpy.calledWith('Please use an array of sizes for native.image.aspect_ratios field.  Removing invalid mediaTypes.native.image.aspect_ratios property from request.'));
+              }];
+              $$PREBID_GLOBAL$$.requestBids({
+                adUnits: badNativeImgAspRat
+              });
+              expect(auctionArgs.adUnits[0].mediaTypes.native.image.aspect_ratios).to.be.undefined;
+              expect(auctionArgs.adUnits[0].mediaTypes.native.image).to.exist;
+              assert.ok(logErrorSpy.calledWith('Please use an array of sizes for native.image.aspect_ratios field.  Removing invalid mediaTypes.native.image.aspect_ratios property from request.'));
 
-            let badNativeIcon = [{
-              code: 'testb6',
-              bids: [],
-              mediaTypes: {
-                native: {
-                  icon: {
-                    sizes: '300x250'
+              let badNativeIcon = [{
+                code: 'testb6',
+                bids: [],
+                mediaTypes: {
+                  native: {
+                    icon: {
+                      sizes: '300x250'
+                    }
                   }
                 }
-              }
-            }];
-            $$PREBID_GLOBAL$$.requestBids({
-              adUnits: badNativeIcon
-            });
-            expect(auctionArgs.adUnits[0].mediaTypes.native.icon.sizes).to.be.undefined;
-            expect(auctionArgs.adUnits[0].mediaTypes.native.icon).to.exist;
-            assert.ok(logErrorSpy.calledWith('Please use an array of sizes for native.icon.sizes field.  Removing invalid mediaTypes.native.icon.sizes property from request.'));
+              }];
+              $$PREBID_GLOBAL$$.requestBids({
+                adUnits: badNativeIcon
+              });
+              expect(auctionArgs.adUnits[0].mediaTypes.native.icon.sizes).to.be.undefined;
+              expect(auctionArgs.adUnits[0].mediaTypes.native.icon).to.exist;
+              assert.ok(logErrorSpy.calledWith('Please use an array of sizes for native.icon.sizes field.  Removing invalid mediaTypes.native.icon.sizes property from request.'));
+            }
           });
 
           it('should throw error message and remove adUnit if adUnit.bids is not defined correctly', function () {
@@ -2033,13 +2237,16 @@ describe('Unit: Prebid Module', function () {
             });
             expect(auctionArgs.adUnits.length).to.equal(1);
             expect(auctionArgs.adUnits[1]).to.not.exist;
-            assert.ok(logErrorSpy.calledWith("Detected adUnit.code 'bad-ad-unit-2' did not have 'adUnit.bids' defined or 'adUnit.bids' is not an array. Removing adUnit from auction."));
+            assert.ok(logErrorSpy.calledWith("adUnit.code 'bad-ad-unit-2' has no 'adUnit.bids' and no 'adUnit.ortb2Imp'. Removing adUnit from auction"));
           });
         });
       });
     });
 
     describe('multiformat requests', function () {
+      if (!FEATURES.NATIVE) {
+        return;
+      }
       let adUnits;
 
       beforeEach(function () {
@@ -2091,6 +2298,9 @@ describe('Unit: Prebid Module', function () {
     });
 
     describe('part 2', function () {
+      if (!FEATURES.NATIVE) {
+        return;
+      }
       let spyCallBids;
       let createAuctionStub;
       let adUnits;
@@ -2158,7 +2368,7 @@ describe('Unit: Prebid Module', function () {
       it('splits native type to individual native assets', function () {
         let adUnits = [{
           code: 'adUnit-code',
-          mediaTypes: { native: { type: 'image' } },
+          mediaTypes: {native: {type: 'image'}},
           bids: [
             {bidder: 'appnexus', params: {placementId: 'id'}}
           ]
@@ -2166,14 +2376,47 @@ describe('Unit: Prebid Module', function () {
         $$PREBID_GLOBAL$$.requestBids({adUnits});
         const spyArgs = adapterManager.callBids.getCall(0);
         const nativeRequest = spyArgs.args[1][0].bids[0].nativeParams;
-        expect(nativeRequest).to.deep.equal({
-          image: {required: true},
-          title: {required: true},
-          sponsoredBy: {required: true},
-          clickUrl: {required: true},
-          body: {required: false},
-          icon: {required: false},
-        });
+        expect(nativeRequest.ortb.assets).to.deep.equal([
+          {
+            required: 1,
+            id: 1,
+            img: {
+              type: 3,
+              wmin: 100,
+              hmin: 100,
+            }
+          },
+          {
+            required: 1,
+            id: 2,
+            title: {
+              len: 140,
+            }
+          },
+          {
+            required: 1,
+            id: 3,
+            data: {
+              type: 1,
+            }
+          },
+          {
+            required: 0,
+            id: 4,
+            data: {
+              type: 2,
+            }
+          },
+          {
+            required: 0,
+            id: 5,
+            img: {
+              type: 1,
+              wmin: 20,
+              hmin: 20,
+            }
+          },
+        ]);
         resetAuction();
       });
     });

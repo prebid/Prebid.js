@@ -1,4 +1,4 @@
-import { deepSetValue, logInfo, deepAccess } from '../src/utils.js';
+import {deepSetValue, logInfo, deepAccess} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 
@@ -44,9 +44,9 @@ export const spec = {
       id: bidderRequest.auctionId,
       imp: impressions,
       site: {
-        domain: window.location.hostname,
-        page: window.location.href,
-        ref: bidderRequest.refererInfo ? bidderRequest.refererInfo.referer || null : null
+        domain: bidderRequest.refererInfo?.domain,
+        page: bidderRequest.refererInfo?.page,
+        ref: bidderRequest.refererInfo?.ref,
       },
       ext: {
         exchange: {
@@ -70,6 +70,12 @@ export const spec = {
     // CCPA
     if (bidderRequest.uspConsent) {
       deepSetValue(openrtbRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+    }
+
+    // EIDS
+    const eids = deepAccess(validBidRequests[0], 'userIdAsEids');
+    if (Array.isArray(eids) && eids.length > 0) {
+      deepSetValue(openrtbRequest, 'user.ext.eids', eids);
     }
 
     const payloadString = JSON.stringify(openrtbRequest);
@@ -96,9 +102,7 @@ export const spec = {
           creativeId: bid.crid,
           netRevenue: DEFAULT_NET_REVENUE,
           currency: DEFAULT_CURRENCY,
-          meta: {
-            adomain: bid.adomain
-          }
+          meta: { advertiserDomains: bid && bid.advertiserDomains ? bid.advertiserDomains : [] }
         })
       })
     } else {

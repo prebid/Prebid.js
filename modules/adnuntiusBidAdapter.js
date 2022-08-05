@@ -1,12 +1,13 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
-import { isStr, deepAccess } from '../src/utils.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { isStr, deepAccess, logInfo } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'adnuntius';
 const ENDPOINT_URL = 'https://ads.adnuntius.delivery/i';
 const GVLID = 855;
+const DEFAULT_VAST_VERSION = 'vast4'
 
 const checkSegment = function (segment) {
   if (isStr(segment)) return segment;
@@ -27,7 +28,7 @@ const getSegmentsFromOrtb = function (ortb2) {
 }
 
 const handleMeta = function () {
-  const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE})
+  const storage = getStorageManager({ gvlid: GVLID, bidderCode: BIDDER_CODE })
   let adnMeta = null
   if (storage.localStorageIsEnabled()) {
     adnMeta = JSON.parse(storage.getDataFromLocalStorage('adn.metaData'))
@@ -45,7 +46,7 @@ const getUsi = function (meta, ortb2, bidderRequest) {
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  supportedMediaTypes: [BANNER],
+  supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function (bid) {
     return !!(bid.bidId || (bid.params.member && bid.params.invCode));
   },
@@ -55,7 +56,7 @@ export const spec = {
     const bidRequests = {};
     const requests = [];
     const request = [];
-    const ortb2 = config.getConfig('ortb2');
+    const ortb2 = bidderRequest.ortb2 || {};
     const bidderConfig = config.getConfig();
 
     const adnMeta = handleMeta()
@@ -67,21 +68,26 @@ export const spec = {
 
     request.push('tzo=' + tzo)
     request.push('format=json')
+
     if (gdprApplies !== undefined) request.push('consentString=' + consentString);
     if (segments.length > 0) request.push('segments=' + segments.join(','));
     if (usi) request.push('userId=' + usi);
     if (bidderConfig.useCookie === false) request.push('noCookies=true')
     for (var i = 0; i < validBidRequests.length; i++) {
       const bid = validBidRequests[i]
-      const network = bid.params.network || 'network';
+      let network = bid.params.network || 'network';
       const targeting = bid.params.targeting || {};
+
+      if (bid.mediaTypes && bid.mediaTypes.video && bid.mediaTypes.video.context !== 'outstream') {
+        network += '_video'
+      }
 
       bidRequests[network] = bidRequests[network] || [];
       bidRequests[network].push(bid);
 
       networks[network] = networks[network] || {};
       networks[network].adUnits = networks[network].adUnits || [];
-      if (bidderRequest && bidderRequest.refererInfo) networks[network].context = bidderRequest.refererInfo.referer;
+      if (bidderRequest && bidderRequest.refererInfo) networks[network].context = bidderRequest.refererInfo.page;
       if (adnMeta) networks[network].metaData = adnMeta;
       networks[network].adUnits.push({ ...targeting, auId: bid.params.auId, targetId: bid.bidId });
     }
@@ -89,9 +95,11 @@ export const spec = {
     const networkKeys = Object.keys(networks)
     for (var j = 0; j < networkKeys.length; j++) {
       const network = networkKeys[j];
+      const networkRequest = [...request]
+      if (network.indexOf('_video') > -1) { networkRequest.push('tt=' + DEFAULT_VAST_VERSION) }
       requests.push({
         method: 'POST',
-        url: ENDPOINT_URL + '?' + request.join('&'),
+        url: ENDPOINT_URL + '?' + networkRequest.join('&'),
         data: JSON.stringify(networks[network]),
         bid: bidRequests[network]
       });
@@ -106,7 +114,7 @@ export const spec = {
       if (adUnit.matchedAdCount >= 1) {
         const ad = adUnit.ads[0];
         const effectiveCpm = (ad.bid) ? ad.bid.amount * 1000 : 0;
-        return {
+        const adResponse = {
           ...response,
           [adUnit.targetId]: {
             requestId: adUnit.targetId,
@@ -122,9 +130,19 @@ export const spec = {
             },
             netRevenue: false,
             ttl: 360,
-            ad: adUnit.html
           }
         }
+
+        if (adUnit.vastXml) {
+          adResponse[adUnit.targetId].vastXml = adUnit.vastXml
+          adResponse[adUnit.targetId].mediaType = 'video'
+        } else {
+          adResponse[adUnit.targetId].ad = adUnit.html
+        }
+
+        logInfo('BID', adResponse)
+
+        return adResponse
       } else return response
     }, {});
 

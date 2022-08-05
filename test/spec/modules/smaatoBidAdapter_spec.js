@@ -18,7 +18,7 @@ const defaultBidderRequest = {
   },
   uspConsent: 'uspConsentString',
   refererInfo: {
-    referer: REFERRER,
+    ref: REFERRER,
   },
   timeout: 1200,
   auctionId: AUCTION_ID
@@ -123,9 +123,18 @@ describe('smaatoBidAdapterTest', () => {
     describe('common', () => {
       const MINIMAL_BIDDER_REQUEST = {
         refererInfo: {
-          referer: REFERRER,
+          ref: REFERRER,
         }
       };
+
+      let sandbox;
+      beforeEach(() => {
+        sandbox = sinon.sandbox.create();
+      });
+
+      afterEach(() => {
+        sandbox.restore();
+      })
 
       it('auction type is 1 (first price auction)', () => {
         const reqs = spec.buildRequests([singleBannerBidRequest], defaultBidderRequest);
@@ -319,28 +328,22 @@ describe('smaatoBidAdapterTest', () => {
       });
 
       it('sends first party data', () => {
-        this.sandbox = sinon.sandbox.create()
-        this.sandbox.stub(config, 'getConfig').callsFake(key => {
-          const config = {
-            ortb2: {
-              site: {
-                keywords: 'power tools,drills',
-                publisher: {
-                  id: 'otherpublisherid',
-                  name: 'publishername'
-                }
-              },
-              user: {
-                keywords: 'a,b',
-                gender: 'M',
-                yob: 1984
-              }
+        const ortb2 = {
+          site: {
+            keywords: 'power tools,drills',
+            publisher: {
+              id: 'otherpublisherid',
+              name: 'publishername'
             }
-          };
-          return utils.deepAccess(config, key);
-        });
+          },
+          user: {
+            keywords: 'a,b',
+            gender: 'M',
+            yob: 1984
+          }
+        };
 
-        const reqs = spec.buildRequests([singleBannerBidRequest], defaultBidderRequest);
+        const reqs = spec.buildRequests([singleBannerBidRequest], {...defaultBidderRequest, ortb2});
 
         const req = extractPayloadOfFirstAndOnlyRequest(reqs);
         expect(req.user.gender).to.equal('M');
@@ -349,7 +352,6 @@ describe('smaatoBidAdapterTest', () => {
         expect(req.user.ext.consent).to.equal(CONSENT_STRING);
         expect(req.site.keywords).to.eql('power tools,drills');
         expect(req.site.publisher.id).to.equal('publisherId');
-        this.sandbox.restore();
       });
 
       it('has no user ids', () => {
