@@ -252,6 +252,10 @@ function getFloor(bid, mediaType) {
 }
 
 function interpretResponse(resp, req) {
+  if (!resp.body) {
+    resp.body = {nbr: 0};
+  }
+
   // pass these from request to the responses for use in userSync
   if (req.data.ext) {
     if (req.data.ext.delDomain) {
@@ -301,7 +305,7 @@ function interpretResponse(resp, req) {
       }
 
       if (respBody.ext && respBody.ext.paf) {
-        response.meta.paf = respBody.ext.paf;
+        response.meta.paf = Object.assign({}, respBody.ext.paf);
         response.meta.paf.content_id = utils.deepAccess(bid, 'ext.paf.content_id');
       }
 
