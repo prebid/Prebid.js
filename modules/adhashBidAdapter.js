@@ -129,8 +129,10 @@ export const spec = {
     const { gdprConsent } = bidderRequest;
     const bidRequests = [];
     let referrer = '';
-    if (bidderRequest && bidderRequest.refererInfo) {
-      referrer = bidderRequest.refererInfo.referer;
+    try {
+      referrer = window.top.location.href;
+    } catch (e) {
+      referrer = window.location.href;
     }
     for (var i = 0; i < validBidRequests.length; i++) {
       const bidderURL = validBidRequests[i].params.bidderURL || 'https://bidder.adhash.com';
