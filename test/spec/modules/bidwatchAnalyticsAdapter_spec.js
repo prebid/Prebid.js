@@ -297,6 +297,7 @@ describe('BidWatch Analytics', function () {
       expect(message.auctionEnd[0].bidderRequests[0].gdprConsent).not.to.have.property('vendorData');
       sinon.assert.callCount(bidwatchAnalytics.track, 4);
     });
+
     it('test bidWon', function() {
       adapterManager.registerAnalyticsAdapter({
         code: 'bidwatch',
