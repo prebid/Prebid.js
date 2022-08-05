@@ -40,6 +40,7 @@ var adUnits = [{
 | site | required | String | Specific identifier name (case-insensitive) that is associated with this ad unit and provided by RAS | `"example_com"`
 | area | required | String | Ad unit category name; only case-insensitive alphanumeric with underscores and hyphens are allowed | `"sport"`
 | slot | required | String | Ad unit placement name (case-insensitive) provided by RAS | `"slot"`
+| pos  | optional | Number | Ad unit placement position provided by RAS                                                                                                                                                                                                                                 | `1`
 | pageContext | optional | Object | Web page context data | `{}`
 | pageContext.dr | optional | String | Document referrer URL address | `"https://example.com/"`
 | pageContext.du | optional | String | Document URL address | `"https://example.com/sport/football/article.html?id=932016a5-02fc-4d5c-b643-fafc2f270f06"`

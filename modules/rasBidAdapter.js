@@ -95,6 +95,9 @@ const getSlots = (bidRequests) => {
     if (sizes.length) {
       queryString += `&iusizes${i}=${encodeURIComponent(sizes)}`;
     }
+    if (Object.prototype.hasOwnProperty.call(adunit.params, 'pos')) {
+      queryString += `&pos${i}=${encodeURIComponent(adunit.params.pos)}`;
+    }
   }
   return queryString;
 };
