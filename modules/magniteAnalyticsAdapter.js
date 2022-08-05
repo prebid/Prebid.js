@@ -447,7 +447,7 @@ const findMatchingAdUnitFromAuctions = (matchesFunction, returnFirstMatch) => {
   return matches;
 }
 
-const getRenderingAuctionId = bidWonData => {
+const getRenderingIds = bidWonData => {
   // if bid caching off -> return the bidWon auciton id
   if (!config.getConfig('useBidCache')) {
     return bidWonData.auctionId;
@@ -459,13 +459,17 @@ const getRenderingAuctionId = bidWonData => {
     const gamHasRendered = deepAccess(cache, `auctions.${auction.auctionId}.gamRenders.${adUnit.adUnitCode}`);
     return adUnit.adUnitCode === bidWonData.adUnitCode && gamHasRendered;
   }
-  let { auction } = findMatchingAdUnitFromAuctions(matchingFunction, false);
+  let { adUnit, auction } = findMatchingAdUnitFromAuctions(matchingFunction, false);
   // If no match was found, we will use the actual bid won auction id
-  return (auction && auction.auctionId) || bidWonData.auctionId;
+  return {
+    renderTransactionId: (adUnit && adUnit.transactionId) || adUnit.transactionId,
+    renderAuctionId: (auction && auction.auctionId) || bidWonData.auctionId
+  }
 }
 
 const formatBidWon = bidWonData => {
-  let renderAuctionId = getRenderingAuctionId(bidWonData);
+  // get transaction and auction id of where this "rendered"
+  const { renderTransactionId, renderAuctionId } = getRenderingIds(bidWonData);
 
   // get the bid from the source auction id
   let bid = deepAccess(cache, `auctions.${bidWonData.auctionId}.auction.adUnits.${bidWonData.adUnitCode}.bids.${bidWonData.requestId}`);
@@ -475,6 +479,7 @@ const formatBidWon = bidWonData => {
     sourceAuctionId: bidWonData.auctionId,
     renderAuctionId,
     transactionId: bidWonData.transactionId,
+    renderTransactionId,
     accountId,
     siteId: adUnit.siteId,
     zoneId: adUnit.zoneId,
