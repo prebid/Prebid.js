@@ -262,7 +262,6 @@ describe('BidWatch Analytics', function () {
       sinon.stub(events, 'getEvents').returns([]);
       sinon.spy(bidwatchAnalytics, 'track');
     });
-
     afterEach(function () {
       events.getEvents.restore();
       bidwatchAnalytics.disableAnalytics();
