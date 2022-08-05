@@ -2,7 +2,7 @@ import { deepClone, logInfo, logError } from '../src/utils.js';
 import Base64 from 'crypto-js/enc-base64';
 import hmacSHA512 from 'crypto-js/hmac-sha512';
 import enc from 'crypto-js/enc-utf8';
-import adapter from '../src/AnalyticsAdapter.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
 import { getStorageManager } from '../src/storageManager.js';

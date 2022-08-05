@@ -248,7 +248,7 @@ describe('Improve Digital Adapter Tests', function () {
         {
           id: '33e9500b21129f',
           native: {
-            request: '{"assets":[{"id":3,"required":1,"data":{"type":2}}]}',
+            request: '{"eventtrackers":[{"event":1,"methods":[1,2]}],"assets":[{"id":3,"required":1,"data":{"type":2}}]}',
             ver: '1.2'
           },
           secure: 0,
@@ -277,7 +277,7 @@ describe('Improve Digital Adapter Tests', function () {
       const payload = JSON.parse(spec.buildRequests([nativeBidRequest], {})[0].data);
       expect(payload.imp[0].native).to.deep.equal({
         ver: '1.2',
-        request: '{\"assets\":[{\"id\":0,\"required\":1,\"title\":{\"len\":140}},{\"id\":3,\"required\":1,\"data\":{\"type\":2}}]}'
+        request: '{"eventtrackers":[{"event":1,"methods":[1,2]}],"assets":[{"id":0,"required":1,"title":{"len":140}},{"id":3,"required":1,"data":{"type":2}}]}'
       });
     });
 
@@ -299,7 +299,7 @@ describe('Improve Digital Adapter Tests', function () {
       const payload = JSON.parse(spec.buildRequests([nativeBidRequest], {})[0].data);
       expect(payload.imp[0].native).to.deep.equal({
         ver: '1.2',
-        request: '{\"assets\":[{\"id\":0,\"required\":1,\"title\":{\"len\":140}},{\"id\":3,\"required\":1,\"data\":{\"type\":2}}]}'
+        request: '{"eventtrackers":[{"event":1,"methods":[1,2]}],"assets":[{"id":0,"required":1,"title":{"len":140}},{"id":3,"required":1,"data":{"type":2}}]}'
       });
     });
 
@@ -930,7 +930,7 @@ describe('Improve Digital Adapter Tests', function () {
               'exp': 120,
               'id': '52098fad-20c1-476b-a4fa-41e275e5a4a5',
               'price': 1.8600000000000003,
-              'adm': "{\"ver\":\"1.1\",\"imptrackers\":[\"https://secure.adnxs.com/imptr?id=52311&t=2\",\"https://euw-ice.360yield.com/imp_pixel?ic=hcUBlCANx1FabHBf6FR2gC7UO4xEyXahdZAn0-B5qL-bb3A74BJ1smyWIyW7IWcC0SOjSXzVpevTHXxTqJ.sf.Qhahyy6tSo.0j1QWfXlH8sM4-8vKWjMjw-x.IrJJNlwkQ0s1CdwcwTefcLXm5l2E-W19VhACuV7f3mgrZMNjiSw.SjJAfyPC3SIyAMRjYfj53UmjriQ46T7lhmkqxK8wHmksYCdbZc3PZESk8NWl28sxdjNvnYYCFMcJbeav.LOLabyTXfwy-1cEPbQs.IKMRZIKaqccTDPV3wOtzbNv0jQzatd3Nnv-PGFQcjQ-GW3i27W04Fws4kodpFSn-B6VwZAjzLzoyd5gBncyRnAyCplEbgHU5sZ1IyKHWjgCl3ZtRIK5vqrRD5D-xqgSnOi7-phG.CqZWDZ4bMDSfQg2ZnbvUTyGKcEl0WR59dW5izTMV4Fjizcrvr5T-t.zMbGwz.hGnmLIyhTqh.IcwW.GiDLVExlDlix5S1LXIWVsSyrQ==\"],\"assets\":[{\"id\":1,\"data\":{\"value\":\"ImproveDigital\",\"type\":1}},{\"id\":3,\"data\":{\"value\":\"Test content.\",\"type\":2}},{\"id\":0,\"title\":{\"text\":\"Sample Prebid Test Title\"}}],\"link\":{\"url\":\"https://euw-ice.360yield.com/click/hcUBlHOV7YhVse8RyBa0ajjyPa9Vt17e4g-1m3cRj3E67vq-RYux.SiUeAmBfNBcoOqkUc6A15AWmi4yFu5K-BdkaYjildyyk7fNLyR6hWr411kv4vrFwm5jrIBceuHS6K8oN69f.uCo8zGTdR2TbSlldwcpahQPlufZU.6VaMsu4IC53uEiUT5vb7kAw6TTlxuGBNq6zaGryiWEV2.N3YYJDTyYPh8tv-ZFyeFZFm0Gnjv.xWbC.70JcRUVU9UelQaPsTpTWYTXBhJt84YJUw1-GNtaLNVLSjjZbVoA2fsMti5p6OBmF.7u39on2OPgvseIkSmge7Pqg63pRqdP75hp.DAEk6OkcN1jGnwP2DSbvpaSbin5lVqjfO0B-wnQgfQTCUtM5v4JmkNweLhUf9Q-x.nPKLW5SccEk9ZFXzY2-1wpT3PWm8Tix3NRscLPZub9wHzL..pl6ip8cQ9hp16UjwT4H6RMAxL0R7bl-h2pAicGAzYmuO7ntRESKUoIWA==//http%3A%2F%2Fquantum-advertising.com%2Ffr%2F\"},\"jstracker\":\"<script type=\\\"application/javascript\\\">var js_tracker = ['https://secure.adnxs.com/imptr?id=52312&t=1', 'https://pixel.adsafeprotected.com/rjss/st/291611/36974035/skeleton.js?ias_adpath=[class~=ea_improve_pid_${TAG_ID}]']</script>\"}",
+              'adm': '{"ver":"1.1","imptrackers":["https://secure.adnxs.com/imptr?id=52311&t=2","https://euw-ice.360yield.com/imp_pixel?ic=hcUBlCANx1FabHBf6FR2gC7UO4xEyXahdZAn0-B5qL-bb3A74BJ1smyWIyW7IWcC0SOjSXzVpevTHXxTqJ.sf.Qhahyy6tSo.0j1QWfXlH8sM4-8vKWjMjw-x.IrJJNlwkQ0s1CdwcwTefcLXm5l2E-W19VhACuV7f3mgrZMNjiSw.SjJAfyPC3SIyAMRjYfj53UmjriQ46T7lhmkqxK8wHmksYCdbZc3PZESk8NWl28sxdjNvnYYCFMcJbeav.LOLabyTXfwy-1cEPbQs.IKMRZIKaqccTDPV3wOtzbNv0jQzatd3Nnv-PGFQcjQ-GW3i27W04Fws4kodpFSn-B6VwZAjzLzoyd5gBncyRnAyCplEbgHU5sZ1IyKHWjgCl3ZtRIK5vqrRD5D-xqgSnOi7-phG.CqZWDZ4bMDSfQg2ZnbvUTyGKcEl0WR59dW5izTMV4Fjizcrvr5T-t.zMbGwz.hGnmLIyhTqh.IcwW.GiDLVExlDlix5S1LXIWVsSyrQ=="],"assets":[{"id":1,"data":{"value":"ImproveDigital","type":1}},{"id":3,"data":{"value":"Test content.","type":2}},{"id":0,"title":{"text":"Sample Prebid Test Title"}}],"link":{"url":"https://euw-ice.360yield.com/click/hcUBlHOV7YhVse8RyBa0ajjyPa9Vt17e4g-1m3cRj3E67vq-RYux.SiUeAmBfNBcoOqkUc6A15AWmi4yFu5K-BdkaYjildyyk7fNLyR6hWr411kv4vrFwm5jrIBceuHS6K8oN69f.uCo8zGTdR2TbSlldwcpahQPlufZU.6VaMsu4IC53uEiUT5vb7kAw6TTlxuGBNq6zaGryiWEV2.N3YYJDTyYPh8tv-ZFyeFZFm0Gnjv.xWbC.70JcRUVU9UelQaPsTpTWYTXBhJt84YJUw1-GNtaLNVLSjjZbVoA2fsMti5p6OBmF.7u39on2OPgvseIkSmge7Pqg63pRqdP75hp.DAEk6OkcN1jGnwP2DSbvpaSbin5lVqjfO0B-wnQgfQTCUtM5v4JmkNweLhUf9Q-x.nPKLW5SccEk9ZFXzY2-1wpT3PWm8Tix3NRscLPZub9wHzL..pl6ip8cQ9hp16UjwT4H6RMAxL0R7bl-h2pAicGAzYmuO7ntRESKUoIWA==//http%3A%2F%2Fquantum-advertising.com%2Ffr%2F"},"jstracker":"<script type=\\"application/javascript\\">var js_tracker = [\\"https://secure.adnxs.com/imptr?id=52312&t=1\\", \\"https://pixel.adsafeprotected.com/rjss/st/291611/36974035/skeleton.js?ias_adpath=[class~=ea_improve_pid_${TAG_ID}]\\"]</script>"}',
               'impid': '33e9500b21129f',
               'cid': '196108'
             }
