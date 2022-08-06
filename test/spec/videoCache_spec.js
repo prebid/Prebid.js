@@ -299,80 +299,80 @@ describe('The video cache', function () {
       JSON.parse(request.requestBody).should.deep.equal(payload);
     });
 
-    it('should not batch requests if batched requests are not enabled in the config', () => {
-      batchRequests.isEnabled().should.equal(false);
-      (batchRequests.getBatchRequests()[0].length).should.equal(0);
-    });
+    // it('should not batch requests if batched requests are not enabled in the config', () => {
+    //   batchRequests.isEnabled().should.equal(false);
+    //   (batchRequests.getBatchRequests()[0].length).should.equal(0);
+    // });
 
-    it('should batch requests correctly based on the value of the batchSize key', () => {
-      config.setConfig({
-        cache: {
-          url: 'https://prebid.adnxs.com/pbc/v1/cache',
-          batchSize: 2,
-          batchTimeout: 20
-        }
-      });
+    // it('should batch requests correctly based on the value of the batchSize key', () => {
+    //   config.setConfig({
+    //     cache: {
+    //       url: 'https://prebid.adnxs.com/pbc/v1/cache',
+    //       batchSize: 2,
+    //       batchTimeout: 20
+    //     }
+    //   });
 
-      const vastXml1 = '<VAST version="3.0">testvast1</VAST>';
-      const vastXml2 = '<VAST version="3.0">testvast2</VAST>';
-      const vastXml3 = '<VAST version="3.0">testvast2</VAST>';
+    //   const vastXml1 = '<VAST version="3.0">testvast1</VAST>';
+    //   const vastXml2 = '<VAST version="3.0">testvast2</VAST>';
+    //   const vastXml3 = '<VAST version="3.0">testvast2</VAST>';
 
-      const bids = [{
-        vastXml: vastXml1,
-        ttl: 25,
-        requestId: '12345abc',
-        bidder: 'appnexus',
-        auctionId: '1234-56789-abcde'
-      }, {
-        vastXml: vastXml2,
-        ttl: 25,
-        requestId: 'cba54321',
-        bidder: 'rubicon',
-        auctionId: '1234-56789-abcde'
-      },
-      {
-        vastXml: vastXml3,
-        ttl: 25,
-        requestId: '1c2b3a45',
-        bidder: 'pubmatic',
-        auctionId: '1234-56789-abcde'
-      }];
+    //   const bids = [{
+    //     vastXml: vastXml1,
+    //     ttl: 25,
+    //     requestId: '12345abc',
+    //     bidder: 'appnexus',
+    //     auctionId: '1234-56789-abcde'
+    //   }, {
+    //     vastXml: vastXml2,
+    //     ttl: 25,
+    //     requestId: 'cba54321',
+    //     bidder: 'rubicon',
+    //     auctionId: '1234-56789-abcde'
+    //   },
+    //   {
+    //     vastXml: vastXml3,
+    //     ttl: 25,
+    //     requestId: '1c2b3a45',
+    //     bidder: 'pubmatic',
+    //     auctionId: '1234-56789-abcde'
+    //   }];
 
-      for (let i = 0; i < bids.length; i++) {
-        batchRequests.createBatchArrayForStore(config.getConfig('cache.batchSize'), bids[i]);
-      }
+    //   for (let i = 0; i < bids.length; i++) {
+    //     batchRequests.createBatchArrayForStore(config.getConfig('cache.batchSize'), bids[i]);
+    //   }
 
-      const batchRequestsArray1 = batchRequests.getBatchRequests();
-      const batchRequestsArray2 = [
-        [
-          {
-            vastXml: vastXml1,
-            ttl: 25,
-            requestId: '12345abc',
-            bidder: 'appnexus',
-            auctionId: '1234-56789-abcde'
-          },
-          {
-            vastXml: vastXml2,
-            ttl: 25,
-            requestId: 'cba54321',
-            bidder: 'rubicon',
-            auctionId: '1234-56789-abcde'
-          }
-        ],
-        [
-          {
-            vastXml: vastXml3,
-            ttl: 25,
-            requestId: '1c2b3a45',
-            bidder: 'pubmatic',
-            auctionId: '1234-56789-abcde'
-          }
-        ]
-      ]
+    //   const batchRequestsArray1 = batchRequests.getBatchRequests();
+    //   const batchRequestsArray2 = [
+    //     [
+    //       {
+    //         vastXml: vastXml1,
+    //         ttl: 25,
+    //         requestId: '12345abc',
+    //         bidder: 'appnexus',
+    //         auctionId: '1234-56789-abcde'
+    //       },
+    //       {
+    //         vastXml: vastXml2,
+    //         ttl: 25,
+    //         requestId: 'cba54321',
+    //         bidder: 'rubicon',
+    //         auctionId: '1234-56789-abcde'
+    //       }
+    //     ],
+    //     [
+    //       {
+    //         vastXml: vastXml3,
+    //         ttl: 25,
+    //         requestId: '1c2b3a45',
+    //         bidder: 'pubmatic',
+    //         auctionId: '1234-56789-abcde'
+    //       }
+    //     ]
+    //   ]
 
-      batchRequestsArray1.should.deep.equal(batchRequestsArray2);
-    });
+    //   batchRequestsArray1.should.deep.equal(batchRequestsArray2);
+    // });
 
     function assertRequestMade(bid, expectedValue) {
       store([bid], function () { });

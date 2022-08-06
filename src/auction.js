@@ -514,116 +514,67 @@ function tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded, {index = au
   }
 }
 
-const callPrebidCacheWithBatchRequestsEnabled = (auctionInstance, afterBidAdded, batchTimeout) => {
-  setTimeout(() => {
-    batchBidResponseArrayToPass.forEach((batch) => {
-      if (batch.length > 0) {
-        store(batch, function (error, cacheIds, batchedBidRequestIds) {
-          // need to increment below b/c responses from each batch request don't always respond in the same order they were called
-          numberOfTimesStoreCacheFuncWasProcessed++;
-          batchedBidRequestIds.forEach((requestId, requestIdIndex) => {
-            const currentBidResponse = batchBidResponseRequestIdMappingObject[requestId];
-            const currentCacheId = cacheIds[requestIdIndex];
-            if (error) {
-              logWarn(`Failed to save to the video cache: ${error}. Video bid must be discarded.`);
-
-              doCallbacksIfTimedout(auctionInstance, currentBidResponse);
-            } else {
-              if (currentCacheId.uuid === '') {
-                logWarn(`Supplied video cache key was already in use by Prebid Cache; caching attempt was rejected. Video bid must be discarded.`);
-
-                doCallbacksIfTimedout(auctionInstance, currentBidResponse);
-              } else {
-                currentBidResponse.videoCacheKey = currentCacheId.uuid;
-
-                if (!currentBidResponse.vastUrl) {
-                  currentBidResponse.vastUrl = getCacheUrl(currentBidResponse.videoCacheKey);
-                }
-                addBidToAuction(auctionInstance, currentBidResponse);
-                afterBidAdded();
-              }
-            }
-
-            if (numberOfTimesStoreCacheFuncWasProcessed === batchBidResponseArrayToPass.length && requestIdIndex === batchedBidRequestIds.length - 1) batchRequests.init()
-          })
-        }, true);
-      }
-    });
-  }, batchTimeout);
-  shouldCallPrebidCache = false;
-};
-
-const callPrebidCacheWithBatchRequestsDisabled = (auctionInstance, bidResponse, afterBidAdded) => {
-  store([bidResponse], function (error, cacheIds) {
-    if (error) {
-      logWarn(`Failed to save to the video cache: ${error}. Video bid must be discarded.`);
-
-      doCallbacksIfTimedout(auctionInstance, bidResponse);
-    } else {
-      if (cacheIds[0].uuid === '') {
-        logWarn(`Supplied video cache key was already in use by Prebid Cache; caching attempt was rejected. Video bid must be discarded.`);
+const storeInCache = (batch) => {
+  store(batch.map(entry => entry.bidResponse), function (error, cacheIds) {
+    cacheIds.forEach((cacheId, i) => {
+      const { auctionInstance, bidResponse, afterBidAdded } = batch[i];
+      if (error) {
+        logWarn(`Failed to save to the video cache: ${error}. Video bid must be discarded.`);
 
         doCallbacksIfTimedout(auctionInstance, bidResponse);
       } else {
-        bidResponse.videoCacheKey = cacheIds[0].uuid;
+        if (cacheId.uuid === '') {
+          logWarn(`Supplied video cache key was already in use by Prebid Cache; caching attempt was rejected. Video bid must be discarded.`);
 
-        if (!bidResponse.vastUrl) {
-          bidResponse.vastUrl = getCacheUrl(bidResponse.videoCacheKey);
+          doCallbacksIfTimedout(auctionInstance, bidResponse);
+        } else {
+          bidResponse.videoCacheKey = cacheId.uuid;
+
+          if (!bidResponse.vastUrl) {
+            bidResponse.vastUrl = getCacheUrl(bidResponse.videoCacheKey);
+          }
+          addBidToAuction(auctionInstance, bidResponse);
+          afterBidAdded();
         }
-        addBidToAuction(auctionInstance, bidResponse);
-        afterBidAdded();
       }
-    }
+    });
   });
 };
 
-let batchBidResponseArrayToPass = [[]];
-let batchBidIndex = 0;
-let batchBidResponseRequestIdMappingObject = {};
-let numberOfTimesStoreCacheFuncWasProcessed = 0;
-let shouldCallPrebidCache = true;
+const batchAndStore = (() => {
+  let batches = [[]];
+  let debouncing = false;
 
-export const batchRequests = {
-  batchSize: () => config.getConfig('cache.batchSize'),
-  batchTimeout: () => typeof config.getConfig('cache.batchTimeout') === 'number' && config.getConfig('cache.batchTimeout') > 0 ? config.getConfig('cache.batchTimeout') : 0,
-  isEnabled: () => typeof config.getConfig('cache.batchSize') === 'number' && config.getConfig('cache.batchSize') > 0 ? config.getConfig('cache.batchSize') : false,
-  createBatchArrayForStore: (batchSize, bidResponse) => {
-    if (!batchBidResponseArrayToPass[batchBidIndex]) batchBidResponseArrayToPass.push([]);
-    if (batchBidResponseArrayToPass[batchBidIndex].length < batchSize) {
-      batchBidResponseArrayToPass[batchBidIndex].push(bidResponse);
-      batchBidResponseRequestIdMappingObject[bidResponse.requestId] = bidResponse;
+  return function(auctionInstance, bidResponse, afterBidAdded) {
+    const batchSize =
+      typeof config.getConfig('cache.batchSize') === 'number' && config.getConfig('cache.batchSize') > 0
+        ? config.getConfig('cache.batchSize')
+        : 1;
 
-      if (batchBidResponseArrayToPass[batchBidIndex].length === batchSize) {
-        batchBidIndex++;
-      }
+    const batchTimeout =
+      typeof config.getConfig('cache.batchTimeout') === 'number' && config.getConfig('cache.batchTimeout') > 0
+        ? config.getConfig('cache.batchTimeout')
+        : 0;
+
+    if (batches[batches.length - 1].length >= batchSize) {
+      batches.push([]);
     }
-  },
-  getBatchRequests: () => {
-    return batchBidResponseArrayToPass;
-  },
-  init: () => {
-    batchBidResponseArrayToPass = [[]];
-    batchBidIndex = 0;
-    batchBidResponseRequestIdMappingObject = {};
-    numberOfTimesStoreCacheFuncWasProcessed = 0;
-    shouldCallPrebidCache = true;
+
+    batches[batches.length - 1].push({auctionInstance, bidResponse, afterBidAdded});
+
+    if (!debouncing) {
+      debouncing = true;
+      setTimeout(() => {
+        batches.forEach(batch => storeInCache(batch));
+        batches = [[]];
+        debouncing = false;
+      }, batchTimeout);
+    }
   }
-}
+})();
 
 export const callPrebidCache = hook('async', function(auctionInstance, bidResponse, afterBidAdded, videoMediaType) {
-  if (batchRequests.isEnabled()) {
-    batchRequests.createBatchArrayForStore(batchRequests.batchSize(), bidResponse);
-  }
-
-  if (batchRequests.isEnabled() && shouldCallPrebidCache) {
-    // function below only gets invoked once if batch requests are enabled
-    callPrebidCacheWithBatchRequestsEnabled(auctionInstance, afterBidAdded, batchRequests.batchTimeout());
-  }
-
-  if (shouldCallPrebidCache) {
-    // function below gets invoked for each bidResponse if batch requests are disabled
-    callPrebidCacheWithBatchRequestsDisabled(auctionInstance, bidResponse, afterBidAdded);
-  }
+  batchAndStore(auctionInstance, bidResponse, afterBidAdded);
 }, 'callPrebidCache');
 
 // Postprocess the bids so that all the universal properties exist, no matter which bidder they came from.
