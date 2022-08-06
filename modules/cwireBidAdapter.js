@@ -1,5 +1,6 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
+import {getParameterByName} from '../src/utils.js';
 
 // ------------------------------------
 const BIDDER_CODE = 'cwire';
@@ -49,6 +50,13 @@ export const spec = {
       `bidderRequest.bids[].transactionId`.
       */
     };
+
+    // Add optional/debug parameters
+    let creativeId = getParameterByName('cw_creative')
+
+    if (creativeId) {
+      payload.creativeId = creativeId
+    }
     const payloadString = JSON.stringify(payload);
     return {
       method: 'POST',
