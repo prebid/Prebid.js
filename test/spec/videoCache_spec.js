@@ -1,11 +1,9 @@
 import chai from 'chai';
-import { batchRequests } from 'src/auction';
 import { getCacheUrl, store } from 'src/videoCache.js';
 import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr.js';
 import {auctionManager} from '../../src/auctionManager.js';
 import {AuctionIndex} from '../../src/auctionIndex.js';
-import { getBatchRequests } from '../../src/auction.js';
 
 const should = chai.should();
 
