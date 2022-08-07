@@ -240,8 +240,15 @@ function bundle(dev, moduleArr) {
       });
     }
   }
+  const coreFile = helpers.getBuiltPrebidCoreFile(dev);
+  const moduleFiles = helpers.getBuiltModules(dev, modules);
+  const depGraph = require(helpers.getBuiltPath(dev, 'dependencies.json'));
+  const dependencies = new Set();
+  [coreFile].concat(moduleFiles).map(name => path.basename(name)).forEach((file) => {
+    (depGraph[file] || []).forEach((dep) => dependencies.add(helpers.getBuiltPath(dev, dep)));
+  })
 
-  var entries = [helpers.getBuiltPrebidCoreFile(dev)].concat(helpers.getBuiltModules(dev, modules));
+  const entries = [coreFile].concat(Array.from(dependencies), moduleFiles);
 
   var outputFileName = argv.bundleName ? argv.bundleName : 'prebid.js';
 

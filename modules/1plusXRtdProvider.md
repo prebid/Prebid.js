@@ -8,9 +8,7 @@
 
 ## Description
 
-RTD provider for 1plusX. 
-Enriches the bidding object with Audience & Targeting data
-Contact dc-team-1px@triplelift.com for information.
+The 1plusX RTD module appends User and Contextual segments to the bidding object.
 
 ## Usage
 
@@ -47,14 +45,14 @@ pbjs.setConfig({
 
 ### Parameters 
 
-| Name              | Type          | Description                                                      | Notes                                                    |
-| :---------------- | :------------ | :--------------------------------------------------------------- |:-------------------------------------------------------- |
-| name              | String        | Real time data module name                                       | Always '1plusX'                                          |
-| waitForIt         | Boolean       | Should be `true` if there's an `auctionDelay` defined (optional) | `false`                                                  |
-| params            | Object        |                                                                  |                                                          |
-| params.customerId | String        | Your 1plusX customer id                                          |                                                          |
-| params.bidders    | Array<string> | List of bidders for which you would like data to be set          |                                                          |
-| params.timeout    | Integer       | timeout (ms)                                                     | 1000ms                                                   |
+| Name              | Type          | Description                                                      | Default           |
+| :---------------- | :------------ | :--------------------------------------------------------------- |:----------------- |
+| name              | String        | Real time data module name                                       | Always '1plusX'   |
+| waitForIt         | Boolean       | Should be `true` if there's an `auctionDelay` defined (optional) | `false`           |
+| params            | Object        |                                                                  |                   |
+| params.customerId | String        | Your 1plusX customer id                                          |                   |
+| params.bidders    | Array<string> | List of bidders for which you would like data to be set          |                   |
+| params.timeout    | Integer       | timeout (ms)                                                     | 1000ms            |
 
 ## Testing 
 

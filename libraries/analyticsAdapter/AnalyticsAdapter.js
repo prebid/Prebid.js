@@ -1,7 +1,7 @@
-import CONSTANTS from './constants.json';
-import { ajax } from './ajax.js';
-import { logMessage, _each } from './utils.js';
-import * as events from './events.js'
+import CONSTANTS from '../../src/constants.json';
+import { ajax } from '../../src/ajax.js';
+import { logMessage, _each } from '../../src/utils.js';
+import * as events from '../../src/events.js'
 
 export const _internal = {
   ajax
@@ -31,14 +31,13 @@ const {
 const ENDPOINT = 'endpoint';
 const BUNDLE = 'bundle';
 
-var _sampled = true;
-
 export default function AnalyticsAdapter({ url, analyticsType, global, handler }) {
   const _queue = [];
   let _eventCount = 0;
   let _enableCheck = true;
   let _handlers;
   let _enabled = false;
+  let _sampled = true;
 
   if (analyticsType === ENDPOINT || BUNDLE) {
     _emptyQueue();

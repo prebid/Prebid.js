@@ -1,4 +1,4 @@
-import {_internal} from '../../src/AnalyticsAdapter.js';
+import {_internal} from '../../libraries/analyticsAdapter/AnalyticsAdapter.js';
 
 before(() => {
   // stub out analytics networking to avoid random events polluting the global xhr mock
