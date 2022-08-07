@@ -2,9 +2,10 @@ import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {convertCamelToUnderscore, isArray, isNumber, isPlainObject, isStr, replaceAuctionPrice} from '../src/utils.js';
 import {find} from '../src/polyfill.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BID_METHOD = 'POST';
-const BIDDER_URL = 'http://13.234.201.146:8088/va/ad';
+const BIDDER_URL = 'https://ad.ventesavenues.in/va/ad';
 
 function groupBy(values, key) {
   const groups = values.reduce((acc, value) => {
@@ -354,6 +355,9 @@ const venavenBidderSpec = {
           validateParameters(adUnit.params);
   },
   buildRequests(bidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
+
     if (!bidRequests) return null;
 
     return groupBy(bidRequests, 'bidderRequestId').map(group => {

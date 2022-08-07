@@ -222,9 +222,8 @@ function getBid(requestId, currency, bidResponse) {
   if (!bidResponse) {
     return;
   }
-
   const {
-    price: cpm, crid: creativeId, adm: ad, w: width, h: height, adomain: advertiserDomains, meta = {}
+    price: cpm, crid: creativeId, adm: ad, w: width, h: height, exp: ttl, adomain: advertiserDomains, meta = {}
   } = bidResponse;
 
   if (advertiserDomains && advertiserDomains.length > 0) {
@@ -233,7 +232,7 @@ function getBid(requestId, currency, bidResponse) {
 
   return {
     requestId,
-    ttl: 360,
+    ttl,
     mediaType: BANNER,
     cpm,
     creativeId,

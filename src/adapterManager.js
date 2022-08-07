@@ -66,6 +66,7 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, src}) {
       .reduce((bids, bid) => {
         bid = Object.assign({}, bid, getDefinedParams(adUnit, [
           'nativeParams',
+          'nativeOrtbRequest',
           'ortb2Imp',
           'mediaType',
           'renderer'
@@ -211,7 +212,9 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
    * @see {@link https://github.com/prebid/Prebid.js/issues/4149|Issue}
    */
   events.emit(CONSTANTS.EVENTS.BEFORE_REQUEST_BIDS, adUnits);
-  decorateAdUnitsWithNativeParams(adUnits);
+  if (FEATURES.NATIVE) {
+    decorateAdUnitsWithNativeParams(adUnits);
+  }
   adUnits = setupAdUnitMediaTypes(adUnits, labels);
 
   let {[PARTITIONS.CLIENT]: clientBidders, [PARTITIONS.SERVER]: serverBidders} = partitionBidders(adUnits, _s2sConfigs);
@@ -425,7 +428,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
 function getSupportedMediaTypes(bidderCode) {
   let supportedMediaTypes = [];
   if (includes(adapterManager.videoAdapters, bidderCode)) supportedMediaTypes.push('video');
-  if (includes(nativeAdapters, bidderCode)) supportedMediaTypes.push('native');
+  if (FEATURES.NATIVE && includes(nativeAdapters, bidderCode)) supportedMediaTypes.push('native');
   return supportedMediaTypes;
 }
 
@@ -439,7 +442,7 @@ adapterManager.registerBidAdapter = function (bidAdapter, bidderCode, {supported
       if (includes(supportedMediaTypes, 'video')) {
         adapterManager.videoAdapters.push(bidderCode);
       }
-      if (includes(supportedMediaTypes, 'native')) {
+      if (FEATURES.NATIVE && includes(supportedMediaTypes, 'native')) {
         nativeAdapters.push(bidderCode);
       }
     } else {

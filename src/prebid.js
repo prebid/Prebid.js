@@ -5,14 +5,14 @@ import {
   adUnitsFilter, flatten, getHighestCpm, isArrayOfNums, isGptPubadsDefined, uniques, logInfo,
   contains, logError, isArray, deepClone, deepAccess, isNumber, logWarn, logMessage, isFn,
   transformAdServerTargetingObj, bind, replaceAuctionPrice, replaceClickThrough, insertElement,
-  inIframe, callBurl, createInvisibleIframe, generateUUID, unsupportedBidderMessage, isEmpty, mergeDeep
+  inIframe, callBurl, createInvisibleIframe, generateUUID, unsupportedBidderMessage, isEmpty, mergeDeep, deepSetValue
 } from './utils.js';
 import { listenMessagesFromCreative } from './secureCreatives.js';
 import { userSync } from './userSync.js';
 import { config } from './config.js';
 import { auctionManager } from './auctionManager.js';
 import { filters, targeting } from './targeting.js';
-import { hook } from './hook.js';
+import {hook, wrapHook} from './hook.js';
 import { loadSession } from './debugging.js';
 import {includes} from './polyfill.js';
 import { adunitCounter } from './adUnits.js';
@@ -129,6 +129,16 @@ function validateVideoMediaType(adUnit) {
 function validateNativeMediaType(adUnit) {
   const validatedAdUnit = deepClone(adUnit);
   const native = validatedAdUnit.mediaTypes.native;
+  // if native assets are specified in OpenRTB format, remove legacy assets and print a warn.
+  if (native.ortb) {
+    const legacyNativeKeys = Object.keys(CONSTANTS.NATIVE_KEYS).filter(key => CONSTANTS.NATIVE_KEYS[key].includes('hb_native_'));
+    const nativeKeys = Object.keys(native);
+    const intersection = nativeKeys.filter(nativeKey => legacyNativeKeys.includes(nativeKey));
+    if (intersection.length > 0) {
+      logError(`when using native OpenRTB format, you cannot use legacy native properties. Deleting ${intersection} keys from request.`);
+      intersection.forEach(legacyKey => delete validatedAdUnit.mediaTypes.native[legacyKey]);
+    }
+  }
   if (native.image && native.image.sizes && !Array.isArray(native.image.sizes)) {
     logError('Please use an array of sizes for native.image.sizes field.  Removing invalid mediaTypes.native.image.sizes property from request.');
     delete validatedAdUnit.mediaTypes.native.image.sizes;
@@ -188,9 +198,12 @@ export const adUnitSetupChecks = {
   validateAdUnit,
   validateBannerMediaType,
   validateVideoMediaType,
-  validateNativeMediaType,
   validateSizes
 };
+
+if (FEATURES.NATIVE) {
+  Object.assign(adUnitSetupChecks, {validateNativeMediaType});
+}
 
 export const checkAdUnitSetup = hook('sync', function (adUnits) {
   const validatedAdUnits = [];
@@ -212,7 +225,7 @@ export const checkAdUnitSetup = hook('sync', function (adUnits) {
       if (mediaTypes.video.hasOwnProperty('pos')) validatedVideo = validateAdUnitPos(validatedVideo, 'video');
     }
 
-    if (mediaTypes.native) {
+    if (FEATURES.NATIVE && mediaTypes.native) {
       validatedNative = validatedVideo ? validateNativeMediaType(validatedVideo) : validatedBanner ? validateNativeMediaType(validatedBanner) : validateNativeMediaType(adUnit);
     }
 
@@ -570,18 +583,28 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
  * @param {String} requestOptions.auctionId
  * @alias module:pbjs.requestBids
  */
-$$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels, auctionId, ortb2 } = {}) {
-  events.emit(REQUEST_BIDS);
-  const cbTimeout = timeout || config.getConfig('bidderTimeout');
-  adUnits = adUnits || $$PREBID_GLOBAL$$.adUnits;
-  adUnits = (isArray(adUnits) ? adUnits : [adUnits]);
-  logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', arguments);
-  const ortb2Fragments = {
-    global: mergeDeep({}, config.getAnyConfig('ortb2') || {}, ortb2 || {}),
-    bidder: Object.fromEntries(Object.entries(config.getBidderConfig()).map(([bidder, cfg]) => [bidder, cfg.ortb2]).filter(([_, ortb2]) => ortb2 != null))
-  }
-  return startAuction({bidsBackHandler, timeout: cbTimeout, adUnits, adUnitCodes, labels, auctionId, ortb2Fragments});
-}, 'requestBids');
+$$PREBID_GLOBAL$$.requestBids = (function() {
+  const delegate = hook('async', function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels, auctionId, ortb2 } = {}) {
+    events.emit(REQUEST_BIDS);
+    const cbTimeout = timeout || config.getConfig('bidderTimeout');
+    logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', arguments);
+    const ortb2Fragments = {
+      global: mergeDeep({}, config.getAnyConfig('ortb2') || {}, ortb2 || {}),
+      bidder: Object.fromEntries(Object.entries(config.getBidderConfig()).map(([bidder, cfg]) => [bidder, cfg.ortb2]).filter(([_, ortb2]) => ortb2 != null))
+    }
+    return startAuction({bidsBackHandler, timeout: cbTimeout, adUnits, adUnitCodes, labels, auctionId, ortb2Fragments});
+  }, 'requestBids');
+
+  return wrapHook(delegate, function requestBids(req = {}) {
+    // if the request does not specify adUnits, clone the global adUnit array - before
+    // any hook has a chance to run.
+    // otherwise, if the caller goes on to use addAdUnits/removeAdUnits, any asynchronous logic
+    // in any hook might see their effects.
+    let adUnits = req.adUnits || $$PREBID_GLOBAL$$.adUnits;
+    req.adUnits = (isArray(adUnits) ? adUnits.slice() : [adUnits]);
+    return delegate.call(this, req);
+  });
+})();
 
 export const startAuction = hook('async', function ({ bidsBackHandler, timeout: cbTimeout, adUnits, adUnitCodes, labels, auctionId, ortb2Fragments } = {}) {
   const s2sBidders = getS2SBidderSet(config.getConfig('s2sConfig') || []);
@@ -612,6 +635,9 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
     const bidders = allBidders.filter(bidder => !s2sBidders.has(bidder));
 
     adUnit.transactionId = generateUUID();
+
+    // Populate ortb2Imp.ext.tid with transactionId. Specifying a transaction ID per item in the ortb impression array, lets multiple transaction IDs be transmitted in a single bid request.
+    deepSetValue(adUnit, 'ortb2Imp.ext.tid', adUnit.transactionId)
 
     bidders.forEach(bidder => {
       const adapter = bidderRegistry[bidder];

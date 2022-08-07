@@ -68,12 +68,14 @@ export const USER_IDS_CONFIG = {
     source: 'flashtalking.com',
     atype: 1,
     getValue: function(data) {
-      return data.uid
+      let value = '';
+      if (data.DeviceID) {
+        value = data.DeviceID.join(',');
+      }
+      return value;
     },
     getUidExt: function(data) {
-      if (data.ext) {
-        return data.ext;
-      }
+      return 'DeviceID';
     }
   },
 
@@ -307,11 +309,23 @@ export const USER_IDS_CONFIG = {
     }
   },
 
+  // tncId
+  'tncid': {
+    source: 'thenewco.it',
+    atype: 3
+  },
+
   // Gravito MP ID
   'gravitompId': {
     source: 'gravito.net',
     atype: 1
   },
+
+  // cpexId
+  'cpexId': {
+    source: 'czechadid.cz',
+    atype: 1
+  }
 };
 
 // this function will create an eid object for the given UserId sub-module
@@ -320,7 +334,6 @@ function createEidObject(userIdData, subModuleKey) {
   if (conf && userIdData) {
     let eid = {};
     eid.source = isFn(conf['getSource']) ? conf['getSource'](userIdData) : conf['source'];
-
     const value = isFn(conf['getValue']) ? conf['getValue'](userIdData) : userIdData;
     if (isStr(value)) {
       const uid = { id: value, atype: conf['atype'] };
@@ -355,6 +368,18 @@ export function createEidsArray(bidRequestUserId) {
     if (bidRequestUserId.hasOwnProperty(subModuleKey)) {
       if (subModuleKey === 'pubProvidedId') {
         eids = eids.concat(bidRequestUserId['pubProvidedId']);
+      } else if (subModuleKey === 'ftrackId') {
+        // ftrack has multiple IDs so we add each one that exists
+        let eid = {
+          'atype': 1,
+          'id': (bidRequestUserId.ftrackId.DeviceID || []).join('|'),
+          'ext': {}
+        }
+        for (let id in bidRequestUserId.ftrackId) {
+          eid.ext[id] = (bidRequestUserId.ftrackId[id] || []).join('|');
+        }
+
+        eids.push(eid);
       } else if (Array.isArray(bidRequestUserId[subModuleKey])) {
         bidRequestUserId[subModuleKey].forEach((config, index, arr) => {
           const eid = createEidObject(config, subModuleKey);

@@ -1,16 +1,52 @@
 import {expect} from 'chai';
 import {config} from 'src/config.js';
 import {getRefererInfo} from 'src/refererDetection.js';
-import {processFpd, registerSubmodules} from 'modules/fpdModule/index.js';
+import {processFpd, registerSubmodules, startAuctionHook, reset} from 'modules/fpdModule/index.js';
 import * as enrichmentModule from 'modules/enrichmentFpdModule.js';
 import * as validationModule from 'modules/validationFpdModule/index.js';
-
-let enrichments = {...enrichmentModule};
-let validations = {...validationModule};
 
 describe('the first party data module', function () {
   afterEach(function () {
     config.resetConfig();
+  });
+
+  describe('startAuctionHook', () => {
+    const mockFpd = {
+      global: {key: 'value'},
+      bidder: {A: {bkey: 'bvalue'}}
+    }
+    beforeEach(() => {
+      reset();
+    });
+
+    it('should run ortb2Fragments through fpd submodules', () => {
+      registerSubmodules({
+        name: 'test',
+        processFpd: function () {
+          return mockFpd;
+        }
+      });
+      const req = {ortb2Fragments: {}};
+      return new Promise((resolve) => startAuctionHook(resolve, req))
+        .then(() => {
+          expect(req.ortb2Fragments).to.eql(mockFpd);
+        })
+    });
+
+    it('should work with fpd submodules that return promises', () => {
+      registerSubmodules({
+        name: 'test',
+        processFpd: function () {
+          return Promise.resolve(mockFpd);
+        }
+      });
+      const req = {ortb2Fragments: {}};
+      return new Promise((resolve) => {
+        startAuctionHook(resolve, req);
+      }).then(() => {
+        expect(req.ortb2Fragments).to.eql(mockFpd);
+      });
+    });
   });
 
   describe('first party data intitializing', function () {
@@ -23,6 +59,10 @@ describe('the first party data module', function () {
     let keywords;
 
     before(function() {
+      reset();
+      registerSubmodules(enrichmentModule);
+      registerSubmodules(validationModule);
+
       canonical = document.createElement('link');
       canonical.rel = 'canonical';
       keywords = document.createElement('meta');
@@ -52,7 +92,6 @@ describe('the first party data module', function () {
     });
 
     it('filters ortb2 data that is set', function () {
-      let validated;
       const global = {
         user: {
           data: {},
@@ -86,42 +125,42 @@ describe('the first party data module', function () {
       width = 1120;
       height = 750;
 
-      ({global: validated} = processFpd({global}));
-      expect(validated.site.ref).to.equal(getRefererInfo().ref || undefined);
-      expect(validated.site.page).to.equal('https://www.domain.com/path?query=12345');
-      expect(validated.site.domain).to.equal('domain.com');
-      expect(validated.site.content.data).to.deep.equal([{segment: [{id: 'test'}], name: 'bar'}]);
-      expect(validated.user.data).to.be.undefined;
-      expect(validated.device).to.deep.to.equal({w: 1, h: 1});
-      expect(validated.site.keywords).to.be.undefined;
+      return processFpd({global}).then(({global: validated}) => {
+        expect(validated.site.ref).to.equal(getRefererInfo().ref || undefined);
+        expect(validated.site.page).to.equal('https://www.domain.com/path?query=12345');
+        expect(validated.site.domain).to.equal('domain.com');
+        expect(validated.site.content.data).to.deep.equal([{segment: [{id: 'test'}], name: 'bar'}]);
+        expect(validated.user.data).to.be.undefined;
+        expect(validated.device).to.deep.to.equal({w: 1, h: 1});
+        expect(validated.site.keywords).to.be.undefined;
+      });
     });
 
     it('should not overwrite existing data with default settings', function () {
-      let validated;
       const global = {
         site: {
           ref: 'https://referer.com'
         }
       };
 
-      ({global: validated} = processFpd({global}));
-      expect(validated.site.ref).to.equal('https://referer.com');
+      return processFpd({global}).then(({global: validated}) => {
+        expect(validated.site.ref).to.equal('https://referer.com');
+      });
     });
 
     it('should allow overwrite default data with setConfig', function () {
-      let validated;
       const global = {
         site: {
           ref: 'https://referer.com'
         }
       };
 
-      ({global: validated} = processFpd({global}));
-      expect(validated.site.ref).to.equal('https://referer.com');
+      return processFpd({global}).then(({global: validated}) => {
+        expect(validated.site.ref).to.equal('https://referer.com');
+      });
     });
 
     it('should filter all data', function () {
-      let validated;
       let global = {
         imp: [],
         site: {
@@ -152,15 +191,13 @@ describe('the first party data module', function () {
           adServerCurrency: 'USD'
         }
       };
-
       config.setConfig({'firstPartyData': {skipEnrichments: true}});
-
-      ({global: validated} = processFpd({global}));
-      expect(validated).to.deep.equal({});
+      return processFpd({global}).then(({global: validated}) => {
+        expect(validated).to.deep.equal({});
+      });
     });
 
     it('should add enrichments but not alter any arbitrary ortb2 data', function () {
-      let validated;
       let global = {
         site: {
           ext: {
@@ -178,12 +215,12 @@ describe('the first party data module', function () {
         },
         cur: ['USD']
       };
-
-      ({global: validated} = processFpd({global}));
-      expect(validated.site.ref).to.equal(getRefererInfo().referer);
-      expect(validated.site.ext.data).to.deep.equal({inventory: ['value1']});
-      expect(validated.user.ext.data).to.deep.equal({visitor: ['value2']});
-      expect(validated.cur).to.deep.equal(['USD']);
+      return processFpd({global}).then(({global: validated}) => {
+        expect(validated.site.ref).to.equal(getRefererInfo().referer);
+        expect(validated.site.ext.data).to.deep.equal({inventory: ['value1']});
+        expect(validated.user.ext.data).to.deep.equal({visitor: ['value2']});
+        expect(validated.cur).to.deep.equal(['USD']);
+      })
     });
 
     it('should filter bidderConfig data', function () {
@@ -203,12 +240,13 @@ describe('the first party data module', function () {
         }
       };
 
-      const {bidder: validated} = processFpd({bidder});
-      expect(validated.bidderA).to.not.be.undefined;
-      expect(validated.bidderA.user.data).to.be.undefined;
-      expect(validated.bidderA.user.keywords).to.equal('test');
-      expect(validated.bidderA.site.keywords).to.equal('other');
-      expect(validated.bidderA.site.ref).to.equal('https://domain.com');
+      return processFpd({bidder}).then(({bidder: validated}) => {
+        expect(validated.bidderA).to.not.be.undefined;
+        expect(validated.bidderA.user.data).to.be.undefined;
+        expect(validated.bidderA.user.keywords).to.equal('test');
+        expect(validated.bidderA.site.keywords).to.equal('other');
+        expect(validated.bidderA.site.ref).to.equal('https://domain.com');
+      })
     });
 
     it('should not filter bidderConfig data as it is valid', function () {
@@ -228,17 +266,16 @@ describe('the first party data module', function () {
         }
       };
 
-      const {bidder: validated} = processFpd({bidder});
-
-      expect(validated.bidderA).to.not.be.undefined;
-      expect(validated.bidderA.user.data).to.deep.equal([{segment: [{id: 'data1_id'}], name: 'data1'}]);
-      expect(validated.bidderA.user.keywords).to.equal('test');
-      expect(validated.bidderA.site.keywords).to.equal('other');
-      expect(validated.bidderA.site.ref).to.equal('https://domain.com');
+      return processFpd({bidder}).then(({bidder: validated}) => {
+        expect(validated.bidderA).to.not.be.undefined;
+        expect(validated.bidderA.user.data).to.deep.equal([{segment: [{id: 'data1_id'}], name: 'data1'}]);
+        expect(validated.bidderA.user.keywords).to.equal('test');
+        expect(validated.bidderA.site.keywords).to.equal('other');
+        expect(validated.bidderA.site.ref).to.equal('https://domain.com');
+      });
     });
 
     it('should not set default values if skipEnrichments is turned on', function () {
-      let validated;
       config.setConfig({'firstPartyData': {skipEnrichments: true}});
 
       let global = {
@@ -254,15 +291,15 @@ describe('the first party data module', function () {
         }
       };
 
-      ({global: validated} = processFpd({global}));
-      expect(validated.device).to.be.undefined;
-      expect(validated.site.ref).to.be.undefined;
-      expect(validated.site.page).to.be.undefined;
-      expect(validated.site.domain).to.be.undefined;
+      return processFpd({global}).then(({global: validated}) => {
+        expect(validated.device).to.be.undefined;
+        expect(validated.site.ref).to.be.undefined;
+        expect(validated.site.page).to.be.undefined;
+        expect(validated.site.domain).to.be.undefined;
+      });
     });
 
     it('should not validate ortb2 data if skipValidations is turned on', function () {
-      let validated;
       config.setConfig({'firstPartyData': {skipValidations: true}});
 
       let global = {
@@ -277,8 +314,9 @@ describe('the first party data module', function () {
         }
       };
 
-      ({global: validated} = processFpd({global}));
-      expect(validated.user.data).to.deep.equal([{segment: [{id: 'nonfiltered'}]}]);
+      return processFpd({global}).then(({global: validated}) => {
+        expect(validated.user.data).to.deep.equal([{segment: [{id: 'nonfiltered'}]}]);
+      });
     });
   });
 });

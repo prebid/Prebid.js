@@ -56,6 +56,7 @@ describe('riseAdapter', function () {
           'org': 'jdye8weeyirk00000001'
         },
         'bidId': '299ffc8cca0b87',
+        'loop': 1,
         'bidderRequestId': '1144f487e563f9',
         'auctionId': 'bfc420c3-8577-4568-9766-a8a935fb620d',
         'mediaTypes': {
@@ -74,6 +75,7 @@ describe('riseAdapter', function () {
           'org': 'jdye8weeyirk00000001'
         },
         'bidId': '299ffc8cca0b87',
+        'loop': 1,
         'bidderRequestId': '1144f487e563f9',
         'auctionId': 'bfc420c3-8577-4568-9766-a8a935fb620d',
         'mediaTypes': {
@@ -94,6 +96,7 @@ describe('riseAdapter', function () {
           'testMode': true
         },
         'bidId': '299ffc8cca0b87',
+        'loop': 2,
         'bidderRequestId': '1144f487e563f9',
         'auctionId': 'bfc420c3-8577-4568-9766-a8a935fb620d',
       }

@@ -16,6 +16,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 // **************************** UTILS *************************** //
 const BIDDER_CODE = '33across';
+const BIDDER_ALIASES = ['33across_mgni'];
 const END_POINT = 'https://ssc.33across.com/api/v1/hb';
 const SYNC_ENDPOINT = 'https://ssc-cms.33across.com/ps/?m=xch&rt=html&ru=deb';
 
@@ -70,7 +71,9 @@ function isBidRequestValid(bid) {
 }
 
 function _validateBasic(bid) {
-  if (bid.bidder !== BIDDER_CODE || typeof bid.params === 'undefined') {
+  const invalidBidderName = bid.bidder !== BIDDER_CODE && !BIDDER_ALIASES.includes(bid.bidder);
+
+  if (invalidBidderName || !bid.params) {
     return false;
   }
 
@@ -251,6 +254,7 @@ function _createServerRequest({ bidRequests, gdprConsent = {}, uspConsent, pageU
   });
 
   ttxRequest.site = { id: siteId };
+  ttxRequest.device = _buildDeviceORTB();
 
   if (pageUrl) {
     ttxRequest.site.page = pageUrl;
@@ -330,12 +334,15 @@ function setExtensions(obj = {}, extFields) {
 
 // BUILD REQUESTS: IMP
 function _buildImpORTB(bidRequest) {
+  const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
+
   const imp = {
     id: bidRequest.bidId,
     ext: {
       ttx: {
         prod: deepAccess(bidRequest, 'params.productId')
-      }
+      },
+      ...(gpid ? { gpid } : {})
     }
   };
 
@@ -731,10 +738,79 @@ function _createSync({ siteId = 'zzz000000000003zzz', gdprConsent = {}, uspConse
   return sync;
 }
 
+// BUILD REQUESTS: DEVICE
+function _buildDeviceORTB() {
+  const win = getWindowSelf();
+
+  return {
+    ext: {
+      ttx: {
+        ...getScreenDimensions(),
+        pxr: win.devicePixelRatio,
+        vp: getViewportDimensions(),
+        ah: win.screen.availHeight,
+        mtp: win.navigator.maxTouchPoints
+      }
+    }
+  };
+}
+
+function getTopMostAccessibleWindow() {
+  let mostAccessibleWindow = getWindowSelf();
+
+  try {
+    while (mostAccessibleWindow.parent !== mostAccessibleWindow &&
+      mostAccessibleWindow.parent.document) {
+      mostAccessibleWindow = mostAccessibleWindow.parent;
+    }
+  } catch (err) {
+    // Do not throw an exception if we can't access the topmost frame.
+  }
+
+  return mostAccessibleWindow;
+}
+
+function getViewportDimensions() {
+  const topWin = getTopMostAccessibleWindow();
+  const documentElement = topWin.document.documentElement;
+
+  return {
+    w: documentElement.clientWidth,
+    h: documentElement.clientHeight,
+  };
+}
+
+function getScreenDimensions() {
+  const {
+    innerWidth: windowWidth,
+    innerHeight: windowHeight,
+    screen
+  } = getWindowSelf();
+
+  const [biggerDimension, smallerDimension] = [
+    Math.max(screen.width, screen.height),
+    Math.min(screen.width, screen.height),
+  ];
+
+  if (windowHeight > windowWidth) { // Portrait mode
+    return {
+      w: smallerDimension,
+      h: biggerDimension,
+    };
+  }
+
+  // Landscape mode
+  return {
+    w: biggerDimension,
+    h: smallerDimension,
+  };
+}
+
 export const spec = {
   NON_MEASURABLE,
 
   code: BIDDER_CODE,
+  aliases: BIDDER_ALIASES,
   supportedMediaTypes: [ BANNER, VIDEO ],
   gvlid: GVLID,
   isBidRequestValid,

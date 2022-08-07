@@ -34,6 +34,7 @@ import {INSTREAM, OUTSTREAM} from '../src/video.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {bidderSettings} from '../src/bidderSettings.js';
 import {hasPurpose1Consent} from '../src/utils/gpdr.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'appnexus';
 const URL = 'https://ib.adnxs.com/ut/v3/prebid';
@@ -122,6 +123,9 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (bidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
+
     const tags = bidRequests.map(bidToTag);
     const userObjBid = find(bidRequests, hasUserInfo);
     let userObj = {};
@@ -447,7 +451,7 @@ export const spec = {
    * @param {Bid} bid
    */
   onBidWon: function (bid) {
-    if (bid.native) {
+    if (FEATURES.NATIVE && bid.native) {
       reloadViewabilityScriptWithCorrectParameters(bid);
     }
   }
@@ -715,7 +719,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
         bid.vastUrl = rtbBid.notify_url + '&redir=' + encodeURIComponent(rtbBid.rtb.video.asset_url);
         break;
     }
-  } else if (rtbBid.rtb[NATIVE]) {
+  } else if (FEATURES.NATIVE && rtbBid.rtb[NATIVE]) {
     const nativeAd = rtbBid.rtb[NATIVE];
 
     // setting up the jsTracker:
@@ -853,7 +857,7 @@ function bidToTag(bid) {
     tag.gpid = gpid;
   }
 
-  if (bid.mediaType === NATIVE || deepAccess(bid, `mediaTypes.${NATIVE}`)) {
+  if (FEATURES.NATIVE && (bid.mediaType === NATIVE || deepAccess(bid, `mediaTypes.${NATIVE}`))) {
     tag.ad_types.push(NATIVE);
     if (tag.sizes.length === 0) {
       tag.sizes = transformSizes([1, 1]);
