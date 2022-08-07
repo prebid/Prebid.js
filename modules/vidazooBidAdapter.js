@@ -72,6 +72,7 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
     cb: Date.now(),
     bidFloor: bidFloor,
     bidId: bidId,
+    referrer: bidderRequest.refererInfo.ref,
     adUnitCode: adUnitCode,
     publisherId: pId,
     sessionId: sId,
