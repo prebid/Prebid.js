@@ -45,11 +45,13 @@ export const spec = {
       currency,
       hb_version: '$prebid.version$',
       ...ortbCommon,
-      price_type: priceType,
-      schain
+      price_type: priceType
     }
     if (test) {
       request.test = 1
+    }
+    if (schain) {
+      request.schain = schain
     }
     if (config.getConfig('coppa')) {
       deepSetValue(request, 'privacy.coppa', 1)
