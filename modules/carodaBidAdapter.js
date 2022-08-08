@@ -7,11 +7,12 @@ import {
   _map,
   deepAccess,
   deepSetValue,
+  flatten,
+  logError,
   mergeDeep,
   parseSizesInput
 } from '../src/utils.js'
 import { config } from '../src/config.js'
-import { Renderer } from '../src/Renderer.js'
 
 const { getConfig } = config
 
@@ -23,7 +24,7 @@ const carodaDomain = 'prebid.caroda.io'
 
 // some state info is required to synchronize wi
 const topUsableWindow = getTopUsableWindow()
-const pageViewId = topUsableWindow.carodaPageViewId || 
+const pageViewId = topUsableWindow.carodaPageViewId || Math.floor(Math.random() * 1e9)
 
 export const spec = {
   code: BIDDER_CODE,
@@ -46,6 +47,7 @@ export const spec = {
     const schain = setOnAny(validBidRequests, 'schain')
     const request = {
       id: bidderRequest.auctionId,
+      hb_version: '$prebid.version$',
       ...ortbCommon,
       pt: priceType,
       cur
@@ -82,7 +84,7 @@ export const spec = {
       method: 'POST',
       url: 'https://' + carodaDomain + '/api/hb?entry_id=' + pageViewId,
       data: JSON.stringify({
-        request,
+        ...request,
         ...imp
       })
     }))
@@ -91,57 +93,34 @@ export const spec = {
     if (!serverResponse.body) {
       return
     }
-    const { seatbid, cur } = serverResponse.body
-
-    const bidResponses = flatten(seatbid.map(seat => seat.bid)).reduce(
-      (result, bid) => {
-        result[bid.impid - 1] = bid
-        return result
-      },
-      []
-    )
-
-    return bids
-      .map((bid, id) => {
-        const bidResponse = bidResponses[id]
-        if (bidResponse) {
-          const mediaType = deepAccess(bidResponse, 'ext.prebid.type')
-          const result = {
+    const { ok, error } = serverResponse.body
+    if (error) {
+      return
+    }
+    try {
+      return JSON.parse(ok)
+        .map((bid) => {
+          return {
             requestId: bid.bidId,
-            cpm: bidResponse.price,
-            creativeId: bidResponse.crid,
-            ttl: 360,
-            netRevenue: bid.netRevenue === 'net',
-            currency: cur,
-            mediaType,
-            width: bidResponse.w,
-            height: bidResponse.h,
-            dealId: bidResponse.dealid,
+            cpm: bid.cpm,
+            creativeId: bid.crid,
+            ttl: 300,
+            netRevenue: true,
+            currency: bid.currency,
+            width: bid.w,
+            height: bid.h,
             meta: {
-              mediaType,
-              advertiserDomains: bidResponse.adomain
-            }
+              advertiserDomains: bid && bid.adomain ? bid.adomain : []
+            },
+            ad: bid.ad,
+            placementId: bid.placementId
           }
-
-          result[mediaType === VIDEO ? 'vastXml' : 'ad'] = bidResponse.adm
-
-          if (
-            !bid.renderer &&
-            mediaType === VIDEO &&
-            deepAccess(bid, 'mediaTypes.video.context') === 'outstream'
-          ) {
-            result.renderer = Renderer.install({
-              id: bid.bidId,
-              url: OUTSTREAM_RENDERER_URL,
-              adUnitCode: bid.adUnitCode
-            })
-            result.renderer.setRender(renderer)
-          }
-
-          return result
-        }
-      })
-      .filter(Boolean)
+        })
+        .filter(Boolean)
+    } catch (e) {
+      logError(BIDDER_CODE, ': caught', e)
+      return
+    }
   }
 }
 
@@ -154,16 +133,6 @@ function setOnAny (collection, key) {
       return result
     }
   }
-}
-
-function flatten (arr) {
-  return [].concat(...arr)
-}
-
-function renderer (bid) {
-  bid.renderer.push(() => {
-    window.Adform.renderOutstream(bid)
-  })
 }
 
 function getTopUsableWindow () {
