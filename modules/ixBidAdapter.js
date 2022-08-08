@@ -1122,7 +1122,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
     const adUnitCode = impressions[transactionIds[adUnitIndex]].adUnitCode;
     if (pbaAdSlot || tagId || adUnitCode || divId) {
       const clonedRObject = deepClone(r);
-      const requestSize = `${baseUrl}${parseQueryStringParameters({ ...payload, r: JSON.stringify(clonedRObject) })}`.length;
+      const requestSize = `${baseUrl}${parseQueryStringParameters({ r: JSON.stringify(clonedRObject) })}`.length;
       if (requestSize < MAX_REQUEST_SIZE) {
         r.ext.ixdiag.pbadslot = pbaAdSlot;
         r.ext.ixdiag.tagid = tagId;
