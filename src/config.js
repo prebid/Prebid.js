@@ -526,7 +526,7 @@ export function newConfig() {
     }
 
     const mergedConfig = Object.keys(obj).reduce((accum, key) => {
-      const prevConf = _getConfig(key)[key] || {};
+      const prevConf = _getConfig()[key] || {};
       accum[key] = mergeDeep(prevConf, obj[key]);
       return accum;
     }, {});

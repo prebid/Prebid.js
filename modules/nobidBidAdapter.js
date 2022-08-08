@@ -30,7 +30,7 @@ function nobidBuildRequests(bids, bidderRequest) {
   var serializeState = function(divIds, siteId, adunits) {
     var filterAdUnitsByIds = function(divIds, adUnits) {
       var filtered = [];
-      if (!divIds || !divIds.length) {
+      if (!divIds.length) {
         filtered = adUnits;
       } else if (adUnits) {
         var a = [];

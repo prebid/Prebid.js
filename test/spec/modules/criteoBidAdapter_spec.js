@@ -1213,6 +1213,31 @@ describe('The Criteo bidding adapter', function () {
         }
       });
     });
+
+    it('should properly build a request when coppa flag is true', function () {
+      const bidRequests = [];
+      const bidderRequest = {};
+      config.setConfig({ coppa: true });
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.regs.coppa).to.not.be.undefined;
+      expect(request.data.regs.coppa).to.equal(1);
+    });
+
+    it('should properly build a request when coppa flag is false', function () {
+      const bidRequests = [];
+      const bidderRequest = {};
+      config.setConfig({ coppa: false });
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.regs.coppa).to.not.be.undefined;
+      expect(request.data.regs.coppa).to.equal(0);
+    });
+
+    it('should properly build a request when coppa flag is not defined', function () {
+      const bidRequests = [];
+      const bidderRequest = {};
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.regs.coppa).to.be.undefined;
+    });
   });
 
   describe('interpretResponse', function () {
@@ -1285,7 +1310,6 @@ describe('The Criteo bidding adapter', function () {
       const bids = spec.interpretResponse(response, request);
       expect(bids).to.have.lengthOf(1);
       expect(bids[0].requestId).to.equal('test-bidId');
-      expect(bids[0].adId).to.equal('abc123');
       expect(bids[0].cpm).to.equal(1.23);
       expect(bids[0].ad).to.equal('test-ad');
       expect(bids[0].width).to.equal(728);
@@ -1319,7 +1343,6 @@ describe('The Criteo bidding adapter', function () {
       const bids = spec.interpretResponse(response, request);
       expect(bids).to.have.lengthOf(1);
       expect(bids[0].requestId).to.equal('test-bidId');
-      expect(bids[0].adId).to.equal('abc123');
       expect(bids[0].cpm).to.equal(1.23);
       expect(bids[0].vastUrl).to.equal('http://test-ad');
       expect(bids[0].mediaType).to.equal(VIDEO);
@@ -1376,7 +1399,6 @@ describe('The Criteo bidding adapter', function () {
       const bids = spec.interpretResponse(response, request);
       expect(bids).to.have.lengthOf(1);
       expect(bids[0].requestId).to.equal('test-bidId');
-      expect(bids[0].adId).to.equal('abc123');
       expect(bids[0].cpm).to.equal(1.23);
       expect(bids[0].mediaType).to.equal(NATIVE);
     });
@@ -1493,40 +1515,6 @@ describe('The Criteo bidding adapter', function () {
       expect(bids[0].ad).to.equal('test-ad');
       expect(bids[0].width).to.equal(728);
       expect(bids[0].height).to.equal(90);
-    });
-
-    it('should generate unique adIds if none are returned by the endpoint', function () {
-      const response = {
-        body: {
-          slots: [{
-            impid: 'test-requestId',
-            cpm: 1.23,
-            creative: 'test-ad',
-            width: 300,
-            height: 250,
-          }, {
-            impid: 'test-requestId',
-            cpm: 4.56,
-            creative: 'test-ad',
-            width: 728,
-            height: 90,
-          }],
-        },
-      };
-      const request = {
-        bidRequests: [{
-          adUnitCode: 'test-requestId',
-          bidId: 'test-bidId',
-          sizes: [[300, 250], [728, 90]],
-          params: {
-            networkId: 456,
-          }
-        }]
-      };
-      const bids = spec.interpretResponse(response, request);
-      expect(bids).to.have.lengthOf(2);
-      const prebidBids = bids.map(bid => Object.assign(createBid(CONSTANTS.STATUS.GOOD, request.bidRequests[0]), bid));
-      expect(prebidBids[0].adId).to.not.equal(prebidBids[1].adId);
     });
 
     [{

@@ -1141,7 +1141,7 @@ describe('PubMatic adapter', function () {
         expect(data.device.dnt).to.equal((navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0);
         expect(data.device.h).to.equal(screen.height);
         expect(data.device.w).to.equal(screen.width);
-        expect(data.device.language).to.equal(navigator.language);
+        expect(data.device.language).to.equal(navigator.language.split('-')[0]);
         expect(data.device.newkey).to.equal('new-device-data');// additional data from config
         sandbox.restore();
       });
