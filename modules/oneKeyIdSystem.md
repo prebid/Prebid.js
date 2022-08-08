@@ -10,29 +10,35 @@ Background information:
 - [prebid/addressability-framework](https://github.com/prebid/addressability-framework)
 - [prebid/paf-mvp-implementation](https://github.com/prebid/paf-mvp-implementation)
 
-## OneKey Configuration
+It can be added to you Prebid.js package with:
 
-The oneKeyData module depends on paf-lib.js existing in the page.
+{: .alert.alert-info :}
+gulp build –modules=userId,oneKeyIdSystem
 
-Compile the oneKeyData module into your Prebid build.
-You will also want to add the oneKeyRtdProvider module as well.
+⚠️ This module works in association with a RTD module. See [oneKeyRtdProvider](oneKeyRtdProvider.md).
 
-`gulp build --modules=userId,oneKeyIdSystem,rtdModule,oneKeyRtdProvider,appnexusBidAdapter`
+#### OneKey Registration
 
-There are no custom configuration parameters for OneKey. The module
-will retrieve the OneKey data from the page if available and pass the 
-information to bidders. Here is a configuration example:
+OneKey is a community based Framework with a decentralized approach.
+Go to [onekey.community](https://onekey.community/) for more details.
+
+#### OneKey Configuration
+
+{: .table .table-bordered .table-striped }
+| Param under userSync.userIds[] | Scope | Type | Description | Example |
+| --- | --- | --- | --- | --- |
+| name | Required | String | The name of this module | `"oneKeyData"` |
+
+
+#### OneKey Exemple
 
 ```javascript
 pbjs.setConfig({
-  userSync: {
-      userIds: [{
-          name: "oneKeyData",
-          params: {}
-      }]
-    }],
-    auctionDelay: 50    // example auction delay, applies to all userId modules
-  }
+    userSync: {
+        userIds: [{
+            name: 'oneKeyData'
+        }]
+    }
 });
 ```
 
@@ -63,7 +69,6 @@ Bidders will receive the data in the following format:
     }
 }
 ```
-
 
 If the bidder elects to use pbjs.getUserIdsAsEids() then the format will be:
 
