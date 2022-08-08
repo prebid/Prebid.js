@@ -30,7 +30,7 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 const BIDDER_CODE = 'ix';
 const ALIAS_BIDDER_CODE = 'roundel';
 const GLOBAL_VENDOR_ID = 10;
-const SECURE_BID_URL = 'http://localhost:8082/cygnus';
+const SECURE_BID_URL = 'https://htlb.casalemedia.com/openrtb/pbjs';
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO, NATIVE];
 const BANNER_ENDPOINT_VERSION = 7.2;
 const VIDEO_ENDPOINT_VERSION = 8.1;
@@ -99,32 +99,6 @@ const VIDEO_PARAMS_ALLOW_LIST = [
   'maxbitrate', 'boxingallowed', 'playbackmethod', 'playbackend',
   'delivery', 'pos', 'companionad', 'api', 'companiontype', 'ext',
   'playerSize', 'w', 'h'
-];
-const NATIVE_ALLOWED_PROPERTIES = [
-  'title',
-  'icon',
-  'image',
-  'sponsoredBy',
-  'body',
-  'rating',
-  'likes',
-  'downloads',
-  'price',
-  'salePrice',
-  'phone',
-  'address',
-  'body2',
-  'displayUrl',
-  'cta',
-  'video',
-  'rendererUrl',
-  'sendTargetingKeys',
-  'adTemplate',
-  'type',
-  'ext',
-  'privacyLink',
-  'clickUrl',
-  'privacyIcon'
 ];
 const LOCAL_STORAGE_KEY = 'ixdiag';
 let hasRegisteredHandler = false;
@@ -508,19 +482,13 @@ function isValidBidFloorParams(bidFloor, bidFloorCur) {
     bidFloorCur.match(curRegex));
 }
 
-function nativeMediaTypeValid(nativeObj) {
-  if (nativeObj === undefined) {
-    return true;
+function nativeMediaTypeValid(bid) {
+  const nativeMediaTypes = deepAccess(bid, 'mediaTypes.native');
+  if (nativeMediaTypes === undefined) {
+    return true
   }
 
-  for (const property in nativeObj) {
-    if (!NATIVE_ALLOWED_PROPERTIES.includes(property)) {
-      logError('IX Bid Adapter: native', { bidder: BIDDER_CODE, code: ERROR_CODES.PROPERTY_NOT_INCLUDED });
-      return false;
-    }
-  }
-
-  return true;
+  return bid.nativeOrtbRequest && Array.isArray(bid.nativeOrtbRequest.assets) && bid.nativeOrtbRequest.assets.length > 0
 }
 
 /**
@@ -1347,7 +1315,6 @@ export const spec = {
     const paramsSize = deepAccess(bid, 'params.size');
     const mediaTypeBannerSizes = deepAccess(bid, 'mediaTypes.banner.sizes');
     const mediaTypeVideoRef = deepAccess(bid, 'mediaTypes.video');
-    const mediaTypeNativeRef = deepAccess(bid, 'mediaTypes.native');
     const mediaTypeVideoPlayerSize = deepAccess(bid, 'mediaTypes.video.playerSize');
     const hasBidFloor = bid.params.hasOwnProperty('bidFloor');
     const hasBidFloorCur = bid.params.hasOwnProperty('bidFloorCur');
@@ -1414,7 +1381,7 @@ export const spec = {
       }
     }
 
-    return nativeMediaTypeValid(mediaTypeNativeRef);
+    return nativeMediaTypeValid(bid);
   },
 
   /**
