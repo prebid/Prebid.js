@@ -1665,7 +1665,7 @@ describe('IndexexchangeAdapter', function () {
         }
       }
       const requests = spec.buildRequests(validBids, DEFAULT_OPTION);
-      const { ext: { gpid } } = JSON.parse(requests[0].data.r).imp[0];
+      const { ext: { gpid } } = requests[0].data.imp[0];
       utils.getGptSlotInfoForAdUnitCode.restore();
       expect(gpid).to.equal(`${AD_UNIT_CODE}#adunit-code-3-div-id`);
     });
@@ -1686,7 +1686,7 @@ describe('IndexexchangeAdapter', function () {
         }
       }
       const requests = spec.buildRequests(validBids, DEFAULT_OPTION);
-      const imp = JSON.parse(requests[0].data.r).imp[0];
+      const imp = requests[0].data.imp[0];
       utils.getGptSlotInfoForAdUnitCode.restore();
       expect(imp.ext.gpid).to.be.undefined;
       expect(imp.ext.dfp_ad_unit_code).to.equal(AD_UNIT_CODE)
@@ -1708,7 +1708,7 @@ describe('IndexexchangeAdapter', function () {
       }
       const requests = spec.buildRequests(validBids, DEFAULT_OPTION);
 
-      const imp = JSON.parse(requests[0].data.r).imp[0];
+      const imp = requests[0].data.imp[0];
       utils.getGptSlotInfoForAdUnitCode.restore();
       expect(imp.ext).to.be.undefined;
     });
