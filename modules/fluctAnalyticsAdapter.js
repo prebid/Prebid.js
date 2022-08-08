@@ -254,7 +254,7 @@ const sendMessage = (auctionId) => {
           fbs_source: adserverTargeting?.fbs_source ?? null,
         },
         adUnitCode: code,
-        eids_source: userIdAsEids?.map(userIdAsEid => userIdAsEid.source) ?? null,
+        eidsSource: userIdAsEids?.map(userIdAsEid => userIdAsEid.source) ?? null,
         bidder,
         bidWon,
         cpm,

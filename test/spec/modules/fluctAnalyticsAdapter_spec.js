@@ -251,7 +251,7 @@ describe('fluct analytics adapter', () => {
           cpm: 5.386152744293213,
           creativeId: "11017985",
           dwid: "dwid1",
-          eids_source: null,
+          eidsSource: null,
           height: 100,
           netRevenue: true,
           noBid: false,
