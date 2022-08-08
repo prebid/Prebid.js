@@ -1,6 +1,6 @@
+import { isFn, deepAccess, logMessage } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'boldwin';
 const AD_URL = 'https://ssp.videowalldirect.com/pbjs';
@@ -24,8 +24,8 @@ function isBidResponseValid(bid) {
 }
 
 function getBidFloor(bid) {
-  if (!utils.isFn(bid.getFloor)) {
-    return utils.deepAccess(bid, 'params.bidfloor', 0);
+  if (!isFn(bid.getFloor)) {
+    return deepAccess(bid, 'params.bidfloor', 0);
   }
 
   try {
@@ -45,9 +45,8 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: (bid) => {
-    return Boolean(bid.bidId && bid.params && bid.params.placementId);
+    return Boolean(bid.bidId && bid.params && (bid.params.placementId || bid.params.endpointId));
   },
-
   buildRequests: (validBidRequests = [], bidderRequest) => {
     let winTop = window;
     let location;
@@ -56,7 +55,7 @@ export const spec = {
       winTop = window.top;
     } catch (e) {
       location = winTop.location;
-      utils.logMessage(e);
+      logMessage(e);
     };
     let placements = [];
     let request = {
@@ -80,7 +79,7 @@ export const spec = {
 
     for (let i = 0; i < len; i++) {
       let bid = validBidRequests[i];
-      const { mediaTypes } = bid;
+      const { mediaTypes, params } = bid;
       const placement = {};
       let sizes;
       if (mediaTypes) {
@@ -109,9 +108,18 @@ export const spec = {
           placement.native = mediaTypes[NATIVE];
         }
       }
+
+      const { placementId, endpointId } = params;
+      if (placementId) {
+        placement.placementId = placementId;
+        placement.type = 'publisher';
+      } else if (endpointId) {
+        placement.endpointId = endpointId;
+        placement.type = 'network';
+      }
+
       placements.push({
         ...placement,
-        placementId: bid.params.placementId,
         bidId: bid.bidId,
         sizes: sizes || [],
         wPlayer: sizes ? sizes[0] : 0,
