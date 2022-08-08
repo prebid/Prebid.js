@@ -4,10 +4,8 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { BANNER, VIDEO } from '../src/mediaTypes.js'
 import {
-  _map,
   deepAccess,
   deepSetValue,
-  flatten,
   logError,
   mergeDeep,
   parseSizesInput
@@ -20,9 +18,7 @@ const BIDDER_CODE = 'caroda'
 const GVLID = 954
 const carodaDomain = 'prebid.caroda.io'
 
-// const OUTSTREAM_RENDERER_URL = 'https://s2.adform.net/banners/scripts/video/outstream/render.js';
-
-// some state info is required to synchronize wi
+// some state info is required to synchronize with Caroda ad server
 const topUsableWindow = getTopUsableWindow()
 const pageViewId = topUsableWindow.carodaPageViewId || Math.floor(Math.random() * 1e9)
 
@@ -36,24 +32,23 @@ export const spec = {
     return ctok && placementId
   },
   buildRequests: (validBidRequests, bidderRequest) => {
-    const ortbCommon = getOrtbCommon(bidderRequest)
+    const ortbCommon = getORTBCommon(bidderRequest)
     const priceType =
       setOnAny(validBidRequests, 'params.priceType') ||
       'net'
     const test = setOnAny(validBidRequests, 'params.test')
     const currency = getConfig('currency.adServerCurrency')
-    const cur = currency && [currency]
     const eids = setOnAny(validBidRequests, 'userIdAsEids')
     const schain = setOnAny(validBidRequests, 'schain')
     const request = {
       id: bidderRequest.auctionId,
+      currency,
       hb_version: '$prebid.version$',
       ...ortbCommon,
-      pt: priceType,
-      cur
+      price_type: priceType,
+      schain
     }
     if (test) {
-      request.is_debug = !!test
       request.test = 1
     }
     if (config.getConfig('coppa')) {
@@ -77,16 +72,10 @@ export const spec = {
     if (eids) {
       deepSetValue(request, 'user.eids', eids)
     }
-    if (schain) {
-      deepSetValue(request, 'schain', schain)
-    }
-    return getImps(validBidRequests).map(imp => ({
+    return getImps(validBidRequests, request).map(imp => ({
       method: 'POST',
       url: 'https://' + carodaDomain + '/api/hb?entry_id=' + pageViewId,
-      data: JSON.stringify({
-        ...request,
-        ...imp
-      })
+      data: JSON.stringify(imp)
     }))
   },
   interpretResponse: function (serverResponse, { bids }) {
@@ -119,7 +108,6 @@ export const spec = {
         .filter(Boolean)
     } catch (e) {
       logError(BIDDER_CODE, ': caught', e)
-      return
     }
   }
 }
@@ -145,71 +133,71 @@ function getTopUsableWindow () {
   return res
 }
 
-function getOrtbCommon (bidderRequest) {
-    let app, site
-    const commonFpd = bidderRequest.ortb2 || {}
-    let { user } = commonFpd
-    if (typeof getConfig('app') === 'object') {
-      app = getConfig('app') || {}
-      if (commonFpd.app) {
-        mergeDeep(app, commonFpd.app)
-      }
-    } else {
-      site = getConfig('site') || {}
-      if (commonFpd.site) {
-        mergeDeep(site, commonFpd.site)
-      }
-      if (!site.page) {
-        site.page = bidderRequest.refererInfo.page
-      }
+function getORTBCommon (bidderRequest) {
+  let app, site
+  const commonFpd = bidderRequest.ortb2 || {}
+  let { user } = commonFpd
+  if (typeof getConfig('app') === 'object') {
+    app = getConfig('app') || {}
+    if (commonFpd.app) {
+      mergeDeep(app, commonFpd.app)
     }
-    const device = getConfig('device') || {}
-    device.w = device.w || window.innerWidth
-    device.h = device.h || window.innerHeight
-    device.ua = device.ua || navigator.userAgent
-    return {
-        app,
-        site,
-        user,
-        device
+  } else {
+    site = getConfig('site') || {}
+    if (commonFpd.site) {
+      mergeDeep(site, commonFpd.site)
     }
+    if (!site.page) {
+      site.page = bidderRequest.refererInfo.page
+    }
+  }
+  const device = getConfig('device') || {}
+  device.w = device.w || window.innerWidth
+  device.h = device.h || window.innerHeight
+  device.ua = device.ua || navigator.userAgent
+  return {
+    app,
+    site,
+    user,
+    device
+  }
 }
 
-function getImps (validBidRequests) {
-    return validBidRequests.map((bid, id) => {
-        bid.netRevenue = pt
-        const floorInfo = bid.getFloor
-          ? bid.getFloor({
-              currency: currency || 'USD'
-            })
-          : {}
-        const bidfloor = floorInfo.floor
-        const bidfloorcur = floorInfo.currency
-        const { ctok, placementId } = bid.params
-        const imp = {
-          id: id + 1,
-          ctok,
-          placementId,
-          bidfloor,
-          bidfloorcur
-        }
-        const bannerParams = deepAccess(bid, 'mediaTypes.banner')
-        if (bannerParams && bannerParams.sizes) {
-          const sizes = parseSizesInput(bannerParams.sizes)
-          const format = sizes.map(size => {
-            const [width, height] = size.split('x')
-            const w = parseInt(width, 10)
-            const h = parseInt(height, 10)
-            return { w, h }
-          })
-          imp.banner = {
-            format
-          }
-        }
-        const videoParams = deepAccess(bid, 'mediaTypes.video')
-        if (videoParams) {
-          imp.video = videoParams
-        }
-        return imp
-    })
+function getImps (validBidRequests, common) {
+  return validBidRequests.map((bid, id) => {
+    const floorInfo = bid.getFloor
+      ? bid.getFloor({ currency: common.currency || 'EUR' })
+      : {}
+    const bidfloor = floorInfo.floor
+    const bidfloorcur = floorInfo.currency
+    const { ctok, placementId } = bid.params
+    const imp = {
+      id: id + 1,
+      ctok,
+      bidfloor,
+      bidfloorcur,
+      ...common
+    }
+    const bannerParams = deepAccess(bid, 'mediaTypes.banner')
+    if (bannerParams && bannerParams.sizes) {
+      const sizes = parseSizesInput(bannerParams.sizes)
+      const format = sizes.map(size => {
+        const [width, height] = size.split('x')
+        const w = parseInt(width, 10)
+        const h = parseInt(height, 10)
+        return { w, h }
+      })
+      imp.banner = {
+        format
+      }
+    }
+    if (placementId) {
+      imp.placementId = placementId
+    }
+    const videoParams = deepAccess(bid, 'mediaTypes.video')
+    if (videoParams) {
+      imp.video = videoParams
+    }
+    return imp
+  })
 }
