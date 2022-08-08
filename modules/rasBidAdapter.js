@@ -1,3 +1,4 @@
+import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { isEmpty, getAdUnitSizes, parseSizesInput, deepAccess } from '../src/utils.js';
@@ -90,13 +91,17 @@ const getSlots = (bidRequests) => {
   const batchSize = bidRequests.length;
   for (let i = 0; i < batchSize; i++) {
     const adunit = bidRequests[i];
+    const pos = utils.deepAccess(adunit, 'params.pos');
+
     const sizes = parseSizesInput(getAdUnitSizes(adunit)).join(',');
+
     queryString += `&slot${i}=${encodeURIComponent(adunit.params.slot)}&id${i}=${encodeURIComponent(adunit.bidId)}&composition${i}=CHILD`;
+
     if (sizes.length) {
       queryString += `&iusizes${i}=${encodeURIComponent(sizes)}`;
     }
-    if (Object.prototype.hasOwnProperty.call(adunit.params, 'pos')) {
-      queryString += `&pos${i}=${encodeURIComponent(adunit.params.pos)}`;
+    if (pos !== undefined) {
+      queryString += `&pos${i}=${encodeURIComponent(pos)}`;
     }
   }
   return queryString;
