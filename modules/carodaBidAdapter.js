@@ -20,7 +20,6 @@ const carodaDomain = 'prebid.caroda.io'
 
 // some state info is required to synchronize with Caroda ad server
 const topUsableWindow = getTopUsableWindow()
-const pageViewId = topUsableWindow.carodaPageViewId || Math.floor(Math.random() * 1e9)
 
 export const spec = {
   code: BIDDER_CODE,
@@ -32,6 +31,7 @@ export const spec = {
     return ctok && placementId
   },
   buildRequests: (validBidRequests, bidderRequest) => {
+    const pageViewId = topUsableWindow.carodaPageViewId || Math.floor(Math.random() * 1e9)    
     const ortbCommon = getORTBCommon(bidderRequest)
     const priceType =
       setOnAny(validBidRequests, 'params.priceType') ||
