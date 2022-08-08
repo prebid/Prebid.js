@@ -10,51 +10,54 @@ Background information:
 - [prebid/addressability-framework](https://github.com/prebid/addressability-framework)
 - [prebid/paf-mvp-implementation](https://github.com/prebid/paf-mvp-implementation)
 
-### Publisher Usage
 
-The OneKey RTD module depends on paf-lib.js existing in the page.
+## Implementation for Publishers
 
-Compile the OneKey RTD module into your Prebid build:
+### Integration
 
-`gulp build --modules=userId,oneKeyIdSystem,rtdModule,oneKeyRtdProvider,appnexusBidAdapter`
-
-Add the OneKey RTD provider to your Prebid config. In this example we will configure
-a sample proxyHostName. See the "Parameter Descriptions" below for more detailed information
-of the configuration parameters.
+1) Compile the OneKey RTD Provider and the OneKey UserID sub-module into your Prebid build. 
 
 ```
-pbjs.setConfig(
-    ...
+gulp build --modules=rtdModule,oneKeyRtdProvider
+```
+
+2) Publishers must register OneKey RTD Provider as a Real Time Data provider by using `setConfig`
+to load a Prebid Config containing a `realTimeData.dataProviders` array:
+
+```javascript
+pbjs.setConfig({
+    ...,
     realTimeData: {
-        auctionDelay: 5000,
-        dataProviders: [
+      auctionDelay: 100,
+      dataProviders: [
             {
-                name: "paf",
-                waitForIt: true,
-                params: {
-                    proxyHostName: "cmp.pafdemopublisher.com"
-                }
+              name: 'oneKey',
+              waitForIt: true
             }
         ]
     }
-    ...
-}
-```
+});
+``` 
 
-### Parameter Descriptions for the OneKey Configuration Section
+3) Configure the OneKey RTD Provider with the bidders that are part of the OneKey community. If there is no bidders specified, the RTD provider
+will share OneKey data with all adapters.
+
+⚠️ This module works in association with a RTD module. See [oneKeyIdSystem](oneKeyIdSystem.md).
+
+### Parameters
 
 | Name  |Type | Description   | Notes  |
 | :------------ | :------------ | :------------ |:------------ |
 | name | String | Real time data module name | Always 'oneKey' |
 | waitForIt | Boolean | Required to ensure that the auction is delayed until prefetch is complete | Optional. Defaults to false |
-| params | Object | | |
-| params.proxyHostName | String | servername of the OneKey Proxy which will generate seeds. | Required |
+| params | Object | | Optional |
 | params.bidders | Array | List of bidders to restrict the data to. | Optional |
 
-### Data for bidders
+## Implementation for Bidders
 
-The data will provided to the bidders using the `ortb2` object. You can find the
-format of the data at https://github.com/prebid/addressability-framework.
+### Bidder Requests
+
+The data will provided to the bidders using the `ortb2` object.
 The following is an example of the format of the data:
 
 ```json
@@ -78,7 +81,6 @@ The following is an example of the format of the data:
 }
 ```
 
-
 ```json
 "ortb2Imp": {
     "ext": {
@@ -100,27 +102,27 @@ along with the releveant content_id using the meta.paf field. The paf-lib will
 be responsible for collecting all of the transmission responses.
 
 Below is an example of setting a transmission response:
+
 ```javascript
 bid.meta.paf = {
-    "content_id": "90141190-26fe-497c-acee-4d2b649c2112",
-    "transmission": {
-        "version": "0.1",
-        "contents": [
+    content_id: "90141190-26fe-497c-acee-4d2b649c2112",
+    transmission: {
+        version: "0.1",
+        contents: [
             {
-                "transaction_id": "f55a401d-e8bb-4de1-a3d2-fa95619393e8",
-                "content_id": "90141190-26fe-497c-acee-4d2b649c2112"
+                transaction_id: "f55a401d-e8bb-4de1-a3d2-fa95619393e8",
+                content_id: "90141190-26fe-497c-acee-4d2b649c2112"
             }
         ],
-        "status": "success",
-        "details": "",
-        "receiver": "dsp1.com",
-        "source": {
-            "domain": "dsp1.com",
-            "timestamp": 1639589531,
-            "signature": "d01c6e83f14b4f057c2a2a86d320e2454fc0c60df4645518d993b5f40019d24c"
+        status: "success",
+        details: "",
+        receiver: "dsp1.com",
+        source: {
+            domain: "dsp1.com",
+            timestamp: 1639589531,
+            signature: "d01c6e83f14b4f057c2a2a86d320e2454fc0c60df4645518d993b5f40019d24c"
         },
-        "children": []
+        children: []
     }
 }
 ```
-
