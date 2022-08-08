@@ -59,7 +59,7 @@ function getBidFloor(bid) {
 
 function getSource(validBidRequests) {
   let source = {
-    tid: utils.deepAccess(validBidRequests[0], 'ortb2Imp.ext.tid')
+    tid: validBidRequests[0].transactionId
   };
   if (validBidRequests[0].schain) {
     utils.deepSetValue(source, 'ext.schain', validBidRequests[0].schain);
@@ -146,10 +146,11 @@ function getImpression(bidRequest) {
   };
 
   const gpid = utils.deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
-  if (gpid) {
-    impression.ext = {
-      gpid: gpid
-    }
+  const tid = utils.deepAccess(bidRequest, 'ortb2Imp.ext.tid');
+  if (gpid || tid) {
+    impression.ext = {}
+    if (gpid) { impression.ext.gpid = gpid }
+    if (tid) { impression.ext.tid = tid }
   }
 
   const tagid = gpid || bidRequest.params.placementId;

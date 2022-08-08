@@ -191,6 +191,7 @@ describe('ttdBidAdapter', function () {
         }
       },
       'sizes': [[300, 250], [300, 600]],
+      'transactionId': '1111474f-58b1-4368-b812-84f8c937a099',
       'adUnitCode': 'div-gpt-ad-1460505748561-0',
       'bidId': '243310435309b5',
       'bidderRequestId': '18084284054531',
@@ -274,7 +275,7 @@ describe('ttdBidAdapter', function () {
     it('sends transaction id in source.tid', function () {
       const requestBody = testBuildRequests(baseBannerBidRequests, baseBidderRequest).data;
       expect(requestBody.source).to.be.not.null;
-      expect(requestBody.source.tid).to.equal('8651474f-58b1-4368-b812-84f8c937a099');
+      expect(requestBody.source.tid).to.equal('1111474f-58b1-4368-b812-84f8c937a099');
     });
 
     it('includes the ad size in the bid request', function () {
@@ -501,6 +502,7 @@ describe('ttdBidAdapter', function () {
         }
       },
       'sizes': [[300, 250], [300, 600]],
+      'transactionId': '1111474f-58b1-4368-b812-84f8c937a099',
       'adUnitCode': 'div-gpt-ad-1460505748561-0',
       'bidId': 'small',
       'bidderRequestId': '18084284054531',
@@ -524,6 +526,7 @@ describe('ttdBidAdapter', function () {
         }
       },
       'sizes': [[728, 90]],
+      'transactionId': '825c1228-ca8c-4657-b40f-2df500621527',
       'adUnitCode': 'div-gpt-ad-91515710-0',
       'bidId': 'large',
       'bidderRequestId': '18084284054531',
@@ -553,6 +556,12 @@ describe('ttdBidAdapter', function () {
     it('sends multiple impressions', function () {
       const requestBody = testBuildRequests(baseBannerMultipleBidRequests, baseBidderRequest).data;
       expect(requestBody.imp.length).to.equal(2);
+      expect(requestBody.source).to.be.not.null;
+      expect(requestBody.source.tid).to.equal('1111474f-58b1-4368-b812-84f8c937a099');
+      expect(requestBody.imp[0].ext).to.be.not.null;
+      expect(requestBody.imp[0].ext.tid).to.equal('8651474f-58b1-4368-b812-84f8c937a099');
+      expect(requestBody.imp[1].ext).to.be.not.null;
+      expect(requestBody.imp[1].ext.tid).to.equal('12345678-58b1-4368-b812-84f8c937a099');
     });
 
     it('sends the right tag ids for each ad unit', function () {
@@ -612,6 +621,7 @@ describe('ttdBidAdapter', function () {
           'tid': '8651474f-58b1-4368-b812-84f8c937a099',
         }
       },
+      'transactionId': '1111474f-58b1-4368-b812-84f8c937a099',
       'adUnitCode': 'div-gpt-ad-1460505748561-0',
       'bidId': '243310435309b5',
       'bidderRequestId': '18084284054531',
@@ -676,6 +686,7 @@ describe('ttdBidAdapter', function () {
           'tid': '8651474f-58b1-4368-b812-84f8c937a099',
         }
       },
+      'transactionId': '1111474f-58b1-4368-b812-84f8c937a099',
       'adUnitCode': 'div-gpt-ad-1460505748561-0',
       'bidId': '243310435309b5',
       'bidderRequestId': '18084284054531',
