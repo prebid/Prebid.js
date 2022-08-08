@@ -22,6 +22,7 @@ export const SUPPORTED_ID_SYSTEMS = {
   'parrableId': 1,
   'pubcid': 1,
   'tdid': 1,
+  'pubProvidedId': 1
 };
 const storage = getStorageManager({ gvlid: GVLID, bidderCode: BIDDER_CODE });
 
