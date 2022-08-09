@@ -114,6 +114,23 @@ describe('nextMillenniumBidAdapterTests', function() {
     expect(JSON.parse(request[0].data).ext.nextMillennium.elOffsets).to.be.an('object')
   })
 
+  it('Check if refferer was added', function() {
+    const request = spec.buildRequests(bidRequestData)
+    expect(JSON.parse(request[0].data).device.referrer).to.exist
+  })
+
+  it('Check if imp object was added', function() {
+    const request = spec.buildRequests(bidRequestData)
+    expect(JSON.parse(request[0].data).imp).to.be.an('array')
+  })
+
+  it('Check if imp prebid stored id is correct', function() {
+    const request = spec.buildRequests(bidRequestData)
+    const requestData = JSON.parse(request[0].data);
+    const storedReqId = requestData.ext.prebid.storedrequest.id;
+    expect(requestData.imp[0].ext.prebid.storedrequest.id).to.equal(storedReqId)
+  })
+
   it('Test getUserSyncs function', function () {
     const syncOptions = {
       'iframeEnabled': true
