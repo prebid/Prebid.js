@@ -28,10 +28,12 @@ export const spec = {
   isBidRequestValid: bid => {
     const params = bid.params || {}
     const { ctok, placementId } = params
-    return ctok && placementId
+    return typeof ctok === 'string' && (
+      typeof placementId === 'string' ||
+      typeof placementId === 'undefined')
   },
   buildRequests: (validBidRequests, bidderRequest) => {
-    const pageViewId = topUsableWindow.carodaPageViewId || Math.floor(Math.random() * 1e9)    
+    const pageViewId = topUsableWindow.carodaPageViewId || Math.floor(Math.random() * 1e9)
     const ortbCommon = getORTBCommon(bidderRequest)
     const priceType =
       setOnAny(validBidRequests, 'params.priceType') ||
@@ -194,7 +196,7 @@ function getImps (validBidRequests, common) {
       }
     }
     if (placementId) {
-      imp.placementId = placementId
+      imp.placement_id = placementId
     }
     const videoParams = deepAccess(bid, 'mediaTypes.video')
     if (videoParams) {
