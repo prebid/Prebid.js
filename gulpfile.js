@@ -198,7 +198,7 @@ function bundle(dev, moduleArr) {
 
   var entries = [helpers.getBuiltPrebidCoreFile(dev)].concat(helpers.getBuiltModules(dev, modules));
 
-  var outputFileName = argv.bundleName ? argv.bundleName : 'prebid.js';
+  var outputFileName = argv.bundleName ? argv.bundleName : 'pbLibrary.js';
 
   // change output filename if argument --tag given
   if (argv.tag && argv.tag.length) {
