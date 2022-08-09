@@ -1,9 +1,10 @@
+import { isFn, isPlainObject } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
-import * as utils from '../src/utils.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
-const storageManager = getStorageManager();
+const storageManager = getStorageManager({bidderCode: 'orbidder'});
 
 /**
  * Determines whether or not the given bid response is valid.
@@ -38,6 +39,7 @@ function isBidResponseValid(bidResponse) {
 
 export const spec = {
   code: 'orbidder',
+  gvlid: 559,
   hostname: 'https://orbidder.otto.de',
   supportedMediaTypes: [BANNER, NATIVE],
 
@@ -77,11 +79,14 @@ export const spec = {
    * @return The requests for the orbidder /bid endpoint, i.e. the server.
    */
   buildRequests(validBidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     const hostname = this.getHostname();
     return validBidRequests.map((bidRequest) => {
       let referer = '';
       if (bidderRequest && bidderRequest.refererInfo) {
-        referer = bidderRequest.refererInfo.referer || '';
+        referer = bidderRequest.refererInfo.page || '';
       }
 
       bidRequest.params.bidfloor = getBidFloor(bidRequest);
@@ -145,7 +150,7 @@ export const spec = {
  * @returns {float||undefined}
  */
 function getBidFloor(bid) {
-  if (!utils.isFn(bid.getFloor)) {
+  if (!isFn(bid.getFloor)) {
     return bid.params.bidfloor;
   }
 
@@ -154,7 +159,7 @@ function getBidFloor(bid) {
     mediaType: '*',
     size: '*'
   });
-  if (utils.isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'EUR') {
+  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'EUR') {
     return floor.floor;
   }
   return undefined;

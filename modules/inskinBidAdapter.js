@@ -1,4 +1,5 @@
-import * as utils from '../src/utils.js';
+import { createTrackPixelHtml } from '../src/utils.js';
+import { loadExternalScript } from '../src/adloader.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'inskin';
@@ -49,11 +50,27 @@ export const spec = {
       placements: [],
       time: Date.now(),
       user: {},
-      url: bidderRequest.refererInfo.referer,
+      url: bidderRequest.refererInfo.page,
       enableBotFiltering: true,
       includePricingData: true,
       parallel: true
     }, validBidRequests[0].params);
+
+    if (validBidRequests[0].schain) {
+      data.rtb = {
+        schain: validBidRequests[0].schain
+      };
+    } else if (data.publisherId) {
+      data.rtb = {
+        schain: {
+          ext: {
+            sid: String(data.publisherId)
+          }
+        }
+      };
+    }
+
+    delete data.publisherId;
 
     data.keywords = data.keywords || [];
     const restrictions = [];
@@ -66,31 +83,29 @@ export const spec = {
         gdprConsentRequired: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true
       };
 
-      if (bidderRequest.gdprConsent.apiVersion === 2) {
-        const purposes = [
-          {id: 1, kw: 'nocookies'},
-          {id: 2, kw: 'nocontext'},
-          {id: 3, kw: 'nodmp'},
-          {id: 4, kw: 'nodata'},
-          {id: 7, kw: 'noclicks'},
-          {id: 9, kw: 'noresearch'}
-        ];
+      const purposes = [
+        {id: 1, kw: 'nocookies'},
+        {id: 2, kw: 'nocontext'},
+        {id: 3, kw: 'nodmp'},
+        {id: 4, kw: 'nodata'},
+        {id: 7, kw: 'noclicks'},
+        {id: 9, kw: 'noresearch'}
+      ];
 
-        const d = bidderRequest.gdprConsent.vendorData;
+      const d = bidderRequest.gdprConsent.vendorData;
 
-        if (d) {
-          if (d.purposeOneTreatment) {
-            data.keywords.push('cst-nodisclosure');
-            restrictions.push('nodisclosure');
-          }
-
-          purposes.map(p => {
-            if (!checkConsent(p.id, d)) {
-              data.keywords.push('cst-' + p.kw);
-              restrictions.push(p.kw);
-            }
-          });
+      if (d) {
+        if (d.purposeOneTreatment) {
+          data.keywords.push('cst-nodisclosure');
+          restrictions.push('nodisclosure');
         }
+
+        purposes.map(p => {
+          if (!checkConsent(p.id, d)) {
+            data.keywords.push('cst-' + p.kw);
+            restrictions.push(p.kw);
+          }
+        });
       }
     }
 
@@ -195,9 +210,9 @@ export const spec = {
           bidPrice: bidsMap[e.data.bidId].price,
           serverResponse
         };
-        const script = document.createElement('script');
-        script.src = 'https://cdn.inskinad.com/isfe/publishercode/' + bidsMap[e.data.bidId].params.siteId + '/default.js?autoload&id=' + id;
-        document.getElementsByTagName('head')[0].appendChild(script);
+
+        const url = 'https://cdn.inskinad.com/isfe/publishercode/' + bidsMap[e.data.bidId].params.siteId + '/default.js?autoload&id=' + id;
+        loadExternalScript(url, BIDDER_CODE);
       });
     }
 
@@ -277,7 +292,7 @@ function getSize(sizes) {
 }
 
 function retrieveAd(bidId, decision) {
-  return "<script>window.top.postMessage({from: 'ism-bid', bidId: '" + bidId + "'}, '*');\x3c/script>" + utils.createTrackPixelHtml(decision.impressionUrl);
+  return "<script>window.top.postMessage({from: 'ism-bid', bidId: '" + bidId + "'}, '*');\x3c/script>" + createTrackPixelHtml(decision.impressionUrl);
 }
 
 function checkConsent(P, d) {

@@ -3,6 +3,21 @@
 ```
 userIdAsEids = [
     {
+        source: '33across.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
+        }]
+    },
+    {
+        source: 'trustpid.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
+        }]
+    },
+
+    {
         source: 'pubcid.org',
         uids: [{
             id: 'some-random-id-value',
@@ -18,6 +33,22 @@ userIdAsEids = [
             ext: {
                 rtiPartner: 'TDID'
             }
+        }]
+    },
+
+    {
+        source: 'navegg.com',
+        uids: [{
+            id: 'naveggId',
+            atype: 1
+        }]
+    },
+
+    {
+        source: 'justtag.com',
+        uids: [{
+            id: 'justId',
+            atype: 1
         }]
     },
 
@@ -39,6 +70,13 @@ userIdAsEids = [
                 abTestingControlGroup: false
             }
         }]
+    },
+
+    {
+        source: 'flashtalking.com',
+        uids: [{
+            id: 'the-ids-object-stringified',
+            atype: 1
     },
 
     {
@@ -117,14 +155,6 @@ userIdAsEids = [
     },
 
     {
-        source: 'nextroll.com',
-        uids: [{
-            id: 'some-random-id-value',
-            atype: 1
-        }]
-    },
-
-    {
         source: 'audigent.com',
         uids: [{
             id: 'some-random-id-value',
@@ -183,14 +213,28 @@ userIdAsEids = [
         }]
     },
     {
-        source: 'akamai.com',
+        source: 'deepintent.com',
         uids: [{
             id: 'some-random-id-value',
-            atype: 1
+            atype: 3
         }]
     },
     {
-        source: 'deepintent.com',
+         source: 'kpuid.com',
+         uids: [{
+              id: 'some-random-id-value',
+              atype: 3
+         }]
+    },
+    {
+         source: 'yahoo.com',
+         uids: [{
+              id: 'some-random-id-value',
+              atype: 3
+         }]
+    },
+    {
+        source: 'thenewco.it',
         uids: [{
             id: 'some-random-id-value',
             atype: 3

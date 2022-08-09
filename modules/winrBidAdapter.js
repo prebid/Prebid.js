@@ -1,12 +1,23 @@
-import * as utils from '../src/utils.js';
-import { config } from '../src/config.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
-import find from 'core-js-pure/features/array/find.js';
-import includes from 'core-js-pure/features/array/includes.js';
-import { getStorageManager } from '../src/storageManager.js';
-
-export const storage = getStorageManager();
+import {
+  convertCamelToUnderscore,
+  convertTypes,
+  deepAccess,
+  getBidRequest,
+  getParameterByName,
+  isArray,
+  isEmpty,
+  isFn,
+  isNumber,
+  isPlainObject,
+  logError,
+  transformBidderParamKeywords
+} from '../src/utils.js';
+import {config} from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER} from '../src/mediaTypes.js';
+import {find, includes} from '../src/polyfill.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {hasPurpose1Consent} from '../src/utils/gpdr.js';
 
 const BIDDER_CODE = 'winr';
 const URL = 'https://ib.adnxs.com/ut/v3/prebid';
@@ -16,6 +27,8 @@ const APP_DEVICE_PARAMS = ['geo', 'device_id']; // appid is collected separately
 const SOURCE = 'pbjs';
 const DEFAULT_CURRENCY = 'USD';
 const GATE_COOKIE_NAME = 'wnr_gate';
+
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 function buildBid(bidData) {
   const bid = bidData;
@@ -39,9 +52,9 @@ function wrapAd(bid, position) {
         <title></title>
         <style>html, body {width: 100%; height: 100%; margin: 0;}</style>
     </head>
-    <body>   
+    <body>
       <script>
-        function winrPbRendererLoad(cb) {     
+        function winrPbRendererLoad(cb) {
           var w = parent.document.createElement("script");
           w.innerHTML = \`
             var WINR = {
@@ -58,13 +71,13 @@ function wrapAd(bid, position) {
                 tg: ${position.domParent},
                 rf: ${position.child}
               },
-            }; 
+            };
           \`;
           var s = parent.document.head.getElementsByTagName("script")[0];
-          s.parentNode.insertBefore(w, s);              
+          s.parentNode.insertBefore(w, s);
           var n = parent.document.createElement("script");
           n.src = 'https://helpers.winr.com.au/dist/prebidRenderer.js';
-          n.onload = function () {            
+          n.onload = function () {
             var WinrLib = window.parent.WinrPbRenderer.default;
             window.parent.winrLib = new WinrLib();
             if (!window.parent.winrLib) {
@@ -139,16 +152,16 @@ export const spec = {
       Object.keys(userObjBid.params.user)
         .filter((param) => includes(USER_PARAMS, param))
         .forEach((param) => {
-          let uparam = utils.convertCamelToUnderscore(param);
+          let uparam = convertCamelToUnderscore(param);
           if (
             param === 'segments' &&
-            utils.isArray(userObjBid.params.user[param])
+            isArray(userObjBid.params.user[param])
           ) {
             let segs = [];
             userObjBid.params.user[param].forEach((val) => {
-              if (utils.isNumber(val)) {
+              if (isNumber(val)) {
                 segs.push({ id: val });
-              } else if (utils.isPlainObject(val)) {
+              } else if (isPlainObject(val)) {
                 segs.push(val);
               }
             });
@@ -215,7 +228,8 @@ export const spec = {
 
     if (bidderRequest && bidderRequest.refererInfo) {
       let refererinfo = {
-        rd_ref: encodeURIComponent(bidderRequest.refererInfo.referer),
+        // TODO: this collects everything it finds, except for canonicalUrl
+        rd_ref: encodeURIComponent(bidderRequest.refererInfo.topmostLocation),
         rd_top: bidderRequest.refererInfo.reachedTop,
         rd_ifs: bidderRequest.refererInfo.numIframes,
         rd_stk: bidderRequest.refererInfo.stack
@@ -228,12 +242,11 @@ export const spec = {
     if (bidRequests[0].userId) {
       let eids = [];
 
-      addUserId(eids, utils.deepAccess(bidRequests[0], `userId.flocId.id`), 'chrome.com', null);
-      addUserId(eids, utils.deepAccess(bidRequests[0], `userId.criteoId`), 'criteo.com', null);
-      addUserId(eids, utils.deepAccess(bidRequests[0], `userId.netId`), 'netid.de', null);
-      addUserId(eids, utils.deepAccess(bidRequests[0], `userId.idl_env`), 'liveramp.com', null);
-      addUserId(eids, utils.deepAccess(bidRequests[0], `userId.tdid`), 'adserver.org', 'TDID');
-      addUserId(eids, utils.deepAccess(bidRequests[0], `userId.uid2.id`), 'uidapi.com', 'UID2');
+      addUserId(eids, deepAccess(bidRequests[0], `userId.criteoId`), 'criteo.com', null);
+      addUserId(eids, deepAccess(bidRequests[0], `userId.netId`), 'netid.de', null);
+      addUserId(eids, deepAccess(bidRequests[0], `userId.idl_env`), 'liveramp.com', null);
+      addUserId(eids, deepAccess(bidRequests[0], `userId.tdid`), 'adserver.org', 'TDID');
+      addUserId(eids, deepAccess(bidRequests[0], `userId.uid2.id`), 'uidapi.com', 'UID2');
 
       if (eids.length) {
         payload.eids = eids;
@@ -262,7 +275,7 @@ export const spec = {
       if (serverResponse && serverResponse.error) {
         errorMessage += `: ${serverResponse.error}`;
       }
-      utils.logError(errorMessage);
+      logError(errorMessage);
       return bids;
     }
 
@@ -297,12 +310,12 @@ export const spec = {
   },
 
   transformBidParams: function (params, isOpenRtb) {
-    params = utils.convertTypes(
+    params = convertTypes(
       {
         member: 'string',
         invCode: 'string',
         placementId: 'number',
-        keywords: utils.transformBidderParamKeywords,
+        keywords: transformBidderParamKeywords,
         publisherId: 'number',
       },
       params
@@ -322,7 +335,7 @@ export const spec = {
       }
 
       Object.keys(params).forEach((paramKey) => {
-        let convertedKey = utils.convertCamelToUnderscore(paramKey);
+        let convertedKey = convertCamelToUnderscore(paramKey);
         if (convertedKey !== paramKey) {
           params[convertedKey] = params[paramKey];
           delete params[paramKey];
@@ -335,31 +348,13 @@ export const spec = {
 };
 
 function isPopulatedArray(arr) {
-  return !!(utils.isArray(arr) && arr.length > 0);
+  return !!(isArray(arr) && arr.length > 0);
 }
 
 function deleteValues(keyPairObj) {
   if (isPopulatedArray(keyPairObj.value) && keyPairObj.value[0] === '') {
     delete keyPairObj.value;
   }
-}
-
-function hasPurpose1Consent(bidderRequest) {
-  let result = true;
-  if (bidderRequest && bidderRequest.gdprConsent) {
-    if (
-      bidderRequest.gdprConsent.gdprApplies &&
-      bidderRequest.gdprConsent.apiVersion === 2
-    ) {
-      result = !!(
-        utils.deepAccess(
-          bidderRequest.gdprConsent,
-          'vendorData.purpose.consents.1'
-        ) === true
-      );
-    }
-  }
-  return result;
 }
 
 function formatRequest(payload, bidderRequest) {
@@ -370,12 +365,12 @@ function formatRequest(payload, bidderRequest) {
 
   let endpointUrl = URL;
 
-  if (!hasPurpose1Consent(bidderRequest)) {
+  if (!hasPurpose1Consent(bidderRequest?.gdprConsent)) {
     endpointUrl = URL_SIMPLE;
   }
 
   if (
-    utils.getParameterByName('apn_test').toUpperCase() === 'TRUE' ||
+    getParameterByName('apn_test').toUpperCase() === 'TRUE' ||
     config.getConfig('apn_test') === true
   ) {
     options.customHeaders = {
@@ -403,7 +398,7 @@ function formatRequest(payload, bidderRequest) {
  * @return Bid
  */
 function newBid(serverBid, rtbBid, bidderRequest) {
-  const bidRequest = utils.getBidRequest(serverBid.uuid, [bidderRequest]);
+  const bidRequest = getBidRequest(serverBid.uuid, [bidderRequest]);
   const bid = {
     adType: rtbBid.ad_type,
     requestId: serverBid.uuid,
@@ -463,7 +458,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
       });
     }
   } catch (error) {
-    utils.logError('Error assigning ad', error);
+    logError('Error assigning ad', error);
   }
   return bid;
 }
@@ -502,8 +497,8 @@ function bidToTag(bid) {
   if (bid.params.externalImpId) {
     tag.external_imp_id = bid.params.externalImpId;
   }
-  if (!utils.isEmpty(bid.params.keywords)) {
-    let keywords = utils.transformBidderParamKeywords(bid.params.keywords);
+  if (!isEmpty(bid.params.keywords)) {
+    let keywords = transformBidderParamKeywords(bid.params.keywords);
 
     if (keywords.length > 0) {
       keywords.forEach(deleteValues);
@@ -511,7 +506,7 @@ function bidToTag(bid) {
     tag.keywords = keywords;
   }
 
-  let gpid = utils.deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+  let gpid = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
   if (gpid) {
     tag.gpid = gpid;
   }
@@ -531,9 +526,9 @@ function transformSizes(requestSizes) {
   let sizeObj = {};
 
   if (
-    utils.isArray(requestSizes) &&
+    isArray(requestSizes) &&
     requestSizes.length === 2 &&
-    !utils.isArray(requestSizes[0])
+    !isArray(requestSizes[0])
   ) {
     sizeObj.width = parseInt(requestSizes[0], 10);
     sizeObj.height = parseInt(requestSizes[1], 10);
@@ -596,7 +591,7 @@ function addUserId(eids, id, source, rti) {
 }
 
 function getBidFloor(bid) {
-  if (!utils.isFn(bid.getFloor)) {
+  if (!isFn(bid.getFloor)) {
     return (bid.params.reserve) ? bid.params.reserve : null;
   }
 
@@ -605,7 +600,7 @@ function getBidFloor(bid) {
     mediaType: '*',
     size: '*'
   });
-  if (utils.isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
+  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
     return floor.floor;
   }
   return null;

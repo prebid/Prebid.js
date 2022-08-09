@@ -1,7 +1,8 @@
+import { logMessage, getDNT, deepSetValue, deepAccess, _map, logWarn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import * as utils from '../src/utils.js';
 import {config} from '../src/config.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 const BIDDER_CODE = 'bizzclick';
 const ACCOUNTID_MACROS = '[account_id]';
 const URL_ENDPOINT = `https://us-e-node1.bizzclick.com/bid?rtb_seat_id=prebidjs&secret_key=${ACCOUNTID_MACROS}`;
@@ -57,17 +58,20 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: (validBidRequests, bidderRequest) => {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     if (validBidRequests && validBidRequests.length === 0) return []
     let accuontId = validBidRequests[0].params.accountId;
     const endpointURL = URL_ENDPOINT.replace(ACCOUNTID_MACROS, accuontId);
     let winTop = window;
     let location;
     try {
-      location = new URL(bidderRequest.refererInfo.referer)
+      location = new URL(bidderRequest.refererInfo.page)
       winTop = window.top;
     } catch (e) {
       location = winTop.location;
-      utils.logMessage(e);
+      logMessage(e);
     };
     let bids = [];
     for (let bidRequest of validBidRequests) {
@@ -80,7 +84,7 @@ export const spec = {
         device: {
           w: winTop.screen.width,
           h: winTop.screen.height,
-          dnt: utils.getDNT() ? 1 : 0,
+          dnt: getDNT() ? 1 : 0,
           language: (navigator && navigator.language) ? navigator.language.indexOf('-') != -1 ? navigator.language.split('-')[0] : navigator.language : '',
         },
         site: {
@@ -88,7 +92,10 @@ export const spec = {
           host: location.host
         },
         source: {
-          tid: bidRequest.transactionId
+          tid: bidRequest.transactionId,
+          ext: {
+            schain: {}
+          }
         },
         regs: {
           coppa: config.getConfig('coppa') === true ? 1 : 0,
@@ -104,32 +111,22 @@ export const spec = {
         imp: [impObject],
       };
 
-      if (bidderRequest && bidderRequest.uspConsent) {
-        data.regs.ext.us_privacy = bidderRequest.uspConsent;
-      }
-
-      if (bidderRequest && bidderRequest.gdprConsent) {
-        let { gdprApplies, consentString } = bidderRequest.gdprConsent;
-        data.regs.ext.gdpr = gdprApplies ? 1 : 0;
-        data.user.ext.consent = consentString;
-      }
-
-      if (bidRequest.schain) {
-        data.source.ext.schain = bidRequest.schain;
-      }
-
       let connection = navigator.connection || navigator.webkitConnection;
       if (connection && connection.effectiveType) {
         data.device.connectiontype = connection.effectiveType;
       }
       if (bidRequest) {
+        if (bidRequest.schain) {
+          deepSetValue(data, 'source.ext.schain', bidRequest.schain);
+        }
+
         if (bidRequest.gdprConsent && bidRequest.gdprConsent.gdprApplies) {
-          utils.deepSetValue(data, 'regs.ext.gdpr', bidRequest.gdprConsent.gdprApplies ? 1 : 0);
-          utils.deepSetValue(data, 'user.ext.consent', bidRequest.gdprConsent.consentString);
+          deepSetValue(data, 'regs.ext.gdpr', bidRequest.gdprConsent.gdprApplies ? 1 : 0);
+          deepSetValue(data, 'user.ext.consent', bidRequest.gdprConsent.consentString);
         }
 
         if (bidRequest.uspConsent !== undefined) {
-          utils.deepSetValue(data, 'regs.ext.us_privacy', bidRequest.uspConsent);
+          deepSetValue(data, 'regs.ext.us_privacy', bidRequest.uspConsent);
         }
       }
       bids.push(data)
@@ -194,7 +191,7 @@ export const spec = {
  * @returns {boolean}
  */
 const checkRequestType = (bidRequest, type) => {
-  return (typeof utils.deepAccess(bidRequest, `mediaTypes.${type}`) !== 'undefined');
+  return (typeof deepAccess(bidRequest, `mediaTypes.${type}`) !== 'undefined');
 }
 const parseNative = admObject => {
   const { assets, link, imptrackers, jstracker } = admObject.native;
@@ -240,7 +237,7 @@ const addNativeParameters = bidRequest => {
     id: bidRequest.transactionId,
     ver: NATIVE_VERSION,
   };
-  const assets = utils._map(bidRequest.mediaTypes.native, (bidParams, key) => {
+  const assets = _map(bidRequest.mediaTypes.native, (bidParams, key) => {
     const props = NATIVE_PARAMS[key];
     const asset = {
       required: bidParams.required & 1,
@@ -286,7 +283,7 @@ const parseSizes = (bid, mediaType) => {
         mediaTypes.video.w,
         mediaTypes.video.h
       ];
-    } else if (Array.isArray(utils.deepAccess(bid, 'mediaTypes.video.playerSize')) && bid.mediaTypes.video.playerSize.length === 1) {
+    } else if (Array.isArray(deepAccess(bid, 'mediaTypes.video.playerSize')) && bid.mediaTypes.video.playerSize.length === 1) {
       size = bid.mediaTypes.video.playerSize[0];
     } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0 && Array.isArray(bid.sizes[0]) && bid.sizes[0].length > 1) {
       size = bid.sizes[0];
@@ -299,7 +296,7 @@ const parseSizes = (bid, mediaType) => {
   } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0) {
     sizes = bid.sizes
   } else {
-    utils.logWarn('no sizes are setup or found');
+    logWarn('no sizes are setup or found');
   }
   return sizes
 }

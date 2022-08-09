@@ -7,7 +7,7 @@ Maintainer: prebid@tappx.com
 
 # Description
 Module that connects to :tappx demand sources.
-Suppots Banner and Instream Video.
+Suppots Banner and Video (instream and outstream).
 Please use ```tappx``` as the bidder code.
 Ads sizes available: [300,250], [320,50], [320,480], [480,320], [728,90], [768,1024], [1024,768]
 
@@ -55,7 +55,7 @@ Ads sizes available: [300,250], [320,50], [320,480], [480,320], [728,90], [768,1
             },
             mediaTypes: {
                 video: {
-                    context: "instream",
+                    context: %CONTEXT%,             // Could be "instream" or "outstream"
                     mimes : [ "video/mp4", "application/javascript" ],
                     playerSize: [320, 250]
                 }

@@ -1,8 +1,11 @@
+import { isFn, isPlainObject } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'proxistore';
 const PROXISTORE_VENDOR_ID = 418;
+const COOKIE_BASE_URL = 'https://abs.proxistore.com/v3/rtb/prebid/multi';
+const COOKIE_LESS_URL =
+  'https://abs.cookieless-proxistore.com/v3/rtb/prebid/multi';
 
 function _createServerRequest(bidRequests, bidderRequest) {
   var sizeIds = [];
@@ -51,10 +54,8 @@ function _createServerRequest(bidRequests, bidderRequest) {
 
     if (gdprConsent.vendorData) {
       var vendorData = gdprConsent.vendorData;
-      var apiVersion = gdprConsent.apiVersion;
 
       if (
-        apiVersion === 2 &&
         vendorData.vendor &&
         vendorData.vendor.consents &&
         typeof vendorData.vendor.consents[PROXISTORE_VENDOR_ID.toString(10)] !==
@@ -62,14 +63,6 @@ function _createServerRequest(bidRequests, bidderRequest) {
       ) {
         payload.gdpr.consentGiven =
           !!vendorData.vendor.consents[PROXISTORE_VENDOR_ID.toString(10)];
-      } else if (
-        apiVersion === 1 &&
-        vendorData.vendorConsents &&
-        typeof vendorData.vendorConsents[PROXISTORE_VENDOR_ID.toString(10)] !==
-          'undefined'
-      ) {
-        payload.gdpr.consentGiven =
-          !!vendorData.vendorConsents[PROXISTORE_VENDOR_ID.toString(10)];
       }
     }
   }
@@ -83,14 +76,9 @@ function _createServerRequest(bidRequests, bidderRequest) {
   };
   var endPointUri =
     payload.gdpr.consentGiven || !payload.gdpr.applies
-      ? 'https://abs.proxistore.com/'.concat(
-        payload.language,
-        '/v3/rtb/prebid/multi'
-      )
-      : 'https://abs.cookieless-proxistore.com/'.concat(
-        payload.language,
-        '/v3/rtb/prebid/multi'
-      );
+      ? COOKIE_BASE_URL
+      : COOKIE_LESS_URL;
+
   return {
     method: 'POST',
     url: endPointUri,
@@ -173,9 +161,7 @@ function interpretResponse(serverResponse, bidRequest) {
 }
 
 function _assignFloor(bid) {
-  if (!utils.isFn(bid.getFloor)) {
-    // eslint-disable-next-line no-console
-    console.log(bid.params.bidFloor);
+  if (!isFn(bid.getFloor)) {
     return bid.params.bidFloor ? bid.params.bidFloor : null;
   }
   const floor = bid.getFloor({
@@ -184,11 +170,7 @@ function _assignFloor(bid) {
     size: '*',
   });
 
-  if (
-    utils.isPlainObject(floor) &&
-    !isNaN(floor.floor) &&
-    floor.currency === 'EUR'
-  ) {
+  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'EUR') {
     return floor.floor;
   }
   return null;
@@ -199,6 +181,7 @@ export const spec = {
   isBidRequestValid: isBidRequestValid,
   buildRequests: buildRequests,
   interpretResponse: interpretResponse,
+  gvlid: PROXISTORE_VENDOR_ID,
 };
 
 registerBidder(spec);

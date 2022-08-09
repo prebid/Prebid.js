@@ -10,9 +10,9 @@ Maintainer: jrosendahl@sovrn.com
 
 Sovrn's adapter integration to the Prebid library. Posts plain-text JSON to the /rtb/bid endpoint.
 
-# Test Parameters
+# Banner Test Parameters
 
-```
+```js
 var adUnits = [
   {
     code: 'test-leaderboard',
@@ -43,5 +43,83 @@ var adUnits = [
       }
     }]
   }
+]
+```
+
+# Video Test Parameters
+### Instream
+```js
+var videoAdUnit = {
+  code: 'video1',
+  sizes: [640, 480],
+  mediaTypes: {
+    video: {
+      context: 'instream',
+      playerSize: [640, 480],
+      mimes: ['video/mp4'],
+      protocols: [1, 2, 3, 4, 5, 6, 7, 8],
+      playbackmethod: [2],
+      skip: 1,
+    },
+  },
+  bids: [
+    {
+      bidder: 'sovrn',
+      // Prebid Server Bidder Params https://docs.prebid.org/dev-docs/pbs-bidders.html#sovrn
+      params: {
+        tagid: '315045',
+        bidfloor: '0.04',
+      },
+    },
+  ],
+}
+```
+### Outstream
+```js
+var adUnits = [
+  {
+    code: videoId,
+    mediaTypes: {
+      video: {
+        context: 'outstream',
+        playerSize: [640, 360],
+        mimes: ['video/mp4'],
+        protocols: [1, 2, 3, 4, 5, 6, 7, 8],
+        playbackmethod: [2],
+        skip: 1,
+      },
+    },
+    bids: [
+      {
+        bidder: 'sovrn',
+        // Prebid Server Bidder Params https://docs.prebid.org/dev-docs/pbs-bidders.html#sovrn
+        params: {
+          tagid: '315045',
+          bidfloor: '0.04',
+        },
+      },
+    ],
+    renderer: {
+      url: 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js',
+      render: function (bid) {
+        adResponse = {
+          ad: {
+            video: {
+              content: bid.vastXml,
+              player_height: bid.height,
+              player_width: bid.width,
+            },
+          },
+        }
+        // push to render queue because ANOutstreamVideo may not be loaded yet.
+        bid.renderer.push(() => {
+          ANOutstreamVideo.renderAd({
+            targetId: bid.adUnitCode,
+            adResponse: adResponse,
+          })
+        })
+      },
+    },
+  },
 ]
 ```

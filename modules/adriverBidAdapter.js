@@ -1,13 +1,14 @@
 // ADRIVER BID ADAPTER for Prebid 1.13
-import * as utils from '../src/utils.js';
+import { logInfo, getWindowLocation, getBidIdParameter, _each } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'adriver';
 const ADRIVER_BID_URL = 'https://pb.adriver.ru/cgi-bin/bid.cgi';
 const TIME_TO_LIVE = 3000;
 
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 export const spec = {
-
   code: BIDDER_CODE,
 
   /**
@@ -21,12 +22,12 @@ export const spec = {
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
-    utils.logInfo('validBidRequests', validBidRequests);
+    logInfo('validBidRequests', validBidRequests);
 
-    let win = utils.getWindowLocation();
+    let win = getWindowLocation();
     let customID = Math.round(Math.random() * 999999999) + '-' + Math.round(new Date() / 1000) + '-1-46-';
-    let siteId = utils.getBidIdParameter('siteid', validBidRequests[0].params) + '';
-    let currency = utils.getBidIdParameter('currency', validBidRequests[0].params);
+    let siteId = getBidIdParameter('siteid', validBidRequests[0].params) + '';
+    let currency = getBidIdParameter('currency', validBidRequests[0].params);
     currency = 'RUB';
 
     let timeout = null;
@@ -58,8 +59,8 @@ export const spec = {
       'imp': []
     };
 
-    utils._each(validBidRequests, (bid) => {
-      utils._each(bid.sizes, (sizes) => {
+    _each(validBidRequests, (bid) => {
+      _each(bid.sizes, (sizes) => {
         let width;
         let height;
         let par;
@@ -67,7 +68,7 @@ export const spec = {
         let floorAndCurrency = _getFloor(bid, currency, sizes);
 
         let bidFloor = floorAndCurrency.floor;
-        let dealId = utils.getBidIdParameter('dealid', bid.params);
+        let dealId = getBidIdParameter('dealid', bid.params);
         if (typeof sizes[0] === 'number' && typeof sizes[1] === 'number') {
           width = sizes[0];
           height = sizes[1];
@@ -93,11 +94,20 @@ export const spec = {
             }]
           };
         }
-        utils.logInfo('par', par);
+        logInfo('par', par);
         payload.imp.push(par);
       });
     });
 
+    let userid = validBidRequests[0].userId;
+    let adrcidCookie = storage.getDataFromLocalStorage('adrcid') || validBidRequests[0].userId.adrcid;
+
+    if (adrcidCookie) {
+      payload.adrcid = adrcidCookie;
+      payload.id5 = userid.id5id;
+      payload.sharedid = userid.pubcid;
+      payload.unifiedid = userid.tdid;
+    }
     const payloadString = JSON.stringify(payload);
 
     return {
@@ -108,11 +118,11 @@ export const spec = {
   },
 
   interpretResponse: function (serverResponse, bidRequest) {
-    utils.logInfo('serverResponse.body.seatbid', serverResponse.body.seatbid);
+    logInfo('serverResponse.body.seatbid', serverResponse.body.seatbid);
     const bidResponses = [];
     let nurl = 0;
-    utils._each(serverResponse.body.seatbid, (seatbid) => {
-      utils.logInfo('_each', seatbid);
+    _each(serverResponse.body.seatbid, (seatbid) => {
+      logInfo('_each', seatbid);
       var bid = seatbid.bid[0];
       if (bid.nurl !== undefined) {
         nurl = bid.nurl.split('://');
@@ -135,7 +145,7 @@ export const spec = {
           },
           ad: '<IFRAME SRC="' + bid.nurl + '" FRAMEBORDER="0" SCROLLING="no" MARGINHEIGHT="0" MARGINWIDTH="0" TOPMARGIN="0" LEFTMARGIN="0" ALLOWTRANSPARENCY="true" STYLE ="WIDTH:' + bid.w + 'px; HEIGHT:' + bid.h + 'px"></IFRAME>'
         };
-        utils.logInfo('bidResponse', bidResponse);
+        logInfo('bidResponse', bidResponse);
         bidResponses.push(bidResponse);
       }
     });
