@@ -210,92 +210,65 @@ describe('Caroda adapter', function () {
       ]);
     });
 
-    describe.skip('user privacy', function () {
+    describe('user privacy', function () {
       it('should send GDPR Consent data to adform if gdprApplies', function () {
         let validBidRequests = [{ bidId: 'bidId', params: { test: 1 } }];
         let bidderRequest = { gdprConsent: { gdprApplies: true, consentString: 'consentDataString' }, refererInfo: { page: 'page' } };
-        let request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
+        let request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest)[0].data);
 
-        assert.equal(request.user.ext.consent, bidderRequest.gdprConsent.consentString);
-        assert.equal(request.regs.ext.gdpr, bidderRequest.gdprConsent.gdprApplies);
-        assert.equal(typeof request.regs.ext.gdpr, 'number');
+        assert.equal(request.privacy.gdpr_consent, bidderRequest.gdprConsent.consentString);
+        assert.equal(request.privacy.gdpr, bidderRequest.gdprConsent.gdprApplies);
+        assert.equal(typeof request.privacy.gdpr, 'number');
       });
 
       it('should send gdpr as number', function () {
         let validBidRequests = [{ bidId: 'bidId', params: { test: 1 } }];
         let bidderRequest = { gdprConsent: { gdprApplies: true, consentString: 'consentDataString' }, refererInfo: { page: 'page' } };
-        let request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
+        let request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest)[0].data);
 
-        assert.equal(typeof request.regs.ext.gdpr, 'number');
-        assert.equal(request.regs.ext.gdpr, 1);
+        assert.equal(typeof request.privacy.gdpr, 'number');
+        assert.equal(request.privacy.gdpr, 1);
       });
 
-      it('should send CCPA Consent data to adform', function () {
+      it('should send CCPA Consent data', function () {
         let validBidRequests = [{ bidId: 'bidId', params: { test: 1 } }];
         let bidderRequest = { uspConsent: '1YA-', refererInfo: { page: 'page' } };
-        let request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
+        let request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest)[0].data);
 
-        assert.equal(request.regs.ext.us_privacy, '1YA-');
+        assert.equal(request.privacy.us_privacy, '1YA-');
 
         bidderRequest = { uspConsent: '1YA-', gdprConsent: { gdprApplies: true, consentString: 'consentDataString' }, refererInfo: { page: 'page' } };
-        request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
+        request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest)[0].data);
 
-        assert.equal(request.regs.ext.us_privacy, '1YA-');
-        assert.equal(request.user.ext.consent, 'consentDataString');
-        assert.equal(request.regs.ext.gdpr, 1);
+        assert.equal(request.privacy.us_privacy, '1YA-');
+        assert.equal(request.privacy.gdpr_consent, 'consentDataString');
+        assert.equal(request.privacy.gdpr, 1);
       });
 
-      it('should not send GDPR Consent data to adform if gdprApplies is undefined', function () {
-        let validBidRequests = [{
-          bidId: 'bidId',
-          params: { siteId: 'siteId' }
-        }];
-        let bidderRequest = { gdprConsent: {gdprApplies: false, consentString: 'consentDataString'}, refererInfo: { page: 'page' } };
-        let request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
-
-        assert.equal(request.user.ext.consent, 'consentDataString');
-        assert.equal(request.regs.ext.gdpr, 0);
-
-        bidderRequest = {gdprConsent: {consentString: 'consentDataString'}, refererInfo: { page: 'page' }};
-        request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
-
-        assert.equal(request.user, undefined);
-        assert.equal(request.regs, undefined);
-      });
-      it('should send default GDPR Consent data to adform', function () {
-        let validBidRequests = [{
-          bidId: 'bidId',
-          params: { siteId: 'siteId' }
-        }];
-        let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data);
-
-        assert.equal(request.user, undefined);
-        assert.equal(request.regs, undefined);
-      });
       it('should not set coppa when coppa is not provided or is set to false', function () {
         config.setConfig({
         });
         let validBidRequests = [{ bidId: 'bidId', params: { test: 1 } }];
         let bidderRequest = { gdprConsent: { gdprApplies: true, consentString: 'consentDataString' }, refererInfo: { page: 'page' } };
-        let request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
+        let request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest)[0].data);
   
-        assert.equal(request.regs.coppa, undefined);
+        assert.equal(request.privacy.coppa, undefined);
   
         config.setConfig({
           coppa: false
         });
-        request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
+        request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest)[0].data);
   
-        assert.equal(request.regs.coppa, undefined);
+        assert.equal(request.privacy.coppa, undefined);
       });  
       it('should set coppa to 1 when coppa is provided with value true', function () {
         config.setConfig({
           coppa: true
         });
         let validBidRequests = [{ bidId: 'bidId', params: { test: 1 } }];
-        let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data);
+        let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } })[0].data);
   
-        assert.equal(request.regs.coppa, 1);
+        assert.equal(request.privacy.coppa, 1);
       });
     });
 
