@@ -678,7 +678,6 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   // Use the siteId in the first bid request as the main siteId.
   siteID = validBidRequests[0].params.siteId;
   payload.s = siteID;
-  payload.v = version;
   if (version) {
     payload.v = version;
   }

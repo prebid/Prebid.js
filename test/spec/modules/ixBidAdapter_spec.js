@@ -10,7 +10,6 @@ describe('IndexexchangeAdapter', function () {
   const IX_SECURE_ENDPOINT = 'https://htlb.casalemedia.com/openrtb/pbjs';
   const VIDEO_ENDPOINT_VERSION = 8.1;
   const BANNER_ENDPOINT_VERSION = 7.2;
-  const NATIVE_ENDPOINT_VERSION = undefined;
 
   const SAMPLE_SCHAIN = {
     'ver': '1.0',
@@ -2153,7 +2152,7 @@ describe('IndexexchangeAdapter', function () {
       it('should have native request', () => {
         const nativeImpression = JSON.parse(request[1].data.r).imp[0];
 
-        expect(request[1].data.v).to.equal(NATIVE_ENDPOINT_VERSION);
+        expect(request[1].data.hasOwnProperty('v')).to.equal(false);
         expect(nativeImpression.id).to.equal(DEFAULT_NATIVE_VALID_BID[0].bidId);
         expect(nativeImpression.native).to.deep.equal(DEFAULT_NATIVE_IMP);
       });
@@ -2499,7 +2498,7 @@ describe('IndexexchangeAdapter', function () {
       const request = spec.buildRequests(DEFAULT_NATIVE_VALID_BID, DEFAULT_OPTION);
       const query = request[0].data;
 
-      expect(query.v).to.equal(NATIVE_ENDPOINT_VERSION);
+      expect(query.hasOwnProperty('v')).to.equal(false);
       expect(query.s).to.equal(DEFAULT_NATIVE_VALID_BID[0].params.siteId);
       expect(query.r).to.exist;
       expect(query.ac).to.equal('j');
@@ -2524,7 +2523,7 @@ describe('IndexexchangeAdapter', function () {
       const request = spec.buildRequests(DEFAULT_NATIVE_VALID_BID, DEFAULT_OPTION);
       const nativeImpression = JSON.parse(request[0].data.r).imp[0];
 
-      expect(request[0].data.v).to.equal(NATIVE_ENDPOINT_VERSION);
+      expect(request[0].data.hasOwnProperty('v')).to.equal(false);
       expect(nativeImpression.id).to.equal(DEFAULT_NATIVE_VALID_BID[0].bidId);
       expect(nativeImpression.native).to.deep.equal(DEFAULT_NATIVE_IMP);
     });
