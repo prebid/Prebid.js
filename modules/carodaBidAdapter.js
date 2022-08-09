@@ -96,7 +96,7 @@ export const spec = {
           return {
             requestId: bid.bidId,
             cpm: bid.cpm,
-            creativeId: bid.crid,
+            creativeId: bid.creativeId,
             ttl: 300,
             netRevenue: true,
             currency: bid.currency,
