@@ -502,6 +502,9 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
 
         slot.video = video;
       }
+
+      enrichSlotWithFloors(slot, bidRequest)
+
       return slot;
     }),
   };
@@ -633,6 +636,42 @@ for (var i = 0; i < 10; ++i) {
   break;
 }
 </script>`;
+}
+
+function enrichSlotWithFloors(slot, bidRequest) {
+  try {
+    const slotFloors = {};
+
+    if (bidRequest.getFloor) {
+      if (bidRequest.mediaTypes?.banner) {
+        slotFloors.banner = {};
+        const bannerSizes = deepAccess(bidRequest, 'mediaTypes.banner.sizes')
+        bannerSizes.forEach(bannerSize => slotFloors.banner[parseSize(bannerSize).toString()] = bidRequest.getFloor({size: bannerSize, mediaType: BANNER}));
+      }
+
+      if (bidRequest.mediaTypes?.video) {
+        slotFloors.video = {};
+        const videoSize = deepAccess(bidRequest, 'mediaTypes.video.playerSize')
+        slotFloors.video[parseSize(videoSize).toString()] = bidRequest.getFloor({size: videoSize, mediaType: VIDEO});
+      }
+
+      if (bidRequest.mediaTypes?.native) {
+        slotFloors.native = {};
+        slotFloors.native['*'] = bidRequest.getFloor({size: '*', mediaType: NATIVE});
+      }
+
+      if (Object.keys(slotFloors).length > 0) {
+        if (!slot.ext) {
+          slot.ext = {}
+        }
+        Object.assign(slot.ext, {
+          floors: slotFloors
+        });
+      }
+    }
+  } catch (e) {
+    logError('Could not parse floors from Prebid: ' + e);
+  }
 }
 
 export function canFastBid(fastBidVersion) {
