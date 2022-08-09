@@ -13,7 +13,7 @@ describe('adnuntiusBidAdapter', function () {
   const meta = [{ key: 'usi', value: usi }]
 
   before(() => {
-    const storage = getStorageManager({gvlid: GVLID, moduleName: 'adnuntius'})
+    const storage = getStorageManager({ gvlid: GVLID, moduleName: 'adnuntius' })
     storage.setDataInLocalStorage('adn.metaData', JSON.stringify(meta))
   });
 
@@ -46,7 +46,11 @@ describe('adnuntiusBidAdapter', function () {
         auId: '8b6bc',
         network: 'adnuntius',
       },
-
+      mediaTypes: {
+        banner: {
+          sizes: [[640, 480], [600, 400]],
+        }
+      },
     }
   ]
 
@@ -228,7 +232,7 @@ describe('adnuntiusBidAdapter', function () {
       expect(request[0]).to.have.property('url');
       expect(request[0].url).to.equal(ENDPOINT_URL);
       expect(request[0]).to.have.property('data');
-      expect(request[0].data).to.equal('{\"adUnits\":[{\"auId\":\"8b6bc\",\"targetId\":\"123\"}],\"metaData\":{\"usi\":\"' + usi + '\"}}');
+      expect(request[0].data).to.equal('{\"adUnits\":[{\"auId\":\"8b6bc\",\"targetId\":\"123\",\"dimensions\":[[640,480],[600,400]]}],\"metaData\":{\"usi\":\"' + usi + '\"}}');
     });
 
     it('Test Video requests', function () {
