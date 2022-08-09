@@ -272,79 +272,77 @@ describe('Caroda adapter', function () {
       });
     });
 
-    describe.skip('bids', function () {
-      it('should add more than one bid to the request', function () {
-        let validBidRequests = [{
+    describe('bids', function () {
+      it('should be able to handle multiple bids', function () {
+        const validBidRequests = [{
           bidId: 'bidId',
-          params: { siteId: 'siteId' }
+          params: { ctok: 'ctok1' }
         }, {
           bidId: 'bidId2',
-          params: { siteId: 'siteId' }
+          params: { ctok: 'ctok2' }
         }];
-        let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data);
-
-        assert.equal(request.imp.length, 2);
-      });
-      it('should add incrementing values of id', function () {
-        let validBidRequests = [{
-          bidId: 'bidId',
-          params: { mid: '1000' },
-          mediaTypes: {video: {}}
-        }, {
-          bidId: 'bidId2',
-          params: { mid: '1000' },
-          mediaTypes: {video: {}}
-        }, {
-          bidId: 'bidId3',
-          params: { mid: '1000' },
-          mediaTypes: {video: {}}
-        }];
-        let imps = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp;
-
-        for (let i = 0; i < 3; i++) {
-          assert.equal(imps[i].id, i + 1);
-        }
+        const request = spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } });
+        assert.equal(request.length, 2);
+        const data = request.map(r => JSON.parse(r.data))
+        assert.equal(data[0].ctok, 'ctok1')
+        assert.equal(data[1].ctok, 'ctok2')
       });
 
-      it('should add mid', function () {
-        let validBidRequests = [{ bidId: 'bidId', params: {mid: 1000}, mediaTypes: {video: {}} },
-          { bidId: 'bidId2', params: {mid: 1001}, mediaTypes: {video: {}} },
-          { bidId: 'bidId3', params: {mid: 1002}, mediaTypes: {video: {}} }];
-        let imps = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp;
-        for (let i = 0; i < 3; i++) {
-          assert.equal(imps[i].tagid, validBidRequests[i].params.mid);
-        }
-      });
-
-      describe('dynamic placement tag', function () {
-        it('should add imp parameters correctly', function () {
-          const validBidRequests = [
-            { bidId: 'bidId', params: { inv: 1000, mname: 'placement' }, mediaTypes: {video: {}} },
-            { bidId: 'bidId', params: { mid: 1234, inv: 1002, mname: 'placement2' }, mediaTypes: {video: {}} },
-            { bidId: 'bidId', params: { mid: 1234 }, mediaTypes: {video: {}} }
-          ];
-          const [ imp1, imp2, imp3 ] = getRequestImps(validBidRequests);
-
-          assert.equal(imp1.ext.bidder.inv, 1000);
-          assert.equal(imp1.ext.bidder.mname, 'placement');
-          assert.equal('tagid' in imp1, false);
-
-          assert.equal(imp2.ext.bidder.inv, 1002);
-          assert.equal(imp2.ext.bidder.mname, 'placement2');
-          assert.equal(imp2.tagid, 1234);
-
-          assert.ok(imp3.ext.bidder);
-          assert.equal('inv' in imp3.ext.bidder, false);
-          assert.equal('mname' in imp3.ext.bidder, false);
-          assert.equal(imp3.tagid, 1234);
+      
+      describe('price floors', function () {
+        it('should not add if floors module not configured', function () {
+          const validBidRequests = [{ bidId: 'bidId', params: {ctok: 'ctok1'}, mediaTypes: {video: {}} }];
+          const imp = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } })[0].data);
+          assert.equal(imp.bidfloor, undefined);
+          assert.equal(imp.bidfloorcur, undefined);
         });
+
+        it('should not add if floor price not defined', function () {
+          const validBidRequests = [ getBidWithFloor() ];
+          const imp = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } })[0].data);
+          assert.equal(imp.bidfloor, undefined);
+          assert.equal(imp.bidfloorcur, 'EUR');
+        });
+
+        it('should request floor price in adserver currency', function () {
+          config.setConfig({ currency: { adServerCurrency: 'DKK' } });
+          const validBidRequests = [ getBidWithFloor() ];
+          const imp = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } })[0].data);
+          assert.equal(imp.bidfloor, undefined);
+          assert.equal(imp.bidfloorcur, 'DKK');
+        });
+
+        it('should add correct floor values', function () {
+          const expectedFloors = [ 1, 1.3, 0.5 ];
+          const validBidRequests = expectedFloors.map(getBidWithFloor);
+          const imps = spec
+            .buildRequests(validBidRequests, { refererInfo: { page: 'page' } })
+            .map(r => JSON.parse(r.data));
+          expectedFloors.forEach((floor, index) => {
+            assert.equal(imps[index].bidfloor, floor);
+            assert.equal(imps[index].bidfloorcur, 'EUR');
+          });
+        });
+
+        function getBidWithFloor(floor) {
+          return {
+            params: { ctok: 'ctok1' },
+            mediaTypes: { video: {} },
+            getFloor: ({ currency }) => {
+              return {
+                currency: currency,
+                floor
+              };
+            }
+          };
+        }
       });
 
       describe('multiple media types', function () {
         it('should use all configured media types for bidding', function () {
-          let validBidRequests = [{
+          const validBidRequests = [{
             bidId: 'bidId',
-            params: { mid: 1000 },
+            params: { ctok: 'ctok1' },
             mediaTypes: {
               banner: {
                 sizes: [[100, 100], [200, 300]]
@@ -352,45 +350,28 @@ describe('Caroda adapter', function () {
               video: {}
             }
           }, {
-            bidId: 'bidId1',
-            params: { mid: 1000 },
+            bidId: 'bidId2',
+            params: { ctok: 'ctok1' },
             mediaTypes: {
               video: {},
               native: {}
             }
-          }, {
-            bidId: 'bidId2',
-            params: { mid: 1000 },
-            nativeParams: {
-              title: { required: true, len: 140 }
-            },
-            mediaTypes: {
-              banner: {
-                sizes: [[100, 100], [200, 300]]
-              },
-              native: {},
-              video: {}
-            }
           }];
-          let [ first, second, third ] = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp;
+          const [ first, second ] = spec
+            .buildRequests(validBidRequests, { refererInfo: { page: 'page' } })
+            .map(r => JSON.parse(r.data));
 
           assert.ok(first.banner);
           assert.ok(first.video);
-          assert.equal(first.native, undefined);
 
           assert.ok(second.video);
           assert.equal(second.banner, undefined);
-          assert.equal(second.native, undefined);
-
-          assert.ok(third.native);
-          assert.ok(third.video);
-          assert.ok(third.banner);
         });
       });
 
       describe('banner', function () {
         it('should convert sizes to openrtb format', function () {
-          let validBidRequests = [{
+          const validBidRequests = [{
             bidId: 'bidId',
             params: { mid: 1000 },
             mediaTypes: {
@@ -399,7 +380,7 @@ describe('Caroda adapter', function () {
               }
             }
           }];
-          let { banner } = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp[0];
+          const { banner } = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } })[0].data);
           assert.deepEqual(banner, {
             format: [ { w: 100, h: 100 }, { w: 200, h: 300 } ]
           });
@@ -408,7 +389,7 @@ describe('Caroda adapter', function () {
 
       describe('video', function () {
         it('should pass video mediatype config', function () {
-          let validBidRequests = [{
+          const validBidRequests = [{
             bidId: 'bidId',
             params: { mid: 1000 },
             mediaTypes: {
@@ -419,7 +400,7 @@ describe('Caroda adapter', function () {
               }
             }
           }];
-          let { video } = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp[0];
+          const { video } = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } })[0].data);
           assert.deepEqual(video, {
             playerSize: [640, 480],
             context: 'outstream',
@@ -427,166 +408,7 @@ describe('Caroda adapter', function () {
           });
         });
       });
-
-      describe('native', function () {
-        describe('assets', function () {
-          it('should set correct asset id', function () {
-            let validBidRequests = [{
-              bidId: 'bidId',
-              params: { mid: 1000 },
-              nativeParams: {
-                title: { required: true, len: 140 },
-                image: { required: false, wmin: 836, hmin: 627, w: 325, h: 300, mimes: ['image/jpg', 'image/gif'] },
-                body: { len: 140 }
-              }
-            }];
-            let assets = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp[0].native.request.assets;
-
-            assert.equal(assets[0].id, 0);
-            assert.equal(assets[1].id, 3);
-            assert.equal(assets[2].id, 4);
-          });
-          it('should add required key if it is necessary', function () {
-            let validBidRequests = [{
-              bidId: 'bidId',
-              params: { mid: 1000 },
-              nativeParams: {
-                title: { required: true, len: 140 },
-                image: { required: false, wmin: 836, hmin: 627, w: 325, h: 300, mimes: ['image/jpg', 'image/gif'] },
-                body: { len: 140 },
-                sponsoredBy: { required: true, len: 140 }
-              }
-            }];
-
-            let assets = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp[0].native.request.assets;
-
-            assert.equal(assets[0].required, 1);
-            assert.ok(!assets[1].required);
-            assert.ok(!assets[2].required);
-            assert.equal(assets[3].required, 1);
-          });
-
-          it('should map img and data assets', function () {
-            let validBidRequests = [{
-              bidId: 'bidId',
-              params: { mid: 1000 },
-              nativeParams: {
-                title: { required: true, len: 140 },
-                image: { required: true, sizes: [150, 50] },
-                icon: { required: false, sizes: [50, 50] },
-                body: { required: false, len: 140 },
-                sponsoredBy: { required: true },
-                cta: { required: false },
-                clickUrl: { required: false }
-              }
-            }];
-
-            let assets = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp[0].native.request.assets;
-            assert.ok(assets[0].title);
-            assert.equal(assets[0].title.len, 140);
-            assert.deepEqual(assets[1].img, { type: 3, w: 150, h: 50 });
-            assert.deepEqual(assets[2].img, { type: 1, w: 50, h: 50 });
-            assert.deepEqual(assets[3].data, { type: 2, len: 140 });
-            assert.deepEqual(assets[4].data, { type: 1 });
-            assert.deepEqual(assets[5].data, { type: 12 });
-            assert.ok(!assets[6]);
-          });
-
-          describe('icon/image sizing', function () {
-            it('should flatten sizes and utilise first pair', function () {
-              const validBidRequests = [{
-                bidId: 'bidId',
-                params: { mid: 1000 },
-                nativeParams: {
-                  image: {
-                    sizes: [[200, 300], [100, 200]]
-                  },
-                }
-              }];
-
-              let assets = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp[0].native.request.assets;
-              assert.ok(assets[0].img);
-              assert.equal(assets[0].img.w, 200);
-              assert.equal(assets[0].img.h, 300);
-            });
-          });
-
-          it('should utilise aspect_ratios', function () {
-            const validBidRequests = [{
-              bidId: 'bidId',
-              params: { mid: 1000 },
-              nativeParams: {
-                image: {
-                  aspect_ratios: [{
-                    min_width: 100,
-                    ratio_height: 3,
-                    ratio_width: 1
-                  }]
-                },
-                icon: {
-                  aspect_ratios: [{
-                    min_width: 10,
-                    ratio_height: 5,
-                    ratio_width: 2
-                  }]
-                }
-              }
-            }];
-
-            let assets = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp[0].native.request.assets;
-            assert.ok(assets[0].img);
-            assert.equal(assets[0].img.wmin, 100);
-            assert.equal(assets[0].img.hmin, 300);
-
-            assert.ok(assets[1].img);
-            assert.equal(assets[1].img.wmin, 10);
-            assert.equal(assets[1].img.hmin, 25);
-          });
-
-          it('should not throw error if aspect_ratios config is not defined', function () {
-            const validBidRequests = [{
-              bidId: 'bidId',
-              params: { mid: 1000 },
-              nativeParams: {
-                image: {
-                  aspect_ratios: []
-                },
-                icon: {
-                  aspect_ratios: []
-                }
-              }
-            }];
-
-            assert.doesNotThrow(() => spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }));
-          });
-        });
-
-        it('should expect any dimensions if min_width not passed', function () {
-          const validBidRequests = [{
-            bidId: 'bidId',
-            params: { mid: 1000 },
-            nativeParams: {
-              image: {
-                aspect_ratios: [{
-                  ratio_height: 3,
-                  ratio_width: 1
-                }]
-              }
-            }
-          }];
-
-          let assets = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp[0].native.request.assets;
-          assert.ok(assets[0].img);
-          assert.equal(assets[0].img.wmin, 0);
-          assert.equal(assets[0].img.hmin, 0);
-          assert.ok(!assets[1]);
-        });
-      });
     });
-
-    function getRequestImps(validBidRequests) {
-      return JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp;
-    }
   });
 
   describe.skip('interpretResponse', function () {

@@ -168,7 +168,7 @@ function getORTBCommon (bidderRequest) {
 }
 
 function getImps (validBidRequests, common) {
-  return validBidRequests.map((bid, id) => {
+  return validBidRequests.map((bid) => {
     const floorInfo = bid.getFloor
       ? bid.getFloor({ currency: common.currency || 'EUR' })
       : {}
@@ -176,7 +176,6 @@ function getImps (validBidRequests, common) {
     const bidfloorcur = floorInfo.currency
     const { ctok, placementId } = bid.params
     const imp = {
-      id: id + 1,
       ctok,
       bidfloor,
       bidfloorcur,
