@@ -36,12 +36,12 @@ export const spec = {
     const pageViewId = topUsableWindow.carodaPageViewId || Math.floor(Math.random() * 1e9)
     const ortbCommon = getORTBCommon(bidderRequest)
     const priceType =
-      setOnAny(validBidRequests, 'params.priceType') ||
+      getFirstWithKey(validBidRequests, 'params.priceType') ||
       'net'
-    const test = setOnAny(validBidRequests, 'params.test')
+    const test = getFirstWithKey(validBidRequests, 'params.test')
     const currency = getConfig('currency.adServerCurrency')
-    const eids = setOnAny(validBidRequests, 'userIdAsEids')
-    const schain = setOnAny(validBidRequests, 'schain')
+    const eids = getFirstWithKey(validBidRequests, 'userIdAsEids')
+    const schain = getFirstWithKey(validBidRequests, 'schain')
     const request = {
       id: bidderRequest.auctionId,
       currency,
@@ -118,7 +118,7 @@ export const spec = {
 
 registerBidder(spec)
 
-function setOnAny (collection, key) {
+function getFirstWithKey (collection, key) {
   for (let i = 0, result; i < collection.length; i++) {
     result = deepAccess(collection[i], key)
     if (result) {
