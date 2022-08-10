@@ -1,5 +1,5 @@
 import { config } from '../src/config.js';
-import events from '../src/events.js';
+import * as events from '../src/events.js';
 import { EVENTS } from '../src/constants.json';
 import {isPlainObject, isArray} from '../src/utils.js';
 import { loadExternalScript } from '../src/adloader.js'
@@ -16,6 +16,7 @@ const AUCTIONS_BIDS_WON_KEY = '_bidsWon';
 const DEBUG_KEY = '_debug';
 const AUCTION_TAEGETING_KEY = '_targeting';
 const TCF2_KEY = '_tcf2Enforcement';
+let isListenerAdded = false;
 
 // Do not load the lib if already loaded
 let uiLibraryLoaded = false;
@@ -144,9 +145,9 @@ function bidWonHandler(bidWonData) {
   auctionEntry[AUCTIONS_BIDS_WON_KEY][bidWonData.adId] = bidWonData;
 }
 
-function init() {
+function handleSetDebugConfig(debugFlag) {
   // this module should work only if pbjs_debug is set to true in page-URL or debug mode is on thru config
-  if (config.getConfig('debug') !== true) {
+  if (debugFlag !== true || isListenerAdded) {
     return;
   }
   events.on(EVENTS.AUCTION_INIT, auctionInitHandler);
@@ -155,7 +156,8 @@ function init() {
   events.on(EVENTS.SET_TARGETING, setTargetingHandler);
   events.on(EVENTS.TCF2_ENFORCEMENT, tcf2EnforcementHandler);
   events.on(EVENTS.BID_WON, bidWonHandler);
+  isListenerAdded = true;
   loadUILibrary();
 }
 
-init();
+config.getConfig('debug', config => handleSetDebugConfig(config.debug));
