@@ -5,7 +5,7 @@ import { config } from '../src/config.js';
 import { hasPurpose1Consent } from '../src/utils/gpdr.js';
 
 const INTEGRATION_METHOD = 'prebid.js';
-const BIDDER_CODE = 'adserveradtarget';
+const BIDDER_CODE = 'adtrgtme';
 const ENDPOINT = 'https://z.cdn.adtarget.market/ssp?prebid&s=';
 const ADAPTER_VERSION = '1.0.0';
 const PREBID_VERSION = '$prebid.version$';
@@ -65,46 +65,23 @@ function getMediaType(bid) {
   return deepAccess(bid, 'mediaTypes.banner') ? BANNER : false;
 }
 
-function validateAppendObject(validationType, allowedKeys, inputObject, appendToObject) {
+function validateAppendObject(validationFunction, allowedKeys, inputObject, appendToObject) {
   const outputObject = {
     ...appendToObject
   };
 
-  for (const objectKey in inputObject) {
-    switch (validationType) {
-      case 'string':
-        if (allowedKeys.indexOf(objectKey) !== -1 && isStr(inputObject[objectKey])) {
-          outputObject[objectKey] = inputObject[objectKey];
-        };
-        break;
-      case 'number':
-        if (allowedKeys.indexOf(objectKey) !== -1 && isNumber(inputObject[objectKey])) {
-          outputObject[objectKey] = inputObject[objectKey];
-        };
-        break;
-
-      case 'array':
-        if (allowedKeys.indexOf(objectKey) !== -1 && isArray(inputObject[objectKey])) {
-          outputObject[objectKey] = inputObject[objectKey];
-        };
-        break;
-      case 'object':
-        if (allowedKeys.indexOf(objectKey) !== -1 && isPlainObject(inputObject[objectKey])) {
-          outputObject[objectKey] = inputObject[objectKey];
-        };
-        break;
-      case 'objectAllKeys':
-        if (isPlainObject(inputObject)) {
-          outputObject[objectKey] = inputObject[objectKey];
-        };
-        break;
-    };
-  };
+  if (allowedKeys.length > 0) {
+    for (const objectKey in inputObject) {
+      if (allowedKeys.indexOf(objectKey) !== -1 && validationFunction(inputObject[objectKey])) {
+        outputObject[objectKey] = inputObject[objectKey]
+      }
+    }
+  }
   return outputObject;
 };
 
 function getTtl(bidderRequest) {
-  const ttl = config.getConfig('adserveradtarget.ttl');
+  const ttl = config.getConfig('adtrgtme.ttl');
   return ttl ? validateTTL(ttl) : validateTTL(deepAccess(bidderRequest, 'params.ttl'));
 };
 
@@ -186,7 +163,7 @@ function appendImpObject(bid, openRtbObject) {
       bidfloor: getFloorModuleData(bid).floor || deepAccess(bid, 'params.bidOverride.imp.bidfloor') || 0.000001
     };
 
-    if (bid.mediaTypes.banner && (typeof mediaTypeMode === 'undefined' || mediaTypeMode === BANNER)) {
+    if (mediaTypeMode === BANNER) {
       impObject.banner = {
         mimes: bid.mediaTypes.banner.mimes || ['text/html', 'text/javascript', 'application/javascript', 'image/jpg'],
         format: transformSizes(bid.sizes)
@@ -229,9 +206,9 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
     const allowedSiteStringKeys = ['name', 'domain', 'page', 'ref', 'keywords', 'search'];
     const allowedSiteArrayKeys = ['cat', 'sectioncat', 'pagecat'];
     const allowedSiteObjectKeys = ['ext'];
-    outBoundBidRequest.site = validateAppendObject('string', allowedSiteStringKeys, siteObject, outBoundBidRequest.site);
-    outBoundBidRequest.site = validateAppendObject('array', allowedSiteArrayKeys, siteObject, outBoundBidRequest.site);
-    outBoundBidRequest.site = validateAppendObject('object', allowedSiteObjectKeys, siteObject, outBoundBidRequest.site);
+    outBoundBidRequest.site = validateAppendObject(isStr, allowedSiteStringKeys, siteObject, outBoundBidRequest.site);
+    outBoundBidRequest.site = validateAppendObject(isArray, allowedSiteArrayKeys, siteObject, outBoundBidRequest.site);
+    outBoundBidRequest.site = validateAppendObject(isPlainObject, allowedSiteObjectKeys, siteObject, outBoundBidRequest.site);
   };
 
   if (siteContentObject && isPlainObject(siteContentObject)) {
@@ -239,10 +216,10 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
     const allowedContentNumberkeys = ['episode', 'prodq', 'context', 'livestream', 'len'];
     const allowedContentArrayKeys = ['cat'];
     const allowedContentObjectKeys = ['ext'];
-    outBoundBidRequest.site.content = validateAppendObject('string', allowedContentStringKeys, siteContentObject, outBoundBidRequest.site.content);
-    outBoundBidRequest.site.content = validateAppendObject('number', allowedContentNumberkeys, siteContentObject, outBoundBidRequest.site.content);
-    outBoundBidRequest.site.content = validateAppendObject('array', allowedContentArrayKeys, siteContentObject, outBoundBidRequest.site.content);
-    outBoundBidRequest.site.content = validateAppendObject('object', allowedContentObjectKeys, siteContentObject, outBoundBidRequest.site.content);
+    outBoundBidRequest.site.content = validateAppendObject(isStr, allowedContentStringKeys, siteContentObject, outBoundBidRequest.site.content);
+    outBoundBidRequest.site.content = validateAppendObject(isNumber, allowedContentNumberkeys, siteContentObject, outBoundBidRequest.site.content);
+    outBoundBidRequest.site.content = validateAppendObject(isArray, allowedContentArrayKeys, siteContentObject, outBoundBidRequest.site.content);
+    outBoundBidRequest.site.content = validateAppendObject(isPlainObject, allowedContentObjectKeys, siteContentObject, outBoundBidRequest.site.content);
 
     if (siteContentDataArray && isArray(siteContentDataArray)) {
       siteContentDataArray.every(dataObject => {
@@ -250,9 +227,9 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
         const allowedContentDataStringKeys = ['id', 'name'];
         const allowedContentDataArrayKeys = ['segment'];
         const allowedContentDataObjectKeys = ['ext'];
-        newDataObject = validateAppendObject('string', allowedContentDataStringKeys, dataObject, newDataObject);
-        newDataObject = validateAppendObject('array', allowedContentDataArrayKeys, dataObject, newDataObject);
-        newDataObject = validateAppendObject('object', allowedContentDataObjectKeys, dataObject, newDataObject);
+        newDataObject = validateAppendObject(isStr, allowedContentDataStringKeys, dataObject, newDataObject);
+        newDataObject = validateAppendObject(isArray, allowedContentDataArrayKeys, dataObject, newDataObject);
+        newDataObject = validateAppendObject(isPlainObject, allowedContentDataObjectKeys, dataObject, newDataObject);
         outBoundBidRequest.site.content.data = [];
         outBoundBidRequest.site.content.data.push(newDataObject);
       })
@@ -266,9 +243,9 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
         const allowedContentDataStringKeys = ['id', 'name'];
         const allowedContentDataArrayKeys = ['segment'];
         const allowedContentDataObjectKeys = ['ext'];
-        newDataObject = validateAppendObject('string', allowedContentDataStringKeys, dataObject, newDataObject);
-        newDataObject = validateAppendObject('array', allowedContentDataArrayKeys, dataObject, newDataObject);
-        newDataObject = validateAppendObject('object', allowedContentDataObjectKeys, dataObject, newDataObject);
+        newDataObject = validateAppendObject(isStr, allowedContentDataStringKeys, dataObject, newDataObject);
+        newDataObject = validateAppendObject(isArray, allowedContentDataArrayKeys, dataObject, newDataObject);
+        newDataObject = validateAppendObject(isPlainObject, allowedContentDataObjectKeys, dataObject, newDataObject);
         outBoundBidRequest.app = {
           content: {
             data: []
@@ -284,10 +261,10 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
     const allowedUserNumbers = ['yob'];
     const allowedUserArrays = ['data'];
     const allowedUserObjects = ['ext'];
-    outBoundBidRequest.user = validateAppendObject('string', allowedUserStrings, userObject, outBoundBidRequest.user);
-    outBoundBidRequest.user = validateAppendObject('number', allowedUserNumbers, userObject, outBoundBidRequest.user);
-    outBoundBidRequest.user = validateAppendObject('array', allowedUserArrays, userObject, outBoundBidRequest.user);
-    outBoundBidRequest.user.ext = validateAppendObject('object', allowedUserObjects, userObject, outBoundBidRequest.user.ext);
+    outBoundBidRequest.user = validateAppendObject(isStr, allowedUserStrings, userObject, outBoundBidRequest.user);
+    outBoundBidRequest.user = validateAppendObject(isNumber, allowedUserNumbers, userObject, outBoundBidRequest.user);
+    outBoundBidRequest.user = validateAppendObject(isArray, allowedUserArrays, userObject, outBoundBidRequest.user);
+    outBoundBidRequest.user.ext = validateAppendObject(isPlainObject, allowedUserObjects, userObject, outBoundBidRequest.user.ext);
   };
 
   return outBoundBidRequest;
@@ -295,7 +272,7 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
 
 function generateServerRequest({payload, requestOptions, bidderRequest}) {
   return {
-    url: (config.getConfig('adserveradtarget.endpoint') || ENDPOINT) + (payload.site.id || ''),
+    url: (config.getConfig('adtrgtme.endpoint') || ENDPOINT) + (payload.site.id || ''),
     method: 'POST',
     data: payload,
     options: requestOptions,
@@ -313,14 +290,14 @@ export const spec = {
     if (isPlainObject(params) && isNumber(params.sid)) {
       return true;
     } else {
-      logWarn('AdserverAdtarget bidder params missing or incorrect');
+      logWarn('Adtrgtme bidder params missing or incorrect');
       return false;
     }
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
     if (isEmpty(validBidRequests) || isEmpty(bidderRequest)) {
-      logWarn('AdserverAdtarget Adapter: buildRequests called with empty request');
+      logWarn('Adtrgtme Adapter: buildRequests called with empty request');
       return undefined;
     };
 
@@ -333,7 +310,7 @@ export const spec = {
 
     requestOptions.withCredentials = hasPurpose1Consent(bidderRequest.gdprConsent);
 
-    if (config.getConfig('adserveradtarget.singleRequestMode') === true) {
+    if (config.getConfig('adtrgtme.singleRequestMode') === true) {
       const payload = generateOpenRtbObject(bidderRequest, validBidRequests[0]);
       validBidRequests.forEach(bid => {
         appendImpObject(bid, payload);
