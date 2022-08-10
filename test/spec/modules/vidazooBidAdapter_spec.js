@@ -48,7 +48,8 @@ const BIDDER_REQUEST = {
   },
   'uspConsent': 'consent_string',
   'refererInfo': {
-    'page': 'https://www.greatsite.com'
+    'page': 'https://www.greatsite.com',
+    'ref': 'https://www.somereferrer.com'
   }
 };
 
@@ -168,6 +169,7 @@ describe('VidazooBidAdapter', function () {
           usPrivacy: 'consent_string',
           sizes: ['300x250', '300x600'],
           url: 'https%3A%2F%2Fwww.greatsite.com',
+          referrer: 'https://www.somereferrer.com',
           cb: 1000,
           bidFloor: 0.1,
           bidId: '2d52001cabd527',
