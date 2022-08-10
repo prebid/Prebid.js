@@ -82,7 +82,7 @@ export const spec = {
       data: JSON.stringify(imp)
     }))
   },
-  interpretResponse: function (serverResponse, { bids }) {
+  interpretResponse: (serverResponse) => {
     if (!serverResponse.body) {
       return
     }
