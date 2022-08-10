@@ -53,7 +53,6 @@ function extractUserSyncUrls(syncOptions, pixels) {
       });
     }
   }
-
   return userSyncObjects;
 }
 
@@ -69,8 +68,7 @@ function validateAppendObject(validationFunction, allowedKeys, inputObject, appe
   const outputObject = {
     ...appendToObject
   };
-
-  if (allowedKeys.length > 0) {
+  if (allowedKeys.length > 0 && typeof validationFunction === 'function') {
     for (const objectKey in inputObject) {
       if (allowedKeys.indexOf(objectKey) !== -1 && validationFunction(inputObject[objectKey])) {
         outputObject[objectKey] = inputObject[objectKey]
@@ -197,13 +195,10 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
   const ortb2Object = bid.ortb2;
   const siteObject = deepAccess(ortb2Object, 'site') || undefined;
   const siteContentObject = deepAccess(siteObject, 'content') || undefined;
-  const siteContentDataArray = deepAccess(siteObject, 'content.data') || undefined;
-  const appContentObject = deepAccess(ortb2Object, 'app.content') || undefined;
-  const appContentDataArray = deepAccess(ortb2Object, 'app.content.data') || undefined;
   const userObject = deepAccess(ortb2Object, 'user') || undefined;
 
   if (siteObject && isPlainObject(siteObject)) {
-    const allowedSiteStringKeys = ['name', 'domain', 'page', 'ref', 'keywords', 'search'];
+    const allowedSiteStringKeys = ['name', 'domain', 'page', 'ref', 'keywords'];
     const allowedSiteArrayKeys = ['cat', 'sectioncat', 'pagecat'];
     const allowedSiteObjectKeys = ['ext'];
     outBoundBidRequest.site = validateAppendObject(isStr, allowedSiteStringKeys, siteObject, outBoundBidRequest.site);
@@ -212,58 +207,16 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
   };
 
   if (siteContentObject && isPlainObject(siteContentObject)) {
-    const allowedContentStringKeys = ['id', 'title', 'series', 'season', 'genre', 'contentrating', 'language'];
-    const allowedContentNumberkeys = ['episode', 'prodq', 'context', 'livestream', 'len'];
+    const allowedContentStringKeys = ['id', 'title', 'language'];
     const allowedContentArrayKeys = ['cat'];
-    const allowedContentObjectKeys = ['ext'];
     outBoundBidRequest.site.content = validateAppendObject(isStr, allowedContentStringKeys, siteContentObject, outBoundBidRequest.site.content);
-    outBoundBidRequest.site.content = validateAppendObject(isNumber, allowedContentNumberkeys, siteContentObject, outBoundBidRequest.site.content);
     outBoundBidRequest.site.content = validateAppendObject(isArray, allowedContentArrayKeys, siteContentObject, outBoundBidRequest.site.content);
-    outBoundBidRequest.site.content = validateAppendObject(isPlainObject, allowedContentObjectKeys, siteContentObject, outBoundBidRequest.site.content);
-
-    if (siteContentDataArray && isArray(siteContentDataArray)) {
-      siteContentDataArray.every(dataObject => {
-        let newDataObject = {};
-        const allowedContentDataStringKeys = ['id', 'name'];
-        const allowedContentDataArrayKeys = ['segment'];
-        const allowedContentDataObjectKeys = ['ext'];
-        newDataObject = validateAppendObject(isStr, allowedContentDataStringKeys, dataObject, newDataObject);
-        newDataObject = validateAppendObject(isArray, allowedContentDataArrayKeys, dataObject, newDataObject);
-        newDataObject = validateAppendObject(isPlainObject, allowedContentDataObjectKeys, dataObject, newDataObject);
-        outBoundBidRequest.site.content.data = [];
-        outBoundBidRequest.site.content.data.push(newDataObject);
-      })
-    };
-  };
-
-  if (appContentObject && isPlainObject(appContentObject)) {
-    if (appContentDataArray && isArray(appContentDataArray)) {
-      appContentDataArray.every(dataObject => {
-        let newDataObject = {};
-        const allowedContentDataStringKeys = ['id', 'name'];
-        const allowedContentDataArrayKeys = ['segment'];
-        const allowedContentDataObjectKeys = ['ext'];
-        newDataObject = validateAppendObject(isStr, allowedContentDataStringKeys, dataObject, newDataObject);
-        newDataObject = validateAppendObject(isArray, allowedContentDataArrayKeys, dataObject, newDataObject);
-        newDataObject = validateAppendObject(isPlainObject, allowedContentDataObjectKeys, dataObject, newDataObject);
-        outBoundBidRequest.app = {
-          content: {
-            data: []
-          }
-        };
-        outBoundBidRequest.app.content.data.push(newDataObject);
-      })
-    };
   };
 
   if (userObject && isPlainObject(userObject)) {
     const allowedUserStrings = ['id', 'buyeruid', 'gender', 'keywords', 'customdata'];
-    const allowedUserNumbers = ['yob'];
-    const allowedUserArrays = ['data'];
     const allowedUserObjects = ['ext'];
     outBoundBidRequest.user = validateAppendObject(isStr, allowedUserStrings, userObject, outBoundBidRequest.user);
-    outBoundBidRequest.user = validateAppendObject(isNumber, allowedUserNumbers, userObject, outBoundBidRequest.user);
-    outBoundBidRequest.user = validateAppendObject(isArray, allowedUserArrays, userObject, outBoundBidRequest.user);
     outBoundBidRequest.user.ext = validateAppendObject(isPlainObject, allowedUserObjects, userObject, outBoundBidRequest.user.ext);
   };
 

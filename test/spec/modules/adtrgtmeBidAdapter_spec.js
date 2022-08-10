@@ -298,7 +298,7 @@ describe('adtrgtme Bid Adapter:', () => {
     });
 
     // Should add valid "site" params
-    const VALID_SITE_STRINGS = ['name', 'domain', 'page', 'ref', 'keywords', 'search'];
+    const VALID_SITE_STRINGS = ['name', 'domain', 'page', 'ref', 'keywords'];
     const VALID_SITE_ARRAYS = ['cat', 'sectioncat', 'pagecat'];
 
     VALID_SITE_STRINGS.forEach(param => {
@@ -362,7 +362,7 @@ describe('adtrgtme Bid Adapter:', () => {
     });
 
     // Should append valid "site.content" keys
-    const VALID_CONTENT_STRINGS = ['id', 'title', 'series', 'season', 'genre', 'contentrating', 'language'];
+    const VALID_CONTENT_STRINGS = ['id', 'title', 'language'];
     VALID_CONTENT_STRINGS.forEach(param => {
       it(`should determine that the ortb2.site String key is valid and append to the bid-request: ${JSON.stringify(param)}`, () => {
         const ortb2 = {
@@ -376,23 +376,6 @@ describe('adtrgtme Bid Adapter:', () => {
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
         expect(data.site.content[param]).to.exist;
         expect(data.site.content[param]).to.be.a('string');
-        expect(data.site.content[param]).to.be.equal(ortb2.site.content[param]);
-      });
-    });
-
-    const VALID_CONTENT_NUMBERS = ['episode', 'prodq', 'context', 'livestream', 'len'];
-    VALID_CONTENT_NUMBERS.forEach(param => {
-      it(`should determine that the ortb2.site.content Number key is valid and append to the bid-request: ${JSON.stringify(param)}`, () => {
-        const ortb2 = {
-          site: {
-            content: {
-              [param]: 1234
-            }
-          }
-        };
-        const { validBidRequests, bidderRequest } = generateBuildRequestMock({ortb2});
-        const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
-        expect(data.site.content[param]).to.be.a('number');
         expect(data.site.content[param]).to.be.equal(ortb2.site.content[param]);
       });
     });
@@ -411,24 +394,6 @@ describe('adtrgtme Bid Adapter:', () => {
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
         expect(data.site.content[param]).to.be.a('array');
         expect(data.site.content[param]).to.be.equal(ortb2.site.content[param]);
-      });
-    });
-
-    const VALID_CONTENT_OBJECTS = ['ext'];
-    VALID_CONTENT_OBJECTS.forEach(param => {
-      it(`should determine that the ortb2.site.content Object key is valid and append to the bid-request: ${JSON.stringify(param)}`, () => {
-        const ortb2 = {
-          site: {
-            content: {
-              [param]: {a: '123', b: '456'}
-            }
-          }
-        };
-        const { validBidRequests, bidderRequest } = generateBuildRequestMock({ortb2});
-        const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
-        expect(data.site.content[param]).to.be.a('object');
-        expect(data.site.content[param]).to.be.equal(ortb2.site.content[param]);
-        config.setConfig({ortb2: {}});
       });
     });
   });
@@ -463,38 +428,6 @@ describe('adtrgtme Bid Adapter:', () => {
       });
     });
 
-    const VALID_USER_NUMBERS = ['yob'];
-    VALID_USER_NUMBERS.forEach(param => {
-      it(`should allow supported user number keys to be added bid-request: ${JSON.stringify(param)}`, () => {
-        const ortb2 = {
-          user: {
-            [param]: 1982
-          }
-        };
-        const { validBidRequests, bidderRequest } = generateBuildRequestMock({ortb2});
-        const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
-        expect(data.user[param]).to.exist;
-        expect(data.user[param]).to.be.a('number');
-        expect(data.user[param]).to.be.equal(ortb2.user[param]);
-      });
-    });
-
-    const VALID_USER_ARRAYS = ['data'];
-    VALID_USER_ARRAYS.forEach(param => {
-      it(`should allow supported user Array keys to be added to the bid-request: ${JSON.stringify(param)}`, () => {
-        const ortb2 = {
-          user: {
-            [param]: ['something']
-          }
-        };
-        const { validBidRequests, bidderRequest } = generateBuildRequestMock({ortb2});
-        const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
-        expect(data.user[param]).to.exist;
-        expect(data.user[param]).to.be.a('array');
-        expect(data.user[param]).to.be.equal(ortb2.user[param]);
-      });
-    });
-
     const VALID_USER_OBJECTS = ['ext'];
     VALID_USER_OBJECTS.forEach(param => {
       it(`should allow supported user extObject keys to be added to the bid-request: ${JSON.stringify(param)}`, () => {
@@ -505,66 +438,9 @@ describe('adtrgtme Bid Adapter:', () => {
         };
         const { validBidRequests, bidderRequest } = generateBuildRequestMock({ortb2});
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+        expect(data.user[param]).to.exist;
         expect(data.user[param]).to.be.a('object');
         expect(data.user[param]).to.be.deep.include({[param]: {a: '123', b: '456'}});
-        config.setConfig({ortb2: {}});
-      });
-    });
-
-    // Should allow valid user.data && site.content.data
-    const VALID_USER_DATA_STRINGS = ['id', 'name'];
-    VALID_USER_DATA_STRINGS.forEach(param => {
-      it(`should allow supported user.data & site.content.data strings to be added to the bid-request: ${JSON.stringify(param)}`, () => {
-        const ortb2 = {
-          user: {
-            data: [{[param]: 'string'}]
-          },
-          site: {
-            content: {
-              data: [{[param]: 'string'}]
-            }
-          }
-        };
-        const { validBidRequests, bidderRequest } = generateBuildRequestMock({ortb2});
-        const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
-        expect(data.user.data[0][param]).to.exist;
-        expect(data.user.data[0][param]).to.be.a('string');
-        expect(data.user.data[0][param]).to.be.equal(ortb2.user.data[0][param]);
-        expect(data.site.content.data[0][param]).to.exist;
-        expect(data.site.content.data[0][param]).to.be.a('string');
-        expect(data.site.content.data[0][param]).to.be.equal(ortb2.site.content.data[0][param]);
-      });
-    });
-
-    const VALID_USER_DATA_ARRAYS = ['segment']
-    VALID_USER_DATA_ARRAYS.forEach(param => {
-      it(`should allow supported user data arrays to be added to the bid-request: ${JSON.stringify(param)}`, () => {
-        const ortb2 = {
-          user: {
-            data: [{[param]: [{id: 1}]}]
-          }
-        };
-        const { validBidRequests, bidderRequest } = generateBuildRequestMock({ortb2});
-        const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
-        expect(data.user.data[0][param]).to.exist;
-        expect(data.user.data[0][param]).to.be.a('array');
-        expect(data.user.data[0][param]).to.be.equal(ortb2.user.data[0][param]);
-      });
-    });
-
-    const VALID_USER_DATA_OBJECTS = ['ext'];
-    VALID_USER_DATA_OBJECTS.forEach(param => {
-      it(`should allow supported user data objects to be added to the bid-request: ${JSON.stringify(param)}`, () => {
-        const ortb2 = {
-          user: {
-            data: [{[param]: {id: 'ext'}}]
-          }
-        };
-        const { validBidRequests, bidderRequest } = generateBuildRequestMock({ortb2});
-        const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
-        expect(data.user.data[0][param]).to.exist;
-        expect(data.user.data[0][param]).to.be.a('object');
-        expect(data.user.data[0][param]).to.be.equal(ortb2.user.data[0][param]);
         config.setConfig({ortb2: {}});
       });
     });
