@@ -88,7 +88,7 @@ describe('Caroda adapter', function () {
       const data = JSON.parse(request.data)
       assert.equal(data.placement_id, 'opzafe342f');
     });
-  
+
     it('should send info about device', function () {
       config.setConfig({
         device: { w: 100, h: 100 }
@@ -251,23 +251,23 @@ describe('Caroda adapter', function () {
         let validBidRequests = [{ bidId: 'bidId', params: { test: 1 } }];
         let bidderRequest = { gdprConsent: { gdprApplies: true, consentString: 'consentDataString' }, refererInfo: { page: 'page' } };
         let request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest)[0].data);
-  
+
         assert.equal(request.privacy.coppa, undefined);
-  
+
         config.setConfig({
           coppa: false
         });
         request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest)[0].data);
-  
+
         assert.equal(request.privacy.coppa, undefined);
-      });  
+      });
       it('should set coppa to 1 when coppa is provided with value true', function () {
         config.setConfig({
           coppa: true
         });
         let validBidRequests = [{ bidId: 'bidId', params: { test: 1 } }];
         let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } })[0].data);
-  
+
         assert.equal(request.privacy.coppa, 1);
       });
     });
@@ -288,7 +288,6 @@ describe('Caroda adapter', function () {
         assert.equal(data[1].ctok, 'ctok2')
       });
 
-      
       describe('price floors', function () {
         it('should not add if floors module not configured', function () {
           const validBidRequests = [{ bidId: 'bidId', params: {ctok: 'ctok1'}, mediaTypes: {video: {}} }];
