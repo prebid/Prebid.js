@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { deepAccess, getBidIdParameter, isArray, getUniqueIdentifierStr, contains } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -26,7 +26,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
-    return !!(bid.params && bid.params.site_id && (utils.deepAccess(bid, 'mediaTypes.video.context') != 'adpod'));
+    return !!(bid.params && bid.params.site_id && (deepAccess(bid, 'mediaTypes.video.context') != 'adpod'));
   },
 
   /**
@@ -84,14 +84,14 @@ export const spec = {
 
 /* Generate bid request for banner adunit */
 function buildBannerRequest(bidRequest, bidderRequest) {
-  let bidFloor = Number(utils.getBidIdParameter('bidfloor', bidRequest.params));
+  let bidFloor = Number(getBidIdParameter('bidfloor', bidRequest.params));
 
   let adW = 0;
   let adH = 0;
 
-  let bannerSizes = utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes');
-  let bidSizes = utils.isArray(bannerSizes) ? bannerSizes : bidRequest.sizes;
-  if (utils.isArray(bidSizes)) {
+  let bannerSizes = deepAccess(bidRequest, 'mediaTypes.banner.sizes');
+  let bidSizes = isArray(bannerSizes) ? bannerSizes : bidRequest.sizes;
+  if (isArray(bidSizes)) {
     if (bidSizes.length === 2 && typeof bidSizes[0] === 'number' && typeof bidSizes[1] === 'number') {
       adW = parseInt(bidSizes[0]);
       adH = parseInt(bidSizes[1]);
@@ -135,29 +135,29 @@ function buildNativeRequest(bidRequest, bidderRequest) {
   let counter = 0;
   let assets = [];
 
-  let bidFloor = Number(utils.getBidIdParameter('bidfloor', bidRequest.params));
+  let bidFloor = Number(getBidIdParameter('bidfloor', bidRequest.params));
 
-  let title = utils.deepAccess(bidRequest, 'mediaTypes.native.title');
+  let title = deepAccess(bidRequest, 'mediaTypes.native.title');
   if (title && title.len) {
     assets.push(generateNativeTitleObj(title, ++counter));
   }
-  let image = utils.deepAccess(bidRequest, 'mediaTypes.native.image');
+  let image = deepAccess(bidRequest, 'mediaTypes.native.image');
   if (image) {
     assets.push(generateNativeImgObj(image, 'image', ++counter));
   }
-  let icon = utils.deepAccess(bidRequest, 'mediaTypes.native.icon');
+  let icon = deepAccess(bidRequest, 'mediaTypes.native.icon');
   if (icon) {
     assets.push(generateNativeImgObj(icon, 'icon', ++counter));
   }
-  let sponsoredBy = utils.deepAccess(bidRequest, 'mediaTypes.native.sponsoredBy');
+  let sponsoredBy = deepAccess(bidRequest, 'mediaTypes.native.sponsoredBy');
   if (sponsoredBy) {
     assets.push(generateNativeDataObj(sponsoredBy, 'sponsored', ++counter));
   }
-  let cta = utils.deepAccess(bidRequest, 'mediaTypes.native.cta');
+  let cta = deepAccess(bidRequest, 'mediaTypes.native.cta');
   if (cta) {
     assets.push(generateNativeDataObj(cta, 'cta', ++counter));
   }
-  let body = utils.deepAccess(bidRequest, 'mediaTypes.native.body');
+  let body = deepAccess(bidRequest, 'mediaTypes.native.body');
   if (body) {
     assets.push(generateNativeDataObj(body, 'desc', ++counter));
   }
@@ -196,30 +196,30 @@ function buildNativeRequest(bidRequest, bidderRequest) {
 
 /* Generate bid request for video adunit */
 function buildVideoRequest(bidRequest, bidderRequest) {
-  let bidFloor = Number(utils.getBidIdParameter('bidfloor', bidRequest.params));
+  let bidFloor = Number(getBidIdParameter('bidfloor', bidRequest.params));
 
   let sizeObj = getVideoAdUnitSize(bidRequest);
 
   const video = {
     w: sizeObj.adW,
     h: sizeObj.adH,
-    api: utils.deepAccess(bidRequest, 'mediaTypes.video.api'),
-    mimes: utils.deepAccess(bidRequest, 'mediaTypes.video.mimes'),
-    protocols: utils.deepAccess(bidRequest, 'mediaTypes.video.protocols'),
-    playbackmethod: utils.deepAccess(bidRequest, 'mediaTypes.video.playbackmethod'),
-    minduration: utils.deepAccess(bidRequest, 'mediaTypes.video.minduration'),
-    maxduration: utils.deepAccess(bidRequest, 'mediaTypes.video.maxduration'),
-    startdelay: utils.deepAccess(bidRequest, 'mediaTypes.video.startdelay'),
-    minbitrate: utils.deepAccess(bidRequest, 'mediaTypes.video.minbitrate'),
-    maxbitrate: utils.deepAccess(bidRequest, 'mediaTypes.video.maxbitrate'),
-    delivery: utils.deepAccess(bidRequest, 'mediaTypes.video.delivery'),
-    linearity: utils.deepAccess(bidRequest, 'mediaTypes.video.linearity'),
-    placement: utils.deepAccess(bidRequest, 'mediaTypes.video.placement'),
-    skip: utils.deepAccess(bidRequest, 'mediaTypes.video.skip'),
-    skipafter: utils.deepAccess(bidRequest, 'mediaTypes.video.skipafter')
+    api: deepAccess(bidRequest, 'mediaTypes.video.api'),
+    mimes: deepAccess(bidRequest, 'mediaTypes.video.mimes'),
+    protocols: deepAccess(bidRequest, 'mediaTypes.video.protocols'),
+    playbackmethod: deepAccess(bidRequest, 'mediaTypes.video.playbackmethod'),
+    minduration: deepAccess(bidRequest, 'mediaTypes.video.minduration'),
+    maxduration: deepAccess(bidRequest, 'mediaTypes.video.maxduration'),
+    startdelay: deepAccess(bidRequest, 'mediaTypes.video.startdelay'),
+    minbitrate: deepAccess(bidRequest, 'mediaTypes.video.minbitrate'),
+    maxbitrate: deepAccess(bidRequest, 'mediaTypes.video.maxbitrate'),
+    delivery: deepAccess(bidRequest, 'mediaTypes.video.delivery'),
+    linearity: deepAccess(bidRequest, 'mediaTypes.video.linearity'),
+    placement: deepAccess(bidRequest, 'mediaTypes.video.placement'),
+    skip: deepAccess(bidRequest, 'mediaTypes.video.skip'),
+    skipafter: deepAccess(bidRequest, 'mediaTypes.video.skipafter')
   };
 
-  let context = utils.deepAccess(bidRequest, 'mediaTypes.video.context');
+  let context = deepAccess(bidRequest, 'mediaTypes.video.context');
   if (context == 'outstream' && !bidRequest.renderer) video.mimes = OUTSTREAM_MIMES
 
   var imp = [];
@@ -254,8 +254,8 @@ function buildVideoRequest(bidRequest, bidderRequest) {
 function getVideoAdUnitSize(bidRequest) {
   var adH = 0;
   var adW = 0;
-  let playerSize = utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize');
-  if (utils.isArray(playerSize)) {
+  let playerSize = deepAccess(bidRequest, 'mediaTypes.video.playerSize');
+  if (isArray(playerSize)) {
     if (playerSize.length === 2 && typeof playerSize[0] === 'number' && typeof playerSize[1] === 'number') {
       adW = parseInt(playerSize[0]);
       adH = parseInt(playerSize[1]);
@@ -278,7 +278,7 @@ function getMediaTypeOfResponse(bidRequest) {
 /* Generate endpoint url */
 function generateScriptUrl(bidRequest) {
   let queryParams = 'hb=1';
-  let siteId = utils.getBidIdParameter('site_id', bidRequest.params);
+  let siteId = getBidIdParameter('site_id', bidRequest.params);
   return ENDPOINT_URL + siteId + '?' + queryParams;
 }
 
@@ -311,7 +311,7 @@ function generatePayload(imp, bidderRequest) {
   };
 
   const payload = {
-    id: utils.getUniqueIdentifierStr(),
+    id: getUniqueIdentifierStr(),
     imp: imp,
     site: site,
     device: device,
@@ -331,7 +331,7 @@ function generateNativeImgObj(obj, type, id) {
   if (type == 'icon') typeId = 1;
   else if (type == 'image') typeId = 3;
 
-  if (utils.isArray(bidSizes)) {
+  if (isArray(bidSizes)) {
     if (bidSizes.length === 2 && typeof bidSizes[0] === 'number' && typeof bidSizes[1] === 'number') {
       adW = parseInt(bidSizes[0]);
       adH = parseInt(bidSizes[1]);
@@ -412,7 +412,7 @@ function buildBannerResponse(bidRequest, bidResponse) {
         bidResponses.push(bid);
         return;
       }
-      let bidSizes = (utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes')) ? utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes') : bidRequest.sizes;
+      let bidSizes = (deepAccess(bidRequest, 'mediaTypes.banner.sizes')) ? deepAccess(bidRequest, 'mediaTypes.banner.sizes') : bidRequest.sizes;
       bidResponse.requestId = bidRequest.bidId
       bidResponse.transactionId = bidRequest.transactionId
       bidResponse.placementCode = placementCode;
@@ -531,7 +531,7 @@ function buildVideoResponse(bidRequest, response) {
 
       switch (context) {
         case OUTSTREAM:
-          var outstreamType = utils.contains(OUTSTREAM_TYPES, bidRequest.params.outstreamType) ? bidRequest.params.outstreamType : ''
+          var outstreamType = contains(OUTSTREAM_TYPES, bidRequest.params.outstreamType) ? bidRequest.params.outstreamType : ''
           bidResponse.outstreamType = outstreamType;
           bidResponse.ad = vastXml;
           if (!bidRequest.renderer) {
