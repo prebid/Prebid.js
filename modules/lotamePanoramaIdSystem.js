@@ -84,9 +84,11 @@ function getFromStorage(key) {
 /**
  * Returns the domain used to host the ID request 
  */
-function getIDHost() {
-  let idHost = DEV_ID_HOST;
-  return idHost;
+function getIDHost(config) {
+  if (config && config['environment'] && config['environment'] == 'dev') {
+    return DEV_ID_HOST;
+  }
+  return ID_HOST;
 }
 
 /**
@@ -238,7 +240,7 @@ export const lotamePanoramaIdSubmodule = {
       }
       const url = buildUrl({
         protocol: 'https',
-        host: getIDHost(),
+        host: getIDHost(config),
         pathname: '/id',
         search: isEmpty(queryParams) ? undefined : queryParams,
       });
