@@ -386,7 +386,11 @@ export function newConfig() {
         option = Object.assign({}, defaults[topic], option);
       }
 
-      topicalConfig[topic] = config[topic] = option;
+      try {
+        topicalConfig[topic] = config[topic] = option;
+      } catch (e) {
+        logWarn(`Cannot set config for property ${topic} : `, e)
+      }
     });
 
     callSubscribers(topicalConfig);
@@ -525,11 +529,7 @@ export function newConfig() {
       return;
     }
 
-    const mergedConfig = Object.keys(obj).reduce((accum, key) => {
-      const prevConf = _getConfig(key)[key] || {};
-      accum[key] = mergeDeep(prevConf, obj[key]);
-      return accum;
-    }, {});
+    const mergedConfig = mergeDeep(_getConfig(), obj);
 
     setConfig({ ...mergedConfig });
     return mergedConfig;

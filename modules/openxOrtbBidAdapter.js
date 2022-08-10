@@ -157,6 +157,9 @@ function isBannerBid(bid) {
 }
 
 function interpretResponse(resp, req) {
+  if (!resp.body) {
+    resp.body = {nbr: 0};
+  }
   return converter.fromORTB({request: req.data, response: resp.body}).bids;
 }
 

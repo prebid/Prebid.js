@@ -1,4 +1,4 @@
-import { deepAccess, getUniqueIdentifierStr, isArray, logError, logInfo, logWarn, parseUrl } from '../src/utils.js';
+import { deepAccess, isArray, logError, logInfo, logWarn, parseUrl } from '../src/utils.js';
 import { loadExternalScript } from '../src/adloader.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
@@ -175,7 +175,8 @@ export const spec = {
     Object.assign(bidderRequest, {
       publisherExt: fpd.site?.ext,
       userExt: fpd.user?.ext,
-      ceh: config.getConfig('criteo.ceh')
+      ceh: config.getConfig('criteo.ceh'),
+      coppa: config.getConfig('coppa')
     });
 
     // If publisher tag not already loaded try to get it from fast bid
@@ -234,7 +235,6 @@ export const spec = {
         const bidId = bidRequest.bidId;
         const bid = {
           requestId: bidId,
-          adId: slot.bidId || getUniqueIdentifierStr(),
           cpm: slot.cpm,
           currency: slot.currency,
           netRevenue: true,
@@ -445,6 +445,9 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
     publisher: {
       url: context.url,
       ext: bidderRequest.publisherExt,
+    },
+    regs: {
+      coppa: bidderRequest.coppa === true ? 1 : (bidderRequest.coppa === false ? 0 : undefined)
     },
     slots: bidRequests.map(bidRequest => {
       networkId = bidRequest.params.networkId || networkId;
