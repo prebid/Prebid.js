@@ -299,6 +299,7 @@ describe('The video cache', function () {
     });
 
     it('should wait the duration of the batchTimeout and pass the correct batchSize if batched requests are enabled in the config', () => {
+      const mockAfterBidAdded = function() {};
       let callback = null;
       let mockTimeout = sinon.stub().callsFake((cb) => { callback = cb });
 
@@ -313,13 +314,13 @@ describe('The video cache', function () {
       let stubCache = sinon.stub();
       const batchAndStore = batchingCache(mockTimeout, stubCache);
       for (let i = 0; i < 3; i++) {
-        batchAndStore({}, {}, function() {});
+        batchAndStore({}, {}, mockAfterBidAdded);
       }
 
       sinon.assert.calledOnce(mockTimeout);
       sinon.assert.calledWith(mockTimeout, sinon.match.any, 20);
 
-      const expectedBatch = [{ afterBidAdded: function () {}, auctionInstance: { }, bidResponse: { } }, { afterBidAdded: function () {}, auctionInstance: { }, bidResponse: { } }, { afterBidAdded: function () {}, auctionInstance: { }, bidResponse: { } }];
+      const expectedBatch = [{ afterBidAdded: mockAfterBidAdded, auctionInstance: { }, bidResponse: { } }, { afterBidAdded: mockAfterBidAdded, auctionInstance: { }, bidResponse: { } }, { afterBidAdded: mockAfterBidAdded, auctionInstance: { }, bidResponse: { } }];
 
       callback();
 
