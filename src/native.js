@@ -677,40 +677,47 @@ export function legacyPropertiesToOrtbNative(legacyNative) {
 }
 
 export function toOrtbNativeResponse(legacyResponse, ortbRequest) {
-  // copy the request, so we don't pollute it with response data below
-  ortbRequest = deepClone(ortbRequest);
-
   const ortbResponse = {
     ...legacyPropertiesToOrtbNative(legacyResponse),
     assets: []
   };
+
+  function useRequestAsset(predicate, fn) {
+    let asset = ortbRequest.assets.find(predicate);
+    if (asset != null) {
+      asset = deepClone(asset);
+      fn(asset);
+      ortbResponse.assets.push(asset);
+    }
+  }
+
   Object.keys(legacyResponse).filter(key => !!legacyResponse[key]).forEach(key => {
     const value = legacyResponse[key];
     switch (key) {
       // process titles
       case 'title':
-        const titleAsset = ortbRequest.assets.find(asset => asset.title != null);
-        titleAsset.title = {
-          text: value
-        };
-        ortbResponse.assets.push(titleAsset);
+        useRequestAsset(asset => asset.title != null, titleAsset => {
+          titleAsset.title = {
+            text: value
+          };
+        })
         break;
       case 'image':
       case 'icon':
         const imageType = key === 'image' ? NATIVE_IMAGE_TYPES.MAIN : NATIVE_IMAGE_TYPES.ICON;
-        const imageAsset = ortbRequest.assets.find(asset => asset.img != null && asset.img.type == imageType);
-        imageAsset.img = {
-          url: value
-        };
-        ortbResponse.assets.push(imageAsset);
+        useRequestAsset(asset => asset.img != null && asset.img.type === imageType, imageAsset => {
+          imageAsset.img = {
+            url: value
+          };
+        })
         break;
       default:
         if (key in PREBID_NATIVE_DATA_KEYS_TO_ORTB) {
-          const dataAsset = ortbRequest.assets.find(asset => asset.data != null && asset.data.type === NATIVE_ASSET_TYPES[PREBID_NATIVE_DATA_KEYS_TO_ORTB[key]]);
-          dataAsset.data = {
-            value
-          };
-          ortbResponse.assets.push(dataAsset);
+          useRequestAsset(asset => asset.data != null && asset.data.type === NATIVE_ASSET_TYPES[PREBID_NATIVE_DATA_KEYS_TO_ORTB[key]], dataAsset => {
+            dataAsset.data = {
+              value
+            };
+          })
         }
         break;
     }

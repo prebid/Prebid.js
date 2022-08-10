@@ -1082,3 +1082,39 @@ describe('fireClickTrackers', () => {
     urls.forEach(url => sinon.assert.calledWith(fetchURL, url));
   })
 })
+
+describe('toOrtbNativeResponse', () => {
+  it('should work when there are unrequested assets in the response', () => {
+    const legacyResponse = {
+      'title': 'vtitle',
+      'body': 'vbody'
+    }
+    const request = toOrtbNativeRequest({
+      title: {
+        required: 'true'
+      },
+
+    });
+    const ortbResponse = toOrtbNativeResponse(legacyResponse, request);
+    expect(ortbResponse.assets.length).to.eql(1);
+  });
+
+  it('should not modify the request', () => {
+    const legacyResponse = {
+      title: 'vtitle'
+    }
+    const request = toOrtbNativeRequest({
+      title: {
+        required: true
+      }
+    });
+    const requestCopy = JSON.parse(JSON.stringify(request));
+    const response = toOrtbNativeResponse(legacyResponse, request);
+    expect(request).to.eql(requestCopy);
+    sinon.assert.match(response.assets[0], {
+      title: {
+        text: 'vtitle'
+      }
+    })
+  })
+})
