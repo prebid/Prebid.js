@@ -18,6 +18,8 @@ const DAYS_TO_CACHE = 7;
 const DAY_MS = 60 * 60 * 24 * 1000;
 const MISSING_CORE_CONSENT = 111;
 const GVLID = 95;
+const ID_HOST = 'id.crwdcntrl.net';
+const DEV_ID_HOST = 'id.dev.lotame.com';
 
 export const storage = getStorageManager(GVLID, MODULE_NAME);
 let cookieDomain;
@@ -77,6 +79,14 @@ function getFromStorage(key) {
     }
   }
   return value;
+}
+
+/**
+ * Returns the domain used to host the ID request 
+ */
+function getIDHost() {
+  let idHost = DEV_ID_HOST;
+  return idHost;
 }
 
 /**
@@ -228,7 +238,7 @@ export const lotamePanoramaIdSubmodule = {
       }
       const url = buildUrl({
         protocol: 'https',
-        host: `id.crwdcntrl.net`,
+        host: getIDHost(),
         pathname: '/id',
         search: isEmpty(queryParams) ? undefined : queryParams,
       });
