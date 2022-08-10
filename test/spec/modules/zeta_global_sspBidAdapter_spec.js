@@ -333,7 +333,7 @@ describe('Zeta Ssp Bid Adapter', function () {
     const payload = JSON.parse(request.data);
     expect(request.url).to.eql('https://ssp.disqus.com/bid/prebid?shortname=test_shortname');
 
-    expect(payload.imp.size()).to.eql(2);
+    expect(payload.imp.length).to.eql(2);
 
     expect(payload.imp[0].bidId).to.eql(12345);
     expect(payload.imp[1].bidId).to.eql(54321);
