@@ -298,7 +298,10 @@ describe('The video cache', function () {
       JSON.parse(request.requestBody).should.deep.equal(payload);
     });
 
-    it('should wait the duration of the batchTimeout if batched requests are enabled in the config', () => {
+    it('should wait the duration of the batchTimeout and pass the correct batchSize if batched requests are enabled in the config', () => {
+      let callback = null;
+      let mockTimeout = sinon.stub().callsFake((cb) => { callback = cb });
+
       config.setConfig({
         cache: {
           url: 'https://prebid.adnxs.com/pbc/v1/cache',
@@ -307,36 +310,21 @@ describe('The video cache', function () {
         }
       });
 
-      let mockTimeout = sinon.stub().callsFake((cb) => cb());
       let stubCache = sinon.stub();
       const batchAndStore = batchingCache(mockTimeout, stubCache);
-      batchAndStore();
+      for (let i = 0; i < 3; i++) {
+        batchAndStore({}, {}, function() {});
+      }
+
+      sinon.assert.calledOnce(mockTimeout);
       sinon.assert.calledWith(mockTimeout, sinon.match.any, 20);
+
+      const expectedBatch = [{ afterBidAdded: function () {}, auctionInstance: { }, bidResponse: { } }, { afterBidAdded: function () {}, auctionInstance: { }, bidResponse: { } }, { afterBidAdded: function () {}, auctionInstance: { }, bidResponse: { } }];
+
+      callback();
+
+      sinon.assert.calledWith(stubCache, expectedBatch);
     });
-
-    // it('should batch requests correctly based on the value of batchSize if batched requests are enabled in the config', () => {
-    //   config.setConfig({
-    //     cache: {
-    //       url: 'https://prebid.adnxs.com/pbc/v1/cache',
-    //       batchSize: 3,
-    //       batchTimeout: 20
-    //     }
-    //   });
-
-    //   let mockTimeout = sinon.stub().callsFake(cb => cb());
-    //   let stubCache = sinon.stub();
-    //   const batchAndStore = batchingCache(mockTimeout, stubCache);
-    //   for (let i = 0; i < 3; i++) {
-    //     batchAndStore({}, {}, function() {});
-    //   }
-
-    //   const expectedBatch = [
-    //     { afterBidAdded: undefined, auctionInstance: undefined, bidResponse: undefined },
-    //     { afterBidAdded: undefined, auctionInstance: undefined, bidResponse: undefined },
-    //     { afterBidAdded: undefined, auctionInstance: undefined, bidResponse: undefined }
-    //   ];
-    //   sinon.assert.calledWith(stubCache, expectedBatch);
-    // });
 
     function assertRequestMade(bid, expectedValue) {
       store([bid], function () { });
