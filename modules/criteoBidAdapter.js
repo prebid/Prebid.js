@@ -513,7 +513,7 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
       ext: {
         schain: schain
       }
-    }
+    };
   };
   request.user = {
     ext: bidderRequest.userExt
