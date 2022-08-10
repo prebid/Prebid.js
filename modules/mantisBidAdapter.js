@@ -1,5 +1,6 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
+import { ajax } from '../src/ajax.js';
 
 export const storage = getStorageManager({bidderCode: 'mantis'});
 
@@ -10,12 +11,7 @@ function inIframe() {
     return true;
   }
 }
-function pixel(url, parent) {
-  var img = document.createElement('img');
-  img.src = url;
-  img.style.cssText = 'display:none !important;';
-  (parent || document.body).appendChild(img);
-}
+
 export function onVisible(win, element, doOnVisible, time, pct) {
   var started = null;
   var notified = false;
@@ -301,9 +297,9 @@ export function iframePostMessage (win, name, callback) {
 
 onMessage('iframe', function (data) {
   if (window.$sf) {
-    sfPostMessage(window.$sf, data.width, data.height, () => pixel(data.pixel));
+    sfPostMessage(window.$sf, data.width, data.height, () => ajax(data.pixel));
   } else {
-    iframePostMessage(window, data.frame, () => pixel(data.pixel));
+    iframePostMessage(window, data.frame, () => ajax(data.pixel));
   }
 });
 

@@ -99,8 +99,9 @@ describe('Taboola Adapter', function () {
 
     const commonBidderRequest = {
       refererInfo: {
-        referer: 'https://example.com/ref',
-        canonicalUrl: 'https://example.com/'
+        page: 'https://example.com/ref',
+        ref: 'https://ref',
+        domain: 'example.com',
       }
     }
 
@@ -126,9 +127,9 @@ describe('Taboola Adapter', function () {
         'site': {
           'id': commonBidRequest.params.publisherId,
           'name': commonBidRequest.params.publisherId,
-          'domain': window.location.host,
-          'page': commonBidderRequest.refererInfo.canonicalUrl,
-          'ref': commonBidderRequest.refererInfo.referer,
+          'domain': commonBidderRequest.refererInfo.domain,
+          'page': commonBidderRequest.refererInfo.page,
+          'ref': commonBidderRequest.refererInfo.ref,
           'publisher': {'id': commonBidRequest.params.publisherId},
           'content': {'language': navigator.language}
         },
@@ -310,6 +311,7 @@ describe('Taboola Adapter', function () {
                 'crid': '278195503434041083381',
                 'w': 300,
                 'h': 250,
+                'exp': 60,
                 'lurl': 'http://us-trc.taboola.com/sample'
               }
             ],
@@ -369,7 +371,7 @@ describe('Taboola Adapter', function () {
           requestId: request.bids[0].bidId,
           cpm: bid.price,
           creativeId: bid.crid,
-          ttl: 360,
+          ttl: 60,
           netRevenue: false,
           currency: serverResponse.body.cur,
           mediaType: 'banner',
@@ -385,6 +387,31 @@ describe('Taboola Adapter', function () {
       const res = spec.interpretResponse(serverResponse, request)
       expect(res).to.deep.equal(expectedRes)
     });
+
+    it('should set the correct ttl form the response', function () {
+      // set exp-ttl to be 125
+      const [bid] = serverResponse.body.seatbid[0].bid;
+      serverResponse.body.seatbid[0].bid[0].exp = 125;
+      const expectedRes = [
+        {
+          requestId: request.bids[0].bidId,
+          cpm: bid.price,
+          creativeId: bid.crid,
+          ttl: 125,
+          netRevenue: false,
+          currency: serverResponse.body.cur,
+          mediaType: 'banner',
+          ad: bid.adm,
+          width: bid.w,
+          height: bid.h,
+          meta: {
+            'advertiserDomains': bid.adomain
+          },
+        }
+      ];
+      const res = spec.interpretResponse(serverResponse, request);
+      expect(res).to.deep.equal(expectedRes);
+    });
   })
 
   describe('userData', function () {
@@ -393,62 +420,36 @@ describe('Taboola Adapter', function () {
 
   describe('internal functions', function () {
     describe('getPageUrl', function () {
-      let origPageUrl;
       const bidderRequest = {
         refererInfo: {
-          canonicalUrl: 'http://canonical.url'
+          page: 'http://canonical.url'
         }
       };
 
-      beforeEach(function () {
-        // remember original pageUrl in config
-        origPageUrl = config.getConfig('pageUrl');
-
-        // unset pageUrl in config
-        config.setConfig({pageUrl: null});
-      });
-
-      afterEach(function () {
-        // set original pageUrl to config
-        config.setConfig({pageUrl: origPageUrl});
-      });
-
       it('should handle empty or missing data', function () {
-        expect(internal.getPageUrl(undefined)).to.equal(utils.getWindowTop().location.href);
-        expect(internal.getPageUrl('')).to.equal(utils.getWindowTop().location.href);
+        expect(internal.getPageUrl(undefined)).to.equal(utils.getWindowSelf().location.href);
+        expect(internal.getPageUrl('')).to.equal(utils.getWindowSelf().location.href);
       });
 
-      it('should use "pageUrl" from config', function () {
-        config.setConfig({pageUrl: 'http://page.url'});
-
-        expect(internal.getPageUrl(undefined)).to.equal(config.getConfig('pageUrl'));
-      });
-
-      it('should use bidderRequest.refererInfo.canonicalUrl', function () {
-        expect(internal.getPageUrl(bidderRequest.refererInfo)).to.equal(bidderRequest.refererInfo.canonicalUrl);
-      });
-
-      it('should prefer bidderRequest.refererInfo.canonicalUrl over "pageUrl" from config', () => {
-        config.setConfig({pageUrl: 'https://page.url'});
-
-        expect(internal.getPageUrl(bidderRequest.refererInfo)).to.equal(bidderRequest.refererInfo.canonicalUrl);
+      it('should use bidderRequest.refererInfo.page', function () {
+        expect(internal.getPageUrl(bidderRequest.refererInfo)).to.equal(bidderRequest.refererInfo.page);
       });
     });
 
     describe('getReferrer', function () {
       it('should handle empty or missing data', function () {
-        expect(internal.getReferrer(undefined)).to.equal(utils.getWindowTop().document.referrer);
-        expect(internal.getReferrer('')).to.equal(utils.getWindowTop().document.referrer);
+        expect(internal.getReferrer(undefined)).to.equal(utils.getWindowSelf().document.referrer);
+        expect(internal.getReferrer('')).to.equal(utils.getWindowSelf().document.referrer);
       });
 
-      it('should use bidderRequest.refererInfo.referer', () => {
+      it('should use bidderRequest.refererInfo.ref', () => {
         const bidderRequest = {
           refererInfo: {
-            referer: 'foobar'
+            ref: 'foobar'
           }
         };
 
-        expect(internal.getReferrer(bidderRequest.refererInfo)).to.equal(bidderRequest.refererInfo.referer);
+        expect(internal.getReferrer(bidderRequest.refererInfo)).to.equal(bidderRequest.refererInfo.ref);
       });
     });
   })

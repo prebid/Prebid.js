@@ -76,6 +76,7 @@ import {bidderSettings} from './bidderSettings.js';
 import * as events from './events.js'
 import adapterManager from './adapterManager.js';
 import CONSTANTS from './constants.json';
+import {GreedyPromise} from './utils/promise.js';
 
 const { syncUsers } = userSync;
 
@@ -94,6 +95,14 @@ const sourceInfo = {};
 const queuedCalls = [];
 
 /**
+ * Clear global state for tests
+ */
+export function resetAuctionState() {
+  queuedCalls.length = 0;
+  [outstandingRequests, sourceInfo].forEach((ob) => Object.keys(ob).forEach((k) => { delete ob[k] }));
+}
+
+/**
   * Creates new auction instance
   *
   * @param {Object} requestConfig
@@ -103,10 +112,11 @@ const queuedCalls = [];
   * @param {number} requestConfig.cbTimeout
   * @param {Array.<string>} requestConfig.labels
   * @param {string} requestConfig.auctionId
-  *
+  * @param {{global: {}, bidder: {}}} ortb2Fragments first party data, separated into global
+  *    (from getConfig('ortb2') + requestBids({ortb2})) and bidder (a map from bidderCode to ortb2)
   * @returns {Auction} auction instance
   */
-export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, auctionId}) {
+export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, auctionId, ortb2Fragments}) {
   let _adUnits = adUnits;
   let _labels = labels;
   let _adUnitCodes = adUnitCodes;
@@ -215,7 +225,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
     _auctionStatus = AUCTION_STARTED;
     _auctionStart = Date.now();
 
-    let bidRequests = adapterManager.makeBidRequests(_adUnits, _auctionStart, _auctionId, _timeout, _labels);
+    let bidRequests = adapterManager.makeBidRequests(_adUnits, _auctionStart, _auctionId, _timeout, _labels, ortb2Fragments);
     logInfo(`Bids Requested for Auction with id: ${_auctionId}`, bidRequests);
 
     if (bidRequests.length < 1) {
@@ -272,7 +282,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
               }
             }
           }
-        }, _timeout, onTimelyResponse);
+        }, _timeout, onTimelyResponse, ortb2Fragments);
       }
     };
 
@@ -324,11 +334,11 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
 
   function addWinningBid(winningBid) {
     _winningBids = _winningBids.concat(winningBid);
-    adapterManager.callBidWonBidder(winningBid.bidder, winningBid, adUnits);
+    adapterManager.callBidWonBidder(winningBid.adapterCode || winningBid.bidder, winningBid, adUnits);
   }
 
   function setBidTargeting(bid) {
-    adapterManager.callSetTargetingBidder(bid.bidder, bid);
+    adapterManager.callSetTargetingBidder(bid.adapterCode || bid.bidder, bid);
   }
 
   return {
@@ -348,7 +358,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
     getBidRequests: () => _bidderRequests,
     getBidsReceived: () => _bidsReceived,
     getNoBids: () => _noBids,
-
+    getFPD: () => ortb2Fragments
   }
 }
 
@@ -375,9 +385,9 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
 
   function waitFor(requestId, result) {
     if (ready[requestId] == null) {
-      ready[requestId] = Promise.resolve();
+      ready[requestId] = GreedyPromise.resolve();
     }
-    ready[requestId] = ready[requestId].then(() => Promise.resolve(result).catch(() => {}))
+    ready[requestId] = ready[requestId].then(() => GreedyPromise.resolve(result).catch(() => {}))
   }
 
   function guard(bidderRequest, fn) {
@@ -389,9 +399,9 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
     const wait = ready[bidderRequest.bidderRequestId];
     const orphanWait = ready['']; // also wait for "orphan" responses that are not associated with any request
     if ((wait != null || orphanWait != null) && timeRemaining > 0) {
-      Promise.race([
-        new Promise((resolve) => setTimeout(resolve, timeRemaining)),
-        Promise.resolve(orphanWait).then(() => wait)
+      GreedyPromise.race([
+        GreedyPromise.timeout(timeRemaining),
+        GreedyPromise.resolve(orphanWait).then(() => wait)
       ]).then(fn);
     } else {
       fn();
@@ -756,7 +766,7 @@ export function getKeyValueTargetingPairs(bidderCode, custBidObj, {index = aucti
   }
 
   // set native key value targeting
-  if (custBidObj['native']) {
+  if (FEATURES.NATIVE && custBidObj['native']) {
     keyValues = Object.assign({}, keyValues, getNativeTargeting(custBidObj));
   }
 

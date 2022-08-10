@@ -13,7 +13,7 @@ Description
 This module connects publishers to Index Exchange's (IX) network of demand
 sources through Prebid.js. This module is GDPR and CCPA compliant.
 
-It is compatible with the newer PrebidJS 5.0 ad unit format where the `banner` and/or `video` properties are encapsulated within the `adUnits[].mediaTypes` object. We
+It is compatible with the newer PrebidJS 5.0 ad unit format where the `banner`, `video` and/or `native` properties are encapsulated within the `adUnits[].mediaTypes` object. We
 recommend that you use this newer format when possible as it will be better able
 to accommodate new feature additions.
 
@@ -32,7 +32,18 @@ var adUnits = [{
         video: {
             context: 'instream',
             playerSize: [300, 250]
-        }
+        },
+        native: {
+            title: {
+                required: true
+            },
+            image: {
+                required: true
+            },
+            body: {
+                required: false
+            }
+        },
     },
     // ...
 }];
@@ -44,7 +55,7 @@ var adUnits = [{
 | --- | ---
 | Banner | Fully supported for all IX approved sizes.
 | Video  | Fully supported for all IX approved sizes.
-| Native | Not supported.
+| Native | Supported (render through GAM or publisher's renderer).
 
 
 
@@ -56,14 +67,14 @@ Each of the IX-specific parameters provided under the `adUnits[].bids[].params`
 object are detailed here.
 
 
-### Banner
+## Banner
 
 | Key | Scope | Type | Description
 | --- | --- | --- | ---
 | siteId | Required | String | An IX-specific identifier that is associated with this ad unit. It will be associated to the single size, if the size provided. This is similar to a placement ID or an ad unit ID that some other modules have. Examples: `'3723'`, `'6482'`, `'3639'`
 | sizes | Required | Number[Number[]] | The size / sizes associated with the site ID. It should be one of the sizes listed in the ad unit under `adUnits[].mediaTypes.banner.sizes`. Examples: `[300, 250]`, `[300, 600]`, `[728, 90]`
 
-### Video
+## Video
 
 | Key | Scope | Type | Description
 | --- | --- | --- | ---
@@ -77,6 +88,61 @@ object are detailed here.
 |video.minduration| Required | Integer | Minimum video ad duration in seconds.
 |video.maxduration| Required | Integer | Maximum video ad duration in seconds.
 |video.protocol / video.protocols| Required | Integer / Integer[] | Either a single protocol provided as an integer, or protocols provided as a list of integers. `2` - VAST 2.0, `3` - VAST 3.0, `5` - VAST 2.0 Wrapper, `6` - VAST 3.0 Wrapper
+| video.playerConfig | Optional | Hash | The Index specific outstream player configurations.
+| video.playerConfig.floatOnScroll | Optional | Boolean | A boolean specifying whether you want to use the player’s floating capabilities, where: <br /> - `true`: Allow the player to float.<br /> <b>Note</b>: If you set floatOnScroll to true, Index updates the placement value to `5`. <br />- `false`: Do not allow the player to float (default).
+| video.playerConfig.floatSize | Optional | Integer[] | The height and width of the floating player in pixels. If you do not specify a float size, the player adjusts to the aspect ratio of the player size that is defined when it is not floating. Index recommends that you review and test the float size to your user experience preference.
+
+## Native
+
+| Key | Scope | Type | Description
+| --- | --- | --- | ---
+| sendTargetingKeys | Optional | Boolean | Defines whether or not to send the hb_native_ASSET targeting keys to the ad server. Defaults to true.
+| adTemplate | Optional | String | Used in the ‘AdUnit-Defined Creative Scenario’, this value controls the Native template right in the page.
+| rendererUrl | Optional | String | Used in the ‘Custom Renderer Scenario’, this points to javascript code that will produce the Native template.
+| title | Optional | Title asset | The title of the ad, usually a call to action or a brand name.
+| body | Optional | Data asset | Text of the ad copy.
+| body2 | Optional | Data asset | Additional Text of the ad copy.
+| sponsoredBy | Optional | Data asset | The name of the brand associated with the ad.
+| icon | Optional | Image asset | The brand icon that will appear with the ad.
+| image | Optional | Image asset | A picture that is associated with the brand, or grabs the user’s attention.
+| displayUrl | Optional | Data asset | Text that can be displayed instead of the raw click URL. e.g, “Example.com/Specials”
+| cta | Optional | Data asset | Call to Action text, e.g., “Click here for more information”.
+| rating | Optional | Data asset | Rating information, e.g., “4” out of 5.
+| downloads | Optional | Data asset | 	The total downloads of the advertised application/product.
+| likes | Optional | Data asset | The total number of individuals who like the advertised application/product.
+| price | Optional | Data asset | The non-sale price of the advertised application/product.
+| salePrice | Optional | Data asset | The sale price of the advertised application/product.
+| address | Optional | Data asset | 	Address of the Buyer/Store. e.g, “123 Main Street, Anywhere USA”
+| phone | Optional | Data asset | Phone Number of the Buyer/Store. e.g, “(123) 456-7890”
+
+#### Title Asset
+
+| Key | Scope | Type | Description
+| --- | --- | --- | ---
+| required | Required | Boolean | Specify whether or not a title is required.
+| len | Optional | Integer | Maximum number of characters (defaults to 25 if omitted).
+| ext | Optional | Object | Arbitrary additional parameters to send to the bidder.
+
+#### Data Asset
+
+| Key | Scope | Type | Description
+| --- | --- | --- | ---
+| required | Required | Boolean | Specify whether or not the asset is required.
+| len | Optional | Integer | Maximum number of characters.
+| ext | Optional | Object | Arbitrary additional parameters to send to the bidder.
+
+#### Image Asset
+
+| Key | Scope | Type | Description
+| --- | --- | --- | ---
+| required | Required | Boolean | Specify whether or not the asset is required.
+| sizes | Optional | Integer[] | Minimum size requested for the image, e.g., [100, 100]
+| mimes | Optional | String[] | Whitelist of content MIME types supported, e.g., ["image/jpg", "image/gif"]
+| ext | Optional | Object | Arbitrary additional parameters to send to the bidder.
+
+### Rendering Native Ad
+
+Native ad can be rendered by setting up GAM or setup custom native renderer. Reference [Prebid implementing the native template](https://docs.prebid.org/prebid/native-implementation.html#4-implementing-the-native-template) for more information.
 
 ## Deprecation warning
 
@@ -247,13 +313,19 @@ var adUnits = [{
             minduration: 5,
             maxduration: 30,
             mimes: ['video/mp4', 'application/javascript'],
-            placement: 3
+            placement: 5
         }
     },
     bids: [{
         bidder: 'ix',
         params: {
             siteId: '715964'
+            video: {
+                playerConfig: {
+                    floatOnScroll: true,
+                    floatSize: [300,250]
+                }
+            }
         }
     }]
 }];
@@ -308,6 +380,33 @@ pbjs.setBidderConfig({
         }
     }
 });
+```
+
+**Native**
+
+```javascript
+var adUnits = [{
+    code: 'native-div-a',
+    mediaTypes: {
+        native: {
+            title: {
+                required: true
+            },
+            image: {
+                required: true
+            },
+            sponsoredBy: {
+                required: false
+            }
+        }
+    },
+    bids: [{
+        bidder: 'ix',
+        params: {
+            siteId: '715966'
+        }
+    }]
+}];
 ```
 
 ### 2. Include `ixBidAdapter` in your build process
@@ -403,11 +502,8 @@ to `'ix'` across all ad units that bids are being requested for does not exceed 
 
 ### Time-To-Live (TTL)
 
-Banner bids from IX have a TTL of 300 seconds while video bids have a TTL of 1 hour, after which time they become
-invalid.
-
-If an invalid bid wins, and its associated ad is rendered, it will not count
-towards total impressions on IX's side.
+Banner bids from Index have a TTL of 600 seconds while video bids have a TTL of three hours, after which time they become invalid.
+**Note:** Index supports the `bid.exp` attribute in the bid response which allows our adapter to specify the maximum number of seconds allowed between the auction and billing notice. In the absence of the `bid.exp` attribute, the TTL provided above applies.
 
 FAQs
 ====
@@ -423,4 +519,4 @@ The `size` parameter is no longer a required field, the `siteId` will now be ass
 In your browser of choice, create a new tab and open the developer tools. In
 developer tools, select the network tab. Then, navigate to a page where IX is
 setup to bid. Now, in the network tab, search for requests to
-`casalemedia.com/cygnus`. These are the bid requests.
+`casalemedia.com/openrtb/pbjs`. These are the bid requests.

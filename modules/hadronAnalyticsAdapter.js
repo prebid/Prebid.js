@@ -1,5 +1,5 @@
 import { ajax } from '../src/ajax.js';
-import adapter from '../src/AnalyticsAdapter.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import * as utils from '../src/utils.js';
 import CONSTANTS from '../src/constants.json';
@@ -36,10 +36,7 @@ var pageView = {
   timezoneOffset: new Date().getTimezoneOffset(),
   language: window.navigator.language,
   vendor: window.navigator.vendor,
-  pageUrl: (() => {
-    const ri = getRefererInfo();
-    return ri.canonicalUrl || ri.referer;
-  })(),
+  pageUrl: getRefererInfo().page,
   screenWidth: x,
   screenHeight: y
 };

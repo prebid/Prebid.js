@@ -129,7 +129,7 @@ export function checkAdUnitSetupHook(adUnits) {
           Verify that 'config.active' is a 'boolean'.
           If not, return 'false'.
         */
-        if (mediaType === 'native') {
+        if (FEATURES.NATIVE && mediaType === 'native') {
           if (typeof config[propertyName] !== 'boolean') {
             logError(`Ad unit ${adUnitCode}: Invalid declaration of 'active' in 'mediaTypes.${mediaType}.sizeConfig[${index}]'. ${conditionalLogMessages[mediaType]}`);
             isValid = false;
@@ -206,7 +206,7 @@ export function checkAdUnitSetupHook(adUnits) {
       }
     }
 
-    if (mediaTypes.native) {
+    if (FEATURES.NATIVE && mediaTypes.native) {
       // Apply the old native checks
       validatedNative = validatedVideo ? adUnitSetupChecks.validateNativeMediaType(validatedVideo) : validatedBanner ? adUnitSetupChecks.validateNativeMediaType(validatedBanner) : adUnitSetupChecks.validateNativeMediaType(adUnit);
 

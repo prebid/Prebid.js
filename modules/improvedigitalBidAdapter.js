@@ -1,12 +1,24 @@
 import {
-  cleanObj, deepAccess, deepClone, deepSetValue, getBidIdParameter, getBidRequest, getDNT,
-  getUniqueIdentifierStr, isFn, isPlainObject, logWarn, mergeDeep, parseUrl
+  cleanObj,
+  deepAccess,
+  deepClone,
+  deepSetValue,
+  getBidIdParameter,
+  getBidRequest,
+  getDNT,
+  getUniqueIdentifierStr,
+  isFn,
+  isPlainObject,
+  logWarn,
+  mergeDeep
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
 import {createEidsArray} from './userId/eids.js';
+import {hasPurpose1Consent} from '../src/utils/gpdr.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'improvedigital';
 const CREATIVE_TTL = 300;
@@ -80,6 +92,9 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests(bidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
+
     const request = {
       cur: [config.getConfig('currency.adServerCurrency') || 'USD'],
       ext: {
@@ -217,7 +232,7 @@ export const spec = {
    * @return {UserSync[]} The user syncs which should be dropped.
    */
   getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
-    if (config.getConfig('coppa') === true || !ID_UTIL.hasPurpose1Consent(gdprConsent)) {
+    if (config.getConfig('coppa') === true || !hasPurpose1Consent(gdprConsent)) {
       return [];
     }
 
@@ -419,6 +434,9 @@ const ID_REQUEST = {
       return null;
     }
     const request = {
+      eventtrackers: [
+        {event: 1, methods: [1, 2]}
+      ],
       assets: [],
     }
     for (let i of Object.keys(nativeParams)) {
@@ -480,20 +498,20 @@ const ID_REQUEST = {
   buildSiteOrApp(request, bidderRequest) {
     const app = {};
     const configAppSettings = config.getConfig('app') || {};
-    const fpdAppSettings = config.getConfig('ortb2.app') || {};
+    const fpdAppSettings = bidderRequest.ortb2?.app || {};
     mergeDeep(app, configAppSettings, fpdAppSettings);
 
     if (Object.keys(app).length !== 0) {
       request.app = app;
     } else {
       const site = {};
-      const url = config.getConfig('pageUrl') || deepAccess(bidderRequest, 'refererInfo.referer');
+      const url = deepAccess(bidderRequest, 'refererInfo.page');
       if (url) {
         site.page = url;
-        site.domain = parseUrl(url).hostname;
+        site.domain = bidderRequest.refererInfo.domain
       }
       const configSiteSettings = config.getConfig('site') || {};
-      const fpdSiteSettings = config.getConfig('ortb2.site') || {};
+      const fpdSiteSettings = deepAccess(bidderRequest, 'ortb2.site') || {};
       mergeDeep(site, configSiteSettings, fpdSiteSettings);
       request.site = site;
     }
@@ -654,14 +672,5 @@ const ID_RAZR = {
     const razr = window.razr = window.razr || {};
     razr.queue = razr.queue || [];
     razr.queue.push(payload);
-  }
-};
-
-const ID_UTIL = {
-  hasPurpose1Consent(gdprConsent) {
-    if (gdprConsent && gdprConsent.gdprApplies && gdprConsent.apiVersion === 2) {
-      return (deepAccess(gdprConsent, 'vendorData.purpose.consents.1') === true);
-    }
-    return true;
   }
 };
