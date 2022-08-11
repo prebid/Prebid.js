@@ -843,7 +843,7 @@ function initSubmodules(dest, submodules, consentData, forceRefresh = false) {
   submodules = submodules.filter((submod) => !submod.config.storage || storageTypes.has(submod.config.storage.type));
 
   if (!submodules.length) {
-    logWarn(`${MODULE_NAME} - no ID module is configured for one of the available storage types:`, Array.from(storageTypes))
+    logWarn(`${MODULE_NAME} - no ID module is configured for one of the available storage types:`, Array.from(storageTypes));
     return [];
   }
 
