@@ -271,9 +271,8 @@ function getDevice() {
 function getSite(bidderRequest) {
   const { refererInfo } = bidderRequest;
   return {
-    // TODO: do these fallbacks make sense?
-    domain: refererInfo.domain || parseDomain(refererInfo.topmostLocation) || '',
-    page: refererInfo.page || refererInfo.topmostLocation || '',
+    domain: parseDomain(refererInfo.topmostLocation) || '',
+    page: refererInfo.topmostLocation || '',
     referrer: refererInfo.ref || getWindowSelf().document.referrer || '',
     top: refererInfo.reachedTop
   };
