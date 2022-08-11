@@ -275,7 +275,7 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
         }
       });
     }
-  })
+  });
 
   // client adapters
   let adUnitsClientCopy = getAdUnitCopyForClientAdapters(adUnits);
