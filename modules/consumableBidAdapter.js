@@ -4,7 +4,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'consumable';
 
-const BASE_URI = 'https://e.serverbid.com/api/v2'
+const BASE_URI = 'https://e.serverbid.com/api/v2';
 
 let siteId = 0;
 let bidder = 'consumable';

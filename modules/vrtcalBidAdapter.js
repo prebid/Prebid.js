@@ -87,7 +87,7 @@ export const spec = {
         params.imp[0].banner.h = bid.sizes[0][1];
       }
 
-      return {method: 'POST', url: 'https://rtb.vrtcal.com/bidder_prebid.vap?ssp=1804', data: JSON.stringify(params), options: {withCredentials: false, crossOrigin: true}}
+      return {method: 'POST', url: 'https://rtb.vrtcal.com/bidder_prebid.vap?ssp=1804', data: JSON.stringify(params), options: {withCredentials: false, crossOrigin: true}};
     });
 
     return requests;

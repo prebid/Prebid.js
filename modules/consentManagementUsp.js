@@ -305,7 +305,7 @@ function enableConsentManagement(configFromUser = false) {
   loadConsentData(); // immediately look up consent data to make it available without requiring an auction
 }
 config.getConfig('consentManagement', config => setConsentConfig(config.consentManagement));
-setTimeout(() => !addedConsentHook && enableConsentManagement())
+setTimeout(() => !addedConsentHook && enableConsentManagement());
 
 export function setOrtbUsp(ortbRequest, bidderRequest) {
   if (bidderRequest.uspConsent) {
