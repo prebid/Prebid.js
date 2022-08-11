@@ -1124,7 +1124,7 @@ export const spec = {
         ...globalFeatures,
         print_number: getPrintNumber(adagioBid.adUnitCode, adagioBidderRequest).toString(),
         adunit_position: getSlotPosition(adagioBid.params.adUnitElementId) // adUnitElementId à déplacer ???
-      }
+      };
 
       adagioBid.params.pageviewId = internal.getPageviewId();
       adagioBid.params.prebidVersion = '$prebid.version$';

@@ -101,7 +101,7 @@ export const tripleliftAdapterSpec = {
       url: syncEndpoint
     }];
   }
-}
+};
 
 function _getSyncType(syncOptions) {
   if (!syncOptions) return;

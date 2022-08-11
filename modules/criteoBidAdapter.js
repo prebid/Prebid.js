@@ -503,7 +503,7 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
         slot.video = video;
       }
 
-      enrichSlotWithFloors(slot, bidRequest)
+      enrichSlotWithFloors(slot, bidRequest);
 
       return slot;
     }),

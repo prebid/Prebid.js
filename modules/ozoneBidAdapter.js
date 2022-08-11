@@ -16,7 +16,7 @@ import {getPriceBucketString} from '../src/cpmBucketManager.js';
 import { Renderer } from '../src/Renderer.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 const BIDDER_CODE = 'ozone';
-const ORIGIN = 'https://elb.the-ozone-project.com' // applies only to auction & cookie
+const ORIGIN = 'https://elb.the-ozone-project.com'; // applies only to auction & cookie
 const AUCTIONURI = '/openrtb2/auction';
 const OZONECOOKIESYNC = '/static/load-cookie.html';
 const OZONE_RENDERER_URL = 'https://prebid.the-ozone-project.com/ozone-renderer.js';
@@ -98,7 +98,7 @@ export const spec = {
     this.loadWhitelabelData(bid);
     logInfo('isBidRequestValid : ', config.getConfig(), bid);
     let adUnitCode = bid.adUnitCode; // adunit[n].code
-    let err1 = 'VALIDATION FAILED : missing {param} : siteId, placementId and publisherId are REQUIRED'
+    let err1 = 'VALIDATION FAILED : missing {param} : siteId, placementId and publisherId are REQUIRED';
     if (!(bid.params.hasOwnProperty('placementId'))) {
       logError(err1.replace('{param}', 'placementId'), adUnitCode);
       return false;
