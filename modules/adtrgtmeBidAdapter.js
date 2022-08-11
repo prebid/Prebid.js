@@ -12,14 +12,13 @@ const PREBID_VERSION = '$prebid.version$';
 const DEFAULT_BID_TTL = 300;
 const DEFAULT_CURRENCY = 'USD';
 
-function getSize(size) {
-  return {
-    w: parseInt(size[0]),
-    h: parseInt(size[1])
-  }
-}
-
 function transformSizes(sizes) {
+  const getSize = (size) => {
+    return {
+      w: parseInt(size[0]),
+      h: parseInt(size[1])
+    }
+  }
   if (isArray(sizes) && sizes.length === 2 && !isArray(sizes[0])) {
     return [ getSize(sizes) ];
   }
@@ -38,7 +37,6 @@ function extractUserSyncUrls(syncOptions, pixels) {
       matchedItems.forEach(item => {
         let tagName = item.match(tagNameRegExp)[0];
         let url = item.match(srcRegExp)[2];
-
         if (tagName && url) {
           let tagType = tagName.toLowerCase() === 'img' ? 'image' : 'iframe';
           if ((!syncOptions.iframeEnabled && tagType === 'iframe') ||
@@ -324,13 +322,11 @@ export const spec = {
     return response;
   },
 
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent = {}, uspConsent = '') {
     const bidResponse = !isEmpty(serverResponses) && serverResponses[0].body;
-
     if (bidResponse && bidResponse.ext && bidResponse.ext.pixels) {
       return extractUserSyncUrls(syncOptions, bidResponse.ext.pixels);
     }
-
     return [];
   }
 };
