@@ -276,7 +276,7 @@ describe('kargo adapter tests', function () {
           optOut: false,
           usp: '1---'
         },
-        pageURL: window.location.href,
+        pageURL: 'https://www.prebid.org',
         prebidRawBidRequests: [
           {
             bidId: 1,
@@ -327,10 +327,19 @@ describe('kargo adapter tests', function () {
       if (excludeTdid) {
         delete clonedBids[0].userId.tdid;
       }
-      var payload = { timeout: 200, uspConsent: '1---', foo: 'bar' };
+      var payload = {
+        timeout: 200,
+        uspConsent: '1---',
+        foo: 'bar',
+        refererInfo: {
+          page: 'https://www.prebid.org',
+        },
+      };
+      {
       if (gdpr) {
         payload['gdprConsent'] = gdpr
       }
+
       var request = spec.buildRequests(clonedBids, payload);
       expected.sessionId = getSessionId();
       sessionIds.push(expected.sessionId);
