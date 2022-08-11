@@ -21,6 +21,88 @@ const VIDEO_PARAMS = {
   }
 };
 
+export const spec = {
+  code: BIDDER_CODE,
+  gvlid: 253,
+  aliases: ['id'],
+  supportedMediaTypes: [BANNER, NATIVE, VIDEO],
+  syncStore: { extendMode: false, placementId: null },
+
+  /**
+   * Determines whether or not the given bid request is valid.
+   *
+   * @param {object} bid The bid to validate.
+   * @return boolean True if this is a valid bid, and false otherwise.
+   */
+  isBidRequestValid(bid) {
+    return !!(bid && bid.params && (bid.params.placementId || (bid.params.placementKey && bid.params.publisherId)));
+  },
+
+  /**
+   * Make a server request from the list of BidRequests.
+   *
+   * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be sent to the Server.
+   * @param bidderRequest
+   * @return ServerRequest Info describing the request to the server.
+   */
+  buildRequests(bidRequests, bidderRequest) {
+    // Save a placement id to send it to the ad server when fetching the user syncs
+    this.syncStore.placementId = this.syncStore.placementId || bidRequests[0].params.placementId;
+    return ID_REQUEST.buildServerRequests(bidRequests, bidderRequest);
+  },
+
+  /**
+   * Unpack the response from the server into a list of bids.
+   *
+   * @param {*} serverResponse A successful response from the server.
+   * @param bidderRequest
+   * @return {Bid[]} An array of bids which were nested inside the server.
+   */
+  interpretResponse(serverResponse, { ortbRequest }) {
+    return CONVERTER.fromORTB({request: ortbRequest, response: serverResponse.body}).bids;
+  },
+
+  /**
+   * Register the user sync pixels which should be dropped after the auction.
+   *
+   * @param {SyncOptions} syncOptions Which user syncs are allowed?
+   * @param {ServerResponse[]} serverResponses List of server's responses.
+   * @return {UserSync[]} The user syncs which should be dropped.
+   */
+  getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
+    if (config.getConfig('coppa') === true || !hasPurpose1Consent(gdprConsent)) {
+      return [];
+    }
+
+    const syncs = [];
+    if ((this.syncStore.extendMode || !syncOptions.pixelEnabled) && syncOptions.iframeEnabled) {
+      const { gdprApplies, consentString } = gdprConsent || {};
+      syncs.push({
+        type: 'iframe',
+        url: IFRAME_SYNC_URL +
+          `?placement_id=${this.syncStore.placementId}` +
+          (this.syncStore.extendMode ? '&pbs=1' : '') +
+          (typeof gdprApplies === 'boolean' ? `&gdpr=${Number(gdprApplies)}` : '') +
+          (consentString ? `&gdpr_consent=${consentString}` : '') +
+          (uspConsent ? `&us_privacy=${encodeURIComponent(uspConsent)}` : '')
+      });
+    } else if (syncOptions.pixelEnabled) {
+      serverResponses.forEach(response => {
+        const syncArr = deepAccess(response, `body.ext.${BIDDER_CODE}.sync`, []);
+        syncArr.forEach(url => {
+          if (!syncs.some(sync => sync.url === url)) {
+            syncs.push({ type: 'image', url });
+          }
+        });
+      });
+    }
+
+    return syncs;
+  }
+};
+
+registerBidder(spec);
+
 export const CONVERTER = ortbConverter({
   context: {
     nativeRequest: {
@@ -32,11 +114,6 @@ export const CONVERTER = ortbConverter({
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
     imp.secure = Number(window.location.protocol === 'https:');
-    if (imp.hasOwnProperty('instl')) {
-      // accept booleans for 'instl'
-      // TODO: does this make sense? we expect ortb2Imp to follow the ORTB spec
-      imp.instl = imp.instl ? 1 : 0
-    }
     if (!imp.bidfloor && bidRequest.params.bidFloor) {
       imp.bidfloor = bidRequest.params.bidFloor;
       imp.bidfloorcur = getBidIdParameter('bidFloorCur', bidRequest.params).toUpperCase() || 'USD'
@@ -178,93 +255,6 @@ export const CONVERTER = ortbConverter({
     }
   }
 })
-
-export const spec = {
-  code: BIDDER_CODE,
-  gvlid: 253,
-  aliases: ['id'],
-  supportedMediaTypes: [BANNER, NATIVE, VIDEO],
-  syncStore: { extendMode: false, placementId: null },
-
-  /**
-   * Determines whether or not the given bid request is valid.
-   *
-   * @param {object} bid The bid to validate.
-   * @return boolean True if this is a valid bid, and false otherwise.
-   */
-  isBidRequestValid(bid) {
-    return !!(bid && bid.params && (bid.params.placementId || (bid.params.placementKey && bid.params.publisherId)));
-  },
-
-  /**
-   * Make a server request from the list of BidRequests.
-   *
-   * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be sent to the Server.
-   * @param bidderRequest
-   * @return ServerRequest Info describing the request to the server.
-   */
-  buildRequests(bidRequests, bidderRequest) {
-    // Save a placement id to send it to the ad server when fetching the user syncs
-    this.syncStore.placementId = this.syncStore.placementId || bidRequests[0].params.placementId;
-    return ID_REQUEST.buildServerRequests(bidRequests, bidderRequest);
-  },
-
-  /**
-   * Unpack the response from the server into a list of bids.
-   *
-   * @param {*} serverResponse A successful response from the server.
-   * @param bidderRequest
-   * @return {Bid[]} An array of bids which were nested inside the server.
-   */
-  interpretResponse(serverResponse, { ortbRequest }) {
-    // force cur to uppercase
-    // TODO: is this necessary? currency codes should always be upper.
-    if (typeof serverResponse.body.cur === 'string') {
-      serverResponse.body.cur = serverResponse.body.cur.toUpperCase();
-    }
-    return CONVERTER.fromORTB({request: ortbRequest, response: serverResponse.body}).bids;
-  },
-
-  /**
-   * Register the user sync pixels which should be dropped after the auction.
-   *
-   * @param {SyncOptions} syncOptions Which user syncs are allowed?
-   * @param {ServerResponse[]} serverResponses List of server's responses.
-   * @return {UserSync[]} The user syncs which should be dropped.
-   */
-  getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
-    if (config.getConfig('coppa') === true || !hasPurpose1Consent(gdprConsent)) {
-      return [];
-    }
-
-    const syncs = [];
-    if ((this.syncStore.extendMode || !syncOptions.pixelEnabled) && syncOptions.iframeEnabled) {
-      const { gdprApplies, consentString } = gdprConsent || {};
-      syncs.push({
-        type: 'iframe',
-        url: IFRAME_SYNC_URL +
-          `?placement_id=${this.syncStore.placementId}` +
-          (this.syncStore.extendMode ? '&pbs=1' : '') +
-          (typeof gdprApplies === 'boolean' ? `&gdpr=${Number(gdprApplies)}` : '') +
-          (consentString ? `&gdpr_consent=${consentString}` : '') +
-          (uspConsent ? `&us_privacy=${encodeURIComponent(uspConsent)}` : '')
-      });
-    } else if (syncOptions.pixelEnabled) {
-      serverResponses.forEach(response => {
-        const syncArr = deepAccess(response, `body.ext.${BIDDER_CODE}.sync`, []);
-        syncArr.forEach(url => {
-          if (!syncs.some(sync => sync.url === url)) {
-            syncs.push({ type: 'image', url });
-          }
-        });
-      });
-    }
-
-    return syncs;
-  }
-};
-
-registerBidder(spec);
 
 const ID_REQUEST = {
   buildServerRequests(bidRequests, bidderRequest) {

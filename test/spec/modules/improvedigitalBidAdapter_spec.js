@@ -672,7 +672,7 @@ describe('Improve Digital Adapter Tests', function () {
     it('should set GPID and Instl Signal', function () {
       const bidRequest = Object.assign({
         ortb2Imp: {
-          instl: true,
+          instl: 1,
           ext: {
             gpid: '/123/ID-FORMAT',
             data: {
@@ -1148,7 +1148,7 @@ describe('Improve Digital Adapter Tests', function () {
 
     it('should set currency', function () {
       const response = deepClone(serverResponse);
-      response.body.cur = 'eur';
+      response.body.cur = 'EUR';
       const bids = spec.interpretResponse(response, makeRequest(bidderRequest));
       expect(bids[0].currency).to.equal('EUR');
     });
