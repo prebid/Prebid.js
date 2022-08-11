@@ -335,8 +335,8 @@ describe('Zeta Ssp Bid Adapter', function () {
 
     expect(payload.imp.length).to.eql(2);
 
-    expect(payload.imp[0].bidId).to.eql(12345);
-    expect(payload.imp[1].bidId).to.eql(54321);
+    expect(payload.imp[0].id).to.eql(12345);
+    expect(payload.imp[1].id).to.eql(54321);
 
     expect(payload.imp[0].banner.w).to.eql(300);
     expect(payload.imp[0].banner.h).to.eql(250);
