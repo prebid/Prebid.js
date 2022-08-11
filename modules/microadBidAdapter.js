@@ -33,7 +33,7 @@ const AUDIENCE_IDS = [
   {type: 13, bidKey: 'userId.idl_env'},
   {type: 14, bidKey: 'userId.criteoId'},
   {type: 15, bidKey: 'userId.pubcid'}
-]
+];
 
 function createCBT() {
   const randomValue = Math.floor(Math.random() * Math.pow(10, 18)).toString(16);
