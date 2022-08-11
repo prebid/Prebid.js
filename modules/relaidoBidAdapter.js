@@ -71,11 +71,11 @@ function buildRequests(validBidRequests, bidderRequest) {
     }
 
     if (!bidder) {
-      bidder = bidRequest.bidder
+      bidder = bidRequest.bidder;
     }
 
     if (!bidder) {
-      bidder = bidRequest.bidder
+      bidder = bidRequest.bidder;
     }
 
     if (!count) {
