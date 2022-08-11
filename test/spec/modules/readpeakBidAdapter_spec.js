@@ -16,7 +16,8 @@ describe('ReadPeakAdapter', function() {
   beforeEach(function() {
     bidderRequest = {
       refererInfo: {
-        referer: 'https://publisher.com/home'
+        page: 'https://publisher.com/home',
+        domain: 'publisher.com'
       }
     };
 
@@ -266,8 +267,8 @@ describe('ReadPeakAdapter', function() {
         expect(data.imp[0].tagId).to.equal('test-tag-1');
         expect(data.site.publisher.id).to.equal(nativeBidRequest.params.publisherId);
         expect(data.site.id).to.equal(nativeBidRequest.params.siteId);
-        expect(data.site.page).to.equal(bidderRequest.refererInfo.referer);
-        expect(data.site.domain).to.equal(parseUrl(bidderRequest.refererInfo.referer).hostname);
+        expect(data.site.page).to.equal(bidderRequest.refererInfo.page);
+        expect(data.site.domain).to.equal(bidderRequest.refererInfo.domain);
         expect(data.device).to.deep.contain({
           ua: navigator.userAgent,
           language: navigator.language
@@ -428,8 +429,8 @@ describe('ReadPeakAdapter', function() {
         expect(data.imp[0].tagId).to.equal('test-tag-1');
         expect(data.site.publisher.id).to.equal(bannerBidRequest.params.publisherId);
         expect(data.site.id).to.equal(bannerBidRequest.params.siteId);
-        expect(data.site.page).to.equal(bidderRequest.refererInfo.referer);
-        expect(data.site.domain).to.equal(parseUrl(bidderRequest.refererInfo.referer).hostname);
+        expect(data.site.page).to.equal(bidderRequest.refererInfo.page);
+        expect(data.site.domain).to.equal(bidderRequest.refererInfo.domain);
         expect(data.device).to.deep.contain({
           ua: navigator.userAgent,
           language: navigator.language
@@ -527,6 +528,7 @@ describe('ReadPeakAdapter', function() {
           ad: bannerServerResponse.seatbid[0].bid[0].adm,
           width: bannerServerResponse.seatbid[0].bid[0].w,
           height: bannerServerResponse.seatbid[0].bid[0].h,
+          burl: bannerServerResponse.seatbid[0].bid[0].burl,
         });
         expect(bidResponse.meta).to.deep.equal({
           advertiserDomains: ['readpeak.com'],

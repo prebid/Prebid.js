@@ -1,8 +1,10 @@
-import { logWarn, _each, isBoolean, isStr, isArray, inIframe, mergeDeep, deepAccess, isNumber, deepSetValue, logInfo, logError, deepClone, convertTypes } from '../src/utils.js';
+import { logWarn, _each, isBoolean, isStr, isArray, inIframe, mergeDeep, deepAccess, isNumber, deepSetValue, logInfo, logError, deepClone, convertTypes, uniques } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
+import { bidderSettings } from '../src/bidderSettings.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'pubmatic';
 const LOG_WARN_PREFIX = 'PubMatic: ';
@@ -11,8 +13,6 @@ const USER_SYNC_URL_IFRAME = 'https://ads.pubmatic.com/AdServer/js/user_sync.htm
 const USER_SYNC_URL_IMAGE = 'https://image8.pubmatic.com/AdServer/ImgSync?p=';
 const DEFAULT_CURRENCY = 'USD';
 const AUCTION_TYPE = 1;
-const GROUPM_ALIAS = {code: 'groupm', gvlid: 98};
-const MARKETPLACE_PARTNERS = ['groupm']
 const UNDEFINED = undefined;
 const DEFAULT_WIDTH = 0;
 const DEFAULT_HEIGHT = 0;
@@ -112,10 +112,6 @@ const dealChannelValues = {
   6: 'PMPG'
 };
 
-const FLOC_FORMAT = {
-  'EID': 1,
-  'SEGMENT': 2
-}
 // BB stands for Blue BillyWig
 const BB_RENDERER = {
   bootstrapPlayer: function(bid) {
@@ -181,6 +177,8 @@ let publisherId = 0;
 let isInvalidNativeRequest = false;
 let NATIVE_ASSET_ID_TO_KEY_MAP = {};
 let NATIVE_ASSET_KEY_TO_ASSET_MAP = {};
+let biddersList = ['pubmatic'];
+const allBiddersList = ['all'];
 
 // loading NATIVE_ASSET_ID_TO_KEY_MAP
 _each(NATIVE_ASSETS, anAsset => { NATIVE_ASSET_ID_TO_KEY_MAP[anAsset.ID] = anAsset.KEY });
@@ -274,8 +272,9 @@ function _parseAdSlot(bid) {
 
 function _initConf(refererInfo) {
   return {
-    pageURL: (refererInfo && refererInfo.referer) ? refererInfo.referer : window.location.href,
-    refURL: window.document.referrer
+    // TODO: do the fallbacks make sense here?
+    pageURL: refererInfo?.page || window.location.href,
+    refURL: refererInfo?.ref || window.document.referrer
   };
 }
 
@@ -800,67 +799,8 @@ function _addFloorFromFloorModule(impObj, bid) {
   logInfo(LOG_WARN_PREFIX, 'new impObj.bidfloor value:', impObj.bidfloor);
 }
 
-function _getFlocId(validBidRequests, flocFormat) {
-  var flocIdObject = null;
-  var flocId = deepAccess(validBidRequests, '0.userId.flocId');
-  if (flocId && flocId.id) {
-    switch (flocFormat) {
-      case FLOC_FORMAT.SEGMENT:
-        flocIdObject = {
-          id: 'FLOC',
-          name: 'FLOC',
-          ext: {
-            ver: flocId.version
-          },
-          segment: [{
-            id: flocId.id,
-            name: 'chrome.com',
-            value: flocId.id.toString()
-          }]
-        }
-        break;
-      case FLOC_FORMAT.EID:
-      default:
-        flocIdObject = {
-          source: 'chrome.com',
-          uids: [
-            {
-              atype: 1,
-              id: flocId.id,
-              ext: {
-                ver: flocId.version
-              }
-            },
-          ]
-        }
-        break;
-    }
-  }
-  return flocIdObject;
-}
-
-function _handleFlocId(payload, validBidRequests) {
-  var flocObject = _getFlocId(validBidRequests, FLOC_FORMAT.SEGMENT);
-  if (flocObject) {
-    if (!payload.user) {
-      payload.user = {};
-    }
-    if (!payload.user.data) {
-      payload.user.data = [];
-    }
-    payload.user.data.push(flocObject);
-  }
-}
-
 function _handleEids(payload, validBidRequests) {
   let bidUserIdAsEids = deepAccess(validBidRequests, '0.userIdAsEids');
-  let flocObject = _getFlocId(validBidRequests, FLOC_FORMAT.EID);
-  if (flocObject) {
-    if (!bidUserIdAsEids) {
-      bidUserIdAsEids = [];
-    }
-    bidUserIdAsEids.push(flocObject);
-  }
   if (isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
     deepSetValue(payload, 'user.eids', bidUserIdAsEids);
   }
@@ -1026,7 +966,6 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: 76,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
-  aliases: [GROUPM_ALIAS],
   /**
   * Determines whether or not the given bid request is valid. Valid bid request must have placementId and hbid
   *
@@ -1085,12 +1024,8 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: (validBidRequests, bidderRequest) => {
-    if (bidderRequest && MARKETPLACE_PARTNERS.includes(bidderRequest.bidderCode)) {
-      // We have got the buildRequests function call for Marketplace Partners
-      logInfo('For all publishers using ' + bidderRequest.bidderCode + ' bidder, the PubMatic bidder will also be enabled so PubMatic server will respond back with the bids that needs to be submitted for PubMatic and ' + bidderRequest.bidderCode + ' in the network call sent by PubMatic bidder. Hence we do not want to create a network call for ' + bidderRequest.bidderCode + '. This way we are trying to save a network call from browser.');
-      return;
-    }
-
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
     var refererInfo;
     if (bidderRequest && bidderRequest.refererInfo) {
       refererInfo = bidderRequest.refererInfo;
@@ -1156,6 +1091,21 @@ export const spec = {
     payload.ext.wrapper.wv = $$REPO_AND_VERSION$$;
     payload.ext.wrapper.transactionId = conf.transactionId;
     payload.ext.wrapper.wp = 'pbjs';
+    const allowAlternateBidder = bidderRequest ? bidderSettings.get(bidderRequest.bidderCode, 'allowAlternateBidderCodes') : undefined;
+    if (allowAlternateBidder !== undefined) {
+      payload.ext.marketplace = {};
+      if (bidderRequest && allowAlternateBidder == true) {
+        let allowedBiddersList = bidderSettings.get(bidderRequest.bidderCode, 'allowedAlternateBidderCodes');
+        if (isArray(allowedBiddersList)) {
+          allowedBiddersList = allowedBiddersList.map(val => val.trim().toLowerCase()).filter(val => !!val).filter(uniques)
+          biddersList = allowedBiddersList.includes('*') ? allBiddersList : [...biddersList, ...allowedBiddersList];
+        } else {
+          biddersList = allBiddersList;
+        }
+      }
+      payload.ext.marketplace.allowedbidders = biddersList.filter(uniques);
+    }
+
     payload.user.gender = (conf.gender ? conf.gender.trim() : UNDEFINED);
     payload.user.geo = {};
     payload.user.geo.lat = _parseSlotParam('lat', conf.lat);
@@ -1174,6 +1124,9 @@ export const spec = {
     if (typeof config.getConfig('device') === 'object') {
       payload.device = Object.assign(payload.device, config.getConfig('device'));
     }
+
+    // update device.language to ISO-639-1-alpha-2 (2 character language)
+    payload.device.language = payload.device.language && payload.device.language.split('-')[0];
 
     // passing transactionId in source.tid
     deepSetValue(payload, 'source.tid', conf.transactionId);
@@ -1206,9 +1159,8 @@ export const spec = {
 
     _handleEids(payload, validBidRequests);
 
-    _handleFlocId(payload, validBidRequests);
     // First Party Data
-    const commonFpd = config.getConfig('ortb2') || {};
+    const commonFpd = (bidderRequest && bidderRequest.ortb2) || {};
     if (commonFpd.site) {
       mergeDeep(payload, {site: commonFpd.site});
     }
@@ -1328,9 +1280,8 @@ export const spec = {
 
               // if from the server-response the bid.ext.marketplace is set then
               //    submit the bid to Prebid as marketplace name
-              if (bid.ext && !!bid.ext.marketplace && MARKETPLACE_PARTNERS.includes(bid.ext.marketplace)) {
+              if (bid.ext && !!bid.ext.marketplace) {
                 newBid.bidderCode = bid.ext.marketplace;
-                newBid.bidder = bid.ext.marketplace;
               }
 
               bidResponses.push(newBid);

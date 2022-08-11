@@ -1,5 +1,5 @@
 import { logInfo, logError, parseUrl, _each } from '../src/utils.js';
-import adapter from '../src/AnalyticsAdapter.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
 import { getRefererInfo } from '../src/refererDetection.js';
@@ -24,9 +24,10 @@ const STAQ_EVENTS = {
 }
 
 function buildRequestTemplate(connId) {
-  const url = staqAdapterRefWin.referer;
-  const ref = staqAdapterRefWin.referer;
-  const topLocation = staqAdapterRefWin.referer;
+  // TODO: what should these pick from refererInfo?
+  const url = staqAdapterRefWin.topmostLocation;
+  const ref = staqAdapterRefWin.topmostLocation;
+  const topLocation = staqAdapterRefWin.topmostLocation;
 
   return {
     ver: ANALYTICS_VERSION,

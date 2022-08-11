@@ -67,12 +67,16 @@ describe('AdriverIdSystem', function () {
         let request = server.requests[0];
         request.respond(200, { 'Content-Type': 'application/json' }, JSON.stringify({ adrcid: response.adrcid }));
 
-        let now = new Date();
-        now.setTime(now.getTime() + 86400 * 1825 * 1000);
+        let expectedExpiration = new Date();
+        expectedExpiration.setTime(expectedExpiration.getTime() + 86400 * 1825 * 1000);
         const minimalDate = new Date(0).toString();
 
+        function dateStringFor(date, maxDeltaMs = 2000) {
+          return sinon.match((val) => Math.abs(date.getTime() - new Date(val).getTime()) <= maxDeltaMs)
+        }
+
         if (response.adrcid) {
-          expect(setCookieStub.calledWith('adrcid', response.adrcid, now.toUTCString())).to.be.true;
+          expect(setCookieStub.calledWith('adrcid', response.adrcid, dateStringFor(expectedExpiration))).to.be.true;
           expect(setLocalStorageStub.calledWith('adrcid', response.adrcid)).to.be.true;
         } else {
           expect(setCookieStub.calledWith('adrcid', '', minimalDate)).to.be.false;

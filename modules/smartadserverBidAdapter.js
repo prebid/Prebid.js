@@ -148,7 +148,8 @@ export const spec = {
         appname: bid.params.appName && bid.params.appName !== '' ? bid.params.appName : undefined,
         ckid: bid.params.ckId || 0,
         tagId: bid.adUnitCode,
-        pageDomain: bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer ? bidderRequest.refererInfo.referer : undefined,
+        // TODO: is 'page' the right value here?
+        pageDomain: bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page ? bidderRequest.refererInfo.page : undefined,
         transactionId: bid.transactionId,
         timeout: config.getConfig('bidderTimeout'),
         bidId: bid.bidId,

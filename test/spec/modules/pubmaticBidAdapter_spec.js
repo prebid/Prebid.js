@@ -3,6 +3,7 @@ import {spec, checkVideoPlacement} from 'modules/pubmaticBidAdapter.js';
 import * as utils from 'src/utils.js';
 import {config} from 'src/config.js';
 import { createEidsArray } from 'modules/userId/eids.js';
+import { bidderSettings } from 'src/bidderSettings.js';
 const constants = require('src/constants.json');
 
 describe('PubMatic adapter', function () {
@@ -1104,6 +1105,62 @@ describe('PubMatic adapter', function () {
         expect(data.source.ext.schain).to.deep.equal(bidRequests[0].schain);
   		});
 
+      describe('Marketplace parameters', function() {
+        let bidderSettingStub;
+        beforeEach(function() {
+          bidderSettingStub = sinon.stub(bidderSettings, 'get');
+        });
+
+        afterEach(function() {
+          bidderSettingStub.restore();
+        });
+
+        it('should not be present when allowAlternateBidderCodes is undefined', function () {
+          bidderSettingStub.returns(undefined);
+          let request = spec.buildRequests(bidRequests, {
+            auctionId: 'new-auction-id'
+          });
+          let data = JSON.parse(request.data);
+          expect(data.ext.marketplace).to.equal(undefined);
+        });
+
+        it('should be pubmatic and groupm when allowedAlternateBidderCodes is \'groupm\'', function () {
+          bidderSettingStub.withArgs('pubmatic', 'allowAlternateBidderCodes').returns(true);
+          bidderSettingStub.withArgs('pubmatic', 'allowedAlternateBidderCodes').returns(['groupm']);
+          let request = spec.buildRequests(bidRequests, {
+            auctionId: 'new-auction-id',
+            bidderCode: 'pubmatic'
+          });
+          let data = JSON.parse(request.data);
+          expect(data.ext.marketplace.allowedbidders).to.be.an('array');
+          expect(data.ext.marketplace.allowedbidders.length).to.equal(2);
+          expect(data.ext.marketplace.allowedbidders[0]).to.equal('pubmatic');
+          expect(data.ext.marketplace.allowedbidders[1]).to.equal('groupm');
+        });
+
+        it('should be ALL by default', function () {
+          bidderSettingStub.returns(true);
+          let request = spec.buildRequests(bidRequests, {
+            auctionId: 'new-auction-id'
+          });
+          let data = JSON.parse(request.data);
+          expect(data.ext.marketplace.allowedbidders).to.be.an('array');
+          expect(data.ext.marketplace.allowedbidders[0]).to.equal('all');
+        });
+
+        it('should be ALL when allowedAlternateBidderCodes is \'*\'', function () {
+          bidderSettingStub.withArgs('pubmatic', 'allowAlternateBidderCodes').returns(true);
+          bidderSettingStub.withArgs('pubmatic', 'allowedAlternateBidderCodes').returns(['*']);
+          let request = spec.buildRequests(bidRequests, {
+            auctionId: 'new-auction-id',
+            bidderCode: 'pubmatic'
+          });
+          let data = JSON.parse(request.data);
+          expect(data.ext.marketplace.allowedbidders).to.be.an('array');
+          expect(data.ext.marketplace.allowedbidders[0]).to.equal('all');
+        });
+      })
+
       it('Set content from config, set site.content', function() {
         let sandbox = sinon.sandbox.create();
         const content = {
@@ -1141,7 +1198,7 @@ describe('PubMatic adapter', function () {
         expect(data.device.dnt).to.equal((navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0);
         expect(data.device.h).to.equal(screen.height);
         expect(data.device.w).to.equal(screen.width);
-        expect(data.device.language).to.equal(navigator.language);
+        expect(data.device.language).to.equal(navigator.language.split('-')[0]);
         expect(data.device.newkey).to.equal('new-device-data');// additional data from config
         sandbox.restore();
       });
@@ -1632,43 +1689,29 @@ describe('PubMatic adapter', function () {
         let newRequest;
 
         it('ortb2.site should be merged in the request', function() {
-          let sandbox = sinon.sandbox.create();
-          sandbox.stub(config, 'getConfig').callsFake(key => {
-            const config = {
-              'ortb2': {
-                site: {
-                  domain: 'page.example.com',
-                  cat: ['IAB2'],
-                  sectioncat: ['IAB2-2']
-                }
-              }
-            };
-            return config[key];
-          });
-          const request = spec.buildRequests(bidRequests, {});
+          const ortb2 = {
+            site: {
+              domain: 'page.example.com',
+              cat: ['IAB2'],
+              sectioncat: ['IAB2-2']
+            }
+          };
+          const request = spec.buildRequests(bidRequests, {ortb2});
           let data = JSON.parse(request.data);
           expect(data.site.domain).to.equal('page.example.com');
           expect(data.site.cat).to.deep.equal(['IAB2']);
           expect(data.site.sectioncat).to.deep.equal(['IAB2-2']);
-          sandbox.restore();
         });
 
         it('ortb2.user should be merged in the request', function() {
-          let sandbox = sinon.sandbox.create();
-          sandbox.stub(config, 'getConfig').callsFake(key => {
-            const config = {
-              'ortb2': {
-                user: {
-                  yob: 1985
-                }
-              }
-            };
-            return config[key];
-          });
-          const request = spec.buildRequests(bidRequests, {});
+          const ortb2 = {
+            user: {
+              yob: 1985
+            }
+          };
+          const request = spec.buildRequests(bidRequests, {ortb2});
           let data = JSON.parse(request.data);
           expect(data.user.yob).to.equal(1985);
-          sandbox.restore();
         });
 
         describe('ortb2Imp', function() {
@@ -2387,68 +2430,6 @@ describe('PubMatic adapter', function () {
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
-          });
-        });
-
-        describe('FlocId', function() {
-          it('send the FlocId if it is present', function() {
-            bidRequests[0].userId = {};
-            bidRequests[0].userId.flocId = {
-              id: '1234',
-              version: 'chrome1.1'
-            }
-            let request = spec.buildRequests(bidRequests, {});
-            let data = JSON.parse(request.data);
-            expect(data.user.eids).to.deep.equal([{
-              'source': 'chrome.com',
-              'uids': [{
-                'id': '1234',
-                'atype': 1,
-                'ext': {
-                  'ver': 'chrome1.1'
-                }
-              }]
-            }]);
-            expect(data.user.data).to.deep.equal([{
-              id: 'FLOC',
-              name: 'FLOC',
-              ext: {
-                ver: 'chrome1.1'
-              },
-              segment: [{
-                id: '1234',
-                name: 'chrome.com',
-                value: '1234'
-              }]
-            }]);
-          });
-
-          it('appnend the flocId if userIds are present', function() {
-            bidRequests[0].userId = {};
-            bidRequests[0].userId.netId = 'netid-user-id';
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            bidRequests[0].userId.flocId = {
-              id: '1234',
-              version: 'chrome1.1'
-            }
-            let request = spec.buildRequests(bidRequests, {});
-            let data = JSON.parse(request.data);
-            expect(data.user.eids).to.deep.equal([{
-              'source': 'netid.de',
-              'uids': [{
-                'id': 'netid-user-id',
-                'atype': 1
-              }]
-            }, {
-              'source': 'chrome.com',
-              'uids': [{
-                'id': '1234',
-                'atype': 1,
-                'ext': {
-                  'ver': 'chrome1.1'
-                }
-              }]
-            }]);
           });
         });
       });
@@ -3212,30 +3193,24 @@ describe('PubMatic adapter', function () {
         expect(data.ext.acat).to.exist.and.to.deep.equal(['IAB1', 'IAB2', 'IAB3']);
       });
       it('ortb2.ext.prebid.bidderparams.pubmatic.acat should be passed in request payload', function() {
-        let sandbox = sinon.sandbox.create();
-        sandbox.stub(config, 'getConfig').callsFake(key => {
-          const config = {
-            'ortb2': {
-              ext: {
-                prebid: {
-                  bidderparams: {
-                    pubmatic: {
-                      acat: ['IAB1', 'IAB2', 'IAB1', 'IAB2', 'IAB1', 'IAB2']
-                    }
-                  }
+        const ortb2 = {
+          ext: {
+            prebid: {
+              bidderparams: {
+                pubmatic: {
+                  acat: ['IAB1', 'IAB2', 'IAB1', 'IAB2', 'IAB1', 'IAB2']
                 }
               }
             }
-          };
-          return config[key];
-        });
+          }
+        };
         const request = spec.buildRequests(bidRequests, {
           auctionId: 'new-auction-id',
-          bidderCode: 'pubmatic'
+          bidderCode: 'pubmatic',
+          ortb2
         });
         let data = JSON.parse(request.data);
         expect(data.ext.acat).to.deep.equal(['IAB1', 'IAB2']);
-        sandbox.restore();
       });
     });
 
@@ -3344,22 +3319,16 @@ describe('PubMatic adapter', function () {
 
 	  it('ortb2.bcat should merged with slot level bcat param', function() {
         multipleBidRequests[0].params.bcat = ['IAB-1', 'IAB-2'];
-        let sandbox = sinon.sandbox.create();
-        sandbox.stub(config, 'getConfig').callsFake(key => {
-          const config = {
-            'ortb2': {
-              bcat: ['IAB-3', 'IAB-4']
-            }
-          };
-          return config[key];
-        });
+        const ortb2 = {
+          bcat: ['IAB-3', 'IAB-4']
+        };
         const request = spec.buildRequests(multipleBidRequests, {
           auctionId: 'new-auction-id',
-          bidderCode: 'pubmatic'
+          bidderCode: 'pubmatic',
+          ortb2
         });
         let data = JSON.parse(request.data);
         expect(data.bcat).to.deep.equal(['IAB-1', 'IAB-2', 'IAB-3', 'IAB-4']);
-        sandbox.restore();
       });
     });
 
@@ -4031,7 +4000,7 @@ describe('PubMatic adapter', function () {
     });
   });
 
-  describe('GroupM params', function() {
+  describe('Marketplace params', function() {
     let sandbox, utilsMock, newBidRequests, newBidResponses;
     beforeEach(() => {
       utilsMock = sinon.mock(utils);
@@ -4048,22 +4017,13 @@ describe('PubMatic adapter', function () {
       sandbox.restore();
     })
 
-    it('Should log info when bidder is groupm  and return', function () {
-      let request = spec.buildRequests(newBidRequests, {bidderCode: 'groupm',
-        auctionId: 'new-auction-id'
-      });
-      sinon.assert.calledOnce(utils.logInfo);
-      expect(request).to.equal(undefined);
-    });
-
-    it('Should add bidder code & bidder as groupm for marketplace groupm response', function () {
+    it('Should add bidder code as groupm for marketplace groupm response', function () {
       let request = spec.buildRequests(newBidRequests, {
         auctionId: 'new-auction-id'
       });
       let response = spec.interpretResponse(newBidResponses, request);
       expect(response).to.be.an('array').with.length.above(0);
       expect(response[0].bidderCode).to.equal('groupm');
-      expect(response[0].bidder).to.equal('groupm');
     });
   });
 });
