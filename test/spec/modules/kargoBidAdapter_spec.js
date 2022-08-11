@@ -335,7 +335,7 @@ describe('kargo adapter tests', function () {
           page: 'https://www.prebid.org',
         },
       };
-      {
+
       if (gdpr) {
         payload['gdprConsent'] = gdpr
       }
