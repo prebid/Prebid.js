@@ -78,11 +78,10 @@ function validateAppendObject(validationFunction, allowedKeys, inputObject, appe
 
 function getTtl(bidderRequest) {
   const ttl = config.getConfig('adtrgtme.ttl');
+  const validateTTL = (ttl) => {
+    return (isNumber(ttl) && ttl > 0 && ttl < 3600) ? ttl : DEFAULT_BID_TTL
+  };
   return ttl ? validateTTL(ttl) : validateTTL(deepAccess(bidderRequest, 'params.ttl'));
-};
-
-function validateTTL(ttl) {
-  return (isNumber(ttl) && ttl > 0 && ttl < 3600) ? ttl : DEFAULT_BID_TTL
 };
 
 function getFloorModuleData(bid) {
@@ -294,7 +293,7 @@ export const spec = {
         return response;
       }
 
-      let cpm = (bid.ext && bid.ext.encp) ? bid.ext.encp : bid.price;
+      let cpm = bid.price;
 
       let bidResponse = {
         adId: deepAccess(bid, 'adId') ? bid.adId : bid.impid || bid.crid,
