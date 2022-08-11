@@ -147,6 +147,7 @@ function bidWonHandler(bidWonData) {
 
 function handleSetDebugConfig(debugFlag) {
   // this module should work only if pbjs_debug is set to true in page-URL or debug mode is on thru config
+  // handlers should be registered only once
   if (debugFlag !== true || isListenerAdded) {
     return;
   }
@@ -160,4 +161,5 @@ function handleSetDebugConfig(debugFlag) {
   loadUILibrary();
 }
 
+// handleSetDebugConfig will be called whenever setConfig is called with debug property
 config.getConfig('debug', config => handleSetDebugConfig(config.debug));
