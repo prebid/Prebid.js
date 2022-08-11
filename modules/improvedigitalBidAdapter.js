@@ -18,6 +18,7 @@ import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
 import {createEidsArray} from './userId/eids.js';
 import {hasPurpose1Consent} from '../src/utils/gpdr.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'improvedigital';
 const CREATIVE_TTL = 300;
@@ -91,6 +92,9 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests(bidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
+
     const request = {
       cur: [config.getConfig('currency.adServerCurrency') || 'USD'],
       ext: {
@@ -119,7 +123,7 @@ export const spec = {
 
     if (bidderRequest) {
       // GDPR
-      const gdprConsent = deepAccess(bidderRequest, 'gdprConsent')
+      const gdprConsent = deepAccess(bidderRequest, 'gdprConsent');
       if (gdprConsent) {
         if (typeof gdprConsent.gdprApplies === 'boolean') {
           deepSetValue(request, 'regs.ext.gdpr', Number(gdprConsent.gdprApplies));
@@ -430,6 +434,9 @@ const ID_REQUEST = {
       return null;
     }
     const request = {
+      eventtrackers: [
+        {event: 1, methods: [1, 2]}
+      ],
       assets: [],
     }
     for (let i of Object.keys(nativeParams)) {
@@ -501,7 +508,7 @@ const ID_REQUEST = {
       const url = deepAccess(bidderRequest, 'refererInfo.page');
       if (url) {
         site.page = url;
-        site.domain = bidderRequest.refererInfo.domain
+        site.domain = bidderRequest.refererInfo.domain;
       }
       const configSiteSettings = config.getConfig('site') || {};
       const fpdSiteSettings = deepAccess(bidderRequest, 'ortb2.site') || {};

@@ -48,7 +48,8 @@ const BIDDER_REQUEST = {
   },
   'uspConsent': 'consent_string',
   'refererInfo': {
-    'page': 'https://www.greatsite.com'
+    'page': 'https://www.greatsite.com',
+    'ref': 'https://www.somereferrer.com'
   }
 };
 
@@ -80,6 +81,15 @@ const REQUEST = {
     bidId: '2d52001cabd527'
   }
 };
+
+function getTopWindowQueryParams() {
+  try {
+    const parsedUrl = utils.parseUrl(window.top.document.URL, { decodeSearchAsString: true });
+    return parsedUrl.search;
+  } catch (e) {
+    return '';
+  }
+}
 
 describe('VidazooBidAdapter', function () {
   describe('validtae spec', function () {
@@ -159,6 +169,7 @@ describe('VidazooBidAdapter', function () {
           usPrivacy: 'consent_string',
           sizes: ['300x250', '300x600'],
           url: 'https%3A%2F%2Fwww.greatsite.com',
+          referrer: 'https://www.somereferrer.com',
           cb: 1000,
           bidFloor: 0.1,
           bidId: '2d52001cabd527',
@@ -171,6 +182,7 @@ describe('VidazooBidAdapter', function () {
           prebidVersion: version,
           schain: BID.schain,
           res: `${window.top.screen.width}x${window.top.screen.height}`,
+          uqs: getTopWindowQueryParams(),
           'ext.param1': 'loremipsum',
           'ext.param2': 'dolorsitamet',
         }

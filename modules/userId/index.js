@@ -167,9 +167,6 @@ const CONSENT_DATA_COOKIE_STORAGE_CONFIG = {
 export const PBJS_USER_ID_OPTOUT_NAME = '_pbjs_id_optout';
 export const coreStorage = getCoreStorageManager('userid');
 
-/** @type {string[]} */
-let validStorageTypes = [];
-
 /** @type {boolean} */
 let addedUserIdHook = false;
 
@@ -617,9 +614,9 @@ function getPPID() {
  * @param {Object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
  * @param {function} fn required; The next function in the chain, used by hook.js
  */
-export function requestBidsHook(fn, reqBidsConfigObj, {delay = GreedyPromise.timeout} = {}) {
+export function requestBidsHook(fn, reqBidsConfigObj, {delay = GreedyPromise.timeout, getIds = getUserIdsAsync} = {}) {
   GreedyPromise.race([
-    getUserIdsAsync(),
+    getIds().catch(() => null),
     delay(auctionDelay)
   ]).then(() => {
     // pass available user id data to bid adapters
@@ -765,13 +762,17 @@ function refreshUserIds({submoduleNames} = {}, callback) {
 function getUserIdsAsync() {
   return initIdSystem().then(
     () => getUserIds(),
-    (e) =>
-      e === INIT_CANCELED
+    (e) => {
+      if (e === INIT_CANCELED) {
         // there's a pending refresh - because GreedyPromise runs this synchronously, we are now in the middle
         // of canceling the previous init, before the refresh logic has had a chance to run.
         // Use a "normal" Promise to clear the stack and let it complete (or this will just recurse infinitely)
-        ? Promise.resolve().then(getUserIdsAsync)
-        : GreedyPromise.reject(e)
+        return Promise.resolve().then(getUserIdsAsync)
+      } else {
+        logError('Error initializing userId', e)
+        return GreedyPromise.reject(e)
+      }
+    }
   );
 }
 
@@ -834,7 +835,19 @@ function populateSubmoduleId(submodule, consentData, storedConsentData, forceRef
 }
 
 function initSubmodules(dest, submodules, consentData, forceRefresh = false) {
-  // gdpr consent with purpose one is required, otherwise exit immediately
+  if (!submodules.length) return []; // to simplify log messages from here on
+
+  // filter out submodules whose storage type is not enabled
+  // this needs to be done here (after consent data has loaded) so that enforcement may disable storage globally
+  const storageTypes = getActiveStorageTypes();
+  submodules = submodules.filter((submod) => !submod.config.storage || storageTypes.has(submod.config.storage.type));
+
+  if (!submodules.length) {
+    logWarn(`${MODULE_NAME} - no ID module is configured for one of the available storage types:`, Array.from(storageTypes));
+    return [];
+  }
+
+  // another consent check, this time each module is checked for consent with its own gvlid
   let { userIdModules, hasValidated } = validateGdprEnforcement(submodules, consentData);
   if (!hasValidated && !hasPurpose1Consent(consentData)) {
     logWarn(`${MODULE_NAME} - gdpr permission not valid for local storage or cookies, exit module`);
@@ -885,7 +898,7 @@ function updateInitializedSubmodules(dest, submodule) {
  * @param {string[]} activeStorageTypes
  * @returns {SubmoduleConfig[]}
  */
-function getValidSubmoduleConfigs(configRegistry, submoduleRegistry, activeStorageTypes) {
+function getValidSubmoduleConfigs(configRegistry, submoduleRegistry) {
   if (!Array.isArray(configRegistry)) {
     return [];
   }
@@ -895,11 +908,11 @@ function getValidSubmoduleConfigs(configRegistry, submoduleRegistry, activeStora
       return carry;
     }
     // Validate storage config contains 'type' and 'name' properties with non-empty string values
-    // 'type' must be a value currently enabled in the browser
+    // 'type' must be one of html5, cookies
     if (config.storage &&
       !isEmptyStr(config.storage.type) &&
       !isEmptyStr(config.storage.name) &&
-      activeStorageTypes.indexOf(config.storage.type) !== -1) {
+      ALL_STORAGE_TYPES.has(config.storage.type)) {
       carry.push(config);
     } else if (isPlainObject(config.value)) {
       carry.push(config);
@@ -910,11 +923,33 @@ function getValidSubmoduleConfigs(configRegistry, submoduleRegistry, activeStora
   }, []);
 }
 
+const ALL_STORAGE_TYPES = new Set([LOCAL_STORAGE, COOKIE]);
+
+function getActiveStorageTypes() {
+  const storageTypes = [];
+  let disabled = false;
+  if (coreStorage.localStorageIsEnabled()) {
+    storageTypes.push(LOCAL_STORAGE);
+    if (coreStorage.getDataFromLocalStorage(PBJS_USER_ID_OPTOUT_NAME)) {
+      logInfo(`${MODULE_NAME} - opt-out localStorage found, storage disabled`);
+      disabled = true;
+    }
+  }
+  if (coreStorage.cookiesAreEnabled()) {
+    storageTypes.push(COOKIE);
+    if (coreStorage.getCookie(PBJS_USER_ID_OPTOUT_NAME)) {
+      logInfo(`${MODULE_NAME} - opt-out cookie found, storage disabled`);
+      disabled = true;
+    }
+  }
+  return new Set(disabled ? [] : storageTypes)
+}
+
 /**
  * update submodules by validating against existing configs and storage types
  */
 function updateSubmodules() {
-  const configs = getValidSubmoduleConfigs(configRegistry, submoduleRegistry, validStorageTypes);
+  const configs = getValidSubmoduleConfigs(configRegistry, submoduleRegistry);
   if (!configs.length) {
     return;
   }
@@ -986,22 +1021,6 @@ export function init(config, {delay = GreedyPromise.timeout} = {}) {
     configListener();
   }
   submoduleRegistry = [];
-
-  // list of browser enabled storage types
-  validStorageTypes = [
-    coreStorage.localStorageIsEnabled() ? LOCAL_STORAGE : null,
-    coreStorage.cookiesAreEnabled() ? COOKIE : null
-  ].filter(i => i !== null);
-
-  // exit immediately if opt out cookie or local storage keys exists.
-  if (validStorageTypes.indexOf(COOKIE) !== -1 && coreStorage.getCookie(PBJS_USER_ID_OPTOUT_NAME)) {
-    logInfo(`${MODULE_NAME} - opt-out cookie found, exit module`);
-    return;
-  }
-  if (validStorageTypes.indexOf(LOCAL_STORAGE) !== -1 && coreStorage.getDataFromLocalStorage(PBJS_USER_ID_OPTOUT_NAME)) {
-    logInfo(`${MODULE_NAME} - opt-out localStorage found, exit module`);
-    return;
-  }
 
   // listen for config userSyncs to be set
   configListener = config.getConfig('userSync', conf => {

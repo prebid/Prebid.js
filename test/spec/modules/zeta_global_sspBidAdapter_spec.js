@@ -271,7 +271,7 @@ describe('Zeta Ssp Bid Adapter', function () {
   it('Test required params in banner request', function () {
     const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
     const payload = JSON.parse(request.data);
-    expect(request.url).to.eql('https://ssp.disqus.com/bid?shortname=test_shortname');
+    expect(request.url).to.eql('https://ssp.disqus.com/bid/prebid?shortname=test_shortname');
     expect(payload.ext.sid).to.eql('publisherId');
     expect(payload.ext.tags.someTag).to.eql(444);
     expect(payload.ext.tags.shortname).to.be.undefined;
@@ -280,7 +280,7 @@ describe('Zeta Ssp Bid Adapter', function () {
   it('Test required params in video request', function () {
     const request = spec.buildRequests(videoRequest, videoRequest[0]);
     const payload = JSON.parse(request.data);
-    expect(request.url).to.eql('https://ssp.disqus.com/bid?shortname=test_shortname');
+    expect(request.url).to.eql('https://ssp.disqus.com/bid/prebid?shortname=test_shortname');
     expect(payload.ext.sid).to.eql('publisherId');
     expect(payload.ext.tags.someTag).to.eql(444);
     expect(payload.ext.tags.shortname).to.be.undefined;
