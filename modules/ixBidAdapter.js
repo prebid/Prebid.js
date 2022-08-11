@@ -25,7 +25,6 @@ import {find} from '../src/polyfill.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {INSTREAM, OUTSTREAM} from '../src/video.js';
 import {Renderer} from '../src/Renderer.js';
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'ix';
 const ALIAS_BIDDER_CODE = 'roundel';
@@ -549,8 +548,6 @@ function getEidInfo(allEids) {
  *
  */
 function buildRequest(validBidRequests, bidderRequest, impressions, version) {
-  // convert Native ORTB definition to old-style prebid native definition
-  validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
   // Always use secure HTTPS protocol.
   let baseUrl = SECURE_BID_URL;
   // Get ids from Prebid User ID Modules
