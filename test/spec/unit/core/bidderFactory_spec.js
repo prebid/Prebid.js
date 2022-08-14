@@ -1050,8 +1050,8 @@ describe('validate bid response: ', function () {
       bids1 = Object.assign({},
         bids[0],
         {
-          bidderCode: 'validAlternateBidder',
-          adapterCode: 'knownAdapter1'
+          bidderCode: 'validalternatebidder',
+          adapterCode: 'knownadapter1'
         }
       );
       logWarnSpy = sinon.spy(utils, 'logWarn');
@@ -1124,6 +1124,31 @@ describe('validate bid response: ', function () {
       expect(addBidResponseStub.calledOnce).to.equal(true);
       expect(logWarnSpy.callCount).to.equal(0);
       expect(logErrorSpy.callCount).to.equal(0);
+    });
+
+    it('should accept the bid, when allowedAlternateBidderCodes is marked as * (with space) and allowAlternateBidderCodes flag is true', function () {
+      bidderSettingStub.withArgs(CODE, 'allowAlternateBidderCodes').returns(true);
+      bidderSettingStub.withArgs(CODE, 'allowedAlternateBidderCodes').returns([' * ']);
+
+      const bidder = newBidder(spec);
+      spec.interpretResponse.returns(bids1);
+      bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+
+      expect(addBidResponseStub.calledOnce).to.equal(true);
+      expect(logWarnSpy.callCount).to.equal(0);
+      expect(logErrorSpy.callCount).to.equal(0);
+    });
+
+    it('should not accept the bid, when allowedAlternateBidderCodes is marked as empty array and allowAlternateBidderCodes flag is true', function () {
+      bidderSettingStub.withArgs(CODE, 'allowAlternateBidderCodes').returns(true);
+      bidderSettingStub.withArgs(CODE, 'allowedAlternateBidderCodes').returns([]);
+
+      const bidder = newBidder(spec);
+      spec.interpretResponse.returns(bids1);
+      bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+
+      expect(addBidResponseStub.calledOnce).to.equal(false);
+      expect(logWarnSpy.callCount).to.equal(1);
     });
 
     it('should accept the bid, when allowedAlternateBidderCodes contains bidder name and allowAlternateBidderCodes flag is true', function () {

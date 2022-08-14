@@ -203,7 +203,7 @@ function interpretResponse(serverResponse, bidRequest) {
           let xml = new window.DOMParser().parseFromString(xmlStr, 'text/xml');
           if (xml && xml.getElementsByTagName('parsererror').length == 0) {
             let cpmData = getCpmData(xml);
-            if (cpmData && cpmData.cpm > 0) {
+            if (cpmData.cpm > 0) {
               bidResponse.requestId = bidRequest.data.bidId;
               bidResponse.ad = '';
               bidResponse.cpm = cpmData.cpm;

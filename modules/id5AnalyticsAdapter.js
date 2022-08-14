@@ -1,4 +1,4 @@
-import buildAdapter from '../src/AnalyticsAdapter.js';
+import buildAdapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
 import { ajax } from '../src/ajax.js';

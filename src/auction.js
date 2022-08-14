@@ -359,7 +359,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
     getBidsReceived: () => _bidsReceived,
     getNoBids: () => _noBids,
     getFPD: () => ortb2Fragments
-  }
+  };
 }
 
 export const addBidResponse = hook('sync', function(adUnitCode, bid) {
@@ -566,7 +566,7 @@ function getPreparedBidForAuction({adUnitCode, bid, auctionId}, {index = auction
 
   // a publisher can also define a renderer for a mediaType
   const bidObjectMediaType = bidObject.mediaType;
-  const mediaTypes = index.getMediaTypes(bidObject)
+  const mediaTypes = index.getMediaTypes(bidObject);
   const bidMediaType = mediaTypes && mediaTypes[bidObjectMediaType];
 
   var mediaTypeRenderer = bidMediaType && bidMediaType.renderer;
