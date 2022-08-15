@@ -97,7 +97,7 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
     }
   }
   if (bidderRequest.uspConsent) {
-    data.usPrivacy = bidderRequest.uspConsent
+    data.usPrivacy = bidderRequest.uspConsent;
   }
 
   const dto = {
