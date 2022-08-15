@@ -1,4 +1,4 @@
-import { _each, deepAccess, parseSizesInput, parseUrl } from '../src/utils.js';
+import {_each, deepAccess, parseSizesInput, parseUrl, uniques} from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -191,17 +191,19 @@ function getUserSyncs(syncOptions, responses, gdprConsent = {}, uspConsent = '')
   let syncs = [];
   const { iframeEnabled, pixelEnabled } = syncOptions;
   const { gdprApplies, consentString = '' } = gdprConsent;
-  const params = `?gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${encodeURIComponent(consentString || '')}&us_privacy=${encodeURIComponent(uspConsent || '')}`
+
+  const cidArr = responses.filter(resp => deepAccess(resp, 'body.cid')).map(resp => resp.body.cid).filter(uniques);
+  const params = `?cid=${encodeURIComponent(cidArr.join(','))}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${encodeURIComponent(consentString || '')}&us_privacy=${encodeURIComponent(uspConsent || '')}`
   if (iframeEnabled) {
     syncs.push({
       type: 'iframe',
-      url: `https://prebid.cootlogix.com/api/sync/iframe/${params}`
+      url: `https://sync.cootlogix.com/api/sync/iframe/${params}`
     });
   }
   if (pixelEnabled) {
     syncs.push({
       type: 'image',
-      url: `https://prebid.cootlogix.com/api/sync/image/${params}`
+      url: `https://sync.cootlogix.com/api/sync/image/${params}`
     });
   }
   return syncs;
