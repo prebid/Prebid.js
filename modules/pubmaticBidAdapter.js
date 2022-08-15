@@ -185,7 +185,7 @@ _each(NATIVE_ASSETS, anAsset => { NATIVE_ASSET_ID_TO_KEY_MAP[anAsset.ID] = anAss
 // loading NATIVE_ASSET_KEY_TO_ASSET_MAP
 _each(NATIVE_ASSETS, anAsset => { NATIVE_ASSET_KEY_TO_ASSET_MAP[anAsset.KEY] = anAsset });
 
-function _getDomainFromURL(url) {
+export function _getDomainFromURL(url) {
   let anchor = document.createElement('a');
   anchor.href = url;
   return anchor.hostname;
@@ -1162,7 +1162,11 @@ export const spec = {
     // First Party Data
     const commonFpd = (bidderRequest && bidderRequest.ortb2) || {};
     if (commonFpd.site) {
+      const { page, domain, ref } = payload.site;
       mergeDeep(payload, {site: commonFpd.site});
+      payload.site.page = page;
+      payload.site.domain = domain;
+      payload.site.ref = ref;
     }
     if (commonFpd.user) {
       mergeDeep(payload, {user: commonFpd.user});
