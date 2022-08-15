@@ -3,7 +3,7 @@ import {makeSlot} from '../integration/faker/googletag.js';
 import * as utils from '../../../src/utils'
 import * as events from '../../../src/events';
 import * as sinon from 'sinon';
-import {sendPageviewEvent} from "../../../modules/browsiRtdProvider.js";
+import {sendPageviewEvent} from '../../../modules/browsiRtdProvider.js';
 
 describe('browsi Real time  data sub module', function () {
   const conf = {
@@ -162,7 +162,7 @@ describe('browsi Real time  data sub module', function () {
   })
 
   describe('should emit ad request billable event', function () {
-    before(()=>{
+    before(() => {
       const data = {
         p: {
           'adUnit1': {ps: {0: 0.234}},
