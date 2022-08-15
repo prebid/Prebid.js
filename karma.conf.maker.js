@@ -22,20 +22,9 @@ function newWebpackConfig(codeCoverage, disableFeatures) {
     .flatMap((r) => r.use)
     .filter((use) => use.loader === 'babel-loader')
     .forEach((use) => {
-      use.options = babelConfig({test: true, disableFeatures});
+      use.options = babelConfig({test: true, codeCoverage, disableFeatures});
     });
 
-  if (codeCoverage) {
-    webpackConfig.module.rules.push({
-      enforce: 'post',
-      exclude: /(node_modules)|(test)|(integrationExamples)|(build)|polyfill.js|(src\/adapters\/analytics\/ga.js)/,
-      use: {
-        loader: '@jsdevtools/coverage-istanbul-loader',
-        options: { esModules: true }
-      },
-      test: /\.js$/
-    })
-  }
   return webpackConfig;
 }
 

@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec, checkVideoPlacement} from 'modules/pubmaticBidAdapter.js';
+import {spec, checkVideoPlacement, _getDomainFromURL} from 'modules/pubmaticBidAdapter.js';
 import * as utils from 'src/utils.js';
 import {config} from 'src/config.js';
 import { createEidsArray } from 'modules/userId/eids.js';
@@ -1688,17 +1688,66 @@ describe('PubMatic adapter', function () {
       describe('FPD', function() {
         let newRequest;
 
-        it('ortb2.site should be merged in the request', function() {
+        describe('ortb2.site should not override page, domain & ref values', function() {
+          it('When above properties are present in ortb2.site', function() {
+            const ortb2 = {
+              site: {
+                domain: 'page.example.com',
+                page: 'https://page.example.com/here.html',
+                ref: 'https://page.example.com/here.html'
+              }
+            };
+            const request = spec.buildRequests(bidRequests, {ortb2});
+            let data = JSON.parse(request.data);
+            expect(data.site.domain).not.equal('page.example.com');
+            expect(data.site.page).not.equal('https://page.example.com/here.html');
+            expect(data.site.ref).not.equal('https://page.example.com/here.html');
+          });
+
+          it('When above properties are absent in ortb2.site', function () {
+            const ortb2 = {
+              site: {}
+            };
+            let request = spec.buildRequests(bidRequests, {
+              auctionId: 'new-auction-id',
+              ortb2
+            });
+            let data = JSON.parse(request.data);
+            let response = spec.interpretResponse(bidResponses, request);
+            expect(data.site.page).to.equal(bidRequests[0].params.kadpageurl);
+            expect(data.site.domain).to.equal(_getDomainFromURL(data.site.page));
+            expect(response[0].referrer).to.equal(data.site.ref);
+          });
+
+          it('With some extra properties in ortb2.site', function() {
+            const ortb2 = {
+              site: {
+                domain: 'page.example.com',
+                page: 'https://page.example.com/here.html',
+                ref: 'https://page.example.com/here.html',
+                cat: ['IAB2'],
+                sectioncat: ['IAB2-2']
+              }
+            };
+            const request = spec.buildRequests(bidRequests, {ortb2});
+            let data = JSON.parse(request.data);
+            expect(data.site.domain).not.equal('page.example.com');
+            expect(data.site.page).not.equal('https://page.example.com/here.html');
+            expect(data.site.ref).not.equal('https://page.example.com/here.html');
+            expect(data.site.cat).to.deep.equal(['IAB2']);
+            expect(data.site.sectioncat).to.deep.equal(['IAB2-2']);
+          });
+        });
+
+        it('ortb2.site should be merged except page, domain & ref in the request', function() {
           const ortb2 = {
             site: {
-              domain: 'page.example.com',
               cat: ['IAB2'],
               sectioncat: ['IAB2-2']
             }
           };
           const request = spec.buildRequests(bidRequests, {ortb2});
           let data = JSON.parse(request.data);
-          expect(data.site.domain).to.equal('page.example.com');
           expect(data.site.cat).to.deep.equal(['IAB2']);
           expect(data.site.sectioncat).to.deep.equal(['IAB2-2']);
         });
