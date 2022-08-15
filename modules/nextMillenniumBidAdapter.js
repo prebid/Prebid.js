@@ -1,4 +1,5 @@
 import { isStr, _each, parseUrl, getWindowTop, getBidIdParameter } from '../src/utils.js';
+import { getRefererInfo } from '../src/refererDetection.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 
@@ -24,12 +25,18 @@ export const spec = {
 
     _each(validBidRequests, function(bid) {
       window.nmmRefreshCounts[bid.adUnitCode] = window.nmmRefreshCounts[bid.adUnitCode] || 0;
+      const id = getPlacementId(bid)
+
+      if (bid.sizes && !Array.isArray(bid.sizes[0])) bid.sizes = [bid.sizes]
+      if (!bid.ortb2) bid.ortb2 = {}
+      if (!bid.ortb2.device) bid.ortb2.device = {}
+      bid.ortb2.device.referrer = (getRefererInfo && getRefererInfo().ref) || ''
       const postBody = {
         'id': bid.auctionId,
         'ext': {
           'prebid': {
             'storedrequest': {
-              'id': getPlacementId(bid)
+              'id': id
             }
           },
 
@@ -39,7 +46,19 @@ export const spec = {
             'scrollTop': window.pageYOffset || document.documentElement.scrollTop
           }
         },
-        ...bid.ortb2
+        ...bid.ortb2,
+        'imp': [{
+          'banner': {
+            'format': (bid.sizes || []).map(s => { return {w: s[0], h: s[1]} })
+          },
+          'ext': {
+            'prebid': {
+              'storedrequest': {
+                'id': id
+              }
+            }
+          }
+        }]
       }
 
       const gdprConsent = bidderRequest && bidderRequest.gdprConsent;

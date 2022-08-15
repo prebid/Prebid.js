@@ -157,7 +157,7 @@ function createVideoRequest(bid, bidderRequest) {
     method: 'POST',
     url: REQUEST_URL,
     data: data
-  }
+  };
 }
 
 function getBaseRequest(bid, bidderRequest) {
@@ -191,7 +191,7 @@ function getBaseRequest(bid, bidderRequest) {
     utils.deepSetValue(req, 'ext.delDomain', bid.params.delDomain);
   }
   if (bid.params.test) {
-    req.test = 1
+    req.test = 1;
   }
   if (bidderRequest.gdprConsent) {
     if (bidderRequest.gdprConsent.gdprApplies !== undefined) {
@@ -252,6 +252,10 @@ function getFloor(bid, mediaType) {
 }
 
 function interpretResponse(resp, req) {
+  if (!resp.body) {
+    resp.body = {nbr: 0};
+  }
+
   // pass these from request to the responses for use in userSync
   if (req.data.ext) {
     if (req.data.ext.delDomain) {
@@ -301,11 +305,11 @@ function interpretResponse(resp, req) {
       }
 
       if (respBody.ext && respBody.ext.paf) {
-        response.meta.paf = respBody.ext.paf;
+        response.meta.paf = Object.assign({}, respBody.ext.paf);
         response.meta.paf.content_id = utils.deepAccess(bid, 'ext.paf.content_id');
       }
 
-      return response
+      return response;
     })];
   });
 
