@@ -57,8 +57,8 @@ export function addBrowsiTag(data) {
   return script;
 }
 
-function sendPageviewEvent(eventType){
-  if (eventType === "PAGEVIEW"){
+export function sendPageviewEvent(eventType) {
+  if (eventType === 'PAGEVIEW') {
     events.emit(CONSTANTS.EVENTS.BILLABLE_EVENT, {
       vendor: 'browsi',
       type: 'pageview',
@@ -348,12 +348,12 @@ export const browsiSubmodule = {
 function getTargetingData(uc, c, us, a) {
   const targetingData = getRTD(uc);
   const auctionId = a.auctionId;
-  const sendAdRequestEvent = _browsiData['bet'] === "AD_REQUEST";
+  const sendAdRequestEvent = _browsiData['bet'] === 'AD_REQUEST';
   uc.forEach(auc => {
     if (isNumber(_ic[auc])) {
       _ic[auc] = _ic[auc] + 1;
     }
-    if (sendAdRequestEvent){
+    if (sendAdRequestEvent) {
       const transactionId = a.adUnits.find(adUnit => adUnit.code === auc).transactionId;
       events.emit(CONSTANTS.EVENTS.BILLABLE_EVENT, {
         vendor: 'browsi',
