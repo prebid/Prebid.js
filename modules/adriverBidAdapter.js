@@ -32,7 +32,7 @@ export const spec = {
 
     let timeout = null;
     if (bidderRequest) {
-      timeout = bidderRequest.timeout
+      timeout = bidderRequest.timeout;
     }
 
     const payload = {
