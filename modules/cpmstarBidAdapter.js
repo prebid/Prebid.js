@@ -73,7 +73,7 @@ export const spec = {
             fixedEncodeURIComponent(node.name || '') + ',' +
             fixedEncodeURIComponent(node.domain || '');
         }
-        url += '&schain=' + schainString
+        url += '&schain=' + schainString;
       }
 
       if (bidderRequest.gdprConsent) {
@@ -123,7 +123,7 @@ export const spec = {
       var cpm = (parseFloat(rawBid.cpm) || 0);
 
       if (!cpm) {
-        logWarn('cpmstarBidAdapter: server response failed check. Missing cpm')
+        logWarn('cpmstarBidAdapter: server response failed check. Missing cpm');
         return;
       }
 
@@ -142,7 +142,7 @@ export const spec = {
       };
 
       if (rawBid.hasOwnProperty('dealId')) {
-        bidResponse.dealId = rawBid.dealId
+        bidResponse.dealId = rawBid.dealId;
       }
 
       if (mediaType == BANNER && rawBid.code) {
