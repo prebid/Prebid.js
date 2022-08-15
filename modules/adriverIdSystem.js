@@ -73,16 +73,7 @@ export const adriverIdSubmodule = {
             callback();
           }
         };
-        let id5obj = JSON.parse(decodeURIComponent(storage.getDataFromLocalStorage('id5id')));
-        let universalVal;
-        for (let key in id5obj) {
-          if (id5obj.hasOwnProperty(key) && key === 'universal_uid') {
-            universalVal = id5obj[key];
-          }
-        }
-        let sharedID = storage.getDataFromLocalStorage('_pubcid') || storage.getCookie('pubcid');
-        let unifiedID = storage.getCookie('__uid2_advertising_token');
-        let newUrl = url + '&custom=' + (universalVal ? '221=' + encodeURIComponent(universalVal) + ';' : '') + (sharedID ? '222=' + encodeURIComponent(sharedID) + ';' : '') + (unifiedID ? '223=' + encodeURIComponent(unifiedID) : '') + '&cid=' + (storage.getDataFromLocalStorage('adrcid') || storage.getCookie('adrcid'));
+        let newUrl = url + '&custom=' + '&cid=' + (storage.getDataFromLocalStorage('adrcid') || storage.getCookie('adrcid'));
         ajax(newUrl, callbacks, undefined, {method: 'GET'});
       }
     };
