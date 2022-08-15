@@ -48,7 +48,7 @@ export function getDgKeywordsAndSet(reqBidsConfigObj, callback, moduleConfig, us
               keywords['opectx'] = res['t'];
             }
             if (Object.keys(keywords).length > 0) {
-              const targetBidKeys = {}
+              const targetBidKeys = {};
               for (let bid of setKeywordTargetBidders) {
                 // set keywords to params
                 bid.params.keywords = keywords;

@@ -9,7 +9,7 @@ import CONSTANTS from '../src/constants.json';
  * prebidmanagerAnalyticsAdapter.js - analytics adapter for prebidmanager
  */
 export const storage = getStorageManager({gvlid: undefined, moduleName: 'prebidmanager'});
-const DEFAULT_EVENT_URL = 'https://endpoint.prebidmanager.com/endpoint'
+const DEFAULT_EVENT_URL = 'https://endpoint.prebidmanager.com/endpoint';
 const analyticsType = 'endpoint';
 const analyticsName = 'Prebid Manager Analytics: ';
 
