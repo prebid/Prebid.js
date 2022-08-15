@@ -211,7 +211,7 @@ export const quantcastIdSubmodule = {
       });
     }
 
-    return { id: fpa ? { quantcastId: fpa } : undefined }
+    return { id: fpa ? { quantcastId: fpa } : undefined };
   }
 };
 
