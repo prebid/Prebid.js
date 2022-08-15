@@ -16,7 +16,6 @@ const { getConfig } = config
 
 const BIDDER_CODE = 'caroda'
 const GVLID = 954
-const carodaDomain = 'prebid.caroda.io'
 
 // some state info is required to synchronize with Caroda ad server
 const topUsableWindow = getTopUsableWindow()
@@ -43,7 +42,7 @@ export const spec = {
     const eids = getFirstWithKey(validBidRequests, 'userIdAsEids')
     const schain = getFirstWithKey(validBidRequests, 'schain')
     const request = {
-      id: bidderRequest.auctionId,
+      auctionId: bidderRequest.auctionId, 
       currency,
       hb_version: '$prebid.version$',
       ...ortbCommon,
@@ -78,25 +77,26 @@ export const spec = {
     }
     return getImps(validBidRequests, request).map(imp => ({
       method: 'POST',
-      url: 'https://' + carodaDomain + '/api/hb?entry_id=' + pageViewId,
+      url: 'https://prebid.caroda.io/api/hb?entry_id=' + pageViewId,
       data: JSON.stringify(imp)
     }))
   },
-  interpretResponse: (serverResponse) => {
+  interpretResponse: (serverResponse, bidRequest) => {
     if (!serverResponse.body) {
       return
     }
     const { ok, error } = serverResponse.body
     if (error) {
+      logError(BIDDER_CODE, ': server caught', error.message)
       return
     }
     try {
-      return JSON.parse(ok)
+      return JSON.parse(ok.value)
         .map((bid) => {
           return {
-            requestId: bid.bidId,
+            requestId: bid.bid_id,
             cpm: bid.cpm,
-            creativeId: bid.creativeId,
+            creativeId: bid.creative_id,
             ttl: 300,
             netRevenue: true,
             currency: bid.currency,
@@ -106,7 +106,7 @@ export const spec = {
               advertiserDomains: bid && bid.adomain ? bid.adomain : []
             },
             ad: bid.ad,
-            placementId: bid.placementId
+            placementId: bid.placement_id
           }
         })
         .filter(Boolean)
@@ -176,6 +176,7 @@ function getImps (validBidRequests, common) {
     const bidfloorcur = floorInfo.currency
     const { ctok, placementId } = bid.params
     const imp = {
+      bid_id: bid.bidId,
       ctok,
       bidfloor,
       bidfloorcur,

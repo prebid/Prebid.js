@@ -43,7 +43,7 @@ describe('Caroda adapter', function () {
     });
     it('should send request with minimal structure', function () {
       const validBidRequests = [{
-        bidId: 'bidId',
+        bid_id: 'bidId',
         params: {
           'ctok': 'adf232eef344'
         }
@@ -63,7 +63,7 @@ describe('Caroda adapter', function () {
 
     it('should add test to request, if test is set in parameters', function () {
       const validBidRequests = [{
-        bidId: 'bidId',
+        bid_id: 'bidId',
         params: {
           'ctok': 'adf232eef344',
           'test': 1
@@ -77,7 +77,7 @@ describe('Caroda adapter', function () {
 
     it('should add placement_id to request when available', function () {
       const validBidRequests = [{
-        bidId: 'bidId',
+        bid_id: 'bidId',
         params: {
           'ctok': 'adf232eef344',
           'placementId': 'opzafe342f'
@@ -94,7 +94,7 @@ describe('Caroda adapter', function () {
         device: { w: 100, h: 100 }
       });
       const validBidRequests = [{
-        bidId: 'bidId',
+        bid_id: 'bidId',
         params: { 'ctok': 'adf232eef344' }
       }];
       const data = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } })[0].data);
@@ -105,7 +105,7 @@ describe('Caroda adapter', function () {
 
     it('should pass supply chain object', function () {
       const validBidRequests = [{
-        bidId: 'bidId',
+        bid_id: 'bidId',
         params: {},
         schain: {
           validation: 'strict',
@@ -130,7 +130,7 @@ describe('Caroda adapter', function () {
       });
       const ortb2 = { app: { name: 'appname' } };
       let validBidRequests = [{
-        bidId: 'bidId',
+        bid_id: 'bidId',
         params: { mid: '1000' },
         ortb2
       }];
@@ -157,7 +157,7 @@ describe('Caroda adapter', function () {
         }
       };
       let validBidRequests = [{
-        bidId: 'bidId',
+        bid_id: 'bidId',
         params: { mid: '1000' },
         ortb2
       }];
@@ -176,7 +176,7 @@ describe('Caroda adapter', function () {
 
     it('should send correct priceType value', function () {
       let validBidRequests = [{
-        bidId: 'bidId',
+        bid_id: 'bidId',
         params: { priceType: 'gross' }
       }];
       let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } })[0].data);
@@ -195,7 +195,7 @@ describe('Caroda adapter', function () {
 
     it('should pass extended ids', function () {
       let validBidRequests = [{
-        bidId: 'bidId',
+        bid_id: 'bidId',
         params: {},
         userIdAsEids: createEidsArray({
           tdid: 'TTD_ID_FROM_USER_ID_MODULE',
@@ -212,7 +212,7 @@ describe('Caroda adapter', function () {
 
     describe('user privacy', function () {
       it('should send GDPR Consent data to adform if gdprApplies', function () {
-        let validBidRequests = [{ bidId: 'bidId', params: { test: 1 } }];
+        let validBidRequests = [{ bid_id: 'bidId', params: { test: 1 } }];
         let bidderRequest = { gdprConsent: { gdprApplies: true, consentString: 'consentDataString' }, refererInfo: { page: 'page' } };
         let request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest)[0].data);
 
@@ -222,7 +222,7 @@ describe('Caroda adapter', function () {
       });
 
       it('should send gdpr as number', function () {
-        let validBidRequests = [{ bidId: 'bidId', params: { test: 1 } }];
+        let validBidRequests = [{ bid_id: 'bidId', params: { test: 1 } }];
         let bidderRequest = { gdprConsent: { gdprApplies: true, consentString: 'consentDataString' }, refererInfo: { page: 'page' } };
         let request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest)[0].data);
 
@@ -231,7 +231,7 @@ describe('Caroda adapter', function () {
       });
 
       it('should send CCPA Consent data', function () {
-        let validBidRequests = [{ bidId: 'bidId', params: { test: 1 } }];
+        let validBidRequests = [{ bid_id: 'bidId', params: { test: 1 } }];
         let bidderRequest = { uspConsent: '1YA-', refererInfo: { page: 'page' } };
         let request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest)[0].data);
 
@@ -248,7 +248,7 @@ describe('Caroda adapter', function () {
       it('should not set coppa when coppa is not provided or is set to false', function () {
         config.setConfig({
         });
-        let validBidRequests = [{ bidId: 'bidId', params: { test: 1 } }];
+        let validBidRequests = [{ bid_id: 'bidId', params: { test: 1 } }];
         let bidderRequest = { gdprConsent: { gdprApplies: true, consentString: 'consentDataString' }, refererInfo: { page: 'page' } };
         let request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest)[0].data);
 
@@ -265,7 +265,7 @@ describe('Caroda adapter', function () {
         config.setConfig({
           coppa: true
         });
-        let validBidRequests = [{ bidId: 'bidId', params: { test: 1 } }];
+        let validBidRequests = [{ bid_id: 'bidId', params: { test: 1 } }];
         let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } })[0].data);
 
         assert.equal(request.privacy.coppa, 1);
@@ -275,10 +275,10 @@ describe('Caroda adapter', function () {
     describe('bids', function () {
       it('should be able to handle multiple bids', function () {
         const validBidRequests = [{
-          bidId: 'bidId',
+          bid_id: 'bidId',
           params: { ctok: 'ctok1' }
         }, {
-          bidId: 'bidId2',
+          bid_id: 'bidId2',
           params: { ctok: 'ctok2' }
         }];
         const request = spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } });
@@ -290,7 +290,7 @@ describe('Caroda adapter', function () {
 
       describe('price floors', function () {
         it('should not add if floors module not configured', function () {
-          const validBidRequests = [{ bidId: 'bidId', params: {ctok: 'ctok1'}, mediaTypes: {video: {}} }];
+          const validBidRequests = [{ bid_id: 'bidId', params: {ctok: 'ctok1'}, mediaTypes: {video: {}} }];
           const imp = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } })[0].data);
           assert.equal(imp.bidfloor, undefined);
           assert.equal(imp.bidfloorcur, undefined);
@@ -340,7 +340,7 @@ describe('Caroda adapter', function () {
       describe('multiple media types', function () {
         it('should use all configured media types for bidding', function () {
           const validBidRequests = [{
-            bidId: 'bidId',
+            bid_id: 'bidId',
             params: { ctok: 'ctok1' },
             mediaTypes: {
               banner: {
@@ -349,7 +349,7 @@ describe('Caroda adapter', function () {
               video: {}
             }
           }, {
-            bidId: 'bidId2',
+            bid_id: 'bidId2',
             params: { ctok: 'ctok1' },
             mediaTypes: {
               video: {},
@@ -371,7 +371,7 @@ describe('Caroda adapter', function () {
       describe('banner', function () {
         it('should convert sizes to openrtb format', function () {
           const validBidRequests = [{
-            bidId: 'bidId',
+            bid_id: 'bidId',
             params: { mid: 1000 },
             mediaTypes: {
               banner: {
@@ -389,7 +389,7 @@ describe('Caroda adapter', function () {
       describe('video', function () {
         it('should pass video mediatype config', function () {
           const validBidRequests = [{
-            bidId: 'bidId',
+            bid_id: 'bidId',
             params: { mid: 1000 },
             mediaTypes: {
               video: {
@@ -419,27 +419,29 @@ describe('Caroda adapter', function () {
     it('should parse a typical ok response', function () {
       const serverResponse = {
         body: {
-          ok: JSON.stringify([{
-            bidId: 'bidId',
-            cpm: 10,
-            creativeId: '12345',
-            currency: 'CZK',
-            w: 100,
-            h: 100,
-            ad: '<script....',
-            placementId: 'opzafe23'
-          }])
+          ok: {
+            value: JSON.stringify([{
+              bid_id: 'bidId',
+              cpm: 10,
+              creative_id: '12345',
+              currency: 'CZK',
+              w: 100,
+              h: 100,
+              ad: '<script....',
+              placement_id: 'opzafe23'
+            }])
+          }
         }
       };
       const bidRequest = {
         data: {},
         bids: [
           {
-            bidId: 'bidId1',
+            bid_id: 'bidId1',
             params: { ctok: 'ctok1' }
           },
           {
-            bidId: 'bidId2',
+            bid_id: 'bidId2',
             params: { ctok: 'ctok2' }
           }
         ]
