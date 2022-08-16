@@ -273,10 +273,6 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
         break;
 
       case AD_REQUEST:
-        if (!player.ima) {
-          return;
-        }
-
         eventHandler = e => {
           const adTagUrl = e.AdsRequest.adTagUrl;
           adState.updateState({ adTagUrl });
@@ -287,12 +283,8 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
         break
 
       case AD_LOADED:
-        if (!player.ima) {
-          return;
-        }
-
         eventHandler = (e) => {
-          const imaAd = e.getAdData();
+          const imaAd = e.getAdData && e.getAdData();
           adState.updateForEvent(imaAd);
           Object.assign(payload, adState.getState());
           callback(type, payload);
@@ -302,10 +294,6 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
         break
 
       case AD_STARTED:
-        if (!player.ima) {
-          return;
-        }
-
         eventHandler = () => {
           Object.assign(payload, adState.getState());
           callback(type, payload);
@@ -314,10 +302,6 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
         break
 
       case AD_IMPRESSION:
-        if (!player.ima) {
-          return;
-        }
-
         eventHandler = () => {
           Object.assign(payload, adState.getState(), timeState.getState());
           callback(type, payload);
@@ -326,10 +310,6 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
         break
 
       case AD_PLAY:
-        if (!player.ima) {
-          return;
-        }
-
         eventHandler = () => {
           Object.assign(payload, adState.getState());
           callback(type, payload);
@@ -338,10 +318,6 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
         break
 
       case AD_PAUSE:
-        if (!player.ima) {
-          return;
-        }
-
         eventHandler = () => {
           Object.assign(payload, adState.getState());
           callback(type, payload);
@@ -350,12 +326,8 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
         break
 
       case AD_TIME:
-        if (!player.ima) {
-          return;
-        }
-
         eventHandler = (e) => {
-          const adTimeEvent = e.getAdData();
+          const adTimeEvent = e && e.getAdData && e.getAdData();
           timeState.updateForTimeEvent(adTimeEvent);
           Object.assign(payload, adState.getState(), timeState.getState());
           callback(type, payload);
@@ -364,10 +336,6 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
         break
 
       case AD_COMPLETE:
-        if (!player.ima) {
-          return;
-        }
-
         eventHandler = () => {
           Object.assign(payload, adState.getState());
           callback(type, payload);
@@ -377,10 +345,6 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
         break
 
       case AD_SKIPPED:
-        if (!player.ima) {
-          return;
-        }
-
         eventHandler = () => {
           Object.assign(payload, adState.getState(), timeState.getState());
           callback(type, payload);
@@ -390,9 +354,6 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
         break
 
       case AD_CLICK:
-        if (!player.ima) {
-          return;
-        }
         eventHandler = () => {
           Object.assign(payload, adState.getState(), timeState.getState());
           callback(type, payload);
@@ -401,11 +362,8 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
         break
 
       case AD_ERROR:
-        if (!player.ima) {
-          return;
-        }
         eventHandler = e => {
-          const imaAdError = e.data.AdError;
+          const imaAdError = e.data && e.data.AdError;
           Object.assign(payload, {
             playerErrorCode: imaAdError.getErrorCode(),
             vastErrorCode: imaAdError.getVastErrorCode(),
@@ -427,14 +385,13 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
             contentId: media && media.id,
             contentUrl,
             title: media && media.title,
-            description: media && media.description, // TODO: description is not part of the videojs Media spec
+            description: media && media.description,
             playlistIndex: utils.getCurrentPlaylistIndex(player),
-            contentTags: null
+            contentTags: media && media.contentTags
           });
           callback(type, payload);
         };
-        // TODO: sourceset is experimental
-        player.on('loadstart', eventHandler); //  loadedmetadata?
+        player.on('loadstart', eventHandler);
         break;
 
       case PLAY:
@@ -452,7 +409,7 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
         break;
 
       case TIME:
-        // might want to check seeking() and/or scrubbing()
+        // TODO: might want to check seeking() and/or scrubbing()
         eventHandler = e => {
           previousLastTimePosition = lastTimePosition;
           const currentTime = player.currentTime();
@@ -551,17 +508,6 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
         player.on(utils.getVideojsEventName(type), eventHandler);
         break;
 
-      // case VIEWABLE:
-      //   eventHandler = e => {
-      //     Object.assign(payload, {
-      //       viewable: e.viewable,
-      //       viewabilityPercentage: player.getPercentViewable() * 100,
-      //     });
-      //     callback(type, payload);
-      //   };
-      //   player.on(VIEWABLE, eventHandler);
-      //   break;
-
       default:
     }
   }
@@ -600,7 +546,7 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
   };
 
   function setupPlayer(config) {
-    // TODO: support https://www.npmjs.com/package/videojs-vast-vpaid
+    // TODO: consider supporting https://www.npmjs.com/package/videojs-vast-vpaid as well
     function setupAds() {
       // when player.ima is already instantiated, it is an object.
       if (!player.ima || typeof player.ima !== 'function') {
@@ -718,6 +664,7 @@ export const utils = {
         return eventName;
     }
     /*
+    The following video.js events might map to an event in our spec
     'loadstart',
       'progress', buffer load ?
       'suspend',
@@ -802,7 +749,7 @@ export function adStateFactory() {
     }
 
     const skippable = event.skippable;
-    // TODO: check traffickingParameters to determine if winning bid is passed
+    // TODO: possibly can check traffickingParameters to determine if winning bid is passed
     const updates = {
       adId: event.adId,
       adServer: event.adSystem,
