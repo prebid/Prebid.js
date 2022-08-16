@@ -33,7 +33,7 @@ import {
 import { VIDEO_JS_VENDOR } from '../libraries/video/constants/vendorCodes.js';
 import { submodule } from '../src/hook.js';
 import stateFactory from '../libraries/video/shared/state.js';
-import { PLAYBACK_MODE } from '../libraries/video/constants/enums'
+import { PLAYBACK_MODE } from '../libraries/video/constants/enums.js'
 
 /*
 Plugins of interest:
@@ -69,7 +69,9 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
   let previousLastTimePosition = 0;
   let lastTimePosition = 0;
 
-  let setupCompleteCallback, setupFailedCallback, setupFailedEventHandler;
+  let setupCompleteCallbacks = [];
+  let setupFailedCallbacks = [];
+  let setupFailedEventHandlers = [];
 
   // TODO: test with older videojs versions
   let minimumSupportedPlayerVersion = '7.17.0';
@@ -110,8 +112,8 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
       errorMessage: msg,
       sourceError: null
     };
-    setupFailedCallback && setupFailedCallback(SETUP_FAILED, payload);
-    setupFailedCallback = null;
+    setupFailedCallbacks.forEach(setupFailedCallback => setupFailedCallback(SETUP_FAILED, payload));
+    setupFailedCallbacks = [];
   }
 
   function triggerSetupComplete() {
@@ -122,15 +124,14 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
       type: SETUP_COMPLETE,
     };
 
-    setupCompleteCallback && setupCompleteCallback(SETUP_COMPLETE, payload);
-    setupCompleteCallback = null;
+    setupCompleteCallbacks.forEach(callback => callback(SETUP_COMPLETE, payload));
+    setupCompleteCallbacks = [];
 
     isMuted = player.muted();
 
-    if (setupFailedEventHandler) {
-      player.off('error', setupFailedEventHandler)
-      setupFailedEventHandler = null;
-    }
+
+    setupFailedEventHandlers.forEach(eventHandler => player.off('error', eventHandler));
+    setupFailedEventHandlers = [];
   }
 
   function getId() {
@@ -259,15 +260,15 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
   function registerPreSetupListeners(type, callback, payload) {
     switch (type) {
       case SETUP_COMPLETE:
-        setupCompleteCallback = callback
+        setupCompleteCallbacks.push(callback);
         break;
       case SETUP_FAILED:
         // no point in registering for setup failures if already setup.
         if (playerIsSetup) {
           return;
         }
-        setupFailedCallback = callback
-        setupFailedEventHandler = () => {
+        setupFailedCallbacks.push(callback);
+        const eventHandler = () => {
           /*
           Videojs has no specific setup error handler
           so we imitate it by hooking to the general error
@@ -285,9 +286,10 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
             errorMessage: error.message,
           });
           callback(type, payload);
-          setupFailedCallback = null;
+          setupFailedCallbacks = [];
         };
-        player.on(ERROR, setupFailedEventHandler);
+        player.on(ERROR, eventHandler);
+        setupFailedEventHandlers.push(eventHandler)
         break;
     }
   }
