@@ -42,7 +42,7 @@ export const spec = {
     const eids = getFirstWithKey(validBidRequests, 'userIdAsEids')
     const schain = getFirstWithKey(validBidRequests, 'schain')
     const request = {
-      auctionId: bidderRequest.auctionId, 
+      auctionId: bidderRequest.auctionId,
       currency,
       hb_version: '$prebid.version$',
       ...ortbCommon,
@@ -106,7 +106,7 @@ export const spec = {
               advertiserDomains: bid.adomain || []
             },
             ad: bid.ad,
-            placementId: bid.placement_id 
+            placementId: bid.placement_id
           }
           if (bid.ad_id) {
             ret.adId = bid.ad_id
