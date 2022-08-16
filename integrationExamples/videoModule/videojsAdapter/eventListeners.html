@@ -54,7 +54,11 @@
                   numRedirects: 10
                 },
                 vendorConfig: {
-                  "controls": true, "autoplay": false, "preload": "auto"
+                  controls: true,
+                  autoplay: false,
+                  preload: "auto",
+                  src: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4",
+                  type: "video/mp4"
                 }
               }
             }
@@ -185,9 +189,7 @@
   <h2>VideoJS Event Listeners</h2>
 
   <h5>Div-1: Player placeholder div</h5>
-  <video-js id='vid-div' class="vjs-big-play-centered">
-    <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4" type="video/mp4">
-  </video-js>
+  <video-js id='vid-div' class="vjs-big-play-centered"></video-js>
 </body>
 
 </html>
