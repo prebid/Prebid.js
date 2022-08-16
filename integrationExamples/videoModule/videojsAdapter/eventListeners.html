@@ -1,15 +1,14 @@
 <html>
 
 <head>
-  <script async src="../../../build/dev/prebid.js"></script>
-  <link href="https://vjs.zencdn.net/7.17.0/video-js.css" rel="stylesheet" />
+  <link href="https://vjs.zencdn.net/7.20.2/video-js.css" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/videojs-contrib-ads/6.9.0/videojs-contrib-ads.css"
     integrity="sha512-0gIqgiX1dWTChdWUl8XGIBDFvLo7aTvmd6FAhJjzWx5bzYsCJTiPJLKqLF3q31IN4Kfrc0NbTO+EthoT6O0olQ=="
     crossorigin="anonymous" referrerpolicy="no-referrer" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/videojs-ima/1.11.0/videojs.ima.css"
     integrity="sha512-vvsEsf+dZDp6wbommO1Jbb2bpFhVQjw6pIzfE5fUY5Fgkmsgn/16sQWegqrd236T69kK5F1SbGZ+yK46a9il5A=="
     crossorigin="anonymous" referrerpolicy="no-referrer" />
-  <script src="https://vjs.zencdn.net/7.17.0/video.min.js"></script>
+  <script src="https://vjs.zencdn.net/7.20.2/video.min.js"></script>
   <script src="https://imasdk.googleapis.com/js/sdkloader/ima3.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-contrib-ads/6.9.0/videojs-contrib-ads.js"
           integrity="sha512-XjyyAijQGlXZET35toG8igvVs8HvfVgKXGnbfAs2EpZ0o8vjJoIrxL9RBBQbQjzAODIe0jvWelFfZOA3Z/vdWg=="
@@ -17,6 +16,9 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-ima/1.11.0/videojs.ima.js"
           integrity="sha512-9ocW9fl8CKJhZp4cmDpLDGPuTQ93gvw1iIS6daMYc5Y0Xh1all8iwdoI+iNmZpiydpdDGyKMTriXDX0wfs2OEg=="
           crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+  <script async src="../../../build/dev/prebid.js"></script>
+
   <title>VideoJS Event Listeners</title>
 
   <!-- Setup ad units -->
@@ -57,8 +59,6 @@
                   controls: true,
                   autoplay: false,
                   preload: "auto",
-                  src: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4",
-                  type: "video/mp4"
                 }
               }
             }
@@ -189,7 +189,9 @@
   <h2>VideoJS Event Listeners</h2>
 
   <h5>Div-1: Player placeholder div</h5>
-  <video-js id='vid-div' class="vjs-big-play-centered"></video-js>
+  <video-js id='vid-div' class="vjs-big-play-centered">
+    <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4" type="video/mp4">
+  </video-js>
 </body>
 
 </html>
