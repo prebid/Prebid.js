@@ -33,7 +33,7 @@ module.exports = {
 
   rules: {
     'comma-dangle': 'off',
-    semi: ['error', 'always'],
+    semi: 'always',
     'space-before-function-paren': 'off',
     'import/extensions': ['error', 'ignorePackages'],
 
