@@ -236,7 +236,7 @@ describe('The DFP video support module', function () {
     let ppid;
     let getPPIDStub;
     beforeEach(() => {
-      getPPIDStub = sinon.stub(getPPID).callsFake(() => ppid);
+      getPPIDStub = sinon.stub(getPPID, 'getPPID').callsFake(() => ppid);
     });
     afterEach(() => {
       getPPIDStub.restore();
