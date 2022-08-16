@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { getRefererInfo } from 'src/refererDetection.js';
-import { processFpd, coreStorage } from 'modules/enrichmentFpdModule.js';
+import { processFpd, coreStorage, resetEnrichments } from 'modules/enrichmentFpdModule.js';
 
 describe('the first party data enrichment module', function() {
   let width;
@@ -20,6 +20,7 @@ describe('the first party data enrichment module', function() {
   });
 
   beforeEach(function() {
+    resetEnrichments();
     querySelectorStub = sinon.stub(window.top.document, 'querySelector');
     querySelectorStub.withArgs("link[rel='canonical']").returns(canonical);
     querySelectorStub.withArgs("meta[name='keywords']").returns(keywords);
@@ -98,4 +99,13 @@ describe('the first party data enrichment module', function() {
     expect(validated.device).to.deep.equal({ w: 1200, h: 700 });
     expect(validated.site.keywords).to.be.undefined;
   });
+
+  it('does not run enrichments again on the second call', () => {
+    width = 1;
+    height = 2;
+    const first = processFpd({}, {}).global;
+    width = 3;
+    const second = processFpd({}, {}).global;
+    expect(first).to.eql(second);
+  })
 });

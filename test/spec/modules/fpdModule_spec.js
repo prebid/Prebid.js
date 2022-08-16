@@ -4,6 +4,7 @@ import {getRefererInfo} from 'src/refererDetection.js';
 import {processFpd, registerSubmodules, startAuctionHook, reset} from 'modules/fpdModule/index.js';
 import * as enrichmentModule from 'modules/enrichmentFpdModule.js';
 import * as validationModule from 'modules/validationFpdModule/index.js';
+import {resetEnrichments} from 'modules/enrichmentFpdModule.js';
 
 describe('the first party data module', function () {
   afterEach(function () {
@@ -70,6 +71,7 @@ describe('the first party data module', function () {
     });
 
     beforeEach(function() {
+      resetEnrichments();
       querySelectorStub = sinon.stub(window.top.document, 'querySelector');
       querySelectorStub.withArgs("link[rel='canonical']").returns(canonical);
       querySelectorStub.withArgs("meta[name='keywords']").returns(keywords);

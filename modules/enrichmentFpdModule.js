@@ -8,7 +8,7 @@ import { submodule } from '../src/hook.js';
 import {getRefererInfo, parseDomain} from '../src/refererDetection.js';
 import { getCoreStorageManager } from '../src/storageManager.js';
 
-let ortb2 = {};
+let ortb2;
 let win = (window === window.top) ? window : window.top;
 export const coreStorage = getCoreStorageManager('enrichmentFpd');
 
@@ -127,7 +127,7 @@ function setKeywords() {
 /**
  * Resets modules global ortb2 data
  */
-const resetOrtb2 = () => { ortb2 = {} };
+export const resetEnrichments = () => { ortb2 = null };
 
 function runEnrichments() {
   setReferer();
@@ -139,17 +139,19 @@ function runEnrichments() {
   return ortb2;
 }
 
-/**
- * Sets default values to ortb2 if exists and adds currency and ortb2 setConfig callbacks on init
- */
 export function processFpd(fpdConf, {global}) {
-  resetOrtb2();
-
-  return {
-    global: (!fpdConf.skipEnrichments) ? mergeDeep(runEnrichments(), global) : global
-  };
+  if (fpdConf.skipEnrichments) {
+    return {global};
+  } else {
+    if (ortb2 == null) {
+      ortb2 = {};
+      runEnrichments();
+    }
+    return {
+      global: mergeDeep({}, ortb2, global)
+    };
+  }
 }
-
 /** @type {firstPartyDataSubmodule} */
 export const enrichmentsSubmodule = {
   name: 'enrichments',
