@@ -10,9 +10,8 @@ import { auctionManager } from 'src/auctionManager.js';
 import { gdprDataHandler, uspDataHandler } from 'src/adapterManager.js';
 import * as adpod from 'modules/adpod.js';
 import { server } from 'test/mocks/xhr.js';
-import * as adServer from 'src/adserver.js';
 import {deepClone} from 'src/utils.js';
-import {hook} from '../../../src/hook.js';
+import {getPPID, hook} from '../../../src/hook.js';
 
 const bid = {
   videoCacheKey: 'abc',
@@ -237,7 +236,7 @@ describe('The DFP video support module', function () {
     let ppid;
     let getPPIDStub;
     beforeEach(() => {
-      getPPIDStub = sinon.stub(adServer, 'getPPID').callsFake(() => ppid);
+      getPPIDStub = sinon.stub(getPPID).callsFake(() => ppid);
     });
     afterEach(() => {
       getPPIDStub.restore();

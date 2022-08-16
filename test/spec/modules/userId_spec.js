@@ -49,9 +49,8 @@ import {adqueryIdSubmodule} from 'modules/adqueryIdSystem.js';
 import {imuIdSubmodule} from 'modules/imuIdSystem.js';
 import * as mockGpt from '../integration/faker/googletag.js';
 import 'src/prebid.js';
-import {hook} from '../../../src/hook.js';
+import {getPPID, hook} from '../../../src/hook.js';
 import {mockGdprConsent} from '../../helpers/consentData.js';
-import {getPPID} from '../../../src/adserver.js';
 import {uninstall as uninstallGdprEnforcement} from 'modules/gdprEnforcement.js';
 
 let assert = require('chai').assert;
