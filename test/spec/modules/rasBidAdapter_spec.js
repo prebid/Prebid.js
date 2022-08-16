@@ -58,7 +58,7 @@ describe('rasBidAdapter', function () {
         slot: 'test',
         area: 'areatest',
         site: 'test',
-        pos: '0',
+        slotSequence: '0',
         network: '4178463'
       }
     };

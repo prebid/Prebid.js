@@ -91,7 +91,7 @@ const getSlots = (bidRequests) => {
   const batchSize = bidRequests.length;
   for (let i = 0; i < batchSize; i++) {
     const adunit = bidRequests[i];
-    const pos = utils.deepAccess(adunit, 'params.pos');
+    const slotSequence = utils.deepAccess(adunit, 'params.slotSequence');
 
     const sizes = parseSizesInput(getAdUnitSizes(adunit)).join(',');
 
@@ -100,8 +100,8 @@ const getSlots = (bidRequests) => {
     if (sizes.length) {
       queryString += `&iusizes${i}=${encodeURIComponent(sizes)}`;
     }
-    if (pos !== undefined) {
-      queryString += `&pos${i}=${encodeURIComponent(pos)}`;
+    if (slotSequence !== undefined) {
+      queryString += `&pos${i}=${encodeURIComponent(slotSequence)}`;
     }
   }
   return queryString;
