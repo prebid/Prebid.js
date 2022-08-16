@@ -11,12 +11,12 @@ import {
 } from '../src/utils.js';
 
 import CONSTANTS from '../src/constants.json'
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import * as events from '../src/events.js'
 
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'nextMillennium';
 const ENDPOINT = 'https://pbs.nextmillmedia.com/openrtb2/auction';
