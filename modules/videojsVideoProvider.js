@@ -1,32 +1,10 @@
 import {
-  SETUP_COMPLETE,
-  SETUP_FAILED,
-  DESTROYED,
-  PLAYLIST,
-  PLAYBACK_REQUEST,
-  AUTOSTART_BLOCKED,
-  PLAY_ATTEMPT_FAILED,
-  CONTENT_LOADED,
-  PLAY,
-  PAUSE,
-  BUFFER,
-  TIME,
-  SEEK_START,
-  SEEK_END,
-  MUTE,
-  VOLUME,
-  RENDITION_UPDATE,
-  ERROR,
-  COMPLETE,
-  PLAYLIST_COMPLETE,
-  FULLSCREEN,
-  PLAYER_RESIZE,
-  VIEWABLE,
-  CAST,
-  AD_REQUEST,
-  AD_IMPRESSION, AD_TIME, AD_COMPLETE, AD_SKIPPED, AD_CLICK, AD_STARTED, AD_ERROR, AD_LOADED, AD_PLAY, AD_PAUSE
-} from '../libraries/video/constants/events.js'
-// pending events: , AD_BREAK_START, , AD_BREAK_END,
+  SETUP_COMPLETE, SETUP_FAILED, DESTROYED,
+  PLAYLIST, PLAYBACK_REQUEST, CONTENT_LOADED, PLAY, PAUSE, TIME, SEEK_START, SEEK_END, MUTE, VOLUME, ERROR, COMPLETE,
+  FULLSCREEN, PLAYER_RESIZE,
+  AD_REQUEST, AD_IMPRESSION, AD_TIME, AD_COMPLETE, AD_SKIPPED, AD_CLICK, AD_STARTED, AD_ERROR, AD_LOADED, AD_PLAY, AD_PAUSE
+} from '../libraries/video/constants/events.js';
+// missing events: , AD_BREAK_START, , AD_BREAK_END, VIEWABLE, BUFFER, CAST, PLAYLIST_COMPLETE, RENDITION_UPDATE, PLAY_ATTEMPT_FAILED, AUTOSTART_BLOCKED
 import {
   PROTOCOLS, API_FRAMEWORKS, VIDEO_MIME_TYPE, PLAYBACK_METHODS, PLACEMENT, VPAID_MIME_TYPE, AD_POSITION, PLAYBACK_END
 } from '../libraries/video/constants/ortb.js';
@@ -49,8 +27,8 @@ https://github.com/videojs/videojs-errors
 https://github.com/videojs/videojs-overlay
 https://github.com/videojs/videojs-playlist-ui
 
-inspiration: https://github.com/Conviva/conviva-js-videojs/blob/master/conviva-videojs-module.js
-
+inspiration:
+https://github.com/Conviva/conviva-js-videojs/blob/master/conviva-videojs-module.js
  */
 
 export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStorage_, utils) {
@@ -101,37 +79,6 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
     }
 
     player.ready(triggerSetupComplete);
-  }
-
-  function triggerSetupFailure(errorCode, msg) {
-    const payload = {
-      divId,
-      playerVersion,
-      type: SETUP_FAILED,
-      errorCode,
-      errorMessage: msg,
-      sourceError: null
-    };
-    setupFailedCallbacks.forEach(setupFailedCallback => setupFailedCallback(SETUP_FAILED, payload));
-    setupFailedCallbacks = [];
-  }
-
-  function triggerSetupComplete() {
-    playerIsSetup = true;
-    const payload = {
-      divId,
-      playerVersion,
-      type: SETUP_COMPLETE,
-    };
-
-    setupCompleteCallbacks.forEach(callback => callback(SETUP_COMPLETE, payload));
-    setupCompleteCallbacks = [];
-
-    isMuted = player.muted();
-
-
-    setupFailedEventHandlers.forEach(eventHandler => player.off('error', eventHandler));
-    setupFailedEventHandlers = [];
   }
 
   function getId() {
@@ -662,11 +609,40 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
 
       const adConfig = utils.getAdConfig(config);
       player.ima(adConfig);
-      window.imaPlayer = player.ima
     }
 
     const setupConfig = utils.getSetupConfig(config);
     player = vjs(divId, setupConfig, setupAds);
+  }
+
+  function triggerSetupFailure(errorCode, msg) {
+    const payload = {
+      divId,
+      playerVersion,
+      type: SETUP_FAILED,
+      errorCode,
+      errorMessage: msg,
+      sourceError: null
+    };
+    setupFailedCallbacks.forEach(setupFailedCallback => setupFailedCallback(SETUP_FAILED, payload));
+    setupFailedCallbacks = [];
+  }
+
+  function triggerSetupComplete() {
+    playerIsSetup = true;
+    const payload = {
+      divId,
+      playerVersion,
+      type: SETUP_COMPLETE,
+    };
+
+    setupCompleteCallbacks.forEach(callback => callback(SETUP_COMPLETE, payload));
+    setupCompleteCallbacks = [];
+
+    isMuted = player.muted();
+
+    setupFailedEventHandlers.forEach(eventHandler => player.off('error', eventHandler));
+    setupFailedEventHandlers = [];
   }
 }
 
