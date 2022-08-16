@@ -67,7 +67,7 @@ export const spec = {
     const response = serverResponse && serverResponse.body;
     const bidResponses = [];
 
-    if (!response) {
+    if (!response || !response.bid.ad) {
       return bidResponses;
     }
 
