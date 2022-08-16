@@ -81,7 +81,7 @@ export const spec = {
       data: JSON.stringify(imp)
     }))
   },
-  interpretResponse: (serverResponse, bidRequest) => {
+  interpretResponse: (serverResponse) => {
     if (!serverResponse.body) {
       return
     }
@@ -92,8 +92,7 @@ export const spec = {
     }
     try {
       return JSON.parse(ok.value)
-        .map((bid) => {
-          return {
+        .map((bid) => ({
             requestId: bid.bid_id,
             cpm: bid.cpm,
             creativeId: bid.creative_id,
@@ -103,12 +102,13 @@ export const spec = {
             width: bid.w,
             height: bid.h,
             meta: {
-              advertiserDomains: bid && bid.adomain ? bid.adomain : []
+              advertiserDomains: bid.adomain || []
             },
             ad: bid.ad,
-            placementId: bid.placement_id
-          }
-        })
+            adId: bid.ad_id,
+            placementId: bid.placement_id,
+            adserverTargeting: bid.adserver_targeting
+        }))
         .filter(Boolean)
     } catch (e) {
       logError(BIDDER_CODE, ': caught', e)

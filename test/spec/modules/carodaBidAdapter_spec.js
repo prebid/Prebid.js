@@ -416,40 +416,36 @@ describe('Caroda adapter', function () {
       const bidRequest = {};
       assert.ok(!spec.interpretResponse(serverResponse, bidRequest));
     });
+    const basicBidResponse = () => ({
+      bid_id: 'bidId',
+      cpm: 10,
+      creative_id: '12345',
+      currency: 'CZK',
+      w: 100,
+      h: 100,
+      ad: '<script....',
+      placement_id: 'opzafe23'
+    });
+    const bidRequest = () => ({
+      data: {},
+      bids: [
+        {
+          bid_id: 'bidId1',
+          params: { ctok: 'ctok1' }
+        },
+        {
+          bid_id: 'bidId2',
+          params: { ctok: 'ctok2' }
+        }
+      ]
+    });
     it('should parse a typical ok response', function () {
       const serverResponse = {
-        body: {
-          ok: {
-            value: JSON.stringify([{
-              bid_id: 'bidId',
-              cpm: 10,
-              creative_id: '12345',
-              currency: 'CZK',
-              w: 100,
-              h: 100,
-              ad: '<script....',
-              placement_id: 'opzafe23'
-            }])
-          }
-        }
+        body: { ok: { value: JSON.stringify([basicBidResponse()]) } }
       };
-      const bidRequest = {
-        data: {},
-        bids: [
-          {
-            bid_id: 'bidId1',
-            params: { ctok: 'ctok1' }
-          },
-          {
-            bid_id: 'bidId2',
-            params: { ctok: 'ctok2' }
-          }
-        ]
-      };
-      bids = spec.interpretResponse(serverResponse, bidRequest);
-      assert.equal(spec.interpretResponse(serverResponse, bidRequest).length, 1);
-      assert.deepEqual(
-        spec.interpretResponse(serverResponse, bidRequest)[0],
+      bids = spec.interpretResponse(serverResponse, bidRequest());
+      assert.equal(bids.length, 1);
+      assert.deepEqual(bids[0],
         {
           requestId: 'bidId',
           cpm: 10,
@@ -463,8 +459,52 @@ describe('Caroda adapter', function () {
             advertiserDomains: []
           },
           ad: '<script....',
+          adId: undefined,
+          adserverTargeting: undefined,
           placementId: 'opzafe23'
         });
+    });
+    it('should add adserverTargeting', function () {
+      const serverResponse = {
+        body: {
+          ok: {
+            value: JSON.stringify([{
+              ...basicBidResponse(),
+              adserver_targeting: { tag: 'value' }
+            }])
+          }
+        }
+      };
+      bids = spec.interpretResponse(serverResponse, bidRequest());
+      assert.deepEqual(bids[0].adserverTargeting, { tag: 'value' });
+    });
+    it('should add adId', function () {
+      const serverResponse = {
+        body: {
+          ok: {
+            value: JSON.stringify([{
+              ...basicBidResponse(),
+              ad_id: '123'
+            }])
+          }
+        }
+      };
+      bids = spec.interpretResponse(serverResponse, bidRequest());
+      assert.equal(bids[0].adId, '123');
+    });
+    it('should add adomains', function () {
+      const serverResponse = {
+        body: {
+          ok: {
+            value: JSON.stringify([{
+              ...basicBidResponse(),
+              adomain: ['a.b.c']
+            }])
+          }
+        }
+      };
+      bids = spec.interpretResponse(serverResponse, bidRequest());
+      assert.deepEqual(bids[0].meta.advertiserDomains, ['a.b.c']);
     });
   });
 });
