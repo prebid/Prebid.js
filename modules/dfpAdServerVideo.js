@@ -6,12 +6,11 @@ import { registerVideoSupport } from '../src/adServerManager.js';
 import { targeting } from '../src/targeting.js';
 import { deepAccess, isEmpty, logError, parseSizesInput, formatQS, parseUrl, buildUrl } from '../src/utils.js';
 import { config } from '../src/config.js';
-import { getHook, submodule } from '../src/hook.js';
+import { hook, getHook, submodule } from '../src/hook.js';
 import { auctionManager } from '../src/auctionManager.js';
 import { gdprDataHandler, uspDataHandler } from '../src/adapterManager.js';
 import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
-import {getPPID} from '../src/adserver.js';
 
 /**
  * @typedef {Object} DfpVideoParams
@@ -120,7 +119,7 @@ export function buildDfpVideoUrl(options) {
   if (uspConsent) { queryParams.us_privacy = uspConsent; }
 
   if (!queryParams.ppid) {
-    const ppid = getPPID();
+    const ppid = hook('sync', () => undefined);
     if (ppid != null) {
       queryParams.ppid = ppid;
     }
