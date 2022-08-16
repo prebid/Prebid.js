@@ -1,5 +1,3 @@
-import { formatQS } from './utils.js';
-import { targeting } from './targeting.js';
 import {hook} from './hook.js';
 
 /**
