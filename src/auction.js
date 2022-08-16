@@ -544,21 +544,23 @@ const storeInCache = (batch) => {
 export const batchingCache = (timeout = setTimeout, cache = storeInCache) => {
   let batches = [[]];
   let debouncing = false;
+  let cacheConfigBatchSize, cacheConfigBatchTimeout, batchSize, batchTimeout;
   const noTimeout = cb => cb();
-  const cacheConfigBatchSize = config.getConfig('cache.batchSize');
-  const cacheConfigBatchTimeout = config.getConfig('cache.batchTimeout');
-
-  const batchSize =
-      typeof cacheConfigBatchSize === 'number' && cacheConfigBatchSize > 0
-        ? cacheConfigBatchSize
-        : 1;
-
-  const batchTimeout =
-    typeof cacheConfigBatchTimeout === 'number' && cacheConfigBatchTimeout > 0
-      ? cacheConfigBatchTimeout
-      : 0;
 
   return function(auctionInstance, bidResponse, afterBidAdded) {
+    if (batches.length === 1 && batches[0].length === 0) {
+      cacheConfigBatchSize = config.getConfig('cache.batchSize');
+      cacheConfigBatchTimeout = config.getConfig('cache.batchTimeout');
+      batchSize =
+        typeof cacheConfigBatchSize === 'number' && cacheConfigBatchSize > 0
+          ? cacheConfigBatchSize
+          : 1;
+      batchTimeout =
+        typeof cacheConfigBatchTimeout === 'number' && cacheConfigBatchTimeout > 0
+          ? cacheConfigBatchTimeout
+          : 0;
+    }
+
     const batchFunc = batchTimeout > 0 ? timeout : noTimeout;
     if (batches[batches.length - 1].length >= batchSize) {
       batches.push([]);
