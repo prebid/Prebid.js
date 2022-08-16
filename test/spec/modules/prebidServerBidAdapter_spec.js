@@ -87,6 +87,84 @@ const REQUEST = {
   ]
 };
 
+const NATIVE_ORTB_MTO = {
+  ortb: {
+    context: 3,
+    plcmttype: 2,
+    eventtrackers: [
+      {
+        event: 1,
+        methods: [
+          1
+        ]
+      },
+      {
+        event: 2,
+        methods: [
+          2
+        ]
+      }
+    ],
+    assets: [
+      {
+        id: 1,
+        required: 1,
+        img: {
+          type: 3,
+          w: 300,
+          h: 250
+        }
+      },
+      {
+        id: 2,
+        required: 1,
+        img: {
+          type: 1,
+          w: 127,
+          h: 83
+        }
+      },
+      {
+        id: 3,
+        required: 1,
+        data: {
+          type: 1,
+          len: 25
+        }
+      },
+      {
+        id: 4,
+        required: 1,
+        title: {
+          len: 140
+        }
+      },
+      {
+        id: 5,
+        required: 1,
+        data: {
+          type: 2,
+          len: 40
+        }
+      },
+      {
+        id: 6,
+        required: 1,
+        data: {
+          type: 12,
+          len: 15
+        }
+      },
+    ],
+    ext: {
+      custom_param: {
+        key: 'custom_value'
+      }
+    },
+    ver: '1.2'
+  }
+}
+
 const VIDEO_REQUEST = {
   'account_id': '1',
   'tid': '437fbbf5-33f5-487a-8e16-a7112903cfe5',
@@ -1196,7 +1274,7 @@ describe('S2S Adapter', function () {
               } else {
                 delete getGlobal().convertCurrency;
               }
-            })
+            });
 
             it(`should pick the ${expectDesc}`, () => {
               adapter.callBids(s2sReq, BID_REQUESTS, addBidResponse, done, ajax);
@@ -1209,37 +1287,38 @@ describe('S2S Adapter', function () {
       });
     });
 
-    it('adds device.w and device.h even if the config lacks a device object', function () {
-      const _config = {
-        s2sConfig: CONFIG,
-        app: { bundle: 'com.test.app' },
-      };
-
-      config.setConfig(_config);
-      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
-      const requestBid = JSON.parse(server.requests[0].requestBody);
-      expect(requestBid.device).to.deep.equal({
-        w: window.innerWidth,
-        h: window.innerHeight
-      });
-      expect(requestBid.app).to.deep.equal({
-        bundle: 'com.test.app',
-        publisher: { 'id': '1' }
-      });
-    });
-
     if (FEATURES.NATIVE) {
-      it('adds native request for OpenRTB', function () {
-        const _config = {
-          s2sConfig: CONFIG
-        };
+      describe('native requests', function () {
+        it('adds device.w and device.h even if the config lacks a device object', function () {
+          const _config = {
+            s2sConfig: CONFIG,
+            app: { bundle: 'com.test.app' },
+          };
 
-        config.setConfig(_config);
-        adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
-        const requestBid = JSON.parse(server.requests[0].requestBody);
+          config.setConfig(_config);
+          adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+          const requestBid = JSON.parse(server.requests[0].requestBody);
+          expect(requestBid.device).to.deep.equal({
+            w: window.innerWidth,
+            h: window.innerHeight
+          });
+          expect(requestBid.app).to.deep.equal({
+            bundle: 'com.test.app',
+            publisher: { 'id': '1' }
+          });
+        });
 
-        expect(requestBid.imp[0].native).to.deep.equal({
-          request: JSON.stringify({
+        it('adds native request for OpenRTB', function () {
+          const _config = {
+            s2sConfig: CONFIG
+          };
+
+          config.setConfig(_config);
+          adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+          const requestBid = JSON.parse(server.requests[0].requestBody);
+          const ortbReq = JSON.parse(requestBid.imp[0].native.request);
+          expect(ortbReq).to.deep.equal({
+            'ver': '1.2',
             'context': 1,
             'plcmttype': 1,
             'eventtrackers': [{
@@ -1283,23 +1362,43 @@ describe('S2S Adapter', function () {
                 }
               }
             ]
-          }),
-          ver: '1.2'
+          });
+          expect(requestBid.imp[0].native.ver).to.equal('1.2');
+        });
+
+        it('adds native ortb request for OpenRTB', function () {
+          const _config = {
+            s2sConfig: CONFIG
+          };
+
+          const openRtbNativeRequest = deepClone(REQUEST);
+          delete openRtbNativeRequest.ad_units[0].mediaTypes.native;
+          delete openRtbNativeRequest.ad_units[0].nativeParams;
+
+          openRtbNativeRequest.ad_units[0].mediaTypes.native = NATIVE_ORTB_MTO;
+          prepRequest(openRtbNativeRequest);
+
+          config.setConfig(_config);
+          adapter.callBids(openRtbNativeRequest, BID_REQUESTS, addBidResponse, done, ajax);
+          const requestBid = JSON.parse(server.requests[0].requestBody);
+          const nativeReq = JSON.parse(requestBid.imp[0].native.request);
+          expect(nativeReq).to.deep.equal(NATIVE_ORTB_MTO.ortb);
+          expect(requestBid.imp[0].native.ver).to.equal('1.2');
+        });
+
+        it('should not include ext.aspectratios if adunit\'s aspect_ratios do not define radio_width and ratio_height', () => {
+          const req = deepClone(REQUEST);
+          req.ad_units[0].mediaTypes.native.icon.aspect_ratios[0] = {'min_width': 1, 'min_height': 2};
+          prepRequest(req);
+          adapter.callBids(req, BID_REQUESTS, addBidResponse, done, ajax);
+          const nativeReq = JSON.parse(JSON.parse(server.requests[0].requestBody).imp[0].native.request);
+          const icons = nativeReq.assets.map((a) => a.img).filter((img) => img && img.type === 1);
+          expect(icons).to.have.length(1);
+          expect(icons[0].hmin).to.equal(2);
+          expect(icons[0].wmin).to.equal(1);
+          expect(deepAccess(icons[0], 'ext.aspectratios')).to.be.undefined;
         });
       });
-
-      it('should not include ext.aspectratios if adunit\'s aspect_ratios do not define radio_width and ratio_height', () => {
-        const req = deepClone(REQUEST);
-        req.ad_units[0].mediaTypes.native.icon.aspect_ratios[0] = {'min_width': 1, 'min_height': 2};
-        prepRequest(req);
-        adapter.callBids(req, BID_REQUESTS, addBidResponse, done, ajax);
-        const nativeReq = JSON.parse(JSON.parse(server.requests[0].requestBody).imp[0].native.request);
-        const icons = nativeReq.assets.map((a) => a.img).filter((img) => img && img.type === 1);
-        expect(icons).to.have.length(1);
-        expect(icons[0].hmin).to.equal(2);
-        expect(icons[0].wmin).to.equal(1);
-        expect(deepAccess(icons[0], 'ext.aspectratios')).to.be.undefined;
-      })
     }
 
     it('adds site if app is not present', function () {

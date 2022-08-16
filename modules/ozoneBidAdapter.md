@@ -72,3 +72,40 @@ adUnits = [{
                     }]
                 }];
 ```
+
+//Instream Video adUnit
+
+adUnits = [{
+					code: 'video1',
+					mediaTypes: {
+						video: {
+							playerSize: [640, 480],
+							context: 'instream',
+							mimes: ['video/mp4'],
+							protocols: [1, 2, 3, 4, 5, 6, 7, 8],
+							playbackmethod: [2]
+						}
+					},
+					bids: [{
+							bidder: 'ozone',
+							params: {
+								publisherId: 'OZONENUK0001',
+								placementId: '8000000328', // or 999
+								siteId: '4204204201',
+								video: {
+									skippable: true,
+									playback_method: ['auto_play_sound_off']
+								},
+							customData: [{
+							      "settings": {},
+							      "targeting": {
+							          "key": "value",
+								  "key2": ["value1", "value2"]
+								  }
+							}
+							]
+
+							}
+						}]
+				};
+```

@@ -76,7 +76,7 @@ export const spec = {
       } else {
         kwString = kwContents;
       }
-      kwEnc = encodeURIComponent(kwString)
+      kwEnc = encodeURIComponent(kwString);
     } else { }
     if (titleContent) {
       if (titleContent.length > 30) {

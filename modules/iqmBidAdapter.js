@@ -245,7 +245,7 @@ function getSite(bidderRequest) {
 function _buildVideoORTB(bidRequest) {
   const videoAdUnit = deepAccess(bidRequest, 'mediaTypes.video');
   const videoBidderParams = deepAccess(bidRequest, 'params.video', {});
-  const video = {}
+  const video = {};
 
   const videoParams = {
     ...videoAdUnit,

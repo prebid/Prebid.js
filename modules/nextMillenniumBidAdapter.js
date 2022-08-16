@@ -12,7 +12,10 @@ import {
 
 import CONSTANTS from '../src/constants.json'
 import * as events from '../src/events.js'
+
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getRefererInfo } from '../src/refererDetection.js';
+
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'nextMillennium';
@@ -47,6 +50,10 @@ export const spec = {
       const auctionId = bid.auctionId
       const bidId = bid.bidId
 
+      if (bid.sizes && !Array.isArray(bid.sizes[0])) bid.sizes = [bid.sizes]
+      if (!bid.ortb2) bid.ortb2 = {}
+      if (!bid.ortb2.device) bid.ortb2.device = {}
+      bid.ortb2.device.referrer = (getRefererInfo && getRefererInfo().ref) || ''
       const postBody = {
         'id': auctionId,
         'ext': {

@@ -1,6 +1,7 @@
 import { deepAccess, isEmpty, isStr } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'microad';
 
@@ -32,7 +33,7 @@ const AUDIENCE_IDS = [
   {type: 13, bidKey: 'userId.idl_env'},
   {type: 14, bidKey: 'userId.criteoId'},
   {type: 15, bidKey: 'userId.pubcid'}
-]
+];
 
 function createCBT() {
   const randomValue = Math.floor(Math.random() * Math.pow(10, 18)).toString(16);
@@ -57,6 +58,9 @@ export const spec = {
     return !!(bid && bid.params && bid.params.spot && bid.mediaTypes && (bid.mediaTypes.banner || bid.mediaTypes.native || bid.mediaTypes.video));
   },
   buildRequests: function(validBidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     const requests = [];
 
     validBidRequests.forEach(bid => {

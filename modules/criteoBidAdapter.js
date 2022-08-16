@@ -1,4 +1,4 @@
-import { deepAccess, getUniqueIdentifierStr, isArray, logError, logInfo, logWarn, parseUrl } from '../src/utils.js';
+import { deepAccess, isArray, logError, logInfo, logWarn, parseUrl } from '../src/utils.js';
 import { loadExternalScript } from '../src/adloader.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
@@ -6,6 +6,7 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { find } from '../src/polyfill.js';
 import { verify } from 'criteo-direct-rsa-validate/build/verify.js'; // ref#2
 import { getStorageManager } from '../src/storageManager.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { hasPurpose1Consent } from '../src/utils/gpdr.js';
 
@@ -164,6 +165,9 @@ export const spec = {
    * @return {ServerRequest}
    */
   buildRequests: (bidRequests, bidderRequest) => {
+    // convert Native ORTB definition to old-style prebid native definition
+    bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
+
     let url;
     let data;
     let fpd = bidderRequest.ortb2 || {};
@@ -171,7 +175,8 @@ export const spec = {
     Object.assign(bidderRequest, {
       publisherExt: fpd.site?.ext,
       userExt: fpd.user?.ext,
-      ceh: config.getConfig('criteo.ceh')
+      ceh: config.getConfig('criteo.ceh'),
+      coppa: config.getConfig('coppa')
     });
 
     // If publisher tag not already loaded try to get it from fast bid
@@ -230,7 +235,6 @@ export const spec = {
         const bidId = bidRequest.bidId;
         const bid = {
           requestId: bidId,
-          adId: slot.bidId || getUniqueIdentifierStr(),
           cpm: slot.cpm,
           currency: slot.currency,
           netRevenue: true,
@@ -442,6 +446,9 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
       url: context.url,
       ext: bidderRequest.publisherExt,
     },
+    regs: {
+      coppa: bidderRequest.coppa === true ? 1 : (bidderRequest.coppa === false ? 0 : undefined)
+    },
     slots: bidRequests.map(bidRequest => {
       networkId = bidRequest.params.networkId || networkId;
       schain = bidRequest.schain || schain;
@@ -495,6 +502,9 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
 
         slot.video = video;
       }
+
+      enrichSlotWithFloors(slot, bidRequest);
+
       return slot;
     }),
   };
@@ -506,7 +516,7 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
       ext: {
         schain: schain
       }
-    }
+    };
   };
   request.user = {
     ext: bidderRequest.userExt
@@ -530,7 +540,7 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
   return request;
 }
 
-function parseSizes(sizes, parser) {
+function parseSizes(sizes, parser = s => s) {
   if (sizes == undefined) {
     return [];
   }
@@ -626,6 +636,42 @@ for (var i = 0; i < 10; ++i) {
   break;
 }
 </script>`;
+}
+
+function enrichSlotWithFloors(slot, bidRequest) {
+  try {
+    const slotFloors = {};
+
+    if (bidRequest.getFloor) {
+      if (bidRequest.mediaTypes?.banner) {
+        slotFloors.banner = {};
+        const bannerSizes = parseSizes(deepAccess(bidRequest, 'mediaTypes.banner.sizes'))
+        bannerSizes.forEach(bannerSize => slotFloors.banner[parseSize(bannerSize).toString()] = bidRequest.getFloor({size: bannerSize, mediaType: BANNER}));
+      }
+
+      if (bidRequest.mediaTypes?.video) {
+        slotFloors.video = {};
+        const videoSizes = parseSizes(deepAccess(bidRequest, 'mediaTypes.video.playerSize'))
+        videoSizes.forEach(videoSize => slotFloors.video[parseSize(videoSize).toString()] = bidRequest.getFloor({size: videoSize, mediaType: VIDEO}));
+      }
+
+      if (bidRequest.mediaTypes?.native) {
+        slotFloors.native = {};
+        slotFloors.native['*'] = bidRequest.getFloor({size: '*', mediaType: NATIVE});
+      }
+
+      if (Object.keys(slotFloors).length > 0) {
+        if (!slot.ext) {
+          slot.ext = {}
+        }
+        Object.assign(slot.ext, {
+          floors: slotFloors
+        });
+      }
+    }
+  } catch (e) {
+    logError('Could not parse floors from Prebid: ' + e);
+  }
 }
 
 export function canFastBid(fastBidVersion) {
