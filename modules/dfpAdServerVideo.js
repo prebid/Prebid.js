@@ -6,12 +6,11 @@ import { registerVideoSupport } from '../src/adServerManager.js';
 import { targeting } from '../src/targeting.js';
 import { deepAccess, isEmpty, logError, parseSizesInput, formatQS, parseUrl, buildUrl } from '../src/utils.js';
 import { config } from '../src/config.js';
-import { getHook, submodule } from '../src/hook.js';
+import { getPPID, getHook, submodule } from '../src/hook.js';
 import { auctionManager } from '../src/auctionManager.js';
 import { gdprDataHandler, uspDataHandler } from '../src/adapterManager.js';
 import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
-import {getPPID} from '../src/adserver.js';
 
 /**
  * @typedef {Object} DfpVideoParams
