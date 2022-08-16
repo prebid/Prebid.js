@@ -1,4 +1,5 @@
-import {isEmptyStr, isStr} from '../../src/utils.js';
+import {isEmptyStr, isStr, isEmpty} from '../../src/utils.js';
+import {GreedyPromise} from '../../src/utils/promise.js';
 
 export const SUA_SOURCE_UNKNOWN = 0;
 export const SUA_SOURCE_LOW_ENTROPY = 1;
@@ -31,7 +32,7 @@ export const getLowEntropySUA = lowEntropySUAAccessor();
 export const getHighEntropySUA = highEntropySUAAccessor();
 
 export function lowEntropySUAAccessor(uaData = window.navigator?.userAgentData) {
-  const sua = uaData == null ? null : Object.freeze(uaDataToSUA(SUA_SOURCE_LOW_ENTROPY, uaData));
+  const sua = isEmpty(uaData) ? null : Object.freeze(uaDataToSUA(SUA_SOURCE_LOW_ENTROPY, uaData));
   return function () {
     return sua;
   }
@@ -49,9 +50,11 @@ export function highEntropySUAAccessor(uaData = window.navigator?.userAgentData)
     const key = keys.get(hints);
     if (!cache.hasOwnProperty(key)) {
       try {
-        cache[key] = uaData.getHighEntropyValues(hints).then(result => Object.freeze(uaDataToSUA(SUA_SOURCE_HIGH_ENTROPY, result))).catch(() => null);
+        cache[key] = uaData.getHighEntropyValues(hints).then(result => {
+          return isEmpty(result) ? null : Object.freeze(uaDataToSUA(SUA_SOURCE_HIGH_ENTROPY, result))
+        }).catch(() => null);
       } catch (e) {
-        cache[key] = Promise.resolve(null);
+        cache[key] = GreedyPromise.resolve(null);
       }
     }
     return cache[key];

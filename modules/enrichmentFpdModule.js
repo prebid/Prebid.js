@@ -7,10 +7,14 @@ import { timestamp, mergeDeep } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
 import {getRefererInfo, parseDomain} from '../src/refererDetection.js';
 import { getCoreStorageManager } from '../src/storageManager.js';
+import {GreedyPromise} from '../src/utils/promise.js';
+import {getHighEntropySUA, getLowEntropySUA} from '../libraries/fpd/sua.js';
 
 let ortb2;
 let win = (window === window.top) ? window : window.top;
 export const coreStorage = getCoreStorageManager('enrichmentFpd');
+
+export const sua = {he: getHighEntropySUA, le: getLowEntropySUA};
 
 /**
   * Find the root domain
@@ -124,32 +128,45 @@ function setKeywords() {
   if (keywords && keywords.content) mergeDeep(ortb2, { site: { keywords: keywords.content.replace(/\s/g, '') } });
 }
 
+function setDeviceSua(hints) {
+  let data = Array.isArray(hints) && hints.length === 0
+    ? GreedyPromise.resolve(sua.le())
+    : sua.he(hints);
+  return data.then((sua) => {
+    if (sua != null) {
+      mergeDeep(ortb2, {device: {sua}});
+    }
+  })
+}
+
 /**
  * Resets modules global ortb2 data
  */
 export const resetEnrichments = () => { ortb2 = null };
 
-function runEnrichments() {
+function runEnrichments(fpdConf) {
   setReferer();
   setPage();
   setDomain();
   setDimensions();
   setKeywords();
-
-  return ortb2;
+  return setDeviceSua(fpdConf.uaHints).then(() => ortb2);
 }
 
 export function processFpd(fpdConf, {global}) {
   if (fpdConf.skipEnrichments) {
     return {global};
   } else {
+    let ready;
     if (ortb2 == null) {
       ortb2 = {};
-      runEnrichments();
+      ready = runEnrichments(fpdConf);
+    } else {
+      ready = GreedyPromise.resolve();
     }
-    return {
+    return ready.then(() => ({
       global: mergeDeep({}, ortb2, global)
-    };
+    }))
   }
 }
 /** @type {firstPartyDataSubmodule} */

@@ -5,6 +5,7 @@ import {processFpd, registerSubmodules, startAuctionHook, reset} from 'modules/f
 import * as enrichmentModule from 'modules/enrichmentFpdModule.js';
 import * as validationModule from 'modules/validationFpdModule/index.js';
 import {resetEnrichments} from 'modules/enrichmentFpdModule.js';
+import {GreedyPromise} from '../../../src/utils/promise.js';
 
 describe('the first party data module', function () {
   afterEach(function () {
@@ -58,6 +59,8 @@ describe('the first party data module', function () {
     let querySelectorStub;
     let canonical;
     let keywords;
+    let lowEntropySuaStub;
+    let highEntropySuaStub;
 
     before(function() {
       reset();
@@ -81,6 +84,8 @@ describe('the first party data module', function () {
       heightStub = sinon.stub(window.top, 'innerHeight').get(function () {
         return height;
       });
+      lowEntropySuaStub = sinon.stub(enrichmentModule.sua, 'le').callsFake(() => null);
+      highEntropySuaStub = sinon.stub(enrichmentModule.sua, 'he').callsFake(() => GreedyPromise.resolve());
     });
 
     afterEach(function() {
@@ -91,6 +96,8 @@ describe('the first party data module', function () {
       canonical.rel = 'canonical';
       keywords = document.createElement('meta');
       keywords.name = 'keywords';
+      lowEntropySuaStub.restore();
+      highEntropySuaStub.restore();
     });
 
     it('filters ortb2 data that is set', function () {

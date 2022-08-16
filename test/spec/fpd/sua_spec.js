@@ -30,7 +30,8 @@ describe('uaDataToSUA', () => {
       const sua = uaDataToSUA(SUA_SOURCE_UNKNOWN, example);
       expect(sua.hasOwnProperty(suaKey)).to.be.false;
     })
-  })
+  });
+
   it('should convert low-entropy userAgentData', () => {
     const sua = uaDataToSUA(SUA_SOURCE_LOW_ENTROPY, {
       'brands': [
@@ -176,6 +177,10 @@ describe('lowEntropySUAAccessor', () => {
   it('should return null if no uaData is available', () => {
     expect(getSUA(null)).to.eql(null);
   })
+
+  it('should return null if uaData is empty', () => {
+    expect(getSUA({})).to.eql(null);
+  })
 });
 
 describe('highEntropySUAAccessor', () => {
@@ -213,6 +218,12 @@ describe('highEntropySUAAccessor', () => {
         expect(result).to.eql(null);
       })
     });
+    it('getHighEntropyValues returns an empty object', () => {
+      userAgentData.getHighEntropyValues.callsFake(() => Promise.resolve({}));
+      return getSUA().then((result) => {
+        expect(result).to.eql(null);
+      });
+    })
   });
   it('should pass hints to userAgentData', () => {
     getSUA(['h1', 'h2']);

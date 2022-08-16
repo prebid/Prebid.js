@@ -1,6 +1,8 @@
 import { expect } from 'chai';
 import { getRefererInfo } from 'src/refererDetection.js';
-import { processFpd, coreStorage, resetEnrichments } from 'modules/enrichmentFpdModule.js';
+import {processFpd, coreStorage, resetEnrichments} from 'modules/enrichmentFpdModule.js';
+import * as enrichmentModule from 'modules/enrichmentFpdModule.js';
+import {GreedyPromise} from '../../../src/utils/promise.js';
 
 describe('the first party data enrichment module', function() {
   let width;
@@ -11,6 +13,8 @@ describe('the first party data enrichment module', function() {
   let coreStorageStub;
   let canonical;
   let keywords;
+  let lowEntropySuaStub;
+  let highEntropySuaStub;
 
   before(function() {
     canonical = document.createElement('link');
@@ -36,6 +40,8 @@ describe('the first party data enrichment module', function() {
       .returns(null) // co.uk
       .onSecondCall()
       .returns('writeable'); // domain.co.uk
+    lowEntropySuaStub = sinon.stub(enrichmentModule.sua, 'le').callsFake(() => null);
+    highEntropySuaStub = sinon.stub(enrichmentModule.sua, 'he').callsFake(() => GreedyPromise.resolve());
   });
 
   afterEach(function() {
@@ -47,13 +53,21 @@ describe('the first party data enrichment module', function() {
     canonical.rel = 'canonical';
     keywords = document.createElement('meta');
     keywords.name = 'keywords';
+    lowEntropySuaStub.restore();
+    highEntropySuaStub.restore();
   });
+
+  function syncProcessFpd(fpdConf, ortb2Fragments) {
+    let result;
+    processFpd(fpdConf, ortb2Fragments).then((res) => { result = res; });
+    return result;
+  };
 
   it('adds ref and device values', function() {
     width = 800;
     height = 500;
 
-    let validated = processFpd({}, {}).global;
+    let validated = syncProcessFpd({}, {}).global;
 
     const {ref, page, domain} = getRefererInfo();
     expect(validated.site.ref).to.equal(ref || undefined);
@@ -68,7 +82,7 @@ describe('the first party data enrichment module', function() {
     height = 500;
     canonical.href = 'https://www.subdomain.domain.co.uk/path?query=12345';
 
-    let validated = processFpd({}, {}).global;
+    let validated = syncProcessFpd({}, {}).global;
 
     expect(validated.site.ref).to.equal(getRefererInfo().ref || undefined);
     expect(validated.site.page).to.equal('https://www.subdomain.domain.co.uk/path?query=12345');
@@ -83,7 +97,7 @@ describe('the first party data enrichment module', function() {
     height = 500;
     keywords.content = 'value1,value2,value3';
 
-    let validated = processFpd({}, {}).global;
+    let validated = syncProcessFpd({}, {}).global;
 
     expect(validated.site.keywords).to.equal('value1,value2,value3');
   });
@@ -92,7 +106,7 @@ describe('the first party data enrichment module', function() {
     width = 800;
     height = 500;
 
-    let validated = processFpd({}, {global: {device: {w: 1200, h: 700}, site: {ref: 'https://someUrl.com', page: 'test.com'}}}).global;
+    let validated = syncProcessFpd({}, {global: {device: {w: 1200, h: 700}, site: {ref: 'https://someUrl.com', page: 'test.com'}}}).global;
 
     expect(validated.site.ref).to.equal('https://someUrl.com');
     expect(validated.site.page).to.equal('test.com');
@@ -103,9 +117,26 @@ describe('the first party data enrichment module', function() {
   it('does not run enrichments again on the second call', () => {
     width = 1;
     height = 2;
-    const first = processFpd({}, {}).global;
+    const first = syncProcessFpd({}, {}).global;
     width = 3;
-    const second = processFpd({}, {}).global;
+    const second = syncProcessFpd({}, {}).global;
     expect(first).to.eql(second);
+  });
+
+  describe('device.sua', () => {
+    it('does not set device.sua if resolved sua is null', () => {
+      const sua = syncProcessFpd({}, {}).global.device?.sua;
+      expect(sua).to.not.exist;
+    });
+    it('uses low entropy values if uaHints is []', () => {
+      lowEntropySuaStub.callsFake(() => ({mock: 'sua'}));
+      const sua = syncProcessFpd({uaHints: []}, {}).global.device.sua;
+      expect(sua).to.eql({mock: 'sua'});
+    });
+    it('uses high entropy values otherwise', () => {
+      highEntropySuaStub.callsFake((hints) => GreedyPromise.resolve({hints}));
+      const sua = syncProcessFpd({uaHints: ['h1', 'h2']}, {}).global.device.sua;
+      expect(sua).to.eql({hints: ['h1', 'h2']});
+    })
   })
 });
