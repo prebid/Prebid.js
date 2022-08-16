@@ -99,7 +99,7 @@ export const spec = {
     let response;
 
     try {
-      response = serverResponse.body
+      response = serverResponse.body;
       bid = response.seatbid[0].bid[0];
     } catch (e) {
       response = null;

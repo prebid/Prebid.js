@@ -444,7 +444,7 @@ function getNativeAssets(response, nativeConfig) {
 /* Create bid from response */
 function createBid(response, bidRequests) {
   if (!response || (!response.Ad && !response.Native && !response.Vast)) {
-    return
+    return;
   }
 
   const request = bidRequests && bidRequests[response.BidID];
