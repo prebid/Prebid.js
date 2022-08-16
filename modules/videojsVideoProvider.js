@@ -102,7 +102,7 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
     }
     const mediaItem = player.getMedia();
     if (mediaItem) {
-      for (let param of ['album', 'artist', 'title']) {
+      for (let param of ['id', 'title', 'description', 'album', 'artist']) {
         if (mediaItem[param]) {
           content[param] = mediaItem[param];
         }
@@ -618,7 +618,7 @@ export const utils = {
       return {};
     }
 
-    return params.adConfig || {};
+    return params.adPluginConfig || {}; // TODO: add adPluginConfig to spec
   },
 
   getPositionCode: function({left, top, width, height}) {

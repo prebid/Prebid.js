@@ -24,21 +24,17 @@
 
     var adUnits = [{
       code: 'div-gpt-ad-51545-0',
-      sizes: [[600, 500]],
       mediaTypes: {
-        video: {
-          sizes: [[600, 500]]
-        }
+        video: {}
       },
       video: {
-        divId: 'vid-div-1',
+        divId: 'vid-div',
       },
 
       bids: [{
         bidder: 'ix',
         params: {
           siteId: '300',
-          size: [600, 500]
         }
       }]
     }];
@@ -50,11 +46,11 @@
       pbjs.setConfig({
         video: {
           providers: [{
-            divId: 'vid-div-1',
+            divId: 'vid-div',
             vendorCode: 2, // videojs vendorCode
             playerConfig: {
               params: {
-                adConfig: {
+                adPluginConfig: {
                   numRedirects: 10
                 },
                 vendorConfig: {
@@ -66,24 +62,21 @@
         }
       });
       pbjs.addAdUnits(adUnits);
+
       pbjs.onEvent('video_setupComplete', e => {
-        console.log('player setup complete', e);
+        console.log('player setup complete: ', e);
       });
 
       pbjs.onEvent('video_setupFailed', e => {
         console.log('player setup failed: ', e);
       });
 
+      pbjs.onEvent('video_destroyed', e => {
+        console.log('player destroyed: ', e);
+      });
+
       pbjs.onEvent('video_playlist', (e) => {
         console.log('videos pb playlist: ', e);
-      });
-
-      pbjs.onEvent('video_play', (e) => {
-        console.log('videos pb play: ', e);
-      });
-
-      pbjs.onEvent('video_pause', (e) => {
-        console.log('videos pb pause: ', e);
       });
 
       pbjs.onEvent('video_playbackRequest', (e) => {
@@ -92,6 +85,14 @@
 
       pbjs.onEvent('video_contentLoaded', (e) => {
         console.log('videos pb contentLoaded: ', e);
+      });
+
+      pbjs.onEvent('video_play', (e) => {
+        console.log('videos pb play: ', e);
+      });
+
+      pbjs.onEvent('video_pause', (e) => {
+        console.log('videos pb pause: ', e);
       });
 
       pbjs.onEvent('video_seekStart', (e) => {
@@ -126,6 +127,10 @@
         console.log('videos pb playerResize: ', e);
       });
 
+      pbjs.onEvent('video_error', (e) => {
+        console.log('videos pb error: ', e);
+      });
+
       pbjs.onEvent('video_adRequest', (e) => {
         console.log('videos pb ad request: ', e);
       });
@@ -142,6 +147,14 @@
         console.log('videos pb ad started: ', e);
       });
 
+      pbjs.onEvent('video_adPlay', (e) => {
+        console.log('videos pb ad play: ', e);
+      });
+
+      pbjs.onEvent('video_adPause', (e) => {
+        console.log('videos pb ad pause: ', e);
+      });
+
       // pbjs.onEvent('video_adTime', (e) => {
       //   console.log('videos pb ad time: ', e);
       // });
@@ -150,17 +163,19 @@
         console.log('videos pb ad complete: ', e);
       });
 
-      pbjs.onEvent('video_adSkip', (e) => {
-        console.log('videos pb ad skip: ', e);
+      pbjs.onEvent('video_adSkipped', (e) => {
+        console.log('videos pb ad skipped: ', e);
       });
 
       pbjs.onEvent('video_adClick', (e) => {
         console.log('videos pb ad click: ', e);
       });
+
       pbjs.onEvent('video_adError', (e) => {
         console.log('videos pb ad error: ', e);
       });
-      pbjs.requestBids();
+
+      pbjs.requestBids(adUnits);
     });
   </script>
 
@@ -170,18 +185,8 @@
   <h2>VideoJS Event Listeners</h2>
 
   <h5>Div-1: Player placeholder div</h5>
-  <video-js id='vid-div-1' class="vjs-big-play-centered">
+  <video-js id='vid-div' class="vjs-big-play-centered">
     <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4" type="video/mp4">
-  </video-js>
-
-  <h5>Div-2: Pre-instantiated player, without IMA</h5>
-  <video-js id='vid-div-2' data-setup='{"controls": true}'>
-    <source src="http://content.bitsontherun.com/videos/bkaovAYt-DZ7jSYgM.mp4" type="video/mp4">
-  </video-js>
-
-  <h5>Div-3: Player placeholder div</h5>
-  <video-js id='vid-div-4' class="vjs-big-play-centered">
-    <source src="https://content.bitsontherun.com/videos/bkaovAYt-52qL9xLP.mp4" type="video/mp4">
   </video-js>
 </body>
 
