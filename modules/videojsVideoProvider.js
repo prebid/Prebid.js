@@ -260,8 +260,16 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
           });
           callback(type, payload);
         };
-        // TODO: sourceset is experimental
-        player.on('sourceset', eventHandler);
+
+        if (player.playlist) {
+          // The following events are specific to the playlist plugin
+          player.one('beforeplaylistitem', eventHandler);
+          // playlistchange does not fire the first time a playlist loaded, therefore we listen to beforeplaylistitem once to know when the first playlist is loaded.
+          player.on('playlistchange', eventHandler);
+        } else {
+          // When playlist plugin is not used, treat each media item as a single item playlist
+          player.on('loadstart', eventHandler);
+        }
         break;
 
       case PLAYBACK_REQUEST:
