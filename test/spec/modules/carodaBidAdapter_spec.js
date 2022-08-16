@@ -459,8 +459,6 @@ describe('Caroda adapter', function () {
             advertiserDomains: []
           },
           ad: '<script....',
-          adId: undefined,
-          adserverTargeting: undefined,
           placementId: 'opzafe23'
         });
     });

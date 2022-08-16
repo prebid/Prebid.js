@@ -92,7 +92,8 @@ export const spec = {
     }
     try {
       return JSON.parse(ok.value)
-        .map((bid) => ({
+        .map((bid) => {
+          const ret = {
             requestId: bid.bid_id,
             cpm: bid.cpm,
             creativeId: bid.creative_id,
@@ -105,10 +106,16 @@ export const spec = {
               advertiserDomains: bid.adomain || []
             },
             ad: bid.ad,
-            adId: bid.ad_id,
-            placementId: bid.placement_id,
-            adserverTargeting: bid.adserver_targeting
-        }))
+            placementId: bid.placement_id 
+          }
+          if (bid.ad_id) {
+            ret.adId = bid.ad_id
+          }
+          if (bid.adserver_targeting) {
+            ret.adserverTargeting = bid.adserver_targeting
+          }
+          return ret
+        })
         .filter(Boolean)
     } catch (e) {
       logError(BIDDER_CODE, ': caught', e)
