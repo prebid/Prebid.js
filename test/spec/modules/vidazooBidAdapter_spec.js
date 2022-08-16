@@ -209,7 +209,7 @@ describe('VidazooBidAdapter', function () {
       const result = adapter.getUserSyncs({iframeEnabled: true}, [SERVER_RESPONSE]);
       expect(result).to.deep.equal([{
         type: 'iframe',
-        url: 'https://sync.cootlogix.com/api/sync/iframe/?gdpr=0&gdpr_consent=&us_privacy='
+        url: 'https://sync.cootlogix.com/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy='
       }]);
     });
 
