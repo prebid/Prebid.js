@@ -251,8 +251,8 @@ describe('emx_digital Adapter', function () {
     it('contains a properly formatted endpoint url', function () {
       const url = request.url.split('?');
       const queryParams = url[1].split('&');
-      expect(queryParams[0]).to.match(new RegExp('^t=\d*', 'g'));
-      expect(queryParams[1]).to.match(new RegExp('^ts=\d*', 'g'));
+      expect(queryParams[0]).to.match(new RegExp('^t=d*', 'g'));
+      expect(queryParams[1]).to.match(new RegExp('^ts=d*', 'g'));
     });
 
     it('builds bidfloor value from bid param when getFloor function does not exist', function () {
