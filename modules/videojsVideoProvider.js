@@ -262,14 +262,14 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
         };
 
         if (player.playlist) {
-          // The following events are specific to the playlist plugin
-          player.one('beforeplaylistitem', eventHandler);
-          // playlistchange does not fire the first time a playlist loaded, therefore we listen to beforeplaylistitem once to know when the first playlist is loaded.
+          // force a playlist event on first item load
+          player.one('loadstart', eventHandler);
           player.on('playlistchange', eventHandler);
         } else {
           // When playlist plugin is not used, treat each media item as a single item playlist
           player.on('loadstart', eventHandler);
         }
+
         break;
 
       case PLAYBACK_REQUEST:
@@ -387,7 +387,7 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
 
       case CONTENT_LOADED:
         eventHandler = e => {
-          const media = player.getMedia();
+          const media = utils.getMedia(player);
           const contentUrl = utils.getValidMediaUrl(player.src, media && media.src, e && e.target && e.target.currentSrc)
           Object.assign(payload, {
             contentId: media && media.id,
@@ -690,6 +690,15 @@ export const utils = {
      */
   },
 
+  getMedia: function(player) {
+    const playlistItem = this.getCurrentPlaylistItem(player);
+    if (playlistItem) {
+      return playlistItem.sources[0];
+    }
+
+    return player.getMedia();
+  },
+
   getValidMediaUrl: function(mediaSrc, playerSrc, eventTargetSrc) {
     return this.getMediaUrl(mediaSrc) || this.getMediaUrl(playerSrc) || this.getMediaUrl(eventTargetSrc);
   },
@@ -729,6 +738,16 @@ export const utils = {
       return 0;
     }
     return playlist.currentIndex && playlist.currentIndex();
+  },
+
+  getCurrentPlaylistItem: function(player) {
+    const playlist = player.playlist; // has playlist plugin
+    if (!playlist) {
+      return;
+    }
+    const currentIndex = this.getCurrentPlaylistIndex(player);
+    const item = playlist()[currentIndex];
+    return item;
   }
 };
 

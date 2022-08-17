@@ -108,6 +108,7 @@
     "video.js": "^7.17.0",
     "videojs-contrib-ads": "^6.9.0",
     "videojs-ima": "^1.11.0",
+    "videojs-playlist": "^5.0.0",
     "webdriverio": "^7.6.1",
     "webpack": "^5.70.0",
     "webpack-bundle-analyzer": "^4.5.0",
