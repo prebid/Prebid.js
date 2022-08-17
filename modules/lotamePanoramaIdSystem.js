@@ -41,6 +41,7 @@ function setProfileId(profileId) {
     );
   }
   if (storage.hasLocalStorage()) {
+    console.log(`setting local storage, key: ${KEY_PROFILE}, val: ${profileId}`);
     storage.setDataInLocalStorage(KEY_PROFILE, profileId, undefined);
   }
 }
@@ -49,12 +50,16 @@ function setProfileId(profileId) {
  * Get the Lotame profile id by checking cookies first and then local storage
  */
 function getProfileId() {
+  let profileId;
   if (storage.cookiesAreEnabled()) {
-    return storage.getCookie(KEY_PROFILE, undefined);
+    console.log("getProfileId - using cookies: " + storage.getCookie(KEY_PROFILE, undefined));
+    profileId = storage.getCookie(KEY_PROFILE, undefined);
   }
-  if (storage.hasLocalStorage()) {
-    return storage.getDataFromLocalStorage(KEY_PROFILE, undefined);
+  if (!profileId && storage.hasLocalStorage()) {
+    console.log("getProfileId - using localStorage: " + storage.getDataFromLocalStorage(KEY_PROFILE, undefined));
+    profileId = storage.getDataFromLocalStorage(KEY_PROFILE, undefined);
   }
+  return profileId;
 }
 
 /**
@@ -67,16 +72,29 @@ function getFromStorage(key) {
     value = storage.getCookie(key, undefined);
   }
   if (storage.hasLocalStorage() && value === null) {
+console.log(`could not get ${key} from cookies, trying localStorage.`);
     const storedValueExp = storage.getDataFromLocalStorage(
       `${key}_exp`, undefined
     );
+
+console.log(`storage expiration: ${storedValueExp}`);
     if (storedValueExp === '') {
+console.log("expiration blank, so going for it.");
       value = storage.getDataFromLocalStorage(key, undefined);
     } else if (storedValueExp) {
-      if ((new Date(storedValueExp)).getTime() - Date.now() > 0) {
+console.log("Is it after now? " + Date.now() + " answer: " + ((new Date(parseInt(storedValueExp, 10))).getTime() - Date.now() > 0));
+console.log("Expiration after conversion: ");
+console.log((new Date(parseInt(storedValueExp, 10))).getTime());
+console.log("Now:");
+console.log(Date.now());
+console.log("Result:");
+console.log((new Date(parseInt(storedValueExp, 10))).getTime() - Date.now());
+      if ((new Date(parseInt(storedValueExp, 10))).getTime() - Date.now() > 0) {
         value = storage.getDataFromLocalStorage(key, undefined);
       }
     }
+    else { console.log('EXPIRED!!!!'); }
+console.log(`storage returned: ${value}`);
   }
   return value;
 }
@@ -115,11 +133,13 @@ function saveLotameCache(
       );
     }
     if (storage.hasLocalStorage()) {
+      console.log(`setting local storage, key: ${key}_exp, val: ${String(expirationTimestamp)}`);
       storage.setDataInLocalStorage(
         `${key}_exp`,
         String(expirationTimestamp),
         undefined
       );
+      console.log(`setting local storage, key: ${key}, val: ${value}`);
       storage.setDataInLocalStorage(key, value, undefined);
     }
   }
@@ -202,18 +222,22 @@ export const lotamePanoramaIdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   getId(config, consentData, cacheIdObj) {
+    console.log("----- PREBID getId() -----");
     cookieDomain = lotamePanoramaIdSubmodule.findRootDomain();
     let localCache = getLotameLocalCache();
 
     let refreshNeeded = Date.now() > localCache.expiryTimestampMs;
 
     if (!refreshNeeded) {
+console.log("No Refresh Needed. id: " + localCache.data);
       return {
         id: localCache.data,
       };
     }
 
+console.log("Refresh Needed.");
     const storedUserId = getProfileId();
+console.log(`storedUserId: ${storedUserId}`);
 
     const resolveIdFunction = function (callback) {
       let queryParams = {};
@@ -221,6 +245,8 @@ export const lotamePanoramaIdSubmodule = {
         queryParams.fp = storedUserId;
       }
 
+console.log("Looking for consentData:");
+console.log(consentData);
       let consentString;
       if (consentData) {
         if (isBoolean(consentData.gdprApplies)) {
