@@ -71,7 +71,11 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     loadAdTag(adUrl, divId, options);
   }
 
-  return { init, renderBid };
+  function getVideoOrtb(divId) {
+    return videoCore.getOrtbParams(divId);
+  }
+
+  return { init, renderBid, getVideoOrtb };
 
   function beforeBidsRequested(nextFn, bidRequest) {
     const adUnits = bidRequest.adUnits || pbGlobal.adUnits || [];
@@ -94,7 +98,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
       return;
     }
 
-    const oRtbParams = videoCore.getOrtbParams(videoConfig.divId);
+    const oRtbParams = getVideoOrtb(videoConfig.divId);
     if (!oRtbParams) {
       return;
     }
