@@ -541,26 +541,22 @@ const storeInCache = (batch) => {
   });
 };
 
+let batchSize, batchTimeout;
+config.getConfig('cache', (cacheConfig) => {
+  batchSize = typeof cacheConfig.cache.batchSize === 'number' && cacheConfig.cache.batchSize > 0
+    ? cacheConfig.cache.batchSize
+    : 1;
+  batchTimeout = typeof cacheConfig.cache.batchTimeout === 'number' && cacheConfig.cache.batchTimeout > 0
+    ? cacheConfig.cache.batchTimeout
+    : 0;
+});
+
 export const batchingCache = (timeout = setTimeout, cache = storeInCache) => {
   let batches = [[]];
   let debouncing = false;
-  let cacheConfigBatchSize, cacheConfigBatchTimeout, batchSize, batchTimeout;
   const noTimeout = cb => cb();
 
   return function(auctionInstance, bidResponse, afterBidAdded) {
-    if (batches.length === 1 && batches[0].length === 0) {
-      cacheConfigBatchSize = config.getConfig('cache.batchSize');
-      cacheConfigBatchTimeout = config.getConfig('cache.batchTimeout');
-      batchSize =
-        typeof cacheConfigBatchSize === 'number' && cacheConfigBatchSize > 0
-          ? cacheConfigBatchSize
-          : 1;
-      batchTimeout =
-        typeof cacheConfigBatchTimeout === 'number' && cacheConfigBatchTimeout > 0
-          ? cacheConfigBatchTimeout
-          : 0;
-    }
-
     const batchFunc = batchTimeout > 0 ? timeout : noTimeout;
     if (batches[batches.length - 1].length >= batchSize) {
       batches.push([]);
