@@ -1,10 +1,12 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { getStorageManager } from '../src/storageManager.js';
 import {includes} from '../src/polyfill.js';
 import {BANNER} from '../src/mediaTypes.js';
 
 const VERSION = '3.0';
 const BAD_WORD_STEP = 0.1;
 const BAD_WORD_MIN = 0.2;
+const ADHASH_BIDDER_CODE = 'adhash';
 
 /**
  * Function that checks the page where the ads are being served for brand safety.
@@ -107,7 +109,7 @@ function brandSafety(badWords, maxScore) {
 }
 
 export const spec = {
-  code: 'adhash',
+  code: ADHASH_BIDDER_CODE,
   supportedMediaTypes: [ BANNER ],
 
   isBidRequestValid: (bid) => {
@@ -126,6 +128,7 @@ export const spec = {
   },
 
   buildRequests: (validBidRequests, bidderRequest) => {
+    const storage = getStorageManager({ bidderCode: ADHASH_BIDDER_CODE });
     const { gdprConsent } = bidderRequest;
     const bidRequests = [];
     let referrer = '';
@@ -139,6 +142,13 @@ export const spec = {
       const url = `${bidderURL}/rtb?version=${VERSION}&prebid=true`;
       const index = Math.floor(Math.random() * validBidRequests[i].sizes.length);
       const size = validBidRequests[i].sizes[index].join('x');
+
+      let recentAds = [];
+      if (storage.localStorageIsEnabled()) {
+        const prefix = validBidRequests[i].params.prefix || 'adHash';
+        recentAds = JSON.parse(storage.getDataFromLocalStorage(prefix + 'recentAds') || '[]');
+      }
+
       bidRequests.push({
         method: 'POST',
         url: url + '&publisher=' + validBidRequests[i].params.publisherId,
@@ -162,7 +172,7 @@ export const spec = {
           }],
           blockedCreatives: [],
           currentTimestamp: new Date().getTime(),
-          recentAds: [],
+          recentAds: recentAds,
           GDPRApplies: gdprConsent ? gdprConsent.gdprApplies : null,
           GDPR: gdprConsent ? gdprConsent.consentString : null
         },
