@@ -176,7 +176,7 @@ export const spec = {
       responses.forEach(csResp => {
         if (csResp.body && csResp.body.ext && csResp.body.ext.usersyncs) {
           try {
-            let response = csResp.body.ext.usersyncs
+            let response = csResp.body.ext.usersyncs;
             let bidders = response.bidder_status;
             for (let synci in bidders) {
               let thisSync = bidders[synci];
@@ -314,7 +314,7 @@ function newOrtbBidRequest(bidRequest, bidderRequest, currentImps) {
     },
     user: {
     }
-  }
+  };
 
   let bidFloor;
   if (isFn(bidRequest.getFloor) && !config.getConfig('disableFloors')) {
@@ -566,7 +566,7 @@ function parseSizes(bid, mediaType) {
   } else if (typeof deepAccess(bid, 'mediaTypes.banner.sizes') !== 'undefined') {
     sizes = mapSizes(bid.mediaTypes.banner.sizes);
   } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0) {
-    sizes = mapSizes(bid.sizes)
+    sizes = mapSizes(bid.sizes);
   } else {
     logWarn('LuponMedia: no sizes are setup or found');
   }

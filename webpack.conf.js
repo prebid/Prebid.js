@@ -5,10 +5,30 @@ var webpack = require('webpack');
 var helpers = require('./gulpHelpers.js');
 var { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 var argv = require('yargs').argv;
+const fs = require('fs');
 const babelConfig = require('./babelConfig.js')({disableFeatures: helpers.getDisabledFeatures(), prebidDistUrlBase: argv.distUrlBase});
+const {WebpackManifestPlugin} = require('webpack-manifest-plugin')
 
 var plugins = [
   new webpack.EnvironmentPlugin({'LiveConnectMode': null}),
+  new WebpackManifestPlugin({
+    fileName: 'dependencies.json',
+    generate: (seed, files) => {
+      const entries = new Set();
+      const addEntry = entries.add.bind(entries);
+
+      files.forEach(file => file.chunk && file.chunk._groups && file.chunk._groups.forEach(addEntry));
+
+      return Array.from(entries).reduce((acc, entry) => {
+        const name = (entry.options || {}).name || (entry.runtimeChunk || {}).name
+        const files = (entry.chunks || [])
+          .filter(chunk => chunk.name !== name)
+          .flatMap(chunk => [...chunk.files])
+          .filter(Boolean);
+        return name && files.length ? {...acc, [`${name}.js`]: files} : acc
+      }, seed)
+    }
+  })
 ];
 
 if (argv.analyze) {
@@ -43,16 +63,6 @@ module.exports = {
           import: fn,
           dependOn: 'prebid-core'
         };
-
-        if (helpers.isLibrary(mod)) {
-          const libraryFiles = helpers.getLibraryFiles(mod);
-          moduleEntry.import = libraryFiles || moduleEntry.import;
-        }
-
-        const libraries = helpers.getParentLibraries(mod);
-        if (libraries.length) {
-          moduleEntry.dependOn = ['prebid-core'].concat(libraries);
-        }
 
         entry[mod] = moduleEntry;
       }
@@ -97,7 +107,33 @@ module.exports = {
           module: true, // do not prepend every module with 'use strict'; allow mangling of top-level locals
         }
       })
-    ]
+    ],
+    splitChunks: {
+      chunks: 'initial',
+      minChunks: 1,
+      minSize: 0,
+      cacheGroups: (() => {
+        const libRoot = path.resolve(__dirname, 'libraries');
+        const libraries = Object.fromEntries(
+          fs.readdirSync(libRoot)
+            .filter((f) => fs.lstatSync(path.resolve(libRoot, f)).isDirectory())
+            .map(lib => {
+              const dir = path.resolve(libRoot, lib)
+              const def = {
+                name: lib,
+                test: (module) => {
+                  return module.resource && module.resource.startsWith(dir)
+                }
+              }
+              return [lib, def];
+            })
+        );
+        return Object.assign(libraries, {
+          default: false,
+          defaultVendors: false
+        })
+      })()
+    }
   },
   plugins
 };

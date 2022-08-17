@@ -375,7 +375,7 @@ function _isAdSlotExists(adUnitCode) {
   }
 
   const gptAdSlot = getGptSlotInfoForAdUnitCode(adUnitCode);
-  if (gptAdSlot && gptAdSlot.divId && document.getElementById(gptAdSlot.divId)) {
+  if (gptAdSlot.divId && document.getElementById(gptAdSlot.divId)) {
     return true;
   }
 

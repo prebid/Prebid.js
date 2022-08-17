@@ -93,7 +93,7 @@ export function collectData() {
 function waitForData(callback) {
   if (_browsiData) {
     _dataReadyCallback = null;
-    callback(_browsiData);
+    callback();
   } else {
     _dataReadyCallback = callback;
   }
@@ -102,7 +102,7 @@ function waitForData(callback) {
 export function setData(data) {
   _browsiData = data;
   if (isFn(_dataReadyCallback)) {
-    _dataReadyCallback(_browsiData);
+    _dataReadyCallback();
     _dataReadyCallback = null;
   }
 }
