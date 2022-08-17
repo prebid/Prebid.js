@@ -388,7 +388,7 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
       case CONTENT_LOADED:
         eventHandler = e => {
           const media = player.getMedia();
-          const contentUrl = utils.getMediaUrl(player.src, media && media.src, e && e.target && e.target.currentSrc)
+          const contentUrl = utils.getValidMediaUrl(player.src, media && media.src, e && e.target && e.target.currentSrc)
           Object.assign(payload, {
             contentId: media && media.id,
             contentUrl,
@@ -690,9 +690,11 @@ export const utils = {
      */
   },
 
-  getMediaUrl: function(playerSrc, mediaSrc, eventTargetSrc) {
-    const source = playerSrc || mediaSrc || eventTargetSrc;
+  getValidMediaUrl: function(mediaSrc, playerSrc, eventTargetSrc) {
+    return this.getMediaUrl(mediaSrc) || this.getMediaUrl(playerSrc) || this.getMediaUrl(eventTargetSrc);
+  },
 
+  getMediaUrl: function(source) {
     if (!source) {
       return;
     }
@@ -716,7 +718,7 @@ export const utils = {
   getPlaylistCount: function (player) {
     const playlist = player.playlist; // has playlist plugin
     if (!playlist) {
-      return;
+      return 1;
     }
     return playlist.lastIndex && playlist.lastIndex() + 1;
   },
@@ -724,7 +726,7 @@ export const utils = {
   getCurrentPlaylistIndex: function (player) {
     const playlist = player.playlist; // has playlist plugin
     if (!playlist) {
-      return;
+      return 0;
     }
     return playlist.currentIndex && playlist.currentIndex();
   }
