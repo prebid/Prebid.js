@@ -6,7 +6,7 @@ import { getGlobal } from '../../src/prebidGlobal.js';
 import CONSTANTS from '../../src/constants.json';
 import {
   videoEvents, AUCTION_AD_LOAD_ATTEMPT, AD_IMPRESSION, AD_ERROR, BID_IMPRESSION, BID_ERROR, AUCTION_AD_LOAD_ABORT
-} from './constants/events.js'
+} from '../../libraries/video/constants/events.js'
 import { videoCoreFactory } from './coreVideo.js';
 import { gamSubmoduleFactory } from './gamAdServerSubmodule.js';
 import { videoImpressionVerifierFactory } from './videoImpressionVerifier.js';

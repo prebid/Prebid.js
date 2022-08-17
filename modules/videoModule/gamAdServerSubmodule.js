@@ -1,4 +1,4 @@
-import { GAM_VENDOR } from './constants/vendorCodes.js';
+import { GAM_VENDOR } from '../../libraries/video/constants/vendorCodes.js';
 import { getGlobal } from '../../src/prebidGlobal.js';
 
 /**

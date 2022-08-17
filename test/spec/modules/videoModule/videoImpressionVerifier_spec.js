@@ -1,4 +1,4 @@
-import { baseImpressionVerifier, PB_PREFIX } from 'libraries/video/videoImpressionVerifier.js';
+import { baseImpressionVerifier, PB_PREFIX } from 'modules/videoModule/videoImpressionVerifier.js';
 
 let trackerMock;
 trackerMock = {

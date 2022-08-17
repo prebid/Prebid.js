@@ -75,6 +75,10 @@
       "enrichmentFpdModule",
       "validationFpdModule",
       "topicsFpdModule"
+    ],
+    "videoModule": [
+      "jwplayerVideoProvider",
+      "videojsVideoProvider"
     ]
   },
   "libraries": {

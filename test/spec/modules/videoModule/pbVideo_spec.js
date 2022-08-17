@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { PbVideo } from 'libraries/video/index.js';
+import { PbVideo } from 'modules/videoModule';
 import CONSTANTS from 'src/constants.json';
 import { AD_IMPRESSION, AD_ERROR, BID_IMPRESSION, BID_ERROR } from 'libraries/video/constants/events.js';
 
