@@ -320,6 +320,11 @@ export const spec = {
       // set ext.prebid.auctiontimestamp using auction time
       deepSetValue(data.imp[0], 'ext.prebid.auctiontimestamp', bidderRequest.auctionStart);
 
+      // set storedrequests to undefined so not sent to PBS
+      // top level and imp level both 'ext.prebid' objects are set above so no exception thrown here
+      data.ext.prebid.storedrequest = undefined;
+      data.imp[0].ext.prebid.storedrequest = undefined;
+
       return {
         method: 'POST',
         url: `https://${rubiConf.videoHost || 'prebid-server'}.rubiconproject.com/openrtb2/auction`,
@@ -934,7 +939,7 @@ function parseSizes(bid, mediaType) {
   } else if (typeof deepAccess(bid, 'mediaTypes.banner.sizes') !== 'undefined') {
     sizes = mapSizes(bid.mediaTypes.banner.sizes);
   } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0) {
-    sizes = mapSizes(bid.sizes)
+    sizes = mapSizes(bid.sizes);
   } else {
     logWarn('Rubicon: no sizes are setup or found');
   }
@@ -1027,7 +1032,7 @@ function applyFPD(bidRequest, mediaType, data) {
         if (segments.length > 0) return segments.toString();
       }).toString();
     } else if (typeof prop === 'object' && !Array.isArray(prop)) {
-      logWarn('Rubicon: Filtered FPD key: ', key, ': Expected value to be string, integer, or an array of strings/ints');
+      return undefined;
     } else if (typeof prop !== 'undefined') {
       return (Array.isArray(prop)) ? prop.filter(value => {
         if (typeof value !== 'object' && typeof value !== 'undefined') return value.toString();
@@ -1040,7 +1045,7 @@ function applyFPD(bidRequest, mediaType, data) {
     let val = validate(obj, key, name);
     let loc = (MAP[key] && isParent) ? `${MAP[key]}` : (key === 'data') ? `${MAP[name]}iab` : `${MAP[name]}${key}`;
     data[loc] = (data[loc]) ? data[loc].concat(',', val) : val;
-  }
+  };
 
   if (mediaType === BANNER) {
     ['site', 'user'].forEach(name => {

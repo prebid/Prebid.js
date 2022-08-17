@@ -1,4 +1,4 @@
-import { deepSetValue, logInfo, deepAccess } from '../src/utils.js';
+import {deepSetValue, logInfo, deepAccess} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 
@@ -72,6 +72,12 @@ export const spec = {
       deepSetValue(openrtbRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent);
     }
 
+    // EIDS
+    const eids = deepAccess(validBidRequests[0], 'userIdAsEids');
+    if (Array.isArray(eids) && eids.length > 0) {
+      deepSetValue(openrtbRequest, 'user.ext.eids', eids);
+    }
+
     const payloadString = JSON.stringify(openrtbRequest);
     return {
       method: 'POST',
@@ -96,9 +102,7 @@ export const spec = {
           creativeId: bid.crid,
           netRevenue: DEFAULT_NET_REVENUE,
           currency: DEFAULT_CURRENCY,
-          meta: {
-            adomain: bid.adomain
-          }
+          meta: { advertiserDomains: bid && bid.advertiserDomains ? bid.advertiserDomains : [] }
         })
       })
     } else {
