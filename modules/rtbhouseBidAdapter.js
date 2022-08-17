@@ -61,7 +61,7 @@ export const spec = {
         ? bidderRequest.gdprConsent.consentString.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '') : '';
       const gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
       request.regs = {ext: {gdpr: gdpr}};
-      request.user = {ext: {consent: consentStr}};
+      request.user = {ext: {consent: consentStr, data: bidderRequest.ortb2}};
     }
     if (validBidRequests[0].schain) {
       const schain = mapSchain(validBidRequests[0].schain);
@@ -71,7 +71,6 @@ export const spec = {
         }
       }
     }
-
     if (validBidRequests[0].userIdAsEids) {
       const eids = { eids: validBidRequests[0].userIdAsEids };
       if (request.user && request.user.ext) {
