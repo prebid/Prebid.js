@@ -179,6 +179,22 @@
         console.log('videos pb ad error: ', e);
       });
 
+      pbjs.onEvent('video_auctionAdLoadAttempt', (e) => {
+        console.log('videos pb auction ad load attempt: ', e);
+      });
+
+      pbjs.onEvent('video_auctionAdLoadAbort', (e) => {
+        console.log('videos pb auction ad load attempt: ', e);
+      });
+
+      pbjs.onEvent('video_bidImpression', (e) => {
+        console.log('videos pb bid Impression: ', e);
+      });
+
+      pbjs.onEvent('video_bidError', (e) => {
+        console.log('videos pb bid Error: ', e);
+      });
+
       pbjs.requestBids(adUnits);
     });
   </script>
