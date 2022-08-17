@@ -114,7 +114,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
       adUnit.mediaTypes.video.playerSize = [width, height];
     }
 
-    let ortb2 = { ortb2: mergeDeep({}, getConfig('ortb2'), { site: oRtbParams.content }) };
+    let ortb2 = { ortb2: mergeDeep({}, pbGlobal.getConfig('ortb2'), { site: oRtbParams.content }) };
     pbGlobal.setConfig(ortb2);
   }
 
