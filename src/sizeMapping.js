@@ -111,7 +111,7 @@ export function resolveStatus({labels = [], labelAll = false, activeLabels = []}
     results.filterResults = {
       before: oldSizes,
       after: mediaTypes.banner.sizes
-    }
+    };
   }
 
   return results;

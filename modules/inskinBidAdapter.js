@@ -184,7 +184,7 @@ export const spec = {
           bid.currency = 'USD';
           bid.creativeId = decision.adId;
           bid.ttl = 360;
-          bid.meta = { advertiserDomains: decision.adomain ? decision.adomain : [] }
+          bid.meta = { advertiserDomains: decision.adomain ? decision.adomain : [] };
           bid.netRevenue = true;
 
           bidResponses.push(bid);

@@ -700,7 +700,7 @@ export function addBidResponseHook(fn, adUnitCode, bid) {
     return fn.call(this, adUnitCode, bid);
   }
 
-  const matchingBidRequest = auctionManager.index.getBidRequest(bid)
+  const matchingBidRequest = auctionManager.index.getBidRequest(bid);
 
   // get the matching rule
   let floorInfo = getFirstMatchingFloor(floorData.data, matchingBidRequest, {...bid, size: [bid.width, bid.height]});

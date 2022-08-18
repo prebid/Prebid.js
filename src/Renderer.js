@@ -60,7 +60,7 @@ export function Renderer(options) {
       this.cmd.unshift(runRender) // should render run first ?
       loadExternalScript(url, moduleCode, this.callback, this.documentContext);
     }
-  }.bind(this) // bind the function to this object to avoid 'this' errors
+  }.bind(this); // bind the function to this object to avoid 'this' errors
 }
 
 Renderer.install = function({ url, config, id, callback, loaded, adUnitCode, renderNow }) {

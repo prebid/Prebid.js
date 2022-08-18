@@ -13,7 +13,7 @@ import * as utils from 'src/utils.js';
 import * as refererDetection from 'src/refererDetection.js';
 import { config } from '../../../src/config.js';
 import * as storageManager from 'src/storageManager.js';
-import { NATIVE, VIDEO } from '../../../src/mediaTypes.js';
+import {BANNER, NATIVE, VIDEO} from '../../../src/mediaTypes.js';
 
 describe('The Criteo bidding adapter', function () {
   let utilsMock, sandbox;
@@ -1237,6 +1237,149 @@ describe('The Criteo bidding adapter', function () {
       const bidderRequest = {};
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.regs.coppa).to.be.undefined;
+    });
+
+    it('should properly build a banner request with floors', function () {
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250], [728, 90]]
+            }
+          },
+          params: {
+            networkId: 456,
+          },
+
+          getFloor: inputParams => {
+            if (inputParams.mediaType === BANNER && inputParams.size[0] === 300 && inputParams.size[1] === 250) {
+              return {
+                currency: 'USD',
+                floor: 1.0};
+            } else if (inputParams.mediaType === BANNER && inputParams.size[0] === 728 && inputParams.size[1] === 90) {
+              return {
+                currency: 'USD',
+                floor: 2.0};
+            } else {
+              return {}
+            }
+          }
+        },
+      ];
+      const bidderRequest = {};
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.slots[0].ext.floors).to.deep.equal({
+        'banner': {
+          '300x250': {'currency': 'USD', 'floor': 1},
+          '728x90': {'currency': 'USD', 'floor': 2}
+        }});
+    });
+
+    it('should properly build a video request with several player sizes with floors', function () {
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          mediaTypes: {
+            video: {
+              playerSize: [[300, 250], [728, 90]]
+            }
+          },
+          params: {
+            networkId: 456,
+          },
+
+          getFloor: inputParams => {
+            if (inputParams.mediaType === VIDEO && inputParams.size[0] === 300 && inputParams.size[1] === 250) {
+              return {
+                currency: 'USD',
+                floor: 1.0};
+            } else if (inputParams.mediaType === VIDEO && inputParams.size[0] === 728 && inputParams.size[1] === 90) {
+              return {
+                currency: 'USD',
+                floor: 2.0};
+            } else {
+              return {}
+            }
+          }
+        },
+      ];
+      const bidderRequest = {};
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.slots[0].ext.floors).to.deep.equal({
+        'video': {
+          '300x250': {'currency': 'USD', 'floor': 1},
+          '728x90': {'currency': 'USD', 'floor': 2}
+        }});
+    });
+
+    it('should properly build a multi format request with floors', function () {
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250], [728, 90]]
+            },
+            video: {
+              playerSize: [640, 480],
+            },
+            native: {}
+          },
+          params: {
+            networkId: 456,
+          },
+          ortb2Imp: {
+            ext: {
+              data: {
+                someContextAttribute: 'abc'
+              }
+            }
+          },
+
+          getFloor: inputParams => {
+            if (inputParams.mediaType === BANNER && inputParams.size[0] === 300 && inputParams.size[1] === 250) {
+              return {
+                currency: 'USD',
+                floor: 1.0};
+            } else if (inputParams.mediaType === BANNER && inputParams.size[0] === 728 && inputParams.size[1] === 90) {
+              return {
+                currency: 'USD',
+                floor: 2.0};
+            } else if (inputParams.mediaType === VIDEO && inputParams.size[0] === 640 && inputParams.size[1] === 480) {
+              return {
+                currency: 'EUR',
+                floor: 3.2};
+            } else if (inputParams.mediaType === NATIVE && inputParams.size === '*') {
+              return {
+                currency: 'YEN',
+                floor: 4.99};
+            } else {
+              return {}
+            }
+          }
+        },
+      ];
+      const bidderRequest = {};
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.slots[0].ext.data.someContextAttribute).to.deep.equal('abc');
+      expect(request.data.slots[0].ext.floors).to.deep.equal({
+        'banner': {
+          '300x250': {'currency': 'USD', 'floor': 1},
+          '728x90': {'currency': 'USD', 'floor': 2}
+        },
+        'video': {
+          '640x480': {'currency': 'EUR', 'floor': 3.2}
+        },
+        'native': {
+          '*': {'currency': 'YEN', 'floor': 4.99}
+        }});
     });
   });
 

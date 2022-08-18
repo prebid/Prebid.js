@@ -19,7 +19,7 @@ _each(MODE, mode => MODES.push(mode));
 
 // validate the supply chain object
 export function isSchainObjectValid(schainObject, returnOnError) {
-  let failPrefix = 'Detected something wrong within an schain config:'
+  let failPrefix = 'Detected something wrong within an schain config:';
   let failMsg = '';
 
   function appendFailMsg(msg) {
