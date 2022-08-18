@@ -26,7 +26,7 @@ app.use(function(req, res, next) {
       'https://test.localhost:9999': true
     };
   if (origin in whitelist) {
-    res.header('Access-Control-Allow-Origin', req.headers.origin);
+    res.header('Access-Control-Allow-Origin', origin);
     res.header('Access-Control-Allow-Credentials', true);
   }
   next();
