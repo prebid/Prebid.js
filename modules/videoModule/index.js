@@ -181,7 +181,8 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
       return;
     }
 
-    const { bidAdId = adId, adUnitCode, requestId, auctionId } = bidIdentifiers;
+    const { adUnitCode, requestId, auctionId } = bidIdentifiers;
+    const bidAdId = bidIdentifiers.adId;
     const { bids } = pbGlobal.getBidResponsesForAdUnitCode(adUnitCode);
     return find(bids, bid => bid.adId === bidAdId && bid.requestId === requestId && bid.auctionId === auctionId);
   }

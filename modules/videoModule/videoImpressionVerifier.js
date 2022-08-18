@@ -156,7 +156,13 @@ export function baseImpressionVerifier(bidTracker_) {
       return;
     }
 
-    const url = new URL(adTagUrl);
+    let url;
+    try {
+      url = new URL(adTagUrl);
+    } catch (e) {
+      return;
+    }
+
     const queryParams = url.searchParams;
     let uuid = queryParams.get(UUID_MARKER);
     return uuid && bidTracker.remove(uuid);

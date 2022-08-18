@@ -173,8 +173,8 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
   }
 
   // Plugins to integrate: https://github.com/googleads/videojs-ima
-  function setAdTagUrl(adTagUrl) {
-    if (!player.ima) {
+  function setAdTagUrl(adTagUrl, options) {
+    if (!player.ima || !adTagUrl) {
       return;
     }
 
