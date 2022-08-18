@@ -114,11 +114,6 @@ describe('nextMillenniumBidAdapterTests', function() {
     expect(JSON.parse(request[0].data).ext.nextMillennium.elOffsets).to.be.an('object')
   })
 
-  it('Check if refferer was added', function() {
-    const request = spec.buildRequests(bidRequestData)
-    expect(JSON.parse(request[0].data).site.ref).to.exist
-  })
-
   it('Check if imp object was added', function() {
     const request = spec.buildRequests(bidRequestData)
     expect(JSON.parse(request[0].data).imp).to.be.an('array')
