@@ -53,7 +53,7 @@ export const spec = {
         bid.currency = result.currency;
         bid.netRevenue = result.netRevenue;
         if (result.adomain) {
-          bid.meta = {advertiserDomains: result.adomain}
+          bid.meta = {advertiserDomains: result.adomain};
         }
         bidResponses.push(bid);
       }
@@ -125,7 +125,7 @@ function buildTrionUrlParams(bid, bidderRequest) {
     intT = getStorageData(BASE_KEY + 'int_t');
   }
   if (intT) {
-    setStorageData(BASE_KEY + 'int_t', intT)
+    setStorageData(BASE_KEY + 'int_t', intT);
   }
   setStorageData(BASE_KEY + 'lps', pubId + ':' + sectionId);
   var trionUrl = '';

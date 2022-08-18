@@ -67,10 +67,10 @@ let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE
             auc: bidRequest.auc,
             buc: bidRequest.buc,
             lw: bidRequest.lw
-          }
+          };
 
           logInfo(bidRequest);
-        })
+        });
         logInfo(livewrappedAnalyticsAdapter.requestEvents);
         break;
       case CONSTANTS.EVENTS.BID_RESPONSE:
@@ -183,7 +183,7 @@ livewrappedAnalyticsAdapter.sendEvents = function() {
   }
 
   ajax(initOptions.endpoint || URL, undefined, JSON.stringify(events), {method: 'POST'});
-}
+};
 
 function getAdblockerRecovered() {
   try {

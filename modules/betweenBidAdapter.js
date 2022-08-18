@@ -90,7 +90,7 @@ export const spec = {
         }
       }
 
-      requests.push({data: params})
+      requests.push({data: params});
     })
     return {
       method: 'POST',

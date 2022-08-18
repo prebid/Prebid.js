@@ -104,7 +104,7 @@ export const spec = {
           ext: {
             consent: bidderRequest.gdprConsent.consentString
           }
-        }
+        };
       }
 
       const imp = {
