@@ -309,7 +309,7 @@ describe('The video cache', function () {
         puts: [{
           type: 'xml',
           value: expectedValue,
-          ttlseconds: 25
+          ttlseconds: 40
         }],
       });
     }
