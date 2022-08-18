@@ -9,6 +9,7 @@ let conf;
 const LOG_PRE_FIX = 'ID-Library: ';
 const CONF_DEFAULT_OBSERVER_DEBOUNCE_MS = 250;
 const CONF_DEFAULT_FULL_BODY_SCAN = false;
+const CONF_DEFAULT_INPUT_SCAN = false;
 const OBSERVER_CONFIG = {
   subtree: true,
   attributes: true,
@@ -78,7 +79,13 @@ function targetAction(mutations, observer) {
   }
 }
 
-function addInputElementsElementListner(conf) {
+function addInputElementsElementListner() {
+  if (doesInputElementsHaveEmail()) {
+    _logInfo('Email found in input elements ' + email);
+    _logInfo('Post data on email found in target without');
+    postData();
+    return;
+  }
   _logInfo('Adding input element listeners');
   const inputs = document.querySelectorAll('input[type=text], input[type=email]');
 
@@ -87,6 +94,19 @@ function addInputElementsElementListner(conf) {
     inputs[i].addEventListener('change', event => processInputChange(event));
     inputs[i].addEventListener('blur', event => processInputChange(event));
   }
+}
+
+function addFormInputElementsElementListner(id) {
+  _logInfo('Adding input element listeners');
+  if (doesFormInputElementsHaveEmail(id)) {
+    _logInfo('Email found in input elements ' + email);
+    postData();
+    return;
+  }
+  _logInfo('Adding input element listeners');
+  const input = document.getElementById(id);
+  input.addEventListener('change', event => processInputChange(event));
+  input.addEventListener('blur', event => processInputChange(event));
 }
 
 function removeInputElementsElementListner() {
@@ -149,12 +169,6 @@ function handleTargetElement() {
 }
 
 function handleBodyElements() {
-  if (doesInputElementsHaveEmail()) {
-    _logInfo('Email found in input elements ' + email);
-    _logInfo('Post data on email found in target without');
-    postData();
-    return;
-  }
   email = getEmail(document.body.innerHTML);
   if (email !== null) {
     _logInfo('Email found in body ' + email);
@@ -162,7 +176,7 @@ function handleBodyElements() {
     postData();
     return;
   }
-  addInputElementsElementListner();
+
   if (conf.fullscan === true) {
     const bodyObserver = new MutationObserver(debounce(bodyAction, conf.debounce, false));
     bodyObserver.observe(document.body, OBSERVER_CONFIG);
@@ -175,6 +189,17 @@ function doesInputElementsHaveEmail() {
   for (let index = 0; index < inputs.length; ++index) {
     const curInput = inputs[index];
     email = getEmail(curInput.value);
+    if (email !== null) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function doesFormInputElementsHaveEmail(formElementId) {
+  const input = document.getElementById(formElementId);
+  if (input) {
+    email = getEmail(input.value);
     if (email !== null) {
       return true;
     }
@@ -213,6 +238,10 @@ function associateIds() {
   if (window.MutationObserver || window.WebKitMutationObserver) {
     if (conf.target) {
       handleTargetElement();
+    } else if (conf.formElementId) {
+      addFormInputElementsElementListner(conf.formElementId);
+    } else if (conf.inputscan) {
+      addInputElementsElementListner();
     } else {
       handleBodyElements();
     }
@@ -235,6 +264,14 @@ export function setConfig(config) {
   if (typeof config.fullscan !== 'boolean') {
     config.fullscan = CONF_DEFAULT_FULL_BODY_SCAN;
     _logInfo('Set default fullscan ' + CONF_DEFAULT_FULL_BODY_SCAN);
+  }
+  if (typeof config.inputscan !== 'boolean') {
+    config.inputscan = CONF_DEFAULT_INPUT_SCAN;
+    _logInfo('Set default input scan ' + CONF_DEFAULT_INPUT_SCAN);
+  }
+
+  if (typeof config.formElementId == 'string') {
+    _logInfo('Looking for formElementId ' + config.formElementId);
   }
   conf = config;
   associateIds();

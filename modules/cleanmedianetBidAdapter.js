@@ -1,9 +1,8 @@
-import { getDNT, inIframe, isArray, isNumber, logError, deepAccess, logWarn } from '../src/utils.js';
+import {deepAccess, getDNT, inIframe, isArray, isNumber, logError, logWarn} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
 import {Renderer} from '../src/Renderer.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import {includes} from '../src/polyfill.js';
 
 export const helper = {
   getTopWindowDomain: function (url) {
@@ -64,15 +63,14 @@ export const spec = {
           params.supplyPartnerId
         }/bidr?rformat=open_rtb&reqformat=rtb_json&bidder=prebid` +
         (params.query ? '&' + params.query : '');
-      let url =
-        config.getConfig('pageUrl') || bidderRequest.refererInfo.referer;
+      let url = bidderRequest.refererInfo.page;
 
       const rtbBidRequest = {
         id: auctionId,
         site: {
-          domain: helper.getTopWindowDomain(url),
+          domain: bidderRequest.refererInfo.domain,
           page: url,
-          ref: bidderRequest.refererInfo.referer
+          ref: bidderRequest.refererInfo.ref
         },
         device: {
           ua: navigator.userAgent,
@@ -106,12 +104,12 @@ export const spec = {
           ext: {
             consent: bidderRequest.gdprConsent.consentString
           }
-        }
+        };
       }
 
       const imp = {
         id: transactionId,
-        instl: params.instl === 1 ? 1 : 0,
+        instl: deepAccess(bidRequest.ortb2Imp, 'instl') === 1 || params.instl === 1 ? 1 : 0,
         tagid: adUnitCode,
         bidfloor: 0,
         bidfloorcur: 'USD',

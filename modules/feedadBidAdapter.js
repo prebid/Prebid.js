@@ -176,13 +176,13 @@ function isMediaTypesEmpty(mediaTypes) {
  * @return {FeedAdApiBidRequest}
  */
 function createApiBidRParams(request) {
-  return {
+  return Object.assign({}, request.params, {
     ad_type: 0,
     client_token: request.params.clientToken,
     placement_id: request.params.placementId,
     sdk_version: `prebid_${VERSION}`,
     app_hybrid: false,
-  };
+  });
 }
 
 /**
@@ -206,7 +206,8 @@ function buildRequests(validBidRequests, bidderRequest) {
     })
   });
   data.bids.forEach(bid => BID_METADATA[bid.bidId] = {
-    referer: data.refererInfo.referer,
+    // TODO: is 'page' the right value here?
+    referer: data.refererInfo.page,
     transactionId: bid.transactionId
   });
   if (bidderRequest.gdprConsent) {

@@ -1,7 +1,7 @@
-import { deepAccess, isArray } from '../src/utils.js';
-import { config } from '../src/config.js';
+import {deepAccess, isArray} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
+import {BANNER} from '../src/mediaTypes.js';
+
 const BIDDER_CODE = 'codefuel';
 const CURRENCY = 'USD';
 
@@ -28,14 +28,13 @@ export const spec = {
          * @return ServerRequest Info describing the request to the server.
          */
   buildRequests: function(validBidRequests, bidderRequest) {
-    const page = bidderRequest.refererInfo.referer;
-    const domain = getDomainFromURL(page)
+    const page = bidderRequest.refererInfo.page;
+    const domain = bidderRequest.refererInfo.domain;
     const ua = navigator.userAgent;
     const devicetype = getDeviceType()
     const publisher = setOnAny(validBidRequests, 'params.publisher');
     const cur = CURRENCY;
-    // const endpointUrl = 'http://localhost:5000/prebid'
-    const endpointUrl = config.getConfig('codefuel.bidderUrl');
+    const endpointUrl = 'https://ai-p-codefuel-ds-rtb-us-east-1-k8s.seccint.com/prebid'
     const timeout = bidderRequest.timeout;
 
     validBidRequests.forEach(bid => bid.netRevenue = 'net');
@@ -129,12 +128,6 @@ export const spec = {
 
 }
 registerBidder(spec);
-
-function getDomainFromURL(url) {
-  let anchor = document.createElement('a');
-  anchor.href = url;
-  return anchor.hostname;
-}
 
 function getDeviceType() {
   if ((/ipad|android 3.0|xoom|sch-i800|playbook|tablet|kindle/i.test(navigator.userAgent.toLowerCase()))) {

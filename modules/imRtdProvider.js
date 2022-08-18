@@ -37,6 +37,36 @@ function setImDataInCookie(value) {
   );
 }
 
+/**
+* @param {string} bidderName
+*/
+export function getBidderFunction(bidderName) {
+  const biddersFunction = {
+    pubmatic: function (bid, data) {
+      if (data.im_segments && data.im_segments.length) {
+        const dctr = deepAccess(bid, 'params.dctr');
+        deepSetValue(
+          bid,
+          'params.dctr',
+          `${dctr ? dctr + '|' : ''}im_segments=${data.im_segments.join(',')}`
+        );
+      }
+      return bid
+    },
+    fluct: function (bid, data) {
+      if (data.im_segments && data.im_segments.length) {
+        deepSetValue(
+          bid,
+          'params.kv.imsids',
+          data.im_segments
+        );
+      }
+      return bid
+    }
+  }
+  return biddersFunction[bidderName] || null;
+}
+
 export function getCustomBidderFunction(config, bidder) {
   const overwriteFn = deepAccess(config, `params.overwrites.${bidder}`)
 
@@ -58,9 +88,8 @@ export function setRealTimeData(bidConfig, moduleConfig, data) {
   const utils = {deepSetValue, deepAccess, logInfo, logError, mergeDeep};
 
   if (data.im_segments) {
-    const ortb2 = config.getConfig('ortb2') || {};
+    const ortb2 = bidConfig.ortb2Fragments?.global || {};
     deepSetValue(ortb2, 'user.ext.data.im_segments', data.im_segments);
-    config.setConfig({ortb2: ortb2});
 
     if (moduleConfig.params.setGptKeyValues || !moduleConfig.params.hasOwnProperty('setGptKeyValues')) {
       window.googletag = window.googletag || {cmd: []};
@@ -73,9 +102,12 @@ export function setRealTimeData(bidConfig, moduleConfig, data) {
 
   adUnits.forEach(adUnit => {
     adUnit.bids.forEach(bid => {
+      const bidderFunction = getBidderFunction(bid.bidder);
       const overwriteFunction = getCustomBidderFunction(moduleConfig, bid.bidder);
       if (overwriteFunction) {
         overwriteFunction(bid, data, utils, config);
+      } else if (bidderFunction) {
+        bidderFunction(bid, data);
       }
     })
   });

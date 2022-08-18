@@ -2,7 +2,7 @@ import { loadExternalScript } from './adloader.js';
 import {
   logError, logWarn, logMessage, deepAccess
 } from './utils.js';
-import find from 'core-js-pure/features/array/find.js';
+import {find} from './polyfill.js';
 const moduleCode = 'outstream';
 
 /**
@@ -14,7 +14,7 @@ const moduleCode = 'outstream';
  */
 
 export function Renderer(options) {
-  const { url, config, id, callback, loaded, adUnitCode } = options;
+  const { url, config, id, callback, loaded, adUnitCode, renderNow } = options;
   this.url = url;
   this.config = config;
   this.handlers = {};
@@ -50,19 +50,21 @@ export function Renderer(options) {
       }
     }
 
-    if (!isRendererPreferredFromAdUnit(adUnitCode)) {
+    if (isRendererPreferredFromAdUnit(adUnitCode)) {
+      logWarn(`External Js not loaded by Renderer since renderer url and callback is already defined on adUnit ${adUnitCode}`);
+      runRender();
+    } else if (renderNow) {
+      runRender();
+    } else {
       // we expect to load a renderer url once only so cache the request to load script
       this.cmd.unshift(runRender) // should render run first ?
-      loadExternalScript(url, moduleCode, this.callback);
-    } else {
-      logWarn(`External Js not loaded by Renderer since renderer url and callback is already defined on adUnit ${adUnitCode}`);
-      runRender()
+      loadExternalScript(url, moduleCode, this.callback, this.documentContext);
     }
-  }.bind(this) // bind the function to this object to avoid 'this' errors
+  }.bind(this); // bind the function to this object to avoid 'this' errors
 }
 
-Renderer.install = function({ url, config, id, callback, loaded, adUnitCode }) {
-  return new Renderer({ url, config, id, callback, loaded, adUnitCode });
+Renderer.install = function({ url, config, id, callback, loaded, adUnitCode, renderNow }) {
+  return new Renderer({ url, config, id, callback, loaded, adUnitCode, renderNow });
 };
 
 Renderer.prototype.getConfig = function() {
@@ -112,9 +114,18 @@ export function isRendererRequired(renderer) {
  * Render the bid returned by the adapter
  * @param {Object} renderer Renderer object installed by adapter
  * @param {Object} bid Bid response
+ * @param {Document} doc context document of bid
  */
-export function executeRenderer(renderer, bid) {
-  renderer.render(bid);
+export function executeRenderer(renderer, bid, doc) {
+  let docContext = null;
+  if (renderer.config && renderer.config.documentResolver) {
+    docContext = renderer.config.documentResolver(bid, document, doc);// a user provided callback, which should return a Document, and expect the parameters; bid, sourceDocument, renderDocument
+  }
+  if (!docContext) {
+    docContext = document;
+  }
+  renderer.documentContext = docContext;
+  renderer.render(bid, renderer.documentContext);
 }
 
 function isRendererPreferredFromAdUnit(adUnitCode) {
