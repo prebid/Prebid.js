@@ -171,7 +171,7 @@ export const spec = {
             position: validBidRequests[i].adUnitCode
           }],
           blockedCreatives: [],
-          currentTimestamp: new Date().getTime(),
+          currentTimestamp: (new Date().getTime() / 1000) | 0,
           recentAds: recentAds,
           GDPRApplies: gdprConsent ? gdprConsent.gdprApplies : null,
           GDPR: gdprConsent ? gdprConsent.consentString : null
