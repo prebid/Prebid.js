@@ -203,9 +203,9 @@ function getTopWindow(curWindow, nesting = 0) {
 function getSiteObj() {
   const refInfo = (getRefererInfo && getRefererInfo()) || {}
 
-  const page = refInfo.page || refInfo.location || getWindowTop().location.href
-  const ref = refInfo.ref || ''
-  const domain = refInfo.domain || (new URL(page).hostname).replace('www.', '')
+  const page = refInfo.page
+  const ref = refInfo.ref
+  const domain = refInfo.domain
 
   return {
     page,
