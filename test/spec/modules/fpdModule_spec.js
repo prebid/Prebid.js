@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {config} from 'src/config.js';
-import {getRefererInfo} from 'src/refererDetection.js';
+import {getRefererInfo, resetRefererInfo} from 'src/refererDetection.js';
 import {processFpd, registerSubmodules, startAuctionHook, reset} from 'modules/fpdModule/index.js';
 import * as enrichmentModule from 'modules/enrichmentFpdModule.js';
 import * as validationModule from 'modules/validationFpdModule/index.js';
@@ -70,6 +70,7 @@ describe('the first party data module', function () {
     });
 
     beforeEach(function() {
+      resetRefererInfo();
       querySelectorStub = sinon.stub(window.top.document, 'querySelector');
       querySelectorStub.withArgs("link[rel='canonical']").returns(canonical);
       querySelectorStub.withArgs("meta[name='keywords']").returns(keywords);
