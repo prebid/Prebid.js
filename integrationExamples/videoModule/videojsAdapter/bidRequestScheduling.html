@@ -19,11 +19,13 @@
 
     <script async src="../../../build/dev/prebid.js"></script>
 
-    <title>VideoJS with Media Metadata</title>
+    <title>VideoJS with Bid Request Scheduling</title>
 
-    <!-- This Demo loads media with metadata which is used to enrich the auction by populating the ortb site.content -->
+    <!--This demo listens to the Video events to create an auction at every 10 seconds. -->
 
     <script>
+      let midrollOffset = 10;
+
       // Setup ad units
       var adUnits = [{
         code: 'div-gpt-ad-51545-0',
@@ -66,6 +68,7 @@
             },]
           }
         });
+
         pbjs.addAdUnits(adUnits);
 
         pbjs.onEvent('video_setupComplete', e => {
@@ -80,20 +83,25 @@
         });
 
         pbjs.onEvent('video_contentLoaded', (e) => {
-          console.log('videos pb contentLoaded: ', e);
+          // reset the offset when media is loaded
+          midrollOffset = 10;
         });
 
-        pbjs.requestBids(adUnits);
+        pbjs.onEvent('video_time', (e) => {
+          // when the video reaches the midroll, request bids and update the offset.
+          if (e.position >= midrollOffset) {
+            pbjs.requestBids(adUnits);
+            midrollOffset += 10;
+          }
+        });
       });
     </script>
-
 </head>
 
 <body>
-<h2>VideoJS with Media Metadata</h2>
-
-<h5>Div-1: Player placeholder div</h5>
-<video-js id='player' class="vjs-big-play-centered"></video-js>
+    <h2>VideoJS with Bid Request Scheduling</h2>
+    <h5>Div-1: Player placeholder div</h5>
+    <video-js id='player' class="vjs-big-play-centered"></video-js>
 </body>
 
 </html>

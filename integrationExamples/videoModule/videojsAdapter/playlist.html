@@ -19,18 +19,19 @@
 
   <script async src="../../../build/dev/prebid.js"></script>
 
-  <title>VideoJS with Media Metadata</title>
+  <title>VideoJS with Playlist</title>
 
-  <!-- Setup ad units -->
+  <!-- This Demo sets up the videojs instance with a playlist and requests a bid whenever a new media item is loaded -->
+
   <script>
-
+    // Setup ad units
     var adUnits = [{
       code: 'div-gpt-ad-51545-0',
       mediaTypes: {
         video: {}
       },
       video: {
-        divId: 'player',
+        divId: 'player', // required to indicate which player is being used to render this ad unit.
       },
 
       bids: [{
@@ -69,6 +70,7 @@
 
       pbjs.onEvent('video_setupComplete', e => {
         const player = videojs('player');
+        // Load the playlist items with their metadata when the video player is done instantiating.
         player.playlist([{
           sources: [{
             id: 'XYXYXYXY',
@@ -102,22 +104,22 @@
         console.log('videos pb playlist: ', e);
       });
 
+      // request a bid when media is loaded
       pbjs.onEvent('video_contentLoaded', (e) => {
         console.log('videos pb contentLoaded: ', e);
+        pbjs.requestBids(adUnits);
       });
 
       pbjs.onEvent('video_complete', (e) => {
         console.log('videos pb complete: ', e);
       });
-
-      pbjs.requestBids(adUnits);
     });
   </script>
 
 </head>
 
 <body>
-<h2>VideoJS Event Listeners</h2>
+<h2>VideoJS with Playlist</h2>
 
 <h5>Div-1: Player placeholder div</h5>
 <video-js id='player' class="vjs-big-play-centered">

@@ -21,16 +21,17 @@
 
   <title>VideoJS Event Listeners</title>
 
-  <!-- Setup ad units -->
-  <script>
+  <!--  This demo listens to every video event and logs the event payload. -->
 
+  <script>
+    // setup ad units
     var adUnits = [{
       code: 'div-gpt-ad-51545-0',
       mediaTypes: {
         video: {}
       },
       video: {
-        divId: 'vid-div',
+        divId: 'player', // required to indicate which player is being used to render this ad unit.
       },
 
       bids: [{
@@ -48,7 +49,7 @@
       pbjs.setConfig({
         video: {
           providers: [{
-            divId: 'vid-div',
+            divId: 'player',
             vendorCode: 2, // videojs vendorCode
             playerConfig: {
               params: {
@@ -69,6 +70,14 @@
 
       pbjs.onEvent('video_setupComplete', e => {
         console.log('player setup complete: ', e);
+        // Load media with its Metadata when the video player is done instantiating.
+        videojs('player').loadMedia({
+          id: 'XYXYXYXY',
+          src: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4',
+          title: 'Subaru Outback On Street And Dirt',
+          description: 'Smoking Tire takes the all-new Subaru Outback to the highest point we can find in hopes our customer-appreciation Balloon Launch will get some free T-shirts into the hands of our viewers.',
+          type: 'video/mp4'
+        });
       });
 
       pbjs.onEvent('video_setupFailed', e => {
@@ -205,8 +214,7 @@
   <h2>VideoJS Event Listeners</h2>
 
   <h5>Div-1: Player placeholder div</h5>
-  <video-js id='vid-div' class="vjs-big-play-centered">
-    <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4" type="video/mp4">
+  <video-js id='player' class="vjs-big-play-centered">
   </video-js>
 </body>
 
