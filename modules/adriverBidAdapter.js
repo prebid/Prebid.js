@@ -97,7 +97,7 @@ export const spec = {
       });
     });
 
-    let adrcidCookie = storage.getDataFromLocalStorage('adrcid') || validBidRequests[0].userId.adrcid;
+    let adrcidCookie = storage.getDataFromLocalStorage('adrcid') || validBidRequests[0].userId?.adrcid;
     if (adrcidCookie) {
       payload.user.buyerid = adrcidCookie;
     }
