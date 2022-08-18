@@ -132,7 +132,7 @@ function createVideoTag(bid) {
   tag.ad_types = [VIDEO];
   tag.uuid = bid.bidId;
   tag.allow_smaller_sizes = false;
-  tag.use_pmt_rule = false
+  tag.use_pmt_rule = false;
   tag.prebid = true;
   tag.disable_psa = true;
   tag.hb_source = 1;
