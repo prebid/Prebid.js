@@ -7,6 +7,7 @@ import {
 import {
   registerBidder
 } from '../src/adapters/bidderFactory.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'theadx';
 const ENDPOINT_URL = 'https://ssp.theadx.com/request';
@@ -141,6 +142,9 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     logInfo('theadx.buildRequests', 'validBidRequests', validBidRequests, 'bidderRequest', bidderRequest);
     let results = [];
     const requestType = 'POST';
@@ -155,7 +159,8 @@ export const spec = {
               withCredentials: true,
             },
             bidder: 'theadx',
-            referrer: encodeURIComponent(bidderRequest.refererInfo.referer),
+            // TODO: is 'page' the right value here?
+            referrer: encodeURIComponent(bidderRequest.refererInfo.page || ''),
             data: generatePayload(bidRequest, bidderRequest),
             mediaTypes: bidRequest['mediaTypes'],
             requestId: bidderRequest.bidderRequestId,
@@ -201,7 +206,7 @@ export const spec = {
         let bidWidth = nullify(bid.w);
         let bidHeight = nullify(bid.h);
 
-        let creative = null
+        let creative = null;
         let videoXml = null;
         let mediaType = null;
         let native = null;
@@ -314,7 +319,7 @@ export const spec = {
 }
 
 let buildSiteComponent = (bidRequest, bidderRequest) => {
-  let loc = parseUrl(bidderRequest.refererInfo.referer, {
+  let loc = parseUrl(bidderRequest.refererInfo.page || '', {
     decodeSearchAsString: true
   });
 
@@ -384,7 +389,7 @@ let extractValidSize = (bidRequest, bidderRequest) => {
       requestedSizes = mediaTypes.video.sizes;
     }
   } else if (!isEmpty(bidRequest.sizes)) {
-    requestedSizes = bidRequest.sizes
+    requestedSizes = bidRequest.sizes;
   }
 
   // Ensure the size array is normalized

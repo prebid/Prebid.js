@@ -1093,7 +1093,6 @@ describe('OpenxAdapter', function () {
         tapadId: '111-tapadid',
         tdid: '1111-tdid',
         uid2: {id: '1111-uid2'},
-        flocId: {id: '12144', version: 'chrome.1.1'},
         novatiq: {snowflake: '1111-novatiqid'},
         admixerId: '1111-admixerid',
         deepintentId: '1111-deepintentid',
@@ -1102,6 +1101,11 @@ describe('OpenxAdapter', function () {
         mwOpenLinkId: '1111-mwopenlinkid',
         dapId: '1111-dapId',
         amxId: '1111-amxid',
+        kpuid: '1111-kpuid',
+        publinkId: '1111-publinkid',
+        naveggId: '1111-naveggid',
+        imuid: '1111-imuid',
+        adtelligentId: '1111-adtelligentid'
       };
 
       // generates the same set of tests for each id provider
@@ -1141,9 +1145,6 @@ describe('OpenxAdapter', function () {
             switch (userIdProviderKey) {
               case 'merkleId':
                 userIdValue = EXAMPLE_DATA_BY_ATTR.merkleId.id;
-                break;
-              case 'flocId':
-                userIdValue = EXAMPLE_DATA_BY_ATTR.flocId.id;
                 break;
               case 'uid2':
                 userIdValue = EXAMPLE_DATA_BY_ATTR.uid2.id;
@@ -1708,21 +1709,10 @@ describe('OpenxAdapter', function () {
           context('in ortb2.user.data', function () {
             let bidRequests;
             beforeEach(function () {
-              let fpdConfig = t.config
-              sinon
-                .stub(config, 'getConfig')
-                .withArgs(sinon.match(/^ortb2\.user\.data$|^ortb2\.site\.content\.data$/))
-                .callsFake((key) => {
-                  return utils.deepAccess(fpdConfig, key);
-                });
               bidRequests = [{...bidRequest, ...t.request}];
             });
 
-            afterEach(function () {
-              config.getConfig.restore();
-            });
-
-            const mockBidderRequest = {refererInfo: {}};
+            const mockBidderRequest = {refererInfo: {}, ortb2: t.config.ortb2};
             it(`${t.name} for type ${name}`, function () {
               const request = spec.buildRequests(bidRequests, mockBidderRequest)
               expect(request.length).to.equal(1);

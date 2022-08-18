@@ -108,7 +108,7 @@ describe('FeedAdAdapter', function () {
   describe('buildRequests', function () {
     const bidderRequest = {
       refererInfo: {
-        referer: 'the referer'
+        page: 'the referer'
       },
       some: 'thing'
     };
@@ -170,6 +170,21 @@ describe('FeedAdAdapter', function () {
       let result = spec.buildRequests([bid], bidderRequest);
       expect(result.data.bids).to.be.lengthOf(1);
       expect(result.data.bids[0]).to.deep.equal(bid);
+    });
+    it('should pass through additional bid parameters', function () {
+      let bid = {
+        code: 'feedad',
+        mediaTypes: {
+          banner: {
+            sizes: [[320, 250]]
+          }
+        },
+        params: {clientToken: 'clientToken', placementId: 'placement-id', another: 'parameter', more: 'parameters'}
+      };
+      let result = spec.buildRequests([bid], bidderRequest);
+      expect(result.data.bids).to.be.lengthOf(1);
+      expect(result.data.bids[0].params.another).to.equal('parameter');
+      expect(result.data.bids[0].params.more).to.equal('parameters');
     });
     it('should detect empty media types', function () {
       let bid = {
@@ -317,7 +332,7 @@ describe('FeedAdAdapter', function () {
     const referer = 'the referer';
     const bidderRequest = {
       refererInfo: {
-        referer: referer
+        page: referer
       },
       some: 'thing'
     };

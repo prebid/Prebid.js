@@ -57,7 +57,7 @@ At this time, only the following partners/publishers are eligble for pubId integ
    A. Do not have any display/banner inventory.
    B. Do not have any existing accounts on Yahoo SSP (aka: aol, oneMobile, oneDisplay).
 
-# Mandaotory Bidder Parameters
+# Mandatory Bidder Parameters
 ## dcn & pos (DEFAULT)
 The minimal requirements for the 'yahoossp' bid adapter to generate an outbound bid-request to our Yahoo SSP are:
 1. At least 1 adUnit including mediaTypes: banner or video

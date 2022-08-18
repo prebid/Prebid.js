@@ -23,7 +23,7 @@ export const spec = {
       const placementId = params.placement;
 
       const rnd = Math.floor(Math.random() * 99999999999);
-      const referrer = encodeURIComponent(bidderRequest.refererInfo.referer);
+      const referrer = encodeURIComponent(bidderRequest.refererInfo.page);
       const bidId = bidRequest.bidId;
       const isDev = params.devMode || false;
 
@@ -65,7 +65,7 @@ export const spec = {
         method: 'GET',
         url: endpoint,
         data: objectToQueryString(payload),
-      }
+      };
     });
   },
   interpretResponse: function(serverResponse, bidRequest) {
@@ -184,7 +184,7 @@ function prepareExtraParams(params, payload, bidderRequest, bidRequest) {
   }
 
   if (params.bcat !== undefined) {
-    payload.bcat = params.bcat;
+    payload.bcat = deepAccess(bidderRequest.ortb2Imp, 'bcat') || params.bcat;
   }
   if (params.dvt !== undefined) {
     payload.dvt = params.dvt;

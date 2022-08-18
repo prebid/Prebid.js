@@ -189,7 +189,7 @@ function formatAdHTML(bid, size) {
   var libUrl = '';
   if (integrationType && integrationType !== 'inbanner') {
     libUrl = PRIMETIME_URL + getComponentId(bid.params.format) + '.min.js';
-    script = getOutstreamScript(bid, size);
+    script = getOutstreamScript(bid);
   } else {
     libUrl = MUSTANG_URL;
     script = getInBannerScript(bid, size);
@@ -312,6 +312,12 @@ export const spec = {
         requestParams._fw_us_privacy = bidderRequest.uspConsent;
       }
 
+      // Add schain object
+      var schain = currentBidRequest.schain;
+      if (schain) {
+        requestParams.schain = schain;
+      }
+
       var vastParams = currentBidRequest.params.vastUrlParams;
       if (typeof vastParams === 'object') {
         for (var key in vastParams) {
@@ -320,8 +326,8 @@ export const spec = {
           }
         }
       }
-
-      var location = (bidderRequest && bidderRequest.refererInfo) ? bidderRequest.refererInfo.referer : getTopMostWindow().location.href;
+      // TODO: is 'page' the right value here?
+      var location = bidderRequest?.refererInfo?.page;
       if (isValidUrl(location)) {
         requestParams.loc = location;
       }

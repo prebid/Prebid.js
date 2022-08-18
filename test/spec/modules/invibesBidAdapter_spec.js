@@ -1,4 +1,5 @@
 import {expect} from 'chai';
+import { config } from 'src/config.js';
 import {spec, resetInvibes, stubDomainOptions, readGdprConsent} from 'modules/invibesBidAdapter.js';
 
 describe('invibesBidAdapter:', function () {
@@ -15,7 +16,7 @@ describe('invibesBidAdapter:', function () {
       params: {
         placementId: PLACEMENT_ID
       },
-      adUnitCode: 'test-div',
+      adUnitCode: 'test-div1',
       auctionId: 'a1',
       sizes: [
         [300, 250],
@@ -30,7 +31,7 @@ describe('invibesBidAdapter:', function () {
       params: {
         placementId: 'abcde'
       },
-      adUnitCode: 'test-div',
+      adUnitCode: 'test-div2',
       auctionId: 'a2',
       sizes: [
         [300, 250],
@@ -48,7 +49,7 @@ describe('invibesBidAdapter:', function () {
       params: {
         placementId: PLACEMENT_ID
       },
-      adUnitCode: 'test-div',
+      adUnitCode: 'test-div1',
       auctionId: 'a1',
       sizes: [
         [300, 250],
@@ -67,7 +68,7 @@ describe('invibesBidAdapter:', function () {
       params: {
         placementId: 'abcde'
       },
-      adUnitCode: 'test-div',
+      adUnitCode: 'test-div2',
       auctionId: 'a2',
       sizes: [
         [300, 250],
@@ -93,13 +94,30 @@ describe('invibesBidAdapter:', function () {
     }
   };
 
+  let SetBidderAccess = function() {
+    config.setConfig({
+      deviceAccess: true
+    });
+    $$PREBID_GLOBAL$$.bidderSettings = {
+      invibes: {
+        storageAllowed: true
+      }
+    };
+  }
+
   beforeEach(function () {
     resetInvibes();
+    $$PREBID_GLOBAL$$.bidderSettings = {
+      invibes: {
+        storageAllowed: true
+      }
+    };
     document.cookie = '';
     this.cStub1 = sinon.stub(console, 'info');
   });
 
   afterEach(function () {
+    $$PREBID_GLOBAL$$.bidderSettings = {};
     this.cStub1.restore();
   });
 
@@ -158,6 +176,125 @@ describe('invibesBidAdapter:', function () {
       expect(request.method).to.equal('GET');
     });
 
+    it('sends bid request to custom endpoint via GET', function () {
+      const request = spec.buildRequests([{
+        bidId: 'b1',
+        bidder: BIDDER_CODE,
+        params: {
+          placementId: 'placement',
+          customEndpoint: 'sub.domain.com/Bid/VideoAdContent'
+        },
+        adUnitCode: 'test-div1'
+      }]);
+      expect(request.url).to.equal('sub.domain.com/Bid/VideoAdContent');
+      expect(request.method).to.equal('GET');
+    });
+
+    it('sends bid request to default endpoint when no placement', function () {
+      const request = spec.buildRequests([{
+        bidId: 'b1',
+        bidder: BIDDER_CODE,
+        params: {
+        },
+        adUnitCode: 'test-div1'
+      }]);
+      expect(request.url).to.equal(ENDPOINT);
+      expect(request.method).to.equal('GET');
+    });
+
+    it('sends bid request to default endpoint when null placement', function () {
+      const request = spec.buildRequests([{
+        bidId: 'b1',
+        bidder: BIDDER_CODE,
+        params: {
+          placementId: null
+        },
+        adUnitCode: 'test-div1'
+      }]);
+      expect(request.url).to.equal(ENDPOINT);
+      expect(request.method).to.equal('GET');
+    });
+
+    it('sends bid request to default endpoint 1 via GET', function () {
+	  const request = spec.buildRequests([{
+        bidId: 'b1',
+        bidder: BIDDER_CODE,
+        params: {
+          placementId: 'placement'
+        },
+        adUnitCode: 'test-div1'
+      }]);
+      expect(request.url).to.equal('https://bid.videostep.com/Bid/VideoAdContent');
+      expect(request.method).to.equal('GET');
+    });
+
+    it('sends bid request to network id endpoint 1 via GET', function () {
+      const request = spec.buildRequests([{
+        bidId: 'b1',
+        bidder: BIDDER_CODE,
+        params: {
+          placementId: 'placement',
+          domainId: 1001
+        },
+        adUnitCode: 'test-div1'
+      }]);
+      expect(request.url).to.equal('https://bid.videostep.com/Bid/VideoAdContent');
+      expect(request.method).to.equal('GET');
+    });
+
+    it('sends bid request to network id endpoint 2 via GET', function () {
+      const request = spec.buildRequests([{
+        bidId: 'b1',
+        bidder: BIDDER_CODE,
+        params: {
+          placementId: 'placement',
+          domainId: 1002
+        },
+        adUnitCode: 'test-div1'
+      }]);
+      expect(request.url).to.equal('https://bid2.videostep.com/Bid/VideoAdContent');
+      expect(request.method).to.equal('GET');
+    });
+
+    it('sends bid request to network id by placement 1 via GET', function () {
+      const request = spec.buildRequests([{
+        bidId: 'b1',
+        bidder: BIDDER_CODE,
+        params: {
+          placementId: 'infeed_ivbs1'
+        },
+        adUnitCode: 'test-div1'
+      }]);
+      expect(request.url).to.equal('https://bid.videostep.com/Bid/VideoAdContent');
+      expect(request.method).to.equal('GET');
+    });
+
+    it('sends bid request to network id by placement 2 via GET', function () {
+      const request = spec.buildRequests([{
+        bidId: 'b1',
+        bidder: BIDDER_CODE,
+        params: {
+          placementId: 'infeed_ivbs2'
+        },
+        adUnitCode: 'test-div1'
+      }]);
+      expect(request.url).to.equal('https://bid2.videostep.com/Bid/VideoAdContent');
+      expect(request.method).to.equal('GET');
+    });
+
+    it('sends bid request to network id by placement 10 via GET', function () {
+      const request = spec.buildRequests([{
+        bidId: 'b1',
+        bidder: BIDDER_CODE,
+        params: {
+          placementId: 'infeed_ivbs10'
+        },
+        adUnitCode: 'test-div1'
+      }]);
+      expect(request.url).to.equal('https://bid10.videostep.com/Bid/VideoAdContent');
+      expect(request.method).to.equal('GET');
+    });
+
     it('sends cookies with the bid request', function () {
       const request = spec.buildRequests(bidRequests);
       expect(request.options.withCredentials).to.equal(true);
@@ -177,13 +314,40 @@ describe('invibesBidAdapter:', function () {
       top.window.invibes.optIn = 1;
       top.window.invibes.purposes = [true, false, false, false, false, false, false, false, false, false];
       localStorage.ivvcap = '{"9731":[1,1768600800000]}';
+      SetBidderAccess();
+
       const request = spec.buildRequests(bidRequests, {auctionStart: Date.now()});
+
       expect(request.data.capCounts).to.equal('9731=1');
     });
 
     it('does not have capped ids if local storage variable is correctly formatted but no opt in', function () {
+      let bidderRequest = {
+        auctionStart: Date.now(),
+        gdprConsent: {
+          vendorData: {
+            gdprApplies: true,
+            hasGlobalConsent: false,
+            purpose: {
+              consents: {
+                1: false,
+                2: false,
+                3: false,
+                4: false,
+                5: false,
+                6: false,
+                7: false,
+                8: false,
+                9: false,
+                10: false
+              }
+            }
+          }
+        }
+      };
+
       localStorage.ivvcap = '{"9731":[1,1768600800000]}';
-      const request = spec.buildRequests(bidRequests, {auctionStart: Date.now()});
+      const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.capCounts).to.equal('');
     });
 
@@ -223,6 +387,12 @@ describe('invibesBidAdapter:', function () {
       expect(JSON.parse(request.data.bidParamsJson).placementIds).to.contain(bidRequests[1].params.placementId);
     });
 
+    it('sends all adUnitCodes', function () {
+      const request = spec.buildRequests(bidRequests);
+      expect(JSON.parse(request.data.bidParamsJson).adUnitCodes).to.contain(bidRequests[0].adUnitCode);
+      expect(JSON.parse(request.data.bidParamsJson).adUnitCodes).to.contain(bidRequests[1].adUnitCode);
+    });
+
     it('sends all Placement Ids and userId', function () {
       const request = spec.buildRequests(bidRequestsWithUserId);
       expect(JSON.parse(request.data.bidParamsJson).userId).to.exist;
@@ -244,6 +414,8 @@ describe('invibesBidAdapter:', function () {
       top.window.invibes.purposes = [true, false, false, false, false, false, false, false, false, false];
       global.document.cookie = 'ivbsdid={"id":"dvdjkams6nkq","cr":' + Date.now() + ',"hc":0}';
       let bidderRequest = {gdprConsent: {vendorData: {vendorConsents: {436: true}}}};
+      SetBidderAccess();
+
       let request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.lId).to.exist;
     });
@@ -371,7 +543,7 @@ describe('invibesBidAdapter:', function () {
       let request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.li.split(',')[1] && request.data.li.split(',')[6]).to.equal('true');
     });
-    it('should send oi = 0 when vendorData is null', function () {
+    it('should send oi = 1 when vendorData is null (calculation will be performed by ADWEB)', function () {
       let bidderRequest = {
         gdprConsent: {
           vendorData: null
@@ -823,7 +995,43 @@ describe('invibesBidAdapter:', function () {
       }
     };
 
-    var buildResponse = function(placementId, cid, blcids, creativeId) {
+    let responseWithAdUnit = {
+      Ads: [{
+        BidPrice: 0.5,
+        VideoExposedId: 123
+      }],
+      BidModel: {
+        BidVersion: 1,
+        PlacementId: '12345_test-div1',
+        AuctionStartTime: Date.now(),
+        CreativeHtml: '<!-- Creative -->'
+      },
+	  UseAdUnitCode: true
+    };
+
+    var buildResponse = function(placementId, cid, blcids, creativeId, ShouldSetLId) {
+      if (ShouldSetLId) {
+        return {
+          MultipositionEnabled: true,
+          AdPlacements: [{
+            Ads: [{
+              BidPrice: 0.5,
+              VideoExposedId: creativeId,
+              Cid: cid,
+              Blcids: blcids
+            }],
+            BidModel: {
+              BidVersion: 1,
+              PlacementId: placementId,
+              AuctionStartTime: Date.now(),
+              CreativeHtml: '<!-- Creative -->'
+            }
+          }],
+          ShouldSetLId: true,
+          LId: 'dvdjkams6nkq'
+        }
+      }
+
       return {
         MultipositionEnabled: true,
         AdPlacements: [{
@@ -911,6 +1119,11 @@ describe('invibesBidAdapter:', function () {
         let secondResult = spec.interpretResponse({body: response}, {bidRequests});
         expect(secondResult).to.be.empty;
       });
+
+      it('bids using the adUnitCode', function () {
+        let result = spec.interpretResponse({body: responseWithAdUnit}, {bidRequests});
+        expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
+      });
     });
 
     context('when the response has meta', function () {
@@ -919,6 +1132,22 @@ describe('invibesBidAdapter:', function () {
         expect(result[0].meta.advertiserName).to.equal('theadvertiser');
         expect(result[0].meta.advertiserDomains).to.contain('theadvertiser.com');
         expect(result[0].meta.advertiserDomains).to.contain('theadvertiser_2.com');
+      });
+    });
+
+    context('AdWeb generates LIDs', function() {
+      it('works when no LID is not sent from AdWeb', function() {
+        var firstResponse = buildResponse('12345', 1, [], 123);
+
+        var firstResult = spec.interpretResponse({body: firstResponse}, {bidRequests});
+        expect(firstResult[0].creativeId).to.equal(123);
+      });
+
+      it('sets lid when AdWeb sends it', function() {
+        var firstResponse = buildResponse('12345', 1, [], 123, true);
+
+        spec.interpretResponse({body: firstResponse}, {bidRequests});
+        expect(global.document.cookie.indexOf('ivbsdid')).to.greaterThanOrEqual(0);
       });
     });
 
@@ -979,22 +1208,33 @@ describe('invibesBidAdapter:', function () {
 
     it('returns an iframe with params if enabled', function () {
       top.window.invibes.optIn = 1;
-      global.document.cookie = 'ivvbks=17639.0,1,2';
       let response = spec.getUserSyncs({iframeEnabled: true});
       expect(response.type).to.equal('iframe');
       expect(response.url).to.include(SYNC_ENDPOINT);
       expect(response.url).to.include('optIn');
-      expect(response.url).to.include('ivvbks');
     });
 
     it('returns an iframe with params including if enabled', function () {
       top.window.invibes.optIn = 1;
-      global.document.cookie = 'ivvbks=17639.0,1,2;ivbsdid={"id":"dvdjkams6nkq","cr":' + Date.now() + ',"hc":0}';
+      global.document.cookie = 'ivbsdid={"id":"dvdjkams6nkq","cr":' + Date.now() + ',"hc":0}';
+      SetBidderAccess();
+
       let response = spec.getUserSyncs({iframeEnabled: true});
       expect(response.type).to.equal('iframe');
       expect(response.url).to.include(SYNC_ENDPOINT);
       expect(response.url).to.include('optIn');
-      expect(response.url).to.include('ivvbks');
+      expect(response.url).to.include('ivbsdid');
+    });
+
+    it('returns an iframe with params including if enabled read from LocalStorage', function () {
+      top.window.invibes.optIn = 1;
+      localStorage.ivbsdid = 'dvdjkams6nkq';
+      SetBidderAccess();
+
+      let response = spec.getUserSyncs({iframeEnabled: true});
+      expect(response.type).to.equal('iframe');
+      expect(response.url).to.include(SYNC_ENDPOINT);
+      expect(response.url).to.include('optIn');
       expect(response.url).to.include('ivbsdid');
     });
 
