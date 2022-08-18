@@ -73,7 +73,8 @@ export const adriverIdSubmodule = {
             callback();
           }
         };
-        ajax(url, callbacks, undefined, {method: 'GET'});
+        let newUrl = url + '&cid=' + (storage.getDataFromLocalStorage('adrcid') || storage.getCookie('adrcid'));
+        ajax(newUrl, callbacks, undefined, {method: 'GET'});
       }
     };
     return {callback: resp};
