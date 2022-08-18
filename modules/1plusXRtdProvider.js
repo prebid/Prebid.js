@@ -138,7 +138,7 @@ export const updateBidderConfig = (bidder, ortb2Updates, bidderConfigs) => {
 
   if (site) {
     // Legacy : cf. comment on buildOrtb2Updates first lines
-    const currentSite = deepAccess(bidderConfigCopy, 'ortb2.site')
+    const currentSite = deepAccess(bidderConfigCopy, 'ortb2.site');
     const updatedSite = mergeDeep(currentSite, site);
     deepSetValue(bidderConfigCopy, 'ortb2.site', updatedSite);
   }

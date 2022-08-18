@@ -96,7 +96,7 @@ function bidResponseAvailable(request, response) {
   const idToImpMap = {};
   const idToBidMap = {};
   const idToSlotConfig = {};
-  const bidResponse = response.body
+  const bidResponse = response.body;
   // extract the request bids and the response bids, keyed by impr-id
   const ortbRequest = request.data;
   ortbRequest.imp.forEach(imp => {

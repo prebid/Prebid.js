@@ -68,7 +68,7 @@ export const spec = {
       if (schain) {
         request.ext = {
           schain: schain,
-        }
+        };
       }
     }
 

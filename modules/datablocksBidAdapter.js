@@ -361,7 +361,7 @@ export const spec = {
         stack: bidderRequest.refererInfo.stack,
         timeout: config.getConfig('bidderTimeout')
       },
-    }
+    };
 
     // ADD REF URL IF FOUND
     if (self === top && document.referrer) {

@@ -139,7 +139,7 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: (serverResponse) => {
-    if (!serverResponse || !serverResponse.body) return []
+    if (!serverResponse || !serverResponse.body) return [];
     let GothamAdsResponse = serverResponse.body;
 
     let bids = [];
@@ -273,7 +273,7 @@ const addNativeParameters = bidRequest => {
         hmin = sizes[1];
       }
 
-      asset[props.name] = {}
+      asset[props.name] = {};
 
       if (bidParams.len) asset[props.name]['len'] = bidParams.len;
       if (props.type) asset[props.name]['type'] = props.type;

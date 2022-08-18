@@ -94,7 +94,8 @@ export const spec = {
     {code: 'turktelekom'},
     {code: 'felixads'},
     {code: 'motionspots'},
-    {code: 'sonic_twist'}
+    {code: 'sonic_twist'},
+    {code: 'displayioads'}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
