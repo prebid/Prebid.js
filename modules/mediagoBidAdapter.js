@@ -5,7 +5,7 @@
 import * as utils from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
+// import { config } from '../src/config.js';
 // import { isPubcidEnabled } from './pubCommonId.js';
 
 const BIDDER_CODE = 'mediago';
@@ -442,7 +442,7 @@ export const spec = {
    * @param {Bid} The bid that won the auction
    */
   onBidWon: function (bid) {
-    console.log('onBidWon', bid, config.getConfig('priceGranularity'));
+    // console.log('onBidWon', bid, config.getConfig('priceGranularity'));
     // Bidder specific code
   },
 
