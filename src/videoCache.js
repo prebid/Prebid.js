@@ -63,7 +63,7 @@ function wrapURI(uri, impUrl) {
 function toStorageRequest(bid, {index = auctionManager.index} = {}) {
   const vastValue = bid.vastXml ? bid.vastXml : wrapURI(bid.vastUrl, bid.vastImpUrl);
   const auction = index.getAuction(bid);
-  const ttlWithBuffer = Number(bid.ttl)+15;
+  const ttlWithBuffer = Number(bid.ttl) + 15;
   let payload = {
     type: 'xml',
     value: vastValue,
