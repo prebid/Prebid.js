@@ -200,12 +200,12 @@ function getTopWindow(curWindow, nesting = 0) {
   }
 }
 
-function getSiteObj(){
+function getSiteObj() {
   const refInfo = (getRefererInfo && getRefererInfo()) || {}
 
   const page = refInfo.page || refInfo.location || getWindowTop().location.href
   const ref = refInfo.ref || ''
-  const domain = refInfo.domain || (new URL(page).hostname).replace('www.','')
+  const domain = refInfo.domain || (new URL(page).hostname).replace('www.', '')
 
   return {
     page,
@@ -214,7 +214,7 @@ function getSiteObj(){
   }
 }
 
-function getDeviceObj(){
+function getDeviceObj() {
   return {
     w: window.innerWidth || window.document.documentElement.clientWidth || window.document.body.clientWidth || 0,
     h: window.innerHeight || window.document.documentElement.clientHeight || window.document.body.clientHeight || 0,
