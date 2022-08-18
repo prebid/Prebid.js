@@ -100,13 +100,19 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
     if (player.readyState()) {
       content.len = Math.round(player.duration());
     }
-    const mediaItem = player.getMedia();
+
+    const mediaItem = utils.getMedia(player);
     if (mediaItem) {
       for (let param of ['id', 'title', 'description', 'album', 'artist']) {
         if (mediaItem[param]) {
           content[param] = mediaItem[param];
         }
       }
+    }
+
+    const contentUrl = utils.getValidMediaUrl(mediaItem && mediaItem.src, player.src)
+    if (contentUrl) {
+      content.url = contentUrl;
     }
 
     let playBackMethod = PLAYBACK_METHODS.CLICK_TO_PLAY;
@@ -157,7 +163,7 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
     // Still cannot reliably check what type of placement the player is if its outstream
     // i.e. we can't tell if its interstitial, in article, etc.
     if (content.url) {
-      video.placement = PLACEMENT.IN_STREAM;
+      video.placement = PLACEMENT.INSTREAM;
     }
 
     // Placement according to IQG Guidelines 4.2.8
@@ -388,7 +394,7 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
       case CONTENT_LOADED:
         eventHandler = e => {
           const media = utils.getMedia(player);
-          const contentUrl = utils.getValidMediaUrl(player.src, media && media.src, e && e.target && e.target.currentSrc)
+          const contentUrl = utils.getValidMediaUrl(media && media.src, player.src, e && e.target && e.target.currentSrc)
           Object.assign(payload, {
             contentId: media && media.id,
             contentUrl,
