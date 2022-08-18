@@ -43,7 +43,8 @@
               {
                 bidder: 'appnexus',
                 params: {
-                   placementId: 13144370
+                   placementId: 13144370,
+                   size: [300, 250]
                 }
               }
             ]
@@ -51,6 +52,25 @@
 
         pbjs.setConfig({
           bidderTimeout: 3000,
+          floors: {
+            enforcement: {
+              floorDeals: false, //default to false
+              bidAdjustment: true
+            },
+            data: {     // default if endpoint doesn't return in time
+              currency: 'USD',
+              skipRate: 5,
+              modelVersion: 'BlackBerryZap',
+              schema: {
+                fields: ['gptSlot', 'mediaType', 'size']
+              },
+              values: {
+                '*|banner|600x500': 6.5,
+                '*|banner|300x250': 3.25,
+                '*|video': 3.5
+              }
+            }
+          },
           s2sConfig : {
             accountId : '1',
             enabled : true, //default value set to false
@@ -58,6 +78,11 @@
             bidders : ['appnexus'],
             timeout : 1000, //default value is 1000
             adapter : 'prebidServer', //if we have any other s2s adapter, default value is s2s
+            extPrebid: {
+              floors: {
+                enabled: true
+              }
+            }
           }
         });
 

@@ -138,6 +138,8 @@ export function getFirstMatchingFloor(floorData, bidObject, responseObject = {})
     return {...previousMatch};
   }
   let allPossibleMatches = generatePossibleEnumerations(fieldValues, deepAccess(floorData, 'schema.delimiter') || '|');
+  // // eslint-disable-next-line no-console
+  // console.log(allPossibleMatches);
   let matchingRule = find(allPossibleMatches, hashValue => floorData.values.hasOwnProperty(hashValue));
 
   let matchingData = {

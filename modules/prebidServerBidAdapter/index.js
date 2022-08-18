@@ -902,6 +902,20 @@ Object.assign(ORTB2.prototype, {
     addBidderFirstPartyDataToRequest(request, s2sBidRequest.ortb2Fragments?.bidder || {});
 
     request.imp.forEach((imp) => this.impRequested[imp.id] = imp);
+
+    if (typeof request.ext.prebid.floors === 'object' && request.ext.prebid.floors.enabled) {
+      const bidfloorArray = [];
+      request.imp.forEach(imp => {
+        if (imp.bidfloor) {
+          imp.ext.prebid.floors = {
+            floorMin: imp.bidfloor
+          }
+          bidfloorArray.push(imp.bidfloor);
+        }
+      });
+      request.ext.prebid.floors.floorMin = Math.min(...bidfloorArray);
+    }
+
     return request;
   },
 
