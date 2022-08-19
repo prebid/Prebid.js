@@ -522,7 +522,7 @@ Object.assign(ORTB2.prototype, {
     let imps = [];
     let aliases = {};
     const firstBidRequest = bidRequests[0];
-    const bidfloorArray = [];
+    let floorMin = null;
 
     // transform ad unit into array of OpenRTB impression objects
     let impIds = new Set();
@@ -730,7 +730,8 @@ Object.assign(ORTB2.prototype, {
       if (floor) {
         imp.bidfloor = floor.floor;
         imp.bidfloorcur = floor.currency;
-        bidfloorArray.push(floor.floor);
+        imp.ext.prebid.floors = { floorMin: imp.bidfloor };
+        if (floorMin == null || floorMin > imp.bidfloor) { floorMin = imp.bidfloor }
       }
 
       if (imp.banner || imp.video || imp.native) {
@@ -915,7 +916,7 @@ Object.assign(ORTB2.prototype, {
       //     bidfloorArray.push(imp.bidfloor);
       //   }
       // });
-      request.ext.prebid.floors.floorMin = Math.min(...bidfloorArray);
+      request.ext.prebid.floors.floorMin = floorMin;
     }
 
     return request;
