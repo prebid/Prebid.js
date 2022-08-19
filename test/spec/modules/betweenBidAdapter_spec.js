@@ -86,7 +86,7 @@ describe('betweenBidAdapterTests', function () {
     expect(req_data.cur).to.equal('THX');
   });
   it('validate default cur USD', function() {
-    let bidRequestData =[{
+    let bidRequestData = [{
       bidId: 'bid1234',
       bidder: 'between',
       params: {
