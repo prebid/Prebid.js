@@ -109,6 +109,10 @@
           });
         });
 
+        pbjs.onEvent('video_adRequest', (e) => {
+          console.log('videos pb ad request: ', e);
+        });
+
         pbjs.onEvent('video_bidError', e => {
           console.log('An Ad Error came from a Bid: ', e);
         });

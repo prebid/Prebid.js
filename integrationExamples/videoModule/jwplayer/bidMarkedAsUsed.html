@@ -17,17 +17,6 @@
         },
         video: {
           divId: 'player', // required to indicate which player is being used to render this ad unit.
-          adServer: {
-            vendorCode: "gam",
-            params: {
-              iu: '/19968336/prebid_cache_video_adunit',
-              cust_params: {
-                section: 'blog',
-                anotherKey: 'anotherValue'
-              },
-              output: 'vast'
-            }
-          },
         },
 
         bids: [{
@@ -46,12 +35,13 @@
           video: {
             providers: [{
               divId: 'player',
-              vendorCode: 1, // videojs vendorCode
+              vendorCode: 1, // jwplayer vendorCode
               playerConfig: {
-                licenseKey: 'huJTAG1dRVvvE1bT4Ng2DEnZ2ogCSgwTLwQBp8Cp9BDyAgkKC7uLuw==',
+                licenseKey: 'IAjLREYRLylTWsfLN3FoN/O3iQLbs+AfgZLlkAoyH8gSf7TnNtmOLcR8CUY=',
                 params: {
                   vendorConfig: {
-                    advertising: { client: 'googima' }
+                    "file": "http://content.bitsontherun.com/videos/3XnJSIm4-52qL9xLP.mp4",
+                    advertising: { client: 'vast' }
                   }
                 }
               },
@@ -78,6 +68,10 @@
 
         pbjs.addAdUnits(adUnits);
 
+        pbjs.onEvent('video_playbackRequest', (e) => {
+          pbjs.requestBids(adUnits);
+        });
+
         pbjs.onEvent('video_bidError', e => {
           console.log('An Ad Error came from a Bid: ', e);
         });
@@ -85,15 +79,11 @@
         pbjs.onEvent('video_bidImpression', e => {
           console.log('An Ad Impression came from a Bid: ', e);
         });
-
-        pbjs.requestBids(adUnits);
       });
     </script>
 </head>
 
 <body>
-<h2>JW Player with Bid Marked As Used</h2>
-<h5>Div-1: Player placeholder div</h5>
     <div id ="player"></div>
 </body>
 

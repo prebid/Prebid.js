@@ -19,41 +19,13 @@
         },
         video: {
           divId: 'player',
-          adServer: {
-            vendorCode: "gam",
-            params: {
-              iu: '/19968336/prebid_cache_video_adunit',
-              cust_params: {
-                section: 'blog',
-                anotherKey: 'anotherValue'
-              },
-              output: 'vast'
-            }
-          },
         },
 
         // Replace this object to test a new Adapter!
         bids: [{
-          bidder: 'appnexus',
+          bidder: 'ix',
           params: {
-            placementId: 13232361
-          }
-        }, {
-          bidder: 'rubicon',
-          params: {
-            accountId: 7780,
-            siteId: 87184,
-            zoneId: 412394,
-          }
-        }, {
-          bidder: 'pubmatic',
-          params: {
-            publisherId: '156209'
-          }
-        }, {
-          bidder: 'spotx',
-          params: {
-            channel_id: 85394
+            siteId: '300',
           }
         }]
       }];
@@ -65,7 +37,7 @@
               divId: 'player',
               vendorCode: 1, // vendorCode for jwplayer
               playerConfig: {
-                licenseKey: 'huJTAG1dRVvvE1bT4Ng2DEnZ2ogCSgwTLwQBp8Cp9BDyAgkKC7uLuw==',
+                licenseKey: 'IAjLREYRLylTWsfLN3FoN/O3iQLbs+AfgZLlkAoyH8gSf7TnNtmOLcR8CUY=',
                 params: {
                   vendorConfig: {
                     "file": "http://content.bitsontherun.com/videos/3XnJSIm4-52qL9xLP.mp4",
@@ -97,12 +69,12 @@
 
         pbjs.addAdUnits(adUnits);
 
-        pbjs.onEvent('video_setupComplete', () => {
-          console.log('player setup complete');
+        pbjs.onEvent('video_setupComplete', (e) => {
+          console.log('player setup complete: ', e);
         });
 
-        pbjs.onEvent('video_setupFailed', () => {
-          console.log('player setup failed!');
+        pbjs.onEvent('video_setupFailed', e => {
+          console.log('player setup failed: ', e);
         });
 
         pbjs.onEvent('video_destroyed', e => {
@@ -115,6 +87,7 @@
 
         pbjs.onEvent('video_playbackRequest', (e) => {
           console.log('videos pb playbackRequest: ', e);
+          pbjs.requestBids(adUnits);
         });
 
         pbjs.onEvent('video_autostartBlocked', (e) => {
@@ -172,8 +145,6 @@
         pbjs.onEvent('video_playlistComplete', (e) => {
           console.log('videos pb playlistComplete: ', e);
         });
-
-
 
         pbjs.onEvent('video_fullscreen', (e) => {
           console.log('videos pb fullscreen: ', e);
@@ -262,8 +233,6 @@
         pbjs.onEvent('video_bidError', event => {
           console.log('The ad error resulted from a bid! \n', event);
         });
-
-        pbjs.requestBids(adUnits);
       });
     </script>
 </head>
