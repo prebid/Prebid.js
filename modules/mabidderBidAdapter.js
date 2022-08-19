@@ -1,9 +1,9 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
-import { deepAccess } from '../src/utils.js';
+import { BANNER } from '../src/mediaTypes.js';
 const BIDDER_CODE = 'mabidder';
-export const baseUrl = 'https://prometheus-ix.ecdrsvc.com/prometheus/bid';
+export const baseUrl = 'https://prebid.ecdrsvc.com/bid';
 export const spec = {
+  supportedMediaTypes: [BANNER],
   code: BIDDER_CODE,
   isBidRequestValid: function(bid) {
     if (typeof bid.params === 'undefined') {
@@ -14,7 +14,6 @@ export const spec = {
   buildRequests: function(validBidRequests, bidderRequest) {
     const fpd = bidderRequest.ortb2;
     const bids = [];
-
     validBidRequests.forEach(bidRequest => {
       const sizes = [];
       bidRequest.sizes.forEach(size => {
@@ -27,7 +26,7 @@ export const spec = {
         bidId: bidRequest.bidId,
         sizes: sizes,
         ppid: bidRequest.params.ppid,
-        mediaType: getFormatType(bidRequest)
+        mediaType: BANNER
       })
     });
     const req = {
@@ -36,9 +35,9 @@ export const spec = {
       data: {
         v: $$PREBID_GLOBAL$$.version,
         bids: bids,
-        url: bidderRequest.refererInfo.canonicalUrl || '',
-        referer: bidderRequest.refererInfo.referer || '',
-        fpd: fpd ? JSON.stringify(fpd) : JSON.stringify({})
+        url: bidderRequest.refererInfo.page || '',
+        referer: bidderRequest.refererInfo.ref || '',
+        fpd: fpd || {}
       }
     };
 
@@ -56,14 +55,6 @@ export const spec = {
       });
     }
     return bidResponses;
-  },
-  supportedMediaTypes: [BANNER]
-}
-
-function getFormatType(bidRequest) {
-  if (deepAccess(bidRequest, 'mediaTypes.banner')) return BANNER
-  if (deepAccess(bidRequest, 'mediaTypes.video')) return VIDEO
-  if (deepAccess(bidRequest, 'mediaTypes.native')) return NATIVE
-  return BANNER
+  }
 }
 registerBidder(spec);
