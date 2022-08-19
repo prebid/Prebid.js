@@ -26,11 +26,12 @@ export const spec = {
     _each(validBidRequests, function(bid) {
       window.nmmRefreshCounts[bid.adUnitCode] = window.nmmRefreshCounts[bid.adUnitCode] || 0;
       const id = getPlacementId(bid)
+      let sizes = bid.sizes
+      if (sizes && !Array.isArray(sizes[0])) sizes = [sizes]
 
-      if (bid.sizes && !Array.isArray(bid.sizes[0])) bid.sizes = [bid.sizes]
-      if (!bid.ortb2) bid.ortb2 = {}
-      if (!bid.ortb2.device) bid.ortb2.device = {}
-      bid.ortb2.device.referrer = (getRefererInfo && getRefererInfo().ref) || ''
+      const site = getSiteObj()
+      const device = getDeviceObj()
+
       const postBody = {
         'id': bid.auctionId,
         'ext': {
@@ -46,10 +47,11 @@ export const spec = {
             'scrollTop': window.pageYOffset || document.documentElement.scrollTop
           }
         },
-        ...bid.ortb2,
+        device,
+        site,
         'imp': [{
           'banner': {
-            'format': (bid.sizes || []).map(s => { return {w: s[0], h: s[1]} })
+            'format': (sizes || []).map(s => { return {w: s[0], h: s[1]} })
           },
           'ext': {
             'prebid': {
@@ -195,6 +197,23 @@ function getTopWindow(curWindow, nesting = 0) {
     }
   } catch (err) {
     return curWindow
+  }
+}
+
+function getSiteObj() {
+  const refInfo = (getRefererInfo && getRefererInfo()) || {}
+
+  return {
+    page: refInfo.page,
+    ref: refInfo.ref,
+    domain: refInfo.domain
+  }
+}
+
+function getDeviceObj() {
+  return {
+    w: window.innerWidth || window.document.documentElement.clientWidth || window.document.body.clientWidth || 0,
+    h: window.innerHeight || window.document.documentElement.clientHeight || window.document.body.clientHeight || 0,
   }
 }
 
