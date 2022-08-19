@@ -908,14 +908,6 @@ Object.assign(ORTB2.prototype, {
     request.imp.forEach((imp) => this.impRequested[imp.id] = imp);
 
     if (request.ext?.prebid?.floors?.enabled) {
-      // request.imp.forEach(imp => {
-      //   if (imp.bidfloor) {
-      //     imp.ext.prebid.floors = {
-      //       floorMin: imp.bidfloor
-      //     }
-      //     bidfloorArray.push(imp.bidfloor);
-      //   }
-      // });
       request.ext.prebid.floors.floorMin = floorMin;
     }
 
