@@ -1,0 +1,275 @@
+-<!--
+
+-->
+
+<html>
+
+<head>
+    <script async src="../../../build/dev/prebid.js"></script>
+    <script src="https://cdn.jwplayer.com/libraries/l5MchIxB.js"></script>
+
+    <script>
+      var pbjs = pbjs || {};
+      pbjs.que = pbjs.que || [];
+
+      var adUnits = [{
+        code: 'div-gpt-ad-51545-0',
+        mediaTypes: {
+          video: {}
+        },
+        video: {
+          divId: 'player',
+          adServer: {
+            vendorCode: "gam",
+            params: {
+              iu: '/19968336/prebid_cache_video_adunit',
+              cust_params: {
+                section: 'blog',
+                anotherKey: 'anotherValue'
+              },
+              output: 'vast'
+            }
+          },
+        },
+
+        // Replace this object to test a new Adapter!
+        bids: [{
+          bidder: 'appnexus',
+          params: {
+            placementId: 13232361
+          }
+        }, {
+          bidder: 'rubicon',
+          params: {
+            accountId: 7780,
+            siteId: 87184,
+            zoneId: 412394,
+          }
+        }, {
+          bidder: 'pubmatic',
+          params: {
+            publisherId: '156209'
+          }
+        }, {
+          bidder: 'spotx',
+          params: {
+            channel_id: 85394
+          }
+        }]
+      }];
+      
+      pbjs.que.push(function () {
+        pbjs.setConfig({
+          video: {
+            providers: [{
+              divId: 'player',
+              vendorCode: 1, // vendorCode for jwplayer
+              playerConfig: {
+                licenseKey: 'huJTAG1dRVvvE1bT4Ng2DEnZ2ogCSgwTLwQBp8Cp9BDyAgkKC7uLuw==',
+                params: {
+                  vendorConfig: {
+                    "file": "http://content.bitsontherun.com/videos/3XnJSIm4-52qL9xLP.mp4",
+                    mediaid: 'd9J2zcaA',
+                    advertising: { client: 'vast' }
+                  }
+                }
+              },
+            }]
+          },
+          debugging: {
+            enabled: true,
+            intercept: [
+              {
+                when: {
+                  adUnitCode: 'div-gpt-ad-51545-0',
+                },
+                then: {
+                  cpm: 25,
+                  mediaType: "video",
+                  vastUrl: "https://pubads.g.doubleclick.net/gampad/ads?iu=/21775744923/external/single_ad_samples&sz=640x480&cust_params=sample_ct%3Dlinear&ciu_szs=300x250%2C728x90&gdfp_req=1&output=vast&unviewed_position_start=1&env=vp&impl=s&correlator=",
+                  // vastXml: "<VAST version=\"3.0\"> <Ad id=\"123\"> <InLine> <AdSystem>PubMatic</AdSystem> <AdTitle>VAST 2.0 Instream Test</AdTitle> <Description>VAST 2.0 Instream Test</Description> <Error> <![CDATA[https://aktrack.pubmatic.com/er=[ERRORCODE]]]> </Error> <Impression> <![CDATA[https://aktrack.pubmatic.com?e=impression]]> </Impression> <Creatives> <Creative AdID=\"123\"> <Linear> <Duration>00:00:30</Duration> <TrackingEvents> <Tracking event=\"creativeView\"> <![CDATA[https://aktrack.pubmatic.com?e=creativeView]]> </Tracking> <Tracking event=\"start\"> <![CDATA[https://aktrack.pubmatic.com?e=start]]> </Tracking> <Tracking event=\"midpoint\"> <![CDATA[https://aktrack.pubmatic.com?e=midpoint]]> </Tracking> <Tracking event=\"firstQuartile\"> <![CDATA[https://aktrack.pubmatic.com?e=firstQuartile]]> </Tracking> <Tracking event=\"thirdQuartile\"> <![CDATA[https://aktrack.pubmatic.com?e=thirdQuartile]]> </Tracking> <Tracking event=\"complete\"> <![CDATA[https://aktrack.pubmatic.com?e=complete]]> </Tracking> </TrackingEvents> <VideoClicks> <ClickThrough> <![CDATA[https://www.pubmatic.com]]> </ClickThrough> </VideoClicks> <MediaFiles> <MediaFile delivery=\"progressive\" type=\"video/mp4\" bitrate=\"500\" width=\"480\" height=\"460\" scalable=\"true\" maintainAspectRatio=\"true\"> <![CDATA[https://staging.pubmatic.com:8443/test/spinning-logo-480x360_video.mp4]]> </MediaFile> <MediaFile delivery=\"progressive\" type=\"video/ogg\" bitrate=\"500\" width=\"480\" height=\"460\" scalable=\"true\" maintainAspectRatio=\"true\"> <![CDATA[https://staging.pubmatic.com:8443/test/spinning-logo-480x360_video.ogg]]> </MediaFile> <MediaFile delivery=\"progressive\" type=\"video/x-flv\" bitrate=\"500\" width=\"400\" height=\"300\" scalable=\"true\" maintainAspectRatio=\"true\"> <![CDATA[https://staging.pubmatic.com:8443/test/PubMatic_test_video.flv]]> </MediaFile> </MediaFiles> </Linear> </Creative> <Creative AdID=\"123\"> <NonLinearAds> <TrackingEvents></TrackingEvents> <NonLinear height=\"50\" width=\"300\" minSuggestedDuration=\"00:00:05\"> <StaticResource creativeType=\"image/jpeg\"> <![CDATA[https://staging.pubmatic.com:8443/test/PubMatic_LetsBeClear_300x50.jpeg]]> </StaticResource> <NonLinearClickThrough> <![CDATA[https://www.pubmatic.com]]> </NonLinearClickThrough> </NonLinear> </NonLinearAds> </Creative> <Creative AdID=\"123\"> <CompanionAds> <Companion width=\"300\" height=\"250\"> <StaticResource creativeType=\"image/jpeg\"> <![CDATA[https://staging.pubmatic.com:8443/test/PubMatic_LetsBeClear_320x250.jpg]]> </StaticResource> <CompanionClickThrough> <![CDATA[https://www.pubmatic.com]]> </CompanionClickThrough> </Companion> </CompanionAds> </Creative> </Creatives> </InLine> </Ad> </VAST>",
+                  ad: "<VAST version=\"3.0\"> <Ad id=\"123\"> <InLine> <AdSystem>PubMatic</AdSystem> <AdTitle>VAST 2.0 Instream Test</AdTitle> <Description>VAST 2.0 Instream Test</Description> <Error> <![CDATA[https://aktrack.pubmatic.com/er=[ERRORCODE]]]> </Error> <Impression> <![CDATA[https://aktrack.pubmatic.com?e=impression]]> </Impression> <Creatives> <Creative AdID=\"123\"> <Linear> <Duration>00:00:30</Duration> <TrackingEvents> <Tracking event=\"creativeView\"> <![CDATA[https://aktrack.pubmatic.com?e=creativeView]]> </Tracking> <Tracking event=\"start\"> <![CDATA[https://aktrack.pubmatic.com?e=start]]> </Tracking> <Tracking event=\"midpoint\"> <![CDATA[https://aktrack.pubmatic.com?e=midpoint]]> </Tracking> <Tracking event=\"firstQuartile\"> <![CDATA[https://aktrack.pubmatic.com?e=firstQuartile]]> </Tracking> <Tracking event=\"thirdQuartile\"> <![CDATA[https://aktrack.pubmatic.com?e=thirdQuartile]]> </Tracking> <Tracking event=\"complete\"> <![CDATA[https://aktrack.pubmatic.com?e=complete]]> </Tracking> </TrackingEvents> <VideoClicks> <ClickThrough> <![CDATA[https://www.pubmatic.com]]> </ClickThrough> </VideoClicks> <MediaFiles> <MediaFile delivery=\"progressive\" type=\"video/mp4\" bitrate=\"500\" width=\"480\" height=\"460\" scalable=\"true\" maintainAspectRatio=\"true\"> <![CDATA[https://staging.pubmatic.com:8443/test/spinning-logo-480x360_video.mp4]]> </MediaFile> <MediaFile delivery=\"progressive\" type=\"video/ogg\" bitrate=\"500\" width=\"480\" height=\"460\" scalable=\"true\" maintainAspectRatio=\"true\"> <![CDATA[https://staging.pubmatic.com:8443/test/spinning-logo-480x360_video.ogg]]> </MediaFile> <MediaFile delivery=\"progressive\" type=\"video/x-flv\" bitrate=\"500\" width=\"400\" height=\"300\" scalable=\"true\" maintainAspectRatio=\"true\"> <![CDATA[https://staging.pubmatic.com:8443/test/PubMatic_test_video.flv]]> </MediaFile> </MediaFiles> </Linear> </Creative> <Creative AdID=\"123\"> <NonLinearAds> <TrackingEvents></TrackingEvents> <NonLinear height=\"50\" width=\"300\" minSuggestedDuration=\"00:00:05\"> <StaticResource creativeType=\"image/jpeg\"> <![CDATA[https://staging.pubmatic.com:8443/test/PubMatic_LetsBeClear_300x50.jpeg]]> </StaticResource> <NonLinearClickThrough> <![CDATA[https://www.pubmatic.com]]> </NonLinearClickThrough> </NonLinear> </NonLinearAds> </Creative> <Creative AdID=\"123\"> <CompanionAds> <Companion width=\"300\" height=\"250\"> <StaticResource creativeType=\"image/jpeg\"> <![CDATA[https://staging.pubmatic.com:8443/test/PubMatic_LetsBeClear_320x250.jpg]]> </StaticResource> <CompanionClickThrough> <![CDATA[https://www.pubmatic.com]]> </CompanionClickThrough> </Companion> </CompanionAds> </Creative> </Creatives> </InLine> </Ad> </VAST>"
+                }
+              },
+            ]
+          }
+        });
+
+        pbjs.addAdUnits(adUnits);
+
+        pbjs.onEvent('video_setupComplete', () => {
+          console.log('player setup complete');
+        });
+
+        pbjs.onEvent('video_setupFailed', () => {
+          console.log('player setup failed!');
+        });
+
+        pbjs.onEvent('video_destroyed', e => {
+          console.log('player destroyed: ', e);
+        });
+
+        pbjs.onEvent('video_playlist', (e) => {
+          console.log('videos pb playlist: ', e);
+        });
+
+        pbjs.onEvent('video_playbackRequest', (e) => {
+          console.log('videos pb playbackRequest: ', e);
+        });
+
+        pbjs.onEvent('video_autostartBlocked', (e) => {
+          console.log('videos pb autostartBlocked: ', e);
+        });
+
+        pbjs.onEvent('video_playAttemptFailed', (e) => {
+          console.log('videos pb playAttemptFailed: ', e);
+        });
+
+        pbjs.onEvent('video_contentLoaded', (e) => {
+          console.log('videos pb contentLoaded: ', e);
+        });
+
+        pbjs.onEvent('video_play', (e) => {
+          console.log('videos pb play: ', e);
+        });
+
+        pbjs.onEvent('video_pause', (e) => {
+          console.log('videos pb pause: ', e);
+        });
+
+        pbjs.onEvent('video_buffer', (e) => {
+          console.log('videos pb buffer: ', e);
+        });
+
+        pbjs.onEvent('video_seekStart', (e) => {
+          console.log('videos pb seekStart: ', e);
+        });
+
+        pbjs.onEvent('video_seekEnd', (e) => {
+          console.log('videos pb seekEnd: ', e);
+        });
+
+        pbjs.onEvent('video_renditionUpdate', (e) => {
+          console.log('videos pb renditionUpdate: ', e);
+        });
+
+        pbjs.onEvent('video_mute', (e) => {
+          console.log('videos pb mute: ', e);
+        });
+
+        pbjs.onEvent('video_volume', (e) => {
+          console.log('videos pb volume: ', e);
+        });
+
+        // pbjs.onEvent('video_time', (e) => {
+        //   console.log('videos pb time: ', e);
+        // });
+
+        pbjs.onEvent('video_complete', (e) => {
+          console.log('videos pb complete: ', e);
+        });
+
+        pbjs.onEvent('video_playlistComplete', (e) => {
+          console.log('videos pb playlistComplete: ', e);
+        });
+
+
+
+        pbjs.onEvent('video_fullscreen', (e) => {
+          console.log('videos pb fullscreen: ', e);
+        });
+
+        pbjs.onEvent('video_playerResize', (e) => {
+          console.log('videos pb playerResize: ', e);
+        });
+
+        pbjs.onEvent('video_error', (e) => {
+          console.log('videos pb error: ', e);
+        });
+
+        pbjs.onEvent('video_viewable', (e) => {
+          console.log('videos pb viewable: ', e);
+        });
+
+        pbjs.onEvent('video_cast', (e) => {
+          console.log('videos pb cast: ', e);
+        });
+
+        pbjs.onEvent('video_adBreakStart', e => {
+          console.log('videos pb ad break start: ', e);
+        });
+
+        pbjs.onEvent('video_adRequest', (e) => {
+          console.log('videos pb ad request: ', e);
+        });
+
+        pbjs.onEvent('video_adLoaded', e => {
+          console.log('videos pb ad load: ', e);
+        });
+
+        pbjs.onEvent('video_adImpression', (e) => {
+          console.log('videos pb ad impression: ', e);
+        });
+
+        pbjs.onEvent('video_adStarted', (e) => {
+          console.log('videos pb ad started: ', e);
+        });
+
+        pbjs.onEvent('video_adPlay', (e) => {
+          console.log('videos pb ad play: ', e);
+        });
+
+        pbjs.onEvent('video_adPause', (e) => {
+          console.log('videos pb ad pause: ', e);
+        });
+
+        // pbjs.onEvent('video_adTime', (e) => {
+        //   console.log('videos pb ad time: ', e);
+        // });
+
+        pbjs.onEvent('video_adComplete', (e) => {
+          console.log('videos pb ad complete: ', e);
+        });
+
+        pbjs.onEvent('video_adSkipped', (e) => {
+          console.log('videos pb ad skipped: ', e);
+        });
+
+        pbjs.onEvent('video_adClick', (e) => {
+          console.log('videos pb ad click: ', e);
+        });
+
+        pbjs.onEvent('video_adError', (e) => {
+          console.log('videos pb ad error: ', e);
+        });
+
+        pbjs.onEvent('video_adBreakStart', e => {
+          console.log('videos pb ad break start: ', e);
+        });
+
+        pbjs.onEvent('video_auctionAdLoadAbort', (e) => {
+          console.log('videos pb auction ad load attempt: ', e);
+        });
+
+        pbjs.onEvent('video_auctionAdLoadAttempt', event => {
+          console.log('The Video Module is attempting to load an ad into the player! \n', event);
+        });
+
+        pbjs.onEvent('video_bidImpression', event => {
+          console.log('The ad impression resulted from a bid! \n', event);
+        });
+
+        pbjs.onEvent('video_bidError', event => {
+          console.log('The ad error resulted from a bid! \n', event);
+        });
+
+        pbjs.requestBids(adUnits);
+      });
+    </script>
+</head>
+
+<body>
+    <div id ="player"></div>
+</body>
+
+</html>
