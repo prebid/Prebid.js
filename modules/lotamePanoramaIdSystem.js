@@ -30,6 +30,7 @@ const MISSING_CORE_CONSENT = 111;
 const GVLID = 95;
 const ID_HOST = 'id.crwdcntrl.net';
 const DEV_ID_HOST = 'id.dev.lotame.com';
+const QA_ID_HOST = 'id.test.lotame.com';
 
 export const storage = getStorageManager({gvlid: GVLID, moduleName: MODULE_NAME});
 let cookieDomain;
@@ -98,10 +99,22 @@ function getFromStorage(key) {
  * Returns the domain used to host the ID request 
  */
 function getIDHost(config) {
-  if (config && config['environment'] && config['environment'] == 'dev') {
-    return DEV_ID_HOST;
+  let host;
+  let environment = config && config['environment'] ? config['environment'] : 'prod';
+  switch (environment) {
+    case 'dev':
+    case 'local':
+      host = DEV_ID_HOST;
+      break;
+
+    case 'test':
+      host = QA_ID_HOST;
+      break;
+
+    default:
+      host = ID_HOST;
   }
-  return ID_HOST;
+  return host;
 }
 
 /**
