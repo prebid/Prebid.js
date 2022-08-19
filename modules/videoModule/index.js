@@ -126,13 +126,19 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     });
   }
 
+  function getAdServerConfig(adUnitVideoConfig) {
+    const globalVideoConfig = getConfig('video');
+    const globalProviderConfig = globalVideoConfig.providers.find(provider => provider.divId === adUnitVideoConfig.divId);
+    return mergeDeep({}, globalVideoConfig.adServer, globalProviderConfig.adServer, adUnitVideoConfig.adServer);
+  }
+
   function renderWinningBid(adUnit) {
     const adUnitCode = adUnit.code;
     const options = { adUnitCode };
 
     const videoConfig = adUnit.video;
     const divId = videoConfig.divId;
-    const adServerConfig = videoConfig.adServer;
+    const adServerConfig = getAdServerConfig(videoConfig);
     let adUrl;
     if (adServerConfig) {
       adUrl = gamSubmodule.getAdTagUrl(adUnit, adServerConfig.baseAdTagUrl, adServerConfig.params);
