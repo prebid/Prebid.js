@@ -483,20 +483,28 @@ export function _getHostInfo(validBidRequests) {
 
   domainInfo.domain = hostParam.split('/', 1)[0];
 
-  let regexHostParam = new RegExp(`^(https:\\||http:\\)`);
+  let regexHostParamHttps = new RegExp(`^https:\\`);
+  let regexHostParamHttp = new RegExp(`^http:\\`);
+
   let regexNewEndpoints = new RegExp(`^(vz.*|zz.*)\\.[a-z]{3}\\.tappx\\.com$`, 'i');
   let regexClassicEndpoints = new RegExp(`^([a-z]{3}|testing)\\.[a-z]{3}\\.tappx\\.com$`, 'i');
-  if (!regexHostParam.test(hostParam)) {
-    if (regexNewEndpoints.test(domainInfo.domain)) {
-      domainInfo.newEndpoint = true;
-      domainInfo.endpoint = domainInfo.domain.split('.', 1)[0]
-      domainInfo.url = `https://${hostParam}`
-    } else if (regexClassicEndpoints.test(domainInfo.domain)) {
-      domainInfo.newEndpoint = false;
-      domainInfo.endpoint = endpoint
-      domainInfo.url = `https://${hostParam}${endpoint}`
-    }
+
+  if (regexHostParamHttps.test(hostParam)) {
+    hostParam = hostParam.replace("https:\\", "");
+  } else if (regexHostParamHttp.test(hostParam)) {
+    hostParam = hostParam.replace("http:\\", "");
   }
+
+  if (regexNewEndpoints.test(domainInfo.domain)) {
+     domainInfo.newEndpoint = true;
+     domainInfo.endpoint = domainInfo.domain.split('.', 1)[0]
+     domainInfo.url = `https://${hostParam}`
+  } else if (regexClassicEndpoints.test(domainInfo.domain)) {
+     domainInfo.newEndpoint = false;
+     domainInfo.endpoint = endpoint
+     domainInfo.url = `https://${hostParam}${endpoint}`
+  }
+  
   return domainInfo;
 }
 
