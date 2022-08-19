@@ -42,23 +42,27 @@ function setImDataInCookie(value) {
 */
 export function getBidderFunction(bidderName) {
   const biddersFunction = {
-    pubmatic: function (bid, data) {
+    pubmatic: function (bid, data, moduleConfig) {
       if (data.im_segments && data.im_segments.length) {
+        const segmentMaxCount = !Number.isNaN(moduleConfig.params.segmentMaxCount) ? moduleConfig.params.segmentMaxCount : 200;
+        const slicedSegments = data.im_segments.slice(0, segmentMaxCount);
         const dctr = deepAccess(bid, 'params.dctr');
         deepSetValue(
           bid,
           'params.dctr',
-          `${dctr ? dctr + '|' : ''}im_segments=${data.im_segments.join(',')}`
+          `${dctr ? dctr + '|' : ''}im_segments=${slicedSegments.join(',')}`
         );
       }
       return bid
     },
-    fluct: function (bid, data) {
+    fluct: function (bid, data, moduleConfig) {
       if (data.im_segments && data.im_segments.length) {
+        const segmentMaxCount = !Number.isNaN(moduleConfig.params.segmentMaxCount) ? moduleConfig.params.segmentMaxCount : 200;
+        const slicedSegments = data.im_segments.slice(0, segmentMaxCount);
         deepSetValue(
           bid,
           'params.kv.imsids',
-          data.im_segments
+          slicedSegments
         );
       }
       return bid
@@ -88,14 +92,16 @@ export function setRealTimeData(bidConfig, moduleConfig, data) {
   const utils = {deepSetValue, deepAccess, logInfo, logError, mergeDeep};
 
   if (data.im_segments) {
+    const segmentMaxCount = !Number.isNaN(moduleConfig.params.segmentMaxCount) ? moduleConfig.params.segmentMaxCount : 200;
+    const slicedSegments = data.im_segments.slice(0, segmentMaxCount);
     const ortb2 = bidConfig.ortb2Fragments?.global || {};
-    deepSetValue(ortb2, 'user.ext.data.im_segments', data.im_segments);
+    deepSetValue(ortb2, 'user.ext.data.im_segments', slicedSegments);
 
     if (moduleConfig.params.setGptKeyValues || !moduleConfig.params.hasOwnProperty('setGptKeyValues')) {
       window.googletag = window.googletag || {cmd: []};
       window.googletag.cmd = window.googletag.cmd || [];
       window.googletag.cmd.push(() => {
-        window.googletag.pubads().setTargeting('im_segments', data.im_segments);
+        window.googletag.pubads().setTargeting('im_segments', slicedSegments);
       });
     }
   }
@@ -107,7 +113,7 @@ export function setRealTimeData(bidConfig, moduleConfig, data) {
       if (overwriteFunction) {
         overwriteFunction(bid, data, utils, config);
       } else if (bidderFunction) {
-        bidderFunction(bid, data);
+        bidderFunction(bid, data, moduleConfig);
       }
     })
   });
