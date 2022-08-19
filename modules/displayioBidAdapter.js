@@ -1,19 +1,16 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
-import {getWindowFromDocument, logWarn, deepAccess} from '../src/utils.js';
-import {createEidsArray} from './userId/eids.js';
+import {getWindowFromDocument, logWarn} from '../src/utils.js';
 
-const BIDDER_VERSION = '1.0.0';
+const ADAPTER_VERSION = '1.1.0';
 const BIDDER_CODE = 'displayio';
-const GVLID = 999;
 const BID_TTL = 300;
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const DEFAULT_CURRENCY = 'USD';
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
   isBidRequestValid: function(bid) {
     return !!(bid.params && bid.params.placementId && bid.params.siteId &&
@@ -101,10 +98,10 @@ function getPayload (bid, bidderRequest) {
         keywords: keywords ? keywords.split(',').map(k => k.trim()) : [],
         lang_content: document.documentElement.lang,
         lang: window.navigator.language,
-        domain: window.location.hostname,
-        page: window.location.href,
+        domain: refererInfo.domain,
+        page: refererInfo.page,
         ref: refererInfo.referer,
-        userids: deepAccess(bid, 'userId') ? createEidsArray(bid.userId) : {},
+        userids: bid.userIdAsEids || {},
         geo: '',
       },
       complianceData: {
@@ -120,7 +117,7 @@ function getPayload (bid, bidderRequest) {
       integration: 'JS',
       omidpn: 'Displayio',
       mediationPlatform: 0,
-      prebidVersion: BIDDER_VERSION,
+      prebidVersion: ADAPTER_VERSION,
       device: {
         w: window.screen.width,
         h: window.screen.height,
