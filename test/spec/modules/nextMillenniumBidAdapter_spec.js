@@ -104,19 +104,14 @@ describe('nextMillenniumBidAdapterTests', function() {
     expect(JSON.parse(request[0].data).ext.nextMillennium.refresh_count).to.equal(3);
   });
 
-  it('Check if ORTB was added', function() {
+  it('Check if domain was added', function() {
     const request = spec.buildRequests(bidRequestData)
-    expect(JSON.parse(request[0].data).site.domain).to.equal('example.com')
+    expect(JSON.parse(request[0].data).site.domain).to.exist
   })
 
   it('Check if elOffsets was added', function() {
     const request = spec.buildRequests(bidRequestData)
     expect(JSON.parse(request[0].data).ext.nextMillennium.elOffsets).to.be.an('object')
-  })
-
-  it('Check if refferer was added', function() {
-    const request = spec.buildRequests(bidRequestData)
-    expect(JSON.parse(request[0].data).device.referrer).to.exist
   })
 
   it('Check if imp object was added', function() {
