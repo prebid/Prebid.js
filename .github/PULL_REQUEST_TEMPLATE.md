@@ -17,7 +17,8 @@ For any user facing change, submit a link to a PR on the docs repo at https://gi
 - [ ] Bugfix
 - [ ] Feature
 - [ ] New bidder adapter  <!--  IMPORTANT: if checking here, also submit your bidder params documentation here https://github.com/prebid/prebid.github.io/tree/master/dev-docs/bidders --> 
-- [ ] Code style update (formatting, local variables)- [ ] Refactoring (no functional changes, no api changes)
+- [ ] Code style update (formatting, local variables)
+- [ ] Refactoring (no functional changes, no api changes)
 - [ ] Build related changes
 - [ ] CI related changes
 
