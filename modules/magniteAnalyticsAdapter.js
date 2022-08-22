@@ -479,6 +479,7 @@ const formatBidWon = bidWonData => {
     sourceAuctionId: bidWonData.auctionId,
     renderAuctionId,
     transactionId: bidWonData.transactionId,
+    bidId: bidWonData.bidId,
     renderTransactionId,
     accountId,
     siteId: adUnit.siteId,
