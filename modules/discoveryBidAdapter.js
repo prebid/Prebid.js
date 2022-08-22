@@ -539,7 +539,7 @@ export const spec = {
   },
 
   /**
-   * Register bidder specific code, which will execute if a bid from this bidder won the auction
+   * Register bidder specific code, which  will execute if a bid from this bidder won the auction
    * @param {Bid} The bid that won the auction
    */
   onBidWon: function (bid) {
