@@ -952,7 +952,7 @@ describe('OpenxRtbAdapter', function () {
     let bidResponse;
     let bid;
 
-    context('when there is no response', function () {
+    context('when there is an nbr response', function () {
       let bids;
       beforeEach(function () {
         bidRequestConfigs = [{
@@ -975,6 +975,37 @@ describe('OpenxRtbAdapter', function () {
         bidRequest = spec.buildRequests(bidRequestConfigs, {refererInfo: {}})[0];
 
         bidResponse = {nbr: 0}; // Unknown error
+        bids = spec.interpretResponse({body: bidResponse}, bidRequest);
+      });
+
+      it('should not return any bids', function () {
+        expect(bids.length).to.equal(0);
+      });
+    });
+
+    context('when there is no response', function () {
+      let bids;
+      beforeEach(function () {
+        bidRequestConfigs = [{
+          bidder: 'openx',
+          params: {
+            unit: '12345678',
+            delDomain: 'test-del-domain'
+          },
+          adUnitCode: 'adunit-code',
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250], [300, 600]],
+            },
+          },
+          bidId: 'test-bid-id',
+          bidderRequestId: 'test-bidder-request-id',
+          auctionId: 'test-auction-id'
+        }];
+
+        bidRequest = spec.buildRequests(bidRequestConfigs, {refererInfo: {}})[0];
+
+        bidResponse = ''; // Unknown error
         bids = spec.interpretResponse({body: bidResponse}, bidRequest);
       });
 

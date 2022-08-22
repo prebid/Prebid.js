@@ -2,6 +2,7 @@ import { isFn, isPlainObject } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const storageManager = getStorageManager({bidderCode: 'orbidder'});
 
@@ -78,6 +79,9 @@ export const spec = {
    * @return The requests for the orbidder /bid endpoint, i.e. the server.
    */
   buildRequests(validBidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     const hostname = this.getHostname();
     return validBidRequests.map((bidRequest) => {
       let referer = '';

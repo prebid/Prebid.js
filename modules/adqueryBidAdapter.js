@@ -58,6 +58,7 @@ export const spec = {
     logInfo(request);
     logInfo(response);
 
+    let qid = null;
     const res = response && response.body && response.body.data;
     let bidResponses = [];
 
@@ -85,6 +86,17 @@ export const spec = {
     };
     bidResponses.push(bidResponse);
     logInfo('bidResponses', bidResponses);
+
+    if (res && res.qid) {
+      if (storage.getDataFromLocalStorage('qid')) {
+        qid = storage.getDataFromLocalStorage('qid');
+        if (qid && qid.includes('%7B%22')) {
+          storage.setDataInLocalStorage('qid', res.qid);
+        }
+      } else {
+        storage.setDataInLocalStorage('qid', res.qid);
+      }
+    }
 
     return bidResponses;
   },
@@ -178,25 +190,13 @@ export const spec = {
 
 };
 function buildRequest(validBidRequests, bidderRequest) {
-  let gnerateQid = (Math.random().toString(36).substring(2)) + ((new Date().getTime()).toString(36));
   let bid = validBidRequests;
-  let qid = gnerateQid;
-
-  if (storage.getDataFromLocalStorage('qid')) {
-    qid = storage.getDataFromLocalStorage('qid');
-    if (qid && qid.includes('%7B%22')) {
-      qid = gnerateQid;
-    }
-  } else {
-    storage.setDataInLocalStorage('qid', qid);
-  }
-
   return {
     placementCode: bid.params.placementId,
     auctionId: bid.auctionId,
-    qid: qid,
     type: bid.params.type,
     adUnitCode: bid.adUnitCode,
+    bidQid: storage.getDataFromLocalStorage('qid') || null,
     bidId: bid.bidId,
     bidder: bid.bidder,
     bidderRequestId: bid.bidderRequestId,

@@ -502,11 +502,8 @@ to `'ix'` across all ad units that bids are being requested for does not exceed 
 
 ### Time-To-Live (TTL)
 
-Banner bids from IX have a TTL of 300 seconds while video bids have a TTL of 1 hour, after which time they become
-invalid.
-
-If an invalid bid wins, and its associated ad is rendered, it will not count
-towards total impressions on IX's side.
+Banner bids from Index have a TTL of 600 seconds while video bids have a TTL of three hours, after which time they become invalid.
+**Note:** Index supports the `bid.exp` attribute in the bid response which allows our adapter to specify the maximum number of seconds allowed between the auction and billing notice. In the absence of the `bid.exp` attribute, the TTL provided above applies.
 
 FAQs
 ====
