@@ -1,6 +1,7 @@
 import { logWarn, createTrackPixelHtml, deepAccess, isArray, deepSetValue } from '../src/utils.js';
 import {config} from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'consumable';
 
@@ -11,6 +12,7 @@ let bidder = 'consumable';
 
 export const spec = {
   code: BIDDER_CODE,
+  supportedMediaTypes: [BANNER, VIDEO],
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -81,6 +83,10 @@ export const spec = {
         divName: bid.bidId,
         adTypes: bid.adTypes || getSize(sizes)
       }, bid.params);
+
+      if (bid.mediaTypes.video && bid.mediaTypes.video.playerSize) {
+        placement.video = bid.mediaTypes.video;
+      }
 
       if (placement.networkId && placement.siteId && placement.unitId && placement.unitName) {
         data.placements.push(placement);
@@ -155,6 +161,13 @@ export const spec = {
 
           if (decision.mediaType) {
             bid.meta.mediaType = decision.mediaType;
+
+            if (decision.mediaType === 'video') {
+              bid.mediaType = 'video';
+              bid.vastUrl = decision.vastUrl || undefined;
+              bid.vastXml = decision.vastXml || undefined;
+              bid.videoCacheKey = decision.uuid || undefined;
+            }
           }
 
           bidResponses.push(bid);
@@ -240,8 +253,13 @@ function getSize(sizes) {
 }
 
 function retrieveAd(decision, unitId, unitName) {
-  let ad = decision.contents && decision.contents[0] && decision.contents[0].body + createTrackPixelHtml(decision.impressionUrl);
-
+  let ad;
+  if (decision.contents && decision.contents[0]) {
+    ad = decision.contents[0].body + createTrackPixelHtml(decision.impressionUrl);
+  }
+  if (decision.vastXml) {
+    ad = decision.vastXml;
+  }
   return ad;
 }
 
