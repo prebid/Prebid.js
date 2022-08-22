@@ -31,6 +31,8 @@ inspiration:
 https://github.com/Conviva/conviva-js-videojs/blob/master/conviva-videojs-module.js
  */
 
+const setupFailMessage = 'Failed to instantiate the player';
+
 export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStorage_, utils) {
   let vjs = vjs_;
   // Supplied callbacks are typically wrapped by handlers
@@ -56,29 +58,26 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
 
   function init() {
     if (!vjs) {
-      triggerSetupFailure(-1, 'Videojs not present')
+      triggerSetupFailure(-1, setupFailMessage + ': Videojs not present')
       return;
     }
 
     playerVersion = vjs.VERSION;
     if (playerVersion < minimumSupportedPlayerVersion) {
-      triggerSetupFailure(-2, 'Videojs version not supported');
+      triggerSetupFailure(-2, setupFailMessage + ': Videojs version not supported');
       return;
     }
 
     if (!document.getElementById(divId)) {
-      triggerSetupFailure(-3, `No div found with id ${divId}`);
+      triggerSetupFailure(-3, setupFailMessage + ': No div found with id ' + divId);
       return;
     }
 
     setupPlayer(playerConfig);
 
     if (!player) {
-      triggerSetupFailure(-4, 'Failed to instantiate the player');
-      return
+      triggerSetupFailure(-4, setupFailMessage);
     }
-
-    player.ready(triggerSetupComplete);
   }
 
   function getId() {
@@ -562,8 +561,12 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
   function setupPlayer(config) {
     // TODO: consider supporting https://www.npmjs.com/package/videojs-vast-vpaid as well
     function setupAds() {
-      // when player.ima is already instantiated, it is an object.
-      if (!player.ima || typeof player.ima !== 'function') {
+      if (!player.ima) {
+        throw new Error(setupFailMessage + ': ima plugin is missing');
+      }
+
+      if (typeof player.ima !== 'function') {
+        // when player.ima is already instantiated, it is an object. Early abort if already instantiated.
         return;
       }
 
@@ -571,8 +574,18 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
       player.ima(adConfig);
     }
 
+    function onReady() {
+      try {
+        setupAds();
+      } catch (e) {
+        triggerSetupFailure(-5, e.message);
+        return;
+      }
+      triggerSetupComplete();
+    }
+
     const setupConfig = utils.getSetupConfig(config);
-    player = vjs(divId, setupConfig, setupAds);
+    player = vjs(divId, setupConfig, onReady);
   }
 
   function triggerSetupFailure(errorCode, msg) {
