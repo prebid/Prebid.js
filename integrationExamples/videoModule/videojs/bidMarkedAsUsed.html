@@ -97,6 +97,10 @@
           });
         });
 
+        pbjs.onEvent('video_setupFailed', e => {
+          console.log('player setup failed: ', e);
+        });
+
         pbjs.onEvent('video_contentLoaded', (e) => {
           pbjs.requestBids(adUnits);
         });

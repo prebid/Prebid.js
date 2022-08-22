@@ -34,7 +34,7 @@
           video: {
             providers: [{
               divId: 'player',
-              vendorCode: 1, // videojs vendorCode
+              vendorCode: 1, // JW Player vendorCode
               playerConfig: {
                 licenseKey: 'IAjLREYRLylTWsfLN3FoN/O3iQLbs+AfgZLlkAoyH8gSf7TnNtmOLcR8CUY=',
                 params: {
@@ -85,6 +85,14 @@
         });
 
         pbjs.addAdUnits(adUnits);
+
+        pbjs.onEvent('video_setupComplete', (e) => {
+          console.log('player setup complete: ', e);
+        });
+
+        pbjs.onEvent('video_setupFailed', e => {
+          console.log('player setup failed: ', e);
+        });
 
         pbjs.onEvent('video_playbackRequest', (e) => {
           pbjs.requestBids(adUnits);

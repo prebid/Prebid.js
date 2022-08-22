@@ -40,7 +40,7 @@
                 licenseKey: 'IAjLREYRLylTWsfLN3FoN/O3iQLbs+AfgZLlkAoyH8gSf7TnNtmOLcR8CUY=',
                 params: {
                   vendorConfig: {
-                    "file": "http://content.bitsontherun.com/videos/3XnJSIm4-52qL9xLP.mp4",
+                    file: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4',
                     advertising: { client: 'vast' }
                   }
                 }
@@ -67,6 +67,14 @@
         });
 
         pbjs.addAdUnits(adUnits);
+
+        pbjs.onEvent('video_setupComplete', (e) => {
+          console.log('player setup complete: ', e);
+        });
+
+        pbjs.onEvent('video_setupFailed', e => {
+          console.log('player setup failed: ', e);
+        });
 
         pbjs.onEvent('video_playbackRequest', (e) => {
           pbjs.requestBids(adUnits);
