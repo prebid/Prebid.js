@@ -3,7 +3,7 @@ import { getStorageManager } from '../src/storageManager.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 
-const BIDDER_CODE = 'discovery';
+const BIDDER_CODE = 'DiscoveryDSP';
 const ENDPOINT_URL = 'https://rtb-jp.mediago.io/api/bid?tn=';
 const TIME_TO_LIVE = 500;
 const storage = getStorageManager();
