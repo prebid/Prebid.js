@@ -384,7 +384,7 @@ function bidResponseHandler(args) {
 
   if ((bid.bidder && args.bidderCode && bid.bidder !== args.bidderCode) || (bid.bidder === args.bidderCode && bid.status === SUCCESS)) {
     bid = copyRequiredBidDetails(args);
-    cache.auctions[args.auctionId].adUnitCodes[args.adUnitCode].bids[args.requestId].push(bid)
+    cache.auctions[args.auctionId].adUnitCodes[args.adUnitCode].bids[args.requestId].push(bid);
   }
   bid.adId = args.adId;
   bid.source = formatSource(bid.source || args.source);

@@ -88,7 +88,7 @@ function getTrustpidFromStorage() {
     return {
       trustpid: null,
       acr: null
-    }
+    };
   }
 
   let fcIdConnectObject;

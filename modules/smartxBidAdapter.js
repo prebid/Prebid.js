@@ -221,7 +221,7 @@ export const spec = {
                 name: provider,
                 value: targetingstring,
               }
-            })
+            });
           }
         }
 
@@ -230,7 +230,7 @@ export const spec = {
         requestPayload.user = {
           ext: userExt,
           data: targetingarr
-        }
+        };
       }
 
       return {

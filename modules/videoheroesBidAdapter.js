@@ -85,7 +85,7 @@ export const spec = {
     };
 
     if (bidderRequest.refererInfo.ref) {
-      data.site.ref = bidderRequest.refererInfo.ref
+      data.site.ref = bidderRequest.refererInfo.ref;
     }
 
     if (bidderRequest.gdprConsent) {

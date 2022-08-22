@@ -52,6 +52,10 @@ describe('Piano DMP Analytics Adapter', () => {
 
       // Then
       const callQueue = (window.cX || {}).callQueue;
+      const billableEventIndex = callQueue.findIndex(([, params]) => params.eventType === constants.EVENTS.BILLABLE_EVENT);
+      if (billableEventIndex > -1) {
+        callQueue.splice(billableEventIndex, 1);
+      }
 
       expect(callQueue).to.be.an('array');
       expect(callQueue.length).to.equal(testEvents.length);

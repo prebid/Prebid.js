@@ -939,7 +939,7 @@ function parseSizes(bid, mediaType) {
   } else if (typeof deepAccess(bid, 'mediaTypes.banner.sizes') !== 'undefined') {
     sizes = mapSizes(bid.mediaTypes.banner.sizes);
   } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0) {
-    sizes = mapSizes(bid.sizes)
+    sizes = mapSizes(bid.sizes);
   } else {
     logWarn('Rubicon: no sizes are setup or found');
   }
@@ -1045,7 +1045,7 @@ function applyFPD(bidRequest, mediaType, data) {
     let val = validate(obj, key, name);
     let loc = (MAP[key] && isParent) ? `${MAP[key]}` : (key === 'data') ? `${MAP[name]}iab` : `${MAP[name]}${key}`;
     data[loc] = (data[loc]) ? data[loc].concat(',', val) : val;
-  }
+  };
 
   if (mediaType === BANNER) {
     ['site', 'user'].forEach(name => {

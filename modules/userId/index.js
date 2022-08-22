@@ -614,9 +614,9 @@ function getPPID() {
  * @param {Object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
  * @param {function} fn required; The next function in the chain, used by hook.js
  */
-export function requestBidsHook(fn, reqBidsConfigObj, {delay = GreedyPromise.timeout} = {}) {
+export function requestBidsHook(fn, reqBidsConfigObj, {delay = GreedyPromise.timeout, getIds = getUserIdsAsync} = {}) {
   GreedyPromise.race([
-    getUserIdsAsync(),
+    getIds().catch(() => null),
     delay(auctionDelay)
   ]).then(() => {
     // pass available user id data to bid adapters
@@ -762,13 +762,17 @@ function refreshUserIds({submoduleNames} = {}, callback) {
 function getUserIdsAsync() {
   return initIdSystem().then(
     () => getUserIds(),
-    (e) =>
-      e === INIT_CANCELED
+    (e) => {
+      if (e === INIT_CANCELED) {
         // there's a pending refresh - because GreedyPromise runs this synchronously, we are now in the middle
         // of canceling the previous init, before the refresh logic has had a chance to run.
         // Use a "normal" Promise to clear the stack and let it complete (or this will just recurse infinitely)
-        ? Promise.resolve().then(getUserIdsAsync)
-        : GreedyPromise.reject(e)
+        return Promise.resolve().then(getUserIdsAsync)
+      } else {
+        logError('Error initializing userId', e)
+        return GreedyPromise.reject(e)
+      }
+    }
   );
 }
 
@@ -839,7 +843,7 @@ function initSubmodules(dest, submodules, consentData, forceRefresh = false) {
   submodules = submodules.filter((submod) => !submod.config.storage || storageTypes.has(submod.config.storage.type));
 
   if (!submodules.length) {
-    logWarn(`${MODULE_NAME} - no ID module is configured for one of the available storage types:`, Array.from(storageTypes))
+    logWarn(`${MODULE_NAME} - no ID module is configured for one of the available storage types:`, Array.from(storageTypes));
     return [];
   }
 
