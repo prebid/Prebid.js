@@ -25,6 +25,15 @@ export function getDgKeywordsAndSet(reqBidsConfigObj, callback, moduleConfig, us
   const timeout = (moduleConfig && moduleConfig.params && moduleConfig.params.timeout && Number(moduleConfig.params.timeout) > 0) ? Number(moduleConfig.params.timeout) : PROFILE_TIMEOUT_MS;
   const url = (moduleConfig && moduleConfig.params && moduleConfig.params.url) ? moduleConfig.params.url : URL + encodeURIComponent(window.location.href);
   const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
+  callback = (function(cb) {
+    let done = false;
+    return function () {
+      if (!done) {
+        done = true;
+        return cb.apply(this, arguments);
+      }
+    }
+  })(callback);
   let isFinish = false;
   logMessage('[dgkeyword sub module]', adUnits, timeout);
   let setKeywordTargetBidders = getTargetBidderOfDgKeywords(adUnits);
@@ -48,7 +57,7 @@ export function getDgKeywordsAndSet(reqBidsConfigObj, callback, moduleConfig, us
               keywords['opectx'] = res['t'];
             }
             if (Object.keys(keywords).length > 0) {
-              const targetBidKeys = {}
+              const targetBidKeys = {};
               for (let bid of setKeywordTargetBidders) {
                 // set keywords to params
                 bid.params.keywords = keywords;

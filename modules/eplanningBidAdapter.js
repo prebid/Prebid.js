@@ -38,14 +38,14 @@ export const spec = {
     const spaces = getSpaces(bidRequests, urlConfig.ml);
     // TODO: do the fallbacks make sense here?
     const pageUrl = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
-    const domain = bidderRequest.refererInfo.domain || window.location.host
+    const domain = bidderRequest.refererInfo.domain || window.location.host;
     if (urlConfig.t) {
       url = 'https://' + urlConfig.isv + '/layers/t_pbjs_2.json';
       params = {};
     } else {
       url = 'https://' + (urlConfig.sv || DEFAULT_SV) + '/pbjs/1/' + urlConfig.ci + '/' + dfpClientId + '/' + domain + '/' + sec;
       // TODO: does the fallback make sense here?
-      const referrerUrl = bidderRequest.refererInfo.ref || bidderRequest.refererInfo.topmostLocation
+      const referrerUrl = bidderRequest.refererInfo.ref || bidderRequest.refererInfo.topmostLocation;
 
       if (storage.hasLocalStorage()) {
         registerViewabilityAllBids(bidRequests);
@@ -150,7 +150,7 @@ export const spec = {
 
     return syncs;
   },
-}
+};
 
 function getUserAgent() {
   return window.navigator.userAgent;

@@ -118,7 +118,7 @@ export const intentIqIdSubmodule = {
       logError('User ID - intentIqId submodule requires a valid partner to be defined');
       return;
     }
-    if (!FIRST_PARTY_DATA_KEY.includes(configParams.partner)) { FIRST_PARTY_DATA_KEY += '_' + configParams.partner }
+    if (!FIRST_PARTY_DATA_KEY.includes(configParams.partner)) { FIRST_PARTY_DATA_KEY += '_' + configParams.partner; }
     let rrttStrtTime = 0;
 
     // Read Intent IQ 1st party id or generate it if none exists
@@ -169,7 +169,7 @@ export const intentIqIdSubmodule = {
               shouldUpdateLs = true;
             }
             if (shouldUpdateLs === true) {
-              partnerData.date = Date.now()
+              partnerData.date = Date.now();
               storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData));
               storeData(FIRST_PARTY_DATA_KEY, JSON.stringify(partnerData));
             }
