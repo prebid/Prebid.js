@@ -203,6 +203,9 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
 
       registerPreSetupListeners(type, callback, payload);
 
+      if (!player) {
+        continue;
+      }
       player.ready(() => {
         registerPostSetupListeners(type, callback, payload);
       });
@@ -230,17 +233,23 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
             return;
           }
 
-          const error = player.error();
-          Object.assign(payload, {
-            playerVersion,
-            sourceError: error,
-            errorCode: error.code,
-            errorMessage: error.message,
-          });
+          if (player) {
+            const error = player.error();
+            Object.assign(payload, {
+              playerVersion,
+              sourceError: error,
+              errorCode: error.code,
+              errorMessage: error.message,
+            });
+          }
+
           callback(type, payload);
           setupFailedCallbacks = [];
         };
-        player.on(ERROR, eventHandler);
+
+        if (player) {
+          player.on(ERROR, eventHandler);
+        }
         setupFailedEventHandlers.push(eventHandler)
         break;
     }
@@ -764,7 +773,12 @@ export const utils = {
     if (!playlist) {
       return;
     }
+
     const currentIndex = this.getCurrentPlaylistIndex(player);
+    if (!currentIndex) {
+      return
+    }
+
     const item = playlist()[currentIndex];
     return item;
   }
