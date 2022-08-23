@@ -4,7 +4,6 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import {Renderer} from '../src/Renderer.js';
-import {createEidsArray} from './userId/eids.js';
 
 const DEV_MODE = window.location.search.match(/bbpbs_debug=true/);
 
@@ -53,7 +52,7 @@ const BB_HELPERS = {
   },
   addUserIds: function(request, validBidRequests) {
     const bidUserId = deepAccess(validBidRequests, '0.userId');
-    const eids = createEidsArray(bidUserId);
+    const eids = bidUserId.userIdAsEids;
 
     if (eids.length) {
       deepSetValue(request, 'user.ext.eids', eids);

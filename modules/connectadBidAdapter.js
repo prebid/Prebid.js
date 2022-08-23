@@ -2,7 +2,6 @@ import { deepSetValue, convertTypes, tryAppendQueryString, logWarn } from '../sr
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js'
 import {config} from '../src/config.js';
-import {createEidsArray} from './userId/eids.js';
 
 const BIDDER_CODE = 'connectad';
 const BIDDER_CODE_ALIAS = 'connectadrealtime';
@@ -74,7 +73,7 @@ export const spec = {
 
     // EIDS Support
     if (validBidRequests[0].userId) {
-      deepSetValue(data, 'user.ext.eids', createEidsArray(validBidRequests[0].userId));
+      deepSetValue(data, 'user.ext.eids', validBidRequests[0].userIdAsEids);
     }
 
     validBidRequests.map(bid => {
