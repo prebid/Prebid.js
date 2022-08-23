@@ -172,7 +172,7 @@ describe('IndexexchangeAdapter', function () {
       mediaTypes: {
         banner: {
           sizes: [[300, 250], [300, 600]],
-          pos: 0,
+          pos: 0
         }
       },
       ortb2Imp: {
