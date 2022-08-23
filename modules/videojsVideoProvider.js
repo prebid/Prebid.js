@@ -73,6 +73,14 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
       return;
     }
 
+    const instantiatedPlayers = vjs.players;
+    if (instantiatedPlayers && instantiatedPlayers[divId]) {
+      // already instantiated
+      player = instantiatedPlayers[divId];
+      onReady();
+      return;
+    }
+
     setupPlayer(playerConfig);
 
     if (!player) {
@@ -568,33 +576,33 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
   };
 
   function setupPlayer(config) {
-    // TODO: consider supporting https://www.npmjs.com/package/videojs-vast-vpaid as well
-    function setupAds() {
-      if (!player.ima) {
-        throw new Error(setupFailMessage + ': ima plugin is missing');
-      }
-
-      if (typeof player.ima !== 'function') {
-        // when player.ima is already instantiated, it is an object. Early abort if already instantiated.
-        return;
-      }
-
-      const adConfig = utils.getAdConfig(config);
-      player.ima(adConfig);
-    }
-
-    function onReady() {
-      try {
-        setupAds();
-      } catch (e) {
-        triggerSetupFailure(-5, e.message);
-        return;
-      }
-      triggerSetupComplete();
-    }
-
     const setupConfig = utils.getSetupConfig(config);
     player = vjs(divId, setupConfig, onReady);
+  }
+
+  function onReady() {
+    try {
+      setupAds();
+    } catch (e) {
+      triggerSetupFailure(-5, e.message);
+      return;
+    }
+    triggerSetupComplete();
+  }
+
+  // TODO: consider supporting https://www.npmjs.com/package/videojs-vast-vpaid as well
+  function setupAds() {
+    if (!player.ima) {
+      throw new Error(setupFailMessage + ': ima plugin is missing');
+    }
+
+    if (typeof player.ima !== 'function') {
+      // when player.ima is already instantiated, it is an object. Early abort if already instantiated.
+      return;
+    }
+
+    const adConfig = utils.getAdConfig(config);
+    player.ima(adConfig);
   }
 
   function triggerSetupFailure(errorCode, msg) {

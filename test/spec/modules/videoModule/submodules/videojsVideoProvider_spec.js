@@ -1,16 +1,18 @@
 // Using require style imports for fine grained control of import time
+import {
+  PLAYBACK_MODE, SETUP_COMPLETE, SETUP_FAILED, PLAY, AD_IMPRESSION
+} from 'libraries/video/constants/events.js'
+
 const {VideojsProvider, utils} = require('modules/videojsVideoProvider')
 
 const {
-  PROTOCOLS, API_FRAMEWORKS, VIDEO_MIME_TYPE, PLAYBACK_METHODS, PLACEMENT, VPAID_MIME_TYPE
-} = require('modules/videoModule/constants/ortb.js');
-const { AD_POSITION } = require('../../../../../modules/videoModule/constants/ortb');
+  PROTOCOLS, API_FRAMEWORKS, VIDEO_MIME_TYPE, PLAYBACK_METHODS, PLACEMENT, VPAID_MIME_TYPE, AD_POSITION
+} = require('libraries/video/constants/ortb.js');
 
-import {
-  PLAYBACK_MODE, SETUP_COMPLETE, SETUP_FAILED, PLAY, AD_IMPRESSION
-} from 'modules/videoModule/constants/events.js'
-
-const videojs = require('video.js').default
+const videojs = require('video.js').default;
+require('videojs-playlist').default;
+require('videojs-ima').default;
+require('videojs-contrib-ads').default;
 
 describe('videojsProvider', function () {
   let config;
@@ -36,7 +38,7 @@ describe('videojsProvider', function () {
     });
 
     it('should trigger failure when videojs version is under min supported version', function () {
-      const provider = VideojsProvider(config, {...videojs, VERSION:'0.0.0'}, adState, timeState, callbackStorage, utils);
+      const provider = VideojsProvider(config, {...videojs, VERSION: '0.0.0'}, adState, timeState, callbackStorage, utils);
       const setupFailed = sinon.spy();
       provider.onEvents([SETUP_FAILED], setupFailed);
       provider.init();
@@ -57,7 +59,7 @@ describe('videojsProvider', function () {
     });
 
     it('should instantiate the player when uninstantied', function () {
-      config.playerConfig = {testAttr:true};
+      config.playerConfig = {testAttr: true};
       config.divId = 'test-div'
       const div = document.createElement('div');
       div.setAttribute('id', 'test-div');
@@ -66,7 +68,7 @@ describe('videojsProvider', function () {
       const mockVideojs = sinon.spy();
       const provider = VideojsProvider(config, mockVideojs, adState, timeState, callbackStorage, utils);
       provider.init();
-      expect(mockVideojs.calledWith(config.divId, config.playerConfig)).to.be.true
+      expect(mockVideojs.calledOnce).to.be.true
     });
 
     it('should not reinstantiate the player', function () {
@@ -93,10 +95,9 @@ describe('videojsProvider', function () {
       const setupComplete = sinon.spy();
       provider.onEvents([SETUP_COMPLETE], setupComplete);
       provider.init();
-      expect(setupComplete.calledOnce).to.be.true;
+      expect(setupComplete.called).to.be.true;
       videojs.getPlayer('test-div').dispose()
     });
-
   });
 
   describe('getId', function () {
@@ -116,8 +117,8 @@ describe('videojsProvider', function () {
       </video>`
     });
 
-    it('should populate oRTB params without ima present', function () {
-      const provider = VideojsProvider(config, videojs,  adState, timeState, callbackStorage, utils);
+    it('should populate oRTB params ', function () {
+      const provider = VideojsProvider(config, videojs, adState, timeState, callbackStorage, utils);
       provider.init();
 
       const oRTB = provider.getOrtbParams();
@@ -126,7 +127,7 @@ describe('videojsProvider', function () {
       const { video, content } = oRTB;
 
       expect(video.mimes).to.include(VIDEO_MIME_TYPE.MP4);
-      expect(video.protocols).to.deep.equal([]);
+      expect(video.protocols).to.deep.equal([2]);
       expect(video.h).to.equal(100);
       expect(video.w).to.equal(200);
 
@@ -134,8 +135,8 @@ describe('videojsProvider', function () {
       expect(video.boxingallowed).to.equal(1);
       expect(video.playbackmethod).to.include(PLAYBACK_METHODS.CLICK_TO_PLAY);
       expect(video.playbackend).to.equal(1);
-      expect(video.api).to.deep.equal([]);
-      expect(video.placement).to.be.equal(PLACEMENT.IN_STREAM);
+      expect(video.api).to.deep.equal([2]);
+      expect(video.placement).to.be.equal(PLACEMENT.INSTREAM);
 
       expect(content.url).to.be.equal('http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4');
       expect(content).to.not.have.property('len');
@@ -262,5 +263,27 @@ describe('utils', function() {
       })
       expect(code).to.equal(AD_POSITION.UNKNOWN)
     });
-  })
+  });
+
+  describe('Playlist utils', function () {
+    let player;
+
+    beforeEach(() => {
+      player = videojs('test');
+      player.playlist([{
+        sources: { src: 'sample.mp4' }
+      }, {
+        sources: { src: 'sample2.mp4' }
+      }]);
+    });
+    describe('getCurrentPlaylistIndex', function () {
+
+    });
+
+    describe('getPlaylistCount', function () {
+      it('should return playlist length', function () {
+        expect(utils.getPlaylistCount(player)).to.be.equal(2);
+      });
+    });
+  });
 })
