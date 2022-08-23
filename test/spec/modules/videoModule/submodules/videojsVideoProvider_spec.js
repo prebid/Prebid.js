@@ -322,7 +322,7 @@ describe('utils', function() {
     });
   });
 
-  describe('Playlist utils', function () {
+  describe('Playlist', function () {
     let player;
     const emptyPlayer = {};
 
@@ -354,6 +354,35 @@ describe('utils', function() {
     describe('getCurrentPlaylistItem', function () {
       it('should return undefined when playlist is absent', function () {
         expect(utils.getCurrentPlaylistItem(emptyPlayer)).to.be.undefined;
+      });
+    });
+  });
+
+  describe('Get Media', function () {
+    describe('parseSource', function () {
+      it('should return src property when source is object', function () {
+        expect(utils.parseSource({
+          src: 'test.url',
+          other: 'other'
+        })).to.be.equal('test.url');
+      });
+
+      it('should return source when it is a string', function () {
+        expect(utils.parseSource('test.url')).to.be.equal('test.url');
+      });
+
+      it('should return undefined when not object or string', function () {
+        expect(utils.parseSource(() => {})).to.be.undefined;
+      });
+    });
+
+    describe('getMediaUrl', function () {
+      it('should return undefined when arg is missing', function () {
+        expect(utils.getMediaUrl()).to.be.undefined;
+      });
+
+      it('should parse first index when arg is array', function () {
+        expect(utils.getMediaUrl(['test.url.1', 'test.url.2'])).to.be.equal('test.url.1');
       });
     });
   });
