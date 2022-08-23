@@ -38,14 +38,23 @@ function setImDataInCookie(value) {
 }
 
 /**
+ * @param {Object} segments
+ * @param {Object} moduleConfig
+ */
+function getSegments(segments, moduleConfig) {
+  if (!segments) return;
+  const maxSegments = !Number.isNaN(moduleConfig.params.maxSegments) ? moduleConfig.params.maxSegments : 200;
+  return segments.slice(0, maxSegments);
+}
+
+/**
 * @param {string} bidderName
 */
 export function getBidderFunction(bidderName) {
   const biddersFunction = {
     pubmatic: function (bid, data, moduleConfig) {
       if (data.im_segments && data.im_segments.length) {
-        const segmentMaxCount = !Number.isNaN(moduleConfig.params.segmentMaxCount) ? moduleConfig.params.segmentMaxCount : 200;
-        const slicedSegments = data.im_segments.slice(0, segmentMaxCount);
+        const slicedSegments = getSegments(data.im_segments, moduleConfig);
         const dctr = deepAccess(bid, 'params.dctr');
         deepSetValue(
           bid,
@@ -57,8 +66,7 @@ export function getBidderFunction(bidderName) {
     },
     fluct: function (bid, data, moduleConfig) {
       if (data.im_segments && data.im_segments.length) {
-        const segmentMaxCount = !Number.isNaN(moduleConfig.params.segmentMaxCount) ? moduleConfig.params.segmentMaxCount : 200;
-        const slicedSegments = data.im_segments.slice(0, segmentMaxCount);
+        const slicedSegments = getSegments(data.im_segments, moduleConfig);
         deepSetValue(
           bid,
           'params.kv.imsids',
@@ -92,8 +100,7 @@ export function setRealTimeData(bidConfig, moduleConfig, data) {
   const utils = {deepSetValue, deepAccess, logInfo, logError, mergeDeep};
 
   if (data.im_segments) {
-    const segmentMaxCount = !Number.isNaN(moduleConfig.params.segmentMaxCount) ? moduleConfig.params.segmentMaxCount : 200;
-    const slicedSegments = data.im_segments.slice(0, segmentMaxCount);
+    const slicedSegments = getSegments(data.im_segments, moduleConfig);
     const ortb2 = bidConfig.ortb2Fragments?.global || {};
     deepSetValue(ortb2, 'user.ext.data.im_segments', slicedSegments);
 

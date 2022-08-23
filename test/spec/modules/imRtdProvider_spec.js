@@ -28,7 +28,7 @@ describe('imRtdProvider', function () {
     params: {
       cid: 5126,
       setGptKeyValues: true,
-      segmentMaxCount: 2
+      maxSegments: 2
     }
   }
 
@@ -88,7 +88,7 @@ describe('imRtdProvider', function () {
         expect(getBidderFunction('fluct')(
           bid,
           {im_segments: ['12345', '67890', '09876']},
-          {params: {segmentMaxCount: 2}}
+          {params: {maxSegments: 2}}
         ))
           .to.eql(
             {

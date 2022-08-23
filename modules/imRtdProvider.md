@@ -22,7 +22,7 @@ pbjs.setConfig(
                 params: {
                     cid: 5126, // Set your Intimate Merger Customer ID here for production
                     setGptKeyValues: true,
-                    segmentMaxCount: 200 // maximum number is 200
+                    maxSegments: 200 // maximum number is 200
                 }
             }
         ]
@@ -40,4 +40,4 @@ pbjs.setConfig(
 | params | Required | Object | Details of module params. | |
 | params.cid | Required | Number | This is the Customer ID value obtained via Intimate Merger. | `5126` |
 | params.setGptKeyValues | Optional | Boolean | This is set targeting for GPT/GAM. Default setting is true. | `true` |
-| params.segmentMaxCount | Optional | Number | This is set maximum number of rtd segments at once. Default setting is 200. | `200` |
+| params.maxSegments | Optional | Number | This is set maximum number of rtd segments at once. Default setting is 200. | `200` |
