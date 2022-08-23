@@ -171,7 +171,8 @@ describe('IndexexchangeAdapter', function () {
       sizes: [[300, 250], [300, 600]],
       mediaTypes: {
         banner: {
-          sizes: [[300, 250], [300, 600]]
+          sizes: [[300, 250], [300, 600]],
+          pos: 0,
         }
       },
       ortb2Imp: {
@@ -1802,6 +1803,7 @@ describe('IndexexchangeAdapter', function () {
       expect(payload.source.ext.schain).to.deep.equal(SAMPLE_SCHAIN);
       expect(payload.imp).to.be.an('array');
       expect(payload.imp).to.have.lengthOf(1);
+      expect(payload.source.tid).to.equal(DEFAULT_BANNER_VALID_BID[0].transactionId);
     });
 
     it('payload should have correct format and value for r.id when bidderRequestId is a number ', function () {
@@ -1830,7 +1832,7 @@ describe('IndexexchangeAdapter', function () {
 
     it('payload should not include schain when not provided', function () {
       const payload = JSON.parse(queryWithoutSchain.r);
-      expect(payload.source).to.not.exist; // source object currently only written for schain
+      expect(payload.source.schain).to.not.exist; // source object currently only written for schain
     });
 
     it('impression should have correct format and value', function () {
@@ -1839,6 +1841,7 @@ describe('IndexexchangeAdapter', function () {
       expect(impression.id).to.equal(DEFAULT_BANNER_VALID_BID[0].bidId);
       expect(impression.banner.format).to.be.length(2);
       expect(impression.banner.topframe).to.be.oneOf([0, 1]);
+      expect(impression.banner.pos).to.equal(0);
       expect(impression.ext.tid).to.equal(DEFAULT_BANNER_VALID_BID[0].transactionId);
 
       impression.banner.format.map(({ w, h, ext }, index) => {
@@ -2448,11 +2451,13 @@ describe('IndexexchangeAdapter', function () {
       bid.mediaTypes.video.protocols = [6];
       bid.mediaTypes.video.mimes = ['video/mp4'];
       bid.mediaTypes.video.api = 2;
+      bid.mediaTypes.video.pos = 0;
       const request = spec.buildRequests([bid], {})[0];
       const impression = JSON.parse(request.data.r).imp[0];
 
       expect(impression.video.protocols[0]).to.equal(6);
       expect(impression.video.api).to.equal(2);
+      expect(impression.video.pos).to.equal(0);
       expect(impression.video.mimes[0]).to.equal('video/mp4');
     });
 

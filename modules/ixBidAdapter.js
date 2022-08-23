@@ -612,13 +612,15 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
     r.ext.ixdiag.err = cachedErrors;
   }
 
+  // populate request source.tid
+  r.source = {
+    tid: validBidRequests[0].transactionId,
+  }
+
   // if an schain is provided, send it along
   if (validBidRequests[0].schain) {
-    r.source = {
-      ext: {
-        schain: validBidRequests[0].schain
-      }
-    };
+    r.source.ext = {};
+    r.source.ext.schain = validBidRequests[0].schain;
   }
 
   if (userEids.length > 0) {
@@ -777,9 +779,14 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
         id,
         banner: {
           topframe,
-          format: impressionObjects.map(({ banner: { w, h }, ext }) => ({ w, h, ext }))
+          format: impressionObjects.map(({ banner: { w, h }, ext }) => ({ w, h, ext })),
         },
       };
+
+      const position = impressions[transactionIds[adUnitIndex]].pos;
+      if (position != undefined) {
+        _bannerImpression.banner.pos = position;
+      }
 
       if (dfpAdUnitCode || gpid || tid) {
         _bannerImpression.ext = {};
@@ -1054,6 +1061,7 @@ function createBannerImps(validBidRequest, missingBannerSizes, bannerImps) {
   bannerImps[validBidRequest.transactionId].tid = deepAccess(validBidRequest, 'ortb2Imp.ext.tid');
   bannerImps[validBidRequest.transactionId].pbadslot = deepAccess(validBidRequest, 'ortb2Imp.ext.data.pbadslot');
   bannerImps[validBidRequest.transactionId].tagId = deepAccess(validBidRequest, 'params.tagId');
+  bannerImps[validBidRequest.transactionId].pos = deepAccess(validBidRequest, 'mediaTypes.banner.pos')
 
   const adUnitCode = validBidRequest.adUnitCode;
   const divId = document.getElementById(adUnitCode) ? adUnitCode : getGptSlotInfoForAdUnitCode(adUnitCode).divId;
