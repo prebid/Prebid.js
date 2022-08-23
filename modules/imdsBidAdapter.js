@@ -16,7 +16,7 @@ const BLOCKED_AD_SIZES = [
 ];
 const DEFAULT_MAX_TTL = 420; // 7 minutes
 export const spec = {
-  code: 'synacormedia',
+  code: 'imds',
   supportedMediaTypes: [ BANNER, VIDEO ],
   sizeMap: {},
 
@@ -64,7 +64,7 @@ export const spec = {
 
     validBidReqs.forEach((bid, i) => {
       if (seatId && seatId !== bid.params.seatId) {
-        logWarn(`Synacormedia: there is an inconsistent seatId: ${bid.params.seatId} but only sending bid requests for ${seatId}, you should double check your configuration`);
+        logWarn(`IMDS: there is an inconsistent seatId: ${bid.params.seatId} but only sending bid requests for ${seatId}, you should double check your configuration`);
         return;
       } else {
         seatId = bid.params.seatId;
@@ -72,7 +72,7 @@ export const spec = {
       const tagIdOrPlacementId = bid.params.tagId || bid.params.placementId;
       let pos = parseInt(bid.params.pos, 10);
       if (isNaN(pos)) {
-        logWarn(`Synacormedia: there is an invalid POS: ${bid.params.pos}`);
+        logWarn(`IMDS: there is an invalid POS: ${bid.params.pos}`);
         pos = 0;
       }
       const videoOrBannerKey = this.isVideoBid(bid) ? 'video' : 'banner';
@@ -150,7 +150,7 @@ export const spec = {
       };
       const bidFloor = getBidFloor(bid, 'banner', '*');
       if (isNaN(bidFloor)) {
-        logWarn(`Synacormedia: there is an invalid bid floor: ${bid.params.bidfloor}`);
+        logWarn(`IMDS: there is an invalid bid floor: ${bid.params.bidfloor}`);
       }
       if (bidFloor !== null && !isNaN(bidFloor)) {
         imp.bidfloor = bidFloor;
@@ -174,7 +174,7 @@ export const spec = {
       };
       const bidFloor = getBidFloor(bid, 'video', size);
       if (isNaN(bidFloor)) {
-        logWarn(`Synacormedia: there is an invalid bid floor: ${bid.params.bidfloor}`);
+        logWarn(`IMDS: there is an invalid bid floor: ${bid.params.bidfloor}`);
       }
 
       if (bidFloor !== null && !isNaN(bidFloor)) {
@@ -212,7 +212,7 @@ export const spec = {
     };
 
     if (!serverResponse.body || typeof serverResponse.body != 'object') {
-      logWarn('Synacormedia: server returned empty/non-json response: ' + JSON.stringify(serverResponse.body));
+      logWarn('IMDS: server returned empty/non-json response: ' + JSON.stringify(serverResponse.body));
       return;
     }
     const {id, seatbid: seatbids} = serverResponse.body;
@@ -300,7 +300,7 @@ export const spec = {
         url: `${USER_SYNC_HOST}/html/usersync.html?src=$$REPO_AND_VERSION$$`
       });
     } else {
-      logWarn('Synacormedia: Please enable iframe based user sync.');
+      logWarn('IMDS: Please enable iframe based user sync.');
     }
     return syncs;
   }

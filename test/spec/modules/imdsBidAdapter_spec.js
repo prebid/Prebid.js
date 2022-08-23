@@ -1,9 +1,9 @@
 import { assert, expect } from 'chai';
 import { BANNER } from 'src/mediaTypes.js';
 import { config } from 'src/config.js';
-import { spec } from 'modules/synacormediaBidAdapter.js';
+import { spec } from 'modules/imdsBidAdapter.js';
 
-describe('synacormediaBidAdapter ', function () {
+describe('imdsBidAdapter ', function () {
   describe('isBidRequestValid', function () {
     let bid;
     beforeEach(function () {
@@ -115,7 +115,7 @@ describe('synacormediaBidAdapter ', function () {
   });
   describe('buildRequests', function () {
     let validBidRequestVideo = {
-      bidder: 'synacormedia',
+      bidder: 'imds',
       params: {
         seatId: 'prebid',
         tagId: '1234',
@@ -140,7 +140,7 @@ describe('synacormediaBidAdapter ', function () {
     };
 
     let bidderRequestVideo = {
-      bidderCode: 'synacormedia',
+      bidderCode: 'imds',
       auctionId: 'VideoAuctionId124',
       bidderRequestId: '117954d20d7c9c',
       auctionStart: 1553624929697,
@@ -569,7 +569,7 @@ describe('synacormediaBidAdapter ', function () {
     });
     it('should use all the video params in the impression request', function () {
       let validBidRequestVideo = {
-        bidder: 'synacormedia',
+        bidder: 'imds',
         params: {
           seatId: 'prebid',
           tagId: '1234',
@@ -627,7 +627,7 @@ describe('synacormediaBidAdapter ', function () {
     });
     it('should move any video params in the mediaTypes object to params.video object', function () {
       let validBidRequestVideo = {
-        bidder: 'synacormedia',
+        bidder: 'imds',
         params: {
           seatId: 'prebid',
           tagId: '1234',
@@ -685,7 +685,7 @@ describe('synacormediaBidAdapter ', function () {
     });
     it('should create params.video object if not present on bid request and move any video params in the mediaTypes object to it', function () {
       let validBidRequestVideo = {
-        bidder: 'synacormedia',
+        bidder: 'imds',
         params: {
           seatId: 'prebid',
           tagId: '1234'
@@ -757,7 +757,7 @@ describe('synacormediaBidAdapter ', function () {
 
   describe('Bid Requests with placementId should be backward compatible ', function () {
     let validVideoBidReq = {
-      bidder: 'synacormedia',
+      bidder: 'imds',
       params: {
         seatId: 'prebid',
         placementId: 'demo1',
@@ -798,7 +798,7 @@ describe('synacormediaBidAdapter ', function () {
       refererInfo: {
         referer: 'http://localhost:9999/'
       },
-      bidderCode: 'synacormedia',
+      bidderCode: 'imds',
       auctionId: 'f8a75621-d672-4cbb-9275-3db7d74fb110'
     };
 
@@ -819,7 +819,7 @@ describe('synacormediaBidAdapter ', function () {
 
   describe('Bid Requests with schain object ', function () {
     let validBidReq = {
-      bidder: 'synacormedia',
+      bidder: 'imds',
       params: {
         seatId: 'prebid',
         tagId: 'demo1',
@@ -861,12 +861,12 @@ describe('synacormediaBidAdapter ', function () {
       refererInfo: {
         referer: 'http://localhost:9999/'
       },
-      bidderCode: 'synacormedia',
+      bidderCode: 'imds',
       auctionId: 'f8a75621-d672-4cbb-9275-3db7d74fb110',
       bidderRequestId: '16d438671bfbec',
       bids: [
         {
-          bidder: 'synacormedia',
+          bidder: 'imds',
           params: {
             seatId: 'prebid',
             tagId: 'demo1',
@@ -1339,7 +1339,7 @@ describe('synacormediaBidAdapter ', function () {
 
   describe('Bid Requests with price module should use if available', function () {
     let validVideoBidRequest = {
-      bidder: 'synacormedia',
+      bidder: 'imds',
       params: {
         bidfloor: '0.50',
         seatId: 'prebid',
@@ -1382,7 +1382,7 @@ describe('synacormediaBidAdapter ', function () {
       refererInfo: {
         referer: 'http://localhost:9999/'
       },
-      bidderCode: 'synacormedia',
+      bidderCode: 'imds',
       auctionId: 'f8a75621-d672-4cbb-9275-3db7d74fb110'
     };
 
@@ -1409,7 +1409,7 @@ describe('synacormediaBidAdapter ', function () {
 
   describe('Bid Requests with gpid or anything in bid.ext should use if available', function () {
     let validVideoBidRequest = {
-      bidder: 'synacormedia',
+      bidder: 'imds',
       params: {
         seatId: 'prebid',
         placementId: 'demo1',
@@ -1466,7 +1466,7 @@ describe('synacormediaBidAdapter ', function () {
       refererInfo: {
         referer: 'http://localhost:9999/'
       },
-      bidderCode: 'synacormedia',
+      bidderCode: 'imds',
       auctionId: 'f8a75621-d672-4cbb-9275-3db7d74fb110'
     };
 

@@ -1,14 +1,14 @@
 # Overview
 
 ```
-Module Name: Synacor Media Bidder Adapter
+Module Name: iMedia Digital Services Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: eng-demand@synacor.com
+Maintainer: eng-demand@imds.tv
 ```
 
 # Description
 
-The Synacor Media adapter requires setup and approval from Synacor.
+The iMedia Digital Services adapter requires setup and approval from iMedia Digital Services.
 Please reach out to your account manager for more information.
 
 ### DFP Video Creative
@@ -30,7 +30,7 @@ https://track.technoratimedia.com/openrtb/tags?ID=%%PATTERN:hb_cache_id_synacorm
           }
       },
       bids: [{
-          bidder: "synacormedia",
+          bidder: "imds",
           params: {
               seatId: "prebid",
               tagId: "demo1",
@@ -49,7 +49,7 @@ https://track.technoratimedia.com/openrtb/tags?ID=%%PATTERN:hb_cache_id_synacorm
         }
       },
       bids: [{
-          bidder: "synacormedia",
+          bidder: "imds",
           params: {
               seatId: "prebid",
               tagId: "demo1",
