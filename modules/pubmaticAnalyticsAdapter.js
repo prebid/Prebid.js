@@ -382,7 +382,7 @@ function bidResponseHandler(args) {
     return;
   }
 
-  if (bid.bidder && args.bidderCode && bid.bidder !== args.bidderCode) {
+  if ((bid.bidder && args.bidderCode && bid.bidder !== args.bidderCode) || (bid.bidder === args.bidderCode && bid.status === SUCCESS)) {
     bid = copyRequiredBidDetails(args);
     cache.auctions[args.auctionId].adUnitCodes[args.adUnitCode].bids[args.requestId].push(bid);
   }
