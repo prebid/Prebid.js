@@ -178,6 +178,19 @@ function findGdprStatus(gdprApplies, gdprData, apiVersion) {
   return status;
 }
 
+// Below is hack for openwrap:
+// Description : Teads expect code to be a div and it replaces the code value in script
+// In OpenWrap we create adUnit as Div@partnerid@sizes(eg. div1@teads@300x250) which is causing trouble for them as
+// it tries to find element with div1@teads so removing @teads from adUnit code in case of openwrap.
+// TODO : Need to have a proper solution for the same which can be pushed to prebid.
+function removePartnerNameFromAdUnitCode(adUnitCode) {
+  adUnitCode = adUnitCode.toString();
+  if (adUnitCode && adUnitCode.indexOf('@teads') > -1) {
+    adUnitCode = adUnitCode.split('@teads')[0];
+  }
+  return adUnitCode;
+}
+
 function isGlobalConsent(gdprData, apiVersion) {
   return gdprData && apiVersion === 1
     ? (gdprData.hasGlobalScope || gdprData.hasGlobalConsent)
@@ -197,6 +210,7 @@ function buildRequestObject(bid) {
   reqObj.bidderRequestId = getBidIdParameter('bidderRequestId', bid);
   reqObj.placementId = parseInt(placementId, 10);
   reqObj.pageId = parseInt(pageId, 10);
+  reqObj.adUnitCode = removePartnerNameFromAdUnitCode(getBidIdParameter('adUnitCode', bid));
   reqObj.adUnitCode = getBidIdParameter('adUnitCode', bid);
   reqObj.auctionId = getBidIdParameter('auctionId', bid);
   reqObj.transactionId = getBidIdParameter('transactionId', bid);

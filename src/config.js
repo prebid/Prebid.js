@@ -30,7 +30,6 @@ const DEFAULT_DEVICE_ACCESS = true;
 const DEFAULT_MAX_NESTED_IFRAMES = 10;
 
 const DEFAULT_TIMEOUTBUFFER = 400;
-
 export const RANDOM = 'random';
 const FIXED = 'fixed';
 

@@ -141,7 +141,6 @@ export const spec = {
 
     return true;
   },
-
   /**
    * Make a server request from the list of BidRequests.
    *
@@ -159,7 +158,6 @@ export const spec = {
       data: JSON.stringify(request),
     };
   },
-
   /**
    * Unpack the response from the server into a list of bids.
    *

@@ -1,4 +1,4 @@
-import { _each, pick, logWarn, isStr, isArray, logError } from '../src/utils.js';
+import { _each, pick, logWarn, isStr, isArray, logError, isFn } from '../src/utils.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
@@ -30,6 +30,11 @@ const DEFAULT_PUBLISHER_ID = 0;
 const DEFAULT_PROFILE_ID = 0;
 const DEFAULT_PROFILE_VERSION_ID = 0;
 const enc = window.encodeURIComponent;
+const MEDIATYPE = {
+  BANNER: 0,
+  VIDEO: 1,
+  NATIVE: 2
+}
 
 /// /////////// VARIABLES //////////////
 let publisherId = DEFAULT_PUBLISHER_ID; // int: mandatory
@@ -47,7 +52,11 @@ function sizeToDimensions(size) {
 }
 
 function validMediaType(type) {
-  return ({'banner': 1, 'native': 1, 'video': 1}).hasOwnProperty(type);
+  return ({
+    'banner': 1,
+    'native': 1,
+    'video': 1
+  }).hasOwnProperty(type);
 }
 
 function formatSource(src) {
@@ -87,6 +96,7 @@ function copyRequiredBidDetails(bid) {
     'status', () => NO_BID, // default a bid to NO_BID until response is recieved or bid is timed out
     'finalSource as source',
     'params',
+    'floorData',
     'adUnit', () => pick(bid, [
       'adUnitCode',
       'transactionId',
@@ -151,9 +161,11 @@ function parseBidResponse(bid) {
     'bidId',
     'mediaType',
     'params',
+    'floorData',
     'mi',
     'regexPattern', () => bid.regexPattern || undefined,
     'partnerImpId', // partner impression ID
+    'prebidBidId',
     'dimensions', () => pick(bid, [
       'width',
       'height'
@@ -190,18 +202,41 @@ function getValueForKgpv(bid, adUnitId) {
   } else if (bid.bidResponse && bid.bidResponse.regexPattern) {
     return bid.bidResponse.regexPattern;
   } else if (bid.params.kgpv) {
-    return bid.params.kgpv;
+    return getUpdatedKGPVForVideo(bid.params.kgpv, bid.bidResponse);
   } else {
     return adUnitId;
   }
 }
 
+function getUpdatedKGPVForVideo(kgpv, bidResponse) {
+  if (bidResponse && bidResponse.mediaType && bidResponse.mediaType == 'video') {
+    var videoKgpv = ['', '0x0'];
+    var splitKgpv = kgpv.split('@');
+    if (splitKgpv.length > 1) {
+      if (splitKgpv.length == 2) {
+        if (splitKgpv[1].indexOf(':') > -1) {
+          var kgpvIndex = splitKgpv[1].split(':');
+          videoKgpv[1] = videoKgpv[1] + ':' + kgpvIndex[1];
+        }
+        videoKgpv[0] = splitKgpv[0];
+      }
+      kgpv = videoKgpv.join('@');
+    }
+  }
+  return kgpv;
+}
+
 function getAdapterNameForAlias(aliasName) {
+  // This condition  is OpenWrap specific, not to contribute to Prebid
+  if (window.PWT && isFn(window.PWT.getAdapterNameForAlias)) {
+    return window.PWT.getAdapterNameForAlias(aliasName)
+  }
+  // Fallback mechanism which is conrtibuted to Prebid
   return adapterManager.aliasRegistry[aliasName] || aliasName;
 }
 
 function getAdDomain(bidResponse) {
-  if (bidResponse.meta && bidResponse.meta.advertiserDomains) {
+  if (bidResponse.meta && bidResponse.meta.advertiserDomains && bidResponse.meta.advertiserDomains.length > 0) {
     let adomain = bidResponse.meta.advertiserDomains[0]
     if (adomain) {
       try {
@@ -209,7 +244,7 @@ function getAdDomain(bidResponse) {
         return hostname.hostname.replace('www.', '');
       } catch (e) {
         logWarn(LOG_PRE_FIX + 'Adomain URL (Not a proper URL):', adomain);
-        return adomain.replace('www.', '');
+        return adomain.split('/')[0].replace('www.', '');
       }
     }
   }
@@ -217,15 +252,17 @@ function getAdDomain(bidResponse) {
 
 function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
   highestBid = (highestBid && highestBid.length > 0) ? highestBid[0] : null;
-  return Object.keys(adUnit.bids).reduce(function(partnerBids, bidId) {
+  return Object.keys(adUnit.bids).reduce(function (partnerBids, bidId) {
     let bid = adUnit.bids[bidId];
+    const prebidBidId = bid.bidResponse && bid.bidResponse.prebidBidId;
     partnerBids.push({
       'pn': getAdapterNameForAlias(bid.bidder),
       'bc': bid.bidder,
-      'bidid': bid.bidId,
+      'bidid': prebidBidId || bid.bidId,
+      'origbidid': bid.bidId,
       'db': bid.bidResponse ? 0 : 1,
       'kgpv': getValueForKgpv(bid, adUnitId),
-      'kgpsv': bid.params.kgpv ? bid.params.kgpv : adUnitId,
+      'kgpsv': bid.params.kgpv ? getUpdatedKGPVForVideo(bid.params.kgpv, bid.bidResponse) : adUnitId,
       'psz': bid.bidResponse ? (bid.bidResponse.dimensions.width + 'x' + bid.bidResponse.dimensions.height) : '0x0',
       'eg': bid.bidResponse ? bid.bidResponse.bidGrossCpmUSD : 0,
       'en': bid.bidResponse ? bid.bidResponse.bidPriceUSD : 0,
@@ -236,22 +273,58 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
       'adv': bid.bidResponse ? getAdDomain(bid.bidResponse) || undefined : undefined,
       'ss': (s2sBidders.indexOf(bid.bidder) > -1) ? 1 : 0,
       't': (bid.status == ERROR && bid.error.code == TIMEOUT_ERROR) ? 1 : 0,
-      'wb': (highestBid && highestBid.requestId === bid.bidId ? 1 : 0),
-      'mi': bid.bidResponse ? (bid.bidResponse.mi || undefined) : undefined,
+      'wb': (highestBid && highestBid.adId === bid.bidId ? 1 : 0),
+      'mi': bid.bidResponse ? bid.bidResponse.mi : (window.matchedimpressions && window.matchedimpressions[bid.bidder]),
       'af': bid.bidResponse ? (bid.bidResponse.mediaType || undefined) : undefined,
       'ocpm': bid.bidResponse ? (bid.bidResponse.originalCpm || 0) : 0,
       'ocry': bid.bidResponse ? (bid.bidResponse.originalCurrency || CURRENCY_USD) : CURRENCY_USD,
-      'piid': bid.bidResponse ? (bid.bidResponse.partnerImpId || EMPTY_STRING) : EMPTY_STRING
+      'piid': bid.bidResponse ? (bid.bidResponse.partnerImpId || EMPTY_STRING) : EMPTY_STRING,
+      'frv': (s2sBidders.indexOf(bid.bidder) > -1) ? undefined : (bid.bidResponse ? (bid.bidResponse.floorData ? bid.bidResponse.floorData.floorRuleValue : undefined) : undefined),
     });
     return partnerBids;
   }, [])
+}
+
+function getSizesForAdUnit(adUnit, adUnitId) {
+  var bid = Object.values(adUnit.bids).filter((bid) => !!bid.bidResponse && bid.bidResponse.mediaType === 'native')[0];
+  if (!!bid || (bid === undefined && adUnit.dimensions.length === 0)) {
+    return ['1x1'];
+  } else {
+    return adUnit.dimensions.map(function (e) {
+      return e[0] + 'x' + e[1];
+    })
+  }
+}
+
+function getAdUnitAdFormats(adUnit) {
+  var af = adUnit ? Object.keys(adUnit.mediaTypes).map(format => MEDIATYPE[format.toUpperCase()]) : [];
+  return af;
+}
+
+function getAdUnit(adUnits, adUnitId) {
+  return adUnits.filter(adUnit => (adUnit.divID && adUnit.divID == adUnitId) || (adUnit.code == adUnitId))[0];
+}
+
+function getPSL(auctionId) {
+  let latency = window.pbsLatency;
+  let latencyValues = latency && latency[auctionId]
+  // If we do not have latencyValues, means we are not using prebidServerBidAdapter i.e. auction end point
+  // so for 2.5 endpoint we need to make sure that we are not passing this key as earlier.
+  let pslTime = latencyValues ? 0 : undefined;
+  if (latencyValues && latencyValues['startTime'] && latencyValues['endTime']) {
+    pslTime = latencyValues['endTime'] - latencyValues['startTime']
+  }
+  return pslTime;
 }
 
 function executeBidsLoggerCall(e, highestCpmBids) {
   let auctionId = e.auctionId;
   let referrer = config.getConfig('pageUrl') || cache.auctions[auctionId].referer || '';
   let auctionCache = cache.auctions[auctionId];
-  let outputObj = { s: [] };
+  let floorData = auctionCache.floorData;
+  let outputObj = {
+    s: []
+  };
   let pixelURL = END_POINT_BID_LOGGER;
 
   if (!auctionCache) {
@@ -271,6 +344,7 @@ function executeBidsLoggerCall(e, highestCpmBids) {
   outputObj['tst'] = Math.round((new window.Date()).getTime() / 1000);
   outputObj['pid'] = '' + profileId;
   outputObj['pdvid'] = '' + profileVersionId;
+  outputObj['psl'] = getPSL(auctionId);
   outputObj['dvc'] = {'plt': getDevicePlatform()};
   outputObj['tgid'] = (function() {
     var testGroupId = parseInt(config.getConfig('testGroupId') || 0);
@@ -280,11 +354,20 @@ function executeBidsLoggerCall(e, highestCpmBids) {
     return 0;
   })();
 
+  if (floorData) {
+    outputObj['fmv'] = floorData.floorRequestData ? floorData.floorRequestData.modelVersion || undefined : undefined;
+    outputObj['ft'] = floorData.floorResponseData ? (floorData.floorResponseData.enforcements.enforceJS == false ? 0 : 1) : undefined;
+  }
+
   outputObj.s = Object.keys(auctionCache.adUnitCodes).reduce(function(slotsArray, adUnitId) {
     let adUnit = auctionCache.adUnitCodes[adUnitId];
+    let origAdUnit = getAdUnit(auctionCache.origAdUnits, adUnitId);
     let slotObject = {
       'sn': adUnitId,
-      'sz': adUnit.dimensions.map(e => e[0] + 'x' + e[1]),
+      'au': origAdUnit.adUnitId || adUnitId,
+      'mt': getAdUnitAdFormats(origAdUnit),
+      'sz': getSizesForAdUnit(adUnit, adUnitId),
+      'fskp': floorData ? (floorData.floorRequestData ? (floorData.floorRequestData.skipped == false ? 0 : 1) : undefined) : undefined,
       'ps': gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestCpmBids.filter(bid => bid.adUnitCode === adUnitId))
     };
     slotsArray.push(slotObject);
@@ -296,8 +379,7 @@ function executeBidsLoggerCall(e, highestCpmBids) {
   ajax(
     pixelURL,
     null,
-    'json=' + enc(JSON.stringify(outputObj)),
-    {
+    'json=' + enc(JSON.stringify(outputObj)), {
       contentType: 'application/x-www-form-urlencoded',
       withCredentials: true,
       method: 'POST'
@@ -309,15 +391,19 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   const winningBidId = cache.auctions[auctionId].adUnitCodes[adUnitId].bidWon;
   const winningBid = cache.auctions[auctionId].adUnitCodes[adUnitId].bids[winningBidId];
   const adapterName = getAdapterNameForAlias(winningBid.bidder);
+  const generatedBidId = winningBid.bidResponse && winningBid.bidResponse.prebidBidId;
+  var origAdUnit = getAdUnit(cache.auctions[auctionId].origAdUnits, adUnitId).adUnitId || adUnitId;
   let pixelURL = END_POINT_WIN_BID_LOGGER;
   pixelURL += 'pubid=' + publisherId;
   pixelURL += '&purl=' + enc(config.getConfig('pageUrl') || cache.auctions[auctionId].referer || '');
   pixelURL += '&tst=' + Math.round((new window.Date()).getTime() / 1000);
   pixelURL += '&iid=' + enc(auctionId);
-  pixelURL += '&bidid=' + enc(winningBidId);
+  pixelURL += '&bidid=' + (generatedBidId ? enc(generatedBidId) : enc(winningBid.bidId));
+  pixelURL += '&origbidid=' + enc(winningBid.bidId);
   pixelURL += '&pid=' + enc(profileId);
   pixelURL += '&pdvid=' + enc(profileVersionId);
   pixelURL += '&slot=' + enc(adUnitId);
+  pixelURL += '&au=' + enc(origAdUnit);
   pixelURL += '&pn=' + enc(adapterName);
   pixelURL += '&bc=' + enc(winningBid.bidder);
   pixelURL += '&en=' + enc(winningBid.bidResponse.bidPriceUSD);
@@ -327,19 +413,17 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   ajax(
     pixelURL,
     null,
-    null,
-    {
+    null, {
       contentType: 'application/x-www-form-urlencoded',
       withCredentials: true,
       method: 'GET'
     }
   );
 }
-
 /// /////////// ADAPTER EVENT HANDLER FUNCTIONS //////////////
 
 function auctionInitHandler(args) {
-  s2sBidders = (function() {
+  s2sBidders = (function () {
     let s2sConf = config.getConfig('s2sConfig');
     return (s2sConf && isArray(s2sConf.bidders)) ? s2sConf.bidders : [];
   }());
@@ -349,6 +433,8 @@ function auctionInitHandler(args) {
     'bidderDonePendingCount', () => args.bidderRequests.length,
   ]);
   cacheEntry.adUnitCodes = {};
+  cacheEntry.origAdUnits = args.adUnits;
+  cacheEntry.floorData = {};
   cacheEntry.referer = args.bidderRequests[0].refererInfo.referer;
   cache.auctions[args.auctionId] = cacheEntry;
 }
@@ -363,6 +449,9 @@ function bidRequestedHandler(args) {
       };
     }
     cache.auctions[args.auctionId].adUnitCodes[bid.adUnitCode].bids[bid.bidId] = copyRequiredBidDetails(bid);
+    if (bid.floorData) {
+      cache.auctions[args.auctionId].floorData['floorRequestData'] = bid.floorData;
+    }
   })
 }
 
@@ -372,6 +461,12 @@ function bidResponseHandler(args) {
     logError(LOG_PRE_FIX + 'Could not find associated bid request for bid response with requestId: ', args.requestId);
     return;
   }
+
+  if (args.floorData) {
+    cache.auctions[args.auctionId].floorData['floorResponseData'] = args.floorData;
+  }
+
+  bid.bidId = args.adId;
   bid.source = formatSource(bid.source || args.source);
   setBidStatus(bid, args);
   bid.clientLatencyTimeMs = Date.now() - cache.auctions[args.auctionId].timestamp;
@@ -413,7 +508,7 @@ function bidTimeoutHandler(args) {
   // db = 0 and t = 1 means bidder did  respond with a bid but post timeout
   args.forEach(badBid => {
     let auctionCache = cache.auctions[badBid.auctionId];
-    let bid = auctionCache.adUnitCodes[badBid.adUnitCode].bids[ badBid.bidId || badBid.requestId ];
+    let bid = auctionCache.adUnitCodes[badBid.adUnitCode].bids[badBid.bidId || badBid.requestId];
     if (bid) {
       bid.status = ERROR;
       bid.error = {
@@ -427,7 +522,9 @@ function bidTimeoutHandler(args) {
 
 /// /////////// ADAPTER DEFINITION //////////////
 
-let baseAdapter = adapter({analyticsType: 'endpoint'});
+let baseAdapter = adapter({
+  analyticsType: 'endpoint'
+});
 let pubmaticAdapter = Object.assign({}, baseAdapter, {
 
   enableAnalytics(conf = {}) {
@@ -464,7 +561,10 @@ let pubmaticAdapter = Object.assign({}, baseAdapter, {
     baseAdapter.disableAnalytics.apply(this, arguments);
   },
 
-  track({eventType, args}) {
+  track({
+    eventType,
+    args
+  }) {
     switch (eventType) {
       case CONSTANTS.EVENTS.AUCTION_INIT:
         auctionInitHandler(args);

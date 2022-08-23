@@ -101,6 +101,15 @@ describe('Parrable ID System', function() {
       let logErrorStub;
       let callbackSpy = sinon.spy();
 
+      let decodeBase64UrlSafe = function (encBase64) {
+        const DEC = {
+          '-': '+',
+          '_': '/',
+          '.': '='
+        };
+        return encBase64.replace(/[-_.]/g, (m) => DEC[m]);
+      }
+
       beforeEach(function() {
         logErrorStub = sinon.stub(utils, 'logError');
         callbackSpy.resetHistory();

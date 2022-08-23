@@ -125,6 +125,12 @@
  * @property {(function|undefined)} callback - function that will return an id
  */
 
+/**
+  * @typedef {Object} RefreshUserIdsOptions
+  * @property {(string[]|undefined)} submoduleNames - submodules to refresh
+  */
+
+// import find from 'core-js-pure/features/array/find.js';
 import {find, includes} from '../../src/polyfill.js';
 import {config} from '../../src/config.js';
 import * as events from '../../src/events.js';
@@ -149,8 +155,13 @@ import {
   logInfo,
   logWarn,
   timestamp,
-  isEmpty
+  isEmpty,
+  skipUndefinedValues
 } from '../../src/utils.js';
+// import includes from 'core-js-pure/features/array/includes.js';
+import MD5 from 'crypto-js/md5.js';
+import SHA1 from 'crypto-js/sha1.js';
+import SHA256 from 'crypto-js/sha256.js';
 import {getPPID as coreGetPPID} from '../../src/adserver.js';
 import {promiseControls} from '../../src/utils/promise.js';
 
@@ -178,6 +189,9 @@ let submodules = [];
 /** @type {SubmoduleContainer[]} */
 let initializedSubmodules;
 
+/** @type {boolean} */
+let initializedSubmodulesUpdated = false;
+
 /** @type {SubmoduleConfig[]} */
 let configRegistry = [];
 
@@ -193,12 +207,19 @@ export let syncDelay;
 /** @type {(number|undefined)} */
 export let auctionDelay;
 
+/** @type {(Object|undefined)} */
+let userIdentity = {};
+
 /** @type {(string|undefined)} */
 let ppidSource;
 
 let configListener;
 
 /** @param {Submodule[]} submodules */
+
+let modulesToRefresh = [];
+let scriptBasedModulesToRefresh = [];
+
 export function setSubmoduleRegistry(submodules) {
   submoduleRegistry = submodules;
 }
@@ -645,6 +666,12 @@ export function requestBidsHook(fn, reqBidsConfigObj, {delay = delayFor} = {}) {
     getUserIdsAsync(),
     delay(auctionDelay)
   ]).then(() => {
+    // initializedSubmodulesUpdated - flag to identify if any module has been added from the page post module initialization. This is specifically for OW use case
+    if (initializedSubmodulesUpdated && initializedSubmodules !== undefined) {
+      for (var index in initializedSubmodules) {
+        submodules.push(initializedSubmodules[index]);
+      }
+    }
     // pass available user id data to bid adapters
     addIdDataToAdUnitBids(reqBidsConfigObj.adUnits || getGlobal().adUnits, initializedSubmodules);
     const ppid = getPPID();
@@ -732,7 +759,8 @@ function encryptSignals(signals, version = 1) {
 * This function will be exposed in the global-name-space so that publisher can register the signals-ESP.
 */
 function registerSignalSources() {
-  if (!isGptPubadsDefined()) {
+  // Need to keep below change always instead of using isGptPubadsDefined()
+  if (!window.googletag) {
     return;
   }
   window.googletag.encryptedSignalProviders = window.googletag.encryptedSignalProviders || [];
@@ -764,7 +792,10 @@ function registerSignalSources() {
  * @param submoduleNames? submodules to refresh. If omitted, refresh all submodules.
  * @param callback? called when the refresh is complete
  */
-function refreshUserIds({submoduleNames} = {}, callback) {
+function refreshUserIds({submoduleNames} = {}, callback, moduleUpdated) {
+  if (moduleUpdated !== undefined) {
+    initializedSubmodulesUpdated = moduleUpdated;
+  }
   return initIdSystem({refresh: true, submoduleNames})
     .then(() => {
       if (callback && isFn(callback)) {
@@ -789,6 +820,177 @@ function getUserIdsAsync() {
   return initIdSystem().then(() => getUserIds(), (e) => e === INIT_CANCELED ? getUserIdsAsync() : Promise.reject(e));
 }
 
+function setUserIdentities(userIdentityData) {
+  if (isEmpty(userIdentityData)) {
+    userIdentity = {};
+    return;
+  }
+  var pubProvidedEmailHash = {};
+  if (userIdentityData.pubProvidedEmail) {
+    generateEmailHash(userIdentityData.pubProvidedEmail, pubProvidedEmailHash);
+    userIdentityData.pubProvidedEmailHash = pubProvidedEmailHash;
+    delete userIdentityData.pubProvidedEmail;
+  }
+  Object.assign(userIdentity, userIdentityData);
+  if (window.PWT && window.PWT.loginEvent) {
+    reTriggerPartnerCallsWithEmailHashes();
+    window.PWT.loginEvent = false;
+  }
+};
+
+export function getRawPDString(emailHashes, userID) {
+  let params = {
+    1: (emailHashes && emailHashes['SHA256']) || undefined, // Email
+    5: userID ? btoa(userID) : undefined // UserID
+  };
+  let pdString = Object.keys(skipUndefinedValues(params)).map(function(key) {
+    return params[key] && key + '=' + params[key]
+  }).join('&');
+  return btoa(pdString);
+};
+
+export function updateModuleParams(moduleToUpdate) {
+  let params = CONSTANTS.MODULE_PARAM_TO_UPDATE_FOR_SSO[moduleToUpdate.name];
+  if (!params) return;
+
+  let userIdentity = getUserIdentities() || {};
+  let enableSSO = (window.PWT && window.PWT.ssoEnabled) || false;
+  let emailHashes = enableSSO && userIdentity.emailHash ? userIdentity.emailHash : userIdentity.pubProvidedEmailHash ? userIdentity.pubProvidedEmailHash : undefined;
+  params.forEach(function(param) {
+    moduleToUpdate.params[param.key] = (moduleToUpdate.name === 'id5Id' ? getRawPDString(emailHashes, userIdentity.userID) : emailHashes ? emailHashes[param.hashType] : undefined);
+  });
+}
+
+function generateModuleLists() {
+  let primaryModulesList = CONSTANTS.REFRESH_IDMODULES_LIST.PRIMARY_MODULES;
+  let scriptBasedModulesList = CONSTANTS.REFRESH_IDMODULES_LIST.SCRIPT_BASED_MODULES;
+  for (let index in configRegistry) {
+    let moduleName = configRegistry[index].name;
+    if (primaryModulesList.indexOf(moduleName) >= 0) {
+      modulesToRefresh.push(moduleName);
+      updateModuleParams(configRegistry[index]);
+    }
+    if (scriptBasedModulesList.indexOf(moduleName) >= 0) {
+      scriptBasedModulesToRefresh.push(moduleName);
+    }
+  }
+}
+
+export function reTriggerPartnerCallsWithEmailHashes(updateModulesOnly) {
+  generateModuleLists();
+  getGlobal().refreshUserIds({'submoduleNames': modulesToRefresh});
+  reTriggerScriptBasedAPICalls(scriptBasedModulesToRefresh);
+}
+
+export function reTriggerScriptBasedAPICalls(modulesToRefresh) {
+  let i = 0;
+  let userIdentity = getUserIdentities() || {};
+  for (i in modulesToRefresh) {
+    switch (modulesToRefresh[i]) {
+      case 'zeotapIdPlus':
+        if (window.zeotap && isFn(window.zeotap.callMethod)) {
+          var userIdentityObject = {
+            email: userIdentity.emailHash['SHA256']
+          };
+          window.zeotap.callMethod('setUserIdentities', userIdentityObject, true);
+        }
+        break;
+      case 'identityLink':
+        if (window.ats && isFn(window.ats.start)) {
+          var atsObject = window.ats.outputCurrentConfiguration();
+          atsObject.emailHashes = userIdentity.emailHash ? [userIdentity.emailHash['MD5'], userIdentity.emailHash['SHA1'], userIdentity.emailHash['SHA256']] : undefined;
+          window.ats.start(atsObject);
+        }
+        break;
+      case 'publinkId':
+        if (window.conversant && isFn(window.conversant.launch)) {
+          let launchObject = window.conversant.getLauncherObject();
+          launchObject.emailHashes = userIdentity.emailHash ? [userIdentity.emailHash['MD5'], userIdentity.emailHash['SHA256']] : undefined;
+          window.conversant.launch('publink', 'start', launchObject);
+        }
+        break;
+    }
+  }
+}
+
+function getUserIdentities() {
+  return userIdentity;
+}
+
+function processFBLoginData(refThis, response) {
+  let emailHash = {};
+  if (response.status === 'connected') {
+    window.PWT = window.PWT || {};
+    window.PWT.fbAt = response.authResponse.accessToken;
+    window.FB && window.FB.api('/me?fields=email&access_token=' + window.PWT.fbAt, function (response) {
+      logInfo('SSO - Data received from FB API');
+      if (response.error) {
+        logInfo('SSO - User information could not be retrieved by facebook api [', response.error.message, ']');
+        return;
+      }
+      logInfo('SSO - Information successfully retrieved by Facebook API.');
+      generateEmailHash(response.email || undefined, emailHash);
+      refThis.setUserIdentities({
+        emailHash: emailHash
+      });
+    });
+  } else {
+    logInfo('SSO - Error fetching login information from facebook');
+  }
+}
+
+/**
+ * This function is used to read sso information from facebook and google apis.
+ * @param {String} provider SSO provider for which the api call is to be made
+ * @param {Object} userObject Google's user object, passed from google's callback function
+ */
+function onSSOLogin(data) {
+  let refThis = this;
+  let email;
+  let emailHash = {};
+  if (!window.PWT || !window.PWT.ssoEnabled) return;
+
+  switch (data.provider) {
+    case undefined:
+    case 'facebook':
+      if (data.provider === 'facebook') {
+        window.FB && window.FB.getLoginStatus(function (response) {
+          processFBLoginData(refThis, response);
+        }, true);
+      } else {
+        window.FB && window.FB.Event.subscribe('auth.statusChange', function (response) {
+          processFBLoginData(refThis, response);
+        });
+      }
+      break;
+    case 'google':
+      var profile = data.googleUserObject.getBasicProfile();
+      email = profile.getEmail() || undefined;
+      logInfo('SSO - Information successfully retrieved by Google API');
+      generateEmailHash(email, emailHash);
+      refThis.setUserIdentities({
+        emailHash: emailHash
+      });
+      break;
+  }
+}
+
+/**
+ * This function is used to clear user login information once user logs out.
+ */
+function onSSOLogout() {
+  this.setUserIdentities({});
+}
+
+function generateEmailHash(email, emailHash) {
+  email = email !== undefined ? email.trim().toLowerCase() : '';
+  let regex = new RegExp(/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/);
+  if (regex.test(email)) {
+    emailHash.MD5 = MD5(email).toString();
+    emailHash.SHA1 = SHA1(email).toString();
+    emailHash.SHA256 = SHA256(email).toString();
+  }
+}
 /**
  * This hook returns updated list of submodules which are allowed to do get user id based on TCF 2 enforcement rules configured
  */
@@ -932,6 +1134,8 @@ function updateSubmodules() {
   if (!configs.length) {
     return;
   }
+  generateModuleLists(); // this is to generate the list of modules to be updated wit sso/publisher provided email data
+
   // do this to avoid reprocessing submodules
   const addedSubmodules = submoduleRegistry.filter(i => !find(submodules, j => j.name === i.name));
 
@@ -1024,6 +1228,10 @@ export function init(config, {delay = delayFor} = {}) {
   (getGlobal()).getEncryptedEidsForSource = getEncryptedEidsForSource;
   (getGlobal()).registerSignalSources = registerSignalSources;
   (getGlobal()).refreshUserIds = refreshUserIds;
+  (getGlobal()).setUserIdentities = setUserIdentities;
+  (getGlobal()).getUserIdentities = getUserIdentities;
+  (getGlobal()).onSSOLogin = onSSOLogin;
+  (getGlobal()).onSSOLogout = onSSOLogout;
   (getGlobal()).getUserIdsAsync = getUserIdsAsync;
   (getGlobal()).getUserIdsAsEidBySource = getUserIdsAsEidBySource;
 }

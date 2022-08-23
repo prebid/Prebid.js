@@ -227,7 +227,7 @@ describe('eids array generation for known sub-modules', function() {
 
   it('zeotapIdPlus', function() {
     const userId = {
-      IDP: 'some-random-id-value'
+      IDP: { id: 'some-random-id-value' }
     };
     const newEids = createEidsArray(userId);
     expect(newEids.length).to.equal(1);

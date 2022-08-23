@@ -1,4 +1,3 @@
-
 /**
  * This module sets default values and validates ortb2 first part data
  * @module modules/firstPartyData

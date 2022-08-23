@@ -83,8 +83,10 @@
     "PRICE_BUCKET": "hb_pb",
     "SIZE": "hb_size",
     "DEAL": "hb_deal",
+    "SOURCE": "hb_source",
     "FORMAT": "hb_format",
     "UUID": "hb_uuid",
+    "CACHE_ID": "hb_cache_id",
     "CACHE_HOST": "hb_cache_host"
   },
   "NATIVE_KEYS": {
@@ -109,14 +111,27 @@
     "rendererUrl": "hb_renderer_url",
     "adTemplate": "hb_adTemplate"
   },
-  "S2S" : {
-    "SRC" : "s2s",
-    "DEFAULT_ENDPOINT" : "https://prebid.adnxs.com/pbs/v1/openrtb2/auction",
+  "S2S": {
+    "SRC": "s2s",
+    "DEFAULT_ENDPOINT": "https://prebid.adnxs.com/pbs/v1/openrtb2/auction",
     "SYNCED_BIDDERS_KEY": "pbjsSyncs"
   },
-  "BID_STATUS" : {
+  "BID_STATUS": {
     "BID_TARGETING_SET": "targetingSet",
     "RENDERED": "rendered",
     "BID_REJECTED": "bidRejected"
+  },
+  "REFRESH_IDMODULES_LIST": {
+    "PRIMARY_MODULES": ["id5Id","publinkId"],
+    "SCRIPT_BASED_MODULES": ["zeotapIdPlus", "identityLink", "publinkId"]
+  },
+  "MODULE_PARAM_TO_UPDATE_FOR_SSO": {
+    "id5Id": [{
+      "key": "pd"
+    }],
+    "publinkId": [{
+      "key": "e",
+      "hashType": "MD5"
+    }]
   }
 }

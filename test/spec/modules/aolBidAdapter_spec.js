@@ -84,7 +84,7 @@ describe('AolAdapter', function () {
     'adserver.org': '100',
     'criteo.com': '200',
     'id5-sync.com': '300',
-    'intentiq.com': '400',
+    'intentiq.com': { RESULT: '400' },
     'liveintent.com': '500',
     'quantcast.com': '600',
     'verizonmedia.com': '700',
@@ -489,7 +489,11 @@ describe('AolAdapter', function () {
           bidRequest.bids[0].userId = {};
           bidRequest.bids[0].userIdAsEids = createEidsArray(USER_ID_DATA);
           let [request] = spec.buildRequests(bidRequest.bids);
-          expect(request.url).to.contain(`&eid${source}=${encodeURIComponent(SUPPORTED_USER_ID_SOURCES[source])}`);
+          if (source === 'intentiq.com') {
+            expect(request.url).to.contain(`&eid${source}=${encodeURIComponent(SUPPORTED_USER_ID_SOURCES[source].RESULT)}`);
+          } else {
+            expect(request.url).to.contain(`&eid${source}=${encodeURIComponent(SUPPORTED_USER_ID_SOURCES[source])}`);
+          }
         });
       });
 

@@ -103,6 +103,9 @@ export const spec = {
     { code: 'districtm', gvlid: 144 },
     { code: 'adasta' },
     { code: 'beintoo', gvlid: 618 },
+    { code: 'dg' },
+    { code: 'gps' },
+    { code: 'appnexus2' }
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 

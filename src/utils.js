@@ -48,7 +48,9 @@ export const internal = {
   logInfo,
   parseQS,
   formatQS,
-  deepEqual
+  deepEqual,
+  isEmpty,
+  skipUndefinedValues
 };
 
 let prebidInternal = {}
@@ -1357,6 +1359,17 @@ export function cyrb53Hash(str, seed = 0) {
   h1 = imul(h1 ^ (h1 >>> 16), 2246822507) ^ imul(h2 ^ (h2 >>> 13), 3266489909);
   h2 = imul(h2 ^ (h2 >>> 16), 2246822507) ^ imul(h1 ^ (h1 >>> 13), 3266489909);
   return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString();
+}
+
+export function skipUndefinedValues (obj) {
+  var newObj = {};
+  var prop;
+  for (prop in obj) {
+    if (obj[prop]) {
+      newObj[prop] = obj[prop];
+    }
+  }
+  return newObj;
 }
 
 /**
