@@ -59,7 +59,7 @@ let cachedPermutiveModuleConfig = {}
  * not initialised before this submodule is initialised.
  */
 function readPermutiveModuleConfigFromCache() {
-  const params = safeJSONParse(window.localStorage.getItem(PERMUTIVE_SUBMODULE_CONFIG_KEY))
+  const params = safeJSONParse(storage.getDataFromLocalStorage(PERMUTIVE_SUBMODULE_CONFIG_KEY))
   return cachedPermutiveModuleConfig = liftIntoParams(params)
 }
 
