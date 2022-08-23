@@ -125,3 +125,52 @@ Module that connects to ShowHeroes demand source to fetch bids.
            }
        ];
 ```
+
+# Test Parameters (V2)
+```
+    var adUnits = [
+           {
+               code: 'video',
+               mediaTypes: {
+                   video: {
+                       playerSize: [640, 480],
+                       context: 'instream',
+                   }
+               },
+               bids: [
+                   {
+                       bidder: "showheroes-bs",
+                       params: {
+                           unitId: 'AACBWAcof-611K4U',
+                           vpaidMode: true // by default is 'false'
+                       }
+                   }
+               ]
+           },
+           {
+               code: 'video',
+               mediaTypes: {
+                   video: {
+                       playerSize: [640, 480],
+                       context: 'outstream',
+                   }
+               },
+               bids: [
+                   {
+                       bidder: "showheroes-bs",
+                       params: {
+                           unitId: 'AACBTwsZVANd9NlB',
+
+                           outstreamOptions: {
+                               // Required for the outstream renderer to exact node, one of
+                               iframe: 'iframe_id',
+                               // or
+                               slot: 'slot_id'
+                           }
+                       }
+                   }
+               ]
+           }
+       ];
+```
+

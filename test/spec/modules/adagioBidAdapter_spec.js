@@ -1391,6 +1391,7 @@ describe('Adagio bid adapter', () => {
         refererInfo: {
           numIframes: 0,
           reachedTop: true,
+          topmostLocation: 'https://test.io/article/a.html',
           page: 'https://test.io/article/a.html',
           domain: 'test.io',
           ref: 'https://google.com'
@@ -1417,6 +1418,7 @@ describe('Adagio bid adapter', () => {
         numIframes: 0,
         reachedTop: true,
         page: 'http://level.io/',
+        topmostLocation: 'http://level.io/',
         stack: [
           'http://level.io/',
           'http://example.com/iframe1.html',

@@ -75,7 +75,7 @@ userIdAsEids = [
     {
         source: 'flashtalking.com',
         uids: [{
-            id: 'some-random-id-value',
+            id: 'the-ids-object-stringified',
             atype: 1
     },
 
@@ -232,6 +232,13 @@ userIdAsEids = [
               id: 'some-random-id-value',
               atype: 3
          }]
+    },
+    {
+        source: 'thenewco.it',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3
+        }]
     }
 ]
 ```

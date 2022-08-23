@@ -3,6 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { find } from '../src/polyfill.js'
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js'
 import { Renderer } from '../src/Renderer.js'
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const ENDPOINT = 'https://ad.yieldlab.net'
 const BIDDER_CODE = 'yieldlab'
@@ -35,6 +36,9 @@ export const spec = {
    * @returns {ServerRequest|ServerRequest[]}
    */
   buildRequests: function (validBidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     const adslotIds = []
     const adslotSizes = [];
     const timestamp = Date.now()
@@ -48,6 +52,9 @@ export const spec = {
       const sizes = extractSizes(bid)
       if (sizes.length > 0) {
         adslotSizes.push(bid.params.adslotId + ':' + sizes.join('|'))
+      }
+      if (bid.params.extId) {
+        query.id = bid.params.extId;
       }
       if (bid.params.targeting) {
         query.t = createTargetingString(bid.params.targeting)
@@ -165,6 +172,7 @@ export const spec = {
         }
 
         if (isNative(bidRequest, adType)) {
+          // there may be publishers still rely on it
           const url = `${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/?ts=${timestamp}${extId}${gdprApplies}${gdprConsent}${pvId}`
           bidResponse.adUrl = url
           bidResponse.mediaType = NATIVE

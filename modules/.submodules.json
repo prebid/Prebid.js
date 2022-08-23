@@ -35,6 +35,7 @@
       "quantcastIdSystem",
       "sharedIdSystem",
       "tapadIdSystem",
+      "tncIdSystem",
       "trustpidSystem",
       "uid2IdSystem",
       "unifiedIdSystem",
@@ -48,6 +49,7 @@
       "dfpAdServerVideo"
     ],
     "rtdModule": [
+      "1plusXRtdProvider",
       "airgridRtdProvider",
       "akamaiDapRtdProvider",
       "blueconicRtdProvider",
@@ -68,19 +70,8 @@
     ],
     "fpdModule": [
       "enrichmentFpdModule",
-      "validationFpdModule"
+      "validationFpdModule",
+      "topicsFpdModule"
     ]
-  },
-  "libraries": {
-    "getOrigin": {
-      "files": [
-        "./index.js"
-      ],
-      "dependants": [
-        "ooloAnalyticsAdapter",
-        "resetdigitalBidAdapter",
-        "rtbhouseBidAdapter.js"
-      ]
-    }
   }
 }

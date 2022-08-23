@@ -25,7 +25,7 @@ function getUserId() {
   let uid;
 
   if (storage.localStorageIsEnabled()) {
-    uid = localStorage.getItem(USER_ID_KEY);
+    uid = storage.getDataFromLocalStorage(USER_ID_KEY);
   } else {
     uid = storage.getCookie(USER_ID_KEY);
   }
@@ -39,7 +39,7 @@ function getUserId() {
 
 function setUserId(userId) {
   if (storage.localStorageIsEnabled()) {
-    localStorage.setItem(USER_ID_KEY, userId);
+    storage.setDataInLocalStorage(USER_ID_KEY, userId);
   }
 
   if (storage.cookiesAreEnabled()) {
@@ -71,8 +71,10 @@ function buildVideo(bidRequest) {
   const w = deepAccess(bidRequest, 'mediaTypes.video.w');
   const h = deepAccess(bidRequest, 'mediaTypes.video.h');
   const mimes = deepAccess(bidRequest, 'mediaTypes.video.mimes');
+  const placement = deepAccess(bidRequest, 'mediaTypes.video.placement') || 3;
 
   return {
+    placement,
     mimes,
     w,
     h,
@@ -327,6 +329,13 @@ function validateVideo(bid) {
 
   if (!Array.isArray(mimes) || mimes.length === 0) {
     logError('insticator: mimes not specified');
+    return false;
+  }
+
+  const placement = deepAccess(bid, 'mediaTypes.video.placement');
+
+  if (typeof placement !== 'undefined' && typeof placement !== 'number') {
+    logError('insticator: video placement is not a number');
     return false;
   }
 

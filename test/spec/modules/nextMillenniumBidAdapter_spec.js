@@ -14,6 +14,16 @@ describe('nextMillenniumBidAdapterTests', function() {
       gdprConsent: {
         consentString: 'kjfdniwjnifwenrif3',
         gdprApplies: true
+      },
+      ortb2: {
+        device: {
+          w: 1500,
+          h: 1000
+        },
+        site: {
+          domain: 'example.com',
+          page: 'http://example.com'
+        }
       }
     }
   ];
@@ -93,6 +103,28 @@ describe('nextMillenniumBidAdapterTests', function() {
     const request = spec.buildRequests(bidRequestData);
     expect(JSON.parse(request[0].data).ext.nextMillennium.refresh_count).to.equal(3);
   });
+
+  it('Check if domain was added', function() {
+    const request = spec.buildRequests(bidRequestData)
+    expect(JSON.parse(request[0].data).site.domain).to.exist
+  })
+
+  it('Check if elOffsets was added', function() {
+    const request = spec.buildRequests(bidRequestData)
+    expect(JSON.parse(request[0].data).ext.nextMillennium.elOffsets).to.be.an('object')
+  })
+
+  it('Check if imp object was added', function() {
+    const request = spec.buildRequests(bidRequestData)
+    expect(JSON.parse(request[0].data).imp).to.be.an('array')
+  })
+
+  it('Check if imp prebid stored id is correct', function() {
+    const request = spec.buildRequests(bidRequestData)
+    const requestData = JSON.parse(request[0].data);
+    const storedReqId = requestData.ext.prebid.storedrequest.id;
+    expect(requestData.imp[0].ext.prebid.storedrequest.id).to.equal(storedReqId)
+  })
 
   it('Test getUserSyncs function', function () {
     const syncOptions = {

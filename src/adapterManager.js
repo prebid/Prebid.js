@@ -66,6 +66,7 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, src}) {
       .reduce((bids, bid) => {
         bid = Object.assign({}, bid, getDefinedParams(adUnit, [
           'nativeParams',
+          'nativeOrtbRequest',
           'ortb2Imp',
           'mediaType',
           'renderer'
@@ -274,7 +275,7 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
         }
       });
     }
-  })
+  });
 
   // client adapters
   let adUnitsClientCopy = getAdUnitCopyForClientAdapters(adUnits);
@@ -385,7 +386,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
       } else {
         logError('missing ' + s2sConfig.adapter);
       }
-      counter++
+      counter++;
     }
   });
 
@@ -472,7 +473,7 @@ adapterManager.aliasBidAdapter = function (bidderCode, alias, options) {
       });
       nonS2SAlias.forEach(bidderCode => {
         logError('bidderCode "' + bidderCode + '" is not an existing bidder.', 'adapterManager.aliasBidAdapter');
-      })
+      });
     } else {
       try {
         let newAdapter;

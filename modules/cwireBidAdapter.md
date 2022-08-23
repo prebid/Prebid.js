@@ -38,7 +38,7 @@ var adUnits = [
       params: {
         pageId: 1422,                 // required - number
         placementId: 2211521,         // required - number
-        cwcreative: 42,               // optional - id of creative to force
+        cwcreative: '42',             // optional - id of creative to force
         refgroups: 'test-user',       // optional - name of group or coma separated list of groups to force
         cwapikey: 'api_key_xyz',      // optional - api key for integration testing        
       }
