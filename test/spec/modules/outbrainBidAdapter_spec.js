@@ -132,6 +132,28 @@ describe('Outbrain Adapter', function () {
         }
         expect(spec.isBidRequestValid(bid)).to.equal(false)
       })
+      it('should fail if wlang does not include strings', function () {
+        const bid = {
+          bidder: 'outbrain',
+          params: {
+            tagid: 123,
+            wlang: ['en', 2]
+          },
+          ...nativeBidRequestParams,
+        }
+        expect(spec.isBidRequestValid(bid)).to.equal(false)
+      })
+      it('should fail if wlang strings do not contain exactly two letters', function () {
+        const bid = {
+          bidder: 'outbrain',
+          params: {
+            tagid: 123,
+            wlang: ['esp']
+          },
+          ...nativeBidRequestParams,
+        }
+        expect(spec.isBidRequestValid(bid)).to.equal(false)
+      })
       it('should succeed with outbrain config', function () {
         const bid = {
           bidder: 'outbrain',

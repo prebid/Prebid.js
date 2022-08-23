@@ -48,6 +48,10 @@ export const spec = {
       return false;
     }
 
+    if (!!bid.params.wlang && (typeof bid.params.wlang !== 'object' || !bid.params.wlang.every(item => typeof item === 'string' && item.length === 2))) {
+      return false;
+    }
+
     return (
       !!config.getConfig('outbrain.bidderUrl') &&
       !!(bid.nativeParams || bid.sizes)
@@ -62,7 +66,8 @@ export const spec = {
     const publisher = setOnAny(validBidRequests, 'params.publisher');
     const bcat = setOnAny(validBidRequests, 'params.bcat');
     const badv = setOnAny(validBidRequests, 'params.badv');
-    const eids = setOnAny(validBidRequests, 'userIdAsEids')
+    const eids = setOnAny(validBidRequests, 'userIdAsEids');
+    const wlang = setOnAny(validBidRequests, 'params.wlang');
     const cur = CURRENCY;
     const endpointUrl = config.getConfig('outbrain.bidderUrl');
     const timeout = bidderRequest.timeout;
@@ -109,6 +114,7 @@ export const spec = {
       imp: imps,
       bcat: bcat,
       badv: badv,
+      wlang: wlang,
       ext: {
         prebid: {
           channel: {
