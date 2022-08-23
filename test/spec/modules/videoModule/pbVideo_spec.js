@@ -34,7 +34,9 @@ function resetTestVars() {
     requestBids: requestBidsMock,
     getHighestCpmBids: sinon.spy(),
     getBidResponsesForAdUnitCode: sinon.spy(),
-    setConfig: sinon.spy()
+    setConfig: sinon.spy(),
+    getConfig: () => ({}),
+    markWinningBidAsUsed: sinon.spy()
   };
   pbEventsMock = {
     emit: sinon.spy(),
@@ -147,7 +149,7 @@ describe('Prebid Video', function () {
         before: callback_ => beforeBidRequestCallback = callback_
       };
 
-      pbVideoFactory(null, null, { requestBids, setConfig: setConfigSpy });
+      pbVideoFactory(null, null, Object.assign({}, pbGlobalMock, { requestBids, setConfig: setConfigSpy }));
       expect(beforeBidRequestCallback).to.not.be.undefined;
       const nextFn = sinon.spy();
       const adUnits = [{
@@ -172,9 +174,11 @@ describe('Prebid Video', function () {
     let providers = [{ divId: 'div1', adServer: {} }, { divId: 'div2' }];
     let getConfig = (propertyName, callbackFn) => {
       if (propertyName === 'video') {
-        callbackFn({
-          video: { providers }
-        });
+        if (callbackFn) {
+          callbackFn({ video: { providers } });
+        } else {
+          return { providers };
+        }
       }
     };
 
@@ -271,7 +275,7 @@ describe('Prebid Video', function () {
       };
       const auctionResults = { adUnits: [ expectedAdUnit, {} ] };
 
-      pbVideoFactory(null, null, pbGlobal, pbEvents);
+      pbVideoFactory(null, () => ({ providers: [] }), pbGlobal, pbEvents);
       beforeBidRequestCallback(() => {}, {});
       auctionEndCallback(auctionResults);
       expect(videoCoreMock.setAdTagUrl.calledOnce).to.be.true;
@@ -320,6 +324,7 @@ describe('Prebid Video', function () {
       const payload = pbEvents.emit.getCall(0).args[1];
       expect(payload.bid).to.be.equal(expectedBid);
       expect(payload.adEvent).to.be.equal(expectedAdEventPayload);
+      expect(pbGlobal.markWinningBidAsUsed.calledOnce).to.be.true;
     });
 
     it('should trigger video bid error when the bid matched', function () {
@@ -334,6 +339,7 @@ describe('Prebid Video', function () {
       const payload = pbEvents.emit.getCall(0).args[1];
       expect(payload.bid).to.be.equal(expectedBid);
       expect(payload.adEvent).to.be.equal(expectedAdEventPayload);
+      expect(pbGlobal.markWinningBidAsUsed.calledOnce).to.be.true;
     });
 
     it('should not trigger a bid impression when the bid did not match', function () {
