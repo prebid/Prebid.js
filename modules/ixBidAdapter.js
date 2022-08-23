@@ -1061,7 +1061,7 @@ function createBannerImps(validBidRequest, missingBannerSizes, bannerImps) {
   bannerImps[validBidRequest.transactionId].tid = deepAccess(validBidRequest, 'ortb2Imp.ext.tid');
   bannerImps[validBidRequest.transactionId].pbadslot = deepAccess(validBidRequest, 'ortb2Imp.ext.data.pbadslot');
   bannerImps[validBidRequest.transactionId].tagId = deepAccess(validBidRequest, 'params.tagId');
-  bannerImps[validBidRequest.transactionId].pos = deepAccess(validBidRequest, 'mediaTypes.banner.pos')
+  bannerImps[validBidRequest.transactionId].pos = deepAccess(validBidRequest, 'mediaTypes.banner.pos');
 
   const adUnitCode = validBidRequest.adUnitCode;
   const divId = document.getElementById(adUnitCode) ? adUnitCode : getGptSlotInfoForAdUnitCode(adUnitCode).divId;
