@@ -398,7 +398,9 @@ function _getSchain(bidRequest) {
 }
 
 function _getEids(bidRequest) {
-  return bidRequest.userIdAsEids;
+  if (bidRequest.userIdAsEids) {
+    return bidRequest.userIdAsEids;
+  }
 }
 
 function _buildVideoBidRequest(bidRequest) {
