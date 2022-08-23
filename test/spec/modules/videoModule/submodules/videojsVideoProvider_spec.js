@@ -1,9 +1,9 @@
 // Using require style imports for fine grained control of import time
 import {
   PLAYBACK_MODE, SETUP_COMPLETE, SETUP_FAILED, PLAY, AD_IMPRESSION
-} from 'libraries/video/constants/events.js'
+} from 'libraries/video/constants/events.js';
 
-const {VideojsProvider, utils} = require('modules/videojsVideoProvider')
+const {VideojsProvider, utils} = require('modules/videojsVideoProvider');
 
 const {
   PROTOCOLS, API_FRAMEWORKS, VIDEO_MIME_TYPE, PLAYBACK_METHODS, PLACEMENT, VPAID_MIME_TYPE, AD_POSITION
@@ -233,6 +233,63 @@ describe('videojsProvider', function () {
 });
 
 describe('utils', function() {
+  describe('getSetupConfig', function() {
+    it('should return undefined when config is absent', function () {
+      expect(utils.getSetupConfig()).to.be.undefined;
+    });
+
+    it('should give priority to vendorConfig', function () {
+      const config = {
+        autostart: false,
+        mute: false,
+        params: {
+          vendorConfig: {
+            autostart: true,
+            mute: true,
+            other: true
+          }
+        }
+      };
+      const setupConfig = utils.getSetupConfig(config);
+      expect(setupConfig.autostart).to.be.true;
+      expect(setupConfig.mute).to.be.true;
+      expect(setupConfig.other).to.be.true;
+    });
+
+    it('should only global apply properties when absent from vendor config', function () {
+      const config = {
+        autostart: false,
+        params: {
+          vendorConfig: {
+            other: true
+          }
+        }
+      };
+      const setupConfig = utils.getSetupConfig(config);
+      expect(setupConfig.autostart).to.be.false;
+      expect(setupConfig.mute).to.be.undefined;
+      expect(setupConfig.other).to.be.true;
+    });
+  });
+
+  describe('getAdConfig', function () {
+    it('should return empty object when config is absent', function () {
+      expect(utils.getAdConfig()).to.deep.equal({});
+    });
+
+    it('should return adPluginConfig', function () {
+      const config = {
+        params: {
+          adPluginConfig: {
+            vpaid: true,
+          }
+        }
+      };
+
+      expect(utils.getAdConfig(config)).to.be.equal(config.params.adPluginConfig);
+    });
+  });
+
   describe('getPositionCode', function() {
     it('should return the correct position when video is above the fold', function () {
       const code = utils.getPositionCode({
@@ -267,6 +324,7 @@ describe('utils', function() {
 
   describe('Playlist utils', function () {
     let player;
+    const emptyPlayer = {};
 
     beforeEach(() => {
       player = videojs('test');
@@ -276,13 +334,26 @@ describe('utils', function() {
         sources: { src: 'sample2.mp4' }
       }]);
     });
-    describe('getCurrentPlaylistIndex', function () {
-
-    });
 
     describe('getPlaylistCount', function () {
+      it('should return 1 when playlist is absent', function () {
+        expect(utils.getPlaylistCount(emptyPlayer)).to.be.equal(1);
+      });
+
       it('should return playlist length', function () {
         expect(utils.getPlaylistCount(player)).to.be.equal(2);
+      });
+    });
+
+    describe('getCurrentPlaylistIndex', function () {
+      it('should return 0 when playlist is absent', function () {
+        expect(utils.getCurrentPlaylistIndex(emptyPlayer)).to.be.equal(0);
+      });
+    });
+
+    describe('getCurrentPlaylistItem', function () {
+      it('should return undefined when playlist is absent', function () {
+        expect(utils.getCurrentPlaylistItem(emptyPlayer)).to.be.undefined;
       });
     });
   });
