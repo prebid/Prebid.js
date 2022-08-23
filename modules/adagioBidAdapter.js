@@ -398,9 +398,7 @@ function _getSchain(bidRequest) {
 }
 
 function _getEids(bidRequest) {
-  if (deepAccess(bidRequest, 'userId')) {
-    return bidRequest.userIdAsEids;
-  }
+  return bidRequest.userIdAsEids;
 }
 
 function _buildVideoBidRequest(bidRequest) {
