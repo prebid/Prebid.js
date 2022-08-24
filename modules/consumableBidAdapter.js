@@ -1,4 +1,4 @@
-import { logWarn, createTrackPixelHtml, deepAccess, isArray, deepSetValue } from '../src/utils.js';
+import { logWarn, deepAccess, isArray, deepSetValue } from '../src/utils.js';
 import {config} from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
@@ -255,7 +255,7 @@ function getSize(sizes) {
 function retrieveAd(decision, unitId, unitName) {
   let ad;
   if (decision.contents && decision.contents[0]) {
-    ad = decision.contents[0].body + createTrackPixelHtml(decision.impressionUrl);
+    ad = decision.contents[0].body;
   }
   if (decision.vastXml) {
     ad = decision.vastXml;
