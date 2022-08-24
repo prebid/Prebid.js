@@ -17,6 +17,7 @@ import {
   triggerPixel
 } from '../src/utils.js';
 import {config} from '../src/config.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const { getConfig } = config;
 
@@ -65,6 +66,9 @@ export const spec = {
     return !!(adzoneid);
   },
   buildRequests: (validBidRequests, bidderRequest) => {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     let app, site;
 
     const commonFpd = bidderRequest.ortb2 || {};

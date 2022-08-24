@@ -1,6 +1,5 @@
 import {hook} from './hook.js';
 import {hasDeviceAccess, checkCookieSupport, logError, logInfo, isPlainObject} from './utils.js';
-import {includes} from './polyfill.js';
 import {bidderSettings as defaultBidderSettings} from './bidderSettings.js';
 
 const moduleTypeWhiteList = ['core', 'prebid-module'];
@@ -33,13 +32,11 @@ export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = 
     const storageAllowed = bidderSettings.get(bidderCode, 'storageAllowed');
     return storageAllowed == null ? false : storageAllowed;
   }
+
+  const isVendorless = moduleTypeWhiteList.includes(moduleType);
+
   function isValid(cb) {
-    if (includes(moduleTypeWhiteList, moduleType)) {
-      let result = {
-        valid: true
-      }
-      return cb(result);
-    } else if (!isBidderAllowed()) {
+    if (!isBidderAllowed()) {
       logInfo(`bidderSettings denied access to device storage for bidder '${bidderCode}'`);
       const result = {valid: false};
       return cb(result);
@@ -48,7 +45,7 @@ export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = 
       let hookDetails = {
         hasEnforcementHook: false
       }
-      validateStorageEnforcement(gvlid, bidderCode || moduleName, moduleType, hookDetails, function(result) {
+      validateStorageEnforcement(isVendorless, gvlid, bidderCode || moduleName, hookDetails, function(result) {
         if (result && result.hasEnforcementHook) {
           value = cb(result);
         } else {
@@ -149,11 +146,7 @@ export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = 
   const cookiesAreEnabled = function (done) {
     let cb = function (result) {
       if (result && result.valid) {
-        if (checkCookieSupport()) {
-          return true;
-        }
-        window.document.cookie = 'prebid.cookieTest';
-        return window.document.cookie.indexOf('prebid.cookieTest') !== -1;
+        return checkCookieSupport();
       }
       return false;
     }
@@ -303,7 +296,7 @@ export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = 
 /**
  * This hook validates the storage enforcement if gdprEnforcement module is included
  */
-export const validateStorageEnforcement = hook('async', function(gvlid, moduleName, moduleType, hookDetails, callback) {
+export const validateStorageEnforcement = hook('async', function(isVendorless, gvlid, moduleName, hookDetails, callback) {
   callback(hookDetails);
 }, 'validateStorageEnforcement');
 
@@ -322,13 +315,12 @@ export function getCoreStorageManager(moduleName) {
  * @param {Number=} gvlid? Vendor id - required for proper GDPR integration
  * @param {string=} bidderCode? - required for bid adapters
  * @param {string=} moduleName? module name
- * @param {string=} moduleType? module type
  */
-export function getStorageManager({gvlid, moduleName, bidderCode, moduleType} = {}) {
+export function getStorageManager({gvlid, moduleName, bidderCode} = {}) {
   if (arguments.length > 1 || (arguments.length > 0 && !isPlainObject(arguments[0]))) {
     throw new Error('Invalid invocation for getStorageManager')
   }
-  return newStorageManager({gvlid, moduleName, bidderCode, moduleType});
+  return newStorageManager({gvlid, moduleName, bidderCode});
 }
 
 export function resetData() {

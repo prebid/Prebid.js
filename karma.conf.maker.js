@@ -7,7 +7,7 @@ var _ = require('lodash');
 var webpackConf = require('./webpack.conf.js');
 var karmaConstants = require('karma').constants;
 
-function newWebpackConfig(codeCoverage) {
+function newWebpackConfig(codeCoverage, disableFeatures) {
   // Make a clone here because we plan on mutating this object, and don't want parallel tasks to trample each other.
   var webpackConfig = _.cloneDeep(webpackConf);
 
@@ -22,20 +22,9 @@ function newWebpackConfig(codeCoverage) {
     .flatMap((r) => r.use)
     .filter((use) => use.loader === 'babel-loader')
     .forEach((use) => {
-      use.options = babelConfig({test: true});
+      use.options = babelConfig({test: true, codeCoverage, disableFeatures});
     });
 
-  if (codeCoverage) {
-    webpackConfig.module.rules.push({
-      enforce: 'post',
-      exclude: /(node_modules)|(test)|(integrationExamples)|(build)|polyfill.js|(src\/adapters\/analytics\/ga.js)/,
-      use: {
-        loader: '@jsdevtools/coverage-istanbul-loader',
-        options: { esModules: true }
-      },
-      test: /\.js$/
-    })
-  }
   return webpackConfig;
 }
 
@@ -92,7 +81,9 @@ function setBrowsers(karmaConf, browserstack) {
     karmaConf.browserStack = {
       username: process.env.BROWSERSTACK_USERNAME,
       accessKey: process.env.BROWSERSTACK_ACCESS_KEY,
-      build: 'Prebidjs Unit Tests ' + new Date().toLocaleString()
+      build: 'Prebidjs Unit Tests ' + new Date().toLocaleString(),
+      startTunnel: false,
+      localIdentifier: process.env.CIRCLE_WORKFLOW_JOB_ID
     }
     if (process.env.TRAVIS) {
       karmaConf.browserStack.startTunnel = false;
@@ -117,8 +108,8 @@ function setBrowsers(karmaConf, browserstack) {
   }
 }
 
-module.exports = function(codeCoverage, browserstack, watchMode, file) {
-  var webpackConfig = newWebpackConfig(codeCoverage);
+module.exports = function(codeCoverage, browserstack, watchMode, file, disableFeatures) {
+  var webpackConfig = newWebpackConfig(codeCoverage, disableFeatures);
   var plugins = newPluginsArray(browserstack);
 
   var files = file ? ['test/test_deps.js', file] : ['test/test_index.js'];
@@ -185,7 +176,7 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
     concurrency: 6,
 
     plugins: plugins
-  }
+  };
 
   // To ensure that, we are able to run single spec file
   // here we are adding preprocessors, when file is passed

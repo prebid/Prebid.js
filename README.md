@@ -1,8 +1,6 @@
 [![Build Status](https://circleci.com/gh/prebid/Prebid.js.svg?style=svg)](https://circleci.com/gh/prebid/Prebid.js)
 [![Percentage of issues still open](http://isitmaintained.com/badge/open/prebid/Prebid.js.svg)](http://isitmaintained.com/project/prebid/Prebid.js "Percentage of issues still open")
-[![Code Climate](https://codeclimate.com/github/prebid/Prebid.js/badges/gpa.svg)](https://codeclimate.com/github/prebid/Prebid.js)
 [![Coverage Status](https://coveralls.io/repos/github/prebid/Prebid.js/badge.svg)](https://coveralls.io/github/prebid/Prebid.js)
-[![devDependencies Status](https://david-dm.org/prebid/Prebid.js/dev-status.svg)](https://david-dm.org/prebid/Prebid.js?type=dev)
 [![Total Alerts](https://img.shields.io/lgtm/alerts/g/prebid/Prebid.js.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/prebid/Prebid.js/alerts/)
 
 # Prebid.js
@@ -91,7 +89,7 @@ Or for Babel 6:
             }
 ```
 
-Then you can use Prebid.js as any other npm depedendency
+Then you can use Prebid.js as any other npm dependency
 
 ```javascript
 import pbjs from 'prebid.js';
@@ -193,7 +191,42 @@ Most likely your custom `prebid.js` will only change when there's:
 
 Having said that, you are probably safe to check your custom bundle into your project.  You can also generate it in your build process.
 
+**Build once, bundle multiple times**
+
+If you need to generate multiple distinct bundles from the same Prebid version, you can reuse a single build with:
+
+```
+gulp build
+gulp bundle --tag one --modules=one.json
+gulp bundle --tag two --modules=two.json
+```
+
+This generates slightly larger files, but has the advantage of being much faster to run (after the initial `gulp build`). It's also the method used by [the Prebid.org download page](https://docs.prebid.org/download.html).  
+
 <a name="Run"></a>
+
+### Excluding particular features from the build
+
+Since version 7.2.0, you may instruct the build to exclude code for some features - for example, if you don't need support for native ads:
+
+```
+gulp build --disable NATIVE --modules=openxBidAdapter,rubiconBidAdapter,sovrnBidAdapter # substitute your module list
+```
+
+Or, if you are consuming Prebid through npm, with the `disableFeatures` option in your Prebid rule:
+
+```javascript
+  {
+    test: /.js$/,
+    include: new RegExp(`\\${path.sep}prebid\\.js`),
+    use: {
+      loader: 'babel-loader',
+      options: require('prebid.js/babelConfig.js')({disableFeatures: ['NATIVE']})
+    }
+  }
+```
+
+**Note**: this is still a work in progress - at the moment, `NATIVE` is the only feature that can be disabled this way, resulting in a minimal decrease in size (but you can expect that to improve over time).
 
 ## Test locally
 

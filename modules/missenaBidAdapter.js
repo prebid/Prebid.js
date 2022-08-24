@@ -45,6 +45,9 @@ export const spec = {
         payload.consent_required = bidderRequest.gdprConsent.gdprApplies;
       }
       const baseUrl = bidRequest.params.baseUrl || ENDPOINT_URL;
+      if (bidRequest.params.test) {
+        payload.test = bidRequest.params.test;
+      }
       return {
         method: 'POST',
         url: baseUrl + '?' + formatQS({ t: bidRequest.params.apiKey }),
@@ -69,7 +72,30 @@ export const spec = {
 
     return bidResponses;
   },
+  getUserSyncs: function (
+    syncOptions,
+    serverResponses,
+    gdprConsent,
+    uspConsent
+  ) {
+    if (!syncOptions.iframeEnabled) {
+      return [];
+    }
 
+    let gdprParams = '';
+    if (
+      gdprConsent &&
+      'gdprApplies' in gdprConsent &&
+      typeof gdprConsent.gdprApplies === 'boolean'
+    ) {
+      gdprParams = `?gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${
+        gdprConsent.consentString
+      }`;
+    }
+    return [
+      { type: 'iframe', url: 'https://sync.missena.io/iframe' + gdprParams },
+    ];
+  },
   /**
    * Register bidder specific code, which will execute if bidder timed out after an auction
    * @param {data} Containing timeout specific data

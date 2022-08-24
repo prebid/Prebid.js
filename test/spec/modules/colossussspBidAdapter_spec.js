@@ -118,7 +118,6 @@ describe('ColossussspAdapter', function () {
         ...bid,
         params: {
           placement_id: 0,
-          traffic: 'video',
         },
         mediaTypes: {
           video: {

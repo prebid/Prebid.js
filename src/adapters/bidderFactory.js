@@ -260,6 +260,7 @@ export function newBidder(spec) {
     let allowAlternateBidderCodes = bidderSettings.get(requestBidder, 'allowAlternateBidderCodes') || false;
     let alternateBiddersList = bidderSettings.get(requestBidder, 'allowedAlternateBidderCodes');
     if (!!responseBidder && !!requestBidder && requestBidder !== responseBidder) {
+      alternateBiddersList = isArray(alternateBiddersList) ? alternateBiddersList.map(val => val.trim().toLowerCase()).filter(val => !!val).filter(uniques) : alternateBiddersList;
       if (!allowAlternateBidderCodes || (isArray(alternateBiddersList) && (alternateBiddersList[0] !== '*' && !alternateBiddersList.includes(responseBidder)))) {
         return true;
       }
@@ -542,7 +543,7 @@ export function isValid(adUnitCode, bid, {index = auctionManager.index} = {}) {
     return false;
   }
 
-  if (bid.mediaType === 'native' && !nativeBidIsValid(bid, {index})) {
+  if (FEATURES.NATIVE && bid.mediaType === 'native' && !nativeBidIsValid(bid, {index})) {
     logError(errorMessage('Native bid missing some required properties.'));
     return false;
   }

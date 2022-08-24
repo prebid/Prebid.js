@@ -279,6 +279,11 @@ describe('gumgumAdapter', function () {
         const bidRequest = spec.buildRequests([request])[0];
         expect(bidRequest.data.pi).to.equal(3);
       });
+      it('should set the correct pi param if product param is found and is equal to skins', function () {
+        const request = { ...bidRequests[0], params: { ...zoneParam, product: 'Skins' } };
+        const bidRequest = spec.buildRequests([request])[0];
+        expect(bidRequest.data.pi).to.equal(8);
+      });
       it('should default the pi param to 2 if only zone or pubId param is found', function () {
         const zoneRequest = { ...bidRequests[0], params: zoneParam };
         const pubIdRequest = { ...bidRequests[0], params: pubIdParam };
