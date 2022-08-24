@@ -9,7 +9,11 @@ const EVENTS_ENDPOINT = `events.${DOMAIN}/diag`;
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['tremor', 'tremorvideo'],
+  gvlid: 202,
+  aliases: [
+    { code: 'tremor', gvlid: 202 },
+    { code: 'tremorvideo', gvlid: 202 }
+  ],
   supportedMediaTypes: [VIDEO],
   /**
    * Determines if the request is valid
@@ -243,8 +247,9 @@ function generateUrl(bid, bidderRequest) {
         }
       }
 
-      if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
-        url += (`&referrer=${encodeURIComponent(bidderRequest.refererInfo.referer)}`);
+      if (bidderRequest.refererInfo && bidderRequest.refererInfo.page) {
+        // TODO: is 'page' the right value here?
+        url += (`&referrer=${encodeURIComponent(bidderRequest.refererInfo.page)}`);
       }
     }
 

@@ -29,8 +29,7 @@ function getMockBid(bidder, auctionId, bidderRequestId) {
     'sizes': [300, 250],
     'bidId': '123',
     'bidderRequestId': bidderRequestId,
-    'auctionId': auctionId,
-    'storedAuctionResponse': 11111
+    'auctionId': auctionId
   };
 }
 
@@ -156,12 +155,12 @@ describe('The video cache', function () {
         puts: [{
           type: 'xml',
           value: vastXml1,
-          ttlseconds: 25,
+          ttlseconds: 40,
           key: customKey1
         }, {
           type: 'xml',
           value: vastXml2,
-          ttlseconds: 25,
+          ttlseconds: 40,
           key: customKey2
         }]
       };
@@ -206,7 +205,7 @@ describe('The video cache', function () {
         puts: [{
           type: 'xml',
           value: vastXml1,
-          ttlseconds: 25,
+          ttlseconds: 40,
           key: customKey1,
           bidid: '12345abc',
           aid: '1234-56789-abcde',
@@ -214,7 +213,7 @@ describe('The video cache', function () {
         }, {
           type: 'xml',
           value: vastXml2,
-          ttlseconds: 25,
+          ttlseconds: 40,
           key: customKey2,
           bidid: 'cba54321',
           aid: '1234-56789-abcde',
@@ -277,7 +276,7 @@ describe('The video cache', function () {
         puts: [{
           type: 'xml',
           value: vastXml1,
-          ttlseconds: 25,
+          ttlseconds: 40,
           key: customKey1,
           bidid: '12345abc',
           bidder: 'appnexus',
@@ -286,7 +285,7 @@ describe('The video cache', function () {
         }, {
           type: 'xml',
           value: vastXml2,
-          ttlseconds: 25,
+          ttlseconds: 40,
           key: customKey2,
           bidid: 'cba54321',
           bidder: 'rubicon',
@@ -310,7 +309,7 @@ describe('The video cache', function () {
         puts: [{
           type: 'xml',
           value: expectedValue,
-          ttlseconds: 25
+          ttlseconds: 40
         }],
       });
     }

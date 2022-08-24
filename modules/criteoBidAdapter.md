@@ -27,12 +27,7 @@ Module that connects to Criteo's demand sources.
 ```
 
 # Additional Config (Optional)
-Set the "ceh" property to provides the user's hashed email if available
-```
-  pbjs.setConfig({
-    criteo: {
-      ceh: 'hashed mail',
-      fastBidVersion: "none"|"latest"|<version>
-    }
-  });
-```
+
+Criteo Bid Adapter supports the collection of the user's hashed email, if available.
+
+Please consider passing it to the adapter, following [these guidelines](https://publisherdocs.criteotilt.com/prebid/#hashed-emails).

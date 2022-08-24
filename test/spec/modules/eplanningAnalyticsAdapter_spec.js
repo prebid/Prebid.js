@@ -1,5 +1,5 @@
 import eplAnalyticsAdapter from 'modules/eplanningAnalyticsAdapter.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import {includes} from 'src/polyfill.js';
 import { expect } from 'chai';
 import { parseUrl } from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
@@ -153,8 +153,8 @@ describe('eplanning analytics adapter', function () {
       // Step 10 check that the host to send the ajax request is configurable via options
       expect(eplAnalyticsAdapter.context.host).to.equal(initOptions.host);
 
-      // Step 11 verify that we received 6 events
-      sinon.assert.callCount(eplAnalyticsAdapter.track, 6);
+      // Step 11 verify that we received 7 events (6 E-Planning events + 1 Clean.io event)
+      sinon.assert.callCount(eplAnalyticsAdapter.track, 7);
     });
   });
 });

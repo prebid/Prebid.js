@@ -5,15 +5,28 @@
  */
 
 import adapterManager from '../src/adapterManager.js';
-import adapter from '../src/AnalyticsAdapter.js';
-import { loadExternalScript } from '../src/adloader.js';
-import { auctionManager } from '../src/auctionManager.js';
-import { AUCTION_COMPLETED } from '../src/auction.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
+import {loadExternalScript} from '../src/adloader.js';
+import {auctionManager} from '../src/auctionManager.js';
+import {AUCTION_COMPLETED} from '../src/auction.js';
 import CONSTANTS from '../src/constants.json';
-import find from 'core-js-pure/features/array/find.js';
+import {find} from '../src/polyfill.js';
+import {getRefererInfo} from '../src/refererDetection.js';
 import {
-  deepAccess, logInfo, isPlainObject, logError, isStr, isNumber, getGptSlotInfoForAdUnitCode,
-  isFn, mergeDeep, logMessage, insertElement, logWarn, getUniqueIdentifierStr, parseUrl
+  deepAccess,
+  getGptSlotInfoForAdUnitCode,
+  getUniqueIdentifierStr,
+  insertElement,
+  isFn,
+  isNumber,
+  isPlainObject,
+  isStr,
+  logError,
+  logInfo,
+  logMessage,
+  logWarn,
+  mergeDeep,
+  parseUrl
 } from '../src/utils.js';
 
 const MODULE = 'adlooxAnalyticsAdapter';
@@ -46,15 +59,19 @@ MACRO['targetelt'] = function(b, c) {
 MACRO['creatype'] = function(b, c) {
   return b.mediaType == 'video' ? ADLOOX_MEDIATYPE.VIDEO : ADLOOX_MEDIATYPE.DISPLAY;
 };
-MACRO['pbadslot'] = function(b, c) {
-  const adUnit = find(auctionManager.getAdUnits(), a => b.adUnitCode === a.code);
-  return deepAccess(adUnit, 'ortb2Imp.ext.data.pbadslot') || getGptSlotInfoForAdUnitCode(b.adUnitCode).gptSlot || b.adUnitCode;
+MACRO['pageurl'] = function(b, c) {
+  const refererInfo = getRefererInfo();
+  return (refererInfo.page || '').substr(0, 300).split(/[?#]/)[0];
 };
-MACRO['pbAdSlot'] = MACRO['pbadslot']; // legacy
+MACRO['gpid'] = function(b, c) {
+  const adUnit = find(auctionManager.getAdUnits(), a => b.adUnitCode === a.code);
+  return deepAccess(adUnit, 'ortb2Imp.ext.gpid') || deepAccess(adUnit, 'ortb2Imp.ext.data.pbadslot') || getGptSlotInfoForAdUnitCode(b.adUnitCode).gptSlot || b.adUnitCode;
+};
+MACRO['pbAdSlot'] = MACRO['pbadslot'] = MACRO['gpid']; // legacy
 
 const PARAMS_DEFAULT = {
   'id1': function(b) { return b.adUnitCode },
-  'id2': '%%pbadslot%%',
+  'id2': '%%gpid%%',
   'id3': function(b) { return b.bidder },
   'id4': function(b) { return b.adId },
   'id5': function(b) { return b.dealId },
@@ -121,7 +138,11 @@ analyticsAdapter.enableAnalytics = function(config) {
     toselector: config.options.toselector || function(bid) {
       let code = getGptSlotInfoForAdUnitCode(bid.adUnitCode).divId || bid.adUnitCode;
       // https://mathiasbynens.be/notes/css-escapes
-      code = code.replace(/^\d/, '\\3$& ');
+      try {
+        code = CSS.escape(code);
+      } catch (_) {
+        code = code.replace(/^\d/, '\\3$& ');
+      }
       return `#${code}`
     },
     client: config.options.client,

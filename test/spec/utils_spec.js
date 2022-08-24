@@ -2,7 +2,7 @@ import { getAdServerTargeting } from 'test/fixtures/fixtures.js';
 import { expect } from 'chai';
 import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils.js';
-import {waitForElementToLoad} from 'src/utils.js';
+import {deepEqual, waitForElementToLoad} from 'src/utils.js';
 
 var assert = require('assert');
 
@@ -1178,6 +1178,13 @@ describe('Utils', function () {
       }
       expect(utils.deepEqual(obj1, obj2)).to.equal(false);
     });
+    it('should check types if {matchTypes: true}', () => {
+      function Typed(obj) {
+        Object.assign(this, obj);
+      }
+      const obj = {key: 'value'};
+      expect(deepEqual({outer: obj}, {outer: new Typed(obj)}, {checkTypes: true})).to.be.false;
+    });
 
     describe('cyrb53Hash', function() {
       it('should return the same hash for the same string', function() {
@@ -1234,6 +1241,22 @@ describe('Utils', function () {
           expect(callbacks).to.equal(1);
         })
       });
+    });
+  });
+
+  describe('setScriptAttributes', () => {
+    it('correctly adds attributes from an object', () => {
+      const script = document.createElement('script'),
+        attrs = {
+          'data-first_prop': '1',
+          'data-second_prop': 'b',
+          'id': 'newId'
+        };
+      script.id = 'oldId';
+      utils.setScriptAttributes(script, attrs);
+      expect(script.dataset['first_prop']).to.equal('1');
+      expect(script.dataset.second_prop).to.equal('b');
+      expect(script.id).to.equal('newId');
     });
   });
 });
