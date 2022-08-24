@@ -24,32 +24,32 @@ let itemMaps = {};
  * @param  {number} a random number from 0 to 15
  * @return {string}   random number or random string
  */
-function getRandomId(
-  a // placeholder
-) {
-  // if the placeholder was passed, return
-  // a random number from 0 to 15
-  return a
-    ? (
-      a ^ // unless b is 8,
-        ((Math.random() * // in which case
-          16) >> // a random number from
-          (a / 4))
-    ) // 8 to 11
-      .toString(16) // in hexadecimal
-    : ( // or otherwise a concatenated string:
-      [1e7] + // 10000000 +
-        1e3 + // -1000 +
-        4e3 + // -4000 +
-        8e3 + // -80000000 +
-        1e11
-    ) // -100000000000,
-      .replace(
-        // replacing
-        /[018]/g, // zeroes, ones, and eights with
-        getRandomId // random hex digits
-      );
-}
+// function getRandomId(
+//   a // placeholder
+// ) {
+//   // if the placeholder was passed, return
+//   // a random number from 0 to 15
+//   return a
+//     ? (
+//       a ^ // unless b is 8,
+//         ((Math.random() * // in which case
+//           16) >> // a random number from
+//           (a / 4))
+//     ) // 8 to 11
+//       .toString(16) // in hexadecimal
+//     : ( // or otherwise a concatenated string:
+//       [1e7] + // 10000000 +
+//         1e3 + // -1000 +
+//         4e3 + // -4000 +
+//         8e3 + // -80000000 +
+//         1e11
+//     ) // -100000000000,
+//       .replace(
+//         // replacing
+//         /[018]/g, // zeroes, ones, and eights with
+//         getRandomId // random hex digits
+//       );
+// }
 
 /* ----- mguid:start ------ */
 const COOKIE_KEY_MGUID = '__mguid_';
@@ -296,7 +296,7 @@ function getParam(validBidRequests, bidderRequest) {
   // console.log('wjh getParam', validBidRequests, bidderRequest);
   let isMobile = isMobileAndTablet() ? 1 : 0;
   let isTest = 0;
-  let auctionId = getProperty(bidderRequest, 'auctionId') || getRandomId();
+  let auctionId = getProperty(bidderRequest, 'auctionId');
   let items = getItems(validBidRequests, bidderRequest);
 
   const domain = document.domain;
@@ -412,6 +412,7 @@ export const spec = {
           ttl: TIME_TO_LIVE,
           // referrer: REFERER,
           ad: getProperty(bid, 'adm'),
+          nurl: getProperty(bid, 'nurl'),
           //   adserverTargeting: {
           //     granularityMultiplier: 0.1,
           //     priceGranularity: "pbHg",
@@ -432,10 +433,10 @@ export const spec = {
    * Register bidder specific code, which will execute if bidder timed out after an auction
    * @param {data} Containing timeout specific data
    */
-  onTimeout: function (data) {
-    // console.log('onTimeout', data);
-    // Bidder specifc code
-  },
+//   onTimeout: function (data) {
+//     // console.log('onTimeout', data);
+//     // Bidder specifc code
+//   },
 
   /**
    * Register bidder specific code, which will execute if a bid from this bidder won the auction
@@ -444,15 +445,18 @@ export const spec = {
   onBidWon: function (bid) {
     // console.log('onBidWon', bid, config.getConfig('priceGranularity'));
     // Bidder specific code
+    if (bid['nurl']) {
+      utils.triggerPixel(bid['nurl']);
+    }
   },
 
   /**
    * Register bidder specific code, which will execute when the adserver targeting has been set for a bid from this bidder
    * @param {Bid} The bid of which the targeting has been set
    */
-  onSetTargeting: function (bid) {
-    // console.log('onSetTargeting', bid);
-    // Bidder specific code
-  },
+//   onSetTargeting: function (bid) {
+//     // console.log('onSetTargeting', bid);
+//     // Bidder specific code
+//   },
 };
 registerBidder(spec);
