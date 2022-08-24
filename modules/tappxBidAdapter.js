@@ -491,9 +491,9 @@ export function _getHostInfo(validBidRequests) {
   let regexClassicEndpoints = new RegExp(`^([a-z]{3}|testing)\\.[a-z]{3}\\.tappx\\.com$`, 'i');
 
   if (regexHostParamHttps.test(hostParam)) {
-    hostParam = hostParam.replace("https://", "");
+    hostParam = hostParam.replace('https://', '');
   } else if (regexHostParamHttp.test(hostParam)) {
-    hostParam = hostParam.replace("http://", "");
+    hostParam = hostParam.replace('http://', '');
   }
 
   if (regexNewEndpoints.test(domainInfo.domain)) {
