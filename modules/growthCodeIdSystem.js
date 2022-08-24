@@ -6,12 +6,11 @@
  */
 
 import {logError, logInfo, tryAppendQueryString} from '../src/utils.js';
-import {ajaxBuilder} from '../src/ajax.js';
+import {ajax} from '../src/ajax.js';
 import { submodule } from '../src/hook.js'
 import { getStorageManager } from '../src/storageManager.js';
 
 const GCID_EXPIRY = 45;
-const AJAX_TIMEOUT = 10000;
 
 const MODULE_NAME = 'growthCodeId';
 export const GC_DATA_KEY = '_gc_data';
@@ -96,12 +95,19 @@ export const growthCodeIdSubmodule = {
    * @param {SubmoduleConfig} [config]
    * @returns {IdResponse|undefined}
    */
-  getId(config) {
+  getId(config, consentData) {
     const configParams = (config && config.params) || {};
     if (!configParams || typeof configParams.pid !== 'string') {
       logError('User ID - GrowthCodeID submodule requires a valid Partner ID to be defined');
       return;
     }
+
+    // const gdpr = (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) ? 1 : 0;
+    // const consentString = gdpr ? consentData.consentString : '';
+    // if (gdpr && !consentString) {
+    //  logInfo('Consent string is required to call GrowthCode id.');
+    //  return;
+    // }
 
     let publisherId = configParams.publisher_id ? configParams.publisher_id : '_sharedId';
 
@@ -116,47 +122,43 @@ export const growthCodeIdSubmodule = {
       return;
     }
 
-    let gcData = tryParse(readData(GC_DATA_KEY))
-    if (gcData) {
-      const resp = function (callback) {
-        callback(gcData)
-      }
-      return { callback: resp };
-    } else {
-      let segment = window.location.pathname.substr(1).replace(/\/+$/, '');
-      if (segment === '') {
-        segment = 'home';
-      }
-
-      let url = configParams.url ? configParams.url : 'https://p2.gcprivacy.com/pb?';
-      url = tryAppendQueryString(url, 'pid', configParams.pid);
-      url = tryAppendQueryString(url, 'uid', sharedId);
-      url = tryAppendQueryString(url, 'u', window.location.href);
-      url = tryAppendQueryString(url, 'h', window.location.hostname);
-      url = tryAppendQueryString(url, 's', segment);
-      url = tryAppendQueryString(url, 'r', document.referrer);
-
-      return {
-        callback(cb) {
-          ajaxBuilder(AJAX_TIMEOUT)(url, {
-            success: response => {
-              let respJson = tryParse(response);
-              // If response is a valid json and should save is true
-              if (respJson) {
-                storeData(GC_DATA_KEY, JSON.stringify(respJson))
-                cb(respJson);
-              } else {
-                cb();
-              }
-            },
-            error: error => {
-              logError(MODULE_NAME + ': ID fetch encountered an error', error);
-              cb();
-            }
-          }, { method: 'GET', withCredentials: true });
+    const resp = function(callback) {
+      let gcData = tryParse(readData(GC_DATA_KEY));
+      if (gcData) {
+        callback(gcData);
+      } else {
+        let segment = window.location.pathname.substr(1).replace(/\/+$/, '');
+        if (segment === '') {
+          segment = 'home';
         }
+
+        let url = configParams.url ? configParams.url : 'https://p2.gcprivacy.com/pb?';
+        url = tryAppendQueryString(url, 'pid', configParams.pid);
+        url = tryAppendQueryString(url, 'uid', sharedId);
+        url = tryAppendQueryString(url, 'u', window.location.href);
+        url = tryAppendQueryString(url, 'h', window.location.hostname);
+        url = tryAppendQueryString(url, 's', segment);
+        url = tryAppendQueryString(url, 'r', document.referrer);
+
+        ajax(url, {
+          success: response => {
+            let respJson = tryParse(response);
+            // If response is a valid json and should save is true
+            if (respJson) {
+              storeData(GC_DATA_KEY, JSON.stringify(respJson))
+              callback(respJson);
+            } else {
+              callback();
+            }
+          },
+          error: error => {
+            logError(MODULE_NAME + ': ID fetch encountered an error', error);
+            callback();
+          }
+        }, undefined, {method: 'GET', withCredentials: true})
       }
-    }
+    };
+    return { callback: resp };
   }
 };
 
