@@ -268,7 +268,7 @@ export const spec = {
               ext: bid.userId.id5id.ext || {}
             }]
           }
-        )
+        );
       }
 
       // Add common id if available
@@ -297,14 +297,14 @@ export const spec = {
               }
             }]
           }
-        )
+        );
       }
 
       // Only add the user object if it's not empty
       if (!isEmpty(userExt)) {
         requestPayload.user = { ext: userExt };
       }
-      const urlQueryParams = 'src_sys=prebid'
+      const urlQueryParams = 'src_sys=prebid';
       return {
         method: 'POST',
         url: URL + channelId + '?' + urlQueryParams,
@@ -365,7 +365,7 @@ export const spec = {
             bid.vastXml = spotxBid.adm;
           } else {
             bid.cache_key = spotxBid.ext.cache_key;
-            bid.vastUrl = 'https://search.spotxchange.com/ad/vast.html?key=' + spotxBid.ext.cache_key
+            bid.vastUrl = 'https://search.spotxchange.com/ad/vast.html?key=' + spotxBid.ext.cache_key;
             bid.videoCacheKey = spotxBid.ext.cache_key;
           }
 
@@ -453,7 +453,7 @@ function outstreamRender(bid) {
         loadExternalScript(easiUrl, BIDDER_CODE, undefined, undefined, attributes);
       }
     } catch (err) {
-      logError('[SPOTX][renderer] Error:' + err.message)
+      logError('[SPOTX][renderer] Error:' + err.message);
     }
   }
 }

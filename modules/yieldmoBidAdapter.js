@@ -531,13 +531,13 @@ function validateVideoParams(bid) {
       error += ' when ' + conditionStr;
     }
     throw new Error(error);
-  }
+  };
 
   const paramInvalid = (paramStr, value, expectedStr) => {
     expectedStr = expectedStr ? ', expected: ' + expectedStr : '';
     value = JSON.stringify(value);
     throw new Error(`"${paramStr}"=${value} is invalid${expectedStr}`);
-  }
+  };
 
   const isDefined = val => typeof val !== 'undefined';
   const validate = (fieldPath, validateCb, errorCb, errorCbParam) => {
@@ -563,7 +563,7 @@ function validateVideoParams(bid) {
       }
       return value;
     }
-  }
+  };
 
   try {
     validate('video.context', val => !isEmpty(val), paramRequired);

@@ -295,9 +295,9 @@ function buildOneRequest(validBidRequests, bidderRequest) {
     if (
       ((bannerMediaType.sizes[0].indexOf(480) >= 0) && (bannerMediaType.sizes[0].indexOf(320) >= 0)) ||
       ((bannerMediaType.sizes[0].indexOf(768) >= 0) && (bannerMediaType.sizes[0].indexOf(1024) >= 0))) {
-      banner.pos = 7
+      banner.pos = 7;
     } else {
-      banner.pos = 4
+      banner.pos = 4;
     }
 
     banner.api = api;
@@ -406,9 +406,9 @@ function buildOneRequest(validBidRequests, bidderRequest) {
         (typeof uuid !== 'undefined' && uuid !== null) &&
         (typeof uuid.source == 'string' && uuid.source !== null) &&
         (typeof uuid.uids[0].id == 'string' && uuid.uids[0].id !== null)
-    )
+    );
 
-    if (typeof user !== 'undefined') { user.ext.eids = eidsArr }
+    user.ext.eids = eidsArr;
   };
 
   let regs = {};

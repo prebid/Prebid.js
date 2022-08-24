@@ -267,7 +267,7 @@ var dsuModule = (function() {
 
   return {
     readOrCreateDsu: readOrCreateDsu
-  }
+  };
 })();
 
 function serializeSizes(sizes) {
@@ -343,7 +343,7 @@ function getBids(bids) {
     const bidId = bid.bidId;
 
     let mediaType = '';
-    const mediaTypes = Object.keys(bid.mediaTypes)
+    const mediaTypes = Object.keys(bid.mediaTypes);
     switch (mediaTypes[0]) {
       case 'video':
         mediaType = 'v';

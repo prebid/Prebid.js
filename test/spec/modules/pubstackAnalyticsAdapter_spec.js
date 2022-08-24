@@ -33,6 +33,7 @@ describe('Pubstack Analytics Adapter', () => {
     events.emit(constants.EVENTS.NO_BID, args)
 
     // Then
-    expect(queue.length).to.eql(6);
+    // 6 Pubstack events + 1 Clean.io event
+    expect(queue.length).to.eql(7);
   });
 });

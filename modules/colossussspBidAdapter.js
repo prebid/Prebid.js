@@ -105,8 +105,8 @@ export const spec = {
         request.ccpa = bidderRequest.uspConsent;
       }
       if (bidderRequest.gdprConsent) {
-        request.gdpr_consent = bidderRequest.gdprConsent.consentString || 'ALL'
-        request.gdpr_require = bidderRequest.gdprConsent.gdprApplies ? 1 : 0
+        request.gdpr_consent = bidderRequest.gdprConsent.consentString || 'ALL';
+        request.gdpr_require = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
       }
     }
 

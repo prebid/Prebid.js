@@ -101,7 +101,7 @@ export const spec = {
     });
 
     // CCPA
-    if (bidderRequest && bidderRequest.uspConsent) {
+    if (bidderRequest.uspConsent) {
       deepSetValue(openRtbBidRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent);
     }
 
