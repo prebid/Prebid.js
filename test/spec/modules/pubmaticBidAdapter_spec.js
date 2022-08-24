@@ -1116,6 +1116,22 @@ describe('PubMatic adapter', function () {
         expect(data.source.ext.schain).to.deep.equal(bidRequests[0].schain);
   		});
 
+		  it('Set tmax from global config if not set by requestBids method', function() {
+			let sandbox = sinon.sandbox.create();
+			sandbox.stub(config, 'getConfig').callsFake((key) => {
+				  var config = {
+				bidderTimeout: 3000
+				  };
+				  return config[key];
+			});
+			let request = spec.buildRequests(bidRequests, {
+				  auctionId: 'new-auction-id', timeout: 3000
+			});
+			let data = JSON.parse(request.data);
+			expect(data.tmax).to.deep.equal(3000);
+			sandbox.restore();
+		  });
+
       it('Set content from config, set site.content', function() {
         let sandbox = sinon.sandbox.create();
         const content = {
