@@ -5,7 +5,7 @@
 import { auctionManager } from '../src/auctionManager.js';
 import { config } from '../src/config.js';
 import { getHook } from '../src/hook.js';
-import { createInvisibleIframe, insertElement, getGptSlotForAdUnitCode, logInfo, logWarn, logError } from '../src/utils.js';
+import { createInvisibleIframe, insertElement, logInfo, logWarn, logError } from '../src/utils.js';
 
 const MODULE = 'fledge'
 
@@ -20,37 +20,14 @@ config.getConfig('fledge', config => init(config.fledge));
   * Module init.
   */
 export function init(fledgeCfg) {
-  logInfo(MODULE, `init`, fledgeCfg);
-  if (fledgeCfg.enabled !== false) {
-    if (fledgeCfg.useGpt) {
-      getHook('addComponentAuction').before(addComponentAuctionToGptHook);
-    } else {
-      getHook('addComponentAuction').before(addComponentAuctionHook);
-      getHook('renderAd').before(renderAdHook);
-      getHook('secureRenderRequest').before(secureRenderRequestHook);
-    }
-  }
-}
-
-export function addComponentAuctionToGptHook(next, bidRequest, componentAuctionConfig) {
-  const seller = componentAuctionConfig.seller;
-  const adUnitCode = bidRequest.adUnitCode;
-  const gptSlot = getGptSlotForAdUnitCode(adUnitCode);
-  logWarn(MODULE, 'gptSlotInfo', gptSlot);
-  if (gptSlot && gptSlot.setConfig) {
-    delete componentAuctionConfig.bidId;
-    gptSlot.setConfig({
-      componentAuction: [{
-        configKey: seller,
-        auctionConfig: componentAuctionConfig
-      }]
-    });
-    logInfo(MODULE, `register component auction config in GPT for: ${adUnitCode} x ${seller}: ${gptSlot.getAdUnitPath()}`, componentAuctionConfig);
+  if (!fledgeCfg || fledgeCfg.enabled !== false) {
+    getHook('addComponentAuction').before(addComponentAuctionHook);
+    getHook('renderAd').before(renderAdHook);
+    getHook('secureRenderRequest').before(secureRenderRequestHook);
+    logInfo(MODULE, `isEnabled`, fledgeCfg);
   } else {
-    logWarn(MODULE, `unable to register component auction config in GPT for: ${adUnitCode} x ${seller}.`);
+    logInfo(MODULE, `isDisabled`, fledgeCfg);
   }
-
-  next(bidRequest, componentAuctionConfig);
 }
 
 export function addComponentAuctionHook(next, bidRequest, fledgeAuctionConfig) {

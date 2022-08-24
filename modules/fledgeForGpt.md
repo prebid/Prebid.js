@@ -1,10 +1,10 @@
 ## Overview
 
-This module enables the registering and running of fledge auctions.
+This module enables the handling of fledge auction by GPT.
 Bid adapters can now return component auction configs in addition to bids.
 
-Those component auction configs will be registered by prebid and will be run
-*only* when the prebid ad wins.
+Those component auction configs will be registered to the GPT ad slot,
+and GPT will be responsible to run fledge auction and render the winning fledge ad.
 
 Find out more [here](https://github.com/WICG/turtledove/blob/main/FLEDGE.md).
 
@@ -13,16 +13,14 @@ Find out more [here](https://github.com/WICG/turtledove/blob/main/FLEDGE.md).
 Build the fledge module into the Prebid.js package with:
 
 ```
-gulp build --modules=fledge,...
+gulp build --modules=fledgeForGpt,...
 ```
 
 ## Configuration Parameters
 
 |Name |Type |Description |Notes |
 | :------------ | :------------ | :------------ |:------------ |
-|enabled | Boolean |Enable/disable the module |Defaults to `true` |
-|seller | String |fledge top level seller, only needed if useGpt=false |`https://privacysandbox.openx.net` |
-|decisionLogicUrl | String |fledge top level decision logic url, only needed if useGpt=false |`https://privacysandbox.openx.net/fledge/decision-logic-top-level.js` |
+|enabled | Boolean |Enable/disable the module |Defaults to `false` |
 
 ## Example Configurations
 
@@ -47,17 +45,11 @@ ortb2Imp: {
 ```
 
 ### enabling fledge support for the prebid callbacks
-
-
-
-#### prebid running the fledge ad auction
-
 ```js
 pbjs.que.push(function() {
   pbjs.setConfig({
-    fledge: {
-      seller: 'https://privacysandbox.openx.net',
-      decisionLogicUrl: 'https://privacysandbox.openx.net/fledge/decision-logic-top-level.js'
+    fledgeGpt: {
+      enabled: true
     }
   });
 });
