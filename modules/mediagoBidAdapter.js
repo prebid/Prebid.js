@@ -433,10 +433,10 @@ export const spec = {
    * Register bidder specific code, which will execute if bidder timed out after an auction
    * @param {data} Containing timeout specific data
    */
-//   onTimeout: function (data) {
-//     // console.log('onTimeout', data);
-//     // Bidder specifc code
-//   },
+  //   onTimeout: function (data) {
+  //     // console.log('onTimeout', data);
+  //     // Bidder specifc code
+  //   },
 
   /**
    * Register bidder specific code, which will execute if a bid from this bidder won the auction
