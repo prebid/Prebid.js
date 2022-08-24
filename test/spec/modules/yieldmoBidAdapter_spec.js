@@ -2,6 +2,9 @@ import { expect } from 'chai';
 import { spec } from 'modules/yieldmoBidAdapter.js';
 import * as utils from 'src/utils.js';
 
+/* eslint no-console: ["error", { allow: ["log", "warn", "error"] }] */
+// above is used for debugging purposes only
+
 describe('YieldmoAdapter', function () {
   const BANNER_ENDPOINT = 'https://ads.yieldmo.com/exchange/prebid';
   const VIDEO_ENDPOINT = 'https://ads.yieldmo.com/exchange/prebidvideo';
@@ -31,6 +34,7 @@ describe('YieldmoAdapter', function () {
     userId: {
       tdid: '8d146286-91d4-4958-aff4-7e489dd1abd6'
     },
+    transactionId: '54a58774-7a41-494e-9aaf-fa7b79164f0c',
     ...rootParams
   });
 
@@ -38,6 +42,7 @@ describe('YieldmoAdapter', function () {
     bidder: 'yieldmo',
     adUnitCode: 'adunit-code-video',
     bidId: '321video123',
+    auctionId: '1d1a03073455',
     mediaTypes: {
       video: {
         playerSize: [640, 480],
@@ -59,6 +64,7 @@ describe('YieldmoAdapter', function () {
         ...videoParams
       }
     },
+    transactionId: '54a58774-7a41-494e-8cbc-fa7b79164f0c',
     ...rootParams
   });
 
@@ -172,15 +178,15 @@ describe('YieldmoAdapter', function () {
       it('should place bid information into the p parameter of data', function () {
         let bidArray = [mockBannerBid()];
         expect(buildAndGetPlacementInfo(bidArray)).to.equal(
-          '[{"placement_id":"adunit-code","callback_id":"30b31c1838de1e","sizes":[[300,250],[300,600]],"bidFloor":0.1}]'
+          '[{"placement_id":"adunit-code","callback_id":"30b31c1838de1e","sizes":[[300,250],[300,600]],"bidFloor":0.1,"tid":"54a58774-7a41-494e-9aaf-fa7b79164f0c","auctionId":"1d1a030790a475"}]'
         );
 
         // multiple placements
         bidArray.push(mockBannerBid(
-          {adUnitCode: 'adunit-2', bidId: '123a', bidderRequestId: '321', auctionId: '222'}, {bidFloor: 0.2}));
+          {adUnitCode: 'adunit-2', bidId: '123a', bidderRequestId: '321', auctionId: '222', transactionId: '444'}, {bidFloor: 0.2}));
         expect(buildAndGetPlacementInfo(bidArray)).to.equal(
-          '[{"placement_id":"adunit-code","callback_id":"30b31c1838de1e","sizes":[[300,250],[300,600]],"bidFloor":0.1},' +
-        '{"placement_id":"adunit-2","callback_id":"123a","sizes":[[300,250],[300,600]],"bidFloor":0.2}]'
+          '[{"placement_id":"adunit-code","callback_id":"30b31c1838de1e","sizes":[[300,250],[300,600]],"bidFloor":0.1,"tid":"54a58774-7a41-494e-9aaf-fa7b79164f0c","auctionId":"1d1a030790a475"},' +
+        '{"placement_id":"adunit-2","callback_id":"123a","sizes":[[300,250],[300,600]],"bidFloor":0.2,"tid":"444","auctionId":"222"}]'
         );
       });
 
@@ -216,6 +222,20 @@ describe('YieldmoAdapter', function () {
         const pubcid = 'c604130c-0144-4b63-9bf2-c2bd8c8d86da2';
         const pubcidBid = mockBannerBid({crumbs: undefined, userId: {pubcid}});
         expect(buildAndGetData([pubcidBid]).pubcid).to.deep.equal(pubcid);
+      });
+
+      it('should add transaction id as parameter of request', function () {
+        const transactionId = '54a58774-7a41-494e-9aaf-fa7b79164f0c';
+        const pubcidBid = mockBannerBid({});
+        const bidRequest = buildAndGetData([pubcidBid]);        
+        expect(bidRequest.p).to.contain(transactionId);
+      });
+
+      it('should add auction id as parameter of request', function () {
+        const auctionId = '1d1a030790a475';
+        const pubcidBid = mockBannerBid({});
+        const bidRequest = buildAndGetData([pubcidBid]);
+        expect(bidRequest.p).to.contain(auctionId);
       });
 
       it('should add unified id as parameter of request', function () {
@@ -469,6 +489,18 @@ describe('YieldmoAdapter', function () {
         const requests = build([mockVideoBid({}, { lr_env: envelope })]);
 
         expect(requests[0].data.ats_envelope).to.equal(envelope);
+      });
+
+      it('should add transaction id to video bid request', function() {
+        const transactionId = '54a58774-7a41-494e-8cbc-fa7b79164f0c';
+        const requests = build([mockVideoBid({})]);
+        expect(buildAndGetData([mockVideoBid({})]).tid).to.deep.equal(transactionId);
+      });
+
+      it('should add auction id to video bid request', function() {
+        const auctionId = '1d1a03073455';
+        const requests = build([mockVideoBid({})]);
+        expect(buildAndGetData([mockVideoBid({})]).auctionId).to.deep.equal(auctionId);
       });
 
       it('should add schain if it is in the bidRequest', () => {
