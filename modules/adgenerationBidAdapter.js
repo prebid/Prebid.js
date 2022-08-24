@@ -2,6 +2,7 @@ import {tryAppendQueryString, getBidIdParameter} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const ADG_BIDDER_CODE = 'adgeneration';
 
@@ -25,6 +26,8 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
     const ADGENE_PREBID_VERSION = '1.4.0';
     let serverRequests = [];
     for (let i = 0, len = validBidRequests.length; i < len; i++) {
@@ -197,7 +200,7 @@ function createNativeAd(body) {
     native.clickTrackers = body.native_ad.link.clicktrackers || [];
     native.impressionTrackers = body.native_ad.imptrackers || [];
     if (body.beaconurl && body.beaconurl != '') {
-      native.impressionTrackers.push(body.beaconurl)
+      native.impressionTrackers.push(body.beaconurl);
     }
   }
   return native;

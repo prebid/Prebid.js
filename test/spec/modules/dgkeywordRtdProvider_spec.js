@@ -293,8 +293,8 @@ describe('Digital Garage Keyword Module', function () {
         moduleConfig,
         null
       );
+      const request = server.requests[0];
       setTimeout(() => {
-        const request = server.requests[0];
         if (request) {
           request.respond(
             200,

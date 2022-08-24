@@ -2,6 +2,7 @@ import { parseUrl, isEmpty, isStr, triggerPixel } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'brave';
 const DEFAULT_CUR = 'USD';
@@ -38,6 +39,9 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: (validBidRequests, bidderRequest) => {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     if (validBidRequests.length === 0 || !bidderRequest) return [];
 
     const endpointURL = ENDPOINT_URL.replace('hash', validBidRequests[0].params.placementId);
