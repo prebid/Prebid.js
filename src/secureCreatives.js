@@ -12,7 +12,6 @@ import {find, includes} from './polyfill.js';
 import {executeRenderer, isRendererRequired} from './Renderer.js';
 import {config} from './config.js';
 import {emitAdRenderFail, emitAdRenderSucceeded} from './adRendering.js';
-import { hook } from './hook.js';
 
 const BID_WON = constants.EVENTS.BID_WON;
 const STALE_RENDER = constants.EVENTS.STALE_RENDER;
@@ -86,10 +85,7 @@ function handleRenderRequest(reply, data, adObject) {
       return;
     }
   }
-  secureRenderRequest(reply, data, adObject, {});
-}
 
-export const secureRenderRequest = hook('sync', (reply, data, adObject, options = {}) => {
   try {
     _sendAdToCreative(adObject, reply);
   } catch (e) {
@@ -102,12 +98,11 @@ export const secureRenderRequest = hook('sync', (reply, data, adObject, options 
     return;
   }
 
-  if (!options.isFledge) {
-    // save winning bids
-    auctionManager.addWinningBid(adObject);
-    events.emit(BID_WON, adObject);
-  }
-}, 'secureRenderRequest');
+  // save winning bids
+  auctionManager.addWinningBid(adObject);
+
+  events.emit(BID_WON, adObject);
+}
 
 function handleNativeRequest(reply, data, adObject) {
   // handle this script from native template in an ad server

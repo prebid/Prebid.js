@@ -541,7 +541,7 @@ $$PREBID_GLOBAL$$.renderAd = hook('async', function (doc, id, options) {
     const message = `Error trying to write ad Id :${id} to the page. Missing document or adId`;
     emitAdRenderFail({ reason: MISSING_DOC_OR_ADID, message, id });
   }
-}, 'renderAd');
+});
 
 /**
  * Remove adUnit from the $$PREBID_GLOBAL$$ configuration, if there are no addUnitCode(s) it will remove all
