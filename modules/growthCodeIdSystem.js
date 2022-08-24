@@ -5,12 +5,13 @@
  * @requires module:modules/userId
  */
 
-import { logError, logInfo } from '../src/utils.js';
-import { ajax } from '../src/ajax.js';
+import {logError, logInfo, tryAppendQueryString} from '../src/utils.js';
+import {ajaxBuilder} from '../src/ajax.js';
 import { submodule } from '../src/hook.js'
 import { getStorageManager } from '../src/storageManager.js';
 
 const GCID_EXPIRY = 45;
+const AJAX_TIMEOUT = 10000;
 
 const MODULE_NAME = 'growthCodeId';
 export const GC_DATA_KEY = '_gc_data';
@@ -102,9 +103,16 @@ export const growthCodeIdSubmodule = {
       return;
     }
 
-    let sharedId = storage.getDataFromLocalStorage('_sharedid') ? (storage.getDataFromLocalStorage('_sharedid')) : null;
+    let publisherId = configParams.publisher_id ? configParams.publisher_id : '_sharedId';
+
+    let sharedId;
+    if (configParams.publisher_id_storage === 'html5') {
+      sharedId = storage.getDataFromLocalStorage(publisherId, null) ? (storage.getDataFromLocalStorage(publisherId, null)) : null;
+    } else {
+      sharedId = storage.getCookie(publisherId, null) ? (storage.getCookie(publisherId, null)) : null;
+    }
     if (!sharedId) {
-      logError('User ID - SharedId Module Must be activated and storage set to html5');
+      logError('User ID - Publisher ID is not correctly setup.');
       return;
     }
 
@@ -120,34 +128,34 @@ export const growthCodeIdSubmodule = {
         segment = 'home';
       }
 
-      let url = configParams.url ? configParams.url : 'https://p2.gcprivacy.com/pb';
-      url += '?pid=' + encodeURIComponent(configParams.pid);
-      url += '&uid=' + encodeURIComponent(sharedId);
-      url += '&u=' + encodeURIComponent(window.location.href);
-      url += '&h=' + encodeURIComponent(window.location.hostname);
-      url += '&s=' + encodeURIComponent(segment);
-      url += '&r=' + encodeURIComponent(document.referrer);
+      let url = configParams.url ? configParams.url : 'https://p2.gcprivacy.com/pb?';
+      url = tryAppendQueryString(url, 'pid', configParams.pid);
+      url = tryAppendQueryString(url, 'uid', sharedId);
+      url = tryAppendQueryString(url, 'u', window.location.href);
+      url = tryAppendQueryString(url, 'h', window.location.hostname);
+      url = tryAppendQueryString(url, 's', segment);
+      url = tryAppendQueryString(url, 'r', document.referrer);
 
-      const resp = function (callback) {
-        const callbacks = {
-          success: response => {
-            let respJson = tryParse(response);
-            // If response is a valid json and should save is true
-            if (respJson) {
-              storeData(GC_DATA_KEY, JSON.stringify(respJson))
-              callback(respJson);
-            } else {
-              callback();
+      return {
+        callback(cb) {
+          ajaxBuilder(AJAX_TIMEOUT)(url, {
+            success: response => {
+              let respJson = tryParse(response);
+              // If response is a valid json and should save is true
+              if (respJson) {
+                storeData(GC_DATA_KEY, JSON.stringify(respJson))
+                cb(respJson);
+              } else {
+                cb();
+              }
+            },
+            error: error => {
+              logError(MODULE_NAME + ': ID fetch encountered an error', error);
+              cb();
             }
-          },
-          error: error => {
-            logError(MODULE_NAME + ': ID fetch encountered an error', error);
-            callback();
-          }
-        };
-        ajax(url, callbacks, undefined, { method: 'GET', withCredentials: true });
-      };
-      return { callback: resp };
+          }, { method: 'GET', withCredentials: true });
+        }
+      }
     }
   }
 };
