@@ -784,7 +784,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
       };
 
       const position = impressions[transactionIds[adUnitIndex]].pos;
-      if (position != undefined) {
+      if (isInteger(position)) {
         _bannerImpression.banner.pos = position;
       }
 
