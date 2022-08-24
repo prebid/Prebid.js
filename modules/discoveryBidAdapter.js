@@ -11,33 +11,7 @@ let globals = {};
 let itemMaps = {};
 const MEDIATYPE = [BANNER, NATIVE];
 
-/**
- * 获取随机id
- * @param  {number} a random number from 0 to 15
- * @return {string}   random number or random string
- */
-function getRandomId(
-  a // placeholder
-) {
-  // if the placeholder was passed, return
-  // a random number from 0 to 15
-  return a
-    ? (
-      a ^ // unless b is 8,
-        ((Math.random() * // in which case
-          16) >> // a random number from
-          (a / 4))
-    ).toString(16) // in hexadecimal
-    : (
-      [1e7] + // 10000000 +
-        1e3 + // -1000 +
-        4e3 + // -4000 +
-        8e3 + // -80000000 +
-        1e11
-    ).replace(/[018]/g, getRandomId);
-}
-
-/* ----- mguid:start ------ */
+/* ----- _ss_pp_id:start ------ */
 const COOKIE_KEY_MGUID = '_ss_pp_id';
 
 /**
@@ -55,15 +29,15 @@ const getUserID = () => {
   return i;
 };
 
-/* ----- mguid:end ------ */
+/* ----- _ss_pp_id:end ------ */
 
 /**
- * 获取一个对象的某个值，如果没有则返回空字符串
+ * get object key -> value
  * @param  {Object}    obj  对象
  * @param  {...string} keys 键名
  * @return {any}
  */
-function getProperty(obj, ...keys) {
+function getKv(obj, ...keys) {
   let o = obj;
 
   for (let key of keys) {
@@ -78,10 +52,10 @@ function getProperty(obj, ...keys) {
 }
 
 /**
- * 是不是移动设备或者平板
+ * get device
  * @return {boolean}
  */
-function isMobileAndTablet() {
+function getDevice() {
   let check = false;
   (function (a) {
     let reg1 = new RegExp(
@@ -126,7 +100,7 @@ function isMobileAndTablet() {
 }
 
 /**
- * 获取底价
+ * get BidFloor
  * @param {*} bid
  * @param {*} mediaType
  * @param {*} sizes
@@ -150,9 +124,8 @@ function getBidFloor(bid) {
 }
 
 /**
- * 将尺寸转为RTB识别的尺寸
- *
- * @param  {Array|Object} requestSizes 配置尺寸
+ * get sizes for rtb
+ * @param  {Array|Object} requestSizes
  * @return {Object}
  */
 function transformSizes(requestSizes) {
@@ -180,7 +153,7 @@ function transformSizes(requestSizes) {
   return sizes;
 }
 
-// 支持的广告尺寸
+// Support sizes
 const popInAdSize = [
   { w: 300, h: 250 },
   { w: 300, h: 600 },
@@ -194,7 +167,7 @@ const popInAdSize = [
 ];
 
 /**
- * 获取广告位配置
+ * get aditem setting
  * @param {Array}  validBidRequests an an array of bids
  * @param {Object} bidderRequest  The master bidRequest object
  * @return {Object}
@@ -204,7 +177,7 @@ function getItems(validBidRequests, bidderRequest) {
   items = validBidRequests.map((req, i) => {
     let ret = {};
     // eslint-disable-next-line no-debugger
-    let mediaTypes = getProperty(req, 'mediaTypes');
+    let mediaTypes = getKv(req, 'mediaTypes');
 
     const bidFloor = getBidFloor(req);
     let id = '' + (i + 1);
@@ -213,7 +186,7 @@ function getItems(validBidRequests, bidderRequest) {
       ret = {
         id: id,
         bidfloor: bidFloor,
-        // TODO 动态参数
+        // TODO Dynamic parameters
         native: {
           ver: '1.2',
           plcmtcnt: 1,
@@ -253,12 +226,11 @@ function getItems(validBidRequests, bidderRequest) {
         ret,
       };
     }
-    // banner广告类型
+    // banner
     if (mediaTypes.banner) {
-      let sizes = transformSizes(getProperty(req, 'sizes'));
+      let sizes = transformSizes(getKv(req, 'sizes'));
       let matchSize;
 
-      // 确认尺寸是否符合我们要求
       for (let size of sizes) {
         matchSize = popInAdSize.find(
           (item) => size.width === item.w && size.height === item.h
@@ -292,7 +264,7 @@ function getItems(validBidRequests, bidderRequest) {
 }
 
 /**
- * 获取rtb请求参数
+ * get rtb qequest params
  *
  * @param {Array}  validBidRequests an an array of bids
  * @param {Object} bidderRequest  The master bidRequest object
@@ -300,9 +272,9 @@ function getItems(validBidRequests, bidderRequest) {
  */
 function getParam(validBidRequests, bidderRequest) {
   const pubcid = utils.deepAccess(validBidRequests[0], 'crumbs.pubcid');
-  let isMobile = isMobileAndTablet() ? 1 : 0;
+  let isMobile = getDevice() ? 1 : 0;
   let isTest = 0;
-  let auctionId = getProperty(bidderRequest, 'auctionId') || getRandomId();
+  let auctionId = getKv(bidderRequest, 'auctionId');
   let items = getItems(validBidRequests, bidderRequest);
 
   const location = utils.deepAccess(bidderRequest, 'refererInfo.referer');
@@ -435,18 +407,18 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse, bidRequest) {
-    const bids = getProperty(serverResponse, 'body', 'seatbid', 0, 'bid');
-    const cur = getProperty(serverResponse, 'body', 'cur');
+    const bids = getKv(serverResponse, 'body', 'seatbid', 0, 'bid');
+    const cur = getKv(serverResponse, 'body', 'cur');
 
     const bidResponses = [];
     for (let bid of bids) {
-      let impid = getProperty(bid, 'impid');
+      let impid = getKv(bid, 'impid');
       if (itemMaps[impid]) {
-        let bidId = getProperty(itemMaps[impid], 'req', 'bidId');
-        const mediaType = getProperty(bid, 'w') ? 'banner' : 'native';
+        let bidId = getKv(itemMaps[impid], 'req', 'bidId');
+        const mediaType = getKv(bid, 'w') ? 'banner' : 'native';
         let bidResponse = {};
         if (mediaType === 'native') {
-          const adm = getProperty(bid, 'adm');
+          const adm = getKv(bid, 'adm');
           const admObj = JSON.parse(adm);
           var native = {};
           admObj.assets.forEach((asset) => {
@@ -499,27 +471,29 @@ export const spec = {
           }
           bidResponse = {
             requestId: bidId,
-            cpm: getProperty(bid, 'price'),
-            creativeId: getProperty(bid, 'cid'),
+            cpm: getKv(bid, 'price'),
+            creativeId: getKv(bid, 'cid'),
             mediaType,
             currency: cur,
             netRevenue: true,
             native,
             ttl: TIME_TO_LIVE,
+            nurl: getKv(bid, 'nurl'),
           };
         } else {
           bidResponse = {
             requestId: bidId,
-            cpm: getProperty(bid, 'price'),
-            width: getProperty(bid, 'w'),
-            height: getProperty(bid, 'h'),
-            creativeId: getProperty(bid, 'cid'),
+            cpm: getKv(bid, 'price'),
+            width: getKv(bid, 'w'),
+            height: getKv(bid, 'h'),
+            creativeId: getKv(bid, 'cid'),
             dealId: '',
             mediaType,
             currency: cur,
             netRevenue: true,
             ttl: TIME_TO_LIVE,
-            ad: getProperty(bid, 'adm'),
+            ad: getKv(bid, 'adm'),
+            nurl: getKv(bid, 'nurl'),
           };
         }
         bidResponses.push(bidResponse);
@@ -534,8 +508,8 @@ export const spec = {
    * @param {data} Containing timeout specific data
    */
   onTimeout: function (data) {
-    // console.log('onTimeout', data);
-    // Bidder specifc  code
+    utils.logError('DiscoveryDSP adapter timed out for the auction.');
+    // TODO send request timeout to serve, the interface is not ready
   },
 
   /**
@@ -543,17 +517,9 @@ export const spec = {
    * @param {Bid} The bid that won the auction
    */
   onBidWon: function (bid) {
-    // console.log('onBidWon', bid, config.getConfig('priceGranularity'));
-    // Bidder specific code
-  },
-
-  /**
-   * Register bidder specific code, which will execute when the adserver targeting has been set for a bid from this bidder
-   * @param {Bid} The bid of which the targeting has been set
-   */
-  onSetTargeting: function (bid) {
-    // console.log('onSetTargeting', bid);
-    // Bidder specific code
-  },
+    if (bid['nurl']) {
+      utils.triggerPixel(bid['nurl'])
+    }
+  }
 };
 registerBidder(spec);
