@@ -23,11 +23,9 @@ const BIDDER_CODE = 'yieldmo';
 const CURRENCY = 'USD';
 const TIME_TO_LIVE = 300;
 const NET_REVENUE = true;
+const BANNER_SERVER_ENDPOINT = 'https://ads.yieldmo.com/exchange/prebid';
+const VIDEO_SERVER_ENDPOINT = 'https://ads.yieldmo.com/exchange/prebidvideo';
 const PB_COOKIE_ASSIST_SYNC_ENDPOINT = `https://ads.yieldmo.com/pbcas`;
-const BANNER_PATH = '/exchange/prebid';
-const VIDEO_PATH = '/exchange/prebidvideo';
-const STAGE_DOMAIN = 'https://ads-stg.yieldmo.com';
-const PROD_DOMAIN = 'https://ads.yieldmo.com';
 const OUTSTREAM_VIDEO_PLAYER_URL = 'https://prebid-outstream.yieldmo.com/bundle.js';
 const OPENRTB_VIDEO_BIDPARAMS = ['mimes', 'startdelay', 'placement', 'startdelay', 'skipafter', 'protocols', 'api',
   'playbackmethod', 'maxduration', 'minduration', 'pos', 'skip', 'skippable'];
@@ -61,9 +59,7 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (bidRequests, bidderRequest) {
-    const stage = isStage(bidderRequest);
-    const bannerUrl = getAdserverUrl(BANNER_PATH, stage);
-    const videoUrl = getAdserverUrl(VIDEO_PATH, stage);
+
     const bannerBidRequests = bidRequests.filter(request => hasBannerMediaType(request));
     const videoBidRequests = bidRequests.filter(request => hasVideoMediaType(request));
     let serverRequests = [];
@@ -127,8 +123,8 @@ export const spec = {
         serverRequest.eids = JSON.stringify(eids);
       };
       // check if url exceeded max length
-      const fullUrl = `${bannerUrl}?${parseQueryStringParameters(serverRequest)}`;
-      let extraCharacters = fullUrl.length - MAX_BANNER_REQUEST_URL_LENGTH;
+      const url = `${BANNER_SERVER_ENDPOINT}?${parseQueryStringParameters(serverRequest)}`;
+      let extraCharacters = url.length - MAX_BANNER_REQUEST_URL_LENGTH;      
       if (extraCharacters > 0) {
         for (let i = 0; i < BANNER_REQUEST_PROPERTIES_TO_REDUCE.length; i++) {
           extraCharacters = shortcutProperty(extraCharacters, serverRequest, BANNER_REQUEST_PROPERTIES_TO_REDUCE[i]);
@@ -141,7 +137,7 @@ export const spec = {
 
       serverRequests.push({
         method: 'GET',
-        url: bannerUrl,
+        url: BANNER_SERVER_ENDPOINT,
         data: serverRequest
       });
     }
@@ -153,7 +149,7 @@ export const spec = {
       };
       serverRequests.push({
         method: 'POST',
-        url: videoUrl,
+        url: VIDEO_SERVER_ENDPOINT,
         data: serverRequest
       });
     }
@@ -676,13 +672,4 @@ function canAccessTopWindow() {
   } catch (error) {
     return false;
   }
-}
-
-function isStage(bidderRequest) {
-  return !!bidderRequest.refererInfo?.referer?.includes('pb_force_a');
-}
-
-function getAdserverUrl(path, stage) {
-  const domain = stage ? STAGE_DOMAIN : PROD_DOMAIN;
-  return `${domain}${path}`;
 }
