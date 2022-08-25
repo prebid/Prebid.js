@@ -57,15 +57,15 @@
             name: "sharedId",
             storage: {
               type: "html5",
-              name: "_sharedid",         // create a cookie with this name
+              name: "_sharedID",         // create a cookie with this name
               expires: 365             // expires in 1 years
             }
           },{
             name: 'growthCodeId',
             params: {
               pid: 'TEST01',
-              url: 'http://localhost:8080/pb?',
-              publisher_id: '_sharedid',
+              url: 'http://localhost:8080/v1/pb?',
+              publisher_id: '_sharedID',
               publisher_id_storage: 'html5',
             }
           }]

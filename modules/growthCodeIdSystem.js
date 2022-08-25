@@ -13,6 +13,7 @@ import { getStorageManager } from '../src/storageManager.js';
 const GCID_EXPIRY = 45;
 const MODULE_NAME = 'growthCodeId';
 const GC_DATA_KEY = '_gc_data';
+const ENDPOINT_URL = 'https://p2.gcprivacy.com/v1/pb?'
 
 export const storage = getStorageManager({ gvlid: undefined, moduleName: MODULE_NAME });
 
@@ -108,7 +109,7 @@ export const growthCodeIdSubmodule = {
       return;
     }
 
-    let publisherId = configParams.publisher_id ? configParams.publisher_id : '_sharedId';
+    let publisherId = configParams.publisher_id ? configParams.publisher_id : '_sharedID';
 
     let sharedId;
     if (configParams.publisher_id_storage === 'html5') {
@@ -130,7 +131,7 @@ export const growthCodeIdSubmodule = {
           segment = 'home';
         }
 
-        let url = configParams.url ? configParams.url : 'https://p2.gcprivacy.com/pb?';
+        let url = configParams.url ? configParams.url : ENDPOINT_URL;
         url = tryAppendQueryString(url, 'pid', configParams.pid);
         url = tryAppendQueryString(url, 'uid', sharedId);
         url = tryAppendQueryString(url, 'u', window.location.href);

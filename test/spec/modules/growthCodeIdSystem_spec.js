@@ -72,7 +72,7 @@ describe('growthCodeIdSystem', () => {
     let submoduleCallback = growthCodeIdSubmodule.getId(getIdParams).callback;
     submoduleCallback(callBackSpy);
     let request = server.requests[0];
-    expect(request.url.substr(0, 82)).to.be.eq('https://p2.gcprivacy.com/pb?pid=TEST01&uid=' + SHAREDID + '&u=');
+    expect(request.url.substr(0, 85)).to.be.eq('https://p2.gcprivacy.com/v1/pb?pid=TEST01&uid=' + SHAREDID + '&u=');
     request.respond(
       200,
       {},
