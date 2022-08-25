@@ -136,23 +136,28 @@ export const storage = getStorageManager({
   moduleName: SUBMODULE_NAME
 });
 
-/** @type {null|Object} */
+/** @type {?Object} */
 let _weboContextualProfile = null;
-
-/** @type {Boolean} */
-let _weboCtxInitialized = false;
 
 /** @type {?Object} */
 let _weboUserDataUserProfile = null;
 
-/** @type {Boolean} */
-let _weboUserDataInitialized = false;
-
 /** @type {?Object} */
 let _sfbxLiteDataProfile = null;
 
-/** @type {Boolean} */
-let _sfbxLiteDataInitialized = false;
+/**
+ * @typedef {Object} DataInitialized
+ * @property {boolean} WeboCtx
+ * @property {boolean} WeboUser
+ * @property {boolean} SfbxLite
+ */
+
+/** @type {DataInitialized} */
+const _dataInitialized = {
+  WeboCtx: false,
+  WeboUser: false,
+  SfbxLite: false,
+};
 
 /** @type {Object} */
 const globalDefaults = {
@@ -173,11 +178,11 @@ function init(moduleConfig) {
   _weboUserDataUserProfile = null;
   _sfbxLiteDataProfile = null;
 
-  _weboCtxInitialized = initSubSection(moduleParams, WEBO_CTX_CONF_SECTION, 'token');
-  _weboUserDataInitialized = initSubSection(moduleParams, WEBO_USER_DATA_CONF_SECTION);
-  _sfbxLiteDataInitialized = initSubSection(moduleParams, SFBX_LITE_DATA_CONF_SECTION);
+  _dataInitialized.WeboCtx = initSubSection(moduleParams, WEBO_CTX_CONF_SECTION, 'token');
+  _dataInitialized.WeboUser = initSubSection(moduleParams, WEBO_USER_DATA_CONF_SECTION);
+  _dataInitialized.SfbxLite = initSubSection(moduleParams, SFBX_LITE_DATA_CONF_SECTION);
 
-  return _weboCtxInitialized || _weboUserDataInitialized || _sfbxLiteDataInitialized;
+  return Object.values(_dataInitialized).some((x) => x)
 }
 
 /** Initialize subsection module
@@ -422,8 +427,8 @@ function getTargetingData(adUnitsCodes, moduleConfig) {
 function buildProfileHandlers(moduleParams) {
   const profileHandlers = [];
 
-  if (_weboCtxInitialized && moduleParams?.weboCtxConf) {
-    const profileHandler = buildProfileHandler(moduleParams.weboCtxConf, getContextualProfile, false, 'contextual');
+  if (_dataInitialized.WeboCtx) {
+    const profileHandler = buildProfileHandler(moduleParams?.weboCtxConf, getContextualProfile, false, 'contextual');
     if (profileHandler) {
       profileHandlers.push(profileHandler)
     } else {
@@ -431,8 +436,8 @@ function buildProfileHandlers(moduleParams) {
     }
   }
 
-  if (_weboUserDataInitialized && moduleParams?.weboUserDataConf) {
-    const profileHandler = buildProfileHandler(moduleParams.weboUserDataConf, getWeboUserDataProfile, true, 'wam');
+  if (_dataInitialized.WeboUser) {
+    const profileHandler = buildProfileHandler(moduleParams?.weboUserDataConf, getWeboUserDataProfile, true, 'wam');
     if (profileHandler) {
       profileHandlers.push(profileHandler)
     } else {
@@ -440,8 +445,8 @@ function buildProfileHandlers(moduleParams) {
     }
   }
 
-  if (_sfbxLiteDataInitialized && moduleParams?.sfbxLiteDataConf) {
-    const profileHandler = buildProfileHandler(moduleParams.sfbxLiteDataConf, getSfbxLiteDataProfile, false, 'lite');
+  if (_dataInitialized.SfbxLite) {
+    const profileHandler = buildProfileHandler(moduleParams?.sfbxLiteDataConf, getSfbxLiteDataProfile, false, 'lite');
     if (profileHandler) {
       profileHandlers.push(profileHandler)
     } else {
@@ -461,6 +466,10 @@ function buildProfileHandlers(moduleParams) {
  * @returns {Object|void}
  */
 function buildProfileHandler(dataConf, callback, user, source) {
+  if (!dataConf) {
+    return;
+  }
+
   const [data, isDefault] = callback(dataConf);
   if (isEmpty(data)) {
     return;
@@ -569,7 +578,7 @@ function getDataFromLocalStorage(weboDataConf, cacheGet, cacheSet, defaultLocalS
 export function getBidRequestData(reqBidsConfigObj, onDone, moduleConfig) {
   const moduleParams = moduleConfig?.params || {};
 
-  if (!_weboCtxInitialized) {
+  if (!_dataInitialized.WeboCtx) {
     handleBidRequestData(reqBidsConfigObj, moduleParams);
 
     onDone();
