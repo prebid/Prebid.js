@@ -24,12 +24,11 @@
             },
             // Replace this object to test a new Adapter!
             bids: [{
-                bidder: "rtbhouse",
+                bidder: 'appnexus',
                 params: {
-                  region: "prebid-eu", //required
-                  publisherId: "test", //required, 
-                  bidfloor: 0.01  // optional,
-                }}]
+                    placementId: 13144370
+                }
+            }]
 
         }];
 
@@ -47,21 +46,6 @@
 
         pbjs.que.push(function() {
             pbjs.addAdUnits(adUnits);
-            pbjs.setBidderConfig({
-          bidders: ["rtbhouse"],
-          config: {
-            ortb2: {
-              user: {
-                ext: {
-                  data: {
-                    registered: true,
-                    interests: ["cars"],
-                  },
-                },
-              },
-            },
-          },
-        });
             pbjs.requestBids({
                 bidsBackHandler: sendAdserverRequest,
                 timeout: PREBID_TIMEOUT
