@@ -179,7 +179,7 @@ function init(moduleConfig) {
  * @return {Boolean} true if module subsection was initialized with success
  */
 function initSubSection(moduleParams, subSection, ...requiredFields) {
-  const weboSectionConf = moduleParams[subSection] || {enabled: false};
+  const weboSectionConf = moduleParams[subSection] || { enabled: false };
 
   if (weboSectionConf.enabled === false) {
     delete moduleParams[subSection];
@@ -212,7 +212,8 @@ const globalDefaults = {
   setPrebidTargeting: true,
   sendToBidders: true,
   onData: () => {
-    /* do nothing */ },
+    /* do nothing */
+  }
 };
 
 /** normalize submodule configuration
