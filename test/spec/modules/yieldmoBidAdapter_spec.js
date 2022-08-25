@@ -227,7 +227,7 @@ describe('YieldmoAdapter', function () {
       it('should add transaction id as parameter of request', function () {
         const transactionId = '54a58774-7a41-494e-9aaf-fa7b79164f0c';
         const pubcidBid = mockBannerBid({});
-        const bidRequest = buildAndGetData([pubcidBid]);        
+        const bidRequest = buildAndGetData([pubcidBid]);
         expect(bidRequest.p).to.contain(transactionId);
       });
 

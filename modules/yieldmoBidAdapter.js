@@ -59,7 +59,6 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (bidRequests, bidderRequest) {
-
     const bannerBidRequests = bidRequests.filter(request => hasBannerMediaType(request));
     const videoBidRequests = bidRequests.filter(request => hasVideoMediaType(request));
     let serverRequests = [];
@@ -124,7 +123,7 @@ export const spec = {
       };
       // check if url exceeded max length
       const url = `${BANNER_SERVER_ENDPOINT}?${parseQueryStringParameters(serverRequest)}`;
-      let extraCharacters = url.length - MAX_BANNER_REQUEST_URL_LENGTH;      
+      let extraCharacters = url.length - MAX_BANNER_REQUEST_URL_LENGTH;
       if (extraCharacters > 0) {
         for (let i = 0; i < BANNER_REQUEST_PROPERTIES_TO_REDUCE.length; i++) {
           extraCharacters = shortcutProperty(extraCharacters, serverRequest, BANNER_REQUEST_PROPERTIES_TO_REDUCE[i]);
