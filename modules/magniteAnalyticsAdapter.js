@@ -745,7 +745,7 @@ magniteAdapter.track = ({ eventType, args }) => {
       const serverError = deepAccess(args, 'serverErrors.0');
       const serverResponseTimeMs = args.serverResponseTimeMs;
       args.bids.forEach(bid => {
-        let cachedBid = deepAccess(cache, `auctions.${args.auctionId}.auction.adUnits.${args.transactionId}.bids.${bid.bidId}`);
+        let cachedBid = deepAccess(cache, `auctions.${bid.auctionId}.auction.adUnits.${bid.adUnitCode}.bids.${bid.bidId}`);
         if (typeof bid.serverResponseTimeMs !== 'undefined') {
           cachedBid.serverLatencyMillis = bid.serverResponseTimeMs;
         } else if (serverResponseTimeMs && bid.source === 's2s') {
