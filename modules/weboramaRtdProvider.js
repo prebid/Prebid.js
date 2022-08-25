@@ -128,6 +128,15 @@ const WEBO_USER_DATA_CONF_SECTION = 'weboUserDataConf';
 /** @type {string} */
 const SFBX_LITE_DATA_CONF_SECTION = 'sfbxLiteDataConf';
 
+/** @type {string} */
+const WEBO_CTX_SOURCE_LABEL = 'contextual';
+
+/** @type {string} */
+const WEBO_USER_DATA_SOURCE_LABEL = 'wam';
+
+/** @type {string} */
+const SFBX_LITE_DATA_SOURCE_LABEL = 'lite';
+
 /** @type {number} */
 const GVLID = 284;
 /** @type {?Object} */
@@ -178,7 +187,10 @@ function init(moduleConfig) {
   _weboUserDataUserProfile = null;
   _sfbxLiteDataProfile = null;
 
-  _dataInitialized.WeboCtx = initSubSection(moduleParams, WEBO_CTX_CONF_SECTION, 'token');
+  /** @type {string} */
+  const WEBO_CTX_REQUIRED_FIELD_TOKEN_LABEL = 'token';
+
+  _dataInitialized.WeboCtx = initSubSection(moduleParams, WEBO_CTX_CONF_SECTION, WEBO_CTX_REQUIRED_FIELD_TOKEN_LABEL);
   _dataInitialized.WeboUser = initSubSection(moduleParams, WEBO_USER_DATA_CONF_SECTION);
   _dataInitialized.SfbxLite = initSubSection(moduleParams, SFBX_LITE_DATA_CONF_SECTION);
 
@@ -363,24 +375,9 @@ function isValidProfile(profile) {
     return false;
   }
 
-  const keys = Object.keys(profile);
-
-  for (var i in keys) {
-    const key = keys[i];
-    const value = profile[key];
-    if (!isArray(value)) {
-      return false;
-    }
-
-    for (var j in value) {
-      const elem = value[j]
-      if (!isStr(elem)) {
-        return false;
-      }
-    }
-  }
-
-  return true;
+  return Object.values(profile).every((field) => {
+    return isArray(field) && field.every(isStr);
+  });
 }
 
 /** function that provides ad server targeting data to RTD-core
@@ -428,7 +425,8 @@ function buildProfileHandlers(moduleParams) {
   const profileHandlers = [];
 
   if (_dataInitialized.WeboCtx) {
-    const profileHandler = buildProfileHandler(moduleParams?.weboCtxConf, getContextualProfile, false, 'contextual');
+    const profileHandler = buildProfileHandler(moduleParams?.weboCtxConf, getContextualProfile,
+      false, WEBO_CTX_SOURCE_LABEL);
     if (profileHandler) {
       profileHandlers.push(profileHandler)
     } else {
@@ -437,7 +435,8 @@ function buildProfileHandlers(moduleParams) {
   }
 
   if (_dataInitialized.WeboUser) {
-    const profileHandler = buildProfileHandler(moduleParams?.weboUserDataConf, getWeboUserDataProfile, true, 'wam');
+    const profileHandler = buildProfileHandler(moduleParams?.weboUserDataConf, getWeboUserDataProfile,
+      true, WEBO_USER_DATA_SOURCE_LABEL);
     if (profileHandler) {
       profileHandlers.push(profileHandler)
     } else {
@@ -446,7 +445,8 @@ function buildProfileHandlers(moduleParams) {
   }
 
   if (_dataInitialized.SfbxLite) {
-    const profileHandler = buildProfileHandler(moduleParams?.sfbxLiteDataConf, getSfbxLiteDataProfile, false, 'lite');
+    const profileHandler = buildProfileHandler(moduleParams?.sfbxLiteDataConf, getSfbxLiteDataProfile,
+      false, SFBX_LITE_DATA_SOURCE_LABEL);
     if (profileHandler) {
       profileHandlers.push(profileHandler)
     } else {
@@ -512,7 +512,7 @@ function getWeboUserDataProfile(weboUserDataConf) {
     (data) => _weboUserDataUserProfile = data,
     DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY,
     LOCAL_STORAGE_USER_TARGETING_SECTION,
-    'wam');
+    WEBO_USER_DATA_SOURCE_LABEL);
 }
 
 /** return weboUserData profile
@@ -525,7 +525,7 @@ function getSfbxLiteDataProfile(sfbxLiteDataConf) {
     (data) => _sfbxLiteDataProfile = data,
     DEFAULT_LOCAL_STORAGE_LITE_PROFILE_KEY,
     LOCAL_STORAGE_LITE_TARGETING_SECTION,
-    'lite');
+    SFBX_LITE_DATA_SOURCE_LABEL);
 }
 
 /** return generic webo data profile
@@ -615,10 +615,8 @@ function handleBidRequestData(reqBids, moduleParams) {
   const adUnits = reqBids.adUnits || getGlobal().adUnits;
 
   try {
-    adUnits.filter(
-      adUnit => adUnit.hasOwnProperty('bids')
-    ).forEach(
-      adUnit => adUnit.bids.forEach(
+    adUnits.forEach(
+      adUnit => adUnit.bids?.forEach(
         bid => profileHandlers.forEach(ph => {
           // logMessage(`check if bidder '${bid.bidder}' and adunit '${adUnit.code} are share ${ph.metadata.source} data`);
 
@@ -779,7 +777,7 @@ function handleSmartadserverBid(bid, profile) {
  */
 function handleRubiconBid(bid, profile, metadata) {
   if (isBoolean(metadata.user)) {
-    const section = (metadata.user) ? 'visitor' : 'inventory';
+    const section = metadata.user ? 'visitor' : 'inventory';
     const base = `params.${section}`;
     assignProfileToObject(bid, base, profile);
   } else {
@@ -797,7 +795,7 @@ function handleRubiconBid(bid, profile, metadata) {
 function handleBidViaORTB2(reqBids, bid, profile, metadata) {
   if (isBoolean(metadata.user)) {
     logMessage(`bidder '${bid.bidder}' is not directly supported, trying set data via bidder ortb2 fpd`);
-    const section = ((metadata.user) ? 'user' : 'site');
+    const section = metadata.user ? 'user' : 'site';
     const base = `${bid.bidder}.${section}.ext.data`;
 
     assignProfileToObject(reqBids.ortb2Fragments?.bidder, base, profile);
