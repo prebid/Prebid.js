@@ -61,16 +61,17 @@ export const spec = {
         ? bidderRequest.gdprConsent.consentString.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '') : '';
       const gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
       request.regs = {ext: {gdpr: gdpr}};
-      request.user = {ext: {consent: consentStr, data: bidderRequest.ortb2}};
+      request.user = {ext: {consent: consentStr}};
     }
     if (validBidRequests[0].schain) {
       const schain = mapSchain(validBidRequests[0].schain);
       if (schain) {
         request.ext = {
           schain: schain,
-        }
+        };
       }
     }
+
     if (validBidRequests[0].userIdAsEids) {
       const eids = { eids: validBidRequests[0].userIdAsEids };
       if (request.user && request.user.ext) {
@@ -80,12 +81,28 @@ export const spec = {
       }
     }
 
-    const clientHints = getClientHints();
-    if (clientHints) {
-      const { device = {} } = request;
-      const { sua = {} } = device;
-      device.sua = { ...sua, ...clientHints };
-      request.device = device;
+    const ortb2Params = bidderRequest && bidderRequest.ortb2;
+    if (ortb2Params?.user) {
+      request.user = {
+        ...request.user,
+        ...(ortb2Params.user.data && {
+          data: { ...request.user?.data, ...ortb2Params.user.data },
+        }),
+        ...(ortb2Params.user.ext && {
+          ext: { ...request.user?.ext, ...ortb2Params.user.ext },
+        }),
+      };
+    }
+    if (ortb2Params?.site) {
+      request.site = {
+        ...request.site,
+        ...(ortb2Params.site.content && {
+          content: { ...request.site?.content, ...ortb2Params.site.content },
+        }),
+        ...(ortb2Params.site.ext && {
+          ext: { ...request.site?.ext, ...ortb2Params.site.ext },
+        }),
+      };
     }
 
     return {
@@ -426,20 +443,4 @@ function interpretNativeAd(adm) {
     }
   });
   return result;
-}
-
-function getClientHints() {
-  let clientHints = {};
-  const { userAgentData = {} } = navigator;
-
-  const { brands = [] } = userAgentData;
-  if (brands.length > 0) {
-    clientHints.browsers = brands;
-  }
-
-  if (Object.keys(clientHints).length === 0) {
-    clientHints = null;
-  }
-
-  return clientHints;
 }
