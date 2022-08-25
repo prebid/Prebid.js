@@ -17,6 +17,9 @@ const BLOCKED_AD_SIZES = [
 const DEFAULT_MAX_TTL = 420; // 7 minutes
 export const spec = {
   code: 'imds',
+  aliases: [
+    { code: 'synacormedia' }
+  ],
   supportedMediaTypes: [ BANNER, VIDEO ],
   sizeMap: {},
 
