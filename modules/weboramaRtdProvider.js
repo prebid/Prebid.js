@@ -10,7 +10,7 @@
 /**
  * @typedef dataCallbackMetadata
  * @property {Boolean} user if true it is user-centric data
- * @property {String} source describe the source of data, if "contextual" or "wam"
+ * @property {String} source describe the source of data, if 'contextual' or 'wam'
  * @property {Boolean} isDefault if true it the default profile defined in the configuration
  */
 
@@ -207,7 +207,7 @@ function initSubSection(moduleParams, subSection, ...requiredFields) {
 
     requiredFields.forEach(field => {
       if (!weboSectionConf[field]) {
-        throw `missing required field "{field}" on {section}`;
+        throw `missing required field '{field}' on {section}`;
       }
     });
   } catch (e) {
