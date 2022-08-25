@@ -423,66 +423,60 @@ function buildProfileHandlers(moduleParams) {
   const profileHandlers = [];
 
   if (_weboCtxInitialized && moduleParams?.weboCtxConf) {
-    const weboCtxConf = moduleParams.weboCtxConf;
-    const [data, isDefault] = getContextualProfile(weboCtxConf);
-    if (!isEmpty(data)) {
-      profileHandlers.push({
-        data: data,
-        metadata: {
-          user: false,
-          source: 'contextual',
-          isDefault: !!isDefault,
-        },
-        setTargeting: weboCtxConf.setPrebidTargeting,
-        sendToBidders: weboCtxConf.sendToBidders,
-        onData: weboCtxConf.onData,
-      })
+    const profileHandler = buildProfileHandler(moduleParams.weboCtxConf, getContextualProfile, false, 'contextual');
+    if (profileHandler) {
+      profileHandlers.push(profileHandler)
     } else {
       logMessage('skip contextual profile: no data');
     }
   }
 
   if (_weboUserDataInitialized && moduleParams?.weboUserDataConf) {
-    const weboUserDataConf = moduleParams.weboUserDataConf;
-    const [data, isDefault] = getWeboUserDataProfile(weboUserDataConf);
-    if (!isEmpty(data)) {
-      profileHandlers.push({
-        data: data,
-        metadata: {
-          user: true,
-          source: 'wam',
-          isDefault: !!isDefault,
-        },
-        setTargeting: weboUserDataConf.setPrebidTargeting,
-        sendToBidders: weboUserDataConf.sendToBidders,
-        onData: weboUserDataConf.onData,
-      })
+    const profileHandler = buildProfileHandler(moduleParams.weboUserDataConf, getWeboUserDataProfile, true, 'wam');
+    if (profileHandler) {
+      profileHandlers.push(profileHandler)
     } else {
       logMessage('skip wam profile: no data');
     }
   }
 
   if (_sfbxLiteDataInitialized && moduleParams?.sfbxLiteDataConf) {
-    const sfbxLiteDataConf = moduleParams.sfbxLiteDataConf;
-    const [data, isDefault] = getSfbxLiteDataProfile(sfbxLiteDataConf);
-    if (!isEmpty(data)) {
-      profileHandlers.push({
-        data: data,
-        metadata: {
-          user: false,
-          source: 'lite',
-          isDefault: !!isDefault,
-        },
-        setTargeting: sfbxLiteDataConf.setPrebidTargeting,
-        sendToBidders: sfbxLiteDataConf.sendToBidders,
-        onData: sfbxLiteDataConf.onData,
-      })
+    const profileHandler = buildProfileHandler(moduleParams.sfbxLiteDataConf, getSfbxLiteDataProfile, false, 'lite');
+    if (profileHandler) {
+      profileHandlers.push(profileHandler)
     } else {
       logMessage('skip sfbx lite profile: no data');
     }
   }
 
   return profileHandlers;
+}
+
+/**
+ * return specific profile handler
+ * @param {WeboCtxConf|WeboUserDataConf|SfbxLiteDataConf} dataConf
+ * @param {function} callback
+ * @param {boolean} user
+ * @param {string} source
+ * @returns {Object|void}
+ */
+function buildProfileHandler(dataConf, callback, user, source) {
+  const [data, isDefault] = callback(dataConf);
+  if (isEmpty(data)) {
+    return;
+  }
+
+  return {
+    data: data,
+    metadata: {
+      user: user,
+      source: source,
+      isDefault: !!isDefault,
+    },
+    setTargeting: dataConf.setPrebidTargeting,
+    sendToBidders: dataConf.sendToBidders,
+    onData: dataConf.onData,
+  };
 }
 
 /** return contextual profile
