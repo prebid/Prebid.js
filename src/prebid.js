@@ -23,6 +23,7 @@ import { emitAdRenderSucceeded, emitAdRenderFail } from './adRendering.js';
 import {gdprDataHandler, getS2SBidderSet, uspDataHandler, default as adapterManager} from './adapterManager.js';
 import CONSTANTS from './constants.json';
 import * as events from './events.js'
+import {performanceMetrics, useMetrics} from './utils/perfMetrics.js';
 
 const $$PREBID_GLOBAL$$ = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -584,7 +585,7 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
  * @alias module:pbjs.requestBids
  */
 $$PREBID_GLOBAL$$.requestBids = (function() {
-  const delegate = hook('async', function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels, auctionId, ortb2 } = {}) {
+  const delegate = hook('async', function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels, auctionId, ortb2, auctionMetrics } = {}) {
     events.emit(REQUEST_BIDS);
     const cbTimeout = timeout || config.getConfig('bidderTimeout');
     logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', arguments);
@@ -592,7 +593,7 @@ $$PREBID_GLOBAL$$.requestBids = (function() {
       global: mergeDeep({}, config.getAnyConfig('ortb2') || {}, ortb2 || {}),
       bidder: Object.fromEntries(Object.entries(config.getBidderConfig()).map(([bidder, cfg]) => [bidder, cfg.ortb2]).filter(([_, ortb2]) => ortb2 != null))
     }
-    return startAuction({bidsBackHandler, timeout: cbTimeout, adUnits, adUnitCodes, labels, auctionId, ortb2Fragments});
+    return startAuction({bidsBackHandler, timeout: cbTimeout, adUnits, adUnitCodes, labels, auctionId, ortb2Fragments, auctionMetrics});
   }, 'requestBids');
 
   return wrapHook(delegate, function requestBids(req = {}) {
@@ -600,15 +601,17 @@ $$PREBID_GLOBAL$$.requestBids = (function() {
     // any hook has a chance to run.
     // otherwise, if the caller goes on to use addAdUnits/removeAdUnits, any asynchronous logic
     // in any hook might see their effects.
+    req.auctionMetrics = performanceMetrics();
+    req.auctionMetrics.checkpoint('requestBids');
     let adUnits = req.adUnits || $$PREBID_GLOBAL$$.adUnits;
     req.adUnits = (isArray(adUnits) ? adUnits.slice() : [adUnits]);
     return delegate.call(this, req);
   });
 })();
 
-export const startAuction = hook('async', function ({ bidsBackHandler, timeout: cbTimeout, adUnits, adUnitCodes, labels, auctionId, ortb2Fragments } = {}) {
+export const startAuction = hook('async', function ({ bidsBackHandler, timeout: cbTimeout, adUnits, adUnitCodes, labels, auctionId, ortb2Fragments, auctionMetrics = performanceMetrics() } = {}) {
   const s2sBidders = getS2SBidderSet(config.getConfig('s2sConfig') || []);
-  adUnits = checkAdUnitSetup(adUnits);
+  adUnits = auctionMetrics.measureTime('requestBids.validate', () => checkAdUnitSetup(adUnits));
 
   if (adUnitCodes && adUnitCodes.length) {
     // if specific adUnitCodes supplied filter adUnits for those codes
@@ -678,7 +681,8 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
     cbTimeout,
     labels,
     auctionId,
-    ortb2Fragments
+    ortb2Fragments,
+    auctionMetrics,
   });
 
   let adUnitsLen = adUnits.length;
@@ -689,6 +693,20 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
   adUnitCodes.forEach(code => targeting.setLatestAuctionForAdUnit(code, auction.getAuctionId()));
   auction.callBids();
 }, 'startAuction');
+
+/**
+ * Wrap a hook function to measure the time spent in it, using the metrics object found in the first argument's `auctionMetrics` property.
+ *
+ * @param name the name to give to the measured time metric
+ * @param hookFn a hook function whose first argument is an object that contains an `auctionMetrics` metrics object
+ */
+export function timedAuctionHook(name, hookFn) {
+  return function (next, auctionReq) {
+    useMetrics(auctionReq.auctionMetrics).measureHookTime('requestBids.' + name, next, function (next, done) {
+      return hookFn.call(this, next, auctionReq, done);
+    });
+  }
+}
 
 export function executeCallbacks(fn, reqBidsConfigObj) {
   runAll(storageCallbacks);

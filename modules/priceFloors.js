@@ -25,6 +25,7 @@ import {find} from '../src/polyfill.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {bidderSettings} from '../src/bidderSettings.js';
 import {auctionManager} from '../src/auctionManager.js';
+import {timedAuctionHook} from '../src/prebid.js';
 
 /**
  * @summary This Module is intended to provide users with the ability to dynamically set and enforce price floors on a per auction basis.
@@ -524,6 +525,8 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
   }
 }
 
+const timedHook = timedAuctionHook('priceFloors', requestBidsHook);
+
 /**
  * @summary If an auction was queued to be delayed (waiting for a fetch) then this function will resume
  * those delayed auctions when delay is hit or success return or fail return
@@ -640,7 +643,7 @@ export function handleSetFloorsConfig(config) {
       });
 
       // we want our hooks to run after the currency hooks
-      getGlobal().requestBids.before(requestBidsHook, 50);
+      getGlobal().requestBids.before(timedHook, 50);
       // if user has debug on then we want to allow the debugging module to run before this, assuming they are testing priceFloors
       // debugging is currently set at 5 priority
       getHook('addBidResponse').before(addBidResponseHook, debugTurnedOn() ? 4 : 50);
@@ -653,7 +656,7 @@ export function handleSetFloorsConfig(config) {
     _floorDataForAuction = {};
 
     getHook('addBidResponse').getHooks({hook: addBidResponseHook}).remove();
-    getGlobal().requestBids.getHooks({hook: requestBidsHook}).remove();
+    getGlobal().requestBids.getHooks({hook: timedHook}).remove();
 
     addedFloorsHook = false;
   }

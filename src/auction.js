@@ -77,6 +77,7 @@ import * as events from './events.js'
 import adapterManager from './adapterManager.js';
 import CONSTANTS from './constants.json';
 import {GreedyPromise} from './utils/promise.js';
+import {useMetrics} from './utils/perfMetrics.js';
 
 const { syncUsers } = userSync;
 
@@ -116,7 +117,8 @@ export function resetAuctionState() {
   *    (from getConfig('ortb2') + requestBids({ortb2})) and bidder (a map from bidderCode to ortb2)
   * @returns {Auction} auction instance
   */
-export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, auctionId, ortb2Fragments}) {
+export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, auctionId, ortb2Fragments, auctionMetrics}) {
+  auctionMetrics = useMetrics(auctionMetrics);
   let _adUnits = adUnits;
   let _labels = labels;
   let _adUnitCodes = adUnitCodes;
@@ -150,7 +152,8 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
       noBids: _noBids,
       bidsReceived: _bidsReceived,
       winningBids: _winningBids,
-      timeout: _timeout
+      timeout: _timeout,
+      metrics: auctionMetrics.getMetrics(),
     };
   }
 
@@ -179,6 +182,9 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
 
       _auctionStatus = AUCTION_COMPLETED;
       _auctionEnd = Date.now();
+      auctionMetrics.checkpoint('auctionEnd');
+      auctionMetrics.setMetric('requestBids.total', auctionMetrics.timeBetween('requestBids', 'auctionEnd'));
+      auctionMetrics.setMetric('requestBids.callBids', auctionMetrics.timeBetween('callBids', 'auctionEnd'));
 
       events.emit(CONSTANTS.EVENTS.AUCTION_END, getProperties());
       bidsBackCallback(_adUnits, function () {
@@ -224,9 +230,13 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   function callBids() {
     _auctionStatus = AUCTION_STARTED;
     _auctionStart = Date.now();
+    auctionMetrics.checkpoint('auctionStart');
 
-    let bidRequests = adapterManager.makeBidRequests(_adUnits, _auctionStart, _auctionId, _timeout, _labels, ortb2Fragments);
+    let bidRequests = auctionMetrics.measureTime('requestBids.makeRequests',
+      () => adapterManager.makeBidRequests(_adUnits, _auctionStart, _auctionId, _timeout, _labels, ortb2Fragments, auctionMetrics));
     logInfo(`Bids Requested for Auction with id: ${_auctionId}`, bidRequests);
+
+    auctionMetrics.checkpoint('callBids')
 
     if (bidRequests.length < 1) {
       logWarn('No valid bid requests returned for auction');
@@ -358,7 +368,8 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
     getBidRequests: () => _bidderRequests,
     getBidsReceived: () => _bidsReceived,
     getNoBids: () => _noBids,
-    getFPD: () => ortb2Fragments
+    getFPD: () => ortb2Fragments,
+    getMetrics: () => auctionMetrics,
   };
 }
 

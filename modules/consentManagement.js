@@ -8,6 +8,7 @@ import {isNumber, isPlainObject, isStr, logError, logInfo, logWarn} from '../src
 import {config} from '../src/config.js';
 import {gdprDataHandler} from '../src/adapterManager.js';
 import {includes} from '../src/polyfill.js';
+import {timedAuctionHook} from '../src/prebid.js';
 
 const DEFAULT_CMP = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 10000;
@@ -227,7 +228,7 @@ function loadIfMissing(cb) {
  * @param {object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
  * @param {function} fn required; The next function in the chain, used by hook.js
  */
-export function requestBidsHook(fn, reqBidsConfigObj) {
+export function requestBidsHook(fn, reqBidsConfigObj, stopMeasuring = () => null) {
   loadIfMissing(function (shouldCancelAuction, errMsg, ...extraArgs) {
     if (errMsg) {
       let log = logWarn;
@@ -239,6 +240,7 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
     }
 
     if (shouldCancelAuction) {
+      stopMeasuring();
       if (typeof reqBidsConfigObj.bidsBackHandler === 'function') {
         reqBidsConfigObj.bidsBackHandler();
       } else {
@@ -345,7 +347,7 @@ export function setConsentConfig(config) {
     }
   }
   if (!addedConsentHook) {
-    $$PREBID_GLOBAL$$.requestBids.before(requestBidsHook, 50);
+    $$PREBID_GLOBAL$$.requestBids.before(timedAuctionHook('gdpr', requestBidsHook), 50);
   }
   addedConsentHook = true;
   gdprDataHandler.enable();

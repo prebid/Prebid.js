@@ -154,6 +154,7 @@ import {
 import {getPPID as coreGetPPID} from '../../src/adserver.js';
 import {defer, GreedyPromise} from '../../src/utils/promise.js';
 import {hasPurpose1Consent} from '../../src/utils/gpdr.js';
+import {timedAuctionHook} from '../../src/prebid.js';
 
 const MODULE_NAME = 'User ID';
 const COOKIE = 'cookie';
@@ -976,7 +977,7 @@ function updateSubmodules() {
 
   if (!addedUserIdHook && submodules.length) {
     // priority value 40 will load after consentManagement with a priority of 50
-    getGlobal().requestBids.before(requestBidsHook, 40);
+    getGlobal().requestBids.before(timedAuctionHook('userId', requestBidsHook), 40);
     coreGetPPID.after((next) => next(getPPID()));
     logInfo(`${MODULE_NAME} - usersync config updated for ${submodules.length} submodules: `, submodules.map(a => a.submodule.name));
     addedUserIdHook = true;

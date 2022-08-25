@@ -6,6 +6,7 @@ import { config } from '../../src/config.js';
 import { module, getHook } from '../../src/hook.js';
 import {logError} from '../../src/utils.js';
 import {GreedyPromise} from '../../src/utils/promise.js';
+import {timedAuctionHook} from '../../src/prebid.js';
 
 let submodules = [];
 
@@ -43,7 +44,7 @@ export function startAuctionHook(fn, req) {
 }
 
 function setupHook() {
-  getHook('startAuction').before(startAuctionHook, 10);
+  getHook('startAuction').before(timedAuctionHook('fpd', startAuctionHook), 10);
 }
 
 module('firstPartyData', registerSubmodules);

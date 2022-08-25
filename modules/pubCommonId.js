@@ -8,6 +8,7 @@ import { config } from '../src/config.js';
 import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
 import { getStorageManager } from '../src/storageManager.js';
+import {timedAuctionHook} from '../src/prebid.js';
 
 const storage = getStorageManager({moduleName: 'pubCommonId'});
 
@@ -290,7 +291,7 @@ export function initPubcid() {
     (storage.hasLocalStorage() && readValue(OPTOUT_NAME, LOCAL_STORAGE));
 
   if (!optout) {
-    $$PREBID_GLOBAL$$.requestBids.before(requestBidHook);
+    $$PREBID_GLOBAL$$.requestBids.before(timedAuctionHook('pubCommonId', requestBidHook));
   }
 }
 

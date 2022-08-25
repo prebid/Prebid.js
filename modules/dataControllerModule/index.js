@@ -5,7 +5,7 @@
 import {config} from '../../src/config.js';
 import {getHook, module} from '../../src/hook.js';
 import {deepAccess, deepSetValue, prefixLog} from '../../src/utils.js';
-import {startAuction} from '../../src/prebid.js';
+import {startAuction, timedAuctionHook} from '../../src/prebid.js';
 
 const LOG_PRE_FIX = 'Data_Controller : ';
 const ALL = '*';
@@ -29,6 +29,8 @@ export function filterBidData(fn, req) {
   fn.call(this, req);
   return req;
 }
+
+const timedFilterBidData = timedAuctionHook('dataController', filterBidData);
 
 function containsConfiguredEIDS(eidSourcesMap, bidderCode) {
   if (_dataControllerConfig.filterSDAwhenEID.includes(ALL)) {
@@ -111,7 +113,7 @@ function constructSegment(userData) {
 function getEIDsSource(adUnits) {
   let bidderEIDSMap = new Map();
   adUnits.forEach(adUnit => {
-    adUnit.bids.forEach(bid => {
+    (adUnit.bids || []).forEach(bid => {
       let userEIDs = deepAccess(bid, 'userIdAsEids') || [];
 
       if (userEIDs) {
@@ -175,19 +177,19 @@ export function init() {
     const dataController = dataControllerConfig && dataControllerConfig.dataController;
     if (!dataController) {
       _logger.logInfo(`Data Controller is not configured`);
-      startAuction.getHooks({hook: filterBidData}).remove();
+      startAuction.getHooks({hook: timedFilterBidData}).remove();
       return;
     }
 
     if (dataController.filterEIDwhenSDA && dataController.filterSDAwhenEID) {
       _logger.logInfo(`Data Controller can be configured with either filterEIDwhenSDA or filterSDAwhenEID`);
-      startAuction.getHooks({hook: filterBidData}).remove();
+      startAuction.getHooks({hook: timedFilterBidData}).remove();
       return;
     }
     confListener(); // unsubscribe config listener
     _dataControllerConfig = dataController;
 
-    getHook('startAuction').before(filterBidData);
+    getHook('startAuction').before(timedFilterBidData);
   });
 }
 

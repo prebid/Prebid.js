@@ -15,6 +15,7 @@ import { getHook, hook } from '../hook.js';
 import { getCoreStorageManager } from '../storageManager.js';
 import {auctionManager} from '../auctionManager.js';
 import { bidderSettings } from '../bidderSettings.js';
+import {useMetrics} from '../utils/perfMetrics.js';
 
 export const storage = getCoreStorageManager('bidderFactory');
 
@@ -206,7 +207,7 @@ export function newBidder(spec) {
         });
       }
 
-      const validBidRequests = bidderRequest.bids.filter(filterAndWarn);
+      const validBidRequests = useMetrics(bidderRequest.metrics).measureTime('adapter.validate', () => bidderRequest.bids.filter(filterAndWarn));
       if (validBidRequests.length === 0) {
         afterAllResponses();
         return;
@@ -245,6 +246,7 @@ export function newBidder(spec) {
             bid.originalCpm = bid.cpm;
             bid.originalCurrency = bid.currency;
             bid.meta = bid.meta || Object.assign({}, bid[bidRequest.bidder]);
+            bid.metrics = useMetrics(bidderRequest.metrics).fork();
             const prebidBid = Object.assign(createBid(CONSTANTS.STATUS.GOOD, bidRequest), bid);
             addBidWithCode(bidRequest.adUnitCode, prebidBid);
           } else {
@@ -297,7 +299,14 @@ export function newBidder(spec) {
  * @param onCompletion {function()} invoked once when all bid requests have been processed
  */
 export const processBidderRequests = hook('sync', function (spec, bids, bidderRequest, ajax, wrapCallback, {onRequest, onResponse, onError, onBid, onCompletion}) {
-  let requests = spec.buildRequests(bids, bidderRequest);
+  const metrics = useMetrics(bidderRequest.metrics);
+  const adapterDone = metrics.startTiming('adapter.total');
+
+  // S2S requests can do the equivalent of `buildRequests` more than once for a given bidRequest;
+  // client-side requests cannot (so far) but for consistency we .fork the metrics so that the result is aggregated
+  // in the same way
+  let requests = metrics.fork().measureTime('adapter.buildRequests', () => spec.buildRequests(bids, bidderRequest));
+
   if (!requests || requests.length === 0) {
     onCompletion();
     return;
@@ -306,13 +315,15 @@ export const processBidderRequests = hook('sync', function (spec, bids, bidderRe
     requests = [requests];
   }
 
-  const requestDone = delayExecution(onCompletion, requests.length);
+  const requestDone = delayExecution(() => { adapterDone(); onCompletion(); }, requests.length);
 
   requests.forEach((request) => {
+    const requestMetrics = metrics.fork();
     // If the server responds successfully, use the adapter code to unpack the Bids from it.
     // If the adapter code fails, no bids should be added. After all the bids have been added,
     // make sure to call the `requestDone` function so that we're one step closer to calling onCompletion().
     const onSuccess = wrapCallback(function(response, responseObj) {
+      networkDone();
       try {
         response = JSON.parse(response);
       } catch (e) { /* response might not be JSON... that's ok. */ }
@@ -326,7 +337,7 @@ export const processBidderRequests = hook('sync', function (spec, bids, bidderRe
 
       let bids;
       try {
-        bids = spec.interpretResponse(response, request);
+        bids = requestMetrics.measureTime('adapter.interpretResponse', () => spec.interpretResponse(response, request));
       } catch (err) {
         logError(`Bidder ${spec.code} failed to interpret the server's response. Continuing without bids`, null, err);
         requestDone();
@@ -350,11 +361,14 @@ export const processBidderRequests = hook('sync', function (spec, bids, bidderRe
     });
 
     const onFailure = wrapCallback(function (errorMessage, error) {
+      networkDone();
       onError(errorMessage, error);
       requestDone();
     });
 
     onRequest(request);
+
+    const networkDone = requestMetrics.startTiming('adapter.net');
     switch (request.method) {
       case 'GET':
         ajax(

@@ -8,6 +8,7 @@ import { isFn, logInfo, logWarn, isStr, isNumber, isPlainObject, logError } from
 import { config } from '../src/config.js';
 import { uspDataHandler } from '../src/adapterManager.js';
 import {getGlobal} from '../src/prebidGlobal.js';
+import {timedAuctionHook} from '../src/prebid.js';
 
 const DEFAULT_CONSENT_API = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 50;
@@ -220,6 +221,8 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
   });
 }
 
+const timedHook = timedAuctionHook('usp', requestBidsHook);
+
 /**
  * This function checks the consent data provided by USPAPI to ensure it's in an expected state.
  * If it's bad, we exit the module depending on config settings.
@@ -257,7 +260,7 @@ export function resetConsentData() {
   consentAPI = undefined;
   consentTimeout = undefined;
   uspDataHandler.reset();
-  getGlobal().requestBids.getHooks({hook: requestBidsHook}).remove();
+  getGlobal().requestBids.getHooks({hook: timedHook}).remove();
   addedConsentHook = false;
 }
 
@@ -297,7 +300,7 @@ export function setConsentConfig(config) {
 function enableConsentManagement(configFromUser = false) {
   if (!addedConsentHook) {
     logInfo(`USPAPI consentManagement module has been activated${configFromUser ? '' : ` using default values (api: '${consentAPI}', timeout: ${consentTimeout}ms)`}`);
-    getGlobal().requestBids.before(requestBidsHook, 50);
+    getGlobal().requestBids.before(timedHook, 50);
   }
   addedConsentHook = true;
   uspDataHandler.enable();

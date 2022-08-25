@@ -39,6 +39,7 @@ import {ajax} from '../../src/ajax.js';
 import {hook} from '../../src/hook.js';
 import {getGlobal} from '../../src/prebidGlobal.js';
 import {hasPurpose1Consent} from '../../src/utils/gpdr.js';
+import {performanceMetrics, useMetrics} from '../../src/utils/perfMetrics.js';
 
 const getConfig = config.getConfig;
 
@@ -906,7 +907,7 @@ Object.assign(ORTB2.prototype, {
   },
 
   interpretResponse(response) {
-    const {bidderRequests, s2sConfig} = this;
+    const {bidderRequests, s2sConfig, s2sBidRequest} = this;
     const bids = [];
 
     [['errors', 'serverErrors'], ['responsetimemillis', 'serverResponseTimeMs']]
@@ -938,6 +939,7 @@ Object.assign(ORTB2.prototype, {
           });
           bidObject.requestTimestamp = this.requestTimestamp;
           bidObject.cpm = cpm;
+          bidObject.metrics = (bidRequest ? useMetrics(bidRequest.metrics) : s2sBidRequest.metrics).fork();
           if (bid?.ext?.prebid?.meta?.adaptercode) {
             bidObject.adapterCode = bid.ext.prebid.meta.adaptercode;
           } else if (bidRequest?.bidder) {
@@ -1097,6 +1099,16 @@ export function PrebidServer() {
 
   /* Prebid executes this function when the page asks to send out bid requests */
   baseAdapter.callBids = function(s2sBidRequest, bidRequests, addBidResponse, done, ajax) {
+    const metrics = s2sBidRequest.metrics = bidRequests.length ? useMetrics(bidRequests[0].metrics).newMetrics() : performanceMetrics();
+    const adapterDone = metrics.startTiming('adapter.total');
+    done = (function (orig) {
+      return function () {
+        adapterDone();
+        orig.apply(this, arguments);
+      }
+    })(done);
+    bidRequests.forEach(req => useMetrics(req.metrics).join(metrics, false));
+
     let { gdprConsent, uspConsent } = getConsentData(bidRequests);
 
     if (Array.isArray(_s2sConfigs)) {
@@ -1157,19 +1169,21 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
     .filter(uniques);
 
   const ortb2 = new ORTB2(s2sBidRequest, bidRequests, adUnits, requestedBidders);
-  const request = ortb2.buildRequest();
+  const request = s2sBidRequest.metrics.measureTime('adapter.buildRequests', () => ortb2.buildRequest());
   const requestJson = request && JSON.stringify(request);
   logInfo('BidRequest: ' + requestJson);
   const endpointUrl = getMatchingConsentUrl(s2sBidRequest.s2sConfig.endpoint, gdprConsent);
   if (request && requestJson && endpointUrl) {
+    const networkDone = s2sBidRequest.metrics.startTiming('adapter.net');
     ajax(
       endpointUrl,
       {
         success: function (response) {
+          networkDone();
           let result;
           try {
             result = JSON.parse(response);
-            const bids = ortb2.interpretResponse(result);
+            const bids = s2sBidRequest.metrics.measureTime('adapter.interpretResponse', () => ortb2.interpretResponse(result));
             bids.forEach(onBid);
           } catch (error) {
             logError(error);
@@ -1181,7 +1195,10 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
             onResponse(true, requestedBidders);
           }
         },
-        error: onError
+        error: function () {
+          networkDone();
+          onError.apply(this, arguments);
+        }
       },
       requestJson,
       {contentType: 'text/plain', withCredentials: true}
