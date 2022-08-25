@@ -154,12 +154,20 @@ let _sfbxLiteDataProfile = null;
 /** @type {Boolean} */
 let _sfbxLiteDataInitialized = false;
 
+/** @type {Object} */
+const globalDefaults = {
+  setPrebidTargeting: true,
+  sendToBidders: true,
+  onData: () => {
+    /* do nothing */
+  }
+};
 /** Initialize module
  * @param {object} moduleConfig
  * @return {Boolean} true if module was initialized with success
  */
 function init(moduleConfig) {
-  const moduleParams = moduleConfig?.params || {};
+  const moduleParams = Object.assign({}, globalDefaults, moduleConfig?.params || {});
 
   _weboContextualProfile = null;
   _weboUserDataUserProfile = null;
@@ -207,26 +215,18 @@ function initSubSection(moduleParams, subSection, ...requiredFields) {
   return true;
 }
 
-/** @type {Object} */
-const globalDefaults = {
-  setPrebidTargeting: true,
-  sendToBidders: true,
-  onData: () => {
-    /* do nothing */
-  }
-};
-
 /** normalize submodule configuration
  * @param {ModuleParams} moduleParams
  * @param {WeboCtxConf|WeboUserDataConf|SfbxLiteDataConf} submoduleParams
  * @return {void}
  */
 function normalizeConf(moduleParams, submoduleParams) {
+  submoduleParams.defaultProfile = submoduleParams.defaultProfile || {};
+
   // handle defaults
-  Object.entries(globalDefaults).forEach(([propertyName, globalDefaultValue]) => {
+  Object.entries(globalDefaults).forEach(([propertyName]) => {
     if (!submoduleParams.hasOwnProperty(propertyName)) {
-      const hasModuleParam = moduleParams.hasOwnProperty(propertyName);
-      submoduleParams[propertyName] = (hasModuleParam) ? moduleParams[propertyName] : globalDefaultValue;
+      submoduleParams[propertyName] = moduleParams[propertyName];
     }
   })
 
@@ -239,8 +239,6 @@ function normalizeConf(moduleParams, submoduleParams) {
   if (!isFn(submoduleParams.onData)) {
     throw 'onData parameter should be a callback';
   }
-
-  submoduleParams.defaultProfile = submoduleParams.defaultProfile || {};
 
   if (!isValidProfile(submoduleParams.defaultProfile)) {
     throw 'defaultProfile is not valid';
