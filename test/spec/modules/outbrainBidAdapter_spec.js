@@ -132,28 +132,6 @@ describe('Outbrain Adapter', function () {
         }
         expect(spec.isBidRequestValid(bid)).to.equal(false)
       })
-      it('should fail if wlang does not include strings', function () {
-        const bid = {
-          bidder: 'outbrain',
-          params: {
-            tagid: 123,
-            wlang: ['en', 2]
-          },
-          ...nativeBidRequestParams,
-        }
-        expect(spec.isBidRequestValid(bid)).to.equal(false)
-      })
-      it('should fail if wlang strings do not contain exactly two letters', function () {
-        const bid = {
-          bidder: 'outbrain',
-          params: {
-            tagid: 123,
-            wlang: ['esp']
-          },
-          ...nativeBidRequestParams,
-        }
-        expect(spec.isBidRequestValid(bid)).to.equal(false)
-      })
       it('should succeed with outbrain config', function () {
         const bid = {
           bidder: 'outbrain',
@@ -338,6 +316,27 @@ describe('Outbrain Adapter', function () {
         expect(resData.site.publisher.domain).to.equal('test-publisher.com')
         expect(resData.bcat).to.deep.equal(['bad-category'])
         expect(resData.badv).to.deep.equal(['bad-advertiser'])
+      });
+
+      it('first party data', function () {
+        const bidRequest = {
+          ...commonBidRequest,
+          ...nativeBidRequestParams,
+        }
+        const bidderRequest = {
+          ortb2: {
+            bcat: ['IAB1', 'IAB2-1'],
+            badv: ['domain1.com', 'domain2.com'],
+            wlang: ['en'],
+          },
+          ...commonBidderRequest,
+        }
+
+        const res = spec.buildRequests([bidRequest], bidderRequest)
+        const resData = JSON.parse(res.data)
+        expect(resData.bcat).to.deep.equal(bidderRequest.ortb2.bcat)
+        expect(resData.badv).to.deep.equal(bidderRequest.ortb2.badv)
+        expect(resData.wlang).to.deep.equal(bidderRequest.ortb2.wlang)
       });
 
       it('should pass bidder timeout', function () {
