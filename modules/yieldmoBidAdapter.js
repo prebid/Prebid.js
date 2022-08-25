@@ -247,6 +247,12 @@ function addPlacement(request) {
   if (gpid) {
     placementInfo.gpid = gpid;
   }
+  if (request.transactionId) {
+    placementInfo.tid = request.transactionId;
+  }
+  if (request.auctionId) {
+    placementInfo.auctionId = request.auctionId;
+  }
   return JSON.stringify(placementInfo);
 }
 
@@ -386,7 +392,12 @@ function openRtbRequest(bidRequests, bidderRequest) {
   if (schain) {
     openRtbRequest.schain = schain;
   }
-
+  if (bidRequests[0].transactionId) {
+    openRtbRequest.tid = bidRequests[0].transactionId;
+  }
+  if (bidRequests[0].auctionId) {
+    openRtbRequest.auctionId = bidRequests[0].auctionId;
+  }
   populateOpenRtbGdpr(openRtbRequest, bidderRequest);
 
   return openRtbRequest;
