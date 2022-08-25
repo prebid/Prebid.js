@@ -7,7 +7,6 @@ import {getStorageManager} from '../../../src/storageManager.js';
 
 const GCID_EXPIRY = 45;
 const MODULE_NAME = 'growthCodeId';
-const GC_DATA_KEY = '_gc_data';
 const SHAREDID = 'fe9c5c89-7d56-4666-976d-e07e73b3b664';
 
 export const storage = getStorageManager({ gvlid: undefined, moduleName: MODULE_NAME });
