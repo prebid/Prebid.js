@@ -11,9 +11,8 @@ import { submodule } from '../src/hook.js'
 import { getStorageManager } from '../src/storageManager.js';
 
 const GCID_EXPIRY = 45;
-
 const MODULE_NAME = 'growthCodeId';
-export const GC_DATA_KEY = '_gc_data';
+const GC_DATA_KEY = '_gc_data';
 
 export const storage = getStorageManager({ gvlid: undefined, moduleName: MODULE_NAME });
 
@@ -102,12 +101,12 @@ export const growthCodeIdSubmodule = {
       return;
     }
 
-    // const gdpr = (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) ? 1 : 0;
-    // const consentString = gdpr ? consentData.consentString : '';
-    // if (gdpr && !consentString) {
-    //  logInfo('Consent string is required to call GrowthCode id.');
-    //  return;
-    // }
+    const gdpr = (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) ? 1 : 0;
+    const consentString = gdpr ? consentData.consentString : '';
+    if (gdpr && !consentString) {
+      logInfo('Consent string is required to call GrowthCode id.');
+      return;
+    }
 
     let publisherId = configParams.publisher_id ? configParams.publisher_id : '_sharedId';
 
@@ -119,7 +118,6 @@ export const growthCodeIdSubmodule = {
     }
     if (!sharedId) {
       logError('User ID - Publisher ID is not correctly setup.');
-      return;
     }
 
     const resp = function(callback) {
