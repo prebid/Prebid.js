@@ -298,26 +298,29 @@ export const spec = {
       .filter(Boolean);
   },
   getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent) => {
+    const params = {};
+    if (gdprConsent) {
+      if (typeof gdprConsent.gdprApplies === 'boolean') {
+        params['gdpr'] = Number(gdprConsent.gdprApplies);
+      }
+      if (typeof gdprConsent.consentString === 'string') {
+        params['gdpr_consent'] = gdprConsent.consentString;
+      }
+    }
+
+    if (uspConsent) {
+      params['us_privacy'] = encodeURIComponent(uspConsent);
+    }
     if (syncOptions.iframeEnabled) {
       // data is only assigned if params are available to pass to syncEndpoint
-      const params = {};
-
-      if (gdprConsent) {
-        if (typeof gdprConsent.gdprApplies === 'boolean') {
-          params['gdpr'] = Number(gdprConsent.gdprApplies);
-        }
-        if (typeof gdprConsent.consentString === 'string') {
-          params['gdpr_consent'] = gdprConsent.consentString;
-        }
-      }
-
-      if (uspConsent) {
-        params['us_privacy'] = encodeURIComponent(uspConsent);
-      }
-
       return {
         type: 'iframe',
         url: `https://${endpoint}/prebid/usersync/index.html?${formatQS(params)}`,
+      };
+    } else if (syncOptions.pixelEnabled) {
+      return {
+        type: 'image',
+        url: `https://${endpoint.includes('dev') ? 'dev-' : ''}data.dianomi.com/frontend/usync${formatQS(params)}`,
       };
     }
   },
