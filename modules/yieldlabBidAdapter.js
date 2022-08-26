@@ -1,9 +1,9 @@
-import {_each, deepAccess, isArray, isFn, isPlainObject, timestamp} from '../src/utils.js'
-import {registerBidder} from '../src/adapters/bidderFactory.js'
-import {find} from '../src/polyfill.js'
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js'
-import {Renderer} from '../src/Renderer.js'
-import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
+import { _each, deepAccess, isArray, isFn, isPlainObject, timestamp } from '../src/utils.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { find } from '../src/polyfill.js'
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js'
+import { Renderer } from '../src/Renderer.js'
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const ENDPOINT = 'https://ad.yieldlab.net'
 const BIDDER_CODE = 'yieldlab'
@@ -181,7 +181,7 @@ export const spec = {
           bidResponse.adUrl = url
           bidResponse.mediaType = NATIVE
           const nativeImageAssetObj = find(matchedBid.native.assets, e => e.id === 2)
-          const nativeImageAsset = nativeImageAssetObj ? nativeImageAssetObj.img : {url: '', w: 0, h: 0};
+          const nativeImageAsset = nativeImageAssetObj ? nativeImageAssetObj.img : { url: '', w: 0, h: 0 };
           const nativeTitleAsset = find(matchedBid.native.assets, e => e.id === 1)
           const nativeBodyAsset = find(matchedBid.native.assets, e => e.id === 3)
           bidResponse.native = {
@@ -417,11 +417,11 @@ function outstreamRender(bid) {
  * @returns {string[]}
  */
 function extractSizes(bid) {
-  const {mediaTypes} = bid // see https://docs.prebid.org/dev-docs/adunit-reference.html#examples
+  const { mediaTypes } = bid // see https://docs.prebid.org/dev-docs/adunit-reference.html#examples
   const sizes = []
 
   if (isPlainObject(mediaTypes)) {
-    const {[BANNER]: bannerType} = mediaTypes
+    const { [BANNER]: bannerType } = mediaTypes
 
     // only applies for multi size Adslots -> BANNER
     if (bannerType && isArray(bannerType.sizes)) {
