@@ -9,9 +9,9 @@
 
 /**
  * @typedef dataCallbackMetadata
- * @property {Boolean} user if true it is user-centric data
- * @property {String} source describe the source of data, if 'contextual' or 'wam'
- * @property {Boolean} isDefault if true it the default profile defined in the configuration
+ * @property {boolean} user if true it is user-centric data
+ * @property {string} source describe the source of data, if 'contextual' or 'wam'
+ * @property {boolean} isDefault if true it the default profile defined in the configuration
  */
 
 /** onData callback type
@@ -23,19 +23,19 @@
 
 /** setPrebidTargeting callback type
  * @callback setPrebidTargetingCallback
- * @param {String} adUnitCode
+ * @param {string} adUnitCode
  * @param {Object} data
  * @param {dataCallbackMetadata} metadata
- * @returns {Boolean}
+ * @returns {boolean}
  */
 
 /** sendToBidders callback type
  * @callback sendToBiddersCallback
  * @param {Object} bid
- * @param {String} adUnitCode
+ * @param {string} adUnitCode
  * @param {Object} data
  * @param {dataCallbackMetadata} metadata
- * @returns {Boolean}
+ * @returns {boolean}
  */
 
 /**
@@ -178,7 +178,7 @@ const globalDefaults = {
 };
 /** Initialize module
  * @param {object} moduleConfig
- * @return {Boolean} true if module was initialized with success
+ * @return {boolean} true if module was initialized with success
  */
 function init(moduleConfig) {
   const moduleParams = Object.assign({}, globalDefaults, moduleConfig?.params || {});
@@ -193,14 +193,14 @@ function init(moduleConfig) {
   _dataInitialized.WeboUser = initSubSection(moduleParams, WEBO_USER_DATA_CONF_SECTION);
   _dataInitialized.SfbxLite = initSubSection(moduleParams, SFBX_LITE_DATA_CONF_SECTION);
 
-  return Object.values(_dataInitialized).some((x) => !!x)
+  return Object.values(_dataInitialized).some((x) => !!x);
 }
 
 /** Initialize subsection module
  * @param {Object} moduleParams
  * @param {string} subSection subsection name to initialize
  * @param {[]string} requiredFields
- * @return {Boolean} true if module subsection was initialized with success
+ * @return {boolean} true if module subsection was initialized with success
  */
 function initSubSection(moduleParams, subSection, ...requiredFields) {
   const weboSectionConf = moduleParams[subSection] || { enabled: false };
@@ -220,7 +220,7 @@ function initSubSection(moduleParams, subSection, ...requiredFields) {
       }
     });
   } catch (e) {
-    logError(`unable to initialize: error on ${subSection} configuration: ${e}`);
+    logError(`unable to initialize: error on ${subSection} configuration:`, e);
     return false;
   }
 
@@ -278,31 +278,27 @@ function coerceSendToBidders(submoduleParams) {
   let sendToBidders = submoduleParams.sendToBidders;
 
   if (isPlainObject(sendToBidders)) {
-    const sendToBiddersMap = sendToBidders;
+    const sendToBiddersMap = Object.entries(sendToBidders).reduce((map, [key, value]) => {
+      map[key] = wrapValidatorCallback(value);
+      return map;
+    }, {});
+
     submoduleParams.sendToBidders = (bid, adUnitCode) => {
       const bidder = bid.bidder;
-      if (!sendToBiddersMap.hasOwnProperty(bidder)) {
-        return false
+      if (!(bidder in sendToBiddersMap)) {
+        return false;
       }
 
-      const value = sendToBiddersMap[bidder];
+      const validatorCallback = sendToBiddersMap[bidder];
 
-      if (isBoolean(value)) {
-        return value
+      try {
+        return validatorCallback(adUnitCode);
+      } catch (e) {
+        throw `invalid sendToBidders[${bidder}]: ${e}`;
       }
-
-      if (isStr(value)) {
-        return value == adUnitCode
-      }
-
-      if (isArray(value)) {
-        return value.includes(adUnitCode)
-      }
-
-      throw `unexpected format for sendToBidders[${bidder}]: ${typeof value}`;
     };
 
-    return
+    return;
   }
 
   try {
@@ -358,20 +354,18 @@ function wrapValidatorCallback(value, coerce = (x) => x) {
 /**
  * check if profile is valid
  * @param {*} profile
- * @returns {Boolean}
+ * @returns {boolean}
  */
 function isValidProfile(profile) {
   if (!isPlainObject(profile)) {
     return false;
   }
 
-  return Object.values(profile).every((field) => {
-    return isArray(field) && field.every(isStr);
-  });
+  return Object.values(profile).every((field) => isArray(field) && field.every(isStr));
 }
 
 /** function that provides ad server targeting data to RTD-core
- * @param {Array} adUnitsCodes
+ * @param {string[]} adUnitsCodes
  * @param {Object} moduleConfig
  * @returns {Object} target data
  */
@@ -386,30 +380,31 @@ function getTargetingData(adUnitsCodes, moduleConfig) {
   }
 
   try {
-    const td = adUnitsCodes.reduce((data, adUnitCode) => {
+    return adUnitsCodes.reduce((data, adUnitCode) => {
       data[adUnitCode] = profileHandlers.reduce((targeting, ph) => {
         // logMessage(`check if should set targeting for adunit '${adUnitCode}'`);
-        const cph = copyProfileHandler(ph);
-        if (ph.setTargeting(adUnitCode, cph.data, cph.metadata)) {
-          // logMessage(`set targeting for adunit '${adUnitCode}', source '${ph.metadata.source}'`);
+        const [data, metadata] = copyDataAndMetadata(ph);
+        if (ph.setTargeting(adUnitCode, data, metadata)) {
+          // logMessage(`set targeting for adunit '${adUnitCode}', source '${metadata.source}'`);
 
-          mergeDeep(targeting, cph.data);
+          mergeDeep(targeting, data);
         }
+
         return targeting;
       }, {});
+
       return data;
     }, {});
-
-    return td;
   } catch (e) {
-    logError('unable to format weborama rtd targeting data', e);
+    logError(`unable to format weborama rtd targeting data:`, e);
+
     return {};
   }
 }
 
 /** function that provides data handlers based on the configuration
  * @param {ModuleParams} moduleParams
- * @returns {Array<Object>} handlers
+ * @returns {ProfileHandler[]}
  */
 function buildProfileHandlers(moduleParams) {
   const profileHandlers = [];
@@ -446,14 +441,28 @@ function buildProfileHandlers(moduleParams) {
 
   return profileHandlers;
 }
+/**
+ * @typedef {Object} ProfileHandler
+ * @property {*} data
+ * @property {dataCallbackMetadata} metadata
+ * @property {setPrebidTargetingCallback} setTargeting
+ * @property {sendToBiddersCallback} sendToBidders
+ * @property {dataCallback} onData
+ */
+
+/**
+ * @callback buildProfileHandlerCallback
+ * @param {WeboCtxConf|WeboUserDataConf|SfbxLiteDataConf} dataConf
+ * @returns {[*,boolean]} profile + is default flag
+ */
 
 /**
  * return specific profile handler
  * @param {WeboCtxConf|WeboUserDataConf|SfbxLiteDataConf} dataConf
- * @param {function} callback
+ * @param {buildProfileHandlerCallback} callback
  * @param {boolean} user
  * @param {string} source
- * @returns {Object|void}
+ * @returns {ProfileHandler}
  */
 function buildProfileHandler(dataConf, callback, user, source) {
   if (!dataConf) {
@@ -480,7 +489,7 @@ function buildProfileHandler(dataConf, callback, user, source) {
 
 /** return contextual profile
  * @param {WeboCtxConf} weboCtxConf
- * @returns {Array} contextual profile + isDefault boolean flag
+ * @returns {[*,boolean]} contextual profile + isDefault boolean flag
  */
 function getContextualProfile(weboCtxConf) {
   if (_weboContextualProfile) {
@@ -494,7 +503,7 @@ function getContextualProfile(weboCtxConf) {
 
 /** return weboUserData profile
  * @param {WeboUserDataConf} weboUserDataConf
- * @returns {Array} weboUserData profile  + isDefault boolean flag
+ * @returns {[*,boolean]} weboUserData profile  + isDefault boolean flag
  */
 function getWeboUserDataProfile(weboUserDataConf) {
   return getDataFromLocalStorage(weboUserDataConf,
@@ -507,7 +516,7 @@ function getWeboUserDataProfile(weboUserDataConf) {
 
 /** return weboUserData profile
  * @param {SfbxLiteDataConf} sfbxLiteDataConf
- * @returns {Array} sfbxLiteData profile + isDefault boolean flag
+ * @returns {[*,boolean]} sfbxLiteData profile + isDefault boolean flag
  */
 function getSfbxLiteDataProfile(sfbxLiteDataConf) {
   return getDataFromLocalStorage(sfbxLiteDataConf,
@@ -522,10 +531,10 @@ function getSfbxLiteDataProfile(sfbxLiteDataConf) {
  * @param {WeboUserDataConf|SfbxLiteDataConf} weboDataConf
  * @param {cacheGetCallback} cacheGet
  * @param {cacheSetCallback} cacheSet
- * @param {String} defaultLocalStorageProfileKey
- * @param {String} targetingSection
- * @param {String} source
- * @returns {Array} webo (user|lite) data profile + isDefault boolean flag
+ * @param {string} defaultLocalStorageProfileKey
+ * @param {string} targetingSection
+ * @param {string} source
+ * @returns {[*,boolean]} webo (user|lite) data profile + isDefault boolean flag
  */
 function getDataFromLocalStorage(weboDataConf, cacheGet, cacheSet, defaultLocalStorageProfileKey, targetingSection, source) {
   const defaultProfile = weboDataConf.defaultProfile || {};
@@ -610,11 +619,11 @@ function handleBidRequestData(reqBids, moduleParams) {
         bid => profileHandlers.forEach(ph => {
           // logMessage(`check if bidder '${bid.bidder}' and adunit '${adUnit.code} are share ${ph.metadata.source} data`);
 
-          const cph = copyProfileHandler(ph);
-          if (ph.sendToBidders(bid, adUnit.code, cph.data, cph.metadata)) {
+          const [data, metadata] = copyDataAndMetadata(ph);
+          if (ph.sendToBidders(bid, adUnit.code, data, metadata)) {
             // logMessage(`handling bidder '${bid.bidder}' with ${ph.metadata.source} data`);
 
-            handleBid(reqBids, bid, cph.data, ph.metadata);
+            handleBid(reqBids, bid, data, ph.metadata);
           }
         })
       )
@@ -625,22 +634,19 @@ function handleBidRequestData(reqBids, moduleParams) {
 
   profileHandlers.forEach(ph => {
     try {
-      const cph = copyProfileHandler(ph);
-      ph.onData(cph.data, cph.metadata);
+      const [data, metadata] = copyDataAndMetadata(ph);
+      ph.onData(data, metadata);
     } catch (e) {
       logError(`error while executure onData callback with ${ph.metadata.source}-based data:`, e);
     }
   });
 }
 /** function that handles bid request data
- * @param {Object} ph profile handler
- *@returns {Object} of deeply copy data and metadata
+ * @param {ProfileHandler} ph profile handler
+ * @returns {[*,dataCallbackMetadata]} deeply copy data + metadata
  */
-function copyProfileHandler(ph) {
-  return {
-    data: deepClone(ph.data),
-    metadata: deepClone(ph.metadata),
-  };
+function copyDataAndMetadata(ph) {
+  return [deepClone(ph.data), deepClone(ph.metadata)];
 }
 
 /** @type {string} */
@@ -809,7 +815,7 @@ function assignProfileToObject(destination, base, profile) {
 }
 
 /** set bigsea contextual profile on module state
- * @param {null|Object} data
+ * @param {?Object} data
  * @returns {void}
  */
 export function setWeboContextualProfile(data) {
@@ -820,7 +826,7 @@ export function setWeboContextualProfile(data) {
 
 /** onSuccess callback type
  * @callback successCallback
- * @param {null|Object} data
+ * @param {?Object} data
  * @returns {void}
  */
 
@@ -857,14 +863,14 @@ function fetchContextualProfile(weboCtxConf, onSuccess, onDone) {
         logError('unable to parse weborama data', e);
         throw e;
       }
-    } else if (req.status === 204) {
+    } else {
       onDone();
     }
   };
 
-  const error = (err) => {
+  const error = (e) => {
     onDone();
-    logError(`unable to get weborama data: ${err}`);
+    logError(`unable to get weborama data`, e);
   };
 
   const callback = {
@@ -882,9 +888,9 @@ function fetchContextualProfile(weboCtxConf, onSuccess, onDone) {
 
 export const weboramaSubmodule = {
   name: SUBMODULE_NAME,
-  init: init,
-  getTargetingData: getTargetingData,
-  getBidRequestData: getBidRequestData,
+  init,
+  getTargetingData,
+  getBidRequestData,
 };
 
 submodule(MODULE_NAME, weboramaSubmodule);
