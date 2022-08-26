@@ -14,9 +14,13 @@
  * @property {boolean} isDefault if true it the default profile defined in the configuration
  */
 
+/**
+ * @typedef {Object<string,string[]>} Profile
+ */
+
 /** onData callback type
  * @callback dataCallback
- * @param {Object} data profile data
+ * @param {Profile} data profile data
  * @param {dataCallbackMetadata} meta metadata
  * @returns {void}
  */
@@ -24,7 +28,7 @@
 /** setPrebidTargeting callback type
  * @callback setPrebidTargetingCallback
  * @param {string} adUnitCode
- * @param {Object} data
+ * @param {Profile} data
  * @param {dataCallbackMetadata} metadata
  * @returns {boolean}
  */
@@ -33,7 +37,7 @@
  * @callback sendToBiddersCallback
  * @param {Object} bid
  * @param {string} adUnitCode
- * @param {Object} data
+ * @param {Profile} data
  * @param {dataCallbackMetadata} metadata
  * @returns {boolean}
  */
@@ -55,8 +59,8 @@
  * @property {?setPrebidTargetingCallback|?Boolean|?Object} setPrebidTargeting if true, will set the GAM targeting (default undefined)
  * @property {?sendToBiddersCallback|?Boolean|?Object} sendToBidders if true, will send the contextual profile to all bidders, else expects a list of allowed bidders (default undefined)
  * @property {?dataCallback} onData callback
- * @property {?object} defaultProfile to be used if the profile is not found
- * @property {?Boolean} enabled if false, will ignore this configuration
+ * @property {?Profile} defaultProfile to be used if the profile is not found
+ * @property {?boolean} enabled if false, will ignore this configuration
  * @property {?string} baseURLProfileAPI to be used to point to a different domain than ctx.weborama.com
  */
 
@@ -65,20 +69,20 @@
  * @property {?number} accountId wam account id
  * @property {?setPrebidTargetingCallback|?Boolean|?Object} setPrebidTargeting if true, will set the GAM targeting (default undefined)
  * @property {?sendToBiddersCallback|?Boolean|?Object} sendToBidders if true, will send the contextual profile to all bidders, else expects a list of allowed bidders (default undefined)
- * @property {?object} defaultProfile to be used if the profile is not found
+ * @property {?Profile} defaultProfile to be used if the profile is not found
  * @property {?dataCallback} onData callback
  * @property {?string} localStorageProfileKey can be used to customize the local storage key (default is 'webo_wam2gam_entry')
- * @property {?Boolean} enabled if false, will ignore this configuration
+ * @property {?boolean} enabled if false, will ignore this configuration
  */
 
 /**
  * @typedef {Object} SfbxLiteDataConf
  * @property {?setPrebidTargetingCallback|?Boolean|?Object} setPrebidTargeting if true, will set the GAM targeting (default undefined)
  * @property {?sendToBiddersCallback|?Boolean|?Object} sendToBidders if true, will send the contextual profile to all bidders, else expects a list of allowed bidders (default undefined)
- * @property {?object} defaultProfile to be used if the profile is not found
+ * @property {?Profile} defaultProfile to be used if the profile is not found
  * @property {?dataCallback} onData callback
  * @property {?string} localStorageProfileKey can be used to customize the local storage key (default is '_lite')
- * @property {?Boolean} enabled if false, will ignore this configuration
+ * @property {?boolean} enabled if false, will ignore this configuration
  */
 import {
   getGlobal
@@ -127,16 +131,12 @@ const WEBO_CTX_CONF_SECTION = 'weboCtxConf';
 const WEBO_USER_DATA_CONF_SECTION = 'weboUserDataConf';
 /** @type {string} */
 const SFBX_LITE_DATA_CONF_SECTION = 'sfbxLiteDataConf';
-
 /** @type {string} */
 const WEBO_CTX_SOURCE_LABEL = 'contextual';
-
 /** @type {string} */
 const WEBO_USER_DATA_SOURCE_LABEL = 'wam';
-
 /** @type {string} */
 const SFBX_LITE_DATA_SOURCE_LABEL = 'lite';
-
 /** @type {number} */
 const GVLID = 284;
 /** @type {?Object} */
@@ -145,13 +145,13 @@ export const storage = getStorageManager({
   moduleName: SUBMODULE_NAME
 });
 
-/** @type {?Object} */
+/** @type {?Profile} */
 let _weboContextualProfile = null;
 
-/** @type {?Object} */
+/** @type {?Profile} */
 let _weboUserDataUserProfile = null;
 
-/** @type {?Object} */
+/** @type {?Profile} */
 let _sfbxLiteDataProfile = null;
 
 /**
@@ -177,10 +177,11 @@ const globalDefaults = {
   }
 };
 /** Initialize module
- * @param {object} moduleConfig
+ * @param {Object} moduleConfig
  * @return {boolean} true if module was initialized with success
  */
 function init(moduleConfig) {
+  /** @type {ModuleParams} */
   const moduleParams = Object.assign({}, globalDefaults, moduleConfig?.params || {});
 
   _weboContextualProfile = null;
@@ -197,12 +198,13 @@ function init(moduleConfig) {
 }
 
 /** Initialize subsection module
- * @param {Object} moduleParams
+ * @param {ModuleParams} moduleParams
  * @param {string} subSection subsection name to initialize
- * @param {[]string} requiredFields
+ * @param {string[]} requiredFields
  * @return {boolean} true if module subsection was initialized with success
  */
 function initSubSection(moduleParams, subSection, ...requiredFields) {
+  /** @type {WeboCtxConf|WeboUserDataConf|SfbxLiteDataConf} */
   const weboSectionConf = moduleParams[subSection] || { enabled: false };
 
   if (weboSectionConf.enabled === false) {
@@ -370,6 +372,7 @@ function isValidProfile(profile) {
  * @returns {Object} target data
  */
 function getTargetingData(adUnitsCodes, moduleConfig) {
+  /** @type {ModuleParams} */
   const moduleParams = moduleConfig?.params || {};
 
   const profileHandlers = buildProfileHandlers(moduleParams);
@@ -443,7 +446,7 @@ function buildProfileHandlers(moduleParams) {
 }
 /**
  * @typedef {Object} ProfileHandler
- * @property {*} data
+ * @property {Profile} data
  * @property {dataCallbackMetadata} metadata
  * @property {setPrebidTargetingCallback} setTargeting
  * @property {sendToBiddersCallback} sendToBidders
@@ -453,7 +456,7 @@ function buildProfileHandlers(moduleParams) {
 /**
  * @callback buildProfileHandlerCallback
  * @param {WeboCtxConf|WeboUserDataConf|SfbxLiteDataConf} dataConf
- * @returns {[*,boolean]} profile + is default flag
+ * @returns {[Profile,boolean]} profile + is default flag
  */
 
 /**
@@ -489,7 +492,7 @@ function buildProfileHandler(dataConf, callback, user, source) {
 
 /** return contextual profile
  * @param {WeboCtxConf} weboCtxConf
- * @returns {[*,boolean]} contextual profile + isDefault boolean flag
+ * @returns {[Profile,boolean]} contextual profile + isDefault boolean flag
  */
 function getContextualProfile(weboCtxConf) {
   if (_weboContextualProfile) {
@@ -503,7 +506,7 @@ function getContextualProfile(weboCtxConf) {
 
 /** return weboUserData profile
  * @param {WeboUserDataConf} weboUserDataConf
- * @returns {[*,boolean]} weboUserData profile  + isDefault boolean flag
+ * @returns {[Profile,boolean]} weboUserData profile  + isDefault boolean flag
  */
 function getWeboUserDataProfile(weboUserDataConf) {
   return getDataFromLocalStorage(weboUserDataConf,
@@ -516,7 +519,7 @@ function getWeboUserDataProfile(weboUserDataConf) {
 
 /** return weboUserData profile
  * @param {SfbxLiteDataConf} sfbxLiteDataConf
- * @returns {[*,boolean]} sfbxLiteData profile + isDefault boolean flag
+ * @returns {[Profile,boolean]} sfbxLiteData profile + isDefault boolean flag
  */
 function getSfbxLiteDataProfile(sfbxLiteDataConf) {
   return getDataFromLocalStorage(sfbxLiteDataConf,
@@ -527,6 +530,16 @@ function getSfbxLiteDataProfile(sfbxLiteDataConf) {
     SFBX_LITE_DATA_SOURCE_LABEL);
 }
 
+/**
+ * @callback cacheGetCallback
+ * @returns {Profile}
+ */
+/**
+ * @callback cacheSetCallback
+ * @param {Profile} profile
+ * @returns {void}
+ */
+
 /** return generic webo data profile
  * @param {WeboUserDataConf|SfbxLiteDataConf} weboDataConf
  * @param {cacheGetCallback} cacheGet
@@ -534,7 +547,7 @@ function getSfbxLiteDataProfile(sfbxLiteDataConf) {
  * @param {string} defaultLocalStorageProfileKey
  * @param {string} targetingSection
  * @param {string} source
- * @returns {[*,boolean]} webo (user|lite) data profile + isDefault boolean flag
+ * @returns {[Profile,boolean]} webo (user|lite) data profile + isDefault boolean flag
  */
 function getDataFromLocalStorage(weboDataConf, cacheGet, cacheSet, defaultLocalStorageProfileKey, targetingSection, source) {
   const defaultProfile = weboDataConf.defaultProfile || {};
@@ -546,13 +559,16 @@ function getDataFromLocalStorage(weboDataConf, cacheGet, cacheSet, defaultLocalS
     if (entry) {
       const data = JSON.parse(entry);
       if (data && isPlainObject(data) && data.hasOwnProperty(targetingSection)) {
+        /** @type {profile} */
         const profile = data[targetingSection];
         const valid = isValidProfile(profile);
         if (!valid) {
           logWarn(`found invalid ${source} profile on local storage key ${localStorageProfileKey}, section ${targetingSection}`);
+
+          return;
         }
 
-        if (valid && !isEmpty(data)) {
+        if (!isEmpty(data)) {
           cacheSet(profile);
         }
       }
@@ -575,6 +591,7 @@ function getDataFromLocalStorage(weboDataConf, cacheGet, cacheSet, defaultLocalS
  * @returns {void}
  */
 export function getBidRequestData(reqBidsConfigObj, onDone, moduleConfig) {
+  /** @type {ModuleParams} */
   const moduleParams = moduleConfig?.params || {};
 
   if (!_dataInitialized.WeboCtx) {
@@ -585,6 +602,7 @@ export function getBidRequestData(reqBidsConfigObj, onDone, moduleConfig) {
     return;
   }
 
+  /** @type {WeboCtxConf} */
   const weboCtxConf = moduleParams.weboCtxConf || {};
 
   fetchContextualProfile(weboCtxConf, (data) => {
@@ -611,6 +629,7 @@ function handleBidRequestData(reqBids, moduleParams) {
     return;
   }
 
+  /** @type {Object[]} */
   const adUnits = reqBids.adUnits || getGlobal().adUnits;
 
   try {
@@ -643,7 +662,7 @@ function handleBidRequestData(reqBids, moduleParams) {
 }
 /** function that handles bid request data
  * @param {ProfileHandler} ph profile handler
- * @returns {[*,dataCallbackMetadata]} deeply copy data + metadata
+ * @returns {[Profile,dataCallbackMetadata]} deeply copy data + metadata
  */
 function copyDataAndMetadata(ph) {
   return [deepClone(ph.data), deepClone(ph.metadata)];
@@ -661,47 +680,47 @@ const RUBICON = 'rubicon';
 /** @type {string} */
 const SMARTADSERVER = 'smartadserver';
 
-/** @type {Object} */
+/** @type {Object<string,string>} */
 const bidderAliasRegistry = adapterManager.aliasRegistry || {};
 
-/** handle individual bid
- * @param reqBids
+/**
+ * @callback specificBidHandlerCallback
  * @param {Object} bid
- * @param {Object} profile
- * @param {Object} metadata
+ * @param {Profile} profile
+ * @param {dataCallbackMetadata} metadata
+ * @returns {void}
+ */
+
+/** @type {Object<string,specificBidHandlerCallback>} */
+const specificBidHandlers = {
+  [APPNEXUS]: handleAppnexusBid,
+  [PUBMATIC]: handlePubmaticBid,
+  [SMARTADSERVER]: handleSmartadserverBid,
+  [RUBICON]: handleRubiconBid,
+}
+
+/** handle individual bid
+ * @param {Object} reqBids
+ * @param {Object} bid
+ * @param {Profile} profile
+ * @param {dataCallbackMetadata} metadata
  * @returns {void}
  */
 function handleBid(reqBids, bid, profile, metadata) {
+  handleBidViaORTB2(reqBids, bid, profile, metadata);
+
+  /** @type {string} */
   const bidder = bidderAliasRegistry[bid.bidder] || bid.bidder;
 
-  switch (bidder) {
-    // TODO: these special cases should not be necessary - all adapters should look into FPD, not just their params
-    case APPNEXUS:
-      handleAppnexusBid(bid, profile);
-
-      break;
-
-    case PUBMATIC:
-      handlePubmaticBid(bid, profile);
-
-      break;
-
-    case SMARTADSERVER:
-      handleSmartadserverBid(bid, profile);
-
-      break;
-    case RUBICON:
-      handleRubiconBid(bid, profile, metadata);
-
-      break;
-    default:
-      handleBidViaORTB2(reqBids, bid, profile, metadata);
+  if (bidder in specificBidHandlers) {
+    const bidHandler = specificBidHandlers[bidder];
+    bidHandler(bid, profile, metadata);
   }
 }
 
 /** handle appnexus/xandr bid
  * @param {Object} bid
- * @param {Object} profile
+ * @param {Profile} profile
  * @returns {void}
  */
 function handleAppnexusBid(bid, profile) {
@@ -711,64 +730,56 @@ function handleAppnexusBid(bid, profile) {
 
 /** handle pubmatic bid
  * @param {Object} bid
- * @param {Object} profile
+ * @param {Profile} profile
  * @returns {void}
  */
 function handlePubmaticBid(bid, profile) {
   const sep = '|';
   const subsep = ',';
-  const target = [];
 
   bid.params ||= {};
 
-  const data = bid.params.dctr;
-  if (data) {
-    data.split(sep).forEach(t => target.push(t));
-  }
+  /** @type {string} */
+  const data = bid.params.dctr || '';
+  const target = new Set(data.split(sep).filter((x) => x.length > 0));
 
-  Object.keys(profile).forEach(key => {
-    const value = profile[key].join(subsep);
+  Object.entries(profile).forEach(([key, values]) => {
+    const value = values.join(subsep);
     const keyword = `${key}=${value}`;
-    if (target.indexOf(keyword) === -1) {
-      target.push(keyword);
-    }
+    target.add(keyword);
   });
 
-  bid.params.dctr = target.join(sep);
+  bid.params.dctr = Array.from(target).join(sep);
 }
 
 /** handle smartadserver bid
  * @param {Object} bid
- * @param {Object} profile
+ * @param {Profile} profile
  * @returns {void}
  */
 function handleSmartadserverBid(bid, profile) {
   const sep = ';';
-  const target = [];
 
   bid.params ||= {};
 
-  const data = bid.params.target;
-  if (data) {
-    data.split(sep).forEach(t => target.push(t));
-  }
+  /** @type {string} */
+  const data = bid.params.target || '';
+  const target = new Set(data.split(sep).filter((x) => x.length > 0));
 
-  Object.keys(profile).forEach(key => {
-    profile[key].forEach(value => {
+  Object.entries(profile).forEach(([key, values]) => {
+    values.forEach(value => {
       const keyword = `${key}=${value}`;
-      if (target.indexOf(keyword) === -1) {
-        target.push(keyword);
-      }
-    });
+      target.add(keyword);
+    })
   });
 
-  bid.params.target = target.join(sep);
+  bid.params.target = Array.from(target).join(sep);
 }
 
 /** handle rubicon bid
  * @param {Object} bid
- * @param {Object} profile
- * @param {Object} metadata
+ * @param {Profile} profile
+ * @param {dataCallbackMetadata} metadata
  * @returns {void}
  */
 function handleRubiconBid(bid, profile, metadata) {
@@ -784,8 +795,8 @@ function handleRubiconBid(bid, profile, metadata) {
 /** handle generic bid via ortb2 arbitrary data
  * @param reqBids
  * @param {Object} bid
- * @param {Object} profile
- * @param {Object} metadata
+ * @param {Profile} profile
+ * @param {dataCallbackMetadata} metadata
  * @returns {void}
  */
 function handleBidViaORTB2(reqBids, bid, profile, metadata) {
@@ -804,7 +815,7 @@ function handleBidViaORTB2(reqBids, bid, profile, metadata) {
  * assign profile to object
  * @param {Object} destination
  * @param {string} base
- * @param {Object} profile
+ * @param {Profile} profile
  * @returns {void}
  */
 function assignProfileToObject(destination, base, profile) {
@@ -864,6 +875,7 @@ function fetchContextualProfile(weboCtxConf, onSuccess, onDone) {
         throw e;
       }
     } else {
+      logWarn(`unexpected http status response ${req.status} with response`, response);
       onDone();
     }
   };
