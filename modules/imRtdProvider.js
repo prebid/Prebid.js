@@ -54,23 +54,23 @@ export function getBidderFunction(bidderName) {
   const biddersFunction = {
     pubmatic: function (bid, data, moduleConfig) {
       if (data.im_segments && data.im_segments.length) {
-        const slicedSegments = getSegments(data.im_segments, moduleConfig);
+        const segments = getSegments(data.im_segments, moduleConfig);
         const dctr = deepAccess(bid, 'params.dctr');
         deepSetValue(
           bid,
           'params.dctr',
-          `${dctr ? dctr + '|' : ''}im_segments=${slicedSegments.join(',')}`
+          `${dctr ? dctr + '|' : ''}im_segments=${segments.join(',')}`
         );
       }
       return bid
     },
     fluct: function (bid, data, moduleConfig) {
       if (data.im_segments && data.im_segments.length) {
-        const slicedSegments = getSegments(data.im_segments, moduleConfig);
+        const segments = getSegments(data.im_segments, moduleConfig);
         deepSetValue(
           bid,
           'params.kv.imsids',
-          slicedSegments
+          segments
         );
       }
       return bid
@@ -100,15 +100,15 @@ export function setRealTimeData(bidConfig, moduleConfig, data) {
   const utils = {deepSetValue, deepAccess, logInfo, logError, mergeDeep};
 
   if (data.im_segments) {
-    const slicedSegments = getSegments(data.im_segments, moduleConfig);
+    const segments = getSegments(data.im_segments, moduleConfig);
     const ortb2 = bidConfig.ortb2Fragments?.global || {};
-    deepSetValue(ortb2, 'user.ext.data.im_segments', slicedSegments);
+    deepSetValue(ortb2, 'user.ext.data.im_segments', segments);
 
     if (moduleConfig.params.setGptKeyValues || !moduleConfig.params.hasOwnProperty('setGptKeyValues')) {
       window.googletag = window.googletag || {cmd: []};
       window.googletag.cmd = window.googletag.cmd || [];
       window.googletag.cmd.push(() => {
-        window.googletag.pubads().setTargeting('im_segments', slicedSegments);
+        window.googletag.pubads().setTargeting('im_segments', segments);
       });
     }
   }
