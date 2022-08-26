@@ -362,7 +362,7 @@ pbjs.setConfig({
 });
 ```
 #### The **detectMissingSizes** feature
-`detectMissingSize` config is now deprecated and IX bidding adapter bids on all banner sizes available in the ad unit when configured to at least one banner size. 
+`detectMissingSize` config is now deprecated and IX bidding adapter bids on all banner sizes available in the ad unit when configured to at least one banner size.
 
 **Native**
 
