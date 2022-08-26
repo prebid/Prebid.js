@@ -675,34 +675,12 @@ function copyDataAndMetadata(ph) {
 
 /** @type {string} */
 const APPNEXUS = 'appnexus';
-
 /** @type {string} */
 const PUBMATIC = 'pubmatic';
-
 /** @type {string} */
 const RUBICON = 'rubicon';
-
 /** @type {string} */
 const SMARTADSERVER = 'smartadserver';
-
-/** @type {Object<string,string>} */
-const bidderAliasRegistry = adapterManager.aliasRegistry || {};
-
-/**
- * @callback specificBidHandlerCallback
- * @param {Object} bid
- * @param {Profile} profile
- * @param {dataCallbackMetadata} metadata
- * @returns {void}
- */
-
-/** @type {Object<string,specificBidHandlerCallback>} */
-const specificBidHandlers = {
-  [APPNEXUS]: handleAppnexusBid,
-  [PUBMATIC]: handlePubmaticBid,
-  [SMARTADSERVER]: handleSmartadserverBid,
-  [RUBICON]: handleRubiconBid,
-}
 
 /** handle individual bid
  * @param {Object} reqBids
@@ -714,12 +692,25 @@ const specificBidHandlers = {
 function handleBid(reqBids, bid, profile, metadata) {
   handleBidViaORTB2(reqBids, bid, profile, metadata);
 
+  /** @type {Object<string,string>} */
+  const bidderAliasRegistry = adapterManager.aliasRegistry || {};
+
   /** @type {string} */
   const bidder = bidderAliasRegistry[bid.bidder] || bid.bidder;
 
-  if (bidder in specificBidHandlers) {
-    const bidHandler = specificBidHandlers[bidder];
-    bidHandler(bid, profile, metadata);
+  switch (bidder) {
+    case APPNEXUS:
+      handleAppnexusBid(bid, profile);
+      break;
+    case PUBMATIC:
+      handlePubmaticBid(bid, profile)
+      break;
+    case SMARTADSERVER:
+      handleSmartadserverBid(bid, profile);
+      break;
+    case RUBICON:
+      handleRubiconBid(bid, profile, metadata);
+      break;
   }
 }
 
