@@ -59,7 +59,8 @@ const resetConfs = () => {
     timeouts: {},
     billing: {},
     pendingEvents: {},
-    eventPending: false
+    eventPending: false,
+    elementIdMap: {}
   }
   rubiConf = {
     pvid: generateUUID().slice(0, 8),
@@ -514,7 +515,9 @@ const subscribeToGamSlots = () => {
     // We want to find the FIRST auction - adUnit that matches and does not have gam data yet
     const matchingFunction = (adUnit, auction) => {
       // first it has to match the slot
-      const matchesSlot = isMatchingAdSlot(adUnit.adUnitCode);
+      // if the code is present in the elementIdMap then we use the matched id as code here
+      const elementIds = cache.elementIdMap[adUnit.adUnitCode] || [adUnit.adUnitCode];
+      const matchesSlot = elementIds.some(isMatchingAdSlot);
 
       // next it has to have NOT already been counted as gam rendered
       const gamHasRendered = deepAccess(cache, `auctions.${auction.auctionId}.gamRenders.${adUnit.adUnitCode}`);
@@ -666,6 +669,19 @@ magniteAdapter.track = ({ eventType, args }) => {
         ad.bids = {};
         adMap[adUnit.code] = ad;
         gamRenders[adUnit.code] = false;
+
+        // Handle case elementId's (div Id's) are set on adUnit - PPI
+        const elementIds = deepAccess(adUnit, 'ortb2Imp.ext.data.elementid');
+        if (elementIds) {
+          cache.elementIdMap[adUnit.code] = cache.elementIdMap[adUnit.code] || [];
+          // set it to array if set to string to be careful (should be array of strings)
+          const newIds = typeof elementIds === 'string' ? [elementIds] : elementIds;
+          newIds.forEach(id => {
+            if (!cache.elementIdMap[adUnit.code].includes(id)) {
+              cache.elementIdMap[adUnit.code].push(id);
+            }
+          });
+        }
         return adMap;
       }, {});
 

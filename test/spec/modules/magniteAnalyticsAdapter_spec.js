@@ -928,5 +928,54 @@ describe('magnite analytics adapter', function () {
         });
       });
     });
+
+    it('should send gam data if adunit has elementid ortb2 fields', function () {
+      // update auction init mock to have the elementids in the adunit
+      // and change adUnitCode to be hashes
+      let auctionInit = utils.deepClone(MOCK.AUCTION_INIT);
+      auctionInit.adUnits[0].ortb2Imp.ext.data.elementid = [gptSlot0.getSlotElementId()];
+      auctionInit.adUnits[0].code = '1a2b3c4d';
+
+      // bid request
+      let bidRequested = utils.deepClone(MOCK.BID_REQUESTED);
+      bidRequested.bids[0].adUnitCode = '1a2b3c4d';
+
+      // bid response
+      let bidResponse = utils.deepClone(MOCK.BID_RESPONSE);
+      bidResponse.adUnitCode = '1a2b3c4d';
+
+      // bidder done
+      let bidderDone = utils.deepClone(MOCK.BIDDER_DONE);
+      bidderDone.bids[0].adUnitCode = '1a2b3c4d';
+
+      // bidder done
+      let bidWon = utils.deepClone(MOCK.BID_WON);
+      bidWon.adUnitCode = '1a2b3c4d';
+
+      // Run auction
+      events.emit(AUCTION_INIT, auctionInit);
+      events.emit(BID_REQUESTED, bidRequested);
+      events.emit(BID_RESPONSE, bidResponse);
+      events.emit(BIDDER_DONE, bidderDone);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+
+      // emmit gpt events and bidWon
+      mockGpt.emitEvent(gptSlotRenderEnded0.eventName, gptSlotRenderEnded0.params);
+
+      events.emit(BID_WON, bidWon);
+
+      // hit the eventDelay
+      clock.tick(rubiConf.analyticsEventDelay + 100);
+
+      expect(server.requests.length).to.equal(1);
+      let request = server.requests[0];
+      let message = JSON.parse(request.requestBody);
+      let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
+
+      // new adUnitCodes in payload
+      expectedMessage.auctions[0].adUnits[0].adUnitCode = '1a2b3c4d';
+      expectedMessage.bidsWon[0].adUnitCode = '1a2b3c4d';
+      expect(message).to.deep.equal(expectedMessage);
+    });
   });
 });
