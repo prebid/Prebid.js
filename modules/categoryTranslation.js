@@ -17,6 +17,7 @@ import { ajax } from '../src/ajax.js';
 import { timestamp, logError } from '../src/utils.js';
 import { addBidResponse } from '../src/auction.js';
 import { getCoreStorageManager } from '../src/storageManager.js';
+import {timedBidResponseHook} from '../src/utils/perfMetrics.js';
 
 export const storage = getCoreStorageManager('categoryTranslation');
 const DEFAULT_TRANSLATION_FILE_URL = 'https://cdn.jsdelivr.net/gh/prebid/category-mapping-file@1/freewheel-mapping.json';
@@ -65,8 +66,10 @@ export function getAdserverCategoryHook(fn, adUnitCode, bid) {
   fn.call(this, adUnitCode, bid);
 }
 
+const timedHook = timedBidResponseHook('categoryTranslation', getAdserverCategoryHook)
+
 export function initTranslation(url, localStorageKey) {
-  setupBeforeHookFnOnce(addBidResponse, getAdserverCategoryHook, 50);
+  setupBeforeHookFnOnce(addBidResponse, timedHook, 50);
   let mappingData = storage.getDataFromLocalStorage(localStorageKey);
   try {
     mappingData = mappingData ? JSON.parse(mappingData) : undefined;

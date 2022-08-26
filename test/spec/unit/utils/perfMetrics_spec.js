@@ -89,7 +89,15 @@ describe('performanceMetrics', () => {
 
     it('timeSince is null if checkpoint does not exist', () => {
       expect(metrics.timeSince('missing')).to.equal(null);
-    })
+    });
+
+    it('timeSince saves a metric if given a name', () => {
+      now = 10;
+      metrics.checkpoint('A');
+      now = 15;
+      metrics.timeSince('A', 'test');
+      expect(metrics.getMetrics()).to.eql({test: 5});
+    });
 
     it('can measure time between checkpoints with timeBetween', () => {
       now = 10;
@@ -114,7 +122,16 @@ describe('performanceMetrics', () => {
         }
         expect(metrics.timeBetween('A', 'B')).to.equal(null)
       })
-    })
+    });
+
+    it('saves a metric with timeBetween if given a name', () => {
+      now = 10;
+      metrics.checkpoint('A');
+      now = 15;
+      metrics.checkpoint('B');
+      metrics.timeBetween('A', 'B', 'test');
+      expect(metrics.getMetrics()).to.eql({test: 5});
+    });
   });
 
   describe('setMetrics', () => {
@@ -122,12 +139,6 @@ describe('performanceMetrics', () => {
       metrics.setMetric('test', 1);
       expect(metrics.getMetrics()).to.eql({test: 1});
     });
-    it('sets metric, but does not propagate, with propagate = false', () => {
-      const m2 = metrics.fork();
-      m2.setMetric('test', 1, false);
-      expect(m2.getMetrics()).to.eql({test: 1});
-      expect(metrics.getMetrics()).to.eql({});
-    })
   });
 
   describe('fork', () => {
@@ -170,20 +181,7 @@ describe('performanceMetrics', () => {
       const c2 = metrics.fork().fork();
       c1.setMetric('test', 10);
       c2.setMetric('test', 20);
-      expect(metrics.getMetrics().test).to.eql({
-        min: 10,
-        max: 20,
-        avg: 15,
-        n: 2
-      });
-    });
-
-    it('groups into only a count when metric is not a number', () => {
-      const c1 = metrics.fork();
-      const c2 = metrics.fork();
-      c1.setMetric('test', 'a');
-      c2.setMetric('test', 'b');
-      expect(metrics.getMetrics().test).to.eql({n: 2});
+      expect(metrics.getMetrics().test).to.eql([10, 20]);
     });
 
     it('does not group metrics into ancestors if the name clashes', () => {
@@ -192,13 +190,11 @@ describe('performanceMetrics', () => {
       expect(metrics.getMetrics().test).to.eql({});
     });
 
-    it('does not propagate further if propagate = false', () => {
+    it('does not propagate further if stopPropagation = true', () => {
       const c1 = metrics.fork();
-      const c2 = c1.fork(false);
+      const c2 = c1.fork({stopPropagation: true});
       c2.setMetric('test', 1);
-      sinon.assert.match(c1.getMetrics().test, {
-        avg: 1
-      });
+      expect(c1.getMetrics().test).to.eql([1]);
       expect(metrics.getMetrics().test).to.not.exist;
     })
   });
@@ -228,10 +224,7 @@ describe('performanceMetrics', () => {
     it('groups metrics after joining', () => {
       metrics.join(other);
       other.setMetric('test', 1);
-      sinon.assert.match(metrics.getMetrics().test, {
-        n: 1,
-        avg: 1
-      });
+      expect(metrics.getMetrics().test).to.eql([1]);
     });
 
     it('gives precedence to first join\'s metrics', () => {
@@ -255,6 +248,14 @@ describe('performanceMetrics', () => {
       metrics2.checkpoint('testcp');
       now = 30;
       expect(other.timeSince('testcp')).to.eql(20);
+    });
+
+    it('does not propagate further if stopPropagation = true', () => {
+      const m2 = metrics.fork();
+      m2.join(other, {stopPropagation: true});
+      other.setMetric('test', 1);
+      expect(m2.getMetrics().test).to.eql([1]);
+      expect(metrics.getMetrics()).to.eql({});
     })
 
     Object.entries({

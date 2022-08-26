@@ -1,76 +1,33 @@
-import {deepAccess, deepSetValue, isNumber} from '../utils.js';
-
-const METRICS = new WeakMap();
 const getTime = window.performance && window.performance.now ? () => window.performance.now() : () => Date.now();
+const NODES = new WeakMap();
+const [METRICS, TIMESTAMPS, GROUPS] = [0, 1, 2];
 
-export function performanceMetrics(now = getTime) {
-  function makeMetrics(parents = []) {
-    const self = (() => {
-      const metrics = {};
-      const groups = {};
-      const revParents = parents.slice().reverse();
-      return {
-        metrics,
-        timestamps: {},
-        addParent(parent, continuePropagation) {
-          parents.unshift([parent, continuePropagation]);
-          revParents.push([parent, continuePropagation]);
-        },
-        group(name, value) {
-          let tally = deepAccess(metrics, name);
-          if (typeof tally === 'undefined' || tally === groups[name]) {
-            tally = groups[name] = tally || {n: 0};
-            deepSetValue(metrics, name, tally);
-            if (isNumber(value) && !isNaN(value)) {
-              if (tally.min == null || tally.min > value) {
-                tally.min = value;
-              }
-              if (tally.max == null || tally.max < value) {
-                tally.max = value;
-              }
-              tally.avg = tally.avg == null ? value : ((tally.avg * tally.n) + value) / (tally.n + 1);
+export function performanceMetrics(now = getTime, mkNode = makeNode) {
+  function makeMetrics(self, rename = (n) => ({forEach(fn) { fn(n); }})) {
+    function accessor(slot) {
+      return function (name) {
+        return self.dfWalk({
+          in_(edge, node) {
+            const obj = node.get(slot);
+            if (obj.hasOwnProperty(name)) {
+              return obj[name];
             }
-            tally.n++;
           }
-        },
-        dfWalk({onlyProp = false, reverse = false, in_, out, visited = new Set(), stop = false} = {}) {
-          let res;
-          if (!visited.has(self)) {
-            visited.add(self);
-            res = in_ && in_(self);
-            if (typeof res !== 'undefined') return res;
-            if (!stop) {
-              for (const [parent, continueProp] of (reverse ? revParents : parents)) {
-                res = parent.dfWalk({onlyProp, reverse, in_, out, visited, stop: onlyProp && !continueProp});
-                if (typeof res !== 'undefined') return res;
-              }
-            }
-            return out && out(self);
-          }
-        }
+        });
       };
-    })();
-
-    function getTimestamp(checkpoint) {
-      return self.dfWalk({
-        reverse: true,
-        in_(node) {
-          if (node.timestamps.hasOwnProperty(checkpoint)) {
-            return node.timestamps[checkpoint];
-          }
-        }
-      });
     }
+
+    const getTimestamp = accessor(TIMESTAMPS);
 
     function wrapFn(fn, before, after) {
       return function () {
-        const val = before && before();
+        before && before();
         try {
           return fn.apply(this, arguments);
         } finally {
-          after && after(val);
+          after && after();
         }
-      }
+      };
     }
 
     /**
@@ -78,39 +35,26 @@ export function performanceMetrics(now = getTime) {
      *
      * @param name metric name
      * @param value metric valiue
-     * @param propagate if true, propagate this metric to other metrics that are related to this via `.fork` or `.join`.
-     *  propagated metrics are aggregated, and intended for numerical measures on repeated operations. For example:
-     *
-     *   ```
-     *      const metrics = performanceMetrics();
-     *      requests.forEach(request => {
-     *        const requestMetrics = metrics.fork();
-     *        requestMetrics.measureTime('processingTime', request.process);
-     *      });
-     *
-     *      // In this example, if the inner `measureTime` is invoked 3 times with time values of [100, 240, 500],
-     *      // then `metrics.getMetrics` will be:
-     *
-     *      {
-     *        processingTime: {
-     *          n: 3,
-     *          min: 100,
-     *          max: 500,
-     *          avg: 280
-     *        }
-     *      }
-     *   ```
      */
-    function setMetric(name, value, propagate = true) {
-      deepSetValue(self.metrics, name, value);
-      if (propagate) {
-        self.dfWalk({
-          onlyProp: true,
-          in_(node) {
-            node.group(name, value)
+    function setMetric(name, value) {
+      const names = rename(name);
+      self.dfWalk({
+        upFrom(edge) {
+          return !edge || !edge.stopPropagation
+        },
+        in_(edge, node) {
+          if (edge == null) {
+            names.forEach(name => self.set(METRICS, name, value));
+          } else {
+            names.forEach(name => {
+              if (!node.get(GROUPS).hasOwnProperty(name)) {
+                node.set(GROUPS, name, []);
+              }
+              node.get(GROUPS)[name].push(value);
+            });
           }
-        });
-      }
+        }
+      });
     }
 
     /**
@@ -120,76 +64,110 @@ export function performanceMetrics(now = getTime) {
      * @param name checkpoint name
      */
     function checkpoint(name) {
-      return self.timestamps[name] = now();
+      self.set(TIMESTAMPS, name, now());
     }
 
-    function timeSince(checkpoint) {
+    function timeSince(checkpoint, metric) {
       const ts = getTimestamp(checkpoint);
-      return ts != null ? now() - ts : null;
+      const elapsed = ts != null ? now() - ts : null;
+      if (metric != null) {
+        setMetric(metric, elapsed);
+      }
+      return elapsed;
     }
 
-    function timeBetween(startCheckpoint, endCheckpoint) {
+    function timeBetween(startCheckpoint, endCheckpoint, metric) {
       const start = getTimestamp(startCheckpoint);
       const end = getTimestamp(endCheckpoint);
-      return start != null && end != null ? end - start : null;
+      const elapsed = start != null && end != null ? end - start : null;
+      if (metric != null) {
+        setMetric(metric, elapsed);
+      }
+      return elapsed;
     }
+
+    /**
+     * A function that, when called, stops a time measure and saves it as a metric.
+     *
+     * @typedef {function(): void} MetricsTimer
+     * @template F
+     * @property {function(F: function): F} stopBefore returns a wrapper around the given function that begins by
+     *   stopping this time measure.
+     * @property {function(F: function): F} stopAfter returns a wrapper around the given function that ends by
+     *   stopping this time measure.
+     */
 
     /**
      * Start measuring a time metric with the given name.
      *
      * @param name metric name
-     * @param propagate if true, propagate this metric - see  `setMetric` for semantics.
-     * @return {(function(): void)} a function that, when called, stops the measure and saves the time metric.
+     * @return {MetricsTimer}
      */
-    function startTiming(name, propagate = true) {
+    function startTiming(name) {
       const start = now();
       let done = false;
-      return function stopTiming() {
+      function stopTiming() {
         if (!done) {
-          setMetric(name, now() - start, propagate);
+          setMetric(name, now() - start);
           done = true;
         }
       }
+      stopTiming.stopBefore = (fn) => wrapFn(fn, stopTiming);
+      stopTiming.stopAfter = (fn) => wrapFn(fn, null, stopTiming);
+      return stopTiming;
     }
 
     /**
      * Run fn and measure the time spent in it.
      *
+     * @template T
      * @param name the name to use for the measured time metric
-     * @param propagate if true, propagate this metric - see  `setMetric` for semantics.
      * @param {function(): T} fn
      * @return {T} the return value of `fn`
      */
-    function measureTime(name, fn, propagate = true) {
-      return wrapFn(fn, () => startTiming(name, propagate), (stopTiming) => stopTiming())();
+    function measureTime(name, fn) {
+      return startTiming(name).stopAfter(fn)();
     }
+
+    /**
+     * @typedef {function: T} HookFn
+     * @property {function(T): void} bail
+     *
+     * @template T
+     * @typedef {T: HookFn} TimedHookFn
+     * @property {function(): void} stopTiming
+     * @property {T} untimed
+     */
 
     /**
      * Convenience method for measuring time spent in a `.before` or `.after` hook.
      *
+     * @template T
      * @param name metric name
-     * @param next the hook's `next` (first) argument
-     * @param fn a function that will be run immediately; it takes (next, stopTiming),
-     *    where stopTiming stops the time measure, and both `next` and `next.bail` automatically
+     * @param {HookFn} next the hook's `next` (first) argument
+     * @param {function(TimedHookFn): T} fn a function that will be run immediately; it takes `next`,
+     *    where both `next` and `next.bail` automatically
      *    call `stopTiming` before continuing with the original hook.
-     * @param propagate if true, propagate this metric - see  `setMetric` for semantics.
-     * @return {*}
+     * @return {T} fn's return value
      */
-    function measureHookTime(name, next, fn, propagate = true) {
-      const stopTiming = startTiming(name, propagate);
+    function measureHookTime(name, next, fn) {
+      const stopTiming = startTiming(name);
       next = (function (orig) {
-        const next = wrapFn(orig, stopTiming);
-        next.bail = orig.bail && wrapFn(orig.bail, stopTiming);
+        const next = stopTiming.stopBefore(orig);
+        next.bail = orig.bail && stopTiming.stopBefore(orig.bail);
+        next.stopTiming = stopTiming;
+        next.untimed = orig;
         return next;
       })(next);
-      return fn(next, stopTiming);
+      return fn.call(this, next);
     }
 
     function getMetrics() {
-      const result = {};
+      const result = {}
       self.dfWalk({
-        out(node) {
-          Object.assign(result, node.metrics)
+        reverse: true,
+        out(edge, node) {
+          Object.assign(result, !edge ? node.get(GROUPS) : null, node.get(METRICS));
         }
       });
       return result;
@@ -199,11 +177,11 @@ export function performanceMetrics(now = getTime) {
      * Create a new metric object that contains all metrics registered here,
      * and - by default - propagates all new metrics to this one (see `setMetric` for propagation semantics).
      *
-     * @param continuePropagation if false, propagation from the new metrics is stopped here - instead of
+     * @param stopPropagation if true, propagation from the new metrics is stopped here - instead of
      *   continuing up the chain (if for example these metrics were themselves created through `.fork()`)
      */
-    function fork(continuePropagation = true) {
-      return makeMetrics([[self, continuePropagation]]);
+    function fork({stopPropagation = false} = {}) {
+      return makeMetrics(mkNode([[self, {stopPropagation}]]), rename);
     }
 
     /**
@@ -211,18 +189,18 @@ export function performanceMetrics(now = getTime) {
      * and all metrics from here will be included in `otherMetrics`.
      *
      * @param otherMetrics metrics to join
-     * @param continuePropagation if false, propagation from `otherMetrics` is stopped here,
+     * @param stopPropagation if false, propagation from `otherMetrics` is stopped here,
      *   and does not continue further up the chain.
      */
-    function join(otherMetrics, continuePropagation = true) {
-      const other = METRICS.get(otherMetrics);
+    function join(otherMetrics, {stopPropagation = false} = {}) {
+      const other = NODES.get(otherMetrics);
       if (other != null) {
-        other.addParent(self, continuePropagation);
+        other.addParent(self, {stopPropagation});
       }
     }
 
     function newMetrics() {
-      return makeMetrics(parents);
+      return makeMetrics(self.newSibling(), rename);
     }
 
     const metrics = {
@@ -237,22 +215,60 @@ export function performanceMetrics(now = getTime) {
       fork,
       join,
       newMetrics,
+      renameWith(renameFn) {
+        return makeMetrics(self, renameFn);
+      },
       toJSON() {
         return getMetrics();
       }
     };
-    METRICS.set(metrics, self);
+    NODES.set(metrics, self);
     return metrics;
   }
 
-  return makeMetrics();
+  return makeMetrics(mkNode([]));
+}
+
+function makeNode(parents) {
+  const state = {[METRICS]: {}, [TIMESTAMPS]: {}, [GROUPS]: {}};
+  return {
+    addParent(node, edge) {
+      parents.push([node, edge]);
+    },
+    set(slot, k, v) {
+      state[slot][k] = v;
+    },
+    get(slot) {
+      return state[slot];
+    },
+    newSibling() {
+      return makeNode(parents);
+    },
+    dfWalk({reverse = false, in_, out, upFrom = () => true, visited = new Set(), edge} = {}) {
+      let res;
+      if (!visited.has(this)) {
+        visited.add(this);
+        res = in_ && in_(edge, this);
+        if (typeof res !== 'undefined') return res;
+        if (upFrom(edge, this)) {
+          for (const [parent, edge] of (reverse ? parents.slice().reverse() : parents)) {
+            res = parent.dfWalk({reverse, in_, out, upFrom, visited, edge});
+            if (typeof res !== 'undefined') return res;
+          }
+        }
+        return out && out(edge, this);
+      }
+    }
+  };
 }
 
 const nullMetrics = (() => {
-  const m = performanceMetrics(() => 0);
-  METRICS.get(m).addParent = function () {};
-  ['fork', 'join', 'newMetrics'].forEach(meth => m[meth] = () => m);
-  return m;
+  const nop = function () {}
+  const empty = {};
+  const nullNode = {get: () => empty, set: nop, dfWalk: nop, addParent: nop, newSibling: () => nullNode}
+  const nullMetrics = performanceMetrics(() => 0, () => nullNode);
+  nullMetrics.renameWith = () => nullMetrics;
+  return nullMetrics;
 })();
 
 /**
@@ -261,3 +277,16 @@ const nullMetrics = (() => {
 export function useMetrics(metrics) {
   return metrics == null ? nullMetrics : metrics;
 }
+
+export function hookTimer(prefix, getMetrics) {
+  return function(name, hookFn) {
+    return function (next, ...args) {
+      return useMetrics(getMetrics.apply(this, args)).measureHookTime(prefix + name, next, function (next) {
+        return hookFn.call(this, next, ...args);
+      });
+    }
+  }
+}
+
+export const timedAuctionHook = hookTimer('requestBids.', (req) => req.auctionMetrics);
+export const timedBidResponseHook = hookTimer('addBidResponse.', (_, bid) => bid.metrics)

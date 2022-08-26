@@ -1,29 +1,54 @@
 /** @module pbjs */
 
-import { getGlobal } from './prebidGlobal.js';
+import {getGlobal} from './prebidGlobal.js';
 import {
-  adUnitsFilter, flatten, getHighestCpm, isArrayOfNums, isGptPubadsDefined, uniques, logInfo,
-  contains, logError, isArray, deepClone, deepAccess, isNumber, logWarn, logMessage, isFn,
-  transformAdServerTargetingObj, bind, replaceAuctionPrice, replaceClickThrough, insertElement,
-  inIframe, callBurl, createInvisibleIframe, generateUUID, unsupportedBidderMessage, isEmpty, mergeDeep, deepSetValue
+  adUnitsFilter,
+  bind,
+  callBurl,
+  contains,
+  createInvisibleIframe,
+  deepAccess,
+  deepClone,
+  deepSetValue,
+  flatten,
+  generateUUID,
+  getHighestCpm,
+  inIframe,
+  insertElement,
+  isArray,
+  isArrayOfNums,
+  isEmpty,
+  isFn,
+  isGptPubadsDefined,
+  isNumber,
+  logError,
+  logInfo,
+  logMessage,
+  logWarn,
+  mergeDeep,
+  replaceAuctionPrice,
+  replaceClickThrough,
+  transformAdServerTargetingObj,
+  uniques,
+  unsupportedBidderMessage
 } from './utils.js';
-import { listenMessagesFromCreative } from './secureCreatives.js';
-import { userSync } from './userSync.js';
-import { config } from './config.js';
-import { auctionManager } from './auctionManager.js';
-import { filters, targeting } from './targeting.js';
+import {listenMessagesFromCreative} from './secureCreatives.js';
+import {userSync} from './userSync.js';
+import {config} from './config.js';
+import {auctionManager} from './auctionManager.js';
+import {filters, targeting} from './targeting.js';
 import {hook, wrapHook} from './hook.js';
-import { loadSession } from './debugging.js';
+import {loadSession} from './debugging.js';
 import {includes} from './polyfill.js';
-import { adunitCounter } from './adUnits.js';
-import { executeRenderer, isRendererRequired } from './Renderer.js';
-import { createBid } from './bidfactory.js';
-import { storageCallbacks } from './storageManager.js';
-import { emitAdRenderSucceeded, emitAdRenderFail } from './adRendering.js';
-import {gdprDataHandler, getS2SBidderSet, uspDataHandler, default as adapterManager} from './adapterManager.js';
+import {adunitCounter} from './adUnits.js';
+import {executeRenderer, isRendererRequired} from './Renderer.js';
+import {createBid} from './bidfactory.js';
+import {storageCallbacks} from './storageManager.js';
+import {emitAdRenderFail, emitAdRenderSucceeded} from './adRendering.js';
+import {default as adapterManager, gdprDataHandler, getS2SBidderSet, uspDataHandler} from './adapterManager.js';
 import CONSTANTS from './constants.json';
-import * as events from './events.js'
-import {performanceMetrics, useMetrics} from './utils/perfMetrics.js';
+import * as events from './events.js';
+import {performanceMetrics} from './utils/perfMetrics.js';
 
 const $$PREBID_GLOBAL$$ = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -693,20 +718,6 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
   adUnitCodes.forEach(code => targeting.setLatestAuctionForAdUnit(code, auction.getAuctionId()));
   auction.callBids();
 }, 'startAuction');
-
-/**
- * Wrap a hook function to measure the time spent in it, using the metrics object found in the first argument's `auctionMetrics` property.
- *
- * @param name the name to give to the measured time metric
- * @param hookFn a hook function whose first argument is an object that contains an `auctionMetrics` metrics object
- */
-export function timedAuctionHook(name, hookFn) {
-  return function (next, auctionReq) {
-    useMetrics(auctionReq.auctionMetrics).measureHookTime('requestBids.' + name, next, function (next, done) {
-      return hookFn.call(this, next, auctionReq, done);
-    });
-  }
-}
 
 export function executeCallbacks(fn, reqBidsConfigObj) {
   runAll(storageCallbacks);

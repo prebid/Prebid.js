@@ -153,7 +153,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
       bidsReceived: _bidsReceived,
       winningBids: _winningBids,
       timeout: _timeout,
-      metrics: auctionMetrics.getMetrics(),
+      metrics: auctionMetrics
     };
   }
 
@@ -183,8 +183,8 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
       _auctionStatus = AUCTION_COMPLETED;
       _auctionEnd = Date.now();
       auctionMetrics.checkpoint('auctionEnd');
-      auctionMetrics.setMetric('requestBids.total', auctionMetrics.timeBetween('requestBids', 'auctionEnd'));
-      auctionMetrics.setMetric('requestBids.callBids', auctionMetrics.timeBetween('callBids', 'auctionEnd'));
+      auctionMetrics.timeBetween('requestBids', 'auctionEnd', 'requestBids.total');
+      auctionMetrics.timeBetween('callBids', 'auctionEnd', 'requestBids.callBids');
 
       events.emit(CONSTANTS.EVENTS.AUCTION_END, getProperties());
       bidsBackCallback(_adUnits, function () {
@@ -492,6 +492,9 @@ export function doCallbacksIfTimedout(auctionInstance, bidResponse) {
 // Add a bid to the auction.
 export function addBidToAuction(auctionInstance, bidResponse) {
   setupBidTargeting(bidResponse);
+
+  const metrics = useMetrics(bidResponse.metrics);
+  metrics.setMetric('addBidResponse.total', metrics.timeSince('addBidResponse'));
 
   events.emit(CONSTANTS.EVENTS.BID_RESPONSE, bidResponse);
   auctionInstance.addBidReceived(bidResponse);

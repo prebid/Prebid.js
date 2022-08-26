@@ -5,7 +5,8 @@
 import {config} from '../../src/config.js';
 import {getHook, module} from '../../src/hook.js';
 import {deepAccess, deepSetValue, prefixLog} from '../../src/utils.js';
-import {startAuction, timedAuctionHook} from '../../src/prebid.js';
+import {startAuction} from '../../src/prebid.js';
+import {timedAuctionHook} from '../../src/utils/perfMetrics.js';
 
 const LOG_PRE_FIX = 'Data_Controller : ';
 const ALL = '*';
@@ -18,7 +19,7 @@ const _logger = prefixLog(LOG_PRE_FIX);
 /**
  * BidderRequests hook to intiate module and reset data object
  */
-export function filterBidData(fn, req) {
+export const filterBidData = timedAuctionHook('dataController', function filterBidData(fn, req) {
   if (_dataControllerConfig.filterEIDwhenSDA) {
     filterEIDs(req.adUnits, req.ortb2Fragments);
   }
@@ -28,9 +29,7 @@ export function filterBidData(fn, req) {
   }
   fn.call(this, req);
   return req;
-}
-
-const timedFilterBidData = timedAuctionHook('dataController', filterBidData);
+});
 
 function containsConfiguredEIDS(eidSourcesMap, bidderCode) {
   if (_dataControllerConfig.filterSDAwhenEID.includes(ALL)) {
@@ -177,19 +176,19 @@ export function init() {
     const dataController = dataControllerConfig && dataControllerConfig.dataController;
     if (!dataController) {
       _logger.logInfo(`Data Controller is not configured`);
-      startAuction.getHooks({hook: timedFilterBidData}).remove();
+      startAuction.getHooks({hook: filterBidData}).remove();
       return;
     }
 
     if (dataController.filterEIDwhenSDA && dataController.filterSDAwhenEID) {
       _logger.logInfo(`Data Controller can be configured with either filterEIDwhenSDA or filterSDAwhenEID`);
-      startAuction.getHooks({hook: timedFilterBidData}).remove();
+      startAuction.getHooks({hook: filterBidData}).remove();
       return;
     }
     confListener(); // unsubscribe config listener
     _dataControllerConfig = dataController;
 
-    getHook('startAuction').before(timedFilterBidData);
+    getHook('startAuction').before(filterBidData);
   });
 }
 

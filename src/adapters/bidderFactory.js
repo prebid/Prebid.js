@@ -190,8 +190,10 @@ export function newBidder(spec) {
 
       const adUnitCodesHandled = {};
       function addBidWithCode(adUnitCode, bid) {
+        const metrics = useMetrics(bid.metrics);
+        metrics.checkpoint('addBidResponse');
         adUnitCodesHandled[adUnitCode] = true;
-        if (isValid(adUnitCode, bid)) {
+        if (metrics.measureTime('addBidResponse.validate', () => isValid(adUnitCode, bid))) {
           addBidResponse(adUnitCode, bid);
         }
       }
@@ -207,7 +209,9 @@ export function newBidder(spec) {
         });
       }
 
-      const validBidRequests = useMetrics(bidderRequest.metrics).measureTime('adapter.validate', () => bidderRequest.bids.filter(filterAndWarn));
+      const validBidRequests = adapterMetrics(bidderRequest)
+        .measureTime('validate', () => bidderRequest.bids.filter(filterAndWarn));
+
       if (validBidRequests.length === 0) {
         afterAllResponses();
         return;
@@ -246,7 +250,6 @@ export function newBidder(spec) {
             bid.originalCpm = bid.cpm;
             bid.originalCurrency = bid.currency;
             bid.meta = bid.meta || Object.assign({}, bid[bidRequest.bidder]);
-            bid.metrics = useMetrics(bidderRequest.metrics).fork();
             const prebidBid = Object.assign(createBid(CONSTANTS.STATUS.GOOD, bidRequest), bid);
             addBidWithCode(bidRequest.adUnitCode, prebidBid);
           } else {
@@ -299,13 +302,10 @@ export function newBidder(spec) {
  * @param onCompletion {function()} invoked once when all bid requests have been processed
  */
 export const processBidderRequests = hook('sync', function (spec, bids, bidderRequest, ajax, wrapCallback, {onRequest, onResponse, onError, onBid, onCompletion}) {
-  const metrics = useMetrics(bidderRequest.metrics);
-  const adapterDone = metrics.startTiming('adapter.total');
+  const metrics = adapterMetrics(bidderRequest);
+  onCompletion = metrics.startTiming('total').stopBefore(onCompletion);
 
-  // S2S requests can do the equivalent of `buildRequests` more than once for a given bidRequest;
-  // client-side requests cannot (so far) but for consistency we .fork the metrics so that the result is aggregated
-  // in the same way
-  let requests = metrics.fork().measureTime('adapter.buildRequests', () => spec.buildRequests(bids, bidderRequest));
+  let requests = metrics.measureTime('buildRequests', () => spec.buildRequests(bids, bidderRequest));
 
   if (!requests || requests.length === 0) {
     onCompletion();
@@ -315,10 +315,14 @@ export const processBidderRequests = hook('sync', function (spec, bids, bidderRe
     requests = [requests];
   }
 
-  const requestDone = delayExecution(() => { adapterDone(); onCompletion(); }, requests.length);
+  const requestDone = delayExecution(onCompletion, requests.length);
 
   requests.forEach((request) => {
     const requestMetrics = metrics.fork();
+    function addBid(bid) {
+      if (bid != null) bid.metrics = requestMetrics.fork().renameWith();
+      onBid(bid);
+    }
     // If the server responds successfully, use the adapter code to unpack the Bids from it.
     // If the adapter code fails, no bids should be added. After all the bids have been added,
     // make sure to call the `requestDone` function so that we're one step closer to calling onCompletion().
@@ -337,7 +341,7 @@ export const processBidderRequests = hook('sync', function (spec, bids, bidderRe
 
       let bids;
       try {
-        bids = requestMetrics.measureTime('adapter.interpretResponse', () => spec.interpretResponse(response, request));
+        bids = requestMetrics.measureTime('interpretResponse', () => spec.interpretResponse(response, request));
       } catch (err) {
         logError(`Bidder ${spec.code} failed to interpret the server's response. Continuing without bids`, null, err);
         requestDone();
@@ -346,9 +350,9 @@ export const processBidderRequests = hook('sync', function (spec, bids, bidderRe
 
       if (bids) {
         if (isArray(bids)) {
-          bids.forEach(onBid);
+          bids.forEach(addBid);
         } else {
-          onBid(bids);
+          addBid(bids);
         }
       }
       requestDone();
@@ -368,7 +372,7 @@ export const processBidderRequests = hook('sync', function (spec, bids, bidderRe
 
     onRequest(request);
 
-    const networkDone = requestMetrics.startTiming('adapter.net');
+    const networkDone = requestMetrics.startTiming('net');
     switch (request.method) {
       case 'GET':
         ajax(
@@ -571,4 +575,8 @@ export function isValid(adUnitCode, bid, {index = auctionManager.index} = {}) {
   }
 
   return true;
+}
+
+function adapterMetrics(bidderRequest) {
+  return useMetrics(bidderRequest.metrics).renameWith(n => [`adapter.client.${n}`, `adapters.client.${bidderRequest.bidderCode}.${n}`])
 }

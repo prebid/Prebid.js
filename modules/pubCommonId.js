@@ -8,7 +8,7 @@ import { config } from '../src/config.js';
 import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
 import { getStorageManager } from '../src/storageManager.js';
-import {timedAuctionHook} from '../src/prebid.js';
+import {timedAuctionHook} from '../src/utils/perfMetrics.js';
 
 const storage = getStorageManager({moduleName: 'pubCommonId'});
 
@@ -166,7 +166,7 @@ export function getPubcidConfig() { return pubcidConfig; }
  * @param {function} next The next function in the chain
  */
 
-export function requestBidHook(next, config) {
+export const requestBidHook = timedAuctionHook('pubCommonId', function requestBidHook(next, config) {
   let adUnits = config.adUnits || $$PREBID_GLOBAL$$.adUnits;
   let pubcid = null;
 
@@ -222,7 +222,7 @@ export function requestBidHook(next, config) {
   }
 
   return next.call(this, config);
-}
+});
 
 // Helper to set a cookie
 export function setCookie(name, value, expires, sameSite) {
@@ -291,7 +291,7 @@ export function initPubcid() {
     (storage.hasLocalStorage() && readValue(OPTOUT_NAME, LOCAL_STORAGE));
 
   if (!optout) {
-    $$PREBID_GLOBAL$$.requestBids.before(timedAuctionHook('pubCommonId', requestBidHook));
+    $$PREBID_GLOBAL$$.requestBids.before(requestBidHook);
   }
 }
 

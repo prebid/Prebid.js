@@ -154,7 +154,7 @@ import {
 import {getPPID as coreGetPPID} from '../../src/adserver.js';
 import {defer, GreedyPromise} from '../../src/utils/promise.js';
 import {hasPurpose1Consent} from '../../src/utils/gpdr.js';
-import {timedAuctionHook} from '../../src/prebid.js';
+import {timedAuctionHook} from '../../src/utils/perfMetrics.js';
 
 const MODULE_NAME = 'User ID';
 const COOKIE = 'cookie';
@@ -615,7 +615,7 @@ function getPPID() {
  * @param {Object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
  * @param {function} fn required; The next function in the chain, used by hook.js
  */
-export function requestBidsHook(fn, reqBidsConfigObj, {delay = GreedyPromise.timeout, getIds = getUserIdsAsync} = {}) {
+export const requestBidsHook = timedAuctionHook('userId', function requestBidsHook(fn, reqBidsConfigObj, {delay = GreedyPromise.timeout, getIds = getUserIdsAsync} = {}) {
   GreedyPromise.race([
     getIds().catch(() => null),
     delay(auctionDelay)
@@ -638,7 +638,7 @@ export function requestBidsHook(fn, reqBidsConfigObj, {delay = GreedyPromise.tim
     // calling fn allows prebid to continue processing
     fn.call(this, reqBidsConfigObj);
   });
-}
+});
 
 /**
  * This function will be exposed in global-name-space so that userIds stored by Prebid UserId module can be used by external codes as well.
@@ -977,7 +977,7 @@ function updateSubmodules() {
 
   if (!addedUserIdHook && submodules.length) {
     // priority value 40 will load after consentManagement with a priority of 50
-    getGlobal().requestBids.before(timedAuctionHook('userId', requestBidsHook), 40);
+    getGlobal().requestBids.before(requestBidsHook, 40);
     coreGetPPID.after((next) => next(getPPID()));
     logInfo(`${MODULE_NAME} - usersync config updated for ${submodules.length} submodules: `, submodules.map(a => a.submodule.name));
     addedUserIdHook = true;

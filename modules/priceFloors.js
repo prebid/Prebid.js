@@ -25,7 +25,7 @@ import {find} from '../src/polyfill.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {bidderSettings} from '../src/bidderSettings.js';
 import {auctionManager} from '../src/auctionManager.js';
-import {timedAuctionHook} from '../src/prebid.js';
+import {timedAuctionHook, timedBidResponseHook} from '../src/utils/perfMetrics.js';
 
 /**
  * @summary This Module is intended to provide users with the ability to dynamically set and enforce price floors on a per auction basis.
@@ -502,7 +502,7 @@ export function parseFloorData(floorsData, location) {
  * @param {Object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
  * @param {function} fn required; The next function in the chain, used by hook.js
  */
-export function requestBidsHook(fn, reqBidsConfigObj) {
+export const requestBidsHook = timedAuctionHook('priceFloors', function requestBidsHook(fn, reqBidsConfigObj) {
   // preserves all module related variables for the current auction instance (used primiarily for concurrent auctions)
   const hookConfig = {
     reqBidsConfigObj,
@@ -523,9 +523,7 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
   } else {
     continueAuction(hookConfig);
   }
-}
-
-const timedHook = timedAuctionHook('priceFloors', requestBidsHook);
+});
 
 /**
  * @summary If an auction was queued to be delayed (waiting for a fetch) then this function will resume
@@ -643,7 +641,7 @@ export function handleSetFloorsConfig(config) {
       });
 
       // we want our hooks to run after the currency hooks
-      getGlobal().requestBids.before(timedHook, 50);
+      getGlobal().requestBids.before(requestBidsHook, 50);
       // if user has debug on then we want to allow the debugging module to run before this, assuming they are testing priceFloors
       // debugging is currently set at 5 priority
       getHook('addBidResponse').before(addBidResponseHook, debugTurnedOn() ? 4 : 50);
@@ -656,7 +654,7 @@ export function handleSetFloorsConfig(config) {
     _floorDataForAuction = {};
 
     getHook('addBidResponse').getHooks({hook: addBidResponseHook}).remove();
-    getGlobal().requestBids.getHooks({hook: timedHook}).remove();
+    getGlobal().requestBids.getHooks({hook: requestBidsHook}).remove();
 
     addedFloorsHook = false;
   }
@@ -696,7 +694,7 @@ function shouldFloorBid(floorData, floorInfo, bid) {
  * @summary The main driving force of floors. On bidResponse we hook in and intercept bidResponses.
  * And if the rule we find determines a bid should be floored we will do so.
  */
-export function addBidResponseHook(fn, adUnitCode, bid) {
+export const addBidResponseHook = timedBidResponseHook('priceFloors', function addBidResponseHook(fn, adUnitCode, bid) {
   let floorData = _floorDataForAuction[bid.auctionId];
   // if no floor data then bail
   if (!floorData || !bid || floorData.skipped) {
@@ -758,6 +756,6 @@ export function addBidResponseHook(fn, adUnitCode, bid) {
     return fn.call(this, adUnitCode, flooredBid);
   }
   return fn.call(this, adUnitCode, bid);
-}
+});
 
 config.getConfig('floors', config => handleSetFloorsConfig(config.floors));
