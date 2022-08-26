@@ -2323,15 +2323,7 @@ describe('IndexexchangeAdapter', function () {
     });
 
     describe('detect missing sizes', function () {
-      beforeEach(function () {
-        config.setConfig({
-          ix: {
-            detectMissingSizes: false
-          }
-        });
-      })
-
-      it('request should not contain missing sizes if detectMissingSizes = false', function () {
+      it('request should always contain missing sizes', function () {
         const bid1 = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
         bid1.mediaTypes.banner.sizes = LARGE_SET_OF_SIZES;
 
@@ -2688,15 +2680,6 @@ describe('IndexexchangeAdapter', function () {
         expect(videoImp.id).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].bidId);
         expect(videoImp.video.w).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params.size[0]);
         expect(videoImp.video.h).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params.size[1]);
-      });
-
-      it('should get missing sizes count 0 when params.size not used', function () {
-        const bid = utils.deepClone(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0]);
-        delete bid.params.size;
-        const request = spec.buildRequests([bid], {});
-        const diagObj = JSON.parse(request[0].data.r).ext.ixdiag;
-        expect(diagObj.msd).to.equal(0);
-        expect(diagObj.msi).to.equal(0);
       });
     });
 

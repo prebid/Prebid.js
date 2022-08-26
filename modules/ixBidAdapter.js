@@ -586,8 +586,6 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   r.ext = {};
   r.ext.source = 'prebid';
   r.ext.ixdiag = {};
-  r.ext.ixdiag.msd = 0;
-  r.ext.ixdiag.msi = 0;
   r.imp = [];
   r.at = 1;
 
@@ -732,12 +730,6 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
     if (typeof otherIxConfig.timeout === 'number') {
       payload.t = otherIxConfig.timeout;
     }
-
-    if (typeof otherIxConfig.detectMissingSizes === 'boolean') {
-      r.ext.ixdiag.dms = otherIxConfig.detectMissingSizes;
-    } else {
-      r.ext.ixdiag.dms = true;
-    }
   }
 
   for (let adUnitIndex = 0; adUnitIndex < transactionIds.length; adUnitIndex++) {
@@ -746,7 +738,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
     }
 
     const adUnitImpressions = impressions[transactionIds[adUnitIndex]];
-    const { missingCount = 0, missingImps: missingBannerImpressions = [], ixImps = [] } = adUnitImpressions;
+    const { missingImps: missingBannerImpressions = [], ixImps = [] } = adUnitImpressions;
     let wasAdUnitImpressionsTrimmed = false;
     let remainingRequestSize = MAX_REQUEST_SIZE - currentRequestSize;
     const sourceImpressions = { ixImps, missingBannerImpressions };
@@ -797,8 +789,6 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
       }
 
       r.imp.push(_bannerImpression);
-      r.ext.ixdiag.msd += missingCount;
-      r.ext.ixdiag.msi += missingBannerImpressions.length;
     } else {
       // set imp.ext.gpid to resolved gpid for each imp
       impressionObjects.forEach(imp => deepSetValue(imp, 'ext.gpid', gpid));
@@ -882,8 +872,6 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
 
       currentRequestSize = baseRequestSize;
       r.imp = [];
-      r.ext.ixdiag.msd = 0;
-      r.ext.ixdiag.msi = 0;
       isFpdAdded = false;
     }
   }
@@ -1035,12 +1023,6 @@ function createVideoImps(validBidRequest, videoImps) {
  * @param {object}  bannerImps reference to created banner impressions
  */
 function createBannerImps(validBidRequest, missingBannerSizes, bannerImps) {
-  const DEFAULT_IX_CONFIG = {
-    detectMissingSizes: true,
-  };
-
-  const ixConfig = { ...DEFAULT_IX_CONFIG, ...config.getConfig('ix') };
-
   let imp = bidToBannerImp(validBidRequest);
 
   const bannerSizeDefined = includesSize(deepAccess(validBidRequest, 'mediaTypes.banner.sizes'), deepAccess(validBidRequest, 'params.size'));
@@ -1068,9 +1050,7 @@ function createBannerImps(validBidRequest, missingBannerSizes, bannerImps) {
     bannerImps[validBidRequest.transactionId].ixImps.push(imp);
   }
 
-  if (ixConfig.hasOwnProperty('detectMissingSizes') && ixConfig.detectMissingSizes) {
-    updateMissingSizes(validBidRequest, missingBannerSizes, imp);
-  }
+  updateMissingSizes(validBidRequest, missingBannerSizes, imp);
 }
 
 /**
