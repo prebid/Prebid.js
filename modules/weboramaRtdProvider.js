@@ -819,9 +819,9 @@ function handleBidViaORTB2(reqBids, bid, profile, metadata) {
  * @returns {void}
  */
 function assignProfileToObject(destination, base, profile) {
-  Object.keys(profile).forEach(key => {
+  Object.entries(profile).forEach(([key, values]) => {
     const path = `${base}.${key}`;
-    deepSetValue(destination, path, profile[key])
+    deepSetValue(destination, path, values)
   })
 }
 
