@@ -1,8 +1,20 @@
-import * as utils from '../src/utils.js';
+import {
+  deepAccess,
+  deepSetValue,
+  getDNT,
+  inIframe,
+  isArray,
+  isFn,
+  isNumber,
+  isPlainObject,
+  isStr,
+  logError,
+  logWarn
+} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
 import {Renderer} from '../src/Renderer.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {includes} from '../src/polyfill.js';
 
 const ENDPOINTS = {
   'gamoshi': 'https://rtb.gamoshi.io'
@@ -21,11 +33,6 @@ export const helper = {
   startsWith: function (str, search) {
     return str.substr(0, search.length) === search;
   },
-  getTopWindowDomain: function (url) {
-    const domainStart = url.indexOf('://') + '://'.length;
-    return url.substring(domainStart, url.indexOf('/', domainStart) < 0 ? url.length : url.indexOf('/', domainStart));
-  },
-
   getMediaType: function (bid) {
     if (bid.ext) {
       if (bid.ext.media_type) {
@@ -37,19 +44,36 @@ export const helper = {
       }
     }
     return BANNER;
+  },
+  getBidFloor(bid) {
+    if (!isFn(bid.getFloor)) {
+      return bid.params.bidfloor ? bid.params.bidfloor : null;
+    }
+
+    let bidFloor = bid.getFloor({
+      mediaType: '*',
+      size: '*',
+      currency: 'USD'
+    });
+
+    if (isPlainObject(bidFloor) && !isNaN(bidFloor.floor) && bidFloor.currency === 'USD') {
+      return bidFloor.floor;
+    }
+
+    return null;
   }
 };
 
 export const spec = {
   code: 'gamoshi',
-  aliases: ['gambid', 'cleanmedia', '9MediaOnline', 'MobfoxX'],
+  aliases: ['gambid', '9MediaOnline'],
   supportedMediaTypes: ['banner', 'video'],
 
   isBidRequestValid: function (bid) {
-    return !!bid.params.supplyPartnerId && utils.isStr(bid.params.supplyPartnerId) &&
-      (!bid.params['rtbEndpoint'] || utils.isStr(bid.params['rtbEndpoint'])) &&
-      (!bid.params.bidfloor || utils.isNumber(bid.params.bidfloor)) &&
-      (!bid.params['adpos'] || utils.isNumber(bid.params['adpos'])) &&
+    return !!bid.params.supplyPartnerId && isStr(bid.params.supplyPartnerId) &&
+      (!bid.params['rtbEndpoint'] || isStr(bid.params['rtbEndpoint'])) &&
+      (!bid.params.bidfloor || isNumber(bid.params.bidfloor)) &&
+      (!bid.params['adpos'] || isNumber(bid.params['adpos'])) &&
       (!bid.params['protocols'] || Array.isArray(bid.params['protocols'])) &&
       (!bid.params.instl || bid.params.instl === 0 || bid.params.instl === 1);
   },
@@ -59,18 +83,16 @@ export const spec = {
       const {adUnitCode, auctionId, mediaTypes, params, sizes, transactionId} = bidRequest;
       const baseEndpoint = params['rtbEndpoint'] || ENDPOINTS['gamoshi'];
       const rtbEndpoint = `${baseEndpoint}/r/${params.supplyPartnerId}/bidr?rformat=open_rtb&reqformat=rtb_json&bidder=prebid` + (params.query ? '&' + params.query : '');
-      let url = config.getConfig('pageUrl') || bidderRequest.refererInfo.referer;
-
       const rtbBidRequest = {
         id: auctionId,
         site: {
-          domain: helper.getTopWindowDomain(url),
-          page: url,
-          ref: bidderRequest.refererInfo.referer
+          domain: bidderRequest.refererInfo.domain,
+          page: bidderRequest.refererInfo.page,
+          ref: bidderRequest.refererInfo.ref
         },
         device: {
           ua: navigator.userAgent,
-          dnt: utils.getDNT() ? 1 : 0,
+          dnt: getDNT() ? 1 : 0,
           h: screen.height,
           w: screen.width,
           language: navigator.language
@@ -81,37 +103,31 @@ export const spec = {
         source: {ext: {}},
         regs: {ext: {}}
       };
-      const gdprConsent = bidderRequest.gdprConsent;
 
-      if (gdprConsent && gdprConsent.consentString && gdprConsent.gdprApplies) {
-        rtbBidRequest.ext.gdpr_consent = {
-          consent_string: gdprConsent.consentString,
-          consent_required: gdprConsent.gdprApplies
-        };
-
-        utils.deepSetValue(rtbBidRequest, 'regs.ext.gdpr', gdprConsent.gdprApplies === true ? 1 : 0);
-        utils.deepSetValue(rtbBidRequest, 'user.ext.consent', gdprConsent.consentString);
-      }
+      const gdprConsent = getGdprConsent(bidderRequest);
+      rtbBidRequest.ext.gdpr_consent = gdprConsent;
+      deepSetValue(rtbBidRequest, 'regs.ext.gdpr', gdprConsent.consent_required === true ? 1 : 0);
+      deepSetValue(rtbBidRequest, 'user.ext.consent', gdprConsent.consent_string);
 
       if (validBidRequests[0].schain) {
-        utils.deepSetValue(rtbBidRequest, 'source.ext.schain', validBidRequests[0].schain);
+        deepSetValue(rtbBidRequest, 'source.ext.schain', validBidRequests[0].schain);
       }
 
       if (bidderRequest && bidderRequest.uspConsent) {
-        utils.deepSetValue(rtbBidRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+        deepSetValue(rtbBidRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent);
       }
 
       const imp = {
         id: transactionId,
-        instl: params.instl === 1 ? 1 : 0,
+        instl: deepAccess(bidderRequest.ortb2Imp, 'instl') === 1 || params.instl === 1 ? 1 : 0,
         tagid: adUnitCode,
-        bidfloor: params.bidfloor || 0,
+        bidfloor: helper.getBidFloor(bidRequest) || 0,
         bidfloorcur: 'USD',
         secure: 1
       };
 
       const hasFavoredMediaType =
-        params.favoredMediaType && this.supportedMediaTypes.includes(params.favoredMediaType);
+        params.favoredMediaType && includes(this.supportedMediaTypes, params.favoredMediaType);
 
       if (!mediaTypes || mediaTypes.banner) {
         if (!hasFavoredMediaType || params.favoredMediaType === BANNER) {
@@ -119,8 +135,8 @@ export const spec = {
             banner: {
               w: sizes.length ? sizes[0][0] : 300,
               h: sizes.length ? sizes[0][1] : 250,
-              pos: params.pos || 0,
-              topframe: utils.inIframe() ? 0 : 1
+              pos: deepAccess(bidderRequest, 'mediaTypes.banner.pos') || params.pos || 0,
+              topframe: inIframe() ? 0 : 1
             }
           });
           rtbBidRequest.imp.push(bannerImp);
@@ -132,18 +148,26 @@ export const spec = {
           const playerSize = mediaTypes.video.playerSize || sizes;
           const videoImp = Object.assign({}, imp, {
             video: {
-              protocols: params.protocols || [1, 2, 3, 4, 5, 6],
-              pos: params.pos || 0,
+              protocols: bidRequest.mediaTypes.video.protocols || params.protocols || [1, 2, 3, 4, 5, 6],
+              pos: deepAccess(bidRequest, 'mediaTypes.video.pos') || params.pos || 0,
               ext: {
                 context: mediaTypes.video.context
-              }
+              },
+              mimes: bidRequest.mediaTypes.video.mimes,
+              maxduration: bidRequest.mediaTypes.video.maxduration,
+              api: bidRequest.mediaTypes.video.api,
+              skip: bidRequest.mediaTypes.video.skip || bidRequest.params.video.skip,
+              placement: bidRequest.mediaTypes.video.placement || bidRequest.params.video.placement,
+              minduration: bidRequest.mediaTypes.video.minduration || bidRequest.params.video.minduration,
+              playbackmethod: bidRequest.mediaTypes.video.playbackmethod || bidRequest.params.video.playbackmethod,
+              startdelay: bidRequest.mediaTypes.video.startdelay || bidRequest.params.video.startdelay
             }
           });
 
-          if (utils.isArray(playerSize[0])) {
+          if (isArray(playerSize[0])) {
             videoImp.video.w = playerSize[0][0];
             videoImp.video.h = playerSize[0][1];
-          } else if (utils.isNumber(playerSize[0])) {
+          } else if (isNumber(playerSize[0])) {
             videoImp.video.w = playerSize[0];
             videoImp.video.h = playerSize[1];
           } else {
@@ -157,8 +181,9 @@ export const spec = {
 
       let eids = [];
       if (bidRequest && bidRequest.userId) {
-        addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.id5id.uid`), 'id5-sync.com', 'ID5ID');
-        addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.tdid`), 'adserver.org', 'TDID');
+        addExternalUserId(eids, deepAccess(bidRequest, `userId.id5id.uid`), 'id5-sync.com', 'ID5ID');
+        addExternalUserId(eids, deepAccess(bidRequest, `userId.tdid`), 'adserver.org', 'TDID');
+        addExternalUserId(eids, deepAccess(bidRequest, `userId.idl_env`), 'liveramp.com', 'idl');
       }
       if (eids.length > 0) {
         rtbBidRequest.user.ext.eids = eids;
@@ -180,7 +205,7 @@ export const spec = {
   interpretResponse: function (serverResponse, bidRequest) {
     const response = serverResponse && serverResponse.body;
     if (!response) {
-      utils.logError('empty response');
+      logError('empty response');
       return [];
     }
 
@@ -197,14 +222,20 @@ export const spec = {
         creativeId: bid.crid || bid.adid,
         netRevenue: true,
         currency: bid.cur || response.cur,
-        mediaType: helper.getMediaType(bid)
+        mediaType: helper.getMediaType(bid),
       };
 
-      if (utils.deepAccess(bidRequest.bidRequest, 'mediaTypes.' + outBid.mediaType)) {
+      if (bid.adomain && bid.adomain.length) {
+        outBid.meta = {
+          advertiserDomains: bid.adomain
+        }
+      }
+
+      if (deepAccess(bidRequest.bidRequest, 'mediaTypes.' + outBid.mediaType)) {
         if (outBid.mediaType === BANNER) {
           outBids.push(Object.assign({}, outBid, {ad: bid.adm}));
         } else if (outBid.mediaType === VIDEO) {
-          const context = utils.deepAccess(bidRequest.bidRequest, 'mediaTypes.video.context');
+          const context = deepAccess(bidRequest.bidRequest, 'mediaTypes.video.context');
           outBids.push(Object.assign({}, outBid, {
             vastUrl: bid.ext.vast_url,
             vastXml: bid.adm,
@@ -283,7 +314,7 @@ function newRenderer(bidRequest, bid, rendererOptions = {}) {
   try {
     renderer.setRender(renderOutstream);
   } catch (err) {
-    utils.logWarn('Prebid Error calling setRender on renderer', err);
+    logWarn('Prebid Error calling setRender on renderer', err);
   }
   return renderer;
 }
@@ -309,7 +340,7 @@ function renderOutstream(bid) {
 }
 
 function addExternalUserId(eids, value, source, rtiPartner) {
-  if (utils.isStr(value)) {
+  if (isStr(value)) {
     eids.push({
       source,
       uids: [{
@@ -327,6 +358,22 @@ function replaceMacros(url, macros) {
     .replace('[GDPR]', macros.gdpr)
     .replace('[CONSENT]', macros.consent)
     .replace('[US_PRIVACY]', macros.uspConsent);
+}
+
+function getGdprConsent(bidderRequest) {
+  const gdprConsent = bidderRequest.gdprConsent;
+
+  if (gdprConsent && gdprConsent.consentString && gdprConsent.gdprApplies) {
+    return {
+      consent_string: gdprConsent.consentString,
+      consent_required: gdprConsent.gdprApplies
+    };
+  }
+
+  return {
+    consent_required: false,
+    consent_string: '',
+  };
 }
 
 registerBidder(spec);

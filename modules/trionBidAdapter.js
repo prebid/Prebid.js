@@ -1,13 +1,12 @@
-import * as utils from '../src/utils.js';
+import { getBidIdParameter, parseSizesInput, tryAppendQueryString } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
-
-const storage = getStorageManager();
 
 const BID_REQUEST_BASE_URL = 'https://in-appadvertising.com/api/bidRequest';
 const USER_SYNC_URL = 'https://in-appadvertising.com/api/userSync.html';
 const BIDDER_CODE = 'trion';
 const BASE_KEY = '_trion_';
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 export const spec = {
   code: BIDDER_CODE,
@@ -53,6 +52,9 @@ export const spec = {
         bid.creativeId = result.creativeId;
         bid.currency = result.currency;
         bid.netRevenue = result.netRevenue;
+        if (result.adomain) {
+          bid.meta = {advertiserDomains: result.adomain}
+        }
         bidResponses.push(bid);
       }
     }
@@ -109,11 +111,11 @@ function getPublisherUrl() {
 }
 
 function buildTrionUrlParams(bid, bidderRequest) {
-  var pubId = utils.getBidIdParameter('pubId', bid.params);
-  var sectionId = utils.getBidIdParameter('sectionId', bid.params);
+  var pubId = getBidIdParameter('pubId', bid.params);
+  var sectionId = getBidIdParameter('sectionId', bid.params);
   var url = getPublisherUrl();
   var bidSizes = getBidSizesFromBidRequest(bid);
-  var sizes = utils.parseSizesInput(bidSizes).join(',');
+  var sizes = parseSizesInput(bidSizes).join(',');
   var isAutomated = (navigator && navigator.webdriver) ? '1' : '0';
   var isHidden = (document.hidden) ? '1' : '0';
   var visibilityState = encodeURIComponent(document.visibilityState);
@@ -128,10 +130,10 @@ function buildTrionUrlParams(bid, bidderRequest) {
   setStorageData(BASE_KEY + 'lps', pubId + ':' + sectionId);
   var trionUrl = '';
 
-  trionUrl = utils.tryAppendQueryString(trionUrl, 'bidId', bid.bidId);
-  trionUrl = utils.tryAppendQueryString(trionUrl, 'pubId', pubId);
-  trionUrl = utils.tryAppendQueryString(trionUrl, 'sectionId', sectionId);
-  trionUrl = utils.tryAppendQueryString(trionUrl, 'vers', '$prebid.version$');
+  trionUrl = tryAppendQueryString(trionUrl, 'bidId', bid.bidId);
+  trionUrl = tryAppendQueryString(trionUrl, 'pubId', pubId);
+  trionUrl = tryAppendQueryString(trionUrl, 'sectionId', sectionId);
+  trionUrl = tryAppendQueryString(trionUrl, 'vers', '$prebid.version$');
   if (url) {
     trionUrl += 'url=' + url + '&';
   }
@@ -139,22 +141,22 @@ function buildTrionUrlParams(bid, bidderRequest) {
     trionUrl += 'sizes=' + sizes + '&';
   }
   if (intT) {
-    trionUrl = utils.tryAppendQueryString(trionUrl, 'int_t', encodeURIComponent(intT));
+    trionUrl = tryAppendQueryString(trionUrl, 'int_t', encodeURIComponent(intT));
   }
-  trionUrl = utils.tryAppendQueryString(trionUrl, 'tr_wd', isAutomated);
-  trionUrl = utils.tryAppendQueryString(trionUrl, 'tr_hd', isHidden);
-  trionUrl = utils.tryAppendQueryString(trionUrl, 'tr_vs', visibilityState);
+  trionUrl = tryAppendQueryString(trionUrl, 'tr_wd', isAutomated);
+  trionUrl = tryAppendQueryString(trionUrl, 'tr_hd', isHidden);
+  trionUrl = tryAppendQueryString(trionUrl, 'tr_vs', visibilityState);
   if (bidderRequest && bidderRequest.gdprConsent) {
     var gdpr = bidderRequest.gdprConsent;
     if (gdpr) {
       if (gdpr.consentString) {
-        trionUrl = utils.tryAppendQueryString(trionUrl, 'gdprc', encodeURIComponent(gdpr.consentString));
+        trionUrl = tryAppendQueryString(trionUrl, 'gdprc', encodeURIComponent(gdpr.consentString));
       }
-      trionUrl = utils.tryAppendQueryString(trionUrl, 'gdpr', (gdpr.gdprApplies ? 1 : 0));
+      trionUrl = tryAppendQueryString(trionUrl, 'gdpr', (gdpr.gdprApplies ? 1 : 0));
     }
   }
   if (bidderRequest && bidderRequest.uspConsent) {
-    trionUrl = utils.tryAppendQueryString(trionUrl, 'usp', encodeURIComponent(bidderRequest.uspConsent));
+    trionUrl = tryAppendQueryString(trionUrl, 'usp', encodeURIComponent(bidderRequest.uspConsent));
   }
   // remove the trailing "&"
   if (trionUrl.lastIndexOf('&') === trionUrl.length - 1) {

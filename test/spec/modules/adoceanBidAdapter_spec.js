@@ -83,6 +83,20 @@ describe('AdoceanAdapter', function () {
         'auctionId': '1d1a030790a475',
       }
     ];
+    const schainExample = {
+      'schain': {
+        ver: '1.0',
+        complete: 1,
+        nodes: [
+          {
+            asi: 'directseller.com',
+            sid: '00001!,2',
+            rid: 'BidRequest1',
+            hp: 1
+          }
+        ]
+      }
+    };
 
     const bidderRequest = {
       gdprConsent: {
@@ -134,7 +148,17 @@ describe('AdoceanAdapter', function () {
       expect(requests[0].url).to.include('aosspsizes=myaozpniqismex~300x250_300x600-myaowafpdwlrks~300x200_600x250');
       expect((requests[0].url.match(/aosspsizes=/g) || []).length).to.equal(1);
     });
-  })
+
+    it('should attach schain parameter if available', function() {
+      let requests = spec.buildRequests(bidRequests, bidderRequest);
+      expect(requests.some(e => e.url.includes('schain='))).to.be.false;
+
+      const bidsWithSchain = deepClone(bidRequests).map(e => ({...e, ...schainExample}));
+      requests = spec.buildRequests(bidsWithSchain, bidderRequest);
+      expect(requests.every(e => e.url.includes('schain=1.0,1!directseller.com,00001%21%2C2,1,BidRequest1,,,0')),
+        `One of urls does not contain valid schain param: ${requests.map(e => e.url).join('\n')}`).to.be.true;
+    });
+  });
 
   describe('interpretResponse', function () {
     const response = {
@@ -150,7 +174,8 @@ describe('AdoceanAdapter', function () {
           'width': '300',
           'height': '250',
           'crid': '0af345b42983cc4bc0',
-          'ttl': '300'
+          'ttl': '300',
+          'adomain': ['adocean.pl']
         }
       ],
       'headers': {
@@ -186,7 +211,10 @@ describe('AdoceanAdapter', function () {
           'ad': '<!-- Creative -->',
           'creativeId': '0af345b42983cc4bc0',
           'ttl': 300,
-          'netRevenue': false
+          'netRevenue': false,
+          'meta': {
+            'advertiserDomains': ['adocean.pl']
+          }
         }
       ];
 
@@ -197,6 +225,8 @@ describe('AdoceanAdapter', function () {
       resultKeys.forEach(function(k) {
         if (k === 'ad') {
           expect(result[0][k]).to.match(/<!-- Creative -->$/);
+        } else if (k === 'meta') {
+          expect(result[0][k]).to.deep.equal(expectedResponse[0][k]);
         } else {
           expect(result[0][k]).to.equal(expectedResponse[0][k]);
         }

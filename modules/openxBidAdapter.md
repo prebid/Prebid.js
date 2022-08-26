@@ -8,7 +8,9 @@ Maintainer: team-openx@openx.com
 
 # Description
 
-Module that connects to OpenX's demand sources
+Module that connects to OpenX's demand sources.
+Note there is an updated version of the OpenX bid adapter called openxOrtbBidAdapter.
+Publishers are welcome to test the other adapter and give feedback. Please note you should only include either openxBidAdapter or openxOrtbBidAdapter in your build.
 
 # Bid Parameters
 ## Banner
@@ -98,7 +100,7 @@ pbjs.setConfig({
 ```
 
 # Additional Details
-[Banner Ads](https://docs.openx.com/Content/developers/containers/prebid-adapter.html)
+[Banner Ads](https://docs.openx.com/publishers/prebid-adapter-web/)
 
-[Video Ads](https://docs.openx.com/Content/developers/containers/prebid-video-adapter.html)
+[Video Ads](https://docs.openx.com/publishers/prebid-adapter-video/)
 

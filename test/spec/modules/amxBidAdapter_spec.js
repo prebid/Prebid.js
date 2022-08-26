@@ -17,25 +17,18 @@ const embeddedTrackingPixel = `https://1x1.a-mo.net/hbx/g_impression?A=sample&B=
 const sampleNurl = 'https://example.exchange/nurl';
 
 const sampleFPD = {
-  context: {
+  site: {
     keywords: 'sample keywords',
-    data: {
-      pageType: 'article'
+    ext: {
+      data: {
+        pageType: 'article'
+      }
     }
   },
   user: {
     gender: 'O',
     yob: 1982,
   }
-};
-
-const stubConfig = (withStub) => {
-  const stub = sinon.stub(config, 'getConfig').callsFake(
-    (arg) => arg === 'fpd' ? sampleFPD : null
-  )
-
-  withStub();
-  stub.restore();
 };
 
 const sampleBidderRequest = {
@@ -47,9 +40,11 @@ const sampleBidderRequest = {
   auctionId: utils.getUniqueIdentifierStr(),
   uspConsent: '1YYY',
   refererInfo: {
-    referer: 'https://www.prebid.org',
+    location: 'https://www.prebid.org',
+    topmostLocation: 'https://www.prebid.org',
     canonicalUrl: 'https://www.prebid.org/the/link/to/the/page'
-  }
+  },
+  ortb2: sampleFPD
 };
 
 const sampleBidRequestBase = {
@@ -58,6 +53,15 @@ const sampleBidRequestBase = {
     endpoint: 'https://httpbin.org/post',
   },
   sizes: [[320, 50]],
+  getFloor(params) {
+    if (params.size == null || params.currency == null || params.mediaType == null) {
+      throw new Error(`getFloor called with incomplete params: ${JSON.stringify(params)}`)
+    }
+    return {
+      floor: 0.5,
+      currency: 'USD'
+    }
+  },
   mediaTypes: {
     [BANNER]: {
       sizes: [[300, 250]]
@@ -69,13 +73,28 @@ const sampleBidRequestBase = {
   auctionId: utils.getUniqueIdentifierStr(),
 };
 
+const schainConfig = {
+  ver: '1.0',
+  nodes: [{
+    asi: 'greatnetwork.exchange',
+    sid: '000001',
+    hp: 1,
+    rid: 'bid_request_1',
+    domain: 'publisher.com'
+  }]
+};
+
 const sampleBidRequestVideo = {
   ...sampleBidRequestBase,
   bidId: sampleRequestId + '_video',
   sizes: [[300, 150]],
+  schain: schainConfig,
   mediaTypes: {
     [VIDEO]: {
-      sizes: [[360, 250]]
+      sizes: [[360, 250]],
+      context: 'adpod',
+      adPodDurationSec: 90,
+      contentMode: 'live'
     }
   }
 };
@@ -104,6 +123,7 @@ const sampleServerResponse = {
             'h': 600,
             'id': '2014691335735134254',
             'impid': '1',
+            'exp': 90,
             'price': 0.25,
             'w': 300
           },
@@ -123,6 +143,7 @@ const sampleServerResponse = {
             'h': 1,
             'id': '7735706981389902829',
             'impid': '1',
+            'exp': 90,
             'price': 0.25,
             'w': 1
           },
@@ -144,8 +165,11 @@ describe('AmxBidAdapter', () => {
       expect(spec.isBidRequestValid({params: { tagId: 'test' }})).to.equal(true)
     });
 
-    it('testMode is an optional boolean', () => {
-      expect(spec.isBidRequestValid({params: { testMode: 1 }})).to.equal(false)
+    it('testMode is an optional truthy value', () => {
+      expect(spec.isBidRequestValid({params: { testMode: 1 }})).to.equal(true)
+      expect(spec.isBidRequestValid({params: { testMode: 'true' }})).to.equal(true)
+      // ignore invalid values (falsy)
+      expect(spec.isBidRequestValid({params: { testMode: 'non-truthy-invalid-value' }})).to.equal(true)
       expect(spec.isBidRequestValid({params: { testMode: false }})).to.equal(true)
     });
 
@@ -179,6 +203,17 @@ describe('AmxBidAdapter', () => {
       expect(url).to.equal('https://prebid.a-mo.net/a/c')
     });
 
+    it('will read the prebid version & global', () => {
+      const { data: { V: prebidVersion, vg: prebidGlobal } } = spec.buildRequests([{
+        ...sampleBidRequestBase,
+        params: {
+          testMode: true
+        }
+      }], sampleBidderRequest);
+      expect(prebidVersion).to.equal('$prebid.version$')
+      expect(prebidGlobal).to.equal('$$PREBID_GLOBAL$$')
+    });
+
     it('reads test mode from the first bid request', () => {
       const { data } = spec.buildRequests([{
         ...sampleBidRequestBase,
@@ -193,35 +228,22 @@ describe('AmxBidAdapter', () => {
       const { data } = spec.buildRequests([sampleBidRequestBase], {
         ...sampleBidderRequest,
         refererInfo: {
-          numIframes: 1,
-          referer: 'http://search-traffic-source.com',
-          stack: []
+          location: null,
+          topmostLocation: null,
+          ref: 'http://search-traffic-source.com',
         }
       });
       expect(data.do).to.equal('localhost')
       expect(data.re).to.equal('http://search-traffic-source.com');
     });
 
-    it('if we are in AMP, make sure we use the canonical URL or the referrer (which is sourceUrl)', () => {
-      const { data } = spec.buildRequests([sampleBidRequestBase], {
-        ...sampleBidderRequest,
-        refererInfo: {
-          isAmp: true,
-          referer: 'http://real-publisher-site.com/content',
-          stack: []
-        }
-      });
-      expect(data.do).to.equal('real-publisher-site.com')
-      expect(data.re).to.equal('http://real-publisher-site.com/content');
-    })
-
     it('if prebid is in an iframe, will use the topmost url as domain', () => {
       const { data } = spec.buildRequests([sampleBidRequestBase], {
         ...sampleBidderRequest,
         refererInfo: {
-          numIframes: 1,
-          referer: 'http://search-traffic-source.com',
-          stack: ['http://top-site.com', 'http://iframe.com']
+          location: null,
+          topmostLocation: 'http://top-site.com',
+          ref: 'http://search-traffic-source.com',
         }
       });
       expect(data.do).to.equal('top-site.com');
@@ -251,10 +273,8 @@ describe('AmxBidAdapter', () => {
       expect(data.trc).to.equal(0)
     });
     it('will forward first-party data', () => {
-      stubConfig(() => {
-        const { data } = spec.buildRequests([sampleBidRequestBase], sampleBidderRequest);
-        expect(data.fpd).to.deep.equal(sampleFPD)
-      });
+      const { data } = spec.buildRequests([sampleBidRequestBase], sampleBidderRequest);
+      expect(data.fpd2).to.deep.equal(sampleFPD)
     });
 
     it('will collect & forward RTI user IDs', () => {
@@ -299,20 +319,24 @@ describe('AmxBidAdapter', () => {
       expect(data.m[sampleRequestId]).to.deep.equal({
         av: true,
         au: 'div-gpt-ad-example',
+        vd: {},
         ms: [
           [[320, 50]],
           [[300, 250]],
           []
         ],
         aw: 300,
+        sc: {},
         ah: 250,
         tf: 0,
+        f: 0.5,
         vr: false
       });
       expect(data.m[sampleRequestId + '_2']).to.deep.equal({
         av: true,
         aw: 300,
         au: 'div-gpt-ad-example',
+        sc: {},
         ms: [
           [[320, 50]],
           [[300, 250]],
@@ -320,7 +344,9 @@ describe('AmxBidAdapter', () => {
         ],
         i: 'example',
         ah: 250,
+        vd: {},
         tf: 0,
+        f: 0.5,
         vr: false,
       });
     });
@@ -338,7 +364,15 @@ describe('AmxBidAdapter', () => {
         av: true,
         aw: 360,
         ah: 250,
+        sc: schainConfig,
+        vd: {
+          sizes: [[360, 250]],
+          context: 'adpod',
+          adPodDurationSec: 90,
+          contentMode: 'live'
+        },
         tf: 0,
+        f: 0.5,
         vr: true
       });
     });
@@ -383,9 +417,10 @@ describe('AmxBidAdapter', () => {
           ...baseBidResponse.meta,
           mediaType: BANNER,
         },
+        mediaType: BANNER,
         width: 300,
         height: 600, // from the bid itself
-        ttl: 70,
+        ttl: 90,
         ad: sampleDisplayAd(
           `<img src="${embeddedTrackingPixel}" width="0" height="0"/>` +
           `<img src="${sampleNurl}" width="0" height="0"/>`
@@ -396,20 +431,14 @@ describe('AmxBidAdapter', () => {
     it('can parse a video ad', () => {
       const parsed = spec.interpretResponse({ body: sampleServerResponse }, baseRequest)
       expect(parsed.length).to.equal(2)
-
-      // we should have display, video, display
-      const xml = parsed[1].vastXml
-      delete parsed[1].vastXml
-
-      expect(xml).to.have.string(`<Impression><![CDATA[${sampleNurl}]]></Impression>`)
-      expect(xml).to.have.string(`<Impression><![CDATA[${embeddedTrackingPixel}]]></Impression>`)
-
       expect(parsed[1]).to.deep.equal({
         ...baseBidResponse,
         meta: {
           ...baseBidResponse.meta,
           mediaType: VIDEO,
         },
+        mediaType: VIDEO,
+        vastXml: sampleVideoAd(''),
         width: 300,
         height: 250,
         ttl: 90,

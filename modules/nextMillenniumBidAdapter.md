@@ -2,7 +2,7 @@
 ```
 Module Name: NextMillennium Bid Adapter
 Module Type: Bidder Adapter
-Maintainer: mikhail.ivanchenko@iageengineering.net
+Maintainer: mihail.ivanchenko@nextmillennium.io
 ```
 
 # Description
@@ -21,7 +21,8 @@ Currently module supports only banner mediaType.
         bids: [{
             bidder: 'nextMillennium',
             params: {
-                placement_id: -1
+                placement_id: '-1',
+                group_id: '6731'
             }
         }]
     }];

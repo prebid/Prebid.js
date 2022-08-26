@@ -10,9 +10,9 @@ pbjs.setConfig({
         userIds: [{
             name: 'verizonMediaId',
             storage: {
-                name: 'vmuid',
+                name: 'vmcid',
                 type: 'html5',
-                expires: 30
+                expires: 15
             },
             params: {
                 pixelId: 58776,

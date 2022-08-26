@@ -1,12 +1,12 @@
-import * as utils from '../src/utils.js';
+import { _each, parseSizesInput, isStr, isArray } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'adocean';
 
 function buildEndpointUrl(emiter, payloadMap) {
   const payload = [];
-  utils._each(payloadMap, function(v, k) {
-    payload.push(k + '=' + encodeURIComponent(v));
+  _each(payloadMap, function(v, k) {
+    payload.push(k + '=' + (k === 'schain' ? v : encodeURIComponent(v)));
   });
 
   const randomizedPart = Math.random().toString().slice(2);
@@ -23,15 +23,19 @@ function buildRequest(masterBidRequests, masterId, gdprConsent) {
     payload.gdpr_consent = gdprConsent.consentString || undefined;
     payload.gdpr = gdprConsent.gdprApplies ? 1 : 0;
   }
+  const anyKey = Object.keys(masterBidRequests)[0];
+  if (masterBidRequests[anyKey].schain) {
+    payload.schain = serializeSupplyChain(masterBidRequests[anyKey].schain);
+  }
 
   const bidIdMap = {};
 
-  utils._each(masterBidRequests, function(bid, slaveId) {
+  _each(masterBidRequests, function(bid, slaveId) {
     if (!emiter) {
       emiter = bid.params.emiter;
     }
 
-    const slaveSizes = utils.parseSizesInput(bid.mediaTypes.banner.sizes).join('_');
+    const slaveSizes = parseSizesInput(bid.mediaTypes.banner.sizes).join('_');
     const rawSlaveId = bid.params.slaveId.replace('adocean', '');
     payload.aosspsizes.push(rawSlaveId + '~' + slaveSizes);
 
@@ -46,6 +50,30 @@ function buildRequest(masterBidRequests, masterId, gdprConsent) {
     data: '',
     bidIdMap: bidIdMap
   };
+}
+
+const SCHAIN_FIELDS = ['asi', 'sid', 'hp', 'rid', 'name', 'domain', 'ext'];
+function serializeSupplyChain(schain) {
+  const header = `${schain.ver},${schain.complete}!`;
+
+  const serializedNodes = [];
+  _each(schain.nodes, function(node) {
+    const serializedNode = SCHAIN_FIELDS
+      .map(fieldName => {
+        if (fieldName === 'ext') {
+          // do not serialize ext data, just mark if it was available
+          return ('ext' in node ? '1' : '0');
+        }
+        if (fieldName in node) {
+          return encodeURIComponent(node[fieldName]).replace(/!/g, '%21');
+        }
+        return '';
+      })
+      .join(',');
+    serializedNodes.push(serializedNode);
+  });
+
+  return header + serializedNodes.join('!');
 }
 
 function assignToMaster(bidRequest, bidRequestsByMaster) {
@@ -80,7 +108,10 @@ function interpretResponse(placementResponse, bidRequest, bids) {
       width: parseInt(placementResponse.width, 10),
       netRevenue: false,
       ttl: parseInt(placementResponse.ttl),
-      creativeId: placementResponse.crid
+      creativeId: placementResponse.crid,
+      meta: {
+        advertiserDomains: placementResponse.adomain || []
+      }
     };
 
     bids.push(bid);
@@ -92,7 +123,7 @@ export const spec = {
 
   isBidRequestValid: function(bid) {
     const requiredParams = ['slaveId', 'masterId', 'emiter'];
-    if (requiredParams.some(name => !utils.isStr(bid.params[name]) || !bid.params[name].length)) {
+    if (requiredParams.some(name => !isStr(bid.params[name]) || !bid.params[name].length)) {
       return false;
     }
 
@@ -103,12 +134,12 @@ export const spec = {
     const bidRequestsByMaster = {};
     let requests = [];
 
-    utils._each(validBidRequests, function(bidRequest) {
+    _each(validBidRequests, function(bidRequest) {
       assignToMaster(bidRequest, bidRequestsByMaster);
     });
 
-    utils._each(bidRequestsByMaster, function(masterRequests, masterId) {
-      utils._each(masterRequests, function(instanceRequests) {
+    _each(bidRequestsByMaster, function(masterRequests, masterId) {
+      _each(masterRequests, function(instanceRequests) {
         requests.push(buildRequest(instanceRequests, masterId, bidderRequest.gdprConsent));
       });
     });
@@ -119,8 +150,8 @@ export const spec = {
   interpretResponse: function(serverResponse, bidRequest) {
     let bids = [];
 
-    if (utils.isArray(serverResponse.body)) {
-      utils._each(serverResponse.body, function(placementResponse) {
+    if (isArray(serverResponse.body)) {
+      _each(serverResponse.body, function(placementResponse) {
         interpretResponse(placementResponse, bidRequest, bids);
       });
     }

@@ -5,24 +5,28 @@
  * @requires module:modules/userId
  */
 
-import * as utils from '../src/utils.js'
-import { ajax } from '../src/ajax.js';
-import { submodule } from '../src/hook.js';
-import { getRefererInfo } from '../src/refererDetection.js';
-import { uspDataHandler } from '../src/adapterManager.js';
-import { getStorageManager } from '../src/storageManager.js';
+// ci trigger: 1
+
+import {contains, deepClone, inIframe, isEmpty, isPlainObject, logError, logWarn, timestamp} from '../src/utils.js';
+import {find} from '../src/polyfill.js';
+import {ajax} from '../src/ajax.js';
+import {submodule} from '../src/hook.js';
+import {getRefererInfo} from '../src/refererDetection.js';
+import {uspDataHandler} from '../src/adapterManager.js';
+import {getStorageManager} from '../src/storageManager.js';
 
 const PARRABLE_URL = 'https://h.parrable.com/prebid';
 const PARRABLE_COOKIE_NAME = '_parrable_id';
+const PARRABLE_GVLID = 928;
 const LEGACY_ID_COOKIE_NAME = '_parrable_eid';
 const LEGACY_OPTOUT_COOKIE_NAME = '_parrable_optout';
 const ONE_YEAR_MS = 364 * 24 * 60 * 60 * 1000;
 const EXPIRE_COOKIE_DATE = 'Thu, 01 Jan 1970 00:00:00 GMT';
 
-const storage = getStorageManager();
+const storage = getStorageManager({gvlid: PARRABLE_GVLID});
 
 function getExpirationDate() {
-  const oneYearFromNow = new Date(utils.timestamp() + ONE_YEAR_MS);
+  const oneYearFromNow = new Date(timestamp() + ONE_YEAR_MS);
   return oneYearFromNow.toGMTString();
 }
 
@@ -32,24 +36,39 @@ function deserializeParrableId(parrableIdStr) {
 
   values.forEach(function(value) {
     const pair = value.split(':');
-    // unpack a value of 1 as true
-    parrableId[pair[0]] = +pair[1] === 1 ? true : pair[1];
+    if (pair[0] === 'ccpaOptout' || pair[0] === 'ibaOptout') { // unpack a value of 0 or 1 as boolean
+      parrableId[pair[0]] = Boolean(+pair[1]);
+    } else if (!isNaN(pair[1])) { // convert to number if is a number
+      parrableId[pair[0]] = +pair[1]
+    } else {
+      parrableId[pair[0]] = pair[1]
+    }
   });
 
   return parrableId;
 }
 
-function serializeParrableId(parrableId) {
+function serializeParrableId(parrableIdAndParams) {
   let components = [];
 
-  if (parrableId.eid) {
-    components.push('eid:' + parrableId.eid);
+  if (parrableIdAndParams.eid) {
+    components.push('eid:' + parrableIdAndParams.eid);
   }
-  if (parrableId.ibaOptout) {
+  if (parrableIdAndParams.ibaOptout) {
     components.push('ibaOptout:1');
   }
-  if (parrableId.ccpaOptout) {
+  if (parrableIdAndParams.ccpaOptout) {
     components.push('ccpaOptout:1');
+  }
+  if (parrableIdAndParams.tpcSupport !== undefined) {
+    const tpcSupportComponent = parrableIdAndParams.tpcSupport === true ? 'tpc:1' : 'tpc:0';
+    const tpcUntil = `tpcUntil:${parrableIdAndParams.tpcUntil}`;
+    components.push(tpcSupportComponent);
+    components.push(tpcUntil);
+  }
+  if (parrableIdAndParams.filteredUntil) {
+    components.push(`filteredUntil:${parrableIdAndParams.filteredUntil}`);
+    components.push(`filterHits:${parrableIdAndParams.filterHits}`);
   }
 
   return components.join(',');
@@ -57,30 +76,54 @@ function serializeParrableId(parrableId) {
 
 function isValidConfig(configParams) {
   if (!configParams) {
-    utils.logError('User ID - parrableId submodule requires configParams');
+    logError('User ID - parrableId submodule requires configParams');
     return false;
   }
-  if (!configParams.partner) {
-    utils.logError('User ID - parrableId submodule requires partner list');
+  if (!configParams.partners && !configParams.partner) {
+    logError('User ID - parrableId submodule requires partner list');
     return false;
   }
   if (configParams.storage) {
-    utils.logWarn('User ID - parrableId submodule does not require a storage config');
+    logWarn('User ID - parrableId submodule does not require a storage config');
   }
   return true;
+}
+
+function encodeBase64UrlSafe(base64) {
+  const ENC = {
+    '+': '-',
+    '/': '_',
+    '=': '.'
+  };
+  return base64.replace(/[+/=]/g, (m) => ENC[m]);
 }
 
 function readCookie() {
   const parrableIdStr = storage.getCookie(PARRABLE_COOKIE_NAME);
   if (parrableIdStr) {
-    return deserializeParrableId(decodeURIComponent(parrableIdStr));
+    const parsedCookie = deserializeParrableId(decodeURIComponent(parrableIdStr));
+    const { tpc, tpcUntil, filteredUntil, filterHits, ...parrableId } = parsedCookie;
+    let { eid, ibaOptout, ccpaOptout, ...params } = parsedCookie;
+
+    if ((Date.now() / 1000) >= tpcUntil) {
+      params.tpc = undefined;
+    }
+
+    if ((Date.now() / 1000) < filteredUntil) {
+      params.shouldFilter = true;
+      params.filteredUntil = filteredUntil;
+    } else {
+      params.shouldFilter = false;
+      params.filterHits = filterHits;
+    }
+    return { parrableId, params };
   }
   return null;
 }
 
-function writeCookie(parrableId) {
-  if (parrableId) {
-    const parrableIdStr = encodeURIComponent(serializeParrableId(parrableId));
+function writeCookie(parrableIdAndParams) {
+  if (parrableIdAndParams) {
+    const parrableIdStr = encodeURIComponent(serializeParrableId(parrableIdAndParams));
     storage.setCookie(PARRABLE_COOKIE_NAME, parrableIdStr, getExpirationDate(), 'lax');
   }
 }
@@ -127,41 +170,56 @@ function shouldFilterImpression(configParams, parrableId) {
   const offset = (new Date()).getTimezoneOffset() / 60;
   const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
+  function isZoneListed(list, zone) {
+    // IE does not provide a timeZone in IANA format so zone will be empty
+    const zoneLowercase = zone && zone.toLowerCase();
+    return !!(list && zone && find(list, zn => zn.toLowerCase() === zoneLowercase));
+  }
+
   function isAllowed() {
-    if (utils.isEmpty(config.allowedZones) &&
-      utils.isEmpty(config.allowedOffsets)) {
+    if (isEmpty(config.allowedZones) &&
+      isEmpty(config.allowedOffsets)) {
       return true;
     }
-    if (utils.contains(config.allowedZones, zone)) {
+    if (isZoneListed(config.allowedZones, zone)) {
       return true;
     }
-    if (utils.contains(config.allowedOffsets, offset)) {
+    if (contains(config.allowedOffsets, offset)) {
       return true;
     }
     return false;
   }
 
   function isBlocked() {
-    if (utils.isEmpty(config.blockedZones) &&
-      utils.isEmpty(config.blockedOffsets)) {
+    if (isEmpty(config.blockedZones) &&
+      isEmpty(config.blockedOffsets)) {
       return false;
     }
-    if (utils.contains(config.blockedZones, zone)) {
+    if (isZoneListed(config.blockedZones, zone)) {
       return true;
     }
-    if (utils.contains(config.blockedOffsets, offset)) {
+    if (contains(config.blockedOffsets, offset)) {
       return true;
     }
     return false;
   }
 
-  return !isAllowed() || isBlocked();
+  return isBlocked() || !isAllowed();
 }
 
-function fetchId(configParams) {
+function epochFromTtl(ttl) {
+  return Math.floor((Date.now() / 1000) + ttl);
+}
+
+function incrementFilterHits(parrableId, params) {
+  params.filterHits += 1;
+  writeCookie({ ...parrableId, ...params })
+}
+
+function fetchId(configParams, gdprConsentData) {
   if (!isValidConfig(configParams)) return;
 
-  let parrableId = readCookie();
+  let { parrableId, params } = readCookie() || {};
   if (!parrableId) {
     parrableId = readLegacyCookies();
     migrateLegacyCookies(parrableId);
@@ -171,23 +229,43 @@ function fetchId(configParams) {
     return null;
   }
 
-  const eid = (parrableId) ? parrableId.eid : null;
+  const eid = parrableId ? parrableId.eid : null;
   const refererInfo = getRefererInfo();
+  const tpcSupport = params ? params.tpc : null;
+  const shouldFilter = params ? params.shouldFilter : null;
   const uspString = uspDataHandler.getConsentData();
+  const gdprApplies = (gdprConsentData && typeof gdprConsentData.gdprApplies === 'boolean' && gdprConsentData.gdprApplies);
+  const gdprConsentString = (gdprConsentData && gdprApplies && gdprConsentData.consentString) || '';
+  const partners = configParams.partners || configParams.partner;
+  const trackers = typeof partners === 'string'
+    ? partners.split(',')
+    : partners;
 
   const data = {
     eid,
-    trackers: configParams.partner.split(','),
-    url: refererInfo.referer
+    trackers,
+    url: refererInfo.page,
+    prebidVersion: '$prebid.version$',
+    isIframe: inIframe(),
+    tpcSupport
   };
 
+  if (shouldFilter === false) {
+    data.filterHits = params.filterHits;
+  }
+
   const searchParams = {
-    data: btoa(JSON.stringify(data)),
+    data: encodeBase64UrlSafe(btoa(JSON.stringify(data))),
+    gdpr: gdprApplies ? 1 : 0,
     _rand: Math.random()
   };
 
   if (uspString) {
     searchParams.us_privacy = uspString;
+  }
+
+  if (gdprApplies) {
+    searchParams.gdpr_consent = gdprConsentString;
   }
 
   const options = {
@@ -198,7 +276,8 @@ function fetchId(configParams) {
   const callback = function (cb) {
     const callbacks = {
       success: response => {
-        let newParrableId = parrableId ? utils.deepClone(parrableId) : {};
+        let newParrableId = parrableId ? deepClone(parrableId) : {};
+        let newParams = {};
         if (response) {
           try {
             let responseObj = JSON.parse(response);
@@ -212,31 +291,44 @@ function fetchId(configParams) {
               if (responseObj.ibaOptout === true) {
                 newParrableId.ibaOptout = true;
               }
+              if (responseObj.tpcSupport !== undefined) {
+                newParams.tpcSupport = responseObj.tpcSupport;
+                newParams.tpcUntil = epochFromTtl(responseObj.tpcSupportTtl);
+              }
+              if (responseObj.filterTtl) {
+                newParams.filteredUntil = epochFromTtl(responseObj.filterTtl);
+                newParams.filterHits = 0;
+              }
             }
           } catch (error) {
-            utils.logError(error);
+            logError(error);
             cb();
           }
-          writeCookie(newParrableId);
+          writeCookie({ ...newParrableId, ...newParams });
           cb(newParrableId);
         } else {
-          utils.logError('parrableId: ID fetch returned an empty result');
+          logError('parrableId: ID fetch returned an empty result');
           cb();
         }
       },
       error: error => {
-        utils.logError(`parrableId: ID fetch encountered an error`, error);
+        logError(`parrableId: ID fetch encountered an error`, error);
         cb();
       }
     };
-    ajax(PARRABLE_URL, callbacks, searchParams, options);
+
+    if (shouldFilter) {
+      incrementFilterHits(parrableId, params);
+    } else {
+      ajax(PARRABLE_URL, callbacks, searchParams, options);
+    }
   };
 
   return {
     callback,
     id: parrableId
   };
-};
+}
 
 /** @type {Submodule} */
 export const parrableIdSubmodule = {
@@ -246,13 +338,19 @@ export const parrableIdSubmodule = {
    */
   name: 'parrableId',
   /**
+   * Global Vendor List ID
+   * @type {number}
+   */
+  gvlid: PARRABLE_GVLID,
+
+  /**
    * decode the stored id value for passing to bid requests
    * @function
    * @param {ParrableId} parrableId
    * @return {(Object|undefined}
    */
   decode(parrableId) {
-    if (parrableId && utils.isPlainObject(parrableId)) {
+    if (parrableId && isPlainObject(parrableId)) {
       return { parrableId };
     }
     return undefined;
@@ -267,7 +365,7 @@ export const parrableIdSubmodule = {
    */
   getId(config, gdprConsentData, currentStoredId) {
     const configParams = (config && config.params) || {};
-    return fetchId(configParams);
+    return fetchId(configParams, gdprConsentData);
   }
 };
 

@@ -1,13 +1,17 @@
+import { tryAppendQueryString, logMessage, logError, isEmpty, isStr, isPlainObject, isArray, logWarn } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 const GVLID = 28;
 const BIDDER_CODE = 'triplelift';
 const STR_ENDPOINT = 'https://tlx.3lift.com/header/auction?';
+const BANNER_TIME_TO_LIVE = 300;
+const INSTREAM_TIME_TO_LIVE = 3600;
 let gdprApplies = true;
 let consentString = null;
+export const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
 
 export const tripleliftAdapterSpec = {
   gvlid: GVLID,
@@ -19,43 +23,43 @@ export const tripleliftAdapterSpec = {
 
   buildRequests: function(bidRequests, bidderRequest) {
     let tlCall = STR_ENDPOINT;
-    let data = _buildPostBody(bidRequests);
+    let data = _buildPostBody(bidRequests, bidderRequest);
 
-    tlCall = utils.tryAppendQueryString(tlCall, 'lib', 'prebid');
-    tlCall = utils.tryAppendQueryString(tlCall, 'v', '$prebid.version$');
+    tlCall = tryAppendQueryString(tlCall, 'lib', 'prebid');
+    tlCall = tryAppendQueryString(tlCall, 'v', '$prebid.version$');
 
     if (bidderRequest && bidderRequest.refererInfo) {
-      let referrer = bidderRequest.refererInfo.referer;
-      tlCall = utils.tryAppendQueryString(tlCall, 'referrer', referrer);
+      let referrer = bidderRequest.refererInfo.page;
+      tlCall = tryAppendQueryString(tlCall, 'referrer', referrer);
     }
 
     if (bidderRequest && bidderRequest.timeout) {
-      tlCall = utils.tryAppendQueryString(tlCall, 'tmax', bidderRequest.timeout);
+      tlCall = tryAppendQueryString(tlCall, 'tmax', bidderRequest.timeout);
     }
 
     if (bidderRequest && bidderRequest.gdprConsent) {
       if (typeof bidderRequest.gdprConsent.gdprApplies !== 'undefined') {
         gdprApplies = bidderRequest.gdprConsent.gdprApplies;
-        tlCall = utils.tryAppendQueryString(tlCall, 'gdpr', gdprApplies.toString());
+        tlCall = tryAppendQueryString(tlCall, 'gdpr', gdprApplies.toString());
       }
       if (typeof bidderRequest.gdprConsent.consentString !== 'undefined') {
         consentString = bidderRequest.gdprConsent.consentString;
-        tlCall = utils.tryAppendQueryString(tlCall, 'cmp_cs', consentString);
+        tlCall = tryAppendQueryString(tlCall, 'cmp_cs', consentString);
       }
     }
 
     if (bidderRequest && bidderRequest.uspConsent) {
-      tlCall = utils.tryAppendQueryString(tlCall, 'us_privacy', bidderRequest.uspConsent);
+      tlCall = tryAppendQueryString(tlCall, 'us_privacy', bidderRequest.uspConsent);
     }
 
     if (config.getConfig('coppa') === true) {
-      tlCall = utils.tryAppendQueryString(tlCall, 'coppa', true);
+      tlCall = tryAppendQueryString(tlCall, 'coppa', true);
     }
 
     if (tlCall.lastIndexOf('&') === tlCall.length - 1) {
       tlCall = tlCall.substring(0, tlCall.length - 1);
     }
-    utils.logMessage('tlCall request built: ' + tlCall);
+    logMessage('tlCall request built: ' + tlCall);
 
     return {
       method: 'POST',
@@ -79,17 +83,17 @@ export const tripleliftAdapterSpec = {
     let syncEndpoint = 'https://eb2.3lift.com/sync?';
 
     if (syncType === 'image') {
-      syncEndpoint = utils.tryAppendQueryString(syncEndpoint, 'px', 1);
-      syncEndpoint = utils.tryAppendQueryString(syncEndpoint, 'src', 'prebid');
+      syncEndpoint = tryAppendQueryString(syncEndpoint, 'px', 1);
+      syncEndpoint = tryAppendQueryString(syncEndpoint, 'src', 'prebid');
     }
 
     if (consentString !== null) {
-      syncEndpoint = utils.tryAppendQueryString(syncEndpoint, 'gdpr', gdprApplies);
-      syncEndpoint = utils.tryAppendQueryString(syncEndpoint, 'cmp_cs', consentString);
+      syncEndpoint = tryAppendQueryString(syncEndpoint, 'gdpr', gdprApplies);
+      syncEndpoint = tryAppendQueryString(syncEndpoint, 'cmp_cs', consentString);
     }
 
     if (usPrivacy) {
-      syncEndpoint = utils.tryAppendQueryString(syncEndpoint, 'us_privacy', usPrivacy);
+      syncEndpoint = tryAppendQueryString(syncEndpoint, 'us_privacy', usPrivacy);
     }
 
     return [{
@@ -105,10 +109,10 @@ function _getSyncType(syncOptions) {
   if (syncOptions.pixelEnabled) return 'image';
 }
 
-function _buildPostBody(bidRequests) {
+function _buildPostBody(bidRequests, bidderRequest) {
   let data = {};
   let { schain } = bidRequests[0];
-  const globalFpd = _getGlobalFpd();
+  const globalFpd = _getGlobalFpd(bidderRequest);
 
   data.imp = bidRequests.map(function(bidRequest, index) {
     let imp = {
@@ -122,13 +126,17 @@ function _buildPostBody(bidRequests) {
     } else if (bidRequest.mediaTypes.banner) {
       imp.banner = { format: _sizes(bidRequest.sizes) };
     };
+    if (!isEmpty(bidRequest.ortb2Imp)) {
+      imp.fpd = _getAdUnitFpd(bidRequest.ortb2Imp);
+    }
     return imp;
   });
 
   let eids = [
-    ...getUnifiedIdEids(bidRequests),
-    ...getIdentityLinkEids(bidRequests),
-    ...getCriteoEids(bidRequests)
+    ...getUnifiedIdEids([bidRequests[0]]),
+    ...getIdentityLinkEids([bidRequests[0]]),
+    ...getCriteoEids([bidRequests[0]]),
+    ...getPubCommonEids([bidRequests[0]])
   ];
 
   if (eids.length > 0) {
@@ -139,7 +147,7 @@ function _buildPostBody(bidRequests) {
 
   let ext = _getExt(schain, globalFpd);
 
-  if (!utils.isEmpty(ext)) {
+  if (!isEmpty(ext)) {
     data.ext = ext;
   }
   return data;
@@ -169,32 +177,84 @@ function _getORTBVideo(bidRequest) {
 function _getFloor (bid) {
   let floor = null;
   if (typeof bid.getFloor === 'function') {
-    const floorInfo = bid.getFloor({
-      currency: 'USD',
-      mediaType: 'banner',
-      size: _sizes(bid.sizes)
-    });
-    if (typeof floorInfo === 'object' &&
-    floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
-      floor = parseFloat(floorInfo.floor);
+    try {
+      const floorInfo = bid.getFloor({
+        currency: 'USD',
+        mediaType: _isInstreamBidRequest(bid) ? 'video' : 'banner',
+        size: '*'
+      });
+      if (typeof floorInfo === 'object' &&
+      floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
+        floor = parseFloat(floorInfo.floor);
+      }
+    } catch (err) {
+      logError('Triplelift: getFloor threw an error: ', err);
     }
   }
   return floor !== null ? floor : bid.params.floor;
 }
 
-function _getGlobalFpd() {
-  let fpd = {};
-  const fpdContext = Object.assign({}, config.getConfig('fpd.context'));
-  const fpdUser = Object.assign({}, config.getConfig('fpd.user'));
+function _getGlobalFpd(bidderRequest) {
+  const fpd = {};
+  const context = {}
+  const user = {};
+  const ortbData = bidderRequest.ortb2 || {};
+  const opeCloudStorage = _fetchOpeCloud();
 
-  _addEntries(fpd, fpdContext);
-  _addEntries(fpd, fpdUser);
+  const fpdContext = Object.assign({}, ortbData.site);
+  const fpdUser = Object.assign({}, ortbData.user);
+
+  if (opeCloudStorage) {
+    fpdUser.data = fpdUser.data || []
+    try {
+      fpdUser.data.push({
+        name: 'www.1plusx.com',
+        ext: opeCloudStorage
+      })
+    } catch (err) {
+      logError('Triplelift: error adding 1plusX segments: ', err);
+    }
+  }
+
+  _addEntries(context, fpdContext);
+  _addEntries(user, fpdUser);
+
+  if (!isEmpty(context)) {
+    fpd.context = context;
+  }
+  if (!isEmpty(user)) {
+    fpd.user = user;
+  }
+  return fpd;
+}
+
+function _fetchOpeCloud() {
+  const opeCloud = storage.getDataFromLocalStorage('opecloud_ctx');
+  if (!opeCloud) return null;
+  try {
+    const parsedJson = JSON.parse(opeCloud);
+    return parsedJson
+  } catch (err) {
+    logError('Triplelift: error parsing JSON: ', err);
+    return null
+  }
+}
+
+function _getAdUnitFpd(adUnitFpd) {
+  const fpd = {};
+  const context = {};
+
+  _addEntries(context, adUnitFpd.ext);
+
+  if (!isEmpty(context)) {
+    fpd.context = context;
+  }
 
   return fpd;
 }
 
 function _addEntries(target, source) {
-  if (!utils.isEmpty(source)) {
+  if (!isEmpty(source)) {
     Object.keys(source).forEach(key => {
       if (source[key] != null) {
         target[key] = source[key];
@@ -205,43 +265,64 @@ function _addEntries(target, source) {
 
 function _getExt(schain, fpd) {
   let ext = {};
-  if (!utils.isEmpty(schain)) {
+  if (!isEmpty(schain)) {
     ext.schain = { ...schain };
   }
-  if (!utils.isEmpty(fpd)) {
+  if (!isEmpty(fpd)) {
     ext.fpd = { ...fpd };
   }
   return ext;
 }
 
-function getUnifiedIdEids(bidRequests) {
-  return getEids(bidRequests, 'tdid', 'adserver.org', 'TDID');
+function getUnifiedIdEids(bidRequest) {
+  return getEids(bidRequest, 'tdid', 'adserver.org', 'TDID');
 }
 
-function getIdentityLinkEids(bidRequests) {
-  return getEids(bidRequests, 'idl_env', 'liveramp.com', 'idl');
+function getIdentityLinkEids(bidRequest) {
+  return getEids(bidRequest, 'idl_env', 'liveramp.com', 'idl');
 }
 
-function getCriteoEids(bidRequests) {
-  return getEids(bidRequests, 'criteoId', 'criteo.com', 'criteoId');
+function getCriteoEids(bidRequest) {
+  return getEids(bidRequest, 'criteoId', 'criteo.com', 'criteoId');
 }
 
-function getEids(bidRequests, type, source, rtiPartner) {
-  return bidRequests
+function getPubCommonEids(bidRequest) {
+  return getEids(bidRequest, 'pubcid', 'pubcid.org', 'pubcid');
+}
+
+function getEids(bidRequest, type, source, rtiPartner) {
+  return bidRequest
     .map(getUserId(type)) // bids -> userIds of a certain type
-    .filter((x) => !!x) // filter out null userIds
+    .filter(filterEids(type)) // filter out unqualified userIds
     .map(formatEid(source, rtiPartner)); // userIds -> eid objects
 }
 
+const filterEids = type => (userId, i, arr) => {
+  let isValidUserId =
+    !!userId && // is not null nor empty
+    (isStr(userId)
+      ? !!userId
+      : isPlainObject(userId) && // or, is object
+        !isArray(userId) && // not an array
+        !isEmpty(userId) && // is not empty
+        userId.id && // contains nested id field
+        isStr(userId.id) && // nested id field is a string
+        !!userId.id); // that is not empty
+  if (!isValidUserId && arr[0] !== undefined) {
+    logWarn(`Triplelift: invalid ${type} userId format`);
+  }
+  return isValidUserId;
+};
+
 function getUserId(type) {
-  return (bid) => (bid && bid.userId && bid.userId[type]);
+  return bid => bid && bid.userId && bid.userId[type];
 }
 
 function formatEid(source, rtiPartner) {
-  return (id) => ({
+  return (userId) => ({
     source,
     uids: [{
-      id,
+      id: userId.id ? userId.id : userId,
       ext: { rtiPartner }
     }]
   });
@@ -280,7 +361,7 @@ function _buildResponseObject(bidderRequest, bid) {
       creativeId: creativeId,
       dealId: dealId,
       currency: 'USD',
-      ttl: 300,
+      ttl: BANNER_TIME_TO_LIVE,
       tl_source: bid.tl_source,
       meta: {}
     };
@@ -288,10 +369,23 @@ function _buildResponseObject(bidderRequest, bid) {
     if (_isInstreamBidRequest(breq)) {
       bidResponse.vastXml = bid.ad;
       bidResponse.mediaType = 'video';
+      bidResponse.ttl = INSTREAM_TIME_TO_LIVE;
     };
 
     if (bid.advertiser_name) {
       bidResponse.meta.advertiserName = bid.advertiser_name;
+    }
+
+    if (bid.adomain && bid.adomain.length) {
+      bidResponse.meta.advertiserDomains = bid.adomain;
+    }
+
+    if (bid.tl_source && bid.tl_source == 'hdx') {
+      bidResponse.meta.mediaType = 'banner';
+    }
+
+    if (bid.tl_source && bid.tl_source == 'tlx') {
+      bidResponse.meta.mediaType = 'native';
     }
   };
   return bidResponse;

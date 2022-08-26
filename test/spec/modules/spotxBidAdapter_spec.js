@@ -96,13 +96,17 @@ describe('the spotx adapter', function () {
 
     beforeEach(function() {
       bid = getValidBidObject();
-      bidRequestObj = {refererInfo: {referer: 'prebid.js'}};
+      bidRequestObj = {
+        refererInfo: {
+          page: 'prebid.js'
+        }
+      };
     });
 
     it('should build a very basic request', function() {
       var request = spec.buildRequests([bid], bidRequestObj)[0];
       expect(request.method).to.equal('POST');
-      expect(request.url).to.equal('https://search.spotxchange.com/openrtb/2.3/dados/12345');
+      expect(request.url).to.equal('https://search.spotxchange.com/openrtb/2.3/dados/12345?src_sys=prebid');
       expect(request.bidRequest).to.equal(bidRequestObj);
       expect(request.data.id).to.equal(12345);
       expect(request.data.ext.wrap_response).to.equal(1);
@@ -144,7 +148,6 @@ describe('the spotx adapter', function () {
         outstream_options: {foo: 'bar'},
         outstream_function: '987',
         custom: {bar: 'foo'},
-        price_floor: 123,
         start_delay: true,
         number_of_ads: 2,
         spotx_all_google_consent: 1,
@@ -194,7 +197,6 @@ describe('the spotx adapter', function () {
       });
 
       expect(request.data.imp.video.startdelay).to.equal(1);
-      expect(request.data.imp.bidfloor).to.equal(123);
       expect(request.data.ext).to.deep.equal({
         number_of_ads: 2,
         wrap_response: 1
@@ -204,9 +206,9 @@ describe('the spotx adapter', function () {
         eids: [{
           source: 'id5-sync.com',
           uids: [{
-            id: 'id5id_1'
-          }],
-          ext: {}
+            id: 'id5id_1',
+            ext: {}
+          }]
         },
         {
           source: 'adserver.org',
@@ -355,29 +357,74 @@ describe('the spotx adapter', function () {
       config.getConfig.restore();
     });
 
-    it('should use pageUrl from config if page param is not passed', function() {
+    it('should use refererInfo.referer if no page is passed', function() {
+      var request;
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.site.page).to.equal('prebid.js');
+    });
+
+    it('should set ext.wrap_response to 0 when cache url is set and ignoreBidderCacheKey is true', function() {
       var request;
 
       var origGetConfig = config.getConfig;
       sinon.stub(config, 'getConfig').callsFake(function (key) {
-        if (key === 'pageUrl') {
-          return 'https://www.spotx.tv';
+        if (key === 'cache') {
+          return {
+            url: 'prebidCacheLocation',
+            ignoreBidderCacheKey: true
+          };
+        }
+        if (key === 'cache.url') {
+          return 'prebidCacheLocation';
+        }
+        if (key === 'cache.ignoreBidderCacheKey') {
+          return true;
         }
         return origGetConfig.apply(config, arguments);
       });
 
       request = spec.buildRequests([bid], bidRequestObj)[0];
 
-      expect(request.data.site.page).to.equal('https://www.spotx.tv');
+      expect(request.data.ext.wrap_response).to.equal(0);
       config.getConfig.restore();
     });
 
-    it('should use refererInfo.referer if no page or pageUrl are passed', function() {
+    it('should pass price floor in USD from the floors module if available', function () {
       var request;
+
+      bid.getFloor = function () {
+        return { currency: 'USD', floor: 3 };
+      }
+
+      bid.params.price_floor = 2;
 
       request = spec.buildRequests([bid], bidRequestObj)[0];
 
-      expect(request.data.site.page).to.equal('prebid.js');
+      expect(request.data.imp.bidfloor).to.equal(3);
+    });
+
+    it('should not pass price floor if price floors module gives a non-USD currency', function () {
+      var request;
+
+      bid.getFloor = function () {
+        return { currency: 'EUR', floor: 3 };
+      }
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.imp.bidfloor).to.be.undefined;
+    });
+
+    it('if floors module is not available, should pass price floor from price_floor param if available', function () {
+      var request;
+
+      bid.params.price_floor = 2;
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.imp.bidfloor).to.equal(2);
     });
   });
 
@@ -488,7 +535,7 @@ describe('the spotx adapter', function () {
     });
   });
 
-  describe('oustreamRender', function() {
+  describe('outstreamRender', function() {
     var serverResponse, bidderRequestObj;
 
     beforeEach(function() {
@@ -545,7 +592,7 @@ describe('the spotx adapter', function () {
     it('should attempt to insert the EASI script', function() {
       var scriptTag;
       sinon.stub(window.document, 'getElementById').returns({
-        appendChild: sinon.stub().callsFake(function(script) { scriptTag = script })
+        appendChild: sinon.stub().callsFake(function(script) { scriptTag = script; })
       });
       var responses = spec.interpretResponse(serverResponse, bidderRequestObj);
 
@@ -573,7 +620,7 @@ describe('the spotx adapter', function () {
         nodeName: 'IFRAME',
         contentDocument: {
           body: {
-            appendChild: sinon.stub().callsFake(function(script) { scriptTag = script })
+            appendChild: sinon.stub().callsFake(function(script) { scriptTag = script; })
           }
         }
       });
@@ -596,6 +643,43 @@ describe('the spotx adapter', function () {
       expect(scriptTag.getAttribute('data-spotx_digitrust_opt_out')).to.equal('1');
       expect(scriptTag.getAttribute('data-spotx_content_width')).to.equal('400');
       expect(scriptTag.getAttribute('data-spotx_content_height')).to.equal('300');
+      window.document.getElementById.restore();
+    });
+
+    it('should adjust width and height to match slot clientWidth if playersize_auto_adapt is used', function() {
+      var scriptTag;
+      sinon.stub(window.document, 'getElementById').returns({
+        clientWidth: 200,
+        appendChild: sinon.stub().callsFake(function(script) { scriptTag = script; })
+      });
+      var responses = spec.interpretResponse(serverResponse, bidderRequestObj);
+
+      responses[0].renderer.render(responses[0]);
+
+      expect(scriptTag.getAttribute('type')).to.equal('text/javascript');
+      expect(scriptTag.getAttribute('src')).to.equal('https://js.spotx.tv/easi/v1/12345.js');
+      expect(scriptTag.getAttribute('data-spotx_content_width')).to.equal('200');
+      expect(scriptTag.getAttribute('data-spotx_content_height')).to.equal('150');
+      window.document.getElementById.restore();
+    });
+
+    it('should use a default 4/3 ratio if playersize_auto_adapt is used and response does not contain width or height', function() {
+      delete serverResponse.body.seatbid[0].bid[0].w;
+      delete serverResponse.body.seatbid[0].bid[0].h;
+
+      var scriptTag;
+      sinon.stub(window.document, 'getElementById').returns({
+        clientWidth: 200,
+        appendChild: sinon.stub().callsFake(function(script) { scriptTag = script; })
+      });
+      var responses = spec.interpretResponse(serverResponse, bidderRequestObj);
+
+      responses[0].renderer.render(responses[0]);
+
+      expect(scriptTag.getAttribute('type')).to.equal('text/javascript');
+      expect(scriptTag.getAttribute('src')).to.equal('https://js.spotx.tv/easi/v1/12345.js');
+      expect(scriptTag.getAttribute('data-spotx_content_width')).to.equal('200');
+      expect(scriptTag.getAttribute('data-spotx_content_height')).to.equal('150');
       window.document.getElementById.restore();
     });
   });

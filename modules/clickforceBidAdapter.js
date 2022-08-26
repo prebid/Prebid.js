@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { _each } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
 const BIDDER_CODE = 'clickforce';
@@ -25,7 +25,7 @@ export const spec = {
    */
   buildRequests: function(validBidRequests) {
     const bidParams = [];
-    utils._each(validBidRequests, function(bid) {
+    _each(validBidRequests, function(bid) {
       bidParams.push({
         z: bid.params.zone,
         bidId: bid.bidId
@@ -51,12 +51,12 @@ export const spec = {
     const bidRequestList = [];
 
     if (typeof bidRequest != 'undefined') {
-      utils._each(bidRequest.validBidRequests, function(req) {
+      _each(bidRequest.validBidRequests, function(req) {
         bidRequestList[req.bidId] = req;
       });
     }
 
-    utils._each(serverResponse.body, function(response) {
+    _each(serverResponse.body, function(response) {
       if (response.requestId != null) {
         // native ad size
         if (response.width == 3) {
@@ -88,6 +88,9 @@ export const spec = {
               impressionTrackers: response.tag.iu,
             },
             mediaType: 'native',
+            meta: {
+              advertiserDomains: response.adomain || []
+            },
           });
         } else {
           // display ad
@@ -102,6 +105,9 @@ export const spec = {
             ttl: response.ttl,
             ad: response.tag,
             mediaType: 'banner',
+            meta: {
+              advertiserDomains: response.adomain || []
+            },
           });
         }
       }

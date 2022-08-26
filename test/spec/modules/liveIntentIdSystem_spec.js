@@ -2,7 +2,8 @@ import { liveIntentIdSubmodule, reset as resetLiveIntentIdSubmodule, storage } f
 import * as utils from 'src/utils.js';
 import { gdprDataHandler, uspDataHandler } from '../../../src/adapterManager.js';
 import { server } from 'test/mocks/xhr.js';
-
+resetLiveIntentIdSubmodule();
+liveIntentIdSubmodule.setModuleMode('standard')
 const PUBLISHER_ID = '89899';
 const defaultConfigParams = { params: {publisherId: PUBLISHER_ID} };
 const responseHeader = {'Content-Type': 'application/json'}
@@ -16,6 +17,7 @@ describe('LiveIntentId', function() {
   let imgStub;
 
   beforeEach(function() {
+    liveIntentIdSubmodule.setModuleMode('standard');
     imgStub = sinon.stub(utils, 'triggerPixel');
     getCookieStub = sinon.stub(storage, 'getCookie');
     getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
@@ -34,7 +36,7 @@ describe('LiveIntentId', function() {
     resetLiveIntentIdSubmodule();
   });
 
-  it('should initialize LiveConnect with a privacy string when getId, and include it in the resolution request', function() {
+  it('should initialize LiveConnect with a privacy string when getId, and include it in the resolution request', function () {
     uspConsentDataStub.returns('1YNY');
     gdprConsentDataStub.returns({
       gdprApplies: true,
@@ -44,13 +46,17 @@ describe('LiveIntentId', function() {
     let submoduleCallback = liveIntentIdSubmodule.getId(defaultConfigParams).callback;
     submoduleCallback(callBackSpy);
     let request = server.requests[1];
-    expect(request.url).to.match(/.*us_privacy=1YNY.*&gdpr=1&gdpr_consent=consentDataString.*/);
+    expect(request.url).to.match(/.*us_privacy=1YNY.*&gdpr=1&n3pc=1&gdpr_consent=consentDataString.*/);
+    const response = {
+      unifiedId: 'a_unified_id',
+      segments: [123, 234]
+    }
     request.respond(
       200,
       responseHeader,
-      JSON.stringify({})
+      JSON.stringify(response)
     );
-    expect(callBackSpy.calledOnce).to.be.true;
+    expect(callBackSpy.calledOnceWith(response)).to.be.true;
   });
 
   it('should fire an event when getId', function() {
@@ -60,7 +66,7 @@ describe('LiveIntentId', function() {
       consentString: 'consentDataString'
     })
     liveIntentIdSubmodule.getId(defaultConfigParams);
-    expect(server.requests[0].url).to.match(/https:\/\/rp.liadm.com\/j\?wpn=prebid.*us_privacy=1YNY.*&gdpr=1&gdpr_consent=consentDataString.*/);
+    expect(server.requests[0].url).to.match(/https:\/\/rp.liadm.com\/j\?.*&us_privacy=1YNY.*&wpn=prebid.*&gdpr=1&n3pc=1&n3pct=1&nb=1&gdpr_consent=consentDataString.*/);
   });
 
   it('should fire an event when getId and a hash is provided', function() {
@@ -82,7 +88,7 @@ describe('LiveIntentId', function() {
         }
       }
     }});
-    expect(server.requests[0].url).to.match(/https:\/\/collector.liveintent.com\/j\?aid=a-0001&wpn=prebid.*/);
+    expect(server.requests[0].url).to.match(/https:\/\/collector.liveintent.com\/j\?.*aid=a-0001.*&wpn=prebid.*/);
   });
 
   it('should initialize LiveConnect and emit an event with a privacy string when decode', function() {
@@ -129,11 +135,10 @@ describe('LiveIntentId', function() {
     let request = server.requests[1];
     expect(request.url).to.be.eq('https://dummy.liveintent.com/idex/prebid/89899');
     request.respond(
-      200,
-      responseHeader,
-      JSON.stringify({})
+      204,
+      responseHeader
     );
-    expect(callBackSpy.calledOnce).to.be.true;
+    expect(callBackSpy.calledOnceWith({})).to.be.true;
   });
 
   it('should call the default url of the LiveIntent Identity Exchange endpoint, with a partner', function() {
@@ -190,7 +195,7 @@ describe('LiveIntentId', function() {
 
   it('should include the LiveConnect identifier when calling the LiveIntent Identity Exchange endpoint', function() {
     const oldCookie = 'a-xxxx--123e4567-e89b-12d3-a456-426655440000'
-    getDataFromLocalStorageStub.withArgs('_li_duid').returns(oldCookie);
+    getCookieStub.withArgs('_lc2_fpi').returns(oldCookie)
     let callBackSpy = sinon.spy();
     let submoduleCallback = liveIntentIdSubmodule.getId(defaultConfigParams).callback;
     submoduleCallback(callBackSpy);
@@ -206,7 +211,7 @@ describe('LiveIntentId', function() {
 
   it('should include the LiveConnect identifier and additional Identifiers to resolve', function() {
     const oldCookie = 'a-xxxx--123e4567-e89b-12d3-a456-426655440000'
-    getDataFromLocalStorageStub.withArgs('_li_duid').returns(oldCookie);
+    getCookieStub.withArgs('_lc2_fpi').returns(oldCookie);
     getDataFromLocalStorageStub.withArgs('_thirdPC').returns('third-pc');
     const configParams = { params: {
       ...defaultConfigParams.params,

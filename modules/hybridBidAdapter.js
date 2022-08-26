@@ -1,9 +1,9 @@
-import * as utils from '../src/utils.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { auctionManager } from '../src/auctionManager.js'
-import { BANNER, VIDEO } from '../src/mediaTypes.js'
+import {_map, deepAccess, isArray, logWarn} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {auctionManager} from '../src/auctionManager.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
-import find from 'core-js-pure/features/array/find.js';
+import {find} from '../src/polyfill.js';
 
 const BIDDER_CODE = 'hybrid';
 const DSP_ENDPOINT = 'https://hbe198.hybrid.ai/prebidhb';
@@ -21,7 +21,7 @@ const placementTypes = {
 };
 
 function buildBidRequests(validBidRequests) {
-  return utils._map(validBidRequests, function(validBidRequest) {
+  return _map(validBidRequests, function(validBidRequest) {
     const params = validBidRequest.params;
     const bidRequest = {
       bidId: validBidRequest.bidId,
@@ -63,7 +63,7 @@ const createRenderer = (bid) => {
   try {
     renderer.setRender(outstreamRender);
   } catch (err) {
-    utils.logWarn('Prebid Error calling setRender on renderer', err);
+    logWarn('Prebid Error calling setRender on renderer', err);
   }
 
   return renderer;
@@ -78,7 +78,10 @@ function buildBid(bidData) {
     creativeId: bidData.bidId,
     currency: bidData.currency,
     netRevenue: true,
-    ttl: TTL
+    ttl: TTL,
+    meta: {
+      advertiserDomains: bidData.advertiserDomains || [],
+    }
   };
 
   if (bidData.placement === PLACEMENT_TYPE_VIDEO) {
@@ -140,8 +143,8 @@ function hasVideoMandatoryParams(mediaTypes) {
   const isHasVideoContext = !!mediaTypes.video && (mediaTypes.video.context === 'instream' || mediaTypes.video.context === 'outstream');
 
   const isPlayerSize =
-    !!utils.deepAccess(mediaTypes, 'video.playerSize') &&
-    utils.isArray(utils.deepAccess(mediaTypes, 'video.playerSize'));
+    !!deepAccess(mediaTypes, 'video.playerSize') &&
+    isArray(deepAccess(mediaTypes, 'video.playerSize'));
 
   return isHasVideoContext && isPlayerSize;
 }
@@ -164,7 +167,7 @@ function wrapAd(bid, bidData) {
                 parentDocument.style.width = "100%";
             }
             var _content = "${encodeURIComponent(JSON.stringify(bid.inImageContent))}";
-            window._ao_ssp.registerInImage(JSON.parse(decodeURIComponent(_content)));
+            window._hyb_prebid_ssp.registerInImage(JSON.parse(decodeURIComponent(_content)));
         </script>
     </body>
   </html>`;
@@ -201,7 +204,8 @@ export const spec = {
    */
   buildRequests(validBidRequests, bidderRequest) {
     const payload = {
-      url: bidderRequest.refererInfo.referer,
+      // TODO: is 'page' the right value here?
+      url: bidderRequest.refererInfo.page,
       cmp: !!bidderRequest.gdprConsent,
       trafficType: TRAFFIC_TYPE_WEB,
       bidRequests: buildBidRequests(validBidRequests)
@@ -234,8 +238,8 @@ export const spec = {
     let bidRequests = JSON.parse(bidRequest.data).bidRequests;
     const serverBody = serverResponse.body;
 
-    if (serverBody && serverBody.bids && utils.isArray(serverBody.bids)) {
-      return utils._map(serverBody.bids, function(bid) {
+    if (serverBody && serverBody.bids && isArray(serverBody.bids)) {
+      return _map(serverBody.bids, function(bid) {
         let rawBid = find(bidRequests, function (item) {
           return item.bidId === bid.bidId;
         });

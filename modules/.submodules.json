@@ -1,33 +1,87 @@
 {
-  "userId": [
-    "unifiedIdSystem",
-    "pubCommonIdSystem",
-    "id5IdSystem",
-    "parrableIdSystem",
-    "britepoolIdSystem",
-    "liveIntentIdSystem",
-    "lotamePanoramaId",
-    "merkleIdSystem",
-    "criteoIdSystem",
-    "netIdSystem",
-    "identityLinkIdSystem",
-    "sharedIdSystem",
-    "intentIqIdSystem",
-    "zeotapIdPlusIdSystem",
-    "haloIdSystem",
-    "quantcastIdSystem",
-    "idxIdSystem",
-    "fabrickIdSystem",
-    "verizonMediaIdSystem"
-  ],
-  "adpod": [
-    "freeWheelAdserverVideo",
-    "dfpAdServerVideo"
-  ],
-  "rtdModule": [
-    "browsiRtdProvider",
-    "audigentRtdProvider",
-    "jwplayerRtdProvider",
-    "reconciliationRtdProvider"
-  ]
+  "parentModules": {
+    "userId": [
+      "33acrossIdSystem",
+      "admixerIdSystem",
+      "adtelligentIdSystem",
+      "amxIdSystem",
+      "britepoolIdSystem",
+      "connectIdSystem",
+      "cpexIdSystem",
+      "criteoIdSystem",
+      "dacIdSystem",
+      "deepintentDpesIdSystem",
+      "dmdIdSystem",
+      "fabrickIdSystem",
+      "hadronIdSystem",
+      "id5IdSystem",
+      "ftrackIdSystem",
+      "identityLinkIdSystem",
+      "idxIdSystem",
+      "imuIdSystem",
+      "intentIqIdSystem",
+      "justIdSystem",
+      "kinessoIdSystem",
+      "liveIntentIdSystem",
+      "lotamePanoramaIdSystem",
+      "merkleIdSystem",
+      "mwOpenLinkIdSystem",
+      "naveggIdSystem",
+      "netIdSystem",
+      "novatiqIdSystem",
+      "parrableIdSystem",
+      "pubProvidedIdSystem",
+      "publinkIdSystem",
+      "quantcastIdSystem",
+      "sharedIdSystem",
+      "tapadIdSystem",
+      "tncIdSystem",
+      "trustpidSystem",
+      "uid2IdSystem",
+      "unifiedIdSystem",
+      "verizonMediaIdSystem",
+      "zeotapIdPlusIdSystem",
+      "adqueryIdSystem",
+      "gravitoIdSystem"
+    ],
+    "adpod": [
+      "freeWheelAdserverVideo",
+      "dfpAdServerVideo"
+    ],
+    "rtdModule": [
+      "airgridRtdProvider",
+      "akamaiDapRtdProvider",
+      "blueconicRtdProvider",
+      "browsiRtdProvider",
+      "dgkeywordRtdProvider",
+      "geoedgeRtdProvider",
+      "hadronRtdProvider",
+      "haloRtdProvider",
+      "iasRtdProvider",
+      "jwplayerRtdProvider",
+      "medianetRtdProvider",
+      "optimeraRtdProvider",
+      "permutiveRtdProvider",
+      "reconciliationRtdProvider",
+      "sirdataRtdProvider",
+      "timeoutRtdProvider",
+      "weboramaRtdProvider"
+    ],
+    "fpdModule": [
+      "enrichmentFpdModule",
+      "validationFpdModule"
+    ]
+  },
+  "libraries": {
+    "getOrigin": {
+      "files": [
+        "./index.js"
+      ],
+      "dependants": [
+        "ooloAnalyticsAdapter",
+        "resetdigitalBidAdapter",
+        "rtbhouseBidAdapter.js"
+      ]
+    }
+  }
 }
