@@ -1212,8 +1212,8 @@ describe('fireClickTrackers', () => {
     fetchURL = sinon.stub();
   });
 
-  function runTrackers(resp) {
-    fireClickTrackers(resp, {fetchURL});
+  function runTrackers(resp, args) {
+    fireClickTrackers(resp, {...args, fetchURL});
   }
 
   it('should load each URL in link.clicktrackers', () => {
@@ -1223,6 +1223,21 @@ describe('fireClickTrackers', () => {
         clicktrackers: urls
       }
     });
+    urls.forEach(url => sinon.assert.calledWith(fetchURL, url));
+  })
+
+  it('should load each URL in asset.link.clicktrackers, when response is ORTB', () => {
+    const urls = ['asset_url1', 'asset_url2'];
+    runTrackers({
+      assets: [
+        {
+          id: 1,
+          link: {
+            clicktrackers: urls
+          }
+        }
+      ],
+    }, {assetId: '1'});
     urls.forEach(url => sinon.assert.calledWith(fetchURL, url));
   })
 })
