@@ -84,6 +84,11 @@
  * @property {?string} localStorageProfileKey can be used to customize the local storage key (default is '_lite')
  * @property {?boolean} enabled if false, will ignore this configuration
  */
+
+/**
+ * @typedef {WeboCtxConf|WeboUserDataConf|SfbxLiteDataConf} CommonConf
+ */
+
 import {
   getGlobal
 } from '../src/prebidGlobal.js';
@@ -204,7 +209,7 @@ function init(moduleConfig) {
  * @return {boolean} true if module subsection was initialized with success
  */
 function initSubSection(moduleParams, subSection, ...requiredFields) {
-  /** @type {WeboCtxConf|WeboUserDataConf|SfbxLiteDataConf} */
+  /** @type {CommonConf} */
   const weboSectionConf = moduleParams[subSection] || { enabled: false };
 
   if (weboSectionConf.enabled === false) {
@@ -233,7 +238,7 @@ function initSubSection(moduleParams, subSection, ...requiredFields) {
 
 /** normalize submodule configuration
  * @param {ModuleParams} moduleParams
- * @param {WeboCtxConf|WeboUserDataConf|SfbxLiteDataConf} submoduleParams
+ * @param {CommonConf} submoduleParams
  * @return {void}
  */
 function normalizeConf(moduleParams, submoduleParams) {
@@ -261,7 +266,7 @@ function normalizeConf(moduleParams, submoduleParams) {
 }
 
 /** coerce set prebid targeting to function
- * @param {WeboCtxConf|WeboUserDataConf|SfbxLiteDataConf} submoduleParams
+ * @param {CommonConf} submoduleParams
  * @return {void}
  */
 function coerceSetPrebidTargeting(submoduleParams) {
@@ -273,7 +278,7 @@ function coerceSetPrebidTargeting(submoduleParams) {
 }
 
 /** coerce send to bidders to function
- * @param {WeboCtxConf|WeboUserDataConf|SfbxLiteDataConf} submoduleParams
+ * @param {CommonConf} submoduleParams
  * @return {void}
  */
 function coerceSendToBidders(submoduleParams) {
@@ -455,13 +460,13 @@ function buildProfileHandlers(moduleParams) {
 
 /**
  * @callback buildProfileHandlerCallback
- * @param {WeboCtxConf|WeboUserDataConf|SfbxLiteDataConf} dataConf
+ * @param {CommonConf} dataConf
  * @returns {[Profile,boolean]} profile + is default flag
  */
 
 /**
  * return specific profile handler
- * @param {WeboCtxConf|WeboUserDataConf|SfbxLiteDataConf} dataConf
+ * @param {CommonConf} dataConf
  * @param {buildProfileHandlerCallback} callback
  * @param {boolean} user
  * @param {string} source
