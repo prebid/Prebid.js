@@ -187,14 +187,13 @@ function init(moduleConfig) {
   _weboUserDataUserProfile = null;
   _sfbxLiteDataProfile = null;
 
-  /** @type {string} */
   const WEBO_CTX_REQUIRED_FIELD_TOKEN_LABEL = 'token';
 
   _dataInitialized.WeboCtx = initSubSection(moduleParams, WEBO_CTX_CONF_SECTION, WEBO_CTX_REQUIRED_FIELD_TOKEN_LABEL);
   _dataInitialized.WeboUser = initSubSection(moduleParams, WEBO_USER_DATA_CONF_SECTION);
   _dataInitialized.SfbxLite = initSubSection(moduleParams, SFBX_LITE_DATA_CONF_SECTION);
 
-  return Object.values(_dataInitialized).some((x) => x)
+  return Object.values(_dataInitialized).some((x) => !!x)
 }
 
 /** Initialize subsection module
@@ -212,14 +211,12 @@ function initSubSection(moduleParams, subSection, ...requiredFields) {
     return false;
   }
 
-  requiredFields ||= [];
-
   try {
     normalizeConf(moduleParams, weboSectionConf);
 
     requiredFields.forEach(field => {
-      if (!weboSectionConf[field]) {
-        throw `missing required field '{field}' on {section}`;
+      if (!(field in weboSectionConf)) {
+        throw `missing required field '${field}''`;
       }
     });
   } catch (e) {
@@ -240,12 +237,11 @@ function initSubSection(moduleParams, subSection, ...requiredFields) {
 function normalizeConf(moduleParams, submoduleParams) {
   submoduleParams.defaultProfile = submoduleParams.defaultProfile || {};
 
-  // handle defaults
-  Object.entries(globalDefaults).forEach(([propertyName]) => {
-    if (!submoduleParams.hasOwnProperty(propertyName)) {
-      submoduleParams[propertyName] = moduleParams[propertyName];
-    }
-  })
+  const { setPrebidTargeting, sendToBidders, onData } = moduleParams;
+
+  submoduleParams.setPrebidTargeting ??= setPrebidTargeting;
+  submoduleParams.sendToBidders ??= sendToBidders;
+  submoduleParams.onData ??= onData;
 
   // handle setPrebidTargeting
   coerceSetPrebidTargeting(submoduleParams)
@@ -267,37 +263,11 @@ function normalizeConf(moduleParams, submoduleParams) {
  * @return {void}
  */
 function coerceSetPrebidTargeting(submoduleParams) {
-  const setPrebidTargeting = submoduleParams.setPrebidTargeting;
-
-  if (isFn(setPrebidTargeting)) {
-    return
+  try {
+    submoduleParams.setPrebidTargeting = wrapValidatorCallback(submoduleParams.setPrebidTargeting);
+  } catch (e) {
+    throw `invalid setPrebidTargeting: ${e}`;
   }
-
-  if (isBoolean(setPrebidTargeting)) {
-    const shouldSetPrebidTargeting = setPrebidTargeting;
-
-    submoduleParams.setPrebidTargeting = () => shouldSetPrebidTargeting;
-
-    return
-  }
-
-  if (isStr(setPrebidTargeting)) {
-    const allowedAdUnitCode = setPrebidTargeting;
-
-    submoduleParams.setPrebidTargeting = (adUnitCode) => allowedAdUnitCode == adUnitCode;
-
-    return
-  }
-
-  if (isArray(setPrebidTargeting)) {
-    const allowedAdUnitCodes = setPrebidTargeting;
-
-    submoduleParams.setPrebidTargeting = (adUnitCode) => allowedAdUnitCodes.includes(adUnitCode);
-
-    return
-  }
-
-  throw `unexpected format for setPrebidTargeting: ${typeof setPrebidTargeting}`;
 }
 
 /** coerce send to bidders to function
@@ -305,35 +275,7 @@ function coerceSetPrebidTargeting(submoduleParams) {
  * @return {void}
  */
 function coerceSendToBidders(submoduleParams) {
-  const sendToBidders = submoduleParams.sendToBidders;
-
-  if (isFn(sendToBidders)) {
-    return
-  }
-
-  if (isBoolean(sendToBidders)) {
-    const shouldSendToBidders = sendToBidders;
-
-    submoduleParams.sendToBidders = () => shouldSendToBidders;
-
-    return
-  }
-
-  if (isStr(sendToBidders)) {
-    const allowedBidder = sendToBidders;
-
-    submoduleParams.sendToBidders = (bid) => allowedBidder == bid.bidder;
-
-    return
-  }
-
-  if (isArray(sendToBidders)) {
-    const allowedBidders = sendToBidders;
-
-    submoduleParams.sendToBidders = (bid) => allowedBidders.includes(bid.bidder);
-
-    return
-  }
+  let sendToBidders = submoduleParams.sendToBidders;
 
   if (isPlainObject(sendToBidders)) {
     const sendToBiddersMap = sendToBidders;
@@ -363,8 +305,56 @@ function coerceSendToBidders(submoduleParams) {
     return
   }
 
-  throw `unexpected format for sendToBidders: ${typeof sendToBidders}`;
+  try {
+    submoduleParams.sendToBidders = wrapValidatorCallback(submoduleParams.sendToBidders,
+      (bid) => bid.bidder);
+  } catch (e) {
+    throw `invalid sendToBidders: ${e}`;
+  }
 }
+
+/**
+ * @callback validatorCallback
+ * @param {string} target
+ * @returns {boolean}
+ */
+
+/**
+ * @callback coerceCallback
+ * @param {*} input
+ * @returns {*}
+ */
+
+/**
+ * wrap value into validator
+ * @param {*} value
+ * @param {coerceCallback} coerce
+ * @returns {validatorCallback}
+ */
+function wrapValidatorCallback(value, coerce = (x) => x) {
+  if (isFn(value)) {
+    return value;
+  }
+
+  if (isBoolean(value)) {
+    return (_) => value;
+  }
+
+  if (isStr(value)) {
+    return (target) => {
+      return value == coerce(target);
+    };
+  }
+
+  if (isArray(value)) {
+    return (target) => {
+      return value.includes(coerce(target));
+    };
+  }
+
+  throw `unexpected format: ${typeof value} (expects function, boolean, string or array)`;
+}
+
 /**
  * check if profile is valid
  * @param {*} profile
@@ -856,31 +846,38 @@ function fetchContextualProfile(weboCtxConf, onSuccess, onDone) {
 
   const urlProfileAPI = `https://${baseURLProfileAPI}/api/profile?${queryString}`;
 
-  ajax(urlProfileAPI, {
-    success: (response, req) => {
-      if (req.status === 200) {
-        try {
-          const data = JSON.parse(response);
-          onSuccess(data);
-          onDone();
-        } catch (e) {
-          onDone();
-          logError('unable to parse weborama data', e);
-          throw e;
-        }
-      } else if (req.status === 204) {
+  const success = (response, req) => {
+    if (req.status === 200) {
+      try {
+        const data = JSON.parse(response);
+        onSuccess(data);
         onDone();
+      } catch (e) {
+        onDone();
+        logError('unable to parse weborama data', e);
+        throw e;
       }
-    },
-    error: () => {
+    } else if (req.status === 204) {
       onDone();
-      logError('unable to get weborama data');
     }
-  },
-  null, {
+  };
+
+  const error = (err) => {
+    onDone();
+    logError(`unable to get weborama data: ${err}`);
+  };
+
+  const callback = {
+    success,
+    error,
+  };
+
+  const options = {
     method: 'GET',
     withCredentials: false,
-  });
+  };
+
+  ajax(urlProfileAPI, callback, null, options);
 }
 
 export const weboramaSubmodule = {
