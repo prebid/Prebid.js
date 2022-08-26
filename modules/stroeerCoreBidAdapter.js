@@ -254,14 +254,17 @@ export const spec = {
       }, commonPayload);
 
       payload.bids = bidRequests.map(bidRequest => {
+        const metaTagPosition = win.YLHH?.bidder?.tag?.getMetaTagPositionBy(bidRequest.adUnitCode) ?? bidRequest.adUnitCode;
+
         const bid = {
           // siz: [] - Still supported on the backend for backwards compatibility (size of banner bid)
           bid: bidRequest.bidId,
           sid: bidRequest.params.sid,
-          viz: elementInView(bidRequest.adUnitCode),
-          ctx: getContextFromSDG(bidRequest),
-          kvl: getLocalKeyValues(bidRequest.adUnitCode),
+          viz: elementInView(metaTagPosition),
+          ctx: getContextFromSDG(metaTagPosition),
+          kvl: getLocalKeyValues(metaTagPosition),
         };
+
         return Object.assign(bid, customAttrsFn(bidRequest));
       });
 
@@ -277,13 +280,13 @@ export const spec = {
       return result;
     }
 
-    function getContextFromSDG(bidRequest) {
+    function getContextFromSDG(metaTagPosition) {
       if (win.SDG) {
         return {
-          position: bidRequest.adUnitCode,
-          adUnits: getAdUnits(bidRequest.adUnitCode),
-          zone: getZone(bidRequest.adUnitCode),
-          pageType: getPageType(bidRequest.adUnitCode),
+          position: metaTagPosition,
+          adUnits: getAdUnits(metaTagPosition),
+          zone: getZone(metaTagPosition),
+          pageType: getPageType(metaTagPosition),
         }
       }
     }
@@ -339,9 +342,9 @@ export const spec = {
       }
     }
 
-    function getLocalKeyValues(position) {
+    function getLocalKeyValues(metaTagPosition) {
       try {
-        return getValidKeyValues(win.SDG.getCN().getSlotByPosition(position).getFilteredKeyValues());
+        return getValidKeyValues(win.SDG.getCN().getSlotByPosition(metaTagPosition).getFilteredKeyValues());
       } catch (e) {
         return undefined;
       }

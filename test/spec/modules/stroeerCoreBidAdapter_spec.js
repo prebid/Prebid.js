@@ -1,4 +1,4 @@
-import {assert, expect} from 'chai';
+import {assert} from 'chai';
 import {spec} from 'modules/stroeerCoreBidAdapter.js';
 import * as utils from 'src/utils.js';
 import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
@@ -96,7 +96,7 @@ describe('stroeerCore bid adapter', function () {
     bids: [{
       bidId: 'bid1',
       bidder: 'stroeerCore',
-      adUnitCode: 'div-1',
+      adUnitCode: '137',
       mediaTypes: {
         banner: {
           sizes: [[300, 600], [160, 60]]
@@ -109,7 +109,7 @@ describe('stroeerCore bid adapter', function () {
     }, {
       bidId: 'bid2',
       bidder: 'stroeerCore',
-      adUnitCode: 'div-2',
+      adUnitCode: '248',
       mediaTypes: {
         banner: {
           sizes: [[728, 90]],
@@ -203,6 +203,16 @@ describe('stroeerCore bid adapter', function () {
 
     return response;
   };
+
+  const buildFakeYLHH = (positionByAdUnitCode) => ({
+    bidder: {
+      tag: {
+        getMetaTagPositionBy(adUnitCode) {
+          return positionByAdUnitCode[adUnitCode];
+        }
+      }
+    }
+  });
 
   const createWindow = (href, params = {}) => {
     let {parent, referrer, top, frameElement, placementElements = []} = params;
@@ -299,7 +309,11 @@ describe('stroeerCore bid adapter', function () {
             }
           }
         }
-      }
+      };
+      win.YLHH = buildFakeYLHH({
+        '137': 'div-1-alpha',
+        '248': 'div-2-alpha'
+      });
     });
 
     it('visibility of both slots should be determined based on SDG ad unit codes', () => {
@@ -312,7 +326,7 @@ describe('stroeerCore bid adapter', function () {
         bids: [{
           bidId: 'bid1',
           bidder: 'stroeerCore',
-          adUnitCode: 'div-1-alpha',
+          adUnitCode: '137',
           mediaTypes: {
             banner: {
               sizes: [[300, 600], [160, 60]],
@@ -324,7 +338,7 @@ describe('stroeerCore bid adapter', function () {
         }, {
           bidId: 'bid2',
           bidder: 'stroeerCore',
-          adUnitCode: 'div-2-alpha',
+          adUnitCode: '248',
           mediaTypes: {
             banner: {
               sizes: [[728, 90]],
@@ -549,6 +563,10 @@ describe('stroeerCore bid adapter', function () {
       beforeEach(() => {
         placementElements = [createElement('div-1', 17), createElement('div-2', 54)];
         ({topWin, win} = setupNestedWindows(sandbox, placementElements));
+        win.YLHH = buildFakeYLHH({
+          '137': 'div-1',
+          '248': 'div-2'
+        })
       });
 
       afterEach(() => {
@@ -742,6 +760,11 @@ describe('stroeerCore bid adapter', function () {
           });
           const bidReq = buildBidderRequest();
 
+          win.YLHH = buildFakeYLHH({
+            '137': 'div-1',
+            '248': 'div-2'
+          });
+
           const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq)[0];
 
           assert.deepEqual(serverRequestInfo.data.bids[0].ctx, {
@@ -753,6 +776,7 @@ describe('stroeerCore bid adapter', function () {
 
           assert.deepEqual(serverRequestInfo.data.bids[1].ctx, {
             'position': 'div-2',
+
             'adUnits': ['adUnit-3', 'adUnit-4', 'adUnit-5'],
             'zone': 'zone-2',
             'pageType': 'pageType-2'
