@@ -15,7 +15,7 @@
  */
 
 /**
- * @typedef {Object<string,string[]>} Profile
+ * @typedef {Object.<string,string[]>} Profile
  */
 
 /** onData callback type
@@ -183,6 +183,7 @@ const globalDefaults = {
 };
 /** Initialize module
  * @param {Object} moduleConfig
+ * @param {?ModuleParams} moduleConfig.params
  * @return {boolean} true if module was initialized with success
  */
 function init(moduleConfig) {
@@ -374,6 +375,7 @@ function isValidProfile(profile) {
 /** function that provides ad server targeting data to RTD-core
  * @param {string[]} adUnitsCodes
  * @param {Object} moduleConfig
+ * @param {?ModuleParams} moduleConfig.params
  * @returns {Object} target data
  */
 function getTargetingData(adUnitsCodes, moduleConfig) {
@@ -593,6 +595,7 @@ function getDataFromLocalStorage(weboDataConf, cacheGet, cacheSet, defaultLocalS
  * @param {Object} reqBidsConfigObj
  * @param {doneCallback} onDone
  * @param {Object} moduleConfig
+ * @param {?ModuleParams} moduleConfig.params
  * @returns {void}
  */
 export function getBidRequestData(reqBidsConfigObj, onDone, moduleConfig) {
@@ -621,12 +624,19 @@ export function getBidRequestData(reqBidsConfigObj, onDone, moduleConfig) {
   });
 }
 
+/**
+ * @typedef {Object} AdUnit
+ * @property {Object[]} bids
+ */
 /** function that handles bid request data
- * @param {Object} reqBids
+ * @param {Object} reqBidsConfigObj
+ * @param {AdUnit[]} reqBidsConfigObj.adUnits
+ * @param {Object} reqBidsConfigObj.ortb2Fragments
+ * @param {Object} reqBidsConfigObj.ortb2Fragments.bidder
  * @param {ModuleParams} moduleParams
  * @returns {void}
  */
-function handleBidRequestData(reqBids, moduleParams) {
+function handleBidRequestData(reqBidsConfigObj, moduleParams) {
   const profileHandlers = buildProfileHandlers(moduleParams);
 
   if (isEmpty(profileHandlers)) {
@@ -634,8 +644,7 @@ function handleBidRequestData(reqBids, moduleParams) {
     return;
   }
 
-  /** @type {Object[]} */
-  const adUnits = reqBids.adUnits || getGlobal().adUnits;
+  const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
 
   try {
     adUnits.forEach(
@@ -647,7 +656,7 @@ function handleBidRequestData(reqBids, moduleParams) {
           if (ph.sendToBidders(bid, adUnit.code, data, metadata)) {
             // logMessage(`handling bidder '${bid.bidder}' with ${ph.metadata.source} data`);
 
-            handleBid(reqBids, bid, data, ph.metadata);
+            handleBid(reqBidsConfigObj, bid, data, ph.metadata);
           }
         })
       )
@@ -683,16 +692,19 @@ const RUBICON = 'rubicon';
 const SMARTADSERVER = 'smartadserver';
 
 /** handle individual bid
- * @param {Object} reqBids
+ * @param {Object} reqBidsConfigObj
+ * @param {Object} reqBidsConfigObj.ortb2Fragments
+ * @param {Object} reqBidsConfigObj.ortb2Fragments.bidder
  * @param {Object} bid
+ * @param {string} bid.bidder
  * @param {Profile} profile
  * @param {dataCallbackMetadata} metadata
  * @returns {void}
  */
-function handleBid(reqBids, bid, profile, metadata) {
-  handleBidViaORTB2(reqBids, bid, profile, metadata);
+function handleBid(reqBidsConfigObj, bid, profile, metadata) {
+  handleBidViaORTB2(reqBidsConfigObj, bid.bidder, profile, metadata);
 
-  /** @type {Object<string,string>} */
+  /** @type {Object.<string,string>} */
   const bidderAliasRegistry = adapterManager.aliasRegistry || {};
 
   /** @type {string} */
@@ -716,6 +728,8 @@ function handleBid(reqBids, bid, profile, metadata) {
 
 /** handle appnexus/xandr bid
  * @param {Object} bid
+ * @param {Object} bid.params
+ * @param {Object} bid.params.keyword
  * @param {Profile} profile
  * @returns {void}
  */
@@ -726,6 +740,8 @@ function handleAppnexusBid(bid, profile) {
 
 /** handle pubmatic bid
  * @param {Object} bid
+ * @param {Object} bid.params
+ * @param {string} bid.params.dctr
  * @param {Profile} profile
  * @returns {void}
  */
@@ -735,7 +751,6 @@ function handlePubmaticBid(bid, profile) {
 
   bid.params ||= {};
 
-  /** @type {string} */
   const data = bid.params.dctr || '';
   const target = new Set(data.split(sep).filter((x) => x.length > 0));
 
@@ -750,6 +765,8 @@ function handlePubmaticBid(bid, profile) {
 
 /** handle smartadserver bid
  * @param {Object} bid
+ * @param {Object} bid.params
+ * @param {string} bid.params.target
  * @param {Profile} profile
  * @returns {void}
  */
@@ -758,7 +775,6 @@ function handleSmartadserverBid(bid, profile) {
 
   bid.params ||= {};
 
-  /** @type {string} */
   const data = bid.params.target || '';
   const target = new Set(data.split(sep).filter((x) => x.length > 0));
 
@@ -774,6 +790,7 @@ function handleSmartadserverBid(bid, profile) {
 
 /** handle rubicon bid
  * @param {Object} bid
+ * @param {string} bid.bidder
  * @param {Profile} profile
  * @param {dataCallbackMetadata} metadata
  * @returns {void}
@@ -789,21 +806,23 @@ function handleRubiconBid(bid, profile, metadata) {
 }
 
 /** handle generic bid via ortb2 arbitrary data
- * @param reqBids
- * @param {Object} bid
+ * @param {Object} reqBidsConfigObj
+ * @param {Object} reqBidsConfigObj.ortb2Fragments
+ * @param {Object} reqBidsConfigObj.ortb2Fragments.bidder
+ * @param {string} bidder
  * @param {Profile} profile
  * @param {dataCallbackMetadata} metadata
  * @returns {void}
  */
-function handleBidViaORTB2(reqBids, bid, profile, metadata) {
+function handleBidViaORTB2(reqBidsConfigObj, bidder, profile, metadata) {
   if (isBoolean(metadata.user)) {
-    logMessage(`bidder '${bid.bidder}' is not directly supported, trying set data via bidder ortb2 fpd`);
+    logMessage(`bidder '${bidder}' is not directly supported, trying set data via bidder ortb2 fpd`);
     const section = metadata.user ? 'user' : 'site';
-    const base = `${bid.bidder}.${section}.ext.data`;
+    const base = `${bidder}.${section}.ext.data`;
 
-    assignProfileToObject(reqBids.ortb2Fragments?.bidder, base, profile);
+    assignProfileToObject(reqBidsConfigObj.ortb2Fragments?.bidder, base, profile);
   } else {
-    logMessage(`SKIP unsupported bidder '${bid.bidder}', data from '${metadata.source}' is not defined as user or site-centric`);
+    logMessage(`SKIP unsupported bidder '${bidder}', data from '${metadata.source}' is not defined as user or site-centric`);
   }
 }
 
