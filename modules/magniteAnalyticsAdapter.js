@@ -1,4 +1,4 @@
-import { generateUUID, mergeDeep, deepAccess, parseUrl, logError, pick, isEmpty, logWarn, debugTurnedOn, parseQS, getWindowLocation, isAdUnitCodeMatchingSlot, isNumber, deepSetValue, deepClone, logInfo } from '../src/utils.js';
+import { generateUUID, mergeDeep, deepAccess, parseUrl, logError, pick, isEmpty, logWarn, debugTurnedOn, parseQS, getWindowLocation, isAdUnitCodeMatchingSlot, isNumber, deepSetValue, deepClone, logInfo, isGptPubadsDefined } from '../src/utils.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
@@ -63,7 +63,7 @@ const resetConfs = () => {
   }
   rubiConf = {
     pvid: generateUUID().slice(0, 8),
-    analyticsEventDelay: 0,
+    analyticsEventDelay: 200,
     analyticsBatchTimeout: 5000,
     dmBilling: {
       enabled: false,
@@ -450,7 +450,10 @@ const findMatchingAdUnitFromAuctions = (matchesFunction, returnFirstMatch) => {
 const getRenderingIds = bidWonData => {
   // if bid caching off -> return the bidWon auciton id
   if (!config.getConfig('useBidCache')) {
-    return bidWonData.auctionId;
+    return {
+      renderTransactionId: bidWonData.transactionId,
+      renderAuctionId: bidWonData.auctionId
+    };
   }
 
   // a rendering auction id is the LATEST auction / adunit which contains GAM ID's
@@ -462,7 +465,7 @@ const getRenderingIds = bidWonData => {
   let { adUnit, auction } = findMatchingAdUnitFromAuctions(matchingFunction, false);
   // If no match was found, we will use the actual bid won auction id
   return {
-    renderTransactionId: (adUnit && adUnit.transactionId) || adUnit.transactionId,
+    renderTransactionId: (adUnit && adUnit.transactionId) || bidWonData.transactionId,
     renderAuctionId: (auction && auction.auctionId) || bidWonData.auctionId
   }
 }
@@ -548,11 +551,6 @@ const subscribeToGamSlots = () => {
   });
 }
 
-// listen to gam slot renders!
-window.googletag = window.googletag || {};
-window.googletag.cmd = window.googletag.cmd || [];
-window.googletag.cmd.push(() => subscribeToGamSlots());
-
 let accountId;
 let endpoint;
 
@@ -575,6 +573,14 @@ function enableMgniAnalytics(config = {}) {
   }
   if (!error) {
     magniteAdapter.originEnableAnalytics(config);
+  }
+  // listen to gam slot renders!
+  if (isGptPubadsDefined()) {
+    subscribeToGamSlots();
+  } else {
+    window.googletag = window.googletag || {};
+    window.googletag.cmd = window.googletag.cmd || [];
+    window.googletag.cmd.push(() => subscribeToGamSlots());
   }
 };
 

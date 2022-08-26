@@ -183,6 +183,7 @@ const MOCK = {
   },
   BID_WON: {
     'bidderCode': 'rubicon',
+    'bidId': '23fcd8cf4bf0d7',
     'adId': '3c0b59947ced11',
     'requestId': '23fcd8cf4bf0d7',
     'transactionId': '7b10a106-89ea-4e19-bc51-9b2e970fc42a',
@@ -204,7 +205,7 @@ const ANALYTICS_MESSAGE = {
   'version': '7.8.0-pre',
   'referrerHostname': 'a-test-domain.com',
   'timestamps': {
-    'eventTime': 1519767018781,
+    'eventTime': 1519767013981,
     'prebidLoaded': magniteAdapter.MODULE_INITIALIZED_TIME
   },
   'wrapper': {
@@ -213,8 +214,8 @@ const ANALYTICS_MESSAGE = {
   'session': {
     'id': '12345678-1234-1234-1234-123456789abc',
     'pvid': '12345678',
-    'start': 1519767018781,
-    'expires': 1519788618781
+    'start': 1519767013981,
+    'expires': 1519788613981
   },
   'auctions': [
     {
@@ -267,6 +268,16 @@ const ANALYTICS_MESSAGE = {
       'auctionEnd': 1658868384019
     }
   ],
+  'gamRenders': [
+    {
+      'adSlot': 'box',
+      'advertiserId': 1111,
+      'creativeId': 2222,
+      'lineItemId': 3333,
+      'auctionId': '99785e47-a7c8-4c8a-ae05-ef1c717a4b4d',
+      'transactionId': '7b10a106-89ea-4e19-bc51-9b2e970fc42a'
+    }
+  ],
   'bidsWon': [
     {
       'bidder': 'rubicon',
@@ -284,6 +295,7 @@ const ANALYTICS_MESSAGE = {
       },
       'sourceAuctionId': '99785e47-a7c8-4c8a-ae05-ef1c717a4b4d',
       'renderAuctionId': '99785e47-a7c8-4c8a-ae05-ef1c717a4b4d',
+      'renderTransactionId': '7b10a106-89ea-4e19-bc51-9b2e970fc42a',
       'transactionId': '7b10a106-89ea-4e19-bc51-9b2e970fc42a',
       'accountId': 1001,
       'siteId': 267318,
@@ -294,18 +306,31 @@ const ANALYTICS_MESSAGE = {
       'adUnitCode': 'box'
     }
   ],
-  'trigger': 'auctionEnd'
+  'trigger': 'gam'
 }
 
 describe('magnite analytics adapter', function () {
   let sandbox;
   let clock;
   let getDataFromLocalStorageStub, setDataInLocalStorageStub, localStorageIsEnabledStub;
+  let gptSlot0;
+  let gptSlotRenderEnded0;
   beforeEach(function () {
+    mockGpt.enable();
+    gptSlot0 = mockGpt.makeSlot({ code: 'box' });
+    gptSlotRenderEnded0 = {
+      eventName: 'slotRenderEnded',
+      params: {
+        slot: gptSlot0,
+        isEmpty: false,
+        advertiserId: 1111,
+        sourceAgnosticCreativeId: 2222,
+        sourceAgnosticLineItemId: 3333
+      }
+    };
     getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
     setDataInLocalStorageStub = sinon.stub(storage, 'setDataInLocalStorage');
     localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled');
-    mockGpt.disable();
     sandbox = sinon.sandbox.create();
 
     localStorageIsEnabledStub.returns(true);
@@ -337,6 +362,7 @@ describe('magnite analytics adapter', function () {
     setDataInLocalStorageStub.restore();
     localStorageIsEnabledStub.restore();
     magniteAdapter.disableAnalytics();
+    mockGpt.disable();
   });
 
   it('should require accountId', function () {
@@ -381,7 +407,7 @@ describe('magnite analytics adapter', function () {
         }
       });
       expect(rubiConf).to.deep.equal({
-        analyticsEventDelay: 0,
+        analyticsEventDelay: 200,
         analyticsBatchTimeout: 5000,
         dmBilling: {
           enabled: false,
@@ -407,7 +433,7 @@ describe('magnite analytics adapter', function () {
         }
       });
       expect(rubiConf).to.deep.equal({
-        analyticsEventDelay: 0,
+        analyticsEventDelay: 200,
         analyticsBatchTimeout: 3000,
         dmBilling: {
           enabled: false,
@@ -434,7 +460,7 @@ describe('magnite analytics adapter', function () {
         }
       });
       expect(rubiConf).to.deep.equal({
-        analyticsEventDelay: 0,
+        analyticsEventDelay: 200,
         analyticsBatchTimeout: 3000,
         dmBilling: {
           enabled: false,
@@ -454,7 +480,7 @@ describe('magnite analytics adapter', function () {
   });
 
   describe('when handling events', function () {
-    function performStandardAuction(gptEvents, auctionId = MOCK.AUCTION_INIT.auctionId) {
+    function performStandardAuction(gptEvents = [gptSlotRenderEnded0], auctionId = MOCK.AUCTION_INIT.auctionId) {
       events.emit(AUCTION_INIT, { ...MOCK.AUCTION_INIT, auctionId });
       events.emit(BID_REQUESTED, { ...MOCK.BID_REQUESTED, auctionId });
       events.emit(BID_RESPONSE, { ...MOCK.BID_RESPONSE, auctionId });
@@ -466,7 +492,7 @@ describe('magnite analytics adapter', function () {
       }
 
       events.emit(BID_WON, { ...MOCK.BID_WON, auctionId });
-      clock.tick(rubiConf.analyticsBatchTimeout + 1000);
+      clock.tick(rubiConf.analyticsEventDelay + 100);
     }
 
     beforeEach(function () {
@@ -729,9 +755,9 @@ describe('magnite analytics adapter', function () {
 
         expect(calledWith).to.deep.equal({
           id: '987654', // should have stayed same
-          start: 1519766113781, // should have stayed same
-          expires: 1519787713781, // should have stayed same
-          lastSeen: 1519767013781, // lastSeen updated to our "now"
+          start: 1519767017881, // should have stayed same
+          expires: 1519767039481, // should have stayed same
+          lastSeen: 1519767013981, // lastSeen updated to our "now"
           fpkvs: { source: 'tw', link: 'email' }, // link merged in
           pvid: expectedPvid // new pvid stored
         });
@@ -792,7 +818,7 @@ describe('magnite analytics adapter', function () {
           id: '987654', // should have stayed same
           start: 1519766113781, // should have stayed same
           expires: 1519787713781, // should have stayed same
-          lastSeen: 1519767013781, // lastSeen updated to our "now"
+          lastSeen: 1519767013981, // lastSeen updated to our "now"
           fpkvs: { source: 'fb', link: 'email', click: 'dog' }, // link merged in
           pvid: expectedPvid // new pvid stored
         });
@@ -841,10 +867,10 @@ describe('magnite analytics adapter', function () {
         }
 
         expect(calledWith).to.deep.equal({
-          id: STUBBED_UUID, // should have stayed same
-          start: 1519767013781, // should have stayed same
-          expires: 1519788613781, // should have stayed same
-          lastSeen: 1519767013781, // lastSeen updated to our "now"
+          id: STUBBED_UUID, // should have generated not used input
+          start: 1519767013981, // should have stayed same
+          expires: 1519788613981, // should have stayed same
+          lastSeen: 1519767013981, // lastSeen updated to our "now"
           fpkvs: { link: 'email' }, // link merged in
           pvid: expectedPvid // new pvid stored
         });
@@ -893,10 +919,10 @@ describe('magnite analytics adapter', function () {
         }
 
         expect(calledWith).to.deep.equal({
-          id: STUBBED_UUID, // should have stayed same
-          start: 1519767013781, // should have stayed same
-          expires: 1519788613781, // should have stayed same
-          lastSeen: 1519767013781, // lastSeen updated to our "now"
+          id: STUBBED_UUID, // should have generated and not used same one
+          start: 1519767013981, // should have stayed same
+          expires: 1519788613981, // should have stayed same
+          lastSeen: 1519767013981, // lastSeen updated to our "now"
           fpkvs: { link: 'email' }, // link merged in
           pvid: expectedPvid // new pvid stored
         });
