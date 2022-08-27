@@ -154,6 +154,9 @@ export const storage = getStorageManager({
  * @typedef {Object} Component
  * @property {boolean} initialized
  * @property {?Profile} data
+ * @property {boolean} user if true it is user-centric data
+ * @property {string} source describe the source of data, if 'contextual' or 'wam'
+ * @property {buildProfileHandlerCallback} callback
  */
 
 /**
@@ -165,9 +168,27 @@ export const storage = getStorageManager({
 
 /** @type {Components} */
 const _components = {
-  WeboCtx: { initialized: false, data: null },
-  WeboWeboUserDataCtx: { initialized: false, data: null },
-  SfbxLiteData: { initialized: false, data: null },
+  WeboCtx: {
+    initialized: false,
+    data: null,
+    user: false,
+    source: WEBO_CTX_SOURCE_LABEL,
+    callback: getContextualProfile,
+  },
+  WeboUserData: {
+    initialized: false,
+    data: null,
+    user: true,
+    source: WEBO_USER_DATA_SOURCE_LABEL,
+    callback: getWeboUserDataProfile,
+  },
+  SfbxLiteData: {
+    initialized: false,
+    data: null,
+    user: false,
+    source: SFBX_LITE_DATA_SOURCE_LABEL,
+    callback: getSfbxLiteDataProfile,
+  },
 }
 
 /** @type {Object} */
@@ -188,9 +209,10 @@ function init(moduleConfig) {
   const moduleParams = Object.assign({}, globalDefaults, moduleConfig?.params || {});
 
   // reset profiles
-  _components.WeboCtx = { initalized: false, data: null };
-  _components.WeboUserData = { initalized: false, data: null };
-  _components.SfbxLiteData = { initalized: false, data: null };
+
+  _components.WeboCtx.data = null;
+  _components.WeboUserData.data = null;
+  _components.SfbxLiteData.data = null;
 
   _components.WeboCtx.initialized = initSubSection(moduleParams, WEBO_CTX_CONF_SECTION, 'token');
   _components.WeboUserData.initialized = initSubSection(moduleParams, WEBO_USER_DATA_CONF_SECTION);
@@ -420,29 +442,23 @@ function buildProfileHandlers(moduleParams) {
   const steps = [{
     component: _components.WeboCtx,
     conf: moduleParams?.weboCtxConf,
-    callback: getContextualProfile,
-    user: false,
-    source: WEBO_CTX_SOURCE_LABEL,
   }, {
     component: _components.WeboUserData,
     conf: moduleParams?.weboUserDataConf,
-    callback: getWeboUserDataProfile,
-    user: true,
-    source: WEBO_USER_DATA_SOURCE_LABEL,
   }, {
     component: _components.SfbxLiteData,
     conf: moduleParams?.sfbxLiteDataConf,
-    callback: getSfbxLiteDataProfile,
-    user: false,
-    source: SFBX_LITE_DATA_SOURCE_LABEL,
   }];
 
-  return steps.filter(step => step.component.initialized).reduce((ph, step) => {
-    const profileHandler = buildProfileHandler(step.conf, step.callback, step.user, step.source);
+  return steps.filter(step => step.component.initialized).reduce((ph, {component, conf}) => {
+    const user = component.user;
+    const source = component.source;
+    const callback = component.callback;
+    const profileHandler = buildProfileHandler(conf, callback, user, source);
     if (profileHandler) {
       ph.push(profileHandler);
     } else {
-      logMessage(`skip ${step.source} profile: no data`);
+      logMessage(`skip ${source} profile: no data`);
     }
 
     return ph;
