@@ -7,14 +7,14 @@
  * @requires module:modules/realTimeData
  */
 
-/**
+/** profile metadata
  * @typedef dataCallbackMetadata
  * @property {boolean} user if true it is user-centric data
  * @property {string} source describe the source of data, if 'contextual' or 'wam'
  * @property {boolean} isDefault if true it the default profile defined in the configuration
  */
 
-/**
+/** profile from contextual, wam or sfbx
  * @typedef {Object.<string,string[]>} Profile
  */
 
@@ -85,7 +85,7 @@
  * @property {?boolean} enabled if false, will ignore this configuration
  */
 
-/**
+/** common configuration between contextual, wam and sfbx
  * @typedef {WeboCtxConf|WeboUserDataConf|SfbxLiteDataConf} CommonConf
  */
 
@@ -144,7 +144,7 @@ const WEBO_USER_DATA_SOURCE_LABEL = 'wam';
 const SFBX_LITE_DATA_SOURCE_LABEL = 'lite';
 /** @type {number} */
 const GVLID = 284;
-/** @type {?Object} */
+
 export const storage = getStorageManager({
   gvlid: GVLID,
   moduleName: SUBMODULE_NAME
@@ -241,6 +241,7 @@ function initSubSection(moduleParams, subSection, ...requiredFields) {
  * @param {ModuleParams} moduleParams
  * @param {CommonConf} submoduleParams
  * @return {void}
+ * @throws will throw an error in case of invalid configuration
  */
 function normalizeConf(moduleParams, submoduleParams) {
   submoduleParams.defaultProfile = submoduleParams.defaultProfile || {};
@@ -269,6 +270,7 @@ function normalizeConf(moduleParams, submoduleParams) {
 /** coerce set prebid targeting to function
  * @param {CommonConf} submoduleParams
  * @return {void}
+ * @throws will throw an error in case of invalid configuration
  */
 function coerceSetPrebidTargeting(submoduleParams) {
   try {
@@ -281,6 +283,7 @@ function coerceSetPrebidTargeting(submoduleParams) {
 /** coerce send to bidders to function
  * @param {CommonConf} submoduleParams
  * @return {void}
+ * @throws will throw an error in case of invalid configuration
  */
 function coerceSendToBidders(submoduleParams) {
   let sendToBidders = submoduleParams.sendToBidders;
@@ -334,6 +337,7 @@ function coerceSendToBidders(submoduleParams) {
  * @param {*} value
  * @param {coerceCallback} coerce
  * @returns {validatorCallback}
+ * @throws will throw an error in case of unsupported type
  */
 function wrapValidatorCallback(value, coerce = (x) => x) {
   if (isFn(value)) {
@@ -880,24 +884,19 @@ function fetchContextualProfile(weboCtxConf, onSuccess, onDone) {
 
   const success = (response, req) => {
     if (req.status === 200) {
-      try {
-        const data = JSON.parse(response);
-        onSuccess(data);
-        onDone();
-      } catch (e) {
-        onDone();
-        logError('unable to parse weborama data', e);
-        throw e;
-      }
+      const data = JSON.parse(response);
+      onSuccess(data);
     } else {
-      logWarn(`unexpected http status response ${req.status} with response`, response);
-      onDone();
+      throw `unexpected http status response ${req.status} with response ${response}`;
     }
+
+    onDone();
   };
 
-  const error = (e) => {
+  const error = (e, req) => {
+    logError(`unable to get weborama data`, e, req);
+
     onDone();
-    logError(`unable to get weborama data`, e);
   };
 
   const callback = {
