@@ -62,15 +62,20 @@ const cache = {
 
 const BID_REJECTED_IPF = 'rejected-ipf';
 
-export let rubiConf = {
-  pvid: generateUUID().slice(0, 8),
-  analyticsEventDelay: 0,
-  dmBilling: {
-    enabled: false,
-    vendors: [],
-    waitForAuction: true
+export let rubiConf;
+export const resetRubiConf = () => {
+  rubiConf = {
+    pvid: generateUUID().slice(0, 8),
+    analyticsEventDelay: 0,
+    dmBilling: {
+      enabled: false,
+      vendors: [],
+      waitForAuction: true
+    }
   }
-};
+}
+resetRubiConf();
+
 // we are saving these as global to this module so that if a pub accidentally overwrites the entire
 // rubicon object, then we do not lose other data
 config.getConfig('rubicon', config => {

@@ -4,6 +4,7 @@ import rubiconAnalyticsAdapter, {
   getHostNameFromReferer,
   storage,
   rubiConf,
+  resetRubiConf
 } from 'modules/rubiconAnalyticsAdapter.js';
 import CONSTANTS from 'src/constants.json';
 import { config } from 'src/config.js';
@@ -667,6 +668,7 @@ describe('rubicon analytics adapter', function () {
       expect(utils.generateUUID.called).to.equal(true);
     });
     it('should merge in and preserve older set configs', function () {
+      resetRubiConf();
       config.setConfig({
         rubicon: {
           wrapperName: '1001_general',
@@ -689,7 +691,6 @@ describe('rubicon analytics adapter', function () {
         fpkvs: {
           source: 'fb'
         },
-        updatePageView: true
       });
 
       // update it with stuff
@@ -714,7 +715,6 @@ describe('rubicon analytics adapter', function () {
           source: 'fb',
           link: 'email'
         },
-        updatePageView: true
       });
 
       // overwriting specific edge keys should update them
@@ -740,7 +740,6 @@ describe('rubicon analytics adapter', function () {
           link: 'iMessage',
           source: 'twitter'
         },
-        updatePageView: true
       });
     });
   });

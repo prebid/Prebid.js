@@ -351,7 +351,6 @@ describe('magnite analytics adapter', function () {
     setDataInLocalStorageStub.restore();
     localStorageIsEnabledStub.restore();
     magniteAdapter.disableAnalytics();
-    mockGpt.disable();
   });
 
   it('should require accountId', function () {

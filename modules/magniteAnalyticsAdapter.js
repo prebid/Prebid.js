@@ -127,7 +127,7 @@ const sendEvent = payload => {
     ...payload
   }
   ajax(
-    rubiConf.analyticsEndpoint || endpoint,
+    endpoint,
     null,
     JSON.stringify(event),
     {
@@ -406,11 +406,8 @@ const getFpkvs = () => {
   adds to the rubiconAliases list if found
 */
 const setRubiconAliases = (aliasRegistry) => {
-  Object.keys(aliasRegistry).forEach(alias => {
-    if (aliasRegistry[alias] === 'rubicon') {
-      rubiconAliases.push(alias);
-    }
-  });
+  const otherAliases = Object.keys(aliasRegistry).filter(alias => aliasRegistry[alias] === 'rubicon');
+  rubiconAliases.push(...otherAliases);
 }
 
 const sizeToDimensions = size => {
