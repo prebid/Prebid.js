@@ -95,7 +95,7 @@ const adUnitIsOnlyInstream = adUnit => {
 }
 
 const sendPendingEvents = () => {
-  cache.pendingEvents.trigger = 'batchedEvents';
+  cache.pendingEvents.trigger = `batched-${Object.keys(cache.pendingEvents).sort().join('-')}`;
   sendEvent(cache.pendingEvents);
   cache.pendingEvents = {};
   cache.eventPending = false;
@@ -159,6 +159,13 @@ const formatAuction = auction => {
       if (statusPriority.indexOf(bid.status) > statusPriority.indexOf(adUnit.status)) {
         adUnit.status = bid.status;
       }
+
+      // If PBS told us to overwrite the bid ID, do so
+      if (bid.pbsBidId) {
+        bid.oldBidId = bid.bidId;
+        bid.bidId = bid.pbsBidId;
+        delete bid.pbsBidId;
+      }
       return bid;
     });
     return adUnit;
@@ -220,12 +227,6 @@ export const parseBidResponse = (bid, previousBidResponse) => {
   // THIS WILL CHANGE WITH ALLOWING MULTIBID BETTER
   if (previousBidResponse && previousBidResponse.bidPriceUSD > responsePrice) {
     return previousBidResponse;
-  }
-
-  // if pbs gave us back a bidId, we need to use it and update our bidId to PBA
-  const pbsId = (bid.pbsBidId == 0 ? generateUUID() : bid.pbsBidId) || (bid.seatBidId == 0 ? generateUUID() : bid.seatBidId);
-  if (pbsId) {
-    bid.bidId = pbsId;
   }
 
   return pick(bid, [
@@ -449,7 +450,7 @@ const findMatchingAdUnitFromAuctions = (matchesFunction, returnFirstMatch) => {
 }
 
 const getRenderingIds = bidWonData => {
-  // if bid caching off -> return the bidWon auciton id
+  // if bid caching off -> return the bidWon auction id
   if (!config.getConfig('useBidCache')) {
     return {
       renderTransactionId: bidWonData.transactionId,
@@ -478,12 +479,13 @@ const formatBidWon = bidWonData => {
   // get the bid from the source auction id
   let bid = deepAccess(cache, `auctions.${bidWonData.auctionId}.auction.adUnits.${bidWonData.adUnitCode}.bids.${bidWonData.requestId}`);
   let adUnit = deepAccess(cache, `auctions.${bidWonData.auctionId}.auction.adUnits.${bidWonData.adUnitCode}`);
-  return {
+  let bidWon = {
     ...bid,
     sourceAuctionId: bidWonData.auctionId,
     renderAuctionId,
     transactionId: bidWonData.transactionId,
-    bidId: bidWonData.bidId,
+    sourceTransactionId: bidWonData.transactionId,
+    bidId: bid.pbsBidId || bidWonData.bidId, // if PBS had us overwrite bidId, use that as signal
     renderTransactionId,
     accountId,
     siteId: adUnit.siteId,
@@ -491,6 +493,8 @@ const formatBidWon = bidWonData => {
     mediaTypes: adUnit.mediaTypes,
     adUnitCode: adUnit.adUnitCode
   }
+  delete bidWon.pbsBidId; // if pbsBidId is there delete it (no need to pass it)
+  return bidWon;
 }
 
 const formatGamEvent = (slotEvent, adUnit, auction) => {
@@ -545,7 +549,7 @@ const subscribeToGamSlots = () => {
       // wait for bid wons a bit or send right away
       if (rubiConf.analyticsEventDelay > 0) {
         setTimeout(() => {
-          sendAuctionEvent(auctionId, 'gam');
+          sendAuctionEvent(auctionId, 'gam-delayed');
         }, rubiConf.analyticsEventDelay);
       } else {
         sendAuctionEvent(auctionId, 'gam');
@@ -663,9 +667,6 @@ magniteAdapter.track = ({ eventType, args }) => {
         ad.pbAdSlot = deepAccess(adUnit, 'ortb2Imp.ext.data.pbadslot');
         ad.pattern = deepAccess(adUnit, 'ortb2Imp.ext.data.aupname');
         ad.gpid = deepAccess(adUnit, 'ortb2Imp.ext.gpid');
-        if (deepAccess(bid, 'ortb2Imp.ext.data.adserver.name') === 'gam') {
-          ad.gam = { adSlot: bid.ortb2Imp.ext.data.adserver.adslot }
-        }
         ad.bids = {};
         adMap[adUnit.code] = ad;
         gamRenders[adUnit.code] = false;
@@ -760,8 +761,14 @@ magniteAdapter.track = ({ eventType, args }) => {
             code: 'request-error'
           };
       }
-      bid.clientLatencyMillis = args.timeToRespond || Date.now() - cache.auctions[args.auctionId].auctionStart;
+      bid.clientLatencyMillis = args.timeToRespond || Date.now() - cache.auctions[args.auctionId].auction.auctionStart;
       bid.bidResponse = parseBidResponse(args, bid.bidResponse);
+
+      // if pbs gave us back a bidId, we need to use it and update our bidId to PBA
+      const pbsBidId = (args.pbsBidId == 0 ? generateUUID() : args.pbsBidId) || (args.seatBidId == 0 ? generateUUID() : args.seatBidId);
+      if (pbsBidId) {
+        bid.pbsBidId = pbsBidId;
+      }
       break;
     case BIDDER_DONE:
       const serverError = deepAccess(args, 'serverErrors.0');
@@ -781,6 +788,11 @@ magniteAdapter.track = ({ eventType, args }) => {
             description: serverError.message
           }
         }
+
+        // set client latency if not done yet
+        if (!cachedBid.clientLatencyMillis) {
+          cachedBid.clientLatencyMillis = Date.now() - cache.auctions[args.auctionId].auction.auctionStart;
+        }
       });
       break;
     case BID_WON:
@@ -799,7 +811,7 @@ magniteAdapter.track = ({ eventType, args }) => {
 
       // if we are not waiting OR it is instream only auction
       if (isOnlyInstreamAuction || rubiConf.analyticsBatchTimeout === 0) {
-        sendAuctionEvent(args.auctionId, 'noBatch');
+        sendAuctionEvent(args.auctionId, 'solo-auction');
       } else {
         // start timer to send batched payload just in case we don't hear any BID_WON events
         cache.timeouts[args.auctionId] = setTimeout(() => {

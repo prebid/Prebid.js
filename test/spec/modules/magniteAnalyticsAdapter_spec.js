@@ -12,19 +12,7 @@ import {
   setConfig,
   addBidResponseHook,
 } from 'modules/currency.js';
-
-let Ajv = require('ajv');
-let schema = require('./magniteAnalyticsSchema.json');
-let ajv = new Ajv({
-  allErrors: true
-});
-
-let validator = ajv.compile(schema);
-
-function validate(message) {
-  validator(message);
-  expect(validator.errors).to.deep.equal(null);
-}
+import { deepAccess } from '../../../src/utils.js';
 
 let events = require('src/events.js');
 let utils = require('src/utils.js');
@@ -295,6 +283,7 @@ const ANALYTICS_MESSAGE = {
       },
       'sourceAuctionId': '99785e47-a7c8-4c8a-ae05-ef1c717a4b4d',
       'renderAuctionId': '99785e47-a7c8-4c8a-ae05-ef1c717a4b4d',
+      'sourceTransactionId': '7b10a106-89ea-4e19-bc51-9b2e970fc42a',
       'renderTransactionId': '7b10a106-89ea-4e19-bc51-9b2e970fc42a',
       'transactionId': '7b10a106-89ea-4e19-bc51-9b2e970fc42a',
       'accountId': 1001,
@@ -306,7 +295,7 @@ const ANALYTICS_MESSAGE = {
       'adUnitCode': 'box'
     }
   ],
-  'trigger': 'gam'
+  'trigger': 'gam-delayed'
 }
 
 describe('magnite analytics adapter', function () {
@@ -480,7 +469,12 @@ describe('magnite analytics adapter', function () {
   });
 
   describe('when handling events', function () {
-    function performStandardAuction(gptEvents = [gptSlotRenderEnded0], auctionId = MOCK.AUCTION_INIT.auctionId) {
+    function performStandardAuction({
+      gptEvents = [gptSlotRenderEnded0],
+      auctionId = MOCK.AUCTION_INIT.auctionId,
+      eventDelay = rubiConf.analyticsEventDelay,
+      sendBidWon = true
+    } = {}) {
       events.emit(AUCTION_INIT, { ...MOCK.AUCTION_INIT, auctionId });
       events.emit(BID_REQUESTED, { ...MOCK.BID_REQUESTED, auctionId });
       events.emit(BID_RESPONSE, { ...MOCK.BID_RESPONSE, auctionId });
@@ -491,8 +485,13 @@ describe('magnite analytics adapter', function () {
         gptEvents.forEach(gptEvent => mockGpt.emitEvent(gptEvent.eventName, gptEvent.params));
       }
 
-      events.emit(BID_WON, { ...MOCK.BID_WON, auctionId });
-      clock.tick(rubiConf.analyticsEventDelay + 100);
+      if (sendBidWon) {
+        events.emit(BID_WON, { ...MOCK.BID_WON, auctionId });
+      }
+
+      if (eventDelay > 0) {
+        clock.tick(eventDelay);
+      }
     }
 
     beforeEach(function () {
@@ -514,7 +513,6 @@ describe('magnite analytics adapter', function () {
       expect(request.url).to.equal('//localhost:9999/event');
 
       let message = JSON.parse(request.requestBody);
-      validate(message);
 
       expect(message).to.deep.equal(ANALYTICS_MESSAGE);
     });
@@ -620,7 +618,6 @@ describe('magnite analytics adapter', function () {
         expect(request.url).to.equal('//localhost:9999/event');
 
         let message = JSON.parse(request.requestBody);
-        validate(message);
 
         expect(message).to.deep.equal(expectedMessage);
       });
@@ -638,7 +635,6 @@ describe('magnite analytics adapter', function () {
         expect(server.requests.length).to.equal(1);
         let request = server.requests[0];
         let message = JSON.parse(request.requestBody);
-        validate(message);
 
         let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
         expectedMessage.session.pvid = STUBBED_UUID.slice(0, 8);
@@ -665,7 +661,6 @@ describe('magnite analytics adapter', function () {
         expect(server.requests.length).to.equal(1);
         let request = server.requests[0];
         let message = JSON.parse(request.requestBody);
-        validate(message);
 
         let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
         expectedMessage.session.pvid = STUBBED_UUID.slice(0, 8);
@@ -694,7 +689,6 @@ describe('magnite analytics adapter', function () {
         expect(server.requests.length).to.equal(1);
         let request = server.requests[0];
         let message = JSON.parse(request.requestBody);
-        validate(message);
 
         let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
         expectedMessage.session.pvid = STUBBED_UUID.slice(0, 8);
@@ -731,7 +725,6 @@ describe('magnite analytics adapter', function () {
         expect(server.requests.length).to.equal(1);
         let request = server.requests[0];
         let message = JSON.parse(request.requestBody);
-        validate(message);
 
         let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
         expectedMessage.session = {
@@ -787,7 +780,6 @@ describe('magnite analytics adapter', function () {
         expect(server.requests.length).to.equal(1);
         let request = server.requests[0];
         let message = JSON.parse(request.requestBody);
-        validate(message);
 
         let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
         expectedMessage.session = {
@@ -847,7 +839,6 @@ describe('magnite analytics adapter', function () {
         expect(server.requests.length).to.equal(1);
         let request = server.requests[0];
         let message = JSON.parse(request.requestBody);
-        validate(message);
 
         let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
         // session should match what is already in ANALYTICS_MESSAGE, just need to add pvid
@@ -899,7 +890,6 @@ describe('magnite analytics adapter', function () {
         expect(server.requests.length).to.equal(1);
         let request = server.requests[0];
         let message = JSON.parse(request.requestBody);
-        validate(message);
 
         let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
         // session should match what is already in ANALYTICS_MESSAGE, just need to add pvid
@@ -977,5 +967,899 @@ describe('magnite analytics adapter', function () {
       expectedMessage.bidsWon[0].adUnitCode = '1a2b3c4d';
       expect(message).to.deep.equal(expectedMessage);
     });
+
+    it('should delay the event call depending on analyticsEventDelay config', function () {
+      config.setConfig({
+        rubicon: {
+          analyticsEventDelay: 2000
+        }
+      });
+      performStandardAuction({ eventDelay: 0 });
+
+      // Should not be sent until delay
+      expect(server.requests.length).to.equal(0);
+
+      // tick the clock and it should fire
+      clock.tick(2000);
+
+      expect(server.requests.length).to.equal(1);
+      let request = server.requests[0];
+      let message = JSON.parse(request.requestBody);
+
+      // The timestamps should be changed from the default by 1800 (set eventDelay - eventDelay default (200))
+      let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
+      expectedMessage.session.expires = expectedMessage.session.expires + 1800;
+      expectedMessage.session.start = expectedMessage.session.start + 1800;
+      expectedMessage.timestamps.eventTime = expectedMessage.timestamps.eventTime + 1800;
+
+      expect(message).to.deep.equal(expectedMessage);
+    });
+
+    ['seatBidId', 'pbsBidId'].forEach(pbsParam => {
+      it(`should overwrite prebid bidId with incoming PBS ${pbsParam}`, function () {
+        // bid response
+        let seatBidResponse = utils.deepClone(MOCK.BID_RESPONSE);
+        seatBidResponse[pbsParam] = 'abc-123-do-re-me';
+
+        // Run auction
+        events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+        events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+        events.emit(BID_RESPONSE, seatBidResponse);
+        events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+        events.emit(AUCTION_END, MOCK.AUCTION_END);
+
+        // emmit gpt events and bidWon
+        mockGpt.emitEvent(gptSlotRenderEnded0.eventName, gptSlotRenderEnded0.params);
+
+        events.emit(BID_WON, MOCK.BID_WON);
+
+        // hit the eventDelay
+        clock.tick(rubiConf.analyticsEventDelay);
+
+        expect(server.requests.length).to.equal(1);
+        let request = server.requests[0];
+        let message = JSON.parse(request.requestBody);
+        let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
+
+        // new adUnitCodes in payload
+        expectedMessage.auctions[0].adUnits[0].bids[0].bidId = 'abc-123-do-re-me';
+        expectedMessage.auctions[0].adUnits[0].bids[0].oldBidId = '23fcd8cf4bf0d7';
+        expectedMessage.bidsWon[0].bidId = 'abc-123-do-re-me';
+        expect(message).to.deep.equal(expectedMessage);
+      });
+    });
+
+    [0, '0'].forEach(pbsParam => {
+      it(`should generate new bidId if incoming pbsBidId is ${pbsParam}`, function () {
+        // bid response
+        let seatBidResponse = utils.deepClone(MOCK.BID_RESPONSE);
+        seatBidResponse.pbsBidId = pbsParam;
+
+        // Run auction
+        events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+        events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+        events.emit(BID_RESPONSE, seatBidResponse);
+        events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+        events.emit(AUCTION_END, MOCK.AUCTION_END);
+
+        // emmit gpt events and bidWon
+        mockGpt.emitEvent(gptSlotRenderEnded0.eventName, gptSlotRenderEnded0.params);
+
+        events.emit(BID_WON, MOCK.BID_WON);
+
+        // hit the eventDelay
+        clock.tick(rubiConf.analyticsEventDelay);
+
+        expect(server.requests.length).to.equal(1);
+        let request = server.requests[0];
+        let message = JSON.parse(request.requestBody);
+        let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
+
+        // new adUnitCodes in payload
+        expectedMessage.auctions[0].adUnits[0].bids[0].bidId = STUBBED_UUID;
+        expectedMessage.auctions[0].adUnits[0].bids[0].oldBidId = '23fcd8cf4bf0d7';
+        expectedMessage.bidsWon[0].bidId = STUBBED_UUID;
+        expect(message).to.deep.equal(expectedMessage);
+      });
+    });
+
+    it(`should pick highest cpm if more than one bidResponse comes in`, function () {
+      // Run auction
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+
+      const bidResp = utils.deepClone(MOCK.BID_RESPONSE);
+
+      // emit some bid responses
+      [1.0, 5.5, 0.1].forEach(cpm => {
+        events.emit(BID_RESPONSE, { ...bidResp, cpm });
+      });
+
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+
+      // emmit gpt events and bidWon
+      mockGpt.emitEvent(gptSlotRenderEnded0.eventName, gptSlotRenderEnded0.params);
+
+      events.emit(BID_WON, MOCK.BID_WON);
+
+      // hit the eventDelay
+      clock.tick(rubiConf.analyticsEventDelay);
+
+      expect(server.requests.length).to.equal(1);
+      let request = server.requests[0];
+      let message = JSON.parse(request.requestBody);
+      let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
+
+      // highest cpm in payload
+      expectedMessage.auctions[0].adUnits[0].bids[0].bidResponse.bidPriceUSD = 5.5;
+      expectedMessage.bidsWon[0].bidResponse.bidPriceUSD = 5.5;
+      expect(message).to.deep.equal(expectedMessage);
+    });
+
+    it('should send bid won events by themselves if emitted after auction pba payload is sent', function () {
+      performStandardAuction({ sendBidWon: false });
+
+      // Now send bidWon
+      events.emit(BID_WON, MOCK.BID_WON);
+
+      // tick the event delay time
+      clock.tick(rubiConf.analyticsEventDelay);
+
+      // should see two server requests
+      expect(server.requests.length).to.equal(2);
+
+      // first is normal analytics event without bidWon
+      let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
+      delete expectedMessage.bidsWon;
+
+      let message = JSON.parse(server.requests[0].requestBody);
+      expect(message).to.deep.equal(expectedMessage);
+
+      // second is just a bidWon (remove gam and auction event)
+      message = JSON.parse(server.requests[1].requestBody);
+
+      let expectedMessage2 = utils.deepClone(ANALYTICS_MESSAGE);
+      delete expectedMessage2.auctions;
+      delete expectedMessage2.gamRenders;
+
+      // second event should be event delay time after first one
+      expectedMessage2.session.expires = expectedMessage.session.expires + rubiConf.analyticsEventDelay;
+      expectedMessage2.session.start = expectedMessage.session.start + rubiConf.analyticsEventDelay;
+      expectedMessage2.timestamps.eventTime = expectedMessage.timestamps.eventTime + rubiConf.analyticsEventDelay;
+
+      // trigger is `batched-bidsWon`
+      expectedMessage2.trigger = 'batched-bidsWon';
+
+      expect(message).to.deep.equal(expectedMessage2);
+    });
+
+    it('should send gamRender events by themselves if emitted after auction pba payload is sent', function () {
+      // dont send extra events and hit the batch timeout
+      performStandardAuction({ gptEvents: [], sendBidWon: false, eventDelay: rubiConf.analyticsBatchTimeout });
+
+      // Now send gptEvent and bidWon
+      mockGpt.emitEvent(gptSlotRenderEnded0.eventName, gptSlotRenderEnded0.params);
+      events.emit(BID_WON, MOCK.BID_WON);
+
+      // tick the event delay time
+      clock.tick(rubiConf.analyticsEventDelay);
+
+      // should see two server requests
+      expect(server.requests.length).to.equal(2);
+
+      // first is normal analytics event without bidWon or gam
+      let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
+      delete expectedMessage.bidsWon;
+      delete expectedMessage.gamRenders;
+
+      // timing changes a bit -> timestamps should be batchTimeout - event delay later
+      const expectedExtraTime = rubiConf.analyticsBatchTimeout - rubiConf.analyticsEventDelay;
+      expectedMessage.session.expires = expectedMessage.session.expires + expectedExtraTime;
+      expectedMessage.session.start = expectedMessage.session.start + expectedExtraTime;
+      expectedMessage.timestamps.eventTime = expectedMessage.timestamps.eventTime + expectedExtraTime;
+
+      // since gam event did not fire, the trigger should be auctionEnd
+      expectedMessage.trigger = 'auctionEnd';
+
+      let message = JSON.parse(server.requests[0].requestBody);
+      expect(message).to.deep.equal(expectedMessage);
+
+      // second is gam and bid won
+      message = JSON.parse(server.requests[1].requestBody);
+
+      let expectedMessage2 = utils.deepClone(ANALYTICS_MESSAGE);
+      // second event should be event delay time after first one
+      expectedMessage2.session.expires = expectedMessage.session.expires + rubiConf.analyticsEventDelay;
+      expectedMessage2.session.start = expectedMessage.session.start + rubiConf.analyticsEventDelay;
+      expectedMessage2.timestamps.eventTime = expectedMessage.timestamps.eventTime + rubiConf.analyticsEventDelay;
+      delete expectedMessage2.auctions;
+
+      // trigger should be `batched-bidsWon-gamRender`
+      expectedMessage2.trigger = 'batched-bidsWon-gamRenders';
+
+      expect(message).to.deep.equal(expectedMessage2);
+    });
+
+    it('should send all events solo if delay and batch set to 0', function () {
+      const defaultDelay = rubiConf.analyticsEventDelay;
+      config.setConfig({
+        rubicon: {
+          analyticsBatchTimeout: 0,
+          analyticsEventDelay: 0
+        }
+      });
+
+      performStandardAuction({eventDelay: 0});
+
+      // should be 3 requests
+      expect(server.requests.length).to.equal(3);
+
+      // grab expected 3 requests from default message
+      let { auctions, gamRenders, bidsWon, ...rest } = utils.deepClone(ANALYTICS_MESSAGE);
+
+      // rest of payload should have timestamps changed to be - default eventDelay since we changed it to 0
+      rest.session.expires = rest.session.expires - defaultDelay;
+      rest.session.start = rest.session.start - defaultDelay;
+      rest.timestamps.eventTime = rest.timestamps.eventTime - defaultDelay;
+
+      // loop through and assert events fired in correct order with correct stuff
+      [
+        { expectedMessage: { auctions, ...rest }, trigger: 'solo-auction' },
+        { expectedMessage: { gamRenders, ...rest }, trigger: 'solo-gam' },
+        { expectedMessage: { bidsWon, ...rest }, trigger: 'solo-bidWon' },
+      ].forEach((stuff, requestNum) => {
+        let message = JSON.parse(server.requests[requestNum].requestBody);
+        stuff.expectedMessage.trigger = stuff.trigger;
+        expect(message).to.deep.equal(stuff.expectedMessage);
+      });
+    });
+
+    it(`should correctly mark bids as timed out`, function () {
+      // Run auction (simulate bidder timed out in 1000 ms)
+      const auctionStart = Date.now() - 1000;
+      events.emit(AUCTION_INIT, { ...MOCK.AUCTION_INIT, timestamp: auctionStart });
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+
+      // emit bid timeout
+      events.emit(BID_TIMEOUT, [
+        {
+          auctionId: MOCK.AUCTION_INIT.auctionId,
+          adUnitCode: MOCK.AUCTION_INIT.adUnits[0].code,
+          bidId: MOCK.BID_REQUESTED.bids[0].bidId
+        }
+      ]);
+
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+
+      // emmit gpt events and bidWon
+      mockGpt.emitEvent(gptSlotRenderEnded0.eventName, gptSlotRenderEnded0.params);
+
+      // hit the eventDelay
+      clock.tick(rubiConf.analyticsEventDelay);
+
+      expect(server.requests.length).to.equal(1);
+      let request = server.requests[0];
+      let message = JSON.parse(request.requestBody);
+      let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
+
+      // should see error time out bid
+      expectedMessage.auctions[0].adUnits[0].bids[0].status = 'error';
+      expectedMessage.auctions[0].adUnits[0].bids[0].error = {
+        code: 'timeout-error',
+        description: 'prebid.js timeout' // will help us diff if timeout was set by PBS or PBJS
+      };
+
+      // should not see bidResponse or bidsWon
+      delete expectedMessage.auctions[0].adUnits[0].bids[0].bidResponse;
+      delete expectedMessage.bidsWon;
+
+      // adunit should be marked as error
+      expectedMessage.auctions[0].adUnits[0].status = 'error';
+
+      // timed out in 1000 ms
+      expectedMessage.auctions[0].adUnits[0].bids[0].clientLatencyMillis = 1000;
+
+      expectedMessage.auctions[0].auctionStart = auctionStart;
+
+      expect(message).to.deep.equal(expectedMessage);
+    });
+
+    [
+      { name: 'aupname', adUnitPath: 'adUnits.0.ortb2Imp.ext.data.aupname', eventPath: 'auctions.0.adUnits.0.pattern', input: '1234/mycoolsite/*&gpt_leaderboard&deviceType=mobile' },
+      { name: 'gpid', adUnitPath: 'adUnits.0.ortb2Imp.ext.gpid', eventPath: 'auctions.0.adUnits.0.gpid', input: '1234/gpid/path' },
+      { name: 'pbadslot', adUnitPath: 'adUnits.0.ortb2Imp.ext.data.pbadslot', eventPath: 'auctions.0.adUnits.0.pbAdSlot', input: '1234/pbadslot/path' }
+    ].forEach(test => {
+      it(`should correctly pass ${test.name}`, function () {
+        // bid response
+        let auctionInit = utils.deepClone(MOCK.AUCTION_INIT);
+        utils.deepSetValue(auctionInit, test.adUnitPath, test.input);
+
+        // Run auction
+        events.emit(AUCTION_INIT, auctionInit);
+        events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+        events.emit(BID_RESPONSE, MOCK.BID_RESPONSE);
+        events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+        events.emit(AUCTION_END, MOCK.AUCTION_END);
+
+        // emmit gpt events and bidWon
+        mockGpt.emitEvent(gptSlotRenderEnded0.eventName, gptSlotRenderEnded0.params);
+
+        events.emit(BID_WON, MOCK.BID_WON);
+
+        // hit the eventDelay
+        clock.tick(rubiConf.analyticsEventDelay);
+
+        expect(server.requests.length).to.equal(1);
+        let request = server.requests[0];
+        let message = JSON.parse(request.requestBody);
+
+        // pattern in payload
+        expect(deepAccess(message, test.eventPath)).to.equal(test.input);
+      });
+    });
+
+    it('should pass bidderDetail for multibid auctions', function () {
+      let bidResponse = utils.deepClone(MOCK.BID_RESPONSE);
+      bidResponse.targetingBidder = 'rubi2';
+      bidResponse.originalRequestId = bidResponse.requestId;
+      bidResponse.requestId = '1a2b3c4d5e6f7g8h9';
+
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+      events.emit(BID_RESPONSE, bidResponse);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE);
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+
+      // emmit gpt events and bidWon
+      mockGpt.emitEvent(gptSlotRenderEnded0.eventName, gptSlotRenderEnded0.params);
+
+      let bidWon = utils.deepClone(MOCK.BID_WON);
+      bidWon.bidId = bidWon.requestId = '1a2b3c4d5e6f7g8h9';
+      bidWon.bidderDetail = 'rubi2';
+      events.emit(BID_WON, bidWon);
+
+      // hit the eventDelay
+      clock.tick(rubiConf.analyticsEventDelay);
+
+      expect(server.requests.length).to.equal(1);
+
+      let message = JSON.parse(server.requests[0].requestBody);
+
+      let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
+
+      // expect an extra bid added
+      expectedMessage.auctions[0].adUnits[0].bids.push({
+        ...ANALYTICS_MESSAGE.auctions[0].adUnits[0].bids[0],
+        bidderDetail: 'rubi2',
+        bidId: '1a2b3c4d5e6f7g8h9'
+      });
+
+      // bid won is our extra bid
+      expectedMessage.bidsWon[0].bidderDetail = 'rubi2';
+      expectedMessage.bidsWon[0].bidId = '1a2b3c4d5e6f7g8h9';
+
+      expect(message).to.deep.equal(expectedMessage);
+    });
+
+    it('should pass bidderDetail for multibid auctions', function () {
+      // Set the rates
+      setConfig({
+        adServerCurrency: 'JPY',
+        rates: {
+          USD: {
+            JPY: 100
+          }
+        }
+      });
+
+      // set our bid response to JPY
+      let bidResponse = utils.deepClone(MOCK.BID_RESPONSE);
+      bidResponse.currency = 'JPY';
+      bidResponse.cpm = 100;
+
+      // Now add the bidResponse hook which hooks on the currenct conversion function onto the bid response
+      let innerBid;
+      addBidResponseHook(function (adCodeId, bid) {
+        innerBid = bid;
+      }, 'elementId', bidResponse);
+
+      // Use the rubi analytics parseBidResponse Function to get the resulting cpm from the bid response!
+      const bidResponseObj = parseBidResponse(innerBid);
+      expect(bidResponseObj).to.have.property('bidPriceUSD');
+      expect(bidResponseObj.bidPriceUSD).to.equal(1.0);
+    });
+
+    it('should use the integration type provided in the config instead of the default', () => {
+      config.setConfig({
+        rubicon: {
+          int_type: 'testType'
+        }
+      })
+
+      performStandardAuction();
+
+      expect(server.requests.length).to.equal(1);
+      const request = server.requests[0];
+      const message = JSON.parse(request.requestBody);
+      expect(message.integration).to.equal('testType');
+    });
+    describe('when handling bid caching', () => {
+      let auctionInits, bidRequests, bidResponses, bidsWon;
+      beforeEach(function () {
+        // set timing stuff to 0 so we clearly know when things fire
+        config.setConfig({
+          useBidCache: true,
+          rubicon: {
+            analyticsEventDelay: 0,
+            analyticsBatchTimeout: 0
+          }
+        });
+
+        // setup 3 auctions
+        auctionInits = [
+          { ...MOCK.AUCTION_INIT, auctionId: 'auctionId-1', adUnits: [{ ...MOCK.AUCTION_INIT.adUnits[0], transactionId: 'tid-1' }] },
+          { ...MOCK.AUCTION_INIT, auctionId: 'auctionId-2', adUnits: [{ ...MOCK.AUCTION_INIT.adUnits[0], transactionId: 'tid-2' }] },
+          { ...MOCK.AUCTION_INIT, auctionId: 'auctionId-3', adUnits: [{ ...MOCK.AUCTION_INIT.adUnits[0], transactionId: 'tid-3' }] }
+        ];
+        bidRequests = [
+          { ...MOCK.BID_REQUESTED, auctionId: 'auctionId-1', bids: [{ ...MOCK.BID_REQUESTED.bids[0], bidId: 'bidId-1' }] },
+          { ...MOCK.BID_REQUESTED, auctionId: 'auctionId-2', bids: [{ ...MOCK.BID_REQUESTED.bids[0], bidId: 'bidId-2' }] },
+          { ...MOCK.BID_REQUESTED, auctionId: 'auctionId-3', bids: [{ ...MOCK.BID_REQUESTED.bids[0], bidId: 'bidId-3' }] }
+        ];
+        bidResponses = [
+          { ...MOCK.BID_RESPONSE, auctionId: 'auctionId-1', transactionId: 'tid-1', requestId: 'bidId-1' },
+          { ...MOCK.BID_RESPONSE, auctionId: 'auctionId-2', transactionId: 'tid-2', requestId: 'bidId-2' },
+          { ...MOCK.BID_RESPONSE, auctionId: 'auctionId-3', transactionId: 'tid-3', requestId: 'bidId-3' },
+        ];
+        bidsWon = [
+          { ...MOCK.BID_WON, auctionId: 'auctionId-1', transactionId: 'tid-1', bidId: 'bidId-1', requestId: 'bidId-1' },
+          { ...MOCK.BID_WON, auctionId: 'auctionId-2', transactionId: 'tid-2', bidId: 'bidId-2', requestId: 'bidId-2' },
+          { ...MOCK.BID_WON, auctionId: 'auctionId-3', transactionId: 'tid-3', bidId: 'bidId-3', requestId: 'bidId-3' },
+        ];
+      });
+      function runBasicAuction(auctionNum) {
+        events.emit(AUCTION_INIT, auctionInits[auctionNum]);
+        events.emit(BID_REQUESTED, bidRequests[auctionNum]);
+        events.emit(BID_RESPONSE, bidResponses[auctionNum]);
+        events.emit(BIDDER_DONE, { ...MOCK.BIDDER_DONE, auctionId: auctionInits[auctionNum].auctionId });
+        events.emit(AUCTION_END, { ...MOCK.AUCTION_END, auctionId: auctionInits[auctionNum].auctionId });
+      }
+      it('should select earliest auction to attach to', () => {
+        // get 3 auctions pending to send events
+        runBasicAuction(0);
+        runBasicAuction(1);
+        runBasicAuction(2);
+
+        // emmit a gptEvent should attach to first auction
+        mockGpt.emitEvent(gptSlotRenderEnded0.eventName, gptSlotRenderEnded0.params);
+
+        // should be 4 requests so far (3 auctions + 1 gamRender)
+        expect(server.requests.length).to.equal(4);
+
+        // 4th should be gamRender and should have Auciton # 1's id's
+        const message = JSON.parse(server.requests[3].requestBody);
+        const expectedMessage = {
+          ...ANALYTICS_MESSAGE.gamRenders[0],
+          auctionId: 'auctionId-1',
+          transactionId: 'tid-1'
+        };
+        expect(message.gamRenders).to.deep.equal([expectedMessage]);
+
+        // emit bidWon from first auction
+        events.emit(BID_WON, bidsWon[0]);
+
+        // another request which is bidWon
+        expect(server.requests.length).to.equal(5);
+        const message1 = JSON.parse(server.requests[4].requestBody);
+        const expectedMessage1 = {
+          ...ANALYTICS_MESSAGE.bidsWon[0],
+          sourceAuctionId: 'auctionId-1',
+          renderAuctionId: 'auctionId-1',
+          sourceTransactionId: 'tid-1',
+          renderTransactionId: 'tid-1',
+          transactionId: 'tid-1',
+          bidId: 'bidId-1',
+        };
+        expect(message1.bidsWon).to.deep.equal([expectedMessage1]);
+      });
+
+      [
+        { useBidCache: true, expectedRenderId: 3 },
+        { useBidCache: false, expectedRenderId: 2 }
+      ].forEach(test => {
+        it(`should match bidWon to correct render auction if useBidCache is ${test.useBidCache}`, () => {
+          config.setConfig({ useBidCache: test.useBidCache });
+          // get 3 auctions pending to send events
+          runBasicAuction(0);
+          runBasicAuction(1);
+          runBasicAuction(2);
+
+          // emmit 3 gpt Events, first two "empty"
+          mockGpt.emitEvent(gptSlotRenderEnded0.eventName, {
+            slot: gptSlot0,
+            isEmpty: true,
+          });
+          mockGpt.emitEvent(gptSlotRenderEnded0.eventName, {
+            slot: gptSlot0,
+            isEmpty: true,
+          });
+          // last one is valid
+          mockGpt.emitEvent(gptSlotRenderEnded0.eventName, gptSlotRenderEnded0.params);
+
+          // should be 6 requests so far (3 auctions + 3 gamRender)
+          expect(server.requests.length).to.equal(6);
+
+          // 4th should be gamRender and should have Auciton # 1's id's
+          const message = JSON.parse(server.requests[3].requestBody);
+          const expectedMessage = {
+            auctionId: 'auctionId-1',
+            transactionId: 'tid-1',
+            isSlotEmpty: true,
+            adSlot: 'box'
+          };
+          expect(message.gamRenders).to.deep.equal([expectedMessage]);
+
+          // 5th should be gamRender and should have Auciton # 2's id's
+          const message1 = JSON.parse(server.requests[4].requestBody);
+          const expectedMessage1 = {
+            auctionId: 'auctionId-2',
+            transactionId: 'tid-2',
+            isSlotEmpty: true,
+            adSlot: 'box'
+          };
+          expect(message1.gamRenders).to.deep.equal([expectedMessage1]);
+
+          // 6th should be gamRender and should have Auciton # 3's id's
+          const message2 = JSON.parse(server.requests[5].requestBody);
+          const expectedMessage2 = {
+            ...ANALYTICS_MESSAGE.gamRenders[0],
+            auctionId: 'auctionId-3',
+            transactionId: 'tid-3'
+          };
+          expect(message2.gamRenders).to.deep.equal([expectedMessage2]);
+
+          // emit bidWon from second auction
+          // it should pick out render information from 3rd auction and source from 1st
+          events.emit(BID_WON, bidsWon[1]);
+
+          // another request which is bidWon
+          expect(server.requests.length).to.equal(7);
+          const message3 = JSON.parse(server.requests[6].requestBody);
+          const expectedMessage3 = {
+            ...ANALYTICS_MESSAGE.bidsWon[0],
+            sourceAuctionId: 'auctionId-2',
+            renderAuctionId: `auctionId-${test.expectedRenderId}`,
+            sourceTransactionId: 'tid-2',
+            renderTransactionId: `tid-${test.expectedRenderId}`,
+            transactionId: 'tid-2',
+            bidId: 'bidId-2',
+          };
+          expect(message3.bidsWon).to.deep.equal([expectedMessage3]);
+        });
+      });
+
+      it('should still fire bidWon if no gam match found', () => {
+        // get 3 auctions pending to send events
+        runBasicAuction(0);
+        runBasicAuction(1);
+        runBasicAuction(2);
+
+        // emit bidWon from 3rd auction - it should still fire even though no associated gamRender found
+        events.emit(BID_WON, bidsWon[2]);
+
+        // another request which is bidWon
+        expect(server.requests.length).to.equal(4);
+        const message1 = JSON.parse(server.requests[3].requestBody);
+        const expectedMessage1 = {
+          ...ANALYTICS_MESSAGE.bidsWon[0],
+          sourceAuctionId: 'auctionId-3',
+          renderAuctionId: 'auctionId-3',
+          sourceTransactionId: 'tid-3',
+          renderTransactionId: 'tid-3',
+          transactionId: 'tid-3',
+          bidId: 'bidId-3',
+        };
+        expect(message1.bidsWon).to.deep.equal([expectedMessage1]);
+      });
+    });
+  });
+
+  describe('billing events integration', () => {
+    beforeEach(function () {
+      magniteAdapter.enableAnalytics({
+        options: {
+          endpoint: '//localhost:9999/event',
+          accountId: 1001
+        }
+      });
+      // default dmBilling
+      config.setConfig({
+        rubicon: {
+          dmBilling: {
+            enabled: false,
+            vendors: [],
+            waitForAuction: true
+          }
+        }
+      })
+    });
+    afterEach(function () {
+      magniteAdapter.disableAnalytics();
+    });
+    const basicBillingAuction = (billingEvents = []) => {
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+
+      billingEvents.forEach(ev => events.emit(BILLABLE_EVENT, ev));
+
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE);
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+
+      mockGpt.emitEvent(gptSlotRenderEnded0.eventName, gptSlotRenderEnded0.params);
+      events.emit(BID_WON, MOCK.BID_WON);
+
+      clock.tick(rubiConf.analyticsEventDelay);
+    }
+    it('should ignore billing events when not enabled', () => {
+      basicBillingAuction([{
+        vendor: 'vendorName',
+        type: 'auction',
+        billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965'
+      }]);
+      expect(server.requests.length).to.equal(1);
+      const request = server.requests[0];
+      const message = JSON.parse(request.requestBody);
+      expect(message.billableEvents).to.be.undefined;
+    });
+    it('should ignore billing events when enabled but vendor is not whitelisted', () => {
+      // off by default
+      config.setConfig({
+        rubicon: {
+          dmBilling: {
+            enabled: true
+          }
+        }
+      });
+      basicBillingAuction([{
+        vendor: 'vendorName',
+        type: 'auction',
+        billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965'
+      }]);
+      expect(server.requests.length).to.equal(1);
+      const request = server.requests[0];
+      const message = JSON.parse(request.requestBody);
+      expect(message.billableEvents).to.be.undefined;
+    });
+    it('should ignore billing events if billingId is not defined or billingId is not a string', () => {
+      // off by default
+      config.setConfig({
+        rubicon: {
+          dmBilling: {
+            enabled: true,
+            vendors: ['vendorName']
+          }
+        }
+      });
+      basicBillingAuction([
+        {
+          vendor: 'vendorName',
+          type: 'auction',
+        },
+        {
+          vendor: 'vendorName',
+          type: 'auction',
+          billingId: true
+        },
+        {
+          vendor: 'vendorName',
+          type: 'auction',
+          billingId: 1233434
+        },
+        {
+          vendor: 'vendorName',
+          type: 'auction',
+          billingId: null
+        }
+      ]);
+      expect(server.requests.length).to.equal(1);
+      const request = server.requests[0];
+      const message = JSON.parse(request.requestBody);
+      expect(message.billableEvents).to.be.undefined;
+    });
+    it('should pass along billing event in same payload if same auctionId', () => {
+      // off by default
+      config.setConfig({
+        rubicon: {
+          dmBilling: {
+            enabled: true,
+            vendors: ['vendorName']
+          }
+        }
+      });
+      basicBillingAuction([{
+        vendor: 'vendorName',
+        type: 'auction',
+        billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965',
+        auctionId: MOCK.AUCTION_INIT.auctionId
+      }]);
+      expect(server.requests.length).to.equal(1);
+      const request = server.requests[0];
+      const message = JSON.parse(request.requestBody);
+      expect(message).to.haveOwnProperty('auctions');
+      expect(message.billableEvents).to.deep.equal([{
+        accountId: 1001,
+        vendor: 'vendorName',
+        type: 'general', // mapping all events to endpoint as 'general' for now
+        billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965',
+        auctionId: MOCK.AUCTION_INIT.auctionId
+      }]);
+    });
+    it('should pass NOT pass along billing event in same payload if no auctionId', () => {
+      // off by default
+      config.setConfig({
+        rubicon: {
+          dmBilling: {
+            enabled: true,
+            vendors: ['vendorName']
+          }
+        }
+      });
+      basicBillingAuction([{
+        vendor: 'vendorName',
+        type: 'auction',
+        billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965',
+      }]);
+      expect(server.requests.length).to.equal(2);
+
+      // first is the billing event
+      let message = JSON.parse(server.requests[0].requestBody);
+      expect(message).to.not.haveOwnProperty('auctions');
+      expect(message.billableEvents).to.deep.equal([{
+        accountId: 1001,
+        vendor: 'vendorName',
+        type: 'general', // mapping all events to endpoint as 'general' for now
+        billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965'
+      }]);
+
+      // second is auctions
+      message = JSON.parse(server.requests[1].requestBody);
+      expect(message).to.haveOwnProperty('auctions');
+      expect(message).to.not.haveOwnProperty('billableEvents');
+    });
+    it('should pass along multiple billing events but filter out duplicates', () => {
+      // off by default
+      config.setConfig({
+        rubicon: {
+          dmBilling: {
+            enabled: true,
+            vendors: ['vendorName']
+          }
+        }
+      });
+      basicBillingAuction([
+        {
+          vendor: 'vendorName',
+          type: 'auction',
+          billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965',
+          auctionId: MOCK.AUCTION_INIT.auctionId
+        },
+        {
+          vendor: 'vendorName',
+          type: 'auction',
+          billingId: '743db6e3-21f2-44d4-917f-cb3488c6076f',
+          auctionId: MOCK.AUCTION_INIT.auctionId
+        },
+        {
+          vendor: 'vendorName',
+          type: 'auction',
+          billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965',
+          auctionId: MOCK.AUCTION_INIT.auctionId
+        }
+      ]);
+      expect(server.requests.length).to.equal(1);
+      const request = server.requests[0];
+      const message = JSON.parse(request.requestBody);
+      expect(message).to.haveOwnProperty('auctions');
+      expect(message.billableEvents).to.deep.equal([
+        {
+          accountId: 1001,
+          vendor: 'vendorName',
+          type: 'general',
+          billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965',
+          auctionId: MOCK.AUCTION_INIT.auctionId
+        },
+        {
+          accountId: 1001,
+          vendor: 'vendorName',
+          type: 'general',
+          billingId: '743db6e3-21f2-44d4-917f-cb3488c6076f',
+          auctionId: MOCK.AUCTION_INIT.auctionId
+        }
+      ]);
+    });
+    it('should pass along event right away if no pending auction', () => {
+      // off by default
+      config.setConfig({
+        rubicon: {
+          analyticsEventDelay: 0,
+          dmBilling: {
+            enabled: true,
+            vendors: ['vendorName']
+          }
+        }
+      });
+
+      events.emit(BILLABLE_EVENT, {
+        vendor: 'vendorName',
+        type: 'auction',
+        billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965'
+      });
+      expect(server.requests.length).to.equal(1);
+      const request = server.requests[0];
+      const message = JSON.parse(request.requestBody);
+      expect(message).to.not.haveOwnProperty('auctions');
+      expect(message.billableEvents).to.deep.equal([
+        {
+          accountId: 1001,
+          vendor: 'vendorName',
+          type: 'general',
+          billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965'
+        }
+      ]);
+    });
+    it('should pass along event right away if pending auction but not waiting', () => {
+      // off by default
+      config.setConfig({
+        rubicon: {
+          dmBilling: {
+            enabled: true,
+            vendors: ['vendorName'],
+            waitForAuction: false
+          }
+        }
+      });
+      // should fire right away, and then auction later
+      basicBillingAuction([{
+        vendor: 'vendorName',
+        type: 'auction',
+        billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965'
+      }]);
+      expect(server.requests.length).to.equal(2);
+      const billingRequest = server.requests[0];
+      const billingMessage = JSON.parse(billingRequest.requestBody);
+      expect(billingMessage).to.not.haveOwnProperty('auctions');
+      expect(billingMessage.billableEvents).to.deep.equal([
+        {
+          accountId: 1001,
+          vendor: 'vendorName',
+          type: 'general',
+          billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965'
+        }
+      ]);
+      // auction event after
+      const auctionRequest = server.requests[1];
+      const auctionMessage = JSON.parse(auctionRequest.requestBody);
+      // should not double pass events!
+      expect(auctionMessage).to.not.haveOwnProperty('billableEvents');
+    });
+  });
+
+  it('getHostNameFromReferer correctly grabs hostname from an input URL', function () {
+    let inputUrl = 'https://www.prebid.org/some/path?pbjs_debug=true';
+    expect(getHostNameFromReferer(inputUrl)).to.equal('www.prebid.org');
+    inputUrl = 'https://www.prebid.com/some/path?pbjs_debug=true';
+    expect(getHostNameFromReferer(inputUrl)).to.equal('www.prebid.com');
+    inputUrl = 'https://prebid.org/some/path?pbjs_debug=true';
+    expect(getHostNameFromReferer(inputUrl)).to.equal('prebid.org');
+    inputUrl = 'http://xn--p8j9a0d9c9a.xn--q9jyb4c/';
+    expect(typeof getHostNameFromReferer(inputUrl)).to.equal('string');
+
+    // not non-UTF char's in query / path which break if noDecodeWholeURL not set
+    inputUrl = 'https://prebid.org/search_results/%95x%8Em%92%CA/?category=000';
+    expect(getHostNameFromReferer(inputUrl)).to.equal('prebid.org');
   });
 });
