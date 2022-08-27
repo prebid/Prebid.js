@@ -31,6 +31,7 @@ import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
 import {OUTSTREAM} from '../src/video.js';
 import { getGlobal } from '../src/prebidGlobal.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'adagio';
 const LOG_PREFIX = 'Adagio:';
@@ -270,9 +271,8 @@ function getDevice() {
 function getSite(bidderRequest) {
   const { refererInfo } = bidderRequest;
   return {
-    // TODO: do these fallbacks make sense?
-    domain: refererInfo.domain || parseDomain(refererInfo.topmostLocation) || '',
-    page: refererInfo.page || refererInfo.topmostLocation || '',
+    domain: parseDomain(refererInfo.topmostLocation) || '',
+    page: refererInfo.topmostLocation || '',
     referrer: refererInfo.ref || getWindowSelf().document.referrer || '',
     top: refererInfo.reachedTop
   };
@@ -882,6 +882,9 @@ export const spec = {
   },
 
   buildRequests(validBidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     const secure = (location.protocol === 'https:') ? 1 : 0;
     const device = internal.getDevice();
     const site = internal.getSite(bidderRequest);
@@ -1120,7 +1123,7 @@ export const spec = {
         ...globalFeatures,
         print_number: getPrintNumber(adagioBid.adUnitCode, adagioBidderRequest).toString(),
         adunit_position: getSlotPosition(adagioBid.params.adUnitElementId) // adUnitElementId à déplacer ???
-      }
+      };
 
       adagioBid.params.pageviewId = internal.getPageviewId();
       adagioBid.params.prebidVersion = '$prebid.version$';

@@ -52,7 +52,7 @@ export const internal = {
   deepEqual
 };
 
-let prebidInternal = {}
+let prebidInternal = {};
 /**
  * Returns object that is used as internal prebid namespace
  */
@@ -1367,4 +1367,17 @@ export function safeJSONParse(data) {
   try {
     return JSON.parse(data);
   } catch (e) {}
+}
+
+/**
+ * Sets dataset attributes on a script
+ * @param {Script} script
+ * @param {object} attributes
+ */
+export function setScriptAttributes(script, attributes) {
+  for (let key in attributes) {
+    if (attributes.hasOwnProperty(key)) {
+      script.setAttribute(key, attributes[key]);
+    }
+  }
 }

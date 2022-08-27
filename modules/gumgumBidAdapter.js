@@ -321,7 +321,7 @@ function buildRequests(validBidRequests, bidderRequest) {
     data.to = to;
 
     // ADTS-169 add adUnitCode to requests
-    if (adUnitCode) data.aun = adUnitCode
+    if (adUnitCode) data.aun = adUnitCode;
 
     // ADTS-134 Retrieve ID envelopes
     for (const eid in eids) data[eid] = eids[eid];
@@ -370,11 +370,11 @@ function buildRequests(validBidRequests, bidderRequest) {
         data.pi = 5;
       } else if (mediaTypes.video) {
         data.pi = mediaTypes.video.linearity === 2 ? 6 : 7; // invideo : video
-      } else if (params.product && params.product.toLowerCase() === 'skin') {
+      } else if (params.product && params.product.toLowerCase() === 'skins') {
         data.pi = 8;
       }
     } else { // legacy params
-      data = { ...data, ...handleLegacyParams(params, sizes) }
+      data = { ...data, ...handleLegacyParams(params, sizes) };
     }
 
     if (gdprConsent) {
@@ -400,7 +400,7 @@ function buildRequests(validBidRequests, bidderRequest) {
       url: BID_ENDPOINT,
       method: 'GET',
       data: Object.assign(data, _getBrowserParams(topWindowUrl), _getDigiTrustQueryParams(userId))
-    })
+    });
   });
   return bids;
 }
