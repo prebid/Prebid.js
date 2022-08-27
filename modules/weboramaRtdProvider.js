@@ -150,28 +150,25 @@ export const storage = getStorageManager({
   moduleName: SUBMODULE_NAME
 });
 
-/** @type {?Profile} */
-let _weboContextualProfile = null;
-
-/** @type {?Profile} */
-let _weboUserDataUserProfile = null;
-
-/** @type {?Profile} */
-let _sfbxLiteDataProfile = null;
-
 /**
- * @typedef {Object} DataInitialized
- * @property {boolean} WeboCtx
- * @property {boolean} WeboUser
- * @property {boolean} SfbxLite
+ * @typedef {Object} Component
+ * @property {boolean} initialized
+ * @property {?Profile} data
  */
 
-/** @type {DataInitialized} */
-const _dataInitialized = {
-  WeboCtx: false,
-  WeboUser: false,
-  SfbxLite: false,
-};
+/**
+ * @typedef {Object} Components
+ * @property {Component} WeboCtx
+ * @property {Component} WeboUserData
+ * @property {Component} SfbxLiteData
+ */
+
+/** @type {Components} */
+const _components = {
+  WeboCtx: { initialized: false, data: null },
+  WeboWeboUserDataCtx: { initialized: false, data: null },
+  SfbxLiteData: { initialized: false, data: null },
+}
 
 /** @type {Object} */
 const globalDefaults = {
@@ -190,17 +187,16 @@ function init(moduleConfig) {
   /** @type {ModuleParams} */
   const moduleParams = Object.assign({}, globalDefaults, moduleConfig?.params || {});
 
-  _weboContextualProfile = null;
-  _weboUserDataUserProfile = null;
-  _sfbxLiteDataProfile = null;
+  // reset profiles
+  _components.WeboCtx = { initalized: false, data: null };
+  _components.WeboUserData = { initalized: false, data: null };
+  _components.SfbxLiteData = { initalized: false, data: null };
 
-  const WEBO_CTX_REQUIRED_FIELD_TOKEN_LABEL = 'token';
+  _components.WeboCtx.initialized = initSubSection(moduleParams, WEBO_CTX_CONF_SECTION, 'token');
+  _components.WeboUserData.initialized = initSubSection(moduleParams, WEBO_USER_DATA_CONF_SECTION);
+  _components.SfbxLiteData.initialized = initSubSection(moduleParams, SFBX_LITE_DATA_CONF_SECTION);
 
-  _dataInitialized.WeboCtx = initSubSection(moduleParams, WEBO_CTX_CONF_SECTION, WEBO_CTX_REQUIRED_FIELD_TOKEN_LABEL);
-  _dataInitialized.WeboUser = initSubSection(moduleParams, WEBO_USER_DATA_CONF_SECTION);
-  _dataInitialized.SfbxLite = initSubSection(moduleParams, SFBX_LITE_DATA_CONF_SECTION);
-
-  return Object.values(_dataInitialized).some((x) => !!x);
+  return Object.values(_components).some((c) => c.initialized);
 }
 
 /** Initialize subsection module
@@ -421,39 +417,36 @@ function getTargetingData(adUnitsCodes, moduleConfig) {
  * @returns {ProfileHandler[]}
  */
 function buildProfileHandlers(moduleParams) {
-  const profileHandlers = [];
+  const steps = [{
+    component: _components.WeboCtx,
+    conf: moduleParams?.weboCtxConf,
+    callback: getContextualProfile,
+    user: false,
+    source: WEBO_CTX_SOURCE_LABEL,
+  }, {
+    component: _components.WeboUserData,
+    conf: moduleParams?.weboUserDataConf,
+    callback: getWeboUserDataProfile,
+    user: true,
+    source: WEBO_USER_DATA_SOURCE_LABEL,
+  }, {
+    component: _components.SfbxLiteData,
+    conf: moduleParams?.sfbxLiteDataConf,
+    callback: getSfbxLiteDataProfile,
+    user: false,
+    source: SFBX_LITE_DATA_SOURCE_LABEL,
+  }];
 
-  if (_dataInitialized.WeboCtx) {
-    const profileHandler = buildProfileHandler(moduleParams?.weboCtxConf, getContextualProfile,
-      false, WEBO_CTX_SOURCE_LABEL);
+  return steps.filter(step => step.component.initialized).reduce((ph, step) => {
+    const profileHandler = buildProfileHandler(step.conf, step.callback, step.user, step.source);
     if (profileHandler) {
-      profileHandlers.push(profileHandler)
+      ph.push(profileHandler);
     } else {
-      logMessage('skip contextual profile: no data');
+      logMessage(`skip ${step.source} profile: no data`);
     }
-  }
 
-  if (_dataInitialized.WeboUser) {
-    const profileHandler = buildProfileHandler(moduleParams?.weboUserDataConf, getWeboUserDataProfile,
-      true, WEBO_USER_DATA_SOURCE_LABEL);
-    if (profileHandler) {
-      profileHandlers.push(profileHandler)
-    } else {
-      logMessage('skip wam profile: no data');
-    }
-  }
-
-  if (_dataInitialized.SfbxLite) {
-    const profileHandler = buildProfileHandler(moduleParams?.sfbxLiteDataConf, getSfbxLiteDataProfile,
-      false, SFBX_LITE_DATA_SOURCE_LABEL);
-    if (profileHandler) {
-      profileHandlers.push(profileHandler)
-    } else {
-      logMessage('skip sfbx lite profile: no data');
-    }
-  }
-
-  return profileHandlers;
+    return ph;
+  }, []);
 }
 /**
  * @typedef {Object} ProfileHandler
@@ -506,8 +499,8 @@ function buildProfileHandler(dataConf, callback, user, source) {
  * @returns {[Profile,boolean]} contextual profile + isDefault boolean flag
  */
 function getContextualProfile(weboCtxConf) {
-  if (_weboContextualProfile) {
-    return [_weboContextualProfile, false];
+  if (_components.WeboCtx.data) {
+    return [_components.WeboCtx.data, false];
   }
 
   const defaultContextualProfile = weboCtxConf.defaultProfile || {};
@@ -521,8 +514,8 @@ function getContextualProfile(weboCtxConf) {
  */
 function getWeboUserDataProfile(weboUserDataConf) {
   return getDataFromLocalStorage(weboUserDataConf,
-    () => _weboUserDataUserProfile,
-    (data) => _weboUserDataUserProfile = data,
+    () => _components.WeboUserData.data,
+    (data) => _components.WeboUserData.data = data,
     DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY,
     LOCAL_STORAGE_USER_TARGETING_SECTION,
     WEBO_USER_DATA_SOURCE_LABEL);
@@ -534,8 +527,8 @@ function getWeboUserDataProfile(weboUserDataConf) {
  */
 function getSfbxLiteDataProfile(sfbxLiteDataConf) {
   return getDataFromLocalStorage(sfbxLiteDataConf,
-    () => _sfbxLiteDataProfile,
-    (data) => _sfbxLiteDataProfile = data,
+    () => _components.SfbxLiteData.data,
+    (data) => _components.SfbxLiteData.data = data,
     DEFAULT_LOCAL_STORAGE_LITE_PROFILE_KEY,
     LOCAL_STORAGE_LITE_TARGETING_SECTION,
     SFBX_LITE_DATA_SOURCE_LABEL);
@@ -606,7 +599,7 @@ export function getBidRequestData(reqBidsConfigObj, onDone, moduleConfig) {
   /** @type {ModuleParams} */
   const moduleParams = moduleConfig?.params || {};
 
-  if (!_dataInitialized.WeboCtx) {
+  if (!_components.WeboCtx.initialized) {
     handleBidRequestData(reqBidsConfigObj, moduleParams);
 
     onDone();
@@ -850,7 +843,7 @@ function assignProfileToObject(destination, base, profile) {
  */
 export function setWeboContextualProfile(data) {
   if (data && isPlainObject(data) && isValidProfile(data) && !isEmpty(data)) {
-    _weboContextualProfile = data;
+    _components.WeboCtx.data = data;
   }
 }
 
