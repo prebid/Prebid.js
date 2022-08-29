@@ -7,8 +7,8 @@ Both modules are required. This module will pass oneKeyData to your partners
 while the oneKeyRtdProvider will pass the transmission requests.
 
 Background information:
-- [prebid/addressability-framework](https://github.com/prebid/addressability-framework)
-- [prebid/paf-mvp-implementation](https://github.com/prebid/paf-mvp-implementation)
+- [OneKey-Network/addressability-framework](https://github.com/OneKey-Network/addressability-framework)
+- [OneKey-Network/OneKey-implementation](https://github.com/OneKey-Network/OneKey-implementation)
 
 It can be added to you Prebid.js package with:
 
