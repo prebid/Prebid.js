@@ -11,12 +11,12 @@
  * If publisher has not defined translation file than prebid will use default prebid translation file provided here //cdn.jsdelivr.net/gh/prebid/category-mapping-file@1/freewheel-mapping.json
  */
 
-import { config } from '../src/config.js';
-import { setupBeforeHookFnOnce, hook } from '../src/hook.js';
-import { ajax } from '../src/ajax.js';
-import { timestamp, logError } from '../src/utils.js';
-import { addBidResponse } from '../src/auction.js';
-import { getCoreStorageManager } from '../src/storageManager.js';
+import {config} from '../src/config.js';
+import {hook, setupBeforeHookFnOnce} from '../src/hook.js';
+import {ajax} from '../src/ajax.js';
+import {logError, timestamp} from '../src/utils.js';
+import {addBidResponse} from '../src/auction.js';
+import {getCoreStorageManager} from '../src/storageManager.js';
 import {timedBidResponseHook} from '../src/utils/perfMetrics.js';
 
 export const storage = getCoreStorageManager('categoryTranslation');
@@ -34,7 +34,7 @@ export const registerAdserver = hook('async', function(adServer) {
 }, 'registerAdserver');
 registerAdserver();
 
-export function getAdserverCategoryHook(fn, adUnitCode, bid) {
+export const getAdserverCategoryHook = timedBidResponseHook('categoryTranslation', function getAdserverCategoryHook(fn, adUnitCode, bid) {
   if (!bid) {
     return fn.call(this, adUnitCode); // if no bid, call original and let it display warnings
   }
@@ -64,12 +64,10 @@ export function getAdserverCategoryHook(fn, adUnitCode, bid) {
     }
   }
   fn.call(this, adUnitCode, bid);
-}
-
-const timedHook = timedBidResponseHook('categoryTranslation', getAdserverCategoryHook)
+});
 
 export function initTranslation(url, localStorageKey) {
-  setupBeforeHookFnOnce(addBidResponse, timedHook, 50);
+  setupBeforeHookFnOnce(addBidResponse, getAdserverCategoryHook, 50);
   let mappingData = storage.getDataFromLocalStorage(localStorageKey);
   try {
     mappingData = mappingData ? JSON.parse(mappingData) : undefined;

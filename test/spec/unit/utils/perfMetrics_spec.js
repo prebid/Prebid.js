@@ -317,6 +317,20 @@ describe('metricsFactory', () => {
       })
     });
   });
+  describe('newMetrics', () => {
+    it('returns related, but independent, metrics', () => {
+      const m0 = metrics.newMetrics();
+      const m1 = newMetrics();
+      m1.join(m0);
+      m0.setMetric('m0', 1);
+      m1.setMetric('m1', 1);
+      expect(metrics.getMetrics()).to.eql({});
+      expect(m0.getMetrics()).to.eql({
+        m0: 1,
+        m1: 1
+      })
+    })
+  })
 })
 
 describe('nullMetrics', () => {

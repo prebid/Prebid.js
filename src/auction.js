@@ -230,7 +230,6 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   function callBids() {
     _auctionStatus = AUCTION_STARTED;
     _auctionStart = Date.now();
-    metrics.checkpoint('auctionStart');
 
     let bidRequests = metrics.measureTime('requestBids.makeRequests',
       () => adapterManager.makeBidRequests(_adUnits, _auctionStart, _auctionId, _timeout, _labels, ortb2Fragments, metrics));
@@ -494,7 +493,7 @@ export function addBidToAuction(auctionInstance, bidResponse) {
   setupBidTargeting(bidResponse);
 
   const metrics = useMetrics(bidResponse.metrics);
-  metrics.setMetric('addBidResponse.total', metrics.timeSince('addBidResponse'));
+  metrics.timeSince('addBidResponse', 'addBidResponse.total');
 
   events.emit(CONSTANTS.EVENTS.BID_RESPONSE, bidResponse);
   auctionInstance.addBidReceived(bidResponse);

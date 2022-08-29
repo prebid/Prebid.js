@@ -314,7 +314,7 @@ function makeNode(parents) {
       parents.push([node, edge]);
     },
     newSibling() {
-      return makeNode(parents);
+      return makeNode(parents.slice());
     },
     dfWalk({visit, follow = () => true, visited = new Set(), inEdge} = {}) {
       let res;
