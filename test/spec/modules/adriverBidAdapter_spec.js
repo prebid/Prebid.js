@@ -297,18 +297,25 @@ describe('adriverAdapter', function () {
       { adrcid: undefined }
     ]
     cookieValues.forEach(cookieValue => describe('test cookie exist or not behavior', function () {
-      let expectedValues = [
-        'buyerid',
-        'ext'
-      ]
+      let expectedValues = {
+        adrcid: cookieValue.adrcid,
+        at: '',
+        cur: '',
+        tmax: '',
+        site: '',
+        id: '',
+        user: '',
+        device: '',
+        imp: ''
+      }
 
       it('check adrcid if it exists', function () {
         bidRequests[0].userId.adrcid = cookieValue.adrcid;
         const payload = JSON.parse(spec.buildRequests(bidRequests).data);
         if (cookieValue.adrcid) {
-          expect(Object.keys(payload.user)).to.have.members(expectedValues);
+          expect(Object.keys(payload)).to.have.members(Object.keys(expectedValues));
         } else {
-          expect(payload.user.buyerid).to.equal(0);
+          expect(payload.adrcid).to.equal(undefined);
         }
       });
     }));

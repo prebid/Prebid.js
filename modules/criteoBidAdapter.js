@@ -469,20 +469,15 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
       if (bidRequest.params.publisherSubId) {
         slot.publishersubid = bidRequest.params.publisherSubId;
       }
-
-      if (bidRequest.params.nativeCallback || hasNativeMediaType(bidRequest)) {
+      if (bidRequest.params.nativeCallback || deepAccess(bidRequest, `mediaTypes.${NATIVE}`)) {
         slot.native = true;
         if (!checkNativeSendId(bidRequest)) {
           logWarn(LOG_PREFIX + 'all native assets containing URL should be sent as placeholders with sendId(icon, image, clickUrl, displayUrl, privacyLink, privacyIcon)');
         }
-      }
-
-      if (hasBannerMediaType(bidRequest)) {
-        slot.sizes = parseSizes(deepAccess(bidRequest, 'mediaTypes.banner.sizes'), parseSize);
+        slot.sizes = parseSizes(deepAccess(bidRequest, 'mediaTypes.banner.sizes'), parseNativeSize);
       } else {
-        slot.sizes = [];
+        slot.sizes = parseSizes(deepAccess(bidRequest, 'mediaTypes.banner.sizes'), parseSize);
       }
-
       if (hasVideoMediaType(bidRequest)) {
         const video = {
           playersizes: parseSizes(deepAccess(bidRequest, 'mediaTypes.video.playerSize'), parseSize),
@@ -559,16 +554,15 @@ function parseSize(size) {
   return size[0] + 'x' + size[1];
 }
 
+function parseNativeSize(size) {
+  if (size[0] === undefined && size[1] === undefined) {
+    return '2x2';
+  }
+  return size[0] + 'x' + size[1];
+}
+
 function hasVideoMediaType(bidRequest) {
   return deepAccess(bidRequest, 'mediaTypes.video') !== undefined;
-}
-
-function hasBannerMediaType(bidRequest) {
-  return deepAccess(bidRequest, 'mediaTypes.banner') !== undefined;
-}
-
-function hasNativeMediaType(bidRequest) {
-  return deepAccess(bidRequest, 'mediaTypes.native') !== undefined;
 }
 
 function hasValidVideoMediaType(bidRequest) {
@@ -652,18 +646,18 @@ function enrichSlotWithFloors(slot, bidRequest) {
       if (bidRequest.mediaTypes?.banner) {
         slotFloors.banner = {};
         const bannerSizes = parseSizes(deepAccess(bidRequest, 'mediaTypes.banner.sizes'))
-        bannerSizes.forEach(bannerSize => slotFloors.banner[parseSize(bannerSize).toString()] = bidRequest.getFloor({ size: bannerSize, mediaType: BANNER }));
+        bannerSizes.forEach(bannerSize => slotFloors.banner[parseSize(bannerSize).toString()] = bidRequest.getFloor({size: bannerSize, mediaType: BANNER}));
       }
 
       if (bidRequest.mediaTypes?.video) {
         slotFloors.video = {};
         const videoSizes = parseSizes(deepAccess(bidRequest, 'mediaTypes.video.playerSize'))
-        videoSizes.forEach(videoSize => slotFloors.video[parseSize(videoSize).toString()] = bidRequest.getFloor({ size: videoSize, mediaType: VIDEO }));
+        videoSizes.forEach(videoSize => slotFloors.video[parseSize(videoSize).toString()] = bidRequest.getFloor({size: videoSize, mediaType: VIDEO}));
       }
 
       if (bidRequest.mediaTypes?.native) {
         slotFloors.native = {};
-        slotFloors.native['*'] = bidRequest.getFloor({ size: '*', mediaType: NATIVE });
+        slotFloors.native['*'] = bidRequest.getFloor({size: '*', mediaType: NATIVE});
       }
 
       if (Object.keys(slotFloors).length > 0) {
