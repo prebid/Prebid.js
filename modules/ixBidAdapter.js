@@ -612,15 +612,13 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
     r.ext.ixdiag.err = cachedErrors;
   }
 
-  // populate request source.tid
-  r.source = {
-    tid: validBidRequests[0].transactionId,
-  }
-
   // if an schain is provided, send it along
   if (validBidRequests[0].schain) {
-    r.source.ext = {};
-    r.source.ext.schain = validBidRequests[0].schain;
+    r.source = {
+      ext: {
+        schain: validBidRequests[0].schain
+      }
+    };
   }
 
   if (userEids.length > 0) {
@@ -779,7 +777,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
         id,
         banner: {
           topframe,
-          format: impressionObjects.map(({ banner: { w, h }, ext }) => ({ w, h, ext })),
+          format: impressionObjects.map(({ banner: { w, h }, ext }) => ({ w, h, ext }))
         },
       };
 
