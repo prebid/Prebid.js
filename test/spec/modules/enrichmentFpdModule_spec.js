@@ -99,4 +99,18 @@ describe('the first party data enrichment module', function() {
     expect(validated.device).to.deep.equal({ w: 1200, h: 700 });
     expect(validated.site.keywords).to.be.undefined;
   });
+
+  it('test 2', function() {
+    let validated;
+    width = 800;
+    height = 500;
+
+    validated = processFpd({}, {}).global;
+    expect(validated.regs).to.equal(undefined);
+
+    navigator.globalPrivacyControl = { gpc: 1 };
+    validated = processFpd({}, {}).global;
+    expect(validated.regs.ext.gpc).to.equal(1);
+    delete navigator.globalPrivacyControl;
+  });
 });

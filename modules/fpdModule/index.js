@@ -20,9 +20,13 @@ export function reset() {
 export function processFpd({global = {}, bidder = {}} = {}) {
   let modConf = config.getConfig('firstPartyData') || {};
   let result = GreedyPromise.resolve({global, bidder});
+  // eslint-disable-next-line no-console
+  console.log('submodules: ', submodules);
   submodules.sort((a, b) => {
     return ((a.queue || 1) - (b.queue || 1));
   }).forEach(submodule => {
+    // eslint-disable-next-line no-console
+    console.log('submodule: ', submodule);
     result = result.then(
       ({global, bidder}) => GreedyPromise.resolve(submodule.processFpd(modConf, {global, bidder}))
         .catch((err) => {
@@ -31,6 +35,8 @@ export function processFpd({global = {}, bidder = {}} = {}) {
         })
         .then((result) => ({global: result.global || global, bidder: result.bidder || bidder}))
     );
+    // eslint-disable-next-line no-console
+    console.log('result: ', result);
   });
   return result;
 }
