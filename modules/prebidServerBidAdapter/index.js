@@ -39,7 +39,7 @@ import {ajax} from '../../src/ajax.js';
 import {hook} from '../../src/hook.js';
 import {getGlobal} from '../../src/prebidGlobal.js';
 import {hasPurpose1Consent} from '../../src/utils/gpdr.js';
-import {performanceMetrics, useMetrics} from '../../src/utils/perfMetrics.js';
+import {useMetrics} from '../../src/utils/perfMetrics.js';
 
 const getConfig = config.getConfig;
 
@@ -907,7 +907,7 @@ Object.assign(ORTB2.prototype, {
   },
 
   interpretResponse(response) {
-    const {bidderRequests, s2sConfig, s2sBidRequest} = this;
+    const {bidderRequests, s2sConfig} = this;
     const bids = [];
 
     [['errors', 'serverErrors'], ['responsetimemillis', 'serverResponseTimeMs']]

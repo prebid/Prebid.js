@@ -1,12 +1,14 @@
-import {performanceMetrics} from '../../../../src/utils/perfMetrics.js';
+import {metricsFactory, newMetrics, useMetrics} from '../../../../src/utils/perfMetrics.js';
 import {defer} from '../../../../src/utils/promise.js';
 import {hook} from '../../../../src/hook.js';
 
-describe('performanceMetrics', () => {
-  let metrics, now;
+describe('metricsFactory', () => {
+  let metrics, now, enabled, newMetrics;
+
   beforeEach(() => {
     now = 0;
-    metrics = performanceMetrics(() => now);
+    newMetrics = metricsFactory({now: () => now});
+    metrics = newMetrics();
   });
 
   it('can measure time with startTiming', () => {
@@ -196,13 +198,26 @@ describe('performanceMetrics', () => {
       c2.setMetric('test', 1);
       expect(c1.getMetrics().test).to.eql([1]);
       expect(metrics.getMetrics().test).to.not.exist;
+    });
+
+    it('does not propagate at all if propagate = false', () => {
+      metrics.fork({propagate: false}).setMetric('test', 1);
+      expect(metrics.getMetrics()).to.eql({});
+    });
+
+    it('replicates grouped metrics if includeGroups = true', () => {
+      const child = metrics.fork({includeGroups: true});
+      metrics.fork().setMetric('test', 1);
+      expect(child.getMetrics()).to.eql({
+        test: [1]
+      });
     })
   });
 
   describe('join', () => {
     let other;
     beforeEach(() => {
-      other = performanceMetrics(() => now);
+      other = newMetrics();
     });
 
     it('joins metrics', () => {
@@ -229,7 +244,7 @@ describe('performanceMetrics', () => {
 
     it('gives precedence to first join\'s metrics', () => {
       metrics.join(other);
-      const metrics2 = performanceMetrics(() => now);
+      const metrics2 = newMetrics();
       metrics2.join(other);
       metrics.setMetric('test', 1);
       metrics2.setMetric('test', 2);
@@ -240,7 +255,7 @@ describe('performanceMetrics', () => {
 
     it('gives precedence to first joins\'s checkpoints', () => {
       metrics.join(other);
-      const metrics2 = performanceMetrics(() => now);
+      const metrics2 = newMetrics();
       metrics2.join(other);
       now = 10;
       metrics.checkpoint('testcp');
@@ -256,11 +271,26 @@ describe('performanceMetrics', () => {
       other.setMetric('test', 1);
       expect(m2.getMetrics().test).to.eql([1]);
       expect(metrics.getMetrics()).to.eql({});
+    });
+
+    it('does not propagate at all if propagate = false', () => {
+      metrics.join(other, {propagate: false});
+      other.setMetric('test', 1);
+      expect(metrics.getMetrics()).to.eql({});
+    });
+
+    it('replicates grouped metrics if includeGroups = true', () => {
+      const m2 = metrics.fork();
+      metrics.join(other, {includeGroups: true});
+      m2.setMetric('test', 1);
+      expect(other.getMetrics()).to.eql({
+        test: [1]
+      });
     })
 
     Object.entries({
       'join with a common ancestor': () => [metrics.fork(), metrics.fork()],
-      'join with self': () => [metrics, metrics]
+      'join with self': () => [metrics, metrics],
     }).forEach(([t, makePair]) => {
       it(`can ${t}`, () => {
         const [m1, m2] = makePair();
@@ -271,5 +301,56 @@ describe('performanceMetrics', () => {
         expect(m2.getMetrics()).to.eql(expected);
       })
     });
+
+    it('can join into a cycle', () => {
+      const c = metrics.fork();
+      c.join(metrics);
+      c.setMetric('child', 1);
+      metrics.setMetric('parent', 1);
+      expect(c.getMetrics()).to.eql({
+        child: 1,
+        parent: [1]
+      })
+      expect(metrics.getMetrics()).to.eql({
+        parent: 1,
+        child: [1]
+      })
+    });
+  });
+})
+
+describe('nullMetrics', () => {
+  let nullMetrics;
+  beforeEach(() => {
+    nullMetrics = useMetrics(null);
+  });
+
+  Object.entries({
+    'stopBefore': (fn) => nullMetrics.startTiming('n').stopBefore(fn),
+    'stopAfter': (fn) => nullMetrics.startTiming('n').stopAfter(fn),
+    'measureTime': (fn) => (...args) => nullMetrics.measureTime('n', () => fn(...args)),
+    'measureHookTime': (fn) => (...args) => nullMetrics.measureHookTime('n', {}, () => fn(...args))
+  }).forEach(([t, wrapFn]) => {
+    describe(t, () => {
+      it('invokes the wrapped fn', () => {
+        const fn = sinon.stub();
+        wrapFn(fn)('one', 'two');
+        sinon.assert.calledWith(fn, 'one', 'two');
+      });
+      it('does not register timing metrics', () => {
+        wrapFn(sinon.stub())();
+        expect(nullMetrics.getMetrics()).to.eql({});
+      })
+    })
+  });
+
+  it('does not save checkpoints', () => {
+    nullMetrics.checkpoint('A');
+    expect(nullMetrics.timeSince('A')).to.equal(null);
+  });
+
+  it('does not save metrics', () => {
+    nullMetrics.setMetric('test', 1);
+    expect(nullMetrics.getMetrics()).to.eql({});
   });
 })
