@@ -11,7 +11,6 @@ const OUTSTREAM_REDNERER_URL = 'https://mtrx.go.sonobi.com/sbi_outstream_rendere
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: 104,
   supportedMediaTypes: [BANNER, VIDEO],
   /**
    * Determines whether or not the given bid request is valid.

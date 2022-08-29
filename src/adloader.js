@@ -18,8 +18,7 @@ const _approvedLoadExternalJSList = [
   'ftrackId',
   'inskin',
   'hadron',
-  'medianet',
-  'improvedigital'
+  'medianet'
 ]
 
 /**

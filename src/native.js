@@ -735,7 +735,6 @@ function toLegacyResponse(ortbResponse, ortbRequest) {
   const legacyResponse = {};
   const requestAssets = ortbRequest?.assets || [];
   legacyResponse.clickUrl = ortbResponse.link.url;
-  legacyResponse.privacyLink = ortbResponse.privacy;
   for (const asset of ortbResponse?.assets || []) {
     const requestAsset = requestAssets.find(reqAsset => asset.id === reqAsset.id);
     if (asset.title) {
