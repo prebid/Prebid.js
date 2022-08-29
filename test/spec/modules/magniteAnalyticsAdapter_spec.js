@@ -190,7 +190,7 @@ const ANALYTICS_MESSAGE = {
   'channel': 'web',
   'integration': 'pbjs',
   'referrerUri': 'http://a-test-domain.com:8000/test_pages/sanity/TEMP/prebidTest.html?pbjs_debug=true',
-  'version': '7.8.0-pre',
+  'version': '$prebid.version$',
   'referrerHostname': 'a-test-domain.com',
   'timestamps': {
     'eventTime': 1519767013981,
