@@ -7,9 +7,8 @@ Both modules are required. This module will pass transmission requests to your p
 while the oneKeyIdSystem will pass the oneKeyData.
 
 Background information:
-- [prebid/addressability-framework](https://github.com/prebid/addressability-framework)
-- [prebid/paf-mvp-implementation](https://github.com/prebid/paf-mvp-implementation)
-
+- [OneKey-Network/addressability-framework](https://github.com/OneKey-Network/addressability-framework)
+- [OneKey-Network/OneKey-implementation](https://github.com/OneKey-Network/OneKey-implementation)
 
 ## Implementation for Publishers
 
@@ -97,7 +96,7 @@ The following is an example of the format of the data:
 
 Bidders who are part of the OneKey Addressability Framework and receive OneKey
 transmissions are required to return transmission responses as outlined in
-[prebid/addressability-framework](https://github.com/prebid/addressability-framework/blob/main/mvp-spec/ad-auction.md). Transmission responses should be appended to bids
+[OneKey-Network/addressability-framework]https://github.com/OneKey-Network/addressability-framework/blob/main/mvp-spec/ad-auction.md). Transmission responses should be appended to bids
 along with the releveant content_id using the meta.paf field. The paf-lib will
 be responsible for collecting all of the transmission responses.
 
