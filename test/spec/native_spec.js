@@ -1212,8 +1212,8 @@ describe('fireClickTrackers', () => {
     fetchURL = sinon.stub();
   });
 
-  function runTrackers(resp, args) {
-    fireClickTrackers(resp, {...args, fetchURL});
+  function runTrackers(resp, assetId = null) {
+    fireClickTrackers(resp, assetId, {fetchURL});
   }
 
   it('should load each URL in link.clicktrackers', () => {
@@ -1237,7 +1237,7 @@ describe('fireClickTrackers', () => {
           }
         }
       ],
-    }, {assetId: '1'});
+    }, 1);
     urls.forEach(url => sinon.assert.calledWith(fetchURL, url));
   })
 })

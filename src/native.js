@@ -272,7 +272,7 @@ export function fireNativeTrackers(message, bidResponse) {
   const nativeResponse = bidResponse.native.ortb || legacyPropertiesToOrtbNative(bidResponse.native);
 
   if (message.action === 'click') {
-    fireClickTrackers(nativeResponse, {assetId: message?.assetId});
+    fireClickTrackers(nativeResponse, message?.assetId);
   } else {
     fireImpressionTrackers(nativeResponse);
   }
@@ -305,7 +305,7 @@ export function fireImpressionTrackers(nativeResponse, {runMarkup = (mkup) => in
   }
 }
 
-export function fireClickTrackers(nativeResponse, {fetchURL = triggerPixel, assetId} = {}) {
+export function fireClickTrackers(nativeResponse, assetId = null, {fetchURL = triggerPixel} = {}) {
   // legacy click tracker
   if (!assetId) {
     (nativeResponse.link?.clicktrackers || []).forEach(url => fetchURL(url));
