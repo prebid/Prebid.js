@@ -108,9 +108,9 @@ describe('the first party data enrichment module', function() {
     validated = processFpd({}, {}).global;
     expect(validated.regs).to.equal(undefined);
 
-    navigator.globalPrivacyControl = { gpc: 1 };
+    const globalPrivacyControlStub = sinon.stub(window, 'navigator').value({globalPrivacyControl: true});
     validated = processFpd({}, {}).global;
     expect(validated.regs.ext.gpc).to.equal(1);
-    delete navigator.globalPrivacyControl;
+    globalPrivacyControlStub.restore();
   });
 });
