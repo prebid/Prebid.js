@@ -100,7 +100,7 @@ describe('the first party data enrichment module', function() {
     expect(validated.site.keywords).to.be.undefined;
   });
 
-  it('test 2', function() {
+  it('should store a reference to gpc witin ortb2.regs.ext if it has been enabled', function() {
     let validated;
     width = 800;
     height = 500;
