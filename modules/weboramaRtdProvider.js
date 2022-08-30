@@ -191,36 +191,117 @@ const _components = {
   },
 }
 
-/** @type {Object} */
-const globalDefaults = {
-  setPrebidTargeting: true,
-  sendToBidders: true,
-  onData: () => {
-    /* do nothing */
-  }
-};
-/** Initialize module
- * @param {Object} moduleConfig
- * @param {?ModuleParams} moduleConfig.params
- * @return {boolean} true if module was initialized with success
+/**
+ * @classdesc Weborama Real Time Data Provider
+ * @class
  */
-function init(moduleConfig) {
-  /** @type {ModuleParams} */
-  const moduleParams = Object.assign({}, globalDefaults, moduleConfig?.params || {});
+class WeboramaRtdProvider {
+  name = SUBMODULE_NAME;
+  /** Initialize module
+   * @method
+   * @param {Object} moduleConfig
+   * @param {?ModuleParams} moduleConfig.params
+   * @return {boolean} true if module was initialized with success
+   */
+  init(moduleConfig) {
+    /** @type {Object} */
+    const globalDefaults = {
+      setPrebidTargeting: true,
+      sendToBidders: true,
+      onData: () => {
+        /* do nothing */
+      }
+    };
+    /** @type {ModuleParams} */
+    const moduleParams = Object.assign({}, globalDefaults, moduleConfig?.params || {});
 
-  // reset profiles
+    // reset profiles
 
-  _components.WeboCtx.data = null;
-  _components.WeboUserData.data = null;
-  _components.SfbxLiteData.data = null;
+    _components.WeboCtx.data = null;
+    _components.WeboUserData.data = null;
+    _components.SfbxLiteData.data = null;
 
-  _components.WeboCtx.initialized = initSubSection(moduleParams, WEBO_CTX_CONF_SECTION, 'token');
-  _components.WeboUserData.initialized = initSubSection(moduleParams, WEBO_USER_DATA_CONF_SECTION);
-  _components.SfbxLiteData.initialized = initSubSection(moduleParams, SFBX_LITE_DATA_CONF_SECTION);
+    _components.WeboCtx.initialized = initSubSection(moduleParams, WEBO_CTX_CONF_SECTION, 'token');
+    _components.WeboUserData.initialized = initSubSection(moduleParams, WEBO_USER_DATA_CONF_SECTION);
+    _components.SfbxLiteData.initialized = initSubSection(moduleParams, SFBX_LITE_DATA_CONF_SECTION);
 
-  return Object.values(_components).some((c) => c.initialized);
+    return Object.values(_components).some((c) => c.initialized);
+  }
+
+  /** function that will allow RTD sub-modules to modify the AdUnit object for each auction
+   * @method
+   * @param {Object} reqBidsConfigObj
+   * @param {doneCallback} onDone
+   * @param {Object} moduleConfig
+   * @param {?ModuleParams} moduleConfig.params
+   * @returns {void}
+   */
+  getBidRequestData(reqBidsConfigObj, onDone, moduleConfig) {
+    /** @type {ModuleParams} */
+    const moduleParams = moduleConfig?.params || {};
+
+    if (!_components.WeboCtx.initialized) {
+      handleBidRequestData(reqBidsConfigObj, moduleParams);
+
+      onDone();
+
+      return;
+    }
+
+    /** @type {WeboCtxConf} */
+    const weboCtxConf = moduleParams.weboCtxConf || {};
+
+    fetchContextualProfile(weboCtxConf, (data) => {
+      logMessage('fetchContextualProfile on getBidRequestData is done');
+
+      setWeboContextualProfile(data);
+    }, () => {
+      handleBidRequestData(reqBidsConfigObj, moduleParams);
+
+      onDone();
+    });
+  }
+
+  /** function that provides ad server targeting data to RTD-core
+   * @param {string[]} adUnitsCodes
+   * @param {Object} moduleConfig
+   * @param {?ModuleParams} moduleConfig.params
+   * @returns {Object} target data
+   */
+  getTargetingData(adUnitsCodes, moduleConfig) {
+    /** @type {ModuleParams} */
+    const moduleParams = moduleConfig?.params || {};
+
+    const profileHandlers = buildProfileHandlers(moduleParams);
+
+    if (isEmpty(profileHandlers)) {
+      logMessage('no data to set targeting');
+      return {};
+    }
+
+    try {
+      return adUnitsCodes.reduce((data, adUnitCode) => {
+        data[adUnitCode] = profileHandlers.reduce((targeting, ph) => {
+          // logMessage(`check if should set targeting for adunit '${adUnitCode}'`);
+          const [data, metadata] = copyDataAndMetadata(ph);
+          if (ph.setTargeting(adUnitCode, data, metadata)) {
+            // logMessage(`set targeting for adunit '${adUnitCode}', source '${metadata.source}'`);
+
+            mergeDeep(targeting, data);
+          }
+
+          return targeting;
+        }, {});
+
+        return data;
+      }, {});
+    } catch (e) {
+      logError(`unable to format weborama rtd targeting data:`, e);
+
+      return {};
+    }
+  }
 }
-
 /** Initialize subsection module
  * @param {ModuleParams} moduleParams
  * @param {string} subSection subsection name to initialize
@@ -394,46 +475,6 @@ function isValidProfile(profile) {
   return Object.values(profile).every((field) => isArray(field) && field.every(isStr));
 }
 
-/** function that provides ad server targeting data to RTD-core
- * @param {string[]} adUnitsCodes
- * @param {Object} moduleConfig
- * @param {?ModuleParams} moduleConfig.params
- * @returns {Object} target data
- */
-function getTargetingData(adUnitsCodes, moduleConfig) {
-  /** @type {ModuleParams} */
-  const moduleParams = moduleConfig?.params || {};
-
-  const profileHandlers = buildProfileHandlers(moduleParams);
-
-  if (isEmpty(profileHandlers)) {
-    logMessage('no data to set targeting');
-    return {};
-  }
-
-  try {
-    return adUnitsCodes.reduce((data, adUnitCode) => {
-      data[adUnitCode] = profileHandlers.reduce((targeting, ph) => {
-        // logMessage(`check if should set targeting for adunit '${adUnitCode}'`);
-        const [data, metadata] = copyDataAndMetadata(ph);
-        if (ph.setTargeting(adUnitCode, data, metadata)) {
-          // logMessage(`set targeting for adunit '${adUnitCode}', source '${metadata.source}'`);
-
-          mergeDeep(targeting, data);
-        }
-
-        return targeting;
-      }, {});
-
-      return data;
-    }, {});
-  } catch (e) {
-    logError(`unable to format weborama rtd targeting data:`, e);
-
-    return {};
-  }
-}
-
 /** function that provides data handlers based on the configuration
  * @param {ModuleParams} moduleParams
  * @returns {ProfileHandler[]}
@@ -450,7 +491,7 @@ function buildProfileHandlers(moduleParams) {
     conf: moduleParams?.sfbxLiteDataConf,
   }];
 
-  return steps.filter(step => step.component.initialized).reduce((ph, {component, conf}) => {
+  return steps.filter(step => step.component.initialized).reduce((ph, { component, conf }) => {
     const user = component.user;
     const source = component.source;
     const callback = component.callback;
@@ -602,39 +643,6 @@ function getDataFromLocalStorage(weboDataConf, cacheGet, cacheSet, defaultLocalS
   }
 
   return [defaultProfile, true];
-}
-
-/** function that will allow RTD sub-modules to modify the AdUnit object for each auction
- * @param {Object} reqBidsConfigObj
- * @param {doneCallback} onDone
- * @param {Object} moduleConfig
- * @param {?ModuleParams} moduleConfig.params
- * @returns {void}
- */
-export function getBidRequestData(reqBidsConfigObj, onDone, moduleConfig) {
-  /** @type {ModuleParams} */
-  const moduleParams = moduleConfig?.params || {};
-
-  if (!_components.WeboCtx.initialized) {
-    handleBidRequestData(reqBidsConfigObj, moduleParams);
-
-    onDone();
-
-    return;
-  }
-
-  /** @type {WeboCtxConf} */
-  const weboCtxConf = moduleParams.weboCtxConf || {};
-
-  fetchContextualProfile(weboCtxConf, (data) => {
-    logMessage('fetchContextualProfile on getBidRequestData is done');
-
-    setWeboContextualProfile(data);
-  }, () => {
-    handleBidRequestData(reqBidsConfigObj, moduleParams);
-
-    onDone();
-  });
 }
 
 /**
@@ -921,11 +929,6 @@ function fetchContextualProfile(weboCtxConf, onSuccess, onDone) {
   ajax(urlProfileAPI, callback, null, options);
 }
 
-export const weboramaSubmodule = {
-  name: SUBMODULE_NAME,
-  init,
-  getTargetingData,
-  getBidRequestData,
-};
+export const weboramaSubmodule = new WeboramaRtdProvider();
 
 submodule(MODULE_NAME, weboramaSubmodule);
