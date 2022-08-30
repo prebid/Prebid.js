@@ -482,7 +482,7 @@ const formatBidWon = bidWonData => {
     renderAuctionId,
     transactionId: bidWonData.transactionId,
     sourceTransactionId: bidWonData.transactionId,
-    bidId: bid.pbsBidId || bidWonData.bidId, // if PBS had us overwrite bidId, use that as signal
+    bidId: bid.pbsBidId || bidWonData.bidId || bidWonData.requestId, // if PBS had us overwrite bidId, use that as signal
     renderTransactionId,
     accountId,
     siteId: adUnit.siteId,
