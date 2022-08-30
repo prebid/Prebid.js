@@ -107,7 +107,7 @@ export const spec = {
       method: 'POST',
       url: ADRIVER_BID_URL,
       data: payloadString
-    }
+    };
   },
 
   interpretResponse: function (serverResponse, bidRequest) {
