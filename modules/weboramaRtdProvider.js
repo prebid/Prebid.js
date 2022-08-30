@@ -166,37 +166,19 @@ export const storage = getStorageManager({
  * @property {Component} SfbxLiteData
  */
 
-/** @type {Components} */
-const _components = {
-  WeboCtx: {
-    initialized: false,
-    data: null,
-    user: false,
-    source: WEBO_CTX_SOURCE_LABEL,
-    callbackBuilder: getContextualProfile,
-  },
-  WeboUserData: {
-    initialized: false,
-    data: null,
-    user: true,
-    source: WEBO_USER_DATA_SOURCE_LABEL,
-    callbackBuilder: getWeboUserDataProfile,
-  },
-  SfbxLiteData: {
-    initialized: false,
-    data: null,
-    user: false,
-    source: SFBX_LITE_DATA_SOURCE_LABEL,
-    callbackBuilder: getSfbxLiteDataProfile,
-  },
-}
-
 /**
  * @classdesc Weborama Real Time Data Provider
  * @class
  */
 class WeboramaRtdProvider {
+  #components;
   name = SUBMODULE_NAME;
+  /**
+   * @param  {Components} components
+   */
+  constructor(components) {
+    this.#components = components;
+  }
   /** Initialize module
    * @method
    * @param {Object} moduleConfig
@@ -217,15 +199,15 @@ class WeboramaRtdProvider {
 
     // reset profiles
 
-    _components.WeboCtx.data = null;
-    _components.WeboUserData.data = null;
-    _components.SfbxLiteData.data = null;
+    this.#components.WeboCtx.data = null;
+    this.#components.WeboUserData.data = null;
+    this.#components.SfbxLiteData.data = null;
 
-    _components.WeboCtx.initialized = this.#initSubSection(moduleParams, WEBO_CTX_CONF_SECTION, 'token');
-    _components.WeboUserData.initialized = this.#initSubSection(moduleParams, WEBO_USER_DATA_CONF_SECTION);
-    _components.SfbxLiteData.initialized = this.#initSubSection(moduleParams, SFBX_LITE_DATA_CONF_SECTION);
+    this.#components.WeboCtx.initialized = this.#initSubSection(moduleParams, WEBO_CTX_CONF_SECTION, 'token');
+    this.#components.WeboUserData.initialized = this.#initSubSection(moduleParams, WEBO_USER_DATA_CONF_SECTION);
+    this.#components.SfbxLiteData.initialized = this.#initSubSection(moduleParams, SFBX_LITE_DATA_CONF_SECTION);
 
-    return Object.values(_components).some((c) => c.initialized);
+    return Object.values(this.#components).some((c) => c.initialized);
   }
 
   /** function that will allow RTD sub-modules to modify the AdUnit object for each auction
@@ -240,7 +222,7 @@ class WeboramaRtdProvider {
     /** @type {ModuleParams} */
     const moduleParams = moduleConfig?.params || {};
 
-    if (!_components.WeboCtx.initialized) {
+    if (!this.#components.WeboCtx.initialized) {
       this.#handleBidRequestData(reqBidsConfigObj, moduleParams);
 
       onDone();
@@ -549,7 +531,7 @@ class WeboramaRtdProvider {
    */
   #setWeboContextualProfile(data) {
     if (data && isPlainObject(data) && isValidProfile(data) && !isEmpty(data)) {
-      _components.WeboCtx.data = data;
+      this.#components.WeboCtx.data = data;
     }
   }
 
@@ -561,13 +543,13 @@ class WeboramaRtdProvider {
    */
   #buildProfileHandlers(moduleParams) {
     const steps = [{
-      component: _components.WeboCtx,
+      component: this.#components.WeboCtx,
       conf: moduleParams?.weboCtxConf,
     }, {
-      component: _components.WeboUserData,
+      component: this.#components.WeboUserData,
       conf: moduleParams?.weboUserDataConf,
     }, {
-      component: _components.SfbxLiteData,
+      component: this.#components.SfbxLiteData,
       conf: moduleParams?.sfbxLiteDataConf,
     }];
 
@@ -985,7 +967,31 @@ function getDataFromLocalStorage(weboDataConf, cacheGet, cacheSet, defaultLocalS
 
   return [defaultProfile, true];
 }
+/** @type {Components} */
+const components = {
+  WeboCtx: {
+    initialized: false,
+    data: null,
+    user: false,
+    source: WEBO_CTX_SOURCE_LABEL,
+    callbackBuilder: getContextualProfile,
+  },
+  WeboUserData: {
+    initialized: false,
+    data: null,
+    user: true,
+    source: WEBO_USER_DATA_SOURCE_LABEL,
+    callbackBuilder: getWeboUserDataProfile,
+  },
+  SfbxLiteData: {
+    initialized: false,
+    data: null,
+    user: false,
+    source: SFBX_LITE_DATA_SOURCE_LABEL,
+    callbackBuilder: getSfbxLiteDataProfile,
+  },
+};
 
-export const weboramaSubmodule = new WeboramaRtdProvider();
+export const weboramaSubmodule = new WeboramaRtdProvider(components);
 
 submodule(MODULE_NAME, weboramaSubmodule);
