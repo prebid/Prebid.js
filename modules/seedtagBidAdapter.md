@@ -12,9 +12,31 @@ Prebidjs seedtag bidder
 
 # Sample integration
 
-All display/video integration use the placement `banner`.
+## InScreen
+```js
+const adUnits = [
+  {
+    code: '/21804003197/prebid_test_320x100',
+    mediaTypes: {
+      banner: {
+        sizes: [[320, 100]]
+      }
+    },
+    bids: [
+      {
+        bidder: 'seedtag',
+        params: {
+          publisherId: '0000-0000-01',      // required
+          adUnitId: '0000',                 // required
+          placement: 'inScreen',              // required
+        }
+      }
+    ]
+  }
+]
+```
 
-
+## InArticle
 ```js
 const adUnits = [
   {
@@ -30,8 +52,7 @@ const adUnits = [
         params: {
           publisherId: '0000-0000-01',      // required
           adUnitId: '0000',                 // required
-          placement: 'banner',              // required, banner only
-          adPosition: 0                     // optional
+          placement: 'inArticle',              // required
         }
       }
     ]
