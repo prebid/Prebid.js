@@ -2,6 +2,13 @@
 
 ```
 userIdAsEids = [
+     {
+        source: '33across.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
+        }]
+    },
     {
         source: '33across.com',
         uids: [{
