@@ -156,7 +156,7 @@ export const storage = getStorageManager({
  * @property {?Profile} data
  * @property {boolean} user if true it is user-centric data
  * @property {string} source describe the source of data, if 'contextual' or 'wam'
- * @property {buildProfileHandlerCallback} callback
+ * @property {buildProfileHandlerCallbackBuilder} callbackBuilder
  */
 
 /**
@@ -173,21 +173,21 @@ const _components = {
     data: null,
     user: false,
     source: WEBO_CTX_SOURCE_LABEL,
-    callback: getContextualProfile,
+    callbackBuilder: getContextualProfile,
   },
   WeboUserData: {
     initialized: false,
     data: null,
     user: true,
     source: WEBO_USER_DATA_SOURCE_LABEL,
-    callback: getWeboUserDataProfile,
+    callbackBuilder: getWeboUserDataProfile,
   },
   SfbxLiteData: {
     initialized: false,
     data: null,
     user: false,
     source: SFBX_LITE_DATA_SOURCE_LABEL,
-    callback: getSfbxLiteDataProfile,
+    callbackBuilder: getSfbxLiteDataProfile,
   },
 }
 
@@ -263,6 +263,7 @@ class WeboramaRtdProvider {
   }
 
   /** function that provides ad server targeting data to RTD-core
+   * @method
    * @param {string[]} adUnitsCodes
    * @param {Object} moduleConfig
    * @param {?ModuleParams} moduleConfig.params
@@ -302,9 +303,9 @@ class WeboramaRtdProvider {
     }
   }
 
-  /* PRIVATE METHODS */
-
   /** Initialize subsection module
+   * @method
+   * @private
    * @param {ModuleParams} moduleParams
    * @param {string} subSection subsection name to initialize
    * @param {string[]} requiredFields
@@ -339,6 +340,8 @@ class WeboramaRtdProvider {
   }
 
   /** normalize submodule configuration
+   * @method
+   * @private
    * @param {ModuleParams} moduleParams
    * @param {CommonConf} submoduleParams
    * @return {void}
@@ -369,6 +372,8 @@ class WeboramaRtdProvider {
   }
 
   /** coerce set prebid targeting to function
+   * @method
+   * @private
    * @param {CommonConf} submoduleParams
    * @return {void}
    * @throws will throw an error in case of invalid configuration
@@ -382,6 +387,8 @@ class WeboramaRtdProvider {
   }
 
   /** coerce send to bidders to function
+   * @method
+   * @private
    * @param {CommonConf} submoduleParams
    * @return {void}
    * @throws will throw an error in case of invalid configuration
@@ -426,6 +433,8 @@ class WeboramaRtdProvider {
    * @property {Object[]} bids
    */
   /** function that handles bid request data
+   * @method
+   * @private
    * @param {Object} reqBidsConfigObj
    * @param {AdUnit[]} reqBidsConfigObj.adUnits
    * @param {Object} reqBidsConfigObj.ortb2Fragments
@@ -484,6 +493,8 @@ class WeboramaRtdProvider {
    */
 
   /** Fetch Bigsea Contextual Profile
+   * @method
+   * @private
    * @param {WeboCtxConf} weboCtxConf
    * @param {successCallback} onSuccess callback
    * @param {doneCallback} onDone callback
@@ -531,6 +542,8 @@ class WeboramaRtdProvider {
   }
 
   /** set bigsea contextual profile on module state
+   * @method
+   * @private
    * @param {?Object} data
    * @returns {void}
    */
@@ -541,6 +554,8 @@ class WeboramaRtdProvider {
   }
 
   /** function that provides data handlers based on the configuration
+   * @method
+   * @private
    * @param {ModuleParams} moduleParams
    * @returns {ProfileHandler[]}
    */
@@ -559,7 +574,7 @@ class WeboramaRtdProvider {
     return steps.filter(step => step.component.initialized).reduce((ph, { component, conf }) => {
       const user = component.user;
       const source = component.source;
-      const callback = component.callback;
+      const callback = component.callbackBuilder(component /* equivalent to this */);
       const profileHandler = this.#buildProfileHandler(conf, callback, user, source);
       if (profileHandler) {
         ph.push(profileHandler);
@@ -581,6 +596,12 @@ class WeboramaRtdProvider {
    */
 
   /**
+   * @callback buildProfileHandlerCallbackBuilder
+   * @param {Component} component
+   * @returns {buildProfileHandlerCallback}
+   */
+
+  /**
    * @callback buildProfileHandlerCallback
    * @param {CommonConf} dataConf
    * @returns {[Profile,boolean]} profile + is default flag
@@ -588,6 +609,8 @@ class WeboramaRtdProvider {
 
   /**
    * return specific profile handler
+   * @method
+   * @private
    * @param {CommonConf} dataConf
    * @param {buildProfileHandlerCallback} callback
    * @param {boolean} user
@@ -617,6 +640,8 @@ class WeboramaRtdProvider {
     };
   }
   /** handle individual bid
+   * @method
+   * @private
    * @param {Object} reqBidsConfigObj
    * @param {Object} reqBidsConfigObj.ortb2Fragments
    * @param {Object} reqBidsConfigObj.ortb2Fragments.bidder
@@ -640,7 +665,7 @@ class WeboramaRtdProvider {
         this.#handleAppnexusBid(bid, profile);
         break;
       case 'pubmatic':
-        this.#handlePubmaticBid(bid, profile)
+        this.#handlePubmaticBid(bid, profile);
         break;
       case 'smartadserver':
         this.#handleSmartadserverBid(bid, profile);
@@ -652,6 +677,8 @@ class WeboramaRtdProvider {
   }
 
   /** function that handles bid request data
+   * @method
+   * @private
    * @param {ProfileHandler} ph profile handler
    * @returns {[Profile,dataCallbackMetadata]} deeply copy data + metadata
    */
@@ -660,6 +687,8 @@ class WeboramaRtdProvider {
   }
 
   /** handle appnexus/xandr bid
+   * @method
+   * @private
    * @param {Object} bid
    * @param {Object} bid.params
    * @param {Object} bid.params.keyword
@@ -672,6 +701,8 @@ class WeboramaRtdProvider {
   }
 
   /** handle pubmatic bid
+   * @method
+   * @private
    * @param {Object} bid
    * @param {Object} bid.params
    * @param {string} bid.params.dctr
@@ -697,6 +728,8 @@ class WeboramaRtdProvider {
   }
 
   /** handle smartadserver bid
+   * @method
+   * @private
    * @param {Object} bid
    * @param {Object} bid.params
    * @param {string} bid.params.target
@@ -722,6 +755,8 @@ class WeboramaRtdProvider {
   }
 
   /** handle rubicon bid
+   * @method
+   * @private
    * @param {Object} bid
    * @param {string} bid.bidder
    * @param {Profile} profile
@@ -739,6 +774,8 @@ class WeboramaRtdProvider {
   }
 
   /** handle generic bid via ortb2 arbitrary data
+   * @method
+   * @private
    * @param {Object} reqBidsConfigObj
    * @param {Object} reqBidsConfigObj.ortb2Fragments
    * @param {Object} reqBidsConfigObj.ortb2Fragments.bidder
@@ -761,6 +798,8 @@ class WeboramaRtdProvider {
 
   /**
    * assign profile to object
+   * @method
+   * @private
    * @param {Object} destination
    * @param {string} base
    * @param {Profile} profile
@@ -769,7 +808,7 @@ class WeboramaRtdProvider {
   #assignProfileToObject(destination, base, profile) {
     Object.entries(profile).forEach(([key, values]) => {
       const path = `${base}.${key}`;
-      deepSetValue(destination, path, values)
+      deepSetValue(destination, path, values);
     })
   }
 
@@ -787,6 +826,8 @@ class WeboramaRtdProvider {
 
   /**
    * wrap value into validator
+   * @method
+   * @private
    * @param {*} value
    * @param {coerceCallback} coerce
    * @returns {validatorCallback}
@@ -829,44 +870,66 @@ export function isValidProfile(profile) {
 
   return Object.values(profile).every((field) => isArray(field) && field.every(isStr));
 }
-/** return contextual profile
- * @param {WeboCtxConf} weboCtxConf
- * @returns {[Profile,boolean]} contextual profile + isDefault boolean flag
+
+/**
+ * bind callback with component
+ * @param {Component} component
+ * @returns {buildProfileHandlerCallback}
  */
-function getContextualProfile(weboCtxConf) {
-  if (_components.WeboCtx.data) {
-    return [_components.WeboCtx.data, false];
+function getContextualProfile(component /* equivalent to this */) {
+  /** return contextual profile
+   * @param {WeboCtxConf} weboCtxConf
+   * @returns {[Profile,boolean]} contextual profile + isDefault boolean flag
+   */
+  return function (weboCtxConf) {
+    if (component.data) {
+      return [component.data, false];
+    }
+
+    const defaultContextualProfile = weboCtxConf.defaultProfile || {};
+
+    return [defaultContextualProfile, true];
   }
-
-  const defaultContextualProfile = weboCtxConf.defaultProfile || {};
-
-  return [defaultContextualProfile, true];
 }
 
-/** return weboUserData profile
- * @param {WeboUserDataConf} weboUserDataConf
- * @returns {[Profile,boolean]} weboUserData profile  + isDefault boolean flag
+/**
+ * bind callback with component
+ * @param {Component} component
+ * @returns {buildProfileHandlerCallback}
  */
-function getWeboUserDataProfile(weboUserDataConf) {
-  return getDataFromLocalStorage(weboUserDataConf,
-    () => _components.WeboUserData.data,
-    (data) => _components.WeboUserData.data = data,
-    DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY,
-    LOCAL_STORAGE_USER_TARGETING_SECTION,
-    WEBO_USER_DATA_SOURCE_LABEL);
+function getWeboUserDataProfile(component /* equivalent to this */) {
+  /** return weboUserData profile
+   * @param {WeboUserDataConf} weboUserDataConf
+   * @returns {[Profile,boolean]} weboUserData profile  + isDefault boolean flag
+   */
+  return function (weboUserDataConf) {
+    return getDataFromLocalStorage(weboUserDataConf,
+      () => component.data,
+      (data) => component.data = data,
+      DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY,
+      LOCAL_STORAGE_USER_TARGETING_SECTION,
+      WEBO_USER_DATA_SOURCE_LABEL);
+  }
 }
 
-/** return weboUserData profile
- * @param {SfbxLiteDataConf} sfbxLiteDataConf
- * @returns {[Profile,boolean]} sfbxLiteData profile + isDefault boolean flag
+/**
+ * bind callback with component
+ * @param {Component} component
+ * @returns {buildProfileHandlerCallback}
  */
-function getSfbxLiteDataProfile(sfbxLiteDataConf) {
-  return getDataFromLocalStorage(sfbxLiteDataConf,
-    () => _components.SfbxLiteData.data,
-    (data) => _components.SfbxLiteData.data = data,
-    DEFAULT_LOCAL_STORAGE_LITE_PROFILE_KEY,
-    LOCAL_STORAGE_LITE_TARGETING_SECTION,
-    SFBX_LITE_DATA_SOURCE_LABEL);
+function getSfbxLiteDataProfile(component /* equivalent to this */) {
+  /** return weboUserData profile
+   * @param {SfbxLiteDataConf} sfbxLiteDataConf
+   * @returns {[Profile,boolean]} sfbxLiteData profile + isDefault boolean flag
+   */
+  return function getSfbxLiteDataProfile(sfbxLiteDataConf) {
+    return getDataFromLocalStorage(sfbxLiteDataConf,
+      () => component.data,
+      (data) => component.data = data,
+      DEFAULT_LOCAL_STORAGE_LITE_PROFILE_KEY,
+      LOCAL_STORAGE_LITE_TARGETING_SECTION,
+      SFBX_LITE_DATA_SOURCE_LABEL);
+  }
 }
 
 /**
