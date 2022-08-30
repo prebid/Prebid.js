@@ -47,7 +47,7 @@ export const spec = {
     const bidResponses = [];
     if (serverResponse.body) {
       const body = serverResponse.body;
-      if (!body || typeof body !== 'object' || !body.Responses || !body.Responses.length > 0) {
+      if (!body || typeof body !== 'object' || !body.Responses || !(body.Responses.length > 0)) {
         return [];
       }
       body.Responses.forEach((bidResponse) => {
