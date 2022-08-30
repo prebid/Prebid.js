@@ -20,15 +20,8 @@ app.use(morgan('dev')); // used to log incoming requests
 
 // Allow Cross Origin request from 'test.localhost:9999'
 app.use(function(req, res, next) {
-  let origin = url.parse(req.url, true).query.origin,
-    whitelist = {
-      'http://test.localhost:9999': true,
-      'https://test.localhost:9999': true
-    };
-  if (origin in whitelist) {
-    res.header('Access-Control-Allow-Origin', origin);
-    res.header('Access-Control-Allow-Credentials', true);
-  }
+  res.header('Access-Control-Allow-Origin', req.headers.origin);
+  res.header('Access-Control-Allow-Credentials', true);
   next();
 });
 

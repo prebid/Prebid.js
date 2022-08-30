@@ -145,7 +145,7 @@ function lookupIabConsent({onSuccess, onError}) {
       if (json[cmpDataPkgName] && json[cmpDataPkgName].callId) {
         const payload = json[cmpDataPkgName];
         // TODO - clean up this logic (move listeners?); we have duplicate messages responses because 2 eventlisteners are active from the 2 cmp requests running in parallel
-        if (typeof cmpCallbacks[payload.callId] !== 'undefined') {
+        if (cmpCallbacks.hasOwnProperty(payload.callId)) {
           cmpCallbacks[payload.callId](payload.returnValue, payload.success);
         }
       }
