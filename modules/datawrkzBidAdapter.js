@@ -162,10 +162,10 @@ function buildNativeRequest(bidRequest, bidderRequest) {
     assets.push(generateNativeDataObj(body, 'desc', ++counter));
   }
 
-  let request = JSON.stringify({assets: assets})
+  let request = JSON.stringify({assets: assets});
   const native = {
     request: request
-  }
+  };
 
   var deals = [];
   if (bidRequest.params.deals && bidRequest.params.deals.length > 0) {
@@ -220,7 +220,7 @@ function buildVideoRequest(bidRequest, bidderRequest) {
   };
 
   let context = deepAccess(bidRequest, 'mediaTypes.video.context');
-  if (context == 'outstream' && !bidRequest.renderer) video.mimes = OUTSTREAM_MIMES
+  if (context == 'outstream' && !bidRequest.renderer) video.mimes = OUTSTREAM_MIMES;
 
   var imp = [];
   var deals = [];
@@ -293,7 +293,7 @@ function generatePayload(imp, bidderRequest) {
     publisher: {}
   };
 
-  let regs = {ext: {}}
+  let regs = {ext: {}};
 
   if (bidderRequest.uspConsent) {
     regs.ext.us_privacy = bidderRequest.uspConsent;
@@ -346,7 +346,7 @@ function generateNativeImgObj(obj, type, id) {
     type: parseInt(typeId),
     w: adW,
     h: adH
-  }
+  };
   return {
     id: id,
     required: required,
@@ -413,8 +413,8 @@ function buildBannerResponse(bidRequest, bidResponse) {
         return;
       }
       let bidSizes = (deepAccess(bidRequest, 'mediaTypes.banner.sizes')) ? deepAccess(bidRequest, 'mediaTypes.banner.sizes') : bidRequest.sizes;
-      bidResponse.requestId = bidRequest.bidId
-      bidResponse.transactionId = bidRequest.transactionId
+      bidResponse.requestId = bidRequest.bidId;
+      bidResponse.transactionId = bidRequest.transactionId;
       bidResponse.placementCode = placementCode;
       bidResponse.cpm = responseCPM;
       bidResponse.size = bidSizes;
@@ -454,8 +454,8 @@ function buildNativeResponse(bidRequest, response) {
         bidResponses.push(bid);
         return;
       }
-      bidResponse.requestId = bidRequest.bidId
-      bidResponse.transactionId = bidRequest.transactionId
+      bidResponse.requestId = bidRequest.bidId;
+      bidResponse.transactionId = bidRequest.transactionId;
       bidResponse.placementCode = placementCode;
       bidResponse.cpm = responseCPM;
 
@@ -506,8 +506,8 @@ function buildVideoResponse(bidRequest, response) {
       }
       let context = bidRequest.mediaTypes.video.context;
 
-      bidResponse.requestId = bidRequest.bidId
-      bidResponse.transactionId = bidRequest.transactionId
+      bidResponse.requestId = bidRequest.bidId;
+      bidResponse.transactionId = bidRequest.transactionId;
       bidResponse.placementCode = placementCode;
       bidResponse.cpm = responseCPM;
 
@@ -531,7 +531,7 @@ function buildVideoResponse(bidRequest, response) {
 
       switch (context) {
         case OUTSTREAM:
-          var outstreamType = contains(OUTSTREAM_TYPES, bidRequest.params.outstreamType) ? bidRequest.params.outstreamType : ''
+          var outstreamType = contains(OUTSTREAM_TYPES, bidRequest.params.outstreamType) ? bidRequest.params.outstreamType : '';
           bidResponse.outstreamType = outstreamType;
           bidResponse.ad = vastXml;
           if (!bidRequest.renderer) {
@@ -542,7 +542,7 @@ function buildVideoResponse(bidRequest, response) {
               loaded: false,
               adUnitCode
             });
-            renderer.setRender(outstreamRender)
+            renderer.setRender(outstreamRender);
             bidResponse.renderer = renderer;
           } else { bidResponse.adResponse = vastXml; }
           break;
