@@ -11,6 +11,8 @@
 import { config } from './config.js';
 import {logWarn} from './utils.js';
 
+let RI = new WeakMap();
+
 /**
  * Prepend a URL with the page's protocol (http/https), if necessary.
  */
@@ -252,10 +254,19 @@ export function detectReferer(win) {
     };
   }
 
-  return refererInfo;
+  return function() {
+    if (!RI.has(win)) {
+      RI.set(win, Object.freeze(refererInfo()));
+    }
+    return RI.get(win);
+  }
 }
 
 /**
  * @type {function(): refererInfo}
  */
 export const getRefererInfo = detectReferer(window);
+
+export function resetRefererInfo() {
+  RI = new WeakMap();
+}

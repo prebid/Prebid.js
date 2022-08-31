@@ -161,7 +161,7 @@ export const spec = {
     }
 
     if (bid.params.isTest) {
-      payload.test = Number(bid.params.isTest) // should be 1 or 0
+      payload.test = Number(bid.params.isTest); // should be 1 or 0
     }
     payload.site.publisher.id = bid.params.siteId.trim();
     payload.user.gender = (conf.gender ? conf.gender.trim() : UNDEFINED);
@@ -207,7 +207,7 @@ export const spec = {
       deepSetValue(payload, 'regs.coppa', 1);
     }
 
-    var options = {contentType: 'text/plain'}
+    var options = {contentType: 'text/plain'};
 
     _logInfo('buildRequests payload', payload);
     _logInfo('buildRequests bidderRequest', bidderRequest);
@@ -463,7 +463,7 @@ function _createImpressionObject(bid, conf) {
       }
     }
   } else {
-    _logWarn('MediaTypes are Required for all Adunit Configs', bid)
+    _logWarn('MediaTypes are Required for all Adunit Configs', bid);
   }
 
   _addFloorFromFloorModule(impObj, bid);

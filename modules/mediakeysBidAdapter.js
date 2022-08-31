@@ -420,7 +420,7 @@ function createVideoImp(bid) {
     }
   });
 
-  return video
+  return video;
 }
 
 /**
@@ -703,7 +703,7 @@ export const spec = {
               agencyName: deepAccess(bid, 'ext.agency_name', null),
               primaryCatId: getPrimaryCatFromResponse(bid.cat),
               mediaType
-            }
+            };
 
             const newBid = {
               requestId: bid.impid,

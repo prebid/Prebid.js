@@ -314,7 +314,7 @@ function outstreamRender(bid) {
         logError('[ShowHeroes][renderer] Error: spot not found');
       }
     } catch (err) {
-      logError('[ShowHeroes][renderer] Error:' + err.message)
+      logError('[ShowHeroes][renderer] Error:' + err.message);
     }
   }
 }
