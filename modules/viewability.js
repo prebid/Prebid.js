@@ -13,7 +13,7 @@ export function init() {
   listenMessagesFromCreative();
 }
 
-const observers = {};
+const observers = new Map();
 
 function isValid(vid, element, tracker, criteria) {
   if (!element) {
@@ -36,7 +36,7 @@ function isValid(vid, element, tracker, criteria) {
     return false;
   }
 
-  if (!vid || observers[vid]) {
+  if (!vid || observers.has(vid)) {
     logWarn(`${MODULE_NAME}: must provide an unregistered vid`, vid);
     return false;
   }
@@ -46,7 +46,7 @@ function isValid(vid, element, tracker, criteria) {
 
 function stopObserving(observer, vid, element) {
   observer.unobserve(element);
-  observers[vid].done = true;
+  observers.get(vid).done = true;
 }
 
 function fireViewabilityTracker(element, tracker) {
@@ -96,21 +96,21 @@ export function startMeasurement(vid, element, tracker, criteria) {
     viewable = entries[0].isIntersecting;
 
     if (viewable) {
-      observers[vid].timeoutId = window.setTimeout(() => {
+      observers.get(vid).timeoutId = window.setTimeout(() => {
         viewabilityCriteriaMet(observer, vid, element, tracker);
       }, criteria.timeInView);
-    } else if (observers[vid].timeoutId) {
-      window.clearTimeout(observers[vid].timeoutId);
+    } else if (observers.get(vid).timeoutId) {
+      window.clearTimeout(observers.get(vid).timeoutId);
     }
   };
 
   observer = new IntersectionObserver(stateChange, options);
-  observers[vid] = {
+  observers.set(vid, {
     observer: observer,
     element: element,
     timeoutId: null,
     done: false,
-  };
+  });
 
   observer.observe(element);
 
@@ -122,19 +122,19 @@ export function startMeasurement(vid, element, tracker, criteria) {
  * @param {string} vid unique viewability identifier
  */
 export function stopMeasurement(vid) {
-  if (!vid || !observers[vid]) {
+  if (!vid || !observers.has(vid)) {
     logWarn(`${MODULE_NAME}: must provide a registered vid`, vid);
     return;
   }
 
-  observers[vid].observer.unobserve(observers[vid].element);
-  if (observers[vid].timeoutId) {
-    window.clearTimeout(observers[vid].timeoutId);
+  observers.get(vid).observer.unobserve(observers.get(vid).element);
+  if (observers.get(vid).timeoutId) {
+    window.clearTimeout(observers.get(vid).timeoutId);
   }
 
   // allow the observer under this vid to be created again
-  if (!observers[vid].done) {
-    delete observers[vid];
+  if (!observers.get(vid).done) {
+    observers.delete(vid);
   }
 }
 
