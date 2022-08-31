@@ -1,4 +1,4 @@
-import { deepAccess, generateUUID, inIframe } from '../src/utils.js';
+import { deepAccess, generateUUID, inIframe, mergeDeep } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
@@ -52,6 +52,7 @@ export const sharethroughAdapterSpec = {
         ext: {},
       },
       source: {
+        tid: bidderRequest.auctionId,
         ext: {
           version: '$prebid.version$',
           str: VERSION,
@@ -80,12 +81,12 @@ export const sharethroughAdapterSpec = {
     }
 
     const imps = bidRequests.map(bidReq => {
-      const impression = {};
+      const impression = { ext: {} };
+
+      mergeDeep(impression, bidReq.ortb2Imp);
 
       const gpid = deepAccess(bidReq, 'ortb2Imp.ext.data.pbadslot');
-      if (gpid) {
-        impression.ext = { gpid: gpid };
-      }
+      if (gpid) impression.ext.gpid = gpid;
 
       const videoRequest = deepAccess(bidReq, 'mediaTypes.video');
 
