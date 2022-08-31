@@ -11,12 +11,11 @@ const gvlid = 148;
 const adapterCode = 'liAnalytics';
 const bidWonTimeout = 2000; // TODO check
 const { EVENTS: { AUCTION_END } } = CONSTANTS;
-const payload = {}
 
 function handleAuctionEnd(args) {
   setTimeout(() => {
     let auction = auctionManager.index.getAuction(args.auctionId);
-    let winningBids = (auction)? auction.getWinningBids() : [];
+    let winningBids = (auction) ? auction.getWinningBids() : [];
     // sampling?
     let data = createAnalyticsEvent(args, winningBids);
     sendAnalyticsEvent(data);
@@ -44,11 +43,14 @@ export function getBannerSizes(banner) {
 }
 
 export function createAnalyticsEvent(args, winningBids) {
+  let payload = {}
+  let allUserIds = [];
+
   payload['instanceId'] = generateUUID();
-  payload['url'] = window.location.protocol + '//' + window.location.hostname + '/'; // window.location.href???
+  payload['url'] = window.location.href;
   payload['bidsReceived'] = getAnalyticsEventBids(args.bidsReceived);
 
-  payload['auctionStart'] = (args.bidderRequests && args.bidderRequests[0]) ? args.bidderRequests[0].auctionStart : 0; // make it optional, now, auctionEnd, timestamp???
+  payload['auctionStart'] = args.timestamp;
   payload['auctionEnd'] = args.auctionEnd;
 
   payload['adUnits'] = [];
@@ -56,24 +58,27 @@ export function createAnalyticsEvent(args, winningBids) {
   payload['bidders'] = [];
 
   args.adUnits.forEach(unit => {
-    if (unit.mediaType && unit.mediaType.banner) {
+    if (unit.mediaTypes && unit.mediaTypes.banner) {
       payload['adUnits'].push({
         code: unit.code,
         mediaType: 'banner',
-        sizes: getBannerSizes(unit.mediaType.banner),
+        sizes: getBannerSizes(unit.mediaTypes.banner),
         ortb2Imp: unit.ortb2Imp
       });
     }
 
-    let userIds = unit.bids.flatMap(getUserIds); //remove duplicates????
-    payload['userIds'].push(...userIds);
-    
+    let userIds = unit.bids.flatMap(getAnalyticsEventUserIds); 
+    allUserIds.push(...userIds);
+
     let bidders = unit.bids.map(getBidder);
     payload['bidders'].push(...bidders);
   })
 
+  let uniqueUserIds = allUserIds // TODO remove duplicates????
+  payload['userIds'] = uniqueUserIds
   payload['winningBids'] = getAnalyticsEventBids(winningBids);
   payload['auctionId'] = args.auctionId;
+  return payload;
 }
 
 function getBidder(bid) {
@@ -83,14 +88,15 @@ function getBidder(bid) {
   };
 }
 
-function getUserIds(bid) {
+function getAnalyticsEventUserIds(bid) {
   return bid.userIdAsEids.map(userId => {
-    return {
+    let analyticsEventUserId = {
       source: userId.source,
       uids: userId.uids,
       ext: userId.ext
     };
-  }); 
+    return ignoreUndefined(analyticsEventUserId)
+  });
 }
 
 function sendAnalyticsEvent(data) {
@@ -105,6 +111,11 @@ function sendAnalyticsEvent(data) {
     contentType: 'application/json',
     method: 'POST'
   })
+}
+
+function ignoreUndefined(data) {
+  const filteredData = Object.entries(data).filter(([key, value]) => value)
+  return Object.fromEntries(filteredData)
 }
 
 let liAnalytics = Object.assign(adapter({url, analyticsType}), {
