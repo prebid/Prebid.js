@@ -330,6 +330,32 @@ export const USER_IDS_CONFIG = {
   'cpexId': {
     source: 'czechadid.cz',
     atype: 1
+  },
+
+  // OneKey Data
+  'oneKeyData': {
+    getValue: function(data) {
+      if (data && Array.isArray(data.identifiers) && data.identifiers[0]) {
+        return data.identifiers[0].value;
+      }
+    },
+    source: 'paf',
+    atype: 1,
+    getEidExt: function(data) {
+      if (data && data.preferences) {
+        return {preferences: data.preferences};
+      }
+    },
+    getUidExt: function(data) {
+      if (data && Array.isArray(data.identifiers) && data.identifiers[0]) {
+        const id = data.identifiers[0];
+        return {
+          version: id.version,
+          type: id.type,
+          source: id.source
+        };
+      }
+    }
   }
 };
 
