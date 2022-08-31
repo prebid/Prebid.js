@@ -300,6 +300,21 @@ export const spec = {
         );
       }
 
+      if (bid && bid.userId && bid.userId.uid2) {
+        userExt.eids = userExt.eids || [];
+        userExt.eids.push(
+          {
+            source: 'uidapi.com',
+            uids: [{
+              id: bid.userId.uid2,
+              ext: {
+                rtiPartner: 'UID2'
+              }
+            }]
+          }
+        );
+      }
+
       // Only add the user object if it's not empty
       if (!isEmpty(userExt)) {
         requestPayload.user = { ext: userExt };
