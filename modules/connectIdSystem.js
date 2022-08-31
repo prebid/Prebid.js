@@ -20,7 +20,7 @@ function isEUConsentRequired(consentData) {
   return !!(consentData && consentData.gdpr && consentData.gdpr.gdprApplies);
 }
 
-function hasUserOptedOut() {
+function userHasOptedOut() {
   try {
     return localStorage.getItem(OVERRIDE_OPT_OUT_KEY) === '1';
   } catch {
@@ -45,7 +45,7 @@ export const connectIdSubmodule = {
    * @returns {{connectId: string} | undefined}
    */
   decode(value) {
-    if (hasUserOptedOut()) {
+    if (userHasOptedOut()) {
       return undefined;
     }
     return (typeof value === 'object' && value.connectid)
@@ -59,7 +59,7 @@ export const connectIdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   getId(config, consentData) {
-    if (hasUserOptedOut()) {
+    if (userHasOptedOut()) {
       return;
     }
     const params = config.params || {};
