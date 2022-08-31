@@ -4,7 +4,7 @@ import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { createEidsArray } from './userId/eids.js';
 
-const VERSION = '4.2.0';
+const VERSION = '4.3.0';
 const BIDDER_CODE = 'sharethrough';
 const SUPPLY_ID = 'WYu2BXv1';
 
