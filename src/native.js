@@ -272,7 +272,7 @@ export function fireNativeTrackers(message, bidResponse) {
   const nativeResponse = bidResponse.native.ortb || legacyPropertiesToOrtbNative(bidResponse.native);
 
   if (message.action === 'click') {
-    fireClickTrackers(nativeResponse);
+    fireClickTrackers(nativeResponse, message?.assetId);
   } else {
     fireImpressionTrackers(nativeResponse);
   }
@@ -305,8 +305,27 @@ export function fireImpressionTrackers(nativeResponse, {runMarkup = (mkup) => in
   }
 }
 
-export function fireClickTrackers(nativeResponse, {fetchURL = triggerPixel} = {}) {
-  (nativeResponse.link?.clicktrackers || []).forEach(url => fetchURL(url));
+export function fireClickTrackers(nativeResponse, assetId = null, {fetchURL = triggerPixel} = {}) {
+  // legacy click tracker
+  if (!assetId) {
+    (nativeResponse.link?.clicktrackers || []).forEach(url => fetchURL(url));
+  } else {
+    // ortb click tracker. This will try to call the clicktracker associated with the asset;
+    // will fallback to the link if none is found.
+    const assetIdLinkMap = (nativeResponse.assets || [])
+      .filter(a => a.link)
+      .reduce((map, asset) => {
+        map[asset.id] = asset.link;
+        return map
+      }, {});
+    const masterClickTrackers = nativeResponse.link?.clicktrackers || [];
+    let assetLink = assetIdLinkMap[assetId];
+    let clickTrackers = masterClickTrackers;
+    if (assetLink) {
+      clickTrackers = assetLink.clicktrackers || [];
+    }
+    clickTrackers.forEach(url => fetchURL(url));
+  }
 }
 
 /**
