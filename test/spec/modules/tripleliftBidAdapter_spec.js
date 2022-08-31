@@ -714,6 +714,24 @@ describe('triplelift adapter', function () {
       expect(payload.user).to.deep.equal({ext: {eids: [{source: 'criteo.com', uids: [{id, ext: {rtiPartner: 'criteoId'}}]}]}});
     });
 
+    it('should add adqueryId to the payload if included', function () {
+      const id = '%7B%22qid%22%3A%229c985f8cc31d9b3c000d%22%7D';
+      bidRequests[0].userIdAsEids = [{ source: 'adquery.io', uids: [{ id }] }];
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      const payload = request.data;
+      expect(payload).to.exist;
+      expect(payload.user).to.deep.equal({ext: {eids: [{source: 'adquery.io', uids: [{id, ext: {rtiPartner: 'adquery.io'}}]}]}});
+    });
+
+    it('should add amxRtbId to the payload if included', function () {
+      const id = 'Ok9JQkBM-UFlAXEZQ-UUNBQlZOQzgrUFhW-UUNBQkRQTUBPQVpVWVxNXlZUUF9AUFhAUF9PXFY/';
+      bidRequests[0].userIdAsEids = [{ source: 'amxrtb.com', uids: [{ id }] }];
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      const payload = request.data;
+      expect(payload).to.exist;
+      expect(payload.user).to.deep.equal({ext: {eids: [{source: 'amxrtb.com', uids: [{id, ext: {rtiPartner: 'amxrtb.com'}}]}]}});
+    });
+
     it('should add tdid, idl_env and criteoId to the payload if both are included', function () {
       const tdidId = '6bca7f6b-a98a-46c0-be05-6020f7604598';
       const idlEnvId = 'XY6104gr0njcH9UDIR7ysFFJcm2XNpqeJTYslleJ_cMlsFOfZI';
