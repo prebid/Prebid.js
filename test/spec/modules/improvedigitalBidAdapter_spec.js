@@ -225,7 +225,6 @@ describe('Improve Digital Adapter Tests', function () {
       expect(payload).to.be.an('object');
       expect(payload.id).to.be.a('string');
       expect(payload.tmax).not.to.exist;
-      expect(payload.cur).to.be.an('array');
       expect(payload.regs).to.not.exist;
       expect(payload.schain).to.not.exist;
       sinon.assert.match(payload.source, {tid: 'f183e871-fbed-45f0-a427-c8a63c4c01eb'})
@@ -349,10 +348,14 @@ describe('Improve Digital Adapter Tests', function () {
     });
 
     it('should add currency', function () {
-      const bidRequest = Object.assign({}, simpleBidRequest);
-      getConfigStub = sinon.stub(config, 'getConfig').returns('JPY');
-      const payload = JSON.parse(spec.buildRequests([bidRequest], bidderRequest)[0].data);
-      expect(payload.cur).to.deep.equal(['JPY']);
+      config.setConfig({currency: {adServerCurrency: 'JPY'}});
+      try {
+        const bidRequest = Object.assign({}, simpleBidRequest);
+        const payload = JSON.parse(spec.buildRequests([bidRequest], bidderRequest)[0].data);
+        expect(payload.cur).to.deep.equal(['JPY']);
+      } finally {
+        config.resetConfig();
+      }
     });
 
     it('should add bid floor', function () {
@@ -498,40 +501,6 @@ describe('Improve Digital Adapter Tests', function () {
       expect(payload.imp[0].video.w).equal(640);
     });
 
-    it('should set skip params only if skip=1', function() {
-      const bidRequest = deepClone(instreamBidRequest);
-      // 1
-      const videoTest = {
-        skip: 1,
-        skipmin: 5,
-        skipafter: 30
-      }
-      bidRequest.params.video = videoTest;
-      let request = spec.buildRequests([bidRequest], {})[0];
-      let payload = JSON.parse(request.data);
-      expect(payload.imp[0].video.skip).to.equal(1);
-      expect(payload.imp[0].video.skipmin).to.equal(5);
-      expect(payload.imp[0].video.skipafter).to.equal(30);
-
-      // 0 - leave out skipmin and skipafter
-      videoTest.skip = 0;
-      bidRequest.params.video = videoTest;
-      request = spec.buildRequests([bidRequest], {})[0];
-      payload = JSON.parse(request.data);
-      expect(payload.imp[0].video.skip).to.equal(0);
-      expect(payload.imp[0].video.skipmin).to.not.exist;
-      expect(payload.imp[0].video.skipafter).to.not.exist;
-
-      // other
-      videoTest.skip = 'blah';
-      bidRequest.params.video = videoTest;
-      request = spec.buildRequests([bidRequest], {})[0];
-      payload = JSON.parse(request.data);
-      expect(payload.imp[0].video.skip).to.not.exist;
-      expect(payload.imp[0].video.skipmin).to.not.exist;
-      expect(payload.imp[0].video.skipafter).to.not.exist;
-    });
-
     it('should ignore invalid/unexpected video params', function() {
       const bidRequest = deepClone(instreamBidRequest);
       // 1
@@ -669,44 +638,6 @@ describe('Improve Digital Adapter Tests', function () {
       });
     });
 
-    it('should set GPID and Instl Signal', function () {
-      const bidRequest = Object.assign({
-        ortb2Imp: {
-          instl: 1,
-          ext: {
-            gpid: '/123/ID-FORMAT',
-            data: {
-              pbadslot: '/123/ID-FORMAT-PBADSLOT',
-              adserver: {
-                adslot: '/123/ID-FORMAT-ADSERVER-PB-ADSLOT',
-              }
-            }
-          },
-        }
-      }, simpleBidRequest);
-      let request = spec.buildRequests([bidRequest], bidderRequest)[0];
-      let payload = JSON.parse(request.data);
-      expect(payload.imp[0].ext.gpid).to.equal('/123/ID-FORMAT');
-      expect(payload.imp[0].instl).to.equal(1);
-
-      delete bidRequest.ortb2Imp.ext.gpid;
-      request = spec.buildRequests([bidRequest], bidderRequest)[0];
-      payload = JSON.parse(request.data);
-      expect(payload.imp[0].ext.gpid).to.equal('/123/ID-FORMAT-PBADSLOT');
-
-      delete bidRequest.ortb2Imp.ext.data.pbadslot;
-      request = spec.buildRequests([bidRequest], bidderRequest)[0];
-      payload = JSON.parse(request.data);
-      expect(payload.imp[0].ext.gpid).to.equal('/123/ID-FORMAT-ADSERVER-PB-ADSLOT');
-
-      delete bidRequest.ortb2Imp.ext.data.adserver;
-      delete bidRequest.ortb2Imp.instl;
-      request = spec.buildRequests([bidRequest], bidderRequest)[0];
-      payload = JSON.parse(request.data);
-      expect(payload.imp[0].ext.gpid).to.not.exist;
-      expect(payload.imp[0].instl).to.not.exist;
-    });
-
     it('should not set site when app is defined in FPD', function () {
       const ortb2 = {app: {content: 'XYZ'}};
       let request = spec.buildRequests([simpleBidRequest], {...bidderRequest, ortb2})[0];
@@ -831,7 +762,6 @@ describe('Improve Digital Adapter Tests', function () {
                   'agency_id': '0'
                 }
               },
-              'exp': 120,
               'crid': '510265',
               'price': 1.9200543539802946,
               'id': '35adfe19-d6e9-46b9-9f7d-20da7026b965',
@@ -874,7 +804,6 @@ describe('Improve Digital Adapter Tests', function () {
                   'agency_id': '0'
                 }
               },
-              'exp': 120,
               'crid': '510265',
               'price': 1.9200543539802946,
               'id': '35adfe19-d6e9-46b9-9f7d-20da7026b965',
@@ -894,7 +823,6 @@ describe('Improve Digital Adapter Tests', function () {
                   'agency_id': '0'
                 }
               },
-              'exp': 120,
               'crid': '479163',
               'price': 1.9200543539802946,
               'id': '83c8d524-0955-4d0c-b558-4c9f3600e09b',
@@ -939,7 +867,6 @@ describe('Improve Digital Adapter Tests', function () {
                 }
               },
               'crid': '544456',
-              'exp': 120,
               'id': '52098fad-20c1-476b-a4fa-41e275e5a4a5',
               'price': 1.8600000000000003,
               'adm': "{\"ver\":\"1.1\",\"imptrackers\":[\"https://secure.adnxs.com/imptr?id=52311&t=2\",\"https://euw-ice.360yield.com/imp_pixel?ic=hcUBlCANx1FabHBf6FR2gC7UO4xEyXahdZAn0-B5qL-bb3A74BJ1smyWIyW7IWcC0SOjSXzVpevTHXxTqJ.sf.Qhahyy6tSo.0j1QWfXlH8sM4-8vKWjMjw-x.IrJJNlwkQ0s1CdwcwTefcLXm5l2E-W19VhACuV7f3mgrZMNjiSw.SjJAfyPC3SIyAMRjYfj53UmjriQ46T7lhmkqxK8wHmksYCdbZc3PZESk8NWl28sxdjNvnYYCFMcJbeav.LOLabyTXfwy-1cEPbQs.IKMRZIKaqccTDPV3wOtzbNv0jQzatd3Nnv-PGFQcjQ-GW3i27W04Fws4kodpFSn-B6VwZAjzLzoyd5gBncyRnAyCplEbgHU5sZ1IyKHWjgCl3ZtRIK5vqrRD5D-xqgSnOi7-phG.CqZWDZ4bMDSfQg2ZnbvUTyGKcEl0WR59dW5izTMV4Fjizcrvr5T-t.zMbGwz.hGnmLIyhTqh.IcwW.GiDLVExlDlix5S1LXIWVsSyrQ==\"],\"assets\":[{\"id\":1,\"data\":{\"value\":\"ImproveDigital\",\"type\":1}},{\"id\":3,\"data\":{\"value\":\"Test content.\",\"type\":2}},{\"id\":0,\"title\":{\"text\":\"Sample Prebid Test Title\"}}],\"link\":{\"url\":\"https://euw-ice.360yield.com/click/hcUBlHOV7YhVse8RyBa0ajjyPa9Vt17e4g-1m3cRj3E67vq-RYux.SiUeAmBfNBcoOqkUc6A15AWmi4yFu5K-BdkaYjildyyk7fNLyR6hWr411kv4vrFwm5jrIBceuHS6K8oN69f.uCo8zGTdR2TbSlldwcpahQPlufZU.6VaMsu4IC53uEiUT5vb7kAw6TTlxuGBNq6zaGryiWEV2.N3YYJDTyYPh8tv-ZFyeFZFm0Gnjv.xWbC.70JcRUVU9UelQaPsTpTWYTXBhJt84YJUw1-GNtaLNVLSjjZbVoA2fsMti5p6OBmF.7u39on2OPgvseIkSmge7Pqg63pRqdP75hp.DAEk6OkcN1jGnwP2DSbvpaSbin5lVqjfO0B-wnQgfQTCUtM5v4JmkNweLhUf9Q-x.nPKLW5SccEk9ZFXzY2-1wpT3PWm8Tix3NRscLPZub9wHzL..pl6ip8cQ9hp16UjwT4H6RMAxL0R7bl-h2pAicGAzYmuO7ntRESKUoIWA==//http%3A%2F%2Fquantum-advertising.com%2Ffr%2F\"},\"jstracker\":\"<script type=\\\"application/javascript\\\">var js_tracker = ['https://secure.adnxs.com/imptr?id=52312&t=1', 'https://pixel.adsafeprotected.com/rjss/st/291611/36974035/skeleton.js?ias_adpath=[class~=ea_improve_pid_${TAG_ID}]']</script>\"}",
@@ -970,7 +897,6 @@ describe('Improve Digital Adapter Tests', function () {
                   'agency_id': '0'
                 }
               },
-              'exp': 120,
               'crid': '484367',
               'price': 9.600271769901472,
               'id': 'b131fd7b-5759-4b72-800e-60e69291e7d9',
@@ -1014,7 +940,6 @@ describe('Improve Digital Adapter Tests', function () {
                   'agency_id': '0'
                 }
               },
-              'exp': 120,
               'crid': '544063',
               'price': 1.9199364935359489,
               'id': '1fcf4dd8-a783-48ed-b59c-8fc8eeccb024',

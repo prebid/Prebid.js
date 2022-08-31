@@ -106,6 +106,7 @@ registerBidder(spec);
 
 export const CONVERTER = ortbConverter({
   context: {
+    ttl: CREATIVE_TTL,
     nativeRequest: {
       eventtrackers: [
         {event: 1, methods: [1, 2]},
@@ -132,14 +133,6 @@ export const CONVERTER = ortbConverter({
     }
     deepSetValue(imp, `${bidderParamsPath}.keyValues`, getBidIdParameter('keyValues', bidRequest.params) || undefined);
 
-    // Adding GPID
-    // TODO: this logic is in modules/gptPreAuction; should it be in core?
-    deepSetValue(imp, 'ext.gpid',
-      imp.ext?.gpid ||
-      deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot') ||
-      deepAccess(bidRequest, 'ortb2Imp.ext.data.adserver.adslot')
-    );
-
     return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {
@@ -147,7 +140,7 @@ export const CONVERTER = ortbConverter({
     mergeDeep(request, {
       id: getUniqueIdentifierStr(),
       source: {
-        // TODO: it may be better to not set this if there's more than one bidRequest - see https://github.com/prebid/Prebid.js/issues/8543
+        // TODO: once https://github.com/prebid/Prebid.js/issues/8573 is resolved, this should be handled by the base ortbConverter logic
         tid: context.bidRequests[0].transactionId,
       },
       ext: {
@@ -159,9 +152,6 @@ export const CONVERTER = ortbConverter({
         }
       },
     });
-    // always set cur, even if currency module is not enabled
-    // TODO: is this necessary?
-    request.cur = request.cur || [config.getConfig('currency.adServerCurrency') || 'USD']
     return request;
   },
   bidResponse(buildBidResponse, bid, context) {
@@ -186,7 +176,6 @@ export const CONVERTER = ortbConverter({
     Object.assign(bidResponse, {
       dealId: (typeof idExt.buying_type === 'string' && idExt.buying_type !== 'rtb') ? idExt.line_item_id : undefined,
       netRevenue: idExt.is_net || false,
-      ttl: CREATIVE_TTL // override bid.exp
     })
     if (bidResponse.mediaType === VIDEO && ID_REQUEST.isOutstreamVideo(bidRequest)) {
       Object.assign(bidResponse, {
@@ -216,15 +205,6 @@ export const CONVERTER = ortbConverter({
           bidRequest.mediaTypes[VIDEO],
           bidRequest.params?.video
         )
-        // skip must be 0 or 1
-        if (video.skip !== 1) {
-          delete video.skipmin;
-          delete video.skipafter;
-          if (video.skip !== 0) {
-            logWarn(`video.skip: invalid value '${video.skip}'. Expected 0 or 1`);
-            delete video.skip;
-          }
-        }
         fillImpVideo(
           imp,
           {...bidRequest, mediaTypes: {[VIDEO]: video}},
