@@ -197,10 +197,18 @@ let ppidSource;
 
 let configListener;
 
-const metrics = newMetrics();
+const uidMetrics = (() => {
+  let metrics;
+  return () => {
+    if (metrics == null) {
+      metrics = newMetrics();
+    }
+    return metrics;
+  }
+})();
 
 function submoduleMetrics(moduleName) {
-  return metrics.fork().renameWith(n => [`userId.mod.${n}`, `userId.mods.${moduleName}.${n}`])
+  return uidMetrics().fork().renameWith(n => [`userId.mod.${n}`, `userId.mods.${moduleName}.${n}`])
 }
 
 /** @param {Submodule[]} submodules */
@@ -402,7 +410,7 @@ export function findRootDomain(fullDomain = window.location.hostname) {
  * @param {function} cb - callback for after processing is done.
  */
 function processSubmoduleCallbacks(submodules, cb) {
-  cb = metrics.fork().startTiming('userId.callbacks.total').stopBefore(cb);
+  cb = uidMetrics().fork().startTiming('userId.callbacks.total').stopBefore(cb);
   const done = delayExecution(() => {
     clearTimeout(timeoutID);
     cb();
@@ -517,7 +525,7 @@ function idSystemInitializer({delay = GreedyPromise.timeout} = {}) {
   let initMetrics;
 
   function cancelAndTry(promise) {
-    initMetrics = metrics.fork();
+    initMetrics = uidMetrics().fork();
     if (cancel != null) {
       cancel.reject(INIT_CANCELED);
     }
@@ -646,7 +654,7 @@ export const requestBidsHook = timedAuctionHook('userId', function requestBidsHo
         });
       }
     }
-    metrics.join(useMetrics(reqBidsConfigObj.metrics), {propagate: false, includeGroups: true});
+    uidMetrics().join(useMetrics(reqBidsConfigObj.metrics), {propagate: false, includeGroups: true});
     // calling fn allows prebid to continue processing
     fn.call(this, reqBidsConfigObj);
   });
@@ -848,7 +856,7 @@ function populateSubmoduleId(submodule, consentData, storedConsentData, forceRef
 }
 
 function initSubmodules(dest, submodules, consentData, forceRefresh = false) {
-  return metrics.fork().measureTime('userId.init.modules', function () {
+  return uidMetrics().fork().measureTime('userId.init.modules', function () {
     if (!submodules.length) return []; // to simplify log messages from here on
 
     // filter out submodules whose storage type is not enabled

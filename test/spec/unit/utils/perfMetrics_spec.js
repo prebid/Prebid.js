@@ -1,6 +1,7 @@
-import {metricsFactory, newMetrics, useMetrics} from '../../../../src/utils/perfMetrics.js';
+import {CONFIG_TOGGLE, metricsFactory, newMetrics, useMetrics} from '../../../../src/utils/perfMetrics.js';
 import {defer} from '../../../../src/utils/promise.js';
 import {hook} from '../../../../src/hook.js';
+import {config} from 'src/config.js';
 
 describe('metricsFactory', () => {
   let metrics, now, enabled, newMetrics;
@@ -368,3 +369,26 @@ describe('nullMetrics', () => {
     expect(nullMetrics.getMetrics()).to.eql({});
   });
 })
+
+describe('configuration toggle', () => {
+  afterEach(() => {
+    config.resetConfig();
+  });
+
+  Object.entries({
+    'useMetrics': () => useMetrics(metricsFactory()()),
+    'newMetrics': newMetrics
+  }).forEach(([t, mkMetrics]) => {
+    it(`${t} returns no-op metrics when disabled`, () => {
+      config.setConfig({[CONFIG_TOGGLE]: false});
+      const metrics = mkMetrics();
+      metrics.setMetric('test', 'value');
+      expect(metrics.getMetrics()).to.eql({});
+    });
+    it(`returns actual metrics by default`, () => {
+      const metrics = mkMetrics();
+      metrics.setMetric('test', 'value');
+      expect(metrics.getMetrics()).to.eql({test: 'value'});
+    });
+  });
+});

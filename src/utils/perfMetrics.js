@@ -1,3 +1,5 @@
+import {config} from '../config.js';
+export const CONFIG_TOGGLE = 'performanceMetrics';
 const getTime = window.performance && window.performance.now ? () => window.performance.now() : () => Date.now();
 const NODES = new WeakMap();
 
@@ -333,8 +335,6 @@ function makeNode(parents) {
   };
 }
 
-export const newMetrics = metricsFactory();
-
 const nullMetrics = (() => {
   const nop = function () {};
   const empty = () => ({});
@@ -354,12 +354,22 @@ const nullMetrics = (() => {
   })();
 })();
 
+let enabled = true;
+config.getConfig(CONFIG_TOGGLE, (cfg) => { enabled = !!cfg[CONFIG_TOGGLE] });
+
 /**
  * convenience fallback function for metrics that may be undefined, especially during tests.
  */
 export function useMetrics(metrics) {
-  return metrics || nullMetrics;
+  return (enabled && metrics) || nullMetrics;
 }
+
+export const newMetrics = (() => {
+  const makeMetrics = metricsFactory();
+  return function () {
+    return enabled ? makeMetrics() : nullMetrics;
+  }
+})();
 
 export function hookTimer(prefix, getMetrics) {
   return function(name, hookFn) {
