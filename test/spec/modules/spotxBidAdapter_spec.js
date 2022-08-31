@@ -160,7 +160,8 @@ describe('the spotx adapter', function () {
 
       bid.userId = {
         id5id: { uid: 'id5id_1' },
-        tdid: 'tdid_1'
+        tdid: 'tdid_1',
+        uid2: 'uid2_1'
       };
 
       bid.crumbs = {
@@ -219,9 +220,18 @@ describe('the spotx adapter', function () {
               rtiPartner: 'TDID'
             }
           }]
+        },
+        {
+          source: 'uidapi.com',
+          uids: [{
+            id: bid.userId.uid2,
+            ext: {
+              rtiPartner: 'UID2'
+            }
+          }]
         }],
         fpc: 'pubcid_1'
-      })
+      });
 
       expect(request.data.source).to.deep.equal({
         ext: {
