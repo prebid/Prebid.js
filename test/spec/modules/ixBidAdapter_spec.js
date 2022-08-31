@@ -171,7 +171,8 @@ describe('IndexexchangeAdapter', function () {
       sizes: [[300, 250], [300, 600]],
       mediaTypes: {
         banner: {
-          sizes: [[300, 250], [300, 600]]
+          sizes: [[300, 250], [300, 600]],
+          pos: 0
         }
       },
       ortb2Imp: {
@@ -1839,6 +1840,7 @@ describe('IndexexchangeAdapter', function () {
       expect(impression.id).to.equal(DEFAULT_BANNER_VALID_BID[0].bidId);
       expect(impression.banner.format).to.be.length(2);
       expect(impression.banner.topframe).to.be.oneOf([0, 1]);
+      expect(impression.banner.pos).to.equal(0);
       expect(impression.ext.tid).to.equal(DEFAULT_BANNER_VALID_BID[0].transactionId);
 
       impression.banner.format.map(({ w, h, ext }, index) => {
@@ -2323,15 +2325,7 @@ describe('IndexexchangeAdapter', function () {
     });
 
     describe('detect missing sizes', function () {
-      beforeEach(function () {
-        config.setConfig({
-          ix: {
-            detectMissingSizes: false
-          }
-        });
-      })
-
-      it('request should not contain missing sizes if detectMissingSizes = false', function () {
+      it('request should always contain missing sizes', function () {
         const bid1 = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
         bid1.mediaTypes.banner.sizes = LARGE_SET_OF_SIZES;
 
@@ -2448,11 +2442,13 @@ describe('IndexexchangeAdapter', function () {
       bid.mediaTypes.video.protocols = [6];
       bid.mediaTypes.video.mimes = ['video/mp4'];
       bid.mediaTypes.video.api = 2;
+      bid.mediaTypes.video.pos = 0;
       const request = spec.buildRequests([bid], {})[0];
       const impression = JSON.parse(request.data.r).imp[0];
 
       expect(impression.video.protocols[0]).to.equal(6);
       expect(impression.video.api).to.equal(2);
+      expect(impression.video.pos).to.equal(0);
       expect(impression.video.mimes[0]).to.equal('video/mp4');
     });
 
@@ -2688,15 +2684,6 @@ describe('IndexexchangeAdapter', function () {
         expect(videoImp.id).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].bidId);
         expect(videoImp.video.w).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params.size[0]);
         expect(videoImp.video.h).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params.size[1]);
-      });
-
-      it('should get missing sizes count 0 when params.size not used', function () {
-        const bid = utils.deepClone(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0]);
-        delete bid.params.size;
-        const request = spec.buildRequests([bid], {});
-        const diagObj = JSON.parse(request[0].data.r).ext.ixdiag;
-        expect(diagObj.msd).to.equal(0);
-        expect(diagObj.msi).to.equal(0);
       });
     });
 
