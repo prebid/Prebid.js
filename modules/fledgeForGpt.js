@@ -4,9 +4,9 @@
  */
 import { config } from '../src/config.js';
 import { getHook } from '../src/hook.js';
-import { getGptSlotForAdUnitCode, logInfo } from '../src/utils.js';
+import { getGptSlotForAdUnitCode, logInfo, logWarn } from '../src/utils.js';
 
-const MODULE = 'fledgeGpt'
+const MODULE = 'fledgeForGpt'
 
 export let isEnabled = false;
 
@@ -24,7 +24,7 @@ export function init(cfg) {
     logInfo(MODULE, `isEnabled`, cfg);
   } else {
     if (isEnabled) {
-      getHook('addComponentAuction').getHooks({hook: addBidResponseHook}).remove();
+      getHook('addComponentAuction').getHooks({hook: addComponentAuctionToGptHook}).remove();
       isEnabled = false;
     }
     logInfo(MODULE, `isDisabled`, cfg);
