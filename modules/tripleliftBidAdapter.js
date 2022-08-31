@@ -139,7 +139,8 @@ function _buildPostBody(bidRequests, bidderRequest) {
     ...getUnifiedIdEids([bidRequests[0]]),
     ...getIdentityLinkEids([bidRequests[0]]),
     ...getCriteoEids([bidRequests[0]]),
-    ...getPubCommonEids([bidRequests[0]])
+    ...getPubCommonEids([bidRequests[0]]),
+    ...getUniversalEids(bidRequests[0])
   ];
 
   if (eids.length > 0) {
@@ -310,6 +311,24 @@ function getCriteoEids(bidRequest) {
 
 function getPubCommonEids(bidRequest) {
   return getEids(bidRequest, 'pubcid', 'pubcid.org', 'pubcid');
+}
+
+function getUniversalEids(bidRequest) {
+  let common = ['adserver.org', 'liveramp.com', 'criteo.com', 'pubcid.org'];
+  let eids = [];
+  if (bidRequest.userIdAsEids) {
+    bidRequest.userIdAsEids.forEach(id => {
+      try {
+        if (common.indexOf(id.source) === -1) {
+          let uids = id.uids.map(uid => ({ id: uid.id, ext: { rtiPartner: id.source } }));
+          eids.push({ source: id.source, uids });
+        }
+      } catch (err) {
+        logWarn(`Triplelift: Error attempting to add ${id} to bid request`, err);
+      }
+    });
+  }
+  return eids;
 }
 
 function getEids(bidRequest, type, source, rtiPartner) {

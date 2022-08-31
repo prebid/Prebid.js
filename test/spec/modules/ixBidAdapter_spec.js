@@ -10,7 +10,6 @@ describe('IndexexchangeAdapter', function () {
   const IX_SECURE_ENDPOINT = 'https://htlb.casalemedia.com/openrtb/pbjs';
   const VIDEO_ENDPOINT_VERSION = 8.1;
   const BANNER_ENDPOINT_VERSION = 7.2;
-  const NATIVE_ENDPOINT_VERSION = undefined;
 
   const SAMPLE_SCHAIN = {
     'ver': '1.0',
@@ -172,7 +171,8 @@ describe('IndexexchangeAdapter', function () {
       sizes: [[300, 250], [300, 600]],
       mediaTypes: {
         banner: {
-          sizes: [[300, 250], [300, 600]]
+          sizes: [[300, 250], [300, 600]],
+          pos: 0
         }
       },
       ortb2Imp: {
@@ -378,6 +378,7 @@ describe('IndexexchangeAdapter', function () {
             required: false
           },
           title: {
+            len: 25,
             required: true
           },
           body: {
@@ -387,12 +388,19 @@ describe('IndexexchangeAdapter', function () {
             required: true
           },
           video: {
-            required: false
+            required: false,
+            mimes: ['video/mp4', 'video/webm'],
+            minduration: 0,
+            maxduration: 120,
+            protocols: [2, 3, 5, 6]
           },
           sponsoredBy: {
             required: true
           }
         }
+      },
+      nativeOrtbRequest: {
+        assets: [{id: 0, required: 0, img: {type: 1}}, {id: 1, required: 1, title: {len: 140}}, {id: 2, required: 1, data: {type: 2}}, {id: 3, required: 1, img: {type: 3}}, {id: 4, required: false, video: {mimes: ['video/mp4', 'video/webm'], minduration: 0, maxduration: 120, protocols: [2, 3, 5, 6]}}]
       },
       adUnitCode: 'div-gpt-ad-1460505748563-0',
       transactionId: '173f49a8-7549-4218-a23c-e7ba59b47231',
@@ -432,6 +440,9 @@ describe('IndexexchangeAdapter', function () {
           }
         }
       },
+      nativeOrtbRequest: {
+        assets: [{id: 0, required: 0, img: {type: 1}}, {id: 1, required: 1, title: {len: 140}}, {id: 2, required: 1, data: {type: 2}}, {id: 3, required: 1, img: {type: 3}}, {id: 4, required: false, video: {mimes: ['video/mp4', 'video/webm'], minduration: 0, maxduration: 120, protocols: [2, 3, 5, 6]}}]
+      },
       adUnitCode: 'div-gpt-ad-1460505748562-0',
       transactionId: '173f49a8-7549-4218-a23c-e7ba59b47230',
       bidId: '1a2b3c4e',
@@ -442,7 +453,7 @@ describe('IndexexchangeAdapter', function () {
   ];
 
   const DEFAULT_NATIVE_IMP = {
-    request: '{"assets":[{"required":0,"img":{"type":1},"id":201},{"required":1,"title":{"len":25},"id":100},{"required":1,"data":{"type":2},"id":402},{"required":1,"img":{"type":3},"id":203},{"required":0,"video":{"mimes":["video/mp4","video/webm"],"minduration":0,"maxduration":120,"protocols":[2,3,5,6]},"id":300},{"required":1,"data":{"type":1},"id":401}],"ver":"1.2","eventtrackers":[{"event":1,"methods":[1,2]}],"privacy":1}',
+    request: '{"assets":[{"id":0,"required":0,"img":{"type":1}},{"id":1,"required":1,"title":{"len":140}},{"id":2,"required":1,"data":{"type":2}},{"id":3,"required":1,"img":{"type":3}},{"id":4,"required":false,"video":{"mimes":["video/mp4","video/webm"],"minduration":0,"maxduration":120,"protocols":[2,3,5,6]}}],"eventtrackers":[{"event":1,"methods":[1,2]}],"privacy":1}',
     ver: '1.2'
   }
 
@@ -588,7 +599,7 @@ describe('IndexexchangeAdapter', function () {
               advbrandid: 303325,
               advbrand: 'OECTA'
             },
-            adm: '{"native":{"ver":"1.2","assets":[{"id":201,"img":{"url":"https://cdn.liftoff.io/customers/1209/creatives/2501-icon-250x250.png","w":250,"h":250}},{"id":203,"img":{"url":"https://cdn.liftoff.io/customers/5a9cab9cc6/image/lambda_png/a0355879b06c09b09232.png","w":1200,"h":627}},{"id":401,"data":{"value":"autodoc.co.uk"}},{"id":402,"data":{"value":"Les pièces automobiles dont vous avez besoin, toujours sous la main."}},{"id":100,"title":{"text":"Autodoc"}},{"id":300,"video":{"vasttag":"<VAST>blah</VAST>"}}],"link":{"url":"https://play.google.com/store/apps/details?id=de.autodoc.gmbh","clicktrackers":["https://click.liftoff.io/v1/campaign_click/blah"]},"eventtrackers":[{"event":1,"method":1,"url":"https://impression-europe.liftoff.io/index/impression"},{"event":1,"method":1,"url":"https://a701.casalemedia.com/impression/v1"}],"privacy":"https://privacy.link.com"}}'
+            adm: '{"native":{"ver":"1.2","assets":[{"id":0,"img":{"url":"https://cdn.liftoff.io/customers/1209/creatives/2501-icon-250x250.png","w":250,"h":250}},{"id":1,"img":{"url":"https://cdn.liftoff.io/customers/5a9cab9cc6/image/lambda_png/a0355879b06c09b09232.png","w":1200,"h":627}},{"id":2,"data":{"value":"autodoc.co.uk"}},{"id":3,"data":{"value":"Les pièces automobiles dont vous avez besoin, toujours sous la main."}},{"id":4,"title":{"text":"Autodoc"}},{"id":5,"video":{"vasttag":"<VAST>blah</VAST>"}}],"link":{"url":"https://play.google.com/store/apps/details?id=de.autodoc.gmbh","clicktrackers":["https://click.liftoff.io/v1/campaign_click/blah"]},"eventtrackers":[{"event":1,"method":1,"url":"https://impression-europe.liftoff.io/index/impression"},{"event":1,"method":1,"url":"https://a701.casalemedia.com/impression/v1"}],"privacy":"https://privacy.link.com"}}'
           }
         ],
         seat: '3970'
@@ -864,7 +875,7 @@ describe('IndexexchangeAdapter', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return true when required params found for a banner or video ad', function () {
+    it('should return true when required params found for a banner, video or native ad', function () {
       expect(spec.isBidRequestValid(DEFAULT_BANNER_VALID_BID[0])).to.equal(true);
       expect(spec.isBidRequestValid(DEFAULT_VIDEO_VALID_BID[0])).to.equal(true);
       expect(spec.isBidRequestValid(DEFAULT_NATIVE_VALID_BID[0])).to.equal(true);
@@ -1064,15 +1075,12 @@ describe('IndexexchangeAdapter', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('should fail when native contains unrecongized properties', function () {
+    it('should fail if native openRTB object contains no valid assets', function () {
       let bid = utils.deepClone(DEFAULT_NATIVE_VALID_BID[0]);
-      bid.mediaTypes.native.test = {}
+      bid.nativeOrtbRequest = {}
       expect(spec.isBidRequestValid(bid)).to.be.false;
-    });
 
-    it('should fail if native mediaTypes should contains no valid assets', function () {
-      let bid = utils.deepClone(DEFAULT_NATIVE_VALID_BID[0]);
-      bid.mediaTypes.native = {}
+      bid.nativeOrtbRequest = {assets: []}
       expect(spec.isBidRequestValid(bid)).to.be.false;
     });
   });
@@ -1832,6 +1840,7 @@ describe('IndexexchangeAdapter', function () {
       expect(impression.id).to.equal(DEFAULT_BANNER_VALID_BID[0].bidId);
       expect(impression.banner.format).to.be.length(2);
       expect(impression.banner.topframe).to.be.oneOf([0, 1]);
+      expect(impression.banner.pos).to.equal(0);
       expect(impression.ext.tid).to.equal(DEFAULT_BANNER_VALID_BID[0].transactionId);
 
       impression.banner.format.map(({ w, h, ext }, index) => {
@@ -2145,7 +2154,7 @@ describe('IndexexchangeAdapter', function () {
       it('should have native request', () => {
         const nativeImpression = JSON.parse(request[1].data.r).imp[0];
 
-        expect(request[1].data.v).to.equal(NATIVE_ENDPOINT_VERSION);
+        expect(request[1].data.hasOwnProperty('v')).to.equal(false);
         expect(nativeImpression.id).to.equal(DEFAULT_NATIVE_VALID_BID[0].bidId);
         expect(nativeImpression.native).to.deep.equal(DEFAULT_NATIVE_IMP);
       });
@@ -2441,11 +2450,13 @@ describe('IndexexchangeAdapter', function () {
       bid.mediaTypes.video.protocols = [6];
       bid.mediaTypes.video.mimes = ['video/mp4'];
       bid.mediaTypes.video.api = 2;
+      bid.mediaTypes.video.pos = 0;
       const request = spec.buildRequests([bid], {})[0];
       const impression = JSON.parse(request.data.r).imp[0];
 
       expect(impression.video.protocols[0]).to.equal(6);
       expect(impression.video.api).to.equal(2);
+      expect(impression.video.pos).to.equal(0);
       expect(impression.video.mimes[0]).to.equal('video/mp4');
     });
 
@@ -2491,7 +2502,7 @@ describe('IndexexchangeAdapter', function () {
       const request = spec.buildRequests(DEFAULT_NATIVE_VALID_BID, DEFAULT_OPTION);
       const query = request[0].data;
 
-      expect(query.v).to.equal(NATIVE_ENDPOINT_VERSION);
+      expect(query.hasOwnProperty('v')).to.equal(false);
       expect(query.s).to.equal(DEFAULT_NATIVE_VALID_BID[0].params.siteId);
       expect(query.r).to.exist;
       expect(query.ac).to.equal('j');
@@ -2516,92 +2527,148 @@ describe('IndexexchangeAdapter', function () {
       const request = spec.buildRequests(DEFAULT_NATIVE_VALID_BID, DEFAULT_OPTION);
       const nativeImpression = JSON.parse(request[0].data.r).imp[0];
 
-      expect(request[0].data.v).to.equal(NATIVE_ENDPOINT_VERSION);
+      expect(request[0].data.hasOwnProperty('v')).to.equal(false);
       expect(nativeImpression.id).to.equal(DEFAULT_NATIVE_VALID_BID[0].bidId);
       expect(nativeImpression.native).to.deep.equal(DEFAULT_NATIVE_IMP);
     });
 
     it('should build request with given asset properties', function() {
       let bid = utils.deepClone(DEFAULT_NATIVE_VALID_BID)
-      bid[0].mediaTypes.native = {
-        title: {
-          len: 200
-        },
-        video: {
-          mimes: [
-            'javascript'
-          ],
-          minduration: 10,
-          maxduration: 60,
-          protocols: [1]
-        }
+      bid[0].nativeOrtbRequest = {
+        assets: [{id: 0, required: 0, title: {len: 140}}, {id: 1, required: 0, video: {mimes: ['javascript'], minduration: 10, maxduration: 60, protocols: [1]}}]
       }
       const request = spec.buildRequests(bid, DEFAULT_OPTION);
       const nativeImpression = JSON.parse(request[0].data.r).imp[0];
-      expect(nativeImpression.native).to.deep.equal({request: '{"assets":[{"required":0,"title":{"len":200},"id":100},{"required":0,"video":{"mimes":["javascript"],"minduration":10,"maxduration":60,"protocols":[1]},"id":300}],"ver":"1.2","eventtrackers":[{"event":1,"methods":[1,2]}],"privacy":1}', ver: '1.2'});
+      expect(nativeImpression.native).to.deep.equal({request: '{"assets":[{"id":0,"required":0,"title":{"len":140}},{"id":1,"required":0,"video":{"mimes":["javascript"],"minduration":10,"maxduration":60,"protocols":[1]}}],"eventtrackers":[{"event":1,"methods":[1,2]}],"privacy":1}', ver: '1.2'});
     });
 
     it('should build request with all possible Prebid asset properties', function() {
       let bid = utils.deepClone(DEFAULT_NATIVE_VALID_BID)
-      bid[0].mediaTypes.native = {
-        title: {
-          required: false
-        },
-        body: {
-          required: false
-        },
-        body2: {
-          required: false
-        },
-        sponsoredBy: {
-          required: false
-        },
-        icon: {
-          required: false
-        },
-        image: {
-          required: false
-        },
-        clickUrl: {
-          required: false
-        },
-        displayUrl: {
-          required: false
-        },
-        privacyLink: {
-          required: false
-        },
-        privacyIcon: {
-          required: false
-        },
-        cta: {
-          required: false
-        },
-        rating: {
-          required: false
-        },
-        downloads: {
-          required: false
-        },
-        likes: {
-          required: false
-        },
-        price: {
-          required: false
-        },
-        salePrice: {
-          required: false
-        },
-        address: {
-          required: false
-        },
-        phone: {
-          required: false
-        },
+      bid[0].nativeOrtbRequest = {
+        'ver': '1.2',
+        'assets': [
+          {
+            'id': 0,
+            'required': 0,
+            'title': {
+              'len': 140
+            }
+          },
+          {
+            'id': 1,
+            'required': 0,
+            'data': {
+              'type': 2
+            }
+          },
+          {
+            'id': 2,
+            'required': 0,
+            'data': {
+              'type': 10
+            }
+          },
+          {
+            'id': 3,
+            'required': 0,
+            'data': {
+              'type': 1
+            }
+          },
+          {
+            'id': 4,
+            'required': 0,
+            'img': {
+              'type': 1
+            }
+          },
+          {
+            'id': 5,
+            'required': 0,
+            'img': {
+              'type': 3
+            }
+          },
+          {
+            'id': 6,
+            'required': 0
+          },
+          {
+            'id': 7,
+            'required': 0,
+            'data': {
+              'type': 11
+            }
+          },
+          {
+            'id': 8,
+            'required': 0
+          },
+          {
+            'id': 9,
+            'required': 0
+          },
+          {
+            'id': 10,
+            'required': 0,
+            'data': {
+              'type': 12
+            }
+          },
+          {
+            'id': 11,
+            'required': 0,
+            'data': {
+              'type': 3
+            }
+          },
+          {
+            'id': 12,
+            'required': 0,
+            'data': {
+              'type': 5
+            }
+          },
+          {
+            'id': 13,
+            'required': 0,
+            'data': {
+              'type': 4
+            }
+          },
+          {
+            'id': 14,
+            'required': 0,
+            'data': {
+              'type': 6
+            }
+          },
+          {
+            'id': 15,
+            'required': 0,
+            'data': {
+              'type': 7
+            }
+          },
+          {
+            'id': 16,
+            'required': 0,
+            'data': {
+              'type': 9
+            }
+          },
+          {
+            'id': 17,
+            'required': 0,
+            'data': {
+              'type': 8
+            }
+          }
+        ]
       }
       const request = spec.buildRequests(bid, DEFAULT_OPTION);
       const nativeImpression = JSON.parse(request[0].data.r).imp[0];
-      expect(nativeImpression.native).to.deep.equal({request: '{"assets":[{"required":0,"title":{"len":25},"id":100},{"required":0,"data":{"type":2},"id":402},{"required":0,"data":{"type":10},"id":410},{"required":0,"data":{"type":1},"id":401},{"required":0,"img":{"type":1},"id":201},{"required":0,"img":{"type":3},"id":203},{"required":0,"data":{"type":11},"id":411},{"required":0,"data":{"type":12},"id":412},{"required":0,"data":{"type":3},"id":403},{"required":0,"data":{"type":5},"id":405},{"required":0,"data":{"type":4},"id":404},{"required":0,"data":{"type":6},"id":406},{"required":0,"data":{"type":7},"id":407},{"required":0,"data":{"type":9},"id":409},{"required":0,"data":{"type":8},"id":408}],"ver":"1.2","eventtrackers":[{"event":1,"methods":[1,2]}],"privacy":1}', ver: '1.2'});
+      expect(nativeImpression.native).to.deep.equal({request: '{"ver":"1.2","assets":[{"id":0,"required":0,"title":{"len":140}},{"id":1,"required":0,"data":{"type":2}},{"id":2,"required":0,"data":{"type":10}},{"id":3,"required":0,"data":{"type":1}},{"id":4,"required":0,"img":{"type":1}},{"id":5,"required":0,"img":{"type":3}},{"id":6,"required":0},{"id":7,"required":0,"data":{"type":11}},{"id":8,"required":0},{"id":9,"required":0},{"id":10,"required":0,"data":{"type":12}},{"id":11,"required":0,"data":{"type":3}},{"id":12,"required":0,"data":{"type":5}},{"id":13,"required":0,"data":{"type":4}},{"id":14,"required":0,"data":{"type":6}},{"id":15,"required":0,"data":{"type":7}},{"id":16,"required":0,"data":{"type":9}},{"id":17,"required":0,"data":{"type":8}}],"eventtrackers":[{"event":1,"methods":[1,2]}],"privacy":1}', ver: '1.2'});
     })
   });
 
@@ -3091,27 +3158,70 @@ describe('IndexexchangeAdapter', function () {
             advertiserDomains: ['www.abc.com']
           },
           native: {
-            body: 'Les pièces automobiles dont vous avez besoin, toujours sous la main.',
-            clickUrl: 'https://play.google.com/store/apps/details?id=de.autodoc.gmbh',
-            icon: {
-              height: 250,
-              width: 250,
-              url: 'https://cdn.liftoff.io/customers/1209/creatives/2501-icon-250x250.png'
-            },
-            image: {
-              height: 627,
-              width: 1200,
-              url: 'https://cdn.liftoff.io/customers/5a9cab9cc6/image/lambda_png/a0355879b06c09b09232.png'
-            },
-            impressionTrackers: [
-              'https://click.liftoff.io/v1/campaign_click/blah',
-              'https://impression-europe.liftoff.io/index/impression',
-              'https://a701.casalemedia.com/impression/v1'
-            ],
-            privacyLink: 'https://privacy.link.com',
-            sponsoredBy: 'autodoc.co.uk',
-            title: 'Autodoc',
-            video: '<VAST>blah</VAST>'
+            ortb: {
+              assets: [
+                {
+                  'id': 0,
+                  'img': {
+                    'h': 250,
+                    'url': 'https://cdn.liftoff.io/customers/1209/creatives/2501-icon-250x250.png',
+                    'w': 250
+                  }
+                },
+                {
+                  'id': 1,
+                  'img': {
+                    'h': 627,
+                    'url': 'https://cdn.liftoff.io/customers/5a9cab9cc6/image/lambda_png/a0355879b06c09b09232.png',
+                    'w': 1200
+                  }
+                },
+                {
+                  'data': {
+                    'value': 'autodoc.co.uk'
+                  },
+                  'id': 2
+                },
+                {
+                  'data': {
+                    'value': 'Les pièces automobiles dont vous avez besoin, toujours sous la main.'
+                  },
+                  'id': 3
+                },
+                {
+                  'id': 4,
+                  'title': {
+                    'text': 'Autodoc'
+                  }
+                },
+                {
+                  'id': 5,
+                  'video': {
+                    'vasttag': '<VAST>blah</VAST>'
+                  }
+                }
+              ],
+              'eventtrackers': [
+                {
+                  'event': 1,
+                  'method': 1,
+                  'url': 'https://impression-europe.liftoff.io/index/impression'
+                },
+                {
+                  'event': 1,
+                  'method': 1,
+                  'url': 'https://a701.casalemedia.com/impression/v1'
+                }
+              ],
+              'link': {
+                'clicktrackers': [
+                  'https://click.liftoff.io/v1/campaign_click/blah'
+                ],
+                'url': 'https://play.google.com/store/apps/details?id=de.autodoc.gmbh'
+              },
+              'privacy': 'https://privacy.link.com',
+              'ver': '1.2'
+            }
           },
           ttl: 3600
         }
