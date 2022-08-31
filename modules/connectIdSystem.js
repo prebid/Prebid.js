@@ -20,6 +20,14 @@ function isEUConsentRequired(consentData) {
   return !!(consentData && consentData.gdpr && consentData.gdpr.gdprApplies);
 }
 
+function hasUserOptedOut() {
+  try {
+    return localStorage.getItem(OVERRIDE_OPT_OUT_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
 /** @type {Submodule} */
 export const connectIdSubmodule = {
   /**
@@ -37,11 +45,9 @@ export const connectIdSubmodule = {
    * @returns {{connectId: string} | undefined}
    */
   decode(value) {
-    try {
-      if (localStorage.getItem(OVERRIDE_OPT_OUT_KEY) === '1') {
-        return undefined;
-      }
-    } catch (e) {}
+    if (hasUserOptedOut()) {
+      return undefined;
+    }
     return (typeof value === 'object' && value.connectid)
       ? {connectId: value.connectid} : undefined;
   },
@@ -53,6 +59,9 @@ export const connectIdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   getId(config, consentData) {
+    if (hasUserOptedOut()) {
+      return;
+    }
     const params = config.params || {};
     if (!params || typeof params.he !== 'string' ||
       (typeof params.pixelId === 'undefined' && typeof params.endpoint === 'undefined')) {
