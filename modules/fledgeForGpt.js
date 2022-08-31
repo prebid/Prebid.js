@@ -18,20 +18,20 @@ config.getConfig('fledgeForGpt', config => init(config.fledgeForGpt));
 export function init(cfg) {
   if (cfg && cfg.enabled === true) {
     if (!isEnabled) {
-      getHook('addComponentAuction').before(addComponentAuctionToGptHook);
+      getHook('addComponentAuction').before(addComponentAuctionHook);
       isEnabled = true;
     }
     logInfo(MODULE, `isEnabled`, cfg);
   } else {
     if (isEnabled) {
-      getHook('addComponentAuction').getHooks({hook: addComponentAuctionToGptHook}).remove();
+      getHook('addComponentAuction').getHooks({hook: addComponentAuctionHook}).remove();
       isEnabled = false;
     }
     logInfo(MODULE, `isDisabled`, cfg);
   }
 }
 
-export function addComponentAuctionToGptHook(next, bidRequest, componentAuctionConfig) {
+export function addComponentAuctionHook(next, bidRequest, componentAuctionConfig) {
   const seller = componentAuctionConfig.seller;
   const adUnitCode = bidRequest.adUnitCode;
   const gptSlot = getGptSlotForAdUnitCode(adUnitCode);
