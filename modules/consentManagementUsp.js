@@ -151,7 +151,7 @@ function lookupUspConsent({onSuccess, onError}) {
     function readPostMessageResponse(event) {
       const res = event && event.data && event.data.__uspapiReturn;
       if (res && res.callId) {
-        if (typeof uspapiCallbacks[res.callId] !== 'undefined') {
+        if (uspapiCallbacks.hasOwnProperty(res.callId)) {
           uspapiCallbacks[res.callId](res.returnValue, res.success);
           delete uspapiCallbacks[res.callId];
         }

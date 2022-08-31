@@ -1174,6 +1174,7 @@ export const spec = {
     if (commonFpd.bcat) {
       blockedIabCategories = blockedIabCategories.concat(commonFpd.bcat);
     }
+
     if (commonFpd.ext?.prebid?.bidderparams?.[bidderRequest.bidderCode]?.acat) {
       const acatParams = commonFpd.ext.prebid.bidderparams[bidderRequest.bidderCode].acat;
       _allowedIabCategoriesValidation(payload, acatParams);
@@ -1181,6 +1182,19 @@ export const spec = {
       _allowedIabCategoriesValidation(payload, allowedIabCategories);
     }
     _blockedIabCategoriesValidation(payload, blockedIabCategories);
+
+    // Check if bidderRequest has timeout property if present send timeout as tmax value to translator request
+    // bidderRequest has timeout property if publisher sets during calling requestBids function from page
+    // if not bidderRequest contains global value set by Prebid
+    if (bidderRequest?.timeout) {
+      payload.tmax = bidderRequest.timeout || config.getConfig('bidderTimeout');
+    } else {
+      payload.tmax = window?.PWT?.versionDetails?.timeout;
+    }
+
+    // Sending epoch timestamp in request.ext object
+    payload.ext.epoch = new Date().getTime();
+
     // Note: Do not move this block up
     // if site object is set in Prebid config then we need to copy required fields from site into app and unset the site object
     if (typeof config.getConfig('app') === 'object') {
