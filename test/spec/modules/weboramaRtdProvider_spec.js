@@ -1090,6 +1090,7 @@ describe('weboramaRtdProvider', function() {
           targeting: data,
         };
 
+        sandbox.stub(storage, 'hasLocalStorage').returns(true);
         sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
         sandbox.stub(storage, 'getDataFromLocalStorage')
           .withArgs(DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY)
@@ -1199,6 +1200,7 @@ describe('weboramaRtdProvider', function() {
               targeting: data,
             };
 
+            sandbox.stub(storage, 'hasLocalStorage').returns(true);
             sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
             sandbox.stub(storage, 'getDataFromLocalStorage')
               .withArgs(DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY)
@@ -1311,6 +1313,7 @@ describe('weboramaRtdProvider', function() {
               targeting: data,
             };
 
+            sandbox.stub(storage, 'hasLocalStorage').returns(true);
             sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
             sandbox.stub(storage, 'getDataFromLocalStorage')
               .withArgs(DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY)
@@ -1418,6 +1421,7 @@ describe('weboramaRtdProvider', function() {
               targeting: data,
             };
 
+            sandbox.stub(storage, 'hasLocalStorage').returns(true);
             sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
             sandbox.stub(storage, 'getDataFromLocalStorage')
               .withArgs(DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY)
@@ -1560,6 +1564,7 @@ describe('weboramaRtdProvider', function() {
               targeting: data,
             };
 
+            sandbox.stub(storage, 'hasLocalStorage').returns(true);
             sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
             sandbox.stub(storage, 'getDataFromLocalStorage')
               .withArgs(DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY)
@@ -1700,6 +1705,7 @@ describe('weboramaRtdProvider', function() {
           targeting: data,
         };
 
+        sandbox.stub(storage, 'hasLocalStorage').returns(true);
         sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
         sandbox.stub(storage, 'getDataFromLocalStorage')
           .withArgs(DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY)
@@ -1760,6 +1766,7 @@ describe('weboramaRtdProvider', function() {
           targeting: data,
         };
 
+        sandbox.stub(storage, 'hasLocalStorage').returns(true);
         sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
         sandbox.stub(storage, 'getDataFromLocalStorage')
           .withArgs(DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY)
@@ -1859,6 +1866,7 @@ describe('weboramaRtdProvider', function() {
           }
         };
 
+        sandbox.stub(storage, 'hasLocalStorage').returns(true);
         sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
 
         const adUnitCode = 'adunit1';
@@ -1932,6 +1940,7 @@ describe('weboramaRtdProvider', function() {
           }
         };
 
+        sandbox.stub(storage, 'hasLocalStorage').returns(true);
         sandbox.stub(storage, 'localStorageIsEnabled').returns(false);
 
         const adUnitCode = 'adunit1';
@@ -2029,6 +2038,7 @@ describe('weboramaRtdProvider', function() {
           targeting: data,
         };
 
+        sandbox.stub(storage, 'hasLocalStorage').returns(true);
         sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
         sandbox.stub(storage, 'getDataFromLocalStorage')
           .withArgs(DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY)
@@ -2146,6 +2156,7 @@ describe('weboramaRtdProvider', function() {
           webo: data,
         };
 
+        sandbox.stub(storage, 'hasLocalStorage').returns(true);
         sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
         sandbox.stub(storage, 'getDataFromLocalStorage')
           .withArgs(DEFAULT_LOCAL_STORAGE_LITE_PROFILE_KEY)
@@ -2254,6 +2265,7 @@ describe('weboramaRtdProvider', function() {
               webo: data,
             };
 
+            sandbox.stub(storage, 'hasLocalStorage').returns(true);
             sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
             sandbox.stub(storage, 'getDataFromLocalStorage')
               .withArgs(DEFAULT_LOCAL_STORAGE_LITE_PROFILE_KEY)
@@ -2365,6 +2377,7 @@ describe('weboramaRtdProvider', function() {
               webo: data,
             };
 
+            sandbox.stub(storage, 'hasLocalStorage').returns(true);
             sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
             sandbox.stub(storage, 'getDataFromLocalStorage')
               .withArgs(DEFAULT_LOCAL_STORAGE_LITE_PROFILE_KEY)
@@ -2471,6 +2484,7 @@ describe('weboramaRtdProvider', function() {
               webo: data,
             };
 
+            sandbox.stub(storage, 'hasLocalStorage').returns(true);
             sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
             sandbox.stub(storage, 'getDataFromLocalStorage')
               .withArgs(DEFAULT_LOCAL_STORAGE_LITE_PROFILE_KEY)
@@ -2612,6 +2626,7 @@ describe('weboramaRtdProvider', function() {
               webo: data,
             };
 
+            sandbox.stub(storage, 'hasLocalStorage').returns(true);
             sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
             sandbox.stub(storage, 'getDataFromLocalStorage')
               .withArgs(DEFAULT_LOCAL_STORAGE_LITE_PROFILE_KEY)
@@ -2751,6 +2766,7 @@ describe('weboramaRtdProvider', function() {
           webo: data,
         };
 
+        sandbox.stub(storage, 'hasLocalStorage').returns(true);
         sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
         sandbox.stub(storage, 'getDataFromLocalStorage')
           .withArgs(DEFAULT_LOCAL_STORAGE_LITE_PROFILE_KEY)
@@ -2814,6 +2830,7 @@ describe('weboramaRtdProvider', function() {
           webo: data,
         };
 
+        sandbox.stub(storage, 'hasLocalStorage').returns(true);
         sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
         sandbox.stub(storage, 'getDataFromLocalStorage')
           .withArgs(DEFAULT_LOCAL_STORAGE_LITE_PROFILE_KEY)
@@ -2912,6 +2929,7 @@ describe('weboramaRtdProvider', function() {
           }
         };
 
+        sandbox.stub(storage, 'hasLocalStorage').returns(true);
         sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
 
         const adUnitCode = 'adunit1';
@@ -2984,6 +3002,7 @@ describe('weboramaRtdProvider', function() {
           }
         };
 
+        sandbox.stub(storage, 'hasLocalStorage').returns(true);
         sandbox.stub(storage, 'localStorageIsEnabled').returns(false);
 
         const adUnitCode = 'adunit1';
@@ -3044,6 +3063,85 @@ describe('weboramaRtdProvider', function() {
         });
       });
 
+      it('should use default profile if has no local storage', function() {
+        const defaultProfile = {
+          lite_hobbies: ['sport', 'cinéma'],
+        };
+        let onDataResponse = {};
+        const moduleConfig = {
+          params: {
+            sfbxLiteDataConf: {
+              setPrebidTargeting: true,
+              defaultProfile: defaultProfile,
+              onData: (data, meta) => {
+                onDataResponse = {
+                  data: data,
+                  meta: meta,
+                };
+              },
+            }
+          }
+        };
+
+        sandbox.stub(storage, 'hasLocalStorage').returns(false);
+
+        const adUnitCode = 'adunit1';
+        const reqBidsConfigObj = {
+          ortb2Fragments: {
+            global: {},
+            bidder: {},
+          },
+          adUnits: [{
+            code: adUnitCode,
+            bids: [{
+              bidder: 'smartadserver'
+            }, {
+              bidder: 'pubmatic'
+            }, {
+              bidder: 'appnexus'
+            }, {
+              bidder: 'rubicon'
+            }, {
+              bidder: 'other'
+            }]
+          }]
+        };
+        const onDoneSpy = sinon.spy();
+
+        expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
+        weboramaSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, moduleConfig);
+
+        expect(onDoneSpy.calledOnce).to.be.true;
+
+        const targeting = weboramaSubmodule.getTargetingData([adUnitCode], moduleConfig);
+
+        expect(targeting).to.deep.equal({
+          'adunit1': defaultProfile,
+        });
+
+        expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
+        expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('lite_hobbies=sport;lite_hobbies=cinéma');
+        expect(reqBidsConfigObj.adUnits[0].bids[1].params.dctr).to.equal('lite_hobbies=sport,cinéma');
+        expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal(defaultProfile);
+        expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
+          inventory: defaultProfile,
+        });
+        expect(reqBidsConfigObj.ortb2Fragments.bidder.other).to.deep.equal({
+          site: {
+            ext: {
+              data: defaultProfile,
+            },
+          },
+        });
+        expect(onDataResponse).to.deep.equal({
+          data: defaultProfile,
+          meta: {
+            user: false,
+            source: 'lite',
+            isDefault: true,
+          },
+        });
+      });
       it('should be possible update profile from callbacks for a given bidder/adUnitCode', function() {
         let onDataResponse = {};
         const moduleConfig = {
@@ -3080,6 +3178,7 @@ describe('weboramaRtdProvider', function() {
           webo: data,
         };
 
+        sandbox.stub(storage, 'hasLocalStorage').returns(true);
         sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
         sandbox.stub(storage, 'getDataFromLocalStorage')
           .withArgs(DEFAULT_LOCAL_STORAGE_LITE_PROFILE_KEY)

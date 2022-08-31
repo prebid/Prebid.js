@@ -936,13 +936,13 @@ function getSfbxLiteDataProfile(component /* equivalent to this */) {
 function getDataFromLocalStorage(weboDataConf, cacheGet, cacheSet, defaultLocalStorageProfileKey, targetingSection, source) {
   const defaultProfile = weboDataConf.defaultProfile || {};
 
-  if (storage.localStorageIsEnabled() && !cacheGet()) {
+  if (storage.hasLocalStorage() && storage.localStorageIsEnabled() && !cacheGet()) {
     const localStorageProfileKey = weboDataConf.localStorageProfileKey || defaultLocalStorageProfileKey;
 
     const entry = storage.getDataFromLocalStorage(localStorageProfileKey);
     if (entry) {
       const data = JSON.parse(entry);
-      if (data && isPlainObject(data) && data.hasOwnProperty(targetingSection)) {
+      if (data && isPlainObject(data) && targetingSection in data) {
         /** @type {profile} */
         const profile = data[targetingSection];
         const valid = isValidProfile(profile);
