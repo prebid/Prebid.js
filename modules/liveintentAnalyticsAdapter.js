@@ -3,6 +3,7 @@ import { generateUUID, logInfo } from '../src/utils.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adaptermanager from '../src/adaptermanager.js';
+import { auctionManager } from '../src/auctionManager.js';
 
 const analyticsType = 'endpoint';
 const url = 'https://wba.liadm.com/analytic-events';
@@ -14,15 +15,16 @@ const payload = {}
 
 function handleAuctionEnd(args) {
   setTimeout(() => {
-    let winningBids = $$PREBID_GLOBAL$$.getAllWinningBids(); // wait/get winning bids
-    // filter winningBids?
-    let data = createAnalyticsEvent(args, winningBids); // transform data
-    sendAnalyticsEvent(data); // send data
+    let auction = auctionManager.index.getAuction(args.auctionId);
+    let winningBids = (auction)? auction.getWinningBids() : [];
+    // sampling?
+    let data = createAnalyticsEvent(args, winningBids);
+    sendAnalyticsEvent(data);
   }, bidWonTimeout);
 }
 
 function getAnalyticsEventBids(bidsReceived) {
-  bidsReceived.map(bid => {
+  return bidsReceived.map(bid => {
     return {
       adUnitCode: bid.adUnitCode,
       timeToRespond: bid.timeToRespond,
@@ -34,24 +36,24 @@ function getAnalyticsEventBids(bidsReceived) {
   });
 }
 
-function getBannerSizes(banner) {
-  banner.sizes.map(size => {
-    const [width, height] = size
-    return {w: width, h: height}
+export function getBannerSizes(banner) {
+  return banner.sizes.map(size => {
+    const [width, height] = size;
+    return {w: width, h: height};
   });
 }
 
-function createAnalyticsEvent(args, winningBids) {
+export function createAnalyticsEvent(args, winningBids) {
   payload['instanceId'] = generateUUID();
-  payload['url'] = window.location.protocol + '//' + window.location.hostname + '/';
+  payload['url'] = window.location.protocol + '//' + window.location.hostname + '/'; // window.location.href???
   payload['bidsReceived'] = getAnalyticsEventBids(args.bidsReceived);
 
-  payload['auctionStart'] = (args.bidderRequests && args.bidderRequests[0]) ? args.bidderRequests[0].auctionStart : 0;
+  payload['auctionStart'] = (args.bidderRequests && args.bidderRequests[0]) ? args.bidderRequests[0].auctionStart : 0; // make it optional, now, auctionEnd, timestamp???
   payload['auctionEnd'] = args.auctionEnd;
 
-  payload['adUnits'] = []
-  payload['userIds'] = []
-  payload['bidders'] = []
+  payload['adUnits'] = [];
+  payload['userIds'] = [];
+  payload['bidders'] = [];
 
   args.adUnits.forEach(unit => {
     if (unit.mediaType && unit.mediaType.banner) {
@@ -60,19 +62,35 @@ function createAnalyticsEvent(args, winningBids) {
         mediaType: 'banner',
         sizes: getBannerSizes(unit.mediaType.banner),
         ortb2Imp: unit.ortb2Imp
-      })
+      });
     }
-    payload['userIds'].push(unit.bids.userIdAsEids)
-    payload['bidders'].concat(unit.bids.map(bid => {
-      return {
-        bidder: bid.bidder,
-        params: bid.params
-      };
-    }))
+
+    let userIds = unit.bids.flatMap(getUserIds); //remove duplicates????
+    payload['userIds'].push(...userIds);
+    
+    let bidders = unit.bids.map(getBidder);
+    payload['bidders'].push(...bidders);
   })
 
   payload['winningBids'] = getAnalyticsEventBids(winningBids);
-  payload['auctionId'] = args.auctionId
+  payload['auctionId'] = args.auctionId;
+}
+
+function getBidder(bid) {
+  return {
+    bidder: bid.bidder,
+    params: bid.params
+  };
+}
+
+function getUserIds(bid) {
+  return bid.userIdAsEids.map(userId => {
+    return {
+      source: userId.source,
+      uids: userId.uids,
+      ext: userId.ext
+    };
+  }); 
 }
 
 function sendAnalyticsEvent(data) {
@@ -83,7 +101,7 @@ function sendAnalyticsEvent(data) {
     error: function (e) {
       logInfo('LiveIntent Prebid Analytics: send data error' + e);
     }
-  }, data, {
+  }, JSON.stringify(data), {
     contentType: 'application/json',
     method: 'POST'
   })
@@ -107,7 +125,7 @@ liAnalytics.originEnableAnalytics = liAnalytics.enableAnalytics;
 
 // override enableAnalytics so we can get access to the config passed in from the page
 liAnalytics.enableAnalytics = function (config) {
-//  initOptions = config.options;
+  // initOptions = config.options;
   liAnalytics.originEnableAnalytics(config); // call the base class function
 };
 
