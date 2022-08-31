@@ -359,7 +359,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
     getBidsReceived: () => _bidsReceived,
     getNoBids: () => _noBids,
     getFPD: () => ortb2Fragments
-  }
+  };
 }
 
 export const addBidResponse = hook('sync', function(adUnitCode, bid) {
@@ -514,28 +514,71 @@ function tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded, {index = au
   }
 }
 
-export const callPrebidCache = hook('async', function(auctionInstance, bidResponse, afterBidAdded, videoMediaType) {
-  store([bidResponse], function (error, cacheIds) {
-    if (error) {
-      logWarn(`Failed to save to the video cache: ${error}. Video bid must be discarded.`);
-
-      doCallbacksIfTimedout(auctionInstance, bidResponse);
-    } else {
-      if (cacheIds[0].uuid === '') {
-        logWarn(`Supplied video cache key was already in use by Prebid Cache; caching attempt was rejected. Video bid must be discarded.`);
+const storeInCache = (batch) => {
+  store(batch.map(entry => entry.bidResponse), function (error, cacheIds) {
+    cacheIds.forEach((cacheId, i) => {
+      const { auctionInstance, bidResponse, afterBidAdded } = batch[i];
+      if (error) {
+        logWarn(`Failed to save to the video cache: ${error}. Video bid must be discarded.`);
 
         doCallbacksIfTimedout(auctionInstance, bidResponse);
       } else {
-        bidResponse.videoCacheKey = cacheIds[0].uuid;
+        if (cacheId.uuid === '') {
+          logWarn(`Supplied video cache key was already in use by Prebid Cache; caching attempt was rejected. Video bid must be discarded.`);
 
-        if (!bidResponse.vastUrl) {
-          bidResponse.vastUrl = getCacheUrl(bidResponse.videoCacheKey);
+          doCallbacksIfTimedout(auctionInstance, bidResponse);
+        } else {
+          bidResponse.videoCacheKey = cacheId.uuid;
+
+          if (!bidResponse.vastUrl) {
+            bidResponse.vastUrl = getCacheUrl(bidResponse.videoCacheKey);
+          }
+          addBidToAuction(auctionInstance, bidResponse);
+          afterBidAdded();
         }
-        addBidToAuction(auctionInstance, bidResponse);
-        afterBidAdded();
       }
-    }
+    });
   });
+};
+
+let batchSize, batchTimeout;
+config.getConfig('cache', (cacheConfig) => {
+  batchSize = typeof cacheConfig.cache.batchSize === 'number' && cacheConfig.cache.batchSize > 0
+    ? cacheConfig.cache.batchSize
+    : 1;
+  batchTimeout = typeof cacheConfig.cache.batchTimeout === 'number' && cacheConfig.cache.batchTimeout > 0
+    ? cacheConfig.cache.batchTimeout
+    : 0;
+});
+
+export const batchingCache = (timeout = setTimeout, cache = storeInCache) => {
+  let batches = [[]];
+  let debouncing = false;
+  const noTimeout = cb => cb();
+
+  return function(auctionInstance, bidResponse, afterBidAdded) {
+    const batchFunc = batchTimeout > 0 ? timeout : noTimeout;
+    if (batches[batches.length - 1].length >= batchSize) {
+      batches.push([]);
+    }
+
+    batches[batches.length - 1].push({auctionInstance, bidResponse, afterBidAdded});
+
+    if (!debouncing) {
+      debouncing = true;
+      batchFunc(() => {
+        batches.forEach(cache);
+        batches = [[]];
+        debouncing = false;
+      }, batchTimeout);
+    }
+  }
+};
+
+const batchAndStore = batchingCache();
+
+export const callPrebidCache = hook('async', function(auctionInstance, bidResponse, afterBidAdded, videoMediaType) {
+  batchAndStore(auctionInstance, bidResponse, afterBidAdded);
 }, 'callPrebidCache');
 
 // Postprocess the bids so that all the universal properties exist, no matter which bidder they came from.
@@ -566,7 +609,7 @@ function getPreparedBidForAuction({adUnitCode, bid, auctionId}, {index = auction
 
   // a publisher can also define a renderer for a mediaType
   const bidObjectMediaType = bidObject.mediaType;
-  const mediaTypes = index.getMediaTypes(bidObject)
+  const mediaTypes = index.getMediaTypes(bidObject);
   const bidMediaType = mediaTypes && mediaTypes[bidObjectMediaType];
 
   var mediaTypeRenderer = bidMediaType && bidMediaType.renderer;

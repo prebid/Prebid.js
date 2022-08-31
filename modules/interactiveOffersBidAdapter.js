@@ -169,7 +169,7 @@ function parseResponseOpenRTBToPrebidjs(openRTBResponse) {
               mediaType: 'banner',
               primaryCatId: bid.cat[0] || '',
               secondaryCatIds: bid.cat
-            }
+            };
             prebidResponse.push(prebid);
           });
         }

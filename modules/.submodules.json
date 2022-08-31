@@ -73,17 +73,5 @@
       "validationFpdModule",
       "topicsFpdModule"
     ]
-  },
-  "libraries": {
-    "getOrigin": {
-      "files": [
-        "./index.js"
-      ],
-      "dependants": [
-        "ooloAnalyticsAdapter",
-        "resetdigitalBidAdapter",
-        "rtbhouseBidAdapter.js"
-      ]
-    }
   }
 }

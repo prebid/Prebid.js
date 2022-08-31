@@ -7,6 +7,9 @@ import * as utils from 'src/utils.js';
 
 const ENDPOINT = 'https://hb.yellowblue.io/hb-multi';
 const TEST_ENDPOINT = 'https://hb.yellowblue.io/hb-multi-test';
+const RTB_DOMAIN_TEST = 'testseller.com';
+const RTB_DOMAIN_ENDPOINT = `https://${RTB_DOMAIN_TEST}/hb-multi`;
+const RTB_DOMAIN_TEST_ENDPOINT = `https://${RTB_DOMAIN_TEST}/hb-multi-test`;
 const TTL = 360;
 /* eslint no-console: ["error", { allow: ["log", "warn", "error"] }] */
 
@@ -119,6 +122,20 @@ describe('riseAdapter', function () {
     it('sends bid request to TEST ENDPOINT via POST', function () {
       const request = spec.buildRequests(testModeBidRequests, bidderRequest);
       expect(request.url).to.equal(TEST_ENDPOINT);
+      expect(request.method).to.equal('POST');
+    });
+
+    it('sends bid request to rtbDomain ENDPOINT via POST', function () {
+      bidRequests[0].params.rtbDomain = RTB_DOMAIN_TEST;
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.url).to.equal(RTB_DOMAIN_ENDPOINT);
+      expect(request.method).to.equal('POST');
+    });
+
+    it('sends bid request to rtbDomain TEST ENDPOINT via POST', function () {
+      testModeBidRequests[0].params.rtbDomain = RTB_DOMAIN_TEST;
+      const request = spec.buildRequests(testModeBidRequests, bidderRequest);
+      expect(request.url).to.equal(RTB_DOMAIN_TEST_ENDPOINT);
       expect(request.method).to.equal('POST');
     });
 

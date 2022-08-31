@@ -198,7 +198,7 @@ function getIsHidden(elem) {
     } catch (o) {
       return false;
     }
-  } while ((m < 250) && (lastElem != null) && (elemHidden === false))
+  } while ((m < 250) && (lastElem != null) && (elemHidden === false));
   return elemHidden;
 }
 

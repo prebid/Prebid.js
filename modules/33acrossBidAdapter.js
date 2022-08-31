@@ -322,7 +322,7 @@ function _createServerRequest({ bidRequests, gdprConsent = {}, uspConsent, pageU
     'url': url,
     'data': JSON.stringify(ttxRequest),
     'options': options
-  }
+  };
 }
 
 // BUILD REQUESTS: SET EXTENSIONS
@@ -438,7 +438,7 @@ function _buildBannerORTB(bidRequest) {
   return {
     format,
     ext
-  }
+  };
 }
 
 // BUILD REQUESTS: VIDEO
@@ -452,7 +452,7 @@ function _buildVideoORTB(bidRequest) {
     ...videoBidderParams // Bidder Specific overrides
   };
 
-  const video = {}
+  const video = {};
 
   const { w, h } = _getSize(videoParams.playerSize[0]);
   video.w = w;
