@@ -1353,7 +1353,7 @@ export const spec = {
                   if (br.dealId) {
                     br['dealChannel'] = 'PMP';
                   }
-                  if (bid.ext && bid.ext.deal_channel) {
+                  if (br.dealId && bid.ext && bid.ext.deal_channel) {
                     br['dealChannel'] = dealChannelValues[bid.ext.deal_channel] || null;
                   }
                   br.meta = {};

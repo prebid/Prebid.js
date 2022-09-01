@@ -109,6 +109,8 @@ function copyRequiredBidDetails(bid) {
 }
 
 function setBidStatus(bid, args) {
+	if(bid?.status === ERROR && bid?.error?.code === TIMEOUT_ERROR)
+    return;
   switch (args.getStatusCode()) {
     case CONSTANTS.STATUS.GOOD:
       bid.status = SUCCESS;
