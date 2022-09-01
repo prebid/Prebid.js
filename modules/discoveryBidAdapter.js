@@ -432,7 +432,7 @@ export const spec = {
           if (admObj.purl) {
             native.purl = admObj.purl;
           }
-          bidResponse['navitve'] = native;
+          bidResponse['native'] = native;
         } else {
           bidResponse['width'] = getKv(bid, 'w');
           bidResponse['height'] = getKv(bid, 'h');
