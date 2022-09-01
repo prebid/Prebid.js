@@ -67,12 +67,17 @@ function createBannerRequest(bids, bidderRequest) {
       },
       ext: {divid: bid.adUnitCode}
     };
+
+    if (bidderRequest.fledgeEnabled) {
+      imp.ext.ae = bid?.ortb2Imp?.ext?.ae
+    }
+
     enrichImp(imp, bid, floor);
     return imp;
   });
   return {
     method: 'POST',
-    url: REQUEST_URL,
+    url: config.getConfig('openxOrtbUrl') || REQUEST_URL,
     data: data
   }
 }
@@ -190,6 +195,9 @@ function getBaseRequest(bid, bidderRequest) {
   if (bid.params.delDomain) {
     utils.deepSetValue(req, 'ext.delDomain', bid.params.delDomain);
   }
+  if (bid.params.response_template_name) {
+    utils.deepSetValue(req, 'ext.response_template_name', bid.params.response_template_name);
+  }
   if (bid.params.test) {
     req.test = 1;
   }
@@ -251,7 +259,7 @@ function getFloor(bid, mediaType) {
   return floor;
 }
 
-function interpretResponse(resp, req) {
+function interpretOrtbResponse(resp, req) {
   if (!resp.body) {
     resp.body = {nbr: 0};
   }
@@ -313,6 +321,24 @@ function interpretResponse(resp, req) {
     })];
   });
 
+  return bids;
+}
+
+function interpretResponse(resp, req) {
+  const bids = interpretOrtbResponse(resp, req);
+  let fledgeAuctionConfigs = utils.deepAccess(resp, 'body.ext.fledge_auction_configs');
+  if (fledgeAuctionConfigs) {
+    fledgeAuctionConfigs = Object.entries(fledgeAuctionConfigs).map(([bidId, cfg]) => {
+      return Object.assign({
+        bidId,
+        auctionSignals: {}
+      }, cfg);
+    });
+    return {
+      bids,
+      fledgeAuctionConfigs,
+    }
+  }
   return bids;
 }
 
