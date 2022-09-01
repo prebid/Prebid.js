@@ -1,6 +1,6 @@
 import { config } from './config.js';
-import {logWarn, isPlainObject, deepAccess, deepClone, getWindowTop, logInfo} from './utils.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import {logWarn, logInfo, isPlainObject, deepAccess, deepClone, getWindowTop} from './utils.js';
+import {includes} from './polyfill.js';
 
 let sizeConfig = [];
 

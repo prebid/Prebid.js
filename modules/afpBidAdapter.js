@@ -1,12 +1,13 @@
-import includes from 'core-js-pure/features/array/includes.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { Renderer } from '../src/Renderer.js'
-import { BANNER, VIDEO } from '../src/mediaTypes.js'
+import {includes} from '../src/polyfill.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {Renderer} from '../src/Renderer.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
 
 export const IS_DEV = location.hostname === 'localhost'
 export const BIDDER_CODE = 'afp'
 export const SSP_ENDPOINT = 'https://ssp.afp.ai/api/prebid'
 export const REQUEST_METHOD = 'POST'
+// TODO: test code should be kept in tests
 export const TEST_PAGE_URL = 'https://rtbinsight.ru/smiert-bolshikh-dannykh-kto-na-novienkogo/'
 const SDK_PATH = 'https://cdn.afp.ai/ssp/sdk.js?auto_initialization=false&deploy_to_parent_window=true'
 const TTL = 60
@@ -96,7 +97,7 @@ export const spec = {
   },
   buildRequests(validBidRequests, {refererInfo, gdprConsent}) {
     const payload = {
-      pageUrl: IS_DEV ? TEST_PAGE_URL : refererInfo.referer,
+      pageUrl: IS_DEV ? TEST_PAGE_URL : refererInfo.page,
       gdprConsent: gdprConsent,
       bidRequests: validBidRequests.map(validBidRequest => {
         const {bidId, transactionId, sizes, params: {
