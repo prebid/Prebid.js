@@ -362,14 +362,24 @@ export const spec = {
   interpretResponse: function (serverResponse, bidRequest) {
     const bids = getKv(serverResponse, 'body', 'seatbid', 0, 'bid');
     const cur = getKv(serverResponse, 'body', 'cur');
-
     const bidResponses = [];
     for (let bid of bids) {
       let impid = getKv(bid, 'impid');
       if (itemMaps[impid]) {
         let bidId = getKv(itemMaps[impid], 'req', 'bidId');
         const mediaType = getKv(bid, 'w') ? 'banner' : 'native';
-        let bidResponse = {};
+        let bidResponse = {
+          requestId: bidId,
+          cpm: getKv(bid, 'price'),
+          creativeId: getKv(bid, 'cid'),
+          mediaType,
+          currency: cur,
+          netRevenue: true,
+          nurl: getKv(bid, 'nurl'),
+          meta: {
+            advertiserDomains:  getKv(bid, 'adomain') || []
+          }
+        };
         if (mediaType === 'native') {
           const adm = getKv(bid, 'adm');
           const admObj = JSON.parse(adm);
@@ -422,38 +432,11 @@ export const spec = {
           if (admObj.purl) {
             native.purl = admObj.purl;
           }
-          bidResponse = {
-            requestId: bidId,
-            cpm: getKv(bid, 'price'),
-            creativeId: getKv(bid, 'cid'),
-            mediaType,
-            currency: cur,
-            netRevenue: true,
-            native,
-            ttl: TIME_TO_LIVE,
-            nurl: getKv(bid, 'nurl'),
-            meta: {
-              advertiserDomains: getKv(bid, 'adomain') || []
-            }
-          };
+          bidResponse['navitve'] = native;
         } else {
-          bidResponse = {
-            requestId: bidId,
-            cpm: getKv(bid, 'price'),
-            width: getKv(bid, 'w'),
-            height: getKv(bid, 'h'),
-            creativeId: getKv(bid, 'cid'),
-            dealId: '',
-            mediaType,
-            currency: cur,
-            netRevenue: true,
-            ttl: TIME_TO_LIVE,
-            ad: getKv(bid, 'adm'),
-            nurl: getKv(bid, 'nurl'),
-            meta: {
-              advertiserDomains:  getKv(bid, 'adomain') || []
-            }
-          };
+          bidResponse['width'] = getKv(bid, 'w');
+          bidResponse['height'] = getKv(bid, 'h');
+          bidResponse['ad'] = getKv(bid, 'adm');
         }
         bidResponses.push(bidResponse);
       }
