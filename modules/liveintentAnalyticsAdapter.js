@@ -42,6 +42,10 @@ export function getBannerSizes(banner) {
   });
 }
 
+function getUniqueBy(arr, key) {
+  return [...new Map(arr.map(item => [item[key], item])).values()]
+}
+
 export function createAnalyticsEvent(args, winningBids) {
   let payload = {}
   let allUserIds = [];
@@ -67,14 +71,14 @@ export function createAnalyticsEvent(args, winningBids) {
       });
     }
 
-    let userIds = unit.bids.flatMap(getAnalyticsEventUserIds); 
+    let userIds = unit.bids.flatMap(getAnalyticsEventUserIds);
     allUserIds.push(...userIds);
 
     let bidders = unit.bids.map(getBidder);
     payload['bidders'].push(...bidders);
   })
 
-  let uniqueUserIds = allUserIds // TODO remove duplicates????
+  let uniqueUserIds = getUniqueBy(allUserIds, 'source') // TODO remove duplicates????
   payload['userIds'] = uniqueUserIds
   payload['winningBids'] = getAnalyticsEventBids(winningBids);
   payload['auctionId'] = args.auctionId;
