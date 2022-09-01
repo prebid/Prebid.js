@@ -169,6 +169,28 @@ describe('currency', function () {
       expect(getGlobal().convertCurrency(1.0, 'USD', 'EUR')).to.equal(4);
       expect(getGlobal().convertCurrency(1.0, 'USD', 'JPY')).to.equal(200);
     });
+    it('uses default rates until currency file is loaded', function () {
+      setConfig({
+        adServerCurrency: 'USD',
+        defaultRates: {
+          USD: {
+            JPY: 100
+          }
+        }
+      });
+
+      // Race condition where a bid is converted before the file has been loaded
+      expect(getGlobal().convertCurrency(1.0, 'USD', 'JPY')).to.equal(100);
+
+      fakeCurrencyFileServer.respondWith(JSON.stringify({
+        'dataAsOf': '2017-04-25',
+        'conversions': {
+          'USD': { JPY: 200 }
+        }
+      }));
+      fakeCurrencyFileServer.respond();
+      expect(getGlobal().convertCurrency(1.0, 'USD', 'JPY')).to.equal(200);
+    });
   });
   describe('bidder override', function () {
     it('allows setConfig to set bidder currency', function () {
