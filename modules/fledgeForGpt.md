@@ -16,15 +16,30 @@ Build the fledge module into the Prebid.js package with:
 gulp build --modules=fledgeForGpt,...
 ```
 
-## Configuration Parameters
+## Module Configuration Parameters
 
 |Name |Type |Description |Notes |
 | :------------ | :------------ | :------------ |:------------ |
 |enabled | Boolean |Enable/disable the module |Defaults to `false` |
 
-## Example Configurations
+## Configuration
 
-### enabling fledge support for openx RTB bid adapter
+Fledge support need to be enabled at 3 levels:
+- `fledgeForGpt` module
+- bidder
+- adunit
+### enabling the fledgeForGpt module
+```js
+pbjs.que.push(function() {
+  pbjs.setConfig({
+    fledgeForGpt: {
+      enabled: true
+    }
+  });
+});
+```
+
+### enablingthe  bidder
 ```js
 pbjs.setBidderConfig({
     bidders: ["openx"],
@@ -34,23 +49,12 @@ pbjs.setBidderConfig({
 });
 ```
 
-### enabling fledge support for the adunit
-ortb2Imp.ext.ae must be 1
+### enabling the adunit
+ortb2Imp.ext.ae on the adunit must be set 1
 ```js
 ortb2Imp: {
     ext: {
         ae: 1
     }
 }
-```
-
-### enabling fledge support for the prebid callbacks
-```js
-pbjs.que.push(function() {
-  pbjs.setConfig({
-    fledgeGpt: {
-      enabled: true
-    }
-  });
-});
 ```
