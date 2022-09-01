@@ -107,7 +107,7 @@ export const spec = {
     }
 
     if (config.getConfig('coppa')) {
-      regs.coppa = 1
+      regs.coppa = 1;
     }
 
     const ortb2 = bidderRequest.ortb2 || {

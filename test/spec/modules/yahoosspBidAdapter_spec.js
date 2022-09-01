@@ -334,6 +334,19 @@ describe('YahooSSP Bid Adapter:', () => {
   });
 
   describe('Schain module support:', () => {
+    it('should not include schain data when schain array is empty', function () {
+      const { bidRequest, validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      const globalSchain = {
+        ver: '1.0',
+        complete: 1,
+        nodes: []
+      };
+      bidRequest.schain = globalSchain;
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      const schain = data.source.ext.schain;
+      expect(schain).to.be.undefined;
+    });
+
     it('should send Global or Bidder specific schain', function () {
       const { bidRequest, validBidRequests, bidderRequest } = generateBuildRequestMock({});
       const globalSchain = {
