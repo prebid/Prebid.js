@@ -39,7 +39,7 @@ describe('Caroda adapter', function () {
   describe('buildRequests', function () {
     beforeEach(function () {
       config.resetConfig();
-      delete window.carodaPageViewId
+      delete window.carodaPageViewId;
     });
     it('should send request with minimal structure', function () {
       const validBidRequests = [{
@@ -48,7 +48,7 @@ describe('Caroda adapter', function () {
           'ctok': 'adf232eef344'
         }
       }];
-      window.top.carodaPageViewId = 12345
+      window.top.carodaPageViewId = 12345;
       const request = spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } })[0];
       assert.equal(request.method, 'POST');
       assert.equal(request.url, 'https://prebid.caroda.io/api/hb?entry_id=12345');
@@ -69,7 +69,7 @@ describe('Caroda adapter', function () {
           'test': 1
         }
       }];
-      window.top.carodaPageViewId = 12345
+      window.top.carodaPageViewId = 12345;
       const request = spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } })[0];
       const data = JSON.parse(request.data)
       assert.equal(data.test, 1);
@@ -83,9 +83,9 @@ describe('Caroda adapter', function () {
           'placementId': 'opzafe342f'
         }
       }];
-      window.top.carodaPageViewId = 12345
+      window.top.carodaPageViewId = 12345;
       const request = spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } })[0];
-      const data = JSON.parse(request.data)
+      const data = JSON.parse(request.data);
       assert.equal(data.placement_id, 'opzafe342f');
     });
 
@@ -283,9 +283,9 @@ describe('Caroda adapter', function () {
         }];
         const request = spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } });
         assert.equal(request.length, 2);
-        const data = request.map(r => JSON.parse(r.data))
-        assert.equal(data[0].ctok, 'ctok1')
-        assert.equal(data[1].ctok, 'ctok2')
+        const data = request.map(r => JSON.parse(r.data));
+        assert.equal(data[0].ctok, 'ctok1');
+        assert.equal(data[1].ctok, 'ctok2');
       });
 
       describe('price floors', function () {

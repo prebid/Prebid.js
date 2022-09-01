@@ -1,95 +1,95 @@
 // jshint esversion: 6, es3: false, node: true
 'use strict'
 
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER, VIDEO } from '../src/mediaTypes.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {
   deepAccess,
   deepSetValue,
   logError,
   mergeDeep,
   parseSizesInput
-} from '../src/utils.js'
-import { config } from '../src/config.js'
+} from '../src/utils.js';
+import { config } from '../src/config.js';
 
-const { getConfig } = config
+const { getConfig } = config;
 
-const BIDDER_CODE = 'caroda'
-const GVLID = 954
+const BIDDER_CODE = 'caroda';
+const GVLID = 954;
 
 // some state info is required to synchronize with Caroda ad server
-const topUsableWindow = getTopUsableWindow()
+const topUsableWindow = getTopUsableWindow();
 
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: bid => {
-    const params = bid.params || {}
-    const { ctok, placementId } = params
+    const params = bid.params || {};
+    const { ctok, placementId } = params;
     return typeof ctok === 'string' && (
       typeof placementId === 'string' ||
-      typeof placementId === 'undefined')
+      typeof placementId === 'undefined');
   },
   buildRequests: (validBidRequests, bidderRequest) => {
-    topUsableWindow.carodaPageViewId = topUsableWindow.carodaPageViewId || Math.floor(Math.random() * 1e9)
-    const pageViewId = topUsableWindow.carodaPageViewId
-    const ortbCommon = getORTBCommon(bidderRequest)
+    topUsableWindow.carodaPageViewId = topUsableWindow.carodaPageViewId || Math.floor(Math.random() * 1e9);
+    const pageViewId = topUsableWindow.carodaPageViewId;
+    const ortbCommon = getORTBCommon(bidderRequest);
     const priceType =
       getFirstWithKey(validBidRequests, 'params.priceType') ||
-      'net'
-    const test = getFirstWithKey(validBidRequests, 'params.test')
-    const currency = getConfig('currency.adServerCurrency')
-    const eids = getFirstWithKey(validBidRequests, 'userIdAsEids')
-    const schain = getFirstWithKey(validBidRequests, 'schain')
+      'net';
+    const test = getFirstWithKey(validBidRequests, 'params.test');
+    const currency = getConfig('currency.adServerCurrency');
+    const eids = getFirstWithKey(validBidRequests, 'userIdAsEids');
+    const schain = getFirstWithKey(validBidRequests, 'schain');
     const request = {
       auctionId: bidderRequest.auctionId,
       currency,
       hb_version: '$prebid.version$',
       ...ortbCommon,
       price_type: priceType
-    }
+    };
     if (test) {
-      request.test = 1
+      request.test = 1;
     }
     if (schain) {
-      request.schain = schain
+      request.schain = schain;
     }
     if (config.getConfig('coppa')) {
-      deepSetValue(request, 'privacy.coppa', 1)
+      deepSetValue(request, 'privacy.coppa', 1);
     }
     if (deepAccess(bidderRequest, 'gdprConsent.gdprApplies') !== undefined) {
       deepSetValue(
         request,
         'privacy.gdpr_consent',
         bidderRequest.gdprConsent.consentString
-      )
+      );
       deepSetValue(
         request,
         'privacy.gdpr',
         bidderRequest.gdprConsent.gdprApplies & 1
-      )
+      );
     }
     if (bidderRequest.uspConsent) {
-      deepSetValue(request, 'privacy.us_privacy', bidderRequest.uspConsent)
+      deepSetValue(request, 'privacy.us_privacy', bidderRequest.uspConsent);
     }
     if (eids) {
-      deepSetValue(request, 'user.eids', eids)
+      deepSetValue(request, 'user.eids', eids);
     }
     return getImps(validBidRequests, request).map(imp => ({
       method: 'POST',
       url: 'https://prebid.caroda.io/api/hb?entry_id=' + pageViewId,
       data: JSON.stringify(imp)
-    }))
+    }));
   },
   interpretResponse: (serverResponse) => {
     if (!serverResponse.body) {
-      return
+      return;
     }
     const { ok, error } = serverResponse.body
     if (error) {
-      logError(BIDDER_CODE, ': server caught', error.message)
-      return
+      logError(BIDDER_CODE, ': server caught', error.message);
+      return;
     }
     try {
       return JSON.parse(ok.value)
@@ -114,9 +114,9 @@ export const spec = {
           }
           return ret
         })
-        .filter(Boolean)
+        .filter(Boolean);
     } catch (e) {
-      logError(BIDDER_CODE, ': caught', e)
+      logError(BIDDER_CODE, ': caught', e);
     }
   }
 }
@@ -125,88 +125,88 @@ registerBidder(spec)
 
 function getFirstWithKey (collection, key) {
   for (let i = 0, result; i < collection.length; i++) {
-    result = deepAccess(collection[i], key)
+    result = deepAccess(collection[i], key);
     if (result) {
-      return result
+      return result;
     }
   }
 }
 
 function getTopUsableWindow () {
-  let res = window
+  let res = window;
   try {
     while (window.top !== res && res.parent.location.href.length) {
-      res = res.parent
+      res = res.parent;
     }
   } catch (e) {}
-  return res
+  return res;
 }
 
 function getORTBCommon (bidderRequest) {
-  let app, site
-  const commonFpd = bidderRequest.ortb2 || {}
-  let { user } = commonFpd
+  let app, site;
+  const commonFpd = bidderRequest.ortb2 || {};
+  let { user } = commonFpd;
   if (typeof getConfig('app') === 'object') {
     app = getConfig('app') || {}
     if (commonFpd.app) {
-      mergeDeep(app, commonFpd.app)
+      mergeDeep(app, commonFpd.app);
     }
   } else {
-    site = getConfig('site') || {}
+    site = getConfig('site') || {};
     if (commonFpd.site) {
-      mergeDeep(site, commonFpd.site)
+      mergeDeep(site, commonFpd.site);
     }
     if (!site.page) {
-      site.page = bidderRequest.refererInfo.page
+      site.page = bidderRequest.refererInfo.page;
     }
   }
-  const device = getConfig('device') || {}
-  device.w = device.w || window.innerWidth
-  device.h = device.h || window.innerHeight
-  device.ua = device.ua || navigator.userAgent
+  const device = getConfig('device') || {};
+  device.w = device.w || window.innerWidth;
+  device.h = device.h || window.innerHeight;
+  device.ua = device.ua || navigator.userAgent;
   return {
     app,
     site,
     user,
     device
-  }
+  };
 }
 
 function getImps (validBidRequests, common) {
   return validBidRequests.map((bid) => {
     const floorInfo = bid.getFloor
       ? bid.getFloor({ currency: common.currency || 'EUR' })
-      : {}
-    const bidfloor = floorInfo.floor
-    const bidfloorcur = floorInfo.currency
-    const { ctok, placementId } = bid.params
+      : {};
+    const bidfloor = floorInfo.floor;
+    const bidfloorcur = floorInfo.currency;
+    const { ctok, placementId } = bid.params;
     const imp = {
       bid_id: bid.bidId,
       ctok,
       bidfloor,
       bidfloorcur,
       ...common
-    }
-    const bannerParams = deepAccess(bid, 'mediaTypes.banner')
+    };
+    const bannerParams = deepAccess(bid, 'mediaTypes.banner');
     if (bannerParams && bannerParams.sizes) {
-      const sizes = parseSizesInput(bannerParams.sizes)
+      const sizes = parseSizesInput(bannerParams.sizes);
       const format = sizes.map(size => {
-        const [width, height] = size.split('x')
-        const w = parseInt(width, 10)
-        const h = parseInt(height, 10)
-        return { w, h }
-      })
+        const [width, height] = size.split('x');
+        const w = parseInt(width, 10);
+        const h = parseInt(height, 10);
+        return { w, h };
+      });
       imp.banner = {
         format
-      }
+      };
     }
     if (placementId) {
-      imp.placement_id = placementId
+      imp.placement_id = placementId;
     }
-    const videoParams = deepAccess(bid, 'mediaTypes.video')
+    const videoParams = deepAccess(bid, 'mediaTypes.video');
     if (videoParams) {
-      imp.video = videoParams
+      imp.video = videoParams;
     }
-    return imp
+    return imp;
   })
 }
