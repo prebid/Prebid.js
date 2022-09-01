@@ -225,7 +225,7 @@ describe('the spotx adapter', function () {
               rtiPartner: 'TDID'
             }
           }]
-        },{
+        }, {
           source: 'id5-sync.com',
           uids: [{
             id: 'id5id_1',
