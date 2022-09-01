@@ -1,6 +1,15 @@
 import liAnalytics from '../../../modules/liveintentAnalyticsAdapter';
 import { expect } from 'chai';
 
+let utils = require('src/utils');
+let instanceId = '77abbc81-c1f1-41cd-8f25-f7149244c800';
+let url = window.location.href;
+let constants = require('src/constants.json');
+let sandbox;
+let clock;
+let now = new Date();
+let events = require('src/events');
+
 let args = {
   auctionId: '99abbc81-c1f1-41cd-8f25-f7149244c897',
   timestamp: 1660915379703,
@@ -23,8 +32,10 @@ let args = {
         }
       },
       ortb2Imp: {
+        gpid: '/777/test/home/ID_Bot100AdJ1',
         ext: {
           data: {
+            aupName: '/777/test/home/ID_Bot100AdJ1',
             adserver: {
               name: 'gam',
               adslot: '/777/test/home/ID_Bot100AdJ1'
@@ -127,6 +138,18 @@ let winningBids = [
 ];
 
 describe('LiveIntent Analytics Adapter ', () => {
+  beforeEach(function () {
+    sinon.stub(events, 'getEvents').returns([]);
+    sandbox = sinon.sandbox.create();
+    clock = sandbox.useFakeTimers(now.getTime());
+  });
+  afterEach(function () {
+    events.getEvents.restore()
+    liAnalytics.disableAnalytics();
+    sandbox.restore();
+    clock.restore();
+  });
+
   it('extract sizes', function () {
     let expectedResult = [{
       w: 100,
@@ -142,8 +165,8 @@ describe('LiveIntent Analytics Adapter ', () => {
 
   it('creates analytics event from args and winning bids', () => {
     let expectedResult = {
-      instanceId: '77abbc81-c1f1-41cd-8f25-f7149244c800',
-      url: 'https://test.com/',
+      instanceId: instanceId,
+      url: url,
       bidsReceived: [
         {
           adUnitCode: 'ID_Bot100AdJ1',
@@ -242,6 +265,18 @@ describe('LiveIntent Analytics Adapter ', () => {
         }
       ]
     };
+    const initOptions = {
+      provider: 'liveintent',
+      options: {
+        bidWonTimeout: 2000,
+        sampling: 1
+      }
+    }
+    sandbox.stub(liAnalytics, 'handleAuctionEnd');
+    liAnalytics.enableAnalytics(initOptions);
+    events.emit(constants.EVENTS.AUCTION_END, args);
+    sinon.stub(utils, 'generateUUID').returns('77abbc81-c1f1-41cd-8f25-f7149244c800')
     expect(liAnalytics.createAnalyticsEvent(args, winningBids)).to.deep.equal(expectedResult);
+    expect(liAnalytics.handleAuctionEnd.called).to.equal(true)
   });
 });

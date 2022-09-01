@@ -17,7 +17,7 @@ let liAnalytics = Object.assign(adapter({url, analyticsType}), {
     if (typeof args !== 'undefined') {
       switch (eventType) {
         case AUCTION_END:
-          handleAuctionEnd(args);
+          liAnalytics.handleAuctionEnd(args);
           break;
         default: break;
       }
@@ -25,15 +25,18 @@ let liAnalytics = Object.assign(adapter({url, analyticsType}), {
   }
 });
 
-function handleAuctionEnd(args) {
-  const bidWonTimeout = initOptions.bidWonTimeout || 2000;
-  setTimeout(() => {
-    let auction = auctionManager.index.getAuction(args.auctionId);
-    let winningBids = (auction) ? auction.getWinningBids() : [];
-    // sampling?
-    let data = liAnalytics.createAnalyticsEvent(args, winningBids);
-    sendAnalyticsEvent(data);
-  }, bidWonTimeout);
+liAnalytics.handleAuctionEnd = function(args) {
+  const bidWonTimeout = (initOptions && initOptions.bidWonTimeout) || 2000;
+  const sampling = (initOptions && initOptions.sampling) || 0.1;
+  const isSampled = Math.random() < parseFloat(sampling)
+  if (isSampled) {
+    setTimeout(() => {
+      const auction = auctionManager.index.getAuction(args.auctionId);
+      const winningBids = (auction) ? auction.getWinningBids() : [];
+      const data = liAnalytics.createAnalyticsEvent(args, winningBids);
+      sendAnalyticsEvent(data);
+    }, bidWonTimeout);
+  }
 }
 
 function getAnalyticsEventBids(bidsReceived) {
@@ -92,7 +95,7 @@ liAnalytics.createAnalyticsEvent = function(args, winningBids) {
     payload['bidders'].push(...bidders);
   })
 
-  let uniqueUserIds = getUniqueBy(allUserIds, 'source') // TODO remove duplicates????
+  let uniqueUserIds = getUniqueBy(allUserIds, 'source')
   payload['userIds'] = uniqueUserIds
   payload['winningBids'] = getAnalyticsEventBids(winningBids);
   payload['auctionId'] = args.auctionId;
