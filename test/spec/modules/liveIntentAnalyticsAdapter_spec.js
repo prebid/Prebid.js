@@ -1,14 +1,18 @@
-import liAnalytics from '../../../modules/liveintentAnalyticsAdapter';
+import liAnalytics from 'modules/liveintentAnalyticsAdapter';
 import { expect } from 'chai';
+import { server } from 'test/mocks/xhr.js';
+import { auctionManager } from 'src/auctionManager.js';
 
+// import { auctionManager } from 'src/auctionManager.js';
 let utils = require('src/utils');
 let instanceId = '77abbc81-c1f1-41cd-8f25-f7149244c800';
 let url = window.location.href;
-let constants = require('src/constants.json');
 let sandbox;
 let clock;
 let now = new Date();
+
 let events = require('src/events');
+let constants = require('src/constants.json');
 
 let args = {
   auctionId: '99abbc81-c1f1-41cd-8f25-f7149244c897',
@@ -137,17 +141,46 @@ let winningBids = [
   }
 ];
 
+const config = {
+  provider: 'liveintent',
+  options: {
+    bidWonTimeout: 2000,
+    sampling: 1
+  }
+}
+
 describe('LiveIntent Analytics Adapter ', () => {
   beforeEach(function () {
-    sinon.stub(events, 'getEvents').returns([]);
     sandbox = sinon.sandbox.create();
+    sandbox.stub(events, 'getEvents').returns([]);
     clock = sandbox.useFakeTimers(now.getTime());
   });
   afterEach(function () {
-    events.getEvents.restore()
     liAnalytics.disableAnalytics();
     sandbox.restore();
     clock.restore();
+  });
+
+  it('request is sent correctly', () => {
+    liAnalytics.enableAnalytics(config);
+    events.emit(constants.EVENTS.AUCTION_END, args);
+    clock.tick(2000);
+    sandbox.stub(auctionManager.index, 'getAuction').withArgs('99abbc81-c1f1-41cd-8f25-f7149244c897').returns({})
+    expect(server.requests.length).to.equal(1);
+  });
+
+  it('calls handleAuctionEnd when an AUCTION_END event is received', () => {
+    liAnalytics.enableAnalytics(config);
+    sandbox.stub(liAnalytics, 'handleAuctionEnd');
+    events.emit(constants.EVENTS.AUCTION_END, args);
+    sandbox.assert.calledOnce(liAnalytics.handleAuctionEnd);
+  });
+
+  it('not call handleAuctionEnd when another event type is received', () => {
+    liAnalytics.enableAnalytics(config);
+    sandbox.stub(liAnalytics, 'handleAuctionEnd');
+    events.emit(constants.EVENTS.BID_TIMEOUT, args);
+    sandbox.assert.notCalled(liAnalytics.handleAuctionEnd);
   });
 
   it('extract sizes', function () {
@@ -265,18 +298,8 @@ describe('LiveIntent Analytics Adapter ', () => {
         }
       ]
     };
-    const initOptions = {
-      provider: 'liveintent',
-      options: {
-        bidWonTimeout: 2000,
-        sampling: 1
-      }
-    }
-    sandbox.stub(liAnalytics, 'handleAuctionEnd');
-    liAnalytics.enableAnalytics(initOptions);
-    events.emit(constants.EVENTS.AUCTION_END, args);
-    sinon.stub(utils, 'generateUUID').returns('77abbc81-c1f1-41cd-8f25-f7149244c800')
+
+    sandbox.stub(utils, 'generateUUID').returns('77abbc81-c1f1-41cd-8f25-f7149244c800')
     expect(liAnalytics.createAnalyticsEvent(args, winningBids)).to.deep.equal(expectedResult);
-    expect(liAnalytics.handleAuctionEnd.called).to.equal(true)
   });
 });

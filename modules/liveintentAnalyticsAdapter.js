@@ -2,7 +2,7 @@ import {ajax} from '../src/ajax.js';
 import { generateUUID, logInfo } from '../src/utils.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
-import adaptermanager from '../src/adaptermanager.js';
+import adapterManager from '../src/adapterManager.js';
 import { auctionManager } from '../src/auctionManager.js';
 
 const analyticsType = 'endpoint';
@@ -148,7 +148,7 @@ liAnalytics.enableAnalytics = function (config) {
   liAnalytics.originEnableAnalytics(config); // call the base class function
 };
 
-adaptermanager.registerAnalyticsAdapter({
+adapterManager.registerAnalyticsAdapter({
   adapter: liAnalytics,
   code: adapterCode,
   gvlid: gvlid
