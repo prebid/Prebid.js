@@ -158,11 +158,22 @@ describe('the spotx adapter', function () {
         position: 1
       };
 
-      bid.userId = {
-        id5id: { uid: 'id5id_1' },
-        tdid: 'tdid_1',
-        uid2: 'uid2_1'
-      };
+      bid.userIdAsEids = [{
+        source: 'adserver.org',
+        uids: [{id: 'tdid_1', atype: 1, ext: {rtiPartner: 'TDID'}}]
+      },
+      {
+        source: 'id5-sync.com',
+        uids: [{id: 'id5id_1', ext: {}}]
+      },
+      {
+        source: 'uidapi.com',
+        uids: [{
+          id: 'uid_1',
+          atype: 3
+        }]
+      }
+      ];
 
       bid.crumbs = {
         pubcid: 'pubcid_1'
@@ -206,6 +217,15 @@ describe('the spotx adapter', function () {
       expect(request.data.user.ext).to.deep.equal({
         consented_providers_settings: GOOGLE_CONSENT,
         eids: [{
+          source: 'adserver.org',
+          uids: [{
+            id: 'tdid_1',
+            atype: 1,
+            ext: {
+              rtiPartner: 'TDID'
+            }
+          }]
+        },{
           source: 'id5-sync.com',
           uids: [{
             id: 'id5id_1',
@@ -213,18 +233,10 @@ describe('the spotx adapter', function () {
           }]
         },
         {
-          source: 'adserver.org',
-          uids: [{
-            id: 'tdid_1',
-            ext: {
-              rtiPartner: 'TDID'
-            }
-          }]
-        },
-        {
           source: 'uidapi.com',
           uids: [{
-            id: bid.userId.uid2,
+            id: 'uid_1',
+            atype: 3,
             ext: {
               rtiPartner: 'UID2'
             }
