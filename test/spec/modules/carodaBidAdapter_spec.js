@@ -476,20 +476,6 @@ describe('Caroda adapter', function () {
       bids = spec.interpretResponse(serverResponse, bidRequest());
       assert.deepEqual(bids[0].adserverTargeting, { tag: 'value' });
     });
-    it('should add adId', function () {
-      const serverResponse = {
-        body: {
-          ok: {
-            value: JSON.stringify([{
-              ...basicBidResponse(),
-              ad_id: '123'
-            }])
-          }
-        }
-      };
-      bids = spec.interpretResponse(serverResponse, bidRequest());
-      assert.equal(bids[0].adId, '123');
-    });
     it('should add adomains', function () {
       const serverResponse = {
         body: {

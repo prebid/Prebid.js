@@ -108,9 +108,6 @@ export const spec = {
             ad: bid.ad,
             placementId: bid.placement_id
           }
-          if (bid.ad_id) {
-            ret.adId = bid.ad_id
-          }
           if (bid.adserver_targeting) {
             ret.adserverTargeting = bid.adserver_targeting
           }
