@@ -242,9 +242,14 @@ function addPlacement(request) {
   if (gpid) {
     placementInfo.gpid = gpid;
   }
-  if (request.transactionId) {
-    placementInfo.tid = request.transactionId;
+
+  // get the transaction id for the banner bid.
+  const transactionId = deepAccess(request, 'ortb2Imp.ext.tid');
+
+  if (transactionId) {
+    placementInfo.tid = transactionId;
   }
+
   if (request.auctionId) {
     placementInfo.auctionId = request.auctionId;
   }
@@ -387,9 +392,7 @@ function openRtbRequest(bidRequests, bidderRequest) {
   if (schain) {
     openRtbRequest.schain = schain;
   }
-  if (bidRequests[0].transactionId) {
-    openRtbRequest.tid = bidRequests[0].transactionId;
-  }
+
   if (bidRequests[0].auctionId) {
     openRtbRequest.auctionId = bidRequests[0].auctionId;
   }
@@ -410,7 +413,8 @@ function openRtbImpression(bidRequest) {
     tagid: bidRequest.adUnitCode,
     bidfloor: getBidFloor(bidRequest, VIDEO),
     ext: {
-      placement_id: bidRequest.params.placementId
+      placement_id: bidRequest.params.placementId,
+      tid: deepAccess(bidRequest, 'ortb2Imp.ext.tid')
     },
     video: {
       w: size[0],
