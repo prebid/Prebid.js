@@ -1,4 +1,4 @@
-import { getBannerSizes, createAnalyticsEvent } from '../../../modules/liveintentAnalyticsAdapter';
+import liAnalytics from '../../../modules/liveintentAnalyticsAdapter';
 import { expect } from 'chai';
 
 let args = {
@@ -137,7 +137,7 @@ describe('LiveIntent Analytics Adapter ', () => {
         [100, 50]
       ]
     };
-    expect(getBannerSizes(banner)).to.deep.equal(expectedResult);
+    expect(liAnalytics.getBannerSizes(banner)).to.deep.equal(expectedResult);
   });
 
   it('creates analytics event from args and winning bids', () => {
@@ -242,6 +242,6 @@ describe('LiveIntent Analytics Adapter ', () => {
         }
       ]
     };
-    expect(createAnalyticsEvent(args, winningBids)).to.deep.equal(expectedResult);
+    expect(liAnalytics.createAnalyticsEvent(args, winningBids)).to.deep.equal(expectedResult);
   });
 });

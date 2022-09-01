@@ -8,16 +8,30 @@ import { auctionManager } from '../src/auctionManager.js';
 const analyticsType = 'endpoint';
 const url = 'https://wba.liadm.com/analytic-events';
 const gvlid = 148;
-const adapterCode = 'liAnalytics';
-const bidWonTimeout = 2000; // TODO check
+const adapterCode = 'liveintent';
 const { EVENTS: { AUCTION_END } } = CONSTANTS;
+let initOptions = {}
+
+let liAnalytics = Object.assign(adapter({url, analyticsType}), {
+  track({ eventType, args }) {
+    if (typeof args !== 'undefined') {
+      switch (eventType) {
+        case AUCTION_END:
+          handleAuctionEnd(args);
+          break;
+        default: break;
+      }
+    }
+  }
+});
 
 function handleAuctionEnd(args) {
+  const bidWonTimeout = initOptions.bidWonTimeout || 2000;
   setTimeout(() => {
     let auction = auctionManager.index.getAuction(args.auctionId);
     let winningBids = (auction) ? auction.getWinningBids() : [];
     // sampling?
-    let data = createAnalyticsEvent(args, winningBids);
+    let data = liAnalytics.createAnalyticsEvent(args, winningBids);
     sendAnalyticsEvent(data);
   }, bidWonTimeout);
 }
@@ -35,7 +49,7 @@ function getAnalyticsEventBids(bidsReceived) {
   });
 }
 
-export function getBannerSizes(banner) {
+liAnalytics.getBannerSizes = function(banner) {
   return banner.sizes.map(size => {
     const [width, height] = size;
     return {w: width, h: height};
@@ -46,7 +60,7 @@ function getUniqueBy(arr, key) {
   return [...new Map(arr.map(item => [item[key], item])).values()]
 }
 
-export function createAnalyticsEvent(args, winningBids) {
+liAnalytics.createAnalyticsEvent = function(args, winningBids) {
   let payload = {}
   let allUserIds = [];
 
@@ -66,7 +80,7 @@ export function createAnalyticsEvent(args, winningBids) {
       payload['adUnits'].push({
         code: unit.code,
         mediaType: 'banner',
-        sizes: getBannerSizes(unit.mediaTypes.banner),
+        sizes: liAnalytics.getBannerSizes(unit.mediaTypes.banner),
         ortb2Imp: unit.ortb2Imp
       });
     }
@@ -122,25 +136,12 @@ function ignoreUndefined(data) {
   return Object.fromEntries(filteredData)
 }
 
-let liAnalytics = Object.assign(adapter({url, analyticsType}), {
-  track({ eventType, args }) {
-    if (typeof args !== 'undefined') {
-      switch (eventType) {
-        case AUCTION_END:
-          handleAuctionEnd(args);
-          break;
-        default: break;
-      }
-    }
-  }
-});
-
 // save the base class function
 liAnalytics.originEnableAnalytics = liAnalytics.enableAnalytics;
 
 // override enableAnalytics so we can get access to the config passed in from the page
 liAnalytics.enableAnalytics = function (config) {
-  // initOptions = config.options;
+  initOptions = config.options;
   liAnalytics.originEnableAnalytics(config); // call the base class function
 };
 
