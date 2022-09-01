@@ -32,7 +32,8 @@ export const spec = {
       typeof placementId === 'undefined')
   },
   buildRequests: (validBidRequests, bidderRequest) => {
-    const pageViewId = topUsableWindow.carodaPageViewId || Math.floor(Math.random() * 1e9)
+    topUsableWindow.carodaPageViewId = topUsableWindow.carodaPageViewId || Math.floor(Math.random() * 1e9)
+    const pageViewId = topUsableWindow.carodaPageViewId
     const ortbCommon = getORTBCommon(bidderRequest)
     const priceType =
       getFirstWithKey(validBidRequests, 'params.priceType') ||
