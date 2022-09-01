@@ -432,6 +432,9 @@ export const spec = {
             native,
             ttl: TIME_TO_LIVE,
             nurl: getKv(bid, 'nurl'),
+            meta: {
+              advertiserDomains: getKv(bid, 'adomain') || []
+            }
           };
         } else {
           bidResponse = {
@@ -447,6 +450,9 @@ export const spec = {
             ttl: TIME_TO_LIVE,
             ad: getKv(bid, 'adm'),
             nurl: getKv(bid, 'nurl'),
+            meta: {
+              advertiserDomains:  getKv(bid, 'adomain') || []
+            }
           };
         }
         bidResponses.push(bidResponse);
