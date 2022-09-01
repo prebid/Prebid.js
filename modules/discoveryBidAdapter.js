@@ -3,7 +3,7 @@ import { getStorageManager } from '../src/storageManager.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 
-const BIDDER_CODE = 'DiscoveryDSP';
+const BIDDER_CODE = 'discovery';
 const ENDPOINT_URL = 'https://rtb-jp.mediago.io/api/bid?tn=';
 const TIME_TO_LIVE = 500;
 const storage = getStorageManager();
@@ -13,6 +13,45 @@ const MEDIATYPE = [BANNER, NATIVE];
 
 /* ----- _ss_pp_id:start ------ */
 const COOKIE_KEY_MGUID = '_ss_pp_id';
+
+const NATIVERET = {
+  id: 'id',
+  bidfloor: 0,
+  // TODO Dynamic parameters
+  native: {
+    ver: '1.2',
+    plcmtcnt: 1,
+    assets: [
+      {
+        id: 1,
+        required: 1,
+        img: {
+          type: 3,
+          w: 300,
+          wmin: 300,
+          h: 174,
+          hmin: 174,
+        },
+      },
+      {
+        id: 2,
+        required: 1,
+        title: {
+          len: 75,
+        },
+      }
+    ],
+    plcmttype: 1,
+    privacy: 1,
+    eventtrackers: [
+      {
+        event: 1,
+        methods: [1, 2],
+      },
+    ],
+  },
+  ext: {},
+};
 
 /**
  * 获取用户id
@@ -183,48 +222,7 @@ function getItems(validBidRequests, bidderRequest) {
     let id = '' + (i + 1);
 
     if (mediaTypes.native) {
-      ret = {
-        id: id,
-        bidfloor: bidFloor,
-        // TODO Dynamic parameters
-        native: {
-          ver: '1.2',
-          plcmtcnt: 1,
-          assets: [
-            {
-              id: 1,
-              required: 1,
-              img: {
-                type: 3,
-                w: 300,
-                wmin: 300,
-                h: 174,
-                hmin: 174,
-              },
-            },
-            {
-              id: 2,
-              required: 1,
-              title: {
-                len: 75,
-              },
-            }
-          ],
-          plcmttype: 1,
-          privacy: 1,
-          eventtrackers: [
-            {
-              event: 1,
-              methods: [1, 2],
-            },
-          ],
-        },
-        ext: {},
-      };
-      itemMaps[id] = {
-        req,
-        ret,
-      };
+      ret = {...NATIVERET, ...{id, bidFloor}}
     }
     // banner
     if (mediaTypes.banner) {
@@ -252,12 +250,11 @@ function getItems(validBidRequests, bidderRequest) {
         },
         ext: {},
       };
-      itemMaps[id] = {
-        req,
-        ret,
-      };
     }
-
+    itemMaps[id] = {
+      req,
+      ret,
+    };
     return ret;
   });
   return items;
@@ -273,89 +270,45 @@ function getItems(validBidRequests, bidderRequest) {
 function getParam(validBidRequests, bidderRequest) {
   const pubcid = utils.deepAccess(validBidRequests[0], 'crumbs.pubcid');
   let isMobile = getDevice() ? 1 : 0;
-  let isTest = 0;
   let auctionId = getKv(bidderRequest, 'auctionId');
   let items = getItems(validBidRequests, bidderRequest);
 
   const location = utils.deepAccess(bidderRequest, 'refererInfo.referer');
 
   const timeout = bidderRequest.timeout || 2000;
-  var mt = Object.keys(validBidRequests[0].mediaTypes)[0];
 
   if (items && items.length) {
-    let c = {};
-    if (mt === 'native') {
-      c = {
-        id: 'pp_hbjs_' + auctionId,
-        at: 1,
-        cur: ['USD'],
-        device: {
-          connectiontype: 0,
-          js: 1,
-          os: navigator.platform || '',
-          ua: navigator.userAgent,
-          language: /en/.test(navigator.language) ? 'en' : navigator.language,
-        },
-        ext: {},
-        imp: items,
-        regs: {
-          coppa: 0,
-        },
-        site: {
+    let c = {
+      id: 'pp_hbjs_' + auctionId,
+      at: 1,
+      cur: ['USD'],
+      device: {
+        connectiontype: 0,
+        js: 1,
+        os: navigator.platform || '',
+        ua: navigator.userAgent,
+        language: /en/.test(navigator.language) ? 'en' : navigator.language,
+      },
+      user: {
+        buyeruid: getUserID(),
+        id: pubcid,
+      },
+      tmax: timeout,
+      site: {
+        name: globals['media'],
+        domain: globals['media'],
+        page: location,
+        ref: location,
+        mobile: isMobile,
+        cat: [], // todo
+        publisher: {
+          // todo
+          id: globals['media'],
           name: globals['media'],
-          domain: globals['media'],
-          page: location,
-          ref: location,
-          mobile: isMobile,
-          cat: [], // todo
-          publisher: {
-            // todo
-            id: globals['media'],
-            name: globals['media'],
-          },
         },
-        tmax: timeout,
-        user: {
-          buyeruid: getUserID(),
-          id: pubcid,
-        }
-      };
-    } else {
-      c = {
-        id: 'pp_hbjs_' + auctionId,
-        test: +isTest,
-        at: 1,
-        cur: ['USD'],
-        device: {
-          connectiontype: 0,
-          js: 1,
-          os: navigator.platform || '',
-          ua: navigator.userAgent,
-          language: /en/.test(navigator.language) ? 'en' : navigator.language,
-        },
-        ext: {},
-        user: {
-          buyeruid: getUserID(),
-          id: pubcid,
-        },
-        site: {
-          name: globals['media'],
-          domain: globals['media'],
-          page: location,
-          ref: location,
-          mobile: isMobile,
-          cat: [], // todo
-          publisher: {
-            // todo
-            id: globals['media'],
-            name: globals['media'],
-          },
-        },
-        imp: items,
-        tmax: timeout,
-      };
-    }
-
+      },
+      imp: items,
+    };
     return c;
   } else {
     return null;
