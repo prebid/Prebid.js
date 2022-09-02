@@ -355,7 +355,6 @@ export const spec = {
 
   /**
    * Unpack the response from the server into a list of bids.
-   *
    * @param {ServerResponse} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
@@ -376,9 +375,9 @@ export const spec = {
           currency: cur,
           netRevenue: true,
           nurl: getKv(bid, 'nurl'),
-          ttl: TIME_TO_LIVE,
+          ttl:TIME_TO_LIVE,
           meta: {
-            advertiserDomains: getKv(bid, 'adomain') || []
+            advertiserDomains:  getKv(bid, 'adomain') || []
           }
         };
         if (mediaType === 'native') {
