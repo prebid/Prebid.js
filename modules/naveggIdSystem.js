@@ -11,11 +11,34 @@ import { getStorageManager } from '../src/storageManager.js';
 const MODULE_NAME = 'naveggId';
 const OLD_NAVEGG_ID = 'nid';
 const NAVEGG_ID = 'nvggid'
+const BASE_URL = 'https://id.navegg.com/uid/';
+const DEFAULT_EXPIRE = 8 * 24 * 3600 * 1000;
 
 export const storage = getStorageManager();
 
+function getNaveggIdFromApi() {
+  const resp = fetch(BASE_URL)
+    .then((response) => response.json())
+    .then((data) => {
+      writeNaveggId(NAVEGG_ID, data[NAVEGG_ID]);
+      return data[NAVEGG_ID]
+    })
+    .catch((err) => { logError(err) })
+
+  return resp;
+}
+
+function writeNaveggId(key, value) {
+  if (storage.cookiesAreEnabled) {
+    let expTime = new Date();
+    const expires = value ? DEFAULT_EXPIRE : DEFAULT_EXPIRE / 8;
+    expTime.setTime(expTime.getTime() + expires);
+    storage.setCookie(key, value, expTime.toUTCString());
+  }
+}
+
 function readnaveggIdFromLocalStorage() {
-  return storage.getDataFromLocalStorage(NAVEGG_ID);
+  return storage.localStorageIsEnabled ? storage.getDataFromLocalStorage(NAVEGG_ID) : null;
 }
 
 function readnaveggIDFromCookie() {
@@ -60,12 +83,7 @@ export const naveggIdSubmodule = {
    * @return {{id: string | undefined } | undefined}
    */
   getId() {
-    let naveggIdStringFromLocalStorage = null;
-    if (storage.localStorageIsEnabled) {
-      naveggIdStringFromLocalStorage = readnaveggIdFromLocalStorage();
-    }
-
-    const naveggIdString = naveggIdStringFromLocalStorage || readnaveggIDFromCookie() || readoldnaveggIDFromCookie() || readnvgIDFromCookie() || readnavIDFromCookie();
+    const naveggIdString = readnaveggIdFromLocalStorage() || readnaveggIDFromCookie() || getNaveggIdFromApi().data || readoldnaveggIDFromCookie() || readnvgIDFromCookie() || readnavIDFromCookie();
 
     if (typeof naveggIdString == 'string' && naveggIdString) {
       try {
