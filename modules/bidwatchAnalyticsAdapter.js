@@ -53,7 +53,7 @@ function filterAttributes(arg, removead) {
 function cleanAuctionEnd(args) {
   let response = {};
   let filteredObj;
-  let objects = ['bidderRequests', 'bidsReceived', 'noBids'];
+  let objects = ['bidderRequests', 'bidsReceived', 'noBids', 'adUnits'];
   objects.forEach((attr) => {
     if (Array.isArray(args[attr])) {
       response[attr] = [];
@@ -150,8 +150,13 @@ function handleAuctionEnd() {
   ajax(endpoint + '.bidwatch.io/analytics/auctions', function (data) {
     let list = JSON.parse(data);
     if (Array.isArray(list) && typeof allEvents['bidResponse'] != 'undefined') {
+      let alreadyCalled = [];
       allEvents['bidResponse'].forEach((bidResponse) => {
-        if (list.includes(bidResponse['originalBidder'] + '_' + bidResponse['creativeId'])) { ajax(endpoint + '.bidwatch.io/analytics/creatives', null, JSON.stringify(bidResponse), {method: 'POST', withCredentials: true}); }
+        let tmpId = bidResponse['originalBidder'] + '_' + bidResponse['creativeId'];
+        if (list.includes(tmpId) && !alreadyCalled.includes(tmpId)) {
+          alreadyCalled.push(tmpId);
+          ajax(endpoint + '.bidwatch.io/analytics/creatives', null, JSON.stringify(bidResponse), {method: 'POST', withCredentials: true});
+        }
       });
     }
     allEvents = {};
@@ -191,7 +196,9 @@ bidwatchAnalytics.originEnableAnalytics = bidwatchAnalytics.enableAnalytics;
 bidwatchAnalytics.enableAnalytics = function (config) {
   bidwatchAnalytics.originEnableAnalytics(config); // call the base class function
   initOptions = config.options;
-  if (initOptions.domain) { endpoint = 'https://' + initOptions.domain; }
+  if (initOptions.domain) {
+    endpoint = 'https://' + initOptions.domain;
+  }
 };
 
 adapterManager.registerAnalyticsAdapter({
