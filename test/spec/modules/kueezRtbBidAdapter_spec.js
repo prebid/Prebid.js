@@ -197,7 +197,7 @@ describe('KueezRtbBidAdapter', function () {
 
       expect(result).to.deep.equal([{
         type: 'iframe',
-        url: 'https://sync.cootlogix.com/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy='
+        url: 'https://sync.kueezrtb.com/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy='
       }]);
     });
 
@@ -205,7 +205,7 @@ describe('KueezRtbBidAdapter', function () {
       const result = adapter.getUserSyncs({iframeEnabled: true}, [SERVER_RESPONSE]);
       expect(result).to.deep.equal([{
         type: 'iframe',
-        url: 'https://sync.cootlogix.com/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy='
+        url: 'https://sync.kueezrtb.com/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy='
       }]);
     });
 
@@ -213,7 +213,7 @@ describe('KueezRtbBidAdapter', function () {
       const result = adapter.getUserSyncs({pixelEnabled: true}, [SERVER_RESPONSE]);
 
       expect(result).to.deep.equal([{
-        'url': 'https://sync.cootlogix.com/api/sync/image/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=',
+        'url': 'https://sync.kueezrtb.com/api/sync/image/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=',
         'type': 'image'
       }]);
     })
