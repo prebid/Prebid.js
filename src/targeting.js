@@ -63,7 +63,7 @@ export const getHighestCpmBidsFromBidPool = hook('sync', function(bidsReceived, 
   }
 
   return bidsReceived;
-})
+});
 
 /**
 * A descending sort function that will sort the list of objects based on the following two dimensions:

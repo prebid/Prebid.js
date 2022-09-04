@@ -59,7 +59,7 @@ function Bid(statusCode, {src = 'client', bidder = '', bidId, transactionId, auc
       transactionId: this.transactionId,
       auctionId: this.auctionId
     }
-  }
+  };
 }
 
 // Bid factory function.

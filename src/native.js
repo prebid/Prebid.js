@@ -272,7 +272,7 @@ export function fireNativeTrackers(message, bidResponse) {
   const nativeResponse = bidResponse.native.ortb || legacyPropertiesToOrtbNative(bidResponse.native);
 
   if (message.action === 'click') {
-    fireClickTrackers(nativeResponse);
+    fireClickTrackers(nativeResponse, message?.assetId);
   } else {
     fireImpressionTrackers(nativeResponse);
   }
@@ -305,8 +305,27 @@ export function fireImpressionTrackers(nativeResponse, {runMarkup = (mkup) => in
   }
 }
 
-export function fireClickTrackers(nativeResponse, {fetchURL = triggerPixel} = {}) {
-  (nativeResponse.link?.clicktrackers || []).forEach(url => fetchURL(url));
+export function fireClickTrackers(nativeResponse, assetId = null, {fetchURL = triggerPixel} = {}) {
+  // legacy click tracker
+  if (!assetId) {
+    (nativeResponse.link?.clicktrackers || []).forEach(url => fetchURL(url));
+  } else {
+    // ortb click tracker. This will try to call the clicktracker associated with the asset;
+    // will fallback to the link if none is found.
+    const assetIdLinkMap = (nativeResponse.assets || [])
+      .filter(a => a.link)
+      .reduce((map, asset) => {
+        map[asset.id] = asset.link;
+        return map
+      }, {});
+    const masterClickTrackers = nativeResponse.link?.clicktrackers || [];
+    let assetLink = assetIdLinkMap[assetId];
+    let clickTrackers = masterClickTrackers;
+    if (assetLink) {
+      clickTrackers = assetLink.clicktrackers || [];
+    }
+    clickTrackers.forEach(url => fetchURL(url));
+  }
 }
 
 /**
@@ -366,34 +385,9 @@ export function getNativeTargeting(bid, {index = auctionManager.index} = {}) {
   return keyValues;
 }
 
-/**
- * Constructs a message object containing asset values for each of the
- * requested data keys.
- */
-export function getAssetMessage(data, adObject) {
-  const message = {
-    message: 'assetResponse',
-    adId: data.adId,
-    assets: [],
-  };
+const getNativeRequest = (bidResponse) => auctionManager.index.getAdUnit(bidResponse)?.nativeOrtbRequest;
 
-  if (adObject.native.hasOwnProperty('adTemplate')) {
-    message.adTemplate = getAssetValue(adObject.native['adTemplate']);
-  } if (adObject.native.hasOwnProperty('rendererUrl')) {
-    message.rendererUrl = getAssetValue(adObject.native['rendererUrl']);
-  }
-
-  data.assets.forEach(asset => {
-    const key = getKeyByValue(CONSTANTS.NATIVE_KEYS, asset);
-    const value = getAssetValue(adObject.native[key]);
-
-    message.assets.push({ key, value });
-  });
-
-  return message;
-}
-
-export function getAllAssetsMessage(data, adObject, {getNativeReq = (bidResponse) => auctionManager.index.getAdUnit(bidResponse).nativeOrtbRequest} = {}) {
+function assetsMessage(data, adObject, keys, {getNativeReq = getNativeRequest} = {}) {
   const message = {
     message: 'assetResponse',
     adId: data.adId,
@@ -401,12 +395,12 @@ export function getAllAssetsMessage(data, adObject, {getNativeReq = (bidResponse
 
   // Pass to Prebid Universal Creative all assets, the legacy ones + the ortb ones (under ortb property)
   const ortbRequest = getNativeReq(adObject);
-  let nativeReq = adObject.native;
+  let nativeResp = adObject.native;
   const ortbResponse = adObject.native?.ortb;
   let legacyResponse = {};
   if (ortbRequest && ortbResponse) {
     legacyResponse = toLegacyResponse(ortbResponse, ortbRequest);
-    nativeReq = {
+    nativeResp = {
       ...adObject.native,
       ...legacyResponse
     };
@@ -416,25 +410,38 @@ export function getAllAssetsMessage(data, adObject, {getNativeReq = (bidResponse
   }
   message.assets = [];
 
-  Object.keys(nativeReq).forEach(function(key) {
-    if (key === 'adTemplate' && nativeReq[key]) {
-      message.adTemplate = getAssetValue(nativeReq[key]);
-    } else if (key === 'rendererUrl' && nativeReq[key]) {
-      message.rendererUrl = getAssetValue(nativeReq[key]);
+  (keys == null ? Object.keys(nativeResp) : keys).forEach(function(key) {
+    if (key === 'adTemplate' && nativeResp[key]) {
+      message.adTemplate = getAssetValue(nativeResp[key]);
+    } else if (key === 'rendererUrl' && nativeResp[key]) {
+      message.rendererUrl = getAssetValue(nativeResp[key]);
     } else if (key === 'ext') {
-      Object.keys(nativeReq[key]).forEach(extKey => {
-        if (nativeReq[key][extKey]) {
-          const value = getAssetValue(nativeReq[key][extKey]);
+      Object.keys(nativeResp[key]).forEach(extKey => {
+        if (nativeResp[key][extKey]) {
+          const value = getAssetValue(nativeResp[key][extKey]);
           message.assets.push({ key: extKey, value });
         }
       })
-    } else if (nativeReq[key] && CONSTANTS.NATIVE_KEYS.hasOwnProperty(key)) {
-      const value = getAssetValue(nativeReq[key]);
+    } else if (nativeResp[key] && CONSTANTS.NATIVE_KEYS.hasOwnProperty(key)) {
+      const value = getAssetValue(nativeResp[key]);
 
       message.assets.push({ key, value });
     }
   });
   return message;
+}
+
+/**
+ * Constructs a message object containing asset values for each of the
+ * requested data keys.
+ */
+export function getAssetMessage(data, adObject, {getNativeReq = getNativeRequest} = {}) {
+  const keys = data.assets.map((k) => getKeyByValue(CONSTANTS.NATIVE_KEYS, k));
+  return assetsMessage(data, adObject, keys, {getNativeReq});
+}
+
+export function getAllAssetsMessage(data, adObject, {getNativeReq = getNativeRequest} = {}) {
+  return assetsMessage(data, adObject, null, {getNativeReq});
 }
 
 /**
@@ -689,40 +696,47 @@ export function legacyPropertiesToOrtbNative(legacyNative) {
 }
 
 export function toOrtbNativeResponse(legacyResponse, ortbRequest) {
-  // copy the request, so we don't pollute it with response data below
-  ortbRequest = deepClone(ortbRequest);
-
   const ortbResponse = {
     ...legacyPropertiesToOrtbNative(legacyResponse),
     assets: []
   };
+
+  function useRequestAsset(predicate, fn) {
+    let asset = ortbRequest.assets.find(predicate);
+    if (asset != null) {
+      asset = deepClone(asset);
+      fn(asset);
+      ortbResponse.assets.push(asset);
+    }
+  }
+
   Object.keys(legacyResponse).filter(key => !!legacyResponse[key]).forEach(key => {
     const value = legacyResponse[key];
     switch (key) {
       // process titles
       case 'title':
-        const titleAsset = ortbRequest.assets.find(asset => asset.title != null);
-        titleAsset.title = {
-          text: value
-        };
-        ortbResponse.assets.push(titleAsset);
+        useRequestAsset(asset => asset.title != null, titleAsset => {
+          titleAsset.title = {
+            text: value
+          };
+        })
         break;
       case 'image':
       case 'icon':
         const imageType = key === 'image' ? NATIVE_IMAGE_TYPES.MAIN : NATIVE_IMAGE_TYPES.ICON;
-        const imageAsset = ortbRequest.assets.find(asset => asset.img != null && asset.img.type == imageType);
-        imageAsset.img = {
-          url: value
-        };
-        ortbResponse.assets.push(imageAsset);
+        useRequestAsset(asset => asset.img != null && asset.img.type === imageType, imageAsset => {
+          imageAsset.img = {
+            url: value
+          };
+        })
         break;
       default:
         if (key in PREBID_NATIVE_DATA_KEYS_TO_ORTB) {
-          const dataAsset = ortbRequest.assets.find(asset => asset.data != null && asset.data.type === NATIVE_ASSET_TYPES[PREBID_NATIVE_DATA_KEYS_TO_ORTB[key]]);
-          dataAsset.data = {
-            value
-          };
-          ortbResponse.assets.push(dataAsset);
+          useRequestAsset(asset => asset.data != null && asset.data.type === NATIVE_ASSET_TYPES[PREBID_NATIVE_DATA_KEYS_TO_ORTB[key]], dataAsset => {
+            dataAsset.data = {
+              value
+            };
+          })
         }
         break;
     }
@@ -740,6 +754,7 @@ function toLegacyResponse(ortbResponse, ortbRequest) {
   const legacyResponse = {};
   const requestAssets = ortbRequest?.assets || [];
   legacyResponse.clickUrl = ortbResponse.link.url;
+  legacyResponse.privacyLink = ortbResponse.privacy;
   for (const asset of ortbResponse?.assets || []) {
     const requestAsset = requestAssets.find(reqAsset => asset.id === reqAsset.id);
     if (asset.title) {

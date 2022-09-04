@@ -1815,6 +1815,64 @@ describe('adapterManager tests', function () {
       });
     });
 
+    describe('fledgeEnabled', function () {
+      const origRunAdAuction = navigator?.runAdAuction;
+      before(function () {
+        // navigator.runAdAuction doesn't exist, so we can't stub it normally with
+        // sinon.stub(navigator, 'runAdAuction') or something
+        navigator.runAdAuction = sinon.stub();
+      });
+
+      after(function() {
+        navigator.runAdAuction = origRunAdAuction;
+      })
+
+      afterEach(function () {
+        config.resetConfig();
+      });
+
+      it('should set fledgeEnabled correctly per bidder', function () {
+        config.setConfig({bidderSequence: 'fixed'})
+        config.setBidderConfig({
+          bidders: ['appnexus'],
+          config: {
+            fledgeEnabled: true,
+          }
+        });
+
+        const adUnits = [{
+          'code': '/19968336/header-bid-tag1',
+          'mediaTypes': {
+            'banner': {
+              'sizes': [[728, 90]]
+            },
+          },
+          'bids': [
+            {
+              'bidder': 'appnexus',
+            },
+            {
+              'bidder': 'rubicon',
+            },
+          ]
+        }];
+
+        const bidRequests = adapterManager.makeBidRequests(
+          adUnits,
+          Date.now(),
+          utils.getUniqueIdentifierStr(),
+          function callback() {},
+          []
+        );
+
+        expect(bidRequests[0].bids[0].bidder).equals('appnexus');
+        expect(bidRequests[0].fledgeEnabled).to.be.true;
+
+        expect(bidRequests[1].bids[0].bidder).equals('rubicon');
+        expect(bidRequests[1].fledgeEnabled).to.be.undefined;
+      });
+    });
+
     describe('sizeMapping', function () {
       let sandbox;
       beforeEach(function () {

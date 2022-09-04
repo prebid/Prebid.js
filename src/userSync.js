@@ -311,7 +311,7 @@ export function newUserSync(userSyncDependencies) {
       }
     }
     return true;
-  }
+  };
   return publicApi;
 }
 

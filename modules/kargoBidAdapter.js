@@ -60,7 +60,7 @@ export const spec = {
         height: window.screen.height
       },
       prebidRawBidRequests: validBidRequests
-    }, spec._getAllMetadata(tdid, bidderRequest.uspConsent, bidderRequest.gdprConsent));
+    }, spec._getAllMetadata(bidderRequest, tdid));
     const encodedParams = encodeURIComponent(JSON.stringify(transformedParams));
     return Object.assign({}, bidderRequest, {
       method: 'GET',
@@ -215,11 +215,10 @@ export const spec = {
     return crb.clientId;
   },
 
-  _getAllMetadata(tdid, usp, gdpr) {
+  _getAllMetadata(bidderRequest, tdid) {
     return {
-      userIDs: spec._getUserIds(tdid, usp, gdpr),
-      // TODO: this should probably look at refererInfo
-      pageURL: window.location.href,
+      userIDs: spec._getUserIds(tdid, bidderRequest.uspConsent, bidderRequest.gdprConsent),
+      pageURL: bidderRequest.refererInfo && bidderRequest.refererInfo.page,
       rawCRB: storage.getCookie('krg_crb'),
       rawCRBLocalStorage: spec._getLocalStorageSafely('krg_crb')
     };

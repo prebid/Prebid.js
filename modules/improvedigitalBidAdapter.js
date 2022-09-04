@@ -19,6 +19,7 @@ import {Renderer} from '../src/Renderer.js';
 import {createEidsArray} from './userId/eids.js';
 import {hasPurpose1Consent} from '../src/utils/gpdr.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import {loadExternalScript} from '../src/adloader.js';
 
 const BIDDER_CODE = 'improvedigital';
 const CREATIVE_TTL = 300;
@@ -212,7 +213,7 @@ export const spec = {
 
         ID_RESPONSE.buildAd(bid, bidRequest, bidObject);
 
-        ID_RAZR.addBidData({
+        ID_RAZR.forwardBid({
           bidRequest,
           bid
         });
@@ -640,37 +641,58 @@ const ID_OUTSTREAM = {
 };
 
 const ID_RAZR = {
-  RENDERER_URL: 'https://razr.improvedigital.com/renderer.js',
-  addBidData({bid, bidRequest}) {
-    if (this.isValidBid(bid)) {
-      bid.renderer = Renderer.install({
-        url: this.RENDERER_URL,
-        config: {bidRequest}
-      });
-      bid.renderer.setRender(this.render);
+  RENDERER_URL: 'https://cdn.360yield.com/razr/tag.js',
+
+  forwardBid({bidRequest, bid}) {
+    if (bid.mediaType !== BANNER) {
+      return;
     }
-  },
 
-  isValidBid(bid) {
-    return bid && /razr:\/\//.test(bid.ad);
-  },
-
-  render(bid) {
-    const {bidRequest} = bid.renderer.getConfig();
-
-    const payload = {
-      type: 'prebid',
-      bidRequest,
-      bid,
-      config: mergeDeep(
-        {},
-        config.getConfig('improvedigital.rendererConfig'),
-        deepAccess(bidRequest, 'params.rendererConfig')
-      )
+    const cfg = {
+      prebid: {
+        bidRequest,
+        bid
+      }
     };
 
-    const razr = window.razr = window.razr || {};
-    razr.queue = razr.queue || [];
-    razr.queue.push(payload);
+    const cfgStr = JSON.stringify(cfg).replace(/<\/script>/g, '\\x3C/script>');
+    const s = `<script>window.__razr_config = ${cfgStr};</script>`;
+    bid.ad = bid.ad.replace(/<body[^>]*>/, match => match + s);
+
+    this.installListener();
+  },
+
+  installListener() {
+    if (this._listenerInstalled) {
+      return;
+    }
+
+    window.addEventListener('message', function(e) {
+      const data = e.data?.razr?.load;
+      if (!data) {
+        return;
+      }
+
+      if (e.source) {
+        data.source = e.source;
+        if (data.id) {
+          e.source.postMessage({
+            razr: {
+              id: data.id
+            }
+          }, '*');
+        }
+      }
+
+      const ns = window.razr = window.razr || {};
+      ns.q = ns.q || [];
+      ns.q.push(data);
+
+      if (!ns.loaded) {
+        loadExternalScript(ID_RAZR.RENDERER_URL, BIDDER_CODE);
+      }
+    });
+
+    this._listenerInstalled = true;
   }
 };
