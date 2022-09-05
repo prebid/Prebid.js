@@ -65,7 +65,7 @@ export function getTopics(doc = document) {
 }
 
 // function to fetch the cached topic data from storage for bidders and return it
-export function getTpsForBidderFromStorage(){
+export function getTpsForBidderFromStorage() {
   let cachedTopicData = [];
   const topics = config.getConfig('userSync.topics');
   let biddersList = Object.keys(topics.bidders || []);
@@ -73,10 +73,10 @@ export function getTpsForBidderFromStorage(){
     // Get Storage Item starting only with tps_.
     if (storeItem.startsWith(initialTopicName)) {
     // Check bidder exist in config for cached bidder data and if not delete it since it is stale cached data
-      if(biddersList.includes(storeItem.slice(initialTopicName.length))){
-        let segmentData = JSON.parse(storage.getDataFromLocalStorage(storeItem) );
+      if (biddersList.includes(storeItem.slice(initialTopicName.length))) {
+        let segmentData = JSON.parse(storage.getDataFromLocalStorage(storeItem));
         segmentData.forEach(segment => cachedTopicData.push(segment));
-      }else{
+      } else {
         storage.removeDataFromLocalStorage(storeItem)
       }
     }
@@ -132,16 +132,16 @@ function loadTopicsForBidders() {
   addListenerToFetchTopics();
   const topics = config.getConfig('userSync.topics');
   if (topics) {
-    const bidders = Object.keys(topics.bidders ||[]);
+    const bidders = Object.keys(topics.bidders || []);
     bidders?.forEach((bidder) => {
       let ifrm = document.createElement('iframe');
       ifrm.name = `ifrm_${bidder}`;
       ifrm.src = `${topics['bidders'][bidder]['iframeURL']}?bidder=${bidder}`;
-      ifrm.style.display = "none";
+      ifrm.style.display = 'none';
       window.document.documentElement.appendChild(ifrm);
     });
   } else {
-    logWarn(`${MODULE_NAME} - Topics : Topics config not defined under userSync Object`);
+    logWarn(`Topics config not defined under userSync Object`);
   }
 }
 
