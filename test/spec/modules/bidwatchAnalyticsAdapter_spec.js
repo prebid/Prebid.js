@@ -291,6 +291,8 @@ describe('BidWatch Analytics', function () {
       expect(message.auctionEnd).to.have.lengthOf(1);
       expect(message.auctionEnd[0]).to.have.property('bidsReceived').and.to.have.lengthOf(1);
       expect(message.auctionEnd[0].bidsReceived[0]).not.to.have.property('ad');
+      expect(message.auctionEnd[0].bidsReceived[0]).to.have.property('meta');
+      expect(message.auctionEnd[0].bidsReceived[0].meta).to.have.property('advertiserDomains');
       expect(message.auctionEnd[0]).to.have.property('bidderRequests').and.to.have.lengthOf(1);
       expect(message.auctionEnd[0].bidderRequests[0]).to.have.property('gdprConsent');
       expect(message.auctionEnd[0].bidderRequests[0].gdprConsent).not.to.have.property('vendorData');
