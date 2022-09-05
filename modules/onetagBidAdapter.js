@@ -6,7 +6,7 @@ import { Renderer } from '../src/Renderer.js';
 import { find } from '../src/polyfill.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { deepClone, logError, deepAccess } from '../src/utils.js';
+import { deepClone } from '../src/utils.js';
 
 const ENDPOINT = 'https://onetag-sys.com/prebid-request';
 const USER_SYNC_ENDPOINT = 'https://onetag-sys.com/usync/';
