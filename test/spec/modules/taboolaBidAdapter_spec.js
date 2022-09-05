@@ -140,10 +140,10 @@ describe('Taboola Adapter', function () {
               w: displayBidRequestParams.sizes[0][0],
               h: displayBidRequestParams.sizes[0][1]
             },
-              {
-                w: displayBidRequestParams.sizes[1][0],
-                h: displayBidRequestParams.sizes[1][1]
-              }
+            {
+              w: displayBidRequestParams.sizes[1][0],
+              h: displayBidRequestParams.sizes[1][1]
+            }
             ]
           },
           'tagid': commonBidRequest.params.tagId,
