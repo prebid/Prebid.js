@@ -323,7 +323,7 @@ export const spec = {
     } else if (syncOptions.pixelEnabled) {
       return {
         type: 'image',
-        url: `https://${endpoint.includes('dev') ? 'dev-' : ''}data.dianomi.com/frontend/usync${formatQS(params)}`,
+        url: `https://${endpoint.includes('dev') ? 'dev-' : ''}data.dianomi.com/frontend/usync?${formatQS(params)}`,
       };
     }
   },
