@@ -1,10 +1,9 @@
-import {deepAccess, getWindowTop, isArray, logWarn} from '../src/utils.js';
-import {ajax} from '../src/ajax.js';
-import {config} from '../src/config.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {includes as strIncludes} from '../src/polyfill.js';
-import { getStorageManager } from '../src/storageManager.js';
+import { deepAccess, getWindowTop, isArray, logWarn } from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { includes as strIncludes } from '../src/polyfill.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'sspBC';
@@ -13,9 +12,8 @@ const SYNC_URL = 'https://ssp.wp.pl/bidder/usersync';
 const NOTIFY_URL = 'https://ssp.wp.pl/bidder/notify';
 const TRACKER_URL = 'https://bdr.wpcdn.pl/tag/jstracker.js';
 const GVLID = 676;
-const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
 const TMAX = 450;
-const BIDDER_VERSION = '5.6';
+const BIDDER_VERSION = '5.7';
 const DEFAULT_CURRENCY = 'PLN';
 const W = window;
 const { navigator } = W;
@@ -101,11 +99,6 @@ const getNotificationPayload = bidData => {
     }
   }
 }
-
-const cookieSupport = () => {
-  const isSafari = /^((?!chrome|android|crios|fxios).)*safari/i.test(navigator.userAgent);
-  return !isSafari && storage.cookiesAreEnabled();
-};
 
 const applyClientHints = ortbRequest => {
   const { location } = document;
@@ -345,7 +338,7 @@ const mapImpression = slot => {
   if (!adUnitsCalled[adUnitCode]) {
     // this is a new adunit - assign & save pbsize
     adSizesCalled[slotSize] = adSizesCalled[slotSize] ? adSizesCalled[slotSize] += 1 : 1;
-    adUnitsCalled[adUnitCode] = `${slotSize}_${adSizesCalled[slotSize]}`
+    adUnitsCalled[adUnitCode] = `${slotSize}_${adSizesCalled[slotSize]}`;
   }
 
   ext.data = Object.assign({ pbsize: adUnitsCalled[adUnitCode] }, ext.data);
@@ -569,7 +562,11 @@ const spec = {
       tmax,
       user: {},
       regs: {},
-      device: { language: getBrowserLanguage() },
+      device: {
+        language: getBrowserLanguage(),
+        w: screen.width,
+        h: screen.height,
+      },
       test: testMode,
     };
 
@@ -579,7 +576,7 @@ const spec = {
 
     return {
       method: 'POST',
-      url: `${BIDDER_URL}?cs=${cookieSupport()}&bdver=${BIDDER_VERSION}&pbver=${pbver}&inver=0`,
+      url: `${BIDDER_URL}?bdver=${BIDDER_VERSION}&pbver=${pbver}&inver=0`,
       data: JSON.stringify(payload),
       bidderRequest,
     };
@@ -685,7 +682,7 @@ const spec = {
                   site: site.id,
                   slot: site.slot,
                   cpm: bid.cpm.toPrecision(4),
-                }
+                };
                 const jsTracker = '<script type="text/javascript" async="true" src="' + TRACKER_URL + '" ' + Object.keys(jsData).reduce((acc, current) => { return acc + ` data-wpar-${current}="${jsData[current]}"` }, '') + '><\/script>';
                 if (bid.native.javascriptTrackers) {
                   bid.native.javascriptTrackers.push(jsTracker);

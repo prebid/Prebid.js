@@ -66,6 +66,7 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, src}) {
       .reduce((bids, bid) => {
         bid = Object.assign({}, bid, getDefinedParams(adUnit, [
           'nativeParams',
+          'nativeOrtbRequest',
           'ortb2Imp',
           'mediaType',
           'renderer'
@@ -274,7 +275,7 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
         }
       });
     }
-  })
+  });
 
   // client adapters
   let adUnitsClientCopy = getAdUnitCopyForClientAdapters(adUnits);
@@ -310,6 +311,14 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
       bidRequest['uspConsent'] = uspDataHandler.getConsentData();
     });
   }
+
+  bidRequests.forEach(bidRequest => {
+    config.runWithBidder(bidRequest.bidderCode, () => {
+      const fledgeEnabledFromConfig = config.getConfig('fledgeEnabled');
+      bidRequest['fledgeEnabled'] = navigator.runAdAuction && fledgeEnabledFromConfig
+    });
+  });
+
   return bidRequests;
 }, 'makeBidRequests');
 
@@ -385,7 +394,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
       } else {
         logError('missing ' + s2sConfig.adapter);
       }
-      counter++
+      counter++;
     }
   });
 
@@ -472,7 +481,7 @@ adapterManager.aliasBidAdapter = function (bidderCode, alias, options) {
       });
       nonS2SAlias.forEach(bidderCode => {
         logError('bidderCode "' + bidderCode + '" is not an existing bidder.', 'adapterManager.aliasBidAdapter');
-      })
+      });
     } else {
       try {
         let newAdapter;

@@ -2,7 +2,6 @@ import Adapter from '../../src/adapter.js';
 import {createBid} from '../../src/bidfactory.js';
 import {
   bind,
-  cleanObj,
   createTrackPixelHtml,
   deepAccess,
   deepClone,
@@ -30,17 +29,16 @@ import {
 } from '../../src/utils.js';
 import CONSTANTS from '../../src/constants.json';
 import adapterManager from '../../src/adapterManager.js';
-import { config } from '../../src/config.js';
-import { VIDEO, NATIVE } from '../../src/mediaTypes.js';
-import { isValid } from '../../src/adapters/bidderFactory.js';
+import {config} from '../../src/config.js';
+import {NATIVE, VIDEO} from '../../src/mediaTypes.js';
+import {isValid} from '../../src/adapters/bidderFactory.js';
 import * as events from '../../src/events.js';
 import {find, includes} from '../../src/polyfill.js';
-import { S2S_VENDORS } from './config.js';
-import { ajax } from '../../src/ajax.js';
+import {S2S_VENDORS} from './config.js';
+import {ajax} from '../../src/ajax.js';
 import {hook} from '../../src/hook.js';
 import {getGlobal} from '../../src/prebidGlobal.js';
 import {hasPurpose1Consent} from '../../src/utils/gpdr.js';
-import { nativeMapper } from '../../src/native.js';
 
 const getConfig = config.getConfig;
 
@@ -362,7 +360,7 @@ function _appendSiteAppDevice(request, pageUrl, accountId) {
   // ORTB specifies app OR site
   if (typeof config.getConfig('app') === 'object') {
     request.app = config.getConfig('app');
-    request.app.publisher = {id: accountId}
+    request.app.publisher = {id: accountId};
   } else {
     request.site = {};
     if (isPlainObject(config.getConfig('site'))) {
@@ -446,11 +444,6 @@ if (FEATURES.NATIVE) {
     });
   });
 }
-/*
- * Protocol spec for OpenRTB endpoint
- * e.g., https://<prebid-server-url>/v1/openrtb2/auction
- */
-let nativeAssetCache = {}; // store processed native params to preserve
 
 /**
  * map wurl to auction id and adId for use in the BID_WON event
@@ -538,7 +531,7 @@ Object.assign(ORTB2.prototype, {
         if (bid.mediaTypes != null) {
           logWarn(`Prebid Server adapter does not (yet) support bidder-specific mediaTypes for the same adUnit. Size mapping configuration will be ignored for adUnit: ${adUnit.code}, bidder: ${bid.bidder}`);
         }
-      })
+      });
 
       // in case there is a duplicate imp.id, add '-2' suffix to the second imp.id.
       // e.g. if there are 2 adUnits (case of twin adUnit codes) with code 'test',
@@ -552,78 +545,6 @@ Object.assign(ORTB2.prototype, {
       impIds.add(impressionId);
       this.adUnitsByImp[impressionId] = adUnit;
 
-      const nativeParams = adUnit.nativeParams;
-      let nativeAssets = nativeAssetCache[impressionId] = deepAccess(nativeParams, 'ortb.assets');
-      if (FEATURES.NATIVE && nativeParams && !nativeAssets) {
-        let idCounter = -1;
-        try {
-          nativeAssets = nativeAssetCache[impressionId] = Object.keys(nativeParams).reduce((assets, type) => {
-            let params = nativeParams[type];
-
-            function newAsset(obj) {
-              idCounter++;
-              return Object.assign({
-                required: params.required ? 1 : 0,
-                id: (isNumber(params.id)) ? idCounter = params.id : idCounter
-              }, obj ? cleanObj(obj) : {});
-            }
-
-            switch (type) {
-              case 'image':
-              case 'icon':
-                let imgTypeId = nativeImgIdMap[type];
-                let asset = cleanObj({
-                  type: imgTypeId,
-                  w: deepAccess(params, 'sizes.0'),
-                  h: deepAccess(params, 'sizes.1'),
-                  wmin: deepAccess(params, 'aspect_ratios.0.min_width'),
-                  hmin: deepAccess(params, 'aspect_ratios.0.min_height')
-                });
-                if (!((asset.w && asset.h) || (asset.hmin && asset.wmin))) {
-                  throw 'invalid img sizes (must provide sizes or min_height & min_width if using aspect_ratios)';
-                }
-                if (Array.isArray(params.aspect_ratios)) {
-                  // pass aspect_ratios as ext data I guess?
-                  const aspectRatios = params.aspect_ratios
-                    .filter((ar) => ar.ratio_width && ar.ratio_height)
-                    .map(ratio => `${ratio.ratio_width}:${ratio.ratio_height}`);
-                  if (aspectRatios.length > 0) {
-                    asset.ext = {
-                      aspectratios: aspectRatios
-                    }
-                  }
-                }
-                assets.push(newAsset({
-                  img: asset
-                }));
-                break;
-              case 'title':
-                if (!params.len) {
-                  throw 'invalid title.len';
-                }
-                assets.push(newAsset({
-                  title: {
-                    len: params.len
-                  }
-                }));
-                break;
-              default:
-                let dataAssetTypeId = nativeDataIdMap[type];
-                if (dataAssetTypeId) {
-                  assets.push(newAsset({
-                    data: {
-                      type: dataAssetTypeId,
-                      len: params.len
-                    }
-                  }))
-                }
-            }
-            return assets;
-          }, []);
-        } catch (e) {
-          logError('error creating native request: ' + String(e))
-        }
-      }
       const videoParams = deepAccess(adUnit, 'mediaTypes.video');
       const bannerParams = deepAccess(adUnit, 'mediaTypes.banner');
 
@@ -678,8 +599,8 @@ Object.assign(ORTB2.prototype, {
             }, {});
         }
       }
-
-      if (FEATURES.NATIVE && nativeAssets) {
+      const nativeReq = deepAccess(adUnit, 'nativeOrtbRequest');
+      if (FEATURES.NATIVE && nativeReq) {
         const defaultRequest = {
           // TODO: determine best way to pass these and if we allow defaults
           context: 1,
@@ -689,18 +610,13 @@ Object.assign(ORTB2.prototype, {
           ],
           // TODO: figure out how to support privacy field
           // privacy: int
-          assets: nativeAssets
         };
-        const ortbRequest = deepAccess(nativeParams, 'ortb');
         try {
-          const request = ortbRequest ? Object.assign(defaultRequest, ortbRequest) : defaultRequest;
+          const request = Object.assign(defaultRequest, nativeReq);
           mediaTypes[NATIVE] = {
             request: JSON.stringify(request),
             ver: '1.2'
           };
-          // saving the converted ortb native request into the native mapper, so the Universal Creative
-          // can render the native ad directly.
-          adUnit.bids.forEach(bid => nativeMapper.set(bid.bid_id, request));
         } catch (e) {
           logError('error creating native request: ' + String(e));
         }
@@ -811,7 +727,7 @@ Object.assign(ORTB2.prototype, {
 
       if (floor) {
         imp.bidfloor = floor.floor;
-        imp.bidfloorcur = floor.currency
+        imp.bidfloorcur = floor.currency;
       }
 
       if (imp.banner || imp.video || imp.native) {
@@ -850,11 +766,11 @@ Object.assign(ORTB2.prototype, {
     }
 
     // This is no longer overwritten unless name and version explicitly overwritten by extPrebid (mergeDeep)
-    request.ext.prebid = Object.assign(request.ext.prebid, {channel: {name: 'pbjs', version: $$PREBID_GLOBAL$$.version}})
+    request.ext.prebid = Object.assign(request.ext.prebid, {channel: {name: 'pbjs', version: $$PREBID_GLOBAL$$.version}});
 
     // set debug flag if in debug mode
     if (getConfig('debug')) {
-      request.ext.prebid = Object.assign(request.ext.prebid, {debug: true})
+      request.ext.prebid = Object.assign(request.ext.prebid, {debug: true});
     }
 
     // s2sConfig video.ext.prebid is passed through openrtb to PBS
@@ -1091,28 +1007,10 @@ Object.assign(ORTB2.prototype, {
               ortb = bidObject.adm = bid.adm;
             }
 
-            // ortb.imptrackers and ortb.jstracker are going to be deprecated. So, when we find
-            // those properties, we're creating the equivalent eventtrackers and let prebid universal
-            //  creative deal with it
-            for (const imptracker of ortb.imptrackers || []) {
-              ortb.eventtrackers.push({
-                event: nativeEventTrackerEventMap.impression,
-                method: nativeEventTrackerMethodMap.img,
-                url: imptracker
-              })
-            }
-            if (ortb.jstracker) {
-              ortb.eventtrackers.push({
-                event: nativeEventTrackerEventMap.impression,
-                method: nativeEventTrackerMethodMap.js,
-                url: ortb.jstracker
-              })
-            }
-
             if (isPlainObject(ortb) && Array.isArray(ortb.assets)) {
               bidObject.native = {
                 ortb,
-              }
+              };
             } else {
               logError('prebid server native response contained no assets');
             }

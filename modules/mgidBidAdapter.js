@@ -88,7 +88,7 @@ export const spec = {
           let v = nativeParams[k];
           const supportProp = spec.NATIVE_ASSET_KEY_TO_ASSET_MAP.hasOwnProperty(k);
           if (supportProp) {
-            assetsCount++
+            assetsCount++;
           }
           if (!isPlainObject(v) || (!supportProp && deepAccess(v, 'required'))) {
             nativeOk = false;
@@ -152,7 +152,7 @@ export const spec = {
         impObj.bidfloor = floorData.floor;
       }
       if (floorData.cur) {
-        impObj.bidfloorcur = floorData.cur
+        impObj.bidfloorcur = floorData.cur;
       }
       for (let mediaTypes in bid.mediaTypes) {
         switch (mediaTypes) {

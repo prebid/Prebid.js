@@ -25,7 +25,7 @@ const getDeviceType = () => {
     return 4;
   }
   return 2;
-}
+};
 
 const createOpenRtbRequest = (validBidRequests, bidderRequest) => {
   // Create request and set imp bids inside

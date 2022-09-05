@@ -5,9 +5,11 @@ import {
   initSegments,
   isAcEnabled,
   isPermutiveOnPage,
-  setBidderRtb
+  setBidderRtb,
+  getModuleConfig,
+  PERMUTIVE_SUBMODULE_CONFIG_KEY,
 } from 'modules/permutiveRtdProvider.js'
-import { deepAccess } from '../../../src/utils.js'
+import { deepAccess, deepSetValue, mergeDeep } from '../../../src/utils.js'
 import { config } from 'src/config.js'
 
 describe('permutiveRtdProvider', function () {
@@ -26,6 +28,154 @@ describe('permutiveRtdProvider', function () {
   describe('permutiveSubmodule', function () {
     it('should initalise and return true', function () {
       expect(permutiveSubmodule.init()).to.equal(true)
+    })
+  })
+
+  describe('getModuleConfig', function () {
+    beforeEach(function () {
+      // Reads data from the cache
+      permutiveSubmodule.init()
+    })
+
+    const liftToParams = (params) => ({ params })
+
+    const getDefaultConfig = () => ({
+      waitForIt: false,
+      params: {
+        maxSegs: 500,
+        acBidders: [],
+        overwrites: {},
+      },
+    })
+
+    const storeConfigInCacheAndInit = (data) => {
+      const dataToStore = { [PERMUTIVE_SUBMODULE_CONFIG_KEY]: data }
+      setLocalStorage(dataToStore)
+      // Reads data from the cache
+      permutiveSubmodule.init()
+
+      // Cleanup
+      return () => removeLocalStorage(dataToStore)
+    }
+
+    const setWindowPermutivePrebid = (getPermutiveRtdConfig) => {
+      // Read from Permutive
+      const backup = window.permutive
+
+      deepSetValue(window, 'permutive.addons.prebid', {
+        getPermutiveRtdConfig,
+      })
+
+      // Cleanup
+      return () => window.permutive = backup
+    }
+
+    it('should return default values', function () {
+      const config = getModuleConfig({})
+      expect(config).to.deep.equal(getDefaultConfig())
+    })
+
+    it('should override deeply on custom config', function () {
+      const defaultConfig = getDefaultConfig()
+
+      const customModuleConfig = { waitForIt: true, params: { acBidders: ['123'] } }
+      const config = getModuleConfig(customModuleConfig)
+
+      expect(config).to.deep.equal(mergeDeep(defaultConfig, customModuleConfig))
+    })
+
+    it('should override deeply on cached config', function () {
+      const defaultConfig = getDefaultConfig()
+
+      const cachedParamsConfig = { acBidders: ['123'] }
+      const cleanupCache = storeConfigInCacheAndInit(cachedParamsConfig)
+
+      const config = getModuleConfig({})
+
+      expect(config).to.deep.equal(mergeDeep(defaultConfig, liftToParams(cachedParamsConfig)))
+
+      // Cleanup
+      cleanupCache()
+    })
+
+    it('should override deeply on Permutive Rtd config', function () {
+      const defaultConfig = getDefaultConfig()
+
+      const permutiveRtdConfigParams = { acBidders: ['123'], overwrites: { '123': true } }
+      const cleanupPermutive = setWindowPermutivePrebid(function () {
+        return permutiveRtdConfigParams
+      })
+
+      const config = getModuleConfig({})
+
+      expect(config).to.deep.equal(mergeDeep(defaultConfig, liftToParams(permutiveRtdConfigParams)))
+
+      // Cleanup
+      cleanupPermutive()
+    })
+
+    it('should NOT use cached Permutive Rtd config if window.permutive is available', function () {
+      const defaultConfig = getDefaultConfig()
+
+      // As Permutive is available on the window object, this value won't be used.
+      const cachedParamsConfig = { acBidders: ['123'] }
+      const cleanupCache = storeConfigInCacheAndInit(cachedParamsConfig)
+
+      const permutiveRtdConfigParams = { acBidders: ['456'], overwrites: { '123': true } }
+      const cleanupPermutive = setWindowPermutivePrebid(function () {
+        return permutiveRtdConfigParams
+      })
+
+      const config = getModuleConfig({})
+
+      expect(config).to.deep.equal(mergeDeep(defaultConfig, liftToParams(permutiveRtdConfigParams)))
+
+      // Cleanup
+      cleanupCache()
+      cleanupPermutive()
+    })
+
+    it('should handle calling Permutive method throwing error', function () {
+      const defaultConfig = getDefaultConfig()
+
+      const cleanupPermutive = setWindowPermutivePrebid(function () {
+        throw new Error()
+      })
+
+      const config = getModuleConfig({})
+
+      expect(config).to.deep.equal(defaultConfig)
+
+      // Cleanup
+      cleanupPermutive()
+    })
+
+    it('should override deeply in priority order', function () {
+      const defaultConfig = getDefaultConfig()
+
+      // As Permutive is available on the window object, this value won't be used.
+      const cachedConfig = { acBidders: ['123'] }
+      const cleanupCache = storeConfigInCacheAndInit(cachedConfig)
+
+      // Read from Permutive
+      const permutiveRtdConfig = { acBidders: ['456'] }
+      const cleanupPermutive = setWindowPermutivePrebid(function () {
+        return permutiveRtdConfig
+      })
+
+      const customModuleConfig = { params: { acBidders: ['789'], maxSegs: 499 } }
+      const config = getModuleConfig(customModuleConfig)
+
+      // The configs are in reverse priority order as configs are merged left to right. So the priority is,
+      // 1. customModuleConfig <- set by publisher with pbjs.setConfig
+      // 2. permutiveRtdConfig <- set by the publisher using Permutive.
+      // 3. defaultConfig
+      const configMergedInPriorityOrder = mergeDeep(defaultConfig, liftToParams(permutiveRtdConfig), customModuleConfig)
+      expect(config).to.deep.equal(configMergedInPriorityOrder)
+
+      // Cleanup
+      cleanupCache()
+      cleanupPermutive()
     })
   })
 
