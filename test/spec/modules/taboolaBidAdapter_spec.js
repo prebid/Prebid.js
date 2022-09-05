@@ -89,6 +89,32 @@ describe('Taboola Adapter', function () {
       }
       expect(spec.isBidRequestValid(bid)).to.equal(true)
     })
+
+    it('should succeed when url is null', function () {
+      const bid = {
+        bidder: 'taboola',
+        params: {
+          publisherId: 'publisherId',
+          tagId: 'below the article',
+          url: null
+        },
+        ...displayBidRequestParams
+      }
+      expect(spec.isBidRequestValid(bid)).to.equal(true)
+    })
+
+    it('should succeed when url is filled', function () {
+      const bid = {
+        bidder: 'taboola',
+        params: {
+          publisherId: 'publisherId',
+          tagId: 'below the article',
+          url: 'https://example.com'
+        },
+        ...displayBidRequestParams
+      }
+      expect(spec.isBidRequestValid(bid)).to.equal(true)
+    })
   })
 
   describe('buildRequests', function () {
@@ -114,10 +140,10 @@ describe('Taboola Adapter', function () {
               w: displayBidRequestParams.sizes[0][0],
               h: displayBidRequestParams.sizes[0][1]
             },
-            {
-              w: displayBidRequestParams.sizes[1][0],
-              h: displayBidRequestParams.sizes[1][1]
-            }
+              {
+                w: displayBidRequestParams.sizes[1][0],
+                h: displayBidRequestParams.sizes[1][1]
+              }
             ]
           },
           'tagid': commonBidRequest.params.tagId,
@@ -148,6 +174,26 @@ describe('Taboola Adapter', function () {
 
       expect(res.url).to.equal(`${END_POINT_URL}/${commonBidRequest.params.publisherId}`);
       expect(res.data).to.deep.equal(JSON.stringify(expectedData));
+    });
+
+    it('should fill the url when it is passed', function () {
+      const commonBidRequestWithUrl = {
+        bidder: 'taboola',
+        params: {
+          publisherId: 'publisherId',
+          tagId: 'placement name',
+          url: 'https://example.com'
+        },
+        bidId: 'aa43860a-4644-442a-b5e0-93f268cs4d19',
+        auctionId: '65746dca-26f3-4186-be13-dfa63469b1b7',
+      }
+      const defaultBidRequestWithUrl = {
+        ...commonBidRequestWithUrl,
+        ...displayBidRequestParams,
+      }
+      const res = spec.buildRequests([defaultBidRequestWithUrl], commonBidderRequest);
+
+      expect(res.url).to.equal(`${commonBidRequestWithUrl.params.url}/${commonBidRequest.params.publisherId}`);
     })
 
     it('should pass optional parameters in request', function () {
