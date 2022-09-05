@@ -28,6 +28,7 @@
     "tripleliftBidAdapter",
     "pulsepointBidAdapter",
     "adtelligentBidAdapter",
+    "yieldmoBidAdapter",
     "adpod",
     "consentManagement",
     "gdprEnforcement",
