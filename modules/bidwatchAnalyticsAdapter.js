@@ -42,6 +42,9 @@ function filterAttributes(arg, removead) {
       response['gdprConsent'] = {};
       if (typeof arg['gdprConsent']['consentString'] != 'undefined') { response['gdprConsent']['consentString'] = arg['gdprConsent']['consentString']; }
     }
+    if (typeof arg['meta'] == 'object' && typeof arg['meta']['advertiserDomains'] != 'undefined') {
+      response['meta'] = {'advertiserDomains': arg['meta']['advertiserDomains']};
+    }
     requestsAttributes.forEach((attr) => {
       if (typeof arg[attr] != 'undefined') { response[attr] = arg[attr]; }
     });
@@ -196,9 +199,7 @@ bidwatchAnalytics.originEnableAnalytics = bidwatchAnalytics.enableAnalytics;
 bidwatchAnalytics.enableAnalytics = function (config) {
   bidwatchAnalytics.originEnableAnalytics(config); // call the base class function
   initOptions = config.options;
-  if (initOptions.domain) {
-    endpoint = 'https://' + initOptions.domain;
-  }
+  if (initOptions.domain) { endpoint = 'https://' + initOptions.domain; }
 };
 
 adapterManager.registerAnalyticsAdapter({
