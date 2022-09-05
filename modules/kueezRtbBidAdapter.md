@@ -4,7 +4,7 @@
 
 **Module Type:** Bidder Adapter
 
-**Maintainer:** dev@kueezrtb.com
+**Maintainer:** rtb@kueez.com
 
 # Description
 
