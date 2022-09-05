@@ -2,7 +2,7 @@
  * Analytics Adapter for Adagio
  */
 
-import adapter from '../src/AnalyticsAdapter.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
 import { getWindowTop } from '../src/utils.js';

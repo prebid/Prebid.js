@@ -102,7 +102,7 @@ export const spec = {
       if (response.adDomain) {
         bidResponse.meta = {
           advertiserDomains: response.adDomain
-        }
+        };
       }
       bidResponses.push(bidResponse);
     }

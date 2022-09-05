@@ -10,13 +10,16 @@ import {
   purpose2Rule,
   enableAnalyticsHook,
   getGvlid,
-  internal
+  internal, STRICT_STORAGE_ENFORCEMENT
 } from 'modules/gdprEnforcement.js';
 import { config } from 'src/config.js';
 import adapterManager, { gdprDataHandler } from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
 import { validateStorageEnforcement } from 'src/storageManager.js';
 import * as events from 'src/events.js';
+import 'modules/appnexusBidAdapter.js'; // some tests expect this to be in the adapter registry
+import 'src/prebid.js'
+import {hook} from '../../../src/hook.js';
 
 describe('gdpr enforcement', function () {
   let nextFnSpy;
@@ -97,6 +100,10 @@ describe('gdpr enforcement', function () {
     }
   };
 
+  before(() => {
+    hook.ready();
+  });
+
   after(function () {
     validateStorageEnforcement.getHooks({ hook: deviceAccessHook }).remove();
     $$PREBID_GLOBAL$$.requestBids.getHooks().remove();
@@ -143,13 +150,13 @@ describe('gdpr enforcement', function () {
         }
       });
 
-      deviceAccessHook(nextFnSpy);
+      deviceAccessHook(nextFnSpy, false);
       expect(nextFnSpy.calledOnce).to.equal(true);
       let result = {
         hasEnforcementHook: true,
         valid: false
       }
-      sinon.assert.calledWith(nextFnSpy, undefined, undefined, result);
+      sinon.assert.calledWith(nextFnSpy, false, undefined, undefined, result);
     });
 
     it('should only check for consent for vendor exceptions when enforcePurpose and enforceVendor are false', function () {
@@ -171,8 +178,8 @@ describe('gdpr enforcement', function () {
       consentData.apiVersion = 2;
       gdprDataHandlerStub.returns(consentData);
 
-      deviceAccessHook(nextFnSpy, 1, 'appnexus');
-      deviceAccessHook(nextFnSpy, 5, 'rubicon');
+      deviceAccessHook(nextFnSpy, false, 1, 'appnexus');
+      deviceAccessHook(nextFnSpy, false, 5, 'rubicon');
       expect(logWarnSpy.callCount).to.equal(0);
     });
 
@@ -194,8 +201,8 @@ describe('gdpr enforcement', function () {
       consentData.apiVersion = 2;
       gdprDataHandlerStub.returns(consentData);
 
-      deviceAccessHook(nextFnSpy, 1, 'appnexus');
-      deviceAccessHook(nextFnSpy, 3, 'rubicon');
+      deviceAccessHook(nextFnSpy, false, 1, 'appnexus');
+      deviceAccessHook(nextFnSpy, false, 3, 'rubicon');
       expect(logWarnSpy.callCount).to.equal(1);
     });
 
@@ -217,13 +224,13 @@ describe('gdpr enforcement', function () {
       consentData.apiVersion = 2;
       gdprDataHandlerStub.returns(consentData);
 
-      deviceAccessHook(nextFnSpy, 1, 'appnexus');
+      deviceAccessHook(nextFnSpy, false, 1, 'appnexus');
       expect(nextFnSpy.calledOnce).to.equal(true);
       let result = {
         hasEnforcementHook: true,
         valid: true
       }
-      sinon.assert.calledWith(nextFnSpy, 1, 'appnexus', result);
+      sinon.assert.calledWith(nextFnSpy, false, 1, 'appnexus', result);
     });
 
     it('should use gvlMapping set by publisher', function() {
@@ -248,13 +255,13 @@ describe('gdpr enforcement', function () {
       consentData.apiVersion = 2;
       gdprDataHandlerStub.returns(consentData);
 
-      deviceAccessHook(nextFnSpy, 1, 'appnexus');
+      deviceAccessHook(nextFnSpy, false, 1, 'appnexus');
       expect(nextFnSpy.calledOnce).to.equal(true);
       let result = {
         hasEnforcementHook: true,
         valid: true
       }
-      sinon.assert.calledWith(nextFnSpy, 4, 'appnexus', result);
+      sinon.assert.calledWith(nextFnSpy, false, 4, 'appnexus', result);
       config.resetConfig();
     });
 
@@ -283,16 +290,43 @@ describe('gdpr enforcement', function () {
       consentData.apiVersion = 2;
       gdprDataHandlerStub.returns(consentData);
 
-      deviceAccessHook(nextFnSpy, 1, 'appnexus');
+      deviceAccessHook(nextFnSpy, false, 1, 'appnexus');
       expect(nextFnSpy.calledOnce).to.equal(true);
       let result = {
         hasEnforcementHook: true,
         valid: true
       }
-      sinon.assert.calledWith(nextFnSpy, 4, 'appnexus', result);
+      sinon.assert.calledWith(nextFnSpy, false, 4, 'appnexus', result);
       config.resetConfig();
       curBidderStub.restore();
     });
+
+    it(`should mark module as vendorless for rule validation when isVendorless = true and ${STRICT_STORAGE_ENFORCEMENT} is set`, () => {
+      setEnforcementConfig({
+        [STRICT_STORAGE_ENFORCEMENT]: true
+      });
+      let consentData = {
+        vendorData: staticConfig.consentData.getTCData,
+        gdprApplies: true
+      }
+      gdprDataHandlerStub.returns(consentData);
+      const validate = sinon.stub().callsFake(() => true);
+      deviceAccessHook(nextFnSpy, true, 123, 'mockModule', undefined, {validate});
+      expect(validate.args[0][4]('mockModule')).to.be.true;
+    });
+
+    it(`should not enforce consent for vendorless modules if ${STRICT_STORAGE_ENFORCEMENT} is not set`, () => {
+      setEnforcementConfig({});
+      let consentData = {
+        vendorData: staticConfig.consentData.getTCData,
+        gdprApplies: true
+      }
+      gdprDataHandlerStub.returns(consentData);
+      const validate = sinon.stub().callsFake(() => false);
+      deviceAccessHook(nextFnSpy, true, 123, 'mockModule', undefined, {validate});
+      sinon.assert.callCount(validate, 0);
+      sinon.assert.calledWith(nextFnSpy, true, 123, 'mockModule', {hasEnforcementHook: true, valid: true});
+    })
   });
 
   describe('userSyncHook', function () {
@@ -887,6 +921,33 @@ describe('gdpr enforcement', function () {
       const isAllowed = validateRules(gdprRule, consentData, vendorBlockedModule, vendorBlockedGvlId);
       expect(isAllowed).to.equal(true);
     });
+
+    describe('when module does not need vendor consent', () => {
+      Object.entries({
+        'storage': 1,
+        'basicAds': 2,
+        'measurement': 7
+      }).forEach(([purpose, purposeNo]) => {
+        describe(`for purpose ${purpose}`, () => {
+          const rule = createGdprRule(purpose);
+          Object.entries({
+            'allowed': true,
+            'not allowed': false
+          }).forEach(([t, consentGiven]) => {
+            it(`should be ${t} when purpose is ${t}`, () => {
+              const consent = utils.deepClone(consentData);
+              consent.vendorData.purpose.consents[purposeNo] = consentGiven;
+              // vendor consent (and gvlid) should be ignored
+              consent.vendorData.vendor.consents[123] = !consentGiven;
+              // take legitimate interest out of the picture for this test
+              consent.vendorData.purpose.legitimateInterests = {};
+              const actual = validateRules(rule, consent, 'mockModule', 123, () => true);
+              expect(actual).to.equal(consentGiven);
+            })
+          })
+        })
+      })
+    })
 
     describe('Purpose 2 special case', function () {
       const consentDataWithLIFalse = utils.deepClone(consentData);

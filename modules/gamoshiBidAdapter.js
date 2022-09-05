@@ -259,7 +259,7 @@ export const spec = {
     let gdpr = gdprApplies ? 1 : 0;
 
     if (gdprApplies && gdprConsent.consentString) {
-      consentString = encodeURIComponent(gdprConsent.consentString)
+      consentString = encodeURIComponent(gdprConsent.consentString);
     }
 
     if (uspConsent) {

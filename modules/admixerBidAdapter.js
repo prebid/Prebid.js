@@ -52,7 +52,7 @@ export const spec = {
           consentString: bidderRequest.gdprConsent.consentString,
           // will check if the gdprApplies field was populated with a boolean value (ie from page config).  If it's undefined, then default to true
           gdprApplies: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true
-        }
+        };
       }
       if (bidderRequest.uspConsent) {
         payload.uspConsent = bidderRequest.uspConsent;

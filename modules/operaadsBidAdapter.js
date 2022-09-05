@@ -549,7 +549,7 @@ function createImp(bidRequest) {
   const floorDetail = getBidFloor(bidRequest, {
     mediaType: mediaType || '*',
     size: size || '*'
-  })
+  });
 
   impItem.bidfloor = floorDetail.floor;
   impItem.bidfloorcur = floorDetail.currency;

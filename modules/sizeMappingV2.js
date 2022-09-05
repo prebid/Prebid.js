@@ -98,7 +98,7 @@ export function checkAdUnitSetupHook(adUnits) {
         */
         if (!isArrayOfNums(config.minViewPort, 2)) {
           logError(`Ad unit ${adUnitCode}: Invalid declaration of 'minViewPort' in 'mediaTypes.${mediaType}.sizeConfig[${index}]'. ${conditionalLogMessages[mediaType]}`);
-          isValid = false
+          isValid = false;
           return;
         }
         /*
