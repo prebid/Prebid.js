@@ -9,6 +9,8 @@ Module Type: Bidder Adapter
 
 Module that connects to popIn's demand sources
 
+The DiscoveryDSP Bidding adapter requires setup before beginning. Please contact us at <media-support@popin.cc>
+
 # Test Parameters
 ```
     var adUnits = [
