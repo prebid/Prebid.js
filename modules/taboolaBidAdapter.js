@@ -85,6 +85,7 @@ export const spec = {
     const [bidRequest] = validBidRequests;
     const {refererInfo, gdprConsent = {}, uspConsent} = bidderRequest;
     const {publisherId} = bidRequest.params;
+    let {url = END_POINT_URL} = bidRequest.params;
     const site = getSiteProperties(bidRequest.params, refererInfo);
     const device = {ua: navigator.userAgent};
     const imps = getImps(validBidRequests);
@@ -128,7 +129,7 @@ export const spec = {
       regs
     };
 
-    const url = [END_POINT_URL, publisherId].join('/');
+    url = [url, publisherId].join('/');
 
     return {
       url,
