@@ -257,18 +257,17 @@ export const spec = {
         deepSetValue(requestPayload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
       }
 
-      // ID5 fied
-      if (deepAccess(bid, 'userId.id5id.uid')) {
-        userExt.eids = userExt.eids || [];
-        userExt.eids.push(
-          {
-            source: 'id5-sync.com',
-            uids: [{
-              id: bid.userId.id5id.uid,
-              ext: bid.userId.id5id.ext || {}
-            }]
+      if (bid.userIdAsEids) {
+        userExt.eids = bid.userIdAsEids;
+
+        userExt.eids.forEach(eid => {
+          if (eid.source === 'uidapi.com') {
+            eid.uids.forEach(uid => {
+              uid.ext = uid.ext || {};
+              uid.ext.rtiPartner = 'UID2'
+            });
           }
-        );
+        });
       }
 
       // Add common id if available
@@ -283,21 +282,6 @@ export const spec = {
             schain: bid.schain
           }
         };
-      }
-
-      if (bid && bid.userId && bid.userId.tdid) {
-        userExt.eids = userExt.eids || [];
-        userExt.eids.push(
-          {
-            source: 'adserver.org',
-            uids: [{
-              id: bid.userId.tdid,
-              ext: {
-                rtiPartner: 'TDID'
-              }
-            }]
-          }
-        );
       }
 
       // Only add the user object if it's not empty
