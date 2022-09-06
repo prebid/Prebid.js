@@ -1,4 +1,4 @@
-import {logError, logWarn, mergeDeep} from '../src/utils.js';
+import {logError, logWarn, mergeDeep, isEmpty} from '../src/utils.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {submodule} from '../src/hook.js';
 import {GreedyPromise} from '../src/utils/promise.js';
@@ -106,7 +106,7 @@ function addListenerToFetchTopics() {
     if (e && e.data) {
       try {
         let data = JSON.parse(e.data);
-        if (data?.segment?.topics) {
+        if (data && data.segment && !isEmpty(data.segment.topics)) {
           let {domain, topics, bidder} = data.segment;
           let segmentData = getTopicsData(domain, topics);
           let updateStore = [];
