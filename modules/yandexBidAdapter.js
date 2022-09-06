@@ -1,4 +1,4 @@
-import {parseUrl, formatQS, deepAccess} from '../src/utils.js';
+import {formatQS, deepAccess} from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'yandex';
@@ -20,8 +20,8 @@ export const spec = {
 
     let referrer = '';
     if (bidderRequest && bidderRequest.refererInfo) {
-      const url = parseUrl(bidderRequest.refererInfo.referer);
-      referrer = url.hostname;
+      // TODO: is 'domain' the right value here?
+      referrer = bidderRequest.refererInfo.domain
     }
 
     return validBidRequests.map((bidRequest) => {
@@ -65,7 +65,7 @@ export const spec = {
           withCredentials,
         },
         bidRequest,
-      }
+      };
     });
   },
 

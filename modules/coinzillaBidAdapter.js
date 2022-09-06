@@ -39,7 +39,8 @@ export const spec = {
         width: width,
         height: height,
         bidId: bidRequest.bidId,
-        referer: bidderRequest.refererInfo.referer,
+        // TODO: is 'page' the right value here?
+        referer: bidderRequest.refererInfo.page,
       };
       return {
         method: 'POST',

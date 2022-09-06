@@ -3,6 +3,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const GVLID = 358;
 const DEFAULT_CUR = 'USD';
@@ -87,7 +88,7 @@ export const spec = {
           let v = nativeParams[k];
           const supportProp = spec.NATIVE_ASSET_KEY_TO_ASSET_MAP.hasOwnProperty(k);
           if (supportProp) {
-            assetsCount++
+            assetsCount++;
           }
           if (!isPlainObject(v) || (!supportProp && deepAccess(v, 'required'))) {
             nativeOk = false;
@@ -117,12 +118,16 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: (validBidRequests, bidderRequest) => {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     logInfo(LOG_INFO_PREFIX + `buildRequests`);
     if (validBidRequests.length === 0) {
       return;
     }
     const info = pageInfo();
-    const page = info.location || deepAccess(bidderRequest, 'refererInfo.referer') || deepAccess(bidderRequest, 'refererInfo.canonicalUrl');
+    // TODO: the fallback seems to never be used here, and probably in the wrong order
+    const page = info.location || deepAccess(bidderRequest, 'refererInfo.page')
     const hostname = parseUrl(page).hostname;
     let domain = extractDomainFromHost(hostname) || hostname;
     const accountId = setOnAny(validBidRequests, 'params.accountId');
@@ -147,7 +152,7 @@ export const spec = {
         impObj.bidfloor = floorData.floor;
       }
       if (floorData.cur) {
-        impObj.bidfloorcur = floorData.cur
+        impObj.bidfloorcur = floorData.cur;
       }
       for (let mediaTypes in bid.mediaTypes) {
         switch (mediaTypes) {

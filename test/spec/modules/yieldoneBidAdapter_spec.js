@@ -399,6 +399,76 @@ describe('yieldoneBidAdapter', function() {
         expect(request[0].data.imuid).to.equal('imuid_sample');
       });
     });
+
+    describe('DAC ID', function () {
+      it('dont send DAC ID if undefined', function () {
+        const bidRequests = [
+          {
+            params: {placementId: '0'},
+          },
+          {
+            params: {placementId: '1'},
+            userId: {},
+          },
+          {
+            params: {placementId: '2'},
+            userId: undefined,
+          },
+        ];
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        expect(request[0].data).to.not.have.property('dac_id');
+        expect(request[1].data).to.not.have.property('dac_id');
+        expect(request[2].data).to.not.have.property('dac_id');
+        expect(request[0].data).to.not.have.property('fuuid');
+        expect(request[1].data).to.not.have.property('fuuid');
+        expect(request[2].data).to.not.have.property('fuuid');
+      });
+
+      it('should send DAC ID if available', function () {
+        const bidRequests = [
+          {
+            params: {placementId: '0'},
+            userId: {dacId: {id: 'dacId_sample'}},
+          },
+        ];
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        expect(request[0].data.dac_id).to.equal('dacId_sample');
+        expect(request[0].data.fuuid).to.equal('dacId_sample');
+      });
+    });
+
+    describe('ID5', function () {
+      it('dont send ID5 if undefined', function () {
+        const bidRequests = [
+          {
+            params: {placementId: '0'},
+          },
+          {
+            params: {placementId: '1'},
+            userId: {},
+          },
+          {
+            params: {placementId: '2'},
+            userId: undefined,
+          },
+        ];
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        expect(request[0].data).to.not.have.property('id5Id');
+        expect(request[1].data).to.not.have.property('id5Id');
+        expect(request[2].data).to.not.have.property('id5Id');
+      });
+
+      it('should send ID5 if available', function () {
+        const bidRequests = [
+          {
+            params: {placementId: '0'},
+            userId: {id5id: {uid: 'id5id_sample'}},
+          },
+        ];
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        expect(request[0].data.id5Id).to.equal('id5id_sample');
+      });
+    });
   });
 
   describe('interpretResponse', function () {
@@ -413,7 +483,9 @@ describe('yieldoneBidAdapter', function() {
           'cb': 12892917383,
           'r': 'http%3A%2F%2Flocalhost%3A9876%2F%3Fid%3D74552836',
           'uid': '23beaa6af6cdde',
-          't': 'i'
+          't': 'i',
+          'language': 'ja',
+          'screen_size': '1440x900'
         }
       }
     ];
@@ -486,7 +558,9 @@ describe('yieldoneBidAdapter', function() {
           'cb': 12892917383,
           'r': 'http%3A%2F%2Flocalhost%3A9876%2F%3Fid%3D74552836',
           'uid': '23beaa6af6cdde',
-          't': 'i'
+          't': 'i',
+          'language': 'ja',
+          'screen_size': '1440x900'
         }
       }
     ];

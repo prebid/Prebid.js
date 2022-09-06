@@ -1,13 +1,31 @@
 import {expect} from 'chai';
 import {BidInterceptor} from '../../../modules/debugging/bidInterceptor.js';
-import {bidderBidInterceptor} from '../../../modules/debugging/index.js';
-import {pbsBidInterceptor} from '../../../modules/debugging/pbsInterceptor.js';
+import {
+  bidderBidInterceptor,
+  disableDebugging,
+  getConfig,
+  sessionLoader,
+} from '../../../modules/debugging/debugging.js';
+import '../../../modules/debugging/index.js';
+import {makePbsInterceptor} from '../../../modules/debugging/pbsInterceptor.js';
+import {config} from '../../../src/config.js';
+import {hook} from '../../../src/hook.js';
+import {
+  addBidderRequestsBound,
+  addBidderRequestsHook,
+  addBidResponseBound,
+  addBidResponseHook,
+} from '../../../modules/debugging/legacy.js';
+
+import {addBidderRequests, addBidResponse} from '../../../src/auction.js';
+import {prefixLog} from '../../../src/utils.js';
+import {createBid} from '../../../src/bidfactory.js';
 
 describe('bid interceptor', () => {
   let interceptor, mockSetTimeout;
   beforeEach(() => {
     mockSetTimeout = sinon.stub().callsFake((fn) => fn());
-    interceptor = new BidInterceptor({setTimeout: mockSetTimeout});
+    interceptor = new BidInterceptor({setTimeout: mockSetTimeout, logger: prefixLog('TEST')});
   });
 
   function setRules(...rules) {
@@ -115,6 +133,13 @@ describe('bid interceptor', () => {
             const result = matchingRule({replace: {outer: {inner: replDef}}}).replace({});
             expect(result).to.include.keys(REQUIRED_KEYS);
             expect(result.outer.inner).to.eql({key: 'value'});
+          });
+
+          it('should respect array vs object definitions', () => {
+            const result = matchingRule({replace: {item: [replDef]}}).replace({});
+            expect(result.item).to.be.an('array');
+            expect(result.item.length).to.equal(1);
+            expect(result.item[0]).to.eql({key: 'value'});
           });
         });
       });
@@ -350,6 +375,7 @@ describe('pbsBidInterceptor', () => {
     interceptResults = [EMPTY_INT_RES, EMPTY_INT_RES];
   });
 
+  const pbsBidInterceptor = makePbsInterceptor({createBid});
   function callInterceptor() {
     return pbsBidInterceptor(next, interceptBids, s2sBidRequest, bidRequests, ajax, {onResponse, onError, onBid});
   }
@@ -446,6 +472,215 @@ describe('pbsBidInterceptor', () => {
         expect(onResponse.called).to.equal(i === dones.length - 1);
       });
       expect(onResponse.calledOnceWith(...responseArgs)).to.be.true;
+    });
+  });
+});
+
+describe('bid overrides', function () {
+  let sandbox;
+  const logger = prefixLog('TEST');
+
+  beforeEach(function () {
+    sandbox = sinon.sandbox.create();
+  });
+
+  afterEach(function () {
+    window.sessionStorage.clear();
+    config.resetConfig();
+    sandbox.restore();
+  });
+
+  describe('initialization', function () {
+    beforeEach(function () {
+      sandbox.stub(config, 'setConfig');
+    });
+
+    afterEach(function () {
+      disableDebugging({hook, logger});
+    });
+
+    it('should happen when enabled with setConfig', function () {
+      getConfig({
+        enabled: true
+      }, {config, hook, logger});
+
+      expect(addBidResponse.getHooks().some(hook => hook.hook === addBidResponseBound)).to.equal(true);
+      expect(addBidderRequests.getHooks().some(hook => hook.hook === addBidderRequestsBound)).to.equal(true);
+    });
+    it('should happen when configuration found in sessionStorage', function () {
+      sessionLoader({
+        storage: {getItem: () => ('{"enabled": true}')},
+        config,
+        hook,
+        logger
+      });
+      expect(addBidResponse.getHooks().some(hook => hook.hook === addBidResponseBound)).to.equal(true);
+      expect(addBidderRequests.getHooks().some(hook => hook.hook === addBidderRequestsBound)).to.equal(true);
+    });
+
+    it('should not throw if sessionStorage is inaccessible', function () {
+      expect(() => {
+        sessionLoader({
+          getItem() {
+            throw new Error('test');
+          }
+        });
+      }).not.to.throw();
+    });
+  });
+
+  describe('bidResponse hook', function () {
+    let mockBids;
+    let bids;
+
+    beforeEach(function () {
+      let baseBid = {
+        'bidderCode': 'rubicon',
+        'width': 970,
+        'height': 250,
+        'statusMessage': 'Bid available',
+        'mediaType': 'banner',
+        'source': 'client',
+        'currency': 'USD',
+        'cpm': 0.5,
+        'ttl': 300,
+        'netRevenue': false,
+        'adUnitCode': '/19968336/header-bid-tag-0'
+      };
+      mockBids = [];
+      mockBids.push(baseBid);
+      mockBids.push(Object.assign({}, baseBid, {
+        bidderCode: 'appnexus'
+      }));
+
+      bids = [];
+    });
+
+    function run(overrides) {
+      mockBids.forEach(bid => {
+        let next = (adUnitCode, bid) => {
+          bids.push(bid);
+        };
+        addBidResponseHook.bind({overrides, logger})(next, bid.adUnitCode, bid);
+      });
+    }
+
+    it('should allow us to exclude bidders', function () {
+      run({
+        enabled: true,
+        bidders: ['appnexus']
+      });
+
+      expect(bids.length).to.equal(1);
+      expect(bids[0].bidderCode).to.equal('appnexus');
+    });
+
+    it('should allow us to override all bids', function () {
+      run({
+        enabled: true,
+        bids: [{
+          cpm: 2
+        }]
+      });
+
+      expect(bids.length).to.equal(2);
+      sinon.assert.match(bids[0], {
+        cpm: 2,
+        isDebug: true,
+      });
+      sinon.assert.match(bids[1], {
+        cpm: 2,
+        isDebug: true,
+      });
+    });
+
+    it('should allow us to override bids by bidder', function () {
+      run({
+        enabled: true,
+        bids: [{
+          bidder: 'rubicon',
+          cpm: 2
+        }]
+      });
+
+      expect(bids.length).to.equal(2);
+      sinon.assert.match(bids[0], {
+        cpm: 2,
+        isDebug: true
+      });
+      sinon.assert.match(bids[1], {
+        cpm: 0.5,
+        isDebug: sinon.match.falsy
+      });
+    });
+
+    it('should allow us to override bids by adUnitCode', function () {
+      mockBids[1].adUnitCode = 'test';
+
+      run({
+        enabled: true,
+        bids: [{
+          adUnitCode: 'test',
+          cpm: 2
+        }]
+      });
+
+      expect(bids.length).to.equal(2);
+      sinon.assert.match(bids[0], {
+        cpm: 0.5,
+        isDebug: sinon.match.falsy,
+      });
+      sinon.assert.match(bids[1], {
+        cpm: 2,
+        isDebug: true,
+      });
+    });
+  });
+
+  describe('bidRequests hook', function () {
+    let mockBidRequests;
+    let bidderRequests;
+
+    beforeEach(function () {
+      let baseBidderRequest = {
+        'bidderCode': 'rubicon',
+        'bids': [{
+          'width': 970,
+          'height': 250,
+          'statusMessage': 'Bid available',
+          'mediaType': 'banner',
+          'source': 'client',
+          'currency': 'USD',
+          'cpm': 0.5,
+          'ttl': 300,
+          'netRevenue': false,
+          'adUnitCode': '/19968336/header-bid-tag-0'
+        }]
+      };
+      mockBidRequests = [];
+      mockBidRequests.push(baseBidderRequest);
+      mockBidRequests.push(Object.assign({}, baseBidderRequest, {
+        bidderCode: 'appnexus'
+      }));
+
+      bidderRequests = [];
+    });
+
+    function run(overrides) {
+      let next = (b) => {
+        bidderRequests = b;
+      };
+      addBidderRequestsHook.bind({overrides, logger})(next, mockBidRequests);
+    }
+
+    it('should allow us to exclude bidders', function () {
+      run({
+        enabled: true,
+        bidders: ['appnexus']
+      });
+
+      expect(bidderRequests.length).to.equal(1);
+      expect(bidderRequests[0].bidderCode).to.equal('appnexus');
     });
   });
 });
