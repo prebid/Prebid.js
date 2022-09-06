@@ -254,9 +254,12 @@ export function detectReferer(win) {
     };
   }
 
+  let cacheRef = win.location.href;
+
   return function() {
-    if (!RI.has(win)) {
+    if (!RI.has(win) || cacheRef !== win.location.href) {
       RI.set(win, Object.freeze(refererInfo()));
+      cacheRef = win.location.href;
     }
     return RI.get(win);
   }

@@ -96,6 +96,27 @@ describe('Referer detection', () => {
     config.resetConfig();
   });
 
+  describe('result caching', () => {
+    it('does not return cached result if location changes', () => {
+      const startPage = 'https://www.example.com'
+      const w = buildWindowTree([startPage]);
+      const detect = detectReferer(w);
+      detect();
+      w.location.href = `${startPage}/subpage`
+      w.document.referrer = startPage
+      sinon.assert.match(detect(), {
+        ref: w.document.referrer,
+        page: w.location.href
+      });
+      w.document.referrer = w.location.href;
+      w.location.href = `${startPage}/otherpage`
+      sinon.assert.match(detect(), {
+        ref: w.document.referrer,
+        page: w.location.href
+      })
+    });
+  });
+
   describe('Non cross-origin scenarios', () => {
     describe('No iframes', () => {
       it('Should return the current window location and no canonical URL', () => {
