@@ -147,6 +147,36 @@ function buildBidResponse(seedtagBid) {
   return bid;
 }
 
+/**
+ *
+ * @returns Measure time to first byte implementation
+ * @see https://web.dev/ttfb/
+ *      https://developer.mozilla.org/en-US/docs/Web/API/Navigation_timing_API
+ */
+function ttfb() {
+  const ttfb = (() => {
+    // Timing API V2
+    try {
+      const entry = performance.getEntriesByType('navigation')[0];
+      return Math.round(entry.responseStart - entry.startTime);
+    } catch (e) {
+      // Timing API V1
+      try {
+        const entry = performance.timing;
+        return Math.round(entry.responseStart - entry.fetchStart);
+      } catch (e) {
+        // Timing API not available
+        return 0;
+      }
+    }
+  })();
+
+  // prevent negative or excessive value
+  // @see https://github.com/googleChrome/web-vitals/issues/162
+  //      https://github.com/googleChrome/web-vitals/issues/137
+  return ttfb >= 0 && ttfb <= performance.now() ? ttfb : 0;
+}
+
 export function getTimeoutUrl (data) {
   let queryParams = '';
   if (
@@ -189,19 +219,25 @@ export const spec = {
    */
   buildRequests(validBidRequests, bidderRequest) {
     const payload = {
-      url: bidderRequest.refererInfo.referer,
+      url: bidderRequest.refererInfo.page,
       publisherToken: validBidRequests[0].params.publisherId,
       cmp: !!bidderRequest.gdprConsent,
       timeout: bidderRequest.timeout,
       version: '$prebid.version$',
       connectionType: getConnectionType(),
-      bidRequests: _map(validBidRequests, buildBidRequest)
+      auctionStart: bidderRequest.auctionStart || Date.now(),
+      ttfb: ttfb(),
+      bidRequests: _map(validBidRequests, buildBidRequest),
     };
 
     if (payload.cmp) {
       const gdprApplies = bidderRequest.gdprConsent.gdprApplies;
       if (gdprApplies !== undefined) payload['ga'] = gdprApplies;
       payload['cd'] = bidderRequest.gdprConsent.consentString;
+    }
+
+    if (bidderRequest.uspConsent) {
+      payload['uspConsent'] = bidderRequest.uspConsent
     }
 
     const payloadString = JSON.stringify(payload)

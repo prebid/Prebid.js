@@ -4,6 +4,8 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { triggerPixel, isFn, deepAccess, getAdUnitSizes, parseGPTSingleSizeArrayToRtbSize, _map } from '../src/utils.js';
+import {parseDomain} from '../src/refererDetection.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'revcontent';
 const NATIVE_PARAMS = {
@@ -31,6 +33,9 @@ export const spec = {
     return (typeof bid.params.apiKey !== 'undefined' && typeof bid.params.userId !== 'undefined');
   },
   buildRequests: (validBidRequests, bidderRequest) => {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     const userId = validBidRequests[0].params.userId;
     const widgetId = validBidRequests[0].params.widgetId;
     const apiKey = validBidRequests[0].params.apiKey;
@@ -44,11 +49,11 @@ export const spec = {
     let serverRequests = [];
     var refererInfo;
     if (bidderRequest && bidderRequest.refererInfo) {
-      refererInfo = bidderRequest.refererInfo.referer;
+      refererInfo = bidderRequest.refererInfo.page;
     }
 
     if (typeof domain === 'undefined') {
-      domain = extractHostname(refererInfo);
+      domain = parseDomain(refererInfo, {noPort: true});
     }
 
     var endpoint = 'https://' + host + '/rtb?apiKey=' + apiKey + '&userId=' + userId;
@@ -196,23 +201,6 @@ function getTemplate(size, customTemplate) {
   return '';
 }
 
-function extractHostname(url) {
-  if (typeof url == 'undefined' || url == null) {
-    return '';
-  }
-  var hostname;
-  if (url.indexOf('//') > -1) {
-    hostname = url.split('/')[2];
-  } else {
-    hostname = url.split('/')[0];
-  }
-
-  hostname = hostname.split(':')[0];
-  hostname = hostname.split('?')[0];
-
-  return hostname;
-}
-
 function buildImp(bid, id) {
   let bidfloor;
   if (isFn(bid.getFloor)) {
@@ -244,7 +232,7 @@ function buildImp(bid, id) {
       w: sizes[0][0],
       h: sizes[0][1],
       format: sizes.map(wh => parseGPTSingleSizeArrayToRtbSize(wh)),
-    }
+    };
   } else if (nativeReq) {
     const assets = _map(bid.nativeParams, (bidParams, key) => {
       const props = NATIVE_PARAMS[key];

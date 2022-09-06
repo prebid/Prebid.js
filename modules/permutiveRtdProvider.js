@@ -8,15 +8,18 @@
 import {getGlobal} from '../src/prebidGlobal.js';
 import {submodule} from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
-import {deepAccess, deepSetValue, isFn, logError, mergeDeep} from '../src/utils.js';
-import {config} from '../src/config.js';
+import {deepAccess, deepSetValue, isFn, logError, mergeDeep, isPlainObject, safeJSONParse} from '../src/utils.js';
 import {includes} from '../src/polyfill.js';
 
 const MODULE_NAME = 'permutive'
 
+export const PERMUTIVE_SUBMODULE_CONFIG_KEY = 'permutive-prebid-rtd'
+
 export const storage = getStorageManager({gvlid: null, moduleName: MODULE_NAME})
 
-function init (moduleConfig, userConsent) {
+function init(moduleConfig, userConsent) {
+  readPermutiveModuleConfigFromCache()
+
   return true
 }
 
@@ -44,29 +47,71 @@ export function initSegments (reqBidsConfigObj, callback, customModuleConfig) {
   }
 }
 
+function liftIntoParams(params) {
+  return isPlainObject(params) ? { params } : {}
+}
+
+let cachedPermutiveModuleConfig = {}
+
 /**
- * Merges segments into existing bidder config
- * @param {Object} customModuleConfig - Publisher config for module
- * @return {Object} Merged defatul and custom config
+ * Access the submodules RTD params that are cached to LocalStorage by the Permutive SDK. This lets the RTD submodule
+ * apply publisher defined params set in the Permutive platform, so they may still be applied if the Permutive SDK has
+ * not initialised before this submodule is initialised.
  */
-function getModuleConfig (customModuleConfig) {
+function readPermutiveModuleConfigFromCache() {
+  const params = safeJSONParse(storage.getDataFromLocalStorage(PERMUTIVE_SUBMODULE_CONFIG_KEY))
+  return cachedPermutiveModuleConfig = liftIntoParams(params)
+}
+
+/**
+ * Access the submodules RTD params attached to the Permutive SDK.
+ *
+ * @return The Permutive config available by the Permutive SDK or null if the operation errors.
+ */
+function getParamsFromPermutive() {
+  try {
+    return liftIntoParams(window.permutive.addons.prebid.getPermutiveRtdConfig())
+  } catch (e) {
+    return null
+  }
+}
+
+/**
+ * Merges segments into existing bidder config in reverse priority order. The highest priority is 1.
+ *
+ *   1. customModuleConfig <- set by publisher with pbjs.setConfig
+ *   2. permutiveRtdConfig <- set by the publisher using the Permutive platform
+ *   3. defaultConfig
+ *
+ * As items with a higher priority will be deeply merged into the previous config, deep merges are performed by
+ * reversing the priority order.
+ *
+ * @param {Object} customModuleConfig - Publisher config for module
+ * @return {Object} Deep merges of the default, Permutive and custom config.
+ */
+export function getModuleConfig(customModuleConfig) {
+  // Use the params from Permutive if available, otherwise fallback to the cached value set by Permutive.
+  const permutiveModuleConfig = getParamsFromPermutive() || cachedPermutiveModuleConfig
+
   return mergeDeep({
     waitForIt: false,
     params: {
       maxSegs: 500,
       acBidders: [],
-      overwrites: {}
-    }
-  }, customModuleConfig)
+      overwrites: {},
+    },
+  },
+  permutiveModuleConfig,
+  customModuleConfig,
+  )
 }
 
 /**
  * Sets ortb2 config for ac bidders
- * @param {Object} auctionDetails
+ * @param {Object} bidderOrtb2
  * @param {Object} customModuleConfig - Publisher config for module
  */
-export function setBidderRtb (auctionDetails, customModuleConfig) {
-  const bidderConfig = config.getBidderConfig()
+export function setBidderRtb (bidderOrtb2, customModuleConfig) {
   const moduleConfig = getModuleConfig(customModuleConfig)
   const acBidders = deepAccess(moduleConfig, 'params.acBidders')
   const maxSegs = deepAccess(moduleConfig, 'params.maxSegs')
@@ -74,13 +119,9 @@ export function setBidderRtb (auctionDetails, customModuleConfig) {
   const segmentData = getSegments(maxSegs)
 
   acBidders.forEach(function (bidder) {
-    const currConfig = bidderConfig[bidder] || {}
+    const currConfig = { ortb2: bidderOrtb2[bidder] || {} }
     const nextConfig = updateOrtbConfig(currConfig, segmentData.ac, transformationConfigs) // ORTB2 uses the `ac` segment IDs
-
-    config.setBidderConfig({
-      bidders: [bidder],
-      config: nextConfig
-    })
+    bidderOrtb2[bidder] = nextConfig.ortb2;
   })
 }
 
@@ -306,12 +347,10 @@ export const permutiveSubmodule = {
     makeSafe(function () {
       // Legacy route with custom parameters
       initSegments(reqBidsConfigObj, callback, customModuleConfig)
-    })
-  },
-  onAuctionInitEvent: function (auctionDetails, customModuleConfig) {
+    });
     makeSafe(function () {
       // Route for bidders supporting ORTB2
-      setBidderRtb(auctionDetails, customModuleConfig)
+      setBidderRtb(reqBidsConfigObj.ortb2Fragments?.bidder, customModuleConfig)
     })
   },
   init: init

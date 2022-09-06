@@ -6,6 +6,7 @@ const REQUEST = {
   'bidId': '456',
   'bidder': 'alkimi',
   'sizes': [[300, 250]],
+  'adUnitCode': 'bannerAdUnitCode',
   'mediaTypes': {
     'banner': {
       'sizes': [[300, 250]]
@@ -15,6 +16,28 @@ const REQUEST = {
     bidFloor: 0.1,
     token: 'e64782a4-8e68-4c38-965b-80ccf115d46f',
     pos: 7
+  },
+  'userIdAsEids': [{
+    'source': 'criteo.com',
+    'uids': [{
+      'id': 'test',
+      'atype': 1
+    }]
+  }, {
+    'source': 'pubcid.org',
+    'uids': [{
+      'id': 'test',
+      'atype': 1
+    }]
+  }],
+  'schain': {
+    ver: '1.0',
+    complete: 1,
+    nodes: [{
+      asi: 'alkimi-onboarding.com',
+      sid: '00001',
+      hp: 1
+    }]
   }
 }
 
@@ -88,15 +111,35 @@ describe('alkimiBidAdapter', function () {
     const bidderRequest = spec.buildRequests(bidRequests, {
       auctionId: '123',
       refererInfo: {
-        referer: 'http://test.com/path.html'
-      }
+        page: 'http://test.com/path.html'
+      },
+      gdprConsent: {
+        consentString: 'test-consent',
+        vendorData: {},
+        gdprApplies: true
+      },
+      uspConsent: 'uspConsent'
+    })
+
+    it('should return a properly formatted request with eids defined', function () {
+      expect(bidderRequest.data.eids).to.deep.equal(REQUEST.userIdAsEids)
+    })
+
+    it('should return a properly formatted request with gdpr defined', function () {
+      expect(bidderRequest.data.gdprConsent.consentRequired).to.equal(true)
+      expect(bidderRequest.data.gdprConsent.consentString).to.equal('test-consent')
+    })
+
+    it('should return a properly formatted request with uspConsent defined', function () {
+      expect(bidderRequest.data.uspConsent).to.equal('uspConsent')
     })
 
     it('sends bid request to ENDPOINT via POST', function () {
       expect(bidderRequest.method).to.equal('POST')
       expect(bidderRequest.data.requestId).to.equal('123')
       expect(bidderRequest.data.referer).to.equal('http://test.com/path.html')
-      expect(bidderRequest.data.signRequest.bids).to.deep.contains({ token: 'e64782a4-8e68-4c38-965b-80ccf115d46f', pos: 7, bidFloor: 0.1, width: 300, height: 250, impMediaType: 'Banner' })
+      expect(bidderRequest.data.schain).to.deep.contains({ver: '1.0', complete: 1, nodes: [{asi: 'alkimi-onboarding.com', sid: '00001', hp: 1}]})
+      expect(bidderRequest.data.signRequest.bids).to.deep.contains({ token: 'e64782a4-8e68-4c38-965b-80ccf115d46f', pos: 7, bidFloor: 0.1, width: 300, height: 250, impMediaType: 'Banner', adUnitCode: 'bannerAdUnitCode' })
       expect(bidderRequest.data.signRequest.randomUUID).to.equal(undefined)
       expect(bidderRequest.data.bidIds).to.deep.contains('456')
       expect(bidderRequest.data.signature).to.equal(undefined)

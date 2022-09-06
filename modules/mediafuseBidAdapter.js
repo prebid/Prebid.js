@@ -8,6 +8,8 @@ import {find, includes} from '../src/polyfill.js';
 import { OUTSTREAM, INSTREAM } from '../src/video.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { bidderSettings } from '../src/bidderSettings.js';
+import {hasPurpose1Consent} from '../src/utils/gpdr.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'mediafuse';
 const URL = 'https://ib.adnxs.com/ut/v3/prebid';
@@ -84,6 +86,8 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (bidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
     const tags = bidRequests.map(bidToTag);
     const userObjBid = find(bidRequests, hasUserInfo);
     let userObj = {};
@@ -173,7 +177,7 @@ export const spec = {
       payload['iab_support'] = {
         omidpn: 'Mediafuse',
         omidpv: '$prebid.version$'
-      }
+      };
     }
 
     if (member > 0) {
@@ -181,7 +185,7 @@ export const spec = {
     }
 
     if (appDeviceObjBid) {
-      payload.device = appDeviceObj
+      payload.device = appDeviceObj;
     }
     if (appIdObjBid) {
       payload.app = appIdObj;
@@ -223,16 +227,17 @@ export const spec = {
     }
 
     if (bidderRequest && bidderRequest.uspConsent) {
-      payload.us_privacy = bidderRequest.uspConsent
+      payload.us_privacy = bidderRequest.uspConsent;
     }
 
     if (bidderRequest && bidderRequest.refererInfo) {
       let refererinfo = {
-        rd_ref: encodeURIComponent(bidderRequest.refererInfo.referer),
+        // TODO: this collects everything it finds, except for canonicalUrl
+        rd_ref: encodeURIComponent(bidderRequest.refererInfo.topmostLocation),
         rd_top: bidderRequest.refererInfo.reachedTop,
         rd_ifs: bidderRequest.refererInfo.numIframes,
         rd_stk: bidderRequest.refererInfo.stack.map((url) => encodeURIComponent(url)).join(',')
-      }
+      };
       payload.referrer_detection = refererinfo;
     }
 
@@ -249,7 +254,6 @@ export const spec = {
     if (bidRequests[0].userId) {
       let eids = [];
 
-      addUserId(eids, deepAccess(bidRequests[0], `userId.flocId.id`), 'chrome.com', null);
       addUserId(eids, deepAccess(bidRequests[0], `userId.criteoId`), 'criteo.com', null);
       addUserId(eids, deepAccess(bidRequests[0], `userId.netId`), 'netid.de', null);
       addUserId(eids, deepAccess(bidRequests[0], `userId.idl_env`), 'liveramp.com', null);
@@ -382,7 +386,7 @@ export const spec = {
       reloadViewabilityScriptWithCorrectParameters(bid);
     }
   }
-}
+};
 
 function isPopulatedArray(arr) {
   return !!(isArray(arr) && arr.length > 0);
@@ -400,7 +404,7 @@ function reloadViewabilityScriptWithCorrectParameters(bid) {
   if (viewJsPayload) {
     let prebidParams = 'pbjs_adid=' + bid.adId + ';pbjs_auc=' + bid.adUnitCode;
 
-    let jsTrackerSrc = getViewabilityScriptUrlFromPayload(viewJsPayload)
+    let jsTrackerSrc = getViewabilityScriptUrlFromPayload(viewJsPayload);
 
     let newJsTrackerSrc = jsTrackerSrc.replace('dom_id=%native_dom_id%', prebidParams);
 
@@ -479,16 +483,6 @@ function getViewabilityScriptUrlFromPayload(viewJsPayload) {
   return jsTrackerSrc;
 }
 
-function hasPurpose1Consent(bidderRequest) {
-  let result = true;
-  if (bidderRequest && bidderRequest.gdprConsent) {
-    if (bidderRequest.gdprConsent.gdprApplies && bidderRequest.gdprConsent.apiVersion === 2) {
-      result = !!(deepAccess(bidderRequest.gdprConsent, 'vendorData.purpose.consents.1') === true);
-    }
-  }
-  return result;
-}
-
 function formatRequest(payload, bidderRequest) {
   let request = [];
   let options = {
@@ -497,14 +491,14 @@ function formatRequest(payload, bidderRequest) {
 
   let endpointUrl = URL;
 
-  if (!hasPurpose1Consent(bidderRequest)) {
+  if (!hasPurpose1Consent(bidderRequest?.gdprConsent)) {
     endpointUrl = URL_SIMPLE;
   }
 
   if (getParameterByName('apn_test').toUpperCase() === 'TRUE' || config.getConfig('apn_test') === true) {
     options.customHeaders = {
       'X-Is-Test': 1
-    }
+    };
   }
 
   if (payload.tags.length > MAX_IMPS_PER_REQUEST) {
@@ -739,7 +733,7 @@ function bidToTag(bid) {
     tag.code = bid.params.invCode;
   }
   tag.allow_smaller_sizes = bid.params.allowSmallerSizes || false;
-  tag.use_pmt_rule = bid.params.usePaymentRule || false
+  tag.use_pmt_rule = bid.params.usePaymentRule || false;
   tag.prebid = true;
   tag.disable_psa = true;
   let bidFloor = getBidFloor(bid);
