@@ -1,4 +1,4 @@
-import liAnalytics from 'modules/liveintentAnalyticsAdapter';
+import liAnalytics from 'modules/liveIntentAnalyticsAdapter';
 import { expect } from 'chai';
 import { server } from 'test/mocks/xhr.js';
 import { auctionManager } from 'src/auctionManager.js';
