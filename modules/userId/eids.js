@@ -277,6 +277,11 @@ export const USER_IDS_CONFIG = {
     atype: 3
   },
 
+  'imppid': {
+    source: 'ppid.intimatemerger.com',
+    atype: 1
+  },
+
   'imuid': {
     source: 'intimatemerger.com',
     atype: 1
@@ -325,6 +330,32 @@ export const USER_IDS_CONFIG = {
   'cpexId': {
     source: 'czechadid.cz',
     atype: 1
+  },
+
+  // OneKey Data
+  'oneKeyData': {
+    getValue: function(data) {
+      if (data && Array.isArray(data.identifiers) && data.identifiers[0]) {
+        return data.identifiers[0].value;
+      }
+    },
+    source: 'paf',
+    atype: 1,
+    getEidExt: function(data) {
+      if (data && data.preferences) {
+        return {preferences: data.preferences};
+      }
+    },
+    getUidExt: function(data) {
+      if (data && Array.isArray(data.identifiers) && data.identifiers[0]) {
+        const id = data.identifiers[0];
+        return {
+          version: id.version,
+          type: id.type,
+          source: id.source
+        };
+      }
+    }
   }
 };
 
@@ -372,11 +403,11 @@ export function createEidsArray(bidRequestUserId) {
         // ftrack has multiple IDs so we add each one that exists
         let eid = {
           'atype': 1,
-          'id': (bidRequestUserId[subModuleKey]['DeviceID'] || []).join('|'),
+          'id': (bidRequestUserId.ftrackId.DeviceID || []).join('|'),
           'ext': {}
         }
-        for (let id in bidRequestUserId[subModuleKey]) {
-          eid.ext[id] = (bidRequestUserId[subModuleKey][id] || []).join('|');
+        for (let id in bidRequestUserId.ftrackId) {
+          eid.ext[id] = (bidRequestUserId.ftrackId[id] || []).join('|');
         }
 
         eids.push(eid);

@@ -1,5 +1,5 @@
 import { _each, pick, logWarn, isStr, isArray, logError } from '../src/utils.js';
-import adapter from '../src/AnalyticsAdapter.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
 import { ajax } from '../src/ajax.js';
@@ -382,9 +382,9 @@ function bidResponseHandler(args) {
     return;
   }
 
-  if (bid.bidder && args.bidderCode && bid.bidder !== args.bidderCode) {
+  if ((bid.bidder && args.bidderCode && bid.bidder !== args.bidderCode) || (bid.bidder === args.bidderCode && bid.status === SUCCESS)) {
     bid = copyRequiredBidDetails(args);
-    cache.auctions[args.auctionId].adUnitCodes[args.adUnitCode].bids[args.requestId].push(bid)
+    cache.auctions[args.auctionId].adUnitCodes[args.adUnitCode].bids[args.requestId].push(bid);
   }
   bid.adId = args.adId;
   bid.source = formatSource(bid.source || args.source);

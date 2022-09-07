@@ -200,7 +200,7 @@ export function addSegmentData(reqBids, data, moduleConfig, onDone) {
         if (typeof n.setTargeting !== 'undefined' && sirdataMergedList && sirdataMergedList.length > 0) {
           n.setTargeting('sd_rtd', sirdataMergedList);
         }
-      })
+      });
     } catch (e) {
       logError(e);
     }
@@ -224,7 +224,7 @@ export function addSegmentData(reqBids, data, moduleConfig, onDone) {
         curationData = {'segments': [], 'categories': []};
         sirdataMergedList = [];
 
-        let minScore = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('contextualMinRelevancyScore') ? moduleConfig.params.bidders[bidderIndex].contextualMinRelevancyScore : globalMinScore)
+        let minScore = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('contextualMinRelevancyScore') ? moduleConfig.params.bidders[bidderIndex].contextualMinRelevancyScore : globalMinScore);
 
         if (!biddersParamsExist || (indexFound && (!moduleConfig.params.bidders[bidderIndex].hasOwnProperty('adUnitCodes') || moduleConfig.params.bidders[bidderIndex].adUnitCodes.indexOf(adUnit.code) !== -1))) {
           switch (bid.bidder) {
@@ -476,7 +476,7 @@ export function addSegmentData(reqBids, data, moduleConfig, onDone) {
           }
         }
       } catch (e) {
-        logError(e)
+        logError(e);
       }
     })
   });

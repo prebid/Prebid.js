@@ -4,7 +4,7 @@ import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { createEidsArray } from './userId/eids.js';
 
-const VERSION = '4.1.1';
+const VERSION = '4.2.0';
 const BIDDER_CODE = 'sharethrough';
 const SUPPLY_ID = 'WYu2BXv1';
 
@@ -58,8 +58,8 @@ export const sharethroughAdapterSpec = {
           schain: bidRequests[0].schain,
         },
       },
-      bcat: deepAccess(bidderRequest.ortb2Imp, 'bcat') || bidRequests[0].params.bcat || [],
-      badv: bidRequests[0].params.badv || [],
+      bcat: deepAccess(bidderRequest.ortb2, 'bcat') || bidRequests[0].params.bcat || [],
+      badv: deepAccess(bidderRequest.ortb2, 'badv') || bidRequests[0].params.badv || [],
       test: 0,
     };
 

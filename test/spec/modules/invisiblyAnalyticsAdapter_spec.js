@@ -202,7 +202,9 @@ describe('Invisibly Analytics Adapter test suite', function () {
           events.emit(constants.EVENTS.BID_REQUESTED, MOCK.BID_REQUESTED);
           events.emit(constants.EVENTS.BID_RESPONSE, MOCK.BID_RESPONSE);
           events.emit(constants.EVENTS.BID_WON, MOCK.BID_WON);
-          sinon.assert.callCount(invisiblyAdapter.track, 5);
+
+          // 5 Invisibly events + 1 Clean.io event
+          sinon.assert.callCount(invisiblyAdapter.track, 6);
         });
 
         it('should not catch events triggered without invisibly account config', function () {
@@ -380,7 +382,9 @@ describe('Invisibly Analytics Adapter test suite', function () {
         expect(invisiblyEvents.event_data.pageViewId).to.exist;
         expect(invisiblyEvents.event_data.ver).to.equal(1);
         expect(invisiblyEvents.event_type).to.equal('PREBID_bidWon');
-        sinon.assert.callCount(invisiblyAdapter.track, 1);
+
+        // 1 Invisibly event + 1 Clean.io event
+        sinon.assert.callCount(invisiblyAdapter.track, 2);
       });
 
       // spec for bidder done event
@@ -551,7 +555,8 @@ describe('Invisibly Analytics Adapter test suite', function () {
         events.emit(constants.EVENTS.ADD_AD_UNITS, MOCK.ADD_AD_UNITS);
         events.emit(constants.EVENTS.AD_RENDER_FAILED, MOCK.AD_RENDER_FAILED);
 
-        sinon.assert.callCount(invisiblyAdapter.track, 13);
+        // 13 Invisibly events + 1 Clean.io event
+        sinon.assert.callCount(invisiblyAdapter.track, 14);
       });
     });
 

@@ -10,7 +10,7 @@ Maintainer: engineering@gumgum.com
 
 GumGum adapter for Prebid.js
 Please note that both video and in-video products require a mediaType of video. 
-In-screen, slot, and skin products should have a mediaType of banner.
+In-screen, slot, and skins products should have a mediaType of banner.
 
 # Test Parameters
 ```
@@ -51,7 +51,7 @@ var adUnits = [
       }
     ]
   },{
-    code: 'skin-placement',
+    code: 'skins-placement',
     sizes: [[300, 50]],
     mediaTypes: {
         banner: {
@@ -63,7 +63,7 @@ var adUnits = [
         bidder: 'gumgum',
         params: {
           zone: 'dc9d6be1', // GumGum Zone ID given to the client
-          product: 'skin',
+          product: 'skins',
           bidfloor: 0.03 // CPM bid floor
         }
       }

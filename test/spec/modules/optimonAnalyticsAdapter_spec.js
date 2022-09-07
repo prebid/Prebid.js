@@ -35,6 +35,7 @@ describe('Optimon Analytics Adapter', () => {
     events.emit(constants.EVENTS.BID_TIMEOUT, optmn_arguments)
     events.emit(constants.EVENTS.BID_WON, optmn_arguments)
 
-    expect(optmn_queue.length).to.eql(3);
+    // 3 Optimon events + 1 Clean.io event
+    expect(optmn_queue.length).to.eql(4);
   });
 });
