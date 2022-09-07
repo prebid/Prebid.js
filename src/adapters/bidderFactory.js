@@ -9,7 +9,7 @@ import CONSTANTS from '../constants.json';
 import * as events from '../events.js';
 import {includes} from '../polyfill.js';
 import { ajax } from '../ajax.js';
-import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, flatten, uniques, timestamp, deepAccess, isArray, isPlainObject } from '../utils.js';
+import { logWarn, logInfo, logError, parseQueryStringParameters, delayExecution, parseSizesInput, flatten, uniques, timestamp, deepAccess, isArray, isPlainObject } from '../utils.js';
 import { ADPOD } from '../mediaTypes.js';
 import { getHook, hook } from '../hook.js';
 import { getCoreStorageManager } from '../storageManager.js';
@@ -70,6 +70,13 @@ export const storage = getCoreStorageManager('bidderFactory');
  *
  * @property {string} bidId A string which uniquely identifies this BidRequest in the current Auction.
  * @property {object} params Any bidder-specific params which the publisher used in their bid request.
+ */
+
+/**
+ * @typedef {object} BidderAuctionResponse An object encapsulating an adapter response for current Auction
+ *
+ * @property {Array<Bid>} bids Contextual bids returned by this adapter, if any
+ * @property {object|null} fledgeAuctionConfigs Optional FLEDGE response, as a map of impid -> auction_config
  */
 
 /**
@@ -226,6 +233,17 @@ export function newBidder(spec) {
           onTimelyResponse(spec.code);
           responses.push(resp)
         },
+        /** Process eventual BidderAuctionResponse.fledgeAuctionConfig field in response.
+         * @param {Array<FledgeAuctionConfig>} fledgeAuctionConfigs
+         */
+        onFledgeAuctionConfigs: (fledgeAuctionConfigs) => {
+          fledgeAuctionConfigs.forEach((fledgeAuctionConfig) => {
+            const bidRequest = bidRequestMap[fledgeAuctionConfig.bidId];
+            if (bidRequest) {
+              addComponentAuction(bidRequest, fledgeAuctionConfig);
+            }
+          });
+        },
         // If the server responds with an error, there's not much we can do beside logging.
         onError: (errorMessage, error) => {
           onTimelyResponse(spec.code);
@@ -260,6 +278,7 @@ export function newBidder(spec) {
     let allowAlternateBidderCodes = bidderSettings.get(requestBidder, 'allowAlternateBidderCodes') || false;
     let alternateBiddersList = bidderSettings.get(requestBidder, 'allowedAlternateBidderCodes');
     if (!!responseBidder && !!requestBidder && requestBidder !== responseBidder) {
+      alternateBiddersList = isArray(alternateBiddersList) ? alternateBiddersList.map(val => val.trim().toLowerCase()).filter(val => !!val).filter(uniques) : alternateBiddersList;
       if (!allowAlternateBidderCodes || (isArray(alternateBiddersList) && (alternateBiddersList[0] !== '*' && !alternateBiddersList.includes(responseBidder)))) {
         return true;
       }
@@ -295,7 +314,7 @@ export function newBidder(spec) {
  * @param onBid {function({})} invoked once for each bid in the response - with the bid as returned by interpretResponse
  * @param onCompletion {function()} invoked once when all bid requests have been processed
  */
-export const processBidderRequests = hook('sync', function (spec, bids, bidderRequest, ajax, wrapCallback, {onRequest, onResponse, onError, onBid, onCompletion}) {
+export const processBidderRequests = hook('sync', function (spec, bids, bidderRequest, ajax, wrapCallback, {onRequest, onResponse, onFledgeAuctionConfigs, onError, onBid, onCompletion}) {
   let requests = spec.buildRequests(bids, bidderRequest);
   if (!requests || requests.length === 0) {
     onCompletion();
@@ -323,13 +342,21 @@ export const processBidderRequests = hook('sync', function (spec, bids, bidderRe
       };
       onResponse(response);
 
-      let bids;
       try {
-        bids = spec.interpretResponse(response, request);
+        response = spec.interpretResponse(response, request);
       } catch (err) {
         logError(`Bidder ${spec.code} failed to interpret the server's response. Continuing without bids`, null, err);
         requestDone();
         return;
+      }
+
+      let bids;
+      // Extract additional data from a structured {BidderAuctionResponse} response
+      if (response && isArray(response.fledgeAuctionConfigs)) {
+        onFledgeAuctionConfigs(response.fledgeAuctionConfigs);
+        bids = response.bids;
+      } else {
+        bids = response;
       }
 
       if (bids) {
@@ -417,6 +444,10 @@ export const registerSyncInner = hook('async', function(spec, responses, gdprCon
     }
   }
 }, 'registerSyncs')
+
+export const addComponentAuction = hook('sync', (_bidRequest, fledgeAuctionConfig) => {
+  logInfo(`bidderFactory.addComponentAuction`, fledgeAuctionConfig);
+}, 'addComponentAuction')
 
 export function preloadBidderMappingFile(fn, adUnits) {
   if (!config.getConfig('adpod.brandCategoryExclusion')) {

@@ -67,12 +67,17 @@ function createBannerRequest(bids, bidderRequest) {
       },
       ext: {divid: bid.adUnitCode}
     };
+
+    if (bidderRequest.fledgeEnabled) {
+      imp.ext.ae = bid?.ortb2Imp?.ext?.ae
+    }
+
     enrichImp(imp, bid, floor);
     return imp;
   });
   return {
     method: 'POST',
-    url: REQUEST_URL,
+    url: config.getConfig('openxOrtbUrl') || REQUEST_URL,
     data: data
   }
 }
@@ -157,7 +162,7 @@ function createVideoRequest(bid, bidderRequest) {
     method: 'POST',
     url: REQUEST_URL,
     data: data
-  }
+  };
 }
 
 function getBaseRequest(bid, bidderRequest) {
@@ -190,8 +195,11 @@ function getBaseRequest(bid, bidderRequest) {
   if (bid.params.delDomain) {
     utils.deepSetValue(req, 'ext.delDomain', bid.params.delDomain);
   }
+  if (bid.params.response_template_name) {
+    utils.deepSetValue(req, 'ext.response_template_name', bid.params.response_template_name);
+  }
   if (bid.params.test) {
-    req.test = 1
+    req.test = 1;
   }
   if (bidderRequest.gdprConsent) {
     if (bidderRequest.gdprConsent.gdprApplies !== undefined) {
@@ -251,7 +259,11 @@ function getFloor(bid, mediaType) {
   return floor;
 }
 
-function interpretResponse(resp, req) {
+function interpretOrtbResponse(resp, req) {
+  if (!resp.body) {
+    resp.body = {nbr: 0};
+  }
+
   // pass these from request to the responses for use in userSync
   if (req.data.ext) {
     if (req.data.ext.delDomain) {
@@ -263,7 +275,7 @@ function interpretResponse(resp, req) {
   }
 
   const respBody = resp.body;
-  if ('nbr' in respBody) {
+  if (!respBody || 'nbr' in respBody) {
     return [];
   }
 
@@ -301,14 +313,32 @@ function interpretResponse(resp, req) {
       }
 
       if (respBody.ext && respBody.ext.paf) {
-        response.meta.paf = respBody.ext.paf;
+        response.meta.paf = Object.assign({}, respBody.ext.paf);
         response.meta.paf.content_id = utils.deepAccess(bid, 'ext.paf.content_id');
       }
 
-      return response
+      return response;
     })];
   });
 
+  return bids;
+}
+
+function interpretResponse(resp, req) {
+  const bids = interpretOrtbResponse(resp, req);
+  let fledgeAuctionConfigs = utils.deepAccess(resp, 'body.ext.fledge_auction_configs');
+  if (fledgeAuctionConfigs) {
+    fledgeAuctionConfigs = Object.entries(fledgeAuctionConfigs).map(([bidId, cfg]) => {
+      return Object.assign({
+        bidId,
+        auctionSignals: {}
+      }, cfg);
+    });
+    return {
+      bids,
+      fledgeAuctionConfigs,
+    }
+  }
   return bids;
 }
 

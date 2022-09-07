@@ -30,7 +30,7 @@ export const storage = getStorageManager({gvlid: AU_GVLID, moduleName: SUBMODULE
  */
 const urlAddParams = (url, params) => {
   return url + (url.indexOf('?') > -1 ? '&' : '?') + params
-}
+};
 
 /**
  * Deep set an object unless value present.
