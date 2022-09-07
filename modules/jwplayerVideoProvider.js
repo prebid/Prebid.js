@@ -173,10 +173,6 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
   }
 
   function onEvents(events, callback) {
-    if (!callback) {
-      return;
-    }
-
     for (let i = 0; i < events.length; i++) {
       const type = events[i];
       let payload = {

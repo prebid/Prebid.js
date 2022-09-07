@@ -198,10 +198,6 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
   // Should this function return some sort of signal
   // to specify whether or not the callback was succesfully hooked?
   function onEvents(events, callback) {
-    if (!callback) {
-      return;
-    }
-
     for (let i = 0; i < events.length; i++) {
       const type = events[i];
       const payload = {

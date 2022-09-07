@@ -145,6 +145,10 @@ export function VideoCore(parentModule_) {
    * @param {string} divId - unique identifier of the player instance
    */
   function onEvents(events, callback, divId) {
+    if (!callback) {
+      return;
+    }
+
     const submodule = parentModule.getSubmodule(divId);
     submodule && submodule.onEvents(events, callback);
   }
