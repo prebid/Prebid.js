@@ -35,7 +35,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
   let supportedMediaTypes = null;
   let minimumSupportedPlayerVersion = '8.20.1';
   let setupCompleteCallbacks = [];
-  let setupFailedCallback = null;
+  let setupFailedCallbacks = [];
   const MEDIA_TYPES = [
     VIDEO_MIME_TYPE.MP4,
     VIDEO_MIME_TYPE.OGG,
@@ -249,7 +249,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
   }
 
   function triggerSetupFailure(errorCode) {
-    if (!setupFailedCallback) {
+    if (!setupFailedCallbacks.length) {
       return;
     }
 
@@ -261,7 +261,9 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
       errorMessage: '',
       sourceError: null
     };
-    setupFailedCallback(SETUP_FAILED, payload);
+
+    setupFailedCallbacks.forEach(callback => callback(SETUP_FAILED, payload));
+    setupFailedCallbacks = [];
   }
 
   function registerPreSetupListeners(type, callback, payload) {
@@ -279,7 +281,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
         break;
 
       case SETUP_FAILED:
-        setupFailedCallback = callback;
+        setupFailedCallbacks.push(callback);
         eventHandler = e => {
           Object.assign(payload, {
             playerVersion,
@@ -288,7 +290,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
             sourceError: e.sourceError
           });
           callback(type, payload);
-          setupFailedCallback = null;
+          setupFailedCallbacks = [];
         };
         player && player.on('setupError', eventHandler);
         break;
