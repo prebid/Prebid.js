@@ -341,7 +341,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
   let counter = 0;
 
   // $.source.tid MUST be a unique UUID and also THE SAME between all PBS Requests for a given Auction
-  const sourceTid = bidRequests[0].transactionId;
+  const sourceTid = bidRequests.auctionId;
   _s2sConfigs.forEach((s2sConfig) => {
     if (s2sConfig && uniqueServerBidRequests[counter] && getS2SBidderSet(s2sConfig).has(uniqueServerBidRequests[counter].bidderCode)) {
       // s2s should get the same client side timeout as other client side requests.
