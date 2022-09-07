@@ -85,7 +85,7 @@ describe('JWPlayerProvider', function () {
     it('should trigger failure when jwplayer is missing', function () {
       const provider = JWPlayerProvider(config, null, adState, timeState, callbackStorage, utilsMock, sharedUtils);
       const setupFailed = sinon.spy();
-      provider.onEvents([SETUP_FAILED], setupFailed);
+      provider.onEvent(SETUP_FAILED, setupFailed, {});
       provider.init();
       expect(setupFailed.calledOnce).to.be.true;
       const payload = setupFailed.args[0][1];
@@ -97,7 +97,7 @@ describe('JWPlayerProvider', function () {
       jwplayerMock.version = '8.20.0';
       const provider = JWPlayerProvider(config, jwplayerMock, adState, timeState, callbackStorage, utilsMock, sharedUtils);
       const setupFailed = sinon.spy();
-      provider.onEvents([SETUP_FAILED], setupFailed);
+      provider.onEvent(SETUP_FAILED, setupFailed, {});
       provider.init();
       expect(setupFailed.calledOnce).to.be.true;
       const payload = setupFailed.args[0][1];
@@ -118,7 +118,7 @@ describe('JWPlayerProvider', function () {
       player.getState = () => 'idle';
       const provider = JWPlayerProvider(config, makePlayerFactoryMock(player), adState, timeState, callbackStorage, utilsMock, sharedUtils);
       const setupComplete = sinon.spy();
-      provider.onEvents([SETUP_COMPLETE], setupComplete);
+      provider.onEvent(SETUP_COMPLETE, setupComplete, {});
       provider.init();
       expect(setupComplete.calledOnce).to.be.true;
     });
@@ -268,7 +268,7 @@ describe('JWPlayerProvider', function () {
       const provider = JWPlayerProvider({}, makePlayerFactoryMock(player), adStateFactory(), timeStateFactory(), callbackStorageFactory(), getUtilsMock(), sharedUtils);
       provider.init();
       const callback = () => {};
-      provider.onEvents([PLAY], callback);
+      provider.onEvent(PLAY, callback, {});
       expect(onSpy.calledOnce).to.be.true;
       const eventName = onSpy.args[0][0];
       expect(eventName).to.be.equal('play');
@@ -280,7 +280,7 @@ describe('JWPlayerProvider', function () {
       const provider = JWPlayerProvider({}, makePlayerFactoryMock(player), adStateFactory(), timeStateFactory(), callbackStorageFactory(), utils, sharedUtils);
       provider.init();
       const callback = () => {};
-      provider.onEvents([AD_IMPRESSION], callback);
+      provider.onEvent(AD_IMPRESSION, callback, {});
       provider.offEvents([AD_IMPRESSION], callback);
       expect(offSpy.calledOnce).to.be.true;
       const eventName = offSpy.args[0][0];

@@ -30,7 +30,7 @@ describe('videojsProvider', function () {
     it('should trigger failure when videojs is missing', function () {
       const provider = VideojsProvider(config, null, adState, timeState, callbackStorage, utils);
       const setupFailed = sinon.spy();
-      provider.onEvents([SETUP_FAILED], setupFailed);
+      provider.onEvent(SETUP_FAILED, setupFailed, {});
       provider.init();
       expect(setupFailed.calledOnce).to.be.true;
       const payload = setupFailed.args[0][1];
@@ -40,7 +40,7 @@ describe('videojsProvider', function () {
     it('should trigger failure when videojs version is under min supported version', function () {
       const provider = VideojsProvider(config, {...videojs, VERSION: '0.0.0'}, adState, timeState, callbackStorage, utils);
       const setupFailed = sinon.spy();
-      provider.onEvents([SETUP_FAILED], setupFailed);
+      provider.onEvent(SETUP_FAILED, setupFailed, {});
       provider.init();
       expect(setupFailed.calledOnce).to.be.true;
       const payload = setupFailed.args[0][1];
@@ -51,7 +51,7 @@ describe('videojsProvider', function () {
       config.divId = 'fake-div'
       const provider = VideojsProvider(config, videojs, adState, timeState, callbackStorage, utils);
       const setupFailed = sinon.spy();
-      provider.onEvents([SETUP_FAILED], setupFailed);
+      provider.onEvent(SETUP_FAILED, setupFailed, {});
       provider.init();
       expect(setupFailed.calledOnce).to.be.true;
       const payload = setupFailed.args[0][1];
@@ -93,7 +93,7 @@ describe('videojsProvider', function () {
       config.divId = 'test-div'
       const provider = VideojsProvider(config, videojs, adState, timeState, callbackStorage, utils);
       const setupComplete = sinon.spy();
-      provider.onEvents([SETUP_COMPLETE], setupComplete);
+      provider.onEvent(SETUP_COMPLETE, setupComplete, {});
       provider.init();
       expect(setupComplete.called).to.be.true;
       videojs.getPlayer('test-div').dispose()

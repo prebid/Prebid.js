@@ -10,6 +10,7 @@ import {
 import { PLAYBACK_MODE } from '../libraries/video/constants/enums.js';
 import stateFactory from '../libraries/video/shared/state.js';
 import { JWPLAYER_VENDOR } from '../libraries/video/constants/vendorCodes.js';
+// import { getEventHandler } from '../libraries/video/shared/eventHandler.js';
 import { submodule } from '../src/hook.js';
 
 /**
@@ -172,112 +173,30 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
     player.playAd(adTagUrl || options.adXml, options);
   }
 
-  function onEvents(events, callback) {
-    for (let i = 0; i < events.length; i++) {
-      const type = events[i];
-      let payload = {
-        divId,
-        type
-      };
-
-      registerPreSetupListeners(type, callback, payload);
-      if (!player) {
-        return;
-      }
-
-      registerPostSetupListeners(type, callback, payload);
+  function onEvent(type, callback, payload) {
+    if (type === SETUP_COMPLETE) {
+      setupCompleteCallbacks.push(callback);
+    } else if (type === SETUP_FAILED) {
+      setupFailedCallbacks.push(callback);
     }
-  }
 
-  function offEvents(events, callback) {
-    events.forEach(event => {
-      const jwEvent = utils.getJwEvent(event);
-      if (!callback) {
-        player.off(jwEvent);
-        return;
-      }
-
-      const eventHandler = callbackStorage.getCallback(event, callback);
-      if (!eventHandler) {
-        // skip this iteration when event handler not found.
-        return;
-      }
-
-      player.off(jwEvent, eventHandler);
-    });
-  }
-
-  function destroy() {
     if (!player) {
       return;
     }
-    player.remove();
-    player = null;
-  }
 
-  return {
-    init,
-    getId,
-    getOrtbParams,
-    setAdTagUrl,
-    onEvents,
-    offEvents,
-    destroy
-  };
-
-  function setupPlayer(config) {
-    if (!config) {
-      return;
-    }
-    player.setup(utils.getJwConfig(config));
-  }
-
-  function getSetupCompletePayload() {
-    return {
-      divId,
-      playerVersion,
-      type: SETUP_COMPLETE,
-      viewable: player.getViewable(),
-      viewabilityPercentage: player.getPercentViewable() * 100,
-      mute: player.getMute(),
-      volumePercentage: player.getVolume()
-    };
-  }
-
-  function triggerSetupFailure(errorCode) {
-    if (!setupFailedCallbacks.length) {
-      return;
-    }
-
-    const payload = {
-      divId,
-      playerVersion,
-      type: SETUP_FAILED,
-      errorCode,
-      errorMessage: '',
-      sourceError: null
-    };
-
-    setupFailedCallbacks.forEach(callback => callback(SETUP_FAILED, payload));
-    setupFailedCallbacks = [];
-  }
-
-  function registerPreSetupListeners(type, callback, payload) {
     let eventHandler;
 
     switch (type) {
       case SETUP_COMPLETE:
-        setupCompleteCallbacks.push(callback);
         eventHandler = () => {
           payload = getSetupCompletePayload();
           callback(type, payload);
           setupCompleteCallbacks = [];
         };
-        player && player.on('ready', eventHandler);
+        player.on('ready', eventHandler);
         break;
 
       case SETUP_FAILED:
-        setupFailedCallbacks.push(callback);
         eventHandler = e => {
           Object.assign(payload, {
             playerVersion,
@@ -288,19 +207,9 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
           callback(type, payload);
           setupFailedCallbacks = [];
         };
-        player && player.on('setupError', eventHandler);
+        player.on('setupError', eventHandler);
         break;
 
-      default:
-        return;
-    }
-    callbackStorage.storeCallback(type, eventHandler, callback);
-  }
-
-  function registerPostSetupListeners(type, callback, payload) {
-    let eventHandler;
-
-    switch (type) {
       case DESTROYED:
         eventHandler = () => {
           callback(type, payload);
@@ -659,7 +568,80 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
       default:
         return;
     }
+
     callbackStorage.storeCallback(type, eventHandler, callback);
+  }
+
+  function offEvents(events, callback) {
+    events.forEach(event => {
+      const jwEvent = utils.getJwEvent(event);
+      if (!callback) {
+        player.off(jwEvent);
+        return;
+      }
+
+      const eventHandler = callbackStorage.getCallback(event, callback);
+      if (!eventHandler) {
+        return;
+      }
+
+      player.off(jwEvent, eventHandler);
+    });
+  }
+
+  function destroy() {
+    if (!player) {
+      return;
+    }
+    player.remove();
+    player = null;
+  }
+
+  return {
+    init,
+    getId,
+    getOrtbParams,
+    setAdTagUrl,
+    onEvent,
+    offEvents,
+    destroy
+  };
+
+  function setupPlayer(config) {
+    if (!config) {
+      return;
+    }
+    player.setup(utils.getJwConfig(config));
+  }
+
+  function getSetupCompletePayload() {
+    return {
+      divId,
+      playerVersion,
+      type: SETUP_COMPLETE,
+      viewable: player.getViewable(),
+      viewabilityPercentage: player.getPercentViewable() * 100,
+      mute: player.getMute(),
+      volumePercentage: player.getVolume()
+    };
+  }
+
+  function triggerSetupFailure(errorCode) {
+    if (!setupFailedCallbacks.length) {
+      return;
+    }
+
+    const payload = {
+      divId,
+      playerVersion,
+      type: SETUP_FAILED,
+      errorCode,
+      errorMessage: '',
+      sourceError: null
+    };
+
+    setupFailedCallbacks.forEach(callback => callback(SETUP_FAILED, payload));
+    setupFailedCallbacks = [];
   }
 }
 

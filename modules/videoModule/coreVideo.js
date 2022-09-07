@@ -150,7 +150,18 @@ export function VideoCore(parentModule_) {
     }
 
     const submodule = parentModule.getSubmodule(divId);
-    submodule && submodule.onEvents(events, callback);
+    if (!submodule) {
+      return;
+    }
+
+    for (let i = 0; i < events.length; i++) {
+      const type = events[i];
+      const basePayload = {
+        divId,
+        type
+      };
+      submodule.onEvent(type, callback, basePayload);
+    }
   }
 
   /**

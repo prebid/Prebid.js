@@ -195,25 +195,15 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
     player.ima.requestAds();
   }
 
-  // Should this function return some sort of signal
-  // to specify whether or not the callback was succesfully hooked?
-  function onEvents(events, callback) {
-    for (let i = 0; i < events.length; i++) {
-      const type = events[i];
-      const payload = {
-        divId,
-        type
-      };
+  function onEvent(type, callback, payload) {
+    registerPreSetupListeners(type, callback, payload);
 
-      registerPreSetupListeners(type, callback, payload);
-
-      if (!player) {
-        continue;
-      }
-      player.ready(() => {
-        registerPostSetupListeners(type, callback, payload);
-      });
+    if (!player) {
+      return;
     }
+    player.ready(() => {
+      registerPostSetupListeners(type, callback, payload);
+    });
   }
 
   function registerPreSetupListeners(type, callback, payload) {
@@ -566,7 +556,7 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
     getId,
     getOrtbParams,
     setAdTagUrl,
-    onEvents,
+    onEvent,
     offEvents,
     destroy
   };
