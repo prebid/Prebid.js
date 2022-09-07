@@ -147,6 +147,7 @@ function initCurrency(url) {
           try {
             currencyRates = JSON.parse(response);
             logInfo('currencyRates set to ' + JSON.stringify(currencyRates));
+            conversionCache = {};
             currencyRatesLoaded = true;
             processBidResponseQueue();
             ready.done();
