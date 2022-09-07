@@ -51,7 +51,7 @@
     "chai": "^4.2.0",
     "coveralls": "^3.1.0",
     "deep-equal": "^2.0.3",
-    "documentation": "^13.2.5",
+    "documentation": "^14.0.0",
     "es5-shim": "^4.5.14",
     "eslint": "^7.27.0",
     "eslint-config-standard": "^10.2.1",
