@@ -13,6 +13,7 @@ import {
 } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const { getConfig } = config;
 
@@ -73,6 +74,8 @@ export const spec = {
     return !!smartadId;
   },
   buildRequests: (validBidRequests, bidderRequest) => {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
     let app, site;
 
     const commonFpd = bidderRequest.ortb2 || {};
@@ -175,12 +178,9 @@ export const spec = {
       }).filter(Boolean);
 
       if (assets.length) {
-        const request = JSON.stringify({
-          ...bid.ortb2Imp,
-          assets
-        });
-
-        imp.native = { request, ver: 1.2 };
+        imp.native = {
+          assets,
+        };
       }
 
       const bannerParams = deepAccess(bid, 'mediaTypes.banner');
@@ -276,7 +276,7 @@ export const spec = {
             },
           };
 
-          if (mediaType === NATIVE) {
+          if (bidResponse.native) {
             result.native = parseNative(bidResponse);
           } else {
             result[mediaType === VIDEO ? 'vastXml' : 'ad'] = bidResponse.adm;
@@ -323,9 +323,7 @@ export const spec = {
     } else if (syncOptions.pixelEnabled) {
       return {
         type: 'image',
-        url: `https://${
-          endpoint.includes('dev') ? 'dev-' : ''
-        }data.dianomi.com/frontend/usync?${formatQS(params)}`,
+        url: `https://${endpoint.includes('dev') ? 'dev-' : ''}data.dianomi.com/frontend/usync?${formatQS(params)}`,
       };
     }
   },
@@ -334,8 +332,7 @@ export const spec = {
 registerBidder(spec);
 
 function parseNative(bid) {
-  const { assets, link, imptrackers, jstracker } = JSON.parse(bid.adm);
-
+  const { assets, link, imptrackers, jstracker } = bid.native;
   const result = {
     clickUrl: link.url,
     clickTrackers: link.clicktrackers || undefined,
