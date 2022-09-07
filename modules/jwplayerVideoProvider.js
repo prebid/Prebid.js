@@ -34,7 +34,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
   let pendingSeek = {};
   let supportedMediaTypes = null;
   let minimumSupportedPlayerVersion = '8.20.1';
-  let setupCompleteCallback = null;
+  let setupCompleteCallbacks = [];
   let setupFailedCallback = null;
   const MEDIA_TYPES = [
     VIDEO_MIME_TYPE.MP4,
@@ -61,7 +61,9 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
     if (player.getState() === undefined) {
       setupPlayer(playerConfig);
     } else {
-      setupCompleteCallback && setupCompleteCallback(SETUP_COMPLETE, getSetupCompletePayload());
+      const payload = getSetupCompletePayload();
+      setupCompleteCallbacks.forEach(callback => callback(SETUP_COMPLETE, payload));
+      setupCompleteCallbacks = [];
     }
   }
 
@@ -267,11 +269,11 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
 
     switch (type) {
       case SETUP_COMPLETE:
-        setupCompleteCallback = callback;
+        setupCompleteCallbacks.push(callback);
         eventHandler = () => {
           payload = getSetupCompletePayload();
           callback(type, payload);
-          setupCompleteCallback = null;
+          setupCompleteCallbacks = [];
         };
         player && player.on('ready', eventHandler);
         break;
