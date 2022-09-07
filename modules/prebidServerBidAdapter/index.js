@@ -725,6 +725,11 @@ const OPEN_RTB_PROTOCOL = {
         }
       }
 
+      const instl = deepAccess(adUnit.ortb2Imp, 'instl');
+      if (instl) {
+        imp.instl = instl;
+      }
+
       if (imp.banner || imp.video || imp.native) {
         imps.push(imp);
       }
