@@ -45,7 +45,7 @@ The DiscoveryDSP Bidding adapter requires setup before beginning. Please contact
             sizes: [[300, 250]],
           },
         },
-        // Replace this object to test a new Adapter!
+        // Replace this object to test a new adapter!
         bids: [
           {
             bidder: "discovery",
