@@ -88,7 +88,7 @@
 
         pbjs.addAdUnits(adUnits);
 
-        pbjs.onEvent('video_setupComplete', e => {
+        pbjs.onEvent('videoSetupComplete', e => {
           // Load media with its Metadata when the video player is done instantiating.
           videojs('player').loadMedia({
             id: 'XYXYXYXY',
@@ -99,11 +99,11 @@
           });
         });
 
-        pbjs.onEvent('video_setupFailed', e => {
+        pbjs.onEvent('videoSetupFailed', e => {
           console.log('player setup failed: ', e);
         });
 
-        pbjs.onEvent('video_contentLoaded', (e) => {
+        pbjs.onEvent('videoContentLoaded', (e) => {
           // reset the offset when media is loaded
           midrollOffset = 0;
         });
@@ -116,7 +116,7 @@
           }
         });
 
-        pbjs.onEvent('video_adError', e => {
+        pbjs.onEvent('videoAdError', e => {
           console.log('adError: ', e);
         });
       });

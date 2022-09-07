@@ -86,7 +86,7 @@
       });
       pbjs.addAdUnits(adUnits);
 
-      pbjs.onEvent('video_setupComplete', e => {
+      pbjs.onEvent('videoSetupComplete', e => {
         const player = videojs('player');
         // Load the playlist items with their metadata when the video player is done instantiating.
         player.playlist([{
@@ -118,21 +118,21 @@
         player.playlist.autoadvance(0);
       });
 
-      pbjs.onEvent('video_setupFailed', e => {
+      pbjs.onEvent('videoSetupFailed', e => {
         console.log('player setup failed: ', e);
       });
 
-      pbjs.onEvent('video_playlist', (e) => {
+      pbjs.onEvent('videoPlaylist', (e) => {
         console.log('videos pb playlist: ', e);
       });
 
       // request a bid when media is loaded
-      pbjs.onEvent('video_contentLoaded', (e) => {
+      pbjs.onEvent('videoContentLoaded', (e) => {
         console.log('videos pb contentLoaded: ', e);
         pbjs.requestBids(adUnits);
       });
 
-      pbjs.onEvent('video_complete', (e) => {
+      pbjs.onEvent('videoComplete', (e) => {
         console.log('videos pb complete: ', e);
       });
     });

@@ -86,27 +86,27 @@
 
         pbjs.addAdUnits(adUnits);
 
-        pbjs.onEvent('video_setupComplete', (e) => {
+        pbjs.onEvent('videoSetupComplete', (e) => {
           console.log('player setup complete: ', e);
         });
 
-        pbjs.onEvent('video_setupFailed', e => {
+        pbjs.onEvent('videoSetupFailed', e => {
           console.log('player setup failed: ', e);
         });
 
-        pbjs.onEvent('video_playbackRequest', (e) => {
+        pbjs.onEvent('videoPlaybackRequest', (e) => {
           pbjs.requestBids(adUnits);
         });
 
-        pbjs.onEvent('video_adRequest', (e) => {
+        pbjs.onEvent('videoAdRequest', (e) => {
           console.log('videos pb ad request: ', e);
         });
 
-        pbjs.onEvent('video_bidError', e => {
+        pbjs.onEvent('videoBidError', e => {
           console.log('An Ad Error came from a Bid: ', e);
         });
 
-        pbjs.onEvent('video_bidImpression', e => {
+        pbjs.onEvent('videoBidImpression', e => {
           console.log('An Ad Impression came from a Bid: ', e);
         });
       });

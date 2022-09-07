@@ -111,7 +111,7 @@ describe('Prebid Video', function () {
         const expectedPayload = {'test': 'data'};
         eventHandler(expectedType, expectedPayload);
         expect(pbEventsMock.emit.calledOnce).to.be.true;
-        expect(pbEventsMock.emit.getCall(0).args[0]).to.be.equal('video_' + expectedType);
+        expect(pbEventsMock.emit.getCall(0).args[0]).to.be.equal('video' + expectedType.replace(/^./, expectedType[0].toUpperCase()));
         expect(pbEventsMock.emit.getCall(0).args[1]).to.be.equal(expectedPayload);
       });
     });
@@ -297,9 +297,9 @@ describe('Prebid Video', function () {
       on: (event, callback) => {
         if (event === CONSTANTS.EVENTS.BID_ADJUSTMENT) {
           bidAdjustmentCb = callback;
-        } else if (event === 'video_' + AD_IMPRESSION) {
+        } else if (event === 'videoAdImpression') {
           adImpressionCb = callback;
-        } else if (event === 'video_' + AD_ERROR) {
+        } else if (event === 'videoAdError') {
           adErrorCb = callback;
         }
       },
@@ -320,7 +320,7 @@ describe('Prebid Video', function () {
       adImpressionCb(expectedAdEventPayload);
 
       expect(pbEvents.emit.calledOnce).to.be.true;
-      expect(pbEvents.emit.getCall(0).args[0]).to.be.equal('video_' + BID_IMPRESSION);
+      expect(pbEvents.emit.getCall(0).args[0]).to.be.equal('videoBidImpression');
       const payload = pbEvents.emit.getCall(0).args[1];
       expect(payload.bid).to.be.equal(expectedBid);
       expect(payload.adEvent).to.be.equal(expectedAdEventPayload);
@@ -335,7 +335,7 @@ describe('Prebid Video', function () {
       adErrorCb(expectedAdEventPayload);
 
       expect(pbEvents.emit.calledOnce).to.be.true;
-      expect(pbEvents.emit.getCall(0).args[0]).to.be.equal('video_' + BID_ERROR);
+      expect(pbEvents.emit.getCall(0).args[0]).to.be.equal('videoBidError');
       const payload = pbEvents.emit.getCall(0).args[1];
       expect(payload.bid).to.be.equal(expectedBid);
       expect(payload.adEvent).to.be.equal(expectedAdEventPayload);
