@@ -5,6 +5,7 @@ import {BANNER, VIDEO} from 'src/mediaTypes.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 // load modules that register ORTB processors
+import 'src/prebid.js'
 import 'modules/currency.js';
 import 'modules/userId/index.js';
 import 'modules/multibid/index.js';
@@ -215,7 +216,12 @@ describe('OpenxRtbAdapter', function () {
         bidId: 'test-bid-id-1',
         bidderRequestId: 'test-bid-request-1',
         auctionId: 'test-auction-1',
-        transactionId: 'test-transactionId-1'
+        transactionId: 'test-transactionId-1',
+        ortb2Imp: {
+          ext: {
+            ae: 2
+          }
+        }
       }, {
         bidder: 'openx',
         params: {
@@ -393,14 +399,16 @@ describe('OpenxRtbAdapter', function () {
         });
 
         it('ortb2.site should be merged in the request', function() {
-          const ortb2 = {
-            site: {
-              domain: 'page.example.com',
-              cat: ['IAB2'],
-              sectioncat: ['IAB2-2']
+          const request = spec.buildRequests(bidRequests, {
+            ...mockBidderRequest,
+            'ortb2': {
+              site: {
+                domain: 'page.example.com',
+                cat: ['IAB2'],
+                sectioncat: ['IAB2-2']
+              }
             }
-          };
-          const request = spec.buildRequests(bidRequests, {refererInfo: {}, ortb2: ortb2});
+          });
           let data = request[0].data;
           expect(data.site.domain).to.equal('page.example.com');
           expect(data.site.cat).to.deep.equal(['IAB2']);
@@ -408,12 +416,14 @@ describe('OpenxRtbAdapter', function () {
         });
 
         it('ortb2.user should be merged in the request', function() {
-          const ortb2 = {
-            user: {
-              yob: 1985
+          const request = spec.buildRequests(bidRequests, {
+            ...mockBidderRequest,
+            'ortb2': {
+              user: {
+                yob: 1985
+              }
             }
-          };
-          const request = spec.buildRequests(bidRequests, {refererInfo: {}, ortb2: ortb2});
+          });
           let data = request[0].data;
           expect(data.user.yob).to.equal(1985);
         });
@@ -607,10 +617,6 @@ describe('OpenxRtbAdapter', function () {
           }];
         });
 
-        afterEach(function () {
-          config.getConfig.restore();
-        });
-
         describe('us_privacy', function () {
           beforeEach(function () {
             bidderRequest = {
@@ -621,6 +627,10 @@ describe('OpenxRtbAdapter', function () {
             sinon.stub(config, 'getConfig').callsFake((key) => {
               return utils.deepAccess(mockConfig, key);
             });
+          });
+
+          afterEach(function () {
+            config.getConfig.restore();
           });
 
           it('should send a signal to specify that US Privacy applies to this request', function () {
@@ -658,6 +668,10 @@ describe('OpenxRtbAdapter', function () {
             sinon.stub(config, 'getConfig').callsFake((key) => {
               return utils.deepAccess(mockConfig, key);
             });
+          });
+
+          afterEach(function () {
+            config.getConfig.restore();
           });
 
           it('should send a signal to specify that GDPR applies to this request', function () {
@@ -726,8 +740,10 @@ describe('OpenxRtbAdapter', function () {
 
           const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
           expect(request[0].data.regs.coppa).to.equal(1);
+        });
 
-          config.getConfig.restore();
+        after(function () {
+          config.getConfig.restore()
         });
       });
 
@@ -896,6 +912,27 @@ describe('OpenxRtbAdapter', function () {
         it(`when no user ids are available, it should not send any extended ids`, function () {
           const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
           expect(request[0].data).to.not.have.any.keys('user');
+        });
+      });
+
+      context('FLEDGE', function() {
+        it('when FLEDGE is disabled, should not send imp.ext.ae', function () {
+          const request = spec.buildRequests(
+            bidRequestsWithMediaTypes,
+            {
+              ...mockBidderRequest,
+              fledgeEnabled: false
+            }
+          );
+          expect(request[0].data.imp[0].ext).to.not.have.property('ae');
+        });
+
+        it('when FLEDGE is enabled, should send whatever is set in ortb2imp.ext.ae in all bid requests', function () {
+          const request = spec.buildRequests(bidRequestsWithMediaTypes, {
+            ...mockBidderRequest,
+            fledgeEnabled: true
+          });
+          expect(request[0].data.imp[0].ext.ae).to.equal(2);
         });
       });
     });
@@ -1250,6 +1287,84 @@ describe('OpenxRtbAdapter', function () {
         bid = spec.interpretResponse({body: bidResponse}, bidRequest)[0];
 
         expect(bid.vastUrl).to.equal(winUrl);
+      });
+    });
+
+    context('when the response contains FLEDGE interest groups config', function() {
+      let response;
+
+      beforeEach(function () {
+        sinon.stub(config, 'getConfig')
+          .withArgs('fledgeEnabled')
+          .returns(true);
+
+        bidRequestConfigs = [{
+          bidder: 'openx',
+          params: {
+            unit: '12345678',
+            delDomain: 'test-del-domain'
+          },
+          adUnitCode: 'adunit-code',
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250], [300, 600]],
+            },
+          },
+          bidId: 'test-bid-id',
+          bidderRequestId: 'test-bidder-request-id',
+          auctionId: 'test-auction-id'
+        }];
+
+        bidRequest = spec.buildRequests(bidRequestConfigs, {refererInfo: {}})[0];
+
+        bidResponse = {
+          seatbid: [{
+            bid: [{
+              impid: 'test-bid-id',
+              price: 2,
+              w: 300,
+              h: 250,
+              crid: 'test-creative-id',
+              dealid: 'test-deal-id',
+              adm: 'test-ad-markup'
+            }]
+          }],
+          cur: 'AUS',
+          ext: {
+            fledge_auction_configs: {
+              'test-bid-id': {
+                seller: 'codinginadtech.com',
+                interestGroupBuyers: ['somedomain.com'],
+                sellerTimeout: 0,
+                perBuyerSignals: {
+                  'somedomain.com': {
+                    base_bid_micros: 0.1,
+                    disallowed_advertiser_ids: [
+                      '1234',
+                      '2345'
+                    ],
+                    multiplier: 1.3,
+                    use_bid_multiplier: true,
+                    win_reporting_id: '1234567asdf'
+                  }
+                }
+              }
+            }
+          }
+        };
+
+        response = spec.interpretResponse({body: bidResponse}, bidRequest);
+      });
+
+      afterEach(function () {
+        config.getConfig.restore();
+      });
+
+      it('should return FLEDGE auction_configs alongside bids', function () {
+        expect(response).to.have.property('bids');
+        expect(response).to.have.property('fledgeAuctionConfigs');
+        expect(response.fledgeAuctionConfigs.length).to.equal(1);
+        expect(response.fledgeAuctionConfigs[0].bidId).to.equal('test-bid-id');
       });
     });
   });

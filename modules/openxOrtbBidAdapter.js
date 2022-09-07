@@ -1,3 +1,4 @@
+import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import * as utils from '../src/utils.js';
 import {mergeDeep} from '../src/utils.js';
@@ -31,6 +32,10 @@ const converter = ortbConverter({
     if (bidRequest.mediaTypes[VIDEO]?.context === 'outstream') {
       imp.video.placement = imp.video.placement || 4;
     }
+    if (imp.ext?.ae && !context.bidderRequest.fledgeEnabled) {
+      // TODO: we may want to standardize this and move fledge logic to ortbConverter
+      delete imp.ext.ae;
+    }
     mergeDeep(imp, {
       tagid: bidRequest.params.unit,
       ext: {
@@ -63,6 +68,9 @@ const converter = ortbConverter({
     if (bid.params.delDomain) {
       utils.deepSetValue(req, 'ext.delDomain', bid.params.delDomain);
     }
+    if (bid.params.response_template_name) {
+      utils.deepSetValue(req, 'ext.response_template_name', bid.params.response_template_name);
+    }
     if (bid.params.test) {
       req.test = 1
     }
@@ -93,7 +101,23 @@ const converter = ortbConverter({
         utils.deepSetValue(ortbResponse, 'ext.platform', ortbRequest.ext.platform);
       }
     }
-    return buildResponse(bidResponses, ortbResponse, context);
+    const response = buildResponse(bidResponses, ortbResponse, context);
+    // TODO: we may want to standardize this and move fledge logic to ortbConverter
+    let fledgeAuctionConfigs = utils.deepAccess(ortbResponse, 'ext.fledge_auction_configs');
+    if (fledgeAuctionConfigs) {
+      fledgeAuctionConfigs = Object.entries(fledgeAuctionConfigs).map(([bidId, cfg]) => {
+        return Object.assign({
+          bidId,
+          auctionSignals: {}
+        }, cfg);
+      });
+      return {
+        bids: response.bids,
+        fledgeAuctionConfigs,
+      }
+    } else {
+      return response.bids
+    }
   },
   overrides: {
     imp: {
@@ -143,7 +167,7 @@ function buildRequests(bids, bidderRequest) {
 function createRequest(bidRequests, bidderRequest, mediaType) {
   return {
     method: 'POST',
-    url: REQUEST_URL,
+    url: config.getConfig('openxOrtbUrl') || REQUEST_URL,
     data: converter.toORTB({bidRequests, bidderRequest, context: {mediaType}})
   }
 }
@@ -160,7 +184,7 @@ function interpretResponse(resp, req) {
   if (!resp.body) {
     resp.body = {nbr: 0};
   }
-  return converter.fromORTB({request: req.data, response: resp.body}).bids;
+  return converter.fromORTB({request: req.data, response: resp.body});
 }
 
 /**
