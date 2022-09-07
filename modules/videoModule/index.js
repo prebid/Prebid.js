@@ -5,23 +5,31 @@ import { mergeDeep } from '../../src/utils.js';
 import { getGlobal } from '../../src/prebidGlobal.js';
 import CONSTANTS from '../../src/constants.json';
 import {
-  videoEvents, AUCTION_AD_LOAD_ATTEMPT, AD_IMPRESSION, AD_ERROR, BID_IMPRESSION, BID_ERROR, AUCTION_AD_LOAD_ABORT
+  videoEvents,
+  AUCTION_AD_LOAD_ATTEMPT,
+  AD_IMPRESSION,
+  AD_ERROR,
+  BID_IMPRESSION,
+  BID_ERROR,
+  AUCTION_AD_LOAD_ABORT,
+  AUCTION_AD_LOAD_QUEUED
 } from '../../libraries/video/constants/events.js'
 import { PLACEMENT } from '../../libraries/video/constants/ortb.js';
 import { videoCoreFactory } from './coreVideo.js';
 import { gamSubmoduleFactory } from './gamAdServerSubmodule.js';
 import { videoImpressionVerifierFactory } from './videoImpressionVerifier.js';
+import { AdQueueCoordinator } from './adQueue'
 
 const videoKey = 'video';
 
 const allVideoEvents = Object.keys(videoEvents).map(eventKey => videoEvents[eventKey]);
-events.addEvents(allVideoEvents.concat([AUCTION_AD_LOAD_ATTEMPT, AUCTION_AD_LOAD_ABORT, BID_IMPRESSION, BID_ERROR]).map(getExternalVideoEventName));
+events.addEvents(allVideoEvents.concat([AUCTION_AD_LOAD_ATTEMPT, AUCTION_AD_LOAD_QUEUED, AUCTION_AD_LOAD_ABORT, BID_IMPRESSION, BID_ERROR]).map(getExternalVideoEventName));
 
 /**
  * This module adds User Video support to prebid.js
  * @module modules/videoModule
  */
-export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvents_, gamAdServerFactory_, videoImpressionVerifierFactory_) {
+export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvents_, gamAdServerFactory_, videoImpressionVerifierFactory_, adQueueCoordinator_) {
   const videoCore = videoCore_;
   const getConfig = getConfig_;
   const pbGlobal = pbGlobal_;
@@ -29,6 +37,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
   const pbEvents = pbEvents_;
   const videoEvents = videoEvents_;
   const gamAdServerFactory = gamAdServerFactory_;
+  const adQueueCoordinator = adQueueCoordinator_;
   let gamSubmodule;
   let mainContentDivId;
   let contentEnrichmentEnabled = true;
@@ -40,10 +49,12 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     videoImpressionVerifier = videoImpressionVerifierFactory(!!cache);
     getConfig(videoKey, ({ video }) => {
       video.providers.forEach(provider => {
+        const divId = provider.divId;
         videoCore.registerProvider(provider);
+        adQueueCoordinator.registerProvider(divId)
         videoCore.onEvents(videoEvents, (type, payload) => {
           pbEvents.emit(getExternalVideoEventName(type), payload);
-        }, provider.divId);
+        }, divId);
 
         const adServerConfig = provider.adServer;
         if (!gamSubmodule && adServerConfig) {
@@ -200,6 +211,13 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
   // options: adXml, winner, adUnitCode,
   function loadAdTag(adTagUrl, divId, options) {
     const payload = Object.assign({ adTagUrl }, options);
+
+    if (adQueueCoordinator.requiresQueueing(divId)) {
+      adQueueCoordinator.queueAd(adTagUrl, divId, options);
+      pbEvents.emit(getExternalVideoEventName(AUCTION_AD_LOAD_QUEUED), payload);
+      return;
+    }
+
     pbEvents.emit(getExternalVideoEventName(AUCTION_AD_LOAD_ATTEMPT), payload);
     videoCore.setAdTagUrl(adTagUrl, divId, options);
   }
@@ -230,8 +248,9 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
 
 export function pbVideoFactory() {
   const videoCore = videoCoreFactory();
+  const adQueueCoordinator = AdQueueCoordinator(videoCore);
   const pbGlobal = getGlobal();
-  const pbVideo = PbVideo(videoCore, config.getConfig, pbGlobal, events, allVideoEvents, gamSubmoduleFactory, videoImpressionVerifierFactory);
+  const pbVideo = PbVideo(videoCore, config.getConfig, pbGlobal, events, allVideoEvents, gamSubmoduleFactory, videoImpressionVerifierFactory, adQueueCoordinator);
   pbVideo.init();
   pbGlobal.videoModule = pbVideo;
   return pbVideo;
