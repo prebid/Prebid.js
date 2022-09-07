@@ -80,23 +80,5 @@
       "jwplayerVideoProvider",
       "videojsVideoProvider"
     ]
-  },
-  "libraries": {
-    "getOrigin": {
-      "files": [
-        "./index.js"
-      ],
-      "dependants": [
-        "ooloAnalyticsAdapter",
-        "resetdigitalBidAdapter",
-        "rtbhouseBidAdapter.js"
-      ]
-    },
-    "video": {
-      "files": [ "./index.js" ],
-      "dependants": [
-        "videoModule"
-      ]
-    }
   }
 }
