@@ -119,7 +119,7 @@ function formatTargetingData(adUnit) {
   return renameKeyValues(result);
 }
 
-function constructQueryString(anId, adUnits) {
+function constructQueryString(anId, adUnits, pageUrl) {
   let queries = [];
   queries.push(['anId', anId]);
 
@@ -130,7 +130,7 @@ function constructQueryString(anId, adUnits) {
 
   queries.push(['wr', stringifyWindowSize()]);
   queries.push(['sr', stringifyScreenSize()]);
-  queries.push(['url', encodeURIComponent(window.location.href)]);
+  queries.push(['url', encodeURIComponent(pageUrl)]);
 
   return encodeURI(queries.map(qs => qs.join('=')).join('&'));
 }
@@ -180,7 +180,9 @@ export function getApiCallback() {
 function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
   const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
   const { pubId } = config.params;
-  const queryString = constructQueryString(pubId, adUnits);
+  let { pageUrl } = config.params
+  pageUrl = pageUrl || document.location.href
+  const queryString = constructQueryString(pubId, adUnits, pageUrl);
   ajax(
     `${IAS_HOST}?${queryString}`,
     getApiCallback(),

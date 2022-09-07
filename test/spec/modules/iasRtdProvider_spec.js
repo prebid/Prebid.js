@@ -136,7 +136,8 @@ const config = {
     pubId: 1234,
     keyMappings: {
       'id': 'ias_id'
-    }
+    },
+    pageUrl: 'https://integralads.com/'
   }
 };
 
