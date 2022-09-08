@@ -428,12 +428,12 @@ describe('yieldoneBidAdapter', function() {
         const bidRequests = [
           {
             params: {placementId: '0'},
-            userId: {dacId: {id: 'dacId_sample'}},
+            userId: {fuuid: 'fuuid_sample', dacId: 'dacId_sample'},
           },
         ];
         const request = spec.buildRequests(bidRequests, bidderRequest);
+        expect(request[0].data.fuuid).to.equal('fuuid_sample');
         expect(request[0].data.dac_id).to.equal('dacId_sample');
-        expect(request[0].data.fuuid).to.equal('dacId_sample');
       });
     });
 
