@@ -354,10 +354,10 @@ describe('FeedAdAdapter', function () {
   });
 
   describe('getUserSyncs', function () {
-    const pixelSync1 = {type: "image", url: "the pixel url 1"};
-    const pixelSync2 = {type: "image", url: "the pixel url 2"};
-    const iFrameSync1 = {type: "iframe", url: "the iFrame url 1"};
-    const iFrameSync2 = {type: "iframe", url: "the iFrame url 2"};
+    const pixelSync1 = {type: 'image', url: 'the pixel url 1'};
+    const pixelSync2 = {type: 'image', url: 'the pixel url 2'};
+    const iFrameSync1 = {type: 'iframe', url: 'the iFrame url 1'};
+    const iFrameSync2 = {type: 'iframe', url: 'the iFrame url 2'};
 
     it('should pass through the syncs out of the extension fields of the server response', function () {
       const serverResponse = [{
@@ -381,7 +381,7 @@ describe('FeedAdAdapter', function () {
           pixels: [pixelSync1],
           iframes: [iFrameSync2],
         },
-        ad: "ad html",
+        ad: 'ad html',
         cpm: 100
       }, {
         ext: {

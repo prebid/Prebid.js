@@ -236,12 +236,12 @@ function interpretResponse(serverResponse, request) {
   if (!isArray(response)) {
     return [];
   }
-  return response.filter(bid => Object.prototype.hasOwnProperty.call(bid, "ad"))
-                 .map(bid => {
-                   const copy = Object.assign({}, bid);
-                   delete copy.ext;
-                   return copy;
-                 });
+  return response.filter(bid => Object.prototype.hasOwnProperty.call(bid, 'ad'))
+    .map(bid => {
+      const copy = Object.assign({}, bid);
+      delete copy.ext;
+      return copy;
+    });
 }
 
 /**
@@ -300,19 +300,19 @@ function trackingHandlerFactory(klass) {
  */
 function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
   return serverResponses.map(response => response.ext)
-                        .flatMap(extension => {
-                          // extract user syncs from extension
-                          const pixels = syncOptions.pixelEnabled && extension.pixels ? extension.pixels : [];
-                          const iframes = syncOptions.iframeEnabled && extension.iframes ? extension.iframes : [];
-                          return pixels.concat(...iframes);
-                        })
-                        .reduce((syncs, sync) => {
-                          // remove duplicates
-                          if (!syncs.find(it => it.type === sync.type && it.url === sync.url)) {
-                            syncs.push(sync);
-                          }
-                          return syncs;
-                        }, []);
+    .flatMap(extension => {
+      // extract user syncs from extension
+      const pixels = syncOptions.pixelEnabled && extension.pixels ? extension.pixels : [];
+      const iframes = syncOptions.iframeEnabled && extension.iframes ? extension.iframes : [];
+      return pixels.concat(...iframes);
+    })
+    .reduce((syncs, sync) => {
+      // remove duplicates
+      if (!syncs.find(it => it.type === sync.type && it.url === sync.url)) {
+        syncs.push(sync);
+      }
+      return syncs;
+    }, []);
 }
 
 /**
