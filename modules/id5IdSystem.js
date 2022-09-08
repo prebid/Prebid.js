@@ -28,7 +28,7 @@ export const ID5_STORAGE_NAME = 'id5id';
 export const ID5_PRIVACY_STORAGE_NAME = `${ID5_STORAGE_NAME}_privacy`;
 const LOCAL_STORAGE = 'html5';
 const LOG_PREFIX = 'User ID - ID5 submodule: ';
-const ID5_API_CONFIG_URL = 'https://id5-sync.com/api/config/prebid'
+const ID5_API_CONFIG_URL = 'https://id5-sync.com/api/config/prebid';
 
 // order the legacy cookie names in reverse priority order so the last
 // cookie in the array is the most preferred to use
@@ -277,7 +277,7 @@ class IdFetchFlow {
         enabled: true, control_group_pct: abTestingConfig.controlGroupPct // The server validates
       };
     }
-    return data
+    return data;
   }
 }
 

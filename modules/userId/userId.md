@@ -151,7 +151,7 @@ pbjs.setConfig({
                   },
         {
              name: "dacId"
-        }, 
+        },
         {
             name: "gravitompId"
         }
