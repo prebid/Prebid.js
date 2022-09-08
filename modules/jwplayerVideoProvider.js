@@ -10,7 +10,7 @@ import {
 import { PLAYBACK_MODE } from '../libraries/video/constants/enums.js';
 import stateFactory from '../libraries/video/shared/state.js';
 import { JWPLAYER_VENDOR } from '../libraries/video/constants/vendorCodes.js';
-// import { getEventHandler } from '../libraries/video/shared/eventHandler.js';
+import { getEventHandler } from '../libraries/video/shared/eventHandler.js';
 import { submodule } from '../src/hook.js';
 
 /**
@@ -173,7 +173,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
     player.playAd(adTagUrl || options.adXml, options);
   }
 
-  function onEvent(type, callback, payload) {
+  function onEvent(type, callback, basePayload) {
     if (type === SETUP_COMPLETE) {
       setupCompleteCallbacks.push(callback);
     } else if (type === SETUP_FAILED) {
@@ -184,136 +184,102 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
       return;
     }
 
-    let eventHandler;
+    let getEventPayload;
+    let jwplayerType = type;
 
     switch (type) {
       case SETUP_COMPLETE:
-        eventHandler = () => {
-          payload = getSetupCompletePayload();
-          callback(type, payload);
+        jwplayerType = 'ready';
+        getEventPayload = () => {
           setupCompleteCallbacks = [];
+          return getSetupCompletePayload();
         };
-        player.on('ready', eventHandler);
         break;
 
       case SETUP_FAILED:
-        eventHandler = e => {
-          Object.assign(payload, {
+        getEventPayload = e => {
+          setupFailedCallbacks = [];
+          return {
             playerVersion,
             errorCode: e.code,
             errorMessage: e.message,
             sourceError: e.sourceError
-          });
-          callback(type, payload);
-          setupFailedCallbacks = [];
+          };
         };
-        player.on('setupError', eventHandler);
+        jwplayerType = 'setupError';
         break;
 
       case DESTROYED:
-        eventHandler = () => {
-          callback(type, payload);
-        };
-        player.on('remove', eventHandler);
+        jwplayerType = 'remove';
         break;
 
       case AD_REQUEST:
-        eventHandler = e => {
-          payload.adTagUrl = e.tag;
-          callback(type, payload);
-        };
-        player.on(AD_REQUEST, eventHandler);
+        getEventPayload = e => ({ adTagUrl: e.tag });
         break;
 
       case AD_BREAK_START:
-        eventHandler = e => {
+        getEventPayload = e => {
           timeState.clearState();
-          payload.offset = e.adPosition;
-          callback(type, payload);
+          return { offset: e.adPosition };
         };
-        player.on(AD_BREAK_START, eventHandler);
         break;
 
       case AD_LOADED:
-        eventHandler = e => {
+        getEventPayload = e => {
           adState.updateForEvent(e);
           const adConfig = player.getConfig().advertising;
           adState.updateState(utils.getSkipParams(adConfig));
-          Object.assign(payload, adState.getState());
-          callback(type, payload);
+          return adState.getState();
         };
-        player.on(AD_LOADED, eventHandler);
         break;
 
       case AD_STARTED:
-        eventHandler = () => {
-          Object.assign(payload, adState.getState());
-          callback(type, payload);
-        };
         // JW Player adImpression fires when the ad starts, regardless of viewability.
-        player.on(AD_IMPRESSION, eventHandler);
+        jwplayerType = AD_IMPRESSION;
+        getEventPayload = () => adState.getState();
         break;
 
       case AD_IMPRESSION:
-        eventHandler = () => {
-          Object.assign(payload, adState.getState(), timeState.getState());
-          callback(type, payload);
-        };
-        player.on('adViewableImpression', eventHandler);
+        jwplayerType = 'adViewableImpression';
+        getEventPayload = () => Object.assign({}, adState.getState(), timeState.getState());
         break;
 
       case AD_PLAY:
-        eventHandler = e => {
-          payload.adTagUrl = e.tag;
-          callback(type, payload);
-        };
-        player.on(AD_PLAY, eventHandler);
+        getEventPayload = e => ({ adTagUrl: e.tag });
         break;
 
       case AD_TIME:
-        eventHandler = e => {
+        getEventPayload = e => {
           timeState.updateForEvent(e);
-          Object.assign(payload, {
+          return {
             adTagUrl: e.tag,
             time: e.position,
             duration: e.duration,
-          });
-          callback(type, payload);
+          };
         };
-        player.on(AD_TIME, eventHandler);
         break;
 
       case AD_PAUSE:
-        eventHandler = e => {
-          payload.adTagUrl = e.tag;
-          callback(type, payload);
-        };
-        player.on(AD_PAUSE, eventHandler);
+        getEventPayload = e => ({ adTagUrl: e.tag });
         break;
 
       case AD_CLICK:
-        eventHandler = () => {
-          Object.assign(payload, adState.getState(), timeState.getState());
-          callback(type, payload);
-        };
-        player.on(AD_CLICK, eventHandler);
+        getEventPayload = () => Object.assign({}, adState.getState(), timeState.getState());
         break;
 
       case AD_SKIPPED:
-        eventHandler = e => {
-          Object.assign(payload, {
+        getEventPayload = e => {
+          adState.clearState();
+          return {
             time: e.position,
             duration: e.duration,
-          });
-          callback(type, payload);
-          adState.clearState();
+          };
         };
-        player.on(AD_SKIPPED, eventHandler);
         break;
 
       case AD_ERROR:
-        eventHandler = e => {
-          Object.assign(payload, {
+        getEventPayload = e => {
+          const extraPayload = Object.assign({
             playerErrorCode: e.adErrorCode,
             vastErrorCode: e.code,
             errorMessage: e.message,
@@ -321,254 +287,185 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
             // timeout
           }, adState.getState(), timeState.getState());
           adState.clearState();
-          callback(type, payload);
+          return extraPayload;
         };
-        player.on(AD_ERROR, eventHandler);
         break;
 
       case AD_COMPLETE:
-        eventHandler = e => {
-          payload.adTagUrl = e.tag;
-          callback(type, payload);
+        getEventPayload = e => {
           adState.clearState();
+          return { adTagUrl: e.tag };
         };
-        player.on(AD_COMPLETE, eventHandler);
         break;
 
       case AD_BREAK_END:
-        eventHandler = e => {
-          payload.offset = e.adPosition;
-          callback(type, payload);
-        };
-        player.on(AD_BREAK_END, eventHandler);
+        getEventPayload = e => ({ offset: e.adPosition });
         break;
 
       case PLAYLIST:
-        eventHandler = e => {
+        getEventPayload = e => {
           const playlistItemCount = e.playlist.length;
-          Object.assign(payload, {
+          return {
             playlistItemCount,
             autostart: player.getConfig().autostart
-          });
-          callback(type, payload);
+          };
         };
-        player.on(PLAYLIST, eventHandler);
         break;
 
       case PLAYBACK_REQUEST:
-        eventHandler = e => {
-          payload.playReason = e.playReason;
-          callback(type, payload);
-        };
-        player.on('playAttempt', eventHandler);
+        getEventPayload = e => ({ playReason: e.playReason });
+        jwplayerType = 'playAttempt';
         break;
 
       case AUTOSTART_BLOCKED:
-        eventHandler = e => {
-          Object.assign(payload, {
-            sourceError: e.error,
-            errorCode: e.code,
-            errorMessage: e.message
-          });
-          callback(type, payload);
-        };
-        player.on('autostartNotAllowed', eventHandler);
+        getEventPayload = e => ({
+          sourceError: e.error,
+          errorCode: e.code,
+          errorMessage: e.message
+        });
+        jwplayerType = 'autostartNotAllowed';
         break;
 
       case PLAY_ATTEMPT_FAILED:
-        eventHandler = e => {
-          Object.assign(payload, {
-            playReason: e.playReason,
-            sourceError: e.sourceError,
-            errorCode: e.code,
-            errorMessage: e.message
-          });
-          callback(type, payload);
-        };
-        player.on(PLAY_ATTEMPT_FAILED, eventHandler);
+        getEventPayload = e => ({
+          playReason: e.playReason,
+          sourceError: e.sourceError,
+          errorCode: e.code,
+          errorMessage: e.message
+        });
         break;
 
       case CONTENT_LOADED:
-        eventHandler = e => {
+        getEventPayload = e => {
           const { item, index } = e;
-          Object.assign(payload, {
+          return {
             contentId: item.mediaid,
             contentUrl: item.file, // cover other sources ? util ?
             title: item.title,
             description: item.description,
             playlistIndex: index,
             contentTags: item.tags
-          });
-          callback(type, payload);
+          };
         };
-        player.on('playlistItem', eventHandler);
+        jwplayerType = 'playlistItem';
         break;
 
       case PLAY:
-        eventHandler = () => {
-          callback(type, payload);
-        };
-        player.on(PLAY, eventHandler);
         break;
 
       case PAUSE:
-        eventHandler = () => {
-          callback(type, payload);
-        };
-        player.on(PAUSE, eventHandler);
         break;
 
       case BUFFER:
-        eventHandler = () => {
-          Object.assign(payload, timeState.getState());
-          callback(type, payload);
-        };
-        player.on(BUFFER, eventHandler);
+        getEventPayload = () => timeState.getState();
         break;
 
       case TIME:
-        eventHandler = e => {
+        getEventPayload = e => {
           timeState.updateForEvent(e);
-          Object.assign(payload, {
+          return {
             position: e.position,
             duration: e.duration
-          });
-          callback(type, payload);
+          };
         };
-        player.on(TIME, eventHandler);
         break;
 
       case SEEK_START:
-        eventHandler = e => {
+        getEventPayload = e => {
           const duration = e.duration;
           const offset = e.offset;
           pendingSeek = {
             duration,
             offset
           };
-          Object.assign(payload, {
+          return {
             position: e.position,
             destination: offset,
             duration: duration
-          });
-          callback(type, payload);
+          };
         }
-        player.on('seek', eventHandler);
+        jwplayerType = 'seek';
         break;
 
       case SEEK_END:
-        eventHandler = () => {
-          Object.assign(payload, {
+        getEventPayload = () => {
+          const extraPayload = {
             position: pendingSeek.offset,
             duration: pendingSeek.duration
-          });
-          callback(type, payload);
+          };
           pendingSeek = {};
+          return extraPayload;
         };
-        player.on('seeked', eventHandler);
+        jwplayerType = 'seeked';
         break;
 
       case MUTE:
-        eventHandler = e => {
-          payload.mute = e.mute;
-          callback(type, payload);
-        };
-        player.on(MUTE, eventHandler);
+        getEventPayload = e => ({ mute: e.mute });
         break;
 
       case VOLUME:
-        eventHandler = e => {
-          payload.volumePercentage = e.volume;
-          callback(type, payload);
-        };
-        player.on(VOLUME, eventHandler);
+        getEventPayload = e => ({ volumePercentage: e.volume });
         break;
 
       case RENDITION_UPDATE:
-        eventHandler = e => {
+        getEventPayload = e => {
           const bitrate = e.bitrate;
           const level = e.level;
-          Object.assign(payload, {
+          return {
             videoReportedBitrate: bitrate,
             audioReportedBitrate: bitrate,
             encodedVideoWidth: level.width,
             encodedVideoHeight: level.height,
             videoFramerate: e.frameRate
-          });
-          callback(type, payload);
+          };
         };
-        player.on('visualQuality', eventHandler);
+        jwplayerType = 'visualQuality';
         break;
 
       case ERROR:
-        eventHandler = e => {
-          Object.assign(payload, {
-            sourceError: e.sourceError,
-            errorCode: e.code,
-            errorMessage: e.message,
-          });
-          callback(type, payload);
-        };
-        player.on(ERROR, eventHandler);
+        getEventPayload = e => ({
+          sourceError: e.sourceError,
+          errorCode: e.code,
+          errorMessage: e.message,
+        });
         break;
 
       case COMPLETE:
-        eventHandler = e => {
-          callback(type, payload);
-          timeState.clearState();
-        };
-        player.on(COMPLETE, eventHandler);
+        getEventPayload = e => timeState.clearState();
         break;
 
       case PLAYLIST_COMPLETE:
-        eventHandler = () => {
-          callback(type, payload);
-        };
-        player.on(PLAYLIST_COMPLETE, eventHandler);
         break;
 
       case FULLSCREEN:
-        eventHandler = e => {
-          payload.fullscreen = e.fullscreen;
-          callback(type, payload);
-        };
-        player.on(FULLSCREEN, eventHandler);
+        getEventPayload = e => ({ fullscreen: e.fullscreen });
         break;
 
       case PLAYER_RESIZE:
-        eventHandler = e => {
-          Object.assign(payload, {
-            height: e.height,
-            width: e.width,
-          });
-          callback(type, payload);
-        };
-        player.on('resize', eventHandler);
+        getEventPayload = e => ({
+          height: e.height,
+          width: e.width,
+        });
+        jwplayerType = 'resize';
         break;
 
       case VIEWABLE:
-        eventHandler = e => {
-          Object.assign(payload, {
-            viewable: e.viewable,
-            viewabilityPercentage: player.getPercentViewable() * 100,
-          });
-          callback(type, payload);
-        };
-        player.on(VIEWABLE, eventHandler);
+        getEventPayload = e => ({
+          viewable: e.viewable,
+          viewabilityPercentage: player.getPercentViewable() * 100,
+        });
         break;
 
       case CAST:
-        eventHandler = e => {
-          payload.casting = e.active;
-          callback(type, payload);
-        };
-        player.on(CAST, eventHandler);
+        getEventPayload = e => ({ casting: e.active });
         break;
 
       default:
         return;
     }
 
+    const eventHandler = getEventHandler(type, callback, basePayload, getEventPayload)
+    player.on(jwplayerType, eventHandler);
     callbackStorage.storeCallback(type, eventHandler, callback);
   }
 
