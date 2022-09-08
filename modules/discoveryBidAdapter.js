@@ -375,9 +375,9 @@ export const spec = {
           currency: cur,
           netRevenue: true,
           nurl: getKv(bid, 'nurl'),
-          ttl:TIME_TO_LIVE,
+          ttl: TIME_TO_LIVE,
           meta: {
-            advertiserDomains:  getKv(bid, 'adomain') || []
+            advertiserDomains: getKv(bid, 'adomain') || []
           }
         };
         if (mediaType === 'native') {
