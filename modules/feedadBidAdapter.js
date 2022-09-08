@@ -7,7 +7,7 @@ import {ajax} from '../src/ajax.js';
  * Version of the FeedAd bid adapter
  * @type {string}
  */
-const VERSION = '1.0.2';
+const VERSION = '1.0.3';
 
 /**
  * @typedef {object} FeedAdApiBidRequest
