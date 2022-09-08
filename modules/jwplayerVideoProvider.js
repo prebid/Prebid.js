@@ -173,10 +173,10 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
     player.playAd(adTagUrl || options.adXml, options);
   }
 
-  function onEvent(type, callback, basePayload) {
-    if (type === SETUP_COMPLETE) {
+  function onEvent(externalEventName, callback, basePayload) {
+    if (externalEventName === SETUP_COMPLETE) {
       setupCompleteCallbacks.push(callback);
-    } else if (type === SETUP_FAILED) {
+    } else if (externalEventName === SETUP_FAILED) {
       setupFailedCallbacks.push(callback);
     }
 
@@ -185,11 +185,9 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
     }
 
     let getEventPayload;
-    let jwplayerType = type;
 
-    switch (type) {
+    switch (externalEventName) {
       case SETUP_COMPLETE:
-        jwplayerType = 'ready';
         getEventPayload = () => {
           setupCompleteCallbacks = [];
           return getSetupCompletePayload();
@@ -206,14 +204,11 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
             sourceError: e.sourceError
           };
         };
-        jwplayerType = 'setupError';
-        break;
-
-      case DESTROYED:
-        jwplayerType = 'remove';
         break;
 
       case AD_REQUEST:
+      case AD_PLAY:
+      case AD_PAUSE:
         getEventPayload = e => ({ adTagUrl: e.tag });
         break;
 
@@ -235,17 +230,11 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
 
       case AD_STARTED:
         // JW Player adImpression fires when the ad starts, regardless of viewability.
-        jwplayerType = AD_IMPRESSION;
         getEventPayload = () => adState.getState();
         break;
 
       case AD_IMPRESSION:
-        jwplayerType = 'adViewableImpression';
         getEventPayload = () => Object.assign({}, adState.getState(), timeState.getState());
-        break;
-
-      case AD_PLAY:
-        getEventPayload = e => ({ adTagUrl: e.tag });
         break;
 
       case AD_TIME:
@@ -257,10 +246,6 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
             duration: e.duration,
           };
         };
-        break;
-
-      case AD_PAUSE:
-        getEventPayload = e => ({ adTagUrl: e.tag });
         break;
 
       case AD_CLICK:
@@ -314,7 +299,6 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
 
       case PLAYBACK_REQUEST:
         getEventPayload = e => ({ playReason: e.playReason });
-        jwplayerType = 'playAttempt';
         break;
 
       case AUTOSTART_BLOCKED:
@@ -323,7 +307,6 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
           errorCode: e.code,
           errorMessage: e.message
         });
-        jwplayerType = 'autostartNotAllowed';
         break;
 
       case PLAY_ATTEMPT_FAILED:
@@ -347,13 +330,6 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
             contentTags: item.tags
           };
         };
-        jwplayerType = 'playlistItem';
-        break;
-
-      case PLAY:
-        break;
-
-      case PAUSE:
         break;
 
       case BUFFER:
@@ -384,7 +360,6 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
             duration: duration
           };
         }
-        jwplayerType = 'seek';
         break;
 
       case SEEK_END:
@@ -396,7 +371,6 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
           pendingSeek = {};
           return extraPayload;
         };
-        jwplayerType = 'seeked';
         break;
 
       case MUTE:
@@ -419,7 +393,6 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
             videoFramerate: e.frameRate
           };
         };
-        jwplayerType = 'visualQuality';
         break;
 
       case ERROR:
@@ -434,9 +407,6 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
         getEventPayload = e => timeState.clearState();
         break;
 
-      case PLAYLIST_COMPLETE:
-        break;
-
       case FULLSCREEN:
         getEventPayload = e => ({ fullscreen: e.fullscreen });
         break;
@@ -446,7 +416,6 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
           height: e.height,
           width: e.width,
         });
-        jwplayerType = 'resize';
         break;
 
       case VIEWABLE:
@@ -460,13 +429,20 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
         getEventPayload = e => ({ casting: e.active });
         break;
 
+      case PLAY:
+      case PAUSE:
+      case PLAYLIST_COMPLETE:
+      case DESTROYED:
+        break;
+
       default:
         return;
     }
 
-    const eventHandler = getEventHandler(type, callback, basePayload, getEventPayload)
-    player.on(jwplayerType, eventHandler);
-    callbackStorage.storeCallback(type, eventHandler, callback);
+    const jwEventName = utils.getJwEvent(externalEventName);
+    const eventHandler = getEventHandler(externalEventName, callback, basePayload, getEventPayload)
+    player.on(jwEventName, eventHandler);
+    callbackStorage.storeCallback(externalEventName, eventHandler, callback);
   }
 
   function offEvents(events, callback) {
