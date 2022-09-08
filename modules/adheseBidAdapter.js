@@ -26,7 +26,8 @@ export const spec = {
 
     const adheseConfig = config.getConfig('adhese');
     const gdprParams = (gdprConsent && gdprConsent.consentString) ? { xt: [gdprConsent.consentString] } : {};
-    const refererParams = (refererInfo && refererInfo.referer) ? { xf: [base64urlEncode(refererInfo.referer)] } : {};
+    // TODO: is 'page' the right value here?
+    const refererParams = (refererInfo && refererInfo.page) ? { xf: [base64urlEncode(refererInfo.page)] } : {};
     const globalCustomParams = (adheseConfig && adheseConfig.globalTargets) ? cleanTargets(adheseConfig.globalTargets) : {};
     const commonParams = { ...globalCustomParams, ...gdprParams, ...refererParams };
     const vastContentAsUrl = !(adheseConfig && adheseConfig.vastContentAsUrl == false);

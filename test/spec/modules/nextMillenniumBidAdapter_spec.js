@@ -14,15 +14,73 @@ describe('nextMillenniumBidAdapterTests', function() {
       gdprConsent: {
         consentString: 'kjfdniwjnifwenrif3',
         gdprApplies: true
+      },
+      ortb2: {
+        device: {
+          w: 1500,
+          h: 1000
+        },
+        site: {
+          domain: 'example.com',
+          page: 'http://example.com'
+        }
       }
     }
   ];
 
-  it('Request params check with GDPR Consent', function () {
+  const bidRequestDataGI = [
+    {
+      adUnitCode: 'test-banner-gi',
+      bidId: 'bid1234',
+      auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+      bidder: 'nextMillennium',
+      params: { group_id: '1234' },
+      mediaTypes: {
+        banner: {
+          sizes: [[300, 250]]
+        }
+      },
+
+      sizes: [[300, 250]],
+      uspConsent: '1---',
+      gdprConsent: {
+        consentString: 'kjfdniwjnifwenrif3',
+        gdprApplies: true
+      }
+    },
+
+    {
+      adUnitCode: 'test-video-gi',
+      bidId: 'bid1234',
+      auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+      bidder: 'nextMillennium',
+      params: { group_id: '1234' },
+      mediaTypes: {
+        video: {
+          playerSize: [640, 480],
+        }
+      },
+
+      uspConsent: '1---',
+      gdprConsent: {
+        consentString: 'kjfdniwjnifwenrif3',
+        gdprApplies: true
+      }
+    },
+  ];
+
+  it('Request params check with GDPR and USP Consent', function () {
     const request = spec.buildRequests(bidRequestData, bidRequestData[0]);
     expect(JSON.parse(request[0].data).user.ext.consent).to.equal('kjfdniwjnifwenrif3');
     expect(JSON.parse(request[0].data).regs.ext.us_privacy).to.equal('1---');
     expect(JSON.parse(request[0].data).regs.ext.gdpr).to.equal(1);
+  });
+
+  it('Request params check without GDPR Consent', function () {
+    delete bidRequestData[0].gdprConsent
+    const request = spec.buildRequests(bidRequestData, bidRequestData[0]);
+    expect(JSON.parse(request[0].data).regs.ext.gdpr).to.be.undefined;
+    expect(JSON.parse(request[0].data).regs.ext.us_privacy).to.equal('1---');
   });
 
   it('validate_generated_params', function() {
@@ -31,10 +89,42 @@ describe('nextMillenniumBidAdapterTests', function() {
     expect(JSON.parse(request[0].data).id).to.equal('b06c5141-fe8f-4cdf-9d7d-54415490a917');
   });
 
+  it('use parameters group_id', function() {
+    for (let test of bidRequestDataGI) {
+      const request = spec.buildRequests([test]);
+      const requestData = JSON.parse(request[0].data);
+      const storeRequestId = requestData.ext.prebid.storedrequest.id;
+      const templateRE = /^g\d+;\d+x\d+;/;
+      expect(templateRE.test(storeRequestId)).to.be.true;
+    };
+  });
+
   it('Check if refresh_count param is incremented', function() {
     const request = spec.buildRequests(bidRequestData);
-    expect(JSON.parse(request[0].data).refresh_count).to.equal(2);
+    expect(JSON.parse(request[0].data).ext.nextMillennium.refresh_count).to.equal(3);
   });
+
+  it('Check if domain was added', function() {
+    const request = spec.buildRequests(bidRequestData)
+    expect(JSON.parse(request[0].data).site.domain).to.exist
+  })
+
+  it('Check if elOffsets was added', function() {
+    const request = spec.buildRequests(bidRequestData)
+    expect(JSON.parse(request[0].data).ext.nextMillennium.elOffsets).to.be.an('object')
+  })
+
+  it('Check if imp object was added', function() {
+    const request = spec.buildRequests(bidRequestData)
+    expect(JSON.parse(request[0].data).imp).to.be.an('array')
+  })
+
+  it('Check if imp prebid stored id is correct', function() {
+    const request = spec.buildRequests(bidRequestData)
+    const requestData = JSON.parse(request[0].data);
+    const storedReqId = requestData.ext.prebid.storedrequest.id;
+    expect(requestData.imp[0].ext.prebid.storedrequest.id).to.equal(storedReqId)
+  })
 
   it('Test getUserSyncs function', function () {
     const syncOptions = {

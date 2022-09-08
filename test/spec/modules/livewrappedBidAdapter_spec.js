@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {spec, storage} from 'modules/livewrappedBidAdapter.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
-import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes.js';
+import { NATIVE, VIDEO } from 'src/mediaTypes.js';
 
 describe('Livewrapped adapter tests', function () {
   let sandbox,
@@ -758,9 +758,9 @@ describe('Livewrapped adapter tests', function () {
       expect(data).to.deep.equal(expectedQuery);
     });
 
-    it('should use params.url, then config pageUrl, then bidderRequest.refererInfo.referer', function() {
+    it('should use params.url, then bidderRequest.refererInfo.page', function() {
       let testRequest = clone(bidderRequest);
-      testRequest.refererInfo = {referer: 'https://www.topurl.com'};
+      testRequest.refererInfo = {page: 'https://www.topurl.com'};
 
       let result = spec.buildRequests(testRequest.bids, testRequest);
       let data = JSON.parse(result.data);
@@ -773,19 +773,6 @@ describe('Livewrapped adapter tests', function () {
       data = JSON.parse(result.data);
 
       expect(data.url).to.equal('https://www.topurl.com');
-
-      let origGetConfig = config.getConfig;
-      sandbox.stub(config, 'getConfig').callsFake(function (key) {
-        if (key === 'pageUrl') {
-          return 'https://www.configurl.com';
-        }
-        return origGetConfig.apply(config, arguments);
-      });
-
-      result = spec.buildRequests(testRequest.bids, testRequest);
-      data = JSON.parse(result.data);
-
-      expect(data.url).to.equal('https://www.configurl.com');
     });
 
     it('should make use of pubcid if available', function() {
@@ -883,6 +870,32 @@ describe('Livewrapped adapter tests', function () {
     let data = JSON.parse(result.data);
 
     expect(data.rtbData.user.ext.eids).to.deep.equal(testbidRequest.bids[0].userIdAsEids);
+  });
+
+  it('should merge user ids with existing ortb2', function() {
+    sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
+    sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
+
+    const ortb2 = {user: {ext: {prop: 'value'}}};
+
+    let testbidRequest = {...clone(bidderRequest), ortb2};
+    delete testbidRequest.bids[0].params.userId;
+    testbidRequest.bids[0].userIdAsEids = [
+      {
+        'source': 'pubcid.org',
+        'uids': [{
+          'id': 'publisher-common-id',
+          'atype': 1
+        }]
+      }
+    ];
+
+    let result = spec.buildRequests(testbidRequest.bids, testbidRequest);
+    let data = JSON.parse(result.data);
+    var expected = {user: {ext: {prop: 'value', eids: testbidRequest.bids[0].userIdAsEids}}}
+
+    expect(data.rtbData).to.deep.equal(expected);
+    expect(ortb2).to.deep.equal({user: {ext: {prop: 'value'}}});
   });
 
   it('should send schain object if available', function() {

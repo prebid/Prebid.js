@@ -16,7 +16,7 @@ import {
 } from '../src/utils.js';
 
 const BIDDER_VERSION = '1.1.0';
-const BASE_URL = 'https://ortb.adpearl.io';
+const BASE_URL = 'https://auction.adpearl.io';
 
 export const spec = {
   code: 'pubgenius',
@@ -228,20 +228,15 @@ function buildSite(bidderRequest) {
   let site = null;
   const { refererInfo } = bidderRequest;
 
-  const pageUrl = config.getConfig('pageUrl') || refererInfo.canonicalUrl || refererInfo.referer;
+  const pageUrl = refererInfo.page;
   if (pageUrl) {
     site = site || {};
     site.page = pageUrl;
   }
 
-  if (refererInfo.reachedTop) {
-    try {
-      const pageRef = window.top.document.referrer;
-      if (pageRef) {
-        site = site || {};
-        site.ref = pageRef;
-      }
-    } catch (e) {}
+  if (refererInfo.ref) {
+    site = site || {};
+    site.ref = refererInfo.ref;
   }
 
   return site;

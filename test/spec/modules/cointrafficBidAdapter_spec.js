@@ -3,7 +3,7 @@ import { spec } from 'modules/cointrafficBidAdapter.js';
 import { config } from 'src/config.js'
 import * as utils from 'src/utils.js'
 
-const ENDPOINT_URL = 'https://appspb.cointraffic.io/pb/tmp';
+const ENDPOINT_URL = 'https://apps-pbd.ctengine.io/pb/tmp';
 
 describe('cointrafficBidAdapter', function () {
   describe('isBidRequestValid', function () {

@@ -37,7 +37,8 @@ export const spec = {
         placementId: bidRequest.params.placementId,
         sizes: sizes,
         bidId: bidRequest.bidId,
-        referer: bidderRequest.refererInfo.referer,
+        // TODO: is 'page' the right value here?
+        referer: bidderRequest.refererInfo.page,
         id: bidRequest.auctionId,
         mediaType: bidRequest.mediaTypes.video ? 'video' : 'banner'
       };
@@ -101,7 +102,7 @@ export const spec = {
       if (response.adDomain) {
         bidResponse.meta = {
           advertiserDomains: response.adDomain
-        }
+        };
       }
       bidResponses.push(bidResponse);
     }

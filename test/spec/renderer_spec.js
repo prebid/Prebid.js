@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { Renderer } from 'src/Renderer.js';
+import { Renderer, executeRenderer } from 'src/Renderer.js';
 import * as utils from 'src/utils.js';
 import { loadExternalScript } from 'src/adloader.js';
 require('test/mocks/adloaderStub.js');
@@ -107,6 +107,21 @@ describe('Renderer', function () {
       sinon.assert.calledOnce(func2);
       expect(testRenderer1.cmd.length).to.equal(0);
     });
+
+    it('renders immediately when requested', function () {
+      const testRenderer3 = Renderer.install({
+        url: 'https://httpbin.org/post',
+        config: { test: 'config2' },
+        id: 2,
+        renderNow: true
+      });
+      const func1 = sinon.spy();
+      const testArg = 'testArgument';
+
+      testRenderer3.setRender(func1);
+      testRenderer3.render(testArg);
+      func1.calledWith(testArg).should.be.ok;
+    });
   });
 
   describe('3rd party renderer', function () {
@@ -211,6 +226,21 @@ describe('Renderer', function () {
 
       testRenderer.render()
       expect(loadExternalScript.called).to.be.true;
+    });
+
+    it('call\'s documentResolver when configured', function () {
+      const documentResolver = sinon.spy(function(bid, sDoc, tDoc) {
+        return document;
+      });
+
+      let testRenderer = Renderer.install({
+        url: 'https://httpbin.org/post',
+        config: { documentResolver: documentResolver }
+      });
+
+      executeRenderer(testRenderer, {}, {});
+
+      expect(documentResolver.called).to.be.true;
     });
   });
 });

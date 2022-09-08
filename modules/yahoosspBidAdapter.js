@@ -3,9 +3,11 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { deepAccess, isFn, isStr, isNumber, isArray, isEmpty, isPlainObject, generateUUID, logInfo, logWarn } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
+import {hasPurpose1Consent} from '../src/utils/gpdr.js';
 
 const INTEGRATION_METHOD = 'prebid.js';
 const BIDDER_CODE = 'yahoossp';
+const GVLID = 25;
 const ADAPTER_VERSION = '1.0.2';
 const PREBID_VERSION = '$prebid.version$';
 const DEFAULT_BID_TTL = 300;
@@ -53,14 +55,6 @@ const SUPPORTED_USER_ID_SOURCES = [
 ];
 
 /* Utility functions */
-function hasPurpose1Consent(bidderRequest) {
-  if (bidderRequest && bidderRequest.gdprConsent) {
-    if (bidderRequest.gdprConsent.gdprApplies && bidderRequest.gdprConsent.apiVersion === 2) {
-      return !!false;
-    }
-  }
-  return true;
-}
 
 function getSize(size) {
   return {
@@ -238,7 +232,7 @@ function generateOpenRtbObject(bidderRequest, bid) {
       cur: [getFloorModuleData(bidderRequest).currency || deepAccess(bid, 'params.bidOverride.cur') || DEFAULT_CURRENCY],
       imp: [],
       site: {
-        page: deepAccess(bidderRequest, 'refererInfo.referer'),
+        page: deepAccess(bidderRequest, 'refererInfo.page'),
       },
       device: {
         dnt: 0,
@@ -283,11 +277,12 @@ function generateOpenRtbObject(bidderRequest, bid) {
       outBoundBidRequest.site.id = bid.params.dcn;
     };
 
-    if (config.getConfig('ortb2')) {
+    if (bidderRequest.ortb2) {
       outBoundBidRequest = appendFirstPartyData(outBoundBidRequest, bid);
     };
 
-    if (deepAccess(bid, 'schain')) {
+    const schainData = deepAccess(bid, 'schain.nodes');
+    if (isArray(schainData) && schainData.length > 0) {
       outBoundBidRequest.source.ext.schain = bid.schain;
       outBoundBidRequest.source.ext.schain.nodes[0].rid = outBoundBidRequest.id;
     };
@@ -375,7 +370,7 @@ function appendImpObject(bid, openRtbObject) {
 };
 
 function appendFirstPartyData(outBoundBidRequest, bid) {
-  const ortb2Object = config.getConfig('ortb2');
+  const ortb2Object = bid.ortb2;
   const siteObject = deepAccess(ortb2Object, 'site') || undefined;
   const siteContentObject = deepAccess(siteObject, 'content') || undefined;
   const siteContentDataArray = deepAccess(siteObject, 'content.data') || undefined;
@@ -413,7 +408,7 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
         newDataObject = validateAppendObject('object', allowedContentDataObjectKeys, dataObject, newDataObject);
         outBoundBidRequest.site.content.data = [];
         outBoundBidRequest.site.content.data.push(newDataObject);
-      })
+      });
     };
   };
 
@@ -433,7 +428,7 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
           }
         };
         outBoundBidRequest.app.content.data.push(newDataObject);
-      })
+      });
     };
   };
 
@@ -481,7 +476,6 @@ function generateServerRequest({payload, requestOptions, bidderRequest}) {
       });
     }
   };
-  logWarn('yahoossp adapter endpoint override enabled. Pointing requests to: ', sspEndpoint);
 
   return {
     url: sspEndpoint,
@@ -494,7 +488,7 @@ function generateServerRequest({payload, requestOptions, bidderRequest}) {
 
 function createRenderer(bidderRequest, bidResponse) {
   const renderer = Renderer.install({
-    url: 'https://cdn.vidible.tv/prod/hb-outstream-renderer/renderer.js',
+    url: 'https://s.yimg.com/kp/prebid-outstream-renderer/renderer.js',
     loaded: false,
     adUnitCode: bidderRequest.adUnitCode
   })
@@ -515,6 +509,7 @@ function createRenderer(bidderRequest, bidResponse) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   aliases: [],
   supportedMediaTypes: [BANNER, VIDEO],
 
@@ -546,7 +541,7 @@ export const spec = {
       }
     };
 
-    requestOptions.withCredentials = hasPurpose1Consent(bidderRequest);
+    requestOptions.withCredentials = hasPurpose1Consent(bidderRequest.gdprConsent);
 
     const filteredBidRequests = filterBidRequestByMode(validBidRequests);
 
@@ -588,7 +583,6 @@ export const spec = {
         adId: deepAccess(bid, 'adId') ? bid.adId : bid.impid || bid.crid,
         adUnitCode: bidderRequest.adUnitCode,
         requestId: bid.impid,
-        bidderCode: spec.code,
         cpm: cpm,
         width: bid.w,
         height: bid.h,

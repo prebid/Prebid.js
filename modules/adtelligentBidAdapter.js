@@ -1,9 +1,9 @@
-import { deepAccess, isArray, chunk, _map, flatten, convertTypes, parseSizesInput } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { ADPOD, BANNER, VIDEO } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
-import { Renderer } from '../src/Renderer.js';
-import find from 'core-js-pure/features/array/find.js';
+import {_map, chunk, convertTypes, deepAccess, flatten, isArray, parseSizesInput} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {ADPOD, BANNER, VIDEO} from '../src/mediaTypes.js';
+import {config} from '../src/config.js';
+import {Renderer} from '../src/Renderer.js';
+import {find} from '../src/polyfill.js';
 
 const subdomainSuffixes = ['', 1, 2];
 const AUCTION_PATH = '/v2/auction/';
@@ -18,9 +18,12 @@ const HOST_GETTERS = {
   navelix: () => 'ghb.hb.navelix.com',
   appaloosa: () => 'ghb.hb.appaloosa.media',
   onefiftytwomedia: () => 'ghb.ads.152media.com',
-  mediafuse: () => 'ghb.hbmp.mediafuse.com',
   bidsxchange: () => 'ghb.hbd.bidsxchange.com',
   streamkey: () => 'ghb.hb.streamkey.net',
+  janet: () => 'ghb.bidder.jmgads.com',
+  pgam: () => 'ghb.pgamssp.com',
+  ocm: () => 'ghb.cenarius.orangeclickmedia.com',
+  vidcrunchllc: () => 'ghb.platform.vidcrunch.com',
 }
 const getUri = function (bidderCode) {
   let bidderWithoutSuffix = bidderCode.split('_')[0];
@@ -36,12 +39,12 @@ const syncsCache = {};
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 410,
-  aliases: ['onefiftytwomedia', 'selectmedia', 'appaloosa', 'bidsxchange', 'streamkey',
+  aliases: ['onefiftytwomedia', 'appaloosa', 'bidsxchange', 'streamkey', 'janet',
+    { code: 'selectmedia', gvlid: 775 },
     { code: 'navelix', gvlid: 380 },
-    {
-      code: 'mediafuse',
-      skipPbsAliasing: true
-    }
+    'pgam',
+    { code: 'ocm', gvlid: 1148 },
+    { code: 'vidcrunchllc', gvlid: 1145 },
   ],
   supportedMediaTypes: [VIDEO, BANNER],
   isBidRequestValid: function (bid) {
@@ -162,7 +165,8 @@ function parseRTBResponse(serverResponse, adapterRequest) {
 function bidToTag(bidRequests, adapterRequest) {
   // start publisher env
   const tag = {
-    Domain: deepAccess(adapterRequest, 'refererInfo.referer')
+    // TODO: is 'page' the right value here?
+    Domain: deepAccess(adapterRequest, 'refererInfo.page')
   };
   if (config.getConfig('coppa') === true) {
     tag.Coppa = 1;
@@ -188,7 +192,7 @@ function bidToTag(bidRequests, adapterRequest) {
   }
 
   // end publisher env
-  const bids = []
+  const bids = [];
 
   for (let i = 0, length = bidRequests.length; i < length; i++) {
     const bid = prepareBidRequests(bidRequests[i]);

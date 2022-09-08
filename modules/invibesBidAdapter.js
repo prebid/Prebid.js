@@ -4,18 +4,20 @@ import {getStorageManager} from '../src/storageManager.js';
 
 const CONSTANTS = {
   BIDDER_CODE: 'invibes',
-  BID_ENDPOINT: 'https://bid.videostep.com/Bid/VideoAdContent',
+  BID_ENDPOINT: '.videostep.com/Bid/VideoAdContent',
+  BID_SUBDOMAIN: 'https://bid',
   SYNC_ENDPOINT: 'https://k.r66net.com/GetUserSync',
   TIME_TO_LIVE: 300,
   DEFAULT_CURRENCY: 'EUR',
-  PREBID_VERSION: 7,
+  PREBID_VERSION: 9,
   METHOD: 'GET',
   INVIBES_VENDOR_ID: 436,
   USERID_PROVIDERS: ['pubcid', 'pubProvidedId', 'uid2', 'zeotapIdPlus', 'id5id'],
-  META_TAXONOMY: ['networkId', 'networkName', 'agencyId', 'agencyName', 'advertiserId', 'advertiserName', 'advertiserDomains', 'brandId', 'brandName', 'primaryCatId', 'secondaryCatIds', 'mediaType']
+  META_TAXONOMY: ['networkId', 'networkName', 'agencyId', 'agencyName', 'advertiserId', 'advertiserName', 'advertiserDomains', 'brandId', 'brandName', 'primaryCatId', 'secondaryCatIds', 'mediaType'],
+  DISABLE_USER_SYNC: true
 };
 
-const storage = getStorageManager(CONSTANTS.INVIBES_VENDOR_ID);
+const storage = getStorageManager({gvlid: CONSTANTS.INVIBES_VENDOR_ID, bidderCode: CONSTANTS.BIDDER_CODE});
 
 export const spec = {
   code: CONSTANTS.BIDDER_CODE,
@@ -39,15 +41,7 @@ export const spec = {
   interpretResponse: function (responseObj, requestParams) {
     return handleResponse(responseObj, requestParams != null ? requestParams.bidRequests : null);
   },
-  getUserSyncs: function (syncOptions) {
-    if (syncOptions.iframeEnabled) {
-      const syncUrl = buildSyncUrl();
-      return {
-        type: 'iframe',
-        url: syncUrl
-      };
-    }
-  }
+  getUserSyncs: getUserSync,
 };
 
 registerBidder(spec);
@@ -59,7 +53,9 @@ invibes.purposes = invibes.purposes || [false, false, false, false, false, false
 invibes.legitimateInterests = invibes.legitimateInterests || [false, false, false, false, false, false, false, false, false, false];
 invibes.placementBids = invibes.placementBids || [];
 invibes.pushedCids = invibes.pushedCids || {};
+let preventPageViewEvent = false;
 let _customUserSync;
+let _disableUserSyncs;
 
 function isBidRequestValid(bid) {
   if (typeof bid.params !== 'object') {
@@ -74,35 +70,45 @@ function isBidRequestValid(bid) {
   return true;
 }
 
+function getUserSync(syncOptions) {
+  if (syncOptions.iframeEnabled) {
+    if (!(_disableUserSyncs == null || _disableUserSyncs == undefined ? CONSTANTS.DISABLE_USER_SYNC : _disableUserSyncs)) {
+      const syncUrl = buildSyncUrl();
+      return {
+        type: 'iframe',
+        url: syncUrl
+      };
+    }
+  }
+}
+
 function buildRequest(bidRequests, bidderRequest) {
   bidderRequest = bidderRequest || {};
   const _placementIds = [];
   const _adUnitCodes = [];
-  let _loginId, _customEndpoint, _userId;
+  let _customEndpoint, _userId, _domainId;
   let _ivAuctionStart = bidderRequest.auctionStart || Date.now();
 
   bidRequests.forEach(function (bidRequest) {
     bidRequest.startTime = new Date().getTime();
     _placementIds.push(bidRequest.params.placementId);
     _adUnitCodes.push(bidRequest.adUnitCode);
-    _loginId = _loginId || bidRequest.params.loginId;
+    _domainId = _domainId || bidRequest.params.domainId;
     _customEndpoint = _customEndpoint || bidRequest.params.customEndpoint;
     _customUserSync = _customUserSync || bidRequest.params.customUserSync;
+    _disableUserSyncs = bidRequest?.params?.disableUserSyncs;
     _userId = _userId || bidRequest.userId;
   });
 
   invibes.optIn = invibes.optIn || readGdprConsent(bidderRequest.gdprConsent);
 
   invibes.visitId = invibes.visitId || generateRandomId();
-  invibes.noCookies = invibes.noCookies || invibes.getCookie('ivNoCookie');
-  let lid = initDomainId(invibes.domainOptions);
 
   const currentQueryStringParams = parseQueryStringParams();
   let userIdModel = getUserIds(_userId);
   let bidParamsJson = {
     placementIds: _placementIds,
     adUnitCodes: _adUnitCodes,
-    loginId: _loginId,
     auctionStartTime: _ivAuctionStart,
     bidVersion: CONSTANTS.PREBID_VERSION
   };
@@ -113,7 +119,7 @@ function buildRequest(bidRequests, bidderRequest) {
     location: getDocumentLocation(topWin),
     videoAdHtmlId: generateRandomId(),
     showFallback: currentQueryStringParams['advs'] === '0',
-    ivbsCampIdsLocal: invibes.getCookie('IvbsCampIdsLocal'),
+    ivbsCampIdsLocal: readFromLocalStorage('IvbsCampIdsLocal'),
 
     bidParamsJson: JSON.stringify(bidParamsJson),
     capCounts: getCappedCampaignsAsString(),
@@ -129,9 +135,22 @@ function buildRequest(bidRequests, bidderRequest) {
     purposes: invibes.purposes.toString(),
     li: invibes.legitimateInterests.toString(),
 
-    tc: invibes.gdpr_consent
+    tc: invibes.gdpr_consent,
+    isLocalStorageEnabled: storage.hasLocalStorage(),
+    preventPageViewEvent: preventPageViewEvent,
   };
 
+  let lid = readFromLocalStorage('ivbsdid');
+  if (!lid) {
+    let str = invibes.getCookie('ivbsdid');
+    if (str) {
+      try {
+        let cookieLid = JSON.parse(str);
+        lid = cookieLid.id ? cookieLid.id : cookieLid;
+      } catch (e) {
+      }
+    }
+  }
   if (lid) {
     data.lId = lid;
   }
@@ -146,9 +165,13 @@ function buildRequest(bidRequests, bidderRequest) {
     }
   }
 
+  let endpoint = createEndpoint(_customEndpoint, _domainId, _placementIds);
+
+  preventPageViewEvent = true;
+
   return {
     method: CONSTANTS.METHOD,
-    url: _customEndpoint || CONSTANTS.BID_ENDPOINT,
+    url: endpoint,
     data: data,
     options: {withCredentials: true},
     // for POST: { contentType: 'application/json', withCredentials: true }
@@ -169,6 +192,15 @@ function handleResponse(responseObj, bidRequests) {
 
   responseObj = responseObj.body || responseObj;
   responseObj = responseObj.videoAdContentResult || responseObj;
+
+  if (responseObj.ShouldSetLId && responseObj.LId) {
+    if ((!invibes.optIn || !invibes.purposes[0]) && responseObj.PrivacyPolicyRule && responseObj.TcModel && responseObj.TcModel.PurposeConsents) {
+      invibes.optIn = responseObj.PrivacyPolicyRule;
+      invibes.purposes = responseObj.TcModel.PurposeConsents;
+    }
+
+    setInLocalStorage('ivbsdid', responseObj.LId);
+  }
 
   if (typeof invibes.bidResponse === 'object') {
     if (responseObj.MultipositionEnabled === true) {
@@ -280,6 +312,48 @@ function createBid(bidRequest, requestPlacement, multipositionEnabled, usedPlace
   };
 }
 
+function createEndpoint(customEndpoint, domainId, placementIds) {
+  if (customEndpoint != null) {
+    return customEndpoint;
+  }
+
+  if (domainId != null) {
+    return extractEndpointFromId(domainId - 1000);
+  }
+
+  if (placementIds.length > 0) {
+    for (var i = 0; i < placementIds.length; i++) {
+      const id = extractFromPlacement(placementIds[i]);
+      if (id != null) {
+        return extractEndpointFromId(id);
+      }
+    }
+  }
+
+  return extractEndpointFromId(1);
+}
+
+function extractEndpointFromId(domainId) {
+  if (domainId < 2) {
+    return CONSTANTS.BID_SUBDOMAIN + CONSTANTS.BID_ENDPOINT;
+  }
+
+  return CONSTANTS.BID_SUBDOMAIN + domainId + CONSTANTS.BID_ENDPOINT;
+}
+
+function extractFromPlacement(placementId) {
+  if (placementId == null) { return null; }
+
+  var pattern = /_ivbs([0-9]+)/g;
+
+  var match = pattern.exec(placementId);
+  if (match != null && match[1] != null) {
+    return parseInt(match[1]);
+  }
+
+  return null;
+}
+
 function addMeta(bidModelMeta) {
   var meta = {};
   if (bidModelMeta != null) {
@@ -318,7 +392,10 @@ function getUserIds(bidUserId) {
 function parseQueryStringParams() {
   let params = {};
   try {
-    params = JSON.parse(localStorage.ivbs);
+    let storedParam = storage.getDataFromLocalStorage('ivbs');
+    if (storedParam != null) {
+      params = JSON.parse(storedParam);
+    }
   } catch (e) {
   }
   let re = /[\\?&]([^=]+)=([^\\?&#]+)/g;
@@ -365,6 +442,22 @@ function renderCreative(bidModel) {
           </body>
         </html>`
     .replace('creativeHtml', bidModel.CreativeHtml);
+}
+
+function readFromLocalStorage(key) {
+  if (invibes.GdprModuleInstalled && (!invibes.optIn || !invibes.purposes[0])) {
+    return;
+  }
+
+  return storage.getDataFromLocalStorage(key) || '';
+}
+
+function setInLocalStorage(key, value) {
+  if (!invibes.optIn || !invibes.purposes[0]) {
+    return;
+  }
+
+  storage.setDataInLocalStorage(key, value);
 }
 
 function getCappedCampaignsAsString() {
@@ -427,14 +520,20 @@ function buildSyncUrl() {
   syncUrl += '?visitId=' + invibes.visitId;
   syncUrl += '&optIn=' + invibes.optIn;
 
-  const did = invibes.getCookie('ivbsdid');
-  if (did) {
-    syncUrl += '&ivbsdid=' + encodeURIComponent(did);
+  let did = readFromLocalStorage('ivbsdid');
+  if (!did) {
+    let str = invibes.getCookie('ivbsdid');
+    if (str) {
+      try {
+        let cookieLid = JSON.parse(str);
+        did = cookieLid.id ? cookieLid.id : cookieLid;
+      } catch (e) {
+      }
+    }
   }
 
-  const bks = invibes.getCookie('ivvbks');
-  if (bks) {
-    syncUrl += '&ivvbks=' + encodeURIComponent(bks);
+  if (did) {
+    syncUrl += '&ivbsdid=' + encodeURIComponent(did);
   }
 
   return syncUrl;
@@ -442,6 +541,7 @@ function buildSyncUrl() {
 
 function readGdprConsent(gdprConsent) {
   if (gdprConsent && gdprConsent.vendorData) {
+    invibes.GdprModuleInstalled = true;
     invibes.gdpr_consent = getVendorConsentData(gdprConsent.vendorData);
 
     if (!gdprConsent.vendorData.gdprApplies || gdprConsent.vendorData.hasGlobalConsent) {
@@ -484,6 +584,7 @@ function readGdprConsent(gdprConsent) {
     return 2;
   }
 
+  invibes.GdprModuleInstalled = false;
   return 0;
 }
 
@@ -593,32 +694,11 @@ invibes.getCookie = function (name) {
     return;
   }
 
-  if (!invibes.optIn || !invibes.purposes[0]) {
+  if (invibes.GdprModuleInstalled && (!invibes.optIn || !invibes.purposes[0])) {
     return;
   }
 
   return storage.getCookie(name);
-};
-
-let initDomainId = function (options) {
-  let cookiePersistence = {
-    cname: 'ivbsdid',
-    load: function () {
-      let str = invibes.getCookie(this.cname) || '';
-      try {
-        return JSON.parse(str);
-      } catch (e) {
-      }
-    }
-  };
-
-  options = options || {};
-
-  var persistence = options.persistence || cookiePersistence;
-
-  let state = persistence.load();
-
-  return state ? (state.id || state.tempId) : undefined;
 };
 
 let keywords = (function () {
@@ -694,7 +774,6 @@ let keywords = (function () {
 
 export function resetInvibes() {
   invibes.optIn = undefined;
-  invibes.noCookies = undefined;
   invibes.dom = undefined;
   invibes.bidResponse = undefined;
   invibes.domainOptions = undefined;
