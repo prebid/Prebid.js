@@ -428,7 +428,7 @@ describe('yieldoneBidAdapter', function() {
         const bidRequests = [
           {
             params: {placementId: '0'},
-            userId: {fuuid: 'fuuid_sample', dacId: 'dacId_sample'},
+            userId: {dacId: {fuuid: 'fuuid_sample', id: 'dacId_sample'}},
           },
         ];
         const request = spec.buildRequests(bidRequests, bidderRequest);

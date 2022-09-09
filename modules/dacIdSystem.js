@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
- import {
+import {
   logError,
   logInfo,
   logWarn
@@ -126,8 +126,10 @@ export const dacIdSystemSubmodule = {
   decode(id) {
     if (id && typeof id === 'object') {
       return {
-        fuuid: id.fuuid,
-        dacId: id.uid
+        dacId: {
+          fuuid: id.fuuid,
+          id: id.uid
+        }
       }
     }
   },

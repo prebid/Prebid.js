@@ -66,7 +66,7 @@ describe('dacId module', function () {
       expect(id).to.be.deep.equal({
         id: {
           fuuid: FUUID_DUMMY_VALUE,
-          uid: undefined,
+          uid: undefined
         }
       });
     });
@@ -118,8 +118,10 @@ describe('dacId module', function () {
     it('should return fuuid & AoneId when they exist', function () {
       const decoded = dacIdSystemSubmodule.decode(DACID_DUMMY_OBJ);
       expect(decoded).to.be.deep.equal({
-        fuuid: FUUID_DUMMY_VALUE,
-        dacId: AONEID_DUMMY_VALUE
+        dacId: {
+          fuuid: FUUID_DUMMY_VALUE,
+          id: AONEID_DUMMY_VALUE
+        }
       });
     });
 
