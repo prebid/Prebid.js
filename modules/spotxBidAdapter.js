@@ -365,6 +365,7 @@ export const spec = {
             const renderer = Renderer.install({
               id: 0,
               renderNow: true,
+              url: '/',
               config: {
                 adText: 'SpotX Outstream Video Ad via Prebid.js',
                 player_width: playersize[0][0],
