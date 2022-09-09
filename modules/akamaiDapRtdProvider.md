@@ -28,8 +28,8 @@
            domain: 'your-domain.com',
            identityType: 'email' | 'mobile' | ... | 'dap-signature:1.3.0',
            segtax: 504,
-           dapFpUrl: 'https://dap-dist.akamaized.net/dapfingerprinting.js',
-           dapFpTimeout: 1500       // Maximum time for dapFP to run
+           dapEntropyUrl: 'https://dap-dist.akamaized.net/dapentropy.js',
+           dapEntropyTimeout: 1500       // Maximum time for dapentropy to run
          }
        }
      ]

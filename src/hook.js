@@ -1,12 +1,12 @@
 import funHooks from 'fun-hooks/no-eval/index.js';
-import {promiseControls} from './utils/promise.js';
+import {defer} from './utils/promise.js';
 
 export let hook = funHooks({
   useProxy: false,
   ready: funHooks.SYNC | funHooks.ASYNC | funHooks.QUEUE
 });
 
-const readyCtl = promiseControls();
+const readyCtl = defer();
 hook.ready = (() => {
   const ready = hook.ready;
   return function () {

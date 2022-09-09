@@ -1,4 +1,5 @@
 import { createTrackPixelHtml } from '../src/utils.js';
+import { loadExternalScript } from '../src/adloader.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'inskin';
@@ -211,9 +212,9 @@ export const spec = {
           bidPrice: bidsMap[e.data.bidId].price,
           serverResponse
         };
-        const script = document.createElement('script');
-        script.src = 'https://cdn.inskinad.com/isfe/publishercode/' + bidsMap[e.data.bidId].params.siteId + '/default.js?autoload&id=' + id;
-        document.getElementsByTagName('head')[0].appendChild(script);
+
+        const url = 'https://cdn.inskinad.com/isfe/publishercode/' + bidsMap[e.data.bidId].params.siteId + '/default.js?autoload&id=' + id;
+        loadExternalScript(url, BIDDER_CODE);
       });
     }
 
