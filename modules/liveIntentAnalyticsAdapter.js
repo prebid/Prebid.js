@@ -4,6 +4,7 @@ import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
 import { auctionManager } from '../src/auctionManager.js';
+import { getRefererInfo } from '../src/refererDetection.js';
 
 const ANALYTICS_TYPE = 'endpoint';
 const URL = 'https://wba.liadm.com/analytic-events';
@@ -54,7 +55,7 @@ function getUniqueBy(arr, key) {
 function createAnalyticsEvent(args, winningBids) {
   let payload = {
     instanceId: generateUUID(),
-    url: window.location.href,
+    url: getRefererInfo().page,
     bidsReceived: getAnalyticsEventBids(args.bidsReceived),
     auctionStart: args.timestamp,
     auctionEnd: args.auctionEnd,
@@ -132,9 +133,9 @@ liAnalytics.originEnableAnalytics = liAnalytics.enableAnalytics;
 // override enableAnalytics so we can get access to the config passed in from the page
 liAnalytics.enableAnalytics = function (config) {
   initOptions = config.options;
-  const sampling = (initOptions && initOptions.sampling) || DEFAULT_SAMPLING;
+  const sampling = (initOptions && initOptions.sampling) ?? DEFAULT_SAMPLING;
   isSampled = Math.random() < parseFloat(sampling);
-  bidWonTimeout = (initOptions && initOptions.bidWonTimeout) || DEFAULT_BID_WON_TIMEOUT;
+  bidWonTimeout = (initOptions && initOptions.bidWonTimeout) ?? DEFAULT_BID_WON_TIMEOUT;
   liAnalytics.originEnableAnalytics(config); // call the base class function
 };
 

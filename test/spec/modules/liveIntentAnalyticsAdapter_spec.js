@@ -4,8 +4,9 @@ import { server } from 'test/mocks/xhr.js';
 import { auctionManager } from 'src/auctionManager.js';
 
 let utils = require('src/utils');
+let refererDetection = require('src/refererDetection');
 let instanceId = '77abbc81-c1f1-41cd-8f25-f7149244c800';
-let url = window.location.href;
+let url = 'https://www.test.com'
 let sandbox;
 let clock;
 let now = new Date();
@@ -274,6 +275,7 @@ describe('LiveIntent Analytics Adapter ', () => {
   it('request is computed and sent correctly', () => {
     liAnalytics.enableAnalytics(config);
     sandbox.stub(utils, 'generateUUID').returns(instanceId);
+    sandbox.stub(refererDetection, 'getRefererInfo').returns({page: url});
     sandbox.stub(auctionManager.index, 'getAuction').withArgs(auctionId).returns({ getWinningBids: () => winningBids });
     events.emit(constants.EVENTS.AUCTION_END, args);
     clock.tick(2000);
