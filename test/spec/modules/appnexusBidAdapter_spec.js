@@ -610,7 +610,7 @@ describe('AppNexusAdapter', function () {
       config.getConfig.restore();
     });
 
-    it('adds auction level keywords to request when set', function () {
+    it('adds auction level keywords and ortb2 keywords to request when set', function () {
       let bidRequest = Object.assign({}, bidRequests[0]);
       sinon
         .stub(config, 'getConfig')
@@ -618,10 +618,31 @@ describe('AppNexusAdapter', function () {
         .returns({
           gender: 'm',
           music: ['rock', 'pop'],
-          test: ''
+          test: '',
+          tools: 'power'
         });
 
-      const request = spec.buildRequests([bidRequest]);
+      const bidderRequest = {
+        ortb2: {
+          site: {
+            keywords: 'power tools, drills, tools=industrial',
+            content: {
+              keywords: 'video, source=streaming'
+            }
+          },
+          user: {
+            keywords: 'tools=home,renting'
+          },
+          app: {
+            keywords: 'app=iphone 11',
+            content: {
+              keywords: 'appcontent=home repair, dyi'
+            }
+          }
+        }
+      };
+
+      const request = spec.buildRequests([bidRequest], bidderRequest);
       const payload = JSON.parse(request.data);
 
       expect(payload.keywords).to.deep.equal([{
@@ -632,6 +653,28 @@ describe('AppNexusAdapter', function () {
         'value': ['rock', 'pop']
       }, {
         'key': 'test'
+      }, {
+        'key': 'tools',
+        'value': ['power', 'industrial', 'home']
+      }, {
+        'key': 'power tools'
+      }, {
+        'key': 'drills'
+      }, {
+        'key': 'video'
+      }, {
+        'key': 'source',
+        'value': ['streaming']
+      }, {
+        'key': 'renting'
+      }, {
+        'key': 'app',
+        'value': ['iphone 11']
+      }, {
+        'key': 'appcontent',
+        'value': ['home repair']
+      }, {
+        'key': 'dyi'
       }]);
 
       config.getConfig.restore();
@@ -714,7 +757,7 @@ describe('AppNexusAdapter', function () {
       });
     }
 
-    it('should convert keyword params to proper form and attaches to request', function () {
+    it('should convert keyword params and adUnit ortb2 keywords to proper form and attaches to request', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
@@ -729,6 +772,13 @@ describe('AppNexusAdapter', function () {
               emptyStr: '',
               emptyArr: [''],
               badValue: { 'foo': 'bar' } // should be dropped
+            }
+          },
+          ortb2Imp: {
+            ext: {
+              data: {
+                keywords: 'ortb2=yes,ortb2test, multiValMixed=4, singleValNum=456'
+              }
             }
           }
         }
@@ -748,14 +798,19 @@ describe('AppNexusAdapter', function () {
         'value': ['5']
       }, {
         'key': 'multiValMixed',
-        'value': ['value1', '2', 'value3']
+        'value': ['value1', '2', 'value3', '4']
       }, {
         'key': 'singleValNum',
-        'value': ['123']
+        'value': ['123', '456']
       }, {
         'key': 'emptyStr'
       }, {
         'key': 'emptyArr'
+      }, {
+        'key': 'ortb2',
+        'value': ['yes']
+      }, {
+        'key': 'ortb2test'
       }]);
     });
 
