@@ -11,7 +11,8 @@ import {
 import { VIDEO_JS_VENDOR } from '../libraries/video/constants/vendorCodes.js';
 import { submodule } from '../src/hook.js';
 import stateFactory from '../libraries/video/shared/state.js';
-import { PLAYBACK_MODE } from '../libraries/video/constants/enums.js'
+import { PLAYBACK_MODE } from '../libraries/video/constants/enums.js';
+import { getEventHandler } from '../libraries/video/shared/eventHandler.js';
 
 /*
 Plugins of interest:
@@ -249,62 +250,61 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
     }
   }
 
-  function registerPostSetupListeners(type, callback, payload) {
-    let eventHandler;
-
-    switch (type) {
-      case DESTROYED:
-        eventHandler = () => {
-          callback(type, payload);
-        };
-        player.on(utils.getVideojsEventName(type), eventHandler);
-        break;
-
-      case PLAYLIST:
-        eventHandler = e => {
-          Object.assign(payload, {
-            playlistItemCount: utils.getPlaylistCount(player),
-            autostart: player.autoplay()
-          });
-          callback(type, payload);
-        };
-
-        if (player.playlist) {
-          // force a playlist event on first item load
-          player.one('loadstart', eventHandler);
-          player.on('playlistchange', eventHandler);
-        } else {
-          // When playlist plugin is not used, treat each media item as a single item playlist
-          player.on('loadstart', eventHandler);
+  function registerPostSetupListeners(externalEventName, callback, basePayload) {
+    if (externalEventName === MUTE) {
+      const eventHandler = () => {
+        if (isMuted !== player.muted()) {
+          basePayload.mute = isMuted = !isMuted;
+          callback(externalEventName, basePayload);
         }
+      };
+      player.on(utils.getVideojsEventName(VOLUME), eventHandler);
+      return;
+    }
 
+    if (externalEventName === PLAYLIST) {
+      const eventHandler = getEventHandler(externalEventName, callback, basePayload, e => ({
+        playlistItemCount: utils.getPlaylistCount(player),
+        autostart: player.autoplay()
+      }));
+
+      if (player.playlist) {
+        // force a playlist event on first item load
+        player.one('loadstart', eventHandler);
+        player.on('playlistchange', eventHandler);
+      } else {
+        // When playlist plugin is not used, treat each media item as a single item playlist
+        player.on('loadstart', eventHandler);
+      }
+      return;
+    }
+
+    let getEventPayload;
+
+    switch (externalEventName) {
+      case PLAY:
+      case PAUSE:
+      case DESTROYED:
         break;
 
       case PLAYBACK_REQUEST:
-        eventHandler = e => {
-          payload.playReason = 'unknown';
-          callback(type, payload);
-        };
-        player.on(utils.getVideojsEventName(type), eventHandler);
+        getEventPayload = e => ({ playReason: 'unknown' });
         break;
 
       case AD_REQUEST:
-        eventHandler = e => {
+        getEventPayload = e => {
           const adTagUrl = e.AdsRequest.adTagUrl;
           adState.updateState({ adTagUrl });
-          payload.adTagUrl = adTagUrl;
-          callback(type, payload);
+          return { adTagUrl };
         };
-        player.on('ads-request', eventHandler); // TODO: e has ref to getSettings().VpaidMode - seems not
         break
 
       case AD_LOADED:
-        eventHandler = (e) => {
+        getEventPayload = (e) => {
           const imaAd = e.getAdData && e.getAdData();
           adState.updateForEvent(imaAd);
-          Object.assign(payload, adState.getState());
-          callback(type, payload);
           timeState.clearState();
+          return adState.getState();
         };
         player.on('ads-manager', () => player.ima.addEventListener('loaded', eventHandler));
         break
@@ -378,154 +378,107 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
         break
 
       case AD_ERROR:
-        eventHandler = e => {
+        getEventPayload = e => {
           const imaAdError = e.data && e.data.AdError;
-          Object.assign(payload, {
+          const extraPayload = Object.assign({
             playerErrorCode: imaAdError.getErrorCode(),
             vastErrorCode: imaAdError.getVastErrorCode(),
             errorMessage: imaAdError.getMessage(),
             sourceError: imaAdError.getInnerError()
             // timeout
           }, adState.getState(), timeState.getState());
-          callback(type, payload);
           adState.clearState();
+          return extraPayload;
         };
-        player.on('adserror', eventHandler)
         break
 
       case CONTENT_LOADED:
-        eventHandler = e => {
+        getEventPayload = e => {
           const media = utils.getMedia(player);
           const contentUrl = utils.getValidMediaUrl(media && media.src, player.src, e && e.target && e.target.currentSrc)
-          Object.assign(payload, {
+          return {
             contentId: media && media.id,
             contentUrl,
             title: media && media.title,
             description: media && media.description,
             playlistIndex: utils.getCurrentPlaylistIndex(player),
             contentTags: media && media.contentTags
-          });
-          callback(type, payload);
+          };
         };
-        player.on('loadstart', eventHandler);
-        break;
-
-      case PLAY:
-        eventHandler = () => {
-          callback(type, payload);
-        };
-        player.on(utils.getVideojsEventName(type), eventHandler);
-        break;
-
-      case PAUSE:
-        eventHandler = () => {
-          callback(type, payload);
-        };
-        player.on(type, eventHandler);
         break;
 
       case TIME:
         // TODO: might want to check seeking() and/or scrubbing()
-        eventHandler = e => {
+        getEventPayload = e => {
           previousLastTimePosition = lastTimePosition;
           const currentTime = player.currentTime();
           const duration = player.duration();
           timeState.updateForTimeEvent({ currentTime, duration });
           lastTimePosition = currentTime;
-          Object.assign(payload, {
+          return {
             position: lastTimePosition,
             duration
-          });
-          callback(type, payload);
+          };
         };
-        player.on(utils.getVideojsEventName(type), eventHandler);
         break;
 
       case SEEK_START:
-        eventHandler = e => {
-          Object.assign(payload, {
+        getEventPayload = e => {
+          return {
             position: previousLastTimePosition,
             destination: player.currentTime(),
             duration: player.duration()
-          });
-          callback(type, payload);
+          };
         }
-        player.on(utils.getVideojsEventName(type), eventHandler);
         break;
 
       case SEEK_END:
-        eventHandler = () => {
-          Object.assign(payload, {
-            position: player.currentTime(),
-            duration: player.duration()
-          });
-          callback(type, payload);
-        };
-        player.on(utils.getVideojsEventName(type), eventHandler);
-        break;
-
-      case MUTE:
-        eventHandler = () => {
-          const muteChange = player.muted();
-          if (isMuted !== muteChange) {
-            payload.mute = isMuted = muteChange;
-            callback(type, payload);
-          }
-        };
-        player.on(utils.getVideojsEventName(VOLUME), eventHandler);
+        getEventPayload = () => ({
+          position: player.currentTime(),
+          duration: player.duration()
+        });
         break;
 
       case VOLUME:
-        eventHandler = e => {
-          payload.volumePercentage = player.volume() * 100;
-          callback(type, payload);
-        };
-        player.on(utils.getVideojsEventName(type), eventHandler);
+        getEventPayload = e => ({ volumePercentage: player.volume() * 100 });
         break;
 
       case ERROR:
-        eventHandler = e => {
+        getEventPayload = e => {
           const error = player.error();
-          Object.assign(payload, {
+          return {
             sourceError: error,
             errorCode: error.code,
             errorMessage: error.message,
-          });
-          callback(type, payload);
+          };
         };
-        player.on(ERROR, eventHandler);
         break;
 
       case COMPLETE:
-        eventHandler = e => {
-          callback(type, payload);
+        getEventPayload = e => {
           previousLastTimePosition = lastTimePosition = 0;
           timeState.clearState();
         };
-        player.on(utils.getVideojsEventName(type), eventHandler);
         break;
 
       case FULLSCREEN:
-        eventHandler = e => {
-          payload.fullscreen = player.isFullscreen();
-          callback(type, payload);
-        };
-        player.on(utils.getVideojsEventName(type), eventHandler);
+        getEventPayload = e => ({ fullscreen: player.isFullscreen() });
         break;
 
       case PLAYER_RESIZE:
-        eventHandler = e => {
-          Object.assign(payload, {
-            height: player.currentHeight(),
-            width: player.currentWidth(),
-          });
-          callback(type, payload);
-        };
-        player.on(utils.getVideojsEventName(type), eventHandler);
+        getEventPayload = e => ({
+          height: player.currentHeight(),
+          width: player.currentWidth(),
+        });
         break;
 
       default:
+        return;
     }
+
+    const videojsEventName = utils.getVideojsEventName(externalEventName);
+    const eventHandler = getEventHandler(externalEventName, callback, basePayload, getEventPayload);
+    player.on(videojsEventName, eventHandler);
   }
 
   function offEvents(events, callback) {
@@ -670,6 +623,12 @@ export const utils = {
         return 'error';
       case DESTROYED:
         return 'dispose';
+      case AD_REQUEST:
+        return 'ads-request';
+      case AD_ERROR:
+        return 'adserror';
+      case CONTENT_LOADED:
+        return 'loadstart';
       case PLAY:
         return PLAY + 'ing';
       case PLAYBACK_REQUEST:
