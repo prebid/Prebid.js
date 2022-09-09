@@ -12,6 +12,7 @@ import { isFn, isStr, isPlainObject, logError } from '../src/utils.js';
 
 const MODULE_NAME = 'hadronId';
 const AU_GVLID = 561;
+const DEFAULT_HADRON_URL_ENDPOINT = 'https://id.hadron.ad.gt/api/v1/pbhid';
 
 export const storage = getStorageManager({gvlid: AU_GVLID, moduleName: 'hadron'});
 
@@ -29,6 +30,15 @@ function paramOrDefault(param, defaultVal, arg) {
   return defaultVal;
 }
 
+/**
+ * @param {string} url
+ * @param {string} params
+ * @returns {string}
+ */
+const urlAddParams = (url, params) => {
+  return url + (url.indexOf('?') > -1 ? '&' : '?') + params
+}
+
 /** @type {Submodule} */
 export const hadronIdSubmodule = {
   /**
@@ -39,8 +49,8 @@ export const hadronIdSubmodule = {
   /**
    * decode the stored id value for passing to bid requests
    * @function
-   * @param {{value:string}} value
-   * @returns {{hadronId:Object}}
+   * @param {string} value
+   * @returns {Object}
    */
   decode(value) {
     let hadronId = storage.getDataFromLocalStorage('auHadronId');
@@ -59,9 +69,12 @@ export const hadronIdSubmodule = {
     if (!isPlainObject(config.params)) {
       config.params = {};
     }
-    const url = paramOrDefault(config.params.url,
-      `https://id.hadron.ad.gt/api/v1/pbhid`,
-      config.params.urlArg);
+    const partnerId = config.params.partnerId | 0;
+
+    const url = urlAddParams(
+      paramOrDefault(config.params.url, DEFAULT_HADRON_URL_ENDPOINT, config.params.urlArg),
+      `partner_id=${partnerId}&_it=prebid`
+    );
 
     const resp = function (callback) {
       let hadronId = storage.getDataFromLocalStorage('auHadronId');

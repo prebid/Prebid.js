@@ -1,4 +1,4 @@
-import adapter from '../src/AnalyticsAdapter.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
 import { logError, parseUrl, _each } from '../src/utils.js';
@@ -381,6 +381,7 @@ export function ExpiringQueue(callback, ttl) {
   }
 }
 
+// TODO: this should reuse logic from refererDetection
 function getNavigationInfo() {
   try {
     return getLocationAndReferrer(self.top);

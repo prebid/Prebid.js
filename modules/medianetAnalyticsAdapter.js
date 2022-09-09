@@ -11,7 +11,7 @@ import {
   uniques,
   getHighestCpm
 } from '../src/utils.js';
-import adapter from '../src/AnalyticsAdapter.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
 import {ajax} from '../src/ajax.js';
@@ -182,16 +182,16 @@ class Configure {
 
 class PageDetail {
   constructor () {
-    const canonicalUrl = this._getUrlFromSelector('link[rel="canonical"]', 'href');
     const ogUrl = this._getUrlFromSelector('meta[property="og:url"]', 'content');
     const twitterUrl = this._getUrlFromSelector('meta[name="twitter:url"]', 'content');
     const refererInfo = getRefererInfo();
 
-    this.domain = URL.parseUrl(refererInfo.referer).hostname;
-    this.page = refererInfo.referer;
+    // TODO: are these the right refererInfo values?
+    this.domain = refererInfo.domain;
+    this.page = refererInfo.page;
     this.is_top = refererInfo.reachedTop;
-    this.referrer = this._getTopWindowReferrer();
-    this.canonical_url = canonicalUrl;
+    this.referrer = refererInfo.ref || window.document.referrer;
+    this.canonical_url = refererInfo.canonicalUrl;
     this.og_url = ogUrl;
     this.twitter_url = twitterUrl;
     this.screen = this._getWindowSize();

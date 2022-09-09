@@ -1,6 +1,6 @@
 import { getParameterByName, logInfo, generateUUID, debugTurnedOn } from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
-import adapter from '../src/AnalyticsAdapter.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
 import { getStorageManager } from '../src/storageManager.js';
@@ -157,7 +157,7 @@ function extendUserSessionTimeout() {
 }
 
 function userSessionID() {
-  return storage.getDataFromLocalStorage(localStorageSessName()) ? localStorage.getItem(localStorageSessName()) : '';
+  return storage.getDataFromLocalStorage(localStorageSessName()) || '';
 }
 
 function sessionExpired() {
@@ -224,7 +224,8 @@ function filterAuctionInit(data) {
   modified.refererInfo = {};
   // handle clean referrer, we only need one
   if (typeof modified.bidderRequests !== 'undefined' && typeof modified.bidderRequests[0] !== 'undefined' && typeof modified.bidderRequests[0].refererInfo !== 'undefined') {
-    modified.refererInfo = modified.bidderRequests[0].refererInfo;
+    // TODO: please do not send internal data structures over the network
+    modified.refererInfo = modified.bidderRequests[0].refererInfo.legacy;
   }
 
   if (typeof modified.adUnitCodes !== 'undefined') {
@@ -294,7 +295,7 @@ pubwiseAnalytics.handleEvent = function(eventType, data) {
   if (eventType === CONSTANTS.EVENTS.AUCTION_END || eventType === CONSTANTS.EVENTS.BID_WON) {
     flushEvents();
   }
-}
+};
 
 pubwiseAnalytics.storeSessionID = function (userSessID) {
   storage.setDataInLocalStorage(localStorageSessName(), userSessID);

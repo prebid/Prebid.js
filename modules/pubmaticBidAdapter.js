@@ -1,9 +1,10 @@
-import { logWarn, _each, isBoolean, isStr, isArray, inIframe, mergeDeep, deepAccess, isNumber, deepSetValue, logInfo, logError, deepClone, convertTypes } from '../src/utils.js';
+import { logWarn, _each, isBoolean, isStr, isArray, inIframe, mergeDeep, deepAccess, isNumber, deepSetValue, logInfo, logError, deepClone, convertTypes, uniques } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { bidderSettings } from '../src/bidderSettings.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'pubmatic';
 const LOG_WARN_PREFIX = 'PubMatic: ';
@@ -111,10 +112,6 @@ const dealChannelValues = {
   6: 'PMPG'
 };
 
-const FLOC_FORMAT = {
-  'EID': 1,
-  'SEGMENT': 2
-}
 // BB stands for Blue BillyWig
 const BB_RENDERER = {
   bootstrapPlayer: function(bid) {
@@ -180,13 +177,15 @@ let publisherId = 0;
 let isInvalidNativeRequest = false;
 let NATIVE_ASSET_ID_TO_KEY_MAP = {};
 let NATIVE_ASSET_KEY_TO_ASSET_MAP = {};
+let biddersList = ['pubmatic'];
+const allBiddersList = ['all'];
 
 // loading NATIVE_ASSET_ID_TO_KEY_MAP
 _each(NATIVE_ASSETS, anAsset => { NATIVE_ASSET_ID_TO_KEY_MAP[anAsset.ID] = anAsset.KEY });
 // loading NATIVE_ASSET_KEY_TO_ASSET_MAP
 _each(NATIVE_ASSETS, anAsset => { NATIVE_ASSET_KEY_TO_ASSET_MAP[anAsset.KEY] = anAsset });
 
-function _getDomainFromURL(url) {
+export function _getDomainFromURL(url) {
   let anchor = document.createElement('a');
   anchor.href = url;
   return anchor.hostname;
@@ -273,8 +272,9 @@ function _parseAdSlot(bid) {
 
 function _initConf(refererInfo) {
   return {
-    pageURL: (refererInfo && refererInfo.referer) ? refererInfo.referer : window.location.href,
-    refURL: window.document.referrer
+    // TODO: do the fallbacks make sense here?
+    pageURL: refererInfo?.page || window.location.href,
+    refURL: refererInfo?.ref || window.document.referrer
   };
 }
 
@@ -608,7 +608,7 @@ function _addDealCustomTargetings(imp, bid) {
       if (dctr.substring(dctrLen, dctrLen - 1) === '|') {
         dctr = dctr.substring(0, dctrLen - 1);
       }
-      imp.ext['key_val'] = dctr.trim()
+      imp.ext['key_val'] = dctr.trim();
     } else {
       logWarn(LOG_WARN_PREFIX + 'Ignoring param : dctr with value : ' + dctr + ', expects string-value, found empty or non-string value');
     }
@@ -799,67 +799,8 @@ function _addFloorFromFloorModule(impObj, bid) {
   logInfo(LOG_WARN_PREFIX, 'new impObj.bidfloor value:', impObj.bidfloor);
 }
 
-function _getFlocId(validBidRequests, flocFormat) {
-  var flocIdObject = null;
-  var flocId = deepAccess(validBidRequests, '0.userId.flocId');
-  if (flocId && flocId.id) {
-    switch (flocFormat) {
-      case FLOC_FORMAT.SEGMENT:
-        flocIdObject = {
-          id: 'FLOC',
-          name: 'FLOC',
-          ext: {
-            ver: flocId.version
-          },
-          segment: [{
-            id: flocId.id,
-            name: 'chrome.com',
-            value: flocId.id.toString()
-          }]
-        }
-        break;
-      case FLOC_FORMAT.EID:
-      default:
-        flocIdObject = {
-          source: 'chrome.com',
-          uids: [
-            {
-              atype: 1,
-              id: flocId.id,
-              ext: {
-                ver: flocId.version
-              }
-            },
-          ]
-        }
-        break;
-    }
-  }
-  return flocIdObject;
-}
-
-function _handleFlocId(payload, validBidRequests) {
-  var flocObject = _getFlocId(validBidRequests, FLOC_FORMAT.SEGMENT);
-  if (flocObject) {
-    if (!payload.user) {
-      payload.user = {};
-    }
-    if (!payload.user.data) {
-      payload.user.data = [];
-    }
-    payload.user.data.push(flocObject);
-  }
-}
-
 function _handleEids(payload, validBidRequests) {
   let bidUserIdAsEids = deepAccess(validBidRequests, '0.userIdAsEids');
-  let flocObject = _getFlocId(validBidRequests, FLOC_FORMAT.EID);
-  if (flocObject) {
-    if (!bidUserIdAsEids) {
-      bidUserIdAsEids = [];
-    }
-    bidUserIdAsEids.push(flocObject);
-  }
   if (isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
     deepSetValue(payload, 'user.eids', bidUserIdAsEids);
   }
@@ -870,7 +811,7 @@ function _checkMediaType(bid, newBid) {
   if (bid.ext && bid.ext['bidtype'] != undefined) {
     newBid.mediaType = MEDIATYPE[bid.ext.bidtype];
   } else {
-    logInfo(LOG_WARN_PREFIX + 'bid.ext.bidtype does not exist, checking alternatively for mediaType')
+    logInfo(LOG_WARN_PREFIX + 'bid.ext.bidtype does not exist, checking alternatively for mediaType');
     var adm = bid.adm;
     var admStr = '';
     var videoRegex = new RegExp(/VAST\s+version/);
@@ -1083,6 +1024,8 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: (validBidRequests, bidderRequest) => {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
     var refererInfo;
     if (bidderRequest && bidderRequest.refererInfo) {
       refererInfo = bidderRequest.refererInfo;
@@ -1148,10 +1091,21 @@ export const spec = {
     payload.ext.wrapper.wv = $$REPO_AND_VERSION$$;
     payload.ext.wrapper.transactionId = conf.transactionId;
     payload.ext.wrapper.wp = 'pbjs';
-    if (bidderRequest && bidderRequest.bidderCode) {
-      payload.ext.allowAlternateBidderCodes = bidderSettings.get(bidderRequest.bidderCode, 'allowAlternateBidderCodes');
-      payload.ext.allowedAlternateBidderCodes = bidderSettings.get(bidderRequest.bidderCode, 'allowedAlternateBidderCodes');
+    const allowAlternateBidder = bidderRequest ? bidderSettings.get(bidderRequest.bidderCode, 'allowAlternateBidderCodes') : undefined;
+    if (allowAlternateBidder !== undefined) {
+      payload.ext.marketplace = {};
+      if (bidderRequest && allowAlternateBidder == true) {
+        let allowedBiddersList = bidderSettings.get(bidderRequest.bidderCode, 'allowedAlternateBidderCodes');
+        if (isArray(allowedBiddersList)) {
+          allowedBiddersList = allowedBiddersList.map(val => val.trim().toLowerCase()).filter(val => !!val).filter(uniques);
+          biddersList = allowedBiddersList.includes('*') ? allBiddersList : [...biddersList, ...allowedBiddersList];
+        } else {
+          biddersList = allBiddersList;
+        }
+      }
+      payload.ext.marketplace.allowedbidders = biddersList.filter(uniques);
     }
+
     payload.user.gender = (conf.gender ? conf.gender.trim() : UNDEFINED);
     payload.user.geo = {};
     payload.user.geo.lat = _parseSlotParam('lat', conf.lat);
@@ -1170,6 +1124,9 @@ export const spec = {
     if (typeof config.getConfig('device') === 'object') {
       payload.device = Object.assign(payload.device, config.getConfig('device'));
     }
+
+    // update device.language to ISO-639-1-alpha-2 (2 character language)
+    payload.device.language = payload.device.language && payload.device.language.split('-')[0];
 
     // passing transactionId in source.tid
     deepSetValue(payload, 'source.tid', conf.transactionId);
@@ -1202,18 +1159,22 @@ export const spec = {
 
     _handleEids(payload, validBidRequests);
 
-    _handleFlocId(payload, validBidRequests);
     // First Party Data
-    const commonFpd = config.getConfig('ortb2') || {};
+    const commonFpd = (bidderRequest && bidderRequest.ortb2) || {};
     if (commonFpd.site) {
+      const { page, domain, ref } = payload.site;
       mergeDeep(payload, {site: commonFpd.site});
+      payload.site.page = page;
+      payload.site.domain = domain;
+      payload.site.ref = ref;
     }
     if (commonFpd.user) {
       mergeDeep(payload, {user: commonFpd.user});
     }
     if (commonFpd.bcat) {
-      blockedIabCategories = blockedIabCategories.concat(commonFpd.bcat)
+      blockedIabCategories = blockedIabCategories.concat(commonFpd.bcat);
     }
+
     if (commonFpd.ext?.prebid?.bidderparams?.[bidderRequest.bidderCode]?.acat) {
       const acatParams = commonFpd.ext.prebid.bidderparams[bidderRequest.bidderCode].acat;
       _allowedIabCategoriesValidation(payload, acatParams);
@@ -1221,6 +1182,19 @@ export const spec = {
       _allowedIabCategoriesValidation(payload, allowedIabCategories);
     }
     _blockedIabCategoriesValidation(payload, blockedIabCategories);
+
+    // Check if bidderRequest has timeout property if present send timeout as tmax value to translator request
+    // bidderRequest has timeout property if publisher sets during calling requestBids function from page
+    // if not bidderRequest contains global value set by Prebid
+    if (bidderRequest?.timeout) {
+      payload.tmax = bidderRequest.timeout || config.getConfig('bidderTimeout');
+    } else {
+      payload.tmax = window?.PWT?.versionDetails?.timeout;
+    }
+
+    // Sending epoch timestamp in request.ext object
+    payload.ext.epoch = new Date().getTime();
+
     // Note: Do not move this block up
     // if site object is set in Prebid config then we need to copy required fields from site into app and unset the site object
     if (typeof config.getConfig('app') === 'object') {

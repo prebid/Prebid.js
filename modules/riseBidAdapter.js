@@ -8,7 +8,7 @@ const BIDDER_CODE = 'rise';
 const ADAPTER_VERSION = '6.0.0';
 const TTL = 360;
 const CURRENCY = 'USD';
-const SELLER_ENDPOINT = 'https://hb.yellowblue.io/';
+const DEFAULT_SELLER_ENDPOINT = 'https://hb.yellowblue.io/';
 const MODES = {
   PRODUCTION: 'hb-multi',
   TEST: 'hb-multi-test'
@@ -42,13 +42,14 @@ export const spec = {
     // use data from the first bid, to create the general params for all bids
     const generalObject = validBidRequests[0];
     const testMode = generalObject.params.testMode;
+    const rtbDomain = generalObject.params.rtbDomain;
 
     combinedRequestsObject.params = generateGeneralParams(generalObject, bidderRequest);
     combinedRequestsObject.bids = generateBidsParams(validBidRequests, bidderRequest);
 
     return {
       method: 'POST',
-      url: getEndpoint(testMode),
+      url: getEndpoint(testMode, rtbDomain),
       data: combinedRequestsObject
     }
   },
@@ -223,9 +224,11 @@ function isSyncMethodAllowed(syncRule, bidderCode) {
 /**
  * Get the seller endpoint
  * @param testMode {boolean}
+ * @param rtbDomain {string}
  * @returns {string}
  */
-function getEndpoint(testMode) {
+function getEndpoint(testMode, rtbDomain) {
+  const SELLER_ENDPOINT = rtbDomain ? `https://${rtbDomain}/` : DEFAULT_SELLER_ENDPOINT;
   return testMode
     ? SELLER_ENDPOINT + MODES.TEST
     : SELLER_ENDPOINT + MODES.PRODUCTION;
@@ -287,6 +290,7 @@ function generateBidParameters(bid, bidderRequest) {
     floorPrice: Math.max(getFloor(bid, mediaType), params.floorPrice),
     bidId: getBidIdParameter('bidId', bid),
     bidderRequestId: getBidIdParameter('bidderRequestId', bid),
+    loop: getBidIdParameter('bidderRequestsCount', bid),
     transactionId: getBidIdParameter('transactionId', bid),
   };
 
@@ -383,14 +387,14 @@ function generateGeneralParams(generalObject, bidderRequest) {
     ua: navigator.userAgent,
     session_id: getBidIdParameter('auctionId', generalObject),
     tmax: timeout
-  }
+  };
 
   const userIdsParam = getBidIdParameter('userId', generalObject);
   if (userIdsParam) {
     generalParams.userIds = JSON.stringify(userIdsParam);
   }
 
-  const ortb2Metadata = config.getConfig('ortb2') || {};
+  const ortb2Metadata = bidderRequest.ortb2 || {};
   if (ortb2Metadata.site) {
     generalParams.site_metadata = JSON.stringify(ortb2Metadata.site);
   }
@@ -423,9 +427,11 @@ function generateGeneralParams(generalObject, bidderRequest) {
   }
 
   if (bidderRequest && bidderRequest.refererInfo) {
-    generalParams.referrer = deepAccess(bidderRequest, 'refererInfo.referer');
-    generalParams.page_url = config.getConfig('pageUrl') || deepAccess(window, 'location.href');
+    // TODO: is 'ref' the right value here?
+    generalParams.referrer = deepAccess(bidderRequest, 'refererInfo.ref');
+    // TODO: does the fallback make sense here?
+    generalParams.page_url = deepAccess(bidderRequest, 'refererInfo.page') || deepAccess(window, 'location.href');
   }
 
-  return generalParams
+  return generalParams;
 }

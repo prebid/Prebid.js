@@ -1,7 +1,8 @@
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 /* eslint dot-notation:0, quote-props:0 */
-import { convertTypes, deepAccess, isArray, logError, isFn } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { Renderer } from '../src/Renderer.js';
+import {convertTypes, deepAccess, isArray, isFn, logError} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {Renderer} from '../src/Renderer.js';
 
 const NATIVE_DEFAULTS = {
   TITLE_LEN: 100,
@@ -39,13 +40,16 @@ export const spec = {
   ),
 
   buildRequests: (bidRequests, bidderRequest) => {
+    // convert Native ORTB definition to old-style prebid native definition
+    bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
+
     const request = {
       id: bidRequests[0].bidderRequestId,
       imp: bidRequests.map(slot => impression(slot)),
       site: site(bidRequests, bidderRequest),
       app: app(bidRequests),
       device: device(),
-      bcat: bidRequests[0].params.bcat,
+      bcat: deepAccess(bidderRequest.ortb2Imp, 'bcat') || bidRequests[0].params.bcat,
       badv: bidRequests[0].params.badv,
       user: user(bidRequests[0], bidderRequest),
       regs: regs(bidderRequest),
@@ -92,7 +96,7 @@ function bidResponseAvailable(request, response) {
   const idToImpMap = {};
   const idToBidMap = {};
   const idToSlotConfig = {};
-  const bidResponse = response.body
+  const bidResponse = response.body;
   // extract the request bids and the response bids, keyed by impr-id
   const ortbRequest = request.data;
   ortbRequest.imp.forEach(imp => {
@@ -330,8 +334,9 @@ function site(bidRequests, bidderRequest) {
       publisher: {
         id: pubId.toString(),
       },
-      ref: referrer(),
-      page: bidderRequest && bidderRequest.refererInfo ? bidderRequest.refererInfo.referer : '',
+      // TODO: does the fallback make sense here?
+      ref: bidderRequest?.refererInfo?.ref || window.document.referrer,
+      page: bidderRequest?.refererInfo?.page || ''
     }
   }
   return null;
@@ -354,17 +359,6 @@ function app(bidderRequest) {
     }
   }
   return null;
-}
-
-/**
- * Attempts to capture the referrer url.
- */
-function referrer() {
-  try {
-    return window.top.document.referrer;
-  } catch (e) {
-    return document.referrer;
-  }
 }
 
 /**
