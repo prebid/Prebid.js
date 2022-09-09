@@ -33,6 +33,7 @@ https://github.com/Conviva/conviva-js-videojs/blob/master/conviva-videojs-module
  */
 
 const setupFailMessage = 'Failed to instantiate the player';
+const AD_MANAGER_EVENTS = [AD_LOADED, AD_STARTED, AD_IMPRESSION, AD_PLAY, AD_PAUSE, AD_TIME, AD_COMPLETE, AD_SKIPPED];
 
 export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStorage_, utils) {
   let vjs = vjs_;
@@ -279,6 +280,11 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
       return;
     }
 
+    if (AD_MANAGER_EVENTS.includes(externalEventName)) {
+      registerAdManagerEvent(externalEventName, callback, basePayload);
+      return;
+    }
+
     let getEventPayload;
 
     switch (externalEventName) {
@@ -297,84 +303,6 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
           adState.updateState({ adTagUrl });
           return { adTagUrl };
         };
-        break
-
-      case AD_LOADED:
-        getEventPayload = (e) => {
-          const imaAd = e.getAdData && e.getAdData();
-          adState.updateForEvent(imaAd);
-          timeState.clearState();
-          return adState.getState();
-        };
-        player.on('ads-manager', () => player.ima.addEventListener('loaded', eventHandler));
-        break
-
-      case AD_STARTED:
-        eventHandler = () => {
-          Object.assign(payload, adState.getState());
-          callback(type, payload);
-        };
-        player.on('ads-manager', () => player.ima.addEventListener('start', eventHandler));
-        break
-
-      case AD_IMPRESSION:
-        eventHandler = () => {
-          Object.assign(payload, adState.getState(), timeState.getState());
-          callback(type, payload);
-        };
-        player.on('ads-manager', () => player.ima.addEventListener('impression', eventHandler));
-        break
-
-      case AD_PLAY:
-        eventHandler = () => {
-          Object.assign(payload, adState.getState());
-          callback(type, payload);
-        };
-        player.on('ads-manager', () => player.ima.addEventListener('resume', eventHandler));
-        break
-
-      case AD_PAUSE:
-        eventHandler = () => {
-          Object.assign(payload, adState.getState());
-          callback(type, payload);
-        };
-        player.on('ads-manager', () => player.ima.addEventListener('pause', eventHandler));
-        break
-
-      case AD_TIME:
-        eventHandler = (e) => {
-          const adTimeEvent = e && e.getAdData && e.getAdData();
-          timeState.updateForTimeEvent(adTimeEvent);
-          Object.assign(payload, adState.getState(), timeState.getState());
-          callback(type, payload);
-        };
-        player.on('ads-manager', () => player.ima.addEventListener('adProgress', eventHandler));
-        break
-
-      case AD_COMPLETE:
-        eventHandler = () => {
-          Object.assign(payload, adState.getState());
-          callback(type, payload);
-          adState.clearState();
-        };
-        player.on('ads-manager', () => player.ima.addEventListener('complete', eventHandler));
-        break
-
-      case AD_SKIPPED:
-        eventHandler = () => {
-          Object.assign(payload, adState.getState(), timeState.getState());
-          callback(type, payload);
-          adState.clearState();
-        };
-        player.on('ads-manager', () => player.ima.addEventListener('skip', eventHandler));
-        break
-
-      case AD_CLICK:
-        eventHandler = () => {
-          Object.assign(payload, adState.getState(), timeState.getState());
-          callback(type, payload);
-        };
-        player.on('ads-manager', () => player.ima.addEventListener('click', eventHandler));
         break
 
       case AD_ERROR:
@@ -479,6 +407,59 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
     const videojsEventName = utils.getVideojsEventName(externalEventName);
     const eventHandler = getEventHandler(externalEventName, callback, basePayload, getEventPayload);
     player.on(videojsEventName, eventHandler);
+  }
+
+  function registerAdManagerEvent(externalEventName, callback, basePayload) {
+    let getEventPayload;
+    switch (externalEventName) {
+      case AD_LOADED:
+        getEventPayload = (e) => {
+          const imaAd = e.getAdData && e.getAdData();
+          adState.updateForEvent(imaAd);
+          timeState.clearState();
+          return adState.getState();
+        };
+        break
+
+      case AD_STARTED:
+      case AD_PLAY:
+      case AD_PAUSE:
+        getEventPayload = () => adState.getState();
+        break
+
+      case AD_IMPRESSION:
+      case AD_CLICK:
+        getEventPayload = () => Object.assign({}, adState.getState(), timeState.getState());
+        break
+
+      case AD_TIME:
+        getEventPayload = (e) => {
+          const adTimeEvent = e && e.getAdData && e.getAdData();
+          timeState.updateForTimeEvent(adTimeEvent);
+          return Object.assign({}, adState.getState(), timeState.getState());
+        };
+        break
+
+      case AD_COMPLETE:
+        getEventPayload = () => {
+          const currentState = adState.getState();
+          adState.clearState();
+          return currentState;
+        };
+        break
+
+      case AD_SKIPPED:
+        getEventPayload = () => {
+          const currentState = Object.assign({}, adState.getState(), timeState.getState());
+          adState.clearState();
+          return currentState;
+        };
+        break
+    }
+
+    const eventHandler = getEventHandler(externalEventName, callback, basePayload, getEventPayload);
+    const imaEventName = utils.getVideojsEventName(externalEventName);
+    player.on('ads-manager', () => player.ima.addEventListener(imaEventName, eventHandler));
   }
 
   function offEvents(events, callback) {
@@ -625,6 +606,24 @@ export const utils = {
         return 'dispose';
       case AD_REQUEST:
         return 'ads-request';
+      case AD_LOADED:
+        return 'loaded'
+      case AD_STARTED:
+        return 'start';
+      case AD_IMPRESSION:
+        return 'impression';
+      case AD_PLAY:
+        return 'resume'
+      case AD_PAUSE:
+        return PAUSE;
+      case AD_TIME:
+        return 'adProgress';
+      case AD_CLICK:
+        return 'click';
+      case AD_COMPLETE:
+        return COMPLETE;
+      case AD_SKIPPED:
+        return 'skip';
       case AD_ERROR:
         return 'adserror';
       case CONTENT_LOADED:
