@@ -17,7 +17,10 @@ export const USER_IDS_CONFIG = {
   // intentIqId
   'intentIqId': {
     source: 'intentiq.com',
-    atype: 1
+    atype: 1,
+    getValue: function(data) {
+      return data.RESULT;
+    }
   },
 
   // naveggId
@@ -182,7 +185,10 @@ export const USER_IDS_CONFIG = {
   // zeotapIdPlus
   'IDP': {
     source: 'zeotap.com',
-    atype: 1
+    atype: 1,
+    getValue: function getValue(data) {
+      return isPlainObject(data) ? data.id : data;
+    }
   },
 
   // hadronId
@@ -265,7 +271,6 @@ export const USER_IDS_CONFIG = {
     source: 'deepintent.com',
     atype: 3
   },
-
   // Admixer Id
   'admixerId': {
     source: 'admixer.net',

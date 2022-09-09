@@ -7,7 +7,7 @@ import { bidderSettings } from '../src/bidderSettings.js';
 
 const BIDDER_CODE = 'pubmatic';
 const LOG_WARN_PREFIX = 'PubMatic: ';
-const ENDPOINT = 'https://hbopenbid.pubmatic.com/translator?source=prebid-client';
+const ENDPOINT = 'https://hbopenbid.pubmatic.com/translator?source=ow-client';
 const USER_SYNC_URL_IFRAME = 'https://ads.pubmatic.com/AdServer/js/user_sync.html?kdntuid=1&p=';
 const USER_SYNC_URL_IMAGE = 'https://image8.pubmatic.com/AdServer/ImgSync?p=';
 const DEFAULT_CURRENCY = 'USD';
@@ -83,6 +83,12 @@ const NATIVE_ASSET_IMAGE_TYPE = {
   'ICON': 1,
   'LOGO': 2,
   'IMAGE': 3
+}
+
+const MEDIATYPE = {
+  0: BANNER,
+  1: VIDEO,
+  2: NATIVE
 }
 
 // check if title, image can be added with mandatory field default values
@@ -170,12 +176,6 @@ const BB_RENDERER = {
   }
 };
 
-const MEDIATYPE = [
-  BANNER,
-  VIDEO,
-  NATIVE
-]
-
 let publisherId = 0;
 let isInvalidNativeRequest = false;
 let NATIVE_ASSET_ID_TO_KEY_MAP = {};
@@ -243,14 +243,16 @@ function _parseAdSlot(bid) {
   bid.params.adUnit = splits[0];
   if (splits.length > 1) {
     // i.e size is specified in adslot, so consider that and ignore sizes array
-    splits = splits[1].split('x');
+    splits = splits.length == 2 ? splits[1].split('x') : splits.length == 3 ? splits[2].split('x') : [];
     if (splits.length != 2) {
       logWarn(LOG_WARN_PREFIX + 'AdSlot Error: adSlot not in required format');
       return;
     }
     bid.params.width = parseInt(splits[0], 10);
     bid.params.height = parseInt(splits[1], 10);
-  } else if (bid.hasOwnProperty('mediaTypes') &&
+  }
+  // Case : if Size is present in ad slot as well as in mediaTypes then ???
+  if (bid.hasOwnProperty('mediaTypes') &&
          bid.mediaTypes.hasOwnProperty(BANNER) &&
           bid.mediaTypes.banner.hasOwnProperty('sizes')) {
     var i = 0;
@@ -264,9 +266,13 @@ function _parseAdSlot(bid) {
     if (bid.mediaTypes.banner.sizes.length >= 1) {
       // set the first size in sizes array in bid.params.width and bid.params.height. These will be sent as primary size.
       // The rest of the sizes will be sent in format array.
-      bid.params.width = bid.mediaTypes.banner.sizes[0][0];
-      bid.params.height = bid.mediaTypes.banner.sizes[0][1];
-      bid.mediaTypes.banner.sizes = bid.mediaTypes.banner.sizes.splice(1, bid.mediaTypes.banner.sizes.length - 1);
+      if (!bid.params.width && !bid.params.height) {
+        bid.params.width = bid.mediaTypes.banner.sizes[0][0];
+        bid.params.height = bid.mediaTypes.banner.sizes[0][1];
+        bid.mediaTypes.banner.sizes = bid.mediaTypes.banner.sizes.splice(1, bid.mediaTypes.banner.sizes.length - 1);
+      } else if (bid.params.width == bid.mediaTypes.banner.sizes[0][0] && bid.params.height == bid.mediaTypes.banner.sizes[0][1]) {
+        bid.mediaTypes.banner.sizes = bid.mediaTypes.banner.sizes.splice(1, bid.mediaTypes.banner.sizes.length - 1);
+      }
     }
   }
 }
@@ -392,37 +398,30 @@ function _createNativeRequest(params) {
             }
             break;
           case NATIVE_ASSETS.IMAGE.KEY:
-            if (params[key].sizes && params[key].sizes.length > 0) {
-              assetObj = {
-                id: NATIVE_ASSETS.IMAGE.ID,
-                required: params[key].required ? 1 : 0,
-                img: {
-                  type: NATIVE_ASSET_IMAGE_TYPE.IMAGE,
-                  w: params[key].w || params[key].width || (params[key].sizes ? params[key].sizes[0] : UNDEFINED),
-                  h: params[key].h || params[key].height || (params[key].sizes ? params[key].sizes[1] : UNDEFINED),
-                  wmin: params[key].wmin || params[key].minimumWidth || (params[key].minsizes ? params[key].minsizes[0] : UNDEFINED),
-                  hmin: params[key].hmin || params[key].minimumHeight || (params[key].minsizes ? params[key].minsizes[1] : UNDEFINED),
-                  mimes: params[key].mimes,
-                  ext: params[key].ext,
-                }
-              };
-            } else {
-              logWarn(LOG_WARN_PREFIX + 'Error: Image sizes is required for native ad: ' + JSON.stringify(params));
-            }
+            assetObj = {
+              id: NATIVE_ASSETS.IMAGE.ID,
+              required: params[key].required ? 1 : 0,
+              img: {
+                type: NATIVE_ASSET_IMAGE_TYPE.IMAGE,
+                w: params[key].w || params[key].width || (params[key].sizes ? params[key].sizes[0] : UNDEFINED),
+                h: params[key].h || params[key].height || (params[key].sizes ? params[key].sizes[1] : UNDEFINED),
+                wmin: params[key].wmin || params[key].minimumWidth || (params[key].minsizes ? params[key].minsizes[0] : UNDEFINED),
+                hmin: params[key].hmin || params[key].minimumHeight || (params[key].minsizes ? params[key].minsizes[1] : UNDEFINED),
+                mimes: params[key].mimes,
+                ext: params[key].ext,
+              }
+            };
             break;
           case NATIVE_ASSETS.ICON.KEY:
-            if (params[key].sizes && params[key].sizes.length > 0) {
-              assetObj = {
-                id: NATIVE_ASSETS.ICON.ID,
-                required: params[key].required ? 1 : 0,
-                img: {
-                  type: NATIVE_ASSET_IMAGE_TYPE.ICON,
-                  w: params[key].w || params[key].width || (params[key].sizes ? params[key].sizes[0] : UNDEFINED),
-                  h: params[key].h || params[key].height || (params[key].sizes ? params[key].sizes[1] : UNDEFINED),
-                }
-              };
-            } else {
-              logWarn(LOG_WARN_PREFIX + 'Error: Icon sizes is required for native ad: ' + JSON.stringify(params));
+            assetObj = {
+              id: NATIVE_ASSETS.ICON.ID,
+              required: params[key].required ? 1 : 0,
+              img: {
+                type: NATIVE_ASSET_IMAGE_TYPE.ICON,
+                w: params[key].w || params[key].width || (params[key].sizes ? params[key].sizes[0] : UNDEFINED),
+                h: params[key].h || params[key].height || (params[key].sizes ? params[key].sizes[1] : UNDEFINED),
+                ext: params[key].ext
+              }
             };
             break;
           case NATIVE_ASSETS.VIDEO.KEY:
@@ -451,7 +450,8 @@ function _createNativeRequest(params) {
               img: {
                 type: NATIVE_ASSET_IMAGE_TYPE.LOGO,
                 w: params[key].w || params[key].width || (params[key].sizes ? params[key].sizes[0] : UNDEFINED),
-                h: params[key].h || params[key].height || (params[key].sizes ? params[key].sizes[1] : UNDEFINED)
+                h: params[key].h || params[key].height || (params[key].sizes ? params[key].sizes[1] : UNDEFINED),
+                ext: params[key].ext
               }
             };
             break;
@@ -559,12 +559,21 @@ function _createVideoRequest(bid) {
       }
     }
     // read playersize and assign to h and w.
-    if (isArray(bid.mediaTypes.video.playerSize[0])) {
-      videoObj.w = parseInt(bid.mediaTypes.video.playerSize[0][0], 10);
-      videoObj.h = parseInt(bid.mediaTypes.video.playerSize[0][1], 10);
-    } else if (isNumber(bid.mediaTypes.video.playerSize[0])) {
-      videoObj.w = parseInt(bid.mediaTypes.video.playerSize[0], 10);
-      videoObj.h = parseInt(bid.mediaTypes.video.playerSize[1], 10);
+    if (bid.mediaTypes.video.playerSize) {
+      if (isArray(bid.mediaTypes.video.playerSize[0])) {
+        videoObj.w = parseInt(bid.mediaTypes.video.playerSize[0][0], 10);
+        videoObj.h = parseInt(bid.mediaTypes.video.playerSize[0][1], 10);
+      } else if (isNumber(bid.mediaTypes.video.playerSize[0])) {
+        videoObj.w = parseInt(bid.mediaTypes.video.playerSize[0], 10);
+        videoObj.h = parseInt(bid.mediaTypes.video.playerSize[1], 10);
+      }
+    } else if (bid.mediaTypes.video.w && bid.mediaTypes.video.h) {
+      videoObj.w = parseInt(bid.mediaTypes.video.w, 10);
+      videoObj.h = parseInt(bid.mediaTypes.video.h, 10);
+    } else {
+      videoObj = UNDEFINED;
+      logWarn(LOG_WARN_PREFIX + 'Error: Video size params(playersize or w&h) missing for adunit: ' + bid.params.adUnit + ' with mediaType set as video. Ignoring video impression in the adunit.');
+      return videoObj;
     }
   } else {
     videoObj = UNDEFINED;
@@ -651,7 +660,7 @@ function _createImpressionObject(bid, conf) {
 
   impObj = {
     id: bid.bidId,
-    tagid: bid.params.adUnit || undefined,
+    tagid: bid.params.hashedKey || bid.params.adUnit || undefined,
     bidfloor: _parseSlotParam('kadfloor', bid.params.kadfloor),
     secure: 1,
     ext: {
@@ -700,10 +709,12 @@ function _createImpressionObject(bid, conf) {
     if (isArray(sizes) && sizes.length > 1) {
       sizes = sizes.splice(1, sizes.length - 1);
       sizes.forEach(size => {
-        format.push({
-          w: size[0],
-          h: size[1]
-        });
+        if (isArray(size) && size.length == 2) {
+          format.push({
+            w: size[0],
+            h: size[1]
+          });
+        };
       });
       bannerObj.format = format;
     }
@@ -1171,6 +1182,9 @@ export const spec = {
       payload.device = Object.assign(payload.device, config.getConfig('device'));
     }
 
+    // update device.language to ISO-639-1-alpha-2 (2 character language)
+    payload.device.language = payload.device.language && payload.device.language.split('-')[0];
+
     // passing transactionId in source.tid
     deepSetValue(payload, 'source.tid', conf.transactionId);
 
@@ -1206,7 +1220,13 @@ export const spec = {
     // First Party Data
     const commonFpd = config.getConfig('ortb2') || {};
     if (commonFpd.site) {
+      // Saving page, domain & ref property from payload before getting replaced by fpd modules.
+      const {page, domain, ref} = payload.site;
       mergeDeep(payload, {site: commonFpd.site});
+      // Replace original values for page, domain & ref
+      payload.site.page = page;
+      payload.site.domain = domain;
+      payload.site.ref = ref;
     }
     if (commonFpd.user) {
       mergeDeep(payload, {user: commonFpd.user});
@@ -1256,6 +1276,23 @@ export const spec = {
     let parsedRequest = JSON.parse(request.data);
     let parsedReferrer = parsedRequest.site && parsedRequest.site.ref ? parsedRequest.site.ref : '';
     try {
+      let requestData = JSON.parse(request.data);
+      if (requestData && requestData.imp && requestData.imp.length > 0) {
+        requestData.imp.forEach(impData => {
+          bidResponses.push({
+            requestId: impData.id,
+            width: 0,
+            height: 0,
+            ttl: 300,
+            ad: '',
+            creativeId: 0,
+            netRevenue: NET_REVENUE,
+            cpm: 0,
+            currency: respCur,
+            referrer: parsedReferrer,
+          })
+        });
+      }
       if (response.body && response.body.seatbid && isArray(response.body.seatbid)) {
         // Supporting multiple bid responses for same adSize
         respCur = response.body.cur || respCur;
@@ -1263,72 +1300,75 @@ export const spec = {
           seatbidder.bid &&
             isArray(seatbidder.bid) &&
             seatbidder.bid.forEach(bid => {
-              let newBid = {
-                requestId: bid.impid,
-                cpm: (parseFloat(bid.price) || 0).toFixed(2),
-                width: bid.w,
-                height: bid.h,
-                creativeId: bid.crid || bid.id,
-                dealId: bid.dealid,
-                currency: respCur,
-                netRevenue: NET_REVENUE,
-                ttl: 300,
-                referrer: parsedReferrer,
-                ad: bid.adm,
-                pm_seat: seatbidder.seat || null,
-                pm_dspid: bid.ext && bid.ext.dspid ? bid.ext.dspid : null,
-                partnerImpId: bid.id || '' // partner impression Id
-              };
-              if (parsedRequest.imp && parsedRequest.imp.length > 0) {
-                parsedRequest.imp.forEach(req => {
-                  if (bid.impid === req.id) {
-                    _checkMediaType(bid, newBid);
-                    switch (newBid.mediaType) {
-                      case BANNER:
-                        break;
-                      case VIDEO:
-                        newBid.width = bid.hasOwnProperty('w') ? bid.w : req.video.w;
-                        newBid.height = bid.hasOwnProperty('h') ? bid.h : req.video.h;
-                        newBid.vastXml = bid.adm;
-                        _assignRenderer(newBid, request);
-                        break;
-                      case NATIVE:
-                        _parseNativeResponse(bid, newBid);
-                        break;
-                    }
+              bidResponses.forEach(br => {
+                if (br.requestId == bid.impid) {
+                  br.requestId = bid.impid;
+                  br.cpm = (parseFloat(bid.price) || 0).toFixed(2);
+                  br.width = bid.w;
+                  br.height = bid.h;
+                  br.sspID = bid.id || '';
+                  br.creativeId = bid.crid || bid.id;
+                  br.dealId = bid.dealid;
+                  br.currency = respCur;
+                  br.netRevenue = NET_REVENUE;
+                  br.ttl = 300;
+                  br.referrer = parsedReferrer;
+                  br.ad = bid.adm;
+                  br.pm_seat = seatbidder.seat || null;
+                  br.pm_dspid = bid.ext && bid.ext.dspid ? bid.ext.dspid : null;
+                  br.partnerImpId = bid.id || '' // partner impression Id
+                  if (requestData.imp && requestData.imp.length > 0) {
+                    requestData.imp.forEach(req => {
+                      if (bid.impid === req.id) {
+                        _checkMediaType(bid, br);
+                        switch (br.mediaType) {
+                          case BANNER:
+                            break;
+                          case VIDEO:
+                            br.width = bid.hasOwnProperty('w') ? bid.w : req.video.w;
+                            br.height = bid.hasOwnProperty('h') ? bid.h : req.video.h;
+                            br.vastXml = bid.adm;
+                            _assignRenderer(br, request);
+                            break;
+                          case NATIVE:
+                            _parseNativeResponse(bid, br);
+                            break;
+                        }
+                      }
+                    });
                   }
-                });
-              }
-              if (bid.ext && bid.ext.deal_channel) {
-                newBid['dealChannel'] = dealChannelValues[bid.ext.deal_channel] || null;
-              }
+                  if (br.dealId) {
+                    br['dealChannel'] = 'PMP';
+                  }
+                  if (bid.ext && bid.ext.deal_channel) {
+                    br['dealChannel'] = dealChannelValues[bid.ext.deal_channel] || null;
+                  }
+                  br.meta = {};
+                  if (bid.ext && bid.ext.dspid) {
+                    br.meta.networkId = bid.ext.dspid;
+                  }
+                  if (bid.ext && bid.ext.advid) {
+                    br.meta.buyerId = bid.ext.advid;
+                  }
+                  if (bid.adomain && bid.adomain.length > 0) {
+                    br.meta.advertiserDomains = bid.adomain;
+                    br.meta.clickUrl = bid.adomain[0];
+                  }
 
-              newBid.meta = {};
-              if (bid.ext && bid.ext.dspid) {
-                newBid.meta.networkId = bid.ext.dspid;
-              }
-              if (bid.ext && bid.ext.advid) {
-                newBid.meta.buyerId = bid.ext.advid;
-              }
-              if (bid.adomain && bid.adomain.length > 0) {
-                newBid.meta.advertiserDomains = bid.adomain;
-                newBid.meta.clickUrl = bid.adomain[0];
-              }
+                  // adserverTargeting
+                  if (seatbidder.ext && seatbidder.ext.buyid) {
+                    br.adserverTargeting = {
+                      'hb_buyid_pubmatic': seatbidder.ext.buyid
+                    };
+                  }
 
-              // adserverTargeting
-              if (seatbidder.ext && seatbidder.ext.buyid) {
-                newBid.adserverTargeting = {
-                  'hb_buyid_pubmatic': seatbidder.ext.buyid
-                };
-              }
-
-              // if from the server-response the bid.ext.marketplace is set then
-              //    submit the bid to Prebid as marketplace name
-              if (bid.ext && !!bid.ext.marketplace) {
-                newBid.bidderCode = bid.ext.marketplace;
-              }
-
-              bidResponses.push(newBid);
+                  // if from the server-response the bid.ext.marketplace is set then
+                  //    submit the bid to Prebid as marketplace name
+                  if (bid.ext && !!bid.ext.marketplace) {
+                    br.bidderCode = bid.ext.marketplace;
+                  }
+                }
+              });
             });
         });
       }

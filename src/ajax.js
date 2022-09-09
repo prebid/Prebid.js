@@ -14,8 +14,11 @@ const XHR_DONE = 4;
  */
 export const ajax = ajaxBuilder();
 
-export function ajaxBuilder(timeout = 3000, {request, done} = {}) {
-  return function(url, callback, data, options = {}) {
+export function ajaxBuilder(timeout = 3000, {
+  request,
+  done
+} = {}) {
+  return function (url, callback, data, options = {}) {
     try {
       let x;
       let method = options.method || (data ? 'POST' : 'GET');
@@ -50,7 +53,6 @@ export function ajaxBuilder(timeout = 3000, {request, done} = {}) {
           }
         }
       };
-
       // Disabled timeout temporarily to avoid xhr failed requests. https://github.com/prebid/Prebid.js/issues/2648
       if (!config.getConfig('disableAjaxTimeout')) {
         x.ontimeout = function () {

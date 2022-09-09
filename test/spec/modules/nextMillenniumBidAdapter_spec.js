@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import * as utils from '../../../src/utils.js';
 import { spec } from 'modules/nextMillenniumBidAdapter.js';
 
 describe('nextMillenniumBidAdapterTests', function() {
@@ -131,7 +132,6 @@ describe('nextMillenniumBidAdapterTests', function() {
 
     let bids = spec.interpretResponse(serverResponse, bidRequestData[0]);
     expect(bids).to.have.lengthOf(1);
-
     let bid = bids[0];
 
     expect(bid.creativeId).to.equal('96846035');

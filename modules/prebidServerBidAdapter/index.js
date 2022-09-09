@@ -1,32 +1,10 @@
 import Adapter from '../../src/adapter.js';
 import {createBid} from '../../src/bidfactory.js';
 import {
-  bind,
-  cleanObj,
-  createTrackPixelHtml,
-  deepAccess,
-  deepClone,
-  deepSetValue,
-  flatten,
-  generateUUID,
-  getBidRequest,
-  getDefinedParams,
-  getPrebidInternal,
-  insertUserSyncIframe,
-  isArray,
-  isEmpty,
-  isNumber,
-  isPlainObject,
-  isStr,
-  logError,
-  logInfo,
-  logMessage,
-  logWarn,
-  mergeDeep,
-  parseSizesInput,
-  pick, timestamp,
-  triggerPixel,
-  uniques
+  getPrebidInternal, logError, isStr, isPlainObject, logWarn, generateUUID, bind, logMessage,
+  triggerPixel, insertUserSyncIframe, deepAccess, mergeDeep, deepSetValue, cleanObj, parseSizesInput,
+  getBidRequest, getDefinedParams, createTrackPixelHtml, pick, deepClone, uniques, flatten, isNumber,
+  isEmpty, isArray, logInfo, timestamp
 } from '../../src/utils.js';
 import CONSTANTS from '../../src/constants.json';
 import adapterManager from '../../src/adapterManager.js';
@@ -38,7 +16,7 @@ import {find, includes} from '../../src/polyfill.js';
 import { S2S_VENDORS } from './config.js';
 import { ajax } from '../../src/ajax.js';
 import {hook} from '../../src/hook.js';
-import {getGlobal} from '../../src/prebidGlobal.js';
+import { processNativeAdUnitParams } from '../../src/native.js';
 
 const getConfig = config.getConfig;
 
@@ -51,7 +29,23 @@ const DEFAULT_S2S_NETREVENUE = true;
 let _s2sConfigs;
 
 let eidPermissions;
-
+let impressionReqIdMap = {};
+window.partnersWithoutErrorAndBids = {};
+window.matchedimpressions = {};
+let dealChannelValues = {
+  1: 'PMP',
+  5: 'PREF',
+  6: 'PMPG'
+};
+let defaultAliases = {
+  adg: 'adgeneration',
+  districtm: 'appnexus',
+  districtmDMX: 'dmx',
+  pubmatic2: 'pubmatic'
+}
+let isPrebidKeys = false;
+let siteObj = {};
+let siteProperties = ['page', 'domain', 'ref'];
 /**
  * @typedef {Object} AdapterOptions
  * @summary s2sConfig parameter that adds arguments to resulting OpenRTB payload that goes to Prebid Server
@@ -374,6 +368,8 @@ function _appendSiteAppDevice(request, pageUrl, accountId) {
     if (!request.site.page) {
       request.site.page = pageUrl;
     }
+    siteObj.domain = _getDomainFromURL(request.site.page);
+    siteObj.ref = window.document.referrer;
   }
   if (typeof config.getConfig('device') === 'object') {
     request.device = config.getConfig('device');
@@ -387,6 +383,23 @@ function _appendSiteAppDevice(request, pageUrl, accountId) {
   if (!request.device.h) {
     request.device.h = window.innerHeight;
   }
+
+  // update device.language to ISO-639-1-alpha-2 (2 character language)
+  request.device.language = request.device.language && request.device.language.split('-')[0];
+}
+
+function updateSiteObject(request) {
+  for (let key in siteObj) {
+    if (deepAccess(request, `site.${key}`) && siteProperties.includes(key)) {
+      request.site[key] = siteObj[key];
+    }
+  }
+}
+
+function _getDomainFromURL(url) {
+  let anchor = document.createElement('a');
+  anchor.href = url;
+  return anchor.hostname;
 }
 
 function addBidderFirstPartyDataToRequest(request) {
@@ -395,7 +408,7 @@ function addBidderFirstPartyDataToRequest(request) {
     const currBidderConfig = bidderConfig[bidder];
     if (currBidderConfig.ortb2) {
       const ortb2 = mergeDeep({}, currBidderConfig.ortb2);
-
+      updateSiteObject(ortb2);
       acc.push({
         bidders: [ bidder ],
         config: { ortb2 }
@@ -407,6 +420,13 @@ function addBidderFirstPartyDataToRequest(request) {
   if (fpdConfigs.length) {
     deepSetValue(request, 'ext.prebid.bidderconfig', fpdConfigs);
   }
+}
+
+function createLatencyMap(impressionID, id) {
+  impressionReqIdMap[id] = impressionID;
+  window.pbsLatency[impressionID] = {
+    'startTime': timestamp()
+  };
 }
 
 // https://iabtechlab.com/wp-content/uploads/2016/07/OpenRTB-Native-Ads-Specification-Final-1.2.pdf#page=40
@@ -515,6 +535,34 @@ export function resetWurlMap() {
   wurlMap = {};
 }
 
+// Get matchedimpressions object
+function getMiValues(responseExt) {
+  if (responseExt && responseExt.matchedimpression) {
+    return responseExt.matchedimpression;
+  }
+}
+// Get partners response time
+function getPartnerResponseTime(responseExt) {
+  if (responseExt && responseExt.responsetimemillis) {
+    return responseExt.responsetimemillis;
+  }
+}
+// Get list of all errored partners
+function getErroredPartners(responseExt) {
+  if (responseExt && responseExt.errors) {
+    return Object.keys(responseExt.errors);
+  }
+}
+
+function findPartnersWithoutErrorsAndBids(erroredPartners, listofPartnersWithmi, responseExt, impValue) {
+  window.partnersWithoutErrorAndBids[impValue] = listofPartnersWithmi.filter(partner => !erroredPartners.includes(partner));
+  erroredPartners.forEach(partner => {
+    if (responseExt.errors[partner] && responseExt.errors[partner][0].code == 1) {
+      window.partnersWithoutErrorAndBids[impValue].push(partner);
+    }
+  })
+}
+
 function ORTB2(s2sBidRequest, bidderRequests, adUnits, requestedBidders) {
   this.s2sBidRequest = s2sBidRequest;
   this.bidderRequests = bidderRequests;
@@ -532,10 +580,20 @@ function ORTB2(s2sBidRequest, bidderRequests, adUnits, requestedBidders) {
 Object.assign(ORTB2.prototype, {
   buildRequest() {
     const {s2sBidRequest, bidderRequests: bidRequests, adUnits, s2sConfig, requestedBidders} = this;
-
     let imps = [];
     let aliases = {};
+    let owAliases;
+    isPrebidKeys = s2sConfig.extPrebid && s2sConfig.extPrebid.isUsePrebidKeysEnabled;
+    // Check if sonobi partner is present in requestedbidders array.
+    let isSonobiPresent = requestedBidders.includes('sonobi');
+    window.pbsLatency = window.pbsLatency || {};
     const firstBidRequest = bidRequests[0];
+    // check if isPrebidPubMaticAnalyticsEnabled in s2sConfig and if it is then get auctionId from adUnit
+    let isAnalyticsEnabled = s2sConfig.extPrebid && s2sConfig.extPrebid.isPrebidPubMaticAnalyticsEnabled;
+    const iidValue = isAnalyticsEnabled ? firstBidRequest.auctionId : firstBidRequest.bids[0].params.wiid;
+    if (typeof s2sConfig.extPrebid === 'object') {
+      owAliases = s2sConfig.extPrebid.aliases;
+    }
 
     // transform ad unit into array of OpenRTB impression objects
     let impIds = new Set();
@@ -560,82 +618,98 @@ Object.assign(ORTB2.prototype, {
       impIds.add(impressionId);
       this.adUnitsByImp[impressionId] = adUnit;
 
-      const nativeParams = adUnit.nativeParams;
-      let nativeAssets;
+      const nativeParams = processNativeAdUnitParams(deepAccess(adUnit, 'mediaTypes.native'));
       if (nativeParams) {
-        let idCounter = -1;
-        try {
-          nativeAssets = nativeAssetCache[impressionId] = Object.keys(nativeParams).reduce((assets, type) => {
-            let params = nativeParams[type];
-
-            function newAsset(obj) {
-              idCounter++;
-              return Object.assign({
-                required: params.required ? 1 : 0,
-                id: (isNumber(params.id)) ? idCounter = params.id : idCounter
-              }, obj ? cleanObj(obj) : {});
-            }
-
-            switch (type) {
-              case 'image':
-              case 'icon':
-                let imgTypeId = nativeImgIdMap[type];
-                let asset = cleanObj({
-                  type: imgTypeId,
-                  w: deepAccess(params, 'sizes.0'),
-                  h: deepAccess(params, 'sizes.1'),
-                  wmin: deepAccess(params, 'aspect_ratios.0.min_width'),
-                  hmin: deepAccess(params, 'aspect_ratios.0.min_height')
-                });
-                if (!((asset.w && asset.h) || (asset.hmin && asset.wmin))) {
-                  throw 'invalid img sizes (must provide sizes or min_height & min_width if using aspect_ratios)';
-                }
-                if (Array.isArray(params.aspect_ratios)) {
-                  // pass aspect_ratios as ext data I guess?
-                  const aspectRatios = params.aspect_ratios
-                    .filter((ar) => ar.ratio_width && ar.ratio_height)
-                    .map(ratio => `${ratio.ratio_width}:${ratio.ratio_height}`);
-                  if (aspectRatios.length > 0) {
-                    asset.ext = {
-                      aspectratios: aspectRatios
-                    }
-                  }
-                }
-                assets.push(newAsset({
-                  img: asset
-                }));
-                break;
-              case 'title':
-                if (!params.len) {
-                  throw 'invalid title.len';
-                }
-                assets.push(newAsset({
-                  title: {
-                    len: params.len
-                  }
-                }));
-                break;
-              default:
-                let dataAssetTypeId = nativeDataIdMap[type];
-                if (dataAssetTypeId) {
-                  assets.push(newAsset({
-                    data: {
-                      type: dataAssetTypeId,
-                      len: params.len
-                    }
-                  }))
-                }
-            }
-            return assets;
-          }, []);
-        } catch (e) {
-          logError('error creating native request: ' + String(e))
-        }
+        logWarn('OW server side dose not support native media types');
       }
+      let nativeAssets;
+      // Commenting mediaTypes,native as s2s dose not support native
+      // will consider native support in hybrid phase 2
+      //   if (nativeParams) {
+      //     try {
+      //       nativeAssets = nativeAssetCache[impressionId] = Object.keys(nativeParams).reduce((assets, type) => {
+      //         let params = nativeParams[type];
+
+      //         function newAsset(obj) {
+      //           return Object.assign({
+      //             required: params.required ? 1 : 0
+      //           }, obj ? cleanObj(obj) : {});
+      //         }
+
+      //         switch (type) {
+      //           case 'image':
+      //           case 'icon':
+      //             let imgTypeId = nativeImgIdMap[type];
+      //             let asset = cleanObj({
+      //               type: imgTypeId,
+      //               w: deepAccess(params, 'sizes.0'),
+      //               h: deepAccess(params, 'sizes.1'),
+      //               wmin: deepAccess(params, 'aspect_ratios.0.min_width'),
+      //               hmin: deepAccess(params, 'aspect_ratios.0.min_height')
+      //             });
+      //             if (!((asset.w && asset.h) || (asset.hmin && asset.wmin))) {
+      //               throw 'invalid img sizes (must provide sizes or min_height & min_width if using aspect_ratios)';
+      //             }
+      //             if (Array.isArray(params.aspect_ratios)) {
+      //               // pass aspect_ratios as ext data I guess?
+      //               asset.ext = {
+      //                 aspectratios: params.aspect_ratios.map(
+      //                   ratio => `${ratio.ratio_width}:${ratio.ratio_height}`
+      //                 )
+      //               }
+      //             }
+      //             assets.push(newAsset({
+      //               img: asset
+      //             }));
+      //             break;
+      //           case 'title':
+      //             if (!params.len) {
+      //               throw 'invalid title.len';
+      //             }
+      //             assets.push(newAsset({
+      //               title: {
+      //                 len: params.len
+      //               }
+      //             }));
+      //             break;
+      //           default:
+      //             let dataAssetTypeId = nativeDataIdMap[type];
+      //             if (dataAssetTypeId) {
+      //               assets.push(newAsset({
+      //                 data: {
+      //                   type: dataAssetTypeId,
+      //                   len: params.len
+      //                 }
+      //               }))
+      //             }
+      //         }
+      //         return assets;
+      //       }, []);
+      //     } catch (e) {
+      //       logError('error creating native request: ' + String(e))
+      //     }
+      //   }
       const videoParams = deepAccess(adUnit, 'mediaTypes.video');
       const bannerParams = deepAccess(adUnit, 'mediaTypes.banner');
 
       adUnit.bids.forEach(bid => {
+        // If bid params contains kgpv then delete it as we do not want to pass it in request.
+        delete bid.params.kgpv;
+        if ((bid.bidder !== 'pubmatic') && !(owAliases && owAliases[bid.bidder] && owAliases[bid.bidder].includes('pubmatic'))) {
+          delete bid.params.wiid;
+        } else {
+          if (isAnalyticsEnabled && bid.params.wiid == undefined) {
+            bid.params.wiid = iidValue;
+          }
+        }
+        // If sonobi is present then add key TagID to params object and value as ad_unit's value
+        if (isSonobiPresent) {
+          adUnit.bids.map(bid => {
+            if (bid.bidder == 'sonobi') {
+              bid.params['TagID'] = bid.params['ad_unit'];
+            }
+          });
+        }
         this.setBidRequestId(impressionId, bid.bidder, bid.bid_id);
         // check for and store valid aliases to add to the request
         if (adapterManager.aliasRegistry[bid.bidder]) {
@@ -663,6 +737,11 @@ Object.assign(ORTB2.prototype, {
         mediaTypes['banner'] = {format};
 
         if (bannerParams.pos) mediaTypes['banner'].pos = bannerParams.pos;
+
+        // when profile is for banner delete macros from extPrebid object.
+        if (s2sConfig.extPrebid && s2sConfig.extPrebid.macros && !videoParams) {
+          delete s2sConfig.extPrebid.macros;
+        }
       }
 
       if (!isEmpty(videoParams)) {
@@ -684,6 +763,11 @@ Object.assign(ORTB2.prototype, {
               }
               return result;
             }, {});
+        }
+        // adding [UNIX_TIMESTAMP] & [WRAPPER_IMPRESSION_ID] in macros as it is required for tracking events.
+        if (s2sConfig.extPrebid && s2sConfig.extPrebid.macros) {
+          s2sConfig.extPrebid.macros['[UNIX_TIMESTAMP]'] = timestamp().toString();
+          s2sConfig.extPrebid.macros['[WRAPPER_IMPRESSION_ID]'] = iidValue.toString();
         }
       }
 
@@ -759,64 +843,22 @@ Object.assign(ORTB2.prototype, {
         deepSetValue(imp, 'ext.prebid.storedauctionresponse.id', storedAuctionResponseBid.storedAuctionResponse.toString());
       }
 
-      const floor = (() => {
-        // we have to pick a floor for the imp - here we attempt to find the minimum floor
-        // across all bids for this adUnit
+      const getFloorBid = find(firstBidRequest.bids, bid => bid.adUnitCode === adUnit.code && typeof bid.getFloor === 'function');
 
-        const convertCurrency = typeof getGlobal().convertCurrency !== 'function'
-          ? (amount) => amount
-          : (amount, from, to) => {
-            if (from === to) return amount;
-            let result = null;
-            try {
-              result = getGlobal().convertCurrency(amount, from, to);
-            } catch (e) {
-            }
-            return result;
-          }
-        const s2sCurrency = config.getConfig('currency.adServerCurrency') || DEFAULT_S2S_CURRENCY;
-
-        return adUnit.bids
-          .map((bid) => this.getBidRequest(imp.id, bid.bidder))
-          .map((bid) => {
-            if (!bid || typeof bid.getFloor !== 'function') return;
-            try {
-              const {currency, floor} = bid.getFloor({
-                currency: s2sCurrency
-              });
-              return {
-                currency,
-                floor: parseFloat(floor)
-              }
-            } catch (e) {
-              logError('PBS: getFloor threw an error: ', e);
-            }
-          })
-          .reduce((min, floor) => {
-            // if any bid does not have a valid floor, do not attempt to send any to PBS
-            if (floor == null || floor.currency == null || floor.floor == null || isNaN(floor.floor)) {
-              min.min = null;
-            }
-            if (min.min === null) {
-              return min;
-            }
-            // otherwise, pick the minimum one (or, in some strange confluence of circumstances, the one in the best currency)
-            if (min.ref == null) {
-              min.ref = min.min = floor;
-            } else {
-              const value = convertCurrency(floor.floor, floor.currency, min.ref.currency);
-              if (value != null && value < min.ref.floor) {
-                min.ref.floor = value;
-                min.min = floor;
-              }
-            }
-            return min;
-          }, {}).min
-      })();
-
-      if (floor) {
-        imp.bidfloor = floor.floor;
-        imp.bidfloorcur = floor.currency
+      if (getFloorBid) {
+        let floorInfo;
+        try {
+          floorInfo = getFloorBid.getFloor({
+            currency: config.getConfig('currency.adServerCurrency') || DEFAULT_S2S_CURRENCY,
+          });
+        } catch (e) {
+          logError('PBS: getFloor threw an error: ', e);
+        }
+        if (floorInfo && floorInfo.currency && !isNaN(parseFloat(floorInfo.floor))) {
+          // Restriciting floor specific parameters being sent to auction request
+          // imp.bidfloor = parseFloat(floorInfo.floor);
+          // imp.bidfloorcur = floorInfo.currency
+        }
       }
 
       if (imp.banner || imp.video || imp.native) {
@@ -828,13 +870,16 @@ Object.assign(ORTB2.prototype, {
       logError('Request to Prebid Server rejected due to invalid media type(s) in adUnit.');
       return;
     }
+    createLatencyMap(iidValue, firstBidRequest.auctionId);
+
     const request = {
       id: firstBidRequest.auctionId,
       source: {tid: s2sBidRequest.tid},
       tmax: s2sConfig.timeout,
       imp: imps,
       // to do: add setconfig option to pass test = 1
-      test: 0,
+      // Commenting below flag as we don't need to send test: 0 to request payload.
+      // test: 0,
       ext: {
         prebid: {
           // set ext.prebid.auctiontimestamp with the auction timestamp. Data type is long integer.
@@ -843,7 +888,12 @@ Object.assign(ORTB2.prototype, {
             // includewinners is always true for openrtb
             includewinners: true,
             // includebidderkeys always false for openrtb
-            includebidderkeys: false
+            // includebidderkeys: false
+
+            // earlier ext.prebid.targeting used to replace with s2sconfig prebid object but since 6.x extPrebid is mergeing with
+            // s2sConfig extPrebid which restrict bidder specific targeting keys in response. And as OW needs these keys in dfp calls
+            // we need to overwrite includebidderkeys to true as mentioned in UOE-7693
+            includebidderkeys: true
           }
         }
       }
@@ -870,14 +920,16 @@ Object.assign(ORTB2.prototype, {
     /**
      * @type {(string[]|string|undefined)} - OpenRTB property 'cur', currencies available for bids
      */
-    const adServerCur = config.getConfig('currency.adServerCurrency');
-    if (adServerCur && typeof adServerCur === 'string') {
-      // if the value is a string, wrap it with an array
-      request.cur = [adServerCur];
-    } else if (Array.isArray(adServerCur) && adServerCur.length) {
-      // if it's an array, get the first element
-      request.cur = [adServerCur[0]];
-    }
+    // Commenting adServerCurrency code as earlier with OW 2.5 endpoint we used to send USD only and in OW logger and tracker calls
+    // we log values only in USD as of now. We will consider sending currency selected by publisher in upcoming tasks.
+    // const adServerCur = config.getConfig('currency.adServerCurrency');
+    // if (adServerCur && typeof adServerCur === 'string') {
+    //   // if the value is a string, wrap it with an array
+    //   request.cur = [adServerCur];
+    // } else if (Array.isArray(adServerCur) && adServerCur.length) {
+    //   // if it's an array, get the first element
+    //   request.cur = [adServerCur[0]];
+    // }
 
     _appendSiteAppDevice(request, bidRequests[0].refererInfo.referer, s2sConfig.accountId);
 
@@ -891,6 +943,22 @@ Object.assign(ORTB2.prototype, {
 
     if (!isEmpty(aliases)) {
       request.ext.prebid.aliases = {...request.ext.prebid.aliases, ...aliases};
+    }
+    // Replace aliases with parent alias e.g. pubmatic2 should replace with pubmatic
+    for (var bidder in request.ext.prebid.aliases) {
+      var defaultAlias = defaultAliases[request.ext.prebid.aliases[bidder]];
+      if (defaultAlias) {
+        request.ext.prebid.aliases[bidder] = defaultAlias;
+      }
+    }
+    // Updating request.ext.prebid.bidderparams wiid if present
+    if (s2sConfig.extPrebid && typeof s2sConfig.extPrebid.bidderparams === 'object') {
+      var listOfPubMaticBidders = Object.keys(s2sConfig.extPrebid.bidderparams);
+      listOfPubMaticBidders.forEach(function(bidder) {
+        if (request.ext.prebid.bidderparams[bidder]) {
+          request.ext.prebid.bidderparams[bidder]['wiid'] = iidValue;
+        }
+      })
     }
 
     const bidUserIdAsEids = deepAccess(bidRequests, '0.bids.0.userIdAsEids');
@@ -948,9 +1016,14 @@ Object.assign(ORTB2.prototype, {
       deepSetValue(request, 'regs.coppa', 1);
     }
 
+    siteObj = mergeDeep(siteObj, request.site);
     const commonFpd = getConfig('ortb2') || {};
     mergeDeep(request, commonFpd);
-
+    updateSiteObject(request);
+    // delete isPrebidPubMaticAnalyticsEnabled from extPrebid object as it not required in request.
+    // it is only used to decide impressionId for wiid parameter in logger and tracker calls.
+    delete request.ext.prebid.isPrebidPubMaticAnalyticsEnabled;
+    delete request.ext.prebid.isUsePrebidKeysEnabled;
     addBidderFirstPartyDataToRequest(request);
 
     request.imp.forEach((imp) => this.impRequested[imp.id] = imp);
@@ -960,13 +1033,36 @@ Object.assign(ORTB2.prototype, {
   interpretResponse(response) {
     const {bidderRequests, s2sConfig} = this;
     const bids = [];
+    // Get impressionID from impressionReqIdMap to check response belongs to same request
+    let impValue = impressionReqIdMap[response.id];
+    if (impValue && window.pbsLatency[impValue]) {
+      window.pbsLatency[impValue]['endTime'] = timestamp();
+    }
 
     [['errors', 'serverErrors'], ['responsetimemillis', 'serverResponseTimeMs']]
       .forEach(info => getPbsResponseData(bidderRequests, response, info[0], info[1]))
+    const miObj = getMiValues(response.ext) || {};
+    window.matchedimpressions = {...window.matchedimpressions, ...miObj};
+    const partnerResponseTimeObj = getPartnerResponseTime(response.ext) || {};
+    const listofPartnersWithmi = window.partnersWithoutErrorAndBids[impValue] = Object.keys(miObj);
+    const erroredPartners = getErroredPartners(response.ext);
+    if (erroredPartners) {
+      findPartnersWithoutErrorsAndBids(erroredPartners, listofPartnersWithmi, response.ext, impValue);
+    }
 
     if (response.seatbid) {
+      let impForSlots, partnerBidsForslots;
+      if (bidderRequests[0].hasOwnProperty('adUnitsS2SCopy')) {
+        impForSlots = bidderRequests[0].adUnitsS2SCopy.length;
+      }
       // a seatbid object contains a `bid` array and a `seat` string
       response.seatbid.forEach(seatbid => {
+        if (seatbid.hasOwnProperty('bid')) {
+          partnerBidsForslots = seatbid.bid.length;
+        }
+        window.partnersWithoutErrorAndBids[impValue] = window.partnersWithoutErrorAndBids[impValue].filter((partner) => {
+          return ((partner !== seatbid.seat) || (impForSlots !== partnerBidsForslots));
+        });
         (seatbid.bid || []).forEach(bid => {
           let bidRequest = this.getBidRequest(bid.impid, seatbid.seat);
           if (bidRequest == null) {
@@ -1020,7 +1116,15 @@ Object.assign(ORTB2.prototype, {
               extPrebidTargeting = getDefinedParams(extPrebidTargeting, Object.keys(extPrebidTargeting)
                 .filter(i => (i.indexOf('hb_winurl') === -1 && i.indexOf('hb_bidid') === -1)));
             }
-            bidObject.adserverTargeting = extPrebidTargeting;
+            // We will be checking for hb_buyid_pubmatic key and if it present we are converting to pwtbuyid_pubmatic before
+            // adding to pwtbuyid_pubmatic
+            bidObject.adserverTargeting = {};
+            if (extPrebidTargeting.hasOwnProperty('hb_buyid_pubmatic')) {
+              isPrebidKeys ? bidObject.adserverTargeting['hb_buyid_pubmatic'] = extPrebidTargeting['hb_buyid_pubmatic']
+                : bidObject.adserverTargeting['pwtbuyid_pubmatic'] = extPrebidTargeting['hb_buyid_pubmatic'];
+            }
+            // We will not copy all ext.prebid.targeting keys to bidObject.adserverTargeting so commenting below line
+            // bidObject.adserverTargeting = extPrebidTargeting;
           }
 
           bidObject.seatBidId = bid.id;
@@ -1108,8 +1212,8 @@ Object.assign(ORTB2.prototype, {
             }
           }
 
-          bidObject.width = bid.w;
-          bidObject.height = bid.h;
+          bidObject.width = bid.w || 0;
+          bidObject.height = bid.h || 0;
           if (bid.dealid) { bidObject.dealId = bid.dealid; }
           bidObject.creative_id = bid.crid;
           bidObject.creativeId = bid.crid;
@@ -1125,11 +1229,36 @@ Object.assign(ORTB2.prototype, {
           bidObject.ttl = (bid.exp) ? bid.exp : configTtl;
           bidObject.netRevenue = (bid.netRevenue) ? bid.netRevenue : DEFAULT_S2S_NETREVENUE;
 
+          // Add mi value to bidObject as it will be required in wrapper logger call
+          // Also we need to get serverSideResponseTime as it required to calculate l1 for wrapper logger call
+          bidObject.mi = miObj.hasOwnProperty(seatbid.seat) ? miObj[seatbid.seat] : undefined;
+          bidObject.serverSideResponseTime = partnerResponseTimeObj.hasOwnProperty(seatbid.seat) ? partnerResponseTimeObj[seatbid.seat] : 0;
+
+          // We need to add originalCpm & originalCurrency to bidObject as these are required for wrapper logger and tracker calls
+          // to calculates values for properties like ocpm, ocry & eg respectively.
+          bidObject.originalCpm = bidObject.cpm;
+          bidObject.originalCurrency = bidObject.currency;
+          // Add bid.id to sspID & partnerImpId as these are used in tracker and logger call
+          if (seatbid.seat == 'pubmatic') {
+            bidObject.partnerImpId = bidObject.sspID = bid.id || '';
+            if (bid.dealid) {
+              bidObject.dealChannel = 'PMP';
+            }
+          }
+
+          // check if bid ext contains deal_channel if present get value from dealChannelValues object
+          if (bid.ext && bid.ext.deal_channel) {
+            bidObject.dealChannel = dealChannelValues[bid.ext.deal_channel];
+          }
+
+          // check if bid contains ext prebid bidid and add it to bidObject for logger and tracker purpose
+          if (bid.ext && bid.ext.prebid && bid.ext.prebid.bidid) {
+            bidObject.prebidBidId = bid.ext.prebid.bidid;
+          }
           bids.push({ adUnit: this.adUnitsByImp[bid.impid].code, bid: bidObject });
         });
       });
     }
-
     return bids;
   },
   setBidRequestId(impId, bidderCode, bidId) {

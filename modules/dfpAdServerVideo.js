@@ -288,11 +288,21 @@ function getCustParams(bid, options, urlCustParams) {
     allTargetingData,
     adserverTargeting,
   );
+
   events.emit(CONSTANTS.EVENTS.SET_TARGETING, {[adUnit.code]: prebidTargetingSet});
 
   // merge the prebid + publisher targeting sets
   const publisherTargetingSet = deepAccess(options, 'params.cust_params');
-  const targetingSet = Object.assign({}, prebidTargetingSet, publisherTargetingSet);
+  // TODO : Remove below function and change the constant value in file to update the key names for video
+  // Changing few key name might have impact on banner as well as we ignore few key names , hence using below function
+  // to get the cust_params that should be attached to dfp.
+  // It will also handle the send allBids cases
+  var customParams = {}
+  if (window.PWT && window.PWT.getCustomParamsForDFPVideo) {
+    customParams = window.PWT.getCustomParamsForDFPVideo(publisherTargetingSet, bid);
+  }
+  // Changing PrebidTargetingSet to adServerTargeitn as for OpenWrap we don't want to set Prebid Keys and instead Set the adServerKeys sent from OpenWrap.
+  const targetingSet = Object.assign({}, adserverTargeting, publisherTargetingSet, customParams);
   let encodedParams = encodeURIComponent(formatQS(targetingSet));
   if (urlCustParams) {
     encodedParams = urlCustParams + '%26' + encodedParams;

@@ -726,6 +726,13 @@ export function addBidResponseHook(fn, adUnitCode, bid) {
   // ok we got the bid response cpm in our desired currency. Now we need to run the bidders CPMAdjustment function if it exists
   adjustedCpm = getBiddersCpmAdjustment(bid.bidderCode, adjustedCpm, bid);
 
+  // The below condition is added to avoid floor on s2s calls
+  // Added bid.source == "s2s" condition as when we use prebidServerBidAdapter for server side partners we get source value as "s2s"
+  // and we do not have support on s2s side.
+  if (bid.bidderCode == 'pubmaticServer' || bid.source == 's2s') {
+    return fn.call(this, adUnitCode, bid);
+  }
+
   // add necessary data information for analytics adapters / floor providers would possibly need
   addFloorDataToBid(floorData, floorInfo, bid, adjustedCpm);
 

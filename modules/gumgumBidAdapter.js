@@ -374,7 +374,11 @@ function buildRequests(validBidRequests, bidderRequest) {
     } else { // legacy params
       data = { ...data, ...handleLegacyParams(params, sizes) }
     }
-
+    if (params.inVideo) {
+      data = Object.assign(data, _getVidParams(mediaTypes.video));
+      data.t = params.inVideo;
+      data.pi = 6;
+    }
     if (gdprConsent) {
       data.gdprApplies = gdprConsent.gdprApplies ? 1 : 0;
     }

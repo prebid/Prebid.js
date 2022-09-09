@@ -512,6 +512,17 @@ describe('The smartx adapter', function () {
       });
       var responses = spec.interpretResponse(serverResponse, bidderRequestObj);
 
+      bidderRequestObj.bidRequest.bids[0].params.outstream_options.startOpen = 'true';
+      bidderRequestObj.bidRequest.bids[0].params.outstream_options.endingScreen = 'true';
+      bidderRequestObj.bidRequest.bids[0].params.outstream_options.title = 'abc';
+      bidderRequestObj.bidRequest.bids[0].params.outstream_options.skipOffset = 2;
+      bidderRequestObj.bidRequest.bids[0].params.outstream_options.desiredBitrate = 123;
+
+      responses[0].renderer.render(responses[0]);
+
+      bidderRequestObj.bidRequest.bids[0].params.outstream_options.startOpen = 'false';
+      bidderRequestObj.bidRequest.bids[0].params.outstream_options.endingScreen = 'false';
+
       responses[0].renderer.render(responses[0]);
 
       expect(responses[0].renderer.url).to.equal('https://dco.smartclip.net/?plc=7777778');

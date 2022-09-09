@@ -1,6 +1,5 @@
 import { isFn, isPlainObject } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-
 const BIDDER_CODE = 'proxistore';
 const PROXISTORE_VENDOR_ID = 418;
 const COOKIE_BASE_URL = 'https://abs.proxistore.com/v3/rtb/prebid/multi';
