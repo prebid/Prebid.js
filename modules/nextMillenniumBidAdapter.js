@@ -176,14 +176,14 @@ function getPlacementId(bid) {
   if (!groupId) return placementId
 
   let windowTop = getTopWindow(window)
-  let size = []
+  let sizes = []
   if (bid.mediaTypes) {
-    if (bid.mediaTypes.banner) size = bid.mediaTypes.banner.sizes && bid.mediaTypes.banner.sizes[0]
-    if (bid.mediaTypes.video) size = bid.mediaTypes.video.playerSize
+    if (bid.mediaTypes.banner) sizes = bid.mediaTypes.banner.sizes
+    if (bid.mediaTypes.video) sizes = [bid.mediaTypes.video.playerSize]
   }
 
   const host = (windowTop && windowTop.location && windowTop.location.host) || ''
-  return `g${groupId};${size.join('x')};${host}`
+  return `g${groupId};${sizes.map(size => size.join('x')).join('|')};${host}`
 }
 
 function getTopWindow(curWindow, nesting = 0) {
