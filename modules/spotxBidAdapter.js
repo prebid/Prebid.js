@@ -177,27 +177,27 @@ export const spec = {
       }
 
       const startdelay = getBidIdParameter('start_delay', bid.params) || deepAccess(bid, 'mediaTypes.video.startdelay');
-      if (startdelay != '') {
+      if (startdelay) {
         spotxReq.video.startdelay = 0 + Boolean(startdelay);
       }
 
       const minduration = getBidIdParameter('min_duration', bid.params) || deepAccess(bid, 'mediaTypes.video.minduration');
-      if (minduration != '') {
+      if (minduration) {
         spotxReq.video.minduration = minduration;
       }
 
       const maxduration = getBidIdParameter('max_duration', bid.params) || deepAccess(bid, 'mediaTypes.video.maxduration');
-      if (maxduration != '') {
+      if (maxduration) {
         spotxReq.video.maxduration = maxduration;
       }
 
       const placement = getBidIdParameter('placement_type', bid.params) || deepAccess(bid, 'mediaTypes.video.placement');
-      if (placement != '') {
+      if (placement) {
         spotxReq.video.ext.placement = placement;
       }
 
       const position = getBidIdParameter('position', bid.params) || deepAccess(bid, 'mediaTypes.video.pos');
-      if (position != '') {
+      if (position) {
         spotxReq.video.ext.pos = position;
       }
 

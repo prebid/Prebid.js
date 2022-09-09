@@ -57,7 +57,7 @@ function getUtilsMock() {
     getPlaybackMethod: function () {},
     isOmidSupported: function () {},
     getSkipParams: function () {},
-    getJwEvent: function () {},
+    getJwEvent: event => event,
     getIsoLanguageCode: function () {},
     getSegments: function () {},
     getContentDatum: function () {}
