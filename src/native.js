@@ -80,7 +80,7 @@ const SUPPORTED_TYPES = {
   image: IMAGE
 };
 
-const { NATIVE_ASSET_TYPES, NATIVE_IMAGE_TYPES, PREBID_NATIVE_DATA_KEYS_TO_ORTB, NATIVE_KEYS_THAT_ARE_NOT_ASSETS } = CONSTANTS;
+const { NATIVE_ASSET_TYPES, NATIVE_IMAGE_TYPES, PREBID_NATIVE_DATA_KEYS_TO_ORTB, NATIVE_KEYS_THAT_ARE_NOT_ASSETS, NATIVE_KEYS } = CONSTANTS;
 
 // inverse native maps useful for converting to legacy
 const PREBID_NATIVE_DATA_KEYS_TO_ORTB_INVERSE = inverse(PREBID_NATIVE_DATA_KEYS_TO_ORTB);
@@ -488,6 +488,10 @@ export function toOrtbNativeRequest(legacyNativeAssets) {
   for (let key in legacyNativeAssets) {
     // skip conversion for non-asset keys
     if (NATIVE_KEYS_THAT_ARE_NOT_ASSETS.includes(key)) continue;
+    if (!NATIVE_KEYS.hasOwnProperty(key)) {
+      logError(`Unrecognized native asset code: ${key}. Asset will be ignored.`);
+      continue;
+    }
 
     const asset = legacyNativeAssets[key];
     let required = 0;
@@ -560,7 +564,6 @@ export function toOrtbNativeRequest(legacyNativeAssets) {
       // in `ext` case, required field is not needed
       delete ortbAsset.required;
     }
-
     ortb.assets.push(ortbAsset);
   }
   return ortb;
