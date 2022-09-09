@@ -17,11 +17,56 @@
       "path": "/modules/browsiRtdProvider.js",
       "module": "browsiRtdProvider"
     },
+  {
+    "name": "plusXRtdProvider",
+    "path": "/modules/plusXRtdProvider.js",
+    "module": "plusXRtdProvider"
+  },
+  {
+    "name": "adnuntiusRtdProvider",
+    "path": "/modules/adnuntiusRtdProvider.js",
+    "module": "adnuntiusRtdProvider"
+  },
+  {
+    "name": "airgridRtdProvider",
+    "path": "/modules/airgridRtdProvider.js",
+    "module": "airgridRtdProvider"
+  },
+  {
+    "name": "akamaiDapRtdProvider",
+    "path": "/modules/akamaiDapRtdProvider.js",
+    "module": "akamaiDapRtdProvider"
+  },
+  {
+    "name": "blueconicRtdProvider",
+    "path": "/modules/blueconicRtdProvider.js",
+    "module": "blueconicRtdProvider"
+  },
+  {
+    "name": "brandmetricsRtdProvider",
+    "path": "/modules/brandmetricsRtdProvider.js",
+    "module": "brandmetricsRtdProvider"
+  },
+  {
+    "name": "cleanioRtdProvider",
+    "path": "/modules/cleanioRtdProvider.js",
+    "module": "cleanioRtdProvider"
+  },
+  {
+    "name": "idWardRtdProvider",
+    "path": "/modules/idWardRtdProvider.js",
+    "module": "idWardRtdProvider"
+  },
     {
       "name": "dgkeywordRtdProvider",
       "path": "/modules/dgkeywordRtdProvider.js",
       "module": "dgkeywordRtdProvider"
     },
+  {
+    "name": "imRtdProvider",
+    "path": "/modules/imRtdProvider.js",
+    "module": "imRtdProvider"
+  },
     {
       "name": "geoedgeRtdProvider",
       "path": "/modules/geoedgeRtdProvider.js",
@@ -350,7 +395,12 @@
       "name": "yuktamediaAnalyticsAdapter",
       "path": "/modules/yuktamediaAnalyticsAdapter.js",
       "module": "yuktamediaAnalyticsAdapter"
-    }
+    },
+  {
+    "name": "intersectionRtdProvider",
+    "path": "/modules/intersectionRtdProvider.js",
+    "module": "intersectionRtdProvider"
+  }
   ],
   "Others": [
   {
@@ -362,11 +412,6 @@
     "name": "CCPA",
     "path": "/modules/consentManagementUsp.js",
     "module": "consentManagementUsp"
-  },
-  {
-    "name": "enrichmentFpdModule",
-    "path": "/modules/enrichmentFpdModule.js",
-    "module": "enrichmentFpdModule"
   },
   {
     "name": "gdprEnforcement",
@@ -419,19 +464,9 @@
     "module": "idImportLibrary"
   },
   {
-    "name": "imRtdProvider",
-    "path": "/modules/imRtdProvider.js",
-    "module": "imRtdProvider"
-  },
-  {
     "name": "instreamTracking",
     "path": "/modules/instreamTracking.js",
     "module": "instreamTracking"
-  },
-  {
-    "name": "intersectionRtdProvider",
-    "path": "/modules/intersectionRtdProvider.js",
-    "module": "intersectionRtdProvider"
   },
   {
     "name": "mass",
@@ -464,49 +499,9 @@
     "module": "userId"
   },
   {
-    "name": "validationFpdModule",
-    "path": "/modules/validationFpdModule/index.js",
-    "module": "validationFpdModule"
-  },
-  {
     "name": "viewability",
     "path": "/modules/viewability.js",
     "module": "viewability"
-  },
-  {
-    "name": "plusXRtdProvider",
-    "path": "/modules/plusXRtdProvider.js",
-    "module": "plusXRtdProvider"
-  },
-  {
-    "name": "adnuntiusRtdProvider",
-    "path": "/modules/adnuntiusRtdProvider.js",
-    "module": "adnuntiusRtdProvider"
-  },
-  {
-    "name": "airgridRtdProvider",
-    "path": "/modules/airgridRtdProvider.js",
-    "module": "airgridRtdProvider"
-  },
-  {
-    "name": "akamaiDapRtdProvider",
-    "path": "/modules/akamaiDapRtdProvider.js",
-    "module": "akamaiDapRtdProvider"
-  },
-  {
-    "name": "blueconicRtdProvider",
-    "path": "/modules/blueconicRtdProvider.js",
-    "module": "blueconicRtdProvider"
-  },
-  {
-    "name": "brandmetricsRtdProvider",
-    "path": "/modules/brandmetricsRtdProvider.js",
-    "module": "brandmetricsRtdProvider"
-  },
-  {
-    "name": "cleanioRtdProvider",
-    "path": "/modules/cleanioRtdProvider.js",
-    "module": "cleanioRtdProvider"
   },
   {
     "name": "gAMExpress",
@@ -514,14 +509,14 @@
     "module": "express"
   },
   {
-    "name": "idWardRtdProvider",
-    "path": "/modules/idWardRtdProvider.js",
-    "module": "idWardRtdProvider"
-  },
-  {
     "name": "konduitAccelerate",
     "path": "/modules/konduitWrapper.js",
     "module": "konduitWrapper"
+  },
+  {
+    "name": "yieldmoSyntheticInventoryModule",
+    "path": "/modules/yieldmoSyntheticInventoryModule.js",
+    "module": "yieldmoSyntheticInventoryModule"
   }
 ]
 }
