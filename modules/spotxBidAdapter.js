@@ -257,18 +257,17 @@ export const spec = {
         deepSetValue(requestPayload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
       }
 
-      // ID5 fied
-      if (deepAccess(bid, 'userId.id5id.uid')) {
-        userExt.eids = userExt.eids || [];
-        userExt.eids.push(
-          {
-            source: 'id5-sync.com',
-            uids: [{
-              id: bid.userId.id5id.uid,
-              ext: bid.userId.id5id.ext || {}
-            }]
+      if (bid.userIdAsEids) {
+        userExt.eids = bid.userIdAsEids;
+
+        userExt.eids.forEach(eid => {
+          if (eid.source === 'uidapi.com') {
+            eid.uids.forEach(uid => {
+              uid.ext = uid.ext || {};
+              uid.ext.rtiPartner = 'UID2'
+            });
           }
-        )
+        });
       }
 
       // Add common id if available
@@ -285,26 +284,11 @@ export const spec = {
         };
       }
 
-      if (bid && bid.userId && bid.userId.tdid) {
-        userExt.eids = userExt.eids || [];
-        userExt.eids.push(
-          {
-            source: 'adserver.org',
-            uids: [{
-              id: bid.userId.tdid,
-              ext: {
-                rtiPartner: 'TDID'
-              }
-            }]
-          }
-        )
-      }
-
       // Only add the user object if it's not empty
       if (!isEmpty(userExt)) {
         requestPayload.user = { ext: userExt };
       }
-      const urlQueryParams = 'src_sys=prebid'
+      const urlQueryParams = 'src_sys=prebid';
       return {
         method: 'POST',
         url: URL + channelId + '?' + urlQueryParams,
@@ -365,7 +349,7 @@ export const spec = {
             bid.vastXml = spotxBid.adm;
           } else {
             bid.cache_key = spotxBid.ext.cache_key;
-            bid.vastUrl = 'https://search.spotxchange.com/ad/vast.html?key=' + spotxBid.ext.cache_key
+            bid.vastUrl = 'https://search.spotxchange.com/ad/vast.html?key=' + spotxBid.ext.cache_key;
             bid.videoCacheKey = spotxBid.ext.cache_key;
           }
 
@@ -453,7 +437,7 @@ function outstreamRender(bid) {
         loadExternalScript(easiUrl, BIDDER_CODE, undefined, undefined, attributes);
       }
     } catch (err) {
-      logError('[SPOTX][renderer] Error:' + err.message)
+      logError('[SPOTX][renderer] Error:' + err.message);
     }
   }
 }

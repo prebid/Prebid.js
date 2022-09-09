@@ -1050,8 +1050,8 @@ describe('validate bid response: ', function () {
       bids1 = Object.assign({},
         bids[0],
         {
-          bidderCode: 'validAlternateBidder',
-          adapterCode: 'knownAdapter1'
+          bidderCode: 'validalternatebidder',
+          adapterCode: 'knownadapter1'
         }
       );
       logWarnSpy = sinon.spy(utils, 'logWarn');
@@ -1126,6 +1126,31 @@ describe('validate bid response: ', function () {
       expect(logErrorSpy.callCount).to.equal(0);
     });
 
+    it('should accept the bid, when allowedAlternateBidderCodes is marked as * (with space) and allowAlternateBidderCodes flag is true', function () {
+      bidderSettingStub.withArgs(CODE, 'allowAlternateBidderCodes').returns(true);
+      bidderSettingStub.withArgs(CODE, 'allowedAlternateBidderCodes').returns([' * ']);
+
+      const bidder = newBidder(spec);
+      spec.interpretResponse.returns(bids1);
+      bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+
+      expect(addBidResponseStub.calledOnce).to.equal(true);
+      expect(logWarnSpy.callCount).to.equal(0);
+      expect(logErrorSpy.callCount).to.equal(0);
+    });
+
+    it('should not accept the bid, when allowedAlternateBidderCodes is marked as empty array and allowAlternateBidderCodes flag is true', function () {
+      bidderSettingStub.withArgs(CODE, 'allowAlternateBidderCodes').returns(true);
+      bidderSettingStub.withArgs(CODE, 'allowedAlternateBidderCodes').returns([]);
+
+      const bidder = newBidder(spec);
+      spec.interpretResponse.returns(bids1);
+      bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+
+      expect(addBidResponseStub.calledOnce).to.equal(false);
+      expect(logWarnSpy.callCount).to.equal(1);
+    });
+
     it('should accept the bid, when allowedAlternateBidderCodes contains bidder name and allowAlternateBidderCodes flag is true', function () {
       bidderSettingStub.withArgs(CODE, 'allowAlternateBidderCodes').returns(true);
       bidderSettingStub.withArgs(CODE, 'allowedAlternateBidderCodes').returns(['validAlternateBidder']);
@@ -1161,6 +1186,70 @@ describe('validate bid response: ', function () {
       expect(addBidResponseStub.calledOnce).to.equal(false);
       expect(logWarnSpy.callCount).to.equal(1);
     });
+  });
+
+  describe('when interpretResponse returns BidderAuctionResponse', function() {
+    const bidRequest = {
+      bids: [{
+        bidId: '1',
+        bidder: CODE,
+        auctionId: 'first-bid-id',
+        adUnitCode: 'mock/placement',
+        transactionId: 'au',
+      }]
+    };
+    const fledgeAuctionConfig = {
+      bidId: '1',
+    }
+    describe('when response has FLEDGE auction config', function() {
+      let logInfoSpy;
+
+      beforeEach(function () {
+        logInfoSpy = sinon.spy(utils, 'logInfo');
+      });
+
+      afterEach(function () {
+        logInfoSpy.restore();
+      });
+
+      it('should unwrap bids', function() {
+        const bidder = newBidder(spec);
+        spec.interpretResponse.returns({
+          bids: bids,
+          fledgeAuctionConfigs: []
+        });
+        bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+        expect(addBidResponseStub.calledOnce).to.equal(true);
+        expect(addBidResponseStub.firstCall.args[0]).to.equal('mock/placement');
+      });
+
+      it('should call fledgeManager with FLEDGE configs', function() {
+        const bidder = newBidder(spec);
+        spec.interpretResponse.returns({
+          bids: bids,
+          fledgeAuctionConfigs: [fledgeAuctionConfig]
+        });
+        bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+
+        expect(logInfoSpy.calledOnce).to.equal(true);
+        expect(logInfoSpy.firstCall.args[1]).to.equal(fledgeAuctionConfig);
+        expect(addBidResponseStub.calledOnce).to.equal(true);
+        expect(addBidResponseStub.firstCall.args[0]).to.equal('mock/placement');
+      })
+
+      it('should call fledgeManager with FLEDGE configs even if no bids returned', function() {
+        const bidder = newBidder(spec);
+        spec.interpretResponse.returns({
+          bids: [],
+          fledgeAuctionConfigs: [fledgeAuctionConfig]
+        });
+        bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+
+        expect(logInfoSpy.calledOnce).to.equal(true);
+        expect(logInfoSpy.firstCall.args[1]).to.equal(fledgeAuctionConfig);
+        expect(addBidResponseStub.calledOnce).to.equal(false);
+      })
+    })
   })
 });
 

@@ -103,7 +103,7 @@ export const spec = {
 
     var pageUrl = _extractTopWindowUrlFromBidderRequest(bidderRequest);
     payload.site = {};
-    payload.site.page = pageUrl
+    payload.site.page = pageUrl;
     payload.site.referrer = _extractTopWindowReferrerFromBidderRequest(bidderRequest);
     // TODO: does it make sense to fall back to window.location for the domain?
     payload.site.hostname = bidderRequest.refererInfo?.domain || parseDomain(pageUrl);
@@ -124,12 +124,12 @@ export const spec = {
 
     // Apply schain.
     if (schain) {
-      payload.schain = schain
+      payload.schain = schain;
     }
 
     // Apply eids.
     if (eids) {
-      payload.eids = eids
+      payload.eids = eids;
     }
 
     // Apply geo

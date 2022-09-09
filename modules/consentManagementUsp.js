@@ -44,7 +44,7 @@ function lookupUspConsent({onSuccess, onError}) {
     let uspapiFrame;
     let uspapiFunction;
 
-    while (!uspapiFrame) {
+    while (true) {
       try {
         if (typeof f.__uspapi === 'function') {
           uspapiFunction = f.__uspapi;
@@ -150,7 +150,7 @@ function lookupUspConsent({onSuccess, onError}) {
     function readPostMessageResponse(event) {
       const res = event && event.data && event.data.__uspapiReturn;
       if (res && res.callId) {
-        if (typeof uspapiCallbacks[res.callId] !== 'undefined') {
+        if (uspapiCallbacks.hasOwnProperty(res.callId)) {
           uspapiCallbacks[res.callId](res.returnValue, res.success);
           delete uspapiCallbacks[res.callId];
         }
@@ -304,4 +304,4 @@ function enableConsentManagement(configFromUser = false) {
   loadConsentData(); // immediately look up consent data to make it available without requiring an auction
 }
 config.getConfig('consentManagement', config => setConsentConfig(config.consentManagement));
-setTimeout(() => !addedConsentHook && enableConsentManagement())
+setTimeout(() => !addedConsentHook && enableConsentManagement());

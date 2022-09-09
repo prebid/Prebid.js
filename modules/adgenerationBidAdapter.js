@@ -1,4 +1,4 @@
-import {tryAppendQueryString, getBidIdParameter} from '../src/utils.js';
+import {tryAppendQueryString, getBidIdParameter, escapeUnsafeChars} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
@@ -200,7 +200,7 @@ function createNativeAd(body) {
     native.clickTrackers = body.native_ad.link.clicktrackers || [];
     native.impressionTrackers = body.native_ad.imptrackers || [];
     if (body.beaconurl && body.beaconurl != '') {
-      native.impressionTrackers.push(body.beaconurl)
+      native.impressionTrackers.push(body.beaconurl);
     }
   }
   return native;
@@ -230,7 +230,7 @@ function insertVASTMethodForAPV(targetId, vastXml) {
   };
   let script = document.createElement(`script`);
   script.type = 'text/javascript';
-  script.innerHTML = `(function(){ new APV.VideoAd(${JSON.stringify(apvVideoAdParam)}).load('${vastXml.replace(/\r?\n/g, '')}'); })();`;
+  script.innerHTML = `(function(){ new APV.VideoAd(${escapeUnsafeChars(JSON.stringify(apvVideoAdParam))}).load('${vastXml.replace(/\r?\n/g, '')}'); })();`;
   return script.outerHTML;
 }
 

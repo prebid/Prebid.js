@@ -480,6 +480,8 @@ describe('sharethrough adapter spec', function () {
               },
             },
           },
+          bcat: ['IAB1', 'IAB2-1'],
+          badv: ['domain1.com', 'domain2.com'],
         };
 
         it('should include first party data in open rtb request, site section', () => {
@@ -493,12 +495,19 @@ describe('sharethrough adapter spec', function () {
         });
 
         it('should include first party data in open rtb request, user section', () => {
-          const openRtbReq = spec.buildRequests(bidRequests, {...bidderRequest, ortb2: firstPartyData})[0].data;
+          const openRtbReq = spec.buildRequests(bidRequests, { ...bidderRequest, ortb2: firstPartyData })[0].data;
 
           expect(openRtbReq.user.yob).to.equal(firstPartyData.user.yob);
           expect(openRtbReq.user.gender).to.equal(firstPartyData.user.gender);
           expect(openRtbReq.user.ext.data).to.deep.equal(firstPartyData.user.ext.data);
           expect(openRtbReq.user.ext.eids).not.to.be.undefined;
+        });
+
+        it('should include first party data in open rtb request, ORTB blocked section', () => {
+          const openRtbReq = spec.buildRequests(bidRequests, { ...bidderRequest, ortb2: firstPartyData })[0].data;
+
+          expect(openRtbReq.bcat).to.deep.equal(firstPartyData.bcat);
+          expect(openRtbReq.badv).to.deep.equal(firstPartyData.badv);
         });
       });
     });

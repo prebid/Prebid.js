@@ -91,7 +91,7 @@ export function buildDfpVideoUrl(options) {
   };
 
   const urlSearchComponent = urlComponents.search;
-  const urlSzParam = urlSearchComponent && urlSearchComponent.sz
+  const urlSzParam = urlSearchComponent && urlSearchComponent.sz;
   if (urlSzParam) {
     derivedParams.sz = urlSzParam + '|' + derivedParams.sz;
   }
@@ -186,7 +186,7 @@ export function buildAdpodVideoUrl({code, params, callback} = {}) {
     let initialValue = {
       [adpodUtils.TARGETING_KEY_PB_CAT_DUR]: undefined,
       [adpodUtils.TARGETING_KEY_CACHE_ID]: undefined
-    }
+    };
     let customParams = {};
     if (targeting[code]) {
       customParams = targeting[code].reduce((acc, curValue) => {

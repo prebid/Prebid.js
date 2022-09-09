@@ -65,7 +65,7 @@ export const spec = {
           withCredentials,
         },
         bidRequest,
-      }
+      };
     });
   },
 

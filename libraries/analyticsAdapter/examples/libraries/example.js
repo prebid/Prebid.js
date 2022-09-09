@@ -1,11 +1,11 @@
 /* eslint-disable no-console */
 /** @module example */
 
-window.ExampleAnalyticsGlobalObject2 = function(hander, type, data) {
-  console.log(`call to Example2 Analytics library: example2('${hander}', '${type}', ${JSON.stringify(data)})`);
+window.ExampleAnalyticsGlobalObject = function(hander, type, data) {
+  console.log(`call to Example Analytics library: example('${hander}', '${type}', ${JSON.stringify(data)})`);
 };
 
-window[window.ExampleAnalyticsGlobalObject2] = function() {};
+window[window.ExampleAnalyticsGlobalObject] = function() {};
 
 // var utils = require('utils');
 // var events = require('events');
@@ -23,16 +23,16 @@ var pbjsHandlers = {
 };
 
 // init
-var example = window[window.ExampleAnalyticsGlobalObject2];
+var example = window[window.ExampleAnalyticsGlobalObject];
 var bufferedQueries = example.q || [];
 
 events.init();
 
 // overwrite example object and handle 'on' callbacks
-window[window.ExampleAnalyticsGlobalObject2] = example = utils.errorless(function() {
+window[window.ExampleAnalyticsGlobalObject] = example = utils.errorless(function() {
   if (arguments[0] && arguments[0] === 'on') {
-    var eventName = arguments[1] && arguments[1];
-    var args = arguments[2] && arguments[2];
+    var eventName = arguments[1];
+    var args = arguments[2];
     if (eventName && args) {
       if (eventName === 'bidAdjustment') {
         pbjsHandlers.onBidAdjustment.apply(this, [args]);

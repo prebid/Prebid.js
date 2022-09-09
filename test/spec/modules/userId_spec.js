@@ -46,6 +46,7 @@ import {deepintentDpesSubmodule} from 'modules/deepintentDpesIdSystem.js';
 import {amxIdSubmodule} from '../../../modules/amxIdSystem.js';
 import {kinessoIdSubmodule} from 'modules/kinessoIdSystem.js';
 import {adqueryIdSubmodule} from 'modules/adqueryIdSystem.js';
+import {imuIdSubmodule} from 'modules/imuIdSystem.js';
 import * as mockGpt from '../integration/faker/googletag.js';
 import 'src/prebid.js';
 import {hook} from '../../../src/hook.js';
@@ -402,7 +403,7 @@ describe('User ID', function () {
     it('should set googletag ppid correctly', function () {
       let adUnits = [getAdUnitMock()];
       init(config);
-      setSubmoduleRegistry([amxIdSubmodule, sharedIdSystemSubmodule, identityLinkSubmodule]);
+      setSubmoduleRegistry([amxIdSubmodule, sharedIdSystemSubmodule, identityLinkSubmodule, imuIdSubmodule]);
 
       config.setConfig({
         userSync: {
@@ -411,6 +412,7 @@ describe('User ID', function () {
             { name: 'amxId', value: {'amxId': 'amx-id-value-amx-id-value-amx-id-value'} },
             { name: 'pubCommonId', value: {'pubcid': 'pubCommon-id-value-pubCommon-id-value'} },
             { name: 'identityLink', value: {'idl_env': 'identityLink-id-value-identityLink-id-value'} },
+            { name: 'imuid', value: {'imppid': 'imppid-value-imppid-value-imppid-value'} },
           ]
         }
       });
@@ -419,6 +421,27 @@ describe('User ID', function () {
       return expectImmediateBidHook(() => {}, {adUnits}).then(() => {
         // ppid should have been set without dashes and stuff
         expect(window.googletag._ppid).to.equal('pubCommonidvaluepubCommonidvalue');
+      });
+    });
+
+    it('should set googletag ppid correctly for imuIdSubmodule', function () {
+      let adUnits = [getAdUnitMock()];
+      init(config);
+      setSubmoduleRegistry([imuIdSubmodule]);
+
+      config.setConfig({
+        userSync: {
+          ppid: 'ppid.intimatemerger.com',
+          userIds: [
+            { name: 'imuid', value: {'imppid': 'imppid-value-imppid-value-imppid-value'} },
+          ]
+        }
+      });
+      // before ppid should not be set
+      expect(window.googletag._ppid).to.equal(undefined);
+      return expectImmediateBidHook(() => {}, {adUnits}).then(() => {
+        // ppid should have been set without dashes and stuff
+        expect(window.googletag._ppid).to.equal('imppidvalueimppidvalueimppidvalue');
       });
     });
 
@@ -516,8 +539,21 @@ describe('User ID', function () {
         clearStack().then(() => {
           // simulate init complete
           mockIdCallback.callArg(0, {id: {MOCKID: '1111'}});
-        })
+        });
       });
+
+      it('should continue the auction when init fails', (done) => {
+        startInit();
+        requestBidsHook(() => {
+          done();
+        },
+        {adUnits: [getAdUnitMock()]},
+        {
+          delay: delay(),
+          getIds: () => Promise.reject(new Error())
+        }
+        );
+      })
 
       it('should not get stuck when init fails', () => {
         const err = new Error();

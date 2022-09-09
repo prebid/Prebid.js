@@ -44,6 +44,106 @@ const bid = {
   },
 };
 
+const ortbBid = {
+  adId: '123',
+  transactionId: 'au',
+  native: {
+    ortb: {
+      assets: [
+        {
+          id: 0,
+          title: {
+            text: 'Native Creative'
+          }
+        },
+        {
+          id: 1,
+          data: {
+            value: 'Cool description great stuff'
+          }
+        },
+        {
+          id: 2,
+          data: {
+            value: 'Do it'
+          }
+        },
+        {
+          id: 3,
+          img: {
+            url: 'http://cdn.example.com/p/creative-image/image.png',
+            h: 83,
+            w: 127
+          }
+        },
+        {
+          id: 4,
+          img: {
+            url: 'http://cdn.example.com/p/creative-image/icon.jpg',
+            h: 742,
+            w: 989
+          }
+        },
+        {
+          id: 5,
+          data: {
+            value: 'AppNexus',
+            type: 1
+          }
+        }
+      ],
+      link: {
+        url: 'https://www.link.example'
+      },
+      privacy: 'https://privacy-link.example',
+      ver: '1.2'
+    }
+  },
+};
+
+const ortbRequest = {
+  assets: [
+    {
+      id: 0,
+      required: 0,
+      title: {
+        len: 140
+      }
+    }, {
+      id: 1,
+      required: 0,
+      data: {
+        type: 2
+      }
+    }, {
+      id: 2,
+      required: 0,
+      data: {
+        type: 12
+      }
+    }, {
+      id: 3,
+      required: 0,
+      img: {
+        type: 3
+      }
+    }, {
+      id: 4,
+      required: 0,
+      img: {
+        type: 1
+      }
+    }, {
+      id: 5,
+      required: 0,
+      data: {
+        type: 1
+      }
+    }
+  ],
+  ver: '1.2'
+}
+
 const bidWithUndefinedFields = {
   transactionId: 'au',
   native: {
@@ -400,6 +500,110 @@ describe('native.js', function () {
       value: bid.native.ext.foo,
     });
   });
+
+  it('creates native all asset message with OpenRTB format', function () {
+    const messageRequest = {
+      message: 'Prebid Native',
+      action: 'allAssetRequest',
+      adId: '123',
+    };
+
+    const message = getAllAssetsMessage(messageRequest, ortbBid, {getNativeReq: () => ortbRequest});
+
+    expect(message.assets.length).to.equal(8);
+    expect(message.assets).to.deep.include({
+      key: 'body',
+      value: bid.native.body,
+    });
+    expect(message.assets).to.deep.include({
+      key: 'image',
+      value: bid.native.image.url,
+    });
+    expect(message.assets).to.deep.include({
+      key: 'clickUrl',
+      value: bid.native.clickUrl,
+    });
+    expect(message.assets).to.deep.include({
+      key: 'title',
+      value: bid.native.title,
+    });
+    expect(message.assets).to.deep.include({
+      key: 'icon',
+      value: bid.native.icon.url,
+    });
+    expect(message.assets).to.deep.include({
+      key: 'cta',
+      value: bid.native.cta,
+    });
+    expect(message.assets).to.deep.include({
+      key: 'sponsoredBy',
+      value: bid.native.sponsoredBy,
+    });
+    expect(message.assets).to.deep.include({
+      key: 'privacyLink',
+      value: ortbBid.native.ortb.privacy,
+    });
+  });
+
+  const SAMPLE_ORTB_REQUEST = toOrtbNativeRequest({
+    title: 'vtitle',
+    body: 'vbody'
+  });
+  const SAMPLE_ORTB_RESPONSE = {
+    native: {
+      ortb: {
+        link: {
+          url: 'url'
+        },
+        assets: [
+          {
+            id: 0,
+            title: {
+              text: 'vtitle'
+            }
+          },
+          {
+            id: 1,
+            data: {
+              value: 'vbody'
+            }
+          }
+        ]
+      }
+    }
+  }
+  describe('getAllAssetsMessage', () => {
+    it('returns assets in legacy format for ortb responses', () => {
+      const actual = getAllAssetsMessage({}, SAMPLE_ORTB_RESPONSE, {getNativeReq: () => SAMPLE_ORTB_REQUEST});
+      expect(actual.assets).to.eql([
+        {
+          key: 'clickUrl',
+          value: 'url'
+        },
+        {
+          key: 'title',
+          value: 'vtitle'
+        },
+        {
+          key: 'body',
+          value: 'vbody'
+        },
+      ])
+    });
+  });
+  describe('getAssetsMessage', () => {
+    Object.entries({
+      'hb_native_title': {key: 'title', value: 'vtitle'},
+      'hb_native_body': {key: 'body', value: 'vbody'}
+    }).forEach(([tkey, assetVal]) => {
+      it(`returns ${tkey} asset in legacy format for ortb responses`, () => {
+        const actual = getAssetMessage({
+          assets: [tkey]
+        }, SAMPLE_ORTB_RESPONSE, {getNativeReq: () => SAMPLE_ORTB_REQUEST})
+        expect(actual.assets).to.eql([assetVal])
+      })
+    })
+  })
 });
 
 describe('validate native openRTB', function () {
@@ -1008,8 +1212,8 @@ describe('fireClickTrackers', () => {
     fetchURL = sinon.stub();
   });
 
-  function runTrackers(resp) {
-    fireClickTrackers(resp, {fetchURL});
+  function runTrackers(resp, assetId = null) {
+    fireClickTrackers(resp, assetId, {fetchURL});
   }
 
   it('should load each URL in link.clicktrackers', () => {
@@ -1020,5 +1224,56 @@ describe('fireClickTrackers', () => {
       }
     });
     urls.forEach(url => sinon.assert.calledWith(fetchURL, url));
+  })
+
+  it('should load each URL in asset.link.clicktrackers, when response is ORTB', () => {
+    const urls = ['asset_url1', 'asset_url2'];
+    runTrackers({
+      assets: [
+        {
+          id: 1,
+          link: {
+            clicktrackers: urls
+          }
+        }
+      ],
+    }, 1);
+    urls.forEach(url => sinon.assert.calledWith(fetchURL, url));
+  })
+})
+
+describe('toOrtbNativeResponse', () => {
+  it('should work when there are unrequested assets in the response', () => {
+    const legacyResponse = {
+      'title': 'vtitle',
+      'body': 'vbody'
+    }
+    const request = toOrtbNativeRequest({
+      title: {
+        required: 'true'
+      },
+
+    });
+    const ortbResponse = toOrtbNativeResponse(legacyResponse, request);
+    expect(ortbResponse.assets.length).to.eql(1);
+  });
+
+  it('should not modify the request', () => {
+    const legacyResponse = {
+      title: 'vtitle'
+    }
+    const request = toOrtbNativeRequest({
+      title: {
+        required: true
+      }
+    });
+    const requestCopy = JSON.parse(JSON.stringify(request));
+    const response = toOrtbNativeResponse(legacyResponse, request);
+    expect(request).to.eql(requestCopy);
+    sinon.assert.match(response.assets[0], {
+      title: {
+        text: 'vtitle'
+      }
+    })
   })
 })
