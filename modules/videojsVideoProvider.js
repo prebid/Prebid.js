@@ -198,60 +198,55 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
   }
 
   function onEvent(type, callback, payload) {
-    registerPreSetupListeners(type, callback, payload);
+    registerSetupListeners(type, callback, payload);
 
     if (!player) {
       return;
     }
+
     player.ready(() => {
-      registerPostSetupListeners(type, callback, payload);
+      registerListeners(type, callback, payload);
     });
   }
 
-  function registerPreSetupListeners(type, callback, payload) {
-    switch (type) {
-      case SETUP_COMPLETE:
-        setupCompleteCallbacks.push(callback);
-        break;
-      case SETUP_FAILED:
-        // no point in registering for setup failures if already setup.
-        if (playerIsSetup) {
-          return;
-        }
-        setupFailedCallbacks.push(callback);
-        const eventHandler = () => {
-          /*
-          Videojs has no specific setup error handler
-          so we imitate it by hooking to the general error
-          handler and checking to see if the player has been setup
-           */
-          if (playerIsSetup) {
-            return;
-          }
+  function registerSetupListeners(externalEventName, callback, basePayload) {
+    // no point in registering for setup failures if already setup.
+    if (playerIsSetup) {
+      return;
+    }
 
-          if (player) {
-            const error = player.error();
-            Object.assign(payload, {
-              playerVersion,
-              sourceError: error,
-              errorCode: error.code,
-              errorMessage: error.message,
-            });
-          }
-
-          callback(type, payload);
-          setupFailedCallbacks = [];
-        };
-
-        if (player) {
-          player.on(ERROR, eventHandler);
-        }
-        setupFailedEventHandlers.push(eventHandler)
-        break;
+    if (externalEventName === SETUP_COMPLETE) {
+      setupCompleteCallbacks.push(callback);
+    } else if (externalEventName === SETUP_FAILED) {
+      setupFailedCallbacks.push(callback);
+      registerSetupErrorListener()
     }
   }
 
-  function registerPostSetupListeners(externalEventName, callback, basePayload) {
+  function registerSetupErrorListener() {
+    if (!player) {
+      return
+    }
+
+    const eventHandler = () => {
+      /*
+      Videojs has no specific setup error handler
+      so we imitate it by hooking to the general error
+      handler and checking to see if the player has been setup
+       */
+      if (playerIsSetup) {
+        return;
+      }
+
+      const error = player.error();
+      triggerSetupFailure(error.code, error.message, error);
+    };
+
+    player.on(ERROR, eventHandler);
+    setupFailedEventHandlers.push(eventHandler)
+  }
+
+  function registerListeners(externalEventName, callback, basePayload) {
     if (externalEventName === MUTE) {
       const eventHandler = () => {
         if (isMuted !== player.muted()) {
@@ -260,28 +255,6 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
         }
       };
       player.on(utils.getVideojsEventName(VOLUME), eventHandler);
-      return;
-    }
-
-    if (externalEventName === PLAYLIST) {
-      const eventHandler = getEventHandler(externalEventName, callback, basePayload, e => ({
-        playlistItemCount: utils.getPlaylistCount(player),
-        autostart: player.autoplay()
-      }));
-
-      if (player.playlist) {
-        // force a playlist event on first item load
-        player.one('loadstart', eventHandler);
-        player.on('playlistchange', eventHandler);
-      } else {
-        // When playlist plugin is not used, treat each media item as a single item playlist
-        player.on('loadstart', eventHandler);
-      }
-      return;
-    }
-
-    if (AD_MANAGER_EVENTS.includes(externalEventName)) {
-      registerAdManagerEvent(externalEventName, callback, basePayload);
       return;
     }
 
@@ -305,6 +278,50 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
         };
         break
 
+      case AD_LOADED:
+        getEventPayload = (e) => {
+          const imaAd = e.getAdData && e.getAdData();
+          adState.updateForEvent(imaAd);
+          timeState.clearState();
+          return adState.getState();
+        };
+        break
+
+      case AD_STARTED:
+      case AD_PLAY:
+      case AD_PAUSE:
+        getEventPayload = () => adState.getState();
+        break
+
+      case AD_IMPRESSION:
+      case AD_CLICK:
+        getEventPayload = () => Object.assign({}, adState.getState(), timeState.getState());
+        break
+
+      case AD_TIME:
+        getEventPayload = (e) => {
+          const adTimeEvent = e && e.getAdData && e.getAdData();
+          timeState.updateForTimeEvent(adTimeEvent);
+          return Object.assign({}, adState.getState(), timeState.getState());
+        };
+        break
+
+      case AD_COMPLETE:
+        getEventPayload = () => {
+          const currentState = adState.getState();
+          adState.clearState();
+          return currentState;
+        };
+        break
+
+      case AD_SKIPPED:
+        getEventPayload = () => {
+          const currentState = Object.assign({}, adState.getState(), timeState.getState());
+          adState.clearState();
+          return currentState;
+        };
+        break
+
       case AD_ERROR:
         getEventPayload = e => {
           const imaAdError = e.data && e.data.AdError;
@@ -318,6 +335,13 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
           adState.clearState();
           return extraPayload;
         };
+        break
+
+      case PLAYLIST:
+        getEventPayload = e => ({
+          playlistItemCount: utils.getPlaylistCount(player),
+          autostart: player.autoplay()
+        });
         break
 
       case CONTENT_LOADED:
@@ -404,62 +428,31 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
         return;
     }
 
-    const videojsEventName = utils.getVideojsEventName(externalEventName);
     const eventHandler = getEventHandler(externalEventName, callback, basePayload, getEventPayload);
-    player.on(videojsEventName, eventHandler);
-  }
 
-  function registerAdManagerEvent(externalEventName, callback, basePayload) {
-    let getEventPayload;
-    switch (externalEventName) {
-      case AD_LOADED:
-        getEventPayload = (e) => {
-          const imaAd = e.getAdData && e.getAdData();
-          adState.updateForEvent(imaAd);
-          timeState.clearState();
-          return adState.getState();
-        };
-        break
-
-      case AD_STARTED:
-      case AD_PLAY:
-      case AD_PAUSE:
-        getEventPayload = () => adState.getState();
-        break
-
-      case AD_IMPRESSION:
-      case AD_CLICK:
-        getEventPayload = () => Object.assign({}, adState.getState(), timeState.getState());
-        break
-
-      case AD_TIME:
-        getEventPayload = (e) => {
-          const adTimeEvent = e && e.getAdData && e.getAdData();
-          timeState.updateForTimeEvent(adTimeEvent);
-          return Object.assign({}, adState.getState(), timeState.getState());
-        };
-        break
-
-      case AD_COMPLETE:
-        getEventPayload = () => {
-          const currentState = adState.getState();
-          adState.clearState();
-          return currentState;
-        };
-        break
-
-      case AD_SKIPPED:
-        getEventPayload = () => {
-          const currentState = Object.assign({}, adState.getState(), timeState.getState());
-          adState.clearState();
-          return currentState;
-        };
-        break
+    if (externalEventName === PLAYLIST) {
+      registerPlaylistEventListener(eventHandler);
+      return;
     }
 
-    const eventHandler = getEventHandler(externalEventName, callback, basePayload, getEventPayload);
-    const imaEventName = utils.getVideojsEventName(externalEventName);
-    player.on('ads-manager', () => player.ima.addEventListener(imaEventName, eventHandler));
+    const videojsEventName = utils.getVideojsEventName(externalEventName);
+
+    if (AD_MANAGER_EVENTS.includes(externalEventName)) {
+      player.on('ads-manager', () => player.ima.addEventListener(videojsEventName, eventHandler));
+    } else {
+      player.on(videojsEventName, eventHandler);
+    }
+  }
+
+  function registerPlaylistEventListener(eventHandler) {
+    if (player.playlist) {
+      // force a playlist event on first item load
+      player.one('loadstart', eventHandler);
+      player.on('playlistchange', eventHandler);
+    } else {
+      // When playlist plugin is not used, treat each media item as a single item playlist
+      player.on('loadstart', eventHandler);
+    }
   }
 
   function offEvents(events, callback) {
@@ -525,14 +518,14 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
     player.ima(adConfig);
   }
 
-  function triggerSetupFailure(errorCode, msg) {
+  function triggerSetupFailure(errorCode, msg, sourceError) {
     const payload = {
       divId,
       playerVersion,
       type: SETUP_FAILED,
       errorCode,
       errorMessage: msg,
-      sourceError: null
+      sourceError: sourceError
     };
     setupFailedCallbacks.forEach(setupFailedCallback => setupFailedCallback(SETUP_FAILED, payload));
     setupFailedCallbacks = [];
