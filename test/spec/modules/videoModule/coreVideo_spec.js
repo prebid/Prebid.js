@@ -6,14 +6,14 @@ describe('Video Core', function () {
     getOrtbParams: sinon.spy(),
     setAdTagUrl: sinon.spy(),
     onEvent: sinon.spy(),
-    offEvents: sinon.spy(),
+    offEvent: sinon.spy(),
   };
 
   const otherSubmodule = {
     getOrtbParams: () => {},
     setAdTagUrl: () => {},
     onEvent: () => {},
-    offEvents: () => {},
+    offEvent: () => {},
   };
 
   const testId = 'test_id';
@@ -80,9 +80,9 @@ describe('Video Core', function () {
 
   describe('offEvents', function () {
     it('delegates to the submodule of the right divId', function () {
-      videoCore.offEvents([], () => {}, testId);
-      videoCore.offEvents([], () => {}, otherId);
-      expect(mockSubmodule.offEvents.calledOnce).to.be.true;
+      videoCore.offEvents(['event'], () => {}, testId);
+      videoCore.offEvents(['event'], () => {}, otherId);
+      expect(mockSubmodule.offEvent.calledOnce).to.be.true;
     });
   });
 });

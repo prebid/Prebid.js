@@ -281,7 +281,7 @@ describe('JWPlayerProvider', function () {
       provider.init();
       const callback = () => {};
       provider.onEvent(AD_IMPRESSION, callback, {});
-      provider.offEvents([AD_IMPRESSION], callback);
+      provider.offEvent(AD_IMPRESSION, callback);
       expect(offSpy.calledOnce).to.be.true;
       const eventName = offSpy.args[0][0];
       expect(eventName).to.be.equal('adViewableImpression');

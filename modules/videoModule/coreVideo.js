@@ -11,8 +11,8 @@ import { ParentModule, SubmoduleBuilder } from '../../libraries/video/shared/par
  * @function getId - retrieves the div id (unique identifier) of the attached player instance.
  * @function getOrtbParams - retrieves the oRTB params for a player's current video session.
  * @function setAdTagUrl - Requests that a player render the ad in the provided ad tag url.
- * @function onEvents - attaches event listeners to the player instance.
- * @function offEvents - removes event listeners to the player instance.
+ * @function onEvent - attaches an event listener to the player instance.
+ * @function offEvent - removes event listener to the player instance.
  * @function destroy - deallocates the player instance
  */
 
@@ -37,14 +37,14 @@ import { ParentModule, SubmoduleBuilder } from '../../libraries/video/shared/par
  */
 
 /**
- * @function VideoProvider#onEvents
- * @param {[string]} events - List of event names for which the listener should be added
+ * @function VideoProvider#onEvent
+ * @param {string} events - name of event for which the listener should be added
  * @param {function} callback - function that will get called when one of the events is triggered
  */
 
 /**
- * @function VideoProvider#offEvents
- * @param {[string]} events - List of event names for which the attached listener should be removed
+ * @function VideoProvider#offEvent
+ * @param {string} event - name of event for which the attached listener should be removed
  * @param {function} callback - function that was assigned as a callback when the listener was added
  */
 
@@ -173,7 +173,13 @@ export function VideoCore(parentModule_) {
    */
   function offEvents(events, callback, divId) {
     const submodule = parentModule.getSubmodule(divId);
-    submodule && submodule.offEvents(events, callback);
+    if (!submodule) {
+      return;
+    }
+
+    events.forEach(event => {
+      submodule.offEvent(event, callback);
+    });
   }
 
   return {

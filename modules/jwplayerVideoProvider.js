@@ -445,21 +445,19 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
     callbackStorage.storeCallback(externalEventName, eventHandler, callback);
   }
 
-  function offEvents(events, callback) {
-    events.forEach(event => {
-      const jwEvent = utils.getJwEvent(event);
-      if (!callback) {
-        player.off(jwEvent);
-        return;
-      }
+  function offEvent(event, callback) {
+    const jwEvent = utils.getJwEvent(event);
+    if (!callback) {
+      player.off(jwEvent);
+      return;
+    }
 
-      const eventHandler = callbackStorage.getCallback(event, callback);
-      if (!eventHandler) {
-        return;
-      }
+    const eventHandler = callbackStorage.getCallback(event, callback);
+    if (!eventHandler) {
+      return;
+    }
 
-      player.off(jwEvent, eventHandler);
-    });
+    player.off(jwEvent, eventHandler);
   }
 
   function destroy() {
@@ -476,7 +474,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
     getOrtbParams,
     setAdTagUrl,
     onEvent,
-    offEvents,
+    offEvent,
     destroy
   };
 

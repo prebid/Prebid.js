@@ -455,18 +455,16 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
     }
   }
 
-  function offEvents(events, callback) {
-    for (let event of events) {
-      const videojsEvent = utils.getVideojsEventName(event)
-      if (!callback) {
-        player.off(videojsEvent);
-        continue;
-      }
+  function offEvent(event, callback) {
+    const videojsEvent = utils.getVideojsEventName(event)
+    if (!callback) {
+      player.off(videojsEvent);
+      return;
+    }
 
-      const eventHandler = callbackToHandler[event];// callbackStorage.getCallback(event, callback);
-      if (eventHandler) {
-        player.off(videojsEvent, eventHandler);
-      }
+    const eventHandler = callbackToHandler[event];// callbackStorage.getCallback(event, callback);
+    if (eventHandler) {
+      player.off(videojsEvent, eventHandler);
     }
   }
 
@@ -484,7 +482,7 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
     getOrtbParams,
     setAdTagUrl,
     onEvent,
-    offEvents,
+    offEvent,
     destroy
   };
 
