@@ -50,6 +50,26 @@ describe('nextMillenniumBidAdapterTests', function() {
     },
 
     {
+      adUnitCode: 'test-banner-gi',
+      bidId: 'bid1234',
+      auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+      bidder: 'nextMillennium',
+      params: { group_id: '1234' },
+      mediaTypes: {
+        banner: {
+          sizes: [[300, 250], [300, 300]]
+        }
+      },
+
+      sizes: [[300, 250], [300, 300]],
+      uspConsent: '1---',
+      gdprConsent: {
+        consentString: 'kjfdniwjnifwenrif3',
+        gdprApplies: true
+      }
+    },
+
+    {
       adUnitCode: 'test-video-gi',
       bidId: 'bid1234',
       auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
@@ -94,7 +114,7 @@ describe('nextMillenniumBidAdapterTests', function() {
       const request = spec.buildRequests([test]);
       const requestData = JSON.parse(request[0].data);
       const storeRequestId = requestData.ext.prebid.storedrequest.id;
-      const templateRE = /^g\d+;\d+x\d+;/;
+      const templateRE = /^g[1-9]\d*;(?:[1-9]\d*x[1-9]\d*\|)*[1-9]\d*x[1-9]\d*;/;
       expect(templateRE.test(storeRequestId)).to.be.true;
     };
   });
