@@ -101,7 +101,7 @@
         console.log('player setup failed: ', e);
       });
 
-      pbjs.onEvent('video_destroyed', e => {
+      pbjs.onEvent('videoDestroyed', e => {
         console.log('player destroyed: ', e);
       });
 
@@ -133,15 +133,15 @@
         console.log('videos pb seekEnd: ', e);
       });
 
-      pbjs.onEvent('video_mute', (e) => {
+      pbjs.onEvent('videoMute', (e) => {
         console.log('videos pb mute: ', e);
       });
 
-      pbjs.onEvent('video_volume', (e) => {
+      pbjs.onEvent('videoVolume', (e) => {
         console.log('videos pb volume: ', e);
       });
 
-      // pbjs.onEvent('video_time', (e) => {
+      // pbjs.onEvent('videoTime', (e) => {
       //   console.log('videos pb time: ', e);
       // });
 
@@ -149,7 +149,7 @@
         console.log('videos pb complete: ', e);
       });
 
-      pbjs.onEvent('video_fullscreen', (e) => {
+      pbjs.onEvent('videoFullscreen', (e) => {
         console.log('videos pb fullscreen: ', e);
       });
 
@@ -157,7 +157,7 @@
         console.log('videos pb playerResize: ', e);
       });
 
-      pbjs.onEvent('video_error', (e) => {
+      pbjs.onEvent('videoError', (e) => {
         console.log('videos pb error: ', e);
       });
 
@@ -213,11 +213,11 @@
         console.log('videos pb auction ad load attempt: ', e);
       });
 
-      pbjs.onEvent('video_bidImpression', (e) => {
+      pbjs.onEvent('videoBidImpression', (e) => {
         console.log('videos pb bid Impression: ', e);
       });
 
-      pbjs.onEvent('video_bidError', (e) => {
+      pbjs.onEvent('videoBidError', (e) => {
         console.log('videos pb bid Error: ', e);
       });
 

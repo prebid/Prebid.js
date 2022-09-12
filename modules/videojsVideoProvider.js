@@ -95,6 +95,10 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
   }
 
   function getOrtbVideo() {
+    if (!player) {
+      return;
+    }
+
     let playBackMethod = PLAYBACK_METHODS.CLICK_TO_PLAY;
     // returns a boolean or a string with the autoplay strategy
     const autoplay = player.autoplay();
@@ -142,7 +146,7 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
     // ~ Sort of resolved check if the player has a source to tell if the placement is instream
     // Still cannot reliably check what type of placement the player is if its outstream
     // i.e. we can't tell if its interstitial, in article, etc.
-    if (player.currentSrc()) { // TODO: does this get set during ad playback ? Check IMA for activity instead ?
+    if (player.src()) { // TODO: does this get set during ad playback ? Check IMA for activity instead ?
       video.placement = PLACEMENT.INSTREAM;
     }
 
@@ -159,6 +163,10 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
   }
 
   function getOrtbContent() {
+    if (!player) {
+      return;
+    }
+
     const content = {
       // id:, TODO: find a suitable id for videojs sources
       url: player.currentSrc()

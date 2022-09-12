@@ -7,6 +7,7 @@ import CONSTANTS from '../../src/constants.json';
 import {
   videoEvents, AUCTION_AD_LOAD_ATTEMPT, AD_IMPRESSION, AD_ERROR, BID_IMPRESSION, BID_ERROR, AUCTION_AD_LOAD_ABORT
 } from '../../libraries/video/constants/events.js'
+import { PLACEMENT } from '../../libraries/video/constants/ortb.js';
 import { videoCoreFactory } from './coreVideo.js';
 import { gamSubmoduleFactory } from './gamAdServerSubmodule.js';
 import { videoImpressionVerifierFactory } from './videoImpressionVerifier.js';
@@ -111,7 +112,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
 
     adUnit.mediaTypes.video = Object.assign({}, videoMediaType, ortbVideo);
 
-    adUnit.mediaTypes.video.context = ortbVideo.placement === 1 ? 'instream' : 'outstream';
+    adUnit.mediaTypes.video.context = ortbVideo.placement === PLACEMENT.INSTREAM ? 'instream' : 'outstream';
 
     const width = ortbVideo.w;
     const height = ortbVideo.h;

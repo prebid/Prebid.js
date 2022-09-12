@@ -73,6 +73,10 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
   }
 
   function getOrtbVideo() {
+    if (!player) {
+      return;
+    }
+
     const config = player.getConfig() || {};
     const adConfig = config.advertising || {};
     supportedMediaTypes = supportedMediaTypes || utils.getSupportedMediaTypes(MEDIA_TYPES);
@@ -127,6 +131,10 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
   }
 
   function getOrtbContent() {
+    if (!player) {
+      return;
+    }
+
     const item = player.getPlaylistItem() || {}; // TODO does player call need optimization ?
     let { duration, playbackMode } = timeState.getState();
     if (duration === undefined) {

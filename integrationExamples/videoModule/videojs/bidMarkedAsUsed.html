@@ -105,11 +105,11 @@
           pbjs.requestBids(adUnits);
         });
 
-        pbjs.onEvent('video_bidError', e => {
+        pbjs.onEvent('videoBidError', e => {
           console.log('An Ad Error came from a Bid: ', e);
         });
 
-        pbjs.onEvent('video_bidImpression', e => {
+        pbjs.onEvent('videoBidImpression', e => {
           console.log('An Ad Impression came from a Bid: ', e);
         });
 
