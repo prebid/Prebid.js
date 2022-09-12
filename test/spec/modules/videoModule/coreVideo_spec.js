@@ -3,14 +3,16 @@ import { VideoCore } from 'modules/videoModule/coreVideo.js';
 
 describe('Video Core', function () {
   const mockSubmodule = {
-    getOrtbParams: sinon.spy(),
+    getOrtbVideo: sinon.spy(),
+    getOrtbContent: sinon.spy(),
     setAdTagUrl: sinon.spy(),
     onEvent: sinon.spy(),
     offEvent: sinon.spy(),
   };
 
   const otherSubmodule = {
-    getOrtbParams: () => {},
+    getOrtbVideo: () => {},
+    getOrtbContent: () => {},
     setAdTagUrl: () => {},
     onEvent: () => {},
     offEvent: () => {},
@@ -54,11 +56,19 @@ describe('Video Core', function () {
     });
   });
 
-  describe('getOrtbParams', function () {
+  describe('getOrtbVideo', function () {
     it('delegates to the submodule of the right divId', function () {
-      videoCore.getOrtbParams(testId);
-      videoCore.getOrtbParams(otherId);
-      expect(mockSubmodule.getOrtbParams.calledOnce).to.be.true;
+      videoCore.getOrtbVideo(testId);
+      videoCore.getOrtbVideo(otherId);
+      expect(mockSubmodule.getOrtbVideo.calledOnce).to.be.true;
+    });
+  });
+
+  describe('getOrtbContent', function () {
+    it('delegates to the submodule of the right divId', function () {
+      videoCore.getOrtbContent(testId);
+      videoCore.getOrtbContent(otherId);
+      expect(mockSubmodule.getOrtbContent.calledOnce).to.be.true;
     });
   });
 

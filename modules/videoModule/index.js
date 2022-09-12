@@ -71,11 +71,15 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     loadAdTag(adUrl, divId, options);
   }
 
-  function getVideoOrtb(divId) {
-    return videoCore.getOrtbParams(divId);
+  function getOrtbVideo(divId) {
+    return videoCore.getOrtbVideo(divId);
   }
 
-  return { init, renderBid, getVideoOrtb };
+  function getOrtbContent(divId) {
+    return videoCore.getOrtbContent(divId);
+  }
+
+  return { init, renderBid, getOrtbVideo, getOrtbContent };
 
   function beforeBidsRequested(nextFn, bidRequest) {
     const adUnits = bidRequest.adUnits || pbGlobal.adUnits || [];
@@ -98,12 +102,13 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
       return;
     }
 
-    const oRtbParams = getVideoOrtb(videoConfig.divId);
-    if (!oRtbParams) {
+    const divId = videoConfig.divId;
+
+    const ortbVideo = getOrtbVideo(divId);
+    if (!ortbVideo) {
       return;
     }
 
-    const ortbVideo = oRtbParams.video;
     adUnit.mediaTypes.video = Object.assign({}, videoMediaType, ortbVideo);
 
     adUnit.mediaTypes.video.context = ortbVideo.placement === 1 ? 'instream' : 'outstream';
@@ -114,7 +119,9 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
       adUnit.mediaTypes.video.playerSize = [width, height];
     }
 
-    let ortb2 = { ortb2: mergeDeep({}, pbGlobal.getConfig('ortb2'), { site: oRtbParams.content }) };
+    const ortbContent = getOrtbContent(divId)
+
+    let ortb2 = { ortb2: mergeDeep({}, pbGlobal.getConfig('ortb2'), { site: ortbContent }) };
     pbGlobal.setConfig(ortb2);
   }
 

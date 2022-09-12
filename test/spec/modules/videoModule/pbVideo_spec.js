@@ -3,7 +3,8 @@ import { PbVideo } from 'modules/videoModule';
 import CONSTANTS from 'src/constants.json';
 import { AD_IMPRESSION, AD_ERROR, BID_IMPRESSION, BID_ERROR } from 'libraries/video/constants/events.js';
 
-let ortbParamsMock;
+let ortbVideoMock;
+let ortbContentMock;
 let videoCoreMock;
 let getConfigMock;
 let requestBidsMock;
@@ -16,14 +17,13 @@ let videoImpressionVerifierFactoryMock;
 let videoImpressionVerifierMock;
 
 function resetTestVars() {
-  ortbParamsMock = {
-    'video': {},
-    'content': {}
-  };
+  ortbVideoMock = {};
+  ortbContentMock = {};
   videoCoreMock = {
     registerProvider: sinon.spy(),
     onEvents: sinon.spy(),
-    getOrtbParams: () => ortbParamsMock,
+    getOrtbVideo: () => ortbVideoMock,
+    getOrtbContent: () => ortbContentMock,
     setAdTagUrl: sinon.spy()
   };
   getConfigMock = () => {};
@@ -134,14 +134,13 @@ describe('Prebid Video', function () {
     });
 
     it('requests oRtb params and writes them to ad unit and config', function() {
-      const getOrtbParamsSpy = videoCoreMock.getOrtbParams = sinon.spy(() => ({
-        video: {
-          test: 'videoTestValue'
-        },
-        content: {
-          test: 'contentTestValue'
-        }
+      const getOrtbVideoSpy = videoCoreMock.getOrtbVideo = sinon.spy(() => ({
+        test: 'videoTestValue'
       }));
+      const getOrtbContentSpy = videoCoreMock.getOrtbContent = sinon.spy(() => ({
+        test: 'contentTestValue'
+      }));
+
       const setConfigSpy = pbGlobalMock.setConfig;
       setConfigSpy.resetHistory();
       let beforeBidRequestCallback;
@@ -160,7 +159,8 @@ describe('Prebid Video', function () {
         video: { divId: 'divId' }
       }];
       beforeBidRequestCallback(nextFn, { adUnits });
-      expect(getOrtbParamsSpy.calledOnce).to.be.true;
+      expect(getOrtbVideoSpy.calledOnce).to.be.true;
+      expect(getOrtbContentSpy.calledOnce).to.be.true;
       const adUnit = adUnits[0];
       expect(adUnit.mediaTypes.video).to.have.property('test', 'videoTestValue');
       expect(setConfigSpy.calledOnce).to.be.true;

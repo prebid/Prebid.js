@@ -9,7 +9,8 @@ import { ParentModule, SubmoduleBuilder } from '../../libraries/video/shared/par
  * @typedef {Object} VideoProvider
  * @function init - Instantiates the Video Provider and the video player, if not already instantiated.
  * @function getId - retrieves the div id (unique identifier) of the attached player instance.
- * @function getOrtbParams - retrieves the oRTB params for a player's current video session.
+ * @function getOrtbVideo - retrieves the oRTB Video params for a player's current video session.
+ * @function getOrtbContent - retrieves the oRTB Content params for a player's current video session.
  * @function setAdTagUrl - Requests that a player render the ad in the provided ad tag url.
  * @function onEvent - attaches an event listener to the player instance.
  * @function offEvent - removes event listener to the player instance.
@@ -26,7 +27,12 @@ import { ParentModule, SubmoduleBuilder } from '../../libraries/video/shared/par
  */
 
 /**
- * @function VideoProvider#getOrtParams
+ * @function VideoProvider#getOrtbVideo
+ * @returns {Object}
+ */
+
+/**
+ * @function VideoProvider#getOrtbContent
  * @returns {Object}
  */
 
@@ -83,7 +89,8 @@ import { ParentModule, SubmoduleBuilder } from '../../libraries/video/shared/par
  * @typedef {Object} VideoCore
  * @class
  * @function registerProvider
- * @function getOrtbParams
+ * @function getOrtbVideo
+ * @function getOrtbContent
  * @function setAdTagUrl
  * @function onEvents
  * @function offEvents
@@ -115,14 +122,25 @@ export function VideoCore(parentModule_) {
   }
 
   /**
-   * @name VideoCore#getOrtbParams
-   * @summary Obtains the oRTB params for a player's current video session.
+   * @name VideoCore#getOrtbVideo
+   * @summary Obtains the oRTB Video params for a player's current video session.
    * @param {string} divId - unique identifier of the player instance
-   * @returns {Object} oRTB params
+   * @returns {Object} oRTB Video params
    */
-  function getOrtbParams(divId) {
+  function getOrtbVideo(divId) {
     const submodule = parentModule.getSubmodule(divId);
-    return submodule && submodule.getOrtbParams();
+    return submodule && submodule.getOrtbVideo();
+  }
+
+  /**
+   * @name VideoCore#getOrtbContent
+   * @summary Obtains the oRTB Content params for a player's current video session.
+   * @param {string} divId - unique identifier of the player instance
+   * @returns {Object} oRTB Content params
+   */
+  function getOrtbContent(divId) {
+    const submodule = parentModule.getSubmodule(divId);
+    return submodule && submodule.getOrtbContent();
   }
 
   /**
@@ -184,7 +202,8 @@ export function VideoCore(parentModule_) {
 
   return {
     registerProvider,
-    getOrtbParams,
+    getOrtbVideo,
+    getOrtbContent,
     setAdTagUrl,
     onEvents,
     offEvents

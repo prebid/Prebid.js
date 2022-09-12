@@ -140,8 +140,8 @@ describe('JWPlayerProvider', function () {
     });
   });
 
-  describe('getOrtbParams', function () {
-    it('should populate oRTB params', function () {
+  describe('getOrtbVideo', function () {
+    it('should populate oRTB Video params', function () {
       const test_media_type = VIDEO_MIME_TYPE.MP4;
       const test_height = 100;
       const test_width = 200;
@@ -150,15 +150,6 @@ describe('JWPlayerProvider', function () {
       const test_battr = 'battr';
       const test_playback_method = PLAYBACK_METHODS.CLICK_TO_PLAY;
       const test_skip = 0;
-      const test_item = {
-        mediaid: 'id',
-        file: 'file',
-        title: 'title',
-        iabCategories: 'iabCategories',
-        tags: 'keywords',
-      };
-      const test_duration = 30;
-      let test_playback_mode = PLAYBACK_MODE.VOD;//
 
       const config = {};
       const player = getPlayerMock();
@@ -172,7 +163,6 @@ describe('JWPlayerProvider', function () {
       player.getHeight = () => test_height;
       player.getWidth = () => test_width;
       player.getFullscreen = () => true; //
-      player.getPlaylistItem = () => test_item;
 
       utils.getSupportedMediaTypes = () => [test_media_type];
       utils.getStartDelay = () => test_start_delay;
@@ -181,20 +171,9 @@ describe('JWPlayerProvider', function () {
       utils.isOmidSupported = () => true; //
       utils.getSkipParams = () => ({ skip: test_skip });
 
-      const timeState = {
-        getState: () => ({
-          duration: test_duration,
-          playbackMode: test_playback_mode
-        })
-      }
-
-      const provider = JWPlayerProvider(config, makePlayerFactoryMock(player), adStateFactory(), timeState, {}, utils, sharedUtils);
+      const provider = JWPlayerProvider(config, makePlayerFactoryMock(player), adStateFactory(), {}, {}, utils, sharedUtils);
       provider.init();
-      let oRTB = provider.getOrtbParams();
-
-      expect(oRTB).to.have.property('video');
-      expect(oRTB).to.have.property('content');
-      let { video, content } = oRTB;
+      let video = provider.getOrtbVideo();
 
       expect(video.mimes).to.include(VIDEO_MIME_TYPE.MP4);
       expect(video.protocols).to.include.members([
@@ -219,6 +198,44 @@ describe('JWPlayerProvider', function () {
       expect(video.skip).to.equal(test_skip);
       expect(video.pos).to.equal(7); //
 
+      player.getFullscreen = () => false;
+      utils.isOmidSupported = () => false;
+
+      video = provider.getOrtbVideo();
+      expect(video).to.not.have.property('pos');
+      expect(video.api).to.have.length(1);
+      expect(video.api).to.include(API_FRAMEWORKS.VPAID_2_0);
+      expect(video.api).to.not.include(API_FRAMEWORKS.OMID_1_0);
+    });
+  });
+
+  describe('getOrtbContent', function () {
+    it('should populate oRTB Content params', function () {
+      const test_item = {
+        mediaid: 'id',
+        file: 'file',
+        title: 'title',
+        iabCategories: 'iabCategories',
+        tags: 'keywords',
+      };
+      const test_duration = 30;
+      let test_playback_mode = PLAYBACK_MODE.VOD;//
+
+      const player = getPlayerMock();
+      player.getPlaylistItem = () => test_item;
+      const utils = getUtilsMock();
+
+      const timeState = {
+        getState: () => ({
+          duration: test_duration,
+          playbackMode: test_playback_mode
+        })
+      }
+
+      const provider = JWPlayerProvider({}, makePlayerFactoryMock(player), adStateFactory(), timeState, {}, utils, sharedUtils);
+      provider.init();
+
+      let content = provider.getOrtbContent();
       expect(content.id).to.be.equal('jw_' + test_item.mediaid);
       expect(content.url).to.be.equal(test_item.file);
       expect(content.title).to.be.equal(test_item.title);
@@ -227,23 +244,14 @@ describe('JWPlayerProvider', function () {
       expect(content.len).to.be.equal(test_duration);
       expect(content.livestream).to.be.equal(0);//
 
-      player.getFullscreen = () => false;
-      utils.isOmidSupported = () => false;
       test_playback_mode = PLAYBACK_MODE.LIVE;
 
-      oRTB = provider.getOrtbParams();
-      video = oRTB.video;
-      content = oRTB.content;
-      expect(video).to.not.have.property('pos');
-      expect(video.api).to.have.length(1);
-      expect(video.api).to.include(API_FRAMEWORKS.VPAID_2_0);
-      expect(video.api).to.not.include(API_FRAMEWORKS.OMID_1_0);
+      content = provider.getOrtbContent();
       expect(content.livestream).to.be.equal(1);
 
       test_playback_mode = PLAYBACK_MODE.DVR;
 
-      oRTB = provider.getOrtbParams();
-      content = oRTB.content;
+      content = provider.getOrtbContent();
       expect(content.livestream).to.be.equal(1);
     });
   });

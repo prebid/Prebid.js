@@ -94,36 +94,7 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
     return divId;
   }
 
-  function getOrtbParams() {
-    if (!player) {
-      return null;
-    }
-
-    const content = {
-      // id:, TODO: find a suitable id for videojs sources
-      url: player.currentSrc()
-    };
-    // Only include length if player is ready
-    // player.readyState() returns a level of readiness from 0 to 4
-    // https://docs.videojs.com/player#readyState
-    if (player.readyState()) {
-      content.len = Math.round(player.duration());
-    }
-
-    const mediaItem = utils.getMedia(player);
-    if (mediaItem) {
-      for (let param of ['id', 'title', 'description', 'album', 'artist']) {
-        if (mediaItem[param]) {
-          content[param] = mediaItem[param];
-        }
-      }
-    }
-
-    const contentUrl = utils.getValidMediaUrl(mediaItem && mediaItem.src, player.src)
-    if (contentUrl) {
-      content.url = contentUrl;
-    }
-
+  function getOrtbVideo() {
     let playBackMethod = PLAYBACK_METHODS.CLICK_TO_PLAY;
     // returns a boolean or a string with the autoplay strategy
     const autoplay = player.autoplay();
@@ -171,7 +142,7 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
     // ~ Sort of resolved check if the player has a source to tell if the placement is instream
     // Still cannot reliably check what type of placement the player is if its outstream
     // i.e. we can't tell if its interstitial, in article, etc.
-    if (content.url) {
+    if (player.currentSrc()) { // TODO: does this get set during ad playback ? Check IMA for activity instead ?
       video.placement = PLACEMENT.INSTREAM;
     }
 
@@ -184,7 +155,36 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
       video.pos = utils.getPositionCode(findPosition(player.el()));
     }
 
-    return {video, content};
+    return video;
+  }
+
+  function getOrtbContent() {
+    const content = {
+      // id:, TODO: find a suitable id for videojs sources
+      url: player.currentSrc()
+    };
+    // Only include length if player is ready
+    // player.readyState() returns a level of readiness from 0 to 4
+    // https://docs.videojs.com/player#readyState
+    if (player.readyState()) {
+      content.len = Math.round(player.duration());
+    }
+
+    const mediaItem = utils.getMedia(player);
+    if (mediaItem) {
+      for (let param of ['id', 'title', 'description', 'album', 'artist']) {
+        if (mediaItem[param]) {
+          content[param] = mediaItem[param];
+        }
+      }
+    }
+
+    const contentUrl = utils.getValidMediaUrl(mediaItem && mediaItem.src, player.src)
+    if (contentUrl) {
+      content.url = contentUrl;
+    }
+
+    return content;
   }
 
   // Plugins to integrate: https://github.com/googleads/videojs-ima
@@ -479,7 +479,8 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
   return {
     init,
     getId,
-    getOrtbParams,
+    getOrtbVideo,
+    getOrtbContent,
     setAdTagUrl,
     onEvent,
     offEvent,

@@ -117,14 +117,11 @@ describe('videojsProvider', function () {
       </video>`
     });
 
-    it('should populate oRTB params ', function () {
+    it('should populate oRTB Video', function () {
       const provider = VideojsProvider(config, videojs, adState, timeState, callbackStorage, utils);
       provider.init();
 
-      const oRTB = provider.getOrtbParams();
-      expect(oRTB).to.have.property('video');
-      expect(oRTB).to.have.property('content');
-      const { video, content } = oRTB;
+      const video = provider.getOrtbVideo();
 
       expect(video.mimes).to.include(VIDEO_MIME_TYPE.MP4);
       expect(video.protocols).to.deep.equal([2]);
@@ -137,7 +134,13 @@ describe('videojsProvider', function () {
       expect(video.playbackend).to.equal(1);
       expect(video.api).to.deep.equal([2]);
       expect(video.placement).to.be.equal(PLACEMENT.INSTREAM);
+    });
 
+    it('should populate oRTB Content', function () {
+      const provider = VideojsProvider(config, videojs, adState, timeState, callbackStorage, utils);
+      provider.init();
+
+      const content = provider.getOrtbContent();
       expect(content.url).to.be.equal('http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4');
       expect(content).to.not.have.property('len');
     });
@@ -165,7 +168,7 @@ describe('videojsProvider', function () {
 
       let provider = VideojsProvider(config, videojs, null, null, null, utils);
       provider.init();
-      let { video, content } = provider.getOrtbParams();
+      const video = provider.getOrtbVideo();
 
       expect(video.protocols).to.include(PROTOCOLS.VAST_2_0);
       expect(video.api).to.include(API_FRAMEWORKS.VPAID_2_0);
@@ -179,7 +182,7 @@ describe('videojsProvider', function () {
       document.body.innerHTML = `<video preload id='test' width="${200}" height="${100}"></video>`
       const provider = VideojsProvider(config, videojs, null, null, null, utils);
       provider.init();
-      const { video, content } = provider.getOrtbParams();
+      const video = provider.getOrtbVideo();
       expect(video).to.not.have.property('placement')
     })
 
@@ -188,7 +191,7 @@ describe('videojsProvider', function () {
       provider.init();
       const player = videojs.getPlayer('test')
       player.isFullscreen = () => true;
-      const { video, content } = provider.getOrtbParams(); ;
+      const video = provider.getOrtbVideo();
       expect(video.pos).to.equal(7);
     });
 
@@ -198,7 +201,7 @@ describe('videojsProvider', function () {
       const player = videojs.getPlayer('test')
       player.readyState = () => 1
       player.duration = () => 100
-      const { video, content } = provider.getOrtbParams();
+      const content = provider.getOrtbContent();
       expect(content.len).to.equal(100);
     });
 
@@ -207,7 +210,7 @@ describe('videojsProvider', function () {
       provider.init();
       const player = videojs.getPlayer('test')
       player.autoplay(true)
-      const { video, content } = provider.getOrtbParams();
+      const video = provider.getOrtbVideo();
       expect(video.playbackmethod).to.include(PLAYBACK_METHODS.AUTOPLAY);
     });
 
@@ -217,7 +220,7 @@ describe('videojsProvider', function () {
       const player = videojs.getPlayer('test')
       player.muted = () => true
       player.autoplay = () => true
-      const { video, content } = provider.getOrtbParams();
+      const video = provider.getOrtbVideo();
       expect(video.playbackmethod).to.include(PLAYBACK_METHODS.AUTOPLAY_MUTED);
     });
 
@@ -226,7 +229,7 @@ describe('videojsProvider', function () {
       provider.init();
       const player = videojs.getPlayer('test')
       player.autoplay = () => 'muted'
-      const { video, content } = provider.getOrtbParams();
+      const video = provider.getOrtbVideo();
       expect(video.playbackmethod).to.include(PLAYBACK_METHODS.AUTOPLAY_MUTED);
     });
   });

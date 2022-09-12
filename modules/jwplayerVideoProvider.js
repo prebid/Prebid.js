@@ -72,10 +72,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
     return divId;
   }
 
-  function getOrtbParams() {
-    if (!player) {
-      return;
-    }
+  function getOrtbVideo() {
     const config = player.getConfig() || {};
     const adConfig = config.advertising || {};
     supportedMediaTypes = supportedMediaTypes || utils.getSupportedMediaTypes(MEDIA_TYPES);
@@ -126,6 +123,10 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
       video.pos = AD_POSITION.FULL_SCREEN; // TODO make constant in oRTB
     }
 
+    return video;
+  }
+
+  function getOrtbContent() {
     const item = player.getPlaylistItem() || {}; // TODO does player call need optimization ?
     let { duration, playbackMode } = timeState.getState();
     if (duration === undefined) {
@@ -159,10 +160,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
       content.language = isoLanguageCode;
     }
 
-    return {
-      video,
-      content
-    }
+    return content;
   }
 
   function setAdTagUrl(adTagUrl, options) {
@@ -471,7 +469,8 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
   return {
     init,
     getId,
-    getOrtbParams,
+    getOrtbVideo,
+    getOrtbContent,
     setAdTagUrl,
     onEvent,
     offEvent,
