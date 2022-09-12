@@ -10,9 +10,9 @@ import {
   triggerPixel,
 } from '../src/utils.js';
 
-import CONSTANTS from '../src/constants.json'
+import CONSTANTS from '../src/constants.json';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import * as events from '../src/events.js'
+import * as events from '../src/events.js';
 
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getRefererInfo } from '../src/refererDetection.js';
@@ -23,11 +23,11 @@ const TEST_ENDPOINT = 'https://test.pbs.nextmillmedia.com/openrtb2/auction';
 const SYNC_ENDPOINT = 'https://statics.nextmillmedia.com/load-cookie.html?v=4';
 const TIME_TO_LIVE = 360;
 
-const EXPIRENCE_WURL = 20 * 60000
-const wurlMap = {}
+const EXPIRENCE_WURL = 20 * 60000;
+const wurlMap = {};
 
-events.on(CONSTANTS.EVENTS.BID_WON, bidWonHandler)
-cleanWurl()
+events.on(CONSTANTS.EVENTS.BID_WON, bidWonHandler);
+cleanWurl();
 
 export const spec = {
   code: BIDDER_CODE,
@@ -46,8 +46,8 @@ export const spec = {
     _each(validBidRequests, function(bid) {
       window.nmmRefreshCounts[bid.adUnitCode] = window.nmmRefreshCounts[bid.adUnitCode] || 0;
       const id = getPlacementId(bid);
-      const auctionId = bid.auctionId
-      const bidId = bid.bidId
+      const auctionId = bid.auctionId;
+      const bidId = bid.bidId;
       let sizes = bid.sizes;
       if (sizes && !Array.isArray(sizes[0])) sizes = [sizes];
 
@@ -108,7 +108,7 @@ export const spec = {
             };
           };
         };
-      }
+      };
 
       const urlParameters = parseUrl(getWindowTop().location.href).search;
       const isTest = urlParameters['pbs'] && urlParameters['pbs'] === 'test';
@@ -136,12 +136,12 @@ export const spec = {
 
     _each(response.seatbid, (resp) => {
       _each(resp.bid, (bid) => {
-        const requestId = bidRequest.bidId
-        const auctionId = bidRequest.auctionId
-        const wurl = deepAccess(bid, 'ext.prebid.events.win')
-        addWurl({auctionId, requestId, wurl})
+        const requestId = bidRequest.bidId;
+        const auctionId = bidRequest.auctionId;
+        const wurl = deepAccess(bid, 'ext.prebid.events.win');
+        addWurl({auctionId, requestId, wurl});
 
-        const {ad, adUrl, vastUrl, vastXml} = getAd(bid)
+        const {ad, adUrl, vastUrl, vastXml} = getAd(bid);
 
         const bidResponse = {
           requestId,
@@ -155,17 +155,17 @@ export const spec = {
           meta: {
             advertiserDomains: bid.adomain || []
           }
-        }
+        };
 
         if (vastUrl || vastXml) {
-          bidResponse.mediaType = VIDEO
+          bidResponse.mediaType = VIDEO;
 
-          if (vastUrl) bidResponse.vastUrl = vastUrl
-          if (vastXml) bidResponse.vastXml = vastXml
+          if (vastUrl) bidResponse.vastUrl = vastUrl;
+          if (vastXml) bidResponse.vastXml = vastXml;
         } else {
-          bidResponse.ad = ad
-          bidResponse.adUrl = adUrl
-        }
+          bidResponse.ad = ad;
+          bidResponse.adUrl = adUrl;
+        };
 
         bidResponses.push(bidResponse);
       });
@@ -177,7 +177,7 @@ export const spec = {
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
     if (!syncOptions.iframeEnabled) {
       return;
-    }
+    };
 
     let syncurl = gdprConsent && gdprConsent.gdprApplies ? `${SYNC_ENDPOINT}&gdpr=1&gdpr_consent=${gdprConsent.consentString}` : SYNC_ENDPOINT;
 
@@ -245,29 +245,29 @@ function getTopWindow(curWindow, nesting = 0) {
 }
 
 function getAd(bid) {
-  let ad, adUrl, vastXml, vastUrl
+  let ad, adUrl, vastXml, vastUrl;
 
   switch (deepAccess(bid, 'ext.prebid.type')) {
     case VIDEO:
       if (bid.adm.substr(0, 4) === 'http') {
-        vastUrl = bid.adm
+        vastUrl = bid.adm;
       } else {
-        vastXml = bid.adm
-      }
+        vastXml = bid.adm;
+      };
 
       break;
     default:
       if (bid.adm && bid.nurl) {
-        ad = bid.adm
-        ad += createTrackPixelHtml(decodeURIComponent(bid.nurl))
+        ad = bid.adm;
+        ad += createTrackPixelHtml(decodeURIComponent(bid.nurl));
       } else if (bid.adm) {
-        ad = bid.adm
+        ad = bid.adm;
       } else if (bid.nurl) {
-        adUrl = bid.nurl
-      }
+        adUrl = bid.nurl;
+      };
   }
 
-  return {ad, adUrl, vastXml, vastUrl}
+  return {ad, adUrl, vastXml, vastUrl};
 }
 
 function getSiteObj() {
@@ -288,46 +288,46 @@ function getDeviceObj() {
 }
 
 function getKeyWurl({auctionId, requestId}) {
-  return `${auctionId}-${requestId}`
+  return `${auctionId}-${requestId}`;
 }
 
 function addWurl({wurl, requestId, auctionId}) {
-  if (!wurl) return
+  if (!wurl) return;
 
-  const expirence = Date.now() + EXPIRENCE_WURL
-  const key = getKeyWurl({auctionId, requestId})
-  wurlMap[key] = {wurl, expirence}
+  const expirence = Date.now() + EXPIRENCE_WURL;
+  const key = getKeyWurl({auctionId, requestId});
+  wurlMap[key] = {wurl, expirence};
 }
 
 function removeWurl({auctionId, requestId}) {
-  const key = getKeyWurl({auctionId, requestId})
-  delete wurlMap[key]
+  const key = getKeyWurl({auctionId, requestId});
+  delete wurlMap[key];
 }
 
 function getWurl({auctionId, requestId}) {
-  const key = getKeyWurl({auctionId, requestId})
-  return wurlMap[key] && wurlMap[key].wurl
+  const key = getKeyWurl({auctionId, requestId});
+  return wurlMap[key] && wurlMap[key].wurl;
 }
 
 function bidWonHandler(bid) {
-  const {auctionId, requestId} = bid
-  const wurl = getWurl({auctionId, requestId})
+  const {auctionId, requestId} = bid;
+  const wurl = getWurl({auctionId, requestId});
   if (wurl) {
-    logMessage(`(nextmillennium) Invoking image pixel for wurl on BID_WIN: "${wurl}"`)
-    triggerPixel(wurl)
-    removeWurl({auctionId, requestId})
-  }
+    logMessage(`(nextmillennium) Invoking image pixel for wurl on BID_WIN: "${wurl}"`);
+    triggerPixel(wurl);
+    removeWurl({auctionId, requestId});
+  };
 }
 
 function cleanWurl() {
-  const dateNow = Date.now()
+  const dateNow = Date.now();
   Object.keys(wurlMap).forEach(key => {
     if (dateNow >= wurlMap[key].expirence) {
-      delete wurlMap[key]
-    }
-  })
+      delete wurlMap[key];
+    };
+  });
 
-  setTimeout(cleanWurl, 60000)
+  setTimeout(cleanWurl, 60000);
 }
 
-registerBidder(spec)
+registerBidder(spec);
