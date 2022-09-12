@@ -25,12 +25,12 @@ export const spec = {
 
     _each(validBidRequests, function(bid) {
       window.nmmRefreshCounts[bid.adUnitCode] = window.nmmRefreshCounts[bid.adUnitCode] || 0;
-      const id = getPlacementId(bid)
-      let sizes = bid.sizes
-      if (sizes && !Array.isArray(sizes[0])) sizes = [sizes]
+      const id = getPlacementId(bid);
+      let sizes = bid.sizes;
+      if (sizes && !Array.isArray(sizes[0])) sizes = [sizes];
 
-      const site = getSiteObj()
-      const device = getDeviceObj()
+      const site = getSiteObj();
+      const device = getDeviceObj();
 
       const postBody = {
         'id': bid.auctionId,
@@ -47,12 +47,14 @@ export const spec = {
             'scrollTop': window.pageYOffset || document.documentElement.scrollTop
           }
         },
+
         device,
         site,
         'imp': [{
           'banner': {
             'format': (sizes || []).map(s => { return {w: s[0], h: s[1]} })
           },
+
           'ext': {
             'prebid': {
               'storedrequest': {
@@ -61,29 +63,29 @@ export const spec = {
             }
           }
         }]
-      }
+      };
 
       const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
-      const uspConsent = bidderRequest && bidderRequest.uspConsent
+      const uspConsent = bidderRequest && bidderRequest.uspConsent;
 
       if (gdprConsent || uspConsent) {
-        postBody.regs = { ext: {} }
+        postBody.regs = { ext: {} };
 
         if (uspConsent) {
           postBody.regs.ext.us_privacy = uspConsent;
-        }
+        };
 
         if (gdprConsent) {
           if (typeof gdprConsent.gdprApplies !== 'undefined') {
             postBody.regs.ext.gdpr = gdprConsent.gdprApplies ? 1 : 0;
-          }
+          };
 
           if (typeof gdprConsent.consentString !== 'undefined') {
             postBody.user = {
               ext: { consent: gdprConsent.consentString }
-            }
-          }
-        }
+            };
+          };
+        };
       }
 
       const urlParameters = parseUrl(getWindowTop().location.href).search;
@@ -97,6 +99,7 @@ export const spec = {
           contentType: 'application/json',
           withCredentials: true
         },
+
         bidId: bid.bidId
       });
     });
@@ -133,22 +136,22 @@ export const spec = {
 
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
     if (!syncOptions.iframeEnabled) {
-      return
+      return;
     }
 
-    let syncurl = gdprConsent && gdprConsent.gdprApplies ? `${SYNC_ENDPOINT}&gdpr=1&gdpr_consent=${gdprConsent.consentString}` : SYNC_ENDPOINT
+    let syncurl = gdprConsent && gdprConsent.gdprApplies ? `${SYNC_ENDPOINT}&gdpr=1&gdpr_consent=${gdprConsent.consentString}` : SYNC_ENDPOINT;
 
-    let bidders = []
+    let bidders = [];
     if (responses) {
       _each(responses, (response) => {
-        if (!(response && response.body && response.body.ext && response.body.ext.responsetimemillis)) return
-        _each(Object.keys(response.body.ext.responsetimemillis), b => bidders.push(b))
-      })
-    }
+        if (!(response && response.body && response.body.ext && response.body.ext.responsetimemillis)) return;
+        _each(Object.keys(response.body.ext.responsetimemillis), b => bidders.push(b));
+      });
+    };
 
     if (bidders.length) {
-      syncurl += `&bidders=${bidders.join(',')}`
-    }
+      syncurl += `&bidders=${bidders.join(',')}`;
+    };
 
     return [{
       type: 'iframe',
@@ -156,6 +159,7 @@ export const spec = {
     }];
   },
 };
+
 function getAdEl(bid) {
   // best way I could think of to get El, is by matching adUnitCode to google slots...
   const slot = window.googletag && window.googletag.pubads && window.googletag.pubads().getSlots().find(slot => slot.getAdUnitPath() === bid.adUnitCode);
@@ -163,58 +167,58 @@ function getAdEl(bid) {
   if (!slotElementId) return null;
   return document.querySelector('#' + slotElementId);
 }
+
 function getBoundingClient(bid) {
-  // console.log(bid)
-  const el = getAdEl(bid)
-  if (!el) return {}
+  const el = getAdEl(bid);
+  if (!el) return {};
   return el.getBoundingClientRect();
 }
 
 function getPlacementId(bid) {
-  const groupId = getBidIdParameter('group_id', bid.params)
-  const placementId = getBidIdParameter('placement_id', bid.params)
-  if (!groupId) return placementId
+  const groupId = getBidIdParameter('group_id', bid.params);
+  const placementId = getBidIdParameter('placement_id', bid.params);
+  if (!groupId) return placementId;
 
-  let windowTop = getTopWindow(window)
-  let sizes = []
+  let windowTop = getTopWindow(window);
+  let sizes = [];
   if (bid.mediaTypes) {
-    if (bid.mediaTypes.banner) sizes = bid.mediaTypes.banner.sizes
-    if (bid.mediaTypes.video) sizes = [bid.mediaTypes.video.playerSize]
-  }
+    if (bid.mediaTypes.banner) sizes = bid.mediaTypes.banner.sizes;
+    if (bid.mediaTypes.video) sizes = [bid.mediaTypes.video.playerSize];
+  };
 
-  const host = (windowTop && windowTop.location && windowTop.location.host) || ''
-  return `g${groupId};${sizes.map(size => size.join('x')).join('|')};${host}`
+  const host = (windowTop && windowTop.location && windowTop.location.host) || '';
+  return `g${groupId};${sizes.map(size => size.join('x')).join('|')};${host}`;
 }
 
 function getTopWindow(curWindow, nesting = 0) {
   if (nesting > 10) {
-    return curWindow
-  }
+    return curWindow;
+  };
 
   try {
     if (curWindow.parent.document) {
-      return getTopWindow(curWindow.parent.window, ++nesting)
-    }
+      return getTopWindow(curWindow.parent.window, ++nesting);
+    };
   } catch (err) {
-    return curWindow
-  }
+    return curWindow;
+  };
 }
 
 function getSiteObj() {
-  const refInfo = (getRefererInfo && getRefererInfo()) || {}
+  const refInfo = (getRefererInfo && getRefererInfo()) || {};
 
   return {
     page: refInfo.page,
     ref: refInfo.ref,
     domain: refInfo.domain
-  }
+  };
 }
 
 function getDeviceObj() {
   return {
     w: window.innerWidth || window.document.documentElement.clientWidth || window.document.body.clientWidth || 0,
     h: window.innerHeight || window.document.documentElement.clientHeight || window.document.body.clientHeight || 0,
-  }
+  };
 }
 
 registerBidder(spec);
