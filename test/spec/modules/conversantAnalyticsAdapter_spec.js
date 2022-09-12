@@ -205,7 +205,7 @@ describe('Conversant analytics adapter tests', function() {
     it('deduplicateArray() should return correct data', function () {
       let arrayOfObjects = [{w: 1, h: 2}, {w: 2, h: 3}, {w: 1, h: 2}];
       let array = [3, 2, 1, 1, 2, 3];
-      let empty = undefined;
+      let empty;
       let notArray = 3;
       let emptyArray = [];
 
