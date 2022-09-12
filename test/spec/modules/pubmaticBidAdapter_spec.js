@@ -1117,19 +1117,19 @@ describe('PubMatic adapter', function () {
   		});
 
 		  it('Set tmax from global config if not set by requestBids method', function() {
-			let sandbox = sinon.sandbox.create();
-			sandbox.stub(config, 'getConfig').callsFake((key) => {
+        let sandbox = sinon.sandbox.create();
+        sandbox.stub(config, 'getConfig').callsFake((key) => {
 				  var config = {
-				bidderTimeout: 3000
+            bidderTimeout: 3000
 				  };
 				  return config[key];
-			});
-			let request = spec.buildRequests(bidRequests, {
+        });
+        let request = spec.buildRequests(bidRequests, {
 				  auctionId: 'new-auction-id', timeout: 3000
-			});
-			let data = JSON.parse(request.data);
-			expect(data.tmax).to.deep.equal(3000);
-			sandbox.restore();
+        });
+        let data = JSON.parse(request.data);
+        expect(data.tmax).to.deep.equal(3000);
+        sandbox.restore();
 		  });
 
       it('Set content from config, set site.content', function() {
@@ -3675,8 +3675,8 @@ describe('PubMatic adapter', function () {
 
       expect(response).to.be.an('array').with.length.above(0);
       expect(response[0].requestId).to.equal(request.imp[0].id);
-      expect(response[0].dealChannel).to.equal('PMPG');
-      expect(response[1].dealChannel).to.equal('PREF');
+      expect(response[0].dealChannel).to.equal(undefined);
+      expect(response[1].dealChannel).to.equal(undefined);
     });
 
     it('should check for unexpected dealChannel value selection', function () {
@@ -3687,7 +3687,7 @@ describe('PubMatic adapter', function () {
       updateBiResponse.body.seatbid[0].bid[0].ext.deal_channel = 11;
       let response = spec.interpretResponse(updateBiResponse, request);
       expect(response).to.be.an('array').with.length.above(0);
-      expect(response[0].dealChannel).to.equal(null);
+      expect(response[0].dealChannel).to.equal(undefined);
     });
 
     it('should assign renderer if bid is video and request is for outstream', function() {
