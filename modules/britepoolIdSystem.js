@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import * as utils from '../src/utils.js'
+import { isEmpty, triggerPixel, logError } from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js';
 const PIXEL = 'https://px.britepool.com/new?partner_id=t';
@@ -47,14 +47,14 @@ export const britepoolIdSubmodule = {
         };
       }
     }
-    if (utils.isEmpty(params)) {
-      utils.triggerPixel(PIXEL);
+    if (isEmpty(params)) {
+      triggerPixel(PIXEL);
     }
     // Return for async operation
     return {
       callback: function(callback) {
         if (errors.length > 0) {
-          errors.forEach(error => utils.logError(error));
+          errors.forEach(error => logError(error));
           callback();
           return;
         }
@@ -65,7 +65,7 @@ export const britepoolIdSubmodule = {
               callback(britepoolIdSubmodule.normalizeValue(response));
             });
           } catch (error) {
-            if (error !== '') utils.logError(error);
+            if (error !== '') logError(error);
             callback();
           }
         } else {
@@ -75,7 +75,7 @@ export const britepoolIdSubmodule = {
               callback(responseObj ? { primaryBPID: responseObj.primaryBPID } : null);
             },
             error: error => {
-              if (error !== '') utils.logError(error);
+              if (error !== '') logError(error);
               callback();
             }
           }, JSON.stringify(params), { customHeaders: headers, contentType: 'application/json', method: 'POST', withCredentials: true });
@@ -132,7 +132,7 @@ export const britepoolIdSubmodule = {
       try {
         valueObj = JSON.parse(value);
       } catch (error) {
-        utils.logError(error);
+        logError(error);
       }
     }
     return valueObj;

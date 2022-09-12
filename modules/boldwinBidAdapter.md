@@ -24,8 +24,7 @@ Module that connects to boldwin demand sources
                         {
                             bidder: 'boldwin',
                             params: {
-                                placementId: 0,
-                                traffic: 'banner'
+                                placementId: 'testBanner',
                             }
                         }
                     ]
@@ -43,11 +42,27 @@ Module that connects to boldwin demand sources
                         {
                             bidder: 'boldwin',
                             params: {
-                                placementId: 0,
-                                traffic: 'video'
+                                placementId: 'testVideo',
                             }
                         }
                     ]
                 }
+                // Will return static test banner
+                {
+                    code: 'endpointId_0',
+                    mediaTypes: {
+                        banner: {
+                            sizes: [[300, 250]],
+                        }
+                    },
+                    bids: [
+                        {
+                            bidder: 'boldwin',
+                            params: {
+                                endpointId: 'testBanner',
+                            }
+                        }
+                    ]
+                },
             ];
 ```

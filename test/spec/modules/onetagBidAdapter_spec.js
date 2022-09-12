@@ -1,6 +1,6 @@
-import { spec, isValid, hasTypeVideo } from 'modules/onetagBidAdapter.js';
+import { spec, isValid, hasTypeVideo, isSchainValid } from 'modules/onetagBidAdapter.js';
 import { expect } from 'chai';
-import find from 'core-js-pure/features/array/find.js';
+import {find} from 'src/polyfill.js';
 import { BANNER, VIDEO } from 'src/mediaTypes.js';
 import {INSTREAM, OUTSTREAM} from 'src/video.js';
 
@@ -15,7 +15,21 @@ describe('onetag', function () {
       'bidId': '30b31c1838de1e',
       'bidderRequestId': '22edbae2733bf6',
       'auctionId': '1d1a030790a475',
-      'transactionId': 'qwerty123'
+      'transactionId': 'qwerty123',
+      'schain': {
+        'validation': 'off',
+        'config': {
+          'ver': '1.0',
+          'complete': 1,
+          'nodes': [
+            {
+              'asi': 'indirectseller.com',
+              'sid': '00001',
+              'hp': 1
+            }
+          ]
+        }
+      },
     };
   }
 
@@ -105,9 +119,36 @@ describe('onetag', function () {
       });
     });
     describe('multi format bidRequest', function () {
-      const multiFormatBid = createMultiFormatBid();
       it('Should return true when correct multi format bid is passed', function () {
-        expect(spec.isBidRequestValid(multiFormatBid)).to.be.true;
+        expect(spec.isBidRequestValid(createMultiFormatBid())).to.be.true;
+      });
+      it('Should split multi format bid into two single format bid with same bidId', function() {
+        const bids = JSON.parse(spec.buildRequests([ createMultiFormatBid() ]).data).bids;
+        expect(bids.length).to.equal(2);
+        expect(bids[0].bidId).to.equal(bids[1].bidId);
+      });
+      it('Should retrieve correct request bid when extracting video request data', function() {
+        const requestBid = createMultiFormatBid();
+        const multiFormatRequest = spec.buildRequests([ requestBid ]);
+        const serverResponse = {
+          body: {
+            bids: [
+              {
+                mediaType: BANNER,
+                requestId: requestBid.bidId,
+                ad: 'test-banner'
+              }, {
+                mediaType: VIDEO,
+                requestId: requestBid.bidId,
+                vastUrl: 'test-video'
+              }
+            ]
+          }
+        };
+        const responseBids = spec.interpretResponse(serverResponse, multiFormatRequest);
+        expect(responseBids.length).to.equal(2);
+        expect(responseBids[0].ad).to.equal('test-banner');
+        expect(responseBids[1].vastUrl).to.equal('test-video');
       });
     });
   });
@@ -142,6 +183,9 @@ describe('onetag', function () {
         expect(data.wHeight).to.be.a('number');
         expect(data.oHeight).to.be.a('number');
         expect(data.oWidth).to.be.a('number');
+        expect(data.ancestorOrigin).to.satisfy(function (value) {
+          return value === null || typeof value === 'string';
+        });
         expect(data.aWidth).to.be.a('number');
         expect(data.aHeight).to.be.a('number');
         expect(data.sLeft).to.be.a('number');
@@ -153,9 +197,35 @@ describe('onetag', function () {
         for (let i = 0; i < bids.length; i++) {
           const bid = bids[i];
           if (hasTypeVideo(bid)) {
-            expect(bid).to.have.all.keys('adUnitCode', 'auctionId', 'bidId', 'bidderRequestId', 'pubId', 'transactionId', 'context', 'mimes', 'playerSize', 'protocols', 'maxDuration', 'api', 'type');
+            expect(bid).to.have.all.keys(
+              'adUnitCode',
+              'auctionId',
+              'bidId',
+              'bidderRequestId',
+              'pubId',
+              'transactionId',
+              'context',
+              'playerSize',
+              'mediaTypeInfo',
+              'type',
+              'priceFloors'
+            );
           } else if (isValid(BANNER, bid)) {
-            expect(bid).to.have.all.keys('adUnitCode', 'auctionId', 'bidId', 'bidderRequestId', 'pubId', 'transactionId', 'sizes', 'type');
+            expect(bid).to.have.all.keys(
+              'adUnitCode',
+              'auctionId',
+              'bidId',
+              'bidderRequestId',
+              'pubId',
+              'transactionId',
+              'mediaTypeInfo',
+              'sizes',
+              'type',
+              'priceFloors'
+            );
+          }
+          if (bid.schain && isSchainValid(bid.schain)) {
+            expect(data).to.have.all.keys('schain');
           }
           expect(bid.bidId).to.be.a('string');
           expect(bid.pubId).to.be.a('string');
@@ -240,6 +310,7 @@ describe('onetag', function () {
         expect(dataItem.creativeId).to.be.a('string');
         expect(dataItem.netRevenue).to.be.a('boolean');
         expect(dataItem.currency).to.be.a('string');
+        expect(dataItem.meta.advertiserDomains).to.be.an('array');
       }
     });
     it('Returns an empty array if response is not valid', function () {
@@ -306,6 +377,36 @@ describe('onetag', function () {
       expect(syncs[0].url).to.match(/(?:[?&](?:us_privacy=us_foo(?:[&][^&]*)*))+$/);
     });
   });
+  describe('isSchainValid', function () {
+    it('Should return false when schain is null or undefined', function () {
+      expect(isSchainValid(null)).to.be.false;
+      expect(isSchainValid(undefined)).to.be.false;
+    });
+    it('Should return false when schain is missing nodes key', function () {
+      const schain = {'otherKey': 'otherValue'};
+      expect(isSchainValid(schain)).to.be.false;
+    });
+    it('Should return false when schain is missing one of the required SupplyChainNode attribute', function () {
+      const missingAsiNode = {'sid': '00001', 'hp': 1};
+      const missingSidNode = {'asi': 'indirectseller.com', 'hp': 1};
+      const missingHpNode = {'asi': 'indirectseller.com', 'sid': '00001'};
+      expect(isSchainValid({'config': {'nodes': [missingAsiNode]}})).to.be.false;
+      expect(isSchainValid({'config': {'nodes': [missingSidNode]}})).to.be.false;
+      expect(isSchainValid({'config': {'nodes': [missingHpNode]}})).to.be.false;
+    });
+    it('Should return true when schain contains all required attributes', function () {
+      const validSchain = {
+        'nodes': [
+          {
+            'asi': 'indirectseller.com',
+            'sid': '00001',
+            'hp': 1
+          }
+        ]
+      };
+      expect(isSchainValid(validSchain)).to.be.true;
+    })
+  });
 });
 
 function getBannerVideoResponse() {
@@ -323,6 +424,7 @@ function getBannerVideoResponse() {
           currency: 'USD',
           requestId: 'banner',
           mediaType: BANNER,
+          adomain: []
         },
         {
           cpm: 13,
@@ -334,7 +436,8 @@ function getBannerVideoResponse() {
           requestId: 'videoInstream',
           vastUrl: 'https://videoinstream.org',
           videoCacheKey: 'key',
-          mediaType: VIDEO
+          mediaType: VIDEO,
+          adomain: ['test_domain']
         },
         {
           cpm: 13,
@@ -347,7 +450,8 @@ function getBannerVideoResponse() {
           requestId: 'videoOutstream',
           ad: '<?xml version="1.0" encoding="UTF-8"?><VAST version="2.0"></VAST>',
           rendererUrl: 'https://testRenderer',
-          mediaType: VIDEO
+          mediaType: VIDEO,
+          adomain: []
         }
       ]
     }

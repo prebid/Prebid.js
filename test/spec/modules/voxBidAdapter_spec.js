@@ -15,7 +15,7 @@ function getSlotConfigs(mediaTypes, params) {
 describe('VOX Adapter', function() {
   const PLACE_ID = '5af45ad34d506ee7acad0c26';
   const bidderRequest = {
-    refererInfo: { referer: 'referer' }
+    refererInfo: { page: 'referer' }
   }
   const bannerMandatoryParams = {
     placementId: PLACE_ID,
@@ -243,7 +243,8 @@ describe('VOX Adapter', function() {
                     content: 'html',
                     width: 100,
                     height: 100
-                  }
+                  },
+                  advertiserDomains: ['voxexchange.io']
                 }
               ]
             }
@@ -257,6 +258,7 @@ describe('VOX Adapter', function() {
           expect(bids[0].height).to.equal(100)
           expect(bids[0].currency).to.equal('USD')
           expect(bids[0].netRevenue).to.equal(true)
+          expect(bids[0].meta.advertiserDomains).to.deep.equal(['voxexchange.io'])
           expect(typeof bids[0].ad).to.equal('string')
         })
         it('should return a In-Image bid', function() {

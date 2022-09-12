@@ -1,6 +1,7 @@
-import * as utils from '../src/utils.js';
+import { parseSizesInput, parseQueryStringParameters, logError } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'temedya';
 const ENDPOINT_URL = 'https://adm.vidyome.com/';
@@ -26,6 +27,9 @@ export const spec = {
   * @return ServerRequest Info describing the request to the server.
   */
   buildRequests: function (validBidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     return validBidRequests.map(req => {
       const mediaType = this._isBannerRequest(req) ? 'display' : NATIVE;
       const data = {
@@ -36,7 +40,7 @@ export const spec = {
         requestid: req.bidId
       };
       if (mediaType === 'display') {
-        data.sizes = utils.parseSizesInput(
+        data.sizes = parseSizesInput(
           req.mediaTypes && req.mediaTypes.banner && req.mediaTypes.banner.sizes
         ).join('|')
       }
@@ -44,7 +48,7 @@ export const spec = {
       return {
         method: ENDPOINT_METHOD,
         url: ENDPOINT_URL,
-        data: utils.parseQueryStringParameters(data),
+        data: parseQueryStringParameters(data),
         options: { withCredentials: false, requestId: req.bidId, mediaType: mediaType }
       };
     });
@@ -128,7 +132,7 @@ export const spec = {
       }
       return bidResponses;
     } catch (err) {
-      utils.logError(err);
+      logError(err);
       return [];
     }
   },

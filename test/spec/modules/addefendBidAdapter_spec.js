@@ -25,7 +25,7 @@ describe('addefendBidAdapter', () => {
     return spec.buildRequests(buildRequest, {
       ...bidderRequest || {},
       refererInfo: {
-        referer: 'https://referer.example.com'
+        page: 'https://referer.example.com'
       }
     })[0];
   };

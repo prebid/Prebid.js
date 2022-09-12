@@ -1,7 +1,9 @@
-import * as utils from '../src/utils.js';
-import { BANNER, NATIVE } from '../src/mediaTypes.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import {deepAccess, isArray, logError} from '../src/utils.js';
+import { getOrigin } from '../libraries/getOrigin/index.js';
+import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {includes} from '../src/polyfill.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'rtbhouse';
 const REGIONS = ['prebid-eu', 'prebid-us', 'prebid-asia'];
@@ -9,6 +11,7 @@ const ENDPOINT_URL = 'creativecdn.com/bidder/prebid/bids';
 const DEFAULT_CURRENCY_ARR = ['USD']; // NOTE - USD is the only supported currency right now; Hardcoded for bids
 const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE];
 const TTL = 55;
+const GVLID = 16;
 
 // Codes defined by OpenRTB Native Ads 1.1 specification
 export const OPENRTB = {
@@ -36,11 +39,15 @@ export const OPENRTB = {
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
+  gvlid: GVLID,
 
   isBidRequestValid: function (bid) {
     return !!(includes(REGIONS, bid.params.region) && bid.params.publisherId);
   },
   buildRequests: function (validBidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     const request = {
       id: validBidRequests[0].auctionId,
       imp: validBidRequests.map(slot => mapImpression(slot)),
@@ -61,7 +68,7 @@ export const spec = {
       if (schain) {
         request.ext = {
           schain: schain,
-        }
+        };
       }
     }
 
@@ -74,6 +81,30 @@ export const spec = {
       }
     }
 
+    const ortb2Params = bidderRequest && bidderRequest.ortb2;
+    if (ortb2Params?.user) {
+      request.user = {
+        ...request.user,
+        ...(ortb2Params.user.data && {
+          data: { ...request.user?.data, ...ortb2Params.user.data },
+        }),
+        ...(ortb2Params.user.ext && {
+          ext: { ...request.user?.ext, ...ortb2Params.user.ext },
+        }),
+      };
+    }
+    if (ortb2Params?.site) {
+      request.site = {
+        ...request.site,
+        ...(ortb2Params.site.content && {
+          content: { ...request.site?.content, ...ortb2Params.site.content },
+        }),
+        ...(ortb2Params.site.ext && {
+          ext: { ...request.site?.ext, ...ortb2Params.site.ext },
+        }),
+      };
+    }
+
     return {
       method: 'POST',
       url: 'https://' + validBidRequests[0].params.region + '.' + ENDPOINT_URL,
@@ -82,7 +113,7 @@ export const spec = {
   },
   interpretResponse: function (serverResponse, originalRequest) {
     const responseBody = serverResponse.body;
-    if (!utils.isArray(responseBody)) {
+    if (!isArray(responseBody)) {
       return [];
     }
 
@@ -145,7 +176,7 @@ function mapImpression(slot) {
  */
 function mapBanner(slot) {
   if (slot.mediaType === 'banner' ||
-    utils.deepAccess(slot, 'mediaTypes.banner') ||
+    deepAccess(slot, 'mediaTypes.banner') ||
     (!slot.mediaType && !slot.mediaTypes)) {
     var sizes = slot.sizes || slot.mediaTypes.banner.sizes;
     return {
@@ -165,16 +196,26 @@ function mapBanner(slot) {
  * @returns {object} Site by OpenRTB 2.5 §3.2.13
  */
 function mapSite(slot, bidderRequest) {
-  const pubId = slot && slot.length > 0
-    ? slot[0].params.publisherId
-    : 'unknown';
-  return {
+  let pubId = 'unknown';
+  let channel = null;
+  if (slot && slot.length > 0) {
+    pubId = slot[0].params.publisherId;
+    channel = slot[0].params.channel &&
+    slot[0].params.channel
+      .toString()
+      .slice(0, 50);
+  }
+  let siteData = {
     publisher: {
       id: pubId.toString(),
     },
-    page: bidderRequest.refererInfo.referer,
-    name: utils.getOrigin()
+    page: bidderRequest.refererInfo.page,
+    name: getOrigin()
+  };
+  if (channel) {
+    siteData.channel = channel;
   }
+  return siteData;
 }
 
 /**
@@ -198,7 +239,7 @@ function mapSchain(schain) {
     return null;
   }
   if (!validateSchain(schain)) {
-    utils.logError('RTB House: required schain params missing');
+    logError('RTB House: required schain params missing');
     return null;
   }
   return schain;
@@ -223,7 +264,7 @@ function validateSchain(schain) {
  * @returns {object} Request by OpenRTB Native Ads 1.1 §4
  */
 function mapNative(slot) {
-  if (slot.mediaType === 'native' || utils.deepAccess(slot, 'mediaTypes.native')) {
+  if (slot.mediaType === 'native' || deepAccess(slot, 'mediaTypes.native')) {
     return {
       request: {
         assets: mapNativeAssets(slot)
@@ -238,7 +279,7 @@ function mapNative(slot) {
  * @returns {array} Request Assets by OpenRTB Native Ads 1.1 §4.2
  */
 function mapNativeAssets(slot) {
-  const params = slot.nativeParams || utils.deepAccess(slot, 'mediaTypes.native');
+  const params = slot.nativeParams || deepAccess(slot, 'mediaTypes.native');
   const assets = [];
   if (params.title) {
     assets.push({

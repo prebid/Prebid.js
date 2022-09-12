@@ -102,12 +102,14 @@ describe('Prebid Manager Analytics Adapter', function () {
       events.emit(constants.EVENTS.AUCTION_END, {});
       events.emit(constants.EVENTS.BID_TIMEOUT, {});
 
-      sinon.assert.callCount(prebidmanagerAnalytics.track, 6);
+      // 6 Prebid Manager events + 1 Clean.io event
+      sinon.assert.callCount(prebidmanagerAnalytics.track, 7);
     });
   });
 
   describe('build utm tag data', function () {
     let getDataFromLocalStorageStub;
+    this.timeout(4000)
     beforeEach(function () {
       getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
       getDataFromLocalStorageStub.withArgs('pm_utm_source').returns('utm_source');
@@ -115,7 +117,6 @@ describe('Prebid Manager Analytics Adapter', function () {
       getDataFromLocalStorageStub.withArgs('pm_utm_campaign').returns('utm_camp');
       getDataFromLocalStorageStub.withArgs('pm_utm_term').returns('');
       getDataFromLocalStorageStub.withArgs('pm_utm_content').returns('');
-      getDataFromLocalStorageStub.withArgs('pm_utm_source').returns('utm_source');
     });
     afterEach(function () {
       getDataFromLocalStorageStub.restore();

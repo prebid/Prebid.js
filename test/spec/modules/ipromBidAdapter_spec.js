@@ -29,13 +29,15 @@ describe('iPROM Adapter', function () {
     bidderRequest = {
       timeout: 3000,
       refererInfo: {
-        referer: 'https://adserver.si/index.html',
-        reachedTop: true,
-        numIframes: 1,
-        stack: [
-          'https://adserver.si/index.html',
-          'https://adserver.si/iframe1.html',
-        ]
+        legacy: {
+          referer: 'https://adserver.si/index.html',
+          reachedTop: true,
+          numIframes: 1,
+          stack: [
+            'https://adserver.si/index.html',
+            'https://adserver.si/iframe1.html',
+          ]
+        }
       }
     }
   });
@@ -164,7 +166,8 @@ describe('iPROM Adapter', function () {
           width: '300',
           height: '250',
           creativeId: 1234,
-          ad: '<html><head><title>Iprom Header bidding example</title></head><body><img src="https://iprom.si/files/2015/08/iprom-logo.svg"></body></html>'
+          ad: '<html><head><title>Iprom Header bidding example</title></head><body><img src="https://iprom.si/files/2015/08/iprom-logo.svg"></body></html>',
+          aDomains: ['https://example.com'],
         }
         ]};
 
@@ -177,6 +180,7 @@ describe('iPROM Adapter', function () {
       expect(bids[0].width).to.equal('300');
       expect(bids[0].height).to.equal('250');
       expect(bids[0].ad).to.have.length.above(1);
+      expect(bids[0].meta.advertiserDomains).to.deep.equal(['https://example.com']);
     });
 
     it('should return empty bid response', function () {

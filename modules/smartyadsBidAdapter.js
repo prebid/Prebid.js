@@ -1,11 +1,12 @@
+import { logMessage } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
-import * as utils from '../src/utils.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'smartyads';
-const AD_URL = 'https://ssp-nj.webtradehub.com/?c=o&m=multi';
-const URL_SYNC = 'https://ssp-nj.webtradehub.com/?c=o&m=cookie';
+const AD_URL = 'https://n1.smartyads.com/?c=o&m=prebid&secret_key=prebid_js';
+const URL_SYNC = 'https://as.ck-ie.com/prebidjs?p=7c47322e527cf8bdeb7facc1bb03387a';
 
 function isBidResponseValid(bid) {
   if (!bid.requestId || !bid.cpm || !bid.creativeId ||
@@ -29,18 +30,22 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: (bid) => {
-    return Boolean(bid.bidId && bid.params && !isNaN(bid.params.placementId));
+    return Boolean(bid.bidId && bid.params && !isNaN(bid.params.sourceid) && !isNaN(bid.params.accountid) && bid.params.host == 'prebid');
   },
 
   buildRequests: (validBidRequests = [], bidderRequest) => {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     let winTop = window;
     let location;
+    // TODO: this odd try-catch block was copied in several adapters; it doesn't seem to be correct for cross-origin
     try {
-      location = new URL(bidderRequest.refererInfo.referer)
+      location = new URL(bidderRequest.refererInfo.page)
       winTop = window.top;
     } catch (e) {
       location = winTop.location;
-      utils.logMessage(e);
+      logMessage(e);
     };
     let placements = [];
     let request = {
@@ -68,10 +73,11 @@ export const spec = {
       let bid = validBidRequests[i];
       let traff = bid.params.traffic || BANNER
       placements.push({
-        placementId: bid.params.placementId,
+        placementId: bid.params.sourceid,
         bidId: bid.bidId,
         sizes: bid.mediaTypes && bid.mediaTypes[traff] && bid.mediaTypes[traff].sizes ? bid.mediaTypes[traff].sizes : [],
-        traffic: traff
+        traffic: traff,
+        publisherId: bid.params.accountid
       });
       if (bid.schain) {
         placements.schain = bid.schain;
@@ -96,11 +102,23 @@ export const spec = {
     return response;
   },
 
-  getUserSyncs: (syncOptions, serverResponses) => {
-    return [{
-      type: 'image',
-      url: URL_SYNC
-    }];
+  getUserSyncs: (syncOptions, serverResponses = [], gdprConsent = {}, uspConsent = '') => {
+    let syncs = [];
+    let { gdprApplies, consentString = '' } = gdprConsent;
+
+    if (syncOptions.iframeEnabled) {
+      syncs.push({
+        type: 'iframe',
+        url: `${URL_SYNC}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}&type=iframe&us_privacy=${uspConsent}`
+      });
+    } else {
+      syncs.push({
+        type: 'image',
+        url: `${URL_SYNC}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}&type=image&us_privacy=${uspConsent}`
+      });
+    }
+
+    return syncs
   }
 
 };

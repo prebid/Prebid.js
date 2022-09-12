@@ -1,13 +1,88 @@
 import { expect } from 'chai'
-import { spec } from 'modules/nativoBidAdapter.js'
-// import { newBidder } from 'src/adapters/bidderFactory.js'
-// import * as bidderFactory from 'src/adapters/bidderFactory.js'
-// import { deepClone } from 'src/utils.js'
-// import { config } from 'src/config.js'
+import { spec, BidDataMap } from 'modules/nativoBidAdapter.js'
+import {
+  getSizeWildcardPrice,
+  getMediaWildcardPrices,
+  sizeToString,
+  parseFloorPriceData,
+} from '../../../modules/nativoBidAdapter'
+
+describe('bidDataMap', function () {
+  it('Should fail gracefully if no key value pairs have been added and no key is sent', function () {
+    const bdm = new BidDataMap()
+    const bidData = bdm.getBidData()
+    expect(bidData).to.be.undefined
+  })
+
+  it('Should fail gracefully if no key value pairs have been added', function () {
+    const bdm = new BidDataMap()
+    const bidData = bdm.getBidData('testKey')
+    expect(bidData).to.be.undefined
+  })
+
+  it('Should add bid data to corresponding keys', function () {
+    const keys = ['key1', 'anotherKey', 6]
+    const bidData = { prop: 'value' }
+
+    const bdm = new BidDataMap()
+    bdm.addBidData(bidData, keys)
+    const bidDataKey0 = bdm.getBidData(keys[0])
+    const bidDataKey1 = bdm.getBidData(keys[1])
+    const bidDataKey2 = bdm.getBidData(keys[2])
+    expect(bidDataKey0).to.be.equal(bidData)
+    expect(bidDataKey1).to.be.equal(bidData)
+    expect(bidDataKey2).to.be.equal(bidData)
+  })
+})
 
 describe('nativoBidAdapterTests', function () {
   describe('isBidRequestValid', function () {
     let bid = {
+      bidder: 'nativo',
+    }
+
+    it('should return true if no params found', function () {
+      expect(spec.isBidRequestValid(bid)).to.equal(true)
+    })
+
+    it('should return true for valid placementId value', function () {
+      bid.params = {
+        placementId: '10433394',
+      }
+      expect(spec.isBidRequestValid(bid)).to.equal(true)
+    })
+
+    it('should return true for valid placementId value', function () {
+      bid.params = {
+        placementId: 10433394,
+      }
+      expect(spec.isBidRequestValid(bid)).to.equal(true)
+    })
+
+    it('should return false for invalid placementId value', function () {
+      bid.params = {
+        placementId: true,
+      }
+      expect(spec.isBidRequestValid(bid)).to.equal(false)
+    })
+
+    it('should return true for valid placementId value', function () {
+      bid.params = {
+        url: 'www.test.com',
+      }
+      expect(spec.isBidRequestValid(bid)).to.equal(true)
+    })
+
+    it('should return false for invalid placementId value', function () {
+      bid.params = {
+        url: 4567890,
+      }
+      expect(spec.isBidRequestValid(bid)).to.equal(false)
+    })
+  })
+
+  describe('buildRequests', function () {
+    const bidRequest = {
       bidder: 'nativo',
       params: {
         placementId: '10433394',
@@ -20,38 +95,15 @@ describe('nativoBidAdapterTests', function () {
       bidId: '27b02036ccfa6e',
       bidderRequestId: '1372cd8bd8d6a8',
       auctionId: 'cfc467e4-2707-48da-becb-bcaab0b2c114',
+      transactionId: '3b36e7e0-0c3e-4006-a279-a741239154ff',
     }
+    const bidRequestString = JSON.stringify(bidRequest)
+    let bidRequests
 
-    it('should return true when required params found', function () {
-      expect(spec.isBidRequestValid(bid)).to.equal(true)
+    beforeEach(function () {
+      // Clone bidRequest each time
+      bidRequests = [JSON.parse(bidRequestString)]
     })
-
-    it('should return false when required params are not passed', function () {
-      let bid2 = Object.assign({}, bid)
-      delete bid2.params
-      bid2.params = {}
-      expect(spec.isBidRequestValid(bid2)).to.equal(false)
-    })
-  })
-
-  describe('buildRequests', function () {
-    let bidRequests = [
-      {
-        bidder: 'nativo',
-        params: {
-          placementId: '10433394',
-        },
-        adUnitCode: 'adunit-code',
-        sizes: [
-          [300, 250],
-          [300, 600],
-        ],
-        bidId: '27b02036ccfa6e',
-        bidderRequestId: '1372cd8bd8d6a8',
-        auctionId: 'cfc467e4-2707-48da-becb-bcaab0b2c114',
-        transactionId: '3b36e7e0-0c3e-4006-a279-a741239154ff',
-      },
-    ]
 
     it('url should contain query string parameters', function () {
       const request = spec.buildRequests(bidRequests, {
@@ -65,8 +117,42 @@ describe('nativoBidAdapterTests', function () {
       expect(request.url).to.be.a('string')
 
       expect(request.url).to.include('?')
-      expect(request.url).to.include('ntv_url')
       expect(request.url).to.include('ntv_ptd')
+      expect(request.url).to.include('ntv_pb_rid')
+      expect(request.url).to.include('ntv_ppc')
+      expect(request.url).to.include('ntv_url')
+      expect(request.url).to.include('ntv_dbr')
+      expect(request.url).to.include('ntv_pas')
+    })
+
+    it('ntv_url parameter should NOT be empty even if the utl parameter was set as an empty value', function () {
+      bidRequests[0].params.url = ''
+      const request = spec.buildRequests(bidRequests, {
+        bidderRequestId: 123456,
+        refererInfo: {
+          referer: 'https://www.test.com',
+        },
+      })
+
+      expect(request.url).to.exist
+      expect(request.url).to.be.a('string')
+      expect(request.url).to.not.be.empty
+    })
+
+    it('url should NOT contain placement specific query string parameters if placementId option is not provided', function () {
+      bidRequests[0].params = {}
+      const request = spec.buildRequests(bidRequests, {
+        bidderRequestId: 123456,
+        refererInfo: {
+          referer: 'https://www.test.com',
+        },
+      })
+
+      expect(request.url).to.exist
+      expect(request.url).to.be.a('string')
+
+      expect(request.url).to.not.include('ntv_pas')
+      expect(request.url).to.not.include('ntv_ptd')
     })
   })
 })
@@ -119,14 +205,19 @@ describe('interpretResponse', function () {
       bids: [
         {
           params: {
-            placementId: 1
-          }
+            placementId: 1,
+          },
         },
       ],
     }
 
     // mock
-    spec.getRequestId = () => 123456
+    spec.getAdUnitData = () => {
+      return {
+        bidId: 123456,
+        sizes: [300, 250],
+      }
+    }
 
     let result = spec.interpretResponse({ body: response }, { bidderRequest })
     expect(Object.keys(result[0])).to.have.deep.members(
@@ -171,11 +262,11 @@ describe('getUserSyncs', function () {
 
   const gdprConsent = {
     gdprApplies: true,
-    consentString: '111111'
+    consentString: '111111',
   }
 
   const uspConsent = {
-    uspConsent: '1YYY'
+    uspConsent: '1YYY',
   }
 
   it('Returns empty array if no supported user syncs', function () {
@@ -205,7 +296,9 @@ describe('getUserSyncs', function () {
     expect(userSync[0].type).to.exist
     expect(userSync[0].url).to.exist
     expect(userSync[0].type).to.be.equal('iframe')
-    expect(userSync[0].url).to.contain('gdpr=1&gdpr_consent=111111&us_privacy=1YYY')
+    expect(userSync[0].url).to.contain(
+      'gdpr=1&gdpr_consent=111111&us_privacy=1YYY'
+    )
   })
 
   it('Returns valid URL and type', function () {
@@ -222,6 +315,324 @@ describe('getUserSyncs', function () {
     expect(userSync[0].type).to.exist
     expect(userSync[0].url).to.exist
     expect(userSync[0].type).to.be.equal('image')
-    expect(userSync[0].url).to.contain('gdpr=1&gdpr_consent=111111&us_privacy=1YYY')
+    expect(userSync[0].url).to.contain(
+      'gdpr=1&gdpr_consent=111111&us_privacy=1YYY'
+    )
+  })
+})
+
+describe('getAdUnitData', () => {
+  afterEach(() => {
+    if (window.bidRequestMap) delete window.bidRequestMap
+  })
+
+  it('Matches placementId value', () => {
+    const adUnitData = {
+      bidId: 123456,
+      sizes: [300, 250],
+    }
+
+    window.bidRequestMap = {
+      9876543: {
+        12345: adUnitData,
+      },
+    }
+
+    const data = spec.getAdUnitData(9876543, { impid: 12345 })
+    expect(Object.keys(data)).to.have.deep.members(Object.keys(adUnitData))
+  })
+
+  it('Falls back to ad unit code value', () => {
+    const adUnitData = {
+      bidId: 123456,
+      sizes: [300, 250],
+    }
+
+    window.bidRequestMap = {
+      9876543: {
+        '#test-code': adUnitData,
+      },
+    }
+
+    const data = spec.getAdUnitData(9876543, {
+      impid: 12345,
+      ext: { ad_unit_code: '#test-code' },
+    })
+    expect(Object.keys(data)).to.have.deep.members(Object.keys(adUnitData))
+  })
+})
+
+describe('Response to Request Filter Flow', () => {
+  let bidRequests = [
+    {
+      bidder: 'nativo',
+      params: {
+        placementId: '10433394',
+      },
+      adUnitCode: 'adunit-code',
+      sizes: [
+        [300, 250],
+        [300, 600],
+      ],
+      bidId: '27b02036ccfa6e',
+      bidderRequestId: '1372cd8bd8d6a8',
+      auctionId: 'cfc467e4-2707-48da-becb-bcaab0b2c114',
+      transactionId: '3b36e7e0-0c3e-4006-a279-a741239154ff',
+    },
+  ]
+
+  let response
+
+  beforeEach(() => {
+    response = {
+      id: '126456',
+      seatbid: [
+        {
+          seat: 'seat_0',
+          bid: [
+            {
+              id: 'f70362ac-f3cf-4225-82a5-948b690927a6',
+              impid: '1',
+              price: 3.569,
+              adm: '<creative>',
+              h: 300,
+              w: 250,
+              cat: [],
+              adomain: ['test.com'],
+              crid: '1060_72_6760217',
+            },
+          ],
+        },
+      ],
+      cur: 'USD',
+    }
+  })
+
+  let bidderRequest = {
+    id: 123456,
+    bids: [
+      {
+        params: {
+          placementId: 1,
+        },
+      },
+    ],
+  }
+
+  // mock
+  spec.getAdUnitData = () => {
+    return {
+      bidId: 123456,
+      size: [300, 250],
+    }
+  }
+
+  it('Appends NO filter based on previous response', () => {
+    // Getting the mock response
+    let result = spec.interpretResponse({ body: response }, { bidderRequest })
+
+    // Winning the bid
+    spec.onBidWon(result[0])
+
+    // Making another request
+    const request = spec.buildRequests(bidRequests, {
+      bidderRequestId: 123456,
+      refererInfo: {
+        referer: 'https://www.test.com',
+      },
+    })
+    expect(request.url).to.not.include('ntv_aft')
+    expect(request.url).to.not.include('ntv_avtf')
+    expect(request.url).to.not.include('ntv_ctf')
+  })
+
+  it('Appends Ads filter based on previous response', () => {
+    response.seatbid[0].bid[0].ext = { adsToFilter: ['12345'] }
+
+    // Getting the mock response
+    let result = spec.interpretResponse({ body: response }, { bidderRequest })
+
+    // Winning the bid
+    spec.onBidWon(result[0])
+
+    // Making another request
+    const request = spec.buildRequests(bidRequests, {
+      bidderRequestId: 123456,
+      refererInfo: {
+        referer: 'https://www.test.com',
+      },
+    })
+    expect(request.url).to.include(`ntv_atf=12345`)
+    expect(request.url).to.not.include('ntv_avtf')
+    expect(request.url).to.not.include('ntv_ctf')
+  })
+
+  it('Appends Advertiser filter based on previous response', () => {
+    response.seatbid[0].bid[0].ext = { advertisersToFilter: ['1'] }
+
+    // Getting the mock response
+    let result = spec.interpretResponse({ body: response }, { bidderRequest })
+
+    // Winning the bid
+    spec.onBidWon(result[0])
+
+    // Making another request
+    const request = spec.buildRequests(bidRequests, {
+      bidderRequestId: 123456,
+      refererInfo: {
+        referer: 'https://www.test.com',
+      },
+    })
+    expect(request.url).to.include(`ntv_atf=12345`)
+    expect(request.url).to.include('ntv_avtf=1')
+    expect(request.url).to.not.include('ntv_ctf')
+  })
+
+  it('Appends Campaign filter based on previous response', () => {
+    response.seatbid[0].bid[0].ext = { campaignsToFilter: ['234'] }
+
+    // Getting the mock response
+    let result = spec.interpretResponse({ body: response }, { bidderRequest })
+
+    // Winning the bid
+    spec.onBidWon(result[0])
+
+    // Making another request
+    const request = spec.buildRequests(bidRequests, {
+      bidderRequestId: 123456,
+      refererInfo: {
+        referer: 'https://www.test.com',
+      },
+    })
+    expect(request.url).to.include(`ntv_atf=12345`)
+    expect(request.url).to.include('ntv_avtf=1')
+    expect(request.url).to.include('ntv_ctf=234')
+  })
+})
+
+describe('sizeToString', () => {
+  it('Formats size array correctly', () => {
+    const sizeString = sizeToString([300, 250])
+    expect(sizeString).to.be.equal('300x250')
+  })
+
+  it('Returns an empty array for invalid data', () => {
+    // Not an array
+    let sizeString = sizeToString(300, 350)
+    expect(sizeString).to.be.equal('')
+    // Single entry
+    sizeString = sizeToString([300])
+    expect(sizeString).to.be.equal('')
+    // Undefined
+    sizeString = sizeToString(undefined)
+    expect(sizeString).to.be.equal('')
+  })
+})
+
+describe('getSizeWildcardPrice', () => {
+  it('Generates the correct floor price data', () => {
+    let floorPrice = {
+      currency: 'USD',
+      floor: 1.0,
+    }
+    let getFloorMock = () => {
+      return floorPrice
+    }
+    let floorMockSpy = sinon.spy(getFloorMock)
+    let bidRequest = {
+      getFloor: floorMockSpy,
+      mediaTypes: {
+        banner: {
+          sizes: [300, 250],
+        },
+      },
+    }
+
+    let result = getSizeWildcardPrice(bidRequest, 'banner')
+    expect(
+      floorMockSpy.calledWith({
+        currency: 'USD',
+        mediaType: 'banner',
+        size: '*',
+      })
+    ).to.be.true
+    expect(result).to.equal(floorPrice)
+  })
+})
+
+describe('getMediaWildcardPrices', () => {
+  it('Generates the correct floor price data', () => {
+    let defaultFloorPrice = {
+      currency: 'USD',
+      floor: 1.1,
+    }
+    let sizefloorPrice = {
+      currency: 'USD',
+      floor: 2.2,
+    }
+    let getFloorMock = ({ currency, mediaType, size }) => {
+      if (Array.isArray(size)) return sizefloorPrice
+
+      return defaultFloorPrice
+    }
+    let floorMockSpy = sinon.spy(getFloorMock)
+    let bidRequest = {
+      getFloor: floorMockSpy,
+      mediaTypes: {
+        banner: {
+          sizes: [300, 250],
+        },
+      },
+    }
+
+    let result = getMediaWildcardPrices(bidRequest, ['*', [300, 250]])
+    expect(
+      floorMockSpy.calledWith({
+        currency: 'USD',
+        mediaType: '*',
+        size: '*',
+      })
+    ).to.be.true
+    expect(
+      floorMockSpy.calledWith({
+        currency: 'USD',
+        mediaType: '*',
+        size: [300, 250],
+      })
+    ).to.be.true
+    expect(result).to.deep.equal({ '*': 1.1, '300x250': 2.2 })
+  })
+})
+
+describe('parseFloorPriceData', () => {
+  it('Generates the correct floor price data', () => {
+    let defaultFloorPrice = {
+      currency: 'USD',
+      floor: 1.1,
+    }
+    let sizefloorPrice = {
+      currency: 'USD',
+      floor: 2.2,
+    }
+    let getFloorMock = ({ currency, mediaType, size }) => {
+      if (Array.isArray(size)) return sizefloorPrice
+
+      return defaultFloorPrice
+    }
+    let floorMockSpy = sinon.spy(getFloorMock)
+    let bidRequest = {
+      getFloor: floorMockSpy,
+      mediaTypes: {
+        banner: {
+          sizes: [[300, 250]],
+        },
+      },
+    }
+
+    let result = parseFloorPriceData(bidRequest)
+    expect(result).to.deep.equal({
+      '*': { '*': 1.1, '300x250': 2.2 },
+      banner: { '*': 1.1, '300x250': 2.2 },
+    })
   })
 })

@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import * as utils from '../src/utils.js'
+import { logError, logInfo } from '../src/utils.js'
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
@@ -43,13 +43,13 @@ export const admixerIdSubmodule = {
   getId(config, consentData) {
     const {e, p, pid} = (config && config.params) || {};
     if (!pid || typeof pid !== 'string') {
-      utils.logError('admixerId submodule requires partner id to be defined');
+      logError('admixerId submodule requires partner id to be defined');
       return;
     }
     const gdpr = (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) ? 1 : 0;
     const consentString = gdpr ? consentData.consentString : '';
     if (gdpr && !consentString) {
-      utils.logInfo('Consent string is required to call admixer id.');
+      logInfo('Consent string is required to call admixer id.');
       return;
     }
     const url = `https://inv-nets.admixer.net/cntcm.aspx?ssp=${pid}${e ? `&e=${e}` : ''}${p ? `&p=${p}` : ''}${consentString ? `&cs=${consentString}` : ''}`;
@@ -83,7 +83,7 @@ function retrieveVisitorId(url, callback) {
       }
     },
     error: error => {
-      utils.logInfo(`admixerId: fetch encountered an error`, error);
+      logInfo(`admixerId: fetch encountered an error`, error);
       callback();
     }
   }, undefined, { method: 'GET', withCredentials: true });

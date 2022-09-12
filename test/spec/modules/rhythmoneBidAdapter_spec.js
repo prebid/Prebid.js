@@ -8,7 +8,7 @@ describe('rhythmone adapter tests', function () {
   beforeEach(function() {
     this.defaultBidderRequest = {
       'refererInfo': {
-        'referer': 'Reference Page',
+        'ref': 'Reference Page',
         'stack': [
           'aodomain.dvl',
           'page.dvl'
@@ -444,7 +444,7 @@ describe('rhythmone adapter tests', function () {
       expect(openrtbRequest.device.dnt).to.equal(1);
     });
 
-    it('sets floor', function () {
+    it('sets floor to zero', function () {
       var bidRequestList = [
         {
           'bidder': 'rhythmone',
@@ -469,7 +469,7 @@ describe('rhythmone adapter tests', function () {
       var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
 
       const openrtbRequest = JSON.parse(bidRequest.data);
-      expect(openrtbRequest.imp[0].bidfloor).to.equal(100.0);
+      expect(openrtbRequest.imp[0].bidfloor).to.equal(0);
     });
 
     it('supports string video sizes', function () {
@@ -645,35 +645,6 @@ describe('rhythmone adapter tests', function () {
       expect(openrtbRequest.site.page).to.equal('');
       expect(openrtbRequest.site.ref).to.equal('');
     });
-  });
-
-  it('should return empty site.domain and site.page when refererInfo.stack is empty', function() {
-    this.defaultBidderRequest.refererInfo.stack = [];
-    var bidRequestList = [
-      {
-        'bidder': 'rhythmone',
-        'params': {
-          'placementId': 'myplacement',
-          'zone': 'myzone',
-          'path': 'mypath'
-        },
-        'mediaType': 'banner',
-        'adUnitCode': 'div-gpt-ad-1438287399331-0',
-        'sizes': [[300, 250]],
-        'transactionId': 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec',
-        'bidderRequestId': '418b37f85e772c',
-        'auctionId': '18fd8b8b0bd757',
-        'bidRequestsCount': 1,
-        'bidId': '51ef8751f9aead'
-      }
-    ];
-
-    var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
-    const openrtbRequest = JSON.parse(bidRequest.data);
-
-    expect(openrtbRequest.site.domain).to.equal('');
-    expect(openrtbRequest.site.page).to.equal('');
-    expect(openrtbRequest.site.ref).to.equal('Reference Page');
   });
 
   it('should secure correctly', function() {

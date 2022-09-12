@@ -1,11 +1,12 @@
-import * as utils from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE } from '../src/mediaTypes.js';
-import find from 'core-js-pure/features/array/find.js';
+import {_each, deepSetValue, inIframe} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import {find} from '../src/polyfill.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'bridgewell';
-const REQUEST_ENDPOINT = 'https://prebid.scupio.com/recweb/prebid.aspx?cb=' + Math.random();
-const BIDDER_VERSION = '0.0.3';
+const REQUEST_ENDPOINT = 'https://prebid.scupio.com/recweb/prebid.aspx?cb=';
+const BIDDER_VERSION = '1.1.0';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -36,8 +37,16 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     const adUnits = [];
-    utils._each(validBidRequests, function (bid) {
+    var bidderUrl = REQUEST_ENDPOINT + Math.random();
+    var userIds;
+
+    _each(validBidRequests, function (bid) {
+      userIds = bid.userId;
+
       if (bid.params.cid) {
         adUnits.push({
           cid: bid.params.cid,
@@ -47,7 +56,8 @@ export const spec = {
             banner: {
               sizes: bid.sizes
             }
-          }
+          },
+          userIds: userIds || {}
         });
       } else {
         adUnits.push({
@@ -58,29 +68,31 @@ export const spec = {
             banner: {
               sizes: bid.sizes
             }
-          }
+          },
+          userIds: userIds || {}
         });
       }
     });
 
     let topUrl = '';
     if (bidderRequest && bidderRequest.refererInfo) {
-      topUrl = bidderRequest.refererInfo.referer;
+      topUrl = bidderRequest.refererInfo.page;
     }
 
     return {
       method: 'POST',
-      url: REQUEST_ENDPOINT,
+      url: bidderUrl,
       data: {
         version: {
           prebid: '$prebid.version$',
           bridgewell: BIDDER_VERSION
         },
-        inIframe: utils.inIframe(),
+        inIframe: inIframe(),
         url: topUrl,
-        referrer: getTopWindowReferrer(),
+        referrer: bidderRequest.refererInfo.ref,
         adUnits: adUnits,
-        refererInfo: bidderRequest.refererInfo,
+        // TODO: please do not send internal data structures over the network
+        refererInfo: bidderRequest.refererInfo.legacy,
       },
       validBidRequests: validBidRequests
     };
@@ -97,7 +109,7 @@ export const spec = {
     const bidResponses = [];
 
     // map responses to requests
-    utils._each(bidRequest.validBidRequests, function (req) {
+    _each(bidRequest.validBidRequests, function (req) {
       const bidResponse = {};
 
       if (!serverResponse.body) {
@@ -161,7 +173,7 @@ export const spec = {
         bidResponse.mediaType = matchedResponse.mediaType;
 
         if (matchedResponse.adomain) {
-          utils.deepSetValue(bidResponse, 'meta.advertiserDomains', Array.isArray(matchedResponse.adomain) ? matchedResponse.adomain : [matchedResponse.adomain]);
+          deepSetValue(bidResponse, 'meta.advertiserDomains', Array.isArray(matchedResponse.adomain) ? matchedResponse.adomain : [matchedResponse.adomain]);
         }
 
         // check required parameters by matchedResponse.mediaType
@@ -281,13 +293,5 @@ export const spec = {
     return bidResponses;
   }
 };
-
-function getTopWindowReferrer() {
-  try {
-    return window.top.document.referrer;
-  } catch (e) {
-    return '';
-  }
-}
 
 registerBidder(spec);

@@ -2,8 +2,11 @@ import { expect } from 'chai';
 import { spec, storage } from 'modules/eplanningBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
-import { init } from 'modules/userId/index.js';
+import {init, getIds} from 'modules/userId/index.js';
 import * as utils from 'src/utils.js';
+import {hook} from '../../../src/hook.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
+import { makeSlot } from '../integration/faker/googletag.js';
 
 describe('E-Planning Adapter', function () {
   const adapter = newBidder('spec');
@@ -26,6 +29,7 @@ describe('E-Planning Adapter', function () {
   const I_ID = '7854abc56248f873';
   const CRID = '1234567890';
   const TEST_ISV = 'leles.e-planning.net';
+  const ADOMAIN = 'adomain.com';
   const validBid = {
     'bidder': 'eplanning',
     'bidId': BID_ID,
@@ -237,6 +241,39 @@ describe('E-Planning Adapter', function () {
       ]
     }
   };
+  const responseWithAdomain = {
+    body: {
+      'sI': {
+        'k': '12345'
+      },
+      'sec': {
+        'k': 'ROS'
+      },
+      'sp': [{
+        'k': CLEAN_ADUNIT_CODE,
+        'a': [{
+          'adm': ADM,
+          'id': '7854abc56248f874',
+          'i': I_ID,
+          'fi': '7854abc56248f872',
+          'ip': '45621afd87462104',
+          'w': W,
+          'h': H,
+          'crid': CRID,
+          'pr': CPM,
+          'adom': ADOMAIN
+        }],
+      }],
+      'cs': [
+        'http://a-sync-url.com/',
+        {
+          'u': 'http://another-sync-url.com/test.php?&partner=123456&endpoint=us-east',
+          'ifr': true
+        }
+      ]
+    }
+  };
+
   const responseWithNoSpace = {
     body: {
       'sI': {
@@ -257,7 +294,9 @@ describe('E-Planning Adapter', function () {
   const refererUrl = 'https://localhost';
   const bidderRequest = {
     refererInfo: {
-      referer: refererUrl
+      page: refererUrl,
+      domain: 'localhost',
+      ref: refererUrl,
     },
     gdprConsent: {
       gdprApplies: 1,
@@ -270,6 +309,10 @@ describe('E-Planning Adapter', function () {
     },
     uspConsent: 'consentCcpa'
   };
+
+  before(() => {
+    hook.ready();
+  });
 
   describe('inherited functions', function () {
     it('exists and is a function', function () {
@@ -294,29 +337,34 @@ describe('E-Planning Adapter', function () {
   describe('buildRequests', function () {
     let bidRequests = [validBid];
     let sandbox;
+    let getWindowSelfStub;
+    let innerWidth;
     beforeEach(() => {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        eplanning: {
+          storageAllowed: true
+        }
+      };
       sandbox = sinon.sandbox.create();
+      getWindowSelfStub = sandbox.stub(utils, 'getWindowSelf');
+      getWindowSelfStub.returns(createWindow(800));
     });
 
     afterEach(() => {
+      $$PREBID_GLOBAL$$.bidderSettings = {};
       sandbox.restore();
     });
 
-    const createWindow = () => {
+    const createWindow = (innerWidth) => {
       const win = {};
       win.self = win;
-      win.innerWidth = 1025;
+      win.innerWidth = innerWidth;
       return win;
     };
 
-    function setupSingleWindow(sandBox) {
-      const win = createWindow();
-      sandBox.stub(utils, 'getWindowSelf').returns(win);
-    }
-
     it('should create the url correctly', function () {
       const url = spec.buildRequests(bidRequests, bidderRequest).url;
-      expect(url).to.equal('https://ads.us.e-planning.net/pbjs/1/' + CI + '/1/localhost/ROS');
+      expect(url).to.equal('https://pbjs.e-planning.net/pbjs/1/' + CI + '/1/localhost/ROS');
     });
 
     it('should return GET method', function () {
@@ -428,7 +476,7 @@ describe('E-Planning Adapter', function () {
 
     it('should return ur parameter with current window url', function () {
       const ur = spec.buildRequests(bidRequests, bidderRequest).data.ur;
-      expect(ur).to.equal(bidderRequest.refererInfo.referer);
+      expect(ur).to.equal(bidderRequest.refererInfo.page);
     });
 
     it('should return fr parameter when there is a referrer', function () {
@@ -482,7 +530,8 @@ describe('E-Planning Adapter', function () {
 
     it('should return the e parameter with a value according to the sizes in order corresponding to the desktop priority list of the ad units', function () {
       let bidRequestsPrioritySizes = [validBidExistingSizesInPriorityListForDesktop];
-      setupSingleWindow(sandbox);
+      // overwrite default innerWdith for tests with a larger one we consider "Desktop" or NOT Mobile
+      getWindowSelfStub.returns(createWindow(1025));
       const e = spec.buildRequests(bidRequestsPrioritySizes, bidderRequest).data.e;
       expect(e).to.equal('300x250_0:300x250,300x600,970x250');
     });
@@ -517,6 +566,25 @@ describe('E-Planning Adapter', function () {
         creativeId: CRID,
         netRevenue: true,
         currency: 'USD',
+      };
+      expect(bidResponse).to.deep.equal(expectedResponse);
+    });
+
+    it('should pass advertiserDomains when present', function () {
+      const bidResponse = spec.interpretResponse(responseWithAdomain, { adUnitToBidId: { [CLEAN_ADUNIT_CODE]: BID_ID } })[0];
+      const expectedResponse = {
+        requestId: BID_ID,
+        cpm: CPM,
+        width: W,
+        height: H,
+        ad: ADM,
+        ttl: 120,
+        creativeId: CRID,
+        netRevenue: true,
+        currency: 'USD',
+        meta: {
+          advertiserDomains: ADOMAIN
+        }
       };
       expect(bidResponse).to.deep.equal(expectedResponse);
     });
@@ -582,7 +650,24 @@ describe('E-Planning Adapter', function () {
     let element;
     let getBoundingClientRectStub;
     let sandbox = sinon.sandbox.create();
-    let focusStub;
+    let intersectionObserverStub;
+    let intersectionCallback;
+
+    function setIntersectionObserverMock(params) {
+      let fakeIntersectionObserver = (stateChange, options) => {
+        intersectionCallback = stateChange;
+        return {
+          unobserve: (element) => {
+            return element;
+          },
+          observe: (element) => {
+            intersectionCallback([{'target': {'id': element.id}, 'isIntersecting': params[element.id].isIntersecting, 'intersectionRatio': params[element.id].ratio, 'boundingClientRect': {'width': params[element.id].width, 'height': params[element.id].height}}]);
+          },
+        };
+      };
+
+      intersectionObserverStub = sandbox.stub(window, 'IntersectionObserver').callsFake(fakeIntersectionObserver);
+    }
     function createElement(id) {
       element = document.createElement('div');
       element.id = id || ADUNIT_CODE_VIEW;
@@ -662,6 +747,11 @@ describe('E-Planning Adapter', function () {
       });
     }
     beforeEach(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        eplanning: {
+          storageAllowed: true
+        }
+      };
       getLocalStorageSpy = sandbox.spy(storage, 'getDataFromLocalStorage');
       setDataInLocalStorageSpy = sandbox.spy(storage, 'setDataInLocalStorage');
 
@@ -669,11 +759,9 @@ describe('E-Planning Adapter', function () {
       hasLocalStorageStub.returns(true);
 
       clock = sandbox.useFakeTimers();
-
-      focusStub = sandbox.stub(window.top.document, 'hasFocus');
-      focusStub.returns(true);
     });
     afterEach(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {};
       sandbox.restore();
       if (document.getElementById(ADUNIT_CODE_VIEW)) {
         document.body.removeChild(element);
@@ -687,7 +775,7 @@ describe('E-Planning Adapter', function () {
       hasLocalStorageStub.returns(false);
       const response = spec.buildRequests(bidRequests, bidderRequest);
 
-      expect(response.url).to.equal('https://ads.us.e-planning.net/pbjs/1/' + CI + '/1/localhost/ROS');
+      expect(response.url).to.equal('https://pbjs.e-planning.net/pbjs/1/' + CI + '/1/localhost/ROS');
       expect(response.data.vs).to.equal('F');
 
       sinon.assert.notCalled(getLocalStorageSpy);
@@ -697,7 +785,7 @@ describe('E-Planning Adapter', function () {
     it('should create the url correctly with LocalStorage', function() {
       createElementVisible();
       const response = spec.buildRequests(bidRequests, bidderRequest);
-      expect(response.url).to.equal('https://ads.us.e-planning.net/pbjs/1/' + CI + '/1/localhost/ROS');
+      expect(response.url).to.equal('https://pbjs.e-planning.net/pbjs/1/' + CI + '/1/localhost/ROS');
 
       expect(response.data.vs).to.equal('F');
 
@@ -713,6 +801,7 @@ describe('E-Planning Adapter', function () {
       let respuesta;
       beforeEach(function () {
         createElementVisible();
+        setIntersectionObserverMock({[ADUNIT_CODE_VIEW]: {'ratio': 1, 'isIntersecting': true, 'width': 200, 'height': 200}});
       });
       it('when you have a render', function() {
         respuesta = spec.buildRequests(bidRequests, bidderRequest);
@@ -750,6 +839,7 @@ describe('E-Planning Adapter', function () {
       let respuesta;
       beforeEach(function () {
         createElementOutOfView();
+        setIntersectionObserverMock({[ADUNIT_CODE_VIEW]: {'ratio': 0, 'isIntersecting': false, 'width': 200, 'height': 200}});
       });
 
       it('when you have a render', function() {
@@ -775,6 +865,7 @@ describe('E-Planning Adapter', function () {
       let respuesta;
       it('should register visibility with more than 50%', function() {
         createPartiallyVisibleElement();
+        setIntersectionObserverMock({[ADUNIT_CODE_VIEW]: {'ratio': 0.6, 'isIntersecting': true, 'width': 200, 'height': 200}});
         respuesta = spec.buildRequests(bidRequests, bidderRequest);
         clock.tick(1005);
 
@@ -783,11 +874,28 @@ describe('E-Planning Adapter', function () {
       });
       it('you should not register visibility with less than 50%', function() {
         createPartiallyInvisibleElement();
+        setIntersectionObserverMock({[ADUNIT_CODE_VIEW]: {'ratio': 0.4, 'isIntersecting': true, 'width': 200, 'height': 200}});
         respuesta = spec.buildRequests(bidRequests, bidderRequest);
         clock.tick(1005);
 
         expect(storage.getDataFromLocalStorage(storageIdRender)).to.equal('1');
         expect(storage.getDataFromLocalStorage(storageIdView)).to.equal(null);
+      });
+    });
+    context('when element id is not equal to adunitcode', function() {
+      let respuesta;
+      it('should register visibility with more than 50%', function() {
+        const code = ADUNIT_CODE_VIEW;
+        const divId = 'div-gpt-ad-123';
+        createPartiallyVisibleElement(divId);
+        window.googletag.pubads().setSlots([makeSlot({ code, divId })]);
+        setIntersectionObserverMock({[divId]: {'ratio': 0.6, 'isIntersecting': true, 'width': 200, 'height': 200}});
+
+        respuesta = spec.buildRequests(bidRequests, bidderRequest);
+        clock.tick(1005);
+
+        expect(storage.getDataFromLocalStorage(storageIdRender)).to.equal('1');
+        expect(storage.getDataFromLocalStorage(storageIdView)).to.equal('1');
       });
     });
     context('when width or height of the element is zero', function() {
@@ -796,6 +904,7 @@ describe('E-Planning Adapter', function () {
       });
       it('if the width is zero but the height is within the range', function() {
         element.style.width = '0px';
+        setIntersectionObserverMock({[ADUNIT_CODE_VIEW]: {'ratio': 0.4, 'isIntersecting': true, 'width': 200, 'height': 200}});
         spec.buildRequests(bidRequests, bidderRequest)
         clock.tick(1005);
 
@@ -804,6 +913,7 @@ describe('E-Planning Adapter', function () {
       });
       it('if the height is zero but the width is within the range', function() {
         element.style.height = '0px';
+        setIntersectionObserverMock({[ADUNIT_CODE_VIEW]: {'ratio': 1, 'isIntersecting': true, 'width': 500, 'height': 0}});
         spec.buildRequests(bidRequests, bidderRequest)
         clock.tick(1005);
 
@@ -813,19 +923,10 @@ describe('E-Planning Adapter', function () {
       it('if both are zero', function() {
         element.style.height = '0px';
         element.style.width = '0px';
+        setIntersectionObserverMock({[ADUNIT_CODE_VIEW]: {'ratio': 1, 'isIntersecting': true, 'width': 0, 'height': 0}});
         spec.buildRequests(bidRequests, bidderRequest)
         clock.tick(1005);
 
-        expect(storage.getDataFromLocalStorage(storageIdRender)).to.equal('1');
-        expect(storage.getDataFromLocalStorage(storageIdView)).to.equal(null);
-      });
-    });
-    context('when tab is inactive', function() {
-      it('I should not register if it is not in focus', function() {
-        createElementVisible();
-        focusStub.returns(false);
-        spec.buildRequests(bidRequests, bidderRequest);
-        clock.tick(1005);
         expect(storage.getDataFromLocalStorage(storageIdRender)).to.equal('1');
         expect(storage.getDataFromLocalStorage(storageIdView)).to.equal(null);
       });
@@ -860,7 +961,11 @@ describe('E-Planning Adapter', function () {
         createElementVisible(ADUNIT_CODE_VIEW);
         createElementVisible(ADUNIT_CODE_VIEW2);
         createElementVisible(ADUNIT_CODE_VIEW3);
-
+        setIntersectionObserverMock({
+          [ADUNIT_CODE_VIEW]: {'ratio': 1, 'isIntersecting': true, 'width': 200, 'height': 200},
+          [ADUNIT_CODE_VIEW2]: {'ratio': 1, 'isIntersecting': true, 'width': 200, 'height': 200},
+          [ADUNIT_CODE_VIEW3]: {'ratio': 1, 'isIntersecting': true, 'width': 200, 'height': 200}
+        });
         respuesta = spec.buildRequests(bidRequestMultiple, bidderRequest);
         clock.tick(1005);
         [ADUNIT_CODE_VIEW, ADUNIT_CODE_VIEW2, ADUNIT_CODE_VIEW3].forEach(ac => {
@@ -873,7 +978,11 @@ describe('E-Planning Adapter', function () {
         createElementOutOfView(ADUNIT_CODE_VIEW);
         createElementOutOfView(ADUNIT_CODE_VIEW2);
         createElementOutOfView(ADUNIT_CODE_VIEW3);
-
+        setIntersectionObserverMock({
+          [ADUNIT_CODE_VIEW]: {'ratio': 0, 'isIntersecting': false, 'width': 200, 'height': 200},
+          [ADUNIT_CODE_VIEW2]: {'ratio': 0, 'isIntersecting': false, 'width': 200, 'height': 200},
+          [ADUNIT_CODE_VIEW3]: {'ratio': 0, 'isIntersecting': false, 'width': 200, 'height': 200}
+        });
         respuesta = spec.buildRequests(bidRequestMultiple, bidderRequest);
         clock.tick(1005);
         [ADUNIT_CODE_VIEW, ADUNIT_CODE_VIEW2, ADUNIT_CODE_VIEW3].forEach(ac => {
@@ -887,7 +996,11 @@ describe('E-Planning Adapter', function () {
         createElementVisible(ADUNIT_CODE_VIEW);
         createElementOutOfView(ADUNIT_CODE_VIEW2);
         createElementOutOfView(ADUNIT_CODE_VIEW3);
-
+        setIntersectionObserverMock({
+          [ADUNIT_CODE_VIEW]: {'ratio': 1, 'isIntersecting': true, 'width': 200, 'height': 200},
+          [ADUNIT_CODE_VIEW2]: {'ratio': 0.3, 'isIntersecting': true, 'width': 200, 'height': 200},
+          [ADUNIT_CODE_VIEW3]: {'ratio': 0, 'isIntersecting': false, 'width': 200, 'height': 200}
+        });
         respuesta = spec.buildRequests(bidRequestMultiple, bidderRequest);
         clock.tick(1005);
         expect(storage.getDataFromLocalStorage('pbsr_' + ADUNIT_CODE_VIEW)).to.equal('6');
@@ -901,17 +1014,22 @@ describe('E-Planning Adapter', function () {
     });
   });
   describe('Send eids', function() {
-    it('should add eids to the request', function() {
-      init(config);
-      config.setConfig({
-        userSync: {
-          userIds: [
-            { name: 'id5Id', value: { 'id5id': { uid: 'ID5-ZHMOL_IfFSt7_lVYX8rBZc6GH3XMWyPQOBUfr4bm0g!', ext: { linkType: 1 } } } },
-            { name: 'pubCommonId', value: {'pubcid': 'c29cb2ae-769d-42f6-891a-f53cadee823d'} },
-            { name: 'unifiedId', value: {'tdid': 'D6885E90-2A7A-4E0F-87CB-7734ED1B99A3'} }
-          ]
-        }
-      });
+    let sandbox;
+    beforeEach(() => {
+      sandbox = sinon.sandbox.create();
+      // TODO: bid adapters should look at request data, not call getGlobal().getUserIds
+      sandbox.stub(getGlobal(), 'getUserIds').callsFake(() => ({
+        pubcid: 'c29cb2ae-769d-42f6-891a-f53cadee823d',
+        tdid: 'D6885E90-2A7A-4E0F-87CB-7734ED1B99A3',
+        id5id: { uid: 'ID5-ZHMOL_IfFSt7_lVYX8rBZc6GH3XMWyPQOBUfr4bm0g!', ext: { linkType: 1 } }
+      }))
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    })
+
+    it('should add eids to the request ', function() {
       let bidRequests = [validBidView];
       const expected_id5id = encodeURIComponent(JSON.stringify({ uid: 'ID5-ZHMOL_IfFSt7_lVYX8rBZc6GH3XMWyPQOBUfr4bm0g!', ext: { linkType: 1 } }));
       const request = spec.buildRequests(bidRequests, bidderRequest);

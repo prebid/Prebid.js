@@ -1,6 +1,8 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import {ajax} from '../src/ajax.js';
+import {isFn, isPlainObject} from '../src/utils.js';
+import { config } from '../src/config.js';
 
 export const spec = {
   code: 'vrtcal',
@@ -10,16 +12,47 @@ export const spec = {
   },
   buildRequests: function (bidRequests) {
     const requests = bidRequests.map(function (bid) {
-      const params = {
+      let floor = 0;
 
+      if (isFn(bid.getFloor)) {
+        const floorInfo = bid.getFloor({ currency: 'USD', mediaType: 'banner', size: bid.sizes.map(([w, h]) => ({w, h})) });
+
+        if (isPlainObject(floorInfo) && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
+          floor = Math.max(floor, parseFloat(floorInfo.floor));
+        }
+      }
+
+      let gdprApplies = 0;
+      let gdprConsent = '';
+      let ccpa = '';
+      let coppa = 0;
+      let tmax = 0;
+
+      if (bid && bid.gdprConsent) {
+        gdprApplies = bid.gdprConsent.gdprApplies ? 1 : 0;
+        gdprConsent = bid.gdprConsent.consentString;
+      }
+
+      if (bid && bid.uspConsent) {
+        ccpa = bid.uspConsent;
+      }
+
+      if (config.getConfig('coppa') === true) {
+        coppa = 1;
+      }
+
+      tmax = config.getConfig('bidderTimeout');
+
+      const params = {
         prebidJS: 1,
         prebidAdUnitCode: bid.adUnitCode,
         id: bid.bidId,
+        tmax: tmax,
         imp: [{
           id: '1',
           banner: {
           },
-          bidfloor: 0.75
+          bidfloor: floor
         }],
         site: {
           id: 'VRTCAL_FILLED',
@@ -31,6 +64,18 @@ export const spec = {
         device: {
           ua: 'VRTCAL_FILLED',
           ip: 'VRTCAL_FILLED'
+        },
+        regs: {
+          coppa: coppa,
+          ext: {
+            gdpr: gdprApplies,
+            us_privacy: ccpa
+          }
+        },
+        user: {
+          ext: {
+            consent: gdprConsent
+          }
         }
       };
 
@@ -42,7 +87,7 @@ export const spec = {
         params.imp[0].banner.h = bid.sizes[0][1];
       }
 
-      return {method: 'POST', url: 'https://rtb.vrtcal.com/bidder_prebid.vap?ssp=1804', data: JSON.stringify(params), options: {withCredentials: false, crossOrigin: true}}
+      return {method: 'POST', url: 'https://rtb.vrtcal.com/bidder_prebid.vap?ssp=1804', data: JSON.stringify(params), options: {withCredentials: false, crossOrigin: true}};
     });
 
     return requests;
@@ -69,6 +114,12 @@ export const spec = {
         ad: response.seatbid[0].bid[0].adm,
         nurl: response.seatbid[0].bid[0].nurl
       };
+
+      if (response.seatbid[0].bid[0].adomain && response.seatbid[0].bid[0].adomain.length) {
+        bidResponse.meta = {
+          advertiserDomains: response.seatbid[0].bid[0].adomain
+        };
+      }
 
       bidResponses.push(bidResponse);
     }

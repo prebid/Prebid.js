@@ -49,7 +49,8 @@ describe('Pubperf Analytics Adapter', function() {
       events.emit(constants.EVENTS.AUCTION_END, {});
       events.emit(constants.EVENTS.BID_TIMEOUT, {});
 
-      sinon.assert.callCount(pubperfAnalytics.track, 6);
+      // 6 Pubperf events + 1 Clean.io event
+      sinon.assert.callCount(pubperfAnalytics.track, 7);
     });
   });
 });

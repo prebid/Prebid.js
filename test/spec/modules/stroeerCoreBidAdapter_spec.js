@@ -2,7 +2,7 @@ import {assert} from 'chai';
 import {spec} from 'modules/stroeerCoreBidAdapter.js';
 import * as utils from 'src/utils.js';
 import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
-import find from 'core-js-pure/features/array/find.js';
+import {find} from 'src/polyfill.js';
 
 describe('stroeerCore bid adapter', function () {
   let sandbox;
@@ -58,6 +58,10 @@ describe('stroeerCore bid adapter', function () {
     bidderCode: 'stroeerCore',
     timeout: 5000,
     auctionStart: 10000,
+    refererInfo: {
+      page: 'https://www.example.com/monkey/index.html',
+      ref: 'https://www.example.com/?search=monkey'
+    },
     bids: [{
       bidId: 'bid1',
       bidder: 'stroeerCore',
@@ -106,7 +110,7 @@ describe('stroeerCore bid adapter', function () {
   });
 
   const createWindow = (href, params = {}) => {
-    let {parent, referrer, top, frameElement, placementElements = []} = params;
+    let {parent, top, frameElement, placementElements = []} = params;
 
     const protocol = (href.indexOf('https') === 0) ? 'https:' : 'http:';
     const win = {
@@ -123,7 +127,6 @@ describe('stroeerCore bid adapter', function () {
             }
           }
         },
-        referrer,
         getElementById: id => find(placementElements, el => el.id === id)
       }
     };
@@ -166,7 +169,7 @@ describe('stroeerCore bid adapter', function () {
   }
 
   function setupNestedWindows(sandBox, placementElements = [createElement('div-1', 17), createElement('div-2', 54)]) {
-    const topWin = createWindow('http://www.abc.org/', {referrer: 'http://www.google.com/?query=monkey'});
+    const topWin = createWindow('http://www.abc.org/');
     topWin.innerHeight = 800;
 
     const midWin = createWindow('http://www.abc.org/', {parent: topWin, top: topWin, frameElement: createElement()});
@@ -307,9 +310,10 @@ describe('stroeerCore bid adapter', function () {
         const expectedJsonPayload = {
           'id': AUCTION_ID,
           'timeout': expectedTimeout,
-          'ref': topWin.document.referrer,
+          'ref': 'https://www.example.com/?search=monkey',
           'mpa': true,
           'ssl': false,
+          'url': 'https://www.example.com/monkey/index.html',
           'bids': [{
             'sid': 'NDA=', 'bid': 'bid1', 'siz': [[300, 600], [160, 60]], 'viz': true
           }, {
@@ -399,6 +403,30 @@ describe('stroeerCore bid adapter', function () {
           assert.lengthOf(serverRequestInfo.data.bids, 2);
           assert.notProperty(serverRequestInfo, 'uids');
         });
+
+        it('should add schain if available', () => {
+          const schain = Object.freeze({
+            ver: '1.0',
+            complete: 1,
+            'nodes': [
+              {
+                asi: 'exchange1.com',
+                sid: 'ABC',
+                hp: 1,
+                rid: 'bid-request-1',
+                name: 'publisher',
+                domain: 'publisher.com'
+              }
+            ]
+          });
+
+          const bidReq = buildBidderRequest();
+          bidReq.bids.forEach(bid => bid.schain = schain);
+
+          const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
+
+          assert.deepEqual(serverRequestInfo.data.schain, schain);
+        });
       });
     });
   });
@@ -428,6 +456,15 @@ describe('stroeerCore bid adapter', function () {
     it('should return empty array, when response contains no bids', () => {
       const result = spec.interpretResponse({body: {bids: []}});
       assert.deepStrictEqual(result, []);
+    });
+
+    it('should add data to meta object', () => {
+      const response = buildBidderResponse();
+      response.bids[0] = Object.assign(response.bids[0], {adomain: ['website.org', 'domain.com']});
+      const result = spec.interpretResponse({body: response});
+      assert.deepPropertyVal(result[0], 'meta', {advertiserDomains: ['website.org', 'domain.com']});
+      // nothing provided for the second bid
+      assert.deepPropertyVal(result[1], 'meta', {advertiserDomains: undefined});
     });
   });
 
