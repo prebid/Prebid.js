@@ -147,9 +147,12 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
       cat: item.iabCategories,
       keywords: item.tags,
       len: duration,
-      livestream: Math.min(playbackMode, 1),
       embeddable: 1
     };
+
+    if (playbackMode !== undefined) {
+      content.livestream = Math.min(playbackMode, 1);
+    }
 
     const mediaId = item.mediaid;
     if (mediaId) {

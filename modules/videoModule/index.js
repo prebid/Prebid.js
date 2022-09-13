@@ -99,7 +99,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
 
   function enrichAuction(bidRequest) {
     if (mainContentDivId) {
-      enrichOrtb2(mainContentDivId);
+      enrichOrtb2(mainContentDivId, bidRequest);
     }
 
     const adUnits = bidRequest.adUnits || pbGlobal.adUnits || [];
@@ -107,15 +107,14 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
       const divId = getDivId(adUnit);
       enrichAdUnit(adUnit, divId);
       if (contentEnrichmentEnabled && !mainContentDivId) {
-        enrichOrtb2(divId);
+        enrichOrtb2(divId, bidRequest);
       }
     });
   }
 
   function getDivId(adUnit) {
-    const videoMediaType = adUnit.mediaTypes.video;
     const videoConfig = adUnit.video;
-    if (!videoMediaType || !videoConfig) {
+    if (!adUnit.mediaTypes.video || !videoConfig) {
       return;
     }
 
@@ -128,24 +127,25 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
       return;
     }
 
-    adUnit.mediaTypes.video = Object.assign({}, videoMediaType, ortbVideo);
+    const video = Object.assign({}, adUnit.mediaTypes.video, ortbVideo);
 
-    adUnit.mediaTypes.video.context = ortbVideo.placement === PLACEMENT.INSTREAM ? 'instream' : 'outstream';
+    video.context = ortbVideo.placement === PLACEMENT.INSTREAM ? 'instream' : 'outstream';
 
     const width = ortbVideo.w;
     const height = ortbVideo.h;
     if (width && height) {
-      adUnit.mediaTypes.video.playerSize = [width, height];
+      video.playerSize = [width, height];
     }
+
+    adUnit.mediaTypes.video = video;
   }
 
-  function enrichOrtb2(divId) {
+  function enrichOrtb2(divId, bidRequest) {
     const ortbContent = getOrtbContent(divId);
     if (!ortbContent) {
       return;
     }
-    let ortb2 = { ortb2: mergeDeep({}, pbGlobal.getConfig('ortb2'), { site: ortbContent }) };
-    pbGlobal.setConfig(ortb2);
+    bidRequest.ortb2 = mergeDeep({}, bidRequest.ortb2, { site: ortbContent });
   }
 
   function auctionEnd(auctionResult) {
