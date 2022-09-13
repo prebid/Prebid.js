@@ -51,7 +51,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
         }
       });
       contentEnrichmentEnabled = video.contentEnrichmentEnabled !== false;
-      mainContentDivId = video.mainContentDivId;
+      mainContentDivId = contentEnrichmentEnabled ? video.mainContentDivId : null;
     });
 
     requestBids.before(beforeBidsRequested, 40);
@@ -98,7 +98,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
   }
 
   function enrichAuction(bidRequest) {
-    if (mainContentDivId && contentEnrichmentEnabled) {
+    if (mainContentDivId) {
       enrichOrtb2(mainContentDivId);
     }
 
