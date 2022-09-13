@@ -58,6 +58,7 @@ describe('rasBidAdapter', function () {
         slot: 'test',
         area: 'areatest',
         site: 'test',
+        slotSequence: '0',
         network: '4178463'
       }
     };
@@ -140,6 +141,7 @@ describe('rasBidAdapter', function () {
       expect(requests[0].url).to.have.string('DV=test%2Fareatest');
       expect(requests[0].url).to.have.string('kwrd=val1%2Bval2');
       expect(requests[0].url).to.have.string('kvadunit=test%2Fareatest');
+      expect(requests[0].url).to.have.string('pos0=0');
     });
   });
 

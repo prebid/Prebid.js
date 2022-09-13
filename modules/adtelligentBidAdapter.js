@@ -23,6 +23,7 @@ const HOST_GETTERS = {
   janet: () => 'ghb.bidder.jmgads.com',
   pgam: () => 'ghb.pgamssp.com',
   ocm: () => 'ghb.cenarius.orangeclickmedia.com',
+  vidcrunchllc: () => 'ghb.platform.vidcrunch.com',
 }
 const getUri = function (bidderCode) {
   let bidderWithoutSuffix = bidderCode.split('_')[0];
@@ -42,7 +43,8 @@ export const spec = {
     { code: 'selectmedia', gvlid: 775 },
     { code: 'navelix', gvlid: 380 },
     'pgam',
-    'ocm',
+    { code: 'ocm', gvlid: 1148 },
+    { code: 'vidcrunchllc', gvlid: 1145 },
   ],
   supportedMediaTypes: [VIDEO, BANNER],
   isBidRequestValid: function (bid) {

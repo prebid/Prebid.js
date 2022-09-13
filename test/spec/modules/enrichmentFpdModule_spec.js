@@ -139,4 +139,20 @@ describe('the first party data enrichment module', function() {
       expect(sua).to.eql({hints: ['h1', 'h2']});
     })
   })
+
+  it('should store a reference to gpc witin ortb2.regs.ext if it has been enabled', function() {
+    let validated;
+    width = 800;
+    height = 500;
+
+    validated = syncProcessFpd({}, {}).global;
+    expect(validated.regs).to.equal(undefined);
+
+    resetEnrichments();
+
+    const globalPrivacyControlStub = sinon.stub(window, 'navigator').value({globalPrivacyControl: true});
+    validated = syncProcessFpd({}, {}).global;
+    expect(validated.regs.ext.gpc).to.equal(1);
+    globalPrivacyControlStub.restore();
+  });
 });

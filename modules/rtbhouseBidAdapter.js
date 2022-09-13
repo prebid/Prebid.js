@@ -81,6 +81,30 @@ export const spec = {
       }
     }
 
+    const ortb2Params = bidderRequest && bidderRequest.ortb2;
+    if (ortb2Params?.user) {
+      request.user = {
+        ...request.user,
+        ...(ortb2Params.user.data && {
+          data: { ...request.user?.data, ...ortb2Params.user.data },
+        }),
+        ...(ortb2Params.user.ext && {
+          ext: { ...request.user?.ext, ...ortb2Params.user.ext },
+        }),
+      };
+    }
+    if (ortb2Params?.site) {
+      request.site = {
+        ...request.site,
+        ...(ortb2Params.site.content && {
+          content: { ...request.site?.content, ...ortb2Params.site.content },
+        }),
+        ...(ortb2Params.site.ext && {
+          ext: { ...request.site?.ext, ...ortb2Params.site.ext },
+        }),
+      };
+    }
+
     return {
       method: 'POST',
       url: 'https://' + validBidRequests[0].params.region + '.' + ENDPOINT_URL,

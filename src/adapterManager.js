@@ -311,6 +311,14 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
       bidRequest['uspConsent'] = uspDataHandler.getConsentData();
     });
   }
+
+  bidRequests.forEach(bidRequest => {
+    config.runWithBidder(bidRequest.bidderCode, () => {
+      const fledgeEnabledFromConfig = config.getConfig('fledgeEnabled');
+      bidRequest['fledgeEnabled'] = navigator.runAdAuction && fledgeEnabledFromConfig
+    });
+  });
+
   return bidRequests;
 }, 'makeBidRequests');
 
