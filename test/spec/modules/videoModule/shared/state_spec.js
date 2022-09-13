@@ -3,7 +3,7 @@ import { expect } from 'chai';
 
 describe('State', function () {
   let state = stateFactory();
-  beforeEach(function () {
+  beforeEach(() => {
     state.clearState();
   });
 

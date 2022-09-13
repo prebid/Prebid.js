@@ -313,7 +313,7 @@ describe('JWPlayerProvider', function () {
 describe('adStateFactory', function () {
   let adState = adStateFactory();
 
-  beforeEach(function() {
+  beforeEach(() => {
     adState.clearState();
   });
 
@@ -447,7 +447,7 @@ describe('adStateFactory', function () {
 describe('timeStateFactory', function () {
   let timeState = timeStateFactory();
 
-  beforeEach(function() {
+  beforeEach(() => {
     timeState.clearState();
   });
 
@@ -500,7 +500,7 @@ describe('timeStateFactory', function () {
 describe('callbackStorageFactory', function () {
   let callbackStorage = callbackStorageFactory();
 
-  beforeEach(function () {
+  beforeEach(() => {
     callbackStorage.clearStorage();
   });
 
@@ -774,8 +774,9 @@ describe('utils', function () {
 
   describe('isOmidSupported', function () {
     const isOmidSupported = utils.isOmidSupported;
+    const initialOmidSessionClient = window.OmidSessionClient;
     afterEach(() => {
-      window.OmidSessionClient = undefined;
+      window.OmidSessionClient = initialOmidSessionClient;
     });
 
     it('should be true when Omid is loaded and client is VAST', function () {
