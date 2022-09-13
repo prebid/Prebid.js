@@ -30,6 +30,8 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
   const videoEvents = videoEvents_;
   const gamAdServerFactory = gamAdServerFactory_;
   let gamSubmodule;
+  let mainContentDivId;
+  let contentEnrichmentEnabled = true;
   const videoImpressionVerifierFactory = videoImpressionVerifierFactory_;
   let videoImpressionVerifier;
 
@@ -48,6 +50,8 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
           gamSubmodule = gamAdServerFactory();
         }
       });
+      contentEnrichmentEnabled = video.contentEnrichmentEnabled !== false;
+      mainContentDivId = video.mainContentDivId;
     });
 
     requestBids.before(beforeBidsRequested, 40);
@@ -83,10 +87,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
   return { init, renderBid, getOrtbVideo, getOrtbContent };
 
   function beforeBidsRequested(nextFn, bidRequest) {
-    const adUnits = bidRequest.adUnits || pbGlobal.adUnits || [];
-    adUnits.forEach(adUnit => {
-      enrichAdUnit(adUnit);
-    });
+    enrichAuction(bidRequest);
 
     const bidsBackHandler = bidRequest.bidsBackHandler;
     if (!bidsBackHandler || typeof bidsBackHandler !== 'function') {
@@ -96,16 +97,33 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     return nextFn.call(this, bidRequest);
   }
 
-  function enrichAdUnit(adUnit) {
+  function enrichAuction(bidRequest) {
+    if (mainContentDivId && contentEnrichmentEnabled) {
+      enrichOrtb2(mainContentDivId);
+    }
+
+    const adUnits = bidRequest.adUnits || pbGlobal.adUnits || [];
+    adUnits.forEach(adUnit => {
+      const divId = getDivId(adUnit);
+      enrichAdUnit(adUnit, divId);
+      if (contentEnrichmentEnabled && !mainContentDivId) {
+        enrichOrtb2(divId);
+      }
+    });
+  }
+
+  function getDivId(adUnit) {
     const videoMediaType = adUnit.mediaTypes.video;
     const videoConfig = adUnit.video;
     if (!videoMediaType || !videoConfig) {
       return;
     }
 
-    const divId = videoConfig.divId;
+    return videoConfig.divId;
+  }
 
-    const ortbVideo = getOrtbVideo(divId);
+  function enrichAdUnit(adUnit, videoDivId) {
+    const ortbVideo = getOrtbVideo(videoDivId);
     if (!ortbVideo) {
       return;
     }
@@ -119,9 +137,13 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     if (width && height) {
       adUnit.mediaTypes.video.playerSize = [width, height];
     }
+  }
 
-    const ortbContent = getOrtbContent(divId)
-
+  function enrichOrtb2(divId) {
+    const ortbContent = getOrtbContent(divId);
+    if (!ortbContent) {
+      return;
+    }
     let ortb2 = { ortb2: mergeDeep({}, pbGlobal.getConfig('ortb2'), { site: ortbContent }) };
     pbGlobal.setConfig(ortb2);
   }
