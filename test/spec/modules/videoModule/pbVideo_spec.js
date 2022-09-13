@@ -141,14 +141,12 @@ describe('Prebid Video', function () {
         test: 'contentTestValue'
       }));
 
-      const setConfigSpy = pbGlobalMock.setConfig;
-      setConfigSpy.resetHistory();
       let beforeBidRequestCallback;
       const requestBids = {
         before: callback_ => beforeBidRequestCallback = callback_
       };
 
-      pbVideoFactory(null, null, Object.assign({}, pbGlobalMock, { requestBids, setConfig: setConfigSpy }));
+      pbVideoFactory(null, null, Object.assign({}, pbGlobalMock, { requestBids }));
       expect(beforeBidRequestCallback).to.not.be.undefined;
       const nextFn = sinon.spy();
       const adUnits = [{
@@ -163,9 +161,8 @@ describe('Prebid Video', function () {
       expect(getOrtbContentSpy.calledOnce).to.be.true;
       const adUnit = adUnits[0];
       expect(adUnit.mediaTypes.video).to.have.property('test', 'videoTestValue');
-      expect(setConfigSpy.calledOnce).to.be.true;
-      expect(setConfigSpy.getCall(0).args[0]).to.be.deep.equal({ ortb2: { site: { test: 'contentTestValue' } } });
       expect(nextFn.calledOnce).to.be.true;
+      expect(nextFn.getCall(0).args[0].ortb2).to.be.deep.equal({ site: { test: 'contentTestValue' } });
     });
   });
 
