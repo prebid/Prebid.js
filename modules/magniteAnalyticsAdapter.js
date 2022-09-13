@@ -473,6 +473,14 @@ const formatBidWon = bidWonData => {
   // get transaction and auction id of where this "rendered"
   const { renderTransactionId, renderAuctionId } = getRenderingIds(bidWonData);
 
+  logInfo(`${MODULE_NAME}: Bid Won : `, {
+    isCachedBid: renderTransactionId !== bidWonData.transactionId,
+    renderAuctionId,
+    renderTransactionId,
+    sourceAuctionId: bidWonData.auctionId,
+    sourceTransactionId: bidWonData.transactionId,
+  });
+
   // get the bid from the source auction id
   let bid = deepAccess(cache, `auctions.${bidWonData.auctionId}.auction.adUnits.${bidWonData.adUnitCode}.bids.${bidWonData.requestId}`);
   let adUnit = deepAccess(cache, `auctions.${bidWonData.auctionId}.auction.adUnits.${bidWonData.adUnitCode}`);
@@ -526,9 +534,23 @@ const subscribeToGamSlots = () => {
     }
     let { adUnit, auction } = findMatchingAdUnitFromAuctions(matchingFunction, true);
 
-    if (!adUnit || !auction) return; // maybe log something here?
+    const slotName = `${event.slot.getAdUnitPath()} - ${event.slot.getSlotElementId()}`;
 
+    if (!adUnit || !auction) {
+      logInfo(`${MODULE_NAME}: Could not find matching adUnit for Gam Render: `, {
+        slotName
+      });
+      return;
+    }
     const auctionId = auction.auctionId;
+
+    logInfo(`${MODULE_NAME}: Gam Render: `, {
+      slotName,
+      transactionId: adUnit.transactionId,
+      auctionId: auctionId,
+      adUnit: adUnit,
+    });
+
     // if we have an adunit, then we need to make a gam event
     const gamEvent = formatGamEvent(event, adUnit, auction);
 
