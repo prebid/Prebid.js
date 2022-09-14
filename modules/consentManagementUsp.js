@@ -8,6 +8,7 @@ import { isFn, logInfo, logWarn, isStr, isNumber, isPlainObject, logError } from
 import { config } from '../src/config.js';
 import { uspDataHandler } from '../src/adapterManager.js';
 import {getGlobal} from '../src/prebidGlobal.js';
+import {timedAuctionHook} from '../src/utils/perfMetrics.js';
 
 const DEFAULT_CONSENT_API = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 50;
@@ -211,14 +212,14 @@ function loadConsentData(cb) {
  * @param {object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
  * @param {function} fn required; The next function in the chain, used by hook.js
  */
-export function requestBidsHook(fn, reqBidsConfigObj) {
+export const requestBidsHook = timedAuctionHook('usp', function requestBidsHook(fn, reqBidsConfigObj) {
   loadConsentData((errMsg, ...extraArgs) => {
     if (errMsg != null) {
       logWarn(errMsg, ...extraArgs);
     }
     fn.call(this, reqBidsConfigObj);
   });
-}
+});
 
 /**
  * This function checks the consent data provided by USPAPI to ensure it's in an expected state.
