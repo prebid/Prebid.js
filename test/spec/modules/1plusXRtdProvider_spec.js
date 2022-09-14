@@ -5,7 +5,9 @@ import {
   extractConfig,
   buildOrtb2Updates,
   updateBidderConfig,
-  setTargetingDataToConfig
+  setTargetingDataToConfig,
+  extractConsent,
+  getPapiUrl
 } from 'modules/1plusXRtdProvider';
 
 describe('1plusXRtdProvider', () => {
@@ -248,6 +250,71 @@ describe('1plusXRtdProvider', () => {
         }
       }
       expect(ortb2Updates).to.deep.include(expectedOutput);
+    })
+  })
+
+  describe('extractConsent', () => {
+    it('extracts consent strings correctly if given', () => {
+      const consent = {
+        gdprApplies: 1,
+        vendorData: {
+          tcString: 'myConsent'
+        }
+      }
+      const output = extractConsent(consent)
+      const expectedOutput = {
+        gdpr_applies: 1,
+        consent_string: 'myConsent'
+      }
+      expect(expectedOutput).to.deep.include(output)
+      expect(output).to.deep.include(expectedOutput)
+    })
+    it('extracts null if not given at all', () => {
+      const consent1 = null
+      const consent2 = undefined
+
+      expect(extractConsent(consent1) === null)
+      expect(extractConsent(consent2) === null)
+    })
+
+    it('throws an error if the consent is malformed', () => {
+      const consent1 = {
+        gdprApplies: 1
+      }
+      const consent2 = {
+        vendorData: {
+          tcString: 'myConsent'
+        }
+      }
+      const consent3 = {
+        gdprApplies: 1,
+        vendorData: {
+          other: 'test'
+        }
+      }
+
+      for (const consent in [consent1, consent2, consent3]) {
+        try {
+          extractConsent(consent)
+          assert(false, 'Should be throwing an exception')
+        } catch (e) {}
+      }
+    })
+  })
+
+  describe('getPapiUrl', () => {
+    const customer = 'acme'
+    const consent = {
+      gdprApplies: 1,
+      vendorData: {
+        tcString: 'myConsent'
+      }
+    }
+
+    it('correctly builds URLs distinguishing if consent is present or null', () => {
+      const url1 = getPapiUrl({ customerId: customer })
+      const url2 = getPapiUrl({ customerId: customer, consent: consent })
+      expect(url2.replace(url1, '')).to.equal('&consent_string=myConsent&gdpr_applies=1')
     })
   })
 

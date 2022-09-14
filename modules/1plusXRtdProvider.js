@@ -57,16 +57,32 @@ export const extractConfig = (moduleConfig, reqBidsConfigObj) => {
   return { customerId, timeout, bidders };
 }
 
+export const extractConsent = (consent) => {
+  const result = consent ? {
+    'gdpr_applies': consent.gdprApplies,
+    'consent_string': consent.vendorData ? consent.vendorData.tcString : undefined
+  } : null
+  if (result && Object.values(result).some(v => !v)) {
+    throw 'gdprApplies and tcString both have to be defined'
+  }
+  return result
+}
 /**
  * Gets the URL of Profile Api from which targeting data will be fetched
  * @param {Object} config
  * @param {string} config.customerId
  * @returns {string} URL to access 1plusX Profile API
  */
-const getPapiUrl = ({ customerId }) => {
+export const getPapiUrl = (customerId, consent) => {
   // https://[yourClientId].profiles.tagger.opecloud.com/[VERSION]/targeting?url=
   const currentUrl = encodeURIComponent(window.location.href);
-  const papiUrl = `https://${customerId}.profiles.tagger.opecloud.com/${PAPI_VERSION}/targeting?url=${currentUrl}`;
+  var papiUrl = `https://${customerId}.profiles.tagger.opecloud.com/${PAPI_VERSION}/targeting?url=${currentUrl}`;
+  if (consent) {
+    Object.entries(consent).forEach(([key, value]) => {
+      papiUrl += `&${key}=${value}`
+    })
+  }
+
   return papiUrl;
 }
 
@@ -222,17 +238,16 @@ const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, userConsent
   try {
     // Get the required config
     const { customerId, bidders } = extractConfig(moduleConfig, reqBidsConfigObj);
+    // Get consent
+    // const consent = extractConsent(userConsent)
     // Get PAPI URL
-    const papiUrl = getPapiUrl({ customerId })
+    const papiUrl = getPapiUrl(customerId, null)
     // Call PAPI
     getTargetingDataFromPapi(papiUrl)
       .then((papiResponse) => {
         logMessage(LOG_PREFIX, 'Get targeting data request successful');
         setTargetingDataToConfig(papiResponse, { bidders });
         callback();
-      })
-      .catch((error) => {
-        throw error;
       })
   } catch (error) {
     logError(LOG_PREFIX, error);
