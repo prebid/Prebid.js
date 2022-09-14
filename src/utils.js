@@ -2,6 +2,7 @@ import { config } from './config.js';
 import clone from 'just-clone';
 import {find, includes} from './polyfill.js';
 import CONSTANTS from './constants.json';
+import {GreedyPromise} from './utils/promise.js';
 export { default as deepAccess } from 'dlv/index.js';
 export { default as deepSetValue } from 'dset';
 
@@ -51,7 +52,7 @@ export const internal = {
   deepEqual
 };
 
-let prebidInternal = {}
+let prebidInternal = {};
 /**
  * Returns object that is used as internal prebid namespace
  */
@@ -487,7 +488,7 @@ export function hasOwn(objectToCheck, propertyToCheckFor) {
 * @param {HTMLElement} [doc]
 * @param {HTMLElement} [target]
 * @param {Boolean} [asLastChildChild]
-* @return {HTMLElement}
+* @return {HTML Element}
 */
 export function insertElement(elm, doc, target, asLastChildChild) {
   doc = doc || document;
@@ -517,7 +518,7 @@ export function insertElement(elm, doc, target, asLastChildChild) {
  */
 export function waitForElementToLoad(element, timeout) {
   let timer = null;
-  return new Promise((resolve) => {
+  return new GreedyPromise((resolve) => {
     const onLoad = function() {
       element.removeEventListener('load', onLoad);
       element.removeEventListener('error', onLoad);
@@ -954,14 +955,22 @@ export function isSlotMatchingAdUnitCode(adUnitCode) {
 }
 
 /**
- * @summary Uses the adUnit's code in order to find a matching gptSlot on the page
+ * @summary Uses the adUnit's code in order to find a matching gpt slot object on the page
  */
-export function getGptSlotInfoForAdUnitCode(adUnitCode) {
+export function getGptSlotForAdUnitCode(adUnitCode) {
   let matchingSlot;
   if (isGptPubadsDefined()) {
     // find the first matching gpt slot on the page
     matchingSlot = find(window.googletag.pubads().getSlots(), isSlotMatchingAdUnitCode(adUnitCode));
   }
+  return matchingSlot;
+};
+
+/**
+ * @summary Uses the adUnit's code in order to find a matching gptSlot on the page
+ */
+export function getGptSlotInfoForAdUnitCode(adUnitCode) {
+  const matchingSlot = getGptSlotForAdUnitCode(adUnitCode);
   if (matchingSlot) {
     return {
       gptSlot: matchingSlot.getAdUnitPath(),
@@ -1367,3 +1376,43 @@ export function safeJSONParse(data) {
     return JSON.parse(data);
   } catch (e) {}
 }
+
+/**
+ * Sets dataset attributes on a script
+ * @param {Script} script
+ * @param {object} attributes
+ */
+export function setScriptAttributes(script, attributes) {
+  for (let key in attributes) {
+    if (attributes.hasOwnProperty(key)) {
+      script.setAttribute(key, attributes[key]);
+    }
+  }
+}
+
+/**
+ * Encode a string for inclusion in HTML.
+ * See https://pragmaticwebsecurity.com/articles/spasecurity/json-stringify-xss.html and
+ * https://codeql.github.com/codeql-query-help/javascript/js-bad-code-sanitization/
+ * @return {string}
+ */
+export const escapeUnsafeChars = (() => {
+  const escapes = {
+    '<': '\\u003C',
+    '>': '\\u003E',
+    '/': '\\u002F',
+    '\\': '\\\\',
+    '\b': '\\b',
+    '\f': '\\f',
+    '\n': '\\n',
+    '\r': '\\r',
+    '\t': '\\t',
+    '\0': '\\0',
+    '\u2028': '\\u2028',
+    '\u2029': '\\u2029'
+  };
+
+  return function(str) {
+    return str.replace(/[<>\b\f\n\r\t\0\u2028\u2029\\]/g, x => escapes[x])
+  }
+})();

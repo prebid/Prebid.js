@@ -89,6 +89,45 @@ describe('Taboola Adapter', function () {
       }
       expect(spec.isBidRequestValid(bid)).to.equal(true)
     })
+
+    it('should succeed when url is null', function () {
+      const bid = {
+        bidder: 'taboola',
+        params: {
+          publisherId: 'publisherId',
+          tagId: 'below the article',
+          endpointUrl: null
+        },
+        ...displayBidRequestParams
+      }
+      expect(spec.isBidRequestValid(bid)).to.equal(true)
+    })
+
+    it('should succeed when url is empty string', function () {
+      const bid = {
+        bidder: 'taboola',
+        params: {
+          publisherId: 'publisherId',
+          tagId: 'below the article',
+          endpointUrl: ''
+        },
+        ...displayBidRequestParams
+      }
+      expect(spec.isBidRequestValid(bid)).to.equal(true)
+    })
+
+    it('should succeed when url is filled', function () {
+      const bid = {
+        bidder: 'taboola',
+        params: {
+          publisherId: 'publisherId',
+          tagId: 'below the article',
+          endpointUrl: 'https://example.com'
+        },
+        ...displayBidRequestParams
+      }
+      expect(spec.isBidRequestValid(bid)).to.equal(true)
+    })
   })
 
   describe('buildRequests', function () {
@@ -148,6 +187,44 @@ describe('Taboola Adapter', function () {
 
       expect(res.url).to.equal(`${END_POINT_URL}/${commonBidRequest.params.publisherId}`);
       expect(res.data).to.deep.equal(JSON.stringify(expectedData));
+    });
+
+    it('should fill the url when it is passed', function () {
+      const commonBidRequestWithUrl = {
+        bidder: 'taboola',
+        params: {
+          publisherId: 'publisherId',
+          tagId: 'placement name',
+          endpointUrl: 'https://example.com'
+        },
+        bidId: 'aa43860a-4644-442a-b5e0-93f268cs4d19',
+        auctionId: '65746dca-26f3-4186-be13-dfa63469b1b7',
+      }
+      let defaultBidRequestWithUrl = {
+        ...commonBidRequestWithUrl,
+        ...displayBidRequestParams,
+      }
+      const res = spec.buildRequests([defaultBidRequestWithUrl], commonBidderRequest);
+      expect(res.url).to.equal(`${commonBidRequestWithUrl.params.endpointUrl}/${commonBidRequest.params.publisherId}`);
+    })
+
+    it('should fill default url when url param is empty string', function () {
+      const commonBidRequestWithUrl = {
+        bidder: 'taboola',
+        params: {
+          publisherId: 'publisherId',
+          tagId: 'placement name',
+          endpointUrl: ''
+        },
+        bidId: 'aa43860a-4644-442a-b5e0-93f268cs4d19',
+        auctionId: '65746dca-26f3-4186-be13-dfa63469b1b7',
+      }
+      let defaultBidRequestWithUrl = {
+        ...commonBidRequestWithUrl,
+        ...displayBidRequestParams,
+      }
+      const res = spec.buildRequests([defaultBidRequestWithUrl], commonBidderRequest);
+      expect(res.url).to.equal(`${END_POINT_URL}/${commonBidRequestWithUrl.params.publisherId}`);
     })
 
     it('should pass optional parameters in request', function () {
@@ -311,6 +388,7 @@ describe('Taboola Adapter', function () {
                 'crid': '278195503434041083381',
                 'w': 300,
                 'h': 250,
+                'exp': 60,
                 'lurl': 'http://us-trc.taboola.com/sample'
               }
             ],
@@ -370,7 +448,7 @@ describe('Taboola Adapter', function () {
           requestId: request.bids[0].bidId,
           cpm: bid.price,
           creativeId: bid.crid,
-          ttl: 360,
+          ttl: 60,
           netRevenue: false,
           currency: serverResponse.body.cur,
           mediaType: 'banner',
@@ -385,6 +463,31 @@ describe('Taboola Adapter', function () {
 
       const res = spec.interpretResponse(serverResponse, request)
       expect(res).to.deep.equal(expectedRes)
+    });
+
+    it('should set the correct ttl form the response', function () {
+      // set exp-ttl to be 125
+      const [bid] = serverResponse.body.seatbid[0].bid;
+      serverResponse.body.seatbid[0].bid[0].exp = 125;
+      const expectedRes = [
+        {
+          requestId: request.bids[0].bidId,
+          cpm: bid.price,
+          creativeId: bid.crid,
+          ttl: 125,
+          netRevenue: false,
+          currency: serverResponse.body.cur,
+          mediaType: 'banner',
+          ad: bid.adm,
+          width: bid.w,
+          height: bid.h,
+          meta: {
+            'advertiserDomains': bid.adomain
+          },
+        }
+      ];
+      const res = spec.interpretResponse(serverResponse, request);
+      expect(res).to.deep.equal(expectedRes);
     });
   })
 

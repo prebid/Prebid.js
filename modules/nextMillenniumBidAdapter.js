@@ -1,4 +1,5 @@
 import { isStr, _each, parseUrl, getWindowTop, getBidIdParameter } from '../src/utils.js';
+import { getRefererInfo } from '../src/refererDetection.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 
@@ -24,19 +25,42 @@ export const spec = {
 
     _each(validBidRequests, function(bid) {
       window.nmmRefreshCounts[bid.adUnitCode] = window.nmmRefreshCounts[bid.adUnitCode] || 0;
+      const id = getPlacementId(bid)
+      let sizes = bid.sizes
+      if (sizes && !Array.isArray(sizes[0])) sizes = [sizes]
+
+      const site = getSiteObj()
+      const device = getDeviceObj()
+
       const postBody = {
         'id': bid.auctionId,
         'ext': {
           'prebid': {
             'storedrequest': {
-              'id': getPlacementId(bid)
+              'id': id
             }
           },
 
           'nextMillennium': {
             'refresh_count': window.nmmRefreshCounts[bid.adUnitCode]++,
+            'elOffsets': getBoundingClient(bid),
+            'scrollTop': window.pageYOffset || document.documentElement.scrollTop
           }
-        }
+        },
+        device,
+        site,
+        'imp': [{
+          'banner': {
+            'format': (sizes || []).map(s => { return {w: s[0], h: s[1]} })
+          },
+          'ext': {
+            'prebid': {
+              'storedrequest': {
+                'id': id
+              }
+            }
+          }
+        }]
       }
 
       const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
@@ -132,6 +156,19 @@ export const spec = {
     }];
   },
 };
+function getAdEl(bid) {
+  // best way I could think of to get El, is by matching adUnitCode to google slots...
+  const slot = window.googletag && window.googletag.pubads && window.googletag.pubads().getSlots().find(slot => slot.getAdUnitPath() === bid.adUnitCode);
+  const slotElementId = slot && slot.getSlotElementId();
+  if (!slotElementId) return null;
+  return document.querySelector('#' + slotElementId);
+}
+function getBoundingClient(bid) {
+  // console.log(bid)
+  const el = getAdEl(bid)
+  if (!el) return {}
+  return el.getBoundingClientRect();
+}
 
 function getPlacementId(bid) {
   const groupId = getBidIdParameter('group_id', bid.params)
@@ -160,6 +197,23 @@ function getTopWindow(curWindow, nesting = 0) {
     }
   } catch (err) {
     return curWindow
+  }
+}
+
+function getSiteObj() {
+  const refInfo = (getRefererInfo && getRefererInfo()) || {}
+
+  return {
+    page: refInfo.page,
+    ref: refInfo.ref,
+    domain: refInfo.domain
+  }
+}
+
+function getDeviceObj() {
+  return {
+    w: window.innerWidth || window.document.documentElement.clientWidth || window.document.body.clientWidth || 0,
+    h: window.innerHeight || window.document.documentElement.clientHeight || window.document.body.clientHeight || 0,
   }
 }
 
