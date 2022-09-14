@@ -14,6 +14,7 @@ import { MinimalLiveConnect } from 'live-connect-js/esm/minimal-live-connect.js'
 
 const MODULE_NAME = 'liveIntentId';
 export const storage = getStorageManager({gvlid: null, moduleName: MODULE_NAME});
+const defaultRequestedAttributes = {'nonId': true}
 const calls = {
   ajaxGet: (url, onSuccess, onError, timeout) => {
     ajaxBuilder(timeout)(
@@ -57,6 +58,23 @@ function parseLiveIntentCollectorConfig(collectConfig) {
   return config;
 }
 
+/**
+ * Create requestedAttributes array to pass to liveconnect
+ * @function
+ * @param {Object} overrides - object with boolean values that will override defaults { 'foo': true, 'bar': false }
+ * @returns {Array}
+ */
+function parseExtraRequestedAttributes(overrides) {
+  function createParameterArray(config) {
+    return Object.entries(config).flatMap(([k, v]) => (typeof v === 'boolean' && v) ? [k] : []);
+  }
+  if (typeof overrides === 'object') {
+    return createParameterArray({...defaultRequestedAttributes, ...overrides})
+  } else {
+    return createParameterArray(defaultRequestedAttributes);
+  }
+}
+
 function initializeLiveConnect(configParams) {
   configParams = configParams || {};
   if (liveConnect) {
@@ -67,7 +85,7 @@ function initializeLiveConnect(configParams) {
   const identityResolutionConfig = {
     source: 'prebid',
     publisherId: publisherId,
-    requestedAttributes: [ 'nonId' ].concat(configParams.extraRequestedAttributes || [ ])
+    requestedAttributes: parseExtraRequestedAttributes(configParams.extraRequestedAttributes)
   };
   if (configParams.url) {
     identityResolutionConfig.url = configParams.url
@@ -137,11 +155,15 @@ export const liveIntentIdSubmodule = {
   decode(value, config) {
     const configParams = (config && config.params) || {};
     function composeIdObject(value) {
-      // old versions stored lipbid in unifiedId. Ensure that we can still read the data.
-      value.lipbid = value.nonId || value.unifiedId
-      delete value.unifiedId
+      const result = {};
 
-      const result = { 'lipb': value }
+      // old versions stored lipbid in unifiedId. Ensure that we can still read the data.
+      const lipbid = value.nonId || value.unifiedId
+      if (lipbid) {
+        value.lipbid = lipbid
+        delete value.unifiedId
+        result.lipb = value
+      }
 
       // Lift usage of uid2 by exposing uid2 if we were asked to resolve it.
       // As adapters are applied in lexicographical order, we will always
@@ -153,16 +175,12 @@ export const liveIntentIdSubmodule = {
       return result
     }
 
-    function isValid(value) {
-      return value && (typeof value['nonId'] === 'string' || typeof value['unifiedId'] === 'string')
-    }
-
     if (!liveConnect) {
       initializeLiveConnect(configParams);
     }
     tryFireEvent();
 
-    return isValid(value) ? composeIdObject(value) : undefined;
+    return composeIdObject(value);
   },
 
   /**

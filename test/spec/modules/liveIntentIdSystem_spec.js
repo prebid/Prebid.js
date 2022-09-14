@@ -111,7 +111,7 @@ describe('LiveIntentId', function() {
 
   it('should not return a decoded identifier when the unifiedId is not present in the value', function() {
     const result = liveIntentIdSubmodule.decode({ additionalData: 'data' });
-    expect(result).to.be.undefined;
+    expect(result).to.be.eql({});
   });
 
   it('should fire an event when decode', function() {
@@ -274,7 +274,7 @@ describe('LiveIntentId', function() {
     let callBackSpy = sinon.spy();
     let submoduleCallback = liveIntentIdSubmodule.getId({ params: {
       ...defaultConfigParams.params,
-      ...{ extraRequestedAttributes: ['foo'] }
+      ...{ extraRequestedAttributes: { 'foo': true, 'bar': false } }
     } }).callback;
     submoduleCallback(callBackSpy);
     let request = server.requests[1];
@@ -290,5 +290,27 @@ describe('LiveIntentId', function() {
   it('should decode a uid2 to a seperate object when present', function() {
     const result = liveIntentIdSubmodule.decode({ nonId: 'foo', uid2: 'bar' });
     expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'uid2': 'bar'}, 'uid2': {'id': 'bar'}});
+  });
+
+  it('should decode values with uid2 but no nonId', function() {
+    const result = liveIntentIdSubmodule.decode({ uid2: 'bar' });
+    expect(result).to.eql({'uid2': {'id': 'bar'}});
+  });
+
+  it('should allow disabling nonId resolution', function() {
+    let callBackSpy = sinon.spy();
+    let submoduleCallback = liveIntentIdSubmodule.getId({ params: {
+      ...defaultConfigParams.params,
+      ...{ extraRequestedAttributes: { 'nonId': false, 'uid2': true } }
+    } }).callback;
+    submoduleCallback(callBackSpy);
+    let request = server.requests[1];
+    expect(request.url).to.be.eq(`https://idx.liadm.com/idex/prebid/89899?resolve=uid2`);
+    request.respond(
+      200,
+      responseHeader,
+      JSON.stringify({})
+    );
+    expect(callBackSpy.calledOnce).to.be.true;
   });
 });
