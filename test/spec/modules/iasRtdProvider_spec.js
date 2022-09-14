@@ -73,6 +73,7 @@ describe('iasRtdProvider is a RTD provider that', function () {
       request = server.requests[0];
       request.respond(200, responseHeader, JSON.stringify(data));
       expect(request.url).to.be.include(`https://pixel.adsafeprotected.com/services/pub?anId=1234`);
+      expect(request.url).to.be.include('url=https%253A%252F%252Fintegralads.com%252Ftest')
       expect(adUnits).to.length(2);
       expect(adUnits[0]).to.be.eq(adUnitsOriginal[0]);
       const targetingKeys = Object.keys(iasTargeting);
@@ -137,7 +138,7 @@ const config = {
     keyMappings: {
       'id': 'ias_id'
     },
-    pageUrl: 'https://integralads.com/'
+    pageUrl: 'https://integralads.com/test'
   }
 };
 
