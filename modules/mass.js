@@ -78,7 +78,7 @@ export function updateRenderers() {
 /**
  * Before hook for 'addBidResponse'.
  */
-export const addBidResponseHook = timedBidResponseHook('mass', function addBidResponseHook(next, adUnitCode, bid, {index = auctionManager.index} = {}) {
+export const addBidResponseHook = timedBidResponseHook('mass', function addBidResponseHook(next, adUnitCode, bid, reject, {index = auctionManager.index} = {}) {
   let renderer;
   for (let i = 0; i < renderers.length; i++) {
     if (renderers[i].match(bid)) {
