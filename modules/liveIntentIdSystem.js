@@ -64,7 +64,7 @@ function parseLiveIntentCollectorConfig(collectConfig) {
  * @param {Object} overrides - object with boolean values that will override defaults { 'foo': true, 'bar': false }
  * @returns {Array}
  */
-function parseExtraRequestedAttributes(overrides) {
+function parseRequestedAttributes(overrides) {
   function createParameterArray(config) {
     return Object.entries(config).flatMap(([k, v]) => (typeof v === 'boolean' && v) ? [k] : []);
   }
@@ -85,7 +85,7 @@ function initializeLiveConnect(configParams) {
   const identityResolutionConfig = {
     source: 'prebid',
     publisherId: publisherId,
-    requestedAttributes: parseExtraRequestedAttributes(configParams.extraRequestedAttributes)
+    requestedAttributes: parseRequestedAttributes(configParams.requestedAttributesOverrides)
   };
   if (configParams.url) {
     identityResolutionConfig.url = configParams.url

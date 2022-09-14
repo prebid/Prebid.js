@@ -274,7 +274,7 @@ describe('LiveIntentId', function() {
     let callBackSpy = sinon.spy();
     let submoduleCallback = liveIntentIdSubmodule.getId({ params: {
       ...defaultConfigParams.params,
-      ...{ extraRequestedAttributes: { 'foo': true, 'bar': false } }
+      ...{ requestedAttributesOverrides: { 'foo': true, 'bar': false } }
     } }).callback;
     submoduleCallback(callBackSpy);
     let request = server.requests[1];
@@ -301,7 +301,7 @@ describe('LiveIntentId', function() {
     let callBackSpy = sinon.spy();
     let submoduleCallback = liveIntentIdSubmodule.getId({ params: {
       ...defaultConfigParams.params,
-      ...{ extraRequestedAttributes: { 'nonId': false, 'uid2': true } }
+      ...{ requestedAttributesOverrides: { 'nonId': false, 'uid2': true } }
     } }).callback;
     submoduleCallback(callBackSpy);
     let request = server.requests[1];
