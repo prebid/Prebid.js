@@ -154,7 +154,7 @@ export const liveIntentIdSubmodule = {
     }
 
     function isValid(value) {
-      return value && (typeof value['unifiedId'] === 'string' || typeof value['nonId'] === 'string')
+      return value && (typeof value['nonId'] === 'string' || typeof value['unifiedId'] === 'string')
     }
 
     if (!liveConnect) {
