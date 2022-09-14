@@ -26,10 +26,15 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: bid => {
     const params = bid.params || {};
-    const { ctok, placementId } = params;
+    const { ctok, placementId, priceType } = params;
     return typeof ctok === 'string' && (
       typeof placementId === 'string' ||
-      typeof placementId === 'undefined');
+      typeof placementId === 'undefined'
+    ) && (
+      typeof priceType === 'undefined' ||
+      priceType === 'gross' ||
+      priceType === 'net'
+    );
   },
   buildRequests: (validBidRequests, bidderRequest) => {
     topUsableWindow.carodaPageViewId = topUsableWindow.carodaPageViewId || Math.floor(Math.random() * 1e9);
