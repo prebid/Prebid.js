@@ -160,6 +160,16 @@ function getTargetingData(adUnits, config, userConsent) {
   return targeting;
 }
 
+function isValidHttpUrl(string) {
+  let url;
+  try {
+    url = new URL(string);
+  } catch (_) {
+    return false;
+  }
+  return url.protocol === 'http:' || url.protocol === 'https:';
+}
+
 export function getApiCallback() {
   return {
     success: function (response, req) {
@@ -180,8 +190,10 @@ export function getApiCallback() {
 function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
   const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
   const { pubId } = config.params;
-  let { pageUrl } = config.params
-  pageUrl = pageUrl || document.location.href
+  let { pageUrl } = config.params;
+  if (!isValidHttpUrl(pageUrl)) {
+    pageUrl = document.location.href;
+  }
   const queryString = constructQueryString(pubId, adUnits, pageUrl);
   ajax(
     `${IAS_HOST}?${queryString}`,
