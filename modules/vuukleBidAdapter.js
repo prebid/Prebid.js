@@ -18,6 +18,7 @@ export const spec = {
   },
 
   buildRequests: function(bidRequests, bidderRequest) {
+    bidderRequest = bidderRequest || {};
     const requests = bidRequests.map(function (bid) {
       const parseSized = parseSizesInput(bid.sizes);
       const arrSize = parseSized[0].split('x');
