@@ -1109,15 +1109,23 @@ function mapSizes(sizes) {
 
 /**
  * Test if bid has mediaType or mediaTypes set for video.
- * Also makes sure the video object is present in the rubicon bidder params
+ * Also checks if the video object is present in the rubicon bidder params
  * @param {BidRequest} bidRequest
  * @returns {boolean}
  */
 export function hasVideoMediaType(bidRequest) {
-  if (typeof deepAccess(bidRequest, 'params.video') !== 'object') {
-    return false;
+  let isVideo = typeof deepAccess(bidRequest, `mediaTypes.${VIDEO}`) !== 'undefined';
+  let isBanner = typeof deepAccess(bidRequest, `mediaTypes.${BANNER}`) !== 'undefined';
+  // If an ad has both video and banner types, a legacy implementation allows choosing video over banner
+  // based on whether or not there is a video object defined in the params
+  if (isVideo && isBanner) {
+    if (typeof deepAccess(bidRequest, 'params.video') !== 'object') {
+      isVideo = false;
+    } else {
+      isBanner = false;
+    }
   }
-  return (typeof deepAccess(bidRequest, `mediaTypes.${VIDEO}`) !== 'undefined');
+  return isVideo && !isBanner;
 }
 
 /**
