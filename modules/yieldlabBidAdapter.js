@@ -1,4 +1,4 @@
-import { _each, deepAccess, isArray, isPlainObject, timestamp } from '../src/utils.js'
+import { _each, deepAccess, isArray, isFn, isPlainObject, timestamp } from '../src/utils.js'
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { find } from '../src/polyfill.js'
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js'
@@ -74,6 +74,10 @@ export const spec = {
       const iabContent = getContentObject(bid)
       if (iabContent) {
         query.iab_content = createIabContentString(iabContent)
+      }
+      const floor = getBidFloor(bid, sizes)
+      if (floor) {
+        query.floor = floor;
       }
     })
 
@@ -177,7 +181,7 @@ export const spec = {
           bidResponse.adUrl = url
           bidResponse.mediaType = NATIVE
           const nativeImageAssetObj = find(matchedBid.native.assets, e => e.id === 2)
-          const nativeImageAsset = nativeImageAssetObj ? nativeImageAssetObj.img : {url: '', w: 0, h: 0};
+          const nativeImageAsset = nativeImageAssetObj ? nativeImageAssetObj.img : { url: '', w: 0, h: 0 };
           const nativeTitleAsset = find(matchedBid.native.assets, e => e.id === 1)
           const nativeBodyAsset = find(matchedBid.native.assets, e => e.id === 3)
           bidResponse.native = {
@@ -405,6 +409,7 @@ function outstreamRender(bid) {
     window.document.dispatchEvent(new Event('ma-start-event'))
   });
 }
+
 /**
  * Extract sizes for a given bid from either `mediaTypes` or `sizes` directly.
  *
@@ -426,7 +431,7 @@ function extractSizes(bid) {
         sizes.push([bannerType.sizes])
       }
     }
-  // The bid top level field `sizes` is deprecated and should not be used anymore. Keeping it for compatibility.
+    // The bid top level field `sizes` is deprecated and should not be used anymore. Keeping it for compatibility.
   } else if (isArray(bid.sizes)) {
     if (isArray(bid.sizes[0])) {
       sizes.push(bid.sizes)
@@ -439,6 +444,32 @@ function extractSizes(bid) {
   const deduplicatedSizeStrings = new Set(sizes.flat().map(([width, height]) => width + DIMENSION_SIGN + height))
 
   return Array.from(deduplicatedSizeStrings)
+}
+
+/**
+ * Gets the floor price if the Price Floors Module is enabled for a given auction,
+ * which will add the getFloor() function to the bidRequest object.
+ *
+ * @param {Object} bid
+ * @param {string[]} sizes
+ * @returns The floor CPM of a matched rule based on the rule selection process (mediaType, size and currency),
+ *          using the getFloor() inputs. Multi sizes and unsupported media types will default to '*'
+ */
+function getBidFloor(bid, sizes) {
+  if (!isFn(bid.getFloor)) {
+    return undefined;
+  }
+  const mediaTypes = deepAccess(bid, 'mediaTypes');
+  const mediaType = mediaTypes !== undefined ? Object.keys(mediaTypes)[0].toLowerCase() : undefined;
+  const floor = bid.getFloor({
+    currency: CURRENCY_CODE,
+    mediaType: mediaType !== undefined && spec.supportedMediaTypes.includes(mediaType) ? mediaType : '*',
+    size: sizes.length !== 1 ? '*' : extractSizes(sizes)
+  });
+  if (floor.currency === CURRENCY_CODE) {
+    return floor.floor;
+  }
+  return undefined;
 }
 
 registerBidder(spec)
