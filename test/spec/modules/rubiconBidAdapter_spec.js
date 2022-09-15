@@ -257,7 +257,7 @@ describe('the rubicon adapter', function () {
         context: 'instream'
       },
     };
-    bid.params = {};
+    bid.params.video = false;
   }
 
   function createVideoBidderRequestOutstream() {
@@ -2361,7 +2361,7 @@ describe('the rubicon adapter', function () {
         it('Should return false if both banner and video mediaTypes are set', function () {
           createVideoBidderRequestNoVideo();
           let bid = bidderRequest.bids[0]
-          bid.mediaTypes.banner = {}
+          bid.mediaTypes.banner = {flag: true}
           expect(classifiedAsVideo(bid)).to.equal(false);
         });
 
@@ -2369,7 +2369,7 @@ describe('the rubicon adapter', function () {
           createVideoBidderRequestNoVideo();
           let bid = bidderRequest.bids[0]
           expect(classifiedAsVideo(bid)).to.equal(true);
-          expect(bid.params.video).to.be.defined();
+          expect(bid.params.video).to.not.be.undefined;
         });
       });
     });

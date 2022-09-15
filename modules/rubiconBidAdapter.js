@@ -1116,10 +1116,11 @@ function mapSizes(sizes) {
 export function classifiedAsVideo(bidRequest) {
   let isVideo = typeof deepAccess(bidRequest, `mediaTypes.${VIDEO}`) !== 'undefined';
   let isBanner = typeof deepAccess(bidRequest, `mediaTypes.${BANNER}`) !== 'undefined';
-  let isMissingVideoParams = !(typeof deepAccess(bidRequest, 'params.video') !== 'object');
+  let isMissingVideoParams = typeof deepAccess(bidRequest, 'params.video') !== 'object';
   // If an ad has both video and banner types, a legacy implementation allows choosing video over banner
   // based on whether or not there is a video object defined in the params
   // Given this legacy implementation, other code depends on params.video being defined
+
   if (isBanner && isMissingVideoParams) {
     isVideo = false;
   }
