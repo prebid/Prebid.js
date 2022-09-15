@@ -3,6 +3,16 @@ import { logMessage, logError, parseUrl, buildUrl, _each } from './utils.js';
 
 const XHR_DONE = 4;
 
+
+/*
+ * Allow configuration of ajax timeout. Default set to 3000.
+ */
+var timeout = 3000;
+
+export function setAjaxTimeout(timeout) {
+  timeout = timeout;
+}
+
 /**
  * Simple IE9+ and cross-browser ajax request function
  * Note: x-domain requests in IE9 do not support the use of cookies
@@ -14,7 +24,7 @@ const XHR_DONE = 4;
  */
 export const ajax = ajaxBuilder();
 
-export function ajaxBuilder(timeout = 3000, {request, done} = {}) {
+export function ajaxBuilder(timeout, {request, done} = {}) {
   return function(url, callback, data, options = {}) {
     try {
       let x;
