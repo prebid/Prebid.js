@@ -1,4 +1,5 @@
 import {detectReferer, ensureProtocol, parseDomain} from 'src/refererDetection.js';
+import * as refererDetection from 'src/refererDetection.js';
 import {config} from 'src/config.js';
 import {expect} from 'chai';
 
@@ -132,6 +133,19 @@ describe('Referer detection', () => {
           ref: 'https://othersite.com/',
           domain: 'example.com'
         });
+      });
+
+      it('Should allow configuration for referer detection frequency', () => {
+        const spy = sinon.spy(refererDetection, 'resetRefererInfo');
+        config.getConfig('refDetectionFreq', (config) => {
+          if (config.refDetectionFreq === 'ongoing') {
+            sinon.assert.calledOnce(spy);
+          }
+        });
+
+        const testWindow = buildWindowTree(['https://example.com/some/page'], 'https://othersite.com/', 'https://example.com/canonical/page');
+        detectReferer(testWindow)();
+        config.setConfig({'refDetectionFreq': 'ongoing'});
       });
     });
 

@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { getRefererInfo } from 'src/refererDetection.js';
+import { getRefererInfo, resetRefererInfo } from 'src/refererDetection.js';
 import { processFpd, coreStorage } from 'modules/enrichmentFpdModule.js';
 
 describe('the first party data enrichment module', function() {
@@ -20,6 +20,7 @@ describe('the first party data enrichment module', function() {
   });
 
   beforeEach(function() {
+    resetRefererInfo();
     querySelectorStub = sinon.stub(window.top.document, 'querySelector');
     querySelectorStub.withArgs("link[rel='canonical']").returns(canonical);
     querySelectorStub.withArgs("meta[name='keywords']").returns(keywords);

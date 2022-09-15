@@ -11,6 +11,15 @@
 import { config } from './config.js';
 import {logWarn} from './utils.js';
 
+let RI = new WeakMap();
+let ongoing = false;
+config.getConfig('refDetectionFreq', (config) => {
+  if (config.refDetectionFreq === 'ongoing') {
+    ongoing = true;
+    resetRefererInfo();
+  }
+});
+
 /**
  * Prepend a URL with the page's protocol (http/https), if necessary.
  */
@@ -117,139 +126,148 @@ export function detectReferer(win) {
    * @returns {refererInfo}
    */
   function refererInfo() {
-    const stack = [];
-    const ancestors = getAncestorOrigins(win);
-    const maxNestedIframes = config.getConfig('maxNestedIframes');
-    let currentWindow;
-    let bestLocation;
-    let bestCanonicalUrl;
-    let reachedTop = false;
-    let level = 0;
-    let valuesFromAmp = false;
-    let inAmpFrame = false;
-    let hasTopLocation = false;
+    let refObj;
+    if (ongoing || !RI.has(win)) {
+      const stack = [];
+      const ancestors = getAncestorOrigins(win);
+      const maxNestedIframes = config.getConfig('maxNestedIframes');
+      let currentWindow;
+      let bestLocation;
+      let bestCanonicalUrl;
+      let reachedTop = false;
+      let level = 0;
+      let valuesFromAmp = false;
+      let inAmpFrame = false;
+      let hasTopLocation = false;
 
-    do {
-      const previousWindow = currentWindow;
-      const wasInAmpFrame = inAmpFrame;
-      let currentLocation;
-      let crossOrigin = false;
-      let foundLocation = null;
+      do {
+        const previousWindow = currentWindow;
+        const wasInAmpFrame = inAmpFrame;
+        let currentLocation;
+        let crossOrigin = false;
+        let foundLocation = null;
 
-      inAmpFrame = false;
-      currentWindow = currentWindow ? currentWindow.parent : win;
+        inAmpFrame = false;
+        currentWindow = currentWindow ? currentWindow.parent : win;
 
-      try {
-        currentLocation = currentWindow.location.href || null;
-      } catch (e) {
-        crossOrigin = true;
-      }
+        try {
+          currentLocation = currentWindow.location.href || null;
+        } catch (e) {
+          crossOrigin = true;
+        }
 
-      if (crossOrigin) {
-        if (wasInAmpFrame) {
-          const context = previousWindow.context;
+        if (crossOrigin) {
+          if (wasInAmpFrame) {
+            const context = previousWindow.context;
 
-          try {
-            foundLocation = context.sourceUrl;
-            bestLocation = foundLocation;
-            hasTopLocation = true;
+            try {
+              foundLocation = context.sourceUrl;
+              bestLocation = foundLocation;
+              hasTopLocation = true;
 
-            valuesFromAmp = true;
-
-            if (currentWindow === win.top) {
-              reachedTop = true;
-            }
-
-            if (context.canonicalUrl) {
-              bestCanonicalUrl = context.canonicalUrl;
-            }
-          } catch (e) { /* Do nothing */ }
-        } else {
-          logWarn('Trying to access cross domain iframe. Continuing without referrer and location');
-
-          try {
-            // the referrer to an iframe is the parent window
-            const referrer = previousWindow.document.referrer;
-
-            if (referrer) {
-              foundLocation = referrer;
+              valuesFromAmp = true;
 
               if (currentWindow === win.top) {
                 reachedTop = true;
               }
-            }
-          } catch (e) { /* Do nothing */ }
 
-          if (!foundLocation && ancestors && ancestors[level - 1]) {
-            foundLocation = ancestors[level - 1];
-            if (currentWindow === win.top) {
-              hasTopLocation = true;
+              if (context.canonicalUrl) {
+                bestCanonicalUrl = context.canonicalUrl;
+              }
+            } catch (e) { /* Do nothing */ }
+          } else {
+            logWarn('Trying to access cross domain iframe. Continuing without referrer and location');
+
+            try {
+              // the referrer to an iframe is the parent window
+              const referrer = previousWindow.document.referrer;
+
+              if (referrer) {
+                foundLocation = referrer;
+
+                if (currentWindow === win.top) {
+                  reachedTop = true;
+                }
+              }
+            } catch (e) { /* Do nothing */ }
+
+            if (!foundLocation && ancestors && ancestors[level - 1]) {
+              foundLocation = ancestors[level - 1];
+              if (currentWindow === win.top) {
+                hasTopLocation = true;
+              }
+            }
+
+            if (foundLocation && !valuesFromAmp) {
+              bestLocation = foundLocation;
             }
           }
-
-          if (foundLocation && !valuesFromAmp) {
+        } else {
+          if (currentLocation) {
+            foundLocation = currentLocation;
             bestLocation = foundLocation;
-          }
-        }
-      } else {
-        if (currentLocation) {
-          foundLocation = currentLocation;
-          bestLocation = foundLocation;
-          valuesFromAmp = false;
+            valuesFromAmp = false;
 
-          if (currentWindow === win.top) {
-            reachedTop = true;
+            if (currentWindow === win.top) {
+              reachedTop = true;
 
-            const canonicalUrl = getCanonicalUrl(currentWindow.document);
+              const canonicalUrl = getCanonicalUrl(currentWindow.document);
 
-            if (canonicalUrl) {
-              bestCanonicalUrl = canonicalUrl;
+              if (canonicalUrl) {
+                bestCanonicalUrl = canonicalUrl;
+              }
             }
           }
+
+          if (currentWindow.context && currentWindow.context.sourceUrl) {
+            inAmpFrame = true;
+          }
         }
 
-        if (currentWindow.context && currentWindow.context.sourceUrl) {
-          inAmpFrame = true;
-        }
-      }
+        stack.push(foundLocation);
+        level++;
+      } while (currentWindow !== win.top && level < maxNestedIframes);
 
-      stack.push(foundLocation);
-      level++;
-    } while (currentWindow !== win.top && level < maxNestedIframes);
+      stack.reverse();
 
-    stack.reverse();
+      let ref;
+      try {
+        ref = win.top.document.referrer;
+      } catch (e) {}
 
-    let ref;
-    try {
-      ref = win.top.document.referrer;
-    } catch (e) {}
+      const location = reachedTop || hasTopLocation ? bestLocation : null;
+      const canonicalUrl = config.getConfig('pageUrl') || bestCanonicalUrl || null;
+      const page = ensureProtocol(canonicalUrl, win) || location;
 
-    const location = reachedTop || hasTopLocation ? bestLocation : null;
-    const canonicalUrl = config.getConfig('pageUrl') || bestCanonicalUrl || null;
-    const page = ensureProtocol(canonicalUrl, win) || location;
-
-    return {
-      reachedTop,
-      isAmp: valuesFromAmp,
-      numIframes: level - 1,
-      stack,
-      topmostLocation: bestLocation || null,
-      location,
-      canonicalUrl,
-      page,
-      domain: parseDomain(page) || null,
-      ref: ref || null,
-      // TODO: the "legacy" refererInfo object is provided here, for now, to accomodate
-      // adapters that decided to just send it verbatim to their backend.
-      legacy: {
+      refObj = {
         reachedTop,
         isAmp: valuesFromAmp,
         numIframes: level - 1,
         stack,
-        referer: bestLocation || null,
-        canonicalUrl
-      }
-    };
+        topmostLocation: bestLocation || null,
+        location,
+        canonicalUrl,
+        page,
+        domain: parseDomain(page) || null,
+        ref: ref || null,
+        // TODO: the "legacy" refererInfo object is provided here, for now, to accomodate
+        // adapters that decided to just send it verbatim to their backend.
+        legacy: {
+          reachedTop,
+          isAmp: valuesFromAmp,
+          numIframes: level - 1,
+          stack,
+          referer: bestLocation || null,
+          canonicalUrl
+        }
+      };
+
+      if (!ongoing) {
+        RI.set(win, Object.freeze(refObj))
+      };
+    }
+
+    return !ongoing ? RI.get(win) : refObj;
   }
 
   return refererInfo;
@@ -259,3 +277,7 @@ export function detectReferer(win) {
  * @type {function(): refererInfo}
  */
 export const getRefererInfo = detectReferer(window);
+
+export function resetRefererInfo() {
+  RI = new WeakMap();
+};
