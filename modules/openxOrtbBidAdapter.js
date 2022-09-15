@@ -275,7 +275,7 @@ function interpretOrtbResponse(resp, req) {
   }
 
   const respBody = resp.body;
-  if (!respBody || 'nbr' in respBody) {
+  if (!respBody || 'nbr' in respBody || !Array.isArray(respBody.seatbid)) {
     return [];
   }
 
