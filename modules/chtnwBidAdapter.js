@@ -28,51 +28,45 @@ export const spec = {
   },
   buildRequests: function(validBidRequests = [], bidderRequest = {}) {
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
-    try {
-      const chtnwId = (storage.getCookie(COOKIE_NAME) != undefined) ? storage.getCookie(COOKIE_NAME) : generateUUID();
-      if (storage.cookiesAreEnabled()) {
-        storage.setCookie(COOKIE_NAME, chtnwId);
-      }
-      const device = getConfig('device') || {};
-      device.w = device.w || window.innerWidth;
-      device.h = device.h || window.innerHeight;
-      device.ua = device.ua || navigator.userAgent;
-      device.dnt = getDNT() ? 1 : 0;
-      device.language = (navigator && navigator.language) ? navigator.language.split('-')[0] : '';
-      const bidParams = [];
-      _each(validBidRequests, function(bid) {
-        bidParams.push({
-          bidId: bid.bidId,
-          placement: bid.params.placementId,
-          sizes: bid.sizes,
-          adSlot: bid.adUnitCode
-        });
-      });
-      return {
-        method: 'POST',
-        url: ENDPOINT_URL + '/request/prebid.json',
-        data: {
-          bids: bidParams,
-          uuid: chtnwId,
-          device: device,
-          version: {
-            prebid: '$prebid.version$',
-            adapter: '1.0.0',
-          },
-          site: {
-            numIframes: bidderRequest.numIframes,
-            isAmp: bidderRequest.isAmp,
-            pageUrl: bidderRequest.page,
-            referrer: window.location.referrer,
-          },
-        },
-        options: {
-          contentType: 'application/json'
-        },
-        bids: validBidRequests
-      };
-    } catch (error) {
+    const chtnwId = (storage.getCookie(COOKIE_NAME) != undefined) ? storage.getCookie(COOKIE_NAME) : generateUUID();
+    if (storage.cookiesAreEnabled()) {
+      storage.setCookie(COOKIE_NAME, chtnwId);
     }
+    const device = getConfig('device') || {};
+    device.w = device.w || window.innerWidth;
+    device.h = device.h || window.innerHeight;
+    device.ua = device.ua || navigator.userAgent;
+    device.dnt = getDNT() ? 1 : 0;
+    device.language = (navigator && navigator.language) ? navigator.language.split('-')[0] : '';
+    const bidParams = [];
+    _each(validBidRequests, function(bid) {
+      bidParams.push({
+        bidId: bid.bidId,
+        placement: bid.params.placementId,
+        sizes: bid.sizes,
+        adSlot: bid.adUnitCode
+      });
+    });
+    return {
+      method: 'POST',
+      url: ENDPOINT_URL + '/request/prebid.json',
+      data: {
+        bids: bidParams,
+        uuid: chtnwId,
+        device: device,
+        version: {
+          prebid: '$prebid.version$',
+          adapter: '1.0.0',
+        },
+        site: {
+          numIframes: bidderRequest.refererInfo?.numIframes || 0,
+          isAmp: bidderRequest.refererInfo?.isAmp || false,
+          pageUrl: bidderRequest.refererInfo?.page || '',
+          ref: bidderRequest.refererInfo?.ref || '',
+        },
+      },
+      bids: validBidRequests
+    };
   },
   interpretResponse: function(serverResponse) {
     const bidResponses = []

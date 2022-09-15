@@ -48,6 +48,10 @@ describe('ChtnwAdapter', function () {
     it('Returns general data valid', function () {
       let data = request.data;
       expect(data).to.be.an('object');
+      expect(data).to.have.property('bids');
+      expect(data).to.have.property('uuid');
+      expect(data).to.have.property('device');
+      expect(data).to.have.property('site');
     });
   });
 
