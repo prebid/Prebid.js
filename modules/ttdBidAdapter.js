@@ -1,6 +1,5 @@
 import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
-import { createEidsArray } from './userId/eids.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
@@ -106,6 +105,13 @@ function getConnectionType() {
   }
 }
 
+function getUserIds(bidderRequest) {
+  let eids = utils.deepAccess(bidderRequest, 'bids.0.userIdAsEids');
+  if (utils.isArray(eids)) {
+    return eids;
+  }
+}
+
 function getUser(bidderRequest) {
   let user = {};
   if (bidderRequest.gdprConsent) {
@@ -116,8 +122,8 @@ function getUser(bidderRequest) {
     user.buyeruid = bidderRequest.bids[0].userId.tdid;
   }
 
-  var eids = createEidsArray(utils.deepAccess(bidderRequest, 'bids.0.userId'))
-  if (eids.length) {
+  let eids = getUserIds(bidderRequest);
+  if (eids) {
     utils.deepSetValue(user, 'ext.eids', eids);
   }
 
