@@ -1028,6 +1028,37 @@ function isNonEmptyArray(test) {
   return false;
 }
 
+/**
+ * Prepare meta object to pass as params
+ * @param {*} br : bidResponse
+ * @param {*} bid : bids
+ */
+function prepareMetaObject(br, bid) {
+  br.meta = {};
+  if (bid.ext) {
+    if (bid.ext.dspid) br.meta.networkId = bid.ext.dspid;
+    if (bid.ext.advid) br.meta.buyerId = bid.ext.advid;
+
+    // New fields added, assignee fields name may change
+    if (bid.ext.advertiserId) br.meta.advertiserId = bid.ext.advertiserId;
+    if (bid.ext.networkName) br.meta.networkName = bid.ext.networkName;
+    if (bid.ext.primaryCatId) br.meta.primaryCatId = bid.ext.primaryCatId;
+    if (bid.ext.advertiserName) br.meta.advertiserName = bid.ext.advertiserName;
+    if (bid.ext.agencyId) br.meta.agencyId = bid.ext.agencyId;
+    if (bid.ext.agencyName) br.meta.agencyName = bid.ext.agencyName;
+    if (bid.ext.brandId) br.meta.brandId = bid.ext.brandId;
+    if (bid.ext.brandName) br.meta.brandName = bid.ext.brandName;
+    if (bid.ext.dchain) br.meta.dchain = bid.ext.dchain;
+    if (bid.ext.demandSource) br.meta.demandSource = bid.ext.demandSource;
+    if (bid.ext.secondaryCatIds) br.meta.secondaryCatIds = bid.ext.secondaryCatIds;
+  }
+  if (bid.adomain && bid.adomain.length > 0) {
+    br.meta.advertiserDomains = bid.adomain;
+    br.meta.clickUrl = bid.adomain[0];
+  }
+}
+
+
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 76,
@@ -1353,18 +1384,7 @@ export const spec = {
                   if (br.dealId && bid.ext && bid.ext.deal_channel) {
                     br['dealChannel'] = dealChannelValues[bid.ext.deal_channel] || null;
                   }
-                  br.meta = {};
-                  if (bid.ext && bid.ext.dspid) {
-                    br.meta.networkId = bid.ext.dspid;
-                  }
-                  if (bid.ext && bid.ext.advid) {
-                    br.meta.buyerId = bid.ext.advid;
-                  }
-                  if (bid.adomain && bid.adomain.length > 0) {
-                    br.meta.advertiserDomains = bid.adomain;
-                    br.meta.clickUrl = bid.adomain[0];
-                  }
-
+                  prepareMetaObject(br, bid);
                   // adserverTargeting
                   if (seatbidder.ext && seatbidder.ext.buyid) {
                     br.adserverTargeting = {
