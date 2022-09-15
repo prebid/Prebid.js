@@ -523,6 +523,7 @@ Object.assign(ORTB2.prototype, {
     let aliases = {};
     const firstBidRequest = bidRequests[0];
     let floorMin = null;
+    let floorMinCur = null;
 
     // transform ad unit into array of OpenRTB impression objects
     let impIds = new Set();
@@ -736,6 +737,7 @@ Object.assign(ORTB2.prototype, {
 
         deepSetValue(imp, 'ext.prebid.floors.floorMin', lowestImpFloorMin);
         if (floorMin == null || floorMin > lowestImpFloorMin) { floorMin = lowestImpFloorMin }
+        if (floorMinCur == null) { floorMinCur = imp.bidfloorcur }
       }
 
       if (imp.banner || imp.video || imp.native) {
@@ -913,6 +915,7 @@ Object.assign(ORTB2.prototype, {
 
     if (request.ext?.prebid?.floors?.enabled) {
       request.ext.prebid.floors.floorMin = floorMin;
+      request.ext.prebid.floors.floorMinCur = floorMinCur;
     }
 
     return request;
