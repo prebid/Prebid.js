@@ -33,6 +33,7 @@ describe('E-Planning Adapter', function () {
   const TEST_ISV = 'leles.e-planning.net';
   const ADOMAIN = 'adomain.com';
   const ADM_VAST = "<VAST version=\"2.0\">\n<Ad id=\"602833\">\n<Wrapper>\n<AdSystem>Acudeo Compatible</AdSystem>\n<VASTAdTagURI>\nhttp://demo.tremormedia.com/proddev/vast/vast_inline_linear.xml\n</VASTAdTagURI>\n<Impression><![CDATA[https://cndigrazia34.devel.e-planning.net:444/eli/4/19911d/6584303d5d0da8bc?i=0123456789012345&fi=0123456789abcdef&pb=<% EXCHANGE_EPBID_49 %>&nfc=1&S=<% SERVER_ID %>&rnd=733663791&bk=0123456789abcdef]]></Impression><Impression>http://myTrackingURL/wrapper/impression</Impression>\n<Creatives>\n<Creative AdID=\"602833\">\n<Linear>\n<TrackingEvents></TrackingEvents>\n</Linear>\n</Creative>\n<Creative AdID=\"602833-Companion\">\n<CompanionAds>\n<Companion width=\"300\" height=\"250\">\n<StaticResource creativeType=\"image/jpeg\">\nhttp://demo.tremormedia.com/proddev/vast/300x250_banner1.jpg\n</StaticResource>\n<TrackingEvents>\n<Tracking event=\"creativeView\">\nhttp://myTrackingURL/wrapper/firstCompanionCreativeView\n</Tracking>\n</TrackingEvents>\n<CompanionClickThrough>http://www.tremormedia.com</CompanionClickThrough>\n</Companion>\n<Companion width=\"728\" height=\"90\">\n<StaticResource creativeType=\"image/jpeg\">\nhttp://demo.tremormedia.com/proddev/vast/728x90_banner1.jpg\n</StaticResource>\n<CompanionClickThrough>http://www.tremormedia.com</CompanionClickThrough>\n</Companion>\n</CompanionAds>\n</Creative>\n</Creatives>\n</Wrapper>\n</Ad>\n</VAST>\n";
+  const ADM_VAST_VV_1 = "<VideoAdServingTemplate xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:noNamespaceSchemaLocation=\"vast_loose.xsd\">test</VideoAdServingTemplate>";
   const DEFAULT_SIZE_VAST = '640x480';
   const validBid = {
     'bidder': 'eplanning',
@@ -326,6 +327,39 @@ describe('E-Planning Adapter', function () {
       ]
     }
   };
+
+  const responseVastVV1 = {
+    body: {
+      'sI': {
+        'k': '12345'
+      },
+      'sec': {
+        'k': 'ROS'
+      },
+      'sp': [{
+        'k': CLEAN_ADUNIT_CODE_VAST,
+        'a': [{
+          'adm': ADM_VAST_VV_1,
+          'id': '7854abc56248f874',
+          'i': I_ID,
+          'fi': '7854abc56248f872',
+          'ip': '45621afd87462104',
+          'w': W,
+          'h': H,
+          'crid': CRID,
+          'pr': CPM
+        }],
+      }],
+      'cs': [
+        'http://a-sync-url.com/',
+        {
+          'u': 'http://another-sync-url.com/test.php?&partner=123456&endpoint=us-east',
+          'ifr': true
+        }
+      ]
+    }
+  };
+
   const responseWithTwoAdunits = {
     body: {
       'sI': {
@@ -809,6 +843,7 @@ describe('E-Planning Adapter', function () {
       };
       expect(bidResponse).to.deep.equal(expectedResponse);
     });
+
     it('should correctly map the parameters in the response vast', function () {
       const bidResponse = spec.interpretResponse(responseVast, { adUnitToBidId: { [CLEAN_ADUNIT_CODE_VAST]: BID_ID } })[0];
       const expectedResponse = {
@@ -821,6 +856,23 @@ describe('E-Planning Adapter', function () {
         netRevenue: true,
         currency: 'USD',
         vastXml: ADM_VAST,
+        mediaTypes: VIDEO
+      };
+      expect(bidResponse).to.deep.equal(expectedResponse);
+    });
+
+    it('should correctly map the parameters in the response vast vv 1', function () {
+      const bidResponse = spec.interpretResponse(responseVastVV1, { adUnitToBidId: { [CLEAN_ADUNIT_CODE_VAST]: BID_ID } })[0];
+      const expectedResponse = {
+        requestId: BID_ID,
+        cpm: CPM,
+        width: W,
+        height: H,
+        ttl: 120,
+        creativeId: CRID,
+        netRevenue: true,
+        currency: 'USD',
+        vastXml: ADM_VAST_VV_1,
         mediaTypes: VIDEO
       };
       expect(bidResponse).to.deep.equal(expectedResponse);
