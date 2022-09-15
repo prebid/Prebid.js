@@ -7,6 +7,7 @@ import * as utils from 'src/utils.js';
 import {hook} from '../../../src/hook.js';
 import {getGlobal} from '../../../src/prebidGlobal.js';
 import { makeSlot } from '../integration/faker/googletag.js';
+import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
 
 describe('E-Planning Adapter', function () {
   const adapter = newBidder('spec');
@@ -19,6 +20,7 @@ describe('E-Planning Adapter', function () {
   const CLEAN_ADUNIT_CODE2 = '300x250_1';
   const CLEAN_ADUNIT_CODE = '300x250_0';
   const CLEAN_ADUNIT_CODE_ML = 'adunitco_de';
+  const CLEAN_ADUNIT_CODE_VAST = 'VIDEO_300x250_0';
   const BID_ID = '123456789';
   const BID_ID2 = '987654321';
   const BID_ID3 = '998877665';
@@ -30,6 +32,8 @@ describe('E-Planning Adapter', function () {
   const CRID = '1234567890';
   const TEST_ISV = 'leles.e-planning.net';
   const ADOMAIN = 'adomain.com';
+  const ADM_VAST = "<VAST version=\"2.0\">\n<Ad id=\"602833\">\n<Wrapper>\n<AdSystem>Acudeo Compatible</AdSystem>\n<VASTAdTagURI>\nhttp://demo.tremormedia.com/proddev/vast/vast_inline_linear.xml\n</VASTAdTagURI>\n<Impression><![CDATA[https://cndigrazia34.devel.e-planning.net:444/eli/4/19911d/6584303d5d0da8bc?i=0123456789012345&fi=0123456789abcdef&pb=<% EXCHANGE_EPBID_49 %>&nfc=1&S=<% SERVER_ID %>&rnd=733663791&bk=0123456789abcdef]]></Impression><Impression>http://myTrackingURL/wrapper/impression</Impression>\n<Creatives>\n<Creative AdID=\"602833\">\n<Linear>\n<TrackingEvents></TrackingEvents>\n</Linear>\n</Creative>\n<Creative AdID=\"602833-Companion\">\n<CompanionAds>\n<Companion width=\"300\" height=\"250\">\n<StaticResource creativeType=\"image/jpeg\">\nhttp://demo.tremormedia.com/proddev/vast/300x250_banner1.jpg\n</StaticResource>\n<TrackingEvents>\n<Tracking event=\"creativeView\">\nhttp://myTrackingURL/wrapper/firstCompanionCreativeView\n</Tracking>\n</TrackingEvents>\n<CompanionClickThrough>http://www.tremormedia.com</CompanionClickThrough>\n</Companion>\n<Companion width=\"728\" height=\"90\">\n<StaticResource creativeType=\"image/jpeg\">\nhttp://demo.tremormedia.com/proddev/vast/728x90_banner1.jpg\n</StaticResource>\n<CompanionClickThrough>http://www.tremormedia.com</CompanionClickThrough>\n</Companion>\n</CompanionAds>\n</Creative>\n</Creatives>\n</Wrapper>\n</Ad>\n</VAST>\n";
+  const DEFAULT_SIZE_VAST = '640x480';
   const validBid = {
     'bidder': 'eplanning',
     'bidId': BID_ID,
@@ -69,6 +73,112 @@ describe('E-Planning Adapter', function () {
     },
     'sizes': [[300, 250], [300, 600]],
   };
+  const validBidSpaceOutstream= {
+    'bidder': 'eplanning',
+    'bidId': BID_ID,
+    'params': {
+      'ci': CI,
+      'sn': SN,
+    },
+    'mediaTypes': {
+      'video': {
+        'context': 'outstream',
+        'playerSize': [300, 600],
+        'mimes': ['video/mp4'],
+        'protocols': [1, 2, 3, 4, 5, 6],
+        'playbackmethod': [2],
+        'skip': 1
+      }
+    },
+  };
+  const validBidOutstreamNoSize= {
+    'bidder': 'eplanning',
+    'bidId': BID_ID,
+    'params': {
+      'ci': CI,
+      'sn': SN,
+    },
+    'mediaTypes': {
+      'video': {
+        'context': 'outstream',
+        'mimes': ['video/mp4'],
+        'protocols': [1, 2, 3, 4, 5, 6],
+        'playbackmethod': [2],
+        'skip': 1
+      }
+    },
+  };
+  const validBidOutstreamNSizes= {
+    'bidder': 'eplanning',
+    'bidId': BID_ID,
+    'params': {
+      'ci': CI,
+      'sn': SN,
+    },
+    'mediaTypes': {
+      'video': {
+        'context': 'outstream',
+        'playerSize': [[300, 600], [400, 500], [500, 500]],
+        'mimes': ['video/mp4'],
+        'protocols': [1, 2, 3, 4, 5, 6],
+        'playbackmethod': [2],
+        'skip': 1
+      }
+    },
+  };
+
+  const bidOutstreamInvalidSizes= {
+    'bidder': 'eplanning',
+    'bidId': BID_ID,
+    'params': {
+      'ci': CI,
+      'sn': SN,
+    },
+    'mediaTypes': {
+      'video': {
+        'context': 'outstream',
+        'playerSize': 'invalidSize',
+        'mimes': ['video/mp4'],
+        'protocols': [1, 2, 3, 4, 5, 6],
+        'playbackmethod': [2],
+        'skip': 1
+      }
+    },
+  };
+  const validBidSpaceInstream= {
+    'bidder': 'eplanning',
+    'bidId': BID_ID,
+    'params': {
+      'ci': CI,
+      'sn': SN,
+    },
+    'mediaTypes': {
+      'video': {
+        'context': 'instream',
+        'mimes': ['video/mp4'],
+        'protocols': [1, 2, 3, 4, 5, 6],
+        'playbackmethod': [2],
+        'skip': 1
+      }
+    },
+  };
+  const validBidSpaceVastNoContext= {
+    'bidder': 'eplanning',
+    'bidId': BID_ID,
+    'params': {
+      'ci': CI,
+      'sn': SN,
+    },
+    'mediaTypes': {
+      'video': {
+        'mimes': ['video/mp4'],
+        'protocols': [1, 2, 3, 4, 5, 6],
+        'playbackmethod': [2],
+        'skip': 1
+      }
+    },
+  };
+  
   const validBidView = {
     'bidder': 'eplanning',
     'bidId': BID_ID,
@@ -145,6 +255,14 @@ describe('E-Planning Adapter', function () {
       }
     }
   };
+  const validBidNoSize = {
+    'bidder': 'eplanning',
+    'bidId': BID_ID,
+    'params': {
+      'ci': CI,
+      'sn': SN,
+    }
+  };
   const response = {
     body: {
       'sI': {
@@ -157,6 +275,38 @@ describe('E-Planning Adapter', function () {
         'k': CLEAN_ADUNIT_CODE,
         'a': [{
           'adm': ADM,
+          'id': '7854abc56248f874',
+          'i': I_ID,
+          'fi': '7854abc56248f872',
+          'ip': '45621afd87462104',
+          'w': W,
+          'h': H,
+          'crid': CRID,
+          'pr': CPM
+        }],
+      }],
+      'cs': [
+        'http://a-sync-url.com/',
+        {
+          'u': 'http://another-sync-url.com/test.php?&partner=123456&endpoint=us-east',
+          'ifr': true
+        }
+      ]
+    }
+  };
+
+  const responseVast = {
+    body: {
+      'sI': {
+        'k': '12345'
+      },
+      'sec': {
+        'k': 'ROS'
+      },
+      'sp': [{
+        'k': CLEAN_ADUNIT_CODE_VAST,
+        'a': [{
+          'adm': ADM_VAST,
           'id': '7854abc56248f874',
           'i': I_ID,
           'fi': '7854abc56248f872',
@@ -411,6 +561,76 @@ describe('E-Planning Adapter', function () {
       expect(e).to.equal('300x250_0:300x250,300x600+100x100_0:100x100');
     });
 
+    it('should return correct e parameter with support vast with one space with size outstream', function () {
+      let bidRequests = [validBidSpaceOutstream];
+      const data = spec.buildRequests(bidRequests, bidderRequest).data;
+      expect(data.e).to.equal('video_300x600_0:300x600;1');
+      expect(data.vctx).to.equal(2);
+      expect(data.vv).to.equal(3);
+    });
+
+    it('should correctly return the e parameter with n sizes in playerSize', function () {
+      let bidRequests = [validBidOutstreamNSizes];
+      const data = spec.buildRequests(bidRequests, bidderRequest).data;
+      expect(data.e).to.equal('video_300x600_0:300x600;1');
+      expect(data.vctx).to.equal(2);
+      expect(data.vv).to.equal(3);
+    });
+
+    it('should correctly return the e parameter with invalid sizes in playerSize', function () {
+      let bidRequests = [bidOutstreamInvalidSizes];
+      const data = spec.buildRequests(bidRequests, bidderRequest).data;
+      expect(data.e).to.equal('video_' + DEFAULT_SIZE_VAST + '_0:' + DEFAULT_SIZE_VAST + ';1');
+      expect(data.vctx).to.equal(2);
+      expect(data.vv).to.equal(3);
+    });
+
+    it('should return correct e parameter with support vast with one space with size default outstream', function () {
+      let bidRequests = [validBidOutstreamNoSize];
+      const data = spec.buildRequests(bidRequests, bidderRequest).data;
+      expect(data.e).to.equal('video_640x480_0:640x480;1');
+      expect(data.vctx).to.equal(2);
+      expect(data.vv).to.equal(3);
+    });
+
+    it('should return correct e parameter with support vast with one space with size instream', function () {
+      let bidRequests = [validBidSpaceInstream];
+      const data = spec.buildRequests(bidRequests, bidderRequest).data;
+      expect(data.e).to.equal('video_640x480_0:640x480;1');
+      expect(data.vctx).to.equal(1);
+      expect(data.vv).to.equal(3);
+    });
+
+    it('should return correct e parameter with support vast with one space with size default and vctx default', function () {
+      let bidRequests = [validBidSpaceVastNoContext];
+      const data = spec.buildRequests(bidRequests, bidderRequest).data;
+      expect(data.e).to.equal('video_640x480_0:640x480;1');
+      expect(data.vctx).to.equal(1);
+      expect(data.vv).to.equal(3);
+    });
+
+    it('if 2 bids arrive, one outstream and the other instream, instream has more priority', function () {
+      let bidRequests = [validBidSpaceOutstream, validBidSpaceInstream];
+      const data = spec.buildRequests(bidRequests, bidderRequest).data;
+      expect(data.e).to.equal('video_640x480_0:640x480;1');
+      expect(data.vctx).to.equal(1);
+      expect(data.vv).to.equal(3);
+    });
+    it('if 2 bids arrive, one outstream and another banner, outstream has more priority', function () {
+      let bidRequests = [validBidSpaceOutstream, validBidSpaceName];
+      const data = spec.buildRequests(bidRequests, bidderRequest).data;
+      expect(data.e).to.equal('video_300x600_0:300x600;1');
+      expect(data.vctx).to.equal(2);
+      expect(data.vv).to.equal(3);
+    });
+    it('should return correct e parameter with support vast with one space outstream', function () {
+      let bidRequests = [validBidSpaceOutstream, validBidOutstreamNoSize];
+      const data = spec.buildRequests(bidRequests, bidderRequest).data;
+      expect(data.e).to.equal('video_300x600_0:300x600;1+video_640x480_1:640x480;1');
+      expect(data.vctx).to.equal(2);
+      expect(data.vv).to.equal(3);
+    });
+
     it('should return correct e parameter with linear mapping attribute with more than one adunit', function () {
       let bidRequestsML = [validBidMappingLinear];
       const NEW_CODE = ADUNIT_CODE + '2';
@@ -541,6 +761,7 @@ describe('E-Planning Adapter', function () {
       const e = spec.buildRequests(bidRequestsPrioritySizes2, bidderRequest).data.e;
       expect(e).to.equal('970x250_0:970x250,300x70,160x600');
     });
+
   });
 
   describe('interpretResponse', function () {
@@ -561,11 +782,11 @@ describe('E-Planning Adapter', function () {
         cpm: CPM,
         width: W,
         height: H,
-        ad: ADM,
         ttl: 120,
         creativeId: CRID,
         netRevenue: true,
         currency: 'USD',
+        ad: ADM,
       };
       expect(bidResponse).to.deep.equal(expectedResponse);
     });
@@ -577,14 +798,30 @@ describe('E-Planning Adapter', function () {
         cpm: CPM,
         width: W,
         height: H,
-        ad: ADM,
         ttl: 120,
         creativeId: CRID,
         netRevenue: true,
         currency: 'USD',
         meta: {
           advertiserDomains: ADOMAIN
-        }
+        },
+        ad: ADM
+      };
+      expect(bidResponse).to.deep.equal(expectedResponse);
+    });
+    it('should correctly map the parameters in the response vast', function () {
+      const bidResponse = spec.interpretResponse(responseVast, { adUnitToBidId: { [CLEAN_ADUNIT_CODE_VAST]: BID_ID } })[0];
+      const expectedResponse = {
+        requestId: BID_ID,
+        cpm: CPM,
+        width: W,
+        height: H,
+        ttl: 120,
+        creativeId: CRID,
+        netRevenue: true,
+        currency: 'USD',
+        vastXml: ADM_VAST,
+        mediaTypes: VIDEO
       };
       expect(bidResponse).to.deep.equal(expectedResponse);
     });
