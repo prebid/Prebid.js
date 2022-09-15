@@ -1129,6 +1129,8 @@ export function PrebidServer() {
           metrics.checkpoint('addBidResponse');
           if (metrics.measureTime('addBidResponse.validate', () => isValid(adUnit, bid))) {
             addBidResponse(adUnit, bid);
+          } else {
+            addBidResponse.reject(adUnit, bid, CONSTANTS.REJECTION_REASON.INVALID);
           }
         }
       })

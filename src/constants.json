@@ -120,6 +120,11 @@
     "RENDERED": "rendered",
     "BID_REJECTED": "bidRejected"
   },
+  "REJECTION_REASON": {
+    "INVALID": "Bid is invalid",
+    "INVALID_REQUEST_ID": "Invalid request ID",
+    "BIDDER_DISALLOWED": "Bidder code is not allowed by allowedAlternateBidderCodes"
+  },
   "PREBID_NATIVE_DATA_KEYS_TO_ORTB": {
     "body": "desc",
     "body2": "desc2",

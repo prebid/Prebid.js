@@ -466,6 +466,7 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
       noBid.cpm = 0;
 
       bid.rejectionReason = reason;
+      logWarn(`Bid from ${bid.bidder || 'unknown bidder'} was rejected: ${reason}`, bid)
       events.emit(CONSTANTS.EVENTS.BID_REJECTED, bid);
       auctionInstance.addBidRejected(bid);
       done();
