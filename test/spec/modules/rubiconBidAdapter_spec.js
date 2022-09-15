@@ -4,7 +4,7 @@ import {
   getPriceGranularity,
   masSizeOrdering,
   resetUserSync,
-  hasVideoMediaType,
+  classifiedAsVideo,
   resetRubiConf
 } from 'modules/rubiconBidAdapter.js';
 import {parse as parseQuery} from 'querystring';
@@ -257,7 +257,7 @@ describe('the rubicon adapter', function () {
         context: 'instream'
       },
     };
-    bid.params.video = '';
+    bid.params = {};
   }
 
   function createVideoBidderRequestOutstream() {
@@ -1990,6 +1990,19 @@ describe('the rubicon adapter', function () {
           expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(false);
         });
 
+        it('should be invalid if bidRequest.mediaTypes.video.context is instream but size_id is not defined', function () {
+          expect(spec.isBidRequestValid({
+            mediaTypes: {
+              video: {
+                context: 'instream'
+              }
+            },
+            params: {
+              video: {}
+            }
+          })).is.equal(false);
+        });
+
         it('bid request is valid when video context is outstream', function () {
           createVideoBidderRequestOutstream();
           sandbox.stub(Date, 'now').callsFake(() =>
@@ -2320,57 +2333,43 @@ describe('the rubicon adapter', function () {
         });
       });
 
-      describe('hasVideoMediaType', function () {
-        it('should return true if mediaType is video and size_id is set', function () {
+      describe('classifiedAsVideo', function () {
+        it('should return true if mediaTypes is video', function () {
           createVideoBidderRequest();
-          const legacyVideoTypeBidRequest = hasVideoMediaType(bidderRequest.bids[0]);
-          expect(legacyVideoTypeBidRequest).is.equal(true);
+          const bidClassifiedAsVideo = classifiedAsVideo(bidderRequest.bids[0]);
+          expect(bidClassifiedAsVideo).is.equal(true);
         });
 
         it('should return false if trying to use legacy mediaType with video', function () {
           createVideoBidderRequest();
           delete bidderRequest.bids[0].mediaTypes;
           bidderRequest.bids[0].mediaType = 'video';
-          const legacyVideoTypeBidRequest = hasVideoMediaType(bidderRequest.bids[0]);
+          const legacyVideoTypeBidRequest = classifiedAsVideo(bidderRequest.bids[0]);
           expect(legacyVideoTypeBidRequest).is.equal(false);
         });
 
-        it('should return false if bidRequest.mediaType is not equal to video', function () {
-          expect(hasVideoMediaType({
+        it('should return false if bid.mediaTypes is not equal to video', function () {
+          expect(classifiedAsVideo({
             mediaType: 'banner'
           })).is.equal(false);
         });
 
-        it('should return false if bidRequest.mediaType is not defined', function () {
-          expect(hasVideoMediaType({})).is.equal(false);
+        it('should return false if bid.mediaTypes is not defined', function () {
+          expect(classifiedAsVideo({})).is.equal(false);
         });
 
-        it('should return true if bidRequest.mediaTypes.video.context is instream and size_id is defined', function () {
-          expect(hasVideoMediaType({
-            mediaTypes: {
-              video: {
-                context: 'instream'
-              }
-            },
-            params: {
-              video: {
-                size_id: 7
-              }
-            }
-          })).is.equal(true);
+        it('Should return false if both banner and video mediaTypes are set', function () {
+          createVideoBidderRequestNoVideo();
+          let bid = bidderRequest.bids[0]
+          bid.mediaTypes.banner = {}
+          expect(classifiedAsVideo(bid)).to.equal(false);
         });
 
-        it('should return false if bidRequest.mediaTypes.video.context is instream but size_id is not defined', function () {
-          expect(spec.isBidRequestValid({
-            mediaTypes: {
-              video: {
-                context: 'instream'
-              }
-            },
-            params: {
-              video: {}
-            }
-          })).is.equal(false);
+        it('Should return true and create a params.video object if one is not already present', function () {
+          createVideoBidderRequestNoVideo();
+          let bid = bidderRequest.bids[0]
+          expect(classifiedAsVideo(bid)).to.equal(true);
+          expect(bid.params.video).to.be.defined();
         });
       });
     });
