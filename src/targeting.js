@@ -15,7 +15,6 @@ import CONSTANTS from './constants.json';
 var pbTargetingKeys = [];
 
 const MAX_DFP_KEYLENGTH = 20;
-const TTL_BUFFER = 1000;
 
 const CFG_ALLOW_TARGETING_KEYS = `targetingControls.allowTargetingKeys`;
 const CFG_ADD_TARGETING_KEYS = `targetingControls.addTargetingKeys`;
@@ -24,6 +23,8 @@ const TARGETING_KEY_CONFIGURATION_ERROR_MSG = `Only one of "${CFG_ALLOW_TARGETIN
 export const TARGETING_KEYS = Object.keys(CONSTANTS.TARGETING_KEYS).map(
   key => CONSTANTS.TARGETING_KEYS[key]
 );
+
+let TTL_BUFFER = 1000;
 
 // return unexpired bids
 const isBidNotExpired = (bid) => (bid.responseTimestamp + bid.ttl * 1000 - TTL_BUFFER) > timestamp();
@@ -64,6 +65,13 @@ export const getHighestCpmBidsFromBidPool = hook('sync', function(bidsReceived, 
 
   return bidsReceived;
 });
+
+/**
+ * Allow the configuration of TTL_BUFFER
+ */
+export function setTTLBuffer(buffer) {
+  TTL_BUFFER = buffer;
+}
 
 /**
 * A descending sort function that will sort the list of objects based on the following two dimensions:
