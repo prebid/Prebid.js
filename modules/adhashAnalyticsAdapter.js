@@ -107,6 +107,15 @@ const bidTimeout = function (eventType, args) {
 
 const auctionEnd = function (eventType, args) {
   auctionEndStorage = args;
+  var adUnitsHaveBids = {};
+  var adUnitsHaveAdhashFallback = {};
+  var adUnitsHaveOtherFallbacks = {};
+  for (var adUnit of args.adUnitCodes) {
+    adUnitsHaveBids[adUnit] = false;
+    adUnitsHaveAdhashFallback[adUnit] = false;
+    adUnitsHaveOtherFallbacks[adUnit] = false;
+  }
+
   // adding domain here:
   if (!auctionTracker.domain) {
     try {
@@ -144,6 +153,7 @@ const auctionEnd = function (eventType, args) {
       cost: res.cpm / 1000,
       currency: res.currency
     }
+    adUnitsHaveBids[res.adUnitCode] = true;
   })
 
   args.noBids.forEach(res => {
@@ -158,6 +168,11 @@ const auctionEnd = function (eventType, args) {
       win: false,
       timeout: false,
       cost: 0.0,
+    }
+    if (res.bidder === 'adhash') {
+      adUnitsHaveAdhashFallback[res.adUnitCode] = true;
+    } else {
+      adUnitsHaveOtherFallbacks[res.adUnitCode] = true;
     }
   })
 
@@ -177,6 +192,34 @@ const auctionEnd = function (eventType, args) {
       noBidObject[req.bidder].timeout = true;
     }
   })
+
+  // Send fallback data for each ad unit
+  for (var adUnit of args.adUnitCodes) {
+    if (adUnitsHaveBids[adUnit]) {
+      continue;
+    }
+    var fallbackData = {};
+    fallbackData.adTagId = adUnit;
+    fallbackData.pageURL = window.location.href;
+    if (navigator.userAgentData && navigator.userAgentData.platform) {
+      fallbackData.platform = navigator.userAgentData.platform;
+    } else {
+      fallbackData.platform = navigator.platform;
+    }
+    fallbackData.language = window.navigator.language || '';
+    fallbackData.userAgent = window.navigator.userAgent || '';
+    fallbackData.screenWidth = screen.width;
+    fallbackData.screenHeight = screen.height;
+    fallbackData.timeZone = new Date().getTimezoneOffset() / 60;
+    fallbackData.hasAdhashFallback = adUnitsHaveAdhashFallback[adUnit];
+    fallbackData.hasOtherFallbacks = adUnitsHaveOtherFallbacks[adUnit];
+
+    var payload = JSON.stringify(fallbackData);
+    var platformUrlMatch = platformURL.match(/.+(?=protocol\.php)/);
+    var fullPlatformURL = (platformUrlMatch ? platformUrlMatch[0] : platformURL) + 'data.php?type=pbfallback';
+
+    ajax(fullPlatformURL, null, payload);
+  }
 }
 
 const noBid = function (eventType, args) {
