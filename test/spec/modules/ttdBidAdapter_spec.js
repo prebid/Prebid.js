@@ -423,7 +423,7 @@ describe('ttdBidAdapter', function () {
       const TDID = '00000000-0000-0000-0000-000000000000';
       const UID2 = '99999999-9999-9999-9999-999999999999';
       let clonedBannerRequests = deepClone(baseBannerBidRequests);
-      clonedBannerRequests[0].userId = {
+      clonedBannerRequests[0].user.ext.eids = {
         tdid: TDID,
         uid2: {
           id: UID2
@@ -432,7 +432,7 @@ describe('ttdBidAdapter', function () {
       const expectedEids = [
         {
           source: 'adserver.org',
-          uids: [
+          eids: [
             {
               atype: 1,
               ext: {
@@ -444,7 +444,7 @@ describe('ttdBidAdapter', function () {
         },
         {
           source: 'uidapi.com',
-          uids: [
+          eids: [
             {
               atype: 3,
               id: UID2
