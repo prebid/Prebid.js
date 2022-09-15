@@ -646,4 +646,5 @@ adapterManager.registerAnalyticsAdapter({
   code: ADAPTER_CODE
 });
 
-export default pubmaticAdapter;
+// export default pubmaticAdapter;
+export { pubmaticAdapter as default, getMetadata };
