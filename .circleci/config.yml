@@ -80,6 +80,9 @@ workflows:
   commit:
     jobs:
       - build
+      - e2etest:
+          requires:
+            - build
 
 experimental:
   pipelines: true
