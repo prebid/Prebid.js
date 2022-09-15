@@ -158,6 +158,7 @@ import * as events from '../../src/events.js';
 import CONSTANTS from '../../src/constants.json';
 import {gdprDataHandler, uspDataHandler} from '../../src/adapterManager.js';
 import {find} from '../../src/polyfill.js';
+import {timedAuctionHook} from '../../src/utils/perfMetrics.js';
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
@@ -266,7 +267,7 @@ function initSubModules() {
  * @param {Object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
  * @param {function} fn required; The next function in the chain, used by hook.js
  */
-export function setBidRequestsData(fn, reqBidsConfigObj) {
+export const setBidRequestsData = timedAuctionHook('rtd', function setBidRequestsData(fn, reqBidsConfigObj) {
   _userConsent = getConsentData();
 
   const relevantSubModules = [];
@@ -317,7 +318,7 @@ export function setBidRequestsData(fn, reqBidsConfigObj) {
     clearTimeout(waitTimeout);
     fn.call(this, reqBidsConfigObj);
   }
-}
+});
 
 /**
  * loop through configured data providers If the data provider has registered getTargetingData,
