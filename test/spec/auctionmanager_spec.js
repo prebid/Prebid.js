@@ -1394,9 +1394,9 @@ describe('auctionmanager.js', function () {
     });
 
     Object.entries({
-      'added to': 'addBidResponse',
-      'rejected from': 'rejectBidResponse'
-    }).forEach(([t, method]) => {
+      'added to': (cbs) => cbs.addBidResponse,
+      'rejected from': (cbs) => cbs.addBidResponse.reject,
+    }).forEach(([t, getMethod]) => {
       it(`should call auction done after bid is ${t} auction for mediaType banner`, function () {
         let ADUNIT_CODE2 = 'adUnitCode2';
         let BIDDER_CODE2 = 'sampleBidder2';
@@ -1409,11 +1409,12 @@ describe('auctionmanager.js', function () {
           mockBidRequest(bids2[0], { adUnitCode: ADUNIT_CODE2 })
         ];
         let cbs = auctionCallbacks(doneSpy, auction);
-        cbs[method](ADUNIT_CODE, bids[0]);
+        const method = getMethod(cbs);
+        method(ADUNIT_CODE, bids[0]);
         cbs.adapterDone.call(bidRequests[0]);
-        cbs[method](ADUNIT_CODE1, bids1[0]);
+        method(ADUNIT_CODE1, bids1[0]);
         cbs.adapterDone.call(bidRequests[1]);
-        cbs[method](ADUNIT_CODE2, bids2[0]);
+        method(ADUNIT_CODE2, bids2[0]);
         cbs.adapterDone.call(bidRequests[2]);
         assert.equal(doneSpy.callCount, 1);
       });
@@ -1594,7 +1595,7 @@ describe('auctionmanager.js', function () {
       });
 
       Object.entries({
-        'through rejectBidResponse': () => cbs.rejectBidResponse(AU_CODE, deepClone(bid), REJECTION_REASON),
+        'with addBidResponse.reject': () => cbs.addBidResponse.reject(AU_CODE, deepClone(bid), REJECTION_REASON),
         'from addBidResponse hooks': () => cbs.addBidResponse(AU_CODE, deepClone(bid))
       }).forEach(([t, rejectBid]) => {
         describe(t, () => {
@@ -1608,25 +1609,19 @@ describe('auctionmanager.js', function () {
             rejectBid();
             sinon.assert.calledWith(auction.addBidRejected, expectedRejection);
           });
-
-          it('should add a NO_BID bid to the auction', () => {
-            auction.addBidReceived = sinon.stub();
-            rejectBid();
-            const noBid = auction.addBidReceived.args[0][0];
-            sinon.assert.match(noBid, {
-              cpm: 0,
-              ad: undefined,
-              adUrl: undefined,
-              vastUrl: undefined,
-              vastXml: undefined,
-              requestId: bid.requestId,
-              auctionId: bid.auctionId,
-              adUnitCode: AU_CODE,
-              rejectionReason: undefined,
-            })
-          });
         })
-      })
+      });
+
+      it('should return a NO_BID replacement', () => {
+        const noBid = cbs.addBidResponse.reject(AU_CODE, bid, 'Rejected');
+        sinon.assert.match(noBid, {
+          cpm: 0,
+          requestId: bid.requestId,
+          auctionId: bid.auctionId,
+          adUnitCode: AU_CODE,
+          rejectionReason: undefined,
+        });
+      });
     })
   });
 

@@ -356,6 +356,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
 
   return {
     addBidReceived,
+    addBidRejected,
     addNoBid,
     executeCallback,
     callBids,
@@ -433,10 +434,7 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
     bidResponseMap[bid.requestId] = true;
     addCommonResponseProperties(bid, adUnitCode)
     outstandingBidsAdded++;
-    handler(() => {
-      useMetrics(bid.metrics).timeSince('addBidResponse', 'addBidResponse.total');
-      afterBidAdded();
-    });
+    return handler(afterBidAdded);
   }
 
   function acceptBidResponse(adUnitCode, bid) {
@@ -453,9 +451,9 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
   }
 
   function rejectBidResponse(adUnitCode, bid, reason) {
-    handleBidResponse(adUnitCode, bid, (done) => {
-      // add a "no bid" bid to the auction to replace the rejected bid
-      // TODO: remove this in v8
+    return handleBidResponse(adUnitCode, bid, (done) => {
+      // return a "NO_BID" replacement that the caller can decide to continue with
+      // TODO: remove this in v8; see https://github.com/prebid/Prebid.js/issues/8956
       const noBid = createBid(CONSTANTS.STATUS.NO_BID, bid.getIdentifiers());
       Object.assign(noBid, Object.fromEntries(Object.entries(bid).filter(([k]) => ![
         'ad',
@@ -466,12 +464,13 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
       ].includes(k))))
       noBid.status = CONSTANTS.BID_STATUS.BID_REJECTED;
       noBid.cpm = 0;
-      addBidToAuction(auctionInstance, noBid);
 
       bid.rejectionReason = reason;
       events.emit(CONSTANTS.EVENTS.BID_REJECTED, bid);
       auctionInstance.addBidRejected(bid);
       done();
+
+      return noBid;
     })
   }
 
@@ -503,15 +502,17 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
     }
   }
 
-
   return {
-    rejectBidResponse,
-    addBidResponse: function (adUnitCode, bid) {
-      const bidderRequest = index.getBidderRequest(bid);
-      waitFor((bidderRequest && bidderRequest.bidderRequestId) || '', addBidResponse.call({
-        dispatch: acceptBidResponse,
-      }, adUnitCode, bid, (reason) => rejectBidResponse(adUnitCode, bid, reason)));
-    },
+    addBidResponse: (function () {
+      function addBid(adUnitCode, bid) {
+        const bidderRequest = index.getBidderRequest(bid);
+        waitFor((bidderRequest && bidderRequest.bidderRequestId) || '', addBidResponse.call({
+          dispatch: acceptBidResponse,
+        }, adUnitCode, bid, (reason) => rejectBidResponse(adUnitCode, bid, reason)));
+      }
+      addBid.reject = rejectBidResponse;
+      return addBid;
+    })(),
     adapterDone: function () {
       guard(this, adapterDone.bind(this))
     }
@@ -528,6 +529,7 @@ export function doCallbacksIfTimedout(auctionInstance, bidResponse) {
 export function addBidToAuction(auctionInstance, bidResponse) {
   setupBidTargeting(bidResponse);
 
+  useMetrics(bidResponse.metrics).timeSince('addBidResponse', 'addBidResponse.total');
   events.emit(CONSTANTS.EVENTS.BID_RESPONSE, bidResponse);
   auctionInstance.addBidReceived(bidResponse);
 
