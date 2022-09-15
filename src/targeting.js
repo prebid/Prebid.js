@@ -24,7 +24,7 @@ export const TARGETING_KEYS = Object.keys(CONSTANTS.TARGETING_KEYS).map(
   key => CONSTANTS.TARGETING_KEYS[key]
 );
 
-let TTL_BUFFER = 1000;
+var TTL_BUFFER = 1000;
 
 // return unexpired bids
 const isBidNotExpired = (bid) => (bid.responseTimestamp + bid.ttl * 1000 - TTL_BUFFER) > timestamp();
