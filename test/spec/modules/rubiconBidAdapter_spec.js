@@ -2358,11 +2358,18 @@ describe('the rubicon adapter', function () {
           expect(classifiedAsVideo({})).is.equal(false);
         });
 
-        it('Should return false if both banner and video mediaTypes are set', function () {
+        it('Should return false if both banner and video mediaTypes are set and params.video is not an object', function () {
           createVideoBidderRequestNoVideo();
-          let bid = bidderRequest.bids[0]
-          bid.mediaTypes.banner = {flag: true}
+          let bid = bidderRequest.bids[0];
+          bid.mediaTypes.banner = {flag: true};
           expect(classifiedAsVideo(bid)).to.equal(false);
+        });
+        it('Should return true if both banner and video mediaTypes are set and params.video is an object', function () {
+          createVideoBidderRequestNoVideo();
+          let bid = bidderRequest.bids[0];
+          bid.mediaTypes.banner = {flag: true};
+          bid.params.video = {};
+          expect(classifiedAsVideo(bid)).to.equal(true);
         });
 
         it('Should return true and create a params.video object if one is not already present', function () {
