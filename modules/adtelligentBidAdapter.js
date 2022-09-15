@@ -43,7 +43,7 @@ export const spec = {
     { code: 'selectmedia', gvlid: 775 },
     { code: 'navelix', gvlid: 380 },
     'pgam',
-    'ocm',
+    { code: 'ocm', gvlid: 1148 },
     { code: 'vidcrunchllc', gvlid: 1145 },
   ],
   supportedMediaTypes: [VIDEO, BANNER],

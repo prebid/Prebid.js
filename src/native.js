@@ -80,7 +80,7 @@ const SUPPORTED_TYPES = {
   image: IMAGE
 };
 
-const { NATIVE_ASSET_TYPES, NATIVE_IMAGE_TYPES, PREBID_NATIVE_DATA_KEYS_TO_ORTB, NATIVE_KEYS_THAT_ARE_NOT_ASSETS } = CONSTANTS;
+const { NATIVE_ASSET_TYPES, NATIVE_IMAGE_TYPES, PREBID_NATIVE_DATA_KEYS_TO_ORTB, NATIVE_KEYS_THAT_ARE_NOT_ASSETS, NATIVE_KEYS } = CONSTANTS;
 
 // inverse native maps useful for converting to legacy
 const PREBID_NATIVE_DATA_KEYS_TO_ORTB_INVERSE = inverse(PREBID_NATIVE_DATA_KEYS_TO_ORTB);
@@ -272,7 +272,7 @@ export function fireNativeTrackers(message, bidResponse) {
   const nativeResponse = bidResponse.native.ortb || legacyPropertiesToOrtbNative(bidResponse.native);
 
   if (message.action === 'click') {
-    fireClickTrackers(nativeResponse);
+    fireClickTrackers(nativeResponse, message?.assetId);
   } else {
     fireImpressionTrackers(nativeResponse);
   }
@@ -305,8 +305,27 @@ export function fireImpressionTrackers(nativeResponse, {runMarkup = (mkup) => in
   }
 }
 
-export function fireClickTrackers(nativeResponse, {fetchURL = triggerPixel} = {}) {
-  (nativeResponse.link?.clicktrackers || []).forEach(url => fetchURL(url));
+export function fireClickTrackers(nativeResponse, assetId = null, {fetchURL = triggerPixel} = {}) {
+  // legacy click tracker
+  if (!assetId) {
+    (nativeResponse.link?.clicktrackers || []).forEach(url => fetchURL(url));
+  } else {
+    // ortb click tracker. This will try to call the clicktracker associated with the asset;
+    // will fallback to the link if none is found.
+    const assetIdLinkMap = (nativeResponse.assets || [])
+      .filter(a => a.link)
+      .reduce((map, asset) => {
+        map[asset.id] = asset.link;
+        return map
+      }, {});
+    const masterClickTrackers = nativeResponse.link?.clicktrackers || [];
+    let assetLink = assetIdLinkMap[assetId];
+    let clickTrackers = masterClickTrackers;
+    if (assetLink) {
+      clickTrackers = assetLink.clicktrackers || [];
+    }
+    clickTrackers.forEach(url => fetchURL(url));
+  }
 }
 
 /**
@@ -469,6 +488,10 @@ export function toOrtbNativeRequest(legacyNativeAssets) {
   for (let key in legacyNativeAssets) {
     // skip conversion for non-asset keys
     if (NATIVE_KEYS_THAT_ARE_NOT_ASSETS.includes(key)) continue;
+    if (!NATIVE_KEYS.hasOwnProperty(key)) {
+      logError(`Unrecognized native asset code: ${key}. Asset will be ignored.`);
+      continue;
+    }
 
     const asset = legacyNativeAssets[key];
     let required = 0;
@@ -541,7 +564,6 @@ export function toOrtbNativeRequest(legacyNativeAssets) {
       // in `ext` case, required field is not needed
       delete ortbAsset.required;
     }
-
     ortb.assets.push(ortbAsset);
   }
   return ortb;

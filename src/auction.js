@@ -77,6 +77,7 @@ import * as events from './events.js'
 import adapterManager from './adapterManager.js';
 import CONSTANTS from './constants.json';
 import {GreedyPromise} from './utils/promise.js';
+import {useMetrics} from './utils/perfMetrics.js';
 
 const { syncUsers } = userSync;
 
@@ -116,7 +117,8 @@ export function resetAuctionState() {
   *    (from getConfig('ortb2') + requestBids({ortb2})) and bidder (a map from bidderCode to ortb2)
   * @returns {Auction} auction instance
   */
-export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, auctionId, ortb2Fragments}) {
+export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, auctionId, ortb2Fragments, metrics}) {
+  metrics = useMetrics(metrics);
   let _adUnits = adUnits;
   let _labels = labels;
   let _adUnitCodes = adUnitCodes;
@@ -150,7 +152,8 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
       noBids: _noBids,
       bidsReceived: _bidsReceived,
       winningBids: _winningBids,
-      timeout: _timeout
+      timeout: _timeout,
+      metrics: metrics
     };
   }
 
@@ -179,6 +182,9 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
 
       _auctionStatus = AUCTION_COMPLETED;
       _auctionEnd = Date.now();
+      metrics.checkpoint('auctionEnd');
+      metrics.timeBetween('requestBids', 'auctionEnd', 'requestBids.total');
+      metrics.timeBetween('callBids', 'auctionEnd', 'requestBids.callBids');
 
       events.emit(CONSTANTS.EVENTS.AUCTION_END, getProperties());
       bidsBackCallback(_adUnits, function () {
@@ -225,8 +231,11 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
     _auctionStatus = AUCTION_STARTED;
     _auctionStart = Date.now();
 
-    let bidRequests = adapterManager.makeBidRequests(_adUnits, _auctionStart, _auctionId, _timeout, _labels, ortb2Fragments);
+    let bidRequests = metrics.measureTime('requestBids.makeRequests',
+      () => adapterManager.makeBidRequests(_adUnits, _auctionStart, _auctionId, _timeout, _labels, ortb2Fragments, metrics));
     logInfo(`Bids Requested for Auction with id: ${_auctionId}`, bidRequests);
+
+    metrics.checkpoint('callBids')
 
     if (bidRequests.length < 1) {
       logWarn('No valid bid requests returned for auction');
@@ -358,7 +367,8 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
     getBidRequests: () => _bidderRequests,
     getBidsReceived: () => _bidsReceived,
     getNoBids: () => _noBids,
-    getFPD: () => ortb2Fragments
+    getFPD: () => ortb2Fragments,
+    getMetrics: () => metrics,
   };
 }
 
@@ -482,6 +492,9 @@ export function doCallbacksIfTimedout(auctionInstance, bidResponse) {
 export function addBidToAuction(auctionInstance, bidResponse) {
   setupBidTargeting(bidResponse);
 
+  const metrics = useMetrics(bidResponse.metrics);
+  metrics.timeSince('addBidResponse', 'addBidResponse.total');
+
   events.emit(CONSTANTS.EVENTS.BID_RESPONSE, bidResponse);
   auctionInstance.addBidReceived(bidResponse);
 
@@ -498,8 +511,9 @@ function tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded, {index = au
       transactionId: bidResponse.transactionId
     }), 'video');
   const context = videoMediaType && deepAccess(videoMediaType, 'context');
+  const useCacheKey = videoMediaType && deepAccess(videoMediaType, 'useCacheKey');
 
-  if (config.getConfig('cache.url') && context !== OUTSTREAM) {
+  if (config.getConfig('cache.url') && (useCacheKey || context !== OUTSTREAM)) {
     if (!bidResponse.videoCacheKey || config.getConfig('cache.ignoreBidderCacheKey')) {
       addBid = false;
       callPrebidCache(auctionInstance, bidResponse, afterBidAdded, videoMediaType);

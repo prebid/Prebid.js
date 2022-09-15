@@ -1665,70 +1665,6 @@ describe('IndexexchangeAdapter', function () {
       expect(gpid).to.equal(GPID);
     });
 
-    it('should still build gpid in request if ortb2Imp.ext.gpid does not exist', function () {
-      const AD_UNIT_CODE = '/1111/home';
-      const validBids = utils.deepClone(DEFAULT_BANNER_VALID_BID);
-      sinon.stub(utils, 'getGptSlotInfoForAdUnitCode')
-        .returns({ gptSlot: AD_UNIT_CODE, divId: 'adunit-code-3-div-id' });
-      validBids[0].ortb2Imp = {
-        ext: {
-          data: {
-            adserver: {
-              name: 'gam',
-              adslot: AD_UNIT_CODE
-            }
-          }
-        }
-      }
-      const requests = spec.buildRequests(validBids, DEFAULT_OPTION);
-      const { ext: { gpid } } = JSON.parse(requests[0].data.r).imp[0];
-      utils.getGptSlotInfoForAdUnitCode.restore();
-      expect(gpid).to.equal(`${AD_UNIT_CODE}#adunit-code-3-div-id`);
-    });
-
-    it('should not build gpid if divid doesnt exist when ortb2Imp.ext.gpid does not exist', function () {
-      const AD_UNIT_CODE = '/1111/home';
-      const validBids = utils.deepClone(DEFAULT_BANNER_VALID_BID);
-      sinon.stub(utils, 'getGptSlotInfoForAdUnitCode')
-        .returns({ gptSlot: AD_UNIT_CODE });
-      validBids[0].ortb2Imp = {
-        ext: {
-          data: {
-            adserver: {
-              name: 'gam',
-              adslot: AD_UNIT_CODE
-            }
-          }
-        }
-      }
-      const requests = spec.buildRequests(validBids, DEFAULT_OPTION);
-      const imp = JSON.parse(requests[0].data.r).imp[0];
-      utils.getGptSlotInfoForAdUnitCode.restore();
-      expect(imp.ext.gpid).to.be.undefined;
-      expect(imp.ext.dfp_ad_unit_code).to.equal(AD_UNIT_CODE)
-    });
-
-    it('should not build gpid if dfp ad unit code / divid doesnt exist when ortb2Imp.ext.gpid does not exist', function () {
-      const AD_UNIT_CODE = '/1111/home';
-      const validBids = utils.deepClone(DEFAULT_BANNER_VALID_BID);
-      sinon.stub(utils, 'getGptSlotInfoForAdUnitCode')
-        .returns({});
-      validBids[0].ortb2Imp = {
-        ext: {
-          data: {
-            adserver: {
-              name: 'gam',
-            }
-          }
-        }
-      }
-      const requests = spec.buildRequests(validBids, DEFAULT_OPTION);
-
-      const imp = JSON.parse(requests[0].data.r).imp[0];
-      utils.getGptSlotInfoForAdUnitCode.restore();
-      expect(imp.ext).to.be.undefined;
-    });
-
     it('should send gpid in request if ortb2Imp.ext.gpid exists when no size present', function () {
       const validBids = utils.deepClone(DEFAULT_BANNER_VALID_BID_PARAM_NO_SIZE);
       validBids[0].ortb2Imp = {
@@ -2325,15 +2261,7 @@ describe('IndexexchangeAdapter', function () {
     });
 
     describe('detect missing sizes', function () {
-      beforeEach(function () {
-        config.setConfig({
-          ix: {
-            detectMissingSizes: false
-          }
-        });
-      })
-
-      it('request should not contain missing sizes if detectMissingSizes = false', function () {
+      it('request should always contain missing sizes', function () {
         const bid1 = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
         bid1.mediaTypes.banner.sizes = LARGE_SET_OF_SIZES;
 
@@ -2692,15 +2620,6 @@ describe('IndexexchangeAdapter', function () {
         expect(videoImp.id).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].bidId);
         expect(videoImp.video.w).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params.size[0]);
         expect(videoImp.video.h).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params.size[1]);
-      });
-
-      it('should get missing sizes count 0 when params.size not used', function () {
-        const bid = utils.deepClone(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0]);
-        delete bid.params.size;
-        const request = spec.buildRequests([bid], {});
-        const diagObj = JSON.parse(request[0].data.r).ext.ixdiag;
-        expect(diagObj.msd).to.equal(0);
-        expect(diagObj.msi).to.equal(0);
       });
     });
 
