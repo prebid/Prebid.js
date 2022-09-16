@@ -123,7 +123,8 @@
   "REJECTION_REASON": {
     "INVALID": "Bid has missing or invalid properties",
     "INVALID_REQUEST_ID": "Invalid request ID",
-    "BIDDER_DISALLOWED": "Bidder code is not allowed by allowedAlternateBidderCodes / allowUnknownBidderCodes"
+    "BIDDER_DISALLOWED": "Bidder code is not allowed by allowedAlternateBidderCodes / allowUnknownBidderCodes",
+    "FLOOR_NOT_MET": "Bid does not meet price floor"
   },
   "PREBID_NATIVE_DATA_KEYS_TO_ORTB": {
     "body": "desc",
