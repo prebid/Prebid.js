@@ -32,9 +32,16 @@ const isBidNotExpired = (bid) => (bid.responseTimestamp + bid.ttl * 1000 - TTL_B
 const isUnusedBid = (bid) => bid && ((bid.status && !includes([CONSTANTS.BID_STATUS.RENDERED], bid.status)) || !bid.status);
 
 export let filters = {
+  isActualBid(bid) {
+    return bid.getStatusCode() === CONSTANTS.STATUS.GOOD
+  },
   isBidNotExpired,
   isUnusedBid
 };
+
+export function isBidUsable(bid) {
+  return !Object.values(filters).some((predicate) => !predicate(bid));
+}
 
 // If two bids are found for same adUnitCode, we will use the highest one to take part in auction
 // This can happen in case of concurrent auctions
@@ -449,10 +456,7 @@ export function newTargeting(auctionManager) {
 
     bidsReceived = bidsReceived
       .filter(bid => deepAccess(bid, 'video.context') !== ADPOD)
-      .filter(bid => bid.mediaType !== 'banner' || sizeSupported([bid.width, bid.height]))
-      .filter(filters.isUnusedBid)
-      .filter(filters.isBidNotExpired)
-    ;
+      .filter(isBidUsable);
 
     return getHighestCpmBidsFromBidPool(bidsReceived, getOldestHighestCpmBid);
   }
