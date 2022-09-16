@@ -54,7 +54,7 @@ export const spec = {
       data: bids,
       deviceWidth: screen.width,
       hb_version: '$prebid.version$',
-      ...getUnifiedId2Parameter(deepAccess(validBidRequests, '0.userId.uid2')),
+      ...getSharedViewerIdParameters(validBidRequests),
       ...getFirstPartyTeadsIdParameter()
     };
 
@@ -123,6 +123,37 @@ export const spec = {
     return bidResponses;
   }
 };
+
+/**
+ *
+ * @param validBidRequests an array of bids
+ * @returns {{sharedViewerIdKey : 'sharedViewerIdValue'}} object with all sharedviewerids
+ */
+function getSharedViewerIdParameters(validBidRequests) {
+  const sharedViewerIdMapping = {
+    unifiedId2: 'uid2.id', // uid2IdSystem
+    liveRampId: 'idl_env', // identityLinkIdSystem
+    lotamePanoramaId: 'lotamePanoramaId', // lotamePanoramaIdSystem
+    id5Id: 'id5id.uid', // id5IdSystem
+    criteoId: 'criteoId', // criteoIdSystem
+    yahooConnectId: 'connectId', // connectIdSystem
+    quantcastId: 'quantcastId', // quantcastIdSystem
+    epsilonPublisherLinkId: 'publinkId', // publinkIdSystem
+    publisherFirstPartyViewerId: 'pubcid', // sharedIdSystem
+    merkleId: 'merkleId.id', // merkleIdSystem
+    kinessoId: 'kpuid' // kinessoIdSystem
+  }
+
+  let sharedViewerIdObject = {};
+  for (const sharedViewerId in sharedViewerIdMapping) {
+    const key = sharedViewerIdMapping[sharedViewerId];
+    const value = deepAccess(validBidRequests, `0.userId.${key}`);
+    if (value) {
+      sharedViewerIdObject[sharedViewerId] = value;
+    }
+  }
+  return sharedViewerIdObject;
+}
 
 function getReferrerInfo(bidderRequest) {
   let ref = '';
@@ -226,15 +257,6 @@ function concatSizes(bid) {
 
 function _validateId(id) {
   return (parseInt(id) > 0);
-}
-
-/**
- * Get unified ID v2 parameter to be sent in bid request.
- * @param `{id: string} | undefined` optionalUid2 uid2 user ID object available if "uid2IdSystem" module is enabled.
- * @returns `{} | {unifiedId2: string}`
- */
-function getUnifiedId2Parameter(optionalUid2) {
-  return optionalUid2 ? { unifiedId2: optionalUid2.id } : {};
 }
 
 /**

@@ -4,7 +4,7 @@ import {find, includes} from './polyfill.js';
 import CONSTANTS from './constants.json';
 import {GreedyPromise} from './utils/promise.js';
 export { default as deepAccess } from 'dlv/index.js';
-export { default as deepSetValue } from 'dset';
+export { dset as deepSetValue } from 'dset';
 
 var tArr = 'Array';
 var tStr = 'String';

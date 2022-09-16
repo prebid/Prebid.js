@@ -19,6 +19,7 @@ import {createEidsArray} from '../../../modules/userId/eids.js';
 describe('Improve Digital Adapter Tests', function () {
   const METHOD = 'POST';
   const AD_SERVER_URL = 'https://ad.360yield.com/pb';
+  const BASIC_ADS_URL = 'https://ad.360yield-basic.com/pb';
   const EXTEND_URL = 'https://pbs.360yield.com/openrtb2/auction';
   const IFRAME_SYNC_URL = 'https://hb.360yield.com/prebid-universal-creative/load-cookie.html';
   const INSTREAM_TYPE = 1;
@@ -693,6 +694,15 @@ describe('Improve Digital Adapter Tests', function () {
       let payload = JSON.parse(request.data);
       expect(payload.site).does.exist;
       expect(payload.app).does.not.exist;
+    });
+
+    it('should call basic ads endpoint when no consent for purpose 1', function () {
+      const consent = deepClone(gdprConsent);
+      deepSetValue(consent, 'vendorData.purpose.consents.1', false);
+      const bidderRequestWithConsent = deepClone(bidderRequest);
+      bidderRequestWithConsent.gdprConsent = consent;
+      const request = spec.buildRequests([simpleBidRequest], bidderRequestWithConsent)[0];
+      expect(request.url).to.equal(BASIC_ADS_URL);
     });
 
     it('should set extend params when extend mode enabled from global configuration', function () {

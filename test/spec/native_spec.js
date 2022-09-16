@@ -877,6 +877,17 @@ describe('validate native', function () {
     });
   });
 
+  ['bogusKey', 'clickUrl', 'privacyLink'].forEach(nativeKey => {
+    it(`should not generate an empty asset for key ${nativeKey}`, () => {
+      const ortbReq = toOrtbNativeRequest({
+        [nativeKey]: {
+          required: true
+        }
+      });
+      expect(ortbReq.assets.length).to.equal(0);
+    });
+  })
+
   it('should convert from ortb to old-style native request', () => {
     const openRTBRequest = {
       'ver': '1.2',

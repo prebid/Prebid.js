@@ -152,6 +152,8 @@
     "MAIN": 3
   },
   "NATIVE_KEYS_THAT_ARE_NOT_ASSETS": [
+    "privacyLink",
+    "clickUrl",
     "sendTargetingKeys",
     "adTemplate",
     "rendererUrl",

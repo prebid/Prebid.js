@@ -8,6 +8,7 @@ import {deepSetValue, isNumber, isPlainObject, isStr, logError, logInfo, logWarn
 import {config} from '../src/config.js';
 import {gdprDataHandler} from '../src/adapterManager.js';
 import {includes} from '../src/polyfill.js';
+import {timedAuctionHook} from '../src/utils/perfMetrics.js';
 import {registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
 
 const DEFAULT_CMP = 'iab';
@@ -228,7 +229,7 @@ function loadIfMissing(cb) {
  * @param {object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
  * @param {function} fn required; The next function in the chain, used by hook.js
  */
-export function requestBidsHook(fn, reqBidsConfigObj) {
+export const requestBidsHook = timedAuctionHook('gdpr', function requestBidsHook(fn, reqBidsConfigObj) {
   loadIfMissing(function (shouldCancelAuction, errMsg, ...extraArgs) {
     if (errMsg) {
       let log = logWarn;
@@ -240,6 +241,7 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
     }
 
     if (shouldCancelAuction) {
+      fn.stopTiming();
       if (typeof reqBidsConfigObj.bidsBackHandler === 'function') {
         reqBidsConfigObj.bidsBackHandler();
       } else {
@@ -249,7 +251,7 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
       fn.call(this, reqBidsConfigObj);
     }
   });
-}
+});
 
 /**
  * This function checks the consent data provided by CMP to ensure it's in an expected state.

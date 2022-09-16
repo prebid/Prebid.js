@@ -14,7 +14,8 @@ import {
   logMessage,
   logWarn,
   triggerPixel,
-  uniques
+  uniques,
+  deepAccess,
 } from '../../src/utils.js';
 import CONSTANTS from '../../src/constants.json';
 import adapterManager from '../../src/adapterManager.js';
@@ -27,6 +28,7 @@ import {ajax} from '../../src/ajax.js';
 import {hook} from '../../src/hook.js';
 import {hasPurpose1Consent} from '../../src/utils/gpdr.js';
 import {buildPBSRequest, interpretPBSResponse} from './ortbConverter.js';
+import {useMetrics} from '../../src/utils/perfMetrics.js';
 
 const getConfig = config.getConfig;
 
@@ -425,6 +427,12 @@ export function PrebidServer() {
 
   /* Prebid executes this function when the page asks to send out bid requests */
   baseAdapter.callBids = function(s2sBidRequest, bidRequests, addBidResponse, done, ajax) {
+    const adapterMetrics = s2sBidRequest.metrics = useMetrics(deepAccess(bidRequests, '0.metrics'))
+      .newMetrics()
+      .renameWith((n) => [`adapter.s2s.${n}`, `adapters.s2s.${s2sBidRequest.s2sConfig.defaultVendor}.${n}`])
+    done = adapterMetrics.startTiming('total').stopBefore(done);
+    bidRequests.forEach(req => useMetrics(req.metrics).join(adapterMetrics, {continuePropagation: false}));
+
     let { gdprConsent, uspConsent } = getConsentData(bidRequests);
 
     if (Array.isArray(_s2sConfigs)) {
@@ -446,7 +454,9 @@ export function PrebidServer() {
         },
         onError: done,
         onBid: function ({adUnit, bid}) {
-          if (isValid(adUnit, bid)) {
+          const metrics = bid.metrics = s2sBidRequest.metrics.fork().renameWith();
+          metrics.checkpoint('addBidResponse');
+          if (metrics.measureTime('addBidResponse.validate', () => isValid(adUnit, bid))) {
             addBidResponse(adUnit, bid);
             if (bid.pbsWurl) {
               addWurl(bid.auctionId, bid.adId, bid.pbsWurl);
@@ -487,19 +497,21 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
     .reduce(flatten, [])
     .filter(uniques);
 
-  const request = buildPBSRequest(s2sBidRequest, bidRequests, adUnits, requestedBidders, eidPermissions);
+  const request = s2sBidRequest.metrics.measureTime('buildRequests', () => buildPBSRequest(s2sBidRequest, bidRequests, adUnits, requestedBidders, eidPermissions));
   const requestJson = request && JSON.stringify(request);
   logInfo('BidRequest: ' + requestJson);
   const endpointUrl = getMatchingConsentUrl(s2sBidRequest.s2sConfig.endpoint, gdprConsent);
   if (request && requestJson && endpointUrl) {
+    const networkDone = s2sBidRequest.metrics.startTiming('net');
     ajax(
       endpointUrl,
       {
         success: function (response) {
+          networkDone();
           let result;
           try {
             result = JSON.parse(response);
-            const bids = interpretPBSResponse(result, request).bids;
+            const bids = s2sBidRequest.metrics.measureTime('interpretResponse', () => interpretPBSResponse(result, request).bids);
             bids.forEach(onBid);
           } catch (error) {
             logError(error);
@@ -511,7 +523,10 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
             onResponse(true, requestedBidders);
           }
         },
-        error: onError
+        error: function () {
+          networkDone();
+          onError.apply(this, arguments);
+        }
       },
       requestJson,
       {contentType: 'text/plain', withCredentials: true}
