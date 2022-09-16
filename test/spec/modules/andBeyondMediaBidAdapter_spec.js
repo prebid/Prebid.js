@@ -3,7 +3,7 @@ import { spec } from '../../../modules/andBeyondMediaBidAdapter.js';
 import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
 import { getUniqueIdentifierStr } from '../../../src/utils.js';
 
-const bidder = 'beyondmedia'
+const bidder = 'andbeyond.media'
 
 describe('AndBeyondMediaBidAdapter', function () {
   const bids = [
