@@ -1,14 +1,14 @@
-import {logError, logWarn, mergeDeep, isEmpty} from '../src/utils.js';
+import {logError, logWarn, mergeDeep, isEmpty, safeJSONParse} from '../src/utils.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {submodule} from '../src/hook.js';
 import {GreedyPromise} from '../src/utils/promise.js';
-import {getGlobal} from '../src/prebidGlobal.js';
 import {config} from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 export const storage = getStorageManager();
-export const initialTopicName = 'tps_';
+export const topicStorageName = 'prebid:topics';
 
+const iframeLoadedURL = [];
 const TAXONOMIES = {
   // map from topic taxonomyVersion to IAB segment taxonomy
   '1': 600
@@ -21,6 +21,20 @@ function partitionBy(field, items) {
     partitions[key].push(item);
     return partitions;
   }, {});
+}
+
+/**
+ * function to get list of loaded Iframes calling Topics API
+ */
+function getLoadedIframeURL() {
+  return iframeLoadedURL;
+}
+
+/**
+ * function to set/push iframe in the list which is loaded to called topics API.
+ */
+function setLoadedIframeURL(url) {
+  return iframeLoadedURL.push(url);
 }
 
 export function getTopicsData(name, topics, taxonomies = TAXONOMIES) {
@@ -64,31 +78,12 @@ export function getTopics(doc = document) {
   return topics;
 }
 
-// function to fetch the cached topic data from storage for bidders and return it
-export function getTpsForBidderFromStorage() {
-  let cachedTopicData = [];
-  const topics = config.getConfig('userSync.topics');
-  let biddersList = Object.keys(topics.bidders || []);
-  Object.keys(window.localStorage).forEach((storeItem) => {
-    // Get Storage Item starting only with tps_.
-    if (storeItem.startsWith(initialTopicName)) {
-    // Check bidder exist in config for cached bidder data and if not delete it since it is stale cached data
-      if (biddersList.includes(storeItem.slice(initialTopicName.length))) {
-        let segmentData = JSON.parse(storage.getDataFromLocalStorage(storeItem));
-        segmentData.forEach(segment => cachedTopicData.push(segment));
-      } else {
-        storage.removeDataFromLocalStorage(storeItem)
-      }
-    }
-  })
-  return cachedTopicData;
-}
-
 const topicsData = getTopics().then((topics) => getTopicsData(getRefererInfo().domain, topics));
 
 export function processFpd(config, {global}, {data = topicsData} = {}) {
+  loadTopicsForBidders();
   return data.then((data) => {
-    data = [].concat(data, getTpsForBidderFromStorage()); // Add cached data in FPD data.
+    data = [].concat(data, getCachedTopics()); // Add cached data in FPD data.
     if (data.length) {
       mergeDeep(global, {
         user: {
@@ -100,53 +95,78 @@ export function processFpd(config, {global}, {data = topicsData} = {}) {
   });
 }
 
-// Added function addListenerToFetchTopics to listen for topic data retured from iframe loaded for SSPs(bidder)
-function addListenerToFetchTopics() {
-  window.addEventListener('message', (e) => {
-    if (e && e.data) {
-      try {
-        let data = JSON.parse(e.data);
-        if (data && data.segment && !isEmpty(data.segment.topics)) {
-          let {domain, topics, bidder} = data.segment;
-          let segmentData = getTopicsData(domain, topics);
-          let updateStore = [];
-          let bidderFoundInStore = false;
-          let storedSegments = JSON.parse(storage.getDataFromLocalStorage(`${initialTopicName}${bidder}`));
-          storedSegments?.forEach((segment) => {
-            if (segment.name === segmentData[0].name && segment.ext.segclass == segmentData[0].ext.segclass) {
-              updateStore.push(segmentData[0]);
-              bidderFoundInStore = true;
-            } else {
-              updateStore.push(segment);
-            };
-          });
-          !bidderFoundInStore && updateStore.push(segmentData[0]);
-          storage.setDataInLocalStorage(`${initialTopicName}${bidder}`, JSON.stringify(updateStore));
-        }
-      } catch (err) { }
+/**
+ * function to fetch the cached topic data from storage for bidders and return it
+ */
+function getCachedTopics() {
+  let cachedTopicData = [];
+  const topics = config.getConfig('userSync.topics');
+  const bidderList = Object.keys(topics.bidders || []);
+  new Map(safeJSONParse(storage.getDataFromLocalStorage(topicStorageName))).forEach((value, key) => {
+    let bidder = `${key}`.split(':')[0];
+    // Check bidder exist in config for cached bidder data and then only retrieve the cached data
+    if (bidderList.includes(bidder)) {
+      cachedTopicData.push(value);
     }
   });
+  return cachedTopicData;
 }
 
+/**
+ * Recieve messages from iframe loaded for bidders to fetch topic
+ * @param {MessageEvent} evt
+ */
+function receiveMessage(evt) {
+  if (evt && evt.data) {
+    try {
+      let data = safeJSONParse(evt.data);
+      if (getLoadedIframeURL().includes(evt.origin) && data && data.segment && !isEmpty(data.segment.topics)) {
+        const {domain, topics, bidder} = data.segment;
+        const iframeTopicsData = getTopicsData(domain, topics)[0];
+        iframeTopicsData && storeInLocalStorage(bidder, iframeTopicsData);
+      }
+    } catch (err) { }
+  }
+}
+
+/**
+Function to store Topics data recieved from iframe in storage(name: "prebid:topics")
+* @param {Topics} topics
+*/
+export function storeInLocalStorage(bidder, topics) {
+  const storedSegments = new Map(safeJSONParse(storage.getDataFromLocalStorage(topicStorageName)));
+  storedSegments.set(`${bidder}:${topics.ext.segclass}`, topics);
+  storage.setDataInLocalStorage(topicStorageName, JSON.stringify([...storedSegments]));
+}
+
+/**
+ * function to add listener for message receiving from IFRAME
+ */
+function listenMessagesFromTopicIframe() {
+  window.addEventListener('message', receiveMessage, false);
+}
+
+/**
+ * function to load the iframes of the bidder to load the topics data
+ */
 function loadTopicsForBidders() {
-  addListenerToFetchTopics();
   const topics = config.getConfig('userSync.topics');
   if (topics) {
+    listenMessagesFromTopicIframe();
     const bidders = Object.keys(topics.bidders || []);
-    bidders?.forEach((bidder) => {
+    bidders && bidders.forEach((bidder) => {
+      const iframeURL = `${topics['bidders'][bidder]['iframeURL']}`;
       let ifrm = document.createElement('iframe');
       ifrm.name = `ifrm_${bidder}`;
-      ifrm.src = `${topics['bidders'][bidder]['iframeURL']}?bidder=${bidder}`;
+      ifrm.src = `${iframeURL}?bidder=${bidder}`;
       ifrm.style.display = 'none';
+      setLoadedIframeURL(new URL(iframeURL).origin);
       window.document.documentElement.appendChild(ifrm);
     });
   } else {
     logWarn(`Topics config not defined under userSync Object`);
   }
 }
-
-// Exposing loadTopicsForBidders function in global-name-space so that API calling from domain can get the data and send it in oRTB format.
-(getGlobal()).loadTopicsForBidders = loadTopicsForBidders;
 
 submodule('firstPartyData', {
   name: 'topics',
