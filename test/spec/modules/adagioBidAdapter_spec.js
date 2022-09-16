@@ -1081,7 +1081,7 @@ describe('Adagio bid adapter', () => {
           impressionTrackers: [
             'https://eventrack.local/impression'
           ],
-          javascriptTrackers: '<script src=\"https://eventrack.local/impression\"></script>',
+          javascriptTrackers: '<script async src=\"https://eventrack.local/impression\"></script>',
           clickTrackers: [
             'https://i.am.a.clicktracker.url'
           ],
@@ -1103,6 +1103,19 @@ describe('Adagio bid adapter', () => {
         expect(r[0].mediaType).to.equal(NATIVE);
         expect(r[0].native).ok;
         expect(r[0].native).to.deep.equal(expected);
+      });
+
+      it('Should handle multiple javascriptTrackers in one single string', () => {
+        const serverResponseWithNativeCopy = utils.deepClone(serverResponseWithNative);
+        serverResponseWithNativeCopy.body.bids[0].admNative.eventtrackers.push(
+          {
+            event: 1,
+            method: 2,
+            url: 'https://eventrack.local/impression-2'
+          },)
+        const r = spec.interpretResponse(serverResponseWithNativeCopy, bidRequestNative);
+        const expected = '<script async src=\"https://eventrack.local/impression\"></script>\n<script async src=\"https://eventrack.local/impression-2\"></script>';
+        expect(r[0].native.javascriptTrackers).to.equal(expected);
       });
     });
   });
