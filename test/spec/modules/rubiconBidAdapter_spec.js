@@ -1990,19 +1990,6 @@ describe('the rubicon adapter', function () {
           expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(false);
         });
 
-        it('should be invalid if bidRequest.mediaTypes.video.context is instream but size_id is not defined', function () {
-          expect(spec.isBidRequestValid({
-            mediaTypes: {
-              video: {
-                context: 'instream'
-              }
-            },
-            params: {
-              video: {}
-            }
-          })).is.equal(false);
-        });
-
         it('bid request is valid when video context is outstream', function () {
           createVideoBidderRequestOutstream();
           sandbox.stub(Date, 'now').callsFake(() =>
