@@ -447,7 +447,7 @@ export const spec = {
    * @param {Bid} The bid that won the auction
    */
   onBidWon: function (bid) {
-    // console.log('onBidWon', bid, config.getConfig('priceGranularity'));
+    // console.log('onBidWon： ', bid, config.getConfig('priceGranularity'));
     // Bidder specific code
     if (bid['nurl']) {
       utils.triggerPixel(bid['nurl']);
