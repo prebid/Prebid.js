@@ -61,9 +61,9 @@ export const extractConsent = (consent) => {
   if (!consent || !consent.vendorData) {
     return null
   }
-  const result = { 
-    'gdpr_applies': consent.gdprApplies, 
-    'consent_string': consent.vendorData.tcString 
+  const result = {
+    'gdpr_applies': consent.gdprApplies,
+    'consent_string': consent.vendorData.tcString
   }
   if (result && Object.values(result).some(v => !v)) {
     throw 'TCF Consent: gdprApplies and tcString both have to be defined'
