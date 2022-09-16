@@ -214,6 +214,10 @@ describe('yieldlabBidAdapter', () => {
       it('passes correct size to bid request', () => {
         expect(request.url).to.include('728x90')
       })
+
+      it('passes external id to bid request', () => {
+        expect(request.url).to.include('id=abc')
+      })
     })
 
     describe('iab_content handling', () => {
@@ -525,6 +529,43 @@ describe('yieldlabBidAdapter', () => {
       expect(sync[0].url).to.have.string('gdpr_consent=' + gdprConsent.consentString);
       expect(sync[0].url).not.have.string('gdpr=');
       expect(sync[0].type).to.have.string('iframe');
+    });
+  });
+
+  describe('getBidFloor', function () {
+    let bidRequest, getFloor;
+
+    it('should add valid bid floor', () => {
+      getFloor = () => {
+        return {
+          currency: 'EUR',
+          floor: 1.33
+        };
+      };
+      bidRequest = Object.assign(DEFAULT_REQUEST(), {getFloor})
+      const result = spec.buildRequests([bidRequest], REQPARAMS)
+      expect(result).to.have.nested.property('queryParams.floor', 1.33)
+    });
+
+    it('should not add empty bid floor', () => {
+      getFloor = () => {
+        return {};
+      };
+      bidRequest = Object.assign(DEFAULT_REQUEST(), {getFloor})
+      const result = spec.buildRequests([bidRequest], REQPARAMS)
+      expect(result).not.to.have.nested.property('queryParams.floor')
+    });
+
+    it('should not add bid floor when currency is not matching', () => {
+      getFloor = (currency, mediaType, size) => {
+        return {
+          currency: 'USD',
+          floor: 1.33
+        };
+      };
+      bidRequest = Object.assign(DEFAULT_REQUEST(), {getFloor})
+      const result = spec.buildRequests([bidRequest], REQPARAMS)
+      expect(result).not.to.have.nested.property('queryParams.floor')
     });
   });
 })

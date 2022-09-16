@@ -281,7 +281,8 @@ function generateOpenRtbObject(bidderRequest, bid) {
       outBoundBidRequest = appendFirstPartyData(outBoundBidRequest, bid);
     };
 
-    if (deepAccess(bid, 'schain')) {
+    const schainData = deepAccess(bid, 'schain.nodes');
+    if (isArray(schainData) && schainData.length > 0) {
       outBoundBidRequest.source.ext.schain = bid.schain;
       outBoundBidRequest.source.ext.schain.nodes[0].rid = outBoundBidRequest.id;
     };
@@ -407,7 +408,7 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
         newDataObject = validateAppendObject('object', allowedContentDataObjectKeys, dataObject, newDataObject);
         outBoundBidRequest.site.content.data = [];
         outBoundBidRequest.site.content.data.push(newDataObject);
-      })
+      });
     };
   };
 
@@ -427,7 +428,7 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
           }
         };
         outBoundBidRequest.app.content.data.push(newDataObject);
-      })
+      });
     };
   };
 
@@ -487,7 +488,7 @@ function generateServerRequest({payload, requestOptions, bidderRequest}) {
 
 function createRenderer(bidderRequest, bidResponse) {
   const renderer = Renderer.install({
-    url: 'https://cdn.vidible.tv/prod/hb-outstream-renderer/renderer.js',
+    url: 'https://s.yimg.com/kp/prebid-outstream-renderer/renderer.js',
     loaded: false,
     adUnitCode: bidderRequest.adUnitCode
   })

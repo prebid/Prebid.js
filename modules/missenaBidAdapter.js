@@ -72,11 +72,29 @@ export const spec = {
 
     return bidResponses;
   },
-  getUserSyncs: function (syncOptions, serverResponses) {
+  getUserSyncs: function (
+    syncOptions,
+    serverResponses,
+    gdprConsent,
+    uspConsent
+  ) {
     if (!syncOptions.iframeEnabled) {
       return [];
     }
-    return [{ type: 'iframe', url: 'https://sync.missena.io/iframe' }];
+
+    let gdprParams = '';
+    if (
+      gdprConsent &&
+      'gdprApplies' in gdprConsent &&
+      typeof gdprConsent.gdprApplies === 'boolean'
+    ) {
+      gdprParams = `?gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${
+        gdprConsent.consentString
+      }`;
+    }
+    return [
+      { type: 'iframe', url: 'https://sync.missena.io/iframe' + gdprParams },
+    ];
   },
   /**
    * Register bidder specific code, which will execute if bidder timed out after an auction

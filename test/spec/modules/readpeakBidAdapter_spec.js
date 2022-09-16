@@ -528,6 +528,7 @@ describe('ReadPeakAdapter', function() {
           ad: bannerServerResponse.seatbid[0].bid[0].adm,
           width: bannerServerResponse.seatbid[0].bid[0].w,
           height: bannerServerResponse.seatbid[0].bid[0].h,
+          burl: bannerServerResponse.seatbid[0].bid[0].burl,
         });
         expect(bidResponse.meta).to.deep.equal({
           advertiserDomains: ['readpeak.com'],

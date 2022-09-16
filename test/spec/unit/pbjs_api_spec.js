@@ -16,7 +16,6 @@ import * as auctionModule from 'src/auction.js';
 import { registerBidder } from 'src/adapters/bidderFactory.js';
 import { _sendAdToCreative } from 'src/secureCreatives.js';
 import {find} from 'src/polyfill.js';
-import {synchronizePromise} from '../../helpers/syncPromise.js';
 import * as pbjsModule from 'src/prebid.js';
 import {hook} from '../../../src/hook.js';
 import {reset as resetDebugging} from '../../../src/debugging.js';
@@ -195,7 +194,7 @@ window.apntag = {
 }
 
 describe('Unit: Prebid Module', function () {
-  let bidExpiryStub, promiseSandbox;
+  let bidExpiryStub
 
   before(() => {
     hook.ready();
@@ -204,15 +203,12 @@ describe('Unit: Prebid Module', function () {
   });
 
   beforeEach(function () {
-    promiseSandbox = sinon.createSandbox();
-    synchronizePromise(promiseSandbox);
     bidExpiryStub = sinon.stub(filters, 'isBidNotExpired').callsFake(() => true);
     configObj.setConfig({ useBidCache: true });
     resetAuctionState();
   });
 
   afterEach(function() {
-    promiseSandbox.restore();
     $$PREBID_GLOBAL$$.adUnits = [];
     bidExpiryStub.restore();
     configObj.setConfig({ useBidCache: false });
@@ -220,6 +216,51 @@ describe('Unit: Prebid Module', function () {
 
   after(function() {
     auctionManager.clearAllAuctions();
+  });
+
+  describe('and global adUnits', () => {
+    const startingAdUnits = [
+      {
+        code: 'one',
+      },
+      {
+        code: 'two',
+      }
+    ];
+    let actualAdUnits, hookRan, done;
+
+    function deferringHook(next, req) {
+      setTimeout(() => {
+        actualAdUnits = req.adUnits || $$PREBID_GLOBAL$$.adUnits;
+        done();
+      });
+    }
+
+    beforeEach(() => {
+      $$PREBID_GLOBAL$$.requestBids.before(deferringHook, 99);
+      $$PREBID_GLOBAL$$.adUnits.splice(0, $$PREBID_GLOBAL$$.adUnits.length, ...startingAdUnits);
+      hookRan = new Promise((resolve) => {
+        done = resolve;
+      });
+    });
+
+    afterEach(() => {
+      $$PREBID_GLOBAL$$.requestBids.getHooks({hook: deferringHook}).remove();
+      $$PREBID_GLOBAL$$.adUnits.splice(0, $$PREBID_GLOBAL$$.adUnits.length);
+    })
+
+    Object.entries({
+      'addAdUnits': (g) => g.addAdUnits({code: 'three'}),
+      'removeAdUnit': (g) => g.removeAdUnit('one')
+    }).forEach(([method, op]) => {
+      it(`once called, should not be affected by ${method}`, () => {
+        $$PREBID_GLOBAL$$.requestBids({});
+        op($$PREBID_GLOBAL$$);
+        return hookRan.then(() => {
+          expect(actualAdUnits).to.eql(startingAdUnits);
+        })
+      });
+    });
   });
 
   describe('getAdserverTargetingForAdUnitCodeStr', function () {
@@ -1800,6 +1841,29 @@ describe('Unit: Prebid Module', function () {
           .and.to.match(/[a-f0-9\-]{36}/i);
       });
 
+      it('should always set ortb2.ext.tid same as transactionId in adUnits', function () {
+        $$PREBID_GLOBAL$$.requestBids({
+          adUnits: [
+            {
+              code: 'test1',
+              mediaTypes: { banner: { sizes: [] } },
+              bids: []
+            }, {
+              code: 'test2',
+              mediaTypes: { banner: { sizes: [] } },
+              bids: []
+            }
+          ]
+        });
+
+        expect(auctionArgs.adUnits[0]).to.have.property('transactionId');
+        expect(auctionArgs.adUnits[0]).to.have.property('ortb2Imp');
+        expect(auctionArgs.adUnits[0].transactionId).to.equal(auctionArgs.adUnits[0].ortb2Imp.ext.tid);
+        expect(auctionArgs.adUnits[1]).to.have.property('transactionId');
+        expect(auctionArgs.adUnits[1]).to.have.property('ortb2Imp');
+        expect(auctionArgs.adUnits[1].transactionId).to.equal(auctionArgs.adUnits[1].ortb2Imp.ext.tid);
+      });
+
       it('should notify targeting of the latest auction for each adUnit', function () {
         let latestStub = sinon.stub(targeting, 'setLatestAuctionForAdUnit');
         let getAuctionStub = sinon.stub(auction, 'getAuctionId').returns(2);
@@ -2312,14 +2376,47 @@ describe('Unit: Prebid Module', function () {
         $$PREBID_GLOBAL$$.requestBids({adUnits});
         const spyArgs = adapterManager.callBids.getCall(0);
         const nativeRequest = spyArgs.args[1][0].bids[0].nativeParams;
-        expect(nativeRequest).to.deep.equal({
-          image: {required: true},
-          title: {required: true},
-          sponsoredBy: {required: true},
-          clickUrl: {required: true},
-          body: {required: false},
-          icon: {required: false},
-        });
+        expect(nativeRequest.ortb.assets).to.deep.equal([
+          {
+            required: 1,
+            id: 1,
+            img: {
+              type: 3,
+              wmin: 100,
+              hmin: 100,
+            }
+          },
+          {
+            required: 1,
+            id: 2,
+            title: {
+              len: 140,
+            }
+          },
+          {
+            required: 1,
+            id: 3,
+            data: {
+              type: 1,
+            }
+          },
+          {
+            required: 0,
+            id: 4,
+            data: {
+              type: 2,
+            }
+          },
+          {
+            required: 0,
+            id: 5,
+            img: {
+              type: 1,
+              wmin: 20,
+              hmin: 20,
+            }
+          },
+        ]);
         resetAuction();
       });
     });

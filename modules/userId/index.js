@@ -152,8 +152,9 @@ import {
   isEmpty
 } from '../../src/utils.js';
 import {getPPID as coreGetPPID} from '../../src/adserver.js';
-import {promiseControls} from '../../src/utils/promise.js';
+import {defer, GreedyPromise} from '../../src/utils/promise.js';
 import {hasPurpose1Consent} from '../../src/utils/gpdr.js';
+import {newMetrics, timedAuctionHook, useMetrics} from '../../src/utils/perfMetrics.js';
 
 const MODULE_NAME = 'User ID';
 const COOKIE = 'cookie';
@@ -166,9 +167,6 @@ const CONSENT_DATA_COOKIE_STORAGE_CONFIG = {
 };
 export const PBJS_USER_ID_OPTOUT_NAME = '_pbjs_id_optout';
 export const coreStorage = getCoreStorageManager('userid');
-
-/** @type {string[]} */
-let validStorageTypes = [];
 
 /** @type {boolean} */
 let addedUserIdHook = false;
@@ -198,6 +196,20 @@ export let auctionDelay;
 let ppidSource;
 
 let configListener;
+
+const uidMetrics = (() => {
+  let metrics;
+  return () => {
+    if (metrics == null) {
+      metrics = newMetrics();
+    }
+    return metrics;
+  }
+})();
+
+function submoduleMetrics(moduleName) {
+  return uidMetrics().fork().renameWith(n => [`userId.mod.${n}`, `userId.mods.${moduleName}.${n}`])
+}
 
 /** @param {Submodule[]} submodules */
 export function setSubmoduleRegistry(submodules) {
@@ -398,14 +410,13 @@ export function findRootDomain(fullDomain = window.location.hostname) {
  * @param {function} cb - callback for after processing is done.
  */
 function processSubmoduleCallbacks(submodules, cb) {
-  let done = () => {};
-  if (cb) {
-    done = delayExecution(() => {
-      clearTimeout(timeoutID);
-      cb();
-    }, submodules.length);
-  }
+  cb = uidMetrics().fork().startTiming('userId.callbacks.total').stopBefore(cb);
+  const done = delayExecution(() => {
+    clearTimeout(timeoutID);
+    cb();
+  }, submodules.length);
   submodules.forEach(function (submodule) {
+    const moduleDone = submoduleMetrics(submodule.submodule.name).startTiming('callback').stopBefore(done);
     function callbackCompleted(idObj) {
       // if valid, id data should be saved to cookie/html storage
       if (idObj) {
@@ -417,13 +428,13 @@ function processSubmoduleCallbacks(submodules, cb) {
       } else {
         logInfo(`${MODULE_NAME}: ${submodule.submodule.name} - request id responded with an empty value`);
       }
-      done();
+      moduleDone();
     }
     try {
       submodule.callback(callbackCompleted);
     } catch (e) {
       logError(`Error in userID module '${submodule.submodule.name}':`, e);
-      done();
+      moduleDone();
     }
     // clear callback, this prop is used to test if all submodule callbacks are complete below
     submodule.callback = undefined;
@@ -504,24 +515,23 @@ function addIdDataToAdUnitBids(adUnits, submodules) {
   });
 }
 
-function delayFor(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 const INIT_CANCELED = {};
 
-function idSystemInitializer({delay = delayFor} = {}) {
-  const startInit = promiseControls();
-  const startCallbacks = promiseControls();
+function idSystemInitializer({delay = GreedyPromise.timeout} = {}) {
+  const startInit = defer();
+  const startCallbacks = defer();
   let cancel;
   let initialized = false;
+  let initMetrics;
 
   function cancelAndTry(promise) {
+    initMetrics = uidMetrics().fork();
     if (cancel != null) {
       cancel.reject(INIT_CANCELED);
     }
-    cancel = promiseControls();
-    return Promise.race([promise, cancel.promise]);
+    cancel = defer();
+    return GreedyPromise.race([promise, cancel.promise])
+      .finally(initMetrics.startTiming('userId.total'))
   }
 
   // grab a reference to global vars so that the promise chains remain isolated;
@@ -539,17 +549,21 @@ function idSystemInitializer({delay = delayFor} = {}) {
     }
   }
 
+  function timeGdpr() {
+    return gdprDataHandler.promise.finally(initMetrics.startTiming('userId.init.gdpr'));
+  }
+
   let done = cancelAndTry(
-    Promise.all([hooksReady, startInit.promise])
-      .then(() => gdprDataHandler.promise)
+    GreedyPromise.all([hooksReady, startInit.promise])
+      .then(timeGdpr)
       .then(checkRefs((consentData) => {
         initSubmodules(initModules, allModules, consentData);
       }))
-      .then(() => startCallbacks.promise)
+      .then(() => startCallbacks.promise.finally(initMetrics.startTiming('userId.callbacks.pending')))
       .then(checkRefs(() => {
         const modWithCb = initModules.filter(item => isFn(item.callback));
         if (modWithCb.length) {
-          return new Promise((resolve) => processSubmoduleCallbacks(modWithCb, resolve));
+          return new GreedyPromise((resolve) => processSubmoduleCallbacks(modWithCb, resolve));
         }
       }))
   );
@@ -573,11 +587,11 @@ function idSystemInitializer({delay = delayFor} = {}) {
         });
       }
     }
-    if (refresh) {
+    if (refresh && initialized) {
       done = cancelAndTry(
         done
           .catch(() => null)
-          .then(() => gdprDataHandler.promise) // fetch again in case a refresh was forced before this was resolved
+          .then(timeGdpr) // fetch again in case a refresh was forced before this was resolved
           .then(checkRefs((consentData) => {
             const cbModules = initSubmodules(
               initModules,
@@ -588,7 +602,7 @@ function idSystemInitializer({delay = delayFor} = {}) {
               return sm.callback != null;
             });
             if (cbModules.length) {
-              return new Promise((resolve) => processSubmoduleCallbacks(cbModules, resolve));
+              return new GreedyPromise((resolve) => processSubmoduleCallbacks(cbModules, resolve));
             }
           }))
       );
@@ -621,9 +635,9 @@ function getPPID() {
  * @param {Object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
  * @param {function} fn required; The next function in the chain, used by hook.js
  */
-export function requestBidsHook(fn, reqBidsConfigObj, {delay = delayFor} = {}) {
-  Promise.race([
-    getUserIdsAsync(),
+export const requestBidsHook = timedAuctionHook('userId', function requestBidsHook(fn, reqBidsConfigObj, {delay = GreedyPromise.timeout, getIds = getUserIdsAsync} = {}) {
+  GreedyPromise.race([
+    getIds().catch(() => null),
     delay(auctionDelay)
   ]).then(() => {
     // pass available user id data to bid adapters
@@ -640,11 +654,11 @@ export function requestBidsHook(fn, reqBidsConfigObj, {delay = delayFor} = {}) {
         });
       }
     }
-
+    uidMetrics().join(useMetrics(reqBidsConfigObj.metrics), {propagate: false, includeGroups: true});
     // calling fn allows prebid to continue processing
     fn.call(this, reqBidsConfigObj);
   });
-}
+});
 
 /**
  * This function will be exposed in global-name-space so that userIds stored by Prebid UserId module can be used by external codes as well.
@@ -767,7 +781,20 @@ function refreshUserIds({submoduleNames} = {}, callback) {
  */
 
 function getUserIdsAsync() {
-  return initIdSystem().then(() => getUserIds(), (e) => e === INIT_CANCELED ? getUserIdsAsync() : Promise.reject(e));
+  return initIdSystem().then(
+    () => getUserIds(),
+    (e) => {
+      if (e === INIT_CANCELED) {
+        // there's a pending refresh - because GreedyPromise runs this synchronously, we are now in the middle
+        // of canceling the previous init, before the refresh logic has had a chance to run.
+        // Use a "normal" Promise to clear the stack and let it complete (or this will just recurse infinitely)
+        return Promise.resolve().then(getUserIdsAsync)
+      } else {
+        logError('Error initializing userId', e)
+        return GreedyPromise.reject(e)
+      }
+    }
+  );
 }
 
 /**
@@ -829,31 +856,47 @@ function populateSubmoduleId(submodule, consentData, storedConsentData, forceRef
 }
 
 function initSubmodules(dest, submodules, consentData, forceRefresh = false) {
-  // gdpr consent with purpose one is required, otherwise exit immediately
-  let { userIdModules, hasValidated } = validateGdprEnforcement(submodules, consentData);
-  if (!hasValidated && !hasPurpose1Consent(consentData)) {
-    logWarn(`${MODULE_NAME} - gdpr permission not valid for local storage or cookies, exit module`);
-    return [];
-  }
+  return uidMetrics().fork().measureTime('userId.init.modules', function () {
+    if (!submodules.length) return []; // to simplify log messages from here on
 
-  // we always want the latest consentData stored, even if we don't execute any submodules
-  const storedConsentData = getStoredConsentData();
-  setStoredConsentData(consentData);
+    // filter out submodules whose storage type is not enabled
+    // this needs to be done here (after consent data has loaded) so that enforcement may disable storage globally
+    const storageTypes = getActiveStorageTypes();
+    submodules = submodules.filter((submod) => !submod.config.storage || storageTypes.has(submod.config.storage.type));
 
-  const initialized = userIdModules.reduce((carry, submodule) => {
-    try {
-      populateSubmoduleId(submodule, consentData, storedConsentData, forceRefresh);
-      carry.push(submodule);
-    } catch (e) {
-      logError(`Error in userID module '${submodule.submodule.name}':`, e);
+    if (!submodules.length) {
+      logWarn(`${MODULE_NAME} - no ID module is configured for one of the available storage types:`, Array.from(storageTypes));
+      return [];
     }
-    return carry;
-  }, []);
-  if (initialized.length) {
-    setPrebidServerEidPermissions(initialized);
-  }
-  initialized.forEach(updateInitializedSubmodules.bind(null, dest));
-  return initialized;
+
+    // another consent check, this time each module is checked for consent with its own gvlid
+    let { userIdModules, hasValidated } = validateGdprEnforcement(submodules, consentData);
+    if (!hasValidated && !hasPurpose1Consent(consentData)) {
+      logWarn(`${MODULE_NAME} - gdpr permission not valid for local storage or cookies, exit module`);
+      return [];
+    }
+
+    // we always want the latest consentData stored, even if we don't execute any submodules
+    const storedConsentData = getStoredConsentData();
+    setStoredConsentData(consentData);
+
+    const initialized = userIdModules.reduce((carry, submodule) => {
+      return submoduleMetrics(submodule.submodule.name).measureTime('init', () => {
+        try {
+          populateSubmoduleId(submodule, consentData, storedConsentData, forceRefresh);
+          carry.push(submodule);
+        } catch (e) {
+          logError(`Error in userID module '${submodule.submodule.name}':`, e);
+        }
+        return carry;
+      })
+    }, []);
+    if (initialized.length) {
+      setPrebidServerEidPermissions(initialized);
+    }
+    initialized.forEach(updateInitializedSubmodules.bind(null, dest));
+    return initialized;
+  })
 }
 
 function updateInitializedSubmodules(dest, submodule) {
@@ -880,7 +923,7 @@ function updateInitializedSubmodules(dest, submodule) {
  * @param {string[]} activeStorageTypes
  * @returns {SubmoduleConfig[]}
  */
-function getValidSubmoduleConfigs(configRegistry, submoduleRegistry, activeStorageTypes) {
+function getValidSubmoduleConfigs(configRegistry, submoduleRegistry) {
   if (!Array.isArray(configRegistry)) {
     return [];
   }
@@ -890,11 +933,11 @@ function getValidSubmoduleConfigs(configRegistry, submoduleRegistry, activeStora
       return carry;
     }
     // Validate storage config contains 'type' and 'name' properties with non-empty string values
-    // 'type' must be a value currently enabled in the browser
+    // 'type' must be one of html5, cookies
     if (config.storage &&
       !isEmptyStr(config.storage.type) &&
       !isEmptyStr(config.storage.name) &&
-      activeStorageTypes.indexOf(config.storage.type) !== -1) {
+      ALL_STORAGE_TYPES.has(config.storage.type)) {
       carry.push(config);
     } else if (isPlainObject(config.value)) {
       carry.push(config);
@@ -905,15 +948,39 @@ function getValidSubmoduleConfigs(configRegistry, submoduleRegistry, activeStora
   }, []);
 }
 
+const ALL_STORAGE_TYPES = new Set([LOCAL_STORAGE, COOKIE]);
+
+function getActiveStorageTypes() {
+  const storageTypes = [];
+  let disabled = false;
+  if (coreStorage.localStorageIsEnabled()) {
+    storageTypes.push(LOCAL_STORAGE);
+    if (coreStorage.getDataFromLocalStorage(PBJS_USER_ID_OPTOUT_NAME)) {
+      logInfo(`${MODULE_NAME} - opt-out localStorage found, storage disabled`);
+      disabled = true;
+    }
+  }
+  if (coreStorage.cookiesAreEnabled()) {
+    storageTypes.push(COOKIE);
+    if (coreStorage.getCookie(PBJS_USER_ID_OPTOUT_NAME)) {
+      logInfo(`${MODULE_NAME} - opt-out cookie found, storage disabled`);
+      disabled = true;
+    }
+  }
+  return new Set(disabled ? [] : storageTypes)
+}
+
 /**
  * update submodules by validating against existing configs and storage types
  */
 function updateSubmodules() {
-  const configs = getValidSubmoduleConfigs(configRegistry, submoduleRegistry, validStorageTypes);
+  const configs = getValidSubmoduleConfigs(configRegistry, submoduleRegistry);
   if (!configs.length) {
     return;
   }
   // do this to avoid reprocessing submodules
+  // TODO: the logic does not match the comment - addedSubmodules is always a copy of submoduleRegistry
+  // (if it did it would not be correct - it's not enough to find new modules, as others may have been removed or changed)
   const addedSubmodules = submoduleRegistry.filter(i => !find(submodules, j => j.name === i.name));
 
   submodules.splice(0, submodules.length);
@@ -949,6 +1016,17 @@ export function attachIdSystem(submodule) {
   if (!find(submoduleRegistry, i => i.name === submodule.name)) {
     submoduleRegistry.push(submodule);
     updateSubmodules();
+    // TODO: a test case wants this to work even if called after init (the setConfig({userId}))
+    // so we trigger a refresh. But is that even possible outside of tests?
+    initIdSystem({refresh: true, submoduleNames: [submodule.name]});
+  }
+}
+
+function normalizePromise(fn) {
+  // for public methods that return promises, make sure we return a "normal" one - to avoid
+  // exposing confusing stack traces
+  return function() {
+    return Promise.resolve(fn.apply(this, arguments));
   }
 }
 
@@ -957,7 +1035,7 @@ export function attachIdSystem(submodule) {
  * so a callback is added to fire after the consentManagement module.
  * @param {{getConfig:function}} config
  */
-export function init(config, {delay = delayFor} = {}) {
+export function init(config, {delay = GreedyPromise.timeout} = {}) {
   ppidSource = undefined;
   submodules = [];
   configRegistry = [];
@@ -968,22 +1046,6 @@ export function init(config, {delay = delayFor} = {}) {
     configListener();
   }
   submoduleRegistry = [];
-
-  // list of browser enabled storage types
-  validStorageTypes = [
-    coreStorage.localStorageIsEnabled() ? LOCAL_STORAGE : null,
-    coreStorage.cookiesAreEnabled() ? COOKIE : null
-  ].filter(i => i !== null);
-
-  // exit immediately if opt out cookie or local storage keys exists.
-  if (validStorageTypes.indexOf(COOKIE) !== -1 && coreStorage.getCookie(PBJS_USER_ID_OPTOUT_NAME)) {
-    logInfo(`${MODULE_NAME} - opt-out cookie found, exit module`);
-    return;
-  }
-  if (validStorageTypes.indexOf(LOCAL_STORAGE) !== -1 && coreStorage.getDataFromLocalStorage(PBJS_USER_ID_OPTOUT_NAME)) {
-    logInfo(`${MODULE_NAME} - opt-out localStorage found, exit module`);
-    return;
-  }
 
   // listen for config userSyncs to be set
   configListener = config.getConfig('userSync', conf => {
@@ -1002,10 +1064,10 @@ export function init(config, {delay = delayFor} = {}) {
   // exposing getUserIds function in global-name-space so that userIds stored in Prebid can be used by external codes.
   (getGlobal()).getUserIds = getUserIds;
   (getGlobal()).getUserIdsAsEids = getUserIdsAsEids;
-  (getGlobal()).getEncryptedEidsForSource = getEncryptedEidsForSource;
+  (getGlobal()).getEncryptedEidsForSource = normalizePromise(getEncryptedEidsForSource);
   (getGlobal()).registerSignalSources = registerSignalSources;
-  (getGlobal()).refreshUserIds = refreshUserIds;
-  (getGlobal()).getUserIdsAsync = getUserIdsAsync;
+  (getGlobal()).refreshUserIds = normalizePromise(refreshUserIds);
+  (getGlobal()).getUserIdsAsync = normalizePromise(getUserIdsAsync);
   (getGlobal()).getUserIdsAsEidBySource = getUserIdsAsEidBySource;
 }
 

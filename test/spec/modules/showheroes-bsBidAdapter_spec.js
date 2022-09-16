@@ -48,6 +48,18 @@ const bidRequestCommonParams = {
   'auctionId': '43aa080090a47f',
 }
 
+const bidRequestCommonParamsV2 = {
+  'bidder': 'showheroes-bs',
+  'params': {
+    'unitId': 'AACBWAcof-611K4U',
+  },
+  'adUnitCode': 'adunit-code-1',
+  'sizes': [[640, 480]],
+  'bidId': '38b373e1e31c18',
+  'bidderRequestId': '12e3ade2543ba6',
+  'auctionId': '43aa080090a47f',
+}
+
 const bidRequestVideo = {
   ...bidRequestCommonParams,
   ...{
@@ -67,6 +79,30 @@ const bidRequestOutstream = {
       'video': {
         'playerSize': [640, 480],
         'context': 'outstream',
+      }
+    }
+  }
+}
+
+const bidRequestVideoV2 = {
+  ...bidRequestCommonParamsV2,
+  ...{
+    'mediaTypes': {
+      'video': {
+        'playerSize': [640, 480],
+        'context': 'instream',
+      }
+    }
+  }
+}
+
+const bidRequestOutstreamV2 = {
+  ...bidRequestCommonParamsV2,
+  ...{
+    'mediaTypes': {
+      'video': {
+        'playerSize': [640, 480],
+        'context': 'outstream'
       }
     }
   }
@@ -129,12 +165,19 @@ describe('shBidAdapter', function () {
 
   describe('isBidRequestValid', function () {
     it('should return true when required params found', function () {
-      const request = {
+      const requestV1 = {
         'params': {
           'playerId': '47427aa0-f11a-4d24-abca-1295a46a46cd',
         }
       }
-      expect(spec.isBidRequestValid(request)).to.equal(true)
+      expect(spec.isBidRequestValid(requestV1)).to.equal(true)
+
+      const requestV2 = {
+        'params': {
+          'unitId': 'AACBTwsZVANd9NlB',
+        }
+      }
+      expect(spec.isBidRequestValid(requestV2)).to.equal(true)
     })
 
     it('should return false when required params are not passed', function () {
@@ -149,6 +192,9 @@ describe('shBidAdapter', function () {
     it('sends bid request to ENDPOINT via POST', function () {
       const request = spec.buildRequests([bidRequestVideo], bidderRequest)
       expect(request.method).to.equal('POST')
+
+      const requestV2 = spec.buildRequests([bidRequestVideoV2], bidderRequest)
+      expect(requestV2.method).to.equal('POST')
     })
 
     it('check sizes formats', function () {
@@ -268,11 +314,42 @@ describe('shBidAdapter', function () {
       expect(payload2).to.have.property('type', 5);
     })
 
+    it('should attach valid params to the payload when type is video (instream V2)', function () {
+      const request = spec.buildRequests([bidRequestVideoV2], bidderRequest)
+      const payload = request.data.bidRequests[0];
+      expect(payload).to.be.an('object');
+      expect(payload).to.have.property('unitId', 'AACBWAcof-611K4U');
+      expect(payload.mediaTypes).to.eql({
+        [VIDEO]: {
+          'context': 'instream'
+        }
+      });
+    })
+
+    it('should attach valid params to the payload when type is video (outstream V2)', function () {
+      const request = spec.buildRequests([bidRequestOutstreamV2], bidderRequest)
+      const payload = request.data.bidRequests[0];
+      expect(payload).to.be.an('object');
+      expect(payload).to.have.property('unitId', 'AACBWAcof-611K4U');
+      expect(payload.mediaTypes).to.eql({
+        [VIDEO]: {
+          'context': 'outstream'
+        }
+      });
+    })
+
     it('passes gdpr if present', function () {
       const request = spec.buildRequests([bidRequestVideo], {...bidderRequest, ...gdpr})
       const payload = request.data.requests[0];
       expect(payload).to.be.an('object');
       expect(payload.gdprConsent).to.eql(gdpr.gdprConsent)
+    })
+
+    it('passes gdpr if present (V2)', function () {
+      const request = spec.buildRequests([bidRequestVideoV2], {...bidderRequest, ...gdpr})
+      const context = request.data.context;
+      expect(context).to.be.an('object');
+      expect(context.gdprConsent).to.eql(gdpr.gdprConsent)
     })
 
     it('passes schain object if present', function() {
@@ -283,6 +360,16 @@ describe('shBidAdapter', function () {
       const payload = request.data.requests[0];
       expect(payload).to.be.an('object');
       expect(payload.schain).to.eql(schain.schain);
+    })
+
+    it('passes schain object if present (V2)', function() {
+      const request = spec.buildRequests([{
+        ...bidRequestVideoV2,
+        ...schain
+      }], bidderRequest)
+      const context = request.data.context;
+      expect(context).to.be.an('object');
+      expect(context.schain).to.eql(schain.schain);
     })
   })
 
@@ -327,6 +414,39 @@ describe('shBidAdapter', function () {
       }],
     };
 
+    const basicResponseV2 = {
+      'requestId': '38b373e1e31c18',
+      'adUnitCode': 'adunit-code-1',
+      'cpm': 1,
+      'currency': 'EUR',
+      'width': 640,
+      'height': 480,
+      'advertiserDomain': [],
+      'callbacks': {
+        'won': ['https://api-n729.qa.viralize.com/track/?ver=15&session_id=01ecd03ce381505ccdeb88e555b05001&category=request_session&type=event&request_session_id=01ecd03ce381505ccdeb88e555b05001&label=prebid_won&reason=ok']
+      },
+      'mediaType': 'video',
+      'adomain': adomain,
+    };
+
+    const vastUrl = 'https://api-n729.qa.viralize.com/vast/?zid=AACBWAcof-611K4U&u=https://example.org/?foo=bar&gdpr=0&cs=XXXXXXXXXXXXXXXXXXXX&sid=01ecd03ce381505ccdeb88e555b05001&width=300&height=200&prebidmode=1'
+
+    const responseVideoV2 = {
+      'bidResponses': [{
+        ...basicResponseV2,
+        'context': 'instream',
+        'vastUrl': vastUrl,
+      }],
+    };
+
+    const responseVideoOutstreamV2 = {
+      'bidResponses': [{
+        ...basicResponseV2,
+        'context': 'outstream',
+        'ad': '<script id="testScript" data-wid="auto" type="text/javascript" src="https://ads.viralize.tv/display/?zid=AACBTwsZVANd9NlB&u=https%3A%2F%2Fexample.org%2F%3Ffoo%3Dbar&gdpr=0&cs=XXXXXXXXXXXXXXXXXXXX&sid=01ececb3b4c19270d6a77ccf75433001&width=300&height=200&prebidmode=1"></script>',
+      }],
+    };
+
     it('should get correct bid response when type is video', function () {
       const request = spec.buildRequests([bidRequestVideo], bidderRequest)
       const expectedResponse = [
@@ -353,6 +473,31 @@ describe('shBidAdapter', function () {
       ]
 
       const result = spec.interpretResponse({'body': responseVideo}, request)
+      expect(result).to.deep.equal(expectedResponse)
+    })
+
+    it('should get correct bid response when type is video (V2)', function () {
+      const request = spec.buildRequests([bidRequestVideoV2], bidderRequest)
+      const expectedResponse = [
+        {
+          'cpm': 1,
+          'creativeId': 'c_38b373e1e31c18',
+          'adUnitCode': 'adunit-code-1',
+          'currency': 'EUR',
+          'width': 640,
+          'height': 480,
+          'mediaType': 'video',
+          'netRevenue': true,
+          'vastUrl': vastUrl,
+          'requestId': '38b373e1e31c18',
+          'ttl': 300,
+          'meta': {
+            'advertiserDomains': adomain
+          }
+        }
+      ]
+
+      const result = spec.interpretResponse({'body': responseVideoV2}, request)
       expect(result).to.deep.equal(expectedResponse)
     })
 
@@ -394,6 +539,32 @@ describe('shBidAdapter', function () {
 
       const spots = document.querySelectorAll('.showheroes-spot')
       expect(spots.length).to.equal(1)
+    })
+
+    it('should get correct bid response when type is outstream (slot V2)', function () {
+      const bidRequestV2 = JSON.parse(JSON.stringify(bidRequestOutstreamV2));
+      const slotId = 'testSlot2'
+      bidRequestV2.params.outstreamOptions = {
+        slot: slotId
+      }
+
+      const container = document.createElement('div')
+      container.setAttribute('id', slotId)
+      document.body.appendChild(container)
+
+      const request = spec.buildRequests([bidRequestV2], bidderRequest)
+
+      const result = spec.interpretResponse({'body': responseVideoOutstreamV2}, request)
+      const bid = result[0]
+      expect(bid).to.have.property('mediaType', VIDEO);
+
+      const renderer = bid.renderer
+      expect(renderer).to.be.an('object')
+      expect(renderer.id).to.equal(bidRequestV2.bidId)
+      renderer.render(bid)
+
+      const scripts = container.querySelectorAll('#testScript')
+      expect(scripts.length).to.equal(1)
     })
 
     it('should get correct bid response when type is outstream (iframe)', function () {
