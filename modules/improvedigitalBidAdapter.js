@@ -25,6 +25,7 @@ const BIDDER_CODE = 'improvedigital';
 const CREATIVE_TTL = 300;
 
 const AD_SERVER_URL = 'https://ad.360yield.com/pb';
+const BASIC_ADS_URL = 'https://ad.360yield-basic.com/pb';
 const EXTEND_URL = 'https://pbs.360yield.com/openrtb2/auction';
 const IFRAME_SYNC_URL = 'https://hb.360yield.com/prebid-universal-creative/load-cookie.html';
 
@@ -282,9 +283,10 @@ const ID_REQUEST = {
       if (transactionId) {
         deepSetValue(request, 'source.tid', transactionId);
       }
+      const adServerUrl = hasPurpose1Consent(bidderRequest?.gdprConsent) ? AD_SERVER_URL : BASIC_ADS_URL;
       return {
         method: 'POST',
-        url: extendMode ? EXTEND_URL : AD_SERVER_URL,
+        url: extendMode ? EXTEND_URL : adServerUrl,
         data: JSON.stringify(request),
         bidderRequest
       }
