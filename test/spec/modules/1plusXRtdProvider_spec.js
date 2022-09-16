@@ -312,13 +312,10 @@ describe('1plusXRtdProvider', () => {
     }
 
     it('correctly builds URLs based on consent', () => {
-      const url1 = getPapiUrl(customer )
-      const url2 = getPapiUrl(customer,extractConsent(consent))
-      console.log(url1)
-      console.log(url2)
+      const url1 = getPapiUrl(customer)
+      const url2 = getPapiUrl(customer, extractConsent(consent))
       expect(['&consent_string=myConsent&gdpr_applies=1', '&gdpr_applies=1&consent_string=myConsent']).to.contain(url2.replace(url1, ''))
     })
-    
   })
 
   describe('updateBidderConfig', () => {

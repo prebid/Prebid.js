@@ -6,7 +6,6 @@ import {
   deepAccess, mergeDeep,
   isNumber, isArray, deepSetValue
 } from '../src/utils.js';
-import { json } from 'body-parser';
 
 // Constants
 const REAL_TIME_MODULE = 'realTimeData';
@@ -60,12 +59,12 @@ export const extractConfig = (moduleConfig, reqBidsConfigObj) => {
 
 export const extractConsent = (consent) => {
   if (!consent || !consent.vendorData) {
-    return null 
+    return null
   }
-  const result = {
-    'gdpr_applies': consent.gdprApplies,
+  const result = { 
+    'gdpr_applies': consent.gdprApplies, 
     'consent_string': consent.vendorData.tcString 
-  } 
+  }
   if (result && Object.values(result).some(v => !v)) {
     throw 'TCF Consent: gdprApplies and tcString both have to be defined'
   }
@@ -82,7 +81,6 @@ export const getPapiUrl = (customerId, consent) => {
   const currentUrl = encodeURIComponent(window.location.href);
   var papiUrl = `https://${customerId}.profiles.tagger.opecloud.com/${PAPI_VERSION}/targeting?url=${currentUrl}`;
   if (consent) {
-    console.log("entering consent if")
     Object.entries(consent).forEach(([key, value]) => {
       papiUrl += `&${key}=${value}`
     })
