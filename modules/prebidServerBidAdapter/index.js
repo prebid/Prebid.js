@@ -732,12 +732,13 @@ Object.assign(ORTB2.prototype, {
         imp.bidfloor = floor.floor;
         imp.bidfloorcur = floor.currency;
 
-        const ortb2ImpFloorMin = imp.ext?.prebid?.floors?.floorMin;
+        if (floorMinCur == null) { floorMinCur = imp.bidfloorcur }
+
+        const ortb2ImpFloorMin = imp.ext?.prebid?.floors?.floorMin || imp.ext?.prebid?.floorMin;
         const lowestImpFloorMin = ortb2ImpFloorMin && ortb2ImpFloorMin < imp.bidfloor ? ortb2ImpFloorMin : imp.bidfloor;
 
         deepSetValue(imp, 'ext.prebid.floors.floorMin', lowestImpFloorMin);
         if (floorMin == null || floorMin > lowestImpFloorMin) { floorMin = lowestImpFloorMin }
-        if (floorMinCur == null) { floorMinCur = imp.bidfloorcur }
       }
 
       if (imp.banner || imp.video || imp.native) {
