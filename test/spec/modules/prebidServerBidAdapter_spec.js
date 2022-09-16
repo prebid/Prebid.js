@@ -536,6 +536,8 @@ describe('S2S Adapter', function () {
     addBidResponse = sinon.spy(),
     done = sinon.spy();
 
+  addBidResponse.reject = sinon.spy();
+
   function prepRequest(req) {
     req.ad_units.forEach((adUnit) => {
       delete adUnit.nativeParams
@@ -595,6 +597,7 @@ describe('S2S Adapter', function () {
 
   afterEach(function () {
     addBidResponse.resetHistory();
+    addBidResponse.reject = sinon.spy();
     done.resetHistory();
   });
 
@@ -2904,6 +2907,16 @@ describe('S2S Adapter', function () {
       });
     }
 
+    it('should reject invalid bids', () => {
+      config.setConfig({ s2sConfig: CONFIG });
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      const response = deepClone(RESPONSE_OPENRTB);
+      Object.assign(response.seatbid[0].bid[0], {w: null, h: null});
+      server.requests[0].respond(200, {}, JSON.stringify(response));
+      expect(addBidResponse.reject.calledOnce).to.be.true;
+      expect(addBidResponse.called).to.be.false;
+    });
+
     it('does not (by default) allow bids that were not requested', function () {
       config.setConfig({ s2sConfig: CONFIG });
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
@@ -2912,6 +2925,7 @@ describe('S2S Adapter', function () {
       server.requests[0].respond(200, {}, JSON.stringify(response));
 
       expect(addBidResponse.called).to.be.false;
+      expect(addBidResponse.reject.calledOnce).to.be.true;
     });
 
     it('allows unrequested bids if config.allowUnknownBidderCodes', function () {

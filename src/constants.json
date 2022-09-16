@@ -121,9 +121,9 @@
     "BID_REJECTED": "bidRejected"
   },
   "REJECTION_REASON": {
-    "INVALID": "Bid is invalid",
+    "INVALID": "Bid has missing or invalid properties",
     "INVALID_REQUEST_ID": "Invalid request ID",
-    "BIDDER_DISALLOWED": "Bidder code is not allowed by allowedAlternateBidderCodes"
+    "BIDDER_DISALLOWED": "Bidder code is not allowed by allowedAlternateBidderCodes / allowUnknownBidderCodes"
   },
   "PREBID_NATIVE_DATA_KEYS_TO_ORTB": {
     "body": "desc",
