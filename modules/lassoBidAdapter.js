@@ -47,7 +47,7 @@ export const spec = {
         params: JSON.stringify(bidRequest.params),
         crumbs: JSON.stringify(bidRequest.crumbs),
         prebidVersion: '$prebid.version$',
-        version: 1,
+        version: 2,
         coppa: config.getConfig('coppa') == true ? 1 : 0,
         ccpa: bidderRequest.uspConsent || undefined
       }
@@ -57,7 +57,7 @@ export const spec = {
         url: getBidRequestUrl(aimXR),
         data: payload,
         options: {
-          withCredentials: false
+          withCredentials: true
         },
       };
     });
@@ -67,7 +67,7 @@ export const spec = {
     const response = serverResponse && serverResponse.body;
     const bidResponses = [];
 
-    if (!response) {
+    if (!response || !response.bid.ad) {
       return bidResponses;
     }
 

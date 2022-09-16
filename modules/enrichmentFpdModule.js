@@ -125,6 +125,16 @@ function setKeywords() {
 }
 
 /**
+ * Checks the Global Privacy Control status, and if exists and is true, merges into regs.ext.gpc
+ */
+function setGpc() {
+  const gpcValue = navigator.globalPrivacyControl;
+  if (gpcValue) {
+    mergeDeep(ortb2, { regs: { ext: { gpc: 1 } } })
+  }
+}
+
+/**
  * Resets modules global ortb2 data
  */
 const resetOrtb2 = () => { ortb2 = {} };
@@ -135,6 +145,7 @@ function runEnrichments() {
   setDomain();
   setDimensions();
   setKeywords();
+  setGpc();
 
   return ortb2;
 }

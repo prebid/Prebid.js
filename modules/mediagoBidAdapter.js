@@ -270,7 +270,7 @@ function getItems(validBidRequests, bidderRequest) {
           pos: 1,
         },
         ext: {
-          //   gpid: gpid, // 加入后无法返回广告
+        //   gpid: gpid, // 加入后无法返回广告
         },
       };
       itemMaps[id] = {
