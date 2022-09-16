@@ -57,15 +57,15 @@ export const extractConfig = (moduleConfig, reqBidsConfigObj) => {
   return { customerId, timeout, bidders };
 }
 
-export const extractConsent = (consent) => {
-  if (!consent || !consent.vendorData) {
+export const extractConsent = ({ gdprApplies, vendorData }) => {
+  if (!vendorData && (gdprApplies === null || gdprApplies === undefined)) {
     return null
   }
   const result = {
-    'gdpr_applies': consent.gdprApplies,
-    'consent_string': consent.vendorData.tcString
+    'gdpr_applies': gdprApplies,
+    'consent_string': vendorData.tcString
   }
-  if (result && Object.values(result).some(v => !v)) {
+  if (Object.values(result).some(v => (v === null || v === undefined))) {
     throw 'TCF Consent: gdprApplies and tcString both have to be defined'
   }
   return result
@@ -242,7 +242,7 @@ const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, userConsent
     // Get the required config
     const { customerId, bidders } = extractConfig(moduleConfig, reqBidsConfigObj);
     // Get PAPI URL
-    const papiUrl = getPapiUrl(customerId, extractConsent(userConsent))
+    const papiUrl = getPapiUrl(customerId, extractConsent(userConsent) || {})
     // Call PAPI
     getTargetingDataFromPapi(papiUrl)
       .then((papiResponse) => {

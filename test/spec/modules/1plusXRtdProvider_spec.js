@@ -270,11 +270,8 @@ describe('1plusXRtdProvider', () => {
       expect(output).to.deep.include(expectedOutput)
     })
     it('extracts null if not given at all', () => {
-      const consent1 = null
-      const consent2 = undefined
-
+      const consent1 = {}
       expect(extractConsent(consent1)).to.equal(null)
-      expect(extractConsent(consent2)).to.equal(null)
     })
 
     it('throws an error if the consent is malformed', () => {
