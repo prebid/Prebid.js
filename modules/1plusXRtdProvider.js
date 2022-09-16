@@ -6,6 +6,7 @@ import {
   deepAccess, mergeDeep,
   isNumber, isArray, deepSetValue
 } from '../src/utils.js';
+import { json } from 'body-parser';
 
 // Constants
 const REAL_TIME_MODULE = 'realTimeData';
@@ -58,12 +59,15 @@ export const extractConfig = (moduleConfig, reqBidsConfigObj) => {
 }
 
 export const extractConsent = (consent) => {
-  const result = consent ? {
+  if (!consent || !consent.vendorData) {
+    return null 
+  }
+  const result = {
     'gdpr_applies': consent.gdprApplies,
-    'consent_string': consent.vendorData ? consent.vendorData.tcString : undefined
-  } : null
+    'consent_string': consent.vendorData.tcString 
+  } 
   if (result && Object.values(result).some(v => !v)) {
-    throw 'gdprApplies and tcString both have to be defined'
+    throw 'TCF Consent: gdprApplies and tcString both have to be defined'
   }
   return result
 }
@@ -78,6 +82,7 @@ export const getPapiUrl = (customerId, consent) => {
   const currentUrl = encodeURIComponent(window.location.href);
   var papiUrl = `https://${customerId}.profiles.tagger.opecloud.com/${PAPI_VERSION}/targeting?url=${currentUrl}`;
   if (consent) {
+    console.log("entering consent if")
     Object.entries(consent).forEach(([key, value]) => {
       papiUrl += `&${key}=${value}`
     })
@@ -232,16 +237,14 @@ const init = (config, userConsent) => {
  * @param {Object} reqBidsConfigObj Bid request configuration object
  * @param {Function} callback Called on completion
  * @param {Object} moduleConfig Configuration for 1plusX RTD module
- * @param {boolean} userConsent
+ * @param {Object} userConsent
  */
 const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, userConsent) => {
   try {
     // Get the required config
     const { customerId, bidders } = extractConfig(moduleConfig, reqBidsConfigObj);
-    // Get consent
-    // const consent = extractConsent(userConsent)
     // Get PAPI URL
-    const papiUrl = getPapiUrl(customerId, null)
+    const papiUrl = getPapiUrl(customerId, extractConsent(userConsent))
     // Call PAPI
     getTargetingDataFromPapi(papiUrl)
       .then((papiResponse) => {

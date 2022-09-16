@@ -273,8 +273,8 @@ describe('1plusXRtdProvider', () => {
       const consent1 = null
       const consent2 = undefined
 
-      expect(extractConsent(consent1) === null)
-      expect(extractConsent(consent2) === null)
+      expect(extractConsent(consent1)).to.equal(null)
+      expect(extractConsent(consent2)).to.equal(null)
     })
 
     it('throws an error if the consent is malformed', () => {
@@ -297,7 +297,7 @@ describe('1plusXRtdProvider', () => {
         try {
           extractConsent(consent)
           assert(false, 'Should be throwing an exception')
-        } catch (e) {}
+        } catch (e) { }
       }
     })
   })
@@ -311,11 +311,14 @@ describe('1plusXRtdProvider', () => {
       }
     }
 
-    it('correctly builds URLs distinguishing if consent is present or null', () => {
-      const url1 = getPapiUrl({ customerId: customer })
-      const url2 = getPapiUrl({ customerId: customer, consent: consent })
-      expect(url2.replace(url1, '')).to.equal('&consent_string=myConsent&gdpr_applies=1')
+    it('correctly builds URLs based on consent', () => {
+      const url1 = getPapiUrl(customer )
+      const url2 = getPapiUrl(customer,extractConsent(consent))
+      console.log(url1)
+      console.log(url2)
+      expect(['&consent_string=myConsent&gdpr_applies=1', '&gdpr_applies=1&consent_string=myConsent']).to.contain(url2.replace(url1, ''))
     })
+    
   })
 
   describe('updateBidderConfig', () => {
