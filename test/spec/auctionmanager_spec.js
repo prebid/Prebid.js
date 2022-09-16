@@ -1569,6 +1569,7 @@ describe('auctionmanager.js', function () {
 
       function rejectHook(fn, adUnitCode, bid, reject) {
         reject(REJECTION_REASON);
+        reject(REJECTION_REASON); // second call should do nothing
       }
 
       before(() => {
@@ -1592,6 +1593,7 @@ describe('auctionmanager.js', function () {
           rejectionReason: REJECTION_REASON,
           adUnitCode: AU_CODE
         }));
+        auction.addBidRejected = sinon.stub();
       });
 
       Object.entries({
@@ -1605,7 +1607,6 @@ describe('auctionmanager.js', function () {
           });
 
           it('should pass bid to auction.addBidRejected', () => {
-            auction.addBidRejected = sinon.stub();
             rejectBid();
             sinon.assert.calledWith(auction.addBidRejected, expectedRejection);
           });
@@ -1613,14 +1614,21 @@ describe('auctionmanager.js', function () {
       });
 
       it('should return a NO_BID replacement', () => {
-        const noBid = cbs.addBidResponse.reject(AU_CODE, bid, 'Rejected');
+        const noBid = cbs.addBidResponse.reject(AU_CODE, {...bid, statusMessage: 'Bid available', status: CONSTANTS.BID_STATUS.RENDERED}, 'Rejected');
         sinon.assert.match(noBid, {
+          status: CONSTANTS.BID_STATUS.BID_REJECTED,
+          statusMessage: 'Bid returned empty or error response',
           cpm: 0,
           requestId: bid.requestId,
           auctionId: bid.auctionId,
           adUnitCode: AU_CODE,
           rejectionReason: undefined,
         });
+      });
+
+      it('addBidResponse hooks should not be able to reject the same bid twice', () => {
+        cbs.addBidResponse(AU_CODE, bid);
+        expect(auction.addBidRejected.calledOnce).to.be.true;
       });
     })
   });

@@ -698,7 +698,7 @@ export const addBidResponseHook = timedBidResponseHook('priceFloors', function a
   let floorData = _floorDataForAuction[bid.auctionId];
   // if no floor data then bail
   if (!floorData || !bid || floorData.skipped) {
-    return fn.call(this, adUnitCode, bid);
+    return fn.call(this, adUnitCode, bid, reject);
   }
 
   const matchingBidRequest = auctionManager.index.getBidRequest(bid);
@@ -708,7 +708,7 @@ export const addBidResponseHook = timedBidResponseHook('priceFloors', function a
 
   if (!floorInfo.matchingFloor) {
     logWarn(`${MODULE_NAME}: unable to determine a matching price floor for bidResponse`, bid);
-    return fn.call(this, adUnitCode, bid);
+    return fn.call(this, adUnitCode, bid, reject);
   }
 
   // determine the base cpm to use based on if the currency matches the floor currency
@@ -724,7 +724,7 @@ export const addBidResponseHook = timedBidResponseHook('priceFloors', function a
       adjustedCpm = getGlobal().convertCurrency(bid.cpm, bidResponseCurrency.toUpperCase(), floorCurrency);
     } catch (err) {
       logError(`${MODULE_NAME}: Unable do get currency conversion for bidResponse to Floor Currency. Do you have Currency module enabled? ${bid}`);
-      return fn.call(this, adUnitCode, bid);
+      return fn.call(this, adUnitCode, bid, reject);
     }
   }
 
@@ -742,7 +742,7 @@ export const addBidResponseHook = timedBidResponseHook('priceFloors', function a
     logWarn(`${MODULE_NAME}: ${flooredBid.bidderCode}'s Bid Response for ${adUnitCode} was rejected due to floor not met (adjusted cpm: ${bid?.floorData?.cpmAfterAdjustments}, floor: ${floorInfo?.matchingFloor})`, bid);
     return fn.call(this, adUnitCode, flooredBid, reject);
   }
-  return fn.call(this, adUnitCode, bid);
+  return fn.call(this, adUnitCode, bid, reject);
 });
 
 config.getConfig('floors', config => handleSetFloorsConfig(config.floors));

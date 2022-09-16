@@ -1681,7 +1681,7 @@ describe('the price floors module', function () {
     };
     beforeEach(function () {
       returnedBidResponse = {};
-      reject = sinon.stub().returns({status: CONSTANTS.BID_STATUS.BID_REJECTED});
+      reject = sinon.stub().returns({status: 'rejected'});
       indexStub = sinon.stub(auctionManager, 'index');
       indexStub.get(() => stubAuctionIndex({adUnits: [adUnit]}));
     });
@@ -1712,7 +1712,7 @@ describe('the price floors module', function () {
       _floorDataForAuction[AUCTION_ID].data.values = { 'banner': 1.0 };
       runBidResponse();
       expect(reject.calledOnce).to.be.true;
-      expect(returnedBidResponse.status).to.equal(CONSTANTS.BID_STATUS.BID_REJECTED);
+      expect(returnedBidResponse.status).to.equal('rejected');
     });
     it('if it finds a rule and does not floor should update the bid accordingly', function () {
       _floorDataForAuction[AUCTION_ID] = utils.deepClone(basicFloorConfig);

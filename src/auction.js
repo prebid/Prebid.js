@@ -377,6 +377,13 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   };
 }
 
+/**
+ * Hook into this to intercept bids before they are added to an auction.
+ *
+ * @param adUnitCode
+ * @param bid
+ * @param {function(String)} reject: a function that, when called, rejects `bid` with the given reason.
+ */
 export const addBidResponse = hook('sync', function(adUnitCode, bid, reject) {
   this.dispatch.call(null, adUnitCode, bid);
 }, 'addBidResponse');
@@ -455,13 +462,13 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
       // return a "NO_BID" replacement that the caller can decide to continue with
       // TODO: remove this in v8; see https://github.com/prebid/Prebid.js/issues/8956
       const noBid = createBid(CONSTANTS.STATUS.NO_BID, bid.getIdentifiers());
-      Object.assign(noBid, Object.fromEntries(Object.entries(bid).filter(([k]) => ![
+      Object.assign(noBid, Object.fromEntries(Object.entries(bid).filter(([k]) => !noBid.hasOwnProperty(k) && ![
         'ad',
         'adUrl',
         'vastXml',
         'vastUrl',
         'native',
-      ].includes(k))))
+      ].includes(k))));
       noBid.status = CONSTANTS.BID_STATUS.BID_REJECTED;
       noBid.cpm = 0;
 
@@ -509,7 +516,15 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
         const bidderRequest = index.getBidderRequest(bid);
         waitFor((bidderRequest && bidderRequest.bidderRequestId) || '', addBidResponse.call({
           dispatch: acceptBidResponse,
-        }, adUnitCode, bid, (reason) => rejectBidResponse(adUnitCode, bid, reason)));
+        }, adUnitCode, bid, (() => {
+          let rejection;
+          return (reason) => {
+            if (rejection == null) {
+              rejection = rejectBidResponse(adUnitCode, bid, reason);
+            }
+            return rejection;
+          }
+        })()));
       }
       addBid.reject = rejectBidResponse;
       return addBid;

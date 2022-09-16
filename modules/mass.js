@@ -104,7 +104,7 @@ export const addBidResponseHook = timedBidResponseHook('mass', function addBidRe
     addListenerOnce();
   }
 
-  next(adUnitCode, bid);
+  next(adUnitCode, bid, reject);
 });
 
 /**
