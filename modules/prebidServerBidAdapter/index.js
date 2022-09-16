@@ -933,6 +933,7 @@ Object.assign(ORTB2.prototype, {
             transactionId: this.adUnitsByImp[bid.impid].transactionId,
             auctionId: this.auctionId,
           });
+          bidObject.requestBidder = bidRequest?.bidder;
           bidObject.requestTimestamp = this.requestTimestamp;
           bidObject.cpm = cpm;
           if (bid?.ext?.prebid?.meta?.adaptercode) {
@@ -1123,8 +1124,7 @@ export function PrebidServer() {
         onBid: function ({adUnit, bid}) {
           const metrics = bid.metrics = s2sBidRequest.metrics.fork().renameWith();
           metrics.checkpoint('addBidResponse');
-
-          if (bid.requestId == null && !s2sBidRequest.s2sConfig.allowUnknownBidderCodes) {
+          if ((bid.requestId == null || bid.requestBidder == null) && !s2sBidRequest.s2sConfig.allowUnknownBidderCodes) {
             logWarn(`PBS adapter received bid from unknown bidder (${bid.bidder}), but 's2sConfig.allowUnknownBidderCodes' is not set. Ignoring bid.`);
             addBidResponse.reject(adUnit, bid, CONSTANTS.REJECTION_REASON.BIDDER_DISALLOWED);
           } else {
