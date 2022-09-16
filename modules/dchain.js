@@ -140,7 +140,7 @@ export const addBidResponseHook = timedBidResponseHook('dchain', function addBid
     bid.meta.dchain = basicDchain;
   }
 
-  fn(adUnitCode, bid,  reject);
+  fn(adUnitCode, bid, reject);
 });
 
 export function init() {

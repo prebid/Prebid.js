@@ -1,10 +1,9 @@
-import { logInfo, logWarn, logError, logMessage } from '../src/utils.js';
-import { getGlobal } from '../src/prebidGlobal.js';
-import { createBid } from '../src/bidfactory.js';
+import {logError, logInfo, logMessage, logWarn} from '../src/utils.js';
+import {getGlobal} from '../src/prebidGlobal.js';
 import CONSTANTS from '../src/constants.json';
-import { ajax } from '../src/ajax.js';
-import { config } from '../src/config.js';
-import { getHook } from '../src/hook.js';
+import {ajax} from '../src/ajax.js';
+import {config} from '../src/config.js';
+import {getHook} from '../src/hook.js';
 import {defer} from '../src/utils/promise.js';
 import {timedBidResponseHook} from '../src/utils/perfMetrics.js';
 

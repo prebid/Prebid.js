@@ -20,7 +20,6 @@ import {ajaxBuilder} from '../src/ajax.js';
 import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
 import {getHook} from '../src/hook.js';
-import {createBid} from '../src/bidfactory.js';
 import {find} from '../src/polyfill.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {bidderSettings} from '../src/bidderSettings.js';

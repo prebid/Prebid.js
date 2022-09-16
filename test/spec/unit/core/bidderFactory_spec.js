@@ -1,4 +1,4 @@
-import { newBidder, registerBidder, preloadBidderMappingFile, storage } from 'src/adapters/bidderFactory.js';
+import {newBidder, registerBidder, preloadBidderMappingFile, storage, isValid} from 'src/adapters/bidderFactory.js';
 import adapterManager from 'src/adapterManager.js';
 import * as ajax from 'src/ajax.js';
 import { expect } from 'chai';
@@ -1396,4 +1396,47 @@ describe('preload mapping url hook', function() {
     expect(fakeTranslationServer.requests.length).to.equal(0);
     clock.restore();
   });
+});
+
+describe('bid response isValid', () => {
+  describe('size check', () => {
+    let req, index;
+
+    beforeEach(() => {
+      req = {
+        ...MOCK_BIDS_REQUEST.bids[0],
+        mediaTypes: {
+          banner: {
+            sizes: [[1, 2], [3, 4]]
+          }
+        }
+      }
+    });
+
+    function mkResponse(width, height) {
+      return {
+        requestId: req.bidId,
+        width,
+        height,
+        cpm: 1,
+        ttl: 60,
+        creativeId: '123',
+        netRevenue: true,
+        currency: 'USD',
+        mediaType: 'banner',
+      }
+    }
+
+    function checkValid(bid) {
+      return isValid('au', bid, {index: stubAuctionIndex({bidRequests: [req]})});
+    }
+
+    it('should succeed when response has a size that was in request', () => {
+      expect(checkValid(mkResponse(3, 4))).to.be.true;
+    });
+
+    it('should fail when response has a size that was not in request', () => {
+      expect(checkValid(mkResponse(10, 11))).to.be.false;
+    });
+  })
 });

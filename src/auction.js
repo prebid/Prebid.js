@@ -58,22 +58,36 @@
  */
 
 import {
-  flatten, timestamp, adUnitsFilter, deepAccess, getValue, parseUrl, generateUUID,
-  logMessage, bind, logError, logInfo, logWarn, isEmpty, _each, isFn, isEmptyStr, pick
+  _each,
+  adUnitsFilter,
+  bind,
+  deepAccess,
+  flatten,
+  generateUUID,
+  getValue,
+  isEmpty,
+  isEmptyStr,
+  isFn,
+  logError,
+  logInfo,
+  logMessage,
+  logWarn,
+  parseUrl,
+  timestamp
 } from './utils.js';
-import { getPriceBucketString } from './cpmBucketManager.js';
-import { getNativeTargeting } from './native.js';
-import { getCacheUrl, store } from './videoCache.js';
-import { Renderer } from './Renderer.js';
-import { config } from './config.js';
-import { userSync } from './userSync.js';
-import { hook } from './hook.js';
+import {getPriceBucketString} from './cpmBucketManager.js';
+import {getNativeTargeting} from './native.js';
+import {getCacheUrl, store} from './videoCache.js';
+import {Renderer} from './Renderer.js';
+import {config} from './config.js';
+import {userSync} from './userSync.js';
+import {hook} from './hook.js';
 import {find, includes} from './polyfill.js';
-import { OUTSTREAM } from './video.js';
-import { VIDEO } from './mediaTypes.js';
+import {OUTSTREAM} from './video.js';
+import {VIDEO} from './mediaTypes.js';
 import {auctionManager} from './auctionManager.js';
 import {bidderSettings} from './bidderSettings.js';
-import * as events from './events.js'
+import * as events from './events.js';
 import adapterManager from './adapterManager.js';
 import CONSTANTS from './constants.json';
 import {GreedyPromise} from './utils/promise.js';
@@ -645,7 +659,6 @@ const batchAndStore = batchingCache();
 export const callPrebidCache = hook('async', function(auctionInstance, bidResponse, afterBidAdded, videoMediaType) {
   batchAndStore(auctionInstance, bidResponse, afterBidAdded);
 }, 'callPrebidCache');
-
 
 /**
  * Augment `bidResponse` with properties that are common across all bids - including rejected bids.

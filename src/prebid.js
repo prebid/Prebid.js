@@ -36,7 +36,7 @@ import {listenMessagesFromCreative} from './secureCreatives.js';
 import {userSync} from './userSync.js';
 import {config} from './config.js';
 import {auctionManager} from './auctionManager.js';
-import {filters, isBidUsable, targeting} from './targeting.js';
+import {isBidUsable, targeting} from './targeting.js';
 import {hook, wrapHook} from './hook.js';
 import {loadSession} from './debugging.js';
 import {includes} from './polyfill.js';

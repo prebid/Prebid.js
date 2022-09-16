@@ -1,15 +1,28 @@
 import {
-  uniques, isGptPubadsDefined, getHighestCpm, getOldestHighestCpmBid, groupBy, isAdUnitCodeMatchingSlot, timestamp,
-  deepAccess, deepClone, logError, logWarn, logInfo, isFn, isArray, logMessage, isStr,
+  deepAccess,
+  deepClone,
+  getHighestCpm,
+  getOldestHighestCpmBid,
+  groupBy,
+  isAdUnitCodeMatchingSlot,
+  isArray,
+  isFn,
+  isGptPubadsDefined,
+  isStr,
+  logError,
+  logInfo,
+  logMessage,
+  logWarn,
+  timestamp,
+  uniques,
 } from './utils.js';
-import { config } from './config.js';
-import { NATIVE_TARGETING_KEYS } from './native.js';
-import { auctionManager } from './auctionManager.js';
-import { sizeSupported } from './sizeMapping.js';
-import { ADPOD } from './mediaTypes.js';
-import { hook } from './hook.js';
-import { bidderSettings } from './bidderSettings.js';
-import {includes, find} from './polyfill.js';
+import {config} from './config.js';
+import {NATIVE_TARGETING_KEYS} from './native.js';
+import {auctionManager} from './auctionManager.js';
+import {ADPOD} from './mediaTypes.js';
+import {hook} from './hook.js';
+import {bidderSettings} from './bidderSettings.js';
+import {find, includes} from './polyfill.js';
 import CONSTANTS from './constants.json';
 
 var pbTargetingKeys = [];
