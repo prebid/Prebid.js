@@ -38,7 +38,6 @@ export const spec = {
   buildRequests: function(validBidRequests, bidderRequest) {
     const slots = validBidRequests.map(beOpRequestSlotsMaker);
     const pageUrl = getPageUrl(bidderRequest.refererInfo, window);
-    const fpd = config.getLegacyFpd(config.getConfig('ortb2'));
     const gdpr = bidderRequest.gdprConsent;
     const firstSlot = slots[0];
     const payloadObject = {
@@ -48,7 +47,7 @@ export const spec = {
       pid: firstSlot.pid,
       url: pageUrl,
       lang: (window.navigator.language || window.navigator.languages[0]),
-      kwds: (fpd && fpd.site && fpd.site.keywords) || [],
+      kwds: bidderRequest.ortb2?.site?.keywords || [],
       dbg: false,
       slts: slots,
       is_amp: deepAccess(bidderRequest, 'referrerInfo.isAmp'),
@@ -100,12 +99,12 @@ export const spec = {
 }
 
 function buildTrackingParams(data, info, value) {
-  const accountId = data.params.accountId;
+  let params = Array.isArray(data.params) ? data.params[0] : data.params;
   const pageUrl = getPageUrl(null, window);
   return {
-    pid: accountId === undefined ? data.ad.match(/account: \“([a-f\d]{24})\“/)[1] : accountId,
-    nid: data.params.networkId,
-    nptnid: data.params.networkPartnerId,
+    pid: params.accountId === undefined ? data.ad.match(/account: \“([a-f\d]{24})\“/)[1] : params.accountId,
+    nid: params.networkId,
+    nptnid: params.networkPartnerId,
     bid: data.bidId || data.requestId,
     sl_n: data.adUnitCode,
     aid: data.auctionId,

@@ -185,28 +185,6 @@ function storeData(data, name, stringify = true) {
 
 function getData(name, remove = true) {
   let data = [];
-  if (storage.hasLocalStorage()) {
-    Object.keys(localStorage).filter((key) => {
-      if (key.indexOf(name) > -1) {
-        data.push(storage.getDataFromLocalStorage(key));
-        if (remove) {
-          storage.removeDataFromLocalStorage(key);
-        }
-      }
-    });
-  }
-
-  if (storage.cookiesAreEnabled()) {
-    document.cookie.split(';').forEach((item) => {
-      let value = item.split('=');
-      if (value[0].indexOf(name) > -1) {
-        data.push(value[1]);
-        if (remove) {
-          storage.setCookie(value[0], '', 'Thu, 01 Jan 1970 00:00:01 GMT');
-        }
-      }
-    });
-  }
   return data;
 }
 

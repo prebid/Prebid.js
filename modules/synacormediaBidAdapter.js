@@ -38,15 +38,23 @@ export const spec = {
     const openRtbBidRequest = {
       id: bidderRequest.auctionId,
       site: {
-        domain: config.getConfig('publisherDomain') || location.hostname,
-        page: refererInfo.referer,
-        ref: document.referrer
+        // TODO: does the fallback make sense here?
+        domain: refererInfo.domain || location.hostname,
+        page: refererInfo.page,
+        ref: refererInfo.ref
       },
       device: {
         ua: navigator.userAgent
       },
       imp: []
     };
+
+    const callbackTimeout = bidderRequest.timeout;
+    const globalTimeout = config.getConfig('bidderTimeout');
+    const tmax = globalTimeout ? Math.min(globalTimeout, callbackTimeout) : callbackTimeout;
+    if (tmax) {
+      openRtbBidRequest.tmax = tmax;
+    }
 
     const schain = validBidReqs[0].schain;
     if (schain) {
@@ -93,7 +101,7 @@ export const spec = {
     });
 
     // CCPA
-    if (bidderRequest && bidderRequest.uspConsent) {
+    if (bidderRequest.uspConsent) {
       deepSetValue(openRtbBidRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent);
     }
 

@@ -71,7 +71,7 @@ describe('Adf adapter', function () {
           adxDomain: '10.8.57.207'
         }
       }];
-      let request = spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } });
+      let request = spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } });
 
       assert.equal(request.method, 'POST');
       assert.equal(request.url, 'https://10.8.57.207/adx/openrtb');
@@ -82,7 +82,7 @@ describe('Adf adapter', function () {
     describe('user privacy', function () {
       it('should send GDPR Consent data to adform if gdprApplies', function () {
         let validBidRequests = [{ bidId: 'bidId', params: { test: 1 } }];
-        let bidderRequest = { gdprConsent: { gdprApplies: true, consentString: 'consentDataString' }, refererInfo: { referer: 'page' } };
+        let bidderRequest = { gdprConsent: { gdprApplies: true, consentString: 'consentDataString' }, refererInfo: { page: 'page' } };
         let request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
 
         assert.equal(request.user.ext.consent, bidderRequest.gdprConsent.consentString);
@@ -92,7 +92,7 @@ describe('Adf adapter', function () {
 
       it('should send gdpr as number', function () {
         let validBidRequests = [{ bidId: 'bidId', params: { test: 1 } }];
-        let bidderRequest = { gdprConsent: { gdprApplies: true, consentString: 'consentDataString' }, refererInfo: { referer: 'page' } };
+        let bidderRequest = { gdprConsent: { gdprApplies: true, consentString: 'consentDataString' }, refererInfo: { page: 'page' } };
         let request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
 
         assert.equal(typeof request.regs.ext.gdpr, 'number');
@@ -101,12 +101,12 @@ describe('Adf adapter', function () {
 
       it('should send CCPA Consent data to adform', function () {
         let validBidRequests = [{ bidId: 'bidId', params: { test: 1 } }];
-        let bidderRequest = { uspConsent: '1YA-', refererInfo: { referer: 'page' } };
+        let bidderRequest = { uspConsent: '1YA-', refererInfo: { page: 'page' } };
         let request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
 
         assert.equal(request.regs.ext.us_privacy, '1YA-');
 
-        bidderRequest = { uspConsent: '1YA-', gdprConsent: { gdprApplies: true, consentString: 'consentDataString' }, refererInfo: { referer: 'page' } };
+        bidderRequest = { uspConsent: '1YA-', gdprConsent: { gdprApplies: true, consentString: 'consentDataString' }, refererInfo: { page: 'page' } };
         request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
 
         assert.equal(request.regs.ext.us_privacy, '1YA-');
@@ -119,13 +119,13 @@ describe('Adf adapter', function () {
           bidId: 'bidId',
           params: { siteId: 'siteId' }
         }];
-        let bidderRequest = {gdprConsent: {gdprApplies: false, consentString: 'consentDataString'}, refererInfo: { referer: 'page' }};
+        let bidderRequest = { gdprConsent: {gdprApplies: false, consentString: 'consentDataString'}, refererInfo: { page: 'page' } };
         let request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
 
         assert.equal(request.user.ext.consent, 'consentDataString');
         assert.equal(request.regs.ext.gdpr, 0);
 
-        bidderRequest = {gdprConsent: {consentString: 'consentDataString'}, refererInfo: { referer: 'page' }};
+        bidderRequest = {gdprConsent: {consentString: 'consentDataString'}, refererInfo: { page: 'page' }};
         request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
 
         assert.equal(request.user, undefined);
@@ -136,7 +136,7 @@ describe('Adf adapter', function () {
           bidId: 'bidId',
           params: { siteId: 'siteId' }
         }];
-        let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data);
+        let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data);
 
         assert.equal(request.user, undefined);
         assert.equal(request.regs, undefined);
@@ -148,7 +148,7 @@ describe('Adf adapter', function () {
         bidId: 'bidId',
         params: { test: 1 }
       }];
-      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data);
+      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data);
 
       assert.ok(request.is_debug);
       assert.equal(request.test, 1);
@@ -160,7 +160,7 @@ describe('Adf adapter', function () {
         bidId: 'bidId',
         params: { siteId: 'siteId' }
       }];
-      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data);
+      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data);
       let data = Object.keys(request);
 
       assert.deepEqual(keys, data);
@@ -172,7 +172,7 @@ describe('Adf adapter', function () {
         params: { siteId: 'siteId' },
         transactionId: 'transactionId'
       }];
-      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data);
+      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data);
 
       assert.equal(request.source.tid, validBidRequests[0].transactionId);
       assert.equal(request.source.fd, 1);
@@ -182,7 +182,7 @@ describe('Adf adapter', function () {
       config.setConfig({
       });
       let validBidRequests = [{ bidId: 'bidId', params: { test: 1 } }];
-      let bidderRequest = { gdprConsent: { gdprApplies: true, consentString: 'consentDataString' }, refererInfo: { referer: 'page' } };
+      let bidderRequest = { gdprConsent: { gdprApplies: true, consentString: 'consentDataString' }, refererInfo: { page: 'page' } };
       let request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
 
       assert.equal(request.regs.coppa, undefined);
@@ -200,7 +200,7 @@ describe('Adf adapter', function () {
         coppa: true
       });
       let validBidRequests = [{ bidId: 'bidId', params: { test: 1 } }];
-      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data);
+      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data);
 
       assert.equal(request.regs.coppa, 1);
     });
@@ -213,7 +213,7 @@ describe('Adf adapter', function () {
         bidId: 'bidId',
         params: { mid: '1000' }
       }];
-      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data);
+      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data);
 
       assert.equal(request.device.ua, navigator.userAgent);
       assert.equal(request.device.w, 100);
@@ -223,13 +223,14 @@ describe('Adf adapter', function () {
     it('should send app info', function () {
       config.setConfig({
         app: { id: 'appid' },
-        ortb2: { app: { name: 'appname' } }
       });
+      const ortb2 = { app: { name: 'appname' } };
       let validBidRequests = [{
         bidId: 'bidId',
-        params: { mid: '1000' }
+        params: { mid: '1000' },
+        ortb2
       }];
-      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data);
+      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' }, ortb2 }).data);
 
       assert.equal(request.app.id, 'appid');
       assert.equal(request.app.name, 'appname');
@@ -244,23 +245,24 @@ describe('Adf adapter', function () {
             domain: 'publisher.domain.com'
           }
         },
-        ortb2: {
-          site: {
-            publisher: {
-              name: 'publisher\'s name'
-            }
+      });
+      const ortb2 = {
+        site: {
+          publisher: {
+            name: 'publisher\'s name'
           }
         }
-      });
+      };
       let validBidRequests = [{
         bidId: 'bidId',
-        params: { mid: '1000' }
+        params: { mid: '1000' },
+        ortb2
       }];
-      let refererInfo = { referer: 'page' };
-      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo }).data);
+      let refererInfo = { page: 'page' };
+      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo, ortb2 }).data);
 
       assert.deepEqual(request.site, {
-        page: refererInfo.referer,
+        page: refererInfo.page,
         publisher: {
           domain: 'publisher.domain.com',
           name: 'publisher\'s name'
@@ -279,7 +281,7 @@ describe('Adf adapter', function () {
         })
       }];
 
-      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data);
+      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data);
       assert.deepEqual(request.user.ext.eids, [
         { source: 'adserver.org', uids: [ { id: 'TTD_ID_FROM_USER_ID_MODULE', atype: 1, ext: { rtiPartner: 'TDID' } } ] },
         { source: 'pubcid.org', uids: [ { id: 'pubCommonId_FROM_USER_ID_MODULE', atype: 1 } ] }
@@ -289,7 +291,7 @@ describe('Adf adapter', function () {
     it('should send currency if defined', function () {
       config.setConfig({ currency: { adServerCurrency: 'EUR' } });
       let validBidRequests = [{ params: {} }];
-      let refererInfo = { referer: 'page' };
+      let refererInfo = { page: 'page' };
       let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo }).data);
 
       assert.deepEqual(request.cur, [ 'EUR' ]);
@@ -307,7 +309,7 @@ describe('Adf adapter', function () {
         }
       }];
 
-      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data);
+      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data);
       assert.deepEqual(request.source.ext.schain, {
         validation: 'strict',
         config: {
@@ -322,7 +324,7 @@ describe('Adf adapter', function () {
           bidId: 'bidId',
           params: { siteId: 'siteId' }
         }];
-        let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data);
+        let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data);
 
         assert.equal(request.ext.pt, 'net');
       });
@@ -331,7 +333,7 @@ describe('Adf adapter', function () {
           bidId: 'bidId',
           params: { priceType: 'net' }
         }];
-        let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data);
+        let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data);
 
         assert.equal(request.ext.pt, 'net');
       });
@@ -346,7 +348,7 @@ describe('Adf adapter', function () {
           bidId: 'bidId2',
           params: { siteId: 'siteId' }
         }];
-        let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data);
+        let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data);
 
         assert.equal(request.imp.length, 2);
       });
@@ -364,7 +366,7 @@ describe('Adf adapter', function () {
           params: { mid: '1000' },
           mediaTypes: {video: {}}
         }];
-        let imps = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data).imp;
+        let imps = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp;
 
         for (let i = 0; i < 3; i++) {
           assert.equal(imps[i].id, i + 1);
@@ -375,7 +377,7 @@ describe('Adf adapter', function () {
         let validBidRequests = [{ bidId: 'bidId', params: {mid: 1000}, mediaTypes: {video: {}} },
           { bidId: 'bidId2', params: {mid: 1001}, mediaTypes: {video: {}} },
           { bidId: 'bidId3', params: {mid: 1002}, mediaTypes: {video: {}} }];
-        let imps = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data).imp;
+        let imps = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp;
         for (let i = 0; i < 3; i++) {
           assert.equal(imps[i].tagid, validBidRequests[i].params.mid);
         }
@@ -488,7 +490,7 @@ describe('Adf adapter', function () {
               video: {}
             }
           }];
-          let [ first, second, third ] = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data).imp;
+          let [ first, second, third ] = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp;
 
           assert.ok(first.banner);
           assert.ok(first.video);
@@ -515,7 +517,7 @@ describe('Adf adapter', function () {
               }
             }
           }];
-          let { banner } = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data).imp[0];
+          let { banner } = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp[0];
           assert.deepEqual(banner, {
             format: [ { w: 100, h: 100 }, { w: 200, h: 300 } ]
           });
@@ -535,7 +537,7 @@ describe('Adf adapter', function () {
               }
             }
           }];
-          let { video } = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data).imp[0];
+          let { video } = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp[0];
           assert.deepEqual(video, {
             playerSize: [640, 480],
             context: 'outstream',
@@ -556,7 +558,7 @@ describe('Adf adapter', function () {
                 body: { len: 140 }
               }
             }];
-            let assets = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data).imp[0].native.request.assets;
+            let assets = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp[0].native.request.assets;
 
             assert.equal(assets[0].id, 0);
             assert.equal(assets[1].id, 3);
@@ -574,7 +576,7 @@ describe('Adf adapter', function () {
               }
             }];
 
-            let assets = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data).imp[0].native.request.assets;
+            let assets = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp[0].native.request.assets;
 
             assert.equal(assets[0].required, 1);
             assert.ok(!assets[1].required);
@@ -597,7 +599,7 @@ describe('Adf adapter', function () {
               }
             }];
 
-            let assets = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data).imp[0].native.request.assets;
+            let assets = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp[0].native.request.assets;
             assert.ok(assets[0].title);
             assert.equal(assets[0].title.len, 140);
             assert.deepEqual(assets[1].img, { type: 3, w: 150, h: 50 });
@@ -620,7 +622,7 @@ describe('Adf adapter', function () {
                 }
               }];
 
-              let assets = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data).imp[0].native.request.assets;
+              let assets = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp[0].native.request.assets;
               assert.ok(assets[0].img);
               assert.equal(assets[0].img.w, 200);
               assert.equal(assets[0].img.h, 300);
@@ -649,7 +651,7 @@ describe('Adf adapter', function () {
               }
             }];
 
-            let assets = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data).imp[0].native.request.assets;
+            let assets = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp[0].native.request.assets;
             assert.ok(assets[0].img);
             assert.equal(assets[0].img.wmin, 100);
             assert.equal(assets[0].img.hmin, 300);
@@ -673,7 +675,7 @@ describe('Adf adapter', function () {
               }
             }];
 
-            assert.doesNotThrow(() => spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }));
+            assert.doesNotThrow(() => spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }));
           });
         });
 
@@ -691,7 +693,7 @@ describe('Adf adapter', function () {
             }
           }];
 
-          let assets = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data).imp[0].native.request.assets;
+          let assets = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp[0].native.request.assets;
           assert.ok(assets[0].img);
           assert.equal(assets[0].img.wmin, 0);
           assert.equal(assets[0].img.hmin, 0);
@@ -701,7 +703,7 @@ describe('Adf adapter', function () {
     });
 
     function getRequestImps(validBidRequests) {
-      return JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data).imp;
+      return JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp;
     }
   });
 

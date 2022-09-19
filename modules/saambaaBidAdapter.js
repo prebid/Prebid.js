@@ -1,3 +1,5 @@
+// TODO: this adapter appears to have no tests
+
 import {deepAccess, generateUUID, isEmpty, isFn, parseSizesInput, parseUrl} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
@@ -321,8 +323,7 @@ function createVideoRequestData(bid, bidderRequest) {
 }
 
 function getTopWindowLocation(bidderRequest) {
-  let url = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
-  return parseUrl(config.getConfig('pageUrl') || url, { decodeSearchAsString: true });
+  return parseUrl(bidderRequest?.refererInfo?.page || '', { decodeSearchAsString: true });
 }
 
 function createBannerRequestData(bid, bidderRequest) {

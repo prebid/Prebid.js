@@ -19,19 +19,19 @@ import {
   logInfo,
   logWarn,
   mergeDeep,
-  parseUrl
 } from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {loadExternalScript} from '../src/adloader.js';
 import {verify} from 'criteo-direct-rsa-validate/build/verify.js';
 import {getStorageManager} from '../src/storageManager.js';
-import {getRefererInfo} from '../src/refererDetection.js';
+import {getRefererInfo, parseDomain} from '../src/refererDetection.js';
 import {createEidsArray} from './userId/eids.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
 import {OUTSTREAM} from '../src/video.js';
 import { getGlobal } from '../src/prebidGlobal.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'adagio';
 const LOG_PREFIX = 'Adagio:';
@@ -270,12 +270,10 @@ function getDevice() {
 
 function getSite(bidderRequest) {
   const { refererInfo } = bidderRequest;
-  const url = parseUrl(refererInfo.referer);
-
   return {
-    domain: url.hostname || '',
-    page: refererInfo.referer || '',
-    referrer: canAccessTopWindow() ? getWindowTop().document.referrer || '' : getWindowSelf().document.referrer || '',
+    domain: parseDomain(refererInfo.topmostLocation) || '',
+    page: refererInfo.topmostLocation || '',
+    referrer: refererInfo.ref || getWindowSelf().document.referrer || '',
     top: refererInfo.reachedTop
   };
 };
@@ -621,7 +619,7 @@ export function setExtraParam(bid, paramName) {
   }
 
   const adgGlobalConf = config.getConfig('adagio') || {};
-  const ortb2Conf = config.getConfig('ortb2');
+  const ortb2Conf = bid.ortb2;
 
   const detected = adgGlobalConf[paramName] || deepAccess(ortb2Conf, `site.ext.data.${paramName}`, null);
   if (detected) {
@@ -884,6 +882,9 @@ export const spec = {
   },
 
   buildRequests(validBidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     const secure = (location.protocol === 'https:') ? 1 : 0;
     const device = internal.getDevice();
     const site = internal.getSite(bidderRequest);
@@ -1122,7 +1123,7 @@ export const spec = {
         ...globalFeatures,
         print_number: getPrintNumber(adagioBid.adUnitCode, adagioBidderRequest).toString(),
         adunit_position: getSlotPosition(adagioBid.params.adUnitElementId) // adUnitElementId à déplacer ???
-      }
+      };
 
       adagioBid.params.pageviewId = internal.getPageviewId();
       adagioBid.params.prebidVersion = '$prebid.version$';

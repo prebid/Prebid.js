@@ -36,7 +36,7 @@ const mock = {
     refererInfo: {
       numIframes: 0,
       reachedTop: true,
-      referer: 'https://demo.glimpseprotocol.io/prebid/desktop',
+      page: 'https://demo.glimpseprotocol.io/prebid/desktop',
       stack: ['https://demo.glimpseprotocol.io/prebid/desktop'],
     },
   },
@@ -167,7 +167,7 @@ describe('GlimpseProtocolAdapter', () => {
     it('Has referer information', () => {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = JSON.parse(request.data);
-      const expected = mock.bidderRequest.refererInfo.referer;
+      const expected = mock.bidderRequest.refererInfo.page;
 
       expect(payload.data.referer).to.equal(expected);
     });
@@ -273,16 +273,11 @@ describe('GlimpseProtocolAdapter', () => {
       },
     };
 
-    afterEach(() => {
-      config.getConfig.restore();
-    });
-
     it('should keep all non-empty fields', () => {
       const fpdMock = fpdMockBase;
-      sinon.stub(config, 'getConfig').withArgs('ortb2').returns(fpdMock);
       const expected = fpdMockBase;
 
-      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const request = spec.buildRequests(bidRequests, {...bidderRequest, ortb2: fpdMock});
       const payload = JSON.parse(request.data);
       const fpd = payload.data.fpd;
 
@@ -293,7 +288,6 @@ describe('GlimpseProtocolAdapter', () => {
       const fpdMock = getDeepCopy(fpdMockBase);
       fpdMock.site.ext.data.fpdProvider.dataObject = {};
       fpdMock.user.ext.data.fpdProvider = {};
-      sinon.stub(config, 'getConfig').withArgs('ortb2').returns(fpdMock);
 
       const expected = {
         site: {
@@ -312,7 +306,7 @@ describe('GlimpseProtocolAdapter', () => {
         },
       };
 
-      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const request = spec.buildRequests(bidRequests, {...bidderRequest, ortb2: fpdMock});
       const payload = JSON.parse(request.data);
       const fpd = payload.data.fpd;
 
@@ -323,7 +317,6 @@ describe('GlimpseProtocolAdapter', () => {
       const fpdMock = getDeepCopy(fpdMockBase);
       fpdMock.site.ext.data.fpdProvider.dataArray = [];
       fpdMock.user.ext.data.fpdProvider.dataArray = [];
-      sinon.stub(config, 'getConfig').withArgs('ortb2').returns(fpdMock);
 
       const expected = {
         site: {
@@ -356,7 +349,7 @@ describe('GlimpseProtocolAdapter', () => {
         },
       };
 
-      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const request = spec.buildRequests(bidRequests, {...bidderRequest, ortb2: fpdMock});
       const payload = JSON.parse(request.data);
       const fpd = payload.data.fpd;
 
@@ -369,7 +362,6 @@ describe('GlimpseProtocolAdapter', () => {
       fpdMock.site.ext.data.fpdProvider.dataString = '';
       fpdMock.user.keywords = '';
       fpdMock.user.ext.data.fpdProvider.dataString = '';
-      sinon.stub(config, 'getConfig').withArgs('ortb2').returns(fpdMock);
 
       const expected = {
         site: {
@@ -400,7 +392,7 @@ describe('GlimpseProtocolAdapter', () => {
         },
       };
 
-      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const request = spec.buildRequests(bidRequests, {...bidderRequest, ortb2: fpdMock});
       const payload = JSON.parse(request.data);
       const fpd = payload.data.fpd;
 
@@ -417,11 +409,10 @@ describe('GlimpseProtocolAdapter', () => {
       fpdMock.user.ext.data.fpdProvider.dataArray = [];
       fpdMock.user.ext.data.fpdProvider.dataObject = {};
       fpdMock.user.ext.data.fpdProvider.dataString = '';
-      sinon.stub(config, 'getConfig').withArgs('ortb2').returns(fpdMock);
 
       const expected = {};
 
-      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const request = spec.buildRequests(bidRequests, {...bidderRequest, ortb2: fpdMock});
       const payload = JSON.parse(request.data);
       const fpd = payload.data.fpd;
 
