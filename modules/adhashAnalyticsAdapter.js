@@ -13,8 +13,9 @@ var auctionEndStorage = null;
 var platformURL;
 var bidderAnalyticsDomain;
 var publisherId;
+let fallbackSaver = {};
 
-const auctionInit = function (eventType, args) {
+export const auctionInit = function (eventType, args) {
   var auctionId = args.auctionId;
   auctionTracker[auctionId] = {};
   // For each of the ad units, create the needed objects in auctionTracker
@@ -33,16 +34,16 @@ const bidRequested = function (eventType, args) {
 const bidResponse = function (eventType, args) {
 }
 
-const bidWon = function (eventType, args) {
-  var relevantBidsData = [];
-  var responses = auctionTracker[args.auctionId][args.adUnitCode].res;
-  var nonResponses = auctionTracker[args.auctionId][args.adUnitCode].nob;
-  var bidResponders = Object.keys(responses);
-  var noBidResponders = Object.keys(nonResponses);
+export const bidWon = function (eventType, args) {
+  let relevantBidsData = [];
+  let responses = auctionTracker[args.auctionId][args.adUnitCode].res;
+  let nonResponses = auctionTracker[args.auctionId][args.adUnitCode].nob;
+  let bidResponders = Object.keys(responses);
+  let noBidResponders = Object.keys(nonResponses);
 
-  var bidResponsesRaw = auctionTracker[args.auctionId][args.adUnitCode].res
-  var winningBid = {};
-  var winningBidData = auctionEndStorage.bidsReceived.filter(
+  let bidResponsesRaw = auctionTracker[args.auctionId][args.adUnitCode].res
+  let winningBid = {};
+  let winningBidData = auctionEndStorage.bidsReceived.filter(
     bid => bid.bidderCode === args.bidderCode && bid.adUnitCode === args.adUnitCode
   )[0]
 
@@ -56,11 +57,11 @@ const bidWon = function (eventType, args) {
     winningBid.platform = navigator.platform;
   }
   winningBid.timeZone = new Date().getTimezoneOffset() / 60;
-  winningBid.width = winningBidData.width;
-  winningBid.height = winningBidData.height;
+  winningBid.width = winningBidData.width ? winningBidData.width : undefined;
+  winningBid.height = winningBidData.height ? winningBidData.height : undefined;
   winningBid.screenWidth = screen.width;
   winningBid.screenHeight = screen.height;
-  winningBid.size = `${winningBidData.width}x${winningBidData.height}`;
+  winningBid.size = winningBid.width && winningBid.height ? `${winningBidData.width}x${winningBidData.height}` : '';
   winningBid.win = true;
 
   winningBid.cost = args.cpm / 1000;
@@ -81,17 +82,16 @@ const bidWon = function (eventType, args) {
   }
 
   // Send the JSON-stringified array to server
-  var payload = JSON.stringify(relevantBidsData);
-  var bidderPayload;
-  var platformUrlMatch = platformURL.match(/.+(?=protocol\.php)/)
-  var fullPlatformURL = (platformUrlMatch ? platformUrlMatch[0] : platformURL) + 'data.php?type=pbstats';
+  let payload = JSON.stringify(relevantBidsData);
+  let platformUrlMatch = platformURL.match(/.+(?=protocol\.php)/)
+  let fullPlatformURL = (platformUrlMatch ? platformUrlMatch[0] : platformURL) + 'data.php?type=pbstats';
 
   ajax(fullPlatformURL, null, payload);
   if (bidderAnalyticsDomain && publisherId) {
-    var optionalForwardSlash = bidderAnalyticsDomain.match(/\/$/) ? '' : '/';
-    var bidderAnalyticsURL = `${bidderAnalyticsDomain}${optionalForwardSlash}protocol.php?action=prebid_impression&version=${VERSION}`
+    let optionalForwardSlash = bidderAnalyticsDomain.match(/\/$/) ? '' : '/';
+    let bidderAnalyticsURL = `${bidderAnalyticsDomain}${optionalForwardSlash}protocol.php?action=prebid_impression&version=${VERSION}`
 
-    bidderPayload = JSON.stringify(
+    let bidderPayload = JSON.stringify(
       {
         platform: publisherId,
         data: relevantBidsData
@@ -101,16 +101,16 @@ const bidWon = function (eventType, args) {
   }
 }
 
-const bidTimeout = function (eventType, args) {
+export const bidTimeout = function (eventType, args) {
   bidTimeouts = args;
 }
 
-const auctionEnd = function (eventType, args) {
+export const auctionEnd = function (eventType, args) {
   auctionEndStorage = args;
   var adUnitsHaveBids = {};
   var adUnitsHaveAdhashFallback = {};
   var adUnitsHaveOtherFallbacks = {};
-  for (var adUnit of args.adUnitCodes) {
+  for (let adUnit of args.adUnitCodes) {
     adUnitsHaveBids[adUnit] = false;
     adUnitsHaveAdhashFallback[adUnit] = false;
     adUnitsHaveOtherFallbacks[adUnit] = false;
@@ -153,6 +153,10 @@ const auctionEnd = function (eventType, args) {
       cost: res.cpm / 1000,
       currency: res.currency
     }
+    if (res.width && res.height) {
+      unitAuction.res[res.bidderCode]['width'] = res.width;
+      unitAuction.res[res.bidderCode]['height'] = res.height;
+    }
     adUnitsHaveBids[res.adUnitCode] = true;
   })
 
@@ -194,11 +198,11 @@ const auctionEnd = function (eventType, args) {
   })
 
   // Send fallback data for each ad unit
-  for (var adUnit of args.adUnitCodes) {
+  for (let adUnit of args.adUnitCodes) {
     if (adUnitsHaveBids[adUnit]) {
       continue;
     }
-    var fallbackData = {};
+    let fallbackData = {};
     fallbackData.adTagId = adUnit;
     fallbackData.pageURL = window.location.href;
     if (navigator.userAgentData && navigator.userAgentData.platform) {
@@ -213,16 +217,17 @@ const auctionEnd = function (eventType, args) {
     fallbackData.timeZone = new Date().getTimezoneOffset() / 60;
     fallbackData.hasAdhashFallback = adUnitsHaveAdhashFallback[adUnit];
     fallbackData.hasOtherFallbacks = adUnitsHaveOtherFallbacks[adUnit];
+    fallbackSaver = fallbackData;
 
-    var payload = JSON.stringify(fallbackData);
-    var platformUrlMatch = platformURL.match(/.+(?=protocol\.php)/);
-    var fullPlatformURL = (platformUrlMatch ? platformUrlMatch[0] : platformURL) + 'data.php?type=pbfallback';
+    let payload = JSON.stringify(fallbackData);
+    let platformUrlMatch = platformURL.match(/.+(?=protocol\.php)/);
+    let fullPlatformURL = (platformUrlMatch ? platformUrlMatch[0] : platformURL) + 'data.php?type=pbfallback';
 
     ajax(fullPlatformURL, null, payload);
   }
 }
 
-const noBid = function (eventType, args) {
+export const noBid = function (eventType, args) {
   var auctionId = args.auctionId;
   var adUnitCode = args.adUnitCode;
   var bidder = args.bidder;
@@ -236,7 +241,7 @@ const noBid = function (eventType, args) {
   }
 }
 
-const {
+export const {
   EVENTS: {
     AUCTION_INIT,
     BID_REQUESTED,
@@ -248,7 +253,7 @@ const {
   }
 } = CONSTANTS;
 
-var adhashAdapter = Object.assign(adapter({ defaultUrl, analyticsType }), {
+let adhashAdapter = Object.assign(adapter({ defaultUrl, analyticsType }), {
   track({ eventType, args }) {
     switch (eventType) {
       case AUCTION_INIT:
@@ -280,7 +285,7 @@ var adhashAdapter = Object.assign(adapter({ defaultUrl, analyticsType }), {
 adhashAdapter.context = {};
 
 adhashAdapter.originEnableAnalytics = adhashAdapter.enableAnalytics;
-adhashAdapter.enableAnalytics = (config) => {
+adhashAdapter.enableAnalytics = function(config) {
   adhashAdapter.initOptions = config.options;
   platformURL = adhashAdapter.initOptions.platformURL;
   bidderAnalyticsDomain = adhashAdapter.initOptions.bidderURL;
@@ -293,5 +298,22 @@ adapterManager.registerAnalyticsAdapter({
   adapter: adhashAdapter,
   code: 'adhash'
 });
+
+// Functions needed for unit testing
+export function getAuctionTracker () {
+  return auctionTracker;
+}
+
+export function getTimeouts() {
+  return bidTimeouts;
+}
+
+export function getSavedFallbackData() {
+  return fallbackSaver;
+}
+
+export function clearSavedFallbackData() {
+  fallbackSaver = {};
+}
 
 export default adhashAdapter;
