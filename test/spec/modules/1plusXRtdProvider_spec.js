@@ -256,9 +256,9 @@ describe('1plusXRtdProvider', () => {
   describe('extractConsent', () => {
     it('extracts consent strings correctly if given', () => {
       const consent = {
-        gdprApplies: 1,
-        vendorData: {
-          tcString: 'myConsent'
+        gdpr: {
+          gdprApplies: 1,
+          consentString: 'myConsent'
         }
       }
       const output = extractConsent(consent)
@@ -269,28 +269,40 @@ describe('1plusXRtdProvider', () => {
       expect(expectedOutput).to.deep.include(output)
       expect(output).to.deep.include(expectedOutput)
     })
-    it('extracts null if not given at all', () => {
+    it('extracts null if consent object is empty', () => {
       const consent1 = {}
       expect(extractConsent(consent1)).to.equal(null)
     })
 
     it('throws an error if the consent is malformed', () => {
       const consent1 = {
-        gdprApplies: 1
+        gdpr: {
+          gdprApplies: 1
+        }
       }
       const consent2 = {
-        vendorData: {
-          tcString: 'myConsent'
+        gdpr: {
+          consentString: 'myConsent'
         }
       }
       const consent3 = {
-        gdprApplies: 1,
-        vendorData: {
-          other: 'test'
+        gdpr: {
+          gdprApplies: 1,
+          consentString: 3
         }
       }
+      const consent4 = {
+        gdpr: {
+          gdprApplies: 'yes',
+          consentString: 'myConsent'
+        }
+      }
+      const consent5 = {
+        gdprApplies: 1,
+        consentString: 'myConsent'
+      }
 
-      for (const consent in [consent1, consent2, consent3]) {
+      for (const consent in [consent1, consent2, consent3, consent4, consent5]) {
         try {
           extractConsent(consent)
           assert(false, 'Should be throwing an exception')
@@ -302,9 +314,9 @@ describe('1plusXRtdProvider', () => {
   describe('getPapiUrl', () => {
     const customer = 'acme'
     const consent = {
-      gdprApplies: 1,
-      vendorData: {
-        tcString: 'myConsent'
+      gdpr: {
+        gdprApplies: 1,
+        consentString: 'myConsent'
       }
     }
 

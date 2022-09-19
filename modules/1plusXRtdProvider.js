@@ -57,16 +57,20 @@ export const extractConfig = (moduleConfig, reqBidsConfigObj) => {
   return { customerId, timeout, bidders };
 }
 
-export const extractConsent = ({ gdprApplies, vendorData }) => {
-  if (!vendorData && (gdprApplies === null || gdprApplies === undefined)) {
+export const extractConsent = ({ gdpr }) => {
+  if (!gdpr) {
     return null
+  }
+  const { gdprApplies, consentString } = gdpr
+  if (!(gdprApplies == '0' || gdprApplies == '1')) {
+    throw 'TCF Consent: gdprApplies has wrong format'
+  }
+  if (!(typeof consentString === 'string')) {
+    throw 'TCF Consent: consentString is not string'
   }
   const result = {
     'gdpr_applies': gdprApplies,
-    'consent_string': vendorData.tcString
-  }
-  if (Object.values(result).some(v => (v === null || v === undefined))) {
-    throw 'TCF Consent: gdprApplies and tcString both have to be defined'
+    'consent_string': consentString
   }
   return result
 }
