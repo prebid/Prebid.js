@@ -241,7 +241,7 @@ export const noBid = function (eventType, args) {
   }
 }
 
-export const {
+const {
   EVENTS: {
     AUCTION_INIT,
     BID_REQUESTED,
@@ -285,7 +285,7 @@ let adhashAdapter = Object.assign(adapter({ defaultUrl, analyticsType }), {
 adhashAdapter.context = {};
 
 adhashAdapter.originEnableAnalytics = adhashAdapter.enableAnalytics;
-adhashAdapter.enableAnalytics = function(config) {
+adhashAdapter.enableAnalytics = (config) => {
   adhashAdapter.initOptions = config.options;
   platformURL = adhashAdapter.initOptions.platformURL;
   bidderAnalyticsDomain = adhashAdapter.initOptions.bidderURL;
