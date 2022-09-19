@@ -24,7 +24,7 @@ AndBeyond.Media bid adapter supports Banner, Video (instream and outstream) and 
                     },
                     bids: [
                         {
-                            bidder: 'andbeyond.media',
+                            bidder: 'andbeyond',
                             params: {
                                 placementId: 'testBanner',
                             }
@@ -43,7 +43,7 @@ AndBeyond.Media bid adapter supports Banner, Video (instream and outstream) and 
                     },
                     bids: [
                         {
-                            bidder: 'andbeyond.media',
+                            bidder: 'andbeyond',
                             params: {
                                 placementId: 'testVideo',
                             }
@@ -68,7 +68,7 @@ AndBeyond.Media bid adapter supports Banner, Video (instream and outstream) and 
                     },
                     bids: [
                         {
-                            bidder: 'andbeyond.media',
+                            bidder: 'andbeyond',
                             params: {
                                 placementId: 'testNative',
                             }
