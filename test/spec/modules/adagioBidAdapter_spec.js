@@ -150,7 +150,9 @@ describe('Adagio bid adapter', () => {
           ext: {
             data: {
               environment: 'desktop',
-              pagetype: 'abc'
+              pagetype: 'abc',
+              category: ['cat1', 'cat2', 'cat3'],
+              subcategory: []
             }
           }
         }
@@ -170,6 +172,12 @@ describe('Adagio bid adapter', () => {
 
       setExtraParam(bid, 'pagetype')
       expect(bid.params.pagetype).to.equal('article');
+
+      setExtraParam(bid, 'category');
+      expect(bid.params.category).to.equal('cat1'); // Only the first value is kept
+
+      setExtraParam(bid, 'subcategory');
+      expect(bid.params.subcategory).to.be.undefined;
     });
 
     it('should use the adUnit param unit if defined', function() {
