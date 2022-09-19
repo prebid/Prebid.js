@@ -125,6 +125,8 @@ function formatSource(src) {
 
 function getBillingPayload(event) {
   let billingEvent = deepClone(event);
+  // Pass along type if is string and not empty else general
+  billingEvent.type = (typeof event.type === 'string' && event.type) || 'general';
   billingEvent.accountId = accountId;
   // mark as sent
   deepSetValue(cache.billing, `${event.vendor}.${event.billingId}`, true);
