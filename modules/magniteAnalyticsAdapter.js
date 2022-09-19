@@ -196,7 +196,7 @@ const getBidPrice = bid => {
   // get the cpm from bidResponse
   let cpm;
   let currency;
-  if (bid.status === BID_REJECTED && deepAccess(bid, 'floorData.cpmAfterAdjustments')) {
+  if (bid.status === BID_REJECTED && typeof deepAccess(bid, 'floorData.cpmAfterAdjustments') === 'number') {
     // if bid was rejected and bid.floorData.cpmAfterAdjustments use it
     cpm = bid.floorData.cpmAfterAdjustments;
     currency = bid.floorData.floorCurrency;
@@ -217,6 +217,10 @@ const getBidPrice = bid => {
     return Number(prebidGlobal.convertCurrency(cpm, currency, 'USD'));
   } catch (err) {
     logWarn(`${MODULE_NAME}: Could not determine the bidPriceUSD of the bid `, bid);
+    bid.conversionError = true;
+    bid.ogCurrency = currency;
+    bid.ogPrice = cpm;
+    return 0;
   }
 }
 
@@ -245,7 +249,10 @@ export const parseBidResponse = (bid, previousBidResponse) => {
       const adomains = deepAccess(bid, 'meta.advertiserDomains');
       const validAdomains = Array.isArray(adomains) && adomains.filter(domain => typeof domain === 'string');
       return validAdomains && validAdomains.length > 0 ? validAdomains.slice(0, 10) : undefined
-    }
+    },
+    'conversionError', conversionError => conversionError === true || undefined, // only pass if exactly true
+    'ogCurrency',
+    'ogPrice'
   ]);
 }
 

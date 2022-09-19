@@ -12,6 +12,7 @@ import {
   setConfig,
   addBidResponseHook,
 } from 'modules/currency.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 import { deepAccess } from '../../../src/utils.js';
 
 let events = require('src/events.js');
@@ -1860,5 +1861,44 @@ describe('magnite analytics adapter', function () {
     // not non-UTF char's in query / path which break if noDecodeWholeURL not set
     inputUrl = 'https://prebid.org/search_results/%95x%8Em%92%CA/?category=000';
     expect(getHostNameFromReferer(inputUrl)).to.equal('prebid.org');
+  });
+
+  describe(`handle currency conversions`, () => {
+    const origConvertCurrency = getGlobal().convertCurrency;
+    afterEach(() => {
+      if (origConvertCurrency != null) {
+        getGlobal().convertCurrency = origConvertCurrency;
+      } else {
+        delete getGlobal().convertCurrency;
+      }
+    });
+
+    it(`should convert successfully`, () => {
+      getGlobal().convertCurrency = () => 1.0;
+      const bidCopy = utils.deepClone(MOCK.BID_RESPONSE);
+      bidCopy.currency = 'JPY';
+      bidCopy.cpm = 100;
+
+      const bidResponseObj = parseBidResponse(bidCopy);
+      expect(bidResponseObj.conversionError).to.equal(undefined);
+      expect(bidResponseObj.ogCurrency).to.equal(undefined);
+      expect(bidResponseObj.ogPrice).to.equal(undefined);
+      expect(bidResponseObj.bidPriceUSD).to.equal(1.0);
+    });
+
+    it(`should catch error and set to zero with conversionError flag true`, () => {
+      getGlobal().convertCurrency = () => {
+        throw new Error('I am an error');
+      };
+      const bidCopy = utils.deepClone(MOCK.BID_RESPONSE);
+      bidCopy.currency = 'JPY';
+      bidCopy.cpm = 100;
+
+      const bidResponseObj = parseBidResponse(bidCopy);
+      expect(bidResponseObj.conversionError).to.equal(true);
+      expect(bidResponseObj.ogCurrency).to.equal('JPY');
+      expect(bidResponseObj.ogPrice).to.equal(100);
+      expect(bidResponseObj.bidPriceUSD).to.equal(0);
+    });
   });
 });
