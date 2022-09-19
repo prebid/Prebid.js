@@ -1,5 +1,6 @@
 import {find} from './polyfill.js';
 import { isEmpty } from './utils.js';
+import { config } from './config.js';
 
 const _defaultPrecision = 2;
 const _lgPriceConfig = {
@@ -118,6 +119,11 @@ function getCpmTarget(cpm, bucket, granularityMultiplier) {
   const precision = typeof bucket.precision !== 'undefined' ? bucket.precision : _defaultPrecision;
   const increment = bucket.increment * granularityMultiplier;
   const bucketMin = bucket.min * granularityMultiplier;
+  let roundingFunction = Math.floor;
+  let customRoundingFunction = config.getConfig('cpmRoundingFunction');
+  if (typeof customRoundingFunction === 'function') {
+    roundingFunction = customRoundingFunction;
+  }
 
   // start increments at the bucket min and then add bucket min back to arrive at the correct rounding
   // note - we're padding the values to avoid using decimals in the math prior to flooring
@@ -126,7 +132,7 @@ function getCpmTarget(cpm, bucket, granularityMultiplier) {
   // min precison should be 2 to move decimal place over.
   let pow = Math.pow(10, precision + 2);
   let cpmToFloor = ((cpm * pow) - (bucketMin * pow)) / (increment * pow);
-  let cpmTarget = ((Math.floor(cpmToFloor)) * increment) + bucketMin;
+  let cpmTarget = ((roundingFunction(cpmToFloor)) * increment) + bucketMin;
   // force to 10 decimal places to deal with imprecise decimal/binary conversions
   //    (for example 0.1 * 3 = 0.30000000000000004)
   cpmTarget = Number(cpmTarget.toFixed(10));
