@@ -131,10 +131,11 @@ function getCpmTarget(cpm, bucket, granularityMultiplier) {
   //   (eg 4.01 / 0.01 = 400.99999999999994)
   // min precison should be 2 to move decimal place over.
   let pow = Math.pow(10, precision + 2);
-  let cpmToFloor = ((cpm * pow) - (bucketMin * pow)) / (increment * pow);
-  let cpmTarget = ((roundingFunction(cpmToFloor)) * increment) + bucketMin;
+  let cpmToRound = ((cpm * pow) - (bucketMin * pow)) / (increment * pow);
+  let cpmTarget = ((roundingFunction(cpmToRound)) * increment) + bucketMin;
   // force to 10 decimal places to deal with imprecise decimal/binary conversions
   //    (for example 0.1 * 3 = 0.30000000000000004)
+
   cpmTarget = Number(cpmTarget.toFixed(10));
   return cpmTarget.toFixed(precision);
 }
