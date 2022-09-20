@@ -401,5 +401,33 @@ describe('Digital Garage Keyword Module', function () {
         JSON.stringify(DUMMY_RESPONSE)
       );
     });
+    it('disable fpid stored in local strage.', function (done) {
+      const uuid = 'uuid_abcdefghijklmnopqrstuvwxyz';
+      let pbjs = cloneDeep(config);
+      pbjs.adUnits = cloneDeep(AD_UNITS);
+      if (IGNORE_SET_ORTB2) {
+        pbjs._ignoreSetOrtb2 = true;
+      }
+      let moduleConfig = cloneDeep(DEF_CONFIG);
+      window.localStorage.setItem('ope_fpid', uuid);
+      moduleConfig.params.disableReadFpid = true;
+      dgRtd.getDgKeywordsAndSet(
+        pbjs,
+        () => {
+          const url = dgRtd.getProfileApiUrl(null, moduleConfig.params.disableReadFpid);
+          expect(url.indexOf(uuid) > 0).to.equal(false);
+          expect(url).to.equal(server.requests[0].url);
+          done();
+        },
+        moduleConfig,
+        null
+      );
+      const request = server.requests[0];
+      request.respond(
+        200,
+        DUMMY_RESPONSE_HEADER,
+        JSON.stringify(DUMMY_RESPONSE)
+      );
+    });
   });
 });

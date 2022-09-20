@@ -41,7 +41,7 @@ export function getDgKeywordsAndSet(reqBidsConfigObj, callback, moduleConfig, us
   } else {
     logMessage('[dgkeyword sub module] dgkeyword targets:', setKeywordTargetBidders);
     logMessage('[dgkeyword sub module] get targets from profile api start.');
-    ajax(getProfileApiUrl(moduleConfig?.params?.url), {
+    ajax(getProfileApiUrl(moduleConfig?.params?.url, moduleConfig?.params?.disableReadFpid), {
       success: function(response) {
         const res = JSON.parse(response);
         if (!isFinish) {
@@ -96,9 +96,9 @@ export function getDgKeywordsAndSet(reqBidsConfigObj, callback, moduleConfig, us
   }
 }
 
-export function getProfileApiUrl(customeUrl) {
+export function getProfileApiUrl(customeUrl, disableReadFpid) {
   const URL = 'https://mediaconsortium.profiles.tagger.opecloud.com/api/v1';
-  const fpid = readFpidFromLocalStrage();
+  const fpid = (disableReadFpid) ? '' : readFpidFromLocalStrage();
   let url = customeUrl || URL;
   url = url + '?url=' + encodeURIComponent(window.location.href) + ((fpid) ? `&fpid=${fpid}` : '');
   return url;
