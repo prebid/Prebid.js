@@ -21,7 +21,6 @@
     "kargoBidAdapter",
     "smilewantedBidAdapter",
     "krushmediaBidAdapter",
-    "trustxBidAdapter",
     "emx_digitalBidAdapter",
     "conversantBidAdapter",
     "criteoBidAdapter",
@@ -39,6 +38,5 @@
     "userId",
     "criteoIdSystem",
     "sharedIdSystem",
-    "uid2IdSystem",
-    "flocIdSystem"
+    "uid2IdSystem"
 ]
