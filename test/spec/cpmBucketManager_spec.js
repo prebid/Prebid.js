@@ -208,6 +208,24 @@ describe('cpmBucketManager', function () {
       config.getConfig = getConfig;
       expect(JSON.stringify(output)).to.deep.equal(expected);
     });
+
+    it('will default to Math.floor if passed an invalid rounding function', function () {
+      let cpm = 6.516;
+      let customConfig = {
+        'buckets': [
+          {
+            'max': 18,
+            'increment': 0.05,
+          }
+        ]
+      };
+      let getConfig = config.getConfig;
+      config.getConfig = () => Math.ceil(5.3);
+      let expected = '{"low":"5.00","med":"6.50","high":"6.51","auto":"6.50","dense":"6.50","custom":"6.50"}';
+      let output = getPriceBucketString(cpm, customConfig);
+      config.getConfig = getConfig;
+      expect(JSON.stringify(output)).to.deep.equal(expected);
+    });
   });
 
   describe('isValidPriceConfig', function () {
