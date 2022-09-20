@@ -1,6 +1,7 @@
 import {find} from './polyfill.js';
 import { isEmpty } from './utils.js';
 import { config } from './config.js';
+import {logWarn} from './utils';
 
 const _defaultPrecision = 2;
 const _lgPriceConfig = {
@@ -133,11 +134,16 @@ function getCpmTarget(cpm, bucket, granularityMultiplier) {
   let pow = Math.pow(10, precision + 2);
   let cpmToRound = ((cpm * pow) - (bucketMin * pow)) / (increment * pow);
   let cpmTarget;
+  let invalidRounding;
   // It is likely that we will be passed {cpmRoundingFunction: roundingFunction()}
   // rather than the expected {cpmRoundingFunction: roundingFunction}. Default back to floor in that case
   try {
     cpmTarget = (roundingFunction(cpmToRound) * increment) + bucketMin;
   } catch (err) {
+    invalidRounding = true;
+  }
+  if (invalidRounding || typeof cpmTarget !== 'number') {
+    logWarn('Invalid rounding function passed in config');
     cpmTarget = (Math.floor(cpmToRound) * increment) + bucketMin;
   }
   // force to 10 decimal places to deal with imprecise decimal/binary conversions
