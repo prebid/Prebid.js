@@ -1,6 +1,8 @@
 ## GrowthCode Analytics Adapter
 
-GrowthCode provides Id Enrichment for requests. 
+[GrowthCode](https://growthcode.io) offers scaled infrastructure-as-a-service to 
+empower independent publishers to harness data and take control of identity and 
+audience while rapidly aligning to industry changes and margin pressure.
 
 ## Building Prebid with GrowthCode Support
 

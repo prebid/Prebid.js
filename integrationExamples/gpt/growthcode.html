@@ -1,10 +1,5 @@
 <!--
-  This page calls a single bidder for a single ad slot. It can be considered a "hello world" example for using
-  Prebid with the Google Publisher Tag.
-  It also makes a good test page for new adapter PR submissions. Simply set your server's Bid Params object in the
-  bids array inside the adUnits, and it will use your adapter to load an ad.
-  NOTE that many ad servers won't send back an ad if the URL is localhost... so you might need to
-  set an alias in your /etc/hosts file so that you can load this page from a different domain.
+  GrowthCode Setup Example contact support@growthcode.io for more information.
 -->
 
 <html>
@@ -53,30 +48,20 @@
         provider: 'growthCodeAnalytics',
         options: {
           pid: 'TEST01',
-          url: 'http://localhost:8080/v1/pb/analytics',
           trackEvents: [
-                  'auctionInit',
-                  'auctionEnd',
+            'auctionInit',
+            'auctionEnd',
             'bidAdjustment',
             'bidTimeout',
-               'bidRequested',
-               'bidResponse',
-               'noBid',
-               'bidWon',
-               'bidderDone',
-               'bidderError',
-               'setTargeting',
-               'beforeRequestBids',
-               'beforeBidderHttp',
-               'requestBids',
-               'addAdUnits',
-               'adRenderFailed',
-               'adRenderSucceeded',
-               'tcf2Enforcement',
-               'auctionDebug',
-               'bidViewable',
-               'staleRender',
-              'billableEvent']
+            'bidTimeout',
+            'bidRequested',
+            'bidResponse',
+            'setTargeting',
+            'requestBids',
+            'addAdUnits',
+            'noBid',
+            'bidWon',
+            'bidderDone']
         }
       });
       pbjs.setConfig({
@@ -102,7 +87,6 @@
             name: 'growthCodeId',
             params: {
               pid: 'TEST01',
-              url: 'http://localhost:8080/v1/pb?',
               publisher_id: '_sharedID',
               publisher_id_storage: 'html5',
             }

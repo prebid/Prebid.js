@@ -1,3 +1,6 @@
+/**
+ * growthCodeAnalyticsAdapter.js - GrowthCode Analytics Adapter
+ */
 import { ajax } from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
@@ -90,11 +93,6 @@ let growthCodeAnalyticsAdapter = Object.assign(adapter({url: url, analyticsType}
       }
 
       case CONSTANTS.EVENTS.ADD_AD_UNITS: {
-        data = eventData;
-        break;
-      }
-
-      case CONSTANTS.EVENTS.AD_RENDER_FAILED: {
         data = eventData;
         break;
       }
