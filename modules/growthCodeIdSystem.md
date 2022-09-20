@@ -31,7 +31,7 @@ pbjs.setConfig({
 |--------------------------------|----------|--------| --- |-----------------|
 | name                           | Required | String | The name of this module. | `"growthCodeId"` |
 | params                         | Required | Object | Details of module params. |                 |
-| params.pid                     | Required | String | This is the Customer ID value obtained via Intimate Merger. | `"TEST01"`        |
+| params.pid                     | Required | String | This is the Parter ID value obtained from GrowthCode | `"TEST01"`        |
 | params.url | Optional | String | Custom URL for server | |
 | params.publisher_id | Optional | String | Name if the variable that holds your publisher ID | `"_sharedID"` |
 | params.publisher_id_storage | Optional | String | Publisher ID storage (cookie, html5) | `"html5"` |
