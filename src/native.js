@@ -449,14 +449,7 @@ export function getAllAssetsMessage(data, adObject, {getNativeReq = getNativeReq
  * appropriate for sending in adserver targeting or placeholder replacement.
  */
 function getAssetValue(value) {
-  // as typeof null is 'object' this case is problematic in the next condition
-  if (value === null) value = '';
-
-  if (typeof value === 'object' && value.url) {
-    return value.url;
-  }
-
-  return value;
+  return value?.url || value;
 }
 
 function getNativeKeys(adUnit) {
