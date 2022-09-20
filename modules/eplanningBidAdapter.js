@@ -93,8 +93,8 @@ export const spec = {
         }
       }
 
-      if (spaces.imp_type) {
-        params.vctx = spaces.imp_type & VAST_INSTREAM ? VAST_INSTREAM : VAST_OUTSTREAM;
+      if (spaces.impType) {
+        params.vctx = spaces.impType & VAST_INSTREAM ? VAST_INSTREAM : VAST_OUTSTREAM;
         params.vv = VAST_VERSION_DEFAULT;
       }
     }
@@ -269,26 +269,25 @@ function cleanName(name) {
 }
 
 function getSpaces(bidRequests, ml) {
-  let imp_type = bidRequests.reduce((previousBits, bid) => (bid.mediaTypes && bid.mediaTypes[VIDEO]) ? (bid.mediaTypes[VIDEO].context == 'outstream' ? previousBits|2 : previousBits|1) : previousBits,0);
+  let impType = bidRequests.reduce((previousBits, bid) => (bid.mediaTypes && bid.mediaTypes[VIDEO]) ? (bid.mediaTypes[VIDEO].context == 'outstream' ? (previousBits | 2) : (previousBits | 1)) : previousBits, 0);
   // Only one type of auction is supported at a time
-  if (imp_type) {
-    bidRequests = bidRequests.filter ((bid) => bid.mediaTypes && bid.mediaTypes[VIDEO] && (imp_type & VAST_INSTREAM ? (!bid.mediaTypes[VIDEO].context || bid.mediaTypes[VIDEO].context == 'instream') : (bid.mediaTypes[VIDEO].context == 'outstream')));
+  if (impType) {
+    bidRequests = bidRequests.filter((bid) => bid.mediaTypes && bid.mediaTypes[VIDEO] && (impType & VAST_INSTREAM ? (!bid.mediaTypes[VIDEO].context || bid.mediaTypes[VIDEO].context == 'instream') : (bid.mediaTypes[VIDEO].context == 'outstream')));
   }
   let spacesStruct = getSpacesStruct(bidRequests);
-  let es = {str: '', vs: '', map: {}, imp_type: imp_type};
-  let spaces = {};
+  let es = {str: '', vs: '', map: {}, impType: impType};
 
   es.str = Object.keys(spacesStruct).map(size => spacesStruct[size].map((bid, i) => {
     es.vs += getVs(bid);
 
     let name;
 
-    if (imp_type) {
+    if (impType) {
       let firstSize = getFirstSizeVast(bid.mediaTypes[VIDEO].playerSize);
-      let sizeVast = firstSize ? firstSize.join('x')  : DEFAULT_SIZE_VAST;
-      name = "video_" + sizeVast + '_' + i;
+      let sizeVast = firstSize ? firstSize.join('x') : DEFAULT_SIZE_VAST;
+      name = 'video_' + sizeVast + '_' + i;
       es.map[name] = bid.bidId;
-      return name + ':' + sizeVast + ";1";
+      return name + ':' + sizeVast + ';1';
     }
 
     if (ml) {

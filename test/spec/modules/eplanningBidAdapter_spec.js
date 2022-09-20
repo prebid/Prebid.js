@@ -32,8 +32,8 @@ describe('E-Planning Adapter', function () {
   const CRID = '1234567890';
   const TEST_ISV = 'leles.e-planning.net';
   const ADOMAIN = 'adomain.com';
-  const ADM_VAST = "<VAST version=\"2.0\">\n<Ad id=\"602833\">\n<Wrapper>\n<AdSystem>Acudeo Compatible</AdSystem>\n<VASTAdTagURI>\nhttp://demo.tremormedia.com/proddev/vast/vast_inline_linear.xml\n</VASTAdTagURI>\n<Impression><![CDATA[https://cndigrazia34.devel.e-planning.net:444/eli/4/19911d/6584303d5d0da8bc?i=0123456789012345&fi=0123456789abcdef&pb=<% EXCHANGE_EPBID_49 %>&nfc=1&S=<% SERVER_ID %>&rnd=733663791&bk=0123456789abcdef]]></Impression><Impression>http://myTrackingURL/wrapper/impression</Impression>\n<Creatives>\n<Creative AdID=\"602833\">\n<Linear>\n<TrackingEvents></TrackingEvents>\n</Linear>\n</Creative>\n<Creative AdID=\"602833-Companion\">\n<CompanionAds>\n<Companion width=\"300\" height=\"250\">\n<StaticResource creativeType=\"image/jpeg\">\nhttp://demo.tremormedia.com/proddev/vast/300x250_banner1.jpg\n</StaticResource>\n<TrackingEvents>\n<Tracking event=\"creativeView\">\nhttp://myTrackingURL/wrapper/firstCompanionCreativeView\n</Tracking>\n</TrackingEvents>\n<CompanionClickThrough>http://www.tremormedia.com</CompanionClickThrough>\n</Companion>\n<Companion width=\"728\" height=\"90\">\n<StaticResource creativeType=\"image/jpeg\">\nhttp://demo.tremormedia.com/proddev/vast/728x90_banner1.jpg\n</StaticResource>\n<CompanionClickThrough>http://www.tremormedia.com</CompanionClickThrough>\n</Companion>\n</CompanionAds>\n</Creative>\n</Creatives>\n</Wrapper>\n</Ad>\n</VAST>\n";
-  const ADM_VAST_VV_1 = "<VideoAdServingTemplate xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:noNamespaceSchemaLocation=\"vast_loose.xsd\">test</VideoAdServingTemplate>";
+  const ADM_VAST = '<VAST version=\"2.0\">\n<Ad id=\"602833\">\n<Wrapper>\n<AdSystem>Acudeo Compatible</AdSystem>\n<VASTAdTagURI>\nhttp://demo.tremormedia.com/proddev/vast/vast_inline_linear.xml\n</VASTAdTagURI>\n<Impression><![CDATA[https://cndigrazia34.devel.e-planning.net:444/eli/4/19911d/6584303d5d0da8bc?i=0123456789012345&fi=0123456789abcdef&pb=<% EXCHANGE_EPBID_49 %>&nfc=1&S=<% SERVER_ID %>&rnd=733663791&bk=0123456789abcdef]]></Impression><Impression>http://myTrackingURL/wrapper/impression</Impression>\n<Creatives>\n<Creative AdID=\"602833\">\n<Linear>\n<TrackingEvents></TrackingEvents>\n</Linear>\n</Creative>\n<Creative AdID=\"602833-Companion\">\n<CompanionAds>\n<Companion width=\"300\" height=\"250\">\n<StaticResource creativeType=\"image/jpeg\">\nhttp://demo.tremormedia.com/proddev/vast/300x250_banner1.jpg\n</StaticResource>\n<TrackingEvents>\n<Tracking event=\"creativeView\">\nhttp://myTrackingURL/wrapper/firstCompanionCreativeView\n</Tracking>\n</TrackingEvents>\n<CompanionClickThrough>http://www.tremormedia.com</CompanionClickThrough>\n</Companion>\n<Companion width=\"728\" height=\"90\">\n<StaticResource creativeType=\"image/jpeg\">\nhttp://demo.tremormedia.com/proddev/vast/728x90_banner1.jpg\n</StaticResource>\n<CompanionClickThrough>http://www.tremormedia.com</CompanionClickThrough>\n</Companion>\n</CompanionAds>\n</Creative>\n</Creatives>\n</Wrapper>\n</Ad>\n</VAST>\n';
+  const ADM_VAST_VV_1 = '<VideoAdServingTemplate xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:noNamespaceSchemaLocation=\"vast_loose.xsd\">test</VideoAdServingTemplate>';
   const DEFAULT_SIZE_VAST = '640x480';
   const validBid = {
     'bidder': 'eplanning',
@@ -74,7 +74,7 @@ describe('E-Planning Adapter', function () {
     },
     'sizes': [[300, 250], [300, 600]],
   };
-  const validBidSpaceOutstream= {
+  const validBidSpaceOutstream = {
     'bidder': 'eplanning',
     'bidId': BID_ID,
     'params': {
@@ -92,7 +92,7 @@ describe('E-Planning Adapter', function () {
       }
     },
   };
-  const validBidOutstreamNoSize= {
+  const validBidOutstreamNoSize = {
     'bidder': 'eplanning',
     'bidId': BID_ID,
     'params': {
@@ -109,7 +109,7 @@ describe('E-Planning Adapter', function () {
       }
     },
   };
-  const validBidOutstreamNSizes= {
+  const validBidOutstreamNSizes = {
     'bidder': 'eplanning',
     'bidId': BID_ID,
     'params': {
@@ -127,7 +127,7 @@ describe('E-Planning Adapter', function () {
       }
     },
   };
-  const bidOutstreamInvalidSizes= {
+  const bidOutstreamInvalidSizes = {
     'bidder': 'eplanning',
     'bidId': BID_ID,
     'params': {
@@ -145,7 +145,7 @@ describe('E-Planning Adapter', function () {
       }
     },
   };
-  const validBidSpaceInstream= {
+  const validBidSpaceInstream = {
     'bidder': 'eplanning',
     'bidId': BID_ID,
     'params': {
@@ -162,7 +162,7 @@ describe('E-Planning Adapter', function () {
       }
     },
   };
-  const validBidSpaceVastNoContext= {
+  const validBidSpaceVastNoContext = {
     'bidder': 'eplanning',
     'bidId': BID_ID,
     'params': {
