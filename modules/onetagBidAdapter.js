@@ -1,13 +1,12 @@
 'use strict';
 
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {INSTREAM, OUTSTREAM} from '../src/video.js';
-import {Renderer} from '../src/Renderer.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { INSTREAM, OUTSTREAM } from '../src/video.js';
+import { Renderer } from '../src/Renderer.js';
 import {find} from '../src/polyfill.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {createEidsArray} from './userId/eids.js';
-import {deepClone} from '../src/utils.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { deepClone, logError, deepAccess } from '../src/utils.js';
 
 const ENDPOINT = 'https://onetag-sys.com/prebid-request';
 const USER_SYNC_ENDPOINT = 'https://onetag-sys.com/usync/';
@@ -65,8 +64,11 @@ function buildRequests(validBidRequests, bidderRequest) {
   if (bidderRequest && bidderRequest.uspConsent) {
     payload.usPrivacy = bidderRequest.uspConsent;
   }
-  if (validBidRequests && validBidRequests.length !== 0 && validBidRequests[0].userId) {
-    payload.userId = createEidsArray(validBidRequests[0].userId);
+  if (validBidRequests && validBidRequests.length !== 0 && validBidRequests[0].userIdAsEids) {
+    payload.userId = validBidRequests[0].userIdAsEids;
+  }
+  if (validBidRequests && validBidRequests.length !== 0 && validBidRequests[0].schain && isSchainValid(validBidRequests[0].schain)) {
+    payload.schain = validBidRequests[0].schain;
   }
   try {
     if (storage.hasLocalStorage()) {
@@ -245,6 +247,7 @@ function requestsToBids(bidRequests) {
     // Other params
     videoObj['mediaTypeInfo'] = deepClone(bidRequest.mediaTypes.video);
     videoObj['type'] = VIDEO;
+    videoObj['priceFloors'] = getBidFloor(bidRequest, VIDEO, videoObj['playerSize']);
     return videoObj;
   });
   const bannerBidRequests = bidRequests.filter(bidRequest => isValid(BANNER, bidRequest)).map(bidRequest => {
@@ -253,6 +256,7 @@ function requestsToBids(bidRequests) {
     bannerObj['sizes'] = parseSizes(bidRequest);
     bannerObj['type'] = BANNER;
     bannerObj['mediaTypeInfo'] = deepClone(bidRequest.mediaTypes.banner);
+    bannerObj['priceFloors'] = getBidFloor(bidRequest, BANNER, bannerObj['sizes']);
     return bannerObj;
   });
   return videoBidRequests.concat(bannerBidRequests);
@@ -265,6 +269,7 @@ function setGeneralInfo(bidRequest) {
   this['bidderRequestId'] = bidRequest.bidderRequestId;
   this['auctionId'] = bidRequest.auctionId;
   this['transactionId'] = bidRequest.transactionId;
+  this['gpid'] = deepAccess(bidRequest, 'ortb2Imp.ext.gpid') || deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot');
   this['pubId'] = params.pubId;
   this['ext'] = params.ext;
   if (params.pubClick) {
@@ -371,6 +376,37 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
     });
   }
   return syncs;
+}
+
+function getBidFloor(bidRequest, mediaType, sizes) {
+  const priceFloors = [];
+  if (typeof bidRequest.getFloor === 'function') {
+    sizes.forEach(size => {
+      const floor = bidRequest.getFloor({
+        currency: 'EUR',
+        mediaType: mediaType || '*',
+        size: [size.width, size.height]
+      });
+      floor.size = deepClone(size);
+      if (!floor.floor) { floor.floor = null; }
+      priceFloors.push(floor);
+    });
+  }
+  return priceFloors;
+}
+
+export function isSchainValid(schain) {
+  let isValid = false;
+  const requiredFields = ['asi', 'sid', 'hp'];
+  if (!schain || !schain.nodes) return isValid;
+  isValid = schain.nodes.reduce((status, node) => {
+    if (!status) return status;
+    return requiredFields.every(field => node.hasOwnProperty(field));
+  }, true);
+  if (!isValid) {
+    logError('OneTag: required schain params missing');
+  }
+  return isValid;
 }
 
 export const spec = {

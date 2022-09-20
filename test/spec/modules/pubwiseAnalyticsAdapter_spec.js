@@ -71,10 +71,10 @@ describe('PubWise Prebid Analytics', function () {
       events.emit(constants.EVENTS.AUCTION_END, {});
 
       // eslint-disable-next-line
-      //console.log(requests);   
+      //console.log(requests);
 
       /* testing for 6 calls, including the 2 we're not currently tracking */
-      sandbox.assert.callCount(pubwiseAnalytics.track, 7);
+      sandbox.assert.callCount(pubwiseAnalytics.track, 8);
     });
 
     it('should initialize the auction properly', function () {
@@ -92,7 +92,7 @@ describe('PubWise Prebid Analytics', function () {
       let request = requests[0];
       let data = JSON.parse(request.requestBody);
       // eslint-disable-next-line
-      // console.log(data.metaData);            
+      // console.log(data.metaData);
       expect(data.metaData, 'metaData property').to.exist;
       expect(data.metaData.pbjs_version, 'pbjs version').to.equal('$prebid.version$')
       expect(data.metaData.session_id, 'session id').not.to.be.empty

@@ -1,5 +1,5 @@
 import { tryAppendQueryString } from '../src/utils.js';
-import adapter from '../src/AnalyticsAdapter.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 
 const emptyUrl = '';

@@ -12,6 +12,7 @@ import * as events from '../../src/events.js';
 import CONSTANTS from '../../src/constants.json';
 import {addBidderRequests} from '../../src/auction.js';
 import {getHighestCpmBidsFromBidPool, sortByDealAndPriceBucketOrCpm} from '../../src/targeting.js';
+import {timedBidResponseHook} from '../../src/utils/perfMetrics.js';
 
 const MODULE_NAME = 'multibid';
 let hasMultibid = false;
@@ -98,7 +99,7 @@ export function adjustBidderRequestsHook(fn, bidderRequests) {
    * @param {String} ad unit code for bid
    * @param {Object} bid object
 */
-export function addBidResponseHook(fn, adUnitCode, bid) {
+export const addBidResponseHook = timedBidResponseHook('multibid', function addBidResponseHook(fn, adUnitCode, bid) {
   let floor = deepAccess(bid, 'floorData.floorValue');
 
   if (!config.getConfig('multibid')) resetMultiConfig();
@@ -141,7 +142,7 @@ export function addBidResponseHook(fn, adUnitCode, bid) {
   } else {
     fn.call(this, adUnitCode, bid);
   }
-}
+});
 
 /**
 * A descending sort function that will sort the list of objects based on the following:
@@ -227,6 +228,7 @@ export const resetMultibidUnits = () => multibidUnits = {};
 * Set up hooks on init
 */
 function init() {
+  // TODO: does this reset logic make sense - what about simultaneous auctions?
   events.on(CONSTANTS.EVENTS.AUCTION_INIT, resetMultibidUnits);
   setupBeforeHookFnOnce(addBidderRequests, adjustBidderRequestsHook);
   getHook('addBidResponse').before(addBidResponseHook, 3);

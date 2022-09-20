@@ -21,6 +21,9 @@ const HOST_GETTERS = {
   bidsxchange: () => 'ghb.hbd.bidsxchange.com',
   streamkey: () => 'ghb.hb.streamkey.net',
   janet: () => 'ghb.bidder.jmgads.com',
+  pgam: () => 'ghb.pgamssp.com',
+  ocm: () => 'ghb.cenarius.orangeclickmedia.com',
+  vidcrunchllc: () => 'ghb.platform.vidcrunch.com',
 }
 const getUri = function (bidderCode) {
   let bidderWithoutSuffix = bidderCode.split('_')[0];
@@ -36,8 +39,12 @@ const syncsCache = {};
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 410,
-  aliases: ['onefiftytwomedia', 'selectmedia', 'appaloosa', 'bidsxchange', 'streamkey', 'janet',
-    { code: 'navelix', gvlid: 380 }
+  aliases: ['onefiftytwomedia', 'appaloosa', 'bidsxchange', 'streamkey', 'janet',
+    { code: 'selectmedia', gvlid: 775 },
+    { code: 'navelix', gvlid: 380 },
+    'pgam',
+    { code: 'ocm', gvlid: 1148 },
+    { code: 'vidcrunchllc', gvlid: 1145 },
   ],
   supportedMediaTypes: [VIDEO, BANNER],
   isBidRequestValid: function (bid) {
@@ -158,7 +165,8 @@ function parseRTBResponse(serverResponse, adapterRequest) {
 function bidToTag(bidRequests, adapterRequest) {
   // start publisher env
   const tag = {
-    Domain: deepAccess(adapterRequest, 'refererInfo.referer')
+    // TODO: is 'page' the right value here?
+    Domain: deepAccess(adapterRequest, 'refererInfo.page')
   };
   if (config.getConfig('coppa') === true) {
     tag.Coppa = 1;
@@ -184,7 +192,7 @@ function bidToTag(bidRequests, adapterRequest) {
   }
 
   // end publisher env
-  const bids = []
+  const bids = [];
 
   for (let i = 0, length = bidRequests.length; i < length; i++) {
     const bid = prepareBidRequests(bidRequests[i]);

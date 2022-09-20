@@ -1,5 +1,15 @@
 <!--
-Thank you for your pull request. Please make sure this PR is scoped to one change, and that any added or changed code includes tests with greater than 80% code coverage. See https://github.com/prebid/Prebid.js/blob/master/CONTRIBUTING.md#testing-prebidjs for documentation on testing Prebid.js.
+Thank you for your pull request! 
+
+Please title your pull request like this: 'Module: Change', eg 'Fraggles Bid Adapter: support fragglerock'
+
+Please make sure this PR is scoped to one change or you may be asked to resubmit. 
+ 
+Please make sure any added or changed code includes tests with greater than 80% code coverage. 
+
+See https://github.com/prebid/Prebid.js/blob/master/CONTRIBUTING.md#testing-prebidjs for documentation on testing Prebid.js.
+
+For any user facing change, submit a link to a PR on the docs repo at https://github.com/prebid/prebid.github.io/
 -->
 
 ## Type of change
@@ -11,14 +21,16 @@ Thank you for your pull request. Please make sure this PR is scoped to one chang
 - [ ] Refactoring (no functional changes, no api changes)
 - [ ] Build related changes
 - [ ] CI related changes
+
 - [ ] Does this change affect user-facing APIs or examples documented on http://prebid.org?
 - [ ] Other
 
 ## Description of change
 <!-- Describe the change proposed in this pull request -->
 
-<!-- For new bidder adapters, please provide the following -->
-- test parameters for validating bids
+<!-- For new bidder adapters, please provide the following
+- contact email of the adapter’s maintainer
+- test parameters for validating bids:
 ```
 {
   bidder: '<bidder name>',
@@ -28,14 +40,8 @@ Thank you for your pull request. Please make sure this PR is scoped to one chang
 }
 ```
 
-Be sure to test the integration with your adserver using the [Hello World](/integrationExamples/gpt/hello_world.html) sample page.
+Be sure to test the integration with your adserver using the [Hello World](/integrationExamples/gpt/hello_world.html) sample page. -->
 
-- contact email of the adapter’s maintainer
-- [ ] official adapter submission
-
-For any changes that affect user-facing APIs or example code documented on http://prebid.org, please provide:
-
-- A link to a PR on the docs repo at https://github.com/prebid/prebid.github.io/
 
 ## Other information
 <!-- References to related PR or issue #s, @mentions of the person or team responsible for reviewing changes, etc. -->

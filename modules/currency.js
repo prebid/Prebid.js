@@ -5,6 +5,8 @@ import CONSTANTS from '../src/constants.json';
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 import { getHook } from '../src/hook.js';
+import {defer} from '../src/utils/promise.js';
+import {timedBidResponseHook} from '../src/utils/perfMetrics.js';
 
 const DEFAULT_CURRENCY_RATE_URL = 'https://cdn.jsdelivr.net/gh/prebid/currency-file@1/latest.json?date=$$TODAY$$';
 const CURRENCY_RATE_PRECISION = 4;
@@ -21,22 +23,12 @@ var bidderCurrencyDefault = {};
 var defaultRates;
 
 export const ready = (() => {
-  let isDone, resolver, promise;
+  let ctl;
   function reset() {
-    isDone = false;
-    resolver = null;
-    promise = new Promise((resolve) => {
-      resolver = resolve;
-      if (isDone) resolve();
-    })
-  }
-  function done() {
-    isDone = true;
-    if (resolver != null) { resolver() }
+    ctl = defer();
   }
   reset();
-
-  return {done, reset, promise: () => promise}
+  return {done: () => ctl.resolve(), reset, promise: () => ctl.promise}
 })();
 
 /**
@@ -155,6 +147,7 @@ function initCurrency(url) {
           try {
             currencyRates = JSON.parse(response);
             logInfo('currencyRates set to ' + JSON.stringify(currencyRates));
+            conversionCache = {};
             currencyRatesLoaded = true;
             processBidResponseQueue();
             ready.done();
@@ -188,7 +181,7 @@ function resetCurrency() {
   bidderCurrencyDefault = {};
 }
 
-export function addBidResponseHook(fn, adUnitCode, bid) {
+export const addBidResponseHook = timedBidResponseHook('currency', function addBidResponseHook(fn, adUnitCode, bid) {
   if (!bid) {
     return fn.call(this, adUnitCode); // if no bid, call original and let it display warnings
   }
@@ -223,9 +216,9 @@ export function addBidResponseHook(fn, adUnitCode, bid) {
   if (!currencySupportEnabled || currencyRatesLoaded) {
     processBidResponseQueue();
   } else {
-    fn.bail(ready.promise());
+    fn.untimed.bail(ready.promise());
   }
-}
+});
 
 function processBidResponseQueue() {
   while (bidResponseQueue.length > 0) {

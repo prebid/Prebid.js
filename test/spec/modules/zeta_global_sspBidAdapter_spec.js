@@ -25,6 +25,67 @@ describe('Zeta Ssp Bid Adapter', function () {
     }
   ];
 
+  const params = {
+    user: {
+      uid: 222,
+      buyeruid: 333
+    },
+    tags: {
+      someTag: 444,
+    },
+    sid: 'publisherId',
+    shortname: 'test_shortname',
+    site: {
+      page: 'testPage'
+    },
+    app: {
+      bundle: 'testBundle'
+    },
+    test: 1
+  };
+
+  const multiImpRequest = [
+    {
+      bidId: 12345,
+      auctionId: 67890,
+      mediaTypes: {
+        banner: {
+          sizes: [[300, 250]],
+        }
+      },
+      refererInfo: {
+        page: 'http://www.zetaglobal.com/page?param=value',
+        domain: 'www.zetaglobal.com',
+      },
+      gdprConsent: {
+        gdprApplies: 1,
+        consentString: 'consentString'
+      },
+      uspConsent: 'someCCPAString',
+      params: params,
+      userIdAsEids: eids
+    }, {
+      bidId: 54321,
+      auctionId: 67890,
+      mediaTypes: {
+        banner: {
+          sizes: [[600, 400]],
+        }
+      },
+      refererInfo: {
+        page: 'http://www.zetaglobal.com/page?param=value',
+        domain: 'www.zetaglobal.com',
+      },
+      gdprConsent: {
+        gdprApplies: 1,
+        consentString: 'consentString'
+      },
+      uspConsent: 'someCCPAString',
+      params: params,
+      userIdAsEids: eids
+    }
+  ];
+
   const bannerRequest = [{
     bidId: 12345,
     auctionId: 67890,
@@ -34,25 +95,15 @@ describe('Zeta Ssp Bid Adapter', function () {
       }
     },
     refererInfo: {
-      referer: 'http://www.zetaglobal.com/page?param=value'
+      page: 'http://www.zetaglobal.com/page?param=value',
+      domain: 'www.zetaglobal.com',
     },
     gdprConsent: {
       gdprApplies: 1,
       consentString: 'consentString'
     },
     uspConsent: 'someCCPAString',
-    params: {
-      placement: 111,
-      user: {
-        uid: 222,
-        buyeruid: 333
-      },
-      tags: {
-        someTag: 444,
-        sid: 'publisherId'
-      },
-      test: 1
-    },
+    params: params,
     userIdAsEids: eids
   }];
 
@@ -72,18 +123,7 @@ describe('Zeta Ssp Bid Adapter', function () {
     refererInfo: {
       referer: 'http://www.zetaglobal.com/page?param=video'
     },
-    params: {
-      placement: 111,
-      user: {
-        uid: 222,
-        buyeruid: 333
-      },
-      tags: {
-        someTag: 444,
-        sid: 'publisherId'
-      },
-      test: 1
-    },
+    params: params
   }];
 
   it('Test the bid validation function', function () {
@@ -111,7 +151,7 @@ describe('Zeta Ssp Bid Adapter', function () {
     const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
     const payload = JSON.parse(request.data);
     expect(payload.site.page).to.eql('http://www.zetaglobal.com/page?param=value');
-    expect(payload.site.domain).to.eql(window.location.origin); // config.js -> DEFAULT_PUBLISHER_DOMAIN
+    expect(payload.site.domain).to.eql('zetaglobal.com');
   });
 
   it('Test the request processing function', function () {
@@ -268,5 +308,40 @@ describe('Zeta Ssp Bid Adapter', function () {
     expect(payload.imp[0].video.h).to.eql(340);
 
     expect(payload.imp[0].banner).to.be.undefined;
+  });
+
+  it('Test required params in banner request', function () {
+    const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
+    const payload = JSON.parse(request.data);
+    expect(request.url).to.eql('https://ssp.disqus.com/bid/prebid?shortname=test_shortname');
+    expect(payload.ext.sid).to.eql('publisherId');
+    expect(payload.ext.tags.someTag).to.eql(444);
+    expect(payload.ext.tags.shortname).to.be.undefined;
+  });
+
+  it('Test required params in video request', function () {
+    const request = spec.buildRequests(videoRequest, videoRequest[0]);
+    const payload = JSON.parse(request.data);
+    expect(request.url).to.eql('https://ssp.disqus.com/bid/prebid?shortname=test_shortname');
+    expect(payload.ext.sid).to.eql('publisherId');
+    expect(payload.ext.tags.someTag).to.eql(444);
+    expect(payload.ext.tags.shortname).to.be.undefined;
+  });
+
+  it('Test multi imp', function () {
+    const request = spec.buildRequests(multiImpRequest, multiImpRequest[0]);
+    const payload = JSON.parse(request.data);
+    expect(request.url).to.eql('https://ssp.disqus.com/bid/prebid?shortname=test_shortname');
+
+    expect(payload.imp.length).to.eql(2);
+
+    expect(payload.imp[0].id).to.eql(12345);
+    expect(payload.imp[1].id).to.eql(54321);
+
+    expect(payload.imp[0].banner.w).to.eql(300);
+    expect(payload.imp[0].banner.h).to.eql(250);
+
+    expect(payload.imp[1].banner.w).to.eql(600);
+    expect(payload.imp[1].banner.h).to.eql(400);
   });
 });

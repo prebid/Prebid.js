@@ -25,6 +25,7 @@ import {find} from '../src/polyfill.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {bidderSettings} from '../src/bidderSettings.js';
 import {auctionManager} from '../src/auctionManager.js';
+import {timedAuctionHook, timedBidResponseHook} from '../src/utils/perfMetrics.js';
 
 /**
  * @summary This Module is intended to provide users with the ability to dynamically set and enforce price floors on a per auction basis.
@@ -75,11 +76,15 @@ function roundUp(number, precision) {
   return Math.ceil((parseFloat(number) * Math.pow(10, precision)).toFixed(1)) / Math.pow(10, precision);
 }
 
-let referrerHostname;
-function getHostNameFromReferer(referer) {
-  referrerHostname = parseUrl(referer, {noDecodeWholeURL: true}).hostname;
-  return referrerHostname;
-}
+const getHostname = (() => {
+  let domain;
+  return function() {
+    if (domain == null) {
+      domain = parseUrl(getRefererInfo().topmostLocation, {noDecodeWholeUrl: true}).hostname;
+    }
+    return domain;
+  }
+})();
 
 // First look into bidRequest!
 function getGptSlotFromAdUnit(transactionId, {index = auctionManager.index} = {}) {
@@ -99,7 +104,7 @@ export let fieldMatchingFunctions = {
   'size': (bidRequest, bidResponse) => parseGPTSingleSizeArray(bidResponse.size) || '*',
   'mediaType': (bidRequest, bidResponse) => bidResponse.mediaType || 'banner',
   'gptSlot': (bidRequest, bidResponse) => getGptSlotFromAdUnit((bidRequest || bidResponse).transactionId) || getGptSlotInfoForAdUnitCode(getAdUnitCode(bidRequest, bidResponse)).gptSlot,
-  'domain': (bidRequest, bidResponse) => referrerHostname || getHostNameFromReferer(getRefererInfo().referer),
+  'domain': getHostname,
   'adUnitCode': (bidRequest, bidResponse) => getAdUnitCode(bidRequest, bidResponse)
 }
 
@@ -142,6 +147,10 @@ export function getFirstMatchingFloor(floorData, bidObject, responseObject = {})
     matchingData: allPossibleMatches[0], // the first possible match is an "exact" so contains all data relevant for anlaytics adapters
     matchingRule
   };
+  // use adUnit floorMin as priority!
+  if (typeof deepAccess(bidObject, 'ortb2Imp.ext.prebid.floorMin') === 'number') {
+    matchingData.floorMin = bidObject.ortb2Imp.ext.prebid.floorMin;
+  }
   matchingData.matchingFloor = Math.max(matchingData.floorMin, matchingData.floorRuleValue);
   // save for later lookup if needed
   deepSetValue(floorData, `matchingInputs.${matchingInput}`, {...matchingData});
@@ -493,7 +502,7 @@ export function parseFloorData(floorsData, location) {
  * @param {Object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
  * @param {function} fn required; The next function in the chain, used by hook.js
  */
-export function requestBidsHook(fn, reqBidsConfigObj) {
+export const requestBidsHook = timedAuctionHook('priceFloors', function requestBidsHook(fn, reqBidsConfigObj) {
   // preserves all module related variables for the current auction instance (used primiarily for concurrent auctions)
   const hookConfig = {
     reqBidsConfigObj,
@@ -514,7 +523,7 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
   } else {
     continueAuction(hookConfig);
   }
-}
+});
 
 /**
  * @summary If an auction was queued to be delayed (waiting for a fetch) then this function will resume
@@ -685,14 +694,14 @@ function shouldFloorBid(floorData, floorInfo, bid) {
  * @summary The main driving force of floors. On bidResponse we hook in and intercept bidResponses.
  * And if the rule we find determines a bid should be floored we will do so.
  */
-export function addBidResponseHook(fn, adUnitCode, bid) {
+export const addBidResponseHook = timedBidResponseHook('priceFloors', function addBidResponseHook(fn, adUnitCode, bid) {
   let floorData = _floorDataForAuction[bid.auctionId];
   // if no floor data then bail
   if (!floorData || !bid || floorData.skipped) {
     return fn.call(this, adUnitCode, bid);
   }
 
-  const matchingBidRequest = auctionManager.index.getBidRequest(bid)
+  const matchingBidRequest = auctionManager.index.getBidRequest(bid);
 
   // get the matching rule
   let floorInfo = getFirstMatchingFloor(floorData.data, matchingBidRequest, {...bid, size: [bid.width, bid.height]});
@@ -743,10 +752,10 @@ export function addBidResponseHook(fn, adUnitCode, bid) {
     flooredBid.status = CONSTANTS.BID_STATUS.BID_REJECTED;
     // if floor not met update bid with 0 cpm so it is not included downstream and marked as no-bid
     flooredBid.cpm = 0;
-    logWarn(`${MODULE_NAME}: ${flooredBid.bidderCode}'s Bid Response for ${adUnitCode} was rejected due to floor not met`, bid);
+    logWarn(`${MODULE_NAME}: ${flooredBid.bidderCode}'s Bid Response for ${adUnitCode} was rejected due to floor not met (adjusted cpm: ${bid?.floorData?.cpmAfterAdjustments}, floor: ${floorInfo?.matchingFloor})`, bid);
     return fn.call(this, adUnitCode, flooredBid);
   }
   return fn.call(this, adUnitCode, bid);
-}
+});
 
 config.getConfig('floors', config => handleSetFloorsConfig(config.floors));
