@@ -45,7 +45,6 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
   setDataToConfig(endpoint);
 }
 
-
 export const pubxaiSubmodule = {
   name: SUBMODULE_NAME,
   init,
