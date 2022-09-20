@@ -6,10 +6,34 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { ajax } from '../src/ajax.js'
 
 const BIDDER_CODE = 'ogury';
+const GVLID = 31;
 const DEFAULT_TIMEOUT = 1000;
 const BID_HOST = 'https://mweb-hb.presage.io/api/header-bidding-request';
 const TIMEOUT_MONITORING_HOST = 'https://ms-ads-monitoring-events.presage.io';
 const MS_COOKIE_SYNC_DOMAIN = 'https://ms-cookie-sync.presage.io';
+const ADAPTER_VERSION = '1.2.13';
+
+function getClientWidth() {
+  const documentElementClientWidth = window.top.document.documentElement.clientWidth
+    ? window.top.document.documentElement.clientWidth
+    : 0
+  const innerWidth = window.top.innerWidth ? window.top.innerWidth : 0
+  const outerWidth = window.top.outerWidth ? window.top.outerWidth : 0
+  const screenWidth = window.top.screen.width ? window.top.screen.width : 0
+
+  return documentElementClientWidth || innerWidth || outerWidth || screenWidth
+}
+
+function getClientHeight() {
+  const documentElementClientHeight = window.top.document.documentElement.clientHeight
+    ? window.top.document.documentElement.clientHeight
+    : 0
+  const innerHeight = window.top.innerHeight ? window.top.innerHeight : 0
+  const outerHeight = window.top.outerHeight ? window.top.outerHeight : 0
+  const screenHeight = window.top.screen.height ? window.top.screen.height : 0
+
+  return documentElementClientHeight || innerHeight || outerHeight || screenHeight
+}
 
 function isBidRequestValid(bid) {
   const adUnitSizes = getAdUnitSizes(bid);
@@ -40,10 +64,10 @@ function buildRequests(validBidRequests, bidderRequest) {
   const openRtbBidRequestBanner = {
     id: bidderRequest.auctionId,
     tmax: DEFAULT_TIMEOUT,
-    at: 2,
+    at: 1,
     regs: {
       ext: {
-        gdpr: 1
+        gdpr: bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies ? 1 : 0
       },
     },
     site: {
@@ -55,17 +79,18 @@ function buildRequests(validBidRequests, bidderRequest) {
         consent: ''
       }
     },
-    imp: []
+    imp: [],
+    ext: {
+      adapterversion: ADAPTER_VERSION,
+      prebidversion: '$prebid.version$'
+    },
+    device: {
+      w: getClientWidth(),
+      h: getClientHeight()
+    }
   };
 
-  if (bidderRequest.hasOwnProperty('gdprConsent') &&
-    bidderRequest.gdprConsent.hasOwnProperty('gdprApplies')) {
-    openRtbBidRequestBanner.regs.ext.gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0
-  }
-
-  if (bidderRequest.hasOwnProperty('gdprConsent') &&
-    bidderRequest.gdprConsent.hasOwnProperty('consentString') &&
-    bidderRequest.gdprConsent.consentString.length > 0) {
+  if (bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString) {
     openRtbBidRequestBanner.user.ext.consent = bidderRequest.gdprConsent.consentString
   }
 
@@ -73,14 +98,15 @@ function buildRequests(validBidRequests, bidderRequest) {
     const sizes = getAdUnitSizes(bidRequest)
       .map(size => ({ w: size[0], h: size[1] }));
 
-    if (bidRequest.hasOwnProperty('mediaTypes') &&
+    if (bidRequest.mediaTypes &&
       bidRequest.mediaTypes.hasOwnProperty('banner')) {
       openRtbBidRequestBanner.site.id = bidRequest.params.assetKey;
+      const floor = getFloor(bidRequest);
 
       openRtbBidRequestBanner.imp.push({
         id: bidRequest.bidId,
         tagid: bidRequest.params.adUnitId,
-        bidfloor: getFloor(bidRequest),
+        ...(floor && {bidfloor: floor}),
         banner: {
           format: sizes
         },
@@ -123,7 +149,9 @@ function interpretResponse(openRtbBidResponse) {
         meta: {
           advertiserDomains: bid.adomain
         },
-        nurl: bid.nurl
+        nurl: bid.nurl,
+        adapterVersion: ADAPTER_VERSION,
+        prebidVersion: '$prebid.version$'
       };
 
       bidResponse.ad = bid.adm;
@@ -159,11 +187,11 @@ function onBidWon(bid) {
   w.OG_PREBID_BID_OBJECT = {
     ...(bid && { ...bid }),
   }
-  if (bid && bid.hasOwnProperty('nurl') && bid.nurl.length > 0) ajax(bid['nurl'], null);
+  if (bid && bid.nurl) ajax(bid.nurl, null);
 }
 
 function onTimeout(timeoutData) {
-  ajax(`${TIMEOUT_MONITORING_HOST}/bid_timeout`, null, JSON.stringify(timeoutData[0]), {
+  ajax(`${TIMEOUT_MONITORING_HOST}/bid_timeout`, null, JSON.stringify({...timeoutData[0], location: window.location.href}), {
     method: 'POST',
     contentType: 'application/json'
   });
@@ -171,6 +199,7 @@ function onTimeout(timeoutData) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER],
   isBidRequestValid,
   getUserSyncs,
@@ -180,6 +209,6 @@ export const spec = {
   onBidWon,
   getWindowContext,
   onTimeout
-}
+};
 
 registerBidder(spec);

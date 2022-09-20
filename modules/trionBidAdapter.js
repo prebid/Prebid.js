@@ -2,12 +2,11 @@ import { getBidIdParameter, parseSizesInput, tryAppendQueryString } from '../src
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 
-const storage = getStorageManager();
-
 const BID_REQUEST_BASE_URL = 'https://in-appadvertising.com/api/bidRequest';
 const USER_SYNC_URL = 'https://in-appadvertising.com/api/userSync.html';
 const BIDDER_CODE = 'trion';
 const BASE_KEY = '_trion_';
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 export const spec = {
   code: BIDDER_CODE,
@@ -54,7 +53,7 @@ export const spec = {
         bid.currency = result.currency;
         bid.netRevenue = result.netRevenue;
         if (result.adomain) {
-          bid.meta = {advertiserDomains: result.adomain}
+          bid.meta = {advertiserDomains: result.adomain};
         }
         bidResponses.push(bid);
       }
@@ -126,7 +125,7 @@ function buildTrionUrlParams(bid, bidderRequest) {
     intT = getStorageData(BASE_KEY + 'int_t');
   }
   if (intT) {
-    setStorageData(BASE_KEY + 'int_t', intT)
+    setStorageData(BASE_KEY + 'int_t', intT);
   }
   setStorageData(BASE_KEY + 'lps', pubId + ':' + sectionId);
   var trionUrl = '';

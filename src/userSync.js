@@ -3,7 +3,7 @@ import {
   logWarn, isStr, isSafariBrowser
 } from './utils.js';
 import { config } from './config.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import {includes} from './polyfill.js';
 import { getCoreStorageManager } from './storageManager.js';
 
 export const USERSYNC_DEFAULT_CONFIG = {
@@ -311,16 +311,20 @@ export function newUserSync(userSyncDependencies) {
       }
     }
     return true;
-  }
+  };
   return publicApi;
 }
 
-const browserSupportsCookies = !isSafariBrowser() && storage.cookiesAreEnabled();
-
-export const userSync = newUserSync({
+export const userSync = newUserSync(Object.defineProperties({
   config: config.getConfig('userSync'),
-  browserSupportsCookies: browserSupportsCookies
-});
+}, {
+  browserSupportsCookies: {
+    get: function() {
+      // call storage lazily to give time for consent data to be available
+      return !isSafariBrowser() && storage.cookiesAreEnabled();
+    }
+  }
+}));
 
 /**
  * @typedef {Object} UserSyncDependencies

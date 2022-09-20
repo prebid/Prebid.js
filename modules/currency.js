@@ -1,10 +1,12 @@
 import { logInfo, logWarn, logError, logMessage } from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { createBid } from '../src/bidfactory.js';
-import { STATUS } from '../src/constants.json';
+import CONSTANTS from '../src/constants.json';
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 import { getHook } from '../src/hook.js';
+import {defer} from '../src/utils/promise.js';
+import {timedBidResponseHook} from '../src/utils/perfMetrics.js';
 
 const DEFAULT_CURRENCY_RATE_URL = 'https://cdn.jsdelivr.net/gh/prebid/currency-file@1/latest.json?date=$$TODAY$$';
 const CURRENCY_RATE_PRECISION = 4;
@@ -19,6 +21,15 @@ export var currencySupportEnabled = false;
 export var currencyRates = {};
 var bidderCurrencyDefault = {};
 var defaultRates;
+
+export const ready = (() => {
+  let ctl;
+  function reset() {
+    ctl = defer();
+  }
+  reset();
+  return {done: () => ctl.resolve(), reset, promise: () => ctl.promise}
+})();
 
 /**
  * Configuration function for currency
@@ -136,15 +147,22 @@ function initCurrency(url) {
           try {
             currencyRates = JSON.parse(response);
             logInfo('currencyRates set to ' + JSON.stringify(currencyRates));
+            conversionCache = {};
             currencyRatesLoaded = true;
             processBidResponseQueue();
+            ready.done();
           } catch (e) {
             errorSettingsRates('Failed to parse currencyRates response: ' + response);
           }
         },
-        error: errorSettingsRates
+        error: function (...args) {
+          errorSettingsRates(...args);
+          ready.done();
+        }
       }
     );
+  } else {
+    ready.done();
   }
 }
 
@@ -163,7 +181,7 @@ function resetCurrency() {
   bidderCurrencyDefault = {};
 }
 
-export function addBidResponseHook(fn, adUnitCode, bid) {
+export const addBidResponseHook = timedBidResponseHook('currency', function addBidResponseHook(fn, adUnitCode, bid) {
   if (!bid) {
     return fn.call(this, adUnitCode); // if no bid, call original and let it display warnings
   }
@@ -197,8 +215,10 @@ export function addBidResponseHook(fn, adUnitCode, bid) {
   bidResponseQueue.push(wrapFunction(fn, this, [adUnitCode, bid]));
   if (!currencySupportEnabled || currencyRatesLoaded) {
     processBidResponseQueue();
+  } else {
+    fn.untimed.bail(ready.promise());
   }
-}
+});
 
 function processBidResponseQueue() {
   while (bidResponseQueue.length > 0) {
@@ -219,10 +239,7 @@ function wrapFunction(fn, context, params) {
         }
       } catch (e) {
         logWarn('Returning NO_BID, getCurrencyConversion threw error: ', e);
-        params[1] = createBid(STATUS.NO_BID, {
-          bidder: bid.bidderCode || bid.bidder,
-          bidId: bid.requestId
-        });
+        params[1] = createBid(CONSTANTS.STATUS.NO_BID, bid.getIdentifiers());
       }
     }
     return fn.apply(context, params);

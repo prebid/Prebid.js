@@ -1,5 +1,5 @@
 import fntzAnalyticsAdapter from 'modules/fintezaAnalyticsAdapter.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import {includes} from 'src/polyfill.js';
 import { expect } from 'chai';
 import { parseUrl } from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
@@ -51,7 +51,7 @@ describe('finteza analytics adapter', function () {
 
   describe('track', () => {
     describe('bid request', () => {
-      it('builds and sends data', function () {
+      it('builds and sends request data', function () {
         const bidderCode = 'Bidder789';
         const pauctionId = '5018eb39-f900-4370-b71e-3bb5b48d324f';
 
@@ -95,7 +95,7 @@ describe('finteza analytics adapter', function () {
     });
 
     describe('bid response', () => {
-      it('builds and sends data', function () {
+      it('builds and sends response data', function () {
         const bidderCode = 'Bidder789';
         const pauctionId = '5018eb39-f900-4370-b71e-3bb5b48d324f';
 
@@ -154,7 +154,7 @@ describe('finteza analytics adapter', function () {
     });
 
     describe('bid won', () => {
-      it('builds and sends data', function () {
+      it('builds and sends bid won data', function () {
         const bidderCode = 'Bidder789';
         const pauctionId = '5018eb39-f900-4370-b71e-3bb5b48d324f';
 
@@ -189,12 +189,13 @@ describe('finteza analytics adapter', function () {
         expect(url.search.value).to.equal(String(cpm));
         expect(url.search.unit).to.equal('usd');
 
-        sinon.assert.callCount(fntzAnalyticsAdapter.track, 1);
+        // 1 Finteza event + 1 Clean.io event
+        sinon.assert.callCount(fntzAnalyticsAdapter.track, 2);
       });
     });
 
     describe('bid timeout', () => {
-      it('builds and sends data', function () {
+      it('builds and sends timeout data', function () {
         const bidderCode = 'biDDer789';
         const pauctionId = '5018eb39-f900-4370-b71e-3bb5b48d324f';
 

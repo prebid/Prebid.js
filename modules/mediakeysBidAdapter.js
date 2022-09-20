@@ -1,10 +1,27 @@
-import find from 'core-js-pure/features/array/find.js';
-import arrayFrom from 'core-js-pure/features/array/from';
-import { getWindowTop, isFn, logWarn, getDNT, deepAccess, isArray, inIframe, mergeDeep, isStr, isEmpty, deepSetValue, deepClone, parseUrl, cleanObj, logError, triggerPixel, isInteger, isNumber } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { createEidsArray } from './userId/eids.js';
+import {arrayFrom, find} from '../src/polyfill.js';
+import {
+  cleanObj,
+  deepAccess,
+  deepClone,
+  deepSetValue,
+  getDNT,
+  inIframe,
+  isArray,
+  isEmpty,
+  isFn,
+  isInteger,
+  isNumber,
+  isStr,
+  logError,
+  logWarn,
+  mergeDeep,
+  triggerPixel
+} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {createEidsArray} from './userId/eids.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const AUCTION_TYPE = 1;
 const BIDDER_CODE = 'mediakeys';
@@ -66,19 +83,6 @@ const ORTB_VIDEO_PARAMS = {
   pos: value => [0, 1, 2, 3, 4, 5, 6, 7].indexOf(value) !== -1,
   api: value => Array.isArray(value) && value.every(v => [1, 2, 3, 4, 5, 6].indexOf(v) !== -1),
 };
-
-/**
- * Detects the capability to reach window.top.
- *
- * @returns {boolean}
- */
-function canAccessTopWindow() {
-  try {
-    return !!getWindowTop().location.href;
-  } catch (error) {
-    return false;
-  }
-}
 
 /**
  * Returns the OpenRtb deviceType id detected from User Agent
@@ -416,7 +420,7 @@ function createVideoImp(bid) {
     }
   });
 
-  return video
+  return video;
 }
 
 /**
@@ -593,6 +597,9 @@ export const spec = {
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     const payload = createOrtbTemplate();
 
     // Pass the auctionId as ortb2 id
@@ -632,31 +639,23 @@ export const spec = {
 
     // Assign payload.site from refererinfo
     if (bidderRequest.refererInfo) {
+      // TODO: reachedTop is probably not the right check here - it may be false when page is available or vice-versa
       if (bidderRequest.refererInfo.reachedTop) {
-        const sitePage = bidderRequest.refererInfo.referer;
-        deepSetValue(payload, 'site.page', sitePage);
-        deepSetValue(payload, 'site.domain', parseUrl(sitePage, {
-          noDecodeWholeURL: true
-        }).hostname);
-
-        if (canAccessTopWindow()) {
-          deepSetValue(payload, 'site.ref', getWindowTop().document.referrer);
+        deepSetValue(payload, 'site.page', bidderRequest.refererInfo.page);
+        deepSetValue(payload, 'site.domain', bidderRequest.refererInfo.domain)
+        if (bidderRequest.refererInfo.ref) {
+          deepSetValue(payload, 'site.ref', bidderRequest.refererInfo.ref);
         }
       }
     }
 
     // Handle First Party Data (need publisher fpd setup)
-    const fpd = config.getConfig('ortb2') || {};
+    const fpd = bidderRequest.ortb2 || {};
     if (fpd.site) {
       mergeDeep(payload, { site: fpd.site });
     }
     if (fpd.user) {
       mergeDeep(payload, { user: fpd.user });
-    }
-    // Here we can handle device.geo prop
-    const deviceGeo = deepAccess(fpd, 'device.geo');
-    if (deviceGeo) {
-      mergeDeep(payload.device, { geo: deviceGeo });
     }
 
     const request = {
@@ -704,7 +703,7 @@ export const spec = {
               agencyName: deepAccess(bid, 'ext.agency_name', null),
               primaryCatId: getPrimaryCatFromResponse(bid.cat),
               mediaType
-            }
+            };
 
             const newBid = {
               requestId: bid.impid,

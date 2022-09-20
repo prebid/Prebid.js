@@ -1,4 +1,4 @@
-import { logError, deepAccess } from '../src/utils.js';
+import { logError, deepAccess, parseSizesInput } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
@@ -12,13 +12,9 @@ const GVLID = 380;
 const COOKIE_SYNC_FALLBACK_URLS = [
   'https://x.bidswitch.net/sync?ssp=vidoomy',
   'https://ib.adnxs.com/getuid?https%3A%2F%2Fa-prebid.vidoomy.com%2Fsetuid%3Fbidder%3Dadnxs%26gdpr%3D{{GDPR}}%26gdpr_consent%3D{{GDPR_CONSENT}}%26uid%3D%24UID',
-  'https://pixel-sync.sitescout.com/dmp/pixelSync?nid=120&redir=https%3A%2F%2Fa.vidoomy.com%2Fapi%2Frtbserver%2Fcookie%3Fi%3DCEN%26uid%3D%7BuserId%7D',
-  'https://sync.1rx.io/usersync2/vidoomy?redir=https%3A%2F%2Fa.vidoomy.com%2Fapi%2Frtbserver%2Fcookie%3Fi%3DUN%26uid%3D%5BRX_UUID%5D',
-  'https://rtb.openx.net/sync/prebid?gdpr={{GDPR}}&gdpr_consent={{GDPR_CONSENT}}&r=https%3A%2F%2Fa-prebid.vidoomy.com%2Fsetuid%3Fbidder%3Dopenx%26uid%3D$%7BUID%7D',
-  'https://ads.pubmatic.com/AdServer/js/user_sync.html?gdpr={{GDPR}}&gdpr_consent={{GDPR_CONSENT}}&us_privacy=&predirect=https%3A%2F%2Fa-prebid.vidoomy.com%2Fsetuid%3Fbidder%3Dpubmatic%26gdpr%3D{{GDPR}}%26gdpr_consent%3D{{GDPR_CONSENT}}%26uid%3D',
+  'https://pixel-sync.sitescout.com/dmp/pixelSync?nid=120&gdpr={{GDPR}}&gdpr_consent={{GDPR_CONSENT}}&redir=https%3A%2F%2Fa.vidoomy.com%2Fapi%2Frtbserver%2Fcookie%3Fi%3DCEN%26uid%3D%7BuserId%7D',
   'https://cm.adform.net/cookie?redirect_url=https%3A%2F%2Fa-prebid.vidoomy.com%2Fsetuid%3Fbidder%3Dadf%26gdpr%3D{{GDPR}}%26gdpr_consent%3D{{GDPR_CONSENT}}%26uid%3D%24UID',
-  'https://ups.analytics.yahoo.com/ups/58531/occ?gdpr={{GDPR}}&gdpr_consent={{GDPR_CONSENT}}',
-  'https://ap.lijit.com/pixel?redir=https%3A%2F%2Fa-prebid.vidoomy.com%2Fsetuid%3Fbidder%3Dsovrn%26gdpr%3D{{GDPR}}%26gdpr_consent%3D{{GDPR_CONSENT}}%26uid%3D%24UID'
+  'https://ups.analytics.yahoo.com/ups/58531/occ?gdpr={{GDPR}}&gdpr_consent={{GDPR_CONSENT}}'
 ];
 
 const isBidRequestValid = bid => {
@@ -42,6 +38,11 @@ const isBidRequestValid = bid => {
     return false;
   }
 
+  if (bid.params.bidfloor && (isNaN(bid.params.bidfloor) || bid.params.bidfloor < 0)) {
+    logError(BIDDER_CODE + ': bid.params.bidfloor should be a number equal or greater than zero');
+    return false;
+  }
+
   return true;
 };
 
@@ -53,7 +54,7 @@ const isBidResponseValid = bid => {
     case BANNER:
       return Boolean(bid.width && bid.height && bid.ad);
     case VIDEO:
-      return Boolean(bid.vastUrl);
+      return Boolean(bid.vastUrl || bid.vastXml);
     default:
       return false;
   }
@@ -62,24 +63,26 @@ const isBidResponseValid = bid => {
 const buildRequests = (validBidRequests, bidderRequest) => {
   const serverRequests = validBidRequests.map(bid => {
     let adType = BANNER;
-    let w, h;
+    let sizes;
     if (bid.mediaTypes && bid.mediaTypes[BANNER] && bid.mediaTypes[BANNER].sizes) {
-      [w, h] = bid.mediaTypes[BANNER].sizes[0];
+      sizes = bid.mediaTypes[BANNER].sizes;
       adType = BANNER;
     } else if (bid.mediaTypes && bid.mediaTypes[VIDEO] && bid.mediaTypes[VIDEO].playerSize) {
-      [w, h] = bid.mediaTypes[VIDEO].playerSize;
+      sizes = bid.mediaTypes[VIDEO].playerSize;
       adType = VIDEO;
     }
+    const [w, h] = (parseSizesInput(sizes)[0] || '0x0').split('x');
 
-    const aElement = document.createElement('a');
-    aElement.href = (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) || top.location.href;
-    const hostname = aElement.hostname
+    // TODO: is 'domain' the right value here?
+    const hostname = bidderRequest.refererInfo.domain || window.location.hostname;
 
     const videoContext = deepAccess(bid, 'mediaTypes.video.context');
+    const bidfloor = deepAccess(bid, `params.bidfloor`, 0);
 
     const queryParams = {
       id: bid.params.id,
       adtype: adType,
+      auc: bid.adUnitCode,
       w,
       h,
       pos: parseInt(bid.params.position) || 1,
@@ -88,8 +91,11 @@ const buildRequests = (validBidRequests, bidderRequest) => {
       dt: /Mobi/.test(navigator.userAgent) ? 2 : 1,
       pid: bid.params.pid,
       requestId: bid.bidId,
-      d: getDomainWithoutSubdomain(hostname),
-      sp: encodeURIComponent(aElement.href),
+      schain: bid.schain || '',
+      bidfloor,
+      d: getDomainWithoutSubdomain(hostname), // 'vidoomy.com',
+      // TODO: does the fallback make sense here?
+      sp: encodeURIComponent(bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation),
       usp: bidderRequest.uspConsent || '',
       coppa: !!config.getConfig('coppa'),
       videoContext: videoContext || ''
@@ -104,7 +110,7 @@ const buildRequests = (validBidRequests, bidderRequest) => {
       method: 'GET',
       url: ENDPOINT,
       data: queryParams
-    }
+    };
   });
   return serverRequests;
 };
@@ -127,7 +133,7 @@ const interpretResponse = (serverResponse, bidRequest) => {
     let responseBody = serverResponse.body;
     if (!responseBody) return;
     if (responseBody.mediaType === 'video') {
-      responseBody.ad = responseBody.vastUrl;
+      responseBody.ad = responseBody.vastUrl || responseBody.vastXml;
       const videoContext = bidRequest.data.videoContext;
 
       if (videoContext === OUTSTREAM) {
@@ -143,13 +149,12 @@ const interpretResponse = (serverResponse, bidRequest) => {
 
           responseBody.renderer = renderer;
         } catch (e) {
-          responseBody.ad = responseBody.vastUrl;
+          responseBody.ad = responseBody.vastUrl || responseBody.vastXml;
           logError(BIDDER_CODE + ': error while installing renderer to show outstream ad');
         }
       }
     }
     const bid = {
-      vastUrl: responseBody.vastUrl,
       ad: responseBody.ad,
       renderer: responseBody.renderer,
       mediaType: responseBody.mediaType,
@@ -178,6 +183,11 @@ const interpretResponse = (serverResponse, bidRequest) => {
         secondaryCatIds: responseBody.meta.secondaryCatIds
       }
     };
+    if (responseBody.vastUrl) {
+      bid.vastUrl = responseBody.vastUrl;
+    } else if (responseBody.vastXml) {
+      bid.vastXml = responseBody.vastXml;
+    }
 
     const bids = [];
 
@@ -202,7 +212,7 @@ function getUserSyncs (syncOptions, responses, gdprConsent, uspConsent) {
     return [].concat(urls).map(url => ({
       type: pixelType,
       url: url
-        .replace('{{GDPR}}', gdprConsent ? gdprConsent.gdprApplies : '0')
+        .replace('{{GDPR}}', gdprConsent ? (gdprConsent.gdprApplies ? '1' : '0') : '0')
         .replace('{{GDPR_CONSENT}}', gdprConsent ? encodeURIComponent(gdprConsent.consentString) : '')
         .replace('{{USP_CONSENT}}', uspConsent ? encodeURIComponent(uspConsent) : '')
     }));

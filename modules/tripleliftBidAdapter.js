@@ -1,15 +1,17 @@
-import { tryAppendQueryString, logMessage, isEmpty, isStr, isPlainObject, isArray, logWarn } from '../src/utils.js';
+import { tryAppendQueryString, logMessage, logError, isEmpty, isStr, isPlainObject, isArray, logWarn } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 const GVLID = 28;
 const BIDDER_CODE = 'triplelift';
 const STR_ENDPOINT = 'https://tlx.3lift.com/header/auction?';
 const BANNER_TIME_TO_LIVE = 300;
-const INSTREAM_TIME_TO_LIVE = 3600;
+const VIDEO_TIME_TO_LIVE = 3600;
 let gdprApplies = true;
 let consentString = null;
+export const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
 
 export const tripleliftAdapterSpec = {
   gvlid: GVLID,
@@ -21,13 +23,13 @@ export const tripleliftAdapterSpec = {
 
   buildRequests: function(bidRequests, bidderRequest) {
     let tlCall = STR_ENDPOINT;
-    let data = _buildPostBody(bidRequests);
+    let data = _buildPostBody(bidRequests, bidderRequest);
 
     tlCall = tryAppendQueryString(tlCall, 'lib', 'prebid');
     tlCall = tryAppendQueryString(tlCall, 'v', '$prebid.version$');
 
     if (bidderRequest && bidderRequest.refererInfo) {
-      let referrer = bidderRequest.refererInfo.referer;
+      let referrer = bidderRequest.refererInfo.page;
       tlCall = tryAppendQueryString(tlCall, 'referrer', referrer);
     }
 
@@ -99,7 +101,7 @@ export const tripleliftAdapterSpec = {
       url: syncEndpoint
     }];
   }
-}
+};
 
 function _getSyncType(syncOptions) {
   if (!syncOptions) return;
@@ -107,10 +109,10 @@ function _getSyncType(syncOptions) {
   if (syncOptions.pixelEnabled) return 'image';
 }
 
-function _buildPostBody(bidRequests) {
+function _buildPostBody(bidRequests, bidderRequest) {
   let data = {};
   let { schain } = bidRequests[0];
-  const globalFpd = _getGlobalFpd();
+  const globalFpd = _getGlobalFpd(bidderRequest);
 
   data.imp = bidRequests.map(function(bidRequest, index) {
     let imp = {
@@ -118,12 +120,15 @@ function _buildPostBody(bidRequests) {
       tagid: bidRequest.params.inventoryCode,
       floor: _getFloor(bidRequest)
     };
-    // remove the else to support multi-imp
-    if (_isInstreamBidRequest(bidRequest)) {
+    // Check for video bidrequest
+    if (_isVideoBidRequest(bidRequest)) {
       imp.video = _getORTBVideo(bidRequest);
-    } else if (bidRequest.mediaTypes.banner) {
+    }
+    // append banner if applicable and request is not for instream
+    if (bidRequest.mediaTypes.banner && !_isInstream(bidRequest)) {
       imp.banner = { format: _sizes(bidRequest.sizes) };
-    };
+    }
+
     if (!isEmpty(bidRequest.ortb2Imp)) {
       imp.fpd = _getAdUnitFpd(bidRequest.ortb2Imp);
     }
@@ -134,7 +139,8 @@ function _buildPostBody(bidRequests) {
     ...getUnifiedIdEids([bidRequests[0]]),
     ...getIdentityLinkEids([bidRequests[0]]),
     ...getCriteoEids([bidRequests[0]]),
-    ...getPubCommonEids([bidRequests[0]])
+    ...getPubCommonEids([bidRequests[0]]),
+    ...getUniversalEids(bidRequests[0])
   ];
 
   if (eids.length > 0) {
@@ -151,22 +157,41 @@ function _buildPostBody(bidRequests) {
   return data;
 }
 
-function _isInstreamBidRequest(bidRequest) {
-  if (!bidRequest.mediaTypes.video) return false;
-  if (!bidRequest.mediaTypes.video.context) return false;
-  if (bidRequest.mediaTypes.video.context.toLowerCase() === 'instream') {
-    return true;
-  } else {
-    return false;
-  }
+function _isVideoBidRequest(bidRequest) {
+  return _isValidVideoObject(bidRequest) && (_isInstream(bidRequest) || _isOutstream(bidRequest));
+}
+
+function _isOutstream(bidRequest) {
+  return _isValidVideoObject(bidRequest) && bidRequest.mediaTypes.video.context.toLowerCase() === 'outstream';
+}
+
+function _isInstream(bidRequest) {
+  return _isValidVideoObject(bidRequest) && bidRequest.mediaTypes.video.context.toLowerCase() === 'instream';
+}
+
+function _isValidVideoObject(bidRequest) {
+  return bidRequest.mediaTypes.video && bidRequest.mediaTypes.video.context;
 }
 
 function _getORTBVideo(bidRequest) {
   // give precedent to mediaTypes.video
   let video = { ...bidRequest.params.video, ...bidRequest.mediaTypes.video };
-  if (!video.w) video.w = video.playerSize[0][0];
-  if (!video.h) video.h = video.playerSize[0][1];
+  try {
+    if (!video.w) video.w = video.playerSize[0][0];
+    if (!video.h) video.h = video.playerSize[0][1];
+  } catch (err) {
+    logWarn('Video size not defined', err);
+  }
   if (video.context === 'instream') video.placement = 1;
+  if (video.context === 'outstream') {
+    if (!video.placement) {
+      video.placement = 3
+    } else if ([3, 4, 5].indexOf(video.placement) === -1) {
+      logMessage(`video.placement value of ${video.placement} is invalid for outstream context. Setting placement to 3`)
+      video.placement = 3
+    }
+  }
+
   // clean up oRTB object
   delete video.playerSize;
   return video;
@@ -175,27 +200,44 @@ function _getORTBVideo(bidRequest) {
 function _getFloor (bid) {
   let floor = null;
   if (typeof bid.getFloor === 'function') {
-    const floorInfo = bid.getFloor({
-      currency: 'USD',
-      mediaType: _isInstreamBidRequest(bid) ? 'video' : 'banner',
-      size: '*'
-    });
-    if (typeof floorInfo === 'object' &&
-    floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
-      floor = parseFloat(floorInfo.floor);
+    try {
+      const floorInfo = bid.getFloor({
+        currency: 'USD',
+        mediaType: _isVideoBidRequest(bid) ? 'video' : 'banner',
+        size: '*'
+      });
+      if (typeof floorInfo === 'object' &&
+      floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
+        floor = parseFloat(floorInfo.floor);
+      }
+    } catch (err) {
+      logError('Triplelift: getFloor threw an error: ', err);
     }
   }
   return floor !== null ? floor : bid.params.floor;
 }
 
-function _getGlobalFpd() {
+function _getGlobalFpd(bidderRequest) {
   const fpd = {};
   const context = {}
   const user = {};
-  const ortbData = config.getLegacyFpd(config.getConfig('ortb2')) || {};
+  const ortbData = bidderRequest.ortb2 || {};
+  const opeCloudStorage = _fetchOpeCloud();
 
-  const fpdContext = Object.assign({}, ortbData.context);
+  const fpdContext = Object.assign({}, ortbData.site);
   const fpdUser = Object.assign({}, ortbData.user);
+
+  if (opeCloudStorage) {
+    fpdUser.data = fpdUser.data || []
+    try {
+      fpdUser.data.push({
+        name: 'www.1plusx.com',
+        ext: opeCloudStorage
+      })
+    } catch (err) {
+      logError('Triplelift: error adding 1plusX segments: ', err);
+    }
+  }
 
   _addEntries(context, fpdContext);
   _addEntries(user, fpdUser);
@@ -207,6 +249,18 @@ function _getGlobalFpd() {
     fpd.user = user;
   }
   return fpd;
+}
+
+function _fetchOpeCloud() {
+  const opeCloud = storage.getDataFromLocalStorage('opecloud_ctx');
+  if (!opeCloud) return null;
+  try {
+    const parsedJson = JSON.parse(opeCloud);
+    return parsedJson
+  } catch (err) {
+    logError('Triplelift: error parsing JSON: ', err);
+    return null
+  }
 }
 
 function _getAdUnitFpd(adUnitFpd) {
@@ -257,6 +311,24 @@ function getCriteoEids(bidRequest) {
 
 function getPubCommonEids(bidRequest) {
   return getEids(bidRequest, 'pubcid', 'pubcid.org', 'pubcid');
+}
+
+function getUniversalEids(bidRequest) {
+  let common = ['adserver.org', 'liveramp.com', 'criteo.com', 'pubcid.org'];
+  let eids = [];
+  if (bidRequest.userIdAsEids) {
+    bidRequest.userIdAsEids.forEach(id => {
+      try {
+        if (common.indexOf(id.source) === -1) {
+          let uids = id.uids.map(uid => ({ id: uid.id, ext: { rtiPartner: id.source } }));
+          eids.push({ source: id.source, uids });
+        }
+      } catch (err) {
+        logWarn(`Triplelift: Error attempting to add ${id} to bid request`, err);
+      }
+    });
+  }
+  return eids;
 }
 
 function getEids(bidRequest, type, source, rtiPartner) {
@@ -335,10 +407,10 @@ function _buildResponseObject(bidderRequest, bid) {
       meta: {}
     };
 
-    if (_isInstreamBidRequest(breq)) {
+    if (_isVideoBidRequest(breq) && bid.media_type === 'video') {
       bidResponse.vastXml = bid.ad;
       bidResponse.mediaType = 'video';
-      bidResponse.ttl = INSTREAM_TIME_TO_LIVE;
+      bidResponse.ttl = VIDEO_TIME_TO_LIVE;
     };
 
     if (bid.advertiser_name) {
@@ -350,7 +422,11 @@ function _buildResponseObject(bidderRequest, bid) {
     }
 
     if (bid.tl_source && bid.tl_source == 'hdx') {
-      bidResponse.meta.mediaType = 'banner';
+      if (_isVideoBidRequest(breq) && bid.media_type === 'video') {
+        bidResponse.meta.mediaType = 'video'
+      } else {
+        bidResponse.meta.mediaType = 'banner'
+      }
     }
 
     if (bid.tl_source && bid.tl_source == 'tlx') {
