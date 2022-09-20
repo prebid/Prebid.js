@@ -1313,7 +1313,7 @@ describe('E-Planning Adapter', function () {
       sandbox.restore();
     })
 
-    it('should add eids to the request ', function() {
+    it('should add eids to the request', function() {
       let bidRequests = [validBidView];
       const expected_id5id = encodeURIComponent(JSON.stringify({ uid: 'ID5-ZHMOL_IfFSt7_lVYX8rBZc6GH3XMWyPQOBUfr4bm0g!', ext: { linkType: 1 } }));
       const request = spec.buildRequests(bidRequests, bidderRequest);
