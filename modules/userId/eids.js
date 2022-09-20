@@ -5,25 +5,6 @@ export const USER_IDS_CONFIG = {
 
   // key-name : {config}
 
-  // GrowthCode
-  'growthCodeId': {
-    getValue: function(data) {
-      return data.gc_id
-    },
-    source: 'growthcode.io',
-    atype: 1,
-    getUidExt: function(data) {
-      const extendedData = pick(data, [
-        'h1',
-        'h2',
-        'h3',
-      ]);
-      if (Object.keys(extendedData).length) {
-        return extendedData;
-      }
-    }
-  },
-
   // trustpid
   'trustpid': {
     source: 'trustpid.com',
