@@ -4488,17 +4488,17 @@ describe('PubMatic adapter', function () {
           'dspid': 6,
           'deal_channel': 1,
           'bidtype': 0,
-          advertiserId: 'adid',
-          networkName: 'nwnm',
-          primaryCatId: 'pcid',
-          advertiserName: 'adnm',
-          agencyId: 'agid',
-          agencyName: 'agnm',
-          brandId: 'brid',
-          brandName: 'brnm',
-          dchain: 'dc',
-          demandSource: 'ds',
-          secondaryCatIds: ['secondaryCatIds']
+          // advertiserId: 'adid',
+          // networkName: 'nwnm',
+          // primaryCatId: 'pcid',
+          // advertiserName: 'adnm',
+          // agencyId: 'agid',
+          // agencyName: 'agnm',
+          // brandId: 'brid',
+          // brandName: 'brnm',
+          // dchain: 'dc',
+          // demandSource: 'ds',
+          // secondaryCatIds: ['secondaryCatIds']
         }
       };
 
@@ -4506,18 +4506,18 @@ describe('PubMatic adapter', function () {
       prepareMetaObject(br, bid);
       expect(br.meta.networkId).to.equal(6); // dspid
       expect(br.meta.buyerId).to.equal(12); // adid
-      expect(br.meta.advertiserId).to.equal('adid');
-      expect(br.meta.networkName).to.equal('nwnm');
-      expect(br.meta.primaryCatId).to.equal('pcid');
-      expect(br.meta.advertiserName).to.equal('adnm');
-      expect(br.meta.agencyId).to.equal('agid');
-      expect(br.meta.agencyName).to.equal('agnm');
-      expect(br.meta.brandId).to.equal('brid');
-      expect(br.meta.brandName).to.equal('brnm');
-      expect(br.meta.dchain).to.equal('dc');
-      expect(br.meta.demandSource).to.equal('ds');
-      expect(br.meta.secondaryCatIds).to.be.an('array').with.length.above(0);
-      expect(br.meta.secondaryCatIds[0]).to.equal('secondaryCatIds');
+      // expect(br.meta.advertiserId).to.equal('adid');
+      // expect(br.meta.networkName).to.equal('nwnm');
+      // expect(br.meta.primaryCatId).to.equal('pcid');
+      // expect(br.meta.advertiserName).to.equal('adnm');
+      // expect(br.meta.agencyId).to.equal('agid');
+      // expect(br.meta.agencyName).to.equal('agnm');
+      // expect(br.meta.brandId).to.equal('brid');
+      // expect(br.meta.brandName).to.equal('brnm');
+      // expect(br.meta.dchain).to.equal('dc');
+      // expect(br.meta.demandSource).to.equal('ds');
+      // expect(br.meta.secondaryCatIds).to.be.an('array').with.length.above(0);
+      // expect(br.meta.secondaryCatIds[0]).to.equal('secondaryCatIds');
       expect(br.meta.advertiserDomains).to.be.an('array').with.length.above(0); // adomain
       expect(br.meta.clickUrl).to.equal('mystartab.com'); // adomain
     });
@@ -4527,6 +4527,18 @@ describe('PubMatic adapter', function () {
       const br = {};
       prepareMetaObject(br, bid);
       expect(Object.keys(br.meta).length).to.equal(0);
+    });
+
+    it('Should be empty, when ext and adomain will not have properties', function () {
+      const bid = {
+        'adomain': [],
+        ext: {}
+      };
+      const br = {};
+      prepareMetaObject(br, bid);
+      expect(Object.keys(br.meta).length).to.equal(0);
+      expect(br.meta.advertiserDomains).to.equal(undefined); // adomain
+      expect(br.meta.clickUrl).to.equal(undefined); // adomain
     });
   });
 });
