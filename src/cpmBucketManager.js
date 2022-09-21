@@ -1,7 +1,6 @@
 import {find} from './polyfill.js';
-import { isEmpty } from './utils.js';
+import { isEmpty, logWarn } from './utils.js';
 import { config } from './config.js';
-import {logWarn} from './utils';
 
 const _defaultPrecision = 2;
 const _lgPriceConfig = {
