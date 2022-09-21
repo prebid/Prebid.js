@@ -293,14 +293,19 @@ function getItems(validBidRequests, bidderRequest) {
  */
 function getParam(validBidRequests, bidderRequest) {
   const pubcid = utils.deepAccess(validBidRequests[0], 'crumbs.pubcid');
-  // console.log('wjh getParam', validBidRequests, bidderRequest);
+  const sharedid =
+    utils.deepAccess(validBidRequests[0], 'userId.sharedid.id') ||
+    utils.deepAccess(validBidRequests[0], 'userId.pubcid');
   let isMobile = isMobileAndTablet() ? 1 : 0;
   let isTest = 0;
   let auctionId = getProperty(bidderRequest, 'auctionId');
   let items = getItems(validBidRequests, bidderRequest);
 
-  const domain = document.domain;
-  const location = utils.deepAccess(bidderRequest, 'refererInfo.referer');
+  const domain =
+    utils.deepAccess(bidderRequest, 'refererInfo.domain') || document.domain;
+  const location = utils.deepAccess(bidderRequest, 'refererInfo.location');
+  const page = utils.deepAccess(bidderRequest, 'refererInfo.page');
+  const referer = utils.deepAccess(bidderRequest, 'refererInfo.ref');
 
   const timeout = bidderRequest.timeout || 2000;
 
@@ -323,14 +328,13 @@ function getParam(validBidRequests, bidderRequest) {
       },
       ext: {},
       user: {
-        buyeruid: getUserID(),
-        id: pubcid,
+        id: sharedid || pubcid || getUserID(),
       },
       site: {
         name: domain,
         domain: domain,
-        page: location,
-        ref: location,
+        page: page || location,
+        ref: referer,
         mobile: isMobile,
         cat: [], // todo
         publisher: {
@@ -454,9 +458,9 @@ export const spec = {
    * Register bidder specific code, which will execute when the adserver targeting has been set for a bid from this bidder
    * @param {Bid} The bid of which the targeting has been set
    */
-//   onSetTargeting: function (bid) {
-//     // console.log('onSetTargeting', bid);
-//     // Bidder specific code
-//   },
+  //   onSetTargeting: function (bid) {
+  //     // console.log('onSetTargeting', bid);
+  //     // Bidder specific code
+  //   },
 };
 registerBidder(spec);

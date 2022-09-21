@@ -71,6 +71,7 @@ describe('adrinoBidAdapter', function () {
           }
         }
       },
+      userId: { criteoId: '2xqi3F94aHdwWnM3', pubcid: '3ec0b202-7697' },
       adUnitCode: 'adunit-code',
       bidId: '12345678901234',
       bidderRequestId: '98765432109876',
@@ -92,6 +93,9 @@ describe('adrinoBidAdapter', function () {
       expect(result[0].data.userAgent).to.equal(navigator.userAgent);
       expect(result[0].data).to.have.property('nativeParams');
       expect(result[0].data).not.to.have.property('gdprConsent');
+      expect(result[0].data).to.have.property('userId');
+      expect(result[0].data.userId.criteoId).to.equal('2xqi3F94aHdwWnM3');
+      expect(result[0].data.userId.pubcid).to.equal('3ec0b202-7697');
     });
 
     it('should build the request correctly with gdpr', function () {
@@ -108,6 +112,9 @@ describe('adrinoBidAdapter', function () {
       expect(result[0].data.userAgent).to.equal(navigator.userAgent);
       expect(result[0].data).to.have.property('nativeParams');
       expect(result[0].data).to.have.property('gdprConsent');
+      expect(result[0].data).to.have.property('userId');
+      expect(result[0].data.userId.criteoId).to.equal('2xqi3F94aHdwWnM3');
+      expect(result[0].data.userId.pubcid).to.equal('3ec0b202-7697');
     });
 
     it('should build the request correctly without gdpr', function () {
@@ -124,6 +131,9 @@ describe('adrinoBidAdapter', function () {
       expect(result[0].data.userAgent).to.equal(navigator.userAgent);
       expect(result[0].data).to.have.property('nativeParams');
       expect(result[0].data).not.to.have.property('gdprConsent');
+      expect(result[0].data).to.have.property('userId');
+      expect(result[0].data.userId.criteoId).to.equal('2xqi3F94aHdwWnM3');
+      expect(result[0].data.userId.pubcid).to.equal('3ec0b202-7697');
     });
   });
 
