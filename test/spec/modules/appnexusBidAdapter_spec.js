@@ -757,6 +757,82 @@ describe('AppNexusAdapter', function () {
       });
     }
 
+    it('should convert keyword params (when there are no ortb keywords) to proper form and attaches to request', function () {
+      let bidRequest = Object.assign({},
+        bidRequests[0],
+        {
+          params: {
+            placementId: '10433394',
+            keywords: {
+              single: 'val',
+              singleArr: ['val'],
+              singleArrNum: [5],
+              multiValMixed: ['value1', 2, 'value3'],
+              singleValNum: 123,
+              emptyStr: '',
+              emptyArr: [''],
+              badValue: { 'foo': 'bar' } // should be dropped
+            }
+          }
+        }
+      );
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.tags[0].keywords).to.deep.equal([{
+        'key': 'single',
+        'value': ['val']
+      }, {
+        'key': 'singleArr',
+        'value': ['val']
+      }, {
+        'key': 'singleArrNum',
+        'value': ['5']
+      }, {
+        'key': 'multiValMixed',
+        'value': ['value1', '2', 'value3']
+      }, {
+        'key': 'singleValNum',
+        'value': ['123']
+      }, {
+        'key': 'emptyStr'
+      }, {
+        'key': 'emptyArr'
+      }]);
+    });
+
+    it('should convert adUnit ortb2 keywords (when there are no bid param keywords) to proper form and attaches to request', function () {
+      let bidRequest = Object.assign({},
+        bidRequests[0],
+        {
+          ortb2Imp: {
+            ext: {
+              data: {
+                keywords: 'ortb2=yes,ortb2test, multiValMixed=4, singleValNum=456'
+              }
+            }
+          }
+        }
+      );
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.tags[0].keywords).to.deep.equal([{
+        'key': 'ortb2',
+        'value': ['yes']
+      }, {
+        'key': 'ortb2test'
+      }, {
+        'key': 'multiValMixed',
+        'value': ['4']
+      }, {
+        'key': 'singleValNum',
+        'value': ['456']
+      }]);
+    });
+
     it('should convert keyword params and adUnit ortb2 keywords to proper form and attaches to request', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
