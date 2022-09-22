@@ -1,6 +1,6 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
-import { logInfo, buildUrl, triggerPixel } from '../src/utils.js';
+import { logInfo, buildUrl, triggerPixel, parseSizesInput } from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const ADQUERY_GVLID = 902;
@@ -24,7 +24,7 @@ export const spec = {
    * @return {boolean}
    */
   isBidRequestValid: (bid) => {
-    return !!(bid && bid.params && bid.params.placementId)
+    return !!(bid && bid.params && bid.params.placementId && bid.mediaTypes.banner.sizes)
   },
 
   /**
@@ -202,6 +202,8 @@ function buildRequest(validBidRequests, bidderRequest) {
     bidderRequestId: bid.bidderRequestId,
     bidRequestsCount: bid.bidRequestsCount,
     bidderRequestsCount: bid.bidderRequestsCount,
+    sizes: parseSizesInput(bid.mediaTypes.banner.sizes).toString(),
+
   };
 }
 
