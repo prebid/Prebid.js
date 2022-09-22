@@ -111,6 +111,8 @@ export const spec = {
           w: size[0],
           h: size[1],
         })),
+        userIds: bidRequest.userId || null,
+        userIdAsEids: bidRequest.userIdAsEids || null,
         bidfloor: getBidFloor(bid),
         bidId: bid.bidId,
         bidderRequestId: getBidIdParameter('bidderRequestId', bid),
