@@ -210,6 +210,7 @@ const ANALYTICS_MESSAGE = {
     {
       'auctionId': '99785e47-a7c8-4c8a-ae05-ef1c717a4b4d',
       'auctionStart': 1658868383741,
+      'samplingFactor': 1,
       'clientTimeoutMillis': 3000,
       'accountId': 1001,
       'bidderOrder': [
@@ -1190,7 +1191,7 @@ describe('magnite analytics adapter', function () {
         }
       });
 
-      performStandardAuction({eventDelay: 0});
+      performStandardAuction({ eventDelay: 0 });
 
       // should be 3 requests
       expect(server.requests.length).to.equal(3);
@@ -1386,6 +1387,37 @@ describe('magnite analytics adapter', function () {
       const message = JSON.parse(request.requestBody);
       expect(message.integration).to.equal('testType');
     });
+
+    it('should correctly pass bid.source when is s2s', () => {
+      // Run auction
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+
+      const bidReq = utils.deepClone(MOCK.BID_REQUESTED);
+      bidReq.bids[0].src = 's2s';
+
+      events.emit(BID_REQUESTED, bidReq);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE);
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+
+      // emmit gpt events and bidWon
+      mockGpt.emitEvent(gptSlotRenderEnded0.eventName, gptSlotRenderEnded0.params);
+      events.emit(BID_WON, MOCK.BID_WON);
+
+      // hit the eventDelay
+      clock.tick(rubiConf.analyticsEventDelay);
+
+      expect(server.requests.length).to.equal(1);
+      let request = server.requests[0];
+      let message = JSON.parse(request.requestBody);
+      let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
+
+      // bid source should be 'server'
+      expectedMessage.auctions[0].adUnits[0].bids[0].source = 'server';
+      expectedMessage.bidsWon[0].source = 'server';
+      expect(message).to.deep.equal(expectedMessage);
+    });
+
     describe('when handling bid caching', () => {
       let auctionInits, bidRequests, bidResponses, bidsWon;
       beforeEach(function () {
@@ -1535,8 +1567,9 @@ describe('magnite analytics adapter', function () {
             sourceTransactionId: 'tid-2',
             renderTransactionId: `tid-${test.expectedRenderId}`,
             transactionId: 'tid-2',
-            bidId: 'bidId-2',
+            bidId: 'bidId-2'
           };
+          if (test.useBidCache) expectedMessage3.isCachedBid = true
           expect(message3.bidsWon).to.deep.equal([expectedMessage3]);
         });
       });

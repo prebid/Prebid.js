@@ -151,6 +151,8 @@ const sendAuctionEvent = (auctionId, trigger) => {
 const formatAuction = auction => {
   const auctionEvent = deepClone(auction);
 
+  auctionEvent.samplingFactor = 1;
+
   // We stored adUnits and bids as objects for quick lookups, now they are mapped into arrays for PBA
   auctionEvent.adUnits = Object.entries(auctionEvent.adUnits).map(([tid, adUnit]) => {
     adUnit.bids = Object.entries(adUnit.bids).map(([bidId, bid]) => {
@@ -480,8 +482,9 @@ const formatBidWon = bidWonData => {
   // get transaction and auction id of where this "rendered"
   const { renderTransactionId, renderAuctionId } = getRenderingIds(bidWonData);
 
+  const isCachedBid = renderTransactionId !== bidWonData.transactionId;
   logInfo(`${MODULE_NAME}: Bid Won : `, {
-    isCachedBid: renderTransactionId !== bidWonData.transactionId,
+    isCachedBid,
     renderAuctionId,
     renderTransactionId,
     sourceAuctionId: bidWonData.auctionId,
@@ -503,7 +506,8 @@ const formatBidWon = bidWonData => {
     siteId: adUnit.siteId,
     zoneId: adUnit.zoneId,
     mediaTypes: adUnit.mediaTypes,
-    adUnitCode: adUnit.adUnitCode
+    adUnitCode: adUnit.adUnitCode,
+    isCachedBid: isCachedBid || undefined // only send if it is true (save some space)
   }
   delete bidWon.pbsBidId; // if pbsBidId is there delete it (no need to pass it)
   return bidWon;
@@ -620,7 +624,7 @@ function enableMgniAnalytics(config = {}) {
 magniteAdapter.enableAnalytics = enableMgniAnalytics;
 
 magniteAdapter.originDisableAnalytics = magniteAdapter.disableAnalytics;
-magniteAdapter.disableAnalytics = function() {
+magniteAdapter.disableAnalytics = function () {
   // trick analytics module to register our enable back as main one
   magniteAdapter._oldEnable = enableMgniAnalytics;
   endpoint = undefined;
@@ -728,7 +732,7 @@ magniteAdapter.track = ({ eventType, args }) => {
         adUnit.bids[bid.bidId] = pick(bid, [
           'bidder',
           'bidId',
-          'src as source',
+          'source', () => bid.src === 's2s' ? 'server' : 'client',
           'status', () => 'no-bid'
         ]);
         // set acct site zone id on adunit
