@@ -21,5 +21,6 @@
   "schain",
   "amxBidAdapter",
   "tripleliftBidAdapter",
-  "synacormediaBidAdapter"
+  "synacormediaBidAdapter",
+  "vidoomyBidAdapter"
 ]
