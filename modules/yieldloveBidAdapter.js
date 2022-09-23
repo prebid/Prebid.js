@@ -121,7 +121,6 @@ export const spec = {
     })
     
     if (bidResponses.length === 0) {
-      // prebid's logger already prefix logs with bidder name
       utils.logInfo('interpretResponse :: no bid');
     }
 
@@ -133,8 +132,6 @@ export const spec = {
 
     let gdpr_params = ''
     gdpr_params = `gdpr=${Number(gdprConsent.gdprApplies)}&`
-    // add OR if you don't want gdpr_consent=undefined in query string
-    // can happen e.g. when gdprApplies=false (like here in NZ).
     gdpr_params += `gdpr_consent=${gdprConsent.consentString || ''}`
 
     let bidder_params = ''
