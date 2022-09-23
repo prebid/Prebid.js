@@ -1033,30 +1033,39 @@ function isNonEmptyArray(test) {
  * @param {*} br : bidResponse
  * @param {*} bid : bids
  */
-export function prepareMetaObject(br, bid) {
+export function prepareMetaObject(br, bid, seat) {
   br.meta = {};
-  if (bid.ext) {
-    if (bid.ext.dspid) br.meta.networkId = bid.ext.dspid;
-    if (bid.ext.advid) br.meta.buyerId = bid.ext.advid;
 
-    // NOTE: We will not recieve below fields from the translator response also not sure on what will be the key names for these in the response,
-    // when we needed we can add it back.
-    // New fields added, assignee fields name may change
-    // if (bid.ext.advertiserId) br.meta.advertiserId = bid.ext.advertiserId;
-    // if (bid.ext.networkName) br.meta.networkName = bid.ext.networkName;
-    // if (bid.ext.primaryCatId) br.meta.primaryCatId = bid.ext.primaryCatId;
-    // if (bid.ext.advertiserName) br.meta.advertiserName = bid.ext.advertiserName;
-    // if (bid.ext.agencyId) br.meta.agencyId = bid.ext.agencyId;
-    // if (bid.ext.agencyName) br.meta.agencyName = bid.ext.agencyName;
-    // if (bid.ext.brandId) br.meta.brandId = bid.ext.brandId;
-    // if (bid.ext.brandName) br.meta.brandName = bid.ext.brandName;
-    // if (bid.ext.dchain) br.meta.dchain = bid.ext.dchain;
-    // if (bid.ext.demandSource) br.meta.demandSource = bid.ext.demandSource;
-    // if (bid.ext.secondaryCatIds) br.meta.secondaryCatIds = bid.ext.secondaryCatIds;
+  if (bid.ext && bid.ext.dspid) {
+    br.meta.networkId = bid.ext.dspid;
+    br.meta.demandSource = bid.ext.dspid;
   }
-  if (bid.adomain && bid.adomain.length > 0) {
+
+  // NOTE: We will not recieve below fields from the translator response also not sure on what will be the key names for these in the response,
+  // when we needed we can add it back.
+  // New fields added, assignee fields name may change
+  // if (bid.ext.networkName) br.meta.networkName = bid.ext.networkName;
+  // if (bid.ext.advertiserName) br.meta.advertiserName = bid.ext.advertiserName;
+  // if (bid.ext.agencyName) br.meta.agencyName = bid.ext.agencyName;
+  // if (bid.ext.brandName) br.meta.brandName = bid.ext.brandName;
+  // if (bid.ext.dchain) br.meta.dchain = bid.ext.dchain;
+
+  const advid = seat || (bid.ext && bid.ext.advid);
+  if (advid) {
+    br.meta.advertiserId = advid;
+    br.meta.agencyId = advid;
+    br.meta.buyerId = advid;
+  }
+
+  if (bid.adomain && isNonEmptyArray(bid.adomain)) {
     br.meta.advertiserDomains = bid.adomain;
     br.meta.clickUrl = bid.adomain[0];
+    br.meta.brandId = bid.adomain[0];
+  }
+
+  if (bid.cat && isNonEmptyArray(bid.cat)) {
+    br.meta.secondaryCatIds = bid.cat;
+    br.meta.primaryCatId = bid.cat[0];
   }
 }
 
@@ -1386,7 +1395,7 @@ export const spec = {
                   if (br.dealId && bid.ext && bid.ext.deal_channel) {
                     br['dealChannel'] = dealChannelValues[bid.ext.deal_channel] || null;
                   }
-                  prepareMetaObject(br, bid);
+                  prepareMetaObject(br, bid, seatbidder.seat);
                   // adserverTargeting
                   if (seatbidder.ext && seatbidder.ext.buyid) {
                     br.adserverTargeting = {
