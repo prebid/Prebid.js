@@ -1265,6 +1265,29 @@ describe('Adagio bid adapter', () => {
       expect(result.dom_loading).to.be.a('String');
       expect(result.user_timestamp).to.be.a('String');
     });
+
+    it('should return `adunit_position` feature when the slot is hidden', function () {
+      const elem = fixtures.getElementById();
+      sandbox.stub(window.top.document, 'getElementById').returns(elem);
+      sandbox.stub(window.top, 'getComputedStyle').returns({ display: 'none' });
+      sandbox.stub(utils, 'inIframe').returns(false);
+
+      const bidRequest = new BidRequestBuilder({
+        mediaTypes: {
+          banner: { sizes: [[300, 250]] },
+        },
+      })
+        .withParams()
+        .build();
+
+      const bidderRequest = new BidderRequestBuilder().build();
+
+      const requests = spec.buildRequests([bidRequest], bidderRequest);
+      const result = requests[0].data.adUnits[0].features;
+
+      expect(result.adunit_position).to.match(/^[\d]+x[\d]+$/);
+      expect(elem.style.display).to.equal(null); // set null to reset style
+    });
   });
 
   describe('Adagio features when prebid in Safeframe', function() {
