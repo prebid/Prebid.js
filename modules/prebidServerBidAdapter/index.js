@@ -690,14 +690,23 @@ Object.assign(ORTB2.prototype, {
           }
         const s2sCurrency = config.getConfig('currency.adServerCurrency') || DEFAULT_S2S_CURRENCY;
 
+        // eslint-disable-next-line no-console
+        console.log('s2sCurrency: ', s2sCurrency);
+
         return adUnit.bids
           .map((bid) => this.getBidRequest(imp.id, bid.bidder))
           .map((bid) => {
+            // eslint-disable-next-line no-console
+            console.log('bid: ', bid);
             if (!bid || typeof bid.getFloor !== 'function') return;
             try {
               const {currency, floor} = bid.getFloor({
                 currency: s2sCurrency
               });
+              // // eslint-disable-next-line no-console
+              // console.log('currency: ', currency);
+              // // eslint-disable-next-line no-console
+              // console.log('floor: ', floor);
               return {
                 currency,
                 floor: parseFloat(floor)
@@ -707,6 +716,10 @@ Object.assign(ORTB2.prototype, {
             }
           })
           .reduce((min, floor) => {
+            // // eslint-disable-next-line no-console
+            // console.log('min: ', min);
+            // // eslint-disable-next-line no-console
+            // console.log('floor: ', floor);
             // if any bid does not have a valid floor, do not attempt to send any to PBS
             if (floor == null || floor.currency == null || floor.floor == null || isNaN(floor.floor)) {
               min.min = null;
@@ -716,8 +729,12 @@ Object.assign(ORTB2.prototype, {
             }
             // otherwise, pick the minimum one (or, in some strange confluence of circumstances, the one in the best currency)
             if (min.ref == null) {
+              // // eslint-disable-next-line no-console
+              // console.log('test 1');
               min.ref = min.min = floor;
             } else {
+              // // eslint-disable-next-line no-console
+              // console.log('test 2');
               const value = convertCurrency(floor.floor, floor.currency, min.ref.currency);
               if (value != null && value < min.ref.floor) {
                 min.ref.floor = value;
@@ -729,8 +746,13 @@ Object.assign(ORTB2.prototype, {
       })();
 
       if (floor) {
+        // eslint-disable-next-line no-console
+        console.log('floor:', floor);
         imp.bidfloor = floor.floor;
         imp.bidfloorcur = floor.currency;
+
+        // // eslint-disable-next-line no-console
+        // console.log('imp.bidfloorcur:', imp.bidfloorcur);
 
         if (floorMinCur == null) { floorMinCur = imp.bidfloorcur }
 
