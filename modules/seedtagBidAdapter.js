@@ -239,7 +239,7 @@ export const spec = {
     if (bidderRequest.uspConsent) {
       payload['uspConsent'] = bidderRequest.uspConsent
     }
-    
+
     if (validBidRequests[0].schain) {
       payload.schain = validBidRequests[0].schain;
     }
