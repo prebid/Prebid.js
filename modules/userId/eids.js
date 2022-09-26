@@ -68,12 +68,14 @@ export const USER_IDS_CONFIG = {
     source: 'flashtalking.com',
     atype: 1,
     getValue: function(data) {
-      return data.uid
+      let value = '';
+      if (data.DeviceID) {
+        value = data.DeviceID.join(',');
+      }
+      return value;
     },
     getUidExt: function(data) {
-      if (data.ext) {
-        return data.ext;
-      }
+      return 'DeviceID';
     }
   },
 
@@ -275,6 +277,11 @@ export const USER_IDS_CONFIG = {
     atype: 3
   },
 
+  'imppid': {
+    source: 'ppid.intimatemerger.com',
+    atype: 1
+  },
+
   'imuid': {
     source: 'intimatemerger.com',
     atype: 1
@@ -323,6 +330,32 @@ export const USER_IDS_CONFIG = {
   'cpexId': {
     source: 'czechadid.cz',
     atype: 1
+  },
+
+  // OneKey Data
+  'oneKeyData': {
+    getValue: function(data) {
+      if (data && Array.isArray(data.identifiers) && data.identifiers[0]) {
+        return data.identifiers[0].value;
+      }
+    },
+    source: 'paf',
+    atype: 1,
+    getEidExt: function(data) {
+      if (data && data.preferences) {
+        return {preferences: data.preferences};
+      }
+    },
+    getUidExt: function(data) {
+      if (data && Array.isArray(data.identifiers) && data.identifiers[0]) {
+        const id = data.identifiers[0];
+        return {
+          version: id.version,
+          type: id.type,
+          source: id.source
+        };
+      }
+    }
   }
 };
 
@@ -332,7 +365,6 @@ function createEidObject(userIdData, subModuleKey) {
   if (conf && userIdData) {
     let eid = {};
     eid.source = isFn(conf['getSource']) ? conf['getSource'](userIdData) : conf['source'];
-
     const value = isFn(conf['getValue']) ? conf['getValue'](userIdData) : userIdData;
     if (isStr(value)) {
       const uid = { id: value, atype: conf['atype'] };
@@ -367,6 +399,18 @@ export function createEidsArray(bidRequestUserId) {
     if (bidRequestUserId.hasOwnProperty(subModuleKey)) {
       if (subModuleKey === 'pubProvidedId') {
         eids = eids.concat(bidRequestUserId['pubProvidedId']);
+      } else if (subModuleKey === 'ftrackId') {
+        // ftrack has multiple IDs so we add each one that exists
+        let eid = {
+          'atype': 1,
+          'id': (bidRequestUserId.ftrackId.DeviceID || []).join('|'),
+          'ext': {}
+        }
+        for (let id in bidRequestUserId.ftrackId) {
+          eid.ext[id] = (bidRequestUserId.ftrackId[id] || []).join('|');
+        }
+
+        eids.push(eid);
       } else if (Array.isArray(bidRequestUserId[subModuleKey])) {
         bidRequestUserId[subModuleKey].forEach((config, index, arr) => {
           const eid = createEidObject(config, subModuleKey);

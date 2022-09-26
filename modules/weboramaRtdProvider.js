@@ -199,7 +199,7 @@ function initSubSection(moduleParams, subSection, ...requiredFields) {
     });
   } catch (e) {
     logError(`unable to initialize: error on ${subSection} configuration: ${e}`);
-    return false
+    return false;
   }
 
   logMessage(`weborama ${subSection} initialized with success`);
@@ -213,7 +213,7 @@ const globalDefaults = {
   sendToBidders: true,
   onData: () => {
     /* do nothing */ },
-}
+};
 
 /** normalize submodule configuration
  * @param {ModuleParams} moduleParams
@@ -558,7 +558,7 @@ function getDataFromLocalStorage(weboDataConf, cacheGet, cacheSet, defaultLocalS
     }
   }
 
-  const profile = cacheGet()
+  const profile = cacheGet();
 
   if (profile) {
     return [profile, false];

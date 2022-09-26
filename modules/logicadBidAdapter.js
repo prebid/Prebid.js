@@ -1,5 +1,6 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'logicad';
 const ENDPOINT_URL = 'https://pb.ladsp.com/adrequest/prebid';
@@ -11,6 +12,9 @@ export const spec = {
     return !!(bid.params && bid.params.tid);
   },
   buildRequests: function (bidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
+
     const requests = [];
     for (let i = 0, len = bidRequests.length; i < len; i++) {
       const request = {

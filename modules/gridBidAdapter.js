@@ -282,7 +282,7 @@ export const spec = {
         ext: {
           gdpr: gdprConsent.gdprApplies ? 1 : 0
         }
-      }
+      };
     }
 
     if (uspConsent) {
