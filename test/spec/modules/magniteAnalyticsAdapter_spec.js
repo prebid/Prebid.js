@@ -194,6 +194,7 @@ const ANALYTICS_MESSAGE = {
   'version': '$prebid.version$',
   'referrerHostname': 'a-test-domain.com',
   'timestamps': {
+    'timeSincePageLoad': 200,
     'eventTime': 1519767013981,
     'prebidLoaded': magniteAdapter.MODULE_INITIALIZED_TIME
   },
@@ -992,6 +993,7 @@ describe('magnite analytics adapter', function () {
       expectedMessage.session.expires = expectedMessage.session.expires + 1800;
       expectedMessage.session.start = expectedMessage.session.start + 1800;
       expectedMessage.timestamps.eventTime = expectedMessage.timestamps.eventTime + 1800;
+      expectedMessage.timestamps.timeSincePageLoad = expectedMessage.timestamps.timeSincePageLoad + 1800;
 
       expect(message).to.deep.equal(expectedMessage);
     });
@@ -1128,6 +1130,7 @@ describe('magnite analytics adapter', function () {
       expectedMessage2.session.expires = expectedMessage.session.expires + rubiConf.analyticsEventDelay;
       expectedMessage2.session.start = expectedMessage.session.start + rubiConf.analyticsEventDelay;
       expectedMessage2.timestamps.eventTime = expectedMessage.timestamps.eventTime + rubiConf.analyticsEventDelay;
+      expectedMessage2.timestamps.timeSincePageLoad = expectedMessage.timestamps.timeSincePageLoad + rubiConf.analyticsEventDelay;
 
       // trigger is `batched-bidsWon`
       expectedMessage2.trigger = 'batched-bidsWon';
@@ -1159,6 +1162,7 @@ describe('magnite analytics adapter', function () {
       expectedMessage.session.expires = expectedMessage.session.expires + expectedExtraTime;
       expectedMessage.session.start = expectedMessage.session.start + expectedExtraTime;
       expectedMessage.timestamps.eventTime = expectedMessage.timestamps.eventTime + expectedExtraTime;
+      expectedMessage.timestamps.timeSincePageLoad = expectedMessage.timestamps.timeSincePageLoad + expectedExtraTime;
 
       // since gam event did not fire, the trigger should be auctionEnd
       expectedMessage.trigger = 'auctionEnd';
@@ -1174,6 +1178,7 @@ describe('magnite analytics adapter', function () {
       expectedMessage2.session.expires = expectedMessage.session.expires + rubiConf.analyticsEventDelay;
       expectedMessage2.session.start = expectedMessage.session.start + rubiConf.analyticsEventDelay;
       expectedMessage2.timestamps.eventTime = expectedMessage.timestamps.eventTime + rubiConf.analyticsEventDelay;
+      expectedMessage2.timestamps.timeSincePageLoad = expectedMessage.timestamps.timeSincePageLoad + rubiConf.analyticsEventDelay;
       delete expectedMessage2.auctions;
 
       // trigger should be `batched-bidsWon-gamRender`
@@ -1203,6 +1208,7 @@ describe('magnite analytics adapter', function () {
       rest.session.expires = rest.session.expires - defaultDelay;
       rest.session.start = rest.session.start - defaultDelay;
       rest.timestamps.eventTime = rest.timestamps.eventTime - defaultDelay;
+      rest.timestamps.timeSincePageLoad = rest.timestamps.timeSincePageLoad - defaultDelay;
 
       // loop through and assert events fired in correct order with correct stuff
       [

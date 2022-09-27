@@ -292,6 +292,7 @@ const getTopLevelDetails = () => {
     version: '$prebid.version$',
     referrerHostname: magniteAdapter.referrerHostname || getHostNameFromReferer(pageReferer),
     timestamps: {
+      timeSincePageLoad: performance.now(),
       eventTime: Date.now(),
       prebidLoaded: magniteAdapter.MODULE_INITIALIZED_TIME
     }
