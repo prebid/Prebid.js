@@ -93,8 +93,8 @@ export const spec = {
         }
       }
       if (spaces.impType) {
-      params.vctx = spaces.impType & VAST_INSTREAM ? VAST_INSTREAM : VAST_OUTSTREAM;
-      params.vv = VAST_VERSION_DEFAULT;
+        params.vctx = spaces.impType & VAST_INSTREAM ? VAST_INSTREAM : VAST_OUTSTREAM;
+        params.vv = VAST_VERSION_DEFAULT;
       }
     }
 
