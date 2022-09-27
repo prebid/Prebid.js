@@ -838,9 +838,8 @@ describe('E-Planning Adapter', function () {
       };
       expect(bidResponse).to.deep.equal(expectedResponse);
     });
-  });
-
-  it('should correctly map the parameters in the response vast', function () {
+    
+    it('should correctly map the parameters in the response vast', function () {
     const bidResponse = spec.interpretResponse(responseVast, { adUnitToBidId: { [CLEAN_ADUNIT_CODE_VAST]: BID_ID } })[0];
     const expectedResponse = {
       requestId: BID_ID,
@@ -872,6 +871,7 @@ describe('E-Planning Adapter', function () {
       mediaTypes: VIDEO
     };
     expect(bidResponse).to.deep.equal(expectedResponse);
+    });
   });
 
   describe('getUserSyncs', function () {
