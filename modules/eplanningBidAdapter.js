@@ -118,7 +118,6 @@ export const spec = {
               cpm: ad.pr,
               width: ad.w,
               height: ad.h,
-              ad: ad.adm,
               ttl: TTL,
               creativeId: ad.crid,
               netRevenue: NET_REVENUE,
