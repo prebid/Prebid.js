@@ -89,6 +89,7 @@ function getBidFloor(bid) {
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
+  aliases: ['beyondmedia'],
 
   isBidRequestValid: (bid = {}) => {
     const { params, bidId, mediaTypes } = bid;
