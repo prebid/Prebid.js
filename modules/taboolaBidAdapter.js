@@ -60,14 +60,10 @@ export const userData = {
 
 export const internal = {
   getPageUrl: (refererInfo = {}) => {
-    return refererInfo.page || getWindowSelf().location.href;
+    return refererInfo?.page || getWindowSelf().location.href;
   },
   getReferrer: (refererInfo = {}) => {
-    if (refererInfo.ref) {
-      return refererInfo.ref;
-    } else {
-      return getWindowSelf().document.referrer;
-    }
+    return refererInfo?.ref || getWindowSelf().document.referrer;
   }
 }
 
@@ -160,7 +156,7 @@ function getSiteProperties({publisherId, bcat = []}, refererInfo) {
   return {
     id: publisherId,
     name: publisherId,
-    domain: refererInfo?.domain || window.location.host,
+    domain: refererInfo?.domain || window.location?.host,
     page: getPageUrl(refererInfo),
     ref: getReferrer(refererInfo),
     publisher: {
