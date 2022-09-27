@@ -673,40 +673,32 @@ Object.assign(ORTB2.prototype, {
 
       mergeDeep(imp, mediaTypes);
 
+      const convertCurrency = typeof getGlobal().convertCurrency !== 'function'
+        ? (amount) => amount
+        : (amount, from, to) => {
+          if (from === to) return amount;
+          let result = null;
+          try {
+            result = getGlobal().convertCurrency(amount, from, to);
+          } catch (e) {
+          }
+          return result;
+        }
+
       const floor = (() => {
         // we have to pick a floor for the imp - here we attempt to find the minimum floor
         // across all bids for this adUnit
-
-        const convertCurrency = typeof getGlobal().convertCurrency !== 'function'
-          ? (amount) => amount
-          : (amount, from, to) => {
-            if (from === to) return amount;
-            let result = null;
-            try {
-              result = getGlobal().convertCurrency(amount, from, to);
-            } catch (e) {
-            }
-            return result;
-          }
         const s2sCurrency = config.getConfig('currency.adServerCurrency') || DEFAULT_S2S_CURRENCY;
-
-        // eslint-disable-next-line no-console
-        console.log('s2sCurrency: ', s2sCurrency);
 
         return adUnit.bids
           .map((bid) => this.getBidRequest(imp.id, bid.bidder))
           .map((bid) => {
-            // eslint-disable-next-line no-console
-            console.log('bid: ', bid);
             if (!bid || typeof bid.getFloor !== 'function') return;
             try {
               const {currency, floor} = bid.getFloor({
                 currency: s2sCurrency
               });
-              // // eslint-disable-next-line no-console
-              // console.log('currency: ', currency);
-              // // eslint-disable-next-line no-console
-              // console.log('floor: ', floor);
+
               return {
                 currency,
                 floor: parseFloat(floor)
@@ -716,10 +708,6 @@ Object.assign(ORTB2.prototype, {
             }
           })
           .reduce((min, floor) => {
-            // // eslint-disable-next-line no-console
-            // console.log('min: ', min);
-            // // eslint-disable-next-line no-console
-            // console.log('floor: ', floor);
             // if any bid does not have a valid floor, do not attempt to send any to PBS
             if (floor == null || floor.currency == null || floor.floor == null || isNaN(floor.floor)) {
               min.min = null;
@@ -729,35 +717,30 @@ Object.assign(ORTB2.prototype, {
             }
             // otherwise, pick the minimum one (or, in some strange confluence of circumstances, the one in the best currency)
             if (min.ref == null) {
-              // // eslint-disable-next-line no-console
-              // console.log('test 1');
               min.ref = min.min = floor;
             } else {
-              // // eslint-disable-next-line no-console
-              // console.log('test 2');
               const value = convertCurrency(floor.floor, floor.currency, min.ref.currency);
+
               if (value != null && value < min.ref.floor) {
                 min.ref.floor = value;
                 min.min = floor;
               }
             }
+
             return min;
           }, {}).min
       })();
 
       if (floor) {
-        // eslint-disable-next-line no-console
-        console.log('floor:', floor);
         imp.bidfloor = floor.floor;
         imp.bidfloorcur = floor.currency;
 
-        // // eslint-disable-next-line no-console
-        // console.log('imp.bidfloorcur:', imp.bidfloorcur);
-
-        if (floorMinCur == null) { floorMinCur = imp.bidfloorcur }
+        if (floorMinCur == null) { floorMinCur = floor.currency }
+        const convertedFloorValue = convertCurrency(floor.floor, floor.currency, floorMinCur);
+        const lowerFloorValue = convertedFloorValue < floor.floor ? convertedFloorValue : floor.floor;
 
         const ortb2ImpFloorMin = imp.ext?.prebid?.floors?.floorMin || imp.ext?.prebid?.floorMin;
-        const lowestImpFloorMin = ortb2ImpFloorMin && ortb2ImpFloorMin < imp.bidfloor ? ortb2ImpFloorMin : imp.bidfloor;
+        const lowestImpFloorMin = ortb2ImpFloorMin && ortb2ImpFloorMin < lowerFloorValue ? ortb2ImpFloorMin : lowerFloorValue;
 
         deepSetValue(imp, 'ext.prebid.floors.floorMin', lowestImpFloorMin);
         if (floorMin == null || floorMin > lowestImpFloorMin) { floorMin = lowestImpFloorMin }
