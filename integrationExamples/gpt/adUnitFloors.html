@@ -10,40 +10,13 @@
 <html>
 
 <head>
-    <script async src="../../build/dev/prebid.js"></script>
+    <script async src="../../build/dist/prebid.js"></script>
     <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
     <script>
         var FAILSAFE_TIMEOUT = 3300;
         var PREBID_TIMEOUT = 1000;
-        var adUnits = [
-          {
+        var adUnits = [{
             code: 'div-gpt-ad-51545-0',
-            sizes: [[300, 250], [600, 500]],
-            mediaTypes: {
-                banner: {
-                    sizes: [[300, 250], [600, 500]]
-                }
-            },
-            // Replace this object to test a new Adapter!
-            bids: [{
-                bidder: 'appnexus',
-                params: {
-                    siteId: '300',
-                    size: [300, 250]
-                }
-            }],
-            // ortb2Imp: {
-            //   ext: {
-            //     prebid: {
-            //       floors: {
-            //         floorMin: 2
-            //       }
-            //     }
-            //   }
-            // }
-          },
-          {
-            code: 'div-gpt-ad-51545-1',
             sizes: [[300, 250], [600, 500]],
             mediaTypes: {
                 banner: {
@@ -58,8 +31,7 @@
                     size: [300, 250]
                 }
             }]
-          }
-        ];
+        }];
         var pbjs = pbjs || {};
         pbjs.que = pbjs.que || [];
     </script>
@@ -73,48 +45,25 @@
         pbjs.que.push(function () {
             pbjs.addAdUnits(adUnits);
             pbjs.setConfig({
-              s2sConfig : {
-                accountId : '1',
-                enabled : true, //default value set to false
-                defaultVendor: 'appnexus',
-                bidders : ['appnexus', 'ix'],
-                timeout : 1000, //default value is 1000
-                adapter : 'prebidServer', //if we have any other s2s adapter, default value is s2s
-                extPrebid: {
-                  floors: {
-                    enabled: true
-                  }
+                floors: {
+                    enforcement: {
+                        floorDeals: false, //default to false
+                        bidAdjustment: true
+                    },
+                    data: {     // default if endpoint doesn't return in time
+                        currency: 'USD',
+                        skipRate: 5,
+                        modelVersion: 'BlackBerryZap',
+                        schema: {
+                            fields: ['gptSlot', 'mediaType', 'size']
+                        },
+                        values: {
+                            '*|banner|600x500': 6.5,
+                            '*|banner|300x250': 3.25,
+                            '*|video': 3.5
+                        }
+                    }
                 }
-              },
-              // ortb2: {
-              //   ext: {
-              //     prebid: {
-              //       floors: {
-              //         enabled: true
-              //       }
-              //     }
-              //   }
-              // },
-              floors: {
-                enforcement: {
-                  floorDeals: false, //default to false
-                  bidAdjustment: true
-                },
-                data: {     // default if endpoint doesn't return in time
-                  currency: 'USD',
-                  skipRate: 5,
-                  modelVersion: 'BlackBerryZap',
-                  schema: {
-                    fields: ['mediaType', 'size']
-                  },
-                  values: {
-                    'banner|600x500': 6.5,
-                    '*|300x250': 3.25,
-                    '*|video': 3.5,
-                    'banner|*': 3.25,
-                  }
-                }
-              }
             });
             pbjs.requestBids({
                 bidsBackHandler: sendAdserverRequest,
@@ -142,7 +91,7 @@
     <script>
         googletag.cmd.push(function () {
             googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-51545-0').addService(googletag.pubads());
-            googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-51545-1').addService(googletag.pubads());
+
             googletag.pubads().enableSingleRequest();
             googletag.enableServices();
         });
@@ -157,11 +106,6 @@
             googletag.cmd.push(function () { googletag.display('div-gpt-ad-51545-0'); });
         </script>
     </div>
-    <div id='div-gpt-ad-51545-1'>
-      <script type='text/javascript'>
-          googletag.cmd.push(function () { googletag.display('div-gpt-ad-51545-1'); });
-      </script>
-  </div>
 </body>
 
 </html>
