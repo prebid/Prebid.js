@@ -92,11 +92,10 @@ export const spec = {
           params['e_' + id] = (typeof userIds[id] === 'object') ? encodeURIComponent(JSON.stringify(userIds[id])) : encodeURIComponent(userIds[id]);
         }
       }
-    }
-
-    if (spaces.impType) {
+      if (spaces.impType) {
       params.vctx = spaces.impType & VAST_INSTREAM ? VAST_INSTREAM : VAST_OUTSTREAM;
       params.vv = VAST_VERSION_DEFAULT;
+      }
     }
 
     return {
