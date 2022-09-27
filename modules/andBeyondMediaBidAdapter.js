@@ -4,7 +4,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 
-const BIDDER_CODE = 'andbeyond';
+const BIDDER_CODE = 'andbeyondmedia';
 const AD_URL = 'https://backend.andbeyond.media/pbjs';
 const SYNC_URL = 'https://cookies.andbeyond.media';
 
