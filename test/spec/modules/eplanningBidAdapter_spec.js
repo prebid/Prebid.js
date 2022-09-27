@@ -838,39 +838,39 @@ describe('E-Planning Adapter', function () {
       };
       expect(bidResponse).to.deep.equal(expectedResponse);
     });
-    
-    it('should correctly map the parameters in the response vast', function () {
-    const bidResponse = spec.interpretResponse(responseVast, { adUnitToBidId: { [CLEAN_ADUNIT_CODE_VAST]: BID_ID } })[0];
-    const expectedResponse = {
-      requestId: BID_ID,
-      cpm: CPM,
-      width: W,
-      height: H,
-      ttl: 120,
-      creativeId: CRID,
-      netRevenue: true,
-      currency: 'USD',
-      vastXml: ADM_VAST,
-      mediaTypes: VIDEO
-    };
-    expect(bidResponse).to.deep.equal(expectedResponse);
-  });
 
-  it('should correctly map the parameters in the response vast vv 1', function () {
-    const bidResponse = spec.interpretResponse(responseVastVV1, { adUnitToBidId: { [CLEAN_ADUNIT_CODE_VAST]: BID_ID } })[0];
-    const expectedResponse = {
-      requestId: BID_ID,
-      cpm: CPM,
-      width: W,
-      height: H,
-      ttl: 120,
-      creativeId: CRID,
-      netRevenue: true,
-      currency: 'USD',
-      vastXml: ADM_VAST_VV_1,
-      mediaTypes: VIDEO
-    };
-    expect(bidResponse).to.deep.equal(expectedResponse);
+    it('should correctly map the parameters in the response vast', function () {
+      const bidResponse = spec.interpretResponse(responseVast, { adUnitToBidId: { [CLEAN_ADUNIT_CODE_VAST]: BID_ID } })[0];
+      const expectedResponse = {
+        requestId: BID_ID,
+        cpm: CPM,
+        width: W,
+        height: H,
+        ttl: 120,
+        creativeId: CRID,
+        netRevenue: true,
+        currency: 'USD',
+        vastXml: ADM_VAST,
+        mediaTypes: VIDEO
+      };
+      expect(bidResponse).to.deep.equal(expectedResponse);
+    });
+
+    it('should correctly map the parameters in the response vast vv 1', function () {
+      const bidResponse = spec.interpretResponse(responseVastVV1, { adUnitToBidId: { [CLEAN_ADUNIT_CODE_VAST]: BID_ID } })[0];
+      const expectedResponse = {
+        requestId: BID_ID,
+        cpm: CPM,
+        width: W,
+        height: H,
+        ttl: 120,
+        creativeId: CRID,
+        netRevenue: true,
+        currency: 'USD',
+        vastXml: ADM_VAST_VV_1,
+        mediaTypes: VIDEO
+      };
+      expect(bidResponse).to.deep.equal(expectedResponse);
     });
   });
 
