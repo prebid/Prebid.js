@@ -28,6 +28,7 @@
     "pulsepointBidAdapter",
     "adtelligentBidAdapter",
     "yieldmoBidAdapter",
+    "aniviewBidAdapter",
     "adpod",
     "consentManagement",
     "gdprEnforcement",
@@ -38,6 +39,5 @@
     "userId",
     "criteoIdSystem",
     "sharedIdSystem",
-    "uid2IdSystem",
-    "aniviewBidAdapter"
+    "uid2IdSystem"
 ]
