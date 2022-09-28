@@ -633,6 +633,14 @@ describe('S2S Adapter', function () {
       expect(requestBid.source.tid).to.equal('437fbbf5-33f5-487a-8e16-a7112903cfe5');
     });
 
+    it('should set tmax to s2sConfig.timeout', () => {
+      const cfg = {...CONFIG, timeout: 123};
+      config.setConfig({s2sConfig: cfg});
+      adapter.callBids({...REQUEST, s2sConfig: cfg}, BID_REQUESTS, addBidResponse, done, ajax);
+      const req = JSON.parse(server.requests[0].requestBody);
+      expect(req.tmax).to.eql(123);
+    })
+
     it('should block request if config did not define p1Consent URL in endpoint object config', function () {
       let badConfig = utils.deepClone(CONFIG);
       badConfig.endpoint = { noP1Consent: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction' };

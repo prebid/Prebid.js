@@ -44,7 +44,7 @@ const PBS_CONVERTER = ortbConverter({
       let {s2sBidRequest, requestedBidders, eidPermissions} = context;
       const request = buildRequest(imps, proxyBidderRequest, context);
 
-      request.tmax = s2sBidRequest.timeout;
+      request.tmax = s2sBidRequest.s2sConfig.timeout;
       deepSetValue(request, 'source.tid', s2sBidRequest.tid);
 
       [request.app, request.site].forEach(section => {
