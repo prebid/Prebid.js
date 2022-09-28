@@ -333,7 +333,7 @@ export const spec = {
       }
     });
 
-    if (rubiConf.singleRequest !== true) {
+    if (config.getConfig('rubicon.singleRequest') !== true) {
       // bids are not grouped if single request mode is not enabled
       requests = videoRequests.concat(bidRequests.filter(bidRequest => bidType(bidRequest) === 'banner').map(bidRequest => {
         const bidParams = spec.createSlotParams(bidRequest, bidderRequest);
