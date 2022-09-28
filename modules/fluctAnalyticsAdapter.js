@@ -19,20 +19,28 @@ const find = _find;
 
 const url = 'https://an.adingo.jp';
 
+/** AdUnit */
+/** @typedef {{ code: string, originalCode?: string, dwid: string, path?: string, analytics?: { bidder: string, dwid: string }[], bids: Bid[], mediaTypes: MediaTypes, transactionId: string, ortb2Imp?: Ortb2Imp }} AdUnit */
+/** @typedef {{ banner: { name: string, sizes?: [number, number][], sizeConfig?: { minViewPort: [number, number], sizes: [number, number][] }[] }, video: any }} MediaTypes */
+/** @typedef {{ ext: { data: { adserver?: { name: string, adSlot: string }, pbadslot: string } } }} Ortb2Imp */
 /** @typedef {{ [key: string]: string|number }[] } Params */
-/** @typedef {{ banner: { name: string, sizes?: [number, number][], sizeConfig?: { minViewPort: [number, number], sizes: [number, number][] }[] }, video: any } MediaTypes */
-/** @typedef {{ adUnitCode: string, auctionId: string, bidder: string }} Bid */
-/** @typedef {{ code: string, _code?: string, dwid: string, path?: string, analytics?: { bidder: string, dwid: string }[], bids: Bid[], mediaTypes: MediaTypes, transactionId: string } AdUnit */
+/** @typedef {{ source: string, uids: { id: string, atype: number, ext?: { linkType: number } }[] }} UserIdAsEid */
+
+/** Bid */
+/** @typedef {{ adUnitCode: string, auctionId: string, bidder: string, userIdAsEids?: UserIdAsEid[] }} Bid */
 /** @typedef {{ noBid: boolean, bidWon: boolean, prebidWon: boolean, timeout: boolean, dwid: string }} BidFlag */
 /** @typedef { Bid & { bidId: string, bidRequestsCount: number, bidderRequestId: string, bidderRequestsCount: number, bidderWinsCount: number, mediaTypes: MediaTypes, params: Params, sizes: [number, number][], src: string, transactionId: string, dwid: string }} BidRequest */
-/** @typedef { Bid & { ad: string, adId: string, adUrl: string, adserverTargeting: { [fbs_key: string]: string }, bidderCode: string, cpm: number, creativeId: string, currency: string, dealId?: string, height: number, mediaType: string, netRevenue: boolean, originalCpm: number, originalCurrency: string, pbAg: string, pbCg: string, pbDg: string, pbHg: string, pbLg: string, pbMg: string, pbLg: string, requestId: string, requestTimestamp: number, responseTimestamp: number, size: string, source: string, statusMessage: string, timeToRespond: number, ts?: string, ttl: string, width: number }} BidResponse */
+/** @typedef { Bid & { ad: string, adId: string, adUrl: string, adserverTargeting: AdserverTargeting, bidderCode: string, cpm: number, creativeId: string, currency: string, dealId?: string, height: number, mediaType: string, netRevenue: boolean, originalCpm: number, originalCurrency: string, pbAg: string, pbCg: string, pbDg: string, pbHg: string, pbLg: string, pbMg: string, pbLg: string, requestId: string, requestTimestamp: number, responseTimestamp: number, size: string, source: string, statusMessage: string, timeToRespond: number, ts?: string, ttl: string, width: number }} BidResponse */
+/** @typedef {{ fbs_adid: string, fbs_adomain: string, fbs_bidder: string, fbs_format: string, fbs_pb: string, fbs_size: string, fbs_source: string }} AdserverTargeting */
 
+/** Prebid Events */
 /** @typedef {{ auctionId: string, auctionStart: number, bidderCode: string, bidderRequestId: string, bids: BidRequest[], refererInfo: { referer: string, reachedTop: boolean, isAmp: boolean, numIframes: number, stack: string[], start: number, timeout: number }}} BidRequestedEvent */
 /** @typedef {(Bid & { bidId: string, params: Params })[]} BidTimeoutEvent */
 /** @typedef { BidRequest } NoBidEvent */
 /** @typedef {{ adUnitCodes: string[], adUnits: AdUnit[], auctionEnd: number, auctionId: string, auctionStatus: string, bidderRequests: BidRequestedEvent[], bidsReceived: BidResponse[], labels?: string, noBids: BidRequest[], timeout: number, timestamp: number, winningBids: BidResponse[] }} AuctionEvent */
 /** @typedef {(BidResponse & { params: Params, status: string })} BidWonEvent */
 /** @typedef {(BidResponse & { adId: string, bid: BidResponse & { params: Params, status: string }})} AdRenderSucceededEvent */
+
 
 /** @type {{ auctions: { [auctionId: string]: AuctionEvent & { aidSuffix?: string, bids: { [requestId: string]: BidWonEvent & BidFlag }}}, gpt: { registered: boolean }, timeouts: { [auctionId: string]: number }, bidRequests: { [bidId: string]: BidRequest }}} */
 const cache = {
@@ -76,7 +84,7 @@ export const convertReplicatedAdUnit = (_adUnit, adUnits = $$PREBID_GLOBAL$$.adU
       const { analytics, bids, code, mediaTypes: { banner: { name } } } = find(adUnits, adUnit => adUnitPath.match(new RegExp(`${adUnit.path}$`)));
       adUnit.analytics = analytics;
       adUnit.bids = bids;
-      adUnit._code = adUnit.code; /** 変換前: `browsi_ad_..` */
+      adUnit.originalCode = adUnit.code; /** 変換前: `browsi_ad_..` */
       adUnit.code = code;
       adUnit.mediaTypes.banner.name = name;
     } catch (_error) {
@@ -179,21 +187,21 @@ let fluctAnalyticsAdapter = Object.assign(
         case EVENTS.AD_RENDER_SUCCEEDED: {
           /** @type {AdRenderSucceededEvent} */
           let adRenderSucceededEvent = args;
-          let { bid: { auctionId, requestId } } = adRenderSucceededEvent;
-          Object.assign(cache.auctions[auctionId].bids[requestId], {
+          let { bid } = adRenderSucceededEvent;
+          Object.assign(cache.auctions[bid.auctionId].bids[bid.requestId], bid, {
             noBid: false,
             prebidWon: true,
             bidWon: true,
             timeout: false,
           });
           /** オークション単位で `AD_RENDER_SUCCEEDED` イベントをまとめて送信する */
-          if (isBrowsiId(auctionId)) {
+          if (isBrowsiId(bid.auctionId)) {
             /** 原則1オークション:1枠 */
-            sendMessage(auctionId);
+            sendMessage(bid.auctionId);
           } else {
-            clearTimeout(cache.timeouts[auctionId]);
-            cache.timeouts[auctionId] = setTimeout(() => {
-              sendMessage(auctionId);
+            clearTimeout(cache.timeouts[bid.auctionId]);
+            cache.timeouts[bid.auctionId] = setTimeout(() => {
+              sendMessage(bid.auctionId);
             }, Math.min(config.getConfig('timeoutBuffer') || 400, 400));
           }
           break;
@@ -210,49 +218,63 @@ let fluctAnalyticsAdapter = Object.assign(
 
 /** @type {(auctionId: string) => void} */
 const sendMessage = (auctionId) => {
-  let { adUnits, auctionEnd, aidSuffix, auctionStatus, bids } = cache.auctions[auctionId];
+  let { adUnits, aidSuffix, bids } = cache.auctions[auctionId];
   adUnits = adUnits.map(adUnit => convertReplicatedAdUnit(adUnit, $$PREBID_GLOBAL$$.adUnits));
 
   const payload = {
     auctionId: aidSuffix ? `${auctionId}_${aidSuffix}` : auctionId,
-    adUnits,
     bids: Object.values(bids).map(bid => {
-      const { noBid, prebidWon, bidWon, timeout, dwid, adId, adUnitCode, adUrl, bidder, status, netRevenue, cpm, currency, originalCpm, originalCurrency, requestId, size, source, timeToRespond } = bid;
-      const adUnit = find(adUnits, adUnit => [adUnit._code, adUnit.code].includes(adUnitCode));
-
-      return {
+      const {
+        adserverTargeting,
+        adUnitCode,
+        bidder,
+        bidWon,
+        cpm,
+        creativeId,
+        dwid,
+        height,
+        netRevenue,
         noBid,
         prebidWon,
-        bidWon,
         timeout,
-        dwid: dwid || (find(adUnit.analytics, param => param.bidder === bidder) || {}).dwid,
-        status,
-        adId,
-        adUrl,
-        adUnitCode: adUnit.code,
-        bidder,
-        netRevenue,
-        cpm,
-        currency,
-        originalCpm,
-        originalCurrency,
-        requestId,
-        size,
-        source,
         timeToRespond,
-        /** @deprecated */
-        bid: {
-          ...bid,
-          ad: undefined
+        userIdAsEids,
+        width
+      } = bid;
+
+      const { analytics, code, originalCode, ortb2Imp } = find(adUnits, adUnit => [adUnit.originalCode, adUnit.code].includes(adUnitCode));
+      return {
+        adserverTargeting: {
+          fbs_adid: adserverTargeting?.fbs_adid ?? null,
+          fbs_adomain: adserverTargeting?.fbs_adomain ?? null,
+          fbs_bidder: adserverTargeting?.fbs_bidder ?? null,
+          fbs_format: adserverTargeting?.fbs_format ?? null,
+          fbs_pb: adserverTargeting?.fbs_pb ?? null,
+          fbs_size: adserverTargeting?.fbs_size ?? null,
+          fbs_source: adserverTargeting?.fbs_source ?? null,
         },
+        adUnitCode: code,
+        eidsSource: userIdAsEids?.map(userIdAsEid => userIdAsEid.source) ?? null,
+        bidder,
+        bidWon,
+        cpm,
+        creativeId,
+        dwid: dwid || (find(analytics, param => param.bidder === bidder) || {}).dwid,
+        height,
+        netRevenue,
+        noBid,
+        originalAdUnitCode: originalCode,
+        pbadslot: ortb2Imp?.ext?.data?.pbadslot ?? null,
+        prebidWon,
+        timeout,
+        timeToRespond,
+        width,
       };
     }),
     timestamp: Date.now(),
-    auctionEnd,
-    auctionStatus,
   }
   ajax(url, () => logInfo(`[sendMessage] ${Date.now()} :`, payload), JSON.stringify(payload), { contentType: 'application/json', method: 'POST' });
-}
+};
 
 fluctAnalyticsAdapter.originEnableAnalytics = fluctAnalyticsAdapter.enableAnalytics;
 fluctAnalyticsAdapter.enableAnalytics = (config) => {

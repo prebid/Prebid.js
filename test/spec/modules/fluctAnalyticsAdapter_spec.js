@@ -76,7 +76,7 @@ describe('複製枠のadUnitsをマッピングできる', () => {
     const expected = {
       ...browsiAdUnit,
       code: 'div-gpt-ad-1587114265584-0',
-      _code: browsiAdUnit.code,
+      originalCode: browsiAdUnit.code,
       bids: [
         {
           bidder: 'bidder1',
@@ -234,84 +234,35 @@ describe('fluct analytics adapter', () => {
     const actual = JSON.parse(server.requests[0].requestBody)
     const expected = {
       auctionId: MOCK.AUCTION_END.auctionId,
-      adUnits: MOCK.AUCTION_END.adUnits,
-      timestamp: actual.timestamp,
-      auctionEnd: actual.auctionEnd,
       bids: [
         {
-          dwid: "dwid1",
-          noBid: false,
-          prebidWon: true,
-          bidWon: false,
-          timeout: false,
-          status: "rendered",
-          adId: "5c28bc93-b1a0-481b-ae59-0641f316ad1a",
+          adserverTargeting: {
+            fbs_bidder: "bidder1",
+            fbs_adid: "5c28bc93-b1a0-481b-ae59-0641f316ad1a",
+            fbs_pb: "4.00",
+            fbs_size: "320x100",
+            fbs_source: "client",
+            fbs_format: "banner",
+            fbs_adomain: ""
+          },
           adUnitCode: "div-gpt-ad-1587114265584-0",
           bidder: "bidder1",
-          netRevenue: true,
+          bidWon: false,
           cpm: 5.386152744293213,
-          currency: "JPY",
-          originalCpm: 5.386152744293213,
-          originalCurrency: "JPY",
-          requestId: "22697ff3e5bf7ee",
-          size: "320x100",
-          source: "client",
+          creativeId: "11017985",
+          dwid: "dwid1",
+          eidsSource: null,
+          height: 100,
+          netRevenue: true,
+          noBid: false,
+          pbadslot: null,
+          prebidWon: true,
+          timeout: false,
           timeToRespond: 216,
-          bid: {
-            dwid: "dwid1",
-            bidderCode: "bidder1",
-            width: 320,
-            height: 100,
-            statusMessage: "Bid available",
-            adId: "5c28bc93-b1a0-481b-ae59-0641f316ad1a",
-            requestId: "22697ff3e5bf7ee",
-            mediaType: "banner",
-            source: "client",
-            cpm: 5.386152744293213,
-            currency: "JPY",
-            netRevenue: true,
-            ttl: 60,
-            creativeId: "11017985",
-            dealId: "",
-            originalCpm: 5.386152744293213,
-            originalCurrency: "JPY",
-            meta: {},
-            auctionId: "eeca6754-525b-4c4c-a697-b06b1fc6c352",
-            responseTimestamp: 1635837149448,
-            requestTimestamp: 1635837149232,
-            bidder: "bidder1",
-            adUnitCode: "div-gpt-ad-1587114265584-0",
-            timeToRespond: 216,
-            pbLg: "5.00",
-            pbMg: "5.30",
-            pbHg: "5.38",
-            pbAg: "5.30",
-            pbDg: "5.35",
-            pbCg: "4.00",
-            size: "320x100",
-            adserverTargeting: {
-              fbs_bidder: "bidder1",
-              fbs_adid: "5c28bc93-b1a0-481b-ae59-0641f316ad1a",
-              fbs_pb: "4.00",
-              fbs_size: "320x100",
-              fbs_source: "client",
-              fbs_format: "banner",
-              fbs_adomain: ""
-            },
-            status: "rendered",
-            params: [
-              {
-                networkId: "11021"
-              }
-            ],
-            noBid: false,
-            prebidWon: true,
-            bidWon: false,
-            timeout: false
-          }
+          width: 320,
         }
       ],
-      auctionStatus: "completed"
+      timestamp: actual.timestamp,
     }
     expect(expected).to.deep.equal(actual)
   })
