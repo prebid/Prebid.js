@@ -1279,8 +1279,7 @@ export function hasValidSupplyChainParams(schain) {
 }
 
 /**
- * Creates a URL key value param, encoding the
- * param unless the key is schain
+ * Creates a URL key value param, encoding the param unless the key is schain
  * @param {String} key
  * @param {String} param
  * @returns {String}
