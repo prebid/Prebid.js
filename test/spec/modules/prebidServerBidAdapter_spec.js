@@ -3454,5 +3454,17 @@ describe('S2S Adapter', function () {
 
       expect(requestBid.ext.prebid.floors).to.deep.equal({ enabled: false });
     });
+
+    it('should override prebid server default DEFAULT_S2S_CURRENCY', function () {
+      config.setConfig({
+        currency: { adServerCurrency: 'JPY' },
+      });
+
+      const bidRequests = utils.deepClone(BID_REQUESTS);
+      adapter.callBids(REQUEST, bidRequests, addBidResponse, done, ajax);
+
+      const parsedRequestBody = JSON.parse(server.requests[1].requestBody);
+      expect(parsedRequestBody.cur).to.deep.equal(['JPY']);
+    });
   });
 });

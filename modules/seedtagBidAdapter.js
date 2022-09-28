@@ -240,6 +240,10 @@ export const spec = {
       payload['uspConsent'] = bidderRequest.uspConsent
     }
 
+    if (validBidRequests[0].schain) {
+      payload.schain = validBidRequests[0].schain;
+    }
+
     const payloadString = JSON.stringify(payload)
     return {
       method: 'POST',

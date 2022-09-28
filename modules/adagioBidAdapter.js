@@ -794,9 +794,10 @@ function getSlotPosition(adUnitElementId) {
 
     if (mustDisplayElement) {
       domElement.style = domElement.style || {};
+      const originalDisplay = domElement.style.display;
       domElement.style.display = 'block';
       box = domElement.getBoundingClientRect();
-      domElement.style.display = elComputedDisplay;
+      domElement.style.display = originalDisplay || null;
     }
     position.x = Math.round(box.left + scrollLeft - clientLeft);
     position.y = Math.round(box.top + scrollTop - clientTop);
