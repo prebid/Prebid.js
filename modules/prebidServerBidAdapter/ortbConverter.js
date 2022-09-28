@@ -2,9 +2,10 @@ import {ortbConverter} from '../../libraries/ortbConverter/converter.js';
 import {
   deepAccess,
   deepSetValue,
-  getBidRequest, getDefinedParams,
+  getBidRequest,
+  getDefinedParams,
   isArray,
-  logError, logInfo,
+  logError,
   logWarn,
   memoize,
   mergeDeep,
@@ -183,44 +184,38 @@ const PBS_CONVERTER = ortbConverter({
         context.actualBidderRequests.forEach(req => orig(ortbRequest, req, context));
       },
       sourceExtSchain(orig, ortbRequest, proxyBidderRequest, context) {
-        // pass schains in ext.prebid.schains rather than source.ext.schain
+        // pass schains in ext.prebid.schains, with the most commonly used one in source.ext.schain
+        let mainChain;
 
-        // get reference to pbs config schain bidder names (if any exist)
-        const pbsSchainBidderNamesArr = ortbRequest.ext?.prebid?.schains ? ortbRequest.ext.prebid.schains.flatMap(s => s.bidders) : [];
-        // create an schains object
-        const schains = Object.fromEntries(
-          (deepAccess(ortbRequest, 'ext.prebid.schains') || []).map(({bidders, schain}) => [JSON.stringify(schain), {bidders: new Set(bidders), schain}])
-        );
+        let chains = (deepAccess(ortbRequest, 'ext.prebid.schains') || []);
+        const chainBidders = new Set(chains.flatMap((item) => item.bidders));
 
-        // compare bidder specific schains with pbs specific schains
-        const chains = Object.values(
-          context.actualBidderRequests
-            .map((req) => {
-              return [req.bidderCode, deepAccess(req, 'bids.0.schain')];
-            })
-            .reduce((chains, [bidder, chain]) => {
-              const chainKey = JSON.stringify(chain);
-
-              switch (true) {
-                // if pbjs bidder name is same as pbs bidder name, pbs bidder name always wins
-                case chainKey && pbsSchainBidderNamesArr.indexOf(bidder) !== -1:
-                  logInfo(`bidder-specific schain for ${bidder} skipped due to existing entry`);
-                  break;
-                // if a pbjs schain obj is equal to an schain obj that exists on the pbs side, add the bidder name on the pbs side
-                case chainKey && chains.hasOwnProperty(chainKey) && pbsSchainBidderNamesArr.indexOf(bidder) === -1:
-                  chains[chainKey].bidders.add(bidder);
-                  break;
-                // if a pbjs schain obj is not on the pbs side, add a new schain entry on the pbs side
-                case chainKey && !chains.hasOwnProperty(chainKey):
-                  chains[chainKey] = {bidders: new Set(), schain: chain};
-                  chains[chainKey].bidders.add(bidder);
-                  break;
-                default:
+        chains = Object.values(
+          chains
+            .concat(context.actualBidderRequests
+              .filter((req) => !chainBidders.has(req.bidderCode)) // schain defined in s2sConfig.extPrebid takes precedence
+              .map((req) => ({
+                bidders: [req.bidderCode],
+                schain: deepAccess(req, 'bids.0.schain')
+              })))
+            .filter(({bidders, schain}) => bidders?.length > 0 && schain)
+            .reduce((chains, {bidders, schain}) => {
+              const key = JSON.stringify(schain);
+              if (!chains.hasOwnProperty(key)) {
+                chains[key] = {bidders: new Set(), schain};
               }
-
+              bidders.forEach((bidder) => chains[key].bidders.add(bidder));
+              if (mainChain == null || chains[key].bidders.size > mainChain.bidders.size) {
+                mainChain = chains[key]
+              }
               return chains;
-            }, schains)
+            }, {})
         ).map(({bidders, schain}) => ({bidders: Array.from(bidders), schain}));
+
+        if (mainChain != null) {
+          deepSetValue(ortbRequest, 'source.ext.schain', mainChain.schain);
+        }
+
         if (chains.length) {
           deepSetValue(ortbRequest, 'ext.prebid.schains', chains);
         }
