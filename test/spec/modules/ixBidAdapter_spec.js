@@ -1739,6 +1739,7 @@ describe('IndexexchangeAdapter', function () {
       expect(payload.source.ext.schain).to.deep.equal(SAMPLE_SCHAIN);
       expect(payload.imp).to.be.an('array');
       expect(payload.imp).to.have.lengthOf(1);
+      expect(payload.source.tid).to.equal(DEFAULT_BANNER_VALID_BID[0].auctionId);
     });
 
     it('payload should have correct format and value for r.id when bidderRequestId is a number ', function () {
@@ -1767,7 +1768,7 @@ describe('IndexexchangeAdapter', function () {
 
     it('payload should not include schain when not provided', function () {
       const payload = JSON.parse(queryWithoutSchain.r);
-      expect(payload.source).to.not.exist; // source object currently only written for schain
+      expect(payload.source.schain).to.not.exist; // source object currently only written for schain
     });
 
     it('impression should have correct format and value', function () {

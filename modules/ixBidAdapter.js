@@ -602,13 +602,15 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
     r.ext.ixdiag.err = cachedErrors;
   }
 
+  // set source.tid to auctionId for outgoing request to Exchange.
+  r.source = {
+    tid: validBidRequests[0].auctionId,
+  }
+
   // if an schain is provided, send it along
   if (validBidRequests[0].schain) {
-    r.source = {
-      ext: {
-        schain: validBidRequests[0].schain
-      }
-    };
+    r.source.ext = {};
+    r.source.ext.schain = validBidRequests[0].schain;
   }
 
   if (userEids.length > 0) {
