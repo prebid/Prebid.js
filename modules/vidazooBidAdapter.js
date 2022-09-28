@@ -10,7 +10,7 @@ const BIDDER_VERSION = '1.0.0';
 const CURRENCY = 'USD';
 const TTL_SECONDS = 60 * 5;
 const DEAL_ID_EXPIRY = 1000 * 60 * 15;
-const UNIQUE_DEAL_ID_EXPIRY = 1000 * 60 * 15;
+const UNIQUE_DEAL_ID_EXPIRY = 1000 * 60 * 60;
 const SESSION_ID_KEY = 'vidSid';
 export const SUPPORTED_ID_SYSTEMS = {
   'britepoolid': 1,

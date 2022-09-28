@@ -88,6 +88,8 @@ describe('MediaSquare bid adapter tests', function () {
       'height': 250,
       'creative_id': '158534630',
       'currency': 'USD',
+      'originalCpm': 25.0123,
+      'originalCurrency': 'USD',
       'net_revenue': true,
       'ttl': 300,
       'ad': '< --- creative code --- >',

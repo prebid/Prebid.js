@@ -60,14 +60,10 @@ export const userData = {
 
 export const internal = {
   getPageUrl: (refererInfo = {}) => {
-    return refererInfo.page || getWindowSelf().location.href;
+    return refererInfo?.page || getWindowSelf().location.href;
   },
   getReferrer: (refererInfo = {}) => {
-    if (refererInfo.ref) {
-      return refererInfo.ref;
-    } else {
-      return getWindowSelf().document.referrer;
-    }
+    return refererInfo?.ref || getWindowSelf().document.referrer;
   }
 }
 
@@ -84,7 +80,7 @@ export const spec = {
   buildRequests: (validBidRequests, bidderRequest) => {
     const [bidRequest] = validBidRequests;
     const {refererInfo, gdprConsent = {}, uspConsent} = bidderRequest;
-    const {publisherId} = bidRequest.params;
+    const {publisherId, endpointUrl} = bidRequest.params;
     const site = getSiteProperties(bidRequest.params, refererInfo);
     const device = {ua: navigator.userAgent};
     const imps = getImps(validBidRequests);
@@ -128,7 +124,7 @@ export const spec = {
       regs
     };
 
-    const url = [END_POINT_URL, publisherId].join('/');
+    const url = [endpointUrl || END_POINT_URL, publisherId].join('/');
 
     return {
       url,
@@ -160,7 +156,7 @@ function getSiteProperties({publisherId, bcat = []}, refererInfo) {
   return {
     id: publisherId,
     name: publisherId,
-    domain: refererInfo?.domain || window.location.host,
+    domain: refererInfo?.domain || window.location?.host,
     page: getPageUrl(refererInfo),
     ref: getReferrer(refererInfo),
     publisher: {
