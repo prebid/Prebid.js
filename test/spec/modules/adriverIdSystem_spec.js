@@ -32,7 +32,6 @@ describe('AdriverIdSystem', function () {
       expect(request.url).to.include('https://ad.adriver.ru/cgi-bin/json.cgi');
       request.respond(503, null, 'Unavailable');
       expect(logErrorStub.calledOnce).to.be.true;
-      expect(callbackSpy.calledOnce).to.be.true;
     });
 
     it('test call user sync url with the right params', function() {

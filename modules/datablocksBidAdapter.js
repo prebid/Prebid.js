@@ -4,6 +4,7 @@ import { config } from '../src/config.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { ajax } from '../src/ajax.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 export const storage = getStorageManager({bidderCode: 'datablocks'});
 
 const NATIVE_ID_MAP = {};
@@ -252,6 +253,9 @@ export const spec = {
 
   // GENERATE THE RTB REQUEST
   buildRequests: function(validRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validRequests = convertOrtbRequestToProprietaryNative(validRequests);
+
     // RETURN EMPTY IF THERE ARE NO VALID REQUESTS
     if (!validRequests.length) {
       return [];
@@ -357,7 +361,7 @@ export const spec = {
         stack: bidderRequest.refererInfo.stack,
         timeout: config.getConfig('bidderTimeout')
       },
-    }
+    };
 
     // ADD REF URL IF FOUND
     if (self === top && document.referrer) {

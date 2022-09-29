@@ -14,7 +14,7 @@ const AD_RENDER_SUCCEEDED = CONSTANTS.EVENTS.AD_RENDER_SUCCEEDED;
 const AUCTION_DEBUG = CONSTANTS.EVENTS.AUCTION_DEBUG;
 const ADD_AD_UNITS = CONSTANTS.EVENTS.ADD_AD_UNITS;
 
-const AnalyticsAdapter = require('src/AnalyticsAdapter').default;
+const AnalyticsAdapter = require('libraries/analyticsAdapter/AnalyticsAdapter.js').default;
 const config = {
   url: 'https://localhost:9999/endpoint',
   analyticsType: 'endpoint'
