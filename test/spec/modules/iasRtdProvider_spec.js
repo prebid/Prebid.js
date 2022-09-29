@@ -138,7 +138,10 @@ const config = {
     keyMappings: {
       'id': 'ias_id'
     },
-    pageUrl: 'https://integralads.com/test'
+    pageUrl: 'https://integralads.com/test',
+    adUnitPath: {
+      'one-div-id': '/012345/ad/unit/path'
+    }
   }
 };
 
