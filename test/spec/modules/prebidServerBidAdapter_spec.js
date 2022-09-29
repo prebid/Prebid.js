@@ -3561,7 +3561,7 @@ describe('S2S Adapter', function () {
       expect(requestBid.imp[0].bidfloor).to.equal(1.23);
       expect(requestBid.imp[1].bidfloor).to.equal(3.21);
 
-      expect(requestBid.ext.prebid.floors).to.deep.equal({ enabled: true, floorMin: 1, floorMinCur: 'CUR' });
+      expect(requestBid.ext.prebid.floors).to.deep.equal({ enabled: true, floorMin: 1.23, floorMinCur: 'CUR' });
     });
   });
 });
