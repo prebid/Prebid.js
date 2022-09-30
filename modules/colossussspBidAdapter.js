@@ -98,6 +98,7 @@ export const spec = {
       host: location.host,
       page: location.pathname,
       placements: placements,
+      tid: bidderRequest.bid[0].transactionId
     };
 
     if (bidderRequest) {

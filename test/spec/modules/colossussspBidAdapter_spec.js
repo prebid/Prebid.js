@@ -91,13 +91,14 @@ describe('ColossussspAdapter', function () {
     it('Returns valid data if array of bids is valid', function () {
       let data = serverRequest.data;
       expect(data).to.be.an('object');
-      expect(data).to.have.all.keys('deviceWidth', 'deviceHeight', 'language', 'secure', 'host', 'page', 'placements', 'ccpa', 'gdpr_consent', 'gdpr_require');
+      expect(data).to.have.all.keys('deviceWidth', 'deviceHeight', 'language', 'secure', 'host', 'page', 'placements', 'ccpa', 'gdpr_consent', 'gdpr_require', 'tid');
       expect(data.deviceWidth).to.be.a('number');
       expect(data.deviceHeight).to.be.a('number');
       expect(data.language).to.be.a('string');
       expect(data.secure).to.be.within(0, 1);
       expect(data.host).to.be.a('string');
       expect(data.page).to.be.a('string');
+      expect(data.tid).to.be.a('string');
       let placements = data['placements'];
       for (let i = 0; i < placements.length; i++) {
         let placement = placements[i];
