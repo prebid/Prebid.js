@@ -57,16 +57,39 @@ export const extractConfig = (moduleConfig, reqBidsConfigObj) => {
   return { customerId, timeout, bidders };
 }
 
+export const extractConsent = ({ gdpr }) => {
+  if (!gdpr) {
+    return null
+  }
+  const { gdprApplies, consentString } = gdpr
+  if (!(gdprApplies == '0' || gdprApplies == '1')) {
+    throw 'TCF Consent: gdprApplies has wrong format'
+  }
+  if (!(typeof consentString === 'string')) {
+    throw 'TCF Consent: consentString is not string'
+  }
+  const result = {
+    'gdpr_applies': gdprApplies,
+    'consent_string': consentString
+  }
+  return result
+}
 /**
  * Gets the URL of Profile Api from which targeting data will be fetched
  * @param {Object} config
  * @param {string} config.customerId
  * @returns {string} URL to access 1plusX Profile API
  */
-const getPapiUrl = ({ customerId }) => {
+export const getPapiUrl = (customerId, consent) => {
   // https://[yourClientId].profiles.tagger.opecloud.com/[VERSION]/targeting?url=
   const currentUrl = encodeURIComponent(window.location.href);
-  const papiUrl = `https://${customerId}.profiles.tagger.opecloud.com/${PAPI_VERSION}/targeting?url=${currentUrl}`;
+  var papiUrl = `https://${customerId}.profiles.tagger.opecloud.com/${PAPI_VERSION}/targeting?url=${currentUrl}`;
+  if (consent) {
+    Object.entries(consent).forEach(([key, value]) => {
+      papiUrl += `&${key}=${value}`
+    })
+  }
+
   return papiUrl;
 }
 
@@ -216,23 +239,20 @@ const init = (config, userConsent) => {
  * @param {Object} reqBidsConfigObj Bid request configuration object
  * @param {Function} callback Called on completion
  * @param {Object} moduleConfig Configuration for 1plusX RTD module
- * @param {boolean} userConsent
+ * @param {Object} userConsent
  */
 const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, userConsent) => {
   try {
     // Get the required config
     const { customerId, bidders } = extractConfig(moduleConfig, reqBidsConfigObj);
     // Get PAPI URL
-    const papiUrl = getPapiUrl({ customerId })
+    const papiUrl = getPapiUrl(customerId, extractConsent(userConsent) || {})
     // Call PAPI
     getTargetingDataFromPapi(papiUrl)
       .then((papiResponse) => {
         logMessage(LOG_PREFIX, 'Get targeting data request successful');
         setTargetingDataToConfig(papiResponse, { bidders });
         callback();
-      })
-      .catch((error) => {
-        throw error;
       })
   } catch (error) {
     logError(LOG_PREFIX, error);

@@ -13,7 +13,6 @@ import {
   logError,
   logWarn,
   mergeDeep,
-  parseGPTSingleSizeArray,
   parseQueryStringParameters
 } from '../src/utils.js';
 import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
@@ -127,10 +126,6 @@ function bidToBannerImp(bid) {
   if (impSize) {
     imp.banner.w = impSize[0];
     imp.banner.h = impSize[1];
-    // populate sid with size if not id
-    if (!deepAccess(imp, 'ext.sid')) {
-      imp.ext.sid = parseGPTSingleSizeArray(impSize);
-    }
   }
 
   imp.banner.topframe = inIframe() ? 0 : 1;
@@ -197,9 +192,6 @@ function bidToVideoImp(bid) {
     if (impSize) {
       imp.video.w = impSize[0];
       imp.video.h = impSize[1];
-      if (!(deepAccess(imp, 'ext.sid'))) {
-        imp.ext.sid = parseGPTSingleSizeArray(impSize);
-      }
     } else {
       logWarn('IX Bid Adapter: Video size is missing in [mediaTypes.video]');
       return {};
@@ -253,8 +245,8 @@ function bidToImp(bid) {
   imp.ext = {};
   imp.ext.siteID = bid.params.siteId.toString();
 
-  if (bid.params.hasOwnProperty('id') &&
-    (typeof bid.params.id === 'string' || typeof bid.params.id === 'number')) {
+  // populate imp level sid
+  if (bid.params.hasOwnProperty('id') && (typeof bid.params.id === 'string' || typeof bid.params.id === 'number')) {
     imp.ext.sid = String(bid.params.id);
   }
 
@@ -755,14 +747,11 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
       currentImpressionSize = encodeURIComponent(JSON.stringify({ impressionObjects })).length;
     }
 
-    let gpid = impressions[transactionIds[adUnitIndex]].gpid;
+    const gpid = impressions[transactionIds[adUnitIndex]].gpid;
     const dfpAdUnitCode = impressions[transactionIds[adUnitIndex]].dfp_ad_unit_code;
     const tid = impressions[transactionIds[adUnitIndex]].tid;
-    const divId = impressions[transactionIds[adUnitIndex]].divId;
+    const sid = impressions[transactionIds[adUnitIndex]].sid
 
-    if (!gpid && dfpAdUnitCode && divId) {
-      gpid = `${dfpAdUnitCode}#${divId}`;
-    }
     if (impressionObjects.length && BANNER in impressionObjects[0]) {
       const { id, banner: { topframe } } = impressionObjects[0];
       const _bannerImpression = {
@@ -773,16 +762,24 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
         },
       };
 
+      // We add sid in imp.ext.sid therefore, remove from banner.format[].ext
+      for (let bannerFormat of _bannerImpression.banner.format) {
+        if (bannerFormat.ext != null && bannerFormat.ext.sid != null) {
+          delete bannerFormat.ext.sid;
+        }
+      }
+
       const position = impressions[transactionIds[adUnitIndex]].pos;
       if (isInteger(position)) {
         _bannerImpression.banner.pos = position;
       }
 
-      if (dfpAdUnitCode || gpid || tid) {
+      if (dfpAdUnitCode || gpid || tid || sid) {
         _bannerImpression.ext = {};
         _bannerImpression.ext.dfp_ad_unit_code = dfpAdUnitCode;
         _bannerImpression.ext.gpid = gpid;
         _bannerImpression.ext.tid = tid;
+        _bannerImpression.ext.sid = sid;
       }
 
       if ('bidfloor' in impressionObjects[0]) {
@@ -845,6 +842,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
     const pbaAdSlot = impressions[transactionIds[adUnitIndex]].pbadslot;
     const tagId = impressions[transactionIds[adUnitIndex]].tagId;
     const adUnitCode = impressions[transactionIds[adUnitIndex]].adUnitCode;
+    const divId = impressions[transactionIds[adUnitIndex]].divId;
     if (pbaAdSlot || tagId || adUnitCode || divId) {
       const clonedRObject = deepClone(r);
       const requestSize = `${baseUrl}${parseQueryStringParameters({ ...payload, r: JSON.stringify(clonedRObject) })}`.length;
@@ -1043,6 +1041,11 @@ function createBannerImps(validBidRequest, missingBannerSizes, bannerImps) {
   bannerImps[validBidRequest.transactionId].tagId = deepAccess(validBidRequest, 'params.tagId');
   bannerImps[validBidRequest.transactionId].pos = deepAccess(validBidRequest, 'mediaTypes.banner.pos');
 
+  const sid = deepAccess(validBidRequest, 'params.id');
+  if (sid && (typeof sid === 'string' || typeof sid === 'number')) {
+    bannerImps[validBidRequest.transactionId].sid = String(sid);
+  }
+
   const adUnitCode = validBidRequest.adUnitCode;
   const divId = document.getElementById(adUnitCode) ? adUnitCode : getGptSlotInfoForAdUnitCode(adUnitCode).divId;
   bannerImps[validBidRequest.transactionId].adUnitCode = adUnitCode;
@@ -1097,7 +1100,6 @@ function updateMissingSizes(validBidRequest, missingBannerSizes, imp) {
  */
 function createMissingBannerImp(bid, imp, newSize) {
   const newImp = deepClone(imp);
-  newImp.ext.sid = parseGPTSingleSizeArray(newSize);
   newImp.banner.w = newSize[0];
   newImp.banner.h = newSize[1];
 
