@@ -38,7 +38,7 @@ const IAS_KEY_MAPPINGS = {
 
 /**
  * Module init
- * @param {Object} provider
+ * @param {Object} config
  * @param {Object} userConsent
  * @return {boolean}
  */
@@ -72,10 +72,15 @@ function stringifySlotSizes(sizes) {
 }
 
 function getAdUnitPath(adSlot, bidRequest, adUnitPath) {
-  let p = utils.isEmpty(adSlot) ? bidRequest.code : adSlot.gptSlot;
-  if (adUnitPath && adUnitPath.hasOwnProperty(bidRequest.code) && typeof adUnitPath[bidRequest.code] == 'string') {
-    if (adUnitPath[bidRequest.code].length > 0) {
-      p = adUnitPath[bidRequest.code];
+  // let p = utils.isEmpty(adSlot) ? bidRequest.code : adSlot.gptSlot;
+  let p = bidRequest.code;
+  if (!utils.isEmpty(adSlot)) {
+    p = adSlot.gptSlot;
+  } else {
+    if (!utils.isEmpty(adUnitPath) && utils.hasOwn(adUnitPath, bidRequest.code)) {
+      if (utils.isStr(adUnitPath[bidRequest.code]) && !utils.isEmpty(adUnitPath[bidRequest.code])) {
+        p = adUnitPath[bidRequest.code];
+      }
     }
   }
   return p;
