@@ -91,18 +91,17 @@ describe('ColossussspAdapter', function () {
     it('Returns valid data if array of bids is valid', function () {
       let data = serverRequest.data;
       expect(data).to.be.an('object');
-      expect(data).to.have.all.keys('deviceWidth', 'deviceHeight', 'language', 'secure', 'host', 'page', 'placements', 'ccpa', 'gdpr_consent', 'gdpr_require', 'tid');
+      expect(data).to.have.all.keys('deviceWidth', 'deviceHeight', 'language', 'secure', 'host', 'page', 'placements', 'ccpa', 'gdpr_consent', 'gdpr_require');
       expect(data.deviceWidth).to.be.a('number');
       expect(data.deviceHeight).to.be.a('number');
       expect(data.language).to.be.a('string');
       expect(data.secure).to.be.within(0, 1);
       expect(data.host).to.be.a('string');
       expect(data.page).to.be.a('string');
-      expect(data.tid).to.be.a('string');
       let placements = data['placements'];
       for (let i = 0; i < placements.length; i++) {
         let placement = placements[i];
-        expect(placement).to.have.all.keys('placementId', 'groupId', 'eids', 'bidId', 'traffic', 'sizes', 'schain', 'floor', 'gpid');
+        expect(placement).to.have.all.keys('placementId', 'groupId', 'eids', 'bidId', 'traffic', 'sizes', 'schain', 'floor', 'gpid', 'tid');
         expect(placement.schain).to.be.an('object')
         expect(placement.placementId).to.be.a('number');
         expect(placement.groupId).to.be.a('number');
@@ -111,6 +110,7 @@ describe('ColossussspAdapter', function () {
         expect(placement.sizes).to.be.an('array');
         expect(placement.floor).to.be.an('object');
         expect(placement.gpid).to.be.an('string');
+        expect(placement.tid).to.be.an('string');
       }
     });
 
@@ -144,7 +144,7 @@ describe('ColossussspAdapter', function () {
         let placement = placements[i];
         expect(placement).to.have.all.keys('placementId', 'groupId', 'eids', 'bidId', 'traffic', 'schain', 'floor', 'gpid', 'sizes',
           'playerSize', 'minduration', 'maxduration', 'mimes', 'protocols', 'startdelay', 'placement', 'skip', 'skipafter',
-          'minbitrate', 'maxbitrate', 'delivery', 'playbackmethod', 'api', 'linearity'
+          'minbitrate', 'maxbitrate', 'delivery', 'playbackmethod', 'api', 'linearity', 'tid'
         );
         expect(placement.schain).to.be.an('object')
         expect(placement.placementId).to.be.a('number');
@@ -156,6 +156,7 @@ describe('ColossussspAdapter', function () {
         expect(placement.playerSize).to.be.an('array');
         expect(placement.minduration).to.be.an('number');
         expect(placement.maxduration).to.be.an('number');
+        expect(placement.tid).to.be.an('string');
       }
     });
 
