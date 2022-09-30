@@ -63,6 +63,50 @@ var adUnits = [{
 }];
 ```
 
+For native adunits:
+
+```
+var adUnits = [{
+    "code": "native unit",
+    "mediaTypes": {
+        native: {
+            sendTargetingKeys: false,
+            image: {
+                required: true,
+                sizes: [150, 50]
+            },
+            title: {
+                required: true,
+                len: 80
+            },
+            sponsoredBy: {
+                required: true
+            },
+            body: {
+                required: true
+            },
+            cta: {
+                required: false
+            },
+            rating: {
+                required: false
+            },
+            icon: {
+                required: true,
+                sizes: [50, 50]
+            }
+        }
+    },
+    "bids": [{
+        "bidder": "smaato",
+        "params": {
+            "publisherId": "1100042525",
+            "adspaceId": "130563103"
+        }
+    }]
+}];
+```
+
 For adpod adunits:
 
 ```
