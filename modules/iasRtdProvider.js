@@ -72,7 +72,6 @@ function stringifySlotSizes(sizes) {
 }
 
 function getAdUnitPath(adSlot, bidRequest, adUnitPath) {
-  // let p = utils.isEmpty(adSlot) ? bidRequest.code : adSlot.gptSlot;
   let p = bidRequest.code;
   if (!utils.isEmpty(adSlot)) {
     p = adSlot.gptSlot;
