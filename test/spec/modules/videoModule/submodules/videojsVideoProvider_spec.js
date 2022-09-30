@@ -1,6 +1,6 @@
 // Using require style imports for fine grained control of import time
 import {
-  PLAYBACK_MODE, SETUP_COMPLETE, SETUP_FAILED, PLAY, AD_IMPRESSION
+  SETUP_COMPLETE, SETUP_FAILED
 } from 'libraries/video/constants/events.js';
 
 const {VideojsProvider, utils} = require('modules/videojsVideoProvider');
@@ -19,7 +19,6 @@ describe('videojsProvider', function () {
   let adState;
   let timeState;
   let callbackStorage;
-  let utilsMock;
 
   describe('init', function () {
     beforeEach(() => {
@@ -114,10 +113,17 @@ describe('videojsProvider', function () {
       document.body.innerHTML = `
       <video preload id='test' width="${200}" height="${100}">
       <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
-      </video>`
+      </video>`;
     });
 
-    it('should populate oRTB Video', function () {
+    afterEach(() => {
+      const testPlayer = videojs('test');
+      if (testPlayer && !testPlayer.isDisposed()) {
+        testPlayer.dispose();
+      }
+    });
+
+    it('should populate oRTB Video and Content', function () {
       const provider = VideojsProvider(config, videojs, adState, timeState, callbackStorage, utils);
       provider.init();
 
@@ -148,13 +154,6 @@ describe('videojsProvider', function () {
     it('should change populated oRTB params when ima present', function () {
       require('videojs-contrib-ads');
       require('videojs-ima');
-      document.body.innerHTML = `
-      <video preload id='test' width="${200}" height="${100}">
-      <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
-      </video>`
-
-      let player = videojs('test')
-
       config.playerConfig = {
         params: {
           vendorConfig: {
@@ -173,9 +172,8 @@ describe('videojsProvider', function () {
       expect(video.protocols).to.include(PROTOCOLS.VAST_2_0);
       expect(video.api).to.include(API_FRAMEWORKS.VPAID_2_0);
       expect(video.mimes).to.include(VPAID_MIME_TYPE);
-      player.dispose();
     });
-
+    //
     // We can't determine what type of outstream play is occuring
     // if the src is absent so we should not set placement
     it('should not set placement when src is absent', function() {
@@ -185,7 +183,7 @@ describe('videojsProvider', function () {
       const video = provider.getOrtbVideo();
       expect(video).to.not.have.property('placement')
     })
-
+    //
     it('should populate position when fullscreen', function () {
       const provider = VideojsProvider(config, videojs, null, null, null, utils);
       provider.init();
@@ -194,7 +192,7 @@ describe('videojsProvider', function () {
       const video = provider.getOrtbVideo();
       expect(video.pos).to.equal(7);
     });
-
+    //
     it('should populate length when loaded', function () {
       const provider = VideojsProvider(config, videojs, null, null, null, utils);
       provider.init();
@@ -204,7 +202,7 @@ describe('videojsProvider', function () {
       const content = provider.getOrtbContent();
       expect(content.len).to.equal(100);
     });
-
+    //
     it('should return the correct playback method for autoplay', function () {
       const provider = VideojsProvider(config, videojs, null, null, null, utils);
       provider.init();
@@ -213,7 +211,7 @@ describe('videojsProvider', function () {
       const video = provider.getOrtbVideo();
       expect(video.playbackmethod).to.include(PLAYBACK_METHODS.AUTOPLAY);
     });
-
+    //
     it('should return the correct playback method for autoplay muted', function () {
       const provider = VideojsProvider(config, videojs, null, null, null, utils);
       provider.init();
@@ -223,7 +221,7 @@ describe('videojsProvider', function () {
       const video = provider.getOrtbVideo();
       expect(video.playbackmethod).to.include(PLAYBACK_METHODS.AUTOPLAY_MUTED);
     });
-
+    //
     it('should return the correct playback method for the other autoplay muted', function () {
       const provider = VideojsProvider(config, videojs, null, null, null, utils);
       provider.init();
@@ -326,17 +324,7 @@ describe('utils', function() {
   });
 
   describe('Playlist', function () {
-    let player;
     const emptyPlayer = {};
-
-    beforeEach(() => {
-      player = videojs('test');
-      player.playlist([{
-        sources: { src: 'sample.mp4' }
-      }, {
-        sources: { src: 'sample2.mp4' }
-      }]);
-    });
 
     describe('getPlaylistCount', function () {
       it('should return 1 when playlist is absent', function () {
@@ -344,7 +332,18 @@ describe('utils', function() {
       });
 
       it('should return playlist length', function () {
+        document.body.innerHTML = `
+      <video preload id='test' width="${200}" height="${100}">
+      <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+      </video>`;
+        const player = videojs('test', {});
+        player.playlist([{
+          sources: { src: 'sample.mp4' }
+        }, {
+          sources: { src: 'sample2.mp4' }
+        }]);
         expect(utils.getPlaylistCount(player)).to.be.equal(2);
+        player.dispose();
       });
     });
 
