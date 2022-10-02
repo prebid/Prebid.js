@@ -1588,7 +1588,7 @@ describe('IndexexchangeAdapter', function () {
           search: 'drill',
         },
         user: {
-          keywords: Array(1000).join('#'),
+          keywords: Array(1200).join('#'),
         }
       };
 
@@ -1663,70 +1663,6 @@ describe('IndexexchangeAdapter', function () {
       const requests = spec.buildRequests(validBids, DEFAULT_OPTION);
       const { ext: { gpid } } = JSON.parse(requests[0].data.r).imp[0];
       expect(gpid).to.equal(GPID);
-    });
-
-    it('should still build gpid in request if ortb2Imp.ext.gpid does not exist', function () {
-      const AD_UNIT_CODE = '/1111/home';
-      const validBids = utils.deepClone(DEFAULT_BANNER_VALID_BID);
-      sinon.stub(utils, 'getGptSlotInfoForAdUnitCode')
-        .returns({ gptSlot: AD_UNIT_CODE, divId: 'adunit-code-3-div-id' });
-      validBids[0].ortb2Imp = {
-        ext: {
-          data: {
-            adserver: {
-              name: 'gam',
-              adslot: AD_UNIT_CODE
-            }
-          }
-        }
-      }
-      const requests = spec.buildRequests(validBids, DEFAULT_OPTION);
-      const { ext: { gpid } } = JSON.parse(requests[0].data.r).imp[0];
-      utils.getGptSlotInfoForAdUnitCode.restore();
-      expect(gpid).to.equal(`${AD_UNIT_CODE}#adunit-code-3-div-id`);
-    });
-
-    it('should not build gpid if divid doesnt exist when ortb2Imp.ext.gpid does not exist', function () {
-      const AD_UNIT_CODE = '/1111/home';
-      const validBids = utils.deepClone(DEFAULT_BANNER_VALID_BID);
-      sinon.stub(utils, 'getGptSlotInfoForAdUnitCode')
-        .returns({ gptSlot: AD_UNIT_CODE });
-      validBids[0].ortb2Imp = {
-        ext: {
-          data: {
-            adserver: {
-              name: 'gam',
-              adslot: AD_UNIT_CODE
-            }
-          }
-        }
-      }
-      const requests = spec.buildRequests(validBids, DEFAULT_OPTION);
-      const imp = JSON.parse(requests[0].data.r).imp[0];
-      utils.getGptSlotInfoForAdUnitCode.restore();
-      expect(imp.ext.gpid).to.be.undefined;
-      expect(imp.ext.dfp_ad_unit_code).to.equal(AD_UNIT_CODE)
-    });
-
-    it('should not build gpid if dfp ad unit code / divid doesnt exist when ortb2Imp.ext.gpid does not exist', function () {
-      const AD_UNIT_CODE = '/1111/home';
-      const validBids = utils.deepClone(DEFAULT_BANNER_VALID_BID);
-      sinon.stub(utils, 'getGptSlotInfoForAdUnitCode')
-        .returns({});
-      validBids[0].ortb2Imp = {
-        ext: {
-          data: {
-            adserver: {
-              name: 'gam',
-            }
-          }
-        }
-      }
-      const requests = spec.buildRequests(validBids, DEFAULT_OPTION);
-
-      const imp = JSON.parse(requests[0].data.r).imp[0];
-      utils.getGptSlotInfoForAdUnitCode.restore();
-      expect(imp.ext).to.be.undefined;
     });
 
     it('should send gpid in request if ortb2Imp.ext.gpid exists when no size present', function () {
@@ -1836,21 +1772,21 @@ describe('IndexexchangeAdapter', function () {
 
     it('impression should have correct format and value', function () {
       const impression = JSON.parse(query.r).imp[0];
+      const sidValue = DEFAULT_BANNER_VALID_BID[0].params.id;
 
       expect(impression.id).to.equal(DEFAULT_BANNER_VALID_BID[0].bidId);
       expect(impression.banner.format).to.be.length(2);
       expect(impression.banner.topframe).to.be.oneOf([0, 1]);
       expect(impression.banner.pos).to.equal(0);
       expect(impression.ext.tid).to.equal(DEFAULT_BANNER_VALID_BID[0].transactionId);
+      expect(impression.ext.sid).to.equal(sidValue);
 
       impression.banner.format.map(({ w, h, ext }, index) => {
         const size = DEFAULT_BANNER_VALID_BID[0].mediaTypes.banner.sizes[index];
-        const sidValue = utils.parseGPTSingleSizeArray(size);
 
         expect(w).to.equal(size[0]);
         expect(h).to.equal(size[1]);
         expect(ext.siteID).to.equal(DEFAULT_BANNER_VALID_BID[0].params.siteId);
-        expect(ext.sid).to.equal(sidValue);
       });
     });
 
@@ -1998,7 +1934,7 @@ describe('IndexexchangeAdapter', function () {
       expect(impression.banner.format[0].h).to.equal(DEFAULT_BANNER_VALID_BID[0].params.size[1]);
       expect(impression.banner.topframe).to.be.oneOf([0, 1]);
       expect(impression.banner.format[0].ext.siteID).to.equal(DEFAULT_BANNER_VALID_BID[0].params.siteId);
-      expect(impression.banner.format[0].ext.sid).to.equal('50');
+      expect(impression.ext.sid).to.equal('50');
     });
 
     it('impression should have sid if id is configured as string', function () {
@@ -2012,7 +1948,7 @@ describe('IndexexchangeAdapter', function () {
       expect(impression.banner.format[0].h).to.equal(DEFAULT_BANNER_VALID_BID[0].params.size[1]);
       expect(impression.banner.topframe).to.be.oneOf([0, 1]);
       expect(impression.banner.format[0].ext.siteID).to.equal(DEFAULT_BANNER_VALID_BID[0].params.siteId);
-      expect(impression.banner.format[0].ext.sid).to.equal('abc');
+      expect(impression.ext.sid).to.equal('abc');
     });
 
     describe('first party data', () => {
@@ -2098,6 +2034,7 @@ describe('IndexexchangeAdapter', function () {
       const request = spec.buildRequests([DEFAULT_BANNER_VALID_BID[0], DEFAULT_VIDEO_VALID_BID[0]], {});
       it('should have banner request', () => {
         const bannerImpression = JSON.parse(request[0].data.r).imp[0];
+        const sidValue = DEFAULT_BANNER_VALID_BID[0].params.id;
 
         expect(JSON.parse(request[0].data.r).imp).to.have.lengthOf(1);
         expect(JSON.parse(request[0].data.v)).to.equal(BANNER_ENDPOINT_VERSION);
@@ -2105,15 +2042,14 @@ describe('IndexexchangeAdapter', function () {
 
         expect(bannerImpression.banner.format).to.be.length(2);
         expect(bannerImpression.banner.topframe).to.be.oneOf([0, 1]);
+        expect(bannerImpression.ext.sid).to.equal(sidValue);
 
         bannerImpression.banner.format.map(({ w, h, ext }, index) => {
           const size = DEFAULT_BANNER_VALID_BID[0].mediaTypes.banner.sizes[index];
-          const sidValue = utils.parseGPTSingleSizeArray(size);
 
           expect(w).to.equal(size[0]);
           expect(h).to.equal(size[1]);
           expect(ext.siteID).to.equal(DEFAULT_BANNER_VALID_BID[0].params.siteId);
-          expect(ext.sid).to.equal(sidValue);
         });
       });
 
@@ -2132,6 +2068,7 @@ describe('IndexexchangeAdapter', function () {
 
       it('should have banner request', () => {
         const bannerImpression = JSON.parse(request[0].data.r).imp[0];
+        const sidValue = DEFAULT_BANNER_VALID_BID[0].params.id;
 
         expect(JSON.parse(request[0].data.r).imp).to.have.lengthOf(1);
         expect(JSON.parse(request[0].data.v)).to.equal(BANNER_ENDPOINT_VERSION);
@@ -2139,15 +2076,14 @@ describe('IndexexchangeAdapter', function () {
 
         expect(bannerImpression.banner.format).to.be.length(2);
         expect(bannerImpression.banner.topframe).to.be.oneOf([0, 1]);
+        expect(bannerImpression.ext.sid).to.equal(sidValue);
 
         bannerImpression.banner.format.map(({ w, h, ext }, index) => {
           const size = DEFAULT_BANNER_VALID_BID[0].mediaTypes.banner.sizes[index];
-          const sidValue = utils.parseGPTSingleSizeArray(size);
 
           expect(w).to.equal(size[0]);
           expect(h).to.equal(size[1]);
           expect(ext.siteID).to.equal(DEFAULT_BANNER_VALID_BID[0].params.siteId);
-          expect(ext.sid).to.equal(sidValue);
         });
       });
 
@@ -2264,19 +2200,19 @@ describe('IndexexchangeAdapter', function () {
 
       const request = spec.buildRequests([bid, bid2], DEFAULT_OPTION)[0];
       const impression = JSON.parse(request.data.r).imp[0];
+      const sidValue = bid.params.id;
 
       expect(impression.id).to.equal(bid.bidId);
       expect(impression.banner.format).to.be.length(bid.mediaTypes.banner.sizes.length);
       expect(impression.banner.topframe).to.be.oneOf([0, 1]);
+      expect(impression.ext.sid).to.equal(sidValue);
 
       impression.banner.format.map(({ w, h, ext }, index) => {
         const size = bid.mediaTypes.banner.sizes[index];
-        const sidValue = utils.parseGPTSingleSizeArray(size);
 
         expect(w).to.equal(size[0]);
         expect(h).to.equal(size[1]);
         expect(ext.siteID).to.equal(index === 1 ? bid2.params.siteId : bid.params.siteId);
-        expect(ext.sid).to.equal(sidValue);
       });
     });
 
@@ -2300,18 +2236,18 @@ describe('IndexexchangeAdapter', function () {
 
       impressions.map((impression, impressionIndex) => {
         const firstSizeObject = bids[impressionIndex].mediaTypes.banner.sizes[0];
+        const sidValue = bids[impressionIndex].params.id;
 
         expect(impression.banner.format).to.be.length(2);
         expect(impression.banner.topframe).to.be.oneOf([0, 1]);
+        expect(impression.ext.sid).to.equal(sidValue);
 
         impression.banner.format.map(({ w, h, ext }, index) => {
           const size = bids[impressionIndex].mediaTypes.banner.sizes[index];
-          const sidValue = utils.parseGPTSingleSizeArray(size);
 
           expect(w).to.equal(size[0]);
           expect(h).to.equal(size[1]);
           expect(ext.siteID).to.equal(bids[impressionIndex].params.siteId);
-          expect(ext.sid).to.equal(sidValue);
         });
       });
     });
@@ -2359,7 +2295,6 @@ describe('IndexexchangeAdapter', function () {
 
     it('impression should have correct format and value', function () {
       const impression = JSON.parse(query.r).imp[0];
-      const sidValue = utils.parseGPTSingleSizeArray(DEFAULT_VIDEO_VALID_BID[0].params.size);
 
       expect(impression.id).to.equal(DEFAULT_VIDEO_VALID_BID[0].bidId);
       expect(impression.video.w).to.equal(DEFAULT_VIDEO_VALID_BID[0].params.size[0]);
@@ -2382,6 +2317,15 @@ describe('IndexexchangeAdapter', function () {
 
       expect(impression.id).to.equal(DEFAULT_VIDEO_VALID_BID[0].bidId);
       expect(impression.video.placement).to.equal(2);
+    });
+
+    it('should set imp.ext.sid for video imps if params.id exists', function () {
+      const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
+      bid.params.id = 50;
+      const request = spec.buildRequests([bid], {})[0];
+      const impression = JSON.parse(request.data.r).imp[0];
+
+      expect(impression.ext.sid).to.equal('50');
     });
 
     it('should set correct default placement, if context is instream', function () {
@@ -2522,6 +2466,16 @@ describe('IndexexchangeAdapter', function () {
       expect(request[0].data.hasOwnProperty('v')).to.equal(false);
       expect(nativeImpression.id).to.equal(DEFAULT_NATIVE_VALID_BID[0].bidId);
       expect(nativeImpression.native).to.deep.equal(DEFAULT_NATIVE_IMP);
+    });
+
+    it('should set imp.ext.sid for native imps if params.id exist', function() {
+      const bid = utils.deepClone(DEFAULT_NATIVE_VALID_BID);
+      bid[0].params.id = 'abc'
+      const request = spec.buildRequests(bid, DEFAULT_OPTION);
+      const nativeImpression = JSON.parse(request[0].data.r).imp[0];
+
+      expect(nativeImpression.id).to.equal(DEFAULT_NATIVE_VALID_BID[0].bidId);
+      expect(nativeImpression.ext.sid).to.equal('abc');
     });
 
     it('should build request with given asset properties', function() {
@@ -2706,12 +2660,10 @@ describe('IndexexchangeAdapter', function () {
 
           impression.banner.format.map(({ w, h, ext }, index) => {
             const size = bid.mediaTypes.banner.sizes[index];
-            const sidValue = utils.parseGPTSingleSizeArray(size);
 
             expect(w).to.equal(size[0]);
             expect(h).to.equal(size[1]);
             expect(ext.siteID).to.equal(bid.params.siteId);
-            expect(ext.sid).to.equal(sidValue);
           });
         });
       });
