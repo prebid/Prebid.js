@@ -238,7 +238,7 @@ const sampleBidderBannerRequest = {
     'bidFloor': '1.00',
     'currency': 'USD',
     'adSlot': '',
-    'adUnit': '',
+    'adUnit': 'div-gpt-ad-1460505748561-0',
     'bcat': [
       'IAB25-3',
       'IAB26-1',
