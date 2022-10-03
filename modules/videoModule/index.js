@@ -86,28 +86,28 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
 
   return { init, renderBid, getOrtbVideo, getOrtbContent };
 
-  function beforeBidsRequested(nextFn, bidRequest) {
-    enrichAuction(bidRequest);
+  function beforeBidsRequested(nextFn, auctionRequest) {
+    enrichAuction(auctionRequest);
 
-    const bidsBackHandler = bidRequest.bidsBackHandler;
+    const bidsBackHandler = auctionRequest.bidsBackHandler;
     if (!bidsBackHandler || typeof bidsBackHandler !== 'function') {
       pbEvents.on(CONSTANTS.EVENTS.AUCTION_END, auctionEnd);
     }
 
-    return nextFn.call(this, bidRequest);
+    return nextFn.call(this, auctionRequest);
   }
 
-  function enrichAuction(bidRequest) {
+  function enrichAuction(auctionRequest) {
     if (mainContentDivId) {
-      enrichOrtb2(mainContentDivId, bidRequest);
+      enrichOrtb2(mainContentDivId, auctionRequest);
     }
 
-    const adUnits = bidRequest.adUnits || pbGlobal.adUnits || [];
+    const adUnits = auctionRequest.adUnits || pbGlobal.adUnits || [];
     adUnits.forEach(adUnit => {
       const divId = getDivId(adUnit);
       enrichAdUnit(adUnit, divId);
       if (contentEnrichmentEnabled && !mainContentDivId) {
-        enrichOrtb2(divId, bidRequest);
+        enrichOrtb2(divId, auctionRequest);
       }
     });
   }
@@ -140,12 +140,12 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     adUnit.mediaTypes.video = video;
   }
 
-  function enrichOrtb2(divId, bidRequest) {
+  function enrichOrtb2(divId, auctionRequest) {
     const ortbContent = getOrtbContent(divId);
     if (!ortbContent) {
       return;
     }
-    bidRequest.ortb2 = mergeDeep({}, bidRequest.ortb2, { site: ortbContent });
+    auctionRequest.ortb2 = mergeDeep({}, auctionRequest.ortb2, { site: ortbContent });
   }
 
   function auctionEnd(auctionResult) {
@@ -154,6 +154,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
         renderWinningBid(adUnit);
       }
     });
+    pbEvents.off(CONSTANTS.EVENTS.AUCTION_END, auctionEnd);
   }
 
   function getAdServerConfig(adUnitVideoConfig) {

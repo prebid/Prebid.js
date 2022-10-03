@@ -184,7 +184,8 @@ describe('Prebid Video', function () {
         if (event === CONSTANTS.EVENTS.AUCTION_END) {
           auctionEndCallback = callback
         }
-      }
+      },
+      off: () => {}
     };
 
     const expectedVendorCode = 5;
