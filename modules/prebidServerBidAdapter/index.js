@@ -735,6 +735,12 @@ Object.assign(ORTB2.prototype, {
         imp.bidfloor = floor.floor;
         imp.bidfloorcur = floor.currency;
 
+        // logic below relates to https://github.com/prebid/Prebid.js/issues/8749 and does the following:
+        // 1. check client-side floors (ref bidfloor/bidfloorcur & ortb2Imp floorMin/floorMinCur (if present))
+        // 2. set pbs req wide floorMinCur to the first floor currency found when iterating over imp's
+        //    (if currency conversion logic present, convert all imp floor values to this currency)
+        // 3. compare/store ref to lowest floorMin value as each imp is iterated over
+        // 4. set req wide floorMin and floorMinCur values for pbs after iterations are done
         if (floorMinCur == null) { floorMinCur = floor.currency }
         const ortb2ImpFloorMin = imp.ext?.prebid?.floors?.floorMin || imp.ext?.prebid?.floorMin;
         const ortb2ImpFloorCur = imp.ext?.prebid?.floors?.floorMinCur || imp.ext?.prebid?.floorMinCur || floorMinCur;
