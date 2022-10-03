@@ -2365,7 +2365,7 @@ describe('rubicon analytics adapter', function () {
       });
       basicBillingAuction([{
         vendor: 'vendorName',
-        type: 'auction',
+        type: 'pageView',
         billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965'
       }]);
       expect(server.requests.length).to.equal(1);
@@ -2375,7 +2375,7 @@ describe('rubicon analytics adapter', function () {
       expect(message.billableEvents).to.deep.equal([{
         accountId: 1001,
         vendor: 'vendorName',
-        type: 'general', // mapping all events to endpoint as 'general' for now
+        type: 'pageView',
         billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965'
       }]);
     });
@@ -2397,7 +2397,7 @@ describe('rubicon analytics adapter', function () {
         },
         {
           vendor: 'vendorName',
-          type: 'auction',
+          type: 'impression',
           billingId: '743db6e3-21f2-44d4-917f-cb3488c6076f'
         },
         {
@@ -2414,13 +2414,13 @@ describe('rubicon analytics adapter', function () {
         {
           accountId: 1001,
           vendor: 'vendorName',
-          type: 'general',
+          type: 'auction',
           billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965'
         },
         {
           accountId: 1001,
           vendor: 'vendorName',
-          type: 'general',
+          type: 'impression',
           billingId: '743db6e3-21f2-44d4-917f-cb3488c6076f'
         }
       ]);
@@ -2449,7 +2449,7 @@ describe('rubicon analytics adapter', function () {
         {
           accountId: 1001,
           vendor: 'vendorName',
-          type: 'general',
+          type: 'auction',
           billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965'
         }
       ]);
@@ -2479,7 +2479,7 @@ describe('rubicon analytics adapter', function () {
         {
           accountId: 1001,
           vendor: 'vendorName',
-          type: 'general',
+          type: 'auction',
           billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965'
         }
       ]);
