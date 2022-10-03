@@ -1,9 +1,10 @@
-import { logWarn, _each, isBoolean, isStr, isArray, inIframe, mergeDeep, deepAccess, isNumber, deepSetValue, logInfo, logError, deepClone, convertTypes } from '../src/utils.js';
+import { getBidRequest, logWarn, _each, isBoolean, isStr, isArray, inIframe, mergeDeep, deepAccess, isNumber, deepSetValue, logInfo, logError, deepClone, convertTypes } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
+import { BANNER, VIDEO, NATIVE, ADPOD } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { bidderSettings } from '../src/bidderSettings.js';
+import { INSTREAM } from '../src/video.js';
 
 const BIDDER_CODE = 'pubmatic';
 const LOG_WARN_PREFIX = 'PubMatic: ';
@@ -1019,6 +1020,28 @@ function _assignRenderer(newBid, request) {
   }
 }
 
+function _assignDealTier(newBid, bid, request) {
+  if (!bid?.ext?.prebiddealpriority) return;
+  const bidRequest = getBidRequest(newBid.requestId, [request.bidderRequest]);
+  const videoContext = deepAccess(bidRequest, 'mediaTypes.video.context');
+  switch (videoContext) {
+    case ADPOD:
+      newBid.video = {
+        context: ADPOD,
+        // durationSeconds: Math.floor(rtbBid.rtb.video.duration_ms / 1000),
+        dealTier: bid.ext.prebiddealpriority
+      };
+      break;
+    case INSTREAM:
+      newBid.video = {
+        context: ADPOD,
+        // durationSeconds: Math.floor(rtbBid.rtb.video.duration_ms / 1000),
+        dealTier: bid.ext.prebiddealpriority
+      };
+      break;
+  }
+}
+
 function isNonEmptyArray(test) {
   if (isArray(test) === true) {
     if (test.length > 0) {
@@ -1339,6 +1362,7 @@ export const spec = {
                             br.height = bid.hasOwnProperty('h') ? bid.h : req.video.h;
                             br.vastXml = bid.adm;
                             _assignRenderer(br, request);
+                            _assignDealTier(br, bid, request);
                             break;
                           case NATIVE:
                             _parseNativeResponse(bid, br);
