@@ -1020,26 +1020,25 @@ function _assignRenderer(newBid, request) {
   }
 }
 
+/**
+ * Assign prebiddealpriority to the dealtier property of adpod-video bid, 
+ * so that adpod module can set the hb_pb_cat_dur targetting key. 
+ * @param {*} newBid 
+ * @param {*} bid 
+ * @param {*} request 
+ * @returns 
+ */
 function _assignDealTier(newBid, bid, request) {
-  if (!bid?.ext?.prebiddealpriority) return;
+  if (!bid?.ext?.prebiddealpriority || videoObj?.context != ADPOD) return;
   const bidRequest = getBidRequest(newBid.requestId, [request.bidderRequest]);
-  const videoContext = deepAccess(bidRequest, 'mediaTypes.video.context');
-  switch (videoContext) {
-    case ADPOD:
-      newBid.video = {
-        context: ADPOD,
-        // durationSeconds: Math.floor(rtbBid.rtb.video.duration_ms / 1000),
-        dealTier: bid.ext.prebiddealpriority
-      };
-      break;
-    case INSTREAM:
-      newBid.video = {
-        context: ADPOD,
-        // durationSeconds: Math.floor(rtbBid.rtb.video.duration_ms / 1000),
-        dealTier: bid.ext.prebiddealpriority
-      };
-      break;
-  }
+  const videoObj = deepAccess(bidRequest, 'mediaTypes.video');
+  const duration = bid?.ext?.video?.duration || videoObj?.maxduration;
+  if (!duration) return;
+  newBid.video = {
+    context: ADPOD,
+    durationSeconds: duration,
+    dealTier: bid.ext.prebiddealpriority
+  };
 }
 
 function isNonEmptyArray(test) {
