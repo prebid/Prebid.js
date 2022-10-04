@@ -289,34 +289,35 @@ function getMetadata(meta) {
 function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
   highestBid = (highestBid && highestBid.length > 0) ? highestBid[0] : null;
   return Object.keys(adUnit.bids).reduce(function (partnerBids, bidId) {
-    let bid = adUnit.bids[bidId];
-    const prebidBidId = bid.bidResponse && bid.bidResponse.prebidBidId;
-    partnerBids.push({
-      'pn': getAdapterNameForAlias(bid.bidder),
-      'bc': bid.bidder,
-      'bidid': prebidBidId || bid.bidId,
-      'origbidid': bid.bidId,
-      'db': bid.bidResponse ? 0 : 1,
-      'kgpv': getValueForKgpv(bid, adUnitId),
-      'kgpsv': bid.params.kgpv ? getUpdatedKGPVForVideo(bid.params.kgpv, bid.bidResponse) : adUnitId,
-      'psz': bid.bidResponse ? (bid.bidResponse.dimensions.width + 'x' + bid.bidResponse.dimensions.height) : '0x0',
-      'eg': bid.bidResponse ? bid.bidResponse.bidGrossCpmUSD : 0,
-      'en': bid.bidResponse ? bid.bidResponse.bidPriceUSD : 0,
-      'di': bid.bidResponse ? (bid.bidResponse.dealId || EMPTY_STRING) : EMPTY_STRING,
-      'dc': bid.bidResponse ? (bid.bidResponse.dealChannel || EMPTY_STRING) : EMPTY_STRING,
-      'l1': bid.bidResponse ? bid.clientLatencyTimeMs : 0,
-      'l2': 0,
-      'adv': bid.bidResponse ? getAdDomain(bid.bidResponse) || undefined : undefined,
-      'ss': (s2sBidders.indexOf(bid.bidder) > -1) ? 1 : 0,
-      't': (bid.status == ERROR && bid.error.code == TIMEOUT_ERROR) ? 1 : 0,
-      'wb': (highestBid && highestBid.adId === bid.bidId ? 1 : 0),
-      'mi': bid.bidResponse ? bid.bidResponse.mi : (window.matchedimpressions && window.matchedimpressions[bid.bidder]),
-      'af': bid.bidResponse ? (bid.bidResponse.mediaType || undefined) : undefined,
-      'ocpm': bid.bidResponse ? (bid.bidResponse.originalCpm || 0) : 0,
-      'ocry': bid.bidResponse ? (bid.bidResponse.originalCurrency || CURRENCY_USD) : CURRENCY_USD,
-      'piid': bid.bidResponse ? (bid.bidResponse.partnerImpId || EMPTY_STRING) : EMPTY_STRING,
-      'frv': (s2sBidders.indexOf(bid.bidder) > -1) ? undefined : (bid.bidResponse ? (bid.bidResponse.floorData ? bid.bidResponse.floorData.floorRuleValue : undefined) : undefined),
-      'md': bid.bidResponse ? getMetadata(bid.bidResponse.meta) : undefined,
+    adUnit.bids[bidId].forEach(function(bid) {
+      const prebidBidId = bid.bidResponse && bid.bidResponse.prebidBidId;
+      partnerBids.push({
+        'pn': getAdapterNameForAlias(bid.bidder),
+        'bc': bid.bidderCode || bid.bidder,
+        'bidid': prebidBidId || bid.bidId,
+        'origbidid': bid.bidId,
+        'db': bid.bidResponse ? 0 : 1,
+        'kgpv': getValueForKgpv(bid, adUnitId),
+        'kgpsv': bid.params.kgpv ? getUpdatedKGPVForVideo(bid.params.kgpv, bid.bidResponse) : adUnitId,
+        'psz': bid.bidResponse ? (bid.bidResponse.dimensions.width + 'x' + bid.bidResponse.dimensions.height) : '0x0',
+        'eg': bid.bidResponse ? bid.bidResponse.bidGrossCpmUSD : 0,
+        'en': bid.bidResponse ? bid.bidResponse.bidPriceUSD : 0,
+        'di': bid.bidResponse ? (bid.bidResponse.dealId || EMPTY_STRING) : EMPTY_STRING,
+        'dc': bid.bidResponse ? (bid.bidResponse.dealChannel || EMPTY_STRING) : EMPTY_STRING,
+        'l1': bid.bidResponse ? bid.clientLatencyTimeMs : 0,
+        'l2': 0,
+        'adv': bid.bidResponse ? getAdDomain(bid.bidResponse) || undefined : undefined,
+        'ss': (s2sBidders.indexOf(bid.bidder) > -1) ? 1 : 0,
+        't': (bid.status == ERROR && bid.error.code == TIMEOUT_ERROR) ? 1 : 0,
+        'wb': (highestBid && highestBid.adId === bid.adId ? 1 : 0),
+        'mi': bid.bidResponse ? bid.bidResponse.mi : (window.matchedimpressions && window.matchedimpressions[bid.bidder]),
+        'af': bid.bidResponse ? (bid.bidResponse.mediaType || undefined) : undefined,
+        'ocpm': bid.bidResponse ? (bid.bidResponse.originalCpm || 0) : 0,
+        'ocry': bid.bidResponse ? (bid.bidResponse.originalCurrency || CURRENCY_USD) : CURRENCY_USD,
+        'piid': bid.bidResponse ? (bid.bidResponse.partnerImpId || EMPTY_STRING) : EMPTY_STRING,
+        'frv': (s2sBidders.indexOf(bid.bidder) > -1) ? undefined : (bid.bidResponse ? (bid.bidResponse.floorData ? bid.bidResponse.floorData.floorRuleValue : undefined) : undefined),
+        'md': bid.bidResponse ? getMetadata(bid.bidResponse.meta) : undefined,
+        });
     });
     return partnerBids;
   }, [])
