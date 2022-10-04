@@ -50,7 +50,7 @@ export const spec = {
 
     const request = {
       id: validBidRequests[0].auctionId,
-      imp: validBidRequests.map(slot => mapImpression(slot)),
+      imp: validBidRequests.map(slot => mapImpression(slot, bidderRequest)),
       site: mapSite(validBidRequests, bidderRequest),
       cur: DEFAULT_CURRENCY_ARR,
       test: validBidRequests[0].params.test || 0,
@@ -104,6 +104,10 @@ export const spec = {
         }),
       };
     }
+    
+    if (bidderRequest.fledgeEnabled) {
+      request.imp.ext.ae = bid?.ortb2Imp?.ext?.ae
+    }
 
     return {
       method: 'POST',
@@ -111,7 +115,7 @@ export const spec = {
       data: JSON.stringify(request)
     };
   },
-  interpretResponse: function (serverResponse, originalRequest) {
+  interpretOrtbResponse: function (serverResponse, originalRequest) {
     const responseBody = serverResponse.body;
     if (!isArray(responseBody)) {
       return [];
@@ -129,6 +133,23 @@ export const spec = {
         bids.push(interpretBannerBid(serverBid));
       }
     });
+    return bids;
+  },
+  interpretResponse: function (serverResponse, originalRequest) {
+    const bids = this.interpretOrtbResponse(serverResponse, originalRequest);
+    let fledgeAuctionConfigs = deepAccess(serverResponse, 'body.ext.fledge_auction_configs');
+    if (fledgeAuctionConfigs) {
+      fledgeAuctionConfigs = Object.entries(fledgeAuctionConfigs).map(([bidId, cfg]) => {
+        return Object.assign({
+          bidId,
+          auctionSignals: {}
+        }, cfg);
+      });
+      return {
+        bids,
+        fledgeAuctionConfigs,
+      }
+    }
     return bids;
   }
 };
@@ -154,7 +175,7 @@ function applyFloor(slot) {
  * @param {object} slot Ad Unit Params by Prebid
  * @returns {object} Imp by OpenRTB 2.5 §3.2.4
  */
-function mapImpression(slot) {
+function mapImpression(slot, bidderRequest) {
   const imp = {
     id: slot.bidId,
     banner: mapBanner(slot),
@@ -165,6 +186,10 @@ function mapImpression(slot) {
   const bidfloor = applyFloor(slot);
   if (bidfloor) {
     imp.bidfloor = bidfloor;
+  }
+
+  if (bidderRequest.fledgeEnabled) {
+    imp.ext.ae = slot?.ortb2Imp?.ext?.ae
   }
 
   return imp;
