@@ -43,7 +43,7 @@ function setUserId(userId) {
   }
 
   if (storage.cookiesAreEnabled()) {
-    const expires = new Date(Date.now() + USER_ID_COOKIE_EXP).toISOString();
+    const expires = new Date(Date.now() + USER_ID_COOKIE_EXP).toUTCString();
     storage.setCookie(USER_ID_KEY, userId, expires);
   }
 }

@@ -64,7 +64,9 @@ describe('Yandex adapter', function () {
 
     const bidderRequest = {
       refererInfo: {
-        domain: 'yandex.ru'
+        domain: 'ya.ru',
+        ref: 'https://ya.ru/',
+        page: 'https://ya.ru/',
       },
       gdprConsent
     };
@@ -72,7 +74,7 @@ describe('Yandex adapter', function () {
     it('creates a valid banner request', function () {
       const bannerRequest = getBidRequest();
       bannerRequest.getFloor = () => ({
-        currency: 'USD',
+        currency: 'EUR',
         // floor: 0.5
       });
 
@@ -89,11 +91,11 @@ describe('Yandex adapter', function () {
       const parsedRequestUrl = parseUrl(url);
       const { search: query } = parsedRequestUrl
 
-      expect(parsedRequestUrl.hostname).to.equal('bs-metadsp.yandex.ru');
+      expect(parsedRequestUrl.hostname).to.equal('bs.yandex.ru');
       expect(parsedRequestUrl.pathname).to.equal('/metadsp/123');
 
       expect(query['imp-id']).to.equal('1');
-      expect(query['target-ref']).to.equal('yandex.ru');
+      expect(query['target-ref']).to.equal('ya.ru');
       expect(query['ssp-id']).to.equal('10500');
 
       expect(query['gdpr']).to.equal('1');
@@ -101,7 +103,8 @@ describe('Yandex adapter', function () {
 
       expect(request.data).to.exist;
       expect(data.site).to.not.equal(null);
-      expect(data.site.page).to.equal('yandex.ru');
+      expect(data.site.page_url).to.equal('https://ya.ru/');
+      expect(data.site.ref_url).to.equal('https://ya.ru/');
 
       // expect(data.device).to.not.equal(null);
       // expect(data.device.w).to.equal(window.innerWidth);

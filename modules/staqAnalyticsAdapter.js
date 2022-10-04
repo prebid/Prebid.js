@@ -21,7 +21,7 @@ const STAQ_EVENTS = {
   BID_WON: 'bidWon',
   AUCTION_END: 'auctionEnd',
   TIMEOUT: 'adapterTimedOut'
-}
+};
 
 function buildRequestTemplate(connId) {
   // TODO: what should these pick from refererInfo?

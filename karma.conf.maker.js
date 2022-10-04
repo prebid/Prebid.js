@@ -22,20 +22,9 @@ function newWebpackConfig(codeCoverage, disableFeatures) {
     .flatMap((r) => r.use)
     .filter((use) => use.loader === 'babel-loader')
     .forEach((use) => {
-      use.options = babelConfig({test: true, disableFeatures});
+      use.options = babelConfig({test: true, codeCoverage, disableFeatures});
     });
 
-  if (codeCoverage) {
-    webpackConfig.module.rules.push({
-      enforce: 'post',
-      exclude: /(node_modules)|(test)|(integrationExamples)|(build)|polyfill.js|(src\/adapters\/analytics\/ga.js)/,
-      use: {
-        loader: '@jsdevtools/coverage-istanbul-loader',
-        options: { esModules: true }
-      },
-      test: /\.js$/
-    })
-  }
   return webpackConfig;
 }
 
@@ -92,9 +81,7 @@ function setBrowsers(karmaConf, browserstack) {
     karmaConf.browserStack = {
       username: process.env.BROWSERSTACK_USERNAME,
       accessKey: process.env.BROWSERSTACK_ACCESS_KEY,
-      build: 'Prebidjs Unit Tests ' + new Date().toLocaleString(),
-      startTunnel: false,
-      localIdentifier: process.env.CIRCLE_WORKFLOW_JOB_ID
+      build: 'Prebidjs Unit Tests ' + new Date().toLocaleString()
     }
     if (process.env.TRAVIS) {
       karmaConf.browserStack.startTunnel = false;
@@ -184,10 +171,10 @@ module.exports = function(codeCoverage, browserstack, watchMode, file, disableFe
     browserNoActivityTimeout: 3e5, // default 10000
     captureTimeout: 3e5, // default 60000,
     browserDisconnectTolerance: 3,
-    concurrency: 6,
+    concurrency: 5, // browserstack allows us 5 concurrent sessions
 
     plugins: plugins
-  }
+  };
 
   // To ensure that, we are able to run single spec file
   // here we are adding preprocessors, when file is passed

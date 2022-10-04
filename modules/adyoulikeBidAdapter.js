@@ -118,6 +118,10 @@ export const spec = {
       payload.uspConsent = bidderRequest.uspConsent;
     }
 
+    if (bidderRequest.ortb2) {
+      payload.ortb2 = bidderRequest.ortb2;
+    }
+
     if (deepAccess(bidderRequest, 'userId')) {
       payload.userId = createEidsArray(bidderRequest.userId);
     }
@@ -221,26 +225,26 @@ function createEndpoint(bidRequests, bidderRequest, hasVideo) {
 /* Create endpoint query string */
 function createEndpointQS(bidderRequest) {
   const qs = {};
-
   if (bidderRequest) {
     const ref = bidderRequest.refererInfo;
     if (ref?.location) {
-      // TODO: is 'location' the right value here?
+      // RefererUrl will be removed in a future version.
       qs.RefererUrl = encodeURIComponent(ref.location);
       if (ref.numIframes > 0) {
         qs.SafeFrame = true;
       }
+    }
+
+    const siteInfo = bidderRequest.ortb2?.site;
+    if (siteInfo) {
+      qs.PageUrl = encodeURIComponent(siteInfo.page);
+      qs.PageReferrer = encodeURIComponent(siteInfo.ref || ref?.location);
     }
   }
 
   const can = bidderRequest?.refererInfo?.canonicalUrl;
   if (can) {
     qs.CanonicalUrl = encodeURIComponent(can);
-  }
-
-  const domain = bidderRequest?.refererInfo?.domain;
-  if (domain) {
-    qs.PublisherDomain = encodeURIComponent(domain);
   }
 
   return qs;
@@ -440,7 +444,7 @@ function getNativeAssets(response, nativeConfig) {
 /* Create bid from response */
 function createBid(response, bidRequests) {
   if (!response || (!response.Ad && !response.Native && !response.Vast)) {
-    return
+    return;
   }
 
   const request = bidRequests && bidRequests[response.BidID];

@@ -146,7 +146,7 @@ export const imuIdSubmodule = {
     }
 
     if (!localData.id) {
-      return {callback: callImuidApi(apiUrl)}
+      return {callback: callImuidApi(apiUrl)};
     }
     if (localData.expired) {
       callImuidApi(apiUrl)();

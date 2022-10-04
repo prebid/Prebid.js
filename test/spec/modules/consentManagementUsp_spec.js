@@ -23,8 +23,12 @@ function createIFrameMarker() {
 }
 
 describe('consentManagement', function () {
-  it('should be enabled by default', () => {
-    expect(uspDataHandler.enabled).to.be.true;
+  it('should enable itself on requestBids using default values', (done) => {
+    requestBidsHook(() => {
+      expect(uspDataHandler.enabled).to.be.true;
+      expect(consentAPI).to.eql('iab');
+      done();
+    }, {});
   });
   it('should respect configuration set after activation', () => {
     setConsentConfig({

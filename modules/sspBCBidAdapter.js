@@ -338,7 +338,7 @@ const mapImpression = slot => {
   if (!adUnitsCalled[adUnitCode]) {
     // this is a new adunit - assign & save pbsize
     adSizesCalled[slotSize] = adSizesCalled[slotSize] ? adSizesCalled[slotSize] += 1 : 1;
-    adUnitsCalled[adUnitCode] = `${slotSize}_${adSizesCalled[slotSize]}`
+    adUnitsCalled[adUnitCode] = `${slotSize}_${adSizesCalled[slotSize]}`;
   }
 
   ext.data = Object.assign({ pbsize: adUnitsCalled[adUnitCode] }, ext.data);
@@ -682,7 +682,7 @@ const spec = {
                   site: site.id,
                   slot: site.slot,
                   cpm: bid.cpm.toPrecision(4),
-                }
+                };
                 const jsTracker = '<script type="text/javascript" async="true" src="' + TRACKER_URL + '" ' + Object.keys(jsData).reduce((acc, current) => { return acc + ` data-wpar-${current}="${jsData[current]}"` }, '') + '><\/script>';
                 if (bid.native.javascriptTrackers) {
                   bid.native.javascriptTrackers.push(jsTracker);

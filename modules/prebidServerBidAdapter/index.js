@@ -39,6 +39,7 @@ import {ajax} from '../../src/ajax.js';
 import {hook} from '../../src/hook.js';
 import {getGlobal} from '../../src/prebidGlobal.js';
 import {hasPurpose1Consent} from '../../src/utils/gpdr.js';
+import {useMetrics} from '../../src/utils/perfMetrics.js';
 
 const getConfig = config.getConfig;
 
@@ -360,7 +361,7 @@ function _appendSiteAppDevice(request, pageUrl, accountId) {
   // ORTB specifies app OR site
   if (typeof config.getConfig('app') === 'object') {
     request.app = config.getConfig('app');
-    request.app.publisher = {id: accountId}
+    request.app.publisher = {id: accountId};
   } else {
     request.site = {};
     if (isPlainObject(config.getConfig('site'))) {
@@ -531,7 +532,7 @@ Object.assign(ORTB2.prototype, {
         if (bid.mediaTypes != null) {
           logWarn(`Prebid Server adapter does not (yet) support bidder-specific mediaTypes for the same adUnit. Size mapping configuration will be ignored for adUnit: ${adUnit.code}, bidder: ${bid.bidder}`);
         }
-      })
+      });
 
       // in case there is a duplicate imp.id, add '-2' suffix to the second imp.id.
       // e.g. if there are 2 adUnits (case of twin adUnit codes) with code 'test',
@@ -599,7 +600,7 @@ Object.assign(ORTB2.prototype, {
             }, {});
         }
       }
-      const nativeReq = deepAccess(adUnit, 'nativeOrtbRequest')
+      const nativeReq = deepAccess(adUnit, 'nativeOrtbRequest');
       if (FEATURES.NATIVE && nativeReq) {
         const defaultRequest = {
           // TODO: determine best way to pass these and if we allow defaults
@@ -727,7 +728,7 @@ Object.assign(ORTB2.prototype, {
 
       if (floor) {
         imp.bidfloor = floor.floor;
-        imp.bidfloorcur = floor.currency
+        imp.bidfloorcur = floor.currency;
       }
 
       if (imp.banner || imp.video || imp.native) {
@@ -766,11 +767,11 @@ Object.assign(ORTB2.prototype, {
     }
 
     // This is no longer overwritten unless name and version explicitly overwritten by extPrebid (mergeDeep)
-    request.ext.prebid = Object.assign(request.ext.prebid, {channel: {name: 'pbjs', version: $$PREBID_GLOBAL$$.version}})
+    request.ext.prebid = Object.assign(request.ext.prebid, {channel: {name: 'pbjs', version: $$PREBID_GLOBAL$$.version}});
 
     // set debug flag if in debug mode
     if (getConfig('debug')) {
-      request.ext.prebid = Object.assign(request.ext.prebid, {debug: true})
+      request.ext.prebid = Object.assign(request.ext.prebid, {debug: true});
     }
 
     // s2sConfig video.ext.prebid is passed through openrtb to PBS
@@ -1010,7 +1011,7 @@ Object.assign(ORTB2.prototype, {
             if (isPlainObject(ortb) && Array.isArray(ortb.assets)) {
               bidObject.native = {
                 ortb,
-              }
+              };
             } else {
               logError('prebid server native response contained no assets');
             }
@@ -1097,6 +1098,12 @@ export function PrebidServer() {
 
   /* Prebid executes this function when the page asks to send out bid requests */
   baseAdapter.callBids = function(s2sBidRequest, bidRequests, addBidResponse, done, ajax) {
+    const adapterMetrics = s2sBidRequest.metrics = useMetrics(deepAccess(bidRequests, '0.metrics'))
+      .newMetrics()
+      .renameWith((n) => [`adapter.s2s.${n}`, `adapters.s2s.${s2sBidRequest.s2sConfig.defaultVendor}.${n}`])
+    done = adapterMetrics.startTiming('total').stopBefore(done);
+    bidRequests.forEach(req => useMetrics(req.metrics).join(adapterMetrics, {continuePropagation: false}));
+
     let { gdprConsent, uspConsent } = getConsentData(bidRequests);
 
     if (Array.isArray(_s2sConfigs)) {
@@ -1118,7 +1125,9 @@ export function PrebidServer() {
         },
         onError: done,
         onBid: function ({adUnit, bid}) {
-          if (isValid(adUnit, bid)) {
+          const metrics = bid.metrics = s2sBidRequest.metrics.fork().renameWith();
+          metrics.checkpoint('addBidResponse');
+          if (metrics.measureTime('addBidResponse.validate', () => isValid(adUnit, bid))) {
             addBidResponse(adUnit, bid);
           }
         }
@@ -1157,19 +1166,21 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
     .filter(uniques);
 
   const ortb2 = new ORTB2(s2sBidRequest, bidRequests, adUnits, requestedBidders);
-  const request = ortb2.buildRequest();
+  const request = s2sBidRequest.metrics.measureTime('buildRequests', () => ortb2.buildRequest());
   const requestJson = request && JSON.stringify(request);
   logInfo('BidRequest: ' + requestJson);
   const endpointUrl = getMatchingConsentUrl(s2sBidRequest.s2sConfig.endpoint, gdprConsent);
   if (request && requestJson && endpointUrl) {
+    const networkDone = s2sBidRequest.metrics.startTiming('net');
     ajax(
       endpointUrl,
       {
         success: function (response) {
+          networkDone();
           let result;
           try {
             result = JSON.parse(response);
-            const bids = ortb2.interpretResponse(result);
+            const bids = s2sBidRequest.metrics.measureTime('interpretResponse', () => ortb2.interpretResponse(result));
             bids.forEach(onBid);
           } catch (error) {
             logError(error);
@@ -1181,7 +1192,10 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
             onResponse(true, requestedBidders);
           }
         },
-        error: onError
+        error: function () {
+          networkDone();
+          onError.apply(this, arguments);
+        }
       },
       requestJson,
       {contentType: 'text/plain', withCredentials: true}

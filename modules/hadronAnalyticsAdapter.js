@@ -10,7 +10,7 @@ import {getRefererInfo} from '../src/refererDetection.js';
  * hadronAnalyticsAdapter.js - Audigent Hadron Analytics Adapter
  */
 
-const HADRON_ANALYTICS_URL = 'https://analytics.hadron.ad.gt/api/v1/analytics'
+const HADRON_ANALYTICS_URL = 'https://analytics.hadron.ad.gt/api/v1/analytics';
 const HADRONID_ANALYTICS_VER = 'pbadgt0';
 const DEFAULT_PARTNER_ID = 0;
 const AU_GVLID = 561;
@@ -152,7 +152,7 @@ hadronAnalyticsAdapter.enableAnalytics = function(conf = {}) {
   }
 
   hadronAnalyticsAdapter.originEnableAnalytics(conf);
-}
+};
 
 function flush() {
   // Don't send anything if no partner id was declared
