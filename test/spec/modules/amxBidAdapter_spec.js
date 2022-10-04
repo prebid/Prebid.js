@@ -359,6 +359,7 @@ describe('AmxBidAdapter', () => {
             bidId: sampleRequestId + '_2',
             params: {
               ...sampleBidRequestBase.params,
+              adUnitId: '',
               tagId: 'example',
             },
           },
@@ -404,12 +405,12 @@ describe('AmxBidAdapter', () => {
 
     it('can build a video request', () => {
       const { data } = spec.buildRequests(
-        [sampleBidRequestVideo],
+        [{...sampleBidRequestVideo, params: { ...sampleBidRequestVideo.params, adUnitId: 'custom-auid' }}],
         sampleBidderRequest
       );
       expect(Object.keys(data.m).length).to.equal(1);
       expect(data.m[sampleRequestId + '_video']).to.deep.equal({
-        au: 'div-gpt-ad-example',
+        au: 'custom-auid',
         ms: [[[300, 150]], [], [[360, 250]]],
         av: true,
         aw: 360,
