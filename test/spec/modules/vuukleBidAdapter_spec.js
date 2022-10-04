@@ -142,5 +142,7 @@ describe('vuukleBidAdapterTests', function() {
     let req_data = request[0].data;
 
     expect(req_data.coppa).to.equal(1);
+    
+    config.getConfig.restore();
   })
 });
