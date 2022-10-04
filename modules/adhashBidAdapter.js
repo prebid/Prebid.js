@@ -63,46 +63,29 @@ function brandSafety(badWords, maxScore) {
   try {
     let score = 0;
     const content = window.top.document.body.innerText.toLowerCase();
-    const words = content.trim().split(/\s+/).length;
-    // Cyrillic unicode block range - 0400-04FF
-    const cyrillicWords = content.match(/[\u0400-\u04FF]+/gi);
+    const contentWords = content.trim().split(/\s+/).length;
+    // \p{L} matches a single unicode code point in the category 'letter'. Matches any kind of letter from any language.
+    const words = content.match(/[\p{L}-]+/ug);
     for (const [word, rule, points] of badWords) {
-      const decodedWord = rot13(word);
-      if (
-        (rule === 'full' && new RegExp('\\b' + decodedWord + '\\b', 'i').test(content)) ||
-        (rule === 'full' && cyrillicWords && cyrillicWords.includes(decodedWord))
-      ) {
-        const occurances = cyrillicWords && cyrillicWords.includes(decodedWord)
-          ? cyrillicWords.filter(word => word === decodedWord).length
-          : content.match(new RegExp('\\b' + decodedWord + '\\b', 'g')).length;
+      const decodedWord = rot13(word.toLowerCase());
+      if (rule === 'full' && words && words.includes(decodedWord)) {
+        const occurances = words.filter(word => word === decodedWord).length;
         score += scoreCalculator(points, occurances);
-      } else if (rule === 'partial' && content.indexOf(rot13(word.toLowerCase())) > -1) {
-        const occurances = content.match(new RegExp(decodedWord, 'g')).length;
+      } else if (rule === 'partial' && words && words.some(word => word.indexOf(decodedWord) > -1)) {
+        const occurances = words.filter(word => word.indexOf(decodedWord) > -1).length;
         score += scoreCalculator(points, occurances);
-      } else if (
-        (rule === 'starts' && new RegExp('\\b' + decodedWord, 'i').test(content)) ||
-        (rule === 'starts' && cyrillicWords && cyrillicWords.some(word => word.startsWith(decodedWord)))
-      ) {
-        const occurances =
-          cyrillicWords && cyrillicWords.some(word => word.startsWith(decodedWord))
-            ? cyrillicWords.find(word => word.startsWith(decodedWord)).length
-            : content.match(new RegExp('\\b' + decodedWord, 'g')).length;
+      } else if (rule === 'starts' && words && words.some(word => word.startsWith(decodedWord))) {
+        const occurances = words.find(word => word.startsWith(decodedWord)).length;
         score += scoreCalculator(points, occurances);
-      } else if (
-        (rule === 'ends' && new RegExp(decodedWord + '\\b', 'i').test(content)) ||
-        (rule === 'ends' && cyrillicWords && cyrillicWords.some(word => word.endsWith(decodedWord)))
-      ) {
-        const occurances =
-          cyrillicWords && cyrillicWords.some(word => word.endsWith(decodedWord))
-            ? cyrillicWords.find(word => word.endsWith(decodedWord)).length
-            : content.match(new RegExp(decodedWord + '\\b', 'g')).length;
+      } else if (rule === 'ends' && words && words.some(word => word.endsWith(decodedWord))) {
+        const occurances = words.find(word => word.endsWith(decodedWord)).length;
         score += scoreCalculator(points, occurances);
-      } else if (rule === 'regexp' && new RegExp(decodedWord, 'i').test(content)) {
-        const occurances = content.match(new RegExp(decodedWord, 'g')).length;
+      } else if (rule === 'regexp' && words && words.includes(decodedWord)) {
+        const occurances = words.filter(word => word === decodedWord).length;
         score += scoreCalculator(points, occurances);
       }
     }
-    return score < maxScore * words / 1000;
+    return score < maxScore * contentWords / 1000;
   } catch (e) {
     return true;
   }
