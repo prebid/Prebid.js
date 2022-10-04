@@ -244,7 +244,10 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   const ENDPOINT = hostInfo.endpoint;
   hostDomain = hostInfo.domain;
 
-  const TAPPXKEY = deepAccess(validBidRequests, 'params.tappxkey');
+  let TAPPXKEY = deepAccess(validBidRequests, 'params.tappxkey');
+  if (TAPPXKEY && TAPPXKEY.split(',').length > 1) {
+    TAPPXKEY = isMobile() ? TAPPXKEY.split(',')[0] : TAPPXKEY.split(',')[1];
+  }
   const MKTAG = deepAccess(validBidRequests, 'params.mktag');
   const BIDFLOOR = deepAccess(validBidRequests, 'params.bidfloor');
   const BIDEXTRA = deepAccess(validBidRequests, 'params.ext');
@@ -474,6 +477,10 @@ function getLanguage() {
 function getOs() {
   let ua = navigator.userAgent;
   if (ua == null) { return 'unknown'; } else if (ua.match(/(iPhone|iPod|iPad)/)) { return 'ios'; } else if (ua.match(/Android/)) { return 'android'; } else if (ua.match(/Window/)) { return 'windows'; } else { return 'unknown'; }
+}
+
+function isMobile() {
+  return (/iphone|ipod|android|blackberry|opera|mini|windows\sce|palm|smartphone|iemobile/i.test(navigator.userAgent.toLowerCase()));
 }
 
 export function _getHostInfo(validBidRequests) {
