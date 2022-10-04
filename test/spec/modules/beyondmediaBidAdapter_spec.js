@@ -1,9 +1,9 @@
 import { expect } from 'chai';
-import { spec } from '../../../modules/andBeyondMediaBidAdapter.js';
+import { spec } from '../../../modules/beyondmediaBidAdapter.js';
 import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
 import { getUniqueIdentifierStr } from '../../../src/utils.js';
 
-const bidder = 'andbeyondmedia'
+const bidder = 'beyondmedia'
 
 describe('AndBeyondMediaBidAdapter', function () {
   const bids = [
