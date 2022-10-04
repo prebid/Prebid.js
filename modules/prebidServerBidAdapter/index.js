@@ -742,7 +742,7 @@ Object.assign(ORTB2.prototype, {
     }
     const request = {
       id: firstBidRequest.auctionId,
-      source: {tid: s2sBidRequest.tid},
+      source: {tid: firstBidRequest.auctionId},
       tmax: s2sConfig.timeout,
       imp: imps,
       // to do: add setconfig option to pass test = 1
