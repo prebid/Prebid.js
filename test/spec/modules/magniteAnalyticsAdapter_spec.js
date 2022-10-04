@@ -204,8 +204,8 @@ const ANALYTICS_MESSAGE = {
   'session': {
     'id': '12345678-1234-1234-1234-123456789abc',
     'pvid': '12345678',
-    'start': 1519767013981,
-    'expires': 1519788613981
+    'start': 1519767013781,
+    'expires': 1519788613781
   },
   'auctions': [
     {
@@ -752,7 +752,7 @@ describe('magnite analytics adapter', function () {
           id: '987654', // should have stayed same
           start: 1519767017881, // should have stayed same
           expires: 1519767039481, // should have stayed same
-          lastSeen: 1519767013981, // lastSeen updated to our "now"
+          lastSeen: 1519767013781, // lastSeen updated to our auction init time
           fpkvs: { source: 'tw', link: 'email' }, // link merged in
           pvid: expectedPvid // new pvid stored
         });
@@ -812,7 +812,7 @@ describe('magnite analytics adapter', function () {
           id: '987654', // should have stayed same
           start: 1519766113781, // should have stayed same
           expires: 1519787713781, // should have stayed same
-          lastSeen: 1519767013981, // lastSeen updated to our "now"
+          lastSeen: 1519767013781, // lastSeen updated to our auction init time
           fpkvs: { source: 'fb', link: 'email', click: 'dog' }, // link merged in
           pvid: expectedPvid // new pvid stored
         });
@@ -861,9 +861,9 @@ describe('magnite analytics adapter', function () {
 
         expect(calledWith).to.deep.equal({
           id: STUBBED_UUID, // should have generated not used input
-          start: 1519767013981, // should have stayed same
-          expires: 1519788613981, // should have stayed same
-          lastSeen: 1519767013981, // lastSeen updated to our "now"
+          start: 1519767013781, // updated to whenever auction init started
+          expires: 1519788613781, // 6 hours after start
+          lastSeen: 1519767013781, // lastSeen updated to our "now"
           fpkvs: { link: 'email' }, // link merged in
           pvid: expectedPvid // new pvid stored
         });
@@ -912,9 +912,9 @@ describe('magnite analytics adapter', function () {
 
         expect(calledWith).to.deep.equal({
           id: STUBBED_UUID, // should have generated and not used same one
-          start: 1519767013981, // should have stayed same
-          expires: 1519788613981, // should have stayed same
-          lastSeen: 1519767013981, // lastSeen updated to our "now"
+          start: 1519767013781, // updated to whenever auction init started
+          expires: 1519788613781, // 6 hours after start
+          lastSeen: 1519767013781, // lastSeen updated to our "now"
           fpkvs: { link: 'email' }, // link merged in
           pvid: expectedPvid // new pvid stored
         });
@@ -990,8 +990,6 @@ describe('magnite analytics adapter', function () {
 
       // The timestamps should be changed from the default by 1800 (set eventDelay - eventDelay default (200))
       let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
-      expectedMessage.session.expires = expectedMessage.session.expires + 1800;
-      expectedMessage.session.start = expectedMessage.session.start + 1800;
       expectedMessage.timestamps.eventTime = expectedMessage.timestamps.eventTime + 1800;
       expectedMessage.timestamps.timeSincePageLoad = expectedMessage.timestamps.timeSincePageLoad + 1800;
 
@@ -1127,8 +1125,6 @@ describe('magnite analytics adapter', function () {
       delete expectedMessage2.gamRenders;
 
       // second event should be event delay time after first one
-      expectedMessage2.session.expires = expectedMessage.session.expires + rubiConf.analyticsEventDelay;
-      expectedMessage2.session.start = expectedMessage.session.start + rubiConf.analyticsEventDelay;
       expectedMessage2.timestamps.eventTime = expectedMessage.timestamps.eventTime + rubiConf.analyticsEventDelay;
       expectedMessage2.timestamps.timeSincePageLoad = expectedMessage.timestamps.timeSincePageLoad + rubiConf.analyticsEventDelay;
 
@@ -1159,8 +1155,6 @@ describe('magnite analytics adapter', function () {
 
       // timing changes a bit -> timestamps should be batchTimeout - event delay later
       const expectedExtraTime = rubiConf.analyticsBatchTimeout - rubiConf.analyticsEventDelay;
-      expectedMessage.session.expires = expectedMessage.session.expires + expectedExtraTime;
-      expectedMessage.session.start = expectedMessage.session.start + expectedExtraTime;
       expectedMessage.timestamps.eventTime = expectedMessage.timestamps.eventTime + expectedExtraTime;
       expectedMessage.timestamps.timeSincePageLoad = expectedMessage.timestamps.timeSincePageLoad + expectedExtraTime;
 
@@ -1175,8 +1169,6 @@ describe('magnite analytics adapter', function () {
 
       let expectedMessage2 = utils.deepClone(ANALYTICS_MESSAGE);
       // second event should be event delay time after first one
-      expectedMessage2.session.expires = expectedMessage.session.expires + rubiConf.analyticsEventDelay;
-      expectedMessage2.session.start = expectedMessage.session.start + rubiConf.analyticsEventDelay;
       expectedMessage2.timestamps.eventTime = expectedMessage.timestamps.eventTime + rubiConf.analyticsEventDelay;
       expectedMessage2.timestamps.timeSincePageLoad = expectedMessage.timestamps.timeSincePageLoad + rubiConf.analyticsEventDelay;
       delete expectedMessage2.auctions;
@@ -1205,8 +1197,6 @@ describe('magnite analytics adapter', function () {
       let { auctions, gamRenders, bidsWon, ...rest } = utils.deepClone(ANALYTICS_MESSAGE);
 
       // rest of payload should have timestamps changed to be - default eventDelay since we changed it to 0
-      rest.session.expires = rest.session.expires - defaultDelay;
-      rest.session.start = rest.session.start - defaultDelay;
       rest.timestamps.eventTime = rest.timestamps.eventTime - defaultDelay;
       rest.timestamps.timeSincePageLoad = rest.timestamps.timeSincePageLoad - defaultDelay;
 
@@ -1721,7 +1711,7 @@ describe('magnite analytics adapter', function () {
       });
       basicBillingAuction([{
         vendor: 'vendorName',
-        type: 'auction',
+        type: 'pageView',
         billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965',
         auctionId: MOCK.AUCTION_INIT.auctionId
       }]);
@@ -1732,7 +1722,7 @@ describe('magnite analytics adapter', function () {
       expect(message.billableEvents).to.deep.equal([{
         accountId: 1001,
         vendor: 'vendorName',
-        type: 'general', // mapping all events to endpoint as 'general' for now
+        type: 'pageView',
         billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965',
         auctionId: MOCK.AUCTION_INIT.auctionId
       }]);
@@ -1760,7 +1750,7 @@ describe('magnite analytics adapter', function () {
       expect(message.billableEvents).to.deep.equal([{
         accountId: 1001,
         vendor: 'vendorName',
-        type: 'general', // mapping all events to endpoint as 'general' for now
+        type: 'auction',
         billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965'
       }]);
 
@@ -1788,7 +1778,7 @@ describe('magnite analytics adapter', function () {
         },
         {
           vendor: 'vendorName',
-          type: 'auction',
+          type: 'impression',
           billingId: '743db6e3-21f2-44d4-917f-cb3488c6076f',
           auctionId: MOCK.AUCTION_INIT.auctionId
         },
@@ -1807,14 +1797,14 @@ describe('magnite analytics adapter', function () {
         {
           accountId: 1001,
           vendor: 'vendorName',
-          type: 'general',
+          type: 'auction',
           billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965',
           auctionId: MOCK.AUCTION_INIT.auctionId
         },
         {
           accountId: 1001,
           vendor: 'vendorName',
-          type: 'general',
+          type: 'impression',
           billingId: '743db6e3-21f2-44d4-917f-cb3488c6076f',
           auctionId: MOCK.AUCTION_INIT.auctionId
         }
@@ -1845,7 +1835,7 @@ describe('magnite analytics adapter', function () {
         {
           accountId: 1001,
           vendor: 'vendorName',
-          type: 'general',
+          type: 'auction',
           billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965'
         }
       ]);
@@ -1875,7 +1865,7 @@ describe('magnite analytics adapter', function () {
         {
           accountId: 1001,
           vendor: 'vendorName',
-          type: 'general',
+          type: 'auction',
           billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965'
         }
       ]);

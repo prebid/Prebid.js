@@ -60,7 +60,8 @@ const resetConfs = () => {
     billing: {},
     pendingEvents: {},
     eventPending: false,
-    elementIdMap: {}
+    elementIdMap: {},
+    sessionData: {}
   }
   rubiConf = {
     pvid: generateUUID().slice(0, 8),
@@ -185,9 +186,9 @@ const isBillingEventValid = event => {
 }
 
 const formatBillingEvent = event => {
-  // for now we are mapping all events to type "general", later we will expand support for specific types
   let billingEvent = deepClone(event);
-  billingEvent.type = 'general';
+  // Pass along type if is string and not empty else general
+  billingEvent.type = (typeof event.type === 'string' && event.type) || 'general';
   billingEvent.accountId = accountId;
   // mark as sent
   deepSetValue(cache.billing, `${event.vendor}.${event.billingId}`, true);
@@ -307,19 +308,18 @@ const getTopLevelDetails = () => {
     }
   }
 
-  // Add session info
-  const sessionData = storage.localStorageIsEnabled() && updateRpaCookie();
-  if (sessionData) {
+  if (cache.sessionData) {
     // gather session info
-    payload.session = pick(sessionData, [
+    payload.session = pick(cache.sessionData, [
       'id',
       'pvid',
       'start',
       'expires'
     ]);
-    if (!isEmpty(sessionData.fpkvs)) {
-      payload.fpkvs = Object.keys(sessionData.fpkvs).map(key => {
-        return { key, value: sessionData.fpkvs[key] };
+    // Any FPKVS set?
+    if (!isEmpty(cache.sessionData.fpkvs)) {
+      payload.fpkvs = Object.keys(cache.sessionData.fpkvs).map(key => {
+        return { key, value: cache.sessionData.fpkvs[key] };
       });
     }
   }
@@ -640,6 +640,8 @@ magniteAdapter.referrerHostname = '';
 magniteAdapter.track = ({ eventType, args }) => {
   switch (eventType) {
     case AUCTION_INIT:
+      // Update session
+      cache.sessionData = storage.localStorageIsEnabled() && updateRpaCookie();
       // set the rubicon aliases
       setRubiconAliases(adapterManager.aliasRegistry);
 
