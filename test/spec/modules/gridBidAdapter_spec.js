@@ -270,6 +270,62 @@ describe('TheMediaGrid Adapter', function () {
       getDataFromLocalStorageStub.restore();
     });
 
+    it('should attach valid params to the tags with multiRequest', function () {
+      const fpdUserIdVal = '0b0f84a1-1596-4165-9742-2e1a7dfac57f';
+      const getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage').callsFake(
+        arg => arg === 'tmguid' ? fpdUserIdVal : null);
+
+      const bidMultiRequests = bidRequests.slice(0, 3).map((bidReq) => ({
+        ...bidReq,
+        params: { ...bidReq.params, multiRequest: true }
+      }));
+      bidMultiRequests[1].params.pubid = 'some_pub_id';
+      bidMultiRequests[2].params.source = 'jwp';
+      const requests = spec.buildRequests(bidMultiRequests, bidderRequest);
+      requests.forEach((request, i) => {
+        expect(request.data).to.be.an('string');
+        const payload = parseRequest(request.data);
+        const banner = bidMultiRequests[i].mediaTypes ? bidRequests[i].mediaTypes.banner : { sizes: bidMultiRequests[i].sizes };
+        const video = bidMultiRequests[i].mediaTypes && bidMultiRequests[i].mediaTypes.video;
+        const source = bidMultiRequests[i].params.source;
+        const url = `https://grid.bidswitch.net/hbjson?no_mapping=1${source ? `&sp=${source}` : ''}`;
+        expect(request.url).to.equal(url);
+        expect(payload).to.deep.equal({
+          'id': bidderRequest.bidderRequestId,
+          'site': {
+            'page': referrer,
+            ...(bidMultiRequests[i].params.pubid && { 'publisher': { 'id': bidMultiRequests[i].params.pubid } })
+          },
+          'tmax': bidderRequest.timeout,
+          'source': {
+            'tid': bidderRequest.auctionId,
+            'ext': {'wrapper': 'Prebid_js', 'wrapper_version': '$prebid.version$'}
+          },
+          'user': {
+            'id': fpdUserIdVal
+          },
+          'imp': [{
+            'id': bidMultiRequests[i].bidId,
+            'tagid': bidMultiRequests[i].params.uid,
+            'ext': {'divid': bidMultiRequests[i].adUnitCode},
+            ...(bidMultiRequests[i].params.bidFloor && { 'bidfloor': bidMultiRequests[i].params.bidFloor }),
+            ...(banner && { banner: {
+              'w': banner.sizes[0][0],
+              'h': banner.sizes[0][1],
+              'format': banner.sizes.map(([w, h]) => ({ w, h }))
+            }}),
+            ...(video && { video: {
+              'w': video.playerSize[0][0],
+              'h': video.playerSize[0][1],
+              'mimes': video.mimes
+            }})
+          }]
+        });
+      });
+
+      getDataFromLocalStorageStub.restore();
+    });
+
     it('should support mixed mediaTypes', function () {
       const fpdUserIdVal = '0b0f84a1-1596-4165-9742-2e1a7dfac57f';
       const getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage').callsFake(

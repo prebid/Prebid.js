@@ -171,14 +171,15 @@ export const spec = {
             id: bid.bidderRequestId && bid.bidderRequestId.toString(),
             site: {
               page: referer,
-              publisher: {
-                id: pubid,
-              },
             },
             tmax,
             source: reqSource,
             imp: [impObj]
           };
+
+          if (pubid) {
+            request.site.publisher = { id: pubid };
+          }
 
           const reqJwpseg = (pubdata && pubdata.jwpseg) || (jwTargeting && jwTargeting.segments);
 
