@@ -52,7 +52,7 @@ export const sharethroughAdapterSpec = {
         ext: {},
       },
       source: {
-        tid: bidRequests[0].transactionId,
+        tid: bidderRequest.auctionId,
         ext: {
           version: '$prebid.version$',
           str: VERSION,
