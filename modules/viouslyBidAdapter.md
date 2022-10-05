@@ -24,7 +24,7 @@ Module that connects to Viously's demand sources
             },
             bids: [
                 {
-                    bidder: "viously",
+                    bidder: 'viously',
                     params: {
                         pid: '20d30b78-43ec-11ed-b878-0242ac120002'
                     }
