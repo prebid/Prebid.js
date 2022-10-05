@@ -1869,6 +1869,18 @@ describe('IndexexchangeAdapter', function () {
         expect(impression.banner.format[0].ext.fl).to.equal('x');
       });
 
+      it('banner multi size impression sould have bidFloor both in imp and format ext obejcts', function () {
+        const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+        bid.params.bidFloor = 50;
+        bid.params.bidFloorCur = 'USD';
+        const requestBidFloor = spec.buildRequests([bid], {})[0];
+        const impression = JSON.parse(requestBidFloor.data.r).imp[0];
+
+        expect(impression.bidfloor).to.equal(bid.params.bidFloor);
+        expect(impression.bidfloorcur).to.equal(bid.params.bidFloorCur);
+        expect(impression.banner.format[0].ext.bidfloor).to.equal(50);
+      });
+
       it('missing sizes impressions should contain floors from priceFloors module ', function () {
         const bid = utils.deepClone(ONE_BANNER[0]);
         bid.mediaTypes.banner.sizes.push([500, 400])
