@@ -130,9 +130,11 @@ describe('Conversant analytics adapter tests', function() {
       expect(Object.keys(cnvrHelper.auctionIdTimestampCache)).to.have.lengthOf(0);
     });
 
-    it('initializeBidDefaults() should return correct object', function() {
-      let bid = cnvrHelper.initializeBidDefaults();
-      expect(bid).to.deep.equal({'eventCodes': []});
+    it('createBid() should return correct object', function() {
+      const EVENT_CODE = 1;
+      const TIME = 2;
+      let bid = cnvrHelper.createBid(EVENT_CODE, 2);
+      expect(bid).to.deep.equal({'eventCodes': [EVENT_CODE], 'timeToRespond': TIME});
     });
 
     it('createAdUnit() should return correct object', function() {
@@ -307,8 +309,8 @@ describe('Conversant analytics adapter tests', function() {
       expect(data.auction.auctionId).to.equal('auctionId');
       expect(data.auction.preBidVersion).to.equal(PREBID_VERSION);
       expect(data.auction.sid).to.equal(SITE_ID);
-      expect(data.adUnits['adUnitCode'].bids['bidderCode'].eventCodes.includes(CNVR_CONSTANTS.RENDER_FAILED)).to.be.true;
-      expect(data.adUnits['adUnitCode'].bids['bidderCode'].message).to.have.lengthOf.above(0);
+      expect(data.adUnits['adUnitCode'].bids['bidderCode'][0].eventCodes.includes(CNVR_CONSTANTS.RENDER_FAILED)).to.be.true;
+      expect(data.adUnits['adUnitCode'].bids['bidderCode'][0].message).to.have.lengthOf.above(0);
     });
 
     it('should not send data if no adId', function() {
@@ -455,13 +457,13 @@ describe('Conversant analytics adapter tests', function() {
       expect(Object.keys(data.adUnits)).to.have.lengthOf(1);
 
       expect(Object.keys(data.adUnits[GOOD_BID_WON_ARGS.adUnitCode].bids)).to.have.lengthOf(1);
-      expect(data.adUnits[GOOD_BID_WON_ARGS.adUnitCode].bids[GOOD_BID_WON_ARGS.bidderCode].eventCodes.includes(CNVR_CONSTANTS.WIN)).to.be.true;
-      expect(data.adUnits[GOOD_BID_WON_ARGS.adUnitCode].bids[GOOD_BID_WON_ARGS.bidderCode].cpm).to.equal(GOOD_BID_WON_ARGS.cpm);
-      expect(data.adUnits[GOOD_BID_WON_ARGS.adUnitCode].bids[GOOD_BID_WON_ARGS.bidderCode].originalCpm).to.equal(GOOD_BID_WON_ARGS.originalCpm);
-      expect(data.adUnits[GOOD_BID_WON_ARGS.adUnitCode].bids[GOOD_BID_WON_ARGS.bidderCode].currency).to.equal(GOOD_BID_WON_ARGS.currency);
-      expect(data.adUnits[GOOD_BID_WON_ARGS.adUnitCode].bids[GOOD_BID_WON_ARGS.bidderCode].timeToRespond).to.equal(GOOD_BID_WON_ARGS.timeToRespond);
-      expect(data.adUnits[GOOD_BID_WON_ARGS.adUnitCode].bids[GOOD_BID_WON_ARGS.bidderCode].adSize.w).to.equal(GOOD_BID_WON_ARGS.width);
-      expect(data.adUnits[GOOD_BID_WON_ARGS.adUnitCode].bids[GOOD_BID_WON_ARGS.bidderCode].adSize.h).to.equal(GOOD_BID_WON_ARGS.height);
+      expect(data.adUnits[GOOD_BID_WON_ARGS.adUnitCode].bids[GOOD_BID_WON_ARGS.bidderCode][0].eventCodes.includes(CNVR_CONSTANTS.WIN)).to.be.true;
+      expect(data.adUnits[GOOD_BID_WON_ARGS.adUnitCode].bids[GOOD_BID_WON_ARGS.bidderCode][0].cpm).to.equal(GOOD_BID_WON_ARGS.cpm);
+      expect(data.adUnits[GOOD_BID_WON_ARGS.adUnitCode].bids[GOOD_BID_WON_ARGS.bidderCode][0].originalCpm).to.equal(GOOD_BID_WON_ARGS.originalCpm);
+      expect(data.adUnits[GOOD_BID_WON_ARGS.adUnitCode].bids[GOOD_BID_WON_ARGS.bidderCode][0].currency).to.equal(GOOD_BID_WON_ARGS.currency);
+      expect(data.adUnits[GOOD_BID_WON_ARGS.adUnitCode].bids[GOOD_BID_WON_ARGS.bidderCode][0].timeToRespond).to.equal(GOOD_BID_WON_ARGS.timeToRespond);
+      expect(data.adUnits[GOOD_BID_WON_ARGS.adUnitCode].bids[GOOD_BID_WON_ARGS.bidderCode][0].adSize.w).to.equal(GOOD_BID_WON_ARGS.width);
+      expect(data.adUnits[GOOD_BID_WON_ARGS.adUnitCode].bids[GOOD_BID_WON_ARGS.bidderCode][0].adSize.h).to.equal(GOOD_BID_WON_ARGS.height);
     });
   });
 
@@ -754,6 +756,44 @@ describe('Conversant analytics adapter tests', function() {
             hb_format: 'banner'
           }
         }, {
+          bidderCode: 'conversant',
+          height: 100,
+          statusMessage: 'Bid available',
+          width: 200,
+          adId: '57e03aeafd83a68',
+          requestId: '2c2a5485a076898',
+          mediaType: 'banner',
+          source: 'client',
+          currency: 'USD',
+          cpm: 4,
+          creativeId: '29123_55016759',
+          ttl: 300,
+          netRevenue: true,
+          ad: '<foobar add goes here />',
+          originalCpm: 0.04,
+          originalCurrency: 'USD',
+          auctionId: '85e1bf44-4035-4e24-bd3c-b1ba367fe294',
+          responseTimestamp: 1583851418626,
+          requestTimestamp: 1583851418292,
+          bidder: 'conversant',
+          adUnitCode: 'div-gpt-ad-1460505748561-0',
+          timeToRespond: 334,
+          pbLg: '4.00',
+          pbMg: '4.00',
+          pbHg: '4.00',
+          pbAg: '4.00',
+          pbDg: '4.00',
+          pbCg: '',
+          size: '100x200',
+          adserverTargeting: {
+            hb_bidder: 'conversant',
+            hb_adid: '57e03aeafd83a68',
+            hb_pb: '4.00',
+            hb_size: '300x250',
+            hb_source: 'client',
+            hb_format: 'banner'
+          }
+        }, {
           bidderCode: 'appnexus',
           statusMessage: 'Bid available',
           adId: '57e03aeafd83a68',
@@ -866,33 +906,58 @@ describe('Conversant analytics adapter tests', function() {
       expect(data.adUnits[AD_UNIT_CODE_NATIVE].sizes).to.have.lengthOf(0);
 
       expect(Object.keys(data.adUnits[AD_UNIT_CODE].bids)).to.have.lengthOf(2);
-      expect(data.adUnits[AD_UNIT_CODE].bids['conversant'].eventCodes.includes(CNVR_CONSTANTS.BID)).to.be.true;
-      expect(data.adUnits[AD_UNIT_CODE].bids['conversant'].cpm).to.equal(4);
-      expect(data.adUnits[AD_UNIT_CODE].bids['conversant'].originalCpm).to.equal(0.04);
-      expect(data.adUnits[AD_UNIT_CODE].bids['conversant'].currency).to.equal('USD');
-      expect(data.adUnits[AD_UNIT_CODE].bids['conversant'].timeToRespond).to.equal(334);
-      expect(data.adUnits[AD_UNIT_CODE].bids['conversant'].adSize.w).to.equal(300);
-      expect(data.adUnits[AD_UNIT_CODE].bids['conversant'].adSize.h).to.equal(250);
-      expect(data.adUnits[AD_UNIT_CODE].bids['conversant'].mediaType).to.equal('banner');
+      const cnvrBidsArray = data.adUnits[AD_UNIT_CODE].bids['conversant'];
+      // testing multiple bids from same bidder
+      expect(cnvrBidsArray).to.have.lengthOf(2);
+      expect(cnvrBidsArray[0].eventCodes.includes(CNVR_CONSTANTS.BID)).to.be.true;
+      expect(cnvrBidsArray[0].cpm).to.equal(4);
+      expect(cnvrBidsArray[0].originalCpm).to.equal(0.04);
+      expect(cnvrBidsArray[0].currency).to.equal('USD');
+      expect(cnvrBidsArray[0].timeToRespond).to.equal(334);
+      expect(cnvrBidsArray[0].adSize.w).to.equal(300);
+      expect(cnvrBidsArray[0].adSize.h).to.equal(250);
+      expect(cnvrBidsArray[0].mediaType).to.equal('banner');
+      // 2nd bid different size
+      expect(cnvrBidsArray[1].eventCodes.includes(CNVR_CONSTANTS.BID)).to.be.true;
+      expect(cnvrBidsArray[1].cpm).to.equal(4);
+      expect(cnvrBidsArray[1].originalCpm).to.equal(0.04);
+      expect(cnvrBidsArray[1].currency).to.equal('USD');
+      expect(cnvrBidsArray[1].timeToRespond).to.equal(334);
+      expect(cnvrBidsArray[1].adSize.w).to.equal(200);
+      expect(cnvrBidsArray[1].adSize.h).to.equal(100);
+      expect(cnvrBidsArray[1].mediaType).to.equal('banner');
 
-      expect(data.adUnits[AD_UNIT_CODE].bids['appnexus'].originalCpm).to.be.undefined;
-      expect(data.adUnits[AD_UNIT_CODE].bids['appnexus'].eventCodes.includes(CNVR_CONSTANTS.NO_BID)).to.be.true;
-      expect(data.adUnits[AD_UNIT_CODE].bids['appnexus'].eventCodes.includes(CNVR_CONSTANTS.TIMEOUT)).to.be.true;
-      expect(data.adUnits[AD_UNIT_CODE].bids['appnexus'].cpm).to.be.undefined;
-      expect(data.adUnits[AD_UNIT_CODE].bids['appnexus'].currency).to.be.undefined;
-      expect(data.adUnits[AD_UNIT_CODE].bids['appnexus'].timeToRespond).to.equal(0);
-      expect(data.adUnits[AD_UNIT_CODE].bids['appnexus'].adSize).to.be.undefined;
-      expect(data.adUnits[AD_UNIT_CODE].bids['appnexus'].mediaType).to.be.undefined;
+      const apnBidsArray = data.adUnits[AD_UNIT_CODE].bids['appnexus'];
+      expect(apnBidsArray).to.have.lengthOf(2);
+      let apnBid = apnBidsArray[0];
+      expect(apnBid.originalCpm).to.be.undefined;
+      expect(apnBid.eventCodes.includes(CNVR_CONSTANTS.TIMEOUT)).to.be.true;
+      expect(apnBid.cpm).to.be.undefined;
+      expect(apnBid.currency).to.be.undefined;
+      expect(apnBid.timeToRespond).to.equal(3000);
+      expect(apnBid.adSize).to.be.undefined;
+      expect(apnBid.mediaType).to.be.undefined;
+      apnBid = apnBidsArray[1];
+      expect(apnBid.originalCpm).to.be.undefined;
+      expect(apnBid.eventCodes.includes(CNVR_CONSTANTS.NO_BID)).to.be.true;
+      expect(apnBid.cpm).to.be.undefined;
+      expect(apnBid.currency).to.be.undefined;
+      expect(apnBid.timeToRespond).to.equal(0);
+      expect(apnBid.adSize).to.be.undefined;
+      expect(apnBid.mediaType).to.be.undefined;
 
       expect(Object.keys(data.adUnits[AD_UNIT_CODE_NATIVE].bids)).to.have.lengthOf(1);
-      expect(data.adUnits[AD_UNIT_CODE_NATIVE].bids['appnexus'].eventCodes.includes(CNVR_CONSTANTS.BID)).to.be.true;
-      expect(data.adUnits[AD_UNIT_CODE_NATIVE].bids['appnexus'].cpm).to.equal(4);
-      expect(data.adUnits[AD_UNIT_CODE_NATIVE].bids['appnexus'].originalCpm).to.equal(0.04);
-      expect(data.adUnits[AD_UNIT_CODE_NATIVE].bids['appnexus'].currency).to.equal('USD');
-      expect(data.adUnits[AD_UNIT_CODE_NATIVE].bids['appnexus'].timeToRespond).to.equal(334);
-      expect(data.adUnits[AD_UNIT_CODE_NATIVE].bids['appnexus'].adSize.w).to.be.undefined;
-      expect(data.adUnits[AD_UNIT_CODE_NATIVE].bids['appnexus'].adSize.h).to.be.undefined;
-      expect(data.adUnits[AD_UNIT_CODE_NATIVE].bids['appnexus'].mediaType).to.equal('native');
+      const apnNativeBidsArray = data.adUnits[AD_UNIT_CODE_NATIVE].bids['appnexus'];
+      expect(apnNativeBidsArray).to.have.lengthOf(1);
+      const apnNativeBid = apnNativeBidsArray[0];
+      expect(apnNativeBid.eventCodes.includes(CNVR_CONSTANTS.BID)).to.be.true;
+      expect(apnNativeBid.cpm).to.equal(4);
+      expect(apnNativeBid.originalCpm).to.equal(0.04);
+      expect(apnNativeBid.currency).to.equal('USD');
+      expect(apnNativeBid.timeToRespond).to.equal(334);
+      expect(apnNativeBid.adSize.w).to.be.undefined;
+      expect(apnNativeBid.adSize.h).to.be.undefined;
+      expect(apnNativeBid.mediaType).to.equal('native');
     });
   });
 });
