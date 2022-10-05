@@ -357,8 +357,6 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
 
   let counter = 0;
 
-  // $.source.tid MUST be a unique UUID and also THE SAME between all PBS Requests for a given Auction
-  const sourceTid = generateUUID();
   _s2sConfigs.forEach((s2sConfig) => {
     if (s2sConfig && uniqueServerBidRequests[counter] && getS2SBidderSet(s2sConfig).has(uniqueServerBidRequests[counter].bidderCode)) {
       // s2s should get the same client side timeout as other client side requests.
@@ -374,7 +372,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
       let uniqueServerRequests = serverBidRequests.filter(serverBidRequest => serverBidRequest.uniquePbsTid === uniquePbsTid);
 
       if (s2sAdapter) {
-        let s2sBidRequest = {tid: sourceTid, 'ad_units': adUnitsS2SCopy, s2sConfig, ortb2Fragments};
+        let s2sBidRequest = {'ad_units': adUnitsS2SCopy, s2sConfig, ortb2Fragments};
         if (s2sBidRequest.ad_units.length) {
           let doneCbs = uniqueServerRequests.map(bidRequest => {
             bidRequest.start = timestamp();
@@ -387,7 +385,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
           // fire BID_REQUESTED event for each s2s bidRequest
           uniqueServerRequests.forEach(bidRequest => {
             // add the new sourceTid
-            events.emit(CONSTANTS.EVENTS.BID_REQUESTED, {...bidRequest, tid: sourceTid});
+            events.emit(CONSTANTS.EVENTS.BID_REQUESTED, {...bidRequest, tid: bidRequest.auctionId});
           });
 
           // make bid requests
