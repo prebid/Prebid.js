@@ -81,7 +81,7 @@ describe('nativoBidAdapterTests', function () {
     })
   })
 
-  describe.only('buildRequests', function () {
+  describe('buildRequests', function () {
     const bidRequest = {
       bidder: 'nativo',
       params: {
@@ -125,7 +125,7 @@ describe('nativoBidAdapterTests', function () {
       expect(request.url).to.include('ntv_pas')
     })
 
-    it.only('ntv_url should contain query params', function () {
+    it('ntv_url should contain query params', function () {
       const request = spec.buildRequests(bidRequests, {
         bidderRequestId: 123456,
         refererInfo: {
