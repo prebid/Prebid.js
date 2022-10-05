@@ -98,4 +98,18 @@ describe('the first party data enrichment module', function() {
     expect(validated.device).to.deep.equal({ w: 1200, h: 700 });
     expect(validated.site.keywords).to.be.undefined;
   });
+
+  it('should store a reference to gpc witin ortb2.regs.ext if it has been enabled', function() {
+    let validated;
+    width = 800;
+    height = 500;
+
+    validated = processFpd({}, {}).global;
+    expect(validated.regs).to.equal(undefined);
+
+    const globalPrivacyControlStub = sinon.stub(window, 'navigator').value({globalPrivacyControl: true});
+    validated = processFpd({}, {}).global;
+    expect(validated.regs.ext.gpc).to.equal(1);
+    globalPrivacyControlStub.restore();
+  });
 });

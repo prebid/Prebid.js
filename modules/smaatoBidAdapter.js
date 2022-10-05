@@ -63,7 +63,7 @@ const buildOpenRtbBidRequest = (bidRequest, bidderRequest) => {
   if (deepAccess(bidRequest, 'params.app')) {
     const geo = deepAccess(bidRequest, 'params.app.geo');
     deepSetValue(requestTemplate, 'device.geo', geo);
-    const ifa = deepAccess(bidRequest, 'params.app.ifa')
+    const ifa = deepAccess(bidRequest, 'params.app.ifa');
     deepSetValue(requestTemplate, 'device.ifa', ifa);
   }
 
@@ -210,7 +210,7 @@ export const spec = {
           }
         };
 
-        const videoContext = deepAccess(JSON.parse(bidRequest.data).imp[0], 'video.ext.context')
+        const videoContext = deepAccess(JSON.parse(bidRequest.data).imp[0], 'video.ext.context');
         if (videoContext === ADPOD) {
           resultingBid.vastXml = bid.adm;
           resultingBid.mediaType = VIDEO;

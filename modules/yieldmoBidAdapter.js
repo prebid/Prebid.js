@@ -242,6 +242,17 @@ function addPlacement(request) {
   if (gpid) {
     placementInfo.gpid = gpid;
   }
+
+  // get the transaction id for the banner bid.
+  const transactionId = deepAccess(request, 'ortb2Imp.ext.tid');
+
+  if (transactionId) {
+    placementInfo.tid = transactionId;
+  }
+
+  if (request.auctionId) {
+    placementInfo.auctionId = request.auctionId;
+  }
   return JSON.stringify(placementInfo);
 }
 
@@ -382,6 +393,9 @@ function openRtbRequest(bidRequests, bidderRequest) {
     openRtbRequest.schain = schain;
   }
 
+  if (bidRequests[0].auctionId) {
+    openRtbRequest.auctionId = bidRequests[0].auctionId;
+  }
   populateOpenRtbGdpr(openRtbRequest, bidderRequest);
 
   return openRtbRequest;
@@ -399,7 +413,8 @@ function openRtbImpression(bidRequest) {
     tagid: bidRequest.adUnitCode,
     bidfloor: getBidFloor(bidRequest, VIDEO),
     ext: {
-      placement_id: bidRequest.params.placementId
+      placement_id: bidRequest.params.placementId,
+      tid: deepAccess(bidRequest, 'ortb2Imp.ext.tid')
     },
     video: {
       w: size[0],
@@ -531,13 +546,13 @@ function validateVideoParams(bid) {
       error += ' when ' + conditionStr;
     }
     throw new Error(error);
-  }
+  };
 
   const paramInvalid = (paramStr, value, expectedStr) => {
     expectedStr = expectedStr ? ', expected: ' + expectedStr : '';
     value = JSON.stringify(value);
     throw new Error(`"${paramStr}"=${value} is invalid${expectedStr}`);
-  }
+  };
 
   const isDefined = val => typeof val !== 'undefined';
   const validate = (fieldPath, validateCb, errorCb, errorCbParam) => {
@@ -563,7 +578,7 @@ function validateVideoParams(bid) {
       }
       return value;
     }
-  }
+  };
 
   try {
     validate('video.context', val => !isEmpty(val), paramRequired);

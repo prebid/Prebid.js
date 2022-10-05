@@ -18,11 +18,14 @@ import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
 import {createEidsArray} from './userId/eids.js';
 import {hasPurpose1Consent} from '../src/utils/gpdr.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import {loadExternalScript} from '../src/adloader.js';
 
 const BIDDER_CODE = 'improvedigital';
 const CREATIVE_TTL = 300;
 
 const AD_SERVER_URL = 'https://ad.360yield.com/pb';
+const BASIC_ADS_URL = 'https://ad.360yield-basic.com/pb';
 const EXTEND_URL = 'https://pbs.360yield.com/openrtb2/auction';
 const IFRAME_SYNC_URL = 'https://hb.360yield.com/prebid-universal-creative/load-cookie.html';
 
@@ -91,6 +94,9 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests(bidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
+
     const request = {
       cur: [config.getConfig('currency.adServerCurrency') || 'USD'],
       ext: {
@@ -119,7 +125,7 @@ export const spec = {
 
     if (bidderRequest) {
       // GDPR
-      const gdprConsent = deepAccess(bidderRequest, 'gdprConsent')
+      const gdprConsent = deepAccess(bidderRequest, 'gdprConsent');
       if (gdprConsent) {
         if (typeof gdprConsent.gdprApplies === 'boolean') {
           deepSetValue(request, 'regs.ext.gdpr', Number(gdprConsent.gdprApplies));
@@ -208,7 +214,7 @@ export const spec = {
 
         ID_RESPONSE.buildAd(bid, bidRequest, bidObject);
 
-        ID_RAZR.addBidData({
+        ID_RAZR.forwardBid({
           bidRequest,
           bid
         });
@@ -277,9 +283,10 @@ const ID_REQUEST = {
       if (transactionId) {
         deepSetValue(request, 'source.tid', transactionId);
       }
+      const adServerUrl = hasPurpose1Consent(bidderRequest?.gdprConsent) ? AD_SERVER_URL : BASIC_ADS_URL;
       return {
         method: 'POST',
-        url: extendMode ? EXTEND_URL : AD_SERVER_URL,
+        url: extendMode ? EXTEND_URL : adServerUrl,
         data: JSON.stringify(request),
         bidderRequest
       }
@@ -300,10 +307,10 @@ const ID_REQUEST = {
     }
     // In the single request mode, split imps between those going to the ad server and those going to extend server
     if (extendImps.length) {
-      requests.push(formatRequest(extendImps, null, true));
+      requests.push(formatRequest(extendImps, bidderRequest.auctionId, true));
     }
     if (adServerImps.length) {
-      requests.push(formatRequest(adServerImps, null, false));
+      requests.push(formatRequest(adServerImps, bidderRequest.auctionId, false));
     }
 
     return requests;
@@ -430,6 +437,9 @@ const ID_REQUEST = {
       return null;
     }
     const request = {
+      eventtrackers: [
+        {event: 1, methods: [1, 2]}
+      ],
       assets: [],
     }
     for (let i of Object.keys(nativeParams)) {
@@ -501,7 +511,7 @@ const ID_REQUEST = {
       const url = deepAccess(bidderRequest, 'refererInfo.page');
       if (url) {
         site.page = url;
-        site.domain = bidderRequest.refererInfo.domain
+        site.domain = bidderRequest.refererInfo.domain;
       }
       const configSiteSettings = config.getConfig('site') || {};
       const fpdSiteSettings = deepAccess(bidderRequest, 'ortb2.site') || {};
@@ -633,37 +643,58 @@ const ID_OUTSTREAM = {
 };
 
 const ID_RAZR = {
-  RENDERER_URL: 'https://razr.improvedigital.com/renderer.js',
-  addBidData({bid, bidRequest}) {
-    if (this.isValidBid(bid)) {
-      bid.renderer = Renderer.install({
-        url: this.RENDERER_URL,
-        config: {bidRequest}
-      });
-      bid.renderer.setRender(this.render);
+  RENDERER_URL: 'https://cdn.360yield.com/razr/tag.js',
+
+  forwardBid({bidRequest, bid}) {
+    if (bid.mediaType !== BANNER) {
+      return;
     }
-  },
 
-  isValidBid(bid) {
-    return bid && /razr:\/\//.test(bid.ad);
-  },
-
-  render(bid) {
-    const {bidRequest} = bid.renderer.getConfig();
-
-    const payload = {
-      type: 'prebid',
-      bidRequest,
-      bid,
-      config: mergeDeep(
-        {},
-        config.getConfig('improvedigital.rendererConfig'),
-        deepAccess(bidRequest, 'params.rendererConfig')
-      )
+    const cfg = {
+      prebid: {
+        bidRequest,
+        bid
+      }
     };
 
-    const razr = window.razr = window.razr || {};
-    razr.queue = razr.queue || [];
-    razr.queue.push(payload);
+    const cfgStr = JSON.stringify(cfg).replace(/<\/script>/g, '\\x3C/script>');
+    const s = `<script>window.__razr_config = ${cfgStr};</script>`;
+    bid.ad = bid.ad.replace(/<body[^>]*>/, match => match + s);
+
+    this.installListener();
+  },
+
+  installListener() {
+    if (this._listenerInstalled) {
+      return;
+    }
+
+    window.addEventListener('message', function(e) {
+      const data = e.data?.razr?.load;
+      if (!data) {
+        return;
+      }
+
+      if (e.source) {
+        data.source = e.source;
+        if (data.id) {
+          e.source.postMessage({
+            razr: {
+              id: data.id
+            }
+          }, '*');
+        }
+      }
+
+      const ns = window.razr = window.razr || {};
+      ns.q = ns.q || [];
+      ns.q.push(data);
+
+      if (!ns.loaded) {
+        loadExternalScript(ID_RAZR.RENDERER_URL, BIDDER_CODE);
+      }
+    });
+
+    this._listenerInstalled = true;
   }
 };
