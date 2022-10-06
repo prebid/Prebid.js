@@ -59,7 +59,7 @@ function getBidFloor(bid) {
 
 function getSource(validBidRequests) {
   let source = {
-    tid: validBidRequests[0].transactionId
+    tid: validBidRequests[0].auctionId
   };
   if (validBidRequests[0].schain) {
     utils.deepSetValue(source, 'ext.schain', validBidRequests[0].schain);

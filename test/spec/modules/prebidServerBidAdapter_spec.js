@@ -607,15 +607,14 @@ describe('S2S Adapter', function () {
       resetSyncedStatus();
     });
 
-    it('should set id to auction ID and source.tid to tid', function () {
+    it('should set id and source.tid to auction ID', function () {
       config.setConfig({ s2sConfig: CONFIG });
 
       adapter.callBids(OUTSTREAM_VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
 
       const requestBid = JSON.parse(server.requests[0].requestBody);
-      expect(requestBid.id).to.equal('173afb6d132ba3');
-      expect(requestBid.source).to.be.an('object');
-      expect(requestBid.source.tid).to.equal('437fbbf5-33f5-487a-8e16-a7112903cfe5');
+      expect(requestBid.id).to.equal(BID_REQUESTS[0].auctionId);
+      expect(requestBid.source.tid).to.equal(BID_REQUESTS[0].auctionId);
     });
 
     it('should block request if config did not define p1Consent URL in endpoint object config', function () {
@@ -3480,6 +3479,162 @@ describe('S2S Adapter', function () {
 
       const parsedRequestBody = JSON.parse(server.requests[1].requestBody);
       expect(parsedRequestBody.cur).to.deep.equal(['JPY']);
+    });
+
+    it('should correctly set the floorMin key when multiple bids with various bidfloors exist', function () {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        extPrebid: {
+          floors: {
+            enabled: true
+          }
+        },
+        bidders: ['b1', 'b2']
+      });
+
+      const bidderRequests = [
+        {
+          ...BID_REQUESTS[0],
+          bidderCode: 'b1',
+          bids: [{
+            bidder: 'b1',
+            bidId: 1,
+            getFloor: () => ({
+              currency: 'US',
+              floor: 1.23
+            })
+          }]
+        },
+        {
+          ...BID_REQUESTS[0],
+          bidderCode: 'b2',
+          bids: [{
+            bidder: 'b2',
+            bidId: 2,
+            getFloor: () => ({
+              currency: 'EUR',
+              floor: 3.21
+            })
+          }],
+        }
+      ];
+
+      const adUnits = [
+        {
+          code: 'au1',
+          transactionId: 't1',
+          mediaTypes: {
+            banner: {sizes: [1, 1]}
+          },
+          bids: [{bidder: 'b1', bid_id: 1}]
+        },
+        {
+          code: 'au2',
+          transactionId: 't2',
+          bids: [{bidder: 'b2', bid_id: 2}],
+          mediaTypes: {
+            banner: {sizes: [1, 1]}
+          }
+        }
+      ];
+
+      const _config = {
+        s2sConfig: s2sConfig,
+      };
+
+      const s2sBidRequest = utils.deepClone(REQUEST);
+      s2sBidRequest.s2sConfig = s2sConfig;
+      s2sBidRequest.ad_units = adUnits;
+      config.setConfig(_config);
+
+      adapter.callBids(s2sBidRequest, bidderRequests, addBidResponse, done, ajax);
+      const requestBid = JSON.parse(server.requests[0].requestBody);
+      expect(requestBid.imp[0].bidfloor).to.equal(1.23);
+      expect(requestBid.imp[1].bidfloor).to.equal(3.21);
+
+      // first imp floorCur should be set
+      expect(requestBid.ext.prebid.floors).to.deep.equal({ enabled: true, floorMin: 1.23, floorMinCur: 'US' });
+    });
+
+    it('should correctly set the floorMin key when multiple bids with various bidfloors exist and ortb2Imp contains the lowest floorMin', function () {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        extPrebid: {
+          floors: {
+            enabled: true
+          }
+        },
+        bidders: ['b1', 'b2']
+      });
+
+      const bidderRequests = [
+        {
+          ...BID_REQUESTS[0],
+          bidderCode: 'b1',
+          bids: [{
+            bidder: 'b1',
+            bidId: 1,
+            getFloor: () => ({
+              currency: 'CUR',
+              floor: 1.23
+            })
+          }]
+        },
+        {
+          ...BID_REQUESTS[0],
+          bidderCode: 'b2',
+          bids: [{
+            bidder: 'b2',
+            bidId: 2,
+            getFloor: () => ({
+              currency: 'CUR',
+              floor: 3.21
+            })
+          }],
+        }
+      ];
+
+      const adUnits = [
+        {
+          code: 'au1',
+          transactionId: 't1',
+          mediaTypes: {
+            banner: {sizes: [1, 1]}
+          },
+          bids: [{bidder: 'b1', bid_id: 1}]
+        },
+        {
+          code: 'au2',
+          transactionId: 't2',
+          bids: [{bidder: 'b2', bid_id: 2}],
+          mediaTypes: {
+            banner: {sizes: [1, 1]}
+          },
+          ortb2Imp: {
+            ext: {
+              prebid: {
+                floors: {
+                  floorMin: 1
+                }
+              }
+            }
+          }
+        }
+      ];
+
+      const _config = {
+        s2sConfig: s2sConfig,
+      };
+
+      const s2sBidRequest = utils.deepClone(REQUEST);
+      s2sBidRequest.s2sConfig = s2sConfig;
+      s2sBidRequest.ad_units = adUnits;
+      config.setConfig(_config);
+
+      adapter.callBids(s2sBidRequest, bidderRequests, addBidResponse, done, ajax);
+      const requestBid = JSON.parse(server.requests[0].requestBody);
+      expect(requestBid.imp[0].bidfloor).to.equal(1.23);
+      expect(requestBid.imp[1].bidfloor).to.equal(3.21);
+
+      expect(requestBid.ext.prebid.floors).to.deep.equal({ enabled: true, floorMin: 1, floorMinCur: 'CUR' });
     });
   });
 });
