@@ -415,7 +415,6 @@ pbjs.que.push(function () {
 });
 ```
 
-
 Imagine we need to configure the following options using the previous example, we can write the configuration like the one below.
 
 ||contextual|wam|lite|
