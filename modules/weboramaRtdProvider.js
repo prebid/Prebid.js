@@ -93,6 +93,7 @@ import {
   getGlobal
 } from '../src/prebidGlobal.js';
 import {
+  deepClone,
   deepSetValue,
   isEmpty,
   isFn,
@@ -102,8 +103,9 @@ import {
   isStr,
   isBoolean,
   isPlainObject,
-  deepClone,
-  tryAppendQueryString, mergeDeep, logWarn
+  logWarn,
+  mergeDeep,
+  tryAppendQueryString
 } from '../src/utils.js';
 import {
   submodule
@@ -329,6 +331,7 @@ class WeboramaRtdProvider {
    * @return {void}
    * @throws will throw an error in case of invalid configuration
    */
+  // eslint-disable-next-line no-dupe-class-members
   #normalizeConf(moduleParams, submoduleParams) {
     submoduleParams.defaultProfile = submoduleParams.defaultProfile || {};
 
@@ -360,6 +363,7 @@ class WeboramaRtdProvider {
    * @return {void}
    * @throws will throw an error in case of invalid configuration
    */
+  // eslint-disable-next-line no-dupe-class-members
   #coerceSetPrebidTargeting(submoduleParams) {
     try {
       submoduleParams.setPrebidTargeting = this.#wrapValidatorCallback(submoduleParams.setPrebidTargeting);
@@ -375,6 +379,7 @@ class WeboramaRtdProvider {
    * @return {void}
    * @throws will throw an error in case of invalid configuration
    */
+  // eslint-disable-next-line no-dupe-class-members
   #coerceSendToBidders(submoduleParams) {
     let sendToBidders = submoduleParams.sendToBidders;
 
@@ -424,6 +429,7 @@ class WeboramaRtdProvider {
    * @param {ModuleParams} moduleParams
    * @returns {void}
    */
+  // eslint-disable-next-line no-dupe-class-members
   #handleBidRequestData(reqBidsConfigObj, moduleParams) {
     const profileHandlers = this.#buildProfileHandlers(moduleParams);
 
@@ -482,6 +488,7 @@ class WeboramaRtdProvider {
    * @param {doneCallback} onDone callback
    * @returns {void}
    */
+  // eslint-disable-next-line no-dupe-class-members
   #fetchContextualProfile(weboCtxConf, onSuccess, onDone) {
     const targetURL = weboCtxConf.targetURL || document.URL;
     const token = weboCtxConf.token;
@@ -529,6 +536,7 @@ class WeboramaRtdProvider {
    * @param {?Object} data
    * @returns {void}
    */
+  // eslint-disable-next-line no-dupe-class-members
   #setWeboContextualProfile(data) {
     if (data && isPlainObject(data) && isValidProfile(data) && !isEmpty(data)) {
       this.#components.WeboCtx.data = data;
@@ -541,6 +549,7 @@ class WeboramaRtdProvider {
    * @param {ModuleParams} moduleParams
    * @returns {ProfileHandler[]}
    */
+  // eslint-disable-next-line no-dupe-class-members
   #buildProfileHandlers(moduleParams) {
     const steps = [{
       component: this.#components.WeboCtx,
@@ -599,6 +608,7 @@ class WeboramaRtdProvider {
    * @param {string} source
    * @returns {ProfileHandler}
    */
+  // eslint-disable-next-line no-dupe-class-members
   #buildProfileHandler(dataConf, callback, user, source) {
     if (!dataConf) {
       return;
@@ -633,6 +643,7 @@ class WeboramaRtdProvider {
    * @param {dataCallbackMetadata} metadata
    * @returns {void}
    */
+  // eslint-disable-next-line no-dupe-class-members
   #handleBid(reqBidsConfigObj, bid, profile, metadata) {
     this.#handleBidViaORTB2(reqBidsConfigObj, bid.bidder, profile, metadata);
 
@@ -664,6 +675,7 @@ class WeboramaRtdProvider {
    * @param {ProfileHandler} ph profile handler
    * @returns {[Profile,dataCallbackMetadata]} deeply copy data + metadata
    */
+  // eslint-disable-next-line no-dupe-class-members
   #copyDataAndMetadata(ph) {
     return [deepClone(ph.data), deepClone(ph.metadata)];
   }
@@ -677,6 +689,7 @@ class WeboramaRtdProvider {
    * @param {Profile} profile
    * @returns {void}
    */
+  // eslint-disable-next-line no-dupe-class-members
   #handleAppnexusBid(bid, profile) {
     const base = 'params.keywords';
     this.#assignProfileToObject(bid, base, profile);
@@ -691,6 +704,7 @@ class WeboramaRtdProvider {
    * @param {Profile} profile
    * @returns {void}
    */
+  // eslint-disable-next-line no-dupe-class-members
   #handlePubmaticBid(bid, profile) {
     const sep = '|';
     const subsep = ',';
@@ -718,6 +732,7 @@ class WeboramaRtdProvider {
    * @param {Profile} profile
    * @returns {void}
    */
+  // eslint-disable-next-line no-dupe-class-members
   #handleSmartadserverBid(bid, profile) {
     const sep = ';';
 
@@ -745,6 +760,7 @@ class WeboramaRtdProvider {
    * @param {dataCallbackMetadata} metadata
    * @returns {void}
    */
+  // eslint-disable-next-line no-dupe-class-members
   #handleRubiconBid(bid, profile, metadata) {
     if (isBoolean(metadata.user)) {
       const section = metadata.user ? 'visitor' : 'inventory';
@@ -766,6 +782,7 @@ class WeboramaRtdProvider {
    * @param {dataCallbackMetadata} metadata
    * @returns {void}
    */
+  // eslint-disable-next-line no-dupe-class-members
   #handleBidViaORTB2(reqBidsConfigObj, bidder, profile, metadata) {
     if (isBoolean(metadata.user)) {
       logMessage(`bidder '${bidder}' is not directly supported, trying set data via bidder ortb2 fpd`);
@@ -787,6 +804,7 @@ class WeboramaRtdProvider {
    * @param {Profile} profile
    * @returns {void}
    */
+  // eslint-disable-next-line no-dupe-class-members
   #assignProfileToObject(destination, base, profile) {
     Object.entries(profile).forEach(([key, values]) => {
       const path = `${base}.${key}`;
@@ -815,6 +833,7 @@ class WeboramaRtdProvider {
    * @returns {validatorCallback}
    * @throws will throw an error in case of unsupported type
    */
+  // eslint-disable-next-line no-dupe-class-members
   #wrapValidatorCallback(value, coerce = (x) => x) {
     if (isFn(value)) {
       return value;
