@@ -44,8 +44,8 @@
 
 /**
  * @typedef {Object} ModuleParams
- * @property {?setPrebidTargetingCallback|?Boolean|?Object} setPrebidTargeting if true, will set the GAM targeting (default undefined)
- * @property {?sendToBiddersCallback|?Boolean|?Object} sendToBidders if true, will send the contextual profile to all bidders, else expects a list of allowed bidders (default undefined)
+ * @property {?setPrebidTargetingCallback|?boolean|?Object} setPrebidTargeting if true, will set the GAM targeting (default undefined)
+ * @property {?sendToBiddersCallback|?boolean|?Object} sendToBidders if true, will send the contextual profile to all bidders, else expects a list of allowed bidders (default undefined)
  * @property {?dataCallback} onData callback
  * @property {?WeboCtxConf} weboCtxConf site-centric contextual configuration
  * @property {?WeboUserDataConf} weboUserDataConf user-centric wam configuration
@@ -53,11 +53,16 @@
  */
 
 /**
+ * @callback assetIDcallback
+ * @returns {string} should return asset id using the form datasource:providerAcronym:docId
+ */
+/**
  * @typedef {Object} WeboCtxConf
  * @property {string} token required token to be used on bigsea contextual API requests
  * @property {?string} targetURL specify the target url instead use the referer
- * @property {?setPrebidTargetingCallback|?Boolean|?Object} setPrebidTargeting if true, will set the GAM targeting (default undefined)
- * @property {?sendToBiddersCallback|?Boolean|?Object} sendToBidders if true, will send the contextual profile to all bidders, else expects a list of allowed bidders (default undefined)
+ * @property {?assetIDcallback|?string} assetID specify the assert id using the form datasource:providerAcronym:docId or via callback
+ * @property {?setPrebidTargetingCallback|?boolean|?Object} setPrebidTargeting if true, will set the GAM targeting (default undefined)
+ * @property {?sendToBiddersCallback|?boolean|?Object} sendToBidders if true, will send the contextual profile to all bidders, else expects a list of allowed bidders (default undefined)
  * @property {?dataCallback} onData callback
  * @property {?Profile} defaultProfile to be used if the profile is not found
  * @property {?boolean} enabled if false, will ignore this configuration
@@ -67,8 +72,8 @@
 /**
  * @typedef {Object} WeboUserDataConf
  * @property {?number} accountId wam account id
- * @property {?setPrebidTargetingCallback|?Boolean|?Object} setPrebidTargeting if true, will set the GAM targeting (default undefined)
- * @property {?sendToBiddersCallback|?Boolean|?Object} sendToBidders if true, will send the contextual profile to all bidders, else expects a list of allowed bidders (default undefined)
+ * @property {?setPrebidTargetingCallback|?boolean|?Object} setPrebidTargeting if true, will set the GAM targeting (default undefined)
+ * @property {?sendToBiddersCallback|?boolean|?Object} sendToBidders if true, will send the contextual profile to all bidders, else expects a list of allowed bidders (default undefined)
  * @property {?Profile} defaultProfile to be used if the profile is not found
  * @property {?dataCallback} onData callback
  * @property {?string} localStorageProfileKey can be used to customize the local storage key (default is 'webo_wam2gam_entry')
@@ -77,8 +82,8 @@
 
 /**
  * @typedef {Object} SfbxLiteDataConf
- * @property {?setPrebidTargetingCallback|?Boolean|?Object} setPrebidTargeting if true, will set the GAM targeting (default undefined)
- * @property {?sendToBiddersCallback|?Boolean|?Object} sendToBidders if true, will send the contextual profile to all bidders, else expects a list of allowed bidders (default undefined)
+ * @property {?setPrebidTargetingCallback|?boolean|?Object} setPrebidTargeting if true, will set the GAM targeting (default undefined)
+ * @property {?sendToBiddersCallback|?boolean|?Object} sendToBidders if true, will send the contextual profile to all bidders, else expects a list of allowed bidders (default undefined)
  * @property {?Profile} defaultProfile to be used if the profile is not found
  * @property {?dataCallback} onData callback
  * @property {?string} localStorageProfileKey can be used to customize the local storage key (default is '_lite')
@@ -490,15 +495,23 @@ class WeboramaRtdProvider {
    */
   // eslint-disable-next-line no-dupe-class-members
   #fetchContextualProfile(weboCtxConf, onSuccess, onDone) {
-    const targetURL = weboCtxConf.targetURL || document.URL;
     const token = weboCtxConf.token;
     const baseURLProfileAPI = weboCtxConf.baseURLProfileAPI || BASE_URL_CONTEXTUAL_PROFILE_API;
 
+    let path = '/profile';
     let queryString = '';
     queryString = tryAppendQueryString(queryString, 'token', token);
-    queryString = tryAppendQueryString(queryString, 'url', targetURL);
 
-    const urlProfileAPI = `https://${baseURLProfileAPI}/api/profile?${queryString}`;
+    if (weboCtxConf.assetID) {
+      path = '/document-profile';
+      const assetID = isFn(weboCtxConf.assetID) ? weboCtxConf.assetID() : weboCtxConf.assetID;
+      queryString = tryAppendQueryString(queryString, 'assetId', assetID);
+    } else {
+      const targetURL = weboCtxConf.targetURL || document.URL;
+      queryString = tryAppendQueryString(queryString, 'url', targetURL);
+    }
+
+    const urlProfileAPI = `https://${baseURLProfileAPI}/api${path}?${queryString}`;
 
     const success = (response, req) => {
       if (req.status === 200) {
