@@ -29,7 +29,7 @@ export const DEFAULT_PROCESSORS = {
       fn: setSite
     },
     props: {
-      // sets request properties id, tmax, test
+      // sets request properties id, tmax, test, source.tid
       fn(ortbRequest, bidderRequest) {
         Object.assign(ortbRequest, {
           id: ortbRequest.id || bidderRequest.auctionId,
@@ -39,6 +39,7 @@ export const DEFAULT_PROCESSORS = {
         if (!isNaN(timeout)) {
           ortbRequest.tmax = timeout;
         }
+        deepSetValue(ortbRequest, 'source.tid', ortbRequest.source?.tid || bidderRequest.auctionId);
       }
     },
     coppa: {
