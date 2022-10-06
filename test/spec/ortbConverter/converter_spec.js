@@ -63,6 +63,9 @@ describe('pbjs-ortb converter', () => {
             if (context.ctx) {
               imp.ctx = context.ctx;
             }
+            if (context.reqContext?.ctx) {
+              imp.reqCtx = context.reqContext?.ctx;
+            }
           }
         }
       },
@@ -73,6 +76,9 @@ describe('pbjs-ortb converter', () => {
             bidResponse.bidId = context.imp.bidId;
             if (context.ctx) {
               bidResponse.ctx = context.ctx;
+            }
+            if (context.reqContext?.ctx) {
+              bidResponse.reqCtx = context.reqContext?.ctx;
             }
           }
         }
@@ -156,6 +162,14 @@ describe('pbjs-ortb converter', () => {
     const response = cvt.fromORTB({request, response: MOCK_ORTB_RESPONSE});
     expect(response.ctx).to.eql('context');
     response.bids.forEach(bidResponse => expect(bidResponse.ctx).to.equal('context'));
+  });
+
+  it('passes request context to imp and bidResponse processors', () => {
+    const cvt = makeConverter();
+    const request = cvt.toORTB({bidderRequest: MOCK_BIDDER_REQUEST, context: {ctx: 'context'}});
+    expect(request.imp[0].reqCtx).to.eql('context');
+    const response = cvt.fromORTB({request, response: MOCK_ORTB_RESPONSE});
+    expect(response.bids[0].reqCtx).to.eql('context');
   });
 
   it('allows overriding of imp building with `imp`', () => {

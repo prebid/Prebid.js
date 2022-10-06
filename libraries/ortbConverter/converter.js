@@ -91,7 +91,7 @@ export function ortbConverter({
         imp: {}
       }
       const imps = bidRequests.map(bidRequest => {
-        const impContext = Object.assign({bidderRequest}, defaultContext, context);
+        const impContext = Object.assign({bidderRequest, reqContext: ctx.req}, defaultContext, context);
         const result = buildImp(bidRequest, impContext);
         if (result != null) {
           if (result.hasOwnProperty('id')) {

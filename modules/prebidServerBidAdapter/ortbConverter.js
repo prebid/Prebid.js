@@ -7,18 +7,17 @@ import {
   isArray,
   logError,
   logWarn,
-  memoize,
   mergeDeep,
   timestamp
 } from '../../src/utils.js';
 import {config} from '../../src/config.js';
 import CONSTANTS from '../../src/constants.json';
 import {createBid} from '../../src/bidfactory.js';
-import {getGlobal} from '../../src/prebidGlobal.js';
 import {pbsExtensions} from '../../libraries/pbsExtensions/pbsExtensions.js';
 import {setImpBidParams} from '../../libraries/pbsExtensions/processors/params.js';
 import {SUPPORTED_MEDIA_TYPES} from '../../libraries/pbsExtensions/processors/mediaType.js';
 import {IMP, REQUEST, RESPONSE} from '../../src/pbjsORTB.js';
+import {beConvertCurrency} from '../../src/utils/currency.js';
 
 const DEFAULT_S2S_TTL = 60;
 const DEFAULT_S2S_CURRENCY = 'USD';
@@ -131,7 +130,6 @@ const PBS_CONVERTER = ortbConverter({
       bidfloor(orig, imp, proxyBidRequest, context) {
         // for bid floors, we pass each bidRequest associated with this imp through normal bidfloor processing,
         // and aggregate all of them into a single, minimum floor to put in the request
-        const convertCurrency = currencyConverter();
         let min;
         for (const req of context.actualBidRequests.values()) {
           const floor = {};
@@ -143,7 +141,7 @@ const PBS_CONVERTER = ortbConverter({
           } else if (min == null) {
             min = floor;
           } else {
-            const value = convertCurrency(floor.bidfloor, floor.bidfloorcur, min.bidfloorcur);
+            const value = beConvertCurrency(floor.bidfloor, floor.bidfloorcur, min.bidfloorcur);
             if (value != null && value < min.bidfloor) {
               min = floor;
             }
@@ -269,7 +267,7 @@ export function buildPBSRequest(s2sBidRequest, bidderRequests, adUnits, requeste
       requestedBidders,
       actualBidderRequests: bidderRequests,
       eidPermissions,
-      nativeRequest: s2sBidRequest.s2sConfig.ortbNative
+      nativeRequest: s2sBidRequest.s2sConfig.ortbNative,
     }
   });
 }
@@ -277,17 +275,3 @@ export function buildPBSRequest(s2sBidRequest, bidderRequests, adUnits, requeste
 export function interpretPBSResponse(response, request) {
   return PBS_CONVERTER.fromORTB({response, request});
 }
-
-export const currencyConverter = memoize(() =>
-  typeof getGlobal().convertCurrency !== 'function'
-    ? (amount) => amount
-    : (amount, from, to) => {
-      if (from === to) return amount;
-      let result = null;
-      try {
-        result = getGlobal().convertCurrency(amount, from, to);
-      } catch (e) {
-      }
-      return result;
-    }
-);
