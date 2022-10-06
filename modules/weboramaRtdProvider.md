@@ -384,7 +384,7 @@ pbjs.que.push(function () {
 });
 ```
 
-An alternative version, using asset id instead url on contextual, can be found here:
+An alternative version, using asset id instead of target url on contextual, can be found here:
 
 ```javascript
 var pbjs = pbjs || {};
