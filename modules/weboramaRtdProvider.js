@@ -503,13 +503,17 @@ class WeboramaRtdProvider {
     queryString = tryAppendQueryString(queryString, 'token', token);
 
     if (weboCtxConf.assetID) {
-      path = '/document-profile';
-      const assetID = isFn(weboCtxConf.assetID) ? weboCtxConf.assetID() : weboCtxConf.assetID;
-      queryString = tryAppendQueryString(queryString, 'assetId', assetID);
-    } else {
-      const targetURL = weboCtxConf.targetURL || document.URL;
-      queryString = tryAppendQueryString(queryString, 'url', targetURL);
+      try {
+        const assetID = isFn(weboCtxConf.assetID) ? weboCtxConf.assetID() : weboCtxConf.assetID;
+        queryString = tryAppendQueryString(queryString, 'assetId', assetID);
+        path = '/document-profile';
+      } catch (e) {
+        logMessage('unexpected error while processing asset id', e);
+      }
     }
+
+    const targetURL = weboCtxConf.targetURL || document.URL;
+    queryString = tryAppendQueryString(queryString, 'url', targetURL);
 
     const urlProfileAPI = `https://${baseURLProfileAPI}/api${path}?${queryString}`;
 

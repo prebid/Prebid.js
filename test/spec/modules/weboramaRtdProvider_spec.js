@@ -160,6 +160,7 @@ describe('weboramaRtdProvider', function() {
             weboCtxConf: {
               token: 'foo',
               assetID: 'webo_vctx:adv:7575ea47-d025-42be-b494-1801e87a3c9b',
+              targetURL: 'https://prebid.org',
               onData: (data, meta) => {
                 onDataResponse = {
                   data: data,
@@ -203,7 +204,7 @@ describe('weboramaRtdProvider', function() {
         let request = server.requests[0];
 
         expect(request.method).to.equal('GET');
-        expect(request.url).to.equal('https://ctx.weborama.com/api/document-profile?token=foo&assetId=webo_vctx%3Aadv%3A7575ea47-d025-42be-b494-1801e87a3c9b&');
+        expect(request.url).to.equal('https://ctx.weborama.com/api/document-profile?token=foo&assetId=webo_vctx%3Aadv%3A7575ea47-d025-42be-b494-1801e87a3c9b&url=https%3A%2F%2Fprebid.org&');
         expect(request.withCredentials).to.be.false;
 
         request.respond(200, responseHeader, JSON.stringify(data));
@@ -247,6 +248,7 @@ describe('weboramaRtdProvider', function() {
             weboCtxConf: {
               token: 'foo',
               assetID: () => 'webo_vctx:adv:7575ea47-d025-42be-b494-1801e87a3c9b',
+              targetURL: 'https://prebid.org',
               onData: (data, meta) => {
                 onDataResponse = {
                   data: data,
@@ -290,7 +292,7 @@ describe('weboramaRtdProvider', function() {
         let request = server.requests[0];
 
         expect(request.method).to.equal('GET');
-        expect(request.url).to.equal('https://ctx.weborama.com/api/document-profile?token=foo&assetId=webo_vctx%3Aadv%3A7575ea47-d025-42be-b494-1801e87a3c9b&');
+        expect(request.url).to.equal('https://ctx.weborama.com/api/document-profile?token=foo&assetId=webo_vctx%3Aadv%3A7575ea47-d025-42be-b494-1801e87a3c9b&url=https%3A%2F%2Fprebid.org&');
         expect(request.withCredentials).to.be.false;
 
         request.respond(200, responseHeader, JSON.stringify(data));
