@@ -89,10 +89,6 @@ export const spec = {
       mergeDeep(request, { user: ortb2Params.user });
     }
     
-    if (bidderRequest.fledgeEnabled) {
-      request.imp.ext.ae = bid?.ortb2Imp?.ext?.ae
-    }
-
     return {
       method: 'POST',
       url: 'https://' + validBidRequests[0].params.region + '.' + ENDPOINT_URL,
@@ -173,9 +169,9 @@ function mapImpression(slot, bidderRequest) {
   }
 
   if (bidderRequest.fledgeEnabled) {
+    imp.ext = imp.ext || {};
     imp.ext.ae = slot?.ortb2Imp?.ext?.ae
   }
-
   return imp;
 }
 
