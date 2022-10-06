@@ -1078,7 +1078,7 @@ export const spec = {
       bid = deepClone(originalBid);
       bid.params.adSlot = bid.params.adSlot || '';
       _parseAdSlot(bid);
-      if (bid.params.hasOwnProperty('video')) {
+      if ((bid.mediaTypes && bid.mediaTypes.hasOwnProperty('video')) || bid.params.hasOwnProperty('video')) {
         // Nothing to do
       } else {
         // If we have a native mediaType configured alongside banner, its ok if the banner size is not set in width and height
