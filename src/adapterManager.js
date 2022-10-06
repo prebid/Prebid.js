@@ -17,22 +17,24 @@ import {
   logError,
   logInfo,
   logMessage,
-  logWarn, mergeDeep,
+  logWarn,
+  mergeDeep,
   shuffle,
   timestamp,
 } from './utils.js';
 import {processAdUnitsForLabels} from './sizeMapping.js';
-import { decorateAdUnitsWithNativeParams, nativeAdapters } from './native.js';
-import { newBidder } from './adapters/bidderFactory.js';
-import { ajaxBuilder } from './ajax.js';
-import { config, RANDOM } from './config.js';
-import { hook } from './hook.js';
-import {includes, find} from './polyfill.js';
-import { adunitCounter } from './adUnits.js';
-import { getRefererInfo } from './refererDetection.js';
+import {decorateAdUnitsWithNativeParams, nativeAdapters} from './native.js';
+import {newBidder} from './adapters/bidderFactory.js';
+import {ajaxBuilder} from './ajax.js';
+import {config, RANDOM} from './config.js';
+import {hook} from './hook.js';
+import {find, includes} from './polyfill.js';
+import {adunitCounter} from './adUnits.js';
+import {getRefererInfo} from './refererDetection.js';
 import {GdprConsentHandler, UspConsentHandler} from './consentHandler.js';
 import * as events from './events.js';
 import CONSTANTS from './constants.json';
+import {useMetrics} from './utils/perfMetrics.js';
 
 export const PARTITIONS = {
   CLIENT: 'client',
@@ -60,7 +62,7 @@ var _analyticsRegistry = {};
  * @property {Array<string>} activeLabels the labels specified as being active by requestBids
  */
 
-function getBids({bidderCode, auctionId, bidderRequestId, adUnits, src}) {
+function getBids({bidderCode, auctionId, bidderRequestId, adUnits, src, metrics}) {
   return adUnits.reduce((result, adUnit) => {
     result.push(adUnit.bids.filter(bid => bid.bidder === bidderCode)
       .reduce((bids, bid) => {
@@ -92,6 +94,7 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, src}) {
           bidderRequestId,
           auctionId,
           src,
+          metrics,
           bidRequestsCount: adunitCounter.getRequestsCounter(adUnit.code),
           bidderRequestsCount: adunitCounter.getBidderRequestsCounter(adUnit.code, bid.bidder),
           bidderWinsCount: adunitCounter.getBidderWinsCounter(adUnit.code, bid.bidder),
@@ -206,7 +209,8 @@ export function _partitionBidders (adUnits, s2sConfigs, {getS2SBidders = getS2SB
 
 export const partitionBidders = hook('sync', _partitionBidders, 'partitionBidders');
 
-adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, auctionId, cbTimeout, labels, ortb2Fragments = {}) {
+adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, auctionId, cbTimeout, labels, ortb2Fragments = {}, auctionMetrics) {
+  auctionMetrics = useMetrics(auctionMetrics);
   /**
    * emit and pass adunits for external modification
    * @see {@link https://github.com/prebid/Prebid.js/issues/4149|Issue}
@@ -244,16 +248,18 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
       let uniquePbsTid = generateUUID();
       serverBidders.forEach(bidderCode => {
         const bidderRequestId = getUniqueIdentifierStr();
+        const metrics = auctionMetrics.fork();
         const bidderRequest = addOrtb2({
           bidderCode,
           auctionId,
           bidderRequestId,
           uniquePbsTid,
-          bids: hookedGetBids({bidderCode, auctionId, bidderRequestId, 'adUnits': deepClone(adUnitsS2SCopy), src: CONSTANTS.S2S.SRC}),
+          bids: hookedGetBids({bidderCode, auctionId, bidderRequestId, 'adUnits': deepClone(adUnitsS2SCopy), src: CONSTANTS.S2S.SRC, metrics}),
           auctionStart: auctionStart,
           timeout: s2sConfig.timeout,
           src: CONSTANTS.S2S.SRC,
           refererInfo,
+          metrics,
         });
         if (bidderRequest.bids.length !== 0) {
           bidRequests.push(bidderRequest);
@@ -281,14 +287,16 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
   let adUnitsClientCopy = getAdUnitCopyForClientAdapters(adUnits);
   clientBidders.forEach(bidderCode => {
     const bidderRequestId = getUniqueIdentifierStr();
+    const metrics = auctionMetrics.fork();
     const bidderRequest = addOrtb2({
       bidderCode,
       auctionId,
       bidderRequestId,
-      bids: hookedGetBids({bidderCode, auctionId, bidderRequestId, 'adUnits': deepClone(adUnitsClientCopy), labels, src: 'client'}),
+      bids: hookedGetBids({bidderCode, auctionId, bidderRequestId, 'adUnits': deepClone(adUnitsClientCopy), labels, src: 'client', metrics}),
       auctionStart: auctionStart,
       timeout: cbTimeout,
       refererInfo,
+      metrics,
     });
     const adapter = _bidderRegistry[bidderCode];
     if (!adapter) {
@@ -311,6 +319,14 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
       bidRequest['uspConsent'] = uspDataHandler.getConsentData();
     });
   }
+
+  bidRequests.forEach(bidRequest => {
+    config.runWithBidder(bidRequest.bidderCode, () => {
+      const fledgeEnabledFromConfig = config.getConfig('fledgeEnabled');
+      bidRequest['fledgeEnabled'] = navigator.runAdAuction && fledgeEnabledFromConfig
+    });
+  });
+
   return bidRequests;
 }, 'makeBidRequests');
 
@@ -341,8 +357,6 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
 
   let counter = 0;
 
-  // $.source.tid MUST be a unique UUID and also THE SAME between all PBS Requests for a given Auction
-  const sourceTid = generateUUID();
   _s2sConfigs.forEach((s2sConfig) => {
     if (s2sConfig && uniqueServerBidRequests[counter] && getS2SBidderSet(s2sConfig).has(uniqueServerBidRequests[counter].bidderCode)) {
       // s2s should get the same client side timeout as other client side requests.
@@ -358,7 +372,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
       let uniqueServerRequests = serverBidRequests.filter(serverBidRequest => serverBidRequest.uniquePbsTid === uniquePbsTid);
 
       if (s2sAdapter) {
-        let s2sBidRequest = {tid: sourceTid, 'ad_units': adUnitsS2SCopy, s2sConfig, ortb2Fragments};
+        let s2sBidRequest = {'ad_units': adUnitsS2SCopy, s2sConfig, ortb2Fragments};
         if (s2sBidRequest.ad_units.length) {
           let doneCbs = uniqueServerRequests.map(bidRequest => {
             bidRequest.start = timestamp();
@@ -371,7 +385,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
           // fire BID_REQUESTED event for each s2s bidRequest
           uniqueServerRequests.forEach(bidRequest => {
             // add the new sourceTid
-            events.emit(CONSTANTS.EVENTS.BID_REQUESTED, {...bidRequest, tid: sourceTid});
+            events.emit(CONSTANTS.EVENTS.BID_REQUESTED, {...bidRequest, tid: bidRequest.auctionId});
           });
 
           // make bid requests

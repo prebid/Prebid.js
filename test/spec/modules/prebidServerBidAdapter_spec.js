@@ -607,15 +607,14 @@ describe('S2S Adapter', function () {
       resetSyncedStatus();
     });
 
-    it('should set id to auction ID and source.tid to tid', function () {
+    it('should set id and source.tid to auction ID', function () {
       config.setConfig({ s2sConfig: CONFIG });
 
       adapter.callBids(OUTSTREAM_VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
 
       const requestBid = JSON.parse(server.requests[0].requestBody);
-      expect(requestBid.id).to.equal('173afb6d132ba3');
-      expect(requestBid.source).to.be.an('object');
-      expect(requestBid.source.tid).to.equal('437fbbf5-33f5-487a-8e16-a7112903cfe5');
+      expect(requestBid.id).to.equal(BID_REQUESTS[0].auctionId);
+      expect(requestBid.source.tid).to.equal(BID_REQUESTS[0].auctionId);
     });
 
     it('should block request if config did not define p1Consent URL in endpoint object config', function () {
@@ -3468,6 +3467,18 @@ describe('S2S Adapter', function () {
       requestBid = JSON.parse(server.requests[1].requestBody);
 
       expect(requestBid.ext.prebid.floors).to.deep.equal({ enabled: false });
+    });
+
+    it('should override prebid server default DEFAULT_S2S_CURRENCY', function () {
+      config.setConfig({
+        currency: { adServerCurrency: 'JPY' },
+      });
+
+      const bidRequests = utils.deepClone(BID_REQUESTS);
+      adapter.callBids(REQUEST, bidRequests, addBidResponse, done, ajax);
+
+      const parsedRequestBody = JSON.parse(server.requests[1].requestBody);
+      expect(parsedRequestBody.cur).to.deep.equal(['JPY']);
     });
   });
 });
