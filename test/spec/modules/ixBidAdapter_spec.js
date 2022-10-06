@@ -1869,7 +1869,7 @@ describe('IndexexchangeAdapter', function () {
         expect(impression.banner.format[0].ext.fl).to.equal('x');
       });
 
-      it('banner multi size impression sould have bidFloor both in imp and format ext obejcts', function () {
+      it('banner multi size impression should have bidFloor both in imp and format ext obejcts', function () {
         const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
         bid.params.bidFloor = 50;
         bid.params.bidFloorCur = 'USD';
