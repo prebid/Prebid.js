@@ -847,7 +847,9 @@ describe('YahooSSP Bid Adapter:', () => {
       expect(data.device).to.deep.equal({
         dnt: 0,
         ua: navigator.userAgent,
-        ip: undefined
+        ip: undefined,
+        w: window.screen.width,
+        h: window.screen.height
       });
 
       expect(data.regs).to.deep.equal({

@@ -662,10 +662,10 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
 
     const bidders = allBidders.filter(bidder => !s2sBidders.has(bidder));
 
-    adUnit.transactionId = generateUUID();
-
+    const tid = adUnit.ortb2Imp?.ext?.tid || generateUUID();
+    adUnit.transactionId = tid;
     // Populate ortb2Imp.ext.tid with transactionId. Specifying a transaction ID per item in the ortb impression array, lets multiple transaction IDs be transmitted in a single bid request.
-    deepSetValue(adUnit, 'ortb2Imp.ext.tid', adUnit.transactionId)
+    deepSetValue(adUnit, 'ortb2Imp.ext.tid', tid);
 
     bidders.forEach(bidder => {
       const adapter = bidderRegistry[bidder];
