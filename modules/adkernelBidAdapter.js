@@ -97,7 +97,8 @@ export const spec = {
     {code: 'felixads'},
     {code: 'motionspots'},
     {code: 'sonic_twist'},
-    {code: 'displayioads'}
+    {code: 'displayioads'},
+    {code: 'rtbdemand_com'}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
