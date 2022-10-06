@@ -522,6 +522,8 @@ Object.assign(ORTB2.prototype, {
     let imps = [];
     let aliases = {};
     const firstBidRequest = bidRequests[0];
+    let floorMin = null;
+    let floorMinCur = null;
 
     // transform ad unit into array of OpenRTB impression objects
     let impIds = new Set();
@@ -671,21 +673,21 @@ Object.assign(ORTB2.prototype, {
 
       mergeDeep(imp, mediaTypes);
 
+      const convertCurrency = typeof getGlobal().convertCurrency !== 'function'
+        ? (amount) => amount
+        : (amount, from, to) => {
+          if (from === to) return amount;
+          let result = null;
+          try {
+            result = getGlobal().convertCurrency(amount, from, to);
+          } catch (e) {
+          }
+          return result;
+        }
+
       const floor = (() => {
         // we have to pick a floor for the imp - here we attempt to find the minimum floor
         // across all bids for this adUnit
-
-        const convertCurrency = typeof getGlobal().convertCurrency !== 'function'
-          ? (amount) => amount
-          : (amount, from, to) => {
-            if (from === to) return amount;
-            let result = null;
-            try {
-              result = getGlobal().convertCurrency(amount, from, to);
-            } catch (e) {
-            }
-            return result;
-          }
         const s2sCurrency = config.getConfig('currency.adServerCurrency') || DEFAULT_S2S_CURRENCY;
 
         return adUnit.bids
@@ -696,6 +698,7 @@ Object.assign(ORTB2.prototype, {
               const {currency, floor} = bid.getFloor({
                 currency: s2sCurrency
               });
+
               return {
                 currency,
                 floor: parseFloat(floor)
@@ -717,11 +720,13 @@ Object.assign(ORTB2.prototype, {
               min.ref = min.min = floor;
             } else {
               const value = convertCurrency(floor.floor, floor.currency, min.ref.currency);
+
               if (value != null && value < min.ref.floor) {
                 min.ref.floor = value;
                 min.min = floor;
               }
             }
+
             return min;
           }, {}).min
       })();
@@ -729,6 +734,26 @@ Object.assign(ORTB2.prototype, {
       if (floor) {
         imp.bidfloor = floor.floor;
         imp.bidfloorcur = floor.currency;
+
+        // logic below relates to https://github.com/prebid/Prebid.js/issues/8749 and does the following:
+        // 1. check client-side floors (ref bidfloor/bidfloorcur & ortb2Imp floorMin/floorMinCur (if present))
+        // 2. set pbs req wide floorMinCur to the first floor currency found when iterating over imp's
+        //    (if currency conversion logic present, convert all imp floor values to this currency)
+        // 3. compare/store ref to lowest floorMin value as each imp is iterated over
+        // 4. set req wide floorMin and floorMinCur values for pbs after iterations are done
+        if (floorMinCur == null) { floorMinCur = floor.currency }
+        const ortb2ImpFloorMin = imp.ext?.prebid?.floors?.floorMin || imp.ext?.prebid?.floorMin;
+        const ortb2ImpFloorCur = imp.ext?.prebid?.floors?.floorMinCur || imp.ext?.prebid?.floorMinCur || floorMinCur;
+
+        const convertedFloorMinValue = convertCurrency(floor.floor, floor.currency, floorMinCur);
+        const convertedOrtb2ImpFloorMinValue = ortb2ImpFloorMin && ortb2ImpFloorCur ? convertCurrency(ortb2ImpFloorMin, ortb2ImpFloorCur, floorMinCur) : false;
+
+        const lowestImpFloorMin = convertedOrtb2ImpFloorMinValue && convertedOrtb2ImpFloorMinValue < convertedFloorMinValue
+          ? convertedOrtb2ImpFloorMinValue
+          : convertedFloorMinValue;
+
+        deepSetValue(imp, 'ext.prebid.floors.floorMin', lowestImpFloorMin);
+        if (floorMin == null || floorMin > lowestImpFloorMin) { floorMin = lowestImpFloorMin }
       }
 
       if (imp.banner || imp.video || imp.native) {
@@ -903,6 +928,12 @@ Object.assign(ORTB2.prototype, {
     addBidderFirstPartyDataToRequest(request, s2sBidRequest.ortb2Fragments?.bidder || {});
 
     request.imp.forEach((imp) => this.impRequested[imp.id] = imp);
+
+    if (request.ext?.prebid?.floors?.enabled) {
+      request.ext.prebid.floors.floorMin = floorMin;
+      request.ext.prebid.floors.floorMinCur = floorMinCur;
+    }
+
     return request;
   },
 
