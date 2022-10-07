@@ -1,4 +1,4 @@
-import {deepAccess, mergeDeep, isArray, logError} from '../src/utils.js';
+import {deepAccess, mergeDeep, isArray, logError, logInfo} from '../src/utils.js';
 import { getOrigin } from '../libraries/getOrigin/index.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
@@ -88,7 +88,10 @@ export const spec = {
     if (ortb2Params.user) {
       mergeDeep(request, { user: ortb2Params.user });
     }
-    
+    if (ortb2Params.device) {
+      mergeDeep(request, { device: ortb2Params.device });
+    }
+
     return {
       method: 'POST',
       url: 'https://' + validBidRequests[0].params.region + '.' + ENDPOINT_URL,
