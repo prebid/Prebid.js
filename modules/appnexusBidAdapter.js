@@ -11,6 +11,7 @@ import {
   getMinValueFromArray,
   getParameterByName,
   getUniqueIdentifierStr,
+  getWindowFromDocument,
   isArray,
   isArrayOfNums,
   isEmpty,
@@ -23,8 +24,7 @@ import {
   logMessage,
   logWarn,
   mergeDeep,
-  transformBidderParamKeywords,
-  getWindowFromDocument
+  transformBidderParamKeywords
 } from '../src/utils.js';
 import {Renderer} from '../src/Renderer.js';
 import {config} from '../src/config.js';
@@ -47,6 +47,11 @@ const VIDEO_RTB_TARGETING = ['minduration', 'maxduration', 'skip', 'skipafter', 
 const USER_PARAMS = ['age', 'externalUid', 'segments', 'gender', 'dnt', 'language'];
 const APP_DEVICE_PARAMS = ['geo', 'device_id']; // appid is collected separately
 const DEBUG_PARAMS = ['enabled', 'dongle', 'member_id', 'debug_timeout'];
+const DEBUG_QUERY_PARAM_MAP = {
+  'apn_debug_dongle': 'dongle',
+  'apn_debug_member_id': 'member_id',
+  'apn_debug_timeout': 'debug_timeout'
+};
 const VIDEO_MAPPING = {
   playback_method: {
     'unknown': 0,
@@ -184,6 +189,14 @@ export const spec = {
         logError('AppNexus Debug Auction Cookie Error:\n\n' + e);
       }
     } else {
+      Object.keys(DEBUG_QUERY_PARAM_MAP).forEach(qparam => {
+        let qval = getParameterByName(qparam);
+        if (isStr(qval) && qval !== '') {
+          debugObj[DEBUG_QUERY_PARAM_MAP[qparam]] = qval;
+          debugObj.enabled = true;
+        }
+      });
+
       const debugBidRequest = find(bidRequests, hasDebug);
       if (debugBidRequest && debugBidRequest.debug) {
         debugObj = debugBidRequest.debug;
