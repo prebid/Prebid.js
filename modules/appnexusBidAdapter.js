@@ -196,6 +196,10 @@ export const spec = {
           debugObj.enabled = true;
         }
       });
+      debugObj = convertTypes({
+        'member_id': 'number',
+        'debug_timeout': 'number'
+      }, debugObj);
 
       const debugBidRequest = find(bidRequests, hasDebug);
       if (debugBidRequest && debugBidRequest.debug) {
