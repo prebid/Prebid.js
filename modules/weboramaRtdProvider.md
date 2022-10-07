@@ -401,7 +401,7 @@ pbjs.que.push(function () {
                 params: {
                     weboCtxConf: {
                         token: "<<to-be-defined>>", // mandatory
-                        assetID: "datasource:providerAcronym:docId", // can be a callback to be executed in runtime and returns the identifier
+                        assetID: "datasource:docId", // can be a callback to be executed in runtime and returns the identifier
                         setPrebidTargeting: true, // override param.setPrebidTargeting. default is true
                         sendToBidders: true,      // override param.sendToBidders. default is true
                         defaultProfile: {         // optional, used if nothing is found
