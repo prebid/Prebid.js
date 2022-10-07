@@ -190,6 +190,11 @@ describe('native.js', function () {
     expect(targeting.hb_native_foo).to.equal(bid.native.foo);
   });
 
+  it('can get targeting from null native keys', () => {
+    const targeting = getNativeTargeting({...bid, native: {...bid.native, displayUrl: null}});
+    expect(targeting.hb_native_displayurl).to.not.be.ok;
+  })
+
   it('sends placeholders for configured assets', function () {
     const adUnit = {
       transactionId: 'au',
@@ -876,6 +881,17 @@ describe('validate native', function () {
       }
     });
   });
+
+  ['bogusKey', 'clickUrl', 'privacyLink'].forEach(nativeKey => {
+    it(`should not generate an empty asset for key ${nativeKey}`, () => {
+      const ortbReq = toOrtbNativeRequest({
+        [nativeKey]: {
+          required: true
+        }
+      });
+      expect(ortbReq.assets.length).to.equal(0);
+    });
+  })
 
   it('should convert from ortb to old-style native request', () => {
     const openRTBRequest = {

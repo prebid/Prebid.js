@@ -2,7 +2,7 @@ import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import { expect } from 'chai';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import { spec, storage, ERROR_CODES } from '../../../modules/ixBidAdapter.js';
+import { spec, storage, ERROR_CODES, FEATURE_TOGGLES, LOCAL_STORAGE_FEATURE_TOGGLES_KEY } from '../../../modules/ixBidAdapter.js';
 import { createEidsArray } from 'modules/userId/eids.js';
 import { deepAccess, deepClone } from '../../../src/utils.js';
 
@@ -1588,7 +1588,7 @@ describe('IndexexchangeAdapter', function () {
           search: 'drill',
         },
         user: {
-          keywords: Array(1000).join('#'),
+          keywords: Array(1200).join('#'),
         }
       };
 
@@ -1665,70 +1665,6 @@ describe('IndexexchangeAdapter', function () {
       expect(gpid).to.equal(GPID);
     });
 
-    it('should still build gpid in request if ortb2Imp.ext.gpid does not exist', function () {
-      const AD_UNIT_CODE = '/1111/home';
-      const validBids = utils.deepClone(DEFAULT_BANNER_VALID_BID);
-      sinon.stub(utils, 'getGptSlotInfoForAdUnitCode')
-        .returns({ gptSlot: AD_UNIT_CODE, divId: 'adunit-code-3-div-id' });
-      validBids[0].ortb2Imp = {
-        ext: {
-          data: {
-            adserver: {
-              name: 'gam',
-              adslot: AD_UNIT_CODE
-            }
-          }
-        }
-      }
-      const requests = spec.buildRequests(validBids, DEFAULT_OPTION);
-      const { ext: { gpid } } = JSON.parse(requests[0].data.r).imp[0];
-      utils.getGptSlotInfoForAdUnitCode.restore();
-      expect(gpid).to.equal(`${AD_UNIT_CODE}#adunit-code-3-div-id`);
-    });
-
-    it('should not build gpid if divid doesnt exist when ortb2Imp.ext.gpid does not exist', function () {
-      const AD_UNIT_CODE = '/1111/home';
-      const validBids = utils.deepClone(DEFAULT_BANNER_VALID_BID);
-      sinon.stub(utils, 'getGptSlotInfoForAdUnitCode')
-        .returns({ gptSlot: AD_UNIT_CODE });
-      validBids[0].ortb2Imp = {
-        ext: {
-          data: {
-            adserver: {
-              name: 'gam',
-              adslot: AD_UNIT_CODE
-            }
-          }
-        }
-      }
-      const requests = spec.buildRequests(validBids, DEFAULT_OPTION);
-      const imp = JSON.parse(requests[0].data.r).imp[0];
-      utils.getGptSlotInfoForAdUnitCode.restore();
-      expect(imp.ext.gpid).to.be.undefined;
-      expect(imp.ext.dfp_ad_unit_code).to.equal(AD_UNIT_CODE)
-    });
-
-    it('should not build gpid if dfp ad unit code / divid doesnt exist when ortb2Imp.ext.gpid does not exist', function () {
-      const AD_UNIT_CODE = '/1111/home';
-      const validBids = utils.deepClone(DEFAULT_BANNER_VALID_BID);
-      sinon.stub(utils, 'getGptSlotInfoForAdUnitCode')
-        .returns({});
-      validBids[0].ortb2Imp = {
-        ext: {
-          data: {
-            adserver: {
-              name: 'gam',
-            }
-          }
-        }
-      }
-      const requests = spec.buildRequests(validBids, DEFAULT_OPTION);
-
-      const imp = JSON.parse(requests[0].data.r).imp[0];
-      utils.getGptSlotInfoForAdUnitCode.restore();
-      expect(imp.ext).to.be.undefined;
-    });
-
     it('should send gpid in request if ortb2Imp.ext.gpid exists when no size present', function () {
       const validBids = utils.deepClone(DEFAULT_BANNER_VALID_BID_PARAM_NO_SIZE);
       validBids[0].ortb2Imp = {
@@ -1803,6 +1739,7 @@ describe('IndexexchangeAdapter', function () {
       expect(payload.source.ext.schain).to.deep.equal(SAMPLE_SCHAIN);
       expect(payload.imp).to.be.an('array');
       expect(payload.imp).to.have.lengthOf(1);
+      expect(payload.source.tid).to.equal(DEFAULT_BANNER_VALID_BID[0].auctionId);
     });
 
     it('payload should have correct format and value for r.id when bidderRequestId is a number ', function () {
@@ -1831,26 +1768,26 @@ describe('IndexexchangeAdapter', function () {
 
     it('payload should not include schain when not provided', function () {
       const payload = JSON.parse(queryWithoutSchain.r);
-      expect(payload.source).to.not.exist; // source object currently only written for schain
+      expect(payload.source.schain).to.not.exist; // source object currently only written for schain
     });
 
     it('impression should have correct format and value', function () {
       const impression = JSON.parse(query.r).imp[0];
+      const sidValue = DEFAULT_BANNER_VALID_BID[0].params.id;
 
       expect(impression.id).to.equal(DEFAULT_BANNER_VALID_BID[0].bidId);
       expect(impression.banner.format).to.be.length(2);
       expect(impression.banner.topframe).to.be.oneOf([0, 1]);
       expect(impression.banner.pos).to.equal(0);
       expect(impression.ext.tid).to.equal(DEFAULT_BANNER_VALID_BID[0].transactionId);
+      expect(impression.ext.sid).to.equal(sidValue);
 
       impression.banner.format.map(({ w, h, ext }, index) => {
         const size = DEFAULT_BANNER_VALID_BID[0].mediaTypes.banner.sizes[index];
-        const sidValue = utils.parseGPTSingleSizeArray(size);
 
         expect(w).to.equal(size[0]);
         expect(h).to.equal(size[1]);
         expect(ext.siteID).to.equal(DEFAULT_BANNER_VALID_BID[0].params.siteId);
-        expect(ext.sid).to.equal(sidValue);
       });
     });
 
@@ -1998,7 +1935,7 @@ describe('IndexexchangeAdapter', function () {
       expect(impression.banner.format[0].h).to.equal(DEFAULT_BANNER_VALID_BID[0].params.size[1]);
       expect(impression.banner.topframe).to.be.oneOf([0, 1]);
       expect(impression.banner.format[0].ext.siteID).to.equal(DEFAULT_BANNER_VALID_BID[0].params.siteId);
-      expect(impression.banner.format[0].ext.sid).to.equal('50');
+      expect(impression.ext.sid).to.equal('50');
     });
 
     it('impression should have sid if id is configured as string', function () {
@@ -2012,7 +1949,7 @@ describe('IndexexchangeAdapter', function () {
       expect(impression.banner.format[0].h).to.equal(DEFAULT_BANNER_VALID_BID[0].params.size[1]);
       expect(impression.banner.topframe).to.be.oneOf([0, 1]);
       expect(impression.banner.format[0].ext.siteID).to.equal(DEFAULT_BANNER_VALID_BID[0].params.siteId);
-      expect(impression.banner.format[0].ext.sid).to.equal('abc');
+      expect(impression.ext.sid).to.equal('abc');
     });
 
     describe('first party data', () => {
@@ -2098,6 +2035,7 @@ describe('IndexexchangeAdapter', function () {
       const request = spec.buildRequests([DEFAULT_BANNER_VALID_BID[0], DEFAULT_VIDEO_VALID_BID[0]], {});
       it('should have banner request', () => {
         const bannerImpression = JSON.parse(request[0].data.r).imp[0];
+        const sidValue = DEFAULT_BANNER_VALID_BID[0].params.id;
 
         expect(JSON.parse(request[0].data.r).imp).to.have.lengthOf(1);
         expect(JSON.parse(request[0].data.v)).to.equal(BANNER_ENDPOINT_VERSION);
@@ -2105,15 +2043,14 @@ describe('IndexexchangeAdapter', function () {
 
         expect(bannerImpression.banner.format).to.be.length(2);
         expect(bannerImpression.banner.topframe).to.be.oneOf([0, 1]);
+        expect(bannerImpression.ext.sid).to.equal(sidValue);
 
         bannerImpression.banner.format.map(({ w, h, ext }, index) => {
           const size = DEFAULT_BANNER_VALID_BID[0].mediaTypes.banner.sizes[index];
-          const sidValue = utils.parseGPTSingleSizeArray(size);
 
           expect(w).to.equal(size[0]);
           expect(h).to.equal(size[1]);
           expect(ext.siteID).to.equal(DEFAULT_BANNER_VALID_BID[0].params.siteId);
-          expect(ext.sid).to.equal(sidValue);
         });
       });
 
@@ -2132,6 +2069,7 @@ describe('IndexexchangeAdapter', function () {
 
       it('should have banner request', () => {
         const bannerImpression = JSON.parse(request[0].data.r).imp[0];
+        const sidValue = DEFAULT_BANNER_VALID_BID[0].params.id;
 
         expect(JSON.parse(request[0].data.r).imp).to.have.lengthOf(1);
         expect(JSON.parse(request[0].data.v)).to.equal(BANNER_ENDPOINT_VERSION);
@@ -2139,15 +2077,14 @@ describe('IndexexchangeAdapter', function () {
 
         expect(bannerImpression.banner.format).to.be.length(2);
         expect(bannerImpression.banner.topframe).to.be.oneOf([0, 1]);
+        expect(bannerImpression.ext.sid).to.equal(sidValue);
 
         bannerImpression.banner.format.map(({ w, h, ext }, index) => {
           const size = DEFAULT_BANNER_VALID_BID[0].mediaTypes.banner.sizes[index];
-          const sidValue = utils.parseGPTSingleSizeArray(size);
 
           expect(w).to.equal(size[0]);
           expect(h).to.equal(size[1]);
           expect(ext.siteID).to.equal(DEFAULT_BANNER_VALID_BID[0].params.siteId);
-          expect(ext.sid).to.equal(sidValue);
         });
       });
 
@@ -2264,19 +2201,19 @@ describe('IndexexchangeAdapter', function () {
 
       const request = spec.buildRequests([bid, bid2], DEFAULT_OPTION)[0];
       const impression = JSON.parse(request.data.r).imp[0];
+      const sidValue = bid.params.id;
 
       expect(impression.id).to.equal(bid.bidId);
       expect(impression.banner.format).to.be.length(bid.mediaTypes.banner.sizes.length);
       expect(impression.banner.topframe).to.be.oneOf([0, 1]);
+      expect(impression.ext.sid).to.equal(sidValue);
 
       impression.banner.format.map(({ w, h, ext }, index) => {
         const size = bid.mediaTypes.banner.sizes[index];
-        const sidValue = utils.parseGPTSingleSizeArray(size);
 
         expect(w).to.equal(size[0]);
         expect(h).to.equal(size[1]);
         expect(ext.siteID).to.equal(index === 1 ? bid2.params.siteId : bid.params.siteId);
-        expect(ext.sid).to.equal(sidValue);
       });
     });
 
@@ -2300,18 +2237,18 @@ describe('IndexexchangeAdapter', function () {
 
       impressions.map((impression, impressionIndex) => {
         const firstSizeObject = bids[impressionIndex].mediaTypes.banner.sizes[0];
+        const sidValue = bids[impressionIndex].params.id;
 
         expect(impression.banner.format).to.be.length(2);
         expect(impression.banner.topframe).to.be.oneOf([0, 1]);
+        expect(impression.ext.sid).to.equal(sidValue);
 
         impression.banner.format.map(({ w, h, ext }, index) => {
           const size = bids[impressionIndex].mediaTypes.banner.sizes[index];
-          const sidValue = utils.parseGPTSingleSizeArray(size);
 
           expect(w).to.equal(size[0]);
           expect(h).to.equal(size[1]);
           expect(ext.siteID).to.equal(bids[impressionIndex].params.siteId);
-          expect(ext.sid).to.equal(sidValue);
         });
       });
     });
@@ -2359,7 +2296,6 @@ describe('IndexexchangeAdapter', function () {
 
     it('impression should have correct format and value', function () {
       const impression = JSON.parse(query.r).imp[0];
-      const sidValue = utils.parseGPTSingleSizeArray(DEFAULT_VIDEO_VALID_BID[0].params.size);
 
       expect(impression.id).to.equal(DEFAULT_VIDEO_VALID_BID[0].bidId);
       expect(impression.video.w).to.equal(DEFAULT_VIDEO_VALID_BID[0].params.size[0]);
@@ -2382,6 +2318,15 @@ describe('IndexexchangeAdapter', function () {
 
       expect(impression.id).to.equal(DEFAULT_VIDEO_VALID_BID[0].bidId);
       expect(impression.video.placement).to.equal(2);
+    });
+
+    it('should set imp.ext.sid for video imps if params.id exists', function () {
+      const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
+      bid.params.id = 50;
+      const request = spec.buildRequests([bid], {})[0];
+      const impression = JSON.parse(request.data.r).imp[0];
+
+      expect(impression.ext.sid).to.equal('50');
     });
 
     it('should set correct default placement, if context is instream', function () {
@@ -2522,6 +2467,16 @@ describe('IndexexchangeAdapter', function () {
       expect(request[0].data.hasOwnProperty('v')).to.equal(false);
       expect(nativeImpression.id).to.equal(DEFAULT_NATIVE_VALID_BID[0].bidId);
       expect(nativeImpression.native).to.deep.equal(DEFAULT_NATIVE_IMP);
+    });
+
+    it('should set imp.ext.sid for native imps if params.id exist', function() {
+      const bid = utils.deepClone(DEFAULT_NATIVE_VALID_BID);
+      bid[0].params.id = 'abc'
+      const request = spec.buildRequests(bid, DEFAULT_OPTION);
+      const nativeImpression = JSON.parse(request[0].data.r).imp[0];
+
+      expect(nativeImpression.id).to.equal(DEFAULT_NATIVE_VALID_BID[0].bidId);
+      expect(nativeImpression.ext.sid).to.equal('abc');
     });
 
     it('should build request with given asset properties', function() {
@@ -2706,12 +2661,10 @@ describe('IndexexchangeAdapter', function () {
 
           impression.banner.format.map(({ w, h, ext }, index) => {
             const size = bid.mediaTypes.banner.sizes[index];
-            const sidValue = utils.parseGPTSingleSizeArray(size);
 
             expect(w).to.equal(size[0]);
             expect(h).to.equal(size[1]);
             expect(ext.siteID).to.equal(bid.params.siteId);
-            expect(ext.sid).to.equal(sidValue);
           });
         });
       });
@@ -3339,6 +3292,224 @@ describe('IndexexchangeAdapter', function () {
       const r = JSON.parse(bid[0].data.r);
 
       expect(r.regs.coppa).to.be.undefined;
+    });
+  });
+
+  describe('Features', () => {
+    let localStorageValues = {};
+    let sandbox = sinon.sandbox.create();
+    let setDataInLocalStorageStub;
+    let getDataFromLocalStorageStub;
+    let removeDataFromLocalStorageStub;
+    const serverResponse = {
+      body: {
+        ext: {
+          features: {
+            test: {
+              activated: false
+            }
+          }
+        }
+      }
+    };
+
+    beforeEach(() => {
+      localStorageValues = {};
+      sandbox = sinon.sandbox.create();
+      setDataInLocalStorageStub = sandbox.stub(storage, 'setDataInLocalStorage').callsFake((key, value) => localStorageValues[key] = value);
+      getDataFromLocalStorageStub = sandbox.stub(storage, 'getDataFromLocalStorage').callsFake((key) => localStorageValues[key]);
+      removeDataFromLocalStorageStub = sandbox.stub(storage, 'removeDataFromLocalStorage').callsFake((key) => delete localStorageValues[key]);
+    });
+
+    afterEach(() => {
+      setDataInLocalStorageStub.restore();
+      getDataFromLocalStorageStub.restore();
+      removeDataFromLocalStorageStub.restore();
+      serverResponse.body.ext.features = {
+        test: {
+          activated: false
+        }
+      };
+      localStorageValues = {};
+      sandbox.restore();
+    });
+
+    it('should store features in internal cache', () => {
+      FEATURE_TOGGLES.setFeatureToggles(serverResponse);
+      expect(FEATURE_TOGGLES.isFeatureEnabled('test')).to.be.false;
+    });
+
+    it('should retrieve features from internal cache', () => {
+      const feature = {
+        ext: {
+          features: {
+            test: {
+              activated: true
+            }
+          }
+        }
+      }
+      FEATURE_TOGGLES.setFeatureToggles(feature);
+      feature.ext.features.test.activated = false;
+      FEATURE_TOGGLES.featureToggles = {
+        features: feature.ext.features
+      };
+      expect(FEATURE_TOGGLES.isFeatureEnabled('test')).to.be.false;
+    });
+
+    it('should store features in localstorage when enabled', () => {
+      sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+      serverResponse.body.ext.features.test.activated = true;
+      FEATURE_TOGGLES.setFeatureToggles(serverResponse);
+
+      const lsData = JSON.parse(storage.getDataFromLocalStorage(LOCAL_STORAGE_FEATURE_TOGGLES_KEY));
+      expect(lsData.features.test.activated).to.be.true;
+    });
+
+    it('should retrive features from localstorage when enabled', () => {
+      sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+      serverResponse.body.ext.features.test.activated = true;
+      FEATURE_TOGGLES.setFeatureToggles(serverResponse);
+      FEATURE_TOGGLES.featureToggles = {};
+      FEATURE_TOGGLES.getFeatureToggles(LOCAL_STORAGE_FEATURE_TOGGLES_KEY);
+      expect(FEATURE_TOGGLES.isFeatureEnabled('test')).to.be.true;
+    });
+
+    it('should remove features from after expiry', () => {
+      sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+      const expiryTime = new Date();
+      localStorageValues = {
+        expiry: expiryTime.setHours(expiryTime.getHours() - 2),
+        features: {
+          test: {
+            activated: true
+          }
+        }
+      }
+      FEATURE_TOGGLES.getFeatureToggles(LOCAL_STORAGE_FEATURE_TOGGLES_KEY);
+      expect(FEATURE_TOGGLES.isFeatureEnabled('test')).to.be.undefined;
+      expect(FEATURE_TOGGLES.featureToggles).to.deep.equal({});
+    });
+
+    it('should create POST request when pbjs_enable_post feature is active', () => {
+      sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+      serverResponse.body.ext.features.pbjs_enable_post = {
+        activated: true
+      };
+      FEATURE_TOGGLES.setFeatureToggles(serverResponse);
+      const builtRequests = {
+        banner: {
+          request: spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION)[0],
+          siteId: DEFAULT_BANNER_VALID_BID[0].params.siteId
+        },
+        video: {
+          request: spec.buildRequests(DEFAULT_VIDEO_VALID_BID, DEFAULT_OPTION)[0],
+          siteId: DEFAULT_VIDEO_VALID_BID[0].params.siteId
+        },
+        native: {
+          request: spec.buildRequests(DEFAULT_NATIVE_VALID_BID, DEFAULT_OPTION)[0],
+          siteId: DEFAULT_NATIVE_VALID_BID[0].params.siteId
+        }
+      };
+
+      Object.keys(builtRequests).forEach((reqType) => {
+        const request = builtRequests[reqType].request;
+        const siteId = builtRequests[reqType].siteId;
+        expect(request.method).to.equal('POST');
+        expect(request.option.contentType).to.equal('text/plain');
+        expect(request.url).to.be.equal(`${IX_SECURE_ENDPOINT}?s=${siteId}`);
+        expect(request.data.r).to.be.undefined;
+        expect(request.data.ac).to.be.undefined;
+        expect(request.data.sd).to.be.undefined;
+        expect(request.data.v).to.be.undefined;
+        expect(request.data.nf).to.be.undefined;
+      });
+    });
+
+    it('should create GET request when pbjs_enable_post feature is disabled', () => {
+      sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+      serverResponse.body.ext.features.pbjs_enable_post = {
+        activated: false
+      };
+      FEATURE_TOGGLES.setFeatureToggles(serverResponse);
+      const builtRequests = {
+        banner: {
+          request: spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION)[0],
+          siteId: DEFAULT_BANNER_VALID_BID[0].params.siteId
+        },
+        video: {
+          request: spec.buildRequests(DEFAULT_VIDEO_VALID_BID, DEFAULT_OPTION)[0],
+          siteId: DEFAULT_VIDEO_VALID_BID[0].params.siteId
+        },
+        native: {
+          request: spec.buildRequests(DEFAULT_NATIVE_VALID_BID, DEFAULT_OPTION)[0],
+          siteId: DEFAULT_NATIVE_VALID_BID[0].params.siteId
+        }
+      };
+
+      Object.keys(builtRequests).forEach((reqType) => {
+        const request = builtRequests[reqType].request;
+        const siteId = builtRequests[reqType].siteId;
+        expect(request.method).to.equal('GET');
+        expect(request.url).to.equal(IX_SECURE_ENDPOINT);
+        expect(request.data.r).to.exist;
+        expect(request.data.ac).to.equal('j');
+        expect(request.data.sd).to.equal(1);
+        expect(request.data.s).to.equal(siteId);
+        if (reqType == 'video') {
+          expect(request.data.nf).to.equal(1);
+        }
+
+        if (reqType === 'native') {
+          expect(request.data.v).to.be.undefined;
+        }
+      });
+    });
+
+    it('should interpertResponse correctly when pbjs_enable_post feature is active', function () {
+      serverResponse.body.ext.features.pbjs_enable_post = {
+        activated: true
+      };
+      FEATURE_TOGGLES.setFeatureToggles(serverResponse);
+      const postBiddderRequestData = {
+        id: '345',
+        imp: [
+          {
+            id: '1a2b3c4e',
+            banner: {
+              w: 300,
+              h: 250,
+              placement: 1
+            }
+          }
+        ],
+        site: {
+          ref: 'https://ref.com/ref.html',
+          page: 'https://page.com'
+        },
+      };
+      const expectedParse = [
+        {
+          requestId: '1a2b3c4d',
+          cpm: 1,
+          creativeId: '12345',
+          width: 300,
+          height: 250,
+          mediaType: 'banner',
+          ad: '<a target="_blank" href="https://www.indexexchange.com"></a>',
+          currency: 'USD',
+          ttl: 300,
+          netRevenue: true,
+          meta: {
+            networkId: 50,
+            brandId: 303325,
+            brandName: 'OECTA',
+            advertiserDomains: ['www.abc.com']
+          }
+        }
+      ];
+      const result = spec.interpretResponse({ body: DEFAULT_BANNER_BID_RESPONSE }, { data: postBiddderRequestData, validBidRequests: [] });
+      expect(result[0]).to.deep.equal(expectedParse[0]);
     });
   });
 

@@ -61,6 +61,13 @@ export const spec = {
       },
       prebidRawBidRequests: validBidRequests
     }, spec._getAllMetadata(bidderRequest, tdid));
+
+    // Pull Social Canvas segments and embed URL
+    if (validBidRequests.length > 0 && validBidRequests[0].params.socialCanvas) {
+      transformedParams.socialCanvasSegments = validBidRequests[0].params.socialCanvas.segments;
+      transformedParams.socialEmbedURL = validBidRequests[0].params.socialCanvas.embedURL;
+    }
+
     const encodedParams = encodeURIComponent(JSON.stringify(transformedParams));
     return Object.assign({}, bidderRequest, {
       method: 'GET',
