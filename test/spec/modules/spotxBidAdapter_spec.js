@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import {config} from 'src/config.js';
 import {loadExternalScript} from '../../../src/adloader';
+import {isRendererRequired} from '../../../src/Renderer';
 import {spec, GOOGLE_CONSENT} from 'modules/spotxBidAdapter.js';
 
 describe('the spotx adapter', function () {
@@ -567,6 +568,11 @@ describe('the spotx adapter', function () {
       }
       renderer.render();
       expect(hasRun).to.equal(true);
+    });
+
+    it('should include the url property on the renderer for Prebid Core checks', function () {
+      var renderer = spec.interpretResponse(serverResponse, bidderRequestObj)[0].renderer;
+      expect(isRendererRequired(renderer)).to.be.true;
     });
   });
 

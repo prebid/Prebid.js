@@ -1,28 +1,54 @@
 /** @module pbjs */
 
-import { getGlobal } from './prebidGlobal.js';
+import {getGlobal} from './prebidGlobal.js';
 import {
-  adUnitsFilter, flatten, getHighestCpm, isArrayOfNums, isGptPubadsDefined, uniques, logInfo,
-  contains, logError, isArray, deepClone, deepAccess, isNumber, logWarn, logMessage, isFn,
-  transformAdServerTargetingObj, bind, replaceAuctionPrice, replaceClickThrough, insertElement,
-  inIframe, callBurl, createInvisibleIframe, generateUUID, unsupportedBidderMessage, isEmpty, mergeDeep, deepSetValue
+  adUnitsFilter,
+  bind,
+  callBurl,
+  contains,
+  createInvisibleIframe,
+  deepAccess,
+  deepClone,
+  deepSetValue,
+  flatten,
+  generateUUID,
+  getHighestCpm,
+  inIframe,
+  insertElement,
+  isArray,
+  isArrayOfNums,
+  isEmpty,
+  isFn,
+  isGptPubadsDefined,
+  isNumber,
+  logError,
+  logInfo,
+  logMessage,
+  logWarn,
+  mergeDeep,
+  replaceAuctionPrice,
+  replaceClickThrough,
+  transformAdServerTargetingObj,
+  uniques,
+  unsupportedBidderMessage
 } from './utils.js';
-import { listenMessagesFromCreative } from './secureCreatives.js';
-import { userSync } from './userSync.js';
-import { config } from './config.js';
-import { auctionManager } from './auctionManager.js';
-import { filters, targeting } from './targeting.js';
+import {listenMessagesFromCreative} from './secureCreatives.js';
+import {userSync} from './userSync.js';
+import {config} from './config.js';
+import {auctionManager} from './auctionManager.js';
+import {filters, targeting} from './targeting.js';
 import {hook, wrapHook} from './hook.js';
-import { loadSession } from './debugging.js';
+import {loadSession} from './debugging.js';
 import {includes} from './polyfill.js';
-import { adunitCounter } from './adUnits.js';
-import { executeRenderer, isRendererRequired } from './Renderer.js';
-import { createBid } from './bidfactory.js';
-import { storageCallbacks } from './storageManager.js';
-import { emitAdRenderSucceeded, emitAdRenderFail } from './adRendering.js';
-import {gdprDataHandler, getS2SBidderSet, uspDataHandler, default as adapterManager} from './adapterManager.js';
+import {adunitCounter} from './adUnits.js';
+import {executeRenderer, isRendererRequired} from './Renderer.js';
+import {createBid} from './bidfactory.js';
+import {storageCallbacks} from './storageManager.js';
+import {emitAdRenderFail, emitAdRenderSucceeded} from './adRendering.js';
+import {default as adapterManager, gdprDataHandler, getS2SBidderSet, uspDataHandler} from './adapterManager.js';
 import CONSTANTS from './constants.json';
-import * as events from './events.js'
+import * as events from './events.js';
+import {newMetrics, useMetrics} from './utils/perfMetrics.js';
 
 const $$PREBID_GLOBAL$$ = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -584,7 +610,7 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
  * @alias module:pbjs.requestBids
  */
 $$PREBID_GLOBAL$$.requestBids = (function() {
-  const delegate = hook('async', function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels, auctionId, ortb2 } = {}) {
+  const delegate = hook('async', function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels, auctionId, ortb2, metrics } = {}) {
     events.emit(REQUEST_BIDS);
     const cbTimeout = timeout || config.getConfig('bidderTimeout');
     logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', arguments);
@@ -592,7 +618,7 @@ $$PREBID_GLOBAL$$.requestBids = (function() {
       global: mergeDeep({}, config.getAnyConfig('ortb2') || {}, ortb2 || {}),
       bidder: Object.fromEntries(Object.entries(config.getBidderConfig()).map(([bidder, cfg]) => [bidder, cfg.ortb2]).filter(([_, ortb2]) => ortb2 != null))
     }
-    return startAuction({bidsBackHandler, timeout: cbTimeout, adUnits, adUnitCodes, labels, auctionId, ortb2Fragments});
+    return startAuction({bidsBackHandler, timeout: cbTimeout, adUnits, adUnitCodes, labels, auctionId, ortb2Fragments, metrics});
   }, 'requestBids');
 
   return wrapHook(delegate, function requestBids(req = {}) {
@@ -600,15 +626,17 @@ $$PREBID_GLOBAL$$.requestBids = (function() {
     // any hook has a chance to run.
     // otherwise, if the caller goes on to use addAdUnits/removeAdUnits, any asynchronous logic
     // in any hook might see their effects.
+    req.metrics = newMetrics();
+    req.metrics.checkpoint('requestBids');
     let adUnits = req.adUnits || $$PREBID_GLOBAL$$.adUnits;
     req.adUnits = (isArray(adUnits) ? adUnits.slice() : [adUnits]);
     return delegate.call(this, req);
   });
 })();
 
-export const startAuction = hook('async', function ({ bidsBackHandler, timeout: cbTimeout, adUnits, adUnitCodes, labels, auctionId, ortb2Fragments } = {}) {
+export const startAuction = hook('async', function ({ bidsBackHandler, timeout: cbTimeout, adUnits, adUnitCodes, labels, auctionId, ortb2Fragments, metrics } = {}) {
   const s2sBidders = getS2SBidderSet(config.getConfig('s2sConfig') || []);
-  adUnits = checkAdUnitSetup(adUnits);
+  adUnits = useMetrics(metrics).measureTime('requestBids.validate', () => checkAdUnitSetup(adUnits));
 
   if (adUnitCodes && adUnitCodes.length) {
     // if specific adUnitCodes supplied filter adUnits for those codes
@@ -634,10 +662,10 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
 
     const bidders = allBidders.filter(bidder => !s2sBidders.has(bidder));
 
-    adUnit.transactionId = generateUUID();
-
+    const tid = adUnit.ortb2Imp?.ext?.tid || generateUUID();
+    adUnit.transactionId = tid;
     // Populate ortb2Imp.ext.tid with transactionId. Specifying a transaction ID per item in the ortb impression array, lets multiple transaction IDs be transmitted in a single bid request.
-    deepSetValue(adUnit, 'ortb2Imp.ext.tid', adUnit.transactionId)
+    deepSetValue(adUnit, 'ortb2Imp.ext.tid', tid);
 
     bidders.forEach(bidder => {
       const adapter = bidderRegistry[bidder];
@@ -678,7 +706,8 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
     cbTimeout,
     labels,
     auctionId,
-    ortb2Fragments
+    ortb2Fragments,
+    metrics,
   });
 
   let adUnitsLen = adUnits.length;
