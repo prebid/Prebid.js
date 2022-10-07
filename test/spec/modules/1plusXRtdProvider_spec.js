@@ -5,7 +5,9 @@ import {
   extractConfig,
   buildOrtb2Updates,
   updateBidderConfig,
-  setTargetingDataToConfig
+  setTargetingDataToConfig,
+  extractConsent,
+  getPapiUrl
 } from 'modules/1plusXRtdProvider';
 
 describe('1plusXRtdProvider', () => {
@@ -248,6 +250,80 @@ describe('1plusXRtdProvider', () => {
         }
       }
       expect(ortb2Updates).to.deep.include(expectedOutput);
+    })
+  })
+
+  describe('extractConsent', () => {
+    it('extracts consent strings correctly if given', () => {
+      const consent = {
+        gdpr: {
+          gdprApplies: 1,
+          consentString: 'myConsent'
+        }
+      }
+      const output = extractConsent(consent)
+      const expectedOutput = {
+        gdpr_applies: 1,
+        consent_string: 'myConsent'
+      }
+      expect(expectedOutput).to.deep.include(output)
+      expect(output).to.deep.include(expectedOutput)
+    })
+    it('extracts null if consent object is empty', () => {
+      const consent1 = {}
+      expect(extractConsent(consent1)).to.equal(null)
+    })
+
+    it('throws an error if the consent is malformed', () => {
+      const consent1 = {
+        gdpr: {
+          gdprApplies: 1
+        }
+      }
+      const consent2 = {
+        gdpr: {
+          consentString: 'myConsent'
+        }
+      }
+      const consent3 = {
+        gdpr: {
+          gdprApplies: 1,
+          consentString: 3
+        }
+      }
+      const consent4 = {
+        gdpr: {
+          gdprApplies: 'yes',
+          consentString: 'myConsent'
+        }
+      }
+      const consent5 = {
+        gdprApplies: 1,
+        consentString: 'myConsent'
+      }
+
+      for (const consent in [consent1, consent2, consent3, consent4, consent5]) {
+        try {
+          extractConsent(consent)
+          assert(false, 'Should be throwing an exception')
+        } catch (e) { }
+      }
+    })
+  })
+
+  describe('getPapiUrl', () => {
+    const customer = 'acme'
+    const consent = {
+      gdpr: {
+        gdprApplies: 1,
+        consentString: 'myConsent'
+      }
+    }
+
+    it('correctly builds URLs based on consent', () => {
+      const url1 = getPapiUrl(customer)
+      const url2 = getPapiUrl(customer, extractConsent(consent))
+      expect(['&consent_string=myConsent&gdpr_applies=1', '&gdpr_applies=1&consent_string=myConsent']).to.contain(url2.replace(url1, ''))
     })
   })
 
