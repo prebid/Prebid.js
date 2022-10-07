@@ -171,8 +171,7 @@ describe('weboramaRtdProvider', function() {
           }
         };
         const data = {
-          webo_ctx: ['foo', 'bar'],
-          webo_ds: ['baz'],
+          webo_vctx: ['foo', 'bar'],
         };
         const adUnitCode = 'adunit1';
         const reqBidsConfigObj = {
@@ -218,8 +217,8 @@ describe('weboramaRtdProvider', function() {
         });
 
         expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
-        expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('webo_ctx=foo;webo_ctx=bar;webo_ds=baz');
-        expect(reqBidsConfigObj.adUnits[0].bids[1].params.dctr).to.equal('webo_ctx=foo,bar|webo_ds=baz');
+        expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('webo_vctx=foo;webo_vctx=bar');
+        expect(reqBidsConfigObj.adUnits[0].bids[1].params.dctr).to.equal('webo_vctx=foo,bar');
         expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal(data);
         expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
           inventory: data
@@ -259,8 +258,7 @@ describe('weboramaRtdProvider', function() {
           }
         };
         const data = {
-          webo_ctx: ['foo', 'bar'],
-          webo_ds: ['baz'],
+          webo_vctx: ['foo', 'bar'],
         };
         const adUnitCode = 'adunit1';
         const reqBidsConfigObj = {
@@ -306,8 +304,8 @@ describe('weboramaRtdProvider', function() {
         });
 
         expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
-        expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('webo_ctx=foo;webo_ctx=bar;webo_ds=baz');
-        expect(reqBidsConfigObj.adUnits[0].bids[1].params.dctr).to.equal('webo_ctx=foo,bar|webo_ds=baz');
+        expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('webo_vctx=foo;webo_vctx=bar');
+        expect(reqBidsConfigObj.adUnits[0].bids[1].params.dctr).to.equal('webo_vctx=foo,bar');
         expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal(data);
         expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
           inventory: data
