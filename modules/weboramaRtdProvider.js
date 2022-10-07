@@ -502,14 +502,19 @@ class WeboramaRtdProvider {
     let queryString = '';
     queryString = tryAppendQueryString(queryString, 'token', token);
 
-    if (weboCtxConf.assetID) {
+    let assetID = weboCtxConf.assetID;
+
+    if (isFn(assetID)) {
       try {
-        const assetID = isFn(weboCtxConf.assetID) ? weboCtxConf.assetID() : weboCtxConf.assetID;
-        queryString = tryAppendQueryString(queryString, 'assetId', assetID);
-        path = '/document-profile';
+        assetID = weboCtxConf.assetID();
       } catch (e) {
         logMessage('unexpected error while processing asset id', e);
       }
+    }
+
+    if (assetID && isStr(assetID)) {
+      queryString = tryAppendQueryString(queryString, 'assetId', assetID);
+      path = '/document-profile';
     }
 
     const targetURL = weboCtxConf.targetURL || document.URL;

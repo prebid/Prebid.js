@@ -329,6 +329,184 @@ describe('weboramaRtdProvider', function() {
         });
       });
 
+      it('should ignore asset id if callback throw error and set gam targeting and send to bidders by default', function() {
+        let onDataResponse = {};
+        const moduleConfig = {
+          params: {
+            weboCtxConf: {
+              token: 'foo',
+              assetID: () => {
+                throw new Error('ops');
+              },
+              targetURL: 'https://prebid.org',
+              onData: (data, meta) => {
+                onDataResponse = {
+                  data: data,
+                  meta: meta,
+                };
+              },
+            }
+          }
+        };
+        const data = {
+          webo_ctx: ['foo', 'bar'],
+          webo_ds: ['baz'],
+        };
+        const adUnitCode = 'adunit1';
+        const reqBidsConfigObj = {
+          ortb2Fragments: {
+            global: {},
+            bidder: {}
+          },
+          adUnits: [{
+            code: adUnitCode,
+            bids: [{
+              bidder: 'smartadserver'
+            }, {
+              bidder: 'pubmatic'
+            }, {
+              bidder: 'appnexus'
+            }, {
+              bidder: 'rubicon'
+            }, {
+              bidder: 'other'
+            }]
+          }]
+        };
+
+        const onDoneSpy = sinon.spy();
+
+        expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
+        weboramaSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, moduleConfig);
+
+        let request = server.requests[0];
+
+        expect(request.method).to.equal('GET');
+        expect(request.url).to.equal('https://ctx.weborama.com/api/profile?token=foo&url=https%3A%2F%2Fprebid.org&');
+        expect(request.withCredentials).to.be.false;
+
+        request.respond(200, responseHeader, JSON.stringify(data));
+
+        expect(onDoneSpy.calledOnce).to.be.true;
+
+        const targeting = weboramaSubmodule.getTargetingData([adUnitCode], moduleConfig);
+
+        expect(targeting).to.deep.equal({
+          'adunit1': data,
+        });
+
+        expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
+        expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('webo_ctx=foo;webo_ctx=bar;webo_ds=baz');
+        expect(reqBidsConfigObj.adUnits[0].bids[1].params.dctr).to.equal('webo_ctx=foo,bar|webo_ds=baz');
+        expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal(data);
+        expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
+          inventory: data
+        });
+        expect(reqBidsConfigObj.ortb2Fragments.bidder.other).to.deep.equal({
+          site: {
+            ext: {
+              data: data
+            },
+          }
+        });
+        expect(onDataResponse).to.deep.equal({
+          data: data,
+          meta: {
+            user: false,
+            source: 'contextual',
+            isDefault: false,
+          },
+        });
+      });
+
+      it('should ignore asset id if callback return empty string and set gam targeting and send to bidders by default', function() {
+        let onDataResponse = {};
+        const moduleConfig = {
+          params: {
+            weboCtxConf: {
+              token: 'foo',
+              assetID: () => '',
+              targetURL: 'https://prebid.org',
+              onData: (data, meta) => {
+                onDataResponse = {
+                  data: data,
+                  meta: meta,
+                };
+              },
+            }
+          }
+        };
+        const data = {
+          webo_ctx: ['foo', 'bar'],
+          webo_ds: ['baz'],
+        };
+        const adUnitCode = 'adunit1';
+        const reqBidsConfigObj = {
+          ortb2Fragments: {
+            global: {},
+            bidder: {}
+          },
+          adUnits: [{
+            code: adUnitCode,
+            bids: [{
+              bidder: 'smartadserver'
+            }, {
+              bidder: 'pubmatic'
+            }, {
+              bidder: 'appnexus'
+            }, {
+              bidder: 'rubicon'
+            }, {
+              bidder: 'other'
+            }]
+          }]
+        };
+
+        const onDoneSpy = sinon.spy();
+
+        expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
+        weboramaSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, moduleConfig);
+
+        let request = server.requests[0];
+
+        expect(request.method).to.equal('GET');
+        expect(request.url).to.equal('https://ctx.weborama.com/api/profile?token=foo&url=https%3A%2F%2Fprebid.org&');
+        expect(request.withCredentials).to.be.false;
+
+        request.respond(200, responseHeader, JSON.stringify(data));
+
+        expect(onDoneSpy.calledOnce).to.be.true;
+
+        const targeting = weboramaSubmodule.getTargetingData([adUnitCode], moduleConfig);
+
+        expect(targeting).to.deep.equal({
+          'adunit1': data,
+        });
+
+        expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
+        expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('webo_ctx=foo;webo_ctx=bar;webo_ds=baz');
+        expect(reqBidsConfigObj.adUnits[0].bids[1].params.dctr).to.equal('webo_ctx=foo,bar|webo_ds=baz');
+        expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal(data);
+        expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
+          inventory: data
+        });
+        expect(reqBidsConfigObj.ortb2Fragments.bidder.other).to.deep.equal({
+          site: {
+            ext: {
+              data: data
+            },
+          }
+        });
+        expect(onDataResponse).to.deep.equal({
+          data: data,
+          meta: {
+            user: false,
+            source: 'contextual',
+            isDefault: false,
+          },
+        });
+      });
+
       describe('should set gam targeting and send to one specific bidder and multiple adunits', function() {
         const testcases = {
           'single string': 'appnexus',
