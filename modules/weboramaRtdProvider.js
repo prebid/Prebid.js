@@ -54,13 +54,13 @@
 
 /**
  * @callback assetIDcallback
- * @returns {string} should return asset id using the form datasource:providerAcronym:docId
+ * @returns {string} should return asset identifier using the form datasource:docId
  */
 /**
  * @typedef {Object} WeboCtxConf
  * @property {string} token required token to be used on bigsea contextual API requests
  * @property {?string} targetURL specify the target url instead use the referer
- * @property {?assetIDcallback|?string} assetID specify the assert id using the form datasource:providerAcronym:docId or via callback
+ * @property {?assetIDcallback|?string} assetID specifies the assert identifier using the form datasource:docId or via callback
  * @property {?setPrebidTargetingCallback|?boolean|?Object} setPrebidTargeting if true, will set the GAM targeting (default undefined)
  * @property {?sendToBiddersCallback|?boolean|?Object} sendToBidders if true, will send the contextual profile to all bidders, else expects a list of allowed bidders (default undefined)
  * @property {?dataCallback} onData callback
@@ -361,7 +361,7 @@ class WeboramaRtdProvider {
     }
   }
 
-  /** coerce set prebid targeting to function
+  /** coerce setPrebidTargeting to a callback
    * @method
    * @private
    * @param {CommonConf} submoduleParams
@@ -377,7 +377,7 @@ class WeboramaRtdProvider {
     }
   }
 
-  /** coerce send to bidders to function
+  /** coerce sendToBidders to a callback
    * @method
    * @private
    * @param {CommonConf} submoduleParams
@@ -469,7 +469,7 @@ class WeboramaRtdProvider {
         const [data, metadata] = this.#copyDataAndMetadata(ph);
         ph.onData(data, metadata);
       } catch (e) {
-        logError(`error while executure onData callback with ${ph.metadata.source}-based data:`, e);
+        logError(`error while execute onData callback with ${ph.metadata.source}-based data:`, e);
       }
     });
   }
