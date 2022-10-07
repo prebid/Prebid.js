@@ -79,7 +79,6 @@ export const spec = {
     {code: 'audiencemedia'},
     {code: 'waardex_ak'},
     {code: 'roqoon'},
-    {code: 'andbeyond'},
     {code: 'adbite'},
     {code: 'houseofpubs'},
     {code: 'torchad'},
