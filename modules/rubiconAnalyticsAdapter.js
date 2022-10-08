@@ -804,7 +804,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         }
 
         let bid = auctionEntry.bids[args.requestId];
-        // If floor rot besolved gptSlut we have not yet, then update the adUnit to have the adSlot name
+        // If floor resolved gptSlot but we have not yet, then update the adUnit to have the adSlot name
         if (!deepAccess(bid, 'adUnit.gam.adSlot') && deepAccess(args, 'floorData.matchedFields.gptSlot')) {
           deepSetValue(bid, 'adUnit.gam.adSlot', args.floorData.matchedFields.gptSlot);
         }
