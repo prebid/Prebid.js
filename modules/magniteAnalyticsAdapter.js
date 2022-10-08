@@ -65,8 +65,9 @@ const resetConfs = () => {
   }
   rubiConf = {
     pvid: generateUUID().slice(0, 8),
-    analyticsEventDelay: 200,
+    analyticsEventDelay: 500,
     analyticsBatchTimeout: 5000,
+    analyticsProcessDelay: 1,
     dmBilling: {
       enabled: false,
       vendors: [],
@@ -434,8 +435,8 @@ const findMatchingAdUnitFromAuctions = (matchesFunction, returnFirstMatch) => {
   // loop through auctions in order and adunits
   for (const auctionId of cache.auctionOrder) {
     const auction = cache.auctions[auctionId].auction;
-    for (const adUnitCode in auction.adUnits) {
-      const adUnit = auction.adUnits[adUnitCode];
+    for (const transactionId in auction.adUnits) {
+      const adUnit = auction.adUnits[transactionId];
 
       // check if this matches
       let doesMatch;
@@ -468,7 +469,7 @@ const getRenderingIds = bidWonData => {
   // a rendering auction id is the LATEST auction / adunit which contains GAM ID's
   const matchingFunction = (adUnit, auction) => {
     // does adUnit match our bidWon and gam id's are present
-    const gamHasRendered = deepAccess(cache, `auctions.${auction.auctionId}.gamRenders.${adUnit.adUnitCode}`);
+    const gamHasRendered = deepAccess(cache, `auctions.${auction.auctionId}.gamRenders.${adUnit.transactionId}`);
     return adUnit.adUnitCode === bidWonData.adUnitCode && gamHasRendered;
   }
   let { adUnit, auction } = findMatchingAdUnitFromAuctions(matchingFunction, false);
@@ -493,8 +494,8 @@ const formatBidWon = bidWonData => {
   });
 
   // get the bid from the source auction id
-  let bid = deepAccess(cache, `auctions.${bidWonData.auctionId}.auction.adUnits.${bidWonData.adUnitCode}.bids.${bidWonData.requestId}`);
-  let adUnit = deepAccess(cache, `auctions.${bidWonData.auctionId}.auction.adUnits.${bidWonData.adUnitCode}`);
+  let bid = deepAccess(cache, `auctions.${bidWonData.auctionId}.auction.adUnits.${bidWonData.transactionId}.bids.${bidWonData.requestId}`);
+  let adUnit = deepAccess(cache, `auctions.${bidWonData.auctionId}.auction.adUnits.${bidWonData.transactionId}`);
   let bidWon = {
     ...bid,
     sourceAuctionId: bidWonData.auctionId,
@@ -541,7 +542,7 @@ const subscribeToGamSlots = () => {
       const matchesSlot = elementIds.some(isMatchingAdSlot);
 
       // next it has to have NOT already been counted as gam rendered
-      const gamHasRendered = deepAccess(cache, `auctions.${auction.auctionId}.gamRenders.${adUnit.adUnitCode}`);
+      const gamHasRendered = deepAccess(cache, `auctions.${auction.auctionId}.gamRenders.${adUnit.transactionId}`);
       return matchesSlot && !gamHasRendered;
     }
     let { adUnit, auction } = findMatchingAdUnitFromAuctions(matchingFunction, true);
@@ -567,12 +568,12 @@ const subscribeToGamSlots = () => {
     const gamEvent = formatGamEvent(event, adUnit, auction);
 
     // marking that this prebid adunit has had its matching gam render found
-    deepSetValue(cache, `auctions.${auctionId}.gamRenders.${adUnit.adUnitCode}`, true);
+    deepSetValue(cache, `auctions.${auctionId}.gamRenders.${adUnit.transactionId}`, true);
 
     addEventToQueue({ gamRenders: [gamEvent] }, auctionId, 'gam');
 
     // If this auction now has all gam slots rendered, fire the payload
-    if (!cache.auctions[auctionId].sent && Object.keys(cache.auctions[auctionId].gamRenders).every(adUnitCode => cache.auctions[auctionId].gamRenders[adUnitCode])) {
+    if (!cache.auctions[auctionId].sent && Object.keys(cache.auctions[auctionId].gamRenders).every(tid => cache.auctions[auctionId].gamRenders[tid])) {
       // clear the auction end timeout
       clearTimeout(cache.timeouts[auctionId]);
       delete cache.timeouts[auctionId];
@@ -621,6 +622,11 @@ function enableMgniAnalytics(config = {}) {
     window.googletag.cmd.push(() => subscribeToGamSlots());
   }
 };
+
+const handleBidWon = args => {
+  const bidWon = formatBidWon(args);
+  addEventToQueue({ bidsWon: [bidWon] }, bidWon.renderAuctionId, 'bidWon');
+}
 
 magniteAdapter.enableAnalytics = enableMgniAnalytics;
 
@@ -701,8 +707,8 @@ magniteAdapter.track = ({ eventType, args }) => {
         ad.pattern = deepAccess(adUnit, 'ortb2Imp.ext.data.aupname');
         ad.gpid = deepAccess(adUnit, 'ortb2Imp.ext.gpid');
         ad.bids = {};
-        adMap[adUnit.code] = ad;
-        gamRenders[adUnit.code] = false;
+        adMap[adUnit.transactionId] = ad;
+        gamRenders[adUnit.transactionId] = false;
 
         // Handle case elementId's (div Id's) are set on adUnit - PPI
         const elementIds = deepAccess(adUnit, 'ortb2Imp.ext.data.elementid');
@@ -725,13 +731,10 @@ magniteAdapter.track = ({ eventType, args }) => {
         gamRenders,
         pendingEvents: {}
       }
-
-      // keeping order of auctions and if they have been sent or not
-      cache.auctionOrder.push(args.auctionId);
       break;
     case BID_REQUESTED:
       args.bids.forEach(bid => {
-        const adUnit = deepAccess(cache, `auctions.${args.auctionId}.auction.adUnits.${bid.adUnitCode}`);
+        const adUnit = deepAccess(cache, `auctions.${args.auctionId}.auction.adUnits.${bid.transactionId}`);
         adUnit.bids[bid.bidId] = pick(bid, [
           'bidder',
           'bidId',
@@ -750,7 +753,7 @@ magniteAdapter.track = ({ eventType, args }) => {
       break;
     case BID_RESPONSE:
       const auctionEntry = deepAccess(cache, `auctions.${args.auctionId}.auction`);
-      const adUnit = deepAccess(auctionEntry, `adUnits.${args.adUnitCode}`);
+      const adUnit = deepAccess(auctionEntry, `adUnits.${args.transactionId}`);
       let bid = adUnit.bids[args.requestId];
 
       // if this came from multibid, there might now be matching bid, so check
@@ -807,7 +810,7 @@ magniteAdapter.track = ({ eventType, args }) => {
       const serverError = deepAccess(args, 'serverErrors.0');
       const serverResponseTimeMs = args.serverResponseTimeMs;
       args.bids.forEach(bid => {
-        let cachedBid = deepAccess(cache, `auctions.${bid.auctionId}.auction.adUnits.${bid.adUnitCode}.bids.${bid.bidId}`);
+        let cachedBid = deepAccess(cache, `auctions.${bid.auctionId}.auction.adUnits.${bid.transactionId}.bids.${bid.bidId}`);
         if (typeof bid.serverResponseTimeMs !== 'undefined') {
           cachedBid.serverLatencyMillis = bid.serverResponseTimeMs;
         } else if (serverResponseTimeMs && bid.source === 's2s') {
@@ -829,8 +832,16 @@ magniteAdapter.track = ({ eventType, args }) => {
       });
       break;
     case BID_WON:
-      const bidWon = formatBidWon(args);
-      addEventToQueue({ bidsWon: [bidWon] }, bidWon.renderAuctionId, 'bidWon');
+      // Allowing us to delay bidWon handling so it happens at right time
+      // we expect it to happen after gpt slotRenderEnded, but have seen it happen before when testing
+      // this will ensure it happens after if set
+      if (rubiConf.analyticsProcessDelay > 0) {
+        setTimeout(() => {
+          handleBidWon(args);
+        }, rubiConf.analyticsProcessDelay);
+      } else {
+        handleBidWon(args);
+      }
       break;
     case AUCTION_END:
       let auctionCache = cache.auctions[args.auctionId];
@@ -838,7 +849,11 @@ magniteAdapter.track = ({ eventType, args }) => {
       if (!auctionCache) {
         break;
       }
+      // Set this auction as being done
       auctionCache.auction.auctionEnd = args.auctionEnd;
+
+      // keeping order of auctions and if the payload has been sent or not
+      cache.auctionOrder.push(args.auctionId);
 
       const isOnlyInstreamAuction = args.adUnits && args.adUnits.every(adUnit => adUnitIsOnlyInstream(adUnit));
 
@@ -854,7 +869,7 @@ magniteAdapter.track = ({ eventType, args }) => {
       break;
     case BID_TIMEOUT:
       args.forEach(badBid => {
-        let bid = deepAccess(cache, `auctions.${badBid.auctionId}.auction.adUnits.${badBid.adUnitCode}.bids.${badBid.bidId}`, {});
+        let bid = deepAccess(cache, `auctions.${badBid.auctionId}.auction.adUnits.${badBid.transactionId}.bids.${badBid.bidId}`, {});
         // might be set already by bidder-done, so do not overwrite
         if (bid.status !== 'error') {
           bid.status = 'error';

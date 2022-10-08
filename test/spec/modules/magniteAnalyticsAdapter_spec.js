@@ -115,6 +115,7 @@ const MOCK = {
   BID_REQUESTED: {
     'bidderCode': 'rubicon',
     'auctionId': '99785e47-a7c8-4c8a-ae05-ef1c717a4b4d',
+    'transactionId': '7b10a106-89ea-4e19-bc51-9b2e970fc42a',
     'bids': [
       {
         'bidder': 'rubicon',
@@ -125,6 +126,7 @@ const MOCK = {
         },
         'adUnitCode': 'box',
         'bidId': '23fcd8cf4bf0d7',
+        'transactionId': '7b10a106-89ea-4e19-bc51-9b2e970fc42a',
         'src': 'client',
       }
     ]
@@ -194,8 +196,8 @@ const ANALYTICS_MESSAGE = {
   'version': '$prebid.version$',
   'referrerHostname': 'a-test-domain.com',
   'timestamps': {
-    'timeSincePageLoad': 200,
-    'eventTime': 1519767013981,
+    'timeSincePageLoad': 500,
+    'eventTime': 1519767014281,
     'prebidLoaded': magniteAdapter.MODULE_INITIALIZED_TIME
   },
   'wrapper': {
@@ -398,8 +400,9 @@ describe('magnite analytics adapter', function () {
         }
       });
       expect(rubiConf).to.deep.equal({
-        analyticsEventDelay: 200,
+        analyticsEventDelay: 500,
         analyticsBatchTimeout: 5000,
+        analyticsProcessDelay: 1,
         dmBilling: {
           enabled: false,
           vendors: [],
@@ -424,8 +427,9 @@ describe('magnite analytics adapter', function () {
         }
       });
       expect(rubiConf).to.deep.equal({
-        analyticsEventDelay: 200,
+        analyticsEventDelay: 500,
         analyticsBatchTimeout: 3000,
+        analyticsProcessDelay: 1,
         dmBilling: {
           enabled: false,
           vendors: [],
@@ -451,8 +455,9 @@ describe('magnite analytics adapter', function () {
         }
       });
       expect(rubiConf).to.deep.equal({
-        analyticsEventDelay: 200,
+        analyticsEventDelay: 500,
         analyticsBatchTimeout: 3000,
+        analyticsProcessDelay: 1,
         dmBilling: {
           enabled: false,
           vendors: [],
@@ -956,8 +961,8 @@ describe('magnite analytics adapter', function () {
 
       events.emit(BID_WON, bidWon);
 
-      // hit the eventDelay
-      clock.tick(rubiConf.analyticsEventDelay + 100);
+      // tick the event delay time plus processing delay
+      clock.tick(rubiConf.analyticsEventDelay + rubiConf.analyticsProcessDelay);
 
       expect(server.requests.length).to.equal(1);
       let request = server.requests[0];
@@ -988,10 +993,10 @@ describe('magnite analytics adapter', function () {
       let request = server.requests[0];
       let message = JSON.parse(request.requestBody);
 
-      // The timestamps should be changed from the default by 1800 (set eventDelay - eventDelay default (200))
+      // The timestamps should be changed from the default by (set eventDelay (2000) - eventDelay default (500))
       let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
-      expectedMessage.timestamps.eventTime = expectedMessage.timestamps.eventTime + 1800;
-      expectedMessage.timestamps.timeSincePageLoad = expectedMessage.timestamps.timeSincePageLoad + 1800;
+      expectedMessage.timestamps.eventTime = expectedMessage.timestamps.eventTime + 1500;
+      expectedMessage.timestamps.timeSincePageLoad = expectedMessage.timestamps.timeSincePageLoad + 1500;
 
       expect(message).to.deep.equal(expectedMessage);
     });
@@ -1014,8 +1019,8 @@ describe('magnite analytics adapter', function () {
 
         events.emit(BID_WON, MOCK.BID_WON);
 
-        // hit the eventDelay
-        clock.tick(rubiConf.analyticsEventDelay);
+        // tick the event delay time plus processing delay
+        clock.tick(rubiConf.analyticsEventDelay + rubiConf.analyticsProcessDelay);
 
         expect(server.requests.length).to.equal(1);
         let request = server.requests[0];
@@ -1048,8 +1053,8 @@ describe('magnite analytics adapter', function () {
 
         events.emit(BID_WON, MOCK.BID_WON);
 
-        // hit the eventDelay
-        clock.tick(rubiConf.analyticsEventDelay);
+        // tick the event delay time plus processing delay
+        clock.tick(rubiConf.analyticsEventDelay + rubiConf.analyticsProcessDelay);
 
         expect(server.requests.length).to.equal(1);
         let request = server.requests[0];
@@ -1084,8 +1089,8 @@ describe('magnite analytics adapter', function () {
 
       events.emit(BID_WON, MOCK.BID_WON);
 
-      // hit the eventDelay
-      clock.tick(rubiConf.analyticsEventDelay);
+      // tick the event delay time plus processing delay
+      clock.tick(rubiConf.analyticsEventDelay + rubiConf.analyticsProcessDelay);
 
       expect(server.requests.length).to.equal(1);
       let request = server.requests[0];
@@ -1104,8 +1109,8 @@ describe('magnite analytics adapter', function () {
       // Now send bidWon
       events.emit(BID_WON, MOCK.BID_WON);
 
-      // tick the event delay time
-      clock.tick(rubiConf.analyticsEventDelay);
+      // tick the event delay time plus processing delay
+      clock.tick(rubiConf.analyticsEventDelay + rubiConf.analyticsProcessDelay);
 
       // should see two server requests
       expect(server.requests.length).to.equal(2);
@@ -1125,8 +1130,8 @@ describe('magnite analytics adapter', function () {
       delete expectedMessage2.gamRenders;
 
       // second event should be event delay time after first one
-      expectedMessage2.timestamps.eventTime = expectedMessage.timestamps.eventTime + rubiConf.analyticsEventDelay;
-      expectedMessage2.timestamps.timeSincePageLoad = expectedMessage.timestamps.timeSincePageLoad + rubiConf.analyticsEventDelay;
+      expectedMessage2.timestamps.eventTime = expectedMessage.timestamps.eventTime + rubiConf.analyticsEventDelay + rubiConf.analyticsProcessDelay;
+      expectedMessage2.timestamps.timeSincePageLoad = expectedMessage.timestamps.timeSincePageLoad + rubiConf.analyticsEventDelay + rubiConf.analyticsProcessDelay;
 
       // trigger is `batched-bidsWon`
       expectedMessage2.trigger = 'batched-bidsWon';
@@ -1142,8 +1147,8 @@ describe('magnite analytics adapter', function () {
       mockGpt.emitEvent(gptSlotRenderEnded0.eventName, gptSlotRenderEnded0.params);
       events.emit(BID_WON, MOCK.BID_WON);
 
-      // tick the event delay time
-      clock.tick(rubiConf.analyticsEventDelay);
+      // tick the event delay time plus processing delay
+      clock.tick(rubiConf.analyticsEventDelay + rubiConf.analyticsProcessDelay);
 
       // should see two server requests
       expect(server.requests.length).to.equal(2);
@@ -1184,7 +1189,8 @@ describe('magnite analytics adapter', function () {
       config.setConfig({
         rubicon: {
           analyticsBatchTimeout: 0,
-          analyticsEventDelay: 0
+          analyticsEventDelay: 0,
+          analyticsProcessDelay: 0
         }
       });
 
@@ -1223,7 +1229,8 @@ describe('magnite analytics adapter', function () {
         {
           auctionId: MOCK.AUCTION_INIT.auctionId,
           adUnitCode: MOCK.AUCTION_INIT.adUnits[0].code,
-          bidId: MOCK.BID_REQUESTED.bids[0].bidId
+          bidId: MOCK.BID_REQUESTED.bids[0].bidId,
+          transactionId: MOCK.AUCTION_INIT.adUnits[0].transactionId,
         }
       ]);
 
@@ -1233,8 +1240,8 @@ describe('magnite analytics adapter', function () {
       // emmit gpt events and bidWon
       mockGpt.emitEvent(gptSlotRenderEnded0.eventName, gptSlotRenderEnded0.params);
 
-      // hit the eventDelay
-      clock.tick(rubiConf.analyticsEventDelay);
+      // tick the event delay time plus processing delay
+      clock.tick(rubiConf.analyticsEventDelay + rubiConf.analyticsProcessDelay);
 
       expect(server.requests.length).to.equal(1);
       let request = server.requests[0];
@@ -1285,8 +1292,8 @@ describe('magnite analytics adapter', function () {
 
         events.emit(BID_WON, MOCK.BID_WON);
 
-        // hit the eventDelay
-        clock.tick(rubiConf.analyticsEventDelay);
+        // tick the event delay time plus processing delay
+        clock.tick(rubiConf.analyticsEventDelay + rubiConf.analyticsProcessDelay);
 
         expect(server.requests.length).to.equal(1);
         let request = server.requests[0];
@@ -1318,8 +1325,8 @@ describe('magnite analytics adapter', function () {
       bidWon.bidderDetail = 'rubi2';
       events.emit(BID_WON, bidWon);
 
-      // hit the eventDelay
-      clock.tick(rubiConf.analyticsEventDelay);
+      // tick the event delay time plus processing delay
+      clock.tick(rubiConf.analyticsEventDelay + rubiConf.analyticsProcessDelay);
 
       expect(server.requests.length).to.equal(1);
 
@@ -1400,8 +1407,8 @@ describe('magnite analytics adapter', function () {
       mockGpt.emitEvent(gptSlotRenderEnded0.eventName, gptSlotRenderEnded0.params);
       events.emit(BID_WON, MOCK.BID_WON);
 
-      // hit the eventDelay
-      clock.tick(rubiConf.analyticsEventDelay);
+      // tick the event delay time plus processing delay
+      clock.tick(rubiConf.analyticsEventDelay + rubiConf.analyticsProcessDelay);
 
       expect(server.requests.length).to.equal(1);
       let request = server.requests[0];
@@ -1422,7 +1429,8 @@ describe('magnite analytics adapter', function () {
           useBidCache: true,
           rubicon: {
             analyticsEventDelay: 0,
-            analyticsBatchTimeout: 0
+            analyticsBatchTimeout: 0,
+            analyticsProcessDelay: 0
           }
         });
 
@@ -1433,9 +1441,9 @@ describe('magnite analytics adapter', function () {
           { ...MOCK.AUCTION_INIT, auctionId: 'auctionId-3', adUnits: [{ ...MOCK.AUCTION_INIT.adUnits[0], transactionId: 'tid-3' }] }
         ];
         bidRequests = [
-          { ...MOCK.BID_REQUESTED, auctionId: 'auctionId-1', bids: [{ ...MOCK.BID_REQUESTED.bids[0], bidId: 'bidId-1' }] },
-          { ...MOCK.BID_REQUESTED, auctionId: 'auctionId-2', bids: [{ ...MOCK.BID_REQUESTED.bids[0], bidId: 'bidId-2' }] },
-          { ...MOCK.BID_REQUESTED, auctionId: 'auctionId-3', bids: [{ ...MOCK.BID_REQUESTED.bids[0], bidId: 'bidId-3' }] }
+          { ...MOCK.BID_REQUESTED, auctionId: 'auctionId-1', bids: [{ ...MOCK.BID_REQUESTED.bids[0], bidId: 'bidId-1', transactionId: 'tid-1' }] },
+          { ...MOCK.BID_REQUESTED, auctionId: 'auctionId-2', bids: [{ ...MOCK.BID_REQUESTED.bids[0], bidId: 'bidId-2', transactionId: 'tid-2' }] },
+          { ...MOCK.BID_REQUESTED, auctionId: 'auctionId-3', bids: [{ ...MOCK.BID_REQUESTED.bids[0], bidId: 'bidId-3', transactionId: 'tid-3' }] }
         ];
         bidResponses = [
           { ...MOCK.BID_RESPONSE, auctionId: 'auctionId-1', transactionId: 'tid-1', requestId: 'bidId-1' },
@@ -1631,7 +1639,8 @@ describe('magnite analytics adapter', function () {
       mockGpt.emitEvent(gptSlotRenderEnded0.eventName, gptSlotRenderEnded0.params);
       events.emit(BID_WON, MOCK.BID_WON);
 
-      clock.tick(rubiConf.analyticsEventDelay);
+      // tick the event delay time plus processing delay
+      clock.tick(rubiConf.analyticsEventDelay + rubiConf.analyticsProcessDelay);
     }
     it('should ignore billing events when not enabled', () => {
       basicBillingAuction([{
