@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { logWarn, isArray } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
@@ -72,27 +72,19 @@ function getPricing(xmlNode) {
       price: priceNode.textContent || priceNode.innerText
     };
   } else {
-    utils.logWarn('PREBID - ' + BIDDER_CODE + ': No bid received or missing pricing extension.');
+    logWarn('PREBID - ' + BIDDER_CODE + ': No bid received or missing pricing extension.');
   }
 
   return princingData;
 }
 
 /*
-* read the StickyBrand extension with this format:
+* Read the StickyBrand extension with this format:
 * <Extension type='StickyBrand'>
-*   <Domain>
-*     <![CDATA[minotaur.com]]>
-*   </Domain>
-*   <Sector>
-*     <![CDATA[BEAUTY & HYGIENE]]>
-*   </Sector>
-*   <Advertiser>
-*     <![CDATA[James Bond Trademarks]]>
-*   </Advertiser>
-*   <Brand>
-*     <![CDATA[007 Seven]]>
-*   </Brand>
+*   <Domain><![CDATA[minotaur.com]]></Domain>
+*   <Sector><![CDATA[BEAUTY & HYGIENE]]></Sector>
+*   <Advertiser><![CDATA[James Bond Trademarks]]></Advertiser>
+*   <Brand><![CDATA[007 Seven]]></Brand>
 * </Extension>
 * @return {object} pricing data in format: {currency: "EUR", price:"1.000"}
 */
@@ -112,7 +104,7 @@ function getAdvertiserDomain(xmlNode) {
     var domainNode = brandExtNode.querySelector('Domain');
     domain = domainNode.textContent || domainNode.innerText
   } else {
-    utils.logWarn('PREBID - ' + BIDDER_CODE + ': No bid received or missing StickyBrand extension.');
+    logWarn('PREBID - ' + BIDDER_CODE + ': No bid received or missing StickyBrand extension.');
   }
 
   return domain;
@@ -229,7 +221,7 @@ function formatAdHTML(bid, size) {
   var libUrl = '';
   if (integrationType && integrationType !== 'inbanner') {
     libUrl = PRIMETIME_URL + getComponentId(bid.params.format) + '.min.js';
-    script = getOutstreamScript(bid, size);
+    script = getOutstreamScript(bid);
   } else {
     libUrl = MUSTANG_URL;
     script = getInBannerScript(bid, size);
@@ -300,7 +292,7 @@ var getOutstreamScript = function(bid) {
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
-  aliases: ['stickyadstv', 'freewheelssp'], //  former names for freewheelssp
+  aliases: ['stickyadstv', 'freewheelssp'], //  aliases for freewheel-ssp
   /**
   * Determines whether or not the given bid request is valid.
   *
@@ -375,7 +367,7 @@ export const spec = {
       var playerSize = [];
       if (currentBidRequest.mediaTypes.video && currentBidRequest.mediaTypes.video.playerSize) {
         // If mediaTypes is video, get size from mediaTypes.video.playerSize per http://prebid.org/blog/pbjs-3
-        if (utils.isArray(currentBidRequest.mediaTypes.video.playerSize[0])) {
+        if (isArray(currentBidRequest.mediaTypes.video.playerSize[0])) {
           playerSize = currentBidRequest.mediaTypes.video.playerSize[0];
         } else {
           playerSize = currentBidRequest.mediaTypes.video.playerSize;
@@ -417,7 +409,7 @@ export const spec = {
     var playerSize = [];
     if (bidrequest.mediaTypes.video && bidrequest.mediaTypes.video.playerSize) {
       // If mediaTypes is video, get size from mediaTypes.video.playerSize per http://prebid.org/blog/pbjs-3
-      if (utils.isArray(bidrequest.mediaTypes.video.playerSize[0])) {
+      if (isArray(bidrequest.mediaTypes.video.playerSize[0])) {
         playerSize = bidrequest.mediaTypes.video.playerSize[0];
       } else {
         playerSize = bidrequest.mediaTypes.video.playerSize;
@@ -439,7 +431,7 @@ export const spec = {
       var parser = new DOMParser();
       xmlDoc = parser.parseFromString(serverResponse, 'application/xml');
     } catch (err) {
-      utils.logWarn('Prebid.js - ' + BIDDER_CODE + ' : ' + err);
+      logWarn('Prebid.js - ' + BIDDER_CODE + ' : ' + err);
       return;
     }
 
