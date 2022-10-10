@@ -4,7 +4,6 @@ import { BANNER, VIDEO, NATIVE, ADPOD } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { bidderSettings } from '../src/bidderSettings.js';
-import { INSTREAM } from '../src/video.js';
 
 const BIDDER_CODE = 'pubmatic';
 const LOG_WARN_PREFIX = 'PubMatic: ';
@@ -1021,19 +1020,21 @@ function _assignRenderer(newBid, request) {
 }
 
 /**
- * Assign prebiddealpriority to the dealtier property of adpod-video bid, 
- * so that adpod module can set the hb_pb_cat_dur targetting key. 
- * @param {*} newBid 
- * @param {*} bid 
- * @param {*} request 
- * @returns 
+ * In case of adpod video context, assign prebiddealpriority to the dealtier property of adpod-video bid,
+ * so that adpod module can set the hb_pb_cat_dur targetting key.
+ * @param {*} newBid
+ * @param {*} bid
+ * @param {*} request
+ * @returns
  */
-function _assignDealTier(newBid, bid, request) {
-  if (!bid?.ext?.prebiddealpriority || videoObj?.context != ADPOD) return;
+export function assignDealTier(newBid, bid, request) {
+  if (!bid?.ext?.prebiddealpriority) return;
   const bidRequest = getBidRequest(newBid.requestId, [request.bidderRequest]);
   const videoObj = deepAccess(bidRequest, 'mediaTypes.video');
+  if (videoObj?.context != ADPOD) return;
+
   const duration = bid?.ext?.video?.duration || videoObj?.maxduration;
-  if (!duration) return;
+  //if (!duration) return;
   newBid.video = {
     context: ADPOD,
     durationSeconds: duration,
@@ -1361,7 +1362,7 @@ export const spec = {
                             br.height = bid.hasOwnProperty('h') ? bid.h : req.video.h;
                             br.vastXml = bid.adm;
                             _assignRenderer(br, request);
-                            _assignDealTier(br, bid, request);
+                            assignDealTier(br, bid, request);
                             break;
                           case NATIVE:
                             _parseNativeResponse(bid, br);
