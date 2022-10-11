@@ -536,6 +536,8 @@ describe('S2S Adapter', function () {
     addBidResponse = sinon.spy(),
     done = sinon.spy();
 
+  addBidResponse.reject = sinon.spy();
+
   function prepRequest(req) {
     req.ad_units.forEach((adUnit) => {
       delete adUnit.nativeParams
@@ -595,6 +597,7 @@ describe('S2S Adapter', function () {
 
   afterEach(function () {
     addBidResponse.resetHistory();
+    addBidResponse.reject = sinon.spy();
     done.resetHistory();
   });
 
@@ -2903,6 +2906,16 @@ describe('S2S Adapter', function () {
       });
     }
 
+    it('should reject invalid bids', () => {
+      config.setConfig({ s2sConfig: CONFIG });
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      const response = deepClone(RESPONSE_OPENRTB);
+      Object.assign(response.seatbid[0].bid[0], {w: null, h: null});
+      server.requests[0].respond(200, {}, JSON.stringify(response));
+      expect(addBidResponse.reject.calledOnce).to.be.true;
+      expect(addBidResponse.called).to.be.false;
+    });
+
     it('does not (by default) allow bids that were not requested', function () {
       config.setConfig({ s2sConfig: CONFIG });
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
@@ -2911,6 +2924,7 @@ describe('S2S Adapter', function () {
       server.requests[0].respond(200, {}, JSON.stringify(response));
 
       expect(addBidResponse.called).to.be.false;
+      expect(addBidResponse.reject.calledOnce).to.be.true;
     });
 
     it('allows unrequested bids if config.allowUnknownBidderCodes', function () {
@@ -2924,17 +2938,35 @@ describe('S2S Adapter', function () {
       expect(addBidResponse.calledWith(sinon.match.any, sinon.match({ bidderCode: 'unknown' }))).to.be.true;
     });
 
-    it('uses "null" request\'s ID for all responses, when a null request is present', function () {
-      const cfg = {...CONFIG, allowUnknownBidderCodes: true};
-      config.setConfig({s2sConfig: cfg});
-      const req = {...REQUEST, s2sConfig: cfg, ad_units: [{...REQUEST.ad_units[0], bids: [{bidder: null, bid_id: 'testId'}]}]};
-      const bidReq = {...BID_REQUESTS[0], bidderCode: null, bids: [{...BID_REQUESTS[0].bids[0], bidder: null, bidId: 'testId'}]}
-      adapter.callBids(req, [bidReq], addBidResponse, done, ajax);
-      const response = deepClone(RESPONSE_OPENRTB);
-      response.seatbid[0].seat = 'storedImpression';
-      server.requests[0].respond(200, {}, JSON.stringify(response));
-      sinon.assert.calledWith(addBidResponse, sinon.match.any, sinon.match({bidderCode: 'storedImpression', requestId: 'testId'}))
-    });
+    describe('stored impressions', () => {
+      let bidReq, response;
+
+      function mks2sReq(s2sConfig = CONFIG) {
+        return {...REQUEST, s2sConfig, ad_units: [{...REQUEST.ad_units[0], bids: [{bidder: null, bid_id: 'testId'}]}]};
+      }
+
+      beforeEach(() => {
+        bidReq = {...BID_REQUESTS[0], bidderCode: null, bids: [{...BID_REQUESTS[0].bids[0], bidder: null, bidId: 'testId'}]}
+        response = deepClone(RESPONSE_OPENRTB);
+        response.seatbid[0].seat = 'storedImpression';
+      })
+
+      it('uses "null" request\'s ID for all responses, when a null request is present', function () {
+        const cfg = {...CONFIG, allowUnknownBidderCodes: true};
+        config.setConfig({s2sConfig: cfg});
+        adapter.callBids(mks2sReq(cfg), [bidReq], addBidResponse, done, ajax);
+        server.requests[0].respond(200, {}, JSON.stringify(response));
+        sinon.assert.calledWith(addBidResponse, sinon.match.any, sinon.match({bidderCode: 'storedImpression', requestId: 'testId'}))
+      });
+
+      it('does not allow null requests (= stored impressions) if allowUnknownBidderCodes is not set', () => {
+        config.setConfig({s2sConfig: CONFIG});
+        adapter.callBids(mks2sReq(), [bidReq], addBidResponse, done, ajax);
+        server.requests[0].respond(200, {}, JSON.stringify(response));
+        expect(addBidResponse.called).to.be.false;
+        expect(addBidResponse.reject.calledOnce).to.be.true;
+      });
+    })
 
     it('copies ortb2Imp to response when there is only a null bid', () => {
       const cfg = {...CONFIG};
