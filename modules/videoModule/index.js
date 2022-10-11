@@ -86,28 +86,28 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
 
   return { init, renderBid, getOrtbVideo, getOrtbContent };
 
-  function beforeBidsRequested(nextFn, auctionRequest) {
-    enrichAuction(auctionRequest);
+  function beforeBidsRequested(nextFn, bidderRequest) {
+    enrichAuction(bidderRequest);
 
-    const bidsBackHandler = auctionRequest.bidsBackHandler;
+    const bidsBackHandler = bidderRequest.bidsBackHandler;
     if (!bidsBackHandler || typeof bidsBackHandler !== 'function') {
       pbEvents.on(CONSTANTS.EVENTS.AUCTION_END, auctionEnd);
     }
 
-    return nextFn.call(this, auctionRequest);
+    return nextFn.call(this, bidderRequest);
   }
 
-  function enrichAuction(auctionRequest) {
+  function enrichAuction(bidderRequest) {
     if (mainContentDivId) {
-      enrichOrtb2(mainContentDivId, auctionRequest);
+      enrichOrtb2(mainContentDivId, bidderRequest);
     }
 
-    const adUnits = auctionRequest.adUnits || pbGlobal.adUnits || [];
+    const adUnits = bidderRequest.adUnits || pbGlobal.adUnits || [];
     adUnits.forEach(adUnit => {
       const divId = getDivId(adUnit);
       enrichAdUnit(adUnit, divId);
       if (contentEnrichmentEnabled && !mainContentDivId) {
-        enrichOrtb2(divId, auctionRequest);
+        enrichOrtb2(divId, bidderRequest);
       }
     });
   }
@@ -140,12 +140,12 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     adUnit.mediaTypes.video = video;
   }
 
-  function enrichOrtb2(divId, auctionRequest) {
+  function enrichOrtb2(divId, bidderRequest) {
     const ortbContent = getOrtbContent(divId);
     if (!ortbContent) {
       return;
     }
-    auctionRequest.ortb2 = mergeDeep({}, auctionRequest.ortb2, { site: { content: ortbContent } });
+    bidderRequest.ortb2 = mergeDeep({}, bidderRequest.ortb2, { site: { content: ortbContent } });
   }
 
   function auctionEnd(auctionResult) {
