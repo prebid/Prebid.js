@@ -307,10 +307,10 @@ const ID_REQUEST = {
     }
     // In the single request mode, split imps between those going to the ad server and those going to extend server
     if (extendImps.length) {
-      requests.push(formatRequest(extendImps, null, true));
+      requests.push(formatRequest(extendImps, bidderRequest.auctionId, true));
     }
     if (adServerImps.length) {
-      requests.push(formatRequest(adServerImps, null, false));
+      requests.push(formatRequest(adServerImps, bidderRequest.auctionId, false));
     }
 
     return requests;

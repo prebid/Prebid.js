@@ -237,7 +237,7 @@ function getBid(requestId, currency, bidResponse) {
     width,
     height,
     meta,
-    netRevenue: false
+    netRevenue: true
   };
 }
 
