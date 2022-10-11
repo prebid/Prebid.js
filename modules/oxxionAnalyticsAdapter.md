@@ -1,21 +1,33 @@
 # Overview
-Module Name: bidwatch Analytics Adapter
+Module Name: oxxion Analytics Adapter
 
 Module Type: Analytics Adapter
 
-Maintainer: tech@bidwatch.io
+Maintainer: tech@oxxion.io
 
-# Description
+# Oxxion Analytics Adapter
 
-Analytics adapter for bidwatch.io.
+Oxxion helps you to understand how your prebid stack performs.
 
-# Test Parameters
+# Integration
 
+Add the oxxion analytics adapter module to your prebid configuration :
 ```
-{
-  provider: 'bidwatch',
+pbjs.enableAnalytics(
+  ...
+  {
+    provider: 'oxxion',
     options : {
           domain: 'test.endpoint'
     }
-}
+  }
+  ...
+)
 ```
+
+# Parameters
+
+| Name                           | Type     | Description                                                                                                 |
+|:-------------------------------|:---------|:------------------------------------------------------------------------------------------------------------|
+| domain                         | String   | This string identifies yourself in Oxxion's systems and is provided to you by your Oxxion representative.   |
+

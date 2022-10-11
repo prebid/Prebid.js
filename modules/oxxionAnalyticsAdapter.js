@@ -146,11 +146,11 @@ function handleBidWon(args) {
   }
   args['cpmIncrement'] = increment;
   if (typeof saveEvents.bidRequested == 'object' && saveEvents.bidRequested.length > 0 && saveEvents.bidRequested[0].gdprConsent) { args.gdpr = saveEvents.bidRequested[0].gdprConsent; }
-  ajax(endpoint + '.bidwatch.io/analytics/bid_won', null, JSON.stringify(args), {method: 'POST', withCredentials: true});
+  ajax(endpoint + '.oxxion.io/analytics/bid_won', null, JSON.stringify(args), {method: 'POST', withCredentials: true});
 }
 
 function handleAuctionEnd() {
-  ajax(endpoint + '.bidwatch.io/analytics/auctions', function (data) {
+  ajax(endpoint + '.oxxion.io/analytics/auctions', function (data) {
     let list = JSON.parse(data);
     if (Array.isArray(list) && typeof allEvents['bidResponse'] != 'undefined') {
       let alreadyCalled = [];
@@ -158,7 +158,7 @@ function handleAuctionEnd() {
         let tmpId = bidResponse['originalBidder'] + '_' + bidResponse['creativeId'];
         if (list.includes(tmpId) && !alreadyCalled.includes(tmpId)) {
           alreadyCalled.push(tmpId);
-          ajax(endpoint + '.bidwatch.io/analytics/creatives', null, JSON.stringify(bidResponse), {method: 'POST', withCredentials: true});
+          ajax(endpoint + '.oxxion.io/analytics/creatives', null, JSON.stringify(bidResponse), {method: 'POST', withCredentials: true});
         }
       });
     }
@@ -167,7 +167,7 @@ function handleAuctionEnd() {
   auctionEnd = {};
 }
 
-let bidwatchAnalytics = Object.assign(adapter({url, analyticsType}), {
+let oxxionAnalytics = Object.assign(adapter({url, analyticsType}), {
   track({
     eventType,
     args
@@ -193,18 +193,18 @@ let bidwatchAnalytics = Object.assign(adapter({url, analyticsType}), {
   }});
 
 // save the base class function
-bidwatchAnalytics.originEnableAnalytics = bidwatchAnalytics.enableAnalytics;
+oxxionAnalytics.originEnableAnalytics = oxxionAnalytics.enableAnalytics;
 
 // override enableAnalytics so we can get access to the config passed in from the page
-bidwatchAnalytics.enableAnalytics = function (config) {
-  bidwatchAnalytics.originEnableAnalytics(config); // call the base class function
+oxxionAnalytics.enableAnalytics = function (config) {
+  oxxionAnalytics.originEnableAnalytics(config); // call the base class function
   initOptions = config.options;
   if (initOptions.domain) { endpoint = 'https://' + initOptions.domain; }
 };
 
 adapterManager.registerAnalyticsAdapter({
-  adapter: bidwatchAnalytics,
-  code: 'bidwatch'
+  adapter: oxxionAnalytics,
+  code: 'oxxion'
 });
 
-export default bidwatchAnalytics;
+export default oxxionAnalytics;
