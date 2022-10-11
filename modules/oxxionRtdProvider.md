@@ -29,7 +29,7 @@ pbjs.setConfig(
           name: "oxxionRtd",
           waitForIt: true,
           params: {
-            endpoint: "test.endpoint",
+            domain: "test.endpoint",
             contexts: ["instream"],
           }
        }
