@@ -1034,7 +1034,7 @@ export function assignDealTier(newBid, bid, request) {
   if (videoObj?.context != ADPOD) return;
 
   const duration = bid?.ext?.video?.duration || videoObj?.maxduration;
-  //if (!duration) return;
+  // if (!duration) return;
   newBid.video = {
     context: ADPOD,
     durationSeconds: duration,
