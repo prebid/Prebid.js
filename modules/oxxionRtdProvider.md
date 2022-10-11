@@ -36,13 +36,13 @@ pbjs.setConfig(
     ]
   }
   ...
-}
+)
 ```
 
 # setConfig Parameters
 
 | Name                             | Type     | Description                                                                                                 |
 |:---------------------------------|:---------|:------------------------------------------------------------------------------------------------------------|
-| endpoint                         | String   | This string identifies yourself in Oxxion's systems and is provided to you by your Oxxion representative.   |
+| domain                           | String   | This string identifies yourself in Oxxion's systems and is provided to you by your Oxxion representative.   |
 | contexts                         | Array    | Array defining which video contexts to add tracking events into. Values can be instream and/or outstream.   |
 
