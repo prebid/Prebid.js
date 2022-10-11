@@ -1,4 +1,4 @@
-import bidwatchAnalytics from 'modules/bidwatchAnalyticsAdapter.js';
+import bidwatchAnalytics from 'modules/oxxionAnalyticsAdapter.js';
 import { expect } from 'chai';
 import { server } from 'test/mocks/xhr.js';
 let adapterManager = require('src/adapterManager').default;
