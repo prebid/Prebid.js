@@ -10,8 +10,9 @@ The simplest way to use this from an adapter is:
 ```javascript
 import {ortbConverter} from '../../libraries/ortbConverter/converter.js'
 
-const converter = ortbConverter({
+const converter = ortbConverter({     
     context: {
+        // `netRevenue` and `ttl` are required properties of bid responses - provide a default for them 
         netRevenue: true,    // or false if your adapter should set bidResponse.netRevenue = false
         ttl: 30              // default bidResponse.ttl (when not specified in ORTB response.seatbid[].bid[].exp)  
     }
