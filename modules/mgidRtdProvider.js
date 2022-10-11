@@ -6,7 +6,7 @@ import {getRefererInfo} from '../src/refererDetection.js';
 
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'mgid';
-const MGID_RTD_API_URL = 'https://servicer-dfw.mgid.com/sda';
+const MGID_RTD_API_URL = 'https://servicer.mgid.com/sda';
 const MGUID_LOCAL_STORAGE_KEY = 'mguid';
 const ORTB2_NAME = 'www.mgid.com'
 
